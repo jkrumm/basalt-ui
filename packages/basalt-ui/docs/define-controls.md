@@ -37,10 +37,35 @@ result goes straight into a query key.
 
 ```ts
 defineControls<const Id extends string, const Scp extends Scope, const F extends Record<string, AnyFieldSpec>, const W extends WidgetsInput = {}>(config: DefineControlsConfig<Id, Scp, F, W>): Controls<Id, Scp, F, W>
-  id: Id
-  scope: Scp
-  fields: F
-  resets?: readonly string[]
-  retain?: readonly string[]
-  widgets?: W & ValidWidgets<W>
+  id: Id  // App-unique; the device lane stores under `basalt:<id>`
+  scope: Scp  // `global` mounts on the root route only; `page` on a page or a layout route
+  fields: F  // The fields; each key is the field's URL param (a range's preset param)
+  resets?: readonly string[]  // Params unset in the same navigate as any URL write of this store: `['page']` on a list, so a narrowed filter …
+  retain?: readonly string[]  // Page stores only: URL params kept across navigations inside the subtree of the layout route that mounts the s…
+  widgets?: W & ValidWidgets<W>  // Page stores only: cards bound to a scalar handle (a global or a page field)
+```
+
+## Example
+
+```tsx
+export const globals = defineControls({
+  id: 'globals',
+  scope: 'global',
+  fields: { range: field.enum(['1h', '24h', '7d'], '24h', { aliases: { day: '24h' } }) },
+})
+export const list = defineControls({
+  id: 'list',
+  scope: 'page',
+  resets: ['page'],
+  fields: { q: field.string(''), status: field.multi(['open', 'closed'], []) },
+})
+
+createRootRoute({ validateSearch: globals.validateSearch, search: { middlewares: globals.middlewares } })
+createFileRoute('/list')({
+  validateSearch: list.extend(z.object({ item: z.string().optional() })),
+  search: { middlewares: list.middlewares },
+})
+
+const [q, setQ] = list.field.q.use()
+<Link to="/list" {...list.field.status.link(['open'])} />
 ```

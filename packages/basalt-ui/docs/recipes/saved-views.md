@@ -1,7 +1,6 @@
 ---
 name: saved-views
 use-when: a table's search, filters, sort and visible columns are worth naming and coming back to
-file: apps/playground/src/recipes/saved-views.tsx
 ---
 
 Views are the toolbar's: `Views` lists them, saves the current state under a name (the same name overwrites) and resets.

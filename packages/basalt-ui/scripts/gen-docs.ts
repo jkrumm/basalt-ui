@@ -88,6 +88,8 @@ type Extracted = {
   info: ExportInfo
   /** The rendered `## Signature` text. */
   signature: string
+  /** The export's `@example` JSDoc tags, fences stripped. */
+  examples: string[]
 }
 
 /** `./dist/charts/index.d.ts` → `<pkg>/src/charts/index.ts(x)`; undefined when no source entry exists. */
@@ -181,6 +183,21 @@ function jsdocOf(checker: ts.TypeChecker, symbol: ts.Symbol): ExportJsdoc | null
   return jsdoc.summary === '' && jsdoc.useWhen === '' && jsdoc.neverWhen === '' ? null : jsdoc
 }
 
+/** The `@example` tags of a symbol: the text between its fence when it has one, else verbatim. */
+function jsdocExamples(checker: ts.TypeChecker, symbol: ts.Symbol): string[] {
+  return symbol
+    .getJsDocTags(checker)
+    .filter((t) => t.name === 'example' && t.text !== undefined)
+    .map((t) =>
+      ts
+        .displayPartsToString(t.text)
+        .replace(/^\s*```\w*\n/, '')
+        .replace(/\n```\s*$/, '')
+        .trim(),
+    )
+    .filter((text) => text !== '')
+}
+
 /** The value exports of one module, aliases resolved, `default` left out. */
 function valueExports(
   checker: ts.TypeChecker,
@@ -247,6 +264,7 @@ function extractOne(
       jsdoc: jsdocOf(checker, symbol),
     },
     signature: signatureOf(checker, name, symbol, decl),
+    examples: jsdocExamples(checker, symbol),
   })
 }
 
@@ -315,8 +333,124 @@ function signatureOf(
   const props =
     first === undefined
       ? []
-      : propShapeLines(checker, checker.getTypeOfSymbolAtLocation(first, node), node, TYPE_FLAGS)
-  return [head.replace('__0:', 'props:'), ...props].join('\n')
+      : docPropLines(checker, checker.getTypeOfSymbolAtLocation(first, node), node)
+  return [head.replace('__0:', 'props:'), ...props, ...returnedMembers(checker, call, node)].join(
+    '\n',
+  )
+}
+
+const isOwnSymbol = (s: ts.Symbol): boolean =>
+  s.declarations?.some((d) => !d.getSourceFile().fileName.includes('/node_modules/')) === true
+
+type Carried = { symbol: ts.Symbol; carried: boolean; optional: boolean }
+
+/** `name` → how one union member declares it: absent or `?: never` is not carried. */
+function carriedProps(checker: ts.TypeChecker, member: ts.Type, node: ts.Node) {
+  const out = new Map<string, Carried>()
+  for (const symbol of member.getProperties().filter(isOwnSymbol)) {
+    const flags = checker.getTypeOfSymbolAtLocation(symbol, node).flags
+    out.set(symbol.name, {
+      symbol,
+      carried: (flags & (ts.TypeFlags.Never | ts.TypeFlags.Undefined)) === 0,
+      optional: (symbol.flags & ts.SymbolFlags.Optional) !== 0,
+    })
+  }
+  return out
+}
+
+const oneLine = (text: string, max: number): string => {
+  const flat = text.replace(/\s+/g, ' ').trim()
+  return flat.length <= max ? flat : `${flat.slice(0, max - 1)}…`
+}
+
+/** The first sentence of a prop's JSDoc and its `@default`, as one `// ...` comment; '' without either. */
+function propNote(checker: ts.TypeChecker, symbol: ts.Symbol): string {
+  const summary = ts.displayPartsToString(symbol.getDocumentationComment(checker)).trim()
+  const first = /^[\s\S]*?(?:\.(?=\s|$)|$)/.exec(summary)?.[0] ?? ''
+  const tag = symbol.getJsDocTags(checker).find((t) => t.name === 'default')
+  const fallback = tag?.text === undefined ? '' : ts.displayPartsToString(tag.text).trim()
+  const parts = [
+    oneLine(first, 110).replace(/\.$/, ''),
+    fallback === '' ? '' : `default ${fallback}`,
+  ]
+  const note = parts.filter((p) => p !== '').join('; ')
+  return note === '' ? '' : `  // ${note}`
+}
+
+/**
+ * The props block of a signature. `propShapeLines` lists every arm's props as one flat list, so a
+ * prop that only one arm of a union carries would read as required. Here such a prop is marked
+ * omittable, one `// either a or b or neither` line names the arms, and a prop's JSDoc summary and
+ * `@default` follow it as a comment.
+ */
+function docPropLines(checker: ts.TypeChecker, paramType: ts.Type, node: ts.Node): string[] {
+  const lines = propShapeLines(checker, paramType, node, TYPE_FLAGS)
+  if (lines.length === 0) return lines
+  const type = checker.getNonNullableType(paramType)
+  const members = (type.isUnion() ? type.types : [type]).map((m) => carriedProps(checker, m, node))
+  const names = new Set(members.flatMap((m) => [...m.keys()]))
+  const carriedBy = (name: string): number => members.filter((m) => m.get(name)?.carried).length
+  const conditional = new Set(
+    members.length > 1 ? [...names].filter((n) => carriedBy(n) < members.length) : [],
+  )
+  const symbolOf = (name: string): ts.Symbol | undefined =>
+    members.find((m) => m.get(name)?.carried)?.get(name)?.symbol ??
+    members.find((m) => m.has(name))?.get(name)?.symbol
+
+  const armLabel = (arm: Map<string, Carried>): string => {
+    const required = [...arm].filter(
+      ([name, e]) =>
+        e.carried &&
+        !e.optional &&
+        (conditional.has(name) ||
+          members.some((m) => m.get(name)?.carried && m.get(name)?.optional)),
+    )
+    const optional = [...arm].filter(
+      ([name, e]) => e.carried && e.optional && conditional.has(name),
+    )
+    const req = required.map(([name]) => name)
+    const opt = optional.map(([name]) => name)
+    return (req.length > 0 ? req : opt).join(' + ') || 'neither'
+  }
+  const labels = [...new Set(members.map(armLabel))].toSorted(
+    (a, b) => Number(a === 'neither') - Number(b === 'neither'),
+  )
+  const arms =
+    members.length > 1 && labels.length > 1
+      ? [`  // either ${labels.slice(0, -1).join(', ')} or ${labels.at(-1)}`]
+      : []
+
+  const body = lines
+    .filter((l) => !l.startsWith('  one of:'))
+    .map((line) => {
+      const m = /^ {2}(\w+)(\?)?: (.*)$/.exec(line)
+      if (m === null) return line
+      const [, name, , rest] = m as unknown as [string, string, string | undefined, string]
+      const symbol = symbolOf(name)
+      const note = symbol === undefined ? '' : propNote(checker, symbol)
+      const omittable = m[2] === '?' || conditional.has(name)
+      return `  ${name}${omittable ? '?' : ''}: ${rest}${note}`
+    })
+  return [...arms, ...body]
+}
+
+/** The members a call returns when it returns an object of methods (`col<T>()`): one line each. */
+function returnedMembers(checker: ts.TypeChecker, call: ts.Signature, node: ts.Node): string[] {
+  const returned = call.getReturnType()
+  const methods = returned.getProperties().filter(isOwnSymbol)
+  const isFactory =
+    returned.getCallSignatures().length === 0 &&
+    returned.aliasSymbol !== undefined &&
+    methods.length >= 3 &&
+    methods.every((s) => checker.getTypeOfSymbolAtLocation(s, node).getCallSignatures().length > 0)
+  if (!isFactory) return []
+  return [
+    `  returns ${returned.aliasSymbol!.name}:`,
+    ...methods.map((s) => {
+      const sig = checker.getTypeOfSymbolAtLocation(s, node).getCallSignatures()[0]!
+      return `    ${s.name}${oneLine(checker.signatureToString(sig, node, TYPE_FLAGS), 110)}`
+    }),
+  ]
 }
 
 // ── Examples ─────────────────────────────────────────────────────────────────────────────────────
@@ -370,6 +504,7 @@ function renderDoc(item: Extracted, examples: readonly Example[]): string {
   const parts = [
     formatExportDoc(item.info).markdown,
     `\n## Signature\n\n\`\`\`ts\n${item.signature}\n\`\`\`\n`,
+    ...item.examples.map((body) => `\n## Example\n\n\`\`\`tsx\n${body}\n\`\`\`\n`),
     ...mine.map(
       (e) =>
         `\n## Example\n\n\`${e.file}\`\n\n\`\`\`${extname(e.file).slice(1)}\n${e.body.join('\n')}\n\`\`\`\n`,

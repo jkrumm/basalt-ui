@@ -1,7 +1,6 @@
 ---
 name: seam-bar
 use-when: a part-of-whole bar you draw yourself (HTML parts in a row), with focus, dimming and a readout
-file: apps/playground/src/recipes/seam-bar.tsx
 ---
 
 A seam bar is a flex row of `div`s, each as wide as its share. Draw it through the geometry seam instead of wiring pointer and keyboard by hand. `useChartFocus` gives the container `focus.target` (the one tab stop and the arrow keys) and each part `focus.item(i)`. A focused part carries `data-focused`; the others carry `data-dimmed`, which the kit dims itself at the opacity its own marks use. A page sets no opacity.

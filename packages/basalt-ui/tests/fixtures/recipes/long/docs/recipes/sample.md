@@ -1,7 +1,6 @@
 ---
 name: sample
 use-when: a greeting helper
-file: apps/playground/src/recipes/sample.ts
 ---
 
 Prose line 1.

@@ -21,3 +21,10 @@ Needs a client from `makeQueryClient`.
 ```ts
 useFreshness(keys?: readonly QueryKey[], options?: FreshnessOptions): FreshnessView
 ```
+
+## Example
+
+```tsx
+const freshness = useFreshness([['usage']])
+<RefreshButton scope="page" {...freshness.button} />
+```

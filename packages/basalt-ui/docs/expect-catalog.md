@@ -21,3 +21,9 @@ expectCatalog(catalog: CatalogLike): void
   discriminator?: string
   Block?: FC<{ spec: unknown; phase: Phase; }>
 ```
+
+## Example
+
+```tsx
+test('the show catalog', () => expectCatalog(catalog))
+```

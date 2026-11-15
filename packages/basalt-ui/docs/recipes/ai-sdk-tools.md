@@ -1,7 +1,6 @@
 ---
 name: ai-sdk-tools
 use-when: a model shows typed blocks through one AI SDK tool, with a route handler and a client that renders the part through the catalog
-file: apps/playground/src/recipes/ai-sdk-tools.tsx
 ---
 
 One `show` tool whose input is a `z.discriminatedUnion` of the block schemas; its `description` is the model's guide. The server half imports `ai-blocks-schemas` only, never `ai-blocks`.

@@ -28,3 +28,17 @@ InnerNav<K extends string = string>({ label, state, filter, groups, }: InnerNavP
   filter?: { readonly kind: "controls-slot"; readonly count: number; r…
   groups: readonly InnerNavGroup[]
 ```
+
+## Example
+
+```tsx
+<InnerNav
+  label="Settings"
+  state={store.field.section}
+  filter={filterSlot([qSpec])}
+  groups={[{ id: 'account', label: 'Account', items: [
+    { id: 'general', label: 'General', icon: Cog },
+    { id: 'billing', label: 'Billing', badge: { dot: true }, menu: [exportItem, resetItem] },
+  ] }]}
+/>
+```

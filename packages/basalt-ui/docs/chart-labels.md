@@ -20,6 +20,16 @@ chartLabels: { width, fits, place, axis, row }
 
 ## Example
 
+```tsx
+const { placed } = chartLabels.place(
+  points.map((p) => ({ key: p.id, text: p.name, x: p.x, y: p.y, priority: p.weight })),
+  { width: 480, height: 240 },
+)
+placed.map((l) => <text key={l.key} x={l.textX} y={l.baselineY} textAnchor={l.textAnchor}>{l.text}</text>)
+```
+
+## Example
+
 `apps/playground/src/demo/gallery/seam.tsx`
 
 ```tsx

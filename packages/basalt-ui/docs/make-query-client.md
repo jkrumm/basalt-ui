@@ -17,3 +17,9 @@ Builds the QueryClient with the basalt defaults (30 s stale, 5 min gc, no retry 
 ```ts
 makeQueryClient(config?: QueryClientConfig): QueryClient
 ```
+
+## Example
+
+```tsx
+const queryClient = makeQueryClient({ defaultOptions: { queries: { staleTime: 5_000 } } })
+```

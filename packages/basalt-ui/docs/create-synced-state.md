@@ -22,14 +22,33 @@ yet sent when the page crashes or reloads is lost. Needs a client from `makeQuer
 
 ```ts
 createSyncedState<T extends object>(o: SyncedStateOptions<T>): SyncedState<T>
-  key: string
-  version: number
-  schema: PersistedSchema<T>
+  key: string  // Mirror key `basalt:<owner>:<key>`; the Query key and the mutation scope derive from it
+  version: number  // Mirror envelope version
+  schema: PersistedSchema<T>  // Validates the mirror
   initial: T
-  owner: () => string | null
+  owner: () => string | null  // The signed-in person
   transport: SyncedTransport<T>
-  freshness?: Freshness
-  editing?: () => boolean
-  storage?: StorageLike
+  freshness?: Freshness  // Default `'standard'`
+  editing?: () => boolean  // True while a field of this state has focus: a remote value waits until it is false
+  storage?: StorageLike  // Mirror backend
   debounceMs?: number
+```
+
+## Example
+
+```tsx
+export const gymPrefs = createSyncedState({
+  key: 'gym', version: 1, schema: GymPrefs, initial: { unit: 'kg', rest: 90 },
+  owner: () => session.userId, freshness: { class: 'ticker', every: 5_000 },
+  transport: {
+    load: async () => {
+      const row = unwrap(await api.gym.get())
+      return { value: row.state, rev: row.updated_at }
+    },
+    save: async (patch, base, init) => {
+      const row = unwrap(await api.gym.put({ ...base.value, ...patch }, init))
+      return { value: row.state, rev: row.updated_at }
+    },
+  },
+})
 ```

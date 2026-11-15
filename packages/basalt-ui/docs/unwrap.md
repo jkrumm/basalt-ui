@@ -17,3 +17,10 @@ and throwing on null data.
 ```ts
 unwrap<R extends Envelope | PromiseLike<Envelope>>(response: R): UnwrapResult<R>
 ```
+
+## Example
+
+```tsx
+queryFn: () => unwrap(api.users.get({ query: params }))
+const rows = await api.users.get().then(unwrap)
+```

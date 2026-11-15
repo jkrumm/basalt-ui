@@ -18,5 +18,11 @@ a server error returned by `toSubmitErrors` shows under the row.
 FormFooter<const A extends readonly FormAction[]>({ form, actions, className, }: { form: FormLike<unknown>; actions: A & ValidActions<A>; className?: string; }): ReactElement
   form: FormLike<unknown>
   actions: A & ValidActions<A>
-  className?: string
+  className?: string  // Layout only (`mt-4`, `w-full`)
+```
+
+## Example
+
+```tsx
+<FormFooter form={form} actions={[{ label: 'Cancel', onClick: close }, { label: 'Save', primary: true }]} />
 ```

@@ -19,3 +19,9 @@ third-party (`external`) poll. Needs a client from `makeQueryClient`.
 ```ts
 useConnection(): ConnectionView
 ```
+
+## Example
+
+```tsx
+<ConnectionIndicator connection={useConnection()} />
+```

@@ -24,8 +24,19 @@ BarList(props: BarListProps): ReactElement
   info?: string
   phase?: Phase | QueryStateLike
   empty?: Empty | null
-  items: readonly BarListItem[]
-  max?: number
-  rows?: ListRows
-  format?: (value: number) => string
+  items: readonly BarListItem[]  // Rows in display order: sort them yourself, the list does not reorder
+  max?: number  // The scale end every bar fills against
+  rows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
+  format?: (value: number) => string  // Formats each value
+```
+
+## Example
+
+```tsx
+<BarList
+  title="Top projects"
+  subtitle="by tokens"
+  items={[{ label: 'argo', value: 1840, href: '/argo' }, { label: 'rb', value: 920 }]}
+  phase={query}
+/>
 ```

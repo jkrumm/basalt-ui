@@ -1,7 +1,6 @@
 ---
 name: field-array
 use-when: a form repeats a row of fields (lines, cameras, splits) that the person adds and removes
-file: apps/playground/src/recipes/field-array.tsx
 ---
 
 TanStack Form names a row by its index: `lines[1].qty`. Declare the array with `mode="array"` and edit it with `pushValue`, `removeValue`, `insertValue` and `moveValue`.

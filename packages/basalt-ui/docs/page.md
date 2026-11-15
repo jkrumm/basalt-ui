@@ -18,8 +18,27 @@ that keep it to one `PageBar` and one `PageAside`.
 
 ```ts
 Page({ area, fill, landmark, children }: PageProps): ReactElement
-  area?: string
-  fill?: boolean | { min: number; }
-  landmark?: boolean
+  area?: string  // Scopes commands
+  fill?: boolean | { min: number; }  // Definite height; `{ min }` keeps a floor in px
+  landmark?: boolean  // Renders `<main>` with no `PageHost`
   children?: ReactNode
+```
+
+## Example
+
+```tsx
+<Page area="runs" fill>
+  <PageBar title="Runs" actions={[{ id: 'new', label: 'New run', primary: true, onClick: create }]} />
+  <Section title="Latency">…</Section>
+</Page>
+```
+
+## Example
+
+```tsx
+// A route outside any shell: a landmark with the visible h1.
+<Page landmark>
+  <PageBar title="Sign in" />
+  <form>…</form>
+</Page>
 ```

@@ -48,11 +48,7 @@ function scratch(opts: { frontmatter?: string[]; prose?: number; fence?: string[
     join(root, SOURCE),
     ['// #region recipe:sample', ...REGION, '// #endregion', ''].join('\n'),
   )
-  const frontmatter = opts.frontmatter ?? [
-    'name: sample',
-    'use-when: a greeting helper',
-    `file: ${SOURCE}`,
-  ]
+  const frontmatter = opts.frontmatter ?? ['name: sample', 'use-when: a greeting helper']
   const prose = Array.from({ length: opts.prose ?? 1 }, (_, i) => `Prose line ${i + 1}.`)
   const doc = [
     '---',
@@ -126,15 +122,15 @@ describe('recipes drift — rules', () => {
     expect(reasons(root).join('\n')).toContain(`the limit is ${MAX_RECIPE_LINES}`)
   })
 
-  test.each(['name', 'use-when', 'file'])('a missing %s frontmatter key fails', (key) => {
-    const all = ['name: sample', 'use-when: a greeting helper', `file: ${SOURCE}`]
+  test.each(['name', 'use-when'])('a missing %s frontmatter key fails', (key) => {
+    const all = ['name: sample', 'use-when: a greeting helper']
     const root = scratch({ frontmatter: all.filter((l) => !l.startsWith(`${key}:`)) })
     expect(reasons(root)).toContain(`frontmatter key missing: ${key}`)
   })
 
   test('"use when" is accepted as the key spelling', () => {
     const root = scratch({
-      frontmatter: ['name: sample', 'use when: a greeting helper', `file: ${SOURCE}`],
+      frontmatter: ['name: sample', 'use when: a greeting helper'],
     })
     expect(reasons(root)).toEqual([])
   })
@@ -146,13 +142,38 @@ describe('recipes drift — rules', () => {
       ['// #region recipe:renamed', ...REGION, '// #endregion', ''].join('\n'),
     )
     const found = reasons(root)
-    expect(found).toContain(`region recipe:sample missing or renamed in ${SOURCE}`)
+    expect(found).toContain('no region recipe:sample under apps/playground/src')
     expect(found.some((r) => r.startsWith('region recipe:renamed has no doc'))).toBe(true)
   })
 
-  test('a doc pointing at a missing file fails', () => {
-    const root = scratch({ frontmatter: ['name: sample', 'use-when: x', 'file: apps/nope.ts'] })
-    expect(reasons(root)).toContain('file apps/nope.ts does not exist')
+  test('a doc that names a playground file fails: the published doc must not point at one', () => {
+    const root = scratch({ frontmatter: ['name: sample', 'use-when: x', `file: ${SOURCE}`] })
+    expect(reasons(root)).toContain('frontmatter key file: a recipe names no playground file')
+  })
+
+  test('a region without imports is led by the package imports it uses, never a relative one', () => {
+    const root = scratch({})
+    writeFileSync(
+      join(root, SOURCE),
+      [
+        "import { Page, Section } from 'basalt-ui/page'",
+        "import type { ReactElement } from 'react'",
+        "import { local } from './local'",
+        "import { unused } from 'basalt-ui/state'",
+        '// #region recipe:sample',
+        'export const view = (): ReactElement => <Page><Section title={local} /></Page>',
+        '// #endregion',
+        '',
+      ].join('\n'),
+    )
+    expect(writeRecipes(roots(root))).toEqual(['docs/recipes/sample.md'])
+    const doc = readFileSync(join(root, 'docs', 'recipes', 'sample.md'), 'utf8')
+    expect(doc).toContain(
+      "```tsx\nimport { Page, Section } from 'basalt-ui/page'\nimport type { ReactElement } from 'react'\n\nexport const view",
+    )
+    expect(doc).not.toContain('./local')
+    expect(doc).not.toContain('unused')
+    expect(reasons(root)).toEqual([])
   })
 
   test('more than 32 recipes fails', () => {

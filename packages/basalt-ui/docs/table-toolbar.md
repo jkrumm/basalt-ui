@@ -16,5 +16,12 @@ The toolbar of a table: search, filters, chips, display and saved views.
 ```ts
 TableToolbar<T>({ table: instance, view, }: { table: DataTableInstance<T>; view?: ViewParam; }): ReactElement
   table: DataTableInstance<T>
-  view?: ViewParam
+  view?: ViewParam  // Binds the applied view's id to the route's own search; the address bar's `?view=` when omitted
+```
+
+## Example
+
+```tsx
+<TableToolbar table={t} />
+<DataTable table={t} />
 ```

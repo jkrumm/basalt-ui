@@ -1,7 +1,6 @@
 ---
 name: seam-linked
 use-when: a chart and a scrolling list of groups (versions, releases) beside it that share one focus
-file: apps/playground/src/recipes/seam-linked.tsx
 ---
 
 One `useChartFocus(samples, { announce, group })` drives both. `group` names a sample's group: PageUp and PageDown step by group, and the live region names the group when the focus enters it.

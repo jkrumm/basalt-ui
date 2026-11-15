@@ -17,3 +17,10 @@ and `PointerEvent` on the current `window` and `globalThis`. Call it before the 
 ```ts
 installDomShims(): void
 ```
+
+## Example
+
+```tsx
+// test preload, once
+installDomShims()
+```

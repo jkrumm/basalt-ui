@@ -18,10 +18,27 @@ an empty list (a failed query is `QueryState`'s error arm, not this).
 
 ```ts
 EmptyState(props: EmptyStateProps): ReactElement
-  why: string
-  title?: string
+  // either action or filtered
+  why: string  // One line: the cause, and the next step when there is one
+  title?: string  // What is empty, in a few words (`No runs yet`), on the line above `why`
   icon?: IconComponent
-  tier?: "section" | "page"
+  tier?: "section" | "page"  // `page` for a whole route body (generous space), `section` for a region inside a card or panel; default 'page'
   action?: CardAction
-  filtered: { reset: () => void; }
+  filtered?: { reset: () => void; }
+```
+
+## Example
+
+```tsx
+<EmptyState
+  why="The queue is filtered to Blocked; clear it to see all 12."
+  filtered={{ reset: clearFilters }}
+  tier="section"
+/>
+```
+
+## Example
+
+```tsx
+<EmptyState title="No runs yet" why="Start one from the CLI." action={{ label: 'Open docs', href: '/docs' }} />
 ```

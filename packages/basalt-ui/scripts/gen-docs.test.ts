@@ -79,6 +79,7 @@ describe('a documented export', () => {
       'create-counter.md',
       'extras.md',
       'limit.md',
+      'pick.md',
       'stat-card.md',
     ])
     expect(docs.get('extras.md')).toContain('subpath: fixture-ui/extras\n')
@@ -96,6 +97,23 @@ describe('a documented export', () => {
     const doc = docs.get('limit.md')!
     expect(doc).toContain('LIMIT: 8')
     expect(doc).not.toContain('toFixed')
+  })
+
+  test('prints each arm of a union, no arm as plainly required, and a default beside its prop', () => {
+    const doc = docs.get('pick.md')!
+    expect(doc).toContain('  // either href, onSelect or neither\n')
+    expect(doc).toContain('  href?: string\n')
+    expect(doc).toContain('  onSelect?: () => void\n')
+    expect(doc).toContain('  label: string\n')
+    expect(doc).toContain(
+      '  casing?: "title" | "upper"  // How the label is cased; default \'title\'\n',
+    )
+  })
+
+  test('renders an @example tag without its fence', () => {
+    expect(docs.get('pick.md')).toContain(
+      "## Example\n\n```tsx\npick({ label: 'Docs', href: '/docs' })\n```\n",
+    )
   })
 
   test('does not document a type, only value exports', () => {

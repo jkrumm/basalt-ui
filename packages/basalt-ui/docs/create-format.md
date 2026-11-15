@@ -16,6 +16,6 @@ Its `Intl` instances live in the returned object, so nothing is shared between r
 
 ```ts
 createFormat(o?: FormatOptions): Format
-  locale?: string
-  timeZone?: string
+  locale?: string  // BCP 47 tag
+  timeZone?: string  // IANA zone
 ```

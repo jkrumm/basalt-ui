@@ -15,5 +15,22 @@ The router options basalt holds and the `LinkComponent` that opens a `navTarget`
 
 ```ts
 routerDefaults(input?: RouterDefaultsInput): { options: RouterDefaultOptions; link: RouterLinkComponent; }
-  router?: () => object
+  router?: () => object  // The router the options go into, read lazily at navigation time (it does not exist yet when the options are bu…
+```
+
+## Example
+
+```tsx
+const { options, link } = routerDefaults({ router: () => router })
+export const router = createRouter({
+  routeTree,
+  ...options,
+  defaultPendingComponent: RoutePending,
+  defaultErrorComponent: RouteError,
+  defaultNotFoundComponent: RouteMissing,
+})
+
+<BasaltProvider link={link}>
+  <RouterProvider router={router} />
+</BasaltProvider>
 ```

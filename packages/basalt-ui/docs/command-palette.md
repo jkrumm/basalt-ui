@@ -21,8 +21,17 @@ the shell's search row the same open state (`search={{ onOpen }}`, as in the exa
 ```ts
 CommandPalette({ commands, rank, open: openProp, onOpenChange, placeholder, }: CommandPaletteProps): ReactElement
   commands: CommandSet
-  rank?: RankFn
-  open?: boolean
+  rank?: RankFn  // Orders and filters the rows for a query
+  open?: boolean  // Controlled state, for `AppShell search={{ onOpen }}`; without it the palette keeps its own
   onOpenChange?: (open: boolean) => void
   placeholder?: string
+```
+
+## Example
+
+```tsx
+<AppShell nav={NAV} brand={{ name: 'Argo' }} search={{ onOpen: () => setOpen(true) }}>
+  <Outlet />
+  <CommandPalette commands={COMMANDS} open={open} onOpenChange={setOpen} />
+</AppShell>
 ```

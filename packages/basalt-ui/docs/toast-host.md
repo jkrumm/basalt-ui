@@ -18,3 +18,9 @@ error is announced urgently (mirrored into a `role=alert`), everything else poli
 ```ts
 ToastHost(): ReactElement
 ```
+
+## Example
+
+```tsx
+<ToastHost />
+```

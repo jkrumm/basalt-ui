@@ -1,7 +1,6 @@
 ---
 name: form-guard
 use-when: a form with a Save action must not be left with unsaved edits, by a link, Back or a closed tab
-file: apps/playground/src/recipes/form-guard.tsx
 ---
 
 A guard is `useBlocker` over one boolean, and basalt ships no symbol for it: the registry of dirty forms and the dialog stay app code.

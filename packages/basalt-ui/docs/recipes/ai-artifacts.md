@@ -1,7 +1,6 @@
 ---
 name: ai-artifacts
 use-when: a model produces a document, a block, code or an html preview that opens beside the chat and keeps its versions
-file: apps/playground/src/recipes/ai-artifacts.tsx
 ---
 
 An artifact opens in `PageAside`; each version is a `ui/tabs` tab, the newest opens. The kind picks the renderer: untrusted `Markdown`, `catalog.Block`, `CodeBlock`, or a preview.

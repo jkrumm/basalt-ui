@@ -23,7 +23,11 @@ export type QueryStateProps = {
   phase: Phase | QueryResultLike
   /** The measured-empty state; it applies once the query settled and shows `EmptyState`. */
   empty?: Empty | null
-  /** `page` for a route body, `section` for a region in a card or panel. Default `page`. */
+  /**
+   * `page` for a route body, `section` for a region in a card or panel.
+   *
+   * @default 'page'
+   */
   tier?: 'page' | 'section'
   /** Replaces the default spinner while loading, e.g. a skeleton in the loaded shape. */
   loading?: ReactNode

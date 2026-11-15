@@ -20,8 +20,17 @@ mount instead of restored, so `status` stays `'none'`.
 
 ```ts
 useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): UseFormDraftResult
-  state: { values: V; isSubmitting: boolean; canSubmit: boolean; err…
-  options: { defaultValues?: V; }
+  state: { values: V; isSubmitting: boolean; canSubmit: boolean; err…  // `errors` are form-level
+  options: { defaultValues?: V; }  // Stays the server value under `keepDefaultValues`
   store: { subscribe(cb: () => void): { unsubscribe(): void; }; }
   reset: (values: V, o?: { keepDefaultValues?: boolean; }) => void
+```
+
+## Example
+
+```tsx
+const form = useForm({ defaultValues, validators: { onSubmitAsync: toSubmitErrors(save) } })
+const draft = useFormDraft(form, { key: `run-edit:${id}`, version: 1, schema: Schema, owner: userId })
+// a successful submit clears the draft and re-bases the form itself (its isSubmitted and
+// isSubmitSuccessful reset with it); `draft.clear()` is for a discard
 ```

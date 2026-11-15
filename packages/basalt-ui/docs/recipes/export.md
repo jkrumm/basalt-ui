@@ -1,7 +1,6 @@
 ---
 name: export
 use-when: a table needs a CSV of its rows, because the table itself has no export
-file: apps/playground/src/recipes/export.tsx
 ---
 
 Export is the app's: the table ships no file format, so a CSV is a function over `t.table`, the read view of what the table shows.

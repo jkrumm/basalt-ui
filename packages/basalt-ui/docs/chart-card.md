@@ -22,10 +22,11 @@ is drawn in every phase, so loading does not move the box.
 
 ```ts
 ChartCard(props: ChartCardProps): ReactElement
+  // either title + chart or phase
   empty?: Empty | null
-  phase?: Phase | ChartQueryState | (Phase | ChartQueryState | undefi…
+  phase?: Phase | ChartQueryState | (Phase | ChartQueryState | undefi…  // A `Phase` or the query itself
   figure?: ChartFigure
-  legend?: readonly LegendEntry[]
+  legend?: readonly LegendEntry[]  // The legend row for marks the page draws through the seam, drawn in every phase
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
   menu?: BoxSlot
@@ -34,5 +35,17 @@ ChartCard(props: ChartCardProps): ReactElement
   subtitle?: string
   icon?: IconComponent
   info?: string
-  chart: BoxSlot
+  chart?: BoxSlot
+```
+
+## Example
+
+```tsx
+<ChartCard
+  title="Requests"
+  subtitle="last 30 days"
+  figure={{ value: 12840, delta: { value: '+8%', polarity: 'up-good' }, period: 'vs prior' }}
+  phase={query}
+  chart={(box) => <Lines height={box.height} ariaLabel="Requests per day" data={rows} x={x} series={series} />}
+/>
 ```

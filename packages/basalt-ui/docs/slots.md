@@ -19,3 +19,9 @@ value (the same object, never a copy), so a new part shows up here with no edit.
 SLOTS: { full key list below }
   accordion, alert, badge, button, card, checkbox, collapsible, combobox, date-picker, dialog, field, input, kbd, menu, meter, num, number-field, popover, progress, radio-group, scroll-area, segmented, select, separator, sheet, skeleton, slider, status, switch, table, tabs, textarea, toast, toolbar, tooltip, virtual-list
 ```
+
+## Example
+
+```tsx
+document.querySelector(`[data-slot="${SLOTS.dialog[1]}"]`) // the dialog's content part
+```

@@ -24,8 +24,18 @@ EventList(props: EventListProps): ReactElement
   info?: string
   phase?: Phase | QueryStateLike
   empty?: Empty | null
-  items: readonly EventListItem[]
-  rows?: ListRows
-  pageSize?: number
-  now?: number | Date
+  items: readonly EventListItem[]  // Events in display order: the list never re-sorts
+  rows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
+  pageSize?: number  // Rows shown before, and added by each "Show more"
+  now?: number | Date  // The instant "Today" is measured from
+```
+
+## Example
+
+```tsx
+<EventList
+  title="Activity"
+  items={[{ id: 'e1', at: Date.now(), actor: 'Ada', title: 'merged #482', chips: ['main'] }]}
+  phase={query}
+/>
 ```

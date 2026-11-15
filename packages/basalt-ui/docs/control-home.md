@@ -20,3 +20,9 @@ ControlHome({ home, children }: ControlHomeProps): ReactElement | null
   home: HomeName
   children?: ReactNode
 ```
+
+## Example
+
+```tsx
+<ControlHome home="aside">{filterSlot([spec(overview.field.q, 'Search')]).render()}</ControlHome>
+```

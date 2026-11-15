@@ -1,7 +1,6 @@
 ---
 name: view-switch
 use-when: one dataset shows as a table or as cards and the visitor can link to either
-file: apps/playground/src/recipes/view-switch.tsx
 ---
 
 A presentation is state, never a second query: `ViewTabs` writes the `as` param and one `useDataTable` serves both.

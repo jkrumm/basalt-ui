@@ -14,4 +14,32 @@ export function createCounter(options: { start?: number; step: number }): () => 
   return () => (n += options.step)
 }
 
+export type PickProps = { label: string } & (
+  | { href: string; onSelect?: never }
+  | { onSelect: () => void; href?: never }
+  | { href?: never; onSelect?: never }
+) & {
+    /**
+     * How the label is cased. Trailing detail the doc must cut.
+     *
+     * @default 'title'
+     */
+    casing?: 'title' | 'upper'
+  }
+
+/**
+ * A pickable label: a link, a button or inert.
+ *
+ * @useWhen a label opens something
+ * @neverWhen the label is plain text
+ *
+ * @example
+ * ```tsx
+ * pick({ label: 'Docs', href: '/docs' })
+ * ```
+ */
+export function pick(props: PickProps): string {
+  return props.label
+}
+
 export type Unrelated = { type: 'only' }

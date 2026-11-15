@@ -22,3 +22,10 @@ CodeBlock({ lang, code, settled }: CodeBlockProps): ReactElement
   code: string
   settled?: boolean
 ```
+
+## Example
+
+```tsx
+<CodeBlock lang="ts" code={source} />
+<CodeBlock lang="bash" code={partial} settled={false} />
+```

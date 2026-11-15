@@ -1,7 +1,6 @@
 ---
 name: ai-approvals-sources
 use-when: a chat asks before a tool runs, shows reasoning and cites sources, which `partView` leaves to the app
-file: apps/playground/src/recipes/ai-approvals-sources.tsx
 ---
 
 `partView` renders text and tools; reasoning and `source-*` parts get a quiet line, so the app draws them.

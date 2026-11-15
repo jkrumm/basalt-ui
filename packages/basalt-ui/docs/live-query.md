@@ -21,3 +21,10 @@ offline, mutating (`pauseWhileMutating`) or after a 401/403, and a function `eve
 ```ts
 liveQuery<T extends QueryOptionsLike>(options: T, freshness: Freshness): T
 ```
+
+## Example
+
+```tsx
+export const gym = () =>
+  liveQuery(queryOptions({ queryKey: ['gym'], queryFn }), { class: 'ticker', every: 5_000 })
+```

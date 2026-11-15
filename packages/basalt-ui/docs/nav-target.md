@@ -18,3 +18,9 @@ target itself carries nothing a caller can read or build by hand.
 ```ts
 navTarget<const TOptions>(options: ValidateLinkOptions<RegisteredRouter, TOptions>): NavTarget
 ```
+
+## Example
+
+```tsx
+<PageBar title="Run 12" parent={{ label: 'Runs', href: navTarget(linkOptions({ to: '/runs' })) }} />
+```

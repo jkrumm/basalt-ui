@@ -1,7 +1,6 @@
 ---
 name: file-drop
 use-when: a form takes a file from the person, by a picker first and by dropping onto the page as an enhancement
-file: apps/playground/src/recipes/file-drop.tsx
 ---
 
 There is no upload primitive: the transport, progress and limits are the app's. The recipe is the picker.

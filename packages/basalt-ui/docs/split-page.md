@@ -20,7 +20,17 @@ that scrolls the detail.
 
 ```ts
 SplitPage({ selected, list, detail }: SplitPageProps): ReactElement
-  selected: boolean
+  selected: boolean  // Narrow: the list while unset, the pane when set
   list: () => ReactNode
   detail: () => ReactNode
+```
+
+## Example
+
+```tsx
+<SplitPage
+  selected={store.field.section.useIsSet()}
+  list={() => <InnerNav label="Settings" state={store.field.section} groups={GROUPS} />}
+  detail={() => <SettingsPane section={section} />}
+/>
 ```

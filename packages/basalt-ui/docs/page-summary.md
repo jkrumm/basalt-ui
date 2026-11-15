@@ -18,9 +18,25 @@ open, 3 need you", never "Overview of your tickets"; the title already says what
 
 ```ts
 PageSummary(props: PageSummaryProps): ReactElement
-  one of: loading=false | loading=true
-  sentence?: ReactNode
-  facts?: readonly Fact[]
-  aside?: ReactNode
+  // either sentence or loading
+  sentence?: ReactNode  // The headline sentence
+  facts?: readonly Fact[]  // Short facts under the headline, e.g
+  aside?: ReactNode  // After the headline: a date or a freshness word
   loading?: false | true
+```
+
+## Example
+
+```tsx
+<PageSummary
+  sentence={`${open} open, ${needYou} need you`}
+  facts={[oldest && `oldest ${oldest}`, `${runs} runs today`]}
+  aside="Today"
+/>
+```
+
+## Example
+
+```tsx
+<PageSummary loading facts={[]} />
 ```

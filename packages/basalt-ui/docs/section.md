@@ -19,9 +19,17 @@ heading just below the page band instead of under it. Outside a `Page` the offse
 ```ts
 Section<K extends string = string>(props: SectionProps<K>): ReactElement
   title: string
-  summary?: string
+  summary?: string  // One line beside the title, shown while collapsed too
   controls?: { readonly kind: "controls-slot"; readonly count: number; r…
-  tabs?: PageTabs<K>
-  collapsible?: { defaultOpen?: boolean; state?: ControlHandle<boolean>; }
+  tabs?: PageTabs<K>  // The section's view switch, beside the title
+  collapsible?: { defaultOpen?: boolean; state?: ControlHandle<boolean>; }  // The heading is the trigger; open state is uncontrolled or a handle (F2 amendment n5)
   children?: ReactNode
+```
+
+## Example
+
+```tsx
+<Section title="Latency" controls={filterSlot([widgetRange])}>
+  <ChartCard title="p95" chart={…} />
+</Section>
 ```

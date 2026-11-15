@@ -21,3 +21,13 @@ tableCodec(schema: TableSchema, options?: TableCodecOptions): TableCodec
   defaults: Partial<TableRequest>
   prefix: string
 ```
+
+## Example
+
+```tsx
+const c = col<Run>()
+const search = defineControls({
+  key: 'runs',
+  fields: { table: field.composite(tableCodec(c.codec({ name: 'entity', km: 'number' }))) },
+})
+```

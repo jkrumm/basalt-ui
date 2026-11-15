@@ -1,7 +1,6 @@
 ---
 name: chat-thread-composer
 use-when: the message box of a chat thread: Enter sends, Shift+Enter and IME composition leave the draft, a failed send gives the text back
-file: apps/playground/src/recipes/chat-thread-composer.tsx
 ---
 
 Part of the `chat-thread` recipe: `MessageBox`, copied beside `chat-thread.tsx`.

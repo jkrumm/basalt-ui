@@ -17,5 +17,16 @@ container tier, one below it, so the same list reads right in a 360 px aside and
 
 ```ts
 Facts({ rows }: FactsProps): ReactElement
-  rows: readonly FactRow[]
+  rows: readonly FactRow[]  // One row per entry, in order; labels are unique within one list
+```
+
+## Example
+
+```tsx
+<Facts
+  rows={[
+    { label: 'Version', value: deploy.version },
+    { label: 'Duration', value: `${deploy.durationS} s` },
+  ]}
+/>
 ```

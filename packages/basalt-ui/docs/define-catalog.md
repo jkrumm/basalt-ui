@@ -21,3 +21,13 @@ field then stays in the props the schema sees (the block's own literal).
 ```ts
 defineCatalog(blocks: readonly Block[], options?: { discriminator?: string; }): Catalog
 ```
+
+## Example
+
+```tsx
+export const catalog = defineCatalog([stat, table])
+// in a tool part's renderer:
+<catalog.Block spec={part.input} phase={part.state === 'output-available' ? 'ready' : 'loading'} />
+// in a test file:
+test('catalog', () => expectCatalog(catalog))
+```

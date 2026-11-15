@@ -32,3 +32,10 @@ createChannel<F = Envelope>(o: ChannelOptions<F>): Channel<F>
   heartbeatMs?: number
   scheduler?: Scheduler
 ```
+
+## Example
+
+```tsx
+const channel = createChannel({ url: '/v1/stream', headers: authHeaders, greeting: 'hello' })
+const off = channel.subscribe((d) => d.kind === 'frame' && d.ok && handle(d.value))
+```

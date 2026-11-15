@@ -20,6 +20,12 @@ age ticking. Hidden on paper.
 
 ```ts
 ConnectionIndicator({ connection, className, }: ConnectionIndicatorProps): ReactElement
-  connection: ConnectionView
-  className?: string
+  connection: ConnectionView  // The live view: `useConnection()`
+  className?: string  // Layout only (`ml-auto`, `shrink-0`)
+```
+
+## Example
+
+```tsx
+<ConnectionIndicator connection={useConnection()} />
 ```
