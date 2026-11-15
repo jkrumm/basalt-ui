@@ -14,26 +14,15 @@ packages/basalt-ui/tests/fixtures/palette-default.css
 # generated); oxfmt would wrap its long shadow and font lines and break that equality.
 packages/basalt-ui/src/css/tokens.css
 
-# A generated root-export doc carries the root's long `peers:` line; oxfmt wraps it and gen-docs
-# --check then reads the file as drifted. Owned by `gen-docs`, never by oxfmt.
-# A namespace-object signature (`chartLabels: { width, fits, place }`): oxfmt reads the fence as a
-# block statement and rewrites it.
-
 # Package fixture trees are byte-exact (deliberate offenders, golden files); never formatted.
 packages/basalt-ui/test/fixtures/**
 
 # Golden emit sheets are byte-exact (src/tokens/emit-fallback.test.ts); oxfmt would rewrite the pinned bytes.
 packages/basalt-ui/src/tokens/golden/**
 
-# Generated ui docs whose `slots:` line is wider than the print width; oxfmt wraps it and gen-ui
-# --check then reads the file as drifted. Owned by `gen-ui`, never by oxfmt.
-
 # The shipped stylelint preset is `renderStylelintConfig()` output byte for byte (src/lint/stylelint/stylelint.test.ts
 # pins committed == rendered), the same bytes a consumer's `sync` writes; oxfmt would re-wrap its arrays.
 packages/basalt-ui/configs/stylelint.basalt.json
-
-# The signature block of a generated doc for an object export prints its key tree (`quality: { a, b }`);
-# oxfmt reads that as a labelled block and rewrites it to `;(a, b)`, which gen-docs --check reads as drift.
 
 # A generated doc is `gen-docs` / `gen-ui` output byte for byte: its signature block, its long `peers:` and
 # `slots:` lines and the `@example` code of its JSDoc are all text oxfmt would rewrite, which `--check` then
