@@ -1,6 +1,20 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 
-import { cleanupTrees, editManifest, makeTree, runCheck } from './fixture.test'
+import { execFileSync } from 'node:child_process'
+
+import { cleanupTrees, editManifest, HEALTHY, makeTree, runCheck } from './fixture.test'
+
+/** Commits the tree with its manifest, so `HEAD` holds the roots declared now. */
+function commitManifest(dir: string): void {
+  const git = (...args: string[]): void => {
+    execFileSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@t', ...args], {
+      stdio: 'ignore',
+    })
+  }
+  git('init', '-q')
+  git('add', '-f', '.basalt/manifest.json')
+  git('commit', '-q', '-m', 'base')
+}
 
 afterEach(cleanupTrees)
 
@@ -31,6 +45,34 @@ describe('check 1: manifest', () => {
     const r = await runCheck(dir, 1)
     expect(r.status).toBe('fail')
     expect(r.detail).toContain('gate floor')
+  })
+})
+
+describe('check 1: declared roots', () => {
+  it('fails when a root is a file', async () => {
+    const dir = makeTree('app', { 'src/index.ts': 'export {}\n' })
+    editManifest(dir, (m) => void (m.roots = { 'src/index.ts': 'app' }))
+    const r = await runCheck(dir, 1, { ...HEALTHY, baseRef: null })
+    expect(r.status).toBe('fail')
+    expect(r.detail).toContain('src/index.ts is a file')
+  })
+
+  it('fails when a root declared at the base ref is narrowed to a subdirectory', async () => {
+    const dir = makeTree('app', { 'src/features/x.ts': 'export {}\n' })
+    editManifest(dir, (m) => void (m.roots = { src: 'app' }))
+    commitManifest(dir)
+    editManifest(dir, (m) => void (m.roots = { 'src/features': 'app' }))
+    const r = await runCheck(dir, 1, { ...HEALTHY, baseRef: 'HEAD' })
+    expect(r.status).toBe('fail')
+    expect(r.detail).toContain('root src was declared at HEAD and is no longer covered')
+  })
+
+  it('passes a root widened or kept against the base ref', async () => {
+    const dir = makeTree('app', { 'src/features/x.ts': 'export {}\n' })
+    editManifest(dir, (m) => void (m.roots = { 'src/features': 'app' }))
+    commitManifest(dir)
+    editManifest(dir, (m) => void (m.roots = { src: 'app' }))
+    expect((await runCheck(dir, 1, { ...HEALTHY, baseRef: 'HEAD' })).status).toBe('pass')
   })
 })
 

@@ -7,6 +7,7 @@ import { dirname, resolve } from 'node:path'
 
 import { readBudget } from '../budget'
 import { findBasaltInstall } from '../index'
+import { defaultBaseRef, rootFindings } from '../../lint/weakened'
 import type { Profile } from '../manifest'
 import {
   compareVersions,
@@ -72,6 +73,13 @@ const check1 = (name: string): Check => ({
         findings.push(`${root} declares ${profile} but imports ${named}, which needs ${needed}`)
       }
     }
+    findings.push(
+      ...rootFindings({
+        dir: ctx.root,
+        roots: rootsOf(manifest).map(([r]) => r),
+        baseRef: ctx.options.baseRef === undefined ? defaultBaseRef(ctx.root) : ctx.options.baseRef,
+      }),
+    )
     return verdictOf(findings, `profile ${manifest.profile}, version ${manifest.version}`)
   },
 })

@@ -6,12 +6,15 @@
  *
  * A required check that cannot run is `skipped`, never `passed`; `doctor` fails on `skipped`.
  */
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { spawn, spawnSync } from 'node:child_process'
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { basename, dirname, relative, resolve } from 'node:path'
 
 import { BUDGET_PATH, CEILINGS, parseBudget } from '../cli/budget'
-import { filesUnder } from '../cli/doctor/types'
+import { filesUnder, rootsOf } from '../cli/doctor/types'
+import { MANIFEST_PATH, parseManifest } from '../cli/manifest'
 import { parseJsonc } from '../cli/source-text'
+import { findBin } from './bin'
 import { findBlanketDisables } from './blanket-disable'
 
 export type WeakenedStatus = 'passed' | 'failed' | 'skipped'
@@ -67,6 +70,23 @@ const normalizeId = (code: string): string => {
   return paren ? `${paren[1]}/${paren[2]}` : code
 }
 
+/** `bin args` from `cwd` through node:child_process, so it runs under node and bun alike. */
+function exec(
+  bin: string,
+  args: readonly string[],
+  cwd: string,
+): Promise<{ out: string; err: string }> {
+  return new Promise((done, fail) => {
+    const child = spawn(bin, args, { cwd })
+    let out = ''
+    let err = ''
+    child.stdout.on('data', (chunk: Buffer) => (out += chunk.toString()))
+    child.stderr.on('data', (chunk: Buffer) => (err += chunk.toString()))
+    child.on('error', (error) => fail(new Error(`${bin} could not run: ${error.message}`)))
+    child.on('close', () => done({ out, err }))
+  })
+}
+
 /** The default runner (`bin` is an override for a non-PATH install): `oxlint --format json <file>` from `cwd`, picking up `.oxlintrc.json`. */
 export const oxlintRunner =
   (bin = 'oxlint'): RunLint =>
@@ -76,16 +96,7 @@ export const oxlintRunner =
     const ignore = existsSync(resolve(cwd, '.oxlintignore'))
       ? ['--ignore-path', '.oxlintignore']
       : []
-    const proc = Bun.spawn([bin, '--format', 'json', ...ignore, relative(cwd, file)], {
-      cwd,
-      stdout: 'pipe',
-      stderr: 'pipe',
-    })
-    const [out, err] = await Promise.all([
-      new Response(proc.stdout).text(),
-      new Response(proc.stderr).text(),
-      proc.exited,
-    ])
+    const { out, err } = await exec(bin, ['--format', 'json', ...ignore, relative(cwd, file)], cwd)
     // An ignored file is "no files found": nothing fired, which is the answer, not a failure.
     if (/No files found/.test(err + out)) return []
     let parsed: { diagnostics?: { code?: string }[] }
@@ -97,6 +108,95 @@ export const oxlintRunner =
     return (parsed.diagnostics ?? []).flatMap((d) => (d.code ? [normalizeId(d.code)] : []))
   }
 
+/** The runner `basalt-ui lint` would use: the project's own oxlint binary, never a bare PATH lookup. */
+function projectRunner(dir: string, roots: readonly string[]): RunLint {
+  const bin = findBin({ root: dir, roots: roots.map((r) => [r, 'app'] as const) }, 'oxlint')
+  return oxlintRunner(bin ?? undefined)
+}
+
+const isDirectory = (path: string): boolean => {
+  try {
+    return statSync(path).isDirectory()
+  } catch {
+    return false
+  }
+}
+
+/** Every directory under `root` that holds a source file, the root itself always (relative to `dir`). */
+function seedDirs(dir: string, root: string): string[] {
+  const dirs = new Set([root])
+  for (const file of filesUnder(dir, root, SCRIPT_FILE)) dirs.add(dirname(file))
+  return [...dirs].toSorted()
+}
+
+/** Which config switched the guard off in `seedDir`, as far as the files say. */
+function blame(dir: string, root: string, seedDir: string): string {
+  for (let at = seedDir; at !== dirname(root) && at !== '.'; at = dirname(at)) {
+    if (existsSync(resolve(dir, at, OXLINTRC))) return `${at}/${OXLINTRC} holds the config there`
+    if (at === root) break
+  }
+  const config = readConfig(dir)
+  if (typeof config !== 'string' && asStrings(config['ignorePatterns']).length > 0) {
+    return `${OXLINTRC} ignorePatterns`
+  }
+  if (existsSync(resolve(dir, '.oxlintignore'))) return '.oxlintignore'
+  return 'extends, jsPlugins or a per-glob override'
+}
+
+/** Git's default remote branch, `origin/main` when nothing says. */
+export function defaultBaseRef(root: string): string | null {
+  const run = spawnSync(
+    'git',
+    ['-C', root, 'symbolic-ref', '--short', 'refs/remotes/origin/HEAD'],
+    {
+      encoding: 'utf8',
+    },
+  )
+  if (run.status === 0 && run.stdout.trim() !== '') return run.stdout.trim()
+  for (const ref of ['origin/main', 'origin/master']) {
+    const probe = spawnSync('git', ['-C', root, 'rev-parse', '--verify', '--quiet', ref], {
+      encoding: 'utf8',
+    })
+    if (probe.status === 0) return ref
+  }
+  return null
+}
+
+/** Declared roots of the manifest committed at `ref`, or null when there is none to read. */
+function rootsAtRef(dir: string, ref: string): string[] | null {
+  const shown = spawnSync('git', ['-C', dir, 'show', `${ref}:./${MANIFEST_PATH}`], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  })
+  const read = shown.status === 0 ? parseManifest(shown.stdout) : null
+  return read !== null && 'manifest' in read ? rootsOf(read.manifest).map(([r]) => r) : null
+}
+
+const covers = (outer: string, inner: string): boolean =>
+  outer === '.' || outer === inner || inner.startsWith(`${outer}/`)
+
+/** A root that is a file, and a root declared at `baseRef` that is still on disk but no longer covered. */
+export function rootFindings(input: {
+  dir: string
+  roots: readonly string[]
+  baseRef: string | null
+}): string[] {
+  const { dir, roots, baseRef } = input
+  const findings = roots.flatMap((root) =>
+    existsSync(resolve(dir, root)) && !isDirectory(resolve(dir, root))
+      ? [`${root} is a file: a declared root is a directory, so the guard would scan one file`]
+      : [],
+  )
+  for (const old of baseRef === null ? [] : (rootsAtRef(dir, baseRef) ?? [])) {
+    if (existsSync(resolve(dir, old)) && !roots.some((r) => covers(r, old))) {
+      findings.push(
+        `root ${old} was declared at ${baseRef} and is no longer covered; the files under it are unlinted`,
+      )
+    }
+  }
+  return findings
+}
+
 async function seededOffender(
   dir: string,
   roots: readonly string[],
@@ -106,27 +206,39 @@ async function seededOffender(
   const result = verdict(1, 'seeded-offender')
   if (roots.length === 0) return result('skipped', 'no declared root to seed')
   const dead: string[] = []
+  let seeded = 0
   for (const root of roots) {
-    const file = resolve(dir, root, SEEDED_FILE)
-    if (existsSync(file)) {
-      return result('failed', `${root}/${SEEDED_FILE} already exists; remove it and run again`)
+    if (!isDirectory(resolve(dir, root))) {
+      dead.push(`${root}: a declared root must be a directory, not a file or a missing path`)
+      continue
     }
-    try {
-      writeFileSync(file, offender.content, 'utf8')
-      const fired = (await runLint(file, dir)).map(normalizeId)
-      if (!fired.some(offender.fired)) dead.push(`${root}: the seeded offender did not fire`)
-    } catch (error) {
-      dead.push(`${root}: lint failed (${error instanceof Error ? error.message : String(error)})`)
-    } finally {
-      rmSync(file, { force: true })
+    for (const seedDir of seedDirs(dir, root)) {
+      const file = resolve(dir, seedDir, SEEDED_FILE)
+      if (existsSync(file)) {
+        return result('failed', `${seedDir}/${SEEDED_FILE} already exists; remove it and run again`)
+      }
+      seeded += 1
+      try {
+        writeFileSync(file, offender.content, 'utf8')
+        const fired = (await runLint(file, dir)).map(normalizeId)
+        if (!fired.some(offender.fired)) {
+          dead.push(`${seedDir}: the guard is off here (${blame(dir, root, seedDir)})`)
+        }
+      } catch (error) {
+        dead.push(
+          `${seedDir}: lint failed (${error instanceof Error ? error.message : String(error)})`,
+        )
+      } finally {
+        rmSync(file, { force: true })
+      }
     }
   }
   return dead.length > 0
-    ? result(
-        'failed',
-        `${dead.join('; ')}; extends, jsPlugins, ignorePatterns or .oxlintignore dropped the guard`,
+    ? result('failed', dead.join('; '))
+    : result(
+        'passed',
+        `the seeded offender fired in ${seeded} directory(ies) of ${roots.length} root(s)`,
       )
-    : result('passed', `the seeded offender fired in ${roots.length} root(s)`)
 }
 
 type Config = Record<string, unknown>
@@ -173,6 +285,20 @@ function blanketDisables(dir: string, roots: readonly string[]): string[] {
   })
 }
 
+/** `.oxlintrc.json` files under the declared roots (below the install root) that do not extend the preset. */
+function nestedConfigsWithoutPreset(dir: string, roots: readonly string[]): string[] {
+  const files = new Set(roots.flatMap((root) => filesUnder(dir, root, /^\.oxlintrc\.json$/)))
+  return [...files].toSorted().filter((file) => {
+    if (file === OXLINTRC) return false
+    try {
+      const config = parseJsonc(readFileSync(resolve(dir, file), 'utf8'))
+      return !asStrings(config?.['extends']).some((p) => basename(p) === PRESET_FILE)
+    } catch {
+      return true
+    }
+  })
+}
+
 function managedIds(
   config: Config | string,
   dir: string,
@@ -195,7 +321,13 @@ function managedIds(
       : [],
   )
   const blanket = blanketDisables(dir, roots)
+  const nested = nestedConfigsWithoutPreset(dir, roots)
   const problems: string[] = []
+  if (nested.length > 0) {
+    problems.push(
+      `nested config without ${PRESET_FILE} in extends: ${nested.join(', ')}; it replaces the root config for its subtree`,
+    )
+  }
   if (hits.length > 0) {
     problems.push(`managed ids set by hand: ${hits.join(', ')}; waive with a reasoned directive`)
   }
@@ -222,11 +354,8 @@ function budgetRatchet(dir: string, baseRef: string | null | undefined): Weakene
   if (!baseRef) return result('skipped', 'no base ref to compare the budget against')
   // A git that cannot start is a check that cannot run: skipped, never a rejected call.
   const git = (...args: string[]) => {
-    try {
-      return Bun.spawnSync(['git', '-C', dir, ...args], { stderr: 'ignore' })
-    } catch {
-      return { exitCode: 127, stdout: Buffer.alloc(0) }
-    }
+    const run = spawnSync('git', ['-C', dir, ...args], { stdio: ['ignore', 'pipe', 'ignore'] })
+    return { exitCode: run.error === undefined ? run.status : 127, stdout: run.stdout ?? '' }
   }
   if (git('rev-parse', '--verify', '--quiet', `${baseRef}^{commit}`).exitCode !== 0) {
     return result('skipped', `base ref ${baseRef} does not resolve; fetch it first`)
@@ -279,7 +408,7 @@ export async function checkWeakenedConfig(input: WeakenedInput): Promise<Weakene
     await seededOffender(
       dir,
       roots,
-      input.runLint ?? oxlintRunner(),
+      input.runLint ?? projectRunner(dir, roots),
       input.offender ?? DEFAULT_OFFENDER,
     ),
     extendsPreset(config),
