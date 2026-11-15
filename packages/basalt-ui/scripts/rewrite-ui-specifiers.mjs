@@ -12,12 +12,15 @@
  *   dist/ui/sheet.js          './button'     -> 'basalt-ui/ui/button'
  * Only names with a seed (`src/ui/<name>.tsx`) are touched, so `./slots`, `./button.guard` and
  * every non-primitive path stay relative. Runs before `fix-esm-extensions`, on extensionless paths.
+ *
+ * `bun scripts/rewrite-ui-specifiers.mjs [<dist>]`: the dist defaults to this package's own; a spike
+ * that stages a scratch package points it at its own emit.
  */
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 
 const ROOT = resolve(import.meta.dirname, '..')
-const DIST = join(ROOT, 'dist')
+const DIST = process.argv[2] === undefined ? join(ROOT, 'dist') : resolve(process.argv[2])
 const UI = join(DIST, 'ui')
 
 if (!existsSync(UI)) {

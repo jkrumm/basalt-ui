@@ -16,6 +16,8 @@ import { Children, createContext, use } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
+import { SlotHomeContext } from '../core/slot-home'
+import type { FoldingHome } from '../core/slot-home'
 import { home as homeMessages } from '../core/messages/home'
 import { Toolbar, ToolbarGroup } from '../ui/toolbar'
 import type {
@@ -42,6 +44,9 @@ export const HOME_PRESENTATION = {
 
 /** Homes whose controls share a toolbar row with buttons, and so draw through `ToolbarGroup`. */
 const TOOLBAR_HOMES: ReadonlySet<HomeName> = new Set<HomeName>(['view-mode', 'tool'])
+
+/** Homes whose `filterSlot` draws the folding `FilterSet`. */
+const FOLDING_HOMES: ReadonlySet<HomeName> = new Set<HomeName>(['page-bar', 'section-header'])
 
 /** `true` inside `FoldedControls`: a home there keeps the row form whatever its own presentation. */
 const FoldedContext = createContext(false)
@@ -81,28 +86,31 @@ export function ControlHome({ home, children }: ControlHomeProps): ReactElement 
   if (Children.toArray(children).length === 0) return null
   const presentation = folded ? 'row' : presentationOf(home)
   const toolbar = TOOLBAR_HOMES.has(home) && !folded
+  const slotHome = !folded && FOLDING_HOMES.has(home) ? (home as FoldingHome) : undefined
   return (
     <ControlPresentationContext value={presentation}>
-      {toolbar ? (
-        <Toolbar
-          aria-label={t('home.filters')}
-          data-home={home}
-          className="min-h-0 min-w-0 max-w-full empty:hidden"
-        >
-          <ToolbarGroup className="h-auto min-w-0 max-w-full flex-wrap gap-2 empty:hidden">
+      <SlotHomeContext value={slotHome}>
+        {toolbar ? (
+          <Toolbar
+            aria-label={t('home.filters')}
+            data-home={home}
+            className="min-h-0 min-w-0 max-w-full empty:hidden"
+          >
+            <ToolbarGroup className="h-auto min-w-0 max-w-full flex-wrap gap-2 empty:hidden">
+              {children}
+            </ToolbarGroup>
+          </Toolbar>
+        ) : (
+          <fieldset
+            data-slot={SLOT[presentation]}
+            data-home={home}
+            aria-label={t('home.filters')}
+            className={cn('m-0 border-0 p-0 empty:hidden', FRAME[presentation])}
+          >
             {children}
-          </ToolbarGroup>
-        </Toolbar>
-      ) : (
-        <fieldset
-          data-slot={SLOT[presentation]}
-          data-home={home}
-          aria-label={t('home.filters')}
-          className={cn('m-0 border-0 p-0 empty:hidden', FRAME[presentation])}
-        >
-          {children}
-        </fieldset>
-      )}
+          </fieldset>
+        )}
+      </SlotHomeContext>
     </ControlPresentationContext>
   )
 }
@@ -117,7 +125,9 @@ export function ControlHome({ home, children }: ControlHomeProps): ReactElement 
 export function FoldedControls({ children }: { children?: ReactNode }): ReactElement {
   return (
     <FoldedContext value>
-      <ControlPresentationContext value="row">{children}</ControlPresentationContext>
+      <SlotHomeContext value={undefined}>
+        <ControlPresentationContext value="row">{children}</ControlPresentationContext>
+      </SlotHomeContext>
     </FoldedContext>
   )
 }

@@ -36,7 +36,11 @@ describe('home to presentation', () => {
         const { container } = render(
           <ControlHome home={home}>{filterSlot([enumSpec(`k.${home}`)]).render()}</ControlHome>,
         )
-        const view = container.querySelector<HTMLElement>('[data-slot="control-view"]')!
+        // A page-bar or section-header slot draws the folding FilterSet, which carries the presentation.
+        const folding = home === 'page-bar' || home === 'section-header'
+        const view = container.querySelector<HTMLElement>(
+          folding ? '[data-slot="filter-set"]' : '[data-slot="control-view"]',
+        )!
         expect(view.dataset['presentation']).toBe(presentation)
       })
     }
@@ -110,13 +114,53 @@ describe('Reset all', () => {
     expect(b.clears.count).toBe(1)
   })
 
-  test('a pill home never draws it', () => {
+  test('a toolbar pill home never draws it', () => {
     const { a, slot } = two()
-    const { queryByRole } = render(<ControlHome home="page-bar">{slot.render()}</ControlHome>)
+    const { queryByRole } = render(<ControlHome home="view-mode">{slot.render()}</ControlHome>)
     act(() => {
       a.put('7d')
     })
     expect(queryByRole('button', { name: 'Reset all' })).toBeNull()
+  })
+})
+
+describe('filterSlot in a pill home', () => {
+  const two = () => filterSlot([enumSpec('p.a'), enumSpec('p.b')])
+
+  for (const home of ['page-bar', 'section-header'] as const) {
+    test(`${home} renders the slot as a FilterSet with one pill per spec and its Filters button`, () => {
+      const { container } = render(<ControlHome home={home}>{two().render()}</ControlHome>)
+      const set = container.querySelector('[data-slot="filter-set"]')!
+      expect(set.getAttribute('data-presentation')).toBe('pill')
+      expect(set.querySelectorAll('[data-slot="filter-set-pill"]')).toHaveLength(2)
+      expect(set.querySelector('[data-slot="filter-count"]')).not.toBeNull()
+      expect(container.querySelector('[data-slot="control-view"]')).toBeNull()
+    })
+  }
+
+  test('the row-or-button swap keys on the page container, not on a cell of its own', () => {
+    const { container } = render(<ControlHome home="page-bar">{two().render()}</ControlHome>)
+    expect(container.querySelector('[data-slot="filter-set"] .\\@container')).toBeNull()
+  })
+
+  test('a toolbar home (view-mode) and a card (no home) keep one ControlView per spec', () => {
+    const toolbar = render(<ControlHome home="view-mode">{two().render()}</ControlHome>)
+    expect(toolbar.container.querySelector('[data-slot="filter-set"]')).toBeNull()
+    expect(toolbar.container.querySelectorAll('[data-slot="control-view"]')).toHaveLength(2)
+    cleanup()
+    const bare = render(<>{two().render()}</>)
+    expect(bare.container.querySelector('[data-slot="filter-set"]')).toBeNull()
+    expect(bare.container.querySelectorAll('[data-slot="control-view"]')).toHaveLength(2)
+  })
+
+  test('a row home inside the fold stays a row', () => {
+    const { container } = render(
+      <FoldedControls>
+        <ControlHome home="page-bar">{two().render()}</ControlHome>
+      </FoldedControls>,
+    )
+    expect(container.querySelector('[data-slot="filter-set"]')).toBeNull()
+    expect(container.querySelectorAll('[data-presentation="row"]').length).toBeGreaterThan(0)
   })
 })
 
