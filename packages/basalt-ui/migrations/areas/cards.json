@@ -130,11 +130,20 @@
     {
       "id": "cards-onclick",
       "kind": "renamed-prop",
-      "from": "basalt-ui/cards#StatCard.target.onSelect",
+      "from": "basalt-ui/cards#StatCard.onSelect",
       "to": "onClick",
       "profiles": ["parts", "app"],
       "manual": true,
       "note": "one name for an action's activation callback; tsc names every call site"
+    },
+    {
+      "id": "cards-statcell-onclick",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/cards#StatCell.onSelect",
+      "to": "onClick",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "one name for an action's activation callback"
     }
   ],
   "tokens": {
