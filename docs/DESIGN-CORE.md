@@ -176,7 +176,7 @@ purpose; the old → new table and the `density`/`radius` knobs that restore the
   misses a seeded defect is fixed before it gates (`docs/waves/design-parity/w31/calibration.md`).
 - **Reconciled decisions.** Deltas are text colour, never a fill; accent never marks selection; a
   single-series sparkline is neutral; metric captions are mono uppercase `micro`; `Meter` and
-  `BarList` are not chart kinds (`src/dashboard`).
+  `BarList` are not chart kinds (`src/cards`).
 
 ## Data visualization — the chart contract
 
