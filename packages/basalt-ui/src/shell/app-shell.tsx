@@ -71,20 +71,18 @@ function AsideSheet({ claim }: { claim: AsideClaim }): ReactElement {
 /**
  * The application frame: a header, a rail, the one scrollport, an aside region and, on a phone, a
  * tab bar, all projections of one `nav` declaration. It owns the markup (a CSS grid in
- * `@layer basalt`), so there is nothing to override and nothing to fight.
+ * `@layer basalt`), so there is nothing to override and nothing to fight. The crumb trail is the nav
+ * section, then the page's `PageBar` `parent`, then its `title`; a selection such as
+ * `/services?service=checkout` is `Fleet / Services / checkout` from
+ * `<PageBar title={service.name} parent={{ label: 'Services', href: '/services' }} />`. A phone
+ * shows no ancestors, a page with no bar shows its nav label, and a path no route matches shows
+ * `Not found`, in the crumb and in the document title.
  *
  * The document never scrolls: `Main` is the scrollport and the `<main>` landmark. The shell also
  * renders what a repeated block needs and a consumer cannot be trusted to remember: a skip link, a
  * polite announcer that says the new page's title after a pathname change, `document.title` as
  * `page · brand`, and the print rules. A `Page` inside claims the breadcrumb, the header actions,
  * the aside and the title through the shell; `Page` itself renders the one `h1`.
- *
- * The header's crumb trail is decided here: the nav section's label (muted, from the `regular`
- * class up; a phone shows no ancestors), then the page's trail, then the page. A `PageBar` writes
- * its own part through `title` and `parent`: on a record or a selection (`?service=checkout` on a
- * `SplitPage`) the bar's `title` is the selection and `parent` is the page it belongs to, so
- * `Fleet / Services / checkout`. A page with no bar shows the active nav label as its leaf; a path
- * no route matches shows `Not found`, in the crumb and in the document title.
  *
  * While a navigation waits past the router's `defaultPendingMs`, main is `aria-busy` and draws a
  * hairline bar; the rail, the crumb and the title keep naming the page on screen until the next
