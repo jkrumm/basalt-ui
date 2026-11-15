@@ -32,5 +32,6 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   selection?: { bulk: BulkAction<T>[]; selectAll?: boolean; }
   views?: { store?: ViewStore; }
   detail: (row: T, box: Box) => ReactNode
+  detailTitle?: (row: T) => string  [with detail]
   onRowActivate?: (row: T) => void
 ```
