@@ -11,7 +11,12 @@ slots: [page-breadcrumb-leaf]
 
 The application frame: a header, a rail, the one scrollport, an aside region and, on a phone, a
 tab bar, all projections of one `nav` declaration. It owns the markup (a CSS grid in
-`@layer basalt`), so there is nothing to override and nothing to fight.
+`@layer basalt`), so there is nothing to override and nothing to fight. The crumb trail is the nav
+section, then the page's `PageBar` `parent`, then its `title`; a selection such as
+`/services?service=checkout` is `Fleet / Services / checkout` from
+`<PageBar title={service.name} parent={{ label: 'Services', href: '/services' }} />`. A phone
+shows no ancestors, a page with no bar shows its nav label, and a path no route matches shows
+`Not found`, in the crumb and in the document title.
 
 ## Signature
 
