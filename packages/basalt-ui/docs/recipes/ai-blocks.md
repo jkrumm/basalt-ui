@@ -8,7 +8,7 @@ Copy this file and `ai-blocks-schemas.ts` (each block's `name`, `description`, z
 ```tsx
 import { defineBlock, defineCatalog } from 'basalt-ui/ai'
 import { BarList, DataPanel, StatCard } from 'basalt-ui/cards'
-import { Bars, LegacyChartCard as ChartCard } from 'basalt-ui/charts'
+import { Bars, ChartCard } from 'basalt-ui/charts'
 import { Callout } from 'basalt-ui/page'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { VX } from 'basalt-ui/tokens'
