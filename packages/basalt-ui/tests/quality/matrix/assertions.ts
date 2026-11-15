@@ -151,17 +151,19 @@ export async function reducedMotion(page: Page): Promise<void> {
       await new Promise<void>((done) =>
         requestAnimationFrame(() => requestAnimationFrame(() => done())),
       )
-      // Finite animations get their time; only one that never ends is a failure.
+      // Finite animations get their time; only one that never ends is a failure. An animation on a scroll or
+      // view timeline (the article progress bar) is driven by the reader's own scrolling, never by the clock:
+      // it is no autonomous motion for the preference to stop, and it is "running" for as long as the page is.
+      const timed = (): Animation[] =>
+        document.getAnimations().filter((a) => a.timeline === document.timeline)
       await Promise.race([
-        Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+        Promise.all(timed().map((a) => a.finished.catch(() => undefined))),
         new Promise((done) => setTimeout(done, 400)),
       ])
-      return document
-        .getAnimations()
-        .map(
-          (a) =>
-            `${a.constructor.name} ${(a as CSSAnimation).animationName ?? (a as CSSTransition).transitionProperty ?? ''}`,
-        )
+      return timed().map(
+        (a) =>
+          `${a.constructor.name} ${(a as CSSAnimation).animationName ?? (a as CSSTransition).transitionProperty ?? ''}`,
+      )
     })
   const all = await running()
   for (const slot of ['dialog-trigger', 'sheet-trigger']) {

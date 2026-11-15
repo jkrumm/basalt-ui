@@ -79,17 +79,24 @@ async function setScheme(page: PageLike, scheme: Scheme): Promise<void> {
 
 // ── animations ────────────────────────────────────────────────────────────────────────────────
 
-/** Fading colours are read blended, so every assertion that reads colour waits for this first. */
+/**
+ * Fading colours are read blended, so every assertion that reads colour waits for this first. Only a
+ * time-driven animation (on `document.timeline`) can settle: one on a scroll or view timeline, such as the
+ * article progress bar, is "running" for as long as the page exists and never blends a colour.
+ */
 async function animationsSettled(page: PageLike): Promise<void> {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   try {
-    await page.waitForFunction((() => document.getAnimations().length === 0) as never, undefined, {
-      timeout: 5000,
-    })
+    await page.waitForFunction(
+      (() => document.getAnimations().every((a) => a.timeline !== document.timeline)) as never,
+      undefined,
+      { timeout: 5000 },
+    )
   } catch {
     const running = await run(page, () =>
       document
         .getAnimations()
+        .filter((a) => a.timeline === document.timeline)
         .map((a) => a.constructor.name + ':' + String((a as CSSAnimation).animationName ?? '')),
     )
     throw new Error(
