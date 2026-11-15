@@ -6,7 +6,7 @@
 const fill = '#ff8800'
 
 // @invalid
-const stroke = "#FFF"
+const stroke = '#FFF'
 
 // @invalid
 const wash = '#00000080'
@@ -49,3 +49,26 @@ const entity = '&#x1F600;'
 
 // @valid
 import tokens from '#ff8800'
+
+// @valid
+const SERIES = defineSeries({
+  sessions: { light: '#2871c7', dark: '#5190f7' },
+  churn: { light: 'oklch(0.6 0.2 25)', dark: '#e46360' },
+})
+
+// @valid
+export const traceColors = groupTokens(
+  'trace',
+  tokens.defineSeries({
+    model: { light: '#2871c7', dark: '#5190f7' },
+  }),
+)
+
+// @invalid
+const SERIES = defineSeries({ sessions: { light: '#2871c7', dark: '#5190f7' } })
+const other = { light: '#ff8800', dark: '#112233' }
+const warn = '#ff8800'
+// @errors colour-literal,colour-literal,colour-literal
+
+// @invalid
+const nested = defineSeries({ sessions: { light: VX.accent, extra: '#2871c7' } })
