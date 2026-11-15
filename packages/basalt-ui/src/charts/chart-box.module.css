@@ -243,10 +243,8 @@
 }
 
 /* A bare Sparkline keeps the outer ring: its cell reserves the clearance (the readout chip and the end
- * marker are placed against it). `--vx-accent` is no token of v3, so the ring takes the ink
- * (over 3:1 on the card surface in both schemes). */
+ * marker are placed against it). */
 :global([data-basalt-sparkline] .basalt-chart .ts-chart:focus-visible) {
-  outline-color: var(--vx-ink);
   outline-offset: calc(0.125rem * var(--mantine-scale));
 }
 
@@ -256,6 +254,12 @@
 :global([data-basalt-hosted] .basalt-chart .ts-chart:focus-visible),
 :global([data-slot='stat-chart'] [data-basalt-sparkline] .basalt-chart .ts-chart:focus-visible) {
   outline-offset: calc(-0.125rem * var(--mantine-scale));
+}
+
+/* The ring above takes `currentColor` (`--vx-accent` is no token of v3), which in a stat card is the
+ * faint line ink: 1.8:1. The card's own ink holds 3:1 on its surface in both schemes. */
+:global([data-slot='stat-chart'] [data-basalt-sparkline] .basalt-chart .ts-chart:focus-visible) {
+  outline-color: var(--vx-ink);
 }
 
 /*
