@@ -17,6 +17,7 @@
  * — head-prepend, the exact position Vite injects the plugin's tags into.
  */
 import { afterAll, describe, expect, test } from 'bun:test'
+import { join } from 'node:path'
 import {
   CLOSE_BUDGET_MS,
   closeLayoutSuite,
@@ -37,6 +38,18 @@ type BasaltAppOptions = Parameters<typeof basaltAppPlugin>[0]
  * ~4.4 s on a GitHub runner, and top-level module evaluation has no such cap. `initLayoutSuite()`
  * now carries its own budget and says which phase overran.
  */
+// The engine reads this when the suite boots; cleared in `afterAll` so a whole-directory run keeps
+// every other file on the default fixture.
+process.env['LAYOUT_FIXTURE_ENTRY'] = join(
+  import.meta.dirname,
+  'fixture',
+  'boot-scheme',
+  'main.tsx',
+)
+afterAll(() => {
+  delete process.env['LAYOUT_FIXTURE_ENTRY']
+})
+
 const ready = await initLayoutSuite()
 const layout = ready ? describe : describe.skip
 

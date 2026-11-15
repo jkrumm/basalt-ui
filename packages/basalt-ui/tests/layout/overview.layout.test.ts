@@ -113,7 +113,7 @@ layout('playground overview route', () => {
         for (const slot of ['stat-group', 'stat-card', 'data-panel', 'bar-list', 'event-list']) {
           expect(await count(page, `[data-slot="${slot}"]`), `${slot} renders`).toBeGreaterThan(0)
         }
-        expect(await count(page, '[data-testid="ov-chart"]'), 'chart card renders').toBe(1)
+        expect(await count(page, '[data-slot="chart-box"]'), 'chart card renders').toBe(1)
       })
 
       test('exactly one card shows the override cue', async () => {
