@@ -1119,3 +1119,34 @@ rows:
         v3-wiring-2-api,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-wiring-3.json' }
+  - key: v3-state-3-detail-link
+    title: 'A table detail field naming an unloaded record opens it or clears, from state cycle 3'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-state-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-3-detail-link.json' }
+  - key: v3-state-3-api
+    title: 'The store resets only the fields it is given, as FilterSet does, from state cycle 3'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-state-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-3-api.json' }
+  - key: v3-state-3-visual
+    title: 'Switches keep their size in a form field, card values name their column, headers keep sort reachable, from state cycle 3'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-state-3-detail-link]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-3-visual.json' }
+  - key: v3-state-3-state
+    title: 'A store-filtered empty table offers Clear filters, a field at its fallback leaves the URL, from state cycle 3'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-state-3-api]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-3-state.json' }
+  - key: v3-cycle-state-4
+    title: 'Improvement cycle 4: state, stores and controls, built as one data page'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-state-3-detail-link, v3-state-3-api, v3-state-3-visual, v3-state-3-state]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-state-4.json' }
