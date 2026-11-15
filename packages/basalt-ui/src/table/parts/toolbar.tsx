@@ -24,7 +24,7 @@ import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { ChipList } from './chips'
 import { FilterEditor } from './toolbar-editor'
-import { activeFilters, filterableSpecs } from './toolbar-filters'
+import { activeFilters, commitsDraft, filterableSpecs } from './toolbar-filters'
 import { ViewsMenu } from './views'
 import type { ViewParam } from './views'
 
@@ -51,7 +51,7 @@ function Search<T>({ model }: { model: TableModel<T> }): ReactElement {
       }}
       onBlur={search.commit}
       onKeyDown={(event) => {
-        if (event.key === 'Enter') search.commit()
+        if (commitsDraft(event)) search.commit()
       }}
     />
   )

@@ -14,7 +14,7 @@ import { Input } from '../../ui/input'
 import type { KindSpec } from '../core/kinds-spec'
 import { useSearchDraft } from '../core/state'
 import type { TableModel } from '../use-data-table'
-import { filterValues, withFilter } from './toolbar-filters'
+import { commitsDraft, filterValues, withFilter } from './toolbar-filters'
 import type { FilterableSpec } from './toolbar-filters'
 
 export type FilterEditorProps<T> = {
@@ -37,7 +37,7 @@ function ContainsEditor<T>({ model, spec }: FilterEditorProps<T>): ReactElement 
       onChange={(event) => search.change(event.currentTarget.value)}
       onBlur={search.commit}
       onKeyDown={(event) => {
-        if (event.key === 'Enter') search.commit()
+        if (commitsDraft(event)) search.commit()
       }}
     />
   )
