@@ -18,7 +18,7 @@ declares and the rest collapse, so a loading cell is already its final height.
 
 ```ts
 StatGroup({ variant, label, children }: StatGroupProps): ReactElement
-  variant: "strip" | "cards"  // `strip` is one dense surface whose cells share their tracks; `cards` is one card per cell with the bands alig…
+  variant: "cards" | "strip"  // `strip` is one dense surface whose cells share their tracks; `cards` is one card per cell with the bands alig…
   label?: string  // Names the group for assistive tech (`Recovery`)
   children: StatCellElement | readonly StatCellElement[]
 ```

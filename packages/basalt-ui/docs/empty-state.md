@@ -22,7 +22,7 @@ EmptyState(props: EmptyStateProps): ReactElement
   why: string  // One line: the cause, and the next step when there is one
   title?: string  // What is empty, in a few words (`No runs yet`), on the line above `why`
   icon?: IconComponent
-  tier?: "section" | "page"  // `page` for a whole route body (generous space), `section` for a region inside a card or panel; default 'page'
+  tier?: "page" | "section"  // `page` for a whole route body (generous space), `section` for a region inside a card or panel; default 'page'
   action?: CardAction
   filtered?: { reset: () => void; }
 ```
