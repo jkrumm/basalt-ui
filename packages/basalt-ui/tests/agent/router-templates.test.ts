@@ -125,6 +125,13 @@ describe('router templates', () => {
     }
   })
 
+  test('the error template retries by invalidating the router, not by reset alone', () => {
+    const text = readFileSync(join(pkgRoot, 'agent/templates/_app-error.tpl'), 'utf8')
+    expect(text).toMatch(/router\.invalidate\(\)/)
+    expect(text).toMatch(/onSelect: retry/)
+    expect(text).not.toMatch(/onSelect: reset/)
+  })
+
   test('the seeded files type-check against the built dist', async () => {
     expect(existsSync(join(pkgRoot, 'dist/router/index.d.ts')), 'run `bun run build` first').toBe(
       true,

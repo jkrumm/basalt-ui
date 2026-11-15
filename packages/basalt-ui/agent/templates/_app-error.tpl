@@ -5,6 +5,7 @@
  *
  * Scaffold written by `basalt-ui init` to `src/components/route-error.tsx`. This file is yours — `basalt-ui sync` will not overwrite it.
  */
+import { useRouter } from '@tanstack/react-router'
 import type { ErrorComponentProps } from '@tanstack/react-router'
 import { EmptyState } from 'basalt-ui/page'
 
@@ -17,6 +18,12 @@ function statusOf(error: unknown): number | undefined {
 }
 
 export function RouteError({ error, reset }: ErrorComponentProps) {
+  // `reset` alone re-renders the boundary over the same failed match; invalidating first re-runs the loader.
+  const router = useRouter()
+  const retry = async () => {
+    await router.invalidate()
+    reset()
+  }
   const status = statusOf(error)
   if (status === 403) return <EmptyState why="You do not have access to this page." />
   if (status === 401)
@@ -29,7 +36,7 @@ export function RouteError({ error, reset }: ErrorComponentProps) {
   return (
     <EmptyState
       why="Something went wrong loading this page. Try again."
-      action={{ label: 'Try again', onSelect: reset }}
+      action={{ label: 'Try again', onSelect: retry }}
     />
   )
 }
