@@ -3,7 +3,6 @@
   "compact",
   "date",
   "dateTime",
-  "defineFormat",
   "delta",
   "duration",
   "durationClock",
@@ -13,6 +12,7 @@
   "money",
   "percent",
   "relativeTime",
+  "setFormatDefaults",
   "time",
   "weekday"
 ]

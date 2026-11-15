@@ -18,11 +18,11 @@ open, 3 need you", never "Overview of your tickets"; the title already says what
 
 ```ts
 PageSummary(props: PageSummaryProps): ReactElement
-  // either sentence or phase: 'loading'
+  // either sentence or phase
   sentence?: ReactNode  // The headline sentence
   facts?: readonly Fact[]  // Short facts under the headline, e.g
   aside?: ReactNode  // After the headline: a date or a freshness word
-  phase?: 'ready' | 'loading'
+  phase?: "ready" | "loading"
 ```
 
 ## Example

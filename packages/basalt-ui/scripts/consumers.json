@@ -73,7 +73,7 @@
   "date": "rb:apps/web/src/lib/format.ts",
   "dateTime": "linewatch:web/src/lib/format.ts",
   "defineControls": "linewatch:web/src/lib/dashboard-store.ts",
-  "defineFormat": "rb:apps/web/src/lib/format.ts",
+  "setFormatDefaults": "rb:apps/web/src/lib/format.ts",
   "defineNav": "argo:apps/dashboard/src/lib/nav.tsx",
   "defineOverlays": "argo:apps/dashboard/src/lib/commands.tsx",
   "defineSeries": "argo:apps/dashboard/src/lib/series.ts",

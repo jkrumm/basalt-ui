@@ -1,6 +1,6 @@
 /** The default Date x labels follow the tick step and never repeat on one axis (ledger row 137). */
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { defineFormat } from '../../format'
+import { setFormatDefaults } from '../../format'
 import { resetFormatDefaults } from '../../format/shared'
 import { compileCartesian, dateTicks } from './compile'
 import { dateTickFormat } from '../date-tick-format'
@@ -39,7 +39,7 @@ const unique = (xs: string[]): boolean => new Set(xs).size === xs.length
 const noAdjacentRepeat = (xs: string[]): boolean => xs.every((x, i) => x !== xs[i - 1])
 
 // The day labels read the page locale: pin one, or the runtime's decides the expected strings.
-beforeEach(() => defineFormat({ locale: 'en-GB' }))
+beforeEach(() => setFormatDefaults({ locale: 'en-GB' }))
 afterEach(resetFormatDefaults)
 
 /** The en-GB day label of October `d`, as this runtime's ICU spells it. */

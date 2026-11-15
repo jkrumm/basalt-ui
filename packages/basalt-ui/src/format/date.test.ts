@@ -4,7 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { date, dateTime, duration, durationClock, relativeTime, time, weekday } from './date'
-import { NON_FINITE, defineFormat, resetFormatDefaults } from './shared'
+import { NON_FINITE, setFormatDefaults, resetFormatDefaults } from './shared'
 
 const en = { locale: 'en-US' } as const
 const now = Date.parse('2026-09-02T12:00:00Z')
@@ -260,7 +260,7 @@ function stubGermanHost(): () => void {
   }
 }
 
-describe('defineFormat default locale', () => {
+describe('setFormatDefaults default locale', () => {
   let restore: () => void
   beforeEach(() => {
     restore = stubGermanHost()
@@ -271,26 +271,26 @@ describe('defineFormat default locale', () => {
   })
 
   test('the default beats a German host', () => {
-    defineFormat({ locale: 'en-GB' })
+    setFormatDefaults({ locale: 'en-GB' })
     expect(relativeTime(now - 4 * DAY, { now })).toBe('4 days ago')
   })
 
   test('relativeTime falls back to the defined locale, a call locale still wins', () => {
-    defineFormat({ locale: 'de' })
+    setFormatDefaults({ locale: 'de' })
     expect(relativeTime(now - 3 * HOUR, { now })).toBe('vor 3 Stunden')
     expect(relativeTime(now - 3 * HOUR, { now, locale: 'en-US' })).toBe('3 hours ago')
   })
 
   test('a changed default is never served a stale formatter', () => {
-    defineFormat({ locale: 'de' })
+    setFormatDefaults({ locale: 'de' })
     expect(relativeTime(now - 3 * HOUR, { now })).toBe('vor 3 Stunden')
-    defineFormat({ locale: 'en-US' })
+    setFormatDefaults({ locale: 'en-US' })
     expect(relativeTime(now - 3 * HOUR, { now })).toBe('3 hours ago')
   })
 
   // Regression guard, not failing-first: these resolved the default before this change.
   test('duration and the date family already honour it', () => {
-    defineFormat({ locale: 'de', timeZone: 'UTC' })
+    setFormatDefaults({ locale: 'de', timeZone: 'UTC' })
     expect(duration(3900, { style: 'long' })).toBe('1 Stunde 5 Minuten')
     expect(date(Date.parse('2026-09-02T12:00:00Z'), { format: 'long' })).toBe('2. September 2026')
   })

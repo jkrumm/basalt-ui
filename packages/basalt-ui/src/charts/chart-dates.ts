@@ -1,6 +1,6 @@
 /**
  * The chart layer's one date locale: the axis's day labels, the tooltip header and a sparkline's
- * readout all read the page's `defineFormat` / `BasaltProvider` locale through here (the runtime's
+ * readout all read the page's `setFormatDefaults` / `BasaltProvider` locale through here (the runtime's
  * when none is set), so no card mixes two orders: `04.10` ticks under a `Sat, Oct 10, 2026` header
  * under a `3 Oct` fact. Every read is UTC, like the time scale that placed the ticks.
  */

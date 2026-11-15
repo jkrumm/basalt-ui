@@ -1,6 +1,6 @@
 /**
  * Shared low-level pieces of `basalt-ui/format`: the {@link NON_FINITE} sentinel, the default
- * locale / time zone ({@link defineFormat}), the memoized `Intl` caches and the number-input
+ * locale / time zone ({@link setFormatDefaults}), the memoized `Intl` caches and the number-input
  * guard every formatter in this module reuses. The subpath is the single implementation; the chart
  * layer imports it directly (`docs/V2-SPEC.md` § 9).
  */
@@ -14,7 +14,7 @@ export const NON_FINITE = '—'
 
 /** Options every number/measure formatter accepts. */
 export type LocaleOption = {
-  /** BCP-47 tag. Default: the {@link defineFormat} default, else the runtime's own locale. */
+  /** BCP-47 tag. Default: the {@link setFormatDefaults} default, else the runtime's own locale. */
   locale?: string | undefined
 }
 
@@ -42,7 +42,7 @@ let defaults: FormatDefaults = {}
  * is an app-wide setting, not a per-request one — a server rendering many locales passes `locale`
  * per call instead. `BasaltProvider`'s `locale` / `timeZone` props call this.
  */
-export function defineFormat(next: FormatDefaults = {}): void {
+export function setFormatDefaults(next: FormatDefaults = {}): void {
   const merged: FormatDefaults = {
     locale: next.locale ?? defaults.locale,
     timeZone: next.timeZone ?? defaults.timeZone,
@@ -53,7 +53,7 @@ export function defineFormat(next: FormatDefaults = {}): void {
   dateCaches.clear()
 }
 
-/** Clears the {@link defineFormat} defaults back to the runtime's own locale and zone. */
+/** Clears the {@link setFormatDefaults} defaults back to the runtime's own locale and zone. */
 export function resetFormatDefaults(): void {
   defaults = {}
   numberCaches.clear()
@@ -94,7 +94,7 @@ function memoize<T>(
 
 /**
  * The ONE locale resolution every formatter shares: the call's own tag, else the
- * {@link defineFormat} default, else `undefined` (the runtime's own locale). Internal — not
+ * {@link setFormatDefaults} default, else `undefined` (the runtime's own locale). Internal — not
  * re-exported from the public barrel.
  */
 export function resolveLocale(locale?: string): string | undefined {
