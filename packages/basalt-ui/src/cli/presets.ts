@@ -90,6 +90,7 @@ export function renderOxlintPreset(manifest: Manifest, pkgRoot: string): string 
     profile: base,
     roots,
     ejected: ejectedPaths(manifest),
+    classPrefixes: manifest.classPrefixes ?? [],
   })
   return preset === undefined ? null : `${JSON.stringify(preset, null, 2)}\n`
 }

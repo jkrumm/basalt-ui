@@ -148,8 +148,18 @@
     "basalt/router-search": "off",
     "basalt/control-home": "off",
     "basalt/untrusted-markdown": "off",
-    "shadcn/no-raw-colors": "error",
-    "shadcn/no-arbitrary-values": "error",
+    "shadcn/no-raw-colors": [
+      "error",
+      {
+        "message": "\"{{className}}\" is a raw colour. Use a theme colour class that is already declared: {{suggestions|see the declared theme colours}}; the palette is derived, so no colour is added per app."
+      }
+    ],
+    "shadcn/no-arbitrary-values": [
+      "error",
+      {
+        "allow": ["grid-cols-[*]", "grid-rows-[*]", "*:grid-cols-[*]", "*:grid-rows-[*]"]
+      }
+    ],
     "shadcn/no-unknown-classes": "error",
     "shadcn/no-inline-styles": "error",
     "shadcn/require-static-classes": "error",

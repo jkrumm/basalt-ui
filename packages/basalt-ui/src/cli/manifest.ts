@@ -25,6 +25,8 @@ export type Manifest = {
   deepRender: string[]
   authoredContent: string[]
   viewports: string[]
+  /** Third-party class prefixes (`maplibregl-`) `shadcn/no-unknown-classes` lets through. */
+  classPrefixes?: string[]
   tokens: TokenOutput[]
   /** The `--extra` file `tokens:css` reads. */
   extra?: string
@@ -36,7 +38,7 @@ export type Manifest = {
 
 export type ManifestRead = { manifest: Manifest } | { error: string }
 
-const LISTS = ['deepRender', 'authoredContent', 'viewports'] as const
+const LISTS = ['deepRender', 'authoredContent', 'viewports', 'classPrefixes'] as const
 const KNOWN = [
   'profile',
   'version',
@@ -127,6 +129,7 @@ export function parseManifest(text: string): ManifestRead {
       deepRender: lists[0] as string[],
       authoredContent: lists[1] as string[],
       viewports: lists[2] as string[],
+      ...((lists[3] as string[]).length > 0 ? { classPrefixes: lists[3] as string[] } : {}),
       tokens,
       ...(extra === undefined ? {} : { extra }),
       ...(typeof sibling === 'string' ? { sibling } : {}),
@@ -142,6 +145,7 @@ const sorted = <T>(record: Record<string, T>): Record<string, T> =>
 export function serializeManifest(m: Manifest): string {
   const { profile, version, deepRender, authoredContent, viewports, tokens, extra, sibling, rest } =
     m
+  const prefixes = m.classPrefixes ?? []
   const body = {
     profile,
     version,
@@ -151,6 +155,7 @@ export function serializeManifest(m: Manifest): string {
     deepRender,
     authoredContent,
     viewports,
+    ...(prefixes.length === 0 ? {} : { classPrefixes: prefixes }),
     tokens,
     ...(extra === undefined ? {} : { extra }),
     ...(sibling === undefined ? {} : { sibling }),
