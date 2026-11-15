@@ -693,11 +693,12 @@ const PROSE_CONTEXT_TAG = /<(?:Prose|ArticleLayout|Modal|Drawer)(?![\w])/
  * has no import graph, so this lane matches by name and accepts the missed warn on a
  * consumer's own `PanelRow` — the same direction every approximation in this scan already leans.
  *
- * The name set is the plugin's `CONTROL_HOST_TAGS` ∪ `BASALT_HOST_TAGS`; `oxlint-plugin.test.ts` ›
- * lane parity asserts the two agree (1.32.1 — `FormRow`/`FormGroup` had drifted out of this lane).
+ * The name set is the 2.x plugin's `CONTROL_HOST_TAGS` ∪ `BASALT_HOST_TAGS` plus the v3 `FormField`,
+ * the home `basalt/control-home` (`HOMES`) already accepts: a Select bound through a v3 `FormField`
+ * is homed in both lanes (1.32.1 — `FormRow`/`FormGroup` had drifted out of this lane the same way).
  */
 const CONTROL_HOST_TAG =
-  /<(?:SettingsRow|FormRow|FormGroup|Modal|Drawer|Popover\.Dropdown|Menu\.Dropdown|Composer|FilterSet|PageAside|PanelRow)(?![\w])/
+  /<(?:SettingsRow|FormRow|FormGroup|FormField|Modal|Drawer|Popover\.Dropdown|Menu\.Dropdown|Composer|FilterSet|PageAside|PanelRow)(?![\w])/
 
 /** An opening or closing host tag's name — the anchor of the walk in {@link insideHostTag}. */
 const CONTROL_HOST_TAG_NAME = new RegExp(

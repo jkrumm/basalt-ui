@@ -2601,13 +2601,25 @@ describe('raw-selection-control', () => {
   })
 
   // FormRow/FormGroup: 1.32.1 (B2) — the plugin always homed them; this lane had drifted.
-  it.each(['SettingsRow', 'FormRow', 'FormGroup', 'Modal', 'Drawer', 'Menu.Dropdown'])(
+  it.each(['SettingsRow', 'FormRow', 'FormGroup', 'FormField', 'Modal', 'Drawer', 'Menu.Dropdown'])(
     'does NOT flag one inside a %s window',
     (host) => {
       const f = find(`<${host}>\n  <Select data={[]} />\n</${host}>`)
       expect(kinds(f)).not.toContain('raw-selection-control')
     },
   )
+
+  it('homes a Select bound through a v3 FormField, and still flags a bare one beside it', () => {
+    const f = find(
+      `<FormField label="Assignee" field={f}>\n  <Select aria-label="Assignee" options={[]} />\n</FormField>\n<Select options={[]} />`,
+    )
+    expect(f.filter((x) => x.kind === 'raw-selection-control')).toHaveLength(1)
+  })
+
+  it('does not read FormFieldset as a FormField host', () => {
+    const f = find(`<FormFieldset>\n  <Select data={[]} />\n</FormFieldset>`)
+    expect(kinds(f)).toContain('raw-selection-control')
+  })
 
   // Ancestry by tag nesting, like the plugin's: depth is what homes a control, not distance.
   it('does NOT flag one 40 lines below its host tag while the host is still open', () => {
