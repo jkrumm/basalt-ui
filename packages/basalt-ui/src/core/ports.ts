@@ -62,10 +62,18 @@ export type IconComponent = (props: {
   'aria-hidden'?: boolean | 'true' | 'false'
 }) => ReactNode
 
-/** Router-free link. Default is a plain `<a>`; `routerDefaults` supplies the router `Link`. */
+/** Opaque product of `navTarget(linkOptions)`; only the `link` adapter opens it. */
+export type NavTarget = { readonly __brand: 'NavTarget' }
+
+/**
+ * Router-free link. Default is a plain `<a>` (a `NavTarget` has no plain form, so it renders without
+ * a destination); `BasaltProvider link={routerDefaults().link}` installs the router `Link` for every
+ * link prop.
+ */
 export type LinkComponent = (props: {
-  href: string
+  href: string | NavTarget
   className?: string
+  'data-slot'?: string
   children?: ReactNode
   'aria-current'?: 'page' | 'step' | 'location' | 'date' | 'time' | boolean | 'true' | 'false'
   'aria-label'?: string

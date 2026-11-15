@@ -8,7 +8,15 @@
  * (`Fact`, `FootFacts`, `FrameHead`, `LegendEntry`) are repeated here, structurally identical.
  */
 import type { CardAction, FrameState } from '../core/phase'
-import type { BoxSlot, ControlsSlot, Delta, IconComponent, MeterSpec, Status } from '../core/ports'
+import type {
+  BoxSlot,
+  ControlsSlot,
+  Delta,
+  IconComponent,
+  MeterSpec,
+  NavTarget,
+  Status,
+} from '../core/ports'
 
 // ---- Frame types the sketch files under ports (absent from ports.ts) ----------------------
 
@@ -40,7 +48,7 @@ export type LegendEntry = {
 
 /** A card is a link, a button or inert; never a link and a button at once. */
 export type CardTarget =
-  | { href: string; onSelect?: never }
+  | { href: string | NavTarget; onSelect?: never }
   | { onSelect: () => void; href?: never }
   | { href?: never; onSelect?: never }
 
@@ -109,7 +117,7 @@ export type Move<C extends string> = { id: string; from: C; to: C; index: number
 export type KanbanCardProps<C extends string> = {
   id: string
   title: string
-  href?: string
+  href?: string | NavTarget
   age?: string
   meta?: readonly [string] | readonly [string, string]
   chips?: readonly [CardChip?, CardChip?, CardChip?, CardChip?]

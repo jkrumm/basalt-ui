@@ -9,6 +9,7 @@ import type {
   ControlsSlot,
   Delta,
   IconComponent,
+  NavTarget,
   Phase,
   QueryStateLike,
   Status,
@@ -18,7 +19,10 @@ import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 // ---- Frame types the sketch files under ports (absent from ports.ts) ----------------------
 
 // minimal; concept elides it
-export type CardAction = { label: string } & ({ href: string } | { onSelect: () => void })
+export type CardAction = { label: string } & (
+  | { href: string | NavTarget }
+  | { onSelect: () => void }
+)
 
 /** No-results under active filters renders Clear filters. */
 export type Empty = { cause: string; action?: CardAction; filtered?: { reset: () => void } }
