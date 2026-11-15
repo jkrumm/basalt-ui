@@ -1,0 +1,20 @@
+{
+  "why": "State cycle 2 (docs/v3/cycles/state-2.md, P1 state-2.4): an edit form in a handle-bound `Sheet` with `useFormDraft` and `toSubmitErrors(save)`. The app closes the record where a save succeeds, the mutation's `onSuccess` (`tickets.field.ticket.clear()`). That runs inside `onSubmitAsync`, the sheet closes, the form unmounts, and `controls/draft.ts` unsubscribes in its effect cleanup before its submit-ended branch can clear the key. The autosaved draft survives the save; the next open of the same record says 'Draft restored from this device.' and applies it over the server value, so a later change by someone else would be overwritten in the form. Evidence: `.evidence/cycle-state-2/draft-race.log` in the cycle's worktree; the build's workaround is the `cycle-state-2: state-2.4` comment in `apps/playground/src/cycle/state-2/TicketsPage.tsx`.",
+  "what": "A successful save never leaves a draft behind, however the app closes the form.",
+  "owns": [
+    "packages/basalt-ui/src/controls/draft.ts and its tests",
+    "packages/basalt-ui/src/controls/submit.ts, only if the success signal must come from `toSubmitErrors`",
+    "packages/basalt-ui/docs/use-form-draft.md (regenerated from the JSDoc)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) `useFormDraft` clears its key when a submit succeeds even if the form unmounts before the submit ends: a test closes the form from the mutation's `onSuccess` (unmounting it inside `onSubmitAsync`) and asserts the key is gone and a remount restores nothing. A failed submit, and an unmount with no submit in flight, still keep the draft (the reload and cancel cases of the cycle). (2) A stored draft equal to the form's current default values is deleted on mount instead of restored, so `status` stays `'none'`. (3) The JSDoc says both, and the reference is regenerated.",
+  "commits": "fix: one commit in packages/basalt-ui; docs regenerated in the same commit.",
+  "proof": "make check; the two tests; on /cycle/state-2 with the workaround removed locally, the save-then-reopen of the cycle shows no 'Draft restored'.",
+  "acceptance": [
+    "A form unmounted by the save's own onSuccess leaves no draft key, and a remount shows no restored draft (test)",
+    "A failed submit and a cancel still keep the draft (test)",
+    "A stored draft equal to the defaults is deleted on mount and status stays 'none' (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Removing the cycle build's workaround (the next cycle does); any new export."
+}

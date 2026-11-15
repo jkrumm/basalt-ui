@@ -1,0 +1,24 @@
+{
+  "why": "State cycle 2 (docs/v3/cycles/state-2.md). The full quality matrix on /cycle/state-2 fails only on clipped focus rings: the page bar's tab trigger in every cell, and the four filter pills in the page bar at 1800 px (P2 state-2.12, `.evidence/cycle-state-2/quality-matrix.txt`). Cycle 1 waived the same pill rings under `v3-state-1-visual`, which closed with the waiver still in `apps/playground/src/cycle/state-1/known.ts`; `/overview` waives them in the package list. Two P3s ride along: a per-day count in `Bars` ticks at 0.5 steps (state-2.8), and the phone cards stack Assignee and Requester values as bare lines with no column label (state-2.9).",
+  "what": "The page bar never clips a focus ring, a count axis ticks on integers, and a phone card says which column a value is.",
+  "owns": [
+    "packages/basalt-ui/src/page/page-bar.tsx and its styles (the controls and tabs rows)",
+    "packages/basalt-ui/src/controls/filter-set*.tsx, only where the pill row clips",
+    "packages/basalt-ui/src/charts/Bars.tsx or the value-axis tick code it uses",
+    "packages/basalt-ui/src/table/core/kinds-cells.tsx and the card part that draws meta lines",
+    "packages/basalt-ui/tests/quality/matrix/known.ts (remove the /overview pill and tab entries it fixes)",
+    "apps/playground/src/cycle/state-1/known.ts and apps/playground/src/cycle/state-2/known.ts (remove the entries it fixes)",
+    "their layout tests"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/*/[A-Za-z]*.tsx"],
+  "change": "(1) The page bar's tabs and controls rows leave room for a focus ring: no overflow clip at the ring's edge, checked by `ringWalk` on /cycle/state-2, /cycle/state and /overview, and the waivers for those rings are removed in the same change (state-2.12). (2) A `Bars` value axis whose data are all integers places ticks on integers only (state-2.8). (3) A phone card's meta line of a `text` column carries its column header as a visible label (state-2.9).",
+  "commits": "fix: per component in packages/basalt-ui; the cycle known.ts edits in their own non-package commit.",
+  "proof": "make check; the full quality matrix on the three routes with the waivers removed; a layout test for the card label and a unit test for the integer ticks.",
+  "acceptance": [
+    "The full quality matrix passes on /cycle/state-2, /cycle/state and /overview with no ring-clipping waiver for page bar tabs or filter pills",
+    "A Bars chart of integer counts ticks on integers (test)",
+    "A phone card shows the column header beside each text meta value (layout test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Other matrix findings; the cycle builds' page code."
+}

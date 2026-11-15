@@ -1,0 +1,23 @@
+{
+  "why": "State cycle 2 (docs/v3/cycles/state-2.md). Offline, a new filter with no cached result paints 32 skeleton rows beside the Offline indicator (P2 state-2.5, `.evidence/cycle-state-2/11-offline-new-filter.png`): cycle 1's fix went into `table/query-branch.ts` of the 2.x `BasaltDataTable`, while the v3 `DataTable`, `ChartCard` and `StatCell` resolve through `core/phase.ts` `resolvePhase`, which has no offline branch. And `useDataTable`'s `detail` door keeps the open row in component state (`table/parts/detail-sheet.tsx:24-33`), so a row opened through the kit's own door is lost on reload, share and Back; the cycle page uses `onRowActivate`, a URL field and its own `Sheet` instead (P2 state-2.11).",
+  "what": "Every v3 frame reads Offline when it waits for the network, and the table's detail door can live in the URL.",
+  "owns": [
+    "packages/basalt-ui/src/core/phase.ts (an offline phase) and the v3 frames that draw it: src/table/parts/*, src/charts/parts/chart-card.tsx, src/cards/stat-cell*",
+    "packages/basalt-ui/src/table/use-data-table.ts, src/table/contract.ts and src/table/parts/detail-sheet.tsx (the `detail` handle)",
+    "their tests and regenerated docs"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "packages/basalt-ui/src/table/data-table.tsx (the 2.x table)"
+  ],
+  "change": "(1) `resolvePhase` returns an `offline` phase for a query with no data and `fetchStatus: 'paused'`, ahead of loading; the v3 `DataTable` body, `ChartCard` and `StatCell` draw the shared Offline line for it, as `QueryState` does, and `data-phase` prints it. (2) `useDataTable`'s `detail` takes `state?: ControlHandle<string>`, a field of row ids: activating a row writes the id, closing calls `clear()`, and a URL that names a row opens its detail on load; without `state` the door keeps today's behaviour.",
+  "commits": "fix: for the offline phase, feat: for the detail handle, in packages/basalt-ui.",
+  "proof": "make check; a test per frame for the paused query; a test that a `detail` bound to a field reopens from the URL.",
+  "acceptance": [
+    "A v3 DataTable, ChartCard and StatCell over a paused query with no data draw Offline, not loading (tests)",
+    "A table with `detail` bound to a string field opens the row from a URL that names it and clears the field on close (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The 2.x BasaltDataTable; removing the cycle build's own sheet (the next cycle does)."
+}

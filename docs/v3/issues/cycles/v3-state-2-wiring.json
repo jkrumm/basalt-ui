@@ -1,0 +1,22 @@
+{
+  "why": "State cycle 2 (docs/v3/cycles/state-2.md, P2 state-2.1): cycle 1's fix (state-1.20) gave `createBasaltRouter` a `live` option, but `bindInvalidation(client, channel, o)` needs the client, and `createBasaltRouter` builds it inside (`provider/create-router.tsx:114`) and refuses one from the app, so `live` cannot be written the way `docs/bind-invalidation.md` shows it. The v3 path the shipped rule prescribes (`routerDefaults` and the `main.tpl` scaffold, 'never `createBasaltRouter`') has no `live` at all, nor does the v3 `BasaltProvider` in `basalt-ui/core/provider`. The cycle page starts the binding in its own effect from `useQueryClient()`.",
+  "what": "An app starts its push binding through the kit on the path it actually uses.",
+  "owns": [
+    "packages/basalt-ui/src/core/provider.tsx and provider-props.tsx (a `live` prop)",
+    "packages/basalt-ui/src/provider/create-router.tsx (`live` also as a function of the client)",
+    "packages/basalt-ui/agent/templates/main.tpl (a commented `live` line, if the template budget allows)",
+    "packages/basalt-ui/src/data/live/bind-invalidation.ts JSDoc and docs/bind-invalidation.md (regenerated)",
+    "their tests; the export-surface snapshot through its generator"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) The v3 `BasaltProvider` (`basalt-ui/core/provider`) takes `live?: { start(): () => void }` and starts it once on the client when it mounts, stopping it on unmount, never on the server, as `createBasaltRouter`'s option does. (2) `createBasaltRouter`'s and `basaltRouterOptions`' `live` also takes `(client: QueryClient) => { start(): () => void }`, called with the client they build. (3) `docs/bind-invalidation.md` shows the v3 wiring first: the module-level client of `main.tpl`, `bindInvalidation(queryClient, channel, o)`, then `<BasaltProvider live={live}>`.",
+  "commits": "feat: one commit per surface in packages/basalt-ui; a contract amendment commit first if the provider props are frozen.",
+  "proof": "make check; a provider test that counts start and stop across mount, rerender and unmount; a router test of the function form.",
+  "acceptance": [
+    "The v3 BasaltProvider starts a `live` binding once on mount and stops it on unmount; a server render starts nothing (test)",
+    "createBasaltRouter accepts `live: (client) => binding` and starts it with the client it built (test)",
+    "docs/bind-invalidation.md shows a wiring that compiles on the routerDefaults path",
+    "make check passes"
+  ],
+  "out_of_scope": "Removing the cycle build's effect (the next cycle does); the 2.x provider beyond the function form."
+}

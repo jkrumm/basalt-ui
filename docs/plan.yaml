@@ -1010,3 +1010,54 @@ rows:
         v3-shell-1-phone-aside,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-2.json' }
+  - key: v3-state-2-draft-unmount
+    title: 'A successful save never leaves a form draft behind, from state cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-state-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-draft-unmount.json' }
+  - key: v3-state-2-wiring
+    title: 'The v3 provider starts the push binding, and the router live option takes the client, from state cycle 2'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-state-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-wiring.json' }
+  - key: v3-state-2-api
+    title: 'useValues returns a range value, status columns take labels, from state cycle 2'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-state-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-api.json' }
+  - key: v3-state-2-state
+    title: 'v3 frames read Offline for a paused query, the table detail binds a field, from state cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-state-2-api]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-state.json' }
+  - key: v3-state-2-visual
+    title: 'The page bar keeps its focus rings, integer count ticks, labelled card meta, from state cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-state-2-api]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-visual.json' }
+  - key: v3-state-2-docs
+    title: 'FilterSet, useFormDraft and createChannel references match the code, from state cycle 2'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-state-2-draft-unmount, v3-state-2-visual]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-docs.json' }
+  - key: v3-cycle-state-3
+    title: 'Improvement cycle 3: state, stores and controls, built as one data page'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-state-2-draft-unmount,
+        v3-state-2-wiring,
+        v3-state-2-api,
+        v3-state-2-state,
+        v3-state-2-visual,
+        v3-state-2-docs,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-state-3.json' }
