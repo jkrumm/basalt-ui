@@ -40,9 +40,16 @@ import { trackShell } from './shell-presence'
 const NO_BLOCKS: NonNullable<AppShellProps['blocks']> = []
 const NO_ACTIONS: NonNullable<AppShellProps['globalActions']> = []
 
-/** On a compact screen the claimed aside is a sheet, opened from the header. */
+/**
+ * On a compact screen the claimed aside is a sheet, opened from the header. A bound aside hands the
+ * page's open state and setter in its claim, so the sheet follows that state; an aside without
+ * `state` keeps a state of its own.
+ */
 function AsideSheet({ claim }: { claim: AsideClaim }): ReactElement {
-  const [open, setOpen] = useState(false)
+  const [local, setLocal] = useState(false)
+  const { sheet } = claim
+  const open = sheet === undefined ? local : sheet.open === true
+  const setOpen = sheet === undefined ? setLocal : sheet.onOpenChange
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger render={<Button variant="secondary" size="sm" />}>{claim.title}</SheetTrigger>
@@ -132,7 +139,10 @@ export function AppShell<Id extends string = string>({
   const sizeClass = useSizeClass()
   const rail = useRailState(storageKey, sizeClass)
   const claim = readAsideClaim(asideNode)
-  const model = useAsideModel(claim, sizeClass, rail.state)
+  // A bound aside claims while closed too (the phone's header button needs it); beside main a
+  // closed one is no region.
+  const regionClaim = claim?.sheet?.open === false ? undefined : claim
+  const model = useAsideModel(regionClaim, sizeClass, rail.state)
   useDocumentFrame()
   usePrintScheme()
 
@@ -173,7 +183,7 @@ export function AppShell<Id extends string = string>({
             search={search}
           />
           <ShellMain>{children}</ShellMain>
-          <AsideRegion claim={claim} model={model} />
+          <AsideRegion claim={regionClaim} model={model} />
           <TabBarMount
             runtime={runtime}
             badges={badges as AppShellProps['badges']}

@@ -17,6 +17,13 @@ export type DockSizeClass = keyof typeof SIZE_CLASSES
 
 export type AsideDock = 'always' | 'auto'
 
+/** A bound aside's open state as the shell's compact sheet reads it. */
+export type AsideSheetState = {
+  /** `undefined` until the field is set; a shown detail counts as open. */
+  open: boolean | undefined
+  onOpenChange: (open: boolean) => void
+}
+
 /**
  * Main keeps at least this much width, or an `'auto'` aside overlays it instead of docking. Not
  * derived from a token: it is the readable floor for a page body, independent of density.

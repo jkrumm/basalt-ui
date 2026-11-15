@@ -12,6 +12,7 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router'
+import { useState, useSyncExternalStore } from 'react'
 import type { ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
@@ -19,7 +20,7 @@ import { Page } from '../../../../../src/page/page'
 import { PageAside } from '../../../../../src/page/page-aside'
 import { PageBar } from '../../../../../src/page/page-bar'
 import { Section } from '../../../../../src/page/section'
-import type { ControlsSlot } from '../../../../../src/core/ports'
+import type { ControlHandle, ControlsSlot } from '../../../../../src/core/ports'
 import { col } from '../../../../../src/table/core/kinds'
 import { DataTable } from '../../../../../src/table/parts/data-table'
 import { useDataTable } from '../../../../../src/table/use-data-table'
@@ -79,6 +80,39 @@ const GLOBAL_ACTIONS: NonNullable<AppShellProps['globalActions']> = [
   },
 ]
 
+/** A boolean handle over a module cell; the document attribute is what the test reads back. */
+function boundAsideState(initial: boolean): ControlHandle<boolean> {
+  let value = initial
+  const listeners = new Set<() => void>()
+  const publish = (): void => {
+    document.documentElement.dataset['asideState'] = String(value)
+    for (const listener of listeners) listener()
+  }
+  publish()
+  const subscribe = (listener: () => void): (() => void) => {
+    listeners.add(listener)
+    return () => listeners.delete(listener)
+  }
+  return {
+    key: 'aside',
+    kind: 'boolean',
+    use: () => [
+      useSyncExternalStore(
+        subscribe,
+        () => value,
+        () => value,
+      ),
+      (next) => {
+        value = next
+        publish()
+      },
+    ],
+    useSource: () => ({ source: 'own', inherited: undefined }),
+    clear: () => {},
+    isDefault: false,
+  }
+}
+
 type Run = { id: string; name: string; seconds: number }
 
 const RUNS: readonly Run[] = Array.from({ length: 6 }, (_, i) => ({
@@ -105,7 +139,8 @@ function DetailTable(): ReactElement {
 
 function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> }): ReactElement {
   const { rows = 12, aside = false, bar = true, detailTable = false } = options
-  const asideProps = typeof aside === 'object' ? aside : {}
+  const { state, ...asideProps } = typeof aside === 'object' ? aside : {}
+  const [handle] = useState(() => (state === undefined ? undefined : boundAsideState(state)))
   return (
     <Page area="runs">
       {bar && (
@@ -133,7 +168,11 @@ function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> 
         )}
       </Section>
       {aside !== false && (
-        <PageAside title="Run details" {...asideProps}>
+        <PageAside
+          title="Run details"
+          {...asideProps}
+          {...(handle !== undefined && { state: handle })}
+        >
           <p data-testid="aside-body">Facts</p>
         </PageAside>
       )}

@@ -33,7 +33,7 @@ import { useMediaQuery } from '../../common/use-media-query'
 import { cn } from '../../core/cn'
 import { persisted } from '../../core/persisted'
 import { asideDockQuery, resolveAsideDocking } from '../../page/core/docking'
-import type { AsideDock } from '../../page/core/docking'
+import type { AsideDock, AsideSheetState } from '../../page/core/docking'
 import type { SizeClass } from '../contract'
 import { SHELL_MAIN_ID } from './a11y'
 import { PRINT_FRAME, PRINT_MAIN, PRINT_OFF } from './print'
@@ -240,6 +240,8 @@ export type AsideClaim = {
   readonly width: number
   readonly dock: AsideDock
   readonly body: ReactNode
+  /** Present when the aside is bound to a `state`: the page's open state and its setter. */
+  readonly sheet?: AsideSheetState
 }
 
 const DEFAULT_ASIDE_WIDTH = 360
@@ -253,6 +255,7 @@ export function readAsideClaim(node: ReactNode | undefined): AsideClaim | undefi
     title?: unknown
     width?: unknown
     dock?: unknown
+    sheet?: AsideSheetState
     children?: ReactNode
   }
   return {
@@ -261,6 +264,7 @@ export function readAsideClaim(node: ReactNode | undefined): AsideClaim | undefi
     width: typeof props.width === 'number' ? props.width : DEFAULT_ASIDE_WIDTH,
     dock: props.dock === 'always' ? 'always' : 'auto',
     body: props.children,
+    ...(props.sheet === undefined ? {} : { sheet: props.sheet }),
   }
 }
 

@@ -16,7 +16,14 @@ export type ShellFrameSpec = FixtureSpec & {
     /** Replaces the plain table with a `DataTable` whose rows carry a `detail`, no host passed. */
     detailTable?: boolean
     /** Mounts a `PageAside` (default false). */
-    aside?: boolean | { dock?: 'always' | 'auto'; width?: number }
+    aside?:
+      | boolean
+      | {
+          dock?: 'always' | 'auto'
+          width?: number
+          /** Binds the aside to an open state starting here; `document.documentElement.dataset.asideState` mirrors it. */
+          state?: boolean
+        }
     /** Mounts a `PageBar` with a title, a control and an action (default true). */
     bar?: boolean
     /** Mounts `compactHeader: 'hidden'`. */
