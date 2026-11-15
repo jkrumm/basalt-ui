@@ -169,7 +169,7 @@ describe('recipes drift — rules', () => {
     expect(writeRecipes(roots(root))).toEqual(['docs/recipes/sample.md'])
     const doc = readFileSync(join(root, 'docs', 'recipes', 'sample.md'), 'utf8')
     expect(doc).toContain(
-      "```tsx\nimport { Page, Section } from 'basalt-ui/page'\nimport type { ReactElement } from 'react'\n\nexport const view",
+      "```ts\nimport { Page, Section } from 'basalt-ui/page'\nimport type { ReactElement } from 'react'\n\nexport const view",
     )
     expect(doc).not.toContain('./local')
     expect(doc).not.toContain('unused')
