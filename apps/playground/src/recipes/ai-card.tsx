@@ -20,7 +20,7 @@ export function AiCard({ api, prompt }: { api: string; prompt: string }) {
     <DataPanel
       title="Summary"
       phase={phase}
-      skeleton={{ height: 160 }}
+      bodySize={{ height: 160 }}
       body={() => (
         <ScrollArea aria-label="Summary" className="max-h-64">
           <div

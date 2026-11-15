@@ -121,7 +121,7 @@ const projects = <BarList title="Top projects" items={PROJECTS} />
 const breakdown = (
   <DataPanel
     title="Breakdown"
-    skeleton={{ rows: 5 }}
+    bodySize={{ rows: 5 }}
     body={() => (
       <div className="flex flex-col gap-4">
         {projects}
