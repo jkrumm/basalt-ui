@@ -359,7 +359,12 @@ async function tabWalk(
         async (fnSource: string) => {
           // A focus ring fades in; read it once the transition ended, not mid-fade.
           await Promise.race([
-            Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+            Promise.all(
+              document
+                .getAnimations()
+                .filter((a) => a.timeline === document.timeline)
+                .map((a) => a.finished.catch(() => undefined)),
+            ),
             new Promise((done) => setTimeout(done, 400)),
           ])
           const el = document.activeElement
