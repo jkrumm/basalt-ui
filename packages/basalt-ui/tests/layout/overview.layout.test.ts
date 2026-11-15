@@ -54,20 +54,10 @@ beforeAll(async () => {
   )
   if (css.exitCode !== 0) throw new Error(`overview: tailwind failed:\n${css.stderr.toString()}`)
 
-  const stub = join(scratch, 'v3-tokens-stub.ts')
-  await Bun.write(stub, 'export function useV3Tokens(): void {}\n')
   const build = await Bun.build({
     entrypoints: [join(import.meta.dirname, 'overview-fixture.jsx')],
     target: 'browser',
     define: { 'process.env.NODE_ENV': JSON.stringify('production') },
-    plugins: [
-      {
-        name: 'stub-v3-tokens',
-        setup(b) {
-          b.onResolve({ filter: /demo\/v3-tokens$/ }, () => ({ path: stub }))
-        },
-      },
-    ],
   })
   if (!build.success) throw new Error(`overview: fixture did not build:\n${build.logs.join('\n')}`)
   const client = await build.outputs[0]!.text()
