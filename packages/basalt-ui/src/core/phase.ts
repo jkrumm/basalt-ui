@@ -3,7 +3,7 @@ import type { NavTarget, Phase, QueryStateLike } from './ports'
 /** A card action: a link or a handler, never both (`CardTarget` in the cards contract). */
 export type CardAction = { label: string } & (
   | { href: string | NavTarget }
-  | { onSelect: () => void }
+  | { onClick: () => void }
 )
 
 /**

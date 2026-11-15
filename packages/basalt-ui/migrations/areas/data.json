@@ -1,7 +1,17 @@
 {
   "schema": 1,
   "area": "data",
-  "rows": [],
+  "rows": [
+    {
+      "id": "data-createQueryClient",
+      "kind": "renamed",
+      "from": "makeQueryClient",
+      "to": "createQueryClient",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "one verb: define declares, create builds an instance"
+    }
+  ],
   "tokens": { "renamed": [], "valueShifts": [] },
   "storage": [],
   "urls": [],

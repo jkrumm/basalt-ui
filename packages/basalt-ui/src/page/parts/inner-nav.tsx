@@ -125,7 +125,7 @@ function ItemMenu({ item }: { item: InnerNavItem }): ReactElement | null {
       </MenuTrigger>
       <MenuContent>
         {item.menu.map((entry) => (
-          <MenuItem key={entry.id} onClick={entry.onSelect}>
+          <MenuItem key={entry.id} onClick={entry.onClick}>
             {entry.label}
           </MenuItem>
         ))}

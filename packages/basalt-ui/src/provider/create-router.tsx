@@ -14,7 +14,7 @@ import type {
   SearchSerializer,
 } from '@tanstack/react-router'
 import type { LiveBinding } from '../core/provider'
-import { makeQueryClient } from '../data/query-client'
+import { createQueryClient } from '../data/query-client'
 import type { RouterHook } from '../telemetry'
 import { ErrorComponent, NotFoundComponent, PendingComponent } from './route-defaults'
 import {
@@ -128,7 +128,7 @@ function buildRouterOptions<TContext extends object>(
   options: RouterOptionsInput<TContext>,
 ): BasaltRouterOptions<TContext> {
   guardViewTransitionRejections()
-  const queryClient = makeQueryClient(options.query)
+  const queryClient = createQueryClient(options.query)
   const hook: RouterHook = { live: bindLive(options.live, queryClient) }
   // The overloads of `basaltRouterOptions` and `createBasaltRouter` make `context` present whenever
   // `TContext` has required keys, so the spread is the whole `TContext`: the one cast, here.

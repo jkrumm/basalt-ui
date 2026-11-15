@@ -10,7 +10,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
-import { makeQueryClient } from './query-client'
+import { createQueryClient } from './query-client'
 
 type Prefs = { theme: string }
 const accept = { '~standard': { validate: (value: unknown) => ({ value: value as Prefs }) } }
@@ -81,8 +81,8 @@ describe('createSyncedState — SSR', () => {
     const prefs = await define('server')
     mirror('server', 'mirror')
     const View = () => <span>{prefs.use().value.theme}</span>
-    expect(renderToString(withClient(makeQueryClient(), <View />))).toContain('initial')
-    const dehydrated = makeQueryClient()
+    expect(renderToString(withClient(createQueryClient(), <View />))).toContain('initial')
+    const dehydrated = createQueryClient()
     dehydrated.setQueryData(['basalt', 'synced', 'server', 'u1'], {
       value: { theme: 'query' },
       rev: '7',
@@ -93,9 +93,9 @@ describe('createSyncedState — SSR', () => {
   test('hydration has zero recoverable errors, then shows the mirror', async () => {
     const prefs = await define('hydrate')
     const View = () => <span>{prefs.use().value.theme}</span>
-    const html = renderToString(withClient(makeQueryClient(), <View />))
+    const html = renderToString(withClient(createQueryClient(), <View />))
     mirror('hydrate', 'mirror')
-    const { errors, container } = await hydrate(html, withClient(makeQueryClient(), <View />))
+    const { errors, container } = await hydrate(html, withClient(createQueryClient(), <View />))
     expect(errors).toBe(0)
     expect(container.textContent).toBe('mirror')
   })

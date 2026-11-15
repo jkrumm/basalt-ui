@@ -178,8 +178,8 @@ describe('loading', () => {
     expect(tag()).toBe('loading')
   })
 
-  test('`loading` replaces the spinner', () => {
-    show('loading', { loading: <div data-testid="skel" /> })
+  test('`skeleton` replaces the spinner', () => {
+    show('loading', { skeleton: <div data-testid="skel" /> })
     expect(screen.getByTestId('skel')).toBeDefined()
     expect(screen.queryByRole('status')).toBeNull()
   })
@@ -194,10 +194,10 @@ describe('empty', () => {
   })
 
   test('the empty action reaches the empty state', () => {
-    const onSelect = mock(() => {})
-    show(result({}), { empty: { cause: 'None', action: { label: 'Add one', onSelect } } })
+    const onClick = mock(() => {})
+    show(result({}), { empty: { cause: 'None', action: { label: 'Add one', onClick } } })
     fireEvent.click(screen.getByRole('button', { name: 'Add one' }))
-    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(onClick).toHaveBeenCalledTimes(1)
   })
 
   test('a filtered empty renders Clear filters', () => {

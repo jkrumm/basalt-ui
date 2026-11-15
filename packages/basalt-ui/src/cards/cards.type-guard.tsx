@@ -69,7 +69,7 @@ export const statusWithoutWord: ReactElement = (
 
 export const linkAndButton: ReactElement = (
   // @ts-expect-error a card is a link or a button, never both
-  <StatCard title="Shipped" value={1} href="/flow" onSelect={() => undefined} />
+  <StatCard title="Shipped" value={1} href="/flow" onClick={() => undefined} />
 )
 
 export const oneItemMenu: ReactElement = (

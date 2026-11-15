@@ -44,10 +44,10 @@ const BASALT_QUERY_DEFAULTS = {
  *
  * @example
  * ```ts
- * const queryClient = makeQueryClient({ defaultOptions: { queries: { staleTime: 5_000 } } })
+ * const queryClient = createQueryClient({ defaultOptions: { queries: { staleTime: 5_000 } } })
  * ```
  */
-export function makeQueryClient(config?: QueryClientConfig): QueryClient {
+export function createQueryClient(config?: QueryClientConfig): QueryClient {
   const client = new QueryClient({
     ...config,
     defaultOptions: {

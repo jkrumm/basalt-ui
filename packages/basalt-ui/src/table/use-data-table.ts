@@ -248,12 +248,12 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
   const settled = options.data !== undefined
   const empty: Empty | null =
     settled && rows.length === 0
-      ? {
-          cause: filtering ? t('table.noMatches') : t('table.empty'),
-          ...(filtering && {
+      ? filtering
+        ? {
+            cause: t('table.noMatches'),
             filtered: { reset: () => state.setRequest({ q: '', filters: [] }) },
-          }),
-        }
+          }
+        : { ...options.empty, cause: options.empty?.cause ?? t('table.empty') }
       : null
   const phase = resolvePhase({
     phase: options.phase ?? (settled ? undefined : 'loading'),

@@ -11,7 +11,7 @@ import { createChannel } from '../../core/channel'
 import type { Scheduler } from '../../core/channel'
 import type { Transport, Wire } from '../../core/channel-transport'
 import { fakeChannel } from '../../testing/fake-channel'
-import { makeQueryClient } from '../query-client'
+import { createQueryClient } from '../query-client'
 import { bindInvalidation } from './bind-invalidation'
 import { connectionStoreOf } from './connection'
 import type { Affects } from './bind-invalidation'
@@ -139,7 +139,7 @@ async function world(
   keys: Record<string, QueryKey> = KEYS,
   extra: { class?: 'pushed' | 'standard'; only?: string[] } = {},
 ) {
-  const client = makeQueryClient()
+  const client = createQueryClient()
   for (const [name, queryKey] of Object.entries(keys)) {
     if (extra.only && !extra.only.includes(name)) continue
     const options =

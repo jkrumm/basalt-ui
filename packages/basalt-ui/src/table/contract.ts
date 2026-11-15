@@ -16,6 +16,7 @@ import type {
   QueryStateLike,
   VirtualLike,
 } from '../core/ports'
+import type { Empty } from '../core/phase'
 
 // ---- State (what the URL and saved views carry) -------------------------------------------
 
@@ -157,6 +158,12 @@ export type UseDataTable<T> = {
   mode: Mode
   state?: StateHandle<TableState>
   phase?: Phase | QueryStateLike
+  /**
+   * Why the table has no rows, and what to do about it: its `cause` replaces the default sentence
+   * and its `action` renders beside it. A filtered-empty table keeps the no-matches sentence and
+   * Clear filters; `null` and `undefined` both keep the default.
+   */
+  empty?: Empty | null
   resetOn?: readonly unknown[]
   /**
    * What a narrow table becomes: cards, or the table scrolling sideways with its first column pinned.

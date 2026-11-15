@@ -17,7 +17,7 @@ head sticks inside that container (or to the page when there is none).
 
 Part `table`.
 
-- `size`: `md`, `compact` (default `md`)
+- `size`: `md`, `sm` (default `md`)
 
 ## Slots
 

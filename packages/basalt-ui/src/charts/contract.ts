@@ -21,7 +21,7 @@ import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 // minimal; concept elides it
 export type CardAction = { label: string } & (
   | { href: string | NavTarget }
-  | { onSelect: () => void }
+  | { onClick: () => void }
 )
 
 /** No-results under active filters renders Clear filters. */

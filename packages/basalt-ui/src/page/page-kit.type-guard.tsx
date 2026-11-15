@@ -34,21 +34,21 @@ export const gridClassName: ReactElement = (
   <CardGrid className="grid-cols-3" />
 )
 
-export const validEmpty: ReactElement = <EmptyState why="No runs yet." />
+export const validEmpty: ReactElement = <EmptyState cause="No runs yet." />
 
-export const emptyWithoutWhy: ReactElement = (
-  // @ts-expect-error an empty state states its cause: `why` is required
+export const emptyWithoutCause: ReactElement = (
+  // @ts-expect-error an empty state states its cause: `cause` is required
   <EmptyState />
 )
 
 export const emptyTitleOnly: ReactElement = (
-  // @ts-expect-error the cause is `why`, not a `title`
+  // @ts-expect-error the cause is `cause`, not a `title`
   <EmptyState title="No data" />
 )
 
 export const emptyTwoActions: ReactElement = (
   // @ts-expect-error the filtered variant renders Clear filters instead of an action
-  <EmptyState why="x" action={{ label: 'a', href: '/' }} filtered={{ reset: () => {} }} />
+  <EmptyState cause="x" action={{ label: 'a', href: '/' }} filtered={{ reset: () => {} }} />
 )
 
 export const validSummary: ReactElement = <PageSummary sentence="3 open" facts={['a', null]} />
@@ -65,6 +65,28 @@ export const validQuery: ReactElement = <QueryState phase="loading">x</QueryStat
 export const queryWithoutPhase: ReactElement = (
   // @ts-expect-error QueryState reads a phase, never a bare data array
   <QueryState>x</QueryState>
+)
+
+export const queryWithSkeleton: ReactElement = (
+  <QueryState phase="loading" skeleton={<p>…</p>}>
+    x
+  </QueryState>
+)
+
+export const queryWithLoadingNode: ReactElement = (
+  // @ts-expect-error the pending node is `skeleton`; `loading` is a boolean elsewhere
+  <QueryState phase="loading" loading={<p>…</p>}>
+    x
+  </QueryState>
+)
+
+export const emptyWithOnClick: ReactElement = (
+  <EmptyState cause="None." action={{ label: 'Add', onClick: () => {} }} />
+)
+
+export const emptyWithOnSelect: ReactElement = (
+  // @ts-expect-error an action's activation callback is `onClick`
+  <EmptyState cause="None." action={{ label: 'Add', onSelect: () => {} }} />
 )
 
 const OVERLAYS = defineOverlays({

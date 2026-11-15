@@ -9,7 +9,7 @@ import { EventList } from './event-list'
 
 const items = [
   { label: 'argo', value: 1840, href: '/argo' },
-  { label: 'rb', value: 920, onSelect: () => undefined },
+  { label: 'rb', value: 920, onClick: () => undefined },
   { label: 'shutterflow', value: 400 },
 ]
 
@@ -53,7 +53,7 @@ export const barRowLinkAndButton: ReactElement = (
     title="Top projects"
     items={[
       // @ts-expect-error a row is a link or a button, never both
-      { label: 'argo', value: 1, href: '/argo', onSelect: () => undefined },
+      { label: 'argo', value: 1, href: '/argo', onClick: () => undefined },
     ]}
   />
 )

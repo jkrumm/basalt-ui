@@ -42,7 +42,7 @@
       "id": "legacy-1x-root-createBasaltQueryClient",
       "kind": "renamed",
       "from": "basalt-ui#createBasaltQueryClient",
-      "to": "basalt-ui/data#makeQueryClient",
+      "to": "basalt-ui/data#createQueryClient",
       "verify": "ast",
       "manual": false
     },
@@ -453,7 +453,7 @@
       "id": "legacy-1x-query-createBasaltQueryClient",
       "kind": "renamed",
       "from": "basalt-ui/query#createBasaltQueryClient",
-      "to": "basalt-ui/data#makeQueryClient",
+      "to": "basalt-ui/data#createQueryClient",
       "verify": "ast",
       "manual": false
     },

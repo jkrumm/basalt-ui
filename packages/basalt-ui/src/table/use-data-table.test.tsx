@@ -120,6 +120,40 @@ describe('client filter and paging', () => {
     )
   })
 
+  test('`empty` names why an empty table is empty and offers its action', () => {
+    const run = mock(() => undefined)
+    render(
+      <Subject
+        options={{
+          data: [],
+          empty: { cause: 'No orders this week.', action: { label: 'New order', onClick: run } },
+        }}
+      />,
+    )
+    const row = document.querySelector('[data-slot="table-empty"]')
+    expect(row?.textContent).toContain('No orders this week.')
+    fireEvent.click(screen.getByRole('button', { name: 'New order' }))
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  test('a filtered-empty table keeps the no-matches sentence and Clear filters over `empty`', () => {
+    render(
+      <Subject
+        options={{
+          state: state({ q: 'zzz' }),
+          empty: {
+            cause: 'No orders this week.',
+            action: { label: 'New order', onClick: () => {} },
+          },
+        }}
+      />,
+    )
+    const row = document.querySelector('[data-slot="table-empty"]')
+    expect(row?.textContent).toContain('No rows match')
+    expect(row?.textContent).not.toContain('No orders this week.')
+    expect(screen.queryByRole('button', { name: 'New order' })).toBeNull()
+  })
+
   test('pager pages slices the client rows', () => {
     render(<Subject options={{ pager: 'pages', state: state({ pageSize: 2 }) }} />)
     expect(names()).toHaveLength(2)

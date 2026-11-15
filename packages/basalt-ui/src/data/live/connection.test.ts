@@ -7,7 +7,7 @@ import { onlineManager } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { ChannelState, Scheduler } from '../../core/channel'
-import { makeQueryClient } from '../query-client'
+import { createQueryClient } from '../query-client'
 import { NetworkError } from '../unwrap'
 import { HYSTERESIS_MS, createConnectionStore } from './connection'
 import type { ConnectionStore } from './connection'
@@ -49,7 +49,7 @@ let off: () => void
 let seq = 0
 
 beforeEach(() => {
-  client = makeQueryClient({ defaultOptions: { queries: { retry: false } } })
+  client = createQueryClient({ defaultOptions: { queries: { retry: false } } })
   clock = fakeClock()
   store = createConnectionStore(client, clock)
   off = store.subscribe(() => {})

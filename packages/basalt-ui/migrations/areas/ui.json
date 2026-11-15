@@ -924,6 +924,15 @@
       "kind": "map",
       "from": "@mantine/core#*.withinPortal | zIndex",
       "to": "always portalled; popups `z-50`, toast above, order by portal; no `z-*` prop"
+    },
+    {
+      "id": "ui-table-size-sm",
+      "kind": "manual",
+      "from": "ui/table size=\"compact\"",
+      "to": "size=\"sm\"",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "sm | md like input, select, tabs, segmented, number-field and combobox"
     }
   ],
   "tokens": {

@@ -113,7 +113,7 @@ export type SectionProps<K extends string = string> = {
 export type PushField<K extends string> = ControlHandle<K> & { readonly history: 'push' }
 
 // minimal; concept elides it
-export type InnerNavMenuItem = { id: string; label: string; onSelect: () => void }
+export type InnerNavMenuItem = { id: string; label: string; onClick: () => void }
 
 export type InnerNavItem = {
   id: string

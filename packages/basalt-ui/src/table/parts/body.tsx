@@ -251,6 +251,7 @@ function Arm<T>({ model }: { model: TableModel<T> }): ReactElement {
         <EmptyRow
           model={model}
           cause={phase.empty.cause}
+          {...(phase.empty.action !== undefined && { action: phase.empty.action })}
           {...(phase.empty.filtered !== undefined && { reset: phase.empty.filtered.reset })}
         />
       )

@@ -1,5 +1,5 @@
 ---
-name: makeQueryClient
+name: createQueryClient
 use when: 'an app or an SSR request needs its QueryClient, built once per router or per request'
 never when: 'a module-level `new QueryClient()` would be shared across requests or tests'
 subpath: basalt-ui/data
@@ -7,7 +7,7 @@ peers: []
 slots: []
 ---
 
-# makeQueryClient
+# createQueryClient
 
 Builds the QueryClient with the basalt defaults (30 s stale, 5 min gc, no retry on a 4xx except
 408/425/429, no refetch on focus); consumer `config` wins per key.
@@ -15,11 +15,11 @@ Builds the QueryClient with the basalt defaults (30 s stale, 5 min gc, no retry 
 ## Signature
 
 ```ts
-makeQueryClient(config?: QueryClientConfig): QueryClient
+createQueryClient(config?: QueryClientConfig): QueryClient
 ```
 
 ## Example
 
 ```tsx
-const queryClient = makeQueryClient({ defaultOptions: { queries: { staleTime: 5_000 } } })
+const queryClient = createQueryClient({ defaultOptions: { queries: { staleTime: 5_000 } } })
 ```

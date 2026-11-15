@@ -126,6 +126,15 @@
       "manual": true,
       "note": "polarity is required and a compile error on purpose: read each metric, never default to up-good",
       "verify": "tsc: a DeltaBadge without polarity is a type error"
+    },
+    {
+      "id": "cards-onclick",
+      "kind": "renamed-prop",
+      "from": "CardAction, CardTarget and BarList row onSelect",
+      "to": "onClick",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "one name for an action's activation callback; tsc names every call site"
     }
   ],
   "tokens": {

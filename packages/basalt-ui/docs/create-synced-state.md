@@ -16,7 +16,7 @@ at once, writes a local mirror and saves after `debounceMs` through one serial w
 hidden tab flushes with `keepalive` when the value fits 64 KiB. A remote value replaces a field
 only when nothing is pending, `editing()` is false and 2 s passed since that field's last edit.
 An un-seeded server (`load` answers `value: null`) is seeded once from the mirror. An edit not
-yet sent when the page crashes or reloads is lost. Needs a client from `makeQueryClient`.
+yet sent when the page crashes or reloads is lost. Needs a client from `createQueryClient`.
 
 ## Signature
 

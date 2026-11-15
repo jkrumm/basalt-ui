@@ -90,7 +90,7 @@ function Fixture(): ReactElement {
             title="Targets"
             items={[
               { label: 'A link', value: 30, href: '#link' },
-              { label: 'A button', value: 20, onSelect: () => undefined },
+              { label: 'A button', value: 20, onClick: () => undefined },
               { label: 'Plain text', value: 10 },
             ]}
           />

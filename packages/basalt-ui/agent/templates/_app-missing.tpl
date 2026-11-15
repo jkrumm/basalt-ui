@@ -8,7 +8,7 @@ import { EmptyState } from 'basalt-ui/page'
 export function RouteMissing() {
   return (
     <EmptyState
-      why="This page does not exist. Check the address, or start from the home page."
+      cause="This page does not exist. Check the address, or start from the home page."
       action={{ label: 'Go home', href: '/' }}
     />
   )

@@ -20,9 +20,9 @@ in a 28 px box.
 
 ```ts
 StatCell(props: StatCellProps): ReactElement
-  // either href, onSelect or neither
+  // either href, onClick or neither
   href?: string | NavTarget
-  onSelect?: () => void
+  onClick?: () => void
   phase?: Phase | QueryStateLike
   empty?: Empty | null
   label: string

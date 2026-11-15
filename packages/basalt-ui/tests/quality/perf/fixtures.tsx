@@ -20,7 +20,7 @@ import type { ReactElement } from 'react'
 import { StatCard } from '../../../src/cards/stat-card'
 import { BasaltProvider } from '../../../src/core/provider'
 import { liveQuery } from '../../../src/data/live/live-query'
-import { makeQueryClient } from '../../../src/data/query-client'
+import { createQueryClient } from '../../../src/data/query-client'
 import type { CommitCounter } from './harness'
 
 export const CARDS = 12
@@ -176,4 +176,4 @@ export function makeRouteApp(client: QueryClient, counter: CommitCounter) {
   return { router, App }
 }
 
-export const newClient = (): QueryClient => makeQueryClient()
+export const newClient = (): QueryClient => createQueryClient()

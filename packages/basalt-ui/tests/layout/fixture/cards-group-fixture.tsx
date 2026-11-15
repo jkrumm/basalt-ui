@@ -112,7 +112,7 @@ const cells = (probe: Probe): StatCellElement[] => {
       value="7 h 12 m"
       chart={chart}
       sub="Last night"
-      onSelect={() => undefined}
+      onClick={() => undefined}
       {...phase}
     />,
     <StatCell

@@ -9,7 +9,8 @@ import type { ReactElement, ReactNode } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
 import { OfflineLine } from '../../core/offline-line'
 import { table } from '../../core/messages/table'
-import type { ResolvedPhase } from '../../core/phase'
+import { AppLink } from '../../core/link'
+import type { CardAction, ResolvedPhase } from '../../core/phase'
 import { Button } from '../../ui/button'
 import { Skeleton } from '../../ui/skeleton'
 import { TableCell, TableRow } from '../../ui/table'
@@ -144,10 +145,12 @@ export function OfflineRow<T>({ model }: { model: TableModel<T> }): ReactElement
 export function EmptyRow<T>({
   model,
   cause,
+  action,
   reset,
 }: {
   model: TableModel<T>
   cause: string
+  action?: CardAction
   reset?: () => void
 }): ReactElement {
   const t = useMessages(table)
@@ -159,6 +162,17 @@ export function EmptyRow<T>({
           {t('table.clearFilters')}
         </Button>
       )}
+      {reset === undefined &&
+        action !== undefined &&
+        ('href' in action ? (
+          <Button size="sm" render={<AppLink href={action.href} />} nativeButton={false}>
+            {action.label}
+          </Button>
+        ) : (
+          <Button size="sm" onClick={action.onClick}>
+            {action.label}
+          </Button>
+        ))}
     </MessageRow>
   )
 }

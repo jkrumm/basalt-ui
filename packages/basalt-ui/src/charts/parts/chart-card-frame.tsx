@@ -221,7 +221,7 @@ function EmptyArm({ empty }: { empty: Empty }): ReactElement {
             {action.label}
           </AppLink>
         ) : (
-          <button type="button" className={ACTION} onClick={action.onSelect}>
+          <button type="button" className={ACTION} onClick={action.onClick}>
             {action.label}
           </button>
         ))

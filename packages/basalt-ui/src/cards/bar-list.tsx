@@ -198,12 +198,12 @@ function Row({ item, percent, value, secondary }: RowProps): ReactElement {
       </AppLink>
     )
   }
-  if (item.onSelect !== undefined) {
+  if (item.onClick !== undefined) {
     return (
       <button
         data-slot="bar-list-target"
         type="button"
-        onClick={item.onSelect}
+        onClick={item.onClick}
         className={cn(ROW, TARGET)}
       >
         {content}

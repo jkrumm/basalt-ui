@@ -181,7 +181,7 @@ describe('every renderer of a link prop goes through the router', () => {
 
   test('the page EmptyState action', async () => {
     const router = mount(() => (
-      <EmptyState why="No runs yet." action={{ label: 'Open orders', href: '/orders' }} />
+      <EmptyState cause="No runs yet." action={{ label: 'Open orders', href: '/orders' }} />
     ))
     await lands(await screen.findByText('Open orders'), router, '/orders')
   })

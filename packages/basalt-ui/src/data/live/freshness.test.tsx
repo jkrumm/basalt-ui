@@ -4,7 +4,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { act, cleanup, renderHook } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, jest, test } from 'bun:test'
-import { makeQueryClient } from '../query-client'
+import { createQueryClient } from '../query-client'
 import { FRESHNESS_TICK_MS, useFreshness } from './freshness'
 import { liveQuery } from './live-query'
 
@@ -14,7 +14,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 )
 
 beforeEach(() => {
-  client = makeQueryClient({ defaultOptions: { queries: { retry: false } } })
+  client = createQueryClient({ defaultOptions: { queries: { retry: false } } })
 })
 afterEach(cleanup)
 

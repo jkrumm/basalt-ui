@@ -133,14 +133,14 @@ function planOf(freshness: Freshness): Plan {
   }
 }
 
-/** Dev only: a `liveQuery` fetched on a client `makeQueryClient` did not build, or overridden. */
+/** Dev only: a `liveQuery` fetched on a client `createQueryClient` did not build, or overridden. */
 function withDevAsserts(options: QueryOptionsLike): unknown {
   const { queryFn } = options
   if (typeof queryFn !== 'function') return queryFn
   return (context: { client: Parameters<typeof isLiveClient>[0]; queryKey: QueryKey }) => {
     if (!isLiveClient(context.client)) {
       throw new Error(
-        `[basalt] liveQuery ${JSON.stringify(context.queryKey)} needs a QueryClient from makeQueryClient`,
+        `[basalt] liveQuery ${JSON.stringify(context.queryKey)} needs a QueryClient from createQueryClient`,
       )
     }
     const query = context.client.getQueryCache().find({ queryKey: context.queryKey, exact: true })
@@ -167,7 +167,7 @@ function withDevAsserts(options: QueryOptionsLike): unknown {
  * `staleTime: Infinity`, never the string `'static'` (that makes the query immune to invalidation).
  * A ticker runs `every` after the previous result, skips while hidden (unless `background`),
  * offline, mutating (`pauseWhileMutating`) or after a 401/403, and a function `every` returning
- * `false` means idle (staleness 30 s, not 0). Needs a client from `makeQueryClient`.
+ * `false` means idle (staleness 30 s, not 0). Needs a client from `createQueryClient`.
  *
  * @useWhen a query is polled, pushed, cross-device or static and its cadence belongs in the factory, not the component
  * @neverWhen an observer would set its own `staleTime` or `refetchInterval`; the class owns both

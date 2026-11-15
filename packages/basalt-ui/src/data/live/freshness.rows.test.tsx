@@ -7,7 +7,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { act, cleanup, render } from '@testing-library/react'
 import { memo } from 'react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { makeQueryClient } from '../query-client'
+import { createQueryClient } from '../query-client'
 import { liveQuery } from './live-query'
 
 type Row = { id: number; name: string; fetchedAt?: number }
@@ -18,7 +18,7 @@ let served: () => Stamped
 const renders = new Map<number, number>()
 
 beforeEach(() => {
-  client = makeQueryClient()
+  client = createQueryClient()
   renders.clear()
 })
 afterEach(cleanup)

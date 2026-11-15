@@ -20,7 +20,7 @@ const replaceField: ControlHandle<'general' | 'billing'> & { readonly history: '
   history: 'replace',
 }
 
-const item = (id: string): InnerNavMenuItem => ({ id, label: id, onSelect: () => {} })
+const item = (id: string): InnerNavMenuItem => ({ id, label: id, onClick: () => {} })
 
 export const validPush: ReactElement = (
   <InnerNav

@@ -109,7 +109,7 @@ describe('forms', () => {
     expect(fixes['unseamed-transport']).toContain('createChannel')
     expect(fixes['unseamed-transport']).toContain('Transport')
     expect(fixes['deprecated-fetch']).toContain('queryClient.query()')
-    expect(fixes['query-client-singleton']).toContain('makeQueryClient')
+    expect(fixes['query-client-singleton']).toContain('createQueryClient')
     expect(fixes['chart-data-fallback']).toContain('phase')
     expect(fixes['timer-refetch']).toContain('liveQuery')
     expect(fixes['raw-storage-write']).toContain('createPersistedState')

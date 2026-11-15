@@ -12,14 +12,14 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { makeQueryClient } from 'basalt-ui/data'
+import { createQueryClient } from 'basalt-ui/data'
 import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { RouteError } from './components/route-error'
 import { RouteMissing } from './components/route-missing'
 import { RoutePending } from './components/route-pending'
 import { routeTree } from './routeTree.gen'
 
-const queryClient = makeQueryClient()
+const queryClient = createQueryClient()
 const defaults = routerDefaults({ router: (): object => router })
 
 export const router = createRouter({
