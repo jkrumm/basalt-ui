@@ -2,10 +2,12 @@
  * `Section`: a titled, anchored part of a page. The offset against the band is geometry
  * (`tests/layout/page-core.layout.test.ts`); here the markup, the anchor and the controls home.
  */
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
 import { memoryHandle } from '../controls/control-view.handles'
+import { filterSlot } from '../controls/filter-slot'
+import { spec } from '../controls/spec'
 import { Page } from './page'
 import { slotOf } from './page.test-support'
 import { Section } from './section'
@@ -105,5 +107,101 @@ describe('Section', () => {
     const html = renderToString(<Section title="Latency" controls={slotOf('Range')} />)
     expect(html).toContain('id="latency"')
     expect(html).toContain('<h2')
+  })
+})
+
+describe('Section summary', () => {
+  test('draws one line beside the title', () => {
+    render(<Section title="Latency" summary="p95 118 ms" />)
+    const row = section().querySelector('header')!
+    expect(row.querySelector('[data-slot="section-summary"]')?.textContent).toBe('p95 118 ms')
+    expect(row.querySelector('h2')?.textContent).toBe('Latency')
+  })
+
+  test('draws nothing for an empty summary', () => {
+    render(<Section title="Latency" summary="" />)
+    expect(section().querySelector('[data-slot="section-summary"]')).toBeNull()
+  })
+})
+
+describe('Section collapsible', () => {
+  const trigger = (): HTMLElement => screen.getByRole('button', { name: 'Latency' })
+
+  test('the heading holds the trigger and the body is open by default', () => {
+    render(
+      <Section title="Latency" collapsible={{}}>
+        <p>body</p>
+      </Section>,
+    )
+    expect(section().querySelector('h2 [data-slot="collapsible-trigger"]')).toBe(trigger())
+    expect(trigger().getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('heading', { level: 2, name: 'Latency' })).toBeDefined()
+    expect(screen.getByText('body')).toBeDefined()
+  })
+
+  test('defaultOpen false starts closed, keeps the summary and the trigger opens it', () => {
+    render(
+      <Section title="Latency" summary="p95 118 ms" collapsible={{ defaultOpen: false }}>
+        <p>body</p>
+      </Section>,
+    )
+    expect(trigger().getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByText('body')).toBeNull()
+    expect(section().querySelector('[data-slot="section-summary"]')).not.toBeNull()
+    fireEvent.click(trigger())
+    expect(trigger().getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByText('body')).toBeDefined()
+  })
+
+  test('a boolean handle owns the open state and receives the toggle', () => {
+    const open = memoryHandle<boolean>('open', false, { kind: 'boolean' })
+    render(
+      <Section title="Latency" collapsible={{ state: open }}>
+        <p>body</p>
+      </Section>,
+    )
+    expect(trigger().getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(trigger())
+    expect(open.writes).toEqual([true])
+    expect(trigger().getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByText('body')).toBeDefined()
+    fireEvent.click(trigger())
+    expect(trigger().getAttribute('aria-expanded')).toBe('false')
+  })
+
+  test('a section without collapsible has no trigger', () => {
+    render(<Section title="Latency">x</Section>)
+    expect(section().querySelector('[data-slot="collapsible-trigger"]')).toBeNull()
+  })
+
+  test('renders the same markup on the server', () => {
+    const html = renderToString(
+      <Section title="Latency" collapsible={{ defaultOpen: true }}>
+        <p>body</p>
+      </Section>,
+    )
+    expect(html).toContain('data-slot="collapsible-trigger"')
+    expect(html).toContain('body')
+  })
+})
+
+describe('Section controls home', () => {
+  test('a filterSlot in the controls slot renders as a FilterSet', () => {
+    const slot = filterSlot([
+      spec(
+        memoryHandle<string>('r', 'a', {
+          kind: 'enum',
+          options: [
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+          ],
+        }),
+        'Range',
+      ),
+    ])
+    render(<Section title="Latency" controls={slot} />)
+    expect(
+      section().querySelector('[data-slot="section-controls"] [data-slot="filter-set"]'),
+    ).not.toBeNull()
   })
 })
