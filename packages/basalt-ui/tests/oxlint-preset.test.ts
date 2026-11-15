@@ -89,9 +89,15 @@ describe('profiles', () => {
         'no-inline-styles',
         'require-static-classes',
       ]) {
-        expect(rules[`shadcn/${rule}`]).toBe('error')
+        const setting = rules[`shadcn/${rule}`]
+        expect(Array.isArray(setting) ? setting[0] : setting).toBe('error')
       }
     }
+    // The options are lint-1.12 and lint-1.16: grid tracks pass, and the advice fits the basalt rules.
+    const options = (file: string, rule: string): Record<string, unknown> =>
+      (read(file).rules[`shadcn/${rule}`] as [string, Record<string, unknown>])[1]
+    expect(options('oxlint-app.json', 'no-arbitrary-values')['allow']).toContain('grid-cols-[*]')
+    expect(String(options('oxlint-app.json', 'no-raw-colors')['message'])).not.toContain('--color-')
     const restyle = (file: string): { componentImports: string[]; contracts: unknown[] } =>
       (read(file).rules['shadcn/no-restyle'] as [string, never])[1]
     expect(restyle('oxlint-bridge.json').componentImports).toEqual(['(?:^|/)components/ui(?:/|$)'])
