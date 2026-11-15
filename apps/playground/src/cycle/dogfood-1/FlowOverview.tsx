@@ -12,7 +12,7 @@ import { filterSlot, spec } from 'basalt-ui/controls'
 import { CardGrid, EmptyState, Page, PageAside, PageBar, Section } from 'basalt-ui/page'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
-import { demoColors } from '../../demo/series'
+import { DEMO_SERIES } from '../../demo/series'
 import { useV3Tokens } from '../../demo/v3-tokens'
 import {
   FLOW_ISSUES,
@@ -22,7 +22,7 @@ import {
   ORIGIN_LABELS,
   STATE_LABELS,
 } from './flow-fixtures'
-import type { FlowIssue, FlowStat, FlowState, TrendDay } from './flow-fixtures'
+import type { FlowIssue, FlowStat, FlowState } from './flow-fixtures'
 import { flow } from './flow-store'
 import type { Screen } from './flow-store'
 
@@ -78,27 +78,18 @@ function phaseOf(screen: Screen): Phase {
 /** The plot (56 px) and its start, now and end labels (16 px) inside the card's 72 px box. */
 function StatTrend({ stat }: { stat: FlowStat }): ReactElement {
   const values = stat.series?.values ?? stat.bars?.values ?? []
-  const labels = stat.series?.labels ?? stat.bars?.labels ?? []
   return (
-    <div className="flex h-full flex-col gap-1">
+    <div className="h-full">
       {/* cycle-dogfood-1: dogfood-1.15 — the Working line has no future segment (`futureFrom`):
-          the Sparkline draws Thu 12:00 and Fri 00:00 as past samples. */}
+          the Sparkline draws Thu 12:00 and Fri 00:00 as past samples. dogfood-1.5 is closed by
+          `axisLabels`; the bar variant draws as a line (`MiniBars` is not exported). */}
       <Sparkline
         ariaLabel={`${stat.title}, ${values.length} samples, latest ${values.at(-1) ?? 0}`}
-        data={values}
-        labels={labels}
-        height={56}
-        mark={stat.bars ? 'bar' : 'line'}
-        {...(stat.series?.target === undefined
-          ? {}
-          : { reference: stat.series.target, referenceLabel: 'Target' })}
+        series={values}
+        height="fill"
+        axisLabels={stat.xLabels}
+        {...(stat.series?.target === undefined ? {} : { reference: stat.series.target })}
       />
-      {/* cycle-dogfood-1: dogfood-1.5 — StatCard takes no x labels; the slot writes the row. */}
-      <div className="flex h-3 shrink-0 items-center justify-between text-micro text-muted-foreground tabular-nums">
-        {stat.xLabels.map((label) => (
-          <span key={label}>{label}</span>
-        ))}
-      </div>
     </div>
   )
 }
@@ -152,37 +143,42 @@ function InFlightChart({ screen }: { screen: Screen }): ReactElement {
   const latest = FLOW_TREND.at(-1)
   const total = latest ? latest.working + latest.waiting + latest.queued : 0
   return (
-    // cycle-dogfood-1: dogfood-1.11 — `basalt-ui/charts` still exports the 2.x `ChartCard` (`state`,
-    // `facts`, children; state-1.11, filed as v3-state-1-wiring), so the screen maps onto `state`.
     <ChartCard
       title="In flight per day"
       subtitle="Working, waiting and queued Issues, last 14 days"
-      facts={{ value: String(total), unit: 'Issues', period: 'today' }}
-      stale={screen === 'stale'}
-      {...(screen === 'loading' ? { state: { pending: true } } : {})}
-      {...(screen === 'error' ? { state: { error: new Error('The factory did not answer') } } : {})}
-    >
-      <Lines<TrendDay, Date>
-        ariaLabel="Working, waiting and queued Issues per day, last 14 days"
-        data={FLOW_TREND}
-        x={(d) => d.day}
-        series={[
-          {
-            key: 'working',
-            label: 'Working',
-            color: demoColors.sessions,
-            getValue: (d) => d.working,
-          },
-          {
-            key: 'waiting',
-            label: 'Waiting',
-            color: demoColors.revenue,
-            getValue: (d) => d.waiting,
-          },
-          { key: 'queued', label: 'Queued', color: demoColors.signups, getValue: (d) => d.queued },
-        ]}
-      />
-    </ChartCard>
+      figure={{ value: String(total), unit: 'Issues', period: 'today' }}
+      phase={phaseOf(screen)}
+      chart={() => (
+        <Lines
+          ariaLabel="Working, waiting and queued Issues per day, last 14 days"
+          data={FLOW_TREND}
+          x={{ value: (d) => d.day }}
+          series={[
+            {
+              mark: 'line',
+              key: 'working',
+              label: 'Working',
+              color: DEMO_SERIES.sessions,
+              y: (d) => d.working,
+            },
+            {
+              mark: 'line',
+              key: 'waiting',
+              label: 'Waiting',
+              color: DEMO_SERIES.revenue,
+              y: (d) => d.waiting,
+            },
+            {
+              mark: 'line',
+              key: 'queued',
+              label: 'Queued',
+              color: DEMO_SERIES.signups,
+              y: (d) => d.queued,
+            },
+          ]}
+        />
+      )}
+    />
   )
 }
 

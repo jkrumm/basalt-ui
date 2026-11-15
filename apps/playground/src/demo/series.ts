@@ -22,7 +22,8 @@ const DEMO_GROUP = 'demo'
  * Demo series — one per Blueprint-leaning hue, declared as light/dark pairs so each keeps its hue
  * identity but shifts shade across schemes (lighter on dark to avoid glow, deeper on light).
  */
-const DEMO_SERIES = defineSeries({
+/** The `{ light, dark }` pairs, as v3 chart series take them. */
+export const DEMO_SERIES = defineSeries({
   sessions: { light: '#2871c7', dark: '#5190f7' },
   signups: { light: '#10781c', dark: '#65d289' },
   revenue: { light: '#c07e3c', dark: '#f9a13d' },
