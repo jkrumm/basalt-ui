@@ -58,6 +58,19 @@ describe('traps', () => {
     expect(r.worklist.map((w) => w.prop)).toEqual(['flex'])
   })
 
+  test('bdrs maps only to radii the v3 sheet defines: sm is rounded-chip, md is rounded-ctrl, the rest go to review', () => {
+    const src = [
+      "import { Box } from '@mantine/core'",
+      'export const a = <><Box bdrs="sm" /><Box bdrs="md" /><Box bdrs="xs" /><Box bdrs="lg" /><Box bdrs="xl" /></>',
+      '',
+    ].join('\n')
+    const r = transformSource(src, { file: 'f.tsx', cnImport: '@/lib/utils' })
+    expect(r.text).toContain('<div className="rounded-chip" />')
+    expect(r.text).toContain('<div className="rounded-ctrl" />')
+    expect(r.text).not.toMatch(/rounded-(xs|sm|md|lg|xl)\b/)
+    expect(r.worklist.map((w) => w.prop)).toEqual(['bdrs', 'bdrs', 'bdrs'])
+  })
+
   test('a target nested in an attribute of a converted element waits for the next run and keeps its import', () => {
     const src = [
       "import { Box, Stack } from '@mantine/core'",
