@@ -1,8 +1,10 @@
 import type { ReactElement, ReactNode } from 'react'
 import { useRef, useState, useSyncExternalStore } from 'react'
 import { cn } from '../core/cn'
+import { AppLink } from '../core/link'
 import { page } from '../core/messages/page'
 import { useMessages } from '../core/messages/use-messages'
+import type { NavTarget } from '../core/ports'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { ArticleProgress } from './article-progress'
 import { formatArticleDate } from './core/article-date'
@@ -21,7 +23,8 @@ export type ArticleLayoutMeta = {
 
 export type ArticleNavTarget = {
   label: string
-  href: string
+  /** A route target or a URL; the installed link renders it (`BasaltProvider link`). */
+  href: string | NavTarget
   description?: string
 }
 
@@ -35,7 +38,7 @@ export type ArticleLayoutProps = {
   readingProgress?: boolean
   prev?: ArticleNavTarget
   next?: ArticleNavTarget
-  /** Router bridge for the prev/next cells. Default renders a plain `<a href>`. */
+  /** Overrides how the prev/next cells render. Default: the installed link, a plain `<a>` without one. */
   renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode
   /** `Prose` density. Default `'article'`. */
   density?: ProseDensity
@@ -61,7 +64,7 @@ const railSnapshot = (): boolean => window.matchMedia(RAIL_QUERY).matches
 const railServerSnapshot = (): boolean => false
 
 function defaultRenderLink(target: ArticleNavTarget, node: ReactNode): ReactNode {
-  return <a href={target.href}>{node}</a>
+  return <AppLink href={target.href}>{node}</AppLink>
 }
 
 function NavCell({

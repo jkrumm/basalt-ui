@@ -11,6 +11,8 @@ import { fileURLToPath } from 'node:url'
 import type { ReactElement } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { LinkContext } from '../core/link'
+import type { LinkComponent } from '../core/ports'
 import { ArticleLayout } from './article-layout'
 
 afterEach(cleanup)
@@ -192,6 +194,23 @@ describe('ArticleLayout: reading progress and footer', () => {
     )
     expect(container.querySelector('button[data-to="/intro"]')).not.toBeNull()
     expect(container.querySelector('footer a')).toBeNull()
+  })
+
+  test('a route target goes through the installed link', () => {
+    const target = { __brand: 'NavTarget' } as const
+    const installed: LinkComponent = ({ href, children }) => (
+      <a href="#installed" data-installed={typeof href === 'string' ? href : 'route'}>
+        {children}
+      </a>
+    )
+    const { container } = render(
+      <LinkContext value={installed}>
+        <ArticleLayout next={{ label: 'Charts', href: target }}>{ARTICLE_BODY}</ArticleLayout>
+      </LinkContext>,
+    )
+    expect(container.querySelector('footer a[data-installed="route"]')?.textContent).toContain(
+      'Charts',
+    )
   })
 
   test('no prev and no next render no footer', () => {

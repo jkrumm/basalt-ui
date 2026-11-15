@@ -24,7 +24,7 @@ ArticleLayout({ children, meta, toc, readingProgress, prev, next, renderLink, de
   readingProgress?: boolean  // A thin fixed bar at the top that tracks the scroll through the body
   prev?: ArticleNavTarget
   next?: ArticleNavTarget
-  renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode  // Router bridge for the prev/next cells
+  renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode  // Overrides how the prev/next cells render
   density?: ProseDensity  // `Prose` density
   locale?: string  // Locale for `meta.date`
   className?: string  // Layout only (`mt-8`)
