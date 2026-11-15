@@ -313,6 +313,16 @@ function urlField(
   }
 }
 
+/** The sheet leaves the DOM after its exit animation; closed means gone or no longer open. */
+const closed = (): boolean => {
+  const dialog = screen.queryByRole('dialog')
+  return (
+    dialog === null ||
+    dialog.hasAttribute('data-closed') ||
+    dialog.hasAttribute('data-ending-style')
+  )
+}
+
 describe('detail bound to a field', () => {
   function Bound({ field }: { field: ControlHandle<string> }): ReactElement {
     const c = col<Row>()
@@ -347,7 +357,7 @@ describe('detail bound to a field', () => {
     expect(screen.getByRole('dialog').textContent).toContain('Project 1 body')
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
     expect(field.value()).toBe('')
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await waitFor(() => expect(closed()).toBe(true))
   })
 
   test('the field going unset (Back) closes the sheet', async () => {
@@ -355,7 +365,7 @@ describe('detail bound to a field', () => {
     render(<Bound field={field} />)
     expect(screen.getByRole('dialog')).not.toBeNull()
     act(() => field.set(''))
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await waitFor(() => expect(closed()).toBe(true))
   })
 
   test('the field changing to another row swaps the detail', () => {
