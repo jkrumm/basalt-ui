@@ -346,6 +346,42 @@ describe('defineControls: range', () => {
     })
   })
 
+  test('useValues returns a range as its RangeValue and a multi as its array', async () => {
+    const values = defineControls({
+      id: 'values-whole',
+      scope: 'page',
+      fields: {
+        opened: field.range({
+          presets: ['7d', '30d'],
+          fallback: '30d',
+          custom: true,
+          window: { '7d': () => ({ from: '2025-01-01', to: '2025-01-07' }) },
+        }),
+        tags: field.multi(['a', 'b'], []),
+        q: field.string(''),
+      },
+    })
+    const seen: unknown[] = []
+    const probe = (): void => {
+      seen.push(values.useValues())
+    }
+    await mount({
+      pages: { '/': values },
+      url: '/?opened=custom&from=2025-02-01&to=2025-02-10&tags=a',
+      probe,
+    })
+    const last = seen.at(-1) as ReturnType<typeof values.useValues>
+    expect(last).toEqual({
+      opened: { preset: 'custom', from: '2025-02-01', to: '2025-02-10' },
+      tags: ['a'],
+      q: '',
+    })
+    expect(values.field.opened.toWindow(last.opened)).toEqual({
+      from: '2025-02-01',
+      to: '2025-02-10',
+    })
+  })
+
   test('toWindow reads a custom value without both dates as the fallback', () => {
     const { toWindow } = store.field.window
     expect(toWindow({ preset: 'custom' })).toEqual({ window: '30d' })

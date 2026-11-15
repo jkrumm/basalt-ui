@@ -26,11 +26,11 @@ root throws in development. `retain: [keys]` on a page store keeps those params 
 subtree of the layout route that mounts it; `widgets: { card: { field: handle } }` binds a card to a
 scalar handle (a global or page field): it inherits the value and writes only its own
 `w.<card>.<field>` key (`store.widget`, `store.useOverrides()`; see `docs/widgets.md`).
-The store reads whole: `useValues()` gives every field's resolved value in one call, instead of one
-`use()` per field; `useActiveCount()` counts the fields that differ from their fallback (the `n` of
+The store reads whole: `useValues()` gives every URL field's value in one call, as its `use()` returns it
+(a range as its `RangeValue`, so `toWindow(values.opened)` compiles), instead of one `use()` per field; `useActiveCount()` counts the fields that differ from their fallback (the `n` of
 `Filters (n)`); `useReset()` returns the callback that unsets every field. A `range` with `window:
 { '7d': (now) => ({ from, to }) }` makes `toWindow(value)` return `{ from, to }` ISO days for that
-preset, resolved at call time (a preset without a resolver gives `{ window: preset }`), so the
+preset, resolved at call time (a preset without a resolver gives `{ window: preset }`; with every preset resolved the type has no `{ window }` member), so the
 result goes straight into a query key.
 
 ## Signature

@@ -75,6 +75,13 @@ export type SearchOf<F> = Flatten<
   UnionToIntersection<{ [K in keyof F & string]: ParamsOf<K, F[K]> }[keyof F & string]>
 >
 
+/** What `store.useValues()` returns: each URL field under its key, as its handle's `use()` returns it. */
+type ValuesOf<F> = Flatten<{
+  [
+    K in keyof F & string as F[K] extends { readonly lane: { readonly url: false } } ? never : K
+  ]: F[K] extends FieldSpec<infer V> ? V : never
+}>
+
 type Member<V> = V extends readonly (infer M)[] ? M : V extends RangeValue<infer P> ? P : V
 
 /**
@@ -128,10 +135,13 @@ export type RangeHandle<
    * both dates reads as the field's fallback, as the URL codec reads it, so `window` is never
    * `'custom'`.
    */
-  toWindow(
-    value: RangeValue<P>,
-  ): { window: Exclude<P, W | 'custom'> } | { from: string; to: string }
+  toWindow(value: RangeValue<P>): WindowOf<Exclude<P, W | 'custom'>>
 }
+
+/** `{ window }` exists only while a preset has no resolver; with every preset resolved it is dates. */
+type WindowOf<Unresolved extends string> = [Unresolved] extends [never]
+  ? { from: string; to: string }
+  : { window: Unresolved } | { from: string; to: string }
 
 export type HandleOf<Key extends string, X> =
   X extends RangeSpec<infer P, infer C, RangeParams, infer W, boolean, infer H>
@@ -192,8 +202,11 @@ export type Controls<Id extends string, Scp extends Scope, F, W = {}> = {
   readonly widget: WidgetHandles<W>
   /** The live `w.` keys, their widgets and the reset (`Reset overrides`). */
   useOverrides(): Overrides
-  /** The store's URL params, resolved; stable while they do not change. */
-  useValues(): SearchOf<F>
+  /**
+   * Every URL field's resolved value under its key, as its handle's `use()` returns it (a range as
+   * its `RangeValue`, a multi as its array); stable while they do not change.
+   */
+  useValues(): ValuesOf<F>
   /** How many fields differ from their fallback: the `n` of `Filters (n)`. */
   useActiveCount(): number
   /** Unsets every field (one navigate for the URL fields); never writes a fallback. */
@@ -436,11 +449,11 @@ type Entry = { name: string; spec: AnyFieldSpec; codec: Codec<unknown>; params: 
  * subtree of the layout route that mounts it; `widgets: { card: { field: handle } }` binds a card to a
  * scalar handle (a global or page field): it inherits the value and writes only its own
  * `w.<card>.<field>` key (`store.widget`, `store.useOverrides()`; see `docs/widgets.md`).
- * The store reads whole: `useValues()` gives every field's resolved value in one call, instead of one
- * `use()` per field; `useActiveCount()` counts the fields that differ from their fallback (the `n` of
+ * The store reads whole: `useValues()` gives every URL field's value in one call, as its `use()` returns it
+ * (a range as its `RangeValue`, so `toWindow(values.opened)` compiles), instead of one `use()` per field; `useActiveCount()` counts the fields that differ from their fallback (the `n` of
  * `Filters (n)`); `useReset()` returns the callback that unsets every field. A `range` with `window:
  * { '7d': (now) => ({ from, to }) }` makes `toWindow(value)` return `{ from, to }` ISO days for that
- * preset, resolved at call time (a preset without a resolver gives `{ window: preset }`), so the
+ * preset, resolved at call time (a preset without a resolver gives `{ window: preset }`; with every preset resolved the type has no `{ window }` member), so the
  * result goes straight into a query key.
  *
  * @useWhen a page or the whole app has filters, tabs, a range or pagination that belong in the URL or on the device
@@ -668,15 +681,16 @@ export function defineControls<
 
   const field = Object.fromEntries(entries.map((entry) => [entry.name, handleFor(entry)]))
 
-  const projectUrl = (search: Raw): Raw => parse(search)
+  const valuesOf = (search: Raw): Record<string, unknown> =>
+    Object.fromEntries(urlEntries.map((entry) => [entry.name, readUrl(entry, search)]))
 
-  const useValues = (): Search => {
+  const useValues = (): ValuesOf<F> => {
     useLend(useLooseRouter())
     return useSelectedSearch({
       strict: false,
-      select: projectUrl,
+      select: valuesOf,
       structuralSharing: true,
-    }) as Search
+    }) as ValuesOf<F>
   }
 
   const useActiveCount = (): number => {
