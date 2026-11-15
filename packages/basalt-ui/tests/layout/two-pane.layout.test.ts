@@ -43,6 +43,27 @@ beforeAll(async () => {
   const build = await Bun.build({
     entrypoints: [join(FIXTURE_DIR, 'two-pane-fixture.tsx')],
     target: 'browser',
+    plugins: [
+      {
+        name: 'recipe',
+        setup(builder) {
+          // The recipe imports the public `basalt-ui/charts`: bundle the working tree, not a stale dist.
+          builder.onResolve({ filter: /^basalt-ui\/charts$/ }, () => ({
+            path: join(REPO_ROOT, 'packages', 'basalt-ui', 'src', 'charts', 'index.ts'),
+          }))
+          builder.onResolve({ filter: /^@recipe\// }, (args) => ({
+            path: join(
+              REPO_ROOT,
+              'apps',
+              'playground',
+              'src',
+              'recipes',
+              `${args.path.slice(8)}.tsx`,
+            ),
+          }))
+        },
+      },
+    ],
     define: { 'process.env': JSON.stringify({ NODE_ENV: 'production' }) },
   })
   if (!build.success)
