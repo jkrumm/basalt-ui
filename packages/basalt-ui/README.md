@@ -100,14 +100,14 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { makeQueryClient } from 'basalt-ui/data'
+import { createQueryClient } from 'basalt-ui/data'
 import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { RouteError } from './components/route-error'
 import { RouteMissing } from './components/route-missing'
 import { RoutePending } from './components/route-pending'
 import { routeTree } from './routeTree.gen'
 
-const queryClient = makeQueryClient()
+const queryClient = createQueryClient()
 const defaults = routerDefaults({ router: (): object => router })
 
 export const router = createRouter({
@@ -138,7 +138,7 @@ createRoot(document.getElementById('root')!).render(
 `routerDefaults` sets preloading, the 300/300 pending timing, structural sharing, scroll
 restoration and the route transition; its `link` goes on `BasaltProvider` once, so every link prop
 (`StatCard href`, `CardAction`, `col.entity`) navigates through the router with no document load.
-`makeQueryClient` is the one `QueryClient` the router context carries. The pending, error and
+`createQueryClient` is the one `QueryClient` the router context carries. The pending, error and
 not-found components are yours; a router with no pending component never shows pending, and
 `doctor` check 12 fails on it. `Register` is what types `defineNav`, `navTarget` and every
 `<Link to>`.

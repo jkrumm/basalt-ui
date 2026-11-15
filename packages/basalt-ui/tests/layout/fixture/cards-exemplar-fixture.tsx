@@ -140,8 +140,8 @@ export function CardsExemplarFixture(): ReactElement {
           {...FULL}
           href="#shipped"
           menu={[
-            { label: 'Export', onSelect: () => undefined },
-            { label: 'Share', onSelect: () => undefined },
+            { label: 'Export', onClick: () => undefined },
+            { label: 'Share', onClick: () => undefined },
           ]}
         />
       </div>

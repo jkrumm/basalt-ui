@@ -147,7 +147,7 @@ for (const [key, spec] of Object.entries(SURFACES)) {
 
 const ENTRY_POINTS: readonly (readonly [string, readonly string[]])[] = [
   ['basalt-ui/router', ['routerDefaults', 'defineNav', 'navTarget']],
-  ['basalt-ui/data', ['makeQueryClient', 'unwrap', 'liveQuery']],
+  ['basalt-ui/data', ['createQueryClient', 'unwrap', 'liveQuery']],
   ['basalt-ui/shell', ['AppShell']],
   ['basalt-ui/page', ['Page', 'PageBar', 'Section', 'QueryState']],
   ['basalt-ui/cards', ['StatCard', 'StatGroup', 'BarList']],
