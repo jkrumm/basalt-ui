@@ -41,9 +41,6 @@ for f in \
   dist/charts/index.js dist/charts/index.d.ts \
   dist/tokens/index.js dist/tokens/index.d.ts \
   dist/table/index.js dist/table/index.d.ts \
-  dist/commands/index.js dist/commands/index.d.ts \
-  dist/agent/index.js dist/agent/index.d.ts \
-  dist/state.js dist/state.d.ts \
   dist/vite.js dist/vite.d.ts \
   dist/cli/index.js dist/styles.css \
   dist/shell/index.js \
@@ -163,12 +160,8 @@ const subpaths = [
   'basalt-ui/charts',
   'basalt-ui/tokens',
   'basalt-ui/controls',
-  'basalt-ui/forms',
-  'basalt-ui/state',
   'basalt-ui/table',
   'basalt-ui/format',
-  'basalt-ui/commands',
-  'basalt-ui/agent',
   'basalt-ui/content',
   'basalt-ui/vite',
   'basalt-ui/styles.css',
@@ -212,19 +205,10 @@ if (format.money(1234, { currency: 'USD', locale: 'en-US' }) !== '$1,234.00') {
 JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint.json'), 'utf8'))
 JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint-basalt.json'), 'utf8'))
 
-// headless adapter smoke imports (peers installed — these load without a DOM/provider)
-const agentMod = await import('basalt-ui/agent')
-if (typeof agentMod.aiSdkTransport !== 'function') throw new Error('agent.aiSdkTransport missing')
-console.log('smoke: basalt-ui/agent OK')
-
 // the push channel ships with the data layer (`createChannel` also stays on the root until the teardown)
 const dataMod = await import('basalt-ui/data')
 if (typeof dataMod.createChannel !== 'function') throw new Error('data.createChannel missing')
 console.log('smoke: basalt-ui/data createChannel OK')
-
-const stateMod = await import('basalt-ui/state')
-if (typeof stateMod.createSearchStore !== 'function') throw new Error('state.createSearchStore missing')
-console.log('smoke: basalt-ui/state OK')
 
 // the status mark is a root export (argo status chips): both components resolve from `basalt-ui`
 const rootMod = await import('basalt-ui')
@@ -277,7 +261,7 @@ console.log('smoke: basalt-ui status exports OK')
 
 console.log(`scratch resolution OK (${subpaths.length} subpaths)`)
 JS
-# `./agent` ships the Mantine chat UI, whose CSS-module imports plain Node cannot load.
+# Some entries import CSS modules, which plain Node cannot load.
 node --import "$(dirname "$ABS_TGZ")/scripts/css-noop-register.mjs" test.mjs
 
 echo "==> export-surface snapshot (named-export completeness per subpath)"
@@ -509,7 +493,7 @@ if [ -d node_modules/@mantine/dates ]; then
   exit 1
 fi
 # Same for `@mantine/form`: the form layout (FormRow & co) lives in ./controls since 1.36.0 so a
-# consumer rendering one never installs the form library. ./forms is the subpath that needs it.
+# consumer rendering one never installs the form library.
 if [ -d node_modules/@mantine/form ]; then
   echo "FAILED: @mantine/form ended up in a scratch install that never requested it — test setup is broken, not a package defect"
   exit 1
@@ -523,17 +507,33 @@ for (const name of ['FilterSet', 'ViewTabs', 'spec', 'FormField', 'FormRow']) {
   if (typeof controls[name] !== 'function') throw new Error(`controls.${name} missing`)
 }
 
-// Render proof, not just a resolve: a real filter bound to a real field. `createLocalStore` is the
-// router-free lane, so this needs no @tanstack/react-router either — and createPersistedState is
-// SSR-safe, so the handle resolves to its fallback under renderToStaticMarkup.
-const { createLocalStore, field } = await import('basalt-ui/state')
-const store = createLocalStore({
-  key: 'pack-test-controls',
-  fields: {
-    currency: field.enum(['USD', 'EUR'], 'USD'),
-    channel: field.enum(['web', 'app'], 'web'),
+// Render proof, not just a resolve: a real filter bound to a real field. `externalField` over a plain
+// store is the router-free lane, so this needs no @tanstack/react-router either.
+const { externalField } = await import('basalt-ui')
+const memory = (key, options, fallback) => {
+  let value = fallback
+  const listeners = new Set()
+  return externalField(
+    {
+      get: () => value,
+      set: (next) => {
+        value = next
+        for (const listener of listeners) listener()
+      },
+      subscribe: (onChange) => {
+        listeners.add(onChange)
+        return () => listeners.delete(onChange)
+      },
+    },
+    { key, kind: 'enum', fallback, options: options.map((v) => ({ value: v, label: v })) },
+  )
+}
+const store = {
+  field: {
+    currency: memory('pack-test-currency', ['USD', 'EUR'], 'USD'),
+    channel: memory('pack-test-channel', ['web', 'app'], 'web'),
   },
-})
+}
 // TWO specs against the default `inline: 1` budget, deliberately: the mobile sheet pill exists
 // only when the budget folded a child away, so a one-spec set proves the sheet nothing.
 const tree = createElement(controls.FilterSet, {
@@ -617,7 +617,6 @@ cat >peers.mjs <<'JS'
 // the peer-free subpaths are listed here so they are still imported.
 const own = {
   ...JSON.parse(process.env.OWN_PEERS),
-  'basalt-ui/state': [],
   'basalt-ui/format': [],
   'basalt-ui/tokens': [],
   // v3 skeleton stubs import no peer, so they must load in both phases (`./ai` is no stub: it has a subpath-required row)
