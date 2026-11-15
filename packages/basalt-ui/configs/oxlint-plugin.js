@@ -1896,7 +1896,8 @@ const CONTROL_OWNER_NAMES = new Set([
  * re-exports them until 1.39.0 — the set is NAME-matched, so both subpaths are homes) are the SAME
  * home written for a `<form>` rather than a settings page — a `TextInput` bound to a field is read and typed
  * into at Mantine's own tier, not a 30px chrome affordance — so they are added here rather than
- * given a second walk.
+ * given a second walk. The v3 `FormField` (`basalt-ui/forms`) is the same home for a control bound
+ * through a form field, the one `basalt/control-home` already accepts (`HOMES`).
  *
  * Declared with the shared slot walk rather than beside `control-outside-home` because three rules
  * read it: that rule's ancestry exemption, and {@link hostedInsideSlot} for the two tier rules.
@@ -1905,6 +1906,7 @@ const CONTROL_HOST_TAGS = new Set([
   'SettingsRow',
   'FormRow',
   'FormGroup',
+  'FormField',
   'Modal',
   'Drawer',
   'Popover.Dropdown',

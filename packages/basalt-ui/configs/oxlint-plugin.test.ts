@@ -2030,6 +2030,19 @@ describe('basalt/control-outside-home', () => {
     expect(rules).not.toContain('control-outside-home')
   })
 
+  it('does NOT flag a raw Select nested inside a v3 FormField, and still flags one beside it', () => {
+    const inside = run(
+      `import { FormField } from 'basalt-ui/forms'\n${MANTINE_IMPORT}` +
+        `export const C = () => <FormField label="L" field={f}><Select data={[]} /></FormField>\n`,
+    )
+    expect(inside.rules).not.toContain('control-outside-home')
+    const beside = run(
+      `import { FormField } from 'basalt-ui/forms'\n${MANTINE_IMPORT}` +
+        `export const C = () => <><FormField label="L" field={f}><Text /></FormField><Select data={[]} /></>\n`,
+    )
+    expect(beside.rules).toContain('control-outside-home')
+  })
+
   it('still flags a bare Select in a page body with no FormRow/FormGroup around it', () => {
     const { rules } = run(
       `${MANTINE_IMPORT}export const C = () => <div><Select data={[]} /></div>\n`,
