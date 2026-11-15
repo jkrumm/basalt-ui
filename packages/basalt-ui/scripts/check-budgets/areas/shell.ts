@@ -1,7 +1,8 @@
 /**
  * Area: shell — the `./shell` subpath, G2 freeze, plus the authored-file line budget of every G2 v3
- * path. `./shell` has no export-surface shard (the 2.x barrel the root re-exports), so its value
- * symbols are counted from `src/shell/index.ts` by the bundler's own export scan, types erased.
+ * path. `./shell` has its own export-surface shard, a drift detector the cross-subpath gates skip (see
+ * `readGatedSurface`); its value symbols are counted from `src/shell/index.ts` by the bundler's own
+ * export scan, types erased.
  * Byte seeds are the first complete build plus 5 percent, rounded up to 0.5 KB (quality-contract
  * section 6), ratcheted down only; the palette row is the marginal cost of `CommandPalette` and
  * `defineCommands` over the same shell without them.
