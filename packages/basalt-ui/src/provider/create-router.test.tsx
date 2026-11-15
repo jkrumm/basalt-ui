@@ -57,6 +57,18 @@ describe('createBasaltRouter defaults (V2-SPEC § 2)', () => {
     })
   })
 
+  test('a search codec pair passes through to the router', () => {
+    const parseSearch = (search: string): Record<string, string> =>
+      Object.fromEntries(new URLSearchParams(search))
+    const stringifySearch = (params: Record<string, unknown>): string => {
+      const text = new URLSearchParams(params as Record<string, string>).toString()
+      return text ? `?${text}` : ''
+    }
+    const plain = createBasaltRouter({ routeTree, parseSearch, stringifySearch })
+    expect(plain.options.parseSearch).toBe(parseSearch)
+    expect(plain.options.stringifySearch).toBe(stringifySearch)
+  })
+
   test('one QueryClient per call', () => {
     const other = createBasaltRouter({ routeTree })
     expect(queryClientOf(other)).not.toBe(queryClientOf(router))
