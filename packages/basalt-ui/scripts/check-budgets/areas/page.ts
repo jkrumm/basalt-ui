@@ -5,7 +5,7 @@
  * measures it (gzip B minus `base0`, peers bundled, whole barrel). The authored-file line budget for
  * the v3 paths of every G2 layer lives in `./shell`.
  */
-import type { RowDef } from '../lib'
+import type { Raises, RowDef } from '../lib'
 import { readSurface } from '../lib'
 import { measureSource, reExportAll } from '../ui-bundle'
 
@@ -14,7 +14,7 @@ export const rows: readonly RowDef[] = [
     id: 'page-symbols',
     order: 440,
     label: 'public value symbols, ./page (exact, export-surface shard)',
-    ceiling: 21,
+    ceiling: 22, // v3 shell-1-api: `Facts`
     measure: () => readSurface()['./page']?.length ?? 0,
   },
   {
@@ -26,3 +26,15 @@ export const rows: readonly RowDef[] = [
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
+
+export const raises: Raises = {
+  'page-symbols': [
+    {
+      from: 21,
+      to: 22,
+      consumer:
+        "`Facts` from `./page`: the shell cycle's deploy inspector (apps/playground/src/cycle/shell-1/ServicesPage.tsx, shell-1.4) hand-builds the label and value `dl` in its `PageAside`; every inspector body is such a list",
+      repo: 'basalt-ui',
+    },
+  ],
+}

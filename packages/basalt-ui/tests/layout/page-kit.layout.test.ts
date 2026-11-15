@@ -5,6 +5,9 @@
  * - `CardGrid`: the tracks follow the closed `min` at 1440, 900 and 390, a track never goes under
  *   the tier unless the container is narrower than it, and nothing overflows horizontally.
  *
+ * - `Facts`: one label-and-value column in a container under the `regular` tier, two from it, and
+ *   nothing overflows, whatever the viewport is.
+ *
  * v3 only: the 2.x oracle has no `CardGrid`, and its `PageSummary` case is `shell-page-kit`'s.
  */
 import { acquireShellTarget } from './shell-target'
@@ -32,7 +35,7 @@ afterAll(closeLayoutSuite)
 const runnable =
   ready &&
   LAYOUT_TARGET === 'v3' &&
-  ['card-grid', 'page-summary-fact'].every((s) => providedSlots().has(s))
+  ['card-grid', 'page-summary-fact', 'facts'].every((s) => providedSlots().has(s))
 const layout = runnable ? describe : describe.skip
 
 const base = { sections: [] }
@@ -171,5 +174,46 @@ layout('CardGrid shares the row among its cards', () => {
     const boxes = await read(6, PHONE)
     expect(new Set(boxes.map((b) => b.top)).size).toBe(6)
     for (const b of boxes) expect(b.width).toBeCloseTo(PHONE.width - 2 * PAD, 0)
+  })
+})
+
+layout('Facts columns follow the container', () => {
+  const read = async (width: number) => {
+    const page = await openFixture(
+      { ...base, pageKitFacts: { width, rows: 6 } } as PageKitSpec,
+      DESKTOP_1440,
+    )
+    return page.raw.evaluate((sel) => {
+      const list = document.querySelector<HTMLElement>(`${sel} dl`)
+      if (list === null) throw new Error('LAYOUT: no facts list')
+      const tracks = getComputedStyle(list).gridTemplateColumns.split(' ').map(parseFloat)
+      const rows = [...list.querySelectorAll<HTMLElement>('dt')].map(
+        (dt) => dt.getBoundingClientRect().top,
+      )
+      return { tracks, rows, width: list.clientWidth, scrollWidth: list.scrollWidth }
+    }, slot('facts'))
+  }
+
+  test('one row per entry: six dt and one pair per line under the regular tier', async () => {
+    const m = await read(360)
+    expect(m.tracks, 'label and value').toHaveLength(2)
+    expect(new Set(m.rows).size, 'six lines').toBe(6)
+    expect(m.scrollWidth).toBeLessThanOrEqual(m.width + 0.5)
+  })
+
+  test('just under the regular tier (479px) is still one column', async () => {
+    const m = await read(479)
+    expect(m.tracks).toHaveLength(2)
+  })
+
+  test('from the regular tier (480px) two pairs share a line', async () => {
+    const m = await read(480)
+    expect(m.tracks, 'label, value, label, value').toHaveLength(4)
+    expect(new Set(m.rows).size, 'three lines for six rows').toBe(3)
+    expect(m.scrollWidth).toBeLessThanOrEqual(m.width + 0.5)
+  })
+
+  test('the viewport does not decide: a 360px host at 1440 stays one column', async () => {
+    expect((await read(360)).tracks).toHaveLength(2)
   })
 })

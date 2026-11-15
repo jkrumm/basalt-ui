@@ -59,6 +59,36 @@ function handle(initial: boolean) {
   return { bound, sets }
 }
 
+/** A string `ControlHandle` over local state: the open record's id, `''` when none; `clear()` is observable. */
+function recordHandle(initial: string) {
+  const writes: string[] = []
+  let clears = 0
+  const bound: ControlHandle<string> = {
+    key: 'record',
+    kind: 'string',
+    use: () => {
+      const [v, setV] = useState(initial)
+      // The store's `clear()` unsets the field: the hook re-reads it as the empty fallback.
+      recordClear = () => setV('')
+      return [
+        v,
+        (next) => {
+          writes.push(next)
+          setV(next)
+        },
+      ]
+    },
+    useSource: () => ({ source: 'own', inherited: undefined }),
+    clear: () => {
+      clears += 1
+      recordClear()
+    },
+    isDefault: false,
+  }
+  return { bound, writes, clears: () => clears }
+}
+let recordClear: () => void = () => {}
+
 describe('PageAside as a column (the page is at least wide)', () => {
   test('portals into the page column as a named landmark with the title as header', () => {
     setWidth(WIDE)
@@ -760,5 +790,82 @@ describe('PageAside extra rows', () => {
   test('an aside outside a Page has no close button and no sheet trigger', () => {
     render(<PageAside title="Loose">x</PageAside>)
     expect(screen.queryByRole('button')).toBeNull()
+  })
+})
+
+describe('PageAside bound to a string field (the open record id)', () => {
+  test('is open while the field holds a value and closed while it is empty', () => {
+    setWidth(WIDE)
+    const open = recordHandle('deploy-7')
+    const view = render(
+      <Page>
+        <PageAside title="Deploy" state={open.bound}>
+          facts
+        </PageAside>
+      </Page>,
+    )
+    expect(aside()?.textContent).toContain('facts')
+    view.unmount()
+    const none = recordHandle('')
+    render(
+      <Page>
+        <PageAside title="Deploy" state={none.bound}>
+          facts
+        </PageAside>
+      </Page>,
+    )
+    expect(aside()).toBeNull()
+  })
+
+  test('the close button clears the field and writes nothing else', () => {
+    setWidth(WIDE)
+    const { bound, writes, clears } = recordHandle('deploy-7')
+    render(
+      <Page>
+        <PageAside title="Deploy" state={bound}>
+          facts
+        </PageAside>
+      </Page>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(clears()).toBe(1)
+    expect(writes).toEqual([])
+    expect(aside()).toBeNull()
+  })
+
+  test('as a sheet on a narrow page, dismissing the sheet clears the field', () => {
+    setWidth(NARROW)
+    const { bound, clears } = recordHandle('deploy-7')
+    render(
+      <Page>
+        <PageAside title="Deploy" state={bound}>
+          facts
+        </PageAside>
+      </Page>,
+    )
+    expect(screen.getByRole('dialog')).not.toBeNull()
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(clears()).toBe(1)
+  })
+
+  test('under a shell the claim is closable while open and its close clears the field', () => {
+    const shell = fakeHost()
+    const { bound, clears } = recordHandle('deploy-7')
+    render(
+      <PageHostContext value={shell.host}>
+        <Page>
+          <PageAside title="Deploy" state={bound}>
+            facts
+          </PageAside>
+        </Page>
+      </PageHostContext>,
+    )
+    const element = shell.of('aside')[0]!.node as React.ReactElement<{
+      onClose?: () => void
+      sheet?: AsideSheetState
+    }>
+    expect(element.props.sheet?.open).toBe(true)
+    act(() => element.props.onClose?.())
+    expect(clears()).toBe(1)
   })
 })
