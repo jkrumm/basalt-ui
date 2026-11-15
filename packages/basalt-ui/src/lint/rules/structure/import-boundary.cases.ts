@@ -8,6 +8,7 @@
  * ```
  * // @invalid [xN] [{"option": …}]   the code below fires this form N times (default 1)
  * // @valid [{"option": …}]          the code below fires nothing
+ * // @filename <path>                 a line inside a case: the file the case runs as
  * ```
  *
  * An invalid case runs against the whole rule with every form enabled, so it also proves no other
@@ -28,14 +29,20 @@ const ROOT =
   resolve(import.meta.dirname, '../../../../test/fixtures/lint/import-bypass')
 
 type Options = unknown[]
-type ValidCase = { code: string; options?: Options }
-type InvalidCase = { code: string; options?: Options; errors: { messageId: string }[] }
+type ValidCase = { code: string; options?: Options; filename?: string }
+type InvalidCase = {
+  code: string
+  options?: Options
+  filename?: string
+  errors: { messageId: string }[]
+}
 export type Suite = {
   name: string
   rule: LintRule
   cases: { valid: ValidCase[]; invalid: InvalidCase[] }
 }
 
+const FILENAME = /^\/\/ @filename\s+(\S+)\s*$/
 const MARKER = /^\/\/ @(valid|invalid)(?: x(\d+))?(?: (\{.*\}))?\s*$/
 
 export type FixtureCase = {
@@ -43,12 +50,13 @@ export type FixtureCase = {
   code: string
   count: number
   options?: Options
+  filename?: string
 }
 
 /** Split one fixture file into its cases; text before the first marker is a header. */
 export function parseFixture(text: string): FixtureCase[] {
   const cases: FixtureCase[] = []
-  let current: { head: RegExpMatchArray; lines: string[] } | undefined
+  let current: { head: RegExpMatchArray; lines: string[]; filename?: string } | undefined
   const flush = (): void => {
     if (!current) return
     const [, kind, count, options] = current.head
@@ -57,6 +65,7 @@ export function parseFixture(text: string): FixtureCase[] {
       code: current.lines.join('\n').trim(),
       count: count ? Number(count) : 1,
       ...(options ? { options: [JSON.parse(options)] } : {}),
+      ...(current.filename ? { filename: current.filename } : {}),
     })
   }
   for (const line of text.split('\n')) {
@@ -64,7 +73,11 @@ export function parseFixture(text: string): FixtureCase[] {
     if (head) {
       flush()
       current = { head, lines: [] }
-    } else current?.lines.push(line)
+      continue
+    }
+    const filename = FILENAME.exec(line)
+    if (filename?.[1] && current) current.filename = filename[1]
+    else current?.lines.push(line)
   }
   flush()
   return cases
@@ -88,12 +101,17 @@ export function fixtureSuites(id: string, entry: RuleEntry): Suite[] {
       cases: {
         valid: cases
           .filter((c) => c.kind === 'valid')
-          .map(({ code, options }) => ({ code, ...(options ? { options } : {}) })),
-        invalid: cases
-          .filter((c) => c.kind === 'invalid')
-          .map(({ code, options, count }) => ({
+          .map(({ code, options, filename }) => ({
             code,
             ...(options ? { options } : {}),
+            ...(filename ? { filename } : {}),
+          })),
+        invalid: cases
+          .filter((c) => c.kind === 'invalid')
+          .map(({ code, options, count, filename }) => ({
+            code,
+            ...(options ? { options } : {}),
+            ...(filename ? { filename } : {}),
             errors: Array.from({ length: count }, () => ({ messageId: form.id })),
           })),
       },

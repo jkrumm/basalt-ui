@@ -72,3 +72,40 @@ const warn = '#ff8800'
 
 // @invalid
 const nested = defineSeries({ sessions: { light: VX.accent, extra: '#2871c7' } })
+
+// @invalid
+ctx.strokeStyle = 'white'
+
+// @invalid
+ctx.fillStyle = dark ? VX.ink : 'Gainsboro'
+
+// @invalid
+ctx.shadowColor = 'red'
+
+// @invalid
+const style = { color: 'red', backgroundColor: 'whitesmoke' }
+
+// @errors colour-literal,colour-literal
+// @invalid
+const mark = <rect fill="steelblue" stroke="black" />
+
+// @errors colour-literal,colour-literal
+// @valid
+ctx.strokeStyle = VX.ink
+ctx.fillStyle = 'transparent'
+ctx.shadowColor = alpha(VX.ink, 0.2)
+
+// @valid
+const style = { color: 'inherit', fill: 'none', stroke: 'currentColor', background: 'transparent' }
+
+// @valid
+const mark = <rect fill="currentColor" stroke="none" />
+
+// @valid
+const label = 'white'
+const tone = { tone: 'red' }
+const text = <span title="red">white</span>
+
+// @valid
+// @filename scenarios/swatch.test.tsx
+const input = { color: 'red' }

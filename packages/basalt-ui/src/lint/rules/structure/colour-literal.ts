@@ -11,13 +11,22 @@
  * call is the colour pair the series file exists to hold, and is not reported; a hex beside it, in
  * a sibling object of the same file or in a component still is.
  *
- * Known limit: a short hex-alphabet fragment (`'#feed'`, `'#cafe'`) is indistinguishable from a
+ * A CSS named colour (`'white'`, `'steelblue'`) is a literal where it is written into a colour slot:
+ * a canvas `strokeStyle`, `fillStyle` or `shadowColor` assignment, a style-object key such as
+ * `color`, `backgroundColor`, `fill` or `stroke`, or an SVG `fill` / `stroke` attribute (through a
+ * ternary or `||` too). The same word anywhere else is a plain string. `transparent`, `inherit`,
+ * `currentColor` and `none` are keywords, not colours, and pass.
+ *
+ * Known limit: a named colour that reaches its slot through a variable or a function result is not
+ * read (`const c = 'white'; ctx.fillStyle = c` reports nothing: only the slot's own literal is). A
+ * short hex-alphabet fragment (`'#feed'`, `'#cafe'`) is indistinguishable from a
  * colour by syntax alone. `url(#id)` and `url('#id')` pass; an anchor or selector string of that
  * shape takes a per-line waiver with a reason.
  */
 import type { AstForm } from '../../rule-table'
 import { defineRules } from '../../rule-table'
 import type { Node } from '../../factory'
+import { isTestFile } from '../../factory'
 
 const HEX = /(?<!url\(['"]?)(?<![\w&#-])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])/gi
 const COLOUR_FUNCTION =
@@ -53,6 +62,49 @@ const isModuleSource = (node: Node): boolean => {
   )
 }
 
+const NAMED_COLOURS: ReadonlySet<string> = new Set(
+  (
+    'aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet ' +
+    'brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan ' +
+    'darkblue darkcyan darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta ' +
+    'darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue ' +
+    'darkslategray darkslategrey darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey ' +
+    'dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray ' +
+    'green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush ' +
+    'lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray ' +
+    'lightgreen lightgrey lightpink lightsalmon lightseagreen lightskyblue lightslategray ' +
+    'lightslategrey lightsteelblue lightyellow lime limegreen linen magenta maroon ' +
+    'mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue ' +
+    'mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin ' +
+    'navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen ' +
+    'paleturquoise palevioletred papayawhip peachpuff peru pink plum powderblue purple ' +
+    'rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen seashell sienna ' +
+    'silver skyblue slateblue slategray slategrey snow springgreen steelblue tan teal thistle ' +
+    'tomato turquoise violet wheat white whitesmoke yellow yellowgreen'
+  ).split(' '),
+)
+
+const COLOUR_SLOTS: ReadonlySet<string> = new Set([
+  'strokeStyle',
+  'fillStyle',
+  'shadowColor',
+  'color',
+  'backgroundColor',
+  'borderColor',
+  'outlineColor',
+  'caretColor',
+  'fill',
+  'stroke',
+  'background',
+])
+const COLOUR_ATTRIBUTES: ReadonlySet<string> = new Set([
+  'fill',
+  'stroke',
+  'stopColor',
+  'floodColor',
+  'lightingColor',
+])
+
 const parentOf = (node: Node): Node | undefined => node['parent'] as Node | undefined
 
 const keyName = (property: Node): string | undefined => {
@@ -87,13 +139,43 @@ function isSeriesColourPair(node: Node): boolean {
   return (call['arguments'] as Node[])[0] === seriesMap
 }
 
+/** True when a string is written into a colour slot: `ctx.fillStyle = …`, `{ color: … }`, `<rect fill=… />`. */
+function inColourSlot(literal: Node): boolean {
+  let at = literal
+  let up = parentOf(at)
+  while (
+    up &&
+    up['test'] !== at &&
+    (up.type === 'ConditionalExpression' ||
+      up.type === 'LogicalExpression' ||
+      up.type === 'TSAsExpression' ||
+      up.type === 'JSXExpressionContainer')
+  ) {
+    at = up
+    up = parentOf(at)
+  }
+  if (up?.type === 'AssignmentExpression' && up['right'] === at) {
+    const left = up['left'] as Node
+    if (left.type !== 'MemberExpression' || left['computed']) return false
+    return COLOUR_SLOTS.has(((left['property'] as Node)['name'] as string | undefined) ?? '')
+  }
+  if (up?.type === 'Property' && up['value'] === at) return COLOUR_SLOTS.has(keyName(up) ?? '')
+  if (up?.type !== 'JSXAttribute') return false
+  const name = up['name'] as Node
+  return name.type === 'JSXIdentifier' && COLOUR_ATTRIBUTES.has(name['name'] as string)
+}
+
+const namedColourIn = (literal: Node, text: string): string | undefined =>
+  NAMED_COLOURS.has(text.trim().toLowerCase()) && inColourSlot(literal) ? text.trim() : undefined
+
 export const colourLiteralForm: AstForm = {
   id: 'colour-literal',
-  detect: ({ report }) => ({
+  detect: ({ context, report }) => ({
     Literal(node) {
       const text = node['value']
       if (typeof text !== 'string' || isModuleSource(node) || isSeriesColourPair(node)) return
-      const found = literalIn(text)
+      // A test passes a colour word as input (`{ color: 'red' }`); a hex is still a literal there.
+      const found = literalIn(text) ?? (isTestFile(context) ? undefined : namedColourIn(node, text))
       if (found) report(node, found)
     },
     TemplateLiteral(node) {

@@ -11,3 +11,59 @@ const a = <Section title="Totals" />
 const a = <PageBar title="Dashboard" />
 // @valid
 const a = <header>Top</header>
+// @valid
+const a = (
+  <div>
+    {columns.map((col) => (
+      <section key={col.id} aria-label={col.label}>
+        <h3 className="text-sm">{col.label}</h3>
+      </section>
+    ))}
+  </div>
+)
+// @valid
+const a = (
+  <ul>
+    {groups.map((g) => {
+      return (
+        <li key={g.id}>
+          <h4>{g.name}</h4>
+        </li>
+      )
+    })}
+  </ul>
+)
+// @invalid
+const a = (
+  <section aria-label="Totals">
+    <h3>Totals</h3>
+  </section>
+)
+// @invalid
+const a = (
+  <div>
+    {columns.map((col) => (
+      <Card key={col.id}>
+        <h3>{col.label}</h3>
+      </Card>
+    ))}
+  </div>
+)
+// @invalid
+const a = (
+  <div>
+    {columns.map((col) => (
+      <section key={col.id}>
+        <div>
+          <h3>{col.label}</h3>
+        </div>
+      </section>
+    ))}
+  </div>
+)
+// @invalid
+const a = (
+  <main>
+    <h1>Settings</h1>
+  </main>
+)

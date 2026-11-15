@@ -1,14 +1,19 @@
 /**
  * The `basalt/data-primitive` clause that gr-3b's forms do not carry (live-realtime 4.6): a literal
- * `staleTime: 'static'` inside a `liveQuery` argument. A query with a `'static'` observer is immune
+ * `staleTime: 'static'` inside a `liveQuery` argument, inside the options of a `useQuery`,
+ * `useSuspenseQuery`, `useInfiniteQuery` or `useSuspenseInfiniteQuery` call, or in options bound to
+ * a name that is then passed to `liveQuery` by name (`const opts = queryOptions({ staleTime:
+ * 'static' }); liveQuery(opts, ...)`). A plain `queryOptions({ staleTime: 'static' })` that nothing
+ * in the file passes on stays legal. A query with a `'static'` observer is immune
  * to `invalidateQueries` and `refetchQueries`, so the same options object used in a loader and a
  * component silently ignores a push, a global refresh and a deploy. `liveQuery(..., 'static')`
  * maps the class to `Infinity` instead.
  *
  * `refetchInterval`, `refetchIntervalInBackground`, `new EventSource` and timer-driven invalidation
- * stay gr-3b's forms in `data-primitive.ts`; this file adds no duplicate of them. Syntactic only:
- * the options must be written in the call (an object literal, `queryOptions({...})` or a spread of
- * either); an identifier handed in is out of reach.
+ * stay gr-3b's forms in `data-primitive.ts`; this file adds no duplicate of them. Syntactic only,
+ * and one file deep. Known limits: options imported from another file, built by a helper, reached
+ * through a spread of a name (`liveQuery({ ...opts }, ...)`) or handed to `useQuery` by name are out
+ * of reach; a name is matched by spelling, not scope.
  */
 import type { Node, Visitor } from '../../factory'
 import type { AstForm } from '../../rule-table'
@@ -66,16 +71,47 @@ function staticStaleTimes(root: Node): Node[] {
   return found
 }
 
+const QUERY_HOOKS: ReadonlySet<string> = new Set([
+  'useQuery',
+  'useSuspenseQuery',
+  'useInfiniteQuery',
+  'useSuspenseInfiniteQuery',
+])
+
 export const liveStaticStale: AstForm = {
   id: 'live-static-stale-time',
-  detect: ({ report }): Visitor => ({
-    CallExpression(node) {
-      if (!isLiveQueryCall(node)) return
-      const [options] = Array.isArray(node['arguments']) ? node['arguments'].filter(isNode) : []
-      if (!options) return
-      for (const property of staticStaleTimes(options)) report(property, "staleTime: 'static'")
-    },
-  }),
+  detect: ({ report }): Visitor => {
+    const staticOptions = new Map<string, Node>()
+    const passed: { node: Node; name: string }[] = []
+    return {
+      VariableDeclarator(node) {
+        const name = nameOf(node['id'])
+        const init = node['init']
+        if (name === undefined || !isNode(init)) return
+        if (init.type === 'CallExpression' && isLiveQueryCall(init)) return
+        const [property] = staticStaleTimes(init)
+        if (property) staticOptions.set(name, property)
+      },
+      CallExpression(node) {
+        const [options] = Array.isArray(node['arguments']) ? node['arguments'].filter(isNode) : []
+        if (!options) return
+        if (isLiveQueryCall(node)) {
+          const name = nameOf(options)
+          if (name !== undefined) passed.push({ node: options, name })
+          for (const property of staticStaleTimes(options)) report(property, "staleTime: 'static'")
+          return
+        }
+        if (!QUERY_HOOKS.has(nameOf(node['callee']) ?? '')) return
+        for (const property of staticStaleTimes(options)) report(property, "staleTime: 'static'")
+      },
+      'Program:exit'() {
+        for (const { node, name } of passed) {
+          if (staticOptions.has(name))
+            report(node, `${name}: staleTime 'static' passed to liveQuery`)
+        }
+      },
+    }
+  },
   fix: "Declare a one-shot query with liveQuery(queryOptions, 'static') (the class is staleTime Infinity); a literal staleTime 'static' makes the query immune to invalidateQueries, so a pushed invalidation, a global refresh and a deploy never reach it",
   next: "Use the 'standard' class when the data should refresh on focus",
   fixture: 'structure-rest/data-primitive-live-static-stale-time.tsx',
