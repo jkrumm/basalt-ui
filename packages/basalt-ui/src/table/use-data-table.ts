@@ -364,9 +364,9 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     },
     openDetails: showAuto,
     closeDetail() {
-      if (detailState === undefined) return
-      shownFor.current = null
-      detailState.clear()
+      // `shownFor` keeps the closed id until the field reads empty, so a render that lands before
+      // the field clears cannot reopen the sheet the user just closed.
+      detailState?.clear()
     },
     expandable:
       activation.kind === 'row' &&

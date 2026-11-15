@@ -368,6 +368,17 @@ describe('detail bound to a field', () => {
     await waitFor(() => expect(closed()).toBe(true))
   })
 
+  test('a render before the field clears does not reopen the closed sheet', async () => {
+    const field = { ...urlField('a'), clear: () => undefined }
+    const { rerender } = render(<Bound field={field} />)
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    await waitFor(() => expect(closed()).toBe(true))
+    rerender(<Bound field={field} />)
+    expect(closed()).toBe(true)
+    fireEvent.click(document.querySelectorAll('tbody tr')[0] as HTMLElement)
+    expect(closed()).toBe(false)
+  })
+
   test('the field changing to another row swaps the detail', () => {
     const field = urlField('a')
     render(<Bound field={field} />)
