@@ -44,7 +44,7 @@ describe('button module', () => {
   })
 
   test('icon sizes carry the name given by type', () => {
-    const { getByRole } = render(<Button size="icon-sm" aria-label="Close" />)
+    const { getByRole } = render(<Button size="sm" shape="icon" aria-label="Close" />)
     expect(getByRole('button', { name: 'Close' })).toBeTruthy()
   })
 

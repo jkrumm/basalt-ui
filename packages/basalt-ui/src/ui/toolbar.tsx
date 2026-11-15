@@ -58,7 +58,7 @@ export type ToolbarProps = Omit<BaseToolbar.Root.Props, 'className'> &
  *
  * @example
  * <Toolbar aria-label="View">
- *   <ToolbarGroup aria-label="Zoom"><ToolbarButton size="icon" aria-label="Zoom in">+</ToolbarButton></ToolbarGroup>
+ *   <ToolbarGroup aria-label="Zoom"><ToolbarButton shape="icon" aria-label="Zoom in">+</ToolbarButton></ToolbarGroup>
  *   <ToolbarSeparator />
  *   <ToolbarButton>Export</ToolbarButton>
  * </Toolbar>
@@ -92,16 +92,15 @@ export function ToolbarGroup({ className, ...props }: ToolbarGroupProps): ReactE
 }
 
 type ButtonAxes = VariantProps<typeof buttonVariants>
-type IconSize = 'icon' | 'icon-sm'
 
 export type ToolbarButtonProps = Omit<BaseToolbar.Button.Props, 'className'> &
-  Omit<ButtonAxes, 'size'> & {
-    /** Layout only (`ml-auto`). Height and display belong to `size`. */
+  Omit<ButtonAxes, 'shape'> & {
+    /** Layout only (`ml-auto`). Height and display belong to `size` and `shape`. */
     className?: string
   } & (
-    | { size?: Exclude<ButtonAxes['size'], IconSize> }
+    | { shape?: 'default' }
     // An icon-only button has no text to name it, so the name is required by type.
-    | { size: IconSize; 'aria-label': string }
+    | { shape: 'icon'; 'aria-label': string }
   )
 
 /**
@@ -116,6 +115,7 @@ export type ToolbarButtonProps = Omit<BaseToolbar.Button.Props, 'className'> &
 export function ToolbarButton({
   variant = 'ghost',
   size,
+  shape,
   className,
   render,
   ...props
@@ -126,7 +126,7 @@ export function ToolbarButton({
       render={render}
       data-slot="toolbar-button"
       className={
-        render === undefined ? cn(buttonVariants({ variant, size }), className) : className
+        render === undefined ? cn(buttonVariants({ variant, size, shape }), className) : className
       }
     />
   )

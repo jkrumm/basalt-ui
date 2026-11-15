@@ -62,7 +62,8 @@ export function PageAsidePanel({
         {onClose !== undefined && (
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="sm"
+            shape="icon"
             aria-label={t('page.closeAside')}
             data-aside-close=""
             onClick={onClose}

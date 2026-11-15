@@ -25,7 +25,7 @@ export const added: Accepts<WithTertiary> = requires
 
 describe('button guard', () => {
   test('every called variant and size resolves to classes in the cva table', () => {
-    const called: Called = { variant: 'ghost', size: 'icon' }
+    const called: Called = { variant: 'ghost', size: 'md', shape: 'icon' }
     expect(buttonVariants(called)).toContain('size-ctl')
     const variants = (['primary', 'secondary', 'ghost'] as const).map((variant) =>
       buttonVariants({ variant }),

@@ -310,7 +310,11 @@ export function contractMessage(module: string, table: Table): string {
       ? `${lead} eject it (basalt-ui eject ${module}) to change them.`
       : `${lead} ${fix}, or eject it (basalt-ui eject ${module}).`
   }
-  const sizes = `use size (${size.values.join(', ')})`
+  const shape = table.axes.find((a) => a.name === 'shape')
+  const sizes =
+    shape === undefined
+      ? `use size (${size.values.join(', ')})`
+      : `use size (${size.values.join(', ')}) and shape (${shape.values.join(', ')})`
   return fix === undefined
     ? `${lead} ${sizes}, or eject it (basalt-ui eject ${module}).`
     : `${lead} ${sizes}, ${fix}, or eject it (basalt-ui eject ${module}).`

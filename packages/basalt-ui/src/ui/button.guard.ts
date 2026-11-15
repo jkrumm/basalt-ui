@@ -11,12 +11,14 @@ import type { ButtonProps, PressableProps } from './button'
 // basalt:guard requires
 type Called = {
   variant?: 'primary' | 'secondary' | 'ghost'
-  size?: 'md' | 'icon'
+  size?: 'md' | 'sm'
+  shape?: 'default' | 'icon'
   loading?: boolean
 }
 type CalledPressable = { size?: 'none' | 'row' | 'chip' }
 
-export const requires = (c: Called): Pick<ButtonProps, 'variant' | 'size' | 'loading'> => c
+export const requires = (c: Called): Pick<ButtonProps, 'variant' | 'size' | 'shape' | 'loading'> =>
+  c
 export const requiresPressable = (c: CalledPressable): Pick<PressableProps, 'size'> => c
 
 // basalt:guard closed
@@ -25,4 +27,4 @@ export const closedVariant: Pick<ButtonProps, 'variant'> = { variant: 'unknown' 
 // @ts-expect-error a Pressable size outside the union is a type error
 export const closedPressable: Pick<PressableProps, 'size'> = { size: 'unknown' }
 // @ts-expect-error an icon-only button needs a name
-export const unnamedIcon: ButtonProps = { size: 'icon' }
+export const unnamedIcon: ButtonProps = { shape: 'icon' }

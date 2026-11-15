@@ -139,7 +139,7 @@ export function RefreshButton({
       {scope === 'global' ? (
         <Button
           variant="ghost"
-          size="icon"
+          shape="icon"
           data-slot="refresh-button"
           data-scope={scope}
           aria-label={name}

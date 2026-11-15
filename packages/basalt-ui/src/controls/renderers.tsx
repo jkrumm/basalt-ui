@@ -71,7 +71,7 @@ function ClearButton({
   return (
     <Button
       variant="ghost"
-      size="icon"
+      shape="icon"
       aria-label={label}
       data-control-clear=""
       onMouseDown={clear.onMouseDown}

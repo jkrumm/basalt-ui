@@ -141,22 +141,22 @@
       "kind": "map",
       "from": "@mantine/core#Button",
       "to": "basalt-ui/ui/button#Button",
-      "note": "variant primary | secondary | ghost | danger; size md | sm | icon | icon-sm; size and `mih={24}` per the primitives-distribution section 4 ladder (xs 30, sm 36, md 42 become md; compact-xs, compact-sm and mih 24 become sm)"
+      "note": "variant primary | secondary | ghost | danger; size md | sm, shape default | icon; size and `mih={24}` per the primitives-distribution section 4 ladder (xs 30, sm 36, md 42 become md; compact-xs, compact-sm and mih 24 become sm)"
     },
     {
       "profiles": ["parts", "app"],
       "id": "mantine-ActionIcon",
       "kind": "map",
       "from": "@mantine/core#ActionIcon",
-      "to": "basalt-ui/ui/button#Button size=\"icon\" | size=\"icon-sm\"",
-      "note": "md 28, lg 34, size 28 and size 40 become icon; xs 18, sm 22 and size 24 become icon-sm; the aria-label is required by type"
+      "to": "basalt-ui/ui/button#Button shape=\"icon\" (size md | sm)",
+      "note": "md 28, lg 34, size 28 and size 40 become `shape=\"icon\"`; xs 18, sm 22 and size 24 become `size=\"sm\" shape=\"icon\"`; the aria-label is required by type"
     },
     {
       "profiles": ["parts", "app"],
       "id": "mantine-CloseButton",
       "kind": "map",
       "from": "@mantine/core#CloseButton",
-      "to": "basalt-ui/ui/button#Button size=\"icon-sm\" variant=\"ghost\"",
+      "to": "basalt-ui/ui/button#Button size=\"sm\" shape=\"icon\" variant=\"ghost\"",
       "note": "names itself from the catalog, so an aria-label is not passed"
     },
     {
@@ -876,7 +876,7 @@
       "id": "mantine-prop-size",
       "kind": "codemod",
       "from": "@mantine/core#Button.size | ActionIcon.size",
-      "to": "size md | sm | icon | icon-sm",
+      "to": "size md | sm, shape default | icon",
       "codemod": "size: Button xs/sm/md and ActionIcon sizes map onto the primitives-distribution section 4 ladder; `mih={24}` becomes size=\"sm\""
     },
     {
@@ -933,6 +933,15 @@
       "profiles": ["parts", "app"],
       "manual": true,
       "note": "sm | md like input, select, tabs, segmented, number-field and combobox"
+    },
+    {
+      "id": "ui-button-shape-icon",
+      "kind": "manual",
+      "from": "ui/button size=\"icon\" | size=\"icon-sm\" (also ToolbarButton and buttonVariants)",
+      "to": "shape=\"icon\" | size=\"sm\" shape=\"icon\"",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "size is the height step (md | sm) and shape is default | icon, so an icon button picks its height like a text one; the aria-label is still required by type"
     }
   ],
   "tokens": {

@@ -103,7 +103,7 @@ function Brand({ brand, native }: { brand: ShellBrand; native: boolean }): React
       >
         <Button
           variant="ghost"
-          size="icon"
+          shape="icon"
           aria-label={label}
           aria-expanded={!rail.collapsed}
           onClick={rail.toggle}
@@ -138,7 +138,7 @@ function ActionBody({ action, box }: { action: GlobalAction; box: ShellBox }): R
   const glyph = <Icon className="size-icon" aria-hidden />
   if (action.kind === 'button') {
     return (
-      <Button variant="ghost" size="icon" aria-label={action.label} onClick={action.onClick}>
+      <Button variant="ghost" shape="icon" aria-label={action.label} onClick={action.onClick}>
         {glyph}
       </Button>
     )
@@ -150,7 +150,7 @@ function ActionBody({ action, box }: { action: GlobalAction; box: ShellBox }): R
         render={
           <Button
             variant="ghost"
-            size="icon"
+            shape="icon"
             aria-label={count > 0 ? `${action.label} (${count})` : action.label}
           />
         }

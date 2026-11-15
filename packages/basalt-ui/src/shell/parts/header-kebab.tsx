@@ -97,7 +97,7 @@ export function HeaderKebab({
   return (
     <span data-slot="shell-kebab" className={className}>
       <Menu onOpenChange={read}>
-        <MenuTrigger render={<Button variant="ghost" size="icon" aria-label="More actions" />}>
+        <MenuTrigger render={<Button variant="ghost" shape="icon" aria-label="More actions" />}>
           <svg viewBox="0 0 16 16" className="size-icon" fill="currentColor" aria-hidden="true">
             <circle cx="3" cy="8" r="1.25" />
             <circle cx="8" cy="8" r="1.25" />
