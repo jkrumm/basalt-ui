@@ -266,7 +266,7 @@ export const SURFACES = {
     ],
     // The chrome half of the plugin: the shell, the card idiom, the page title and the scroll
     // doctrine. `hand-rolled-shell` sits here rather than on a shell-shaped surface because
-    // `BasaltShell` IS the root barrel's promise (docs/CONTROLS-SPEC.md §6 wave 6).
+    // the shell (`AppShell`, from `./shell`) IS the framework's promise (docs/CONTROLS-SPEC.md §6 wave 6).
     pluginRules: [
       'hand-rolled-shell',
       // The size-class axis's one JSX escape hatch (docs/CONTROLS-SPEC.md §6) is reserved
