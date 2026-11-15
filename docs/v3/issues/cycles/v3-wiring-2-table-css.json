@@ -1,0 +1,21 @@
+{
+  "why": "Wiring cycle 2 (docs/v3/cycles/wiring-2.md, P1 wiring-2.3, P3 wiring-2.10): cycle 1's phone-table fix (wiring-1.5) lives in `basalt-ui/table.css`, and only one sentence in `docs/use-data-table.md` asks the app to import it. Without the import the same `/orders` page at 390 px stays a table with a 14 px Customer cell, cycle 1's exact result, and the build, `tsc`, lint and doctor are all green (`.evidence/cycle-wiring-2/p1.log` against `p2.log`, `shots-nocss/`). `docs/data-table.md`, the add-page recipe and the `index.css` `init` writes do not name it, though `basalt()` already sees the `basalt-ui/table` import when it checks the table's peer. The P3 riding along: on the phone card a `money` value prints `1,200.00` and loses the currency only its column header carried, and nav items with no icon draw their first letter, so `Overview` and `Orders` are both \"O\" in the rail and the tab bar (`shots/*`).",
+  "what": "An app that imports `basalt-ui/table` gets the table tiers without a second import; the phone card keeps a money value's currency; two nav items without icons look different.",
+  "owns": [
+    "packages/basalt-ui/src/css/** (the tailwind.css entry) or packages/basalt-ui/src/vite/** (the plugin), whichever carries the tiers",
+    "packages/basalt-ui/src/table/table.css and src/table/parts/tiers.tsx (the money card cell only)",
+    "the JSDoc of DataTable and useDataTable that gen-docs reads (the table.css sentence)",
+    "the shell's nav icon fallback (the monogram only), its layout tests"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) The table tiers reach the app with no import of its own: `tailwind.css` carries `@layer basalt.table`, or `basalt()` adds `basalt-ui/table.css` when a module imports `basalt-ui/table`. If neither fits the layering, `basalt()` stops the build on the missing import with the line to add, as it does for a missing peer. Either way `docs/data-table.md` says what the app does. (2) The phone card prints a `money` value with its currency. (3) The monogram fallback tells two items apart (the item's `short`, or two letters).",
+  "commits": "fix: in packages/basalt-ui.",
+  "proof": "make check; a layout test of a four-column client table at 390x844 in an app that does not import `basalt-ui/table.css`.",
+  "acceptance": [
+    "A scratch app from the packed tarball that imports `basalt-ui/table` and not `basalt-ui/table.css` renders cycle 2's `/orders` as cards at 390x844, or its `vite build` fails naming the import",
+    "The phone card of a `money` column shows the currency",
+    "Two nav items with no icon and the same first letter draw different glyphs",
+    "make check passes"
+  ],
+  "out_of_scope": "Server and virtual tables; the add-page recipe (v3-wiring-2-docs)."
+}

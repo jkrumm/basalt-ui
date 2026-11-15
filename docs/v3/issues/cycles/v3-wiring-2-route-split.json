@@ -1,0 +1,21 @@
+{
+  "why": "Wiring cycle 2 (docs/v3/cycles/wiring-2.md, P1 wiring-2.1): the router scaffold `init` writes exports its route component, and `routes/_app.tsx` says it must (\"Exported: react/only-export-components flags a non-exported component in a file that exports `Route`\"). TanStack Router's `autoCodeSplitting` does not split an exported component, so an app that follows the pattern ships one 861 kB chunk with the option switched on; the same app with the three route components unexported has a 316 kB entry and route chunks (`.evidence/cycle-wiring-2/s11.log`, `s11b.log`). The warning the comment dodges fires anyway, on `Route`, from create-vite's own `.oxlintrc.json` rule (`react/only-export-components` with `allowConstantExport`), which overrides the preset it extends; the consumer presets set nothing for `routes/**` (only the repo's own `configs/oxlint.json` turns the rule off there).",
+  "what": "A route file keeps its component unexported, the lint stays quiet on it, and the scaffold's routes split.",
+  "owns": [
+    "packages/basalt-ui/agent/templates/{__root,_app,_app-error,_app-missing,_app-pending}.tpl and their headers",
+    "packages/basalt-ui/scripts/gen-oxlint.ts and the consumer presets configs/oxlint-{bridge,parts,app}.json it writes",
+    "packages/basalt-ui/src/cli/init (the `.oxlintrc.json` patch only), its tests",
+    "the add-page recipe region the playground typecheck builds (the route file line only)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) The scaffold's route templates declare their component without `export` and drop the comment that says the lint needs it. (2) The consumer presets turn `react/only-export-components` off under `**/routes/**` (as `configs/oxlint.json` already does for the repo). (3) `init` removes create-vite's stock `react/only-export-components` entry from `.oxlintrc.json` when it adds the `extends` line, as it patches a stock `vite.config.ts`; any other shape gets the line to delete printed. (4) The add-page recipe shows the route's `createFileRoute` line with an unexported component.",
+  "commits": "fix: in packages/basalt-ui; a regenerated preset and recipe in the same commit as their source.",
+  "proof": "make check; an init test on a stock create-vite `.oxlintrc.json`; a scratch app from the packed tarball whose `vite build` emits a route chunk per page.",
+  "acceptance": [
+    "No template under `agent/templates/` exports a route component, and none says the lint requires it",
+    "`init` on a stock create-vite app leaves no local `react/only-export-components` override, and `oxlint` reports no `only-export-components` warning on the scaffold's route files",
+    "A scratch app from the packed tarball with two pages under `routes/_app/` builds to an entry chunk plus one chunk per route",
+    "make check passes"
+  ],
+  "out_of_scope": "Other create-vite lint rules; the route path the add-page recipe names (v3-wiring-2-docs)."
+}

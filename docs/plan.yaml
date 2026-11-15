@@ -1068,3 +1068,54 @@ rows:
         v3-state-2-lint,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-state-3.json' }
+  - key: v3-wiring-2-route-split
+    title: 'Route files keep their component unexported, so the scaffold splits, from wiring cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-wiring-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-route-split.json' }
+  - key: v3-wiring-2-generated-tree
+    title: 'Doctor and init leave the generated route tree alone, from wiring cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-wiring-2-route-split]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-generated-tree.json' }
+  - key: v3-wiring-2-table-css
+    title: 'The table tiers reach the app without a second import, from wiring cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-wiring-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-table-css.json' }
+  - key: v3-wiring-2-wiring
+    title: 'init never downgrades a peer, doctor fails an out-of-range one, a stock app lints clean, from wiring cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-wiring-2-generated-tree]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-wiring.json' }
+  - key: v3-wiring-2-docs
+    title: 'Recipes match the scaffold, init runs one way, generated docs print whole, from wiring cycle 2'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-wiring-2-route-split, v3-wiring-2-table-css]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-docs.json' }
+  - key: v3-wiring-2-api
+    title: 'One menu shape, one word per width, one name per role, from wiring cycle 2'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-wiring-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-api.json' }
+  - key: v3-cycle-wiring-3
+    title: 'Improvement cycle 3: wiring from init to a first page, and the export surface'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-wiring-2-route-split,
+        v3-wiring-2-generated-tree,
+        v3-wiring-2-table-css,
+        v3-wiring-2-wiring,
+        v3-wiring-2-docs,
+        v3-wiring-2-api,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-wiring-3.json' }

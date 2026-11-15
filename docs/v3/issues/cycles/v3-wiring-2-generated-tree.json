@@ -1,0 +1,19 @@
+{
+  "why": "Wiring cycle 2 (docs/v3/cycles/wiring-2.md, P1 wiring-2.2): doctor check 11 fails on every app the `app` scaffold produces, once it has built: `file-level disable silences waiver-needs-reason: src/routeTree.gen.ts:1 (every rule)`, the `/* eslint-disable */` TanStack Router writes into its generated tree. It passes right after `init` only because the file does not exist yet. Neither `ignorePatterns` in `.oxlintrc.json` (TanStack's own advice: \"exclude this file from your linter\") nor `.gitignore` clears it (`.evidence/cycle-wiring-2/d1.log` to `d4.log`). The remedy doctor prints names `manifest.deepRender`, which no shipped doc describes, and asks the disable to name rules, which a generated file cannot. Doctor never reaches its floor.",
+  "what": "Doctor's blanket-disable scan leaves generated and ignored files alone, and `init` ignores the router's generated tree.",
+  "owns": [
+    "packages/basalt-ui/src/lint/blanket-disable.ts, packages/basalt-ui/src/cli/lint/stats.ts and the doctor check that reports them, their tests",
+    "packages/basalt-ui/src/cli/init (the oxlint and oxfmt ignore patches only)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md"],
+  "change": "The file-level-disable scan skips every path the project's oxlint config ignores and the router plugin's generated tree (`routeTree.gen.ts`, or the `generatedRouteTree` the Vite config names). `init` adds `src/routeTree.gen.ts` (under the declared root) to `.oxlintrc.json` `ignorePatterns` and to the `.oxfmtrc.json` ignores it already writes. The doctor message for a real blanket disable names the ignore route for generated files.",
+  "commits": "fix: in packages/basalt-ui.",
+  "proof": "make check; a doctor test over a project holding a `routeTree.gen.ts` with `/* eslint-disable */` on line 1.",
+  "acceptance": [
+    "Doctor check 11 passes on a project whose only file-level disable is a TanStack `routeTree.gen.ts`",
+    "A hand-written `/* eslint-disable */` in a source file still fails check 11",
+    "`init --profile app` writes `routeTree.gen.ts` into the oxlint and oxfmt ignores",
+    "make check passes"
+  ],
+  "out_of_scope": "The budget ratchet's base ref; any other doctor check."
+}

@@ -1,0 +1,24 @@
+{
+  "why": "Wiring cycle 2 (docs/v3/cycles/wiring-2.md) logged one P2 and one P3 `docs` finding. wiring-2.6: `docs/recipes/add-page.md` shows a component and no file route or path. Under the pathless `_app` layout `init` writes, a page belongs at `src/routes/_app/<name>.tsx`; a page at `src/routes/orders.tsx`, TanStack's default and cycle 1's layout, builds, type-checks and renders with no shell (`.evidence/cycle-wiring-2/r3.log`, `shots-flat/`). `docs/recipes/app-shell.md` mounts `AppShell` in `__root.tsx` and uses `NAV` with no import, where `init` writes `_app.tsx`. wiring-2.9 (P3): README §2 calls `bunx` the one sanctioned entry for `init`, `/basalt-app` step 1 says never a download-and-run, the AGENTS block says `init` is the one exception (wiring-1.14 again); `/basalt-design` step 3 links `docs/<name>.md` relative to the skill; `docs/data-table.md` prints `height?: \"auto\" | Scrollport | Scrollport`; `docs/use-data-table.md` cuts the `group` and `empty` comments with `…`; the shipped `configs/oxlint.json` tells a v3 app \"Use Mantine — antd is not part of the basalt-ui stack\".",
+  "what": "The add-page and app-shell recipes match the scaffold `init` writes, `init`'s entry is stated once, and the generated docs print whole, deduplicated signatures.",
+  "owns": [
+    "the add-page and app-shell recipe regions and packages/basalt-ui/scripts/gen-recipes.ts",
+    "packages/basalt-ui/scripts/gen-docs.ts, its tests and baseline, and the generated packages/basalt-ui/docs/**",
+    "packages/basalt-ui/agent/skills/basalt-app/SKILL.md and agent/skills/basalt-design/SKILL.md (links and the init sentence)",
+    "packages/basalt-ui/agent/templates/AGENTS-block.md.tpl (the init sentence only)",
+    "packages/basalt-ui/README.md §2 (the init sentence only)",
+    "packages/basalt-ui/configs/oxlint.json (the antd message only)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "packages/basalt-ui/scripts/gen-llms.ts"],
+  "change": "(1) add-page shows the file `src/routes/_app/<name>.tsx` with its `createFileRoute('/_app/<name>')` line and the nav entry, and says a route outside `_app` renders with no shell. (2) app-shell mounts `AppShell` in the `_app` layout and imports `NAV`. (3) One sentence on how `init` runs, the same in README §2, `/basalt-app` and the AGENTS block. (4) `/basalt-design` links `node_modules/basalt-ui/docs/<name>.md`. (5) `gen-docs.ts` prints a union's members once and a prop comment whole. (6) The `antd` message names no Mantine.",
+  "commits": "docs: or fix: in packages/basalt-ui as the release rules say.",
+  "proof": "make check (gen-docs and gen-recipes tests, docs-format, agent-doc-drift, recipes typecheck).",
+  "acceptance": [
+    "`docs/recipes/add-page.md` names the `routes/_app/` path and the `createFileRoute` line",
+    "`docs/recipes/app-shell.md` mounts `AppShell` where `init` writes it and imports `NAV`",
+    "README §2, `/basalt-app` and the AGENTS block say the same thing about running `init`",
+    "No generated doc repeats a union member or ends a comment in `…`",
+    "make check passes"
+  ],
+  "out_of_scope": "The route component's export (v3-wiring-2-route-split); the table.css sentence (v3-wiring-2-table-css)."
+}
