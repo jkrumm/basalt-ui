@@ -63,157 +63,50 @@ export type PatternMapping = FoundMapping | MissingMapping
 
 export const isMissing = (m: PatternMapping): m is MissingMapping => 'missing' in m
 
-const SIDEBAR_LINK = '.mantine-AppShell-navbar a.mantine-NavLink-root'
-const BOTTOM_BAR_LINK = '.mantine-AppShell-footer a'
+/** The playground pages these patterns were measured on went with the 2.x view layer. */
+const REMOVED =
+  'the 2.x playground page this pattern was measured on was deleted with the 2.x view layer'
 
 /** The single source of the id vocabulary: ids and their order are this table's keys. */
 export const PATTERNS = {
-  'metric-card': {
-    route: '/dashboard',
-    anchor: 'dashboard',
-    select: '.mantine-Card-root',
-    note: 'StatCard, first KPI of the dashboard row (title, value, delta)',
-  },
+  'metric-card': { missing: REMOVED },
   'decision-card': { missing: 'no decision-card component or demo exists' },
   'entity-card': {
     missing: 'no entity-card component; the only Card in the playground is a bare surface',
   },
-  'table-header': {
-    route: '/data',
-    anchor: 'table',
-    select: 'thead tr',
-    rowLike: true,
-    note: 'BasaltDataTable header row',
-  },
-  'table-row': {
-    route: '/data',
-    anchor: 'table',
-    select: 'tbody tr',
-    rowLike: true,
-    note: 'BasaltDataTable first body row',
-  },
+  'table-header': { missing: REMOVED },
+  'table-row': { missing: REMOVED },
   'kanban-column': { missing: 'basalt has no kanban or board component' },
   'kanban-card': { missing: 'basalt has no kanban or board component' },
   'timeline-event': {
     missing: 'no record-timeline component; the activity Timeline is measured as activity-item',
   },
-  'activity-item': {
-    route: '/components',
-    anchor: 'activity',
-    select: '.mantine-Timeline-item',
-    rowLike: true,
-    storage: { 'basalt:components-view': '{"v":1,"value":{"tab":"activity"}}' },
-    note: 'Mantine Timeline item on the Components → Activity tab',
-  },
-  'form-field': {
-    route: '/forms',
-    anchor: 'form',
-    select: ':scope > *',
-    note: 'FormRow with a TextInput (first field of the project form)',
-  },
-  'nav-item': {
-    route: '/dashboard',
-    selector: SIDEBAR_LINK,
-    mobileSelector: BOTTOM_BAR_LINK,
-    rowLike: true,
-    note:
-      'first sidebar NavLink (the active destination); on a phone the bottom bar IS the nav — ' +
-      'basalt has no burger drawer, only a More sheet for overflow — so its first tab is measured',
-  },
-  'nav-item-idle': {
-    route: '/dashboard',
-    selector: `${SIDEBAR_LINK}:not([aria-current])`,
-    mobileSelector: `${BOTTOM_BAR_LINK}:not([aria-current])`,
-    rowLike: true,
-    note: 'first inactive sidebar NavLink (bottom-bar tab on a phone)',
-  },
-  'empty-state': {
-    route: '/components',
-    anchor: 'surfaces',
-    select: ':scope > .mantine-Card-root:nth-last-child(2) .mantine-Stack-root',
-    note: 'EmptyState (section tier) on the Components → Surfaces tab',
-  },
-  'loading-state': {
-    route: '/data?shot-state=loading',
-    anchor: 'table',
-    select: 'tbody tr',
-    rowLike: true,
-    note: 'BasaltDataTable skeleton row, behind the `shot-state=loading` search param',
-  },
-  'page-header': {
-    route: '/dashboard',
-    selector: '.mantine-AppShell-header',
-    note: 'the shell header row that carries the PageBar',
-  },
+  'activity-item': { missing: REMOVED },
+  'form-field': { missing: REMOVED },
+  'nav-item': { missing: REMOVED },
+  'nav-item-idle': { missing: REMOVED },
+  'empty-state': { missing: REMOVED },
+  'loading-state': { missing: REMOVED },
+  'page-header': { missing: REMOVED },
   // ── Beyond the default list: ids the Keel capture added, mapped to basalt's closest current equivalent.
   'metric-card-gauge': { missing: 'StatCard has no ring-gauge variant' },
   'metric-card-bar': { missing: 'StatCard has no segmented progress-bar variant' },
   'pipeline-column': { missing: 'basalt has no kanban or pipeline component' },
   'deal-card': { missing: 'basalt has no deal or link-card component' },
   'schedule-item': { missing: 'no meeting-list component or demo exists' },
-  'filter-toolbar': {
-    route: '/data',
-    anchor: 'table',
-    select: '.mantine-Group-root:has(.mantine-TextInput-root)',
-    note: 'BasaltDataTable toolbar (global search + facets)',
-  },
+  'filter-toolbar': { missing: REMOVED },
   'record-header': {
     missing: 'no record-header block (avatar + facts); the playground has no record detail page',
   },
-  'stat-strip': {
-    route: '/dashboard',
-    anchor: 'dashboard',
-    select: 'div:has(> .mantine-Card-root)',
-    note: 'StatGroup grid of KPI StatCards',
-  },
-  'stat-cell': {
-    route: '/dashboard',
-    anchor: 'dashboard',
-    select: '.mantine-Card-root',
-    note: 'first StatCard of the StatGroup',
-  },
-  'side-panel-card': {
-    route: '/components',
-    anchor: 'surfaces',
-    select: '.mantine-Card-root',
-    note: 'SettingsSection card (header + rows); the closest panel card without a record page',
-  },
-  'segmented-control': {
-    route: '/components',
-    anchor: 'surfaces',
-    select: '.mantine-SegmentedControl-root',
-    note: 'Mantine SegmentedControl on the Components → Surfaces tab',
-  },
-  'tab-bar': {
-    route: '/components',
-    anchor: 'surfaces',
-    select: '.mantine-Tabs-list',
-    note: 'Mantine Tabs list on the Components → Surfaces tab',
-  },
-  'status-pill': {
-    route: '/components',
-    anchor: 'surfaces',
-    select: '.mantine-Badge-root',
-    note: 'first Mantine Badge on the Components → Surfaces tab',
-  },
-  'button-primary': {
-    route: '/components',
-    anchor: 'surfaces',
-    select: '.mantine-Button-root[data-variant="filled"]',
-    note: 'filled Button',
-  },
-  'button-secondary': {
-    route: '/components',
-    anchor: 'surfaces',
-    select: '.mantine-Button-root[data-variant="default"]',
-    note: 'default-variant Button',
-  },
-  'button-ghost': {
-    route: '/components',
-    anchor: 'surfaces',
-    select: '.mantine-Button-root[data-variant="subtle"]',
-    note: 'subtle-variant Button',
-  },
+  'stat-strip': { missing: REMOVED },
+  'stat-cell': { missing: REMOVED },
+  'side-panel-card': { missing: REMOVED },
+  'segmented-control': { missing: REMOVED },
+  'tab-bar': { missing: REMOVED },
+  'status-pill': { missing: REMOVED },
+  'button-primary': { missing: REMOVED },
+  'button-secondary': { missing: REMOVED },
+  'button-ghost': { missing: REMOVED },
 } as const satisfies Record<string, PatternMapping>
 
 export type PatternId = keyof typeof PATTERNS
