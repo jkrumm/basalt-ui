@@ -46,7 +46,6 @@ const CHART_VALUES = [
   'CartesianChart',
   'ChartCard',
   'Heatmap',
-  'LegacyChartCard',
   'Lines',
   'Sparkline',
   'chartCursor',
