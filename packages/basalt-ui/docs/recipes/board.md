@@ -20,9 +20,7 @@ export function KanbanBoard({ cards, active, onMove, wrap = (card) => card }: Bo
   }, [moved])
   return (
     <div className="grid gap-4 @container @regular:grid-cols-3">
-      <p role="status" className="sr-only">
-        {moved && `Moved to ${LABELS[moved.to]}`}
-      </p>
+      <output className="sr-only">{moved && `Moved to ${LABELS[moved.to]}`}</output>
       {columns.map((col) => (
         <section
           key={col.id}
@@ -33,7 +31,7 @@ export function KanbanBoard({ cards, active, onMove, wrap = (card) => card }: Bo
             {col.label} <CountBadge count={col.count} />
           </h3>
           <VirtualList
-            className="max-h-[70dvh]"
+            className="max-h-160"
             count={col.count}
             estimateSize={() => 124} // rows are never measured: the tallest card plus its gap
             getItemKey={(i) => cards[col.id][i]!.id}

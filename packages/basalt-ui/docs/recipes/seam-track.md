@@ -30,18 +30,18 @@ export function SeamTrack({ spans }: { spans: readonly Span[] }) {
       </div>
       <div {...focus.target} aria-label="Spans on a time axis" className="flex flex-col gap-1">
         {spans.map((s, i) => {
-          const [from, to] = [axis.at(s.startMs), axis.at(s.startMs + s.durationMs)]
-          const label = { key: s.name, text: seconds(s.durationMs), from, to }
+          const [x0, x1] = [axis.at(s.startMs), axis.at(s.startMs + s.durationMs)]
+          const label = { key: s.name, text: seconds(s.durationMs), from: x0, to: x1 }
           const row = chartLabels.row([label], { share: SHARE, grid: axis.ticks })
-          const bar = { left: `${from * 100}%`, width: `${(to - from) * 100}%` }
+          const bar = { '--l': `${x0 * 100}%`, '--w': `${(x1 - x0) * 100}%` } as React.CSSProperties
           return (
             <div key={s.name} {...focus.item(i)} className="grid grid-cols-4 items-center gap-x-2">
               <div className="truncate text-sm">{s.name}</div>
-              <div className="relative col-span-3 h-5">
+              <div className="relative col-span-3 h-5" style={bar}>
                 {row.lines.map((t) => (
                   <span key={t.at} {...t.line} />
                 ))}
-                <div className="absolute inset-y-0 rounded-sm bg-brand-fill" style={bar} />
+                <div className="absolute inset-y-0 left-(--l) w-(--w) rounded-chip bg-brand-fill" />
                 {row.placed.map((l) => (
                   <span key={l.key} {...l.props} className={`${l.props.className} ${INK}`}>
                     {l.text}
