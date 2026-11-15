@@ -1,0 +1,42 @@
+// A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
+/** Synthetic rows shaped like argo's momentum chart: a price series and a signed momentum series. */
+export const seedBars = (): Bar[] =>
+  Array.from({ length: 60 }, (_, i) => ({
+    day: new Date(Date.UTC(2026, 8, 1 + i)),
+    close: 41000 + Math.round(Math.sin(i / 6) * 4000) + i * 90,
+    momentum: Math.round(Math.sin(i / 4) * 30) / 10,
+  }))
+
+// #region recipe:two-pane
+import { Lines } from 'basalt-ui/charts'
+export type Bar = { day: Date; close: number; momentum: number }
+export const GROUP = 'momentum' // one cursor group for both panes
+export const GUTTER = 56 // one y gutter in px for both panes
+const blue = { light: 'var(--vx-info)', dark: 'var(--vx-info)' }
+const amber = { light: 'var(--vx-warning)', dark: 'var(--vx-warning)' }
+const x = { value: (d: Bar) => d.day }
+export function TwoPane({ bars }: { bars: Bar[] }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <Lines
+        ariaLabel="Price"
+        data={bars}
+        x={x}
+        y={{ gutter: GUTTER }}
+        cursor={GROUP}
+        height={180}
+        series={[{ mark: 'line', key: 'close', label: 'Close', color: blue, y: (d) => d.close }]}
+      />
+      <Lines
+        ariaLabel="Momentum"
+        data={bars}
+        x={x}
+        y={{ gutter: GUTTER }}
+        cursor={GROUP}
+        height={110}
+        series={[{ mark: 'line', key: 'm', label: 'Momentum', color: amber, y: (d) => d.momentum }]}
+      />
+    </div>
+  )
+}
+// #endregion
