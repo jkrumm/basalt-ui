@@ -11,7 +11,7 @@ import type { ChartProps } from '@tanstack/charts/react'
 import type { ChartValue } from '@tanstack/charts/types/core'
 import { useEffect, useMemo } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
-import type { CartesianDefinition } from './compile'
+import type { CartesianDefinition } from './core/compile'
 import {
   measuredPlots,
   plotSizesOf,

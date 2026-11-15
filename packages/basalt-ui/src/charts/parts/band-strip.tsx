@@ -15,16 +15,19 @@ import { barY } from '@tanstack/charts/bar'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
 import { text } from '@tanstack/charts/text'
-import { useCallback, useMemo, useState } from 'react'
-import type { ReactElement } from 'react'
+import { useCallback, useId, useMemo, useState } from 'react'
+import type { CSSProperties, ReactElement } from 'react'
 import { oneOf, requiredProp } from '../../common/errors'
 import { NON_FINITE } from '../../format/shared'
 import { VX, alpha } from '../../tokens'
-import { ChartShell } from '../CartesianChart'
-import type { ShellContext } from '../CartesianChart'
-// The 2.x compile, not `core/compile`: the core's strip portal does not yet keep a tooltip opened
-// below the strip clear of the x tick labels (`charts-w52` layout test); a signal tracks it.
-import { compileCartesian } from '../compile'
+import { useInChartCard } from '../card-context'
+import { compileCartesian } from '../core/compile'
+import { samePlots } from '../core/plot-context'
+import type { PlotSizes } from '../core/plot-context'
+import { ChartEngine, idPrefixOf } from '../host'
+import { ChartLegend, legendEntries } from '../legend'
+import { useChartSize } from '../sizing'
+import { ChartPlaceholder, resolveChartState } from '../state'
 import {
   BAND_GLYPH_MIN_PX,
   NOTCH_PX,
@@ -120,6 +123,20 @@ function useShallowStable<V extends Record<string, unknown>>(next: V): V {
   if (!same) setKept(next)
   return same ? kept : next
 }
+
+// A size container: the legend picks none/dots/chips from this box's width in CSS, so the server
+// HTML already carries the right one (`chart-legend.module.css`). `width: 100%` because a size
+// container cannot take its width from its content.
+const rootStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  width: '100%',
+  minWidth: 0,
+  containerType: 'inline-size',
+}
+// A `placement: 'header'` legend inside a `ChartCard` sits where the header's legend row did.
+const headerLegendStyle: CSSProperties = { marginTop: 8 }
 
 const DEFAULT_MIN_BAND_PX = 3
 const DEFAULT_MARKER_INSET = 6
@@ -364,9 +381,10 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
     absentState,
     cursorResolution = 'leading',
     tooltip,
+    data,
+    x,
     ...rest
   } = props
-  const { data, x } = rest
   // Resolved once: a misconfigured absent state degrades to primary-only paint, hits and rows.
   const absentKey = resolveNamedState(
     'BandStrip',
@@ -522,34 +540,95 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
   const { ariaLabel, legend, height, state: chartState, className, style, ...spec } = rest
   const stable = useShallowStable({
     ...spec,
+    data,
+    x,
     series,
     marks,
     cursorResolution,
     tooltip: tooltipWithPrimary,
   })
-  const compile = useCallback(
-    (ctx: ShellContext) =>
+
+  const chartId = useId()
+  const inCard = useInChartCard()
+  const { ref, coarse } = useChartSize()
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
+  const [highlighted, setHighlighted] = useState<string | null>(null)
+  // The engine lays the plot out AFTER `marks` runs, and the bands read its size: recompile once.
+  const [plot, setPlot] = useState<PlotSizes | null>(null)
+  const onPlot = useCallback((next: PlotSizes) => {
+    setPlot((prev) => (samePlots(prev, next) ? prev : next))
+  }, [])
+  const definition = useMemo(
+    () =>
       compileCartesian<T, X>({
         ...stable,
-        ...ctx,
+        chartId,
+        hidden,
+        highlighted,
+        coarse,
+        plot,
         band: true,
         tooltipBelow: true,
         y: STRIP_AXIS,
         xZones: ZX_ANCHOR,
       }),
-    [stable],
+    [stable, chartId, hidden, highlighted, coarse, plot],
   )
 
+  // The legend names every state: a single entry names nothing the axis and tooltip do not.
+  const entryCount = legendEntries(series, false)[0]?.length ?? 0
+  const config = legend === false ? null : (legend ?? (entryCount > 1 ? {} : null))
+  const toggle = config?.toggle ?? entryCount >= 2
+  const onToggle = useCallback((key: string) => {
+    setHidden((prev) => {
+      const next = new Set(prev)
+      if (!next.delete(key)) next.add(key)
+      return next
+    })
+  }, [])
+  const resolved = resolveChartState(chartState)
+  const legendNode =
+    config !== null && entryCount > 0 ? (
+      <ChartLegend
+        series={series}
+        hidden={hidden}
+        mode="auto"
+        groups={config.groups === true}
+        toggle={toggle}
+        onToggle={onToggle}
+        onHighlight={setHighlighted}
+        concealed={resolved !== null}
+      />
+    ) : null
+  // `header` is the enclosing card's header row (`top` outside a card).
+  const atTop = config?.placement === 'top' || config?.placement === 'header'
+
   return (
-    <ChartShell
-      series={series}
-      compile={compile}
-      ariaLabel={ariaLabel}
-      {...(legend !== undefined && { legend })}
-      {...(height !== undefined && { height })}
-      {...(chartState !== undefined && { state: chartState })}
+    <div
+      ref={ref}
+      data-basalt-chart=""
       {...(className !== undefined && { className })}
-      {...(style !== undefined && { style })}
-    />
+      style={style ? { ...rootStyle, ...style } : rootStyle}
+    >
+      {atTop &&
+        (config?.placement === 'header' && inCard ? (
+          <div style={headerLegendStyle}>{legendNode}</div>
+        ) : (
+          legendNode
+        ))}
+      {resolved === null ? (
+        <ChartEngine
+          definition={definition}
+          ariaLabel={ariaLabel}
+          height={height}
+          idPrefix={idPrefixOf(chartId)}
+          coarse={coarse}
+          onPlot={onPlot}
+        />
+      ) : (
+        <ChartPlaceholder state={chartState} height={height} />
+      )}
+      {!atTop && legendNode}
+    </div>
   )
 }

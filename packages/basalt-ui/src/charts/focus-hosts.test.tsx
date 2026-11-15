@@ -8,12 +8,9 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
 import type { ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
-import { dot } from '@tanstack/charts/dot'
-import { CartesianChart } from './CartesianChart'
 import { useChartFocus } from './focus'
-import { CartesianChart as V3CartesianChart } from './parts/cartesian'
+import { CartesianChart } from './parts/cartesian'
 import { Heatmap, stepGrid } from './parts/heatmap'
-import type { PlotContext } from './types'
 
 type Cell = { row: string; col: string; v: number }
 const CELLS: readonly Cell[] = [
@@ -147,39 +144,12 @@ const STAGES: readonly Stage[] = [
 ]
 const COLOR = { light: 'var(--vx-line)', dark: 'var(--vx-line)' }
 
-/** What the custom marks saw last: the 2.x chart hands marks `plot.focused`. */
-let seen: Stage | null | undefined
-const lastSeen = (): Stage | null | undefined => seen
-
-function Pace2x() {
-  const focus = useChartFocus(STAGES, { announce: (d) => `${d.stage}: ${d.behind} s behind` })
-  return (
-    <div>
-      <output data-readout="">{focus.readout('+98 s', (d) => `${d.stage} ${d.behind} s`)}</output>
-      <CartesianChart
-        ariaLabel="Pace"
-        data={STAGES}
-        x={(d) => d.at}
-        series={[
-          { key: 'behind', label: 'Behind', color: 'var(--vx-line)', getValue: (d) => d.behind },
-        ]}
-        cursorGroup="focus-2x"
-        focus={focus}
-        marks={(plot: PlotContext<Stage, number>) => {
-          seen = plot.focused
-          return [dot(plot.rows('behind'), { x: 'x', y: 'y', r: 4, fill: 'currentColor' })]
-        }}
-      />
-    </div>
-  )
-}
-
 function Pace3() {
   const focus = useChartFocus(STAGES, { announce: (d) => `${d.stage}: ${d.behind} s behind` })
   return (
     <div>
       <output data-readout="">{focus.readout('+98 s', (d) => `${d.stage} ${d.behind} s`)}</output>
-      <V3CartesianChart
+      <CartesianChart
         ariaLabel="Pace"
         data={STAGES}
         x={{ value: (d) => d.stage }}
@@ -195,34 +165,7 @@ function Pace3() {
 const barFills = (el: HTMLElement) =>
   [...el.querySelectorAll('[data-ts-key^="bars"]:not(g)')].map((b) => b.getAttribute('fill') ?? '')
 
-describe('CartesianChart focus (2.x)', () => {
-  test('arrow keys on the wrapper focus a datum, the marks see it, the readout follows', async () => {
-    seen = undefined
-    const el = await mount(<Pace2x />)
-    const stops = el.querySelectorAll('[tabindex="0"]')
-    expect(stops.length).toBe(1)
-    const wrap = el.querySelector('[data-chart-focus]') as Element
-    await press(wrap, 'ArrowRight')
-    expect(readout(el)).toBe('Build 12 s')
-    await press(wrap, 'ArrowRight')
-    expect(readout(el)).toBe('Test 94 s')
-    expect(lastSeen()).toBe(STAGES[1])
-    expect(live(el)).toBe('Test: 94 s behind')
-    await press(wrap, 'Escape')
-    expect(readout(el)).toBe('+98 s')
-    expect(lastSeen()).toBeNull()
-  })
-
-  test('pointing at the plot focuses the datum under the cursor', async () => {
-    const el = await mount(<Pace2x />)
-    const svg = el.querySelector('svg') as Element
-    await point(svg, 700, 100)
-    expect(readout(el)).toBe('Deploy -8 s')
-    expect(lastSeen()).toBe(STAGES[2])
-  })
-})
-
-describe('CartesianChart focus (v3)', () => {
+describe('CartesianChart focus', () => {
   test('arrow keys dim the other bars and drive the readout', async () => {
     const el = await mount(<Pace3 />)
     const wrap = el.querySelector('[data-chart-focus]') as Element

@@ -11,7 +11,7 @@ export const seedBars = (): Bar[] =>
 
 // #region recipe:two-pane
 import { Lines } from '../../../src/charts/parts/lines'
-import { chartCursor } from '../../../src/charts/cursor'
+import { chartCursor } from '../../../src/charts/core/cursor'
 import { useSyncExternalStore } from 'react'
 const GROUP = 'momentum' // one cursor group: a hover on either pane moves the other
 const GUTTER = 56 // one y gutter in px, so both panes put one day on one pixel column

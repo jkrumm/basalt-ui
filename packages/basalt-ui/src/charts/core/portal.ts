@@ -18,12 +18,25 @@ import type {
 export type TipMode = 'card' | 'slot' | 'strip'
 
 const CARD = '[data-slot="card"]'
+/** Air between a strip tooltip opened below and the scene's bottom edge (under the x tick labels), px. */
+const STRIP_TICK_AIR = 2
 /** The resolver keeps this much air inside its boundary; a plot fence must leave room for it. */
 const EDGE = 8
 /** Without an authored placement a tooltip flips above or below its anchor, then slides. */
 const VERTICAL = ['top', 'bottom'] as const
 
-function boundary(ctx: ChartTooltipPortalPositionContext, mode: TipMode, size: TooltipSize) {
+type Boundary = {
+  anchor: { x: number; y: number }
+  bounds: TooltipBounds
+  /** The lowest top a tooltip placed below the anchor may take, client px. */
+  clear?: number
+}
+
+function boundary(
+  ctx: ChartTooltipPortalPositionContext,
+  mode: TipMode,
+  size: TooltipSize,
+): Boundary {
   const element = ctx.surface.element as HTMLElement
   const doc = element.ownerDocument
   const view = doc.defaultView
@@ -36,8 +49,13 @@ function boundary(ctx: ChartTooltipPortalPositionContext, mode: TipMode, size: T
     y: surface.top + (y / height) * surface.height,
   })
   const anchor = toClient(ctx.anchor.x, ctx.anchor.y)
+  // A strip tooltip opens below the plot, and the x tick labels sit in the scene's bottom margin: it starts under the scene.
   if (mode === 'strip')
-    return { anchor, bounds: { ...viewport, left: card.left, right: card.right } }
+    return {
+      anchor,
+      bounds: { ...viewport, left: card.left, right: card.right },
+      clear: surface.bottom + STRIP_TICK_AIR,
+    }
   if (mode === 'slot') return { anchor, bounds: card }
   const tl = toClient(margin.left, margin.top)
   const br = toClient(width - margin.right, height - margin.bottom)
@@ -90,7 +108,7 @@ function create(mode: TipMode): ChartTooltipPortalExtension['create'] {
         listen(true)
         const size = { width: element.offsetWidth, height: element.offsetHeight }
         if (!size.width || !size.height || !ctx.scene.width || !ctx.scene.height) return true
-        const { anchor, bounds } = boundary(ctx, mode, size)
+        const { anchor, bounds, clear } = boundary(ctx, mode, size)
         const placed = resolveChartTooltipPlacement(
           anchor,
           size,
@@ -99,7 +117,13 @@ function create(mode: TipMode): ChartTooltipPortalExtension['create'] {
           ctx.offset,
         )
         write(element, 'left', placed.left)
-        write(element, 'top', placed.top)
+        write(
+          element,
+          'top',
+          clear !== undefined && placed.placement === 'bottom'
+            ? Math.max(placed.top, clear)
+            : placed.top,
+        )
         if (element.dataset['placement'] !== placed.placement)
           element.dataset['placement'] = placed.placement
         return true

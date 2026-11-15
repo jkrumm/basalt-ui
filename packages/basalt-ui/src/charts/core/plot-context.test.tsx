@@ -7,7 +7,8 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
-import { CartesianChart } from '../CartesianChart'
+import { CartesianChart } from '../parts/cartesian'
+import type { ChartPlot } from '../contract'
 import { compileCartesian } from './compile'
 import {
   MAIN_PANE,
@@ -27,6 +28,7 @@ const data: Row[] = [1, 2, 3, 4].map((d) => ({ t: new Date(Date.UTC(2026, 8, d))
 const x = (d: Row): Date => d.t
 const a: ChartSeries<Row> = { key: 'a', label: 'A', color: 'var(--vx-line)', getValue: (d) => d.v }
 const b: ChartSeries<Row> = { ...a, key: 'b', label: 'B' }
+const COLOR = { light: 'var(--vx-line)', dark: 'var(--vx-line)' }
 const FRAME = { width: 400, height: 200, defaultTheme: {} as never }
 
 const sized = (main: { width: number; height: number }): PlotSizes => ({ [MAIN_PANE]: main })
@@ -184,17 +186,17 @@ describe('rendered', () => {
   })
 
   const settle = (): Promise<void> => new Promise((r) => setTimeout(r, 60))
-  const chart = (onMarks: (p: PlotContext<Row, Date>) => void, height = 200) => (
+  const chart = (onMarks: (p: ChartPlot<Row>) => void, height = 200) => (
     <CartesianChart
       ariaLabel="C"
       data={data}
-      x={x}
-      series={[a]}
+      x={{ value: x }}
+      series={[{ mark: 'line', key: 'a', label: 'A', color: COLOR, y: (d) => d.v }]}
       height={height}
-      marks={(p) => {
+      marks={CartesianChart.custom<Row>((p) => {
         onMarks(p)
         return []
-      }}
+      })}
     />
   )
   async function mount(node: React.ReactNode): Promise<void> {

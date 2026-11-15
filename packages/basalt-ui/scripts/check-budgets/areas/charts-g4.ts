@@ -6,11 +6,9 @@
  * +5% rounded up to 0.5 KB, at most 4000 B (above that is an amendment, not a raise). Ratcheted down only.
  * Amendment (Decision, Issue 1227): Heatmap measures 4002 B, so its ceiling is 4500 B (+5% rounded up to
  * 0.5 KB) instead of the 4000 B cap; BandStrip holds the cap.
- * Amendment (Decision, Issue 1407): the three-kind fixture is the v3 parts since v3-teardown-views deleted the
- * 2.x Lines, Bars and Sparkline. BandStrip and Heatmap still compose 2.x modules (`CartesianChart.tsx`
- * ChartShell, `compile.ts`, `marks.ts`) that the v3 kinds do not, so their marginals read 17953 B and 5158 B
- * against the lighter baseline. Ceilings are the measured value +5%, up to 0.5 KB; they ratchet back down when
- * the follow-up ports both kinds onto `core/compile` and those 2.x modules go.
+ * Issue 1417: BandStrip and Heatmap compose `core/compile`, the host and the card portal like the v3 kinds, and
+ * the 2.x ChartShell and compile modules are deleted, so the Issue 1407 amendment (18500 B and 5500 B) is gone:
+ * Heatmap measures 3966 B (ceiling at the 4000 B cap), BandStrip 2434 B (3000 B).
  */
 import { reExportNamed, measureSource } from '../ui-bundle'
 import type { Raises, RowDef } from '../lib'
@@ -38,38 +36,18 @@ export const rows: readonly RowDef[] = [
     id: 'charts-heatmap-marginal',
     order: 24,
     label: 'charts Heatmap marginal (gzip B over Sparkline + Lines + Bars)',
-    // 5158 B measured on the v3 three-kind fixture (4002 B on the 2.x one); amended by Decision, Issue 1407.
-    ceiling: 5500,
+    // 3966 B measured on the v3 three-kind fixture; at the cap.
+    ceiling: 4000,
     measure: () => marginal(HEATMAP),
   },
   {
     id: 'charts-band-strip-marginal',
     order: 25,
     label: 'charts BandStrip marginal (gzip B over Sparkline + Lines + Bars)',
-    // 17953 B measured on the v3 three-kind fixture (2135 B on the 2.x one): BandStrip still reaches the 2.x
-    // ChartShell and compile modules; amended by Decision, Issue 1407.
-    ceiling: 18500,
+    // 2434 B measured on the v3 three-kind fixture (+5%, rounded up to 0.5 KB).
+    ceiling: 3000,
     measure: () => marginal(BAND_STRIP),
   },
 ]
 
-export const raises: Raises = {
-  'charts-heatmap-marginal': [
-    {
-      from: 4500,
-      to: 5500,
-      consumer:
-        '`Heatmap` over the v3 three-kind fixture (Issue 1407): linewatch renders two Heatmaps (the 2.x Lines, Bars and Sparkline that carried part of its closure are deleted, so the marginal reads 5158 B); a port onto `core/compile` brings it back down',
-      repo: 'linewatch',
-    },
-  ],
-  'charts-band-strip-marginal': [
-    {
-      from: 2500,
-      to: 18500,
-      consumer:
-        "`BandStrip` over the v3 three-kind fixture (Issue 1407): linewatch's availability strip (web/src/charts/availability-strip.tsx) renders it; it still reaches the 2.x ChartShell and compile modules the v3 kinds do not, so the marginal reads 17953 B until a port onto `core/compile`",
-      repo: 'linewatch',
-    },
-  ],
-}
+export const raises: Raises = {}

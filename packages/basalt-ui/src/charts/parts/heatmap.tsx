@@ -12,7 +12,6 @@ import { decorative } from '@tanstack/charts/mark/decorative'
 import { cell } from '@tanstack/charts/rect'
 import { text } from '@tanstack/charts/text'
 import { scaleBand } from '@tanstack/charts/scales/band'
-import { portal } from '@tanstack/charts/tooltip/portal'
 import type { ChartBuildContext, ChartPoint, StoredChartSpec } from '@tanstack/charts/types/core'
 import { scaleQuantize } from 'd3-scale'
 import { useId, useMemo } from 'react'
@@ -27,6 +26,7 @@ import { GLYPH_MIN_PX, glyphOf, resolveNamedState } from './band-fold'
 import type { NamedChartState } from './band-fold'
 import { ABSENT_OPACITY, RAMP_LEVELS, RAMP_OPACITIES } from './heatmap-fill'
 import { engineTooltip } from '../core/cursor'
+import { cardPortal } from '../core/portal'
 import { ChartEngine, idPrefixOf } from '../host'
 import { ChartLegend } from '../legend'
 import { useCoarsePointer } from '../../common/use-media-query'
@@ -156,6 +156,9 @@ type Cell<T, K extends string> = {
   state: K | undefined
 }
 
+/** A cell's centred mark: its text and ink. */
+type Mark = { id: number; row: string; col: string; text: string; fill: string }
+
 const identityLabel = (band: string): string => band
 
 const firstSeen = (keys: Iterable<string>): string[] => [...new Set(keys)]
@@ -191,16 +194,15 @@ export function colTicks(
   cls: ContainerClass,
 ): string[] {
   const stride = strideTicks(cols, cls)
-  const pinned = new Set(named?.filter((c) => cols.includes(c)))
-  if (pinned.size === 0) return stride
+  const pinned = cols.filter((c) => named?.includes(c))
+  if (pinned.length === 0) return stride
   const gap = stride.length > 1 ? cols.indexOf(stride[1] as string) : cols.length
-  const pinnedAt = [...pinned].map((c) => cols.indexOf(c))
-  const kept = stride.filter((c) => {
-    if (pinned.has(c)) return true
-    const at = cols.indexOf(c)
-    return pinnedAt.every((p) => Math.abs(at - p) * 2 >= gap)
-  })
-  const wanted = new Set([...kept, ...pinned])
+  const wanted = new Set([
+    ...pinned,
+    ...stride.filter((c) =>
+      pinned.every((p) => Math.abs(cols.indexOf(c) - cols.indexOf(p)) * 2 >= gap),
+    ),
+  ])
   return cols.filter((c) => wanted.has(c))
 }
 
@@ -234,6 +236,13 @@ const heightOfRows = (count: number): number =>
 
 const fillStyle: CSSProperties = { position: 'relative', height: '100%', minHeight: HEIGHT_MIN }
 
+/** The datum at each grid position, by `row\0col`; the last datum at a position wins. */
+const gridIndex = <T,>(
+  data: readonly T[],
+  getRow: (d: T) => string,
+  getCol: (d: T) => string,
+): Map<string, T> => new Map(data.map((d) => [`${getRow(d)}\u0000${getCol(d)}`, d]))
+
 /** The datum at each grid position, row-major; `undefined` where the grid has none. */
 export function datumGrid<T>(
   data: readonly T[],
@@ -242,8 +251,7 @@ export function datumGrid<T>(
   getRow: (d: T) => string,
   getCol: (d: T) => string,
 ): (T | undefined)[][] {
-  const at = new Map<string, T>()
-  for (const d of data) at.set(`${getRow(d)}\u0000${getCol(d)}`, d)
+  const at = gridIndex(data, getRow, getCol)
   return rows.map((r) => cols.map((c) => at.get(`${r}\u0000${c}`)))
 }
 
@@ -260,30 +268,30 @@ export function stepGrid<T>(
   indexOf: (d: T) => number,
 ): number | null | undefined {
   if (key === 'Escape') return null
+  const step = STEPS[key]
+  if (!step && key !== 'Home' && key !== 'End') return undefined
   const cells = grid.flatMap((row, r) =>
     row.flatMap((d, c) => (d === undefined ? [] : [{ r, c, d }])),
   )
-  const first = cells[0]
-  const last = cells.at(-1)
-  if (first === undefined || last === undefined) return undefined
-  const back = key === 'ArrowLeft' || key === 'ArrowUp' || key === 'End'
-  const known = new Set(['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End'])
-  if (!known.has(key)) return undefined
-  const here = current === undefined ? undefined : cells.find((p) => p.d === current)
-  if (here === undefined || key === 'Home' || key === 'End') return indexOf((back ? last : first).d)
-  const [dr, dc] =
-    key === 'ArrowRight'
-      ? [0, 1]
-      : key === 'ArrowLeft'
-        ? [0, -1]
-        : key === 'ArrowDown'
-          ? [1, 0]
-          : [-1, 0]
+  const here = cells.find((p) => p.d === current)
+  if (!step || !here) {
+    const back = key === 'ArrowLeft' || key === 'ArrowUp' || key === 'End'
+    const edge = back ? cells.at(-1) : cells[0]
+    return edge && indexOf(edge.d)
+  }
+  const [dr, dc] = step
   for (let r = here.r + dr, c = here.c + dc; inside(grid, r, c); r += dr, c += dc) {
     const d = grid[r]?.[c]
     if (d !== undefined) return indexOf(d)
   }
   return indexOf(here.d)
+}
+
+const STEPS: Record<string, readonly [number, number]> = {
+  ArrowRight: [0, 1],
+  ArrowLeft: [0, -1],
+  ArrowDown: [1, 0],
+  ArrowUp: [-1, 0],
 }
 
 const inside = (grid: readonly (readonly unknown[])[], r: number, c: number): boolean =>
@@ -336,13 +344,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
   const stateByKey = useMemo(() => new Map(states.map((s) => [s.key, s])), [states])
 
   const definition = useMemo<CartesianDefinition>(() => {
-    const byBand = new Map<string, Map<string, T>>()
-    for (const d of data) {
-      const row = getRow(d)
-      const inRow = byBand.get(row) ?? new Map<string, T>()
-      inRow.set(getCol(d), d)
-      byBand.set(row, inRow)
-    }
+    const at = gridIndex(data, getRow, getCol)
     // One pass: split the grid into measured, stated, absent-with-a-datum and absent-with-none.
     const present: Cell<T, K>[] = []
     const stated = new Map<K, Cell<T, K>[]>()
@@ -351,7 +353,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     let max = 0
     for (const [r, row] of rows.entries()) {
       for (const [c, col] of cols.entries()) {
-        const datum = byBand.get(row)?.get(col)
+        const datum = at.get(`${row}\u0000${col}`)
         const raw = datum === undefined ? null : getValue(datum)
         const value = raw !== null && Number.isFinite(raw) ? raw : null
         const stateKey =
@@ -424,12 +426,14 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         ? []
         : [...present, ...absentWithDatum, ...[...stated.values()].flat()].flatMap((c) => {
             const note = c.datum === undefined ? null : annotate(c.datum)
-            return note === null || note === '' ? [] : [{ ...c, note, dark: darkFill(c) }]
+            return note === null || note === ''
+              ? []
+              : [{ ...c, text: note, fill: darkFill(c) ? VX.surface.panel : VX.ink }]
           })
     const tooltipOptions = showTooltip
       ? {
           use: engineTooltip,
-          portal,
+          portal: cardPortal('card'),
           // Below the hovered cell (flipping above only when there is no room): the default sits
           // above it and covers the caption row over the grid.
           placement: ['bottom', 'top'] as const,
@@ -457,49 +461,31 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
           opacity: 1,
           thin: true,
         }
-        // A stated cell's glyph, centred in the cell; skipped when the cell is too narrow to hold it.
-        const glyphMarks = (plotWidth: number) => {
-          const drawn = [...stated].flatMap(([key, group]) => {
-            const named = stateByKey.get(key)
-            const glyph = named && glyphOf({ ...named, color: fillOf(named) })
-            return glyph ? group.map((c) => ({ ...c, glyph })) : []
-          })
-          return drawn.length > 0 && plotWidth / Math.max(cols.length, 1) >= GLYPH_MIN_PX
+        // A mark in the cell's centre (a stated cell's glyph, a per-cell note), skipped where the
+        // cell is too narrow to hold it.
+        const centred = (items: readonly Mark[], id: string, fontSize: number) =>
+          items.length > 0 && width / Math.max(cols.length, 1) >= GLYPH_MIN_PX
             ? [
                 decorative(
-                  text(drawn, {
-                    id: 'state-glyphs',
+                  text(items, {
+                    id,
                     x: 'col',
                     y: 'row',
                     key: 'id',
-                    text: 'glyph',
-                    fill: VX.surface.panel,
-                    fontSize: VX.text.xs,
+                    text: 'text',
+                    fill: 'fill',
+                    fontSize,
                     fontWeight: 600,
                     anchor: 'middle',
                   }),
                 ),
               ]
             : []
-        }
-        const noteMarks = (plotWidth: number) =>
-          annotated.length > 0 && plotWidth / Math.max(cols.length, 1) >= GLYPH_MIN_PX
-            ? [
-                decorative(
-                  text(annotated, {
-                    id: 'annotations',
-                    x: 'col',
-                    y: 'row',
-                    key: 'id',
-                    text: 'note',
-                    fill: (c: { dark: boolean }) => (c.dark ? VX.surface.panel : VX.ink),
-                    fontSize: VX.text.nano,
-                    fontWeight: 600,
-                    anchor: 'middle',
-                  }),
-                ),
-              ]
-            : []
+        const glyphs = [...stated].flatMap(([key, group]) => {
+          const named = stateByKey.get(key)
+          const glyph = named && glyphOf({ ...named, color: fillOf(named) })
+          return glyph ? group.map((c) => ({ ...c, text: glyph, fill: VX.surface.panel })) : []
+        })
         const marks = [
           // Inert, not decorative: it must still win the hit test, so a pointer over an empty
           // position lands on THIS cell (whose tooltip is empty) instead of snapping to a neighbour.
@@ -516,8 +502,8 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
             })
           }),
           ...cellMark('cells', present, { color: 'value' }),
-          ...glyphMarks(width),
-          ...noteMarks(width),
+          ...centred(glyphs, 'state-glyphs', VX.text.xs),
+          ...centred(annotated, 'annotations', VX.text.nano),
         ]
         return {
           marks,
