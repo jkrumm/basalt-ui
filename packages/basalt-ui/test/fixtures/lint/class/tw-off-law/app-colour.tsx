@@ -7,6 +7,7 @@
 // expect: bg-brand-fill
 // expect: text-good
 // expect: border-brand
+// expect: bg-info-tint
 import { useChartFocus } from 'basalt-ui/charts'
 
 export const a = (
@@ -25,3 +26,5 @@ export function Track({ spans }) {
     </div>
   )
 }
+
+export const unbound = <div {...other.item(0)} className="bg-info-tint" />

@@ -111,7 +111,8 @@ function itemSpreadHandle(attr: Node): string | undefined {
  * `focus` is bound from `useChartFocus(..)` in this file. The same route `primitive-bypass` names
  * for a self-drawn mark, so the fill that mark takes is not reported (text, border and ring
  * colours still are). Purely syntactic: a handle bound elsewhere, or a mark in a child component,
- * is not seen and takes a waiver.
+ * is not seen and takes a waiver. Unlike `primitive-bypass`'s data-mark forms it does not require
+ * the enclosing `focus.target` container: a seam mark's fill is legal wherever the mark is wired.
  */
 export function partsOnlyExceptSeamMark(form: ClassForm, exempt: RegExp): AstForm {
   const { pattern, ...base } = form
