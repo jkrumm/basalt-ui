@@ -209,12 +209,12 @@ describe('featureRuntimeChunks', () => {
 })
 
 /** A self-contained area file: one row `r` at `ceiling`, plus raw `raises` source. */
-const fixtureArea = (ceiling: number, raises = '[]') =>
+const fixtureArea = (ceiling: number, raises = '{}') =>
   `export const rows = [{ id: 'r', order: 1, label: 'r', ceiling: ${ceiling}, measure: () => 1 }]\n` +
   `export const raises = ${raises}\n`
 
 const raiseRow = (repo: string, { from = 100, to = 120, consumer = 'a screen' } = {}) =>
-  `[{ ceiling: 'r', from: ${from}, to: ${to}, consumer: '${consumer}', repo: '${repo}' }]`
+  `{ r: [{ from: ${from}, to: ${to}, consumer: '${consumer}', repo: '${repo}' }] }`
 
 describe('ratchet', () => {
   const scratch = mkdtempSync(join(tmpdir(), 'check-budgets-ratchet-'))
@@ -293,6 +293,44 @@ describe('ratchet', () => {
     expect(files.length).toBeGreaterThan(0)
     const readBase = (file: string) => readFileSync(file, 'utf8')
     expect(await ratchetViolations({ files, readBase })).toEqual([])
+  })
+
+  test('two branches that raise different rows of one area file merge without a conflict', () => {
+    const base = readFileSync(join(REAL_AREAS, 'surface.ts'), 'utf8')
+    /** What a branch does to raise `id`: the ceiling number, then a new entry at the head of the row's raises. */
+    const raise = (source: string, id: string, ceiling: RegExp, to: string): string =>
+      source
+        .replace(ceiling, (match) => match.replace(/\d+/, to))
+        .replace(
+          `  '${id}': [\n`,
+          `  '${id}': [\n    { from: 1, to: 2, consumer: 'a screen', repo: 'rb' },\n`,
+        )
+    const ours = raise(base, 'barrel-types', /ceiling: \d+, \/\/ v3 table-ga: 24/, '999')
+    const theirs = raise(base, 'non-chart-symbols', /ceiling: \d+, \/\/ v3 table-ga: `Table/, '998')
+    expect(ours).not.toBe(base)
+    expect(theirs).not.toBe(base)
+
+    const dir = mkdtempSync(join(tmpdir(), 'check-budgets-merge-'))
+    try {
+      for (const [name, text] of [
+        ['base', base],
+        ['ours', ours],
+        ['theirs', theirs],
+      ] as const) {
+        writeFileSync(join(dir, name), text)
+      }
+      const merged = Bun.spawnSync(
+        ['git', 'merge-file', '-p', join(dir, 'ours'), join(dir, 'base'), join(dir, 'theirs')],
+        { stderr: 'pipe' },
+      )
+      expect(merged.exitCode).toBe(0)
+      const text = merged.stdout.toString()
+      expect(text.match(/consumer: 'a screen'/g)).toHaveLength(2)
+      expect(text).toContain('ceiling: 999,')
+      expect(text).toContain('ceiling: 998,')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })
 

@@ -9,7 +9,7 @@ import { join } from 'node:path'
 import { CHART_SUBPATH } from '../../surface-gates'
 import type { Manifest, Surface } from '../../surface-gates'
 import { PKG_ROOT, Unmeasured, readManifest, readSurface } from '../lib'
-import type { Raise, RowDef } from '../lib'
+import type { Raises, RowDef } from '../lib'
 
 /** Value exports of every subpath except `./charts`, which is budgeted apart. */
 function nonChartSymbols(surface: Surface): number {
@@ -78,377 +78,336 @@ export const rows: readonly RowDef[] = [
   },
 ]
 
-export const raises: readonly Raise[] = [
-  {
-    ceiling: 'non-chart-symbols',
-    from: 174,
-    to: 179,
-    consumer:
-      '`TableToolbar`, `DataTableBody`, `TablePager`, `BulkBar` and `tableCodec` from `./table`: linewatch lays its outage and status tables out through the parts `DataTable` composes (web/src/components/outage-table.tsx) and carries the table state through `field.composite(tableCodec(...))` (Issue 1146)',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 109,
-    to: 133,
-    consumer:
-      'the table contract types from `./table` (`TableState`, `TableRequest`, `View`, `ViewStore`, `Mode`, `Selection`, `DataTableInstance`, `TableEscape`, `UseDataTable` and the rest): linewatch types its table composites and its saved-view store off them (web/src/components/outage-table.tsx, Issue 1146)',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'subpaths',
-    from: 32,
-    to: 33,
-    consumer:
-      '`./table.css`: linewatch imports the table tier sheet beside `./table` (web/src/components/outage-table.tsx), the CSS entry of an app that renders `DataTable` (Issue 1146)',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 172,
-    to: 174,
-    consumer:
-      '`routerDefaults`, `navTarget` from `./router`: linewatch replaces `createBasaltRouter` (web/src/lib/router.ts) with plain TanStack options and a typed link adapter (docs/v3/concepts/shell-nav-router.md section 3.4)',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 169,
-    to: 172,
-    consumer:
-      '`defineBlock`, `defineCatalog` from `./ai` and `expectCatalog` from `./testing`: epos ports its `show` tool (stat, chart, table, list, board, callout and four more blocks) onto one catalog and keeps its schema contract test, which `expectCatalog` extends (docs/v3/concepts/ai-mdx.md section 6, stage 3)',
-    repo: 'epos',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 160,
-    to: 161,
-    consumer:
-      '`bindInvalidation` from `./data`: software-factory console hand-rolls the push-to-refetch policy (src/lib/live.ts, policy.ts, debounce.ts) that this replaces (docs/v3/concepts/live-realtime.md section 3)',
-    repo: 'software-factory',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 101,
-    to: 104,
-    consumer:
-      '`MessagePart`, `PartViewOptions`, `ToolView` from `./ai`: the software-factory console types its message mapper and its tool renderers off them',
-    repo: 'software-factory',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 159,
-    to: 160,
-    consumer:
-      '`partView` from `./ai`: the software-factory console renders artifact text through raw react-markdown and epos rebuilds its chat parts at G6; the one exhaustive, untrusted-pinned renderer replaces both',
-    repo: 'software-factory',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 161,
-    to: 165,
-    consumer:
-      "`useConnection`, `useFreshness` from `./data` and `ConnectionIndicator`, `RefreshButton` from `./page`: the software-factory console replaces its hand-rolled lib/connection.ts, and argo's root route swaps its SyncButton for `RefreshButton` fed by `useFreshness().button`",
-    repo: 'software-factory',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 104,
-    to: 107,
-    consumer:
-      '`FreshnessOptions`, `ConnectionIndicatorProps` and `RefreshButtonProps`: apps type the `source` reader of `useFreshness` and wrap the two views off them',
-    repo: 'software-factory',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 158,
-    to: 159,
-    consumer:
-      '`mdxComponents` from `./page`: jkrumm.com and the docs site render authored MDX with one component map that blocks `//h` links (docs/v3/concepts/ai-mdx.md section 4)',
-    repo: 'jkrumm.com',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 157,
-    to: 158,
-    consumer:
-      '`createSyncedState` from `./data`: epos settings (four per-field preferences, no server rev) replaces its hand-rolled synced store; argo gym is the second fit (docs/v3/spikes/synced.md)',
-    repo: 'epos',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 156,
-    to: 157,
-    consumer:
-      '`quality` from `./testing`: shutterflow runs its axe, overflow, focus-ring, focus-not-obscured and text-spacing assertions over its own route list in e2e/desktop/a11y',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 152,
-    to: 153,
-    consumer:
-      '`expectShellInvariants` from `./testing`: shutterflow holds its shell to the same geometry rules in invariants.spec.ts, and the rb and obsidian G2 apps wire it into their tests',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'subpaths',
-    from: 31,
-    to: 32,
-    consumer:
-      '`./core/*`, the modules an ejected seed imports (`basalt-ui/core/cn`, `/format`, `/ports`); rb and obsidian are the G2 eject pilots',
-    repo: 'rb',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 116,
-    to: 117,
-    consumer: '`col` from `./table`, the v3 kind column factory for the outage table',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 110,
-    to: 111,
-    consumer: 'root `externalField`, the ControlHandle bridge for the shutterflow memory store',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 111,
-    to: 112,
-    consumer: '`StatCard` from `./cards`, the stat card anatomy linewatch StatusBar hand-rolls',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 72,
-    to: 73,
-    consumer: '`StatCardProps` from `./cards`, read by linewatch to type its status cells',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 112,
-    to: 114,
-    consumer:
-      '`createFormat` (rb format.ts model module) and `useFormat` (linewatch format helpers), the one Format that replaces their hand-rolled Intl calls',
-    repo: 'rb',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 73,
-    to: 77,
-    consumer:
-      '`Format`, `Msg`, `BasaltMessages`, `CalendarDate`: rb and linewatch type their format modules, message packs and zone-less dates off them',
-    repo: 'rb',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 114,
-    to: 116,
-    consumer:
-      '`defineControls` and `field` from `./router`, the branded store that replaces the linewatch dashboard-store.ts `createSearchStore` store',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 77,
-    to: 81,
-    consumer:
-      '`Controls`, `FieldHandle`, `SearchOf`, `RangeValue`: linewatch types its dashboard query params and range window off them',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 117,
-    to: 119,
-    consumer:
-      '`BarList` and `EventList` from `./cards`, the ranked list and activity feed that shutterflow and linewatch each copy',
-    repo: 'shutterflow',
-  },
-
-  {
-    ceiling: 'barrel-types',
-    from: 81,
-    to: 83,
-    consumer:
-      '`BarListProps` and `EventListProps` from `./cards`: shutterflow types its list rows and event items off them',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 119,
-    to: 122,
-    consumer:
-      '`StatGroup`, `StatCell` and `DataPanel` from `./cards`: linewatch rebuilds its 753-line StatusBar on the strip, argo wraps 19 non-chart panels in the frame',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 83,
-    to: 86,
-    consumer:
-      '`StatGroupProps`, `StatCellProps` and `DataPanelProps` from `./cards`: linewatch types its status bar cells off them',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 122,
-    to: 129,
-    consumer:
-      'the page kit from `./page`: `PageSummary` (argo page-summary.tsx), `EmptyState` (12 shutterflow files, argo strength-tracker.tsx), `QueryState` (3 shutterflow files, argo m365-explorer), `useSizeClass` (2 shutterflow files), `CardGrid` (argo garmin-health, the `SimpleGrid type="container"` it replaces), `OverlayHost` and `defineOverlays` (shutterflow shell/overlays.tsx, argo lib/commands.tsx)',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 129,
-    to: 134,
-    consumer:
-      '`CodeBlock` from `./content` and `Prose`, `Callout`, `Toc`, `ArticleLayout` from `./page`: rb knot-detail and course pages, the argo models slots list and the obsidian note view render them',
-    repo: 'rb',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 134,
-    to: 136,
-    consumer:
-      '`notify` (root) and `ToastHost` (`./page`): argo emit sites and its root host, shutterflow notifyError calls',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 86,
-    to: 87,
-    consumer: '`NotificationPayload`, read by apps to type the payload they build before `notify`',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 136,
-    to: 139,
-    consumer:
-      '`settled`, `installDomShims` and `SLOTS` from `./testing`: shutterflow replaces its Mantine-keyed e2e selectors with `SLOTS` and its hand-rolled DOM stubs with the kit',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 139,
-    to: 143,
-    consumer:
-      'the page core from `./page`: `Page` and `PageAside` (shutterflow photos route: `Page fill area="photos"` and `PageAside dock="always"`), `PageBar` and `Section` (shutterflow settings and library screens, argo agents.tsx and strength-tracker.tsx); the 2.x shell and dashboard ones they replace',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 143,
-    to: 145,
-    consumer:
-      '`spec` and `ControlView` from `./controls`: argo and shutterflow build every filter slot from `spec`, and `ControlView` is the one place the override cue is drawn',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 145,
-    to: 146,
-    consumer:
-      '`KanbanCard` from `./cards`: the software-factory console builds its IssueCard on it, with the mandatory non-drag move path',
-    repo: 'software-factory',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 87,
-    to: 88,
-    consumer:
-      '`FilterSpec` from `./controls`, read by apps to type a list of specs before `filterSlot`',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 88,
-    to: 92,
-    consumer:
-      '`KanbanCardProps`, `ColumnRef`, `Move` and `CardChip` from `./cards`: the console types its columns and its `onMove` handler off them',
-    repo: 'software-factory',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 146,
-    to: 148,
-    consumer:
-      '`DataTable` and `useDataTable` from `./table`: linewatch replaces the hand-rolled outage table and its status table (outage-table.tsx, table-card-swap.module.css and both minWidths go at G1)',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 148,
-    to: 150,
-    consumer:
-      "`InnerNav` and `SplitPage` from `./page`: shutterflow's 11-section settings and argo m365-explorer hand-build the inner sidebar; the pair gives it real links and a Back that walks sections",
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 150,
-    to: 152,
-    consumer:
-      '`filterSlot` and `ControlHome` from `./controls`: argo and shutterflow hand every composite its controls through `filterSlot`, and place the rest of them in a `ControlHome`',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 153,
-    to: 154,
-    consumer:
-      "`liveQuery` from `./data`: linewatch's polled queries (web/src/lib/queries.ts) take a freshness class instead of a per-component refetchInterval",
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 92,
-    to: 93,
-    consumer:
-      '`Freshness` from `./data`: linewatch types a shared cadence off it in web/src/lib/queries.ts',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 154,
-    to: 156,
-    consumer:
-      "`createChannel` and `useNow` from the root: the software-factory console replaces its hand-rolled live.ts and now.ts with them, and shutterflow's hub, epos and rollhook streams are the other SSE copies they remove",
-    repo: 'software-factory',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 93,
-    to: 101,
-    consumer:
-      "`Channel`, `Delivered`, `ChannelState` and the `Transport` seam types, read by the console's live wiring and by any app that writes a Transport",
-    repo: 'software-factory',
-  },
-  {
-    ceiling: 'barrel-types',
-    from: 107,
-    to: 109,
-    consumer:
-      "`FormFieldProps` and `FormRowProps` from `./controls`: shutterflow's settings sections (CamerasSection and the forms around it) wrap `FormField` and type a repeated `FormRow` off them",
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 165,
-    to: 166,
-    consumer:
-      "`FormField` from `./controls`: shutterflow's settings forms (apps/desktop/src/features/settings/CamerasSection.tsx and 18 more files on FormRow) carry their label, description and error through it",
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'non-chart-symbols',
-    from: 166,
-    to: 169,
-    consumer:
-      "`useFormDraft`, `toSubmitErrors` and `FormFooter` from `./controls`: shutterflow's 17 `useFormSubmit` calls and 13 `FormActions` footers (apps/desktop/src/features/settings/CamerasSection.tsx among them) and argo's run edit draft replace their hand-rolled submit lifecycle and draft with them",
-    repo: 'shutterflow',
-  },
-]
+export const raises: Raises = {
+  'non-chart-symbols': [
+    {
+      from: 174,
+      to: 179,
+      consumer:
+        '`TableToolbar`, `DataTableBody`, `TablePager`, `BulkBar` and `tableCodec` from `./table`: linewatch lays its outage and status tables out through the parts `DataTable` composes (web/src/components/outage-table.tsx) and carries the table state through `field.composite(tableCodec(...))` (Issue 1146)',
+      repo: 'linewatch',
+    },
+    {
+      from: 172,
+      to: 174,
+      consumer:
+        '`routerDefaults`, `navTarget` from `./router`: linewatch replaces `createBasaltRouter` (web/src/lib/router.ts) with plain TanStack options and a typed link adapter (docs/v3/concepts/shell-nav-router.md section 3.4)',
+      repo: 'linewatch',
+    },
+    {
+      from: 169,
+      to: 172,
+      consumer:
+        '`defineBlock`, `defineCatalog` from `./ai` and `expectCatalog` from `./testing`: epos ports its `show` tool (stat, chart, table, list, board, callout and four more blocks) onto one catalog and keeps its schema contract test, which `expectCatalog` extends (docs/v3/concepts/ai-mdx.md section 6, stage 3)',
+      repo: 'epos',
+    },
+    {
+      from: 160,
+      to: 161,
+      consumer:
+        '`bindInvalidation` from `./data`: software-factory console hand-rolls the push-to-refetch policy (src/lib/live.ts, policy.ts, debounce.ts) that this replaces (docs/v3/concepts/live-realtime.md section 3)',
+      repo: 'software-factory',
+    },
+    {
+      from: 159,
+      to: 160,
+      consumer:
+        '`partView` from `./ai`: the software-factory console renders artifact text through raw react-markdown and epos rebuilds its chat parts at G6; the one exhaustive, untrusted-pinned renderer replaces both',
+      repo: 'software-factory',
+    },
+    {
+      from: 161,
+      to: 165,
+      consumer:
+        "`useConnection`, `useFreshness` from `./data` and `ConnectionIndicator`, `RefreshButton` from `./page`: the software-factory console replaces its hand-rolled lib/connection.ts, and argo's root route swaps its SyncButton for `RefreshButton` fed by `useFreshness().button`",
+      repo: 'software-factory',
+    },
+    {
+      from: 158,
+      to: 159,
+      consumer:
+        '`mdxComponents` from `./page`: jkrumm.com and the docs site render authored MDX with one component map that blocks `//h` links (docs/v3/concepts/ai-mdx.md section 4)',
+      repo: 'jkrumm.com',
+    },
+    {
+      from: 157,
+      to: 158,
+      consumer:
+        '`createSyncedState` from `./data`: epos settings (four per-field preferences, no server rev) replaces its hand-rolled synced store; argo gym is the second fit (docs/v3/spikes/synced.md)',
+      repo: 'epos',
+    },
+    {
+      from: 156,
+      to: 157,
+      consumer:
+        '`quality` from `./testing`: shutterflow runs its axe, overflow, focus-ring, focus-not-obscured and text-spacing assertions over its own route list in e2e/desktop/a11y',
+      repo: 'shutterflow',
+    },
+    {
+      from: 152,
+      to: 153,
+      consumer:
+        '`expectShellInvariants` from `./testing`: shutterflow holds its shell to the same geometry rules in invariants.spec.ts, and the rb and obsidian G2 apps wire it into their tests',
+      repo: 'shutterflow',
+    },
+    {
+      from: 116,
+      to: 117,
+      consumer: '`col` from `./table`, the v3 kind column factory for the outage table',
+      repo: 'linewatch',
+    },
+    {
+      from: 110,
+      to: 111,
+      consumer: 'root `externalField`, the ControlHandle bridge for the shutterflow memory store',
+      repo: 'shutterflow',
+    },
+    {
+      from: 111,
+      to: 112,
+      consumer: '`StatCard` from `./cards`, the stat card anatomy linewatch StatusBar hand-rolls',
+      repo: 'linewatch',
+    },
+    {
+      from: 112,
+      to: 114,
+      consumer:
+        '`createFormat` (rb format.ts model module) and `useFormat` (linewatch format helpers), the one Format that replaces their hand-rolled Intl calls',
+      repo: 'rb',
+    },
+    {
+      from: 114,
+      to: 116,
+      consumer:
+        '`defineControls` and `field` from `./router`, the branded store that replaces the linewatch dashboard-store.ts `createSearchStore` store',
+      repo: 'linewatch',
+    },
+    {
+      from: 117,
+      to: 119,
+      consumer:
+        '`BarList` and `EventList` from `./cards`, the ranked list and activity feed that shutterflow and linewatch each copy',
+      repo: 'shutterflow',
+    },
+    {
+      from: 119,
+      to: 122,
+      consumer:
+        '`StatGroup`, `StatCell` and `DataPanel` from `./cards`: linewatch rebuilds its 753-line StatusBar on the strip, argo wraps 19 non-chart panels in the frame',
+      repo: 'linewatch',
+    },
+    {
+      from: 122,
+      to: 129,
+      consumer:
+        'the page kit from `./page`: `PageSummary` (argo page-summary.tsx), `EmptyState` (12 shutterflow files, argo strength-tracker.tsx), `QueryState` (3 shutterflow files, argo m365-explorer), `useSizeClass` (2 shutterflow files), `CardGrid` (argo garmin-health, the `SimpleGrid type="container"` it replaces), `OverlayHost` and `defineOverlays` (shutterflow shell/overlays.tsx, argo lib/commands.tsx)',
+      repo: 'shutterflow',
+    },
+    {
+      from: 129,
+      to: 134,
+      consumer:
+        '`CodeBlock` from `./content` and `Prose`, `Callout`, `Toc`, `ArticleLayout` from `./page`: rb knot-detail and course pages, the argo models slots list and the obsidian note view render them',
+      repo: 'rb',
+    },
+    {
+      from: 134,
+      to: 136,
+      consumer:
+        '`notify` (root) and `ToastHost` (`./page`): argo emit sites and its root host, shutterflow notifyError calls',
+      repo: 'shutterflow',
+    },
+    {
+      from: 136,
+      to: 139,
+      consumer:
+        '`settled`, `installDomShims` and `SLOTS` from `./testing`: shutterflow replaces its Mantine-keyed e2e selectors with `SLOTS` and its hand-rolled DOM stubs with the kit',
+      repo: 'shutterflow',
+    },
+    {
+      from: 139,
+      to: 143,
+      consumer:
+        'the page core from `./page`: `Page` and `PageAside` (shutterflow photos route: `Page fill area="photos"` and `PageAside dock="always"`), `PageBar` and `Section` (shutterflow settings and library screens, argo agents.tsx and strength-tracker.tsx); the 2.x shell and dashboard ones they replace',
+      repo: 'shutterflow',
+    },
+    {
+      from: 143,
+      to: 145,
+      consumer:
+        '`spec` and `ControlView` from `./controls`: argo and shutterflow build every filter slot from `spec`, and `ControlView` is the one place the override cue is drawn',
+      repo: 'shutterflow',
+    },
+    {
+      from: 145,
+      to: 146,
+      consumer:
+        '`KanbanCard` from `./cards`: the software-factory console builds its IssueCard on it, with the mandatory non-drag move path',
+      repo: 'software-factory',
+    },
+    {
+      from: 146,
+      to: 148,
+      consumer:
+        '`DataTable` and `useDataTable` from `./table`: linewatch replaces the hand-rolled outage table and its status table (outage-table.tsx, table-card-swap.module.css and both minWidths go at G1)',
+      repo: 'linewatch',
+    },
+    {
+      from: 148,
+      to: 150,
+      consumer:
+        "`InnerNav` and `SplitPage` from `./page`: shutterflow's 11-section settings and argo m365-explorer hand-build the inner sidebar; the pair gives it real links and a Back that walks sections",
+      repo: 'shutterflow',
+    },
+    {
+      from: 150,
+      to: 152,
+      consumer:
+        '`filterSlot` and `ControlHome` from `./controls`: argo and shutterflow hand every composite its controls through `filterSlot`, and place the rest of them in a `ControlHome`',
+      repo: 'shutterflow',
+    },
+    {
+      from: 153,
+      to: 154,
+      consumer:
+        "`liveQuery` from `./data`: linewatch's polled queries (web/src/lib/queries.ts) take a freshness class instead of a per-component refetchInterval",
+      repo: 'linewatch',
+    },
+    {
+      from: 154,
+      to: 156,
+      consumer:
+        "`createChannel` and `useNow` from the root: the software-factory console replaces its hand-rolled live.ts and now.ts with them, and shutterflow's hub, epos and rollhook streams are the other SSE copies they remove",
+      repo: 'software-factory',
+    },
+    {
+      from: 165,
+      to: 166,
+      consumer:
+        "`FormField` from `./controls`: shutterflow's settings forms (apps/desktop/src/features/settings/CamerasSection.tsx and 18 more files on FormRow) carry their label, description and error through it",
+      repo: 'shutterflow',
+    },
+    {
+      from: 166,
+      to: 169,
+      consumer:
+        "`useFormDraft`, `toSubmitErrors` and `FormFooter` from `./controls`: shutterflow's 17 `useFormSubmit` calls and 13 `FormActions` footers (apps/desktop/src/features/settings/CamerasSection.tsx among them) and argo's run edit draft replace their hand-rolled submit lifecycle and draft with them",
+      repo: 'shutterflow',
+    },
+  ],
+  'barrel-types': [
+    {
+      from: 109,
+      to: 133,
+      consumer:
+        'the table contract types from `./table` (`TableState`, `TableRequest`, `View`, `ViewStore`, `Mode`, `Selection`, `DataTableInstance`, `TableEscape`, `UseDataTable` and the rest): linewatch types its table composites and its saved-view store off them (web/src/components/outage-table.tsx, Issue 1146)',
+      repo: 'linewatch',
+    },
+    {
+      from: 101,
+      to: 104,
+      consumer:
+        '`MessagePart`, `PartViewOptions`, `ToolView` from `./ai`: the software-factory console types its message mapper and its tool renderers off them',
+      repo: 'software-factory',
+    },
+    {
+      from: 104,
+      to: 107,
+      consumer:
+        '`FreshnessOptions`, `ConnectionIndicatorProps` and `RefreshButtonProps`: apps type the `source` reader of `useFreshness` and wrap the two views off them',
+      repo: 'software-factory',
+    },
+    {
+      from: 72,
+      to: 73,
+      consumer: '`StatCardProps` from `./cards`, read by linewatch to type its status cells',
+      repo: 'linewatch',
+    },
+    {
+      from: 73,
+      to: 77,
+      consumer:
+        '`Format`, `Msg`, `BasaltMessages`, `CalendarDate`: rb and linewatch type their format modules, message packs and zone-less dates off them',
+      repo: 'rb',
+    },
+    {
+      from: 77,
+      to: 81,
+      consumer:
+        '`Controls`, `FieldHandle`, `SearchOf`, `RangeValue`: linewatch types its dashboard query params and range window off them',
+      repo: 'linewatch',
+    },
+    {
+      from: 81,
+      to: 83,
+      consumer:
+        '`BarListProps` and `EventListProps` from `./cards`: shutterflow types its list rows and event items off them',
+      repo: 'shutterflow',
+    },
+    {
+      from: 83,
+      to: 86,
+      consumer:
+        '`StatGroupProps`, `StatCellProps` and `DataPanelProps` from `./cards`: linewatch types its status bar cells off them',
+      repo: 'linewatch',
+    },
+    {
+      from: 86,
+      to: 87,
+      consumer:
+        '`NotificationPayload`, read by apps to type the payload they build before `notify`',
+      repo: 'shutterflow',
+    },
+    {
+      from: 87,
+      to: 88,
+      consumer:
+        '`FilterSpec` from `./controls`, read by apps to type a list of specs before `filterSlot`',
+      repo: 'shutterflow',
+    },
+    {
+      from: 88,
+      to: 92,
+      consumer:
+        '`KanbanCardProps`, `ColumnRef`, `Move` and `CardChip` from `./cards`: the console types its columns and its `onMove` handler off them',
+      repo: 'software-factory',
+    },
+    {
+      from: 92,
+      to: 93,
+      consumer:
+        '`Freshness` from `./data`: linewatch types a shared cadence off it in web/src/lib/queries.ts',
+      repo: 'linewatch',
+    },
+    {
+      from: 93,
+      to: 101,
+      consumer:
+        "`Channel`, `Delivered`, `ChannelState` and the `Transport` seam types, read by the console's live wiring and by any app that writes a Transport",
+      repo: 'software-factory',
+    },
+    {
+      from: 107,
+      to: 109,
+      consumer:
+        "`FormFieldProps` and `FormRowProps` from `./controls`: shutterflow's settings sections (CamerasSection and the forms around it) wrap `FormField` and type a repeated `FormRow` off them",
+      repo: 'shutterflow',
+    },
+  ],
+  subpaths: [
+    {
+      from: 32,
+      to: 33,
+      consumer:
+        '`./table.css`: linewatch imports the table tier sheet beside `./table` (web/src/components/outage-table.tsx), the CSS entry of an app that renders `DataTable` (Issue 1146)',
+      repo: 'linewatch',
+    },
+    {
+      from: 31,
+      to: 32,
+      consumer:
+        '`./core/*`, the modules an ejected seed imports (`basalt-ui/core/cn`, `/format`, `/ports`); rb and obsidian are the G2 eject pilots',
+      repo: 'rb',
+    },
+  ],
+}

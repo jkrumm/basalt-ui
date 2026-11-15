@@ -6,7 +6,7 @@
  */
 import { join } from 'node:path'
 
-import type { Raise, RowDef } from '../lib'
+import type { Raises, RowDef } from '../lib'
 import { PKG_ROOT } from '../lib'
 import { BASE0, bundleApp, gzipBytes } from '../provider-v3'
 import { measureSource, reExportNamed } from '../ui-bundle'
@@ -48,13 +48,14 @@ export const rows: readonly RowDef[] = [
   },
 ]
 
-export const raises: readonly Raise[] = [
-  {
-    ceiling: 'table-own',
-    from: 111000,
-    to: 123000,
-    consumer:
-      "the default detail sheet of `DataTable`: linewatch's outage table (web/src/components/outage-table.tsx) has a `detail` and no aside host, so a row tap opens the table's own sheet instead of nothing (Issue 1146)",
-    repo: 'linewatch',
-  },
-]
+export const raises: Raises = {
+  'table-own': [
+    {
+      from: 111000,
+      to: 123000,
+      consumer:
+        "the default detail sheet of `DataTable`: linewatch's outage table (web/src/components/outage-table.tsx) has a `detail` and no aside host, so a row tap opens the table's own sheet instead of nothing (Issue 1146)",
+      repo: 'linewatch',
+    },
+  ],
+}

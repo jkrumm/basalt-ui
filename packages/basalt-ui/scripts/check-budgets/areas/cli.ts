@@ -4,7 +4,7 @@
 import { join } from 'node:path'
 
 import { PKG_ROOT, totalLines, walkFiles } from '../lib'
-import type { Raise, RowDef } from '../lib'
+import type { Raises, RowDef } from '../lib'
 
 export const rows: readonly RowDef[] = [
   // 4000 -> 4250: the AGENTS.md block move + the doctor checks (the CLAUDE.md migration was removed in 2.0).
@@ -60,54 +60,49 @@ export const rows: readonly RowDef[] = [
   },
 ]
 
-export const raises: readonly Raise[] = [
-  {
-    ceiling: 'cli-lines',
-    from: 8879,
-    to: 8923,
-    consumer: '`migrate --from` on a direct 1.x jump',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'cli-lines',
-    from: 8923,
-    to: 9691,
-    consumer: '`migrate --from` on a direct 1.x jump',
-    repo: 'shutterflow',
-  },
-  {
-    ceiling: 'cli-lines',
-    from: 9691,
-    to: 9836,
-    consumer: '`sync --check` render-and-compare on a G0 `bridge` install',
-    repo: 'rollhook',
-  },
-  {
-    ceiling: 'cli-lines',
-    from: 9836,
-    to: 11138,
-    consumer: '`eject --adopt` of the base-nova files on a G1 `parts` install',
-    repo: 'console',
-  },
-  {
-    ceiling: 'cli-lines',
-    from: 11138,
-    to: 11309,
-    consumer: '`init` seeding and `lint` counting `.basalt/budget.json` on a G0 `bridge` install',
-    repo: 'rollhook',
-  },
-  {
-    ceiling: 'cli-lines',
-    from: 11309,
-    to: 11637,
-    consumer: '`tokens:css --extra` for app-owned vars and `--format json` for manifest hex',
-    repo: 'rb',
-  },
-  {
-    ceiling: 'cli-lines',
-    from: 11637,
-    to: 11886,
-    consumer: '`init` and `sync` in a declared `basalt.sibling` app beside the root install',
-    repo: 'shutterflow',
-  },
-]
+export const raises: Raises = {
+  'cli-lines': [
+    {
+      from: 8879,
+      to: 8923,
+      consumer: '`migrate --from` on a direct 1.x jump',
+      repo: 'shutterflow',
+    },
+    {
+      from: 8923,
+      to: 9691,
+      consumer: '`migrate --from` on a direct 1.x jump',
+      repo: 'shutterflow',
+    },
+    {
+      from: 9691,
+      to: 9836,
+      consumer: '`sync --check` render-and-compare on a G0 `bridge` install',
+      repo: 'rollhook',
+    },
+    {
+      from: 9836,
+      to: 11138,
+      consumer: '`eject --adopt` of the base-nova files on a G1 `parts` install',
+      repo: 'console',
+    },
+    {
+      from: 11138,
+      to: 11309,
+      consumer: '`init` seeding and `lint` counting `.basalt/budget.json` on a G0 `bridge` install',
+      repo: 'rollhook',
+    },
+    {
+      from: 11309,
+      to: 11637,
+      consumer: '`tokens:css --extra` for app-owned vars and `--format json` for manifest hex',
+      repo: 'rb',
+    },
+    {
+      from: 11637,
+      to: 11886,
+      consumer: '`init` and `sync` in a declared `basalt.sibling` app beside the root install',
+      repo: 'shutterflow',
+    },
+  ],
+}
