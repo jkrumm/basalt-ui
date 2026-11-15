@@ -133,7 +133,7 @@
               },
               {
                 "name": "@mantine/form",
-                "message": "@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Only ./forms needs it."
+                "message": "@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Nothing in the package needs it."
               }
             ],
             "patterns": [
@@ -143,7 +143,7 @@
               },
               {
                 "group": ["@mantine/form/*"],
-                "message": "@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Only ./forms needs it."
+                "message": "@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Nothing in the package needs it."
               }
             ]
           }
