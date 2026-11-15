@@ -120,6 +120,16 @@ describe('check 11: budgets, ejects, weakened config, DESIGN.md', () => {
     expect(r.detail).toContain('weakened-config 1 seeded-offender')
   })
 
+  it('fails when a source file opens with a bare oxlint-disable, naming file and line', async () => {
+    const r = await runCheck(
+      healthy('app', { 'src/legacy.tsx': '/* oxlint-disable */\nexport const a = 1\n' }),
+      11,
+    )
+    expect(r.status).toBe('fail')
+    expect(r.detail).toContain('weakened-config 3 managed-ids')
+    expect(r.detail).toContain('src/legacy.tsx:1')
+  })
+
   it('fails when .oxlintrc.json no longer extends the preset', async () => {
     const r = await runCheck(healthy('app', { '.oxlintrc.json': '{}' }), 11)
     expect(r.status).toBe('fail')

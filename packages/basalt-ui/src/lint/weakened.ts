@@ -10,7 +10,9 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, dirname, relative, resolve } from 'node:path'
 
 import { BUDGET_PATH, CEILINGS, parseBudget } from '../cli/budget'
+import { filesUnder } from '../cli/doctor/types'
 import { parseJsonc } from '../cli/source-text'
+import { findBlanketDisables } from './blanket-disable'
 
 export type WeakenedStatus = 'passed' | 'failed' | 'skipped'
 
@@ -31,6 +33,7 @@ export const SEEDED_FILE = '__basalt_seeded_offender__.tsx'
 export const PRESET_FILE = '.oxlintrc.basalt.json'
 const OXLINTRC = '.oxlintrc.json'
 const MANAGED_PREFIXES = ['basalt/', 'shadcn/'] as const
+const SCRIPT_FILE = /\.[cm]?[jt]sx?$/
 
 /** A hex literal is `colour-literal`, the one form that runs at every profile that lints a root. */
 export const DEFAULT_OFFENDER: Offender = {
@@ -156,7 +159,25 @@ function extendsPreset(config: Config | string): WeakenedResult {
       )
 }
 
-function managedIds(config: Config | string): WeakenedResult {
+/** File-level directives under the declared roots that leave `waiver-needs-reason` unable to report. */
+function blanketDisables(dir: string, roots: readonly string[]): string[] {
+  const files = new Set(roots.flatMap((root) => filesUnder(dir, root, SCRIPT_FILE)))
+  return [...files].toSorted().flatMap((file) => {
+    let source: string
+    try {
+      source = readFileSync(resolve(dir, file), 'utf8')
+    } catch {
+      return []
+    }
+    return findBlanketDisables(source).map((d) => `${file}:${d.line} (${d.reach})`)
+  })
+}
+
+function managedIds(
+  config: Config | string,
+  dir: string,
+  roots: readonly string[],
+): WeakenedResult {
   const result = verdict(3, 'managed-ids')
   if (typeof config === 'string') return result('failed', config)
   const tables: [string, unknown][] = [['rules', config['rules']]]
@@ -173,12 +194,19 @@ function managedIds(config: Config | string): WeakenedResult {
           .map((id) => `${id} in ${where}`)
       : [],
   )
-  return hits.length > 0
-    ? result(
-        'failed',
-        `managed ids set by hand: ${hits.join(', ')}; waive with a reasoned directive`,
-      )
-    : result('passed', 'no managed id in rules or overrides')
+  const blanket = blanketDisables(dir, roots)
+  const problems: string[] = []
+  if (hits.length > 0) {
+    problems.push(`managed ids set by hand: ${hits.join(', ')}; waive with a reasoned directive`)
+  }
+  if (blanket.length > 0) {
+    problems.push(
+      `file-level disable silences waiver-needs-reason: ${blanket.join(', ')}; waive the line with a reason, or declare the path in manifest.deepRender and name colour-literal, shadcn/no-inline-styles or raw-scroll`,
+    )
+  }
+  return problems.length > 0
+    ? result('failed', problems.join('; '))
+    : result('passed', 'no managed id in rules or overrides, no file-level blanket disable')
 }
 
 function oxlintPin(pin: string, installed: string | null): WeakenedResult {
@@ -255,7 +283,7 @@ export async function checkWeakenedConfig(input: WeakenedInput): Promise<Weakene
       input.offender ?? DEFAULT_OFFENDER,
     ),
     extendsPreset(config),
-    managedIds(config),
+    managedIds(config, dir, roots),
     oxlintPin(
       pin,
       input.installedOxlint === undefined ? installedOxlintVersion(dir) : input.installedOxlint,
