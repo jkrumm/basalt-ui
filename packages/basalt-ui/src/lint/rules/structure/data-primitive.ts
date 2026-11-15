@@ -9,7 +9,7 @@
  * `EventSource`: the contract ships no client, so the message names `createChannel` and the seam.
  */
 import type { FormContext, Node, Visitor } from '../../factory'
-import { mergeVisitors } from '../../factory'
+import { isTestFile, mergeVisitors } from '../../factory'
 import type { AstForm } from '../../rule-table'
 import { defineRules } from '../../rule-table'
 import { dataPrimitiveLiveForms } from './data-primitive-live'
@@ -268,20 +268,57 @@ const CHART_ELEMENTS: ReadonlySet<string> = new Set([
 const isEmptyArray = (node: Node | undefined): boolean =>
   node?.type === 'ArrayExpression' && nodesIn(node, 'elements').length === 0
 
+const isFallbackExpression = (node: Node | undefined): boolean =>
+  node?.type === 'LogicalExpression' &&
+  (node['operator'] === '??' || node['operator'] === '||') &&
+  isEmptyArray(child(node, 'right'))
+
+/**
+ * An empty array standing in for a query's data on a chart: written in the prop
+ * (`data={q.data ?? []}`), hoisted (`const rows = q.data ?? []` then `data={rows}`), or a
+ * destructure default off a call (`const { data = [] } = useRuns()` then `data={data}`). A name is
+ * matched by spelling, not scope. Known limit: a fallback that reaches the chart through a helper,
+ * a prop or another file is out of reach.
+ */
 export const chartDataFallback: AstForm = {
   id: 'chart-data-fallback',
-  detect: ({ report }): Visitor => ({
-    JSXAttribute(node) {
-      if (nameOf(child(node, 'name')) !== 'data') return
-      const element = child(node['parent'] as Node, 'name')
-      const tag = nameOf(element)
-      if (tag === undefined || !CHART_ELEMENTS.has(tag)) return
-      const value = child(child(node, 'value'), 'expression')
-      if (value?.type !== 'LogicalExpression') return
-      if (value['operator'] !== '??' && value['operator'] !== '||') return
-      if (isEmptyArray(child(value, 'right'))) report(node, `data={… ${value['operator']} []}`)
-    },
-  }),
+  detect: ({ report }): Visitor => {
+    const fallbacks = new Set<string>()
+    const named: { node: Node; name: string }[] = []
+    return {
+      VariableDeclarator(node) {
+        const id = child(node, 'id')
+        const init = child(node, 'init')
+        const name = nameOf(id)
+        if (name !== undefined && isFallbackExpression(init)) fallbacks.add(name)
+        if (id?.type !== 'ObjectPattern' || init?.type !== 'CallExpression') return
+        for (const prop of nodesIn(id, 'properties')) {
+          const value = child(prop, 'value')
+          if (value?.type !== 'AssignmentPattern' || !isEmptyArray(child(value, 'right'))) continue
+          const local = nameOf(child(value, 'left'))
+          if (local !== undefined) fallbacks.add(local)
+        }
+      },
+      JSXAttribute(node) {
+        if (nameOf(child(node, 'name')) !== 'data') return
+        const element = child(node['parent'] as Node, 'name')
+        const tag = nameOf(element)
+        if (tag === undefined || !CHART_ELEMENTS.has(tag)) return
+        const value = child(child(node, 'value'), 'expression')
+        if (isFallbackExpression(value)) {
+          report(node, `data={… ${(value as Node)['operator']} []}`)
+          return
+        }
+        const name = nameOf(value)
+        if (name !== undefined) named.push({ node, name })
+      },
+      'Program:exit'() {
+        for (const { node, name } of named) {
+          if (fallbacks.has(name)) report(node, `data={${name}} (an empty-array fallback)`)
+        }
+      },
+    }
+  },
   fix: 'Pass the query through state (phase, pending, error, empty) and the real data; a fallback array paints an empty chart as a loaded one',
   next: 'A streamed chart suspends on the same chart with state pending',
   fixture: 'structure-rest/data-primitive-chart-data-fallback.tsx',
@@ -325,9 +362,11 @@ const storageName = (node: Node | undefined): string | undefined => {
   return name !== undefined && STORAGE_OBJECTS.has(name) ? name : undefined
 }
 
+/** A write in a test file (`*.test.*`, `*.spec.*`) seeds storage for a read and passes. */
 export const rawStorageWrite: AstForm = {
   id: 'raw-storage-write',
-  detect: ({ report }): Visitor => {
+  detect: ({ context, report }): Visitor => {
+    if (isTestFile(context)) return {}
     const adapter = seamTracker('StorageLike')
     const pending: { node: Node; subject: string }[] = []
     return mergeVisitors([

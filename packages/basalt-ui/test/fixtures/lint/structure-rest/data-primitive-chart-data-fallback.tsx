@@ -20,3 +20,39 @@ const a = <Table data={rows ?? []} />
 
 // @valid
 const a = <Lines ariaLabel="Runs" rows={runs.data ?? []} />
+
+// @invalid
+const rows = q.data ?? []
+const a = <Lines ariaLabel="Runs" data={rows} series={series} />
+
+// @invalid
+const rows = runs.data || []
+const a = <Sparkline ariaLabel="Runs" data={rows} />
+
+// @invalid
+const { data = [] } = useRuns()
+const a = <Bars ariaLabel="Runs" data={data} series={series} />
+
+// @invalid
+const { data: rows = [] } = useQuery(runsQuery)
+const a = <Lines ariaLabel="Runs" data={rows} series={series} />
+
+// @valid
+const rows = q.data ?? previous
+const a = <Lines ariaLabel="Runs" data={rows} series={series} />
+
+// @valid
+const rows = q.data ?? []
+const a = <Table data={rows} />
+
+// @valid
+const rows = q.data ?? []
+const a = <Lines ariaLabel="Runs" data={other} series={series} />
+
+// @valid
+const { data = [] } = props
+const a = <Lines ariaLabel="Runs" data={data} series={series} />
+
+// @valid
+const { data } = useRuns()
+const a = <Lines ariaLabel="Runs" data={data} state={{ pending }} series={series} />

@@ -35,3 +35,19 @@ localStorage.removeItem('x')
 // @ts
 import { type StorageLike } from 'basalt-ui'
 localStorage.removeItem('y')
+
+// @valid
+// @filename recipes/remembered-values.test.ts
+localStorage.setItem('theme', 'dark')
+
+// @valid
+// @filename recipes/remembered-values.spec.tsx
+window.sessionStorage.clear()
+
+// @invalid
+// @filename recipes/remembered-values.ts
+localStorage.setItem('theme', 'dark')
+
+// @invalid
+// @filename recipes/test-utils.ts
+localStorage.setItem('theme', 'dark')

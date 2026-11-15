@@ -62,6 +62,14 @@ export const TEMPLATE_HOLE = '${}'
 /** Callees whose arguments are class strings. `twMerge` is banned by `import-boundary`. */
 export const CLASS_CALLEES: ReadonlySet<string> = new Set(['cn', 'clsx', 'cx', 'cva'])
 
+const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/
+
+/** A file the host names as a test: it seeds storage and computes expected text as input. */
+export const isTestFile = (context: RuleContext): boolean => {
+  const host = context as RuleContext & { physicalFilename?: string; filename?: string }
+  return TEST_FILE.test((host.physicalFilename ?? host.filename ?? '').replaceAll('\\', '/'))
+}
+
 const CLASS_ATTRIBUTE = /^(?:class|className|[a-z][A-Za-z0-9]*ClassName)$/
 const CLASS_TOKEN = /^!?-?[a-z0-9@[(*_][^\s"'`<>{};]*$/
 
