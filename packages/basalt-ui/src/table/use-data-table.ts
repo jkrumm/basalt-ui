@@ -253,7 +253,10 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
             cause: t('table.noMatches'),
             filtered: { reset: () => state.setRequest({ q: '', filters: [] }) },
           }
-        : { cause: options.empty?.cause ?? t('table.empty'), action: options.empty?.action }
+        : {
+            cause: options.empty?.cause ?? t('table.empty'),
+            ...(options.empty?.action && { action: options.empty.action }),
+          }
       : null
   const phase = resolvePhase({
     phase: options.phase ?? (settled ? undefined : 'loading'),
