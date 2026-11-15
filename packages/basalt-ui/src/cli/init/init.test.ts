@@ -13,7 +13,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import stylelint from 'stylelint'
 
 import { readBudget, seedBudget } from '../budget'
@@ -618,5 +618,20 @@ describe('init: the router scaffold', () => {
     expect(read(dir, 'vite.config.ts')).toBe(first)
     expect(first.match(/tanstackRouter\(/g)).toHaveLength(1)
     expect(first).toContain('basalt(), react()')
+  })
+
+  it('names the router plugin in the to-do when the vite config is not stock', async () => {
+    const dir = repo({ 'vite.config.ts': 'export default defineConfig(() => ({}))\n' })
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(log).toContain('to do: import { tanstackRouter }')
+    expect(log).toContain('routeTree.gen')
+  })
+
+  it('writes the seeds in a directory without a package.json', async () => {
+    const dir = repo()
+    rmSync(join(dir, 'package.json'))
+    const { code } = await runInit(['--profile', 'app', '--root', 'src', '--no-install'], dir)
+    expect(code).toBe(0)
+    expect(read(dir, 'src/routes/_app.tsx')).toContain(`name: '${basename(dir)}'`)
   })
 })
