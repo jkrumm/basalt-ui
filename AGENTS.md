@@ -2,7 +2,7 @@
 
 An opinionated framework for **Mantine-based React apps**, extracted from argo (the POC). A
 consumer app instantly gets: a Mantine theme + `cssVariablesResolver`, a `BasaltProvider`, an app
-shell (`BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header), a chart system, a
+shell (`AppShell`: header, rail, one scrollport, aside and a phone tab bar, driven by one `defineNav`), a chart system, a
 three-tier `--vx-*` token system, a theme-lab, a Vite preset, raw toolchain config presets, and a
 `basalt-ui` CLI (bin named like the package — never `bunx basalt`).
 
