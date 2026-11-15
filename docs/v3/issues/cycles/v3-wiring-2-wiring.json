@@ -1,0 +1,22 @@
+{
+  "why": "Wiring cycle 2 (docs/v3/cycles/wiring-2.md) logged two P2 `wiring` findings. wiring-2.4: README §1 installs `@tanstack/router-plugin` (1.169.0), then `init` installs `--exact 1.168.40` over it, down from a newer version (`.evidence/cycle-wiring-2/s4.log`, `s5.log`); `basalt()` prints `Run: bun add @tanstack/react-table`, which installs 9.3.1 against the exact peer `9.2.8`, and doctor check 3 still reports that the peers resolve (`s8.log`, `s10.log`). wiring-2.5: right after `init` replaced create-vite's `main.tsx`, `bun run lint` fails with 20 errors in the stock `App.tsx` the entry no longer imports, and `init`'s report says nothing about it (`l1.log`); the scaffold's own `_app-pending` template draws a `jsx-a11y(prefer-tag-over-role)` warning.",
+  "what": "`init` never downgrades a peer, the peer messages print the pinned spec, doctor fails an out-of-range peer, and a stock app is lint-clean right after `init`.",
+  "owns": [
+    "packages/basalt-ui/src/cli/init (peer install and the stock-entry replacement), its tests",
+    "packages/basalt-ui/src/vite/** (the missing-peer message only)",
+    "packages/basalt-ui/src/cli/doctor (check 3 only)",
+    "packages/basalt-ui/agent/templates/_app-pending.tpl"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "packages/basalt-ui/README.md"],
+  "change": "(1) `init` keeps an installed version that satisfies the profile's range and installs its pin only where nothing is installed. (2) `basalt()` and doctor print the declared spec (`bun add @tanstack/react-table@9.2.8`). (3) Doctor check 3 fails a peer installed outside its declared range, naming both versions. (4) When `init` replaces create-vite's stock entry it deletes the stock `App.tsx` and `App.css` it can prove are stock (or prints that they are now dead), and the `_app-pending` template lints clean under the shipped preset.",
+  "commits": "fix: in packages/basalt-ui.",
+  "proof": "make check; an init test on a stock create-vite app with a newer `@tanstack/router-plugin` already installed.",
+  "acceptance": [
+    "`init` on an app with a newer in-range `@tanstack/router-plugin` leaves that version in `package.json`",
+    "The missing-peer message from `basalt()` names the declared version",
+    "Doctor check 3 fails when `@tanstack/react-table` is installed outside `9.2.8`",
+    "`bun run lint` exits 0 right after `init --profile app` on a stock create-vite app",
+    "make check passes"
+  ],
+  "out_of_scope": "The route-file lint rule (v3-wiring-2-route-split); the generated route tree (v3-wiring-2-generated-tree)."
+}

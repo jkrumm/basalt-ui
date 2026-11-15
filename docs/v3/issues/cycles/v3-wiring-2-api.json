@@ -1,0 +1,30 @@
+{
+  "why": "Wiring cycle 2's export-surface read (docs/v3/cycles/wiring-2.md) logged two P2 and four P3 `api` findings. wiring-2.7: `menu` is action data on `StatCard`, `KanbanCard` and `InnerNavItem` and a `BoxSlot` on `DataPanel` and `ChartCard`, and one menu entry has two types (`CardAction`: `label`, `href` or `onClick`, no `id`; `InnerNavMenuItem`: `id`, `label`, `onClick`, no `href`). wiring-2.8: `compact` is a window below 840 px in `SIZE_CLASSES` and `useSizeClass()`, and a 240 px container in `CONTAINER_CLASSES` and `CONTAINER_KEYS`, which `tailwind.css` and the shipped rule `basalt-ui.md` call `@narrow`. P3s: an action's identity is `id` on page and shell actions and `key` on `RowAction` and `BulkAction` (2.11); `skeleton` is a node on `QueryState` and a size on `DataPanel`, and `PageSummary` takes `loading: true` where every other data part takes `phase` (2.12); `defineFormat` returns `void` and sets defaults, against the verb rule in `MAINTAINING.md` that cites it, the button's destructive look is `variant: 'danger'` where every other part says `tone: 'bad'`, `Button` and `ToolbarButton` keep `icon` and `icon-sm` on `size`, and `ArticleLayout prev/next` take a bare `href: string` (2.13); `charts/contract.ts` declares `CardAction`, `Empty`, `FrameState`, `Fact`, `FootFacts` and `FrameHead` a second time and `basalt-ui/charts` exports the copies (2.14).",
+  "what": "One shape per prop name and one word per width across the v3 surface, with migration rows.",
+  "owns": [
+    "packages/basalt-ui/src/cards/contract.ts, src/charts/contract.ts, src/page/contract.ts, src/core/phase.ts, src/table/contract.ts (the renamed or unified types and their callers)",
+    "packages/basalt-ui/src/tokens/size-classes.ts and its readers",
+    "packages/basalt-ui/src/page/page-summary.tsx, src/cards/data-panel.tsx, src/page/article-layout.tsx",
+    "packages/basalt-ui/src/format/shared.ts (the defaults setter)",
+    "packages/basalt-ui/src/ui/button.tsx, src/ui/toolbar.tsx (variant and size axes)",
+    "packages/basalt-ui/MAINTAINING.md (the verb rule), MIGRATING.md and the migration rows, the export-surface snapshot as its generator writes it",
+    "the playground and examples call sites of a renamed prop, for the rename only"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "the 2.x root barrel (v3-teardown-runtime)"
+  ],
+  "change": "(1) One `menu` shape on the card family: action data the frame draws as its menu, with one menu-entry type (`id`, `label`, `href` or `onClick`) shared by cards and `InnerNav` (wiring-2.7). (2) The container constants take the variant names `narrow`, `regular`, `wide`, so `compact` names only the window class (wiring-2.8). (3) The P3s: `RowAction` and `BulkAction` take `id`; `DataPanel`'s size takes a name other than `skeleton`; `PageSummary` takes `phase`; `defineFormat` becomes a setter verb beside `resetFormatDefaults`; the destructive button variant is named as the tones are, or the exception is written into the verb and tone rule; the icon button's shape leaves `size`; `ArticleNavTarget.href` takes `string | NavTarget` through the installed link; `charts/contract.ts` imports and re-exports the `core/phase.ts` and `cards` types instead of copying them. Each rename keeps the old name as a deprecated alias for one minor with a migration row, as the 3.x upgrade rule requires.",
+  "commits": "feat: or fix: in packages/basalt-ui, one per concern; the regenerated snapshot and docs in the same commit as their source.",
+  "proof": "make check; release-migrating --check; a type test per unified shape.",
+  "acceptance": [
+    "`StatCard`, `KanbanCard`, `DataPanel`, `ChartCard` and `InnerNavItem` take one `menu` type",
+    "No exported constant uses `compact` for a container width",
+    "`RowAction` and `BulkAction` take `id`; `PageSummary` takes `phase`; `QueryState` is the only `skeleton`",
+    "`charts/contract.ts` declares none of the six frame types itself",
+    "Every rename has a migration row and `release-migrating --check` passes",
+    "make check passes"
+  ],
+  "out_of_scope": "The 2.x root barrel's duplicates and `basalt-ui/state` (v3-teardown-runtime); behaviour changes beyond the renames."
+}
