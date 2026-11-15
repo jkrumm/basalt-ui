@@ -6,5 +6,6 @@ declare const classes: {
   readonly auto: string
   readonly dot: string
   readonly chip: string
+  readonly toggle: string
 }
 export default classes

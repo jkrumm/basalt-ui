@@ -72,7 +72,8 @@ type FillStyle = CSSProperties & { '--page-fill-min'?: string }
  *
  * Under an `AppShell` the shell renders `<main>`, the header and the aside region; without one
  * `Page` is self-contained: the band is sticky at the nearest scrollport and the aside is a second
- * column from the `wide` container tier, a `Sheet` below it. `fill` gives the page a definite
+ * column from the `wide` container tier, a `Sheet` below it. Under a shell a page with no band
+ * keeps the band's top inset, so content starts at the same height with and without one. `fill` gives the page a definite
  * height (`{ min }` keeps a floor in px) for a canvas or map that must not scroll the page.
  *
  * @useWhen a route renders a screen: its bar, its sections and an optional aside live under one Page
@@ -115,6 +116,7 @@ export function Page({ area, fill, landmark, children }: PageProps): ReactElemen
     readServer,
   )
   const Root = landmark === true && host === null ? 'main' : 'div'
+  const unbanded = host !== null && (fill === undefined || fill === false)
   const min = typeof fill === 'object' ? fill.min : undefined
   const style: FillStyle | undefined =
     min === undefined ? undefined : { '--page-fill-min': `${min}px` }
@@ -136,7 +138,14 @@ export function Page({ area, fill, landmark, children }: PageProps): ReactElemen
         >
           <div
             data-slot="page-main"
-            className="flex min-w-0 flex-1 flex-col gap-4 px-(--page-gutter) pb-(--page-gutter)"
+            className={cn(
+              'flex min-w-0 flex-1 flex-col gap-4 px-(--page-gutter) pb-(--page-gutter)',
+              // A page with no band keeps the band's top inset (its height, one control row and its
+              // padding and rule, plus the gap below it), so content starts at one height on every
+              // page. A `fill` page owns its region and a shell-less page has no header to clear.
+              unbanded &&
+                'not-has-[[data-slot=page-bar]]:pt-[calc(var(--vx-ctl-h)+--spacing(8)+1px)]',
+            )}
           >
             {children}
           </div>

@@ -53,17 +53,14 @@ type Placement = 'bar' | 'more' | 'hidden'
 
 type Placed = { action: PageAction; placement: Placement }
 
-const MAX_BAR_ACTIONS = 2
-
-/** The explicit `mobile` wins; else the primary and the first two actions stay in the bar. */
+/**
+ * The explicit `mobile` wins; else only the primary stays in the bar below the fold, so a title and
+ * two actions never take the phone header from the title. The rest are the overflow menu's.
+ */
 function place(actions: readonly PageAction[]): Placed[] {
-  return actions.map((action, index) => ({
+  return actions.map((action) => ({
     action,
-    placement:
-      action.mobile ??
-      (('primary' in action && action.primary === true) || index < MAX_BAR_ACTIONS
-        ? 'bar'
-        : 'more'),
+    placement: action.mobile ?? ('primary' in action && action.primary === true ? 'bar' : 'more'),
   }))
 }
 
@@ -221,11 +218,11 @@ const isEmptySlot = (slot: { count: number } | undefined): boolean =>
  * <PageBar title="Orders" tabs={{ handle: store.field.view, label: 'Orders view' }} />
  *
  * @example
- * // Date navigation: grouped actions and a text action, no primary.
+ * // Date navigation: grouped actions that stay in the phone bar and a text action that does not.
  * <PageBar
  *   actions={[
- *     { id: 'prev', label: 'Previous week', group: 'date', onClick: prev },
- *     { id: 'next', label: 'Next week', group: 'date', onClick: next },
+ *     { id: 'prev', label: 'Previous week', group: 'date', mobile: 'bar', onClick: prev },
+ *     { id: 'next', label: 'Next week', group: 'date', mobile: 'bar', onClick: next },
  *     { kind: 'text', id: 'range', text: 'Nov 3 to 9', mobile: 'hidden' },
  *   ]}
  * />
