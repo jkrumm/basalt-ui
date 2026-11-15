@@ -9,7 +9,6 @@ import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { StrictMode } from 'react'
 import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { legacyPaletteCss } from './demo/legacy-palette'
 import { PAGE_FORMAT } from './demo/page-format'
 import { routeTree } from './routeTree.gen'
 
@@ -30,10 +29,6 @@ declare module '@tanstack/react-router' {
     router: typeof router
   }
 }
-
-const palette = document.createElement('style')
-palette.textContent = legacyPaletteCss()
-document.head.append(palette)
 
 const root = document.getElementById('root')
 if (!root) throw new Error('root element not found')
