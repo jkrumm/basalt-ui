@@ -23,7 +23,7 @@
   "DataTableBody": "linewatch:web/src/components/outage-table.tsx",
   "EmptyState": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "EventList": "argo:apps/dashboard/src/features/agents/narratives-section.tsx",
-  "Facts": "basalt-ui:apps/playground/src/cycle/shell-1/ServicesPage.tsx",
+  "Facts": "basalt-ui:apps/playground/src/cycle/dogfood-1/FlowOverview.tsx",
   "FilterSet": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "FormField": "shutterflow:apps/desktop/src/features/settings/CamerasSection.tsx",
   "FormFooter": "shutterflow:apps/desktop/src/features/settings/CamerasSection.tsx",
