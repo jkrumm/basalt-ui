@@ -8,6 +8,7 @@
 import type { QueryClient, QueryClientConfig } from '@tanstack/react-query'
 import { Router, createRouter } from '@tanstack/react-router'
 import type { AnyRoute, RouterHistory } from '@tanstack/react-router'
+import type { LiveBinding } from '../core/provider'
 import { makeQueryClient } from '../data/query-client'
 import type { RouterHook } from '../telemetry'
 import { ErrorComponent, NotFoundComponent, PendingComponent } from './route-defaults'
@@ -63,8 +64,9 @@ type RouterOptionsInput<TContext extends object> = {
   /**
    * A push binding (`bindInvalidation(...)`) the provider starts once on the client when it mounts
    * and stops on unmount; it never runs on the server. Replaces `useEffect(() => live.start(), [])` in the root.
+   * A function receives the `QueryClient` this call builds (`bindInvalidation` needs it) and runs at the first start, never on the server.
    */
-  live?: { start(): () => void } | undefined
+  live?: LiveBinding | ((client: QueryClient) => LiveBinding) | undefined
 }
 
 /** What `basaltRouterOptions` returns: the router options basalt owns, plus the context. */
@@ -102,16 +104,32 @@ export function basaltRouterOptions<TContext extends object>(
   return buildRouterOptions(options)
 }
 
+/** The function form runs at the first `start()` with the client it was built for, and its binding is kept. */
+function bindLive(
+  live: RouterOptionsInput<object>['live'],
+  client: QueryClient,
+): LiveBinding | undefined {
+  if (typeof live !== 'function') return live
+  let binding: LiveBinding | undefined
+  return {
+    start() {
+      binding ??= live(client)
+      return binding.start()
+    },
+  }
+}
+
 function buildRouterOptions<TContext extends object>(
   options: RouterOptionsInput<TContext>,
 ): BasaltRouterOptions<TContext> {
   guardViewTransitionRejections()
-  const hook: RouterHook = { live: options.live }
+  const queryClient = makeQueryClient(options.query)
+  const hook: RouterHook = { live: bindLive(options.live, queryClient) }
   // The overloads of `basaltRouterOptions` and `createBasaltRouter` make `context` present whenever
   // `TContext` has required keys, so the spread is the whole `TContext`: the one cast, here.
   const context = {
     ...options.context,
-    queryClient: makeQueryClient(options.query),
+    queryClient,
     __basalt: hook,
   } as TContext & BasaltRouterContext
   return {
