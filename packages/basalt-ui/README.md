@@ -40,7 +40,7 @@ versions: `peerDependencies` in `package.json`; `basalt-ui doctor` lists what is
 | Optional         | `shiki`, `@shikijs/*`, `beautiful-mermaid`, `@tanstack/react-query-devtools`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                                                                                                                                        | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
 
 The `@mantine/*` and `@fontsource-variable/*` peers are declared required for the 2.x root and for
-`./controls`, `./forms` and `./controls-dates` (see [The 2.x root](#the-2x-root)); your package
+`./forms` (see [The 2.x root](#the-2x-root)); your package
 manager places them, and a v3 app imports none of them.
 
 **No React?** `./tokens` imports no `@mantine/*`, and the token system is consumable with no package
@@ -333,7 +333,7 @@ The value **is** the reason: omitting the key, or setting it to `true` or `""`, 
 ## The 2.x root
 
 The root barrel, `basalt-ui`, is the **2.x Mantine surface** and is held until the teardown; a v3
-app never imports from it. Its wiring is `BasaltProvider`, `createBasaltRouter` and `BasaltShell`
+app never imports from it. Its wiring is `BasaltProvider` and `createBasaltRouter`
 over the `@mantine/*` peers and the three `@fontsource-variable/*` faces, and its theme is
 `createBasaltTheme`. An app still on 2.x keeps this wiring; migrate it with
 [`MIGRATING.md`](./MIGRATING.md).
@@ -364,8 +364,9 @@ framework palette. Skip it if you have no app-specific series yet.
 > need it — there is no hydration to mismatch. See [`MANTINE-THEMING.md`](https://github.com/jkrumm/basalt-ui/blob/master/docs/MANTINE-THEMING.md) (repo, not in the package).
 
 ```tsx
-// 2.x wiring: shell — sidebar / mobile nav / breadcrumbs / PageBar; resolved against the router from `nav`
-import { BasaltShell, PageBar } from 'basalt-ui'
+// Shell — header, rail, one scrollport and (on a phone) a tab bar, resolved against the router from `nav`
+import { AppShell } from 'basalt-ui/shell'
+import { PageBar } from 'basalt-ui/page'
 ```
 
 > Use the **layered** `*.layer.css` bundles, never the plain ones — Mantine's unlayered bundle
@@ -528,8 +529,8 @@ import { VX } from 'basalt-ui/tokens'
 ```
 
 Shipped kinds are that same composition, pre-wired: `Lines` (n series, `area`, `thresholds`, zones,
-reference lines, `y2`) and `Bars` (stacked, grouped or normalised, ± bars, overlay lines), plus `StackedArea`,
-`DualPanel`, `MirroredBars`, `BandStrip`, `Donut`, `Heatmap` and `Sparkline`. The
+reference lines, `y2`) and `Bars` (stacked, grouped or normalised, ± bars, overlay lines), plus `BandStrip`,
+`Heatmap` and `Sparkline`. The
 [`MIGRATING.md`](./MIGRATING.md) § 2.x to 3.0 lists every removed or renamed chart export.
 
 Charts share a cursor with no provider (`cursorGroup="…"` isolates one; `chartCursor(group?)` reads
@@ -566,7 +567,7 @@ export const analytics = createSearchStore({
   fields: { range: field.range({ presets: ['7d', '30d'], fallback: '30d' }) },
 })
 
-// <BasaltShell nav={NAV} /> resolves the sidebar, mobile bar and breadcrumb
+// <AppShell nav={NAV} /> resolves the sidebar, mobile bar and breadcrumb
 // route: validateSearch: analytics.validateSearch — nav link: search: analytics.linkSearch
 ```
 
@@ -613,35 +614,27 @@ bun add -E @tanstack/react-table@9.2.8 @base-ui/react
 ```
 
 ```tsx
-import { BasaltDataTable, createColumnHelper } from 'basalt-ui/table'
+import { DataTable, col, useDataTable } from 'basalt-ui/table'
 
-const col = createColumnHelper<Row>()
-const columns = [
-  col.accessor('name', { header: 'Name' }),
-  col.accessor('amount', { header: 'Amount', meta: { align: 'right' } }),
-]
-// <BasaltDataTable data={rows} columns={columns} maxHeight={320} stickyHeader />
+const c = col<Row>()
+const columns = [c.text('name'), c.number('amount')]
+
+function Orders({ rows }: { rows: readonly Row[] }) {
+  const table = useDataTable({
+    id: 'orders',
+    label: 'Orders',
+    columns,
+    data: rows,
+    getRowId: (row) => row.id,
+    mode: 'client',
+  })
+  return <DataTable table={table} />
+}
 ```
 
-**Body chrome.** `maxHeight`, `minWidth`, `stickyHeader`, `stickyHeaderOffset`, `verticalSpacing`,
-`horizontalSpacing`, `withRowBorders`, `withTableBorder` (basalt defaults this one to `true`),
-`striped` (`boolean | 'odd' | 'even'`), and per-column `meta: { align, numeral }`.
-
-- `maxHeight` (or `minWidth`) renders `Table.ScrollContainer type="native"` — the same node a
-  bespoke escape-hatch table should wrap itself in, so the two lanes produce identical DOM.
-  `type="native"` is required, not preferred: `ScrollArea`'s custom viewport is what a sticky
-  `<thead>` positions against, so the default type pins the header to the page viewport.
-- `meta.align` is a `ColumnMeta` module augmentation: a typo'd key is a type error, and a value
-  outside `'left' | 'center' | 'right'` throws naming the column rather than left-aligning a money
-  column in silence. `meta: { numeral: false }` opts a numeric cell OUT of the mono-numeral style —
-  it is an opt-out only; `numeral: true` forces nothing.
-- `emptyState` renders inside a `<td colSpan>`, so the header row survives an empty table. There is
-  no mode that replaces the whole table.
-
-**Honest result:** porting argo's three tables onto these props made them 341 → **370–379** lines, 29–38
-longer. Column defs cost more than JSX rows when every cell is bespoke. Adopt the props for what
-they actually buy — the `type="native"` footgun, alignment stated once instead of on both `th` and
-`td`, and sorting/filtering/pagination owned by basalt — not for a line count.
+Columns come from the kind constructors, never a raw column; a client table has no `rowCount`, a
+server table has a `rowCount` or a `cursor`, never both. View state persists through a `ViewStore`.
+The per-part references are in `docs/data-table.md`, `docs/use-data-table.md` and `docs/table.md`.
 
 ### `./content` — markdown
 
