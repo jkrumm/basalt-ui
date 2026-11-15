@@ -124,7 +124,10 @@ export function StatCard(props: StatCardProps): ReactElement {
                   </p>
                 )}
                 {chart !== undefined && (
-                  <div data-slot="stat-chart" className="mt-2 h-18 shrink-0 overflow-clip">
+                  <div
+                    data-slot="stat-chart"
+                    className="relative z-20 mt-2 h-18 shrink-0 overflow-clip"
+                  >
                     {chart({ height: CHART_HEIGHT, phase: box.phase })}
                   </div>
                 )}
@@ -146,7 +149,7 @@ type TargetProps = { label: string } & ({ href: string | NavTarget } | { onSelec
 /**
  * The stretched target: one transparent link or button over the whole card, the header band and the
  * inset included, so a click on the figure, the sub line or the blank inset takes it. The info
- * glyph, the controls and the menu sit above it (`z-20`) and keep their own hit areas. Its focus
+ * glyph, the controls, the menu and the chart box (it owns focus and a tooltip) sit above it (`z-20`) and keep their own hit areas. Its focus
  * ring is drawn inside the card, because the card clips its own overflow.
  */
 function Target(props: TargetProps): ReactElement {
