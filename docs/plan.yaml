@@ -1046,6 +1046,12 @@ rows:
     kind: chore
     after: [v3-state-2-draft-unmount, v3-state-2-visual]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-docs.json' }
+  - key: v3-state-2-lint
+    title: 'The theme guard and the control-home rule home a control inside a v3 FormField, from state cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-state-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-lint.json' }
   - key: v3-cycle-state-3
     title: 'Improvement cycle 3: state, stores and controls, built as one data page'
     repo: basalt-ui
@@ -1059,5 +1065,6 @@ rows:
         v3-state-2-state,
         v3-state-2-visual,
         v3-state-2-docs,
+        v3-state-2-lint,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-state-3.json' }

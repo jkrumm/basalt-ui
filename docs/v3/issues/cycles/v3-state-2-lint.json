@@ -1,0 +1,18 @@
+{
+  "why": "State cycle 2 (docs/v3/cycles/state-2.md, P2 state-2.13): `check-theme` flags a v3 `Select` inside `FormField`, bound to a TanStack form field, as `raw-selection-control` ('no store field'). Its host list (`packages/basalt-ui/src/guard/index.ts:700`: `SettingsRow`, `FormRow`, `FormGroup`, `Modal`, `Drawer`, `Popover.Dropdown`, `Menu.Dropdown`, `Composer`, `FilterSet`, `PageAside`, `PanelRow`) is 2.x: it homes the two Selects of the cycle's edit form that sit in a `FormRow` and flags the one beside it. Cycle 1 silenced the same rule with a `theme-allow-file`; cycle 2 with a line waiver at `apps/playground/src/cycle/state-2/TicketsPage.tsx:258`. Every v3 form with a select outside a row repeats the waiver.",
+  "what": "A control bound through a v3 FormField is homed, in both lanes.",
+  "owns": [
+    "packages/basalt-ui/src/guard/index.ts (the raw-selection-control host list) and its tests",
+    "packages/basalt-ui/src/lint/rules/structure/control-home.ts (`basalt/control-outside-home`) and its tests, so the two lanes agree"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "Both lanes home a selection control whose nearest host is a v3 `FormField` (and, if the same reading applies, a `Fieldset` of a `Form`), as they home one in a `FormRow`. A bare `Select` outside any host still fires. The waiver comments in the cycle builds stay; the next cycle removes them.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "make check; a check-source test and a plugin test for a Select inside FormField and one outside any host.",
+  "acceptance": [
+    "check-theme and basalt/control-outside-home pass a Select inside a v3 FormField (tests)",
+    "A Select outside any host still fires in both lanes (tests)",
+    "make check passes"
+  ],
+  "out_of_scope": "Other guard rules; removing the cycle builds' waivers."
+}
