@@ -252,6 +252,31 @@ describe('init: presets by profile', () => {
     expect(presets.size).toBe(2)
   })
 
+  it("drops create-vite's stock only-export-components rule and keeps the rest", async () => {
+    const stock = {
+      rules: {
+        'react/only-export-components': ['warn', { allowConstantExport: true }],
+        'no-console': 'warn',
+      },
+    }
+    const dir = repo({ '.oxlintrc.json': JSON.stringify(stock) })
+    await runInit(['--profile', 'bridge', '--root', 'src'], dir)
+    expect(JSON.parse(read(dir, '.oxlintrc.json'))).toEqual({
+      rules: { 'no-console': 'warn' },
+      extends: ['./.oxlintrc.basalt.json'],
+    })
+  })
+
+  it('prints the line to delete when the only-export-components rule has another shape', async () => {
+    const custom = {
+      rules: { 'react/only-export-components': ['error', { allowExportNames: ['x'] }] },
+    }
+    const dir = repo({ '.oxlintrc.json': JSON.stringify(custom) })
+    const { log } = await runInit(['--profile', 'bridge', '--root', 'src'], dir)
+    expect(JSON.parse(read(dir, '.oxlintrc.json')).rules).toEqual(custom.rules)
+    expect(log).toContain('delete react/only-export-components')
+  })
+
   it('extends a commented .oxlintrc.json by printing the line, never rewriting it', async () => {
     const dir = repo({ '.oxlintrc.json': '{\n  // mine\n  "rules": {}\n}\n' })
     const { log } = await runInit(['--profile', 'bridge', '--root', 'src'], dir)
