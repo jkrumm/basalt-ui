@@ -18,8 +18,8 @@ export type FrameState = {
   empty?: Empty | null | undefined
 }
 
-/** The five states `data-phase` prints. */
-export type PhaseTag = 'ready' | 'loading' | 'stale' | 'error' | 'empty'
+/** The six states `data-phase` prints. */
+export type PhaseTag = 'ready' | 'loading' | 'offline' | 'stale' | 'error' | 'empty'
 
 export type ErrorKind = 'forbidden' | 'not-found'
 
@@ -28,8 +28,16 @@ export type ResolvedPhase =
   | { tag: 'ready'; body: true }
   | { tag: 'stale'; body: true; refreshFailed: boolean }
   | { tag: 'loading'; body: false }
+  | { tag: 'offline'; body: false }
   | { tag: 'empty'; body: false; empty: Empty }
   | { tag: 'error'; body: false; kind?: ErrorKind; message?: string; retry?: () => void }
+
+/**
+ * A TanStack query result also carries `fetchStatus`, which `QueryStateLike` does not name (the
+ * port is frozen), so it is read here as an optional extra: a `paused` fetch with no data waits for
+ * the connection, not for the server.
+ */
+type QueryResultLike = QueryStateLike & { fetchStatus?: 'fetching' | 'paused' | 'idle' }
 
 const isQueryState = (phase: Phase | QueryStateLike): phase is QueryStateLike =>
   typeof phase === 'object' && 'isPending' in phase
@@ -51,7 +59,11 @@ function resolveInput(phase: Phase | QueryStateLike | undefined): Base {
   if (!isQueryState(phase)) {
     return { tag: 'error', body: false, ...errorFields(phase) }
   }
-  if (phase.isPending) return { tag: 'loading', body: false }
+  if (phase.isPending) {
+    return (phase as QueryResultLike).fetchStatus === 'paused'
+      ? { tag: 'offline', body: false }
+      : { tag: 'loading', body: false }
+  }
   if (phase.isError && phase.isRefetchError === true) {
     // The data survives a failed refetch, so the card keeps drawing it and says it is old.
     return { tag: 'stale', body: true, refreshFailed: true }
@@ -87,8 +99,8 @@ function errorFields(
 }
 
 /**
- * The one phase resolver every frame shares. Precedence: loading, error, empty, stale, ready; a
- * pending query is loading even when `empty` is set, and `isPlaceholderData` is stale. `empty`
+ * The one phase resolver every frame shares. Precedence: offline, loading, error, empty, stale, ready; a
+ * pending query is loading (offline when its fetch is paused) even when `empty` is set, and `isPlaceholderData` is stale. `empty`
  * applies only once the query settled, to a ready or stale phase.
  *
  * @example

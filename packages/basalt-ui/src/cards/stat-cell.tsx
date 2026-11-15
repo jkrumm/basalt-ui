@@ -2,6 +2,7 @@ import { useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { AppLink } from '../core/link'
+import { OfflineLine } from '../core/offline-line'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ErrorKind, ResolvedPhase } from '../core/phase'
 import { PhaseBoundary } from '../core/phase-boundary'
@@ -229,6 +230,13 @@ function Figure({
         <div className={cn(BAR, 'h-6 w-20')} />
         {delta !== undefined && <div className={cn(BAR, 'h-5 w-12 rounded-full')} />}
       </div>
+    )
+  }
+  if (resolved.tag === 'offline') {
+    return (
+      <output data-slot="stat-figure" className={T_FIGURE}>
+        <OfflineLine />
+      </output>
     )
   }
   if (resolved.tag === 'error') {

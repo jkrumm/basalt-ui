@@ -1,6 +1,6 @@
 /**
  * The table body (docs/v3/concepts/data-table.md sections 3 and 6): one native `<tbody>` in every
- * phase. Ready and stale draw the rows through the kinds; loading, error and empty draw their arm
+ * phase. Ready and stale draw the rows through the kinds; loading, offline, error and empty draw their arm
  * from `phases.tsx` inside the same body, so the table never swaps its markup. A row activates
  * through `onRowActivate` XOR `detail` (never both, by type), a tick or a row action never does
  * (I2), and a throw in a cell lands in the error arm instead of the page.
@@ -23,7 +23,7 @@ import { alignProps, tierAttributes, useActionsLabel, visibleColumns } from './h
 import { GroupRow } from './group-row'
 import type { BodyItem } from './group-row-model'
 import { useDetailHost } from './detail-sheet'
-import { EmptyRow, ErrorRow, LoadingRows } from './phases'
+import { EmptyRow, ErrorRow, LoadingRows, OfflineRow } from './phases'
 import { SelectCell } from './select-cell'
 import { TickCell } from './tick-column'
 
@@ -241,6 +241,8 @@ function Arm<T>({ model }: { model: TableModel<T> }): ReactElement {
   switch (phase.tag) {
     case 'loading':
       return <LoadingRows model={model} />
+    case 'offline':
+      return <OfflineRow model={model} />
     case 'error':
       return <ErrorRow model={model} phase={phase} />
     case 'empty':

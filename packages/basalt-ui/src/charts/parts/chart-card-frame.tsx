@@ -10,6 +10,7 @@ import { useId } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../../core/cn'
 import { AppLink } from '../../core/link'
+import { OfflineLine } from '../../core/offline-line'
 import type { Empty, ResolvedPhase } from '../../core/phase'
 import { PhaseBoundary } from '../../core/phase-boundary'
 import type { BoxSlot, ControlsSlot, IconComponent } from '../../core/ports'
@@ -193,6 +194,17 @@ function ErrorArm({
   )
 }
 
+function OfflineArm(): ReactElement {
+  return (
+    <output
+      data-slot="chart-offline"
+      className="flex h-full min-h-24 flex-col items-center justify-center px-(--card-edge) py-3 text-center"
+    >
+      <OfflineLine />
+    </output>
+  )
+}
+
 function EmptyArm({ empty }: { empty: Empty }): ReactElement {
   const { cause, action, filtered } = empty
   return (
@@ -246,7 +258,7 @@ export type PhaseBoxProps = {
 
 /**
  * The chart box: one fixed clipping box whose height the card chose, holding the skeleton, the
- * error arm, the empty arm or the chart. The slot is called only in `ready` and `stale`; whatever it
+ * offline line, the error arm, the empty arm or the chart. The slot is called only in `ready` and `stale`; whatever it
  * draws is clipped, so a taller chart cannot move the card.
  */
 export function PhaseBox({ resolved, chart, className }: PhaseBoxProps): ReactElement {
@@ -259,6 +271,7 @@ export function PhaseBox({ resolved, chart, className }: PhaseBoxProps): ReactEl
       className={cn('relative flex min-h-0 min-w-0 flex-col overflow-clip', className)}
     >
       {resolved.tag === 'loading' && <PlotSkeleton />}
+      {resolved.tag === 'offline' && <OfflineArm />}
       {resolved.tag === 'error' && <ErrorArm resolved={resolved} />}
       {resolved.tag === 'empty' && <EmptyArm empty={resolved.empty} />}
       {resolved.body && chart !== undefined && (

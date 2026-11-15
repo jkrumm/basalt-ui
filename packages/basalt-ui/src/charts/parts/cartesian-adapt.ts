@@ -119,7 +119,7 @@ export function toEngineTooltip<D>(t: ChartTooltipConfig<D>): EngineTooltip<D> {
 /** `phase` onto the three "nothing to draw" states the placeholders render. */
 export function toChartState(phase: CartesianChartProps<unknown>['phase']): ChartState | undefined {
   const resolved = resolvePhase({ phase })
-  if (resolved.tag === 'loading') return { pending: true }
+  if (resolved.tag === 'loading' || resolved.tag === 'offline') return { pending: true }
   if (resolved.tag === 'error') return { error: resolved.message ?? true }
   return undefined
 }
