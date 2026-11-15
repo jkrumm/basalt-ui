@@ -4,7 +4,7 @@
  * and the run goes on, so one failed install does not leave the files unplaced. A step is safe to
  * run twice: it writes only what differs. The hook step lives in `../lint/hook-step`.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 
 import { BUDGET_PATH, seedBudget, writeBudget } from '../budget'
@@ -151,6 +151,7 @@ export function declareManifest(ctx: Ctx): { error: string } | null {
 // ── peers ───────────────────────────────────────────────────────────────────────────────────────
 
 type PackageJson = {
+  name?: string
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
@@ -347,7 +348,7 @@ export function seedDesign(ctx: Ctx): void {
   const series = ctx.args.extra ?? join(first === '.' ? 'src' : first, 'basalt.tokens.ts')
   const accent = ctx.args.identity[ctx.args.identity.indexOf('--accent') + 1]
   const vars: Record<string, string> = {
-    APP_NAME: readPackage(ctx.root) === null ? basename(ctx.root) : appName(ctx.root),
+    APP_NAME: appName(ctx.root),
     ACCENT_HUE: ctx.args.identity.includes('--accent') && accent !== undefined ? accent : 'blue',
     SERIES_MODULE_PATH: series,
   }
@@ -357,9 +358,7 @@ export function seedDesign(ctx: Ctx): void {
 }
 
 export function appName(root: string): string {
-  const name = (
-    JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')) as { name?: string }
-  ).name
+  const name = readPackage(root)?.name
   return name !== undefined && name !== '' ? name : basename(root)
 }
 
@@ -425,6 +424,11 @@ export function wireApp(ctx: Ctx): void {
     if (writeText(ctx.root, vite, patched)) say(`${vite}: added the Vite plugins`)
   } else {
     ctx.todo.push(`${BASALT_IMPORT}, then add basalt() to the plugins of your Vite config`)
+    if (ctx.routerPlugin === true) {
+      ctx.todo.push(
+        `${ROUTER_IMPORT}, then add ${ROUTER_PLUGIN} first in those plugins (the seeded main.tsx imports the routeTree.gen file it writes)`,
+      )
+    }
   }
   const css = dirs
     .flatMap((d) => ['src', '.'].flatMap((s) => CSS_ENTRIES.map((f) => join(d, s, f))))
