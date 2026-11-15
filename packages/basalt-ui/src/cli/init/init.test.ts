@@ -340,6 +340,17 @@ describe('init: the budget, the install and the seeds', () => {
     expect((await runInit(['--profile', 'app', '--root', 'src'], dir)).commands).toEqual([])
   })
 
+  it('leaves a newer in-range version of a peer alone on a second init', async () => {
+    const dir = repo()
+    put(
+      dir,
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-query': '5.199.0' } }),
+    )
+    const { commands } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(commands.flat().join(' ')).not.toContain('@tanstack/react-query')
+  })
+
   it('installs every peer the app profile needs, and no oxfmt for a Prettier repo', async () => {
     const { commands } = await runInit(['--profile', 'app', '--root', 'src'], repo())
     const all = commands.flat().map((s) => s.replace(/@[\d~^].*$/, ''))
