@@ -199,6 +199,52 @@ describe('useFormDraft', () => {
     expect(isPristine(form)).toBe(false)
   })
 
+  test("a form the save's own onSuccess unmounts mid-submit still clears the key", async () => {
+    const form = fakeForm()
+    const { unmount } = render(<Host form={form} o={opts()} />)
+    act(() => form.edit(changed))
+    act(() => form.submitState(true))
+    // The mutation's onSuccess closes the record: the form unmounts inside onSubmitAsync.
+    unmount()
+    expect(draftOf()).toEqual({ v: 1, value: changed })
+    act(() => form.endSubmit(true))
+    expect(draftOf()).toBeNull()
+    await tick()
+    expect(draftOf()).toBeNull()
+
+    const next = fakeForm()
+    render(<Host form={next} o={opts()} />)
+    expect(next.state.values).toEqual(defaults)
+    expect(last.status).toBe('none')
+  })
+
+  test('a failed submit that unmounts, and a cancel with no submit, keep the draft', async () => {
+    const failed = fakeForm()
+    const { unmount } = render(<Host form={failed} o={opts()} />)
+    act(() => failed.edit(changed))
+    act(() => failed.submitState(true))
+    unmount()
+    act(() => failed.endSubmit(false))
+    await tick()
+    expect(draftOf()).toEqual({ v: 1, value: changed })
+    localStorage.clear()
+
+    const cancelled = fakeForm()
+    const second = render(<Host form={cancelled} o={opts()} />)
+    act(() => cancelled.edit(changed))
+    second.unmount()
+    expect(draftOf()).toEqual({ v: 1, value: changed })
+  })
+
+  test('a stored draft equal to the defaults is deleted on mount, not restored', () => {
+    localStorage.setItem(draftKey, JSON.stringify({ v: 1, value: defaults }))
+    const form = fakeForm()
+    render(<Host form={form} o={opts()} />)
+    expect(draftOf()).toBeNull()
+    expect(last.status).toBe('none')
+    expect(form.state.values).toEqual(defaults)
+  })
+
   test('reverting to the server values deletes the key', async () => {
     const form = fakeForm()
     render(<Host form={form} o={opts()} />)

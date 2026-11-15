@@ -30,7 +30,11 @@ function draftStore<V>(o: UseFormDraftOptions<V>, key: string) {
 
 /**
  * Keeps an unfinished form across a reload. The form's `defaultValues` stay the server value
- * (`keepDefaultValues`), so the form is dirty against the server while a draft is applied.
+ * (`keepDefaultValues`), so the form is dirty against the server while a draft is applied. A
+ * successful submit never leaves a draft behind, however the app closes the form: the draft is
+ * cleared even when the save's own `onSuccess` unmounts the form mid-submit. A failed submit, a
+ * cancel and a reload keep it. A stored draft equal to the form's default values is deleted on
+ * mount instead of restored, so `status` stays `'none'`.
  *
  * @useWhen a submit-and-leave form with a textarea or more than three fields can be lost to a reload
  * @neverWhen the form is an instant-apply preference (`persisted`) or a settings form with a Save action
@@ -59,6 +63,11 @@ export function useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): U
       }
       legacy.reset()
     }
+    if (draft !== null && isPristine({ state: { values: draft }, options: form.options })) {
+      // A draft that equals the server value is no draft: a save left it, or the edit was reverted.
+      store.reset()
+      draft = null
+    }
     if (draft !== null) {
       form.reset(draft, { keepDefaultValues: true })
       setStatus('restored')
@@ -67,6 +76,7 @@ export function useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): U
     // Subscribed after the restore, so the restore's own notification never reads as an edit.
     let seen: unknown = form.state.values
     let submitting = form.state.isSubmitting
+    let unmounted = false
     const save = debounce(() => {
       // This mount's own form and store: a pending edit must never land under a newer key.
       if (isPristine(form)) store.reset()
@@ -83,8 +93,18 @@ export function useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): U
         // what was submitted so it reads pristine without the app's own success step.
         save.cancel()
         store.reset()
+        if (unmounted) {
+          // The save's own `onSuccess` closed the form: nothing is left to re-base.
+          subscription.unsubscribe()
+          return
+        }
         form.reset(form.state.values, { keepDefaultValues: false })
         seen = form.state.values
+        return
+      }
+      if (unmounted) {
+        // A failed submit keeps the draft the unmount flushed; the form is gone either way.
+        if (submitEnded) subscription.unsubscribe()
         return
       }
       // The store also fires for `isSubmitting` and `canSubmit`; only a values change is an edit.
@@ -101,9 +121,12 @@ export function useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): U
     return () => {
       document.removeEventListener('visibilitychange', flushOnHide)
       window.removeEventListener('pagehide', flush)
-      subscription.unsubscribe()
       save.flush()
       writer.current = null
+      // A submit still in flight (the save's `onSuccess` closed the form) keeps its listener until
+      // it ends, so a success can still clear the key the flush above just wrote.
+      if (submitting) unmounted = true
+      else subscription.unsubscribe()
     }
     // One restore per mounted draft: the key identifies it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
