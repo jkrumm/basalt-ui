@@ -40,12 +40,12 @@ function Probe({ id, phone }: { id: string; phone?: 'scroll' }): ReactElement {
       }),
       c.money('amount', { currency: 'EUR', header: 'Amount' }),
       c.text('note', { header: 'Note', priority: 3 }),
-      c.actions([{ key: 'open', label: 'Open', onClick: () => undefined }]),
+      c.actions([{ id: 'open', label: 'Open', onClick: () => undefined }]),
     ],
     data: ROWS,
     getRowId: (r) => r.id,
     mode: { kind: 'client' },
-    selection: { bulk: [{ key: 'archive', label: 'Archive', onClick: () => undefined }] },
+    selection: { bulk: [{ id: 'archive', label: 'Archive', onClick: () => undefined }] },
     ...(phone !== undefined && { phone }),
   } as UseDataTable<Row>)
   return <DataTable table={t} />

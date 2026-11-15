@@ -33,7 +33,7 @@ function Subject(): ReactElement {
     columns: [
       c.entity('payee', { header: 'Payee' }),
       c.money('amount', { currency: 'EUR', header: 'Amount' }),
-      c.actions([{ key: 'x', label: 'Open', onClick: () => undefined }]),
+      c.actions([{ id: 'x', label: 'Open', onClick: () => undefined }]),
     ],
     data: ROWS,
     getRowId: (r) => r.id,

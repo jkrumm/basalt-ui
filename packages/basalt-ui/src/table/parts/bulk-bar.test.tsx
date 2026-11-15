@@ -50,7 +50,7 @@ const tick = (index: number): HTMLElement =>
 
 describe('BulkBar', () => {
   test('selecting rows shows the count and the bulk actions; clearing hides it', () => {
-    render(<Subject bulk={[{ key: 'x', label: 'Archive', onClick: mock(() => undefined) }]} />)
+    render(<Subject bulk={[{ id: 'x', label: 'Archive', onClick: mock(() => undefined) }]} />)
     expect(bar()).toBeNull()
 
     fireEvent.click(tick(0))
@@ -65,7 +65,7 @@ describe('BulkBar', () => {
 
   test('an action receives the selected rows and the selection', () => {
     const onClick = mock((_rows: readonly Row[], _selection: unknown) => undefined)
-    render(<Subject bulk={[{ key: 'x', label: 'Archive', onClick }]} />)
+    render(<Subject bulk={[{ id: 'x', label: 'Archive', onClick }]} />)
     fireEvent.click(tick(1))
     fireEvent.click(screen.getByRole('button', { name: 'Archive' }))
     expect(onClick).toHaveBeenCalledTimes(1)
@@ -92,7 +92,7 @@ describe('BulkBar', () => {
     const onClick = mock((_rows: readonly Row[], _selection: unknown) => undefined)
     render(
       <Subject
-        bulk={[{ key: 'x', label: 'Archive', onClick }]}
+        bulk={[{ id: 'x', label: 'Archive', onClick }]}
         selectAll
         mode={{ kind: 'server', rowCount: 120 }}
       />,

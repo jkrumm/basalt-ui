@@ -13,7 +13,7 @@ afterEach(cleanup)
 describe('toolbar invariants', () => {
   // 2.x: data-table.tsx:505-520,804-816,1620-1640
   test('I22 the bulk bar exists only while a row is ticked', () => {
-    const bulk = [{ key: 'x', label: 'Act', onClick: mock(() => undefined) }]
+    const bulk = [{ id: 'x', label: 'Act', onClick: mock(() => undefined) }]
     const { container } = renderTable({ selection: { bulk } })
     expect(container.querySelector('[data-slot="table-bulk"]')).toBeNull()
     fireEvent.click(container.querySelector('tbody input[type="checkbox"]') as HTMLElement)

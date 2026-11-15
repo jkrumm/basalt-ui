@@ -67,7 +67,7 @@ function RowActions<T>({
             const loading = action.loading?.(row) === true
             return (
               <MenuItem
-                key={action.key}
+                key={action.id}
                 disabled={loading || action.disabled?.(row) === true}
                 aria-busy={loading || undefined}
                 onClick={() => action.onClick(row)}
