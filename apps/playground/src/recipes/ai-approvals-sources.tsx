@@ -12,10 +12,10 @@ const approval = (parts: readonly Part[], respond: Respond) => (v: ToolView) => 
   const id = parts.find((p) => 'input' in p && p.input === v.args)?.approval?.id
   if (v.state !== 'awaiting-approval' || !id) return `${v.name}: ${v.state}`
   return (
-    <span role="group" aria-label={v.name}>
+    <fieldset className="inline-flex gap-2" aria-label={v.name}>
       <Button onClick={() => respond({ id, approved: true })}>Approve</Button>
       <Button onClick={() => respond({ id, approved: false })}>Deny</Button>
-    </span>
+    </fieldset>
   )
 }
 const host = (url: string) => (/^https?:\/\//i.test(url) ? URL.parse(url)?.hostname : undefined)

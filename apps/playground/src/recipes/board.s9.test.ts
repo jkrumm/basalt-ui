@@ -98,6 +98,6 @@ describe('S9 board recipe', () => {
     expect(document.activeElement?.getAttribute('data-slot')).toBe('kanban-menu')
     expect(document.activeElement?.closest('section')?.getAttribute('aria-label')).toBe('Done')
     expect(doneRows()).toBeLessThan(31)
-    expect(document.querySelector('[role="status"]')?.textContent).toBe('Moved to Done')
+    expect(document.querySelector('output')?.textContent).toBe('Moved to Done')
   })
 })

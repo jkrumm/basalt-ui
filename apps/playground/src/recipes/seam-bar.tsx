@@ -20,12 +20,13 @@ export function SeamBar({ parts, track }: { parts: readonly Part[]; track: numbe
         className="flex h-8 overflow-hidden rounded-chip"
       >
         {parts.map((p, i) => (
-          // theme-allow hidden-inline-style — a part's width and colour are data
           <div
             key={p.label}
             {...focus.item(i)}
-            className="flex items-center justify-center truncate text-xs"
-            style={{ width: `${(p.value / total) * 100}%`, background: p.color }}
+            className="flex w-(--share) items-center justify-center truncate bg-(--part) text-xs"
+            style={
+              { '--share': `${(p.value / total) * 100}%`, '--part': p.color } as React.CSSProperties
+            }
           >
             {chartLabels.fits(
               p.label,
