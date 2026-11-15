@@ -5,7 +5,6 @@ import type { ReactElement, ReactNode } from 'react'
 import { CartesianChart } from '../../../../packages/basalt-ui/dist/charts/parts/cartesian'
 import type { Series } from '../../../../packages/basalt-ui/dist/charts/contract'
 import { pixelExtent } from '../../../../packages/basalt-ui/dist/charts/seams/pixel-extent'
-import { useV3Tokens } from '../demo/v3-tokens'
 
 // The v3 `CartesianChart` is not on the public `basalt-ui/charts` barrel yet (it still exports the
 // 2.x rung), so this route reaches the built module by path until the barrel switch lands. Dist, not
@@ -223,7 +222,6 @@ const lone = (
 )
 
 function ChartsRoute(): ReactElement {
-  useV3Tokens()
   return (
     <Section title="Chart seams">
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,26rem),1fr))] items-start gap-4">

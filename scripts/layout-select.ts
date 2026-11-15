@@ -42,30 +42,23 @@ export const SMOKE: readonly string[] = [
 ]
 
 /** `src/` folders no page renders: the CLI, the linter and the guard registry. (`testing` is NOT one: the layout suite imports it.) */
-const INVISIBLE_DIRS: ReadonlySet<string> = new Set(['cli', 'commands', 'lint', 'guard'])
+const INVISIBLE_DIRS: ReadonlySet<string> = new Set(['cli', 'lint', 'guard'])
 
 /** Folders and files whose change reaches every page: a name cannot place them, so they run the smoke set. */
 const SHARED: ReadonlySet<string> = new Set([
   'theme',
-  'theme-lab',
   'tokens',
   'css',
   'core',
   'common',
-  'provider',
   'format',
   'state',
   'router',
-  'router-tanstack',
   'vite',
   'styles',
   'index',
   'surfaces',
   'register',
-  'telemetry',
-  'query-client',
-  'unwrap',
-  'dev-dock',
 ])
 
 /** Config whose change reaches every page: a dependency bump, the compiler, the test config. */

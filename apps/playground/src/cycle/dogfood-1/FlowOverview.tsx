@@ -13,7 +13,6 @@ import { CardGrid, EmptyState, Facts, Page, PageAside, PageBar, Section } from '
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 import { DEMO_SERIES } from '../../demo/series'
-import { useV3Tokens } from '../../demo/v3-tokens'
 import {
   FLOW_ISSUES,
   FLOW_NOW,
@@ -294,7 +293,6 @@ function IssueFacts({ issue }: { issue: FlowIssue }): ReactElement {
 // ---- Page --------------------------------------------------------------------------------------
 
 export function FlowOverview(): ReactElement {
-  useV3Tokens()
   const [screen] = flow.field.screen.use()
   const [key] = flow.field.issue.use()
   const phase = phaseOf(screen)

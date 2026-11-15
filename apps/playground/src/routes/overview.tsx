@@ -6,7 +6,6 @@ import { FilterSet, ViewTabs, filterSlot, spec } from 'basalt-ui/controls'
 import { defineControls, field } from 'basalt-ui/router'
 import type { ComponentProps, ReactElement } from 'react'
 import { VX } from 'basalt-ui/tokens'
-import { useV3Tokens } from '../demo/v3-tokens'
 
 const globals = defineControls({
   id: 'overview-globals',
@@ -152,7 +151,6 @@ const tabs: NonNullable<ComponentProps<typeof PageBar>['tabs']> = {
 // #endregion
 
 function OverviewRoute(): ReactElement {
-  useV3Tokens()
   const [tab] = overview.field.tab.use()
   return (
     <div className="flex min-w-0 flex-col gap-4" data-testid="ov-root">

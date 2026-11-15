@@ -25,8 +25,6 @@ const LANES = [
   'screens',
   'lighthouse',
   'charts-perf',
-  'chat-profile',
-  'chat-turn-trace',
   'keyboard',
   'otel',
   'transitions',

@@ -92,7 +92,7 @@ describe('oxlint preset sync contract', () => {
 
   it('repo headless surfaces outside charts/tokens still ban @mantine/* but no longer @visx/*', () => {
     const projected = projectBanList('repo')
-    const globs = ['packages/basalt-ui/src/agent/*.ts', 'packages/basalt-ui/src/state.ts']
+    const globs = ['packages/basalt-ui/src/format/**']
 
     for (const glob of globs) {
       const block = findBlock(projected, glob)

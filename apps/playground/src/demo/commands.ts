@@ -5,24 +5,24 @@
  * mounted inside `AppShell` (`routes/__root.tsx`) lists these beside every `defineNav` item and
  * binds their chords. `Mod+K` and `Mod+B` are the shell's own.
  */
-import { setColorScheme } from 'basalt-ui/commands'
+import { setScheme } from 'basalt-ui/core/scheme'
 import { defineCommands } from 'basalt-ui/shell'
 
 export const COMMANDS = defineCommands({
   'appearance:light': {
     label: 'Switch to light theme',
     group: 'Appearance',
-    run: () => setColorScheme('light'),
+    run: () => setScheme('light'),
   },
   'appearance:dark': {
     label: 'Switch to dark theme',
     group: 'Appearance',
-    run: () => setColorScheme('dark'),
+    run: () => setScheme('dark'),
   },
   'appearance:system': {
     label: 'Match system theme',
     group: 'Appearance',
-    run: () => setColorScheme('auto'),
+    run: () => setScheme('auto'),
   },
   'demo:greet': {
     label: 'Greet user',

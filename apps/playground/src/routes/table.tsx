@@ -9,7 +9,6 @@ import { Sheet, SheetContent } from 'basalt-ui/ui/sheet'
 import { VirtualList } from 'basalt-ui/ui/virtual-list'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
-import { useV3Tokens } from '../demo/v3-tokens'
 
 // ---- Section 1: finances shape, server mode ------------------------------------------------
 
@@ -337,7 +336,6 @@ function Grouped(): ReactElement {
 }
 
 function TableRoute(): ReactElement {
-  useV3Tokens()
   return (
     <div className="flex min-w-0 flex-col gap-8 p-4">
       <Section title="Bookings" controls={filterSlot([spec(exemplar.field.month, 'Month')])}>

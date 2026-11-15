@@ -30,7 +30,6 @@ import { useEffect } from 'react'
 import type { ReactElement } from 'react'
 import { z } from 'zod'
 import { DEMO_SERIES } from '../../demo/series'
-import { useV3Tokens } from '../../demo/v3-tokens'
 import {
   AGENTS,
   PRIORITIES,
@@ -331,7 +330,6 @@ function TicketsBody(): ReactElement {
 const ELSEWHERE_MS = 20_000
 
 export function TicketsPage(): ReactElement {
-  useV3Tokens()
   const client = useQueryClient()
   // cycle-state-2: state-2.1 — `bindInvalidation` needs the client, and the router builds the client
   // inside `createBasaltRouter`, so its `live` option cannot be written; the binding starts here.
