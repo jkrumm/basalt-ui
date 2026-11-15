@@ -1,10 +1,10 @@
 /**
- * The `two-pane` fixture (S10): the two-pane recipe (`two-pane-recipe.tsx`)
- * mounted as written, on the v3 parts (the public `./charts` export still carries the 2.x chart).
+ * The `two-pane` fixture (S10): the playground recipe `apps/playground/src/recipes/two-pane.tsx`
+ * mounted as written. The layout test maps `@recipe/<name>` to the playground recipe file.
  * Entry of `two-pane.layout.test.ts`.
  */
 import { createRoot } from 'react-dom/client'
-import { TwoPane, seedBars } from './two-pane-recipe'
+import { TwoPane, seedBars } from '@recipe/two-pane'
 
 function Fixture() {
   return (
