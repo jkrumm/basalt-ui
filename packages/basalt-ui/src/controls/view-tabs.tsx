@@ -21,8 +21,6 @@ import { Select } from '../ui/select'
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs'
 import type { ViewTabsProps as ContractProps } from './contract'
 import { ControlPresentationContext } from './control-view'
-import { LegacyViewTabs } from './view-tabs-legacy'
-import type { LegacyViewTabsProps } from './view-tabs-legacy'
 
 export type ViewTabsOption<T extends string = string> = {
   readonly value: T
@@ -45,16 +43,9 @@ type HandleProps<T extends string> = ContractProps<T> & {
   disabled?: boolean
   /** Layout only (`w-full`, `ml-auto`). */
   className?: string
-  field?: never
-  value?: never
-  onChange?: never
-  size?: never
 }
 
-/** The 2.x `field` form stays while 2.x pages compose it; it moves to `handle` with them. */
-export type ViewTabsProps<T extends string = string> =
-  | HandleProps<T>
-  | (LegacyViewTabsProps<T> & { handle?: never })
+export type ViewTabsProps<T extends string = string> = HandleProps<T>
 
 /** Past three options the narrow form is a `Select`, not a track. */
 const TRACK_MAX = 3
@@ -209,6 +200,5 @@ function HandleViewTabs<T extends string>({
  * />
  */
 export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
-  if (props.handle !== undefined) return <HandleViewTabs {...props} />
-  return <LegacyViewTabs {...(props as LegacyViewTabsProps<T>)} />
+  return <HandleViewTabs {...props} />
 }

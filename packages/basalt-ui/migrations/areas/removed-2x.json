@@ -1,0 +1,230 @@
+{
+  "schema": 1,
+  "area": "removed-2x",
+  "rows": [
+    {
+      "id": "removed-2x-root-BarList",
+      "kind": "removed",
+      "from": "basalt-ui#BarList",
+      "note": "the 2.x view layer is deleted in 3.0; instead: BarList from basalt-ui/cards"
+    },
+    {
+      "id": "removed-2x-root-BasaltShell",
+      "kind": "removed",
+      "from": "basalt-ui#BasaltShell",
+      "note": "the 2.x view layer is deleted in 3.0; instead: AppShell from basalt-ui/shell, with defineNav"
+    },
+    {
+      "id": "removed-2x-root-Board",
+      "kind": "removed",
+      "from": "basalt-ui#Board",
+      "note": "the 2.x view layer is deleted in 3.0; instead: no replacement; a grouped grid is KanbanCard with onMove (docs/v3/DIRECTION.md section 6)"
+    },
+    {
+      "id": "removed-2x-root-DangerZone",
+      "kind": "removed",
+      "from": "basalt-ui#DangerZone",
+      "note": "the 2.x view layer is deleted in 3.0; instead: app code on Section from basalt-ui/page; a destructive action is a Button with the destructive variant"
+    },
+    {
+      "id": "removed-2x-root-DeltaBadge",
+      "kind": "removed",
+      "from": "basalt-ui#DeltaBadge",
+      "note": "the 2.x view layer is deleted in 3.0; instead: DeltaBadge from ui/badge, or the figure of a ChartCard or StatCard"
+    },
+    {
+      "id": "removed-2x-root-EmptyState",
+      "kind": "removed",
+      "from": "basalt-ui#EmptyState",
+      "note": "the 2.x view layer is deleted in 3.0; instead: EmptyState from basalt-ui/page"
+    },
+    {
+      "id": "removed-2x-root-EventList",
+      "kind": "removed",
+      "from": "basalt-ui#EventList",
+      "note": "the 2.x view layer is deleted in 3.0; instead: EventList from basalt-ui/cards"
+    },
+    {
+      "id": "removed-2x-root-Meter",
+      "kind": "removed",
+      "from": "basalt-ui#Meter",
+      "note": "the 2.x view layer is deleted in 3.0; instead: Meter from basalt-ui/ui/meter"
+    },
+    {
+      "id": "removed-2x-root-PageAside",
+      "kind": "removed",
+      "from": "basalt-ui#PageAside",
+      "note": "the 2.x view layer is deleted in 3.0; instead: PageAside from basalt-ui/page"
+    },
+    {
+      "id": "removed-2x-root-PageBar",
+      "kind": "removed",
+      "from": "basalt-ui#PageBar",
+      "note": "the 2.x view layer is deleted in 3.0; instead: PageBar from basalt-ui/page"
+    },
+    {
+      "id": "removed-2x-root-PageSummary",
+      "kind": "removed",
+      "from": "basalt-ui#PageSummary",
+      "note": "the 2.x view layer is deleted in 3.0; instead: PageSummary from basalt-ui/page"
+    },
+    {
+      "id": "removed-2x-root-PageTitle",
+      "kind": "removed",
+      "from": "basalt-ui#PageTitle",
+      "note": "the 2.x view layer is deleted in 3.0; instead: PageBar title in basalt-ui/page, or the nav label"
+    },
+    {
+      "id": "removed-2x-root-Section",
+      "kind": "removed",
+      "from": "basalt-ui#Section",
+      "note": "the 2.x view layer is deleted in 3.0; instead: Section from basalt-ui/page"
+    },
+    {
+      "id": "removed-2x-root-SettingsRow",
+      "kind": "removed",
+      "from": "basalt-ui#SettingsRow",
+      "note": "the 2.x view layer is deleted in 3.0; instead: FormField and FormRow from basalt-ui/controls"
+    },
+    {
+      "id": "removed-2x-root-SettingsSection",
+      "kind": "removed",
+      "from": "basalt-ui#SettingsSection",
+      "note": "the 2.x view layer is deleted in 3.0; instead: Section from basalt-ui/page with FormField and FormRow from basalt-ui/controls"
+    },
+    {
+      "id": "removed-2x-root-StatCard",
+      "kind": "removed",
+      "from": "basalt-ui#StatCard",
+      "note": "the 2.x view layer is deleted in 3.0; instead: StatCard from basalt-ui/cards"
+    },
+    {
+      "id": "removed-2x-root-StatGroup",
+      "kind": "removed",
+      "from": "basalt-ui#StatGroup",
+      "note": "the 2.x view layer is deleted in 3.0; instead: StatGroup from basalt-ui/cards"
+    },
+    {
+      "id": "removed-2x-root-WidgetHeader",
+      "kind": "removed",
+      "from": "basalt-ui#WidgetHeader",
+      "note": "the 2.x view layer is deleted in 3.0; instead: the title and controls slot of Section, ChartCard or DataPanel"
+    },
+    {
+      "id": "removed-2x-root-useSizeClass",
+      "kind": "removed",
+      "from": "basalt-ui#useSizeClass",
+      "note": "the 2.x view layer is deleted in 3.0; instead: useSizeClass from basalt-ui/page"
+    },
+    {
+      "id": "removed-2x-charts-Donut",
+      "kind": "removed",
+      "from": "basalt-ui/charts#Donut",
+      "note": "the 2.x view layer is deleted in 3.0; instead: BarList from basalt-ui/cards, with max = the total"
+    },
+    {
+      "id": "removed-2x-charts-DualPanel",
+      "kind": "removed",
+      "from": "basalt-ui/charts#DualPanel",
+      "note": "the 2.x view layer is deleted in 3.0; instead: the two-pane recipe in docs/recipes"
+    },
+    {
+      "id": "removed-2x-charts-MirroredBars",
+      "kind": "removed",
+      "from": "basalt-ui/charts#MirroredBars",
+      "note": "the 2.x view layer is deleted in 3.0; instead: the two-pane recipe in docs/recipes"
+    },
+    {
+      "id": "removed-2x-charts-StackedArea",
+      "kind": "removed",
+      "from": "basalt-ui/charts#StackedArea",
+      "note": "the 2.x view layer is deleted in 3.0; instead: Lines with stack and area: \"fade\""
+    },
+    {
+      "id": "removed-2x-charts-chartCurve",
+      "kind": "removed",
+      "from": "basalt-ui/charts#chartCurve",
+      "note": "the 2.x view layer is deleted in 3.0; instead: series.curve; plot.curve inside custom marks"
+    },
+    {
+      "id": "removed-2x-charts-foldBands",
+      "kind": "removed",
+      "from": "basalt-ui/charts#foldBands",
+      "note": "the 2.x view layer is deleted in 3.0; instead: BandStrip, which folds its own bands"
+    },
+    {
+      "id": "removed-2x-controls-FormGroup",
+      "kind": "removed",
+      "from": "basalt-ui/controls#FormGroup",
+      "note": "the 2.x view layer is deleted in 3.0; instead: FormField rows inside a fieldset or a Section"
+    },
+    {
+      "id": "removed-2x-controls-MultiSelectFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#MultiSelectFilter",
+      "note": "the 2.x view layer is deleted in 3.0; instead: spec(handle, label, { options }) in FilterSet specs"
+    },
+    {
+      "id": "removed-2x-controls-NumberFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#NumberFilter",
+      "note": "the 2.x view layer is deleted in 3.0; instead: spec(handle, label, { placeholder }) in FilterSet specs"
+    },
+    {
+      "id": "removed-2x-controls-RangeFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#RangeFilter",
+      "note": "the 2.x view layer is deleted in 3.0; instead: spec(handle, label) in FilterSet specs"
+    },
+    {
+      "id": "removed-2x-controls-SearchFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#SearchFilter",
+      "note": "the 2.x view layer is deleted in 3.0; instead: spec(handle, label, { placeholder }) in FilterSet specs"
+    },
+    {
+      "id": "removed-2x-controls-SelectFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#SelectFilter",
+      "note": "the 2.x view layer is deleted in 3.0; instead: spec(handle, label, { options }) in FilterSet specs"
+    },
+    {
+      "id": "removed-2x-controls-SyncButton",
+      "kind": "removed",
+      "from": "basalt-ui/controls#SyncButton",
+      "note": "the 2.x view layer is deleted in 3.0; instead: RefreshButton from basalt-ui/page"
+    },
+    {
+      "id": "removed-2x-controls-ToggleFilter",
+      "kind": "removed",
+      "from": "basalt-ui/controls#ToggleFilter",
+      "note": "the 2.x view layer is deleted in 3.0; instead: spec(handle, label) in FilterSet specs"
+    },
+    {
+      "id": "removed-2x-controls-dates-DateRangePicker",
+      "kind": "removed",
+      "from": "basalt-ui/controls-dates#DateRangePicker",
+      "note": "the 2.x view layer is deleted in 3.0; instead: DatePicker from ui/date-picker, bound through spec(handle, label) in FilterSet specs"
+    },
+    {
+      "id": "removed-2x-table-BasaltDataTable",
+      "kind": "removed",
+      "from": "basalt-ui/table#BasaltDataTable",
+      "note": "the 2.x view layer is deleted in 3.0; instead: useDataTable({ id, label, columns, data, getRowId, mode }) and <DataTable table={t} /> from basalt-ui/table"
+    },
+    {
+      "id": "removed-2x-table-createColumnHelper",
+      "kind": "removed",
+      "from": "basalt-ui/table#createColumnHelper",
+      "note": "the 2.x view layer is deleted in 3.0; instead: col from basalt-ui/table (the kind column factory)"
+    }
+  ],
+  "tokens": {
+    "renamed": [],
+    "valueShifts": []
+  },
+  "storage": [],
+  "urls": [],
+  "attrs": [],
+  "rules": []
+}

@@ -169,14 +169,14 @@ export const REPO_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = [
   {
     rule: 'react/refs',
     reason:
-      'page-bar: the ref callback runs at commit, before any effect, so the first publish reads `active` from a ref written in render; provider: the telemetry sink is read through a ref by an emitter built once (an effect event cannot reach router/window callbacks, and a dep on it rebuilds the emitter every render)',
-    files: [`${PKG_ROOT}src/shell/page-bar.tsx`, `${PKG_ROOT}src/provider/index.tsx`],
+      'provider: the telemetry sink is read through a ref by an emitter built once (an effect event cannot reach router/window callbacks, and a dep on it rebuilds the emitter every render)',
+    files: [`${PKG_ROOT}src/provider/index.tsx`],
   },
   {
     rule: 'react/set-state-in-effect',
     reason:
-      'provider: the Spotlight action list is rebuilt on mount and at each open so `when()` and `detectMac` never run during render; fixtures: the aside probe takes its mount ordinal from a page-global counter bumped by that same mount effect',
-    files: [`${PKG_ROOT}src/provider/index.tsx`, `${PKG_ROOT}tests/layout/fixture/fixtures.tsx`],
+      'provider: the Spotlight action list is rebuilt on mount and at each open so `when()` and `detectMac` never run during render',
+    files: [`${PKG_ROOT}src/provider/index.tsx`],
   },
 ]
 

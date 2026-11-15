@@ -57,15 +57,6 @@ describe('chartCurve', () => {
   })
 })
 
-describe('public barrel', () => {
-  test('chartCurve is exported for CartesianChart marks, and caches per name', async () => {
-    const barrel = await import('./index')
-    expect(barrel.chartCurve).toBe(chartCurve)
-    expect(barrel.chartCurve('monotone')).toBe(barrel.chartCurve('monotone'))
-    expect(barrel.chartCurve('monotone')).not.toBe(barrel.chartCurve('linear'))
-  })
-})
-
 describe('CurveName', () => {
   test('covers exactly the shipped curves, at compile time', () => {
     const all = [

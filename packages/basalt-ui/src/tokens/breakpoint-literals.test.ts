@@ -26,9 +26,7 @@ const sizeLiterals = new Set(
  * Component-shape rules still on a viewport `@media` (a container question — later waves move them
  * onto `@container` and delete their entry here). Keyed by file relative to `src/`.
  */
-const COMPONENT_SHAPE_LEGACY: Record<string, readonly string[]> = {
-  'content/article-layout.module.css': ['1199.9px'],
-}
+const COMPONENT_SHAPE_LEGACY: Record<string, readonly string[]> = {}
 
 /** `@container basalt-card` is the card-chrome axis: its literals are CONTAINER_CLASSES boundaries. */
 const containerLiterals = new Set(

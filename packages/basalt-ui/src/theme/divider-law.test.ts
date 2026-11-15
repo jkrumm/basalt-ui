@@ -110,85 +110,6 @@ type Kind = 'between-rows' | 'region-boundary' | 'prose-typography'
 
 const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string }[] = [
   {
-    file: 'controls/panel-row.module.css',
-    selector: '.row + .row',
-    kind: 'between-rows',
-    why: "An aside's inspector rows (`docs/ASIDE-SPEC.md` §3). Adjacent-sibling, so the FIRST row draws no top line — the group's own header already bounds it — and the family has no trailing rule by construction.",
-  },
-  {
-    file: 'shell/page-aside.module.css',
-    selector: '.body > * + *',
-    kind: 'between-rows',
-    why: "The aside body's GROUPS — flush chrome, hairline-separated, rather than a stack of cards (Lightroom, not a dashboard). Same adjacent-sibling shape as the rows inside them, so the first group draws nothing under the panel header above it.",
-  },
-  {
-    file: 'shell/page-aside.module.css',
-    selector: ".panel[data-basalt-page-aside='shell'] .header",
-    kind: 'region-boundary',
-    why: "The shell-form aside header's bottom rule closes the top belt's seam across the panel (docs/DESIGN-SPEC.md §5, §8 #12) instead of dead-ending at the aside column — a continuation of the header|main AppShell seam, not a heading echoing its own type scale.",
-  },
-  {
-    file: 'dashboard/stat-strip.module.css',
-    selector: '.cell',
-    kind: 'between-rows',
-    why: "The strip's cells, wrapped onto several rows: a LEADING outer box-shadow (no layout space, so every cell keeps one inset), and the leading row's line is clipped by the section, so the strip has no top or trailing rule.",
-  },
-  {
-    file: 'dashboard/stat-strip.module.css',
-    selector: '@media (forced-colors: active) >> .cell',
-    kind: 'between-rows',
-    why: "The same leading edge as `.cell`, as a CanvasText border: forced colors drop box-shadows, so the strip's hairlines would vanish. Every cell takes it, so cells stay level, and `.clip` hides the leading row's.",
-  },
-  {
-    file: 'dashboard/stat-strip.module.css',
-    selector: '.footerCell',
-    kind: 'region-boundary',
-    why: "The seam between the strip's cells and its footer row of wider cells: a region boundary inside one surface, the same --vx-divider line the cells use, not a heading echoing its type scale.",
-  },
-  {
-    file: 'dashboard/stat-strip.module.css',
-    selector: '.underCell',
-    kind: 'region-boundary',
-    why: "The seam between a strip cell's readings and the footer entry that captions them (`under`): a region boundary inside the cell, the same --vx-divider line, not a heading echoing its type scale.",
-  },
-  {
-    file: 'dashboard/settings-section.module.css',
-    selector: '.rows > *:not(:last-child)',
-    kind: 'between-rows',
-    why: 'A settings list. The `:not(:last-child)` IS the last-rule drop, written into the selector rather than as a second rule.',
-  },
-  {
-    file: 'controls/form-layout.module.css',
-    selector:
-      ".group[data-section] > .groupControls[data-direction='column'] > .row:not(:last-child)",
-    kind: 'between-rows',
-    why: "A form section's rows (D54: the same rule as a settings list). The `:not(:last-child)` IS the last-rule drop.",
-  },
-  {
-    file: 'content/article-layout.module.css',
-    selector: '.header',
-    kind: 'prose-typography',
-    why: "An article's masthead rule — the title-block convention of a printed document, and the one place a reader expects a line under a heading.",
-  },
-  {
-    file: 'shell/app-main.module.css',
-    selector: '.band:not(:empty)',
-    kind: 'region-boundary',
-    why: "The shell's page-bar BAND — a region between the header and the scrollport, not a row inside the page — so this is the seam between the page's control bar and the content under it, the same `--vx-divider` line the header|main AppShell seam draws one region up. The `:not(:empty)` gate is law C14 in CSS: a route with no PageBar paints no line.",
-  },
-  {
-    file: 'content/article-layout.module.css',
-    selector: '.footer',
-    kind: 'region-boundary',
-    why: 'Prev/next navigation below the article body — two regions, and the rule is above the footer rather than under a heading.',
-  },
-  {
-    file: 'content/guide.module.css',
-    selector: '.footer',
-    kind: 'region-boundary',
-    why: 'Same shape as the article footer: the boundary between a document and the navigation after it.',
-  },
-  {
     file: 'content/prose.module.css',
     selector: '.root hr',
     kind: 'prose-typography',
@@ -229,11 +150,6 @@ describe('every horizontal hairline is inventoried and classified', () => {
     expect(unlisted).toEqual([])
   })
 
-  test('a box-shadow divider is recorded, not only borders', () => {
-    const strip = rules.filter((r) => r.file === 'dashboard/stat-strip.module.css')
-    expect(strip.some((r) => r.selector === '.cell' && r.decl.includes('0 -1px 0'))).toBe(true)
-  })
-
   test('the ledger names nothing that no longer exists', () => {
     const found = new Set(rules.map((r) => `${r.file}|${r.selector}`))
     expect(LEDGER.filter((e) => !found.has(`${e.file}|${e.selector}`)).map((e) => e.file)).toEqual(
@@ -268,15 +184,10 @@ describe('a header never draws a rule under itself in the chrome lane', () => {
     expect(offenders).toEqual([])
   })
 
-  test('the chrome lane holds between-rows lines and the one aside-header region boundary', () => {
-    // The mobile bar's old `region-boundary` top rule is gone — that seam is now Mantine's own
-    // `AppShell.Footer` edge (docs/DESIGN-SPEC.md §5), outside this scan. The one that replaced it
-    // is the shell-form aside header's bottom rule: it closes the top belt's seam across the panel
-    // (§8 #12) rather than a heading drawing a line under itself, so it is ledgered
-    // `region-boundary`, not `between-rows`. The other `region-boundary` entries live in
-    // `content/**`, outside CHROME_LANES.
-    const kinds = LEDGER.filter((e) => isChrome(e.file)).map((e) => e.kind)
-    expect([...new Set(kinds)].sort()).toEqual(['between-rows', 'region-boundary'])
+  test('no ledger entry is left in the chrome lane', () => {
+    // The 2.x shell, dashboard and control CSS that carried the between-rows and region-boundary
+    // entries is deleted; a chrome-lane hairline needs a new entry and a stated kind.
+    expect(LEDGER.filter((e) => isChrome(e.file))).toEqual([])
   })
 })
 

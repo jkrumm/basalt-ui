@@ -18,27 +18,25 @@ code. Mechanics live where they can't drift: **API shape → the JSDoc on the ex
 
 Named exports only — **no default exports**. Files `kebab-case`, components `PascalCase`.
 
-| Subpath            | Mantine? | Owns                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `.`                | coupled  | provider + theme factory, `BasaltShell` (sidebar / mobile nav / breadcrumbs / `PageBar` / `PageAside`), `Section`, `WidgetHeader`, dashboard composites, `QueryState`, `createBasaltQueryClient`/`unwrap` (C1: absorbed from the dropped `./query`), `ConnectivityIndicator`/`useConnectivity` (C1: absorbed from the dropped `./connectivity`, provider auto-mounts it) |
-| `./charts`         | **free** | `CartesianChart` + the `Lines`/`Bars` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export                                                                                                                                                                                                                                                        |
-| `./tokens`         | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                                                                                                                                                                                                                                                |
-| `./controls`       | coupled  | the control tier — `FilterSet`, the `FieldHandle`-bound filters, `ViewTabs`, `ActionGroup`, `OverflowMenu`, `SyncButton`; three surfaces (`pill` / `sheet` / `panel`) plus the aside's row primitives `PanelRow` + `SliderControl`, and the form layout `FormSection`/`FormRow`/`FormGroup`/`FormActions` (moved from `./forms` in 1.36.0 — no `@mantine/form`)          |
-| `./controls-dates` | coupled  | `DateRangePicker` only — the `@mantine/dates` implementation of `RangeFilter`'s picker seam. STAYS separate post-C1: inlining it would pull `@mantine/dates` into `./controls`                                                                                                                                                                                           |
-| `./state`          | **free** | `field.*`, `createSearchStore`, `createLocalStore`, `createPersistedState`                                                                                                                                                                                                                                                                                               |
-| `./forms`          | coupled  | `useBasaltForm`, `inputProps`, `fieldKey`                                                                                                                                                                                                                                                                                                                                |
-| `./commands`       | coupled  | `defineCommands`, `defineOverlays`/`overlays`, `ShortcutsHelp`, and the notifications registry + `NotificationBell` (folded in from `./notifications`)                                                                                                                                                                                                                   |
-| `./table`          | coupled  | `BasaltDataTable`, `createColumnHelper` (renamed from `./data/table`), v3 `col`                                                                                                                                                                                                                                                                                          |
-| `./agent`          | coupled  | transport + runner + thread contracts and the Mantine chat UI (folded in from `./agent-chat`); `src/agent/*.ts` stays Mantine-free as a repo-local lint boundary, `src/agent/chat/**` is the UI                                                                                                                                                                          |
-| `./content`        | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map, `ArticleLayout`, the Article model                                                                                                                                                                                                                                                                          |
-| `./vite`           | —        | `basaltViteConfig` (config only, never `plugins`) + `basalt()` (gates, sources.css, head/PWA)                                                                                                                                                                                                                                                                            |
-| `./styles.css`     | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                                                                                                                                                                                                                      |
-| `./configs/*`      | —        | raw toolchain presets (real paths — `extends` needs them)                                                                                                                                                                                                                                                                                                                |
+| Subpath        | Mantine? | Owns                                                                                                                                                                                            |
+| -------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`            | coupled  | provider + theme factory, `createBasaltRouter`/`unwrap`, `ThemeToggle`, nav (`defineNav`, `useBasaltNav`), the state seams                                                                      |
+| `./charts`     | **free** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export                                             |
+| `./tokens`     | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                                                                       |
+| `./controls`   | free     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                                                                         |
+| `./state`      | **free** | `field.*`, `createSearchStore`, `createLocalStore`, `createPersistedState`                                                                                                                      |
+| `./forms`      | coupled  | `useBasaltForm`, `inputProps`, `fieldKey`                                                                                                                                                       |
+| `./commands`   | coupled  | `defineCommands`, `defineOverlays`/`overlays`, `ShortcutsHelp`, and the notifications registry + `NotificationBell` (folded in from `./notifications`)                                          |
+| `./table`      | coupled  | `BasaltDataTable`, `createColumnHelper` (renamed from `./data/table`), v3 `col`                                                                                                                 |
+| `./agent`      | coupled  | transport + runner + thread contracts and the Mantine chat UI (folded in from `./agent-chat`); `src/agent/*.ts` stays Mantine-free as a repo-local lint boundary, `src/agent/chat/**` is the UI |
+| `./content`    | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map, `ArticleLayout`, the Article model                                                                                                 |
+| `./vite`       | —        | `basaltViteConfig` (config only, never `plugins`) + `basalt()` (gates, sources.css, head/PWA)                                                                                                   |
+| `./styles.css` | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                                             |
+| `./configs/*`  | —        | raw toolchain presets (real paths — `extends` needs them)                                                                                                                                       |
 
 **2.0:** 15 published subpaths (V2-SPEC § 1), plus the v3 skeleton stubs added since (31 export keys; `./shell` aliases the 2.x shell barrel, `./tokens.css` is a v3 stub); `./guard`, `./theme-lab`, `./data/virtual`,
 `./llms.txt` and `./package.json` are no longer exports. **C1 (1.29.0):** `./query`, `./connectivity` and bare `./data` were dropped — 26 published subpaths
-→ 20. `section/` + `widget-header/` merged into `src/dashboard/` (internal only, no subpath
-change); `utils/`+`motion/`+`query/error-message` merged into `src/common/`. Full symbol mapping:
+→ 20. `utils/`+`motion/`+`query/error-message` merged into `src/common/`. The 2.x view layer (`src/dashboard/`, `./controls-dates`, the 2.x files of `./charts`, `./table`, `./controls`, `./shell` and `./content`) was deleted in 3.0; `migrations/areas/removed-2x.json` names each export. Full symbol mapping:
 `MIGRATING.md` § 2.x to 3.0.
 
 `src/surfaces.ts` is the SSOT behind that table, `llms.txt`, `AGENTS.md`, the oxlint boundary globs
@@ -104,12 +102,9 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
   way, and it means a charts-only consumer never pulls Mantine in by importing the root.
 - `motion` is framework-agnostic, so `src/motion` is importable from both halves. Only `@mantine/*`
   is banned in the free layer.
-- `./controls` must never import `@mantine/dates`, statically OR lazily: `basaltViteConfig`
-  pre-bundles the whole `@mantine` scope, so a consumer without that peer would fail to resolve.
-  The picker is injected through `RangeFilter.customPicker` from `./controls-dates`. `./controls`
-  must equally never reach `@mantine/form` (the form layout lives there so a `FormRow` costs no
-  peer): `peer-boundary.test.ts` walks the relative-import closure, `check-dist-layering.mjs` the
-  built graph, `pack-test.sh` renders one with the peer absent.
+- `./controls` must never reach any `@mantine/*` package, statically OR lazily: `peer-boundary.test.ts`
+  walks the relative-import closure, `check-dist-layering.mjs` the built graph, `pack-test.sh`
+  renders one with the peers absent.
 
 ## Tests
 
@@ -290,44 +285,6 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
   is deliberately absent from the slot set: a raw `Select` bound to a setting is right there, and its
   `size` prop is load-bearing. `settings-section.tsx` wraps `actions` in the ctl slot and never
   `control`.
-
-## `QueryState` — the gap was correctness, not convenience
-
-basalt owned both ends of the file (`EmptyState`, `toErrorMessage`) and nothing in between, so a
-consumer wrote the four-way switch and got it wrong in the direction the shape suggested: `No images`
-on a 500. Three invariants:
-
-- **It is a component, not a hook.** The product IS the branch precedence, and a hook hands every
-  call site the same switch back.
-- **It lives in `src/dashboard/`, not `src/query/`** — `check-dist-layering.mjs` asserts
-  `dist/query/index.js` reaches no `@mantine/*`, and this renders Mantine. `query` is typed as a
-  five-field structural subset, so a composed or hand-rolled result passes with no cast; that subset
-  removes the compiler, so `assertQueryStateLike` throws at runtime on a missing `isError` — which
-  is precisely the "500 renders _No images_" bug.
-- `errorTitle`/`errorFallback`/`errorAction` reach the **no-data** error branch only; the
-  cached-data banner hardcodes its own copy. Don't document them as covering both.
-
-## `BasaltDataTable` — the port got LONGER, and that is the finding
-
-argo's three tables went 341 → 370–379 lines after adopting the shipped props. Column defs cost more
-than bespoke rows when every cell is bespoke. **What the port buys is ownership, not brevity** — the
-`type="native"` scroll footgun, alignment stated once instead of on both `th` and `td`, and
-sorting/filtering/pagination no longer consumer-owned. Keep producing that number BEFORE selling a
-prop as a line saving.
-
-- `maxHeight`/`minWidth` render `Table.ScrollContainer type="native"`. Required, not preferred: a
-  `ScrollArea` viewport is the positioning context a sticky `<thead>` resolves against, so the
-  default type pins the header to the page viewport instead of the table's box. The escape-hatch lane
-  is documented to use the identical node, so the two provably share one DOM.
-- `meta.align` is a `ColumnMeta` augmentation (typo → tsc error, bad value → a throw naming the
-  column); `meta.numeral` is read only as `!== false`, an opt-OUT.
-- **`manualPagination` imposes a contract** on sorting, filtering and the count, and an unresolved
-  one throws in dev and degrades to the honest table in production. Not silent, by design.
-- **Row selection shipped 1.28.0** — TanStack row-selection passthrough, `onRowActivate` and a
-  `bulkActions` bar. Known, still not shipped: `emptyState` renders inside a `<td colSpan>` counting
-  the raw `columns` prop; no `emptyState="replace"`; no row expansion.
-- **`renderCard`** swaps the body for per-row cards below the TABLE's own `regular` container class,
-  never the viewport — same processed rows, states and activation; the fold is for shedding columns.
 
 ## CLI
 

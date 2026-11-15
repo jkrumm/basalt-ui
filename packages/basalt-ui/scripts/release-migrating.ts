@@ -42,6 +42,7 @@ export const AREAS = [
   'lint',
   'agent',
   'legacy-1x',
+  'removed-2x',
 ] as const
 
 export const PROFILES = ['tokens', 'bridge', 'parts', 'app'] as const

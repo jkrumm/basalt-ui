@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 import { routePaths } from './routes'
 
 describe('routePaths', () => {
-  test('reads nested playground routes', () => {
+  test('reads the playground routes', () => {
     const paths = routePaths()
-    expect(paths).toContain('/cycle/state')
+    expect(paths).toContain('/overview')
     expect(paths).toContain('/')
     expect(paths).toContain('/table')
   })

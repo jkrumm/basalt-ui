@@ -1,7 +1,7 @@
 /**
  * Runs `scripts/check-theme-css.ts` (the consolidated CSS-scan gates — shadow-surface coverage,
- * border coverage, ctl-tier var coverage, layout-rhythm regressions) as a subprocess and asserts
- * exit 0, so `bun test` still covers all four sections without re-implementing their scans inline.
+ * border coverage, ctl-tier var coverage) as a subprocess and asserts
+ * exit 0, so `bun test` still covers all three sections without re-implementing their scans inline.
  * See that script for what each section checks and why it moved out of `src/theme/*.test.ts` (C2).
  *
  * Run: bun test packages/basalt-ui/tests/theme-css-gate.test.ts

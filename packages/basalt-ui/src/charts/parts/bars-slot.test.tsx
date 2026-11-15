@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HOSTED, VisualSlotContext } from '../../dashboard/visual-slot'
+import { HOSTED, VisualSlotContext } from '../visual-slot'
 import { compileCartesian } from '../core/compile'
 import type { SeriesColor } from '../contract'
 import type { ChartSeries } from '../types'

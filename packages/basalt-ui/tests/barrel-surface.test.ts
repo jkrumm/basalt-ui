@@ -45,18 +45,12 @@ const CHART_VALUES = [
   'Bars',
   'CartesianChart',
   'ChartCard',
-  'Donut',
-  'DualPanel',
   'Heatmap',
   'LegacyChartCard',
   'Lines',
-  'MirroredBars',
   'Sparkline',
-  'StackedArea',
   'chartCursor',
-  'chartCurve',
   'chartLabels',
-  'foldBands',
   'useChartFocus',
 ] as const
 
@@ -77,7 +71,7 @@ describe('barrel surface', () => {
   })
 
   describe('./charts', () => {
-    it('exports exactly the 2.0 chart values', () => {
+    it('exports exactly the v3 chart values', () => {
       expect(Object.keys(chartsBarrel).toSorted()).toEqual([...CHART_VALUES])
     })
 

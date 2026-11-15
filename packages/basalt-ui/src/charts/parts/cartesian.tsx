@@ -16,7 +16,7 @@ import { whenSelected } from '@tanstack/charts/selection'
 import { dot } from '@tanstack/charts/dot'
 import { useCallback, useContext, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
-import { VisualSlotContext } from '../../dashboard/visual-slot'
+import { VisualSlotContext } from '../visual-slot'
 import { VX } from '../../tokens'
 import { useInChartCard } from '../card-context'
 import {

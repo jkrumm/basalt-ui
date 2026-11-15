@@ -1,26 +1,13 @@
 /**
- * `basalt-ui/controls` — the Mantine-coupled control tier (`docs/CONTROLS-SPEC.md` §3).
+ * `basalt-ui/controls` — the control tier (`docs/v3/concepts/controls-url-state.md`).
  *
  * Every control here renders at the `ctl` tier from the home that hosts it and owns its own
  * desktop/mobile swap in CSS (law C9).
  */
-export { type BarAction, type GlobalAction } from './actions'
-export { SyncButton } from './sync-button'
 
-// `FilterPill`, `FilterSheet` and the `EnumFilter` body are deliberately NOT here: reaching for
-// them is hand-rolling a filter (`basalt/hand-rolled-filter`).
+// Filters are data: `spec(handle, label, options?)` entries a `FilterSet` or a `ControlHome` renders.
 export { FilterSet } from './filter-set'
-export { RangeFilter, type RangeCustomPickerProps } from './range-filter'
-export { SelectFilter } from './select-filter'
-export { MultiSelectFilter } from './multi-select-filter'
-export { NumberFilter } from './number-filter'
-export { SearchFilter } from './search-filter'
-export { ToggleFilter } from './toggle-filter'
 export { ViewTabs } from './view-tabs'
-export type { FilterOption } from './filter-base'
-
-// The 2.x group stays until `v3-ctl-9-rows` lands its migration row; its 2.x `FormRow` is the v3 one below.
-export { FormGroup } from './form-layout'
 
 // v3 forms: `FormField` carries label, description and error by construction; `FormRow` lays fields out by container tier.
 export { FormField } from './form-field'

@@ -23,7 +23,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 ## Label and annotate the mark that matters
 
-- Label marks directly with `text` marks placed by [chartLabels](docs/chart-labels.md): it measures, avoids overlaps and drops what is too wide. The worked example is region `example:chartLabels` in `apps/playground/src/demo/gallery/seam.tsx`.
+- Label marks directly with `text` marks placed by [chartLabels](docs/chart-labels.md): it measures, avoids overlaps and drops what is too wide. The worked example is region `example:chartLabels` in `apps/playground/src/recipes/seam-examples.tsx`.
 - Annotate the one mark the page is about (the best run, the onset, the live stage) and let the rest recede. [useChartFocus](docs/use-chart-focus.md) holds one focused datum for the marks, the card fact and the live region; region `example:useChartFocus` in the same file.
 - The hero states the answer with its verb ("Runs out 13:52", where "13:52" alone answers nothing) and at most one phrase of baseline; the one mark the page is about carries the annotation at rest, so the sentences around it say something else ([copy](copy.md)). A list keeps the answer above its cut.
 - Custom marks read `plot.rows(key)` and `plot.visible`, so a legend toggle hides the mark. [type:ChartPlot]

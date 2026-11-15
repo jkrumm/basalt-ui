@@ -13,7 +13,7 @@ import type { ControlPresentation } from './contract'
 import { ControlPresentationContext } from './control-view'
 import { memoryHandle } from './control-view.handles'
 import { ViewTabs } from './view-tabs'
-import type { ViewTabsOption, ViewTabsProps } from './view-tabs'
+import type { ViewTabsOption } from './view-tabs'
 import { mountApp } from './view-tabs.test-support'
 
 afterEach(() => {
@@ -144,14 +144,6 @@ describe('inside a row home (PageAside)', () => {
     const labelId = root.querySelector('span')?.id as string
     expect(track.getAttribute('aria-labelledby')).toBe(labelId)
     expect(root.querySelectorAll('[data-slot="segmented"]')).toHaveLength(1)
-  })
-})
-
-describe('the 2.x field form', () => {
-  test('a call with neither handle nor field still names the missing prop', () => {
-    expect(() => {
-      render(<ViewTabs {...({} as unknown as ViewTabsProps)} />)
-    }).toThrow('[basalt] ViewTabs: prop "field" is required')
   })
 })
 

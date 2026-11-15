@@ -54,17 +54,6 @@ export async function loadCycleKnown(dir = join(PLAYGROUND, 'src/cycle')): Promi
 
 export const KNOWN: readonly KnownFinding[] = [
   ...(await loadCycleKnown()),
-  // /gallery is the 2.x Mantine specimen page (Pagination, SegmentedControl, raw inputs). It carries
-  // dozens of findings of the legacy components and goes with the legacy barrel, so it is listed by
-  // assertion, not by item.
-  ...(['axe', 'ringWalk', 'forcedColors', 'fit', 'hitFloor', 'hitOverlap'] as const).map(
-    (assertion): KnownFinding => ({
-      route: '/gallery',
-      assertion,
-      item: /./,
-      owner: 'playground gallery (2.x Mantine specimens): retires with the legacy barrel',
-    }),
-  ),
   {
     route: '/overview',
     assertion: 'ringWalk',
@@ -83,6 +72,24 @@ export const KNOWN: readonly KnownFinding[] = [
     assertion: 'ringWalk',
     item: /view-tabs\]>div>div\[segmented\]>button\[segmented-item\].*outline is clipped by main/,
     owner: 'controls: the track sits on the page edge, so the page bar clips its ring like Range',
+  },
+  {
+    route: '/overview',
+    assertion: 'ringWalk',
+    item: /svg "Requests per day, 30 day.*outline contrast 1\.8\d:1/,
+    owner: 'charts: focusable plot ring contrast (as /charts)',
+  },
+  {
+    route: '/overview',
+    assertion: 'focusNotObscured',
+    item: /view-tabs\]>div>div\[segmented\]>button\[segmented-item\].*covered at .* by div\[control-view\]/,
+    owner: 'controls: the phone track sits under the control view layer at the page edge',
+  },
+  {
+    route: '/scenarios/mdx',
+    assertion: 'axe',
+    item: /^color-contrast \(serious\)|^\.text_/,
+    owner: 'provider: the fallback text contrast the mdx scenario renders (not owned here)',
   },
   {
     route: '/overview',
@@ -109,35 +116,10 @@ export const KNOWN: readonly KnownFinding[] = [
     owner: 'charts: focusable plot ring contrast',
   },
   {
-    route: '/scenarios/s1-ops',
-    assertion: 'axe',
-    item: /^color-contrast \(serious\)/,
-    owner: 'playground scenario (2.x cards): text contrast',
-  },
-  {
-    route: '/scenarios/s1-ops',
-    assertion: 'ringWalk',
-    item: /svg ".*outline is clipped/,
-    owner: 'charts: focusable plot ring is clipped by its card',
-  },
-  {
-    route: '/scenarios/s1-ops',
-    assertion: 'ringWalk',
-    item: /(tbody>tr>td>button "Show Cause"|tr>th>span>button "\+\d+ col).*(outline contrast|outline is clipped)/,
-    owner:
-      'table: row and folded-column buttons keep a ring that is too faint and is clipped by the scrollport',
-  },
-  {
-    route: '/scenarios/s1-ops',
-    assertion: 'ringWalk',
-    item: /button "More information": no focus outline/,
-    owner: 'cards: info button has no focus ring',
-  },
-  {
-    route: '/scenarios/s1-ops',
-    assertion: 'hitOverlap',
-    item: /^\d+:button\[\] x \d+:button\[\]/,
-    owner: 'charts: legend hit overlays overlap on the phone',
+    route: '/cards',
+    assertion: 'focusNotObscured',
+    item: /a\[stat-target\].*covered at .* by div\[card-phase\]/,
+    owner: 'cards: the phase overlay sits over the stat target link',
   },
   // /table is the v3 DataTable exemplar (v3-table-t5-exemplar); its other findings are fixed in src/table.
   {
