@@ -3726,7 +3726,7 @@ const RAW_BREAKPOINT_EXEMPT_FILE = /(?:^|[\\/])(?:use-media-query\.ts|ChartToolt
 
 /**
  * The one recipe every raw-breakpoint message points at. A page's own layout keys on its CONTAINER
- * (`CONTAINER_CLASSES`, `basalt-ui/tokens`: compact 240 / regular 480 / wide 800), never on the
+ * (`CONTAINER_CLASSES`, `basalt-ui/tokens`: narrow 240 / regular 480 / wide 800), never on the
  * viewport — `useSizeClass()` is the shell's seam, not a page's. Mantine 9's own `type="container"`
  * grids are the primitive: both self-wrap in an `inline-size` container, so they need no ancestor.
  * The px literals are `CONTAINER_KEYS` written out (the plugin cannot import TS source);

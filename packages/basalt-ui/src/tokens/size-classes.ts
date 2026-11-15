@@ -10,7 +10,7 @@
 export const SIZE_CLASSES = { compact: 0, medium: 840, expanded: 1200 } as const
 
 /** A component's own inline size — card chrome, chart tier, forms. No CSS reads it yet. */
-export const CONTAINER_CLASSES = { micro: 0, compact: 240, regular: 480, wide: 800 } as const
+export const CONTAINER_CLASSES = { micro: 0, narrow: 240, regular: 480, wide: 800 } as const
 
 export type ContainerClass = keyof typeof CONTAINER_CLASSES
 
@@ -22,7 +22,7 @@ export type ContainerClass = keyof typeof CONTAINER_CLASSES
  * computed key is green.
  */
 export const CONTAINER_KEYS = {
-  compact: `${CONTAINER_CLASSES.compact}px`,
+  narrow: `${CONTAINER_CLASSES.narrow}px`,
   regular: `${CONTAINER_CLASSES.regular}px`,
   wide: `${CONTAINER_CLASSES.wide}px`,
 } as const
@@ -30,22 +30,22 @@ export const CONTAINER_KEYS = {
 /**
  * `CONTAINER_CLASSES` as the five-key map `<Grid type="container" breakpoints={…}>` takes (Mantine
  * types it `Record<MantineSize, string>`), so `Grid.Col` keys resolve onto the grid's own width:
- * `xs` opens compact, `sm` regular, `md`/`lg`/`xl` wide. `basalt/raw-breakpoint` trusts this import
+ * `xs` opens narrow, `sm` regular, `md`/`lg`/`xl` wide. `basalt/raw-breakpoint` trusts this import
  * by name (from `basalt-ui/tokens`) — any other imported map is unreadable to it and flagged.
  */
 export const CONTAINER_GRID_BREAKPOINTS = {
-  xs: CONTAINER_KEYS.compact,
+  xs: CONTAINER_KEYS.narrow,
   sm: CONTAINER_KEYS.regular,
   md: CONTAINER_KEYS.wide,
   lg: CONTAINER_KEYS.wide,
   xl: CONTAINER_KEYS.wide,
 } as const
 
-/** The class a MEASURED inline size falls in (`px` is a min-width boundary, so 240 is `compact`). */
+/** The class a MEASURED inline size falls in (`px` is a min-width boundary, so 240 is `narrow`). */
 export function resolveContainerClass(px: number): ContainerClass {
   if (px >= CONTAINER_CLASSES.wide) return 'wide'
   if (px >= CONTAINER_CLASSES.regular) return 'regular'
-  if (px >= CONTAINER_CLASSES.compact) return 'compact'
+  if (px >= CONTAINER_CLASSES.narrow) return 'narrow'
   return 'micro'
 }
 

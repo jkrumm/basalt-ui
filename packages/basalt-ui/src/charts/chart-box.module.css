@@ -23,7 +23,7 @@
 
 @container (min-width: 240px) {
   .box {
-    height: var(--bc-compact);
+    height: var(--bc-narrow);
   }
 }
 
@@ -72,7 +72,7 @@
 
 @container (min-width: 240px) {
   .grow {
-    min-height: var(--bc-compact);
+    min-height: var(--bc-narrow);
   }
 }
 

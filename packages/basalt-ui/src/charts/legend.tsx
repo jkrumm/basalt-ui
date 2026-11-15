@@ -124,18 +124,18 @@ const swatchFill = (s: SwatchStyle): string =>
   s.colorNegative ? `linear-gradient(90deg, ${s.color} 50%, ${s.colorNegative} 50%)` : s.color
 
 /**
- * A line series' key: a stroke with its dash, compact below 480px of CHART width (a container
+ * A line series' key: a stroke with its dash, narrow below 480px of CHART width (a container
  * query, not the viewport) and wide from 480px. Both are at least 14px with two or more clear
  * dashes: a shorter key reads as two dots. A dashed swatch has BUTT caps: a round cap grows each
  * dash by half the stroke width per end and would close the gap.
  */
 export const LINE_SWATCH = {
-  compact: { width: 14, dash: '4 3' },
+  narrow: { width: 14, dash: '4 3' },
   wide: { width: 16, dash: '4 3' },
 } as const
 
 function LineSwatch({ s, compact }: { s: SwatchStyle; compact: boolean }): ReactElement {
-  const { width, dash } = compact ? LINE_SWATCH.compact : LINE_SWATCH.wide
+  const { width, dash } = compact ? LINE_SWATCH.narrow : LINE_SWATCH.wide
   return (
     <svg
       aria-hidden

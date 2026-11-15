@@ -12,7 +12,7 @@ import type { ResponsiveChartHeight } from './types'
 export type ChartBoxHeight = number | ResponsiveChartHeight | 'fill' | undefined
 
 /** Height = width × ratio, per container class, clamped to {@link HEIGHT_MIN}–{@link HEIGHT_MAX}. */
-export const HEIGHT_RATIO = { micro: 0.5, compact: 0.62, regular: 0.5, wide: 0.4 } as const
+export const HEIGHT_RATIO = { micro: 0.5, narrow: 0.62, regular: 0.5, wide: 0.4 } as const
 export const HEIGHT_MIN = 160
 export const HEIGHT_MAX = 420
 
@@ -37,14 +37,14 @@ const law = (ratio: number): string =>
 
 /** The four custom properties the stylesheet selects between by the frame's container class. */
 export type ChartBoxVars = CSSProperties &
-  Record<'--bc-micro' | '--bc-compact' | '--bc-regular' | '--bc-wide', string>
+  Record<'--bc-micro' | '--bc-narrow' | '--bc-regular' | '--bc-wide', string>
 
-/** The four per-class heights (micro, compact, regular, wide) a height prop resolves to. */
+/** The four per-class heights (micro, narrow, regular, wide) a height prop resolves to. */
 function classHeights(height: Exclude<ChartBoxHeight, 'fill'>): [string, string, string, string] {
   if (height === undefined) {
     return [
       law(HEIGHT_RATIO.micro),
-      law(HEIGHT_RATIO.compact),
+      law(HEIGHT_RATIO.narrow),
       law(HEIGHT_RATIO.regular),
       law(HEIGHT_RATIO.wide),
     ]
@@ -55,10 +55,10 @@ function classHeights(height: Exclude<ChartBoxHeight, 'fill'>): [string, string,
 }
 
 export function chartBoxVars(height: Exclude<ChartBoxHeight, 'fill'>): ChartBoxVars {
-  const [micro, compact, regular, wide] = classHeights(height)
+  const [micro, narrow, regular, wide] = classHeights(height)
   return {
     '--bc-micro': micro,
-    '--bc-compact': compact,
+    '--bc-narrow': narrow,
     '--bc-regular': regular,
     '--bc-wide': wide,
   }
