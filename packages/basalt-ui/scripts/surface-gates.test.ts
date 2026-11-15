@@ -82,19 +82,28 @@ describe('peerClassViolations', () => {
   write('dist/index.d.ts', "export type { A } from './a.js'\n")
   write('dist/a.d.ts', "export type A = import('@tanstack/react-router').Router\n")
   write('dist/lazy-host.js', "export const load = () => import('shiki')\n")
-  write('dist/agent/index.js', "import { motion } from 'motion/react'\nimport 'remend'\n")
-  write('dist/agent/index.d.ts', "export type { LanguageModel } from 'ai'\n")
+  write(
+    'dist/table/index.js',
+    "import { useReactTable } from '@tanstack/react-table'\nimport 'remend'\n",
+  )
+  write('dist/table/index.d.ts', "export type { Meter } from '@base-ui/react'\n")
 
   const peers = Object.fromEntries(
-    [...REQUIRED_PEERS, 'motion', 'ai', 'remend', 'shiki', '@ai-sdk/provider'].map((n) => [n, '*']),
+    [...REQUIRED_PEERS, '@tanstack/react-table', '@base-ui/react', 'remend', 'shiki'].map((n) => [
+      n,
+      '*',
+    ]),
   )
   const meta = Object.fromEntries(
-    ['motion', 'ai', 'remend', 'shiki', '@ai-sdk/provider'].map((n) => [n, { optional: true }]),
+    ['@tanstack/react-table', '@base-ui/react', 'remend', 'shiki'].map((n) => [
+      n,
+      { optional: true },
+    ]),
   )
   const entry = (js: string, types: string) => ({ import: js, types })
   const exportsMap = {
     '.': entry('./dist/index.js', './dist/index.d.ts'),
-    './agent': entry('./dist/agent/index.js', './dist/agent/index.d.ts'),
+    './table': entry('./dist/table/index.js', './dist/table/index.d.ts'),
   }
 
   test('a lazy import() is optional, a static or .d.ts reach is not', () => {
@@ -103,14 +112,14 @@ describe('peerClassViolations', () => {
       peerDependencies: peers,
       peerDependenciesMeta: meta,
     })
-    // `shiki` (lazy) passes; `remend` (static, unclassified) fails; `./agent`'s classification of
-    // `@tanstack/react-hotkeys` etc. is absent from the fixture, so only the entries it reaches matter.
+    // `shiki` (lazy) passes; `remend` (static, unclassified) fails; `./table`'s classification of
+    // its other peers is absent from the fixture, so only the entries it reaches matter.
     expect(v).toContain(
-      './agent imports the optional peer remend without it being subpath-required for ./agent',
+      './table imports the optional peer remend without it being subpath-required for ./table',
     )
     expect(v.some((m) => m.includes('shiki'))).toBe(false)
-    expect(v.some((m) => m.startsWith('./agent') && m.includes('motion'))).toBe(false)
-    expect(v.some((m) => m.startsWith('./agent') && m.includes(' ai '))).toBe(false)
+    expect(v.some((m) => m.startsWith('./table') && m.includes('react-table'))).toBe(false)
+    expect(v.some((m) => m.startsWith('./table') && m.includes('@base-ui/react'))).toBe(false)
   })
 
   test('a null export target is skipped, not dereferenced', () => {

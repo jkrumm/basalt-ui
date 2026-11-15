@@ -88,7 +88,6 @@ const subpaths = [
   { rel: 'tokens/index.js' },
   { rel: 'charts/index.js', onlyBare: CHART_BARE },
   { rel: 'format/index.js' },
-  { rel: 'state.js' },
 ]
 for (const { rel, onlyBare } of subpaths) {
   const entry = resolve(DIST, rel)

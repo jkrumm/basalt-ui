@@ -123,11 +123,8 @@ export const REQUIRED_PEERS: readonly string[] = [
  * the subpath imports them statically or names them in its public `.d.ts`.
  */
 export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>> = {
-  './commands': ['@tanstack/react-hotkeys'],
-  './agent': ['ai', '@ai-sdk/provider', 'motion'],
   // The `meter` kind renders `ui/meter`, which wraps Base UI `Meter`; the v3 parts add more `ui/*`.
   './table': ['@tanstack/react-table', '@base-ui/react'],
-  './forms': ['@mantine/form'],
   // `ui/card` imports Base UI `useRender`, so `StatCard` reaches it; the concept (charts-cards-kanban 3, 'Shared frame') wants no Base UI import there. Remove this row when `ui/card` drops it.
   './cards': ['@base-ui/react'],
   './page': ['@base-ui/react'],
@@ -153,9 +150,7 @@ export const DEFERRED_PEER_GAPS: {
   readonly unreached: Readonly<Record<string, readonly string[]>>
   readonly tolerated: Readonly<Record<string, readonly string[]>>
 } = {
-  unreached: {
-    './agent': ['ai', '@ai-sdk/provider'], // `aiSdkTransport` reaches `ai` only via import()
-  },
+  unreached: {},
   tolerated: {},
 }
 
