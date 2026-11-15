@@ -22,6 +22,25 @@ const A = ({ body }) => <Markdown contentTrust="trusted" children={body} />
 // @filename src/chat/reply.tsx
 const A = (props) => <Markdown contentTrust="trusted" {...props} />
 
+// @invalid
+// @filename src/chat/reply.tsx
+const A = ({ m }) => {
+  const trust = 'trusted'
+  return <Markdown contentTrust={trust}>{m.text}</Markdown>
+}
+
+// @invalid
+// @filename src/chat/reply.tsx
+const A = ({ m, authored }) => (
+  <Markdown contentTrust={authored ? 'trusted' : 'untrusted'}>{m.text}</Markdown>
+)
+
+// @valid
+const A = ({ mode }) => <Markdown contentTrust={mode}>{'Authored **text**'}</Markdown>
+
+// @valid
+const A = ({ reply }) => <Markdown contentTrust={'untrusted'}>{reply}</Markdown>
+
 // @valid
 const A = () => <Markdown contentTrust="trusted">{'Authored **text**'}</Markdown>
 
