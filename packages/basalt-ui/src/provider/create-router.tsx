@@ -7,7 +7,12 @@
  */
 import type { QueryClient, QueryClientConfig } from '@tanstack/react-query'
 import { Router, createRouter } from '@tanstack/react-router'
-import type { AnyRoute, RouterHistory } from '@tanstack/react-router'
+import type {
+  AnyRoute,
+  RouterHistory,
+  SearchParser,
+  SearchSerializer,
+} from '@tanstack/react-router'
 import type { LiveBinding } from '../core/provider'
 import { makeQueryClient } from '../data/query-client'
 import type { RouterHook } from '../telemetry'
@@ -157,6 +162,14 @@ type CreateRouterInput<TRouteTree extends AnyRoute> = {
   routeTree: TRouteTree
   history?: RouterHistory
   basepath?: string
+  /**
+   * The search-string codec, passed to the router as is. The default is JSON-ish: `?id=123`
+   * parses to the number `123` and `density=128` round-trips as a string only through a custom
+   * pair. An app whose params are plain strings passes both (`parseSearch` and `stringifySearch`
+   * come as a pair: one without the other does not round-trip).
+   */
+  parseSearch?: SearchParser
+  stringifySearch?: SearchSerializer
 } & { [K in ManagedKeys]?: never }
 
 /**
