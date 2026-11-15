@@ -38,14 +38,24 @@ export function DirectLabels({ points }: { points: readonly Point[] }) {
     points.map((p) => ({ key: p.id, text: p.name, x: p.x, y: p.y, priority: p.weight })),
     { width: 480, height: 240 },
   )
+  const focus = useChartFocus(placed, { announce: (l) => l.text })
   return (
-    <svg viewBox="0 0 480 240" role="img" aria-label="Labelled points">
-      {placed.map((l) => (
-        <text key={l.key} x={l.textX} y={l.baselineY} textAnchor={l.textAnchor}>
-          {l.text}
-        </text>
-      ))}
-    </svg>
+    <>
+      <svg {...focus.target} viewBox="0 0 480 240" aria-label="Labelled points">
+        {placed.map((l, i) => (
+          <text
+            key={l.key}
+            {...focus.item(i)}
+            x={l.textX}
+            y={l.baselineY}
+            textAnchor={l.textAnchor}
+          >
+            {l.text}
+          </text>
+        ))}
+      </svg>
+      {focus.live}
+    </>
   )
 }
 ```
