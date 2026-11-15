@@ -13,3 +13,16 @@ export const RAIL_TEXT = {
 export function rowName(label: string, count: number | undefined): string {
   return count === undefined ? label : `${label}, ${count}`
 }
+
+/** The first two graphemes of a name: the icon an icon-less item falls back to, so `Orders` and `Overview` differ. */
+const segmenter =
+  typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    : undefined
+
+export function monogramOf(name: string): string {
+  const graphemes = segmenter
+    ? Array.from(segmenter.segment(name), (part) => part.segment)
+    : [...name]
+  return graphemes.slice(0, 2).join('').toUpperCase() || '?'
+}

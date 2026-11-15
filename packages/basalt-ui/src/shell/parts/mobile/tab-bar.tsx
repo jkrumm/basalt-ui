@@ -27,6 +27,7 @@ import { projectMobileNav } from '../../core/mobile-projection'
 import type { PhoneSlot } from '../../core/mobile-projection'
 import type { BadgeMap } from '../../core/types'
 import { SHELL_TEXT } from '../a11y'
+import { monogramOf } from '../rail-text'
 import { BlockSheet, MoreSurface } from './more-surface'
 import type { SurfaceSlot } from './more-surface'
 import { retap } from './retap'
@@ -79,7 +80,7 @@ function MoreGlyph(): ReactElement {
   )
 }
 
-/** The icon, the More glyph, or the first letter when a consumer ships no icons at all. */
+/** The icon, the More glyph, or the first two letters when a consumer ships no icons at all. */
 function Glyph({ slot }: { slot: PhoneSlot }): ReactElement {
   const Icon = slot.icon
   if (Icon !== undefined) return <Icon className="size-6" aria-hidden="true" />
@@ -89,7 +90,7 @@ function Glyph({ slot }: { slot: PhoneSlot }): ReactElement {
     // start with is an axe `label-content-name-mismatch` on every icon-less tab.
     <span
       aria-hidden="true"
-      data-letter={slot.short.slice(0, 1).toUpperCase()}
+      data-letter={monogramOf(slot.short)}
       className="inline-flex size-6 items-center justify-center font-semibold before:content-[attr(data-letter)]"
     />
   )
