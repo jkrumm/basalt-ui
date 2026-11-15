@@ -20,7 +20,7 @@ the record it inspects is a string field passed as `state`.
 PageAside(props: PageAsideProps): ReactElement | null
   title: string  // Header and `aria-label`; required
   width?: number
-  state?: ControlHandle<boolean> | ControlHandle<string>  // Open state, device or URL lane
+  state?: ControlHandle<string> | ControlHandle<boolean>  // Open state, device or URL lane
   dock?: "auto" | "always"
   mobile?: "sheet"
   children?: ReactNode

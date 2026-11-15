@@ -9,6 +9,7 @@
 import type { ReactNode } from 'react'
 import type {
   Box,
+  ControlHandle,
   DetailHost,
   IconComponent,
   Phase,
@@ -187,7 +188,20 @@ export type UseDataTable<T> = {
       detail: (row: T, box: Box) => ReactNode
       /** The title of a row's detail entry (the aside or sheet header); the table label when absent. */
       detailTitle?: (row: T) => string
+      /**
+       * A string field of row ids that holds the open row: activating a row writes its id, closing
+       * the sheet calls `clear()`, and a value that names a loaded row opens its detail on load, on
+       * a share link and on Back. Without it the open row lives in component state. Close tracking
+       * covers the table's own sheet; a caller's or page's host closes on its own terms, so a field
+       * bound to one keeps its id until the field is cleared. Pass a stable handle across renders.
+       */
+      detailState?: ControlHandle<string>
       onRowActivate?: never
     }
-  | { onRowActivate?: (row: T) => void; detail?: never; detailTitle?: never }
+  | {
+      onRowActivate?: (row: T) => void
+      detail?: never
+      detailTitle?: never
+      detailState?: never
+    }
 )

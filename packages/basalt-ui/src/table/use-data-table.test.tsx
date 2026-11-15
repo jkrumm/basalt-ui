@@ -2,9 +2,11 @@
  * `useDataTable` through `DataTable`: sort cycle, natural order, client filter and paging, the
  * selection (one writer, cleared by `resetOn`), the empty arms and the activation contract.
  */
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
+import { useSyncExternalStore } from 'react'
 import type { ReactElement } from 'react'
+import type { ControlHandle } from '../core/ports'
 import { Page } from '../page/page'
 import { PageAside } from '../page/page-aside'
 import { installLayoutDoubles, restoreLayoutDoubles, setWidth } from '../page/page.test-support'
@@ -276,5 +278,90 @@ describe('the instance', () => {
     render(<Subject options={{ id: 'hidden-test' }} />)
     expect(screen.queryByRole('columnheader', { name: 'State' })).toBeNull()
     localStorage.clear()
+  })
+})
+
+/** A string field kept outside React, as the URL keeps it: `set` is a navigation, `clear` unsets. */
+function urlField(
+  initial: string,
+): ControlHandle<string> & { set(v: string): void; value(): string } {
+  let value = initial
+  const listeners = new Set<() => void>()
+  const set = (next: string): void => {
+    value = next
+    for (const listener of listeners) listener()
+  }
+  return {
+    key: 'row',
+    kind: 'string',
+    isDefault: true,
+    use: () => [
+      useSyncExternalStore(
+        (listener) => {
+          listeners.add(listener)
+          return () => listeners.delete(listener)
+        },
+        () => value,
+        () => value,
+      ),
+      set,
+    ],
+    useSource: () => ({ source: 'own', inherited: undefined }),
+    clear: () => set(''),
+    set,
+    value: () => value,
+  }
+}
+
+describe('detail bound to a field', () => {
+  function Bound({ field }: { field: ControlHandle<string> }): ReactElement {
+    const c = col<Row>()
+    const t = useDataTable<Row>({
+      id: 'detail-state-test',
+      label: 'Rows',
+      columns: [c.text('name')],
+      data: ROWS,
+      getRowId: (r) => r.id,
+      mode: { kind: 'client' },
+      detail: (row) => <span>{row.name} body</span>,
+      detailState: field,
+    })
+    return <DataTable table={t} />
+  }
+
+  test('a field that names a row opens its detail on load', () => {
+    render(<Bound field={urlField('b')} />)
+    expect(screen.getByRole('dialog', { name: 'Rows' }).textContent).toContain('Project 2 body')
+  })
+
+  test('a field that names no row opens nothing', () => {
+    render(<Bound field={urlField('zzz')} />)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  test('activating a row writes its id, closing the sheet clears the field', async () => {
+    const field = urlField('')
+    render(<Bound field={field} />)
+    fireEvent.click(document.querySelectorAll('tbody tr')[2] as HTMLElement)
+    expect(field.value()).toBe('c')
+    expect(screen.getByRole('dialog').textContent).toContain('Project 1 body')
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(field.value()).toBe('')
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  test('the field going unset (Back) closes the sheet', async () => {
+    const field = urlField('a')
+    render(<Bound field={field} />)
+    expect(screen.getByRole('dialog')).not.toBeNull()
+    act(() => field.set(''))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  test('the field changing to another row swaps the detail', () => {
+    const field = urlField('a')
+    render(<Bound field={field} />)
+    act(() => field.set('c'))
+    expect(screen.getByRole('dialog').textContent).toContain('Project 1 body')
   })
 })

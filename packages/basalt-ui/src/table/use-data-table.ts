@@ -96,6 +96,8 @@ export type TableModel<T> = {
   setHost(host: DetailHost | undefined): void
   /** Opens the sheet derived from the row's columns (the `table-expand` door). */
   openDetails(id: string): void
+  /** The own sheet closed: unsets the `detailState` field, when one is bound. */
+  closeDetail(): void
   /**
    * Whether each row carries the `table-expand` door: `onRowActivate` takes the tap, and a tier can
    * hide a column (priority 3, or a card `detail`), so the derived sheet needs its own way in.
@@ -120,6 +122,11 @@ export function modelOf<T>(instance: DataTableInstance<T>): TableModel<T> {
 }
 
 const MINUTE = 60_000
+
+/** Stands in for an absent `detailState`, so `use()` is called on every render either way. */
+const NO_DETAIL_STATE = {
+  use: (): [string, (id: string) => void] => ['', () => undefined],
+}
 
 function filterFnOf(spec: KindSpec<never>) {
   return spec.filter === null
@@ -270,19 +277,47 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       body: (box) => createElement(AutoDetail<T>, { model, row, box }),
     })
   }
+  const showDetail = (row: T): void => {
+    if (activation.kind !== 'detail') return
+    const { render } = activation
+    host.current?.show({
+      title: options.detailTitle?.(row) ?? options.label,
+      body: (box) => render(row, box),
+    })
+  }
+  // The `detailState` field: the id of the open row. `NO_DETAIL_STATE` keeps the hook order fixed.
+  const detailState = options.detailState
+  const [openId, setOpenId] = (detailState ?? NO_DETAIL_STATE).use()
+  const shownFor = useRef<string | null>(null)
   const activate = (id: string): void => {
     const row = byId.get(id)
     if (row === undefined) return
     if (activation.kind === 'row') activation.run(row)
     else if (activation.kind === 'auto') showAuto(id)
     else if (activation.kind === 'detail') {
-      const { render } = activation
-      host.current?.show({
-        title: options.detailTitle?.(row) ?? options.label,
-        body: (box) => render(row, box),
-      })
+      if (detailState !== undefined) {
+        shownFor.current = id
+        setOpenId(id)
+      }
+      showDetail(row)
     }
   }
+  // The field is the source of truth: a name that arrives from the URL opens its row once the rows
+  // load, and a field that goes unset (Back, `clear()`) closes the sheet the table opened.
+  useEffect(() => {
+    if (detailState === undefined) return
+    if (!openId) {
+      if (shownFor.current === null) return
+      shownFor.current = null
+      host.current?.hide()
+      return
+    }
+    if (shownFor.current === openId) return
+    const row = byId.get(openId)
+    if (row === undefined || host.current === undefined) return
+    shownFor.current = openId
+    showDetail(row)
+  })
   const keyboard = useRowKeyboard({
     rowIds: items.flatMap((item) => (item.type === 'row' ? [item.row.id] : [])),
     onActivate: activate,
@@ -328,6 +363,11 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       host.current = next
     },
     openDetails: showAuto,
+    closeDetail() {
+      if (detailState === undefined) return
+      shownFor.current = null
+      detailState.clear()
+    },
     expandable:
       activation.kind === 'row' &&
       plan.columns.some(
