@@ -10,7 +10,11 @@ slots: []
 # useFormDraft
 
 Keeps an unfinished form across a reload. The form's `defaultValues` stay the server value
-(`keepDefaultValues`), so the form is dirty against the server while a draft is applied.
+(`keepDefaultValues`), so the form is dirty against the server while a draft is applied. A
+successful submit never leaves a draft behind, however the app closes the form: the draft is
+cleared even when the save's own `onSuccess` unmounts the form mid-submit. A failed submit, a
+cancel and a reload keep it. A stored draft equal to the form's default values is deleted on
+mount instead of restored, so `status` stays `'none'`.
 
 ## Signature
 
