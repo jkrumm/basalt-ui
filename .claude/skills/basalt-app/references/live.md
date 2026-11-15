@@ -54,7 +54,7 @@ export function useLive(): void {
 
 - `aggregates` names the slower tier (2 s) among `roots`; every other root is the list tier (250 ms). Burst frames collapse; a frame never refetches per event.
 - `patch(frame, client)` is the explicit `setQueryData` seam, for a frame that carries the whole new value and nothing private; `map` returns `'none'` to skip the invalidation.
-- Never open a stream yourself: no `new EventSource`, no `new WebSocket`, no `getReader()` loop. A file that implements a `Transport` is the one place a socket may be constructed; the WebSocket recipe is `docs/recipes/websocket-transport.md`. [lint:data-primitive]
+- Never open a stream yourself: no `new EventSource`, no `new WebSocket`, no `getReader()` loop. A file that implements a `Transport` is the one place a socket may be constructed; the WebSocket recipe is `node_modules/basalt-ui/docs/recipes/websocket-transport.md`. [lint:data-primitive]
 - Never build the client with `new QueryClient()`: `createQueryClient()` installs the connection runtime the classes read. [lint:data-primitive]
 - A channel reports its state as `ChannelStatus`; branch on that union, never on a string you invented. [type:ChannelStatus]
 
@@ -100,7 +100,7 @@ export function useLive(): void {
 
 - Settle: a synced value adopts the server's copy only after its own write window (2 s) has passed; `createSyncedState` owns the gate, `pauseWhileMutating` covers just the PUT in flight.
 - Reload: `channel.frames()` throws `ChannelReset` on a `reset`; a loop catches it, reloads the list once, then continues. A page that cannot trust its list reloads on `reset: 'gap'` too.
-- Persist: device preferences follow the person through `persisted.setStorage(adapter)`; the recipe is `docs/recipes/storage-adapter.md`. Cache snapshots are an app concern, and a persister needs `shouldDehydrateQuery`.
+- Persist: device preferences follow the person through `persisted.setStorage(adapter)`; the recipe is `node_modules/basalt-ui/docs/recipes/storage-adapter.md`. Cache snapshots are an app concern, and a persister needs `shouldDehydrateQuery`.
 - Multi-tab: each tab owns its channel (the hub closes 1 s after the last subscriber, so StrictMode and route swaps do not churn the socket). There is no leader election; cross-tab preference changes ride `persisted`'s storage event.
 
 not guarded:

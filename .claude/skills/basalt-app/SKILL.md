@@ -18,7 +18,7 @@ Run the local bin, `./node_modules/.bin/basalt-ui` or a package script; in a wor
 | `check-theme`             | Scan for hand-written colour; `--audit-allows` lists waivers that suppress nothing.                                                                                                    |
 | `tokens:css`, `fonts:css` | Emit the `--vx-*` sheet and the font stacks as plain CSS; `--check` is the CI gate.                                                                                                    |
 | `migrate`                 | Select the migration rows an app needs from a version; see [migrate](references/migrate.md).                                                                                           |
-| `eject`                   | Take ownership of one primitive, with `--reason`; see [eject](docs/eject.md).                                                                                                          |
+| `eject`                   | Take ownership of one primitive, with `--reason`; see [eject](node_modules/basalt-ui/docs/eject.md).                                                                                   |
 | `shot`                    | Render routes to an out dir for the reviewer; see `/basalt-design`.                                                                                                                    |
 
 ## Pick the profile
@@ -34,17 +34,26 @@ The profile is declared in `.basalt/manifest.json` and never inferred. Choose th
 
 ## Set up a new app
 
-1. `bun add basalt-ui`, then `./node_modules/.bin/basalt-ui init` at the repo root. Install the peers of each subpath you import: the generated doc of the export names its `peers`, and `llms.txt` lists them per subpath.
+1. `bun add basalt-ui`, then `./node_modules/.bin/basalt-ui init --profile <profile>` at the repo root (run `init` once, from the local bin; never through a download-and-run command). `init` installs the profile's peers (`app`: `tailwindcss`, `@tailwindcss/vite`, `@base-ui/react`, `@tanstack/react-query`, `@tanstack/react-router`, `@tanstack/router-plugin`, plus the lint tools and `oxfmt`). Install the peers of each further subpath you import: the generated doc of the export names its `peers`, and `llms.txt` lists them per subpath.
 2. Confirm `profile` in `.basalt/manifest.json`, then run `doctor` and fix every finding it prints until it is clean.
-3. Tokens: `./node_modules/.bin/basalt-ui tokens:css --out src/tokens.css` and `fonts:css --out src/fonts.css`; import them once, and commit the output as the app's own files. A `tokens` app stops here.
-4. Vite apps (`bridge` and above): add `basalt()` from `basalt-ui/vite` to `plugins` and import the generated `.basalt/sources.css` after `@import 'tailwindcss'` ([vite](docs/vite.md), [basalt](docs/basalt.md)). Outside Vite the app lists its own Tailwind sources.
-5. `app` profile: mount the frame once in the root route ([app-shell recipe](references/recipes.md)), declare `NAV` once with [defineNav](docs/define-nav.md), and gate an authenticated app in the root route's `beforeLoad` (the shell has no auth seam and loaders fire before any gate component renders).
+3. Tokens: `init` generates `src/tokens.css` (`tokens:css --out`), the app's own file, committed. A `tokens` app imports it and stops here. Re-run `tokens:css` with `--accent` or `--neutral` to retune; `fonts:css --out src/fonts.css` only to change the stacks, imported after `tokens.css`.
+4. Vite apps (`bridge` and above): one stylesheet entry and one plugin order, both written by `init` into a stock `index.css` and `vite.config.ts` ([vite](node_modules/basalt-ui/docs/vite.md), [basalt](node_modules/basalt-ui/docs/basalt.md)). `plugins: [react(), tailwindcss(), basalt()]`, and the entry:
+
+   ```css
+   @import 'basalt-ui/tailwind.css';
+   @import './tokens.css';
+   @import '../.basalt/sources.css';
+   ```
+
+   `tailwind.css` already brings `tailwindcss`, the shipped tokens and fonts: never import them again. Edit a config `init` printed instead of patching to match. Outside Vite the app lists its own Tailwind sources.
+
+5. `app` profile: the entry `init` writes mounts `BasaltProvider` from `basalt-ui/router` once ([basalt-provider](node_modules/basalt-ui/docs/basalt-provider.md)); mount the frame once in the root route ([app-shell recipe](references/recipes.md)), declare `NAV` once with [defineNav](node_modules/basalt-ui/docs/define-nav.md), and gate an authenticated app in the root route's `beforeLoad` (the shell has no auth seam and loaders fire before any gate component renders).
 6. Fill in `DESIGN.md` (identity, series dictionary, deviations); `/basalt-design` reads it before every page.
 7. Run the repo gate (`make check` or the package's own), which runs lint, `check-theme` and typecheck. Fix findings at their source.
 
 ## Add what the app needs
 
-- A page, a nav entry, a board, a timeline, persisted state, a transport or a markdown view: one line per recipe in [recipes](references/recipes.md), each with a file that compiles in the playground. When an export is missing, look for its recipe first.
+- A page, a nav entry, a board, a timeline, persisted state, a transport or a markdown view: one line per recipe in [recipes](references/recipes.md), each a compiled example with its imports. When an export is missing, look for its recipe first.
 - Live data, freshness, streams and the connection: [live](references/live.md).
 - Tests, DOM shims and what only a browser can assert: [testing](references/testing.md).
 - Route bars, the compiler check and DevTools: [performance](references/performance.md).
@@ -85,5 +94,4 @@ A 3.x release never removes a public shape without a migration row and never cha
 
 not guarded:
 
-- Run `init` once, from the local bin after `bun add`; never run a verb through a download-and-run command.
 - Read `references/migrate.md` before choosing a coexistence shape; never start a migration by editing imports.
