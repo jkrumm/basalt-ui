@@ -1,5 +1,5 @@
 import { oneOf } from '../../common/errors'
-import { VX } from '../../tokens'
+import { CV_STATUS } from '../core/theme'
 import type { ChartSeries } from '../types'
 
 /**
@@ -14,7 +14,7 @@ export type NamedChartState = Pick<
   /**
    * A short mark (`!`, `×`) drawn in the middle of each cell in this state, so a state is not told
    * apart by hue alone; `''` opts out of the default. Default: `!` for a `warn` state and `×` for a
-   * `bad` one (by `tone`, or by a `color` that is `VX.status.warn` / `VX.status.bad`); none
+   * `bad` one (by `tone`, or by a `color` that is `CV_STATUS.warn` / `CV_STATUS.bad`); none
    * otherwise. Skipped on a cell too narrow to hold it.
    */
   glyph?: string | undefined
@@ -23,7 +23,7 @@ export type NamedChartState = Pick<
   tone?: StatusTone | undefined
 }
 
-/** The status inks a state can name: `VX.status.*`. */
+/** The status inks a state can name: `CV_STATUS.*`. */
 export type StatusTone = 'good' | 'warn' | 'bad' | 'neutral'
 
 /** `warn` and `bad` carry a glyph by default: a status state is not told apart by hue alone. */
@@ -34,7 +34,7 @@ type ToneSource = Pick<NamedChartState, 'glyph' | 'tone'> & { color?: string | u
 /** A state's status tone: its own, else the one its status colour names. */
 export function toneOf(s: ToneSource): StatusTone | undefined {
   return (
-    s.tone ?? (s.color === VX.status.warn ? 'warn' : s.color === VX.status.bad ? 'bad' : undefined)
+    s.tone ?? (s.color === CV_STATUS.warn ? 'warn' : s.color === CV_STATUS.bad ? 'bad' : undefined)
   )
 }
 

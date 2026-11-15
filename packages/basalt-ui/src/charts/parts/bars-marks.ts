@@ -7,8 +7,7 @@ import { barY } from '@tanstack/charts/bar'
 import { dot } from '@tanstack/charts/dot'
 import { group } from '@tanstack/charts/group'
 import { stack } from '@tanstack/charts/stack'
-import { VX } from '../../tokens'
-import { DIMMED } from '../core/theme'
+import { CV, DIMMED } from '../core/theme'
 import { emphasis } from '../marks'
 import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from '../types'
@@ -68,7 +67,7 @@ function emptyBinTicks<D, X extends ChartX>(rows: readonly PlotRow<D, X>[]): Cha
       x: rowX,
       y: () => 0,
       r: EMPTY_BIN_R,
-      fill: VX.muted,
+      fill: CV.inkMuted,
       fillOpacity: 0,
       states: [{ when: { focus: 'x' }, style: { fillOpacity: 1 } }],
     }),
@@ -112,7 +111,7 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
       z: 'series',
       fill,
       // Series of one colour differ by shade alone: a surface hairline keeps stacked segments apart.
-      ...(sharedColor && layout !== 'grouped' && { stroke: VX.surface.panel, strokeWidth: 1 }),
+      ...(sharedColor && layout !== 'grouped' && { stroke: CV.surface, strokeWidth: 1 }),
       // The hovered x is its own highlight: the bar reads at full strength.
       states: [{ when: { focus: 'x' }, style: { fill: solid } }],
       layout:

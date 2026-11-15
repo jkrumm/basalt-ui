@@ -7,6 +7,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { alpha, VX } from '../../tokens'
+import { CV } from '../core/theme'
 import { BandStrip } from './band-strip'
 import type { BandSpan, BandStripProps, BandStripSeries } from './band-strip'
 
@@ -24,7 +25,7 @@ const down: BandStripSeries<Slot> = {
 const none: BandStripSeries<Slot> = {
   key: 'none',
   label: 'Not measured',
-  color: 'var(--vx-neutral)',
+  color: 'var(--vx-line)',
 }
 
 const getBand = (d: Slot): BandSpan => ({ state: d.s })
@@ -85,7 +86,7 @@ const layerFills = (root: ParentNode): (string | null | undefined)[] =>
     g.querySelector('rect')?.getAttribute('fill'),
   )
 
-const NEUTRAL = alpha(VX.neutral, 1)
+const NEUTRAL = alpha(CV.neutral, 1)
 const GOOD = alpha(VX.good, 1)
 const width = (r: Element): number => Number(r.getAttribute('width'))
 const sumWidth = (rs: Element[]): number => rs.reduce((n, r) => n + width(r), 0)
@@ -409,6 +410,7 @@ describe('BandStrip', () => {
       <BandStrip
         {...props({
           data,
+          states: [up, { ...down, glyph: '' }],
           fold: {
             merge: (group) => {
               merged.push(group.length)
@@ -494,6 +496,7 @@ describe('BandStrip', () => {
       <BandStrip
         {...props({
           data,
+          states: [up, { ...down, glyph: '' }],
           getBand: (d) => ({ state: d.s, ...(d.s === 'up' && { marker: { state: 'down' } }) }),
         })}
       />,

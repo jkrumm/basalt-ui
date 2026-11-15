@@ -229,7 +229,7 @@ export const VX = {
   legendText: 'var(--vx-legend-text)',
 
   // Tooltip chrome — muted (secondary) text inside a bespoke tooltip. The other tooltip vars
-  // (bg/text/border/shadow) reach the engine tooltip as `--ts-chart-tooltip-*` (`charts/theme.ts`);
+  // (bg/text/border/shadow) reach the engine tooltip as `--ts-chart-tooltip-*` (`charts/core/theme.ts`);
   // this one is flattened onto `VX` too because bespoke-tooltip authors reached for `VX.muted` (the
   // general ink-ramp muted) instead and got the wrong token — same pattern as `VX.muted` below.
   tooltipMuted: 'var(--vx-tooltip-muted)',

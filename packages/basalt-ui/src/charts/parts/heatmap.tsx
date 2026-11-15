@@ -2,7 +2,7 @@
  * `Heatmap` — a band × band matrix of `cell` marks (`docs/V2-SPEC.md` § 9.3). Intensity is ABSOLUTE:
  * the color scale spans `domain` (default `[0, max]`), never each row's own range, so two grids on
  * one page read against the same ink. A cell with a datum but a `null` value is ABSENT: a flat
- * `--vx-neutral` fill, no hatch; a cell the consumer names a `states` entry for (failed, idle, …)
+ * `--vx-line` fill, no hatch; a cell the consumer names a `states` entry for (failed, idle, …)
  * draws that state's flat fill instead, legended next to the gradient. A position with NO datum is
  * inert: it paints the absent fill and answers no pointer — no tooltip, no snap to a neighbour.
  * There is no cursor and no crosshair — the tooltip is per cell, its rows are `tooltip.rows(d)` data.
@@ -32,7 +32,7 @@ import { ChartLegend } from '../legend'
 import { useCoarsePointer } from '../../common/use-media-query'
 import { HEIGHT_MAX, HEIGHT_MIN } from '../box'
 import { ChartPlaceholder, resolveChartState } from '../state'
-import { AXIS_LINE, CHART_THEME, DIMMED } from '../core/theme'
+import { AXIS_LINE, CHART_THEME, CV, CV_STATUS, DIMMED } from '../core/theme'
 import type { ChartFocus } from '../contract'
 import { engineFocusHandler, hostFocusProps } from '../focus'
 import type { ChartSeries, ChartState, ChartTooltipRow, ResponsiveChartHeight } from '../types'
@@ -63,7 +63,7 @@ export type HeatmapState<K extends string = string> = Omit<
 
 /** The fill a state resolves to: its `color`, else its tone's status colour, else neutral. */
 const fillOf = (s: HeatmapState | undefined): string =>
-  s?.color ?? (s?.tone === undefined ? VX.neutral : VX.status[s.tone])
+  s?.color ?? (s?.tone === undefined ? CV.neutral : CV_STATUS[s.tone])
 
 export type HeatmapProps<T, K extends string = string> = BasaltProps & {
   /** The accessible name. Required. */
@@ -428,7 +428,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
             const note = c.datum === undefined ? null : annotate(c.datum)
             return note === null || note === ''
               ? []
-              : [{ ...c, text: note, fill: darkFill(c) ? VX.surface.panel : VX.ink }]
+              : [{ ...c, text: note, fill: darkFill(c) ? CV.surface : VX.ink }]
           })
     const tooltipOptions = showTooltip
       ? {
@@ -484,16 +484,16 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         const glyphs = [...stated].flatMap(([key, group]) => {
           const named = stateByKey.get(key)
           const glyph = named && glyphOf({ ...named, color: fillOf(named) })
-          return glyph ? group.map((c) => ({ ...c, text: glyph, fill: VX.surface.panel })) : []
+          return glyph ? group.map((c) => ({ ...c, text: glyph, fill: CV.surface })) : []
         })
         const marks = [
           // Inert, not decorative: it must still win the hit test, so a pointer over an empty
           // position lands on THIS cell (whose tooltip is empty) instead of snapping to a neighbour.
           ...cellMark('absent-empty', absentEmpty, {
-            fill: VX.neutral,
+            fill: CV.neutral,
             fillOpacity: ABSENT_OPACITY,
           }),
-          ...cellMark('absent', absentWithDatum, { fill: VX.neutral, fillOpacity: ABSENT_OPACITY }),
+          ...cellMark('absent', absentWithDatum, { fill: CV.neutral, fillOpacity: ABSENT_OPACITY }),
           ...[...stated].flatMap(([key, group]) => {
             const named = stateByKey.get(key)
             return cellMark(`state:${key}`, group, {

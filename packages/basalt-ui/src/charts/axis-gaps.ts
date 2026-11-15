@@ -9,7 +9,7 @@ import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { text } from '@tanstack/charts/text'
 import { reportOnce } from '../common/validate'
 import { VX } from '../tokens'
-import { DASH } from './theme'
+import { CV, DASH } from './core/theme'
 import type { ChartMarks, ChartX, XRefLine } from './types'
 
 // ---- axis titles -------------------------------------------------------------------------------
@@ -22,7 +22,7 @@ export const xTitleLabel = (title: string) => ({
   text: title,
   fontSize: TITLE_FONT,
   fontWeight: 400,
-  fill: VX.axis,
+  fill: CV.axis,
   opacity: 1,
 })
 
@@ -275,7 +275,7 @@ export function xRefLineMarks<X extends ChartX>(opts: {
           xScale: 'zx',
           yScale: 'y',
           text: () => r.label ?? '',
-          fill: VX.ink2,
+          fill: CV.inkMuted,
           fontSize,
           anchor: spot.toRight ? 'start' : 'end',
           dx: spot.toRight ? X_REF_LABEL_DX : -X_REF_LABEL_DX,

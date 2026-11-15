@@ -182,7 +182,7 @@ export type RefLine = {
   axis?: 'left' | 'right' | undefined
   /**
    * Names the line on the plot: a small muted caption on one of four spots (the plot's end or
-   * start, above or below the line). It follows the legend toggle. The ink is `--vx-ink2`, never
+   * start, above or below the line). It follows the legend toggle. The ink is `--vx-ink-muted`, never
    * the line colour.
    */
   label?: string | undefined

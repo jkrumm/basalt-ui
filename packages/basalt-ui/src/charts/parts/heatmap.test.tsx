@@ -56,7 +56,7 @@ const inked = (el: HTMLElement): string[] =>
     .map((r) => r.getAttribute('fill') ?? '')
     .filter((f) => f.startsWith('color-mix'))
 const flat = (el: HTMLElement): Element[] =>
-  plotRects(el).filter((r) => r.getAttribute('fill') === 'var(--vx-neutral)')
+  plotRects(el).filter((r) => r.getAttribute('fill') === 'var(--vx-line)')
 const bandY = (el: HTMLElement, label: string): number =>
   Number([...el.querySelectorAll('text')].find((t) => t.textContent === label)?.getAttribute('y'))
 const bandX = (el: HTMLElement, label: string): number =>

@@ -20,6 +20,7 @@ import type { CSSProperties, ReactElement } from 'react'
 import { oneOf, requiredProp } from '../../common/errors'
 import { NON_FINITE } from '../../format/shared'
 import { VX, alpha } from '../../tokens'
+import { CV } from '../core/theme'
 import { useInChartCard } from '../card-context'
 import { compileCartesian } from '../core/compile'
 import { samePlots } from '../core/plot-context'
@@ -152,7 +153,7 @@ const STRIP_AXIS = {
 const ZX_ANCHOR = [{ fill: 'transparent' }] as const
 
 /** A band whose state is not in `states`: a typo in dev, a neutral tint in production. */
-const UNKNOWN_FILL = alpha(VX.neutral, 0.2)
+const UNKNOWN_FILL = alpha(CV.neutral, 0.2)
 
 type Cell = { f0: number; f1: number; y0: number; y1: number }
 /** A state's glyph at a band's centre, on the rung's `[0, 1]` zone scale. */
@@ -474,7 +475,7 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
                   y: () => 0.5,
                   xScale: 'zx',
                   text: 'glyph',
-                  fill: VX.surface.panel,
+                  fill: CV.surface,
                   fontSize: VX.text.xs,
                   fontWeight: 600,
                   anchor: 'middle',

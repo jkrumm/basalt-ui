@@ -109,8 +109,8 @@
   padding: 12px 4px 0;
   /* The axis baseline: a 1px line painted under the ghosts, not a border (the divider law inventories those). */
   background: linear-gradient(
-      color-mix(in srgb, var(--vx-ink) 24%, var(--vx-surface-panel)),
-      color-mix(in srgb, var(--vx-ink) 24%, var(--vx-surface-panel))
+      color-mix(in srgb, var(--vx-ink) 24%, var(--vx-card)),
+      color-mix(in srgb, var(--vx-ink) 24%, var(--vx-card))
     )
     bottom / 100% 1px no-repeat;
 }
@@ -119,7 +119,7 @@
   width: 100%;
   height: 100%;
   fill: none;
-  stroke: color-mix(in srgb, var(--vx-ink) 24%, var(--vx-surface-panel));
+  stroke: color-mix(in srgb, var(--vx-ink) 24%, var(--vx-card));
   stroke-width: 2px;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -132,7 +132,7 @@
   /* The loaded strip is one row above its axis labels: the row keeps their room. */
   margin-bottom: var(--basalt-ghost-band-axis, 1.5rem);
   border-radius: 3px;
-  background: color-mix(in srgb, var(--vx-ink) 18%, var(--vx-surface-panel));
+  background: color-mix(in srgb, var(--vx-ink) 18%, var(--vx-card));
 }
 
 /* A pending `Heatmap`: a grid of quiet cells over the plot, the loaded chart's own shape. */
@@ -148,14 +148,14 @@
 
 .ghostCell {
   border-radius: 2px;
-  background: color-mix(in srgb, var(--vx-ink) 12%, var(--vx-surface-panel));
+  background: color-mix(in srgb, var(--vx-ink) 12%, var(--vx-card));
 }
 
 .ghostBar {
   flex: 1 1 0;
   min-width: 0;
   border-radius: 3px 3px 0 0;
-  background: color-mix(in srgb, var(--vx-ink) 18%, var(--vx-surface-panel));
+  background: color-mix(in srgb, var(--vx-ink) 18%, var(--vx-card));
 }
 
 /*
@@ -170,10 +170,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--vx-space-stack-xs, 0.25rem);
+  gap: 0.25rem;
   width: 100%;
   height: 100%;
-  padding: var(--vx-space-stack-md) var(--vx-space-stack-lg);
+  padding: 0.75rem 1rem;
   overflow: hidden;
   text-align: center;
   border-radius: var(--vx-radius-card);
@@ -183,7 +183,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--vx-space-stack-xs, 0.25rem);
+  gap: 0.25rem;
 }
 
 .emptyTitle {
@@ -195,7 +195,7 @@
 .emptyText {
   max-width: 22.5rem;
   font-size: var(--vx-text-sm);
-  color: var(--vx-muted);
+  color: var(--vx-ink-muted);
 }
 
 /*
@@ -221,16 +221,16 @@
   white-space: nowrap;
 }
 
-/* Opaque in both schemes: `--vx-tooltip-bg` is translucent in dark and the card's footer ghosts
+/* Opaque in both schemes: a tinted `--basalt-tooltip-surface` can be translucent and the card's footer ghosts
  * through a tooltip that opens over it (a slotted `Bars`). The tint is layered over the elevated
  * surface, so a consumer's `tooltipBg` and `--basalt-tooltip-surface` still colour it. The engine's
  * own value is inline. */
 :global(.ts-chart-tooltip) {
   background: linear-gradient(
-      var(--basalt-tooltip-surface, var(--vx-tooltip-bg)),
-      var(--basalt-tooltip-surface, var(--vx-tooltip-bg))
+      var(--basalt-tooltip-surface, var(--vx-raised)),
+      var(--basalt-tooltip-surface, var(--vx-raised))
     )
-    var(--vx-surface-elevated) !important;
+    var(--vx-raised) !important;
 }
 
 /* The engine focuses the plot's `svg.ts-chart` (tabindex 0), not the `.basalt-chart` wrapper
@@ -238,14 +238,14 @@
  * 2px accent ring. The ring is INSET: an outer one is clipped by the card body's overflow at the
  * plot's right and bottom edges (partial edges), an inset one is whole wherever the chart sits. */
 :global(.basalt-chart .ts-chart:focus-visible) {
-  outline: 2px solid var(--vx-accent);
-  outline-offset: calc(-0.125rem * var(--mantine-scale));
+  outline: 2px solid var(--vx-brand);
+  outline-offset: -0.125rem;
 }
 
 /* A bare Sparkline keeps the outer ring: its cell reserves the clearance (the readout chip and the end
  * marker are placed against it). */
 :global([data-basalt-sparkline] .basalt-chart .ts-chart:focus-visible) {
-  outline-offset: calc(0.125rem * var(--mantine-scale));
+  outline-offset: 0.125rem;
 }
 
 /* A Sparkline in a box that clips its overflow (`StatCard`'s 72 px chart box, a hosted strip cell's
@@ -253,11 +253,10 @@
  * the end marker clear of it. */
 :global([data-basalt-hosted] .basalt-chart .ts-chart:focus-visible),
 :global([data-slot='stat-chart'] [data-basalt-sparkline] .basalt-chart .ts-chart:focus-visible) {
-  outline-offset: calc(-0.125rem * var(--mantine-scale));
+  outline-offset: -0.125rem;
 }
 
-/* The ring above takes `currentColor` (`--vx-accent` is no token of v3), which in a stat card is the
- * faint line ink: 1.8:1. The card's own ink holds 3:1 on its surface in both schemes. */
+/* A sparkline in a stat card rings in the card's own ink: 3:1 on its surface in both schemes. */
 :global([data-slot='stat-chart'] [data-basalt-sparkline] .basalt-chart .ts-chart:focus-visible) {
   outline-color: var(--vx-ink);
 }

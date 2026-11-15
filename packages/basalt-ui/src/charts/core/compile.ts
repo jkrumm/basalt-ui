@@ -53,7 +53,16 @@ import {
   yTitleScale,
 } from '../axis-gaps'
 import type { XRefLabelBox } from '../axis-gaps'
-import { AXIS_LINE, CHART_THEME, CROSSHAIR, DASH, GRID_LINE } from './theme'
+import {
+  AREA_BOTTOM,
+  AREA_TOP,
+  AXIS_LINE,
+  CHART_THEME,
+  CROSSHAIR,
+  CV,
+  DASH,
+  GRID_LINE,
+} from './theme'
 import type {
   AxisConfig,
   CartesianChartProps,
@@ -255,22 +264,6 @@ const ZONE_KEY_PREFIX = '__zone-'
 /** The legend key of a reference line that names itself (`RefLine.legend`). */
 const refLegendKey = (index: number): string => `${REF_KEY_PREFIX}${index}`
 
-/**
- * A reference line is drawn translucent (`*-ref`, 20-30% alpha) so it recedes behind the data, but
- * a 16x8 swatch at that alpha vanishes on the dark surface. The legend takes the status solid,
- * which the color gate holds to 3:1 on the panel in both schemes, like a series swatch.
- */
-const SWATCH_SOLID: ReadonlyMap<string, string> = new Map([
-  [VX.goodRef, VX.goodSolid],
-  [VX.badRef, VX.badSolid],
-  [VX.warnRef, VX.warnSolid],
-  // The tinted status fills are as translucent, and a consumer may pass either as a line color.
-  [VX.good, VX.goodSolid],
-  [VX.goodSoft, VX.goodSolid],
-  [VX.bad, VX.badSolid],
-  [VX.warn, VX.warnSolid],
-])
-
 /** Legend-only entries for the reference lines that name themselves, in line order. */
 export function refLegendSeries<T>(refLines: readonly RefLine[] | undefined): ChartSeries<T>[] {
   return (refLines ?? []).flatMap((r, i) =>
@@ -280,7 +273,7 @@ export function refLegendSeries<T>(refLines: readonly RefLine[] | undefined): Ch
           {
             key: refLegendKey(i),
             label: r.legend.label,
-            color: SWATCH_SOLID.get(r.color) ?? r.color,
+            color: r.color,
             role: 'reference' as const,
             tooltip: false,
             getValue: () => null,
@@ -300,7 +293,7 @@ export function zoneLegendSeries<T>(zones: readonly ZoneSpec[] | undefined): Cha
           {
             key: `${ZONE_KEY_PREFIX}${i}`,
             label: z.legend.label,
-            color: z.legend.color ?? SWATCH_SOLID.get(z.fill) ?? z.fill,
+            color: z.legend.color ?? z.fill,
             mark: z.legend.mark ?? 'bar',
             role: 'reference' as const,
             tooltip: false,
@@ -537,14 +530,13 @@ export function areaGradient(index: number, color: string): ChartGradient {
     x2: 0,
     y2: 1,
     stops: [
-      { offset: 0, color: `color-mix(in srgb, ${color} var(--vx-area-top), transparent)` },
-      { offset: 1, color: `color-mix(in srgb, ${color} var(--vx-area-bottom), transparent)` },
+      { offset: 0, color: `color-mix(in srgb, ${color} ${AREA_TOP}, transparent)` },
+      { offset: 1, color: `color-mix(in srgb, ${color} ${AREA_BOTTOM}, transparent)` },
     ],
   }
 }
 
-const areaTint = (color: string): string =>
-  `color-mix(in srgb, ${color} var(--vx-area-top), transparent)`
+const areaTint = (color: string): string => `color-mix(in srgb, ${color} ${AREA_TOP}, transparent)`
 
 /**
  * A series area filled by value zone: a vertical gradient whose stops sit at the zone boundaries.
@@ -921,7 +913,7 @@ const refLabelMark = <T, X extends ChartX>(
         xScale: 'zx',
         yScale: axes.scaleId(r.axis),
         text: () => r.label ?? '',
-        fill: VX.ink2,
+        fill: CV.inkMuted,
         fontSize: VX.text.micro,
         anchor: atStart ? 'start' : 'end',
         dx: atStart ? REF_LABEL_DX : -REF_LABEL_DX,
