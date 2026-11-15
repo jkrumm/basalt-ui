@@ -72,7 +72,8 @@ export const STYLELINT_RULES = {
     {
       message:
         'Disallowed `%s: %s`. Spacing and type take --vx tokens, colour roles follow their surface, ' +
-        'and a scroll box (overflow auto|scroll) is ui/scroll-area, or let Page own the scroll.',
+        'and a scroll box (overflow auto|scroll) is ui/scroll-area, or let Page own the scroll; ' +
+        'a profile without the ui primitives (tokens, bridge) waives it with stylelint-disable -- <reason>.',
     },
   ],
   'declaration-property-value-allowed-list': {
