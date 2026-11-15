@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { dropMisreadDirectives } from './engine'
+import { dropMisreadDirectives } from './waiver-needs-reason'
 
 const finding = (id: string, line: number, file = 'src/a.tsx') => ({ file, line, id, message: id })
 
