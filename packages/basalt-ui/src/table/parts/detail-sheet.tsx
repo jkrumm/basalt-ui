@@ -26,11 +26,15 @@ export function useDetailHost<T>(
     show: setEntry,
     hide: () => setEntry(null),
   }
+  const close = (): void => {
+    setEntry(null)
+    model.closeDetail()
+  }
   useEffect(() => {
     model.setHost(detail ?? page ?? own)
   })
   return (
-    <Sheet open={entry !== null} onOpenChange={(open) => !open && setEntry(null)}>
+    <Sheet open={entry !== null} onOpenChange={(open) => !open && close()}>
       <SheetContent title={entry?.title ?? ''}>
         {entry?.body({ height: 'fill', phase: 'ready' })}
       </SheetContent>

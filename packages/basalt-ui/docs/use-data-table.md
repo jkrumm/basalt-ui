@@ -37,6 +37,7 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   views?: { store?: ViewStore; }
   detail?: (row: T, box: Box) => ReactNode
   detailTitle?: (row: T) => string  [with detail]  // The title of a row's detail entry (the aside or sheet header); the table label when absent
+  detailState?: ControlHandle<string>  [with detail]  // A string field of row ids that holds the open row: activating a row writes its id, closing the sheet calls `c…
   onRowActivate?: (row: T) => void
 ```
 
