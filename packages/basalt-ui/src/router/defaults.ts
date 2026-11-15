@@ -83,6 +83,8 @@ export function routeTransitionTypes(
  * @neverWhen the app has no router (a link prop renders a plain anchor with no `link` installed)
  *
  * @example
+ * // The three screens are the app's own, scaffolded by `basalt-ui init` into `src/components/`;
+ * // no subpath exports them.
  * const { options, link } = routerDefaults({ router: () => router })
  * export const router = createRouter({
  *   routeTree,
