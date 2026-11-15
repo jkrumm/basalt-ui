@@ -1,0 +1,23 @@
+{
+  "why": "Lint cycle 1 (docs/v3/cycles/lint-1.md, P1 lint-1.4): primitive-bypass's svg-data-marks and html-data-marks name one route for a mark a page draws itself (focus.item(i) inside a focus.target container from useChartFocus), and the shipped seam-track, seam-bar and timeline recipes take it. But tw-off-law's app-colour form reports every colour such a mark can carry: bg-brand-fill on a seam-track bar, bg-info-tint on a timeline bar, bg-brand on the now line, and chart-1..5 and seq-1..5 are in the same list. The sanctioned route has no legal colour, so every app that draws one mark takes a waiver.",
+  "what": "A mark drawn through the useChartFocus seam takes its fill from the chart and status fill tokens without a finding, and app-colour keeps firing on chrome.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/class/table.ts and detect.ts",
+    "packages/basalt-ui/src/lint/rules/class/class.cases.ts and class.test.ts",
+    "packages/basalt-ui/test/fixtures/lint/class/tw-off-law/app-colour.tsx",
+    "packages/basalt-ui/configs/oxlint-*.json (regenerated)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/recipes/** (v3-lint-1-recipes)"
+  ],
+  "change": "Decide the narrowest syntactic carve-out and build it: app-colour does not report a `bg-*`, `fill-*` or `stroke-*` fill token (brand-fill, chart-N, seq-N, dim-bar and the status tints) on a JSX element that spreads `focus.item(...)` (any callee member named `item` on an identifier bound from `useChartFocus`), nor on its descendants inside the same element. Text, border and ring colours stay reported there. If the carve-out cannot be stated syntactically, the alternative is a shipped `markTone(tone)` helper whose classes the rule skips; pick one and say why in the PR. Fixture: the seam-track recipe's bar is valid; a bg-good banner div outside any focus.item spread is invalid.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "bun test on the class suite; the app preset over apps/playground/src/recipes/seam-track.tsx and timeline.tsx reports no app-colour.",
+  "acceptance": [
+    "A bar spreading focus.item(i) with bg-brand-fill reports nothing (fixture)",
+    "The same class on a div with no focus.item spread still reports (fixture)",
+    "make check passes"
+  ],
+  "out_of_scope": "Focus-ring colours (lint-1.9, v3-lint-1-lint); the recipes' other findings (v3-lint-1-recipes)."
+}

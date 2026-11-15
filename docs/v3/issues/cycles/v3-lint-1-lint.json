@@ -1,0 +1,26 @@
+{
+  "why": "Lint cycle 1 (docs/v3/cycles/lint-1.md): the class `lint` P2s and P3s. False alarms on code the playground calls correct (lint-1.8 to lint-1.12), seeded phrasings an agent writes that no rule catches (lint-1.13 to lint-1.15), and messages that name a fix another rule bans or no fix at all (lint-1.16 to lint-1.21). Each finding's evidence is the command and the matched line in the cycle file.",
+  "what": "Each rule named below stays silent on the valid shapes the cycle recorded, reports the missed phrasings that fall inside its stated defect, and every message names a fix that no other shipped rule rejects.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/** (class and structure families) with their cases, tests and test/fixtures/lint/**",
+    "packages/basalt-ui/src/lint/preset.ts (the shadcn rule options and no-restyle contract messages)",
+    "packages/basalt-ui/src/lint/stylelint/** (messages)",
+    "packages/basalt-ui/src/lint/check-tokens.ts (message)",
+    "packages/basalt-ui/configs/oxlint-*.json and stylelint.basalt.json (regenerated)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/**",
+    "packages/basalt-ui/src/lint/rule-table.ts ID_CEILING"
+  ],
+  "change": "False alarms: app-spacing margin does not report `m-0` and its axis forms (`mx-0`, `my-0`, `mt-0` …), which add no spacing (lint-1.8, 22 playground sites); app-colour does not report a ring or outline colour under a focus variant (`focus-visible:`, `data-focused:`, `group-data-focused:`) or names the token that is legal for it (lint-1.9); raw-heading allows a heading inside a board column or names the frame that owns a column title, and raw-control does not report an `<input type=\"file\">` that is visually hidden behind a label (lint-1.10); data-primitive raw-storage-write and primitive-bypass intl-format do not report in `*.test.*` files (lint-1.11); shadcn/no-arbitrary-values allows a grid track list with no length (`grid-cols-[auto_1fr]`, `[2fr_3fr]`) through its options, and no-unknown-classes takes the third-party class prefixes an app declares (lint-1.12). Misses, each with an invalid fixture block: negative margins (`-mt-0.5`), `data-[theme=dark]:` forks, `text-(--vx-<fill>)`, a class built by string concatenation, a bordered card without card tokens (`rounded-* border p-*` on a div) (lint-1.13); `react-markdown`, `recharts` and `@tremor/react`, a relative `components/ui/` path that is not ejected, `@nanostores/persistent` (lint-1.14); a chart fallback hoisted into a const or a destructure default, `staleTime: 'static'` outside a liveQuery call and in options passed to it by name, `navigate({ search: {…} })`, `loaderDeps` spreading search, table rows from a hoisted sort, a chart kind under a wrapper in a DataPanel body, a data mark sized through a CSS custom property, an svg path built from data, a computed contentTrust, a window.innerWidth layout read, a named CSS colour in a TS string, `toFixed` and date-fns `format` for display (lint-1.15); each item either becomes a form or is listed in the rule's JSDoc as a known limit with the reason. Messages: the shadcn no-restyle spacing message stops saying \"use margin here\", no-arbitrary-values stops proposing a fixed width that tw-off-law fixed-width rejects, no-raw-colors stops proposing a new --color-<name>, no-inline-styles' custom-property advice is matched by primitive-bypass reading the property (lint-1.16); each stylelint rule carries a `message` that names the token or component (lint-1.17); a no-restyle contract names the class fix its primitive's doc gives before \"eject\" (Skeleton: the text style; ScrollArea: max-h-*) (lint-1.18, P3); an em-dash reason is reported once by waiver-needs-reason, not split into unused-directive lines (lint-1.19, P3); one token is reported by one rule (lint-1.20, P3); unknown-token names the nearest shipped token (lint-1.21, P3). The id ceiling does not move: every change is a form or an option of an existing id.",
+  "commits": "fix: commits in packages/basalt-ui, one per rule family; split the row with plan rows of its own if it passes one PR.",
+  "proof": "docs/v3/cycles/lint-1/fixtures/run.sh: every seed this row adds a form for reports caught; the app preset over apps/playground/src reports none of the false alarms listed in lint-1.8 to lint-1.12.",
+  "acceptance": [
+    "Each false alarm of lint-1.8 to lint-1.12 has a valid fixture block that passes",
+    "Each miss of lint-1.13 to lint-1.15 is caught (seed report) or stated as a known limit in its rule's JSDoc",
+    "No shipped message names a fix another shipped rule reports (a test reads the messages)",
+    "make check passes"
+  ],
+  "out_of_scope": "The series file (v3-lint-1-series-file), seam mark colours (v3-lint-1-seam-colour), stylesheet overflow (v3-lint-1-stylesheet-scroll); fixing the playground or the recipes."
+}

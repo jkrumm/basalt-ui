@@ -1,0 +1,22 @@
+{
+  "why": "Lint cycle 1 (docs/v3/cycles/lint-1.md, P1 lint-1.3): `sync` builds a consumer's .oxlintrc.basalt.json with renderOxlintPreset (src/cli/presets.ts), which copies the shipped profile preset and adds one rules block per root and nothing else. It never adds zone E (manifest.ejected paths: no-restyle, primitive-bypass and app-spacing off) and never adds zone V for a root declared at bridge below a higher default profile; buildPreset in src/lint/preset.ts does both but is only used to write the shipped files. In a scratch app, `basalt-ui eject button --reason ...` wrote src/components/ui/button.tsx and the next basalt-ui lint reported 54 findings on it (48 shadcn/no-restyle, 5 tw-off-law, 1 import-boundary on its own @base-ui import). In the sweep, a bridge root under an app default linted its components/ui with 21 findings. Eject is the next rung most messages name, so every app that takes it goes red.",
+  "what": "The preset sync writes carries the zone blocks: E for every manifest.ejected path, V for every bridge root's components/ui.",
+  "owns": [
+    "packages/basalt-ui/src/cli/presets.ts and its tests",
+    "packages/basalt-ui/src/lint/preset.ts (only to export the zone builders sync needs)",
+    "packages/basalt-ui/tests or src/cli/sync tests that assert the generated preset"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/configs/oxlint-*.json (the shipped files do not change)"
+  ],
+  "change": "renderOxlintPreset builds its overrides through the same zone builders as buildPreset: after the per-root blocks, a vendored block per bridge root (`<root>/components/ui/**`) and one structure block over manifest.ejected paths, with the import-boundary allowance an ejected copy needs for its own @base-ui import. Preferably sync calls buildPreset with the manifest's roots and ejected paths, so the two code paths become one. Test: a manifest with one ejected primitive yields an override naming its path with no-restyle, primitive-bypass and app-spacing off; a manifest with an app default and a bridge root yields `<root>/components/ui/**` with the class rules off.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "Unit tests; in a scratch app from docs/v3/cycles/lint-1/fixtures/run.sh with a vite.config and tsconfig, `basalt-ui eject button --reason x` followed by `basalt-ui lint` reports nothing on the ejected file.",
+  "acceptance": [
+    "An ejected primitive lints clean right after eject (scratch run, command and output in the PR)",
+    "A bridge root below an app default gets its components/ui zone (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Which rules an ejected copy keeps (guardrails section 6 decides it)."
+}

@@ -881,3 +881,77 @@ rows:
         v3-wiring-1-lint,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-wiring-2.json' }
+  - key: v3-lint-1-series-file
+    title: 'colour-literal stays silent on the series file it names, from lint cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-lint-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-series-file.json' }
+  - key: v3-lint-1-blanket-disable
+    title: 'doctor reports a file-level disable that silences every rule, from lint cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-lint-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-blanket-disable.json' }
+  - key: v3-lint-1-eject-zones
+    title: 'An ejected primitive and a bridge root lint clean in the consumer preset, from lint cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-lint-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-eject-zones.json' }
+  - key: v3-lint-1-seam-colour
+    title: 'A mark drawn through the chart focus seam takes a fill token without a finding, from lint cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-lint-1-series-file]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-seam-colour.json' }
+  - key: v3-lint-1-stylesheet-scroll
+    title: 'The stylelint preset reports a scroll box in app CSS, from lint cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-lint-1-seam-colour]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-stylesheet-scroll.json' }
+  - key: v3-lint-1-lint
+    title: 'False alarms, missed spellings and fix-less messages of the shipped rules, from lint cycle 1'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-1-stylesheet-scroll]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-lint.json' }
+  - key: v3-lint-1-wiring
+    title: 'The weakened-config check catches a guard switched off for a subtree, from lint cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-lint-1-blanket-disable]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-wiring.json' }
+  - key: v3-lint-1-recipes
+    title: 'Every shipped recipe lints clean under the app preset, gated, from lint cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-lint-1-seam-colour, v3-lint-1-lint]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-recipes.json' }
+  - key: v3-lint-1-dogfood
+    title: 'The playground lints through the generated app preset at zero findings, from lint cycle 1'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-1-recipes, v3-lint-1-eject-zones]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-dogfood.json' }
+  - key: v3-cycle-lint-2
+    title: 'Improvement cycle 2: lint and guards, misses and false alarms per rule'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-lint-1-series-file,
+        v3-lint-1-blanket-disable,
+        v3-lint-1-eject-zones,
+        v3-lint-1-seam-colour,
+        v3-lint-1-stylesheet-scroll,
+        v3-lint-1-lint,
+        v3-lint-1-wiring,
+        v3-lint-1-recipes,
+        v3-lint-1-dogfood,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-2.json' }

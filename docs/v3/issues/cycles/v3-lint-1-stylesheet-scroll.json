@@ -1,0 +1,18 @@
+{
+  "why": "Lint cycle 1 (docs/v3/cycles/lint-1.md, P1 lint-1.5): raw-scroll's recorded defect is that `.module.css` overflow was invisible in 2.x. It still is: the rule reads class strings, and the stylelint preset has no overflow rule. The seeded `.list { max-height: 20rem; overflow-y: auto }` in a stylesheet reported nothing. An agent that hits raw-scroll on `overflow-y-auto` moves the declaration into a module and the guard goes silent.",
+  "what": "The stylelint preset reports a scroll container declared in app CSS, with raw-scroll's fix in its message.",
+  "owns": [
+    "packages/basalt-ui/src/lint/stylelint/rules.ts, render.ts, gen.ts and stylelint.test.ts",
+    "packages/basalt-ui/configs/stylelint.basalt.json (regenerated)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/**"],
+  "change": "Add `overflow`, `overflow-x`, `overflow-y`, `overflow-block` and `overflow-inline` with the values `auto` and `scroll` to declaration-property-value-disallowed-list (or the rule the generator uses for value bans), with a message that names ui/scroll-area or the Page scroll, the way raw-scroll's message does. `hidden`, `clip` and `visible` stay legal. The deepRender file-level waiver keeps working through stylelint's own disable comment. Test: the seeded `.list` block fails, `overflow: hidden` passes.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "bun test on stylelint.test.ts; docs/v3/cycles/lint-1/fixtures/run.sh reports seed raw-scroll/overflow-scroll 5 as caught by a stylelint id (the score script maps raw-scroll; note the id in the PR).",
+  "acceptance": [
+    "`overflow-y: auto` in an app stylesheet fails with a message naming ui/scroll-area (test)",
+    "`overflow: hidden` passes (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Inline-style overflow (shadcn/no-inline-styles already reports it)."
+}
