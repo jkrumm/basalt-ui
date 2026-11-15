@@ -133,9 +133,8 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   './page': ['@base-ui/react'],
   // v3 shell: the header's popover actions and the compact aside sheet draw `ui/popover`, `ui/sheet` and `ui/button`, which wrap Base UI.
   './shell': ['@base-ui/react'],
-  // v3 ctl-4: `ControlView` and its renderers draw `ui/select`, `ui/combobox`, `ui/segmented`, `ui/number-field` and `ui/switch`, which wrap Base UI; the 2.x Mantine tier in this subpath stays beside them until it retires.
+  // v3 ctl-4: `ControlView` and its renderers draw `ui/select`, `ui/combobox`, `ui/segmented`, `ui/number-field` and `ui/switch`, which wrap Base UI.
   './controls': ['@base-ui/react'],
-  './controls-dates': ['@mantine/dates', 'dayjs'],
   // `CodeBlock` renders `ui/button`, which wraps Base UI; `./page` (above) takes the same peer for `ui/alert`, `ui/popover`, `ui/dialog` and `ui/sheet`.
   './content': ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend', '@base-ui/react'],
   // `partView` renders `Markdown`, so it needs the same four peers, and `ui/collapsible` and `ui/status` wrap Base UI.
@@ -156,7 +155,6 @@ export const DEFERRED_PEER_GAPS: {
 } = {
   unreached: {
     './agent': ['ai', '@ai-sdk/provider'], // `aiSdkTransport` reaches `ai` only via import()
-    './controls-dates': ['dayjs'], // named by `@mantine/dates`, not imported by basalt
   },
   tolerated: {},
 }

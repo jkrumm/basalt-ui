@@ -16,6 +16,7 @@ import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { ReactElement } from 'react'
 import { col } from '../../../src/table/core/kinds'
+import { K2TableFixture } from './k2-table-fixture'
 import { DataTable } from '../../../src/table/parts/data-table'
 import { useDataTable } from '../../../src/table/use-data-table'
 import type { UseDataTable } from '../../../src/table/contract'
@@ -177,6 +178,7 @@ function Fixture(): ReactElement {
           <Probe id={id} count={count} {...(phone !== undefined && { phone })} />
         </div>
       ))}
+      <K2TableFixture />
     </main>
   )
 }
