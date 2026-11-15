@@ -185,6 +185,7 @@ export function DataRow<T>({
             aria-colindex={index + offset}
             {...cellAttributes(spec)}
             {...tierAttributes(planned)}
+            {...(planned.place === 'meta' && spec.kind === 'text' && { 'data-label': spec.header })}
             numeric={numeric}
             className={spec.wrap ? `${className ?? ''} whitespace-normal` : className}
           >
