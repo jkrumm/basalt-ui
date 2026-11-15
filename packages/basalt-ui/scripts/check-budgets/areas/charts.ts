@@ -3,7 +3,7 @@
  */
 import { CHART_SUBPATH } from '../../surface-gates'
 import { readSurface } from '../lib'
-import type { Raise, RowDef } from '../lib'
+import type { Raises, RowDef } from '../lib'
 import { measureSource, reExportNamed } from '../ui-bundle'
 
 /** The G1 byte fixtures (gzip B minus `base0`, peers bundled, `../ui-bundle`); seeds are the first build +5%, up to 0.5 KB, ratcheted down only. */
@@ -43,13 +43,14 @@ export const rows: readonly RowDef[] = [
   },
 ]
 
-export const raises: readonly Raise[] = [
-  {
-    ceiling: 'chart-symbols',
-    from: 14,
-    to: 16,
-    consumer:
-      '`useChartFocus` and `chartLabels`, the geometry seam (Issue 1019): weatherorb meteogram.tsx dims the rest around a focused hour and drives its readout; weatherorb timeline-bar.tsx measures tick labels by hand to pick a stride',
-    repo: 'weatherorb',
-  },
-]
+export const raises: Raises = {
+  'chart-symbols': [
+    {
+      from: 14,
+      to: 16,
+      consumer:
+        '`useChartFocus` and `chartLabels`, the geometry seam (Issue 1019): weatherorb meteogram.tsx dims the rest around a focused hour and drives its readout; weatherorb timeline-bar.tsx measures tick labels by hand to pick a stride',
+      repo: 'weatherorb',
+    },
+  ],
+}

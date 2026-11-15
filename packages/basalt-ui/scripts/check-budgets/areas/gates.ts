@@ -7,7 +7,7 @@ import { join } from 'node:path'
 
 import { consumerViolations, duplicateSymbols, peerClassViolations } from '../../surface-gates'
 import { PKG_ROOT, Unmeasured, gate, readManifest, readSurface } from '../lib'
-import type { Raise, RowDef } from '../lib'
+import type { Raises, RowDef } from '../lib'
 
 export const rows: readonly RowDef[] = [
   {
@@ -44,21 +44,21 @@ export const rows: readonly RowDef[] = [
   },
 ]
 
-export const raises: readonly Raise[] = [
-  {
-    ceiling: 'duplicate-symbols',
-    from: 0,
-    to: 1,
-    consumer:
-      '`field` from `./router` (v3 defineControls) while linewatch dashboard-store.ts still imports the 2.x `./state` `field` for createSearchStore; drops back to 0 when ./state retires',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'duplicate-symbols',
-    from: 1,
-    to: 2,
-    consumer:
-      '`defineOverlays` from `./page` (the typed overlay registry on `ui/dialog`) while shutterflow shell/overlays.tsx (5 entries) still imports the 2.x `./commands` one; drops back when ./commands retires',
-    repo: 'shutterflow',
-  },
-]
+export const raises: Raises = {
+  'duplicate-symbols': [
+    {
+      from: 0,
+      to: 1,
+      consumer:
+        '`field` from `./router` (v3 defineControls) while linewatch dashboard-store.ts still imports the 2.x `./state` `field` for createSearchStore; drops back to 0 when ./state retires',
+      repo: 'linewatch',
+    },
+    {
+      from: 1,
+      to: 2,
+      consumer:
+        '`defineOverlays` from `./page` (the typed overlay registry on `ui/dialog`) while shutterflow shell/overlays.tsx (5 entries) still imports the 2.x `./commands` one; drops back when ./commands retires',
+      repo: 'shutterflow',
+    },
+  ],
+}

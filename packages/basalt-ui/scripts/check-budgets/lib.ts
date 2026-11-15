@@ -33,20 +33,26 @@ export type RowDef = {
 }
 
 /**
- * The one way a ceiling goes up: a row in the area file that raised it. `ceiling` is the `id` of the
- * row; `from`/`to` must match the base-branch and current ceilings exactly, so a row cannot cover a
- * later raise. `repo` names a consumer repo other than argo (95 of 124 2.x values named argo).
+ * The one way a ceiling goes up: an entry under the row's `id` in the area file's `raises`. `from`/`to`
+ * must match the base-branch and current ceilings exactly, so an entry cannot cover a later raise.
+ * `repo` names a consumer repo other than argo (95 of 124 2.x values named argo).
  */
 export type Raise = {
-  readonly ceiling: string
   readonly from: number
   readonly to: number
   readonly consumer: string
   readonly repo: string
 }
 
+/**
+ * An area file's raises, grouped by the `id` of the row they raised. The group is the merge boundary: two
+ * branches that raise different rows add to different lists, `],` and the next key apart, so they rebase
+ * without a conflict (a flat array took every branch's entry at the same line).
+ */
+export type Raises = Readonly<Record<string, readonly Raise[]>>
+
 /** What an area file exports. */
-export type AreaModule = { readonly rows: readonly RowDef[]; readonly raises?: readonly Raise[] }
+export type AreaModule = { readonly rows: readonly RowDef[]; readonly raises?: Raises }
 
 /** A printed row. `value: null` is "could not be measured here" and fails the gate. */
 export type Budget = {

@@ -45,10 +45,10 @@ async function loadBase(file: string, source: string): Promise<AreaModule> {
   }
 }
 
-/** Why no entry in `raises` covers `id` going `from` → `to`, or `null` when one does. */
-function raiseProblem(raises: readonly Raise[], id: string, from: number, to: number) {
-  const raise = raises.find((r) => r.ceiling === id && r.from === from && r.to === to)
-  if (raise === undefined) return 'no raise row { ceiling, from, to, consumer, repo } covers it'
+/** Why no entry under `id` in `raises` covers it going `from` → `to`, or `null` when one does. */
+function raiseProblem(raises: readonly Raise[], from: number, to: number) {
+  const raise = raises.find((r) => r.from === from && r.to === to)
+  if (raise === undefined) return 'no raise row { from, to, consumer, repo } under its id covers it'
   if (raise.consumer.trim() === '') return 'its raise row names no consumer'
   const repo = raise.repo.trim().toLowerCase()
   if (repo === '') return 'its raise row names no repo'
@@ -80,7 +80,7 @@ export async function ratchetViolations({
     for (const row of current.rows) {
       const from = baseCeilings.get(row.id)
       if (from === undefined || row.ceiling <= from) continue
-      const problem = raiseProblem(current.raises ?? [], row.id, from, row.ceiling)
+      const problem = raiseProblem(current.raises?.[row.id] ?? [], from, row.ceiling)
       if (problem === null) continue
       violations.push(
         `${basename(file, '.ts')}/${row.id}: ceiling ${from} → ${row.ceiling}, ${problem}`,
