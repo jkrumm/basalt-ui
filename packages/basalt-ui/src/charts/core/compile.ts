@@ -320,7 +320,12 @@ export function visibleSeries<T>(
   )
 }
 
-type YAxis = { domain: readonly [number, number]; format: (v: number) => string }
+type YAxis = {
+  domain: readonly [number, number]
+  format: (v: number) => string
+  /** Every value on this axis is a whole number and a bar draws it (a count): ticks land on integers. */
+  whole?: boolean
+}
 
 /** The page locale's decimal separator (`.` or `,`). */
 const decimalSeparator = (): string =>
@@ -381,6 +386,24 @@ function withEndTick<T>(
     : { values: [...round, hi] }
 }
 
+/**
+ * A count axis never labels a fraction: `0, 0.5, 1` over a day's two events becomes `0, 1, 2`. The
+ * count's own ticks keep the integers; fewer than two leave the plan as it was. A tick list the caller
+ * wrote, a log axis and a plan that is all integers already stay as they are.
+ */
+function wholeTicks<T>(
+  axis: YAxis,
+  cfg: AxisConfig<T> | undefined,
+  planned: { values: readonly number[] } | { count: number },
+): { values: readonly number[] } | { count: number } {
+  if ('values' in planned || cfg?.scale === 'log') return planned
+  const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
+  const all = scaleLinear().domain([lo, hi]).ticks(planned.count)
+  if (all.every(Number.isInteger)) return planned
+  const whole = all.filter(Number.isInteger)
+  return whole.length >= 2 ? { values: whole } : planned
+}
+
 export function yGuide<T>(opts: {
   cfg: AxisConfig<T> | undefined
   axis: YAxis
@@ -390,12 +413,13 @@ export function yGuide<T>(opts: {
 }): Omit<ChartPositionScaleOptions<number>, 'scale'> {
   const { cfg, axis, cls, side, grid } = opts
   const ladder = LADDER[cls]
-  const ticks =
+  const planned =
     typeof cfg?.ticks === 'object'
       ? { values: cfg.ticks }
       : ((cls === 'compact' && cfg?.ticks === undefined
           ? withEndTick(cfg, axis, ladder.yTicks)
           : null) ?? { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks })
+  const ticks = axis.whole === true ? wholeTicks(axis, cfg, planned) : planned
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
   const tickFormat = wholeStepFormat(axis, cfg, ticks)
@@ -659,6 +683,20 @@ function leftDomain<T, X extends ChartX>(
   )
 }
 
+/** Whether the left axis shows counts: a bar draws it, no stack shares it out, every value is whole. */
+function wholeCounts<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  series: readonly ChartSeries<T>[],
+): boolean {
+  if (input.stack === 'normalized' || !series.some(isBar)) return false
+  return series.every((s) =>
+    input.data.every((d) => {
+      const v = s.getValue(d)
+      return v === null || !Number.isFinite(v) || Number.isInteger(v)
+    }),
+  )
+}
+
 /** Both y domains (basalt's, from the VISIBLE series plus this axis' overlay bounds) and scales. */
 function resolveAxes<T, X extends ChartX>(
   input: CartesianInput<T, X>,
@@ -679,6 +717,10 @@ function resolveAxes<T, X extends ChartX>(
       tickCount(input.y),
     ),
     format: input.y?.format ?? defaultNumberFormat,
+    whole: wholeCounts(
+      input,
+      visible.filter((s) => !onRight(s)),
+    ),
   }
   const right: YAxis | null = hasY2
     ? {
