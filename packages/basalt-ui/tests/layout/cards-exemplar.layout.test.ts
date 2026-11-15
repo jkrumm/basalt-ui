@@ -278,6 +278,19 @@ layout('StatCard exemplar', () => {
           expect(await page.raw.evaluate(() => location.hash), 'the link did not fire').toBe('')
         })
 
+        test('the retry button of a linked card in the error phase takes its own click', async () => {
+          const page = await open(viewport, scheme)
+          const retry = within('cx-link-error', '[data-slot="card-phase"] button')
+          await page.raw.locator(retry).scrollIntoViewIfNeeded()
+          const hit = await page.raw.evaluate((sel) => {
+            const el = document.querySelector<HTMLElement>(sel)
+            if (el === null) throw new Error('LAYOUT: no retry button')
+            const r = el.getBoundingClientRect()
+            return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === el
+          }, retry)
+          expect(hit, 'the retry button is the topmost element at its centre').toBe(true)
+        })
+
         test('the stretched link paints its focus ring inside the card', async () => {
           const page = await open(viewport, scheme)
           const target = within('cx-link', '[data-slot="stat-target"]')
