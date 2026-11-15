@@ -1,0 +1,23 @@
+{
+  "why": "State cycle 3 (docs/v3/cycles/state-3.md). The table's detail door bound to a URL field (`detailState`, cycle 2's state-2.11 fix) opens only a row the table has loaded: `table/use-data-table.ts:319-320` returns when `byId.get(openId)` finds nothing. A link that names a record the current filters exclude (the record just saved out of the filtered list, a shared link after its status changed, a notification, a row on another page of a server table) keeps `order=…` in the URL and opens nothing, with no message (P1 state-3.1, `.evidence/cycle-state-3/actions.log` step 10a). The only way out is the page's own `Sheet` beside the table, the glue cycle 2's fix meant to remove.",
+  "what": "A detail field that names a record the table has not loaded still opens that record, or never stays set.",
+  "owns": [
+    "packages/basalt-ui/src/table/use-data-table.ts, src/table/contract.ts and src/table/parts/detail-sheet.tsx (the `detailState` door)",
+    "their tests and regenerated docs (docs/use-data-table.md)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "packages/basalt-ui/src/table/data-table.tsx (the 2.x table)"
+  ],
+  "change": "(1) `useDataTable` takes `detailById?: (id: string, box: Box) => ReactNode` beside `detail` and `detailState`: when the field names an id that no loaded row has, once the query has settled (not while it loads), the door opens with that body (the page fetches the record by id) under `detailTitle` falling back to the table label; closing clears the field as today. (2) Without `detailById`, a field naming an id absent from the settled rows is cleared (replace, not push) and a dev warning names the table and the id, so the URL never holds an unopened record. (3) A loaded row still opens through `detail` exactly as today. Name the option to match the surface (`detailById` is the default); if the contract amendment process applies to a new table option, follow it.",
+  "commits": "feat: in packages/basalt-ui (the option), its tests in the same commit; a separate chore: commit for any contract amendment or regenerated non-package file.",
+  "proof": "make check; tests on a table with `detailState`: an id outside the filtered rows opens `detailById`'s body after the query settles; without it the field clears; a loaded id opens `detail`.",
+  "acceptance": [
+    "A table with detailState and detailById opens a record whose id is not among the loaded rows once the query settles, and clearing closes it (test)",
+    "Without detailById, a detailState id absent from the settled rows is cleared and a dev warning names it (test)",
+    "A loaded row still opens through detail, on click and from the URL (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Changing the cycle 3 build (the next cycle uses the option); the 2.x BasaltDataTable."
+}

@@ -1,0 +1,23 @@
+{
+  "why": "State is where 2.x apps wrote the most glue: a filter, a tab, a form draft or a live query that does not bind to one store field turns into useState, useEffect and hand-written URL sync in every app. The owner asked for repeated improvement cycles on states and stores, and docs/v3/CYCLES.md is the protocol. Cycle 1 (docs/v3/cycles/state-1.md) found 4 P1 and 13 P2; cycle 2 (docs/v3/cycles/state-2.md) found 1 P1 and 7 P2; cycle 3 (docs/v3/cycles/state-3.md) found 1 P1 and 5 P2, two of them where a cycle 2 fix reached only part of the v3 surface (the detail door opens only a loaded row, a phone card labels only text values). This cycle rebuilds on cycle 3's fixes.",
+  "what": "Cycle 4 of the state, stores and controls area: build, measure, log, file. Protocol: docs/v3/CYCLES.md.",
+  "owns": [
+    "docs/v3/cycles/state-4.md",
+    "docs/v3/issues/cycles/**",
+    "docs/plan.yaml (append rows only)",
+    "apps/playground/src/** (the cycle build only: new files plus nav registration)"
+  ],
+  "must_not_touch": ["packages/basalt-ui/**", "docs/v3/ARCHITECTURE.md", "docs/v3/DIRECTION.md"],
+  "change": "Build one realistic data page in the playground: a FilterSet with a range, a multi-select, a search and a toggle, all in the URL; ViewTabs switching between a table and a chart of the same query; a live query that refreshes on an interval and through a bound invalidation; a connection indicator; a row that opens an edit form with a draft, validation, a submit helper and a FormFooter, through the table's own detail door bound to a URL field; an empty state whose Clear filters resets the filters only. Then do what users do: reload mid-edit, share the URL, go back and forward, reset the filters (from the row and from an empty state), fail the submit, succeed the submit and reopen the record (by clicking it and by a link that names it while the filters exclude it), go offline. Count: every useState, useEffect or manual URL read the app wrote for state the kit should own; every place two sources of truth disagree after one of those actions; and lines of glue between a store field and a control. Build it fresh in apps/playground/src/cycle/state-4/ on route /cycle/state-4 (routes/cycle/state-4.tsx), leave the earlier cycles' builds as they are, wire the live binding the way a v3 app does (a module-level client and `BasaltProvider live`), and compare the numbers with cycles 1 to 3 in a trend table. For each cycle 3 finding, say whether the fix reached this page. The stand-in server is in memory: after a save, navigate in-app, never with a document load.",
+  "commits": "Playground build in its own commit (feat:), findings and plan rows in a docs: commit. No package commit.",
+  "proof": "docs/v3/cycles/state-4.md with the sha, the numbers, the action-by-action results and the findings table.",
+  "acceptance": [
+    "docs/v3/cycles/state-4.md exists, names the master sha, and has every field from CYCLES.md step 5 for each finding",
+    "The file has a table with one row per user action from the change (reload, share, back/forward, reset, failed submit, successful submit and reopen, offline), each showing the expected result, the actual result and a finding id where they differ",
+    "The build imports basalt-ui only through published subpaths, and every workaround carries a `cycle-state-4:` comment",
+    "Every P1 has its own plan row with a brief; the P2s are grouped one row per class; or the file states convergence",
+    "If the cycle did not converge, a v3-cycle-state-5 row exists after every fix row",
+    "git diff --name-only origin/master...HEAD lists nothing under packages/basalt-ui/"
+  ],
+  "out_of_scope": "Fixing any finding in this PR; createSyncedState transports beyond the in-memory one."
+}

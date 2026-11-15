@@ -1,0 +1,25 @@
+{
+  "why": "State cycle 3 (docs/v3/cycles/state-3.md). Three visual defects on a v3 data page. A `Switch` bound through `FormField` draws as a track the width of its container with the thumb at the left edge, because `controls/form-field.tsx:187` puts `*:w-full` on the control slot; FormField's own JSDoc example (`<FormField label=\"Compact rows\" …><Switch /></FormField>`) draws the same (P2 state-3.2, `.evidence/v3-shots/state-3/cycle-state-3-order-or-5101--light--1800x1200.png`). A phone card labels only its `text` meta values (`table/parts/body.tsx:188`, cycle 2's state-2.9 fix), so money, boolean and date values print bare and oddly placed: `19.00` alone at the right, `✕ No` alone in the middle (P2 state-3.5, `cycle-state-3--dark--390x844.png`). In a narrow column (a boolean `Flagged` at 1800 px) the header's column-actions button covers its sort button, which the quality matrix reports as `focusNotObscured` (P2 state-3.6, `.evidence/cycle-state-3/quality-matrix.txt`, waived in `apps/playground/src/cycle/state-3/known.ts`).",
+  "what": "Switches keep their size in a form field, every phone card value names its column, and a narrow header keeps its sort button reachable.",
+  "owns": [
+    "packages/basalt-ui/src/controls/form-field.tsx (the control slot's sizing)",
+    "packages/basalt-ui/src/table/parts/body.tsx, src/table/parts/header*.tsx and src/table/table.css (card meta labels, header layout)",
+    "apps/playground/src/cycle/state-3/known.ts (remove the state-3.6 waiver only)",
+    "their tests (unit and layout) and regenerated docs"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/** except the one waiver line named above",
+    "packages/basalt-ui/src/table/data-table.tsx (the 2.x table)"
+  ],
+  "change": "(1) `FormField`'s control slot stretches text-like controls (input, select, textarea, number field, combobox, date picker) and leaves a `Switch` or `Checkbox` at its intrinsic size; the JSDoc example draws a 36 x 20 switch (state-3.2). (2) A phone card's meta line carries its column header for every kind placed in the meta (money, number, boolean, date, relative time, status, delta), aligned to the card's start like the text values; the title and entity cells stay unlabelled (state-3.5). (3) A header cell lays the sort button and the column-actions button side by side at every column width, so the actions button never covers the sort target; remove the `focusNotObscured` entry from `cycle/state-3/known.ts` (state-3.6).",
+  "commits": "fix: per defect in packages/basalt-ui; the known.ts line removal in its own chore: commit (non-package).",
+  "proof": "make check; a layout test that a Switch inside FormField measures 36 px wide; a layout test of a phone card showing a label beside a money, a boolean and a date value; the full quality matrix on /cycle/state-3 passes with no waiver.",
+  "acceptance": [
+    "A Switch inside a FormField keeps its intrinsic width (layout test)",
+    "A phone card names the column of every meta value, money, boolean and date included (layout test)",
+    "The full quality matrix passes on /cycle/state-3 with cycle/state-3/known.ts holding no focusNotObscured entry",
+    "make check passes"
+  ],
+  "out_of_scope": "Other columns' header widths beyond the overlap; the 2.x table."
+}
