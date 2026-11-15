@@ -115,12 +115,6 @@ export const KNOWN: readonly KnownFinding[] = [
     item: /svg ".*outline contrast 1\.74:1/,
     owner: 'charts: focusable plot ring contrast',
   },
-  {
-    route: '/cards',
-    assertion: 'focusNotObscured',
-    item: /a\[stat-target\].*covered at .* by div\[card-phase\]/,
-    owner: 'cards: the phase overlay sits over the stat target link',
-  },
   // /table is the v3 DataTable exemplar (v3-table-t5-exemplar); its other findings are fixed in src/table.
   {
     route: '/table',
