@@ -117,7 +117,7 @@ basalt-ui/
 bun install                # install all workspaces
 bun run dev                # = dev:playground
 bun run dev:playground     # start the playground consumer
-bun run lint               # oxlint
+bun run lint               # oxlint: the repo on the 2.x config, then apps/playground on the v3 app preset (0 findings)
 bun run fmt                # oxfmt (write)
 bun run fmt:check          # oxfmt (check only)
 bun run typecheck          # tsc across package + playground (see the dist footgun below)
