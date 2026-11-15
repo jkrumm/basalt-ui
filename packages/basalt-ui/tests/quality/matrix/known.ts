@@ -1,3 +1,8 @@
+import { existsSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
+
+import { PLAYGROUND } from './routes'
+
 /**
  * Findings the matrix already reports on code this Issue does not own (shell, cards, charts, the
  * playground's 2.x pages). Each entry names one failing item of one assertion on one route and why it
@@ -99,10 +104,43 @@ const DOGFOOD_KNOWN: readonly KnownFinding[] = [
   },
 ]
 
+/**
+ * A cycle's waivers live in its own folder, `apps/playground/src/cycle/<cycle>/known.ts`, so a cycle PR
+ * never touches this package (docs/v3/CYCLES.md step 2). The file exports `known`, an array of
+ * `KnownFinding` shaped objects; the cycle code imports published entry points only, so it declares
+ * the shape inline and this loader checks it. The matrix applies the same rules to these entries: one
+ * item per entry, and in the full run an entry that matched nothing fails.
+ */
+export async function loadCycleKnown(dir = join(PLAYGROUND, 'src/cycle')): Promise<KnownFinding[]> {
+  if (!existsSync(dir)) return []
+  const entries: KnownFinding[] = []
+  for (const cycle of readdirSync(dir, { withFileTypes: true }).toSorted((a, b) =>
+    a.name.localeCompare(b.name),
+  )) {
+    const file = join(dir, cycle.name, 'known.ts')
+    if (!cycle.isDirectory() || !existsSync(file)) continue
+    const mod = (await import(file)) as { known?: unknown }
+    if (!Array.isArray(mod.known))
+      throw new Error(`matrix: ${file} must export \`known\` as an array`)
+    for (const entry of mod.known as Partial<KnownFinding>[]) {
+      const { route, assertion, item, owner } = entry
+      const ok =
+        typeof route === 'string' &&
+        typeof assertion === 'string' &&
+        item instanceof RegExp &&
+        typeof owner === 'string'
+      if (!ok) throw new Error(`matrix: ${file} has an entry that is not a KnownFinding`)
+      entries.push({ route, assertion, item, owner })
+    }
+  }
+  return entries
+}
+
 export const KNOWN: readonly KnownFinding[] = [
   ...STATE_KNOWN,
   ...SHELL_KNOWN,
   ...DOGFOOD_KNOWN,
+  ...(await loadCycleKnown()),
   // /gallery is the 2.x Mantine specimen page (Pagination, SegmentedControl, raw inputs). It carries
   // dozens of findings of the legacy components and goes with the legacy barrel, so it is listed by
   // assertion, not by item.
@@ -225,14 +263,18 @@ function itemsOf(message: string): string[] {
     .map((line) => line.trim().replace(/"$/, ''))
 }
 
-export function classify(route: string, failures: readonly string[]): Classified {
+export function classify(
+  route: string,
+  failures: readonly string[],
+  known: readonly KnownFinding[] = KNOWN,
+): Classified {
   const unexpected: string[] = []
   const matched: KnownFinding[] = []
   for (const failure of failures) {
     const assertion = failure.slice(0, failure.indexOf(':'))
     const items = itemsOf(failure)
     const covers = items.map((item) =>
-      KNOWN.find(
+      known.find(
         (k) =>
           (k.route === '*' || k.route === route) && k.assertion === assertion && k.item.test(item),
       ),
