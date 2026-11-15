@@ -41,3 +41,4 @@ not guarded:
 - Under SSR a field reads URL then fallback until hydration commits; never read a stored value in a server loader.
 - Wrap every API-client call in `unwrap()` so an error branch throws.
 - Keep `ai` and `@ai-sdk/*` on one major across packages; `doctor` checks it at install, the editor does not.
+- A text box that commits on Enter is a `useCommittedField`; a hand-written Enter handler ignores `isComposing` and breaks IME input.
