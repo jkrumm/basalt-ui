@@ -547,6 +547,20 @@ describe('keyboard contract', () => {
     expect(submits).toBe(0)
     expect(input().value).toBe('にほん')
   })
+
+  test('the Enter after compositionend (keyCode 229, Safari) does not submit', () => {
+    let submits = 0
+    renderComposer({
+      onSubmit: () => {
+        submits += 1
+      },
+    })
+
+    type('にほん')
+    fireEvent.keyDown(input(), { key: 'Enter', keyCode: 229 })
+
+    expect(submits).toBe(0)
+  })
 })
 
 describe('streaming gate', () => {
