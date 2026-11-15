@@ -16,13 +16,19 @@ import {
   linkOptions,
 } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import { BarList } from '../cards/bar-list'
 import type { BarListItem } from '../cards/bar-list'
 import type { KanbanCardProps } from '../cards/contract'
+import { KanbanCard } from '../cards/kanban-card'
 import { StatCard } from '../cards/stat-card'
 import type { CardAction as ChartCardAction } from '../charts/contract'
+import { ChartCard } from '../charts/parts/chart-card'
 import type { CardAction } from '../core/phase'
 import { BasaltProvider } from '../core/provider'
+import { EmptyState } from '../page/empty-state'
 import type { InnerNavItem } from '../page/contract'
+import { InnerNav } from '../page/parts/inner-nav'
+import { pushField } from '../page/parts/inner-nav.test-support'
 import { col } from '../table/core/kinds'
 import { EntityCell } from '../table/core/kinds-cells'
 import { routerDefaults } from './defaults'
@@ -152,5 +158,66 @@ describe('every link prop takes a navTarget', () => {
     ]
     const kanban: KanbanCardProps<'todo'>['href'] = to
     expect(accepted.length + (kanban === undefined ? 0 : 1)).toBe(6)
+  })
+})
+
+describe('every renderer of a link prop goes through the router', () => {
+  const lands = async (target: HTMLElement, router: ReturnType<typeof mount>, path: string) => {
+    expect(await act(async () => clicked(target))).toBe(false)
+    await waitFor(() => expect(router.state.location.pathname).toBe(path))
+  }
+
+  test('the StatCard empty action', async () => {
+    const router = mount(() => (
+      <StatCard
+        title="Empty"
+        value={null}
+        empty={{ cause: 'None yet', action: { label: 'Open orders', href: '/orders' } }}
+      />
+    ))
+    await lands(await screen.findByText('Open orders'), router, '/orders')
+  })
+
+  test('the page EmptyState action', async () => {
+    const router = mount(() => (
+      <EmptyState why="No runs yet." action={{ label: 'Open orders', href: '/orders' }} />
+    ))
+    await lands(await screen.findByText('Open orders'), router, '/orders')
+  })
+
+  test('the chart card empty action', async () => {
+    const router = mount(() => (
+      <ChartCard
+        title="Requests"
+        chart={() => null}
+        empty={{ cause: 'No data', action: { label: 'Open orders', href: '/orders' } }}
+      />
+    ))
+    await lands(await screen.findByText('Open orders'), router, '/orders')
+  })
+
+  test('a BarList row', async () => {
+    const router = mount(() => (
+      <BarList title="Top" items={[{ label: 'argo', value: 3, href: '/orders' }]} />
+    ))
+    await lands(await screen.findByText('argo'), router, '/orders')
+  })
+
+  test('a KanbanCard', async () => {
+    const router = mount(() => <KanbanCard id="c1" title="Fix it" href="/orders" move="static" />)
+    await lands(await screen.findByLabelText('Fix it'), router, '/orders')
+  })
+
+  test('an InnerNav item with an href leaves the field', async () => {
+    const state = pushField<'a'>(['a'], 'a', 'section')
+    const router = mount(() => (
+      <InnerNav
+        label="Settings"
+        state={state}
+        groups={[{ id: 'g', label: 'G', items: [{ id: 'a', label: 'Orders', href: '/orders' }] }]}
+      />
+    ))
+    await lands(await screen.findByText('Orders'), router, '/orders')
+    expect(state.writes).toEqual([])
   })
 })
