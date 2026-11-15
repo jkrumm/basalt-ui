@@ -83,8 +83,11 @@ export type PageAsideProps = {
   /** Header and `aria-label`; required. */
   title: string
   width?: number
-  /** Open state, device or URL lane. */
-  state?: ControlHandle<boolean>
+  /**
+   * Open state, device or URL lane. A boolean field is open while it is `true`; a string field
+   * holds the open record's id: open while it holds a value, and a close clears it.
+   */
+  state?: ControlHandle<boolean> | ControlHandle<string>
   dock?: 'always' | 'auto'
   mobile?: 'sheet'
   children?: ReactNode

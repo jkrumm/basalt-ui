@@ -4,6 +4,7 @@
   "CardGrid",
   "ConnectionIndicator",
   "EmptyState",
+  "Facts",
   "InnerNav",
   "OverlayHost",
   "Page",
