@@ -13,12 +13,51 @@ const SCANNED_EXTENSIONS: ReadonlySet<string> = new Set(['.css', '.tsx', '.astro
 /** A whole name: a trailing `-` or `${` is a template prefix, not a spelling. */
 const VX_NAME = /--vx-[a-z0-9]+(?:-[a-z0-9]+)*(?![\w-]|\$\{)/gi
 
-export type TokenFinding = { file: string; line: number; name: string }
+export type TokenFinding = {
+  file: string
+  line: number
+  name: string
+  /** The closest known name within a few edits, when there is one. */
+  nearest?: string
+}
 export type CheckTokensResult = {
   scanned: number
   findings: TokenFinding[]
   /** 0 clean; 1 on an unknown name or when no file was scanned. */
   exitCode: 0 | 1
+}
+
+/** How many edits away a name may be and still read as a typo of a token. */
+const NEAR = 3
+
+function editDistance(a: string, b: string): number {
+  let row = Array.from({ length: b.length + 1 }, (_, j) => j)
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i]
+    for (let j = 1; j <= b.length; j++) {
+      next[j] = Math.min(
+        (row[j] ?? 0) + 1,
+        (next[j - 1] ?? 0) + 1,
+        (row[j - 1] ?? 0) + (a[i - 1] === b[j - 1] ? 0 : 1),
+      )
+    }
+    row = next
+  }
+  return row[b.length] ?? 0
+}
+
+/** The known name closest to `name` (ties go to the first in sort order), or undefined past `NEAR`. */
+export function nearestToken(name: string, known: Iterable<string>): string | undefined {
+  let best: string | undefined
+  let bestDistance = NEAR + 1
+  for (const candidate of [...known].toSorted()) {
+    const distance = editDistance(name, candidate)
+    if (distance < bestDistance) {
+      best = candidate
+      bestDistance = distance
+    }
+  }
+  return best
 }
 
 export function packageTokenNames(): Set<string> {
@@ -40,7 +79,9 @@ export function checkTokens(input: {
       .split('\n')
       .forEach((text, i) => {
         for (const [name] of text.matchAll(VX_NAME)) {
-          if (!known.has(name)) findings.push({ file, line: i + 1, name })
+          if (known.has(name)) continue
+          const nearest = nearestToken(name, known)
+          findings.push({ file, line: i + 1, name, ...(nearest === undefined ? {} : { nearest }) })
         }
       })
   }

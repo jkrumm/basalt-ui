@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { checkTokens } from './check-tokens'
+import { checkTokens, nearestToken } from './check-tokens'
 
 const dir = mkdtempSync(join(tmpdir(), 'check-tokens-'))
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
@@ -34,6 +34,17 @@ describe('checkTokens', () => {
       [2, '--vx-usage-x'],
       [3, '--vx-typo'],
     ])
+  })
+
+  it('names the nearest token for a typo, and none for a stranger', () => {
+    const f = file(
+      'e.css',
+      '.a { color: var(--vx-ink-mutd); }\n.b { color: var(--vx-qqqqqqqqqqqq); }',
+    )
+    const [typo, stranger] = checkTokens({ files: [f] }).findings
+    expect(typo?.nearest).toBe('--vx-ink-muted')
+    expect(stranger?.nearest).toBeUndefined()
+    expect(nearestToken('--vx-ink2', ['--vx-ink', '--vx-ink-muted'])).toBe('--vx-ink')
   })
 
   it('fails when no file is scanned', () => {

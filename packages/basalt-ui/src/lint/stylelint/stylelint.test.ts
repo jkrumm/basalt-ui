@@ -139,6 +139,24 @@ describe('scan coverage', () => {
   })
 })
 
+describe('messages', () => {
+  it('every rule in the preset carries a message', () => {
+    for (const [rule, value] of Object.entries(stylelintConfig().rules)) {
+      const secondary = Array.isArray(value) ? value[1] : undefined
+      const message = (secondary as { message?: string } | undefined)?.message
+      expect(typeof message, rule).toBe('string')
+      expect(message?.length ?? 0, rule).toBeGreaterThan(20)
+    }
+  })
+
+  it('a data-slot selector is told to use the component prop, a viewport query the container', async () => {
+    const slot = (await lint('offenders/data-slot.css')).get('offenders/data-slot.css') ?? []
+    expect(slot[0]?.text).toContain("component's own prop or variant")
+    const media = (await lint('offenders/viewport-media.css')).get('offenders/viewport-media.css')
+    expect(media?.[0]?.text).toContain('@container')
+  })
+})
+
 describe('renderStylelintConfig', () => {
   it('the shipped file is the default render (no drift)', () => {
     expect(readFileSync(SHIPPED_CONFIG, 'utf8')).toBe(renderStylelintConfig())

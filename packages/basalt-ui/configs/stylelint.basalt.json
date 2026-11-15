@@ -14,20 +14,35 @@
   ],
   "ignoreFiles": [],
   "rules": {
-    "color-no-hex": true,
-    "color-named": "never",
+    "color-no-hex": [
+      true,
+      {
+        "message": "A hex colour `%s` is authored colour. Use a `--vx-*` colour token (`var(--vx-ink)`), or `color-mix` over one."
+      }
+    ],
+    "color-named": [
+      "never",
+      {
+        "message": "The named colour `%s` is authored colour. Use a `--vx-*` colour token, or `color-mix` over one."
+      }
+    ],
     "function-disallowed-list": [
-      "rgb",
-      "rgba",
-      "hsl",
-      "hsla",
-      "hwb",
-      "lab",
-      "lch",
-      "oklab",
-      "oklch",
-      "color",
-      "light-dark"
+      [
+        "rgb",
+        "rgba",
+        "hsl",
+        "hsla",
+        "hwb",
+        "lab",
+        "lch",
+        "oklab",
+        "oklch",
+        "color",
+        "light-dark"
+      ],
+      {
+        "message": "`%s()` writes a colour by hand. Use a `--vx-*` colour token, or `color-mix(in oklab, var(--vx-token) 40%, transparent)` for an alpha; a token already switches per scheme."
+      }
     ],
     "declaration-property-value-disallowed-list": [
       {
@@ -49,24 +64,54 @@
         "message": "Disallowed `%s: %s`. Spacing and type take --vx tokens, colour roles follow their surface, and a scroll box (overflow auto|scroll) is ui/scroll-area, or let Page own the scroll."
       }
     ],
-    "declaration-property-value-allowed-list": {
-      "/^(?:border(?:-[a-z]+)*-radius|box-shadow|line-height|letter-spacing)$/": [
-        "/^(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit)(?:\\s*[,\\s]\\s*(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit))*$/i"
-      ]
-    },
-    "property-disallowed-list": [
-      "/^--vx-/"
+    "declaration-property-value-allowed-list": [
+      {
+        "/^(?:border(?:-[a-z]+)*-radius|box-shadow|line-height|letter-spacing)$/": [
+          "/^(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit)(?:\\s*[,\\s]\\s*(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit))*$/i"
+        ]
+      },
+      {
+        "message": "Disallowed `%s: %s`. Radius, shadow, line height and letter spacing take a `--vx-*` token, `0`, `none` or `inherit`."
+      }
     ],
-    "declaration-no-important": true,
+    "property-disallowed-list": [
+      [
+        "/^--vx-/"
+      ],
+      {
+        "message": "Never declare `%s`: a `--vx-*` token is derived from the palette config, not authored. Read it with `var()`, or retune `basalt()` options."
+      }
+    ],
+    "declaration-no-important": [
+      true,
+      {
+        "message": "Never force a style with `!important`. Add a variant or prop on the component, or raise the layer."
+      }
+    ],
     "media-feature-name-disallowed-list": [
-      "/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+)$/"
+      [
+        "/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+)$/"
+      ],
+      {
+        "message": "A viewport media feature (`%s`) keys layout on the window. Key on the container: `@container` with a named size (`@narrow`, `@regular`, `@wide`), or `useSizeClass()` for chrome."
+      }
     ],
     "selector-disallowed-list": [
-      "/\\[\\s*data-slot/",
-      "/\\.mantine-/"
+      [
+        "/\\[\\s*data-slot/",
+        "/\\.mantine-/"
+      ],
+      {
+        "message": "Never select `%s`: a `data-slot` or `.mantine-*` selector reaches into a component. Use the component's own prop or variant, or eject it (basalt-ui eject <name>)."
+      }
     ],
     "at-rule-disallowed-list": [
-      "utility"
+      [
+        "utility"
+      ],
+      {
+        "message": "`@%s` defines a utility class. Compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet."
+      }
     ]
   }
 }

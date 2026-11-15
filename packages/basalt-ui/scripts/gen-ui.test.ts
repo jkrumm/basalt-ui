@@ -117,6 +117,16 @@ describe('the real tree', () => {
     }
   })
 
+  test('skeleton and scroll-area name the class fix their doc gives before eject', () => {
+    const message = (part: string): string => contracts.find((c) => c.part === part)!.message
+    expect(message('skeleton')).toContain('match the text style')
+    expect(message('scroll-area')).toContain('max-h-*')
+    for (const part of ['skeleton', 'scroll-area']) {
+      expect(message(part).indexOf('eject')).toBeGreaterThan(message(part).indexOf(': '))
+      expect(message(part)).toMatch(/or eject it/)
+    }
+  })
+
   test('docs carry the six frontmatter keys in order', () => {
     const files = generate(REAL_ROOTS)
     for (const doc of ['docs/button.md', 'docs/input.md']) {
