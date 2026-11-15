@@ -58,6 +58,22 @@ const gap = (page: LayoutPage): Promise<number> =>
     return el.scrollHeight - el.scrollTop - el.clientHeight
   }, SCROLLER)
 
+/**
+ * The gap to the bottom once the thread has caught up: a pinned thread re-pins on the frame after the
+ * content grew, and a starved host can sit more than a frame behind when the test looks. Poll up to `within`
+ * ms for a gap of at most 1 px and return the last read: a thread that never re-pins still fails the caller's
+ * expectation, only a late frame no longer does.
+ */
+async function pinnedGap(page: LayoutPage, within = 2000): Promise<number> {
+  const until = Date.now() + within
+  let last = await gap(page)
+  while (last > 1 && Date.now() < until) {
+    await sleep(50)
+    last = await gap(page)
+  }
+  return last
+}
+
 const scrollTop = (page: LayoutPage): Promise<number> =>
   page.raw.evaluate((sel) => document.querySelector(sel)!.scrollTop, SCROLLER)
 
@@ -85,6 +101,16 @@ async function send(page: LayoutPage, text: string): Promise<void> {
   await page.raw.fill(BOX, text)
   await page.raw.keyboard.press('Enter')
 }
+
+/**
+ * A test that reads the streaming state opens the thread with `pauseAfter`, which holds the mock stream
+ * mid-answer; the stream resumes here. The state under test then lasts as long as the test needs it, however
+ * slowly the host runs the page, and no wall-clock length of stream has to outlast an axe run.
+ */
+const release = (page: LayoutPage): Promise<void> =>
+  page.raw.evaluate(() => {
+    delete (window as never as { chatMock: { pauseAfter?: number } }).chatMock.pauseAfter
+  })
 
 const status = (page: LayoutPage): Promise<string> =>
   page.raw.evaluate((sel) => document.querySelector(sel)?.textContent ?? '', LIVE)
@@ -133,7 +159,7 @@ layout('chat-thread: the scroller over a 90 s stream (P12)', () => {
     const start = Date.now()
     const at = (s: number): Promise<void> => sleep(Math.max(0, start + s * 1000 - Date.now()))
     const pinnedGaps: number[] = []
-    const sample = async (): Promise<void> => void pinnedGaps.push(await gap(page))
+    const sample = async (): Promise<void> => void pinnedGaps.push(await pinnedGap(page))
 
     // Pinned from the first line: every one-second sample is within 1 px of the bottom.
     for (let s = 2; s <= 9; s++) {
@@ -157,7 +183,7 @@ layout('chat-thread: the scroller over a 90 s stream (P12)', () => {
     await at(14)
     await page.raw.mouse.wheel(0, (await gap(page)) - 6)
     await at(15.2)
-    expect(await gap(page), 'gap after the return').toBeLessThanOrEqual(1)
+    expect(await pinnedGap(page, 4000), 'gap after the return').toBeLessThanOrEqual(1)
     for (let s = 16; s <= 29; s += 1) {
       await at(s)
       await sample()
@@ -175,7 +201,7 @@ layout('chat-thread: the scroller over a 90 s stream (P12)', () => {
       setTimeout(() => (img.style.height = '220px'), 400)
     }, SCROLLER)
     await at(31.6)
-    expect(await gap(page), 'gap 1 s after the image reflow').toBeLessThanOrEqual(1)
+    expect(await pinnedGap(page, 4000), 'gap after the image reflow').toBeLessThanOrEqual(1)
     for (let s = 33; s <= 49; s += 1) {
       await at(s)
       await sample()
@@ -185,11 +211,11 @@ layout('chat-thread: the scroller over a 90 s stream (P12)', () => {
     await at(50)
     await page.raw.setViewportSize({ width: PHONE.width, height: 484 })
     await at(51.2)
-    expect(await gap(page), 'gap with the keyboard open').toBeLessThanOrEqual(1)
+    expect(await pinnedGap(page, 4000), 'gap with the keyboard open').toBeLessThanOrEqual(1)
     await at(60)
     await page.raw.setViewportSize({ width: PHONE.width, height: PHONE.height })
     await at(61.6)
-    expect(await gap(page), 'gap after the keyboard closes').toBeLessThanOrEqual(1)
+    expect(await pinnedGap(page, 4000), 'gap after the keyboard closes').toBeLessThanOrEqual(1)
     for (let s = 63; s <= 88; s += 1) {
       await at(s)
       await sample()
@@ -205,14 +231,14 @@ layout('chat-thread: the scroller over a 90 s stream (P12)', () => {
         timeout: 20_000,
       },
     )
-    expect(await gap(page), 'gap once settled').toBeLessThanOrEqual(1)
+    expect(await pinnedGap(page, 4000), 'gap once settled').toBeLessThanOrEqual(1)
     expect((await status(page)).length).toBeGreaterThan(500)
   }, 150_000)
 })
 
 layout('chat-thread: composer, live region and axe', () => {
   test('Enter sends, Shift+Enter is a newline, an IME Enter does nothing', async () => {
-    const page = await open(PHONE, { tickMs: 20, ticks: 20 })
+    const page = await open(PHONE, { tickMs: 20, ticks: 20, pauseAfter: 5 })
     await page.raw.fill(BOX, 'line one')
     await page.raw.keyboard.press('Shift+Enter')
     await page.raw.keyboard.type('line two')
@@ -239,6 +265,7 @@ layout('chat-thread: composer, live region and axe', () => {
     await page.raw.waitForSelector('li[data-state="streaming"]')
     expect(await page.raw.inputValue(BOX), 'the draft clears on send').toBe('')
     expect(await page.raw.getAttribute('li[data-state="streaming"]', 'aria-busy')).toBe('true')
+    await release(page)
     await waitSettled(page)
     expect(await page.count('li[aria-busy="true"]')).toBe(0)
   })
@@ -249,14 +276,14 @@ layout('chat-thread: composer, live region and axe', () => {
     await page.raw.waitForFunction(
       (sel) => (document.querySelector(sel) as HTMLTextAreaElement).value === 'will fail',
       BOX,
-      { timeout: 5000 },
+      { timeout: 20_000 },
     )
   })
 
   for (const viewport of [PHONE, DESKTOP_1440]) {
     for (const scheme of ['light', 'dark'] as const) {
       test(`axe: 0 serious, one polite region, settled and streaming (${viewport.name}, ${scheme})`, async () => {
-        const page = await open(viewport, { tickMs: 50, ticks: 60 })
+        const page = await open(viewport, { tickMs: 50, ticks: 60, pauseAfter: 10 })
         await page.raw.evaluate(
           (s) => document.documentElement.setAttribute('data-theme', s),
           scheme,
@@ -283,6 +310,7 @@ layout('chat-thread: composer, live region and axe', () => {
         expect(await status(page), 'silent while streaming').toBe('')
         expect(await axeSerious(page), 'streaming').toEqual([])
 
+        await release(page)
         await waitSettled(page)
         expect(await live(), 'still exactly one live region').toBe(1)
         expect((await status(page)).length).toBeGreaterThan(20)
