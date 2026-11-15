@@ -5,6 +5,8 @@
  * - `k2-table-narrow`: four kinded columns with a long id and sub, in the tier the viewport gives;
  * - `k2-table-scroll`: the same columns with `phone: 'scroll'`, so cells keep their column width;
  * - `k2-table-mid`: the same columns in a 560 px box (the reduced tier, columns side by side);
+ * - `w1-orders`: the wiring cycle 1 client table (entity, money, status, date), default `phone`
+ *   and `cardsBelow`;
  * - `k2-table-ready-<14|17>`: a loaded table of that many rows;
  * - `k2-table-reload-<14|17>`: the same, flipped to loading by `window.k2Loading(id, true)`.
  */
@@ -40,6 +42,31 @@ function columns(): UseDataTable<Row>['columns'] {
     c.delta('change', { header: 'Change', polarity: 'up-good', unit: '%' }),
     c.number('base', { header: 'Baseline' }),
   ]
+}
+
+type Order = { id: string; customer: string; amount: number; status: string; placed: string }
+const ORDERS: Order[] = [
+  { id: 'o1', customer: 'Wayne Ltd', amount: 1200, status: 'paid', placed: '2026-11-01' },
+  { id: 'o2', customer: 'Stark Inc', amount: 860.5, status: 'pending', placed: '2026-11-03' },
+  { id: 'o3', customer: 'Acme', amount: 4300, status: 'failed', placed: '2026-11-07' },
+]
+const o = col<Order>()
+
+function Orders(): ReactElement {
+  const t = useDataTable<Order>({
+    id: 'w1-orders',
+    label: 'Orders',
+    columns: [
+      o.entity('customer'),
+      o.money('amount', { currency: 'EUR' }),
+      o.status('status', { options: ['paid', 'pending', 'failed'] }),
+      o.date('placed'),
+    ],
+    data: ORDERS,
+    getRowId: (r) => r.id,
+    mode: { kind: 'client' },
+  })
+  return <DataTable table={t} />
 }
 
 const loaders = new Map<string, (loading: boolean) => void>()
@@ -86,6 +113,9 @@ function Fixture(): ReactElement {
   return (
     // theme-allow -- the wrappers are the probe's payload (tables in a column)
     <main lang="en" className="flex flex-col gap-8 p-4 text-foreground">
+      <div data-testid="w1-orders" className="min-w-0">
+        <Orders />
+      </div>
       {PROBES.map(({ id, count, phone, width }) => (
         <div
           key={id}

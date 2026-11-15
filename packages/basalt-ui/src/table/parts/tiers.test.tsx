@@ -4,9 +4,9 @@
  * jsdom has none; the real walk is the quality matrix's `/table` cell at 390.
  */
 import { cleanup, fireEvent, render } from '@testing-library/react'
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import type { ReactElement } from 'react'
-import { revealFocus } from './tiers'
+import { revealFocus, warnWithoutTierSheet } from './tiers'
 
 afterEach(cleanup)
 
@@ -70,5 +70,47 @@ describe('revealFocus', () => {
     const { port, button } = setup(box(250, 340), true)
     fireEvent.focus(button)
     expect(port.scrollLeft).toBe(0)
+  })
+})
+
+describe('warnWithoutTierSheet', () => {
+  const names = ['requestAnimationFrame', 'getComputedStyle'] as const
+  const real = new Map(
+    names.map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]),
+  )
+  afterEach(() => {
+    for (const [name, descriptor] of real) {
+      if (descriptor === undefined) Reflect.deleteProperty(globalThis, name)
+      else Object.defineProperty(globalThis, name, descriptor)
+    }
+  })
+  const stub = (name: (typeof names)[number], value: unknown): void => {
+    Object.defineProperty(globalThis, name, { configurable: true, writable: true, value })
+  }
+
+  function scroller(containerType: string): HTMLElement {
+    const el = document.createElement('div')
+    el.dataset['containerType'] = containerType
+    return el
+  }
+
+  test('says nothing with the sheet or without container queries, and warns once without the sheet', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    stub('requestAnimationFrame', (run: () => void) => (run(), 0))
+    stub('getComputedStyle', (el: HTMLElement) => ({ containerType: el.dataset['containerType'] }))
+    const plain = scroller('normal')
+
+    warnWithoutTierSheet(scroller(''))
+    warnWithoutTierSheet(scroller('inline-size'))
+    warnWithoutTierSheet(null)
+    expect(warn).not.toHaveBeenCalled()
+
+    warnWithoutTierSheet(plain)
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(String(warn.mock.calls[0]?.[0])).toContain('basalt-ui/table.css')
+
+    warnWithoutTierSheet(plain)
+    expect(warn).toHaveBeenCalledTimes(1)
+    warn.mockRestore()
   })
 })
