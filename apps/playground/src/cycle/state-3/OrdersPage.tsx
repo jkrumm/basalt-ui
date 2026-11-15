@@ -30,7 +30,6 @@ import { useEffect } from 'react'
 import type { ReactElement } from 'react'
 import { z } from 'zod'
 import { DEMO_SERIES } from '../../demo/series'
-import { useV3Tokens } from '../../demo/v3-tokens'
 import { STATUSES, STATUS_LABELS, ordersApi } from './orders-api'
 import type { Order, OrderQuery, OrderStatus, OrderValues } from './orders-api'
 import { fulfilmentQuery, orderQuery, ordersQuery } from './orders-live'
@@ -101,13 +100,7 @@ function OrdersTable({ list, query }: { list: ListResult; query: OrderQuery }): 
     mode: { kind: 'client' },
     phase: list,
     resetOn: [query],
-    // cycle-state-3: state-3.3 — the table's filtered-empty knows only its own column filters, so a
-    // query the page store filtered to nothing reads "No rows yet"; the app writes the cause and a
-    // reset from the store.
-    empty: {
-      cause: 'No order matches these filters.',
-      action: { label: 'Reset filters', onClick: clearFilters },
-    },
+    empty: { cause: 'No order matches these filters.', filtered: { reset: clearFilters } },
     detail: (row) => <EditOrder key={row.id} id={row.id} />,
     detailTitle: (row) => `Edit order ${row.id}`,
     detailState: orders.field.order,
@@ -305,7 +298,6 @@ function OrdersBody(): ReactElement {
 const ELSEWHERE_MS = 20_000
 
 export function OrdersPage(): ReactElement {
-  useV3Tokens()
   useEffect(() => {
     // The stand-in for other users' edits: fixture, not glue.
     const timer = setInterval(() => ordersApi.touchElsewhere(), ELSEWHERE_MS)
