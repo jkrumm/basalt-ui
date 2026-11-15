@@ -27,12 +27,6 @@ export const known: readonly KnownFinding[] = [
   {
     route: '/cycle/dogfood',
     assertion: 'ringWalk',
-    item: /^div>div\[filter-pills\]>div\[filter-set-pill\]>button\[button\] ".*": outline is clipped by div$/,
-    owner: 'v3-state-1-visual: the filter pill rings are clipped by their row (as /cycle/state)',
-  },
-  {
-    route: '/cycle/dogfood',
-    assertion: 'ringWalk',
     item: /^div>div>div>svg ".*": outline contrast 1\.\d+:1 is under 3:1$/,
     owner: 'charts: focusable plot ring contrast (as /charts)',
   },
