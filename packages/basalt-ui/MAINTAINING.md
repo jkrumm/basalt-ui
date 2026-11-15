@@ -27,14 +27,14 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 | `./state`      | **free** | `field.*`, `createSearchStore`, `createLocalStore`, `createPersistedState`                                                                                                                      |
 | `./forms`      | coupled  | `useBasaltForm`, `inputProps`, `fieldKey`                                                                                                                                                       |
 | `./commands`   | coupled  | `defineCommands`, `defineOverlays`/`overlays`, `ShortcutsHelp`, and the notifications registry + `NotificationBell` (folded in from `./notifications`)                                          |
-| `./table`      | coupled  | `BasaltDataTable`, `createColumnHelper` (renamed from `./data/table`), v3 `col`                                                                                                                 |
+| `./table`      | free     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                                                              |
 | `./agent`      | coupled  | transport + runner + thread contracts and the Mantine chat UI (folded in from `./agent-chat`); `src/agent/*.ts` stays Mantine-free as a repo-local lint boundary, `src/agent/chat/**` is the UI |
-| `./content`    | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map, `ArticleLayout`, the Article model                                                                                                 |
+| `./content`    | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map                                                                                                                                     |
 | `./vite`       | —        | `basaltViteConfig` (config only, never `plugins`) + `basalt()` (gates, sources.css, head/PWA)                                                                                                   |
 | `./styles.css` | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                                             |
 | `./configs/*`  | —        | raw toolchain presets (real paths — `extends` needs them)                                                                                                                                       |
 
-**2.0:** 15 published subpaths (V2-SPEC § 1), plus the v3 skeleton stubs added since (31 export keys; `./shell` aliases the 2.x shell barrel, `./tokens.css` is a v3 stub); `./guard`, `./theme-lab`, `./data/virtual`,
+**2.0:** 15 published subpaths (V2-SPEC § 1), plus the v3 skeleton stubs added since (32 export keys; `./tokens.css` is a v3 stub); `./guard`, `./theme-lab`, `./data/virtual`,
 `./llms.txt` and `./package.json` are no longer exports. **C1 (1.29.0):** `./query`, `./connectivity` and bare `./data` were dropped — 26 published subpaths
 → 20. `utils/`+`motion/`+`query/error-message` merged into `src/common/`. The 2.x view layer (`src/dashboard/`, `./controls-dates`, the 2.x files of `./charts`, `./table`, `./controls`, `./shell` and `./content`) was deleted in 3.0; `migrations/areas/removed-2x.json` names each export. Full symbol mapping:
 `MIGRATING.md` § 2.x to 3.0.
@@ -225,66 +225,12 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
 
 ## Shell, homes and the control tier
 
-- **`BasaltShell` is the single mount.** Every extension point is DECLARED DATA, not a `ReactNode`
-  slot — `nav`, `globalActions: GlobalAction[]`, `sidebarBlocks: SidebarBlock[]`, `brand.menu`,
-  `search.actions`, `settingsMenuItems`, `account` — because that is what lets basalt own the mobile
-  projection (rail dot/ring, one kebab, one More-sheet row per block) instead of asking every
-  consumer to re-derive it. Law C13, `../../docs/CONTROLS-SPEC.md` §2.3.
-- **The router seam is ONE component**, `SidebarItem.Anchor` (a `NavAnchor`): basalt renders every
-  pixel of chrome — desktop row, mobile slot, sheet row — and only hosts that component. No render
-  callbacks anywhere; the breadcrumb's equivalent is `parentAnchor`. `BasaltShell nav` builds those
-  anchors from TanStack's `Link`; under an `isActive` override it leans on `Link`'s private
-  `_asChild` host prop (`router-tanstack/use-nav.ts`, verified against `@tanstack/react-router`
-  1.170.x `link.js`) — re-verify it on every router bump (`use-nav.test.tsx`/`nav-prop.router.test.tsx`
-  pin the behaviour).
-- **The aside is a REGION a route claims, not a shell prop.** `BasaltShell` always renders an
-  `AppShell.Aside`, zero-wide and `collapsed.desktop` until a page mounts `PageAside`, which claims
-  it and publishes its fold back so the shell can size it (`docs/ASIDE-SPEC.md` §0, wave 1). Below
-  `sm` and in a shell-less app the same ONE node renders in flow where the page wrote it — no
-  portal, no fold chrome, no responsive twin (C9). Same claim/outlet/portal mechanism as `PageBar`
-  row 1, one region over.
-- **`PageBar` row 1 portals into the header; row 2 is in-flow and sticky**, publishing its measured
-  height as `--basalt-page-bar-h` on `documentElement` behind a `height > 0` guard — a
-  ResizeObserver fires once with a zero box while the element is still laid out, and publishing that
-  zero is what collapsed a consumer's sticky offset mid-navigation. **No header height is React
-  state**, and the header is one token tall on every viewport. An empty home renders nothing (C14).
-- **`--basalt-shell-lead-inset` is the one opt-in CSS contract of the header's leading zone**
-  (`app-brand.module.css`, JSDoc on `BasaltShell`): a consumer with a native macOS overlay title bar
-  sets it on `:root` to the traffic-light span (~70px, default `0px`). The zone's inline-start
-  padding grows by it and its width is `max(--app-shell-navbar-offset, inset + the 28px toggle)`, so
-  the rail keeps the toggle right of the lights instead of clipping it; unset is byte-identical
-  (`app-brand.module.css.test.ts`, measured in `tests/layout/shell-chrome`). The breadcrumb after a
-  widened rail zone shifts right by the same amount — accepted.
-- **`BasaltShell headerHeight` (px, default the `appShellHeaderHeight` token, 44) is the header's one
-  consumer-settable height** — same in both sidebar forms and at every width (law C14). It is only
-  the number handed to Mantine's `AppShell header.height`: the navbar/aside top, the page-bar band,
-  Main and the aside's shell header all read `--app-shell-header-height`, so nothing keeps a copy of 44. A native macOS unified-toolbar host sets ~52 together with `--basalt-shell-lead-inset`
-  (`tests/layout/shell-chrome` measures both).
-- **Mobile nav is a TAB BAR, not a menu**, and `projectMobileNav` is a PURE projection: the surface
-  is INFERRED from row count (0 drops the slot, 1 is a plain link, ≤ `menuMax` is a menu, more is a
-  sheet). The `menu` surface is a compact POPOVER, not a bottom sheet, and **`menuMax` is no longer
-  the never-below-the-fold guarantee** — the popover's own CSS `max-height` is, which is what let the
-  default rise 6 → 12. The constant is now a taste bound on how long one popover may get;
-  `mobileNav.menuMax` remains the per-app opt-out, and the menu still runs `flip: false`.
-- **Two mobile CSS facts that look like bugs**: `.bar` carries no `env(safe-area-inset-bottom)`
-  because Mantine's `AppShell.Footer` rule already grows the box by it (the real gap is
-  `--app-shell-footer-offset`, closed by `.mainSafeArea`); and the active indicator is a neutral
-  ink pill behind the ICON only, never the identity accent, because a filled tab reads as chrome.
-- **A home sizes its own SLOT, never its body.** Each home hoists a `MantineThemeProvider inherit`
-  whose `components` default `size: 'ctl'` (`mergeMantineTheme` deep-merges, so the base `.extend()`
-  vars survive) plus a `data-basalt-tier` attribute. `ChartCard` is the one exception and it is a
-  boundary consequence, not an oversight: it lives inside the Mantine-free chart layer, so its
-  `actions` slot carries only the tier attribute and the basalt controls there size themselves.
-- Mantine's own `sm`/`xs` sizes are **not** re-pointed — a `size="sm"` in a modal keeps Mantine's
-  height. The `ctl`/`icon` tiers reach Mantine through its own size system, and
-  `theme/spacing.test.ts` greps every `getSize(size, '<prefix>')` / `getFontSize(size)` call in the
-  components that matter and asserts each prefix has a `-ctl` declaration — a missing var (the
-  `--button-padding-x-ctl` every draft omitted) fails the build rather than shipping a squashed
-  button.
-- **`SettingsRow.control` is law C1's THIRD home, the form row, and keeps Mantine's `md` tier.** It
-  is deliberately absent from the slot set: a raw `Select` bound to a setting is right there, and its
-  `size` prop is load-bearing. `settings-section.tsx` wraps `actions` in the ctl slot and never
-  `control`.
+The 2.x Mantine shell (`BasaltShell`, `PageBar`, `PageAside`, `projectMobileNav`, the sidebar and
+mobile-nav modules) and the 2.x control tier (`FilterSet` children, `SettingsRow`, the `ctl` size
+slots) were deleted in 3.0; their invariants went with them. The v3 shell, homes and controls are
+specified in `../../docs/v3/ARCHITECTURE.md` and its concepts, and their maintainer-facing
+properties live in the JSDoc of `src/shell/index.ts`, `src/page` and `src/controls`, where the
+guards that hold them are named.
 
 ## CLI
 

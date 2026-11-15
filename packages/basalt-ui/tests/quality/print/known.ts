@@ -28,11 +28,6 @@ export const KNOWN_PRINT: readonly KnownPrint[] = [
     owner: 'charts: axis labels and legend spans keep the screen muted ink in print',
   },
   {
-    route: '/gallery',
-    item: /./,
-    owner: 'playground gallery (2.x Mantine specimens): retires with the legacy barrel',
-  },
-  {
     route: '/overview',
     item: /^scrollport clips its content: div\[data-slot=card-phase\]/,
     owner: 'cards: the phase list scrolls inside its card',
@@ -46,16 +41,6 @@ export const KNOWN_PRINT: readonly KnownPrint[] = [
     route: '/overview',
     item: /^card split: div\[data-slot=(?:stat-card|card)\]/,
     owner: 'cards: card and stat-card carry no break-inside: avoid (quality-contract P7)',
-  },
-  {
-    route: '/scenarios/s1-ops',
-    item: /^card split: tr /,
-    owner: 'scenario s1-ops: its table rows carry no break-inside: avoid',
-  },
-  {
-    route: '/scenarios/s1-ops',
-    item: /^ink under 4\.5:1: /,
-    owner: 'scenario s1-ops: dt and muted spans keep the dark-scheme ink in print',
   },
   {
     route: '/table',
