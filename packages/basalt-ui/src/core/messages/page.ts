@@ -5,7 +5,7 @@ import type { BasaltMessages } from './index'
  * The strings `./page` prints itself. `page.toc` titles the table of contents, `page.tocTrigger` is
  * the button that opens it below 1200px, and
  * `page.kind*` name a title-less callout's kind for assistive tech, and `page.moreActions`
- * and `page.closeAside` name the page bar's overflow button and the aside's close button, and `page.itemAttention` and `page.itemActions` name an `InnerNav` item's dot
+ * `page.closeAside` and `page.backToList` name the page bar's overflow button, the aside's close button and a split page's way back to its list, and `page.itemAttention` and `page.itemActions` name an `InnerNav` item's dot
  * and its actions menu.
  */
 export type PageMessages = Record<
@@ -19,6 +19,7 @@ export type PageMessages = Record<
   | 'page.kindBad'
   | 'page.moreActions'
   | 'page.closeAside'
+  | 'page.backToList'
   | 'page.itemAttention',
   string
 > &
@@ -36,6 +37,7 @@ export const page = {
   'page.kindBad': 'Error',
   'page.moreActions': 'More actions',
   'page.closeAside': 'Close panel',
+  'page.backToList': 'Back',
   'page.itemAttention': 'Needs attention',
   'page.itemActions': (_f, label) => `Actions for ${label}`,
   'page.minRead': (f, minutes) => `${f.number(minutes)} min read`,
