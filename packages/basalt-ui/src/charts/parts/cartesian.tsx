@@ -38,7 +38,7 @@ import { applySeams } from '../seams'
 import { asMarks, customPlot, toChartState, toEngineSpec } from './cartesian-adapt'
 import { chartSelection, indexMap } from './cartesian-selection'
 import { barMarks, floorIsZero, paint, shadeBars } from './bars-marks'
-import { DIMMED } from '../core/theme'
+import { CV, DIMMED } from '../core/theme'
 import { FocusWrap, useCursorFocus } from '../focus'
 import type { BarLayout } from './bars-marks'
 import { AUTO_END_LABELS, lastIsPlaceable, lineMarks } from './lines-marks'
@@ -348,7 +348,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
               y: 'y',
               r: VX.dotR + 2,
               fill: 'none',
-              stroke: VX.accent,
+              stroke: CV.brand,
               strokeWidth: 2,
               key: (row: { datum: D }) => indexOf.get(row.datum) ?? -1,
             }),

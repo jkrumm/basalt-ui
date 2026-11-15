@@ -9,8 +9,8 @@ describe('the engine tooltip', () => {
     const tip = readFileSync(new URL('./chart-box.module.css', import.meta.url), 'utf8')
     const rule = tip.match(/:global\(\.ts-chart-tooltip\)\s*\{([^}]*)\}/)?.[1] ?? ''
     expect(rule.replaceAll(/\s+/g, ' ')).toContain(
-      'var(--basalt-tooltip-surface, var(--vx-tooltip-bg))',
+      'var(--basalt-tooltip-surface, var(--vx-raised))',
     )
-    expect(rule).toContain('var(--vx-surface-elevated) !important')
+    expect(rule).toContain('var(--vx-raised) !important')
   })
 })

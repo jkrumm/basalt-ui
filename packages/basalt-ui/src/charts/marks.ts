@@ -10,7 +10,7 @@ import { lineY } from '@tanstack/charts/line'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { VX } from '../tokens'
 import { chartCurve } from './curves'
-import { DASH, DIMMED, LINE_STROKE_WIDTH } from './theme'
+import { CV, DASH, DIMMED, LINE_STROKE_WIDTH } from './core/theme'
 import { rowX } from './types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from './types'
 
@@ -139,7 +139,7 @@ export function markersOf<T, X extends ChartX>(
         r: 'r',
         fill: group.color,
         fillOpacity: group.opacity,
-        ...(group.ring && { stroke: VX.surface.panel, strokeWidth: 1.5 }),
+        ...(group.ring && { stroke: CV.surface, strokeWidth: 1.5 }),
         ...(yScale !== undefined && { yScale }),
       }),
     ),
@@ -178,7 +178,7 @@ export function cursorDots<T, X extends ChartX>(
       r: VX.dotR,
       fill: s.color,
       fillOpacity: 0,
-      stroke: VX.surface.panel,
+      stroke: CV.surface,
       strokeWidth: 1.5,
       strokeOpacity: 0,
       states: [{ when: { focus: 'x' }, style: focused }],

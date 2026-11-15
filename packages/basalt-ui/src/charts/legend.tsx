@@ -7,6 +7,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import { VX } from '../tokens'
+import { CV } from './core/theme'
 import classes from './chart-legend.module.css'
 import type { ChartSeries } from './types'
 
@@ -56,7 +57,7 @@ const rowBaseStyle: CSSProperties = {
   rowGap: 4,
   // The tick step: ticks, legend and tooltip are one size, so a chart card has at most three.
   fontSize: VX.text.micro,
-  color: VX.ink2,
+  color: CV.inkMuted,
   lineHeight: 1.35,
 }
 const rowStyle: CSSProperties = { ...rowBaseStyle, display: 'flex' }
@@ -84,7 +85,7 @@ function rowLayout(mode: LegendMode, concealed: boolean): CSSProperties {
     ...hide,
   }
 }
-const dividerStyle: CSSProperties = { width: 1, alignSelf: 'stretch', background: VX.divider }
+const dividerStyle: CSSProperties = { width: 1, alignSelf: 'stretch', background: CV.hairline }
 const buttonStyle: CSSProperties = {
   all: 'unset',
   // `all: unset` would also drop styles.css's `position: relative` (an inline style outranks the
@@ -103,7 +104,7 @@ const buttonStyle: CSSProperties = {
   cursor: 'pointer',
   borderRadius: VX.radiusCtrl,
 }
-const noteStyle: CSSProperties = { color: VX.axis, flex: 'none' }
+const noteStyle: CSSProperties = { color: CV.axis, flex: 'none' }
 const labelStyle: CSSProperties = { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }
 
 /**

@@ -8,6 +8,7 @@ import { couldNotLoad } from '../common/could-not-load'
 import { toErrorMessage } from '../common/errors'
 import { RetryButton } from '../common/retry-button'
 import { VX } from '../tokens'
+import { CV } from './core/theme'
 import { ChartBox, growClass, stateClass } from './box'
 import boxClasses from './chart-box.module.css'
 import type { ChartBoxHeight } from './box'
@@ -29,7 +30,7 @@ const boxStyle: CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   gap: 6,
-  color: VX.axis,
+  color: CV.axis,
   fontSize: VX.text.xs,
   textAlign: 'center',
 }
@@ -37,7 +38,7 @@ const boxStyle: CSSProperties = {
 const pendingStyle: CSSProperties = {
   ...boxStyle,
   borderRadius: VX.radiusCtrl,
-  background: `linear-gradient(90deg, transparent, ${VX.surface.subtle}, transparent)`,
+  background: `linear-gradient(90deg, transparent, ${CV.inset}, transparent)`,
 }
 
 /** Bar ghost heights (% of the plot) of a pending plot: a mild rise, not data. */
@@ -104,32 +105,32 @@ const dotStyle: CSSProperties = {
   height: 6,
   // theme-allow raw-surface — a 6px status dot, not a surface
   borderRadius: '50%',
-  background: VX.status.bad,
+  background: CV.bad,
 }
 // StatCard's error anatomy (`ErrorState` at the section tier): a left-aligned stack, never centred.
 const errorStyle: CSSProperties = {
   ...boxStyle,
   alignItems: 'flex-start',
   justifyContent: 'flex-start',
-  paddingBottom: VX.space.controlGap,
+  paddingBottom: 6,
   textAlign: 'start',
   fontSize: VX.text.sm,
-  gap: VX.space.controlGap,
+  gap: 6,
 }
 // The empty tile's one ring: an inset shadow, never a border, as `EmptyState`'s section tier draws it.
 const tileStyle: CSSProperties = {
   // theme-allow surface-shadow-override — an inset ring on a tile inside a surface, not a card's depth
-  boxShadow: `var(--basalt-state-ring, inset 0 0 0 1px ${VX.surface.hairline})`,
+  boxShadow: `var(--basalt-state-ring, inset 0 0 0 1px ${CV.hairline})`,
 }
 const errorHeadStyle: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: VX.space.controlGap,
+  gap: 6,
   color: VX.ink,
   fontWeight: 500,
 }
 
-const errorMessageStyle: CSSProperties = { color: VX.muted }
+const errorMessageStyle: CSSProperties = { color: CV.inkMuted }
 
 const emptyLabel = (state: ChartState | undefined): string =>
   typeof state?.empty === 'string' ? state.empty : 'Nothing plotted in this range.'

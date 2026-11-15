@@ -9,7 +9,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { chartEngineCss } from '../src/charts/theme.ts'
+import { chartEngineCss } from '../src/charts/core/theme.ts'
 
 const FILE = resolve(import.meta.dirname, '..', 'src', 'styles.css')
 const START =

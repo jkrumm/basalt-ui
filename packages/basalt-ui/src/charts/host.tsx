@@ -50,7 +50,7 @@ type EngineProps = ChartProps<unknown, ChartValue, number>
 const HOST_STYLE: CSSProperties = {
   // Overrides the host's own fallback height: the box decides, the engine measures it.
   height: '100%',
-  color: 'var(--vx-axis)',
+  color: 'var(--vx-ink-faint)',
   fontFamily: 'var(--basalt-chart-font, var(--basalt-font-sans))',
   fontVariantNumeric: 'tabular-nums',
 }
