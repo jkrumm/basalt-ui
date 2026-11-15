@@ -28,6 +28,7 @@ import { BasaltProvider } from '../core/provider'
 import { EmptyState } from '../page/empty-state'
 import type { InnerNavItem } from '../page/contract'
 import { InnerNav } from '../page/parts/inner-nav'
+import { PageBar } from '../page/page-bar'
 import { pushField } from '../page/parts/inner-nav.test-support'
 import { col } from '../table/core/kinds'
 import { EntityCell } from '../table/core/kinds-cells'
@@ -219,5 +220,20 @@ describe('every renderer of a link prop goes through the router', () => {
     ))
     await lands(await screen.findByText('Orders'), router, '/orders')
     expect(state.writes).toEqual([])
+  })
+})
+
+describe('a standalone PageBar parent', () => {
+  test('a string and a navTarget both go through the router', async () => {
+    const router = mount(() => (
+      <PageBar
+        title="Run"
+        parent={{ label: 'Orders', href: navTarget(linkOptions({ to: '/orders' })) }}
+      />
+    ))
+    const parent = await screen.findByText('Orders')
+    expect(parent.getAttribute('href')).toBe('/orders')
+    expect(await act(async () => clicked(parent))).toBe(false)
+    await waitFor(() => expect(router.state.location.pathname).toBe('/orders'))
   })
 })

@@ -2,6 +2,7 @@ import { useCallback, useContext, useId, useState, useSyncExternalStore } from '
 import type { ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cn } from '../core/cn'
+import { AppLink } from '../core/link'
 import { page } from '../core/messages/page'
 import { SlotHomeContext } from '../core/slot-home'
 import { useMessages } from '../core/messages/use-messages'
@@ -334,19 +335,13 @@ export function PageBar<K extends string = string>({
   const trail =
     inShell || parent === undefined ? null : (
       <>
-        {typeof parent.href === 'string' ? (
-          <a
-            href={parent.href}
-            data-slot="page-breadcrumb-parent"
-            className="text-sm text-muted-foreground hover:text-foreground focus-ring"
-          >
-            {parent.label}
-          </a>
-        ) : (
-          <span data-slot="page-breadcrumb-parent" className="text-sm text-muted-foreground">
-            {parent.label}
-          </span>
-        )}
+        <AppLink
+          href={parent.href}
+          data-slot="page-breadcrumb-parent"
+          className="text-sm text-muted-foreground hover:text-foreground focus-ring"
+        >
+          {parent.label}
+        </AppLink>
         <span aria-hidden="true" className="text-faint">
           /
         </span>
