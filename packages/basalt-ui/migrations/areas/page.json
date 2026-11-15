@@ -5,16 +5,16 @@
     {
       "id": "page-onclick",
       "kind": "renamed-prop",
-      "from": "InnerNavMenuItem and EmptyState action onSelect",
+      "from": "basalt-ui/page#EmptyState.action.onSelect",
       "to": "onClick",
       "profiles": ["parts", "app"],
       "manual": true,
-      "note": "one name for an action's activation callback"
+      "note": "one name for an action's activation callback (also InnerNavMenuItem, EmptyState action and BarList rows)"
     },
     {
       "id": "page-empty-cause",
       "kind": "renamed-prop",
-      "from": "EmptyState why",
+      "from": "basalt-ui/page#EmptyState.why",
       "to": "cause",
       "profiles": ["parts", "app"],
       "manual": true,
@@ -23,7 +23,7 @@
     {
       "id": "page-querystate-skeleton",
       "kind": "renamed-prop",
-      "from": "QueryState loading (a node)",
+      "from": "basalt-ui/page#QueryState.loading",
       "to": "skeleton",
       "profiles": ["parts", "app"],
       "manual": true,

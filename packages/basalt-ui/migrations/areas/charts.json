@@ -150,7 +150,7 @@
     {
       "id": "charts-onclick",
       "kind": "renamed-prop",
-      "from": "ChartCard action target onSelect",
+      "from": "basalt-ui/charts#ChartCard.action.onSelect",
       "to": "onClick",
       "profiles": ["parts", "app"],
       "manual": true,
