@@ -4,11 +4,11 @@
 // expect: window.innerWidth < 768
 // expect: 1024 <= window.outerWidth
 // expect: document.documentElement.clientWidth > 600
-// expect: innerWidth >= 640
+// expect: globalThis.innerWidth >= 640
 export const a = window.matchMedia('(min-width: 768px)')
 export const b = useMediaQuery('(max-width: 640px)')
 export const c = matchMedia(`(min-width: ${bp}px)`)
 export const d = window.innerWidth < 768
 export const e = 1024 <= window.outerWidth
 export const f = document.documentElement.clientWidth > 600
-export const g = innerWidth >= 640
+export const g = globalThis.innerWidth >= 640

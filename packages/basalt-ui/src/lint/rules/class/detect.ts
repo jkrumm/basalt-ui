@@ -64,17 +64,18 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
   }
 }
 
-/** The text of a viewport-size read: `window.innerWidth`, `innerWidth`, `document.documentElement.clientWidth`. */
+/**
+ * The text of a viewport-size read: `window.innerWidth`, `globalThis.outerWidth`,
+ * `document.documentElement.clientWidth`. A bare `innerWidth` is not read: charts name a plot width so.
+ */
 function viewportRead(node: Node | undefined): string | undefined {
-  if (node?.type === 'Identifier') return node['name'] === 'innerWidth' ? 'innerWidth' : undefined
   if (node?.type !== 'MemberExpression' || node['computed'] === true) return undefined
   const property = field(node, 'property')
   const prop = property?.type === 'Identifier' ? (property['name'] as string) : undefined
   const object = field(node, 'object')
   if (prop === 'innerWidth' || prop === 'outerWidth') {
-    return object?.type === 'Identifier' && object['name'] === 'window'
-      ? `window.${prop}`
-      : undefined
+    const global = object?.type === 'Identifier' ? (object['name'] as string) : undefined
+    return global === 'window' || global === 'globalThis' ? `${global}.${prop}` : undefined
   }
   if (prop !== 'clientWidth' || object?.type !== 'MemberExpression') return undefined
   const root = field(object, 'object')
