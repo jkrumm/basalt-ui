@@ -123,11 +123,11 @@ function StatRow({ phase }: { phase: Phase }): ReactElement {
           phase={phase}
           chart={() => <StatTrend stat={stat} />}
           footer={stat.footer}
-          onSelect={() => setState(stat.key === 'shipped' ? 'done' : stat.key)}
+          onClick={() => setState(stat.key === 'shipped' ? 'done' : stat.key)}
           menu={[
             {
               label: 'Show these Issues',
-              onSelect: () => setState(stat.key === 'shipped' ? 'done' : stat.key),
+              onClick: () => setState(stat.key === 'shipped' ? 'done' : stat.key),
             },
             { label: 'Open Throughput', href: '#throughput' },
           ]}
@@ -306,7 +306,7 @@ export function FlowOverview(): ReactElement {
         <PageBar title="Flow" />
         <EmptyState
           tier="page"
-          why="Nothing in flight. Issues show here as they are filed and while they move."
+          cause="Nothing in flight. Issues show here as they are filed and while they move."
         />
       </Page>
     )
