@@ -5,6 +5,7 @@ import { isValidElement, useId } from 'react'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { AppLink } from '../core/link'
+import { OfflineLine } from '../core/offline-line'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ErrorKind, FrameState } from '../core/phase'
 import { PhaseBoundary } from '../core/phase-boundary'
@@ -281,6 +282,14 @@ function ErrorArm({
   )
 }
 
+function OfflineArm({ arms }: { arms: Arms }): ReactElement {
+  return (
+    <output data-slot="card-offline" className={ARM[arms]}>
+      <OfflineLine />
+    </output>
+  )
+}
+
 function EmptyArm({ empty, arms }: { empty: Empty; arms: Arms }): ReactElement {
   const { cause, action, filtered } = empty
   return (
@@ -398,6 +407,7 @@ export function CardPhase({
       )}
     >
       {resolved.tag === 'loading' && <Skeleton shape={skeleton} />}
+      {resolved.tag === 'offline' && <OfflineArm arms={arms} />}
       {resolved.tag === 'error' && (
         <ErrorArm
           kind={resolved.kind}

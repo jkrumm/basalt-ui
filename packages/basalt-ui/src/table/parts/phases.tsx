@@ -7,6 +7,7 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
 import type { ReactElement, ReactNode } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
+import { OfflineLine } from '../../core/offline-line'
 import { table } from '../../core/messages/table'
 import type { ResolvedPhase } from '../../core/phase'
 import { Button } from '../../ui/button'
@@ -77,7 +78,7 @@ function MessageRow<T>({
   children,
 }: {
   model: TableModel<T>
-  slot: 'table-error' | 'table-empty'
+  slot: 'table-error' | 'table-empty' | 'table-offline'
   children: ReactNode
 }): ReactElement {
   return (
@@ -127,6 +128,15 @@ export function ErrorRow<T>({
           {t('table.retry')}
         </Button>
       )}
+    </MessageRow>
+  )
+}
+
+/** A query paused for lack of a connection, with no rows: the shared Offline line, not skeletons. */
+export function OfflineRow<T>({ model }: { model: TableModel<T> }): ReactElement {
+  return (
+    <MessageRow model={model} slot="table-offline">
+      <OfflineLine />
     </MessageRow>
   )
 }
