@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import { execFileSync } from 'node:child_process'
 import { appendFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -139,6 +140,10 @@ describe('check 11: budgets, ejects, weakened config, DESIGN.md', () => {
   it('passes the ratchet on a repo with no base, and a ref that does not resolve is SKIPPED', async () => {
     const none = await runCheck(healthy(), 11, { ...HEALTHY, baseRef: null })
     expect(none.status).toBe('pass')
+    const remote = healthy()
+    execFileSync('git', ['-C', remote, 'remote', 'add', 'origin', 'https://example.invalid/x.git'])
+    const shallow = await runCheck(remote, 11, { ...HEALTHY, baseRef: null })
+    expect(shallow.status).toBe('skipped')
     const missing = await runCheck(healthy(), 11, { ...HEALTHY, baseRef: 'origin/nope' })
     expect(missing.status).toBe('skipped')
     expect(missing.detail).toContain('budget-ratchet')

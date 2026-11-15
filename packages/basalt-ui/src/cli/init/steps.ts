@@ -530,12 +530,16 @@ export function stylesheetEntry(tokens: string | null, sources: string): string 
   ].join('\n')
 }
 
-/** What create-vite's `src/index.css` is: plain CSS on `:root`, no `@import`, no Tailwind. */
+/**
+ * What create-vite's `src/index.css` is: no `@import`, `color-scheme: light dark` and one of the
+ * template's own variables (`--code-bg`, `--social-bg`). Anything else
+ * is the app's own sheet and is never overwritten.
+ */
 export function isStockViteCss(text: string): boolean {
   return (
     !/@import|@tailwind/.test(text) &&
-    /:root\s*\{/.test(text) &&
-    /color-scheme:|font-synthesis:|#root\b/.test(text)
+    /color-scheme:\s*light dark/.test(text) &&
+    /--code-bg|--social-bg/.test(text)
   )
 }
 
