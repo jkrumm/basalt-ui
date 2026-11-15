@@ -6,6 +6,7 @@
 import { Box, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 
+// theme-allow shadow-basalt-export — the 2.x call shape kept for two playground forms until their migration row
 export function FormRow({
   label,
   hint,
