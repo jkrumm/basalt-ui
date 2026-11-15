@@ -331,8 +331,8 @@ const ELSEWHERE_MS = 20_000
 
 export function TicketsPage(): ReactElement {
   const client = useQueryClient()
-  // cycle-state-2: state-2.1 — `bindInvalidation` needs the client, and the router builds the client
-  // inside `createBasaltRouter`, so its `live` option cannot be written; the binding starts here.
+  // cycle-state-2: state-2.1 — `bindInvalidation` needs the client; the page starts the binding itself
+  // rather than handing it to the provider's `live` option in main.tsx.
   useEffect(
     () =>
       bindInvalidation(client, ticketsChannel, {

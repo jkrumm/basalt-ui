@@ -27,9 +27,8 @@ which metric maps to which hue, as `{ light, dark }` pairs wired through `define
 
 ```ts
 // apps/playground/src/demo/series.ts — the app's guard-exempt series file
-import { defineSeries, groupTokens } from 'basalt-ui/tokens'
+import { defineSeries } from 'basalt-ui/tokens'
 export const DEMO_SERIES = defineSeries({/* … demo series, see the file itself */})
-export const demoColors = groupTokens(DEMO_GROUP, DEMO_SERIES)
 ```
 
 A series earns a color only for trend, signal/status or categorical separation. `/basalt-design` is
