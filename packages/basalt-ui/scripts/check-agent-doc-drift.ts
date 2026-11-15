@@ -791,7 +791,6 @@ export const CHECK_I_NON_EXPORTS: ReadonlySet<string> = new Set([
   'basalt-ui/format:Intl', // the platform API the formatters wrap
   'basalt-ui/charts:marks', // prose: the marks a chart kind fixes
   'basalt-ui/controls:ctl', // the size tier
-  'basalt-ui/controls:options', // a prop of NumberFilter
   'basalt-ui/forms:key', // the React `key` prop
   'basalt-ui/format:locale', // an option of the formatters
   'basalt-ui/agent:ai', // the Vercel `ai` package

@@ -230,7 +230,7 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./controls-dates, ./forms, ./state, ./table, ./format, ./commands, ./agent, ./content, ./vite, plus the v3 subpaths ./router, ./data, ./page, ./cards, ./ai, ./ui/*, ./core/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
+ * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./forms, ./state, ./table, ./format, ./commands, ./agent, ./content, ./vite, plus the v3 subpaths ./router, ./data, ./page, ./cards, ./ai, ./ui/*, ./core/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
  * - #-prefixed synthetic keys (#app) — the synthetic global app-wide ban layer. The #-prefix
  *   guarantees it is never mistaken for an export path.
  *
@@ -295,7 +295,7 @@ export const SURFACES = {
       "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
     ],
     description:
-      'Wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`, `unwrap`), shell + nav (`BasaltShell`, `PageBar`, `PageAside`, `PageTitle`, `ThemeToggle`, `defineNav`/`navGroup`/`navTarget`/`flattenNav`, `useBasaltNav`, `useSizeClass`, `useCoarsePointer`), dashboard (`Section`, `WidgetHeader`, `StatCard`, `StatGroup`, `DeltaBadge`, `EmptyState`, `SettingsSection`/`SettingsRow`/`DangerZone`). Reaches no subpath-required peer.',
+      'Wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`, `unwrap`), nav (`ThemeToggle`, `defineNav`/`navGroup`/`navTarget`/`flattenNav`, `useBasaltNav`, `useCoarsePointer`) and the state seams. Reaches no subpath-required peer.',
     optionalPeers: [
       'remark-gfm',
       'rehype-sanitize',
@@ -314,7 +314,7 @@ export const SURFACES = {
     guardKinds: ['raw-hex', 'raw-color-fn'],
     pluginRules: ['chart-in-raw-surface', 'chart-engine-boundary', 'chart-host-single'],
     description:
-      'CartesianChart (the TanStack Charts rung), the Lines and Bars kinds, ChartCard, the shared chartCursor and the geometry seam: useChartFocus (focus, dim the rest, one bound readout) and chartLabels (server-equal label width and placement) (Mantine-free; @tanstack/charts + d3-scale peers)',
+      'CartesianChart (the TanStack Charts rung), the Lines, Bars, Sparkline, Heatmap and BandStrip kinds, ChartCard, the shared chartCursor and the geometry seam: useChartFocus (focus, dim the rest, one bound readout) and chartLabels (server-equal label width and placement) (Mantine-free; @tanstack/charts + d3-scale peers)',
     optionalPeers: ['@tanstack/charts', 'd3-scale'],
     globs: {
       shipped: ['**/charts/**'],
@@ -427,7 +427,7 @@ export const SURFACES = {
     guardKinds: [],
     pluginRules: [],
     description:
-      'BasaltDataTable and createColumnHelper: a data table over TanStack Table v9, rendered with Mantine',
+      '`DataTable` over `useDataTable`, the `col` kind columns, the parts `DataTable` composes (`TableToolbar`, `DataTableBody`, `TablePager`, `BulkBar`) and `tableCodec`, on TanStack Table v9 and `ui/*` primitives',
     optionalPeers: ['@tanstack/react-table', '@base-ui/react'],
     forbiddenImports: [],
   },
@@ -500,11 +500,11 @@ export const SURFACES = {
     advisoryLaws: [
       'C1 as a cross-file law (a control placed in one file, its home declared in another)',
       'hand-rolled section headings (argo writes `<Text fw={600} size="sm">` + children, which no AST heuristic matches without false positives)',
-      'C11 — a table/list stating its count when it is not a BasaltDataTable',
-      'C12 — one shape for refresh/sync (SyncButton); only the alias table sees a renamed copy',
+      'C11 — a table/list stating its count when it is not a DataTable',
+      'C12 — one shape for refresh/sync (RefreshButton); only the alias table sees a renamed copy',
     ],
     description:
-      'The control tier (docs/CONTROLS-SPEC.md §3). Exports: `FilterSet` (nowrap row + measured +N fold + the mobile Filters (n) sheet), `RangeFilter`/`SelectFilter`/`MultiSelectFilter`/`NumberFilter`/`SearchFilter`/`ToggleFilter` (each bound to a FieldHandle — no value/onChange/size, law C2/C5; `NumberFilter` is the field.number lane, a radio list over `options` or a stepper without), `ViewTabs`, `SyncButton` with the `BarAction`/`GlobalAction` types, and the form layout `FormRow`/`FormGroup` (moved here from ./forms in 1.36.0 — `FormRow` is law C1’s form row and needs no @mantine/form). THREE surfaces, picked by the home and never by a prop: pill in a PageBar row, sheet in the mobile Filters (n) drawer, panel in a PageAside body — where every control renders an inspector/facet ROW instead of a chip (docs/ASIDE-SPEC.md §3); the counts/max props on `MultiSelectFilter` render the Foundry facet list there. Every control owns its own desktop/mobile swap in CSS (C9) and renders size="ctl" internally. Resolves and renders with NO @mantine/dates installed — the custom date picker is injected through RangeFilter.customPicker from ./controls-dates.',
+      'The control tier (docs/v3/concepts/controls-url-state.md). Exports: `FilterSet` (a list of `spec(...)`s as one nowrap row of pills, a measured +N fold and the mobile Filters (n) sheet), `ViewTabs` bound to a control handle, `ControlView`, `ControlHome`, `filterSlot`, `spec`, and the v3 forms `FormField`/`FormRow`/`FormFooter`/`useFormDraft`/`toSubmitErrors`. The home picks the presentation (pill, row, inline), never a prop. Every control owns its own desktop/mobile swap in CSS and resolves with no Mantine installed.',
     optionalPeers: [],
     // `@mantine/dates` is an optional peer basaltViteConfig pre-bundles the whole @mantine scope
     // for — a consumer without the peer (linewatch) must never resolve it through this surface.
@@ -517,11 +517,11 @@ export const SURFACES = {
     forbiddenImports: [
       v(
         '@mantine/dates',
-        '@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. The one reach lives in src/controls-dates/, injected into range-filter.tsx’s customPicker seam.',
+        '@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. Nothing under src/controls reaches it.',
       ),
       vg(
         '@mantine/dates/*',
-        '@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. The one reach lives in src/controls-dates/, injected into range-filter.tsx’s customPicker seam.',
+        '@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. Nothing under src/controls reaches it.',
       ),
       v(
         '@mantine/form',
@@ -532,18 +532,6 @@ export const SURFACES = {
         '@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Only ./forms needs it.',
       ),
     ],
-  },
-  './controls-dates': {
-    kind: 'doctrine',
-    layer: 'mantine-coupled',
-    rule: 'controls',
-    skill: ['basalt-design'],
-    guardKinds: [],
-    pluginRules: [],
-    description:
-      "DateRangePicker — the @mantine/dates implementation of RangeFilter's customPicker seam. Its own subpath because @mantine/dates is an optional peer and basaltViteConfig pre-bundles the whole @mantine scope, so a consumer without the peer (linewatch) must never resolve it: nothing under src/controls may import it, statically or lazily (docs/CONTROLS-SPEC.md §3).",
-    optionalPeers: ['@mantine/dates', 'dayjs'],
-    forbiddenImports: [],
   },
   './state': {
     kind: 'doctrine',

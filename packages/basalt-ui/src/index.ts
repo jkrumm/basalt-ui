@@ -1,6 +1,5 @@
 /**
- * basalt-ui root barrel — the Mantine-coupled surface: provider, theme, the app shell and the
- * dashboard atoms. The Mantine-free token/chart layer is published under `basalt-ui/tokens` and
+ * basalt-ui root barrel — the provider, the theme and the state seams. The Mantine-free token/chart layer is published under `basalt-ui/tokens` and
  * `basalt-ui/charts`, NOT re-exported here, so a tokens/charts-only consumer never pulls in
  * `@mantine/*`. One import path per symbol: `docs/V2-SPEC.md` § 1; the per-symbol verdicts are
  * `docs/waves/v2-surface.md`.
@@ -28,44 +27,6 @@ export { createBasaltTheme } from './theme'
 export { ThemeToggle } from './theme/theme-toggle'
 export { StatusDot, type StatusDotProps } from './theme/status-dot'
 export { StatusVerdict, type StatusVerdictProps } from './theme/status-verdict'
-export {
-  BasaltShell,
-  PageBar,
-  PageAside,
-  useSizeClass,
-  PageTitle,
-  type ShellBaseProps,
-  type SidebarBlock,
-  type SettingsMenuItem,
-} from './shell/legacy'
-export {
-  WidgetHeader,
-  DeltaBadge,
-  Section,
-  StatCard,
-  type StatCardBreakdownRow,
-  type StatCardSparklineSize,
-  StatGroup,
-  type StatStripCell,
-  type StatStripRow,
-  EmptyState,
-  SettingsSection,
-  SettingsRow,
-  DangerZone,
-  Meter,
-  type MeterProps,
-  type MeterSegment,
-  type MeterTick,
-  type MeterZone,
-  BarList,
-  type BarListProps,
-  EventList,
-  type EventListProps,
-  Board,
-  type BoardProps,
-  PageSummary,
-  type PageSummaryProps,
-} from './dashboard'
 export { unwrap } from './unwrap'
 export {
   persisted,

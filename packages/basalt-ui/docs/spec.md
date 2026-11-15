@@ -19,7 +19,7 @@ multi's `'a'`, a range's `'7d'`), the way its handle lists them.
 ```ts
 spec<T>(handle: WidgetHandle<T>, label: string, options?: SpecOptions<T>): FilterSpec<T, "widget">
   key: string
-  kind: "string" | "number" | "boolean" | "range" | "enum" | "multi"
+  kind: "string" | "number" | "boolean" | "enum" | "multi" | "range"
   options?: readonly { value: T; label: string; }[]
   use: () => [T, (v: T) => void]
   useSource: () => { source: "own" | "inherited" | "override"; inherited…

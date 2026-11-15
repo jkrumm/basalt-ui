@@ -7,6 +7,7 @@
  * v3 shell add scenarios (and their slots) as they land.
  */
 import type { FixtureSpec } from '../spec'
+import { cardsExemplarScenario } from './scenarios/cards-exemplar'
 import { innerNavScenario } from './scenarios/inner-nav'
 import { pageCoreScenario } from './scenarios/page-core'
 import { pageKitScenario } from './scenarios/page-kit'
@@ -27,6 +28,8 @@ export interface Scenario {
 }
 
 export const SCENARIOS: Readonly<Record<string, Scenario>> = {
+  // Before shell-mobile: the exemplar spec carries sections, which that scenario claims.
+  'cards-exemplar': cardsExemplarScenario,
   'page-kit': pageKitScenario,
   'page-core': pageCoreScenario,
   'inner-nav': innerNavScenario,

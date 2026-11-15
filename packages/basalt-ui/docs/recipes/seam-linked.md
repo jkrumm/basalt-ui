@@ -12,12 +12,13 @@ A list of the same grain as the samples spreads `focus.item(i)` on its rows inst
 Keep a long list in the `ScrollArea` primitive: the keyboard step scrolls the focused group's row into view. The kit dims, so the page sets no opacity.
 
 ```tsx
-import { dot } from '@tanstack/charts/dot'
 import { CartesianChart, useChartFocus } from 'basalt-ui/charts'
 import { VX } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 
 export type Sample = { day: number; version: string; value: number }
+
+const color = { light: VX.accent, dark: VX.accent }
 
 export function SeamLinked({ samples }: { samples: readonly Sample[] }) {
   const focus = useChartFocus(samples, {
@@ -30,12 +31,11 @@ export function SeamLinked({ samples }: { samples: readonly Sample[] }) {
       <div className="text-sm">
         {focus.readout('Daily samples', (s) => `${s.version}, day ${s.day}: ${s.value}`)}
       </div>
-      <CartesianChart<Sample, number>
+      <CartesianChart<Sample>
         data={samples}
         ariaLabel="Daily samples, one value per day"
-        x={(s) => s.day}
-        series={[{ key: 'value', label: 'Value', color: VX.accent, getValue: (s) => s.value }]}
-        marks={(plot) => [dot(plot.rows('value'), { x: 'x', y: 'y', r: VX.dotR, fill: VX.accent })]}
+        x={{ value: (s) => s.day }}
+        series={[{ mark: 'dot', key: 'value', label: 'Value', color, y: (s) => s.value }]}
         focus={focus}
       />
       <ScrollArea aria-label="Versions" className="max-h-32">

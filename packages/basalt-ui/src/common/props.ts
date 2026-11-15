@@ -85,12 +85,8 @@ export type Tone = 'good' | 'warn' | 'bad'
 /** `Tone` plus the un-toned state — a badge or a block with nothing to say yet. */
 export type ToneWithNeutral = Tone | 'neutral'
 
-/**
- * The heading tier (`docs/CONTROLS-SPEC.md` §2.2). Re-exported from its owner rather than declared
- * twice — `WidgetHeaderTier` stays the name on the public barrel; `Tier` is what `common`-aware
- * code spells. Type-only, so this file emits no runtime edge into the Mantine-coupled half.
- */
-export type { WidgetHeaderTier as Tier } from '../dashboard/widget-header'
+/** The heading tier of a section, a widget and a group. */
+export type Tier = 'section' | 'widget' | 'group'
 
 /**
  * The class joiner. Replaces the `[a, b].filter(Boolean).join(' ')` spelled out in seven files

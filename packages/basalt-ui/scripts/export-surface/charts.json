@@ -3,17 +3,11 @@
   "Bars",
   "CartesianChart",
   "ChartCard",
-  "Donut",
-  "DualPanel",
   "Heatmap",
   "LegacyChartCard",
   "Lines",
-  "MirroredBars",
   "Sparkline",
-  "StackedArea",
   "chartCursor",
-  "chartCurve",
   "chartLabels",
-  "foldBands",
   "useChartFocus"
 ]

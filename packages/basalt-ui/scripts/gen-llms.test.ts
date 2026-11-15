@@ -56,10 +56,9 @@ describe('gen-llms signatures', () => {
       const end = rest.findIndex((l) => !l.startsWith('  '))
       return rest.slice(0, end === -1 ? rest.length : end)
     }
-    const table = block('BasaltDataTable')
-    expect(table).toContain('  data: T[]')
-    expect(table).toContain('  striped?: boolean | "odd" | "even"')
-    expect(table.at(-1)).toMatch(/^  … \+\d+ more$/)
+    const table = block('DataTable')
+    expect(table).toContain('  table: DataTableInstance<T>')
+    expect(table).toContain('  detail?: DetailHost')
     expect(block('Bars')).toContain('  ariaLabel: string')
     // Exactly the own props; nothing inherited from Mantine/DOM leaks in.
     expect(block('useBasaltForm')).toEqual([
@@ -69,7 +68,7 @@ describe('gen-llms signatures', () => {
     // Subpaths beyond table/charts/forms get their props too (friction row 57).
     const aside = block('PageAside')
     expect(aside.some((l) => l.startsWith('  title: '))).toBe(true)
-    expect(aside.some((l) => l.startsWith('  persistKey?: '))).toBe(true)
+    expect(aside.some((l) => l.startsWith('  dock?: '))).toBe(true)
     expect(block('FilterSet').length).toBeGreaterThan(0)
   })
 
@@ -88,13 +87,13 @@ describe('gen-llms signatures', () => {
   })
 
   test('the glossary spells out a named literal union, in declaration order (row 78 a)', () => {
-    const glossary = text.split('\n## Types\n')[1] ?? ''
-    expect(glossary).toContain("type ChartCardSlot = 'root' | 'header' | 'body'")
+    expect(text).toMatch(
+      /^Type: ChartZone = \{ from: number, to: number, fill: string, axis\?: 'left' \| 'right' \}/m,
+    )
   })
 
   test('inline unions print exactly as they always did (no checker-order drift)', () => {
-    expect(text).toContain('  settingsMenu?: "auto" | "flat" | "menu"')
-    expect(text).toContain('  sparklinePlacement?: "bleed" | "right"')
+    expect(text).toContain('  dock?: "auto" | "always"')
   })
 })
 
@@ -331,11 +330,10 @@ describe('option types (row 187)', () => {
   })
 
   test('the slot and composite types an agent builds first are expanded (row 197)', () => {
-    expect(text).toMatch(/^Type: StatStripCell = \{/m)
-    expect(text).toMatch(/^Type: MeterSegment = \{ value: number, label: string/m)
-    expect(text).toMatch(/^Type: QueryStateLike<TData> = \{/m)
-    expect(text).toMatch(/^Type: ChartSeries<T> = \{/m)
-    expect(text).toMatch(/^ {2}getValue: \(d: T\) => number \| null/m)
+    expect(text).toMatch(/^Type: ChartFigure = \{ value: number \| string \| null/m)
+    expect(text).toMatch(/^Type: QueryStateLike = \{/m)
+    expect(text).toMatch(/^Type: LegendEntry = \{/m)
+    expect(text).toMatch(/^Type: XConfig<D> = \{/m)
   })
 
   test('a generic member list keeps its parameters in the name; a conditional alias and a literal union stay out', () => {
@@ -346,10 +344,6 @@ describe('option types (row 187)', () => {
       'Type: S<T, K extends string = string> = { key: K, get: (d: T) => number }',
     )
     expect(text).not.toMatch(/^Type: (EmitArgs|CalloutKind)\b/m)
-  })
-
-  test('an intersection of a Pick and a member list (BarsBar<T>) gets its Type block', () => {
-    expect(text).toMatch(/^Type: BarsBar<T> = Pick<ChartSeries<T>, .*> & \{ fillOpacity\?: number/m)
   })
 
   test('no subpath prints more option types than MAX_OPTION_TYPES, plus the remainder line', () => {

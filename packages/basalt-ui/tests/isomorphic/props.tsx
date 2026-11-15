@@ -15,16 +15,9 @@
  * - `EXPECTED_DEFECTS` — components that render but VIOLATE one of the assertions today. Each
  *   entry names the finding it waives, so the suite stays green while the defect stays visible.
  *   Deleting an entry is how a fix gets proven.
- *
- * The bound-control fixtures use `createLocalStore`, never `createSearchStore`: the field
- * vocabulary is identical and the local store needs no router, so every `FieldHandle`-bound filter
- * renders here without the harness having to host a `RouterProvider`.
  */
 import type { ReactNode } from 'react'
-import { createLocalStore, field } from '../../src/state'
-import { lineY } from '@tanstack/charts/line'
-import type { ChartSeries } from '../../src/charts'
-import { DateRangePicker } from '../../src/controls-dates'
+import type { Series } from '../../src/charts'
 import { defineCommands } from '../../src/commands'
 import { memoryHandle } from '../../src/controls/control-view.handles'
 import { Input } from '../../src/ui/input'
@@ -42,31 +35,12 @@ const ROWS: Row[] = [
 
 const x = (d: Row): Date => new Date(`${d.date}T00:00:00Z`)
 
-const SERIES: ChartSeries<Row>[] = [
-  { key: 'a', label: 'A', color: '#4c7cf3', mark: 'line', getValue: (d) => d.a },
-  { key: 'b', label: 'B', color: '#e0803a', mark: 'line', getValue: (d) => d.b },
-]
+const BLUE = { light: '#4c7cf3', dark: '#7a9cf5' }
+const ORANGE = { light: '#e0803a', dark: '#e89a62' }
 
-const store = createLocalStore({
-  key: 'isomorphic-smoke',
-  fields: {
-    currency: field.enum(['USD', 'EUR'], 'USD'),
-    compare: field.enum(['none', 'previous', 'year'] as const, 'none'),
-    channels: field.multi(['web', 'email'], []),
-    range: field.range({ presets: ['7d', '30d'], fallback: '30d', custom: true }),
-    errorsOnly: field.boolean(false),
-    q: field.string(),
-    nights: field.number({ fallback: 2, min: 1, max: 14, int: true }),
-  },
-})
-
-const OPTIONS = [
-  { value: 'USD', label: 'USD' },
-  { value: 'EUR', label: 'EUR' },
-]
-const MULTI_OPTIONS = [
-  { value: 'web', label: 'web' },
-  { value: 'email', label: 'email' },
+const SERIES: Series<Row>[] = [
+  { key: 'a', label: 'A', color: BLUE, mark: 'line', y: (d) => d.a },
+  { key: 'b', label: 'B', color: ORANGE, mark: 'line', y: (d) => d.b },
 ]
 
 const TEXT: ReactNode = 'body'
@@ -99,36 +73,25 @@ defineCommands({
 export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   StatusDot: { color: 'red' },
   StatusVerdict: { color: 'red', word: 'Over' },
-  /* --- charts (docs/V2-SPEC.md § 9) --------------------------------------- */
+  /* --- charts ------------------------------------------------------------- */
   CartesianChart: {
     ariaLabel: 'Cartesian',
     data: ROWS,
-    x,
+    x: { value: x },
     series: SERIES,
     height: 200,
-    marks: () => [lineY(ROWS, { x, y: (d: Row) => d.a })],
   },
-  Lines: { ariaLabel: 'Lines', data: ROWS, x, series: SERIES, height: 200 },
+  Lines: { ariaLabel: 'Lines', data: ROWS, x: { value: x }, series: SERIES, height: 200 },
   Bars: {
     ariaLabel: 'Bars',
     data: ROWS,
-    x,
-    bars: [{ key: 'a', label: 'A', color: '#4c7cf3', getValue: (d: Row) => d.a }],
+    x: { value: x },
+    series: [{ key: 'a', label: 'A', color: BLUE, mark: 'bar', y: (d: Row) => d.a }],
     height: 200,
   },
-  ChartCard: { title: 'Card', phase: 'loading' },
-  LegacyChartCard: { title: 'Card', children: TEXT },
-  StackedArea: {
-    ariaLabel: 'Stacked',
-    data: ROWS,
-    x,
-    series: [
-      { key: 'a', label: 'A', color: '#4c7cf3', getValue: (d: Row) => d.a },
-      { key: 'b', label: 'B', color: '#e0803a', getValue: (d: Row) => d.b },
-    ],
-    height: 200,
-  },
-  Sparkline: { ariaLabel: 'Spark', data: [1, 3, 2, 5], height: 28, width: 80 },
+  ChartCard: { title: 'Card', chart: () => TEXT },
+  Sparkline: { ariaLabel: 'Spark', series: [1, 3, 2, 5], height: 28, width: 80 },
+  MiniBars: { ariaLabel: 'Mini', series: [1, 3, 2, 5], height: 28, width: 80 },
   BandStrip: {
     ariaLabel: 'Strip',
     data: ROWS,
@@ -137,47 +100,12 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
     getBand: () => ({ state: 'up' }),
     height: 60,
   },
-  Donut: {
-    ariaLabel: 'Donut',
-    data: [
-      { key: 'a', value: 3 },
-      { key: 'b', value: 1 },
-    ],
-    colorForKey: () => '#4c7cf3',
-    formatValue: (v: number) => String(v),
-  },
   Heatmap: {
     ariaLabel: 'Heat',
     data: ROWS,
     getRow: (d: Row) => d.date,
     getCol: () => 'c',
     getValue: (d: Row) => d.a,
-  },
-  DualPanel: {
-    ariaLabel: 'Dual',
-    data: ROWS,
-    x,
-    series: [{ key: 'a', label: 'A', color: '#4c7cf3', getValue: (d: Row) => d.a }],
-    bar: {
-      label: 'B',
-      getValue: (d: Row) => d.b,
-      positive: '#4c7cf3',
-      negative: '#e0803a',
-      format: (v: number) => String(v),
-    },
-    height: 240,
-  },
-  MirroredBars: {
-    ariaLabel: 'Mirrored',
-    data: ROWS,
-    x,
-    series: [
-      { key: 'a', label: 'A', color: '#4c7cf3', getValue: (d: Row) => d.a },
-      { key: 'b', label: 'B', color: '#e0803a', getValue: (d: Row) => d.b },
-    ],
-    up: { key: 'a', format: (v: number) => String(v) },
-    down: { key: 'b', format: (v: number) => String(v) },
-    height: 240,
   },
 
   /* --- controls ------------------------------------------------------------ */
@@ -194,58 +122,20 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
       'Smoke',
     ),
   },
+  FilterSet: { specs: [] },
+  ViewTabs: {
+    handle: memoryHandle('smoke.tabs', 'a', {
+      kind: 'enum',
+      options: [
+        { value: 'a', label: 'A' },
+        { value: 'b', label: 'B' },
+      ],
+    }),
+  },
   // v3 ctl-4b: a home with nothing to host draws nothing, so the smoke render needs no router
   ControlHome: { home: 'aside' },
-  SelectFilter: { field: store.field.currency, label: 'Currency', options: OPTIONS },
-  MultiSelectFilter: { field: store.field.channels, label: 'Channels', options: MULTI_OPTIONS },
-  CompareFilter: { field: store.field.compare, label: 'Compare' },
-  RangeFilter: { field: store.field.range, label: 'Range', customPicker: DateRangePicker },
-  ToggleFilter: { field: store.field.errorsOnly, label: 'Errors only' },
-  SearchFilter: { field: store.field.q, label: 'Search' },
-  NumberFilter: { field: store.field.nights, label: 'Nights' },
-  ViewTabs: { field: store.field.currency, options: OPTIONS },
-  SliderControl: { field: store.field.nights, label: 'Nights' },
-  FilterSet: { children: TEXT },
-  SyncButton: { onSync: () => {} },
-  DateRangePicker: { value: [null, null], onChange: () => {} },
-
-  /* --- dashboard / section / widget-header --------------------------------- */
-  Section: { title: 'Section', children: TEXT },
-  WidgetHeader: { title: 'Widget' },
-  DeltaBadge: { value: 0.12 },
-  StatCard: { label: 'Revenue', value: '1.2k' },
-  EmptyState: { title: 'Nothing here' },
-  BarList: { label: 'Top', items: [] },
-  EventList: { label: 'Events', items: [] },
-  Board: { label: 'Board', columns: [] },
-  Meter: { label: 'Usage', value: 40 },
-  ErrorState: { title: 'Broke' },
-  SettingsSection: { title: 'Settings', children: TEXT },
-  SettingsRow: { label: 'Row', control: TEXT },
-  DangerZone: { children: TEXT },
-
-  /* --- shell --------------------------------------------------------------- */
-  NavCountBadge: { count: 3 },
-  AppBreadcrumbs: { items: [{ label: 'Home' }] },
-  PageBar: { title: 'Page' },
-  PageAside: { title: 'Aside', children: TEXT },
-  PageTitle: { title: 'Title' },
-  BasaltShell: { brand: { name: 'Iso' }, nav: { groups: [] }, children: TEXT },
-  AppSidebar: {
-    brand: { name: 'Iso' },
-    sections: [],
-    collapsed: false,
-    onToggleCollapse: () => {},
-  },
-  MobileNav: { model: { slots: [] } },
-  SidebarAccount: { state: { status: 'unauthenticated' } },
-  SidebarSearch: { search: { placeholder: 'Search' } },
 
   /* --- data ---------------------------------------------------------------- */
-  BasaltDataTable: {
-    data: [{ id: 1, name: 'one' }],
-    columns: [{ accessorKey: 'name', header: 'Name' }],
-  },
   BasaltVirtualList: {
     items: [{ id: 1 }, { id: 2 }],
     height: 200,
@@ -261,7 +151,6 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   // render is a throw rather than a smoke test.
   FormSection: { title: 'Billing', children: TEXT },
   FormRow: { children: TEXT },
-  FormGroup: { label: 'Notify me about', children: TEXT },
   FormFooter: {
     form: {
       state: { values: {}, isSubmitting: false, canSubmit: true, errors: [] },
@@ -281,17 +170,6 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   Prose: { children: TEXT },
   Markdown: { children: '# Hello', contentTrust: 'untrusted' },
   CodeBlock: { code: 'const a = 1', lang: 'ts' },
-  Callout: { children: TEXT },
-  ArticleCard: { title: 'Iso' },
-  ArticleGrid: { children: TEXT },
-  ArticleLayout: { children: TEXT },
-  TableOfContents: { items: [{ id: 'a', label: 'A', level: 2 }] },
-  HeadingAnchor: { id: 'a' },
-  GuideLink: { title: 'Guide', children: TEXT },
-  // `opened: true` for the same reason `FormErrorSummary` carries an error — a closed Drawer paints
-  // nothing, so the probe would be measuring the empty branch.
-  GuideDrawer: { opened: true, onClose: () => {}, title: 'Guide', children: TEXT },
-  MermaidDiagram: { code: 'graph TD; A-->B;' },
 
   /* --- agent / agent-chat --------------------------------------------------- */
   PartList: { parts: [] },
@@ -382,12 +260,16 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   // portal — forwards the class onto a node outside the probe's container. Not a gap.
 
   // gap — renders a real box and drops the class.
-  DateRangePicker: 'gap',
-  DeltaBadge: 'gap',
-  ChartCard: 'gap', // v3: the frame owns its surface and box; a wrapper takes the class
   CodeBlock: 'gap', // by design: the props are frozen (lang, code, settled); styling goes on a wrapper
   Markdown: 'gap', // by design: the root is data-slot="markdown"; styling goes on a wrapper
   ControlHome: 'gap', // by design: the home decides the look of its controls; there is no className or variant
+  // v3 chart kinds and the card: the host owns the box (height, phase, legend); layout is the parent's
+  CartesianChart: 'gap',
+  Lines: 'gap',
+  Bars: 'gap',
+  Sparkline: 'gap',
+  ChartCard: 'gap',
+  FilterSet: 'gap', // draws a list of specs; a row of pills has no className, the layout is the home's
 }
 
 /**

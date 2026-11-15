@@ -2,19 +2,12 @@
  * `FilterSet`: the filter home's container. Hand it `specs` and it draws one nowrap row of pills,
  * folds what does not fit behind `+N`, and on a phone swaps the row for a `Filters (n)` button that
  * opens a sheet of row forms. It never scrolls and never wraps. See `filter-set-spec.tsx`.
- *
- * The `children` form (`<FilterSet><SelectFilter field=… /></FilterSet>`) is the 2.x container,
- * kept while `BasaltDataTable` and the 2.x pages still compose it; it moves to `specs` with them.
  */
 import type { ReactElement, ReactNode } from 'react'
-import type { FilterSetProps as SpecProps } from './contract'
-import { LegacyFilterSet } from './filter-set-legacy'
-import type { LegacyFilterSetProps } from './filter-set-legacy'
+import type { FilterSetProps } from './contract'
 import { SpecFilterSet } from './filter-set-spec'
 
-export type FilterSetProps =
-  | (SpecProps & { children?: never })
-  | (LegacyFilterSetProps & { specs?: never })
+export type { FilterSetProps }
 
 /**
  * Draws a list of `spec(...)`s as pills in one row: each pill prints its value, opens as a row form,
@@ -35,6 +28,5 @@ export type FilterSetProps =
  * />
  */
 export function FilterSet(props: FilterSetProps): ReactElement | ReactNode {
-  if (props.specs !== undefined) return <SpecFilterSet specs={props.specs} />
-  return <LegacyFilterSet {...props} />
+  return <SpecFilterSet specs={props.specs} />
 }

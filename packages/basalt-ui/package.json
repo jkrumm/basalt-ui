@@ -76,11 +76,6 @@
       "import": "./dist/controls/index.js",
       "default": "./dist/controls/index.js"
     },
-    "./controls-dates": {
-      "types": "./dist/controls-dates/index.d.ts",
-      "import": "./dist/controls-dates/index.js",
-      "default": "./dist/controls-dates/index.js"
-    },
     "./forms": {
       "types": "./dist/forms/index.d.ts",
       "import": "./dist/forms/index.js",

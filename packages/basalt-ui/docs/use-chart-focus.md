@@ -19,52 +19,32 @@ useChartFocus<D>(items: readonly D[], options: ChartFocusOptions<D>): ChartFocus
 
 ## Example
 
-`apps/playground/src/demo/gallery/seam.tsx`
+`apps/playground/src/recipes/seam-examples.tsx`
 
 ```tsx
-function PipelinePace() {
+export function PipelinePace() {
   const focus = useChartFocus(STAGES, { announce: (s) => `${s.name}: ${s.behind} s behind best` })
   return (
-    <LegacyChartCard
+    <ChartCard
       title="Pipeline pace"
       subtitle="Seconds behind the best run, per stage"
-      facts={{
+      figure={{
         value: focus.readout(`${STAGES_TOTAL} s`, (s) => `${s.behind} s`),
         period: focus.readout('whole run', (s) => s.name),
       }}
-    >
-      <CartesianChart<Stage, number>
-        data={STAGES}
-        ariaLabel="Seconds behind the best run for each of five pipeline stages"
-        x={(s) => s.at}
-        formatX={(at) => STAGES[at - 1]?.name ?? ''}
-        series={[
-          {
-            key: 'behind',
-            label: 'Behind best',
-            color: demoColors.sessions,
-            getValue: (s) => s.behind,
-          },
-        ]}
-        y={{ title: 'Seconds behind best' }}
-        xTitle="Stage"
-        xRefLines={[{ x: 3, color: VX.badRef, dashed: true, label: 'Target stage' }]}
-        focus={focus}
-        marks={(plot) => {
-          const rows = plot.rows('behind')
-          const rest = (r: PlotRow<Stage, number>): boolean =>
-            plot.focused !== null && r.datum !== plot.focused
-          const common = { x: 'x', y: 'y', r: VX.dotR, fill: demoColors.sessions } as const
-          return [
-            dot(
-              rows.filter((r) => !rest(r)),
-              { ...common, id: 'pace-on' },
-            ),
-            dot(rows.filter(rest), { ...common, id: 'pace-rest', fillOpacity: REST_OPACITY }),
-          ]
-        }}
-      />
-    </LegacyChartCard>
+      chart={() => (
+        <CartesianChart
+          data={STAGES}
+          ariaLabel="Seconds behind the best run for each of five pipeline stages"
+          x={{ value: (s) => s.at, format: (at) => STAGES[Number(at) - 1]?.name ?? '' }}
+          y={{ title: 'Seconds behind best' }}
+          series={[
+            { mark: 'dot', key: 'behind', label: 'Behind best', color: PACE, y: (s) => s.behind },
+          ]}
+          focus={focus}
+        />
+      )}
+    />
   )
 }
 ```

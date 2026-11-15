@@ -139,11 +139,6 @@ describe('FilterSet specs', () => {
     expect([...views].every((v) => v.getAttribute('data-presentation') === 'row')).toBe(true)
     expect(container.querySelector('[data-slot="filter-reset"]')).not.toBeNull()
   })
-
-  test('the children form still draws the 2.x container', () => {
-    const { container } = render(<FilterSet>{null}</FilterSet>)
-    expect(container.querySelector('[data-slot="filter-set"]')).toBeNull()
-  })
 })
 
 describe('fitCount', () => {

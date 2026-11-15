@@ -1,6 +1,6 @@
 /**
  * The CSS-scan gates, consolidated: four source-coupled inventories that used to live as
- * `src/theme/{shadow-surfaces,border-coverage,ctl-tier-coverage,layout-rhythm-css}.test.ts` (C2,
+ * `src/theme/{shadow-surfaces,border-coverage,ctl-tier-coverage}.test.ts` (C2,
  * "lint rules written as tests" per `.claude/maturation/audit-d-package-surface.md` §7). Each
  * section below is the SAME scan, the SAME registry, and the SAME failure condition as its former
  * file — moved here because none of the four asserts anything through `bun:test`'s runtime beyond
@@ -9,7 +9,7 @@
  * Usage: bun scripts/check-theme-css.ts
  *
  * `tests/theme-css-gate.test.ts` runs this script as a subprocess and asserts exit 0, so `bun test`
- * still covers all four sections without re-implementing their scans.
+ * still covers all three sections without re-implementing their scans.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
@@ -19,13 +19,9 @@ import type { MantineTheme } from '@mantine/core'
 import * as MantineCore from '@mantine/core'
 
 import { CTL_THEME, baseTheme, cssVariablesResolver } from '../src/theme/index'
-import { SIZE_CLASSES, sizeClassMaxEm, toEm } from '../src/tokens/size-classes'
 
 const PKG_ROOT = join(import.meta.dir, '..')
 const SRC_DIR = join(PKG_ROOT, 'src')
-/** The `medium` size-class boundary as the literals the CSS modules carry (52.5em / 52.49375em). */
-const SMALL_MIN_EM = toEm(SIZE_CLASSES.medium)
-const SMALL_MAX_EM = sizeClassMaxEm(SIZE_CLASSES.medium)
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // 1. Shadow-surface coverage — every `--vx-shadow-card`/`-ctrl`/`-raised` application site must be
@@ -223,29 +219,6 @@ const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
       'directly on the label part — the same element `.chipLabel` targets).',
   },
   {
-    file: 'shell/app-mobile-nav.module.css',
-    site: '.sheet',
-    roundedBy:
-      'border-top-left-radius / border-top-right-radius: var(--mantine-radius-lg) (co-declared in ' +
-      'the same rule).',
-  },
-  {
-    file: 'shell/app-main.module.css',
-    site: '.asideOverlay',
-    roundedBy:
-      "none by design — `.asideOverlay` lands on Mantine's AppShell.Aside root, a full-height " +
-      'panel flush to the viewport edge whose aside rule in AppShell.css (@mantine/core/styles) ' +
-      'declares no border-radius, so the shadow follows a square box and there is no corner shape to mismatch.',
-  },
-  {
-    file: 'shell/sidebar-search.module.css',
-    site: '.trigger',
-    roundedBy:
-      'border-radius: var(--vx-radius-ctrl) (co-declared in the same .trigger rule, on the same ' +
-      "UnstyledButton root the box-shadow lands on — the ring follows this box's own corners). " +
-      'The collapsed `.railBtn` in the same file carries no shadow (radius only), so it is not a site.',
-  },
-  {
     file: 'theme/index.ts',
     site: 'Card.styles.root',
     roundedBy:
@@ -272,31 +245,6 @@ const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
       'notification-radius)` on that same root element the styles.root boxShadow targets).',
   },
   {
-    file: 'dashboard/widget-header.module.css',
-    site: '.infoBubble',
-    roundedBy:
-      'border-radius: var(--vx-radius-card) (co-declared in the same .infoBubble rule as the ' +
-      'box-shadow, so the ring follows this box’s own shape). This is the info-tooltip bubble that ' +
-      'used to live in the 1.x charts/primitives/ChartCard.tsx as `bubbleStyle`; it moved down into ' +
-      'WidgetHeader when ChartCard started composing it, so every tier gets the same ' +
-      'hover/focus/click affordance. Nothing clips it: its host `.info` span is `position: ' +
-      'relative` with no overflow, and ChartCard deliberately keeps its header outside the chart ' +
-      'body’s clip box for exactly this reason.',
-  },
-  {
-    file: 'charts/ChartCard.tsx',
-    site: 'default',
-    roundedBy:
-      'One shadowed box in this file: cardStyle — the outer card box co-declares borderRadius: ' +
-      'VX.radiusCard + boxShadow + backgroundColor, so the ring is bound to THIS radius and ' +
-      'matches. It carries NO overflow: the chart body clips itself on a separate inner box ' +
-      '(bodyClipStyle, identical bottom-corner radius, no shadow) so the header — and the info ' +
-      'bubble WidgetHeader opens under it — can escape the clip; the ring is safe on the outer box ' +
-      'either way (an element’s own overflow never clips its own shadow). The second shadowed box ' +
-      'this entry used to cover, `bubbleStyle`, now lives in widget-header.module.css’s ' +
-      '.infoBubble (registered above).',
-  },
-  {
     file: 'agent/chat/thread-outcome-card.tsx',
     site: 'default',
     roundedBy: 'borderRadius: VX.radiusCard (co-declared in the same inline style object).',
@@ -320,14 +268,6 @@ const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
     site: 'default',
     roundedBy:
       'borderRadius: 999 (co-declared in the same inline style object — a circular button).',
-  },
-  {
-    file: 'dashboard/settings-section.tsx',
-    site: 'default',
-    roundedBy:
-      "Card.styles.root borderRadius: 'var(--vx-radius-card)' (theme/index.ts) — this DangerZone " +
-      "call site's inline `style` prop only overrides boxShadow (layering the danger-red ring on " +
-      "top); Card's themed border-radius stays active underneath on the same root element.",
   },
 ]
 
@@ -759,187 +699,14 @@ function checkCtlTierCoverage(): string[] {
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// 4. Layout-rhythm CSS-text regressions — two shell rules that broke silently because neither is
-//    exercised by a render test (moved verbatim from layout-rhythm-css.test.ts).
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-
-function extractMediaBlock(css: string, mediaStart: number): { body: string; end: number } {
-  const braceStart = css.indexOf('{', mediaStart)
-  let depth = 0
-  for (let i = braceStart; i < css.length; i++) {
-    if (css[i] === '{') depth++
-    else if (css[i] === '}') {
-      depth--
-      if (depth === 0) return { body: css.slice(braceStart + 1, i), end: i + 1 }
-    }
-  }
-  throw new Error('unterminated @media block')
-}
-
-function checkLayoutRhythmCss(): string[] {
-  const failures: string[] = []
-  const appSidebarCss = readFileSync(join(SRC_DIR, 'shell/app-sidebar.module.css'), 'utf8')
-  const pageBarCss = readFileSync(join(SRC_DIR, 'shell/page-bar.module.css'), 'utf8')
-
-  const railStart = appSidebarCss.indexOf(`@media (min-width: ${SMALL_MIN_EM})`)
-  if (railStart < 0) {
-    failures.push(
-      `layout-rhythm-css: app-sidebar.module.css has no @media (min-width: ${SMALL_MIN_EM}) block`,
-    )
-  } else {
-    const rail = appSidebarCss.slice(railStart)
-    if (!rail.includes('.root[data-collapsed] .footerVersion {\n    display: none;\n  }')) {
-      failures.push(
-        'layout-rhythm-css: .footerVersion hide is not scoped to .root[data-collapsed] inside the ' +
-          'rail media query',
-      )
-    }
-    for (const m of rail.matchAll(/([^{}\n]+)\{\s*display:\s*none;\s*\}/g)) {
-      const selector = m[1]!.trim()
-      if (!selector.endsWith('.footerVersion')) continue
-      if (!selector.includes('[data-collapsed]')) {
-        failures.push(
-          `layout-rhythm-css: an unscoped .footerVersion rule ('${selector}') hides the version ` +
-            'label at every desktop viewport, not just when collapsed',
-        )
-      }
-    }
-    if ([...rail.matchAll(/\.footerIconSlot\s*\{/g)].length > 0) {
-      failures.push(
-        'layout-rhythm-css: .footerIconSlot is duplicated inside the rail media query (should be ' +
-          'declared once, outside it)',
-      )
-    }
-  }
-
-  const barStart = pageBarCss.indexOf('.bar {')
-  if (barStart < 0) {
-    failures.push('layout-rhythm-css: page-bar.module.css has no .bar rule')
-  } else {
-    const bar = pageBarCss.slice(barStart, pageBarCss.indexOf('\n}', barStart))
-    if (!bar.includes('z-index: calc(var(--app-shell-header-z-index, 100) - 1);')) {
-      failures.push(
-        'layout-rhythm-css: .bar does not sit one layer below the AppShell header z-index',
-      )
-    }
-    if (/z-index:\s*1\s*;/.test(bar)) {
-      failures.push('layout-rhythm-css: .bar declares a bare z-index: 1, which a sibling can equal')
-    }
-  }
-
-  const row2Start = pageBarCss.indexOf('.row2Band {')
-  if (row2Start < 0) {
-    failures.push('layout-rhythm-css: page-bar.module.css has no .row2Band rule')
-  } else {
-    const row2 = pageBarCss.slice(row2Start, pageBarCss.indexOf('\n}', row2Start))
-    if (row2.includes('position:')) {
-      failures.push(
-        'layout-rhythm-css: .row2Band declares position: — the shell band owns geometry',
-      )
-    }
-    if (row2.includes('z-index:')) {
-      failures.push('layout-rhythm-css: .row2Band declares z-index:')
-    }
-    if (row2.includes('border-bottom')) {
-      failures.push('layout-rhythm-css: .row2Band declares border-bottom')
-    }
-  }
-
-  const decls = pageBarCss.replace(/\/\*[\s\S]*?\*\//g, '')
-  const mediaStart = decls.indexOf(`@media (max-width: ${SMALL_MAX_EM})`)
-  if (mediaStart < 0) {
-    failures.push(
-      `layout-rhythm-css: page-bar.module.css has no @media (max-width: ${SMALL_MAX_EM}) block`,
-    )
-  } else {
-    const { body: mobileBlock, end: mediaEnd } = extractMediaBlock(decls, mediaStart)
-    const desktopCss = decls.slice(0, mediaStart) + decls.slice(mediaEnd)
-
-    const mobileRow2 = mobileBlock.match(/\.row2\s*\{([^}]*)\}/)
-    if (mobileRow2 === null || !/flex-direction:\s*column/.test(mobileRow2[1] ?? '')) {
-      failures.push(
-        'layout-rhythm-css: the mobile media block does not set .row2 flex-direction: column',
-      )
-    }
-
-    if (decls.includes('flex-wrap: wrap')) {
-      failures.push('layout-rhythm-css: page-bar.module.css declares flex-wrap: wrap (law C7)')
-    }
-    if (decls.includes('overflow-x')) {
-      failures.push('layout-rhythm-css: page-bar.module.css declares overflow-x (law C7)')
-    }
-
-    const pillsStart = decls.indexOf('.pills {')
-    if (pillsStart < 0) {
-      failures.push('layout-rhythm-css: page-bar.module.css has no .pills rule')
-    } else {
-      const pillsRule = decls.slice(pillsStart, decls.indexOf('\n}', pillsStart))
-      if (!pillsRule.includes('flex-wrap: nowrap')) {
-        failures.push('layout-rhythm-css: .pills does not declare flex-wrap: nowrap')
-      }
-    }
-
-    const desktopRow2 = desktopCss.match(/\.row2\s*\{([^}]*)\}/)
-    if (desktopRow2 === null) {
-      failures.push('layout-rhythm-css: no .row2 rule outside the mobile media block')
-    } else if (/flex-direction:\s*column/.test(desktopRow2[1] ?? '')) {
-      failures.push('layout-rhythm-css: desktop .row2 declares flex-direction: column')
-    }
-
-    if (/\.tabs\s*>\s*\*\s*\{/.test(mobileBlock)) {
-      failures.push(
-        'layout-rhythm-css: the mobile tabs selector matches `.tabs > *` — the inert CtlSlot ' +
-          'wrapper, never ViewTabs (display: contents means it must reach past it)',
-      )
-    }
-    if (!/\.tabs\s*>\s*\[data-basalt-tier\]\s*>\s*\*\s*\{/.test(mobileBlock)) {
-      failures.push(
-        'layout-rhythm-css: the mobile tabs selector does not reach past the CtlSlot wrapper',
-      )
-    }
-    if (
-      !/\.tabs\s*>\s*\[data-basalt-tier\]\s*>\s*:global\(\.mantine-Select-root\)\s*\{/.test(
-        mobileBlock,
-      )
-    ) {
-      failures.push('layout-rhythm-css: the mobile tabs Select fallback selector is missing')
-    }
-
-    const emptyPillsRule = mobileBlock.match(/\.pills:not\(:has\(([^)]*)\)\)\s*\{([^}]*)\}/)
-    if (emptyPillsRule === null) {
-      failures.push(
-        'layout-rhythm-css: no .pills:not(:has(...)) rule in the mobile media block (law C14)',
-      )
-    } else {
-      if (!(emptyPillsRule[1] ?? '').includes('> .filters')) {
-        failures.push('layout-rhythm-css: the empty-.pills selector does not exclude > .filters')
-      }
-      if (!(emptyPillsRule[1] ?? '').includes('> .panelPill')) {
-        failures.push('layout-rhythm-css: the empty-.pills selector does not exclude > .panelPill')
-      }
-      if (!/display:\s*none/.test(emptyPillsRule[2] ?? '')) {
-        failures.push('layout-rhythm-css: the empty-.pills rule does not display: none')
-      }
-    }
-  }
-
-  return failures
-}
-
-// ════════════════════════════════════════════════════════════════════════════════════════════════
 // Report
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 
 function main(): number {
-  const failures = [
-    ...checkShadowSurfaces(),
-    ...checkBorderCoverage(),
-    ...checkCtlTierCoverage(),
-    ...checkLayoutRhythmCss(),
-  ]
+  const failures = [...checkShadowSurfaces(), ...checkBorderCoverage(), ...checkCtlTierCoverage()]
 
   if (failures.length === 0) {
-    console.log('✓ check-theme-css: all 4 sections pass.')
+    console.log('✓ check-theme-css: all 3 sections pass.')
     return 0
   }
 

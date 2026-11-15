@@ -105,7 +105,6 @@ const SUBPATHS: Subpath[] = await Promise.all(
       ['./charts', '../../src/charts/index.ts', true],
       ['./tokens', '../../src/tokens/index.ts', true],
       ['./controls', '../../src/controls/index.ts', false],
-      ['./controls-dates', '../../src/controls-dates/index.ts', false],
       ['./forms', '../../src/forms/index.ts', false],
       ['./table', '../../src/table/index.ts', false],
       ['./commands', '../../src/commands/index.ts', false],

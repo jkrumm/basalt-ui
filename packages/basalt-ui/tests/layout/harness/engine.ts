@@ -139,7 +139,7 @@ export type LayoutPage = {
 // the suite at the 2.x oracle checkout or the v3 fixture, and a whole-directory run shares this
 // module across files. Unset, they fall back to this tree's fixture.
 const fixtureEntry = (): string =>
-  process.env['LAYOUT_FIXTURE_ENTRY'] ?? new URL('../fixture/main.tsx', import.meta.url).pathname
+  process.env['LAYOUT_FIXTURE_ENTRY'] ?? new URL('../fixture/v3/main.tsx', import.meta.url).pathname
 const fixtureHtmlPath = (): string =>
   process.env['LAYOUT_FIXTURE_HTML'] ?? new URL('../fixture/index.html', import.meta.url).pathname
 

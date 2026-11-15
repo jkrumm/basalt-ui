@@ -1,12 +1,10 @@
 [
-  "BasaltDataTable",
   "BulkBar",
   "DataTable",
   "DataTableBody",
   "TablePager",
   "TableToolbar",
   "col",
-  "createColumnHelper",
   "tableCodec",
   "useDataTable"
 ]

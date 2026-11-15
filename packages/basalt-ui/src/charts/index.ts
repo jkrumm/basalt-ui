@@ -1,15 +1,15 @@
 /**
- * `basalt-ui/charts` — the chart layer on TanStack Charts (`docs/V2-SPEC.md` § 9). Mantine-free:
- * the rung (`CartesianChart`), the kinds (`Lines`, `Bars`, `StackedArea`, `Sparkline`, `BandStrip`, `Donut`, `Heatmap`, `DualPanel`, `MirroredBars`), the card (`ChartCard`; the 2.x one is `LegacyChartCard`) and the shared
- * cursor (`chartCursor`). Engine marks for `CartesianChart`'s `marks` are imported from the allowed
- * `@tanstack/charts/*` subpaths directly; tokens come from `basalt-ui/tokens`, formatters from
- * `basalt-ui/format`. Nothing here re-exports either, or the engine.
+ * `basalt-ui/charts` — the chart layer on TanStack Charts (`docs/v3/concepts/charts-cards-kanban.md`).
+ * Mantine-free: the rung (`CartesianChart`), the kinds (`Lines`, `Bars`, `Sparkline`,
+ * `Heatmap`, `BandStrip`), the card (`ChartCard`), the shared cursor (`chartCursor`) and the geometry seam (`useChartFocus`, `chartLabels`). Engine marks for
+ * `CartesianChart`'s `marks` are imported from the allowed `@tanstack/charts/*` subpaths directly;
+ * tokens come from `basalt-ui/tokens`, formatters from `basalt-ui/format`. Nothing here re-exports
+ * either, or the engine.
  */
-export { CartesianChart } from './CartesianChart'
-export { Lines, type LinesProps } from './Lines'
-export { Bars, type BarsProps, type BarsBar, type BarsLine } from './Bars'
-export { StackedArea, type StackedAreaProps, type StackedAreaBand } from './StackedArea'
-export { Sparkline, type SparklineProps } from './Sparkline'
+export { CartesianChart } from './parts/cartesian'
+export { Lines, type LinesProps, type LineSeries } from './parts/lines'
+export { Bars, type BarsProps, type BarsSeries } from './parts/bars'
+export { Sparkline } from './parts/sparkline'
 export {
   BandStrip,
   type BandStripProps,
@@ -17,26 +17,9 @@ export {
   type BandSpan,
   type BandFold,
 } from './parts/band-strip'
-export { foldBands } from './parts/band-fold'
-export { Donut, type DonutProps, type DonutDatum } from './Donut'
 export { Heatmap, type HeatmapProps, type HeatmapState } from './parts/heatmap'
-export { DualPanel, type DualPanelProps, type DualPanelLine, type DualPanelBar } from './DualPanel'
-export {
-  MirroredBars,
-  type MirroredBarsProps,
-  type MirroredBarsSeries,
-  type MirroredBarPane,
-} from './MirroredBars'
 export { ChartCard } from './parts/chart-card'
-export type { ChartCardProps, ChartFigure } from './contract'
-/** The 2.x card (`state`, `facts`, children), kept until `v3-teardown-views`; `ChartCard` is the v3 card. */
-export {
-  ChartCard as LegacyChartCard,
-  type ChartCardProps as LegacyChartCardProps,
-  type ChartCardSlot,
-  type ChartFact,
-} from './ChartCard'
-export { chartCursor } from './cursor'
+export { chartCursor } from './core/cursor'
 export {
   useChartFocus,
   type ChartFocus,
@@ -65,24 +48,30 @@ export type {
   TrackTick,
   TrackValue,
 } from './track'
-export { chartCurve, type CurveName } from './curves'
 export type {
-  AxisConfig,
   CartesianChartProps,
-  ChartLegendConfig,
-  ChartMarks,
-  ChartSeries,
-  ChartState,
+  CardAction,
+  ChartCardProps,
+  ChartFigure,
+  ChartPlot,
+  ChartRefLine,
+  ChartSelection,
   ChartTooltipConfig,
-  ChartTooltipRow,
-  ChartX,
-  CursorResolution,
-  PlotContext,
-  PlotRow,
-  RefLine,
-  XRefLine,
-  ResponsiveChartHeight,
-  Threshold,
-  XZoneSpec,
-  ZoneSpec,
-} from './types'
+  ChartZone,
+  CurveName,
+  CustomMarks,
+  Empty,
+  Fact,
+  FootFacts,
+  FrameHead,
+  FrameState,
+  LegendEntry,
+  Marker,
+  Series,
+  SeriesBase,
+  SeriesColor,
+  SparklineProps,
+  SparkPoint,
+  XConfig,
+  YConfig,
+} from './contract'

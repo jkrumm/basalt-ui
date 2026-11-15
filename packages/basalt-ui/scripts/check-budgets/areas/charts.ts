@@ -7,12 +7,12 @@ import type { Raises, RowDef } from '../lib'
 import { measureSource, reExportNamed } from '../ui-bundle'
 
 /** The G1 byte fixtures (gzip B minus `base0`, peers bundled, `../ui-bundle`); seeds are the first build +5%, up to 0.5 KB, ratcheted down only. */
-const SPARKLINE = reExportNamed('charts/Sparkline', ['Sparkline'])
+const SPARKLINE = reExportNamed('charts/parts/sparkline', ['Sparkline'])
 /** `charts-three-kind`: the fixture v3-freeze-g4's marginal rows (Heatmap, BandStrip) subtract against. */
 const THREE_KIND = [
   SPARKLINE,
-  reExportNamed('charts/Lines', ['Lines']),
-  reExportNamed('charts/Bars', ['Bars']),
+  reExportNamed('charts/parts/lines', ['Lines']),
+  reExportNamed('charts/parts/bars', ['Bars']),
 ].join('\n')
 
 export const rows: readonly RowDef[] = [

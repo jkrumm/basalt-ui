@@ -36,6 +36,9 @@ export const VX_NAMES_PATH = resolve(ROOT, 'src/guard/vx-names.ts')
 export const VX_FAMILIES_PATH = resolve(ROOT, 'src/common/vx-families.ts')
 
 const DECLARATION = /(--vx-[A-Za-z0-9-]*[A-Za-z0-9])\s*:/g
+// A name a stylesheet reads with a fallback, `var(--vx-x, 1rem)`, is an optional override hook a
+// host sets (`IconSlot`'s `--vx-space-icon-size`): it is basalt's even when no source declares it.
+const OVERRIDE_HOOK = /var\(\s*(--vx-[A-Za-z0-9-]*[A-Za-z0-9])\s*,/g
 const QUOTED = /['"](--vx-[A-Za-z0-9-]*[A-Za-z0-9])['"]/g
 
 export function collectVxNames(): string[] {
@@ -58,7 +61,8 @@ export function collectVxNames(): string[] {
     }
     const text = readFileSync(resolve(ROOT, rel), 'utf8')
     add(text, DECLARATION)
-    if (!rel.endsWith('.css')) add(text, QUOTED)
+    if (rel.endsWith('.css')) add(text, OVERRIDE_HOOK)
+    else add(text, QUOTED)
   }
   return [...names].toSorted()
 }
