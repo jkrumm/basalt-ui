@@ -30,7 +30,7 @@ describe('parts invariants', () => {
     const { container } = renderTable({
       onRowActivate,
       selection: { bulk: [] },
-      columns: [c.text('name'), c.actions([{ key: 'go', label: 'Go', onClick: () => undefined }])],
+      columns: [c.text('name'), c.actions([{ id: 'go', label: 'Go', onClick: () => undefined }])],
     })
     fireEvent.click(container.querySelector('tbody input[type="checkbox"]') as HTMLElement)
     fireEvent.click(
@@ -140,11 +140,11 @@ describe('parts invariants', () => {
         // `api.ts` types the narrow action shape; `disabled(row)` is part of the contract's RowAction.
         c.actions([
           {
-            key: 'go',
+            id: 'go',
             label: 'Go',
             onClick: () => undefined,
             disabled: (row: Row) => row.id === 'a',
-          } as { key: string; label: string; onClick(row: Row): void },
+          } as { id: string; label: string; onClick(row: Row): void },
         ]),
       ],
       data: ROWS,

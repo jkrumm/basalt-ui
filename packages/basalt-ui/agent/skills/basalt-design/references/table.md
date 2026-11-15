@@ -74,7 +74,7 @@ export function Orders({ rows, total }: { rows: readonly Order[]; total: number 
     data: rows,
     getRowId: (row) => row.id,
     mode: { kind: 'server', rowCount: total },
-    selection: { bulk: [{ key: 'archive', label: 'Archive', onClick: (picked) => picked.length }] },
+    selection: { bulk: [{ id: 'archive', label: 'Archive', onClick: (picked) => picked.length }] },
     onRowActivate: (row) => row.id,
   })
   return <DataTable table={t} />

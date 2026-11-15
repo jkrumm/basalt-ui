@@ -60,7 +60,7 @@ export function BulkBar<T>({
         const Icon = action.icon
         return (
           <Button
-            key={action.key}
+            key={action.id}
             onClick={() => action.onClick(selection.rows(bulk.data), selection.selection)}
           >
             {Icon !== undefined && <Icon aria-hidden="true" size={16} />}

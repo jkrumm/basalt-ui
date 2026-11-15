@@ -36,7 +36,7 @@ A page is composed from the shipped frame; each bullet names what holds it.
 - A table is `DataTable` over `useDataTable`; never a raw table or the table library's hook. [lint:primitive-bypass] [lint:import-boundary]
 - Columns come from the kind constructors; a raw column or a free `cell` is not a column. [type:KindColumn]
 - A client table has no `rowCount`; a server table has a `rowCount` or a `cursor`, never both. [type:Mode]
-- A row action is typed data: `label`, `onClick(row)`, optional `disabled(row)`. [type:RowAction]
+- A row action is typed data: `id`, `label`, `onClick(row)`, optional `disabled(row)`. [type:RowAction]
 - A virtual table passes `virtual` with a fixed scrollport height. [type:DataTableProps]
 
 ## Forms

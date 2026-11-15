@@ -25,7 +25,7 @@ export type ColFactory<T> = {
       commit: (row: T, value: string) => void
     },
   ): KindColumn<T>
-  actions(actions: readonly { key: string; label: string; onClick(row: T): void }[]): KindColumn<T>
+  actions(actions: readonly { id: string; label: string; onClick(row: T): void }[]): KindColumn<T>
 }
 
 type Api = {

@@ -83,7 +83,7 @@ const ALL = () => [
     options: ['Food'],
     commit: () => {},
   }),
-  c.actions([{ key: 'edit', label: 'Edit', onClick: () => {} }]),
+  c.actions([{ id: 'edit', label: 'Edit', onClick: () => {} }]),
   c.custom('score', { render: () => 'x', sortValue: (r) => r.count, card: 'meta', priority: 3 }),
 ]
 

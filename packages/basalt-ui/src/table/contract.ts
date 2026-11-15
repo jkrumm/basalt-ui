@@ -65,7 +65,7 @@ export type KindColumn<T> = {
 export type StateHandle<S> = { use(): [S, (next: S) => void] }
 
 export type BulkAction<T> = {
-  key: string
+  id: string
   label: string
   onClick(rows: readonly T[], selection: Selection): void
   icon?: IconComponent
@@ -131,7 +131,7 @@ export type ViewStore = {
 }
 
 export type RowAction<T> = {
-  key: string
+  id: string
   label: string
   onClick(row: T): void
   icon?: IconComponent

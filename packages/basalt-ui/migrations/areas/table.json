@@ -3,6 +3,16 @@
   "area": "table",
   "rows": [
     {
+      "id": "tb-action-id",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/table#RowAction.key and BulkAction.key",
+      "to": "id",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "an action's identity is `id` in the table, the page and the shell; no alias, so a stale `key` is a type error",
+      "verify": "tsc: an action with a key and no id does not compile"
+    },
+    {
       "id": "tb-BasaltDataTable",
       "kind": "replace",
       "from": "basalt-ui/table#BasaltDataTable",
