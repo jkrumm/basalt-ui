@@ -215,9 +215,9 @@ function EditOrderForm({ order }: { order: Order }): ReactElement {
       }}
     >
       <Fieldset disabled={form.state.isSubmitting}>
-        <p role="status" className="m-0 text-sm text-muted-foreground empty:hidden">
+        <output className="block text-sm text-muted-foreground empty:hidden">
           {draft.status === 'restored' ? 'Draft restored from this device.' : null}
-        </p>
+        </output>
         {/* A Select homed by its FormField alone, outside a FormRow: state-2.13's waiver case. */}
         <form.Field name="status">
           {(f) => (
