@@ -122,7 +122,7 @@ export const NAV = defineNav({
 const store = defineControls({ id: 'settings', scope: 'page',
   fields: { section: field.enum(SECTIONS, 'general', { history: 'push' }) } })
 
-<SplitPage selected={store.field.section.isSet}                 // narrow: list when unset, pane when set; CSS only
+<SplitPage selected={store.field.section.useIsSet()}                 // narrow: list when unset, pane when set; CSS only
   list={() => <InnerNav label="Settings" state={store.field.section} filter={filterSlot([qSpec])}
     groups={[{ id: 'account', label: 'Account', items: [
       { id: 'general', label: 'General', icon: Cog },
