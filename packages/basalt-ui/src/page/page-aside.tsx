@@ -1,6 +1,7 @@
 import { useContext, useId, useRef, useState, useSyncExternalStore } from 'react'
-import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import type { CSSProperties, KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { focusLost, focusMain } from '../common/focus'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { page } from '../core/messages/page'
 import { useMessages } from '../core/messages/use-messages'
@@ -46,8 +47,17 @@ export function PageAsidePanel({
 }: PanelProps): ReactElement {
   const t = useMessages(page)
   const style: PanelStyle = { '--page-aside-w': `${width}px` }
+  // Escape inside the panel closes it. A control that used the key itself (a menu, a combobox
+  // popup) has already prevented the default, and the key was theirs.
+  const escape = (event: KeyboardEvent<HTMLElement>): void => {
+    if (event.key !== 'Escape' || event.defaultPrevented || onClose === undefined) return
+    event.preventDefault()
+    onClose()
+  }
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape bubbles from the controls inside; the landmark itself takes no input
     <aside
+      onKeyDown={escape}
       data-slot="page-aside"
       data-dock={dock}
       aria-label={title}
@@ -95,6 +105,38 @@ const DETAIL_BOX = { height: 'fill', phase: 'ready' } as const
 
 const noSubscribe = (): (() => void) => () => {}
 
+/**
+ * Remembers what had focus when the aside opened and gives focus back to it when the aside closes,
+ * else to the shell's main: closing removes the control that was focused (the close button), and
+ * focus left on `<body>` makes the next Tab start at the skip link. Focus that already went
+ * somewhere real (the reader moved on) stays there.
+ */
+function useReturnFocus(isOpen: boolean): void {
+  const opener = useRef<HTMLElement | null>(null)
+  const wasOpen = useRef(isOpen)
+  useIsomorphicLayoutEffect(() => {
+    const was = wasOpen.current
+    wasOpen.current = isOpen
+    if (isOpen === was) return undefined
+    if (isOpen) {
+      const active = document.activeElement
+      opener.current = active instanceof HTMLElement && active !== document.body ? active : null
+      return undefined
+    }
+    const target = opener.current
+    opener.current = null
+    // A frame later: the panel's own unmount can land after this effect.
+    const frame = requestAnimationFrame(() => {
+      const active = document.activeElement
+      const inPanel = active instanceof HTMLElement && active.closest('[data-slot="page-aside"]')
+      if (!focusLost() && inPanel === null) return
+      if (target?.isConnected === true) target.focus({ preventScroll: true })
+      else focusMain()
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [isOpen])
+}
+
 function AsideView({
   title,
   width = DEFAULT_ASIDE_WIDTH,
@@ -120,6 +162,7 @@ function AsideView({
   const wide = host !== null || (context?.wide ?? true)
   const isOpen = detail !== null || (open ?? wide)
   const owns = snapshot?.owner === undefined || snapshot.owner.id === id
+  useReturnFocus(isOpen)
 
   useIsomorphicLayoutEffect(() => {
     if (context === null) return undefined

@@ -9,10 +9,10 @@
 import { useRouterState } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent, ReactElement } from 'react'
+import { SHELL_MAIN_ID, focusLost, focusMain } from '../../common/focus'
 import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
 
-/** The `id` of the one scrollport, the skip link's target. */
-export const SHELL_MAIN_ID = 'shell-main'
+export { SHELL_MAIN_ID }
 
 /**
  * The shell's own strings. `shell.*` message keys belong to the messages concept (v3-qa-i2) and are
@@ -109,16 +109,10 @@ export function useRouteFocus(pathname: string): void {
     seen.current = pathname
     const frame = requestAnimationFrame(() => {
       if (!focusLost()) return
-      document.getElementById(SHELL_MAIN_ID)?.focus({ preventScroll: true })
+      focusMain()
     })
     return () => cancelAnimationFrame(frame)
   }, [pathname])
-}
-
-/** Whether focus fell to the document: nothing is focused, or it is `<body>`. */
-export function focusLost(): boolean {
-  const active = document.activeElement
-  return active === null || active === document.body
 }
 
 /**

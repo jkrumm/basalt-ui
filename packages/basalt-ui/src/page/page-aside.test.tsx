@@ -221,6 +221,89 @@ describe('PageAside as a column (the page is at least wide)', () => {
   })
 })
 
+/** A row that opens the aside through shared state, as a table row does. */
+function RowAndAside() {
+  const [open, setOpen] = useState(false)
+  const bound: ControlHandle<boolean> = {
+    key: 'inspector',
+    kind: 'boolean',
+    use: () => [open, setOpen],
+    useSource: () => ({ source: 'own', inherited: undefined }),
+    clear: () => setOpen(false),
+    isDefault: !open,
+  }
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Open row
+      </button>
+      <main id="shell-main" tabIndex={-1}>
+        <Page>
+          <PageAside title="A" state={bound}>
+            x
+          </PageAside>
+        </Page>
+      </main>
+    </>
+  )
+}
+
+const frames = (): Promise<void> =>
+  new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+
+describe('PageAside focus and Escape', () => {
+  test('closing with the button returns focus to the row that opened it', async () => {
+    setWidth(WIDE)
+    render(<RowAndAside />)
+    const row = screen.getByRole('button', { name: 'Open row' })
+    row.focus()
+    fireEvent.click(row)
+    const close = screen.getByRole('button', { name: 'Close panel' })
+    close.focus()
+    fireEvent.click(close)
+    await act(frames)
+    expect(aside()).toBeNull()
+    expect(document.activeElement).toBe(row)
+  })
+
+  test('Escape inside the panel closes it and returns focus the same way', async () => {
+    setWidth(WIDE)
+    render(<RowAndAside />)
+    const row = screen.getByRole('button', { name: 'Open row' })
+    row.focus()
+    fireEvent.click(row)
+    screen.getByRole('button', { name: 'Close panel' }).focus()
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Close panel' }), { key: 'Escape' })
+    await act(frames)
+    expect(aside()).toBeNull()
+    expect(document.activeElement).toBe(row)
+  })
+
+  test('Escape that a control inside already used does not close it', () => {
+    setWidth(WIDE)
+    render(<RowAndAside />)
+    fireEvent.click(screen.getByRole('button', { name: 'Open row' }))
+    const close = screen.getByRole('button', { name: 'Close panel' })
+    close.addEventListener('keydown', (event) => event.preventDefault())
+    fireEvent.keyDown(close, { key: 'Escape' })
+    expect(aside()).not.toBeNull()
+  })
+
+  test('with no opener the focus goes to main', async () => {
+    setWidth(WIDE)
+    render(<RowAndAside />)
+    const row = screen.getByRole('button', { name: 'Open row' })
+    // A pointer click that gave the row no focus (Safari buttons): nothing to return to.
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    fireEvent.click(row)
+    const close = screen.getByRole('button', { name: 'Close panel' })
+    close.focus()
+    fireEvent.click(close)
+    await act(frames)
+    expect(document.activeElement).toBe(document.getElementById('shell-main'))
+  })
+})
+
 describe('PageAside as a sheet (the page is narrower than wide)', () => {
   test('renders no column, only a trigger named by the title; the body is not mounted', () => {
     setWidth(NARROW)
