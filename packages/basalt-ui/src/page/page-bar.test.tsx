@@ -374,22 +374,32 @@ describe('PageBar actions', () => {
     expect(cls).toContain('@wide:inline-flex')
   })
 
-  test('the primary and the first two actions stay in the bar; the third folds', () => {
+  test('only the primary stays in the phone bar; the rest fold into the one overflow menu', () => {
     render(
       <Page>
-        <PageBar actions={[action('a'), action('b'), action('c')]} />
+        <PageBar actions={[action('a', { primary: true }), action('b'), action('c')]} />
       </Page>,
     )
     expect(document.querySelector('[data-action-id="a"]')!.className).not.toContain('hidden')
-    expect(document.querySelector('[data-action-id="b"]')!.className).not.toContain('hidden')
+    expect(document.querySelector('[data-action-id="b"]')!.className).toContain('hidden')
     expect(document.querySelector('[data-action-id="c"]')!.className).toContain('hidden')
-    expect(screen.getByRole('button', { name: 'More actions' })).toBeDefined()
+    expect(screen.getAllByRole('button', { name: 'More actions' })).toHaveLength(1)
+  })
+
+  test("an explicit mobile: 'bar' keeps a non-primary action in the phone bar", () => {
+    render(
+      <Page>
+        <PageBar actions={[action('a', { primary: true }), action('b', { mobile: 'bar' })]} />
+      </Page>,
+    )
+    expect(document.querySelector('[data-action-id="b"]')!.className).not.toContain('hidden')
+    expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull()
   })
 
   test('there is no overflow menu when nothing folds', () => {
     render(
       <Page>
-        <PageBar actions={[action('a'), action('b')]} />
+        <PageBar actions={[action('a', { primary: true })]} />
       </Page>,
     )
     expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull()

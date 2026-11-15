@@ -46,30 +46,6 @@ const STATE_KNOWN: readonly KnownFinding[] = [
 // a kit part the build composes, owned by the fix row that removes it (shell-1.21); the gate conflict
 // that puts these lines in a cycle PR is shell-1.22.
 const SHELL_KNOWN: readonly KnownFinding[] = [
-  {
-    route: '/cycle/shell',
-    assertion: 'axe',
-    item: /^color-contrast \(serious\)/,
-    owner: 'v3-shell-1-visual: the chart card fact value text contrast (as /overview)',
-  },
-  {
-    route: '/cycle/shell',
-    assertion: 'ringWalk',
-    item: /fieldset>button ".*no focus outline/,
-    owner: 'v3-shell-1-visual: chart legend toggles have no focus ring (as /charts)',
-  },
-  {
-    route: '/cycle/shell',
-    assertion: 'overflow',
-    item: /^320px: document scrollWidth \d+ > 320/,
-    owner: 'v3-shell-1-visual: two page actions overflow the phone header (shell-1.14)',
-  },
-  {
-    route: '/cycle/shell/services',
-    assertion: 'forcedColors',
-    item: /^\[empty-state\] div \d+x\d+$/,
-    owner: 'v3-shell-1-visual: the empty state frame vanishes under forced colors',
-  },
   // `filterSlot` in a page bar draws the folding `FilterSet` (F2 n12), whose pill row clips at its
   // border box; the same finding /overview lists. The row's own clip margin paints the ring, the walk measures the box.
   ...['/cycle/shell', '/cycle/shell/services'].map((route): KnownFinding => ({
@@ -100,12 +76,6 @@ export const KNOWN: readonly KnownFinding[] = [
       owner: 'playground gallery (2.x Mantine specimens): retires with the legacy barrel',
     }),
   ),
-  {
-    route: '/overview',
-    assertion: 'axe',
-    item: /^color-contrast \(serious\)/,
-    owner: 'overview: the fact value text contrast',
-  },
   {
     route: '/overview',
     assertion: 'ringWalk',
@@ -162,12 +132,6 @@ export const KNOWN: readonly KnownFinding[] = [
     owner: 'charts: focusable plot ring contrast',
   },
   {
-    route: '/charts',
-    assertion: 'ringWalk',
-    item: /fieldset>button ".*no focus outline/,
-    owner: 'charts: legend toggles have no focus ring',
-  },
-  {
     route: '/scenarios/s1-ops',
     assertion: 'axe',
     item: /^color-contrast \(serious\)/,
@@ -178,12 +142,6 @@ export const KNOWN: readonly KnownFinding[] = [
     assertion: 'ringWalk',
     item: /svg ".*outline is clipped/,
     owner: 'charts: focusable plot ring is clipped by its card',
-  },
-  {
-    route: '/scenarios/s1-ops',
-    assertion: 'ringWalk',
-    item: /fieldset>button ".*no focus outline/,
-    owner: 'charts: legend toggles have no focus ring',
   },
   {
     route: '/scenarios/s1-ops',

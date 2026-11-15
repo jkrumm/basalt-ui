@@ -318,6 +318,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
               data-legend-key={s.key}
               data-legend-role={s.role ?? 'series'}
               data-basalt-hit=""
+              className={classes.toggle}
               aria-pressed={!off}
               style={itemStyle}
               onClick={() => props.onToggle(s.key)}

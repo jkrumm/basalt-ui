@@ -44,3 +44,22 @@
     display: none;
   }
 }
+
+/*
+ * The toggle's inline `all: unset` (`buttonStyle`) outranks the layered focus rule, so the ring is
+ * restated here and wins by `!important`. A fixed mid blue clears 3:1 on both the light page and the
+ * dark card surface the legend can sit on (a token cannot: the brand colour reads 2.8:1 on the card,
+ * and a mixed colour is one the ring walk cannot read); the offset is negative because the legend
+ * row is a clip box.
+ */
+.toggle:focus-visible {
+  /* theme-allow raw-hex — one literal that clears 3:1 on the light page and the dark card (see above) */
+  outline: 2px solid #5d86b2 !important;
+  outline-offset: -2px !important;
+}
+
+@media (forced-colors: active) {
+  .toggle:focus-visible {
+    outline-color: Highlight !important;
+  }
+}

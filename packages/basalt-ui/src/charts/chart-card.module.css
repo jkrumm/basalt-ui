@@ -79,7 +79,9 @@
   font-weight: 500;
   font-variant-numeric: lining-nums;
   letter-spacing: -0.02em;
-  color: var(--vx-ink);
+  /* The card paints `--vx-surface-panel`, so the value takes the ink that pairs with it. Plain
+   * `--vx-ink` is the v3 token and follows `data-theme`, which that surface does not. */
+  color: var(--vx-ink2, var(--vx-ink));
 }
 
 .factUnit,
