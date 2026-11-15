@@ -280,7 +280,16 @@ export type ChartFigure = {
   status?: Status
 }
 
-export type ChartCardProps = FrameState & {
+/** A query result with its rows: `empty` then applies only when `data` is an empty array. */
+type ChartQueryState = QueryStateLike & { data?: unknown }
+
+export type ChartCardProps = Omit<FrameState, 'phase'> & {
+  /**
+   * A `Phase` or the query itself. With a query, `empty` takes effect only once `data` is an empty
+   * array, so it can be passed unconditionally; with a `Phase`, `empty` applies whenever it is set.
+   */
+  phase?: Phase | ChartQueryState
+
   figure?: ChartFigure
   /** The legend row for marks the page draws through the seam, drawn in every phase. */
   legend?: readonly LegendEntry[]
