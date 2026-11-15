@@ -139,3 +139,37 @@ layout('CardGrid tracks follow the closed min', () => {
     })
   }
 })
+
+layout('CardGrid shares the row among its cards', () => {
+  const WIDE_1510: Viewport = { name: 'wide 1510', width: 1510, height: 900 }
+  const read = async (cards: number, viewport: Viewport) => {
+    const page = await openFixture(gridSpec('narrow', cards), viewport)
+    return page.raw.evaluate(() => {
+      const boxes = [...document.querySelectorAll<HTMLElement>('[data-testid="grid-card"]')].map(
+        (card) => {
+          const r = card.getBoundingClientRect()
+          return { left: r.left, right: r.right, top: r.top, width: r.width }
+        },
+      )
+      return boxes
+    })
+  }
+
+  test('1510px: four cards take a quarter of the row each, no empty track', async () => {
+    const boxes = await read(4, WIDE_1510)
+    const inner = WIDE_1510.width - 2 * PAD
+    const quarter = (inner - 3 * GAP) / 4
+    expect(new Set(boxes.map((b) => b.top)).size, 'one row').toBe(1)
+    for (const b of boxes) expect(b.width).toBeCloseTo(quarter, 0)
+    expect(boxes[3]!.right, 'the last card reaches the content edge').toBeCloseTo(
+      WIDE_1510.width - PAD,
+      0,
+    )
+  })
+
+  test('390px: six cards stack one per row', async () => {
+    const boxes = await read(6, PHONE)
+    expect(new Set(boxes.map((b) => b.top)).size).toBe(6)
+    for (const b of boxes) expect(b.width).toBeCloseTo(PHONE.width - 2 * PAD, 0)
+  })
+})

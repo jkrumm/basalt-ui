@@ -35,8 +35,8 @@ describe('CardGrid', () => {
       expect(cardGridVariants({ min })).toContain('min(100%,')
   })
 
-  test('the tracks auto-fill: no column count is written anywhere', () => {
+  test('the tracks auto-fit: empty tracks collapse, no column count is written anywhere', () => {
     for (const min of ['narrow', 'regular', 'wide'] as const)
-      expect(cardGridVariants({ min })).toContain('repeat(auto-fill,')
+      expect(cardGridVariants({ min })).toContain('repeat(auto-fit,')
   })
 })
