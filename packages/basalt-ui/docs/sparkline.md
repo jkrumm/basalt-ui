@@ -29,3 +29,9 @@ Sparkline(props: SparklineProps): ReactElement
   format?: (v: number) => string
   summary?: string
 ```
+
+## Example
+
+```tsx
+<Sparkline series={perDay} height={72} axisLabels={['Mon', 'Today', 'Sun']} ariaLabel="Shipped per day" />
+```

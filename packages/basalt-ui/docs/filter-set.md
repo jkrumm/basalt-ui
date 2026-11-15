@@ -19,13 +19,7 @@ holds every option counts as none), and the sheet's `Reset all` unsets them. Ins
 
 ```ts
 FilterSet(props: FilterSetProps): ReactElement | ReactNode
-  // either specs or children
-  specs?: readonly FilterSpec<any, FilterScope>[]
-  children?: ReactNode
-  className?: string  [with children]  // Appended to the root element's own class — never replaces it
-  style?: CSSProperties  [with children]  // Merged onto the root element's own inline style, if it has one
-  classNames?: Partial<Record<"root" | "sheet", string>>  [with children]
-  inline?: number  [with children]  // How many children stay inline pills below `sm`; default 1
+  specs: readonly FilterSpec<any, FilterScope>[]
 ```
 
 ## Example

@@ -23,7 +23,7 @@ RefreshButton({ syncing, lastCompletedAt, onSync, scope, label, error, className
   syncing: boolean  // True while a refresh runs: the button is busy and refuses a second press
   lastCompletedAt?: number | Date | null  // Last successful completion
   onSync: () => void
-  scope: "page" | "global"  // The home, and with it the shape: `'global'` is icon-only at every width (the shell header), `'page'` is label…
+  scope: "global" | "page"  // The home, and with it the shape: `'global'` is icon-only at every width (the shell header), `'page'` is label…
   label?: string  // The visible label of the `'page'` form and the accessible name of every form
   error?: string  // The last failure: names the button (`Refresh — <error>`) and shows in its tooltip
   className?: string  // Layout only (`ml-auto`, `shrink-0`)
