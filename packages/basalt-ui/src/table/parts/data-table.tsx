@@ -23,16 +23,39 @@ import { revealFocus, scrollMinWidth, tierAttributesOf, warnWithoutTierSheet } f
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 
+/** A flexible `entity` column takes this many shares of the free width, a flexible text one takes 1. */
+const ENTITY_SHARES = 2
+const SELECTION_COL_PX = 40
+
 /** `<col>` widths of the plan: fixed kinds in px, flexible ones share the rest. One set at every phase. */
 function Columns<T>({ model }: { model: TableModel<T> }): ReactElement {
+  const visible = visibleColumns(model.specs, model.plan.columns)
+  const isFlexible = (spec: (typeof visible)[number]['spec']) =>
+    spec.width !== 'icon' && spec.width.flex && spec.content === undefined
+  const fixedPx = visible.reduce(
+    (sum, { spec, planned }) => (isFlexible(spec) ? sum : sum + planned.widthPx),
+    model.selection === undefined ? 0 : SELECTION_COL_PX,
+  )
+  const shares = visible.reduce(
+    (sum, { spec }) =>
+      isFlexible(spec) ? sum + (spec.kind === 'entity' ? ENTITY_SHARES : 1) : sum,
+    0,
+  )
   return (
     <colgroup>
       {model.selection !== undefined && <col style={{ width: '2.5rem' }} />}
-      {visibleColumns(model.specs, model.plan.columns).map(({ spec, planned }) => {
-        const flexible = spec.width !== 'icon' && spec.width.flex && spec.content === undefined
+      {visible.map(({ spec, planned }) => {
+        const flexible = isFlexible(spec)
+        // The title is the row's name: it gets a larger share of the free width, never less than its floor.
+        const weighted = flexible && spec.kind === 'entity' && shares > ENTITY_SHARES
         return (
           <col
             key={spec.id}
+            {...(weighted && {
+              style: {
+                width: `max(${planned.widthPx}px, calc((100cqw - ${fixedPx}px) * ${ENTITY_SHARES / shares}))`,
+              },
+            })}
             {...(!flexible && { style: { width: `${planned.widthPx}px` } })}
             data-flex={flexible ? '' : undefined}
             data-priority={planned.priority === null ? undefined : String(planned.priority)}

@@ -133,11 +133,14 @@ export function EntityCell({
   return (
     <span data-slot="table-entity" className="flex min-w-0 items-center gap-2">
       {Icon !== undefined && <Icon aria-hidden="true" size={16} />}
-      <span data-slot="table-entity-name" className="min-w-0 truncate">
+      <span data-slot="table-entity-name" className="max-w-full min-w-0 shrink-0 truncate">
         {name}
       </span>
       {sub !== undefined && (
-        <span data-slot="table-entity-sub" className="min-w-0 truncate text-muted-foreground">
+        <span
+          data-slot="table-entity-sub"
+          className="min-w-0 flex-1 truncate text-muted-foreground"
+        >
           {sub}
         </span>
       )}

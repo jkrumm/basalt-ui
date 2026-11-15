@@ -114,6 +114,25 @@ layout('expression cycle 2 table and StatGroup fixes', () => {
       for (const gap of gaps) expect(gap).toBeGreaterThan(0)
     })
 
+    if (viewport === WIDE) {
+      test(`${at}: an entity title reads in full beside its sub`, async () => {
+        const p = await open(viewport)
+        const cells = await p.raw.evaluate(() =>
+          [
+            ...document.querySelectorAll(
+              '[data-testid="k2-table-title-first"] [data-slot="table-entity"]',
+            ),
+          ].map((cell) => {
+            const name = cell.querySelector<HTMLElement>('[data-slot="table-entity-name"]')
+            if (!name) throw new Error('LAYOUT: an entity cell lacks its name')
+            return { cut: name.scrollWidth - name.clientWidth }
+          }),
+        )
+        expect(cells.length).toBeGreaterThan(0)
+        for (const cell of cells) expect(cell.cut).toBeLessThanOrEqual(0)
+      })
+    }
+
     for (const id of ['k2-table-narrow', 'k2-table-scroll', 'k2-table-mid']) {
       test(`${at}: ${id}: no cell's text reaches into the next cell`, async () => {
         const p = await open(viewport)

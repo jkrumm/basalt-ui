@@ -7,6 +7,8 @@
  * - `k2-table-mid`: the same columns in a 560 px box (the reduced tier, columns side by side);
  * - `w1-orders`: the wiring cycle 1 client table (entity, money, status, date), default `phone`
  *   and `cardsBelow`;
+ * - `k2-table-title-first`: a 60-character title with a 70-character sub in a 1500 px table beside
+ *   six short columns;
  * - `k2-table-ready-<14|17>`: a loaded table of that many rows;
  * - `k2-table-reload-<14|17>`: the same, flipped to loading by `window.k2Loading(id, true)`.
  */
@@ -34,6 +36,7 @@ const rows = (count: number): Row[] =>
   }))
 
 const c = col<Row>()
+const c2 = col<Issue>()
 
 function columns(): UseDataTable<Row>['columns'] {
   return [
@@ -63,6 +66,51 @@ function Orders(): ReactElement {
       o.date('placed'),
     ],
     data: ORDERS,
+    getRowId: (r) => r.id,
+    mode: { kind: 'client' },
+  })
+  return <DataTable table={t} />
+}
+
+type Issue = {
+  id: string
+  ref: string
+  project: string
+  title: string
+  why: string
+  state: string
+  kind: string
+  origin: string
+  at: string
+}
+const TITLE = 'A sixty character issue title that must read in full in its cell'
+const WHY = 'A seventy character reason that follows the title and gives way to it first'
+const ISSUES: Issue[] = Array.from({ length: 3 }, (_, i) => ({
+  id: `t${i}`,
+  title: TITLE,
+  why: WHY,
+  ref: `issue_${1440 + i}`,
+  project: 'basalt-ui',
+  state: i % 2 === 0 ? 'Open' : 'Done',
+  kind: 'bug',
+  origin: 'factory',
+  at: '2026-11-0' + String(i + 1),
+}))
+
+function TitleFirst(): ReactElement {
+  const t = useDataTable<Issue>({
+    id: 'k2-table-title-first',
+    label: 'Issues',
+    columns: [
+      c2.entity('title', { header: 'Issue', sub: (r) => r.why }),
+      c2.text('ref', { header: 'Issue' }),
+      c2.text('project', { header: 'Project' }),
+      c2.status('state', { header: 'State', options: ['Open', 'Done'] }),
+      c2.text('kind', { header: 'Kind' }),
+      c2.text('origin', { header: 'Origin' }),
+      c2.date('at', { header: 'Opened' }),
+    ],
+    data: ISSUES,
     getRowId: (r) => r.id,
     mode: { kind: 'client' },
   })
@@ -115,6 +163,9 @@ function Fixture(): ReactElement {
     <main lang="en" className="flex flex-col gap-8 p-4 text-foreground">
       <div data-testid="w1-orders" className="min-w-0">
         <Orders />
+      </div>
+      <div data-testid="k2-table-title-first" className="min-w-0" style={{ width: 1500 }}>
+        <TitleFirst />
       </div>
       {PROBES.map(({ id, count, phone, width }) => (
         <div
