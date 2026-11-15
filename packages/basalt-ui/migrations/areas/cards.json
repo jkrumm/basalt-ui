@@ -130,7 +130,7 @@
     {
       "id": "cards-onclick",
       "kind": "renamed-prop",
-      "from": "CardAction, CardTarget and BarList row onSelect",
+      "from": "basalt-ui/cards#StatCard.target.onSelect",
       "to": "onClick",
       "profiles": ["parts", "app"],
       "manual": true,
