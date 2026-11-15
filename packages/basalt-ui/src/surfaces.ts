@@ -230,7 +230,7 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./forms, ./state, ./table, ./format, ./commands, ./agent, ./content, ./vite, plus the v3 subpaths ./router, ./data, ./page, ./cards, ./ai, ./ui/*, ./core/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
+ * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./table, ./format, ./content, ./vite, plus the v3 subpaths ./router, ./data, ./page, ./cards, ./ai, ./ui/*, ./core/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
  * - #-prefixed synthetic keys (#app) — the synthetic global app-wide ban layer. The #-prefix
  *   guarantees it is never mistaken for an export path.
  *
@@ -483,11 +483,11 @@ export const SURFACES = {
       ),
       v(
         '@mantine/form',
-        '@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Only ./forms needs it.',
+        '@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Nothing in the package needs it.',
       ),
       vg(
         '@mantine/form/*',
-        '@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Only ./forms needs it.',
+        '@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Nothing in the package needs it.',
       ),
     ],
   },
