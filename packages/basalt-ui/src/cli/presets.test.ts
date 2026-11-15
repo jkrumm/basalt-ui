@@ -6,6 +6,7 @@ import { describe, expect, it } from 'bun:test'
 
 import { packageRoot } from './index'
 import type { Manifest } from './manifest'
+import { parseManifest, serializeManifest } from './manifest'
 import { renderOxlintPreset, renderStylelintPreset } from './presets'
 
 type Override = { files: string[]; rules: Record<string, unknown> }
@@ -28,6 +29,10 @@ const overridesOf = (m: Manifest): Override[] => {
   const text = renderOxlintPreset(m, packageRoot())
   return (JSON.parse(text ?? '{}') as { overrides: Override[] }).overrides
 }
+
+const rulesOf = (m: Manifest): Record<string, unknown> =>
+  (JSON.parse(renderOxlintPreset(m, packageRoot()) ?? '{}') as { rules: Record<string, unknown> })
+    .rules
 
 const row = (path: string): Record<string, unknown> => ({
   path,
@@ -85,6 +90,50 @@ describe('renderOxlintPreset', () => {
 
   it('without roots or ejected rows the preset is the shipped profile', () => {
     expect(overridesOf(manifest({}))).toEqual([])
+  })
+
+  it('passes a grid track list and writes the message options at the app profile', () => {
+    const rules = rulesOf(manifest({}))
+    expect(rules['shadcn/no-arbitrary-values']).toEqual([
+      'error',
+      {
+        allow: ['grid-cols-[*]', 'grid-rows-[*]', '*:grid-cols-[*]', '*:grid-rows-[*]'],
+        message: expect.stringContaining('step of the spacing ladder'),
+      },
+    ])
+    const restyle = rules['shadcn/no-restyle'] as [string, { message?: { spacing?: string } }]
+    expect(restyle[1].message?.spacing).not.toContain('margin')
+  })
+
+  it('zone E merges the Base UI vars with the grid track allow', () => {
+    const path = 'src/components/ui/button.tsx'
+    const zone = overridesOf(manifest({ ejected: { '.#button': row(path) } })).find(
+      (o) => o.files.includes(path) && 'shadcn/no-restyle' in o.rules,
+    )
+    const rule = zone?.rules['shadcn/no-arbitrary-values'] as [string, { allow: string[] }]
+    const options = rule[1]
+    expect(options.allow).toContain('origin-(--transform-origin)')
+    expect(options.allow).toContain('grid-cols-[*]')
+  })
+
+  it('classPrefixes allow a third-party prefix, bare and under a variant', () => {
+    expect(rulesOf(manifest({}))['shadcn/no-unknown-classes']).toBe('error')
+    expect(
+      rulesOf(manifest({ classPrefixes: ['maplibregl-'] }))['shadcn/no-unknown-classes'],
+    ).toEqual(['error', { allow: ['maplibregl-*', '*:maplibregl-*'] }])
+  })
+})
+
+describe('manifest classPrefixes', () => {
+  it('round-trips, is absent when unset, and rejects a non-string list', () => {
+    const text = serializeManifest(manifest({ classPrefixes: ['maplibregl-'] }))
+    const parsed = parseManifest(text)
+    expect('manifest' in parsed && parsed.manifest.classPrefixes).toEqual(['maplibregl-'])
+    const bare = parseManifest(JSON.stringify({ profile: 'app', version: '3.0.0' }))
+    expect('manifest' in bare && bare.manifest.classPrefixes).toBeUndefined()
+    expect('error' in parseManifest(JSON.stringify({ profile: 'app', classPrefixes: [1] }))).toBe(
+      true,
+    )
   })
 })
 

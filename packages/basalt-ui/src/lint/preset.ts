@@ -45,6 +45,47 @@ export const BASE_UI_VARS = [
   'h-(--collapsible-panel-height)',
 ] as const
 
+/**
+ * `no-arbitrary-values` passes a grid track list: `grid-cols-[auto_1fr]` carries no length. A length
+ * inside one is `basalt/tw-off-law` `track-length`'s. An entry with `:` is a full-token glob, so the
+ * variant spellings are listed too.
+ */
+export const GRID_TRACKS = [
+  'grid-cols-[*]',
+  'grid-rows-[*]',
+  '*:grid-cols-[*]',
+  '*:grid-rows-[*]',
+] as const
+
+/**
+ * The `message` option of the bought rules, where the rule's own advice names a fix another shipped
+ * rule reports (lint-1.16): `use margin here` against app-spacing, `w-120` against fixed-width, a new
+ * `--color-<name>` against the derived palette. Bridge keeps the default where it has no such rule.
+ * `{{suggestions|...}}` is a universal slot, so it never prints raw.
+ */
+export const SHADCN_MESSAGES: Readonly<
+  Partial<Record<PresetProfile, Readonly<Record<string, string | Record<string, string>>>>>
+> = (() => {
+  const owned = {
+    'no-restyle': {
+      spacing:
+        '"{{className}}" is not allowed on <{{component}}>: it owns its spacing. Use its size prop if it has one, or gap-* on the parent for space around it.',
+    },
+    'no-arbitrary-values':
+      '"{{className}}" hardcodes an off-token value. Use a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container.',
+    'no-raw-colors':
+      '"{{className}}" is a raw colour, and app code takes colour from components. Use Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app.',
+  }
+  return {
+    bridge: {
+      'no-raw-colors':
+        '"{{className}}" is a raw colour. Use a theme colour class that is already declared: {{suggestions|see the declared theme colours}}; the palette is derived, so no colour is added per app.',
+    },
+    parts: owned,
+    app: owned,
+  }
+})()
+
 /** One `shadcn/no-restyle` contract, generated from a primitive's cva table. */
 export type Contract = {
   readonly pattern: string
@@ -68,6 +109,8 @@ export type PresetInputs = {
   readonly ejected?: readonly string[]
   /** Zone S: seeds, in basalt-ui's own repo only. */
   readonly seeds?: readonly string[]
+  /** `manifest.classPrefixes`: third-party class prefixes (`maplibregl-`) `no-unknown-classes` lets through. */
+  readonly classPrefixes?: readonly string[]
 }
 
 type Rules = Record<string, unknown>
@@ -133,14 +176,29 @@ const on = (options: readonly unknown[] | undefined): unknown =>
 
 function restyleOptions(profile: PresetProfile, contracts: readonly Contract[]): unknown {
   const bridge = profile === 'bridge'
+  const message = SHADCN_MESSAGES[profile]?.[SHADCN_RESTYLE]
   return [
     'error',
     {
       allow: ['layout'],
+      ...(message === undefined ? {} : { message }),
       componentImports: bridge ? BRIDGE_COMPONENT_IMPORTS : PARTS_COMPONENT_IMPORTS,
       contracts: bridge ? [] : contracts,
     },
   ]
+}
+
+/** A bought token rule at a profile: `error`, with the options it carries there. */
+function shadcnRule(profile: PresetProfile, rule: string, inputs: PresetInputs): unknown {
+  const message = SHADCN_MESSAGES[profile]?.[rule]
+  const options: Record<string, unknown> = {}
+  if (rule === 'no-arbitrary-values') options['allow'] = [...GRID_TRACKS]
+  if (rule === 'no-unknown-classes') {
+    const prefixes = inputs.classPrefixes ?? []
+    if (prefixes.length > 0) options['allow'] = prefixes.flatMap((p) => [`${p}*`, `*:${p}*`])
+  }
+  if (message !== undefined) options['message'] = message
+  return on(Object.keys(options).length > 0 ? [options] : undefined)
 }
 
 /** Every rule the preset can set, each `off`: the base a profile's rules are written over. */
@@ -158,7 +216,7 @@ export function rulesFor(profile: PresetProfile, inputs: PresetInputs): Rules {
   if (profile === 'tokens') return rules
   const input = presetInput(inputs.table)
   for (const name of input.profiles[profile]) rules[name] = on(input.options[profile][name])
-  for (const rule of SHADCN_TOKEN_RULES) rules[qualified(rule)] = 'error'
+  for (const rule of SHADCN_TOKEN_RULES) rules[qualified(rule)] = shadcnRule(profile, rule, inputs)
   rules[qualified(SHADCN_RESTYLE)] = restyleOptions(profile, inputs.contracts)
   return rules
 }
@@ -176,7 +234,7 @@ function structureZone(files: readonly string[], inputs: PresetInputs): Override
     rules: {
       ...offAll(names),
       [qualified(SHADCN_RESTYLE)]: 'off',
-      [qualified('no-arbitrary-values')]: ['error', { allow: [...BASE_UI_VARS] }],
+      [qualified('no-arbitrary-values')]: ['error', { allow: [...BASE_UI_VARS, ...GRID_TRACKS] }],
     },
   }
 }

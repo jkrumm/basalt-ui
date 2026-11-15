@@ -143,8 +143,19 @@
     "basalt/router-search": "error",
     "basalt/control-home": "error",
     "basalt/untrusted-markdown": "error",
-    "shadcn/no-raw-colors": "error",
-    "shadcn/no-arbitrary-values": "error",
+    "shadcn/no-raw-colors": [
+      "error",
+      {
+        "message": "\"{{className}}\" is a raw colour, and app code takes colour from components. Use Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app."
+      }
+    ],
+    "shadcn/no-arbitrary-values": [
+      "error",
+      {
+        "allow": ["grid-cols-[*]", "grid-rows-[*]", "*:grid-cols-[*]", "*:grid-rows-[*]"],
+        "message": "\"{{className}}\" hardcodes an off-token value. Use a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container."
+      }
+    ],
     "shadcn/no-unknown-classes": "error",
     "shadcn/no-inline-styles": "error",
     "shadcn/require-static-classes": "error",
@@ -152,6 +163,9 @@
       "error",
       {
         "allow": ["layout"],
+        "message": {
+          "spacing": "\"{{className}}\" is not allowed on <{{component}}>: it owns its spacing. Use its size prop if it has one, or gap-* on the parent for space around it."
+        },
         "componentImports": ["^basalt-ui/ui/"],
         "contracts": [
           {
@@ -380,7 +394,7 @@
             "pattern": "^ScrollArea$",
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
-            "message": "ScrollArea owns its height and display: eject it (basalt-ui eject scroll-area) to change them."
+            "message": "ScrollArea owns its height and display: bound it with max-h-*, or eject it (basalt-ui eject scroll-area)."
           },
           {
             "pattern": "^Segmented$",
@@ -440,7 +454,7 @@
             "pattern": "^Skeleton$",
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
-            "message": "Skeleton owns its height and display: eject it (basalt-ui eject skeleton) to change them."
+            "message": "Skeleton owns its height and display: match the text style it stands in for (text-sm, text-lg) on it or its parent, or eject it (basalt-ui eject skeleton)."
           },
           {
             "pattern": "^Spinner$",
