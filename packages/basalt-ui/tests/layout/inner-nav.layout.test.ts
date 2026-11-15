@@ -222,7 +222,7 @@ layout('SplitPage at 390', () => {
   })
 
   test('the pane has a back link above it that clears the field; at 1440 there is none', async () => {
-    const BACK = '[data-slot="split-page-back"]'
+    const BACK = '[data-split-back]'
     const page = await openFixture(specOf('split'), PHONE)
     expect(await page.count(BACK)).toBe(0)
     await page.raw.evaluate(

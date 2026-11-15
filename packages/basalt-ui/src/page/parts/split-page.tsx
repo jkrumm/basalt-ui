@@ -77,7 +77,7 @@ export function SplitPage({
           <Button
             variant="ghost"
             size="sm"
-            data-slot="split-page-back"
+            data-split-back=""
             className="justify-self-start @wide:hidden"
             onClick={onBack}
           >
