@@ -1,6 +1,6 @@
 # Recipes
 
-A recipe is the shipped answer to a pattern basalt composes but does not export: a compiled example in `docs/recipes/<name>.md`, its region built by the playground typecheck. Read the one that matches before writing the pattern; a missing export is a recipe, never a local copy. One line per recipe: when to use it, then the file. A new recipe adds its own line here.
+A recipe is the shipped answer to a pattern basalt composes but does not export: a compiled example in `node_modules/basalt-ui/docs/recipes/<name>.md`, its region built by the playground typecheck. Read the one that matches before writing the pattern; a missing export is a recipe, never a local copy. One line per recipe: when to use it, then the file. A new recipe adds its own line here.
 
 - [add-page](node_modules/basalt-ui/docs/recipes/add-page.md): adding a destination to an AppShell app: one file route, one nav entry
 - [app-shell](node_modules/basalt-ui/docs/recipes/app-shell.md): mounting the application frame once, in the root route
