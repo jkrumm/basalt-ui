@@ -54,6 +54,7 @@ const OFFENDERS: [file: string, rule: string][] = [
   ['background-tint.css', 'declaration-property-value-disallowed-list'],
   ['outline-status.css', 'declaration-property-value-disallowed-list'],
   ['shadow-chart.css', 'declaration-property-value-disallowed-list'],
+  ['overflow-scroll.css', 'declaration-property-value-disallowed-list'],
   ['raw-radius.css', 'declaration-property-value-allowed-list'],
   ['raw-line-height.css', 'declaration-property-value-allowed-list'],
   ['vx-declaration.css', 'property-disallowed-list'],
@@ -85,6 +86,33 @@ describe('seeded offenders', () => {
       ).toBe(true)
     })
   }
+
+  it('a scroll container in app CSS names ui/scroll-area, for every overflow longhand', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'basalt-stylelint-scroll-'))
+    try {
+      const css = [
+        'overflow: auto',
+        'overflow: scroll',
+        'overflow: hidden auto',
+        'overflow-x: scroll',
+        'overflow-y: auto',
+        'overflow-block: auto',
+        'overflow-inline: scroll',
+      ]
+        .map((d, i) => `.c${i} { ${d}; }`)
+        .join('\n')
+      writeFileSync(join(root, 'app.css'), `${css}\n`)
+      const { results } = await stylelint.lint({
+        files: join(root, 'app.css'),
+        configFile: SHIPPED_CONFIG,
+      })
+      const warnings = results[0]?.warnings ?? []
+      expect(warnings).toHaveLength(7)
+      for (const w of warnings) expect(w.text).toContain('ui/scroll-area')
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
 
   it('a style block in an .astro fixture is linted', async () => {
     const findings = (await lint('offenders/page.astro')).get('offenders/page.astro') ?? []

@@ -36,6 +36,9 @@ export const SHAPE_PROPERTIES =
   '/^(?:border(?:-[a-z]+)*-radius|box-shadow|line-height|letter-spacing)$/'
 export const DECORATION_PROPERTIES =
   '/^(?:background(?:-[a-z]+)*|border(?:-[a-z]+)*|outline(?:-[a-z]+)*|box-shadow)$/'
+// `overlay` is the deprecated alias of `auto`; `hidden`, `clip` and `visible` do not scroll.
+export const SCROLL_PROPERTIES = '/^overflow(?:-x|-y|-block|-inline)?$/'
+export const SCROLL_VALUES = '/\\b(?:auto|scroll|overlay)\\b/i'
 
 /** The ten rules, keyed by stylelint rule name. Order is the order of the section 4.2 table. */
 export const STYLELINT_RULES = {
@@ -54,14 +57,24 @@ export const STYLELINT_RULES = {
     'color',
     'light-dark',
   ],
-  'declaration-property-value-disallowed-list': {
-    // colour mixing is only legal over tokens or transparent
-    '/.*/': [`/color-mix\\((?!${CLEAN_MIX_BODY})/i`],
-    // raw lengths and calc() on spacing and the type size (D0: tokens, 0, auto, %)
-    [SPACING_PROPERTIES]: [`/${RAW_LENGTH}/i`, '/\\bcalc\\(/i'],
-    // colour as decoration
-    [DECORATION_PROPERTIES]: [`/${DECORATIVE_ROLE}/i`],
-  },
+  'declaration-property-value-disallowed-list': [
+    {
+      // colour mixing is only legal over tokens or transparent
+      '/.*/': [`/color-mix\\((?!${CLEAN_MIX_BODY})/i`],
+      // raw lengths and calc() on spacing and the type size (D0: tokens, 0, auto, %)
+      [SPACING_PROPERTIES]: [`/${RAW_LENGTH}/i`, '/\\bcalc\\(/i'],
+      // colour as decoration
+      [DECORATION_PROPERTIES]: [`/${DECORATIVE_ROLE}/i`],
+      // a scroll container: the stylesheet twin of the raw-scroll class rule
+      [SCROLL_PROPERTIES]: [SCROLL_VALUES],
+    },
+    // One message per rule, so it names each family's fix; `%s` takes the property, then the value.
+    {
+      message:
+        'Disallowed `%s: %s`. Spacing and type take --vx tokens, colour roles follow their surface, ' +
+        'and a scroll box (overflow auto|scroll) is ui/scroll-area, or let Page own the scroll.',
+    },
+  ],
   'declaration-property-value-allowed-list': {
     [SHAPE_PROPERTIES]: [`/${ALLOWED_SHAPE}/i`],
   },
