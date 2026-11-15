@@ -284,6 +284,28 @@ describe('basaltRouterOptions', () => {
       expect(calls).toEqual({ start: 1, stop: 1 })
     })
 
+    test('createBasaltRouter takes `live` as a function of the client it built, run at the first start', async () => {
+      const { calls, live } = counting()
+      const seen: QueryClient[] = []
+      const root = createRootRoute({ component: () => <div>fn page</div> })
+      const router = createBasaltRouter({
+        routeTree: root,
+        history: createMemoryHistory({ initialEntries: ['/'] }),
+        live: (client) => {
+          seen.push(client)
+          return live
+        },
+      })
+      expect(seen).toEqual([])
+      const view = render(<BasaltProvider router={router} telemetry={() => {}} />)
+      await screen.findByText('fn page')
+      expect(calls).toEqual({ start: 1, stop: 0 })
+      expect(seen).toHaveLength(1)
+      expect(seen[0]).toBe(queryClientOf(router))
+      view.unmount()
+      expect(calls).toEqual({ start: 1, stop: 1 })
+    })
+
     test('a router without `live` starts nothing', async () => {
       const root = createRootRoute({ component: () => <div>quiet page</div> })
       const router = createBasaltRouter({
