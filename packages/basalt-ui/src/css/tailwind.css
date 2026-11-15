@@ -165,4 +165,9 @@
       transition: opacity 120ms ease-out;
     }
   }
+  @keyframes basalt-article-progress {
+    to {
+      transform: scaleX(1);
+    }
+  }
 }
