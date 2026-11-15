@@ -11,6 +11,7 @@ import { useContext, useEffect, useState } from 'react'
 import { renderToString } from 'react-dom/server'
 import type { ControlHandle, DetailHost } from '../core/ports'
 import type { ClaimSnapshot } from './core/claims'
+import type { AsideSheetState } from './core/docking'
 import { DetailHostContext, Page, PageContext, PageHostContext } from './page'
 import { PageAside, PageAsidePanel } from './page-aside'
 import {
@@ -329,16 +330,45 @@ describe('PageAside in a shell (PageHost)', () => {
     expect(shell.of('aside')).toHaveLength(0)
   })
 
-  test('a closed aside holds no claim', () => {
+  test('a closed bound aside claims with its state, for the phone sheet', () => {
     const shell = fakeHost()
-    const { bound } = handle(false)
+    const { bound, sets } = handle(false)
     inShell(
       shell.host,
       <PageAside title="A" state={bound}>
         x
       </PageAside>,
     )
-    expect(shell.of('aside')).toHaveLength(0)
+    const claims = shell.of('aside')
+    expect(claims).toHaveLength(1)
+    const props = (claims[0]!.node as React.ReactElement<{ sheet?: AsideSheetState }>).props
+    expect(props.sheet?.open).toBe(false)
+    act(() => props.sheet?.onOpenChange(true))
+    expect(sets).toEqual([true])
+  })
+
+  test('an open bound aside hands its state; closing through it writes false', () => {
+    const shell = fakeHost()
+    const { bound, sets } = handle(true)
+    inShell(
+      shell.host,
+      <PageAside title="A" state={bound}>
+        x
+      </PageAside>,
+    )
+    const props = (shell.of('aside')[0]!.node as React.ReactElement<{ sheet?: AsideSheetState }>)
+      .props
+    expect(props.sheet?.open).toBe(true)
+    act(() => props.sheet?.onOpenChange(false))
+    expect(sets).toEqual([false])
+  })
+
+  test('an aside without state claims only while open and carries no sheet state', () => {
+    const shell = fakeHost()
+    inShell(shell.host, <PageAside title="A">x</PageAside>)
+    const props = (shell.of('aside')[0]!.node as React.ReactElement<{ sheet?: AsideSheetState }>)
+      .props
+    expect(props.sheet).toBeUndefined()
   })
 
   test('a title change re-claims with the new title and never leaves two claims', () => {

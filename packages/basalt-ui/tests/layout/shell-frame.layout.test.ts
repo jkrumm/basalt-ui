@@ -264,6 +264,22 @@ layout('AppShell frame — real layout', () => {
     expect(triggers).toBe(1)
   })
 
+  test('a bound aside on a phone: state true shows the sheet, Escape writes false, the header button opens it again', async () => {
+    const SHEET = '[data-slot="sheet-content"]'
+    const stateOf = (p: LayoutPage): Promise<string | undefined> =>
+      p.raw.evaluate(() => document.documentElement.dataset['asideState'])
+    const p = await openFixture(specOf({ aside: { state: true } }), PHONE)
+    await p.waitFor(SHEET)
+    expect(await p.count(SHEET), 'a deep link with the state set opens the sheet on load').toBe(1)
+    await p.raw.keyboard.press('Escape')
+    await p.quiesce()
+    expect(await stateOf(p), 'closing the sheet writes false').toBe('false')
+    expect(await p.count(SHEET)).toBe(0)
+    await p.raw.locator(`${HEADER} button:has-text("Run details")`).click()
+    await p.waitFor(SHEET)
+    expect(await stateOf(p), 'the header button writes true').toBe('true')
+  })
+
   test('the skip link is the first tab stop and moves focus into Main', async () => {
     const p = await openFixture(specOf(), DESKTOP_1440)
     await p.raw.keyboard.press('Tab')

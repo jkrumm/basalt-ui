@@ -9,6 +9,7 @@ import { ScrollArea } from '../ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
 import type { PageAsideProps } from './contract'
 import type { ClaimHandle } from './core/claims'
+import type { AsideSheetState } from './core/docking'
 import { PageContext, PageHostContext } from './page'
 
 /** The default aside width in px; 320, 360, 480 and 640 are the sanctioned widths. */
@@ -21,6 +22,11 @@ type PanelProps = {
   dock: 'always' | 'auto'
   /** The close button's handler; absent while the aside has nothing to close. */
   onClose?: (() => void) | undefined
+  /**
+   * Shell only: the page's open state and its setter, present when the aside is bound to `state`.
+   * The panel never reads them; the shell's compact sheet does.
+   */
+  sheet?: AsideSheetState | undefined
   children?: ReactNode
 }
 
@@ -139,11 +145,23 @@ function AsideView({
   const body: ReactNode = detail === null ? children : detail.body(DETAIL_BOX)
   const closes = detail !== null || closable ? close : undefined
 
+  // A bound aside under a shell claims even while closed: on a phone the header button that opens
+  // the sheet needs the claim, and the shell drops a closed claim from the docked region.
+  const sheet: AsideSheetState | undefined = closable
+    ? {
+        open: detail !== null ? true : open,
+        onOpenChange: (next) => {
+          if (next) onOpenChange(true)
+          else close()
+        },
+      }
+    : undefined
+
   useIsomorphicLayoutEffect(() => {
-    if (host === null || !owns || !isOpen) return undefined
+    if (host === null || !owns || !(isOpen || closable)) return undefined
     return host.claim(
       'aside',
-      <PageAsidePanel title={shownTitle} width={width} dock={dock} onClose={closes}>
+      <PageAsidePanel title={shownTitle} width={width} dock={dock} onClose={closes} sheet={sheet}>
         {body}
       </PageAsidePanel>,
       id,
