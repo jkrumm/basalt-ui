@@ -36,10 +36,12 @@ const shardsDir =
 const exportsMap = JSON.parse(readFileSync(resolve(baseDir, 'package.json'), 'utf8')).exports
 /**
  * Every published JS subpath — non-JS assets (`.css`, `./configs/*`) and wildcard entries have no
- * named exports to snapshot.
+ * named exports to snapshot. `./shell` is the v3 shell barrel: it gets a shard when its symbols are
+ * counted by the surface budgets (one import path per symbol, a named consumer each), which its own
+ * row settles.
  */
 const subpaths = Object.keys(exportsMap).filter(
-  (k) => !k.startsWith('./configs') && !k.endsWith('.css') && !k.includes('*'),
+  (k) => !k.startsWith('./configs') && !k.endsWith('.css') && !k.includes('*') && k !== './shell',
 )
 
 const actual = {}
