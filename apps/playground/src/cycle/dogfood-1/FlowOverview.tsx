@@ -7,7 +7,7 @@
  */
 import type { ControlHandle } from 'basalt-ui'
 import { StatCard } from 'basalt-ui/cards'
-import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
+import { LegacyChartCard as ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import { filterSlot, spec } from 'basalt-ui/controls'
 import { CardGrid, EmptyState, Page, PageAside, PageBar, Section } from 'basalt-ui/page'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
