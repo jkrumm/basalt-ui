@@ -53,7 +53,7 @@ export function placeRouterSeeds(ctx: Ctx): void {
   ctx.routerPlugin = skip === null || skip === 'shell-less'
   if (skip !== null) return say(`skipped the router seeds: ${SKIP_NOTES[skip]}`)
 
-  const name = appName(ctx.root)
+  const name = appName(ctx.root).replace(/[\\']/g, '\\$&')
   for (const [seed, tpl] of Object.entries(ROUTER_SEED_TEMPLATES)) {
     const dest = routerSeedDest(app.rel, seed as keyof typeof ROUTER_SEED_TEMPLATES)
     const template = readIfExists(resolve(ctx.pkgRoot, 'agent/templates', tpl))
@@ -61,7 +61,7 @@ export function placeRouterSeeds(ctx: Ctx): void {
       ctx.problems.push(`${ctx.pkgRoot} ships no ${tpl}`)
       continue
     }
-    const text = template.replaceAll('{{APP_NAME}}', name)
+    const text = template.replaceAll('{{APP_NAME}}', () => name)
     const existing = readIfExists(resolve(ctx.root, dest))
     if (existing === null) {
       writeText(ctx.root, dest, text)

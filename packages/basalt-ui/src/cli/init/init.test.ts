@@ -634,4 +634,11 @@ describe('init: the router scaffold', () => {
     expect(code).toBe(0)
     expect(read(dir, 'src/routes/_app.tsx')).toContain(`name: '${basename(dir)}'`)
   })
+
+  it('writes an app name with a quote or a $ literally into the brand', async () => {
+    const dir = repo()
+    put(dir, 'package.json', JSON.stringify({ name: "it's $&-app" }))
+    await runInit(['--profile', 'app', '--root', 'src', '--no-install'], dir)
+    expect(read(dir, 'src/routes/_app.tsx')).toContain("name: 'it\\'s $&-app'")
+  })
 })
