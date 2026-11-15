@@ -102,7 +102,7 @@ describe('phase matrix', () => {
 
   describe('empty with a query phase', () => {
     const empty = { cause: 'No ticket matches' }
-    const query = (data: unknown): ChartCardProps['phase'] => ({
+    const query = (data: unknown) => ({
       isPending: false,
       isError: false,
       error: null,
