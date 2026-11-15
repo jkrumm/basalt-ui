@@ -32,6 +32,7 @@
   "DualPanel": "argo:apps/dashboard/src/features/garmin-health/charts/divergence-chart.tsx",
   "EmptyState": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "EventList": "argo:apps/dashboard/src/features/agents/narratives-section.tsx",
+  "Facts": "basalt-ui:apps/playground/src/cycle/shell-1/ServicesPage.tsx",
   "FilterSet": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "FormGroup": "image-gateway:app/src/views/Create.tsx",
   "FormField": "shutterflow:apps/desktop/src/features/settings/CamerasSection.tsx",

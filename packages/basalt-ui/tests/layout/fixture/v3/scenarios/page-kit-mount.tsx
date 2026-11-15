@@ -1,6 +1,6 @@
 /**
- * The page-kit scenario's browser half: a `PageSummary` whose facts wrap at 390, and a `CardGrid`
- * of plain cards. `page-kit.ts` loads it on mount, so the registry the test process imports stays
+ * The page-kit scenario's browser half: a `PageSummary` whose facts wrap at 390, a `CardGrid`
+ * of plain cards and a `Facts` list in a host of a set width. `page-kit.ts` loads it on mount, so the registry the test process imports stays
  * free of DOM, CSS and `src` imports.
  *
  * The v3 fixture has no stylesheet of its own: this imports the layer order and the compiled
@@ -13,6 +13,7 @@ import '../../tailwind.generated.css'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import { CardGrid } from '../../../../../src/page/card-grid'
+import { Facts } from '../../../../../src/page/facts'
 import { PageSummary } from '../../../../../src/page/page-summary'
 import type { FixtureSpec } from '../../spec'
 import type { PageKitSpec } from './page-kit'
@@ -53,7 +54,23 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
   root?.unmount()
   if (!RESET.isConnected) document.head.append(RESET)
   root = createRoot(container)
-  const grid = (spec as PageKitSpec).pageKit
+  const { pageKit: grid, pageKitFacts: facts } = spec as PageKitSpec
+  if (facts !== undefined) {
+    // The host's width is the container the list keys on, whatever the viewport is.
+    root.render(
+      <div data-testid="facts-host" className="p-4">
+        <div style={{ width: facts.width }}>
+          <Facts
+            rows={Array.from({ length: facts.rows ?? 6 }, (_, i) => ({
+              label: `Label ${i + 1}`,
+              value: `Value ${i + 1}`,
+            }))}
+          />
+        </div>
+      </div>,
+    )
+    return
+  }
   root.render(
     grid === undefined ? (
       <div data-testid="w37-summary" className="p-4">

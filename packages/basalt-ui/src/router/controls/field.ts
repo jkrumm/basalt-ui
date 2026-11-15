@@ -36,6 +36,18 @@ export type HistoryOf<L> = L extends { readonly url: false }
 /** One option of an enum, multi or range field; labels come from `.labels()`. */
 export type FieldOption<V = string> = { readonly value: V; readonly label: string }
 
+type LabelSpec = Pick<FieldSpec<unknown>, 'values' | 'labelMap'>
+
+/** A closed-values field's options, each labelled by `.labels()`, else by its value. */
+export function optionsOf(spec: LabelSpec): readonly FieldOption<never>[] {
+  return spec.values.map((value) => ({ value: value as never, label: labelOf(spec, value) }))
+}
+
+/** The label `.labels()` declared for a member, else the member itself. */
+export function labelOf(spec: Pick<LabelSpec, 'labelMap'>, value: unknown): string {
+  return spec.labelMap?.[String(value)] ?? String(value)
+}
+
 /**
  * A field definition. `U` is whether it lives in the URL, `S` the params it adds to the route's
  * search, keyed later by the field's name (see `ParamsOf` in `define`).

@@ -26,6 +26,7 @@ import type {
   RangeSpec,
   RangeWindow,
 } from './field'
+import { labelOf, optionsOf } from './field'
 import { KEEP_KEY, chosenStrip, orderMiddlewares } from './middleware'
 import { attachWidgets, resetWidgetOwnersForTests } from './widgets'
 import type {
@@ -109,6 +110,8 @@ export type FieldHandle<
   readonly params: readonly string[]
   readonly bounds?: NumberBounds | undefined
   link(value: V): LinkWrite<S>
+  /** The label `.labels()` declared for a member, else the member itself. */
+  label(value: Member<V>): string
   /** Chosen: the URL param is present (a push enum keeps its written fallback) or the device or memory value is held. */
   useIsSet(): boolean
 }
@@ -575,12 +578,6 @@ export function defineControls<
   const unsetPatch = (entry: Entry): Raw =>
     Object.fromEntries(entry.params.map((param) => [param, undefined]))
 
-  const optionsOf = (entry: Entry): readonly FieldOption<never>[] =>
-    entry.spec.values.map((value) => ({
-      value: value as never,
-      label: entry.spec.labelMap?.[value] ?? value,
-    }))
-
   const handleFor = (entry: Entry): FieldHandle<unknown> => {
     const { spec, codec, name } = entry
     const history = spec.lane.history
@@ -625,7 +622,7 @@ export function defineControls<
     const handle: FieldHandle<unknown> & { toWindow?: unknown } = {
       key: name,
       kind: spec.kind,
-      options: optionsOf(entry),
+      options: optionsOf(spec),
       codec,
       get fallback() {
         return fallbackOf(entry)
@@ -653,6 +650,7 @@ export function defineControls<
       get isDefault() {
         return codec.equals(current(), fallbackOf(entry))
       },
+      label: (value) => labelOf(spec, value),
       link: (value) => ({
         search: encodeWrite(value),
         replace: history !== 'push',

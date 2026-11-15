@@ -206,21 +206,33 @@ function BoundAside({
   state,
   ...props
 }: PageAsideProps & { state: NonNullable<PageAsideProps['state']> }): ReactElement | null {
-  const [open, setOpen] = state.use()
-  return <AsideView {...props} open={open} onOpenChange={setOpen} closable />
+  const [value, set] = state.use()
+  // A string field holds the open record's id: open while it holds one, and a close clears it.
+  // Opening is the row's job (it writes the id), so `onOpenChange(true)` writes nothing.
+  if (typeof value === 'string') {
+    const onOpenChange = (next: boolean): void => {
+      if (!next) state.clear()
+    }
+    return <AsideView {...props} open={value !== ''} onOpenChange={onOpenChange} closable />
+  }
+  return (
+    <AsideView {...props} open={value} onOpenChange={set as (open: boolean) => void} closable />
+  )
 }
 
 /**
  * The page's second surface: an inspector or detail panel beside the content. `title` is required
  * and is both the header and the landmark's `aria-label`. One per page; a second raises a dev
- * warning and the newest owns the region.
+ * warning and the newest owns the region. An inspector's body of properties is a `Facts` list, and
+ * the record it inspects is a string field passed as `state`.
  *
  * Where it renders follows the context. Under an `AppShell` it claims the shell's aside region,
  * which docks beside main (`dock="auto"`, the default, only while main keeps its floor width) or
  * overlays it, and is zero-wide while no aside is mounted. Without a shell it is a second column
  * from the `wide` container tier and a `Sheet` below it, opened by a button where the aside is
  * written, so a page places it after its content. `state` is the open state (a device or URL
- * field); without it the column is always open and the sheet is closed until the button opens it.
+ * boolean field, or a string field holding the open record's id: open while it holds a value, a
+ * close clears it); without it the column is always open and the sheet is closed until the button opens it.
  * `PageAside` also hosts the page's `DetailHost`: a table row or list item can show its detail in
  * the aside instead of a sheet of its own.
  *
@@ -228,8 +240,8 @@ function BoundAside({
  * @neverWhen the panel holds page-wide filters (use the PageBar controls) or two panels are needed (one aside per page)
  *
  * @example
- * <PageAside title="Run details" width={360} state={store.field.inspector} mobile="sheet">
- *   <RunFacts run={run} />
+ * <PageAside title="Run details" width={360} state={store.field.run} mobile="sheet">
+ *   <Facts rows={[{ label: 'Version', value: run.version }]} />
  * </PageAside>
  */
 export function PageAside(props: PageAsideProps): ReactElement | null {

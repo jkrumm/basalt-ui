@@ -11,7 +11,8 @@ slots: []
 
 The page's second surface: an inspector or detail panel beside the content. `title` is required
 and is both the header and the landmark's `aria-label`. One per page; a second raises a dev
-warning and the newest owns the region.
+warning and the newest owns the region. An inspector's body of properties is a `Facts` list, and
+the record it inspects is a string field passed as `state`.
 
 ## Signature
 
@@ -19,7 +20,7 @@ warning and the newest owns the region.
 PageAside(props: PageAsideProps): ReactElement | null
   title: string
   width?: number
-  state?: ControlHandle<boolean>
+  state?: ControlHandle<boolean> | ControlHandle<string>
   dock?: "auto" | "always"
   mobile?: "sheet"
   children?: ReactNode
