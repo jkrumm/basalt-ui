@@ -11,12 +11,12 @@ import type {
   ControlsSlot,
   FreshnessView,
   IconComponent,
+  NavTarget,
 } from '../core/ports'
 
 // ---- Targets and badges shared with the shell (`shell -> page` is the declared edge) -------
 
-/** Opaque product of `navTarget(linkOptions)`; only the `link` adapter opens it. */
-export type NavTarget = { readonly __brand: 'NavTarget' }
+export type { NavTarget }
 
 /** One field per row: a count, or a dot. */
 export type NavBadge = { count: number; attention?: boolean } | { dot: true; attention?: boolean }
@@ -116,6 +116,8 @@ export type InnerNavItem = {
   id: string
   label: string
   icon?: IconComponent
+  /** Leaves the field: a route or URL the item opens instead of writing the field. A `navTarget` is a typed route. */
+  href?: string | NavTarget
   badge?: NavBadge
   /** Min 2 entries; one action is a plain button. */
   menu?: readonly [InnerNavMenuItem, InnerNavMenuItem, ...InnerNavMenuItem[]]
