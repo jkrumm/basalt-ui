@@ -1,0 +1,19 @@
+{
+  "why": "State cycle 2 (docs/v3/cycles/state-2.md, P2 state-2.7): three references fell behind cycle 1's fixes, each costing the cycle a read of the source. `docs/filter-set.md` says `Reset all` sits in the sheet, while the desktop row has its own since state-1.7. `docs/use-form-draft.md` does not say what a successful submit does to the draft; only the JSDoc example in `controls/draft.ts` does. `docs/create-channel.md` names `subpath: basalt-ui` with the root barrel's peers, while `basalt-ui/data` exports it since state-1.12.",
+  "what": "The filter set, form draft and channel references say what the code does.",
+  "owns": [
+    "JSDoc of packages/basalt-ui/src/controls/filter-set-spec.tsx, src/controls/draft.ts and src/core/channel.ts",
+    "the regenerated packages/basalt-ui/docs/filter-set.md, use-form-draft.md and create-channel.md, and whatever generator decides a doc's subpath"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**", "any runtime code"],
+  "change": "(1) `FilterSet`'s doc says the row ends with `Reset all` while any spec differs from its default, and the narrow sheet has its own. (2) `useFormDraft`'s doc says a successful submit deletes the key and re-bases the form, including when the form unmounts during the submit (as `v3-state-2-draft-unmount` leaves it), and that `clear()` is for a discard. (3) `createChannel`'s doc names `basalt-ui/data` as its subpath with that subpath's peers; if the generator picks the first barrel, make it prefer the narrowest subpath that exports the symbol.",
+  "commits": "docs: one commit in packages/basalt-ui.",
+  "proof": "make check (the doc drift gates); the three regenerated files in the diff.",
+  "acceptance": [
+    "docs/filter-set.md names the row's Reset all",
+    "docs/use-form-draft.md states what a successful submit does to the draft",
+    "docs/create-channel.md names subpath basalt-ui/data",
+    "make check passes"
+  ],
+  "out_of_scope": "Any behaviour change."
+}

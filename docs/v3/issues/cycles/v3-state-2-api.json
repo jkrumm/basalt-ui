@@ -1,0 +1,26 @@
+{
+  "why": "State cycle 2 (docs/v3/cycles/state-2.md): four places where the app wrote around a type. `useValues()` returns a range field as its preset param (`opened: string`), not the `RangeValue` its doc promises, so `toWindow(values.opened)` fails tsc and the range is read through its handle (P2 state-2.2). `c.status` takes option values and no labels, so the Priority column prints `urgent` while the store field carries `.labels()` (P2 state-2.6). With a resolver for every preset, `toWindow` still returns a `{ window: never }` member the app narrows away (P3 state-2.3). The v3 `ChartCard` takes `empty` as given, so the app derives it from `data.length` (P3 state-2.10). Each has a `cycle-state-2:` comment in `apps/playground/src/cycle/state-2/TicketsPage.tsx`.",
+  "what": "The store's whole read, the status column and the chart card take what the app has without glue.",
+  "owns": [
+    "packages/basalt-ui/src/router/controls/define.ts (`useValues` value and type, `toWindow` type)",
+    "packages/basalt-ui/src/table/core/kinds.tsx, kinds-cells.tsx and kinds-spec.ts (status labels)",
+    "packages/basalt-ui/src/charts/parts/chart-card.tsx and charts/contract.ts (the `empty` rule with a query phase)",
+    "their tests, type guards and regenerated docs (define-controls, col, chart-card)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "packages/basalt-ui/src/core/phase.ts"
+  ],
+  "change": "(1) `useValues()` returns each field's value as its handle's `use()` returns it (a range as `RangeValue<P>`, a multi as its array), typed so, and `toWindow(values.<range>)` compiles (state-2.2). (2) `c.status` takes `labels?: Record<O, string>` and prints the label in the cell, the phone card and the column filter; without it nothing changes (state-2.6). (3) `toWindow`'s return type drops the `{ window }` member when every preset has a resolver (state-2.3). (4) With a query `phase`, `ChartCard` applies `empty` only when the query's `data` is an empty array, so `empty={{ cause }}` can be passed unconditionally; a `Phase` string keeps today's rule (state-2.10). Keep the change inside `chart-card.tsx`; `resolvePhase` belongs to `v3-state-2-state`.",
+  "commits": "feat: or fix: per surface, in packages/basalt-ui.",
+  "proof": "make check; a type guard per type change; a test for the status labels and the chart card's empty rule.",
+  "acceptance": [
+    "`toWindow(store.useValues().<range>)` compiles and returns the same window as the handle's value (type guard and test)",
+    "A status column with `labels` prints the label in the cell, the card and the filter (test)",
+    "With every preset resolved, `toWindow`'s type has no `{ window }` member (type guard)",
+    "ChartCard with a query phase and an unconditional `empty` draws the chart for rows and the empty state for `[]` (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The offline phase (v3-state-2-state); removing the cycle build's workarounds."
+}
