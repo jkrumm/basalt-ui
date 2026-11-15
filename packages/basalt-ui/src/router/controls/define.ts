@@ -1,14 +1,15 @@
 /**
  * `defineControls`: one store of typed fields over the URL (global and page scope) and the device
  * and memory lanes (`url: false`). The URL is the truth for a URL field; its validated search is
- * always complete, and a default never reaches the URL (the strip middleware removes it).
+ * always complete, and a default never reaches the URL (the strip middleware removes it), except
+ * a push enum's fallback once chosen (`?section=general`): `useIsSet()` reads it until `clear()`.
  *
  * Route ownership is the brand on `validateSearch` (`./brand`), read off the matched routes: a page
  * store's write from a route that does not run it is refused, and a global store mounted anywhere
  * but the root route is refused in development.
  */
 import { useEffect, useSyncExternalStore } from 'react'
-import { stripSearchParams, useRouter, useSearch } from '@tanstack/react-router'
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router'
 import { persisted } from '../../core/persisted'
 import type { ControlHandle } from '../../core/ports'
 import { batching, onBatchEnd } from '../../core/write-batch'
@@ -25,7 +26,7 @@ import type {
   RangeSpec,
   RangeWindow,
 } from './field'
-import { orderMiddlewares } from './middleware'
+import { KEEP_KEY, chosenStrip, orderMiddlewares } from './middleware'
 import { attachWidgets, resetWidgetOwnersForTests } from './widgets'
 import type {
   Overrides,
@@ -108,6 +109,8 @@ export type FieldHandle<
   readonly params: readonly string[]
   readonly bounds?: NumberBounds | undefined
   link(value: V): LinkWrite<S>
+  /** Chosen: the URL param is present (a push enum keeps its written fallback) or the device or memory value is held. */
+  useIsSet(): boolean
 }
 
 export type RangeHandle<
@@ -581,6 +584,13 @@ export function defineControls<
   const handleFor = (entry: Entry): FieldHandle<unknown> => {
     const { spec, codec, name } = entry
     const history = spec.lane.history
+    const choice = history === 'push' && spec.kind === 'enum'
+    const inUrl = (search: unknown): boolean =>
+      entry.params.some((param) => asRecord(search)[param] !== undefined)
+    const encodeWrite = (value: unknown): Raw =>
+      choice && codec.equals(value, fallbackOf(entry))
+        ? { ...codec.encode(name, value), [KEEP_KEY]: [name] }
+        : codec.encode(name, value)
     const useUrlField = (): [unknown, (v: unknown) => void] => {
       const router = useLooseRouter()
       useLend(router)
@@ -593,12 +603,16 @@ export function defineControls<
         value,
         (next) => {
           if (spec.kind === 'range' && !writableRange(next as RangeValue)) return
-          // A write of the live value is a no-op: it must not fire `resets` (page back to 1).
-          if (codec.equals(next, readUrl(entry, asRecord(router.state.location.search)))) return
-          commit(router, codec.encode(name, next), history)
+          const search = router.state.location.search
+          // A write of the live value is a no-op (it must not fire `resets`), unless it chooses a push enum.
+          if (codec.equals(next, readUrl(entry, asRecord(search))) && !(choice && !inUrl(search)))
+            return
+          commit(router, encodeWrite(next), history)
         },
       ]
     }
+    const useUrlIsSet = (): boolean =>
+      useRouterState({ select: (state) => inUrl(state.location.search) })
     const useLocalField = (): [unknown, (v: unknown) => void] => {
       const record = useLaneRecord(laneOf(entry))
       return [readLocal(entry, record), (next) => laneOf(entry).write(name, next)]
@@ -621,6 +635,9 @@ export function defineControls<
       params: entry.params,
       bounds: spec.bounds,
       use: spec.lane.url ? useUrlField : useLocalField,
+      useIsSet: spec.lane.url
+        ? useUrlIsSet
+        : () => Object.hasOwn(useLaneRecord(laneOf(entry)), name),
       useSource: () => ({ source: 'own', inherited: undefined }),
       clear: () => {
         if (!spec.lane.url) {
@@ -637,7 +654,7 @@ export function defineControls<
         return codec.equals(current(), fallbackOf(entry))
       },
       link: (value) => ({
-        search: codec.encode(name, value),
+        search: encodeWrite(value),
         replace: history !== 'push',
         resetScroll: false,
       }),
@@ -695,7 +712,15 @@ export function defineControls<
     }
   }
 
-  const strip = stripSearchParams(defaults as never) as unknown as AnyMiddleware
+  const strip = chosenStrip({
+    defaults,
+    choices: urlEntries.filter((e) => e.spec.lane.history === 'push' && e.spec.kind === 'enum'),
+    inUrl: (param) => {
+      const [router] = mounts.keys()
+      if (router) return asRecord(router.state.location.search)[param] !== undefined
+      return typeof window !== 'undefined' && new URLSearchParams(location.search).has(param)
+    },
+  })
 
   const io: StoreIo = {
     useRouter: () => {
