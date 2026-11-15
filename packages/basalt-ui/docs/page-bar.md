@@ -9,18 +9,19 @@ slots: [page-bar, page-bar-controls, page-bar-tabs, page-breadcrumb-parent]
 
 # PageBar
 
-The page's band: the title and breadcrumb, the page tabs, the controls, the refresh button and
-the actions. One per `Page`; a second renders nothing and raises a dev warning, so nested layouts
+The page's band: the title and breadcrumb, the page tabs, the controls, the connection indicator,
+the refresh button and the actions. One per `Page`; a second renders nothing and raises a dev warning, so nested layouts
 that each render a bar fail loudly instead of stacking two bands.
 
 ## Signature
 
 ```ts
-PageBar<K extends string = string>({ title, parent, controls, tabs, refresh, actions, }: PageBarProps<K>): ReactElement | null
+PageBar<K extends string = string>({ title, parent, controls, tabs, connection, refresh, actions, }: PageBarProps<K>): ReactElement | null
   title?: string
   parent?: { label: string; href: string | NavTarget; }
   controls?: { readonly kind: "controls-slot"; readonly count: number; r…
   tabs?: PageTabs<K>
+  connection?: ConnectionView
   refresh?: { scope: "page" | "global"; } & { syncing: boolean; lastCom…
   actions?: readonly [PageAction?, PageAction?, PageAction?, PageAction…
 ```

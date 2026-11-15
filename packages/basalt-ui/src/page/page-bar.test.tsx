@@ -225,6 +225,40 @@ describe('PageBar without a shell', () => {
   })
 })
 
+describe('PageBar connection', () => {
+  const view = { state: 'live', stream: 'live', online: true, reachable: true } as const
+
+  test('draws the indicator before the refresh button, and a bar of only a connection still renders', () => {
+    const { container } = render(
+      <Page>
+        <PageBar connection={view} refresh={{ scope: 'page', syncing: false, onSync: () => {} }} />
+      </Page>,
+    )
+    const indicator = container.querySelector('[data-slot="connection-indicator"]')
+    const refresh = container.querySelector('[data-scope]')
+    expect(indicator).not.toBeNull()
+    expect(
+      indicator!.compareDocumentPosition(refresh!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    cleanup()
+    const alone = render(
+      <Page>
+        <PageBar connection={view} />
+      </Page>,
+    )
+    expect(alone.container.querySelector('[data-slot="page-bar"]')).not.toBeNull()
+  })
+
+  test('without the prop no indicator is drawn', () => {
+    const { container } = render(
+      <Page>
+        <PageBar refresh={{ scope: 'page', syncing: false, onSync: () => {} }} />
+      </Page>,
+    )
+    expect(container.querySelector('[data-slot="connection-indicator"]')).toBeNull()
+  })
+})
+
 describe('PageBar refresh', () => {
   test('is a named button that calls onSync', () => {
     const calls: string[] = []

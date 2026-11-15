@@ -9,7 +9,7 @@ import type { Scenario } from '../registry'
 
 /** One shell-less page: a bar, three tall sections (the middle one holds a table) and an optional aside. */
 export type PageCoreSpec = FixtureSpec & {
-  pageCore?: { aside?: boolean; bar?: boolean }
+  pageCore?: { aside?: boolean; bar?: boolean; connection?: boolean }
 }
 
 export const pageCoreScenario: Scenario = {

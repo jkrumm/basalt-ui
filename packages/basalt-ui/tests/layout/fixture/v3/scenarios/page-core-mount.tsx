@@ -89,7 +89,7 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
   root?.unmount()
   if (!RESET.isConnected) document.head.append(RESET)
   root = createRoot(container)
-  const { aside = false, bar = true } = (spec as PageCoreSpec).pageCore ?? {}
+  const { aside = false, bar = true, connection = false } = (spec as PageCoreSpec).pageCore ?? {}
   root.render(
     <Page area="runs">
       {bar && (
@@ -97,7 +97,14 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
           title="Runs"
           parent={{ label: 'Projects', href: '/projects' }}
           controls={controls}
-          actions={[{ id: 'new', label: 'New run', primary: true, onClick: () => {} }]}
+          {...(connection && {
+            connection: { state: 'live', stream: 'live', online: true, reachable: true },
+            refresh: { scope: 'page', syncing: false, onSync: () => {} },
+          })}
+          actions={[
+            { id: 'new', label: 'New run', primary: true, onClick: () => {} },
+            { id: 'export', label: 'Export', onClick: () => {} },
+          ]}
         />
       )}
       <Section title="Overview">
