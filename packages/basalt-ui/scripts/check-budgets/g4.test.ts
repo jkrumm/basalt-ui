@@ -3,7 +3,7 @@
  * and BandStrip marginals hold a ceiling no higher than 4.0 KB that only a raise row can lift.
  */
 import { describe, expect, test } from 'bun:test'
-import { join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 
 import { CHART_SUBPATH } from '../surface-gates'
 import { ALLOWED, LEGACY, chartsApiViolations } from './areas/charts-api'
@@ -35,14 +35,27 @@ describe('charts-api', () => {
 })
 
 describe('charts-g4', () => {
-  test('both marginals carry the Issue 1407 amendment, each with a raise row', () => {
-    const ceiling = (id: string) => g4.rows.find((r) => r.id === id)?.ceiling ?? 0
-    expect(ceiling('charts-band-strip-marginal')).toBe(18500)
-    expect(ceiling('charts-heatmap-marginal')).toBe(5500)
-    expect(Object.keys(g4.raises).toSorted()).toEqual([
-      'charts-band-strip-marginal',
+  test('both marginals hold the 4000 B cap with no raise row', () => {
+    for (const row of g4.rows) expect(row.ceiling).toBeLessThanOrEqual(4000)
+    expect(g4.rows.map((r) => r.id)).toEqual([
       'charts-heatmap-marginal',
+      'charts-band-strip-marginal',
     ])
+    expect(g4.raises).toEqual({})
+  })
+
+  test('no chart module imports the deleted 2.x shell or compile', async () => {
+    const root = join(import.meta.dir, '../../src/charts')
+    const offenders: string[] = []
+    for await (const file of new Bun.Glob('**/*.{ts,tsx}').scan(root)) {
+      const source = await Bun.file(join(root, file)).text()
+      for (const [, from] of source.matchAll(/from '(\.[^']*)'/g)) {
+        const target = resolve(root, dirname(file), from ?? '')
+        if (target === join(root, 'CartesianChart') || target === join(root, 'compile'))
+          offenders.push(file)
+      }
+    }
+    expect(offenders).toEqual([])
   })
 
   test('a raised marginal ceiling with no raise row fails the ratchet', async () => {

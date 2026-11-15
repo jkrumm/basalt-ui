@@ -133,6 +133,15 @@ describe('cardPortal', () => {
     expect(top(tip)).toBeLessThan(100)
   })
 
+  test('a strip tooltip opened below starts under the scene, clear of the x tick labels', () => {
+    const { tip, at, portal } = setup({ mode: 'strip' })
+    // The anchor sits on the plot's bottom edge, inside the scene (surface bottom is 300): the
+    // resolver would open the tooltip over the tick labels in the bottom margin.
+    portal.position({ ...at(200, 170), placement: ['bottom', 'top'], offset: 8 })
+    expect(tip.dataset['placement']).toBe('bottom')
+    expect(top(tip)).toBeGreaterThanOrEqual(302)
+  })
+
   test('destroy detaches the element and its listeners', () => {
     const { tip, ctx, portal, scheduled } = setup()
     portal.position(ctx)

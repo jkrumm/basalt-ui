@@ -15,7 +15,7 @@ import {
   followerOptions,
   quietWhileFollowing,
   withTooltipRole,
-} from './cursor'
+} from './core/cursor'
 
 let release: (() => void) | undefined
 afterEach(() => {

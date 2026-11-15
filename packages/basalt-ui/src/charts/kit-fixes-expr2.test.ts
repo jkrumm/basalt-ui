@@ -1,8 +1,7 @@
 /** Expression cycle 2 kit fixes, the pure parts: rule captions, reference caption drops and the Date tick floor. */
 import { describe, expect, test } from 'bun:test'
 import { xRefLabelSpots } from './axis-gaps'
-import { dateTicks } from './compile'
-import { dateTicks as coreDateTicks } from './core/compile'
+import { dateTicks } from './core/compile'
 import { placeRefLabel } from './ref-label'
 
 const DAY = 86_400_000
@@ -69,15 +68,10 @@ describe('reference caption placement', () => {
 
 describe('Date tick floor', () => {
   const at = (day: number): Date => new Date(Date.UTC(2026, 10, day))
-  for (const [name, ticks] of [
-    ['root', dateTicks],
-    ['core', coreDateTicks],
-  ] as const) {
-    test(`${name}: twelve days asked for 3 ticks keeps at least three`, () => {
-      expect(ticks([at(2), at(14)], 3, DAY).length).toBeGreaterThanOrEqual(3)
-    })
-    test(`${name}: a two-day span is not forced past what it holds`, () => {
-      expect(ticks([at(2), at(4)], 3, DAY).length).toBeLessThanOrEqual(3)
-    })
-  }
+  test('twelve days asked for 3 ticks keeps at least three', () => {
+    expect(dateTicks([at(2), at(14)], 3, DAY).length).toBeGreaterThanOrEqual(3)
+  })
+  test('a two-day span is not forced past what it holds', () => {
+    expect(dateTicks([at(2), at(4)], 3, DAY).length).toBeLessThanOrEqual(3)
+  })
 })
