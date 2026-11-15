@@ -70,6 +70,18 @@ function applyScheme(scheme: Scheme): void {
   }
 }
 
+/**
+ * The app's root provider: scheme, locale, `<html lang>` and the installed link, nothing else. The
+ * entry imports it from `basalt-ui/router` beside `routerDefaults`, whose `link` it takes.
+ *
+ * @useWhen an app mounts its tree once at the entry, so the colour scheme, the locale and the link every link prop renders through are set in one place
+ * @neverWhen a leaf renders on its own (it needs no provider: English, `auto` scheme, a plain anchor)
+ *
+ * @example
+ * <BasaltProvider link={routerDefaults().link} locale="en">
+ *   <RouterProvider router={router} />
+ * </BasaltProvider>
+ */
 export function BasaltProvider({
   scheme,
   locale = DEFAULTS.locale,
