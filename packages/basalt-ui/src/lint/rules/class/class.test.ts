@@ -190,6 +190,7 @@ describe('forms', () => {
     'important-modifier': 'cva variant',
     'template-interpolation': 'cva variant',
     'fixed-width': 'Parent-owned width',
+    'track-length': 'minmax(0,1fr)',
     'space-between': 'gap-',
     margin: 'gap-',
     padding: 'Inset',
@@ -198,7 +199,7 @@ describe('forms', () => {
     entry.forms.map((form) => ({ id, form })),
   )
 
-  it('is eighteen enabled forms in seven ids, plus the padding form', () => {
+  it('is nineteen enabled forms in seven ids, plus the padding form', () => {
     expect(Object.keys(CLASS_RULES)).toEqual([
       'viewport-keyed',
       'dark-fork',
@@ -208,8 +209,8 @@ describe('forms', () => {
       'tw-off-law',
       'app-spacing',
     ])
-    expect(all.filter(({ form }) => isEnabled(form))).toHaveLength(18)
-    expect(all).toHaveLength(19)
+    expect(all.filter(({ form }) => isEnabled(form))).toHaveLength(19)
+    expect(all).toHaveLength(20)
   })
 
   it('runs viewport-keyed, dark-fork, fixed-colour and status-fill-as-text from bridge up', () => {

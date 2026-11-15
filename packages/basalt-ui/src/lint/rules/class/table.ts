@@ -1,5 +1,5 @@
 /**
- * The class-rule family: seven ids, eighteen enabled forms and one built-but-off form, all data
+ * The class-rule family: seven ids, nineteen enabled forms and one built-but-off form, all data
  * (guardrails section 4, rows 1-7). The factory turns each entry into an oxlint/ESLint rule; this
  * module holds the patterns, the fix each message names and the next rung of the bending ladder.
  *
@@ -10,7 +10,13 @@
 import { deniedCurrent, zoneAFillOnly, zoneANames, zoneAPremixed } from '../../generated/zone-a'
 import type { Profile, Zone } from '../../rule-table'
 import { defineRules } from '../../rule-table'
-import { mediaQueryForm, PROFILE_GATE_SCHEMA, partsOnly, partsOnlyExceptSeamMark } from './detect'
+import {
+  borderedCard,
+  mediaQueryForm,
+  PROFILE_GATE_SCHEMA,
+  partsOnly,
+  partsOnlyExceptSeamMark,
+} from './detect'
 
 const ALL: readonly Profile[] = ['bridge', 'parts', 'app', 'repo']
 const PARTS_UP: readonly Profile[] = ['parts', 'app', 'repo']
@@ -46,8 +52,15 @@ const deniedOutright = deniedCurrent
   )
   .join('|')
 
+/**
+ * A ring or outline colour under a focus variant (`focus-visible:`, `data-focused:`,
+ * `group-focus-visible:` ...): no component owns a focus ring's colour, so it is not app colour.
+ */
+const FOCUS_RING_COLOUR =
+  '(?:[^:]+:)*[^:]*focus[^:]*:(?:[^:]+:)*!?(?:ring(?:-offset)?|outline)-[^:]*$'
+
 const colourUtility = new RegExp(
-  `${HEAD}${COLOUR_PREFIX}-(?:${alt(zoneANames)})${TAIL}|${deniedOutright}`,
+  `^(?!${FOCUS_RING_COLOUR})(?=.*(?:${HEAD}${COLOUR_PREFIX}-(?:${alt(zoneANames)})${TAIL}|${deniedOutright}))`,
 )
 /**
  * The fills a mark can carry: the fill-only and status roles on `bg`, `fill` and `stroke`. Ink,
@@ -61,8 +74,17 @@ const FILL_ROLES = [
 const seamMarkFill = new RegExp(`${HEAD}(?:bg|fill|stroke)-(?:${alt(FILL_ROLES)})${TAIL}`)
 
 const colourArbitrary = new RegExp(
-  `${HEAD}${COLOUR_PREFIX}-(?:\\(--vx-(?:${alt(zoneANames)})\\)|\\[(?:var\\()?--vx-(?:${alt(zoneANames)})\\)?\\])${TAIL}`,
+  `^(?!${FOCUS_RING_COLOUR})(?=.*(?:${HEAD}${COLOUR_PREFIX}-(?:\\(--vx-(?:${alt(zoneANames)})\\)|\\[(?:var\\()?--vx-(?:${alt(zoneANames)})\\)?\\])${TAIL}))`,
 )
+
+/** A fill-only role as text: the named utility, `text-(--vx-x)`, `text-[var(--vx-x)]` or `text-[--vx-x]`. */
+const textOnFill = new RegExp(
+  `${HEAD}text-(?:${alt(zoneAFillOnly)}|\\(--vx-(?:${alt(zoneAFillOnly)})\\)|\\[(?:var\\()?--vx-(?:${alt(zoneAFillOnly)})\\)?\\])${TAIL}`,
+)
+
+/** A viewport variant anywhere in the token's chain: `viewport-keyed` already reports it. */
+const VIEWPORT_CHAIN =
+  '(?:[^:]+:)*(?:(?:(?:max|min)-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\\[[^\\]]*\\]):'
 
 export const CLASS_RULES = defineRules({
   'viewport-keyed': {
@@ -100,12 +122,16 @@ export const CLASS_RULES = defineRules({
     family: 'class',
     profiles: ALL,
     zonesOff: VENDORED,
+    // Known limit: a JS fork on the resolved scheme (`readScheme() === 'dark' ? 'bg-inset' : 'bg-card'`)
+    // is not read. The scheme comes from any hook or helper, so a comparison against 'dark' cannot be
+    // tied to a scheme read without a type-aware rule, and a bare `=== 'dark'` also names a theme
+    // setting or a chart option; the class strings inside it are still read by the other forms.
     defect:
       'epos 21 `dark:` forks in app code and 40 in vendored ui; `@custom-variant dark` keys to `data-theme`, so a fork compiles and diverges from the token switch',
     forms: [
       {
         id: 'dark-variant',
-        pattern: /(?:^|:)dark:/,
+        pattern: /(?:^|:)(?:(?:group|peer|in)-)?(?:dark|data-\[theme=dark\]):/,
         fix: 'Tokens switch per scheme: add the token instead of forking with dark:',
         next: 'A reasoned per-line waiver',
         fixture: 'class/dark-fork/dark-variant.tsx',
@@ -139,7 +165,7 @@ export const CLASS_RULES = defineRules({
     forms: [
       {
         id: 'text-on-fill',
-        pattern: new RegExp(`${HEAD}text-(?:${alt(zoneAFillOnly)})${TAIL}`),
+        pattern: textOnFill,
         fix: 'Status or Num tone from parts; text-good or text-brand at bridge',
         next: 'A reasoned per-line waiver',
         fixture: 'class/status-fill-as-text/text-on-fill.tsx',
@@ -164,6 +190,9 @@ export const CLASS_RULES = defineRules({
     ],
   },
 
+  // Known limit: a class built by concatenation (`'bg-' + tone + '-tint'`) is not read. The class
+  // walker reads strings and templates only, and a `+` outside a class context (`'chart-' + id`)
+  // is indistinguishable from one inside it without the parent call or attribute.
   'tw-off-law': {
     family: 'class',
     // Bridge carries the bridge forms only; the parts-only forms read the `profile` option.
@@ -181,16 +210,19 @@ export const CLASS_RULES = defineRules({
         next: 'A cva variant, or a reasoned waiver',
         fixture: 'class/tw-off-law/off-ladder-spacing.tsx',
       },
-      partsOnly({
-        id: 'surface-recipe',
-        // A `dark:` token is `dark-fork`'s: one fix at a time, and the recipe fires once it is gone.
-        pattern: new RegExp(
-          `^(?!.*(?:^|:)dark:)(?:.*:)?!?(?:bg-(?:card|inset)|shadow-card|rounded-card)(?:\\/[^\\s!]+)?!?$`,
-        ),
-        fix: 'Card or Inset own the surface recipe',
-        next: 'A reasoned waiver',
-        fixture: 'class/tw-off-law/surface-recipe.tsx',
-      }),
+      partsOnly(
+        {
+          id: 'surface-recipe',
+          // A `dark:` token is `dark-fork`'s: one fix at a time, and the recipe fires once it is gone.
+          pattern: new RegExp(
+            `^(?!.*(?:^|:)(?:dark|data-\\[theme=dark\\]):)(?:.*:)?!?(?:bg-(?:card|inset)|shadow-card|rounded-card)(?:\\/[^\\s!]+)?!?$`,
+          ),
+          fix: 'Card or Inset own the surface recipe',
+          next: 'A reasoned waiver',
+          fixture: 'class/tw-off-law/surface-recipe.tsx',
+        },
+        borderedCard,
+      ),
       partsOnlyExceptSeamMark(
         {
           id: 'app-colour',
@@ -240,12 +272,24 @@ export const CLASS_RULES = defineRules({
       },
       partsOnly({
         id: 'fixed-width',
-        pattern:
-          /(?:^|:)!?(?:min-)?w-(?:(?:9[7-9]|[1-9]\d{2,})(?:\.\d+)?|\[(?:(?:38[5-9]|39\d|[4-9]\d{2}|\d{4,})(?:\.\d+)?px|(?:2[5-9]|[3-9]\d|\d{3,})(?:\.\d+)?rem)\])!?$/,
+        pattern: new RegExp(
+          `^(?!${VIEWPORT_CHAIN})` +
+            /(?:.*:)?!?(?:min-)?w-(?:(?:9[7-9]|[1-9]\d{2,})(?:\.\d+)?|\[(?:(?:38[5-9]|39\d|[4-9]\d{2}|\d{4,})(?:\.\d+)?px|(?:2[5-9]|[3-9]\d|\d{3,})(?:\.\d+)?rem)\])!?$/
+              .source,
+        ),
         fix: 'Parent-owned width: size the container, not the child',
         next: 'A reasoned waiver',
         fixture: 'class/tw-off-law/fixed-width.tsx',
       }),
+      {
+        id: 'track-length',
+        // A grid track list with a fixed length; `fr`, `auto`, `minmax(0,1fr)` and `%` stay legal.
+        pattern:
+          /(?:^|:)!?grid-(?:cols|rows)-\[[^\]]*[\d.](?:px|r?em|ch|vw|vh|vmin|vmax|[sdl]v[wh]|cq[wh]|cm|mm|in|pt|pc)(?![a-z])[^\]]*\]!?$/,
+        fix: 'Size tracks by fr, auto or minmax(0,1fr); a card grid is CardGrid with a min tier, and the container owns the width',
+        next: 'A reasoned waiver',
+        fixture: 'class/tw-off-law/track-length.tsx',
+      },
     ],
   },
 
@@ -265,7 +309,7 @@ export const CLASS_RULES = defineRules({
       },
       {
         id: 'margin',
-        pattern: /(?:^|:)!?m[xytrblse]?-(?!auto!?$)[^\s]/,
+        pattern: /(?:^|:)!?-?m[xytrblse]?-(?!(?:auto|0)!?$)[^\s]/,
         fix: 'gap-* on the parent; Page for page offsets; ml-auto is legal',
         next: 'A reasoned waiver for an optical offset',
         fixture: 'class/app-spacing/margin.tsx',
