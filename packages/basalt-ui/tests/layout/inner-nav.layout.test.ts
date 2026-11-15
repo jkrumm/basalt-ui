@@ -221,6 +221,32 @@ layout('SplitPage at 390', () => {
     expect(set.detail).not.toBe('none')
   })
 
+  test('the fallback section opens its pane too, and Back returns to the list', async () => {
+    const page = await openFixture(specOf('split'), PHONE)
+    await page.raw.evaluate(
+      ({ nav, frames }) => {
+        const wait = new Function(`return (async () => { ${frames} })()`) as () => Promise<void>
+        document.querySelectorAll<HTMLAnchorElement>(`${nav} a[href]`)[0]?.click()
+        return wait()
+      },
+      { nav: NAV, frames },
+    )
+    const opened = await display(page)
+    expect(opened.list).toBe('none')
+    expect(opened.detail).not.toBe('none')
+    await page.raw.evaluate(
+      ({ frames }) => {
+        const wait = new Function(`return (async () => { ${frames} })()`) as () => Promise<void>
+        history.back()
+        return wait()
+      },
+      { frames },
+    )
+    const back = await display(page)
+    expect(back.list).not.toBe('none')
+    expect(back.detail).toBe('none')
+  })
+
   test('the pane scrolls the page, not an inner scroller, and a section change resets it', async () => {
     const page = await openFixture(specOf('split'), PHONE)
     const read = await page.raw.evaluate(

@@ -1,6 +1,6 @@
 /**
  * A test-local push field over the address bar: the structural stand-in for the controls layer's
- * handle (`value`, `set`, `isSet`, `link`). Writes `?<key>=<value>` with `history.pushState`, so a
+ * handle (`use`, `useIsSet`, `link`). Writes `?<key>=<value>` with `history.pushState`, so a
  * Back walks the sections exactly as a router-backed push field would. Shared by the unit suites and
  * the layout fixture; never exported from the package.
  */
@@ -23,7 +23,7 @@ function subscribe(listener: () => void): () => void {
 const search = (): string => (typeof window === 'undefined' ? '' : window.location.search)
 
 export type PushDouble<K extends string> = InnerNavHandle<K> & {
-  readonly isSet: boolean
+  useIsSet(): boolean
   /** Every value written through `set` or a link click, in order. */
   readonly writes: K[]
 }
@@ -67,9 +67,12 @@ export function pushField<K extends string>(
     get isDefault() {
       return (raw() ?? fallback) === fallback
     },
-    get isSet() {
-      return raw() !== null
-    },
+    useIsSet: () =>
+      useSyncExternalStore(
+        subscribe,
+        () => raw() !== null,
+        () => false,
+      ),
     link: (value) => ({
       href: hrefOf(value),
       onClick: (event) => {

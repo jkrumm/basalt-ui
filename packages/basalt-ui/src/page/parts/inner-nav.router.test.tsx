@@ -65,9 +65,9 @@ const hrefOf = (name: RegExp): string | null =>
   screen.getByRole('link', { name }).getAttribute('href')
 
 describe('InnerNav on a defineControls push field', () => {
-  test('every item is an <a href> carrying the field param; the default stays out of the URL', async () => {
+  test('every item is an <a href> carrying the field param; the fallback is written only when chosen', async () => {
     await mount('/')
-    expect(hrefOf(/General/)).toBe('/')
+    expect(hrefOf(/General/)).toBe('/?section=general')
     expect(hrefOf(/Billing/)).toBe('/?section=billing')
     expect(hrefOf(/Team/)).toBe('/?section=team')
     expect(screen.getByRole('link', { name: /General/ }).getAttribute('aria-current')).toBe('page')

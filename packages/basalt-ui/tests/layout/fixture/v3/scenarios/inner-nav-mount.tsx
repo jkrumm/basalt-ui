@@ -96,6 +96,7 @@ function Body({ section }: { section: Section }): ReactElement {
 function Screen({ mode }: { mode: 'standalone' | 'split' }): ReactElement {
   const state = field
   const [section] = state.use()
+  const selected = state.useIsSet()
   const nav = <InnerNav label="Settings" state={state} filter={filter} groups={GROUPS} />
   return (
     <Page area="settings">
@@ -107,7 +108,7 @@ function Screen({ mode }: { mode: 'standalone' | 'split' }): ReactElement {
           </>
         ) : (
           <SplitPage
-            selected={state.isSet}
+            selected={selected}
             list={() => nav}
             detail={() => <Body section={section} />}
           />

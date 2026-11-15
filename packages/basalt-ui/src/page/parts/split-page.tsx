@@ -19,16 +19,16 @@ export const SplitListContext = createContext(false)
  * detail grows with the page, so the page's own scrollport (the shell's main region) stays the one
  * that scrolls the detail.
  *
- * `selected` is the pane field's `isSet`: a pane navigation (a push) flips it, so Back walks from
- * the detail to the list. The tiers are container queries: put it inside a `Page`, or any
- * `@container`.
+ * `selected` is the pane field's `useIsSet()`: choosing a pane (a push) flips it, the fallback
+ * pane included, so Back walks from the detail to the list. The tiers are container queries: put
+ * it inside a `Page`, or any `@container`.
  *
  * @useWhen a page is a list of things plus the pane for the chosen one (settings sections, a record browser)
  * @neverWhen the detail is a transient inspector over a table (use `PageAside`) or the choices are views of one dataset (use `ViewTabs`)
  *
  * @example
  * <SplitPage
- *   selected={store.field.section.isSet}
+ *   selected={store.field.section.useIsSet()}
  *   list={() => <InnerNav label="Settings" state={store.field.section} groups={GROUPS} />}
  *   detail={() => <SettingsPane section={section} />}
  * />

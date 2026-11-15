@@ -43,7 +43,7 @@ const store = () =>
     fields: { section: field.enum(['general', 'billing', 'team'], 'general', { history: 'push' }) },
   })
 
-/** A router push field as `InnerNav` reads it: `isSet` from the URL, `link()` as `href` + `onClick`. */
+/** A router push field as `InnerNav` reads it: `link()` as `href` + `onClick`. */
 function bindPush(
   handle: ReturnType<typeof store>['field']['section'],
   router: TestRouter,
@@ -53,10 +53,6 @@ function bindPush(
     search: (prev) => ({ ...prev, ...handle.link(value as never).search }),
   })
   return Object.create(handle, {
-    isSet: {
-      get: () =>
-        new URL(router.state.location.href, 'http://localhost').searchParams.has(handle.key),
-    },
     link: {
       value: (value: Section) => ({
         href: router.buildLocation({ to: '.', ...to(value) }).href,
@@ -98,7 +94,7 @@ describe('InnerNav over a push field', () => {
     render(app)
     await waitFor(() => expect(links()).toHaveLength(3))
     expect(links().map((a) => a.getAttribute('href'))).toEqual([
-      '/p', // the default is absent from the URL (defaults never pin)
+      '/p?section=general', // choosing the fallback writes it: that is what opens its pane
       '/p?section=billing',
       '/p?section=team',
     ])
