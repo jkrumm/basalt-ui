@@ -125,10 +125,11 @@ function StatRow({ phase }: { phase: Phase }): ReactElement {
           onClick={() => setState(stat.key === 'shipped' ? 'done' : stat.key)}
           menu={[
             {
+              id: 'issues',
               label: 'Show these Issues',
               onClick: () => setState(stat.key === 'shipped' ? 'done' : stat.key),
             },
-            { label: 'Open Throughput', href: '#throughput' },
+            { id: 'throughput', label: 'Open Throughput', href: '#throughput' },
           ]}
         />
       ))}
