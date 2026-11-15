@@ -22,7 +22,7 @@ pass the channel's `greeting` so the greeting does not reach `map` either.
 Console wiring (software-factory apps/console; replaces its live.ts, policy.ts and debounce.ts):
 `createChannel({ url: '/v1/stream', greeting: 'hello', schema })`, then
 `bindInvalidation(client, channel, { roots: ROOTS, aggregates: ['kpis', 'friction'], greeting: 'hello', map: (change) => BY_KIND[change.kind] ?? 'all' })`,
-then pass it as `createBasaltRouter({ routeTree, live })`: the provider starts it once on the client and stops it on unmount.
+then hand it to the provider (`<BasaltProvider live={live}>`, or `createBasaltRouter({ routeTree, live })`): it starts once on the client and stops on unmount.
 
 ## Signature
 
