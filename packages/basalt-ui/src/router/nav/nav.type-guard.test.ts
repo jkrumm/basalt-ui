@@ -10,7 +10,7 @@
 //
 // Each directive suppresses exactly ONE following line, so every bad literal is on its own line.
 //
-// Counterparts of apps/playground/src/nav.type-guard.tsx (2.x row -> here):
+// Counterparts of the deleted 2.x apps/playground/src/nav.type-guard.tsx:
 //   1 literal precision -> 1      2/4c bad path (item, child) -> 2, 4c   3 missing label -> 3
 //   4/4b/6 foreign key (item, child, group) -> 4, 4b, 6 (+ grandchild 4d, pinned 4e, section 6)
 //   5 flat `to` -> 5              8 search thunk -> 8     9/10 tabs -> 9, 10

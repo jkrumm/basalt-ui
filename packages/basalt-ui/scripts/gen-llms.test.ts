@@ -62,11 +62,6 @@ describe('gen-llms signatures', () => {
     expect(table).toContain('  table: DataTableInstance<T>')
     expect(table).toContain('  detail?: DetailHost')
     expect(block('Bars')).toContain('  ariaLabel: string')
-    // Exactly the own props; nothing inherited from Mantine/DOM leaks in.
-    expect(block('useBasaltForm')).toEqual([
-      '  mode?: "controlled" | "uncontrolled"',
-      '  schema?: StandardSchemaV1<unknown, Values>',
-    ])
     // Subpaths beyond table/charts/forms get their props too (friction row 57).
     const aside = block('PageAside')
     expect(aside.some((l) => l.startsWith('  title: '))).toBe(true)

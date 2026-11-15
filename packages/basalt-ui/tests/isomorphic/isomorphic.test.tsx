@@ -105,11 +105,8 @@ const SUBPATHS: Subpath[] = await Promise.all(
       ['./charts', '../../src/charts/index.ts', true],
       ['./tokens', '../../src/tokens/index.ts', true],
       ['./controls', '../../src/controls/index.ts', false],
-      ['./forms', '../../src/forms/index.ts', false],
       ['./table', '../../src/table/index.ts', false],
-      ['./commands', '../../src/commands/index.ts', false],
       ['./content', '../../src/content/index.ts', false],
-      ['./agent', '../../src/agent/index.ts', false],
     ] as const
   ).map(async ([id, path, mantineFree]) => ({
     id,
@@ -217,6 +214,6 @@ describe('renderToString — every component must survive with no DOM', () => {
  */
 test('every coupled subpath enumerated at least one component', () => {
   const empty = SUBPATHS.filter((s) => detectComponents(s.mod).length === 0).map((s) => s.id)
-  // `./tokens` is pure data by design and `./forms` is hooks-only since 2.0 — the only permitted entries.
-  expect(empty).toEqual(['./tokens', './forms'])
+  // `./tokens` is pure data by design — the only permitted entry.
+  expect(empty).toEqual(['./tokens'])
 })

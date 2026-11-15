@@ -31,7 +31,7 @@ test('every --vx-space-card-inset-* fallback literal equals the level-0 inset', 
       found.push([file.slice(SRC.length), m[1] as string, toPx(m[2] as string, m[3] as string)])
     }
   }
-  expect(found.length).toBeGreaterThan(3)
+  expect(found.length).toBeGreaterThan(1)
   for (const [file, axis, px] of found) {
     expect([file, axis, px]).toEqual([
       file,

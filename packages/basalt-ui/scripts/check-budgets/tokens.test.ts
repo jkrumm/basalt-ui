@@ -12,7 +12,7 @@ import type { AreaModule, Ctx, Measured } from './lib'
 import { gzipFileBytes, publicVxNames, tokensPeers } from './areas/tokens'
 
 const area = (await import('./areas/tokens')) as AreaModule
-const ctx: Ctx = { providerOnlyDist: '', once: (_key, build) => build() }
+const ctx: Ctx = { once: (_key, build) => build() }
 const scratch = mkdtempSync(join(tmpdir(), 'tokens-budget-'))
 afterAll(() => rmSync(scratch, { recursive: true, force: true }))
 

@@ -6,13 +6,12 @@
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import { PKG_ROOT, Unmeasured, summarizeError } from './lib'
+import { Unmeasured, summarizeError } from './lib'
 import type { AreaModule, Budget, Ctx, RowDef } from './lib'
 import { gitBase, ratchetViolations } from './ratchet'
 import type { ReadBase } from './ratchet'
 
 const AREAS_DIR = join(import.meta.dir, 'areas')
-const PROVIDER_ONLY_DIST = join(PKG_ROOT, 'dist/index.js')
 
 /** The area files in `dir`, sorted by name. */
 export function areaFiles(dir: string): string[] {
@@ -56,8 +55,6 @@ async function measureRow(row: RowDef, ctx: Ctx): Promise<Budget> {
 export type RunBudgetsOptions = {
   /** `--report`: print everything, exit 0 regardless. */
   reportOnly: boolean
-  /** The built root entry the provider-only fixture bundles. Defaults to this package's `dist`. */
-  providerOnlyDist?: string
   log?: (line: string) => void
   /** Where the area files live. Defaults to `areas/` beside this file. */
   areasDir?: string
@@ -68,7 +65,6 @@ export type RunBudgetsOptions = {
 /** Print every budget row, then the verdict; returns the exit code instead of exiting. */
 export async function runBudgets({
   reportOnly,
-  providerOnlyDist = PROVIDER_ONLY_DIST,
   log = console.log,
   areasDir = AREAS_DIR,
   readBase = gitBase,
@@ -76,7 +72,6 @@ export async function runBudgets({
   const files = areaFiles(areasDir)
   const memo = new Map<string, Promise<unknown>>()
   const ctx: Ctx = {
-    providerOnlyDist,
     once: <T>(key: string, build: () => Promise<T>) => {
       if (!memo.has(key)) memo.set(key, build())
       return memo.get(key) as Promise<T>

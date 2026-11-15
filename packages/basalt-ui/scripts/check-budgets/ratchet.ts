@@ -23,8 +23,12 @@ export function gitBase(file: string): string | null {
   return shown.exitCode === 0 ? shown.stdout.toString() : null
 }
 
-/** Evaluate base-branch source: written to a temp file with its imports anchored to the real tree. */
-async function loadBase(file: string, source: string): Promise<AreaModule> {
+/**
+ * Evaluate base-branch source: written to a temp file with its imports anchored to the real tree.
+ * `null` when the base imports a module this branch deleted: that base cannot be evaluated, and the
+ * rows it held have no ceiling to be raised from.
+ */
+async function loadBase(file: string, source: string): Promise<AreaModule | null> {
   const anchored = source.replace(
     /\bfrom\s*(['"])([^'"]+)\1/g,
     (_, quote: string, spec: string) => {
@@ -40,6 +44,9 @@ async function loadBase(file: string, source: string): Promise<AreaModule> {
     const path = join(dir, basename(file))
     writeFileSync(path, anchored)
     return (await import(pathToFileURL(path).href)) as AreaModule
+  } catch (error) {
+    if (error instanceof Error && /Cannot find module/.test(error.message)) return null
+    throw error
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -71,7 +78,8 @@ export async function ratchetViolations({
   for (const file of files) {
     const source = readBase(file)
     if (source === null) continue
-    for (const row of (await loadBase(file, source)).rows) baseCeilings.set(row.id, row.ceiling)
+    const base = await loadBase(file, source)
+    for (const row of base?.rows ?? []) baseCeilings.set(row.id, row.ceiling)
   }
 
   const violations: string[] = []

@@ -5,8 +5,8 @@ ships in the tarball. The repo-root `AGENTS.md` is the monorepo file; `AGENTS.md
 shipped consumer quick reference.
 
 The only published package (npm: `basalt-ui`). An opinionated framework for Mantine v9 + TanStack Charts
-React apps: a Mantine theme + `cssVariablesResolver`, `BasaltProvider`, an app shell with a page bar and a
-control tier, a TanStack Charts chart system, a three-tier `--vx-*` token system, a theme-lab, a Vite preset,
+React apps: a Mantine theme + `cssVariablesResolver`, `BasaltProvider` (`basalt-ui/router`), an app shell with a page bar and a
+control tier, a TanStack Charts chart system, a three-tier `--vx-*` token system, a Vite preset,
 raw toolchain presets, and the `basalt-ui` CLI.
 
 This file is **invariants and footguns** — the things that are load-bearing and not obvious from the
@@ -18,23 +18,19 @@ code. Mechanics live where they can't drift: **API shape → the JSDoc on the ex
 
 Named exports only — **no default exports**. Files `kebab-case`, components `PascalCase`.
 
-| Subpath        | Mantine? | Owns                                                                                                                                                                                            |
-| -------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`            | coupled  | provider + theme factory, `createBasaltRouter`/`unwrap`, `ThemeToggle`, nav (`defineNav`, `useBasaltNav`), the state seams                                                                      |
-| `./charts`     | **free** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export                                             |
-| `./tokens`     | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                                                                       |
-| `./controls`   | free     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                                                                         |
-| `./state`      | **free** | `field.*`, `createSearchStore`, `createLocalStore`, `createPersistedState`                                                                                                                      |
-| `./forms`      | coupled  | `useBasaltForm`, `inputProps`, `fieldKey`                                                                                                                                                       |
-| `./commands`   | coupled  | `defineCommands`, `defineOverlays`/`overlays`, `ShortcutsHelp`, and the notifications registry + `NotificationBell` (folded in from `./notifications`)                                          |
-| `./table`      | free     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                                                              |
-| `./agent`      | coupled  | transport + runner + thread contracts and the Mantine chat UI (folded in from `./agent-chat`); `src/agent/*.ts` stays Mantine-free as a repo-local lint boundary, `src/agent/chat/**` is the UI |
-| `./content`    | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map                                                                                                                                     |
-| `./vite`       | —        | `basaltViteConfig` (config only, never `plugins`) + `basalt()` (gates, sources.css, head/PWA)                                                                                                   |
-| `./styles.css` | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                                             |
-| `./configs/*`  | —        | raw toolchain presets (real paths — `extends` needs them)                                                                                                                                       |
+| Subpath        | Mantine? | Owns                                                                                                                                                               |
+| -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.`            | coupled  | the theme factory, `ThemeToggle`, `StatusDot`/`StatusVerdict`, the state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`) |
+| `./charts`     | **free** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export                |
+| `./tokens`     | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                                          |
+| `./controls`   | free     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                                            |
+| `./table`      | free     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                                 |
+| `./content`    | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map                                                                                                        |
+| `./vite`       | —        | `basaltViteConfig` (config only, never `plugins`) + `basalt()` (gates, sources.css, head/PWA)                                                                      |
+| `./styles.css` | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                |
+| `./configs/*`  | —        | raw toolchain presets (real paths — `extends` needs them)                                                                                                          |
 
-**2.0:** 15 published subpaths (V2-SPEC § 1), plus the v3 skeleton stubs added since (32 export keys; `./tokens.css` is a v3 stub); `./guard`, `./theme-lab`, `./data/virtual`,
+**2.0:** 15 published subpaths (V2-SPEC § 1), plus the v3 skeleton stubs added since (32 export keys; `./tokens.css` is a v3 stub); `./guard`, `./data/virtual`,
 `./llms.txt` and `./package.json` are no longer exports. **C1 (1.29.0):** `./query`, `./connectivity` and bare `./data` were dropped — 26 published subpaths
 → 20. `utils/`+`motion/`+`query/error-message` merged into `src/common/`. The 2.x view layer (`src/dashboard/`, `./controls-dates`, the 2.x files of `./charts`, `./table`, `./controls`, `./shell` and `./content`) was deleted in 3.0; `migrations/areas/removed-2x.json` names each export. Full symbol mapping:
 `MIGRATING.md` § 2.x to 3.0.
@@ -186,7 +182,7 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
   the sidebar search trigger, `touchControlHeight`) because the law would take them below the
   minimum target, and `input-height` must keep its `rem × --mantine-scale` form.
 - **Keep the `--vx-` prefix.** Renaming it costs every consumer and buys nothing.
-- **The one known gap, and it is not theme-lab-only**: `VX.legendGap` / `VX.margin` / `VX.dotR` are
+- **The one known gap**: `VX.legendGap` / `VX.margin` / `VX.dotR` are
   frozen at module load from the level-0 snapshot and never re-derive from a `density` option, even
   through `createBasaltTheme`. `deriveSpacing`'s JSDoc has the full accounting.
 - **Series color is consumer data.** `VX.series` is not in the framework: an app declares its own in
@@ -194,13 +190,6 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
   `defineX` factory follows ONE shape — `<const T extends Constraint>(spec: T): T`, exact-keyed, no
   widening annotation, no fluent builder, no accumulating config bag. A new factory matches that
   shape before it reaches the public surface.
-- `theme-lab`'s `DeriveControls` is the DEV analog of the production path and faithful to it (same
-  config through both halves of the theme), gated to dev builds at module scope so production pays
-  no localStorage read. It merges the config DELTA, never a whole theme — a whole-theme merge would
-  clobber the lab back to level 0 in one direction and eat consumer overrides in the other.
-
-## Theme & provider invariants
-
 - **The fill band.** A filled control does not invert across schemes, so its color must clear a white
   label AND stay visible on both pages. That pins every fill into one narrow luminance band: hue
   varies, luminance does not. Never fill with the ink accent — fill with `--vx-accent-fill` /

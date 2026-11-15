@@ -263,6 +263,8 @@ export const SURFACES = {
       // The CSS-text twin of `raw-breakpoint` (below) — a width @media, an undeclared @container
       // name/literal, or a non-coarse pointer query, the shape a JSX-only AST rule cannot see.
       'raw-media-query',
+      // The persisted-theme read the scheme boot owns.
+      'localstorage-theme',
     ],
     // The chrome half of the plugin: the shell, the card idiom, the page title and the scroll
     // doctrine. `hand-rolled-shell` sits here rather than on a shell-shaped surface because
@@ -286,6 +288,14 @@ export const SURFACES = {
       // scripts, tests) — process.env.NODE_ENV works everywhere basalt code runs. Repo-local,
       // scoped to all of src/**, one surface required by coverage (C2 consolidation).
       'no-import-meta-env',
+      // Rows of the deleted 2.x runtime's surfaces, kept on the one remaining doctrine surface until
+      // the plugin retires them (`search-literal-link`, `use-search-from-literal`, `forms-field-key`,
+      // `agent-no-raw-usechat`, `ai-sdk-major`).
+      'search-literal-link',
+      'use-search-from-literal',
+      'forms-field-key',
+      'agent-no-raw-usechat',
+      'ai-sdk-major',
     ],
     // agent/rules/basalt-mantine.md — stated, not guarded. This law has no AST form to catch, because
     // `cssVariablesResolver` is now `Omit`ted from the accepted prop type and a hand-built
@@ -295,7 +305,7 @@ export const SURFACES = {
       "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
     ],
     description:
-      'Wiring (`BasaltProvider`, `createBasaltTheme`, `createBasaltRouter`, `unwrap`), nav (`ThemeToggle`, `defineNav`/`navGroup`/`navTarget`/`flattenNav`, `useBasaltNav`, `useCoarsePointer`) and the state seams. Reaches no subpath-required peer.',
+      'The theme (`createBasaltTheme`, `ThemeToggle`, `StatusDot`, `StatusVerdict`, `useCoarsePointer`) and the state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`). Reaches no subpath-required peer.',
     optionalPeers: [
       'remark-gfm',
       'rehype-sanitize',
@@ -393,32 +403,6 @@ export const SURFACES = {
     },
     forbiddenImports: [...MANTINE_BANS],
   },
-  './forms': {
-    kind: 'doctrine',
-    layer: 'mantine-coupled',
-    rule: 'batteries',
-    skill: ['basalt-design'],
-    guardKinds: [],
-    // The one forms change a compiler cannot see: `inputProps` does not return `key`, and the old
-    // spread still type-checks, renders and validates — it only stops resetting.
-    pluginRules: ['forms-field-key'],
-    description:
-      'Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning), on @mantine/form',
-    optionalPeers: ['@mantine/form'],
-    forbiddenImports: [],
-  },
-  './commands': {
-    kind: 'doctrine',
-    layer: 'mantine-coupled',
-    rule: 'batteries',
-    skill: ['basalt-app'],
-    guardKinds: [],
-    pluginRules: [],
-    description:
-      'defineCommands (typed command bus), defineOverlays/overlays (a form dialog is a registered overlay opened with overlays.open), setColorScheme, toggleSidebar, ShortcutsHelp, defineNotifications/emit/NotificationBell (emit only accepts kinds registered in defineNotifications; folded in from ./notifications); BasaltProvider mounts Notifications; Spotlight mounts once defineNav/defineCommands ran, Modals once defineOverlays/overlays.confirm ran',
-    optionalPeers: ['@tanstack/react-hotkeys'],
-    forbiddenImports: [],
-  },
   './table': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
@@ -430,32 +414,6 @@ export const SURFACES = {
       '`DataTable` over `useDataTable`, the `col` kind columns, the parts `DataTable` composes (`TableToolbar`, `DataTableBody`, `TablePager`, `BulkBar`) and `tableCodec`, on TanStack Table v9 and `ui/*` primitives',
     optionalPeers: ['@tanstack/react-table', '@base-ui/react'],
     forbiddenImports: [],
-  },
-  './agent': {
-    kind: 'doctrine',
-    layer: 'mantine-coupled',
-    rule: 'batteries',
-    skill: ['basalt-app'],
-    guardKinds: [],
-    // The agent-chat correctness rules — they honour `basalt-agent-allow`, not `theme-allow`.
-    pluginRules: ['agent-no-raw-usechat', 'ai-sdk-major'],
-    description:
-      'Streaming-chat surface: aiSdkTransport, useAgentThreadRuns, parseAgentPart, the open part-registry types, the consumer-owned thread contracts (AgentThread/ThreadsStore/ChatMessage), and the Mantine chat UI folded in from ./agent-chat (ThreadFeed, ThreadFeedRow, Composer, ToolChip). motion is subpath-required: the chat UI imports it eagerly',
-    optionalPeers: [
-      'ai',
-      '@ai-sdk/provider',
-      'motion',
-      'use-stick-to-bottom',
-      '@tanstack/react-virtual',
-    ],
-    // The chat UI (src/agent/chat/**) is Mantine-styled; the runtime beside it stays Mantine-free.
-    // `*` does not cross `/`, so the two globs below cover the runtime files and not chat/.
-    globs: {
-      shipped: [],
-      repo: ['packages/basalt-ui/src/agent/*.ts', 'packages/basalt-ui/src/agent/*.tsx'],
-    },
-    // @visx/* ban dropped — `basalt/chart-engine-boundary` bans it everywhere.
-    forbiddenImports: [...MANTINE_BANS],
   },
   './content': {
     kind: 'doctrine',
@@ -532,32 +490,6 @@ export const SURFACES = {
         '@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Only ./forms needs it.',
       ),
     ],
-  },
-  './state': {
-    kind: 'doctrine',
-    layer: 'headless',
-    rule: 'state',
-    skill: ['basalt-design'],
-    guardKinds: ['localstorage-theme'],
-    // Law C10 — a nav link's `search` and a reader's `from` are both the search store's contract
-    // (the store half of the former `./router-tanstack`).
-    pluginRules: ['search-literal-link', 'use-search-from-literal'],
-    description:
-      'field.enum/multi/range/number/boolean/string (the store field vocabulary), createSearchStore (typed URL > localStorage > fallback store), createLocalStore (the router-free store), createPersistedState (versioned localStorage)',
-    optionalPeers: [],
-    // Consumers import basalt-ui/state from node_modules (lint-ignored), so there is nothing to
-    // enforce consumer-side, and a shipped **/state* glob would wrongly hit consumers' own
-    // Mantine-using state files. Enforce basalt's own barrel AND its implementation files.
-    globs: {
-      shipped: [],
-      repo: [
-        'packages/basalt-ui/src/state.ts',
-        'packages/basalt-ui/src/state/**',
-        'packages/basalt-ui/src/router-tanstack/search-store.ts',
-      ],
-    },
-    // @visx/* ban dropped — `basalt/chart-engine-boundary` bans it everywhere.
-    forbiddenImports: [...MANTINE_BANS],
   },
 
   // ── v3 skeleton (additive stubs; each row is filled by its owning v3 Issue) ──────────────────

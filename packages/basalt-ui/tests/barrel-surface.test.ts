@@ -13,7 +13,6 @@
  */
 import { describe, expect, it } from 'bun:test'
 
-import * as agentBarrel from '../src/agent'
 import * as chartsBarrel from '../src/charts'
 import * as tokensBarrel from '../src/tokens'
 
@@ -79,29 +78,5 @@ describe('barrel surface', () => {
         expect(Object.prototype.hasOwnProperty.call(chartsBarrel, key)).toBe(false)
       })
     }
-  })
-
-  // ./agent — the V2-SPEC section 1 surface: the transport and runner plus the chat UI folded in from
-  // the former ./agent-chat. `ToolChipRenderer` (the internal adapter) was never exported.
-  describe('./agent', () => {
-    const AGENT_REQUIRED_KEYS = [
-      'aiSdkTransport',
-      'useAgentThreadRuns',
-      'parseAgentPart',
-      'ThreadFeed',
-      'ThreadFeedRow',
-      'Composer',
-      'ToolChip',
-    ] as const
-
-    for (const key of AGENT_REQUIRED_KEYS) {
-      it(`exports '${key}'`, () => {
-        expect((agentBarrel as Record<string, unknown>)[key]).toBeDefined()
-      })
-    }
-
-    it('does not export the internal ToolChipRenderer adapter', () => {
-      expect(Object.prototype.hasOwnProperty.call(agentBarrel, 'ToolChipRenderer')).toBe(false)
-    })
   })
 })

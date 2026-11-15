@@ -77,6 +77,15 @@ const playgroundPlugin = (pseudo: boolean): Bun.BunPlugin => ({
       contents: `export default ${JSON.stringify(await Bun.file(args.path).text())}`,
       loader: 'js',
     }))
+    // Authored `.mdx` is compiled at build time, as the playground's Vite plugin does.
+    build.onLoad({ filter: /\.mdx$/ }, async (args) => {
+      const { compile } = (await import(Bun.resolveSync('@mdx-js/mdx', PLAYGROUND))) as {
+        compile: (source: string, options: { remarkPlugins: unknown[] }) => Promise<unknown>
+      }
+      const gfm = (await import(Bun.resolveSync('remark-gfm', PLAYGROUND))) as { default: unknown }
+      const file = await compile(await Bun.file(args.path).text(), { remarkPlugins: [gfm.default] })
+      return { contents: String(file), loader: 'js' }
+    })
     build.onLoad({ filter: /apps\/playground\/src\/index\.css$/ }, (args) => ({
       contents: compileTailwind(args.path),
       loader: 'css',

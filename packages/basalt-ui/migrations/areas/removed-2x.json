@@ -217,6 +217,84 @@
       "kind": "removed",
       "from": "basalt-ui/table#createColumnHelper",
       "note": "the 2.x view layer is deleted in 3.0; instead: col from basalt-ui/table (the kind column factory)"
+    },
+    {
+      "id": "removed-2x-root-BasaltProvider",
+      "kind": "removed",
+      "from": "basalt-ui#BasaltProvider",
+      "note": "the 2.x runtime is deleted in 3.0; instead: BasaltProvider from basalt-ui/router, with routerDefaults().link on its link prop; scheme, locale, lang and live are its props"
+    },
+    {
+      "id": "removed-2x-root-basaltRouterOptions",
+      "kind": "removed",
+      "from": "basalt-ui#basaltRouterOptions",
+      "note": "the 2.x runtime is deleted in 3.0; instead: routerDefaults().options spread into createRouter, with makeQueryClient from basalt-ui/data"
+    },
+    {
+      "id": "removed-2x-root-createBasaltRouter",
+      "kind": "removed",
+      "from": "basalt-ui#createBasaltRouter",
+      "note": "the 2.x runtime is deleted in 3.0; instead: createRouter from @tanstack/react-router with routerDefaults().options, and your own pending, error and not-found components"
+    },
+    {
+      "id": "removed-2x-root-defineNav",
+      "kind": "removed",
+      "from": "basalt-ui#defineNav",
+      "note": "the 2.x runtime is deleted in 3.0; instead: defineNav from basalt-ui/router"
+    },
+    {
+      "id": "removed-2x-root-flattenNav",
+      "kind": "removed",
+      "from": "basalt-ui#flattenNav",
+      "note": "the 2.x runtime is deleted in 3.0; instead: no replacement; AppShell derives rail, tab bar, breadcrumb and palette from the one defineNav declaration"
+    },
+    {
+      "id": "removed-2x-root-navGroup",
+      "kind": "removed",
+      "from": "basalt-ui#navGroup",
+      "note": "the 2.x runtime is deleted in 3.0; instead: group objects in the defineNav declaration from basalt-ui/router"
+    },
+    {
+      "id": "removed-2x-root-navTarget",
+      "kind": "removed",
+      "from": "basalt-ui#navTarget",
+      "note": "the 2.x runtime is deleted in 3.0; instead: navTarget from basalt-ui/router"
+    },
+    {
+      "id": "removed-2x-root-unwrap",
+      "kind": "removed",
+      "from": "basalt-ui#unwrap",
+      "note": "the 2.x runtime is deleted in 3.0; instead: unwrap from basalt-ui/data"
+    },
+    {
+      "id": "removed-2x-root-useBasaltNav",
+      "kind": "removed",
+      "from": "basalt-ui#useBasaltNav",
+      "note": "the 2.x runtime is deleted in 3.0; instead: useActiveNav through AppShell; no hook of its own is published"
+    },
+    {
+      "id": "removed-2x-agent",
+      "kind": "removed",
+      "from": "basalt-ui/agent",
+      "note": "the 2.x runtime is deleted in 3.0; instead: the chat runtime of basalt-ui/ai (defineCatalog, defineBlock, partView) and the chat recipes in docs/recipes"
+    },
+    {
+      "id": "removed-2x-commands",
+      "kind": "removed",
+      "from": "basalt-ui/commands",
+      "note": "the 2.x runtime is deleted in 3.0; instead: defineCommands and CommandPalette from basalt-ui/shell; notify from basalt-ui; setScheme from basalt-ui/core/scheme"
+    },
+    {
+      "id": "removed-2x-forms",
+      "kind": "removed",
+      "from": "basalt-ui/forms",
+      "note": "the 2.x runtime is deleted in 3.0; instead: @tanstack/react-form with FormField, FormRow and FormFooter from basalt-ui/controls"
+    },
+    {
+      "id": "removed-2x-state",
+      "kind": "removed",
+      "from": "basalt-ui/state",
+      "note": "the 2.x runtime is deleted in 3.0; instead: defineControls and field from basalt-ui/router for URL state; persisted and createSyncedState from basalt-ui and basalt-ui/data"
     }
   ],
   "tokens": {

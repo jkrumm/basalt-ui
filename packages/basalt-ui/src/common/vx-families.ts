@@ -35,7 +35,6 @@ export const BASALT_VX_FAMILIES: readonly string[] = [
   'ink',
   'input',
   'inset',
-  'keyboard',
   'legend',
   'line',
   'measure',
