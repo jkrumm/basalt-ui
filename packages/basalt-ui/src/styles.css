@@ -18,7 +18,7 @@
 
 /* Every Mantine layer bundle the provider mounts (core, Notifications, Spotlight; `@mantine/modals`
  * ships no CSS), imported here so a consumer's one `import 'basalt-ui/styles.css'` carries them
- * (docs/V2-SPEC.md § 1 Open). `@mantine/dates` is not here: only `./controls-dates` needs it, so it
+ * (docs/V2-SPEC.md § 1 Open). `@mantine/dates` is not here: nothing in the package needs it, so it
  * stays the consumer's import. After the `@layer` statement above on purpose: the order is already
  * fixed, so the imports cannot reorder the layers whichever way the bundler emits them. */
 @import '@mantine/core/styles.layer.css';
