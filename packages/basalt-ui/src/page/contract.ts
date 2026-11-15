@@ -5,7 +5,13 @@
  * 3.2, 3.3 and 3.6, and docs/v3/concepts/ai-mdx.md section 4 (`MDXComponents`).
  */
 import type { ComponentType, ReactNode } from 'react'
-import type { ControlHandle, ControlsSlot, FreshnessView, IconComponent } from '../core/ports'
+import type {
+  ConnectionView,
+  ControlHandle,
+  ControlsSlot,
+  FreshnessView,
+  IconComponent,
+} from '../core/ports'
 
 // ---- Targets and badges shared with the shell (`shell -> page` is the declared edge) -------
 
@@ -64,6 +70,8 @@ export type PageBarProps<K extends string = string> = {
   parent?: { label: string; href: string | NavTarget }
   controls?: ControlsSlot
   tabs?: PageTabs<K>
+  /** `useConnection()`: draws `ConnectionIndicator` in the end slot, before `refresh`. */
+  connection?: ConnectionView
   refresh?: { scope: 'page' | 'global' } & FreshnessView['button']
   /** At most 5, at most one `primary`, none required. */
   actions?: readonly [PageAction?, PageAction?, PageAction?, PageAction?, PageAction?]
