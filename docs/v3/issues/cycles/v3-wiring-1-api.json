@@ -1,0 +1,26 @@
+{
+  "why": "Wiring cycle 1's export-surface read (docs/v3/cycles/wiring-1.md) logged two P2 and six P3 `api` findings. wiring-1.11: an action's activation callback is `onClick` on `PageButtonAction`, `RowAction`, `GlobalAction` and `SidebarBlock` rows, and `onSelect` on `CardAction`, `InnerNavMenuItem` and the `ChartCard` target. wiring-1.12: every frame takes `phase` and `empty`, but `useDataTable` takes `phase` alone, so an app cannot say why its table is empty. P3s: `Empty.cause` against `EmptyStateProps.why` (1.15); `QueryStateProps.loading: ReactNode` against `loading: boolean` on `Button` and `PageSummary` (1.16); `ui/table` `size: compact | md` against `sm | md` on six primitives, and `ui/button` `size` carrying `icon`, `icon-sm` (1.17); `SidebarBlock` row `icon?: ReactNode` against `IconComponent` everywhere else (1.18); `makeQueryClient` beside `createSyncedState`, `createFormat` against `defineFormat` (1.19); `field` on `basalt-ui/router` and on `basalt-ui/state` are two different objects that no teardown row names (1.20).",
+  "what": "One prop name per role across the v3 surface, and the table takes `empty` like every frame.",
+  "owns": [
+    "packages/basalt-ui/src/page/contract.ts, src/core/phase.ts, src/table/contract.ts, src/table/use-data-table.ts, src/shell/nav-types.ts, src/page/query-state.tsx, src/page/empty-state.tsx (the renamed props and their callers)",
+    "packages/basalt-ui/src/ui/table.tsx, src/ui/button.tsx (size axes)",
+    "packages/basalt-ui/MAINTAINING.md (one verb rule)",
+    "packages/basalt-ui/MIGRATING.md and migrations rows, the export-surface snapshot as its generator writes it",
+    "the playground and examples call sites of a renamed prop, for the rename only"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "the 2.x root barrel (v3-teardown-*)"
+  ],
+  "change": "(1) One name for an action's activation callback on the v3 surface; pick the one the shipped rules and most call sites use, rename the rest with a migration row (wiring-1.11). (2) `useDataTable` takes `empty?: Empty | null`, shown through the existing empty row (wiring-1.12). (3) The P3s: one name for the empty sentence; `QueryState`'s node slot renamed off `loading`; `ui/table` says `sm`, and the icon button's shape leaves `size`; the sidebar row `icon` is an `IconComponent`; a verb rule in `MAINTAINING.md` (`define` declares, `create` or `make` builds one, pick one) with the outliers renamed; the `basalt-ui/state` `field` either named in a teardown brief or renamed. Each rename ships with its migration row and the snapshot update. Where a rename touches more than this row can carry, do (1) and (2) and file the rest as a signal.",
+  "commits": "feat: per rename in packages/basalt-ui; call-site updates in their own commit.",
+  "proof": "make check; type guards for the renamed props; release-migrating --check.",
+  "acceptance": [
+    "`rg -n 'onClick\\??:|onSelect\\??:' packages/basalt-ui/src/{page,cards,table,shell,core}/*contract*.ts packages/basalt-ui/src/core/phase.ts` shows one name for the activation callback",
+    "`useDataTable({ ..., empty: { cause } })` shows that cause on an empty table (test)",
+    "Every rename has a MIGRATING row and `release-migrating --check` passes",
+    "make check passes"
+  ],
+  "out_of_scope": "Link props and NavTarget (v3-wiring-1-router-link); deleting the 2.x root duplicates (v3-teardown-views, v3-teardown-runtime)."
+}

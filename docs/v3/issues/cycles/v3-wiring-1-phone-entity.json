@@ -1,0 +1,21 @@
+{
+  "why": "Wiring cycle 1 (docs/v3/cycles/wiring-1.md, P1 wiring-1.5): a client `DataTable` with `entity`, `money`, `status` and `date` columns at 390 px (a 374 px container) renders as a table, not cards; the Customer cell is 14 px wide and its text invisible while the other three keep 120 px each (`.evidence/cycle-wiring-1/p1.log`, `shots/orders--*--390x844.png`). The row's name is the one cell a phone reader needs. Neither `docs/data-table.md` nor `docs/use-data-table.md` states the `phone` or `cardsBelow` default, so the author cannot tell whether cards were expected.",
+  "what": "On a phone a table never hides the row's name: the entity column keeps its content width, or the table projects to cards.",
+  "owns": [
+    "packages/basalt-ui/src/table/parts/tiers.tsx",
+    "packages/basalt-ui/src/table/use-data-table.ts (defaults only)",
+    "packages/basalt-ui/src/table/core/kinds*.ts (column widths only)",
+    "the table layout tests and fixtures",
+    "the JSDoc gen-docs reads for `phone` and `cardsBelow`"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md"],
+  "change": "Find why a four-column client table with the default `phone` and `cardsBelow` stays a table in a 374 px container. Either the card projection applies there, or the tier drops lower-priority columns before the entity column shrinks below its content (a minimum width for `entity`). State the defaults in the JSDoc so `docs/use-data-table.md` prints them.",
+  "commits": "fix: in packages/basalt-ui.",
+  "proof": "make check; a layout test at 390x844 with the cycle's four columns.",
+  "acceptance": [
+    "At 390x844, the entity cell of the cycle's four-column table is at least as wide as its text (`Wayne Ltd`), as a column or as a card title (layout test)",
+    "`docs/use-data-table.md` states the `phone` and `cardsBelow` defaults",
+    "make check passes"
+  ],
+  "out_of_scope": "Server tables, virtual tables and the table's empty state (v3-wiring-1-api)."
+}

@@ -808,3 +808,76 @@ rows:
     repo: basalt-ui
     kind: chore
     facts: { 'brief': 'docs/v3/issues/cycles/v3-mwg-progress-timeline.json' }
+  - key: v3-wiring-1-init-scaffold
+    title: 'basalt-ui init writes the router scaffold its templates promise, from wiring cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-wiring-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-init-scaffold.json' }
+  - key: v3-wiring-1-entry-docs
+    title: 'README and llms.txt teach the v3 app, from wiring cycle 1'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-wiring-1-init-scaffold]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-entry-docs.json' }
+  - key: v3-wiring-1-router-link
+    title: 'Every link prop navigates through the router and takes a NavTarget, from wiring cycle 1'
+    repo: basalt-ui
+    kind: feature
+    checkpoint: spec
+    after: [v3-cycle-wiring-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-router-link.json' }
+  - key: v3-wiring-1-statcard-target
+    title: 'The whole linked StatCard takes the click; a title-only PageBar draws no band, from wiring cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-wiring-1-router-link]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-statcard-target.json' }
+  - key: v3-wiring-1-phone-entity
+    title: 'A phone table never hides the row name, from wiring cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-wiring-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-phone-entity.json' }
+  - key: v3-wiring-1-wiring
+    title: 'init installs and patches the app profile; doctor runs from the local bin; the v3 provider has a home, from wiring cycle 1'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-wiring-1-init-scaffold]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-wiring.json' }
+  - key: v3-wiring-1-docs
+    title: 'Generated docs show union arms, defaults and examples, from wiring cycle 1'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-wiring-1-entry-docs]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-docs.json' }
+  - key: v3-wiring-1-api
+    title: 'One prop name per role, and the table takes empty, from wiring cycle 1'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-wiring-1-router-link]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-api.json' }
+  - key: v3-wiring-1-lint
+    title: 'The export-surface snapshot covers ./shell and ui/*, from wiring cycle 1'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-cycle-wiring-1]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-lint.json' }
+  - key: v3-cycle-wiring-2
+    title: 'Improvement cycle 2: wiring from init to a first page, and the export surface'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-wiring-1-init-scaffold,
+        v3-wiring-1-entry-docs,
+        v3-wiring-1-router-link,
+        v3-wiring-1-statcard-target,
+        v3-wiring-1-phone-entity,
+        v3-wiring-1-wiring,
+        v3-wiring-1-docs,
+        v3-wiring-1-api,
+        v3-wiring-1-lint,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-wiring-2.json' }

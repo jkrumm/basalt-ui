@@ -1,0 +1,27 @@
+{
+  "why": "Wiring cycle 1 (docs/v3/cycles/wiring-1.md) logged one P2 and one P3 `docs` finding. wiring-1.10: the generated docs print each arm of a union as a required prop and name no default: `docs/data-table.md` lists `virtual: VirtualLike`, `docs/use-data-table.md` lists `detail`, `docs/stat-card.md` lists both `href` and `onSelect`, and none states `phone`, `cardsBelow`, `pager` or `tier`; `docs/define-nav.md` and `docs/col.md` are a signature with no example and no kind list; `docs/table.md` has an empty `use when`. Two pages took seven `.d.ts` reads. wiring-1.14 (P3): `/basalt-app` links `docs/*.md` relative to its own dir, where nothing resolves; `docs/recipes/{app-shell,add-page}.md` show no imports and cite `apps/playground/src/routes/index.tsx`, which does not ship; README says `bunx basalt-ui init`, the skill says never a download-and-run; nothing says whether `Delta.value` 0.12 means 12 %.",
+  "what": "The shipped docs answer a prop's required-ness, default and shape without a `.d.ts` read.",
+  "owns": [
+    "packages/basalt-ui/scripts/gen-docs.ts, its tests and baseline",
+    "packages/basalt-ui/scripts/gen-recipes.ts and the recipe regions it reads",
+    "the JSDoc of defineNav, col, StatCard, Delta and ui/table that gen-docs reads",
+    "packages/basalt-ui/agent/skills/basalt-app/** (links and the init sentence)",
+    "the generated packages/basalt-ui/docs/**"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/README.md",
+    "packages/basalt-ui/scripts/gen-llms.ts"
+  ],
+  "change": "`gen-docs.ts` renders a union prop as its arms (\"either `href` or `onSelect`\") and prints `@default` where the JSDoc has one; the `phone`, `cardsBelow`, `pager` and `tier` JSDoc gain theirs. `defineNav`, `col` (with its kinds) and `StatCard` each carry one `@example`; `ui/table` gets its `@useWhen` and `@neverWhen`; `Delta.value` says what a number means. Recipes print their imports and name no unshipped file. The skill links `node_modules/basalt-ui/docs/<name>.md` and says once how `init` is run.",
+  "commits": "docs: or fix: in packages/basalt-ui as the release rules say.",
+  "proof": "make check (gen-docs tests, docs-format, agent-doc-drift).",
+  "acceptance": [
+    "`docs/data-table.md`, `docs/use-data-table.md` and `docs/stat-card.md` show the union arms, and no arm as plainly required",
+    "`docs/use-data-table.md` prints the defaults of `phone`, `cardsBelow` and `pager`",
+    "`docs/define-nav.md`, `docs/col.md` and `docs/stat-card.md` have an example",
+    "`rg -n 'apps/playground' packages/basalt-ui/docs/recipes` is empty, and every link in `agent/skills/basalt-app/**` resolves from an installed app",
+    "make check passes"
+  ],
+  "out_of_scope": "README and llms.txt (v3-wiring-1-entry-docs); renaming props (v3-wiring-1-api)."
+}

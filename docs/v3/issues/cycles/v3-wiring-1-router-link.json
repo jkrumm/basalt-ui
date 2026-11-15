@@ -1,0 +1,30 @@
+{
+  "why": "Wiring cycle 1 (docs/v3/cycles/wiring-1.md, P1 wiring-1.3): a `StatCard href=\"/orders\"` renders a plain `<a>`, and a click loads `/orders` as a new document: the Query cache, the shell state and any in-flight work are gone (`.evidence/cycle-wiring-1/p2.log`, `p3.log`). `routerDefaults()` returns a `link` (`RouterLinkComponent`) and the shipped rule says \"`routerDefaults` supplies the router link\", but no prop and no provider takes it. `href` is `string` on `StatCard`, `CardAction` (and so `EmptyState action`, `Empty.action`), `col.entity({ href })`, `InnerNav` items, the `ChartCard` target and sidebar block rows; only `PageBar parent.href` takes `string | NavTarget`. Every app with a linked card or row repeats `onSelect` plus `router.navigate`.",
+  "what": "Every link prop navigates through the router: one place installs the router's `LinkComponent`, and every link prop takes `string | NavTarget`.",
+  "owns": [
+    "packages/basalt-ui/src/core/ports.ts (`LinkComponent`)",
+    "packages/basalt-ui/src/core/phase.ts (`CardAction`)",
+    "packages/basalt-ui/src/core/provider.tsx or the shell host, wherever the spec installs the link",
+    "packages/basalt-ui/src/router/defaults.ts, src/router/nav-target.ts",
+    "packages/basalt-ui/src/cards/contract.ts and the cards that render a target",
+    "packages/basalt-ui/src/table/core/kinds*.ts (entity href)",
+    "packages/basalt-ui/src/page/parts/inner-nav.tsx, src/shell/nav-types.ts (href only)",
+    "packages/basalt-ui/agent/templates/main.tpl (installing the link)",
+    "packages/basalt-ui/MIGRATING.md rows, the export-surface snapshot as its generator writes it"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/src/cards/stat-card-parts.tsx hit area (v3-wiring-1-statcard-target)"
+  ],
+  "change": "Spec first (one page): where the router link is installed (the v3 provider, `AppShell`, or a `link` option the router context carries), whether a plain in-app string `href` also goes through it or only a `NavTarget` does, and what an app without a router gets (the plain anchor, as today). Then every link prop of the v3 surface takes `string | NavTarget` and renders through the installed `LinkComponent`; `main.tpl` installs `routerDefaults().link` in the chosen place.",
+  "commits": "feat: per change in packages/basalt-ui; the template change in its own commit.",
+  "proof": "make check; a layout or unit test that a linked StatCard click keeps the document (no reload) with the link installed.",
+  "acceptance": [
+    "A Spec states the install point and the string-href rule before code",
+    "`StatCard`, `CardAction`, `col.entity`, `InnerNav` items and the `ChartCard` target accept `navTarget({ to })` (type guard)",
+    "With the link installed, a click on a linked StatCard navigates without a document load (test)",
+    "Without a router, the same props render a plain anchor (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Which part of the card takes the click (v3-wiring-1-statcard-target); renaming onClick/onSelect (v3-wiring-1-api)."
+}
