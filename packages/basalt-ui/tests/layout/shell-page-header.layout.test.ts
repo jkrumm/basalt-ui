@@ -63,6 +63,48 @@ layout('the phone header keeps the title readable', () => {
   })
 })
 
+layout('a title-only PageBar in a shell draws no band', () => {
+  for (const viewport of [DESKTOP_1800, PHONE]) {
+    test(`${viewport.name}: 0 px of band, one h1, --page-bar-h reads 0`, async () => {
+      const page = await openFixture(specOf({ title: 'Orders' }), viewport)
+      await page.raw.waitForSelector(slot('section'))
+      await page.settle()
+      const m = await page.raw.evaluate(() => {
+        const band = document.querySelector<HTMLElement>('[data-slot="page-bar"]')
+        const main = document.querySelector<HTMLElement>('main') ?? document.body
+        const raw = getComputedStyle(document.documentElement).getPropertyValue('--page-bar-h')
+        const owner = [...document.querySelectorAll<HTMLElement>('*')].find(
+          (el) => el.style.getPropertyValue('--page-bar-h') !== '',
+        )
+        return {
+          bandHeight: band === null ? 0 : band.getBoundingClientRect().height,
+          h1: main.querySelectorAll('h1').length,
+          raw: raw.trim(),
+          inline: owner?.style.getPropertyValue('--page-bar-h') ?? '',
+        }
+      })
+      expect(m.bandHeight, 'no band element has height').toBe(0)
+      expect(m.h1, 'the title stays as one h1').toBe(1)
+      expect(parseFloat(m.inline || m.raw || '0'), '--page-bar-h reads 0').toBe(0)
+    })
+  }
+
+  test('1800: a title-only page and a bar-less page start content at one height', async () => {
+    const top = async (bar?: NonNullable<FixtureSpec['bar']>): Promise<number> => {
+      const page = await openFixture(specOf(bar), DESKTOP_1800)
+      await page.raw.waitForSelector(slot('section'))
+      await page.settle()
+      return page.raw.evaluate(
+        (sel) => document.querySelector<HTMLElement>(sel)?.getBoundingClientRect().top ?? -1,
+        slot('section'),
+      )
+    }
+    const bare = await top()
+    const titled = await top({ title: 'Orders' })
+    expect(Math.abs(bare - titled)).toBeLessThanOrEqual(1)
+  })
+})
+
 layout('content starts at one height on every page', () => {
   const firstRow = async (bar?: NonNullable<FixtureSpec['bar']>): Promise<number> => {
     const page = await openFixture(specOf(bar), DESKTOP_1800)
