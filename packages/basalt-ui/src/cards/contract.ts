@@ -65,6 +65,8 @@ export type StatCardProps = CardTarget &
     sub?: string
     /** Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16). */
     chart?: BoxSlot
+    /** The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alone. */
+    xLabels?: readonly [string, string, string]
     footer?: FootFacts
     controls?: ControlsSlot<'widget'>
     menu?: readonly [MenuAction, MenuAction, ...MenuAction[]]
