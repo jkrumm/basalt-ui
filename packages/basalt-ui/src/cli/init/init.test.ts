@@ -17,7 +17,8 @@ import { dirname, join, resolve } from 'node:path'
 import stylelint from 'stylelint'
 
 import { readBudget, seedBudget } from '../budget'
-import { run } from '../index'
+import { packageRoot, run } from '../index'
+import { sync } from '../sync'
 import { parseManifest } from '../manifest'
 import type { Manifest, Profile } from '../manifest'
 import { COMMAND_OPTIONS } from '../help'
@@ -385,7 +386,12 @@ describe('init: the budget, the install and the seeds', () => {
     })
     await runInit(['--profile', 'app', '--root', 'src'], stock)
     expect(read(stock, 'vite.config.ts')).toContain("import { basalt } from 'basalt-ui/vite'")
-    expect(read(stock, 'vite.config.ts')).toContain('plugins: [basalt(), react()]')
+    expect(read(stock, 'vite.config.ts')).toContain(
+      "plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), basalt(), react()]",
+    )
+    expect(read(stock, 'vite.config.ts')).toContain(
+      "import { tanstackRouter } from '@tanstack/router-plugin/vite'",
+    )
     expect(read(stock, 'src/index.css')).toBe(
       "@import 'basalt-ui/tailwind.css';\n@import '../.basalt/sources.css';\n",
     )
@@ -404,7 +410,7 @@ describe('init: the budget, the install and the seeds', () => {
     })
     await runInit(['--profile', 'app', '--root', 'src'], dir)
     expect(read(dir, 'vite.config.ts')).toBe(
-      "import {\n  defineConfig,\n  loadEnv,\n} from 'vite'\nimport { basalt } from 'basalt-ui/vite'\n\nexport default defineConfig({ plugins: [basalt(), ] })\n",
+      "import {\n  defineConfig,\n  loadEnv,\n} from 'vite'\nimport { tanstackRouter } from '@tanstack/router-plugin/vite'\nimport { basalt } from 'basalt-ui/vite'\n\nexport default defineConfig({ plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), basalt(), ] })\n",
     )
   })
 
@@ -484,5 +490,133 @@ describe('init: twice produces no diff', () => {
     const once = snapshot(dir)
     expect((await runInit(argv, dir)).code).toBe(0)
     expect(snapshot(dir)).toEqual(once)
+  })
+})
+
+const VITE_STOCK_MAIN = `import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+`
+
+/** What `bun create vite --template react-ts` leaves, to the files `init` looks at. */
+const createVite = (): string =>
+  repo({
+    'vite.config.ts':
+      "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n})\n",
+    'index.html': '<script type="module" src="/src/main.tsx"></script>\n',
+    'src/main.tsx': VITE_STOCK_MAIN,
+    'src/App.tsx': 'export default function App() { return null }\n',
+    'src/index.css': "@import 'tailwindcss';\n",
+  })
+
+const SEEDED = [
+  'src/main.tsx',
+  'src/routes/__root.tsx',
+  'src/routes/_app.tsx',
+  'src/lib/nav.tsx',
+  'src/components/route-pending.tsx',
+  'src/components/route-error.tsx',
+  'src/components/route-missing.tsx',
+] as const
+
+const template = (name: string): string =>
+  readFileSync(join(import.meta.dirname, '../../../agent/templates', name), 'utf8').replaceAll(
+    '{{APP_NAME}}',
+    'fixture',
+  )
+
+describe('init: the router scaffold', () => {
+  it('writes every router seed on a create-vite app, replacing its stock entry', async () => {
+    const dir = createVite()
+    const { code, log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(code).toBe(0)
+    expect(read(dir, 'src/main.tsx')).toBe(template('main.tpl'))
+    expect(read(dir, 'src/routes/__root.tsx')).toBe(template('__root.tpl'))
+    expect(read(dir, 'src/routes/_app.tsx')).toBe(template('_app.tpl'))
+    expect(read(dir, 'src/lib/nav.tsx')).toBe(template('nav.tpl'))
+    expect(read(dir, 'src/components/route-pending.tsx')).toBe(template('_app-pending.tpl'))
+    expect(read(dir, 'src/components/route-error.tsx')).toBe(template('_app-error.tpl'))
+    expect(read(dir, 'src/components/route-missing.tsx')).toBe(template('_app-missing.tpl'))
+    expect(log).toContain("src/main.tsx: replaced create-vite's entry")
+    expect(log).toContain('wrote src/routes/_app.tsx')
+    expect(read(dir, 'src/App.tsx')).toContain('export default function App')
+  })
+
+  it('writes the seeds into an empty src/', async () => {
+    const dir = repo()
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    for (const path of SEEDED) expect(existsSync(join(dir, path))).toBe(true)
+  })
+
+  it('changes no seed on a second init or a sync after a local edit', async () => {
+    const dir = createVite()
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    for (const path of SEEDED) put(dir, path, `${read(dir, path)}// mine\n`)
+    const edited = snapshot(dir)
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(snapshot(dir)).toEqual(edited)
+    expect(log).toContain('kept src/routes/_app.tsx')
+    expect(log).toContain('src/main.tsx: it exists and is not')
+    expect(sync({ pkgRoot: packageRoot() }, dir)).toBe(0)
+    for (const path of SEEDED) expect(read(dir, path)).toBe(edited[path] ?? '')
+  })
+
+  it('leaves a non-stock main.tsx and prints the template lines', async () => {
+    const mine = "import { render } from './mine'\nrender()\n"
+    const dir = repo({ 'src/main.tsx': mine })
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(read(dir, 'src/main.tsx')).toBe(mine)
+    expect(log).toContain('to do: make src/main.tsx mount the router')
+    expect(log).toContain('<RouterProvider router={router} />')
+    expect(existsSync(join(dir, 'src/routes/_app.tsx'))).toBe(true)
+  })
+
+  it('writes no seeds below the app profile, for a Start app, or with shell: false', async () => {
+    const parts = repo()
+    await runInit(['--profile', 'parts', '--root', 'src'], parts)
+    const start = repo()
+    put(
+      start,
+      'package.json',
+      JSON.stringify({ name: 'x', dependencies: { '@tanstack/react-start': '1.0.0' } }),
+    )
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], start)
+    expect(log).toContain('TanStack Start app')
+    const shellLess = repo()
+    put(shellLess, 'package.json', JSON.stringify({ name: 'x', basalt: { shell: false } }))
+    await runInit(['--profile', 'app', '--root', 'src'], shellLess)
+    for (const dir of [parts, start, shellLess]) {
+      for (const path of SEEDED) expect(existsSync(join(dir, path))).toBe(false)
+    }
+  })
+
+  it('leaves a code-routed app and its vite config without the router plugin', async () => {
+    const config =
+      "import react from '@vitejs/plugin-react'\nexport default { plugins: [react()] }\n"
+    const dir = repo({
+      'vite.config.ts': config,
+      'src/main.tsx': 'const router = createBasaltRouter({})\n',
+    })
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(log).toContain('code-routed app')
+    expect(existsSync(join(dir, 'src/routes/__root.tsx'))).toBe(false)
+    expect(read(dir, 'vite.config.ts')).not.toContain('tanstackRouter')
+  })
+
+  it('adds the router plugin once and keeps one that is there', async () => {
+    const dir = createVite()
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    const first = read(dir, 'vite.config.ts')
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(read(dir, 'vite.config.ts')).toBe(first)
+    expect(first.match(/tanstackRouter\(/g)).toHaveLength(1)
+    expect(first).toContain('basalt(), react()')
   })
 })

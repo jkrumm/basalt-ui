@@ -3,8 +3,8 @@
  * [--tokens-json-out <json>] [--extra <file>] [--accent --neutral --vibrancy --selector]`: the one
  * door into an install (docs/v3/concepts/skills-agent-layer.md 4.1). The profile is declared,
  * never inferred. It declares the manifest, generates the token outputs, installs the profile's
- * peers at exact pins, places the managed files through `sync`, seeds the budget and DESIGN.md and
- * ends in `doctor`, which reports; `init` exits 0 when every step ran, 1 when one could not.
+ * peers at exact pins, places the managed files through `sync`, seeds the budget and DESIGN.md,
+ * writes the router scaffold at `app` (`./router-seeds`) and ends in `doctor`, which reports; `init` exits 0 when every step ran, 1 when one could not.
  * Running it twice changes nothing. The steps live in `./steps`.
  */
 import { spawnSync } from 'node:child_process'
@@ -30,6 +30,7 @@ import {
   wireApp,
   wireFormatterAndLint,
 } from './steps'
+import { placeRouterSeeds } from './router-seeds'
 import type { Args, Ctx, Runner } from './steps'
 
 export type InitDeps = {
@@ -163,6 +164,7 @@ export async function init(
     seedBudgetFile,
     wireFormatterAndLint,
     seedDesign,
+    placeRouterSeeds,
     wireApp,
   ]) {
     try {

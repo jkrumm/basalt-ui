@@ -199,6 +199,17 @@ export const ROUTER_SEED_DESTS = {
   appPending: 'src/components/route-pending.tsx',
 } as const
 
+/** The shipped template (`agent/templates/`) each router seed is written from. */
+export const ROUTER_SEED_TEMPLATES = {
+  nav: 'nav.tpl',
+  root: '__root.tpl',
+  main: 'main.tpl',
+  app: '_app.tpl',
+  appError: '_app-error.tpl',
+  appMissing: '_app-missing.tpl',
+  appPending: '_app-pending.tpl',
+} as const satisfies Record<keyof typeof ROUTER_SEED_DESTS, string>
+
 /** A router seed's dest, relative to the install root: under the app dir when it is not the root. */
 export function routerSeedDest(appRel: string, seed: keyof typeof ROUTER_SEED_DESTS): string {
   return appRel === '' ? ROUTER_SEED_DESTS[seed] : `${appRel}/${ROUTER_SEED_DESTS[seed]}`
