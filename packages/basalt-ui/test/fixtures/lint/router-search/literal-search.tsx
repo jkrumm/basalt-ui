@@ -7,7 +7,32 @@ const a = <Link to="/runs" search={{ range: '30d' }} />
 const a = <Link to="/runs" search={(prev) => ({ ...prev, range: '30d' })} />
 
 // @invalid
-const a = <Link to="/runs" search={function (prev) { return { range: '30d' } }} />
+const a = (
+  <Link
+    to="/runs"
+    search={function (prev) {
+      return { range: '30d' }
+    }}
+  />
+)
+
+// @invalid
+const go = () => navigate({ to: '/runs', search: { status: 'failed' } })
+
+// @invalid
+const go = () => router.navigate({ to: '/runs', search: (prev) => ({ ...prev, status: 'failed' }) })
+
+// @valid
+const go = () => navigate({ to: '/runs', search: store.field.status.link('failed') })
+
+// @valid
+const go = () => navigate({ to: '/runs' })
+
+// @valid
+const go = () => navigate({ to: '/runs', search })
+
+// @valid
+const go = () => other({ to: '/runs', search: { status: 'failed' } })
 
 // @valid
 const a = <Link to="/runs" search={store.field.range.link()} />

@@ -2,15 +2,22 @@
  * `basalt/router-search` (guardrails section 4, row 11): three forms.
  *
  * - `literal-search`: `search=` on a `Link` whose value is an object literal, or a function
- *   returning one. A literal pins a default and hits the router traps reproduced on Router 1.170.46;
+ *   returning one; the same value as the `search` of `navigate({ ... })` (`navigate`,
+ *   `x.navigate`, so `router.navigate` and a `useNavigate()` result bound to that name). A literal pins a default and hits the router traps reproduced on Router 1.170.46;
  *   the link of a store-backed route is `field.link()`.
- * - `loader-deps-search`: `loaderDeps: ({ search }) => search`. Returning the whole search re-runs
- *   the loader on every param (argo `strength-tracker.tsx:53`); the deps are the keys it reads.
+ * - `loader-deps-search`: `loaderDeps: ({ search }) => search`, `=> ({ search })` and
+ *   `=> ({ ...search })`. Returning the whole search re-runs the loader on every param (argo
+ *   `strength-tracker.tsx:53`); the deps are the keys it reads.
  * - `validate-search-pure`: an inline `validateSearch` that reads `window`, `document`,
  *   `localStorage`, `sessionStorage`, `Math.random` or the clock (`new Date()` with no argument,
  *   `Date.now()`, `Date()`), through a Zod `.default(() => new Date())` too. `new Date(input)`
  *   and `Date.parse` are pure and pass. A validator named by reference is not read: the rule is
  *   file-local.
+ *
+ * Known limits: a `useNavigate()` result bound to another name (`const go = useNavigate()`), a
+ * `search` object built in a variable before the call, and a `loaderDeps` that spreads a copy of
+ * search (`const s = search; ({ ...s })`) are not read: the rule is file-local and names, not
+ * flow. A `search` key of a `navigate` argument that is itself a variable passes.
  *
  * The `<ViewTransition>` around `Outlet` form of the original row was removed on 2026-11-11 (zero
  * consumer hits, allow-padding S2); the router's `defaultViewTransition` owns it.
@@ -100,9 +107,22 @@ function someDescendant(root: Node, test: (node: Node) => boolean): boolean {
   return false
 }
 
+const isLiteralSearch = (expression: Node): boolean =>
+  expression.type === 'ObjectExpression' ||
+  (isFunction(expression) && returned(expression).some((r) => r.type === 'ObjectExpression'))
+
+/** `navigate(...)` or `x.navigate(...)`, not `x['navigate']`. */
+const isNavigateCall = (node: Node): boolean => {
+  const callee = child(node, 'callee')
+  if (callee?.type === 'MemberExpression') {
+    return callee['computed'] !== true && nameOf(child(callee, 'property')) === 'navigate'
+  }
+  return nameOf(callee) === 'navigate'
+}
+
 const literalSearch: AstForm = {
   id: 'literal-search',
-  fix: 'Build the link search from the route store: search={field.link()}, which keeps the keys the route owns',
+  fix: 'Build the search from the route store: search={field.link()} on a Link, search: field.link(value) in navigate(), which keeps the keys the route owns',
   next: 'navTarget(...) for a nav row; a counted line waiver where no field owns the key',
   fixture: 'router-search/literal-search.tsx',
   detect: ({ report }): Visitor => ({
@@ -114,10 +134,17 @@ const literalSearch: AstForm = {
       const expression =
         value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
       if (!expression) return
-      const literal =
-        expression.type === 'ObjectExpression' ||
-        (isFunction(expression) && returned(expression).some((r) => r.type === 'ObjectExpression'))
-      if (literal) report(node, 'search={{ … }}')
+      if (isLiteralSearch(expression)) report(node, 'search={{ … }}')
+    },
+    CallExpression(node) {
+      if (!isNavigateCall(node)) return
+      const [options] = children(node, 'arguments')
+      if (options?.type !== 'ObjectExpression') return
+      const search = children(options, 'properties').find(
+        (property) => property.type === 'Property' && keyOf(property) === 'search',
+      )
+      const value = search ? child(search, 'value') : undefined
+      if (search && value && isLiteralSearch(value)) report(search, 'navigate({ search: { … } })')
     },
   }),
 }
@@ -144,11 +171,13 @@ const isWholeSearch = (
   if ('name' in binding) {
     if (nameOf(expression) === binding.name) return true
     // `({ search }) => ({ search })`: the whole search under a key is the same dependency
+    // and `({ ...search })` copies it key for key
     return (
       expression.type === 'ObjectExpression' &&
-      children(expression, 'properties').some(
-        (property) =>
-          property.type === 'Property' && nameOf(child(property, 'value')) === binding.name,
+      children(expression, 'properties').some((property) =>
+        property.type === 'SpreadElement'
+          ? nameOf(child(property, 'argument')) === binding.name
+          : property.type === 'Property' && nameOf(child(property, 'value')) === binding.name,
       )
     )
   }

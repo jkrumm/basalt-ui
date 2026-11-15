@@ -9,6 +9,12 @@ import { useLocalStorage } from '@mantine/hooks'
 import useLocalStorage from 'use-local-storage'
 // @invalid
 import * as middleware from 'zustand/middleware'
+// @invalid
+import { persistentAtom } from '@nanostores/persistent'
+// @invalid
+import { persistentMap } from '@nanostores/persistent'
+// @valid
+import { atom } from 'nanostores'
 // @valid
 import { devtools } from 'zustand/middleware'
 // @valid

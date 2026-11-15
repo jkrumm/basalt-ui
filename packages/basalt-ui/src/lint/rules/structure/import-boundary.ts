@@ -8,6 +8,10 @@
  * `StorageLike` adapter. The repo-only rows (layer table, single `host.tsx` importer) are not
  * here: a form carries no profile of its own and this rule ships at `parts` and `app`.
  *
+ * The `ui-path` form reads `@/`, `~/` and relative `components/ui/<name>` paths; an ejected name
+ * stays legal however it is spelled. The `visx`, `streamdown` and `persist-storage` forms list the
+ * rival packages in the table below.
+ *
  * Option: `{ ejected?: string[] }`, the paths of `manifest.ejected`. An entry may be a
  * `@/components/ui/<name>` specifier or a file path under `components/ui/`. An ejected file is the
  * primitive's owned copy, so its own `@base-ui` import is the one thing it exists to hold.
@@ -57,6 +61,7 @@ const STORAGE_PACKAGES: ReadonlySet<string> = new Set([
   '@uidotdev/usehooks',
   'redux-persist',
   'zustand-persist',
+  '@nanostores/persistent',
 ])
 
 /** Packages that are only a route through named specifiers. */
@@ -201,6 +206,10 @@ const uiName = (path: string): string => {
   return rest.replace(/\.[cm]?[jt]sx?$/, '').replace(/\/index$/, '')
 }
 
+/** The shadcn alias (`@/`, `~/`) or a relative path into `components/ui`, not a package's own. */
+const isUiPath = (source: string): boolean =>
+  /^(?:[@~]\/|(?:\.{1,2}\/)+(?:[^/]+\/)*?)components\/ui(?:\/|$)/.test(source)
+
 const ejectedNames = (options: readonly unknown[]): Set<string> => {
   const [first] = options
   const list = (first as { ejected?: unknown } | undefined)?.ejected
@@ -212,7 +221,7 @@ const uiPath: AstForm = {
   detect: ({ context, report }) => {
     const ejected = ejectedNames(context.options)
     return sourceVisitor((node, source) => {
-      if (!within(source, '@/components/ui')) return
+      if (!isUiPath(source)) return
       if (ejected.has(uiName(source))) return
       report(node, source)
     })
@@ -321,7 +330,7 @@ const FORMS: readonly AstForm[] = [
   ),
   packageForm(
     'streamdown',
-    ['streamdown'],
+    ['streamdown', 'react-markdown', 'markdown-to-jsx', 'marked-react'],
     'Render model text with Markdown contentTrust from basalt-ui/content',
     'partView for a streamed part',
   ),
@@ -333,7 +342,7 @@ const FORMS: readonly AstForm[] = [
   ),
   packageForm(
     'visx',
-    ['@visx'],
+    ['@visx', 'recharts', '@tremor/react', '@nivo', 'chart.js', 'react-chartjs-2'],
     'Use a chart kind from basalt-ui/charts, or CartesianChart marks',
     'Compose the mark from the allowed engine subpaths',
   ),

@@ -7,9 +7,12 @@
  * - `rehype-raw`: an import or require of `rehype-raw`.
  * - `mdx-evaluate`: `evaluate`/`run` (and their Sync twins) of `@mdx-js/mdx`, `evaluate` of
  *   `next-mdx-remote`, by name import, namespace member or require.
- * - `trusted-content`: `contentTrust="trusted"` unless every child is a string literal, an
- *   imported binding, or the file matches a glob of the `authoredContent` option (the manifest's
- *   list of source files that render authored text).
+ * - `trusted-content`: `contentTrust="trusted"`, or a non-literal `contentTrust={trust}` (a
+ *   variable, a conditional, a call: the tier cannot be read, so it is treated as `trusted`),
+ *   unless every child is a string literal, an imported binding, or the file matches a glob of
+ *   the `authoredContent` option (the manifest's list of source files that render authored text).
+ *   A wrapper that forwards its own `contentTrust` prop is a report too: pass the literal at the
+ *   call site that knows the source of the text.
  *
  * Option: `{ authoredContent: string[] }`, path suffixes or globs (`*`, `**`) matched on the file.
  */
@@ -48,6 +51,16 @@ const NEXT =
 function isLiteralText(node: Node): boolean {
   if (text(node) !== undefined) return true
   return node.type === 'TemplateLiteral' && children(node, 'expressions').length === 0
+}
+
+/** The string a literal or hole-free template holds. */
+function literalValue(node: Node): string | undefined {
+  const direct = text(node)
+  if (direct !== undefined) return direct
+  if (node.type !== 'TemplateLiteral' || children(node, 'expressions').length > 0) return undefined
+  const [quasi] = children(node, 'quasis')
+  const cooked = (quasi?.['value'] as { cooked?: unknown } | undefined)?.cooked
+  return typeof cooked === 'string' ? cooked : undefined
 }
 
 const globPattern = (glob: string): RegExp => {
@@ -203,10 +216,11 @@ const trustedContent: AstForm = {
         )
         if (!trust) return
         const value = child(trust, 'value')
-        const literal =
-          text(value) ??
-          (value?.type === 'JSXExpressionContainer' ? text(child(value, 'expression')) : undefined)
-        if (literal === 'trusted') pending.push(node)
+        const expression =
+          value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
+        // `contentTrust={trust}` hides the tier from the reader: it counts as trusted
+        const literal = text(value) ?? (expression && literalValue(expression))
+        if (literal === 'trusted' || (expression && literal === undefined)) pending.push(node)
       },
       'Program:exit'() {
         if (inAuthoredContent(context) || pending.length === 0) return

@@ -16,6 +16,17 @@ const route = createFileRoute('/runs')({ loaderDeps: (opts) => opts.search })
 // @invalid
 const route = createFileRoute('/runs')({ loaderDeps: ({ search }) => ({ search }) })
 
+// @invalid
+const route = createFileRoute('/runs')({ loaderDeps: ({ search }) => ({ ...search }) })
+
+// @invalid
+const route = createFileRoute('/runs')({ loaderDeps: ({ search }) => ({ ...search, extra: 1 }) })
+
+// @valid
+const route = createFileRoute('/runs')({
+  loaderDeps: ({ search }) => ({ ...other, range: search.range }),
+})
+
 // @valid
 const route = createFileRoute('/runs')({
   loaderDeps: ({ search }) => ({ range: search.range }),
