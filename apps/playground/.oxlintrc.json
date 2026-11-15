@@ -1,6 +1,5 @@
 {
   "extends": ["./node_modules/basalt-ui/configs/oxlint-app.json"],
-  "ignorePatterns": ["src/recipes/seam-examples.tsx"],
   "rules": {
     "react/globals": "error",
     "react/immutability": "error",
