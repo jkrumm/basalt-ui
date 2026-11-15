@@ -109,7 +109,7 @@ export function StatCard(props: StatCardProps): ReactElement {
                     <output
                       data-slot="stat-stale"
                       title={staleText}
-                      className="ml-auto min-w-0 shrink-[4] truncate text-xs text-muted-foreground"
+                      className="relative z-20 ml-auto min-w-0 shrink-[4] truncate text-xs text-muted-foreground"
                     >
                       {staleText}
                     </output>
@@ -144,12 +144,14 @@ const labelOf = (delta: NonNullable<StatCardProps['delta']>): { label?: string }
 type TargetProps = { label: string } & ({ href: string | NavTarget } | { onSelect: () => void })
 
 /**
- * The stretched target: one transparent link or button over the whole card, under the controls.
- * Its focus ring is drawn inside the card, because the card clips its own overflow.
+ * The stretched target: one transparent link or button over the whole card, the header band and the
+ * inset included, so a click on the figure, the sub line or the blank inset takes it. The info
+ * glyph, the controls and the menu sit above it (`z-20`) and keep their own hit areas. Its focus
+ * ring is drawn inside the card, because the card clips its own overflow.
  */
 function Target(props: TargetProps): ReactElement {
   const className =
-    'absolute inset-0 z-0 cursor-pointer rounded-card border-0 bg-transparent p-0 focus-ring focus-visible:-outline-offset-2'
+    'absolute inset-0 z-10 cursor-pointer rounded-card border-0 bg-transparent p-0 focus-ring focus-visible:-outline-offset-2'
   if ('href' in props) {
     return (
       <AppLink

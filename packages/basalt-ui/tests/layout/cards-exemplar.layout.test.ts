@@ -210,6 +210,74 @@ layout('StatCard exemplar', () => {
           ).toContain('–')
         })
 
+        test('a click on the figure, the sub line and the blank inset reaches the link, with a pointer', async () => {
+          const page = await open(viewport, scheme)
+          const card = 'cx-link'
+          await page.raw.locator('[data-testid="cx-link"]').scrollIntoViewIfNeeded()
+          const spots = {
+            figure: within('cx-link', '[data-slot="stat-figure"] > span'),
+            sub: within('cx-link', '[data-slot="stat-sub"]'),
+            inset: within('cx-link', '[data-slot="inset"]'),
+          }
+          // The sub line is hidden below @narrow, so the phone reads the other two.
+          for (const [name, selector] of Object.entries(spots)) {
+            if (
+              name === 'sub' &&
+              viewport === PHONE &&
+              (await page.raw.locator(selector).isHidden())
+            )
+              continue
+            const hit = await page.raw.evaluate(
+              ({ selector, root }) => {
+                const el = document.querySelector<HTMLElement>(selector)
+                if (el === null) throw new Error(`LAYOUT: no ${selector}`)
+                const r = el.getBoundingClientRect()
+                // The blank inset is read at its bottom-right corner, clear of every row.
+                const blank = selector.endsWith('"inset"]')
+                const x = blank ? r.right - 6 : r.left + r.width / 2
+                const y = blank ? r.bottom - 6 : r.top + r.height / 2
+                const top = document.elementFromPoint(x, y)
+                return {
+                  slot: top?.getAttribute('data-slot') ?? top?.tagName ?? null,
+                  cursor: top === null ? '' : getComputedStyle(top).cursor,
+                  inside: top?.closest(root) !== null,
+                  x,
+                  y,
+                }
+              },
+              { selector, root: `[data-testid="cx-link"]` },
+            )
+            expect(hit.slot, `${name} hits the target`).toBe('stat-target')
+            expect(hit.cursor, `${name} cursor`).toBe('pointer')
+            expect(hit.inside).toBe(true)
+          }
+          const figure = await page.box('figure', spots.figure)
+          await page.raw.mouse.click(
+            figure.box.left + figure.box.width / 2,
+            figure.box.top + figure.box.height / 2,
+          )
+          expect(await page.raw.evaluate(() => location.hash), `${card} activates`).toBe('#shipped')
+        })
+
+        test('the info glyph and the menu keep their own click on a linked card', async () => {
+          const page = await open(viewport, scheme)
+          const root = '[data-testid="cx-link-menu"]'
+          await page.raw.locator(root).scrollIntoViewIfNeeded()
+          const opens = async (button: string): Promise<boolean> => {
+            await page.raw.click(button)
+            return page.raw.evaluate((sel) => {
+              const id = document.querySelector(sel)?.getAttribute('popovertarget')
+              return id === null || id === undefined
+                ? false
+                : (document.getElementById(id)?.matches(':popover-open') ?? false)
+            }, button)
+          }
+          expect(await opens(`${root} [data-slot="stat-menu"]`), 'the menu opens').toBe(true)
+          await page.raw.keyboard.press('Escape')
+          expect(await opens(`${root} [data-slot="card-info"]`), 'the info glyph opens').toBe(true)
+          expect(await page.raw.evaluate(() => location.hash), 'the link did not fire').toBe('')
+        })
+
         test('the stretched link paints its focus ring inside the card', async () => {
           const page = await open(viewport, scheme)
           const target = within('cx-link', '[data-slot="stat-target"]')

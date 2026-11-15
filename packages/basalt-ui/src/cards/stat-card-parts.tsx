@@ -98,7 +98,7 @@ export function StatMenu({
         data-slot="stat-menu"
         popoverTarget={id}
         style={{ anchorName: anchor }}
-        className="relative z-10 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-ctrl border-0 bg-secondary p-0 text-muted-foreground shadow-raised hover:text-foreground focus-ring after:absolute after:inset-0 pointer-coarse:after:-inset-2"
+        className="relative z-20 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-ctrl border-0 bg-secondary p-0 text-muted-foreground shadow-raised hover:text-foreground focus-ring after:absolute after:inset-0 pointer-coarse:after:-inset-2"
       >
         <svg viewBox="0 0 16 16" className="size-icon" fill="currentColor" aria-hidden="true">
           <circle cx="3.5" cy="8" r="1.25" />
@@ -173,7 +173,7 @@ export function StatHead({
         <div className="flex h-5 min-w-0 items-center gap-1">
           <p className="truncate text-md font-semibold tracking-tight text-foreground">{title}</p>
           {info !== undefined && (
-            <CardInfo label={`About ${title}`} className="-my-0.5">
+            <CardInfo label={`About ${title}`} className="relative z-20 -my-0.5">
               {info}
             </CardInfo>
           )}
@@ -185,7 +185,7 @@ export function StatHead({
       {controls !== undefined && (
         <div
           data-slot="stat-controls"
-          className="relative z-10 order-1 flex w-full items-center gap-2 @regular:order-none @regular:w-auto"
+          className="relative z-20 order-1 flex w-full items-center gap-2 @regular:order-none @regular:w-auto"
         >
           {controls.render()}
         </div>
