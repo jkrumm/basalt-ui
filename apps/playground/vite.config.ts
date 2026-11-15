@@ -56,7 +56,7 @@ export default mergeConfig(
             new URL('../../packages/basalt-ui/src/table/table.css', import.meta.url),
           ),
         },
-        // The query survives the rewrite: `?inline` is how `demo/v3-tokens.ts` reads the sheet.
+        // The query survives the rewrite: `?inline` is how `demo/legacy-palette.ts` reads the sheet.
         {
           find: /^basalt-ui\/tokens\.css(\?inline)?$/,
           replacement: `${css('tokens.css')}$1`,

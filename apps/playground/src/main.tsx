@@ -4,6 +4,7 @@ import './index.css'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { createQueryClient } from 'basalt-ui/data'
+import { IntlScope } from 'basalt-ui/core/provider-props'
 import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { StrictMode } from 'react'
 import type { ReactNode } from 'react'
@@ -40,7 +41,9 @@ if (!root) throw new Error('root element not found')
 createRoot(root).render(
   <StrictMode>
     <BasaltProvider link={defaults.link} locale={PAGE_FORMAT.locale}>
-      <RouterProvider router={router} />
+      <IntlScope {...PAGE_FORMAT}>
+        <RouterProvider router={router} />
+      </IntlScope>
     </BasaltProvider>
   </StrictMode>,
 )
