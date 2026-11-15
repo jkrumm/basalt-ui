@@ -1,4 +1,4 @@
-import { STYLELINT_RULES } from './rules'
+import { disallowedValueList, STYLELINT_RULES } from './rules'
 
 /** HTML-ish hosts whose `<style>` blocks `postcss-html` extracts. */
 export const HTML_STYLE_FILES = ['**/*.astro', '**/*.mdx', '**/*.html']
@@ -10,9 +10,15 @@ const REPORT_OPTIONS = {
   reportNeedlessDisables: true,
 } as const
 
+type Override = {
+  files: string[]
+  customSyntax?: string
+  rules?: Record<string, unknown>
+}
+
 export type StylelintConfig = {
   rules: typeof STYLELINT_RULES
-  overrides: { files: string[]; customSyntax: string }[]
+  overrides: Override[]
   ignoreFiles: string[]
   reportDescriptionlessDisables: boolean
   reportInvalidScopeDisables: boolean
@@ -20,17 +26,45 @@ export type StylelintConfig = {
 }
 
 export type RenderOptions = {
+  /**
+   * Where the scroll-container ban holds (it needs `ui/scroll-area`, so `parts` and up): `base` for
+   * files outside every root, and each root's own flag. Absent, the ban holds everywhere.
+   */
+  scroll?: { base: boolean; roots: Record<string, boolean> }
   /** Generated token sheets (the manifest's `tokens[].out` paths, css only): stylelint cannot read a line-1 marker. */
   ignoreFiles?: readonly string[]
 }
 
+/** The glob of a root relative to the config: `.` is every file. */
+const rootGlob = (root: string): string => (root === '.' ? '**' : `${root.replace(/\/+$/, '')}/**`)
+
+/** One override per root whose scroll flag differs from the base, the more specific root last so it wins. */
+function scrollOverrides({ base, roots }: NonNullable<RenderOptions['scroll']>): Override[] {
+  return Object.entries(roots)
+    .filter(([, scroll]) => scroll !== base)
+    .toSorted(([a], [b]) => a.length - b.length || a.localeCompare(b))
+    .map(([root, scroll]) => ({
+      files: [rootGlob(root)],
+      rules: { 'declaration-property-value-disallowed-list': disallowedValueList(scroll) },
+    }))
+}
+
 /** The config as an object, with `ignoreFiles` listing the generated sheets. */
-export function stylelintConfig({ ignoreFiles = [] }: RenderOptions = {}): StylelintConfig {
+export function stylelintConfig({ ignoreFiles = [], scroll }: RenderOptions = {}): StylelintConfig {
+  const base = scroll?.base ?? true
   return {
     ...REPORT_OPTIONS,
-    overrides: [{ files: HTML_STYLE_FILES, customSyntax: 'postcss-html' }],
+    overrides: [
+      { files: HTML_STYLE_FILES, customSyntax: 'postcss-html' },
+      ...(scroll === undefined ? [] : scrollOverrides(scroll)),
+    ],
     ignoreFiles: [...ignoreFiles],
-    rules: STYLELINT_RULES,
+    rules: base
+      ? STYLELINT_RULES
+      : {
+          ...STYLELINT_RULES,
+          'declaration-property-value-disallowed-list': disallowedValueList(false),
+        },
   }
 }
 

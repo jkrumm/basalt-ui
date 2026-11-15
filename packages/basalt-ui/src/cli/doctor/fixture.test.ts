@@ -9,12 +9,12 @@ import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 
 import { a11yComponents } from '../../lint/preset'
-import { renderStylelintConfig } from '../../lint/stylelint/render'
 import { SLOTS } from '../../ui/slots'
 import { seedBudget, writeBudget } from '../budget'
 import { packageRoot, readFrameworkVersion } from '../index'
 import { readManifest, writeManifest } from '../manifest'
 import type { Manifest, Profile } from '../manifest'
+import { renderStylelintPreset } from '../presets'
 import { sync } from '../sync'
 import { tokensCss } from '../tokens-css'
 import { afterEach, describe, expect, it } from 'bun:test'
@@ -192,7 +192,7 @@ export function makeTree(profile: Profile = 'app', files: Patch = {}): string {
   quiet(() => tokensCss(['--out', 'src/tokens.css'], dir))
   quiet(() => sync({ pkgRoot }, dir))
 
-  put(dir, '.stylelintrc.basalt.json', renderStylelintConfig({ ignoreFiles: ['src/tokens.css'] }))
+  put(dir, '.stylelintrc.basalt.json', renderStylelintPreset(manifest))
   if (lint) {
     put(
       dir,
