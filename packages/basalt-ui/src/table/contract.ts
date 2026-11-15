@@ -168,6 +168,11 @@ export type UseDataTable<T> = {
   selection?: { bulk: BulkAction<T>[]; selectAll?: boolean }
   views?: { store?: ViewStore }
 } & (
-  | { detail: (row: T, box: Box) => ReactNode; onRowActivate?: never }
-  | { onRowActivate?: (row: T) => void; detail?: never }
+  | {
+      detail: (row: T, box: Box) => ReactNode
+      /** The title of a row's detail entry (the aside or sheet header); the table label when absent. */
+      detailTitle?: (row: T) => string
+      onRowActivate?: never
+    }
+  | { onRowActivate?: (row: T) => void; detail?: never; detailTitle?: never }
 )
