@@ -8,10 +8,6 @@
  * and nothing else, so the playground's own rule overrides never soften the check. It needs the built
  * package (`basalt-ui/lint` resolves through `dist`), so it runs in `pre`, after the build.
  *
- * The config ignores `seam-examples.tsx`: it holds the worked examples gen-docs copies into the seam
- * reference, not a recipe page's file, and its `chartLabels.place` svg example reports
- * `primitive-bypass` until that rule row decides it.
- *
  * Usage: bun packages/basalt-ui/scripts/check-recipes-lint.ts [<path>...]   (default: src/recipes)
  * Exit 0 clean; otherwise oxlint's exit code, with its findings on stdout.
  */
