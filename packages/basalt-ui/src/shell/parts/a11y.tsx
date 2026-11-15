@@ -120,12 +120,13 @@ export function useRouteFocus(pathname: string): void {
  * own default, 1000, where the app set none). True while a navigation has waited that long.
  */
 export function useNavigationPending(pendingMs: number): boolean {
-  // A navigation, not a background reload: the wanted location is not the resolved one yet.
+  // A navigation to another page, not a background reload or a search change: the shell re-renders
+  // when this flips, and a widget write (a search-only navigation) must not cost it a render.
   const loading = useRouterState({
     select: (s) =>
       s.status === 'pending' &&
       s.resolvedLocation !== undefined &&
-      s.resolvedLocation.href !== s.location.href,
+      s.resolvedLocation.pathname !== s.location.pathname,
   })
   const [late, setLate] = useState(false)
   useEffect(() => {
