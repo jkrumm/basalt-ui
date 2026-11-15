@@ -6,7 +6,7 @@ import { describe, expect, it } from 'bun:test'
 
 import { packageRoot } from './index'
 import type { Manifest } from './manifest'
-import { renderOxlintPreset } from './presets'
+import { renderOxlintPreset, renderStylelintPreset } from './presets'
 
 type Override = { files: string[]; rules: Record<string, unknown> }
 
@@ -85,5 +85,32 @@ describe('renderOxlintPreset', () => {
 
   it('without roots or ejected rows the preset is the shipped profile', () => {
     expect(overridesOf(manifest({}))).toEqual([])
+  })
+})
+
+const bansScroll = (rules: Record<string, unknown>): boolean =>
+  JSON.stringify(rules['declaration-property-value-disallowed-list']).includes('overflow')
+
+describe('renderStylelintPreset', () => {
+  type Config = { rules: Record<string, unknown>; overrides: { files: string[] }[] }
+  const configOf = (over: Partial<Manifest>): Config =>
+    JSON.parse(renderStylelintPreset(manifest(over))) as Config
+
+  it('a tokens or bridge manifest renders without the scroll ban', () => {
+    for (const profile of ['tokens', 'bridge'] as const) {
+      expect(bansScroll(configOf({ profile }).rules)).toBe(false)
+    }
+  })
+
+  it('a parts or app manifest keeps it', () => {
+    for (const profile of ['parts', 'app'] as const) {
+      expect(bansScroll(configOf({ profile }).rules)).toBe(true)
+    }
+  })
+
+  it('a root at another scroll state gets an override', () => {
+    const config = configOf({ profile: 'app', roots: { site: 'tokens', src: 'app' } })
+    expect(bansScroll(config.rules)).toBe(true)
+    expect(config.overrides.slice(1).map((o) => o.files)).toEqual([['site/**']])
   })
 })
