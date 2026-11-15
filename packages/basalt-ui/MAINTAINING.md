@@ -66,7 +66,7 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
   chart primitives (since replaced by the TanStack Charts rung) and three misses
   (`OverflowMenu`, `ThreadDetailPanel`, the third-party `QueryClientProvider` re-export). `useValidateProps` is dev-only, `console.error`s each message ONCE per
   `(component, message)`, and constant-folds away in production. A misuse that would crash anyway
-  throws; one that merely renders the wrong thing warns. `SelectFilter` and `Section` are the two
+  throws; one that merely renders the wrong thing warns. `FilterSet` and `Section` are the two
   reference adoptions.
 - **Every message is built in `common/errors.ts`** — `requiredProp` / `oneOf` /
   `duplicateMount` over one `BASALT_PREFIX`, so consumers can grep `[basalt] <Component>:`.
@@ -325,7 +325,7 @@ promotion state there, never from prose here.** Five things about it that are no
 - **The control guards share ONE ancestry walk** (`createSlotContext`) that stops at a slot
   ATTRIBUTE, never at the element — so a control in a TIERED home's CHILDREN (the body form) never
   fires, while a hoisted `const pills = <Select/>` handed to `filters={pills}` does. The SUBTREE
-  homes are the mirror image and take the same hoisted hop: a `const rows = <SelectFilter/>`
+  homes are the mirror image and take the same hoisted hop: a `const rows = <ViewTabs handle={tab} />`
   rendered as `<PageAside>{rows}</PageAside>` is inside that aside. That is why the ancestry facts
   are captured during the visit and resolved at `Program:exit`.
 - **The owner exemption needs a second half**: a file DEFINING `PanelRow`/`EnumFilter`/
