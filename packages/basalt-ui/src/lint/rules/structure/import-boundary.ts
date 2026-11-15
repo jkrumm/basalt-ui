@@ -9,9 +9,10 @@
  * here: a form carries no profile of its own and this rule ships at `parts` and `app`.
  *
  * Option: `{ ejected?: string[] }`, the paths of `manifest.ejected`. An entry may be a
- * `@/components/ui/<name>` specifier or a file path under `components/ui/`.
+ * `@/components/ui/<name>` specifier or a file path under `components/ui/`. An ejected file is the
+ * primitive's owned copy, so its own `@base-ui` import is the one thing it exists to hold.
  */
-import type { Node, Visitor } from '../../factory'
+import type { Node, RuleContext, Visitor } from '../../factory'
 import type { AstForm, RuleEntry } from '../../rule-table'
 import { defineRules } from '../../rule-table'
 
@@ -115,17 +116,38 @@ function sourceVisitor(onSource: (node: Node, source: string) => void): Visitor 
   }
 }
 
+type HostContext = RuleContext & { readonly filename?: string; readonly physicalFilename?: string }
+
+const ejectedPaths = (options: readonly unknown[]): string[] => {
+  const [first] = options
+  const list = (first as { ejected?: unknown } | undefined)?.ejected
+  return Array.isArray(list) ? list.filter((p): p is string => typeof p === 'string') : []
+}
+
+/** Whether the linted file is one of the `manifest.ejected` paths (a file entry, not a specifier). */
+const isEjectedFile = (context: RuleContext): boolean => {
+  const host = context as HostContext
+  const file = (host.physicalFilename ?? host.filename ?? '').replaceAll('\\', '/')
+  return ejectedPaths(context.options).some((path) => {
+    const entry = path.replaceAll('\\', '/').replace(/^\.\//, '')
+    return /\.[cm]?[jt]sx?$/.test(entry) && (file === entry || file.endsWith(`/${entry}`))
+  })
+}
+
 const packageForm = (
   id: string,
   packages: readonly string[],
   fix: string,
   next: string,
+  { allowInEjected = false }: { allowInEjected?: boolean } = {},
 ): AstForm => ({
   id,
-  detect: ({ report }) =>
-    sourceVisitor((node, source) => {
+  detect: ({ context, report }) => {
+    if (allowInEjected && isEjectedFile(context)) return {}
+    return sourceVisitor((node, source) => {
       if (packages.some((pkg) => within(source, pkg))) report(node, source)
-    }),
+    })
+  },
   fix,
   next,
   fixture: `import-bypass/${id}.tsx`,
@@ -277,6 +299,7 @@ const FORMS: readonly AstForm[] = [
     ['@base-ui/react', '@base-ui-components/react'],
     'Import the owned primitive from basalt-ui/ui/<name>',
     'Eject the primitive with basalt-ui eject, then edit the copy',
+    { allowInEjected: true },
   ),
   packageForm(
     'radix',

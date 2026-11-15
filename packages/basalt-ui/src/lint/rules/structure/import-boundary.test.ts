@@ -109,20 +109,43 @@ describe('import-boundary forms', () => {
 
 describe('contract rows', () => {
   const linter = new Linter()
-  const lint = (code: string, options: unknown[] = []) =>
-    linter.verify(code, [
-      {
-        languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
-        plugins: {
-          basalt: { rules: { 'import-boundary': enabledRule('import-boundary', IMPORT_BOUNDARY) } },
+  const lint = (code: string, options: unknown[] = [], filename = 'file.js') =>
+    linter.verify(
+      code,
+      [
+        {
+          files: ['**/*.js', '**/*.tsx'],
+          languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
+          plugins: {
+            basalt: {
+              rules: { 'import-boundary': enabledRule('import-boundary', IMPORT_BOUNDARY) },
+            },
+          },
+          rules: { 'basalt/import-boundary': ['error', ...options] },
         },
-        rules: { 'basalt/import-boundary': ['error', ...options] },
-      },
-    ] as never)
+      ] as never,
+      filename,
+    )
 
   it('useChat() fires and useChat({ chat }) does not', () => {
     expect(lint('useChat()').map((m) => m.messageId)).toEqual(['use-chat-chat'])
     expect(lint('useChat({ chat })')).toEqual([])
+  })
+
+  it('an ejected file may hold its own @base-ui import; no other file may', () => {
+    const code = "import { Button } from '@base-ui/react/button'"
+    const options = [{ ejected: ['src/components/ui/button.tsx'] }]
+    expect(lint(code, options, 'src/components/ui/button.tsx')).toEqual([])
+    expect(lint(code, options, 'src/components/ui/card.tsx').map((m) => m.messageId)).toEqual([
+      'base-ui',
+    ])
+    expect(lint(code, [], 'src/components/ui/button.tsx').map((m) => m.messageId)).toEqual([
+      'base-ui',
+    ])
+    // An ejected file keeps every other form.
+    expect(
+      lint("import x from 'cmdk'", options, 'src/components/ui/button.tsx').map((m) => m.messageId),
+    ).toEqual(['cmdk'])
   })
 
   it('@/components/ui/button fires unless the ejected option lists it', () => {

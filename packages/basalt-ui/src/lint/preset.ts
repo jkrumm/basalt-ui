@@ -192,6 +192,35 @@ function vendoredZone(files: string, inputs: PresetInputs): Override {
 
 const rootGlob = (root: string): string => `${root.replace(/\/+$/, '')}/**`
 
+/** The profile an ejected file lints at: its longest declared root, else the default. */
+function profileOfPath(path: string, inputs: PresetInputs): PresetProfile {
+  const own = Object.entries(inputs.roots ?? {})
+    .filter(
+      ([root]) => root === '.' || path === root || path.startsWith(`${root.replace(/\/+$/, '')}/`),
+    )
+    .toSorted(([a], [b]) => b.length - a.length)[0]
+  return own?.[1] ?? inputs.profile
+}
+
+/**
+ * Zone E for `manifest.ejected`: the structure block, plus `import-boundary` told which files are
+ * owned copies (so a copy may hold its own `@base-ui` import) where that rule runs at all.
+ */
+function ejectedZones(ejected: readonly string[], inputs: PresetInputs): Override[] {
+  const zones = [structureZone(ejected, inputs)]
+  const boundary = ejected.filter((path) => {
+    const profile = profileOfPath(path, inputs)
+    return profile === 'parts' || profile === 'app'
+  })
+  if (boundary.length > 0) {
+    zones.push({
+      files: boundary,
+      rules: { [`${PLUGIN_NAME}/import-boundary`]: ['error', { ejected: boundary }] },
+    })
+  }
+  return zones
+}
+
 // ── the preset ───────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -217,7 +246,7 @@ export function buildPreset(inputs: PresetInputs): PresetConfig | undefined {
       overrides.push(vendoredZone(`${rootGlob(root)}/components/ui/**`, inputs))
   }
   const ejected = inputs.ejected ?? []
-  if (ejected.length > 0) overrides.push(structureZone(ejected, inputs))
+  if (ejected.length > 0) overrides.push(...ejectedZones(ejected, inputs))
   const seeds = inputs.seeds ?? []
   if (seeds.length > 0) overrides.push(structureZone(seeds, inputs))
 
