@@ -29,7 +29,7 @@ import { Textarea } from 'basalt-ui/ui/textarea'
 import { useEffect } from 'react'
 import type { ReactElement } from 'react'
 import { z } from 'zod'
-import { demoColors } from '../../demo/series'
+import { DEMO_SERIES } from '../../demo/series'
 import { useV3Tokens } from '../../demo/v3-tokens'
 import {
   AGENTS,
@@ -129,13 +129,19 @@ function TicketsChart({ list }: { list: ListResult }): ReactElement {
       empty={list.data?.length === 0 ? { cause: 'No ticket matches these filters.' } : null}
       figure={{ value: list.data?.length ?? null, unit: 'tickets', period: 'in range' }}
       chart={(box) => (
-        <Bars<Day, Date>
+        <Bars<Day>
           ariaLabel="Tickets opened per day"
           data={days}
-          x={(d) => d.day}
-          height={box.height === 'fill' ? undefined : box.height}
-          bars={[
-            { key: 'count', label: 'Opened', color: demoColors.sessions, getValue: (d) => d.count },
+          x={{ value: (d) => d.day }}
+          height={box.height}
+          series={[
+            {
+              mark: 'bar',
+              key: 'count',
+              label: 'Opened',
+              color: DEMO_SERIES.sessions,
+              y: (d) => d.count,
+            },
           ]}
         />
       )}
