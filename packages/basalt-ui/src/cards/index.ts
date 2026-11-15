@@ -14,6 +14,8 @@ export type {
   ColumnRef,
   Move,
   CardChip,
+  Menu,
+  MenuEntry,
 } from './contract'
 export type { StatGroupProps } from './stat-group'
 export type { StatCellProps } from './stat-cell'

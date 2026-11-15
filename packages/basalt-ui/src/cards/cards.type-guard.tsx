@@ -74,5 +74,5 @@ export const linkAndButton: ReactElement = (
 
 export const oneItemMenu: ReactElement = (
   // @ts-expect-error a menu has at least two actions; one is a plain button
-  <StatCard title="Shipped" value={1} menu={[{ label: 'Open', href: '/flow' }]} />
+  <StatCard title="Shipped" value={1} menu={[{ id: 'open', label: 'Open', href: '/flow' }]} />
 )

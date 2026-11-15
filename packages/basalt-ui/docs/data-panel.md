@@ -27,7 +27,7 @@ DataPanel(props: DataPanelProps): ReactElement
   empty?: Empty | null
   controls?: ControlsSlot<"widget">
   toolbar?: ControlsSlot<"widget">
-  menu?: BoxSlot
+  menu?: Menu
   legend?: readonly LegendEntry[]
   skeleton: { rows: number; } | { height: number; }  // Required: the loading card draws its final shape
   body: BoxSlot  // Tables, lists and boards

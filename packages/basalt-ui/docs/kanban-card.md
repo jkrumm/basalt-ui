@@ -25,7 +25,7 @@ KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactElement
   chips?: readonly [CardChip?, CardChip?, CardChip?, CardChip?]
   reason?: { icon?: IconComponent; text: string; }
   status?: Status
-  menu?: readonly CardAction[]
+  menu?: readonly MenuEntry[]
   move: "static" | { column: ColumnRef<C>; index: number; columns: …  // Required: no card exists without the non-drag path
 ```
 

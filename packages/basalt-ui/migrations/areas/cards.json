@@ -3,6 +3,26 @@
   "area": "cards",
   "rows": [
     {
+      "id": "cards-menu-id",
+      "kind": "required-prop",
+      "from": "basalt-ui/cards#StatCard.menu and KanbanCard.menu entries",
+      "to": "{ id, label, href | onClick }: one MenuEntry with a stable id",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "one menu-entry type across StatCard, KanbanCard, DataPanel, ChartCard and InnerNavItem; the id is the React key and a kanban row's identity",
+      "verify": "tsc: an entry with no id is a type error"
+    },
+    {
+      "id": "cards-menu-data",
+      "kind": "replace",
+      "from": "basalt-ui/cards#DataPanel.menu as a BoxSlot (box) => node",
+      "to": "menu: [{ id, label, href | onClick }, ...] (at least two entries)",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "menu is action data on every card frame and the frame draws the menu button and its popover; a one-off control belongs in controls or toolbar",
+      "verify": "tsc: a function is not assignable to Menu"
+    },
+    {
       "id": "cc-body-chart",
       "kind": "codemod",
       "from": "basalt-ui/charts#ChartCard.children",

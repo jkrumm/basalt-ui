@@ -38,7 +38,7 @@ StatCard(props: StatCardProps): ReactElement
   xLabels?: readonly [string, string, string]  // The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alon…
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
-  menu?: readonly [CardAction, CardAction, ...CardAction[]]
+  menu?: Menu
 ```
 
 ## Example

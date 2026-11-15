@@ -1,10 +1,9 @@
 import { useContext } from 'react'
-import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import type { CSSProperties, ReactElement } from 'react'
 import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
 import { cards } from '../core/messages/cards'
-import { PhaseBoundary } from '../core/phase-boundary'
-import type { Box, BoxSlot } from '../core/ports'
+import { CardMenu } from '../core/card-menu'
 import { Card, CardInfo, CardPhase, IconTile, Inset } from '../ui/card'
 import type { DataPanelProps, LegendEntry } from './contract'
 import {
@@ -91,11 +90,6 @@ function Legend({ entries }: { entries: readonly LegendEntry[] }): ReactElement 
   )
 }
 
-/** Calls the menu slot as a component, so a throw lands in the boundary and not in the panel. */
-function MenuSlot({ slot, box }: { slot: BoxSlot; box: Box }): ReactNode {
-  return slot(box)
-}
-
 /**
  * The panel header: an icon tile, the title and its definition glyph, a subtitle, the inline controls
  * and the menu, on the card's left edge. Below `@regular` the controls wrap to a second row; they are
@@ -139,9 +133,7 @@ function PanelHead(
       )}
       {menu !== undefined && (
         <div data-slot="data-panel-menu" className="flex shrink-0 items-center">
-          <PhaseBoundary fallback={() => null}>
-            <MenuSlot slot={menu} box={{ height: 28, phase: 'ready' }} />
-          </PhaseBoundary>
+          <CardMenu menu={menu} label={`Actions for ${title}`} />
         </div>
       )}
     </div>

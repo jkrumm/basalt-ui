@@ -8,7 +8,7 @@
  * `FrameHead`) are declared once in `core/phase.ts`. `LegendEntry` is still repeated here,
  * structurally identical.
  */
-import type { CardAction, Fact, FootFacts, FrameHead, FrameState } from '../core/phase'
+import type { Fact, FootFacts, FrameHead, FrameState, Menu, MenuEntry } from '../core/phase'
 import type {
   BoxSlot,
   ControlsSlot,
@@ -21,10 +21,7 @@ import type {
 
 // ---- Frame types the sketch files under ports (absent from ports.ts) ----------------------
 
-export type { Fact, FootFacts, FrameHead }
-
-/** One menu entry: a link or a handler, never both. Minimal; the concept elides it. */
-export type MenuAction = CardAction
+export type { Fact, FootFacts, FrameHead, Menu, MenuEntry }
 
 /** A chip on a `KanbanCard`. Minimal; the concept elides it. */
 export type CardChip = { label: string; icon?: IconComponent }
@@ -63,7 +60,7 @@ export type StatCardProps = CardTarget &
     xLabels?: readonly [string, string, string]
     footer?: FootFacts
     controls?: ControlsSlot<'widget'>
-    menu?: readonly [MenuAction, MenuAction, ...MenuAction[]]
+    menu?: Menu
   }
 
 export type StatRow = {
@@ -94,7 +91,7 @@ export type DataPanelProps = FrameHead &
   FrameState & {
     controls?: ControlsSlot<'widget'>
     toolbar?: ControlsSlot<'widget'>
-    menu?: BoxSlot
+    menu?: Menu
     legend?: readonly LegendEntry[]
     /** Required: the loading card draws its final shape. */
     skeleton: { rows: number } | { height: number }
@@ -120,7 +117,8 @@ export type KanbanCardProps<C extends string> = {
   chips?: readonly [CardChip?, CardChip?, CardChip?, CardChip?]
   reason?: { icon?: IconComponent; text: string }
   status?: Status
-  menu?: readonly MenuAction[]
+  /** Entries after the move rows the card always offers, so one entry is enough. */
+  menu?: readonly MenuEntry[]
   /** Required: no card exists without the non-drag path. `'static'` is a read-only board. */
   move:
     | 'static'

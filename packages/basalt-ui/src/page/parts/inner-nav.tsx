@@ -125,11 +125,18 @@ function ItemMenu({ item }: { item: InnerNavItem }): ReactElement | null {
         </svg>
       </MenuTrigger>
       <MenuContent>
-        {item.menu.map((entry) => (
-          <MenuItem key={entry.id} onClick={entry.onClick}>
-            {entry.label}
-          </MenuItem>
-        ))}
+        {item.menu.map((entry) =>
+          'href' in entry ? (
+            // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- MenuItem passes its children into the link
+            <MenuItem key={entry.id} render={<AppLink href={entry.href} />}>
+              {entry.label}
+            </MenuItem>
+          ) : (
+            <MenuItem key={entry.id} onClick={entry.onClick}>
+              {entry.label}
+            </MenuItem>
+          ),
+        )}
       </MenuContent>
     </Menu>
   )

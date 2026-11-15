@@ -4,14 +4,23 @@
  * `chore: contract amendment` commit. Sketched in docs/v3/concepts/charts-cards-kanban.md
  * section 4 (the `src/charts/contract.ts` block, plus the frame types it names).
  */
-import type { FootFacts, FrameHead, FrameState } from '../core/phase'
+import type { FootFacts, FrameHead, FrameState, Menu } from '../core/phase'
 import type { BoxSlot, ControlsSlot, Delta, Phase, QueryStateLike, Status } from '../core/ports'
 import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 
 // ---- Frame types the sketch files under ports (absent from ports.ts) ----------------------
 
 // One declaration holds each: `core/phase.ts`, re-exported here so `basalt-ui/charts` names them.
-export type { CardAction, Empty, Fact, FootFacts, FrameHead, FrameState } from '../core/phase'
+export type {
+  CardAction,
+  Empty,
+  Fact,
+  FootFacts,
+  FrameHead,
+  FrameState,
+  Menu,
+  MenuEntry,
+} from '../core/phase'
 
 // ---- Series -------------------------------------------------------------------------------
 
@@ -271,7 +280,7 @@ export type ChartCardProps = Omit<FrameState, 'phase'> & {
   legend?: readonly LegendEntry[]
   footer?: FootFacts
   controls?: ControlsSlot<'widget'>
-  menu?: BoxSlot
+  menu?: Menu
   height?: 'auto' | 'short' | 'fill'
 } & (
     | (FrameHead & { chart: BoxSlot })

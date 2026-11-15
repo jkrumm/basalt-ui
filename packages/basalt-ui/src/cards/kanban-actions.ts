@@ -1,7 +1,7 @@
 import type { NavTarget } from '../core/ports'
 import type { Translate } from '../core/messages/use-messages'
 import type { kanban } from '../core/messages/kanban'
-import type { KanbanCardProps, MenuAction, Move } from './contract'
+import type { KanbanCardProps, MenuEntry, Move } from './contract'
 
 /** One row of the card's menu: a link or a handler, never both. `key` is stable per row. */
 export type KanbanAction = { key: string; label: string } & (
@@ -19,7 +19,7 @@ type MoveSpec<C extends string> = Exclude<KanbanCardProps<C>['move'], 'static'>
 export function kanbanActions<C extends string>(
   id: string,
   move: MoveSpec<C> | 'static',
-  menu: readonly MenuAction[] | undefined,
+  menu: readonly MenuEntry[] | undefined,
   t: Translate<typeof kanban>,
 ): { moves: KanbanAction[]; extras: KanbanAction[] } {
   const moves: KanbanAction[] = []
@@ -43,8 +43,8 @@ export function kanbanActions<C extends string>(
   }
   const extras = (menu ?? []).map((a): KanbanAction =>
     'href' in a
-      ? { key: `x:${a.label}`, label: a.label, href: a.href }
-      : { key: `x:${a.label}`, label: a.label, run: a.onClick },
+      ? { key: `x:${a.id}`, label: a.label, href: a.href }
+      : { key: `x:${a.id}`, label: a.label, run: a.onClick },
   )
   return { moves, extras }
 }

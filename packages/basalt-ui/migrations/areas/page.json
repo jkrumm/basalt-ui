@@ -3,6 +3,15 @@
   "area": "page",
   "rows": [
     {
+      "id": "page-innernav-menu-entry",
+      "kind": "renamed",
+      "from": "basalt-ui/page#InnerNavMenuItem",
+      "to": "MenuEntry (basalt-ui/cards, basalt-ui/charts): { id, label, href | onClick }",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "an inner-nav menu entry may now be a link, like a card menu entry; existing entries (id, label, onClick) keep working"
+    },
+    {
       "id": "page-onclick",
       "kind": "renamed-prop",
       "from": "basalt-ui/page#EmptyState.action.onSelect",

@@ -8,10 +8,11 @@
  */
 import { useId } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { CardMenu } from '../../core/card-menu'
 import { cn } from '../../core/cn'
 import { AppLink } from '../../core/link'
 import { OfflineLine } from '../../core/offline-line'
-import type { Empty, ResolvedPhase } from '../../core/phase'
+import type { Empty, MenuEntry, ResolvedPhase } from '../../core/phase'
 import { PhaseBoundary } from '../../core/phase-boundary'
 import type { BoxSlot, ControlsSlot, IconComponent } from '../../core/ports'
 import type { Fact, FootFacts } from '../contract'
@@ -76,7 +77,7 @@ export type HeadProps = {
   icon: IconComponent | undefined
   info: string | undefined
   controls: ControlsSlot | undefined
-  menu: ReactNode
+  menu: readonly MenuEntry[] | undefined
 }
 
 /**
@@ -126,9 +127,9 @@ export function Head({
           {controls.render()}
         </div>
       )}
-      {menu !== undefined && menu !== null && (
+      {menu !== undefined && title !== undefined && (
         <div data-slot="chart-menu" className="relative z-10 flex shrink-0 items-center">
-          {menu}
+          <CardMenu menu={menu} label={`Actions for ${title}`} />
         </div>
       )}
     </div>
