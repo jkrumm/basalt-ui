@@ -5,7 +5,7 @@ import { NAV } from '../demo/nav-model'
 import { SCENARIO_INFO } from '../scenarios/scenario-info'
 
 // #region recipe:add-page
-// A page is one file route plus one nav entry, e.g. in demo/nav-model.tsx:
+// A page is one file route plus one nav entry in the app's `defineNav` declaration, e.g.:
 //   { id: 'runs', label: 'Runs', icon: Flask, mobile: 'tab', link: linkOptions({ to: '/runs' }) }
 // The shell names the page from that entry and `PageBar title` renders the one h1.
 export function RunsPage() {

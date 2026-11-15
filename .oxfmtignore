@@ -16,17 +16,8 @@ packages/basalt-ui/src/css/tokens.css
 
 # A generated root-export doc carries the root's long `peers:` line; oxfmt wraps it and gen-docs
 # --check then reads the file as drifted. Owned by `gen-docs`, never by oxfmt.
-packages/basalt-ui/docs/external-field.md
-packages/basalt-ui/docs/create-format.md
-packages/basalt-ui/docs/use-format.md
-packages/basalt-ui/docs/code-block.md
-packages/basalt-ui/docs/notify.md
-packages/basalt-ui/docs/create-channel.md
-packages/basalt-ui/docs/use-now.md
-packages/basalt-ui/docs/mdx-components.md
 # A namespace-object signature (`chartLabels: { width, fits, place }`): oxfmt reads the fence as a
 # block statement and rewrites it.
-packages/basalt-ui/docs/chart-labels.md
 
 # Package fixture trees are byte-exact (deliberate offenders, golden files); never formatted.
 packages/basalt-ui/test/fixtures/**
@@ -36,10 +27,6 @@ packages/basalt-ui/src/tokens/golden/**
 
 # Generated ui docs whose `slots:` line is wider than the print width; oxfmt wraps it and gen-ui
 # --check then reads the file as drifted. Owned by `gen-ui`, never by oxfmt.
-packages/basalt-ui/docs/dialog.md
-packages/basalt-ui/docs/select.md
-packages/basalt-ui/docs/combobox.md
-packages/basalt-ui/docs/menu.md
 
 # The shipped stylelint preset is `renderStylelintConfig()` output byte for byte (src/lint/stylelint/stylelint.test.ts
 # pins committed == rendered), the same bytes a consumer's `sync` writes; oxfmt would re-wrap its arrays.
@@ -47,4 +34,15 @@ packages/basalt-ui/configs/stylelint.basalt.json
 
 # The signature block of a generated doc for an object export prints its key tree (`quality: { a, b }`);
 # oxfmt reads that as a labelled block and rewrites it to `;(a, b)`, which gen-docs --check reads as drift.
-packages/basalt-ui/docs/quality.md
+
+# A generated doc is `gen-docs` / `gen-ui` output byte for byte: its signature block, its long `peers:` and
+# `slots:` lines and the `@example` code of its JSDoc are all text oxfmt would rewrite, which `--check` then
+# reads as drift. The hand-written guides stay formatted.
+packages/basalt-ui/docs/*.md
+!packages/basalt-ui/docs/cartesian-chart.md
+!packages/basalt-ui/docs/eject.md
+!packages/basalt-ui/docs/persisted.md
+!packages/basalt-ui/docs/static-site.md
+!packages/basalt-ui/docs/testing.md
+!packages/basalt-ui/docs/vite.md
+!packages/basalt-ui/docs/widgets.md
