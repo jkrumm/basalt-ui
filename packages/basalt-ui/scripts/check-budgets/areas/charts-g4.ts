@@ -13,7 +13,7 @@
  * the follow-up ports both kinds onto `core/compile` and those 2.x modules go.
  */
 import { reExportNamed, measureSource } from '../ui-bundle'
-import type { Raise, RowDef } from '../lib'
+import type { Raises, RowDef } from '../lib'
 
 const THREE_KIND = [
   reExportNamed('charts/parts/sparkline', ['Sparkline']),
@@ -53,21 +53,23 @@ export const rows: readonly RowDef[] = [
   },
 ]
 
-export const raises: readonly Raise[] = [
-  {
-    ceiling: 'charts-heatmap-marginal',
-    from: 4500,
-    to: 5500,
-    consumer:
-      '`Heatmap` over the v3 three-kind fixture (Issue 1407): linewatch renders two Heatmaps (the 2.x Lines, Bars and Sparkline that carried part of its closure are deleted, so the marginal reads 5158 B); a port onto `core/compile` brings it back down',
-    repo: 'linewatch',
-  },
-  {
-    ceiling: 'charts-band-strip-marginal',
-    from: 2500,
-    to: 18500,
-    consumer:
-      "`BandStrip` over the v3 three-kind fixture (Issue 1407): linewatch's availability strip (web/src/charts/availability-strip.tsx) renders it; it still reaches the 2.x ChartShell and compile modules the v3 kinds do not, so the marginal reads 17953 B until a port onto `core/compile`",
-    repo: 'linewatch',
-  },
-]
+export const raises: Raises = {
+  'charts-heatmap-marginal': [
+    {
+      from: 4500,
+      to: 5500,
+      consumer:
+        '`Heatmap` over the v3 three-kind fixture (Issue 1407): linewatch renders two Heatmaps (the 2.x Lines, Bars and Sparkline that carried part of its closure are deleted, so the marginal reads 5158 B); a port onto `core/compile` brings it back down',
+      repo: 'linewatch',
+    },
+  ],
+  'charts-band-strip-marginal': [
+    {
+      from: 2500,
+      to: 18500,
+      consumer:
+        "`BandStrip` over the v3 three-kind fixture (Issue 1407): linewatch's availability strip (web/src/charts/availability-strip.tsx) renders it; it still reaches the 2.x ChartShell and compile modules the v3 kinds do not, so the marginal reads 17953 B until a port onto `core/compile`",
+      repo: 'linewatch',
+    },
+  ],
+}

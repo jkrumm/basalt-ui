@@ -39,7 +39,7 @@ describe('charts-g4', () => {
     const ceiling = (id: string) => g4.rows.find((r) => r.id === id)?.ceiling ?? 0
     expect(ceiling('charts-band-strip-marginal')).toBe(18500)
     expect(ceiling('charts-heatmap-marginal')).toBe(5500)
-    expect(g4.raises.map((r) => r.ceiling).toSorted()).toEqual([
+    expect(Object.keys(g4.raises).toSorted()).toEqual([
       'charts-band-strip-marginal',
       'charts-heatmap-marginal',
     ])
