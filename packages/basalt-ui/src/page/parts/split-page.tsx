@@ -1,6 +1,9 @@
 import { createContext } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../../core/cn'
+import { page } from '../../core/messages/page'
+import { useMessages } from '../../core/messages/use-messages'
+import { Button } from '../../ui/button'
 import { ScrollArea } from '../../ui/scroll-area'
 import type { SplitPageProps } from '../contract'
 
@@ -20,7 +23,8 @@ export const SplitListContext = createContext(false)
  * that scrolls the detail.
  *
  * `selected` is the pane field's `useIsSet()`: choosing a pane (a push) flips it, the fallback
- * pane included, so Back walks from the detail to the list. The tiers are container queries: put
+ * pane included, so Back walks from the detail to the list. `onBack` is the same field's `clear`:
+ * below `wide` it draws a back link above the detail, for an installed app that has no browser Back. The tiers are container queries: put
  * it inside a `Page`, or any `@container`.
  *
  * @useWhen a page is a list of things plus the pane for the chosen one (settings sections, a record browser)
@@ -29,11 +33,19 @@ export const SplitListContext = createContext(false)
  * @example
  * <SplitPage
  *   selected={store.field.section.useIsSet()}
+ *   onBack={store.field.section.clear}
  *   list={() => <InnerNav label="Settings" state={store.field.section} groups={GROUPS} />}
  *   detail={() => <SettingsPane section={section} />}
  * />
  */
-export function SplitPage({ selected, list, detail }: SplitPageProps): ReactElement {
+export function SplitPage({
+  selected,
+  onBack,
+  backLabel,
+  list,
+  detail,
+}: SplitPageProps): ReactElement {
+  const t = useMessages(page)
   return (
     <div
       data-slot="split-page"
@@ -54,8 +66,33 @@ export function SplitPage({ selected, list, detail }: SplitPageProps): ReactElem
       </div>
       <div
         data-slot="split-page-detail"
-        className={cn('min-w-0', !selected && 'hidden @wide:block')}
+        className={cn(
+          'min-w-0',
+          !selected && 'hidden @wide:block',
+          // The back link sits above the detail in one column; beside the list the pane is plain block.
+          selected && onBack !== undefined && 'grid grid-cols-[minmax(0,1fr)] gap-2 @wide:block',
+        )}
       >
+        {selected && onBack !== undefined && (
+          <Button
+            variant="ghost"
+            size="sm"
+            data-slot="split-page-back"
+            className="justify-self-start @wide:hidden"
+            onClick={onBack}
+          >
+            <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
+              <path
+                d="M10 3L5 8l5 5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {backLabel ?? t('page.backToList')}
+          </Button>
+        )}
         {detail()}
       </div>
     </div>

@@ -141,6 +141,14 @@ export type InnerNavProps<K extends string = string> = {
 export type SplitPageProps = {
   /** Narrow: the list while unset, the pane when set. CSS only. */
   selected: boolean
+  /**
+   * The way back below the `wide` tier, written from the same field that `selected` reads: the
+   * pane field's `clear`. Without it a phone's pane has only the browser's back. Absent from the
+   * pane at `wide` and up, where the list sits beside it.
+   */
+  onBack?: () => void
+  /** The back link's text; names the list (`Settings`). Defaults to the catalogue's `page.backToList`. */
+  backLabel?: string
   list: () => ReactNode
   detail: () => ReactNode
 }

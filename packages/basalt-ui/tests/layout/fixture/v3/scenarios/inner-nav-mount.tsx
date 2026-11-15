@@ -109,6 +109,7 @@ function Screen({ mode }: { mode: 'standalone' | 'split' }): ReactElement {
         ) : (
           <SplitPage
             selected={selected}
+            onBack={state.clear}
             list={() => nav}
             detail={() => <Body section={section} />}
           />

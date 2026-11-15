@@ -221,6 +221,50 @@ layout('SplitPage at 390', () => {
     expect(set.detail).not.toBe('none')
   })
 
+  test('the pane has a back link above it that clears the field; at 1440 there is none', async () => {
+    const BACK = '[data-slot="split-page-back"]'
+    const page = await openFixture(specOf('split'), PHONE)
+    expect(await page.count(BACK)).toBe(0)
+    await page.raw.evaluate(
+      ({ nav, frames }) => {
+        const wait = new Function(`return (async () => { ${frames} })()`) as () => Promise<void>
+        document.querySelectorAll<HTMLAnchorElement>(`${nav} a[href]`)[1]?.click()
+        return wait()
+      },
+      { nav: NAV, frames },
+    )
+    const link = await page.box('back link', BACK)
+    const body = await page.box('pane', '[data-slot="split-page-detail"]')
+    expect(link.box.height).toBeGreaterThan(0)
+    expect(link.box.y).toBeLessThan(body.box.y + body.box.height / 2)
+    await page.raw.evaluate(
+      ({ back, frames }) => {
+        const wait = new Function(`return (async () => { ${frames} })()`) as () => Promise<void>
+        document.querySelector<HTMLElement>(back)?.click()
+        return wait()
+      },
+      { back: BACK, frames },
+    )
+    const after = await display(page)
+    expect(after.list).not.toBe('none')
+    expect(after.detail).toBe('none')
+
+    const wide = await openFixture(specOf('split'), DESKTOP_1440)
+    await wide.raw.evaluate(
+      ({ nav, frames }) => {
+        const wait = new Function(`return (async () => { ${frames} })()`) as () => Promise<void>
+        document.querySelectorAll<HTMLAnchorElement>(`${nav} a[href]`)[1]?.click()
+        return wait()
+      },
+      { nav: NAV, frames },
+    )
+    const hidden = await wide.raw.evaluate(
+      (back) => getComputedStyle(document.querySelector<HTMLElement>(back)!).display,
+      BACK,
+    )
+    expect(hidden).toBe('none')
+  })
+
   test('the fallback section opens its pane too, and Back returns to the list', async () => {
     const page = await openFixture(specOf('split'), PHONE)
     await page.raw.evaluate(
