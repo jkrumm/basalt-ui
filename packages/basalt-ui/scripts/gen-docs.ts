@@ -268,7 +268,7 @@ function extractOne(
   })
 }
 
-/** Every public value export, once, under the first subpath (in `package.json` order) that has it. */
+/** Every public value export, once, under the first subpath that has it, except that a subpath beats the root. */
 function extractExports(roots: GenRoots): { exports: Extracted[]; problems: string[] } {
   const entries = publishedEntries(roots.pkgRoot)
   const program = ts.createProgram(
@@ -288,17 +288,40 @@ function extractExports(roots: GenRoots): { exports: Extracted[]; problems: stri
     baseline: new Set(readBaseline(roots)),
   }
 
-  for (const { key, file } of entries) {
+  const read = entries.map(({ key, file }) => {
     const source = program.getSourceFile(file)
-    const values = source === undefined ? undefined : valueExports(checker, source)
+    return {
+      key,
+      file,
+      source,
+      values: source === undefined ? undefined : valueExports(checker, source),
+    }
+  })
+  // The root barrel re-exports the widest set, so a subpath that also exports a symbol names it:
+  // `createChannel` is `basalt-ui/data`'s. The root keeps what no subpath has.
+  const home = (key: string, symbol: ts.Symbol) =>
+    key !== '.'
+      ? undefined
+      : read.find((r) => r.key !== '.' && r.values?.some((v) => v.symbol === symbol))
+  for (const { key, file, source, values } of read) {
     if (source === undefined || values === undefined) {
       acc.problems.push(`${key}: no module symbol for ${relative(roots.pkgRoot, file)}`)
       continue
     }
-    const at = { key, source, subpath: key === '.' ? pkgName : `${pkgName}${key.slice(1)}` }
     for (const value of values.filter((v) => !acc.seen.has(v.symbol))) {
       acc.seen.add(value.symbol)
-      extractOne(checker, roots, at, value, acc)
+      const narrower = home(key, value.symbol)
+      const at =
+        narrower?.source === undefined
+          ? { key, source }
+          : { key: narrower.key, source: narrower.source }
+      extractOne(
+        checker,
+        roots,
+        { ...at, subpath: at.key === '.' ? pkgName : `${pkgName}${at.key.slice(1)}` },
+        value,
+        acc,
+      )
     }
   }
   const exports = acc.out.toSorted((x, y) => x.info.name.localeCompare(y.info.name))
