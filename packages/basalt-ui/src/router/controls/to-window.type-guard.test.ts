@@ -30,6 +30,37 @@ export const customRefused = (): void => {
   void bad
 }
 
+const resolved = defineControls({
+  id: 'to-window-resolved',
+  scope: 'page',
+  fields: {
+    opened: field.range({
+      presets: ['7d', '30d'],
+      fallback: '30d',
+      custom: true,
+      window: {
+        '7d': () => ({ from: '2026-11-08', to: '2026-11-15' }),
+        '30d': () => ({ from: '2026-10-16', to: '2026-11-15' }),
+      },
+    }),
+    tags: field.multi(['a', 'b'], []),
+  },
+})
+
+/** With every preset resolved there is no `{ window }` member: the dates are read without a guard. */
+export const resolvedDates = (): string => {
+  const window = resolved.field.opened.toWindow({ preset: '7d' })
+  return `${window.from}/${window.to}`
+}
+
+/** `useValues()` hands a range back as its `RangeValue` and a multi as its array (state-2.2). */
+export const valuesFeedToWindow = (): string => {
+  const values = resolved.useValues()
+  const tags: readonly ('a' | 'b')[] = values.tags
+  const window = resolved.field.opened.toWindow(values.opened)
+  return `${window.from}${tags.length}`
+}
+
 describe('toWindow (type-guard)', () => {
   test('is a compile-time fixture: see the @ts-expect-error directives above', () => {
     expect(store.field.window.toWindow({ preset: '7d' })).toEqual({ window: '7d' })
