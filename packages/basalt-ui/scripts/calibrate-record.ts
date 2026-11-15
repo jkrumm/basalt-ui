@@ -2,11 +2,13 @@
  * `calibrate-record` — writes `docs/calibration/last.json` from six reviewer verdict files.
  *
  * Calibration is the proof that a rubric change did not silently move scores: six blind reviewer
- * runs (five seeded offenders and one known-good board, `apps/playground` `Calibrate*.tsx`) are
- * recorded against the sha256 of `agent/reviewer/rubric.md`. When the rubric changes, the hash
+ * runs (five seeded offenders and one known-good board) are recorded against the sha256 of `agent/reviewer/rubric.md`. When the rubric changes, the hash
  * test (`tests/agent/calibration.test.ts`) goes red until the six runs are redone and recorded
  * again. The runs are owner-run; this script only reads the six verdict files they leave behind
  * (each the reviewer's `last.json`, rubric "Handing the result on") and calls no model.
+ *
+ * The seed pages (`Calibrate*.tsx`) were 2.x pages and went with the 2.x view layer; the next
+ * recalibration needs six seeds rebuilt on the v3 parts first.
  *
  * Usage: bun packages/basalt-ui/scripts/calibrate-record.ts <verdict.json> x6
  */
