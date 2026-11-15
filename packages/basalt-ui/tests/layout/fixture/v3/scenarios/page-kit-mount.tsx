@@ -12,6 +12,7 @@ import '../../tailwind-layers.css'
 import '../../tailwind.generated.css'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
+import { StatCard } from '../../../../../src/cards/stat-card'
 import { CardGrid } from '../../../../../src/page/card-grid'
 import { Facts } from '../../../../../src/page/facts'
 import { PageSummary } from '../../../../../src/page/page-summary'
@@ -75,6 +76,21 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
     grid === undefined ? (
       <div data-testid="w37-summary" className="p-4">
         <PageSummary sentence="12 open, 3 need you" facts={FACTS} aside="Today" />
+      </div>
+    ) : grid.stat === true ? (
+      // The host stands for `Page`, the one container a stat row keys on.
+      <div data-testid="grid-host" className="@container p-4">
+        <CardGrid min={grid.grid}>
+          {Array.from({ length: grid.cards ?? 4 }, (_, i) => (
+            <StatCard
+              key={i}
+              title={`Stat ${i + 1}`}
+              value={100 + i}
+              footer={[{ label: 'Open', value: i }]}
+              onSelect={() => undefined}
+            />
+          ))}
+        </CardGrid>
       </div>
     ) : (
       <div data-testid="grid-host" className="p-4">

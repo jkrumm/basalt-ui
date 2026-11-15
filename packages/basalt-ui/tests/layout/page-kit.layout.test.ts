@@ -177,6 +177,66 @@ layout('CardGrid shares the row among its cards', () => {
   })
 })
 
+layout('A stat row scrolls sideways in a narrow container', () => {
+  const read = async (viewport: Viewport) => {
+    const spec = { ...base, pageKit: { grid: 'narrow', cards: 4, stat: true } } as PageKitSpec
+    const page = await openFixture(spec, viewport)
+    const m = await page.raw.evaluate((sel) => {
+      const grid = document.querySelector<HTMLElement>(sel)
+      const scroller = grid?.closest<HTMLElement>('[data-slot="scroll-area"]') ?? null
+      if (grid === null || scroller === null) throw new Error('LAYOUT: no stat row scroller')
+      const port = scroller.getBoundingClientRect()
+      const cards = [...grid.querySelectorAll<HTMLElement>('[data-slot="stat-card"]')].map((c) => {
+        const r = c.getBoundingClientRect()
+        return {
+          left: r.left,
+          right: r.right,
+          top: r.top,
+          width: r.width,
+          snap: getComputedStyle(c).scrollSnapAlign,
+        }
+      })
+      return {
+        display: getComputedStyle(grid).display,
+        snapType: getComputedStyle(scroller).scrollSnapType,
+        portLeft: port.left,
+        portRight: port.right,
+        clientWidth: scroller.clientWidth,
+        scrollWidth: scroller.scrollWidth,
+        focusable: scroller.tabIndex,
+        cards,
+      }
+    }, slot('card-grid'))
+    return { ...m, overflow: await page.horizontalOverflow() }
+  }
+
+  test("390px: one card and the next one's edge show, the row scrolls with snap", async () => {
+    const m = await read(PHONE)
+    expect(m.scrollWidth, 'the row is wider than its scrollport').toBeGreaterThan(
+      m.clientWidth + 100,
+    )
+    expect(m.snapType).toContain('mandatory')
+    expect(new Set(m.cards.map((c) => c.top)).size, 'one line').toBe(1)
+    for (const c of m.cards) expect(c.snap).toBe('start')
+    const [first, second] = m.cards
+    expect(first!.right, 'the first card is whole').toBeLessThanOrEqual(m.portRight)
+    expect(second!.left, 'the next card starts in view').toBeLessThan(m.portRight - 8)
+    expect(second!.right, 'the next card is only an edge').toBeGreaterThan(m.portRight + 100)
+    expect(m.focusable, 'a keyboard reaches the scroller').toBe(0)
+    expectNoHorizontalOverflow(m.overflow, 'stat row at 390', PHONE)
+  })
+
+  test('1440px: the row is the grid, four cards share it and nothing scrolls', async () => {
+    const m = await read(DESKTOP_1440)
+    expect(m.display).toBe('grid')
+    expect(m.scrollWidth).toBeLessThanOrEqual(m.clientWidth + 0.5)
+    expect(new Set(m.cards.map((c) => c.top)).size, 'one row').toBe(1)
+    const quarter = (DESKTOP_1440.width - 2 * PAD - 3 * GAP) / 4
+    for (const c of m.cards) expect(c.width).toBeCloseTo(quarter, 0)
+    expect(m.focusable, 'a row that fits adds no tab stop').toBe(-1)
+  })
+})
+
 layout('Facts columns follow the container', () => {
   const read = async (width: number) => {
     const page = await openFixture(

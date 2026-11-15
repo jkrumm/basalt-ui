@@ -4,7 +4,7 @@ use when: 'a settled query or a filter left a page or region with nothing to lis
 never when: 'the data failed to load or is still loading (use `QueryState`, or a frame `phase`)'
 subpath: basalt-ui/page
 peers: ['@base-ui/react']
-slots: [empty-state, empty-state-action, empty-state-icon, empty-state-why]
+slots: [empty-state, empty-state-action, empty-state-icon, empty-state-title, empty-state-why]
 ---
 
 # EmptyState
@@ -19,6 +19,7 @@ an empty list (a failed query is `QueryState`'s error arm, not this).
 ```ts
 EmptyState(props: EmptyStateProps): ReactElement
   why: string
+  title?: string
   icon?: IconComponent
   tier?: "section" | "page"
   action?: CardAction

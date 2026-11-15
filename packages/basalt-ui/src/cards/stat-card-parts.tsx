@@ -98,7 +98,7 @@ export function StatMenu({
         data-slot="stat-menu"
         popoverTarget={id}
         style={{ anchorName: anchor }}
-        className="relative z-20 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-ctrl border-0 bg-secondary p-0 text-muted-foreground shadow-raised hover:text-foreground focus-ring after:absolute after:inset-0 pointer-coarse:after:-inset-2"
+        className="relative z-20 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-ctrl border-0 bg-secondary p-0 text-muted-foreground shadow-raised hover:text-foreground focus-ring forced-colors:border forced-colors:border-current after:absolute after:inset-0 pointer-coarse:after:-inset-2"
       >
         <svg viewBox="0 0 16 16" className="size-icon" fill="currentColor" aria-hidden="true">
           <circle cx="3.5" cy="8" r="1.25" />

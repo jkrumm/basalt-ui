@@ -3,6 +3,7 @@ import { cn } from '../core/cn'
 import { AppLink } from '../core/link'
 import { resolvePhase } from '../core/phase'
 import type { Box, NavTarget } from '../core/ports'
+import { markStatCard } from '../core/stat-row'
 import { DeltaBadge } from '../ui/badge'
 import { Card, CardPhase, Inset } from '../ui/card'
 import type { StatCardProps } from './contract'
@@ -140,6 +141,8 @@ export function StatCard(props: StatCardProps): ReactElement {
     </div>
   )
 }
+
+markStatCard(StatCard)
 
 const labelOf = (delta: NonNullable<StatCardProps['delta']>): { label?: string } =>
   delta.label === undefined ? {} : { label: delta.label }
