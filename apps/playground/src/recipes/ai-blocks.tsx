@@ -34,7 +34,7 @@ export const catalog = defineCatalog([
   defineBlock({
     ...s.table,
     render: (p) => (
-      <DataPanel title={p.title} skeleton={{ rows: 4 }} body={() => <Rows data={p.rows} />} />
+      <DataPanel title={p.title} bodySize={{ rows: 4 }} body={() => <Rows data={p.rows} />} />
     ),
   }),
   defineBlock({ ...s.callout, render: (p) => <Callout kind={p.kind}>{p.text}</Callout> }),
