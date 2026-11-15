@@ -44,6 +44,10 @@ type Pointer = (typeof POINTERS)[number]
 const FLOOR: Record<Pointer, number> = { fine: 24, coarse: 44 }
 const EMPTY_SPEC = { sections: [] } as FixtureSpec
 
+const near = (got: number, want: number): void => {
+  expect(Math.abs(got - want)).toBeLessThan(1)
+}
+
 let documentPath = ''
 let axeSource = ''
 let scratch = ''
@@ -209,6 +213,48 @@ layout('Textarea, NumberField and Checkbox', () => {
               expect(Number.parseFloat(fontSize), `${sel} font-size`).toBeLessThan(16)
             }
           }
+        })
+
+        test('the textarea keeps the rows floor, grows with its value, and stops at 10 lines', async () => {
+          const page = await open(viewport, pointer)
+          const read = (id: string, value?: string) =>
+            page.raw.evaluate(
+              ([testid, next]) => {
+                const el = document.querySelector<HTMLTextAreaElement>(`[data-testid="${testid}"]`)!
+                if (next !== undefined) el.value = next
+                const style = getComputedStyle(el)
+                const chrome =
+                  Number.parseFloat(style.paddingTop) +
+                  Number.parseFloat(style.paddingBottom) +
+                  Number.parseFloat(style.borderTopWidth) +
+                  Number.parseFloat(style.borderBottomWidth)
+                return {
+                  height: el.getBoundingClientRect().height,
+                  line: Number.parseFloat(style.lineHeight),
+                  chrome,
+                  scrolls: el.scrollHeight > el.clientHeight + 1,
+                }
+              },
+              [id, value] as const,
+            )
+
+          const empty = await read('ui-note')
+          near(empty.height, 3 * empty.line + empty.chrome)
+          expect(empty.scrolls).toBe(false)
+
+          const oneLine = await read('ui-note', 'one line')
+          near(oneLine.height, 3 * oneLine.line + oneLine.chrome)
+
+          const grown = await read('ui-note', 'x\n'.repeat(5))
+          near(grown.height, 6 * grown.line + grown.chrome)
+
+          const long = await read('ui-note', 'x\n'.repeat(40))
+          near(long.height, 10 * long.line + long.chrome)
+          expect(long.scrolls).toBe(true)
+
+          const single = await read('ui-note-one')
+          if (pointer === 'coarse') expect(single.height).toBeGreaterThanOrEqual(44 - 0.5)
+          else near(single.height, single.line + single.chrome)
         })
 
         test('the number field prints 1.234,5 in de-DE', async () => {

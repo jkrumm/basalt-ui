@@ -4,7 +4,9 @@
  * so the guard pins its props and the table's classes.
  */
 import { describe, expect, test } from 'bun:test'
+import type { ComponentProps } from 'react'
 import { textareaVariants } from './textarea'
+import type { TextareaProps } from './textarea'
 import { requires } from './textarea.guard'
 
 type Called = Parameters<typeof requires>[0]
@@ -24,9 +26,13 @@ export const removed: Accepts<WithoutRows> = requires
 
 export const added: Accepts<WithMoreRows> = requires
 
+// Growing with content adds no prop: every key is a native textarea attribute or `onValueChange`.
+type NewProps = Exclude<keyof TextareaProps, keyof ComponentProps<'textarea'> | 'onValueChange'>
+export const noNewProp: NewProps extends never ? true : false = true
+
 describe('textarea guard', () => {
   test('every called prop is accepted and the table resolves', () => {
     expect(requires({ rows: 4, name: 'note' })).toEqual({ rows: 4, name: 'note' })
-    expect(textareaVariants()).toContain('pointer-coarse:min-h-11')
+    expect(textareaVariants()).toContain('pointer-coarse:min-h-[max(2.75rem,')
   })
 })
