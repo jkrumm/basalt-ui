@@ -11,7 +11,7 @@ import { OfflineLine } from '../../core/offline-line'
 import { table } from '../../core/messages/table'
 import { AppLink } from '../../core/link'
 import type { CardAction, ResolvedPhase } from '../../core/phase'
-import { Button } from '../../ui/button'
+import { Button, buttonVariants } from '../../ui/button'
 import { Skeleton } from '../../ui/skeleton'
 import { TableCell, TableRow } from '../../ui/table'
 import type { TableModel } from '../use-data-table'
@@ -165,9 +165,12 @@ export function EmptyRow<T>({
       {reset === undefined &&
         action !== undefined &&
         ('href' in action ? (
-          <Button size="sm" render={<AppLink href={action.href} />} nativeButton={false}>
+          <AppLink
+            href={action.href}
+            className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+          >
             {action.label}
-          </Button>
+          </AppLink>
         ) : (
           <Button size="sm" onClick={action.onClick}>
             {action.label}
