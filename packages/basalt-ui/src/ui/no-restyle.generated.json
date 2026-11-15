@@ -302,7 +302,7 @@
       "pattern": "^ScrollArea$",
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
-      "message": "ScrollArea owns its height and display: eject it (basalt-ui eject scroll-area) to change them."
+      "message": "ScrollArea owns its height and display: bound it with max-h-*, or eject it (basalt-ui eject scroll-area)."
     },
     {
       "module": "segmented",
@@ -382,7 +382,7 @@
       "pattern": "^Skeleton$",
       "allow": ["layout"],
       "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
-      "message": "Skeleton owns its height and display: eject it (basalt-ui eject skeleton) to change them."
+      "message": "Skeleton owns its height and display: match the text style it stands in for (text-sm, text-lg) on it or its parent, or eject it (basalt-ui eject skeleton)."
     },
     {
       "module": "skeleton",

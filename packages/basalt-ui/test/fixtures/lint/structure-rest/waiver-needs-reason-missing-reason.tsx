@@ -22,6 +22,10 @@ console.log(a)
 /* oxlint-disable basalt/colour-literal */
 const a = 1
 
+// @invalid
+// oxlint-disable-next-line basalt/dark-fork — the logo needs its own dark tone
+const a = 1
+
 // @valid
 // oxlint-disable-next-line basalt/colour-literal -- canvas draws raw pixels
 const a = 1

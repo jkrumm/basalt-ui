@@ -70,30 +70,70 @@ export function disallowedValueList(
 
 /** The ten rules, keyed by stylelint rule name. Order is the order of the section 4.2 table. */
 export const STYLELINT_RULES = {
-  'color-no-hex': true,
-  'color-named': 'never',
+  'color-no-hex': [
+    true,
+    {
+      message:
+        'A hex colour `%s` is authored colour. Use a `--vx-*` colour token (`var(--vx-ink)`), or `color-mix` over one.',
+    },
+  ],
+  'color-named': [
+    'never',
+    {
+      message:
+        'The named colour `%s` is authored colour. Use a `--vx-*` colour token, or `color-mix` over one.',
+    },
+  ],
   'function-disallowed-list': [
-    'rgb',
-    'rgba',
-    'hsl',
-    'hsla',
-    'hwb',
-    'lab',
-    'lch',
-    'oklab',
-    'oklch',
-    'color',
-    'light-dark',
+    ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color', 'light-dark'],
+    {
+      message:
+        '`%s()` writes a colour by hand. Use a `--vx-*` colour token, or `color-mix(in oklab, var(--vx-token) 40%, transparent)` for an alpha; a token already switches per scheme.',
+    },
   ],
   'declaration-property-value-disallowed-list': disallowedValueList(true),
-  'declaration-property-value-allowed-list': {
-    [SHAPE_PROPERTIES]: [`/${ALLOWED_SHAPE}/i`],
-  },
-  'property-disallowed-list': ['/^--vx-/'],
-  'declaration-no-important': true,
-  'media-feature-name-disallowed-list': [
-    '/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+)$/',
+  'declaration-property-value-allowed-list': [
+    {
+      [SHAPE_PROPERTIES]: [`/${ALLOWED_SHAPE}/i`],
+    },
+    {
+      message:
+        'Disallowed `%s: %s`. Radius, shadow, line height and letter spacing take a `--vx-*` token, `0`, `none` or `inherit`.',
+    },
   ],
-  'selector-disallowed-list': ['/\\[\\s*data-slot/', '/\\.mantine-/'],
-  'at-rule-disallowed-list': ['utility'],
+  'property-disallowed-list': [
+    ['/^--vx-/'],
+    {
+      message:
+        'Never declare `%s`: a `--vx-*` token is derived from the palette config, not authored. Read it with `var()`, or retune `basalt()` options.',
+    },
+  ],
+  'declaration-no-important': [
+    true,
+    {
+      message:
+        'Never force a style with `!important`. Add a variant or prop on the component, or raise the layer.',
+    },
+  ],
+  'media-feature-name-disallowed-list': [
+    ['/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+)$/'],
+    {
+      message:
+        'A viewport media feature (`%s`) keys layout on the window. Key on the container: `@container` with a named size (`@narrow`, `@regular`, `@wide`), or `useSizeClass()` for chrome.',
+    },
+  ],
+  'selector-disallowed-list': [
+    ['/\\[\\s*data-slot/', '/\\.mantine-/'],
+    {
+      message:
+        "Never select `%s`: a `data-slot` or `.mantine-*` selector reaches into a component. Use the component's own prop or variant, or eject it (basalt-ui eject <name>).",
+    },
+  ],
+  'at-rule-disallowed-list': [
+    ['utility'],
+    {
+      message:
+        '`@%s` defines a utility class. Compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet.',
+    },
+  ],
 } as const

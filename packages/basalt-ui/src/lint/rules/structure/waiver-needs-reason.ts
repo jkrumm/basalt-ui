@@ -33,6 +33,8 @@ export const FILE_WAIVABLE: ReadonlySet<string> = new Set([
 ])
 
 const DIRECTIVE = /^\s*(?:oxlint|eslint)-(disable-next-line|disable-line|disable)(?=\s|$)([\s\S]*)$/
+/** A prose dash where `--` belongs: oxlint reads every word after it as a rule id. */
+const EM_DASH = /\s[\u2013\u2014]\s/
 const REASON_SEPARATOR = /(?:^|\s)--+(?:\s|$)/
 
 type Directive = {
@@ -84,11 +86,15 @@ export const missingReason: AstForm = {
     'Program:exit'() {
       for (const comment of commentsOf(context as HostContext)) {
         const directive = parseDirective(comment.value)
-        if (directive && directive.reason === '') report(comment, 'disable directive')
+        if (!directive || directive.reason !== '') continue
+        report(
+          comment,
+          EM_DASH.test(comment.value) ? 'disable directive with an em dash' : 'disable directive',
+        )
       }
     },
   }),
-  fix: 'End the directive with -- <why>, e.g. // oxlint-disable-next-line basalt/x -- <why>',
+  fix: 'End the directive with `-- <why>` (two hyphens, not an em dash: oxlint reads every word after an em dash as a rule id), e.g. // oxlint-disable-next-line basalt/x -- <why>',
   next: 'Fix the finding at its source instead of waiving it',
   fixture: 'structure-rest/waiver-needs-reason-missing-reason.tsx',
 }

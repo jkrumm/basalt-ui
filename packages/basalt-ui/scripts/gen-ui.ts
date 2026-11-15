@@ -290,14 +290,30 @@ function renderSlots(modules: readonly UiModule[]): string {
   ].join('\n')
 }
 
+/**
+ * The class fix a primitive's own doc gives for a denied height or display, by part: named before
+ * "eject" so the message never skips the doc's answer (docs/skeleton.md, docs/scroll-area.md).
+ */
+const CLASS_FIX: Readonly<Record<string, string>> = {
+  skeleton: 'match the text style it stands in for (text-sm, text-lg) on it or its parent',
+  'scroll-area': 'bound it with max-h-*',
+}
+
 /** The deny message: one fixed phrasing, `size` first when the table has a `size` axis. */
 export function contractMessage(module: string, table: Table): string {
   const name = pascal(table.part)
   const size = table.axes.find((a) => a.name === 'size')
+  const fix = CLASS_FIX[table.part]
+  const lead = `${name} owns its height and display:`
   if (size === undefined) {
-    return `${name} owns its height and display: eject it (basalt-ui eject ${module}) to change them.`
+    return fix === undefined
+      ? `${lead} eject it (basalt-ui eject ${module}) to change them.`
+      : `${lead} ${fix}, or eject it (basalt-ui eject ${module}).`
   }
-  return `${name} owns its height and display: use size (${size.values.join(', ')}), or eject it (basalt-ui eject ${module}).`
+  const sizes = `use size (${size.values.join(', ')})`
+  return fix === undefined
+    ? `${lead} ${sizes}, or eject it (basalt-ui eject ${module}).`
+    : `${lead} ${sizes}, ${fix}, or eject it (basalt-ui eject ${module}).`
 }
 
 function renderContracts(modules: readonly UiModule[]): string {
