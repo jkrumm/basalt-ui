@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { QueryClientProvider } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { isMutationPaused } from './live/live-query-runtime'
-import { makeQueryClient } from './query-client'
+import { createQueryClient } from './query-client'
 import { createSyncedState } from './synced'
 import type { SyncedRemote, SyncedTransport } from './synced'
 
@@ -62,7 +62,7 @@ describe('createSyncedState — Query binding', () => {
       freshness: { class: 'ticker', every: 5_000 },
       debounceMs: 0,
     })
-    const client = makeQueryClient()
+    const client = createQueryClient()
     let api: ReturnType<typeof prefs.use> | null = null
     const { container } = mount(client, () => {
       api = prefs.use()
@@ -96,8 +96,8 @@ describe('createSyncedState — Query binding', () => {
       owner: () => null,
       transport,
     })
-    const first = makeQueryClient()
-    const second = makeQueryClient()
+    const first = createQueryClient()
+    const second = createQueryClient()
     let one: ReturnType<typeof prefs.use> | null = null
     let two: ReturnType<typeof prefs.use> | null = null
     mount(first, () => {
@@ -129,7 +129,7 @@ describe('createSyncedState — Query binding', () => {
       transport: { ...transport, load: () => new Promise<never>(() => {}) },
       debounceMs: 50,
     })
-    const client = makeQueryClient()
+    const client = createQueryClient()
     let api: ReturnType<typeof prefs.use> | null = null
     const { container, rerender } = mount(client, () => {
       api = prefs.use()
@@ -161,7 +161,7 @@ describe('createSyncedState — Query binding', () => {
     })
     expect(prefs.field('rest')).toBe(prefs.field('rest'))
     let setRest: ((n: number) => void) | null = null
-    const { container } = mount(makeQueryClient(), () => {
+    const { container } = mount(createQueryClient(), () => {
       const [rest, set] = prefs.field('rest').use()
       setRest = set
       return <span>{rest}</span>

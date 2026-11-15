@@ -140,12 +140,12 @@ describe('BarList part of a whole', () => {
 })
 
 describe('BarList rows as targets', () => {
-  test('a row with href is a link, a row with onSelect is a button, a plain row is neither', () => {
-    const onSelect = mock(() => undefined)
+  test('a row with href is a link, a row with onClick is a button, a plain row is neither', () => {
+    const onClick = mock(() => undefined)
     const { container, getAllByRole, queryAllByRole } = draw({
       items: [
         { label: 'argo', value: 3, href: '/argo' },
-        { label: 'rb', value: 2, onSelect },
+        { label: 'rb', value: 2, onClick },
         { label: 'plain', value: 1 },
       ],
     })
@@ -153,13 +153,13 @@ describe('BarList rows as targets', () => {
     expect(getAllByRole('link')[0]?.getAttribute('href')).toBe('/argo')
     expect(getAllByRole('button')).toHaveLength(1)
     fireEvent.click(getAllByRole('button')[0]!)
-    expect(onSelect).toHaveBeenCalledTimes(1)
+    expect(onClick).toHaveBeenCalledTimes(1)
     const rows = container.querySelectorAll('[data-slot="bar-list-row"]')
     expect(rows[2]?.querySelector('a, button, [role="link"], [role="button"]')).toBeNull()
     expect(queryAllByRole('link')).toHaveLength(1)
   })
 
-  test('no row is a target when none carries href or onSelect', () => {
+  test('no row is a target when none carries href or onClick', () => {
     const { queryAllByRole } = draw()
     expect(queryAllByRole('link')).toHaveLength(0)
     expect(queryAllByRole('button')).toHaveLength(0)

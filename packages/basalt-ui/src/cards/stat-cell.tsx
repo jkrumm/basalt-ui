@@ -87,7 +87,7 @@ const rowsOf = (rows: StatCellProps['rows']): StatRow[] => {
  */
 export function StatCell(props: StatCellProps): ReactElement {
   const { label, qualifier, info, value, unit, delta, status, sub, srText, meter, chart } = props
-  const { href, onSelect, phase, empty } = props
+  const { href, onClick, phase, empty } = props
   const variant = useContext(StatGroupContext)
   const about = useAboutLabel()
   const resolved = resolvePhase({ phase, empty })
@@ -104,7 +104,7 @@ export function StatCell(props: StatCellProps): ReactElement {
   const inner = (
     <>
       {href !== undefined && <Target label={label} href={href} />}
-      {onSelect !== undefined && <Target label={label} onSelect={onSelect} />}
+      {onClick !== undefined && <Target label={label} onClick={onClick} />}
       <div data-slot="stat-caption" className={T_CAPTION}>
         <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
         {qualifier !== undefined && (
@@ -391,7 +391,7 @@ function EmptyLine({ empty }: { empty: Empty }): ReactNode {
             {action.label}
           </AppLink>
         ) : (
-          <button type="button" className={ACTION} onClick={action.onSelect}>
+          <button type="button" className={ACTION} onClick={action.onClick}>
             {action.label}
           </button>
         ))
@@ -400,7 +400,7 @@ function EmptyLine({ empty }: { empty: Empty }): ReactNode {
   )
 }
 
-type TargetProps = { label: string } & Exclude<CardTarget, { href?: never; onSelect?: never }>
+type TargetProps = { label: string } & Exclude<CardTarget, { href?: never; onClick?: never }>
 
 /**
  * The stretched target: one transparent link or button over the whole cell, under the info glyph,
@@ -424,7 +424,7 @@ function Target(props: TargetProps): ReactElement {
       data-slot="stat-target"
       type="button"
       aria-label={props.label}
-      onClick={props.onSelect}
+      onClick={props.onClick}
       className={className}
     />
   )

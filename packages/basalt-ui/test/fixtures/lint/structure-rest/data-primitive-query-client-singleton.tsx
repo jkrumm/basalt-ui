@@ -9,15 +9,15 @@ export function setup() {
 }
 
 // @valid
-export function makeQueryClient(config) {
+export function createQueryClient(config) {
   return new QueryClient(config)
 }
 
 // @valid
-export const makeQueryClient = (config) => {
+export const createQueryClient = (config) => {
   const client = new QueryClient(config)
   return client
 }
 
 // @valid
-const queryClient = makeQueryClient()
+const queryClient = createQueryClient()

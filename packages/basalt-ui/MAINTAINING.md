@@ -423,5 +423,10 @@ impossible, land a one-release `releaseRules` override (`{"breaking":true,"relea
 - Respect the Mantine-free boundary and the chart-engine boundary (`host.tsx` is the one `@tanstack/charts/react` importer).
 - Don't reintroduce Tailwind, OKLCH foundation palettes, ShadCN/Tremor/Starlight compat, or any
   `import.meta.env` reference in shipped code.
+- **One verb per role.** `define` declares a value that is data (`defineNav`, `defineFormat`,
+  `defineControls`); `create` builds an instance that holds state or a connection
+  (`createQueryClient`, `createSyncedState`, `createChannel`). `make` is not a verb of this
+  surface. An activation callback is `onClick` on every action, card target and menu item; the
+  empty sentence is `cause`; a frame's pending node is `skeleton`, and `loading` is a boolean.
 - When extending the public API, keep it grounded in the consumer need that drove it, and update
   `src/surfaces.ts` + this file in the same commit.

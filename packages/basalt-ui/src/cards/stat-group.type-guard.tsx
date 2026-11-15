@@ -32,7 +32,7 @@ export const validGroup: ReactElement = (
       rows={[row, row, row, row]}
       href="/recovery"
     />
-    <StatCell label="Sleep" value={null} onSelect={() => undefined} />
+    <StatCell label="Sleep" value={null} onClick={() => undefined} />
   </StatGroup>
 )
 
@@ -81,7 +81,7 @@ export const cellFifthRow: ReactElement = (
 
 export const cellLinkAndButton: ReactElement = (
   // @ts-expect-error a cell is a link or a button, never both
-  <StatCell label="Recovery" href="/recovery" onSelect={() => undefined} />
+  <StatCell label="Recovery" href="/recovery" onClick={() => undefined} />
 )
 
 export const cellStatusWithoutWord: ReactElement = (

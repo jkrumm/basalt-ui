@@ -9,8 +9,8 @@ import { buttonVariants } from '../ui/button'
 
 type EmptyStateBase = {
   /** One line: the cause, and the next step when there is one. Required: never a bare "No data". */
-  why: string
-  /** What is empty, in a few words (`No runs yet`), on the line above `why`. Drawn on the `page` tier only. */
+  cause: string
+  /** What is empty, in a few words (`No runs yet`), on the line above `cause`. Drawn on the `page` tier only. */
   title?: string
   icon?: IconComponent
   /**
@@ -28,7 +28,7 @@ export type EmptyStateProps = EmptyStateBase &
 const ACTION = buttonVariants({ variant: 'secondary', size: 'sm' })
 
 /**
- * The state of a region that has nothing to show: one line of why and at most one action. With
+ * The state of a region that has nothing to show: one line of cause and at most one action. With
  * active filters it is the filtered variant, whose action is Clear filters; the line says what the
  * filters hid. It never says "No data": the line names the cause, so a failed load cannot pass for
  * an empty list (a failed query is `QueryState`'s error arm, not this).
@@ -38,16 +38,16 @@ const ACTION = buttonVariants({ variant: 'secondary', size: 'sm' })
  *
  * @example
  * <EmptyState
- *   why="The queue is filtered to Blocked; clear it to see all 12."
+ *   cause="The queue is filtered to Blocked; clear it to see all 12."
  *   filtered={{ reset: clearFilters }}
  *   tier="section"
  * />
  *
  * @example
- * <EmptyState title="No runs yet" why="Start one from the CLI." action={{ label: 'Open docs', href: '/docs' }} />
+ * <EmptyState title="No runs yet" cause="Start one from the CLI." action={{ label: 'Open docs', href: '/docs' }} />
  */
 export function EmptyState(props: EmptyStateProps): ReactElement {
-  const { why, title, icon: Icon, tier = 'page', action, filtered } = props
+  const { cause, title, icon: Icon, tier = 'page', action, filtered } = props
   const t = useMessages(home)
   return (
     <div
@@ -80,7 +80,7 @@ export function EmptyState(props: EmptyStateProps): ReactElement {
           tier === 'page' ? 'text-md' : 'text-sm',
         )}
       >
-        {why}
+        {cause}
       </p>
       {filtered !== undefined ? (
         <button
@@ -102,7 +102,7 @@ export function EmptyState(props: EmptyStateProps): ReactElement {
             type="button"
             data-slot="empty-state-action"
             className={ACTION}
-            onClick={action.onSelect}
+            onClick={action.onClick}
           >
             {action.label}
           </button>

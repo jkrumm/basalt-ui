@@ -25,18 +25,18 @@ export function RouteError({ error, reset }: ErrorComponentProps) {
     reset()
   }
   const status = statusOf(error)
-  if (status === 403) return <EmptyState why="You do not have access to this page." />
+  if (status === 403) return <EmptyState cause="You do not have access to this page." />
   if (status === 401)
     return (
       <EmptyState
-        why="Your session ended. Sign in again to continue."
+        cause="Your session ended. Sign in again to continue."
         action={{ label: 'Sign in', href: SIGN_IN }}
       />
     )
   return (
     <EmptyState
-      why="Something went wrong loading this page. Try again."
-      action={{ label: 'Try again', onSelect: retry }}
+      cause="Something went wrong loading this page. Try again."
+      action={{ label: 'Try again', onClick: retry }}
     />
   )
 }

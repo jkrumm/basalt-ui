@@ -125,7 +125,7 @@ export function StatMenu({
               className={ITEM}
               onClick={() => {
                 close()
-                action.onSelect()
+                action.onClick()
               }}
             >
               {action.label}

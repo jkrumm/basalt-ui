@@ -57,8 +57,8 @@ const GROUPS: readonly InnerNavGroup[] = [
         id: 'integrations',
         label: 'Integrations',
         menu: [
-          { id: 'sync', label: 'Sync now', onSelect: () => {} },
-          { id: 'reset', label: 'Reset', onSelect: () => {} },
+          { id: 'sync', label: 'Sync now', onClick: () => {} },
+          { id: 'reset', label: 'Reset', onClick: () => {} },
         ],
       },
       { id: 'audit', label: 'Audit log' },

@@ -20,9 +20,9 @@ figure row.
 
 ```ts
 StatCard(props: StatCardProps): ReactElement
-  // either href, onSelect or neither
+  // either href, onClick or neither
   href?: string | NavTarget
-  onSelect?: () => void
+  onClick?: () => void
   title: string
   subtitle?: string
   icon?: IconComponent

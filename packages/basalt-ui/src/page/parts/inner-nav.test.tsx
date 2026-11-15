@@ -147,8 +147,8 @@ describe('InnerNav parts', () => {
             id: 'billing',
             label: 'Billing',
             menu: [
-              { id: 'export', label: 'Export', onSelect: () => ran.push('export') },
-              { id: 'reset', label: 'Reset', onSelect: () => ran.push('reset') },
+              { id: 'export', label: 'Export', onClick: () => ran.push('export') },
+              { id: 'reset', label: 'Reset', onClick: () => ran.push('reset') },
             ],
           },
         ],

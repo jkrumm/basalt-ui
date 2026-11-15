@@ -1,6 +1,6 @@
 /**
  * The per-client live runtime behind `liveQuery`: which QueryClients were built by
- * `makeQueryClient`, and the two flags a function-form `refetchInterval` cannot read for itself
+ * `createQueryClient`, and the two flags a function-form `refetchInterval` cannot read for itself
  * (Query hands it the `Query`, never the client): a mutation is in flight (`pauseWhileMutating`) and
  * the push stream is live (`pushed`). The flags live in WeakSets keyed by `Query`; when one changes
  * the runtime nudges the query's observers so Query re-evaluates the interval. No timer, no
@@ -67,7 +67,7 @@ const refresh = (client: QueryClient, runtime: Runtime, query: AnyQuery): void =
 }
 
 /**
- * Marks `client` as live-capable. Idempotent. `makeQueryClient` calls it; a bare `new QueryClient()`
+ * Marks `client` as live-capable. Idempotent. `createQueryClient` calls it; a bare `new QueryClient()`
  * never does, which is what the dev assert in `liveQuery` catches.
  */
 export function installLiveRuntime(client: QueryClient): void {

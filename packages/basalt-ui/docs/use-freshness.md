@@ -14,7 +14,7 @@ The freshness of the data behind `keys` (every active query when omitted) and th
 `fresh`, `none` with no active query; `button.onSync` invalidates the keys; `button.error` is
 the failing query's message. `source` reads an upstream timestamp out of the data (a Garmin
 sync time) against `sourceMaxAge`. The server render carries no age, so it hydrates cleanly.
-Needs a client from `makeQueryClient`.
+Needs a client from `createQueryClient`.
 
 ## Signature
 

@@ -1,9 +1,9 @@
 [
   "bindInvalidation",
   "createChannel",
+  "createQueryClient",
   "createSyncedState",
   "liveQuery",
-  "makeQueryClient",
   "optimistic",
   "unwrap",
   "useConnection",

@@ -17,7 +17,7 @@ afterEach(cleanup)
 const slots = (root: ParentNode): string[] =>
   [...root.querySelectorAll('[data-slot]')].map((el) => el.getAttribute('data-slot') ?? '')
 
-const Sample = ({ size }: { size?: 'md' | 'compact' }) => (
+const Sample = ({ size }: { size?: 'md' | 'sm' }) => (
   <Table size={size} aria-label="Orders">
     <TableCaption>Amounts in EUR.</TableCaption>
     <TableHeader>
@@ -53,8 +53,8 @@ describe('table module', () => {
     expect(getByLabelText('Orders').className).not.toContain('[--table-row-h:1.75rem]')
   })
 
-  test('compact sets the fixed row height and keeps the coarse-pointer floor', () => {
-    const { getByLabelText } = render(<Sample size="compact" />)
+  test('sm sets the fixed row height and keeps the coarse-pointer floor', () => {
+    const { getByLabelText } = render(<Sample size="sm" />)
     const { className } = getByLabelText('Orders')
     expect(className).toContain('[--table-row-h:1.75rem]')
     expect(className).toContain('pointer-coarse:[--table-row-h:var(--vx-row-h)]')

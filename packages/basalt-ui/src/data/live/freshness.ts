@@ -95,7 +95,7 @@ const sameCore = (a: Core, b: Core): boolean =>
  * `fresh`, `none` with no active query; `button.onSync` invalidates the keys; `button.error` is
  * the failing query's message. `source` reads an upstream timestamp out of the data (a Garmin
  * sync time) against `sourceMaxAge`. The server render carries no age, so it hydrates cleanly.
- * Needs a client from `makeQueryClient`.
+ * Needs a client from `createQueryClient`.
  *
  * @useWhen a page shows how old its data is, or wires a refresh button to the queries it reads
  * @neverWhen the refresh is a server job with its own state (pass the `RefreshButton` its own props)

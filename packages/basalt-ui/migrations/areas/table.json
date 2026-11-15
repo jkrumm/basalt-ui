@@ -91,6 +91,14 @@
       "manual": true,
       "note": "delete the prop; the Mantine AppShell main selector it needed is gone with it",
       "verify": "tsc"
+    },
+    {
+      "id": "tb-empty",
+      "kind": "flag",
+      "from": "useDataTable without empty",
+      "to": "useDataTable({ empty: { cause, action } })",
+      "profiles": ["parts", "app"],
+      "note": "optional: the table takes empty like every frame; omit it to keep the default sentence"
     }
   ],
   "tokens": {

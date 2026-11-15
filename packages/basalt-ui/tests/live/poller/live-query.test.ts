@@ -7,7 +7,7 @@
 import * as core from '@tanstack/react-query'
 import { queryOptions } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
-import { makeQueryClient } from '../../../src/data/query-client'
+import { createQueryClient } from '../../../src/data/query-client'
 import { liveQuery } from '../../../src/data/live/live-query'
 import { setStreamLive } from '../../../src/data/live/live-query-runtime'
 import { countingFetch, installClock, perInterval } from './support/harness'
@@ -30,7 +30,7 @@ const mount = (client: core.QueryClient, options: unknown) =>
 
 describe('P1: six observers on one key (poller branch: none, one fetch per interval)', () => {
   test('staggered mounts over 60 s give exactly one fetch per interval', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const { queryFn, starts } = countingFetch(clock)
     const mounts = [0, 1_100, 2_300, 3_100, 4_200, 4_700]
@@ -49,7 +49,7 @@ describe('P1: six observers on one key (poller branch: none, one fetch per inter
 
 describe('P1b: a hidden tab', () => {
   test('showing the tab after the clock advanced gives one fetch when stale', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const { queryFn, starts } = countingFetch(clock)
     mount(client, ticker(queryFn))
@@ -64,7 +64,7 @@ describe('P1b: a hidden tab', () => {
   })
 
   test('showing the tab while the data is fresh gives none', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const { queryFn, starts } = countingFetch(clock)
     mount(client, ticker(queryFn))
@@ -77,7 +77,7 @@ describe('P1b: a hidden tab', () => {
   })
 
   test('background: true keeps polling a hidden tab', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const { queryFn, starts } = countingFetch(clock)
     mount(client, ticker(queryFn, { background: true }))
@@ -90,7 +90,7 @@ describe('P1b: a hidden tab', () => {
 describe('P5: a 401 on a ticker is not a retry storm', () => {
   for (const status of [401, 403]) {
     test(`${status} gives at most one request per class interval`, async () => {
-      const client = makeQueryClient()
+      const client = createQueryClient()
       client.mount()
       const { queryFn, starts } = countingFetch(clock, { fail: () => ({ status }) })
       mount(client, ticker(queryFn))
@@ -101,7 +101,7 @@ describe('P5: a 401 on a ticker is not a retry storm', () => {
   }
 
   test('a 500 retries twice, then ticks at the class interval', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const { queryFn, starts } = countingFetch(clock, { fail: () => ({ status: 500 }) })
     mount(client, ticker(queryFn))
@@ -113,7 +113,7 @@ describe('P5: a 401 on a ticker is not a retry storm', () => {
 
 describe('L9: staleTime equals the cadence, one decision', () => {
   test('a ticker sets staleTime from every, per query', () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     const options = ticker(async () => 1) as unknown as { staleTime: (q: core.Query) => number }
     const query = client.getQueryCache().build(client, options as never)
     expect(options.staleTime(query)).toBe(EVERY)
@@ -125,7 +125,7 @@ describe('L9: staleTime equals the cadence, one decision', () => {
   })
 
   test('every returning false gives staleTime 30000, not 0', () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     const options = liveQuery(queryOptions({ queryKey: ['idle'], queryFn: async () => 1 }), {
       class: 'ticker',
       every: () => false,
@@ -190,7 +190,7 @@ describe('class mapping', () => {
   })
 
   test('pushed polls at fallback until the stream is live, then at safety', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const { queryFn, starts } = countingFetch(clock)
     const options = liveQuery(queryOptions({ queryKey: ['p'], queryFn }), {
@@ -212,7 +212,7 @@ describe('class mapping', () => {
 
 describe('tick rules', () => {
   test('pauseWhileMutating: no tick while a mutation with the key is in flight', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const { queryFn, starts } = countingFetch(clock)
     mount(client, ticker(queryFn, { pauseWhileMutating: ['gym', 'put'] }))
@@ -233,7 +233,7 @@ describe('tick rules', () => {
   })
 
   test('offline: no request starts', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const { queryFn, starts } = countingFetch(clock)
     mount(client, ticker(queryFn))
@@ -244,7 +244,7 @@ describe('tick rules', () => {
   })
 
   test('a fetch in flight is joined, not doubled (cancelRefetch false)', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const { queryFn, starts } = countingFetch(clock, { latencyMs: 12_000 })
     mount(client, ticker(queryFn))
@@ -253,7 +253,7 @@ describe('tick rules', () => {
   })
 
   test('the least active class wins when observers of one key disagree, and dev warns', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     const { queryFn, starts } = countingFetch(clock)
@@ -266,7 +266,7 @@ describe('tick rules', () => {
   })
 
   test('a disabled observer does not count', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const { queryFn, starts } = countingFetch(clock)
     mount(client, ticker(queryFn))
@@ -284,7 +284,7 @@ describe('dev asserts', () => {
     const client = new core.QueryClient()
     const { queryFn } = countingFetch(clock)
     const options = ticker(queryFn)
-    await expect(client.fetchQuery(options as never)).rejects.toThrow(/makeQueryClient/)
+    await expect(client.fetchQuery(options as never)).rejects.toThrow(/createQueryClient/)
   })
 
   test('options that already set staleTime or refetchInterval throw', () => {
@@ -293,7 +293,7 @@ describe('dev asserts', () => {
   })
 
   test('an observer overriding the class staleTime warns', async () => {
-    const client = makeQueryClient()
+    const client = createQueryClient()
     client.mount()
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     const { queryFn } = countingFetch(clock)

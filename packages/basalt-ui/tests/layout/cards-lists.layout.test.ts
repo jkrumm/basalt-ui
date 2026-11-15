@@ -163,7 +163,7 @@ layout('BarList and EventList', () => {
         expect(truncated).toBe(true)
       })
 
-      test('only a row with href is a link and only a row with onSelect is a button', async () => {
+      test('only a row with href is a link and only a row with onClick is a button', async () => {
         const page = await open(viewport)
         expect(await page.count(within('cl-bar-link', 'a[data-slot="bar-list-target"]'))).toBe(1)
         expect(await page.count(within('cl-bar-link', 'button[data-slot="bar-list-target"]'))).toBe(

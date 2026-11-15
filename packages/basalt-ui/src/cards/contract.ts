@@ -48,9 +48,9 @@ export type LegendEntry = {
 
 /** A card is a link, a button or inert; never a link and a button at once. */
 export type CardTarget =
-  | { href: string | NavTarget; onSelect?: never }
-  | { onSelect: () => void; href?: never }
-  | { href?: never; onSelect?: never }
+  | { href: string | NavTarget; onClick?: never }
+  | { onClick: () => void; href?: never }
+  | { href?: never; onClick?: never }
 
 export type StatCardProps = CardTarget &
   FrameHead &

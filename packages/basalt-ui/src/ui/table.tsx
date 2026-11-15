@@ -5,11 +5,11 @@ import { cn } from '../core/cn'
 
 /**
  * The `Table` cva table: the row height every part reads. `md` follows the density row height
- * (`--vx-row-h`); `compact` is a fixed 28 px row for a table that sits in a card and carries many
+ * (`--vx-row-h`); `sm` is a fixed 28 px row for a table that sits in a card and carries many
  * rows. A coarse pointer takes the density floor in both, so a row stays a touch target.
  *
  * @example
- * tableVariants({ size: 'compact' }) // class string for a non-`Table` element
+ * tableVariants({ size: 'sm' }) // class string for a non-`Table` element
  */
 export const tableVariants = cva(
   'w-full caption-bottom border-separate border-spacing-0 text-sm text-foreground [--table-row-h:var(--vx-row-h)]',
@@ -17,7 +17,7 @@ export const tableVariants = cva(
     variants: {
       size: {
         md: '',
-        compact: '[--table-row-h:1.75rem] pointer-coarse:[--table-row-h:var(--vx-row-h)]',
+        sm: '[--table-row-h:1.75rem] pointer-coarse:[--table-row-h:var(--vx-row-h)]',
       },
     },
     defaultVariants: { size: 'md' },
@@ -54,7 +54,7 @@ export type TableProps = PartProps<'table'> & VariantProps<typeof tableVariants>
  * @neverWhen the table sorts, filters, pages or selects (use `DataTable` over `useDataTable`)
  *
  * @example
- * <Table size="compact">
+ * <Table size="sm">
  *   <TableHeader><TableRow><TableHead>Order</TableHead></TableRow></TableHeader>
  *   <TableBody><TableRow><TableCell>#4821</TableCell></TableRow></TableBody>
  * </Table>

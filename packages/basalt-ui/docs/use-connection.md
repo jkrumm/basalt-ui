@@ -12,7 +12,7 @@ slots: []
 Whether the app is live, polling or offline, and how old its stream and data are. Feed it to
 `<ConnectionIndicator connection={...} />`. `offline` is a classified network failure (three in
 a row, held 5 s) or the browser reporting offline, never a 4xx/5xx, a parse error or a failing
-third-party (`external`) poll. Needs a client from `makeQueryClient`.
+third-party (`external`) poll. Needs a client from `createQueryClient`.
 
 ## Signature
 

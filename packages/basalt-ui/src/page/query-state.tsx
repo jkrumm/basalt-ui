@@ -30,7 +30,7 @@ export type QueryStateProps = {
    */
   tier?: 'page' | 'section'
   /** Replaces the default spinner while loading, e.g. a skeleton in the loaded shape. */
-  loading?: ReactNode
+  skeleton?: ReactNode
   /** Rendered when there is data worth showing. */
   children?: ReactNode
 }
@@ -99,7 +99,7 @@ export function QueryState({
   phase,
   empty,
   tier = 'page',
-  loading,
+  skeleton,
   children,
 }: QueryStateProps): ReactElement {
   const t = useMessages(home)
@@ -121,7 +121,7 @@ export function QueryState({
       </Notice>
     )
   } else if (resolved.tag === 'loading') {
-    body = loading ?? (
+    body = skeleton ?? (
       <div className={cn('flex justify-center', tier === 'page' ? 'py-16' : 'py-8')}>
         <Spinner />
       </div>
@@ -141,9 +141,9 @@ export function QueryState({
     const { cause, action, filtered } = resolved.empty
     body =
       filtered !== undefined ? (
-        <EmptyState why={cause} tier={tier} filtered={filtered} />
+        <EmptyState cause={cause} tier={tier} filtered={filtered} />
       ) : (
-        <EmptyState why={cause} tier={tier} {...(action !== undefined && { action })} />
+        <EmptyState cause={cause} tier={tier} {...(action !== undefined && { action })} />
       )
   } else if (resolved.tag === 'stale' && resolved.refreshFailed) {
     body = (

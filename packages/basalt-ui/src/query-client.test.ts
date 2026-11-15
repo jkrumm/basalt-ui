@@ -2,10 +2,10 @@
  * `unwrap` — its runtime branches (a `Promise` of the envelope, or the already-resolved envelope
  * itself, one generic signature since 1.29.1 — see `unwrap.type-guard.test.ts` for the
  * compile-time proof) and the null/undefined absence guard (C5 consolidation: `undefined` joined
- * `null`). `makeQueryClient` is covered in `provider/create-router.test.ts`.
+ * `null`). `createQueryClient` is covered in `provider/create-router.test.ts`.
  */
 import { describe, expect, test } from 'bun:test'
-import { makeQueryClient } from './data/query-client'
+import { createQueryClient } from './data/query-client'
 import { unwrap } from './unwrap'
 
 describe('unwrap — Promise-of-envelope overload', () => {
@@ -105,17 +105,17 @@ describe('unwrap — guards', () => {
   })
 })
 
-describe('makeQueryClient — a numeric retry replaces the predicate', () => {
+describe('createQueryClient — a numeric retry replaces the predicate', () => {
   test("retry: 0 and retry: 5 are the consumer's, 4xx included", () => {
     const queries = (retry: number) =>
-      makeQueryClient({ defaultOptions: { queries: { retry } } }).getDefaultOptions().queries
+      createQueryClient({ defaultOptions: { queries: { retry } } }).getDefaultOptions().queries
     expect(queries(0)?.retry).toBe(0)
     expect(queries(5)?.retry).toBe(5)
   })
 })
 
-describe('makeQueryClient — retry default', () => {
-  const retry = makeQueryClient().getDefaultOptions().queries?.retry as (
+describe('createQueryClient — retry default', () => {
+  const retry = createQueryClient().getDefaultOptions().queries?.retry as (
     failureCount: number,
     error: unknown,
   ) => boolean

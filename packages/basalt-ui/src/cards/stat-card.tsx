@@ -60,7 +60,7 @@ const bodyHeight = (hasSub: boolean, hasChart: boolean): string =>
  * />
  */
 export function StatCard(props: StatCardProps): ReactElement {
-  const { title, value, unit, delta, status, sub, chart, footer, href, onSelect } = props
+  const { title, value, unit, delta, status, sub, chart, footer, href, onClick } = props
   const { phase, empty, subtitle, icon, info, controls, menu } = props
   const figure = formatValue(value)
   const resolved = resolvePhase({ phase, empty })
@@ -70,7 +70,7 @@ export function StatCard(props: StatCardProps): ReactElement {
     <div data-slot="stat-card" className="@container min-w-0">
       <Card flush className="relative">
         {href !== undefined && <Target label={title} href={href} />}
-        {onSelect !== undefined && <Target label={title} onSelect={onSelect} />}
+        {onClick !== undefined && <Target label={title} onClick={onClick} />}
         <StatHead
           title={title}
           subtitle={subtitle}
@@ -147,7 +147,7 @@ markStatCard(StatCard)
 const labelOf = (delta: NonNullable<StatCardProps['delta']>): { label?: string } =>
   delta.label === undefined ? {} : { label: delta.label }
 
-type TargetProps = { label: string } & ({ href: string | NavTarget } | { onSelect: () => void })
+type TargetProps = { label: string } & ({ href: string | NavTarget } | { onClick: () => void })
 
 /**
  * The stretched target: one transparent link or button over the whole card, the header band and the
@@ -173,7 +173,7 @@ function Target(props: TargetProps): ReactElement {
       data-slot="stat-target"
       type="button"
       aria-label={props.label}
-      onClick={props.onSelect}
+      onClick={props.onClick}
       className={className}
     />
   )

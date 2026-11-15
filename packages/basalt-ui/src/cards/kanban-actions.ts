@@ -44,7 +44,7 @@ export function kanbanActions<C extends string>(
   const extras = (menu ?? []).map((a): KanbanAction =>
     'href' in a
       ? { key: `x:${a.label}`, label: a.label, href: a.href }
-      : { key: `x:${a.label}`, label: a.label, run: a.onSelect },
+      : { key: `x:${a.label}`, label: a.label, run: a.onClick },
   )
   return { moves, extras }
 }

@@ -14,7 +14,7 @@ function-form `refetchInterval` follow the class, so no component sets a cadence
 `staleTime: Infinity`, never the string `'static'` (that makes the query immune to invalidation).
 A ticker runs `every` after the previous result, skips while hidden (unless `background`),
 offline, mutating (`pauseWhileMutating`) or after a 401/403, and a function `every` returning
-`false` means idle (staleness 30 s, not 0). Needs a client from `makeQueryClient`.
+`false` means idle (staleness 30 s, not 0). Needs a client from `createQueryClient`.
 
 ## Signature
 

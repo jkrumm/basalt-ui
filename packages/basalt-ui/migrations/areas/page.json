@@ -1,7 +1,35 @@
 {
   "schema": 1,
   "area": "page",
-  "rows": [],
+  "rows": [
+    {
+      "id": "page-onclick",
+      "kind": "renamed-prop",
+      "from": "InnerNavMenuItem and EmptyState action onSelect",
+      "to": "onClick",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "one name for an action's activation callback"
+    },
+    {
+      "id": "page-empty-cause",
+      "kind": "renamed-prop",
+      "from": "EmptyState why",
+      "to": "cause",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the empty sentence is Empty.cause everywhere"
+    },
+    {
+      "id": "page-querystate-skeleton",
+      "kind": "renamed-prop",
+      "from": "QueryState loading (a node)",
+      "to": "skeleton",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "loading is a boolean on Button and PageSummary; the pending node takes its own name"
+    }
+  ],
   "tokens": { "renamed": [], "valueShifts": [] },
   "storage": [],
   "urls": [],

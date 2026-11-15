@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'bun:test'
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { renderToString } from 'react-dom/server'
-import { makeQueryClient } from './query-client'
+import { createQueryClient } from './query-client'
 
 const seen: unknown[] = []
 
@@ -12,7 +12,7 @@ function Probe() {
 }
 
 const render = () => {
-  const client = makeQueryClient()
+  const client = createQueryClient()
   renderToString(
     <QueryClientProvider client={client}>
       <Probe />
@@ -21,7 +21,7 @@ const render = () => {
   return client
 }
 
-describe('makeQueryClient — SSR', () => {
+describe('createQueryClient — SSR', () => {
   test('two renders never share a client or its cache', () => {
     const first = render()
     first.setQueryData(['k'], 'first request')

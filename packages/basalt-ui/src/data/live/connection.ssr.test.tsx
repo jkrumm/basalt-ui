@@ -15,7 +15,7 @@ import { RefreshButton } from '../../page/refresh-button'
 import { useConnection } from './connection'
 import { useFreshness } from './freshness'
 import { liveQuery } from './live-query'
-import { makeQueryClient } from '../query-client'
+import { createQueryClient } from '../query-client'
 
 afterEach(() => {
   cleanup()
@@ -49,7 +49,7 @@ function LivePage() {
 }
 
 const seeded = (): QueryClient => {
-  const client = makeQueryClient()
+  const client = createQueryClient()
   client.setQueryData(['usage'], { total: 3 }, { updatedAt: Date.now() - 5 * 60_000 })
   return client
 }

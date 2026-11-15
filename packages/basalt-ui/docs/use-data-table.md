@@ -28,6 +28,7 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   mode: Mode
   state?: StateHandle<TableState>
   phase?: Phase | QueryStateLike
+  empty?: Empty | null  // Why the table has no rows, and what to do about it: its `cause` replaces the default sentence and its `action…
   resetOn?: readonly unknown[]
   phone?: "cards" | "scroll"  // What a narrow table becomes: cards, or the table scrolling sideways with its first column pinned; default 'cards'
   cardsBelow?: "regular" | "wide" | "always"  // The width below which the table becomes cards (`regular` is 480 px, `wide` 800 px, `always` never a table); default 'regular'

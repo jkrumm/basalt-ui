@@ -227,12 +227,12 @@ export const deprecatedFetch: AstForm = {
   fixture: 'structure-rest/data-primitive-deprecated-fetch.tsx',
 }
 
-function insideMakeQueryClient(node: Node): boolean {
+function insideCreateQueryClient(node: Node): boolean {
   for (let at = node['parent'] as Node | undefined; at; at = at['parent'] as Node | undefined) {
-    if (at.type === 'FunctionDeclaration' && nameOf(child(at, 'id')) === 'makeQueryClient') {
+    if (at.type === 'FunctionDeclaration' && nameOf(child(at, 'id')) === 'createQueryClient') {
       return true
     }
-    if (at.type === 'VariableDeclarator' && nameOf(child(at, 'id')) === 'makeQueryClient') {
+    if (at.type === 'VariableDeclarator' && nameOf(child(at, 'id')) === 'createQueryClient') {
       return true
     }
   }
@@ -244,10 +244,10 @@ export const queryClientSingleton: AstForm = {
   detect: ({ report }): Visitor => ({
     NewExpression(node) {
       if (nameOf(child(node, 'callee')) !== 'QueryClient') return
-      if (!insideMakeQueryClient(node)) report(node, 'new QueryClient')
+      if (!insideCreateQueryClient(node)) report(node, 'new QueryClient')
     },
   }),
-  fix: 'makeQueryClient() builds the one client; createBasaltRouter owns it and hands it down in router context',
+  fix: 'createQueryClient() builds the one client; createBasaltRouter owns it and hands it down in router context',
   next: 'Extend its defaults through the query option of createBasaltRouter',
   fixture: 'structure-rest/data-primitive-query-client-singleton.tsx',
 }
