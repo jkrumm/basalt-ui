@@ -226,6 +226,17 @@ describe('kind cells', () => {
       labels: { Open: 'Offen', Done: 'Erledigt' },
     })
     expect(cell(labelled).textContent).toBe('Offen')
+    const toned = c.status('state', {
+      options: ['Open', 'Done'],
+      labels: { Open: 'Offen', Done: 'Erledigt' },
+      tone: (v) => (v === 'Done' ? 'good' : 'neutral'),
+    })
+    const done = cell(toned, { ...ROW, state: 'Done' })
+    expect(done.textContent).toBe('Erledigt')
+    const bare = c.status('state', { options: ['Open', 'Done'], tone: () => 'good' })
+    expect(done.querySelector('[data-slot="status"]')?.className).toBe(
+      cell(bare, { ...ROW, state: 'Done' }).querySelector('[data-slot="status"]')?.className,
+    )
     expect(specOf(labelled).labels).toEqual({ Open: 'Offen', Done: 'Erledigt' })
     expect(specOf(c.status('state', { options: ['Open'] })).labels).toBeUndefined()
   })

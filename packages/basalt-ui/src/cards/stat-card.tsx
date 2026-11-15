@@ -18,6 +18,24 @@ import {
 
 /** The chart box: plot 56 plus the 16 px label row. The slot draws inside it and cannot grow it. */
 const CHART_HEIGHT = 72
+/** The plot alone: what the slot gets when the card draws the label row itself (`xLabels`). */
+const PLOT_HEIGHT = 56
+
+/** The label row: start, middle and end under the plot, in the box's 16 px. */
+function XLabels({ labels }: { labels: NonNullable<StatCardProps['xLabels']> }): ReactElement {
+  return (
+    <div
+      data-slot="stat-x-labels"
+      className="flex h-4 items-end justify-between text-xs tabular-nums text-muted-foreground"
+    >
+      {labels.map((label, i) => (
+        <span key={i} className="truncate">
+          {label}
+        </span>
+      ))}
+    </div>
+  )
+}
 
 /**
  * The inset is exactly as tall as its anatomy, so a loading, empty or error card is as tall as a
@@ -56,11 +74,12 @@ const bodyHeight = (hasSub: boolean, hasChart: boolean): string =>
  *   delta={{ value: '+12%', polarity: 'up-good' }}
  *   phase={query}
  *   chart={(box) => <Sparkline series={perDay} height={box.height} ariaLabel="Shipped per day" />}
+ *   xLabels={["Mon", "Thu", "Sun"]}
  *   footer={[{ label: 'Open', value: 12 }, { label: 'Merged', value: 4 }]}
  * />
  */
 export function StatCard(props: StatCardProps): ReactElement {
-  const { title, value, unit, delta, status, sub, chart, footer, href, onClick } = props
+  const { title, value, unit, delta, status, sub, chart, xLabels, footer, href, onClick } = props
   const { phase, empty, subtitle, icon, info, controls, menu } = props
   const figure = formatValue(value)
   const resolved = resolvePhase({ phase, empty })
@@ -129,7 +148,11 @@ export function StatCard(props: StatCardProps): ReactElement {
                     data-slot="stat-chart"
                     className="relative z-20 mt-2 h-18 shrink-0 overflow-clip"
                   >
-                    {chart({ height: CHART_HEIGHT, phase: box.phase })}
+                    {chart({
+                      height: xLabels === undefined ? CHART_HEIGHT : PLOT_HEIGHT,
+                      phase: box.phase,
+                    })}
+                    {xLabels !== undefined && <XLabels labels={xLabels} />}
                   </div>
                 )}
               </>
