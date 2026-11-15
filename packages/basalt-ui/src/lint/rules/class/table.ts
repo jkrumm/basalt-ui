@@ -10,7 +10,7 @@
 import { deniedCurrent, zoneAFillOnly, zoneANames, zoneAPremixed } from '../../generated/zone-a'
 import type { Profile, Zone } from '../../rule-table'
 import { defineRules } from '../../rule-table'
-import { mediaQueryForm, PROFILE_GATE_SCHEMA, partsOnly } from './detect'
+import { mediaQueryForm, PROFILE_GATE_SCHEMA, partsOnly, partsOnlyExceptSeamMark } from './detect'
 
 const ALL: readonly Profile[] = ['bridge', 'parts', 'app', 'repo']
 const PARTS_UP: readonly Profile[] = ['parts', 'app', 'repo']
@@ -49,6 +49,17 @@ const deniedOutright = deniedCurrent
 const colourUtility = new RegExp(
   `${HEAD}${COLOUR_PREFIX}-(?:${alt(zoneANames)})${TAIL}|${deniedOutright}`,
 )
+/**
+ * The fills a mark can carry: the fill-only and status roles on `bg`, `fill` and `stroke`. Ink,
+ * the focus-ring and line roles and every other prefix (text, border, outline) stay out,
+ * so a mark on the `useChartFocus` seam is exempt from these and nothing else.
+ */
+const FILL_ROLES = [
+  ...zoneAFillOnly,
+  ...zoneANames.filter((name) => /^(?:brand|good|warn|bad|destructive|info)(?:-tint)?$/.test(name)),
+]
+const seamMarkFill = new RegExp(`${HEAD}(?:bg|fill|stroke)-(?:${alt(FILL_ROLES)})${TAIL}`)
+
 const colourArbitrary = new RegExp(
   `${HEAD}${COLOUR_PREFIX}-(?:\\(--vx-(?:${alt(zoneANames)})\\)|\\[(?:var\\()?--vx-(?:${alt(zoneANames)})\\)?\\])${TAIL}`,
 )
@@ -180,13 +191,16 @@ export const CLASS_RULES = defineRules({
         next: 'A reasoned waiver',
         fixture: 'class/tw-off-law/surface-recipe.tsx',
       }),
-      partsOnly({
-        id: 'app-colour',
-        pattern: colourUtility,
-        fix: 'Status, Lozenge, DeltaBadge or Num tone own colour in app code',
-        next: 'A reasoned waiver',
-        fixture: 'class/tw-off-law/app-colour.tsx',
-      }),
+      partsOnlyExceptSeamMark(
+        {
+          id: 'app-colour',
+          pattern: colourUtility,
+          fix: 'Status, Lozenge, DeltaBadge or Num tone own colour in app code',
+          next: 'A reasoned waiver',
+          fixture: 'class/tw-off-law/app-colour.tsx',
+        },
+        seamMarkFill,
+      ),
       partsOnly({
         id: 'app-colour-arbitrary',
         pattern: colourArbitrary,
