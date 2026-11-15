@@ -13,7 +13,8 @@ The table's state, engine, selection and phase in one call. Hand the result to `
 to the parts. A narrow table becomes cards: `phone` defaults to `'cards'` (`'scroll'` pins the
 name and scrolls sideways) and `cardsBelow` to `'regular'` (480 px of the table's own width, 800 px
 when its priority 1 and 2 columns need more; `'wide'` is always 800, `'always'` never shows a
-table). The tiers live in `basalt-ui/table.css`: import it beside `basalt-ui/table`.
+table). The tiers live in `basalt-ui/table.css`, which `basalt()` imports for any module that imports
+`basalt-ui/table`; an app without the plugin imports it beside `basalt-ui/table`.
 
 ## Signature
 

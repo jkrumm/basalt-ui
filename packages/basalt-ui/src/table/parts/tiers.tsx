@@ -7,6 +7,7 @@
  * plan's `reducedFrom`, raised by `cardsBelow: 'wide'`) or `always`.
  */
 import type { CSSProperties, FocusEvent } from 'react'
+import type { KindSpec } from '../core/kinds-spec'
 import type { TableModel } from '../use-data-table'
 
 export type TierAttributes = {
@@ -27,11 +28,16 @@ export function tierAttributesOf<T>(model: TableModel<T>): TierAttributes {
   }
 }
 
+/** A money cell's currency for the card tier, where the column header that names it is hidden. */
+export function unitAttribute(spec: KindSpec<never>): { 'data-unit'?: string } {
+  return spec.kind === 'money' && spec.unit !== undefined ? { 'data-unit': spec.unit } : {}
+}
+
 let sheetWarned = false
 
 /**
  * A ref for the scroller: in development, names the missing tier sheet. Without
- * `basalt-ui/table.css` no tier exists, so a phone table stays a table and its flexible name column
+ * `basalt-ui/table.css` (which `basalt()` adds) no tier exists, so a phone table stays a table and its flexible name column
  * takes what the fixed columns leave (14 px in wiring cycle 1). Only a real browser answers `normal`
  * for a scroller with no container type; a test DOM or a browser without container queries answers
  * nothing and is skipped. The check runs once per page, after styles have applied.
@@ -43,7 +49,7 @@ export function warnWithoutTierSheet(scroller: HTMLElement | null): void {
     sheetWarned = true
     // oxlint-disable-next-line no-console -- the dev-only warning is the whole point of this function
     console.warn(
-      "basalt-ui/table: the tier sheet is not loaded, so the table never becomes cards and its name column can shrink to nothing. Add `@import 'basalt-ui/table.css'` beside the app's `basalt-ui/tailwind.css` import.",
+      "basalt-ui/table: the tier sheet is not loaded, so the table never becomes cards and its name column can shrink to nothing. Add `basalt()` from `basalt-ui/vite` to the Vite config, or `@import 'basalt-ui/table.css'` beside the app's `basalt-ui/tailwind.css` import.",
     )
   })
 }

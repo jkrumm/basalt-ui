@@ -1,0 +1,8 @@
+/*
+ * The `table-sheet` fixture's Tailwind v4 entry. It never imports the table tier sheet: that is
+ * the point of `table-sheet.layout.test.ts`.
+ */
+@import '../../src/css/tailwind.css' source(none);
+@source './table-sheet-fixture.tsx';
+@source '../../src/ui';
+@source '../../src/table';

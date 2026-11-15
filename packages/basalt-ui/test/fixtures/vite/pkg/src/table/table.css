@@ -1,0 +1,5 @@
+@layer basalt.table {
+  [data-slot='table-scroller'] {
+    container: table / inline-size;
+  }
+}

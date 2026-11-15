@@ -402,7 +402,10 @@ export function col<T>(): Col<T> {
           typeof v === 'number' ? formatMoney(env.format, v, o.currency) : String(v),
         {
           header: (h) => withUnit(h, o?.currency),
-          ...footerOf<T>(o?.footer, (v, env) => formatMoney(env.format, v, o.currency)),
+          spec: {
+            unit: o.currency,
+            ...footerOf<T>(o?.footer, (v, env) => formatMoney(env.format, v, o.currency)).spec,
+          },
         },
       ),
     date: (key, o) =>

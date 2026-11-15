@@ -80,6 +80,10 @@ function scrollportStyle(height: DataTableProps<unknown>['height']): CSSProperti
  * Under a `Page` that mounts a `PageAside`, a row's `detail` opens in the aside with no wiring; pass
  * `detail` (a `DetailHost`) only to send it somewhere else. Outside a `Page` it opens a sheet.
  *
+ * The table tiers (cards on a phone) are `basalt-ui/table.css`. `basalt()` imports it for any module
+ * that imports `basalt-ui/table`, so the app adds nothing; without the plugin, import it once beside
+ * `basalt-ui/tailwind.css`, or a phone table stays a table.
+ *
  * @useWhen a page lists records that sort, filter, page, select or open in a detail
  * @neverWhen the rows are static with no behaviour (use `ui/table`) or a chart says it better
  *

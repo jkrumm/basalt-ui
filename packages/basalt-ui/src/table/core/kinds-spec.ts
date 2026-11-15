@@ -103,6 +103,8 @@ export type KindSpec<T> = {
   actions?: readonly RowAction<T>[]
   /** `select`: the in-place edit. */
   edit?: SelectEdit<T>
+  /** `money`: the currency code, which the card tier prints after the value (the header is hidden there). */
+  unit?: string
   /** `number`, `money`: the footer reduce. */
   footer?: FooterSpec
 }

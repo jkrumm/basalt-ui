@@ -73,6 +73,28 @@ describe('peer gate', () => {
   })
 })
 
+describe('table tiers', () => {
+  it('an app importing basalt-ui/table and not table.css builds with the tier sheet', async () => {
+    const app = makeApp('table', [...PARTS_PEERS, '@tanstack/react-table'])
+    const out = (await build(config(app, { build: { write: false } }))) as {
+      output: { type: string; fileName: string; source?: string | Uint8Array }[]
+    }
+    const css = out.output
+      .filter((file) => file.fileName.endsWith('.css'))
+      .map((file) => String(file.source))
+      .join('\n')
+    expect(css).toContain('basalt.table')
+  })
+
+  it('without basalt() the same app ships no tier sheet', async () => {
+    const app = makeApp('table', [...PARTS_PEERS, '@tanstack/react-table'])
+    const out = (await build(config(app, { build: { write: false }, plugins: [] }))) as {
+      output: { fileName: string }[]
+    }
+    expect(out.output.some((file) => file.fileName.endsWith('.css'))).toBe(false)
+  })
+})
+
 describe('seed gate', () => {
   it('an unchanged digest builds; a bumped one fails naming basalt-ui sync', async () => {
     const app = makeApp('parts')
