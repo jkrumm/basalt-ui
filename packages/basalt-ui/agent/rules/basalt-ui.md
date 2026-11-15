@@ -36,3 +36,4 @@ not guarded:
 - Read `node_modules/basalt-ui/docs/<name>.md` before guessing an import or a prop; a missing export is a recipe in `docs/recipes/`, never a local copy.
 - Never `shadcn add` a primitive basalt ships; to change one, eject it with `basalt-ui eject <name> --reason`.
 - Run the repo gate before reporting done; the editor hook is a floor, not the gate.
+- A field names its `autoComplete` token and a numeric one its `inputMode`; it validates on blur and on submit (`validators.onBlur`), never on every change.
