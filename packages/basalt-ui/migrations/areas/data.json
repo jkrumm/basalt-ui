@@ -5,7 +5,7 @@
     {
       "id": "data-createQueryClient",
       "kind": "renamed",
-      "from": "makeQueryClient",
+      "from": "basalt-ui/data#makeQueryClient",
       "to": "createQueryClient",
       "profiles": ["parts", "app"],
       "manual": true,
