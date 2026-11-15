@@ -426,7 +426,7 @@ export function wireApp(ctx: Ctx): void {
     ctx.todo.push(`${BASALT_IMPORT}, then add basalt() to the plugins of your Vite config`)
     if (ctx.routerPlugin === true) {
       ctx.todo.push(
-        `${ROUTER_IMPORT}, then add ${ROUTER_PLUGIN} first in those plugins (the seeded main.tsx imports the routeTree.gen file it writes)`,
+        `${ROUTER_IMPORT}, then add ${ROUTER_PLUGIN} first in those plugins (a file-routed entry imports the routeTree.gen file it writes)`,
       )
     }
   }
