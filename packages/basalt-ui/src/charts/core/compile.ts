@@ -142,7 +142,7 @@ const TICK_FONT = VX.text.micro
 /** Tick counts per container class (§ 9.6). */
 const LADDER = {
   micro: { xTicks: 2, yTicks: 0 },
-  compact: { xTicks: 3, yTicks: 3 },
+  narrow: { xTicks: 3, yTicks: 3 },
   regular: { xTicks: 5, yTicks: 5 },
   wide: { xTicks: 6, yTicks: 5 },
 } as const satisfies Record<ContainerClass, { xTicks: number; yTicks: number }>
@@ -409,7 +409,7 @@ export function yGuide<T>(opts: {
   const planned =
     typeof cfg?.ticks === 'object'
       ? { values: cfg.ticks }
-      : ((cls === 'compact' && cfg?.ticks === undefined
+      : ((cls === 'narrow' && cfg?.ticks === undefined
           ? withEndTick(cfg, axis, ladder.yTicks)
           : null) ?? { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks })
   const ticks = axis.whole === true ? wholeTicks(axis, cfg, planned) : planned
