@@ -34,6 +34,9 @@ export function useProviderContext(): ProviderContextValue {
   return useContext(ProviderContext)
 }
 
+/** What `bindInvalidation(...)` returns: `start()` subscribes and returns the stop. */
+export type LiveBinding = { start(): () => void }
+
 export type BasaltProviderProps = {
   /** Stamped on `<html data-theme>` and stored raw. Omitted: the boot script owns the first paint and nothing is written. */
   scheme?: Scheme
@@ -46,6 +49,12 @@ export type BasaltProviderProps = {
    * so a `string | NavTarget` target navigates without a document load. Omitted: a plain `<a>`.
    */
   link?: LinkComponent
+  /**
+   * A push binding (`bindInvalidation(queryClient, channel, o)`) started once on the client when the
+   * provider mounts and stopped on unmount; a server render starts nothing. Pass a stable value
+   * (module level): a new one stops the old and starts it.
+   */
+  live?: LiveBinding
   children?: ReactNode
 }
 
@@ -66,6 +75,7 @@ export function BasaltProvider({
   locale = DEFAULTS.locale,
   lang = locale,
   link,
+  live,
   children,
 }: BasaltProviderProps): ReactNode {
   const value = useMemo(
@@ -80,6 +90,8 @@ export function BasaltProvider({
   useEffect(() => {
     document.documentElement.lang = lang
   }, [lang])
+
+  useEffect(() => live?.start(), [live])
 
   const tree = <ProviderContext value={value}>{children}</ProviderContext>
   return link === undefined ? tree : <LinkContext value={link}>{tree}</LinkContext>

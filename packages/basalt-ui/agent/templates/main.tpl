@@ -42,6 +42,7 @@ declare module '@tanstack/react-router' {
 }
 
 // `link` makes every link prop (`StatCard href`, `CardAction`, `col.entity`) navigate through the router: no document load.
+// Push updates: `live={bindInvalidation(queryClient, channel, o)}` here (docs/bind-invalidation.md).
 createRoot(document.getElementById('root')!).render(
   <BasaltProvider link={defaults.link}>
     <RouterProvider router={router} />
