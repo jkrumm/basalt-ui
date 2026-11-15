@@ -9,7 +9,8 @@ import { createNavRuntimeDouble } from '../core/nav-runtime'
 import { projectRail } from '../core/projector'
 import type { RailRow } from '../core/projector'
 import type { BadgeMap, CoreNavItem } from '../core/types'
-import { RailRowView, initialOf } from './rail-rows'
+import { RailRowView } from './rail-rows'
+import { monogramOf } from './rail-text'
 import { item, navOf, renderInRouter, section } from './rail-test-kit'
 
 afterEach(cleanup)
@@ -40,19 +41,20 @@ async function renderRows(rows: RailRow[], collapsed = false) {
   )
 }
 
-describe('initialOf', () => {
-  test('uppercases the first letter', () => {
-    expect(initialOf('inbox')).toBe('I')
+describe('monogramOf', () => {
+  test('uppercases the first two letters, so two items with one initial differ', () => {
+    expect(monogramOf('inbox')).toBe('IN')
+    expect(monogramOf('Overview')).not.toBe(monogramOf('Orders'))
   })
 
-  test('an empty label falls back to a question mark', () => {
-    expect(initialOf('')).toBe('?')
+  test('an empty name falls back to a question mark', () => {
+    expect(monogramOf('')).toBe('?')
   })
 
-  test('keeps a whole grapheme, not a lone code unit', () => {
-    expect(initialOf('👨‍👩‍👧 Family')).toBe('👨‍👩‍👧')
-    expect(initialOf('🇩🇪 Germany')).toBe('🇩🇪')
-    expect(initialOf('école')).toBe('É')
+  test('keeps whole graphemes, not lone code units', () => {
+    expect(monogramOf('👨‍👩‍👧Family')).toBe('👨‍👩‍👧F')
+    expect(monogramOf('🇩🇪Germany')).toBe('🇩🇪G')
+    expect(monogramOf('école')).toBe('ÉC')
   })
 })
 
@@ -94,11 +96,11 @@ describe('active and ancestor rows', () => {
 })
 
 describe('an icon-less item survives the collapsed rail', () => {
-  test('falls back to the first letter, aria-hidden, and the link is named by its label', async () => {
+  test('falls back to its first two letters, aria-hidden, and the link is named by its label', async () => {
     await renderRows(rowOf([item('inbox', 'inbox')]), true)
     const link = screen.getByRole('link', { name: 'inbox' })
     const glyph = link.querySelector('[data-slot="shell-rail-row-icon"] > [data-nav-glyph]')
-    expect(glyph?.getAttribute('data-nav-glyph')).toBe('I')
+    expect(glyph?.getAttribute('data-nav-glyph')).toBe('IN')
     expect(glyph?.getAttribute('aria-hidden')).toBe('true')
   })
 
@@ -107,7 +109,7 @@ describe('an icon-less item survives the collapsed rail', () => {
     const row = screen.getByText('Soon').closest('[data-slot="shell-rail-row"]')!
     expect(row.tagName).toBe('SPAN')
     expect(row.getAttribute('aria-disabled')).toBe('true')
-    expect(row.querySelector('[data-nav-glyph]')?.getAttribute('data-nav-glyph')).toBe('S')
+    expect(row.querySelector('[data-nav-glyph]')?.getAttribute('data-nav-glyph')).toBe('SO')
   })
 
   test('a supplied icon is rendered as-is, with no fallback glyph', async () => {
@@ -119,7 +121,7 @@ describe('an icon-less item survives the collapsed rail', () => {
 
   test('the glyph is replaced, not added, when the icon is falsy at runtime', async () => {
     await renderRows(rowOf([item('a', 'Alpha', { icon: false as never })]))
-    expect(document.querySelector('[data-nav-glyph]')?.getAttribute('data-nav-glyph')).toBe('A')
+    expect(document.querySelector('[data-nav-glyph]')?.getAttribute('data-nav-glyph')).toBe('AL')
   })
 })
 
@@ -199,7 +201,7 @@ describe('child rows are named by their visible label', () => {
     const enabled = screen.getByRole('link', { name: 'enabled kid' })
     expect(enabled.getAttribute('data-depth')).toBe('1')
     expect(enabled.closest('[data-slot="shell-rail-children"]')).not.toBeNull()
-    expect(enabled.querySelector('[data-nav-glyph]')?.getAttribute('data-nav-glyph')).toBe('E')
+    expect(enabled.querySelector('[data-nav-glyph]')?.getAttribute('data-nav-glyph')).toBe('EN')
 
     const disabled = screen.getByText('disabled kid').closest('[data-slot="shell-rail-row"]')!
     expect(disabled.getAttribute('aria-disabled')).toBe('true')
@@ -224,7 +226,7 @@ describe('child rows are named by their visible label', () => {
         .closest('[data-slot="shell-rail-row"]')
         ?.querySelector('[data-nav-glyph]')
         ?.getAttribute('data-nav-glyph'),
-    ).toBe('D')
+    ).toBe('DI')
   })
 
   test('expanded, a click on the parent navigates and never opens the popover', async () => {

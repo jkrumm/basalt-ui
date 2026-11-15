@@ -23,20 +23,7 @@ import type { NavBadge } from '../core/types'
 import { navAnchor } from '../../router/nav/anchor'
 import type { AnyNavItem } from '../../router/nav/types'
 import { useRailControl } from './grid'
-import { rowName } from './rail-text'
-
-/** First grapheme of a label: the icon an icon-less item falls back to. */
-const segmenter =
-  typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
-    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
-    : undefined
-
-export function initialOf(label: string): string {
-  const first = segmenter
-    ? segmenter.segment(label)[Symbol.iterator]().next().value?.segment
-    : [...label][0]
-  return first?.toUpperCase() ?? '?'
-}
+import { monogramOf, rowName } from './rail-text'
 
 /** The row's own count, when it carries one. */
 const countOf = (badge: NavBadge | null): number | undefined =>
@@ -75,7 +62,7 @@ function Icon({ row }: { row: RailRow }): ReactElement {
         // both read the visible label alone.
         <span
           aria-hidden="true"
-          data-nav-glyph={initialOf(row.label)}
+          data-nav-glyph={monogramOf(row.item.short ?? row.label)}
           className="text-xs leading-none font-medium before:content-[attr(data-nav-glyph)]"
         />
       )}

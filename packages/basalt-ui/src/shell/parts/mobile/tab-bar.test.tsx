@@ -172,14 +172,14 @@ describe('TabBar structure', () => {
     expect(dialog()).toBeNull()
   })
 
-  test('an icon-less slot shows an aria-hidden first-letter glyph and keeps its name', async () => {
+  test('an icon-less slot shows an aria-hidden two-letter glyph and keeps its name', async () => {
     const nav: CoreNavConfig = {
       sections: [section('main', [item('home', { mobile: 'tab', short: 'start' })])],
     }
     await mount(nav, 'home')
     const home = tab('Home')
     const glyph = home.querySelector('span[aria-hidden="true"]')
-    expect(glyph?.getAttribute('data-letter')).toBe('S')
+    expect(glyph?.getAttribute('data-letter')).toBe('ST')
     expect(home.getAttribute('aria-label')).toBe('Home')
     expect(home.querySelector('p')?.textContent).toBe('start')
   })
