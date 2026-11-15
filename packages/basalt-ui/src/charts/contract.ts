@@ -4,38 +4,14 @@
  * `chore: contract amendment` commit. Sketched in docs/v3/concepts/charts-cards-kanban.md
  * section 4 (the `src/charts/contract.ts` block, plus the frame types it names).
  */
-import type {
-  BoxSlot,
-  ControlsSlot,
-  Delta,
-  IconComponent,
-  NavTarget,
-  Phase,
-  QueryStateLike,
-  Status,
-} from '../core/ports'
+import type { FootFacts, FrameHead, FrameState } from '../core/phase'
+import type { BoxSlot, ControlsSlot, Delta, Phase, QueryStateLike, Status } from '../core/ports'
 import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 
 // ---- Frame types the sketch files under ports (absent from ports.ts) ----------------------
 
-// minimal; concept elides it
-export type CardAction = { label: string } & (
-  | { href: string | NavTarget }
-  | { onClick: () => void }
-)
-
-/** No-results under active filters renders Clear filters. */
-export type Empty = { cause: string; action?: CardAction; filtered?: { reset: () => void } }
-
-/** `empty` wins once the query settled; `data-phase` prints the result. */
-export type FrameState = { phase?: Phase | QueryStateLike; empty?: Empty | null }
-
-export type Fact = { label: string; value: string | number }
-
-/** Capped at 2; `null` drops one. */
-export type FootFacts = readonly [Fact | null, (Fact | null)?]
-
-export type FrameHead = { title: string; subtitle?: string; icon?: IconComponent; info?: string }
+// One declaration holds each: `core/phase.ts`, re-exported here so `basalt-ui/charts` names them.
+export type { CardAction, Empty, Fact, FootFacts, FrameHead, FrameState } from '../core/phase'
 
 // ---- Series -------------------------------------------------------------------------------
 

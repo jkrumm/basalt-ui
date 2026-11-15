@@ -4,10 +4,11 @@
  * `chore: contract amendment` commit. Sketched in docs/v3/concepts/charts-cards-kanban.md
  * section 4 (the `src/cards/contract.ts` block, plus the frame types it names).
  *
- * `./cards` never imports `./charts`, so the frame types `charts/contract.ts` also declares
- * (`Fact`, `FootFacts`, `FrameHead`, `LegendEntry`) are repeated here, structurally identical.
+ * `./cards` never imports `./charts`; the frame types both contracts name (`Fact`, `FootFacts`,
+ * `FrameHead`) are declared once in `core/phase.ts`. `LegendEntry` is still repeated here,
+ * structurally identical.
  */
-import type { CardAction, FrameState } from '../core/phase'
+import type { CardAction, Fact, FootFacts, FrameHead, FrameState } from '../core/phase'
 import type {
   BoxSlot,
   ControlsSlot,
@@ -20,14 +21,7 @@ import type {
 
 // ---- Frame types the sketch files under ports (absent from ports.ts) ----------------------
 
-/** One labelled fact in a footer. `value` is data, never a node, so every card formats alike. */
-export type Fact = { label: string; value: string | number }
-
-/** Capped at 2; `null` drops one, so a conditional fact type-checks without a hole. */
-export type FootFacts = readonly [Fact | null, (Fact | null)?]
-
-/** The header every frame shares. */
-export type FrameHead = { title: string; subtitle?: string; icon?: IconComponent; info?: string }
+export type { Fact, FootFacts, FrameHead }
 
 /** One menu entry: a link or a handler, never both. Minimal; the concept elides it. */
 export type MenuAction = CardAction
