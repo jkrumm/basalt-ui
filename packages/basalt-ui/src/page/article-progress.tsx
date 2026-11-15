@@ -1,8 +1,6 @@
 import type { ReactElement, RefObject } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { scrollParentOf } from '../common/scroll-parent'
-import { page } from '../core/messages/page'
-import { useMessages } from '../core/messages/use-messages'
 
 export type ArticleProgressProps = {
   /** The element to track scroll progress through. Default: the whole scrollport. */
@@ -10,75 +8,67 @@ export type ArticleProgressProps = {
 }
 
 /**
- * `port` is the resolved scrollport, or `null` for "the document scrolls". The only thing that
- * changes between the two is where the four numbers come from; `target`'s offset is measured
- * against the scroller's own top edge rather than the viewport's.
- */
-function computeProgress(target: HTMLElement | null | undefined, port: HTMLElement | null): number {
-  const viewport = port ? port.clientHeight : window.innerHeight
-  const scrollTop = port ? port.scrollTop : window.scrollY
-  const originTop = port ? port.getBoundingClientRect().top : 0
-  const scrollable = port ? port.scrollHeight : document.documentElement.scrollHeight
-
-  const start = target ? target.getBoundingClientRect().top - originTop + scrollTop : 0
-  const total = target ? target.offsetHeight - viewport : scrollable - viewport
-
-  if (total <= 0) return 0
-  const ratio = (scrollTop - start) / total
-  return Math.min(1, Math.max(0, ratio))
-}
-
-/**
  * The thin fixed bar `ArticleLayout` shows for `readingProgress`: 0 at the top of `target`, 1 once
- * its bottom edge has cleared the viewport. The scroller is resolved (`scrollParentOf`), never
- * assumed: inside the shell it is the main region, otherwise the window. Internal: not exported
- * from the barrel.
+ * its bottom edge has cleared the viewport. Internal: not exported from the barrel.
+ *
+ * The compositor draws it: the fill's `animation-timeline` is a named scroll timeline on the
+ * resolved scroller (`scrollParentOf`: inside the shell the main region, otherwise the document),
+ * or a view timeline on `target` ranged from its start edge at the scrollport's start to its end
+ * edge at the scrollport's end. No scroll listener, no frame callback, no layout read. The names
+ * are declared in an effect because the scroller is found by walking the DOM.
+ *
+ * An engine without scroll timelines never shows the bar: it is an affordance, not content, and
+ * `aria-hidden` for the same reason. Reduced motion keeps it; the bar is position, not motion.
  */
 export function ArticleProgress({ target }: ArticleProgressProps = {}): ReactElement {
-  const t = useMessages(page)
-  const [progress, setProgress] = useState(0)
-  const frame = useRef<number | null>(null)
+  const name = `--article-progress-${useId().replaceAll(/\W/g, '')}`
   const rootRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    // The bar is a fine probe when there is no `target`: it sits inside the box being read.
-    const port = scrollParentOf(target?.current ?? rootRef.current)
-    const scroller: Window | HTMLElement = port ?? window
-
-    const tick = () => {
-      frame.current = null
-      setProgress(computeProgress(target?.current, port))
+    const bar = rootRef.current
+    if (bar === null || !CSS.supports('animation-timeline', 'auto')) return
+    const subject = target?.current ?? null
+    // A view timeline is looked up from the bar, which is not inside `target`: scope it to the
+    // nearest ancestor that holds both. A scroll timeline is on an ancestor of the bar already.
+    let host: HTMLElement
+    let property: 'scrollTimeline' | 'viewTimeline'
+    let scope: HTMLElement | null = null
+    if (subject === null) {
+      host = scrollParentOf(bar) ?? bar.ownerDocument.documentElement
+      property = 'scrollTimeline'
+    } else {
+      host = subject
+      property = 'viewTimeline'
+      scope = subject.parentElement
+      while (scope !== null && !scope.contains(bar)) scope = scope.parentElement
     }
-
-    const onScroll = () => {
-      if (frame.current !== null) return
-      frame.current = requestAnimationFrame(tick)
-    }
-
-    tick()
-    scroller.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll, { passive: true })
+    const previous = host.style[property]
+    const previousScope = scope?.style.timelineScope ?? ''
+    host.style[property] = `${name} y`
+    if (scope !== null) scope.style.timelineScope = name
     return () => {
-      scroller.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
-      if (frame.current !== null) cancelAnimationFrame(frame.current)
+      host.style[property] = previous
+      if (scope !== null) scope.style.timelineScope = previousScope
     }
-  }, [target])
+  }, [target, name])
 
   return (
     <div
       ref={rootRef}
-      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a fixed scaleX bar over the page, not a form <progress>
-      role="progressbar"
-      aria-label={t('page.progress')}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(progress * 100)}
-      className="pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5"
+      aria-hidden
+      className="pointer-events-none fixed inset-x-0 top-0 z-50 hidden h-0.5 supports-[animation-timeline:auto]:block"
     >
       <div
         className="h-full origin-left bg-brand will-change-transform"
-        style={{ transform: `scaleX(${progress})` }}
+        style={{
+          // The resting state until a timeline is in scope: an unresolved name leaves the bar at 0.
+          transform: 'scaleX(0)',
+          animationName: 'basalt-article-progress',
+          animationTimingFunction: 'linear',
+          animationFillMode: 'both',
+          animationTimeline: name,
+          animationRange: target === undefined ? undefined : 'entry 100% exit 0%',
+        }}
       />
     </div>
   )

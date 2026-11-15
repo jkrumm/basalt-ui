@@ -74,6 +74,10 @@ const chartMarkRules =
   `  [data-chart-mark][data-dimmed] {\n    opacity: ${CHART_MARK_DIM};\n  }\n` +
   '  @media (prefers-reduced-motion: no-preference) {\n    [data-chart-mark] {\n      transition: opacity 120ms ease-out;\n    }\n  }\n'
 
+/** The reading-progress bar's keyframes (`page/article-progress.tsx`): a scroll or view timeline plays them. */
+const articleProgressRules =
+  '  @keyframes basalt-article-progress {\n    to {\n      transform: scaleX(1);\n    }\n  }\n'
+
 function tailwindCss(): string {
   const entries = bridgeEntries()
   const colours = entries.filter((e) => e.tw.startsWith('--color-'))
@@ -105,6 +109,7 @@ function tailwindCss(): string {
     '  }\n' +
     '  @media (pointer: coarse) {\n    input,\n    select,\n    textarea {\n      font-size: max(16px, 1em) !important;\n    }\n  }\n' +
     chartMarkRules +
+    articleProgressRules +
     '}\n'
 
   return (

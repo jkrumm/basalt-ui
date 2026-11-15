@@ -164,10 +164,11 @@ describe('ArticleLayout: the header', () => {
 describe('ArticleLayout: reading progress and footer', () => {
   test('readingProgress is opt-in', () => {
     renderArticle()
-    expect(screen.queryByRole('progressbar')).toBeNull()
+    const bar = () => document.querySelector('.fixed.inset-x-0.top-0[aria-hidden="true"]')
+    expect(bar()).toBeNull()
     cleanup()
     render(<ArticleLayout readingProgress>{ARTICLE_BODY}</ArticleLayout>)
-    expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('0')
+    expect(bar()).not.toBeNull()
   })
 
   test('prev/next render as plain links by default and go through renderLink when given', () => {

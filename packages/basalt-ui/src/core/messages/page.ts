@@ -3,7 +3,7 @@ import type { BasaltMessages } from './index'
 
 /**
  * The strings `./page` prints itself. `page.toc` titles the table of contents, `page.tocTrigger` is
- * the button that opens it below 1200px, `page.progress` names the reading-progress bar, and
+ * the button that opens it below 1200px, and
  * `page.kind*` name a title-less callout's kind for assistive tech, and `page.moreActions`
  * and `page.closeAside` name the page bar's overflow button and the aside's close button, and `page.itemAttention` and `page.itemActions` name an `InnerNav` item's dot
  * and its actions menu.
@@ -11,7 +11,6 @@ import type { BasaltMessages } from './index'
 export type PageMessages = Record<
   | 'page.toc'
   | 'page.tocTrigger'
-  | 'page.progress'
   | 'page.previous'
   | 'page.next'
   | 'page.kindInfo'
@@ -29,7 +28,6 @@ export type PageMessages = Record<
 export const page = {
   'page.toc': 'On this page',
   'page.tocTrigger': 'On this page',
-  'page.progress': 'Reading progress',
   'page.previous': 'Previous',
   'page.next': 'Next',
   'page.kindInfo': 'Info',
