@@ -72,7 +72,7 @@ const SHIPPED = {
   chart: (box: { height: number | 'fill' }) => <ShippedBars height={box.height} />,
   menu: [
     { label: 'Open report', href: '#shipped' },
-    { label: 'Export CSV', onSelect: () => undefined },
+    { label: 'Export CSV', onClick: () => undefined },
   ],
 } as const
 
