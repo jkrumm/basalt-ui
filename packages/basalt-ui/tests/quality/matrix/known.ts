@@ -172,13 +172,6 @@ export const KNOWN: readonly KnownFinding[] = [
   {
     route: '/table',
     assertion: 'ringWalk',
-    item: /th\[table-head\]>button\[pressable\] "Amount \(EUR\)": outline is clipped by div/,
-    owner:
-      "table: Chrome centres the focused column menu inside the pin-reduced scrollport, so the next stop, the last column's sort button, stays half out of view at 390",
-  },
-  {
-    route: '/table',
-    assertion: 'ringWalk',
     item: /td\[table-cell\]>span\[table-select-cell\]>div\[select\]>button\[select-trigger\] ".*outline is clipped by div/,
     owner:
       'table: the inline select in a cell sits flush in the scrollport, which clips its ring; the 390 walk reaches it now that the page bar folds its filters into one Filters button (fewer stops before the table)',

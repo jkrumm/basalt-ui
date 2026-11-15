@@ -6,7 +6,7 @@
  * `data-below` is the inline size under which the table stops being a table: `480` or `800` (the
  * plan's `reducedFrom`, raised by `cardsBelow: 'wide'`) or `always`.
  */
-import type { CSSProperties } from 'react'
+import type { CSSProperties, FocusEvent } from 'react'
 import type { TableModel } from '../use-data-table'
 
 export type TierAttributes = {
@@ -51,4 +51,31 @@ export function scrollMinWidth<T>(model: TableModel<T>): CSSProperties {
     ['--table-scroll-pad-start' as string]: `${selectPx + pinnedPx(model, 'start')}px`,
     ['--table-scroll-pad-end' as string]: `${pinnedPx(model, 'end')}px`,
   }
+}
+
+/** Room kept past a revealed control for its focus ring (outline width plus offset). */
+const RING_ROOM_PX = 4
+
+/**
+ * Brings a focused control fully into the sideways scrollport. Chrome centres a stop that is hidden
+ * and leaves a stop that is only partly visible where it is, so the control that follows a centred
+ * one (the last column's sort button after its menu) stays half out of view and the scrollport clips
+ * its ring. The reveal measures against the scroll padding, so a pinned column never covers it; a
+ * pinned control itself is already in place.
+ */
+export function revealFocus(event: FocusEvent<HTMLElement>): void {
+  const target = event.target
+  if (target.closest('[data-pin], [data-kind="tick"]') !== null) return
+  const port = target.closest<HTMLElement>(
+    '[data-slot="virtual-list"], [data-slot="table-scroller"]',
+  )
+  if (port === null || port.scrollWidth <= port.clientWidth) return
+  const box = port.getBoundingClientRect()
+  const pad = getComputedStyle(port)
+  const rect = target.getBoundingClientRect()
+  const start = box.left + (parseFloat(pad.scrollPaddingLeft) || 0)
+  const end = box.right - (parseFloat(pad.scrollPaddingRight) || 0) - RING_ROOM_PX
+  if (rect.right > end)
+    port.scrollLeft += Math.max(0, Math.min(rect.right - end, rect.left - start))
+  else if (rect.left < start + RING_ROOM_PX) port.scrollLeft -= start + RING_ROOM_PX - rect.left
 }
