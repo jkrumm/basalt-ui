@@ -39,7 +39,8 @@ export function ChipList<T>({ model }: { model: TableModel<T> }): ReactElement |
       className="m-0 flex min-w-0 list-none flex-wrap items-center gap-2 p-0"
     >
       {chips.map((filter) => {
-        const subject = model.specs.find((spec) => spec.id === filter.id)?.header ?? filter.id
+        const spec = model.specs.find((s) => s.id === filter.id)
+        const subject = spec?.header ?? filter.id
         return (
           <li
             key={filter.id}
@@ -51,7 +52,9 @@ export function ChipList<T>({ model }: { model: TableModel<T> }): ReactElement |
               <span className="text-muted-foreground">
                 {filter.op === 'anyOf' ? t('table.opAnyOf') : t('table.opContains')}
               </span>{' '}
-              <span className="font-medium">{filter.values.join(', ')}</span>
+              <span className="font-medium">
+                {filter.values.map((v) => spec?.labels?.[v] ?? v).join(', ')}
+              </span>
             </span>
             <Button
               size="icon-sm"

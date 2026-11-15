@@ -97,6 +97,8 @@ export type KindSpec<T> = {
   render: ((row: T, env: CellEnv) => ReactNode) | null
   /** `status`: the closed option list (sort order and filter values). */
   options?: readonly string[]
+  /** `status`: the text drawn for an option value (cell, card, filter); absent, the value itself. */
+  labels?: Readonly<Record<string, string>>
   /** `actions`: the typed row actions. */
   actions?: readonly RowAction<T>[]
   /** `select`: the in-place edit. */
