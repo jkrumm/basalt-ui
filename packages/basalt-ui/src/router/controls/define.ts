@@ -27,6 +27,7 @@ import type {
   RangeWindow,
 } from './field'
 import { labelOf, optionsOf } from './field'
+import type { ValuesOf, WindowOf } from './values'
 import { KEEP_KEY, chosenStrip, orderMiddlewares } from './middleware'
 import { attachWidgets, resetWidgetOwnersForTests } from './widgets'
 import type {
@@ -74,13 +75,6 @@ export type ParamsOf<Key extends string, X> = X extends { readonly lane: { reado
 export type SearchOf<F> = Flatten<
   UnionToIntersection<{ [K in keyof F & string]: ParamsOf<K, F[K]> }[keyof F & string]>
 >
-
-/** What `store.useValues()` returns: each URL field under its key, as its handle's `use()` returns it. */
-type ValuesOf<F> = Flatten<{
-  [
-    K in keyof F & string as F[K] extends { readonly lane: { readonly url: false } } ? never : K
-  ]: F[K] extends FieldSpec<infer V> ? V : never
-}>
 
 type Member<V> = V extends readonly (infer M)[] ? M : V extends RangeValue<infer P> ? P : V
 
@@ -137,11 +131,6 @@ export type RangeHandle<
    */
   toWindow(value: RangeValue<P>): WindowOf<Exclude<P, W | 'custom'>>
 }
-
-/** `{ window }` exists only while a preset has no resolver; with every preset resolved it is dates. */
-type WindowOf<Unresolved extends string> = [Unresolved] extends [never]
-  ? { from: string; to: string }
-  : { window: Unresolved } | { from: string; to: string }
 
 export type HandleOf<Key extends string, X> =
   X extends RangeSpec<infer P, infer C, RangeParams, infer W, boolean, infer H>
@@ -202,10 +191,7 @@ export type Controls<Id extends string, Scp extends Scope, F, W = {}> = {
   readonly widget: WidgetHandles<W>
   /** The live `w.` keys, their widgets and the reset (`Reset overrides`). */
   useOverrides(): Overrides
-  /**
-   * Every URL field's resolved value under its key, as its handle's `use()` returns it (a range as
-   * its `RangeValue`, a multi as its array); stable while they do not change.
-   */
+  /** Every URL field's value under its key, as its handle's `use()` returns it; stable while they do not change. */
   useValues(): ValuesOf<F>
   /** How many fields differ from their fallback: the `n` of `Filters (n)`. */
   useActiveCount(): number
