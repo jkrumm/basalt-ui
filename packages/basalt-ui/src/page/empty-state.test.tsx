@@ -23,12 +23,12 @@ describe('EmptyState', () => {
   })
 
   test('a page-tier title is its own line above why; the section tier draws none', () => {
-    const { unmount } = render(<EmptyState title="No runs yet" why="Start one from the CLI." />)
+    const { unmount } = render(<EmptyState title="No runs yet" cause="Start one from the CLI." />)
     const title = document.querySelector('[data-slot="empty-state-title"]')
     expect(title?.textContent).toBe('No runs yet')
     expect(title?.nextElementSibling?.getAttribute('data-slot')).toBe('empty-state-why')
     unmount()
-    render(<EmptyState tier="section" title="No runs yet" why="Start one from the CLI." />)
+    render(<EmptyState tier="section" title="No runs yet" cause="Start one from the CLI." />)
     expect(document.querySelector('[data-slot="empty-state-title"]')).toBeNull()
   })
 
