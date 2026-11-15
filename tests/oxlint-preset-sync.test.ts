@@ -141,12 +141,11 @@ describe('oxlint preset sync contract', () => {
     expect(findBlock(projectBanList('repo'), '**/__root.tsx')).toBeUndefined()
   })
 
-  // ── Playground dogfooding: it consumes the SHIPPED preset, not the repo-local config ──────────
-  // apps/playground is the model consumer, so it must see exactly what argo sees. It gets there
-  // via its own nested apps/playground/.oxlintrc.json (oxlint resolves the nearest config and it
-  // REPLACES the root one for that subtree — verified against oxlint 1.68.0). These assertions
-  // lock the config-level chain; the preset's runtime behaviour is covered by pack-test.sh's
-  // scratch-consumer step.
+  // ── Playground dogfooding: it consumes the SHIPPED app preset, not the repo-local config ───────
+  // apps/playground is the model consumer, so it must see exactly what a v3 app sees. Its own
+  // apps/playground/.oxlintrc.json extends configs/oxlint-app.json; the root lint skips the
+  // subtree (`--ignore-pattern`, since the v3 and 2.x plugins both register as `basalt` and one
+  // oxlint run cannot load both) and `lint:playground` runs oxlint from that directory.
 
   it('#app repo globs exclude apps/playground (it is governed by its own nested config)', () => {
     const block = findBlock(projectBanList('repo'), 'packages/basalt-ui/src/**')
@@ -154,15 +153,15 @@ describe('oxlint preset sync contract', () => {
     expect(block?.files.some((f) => f.startsWith('apps/playground'))).toBe(false)
   })
 
-  it('apps/playground extends the shipped preset via the documented node_modules path', () => {
+  it('apps/playground extends the shipped app preset via the documented node_modules path', () => {
     const parsed = JSON.parse(
       readFileSync(join(root, 'apps/playground/.oxlintrc.json'), 'utf8'),
     ) as { extends?: string[] }
-    expect(parsed.extends).toEqual(['./node_modules/basalt-ui/configs/oxlint.json'])
+    expect(parsed.extends).toEqual(['./node_modules/basalt-ui/configs/oxlint-app.json'])
   })
 
   // The basalt/* levels live in the guards-only preset, which the full one extends.
-  it('the preset the playground extends carries the engine boundary but NOT the repo-only boundaries', () => {
+  it('the 2.x shipped preset carries the engine boundary but NOT the repo-only boundaries', () => {
     const shipped = JSON.parse(readFileSync(SHIPPED_CONFIG_PATH, 'utf8')) as { extends?: string[] }
     expect(shipped.extends).toEqual(['./oxlint-basalt.json'])
     const rules = (
