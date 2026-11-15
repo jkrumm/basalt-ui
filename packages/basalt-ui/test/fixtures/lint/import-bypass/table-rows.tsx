@@ -2,6 +2,23 @@
 // @invalid
 const a = (
   <TableBody>
+    {[...runs].sort(by).map((r) => (
+      <TableRow key={r.id} />
+    ))}
+  </TableBody>
+)
+// @invalid
+const sorted = [...runs].sort(by)
+const a = (
+  <TableBody>
+    {sorted.map((r) => (
+      <TableRow key={r.id} />
+    ))}
+  </TableBody>
+)
+// @invalid
+const a = (
+  <TableBody>
     {rows.sort(by).map((r) => (
       <TableRow key={r.id} />
     ))}
