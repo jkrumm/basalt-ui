@@ -6,12 +6,15 @@
  * declaration onto the rail, the phone tab bar, the breadcrumb and the document title.
  *
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
+ * The app's one `CommandPalette` sits inside the shell: it lists every nav destination and the
+ * commands of `demo/commands.ts`, takes `Mod+K`, and the rail's search row opens it.
  */
-import { spotlight } from '@mantine/spotlight'
 import { Outlet, createRootRouteWithContext, useNavigate } from '@tanstack/react-router'
 import type { BasaltRouterContext } from 'basalt-ui'
-import { AppShell } from 'basalt-ui/shell'
+import { AppShell, CommandPalette } from 'basalt-ui/shell'
+import { useState } from 'react'
 import type { ComponentProps } from 'react'
+import { COMMANDS } from '../demo/commands'
 import { NAV } from '../demo/nav-model'
 import { useUserScenario } from '../demo/user-scenario-store'
 import type { UserScenario } from '../demo/user-scenario-store'
@@ -58,6 +61,7 @@ function accountOf(scenario: UserScenario, setScenario: (next: UserScenario) => 
 function RootLayout() {
   const navigate = useNavigate()
   const [scenario, setScenario] = useUserScenario()
+  const [paletteOpen, setPaletteOpen] = useState(false)
 
   return (
     <AppShell
@@ -65,7 +69,7 @@ function RootLayout() {
       brand={{ name: 'Basalt' }}
       badges={BADGES}
       blocks={BLOCKS}
-      search={{ onOpen: () => spotlight.open() }}
+      search={{ onOpen: () => setPaletteOpen(true) }}
       settings={{
         mode: 'menu',
         items: [
@@ -85,6 +89,7 @@ function RootLayout() {
       chrome={CHROME}
     >
       <Outlet />
+      <CommandPalette commands={COMMANDS} open={paletteOpen} onOpenChange={setPaletteOpen} />
     </AppShell>
   )
 }
