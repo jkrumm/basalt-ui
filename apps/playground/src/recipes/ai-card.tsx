@@ -22,7 +22,7 @@ export function AiCard({ api, prompt }: { api: string; prompt: string }) {
       phase={phase}
       skeleton={{ height: 160 }}
       body={() => (
-        <ScrollArea aria-label="Summary" className="h-full">
+        <ScrollArea aria-label="Summary" className="max-h-64">
           <div
             data-state={isLoading ? 'streaming' : 'settled'}
             aria-busy={isLoading}

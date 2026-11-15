@@ -10,6 +10,7 @@ export const LEGEND = [
 
 // #region recipe:timeline
 import { DataPanel } from 'basalt-ui/cards'
+import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h)
 
@@ -22,35 +23,38 @@ export function Timeline({ bars, now }: { bars: Bar[]; now: number }) {
       legend={LEGEND}
       skeleton={{ rows: bars.length + 1 }} // the hour row plus one 32 px row per bar
       body={() => (
-        <div className="grid auto-rows-8 grid-cols-[8rem_repeat(24,var(--col-w))] gap-y-2 overflow-x-auto px-(--card-edge) [--col-w:2.5rem]">
-          <div className="col-span-full grid grid-cols-subgrid text-xs text-muted-foreground">
-            {HOURS.map((h) => (
-              <span key={h} className="col-start-auto first:col-start-2">
-                {h}
-              </span>
-            ))}
-          </div>
-          {bars.map((bar) => (
-            <div key={bar.id} className="col-span-full grid grid-cols-subgrid items-center text-sm">
-              <span className="truncate">{bar.row}</span>
-              {/* theme-allow hidden-inline-style — a bar's span is data, not a class */}
-              <span
-                className="truncate rounded-chip bg-info-tint px-2"
-                style={{ gridColumn: `${bar.from + 2} / ${bar.to + 2}` }}
-              >
-                {bar.label}
-              </span>
+        <ScrollArea aria-label="Deploys by hour" orientation="horizontal">
+          <div
+            className="grid min-w-6xl auto-rows-8 grid-cols-[auto_repeat(24,minmax(0,1fr))] gap-y-2 px-(--card-edge)"
+            style={{ '--bar': 'var(--vx-info-tint)' } as React.CSSProperties}
+          >
+            <div className="col-span-full grid grid-cols-subgrid text-xs text-muted-foreground">
+              {HOURS.map((h) => (
+                <span key={h} className="col-start-auto first:col-start-2">
+                  {h}
+                </span>
+              ))}
             </div>
-          ))}
-          <div className="pointer-events-none relative col-start-2 col-span-24 row-start-1 row-span-full">
-            {/* theme-allow hidden-inline-style — the now line sits at a data position */}
+            {bars.map((bar) => (
+              <div
+                key={bar.id}
+                className="col-span-full grid grid-cols-subgrid items-center text-sm"
+                style={{ '--at': `${bar.from + 2} / ${bar.to + 2}` } as React.CSSProperties}
+              >
+                <span className="truncate">{bar.row}</span>
+                <span className="col-(--at) truncate rounded-chip bg-(--bar) px-2">
+                  {bar.label}
+                </span>
+              </div>
+            ))}
             <div
-              aria-hidden="true"
-              className="absolute inset-y-0 w-px bg-brand"
-              style={{ left: `${(now / 24) * 100}%` }}
-            />
+              className="pointer-events-none relative col-span-24 col-start-2 row-span-full row-start-1"
+              style={{ '--now': `${(now / 24) * 100}%` } as React.CSSProperties}
+            >
+              <div aria-hidden className="absolute inset-y-0 left-(--now) w-px bg-foreground" />
+            </div>
           </div>
-        </div>
+        </ScrollArea>
       )}
     />
   )
