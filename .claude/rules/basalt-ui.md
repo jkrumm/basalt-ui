@@ -19,7 +19,7 @@ Compose the shipped surface; each bullet names the lint id or type that holds it
 - A static table is the table primitive; data is `DataTable`; hand-drawn chart marks are a chart kind. [lint:primitive-bypass]
 - A scroll region is the scroll primitive, or the page owns the scroll; never a raw overflow box. [lint:raw-scroll]
 - An icon prop takes any component with the `IconComponent` shape; pass the icon library's own. [type:IconComponent]
-- A link prop takes a `LinkComponent`; the default is a plain anchor and `routerDefaults` supplies the router link. [type:LinkComponent]
+- A link prop takes `string | NavTarget`; install `routerDefaults().link` once on `BasaltProvider link`, never per prop; without it a target is a plain anchor. [type:LinkComponent]
 
 ## Layout
 
