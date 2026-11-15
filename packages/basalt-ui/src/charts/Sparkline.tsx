@@ -74,6 +74,9 @@ export type SparklineProps = BasaltProps & {
    * and the readout reads `3 items · 12 Oct` beside the point. Omitted: the moment of an `{ at }`
    * point, else the value alone. */
   labels?: readonly string[] | undefined
+  /** Index of the first planned point: the line from the point before it on draws dashed, so planned
+   * samples never read as past ones. Line only; out of range draws a plain line. */
+  future?: number | undefined
   /** The span the series covers, stated quietly under the plot (`12 wk`). Default inside a `StatCard`
    * or strip cell: the first and last of `labels`, or of an `{ at }` series' days (`3 Aug – 19 Oct`; an hourly series states none);
    * plain values state none. `false` or a blank string states none. With a `referenceLabel`, a stated window also takes
@@ -318,6 +321,7 @@ function compileSparkline(
   referenceLabel: string | undefined,
   band: { from: number; to: number } | null,
   bandEdges: boolean,
+  future: number | null,
 ): CartesianDefinition {
   const frame = frameOf(extentOf, mark, source.length, emphasisColor !== null, bandEdges)
   const bandMark = (): ChartMarks =>
@@ -429,7 +433,7 @@ function compileSparkline(
         marks: [
           ...bandMark(),
           ...referenceMark(height, width, rows),
-          lineY(rows, {
+          lineY(future === null ? rows : rows.filter((r) => r.i < future), {
             id: 'line',
             x: 'i',
             y: 'v',
@@ -437,6 +441,22 @@ function compileSparkline(
             strokeWidth: LINE_WIDTH,
             curve: chartCurve('monotone'),
           }),
+          ...(future === null
+            ? []
+            : [
+                // From the last past point, so the dashes continue the line without a gap.
+                decorative(
+                  lineY(rows.slice(Math.max(0, rows.findIndex((r) => r.i >= future) - 1)), {
+                    id: 'line-future',
+                    x: 'i',
+                    y: 'v',
+                    stroke: color,
+                    strokeWidth: LINE_WIDTH,
+                    strokeDasharray: DASH,
+                    curve: chartCurve('monotone'),
+                  }),
+                ),
+              ]),
           ...(emphasisColor !== null && last !== undefined && last.v !== null
             ? [
                 decorative(
@@ -679,6 +699,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
     band,
     format = defaultNumberFormat,
     labels,
+    future: futureProp,
     window: windowProp,
     className,
     style,
@@ -699,6 +720,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
   const [keyed, setKeyed] = useState<number | null>(null)
   const active = hover ?? keyed
   const readoutRef = useRef<HTMLOutputElement>(null)
+  const futureStart = Number.isInteger(futureProp) ? (futureProp as number) : -1
   const bandFrom = band?.from
   const bandTo = band?.to
   const model = useMemo(() => {
@@ -743,6 +765,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
         plotLabel,
         bandSpan,
         bandSpan !== null && bandEdges,
+        mark === 'line' && futureStart > 0 && futureStart < rows.length ? futureStart : null,
       ),
     }
   }, [
@@ -756,6 +779,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
     plotLabel,
     bandFrom,
     bandTo,
+    futureStart,
   ])
   const resolved = resolveChartState(state)
   const rows = model?.rows

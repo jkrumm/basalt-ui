@@ -97,12 +97,6 @@ export const KNOWN: readonly KnownFinding[] = [
     owner: 'shell: brand zone clips the rail toggle ring',
   },
   {
-    route: '/cards',
-    assertion: 'forcedColors',
-    item: /^\[stat-menu\] button/,
-    owner: 'cards: stat menu draws its frame with a shadow only',
-  },
-  {
     route: '/charts',
     assertion: 'axe',
     item: /^color-contrast \(serious\)/,
@@ -132,12 +126,6 @@ export const KNOWN: readonly KnownFinding[] = [
     item: /(tbody>tr>td>button "Show Cause"|tr>th>span>button "\+\d+ col).*(outline contrast|outline is clipped)/,
     owner:
       'table: row and folded-column buttons keep a ring that is too faint and is clipped by the scrollport',
-  },
-  {
-    route: '/cards',
-    assertion: 'focusNotObscured',
-    item: /a\[stat-target\].*covered at .* by div\[card-phase\]/,
-    owner: 'cards: the phase overlay sits over the stat target link',
   },
   {
     route: '/scenarios/s1-ops',

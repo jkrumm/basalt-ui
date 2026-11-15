@@ -242,10 +242,20 @@
   outline-offset: calc(-0.125rem * var(--mantine-scale));
 }
 
-/* A Sparkline keeps the outer ring: its cell reserves the clearance (the readout chip and the end
- * marker are placed against it) and an inset ring would cross the end marker. */
+/* A bare Sparkline keeps the outer ring: its cell reserves the clearance (the readout chip and the end
+ * marker are placed against it). `--vx-accent` is no token of v3, so the ring takes the ink
+ * (over 3:1 on the card surface in both schemes). */
 :global([data-basalt-sparkline] .basalt-chart .ts-chart:focus-visible) {
+  outline-color: var(--vx-ink);
   outline-offset: calc(0.125rem * var(--mantine-scale));
+}
+
+/* A Sparkline in a box that clips its overflow (`StatCard`'s 72 px chart box, a hosted strip cell's
+ * visual) has an inset ring like a chart's: whole at every edge. The plot's own 3 px margin keeps
+ * the end marker clear of it. */
+:global([data-basalt-hosted] .basalt-chart .ts-chart:focus-visible),
+:global([data-slot='stat-chart'] [data-basalt-sparkline] .basalt-chart .ts-chart:focus-visible) {
+  outline-offset: calc(-0.125rem * var(--mantine-scale));
 }
 
 /*

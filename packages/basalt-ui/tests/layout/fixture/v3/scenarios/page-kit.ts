@@ -8,9 +8,9 @@
 import type { FixtureSpec } from '../../spec'
 import type { Scenario } from '../registry'
 
-/** The grid's tier and how many cards it holds; or a `Facts` list in a host of `factsWidth` px. */
+/** The grid's tier and how many cards it holds (`stat`: stat cards in a page-like `@container`); or a `Facts` list in a host of `factsWidth` px. */
 export type PageKitSpec = FixtureSpec & {
-  pageKit?: { grid: 'narrow' | 'regular' | 'wide'; cards?: number }
+  pageKit?: { grid: 'narrow' | 'regular' | 'wide'; cards?: number; stat?: boolean }
   pageKitFacts?: { width: number; rows?: number }
 }
 

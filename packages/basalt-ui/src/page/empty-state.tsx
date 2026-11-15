@@ -10,6 +10,8 @@ import { buttonVariants } from '../ui/button'
 type EmptyStateBase = {
   /** One line: the cause, and the next step when there is one. Required: never a bare "No data". */
   why: string
+  /** What is empty, in a few words (`No runs yet`), on the line above `why`. Drawn on the `page` tier only. */
+  title?: string
   icon?: IconComponent
   /** `page` for a whole route body (generous space), `section` for a region inside a card or panel. Default `page`. */
   tier?: 'page' | 'section'
@@ -38,10 +40,10 @@ const ACTION = buttonVariants({ variant: 'secondary', size: 'sm' })
  * />
  *
  * @example
- * <EmptyState why="No runs yet. Start one from the CLI." action={{ label: 'Open docs', href: '/docs' }} />
+ * <EmptyState title="No runs yet" why="Start one from the CLI." action={{ label: 'Open docs', href: '/docs' }} />
  */
 export function EmptyState(props: EmptyStateProps): ReactElement {
-  const { why, icon: Icon, tier = 'page', action, filtered } = props
+  const { why, title, icon: Icon, tier = 'page', action, filtered } = props
   const t = useMessages(home)
   return (
     <div
@@ -61,6 +63,11 @@ export function EmptyState(props: EmptyStateProps): ReactElement {
         >
           <Icon aria-hidden="true" size={24} />
         </span>
+      )}
+      {title !== undefined && tier === 'page' && (
+        <p data-slot="empty-state-title" className="m-0 text-lg font-semibold text-foreground">
+          {title}
+        </p>
       )}
       <p
         data-slot="empty-state-why"

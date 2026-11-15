@@ -16,7 +16,8 @@ grid reads right in a phone column, a docked aside and a 1440 page.
 ## Signature
 
 ```ts
-CardGrid({ min, children }: CardGridProps): ReactElement
+CardGrid({ min, narrow, children }: CardGridProps): ReactElement
   min?: "regular" | "wide" | "narrow"
+  narrow?: "scroll" | "stack"
   children?: ReactNode
 ```

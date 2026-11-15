@@ -22,6 +22,16 @@ describe('EmptyState', () => {
     expect(document.querySelector('[data-slot="empty-state-action"]')).toBeNull()
   })
 
+  test('a page-tier title is its own line above why; the section tier draws none', () => {
+    const { unmount } = render(<EmptyState title="No runs yet" why="Start one from the CLI." />)
+    const title = document.querySelector('[data-slot="empty-state-title"]')
+    expect(title?.textContent).toBe('No runs yet')
+    expect(title?.nextElementSibling?.getAttribute('data-slot')).toBe('empty-state-why')
+    unmount()
+    render(<EmptyState tier="section" title="No runs yet" why="Start one from the CLI." />)
+    expect(document.querySelector('[data-slot="empty-state-title"]')).toBeNull()
+  })
+
   test('a button action calls its handler', () => {
     const onSelect = mock(() => {})
     render(<EmptyState why="No runs." action={{ label: 'Start a run', onSelect }} />)
