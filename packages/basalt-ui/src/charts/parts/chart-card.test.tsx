@@ -100,6 +100,36 @@ describe('phase matrix', () => {
     expect(c.calls()).toBe(0)
   })
 
+  describe('empty with a query phase', () => {
+    const empty = { cause: 'No ticket matches' }
+    const query = (data: unknown): ChartCardProps['phase'] => ({
+      isPending: false,
+      isError: false,
+      error: null,
+      data,
+    })
+
+    test('rows draw the chart although `empty` is passed unconditionally', () => {
+      const c = counted()
+      const el = html(<ChartCard title="R" chart={c.slot} phase={query([1])} empty={empty} />)
+      expect(el.querySelector('[data-slot="card"]')?.getAttribute('data-phase')).toBe('ready')
+      expect(c.calls()).toBe(1)
+    })
+
+    test('an empty array draws the empty state', () => {
+      const c = counted()
+      const el = html(<ChartCard title="R" chart={c.slot} phase={query([])} empty={empty} />)
+      expect(el.querySelector('[data-slot="card"]')?.getAttribute('data-phase')).toBe('empty')
+      expect(el.textContent).toContain('No ticket matches')
+      expect(c.calls()).toBe(0)
+    })
+
+    test('a Phase string keeps the plain rule', () => {
+      const el = html(<ChartCard title="R" chart={() => null} phase="ready" empty={empty} />)
+      expect(el.querySelector('[data-slot="card"]')?.getAttribute('data-phase')).toBe('empty')
+    })
+  })
+
   test('a refetch error keeps the chart and says it is old', () => {
     const query = { isPending: false, isError: true, isRefetchError: true, error: new Error('x') }
     const c = counted()

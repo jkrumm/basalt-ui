@@ -22,8 +22,8 @@ is drawn in every phase, so loading does not move the box.
 
 ```ts
 ChartCard(props: ChartCardProps): ReactElement
-  phase?: Phase | QueryStateLike | (Phase | QueryStateLike | undefine…
   empty?: Empty | null
+  phase?: Phase | ChartQueryState | (Phase | ChartQueryState | undefi…
   figure?: ChartFigure
   legend?: readonly LegendEntry[]
   footer?: FootFacts

@@ -120,7 +120,15 @@ function FigureRow({ figure, loading }: { figure: ChartFigure; loading: boolean 
  */
 export function ChartCard(props: ChartCardProps): ReactElement {
   const { figure, legend, footer, controls, menu, height = 'auto', chart } = props
-  const resolved = resolvePhase({ phase: props.phase, empty: props.empty })
+  const { phase } = props
+  // A query phase measures emptiness itself: `empty` applies only when its `data` is an empty array.
+  const empty =
+    typeof phase === 'object' &&
+    'isPending' in phase &&
+    !(Array.isArray(phase.data) && phase.data.length === 0)
+      ? null
+      : props.empty
+  const resolved = resolvePhase({ phase, empty })
   // A Suspense fallback has no chart to call, so it can only be loading.
   const effective: ResolvedPhase = chart === undefined ? { tag: 'loading', body: false } : resolved
   const box = effective.tag === 'stale' ? 'stale' : 'ready'
