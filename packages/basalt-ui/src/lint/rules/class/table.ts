@@ -215,7 +215,7 @@ export const CLASS_RULES = defineRules({
           id: 'surface-recipe',
           // A `dark:` token is `dark-fork`'s: one fix at a time, and the recipe fires once it is gone.
           pattern: new RegExp(
-            `^(?!.*(?:^|:)(?:dark|data-\\[theme=dark\\]):)(?:.*:)?!?(?:bg-(?:card|inset)|shadow-card|rounded-card)(?:\\/[^\\s!]+)?!?$`,
+            `^(?!.*(?:^|:)(?:(?:group|peer|in)-)?(?:dark|data-\\[theme=dark\\]):)(?:.*:)?!?(?:bg-(?:card|inset)|shadow-card|rounded-card)(?:\\/[^\\s!]+)?!?$`,
           ),
           fix: 'Card or Inset own the surface recipe',
           next: 'A reasoned waiver',
