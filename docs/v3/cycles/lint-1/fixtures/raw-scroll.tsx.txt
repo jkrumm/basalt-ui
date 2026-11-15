@@ -1,0 +1,28 @@
+// Seeded offenders for basalt/raw-scroll.
+import { cn } from 'basalt-ui'
+
+// seed raw-scroll/overflow-scroll 1: a log panel with a max height that scrolls itself
+export function LogPanel({ lines }: { lines: string[] }) {
+  return (
+    <div className="max-h-96 overflow-y-auto">
+      {lines.map((l) => (
+        <div key={l}>{l}</div>
+      ))}
+    </div>
+  )
+}
+
+// seed raw-scroll/overflow-scroll 2: a horizontally scrolling chip row inside cn()
+export function ChipRow({ wrap }: { wrap: boolean }) {
+  return <div className={cn('flex gap-2', !wrap && 'overflow-x-scroll')}>chips</div>
+}
+
+// seed raw-scroll/overflow-scroll 3: the scroll box written as an inline style
+export function Feed() {
+  return <div style={{ maxHeight: 320, overflowY: 'auto' }}>feed</div>
+}
+
+// seed raw-scroll/overflow-scroll 4: overflow-auto on a wide table wrapper
+export function Wide() {
+  return <div className="w-full overflow-auto">table</div>
+}

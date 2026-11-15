@@ -1,0 +1,23 @@
+{
+  "why": "Lint cycle 1 (docs/v3/cycles/lint-1.md, P1 lint-1.6): the shipped rule says a missing export is a recipe in docs/recipes/, and the recipe pages carry the code of apps/playground/src/recipes/. Run through the app preset, 7 of those files report 19 findings: timeline (raw-scroll, two app-colour, two arbitrary values, two inline styles), board (raw-heading, m-0, max-h-[70dvh]), file-drop (raw-control on the hidden file input), seam-track (rounded-sm, which the basalt theme does not generate, app-colour, two inline styles), seam-bar (two inline styles), ai-card (ScrollArea h-full), remembered-values.test (raw localStorage write). An agent that copies a recipe as told gets a red lint and learns to waive. Nothing in the gate lints the recipes with the shipped preset.",
+  "what": "Every recipe file lints clean under the app preset, and the gate keeps it so.",
+  "owns": [
+    "apps/playground/src/recipes/**",
+    "packages/basalt-ui/docs/recipes/** (the code blocks that mirror those files)",
+    "the recipes check script (v3-recipes-check's) or a new scripts/ step that lints apps/playground/src/recipes with the app preset"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/src/lint/** (rule changes are other rows)"
+  ],
+  "change": "Fix each recipe at source where the rule is right: timeline scrolls through ScrollArea, data positions pass through CSS custom properties instead of inline left/width, seam-track's rounded-sm becomes a basalt radius (rounded-chip), board's list height is a named size, ai-card bounds ScrollArea with max-h-* as its doc says. Where the rule is wrong the fix lands in its own row first (m-0, the board column heading, the hidden file input, the seam mark colour, the test-file storage write) and the recipe keeps its code. Then add a gate step: oxlint with the generated app preset over apps/playground/src/recipes exits 0, run in `pre` or in the recipes check. Each recipe page's code block is updated with its file.",
+  "commits": "fix: for the recipe files and pages (non-package and package commits kept separate as AGENTS.md requires); ci: or test: for the gate step.",
+  "proof": "The gate step's command and its exit 0 in the PR; make check.",
+  "acceptance": [
+    "The app preset over apps/playground/src/recipes reports 0 findings (command and output in the PR)",
+    "Each changed recipe page matches its file (the recipes check)",
+    "A seeded raw <button> in a recipe file fails the gate step",
+    "make check passes"
+  ],
+  "out_of_scope": "Rule changes (v3-lint-1-seam-colour, v3-lint-1-lint); the rest of the playground (v3-lint-1-dogfood)."
+}

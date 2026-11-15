@@ -1,0 +1,23 @@
+{
+  "why": "Lint cycle 1 (docs/v3/cycles/lint-1.md, P1 lint-1.7): apps/playground/.oxlintrc.json extends configs/oxlint.json, which extends configs/oxlint-basalt.json, the 2.x plugin (oxlint-plugin.js); the root .oxlintrc.json loads the same 2.x plugin. The v3 preset, configs/oxlint-app.json, runs on neither, though v3-gr-4-preset named the root config as its dogfood and ARCHITECTURE's lint-tightening row says a stricter rule passes a probe over apps/playground first with 0 new findings. Run by hand, the app preset reports 283 findings on the playground; nothing in the gate saw them. The playground also carries 34 2.x `theme-allow` waivers, 18 of which suppress nothing (check-theme --audit-allows) and none of which the v3 preset reads, and 5 lint directives without a reason.",
+  "what": "The playground lints through the generated app preset in the repo gate, at 0 findings, with every waiver in the v3 dialect and reasoned.",
+  "owns": [
+    "apps/playground/.oxlintrc.json",
+    "apps/playground/src/** except src/recipes/** (v3-lint-1-recipes) and src/cycle/** (cycle builds keep their marked workarounds; waive them per line with the finding id)",
+    "packages/basalt-ui/scripts/gen-oxlint.ts (only the playground config it writes)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/src/lint/** (rules change in their own rows)"
+  ],
+  "change": "Point apps/playground/.oxlintrc.json at the generated app preset (configs/oxlint-app.json) the way a consumer's .oxlintrc.json extends .oxlintrc.basalt.json, keeping its compiler rules; the 2.x plugin keeps linting packages/basalt-ui until v3-teardown-runtime removes it. Then work the findings: fix 2.x token names (52 basalt/unknown-token), convert each live theme-allow to `// oxlint-disable-next-line <id> -- <why>` with the v3 id (v3-gr-6-waiver-codemod's codemod, if it applies), delete the 18 dead ones, add reasons to the 5 bare directives, and fix or waive the rest per line. A finding the cycle judged a false alarm is not waived here when its rule row has landed. Record the before and after count in the PR. If 2.x code that v3-teardown-views deletes holds most of the findings, list those files in the playground config's ignorePatterns with a comment naming that row, and say so in the PR.",
+  "commits": "chore: for the playground (non-package commit); a package commit only if gen-oxlint.ts changes.",
+  "proof": "`bun run lint` (or the gate step that lints the playground) runs the app preset and exits 0; the PR shows the finding count before and after and the waiver count by dialect.",
+  "acceptance": [
+    "apps/playground lints with configs/oxlint-app.json in the repo gate and exits 0",
+    "No theme-allow comment is left in apps/playground/src, or each one left is named in the PR with the row that deletes its file",
+    "Every lint directive in apps/playground/src carries `-- <why>`",
+    "make check passes"
+  ],
+  "out_of_scope": "examples/react, which is pre-v3 and left out of the green claim by v3-ga-prep; the package's own source."
+}

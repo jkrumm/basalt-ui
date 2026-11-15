@@ -1,0 +1,20 @@
+{
+  "why": "Lint cycle 1 (docs/v3/cycles/lint-1.md, P1 lint-1.1): basalt/colour-literal reports every hex inside defineSeries, the series file its own message names as the place for series colours. The playground's demo/series.ts takes 14 findings on 8 lines. Every app with a chart writes that file, so every app would waive the rule or list the file in manifest.deepRender, which the message's next rung also suggests and which is meant for canvas renderers.",
+  "what": "colour-literal stays silent on the colour pairs of a series definition and keeps firing everywhere else.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/structure/colour-literal.ts",
+    "packages/basalt-ui/src/lint/rules/structure/colour-literal.cases.ts and colour-literal.test.ts",
+    "packages/basalt-ui/test/fixtures/lint/structure-rest/colour-literal.tsx",
+    "packages/basalt-ui/configs/oxlint-*.json (regenerated, never hand-edited)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/**"],
+  "change": "A string literal that is the `light` or `dark` value of a property inside the object argument of a `defineSeries(...)` call (by that callee name, also as a member `x.defineSeries`) is not reported. Nothing else changes: a hex beside defineSeries, in a component or in a template literal still fires. The message keeps naming the series file, and its next rung stops pointing a series at manifest.deepRender. Add two valid fixture blocks (the playground's demo/series.ts shape; a nested series group if defineSeries accepts one) and one invalid block (a hex in a sibling object of the same file).",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "bun test on the colour-literal suite; the scratch run of docs/v3/cycles/lint-1/fixtures/run.sh still reports colour-literal on seeds 1, 2, 3 and 5; apps/playground/src/demo/series.ts linted with the app preset reports no colour-literal.",
+  "acceptance": [
+    "A `{ light: '#…', dark: '#…' }` pair inside defineSeries reports nothing (fixture)",
+    "A hex outside defineSeries in the same file still reports (fixture)",
+    "make check passes"
+  ],
+  "out_of_scope": "Named colours (lint-1.15, row v3-lint-1-lint); the playground's own config (v3-lint-1-dogfood)."
+}
