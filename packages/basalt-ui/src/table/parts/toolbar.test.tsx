@@ -14,7 +14,7 @@ import { useDataTable, modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { DataTable } from './data-table'
 import { TableToolbar } from './toolbar'
-import { filterValues, filterableSpecs, withFilter } from './toolbar-filters'
+import { commitsDraft, filterValues, filterableSpecs, withFilter } from './toolbar-filters'
 
 afterEach(cleanup)
 
@@ -59,6 +59,21 @@ function Subject({ phone }: { phone?: 'cards' | 'scroll' }): ReactElement {
 }
 
 const wait = (ms: number) => act(async () => void (await new Promise((r) => setTimeout(r, ms))))
+
+const keydown = (key: string, keyCode: number, isComposing: boolean) => ({
+  key,
+  keyCode,
+  nativeEvent: { isComposing },
+})
+
+describe('commitsDraft', () => {
+  test('only a plain Enter commits: not a composition, not keyCode 229, not another key', () => {
+    expect(commitsDraft(keydown('Enter', 13, false))).toBe(true)
+    expect(commitsDraft(keydown('Enter', 13, true))).toBe(false)
+    expect(commitsDraft(keydown('Enter', 229, false))).toBe(false)
+    expect(commitsDraft(keydown('a', 65, false))).toBe(false)
+  })
+})
 
 describe('filter helpers', () => {
   const specs = [
@@ -109,6 +124,17 @@ describe('quick search', () => {
     expect(model().state.request.q).toBe('你')
   })
 
+  test('Enter commits at once, but not while it confirms an IME composition', () => {
+    render(<Subject />)
+    const box = screen.getByRole('searchbox', { name: 'Search rows' })
+    fireEvent.change(box, { target: { value: 'ac' } })
+    fireEvent.keyDown(box, { key: 'Enter', isComposing: true })
+    fireEvent.keyDown(box, { key: 'Enter', keyCode: 229 })
+    expect(model().state.request.q).toBe('')
+    fireEvent.keyDown(box, { key: 'Enter' })
+    expect(model().state.request.q).toBe('ac')
+  })
+
   test('the search box is a landmark of its own, named', () => {
     const html = renderToString(<Subject />)
     expect(html).toContain('<search')
@@ -139,6 +165,21 @@ describe('+ Filter', () => {
     await wait(320)
     expect(model().state.request.filters).toEqual([{ id: 'name', op: 'contains', values: ['Ac'] }])
     expect(model().rows.map((r) => r.id)).toEqual(['a', 'c'])
+  })
+
+  test('the text filter does not commit on the Enter that confirms an IME composition', async () => {
+    render(<Subject />)
+    fireEvent.click(screen.getByRole('button', { name: '+ Filter' }))
+    await settled()
+    const panel = screen.getByRole('dialog', { name: 'Filter by column' })
+    fireEvent.click(within(panel).getByRole('button', { name: 'Name' }))
+    await settled()
+    const input = screen.getByRole('textbox', { name: 'Contains' })
+    fireEvent.change(input, { target: { value: 'ni' } })
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true })
+    expect(model().state.request.filters).toEqual([])
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(model().state.request.filters).toEqual([{ id: 'name', op: 'contains', values: ['ni'] }])
   })
 
   test('a filter write returns to page 1', async () => {
