@@ -334,7 +334,7 @@ The value **is** the reason: omitting the key, or setting it to `true` or `""`, 
 The root barrel, `basalt-ui`, holds the theme (`createBasaltTheme`, `ThemeToggle`, `StatusDot`,
 `StatusVerdict`) and the state seams (`persisted`, `notify`, `createChannel`, `externalField`,
 `useNow`, `createFormat`). A v3 app wires itself through `basalt-ui/router` (`BasaltProvider`,
-`routerDefaults`) and `basalt-ui/data` (`makeQueryClient`, `unwrap`). The 2.x provider, router
+`routerDefaults`) and `basalt-ui/data` (`createQueryClient`, `unwrap`). The 2.x provider, router
 factory, command bus, agent runtime, form adapter and store layer are removed: every symbol and its
 replacement is a row in [`MIGRATING.md`](./MIGRATING.md).
 

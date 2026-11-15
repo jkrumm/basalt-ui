@@ -104,7 +104,7 @@ function toTest<R extends string>(affects: Affects<R>): KeyTest {
  * Console wiring (software-factory apps/console; replaces its live.ts, policy.ts and debounce.ts):
  * `createChannel({ url: '/v1/stream', greeting: 'hello', schema })`, then
  * `bindInvalidation(client, channel, { roots: ROOTS, aggregates: ['kpis', 'friction'], greeting: 'hello', map: (change) => BY_KIND[change.kind] ?? 'all' })`,
- * then hand it to the provider (`<BasaltProvider live={live}>`, or `createBasaltRouter({ routeTree, live })`): it starts once on the client and stops on unmount.
+ * then hand it to the provider (`<BasaltProvider live={live}>`): it starts once on the client and stops on unmount.
  *
  * @useWhen an app pushes changes over a channel and queries should refetch from them instead of polling
  * @neverWhen the frame carries the whole entity and a cache write is enough (use `patch` alone and have `map` skip it), or the data is only polled
@@ -124,12 +124,6 @@ function toTest<R extends string>(affects: Affects<R>): KeyTest {
  *     <RouterProvider router={router} />
  *   </BasaltProvider>,
  * )
- *
- * // `createBasaltRouter` builds the client itself: take it as a function
- * const router = createBasaltRouter({
- *   routeTree,
- *   live: (client) => bindInvalidation(client, channel, { roots: ROOTS, map }),
- * })
  * ```
  */
 export function bindInvalidation<F, R extends string>(

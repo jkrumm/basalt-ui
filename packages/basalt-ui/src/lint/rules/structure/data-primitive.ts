@@ -247,8 +247,8 @@ export const queryClientSingleton: AstForm = {
       if (!insideCreateQueryClient(node)) report(node, 'new QueryClient')
     },
   }),
-  fix: 'createQueryClient() builds the one client; createBasaltRouter owns it and hands it down in router context',
-  next: 'Extend its defaults through the query option of createBasaltRouter',
+  fix: 'createQueryClient() builds the one client; create it once at the entry and hand it down in router context and QueryClientProvider',
+  next: 'Extend its defaults through the options of createQueryClient',
   fixture: 'structure-rest/data-primitive-query-client-singleton.tsx',
 }
 
