@@ -417,5 +417,10 @@ impossible, land a one-release `releaseRules` override (`{"breaking":true,"relea
   (`setFormatDefaults`, beside `resetFormatDefaults`). `make` is not a verb of this
   surface. An activation callback is `onClick` on every action, card target and menu item; the
   empty sentence is `cause`; a frame's pending node is `skeleton`, and `loading` is a boolean.
+  An action's identity is `id`; every data part takes `phase`; a width has one word (`compact` is
+  the window class, `narrow` the 240 px container). `tone` (`good`, `warn`, `bad`, `info`) is the
+  verdict colour of a read-out (`Alert`, `Status`, `Num`, `Meter`, `Progress`, `Lozenge`,
+  `Toast`); a `Button` is an action, not a read-out, so its `variant` names the role
+  (`primary`, `secondary`, `ghost`) and the destructive one is `danger`: the one written exception.
 - When extending the public API, keep it grounded in the consumer need that drove it, and update
   `src/surfaces.ts` + this file in the same commit.
