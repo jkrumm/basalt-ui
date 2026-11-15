@@ -76,7 +76,12 @@ async function mount(
   return { router, clear: () => pane.clear(), other: () => setQ('1') }
 }
 
-beforeEach(resetControlsOwnersForTests)
+beforeEach(() => {
+  resetControlsOwnersForTests()
+  // The store reads the browser's address bar before a router is mounted; a sibling suite in the
+  // same process may have left a `?section=` on it.
+  window.history.replaceState(null, '', '/')
+})
 afterEach(cleanup)
 
 const selected = (): boolean =>
