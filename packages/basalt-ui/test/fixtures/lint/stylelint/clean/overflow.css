@@ -1,0 +1,2 @@
+.a { overflow: hidden; }
+.b { overflow-x: clip; overflow-y: visible; }
