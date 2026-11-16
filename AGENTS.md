@@ -126,7 +126,7 @@ make layout-fast           # just that layout step (BASE=<ref>, default origin/m
 make verify                # probe production (curl basalt-ui.com) — not the local gate
 ```
 
-`pre` runs the unit suite; the **layout** suite (real CSS geometry in headless Chrome, 127 files and
+`pre` runs the unit suite; the **layout** suite (real CSS geometry in Playwright's headless shell, 127 files and
 ~2300 tests, about half a second each, nearly all of it opening a page: 18 min measured on a loaded host) stays out of it and is reached by `make layout`, by `make check`, or
 in part by `make layout-fast` (`scripts/layout-select.ts` picks the files by name: a changed layout test and fixture,
 the tests named for a changed `src/` file, its folder or the fixture that imports it; a change no name places runs a
@@ -197,10 +197,16 @@ publishing is NOT a deploy — it is the release process (`make release`, below)
   staging set that mixes `packages/basalt-ui/` and non-package files.
 - **`make verify` probes production; `make check` is the local gate.** They are not interchangeable:
   `verify` makes a network call and does not run the tests.
-- **The layout suite needs Chrome.** It runs in CI, `make check` and (in part) `make check-fast`, never in `pre`.
+- **The layout suite needs the headless shell.** It runs in CI, `make check` and (in part) `make check-fast`, never in `pre`.
+  The layout suite, the quality matrix and the print controls run on Playwright's chromium-headless-shell
+  (`make browser-shell` installs it, a no-op when cached; CI caches it); `BASALT_TEST_BROWSER=chrome` runs them on
+  installed Chrome instead (`tests/support/test-browser.ts`). Screenshots a person judges (`scripts/evidence`,
+  `src/cli/shot`, the playground shots) stay on installed Chrome.
 - **The layout suite is a memory budget.** The harness closes each test's browser context in `afterEach`
   (a page from `beforeAll` lives until the file's browser closes); before that, one run held 13 GB of
-  Chrome. `make check` and `make layout` run it through `factory slot run` when `factory` is installed, so two
+  Chrome. Measured on the mini (2026-11-16, peak `footprint` phys_footprint of the browser tree, 2 s samples):
+  layout suite 244 MiB on the shell (5 processes, 642 s) against 614 MiB on Chrome (11 processes, 768 s); quality
+  matrix 447 MiB (5, 185 s) against 981 MiB (8, 505 s); pass sets identical. `make check` and `make layout` run it through `factory slot run` when `factory` is installed, so two
   leads' browser steps never overlap, and `project.yaml` declares a `browser` lane for rows that add browser work.
 - **`apps/marketing/AGENTS.md` describes the pre-Mantine (Tailwind/Biome) era** and is stale; the
   root + package conventions here are authoritative.

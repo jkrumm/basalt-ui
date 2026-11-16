@@ -13,7 +13,7 @@ export type LaneCtx = {
   distDir: string
   /** Route paths under test: the `--routes` file, else derived from the playground's route files. */
   routes: string[]
-  /** Launch Chrome via the layout harness's channel logic; the caller closes it. */
+  /** Launch installed Chrome (always, whatever BASALT_TEST_BROWSER says: the shots are judged by a person); the caller closes it. */
   openBrowser: () => Promise<import('playwright-core').Browser>
 }
 

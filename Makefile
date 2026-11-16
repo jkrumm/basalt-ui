@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-fast check-pre check-post gen-check verify deploy logs pre test layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix
+.PHONY: help check check-fast check-pre check-post gen-check verify deploy logs pre test layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -74,7 +74,13 @@ pre: ## fmt:check + lint + typecheck + budgets + literals + the unit suite in a 
 test: ## Run the unit suite in a host test slot (scripts/unit-test.ts: consecutive `bun test` processes, peak under 2.5 GiB)
 	@$(call slot,unit) bun scripts/unit-test.ts
 
-layout: ## Run the layout regression suite (real CSS geometry, headless Chrome)
+# The browser of the layout and quality-matrix suites is BASALT_TEST_BROWSER=shell|chrome (tests/support/test-browser.ts).
+# `chrome` is the installed Google Chrome and downloads nothing; `shell` is Playwright's chromium-headless-shell,
+# fetched here and nowhere else (a no-op when the pinned revision is already in the Playwright cache).
+browser-shell: ## Install Playwright's chromium-headless-shell (BASALT_TEST_BROWSER=shell)
+	@bun x playwright-core install --only-shell chromium
+
+layout: ## Run the layout regression suite (real CSS geometry, headless shell)
 	@$(call slot,layout) sh -c 'bun run test:layout && bun run test:layout:harness'
 
 # The layout files the branch's changes reach (scripts/layout-select.ts prints them and why, on stderr), plus the
@@ -108,7 +114,7 @@ evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> 
 # check` runs (1800 light en + 390 dark pseudo-locale per route); `make evidence` runs `full` (x both
 # schemes) unless LANES excludes `quality`. Needs the built package and playground deps, like `check`.
 QUALITY_MATRIX ?= sampled
-quality-matrix: ## Quality matrix in real Chrome: make quality-matrix [QUALITY_MATRIX=sampled|full]
+quality-matrix: ## Quality matrix in a real browser: make quality-matrix [QUALITY_MATRIX=sampled|full]
 	@$(call slot,quality-matrix) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 packages/basalt-ui/tests/quality/matrix'
 
 # Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the local
