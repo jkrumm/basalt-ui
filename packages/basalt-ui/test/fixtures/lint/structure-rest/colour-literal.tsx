@@ -138,3 +138,10 @@ const tone = `oklch(var(--accent))`
 const wrapped = 'hsl(var(--vx-accent))'
 const alpha = 'rgb(var(--vx-accent) / 50%)'
 const label = { 'line-width': 'wide', 'text-field': 'white' }
+
+// @valid
+const toc = [{ href: '#add', label: 'Add' }, { to: '#cafe' }, { hash: '#feed' }]
+const anchor = <a href="#add">Add</a>
+
+// @invalid
+const notAnchor = { label: '#add' }
