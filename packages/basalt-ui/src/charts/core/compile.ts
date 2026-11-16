@@ -1178,11 +1178,13 @@ function cursorDotMarks<T, X extends ChartX>(
   return visible.flatMap((s) => {
     const { cursorValue } = s
     if (!cursorValue) return []
+    // The dot sits where its mark does: on the edge for a datum past a bounded domain.
+    const axis = axes.axisOf(axes.onRight(s) ? 'right' : 'left')
     const rows = input.data.flatMap((d): PlotRow<T, X>[] => {
-      const y = cursorValue(d)
-      return y === null || !Number.isFinite(y)
-        ? []
-        : [{ x: input.x(d), y, series: s.key, datum: d }]
+      const v = cursorValue(d)
+      if (v === null || !Number.isFinite(v)) return []
+      const y = axis.bounded ? clampToDomain(v, axis.domain) : v
+      return [{ x: input.x(d), y, series: s.key, datum: d }]
     })
     return cursorDots(s, rows, axes.onRight(s) ? 'y2' : undefined)
   })
