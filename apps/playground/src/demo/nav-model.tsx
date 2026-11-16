@@ -139,6 +139,13 @@ export const NAV = defineNav({
           mobile: 'more',
           link: linkOptions({ to: '/cycle/dogfood-2' }),
         },
+        {
+          id: 'cycle-dogfood-3',
+          label: 'Flow (dogfood cycle 3)',
+          icon: Dashboard,
+          mobile: 'more',
+          link: linkOptions({ to: '/cycle/dogfood-3' }),
+        },
       ],
     },
     // Shell cycle 2 (docs/v3/cycles/shell-2.md): the fleet app's three pages.
