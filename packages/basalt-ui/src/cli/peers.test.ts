@@ -1,0 +1,40 @@
+import { describe, expect, it } from 'bun:test'
+
+import { peerSpec, satisfiesRange } from './peers'
+
+describe('satisfiesRange', () => {
+  it.each([
+    ['9.2.8', '9.2.8', true],
+    ['9.3.1', '9.2.8', false],
+    ['5.107.1', '^5.104.0', true],
+    ['5.103.9', '^5.104.0', false],
+    ['6.0.0', '^5.104.0', false],
+    ['1.9.4', '~1.9.0', true],
+    ['1.10.0', '~1.9.0', false],
+    ['3.14.14', '>=3.14.0 <4', true],
+    ['4.0.0', '>=3.14.0 <4', false],
+    ['8.1.0', '^7 || ^8', true],
+    ['6.9.0', '^7 || ^8', false],
+    ['0.2.5', '^0.2.0', true],
+    ['0.3.0', '^0.2.0', false],
+    ['1.169.0', '^1.168.40', true],
+    ['1.168.39', '^1.168.40', false],
+  ])('%s against %s is %p', (version, range, met) => {
+    expect(satisfiesRange(version, range)).toBe(met)
+  })
+
+  it('does not meet a range it cannot read', () => {
+    expect(satisfiesRange('1.0.0', 'latest')).toBe(false)
+    expect(satisfiesRange('not-a-version', '^1.0.0')).toBe(false)
+  })
+})
+
+describe('peerSpec', () => {
+  it('names the range, quoted when the shell would read it', () => {
+    expect(peerSpec('@tanstack/react-table', '9.2.8')).toBe('@tanstack/react-table@9.2.8')
+    expect(peerSpec('@tanstack/react-virtual', '>=3.14.0 <4')).toBe(
+      "'@tanstack/react-virtual@>=3.14.0 <4'",
+    )
+    expect(peerSpec('react-day-picker', undefined)).toBe('react-day-picker')
+  })
+})

@@ -17,9 +17,10 @@
  * 2.x `basaltViteConfig` stays exported until its migration row retires it.
  */
 import { existsSync, readFileSync } from 'node:fs'
-import { relative, resolve } from 'node:path'
+import { join, relative, resolve } from 'node:path'
 import type { Plugin, PluginOption, UserConfig } from 'vite'
 
+import { peerSpec } from '../cli/peers'
 import { ALLOTMENT } from './allotment.gen'
 import { appEjects, staleEjects } from './ejects'
 import type { AppEjects } from './ejects'
@@ -99,12 +100,25 @@ function ejectConfig(ejects: AppEjects): UserConfig | null {
 }
 
 /** The peer failure text: the imports that need each missing peer, then the one command. */
-function missingPeersMessage(missing: ReadonlyMap<string, string>): string {
+function missingPeersMessage(missing: ReadonlyMap<string, string>, pkgRoot: string): string {
+  const declared = declaredPeers(pkgRoot)
   const lines = [...missing].map(([peer, via]) => `  ${via} needs ${peer}`)
   return (
     `basalt-ui: an imported subpath's peer is not installed.\n${lines.join('\n')}\n` +
-    `Run: bun add ${[...missing.keys()].join(' ')}`
+    `Run: bun add ${[...missing.keys()].map((peer) => peerSpec(peer, declared[peer])).join(' ')}`
   )
+}
+
+/** The `peerDependencies` the installed basalt-ui declares: the spec a missing peer is added at. */
+function declaredPeers(pkgRoot: string): Record<string, string> {
+  try {
+    const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
+      peerDependencies?: Record<string, string>
+    }
+    return pkg.peerDependencies ?? {}
+  } catch {
+    return {}
+  }
 }
 
 /** The seed failure text; `where` is the install root relative to the Vite root, '' when equal. */
@@ -162,7 +176,7 @@ export function basalt(options: BasaltOptions = {}): PluginOption[] {
       const missing = new Map(
         [...requiredPeers(closure)].filter(([peer]) => !hasPackage(root, peer)).toSorted(),
       )
-      if (missing.size > 0) this.error(missingPeersMessage(missing))
+      if (missing.size > 0) this.error(missingPeersMessage(missing, pkgRoot))
 
       const stale = staleEjects(ejects.ejected, pkgRoot)
       if (stale.length > 0) {

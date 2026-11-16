@@ -2,6 +2,11 @@
   "name": "basalt-ui",
   "version": "3.0.0-fixture",
   "type": "module",
+  "peerDependencies": {
+    "@base-ui/react": "~1.9.0",
+    "react-day-picker": "10.0.2",
+    "react-dom": "^19.3.0"
+  },
   "exports": {
     "./core/*": "./src/core/*.ts",
     "./ui/*": "./src/ui/*.tsx",

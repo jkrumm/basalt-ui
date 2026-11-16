@@ -5,7 +5,8 @@
  * is the one existing file replaced; any other existing entry is left and the template's lines are
  * printed. A Start app, a code-routed app and `basalt.shell: false` get none.
  */
-import { resolve } from 'node:path'
+import { rmSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
 
 import { readBasaltConfig, resolveAppDir } from '../index'
 import {
@@ -29,6 +30,48 @@ export function isStockViteMain(text: string): boolean {
     /<App\s*\/>/.test(code) &&
     !/Router/.test(code)
   )
+}
+
+/** What create-vite's `src/App.tsx` is: the Vite + React demo page (every template version names one of these). */
+export function isStockViteApp(text: string): boolean {
+  return (
+    /from\s*['"]\.\/assets\/react\.svg['"]/.test(text) ||
+    /Vite\s*\+\s*React/.test(text) ||
+    /test\s+HMR/i.test(text)
+  )
+}
+
+/** What create-vite's `src/App.css` is: the demo page's logo spin, or the newer hero and counter. */
+export function isStockViteAppCss(text: string): boolean {
+  return /logo-spin/.test(text) || (/\.counter\b/.test(text) && /\.hero\b|#center\b/.test(text))
+}
+
+/**
+ * After the stock entry is replaced, `App.tsx` and `App.css` are imported by nothing. Each one that
+ * is provably create-vite's is deleted; one that is not is named as dead, never touched.
+ */
+function dropStockApp(ctx: Ctx, mainDest: string): void {
+  const dir = dirname(mainDest)
+  const tsx = join(dir, 'App.tsx')
+  const css = join(dir, 'App.css')
+  const app = readIfExists(resolve(ctx.root, tsx))
+  const style = readIfExists(resolve(ctx.root, css))
+  const dead: string[] = []
+  const remove = (rel: string): void => {
+    rmSync(resolve(ctx.root, rel))
+    say(`removed ${rel}: create-vite's demo page, nothing imports it now`)
+  }
+  let appGone = app === null
+  if (app !== null && isStockViteApp(app)) {
+    remove(tsx)
+    appGone = true
+  } else if (app !== null) dead.push(tsx)
+  if (style !== null && appGone && isStockViteAppCss(style)) remove(css)
+  else if (style !== null) dead.push(css)
+  if (dead.length > 0)
+    say(
+      `${dead.join(' and ')} ${dead.length > 1 ? 'are' : 'is'} no longer imported by the entry: delete it or import it`,
+    )
 }
 
 const SKIP_NOTES: Record<NonNullable<RouterSeedSkip>, string> = {
@@ -69,6 +112,7 @@ export function placeRouterSeeds(ctx: Ctx): void {
     } else if (seed === 'main' && isStockViteMain(existing)) {
       writeText(ctx.root, dest, text)
       say(`${dest}: replaced create-vite's entry with the router entry`)
+      dropStockApp(ctx, dest)
     } else if (existing === text) {
       say(`kept ${dest}: already the seed`)
     } else if (seed === 'main') {
