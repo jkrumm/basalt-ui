@@ -9,15 +9,27 @@ import { basename, resolve } from 'node:path'
 
 import { parseJsonc } from '../cli/source-text'
 import { findBlanketDisables } from './blanket-disable'
-import { ignoreFilePatterns, ignoreMatcher, rootFilesNamedBy, STYLELINTIGNORE } from './weakened'
+import {
+  ignoreFilePatterns,
+  ignoreMatcher,
+  GENERATED_TREE,
+  PRESET_FILE,
+  rootFilesNamedBy,
+  STYLELINTIGNORE,
+} from './weakened'
 
 const SCRIPT = /\.[cm]?[jt]sx?$/
-const GENERATED_TREE = /^routeTree\.gen\.[cm]?[jt]sx?$/
 
 const ignorePatternsIn = (text: string | null): string[] => {
   const patterns = text === null ? undefined : parseJsonc(text)?.['ignorePatterns']
   return [patterns].flat().filter((p): p is string => typeof p === 'string')
 }
+
+/** Whether a nested config's text extends the basalt preset; text that does not parse never does. */
+const extendsPreset = (text: string): boolean =>
+  [parseJsonc(text)?.['extends']]
+    .flat()
+    .some((p) => typeof p === 'string' && basename(p) === PRESET_FILE)
 
 const readIfPresent = (dir: string, name: string): string | null =>
   existsSync(resolve(dir, name)) ? readFileSync(resolve(dir, name), 'utf8') : null
@@ -47,7 +59,14 @@ export function weakeningDenial(
     )
     return hidden.length === 0
       ? null
-      : `${rel} would add an ignorePatterns entry over ${some(hidden)}, which the lint run then skips; waive the line with a reasoned directive instead.`
+      : `${rel} would add an ignorePatterns entry over ${some(hidden)}, which the lint run then skips; waive the line with a reasoned directive instead. A generated file (a *.gen.* name: openapi-ts, orval) cannot carry one: name only its own path in ignorePatterns.`
+  }
+  if (/(?:^|\/)\.oxlintrc\.json$/.test(rel)) {
+    // A nested config replaces the root one for its subtree; one that never extends the preset switches the rules off there.
+    const inRootDir = roots.some((r) => r === '.' || rel.startsWith(`${r}/`))
+    if (!inRootDir || extendsPreset(next)) return null
+    if (current !== null && !extendsPreset(current)) return null
+    return `${rel} would replace the root lint config for its folder without extending ${PRESET_FILE}, which switches the basalt rules off there; add "extends": ["<path to root>/${PRESET_FILE}"] or leave the folder to the root config.`
   }
   if (rel === STYLELINTIGNORE) {
     const hidden = rootFilesNamedBy(

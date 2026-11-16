@@ -277,7 +277,12 @@ function extendsPreset(config: Config | string): WeakenedResult {
       )
 }
 
-const GENERATED_TREE = /^routeTree\.gen\.[cm]?[jt]sx?$/
+export const GENERATED_TREE = /^routeTree\.gen\.[cm]?[jt]sx?$/
+/** A generator's output (openapi-ts, orval, the router): rewritten on the next run, so it cannot carry a line waiver. */
+const GENERATED_NAME = /\.gen\.[cm]?[jt]sx?$/
+
+/** The one rule for a generated file, shared by doctor's weakened-config check and the editor hook's pre-edit. */
+export const isGeneratedFile = (file: string): boolean => GENERATED_NAME.test(basename(file))
 
 /** A gitignore-style glob (`*`, `**`, a bare name at any depth, a directory) as a test on a root-relative path. */
 export function ignoreMatcher(pattern: string): (path: string) => boolean {
@@ -309,7 +314,7 @@ export function ignoreFilePatterns(text: string): string[] {
 export const STYLELINTIGNORE = '.stylelintignore'
 const STYLE_SOURCE = /\.(?:css|astro|mdx|html)$/
 
-/** The source files (scripts, or stylesheets) under the declared roots that any of `patterns` names; the router's generated tree is never counted. */
+/** The source files (scripts, or stylesheets) under the declared roots that any of `patterns` names; a generated file (`*.gen.*`) is never counted: it goes into `ignorePatterns`. */
 export function rootFilesNamedBy(
   dir: string,
   roots: readonly string[],
@@ -320,7 +325,7 @@ export function rootFilesNamedBy(
   const pattern = kind === 'script' ? SCRIPT_FILE : STYLE_SOURCE
   const files = new Set(roots.flatMap((root) => filesUnder(dir, root, pattern)))
   return [...files]
-    .filter((file) => !GENERATED_TREE.test(basename(file)))
+    .filter((file) => !isGeneratedFile(file))
     .filter((file) => matchers.some((matches) => matches(file)))
     .toSorted()
 }
