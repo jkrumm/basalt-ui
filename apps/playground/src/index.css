@@ -4,6 +4,8 @@
 @import 'basalt-ui/table.css';
 @source '../../../packages/basalt-ui/src/ui';
 @source '../../../packages/basalt-ui/src/cards';
+@source '../../../packages/basalt-ui/src/charts';
+@source not '../../../packages/basalt-ui/src/charts/**/*.test.*';
 @source '../../../packages/basalt-ui/src/content';
 @source '../../../packages/basalt-ui/src/core';
 @source not '../../../packages/basalt-ui/src/core/**/*.test.*';
