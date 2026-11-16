@@ -13,6 +13,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - Neutral by default, one accent, one status hue. The accent marks the series the question is about; the rest sit in ink steps.
 - A part of a whole or a category split is read from position, order and a direct label. A hue per part is a rainbow.
 - A ramp starts neutral below its threshold and turns hue only past it; zero stays neutral.
+- A rise is one hue in the chart and in the table pill, and a fall the other; the accent marks the answer (the next run, the leader) and nothing else, so the same word never wears two colours across parts (n13 drew a rise in the chart and a fall in the table).
 - A status hue means a status: carry it with a word or a dot, not hue alone. [lint:status-fill-as-text]
 - A status hue marks a state that needs action; a target rule, a "live" band and a passing delta stay in ink steps, and the failed mark takes the status fill instead of its category hue.
 
@@ -27,6 +28,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - Annotate the one mark the page is about (the best run, the onset, the live stage) and let the rest recede. [useChartFocus](node_modules/basalt-ui/docs/use-chart-focus.md) holds one focused datum for the marks, the card fact and the live region; region `example:useChartFocus` in the same file.
 - The hero states the answer with its verb ("Runs out 13:52", where "13:52" alone answers nothing) and at most one phrase of baseline; the one mark the page is about carries the annotation at rest, so the sentences around it say something else ([copy](copy.md)). A list keeps the answer above its cut.
 - When the answer needs a word on one mark (the slowest, the spike, last night), compose [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md) with a `text` mark placed by `chartLabels`: a kind such as [Bars](node_modules/basalt-ui/docs/bars.md) takes only its own marks. Engine `text` marks from `@tanstack/charts/text` are allowed in custom marks. On focus the figure's readout carries what the mark means (its share, its model, its stage) and returns to the answer on leave (c11, c12, c13, n02, n12: the answer was a sentence, or the readout a bare total).
+- Name the few marks that matter. On a band axis `x.ticks` as a list of keys labels exactly those bands (`ticks: ['Acme', 'Globex']`); a number only thins. Elsewhere an engine `text` mark placed by `chartLabels`. A band or zone that is the answer carries its words on the mark, where a faint fill with an empty face leaves the reader to guess (n13, n04, c15, n16).
 - Custom marks read `plot.rows(key)` and `plot.visible`, so a legend toggle hides the mark. [type:ChartPlot]
 
 ## Anatomy of a chart card
@@ -49,7 +51,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 ## One view
 
-- Where two charts share an axis and answer the two halves of one question, they are one chart above and below the axis (a diverging chart) in one card, where two cards and a strip would stack (c13 X2, F1; n01 in cycle 2: a strip, per-day bars, a list and a line as four stacked parts). Two cards stand only when the axes differ.
+- Where two charts share an axis and answer the two halves of one question, they are one chart above and below the axis (a diverging chart) in one card, where two cards and a strip would stack (c13 X2, F1; n01 in cycle 2: a strip, per-day bars, a list and a line as four stacked parts). Two cards stand only when the axes differ. A list longer than the chart sits beside it in its own scroll region at `@wide`, and a box holds its content's height, never a fixed one that leaves a gap or clips (n13, n09, c14, n04).
 
 ## Honest marks
 
@@ -58,7 +60,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - A fixed row or bar count (`rows={8}`) is derived from the data, so the extreme fixture shows every item: hop 9 hidden behind eight rows, with a headline saying nine hops, is the defect (c10 F5; the bars summed to 18 of 19).
 - An incomplete datum (a partial day, a night missing a stage) is marked on its mark (hatched, hollow or a caption on the bar) and named once; a complete smaller value would misstate it (n12 F5: a night with REM missing read as a finished 305 min; c12 F5: today's partial bar read as a finished day; n01 in cycle 2: a zero or absent day drew neither a mark nor a cue).
 - The fixture shows its zero and its extreme at rest, so the card is judged with an empty hour and an over-limit value on screen. The extreme reads true: rounding or clamping it away hides it. A zero fixture shows a cue (a dash, a baseline) where the marks would be.
-- Binned bars carry a unit caption ("per 15 min").
+- Binned bars carry a unit caption ("per 15 min"). A count axis and a share-of-limit axis carry a caption (`y.title`: "Requests", "% of limit"), and a `y.format` keeps a decimal for a domain under 2 units (`0.5`, `1.0`, never `1`, `1`, `2`) (c14, n04, n16).
 
 ## Finish of a form the page draws
 
