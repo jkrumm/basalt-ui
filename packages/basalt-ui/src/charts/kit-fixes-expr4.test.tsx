@@ -9,7 +9,9 @@ import type { ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { rect } from '@tanstack/charts/rect'
+import { compileCartesian } from './core/compile'
 import { useChartFocus } from './focus'
+import type { ChartSeries } from './types'
 import { CartesianChart } from './parts/cartesian'
 
 let root: ReturnType<typeof createRoot> | undefined
@@ -158,5 +160,88 @@ describe('a custom rect beside bars', () => {
     const right = left + num(window, 'width')
     const inside = xs.map(([a, b]) => a >= left - 0.5 && b <= right + 0.5)
     expect(inside).toEqual([false, false, true, true, false, false])
+  })
+})
+
+describe('dimmed bars in dark', () => {
+  type Stage = { stage: string; behind: number }
+  const STAGES: readonly Stage[] = [
+    { stage: 'Build', behind: 12 },
+    { stage: 'Test', behind: 94 },
+    { stage: 'Deploy', behind: 8 },
+  ]
+  function Bars3() {
+    const focus = useChartFocus(STAGES, { announce: (d) => d.stage })
+    return (
+      <CartesianChart<Stage>
+        ariaLabel="Pace"
+        data={STAGES}
+        x={{ value: (d) => d.stage }}
+        series={[{ key: 'behind', label: 'Behind', color: COLOR, mark: 'bar', y: (d) => d.behind }]}
+        cursor="expr4-dim"
+        focus={focus}
+      />
+    )
+  }
+  const fills = (el: HTMLElement) =>
+    [...el.querySelectorAll('[data-ts-key^="bars"]:not(g)')].map(
+      (b) => b.getAttribute('fill') ?? '',
+    )
+
+  test('a dimmed bar is half strength in light and 70% of its strength in dark', async () => {
+    const el = await mount(<Bars3 />)
+    const wrap = el.querySelector('[data-chart-focus]') as Element
+    await press(wrap, 'ArrowRight')
+    await press(wrap, 'ArrowRight')
+    const dimmed = fills(el).filter((f) => f.startsWith('light-dark(color-mix'))
+    expect(dimmed.length).toBe(2)
+    for (const fill of dimmed) {
+      // The default bar shade is 85%: 43% of it in light, 60% in dark.
+      expect(fill).toContain(' 43%')
+      expect(fill).toContain(' 60%')
+    }
+  })
+})
+
+describe('the tooltip names the held focus', () => {
+  type Sender = { name: string; mails: number; opened: number }
+  // Two senders share 8.5 mails a week: the cursor carries only that x.
+  const senders: Sender[] = [
+    { name: 'buildstatus', mails: 8.5, opened: 26 },
+    { name: 'pizzaclub', mails: 8.5, opened: 6 },
+    { name: 'devnotes', mails: 4, opened: 61 },
+  ]
+  const opened: ChartSeries<Sender> = {
+    key: 'opened',
+    label: 'Opened',
+    color: 'var(--vx-line)',
+    mark: 'dot',
+    getValue: (d) => d.opened,
+  }
+  const titleOf = (focused: Sender | null, hovered: Sender): string => {
+    const definition = compileCartesian<Sender, number>({
+      chartId: 'held',
+      data: senders,
+      x: (d) => d.mails,
+      series: [opened],
+      focused,
+      tooltip: { formatHeader: (_x, d) => (d as Sender).name },
+      marks: () => [],
+    })
+    const row = (d: Sender) => ({ series: 'opened', x: d.mails, datum: d, y: d.opened })
+    const content = (
+      definition.tooltip as unknown as {
+        content: (p: unknown[]) => { title: string; rows: { value: string }[] }
+      }
+    ).content([{ xValue: hovered.mails, datum: row(hovered) }])
+    return `${content.title}:${content.rows[0]?.value}`
+  }
+
+  test('without a held focus the nearest point names it', () => {
+    expect(titleOf(null, senders[0]!)).toStartWith('buildstatus:')
+  })
+
+  test('with a held focus the focused datum names it, though the engine found another at that x', () => {
+    expect(titleOf(senders[1]!, senders[0]!)).toBe('pizzaclub:6')
   })
 })

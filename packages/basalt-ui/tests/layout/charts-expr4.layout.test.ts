@@ -141,6 +141,21 @@ layout('chart kit fixes, expression cycle 4', () => {
         expect(await height('ex-stat-loading')).toBeCloseTo(await height('ex-stat-ready'), 0)
         expect(await height('ex-table-loading')).toBeCloseTo(await height('ex-table-ready'), 0)
       })
+
+      test('the ring of a hand-drawn list is inset, inside the list box', async () => {
+        const page = await open(viewport)
+        const ring = await page.raw.evaluate(() => {
+          const el = document.querySelector('[data-testid="ex-ring-target"]') as HTMLElement
+          el.focus({ focusVisible: true } as FocusOptions)
+          const style = getComputedStyle(el)
+          return {
+            offset: Number.parseFloat(style.outlineOffset),
+            width: Number.parseFloat(style.outlineWidth),
+          }
+        })
+        expect(ring.width).toBeGreaterThan(0)
+        expect(ring.offset).toBeLessThan(0)
+      })
     })
   }
 })
