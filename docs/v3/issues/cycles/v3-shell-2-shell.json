@@ -1,0 +1,32 @@
+{
+  "why": "Shell cycle 2 (docs/v3/cycles/shell-2.md, P2 shell-2.2): below the `wide` tier, `SplitPage` swaps its panes when `selected` flips, and focus falls to `<body>` both ways. The in-page back link hides the detail that held focus, and an `InnerNav` choice hides the list that held focus (`.evidence/cycle-shell-2/actions.log` B5, `keyboard.log` K8). Seven P3s ride along:\n- shell-2.3: Try again on the scaffolded error screen leaves focus on `<body>`;\n- shell-2.4: the aside's close returns focus to the first opener row, not the row whose record is open;\n- shell-2.5: a palette or More-sheet jump does not hand focus to main;\n- shell-2.7: the scaffolded not-found and error screens have no `h1`;\n- shell-2.8: the playground's `main.tsx` installs no route screens, so the cycle spreads them per route;\n- shell-2.9: a lone enum filter takes three interactions, and its dialog stays open after the choice;\n- shell-2.10: the phone `StatGroup` strip stacks four stats in one column.",
+  "what": "Focus follows the task across a SplitPage swap, a retry, an aside close and a palette or More-sheet jump; the route screens name themselves; the small P3s of shell cycle 2 go.",
+  "owns": [
+    "packages/basalt-ui/src/page/parts/split-page.tsx and its tests",
+    "packages/basalt-ui/src/shell/page-aside.tsx, the page detail host (focus return only)",
+    "packages/basalt-ui/src/shell/** (focus after a palette or More-sheet navigation)",
+    "packages/basalt-ui/agent/templates/_app-error.tpl, _app-missing.tpl",
+    "packages/basalt-ui/src/controls/filter-slot.tsx, filter-set*.tsx (the single-filter form)",
+    "packages/basalt-ui/src/cards/stat-group.tsx",
+    "packages/basalt-ui/tests/layout/**",
+    "apps/playground/src/main.tsx (route screens only)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "packages/basalt-ui/src/page/page-bar.tsx (v3-shell-2-crumb)"
+  ],
+  "change": "Fixes by finding:\n- shell-2.2: when `selected` flips below `wide`, `SplitPage` moves focus to the pane it shows: the detail's heading or first focusable on select, the list's current item on back.\n- shell-2.3: the error template hands focus to main after its retry re-renders the route.\n- shell-2.4: closing the aside returns focus to the latest opener.\n- shell-2.5: a palette or More-sheet navigation hands focus to main through the path a navigating page action uses.\n- shell-2.7: the missing and error templates wrap their `EmptyState` in `Page` with a `PageBar` title.\n- shell-2.8: the playground's `main.tsx` installs the three init screens once.\n- shell-2.9: a `filterSlot` holding a single enum filter draws it inline, and a single-value choice closes the filter dialog.\n- shell-2.10: the `StatGroup` strip lays out two stats per row in a narrow container.",
+  "commits": "fix: commits in packages/basalt-ui, one per finding group (split focus, aside focus, navigation focus, templates, filter, stat strip); the playground main.tsx change in its own commit.",
+  "proof": "make check; 390 px layout tests for both SplitPage directions; a test that opens two rows and closes the aside; a 390 px shot of the stat strip.",
+  "acceptance": [
+    "At 390 px, selecting in a SplitPage list and taking its back link both leave focus inside the shown pane (layout test)",
+    "Closing the aside after a second row retitled it returns focus to the second row (test)",
+    "A palette jump and a More-sheet jump leave focus in main (layout test)",
+    "The scaffolded not-found and error screens render one h1",
+    "A lone enum filter changes in at most two interactions, and the dialog closes after a single choice",
+    "The phone StatGroup strip shows two stats per row",
+    "make check passes"
+  ],
+  "out_of_scope": "The crumb parent and the phone crumb rule (v3-shell-2-crumb)."
+}
