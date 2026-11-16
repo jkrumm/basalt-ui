@@ -31,3 +31,13 @@ import { Button } from '@/components/ui/button'
 import { Button } from '@/components/ui/button'
 // @valid
 import { Page } from '@/components/page'
+// @invalid
+import { Button } from 'src/components/ui/button'
+// @invalid
+import { Badge } from '#/components/ui/badge'
+// @valid {"ejected":["#/components/ui/badge"]}
+import { Badge } from '#/components/ui/badge'
+// @valid
+import { Page } from '#/components/page'
+// @valid
+import { Page } from 'src/components/page'

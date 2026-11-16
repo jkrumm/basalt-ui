@@ -17,3 +17,5 @@ import { DayPicker } from 'react-day-picker'
 import { useVirtualizer } from '@tanstack/react-virtual'
 // @valid
 import { DatePicker } from 'basalt-ui/ui/date-picker'
+// @invalid
+import { Virtualizer } from '@tanstack/virtual-core'

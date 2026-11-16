@@ -7,3 +7,5 @@ import { Item } from 'cmdk/dist/item'
 import { CommandPalette } from 'basalt-ui/shell'
 // @valid
 import { cmdkLike } from 'cmdk-lite'
+// @invalid
+import { KBarProvider } from 'kbar'

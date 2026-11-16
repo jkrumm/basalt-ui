@@ -32,3 +32,6 @@ export * from 'jotai/utils'
 const mod = await import('zustand/middleware')
 // @invalid
 export { persist } from 'zustand/middleware'
+// @invalid
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
+export const persister = createSyncStoragePersister({ storage: window.localStorage })

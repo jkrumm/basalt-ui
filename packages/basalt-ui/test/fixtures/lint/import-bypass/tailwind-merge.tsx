@@ -7,3 +7,5 @@ import { extendTailwindMerge } from 'tailwind-merge'
 import { cn } from 'basalt-ui'
 // @valid
 import { cx } from 'class-variance-authority'
+// @invalid
+import { tv } from 'tailwind-variants'

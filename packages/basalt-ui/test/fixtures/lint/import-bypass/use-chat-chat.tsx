@@ -15,3 +15,18 @@ const chat = useChat({ ...options })
 const chat = useChat(options)
 // @valid
 const store = useChatStore()
+// @invalid
+import { useChat as useLegacyChat } from 'ai/react'
+export const legacy = () => useLegacyChat({ api: '/api/chat' })
+// @invalid
+const opts = { id: 'support' }
+const chat = useChat(opts)
+// @valid
+const opts = { id: 'support', chat: sharedChat }
+const chat = useChat(opts)
+// @valid
+const opts = { ...base }
+const chat = useChat(opts)
+// @valid
+import { useChat as useLegacyChat } from 'ai/react'
+export const legacy = () => useLegacyChat({ chat })

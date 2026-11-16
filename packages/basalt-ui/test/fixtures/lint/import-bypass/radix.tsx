@@ -19,3 +19,9 @@ import { ArrowRightIcon } from '@radix-ui/react-icons'
 import { useFloating, autoUpdate } from '@floating-ui/react'
 // @invalid
 import { useFloating } from '@floating-ui/react-dom'
+// @invalid
+import { Dialog } from 'react-aria-components'
+// @invalid
+import { Dialog } from '@ark-ui/react/dialog'
+// @valid
+import { Dialog } from 'react-aria-lookalike'

@@ -9,7 +9,7 @@
  * `StorageLike` adapter. The repo-only rows (layer table, single `host.tsx` importer) are not
  * here: a form carries no profile of its own and this rule ships at `parts` and `app`.
  *
- * The `ui-path` form reads `@/`, `~/` and relative `components/ui/<name>` paths; an ejected name
+ * The `ui-path` form reads `@/`, `~/`, `#/`, `src/` and relative `components/ui/<name>` paths; an ejected name
  * stays legal however it is spelled. The `radix` form leaves `@radix-ui/react-icons` alone: it is
  * an icon set, and an icon prop takes the icon library's own component. The `visx`, `streamdown`
  * and `persist-storage` forms list the rival packages in the table below.
@@ -64,6 +64,7 @@ const STORAGE_PACKAGES: ReadonlySet<string> = new Set([
   'redux-persist',
   'zustand-persist',
   '@nanostores/persistent',
+  '@tanstack/query-sync-storage-persister',
 ])
 
 /** Packages that are only a route through named specifiers. */
@@ -221,9 +222,9 @@ const uiName = (path: string): string => {
   return rest.replace(/\.[cm]?[jt]sx?$/, '').replace(/\/index$/, '')
 }
 
-/** The shadcn alias (`@/`, `~/`) or a relative path into `components/ui`, not a package's own. */
+/** The shadcn alias (`@/`, `~/`, `#/`), a `src/` rooted path or a relative path into `components/ui`, not a package's own. */
 const isUiPath = (source: string): boolean =>
-  /^(?:[@~]\/|(?:\.{1,2}\/)+(?:[^/]+\/)*?)components\/ui(?:\/|$)/.test(source)
+  /^(?:[@~#]\/|src\/|(?:\.{1,2}\/)+(?:[^/]+\/)*?)components\/ui(?:\/|$)/.test(source)
 
 const ejectedNames = (options: readonly unknown[]): Set<string> => {
   const [first] = options
@@ -246,28 +247,58 @@ const uiPath: AstForm = {
   fixture: 'import-bypass/ui-path.tsx',
 }
 
-/** `useChat()` or `x.useChat({ ...})` without a `chat` option (`unlessCallHas: 'chat'`). */
+/** A props list that proves `chat` (a `chat` key or a spread, which may carry it). */
+const carriesChat = (object: Node): boolean =>
+  children(object, 'properties').some((property) => {
+    if (property.type === 'SpreadElement') return true
+    const key = child(property, 'key')
+    return property['computed'] !== true && (nameOf(key) ?? stringValue(key)) === 'chat'
+  })
+
+/**
+ * `useChat()` or `x.useChat({ ...})` without a `chat` option (`unlessCallHas: 'chat'`). The hook is
+ * also read under an import alias (`import { useChat as useLegacyChat } from 'ai/react'`), and an
+ * identifier argument is resolved when it is a same-file `const` object literal; any other
+ * opaque argument (a parameter, a call, an import) may carry `chat` and passes.
+ */
 const useChatWithoutChat: AstForm = {
   id: 'use-chat-chat',
-  detect: ({ report }) => ({
-    CallExpression(node) {
-      const callee = child(node, 'callee')
-      const member = callee?.type === 'MemberExpression' && callee['computed'] !== true
-      const name = member ? nameOf(child(callee, 'property')) : nameOf(callee)
-      if (name !== 'useChat') return
-      const [first] = children(node, 'arguments')
-      if (first === undefined) return report(node, 'useChat()')
-      // An opaque argument (a variable, a call) may carry `chat`; only a literal object is proof.
-      if (first.type !== 'ObjectExpression') return
-      const props = children(first, 'properties')
-      const hasChat = props.some((property) => {
-        if (property.type === 'SpreadElement') return true
-        const key = child(property, 'key')
-        return property['computed'] !== true && (nameOf(key) ?? stringValue(key)) === 'chat'
-      })
-      if (!hasChat) report(node, 'useChat()')
-    },
-  }),
+  detect: ({ report }) => {
+    const aliases = new Set<string>(['useChat'])
+    const objects = new Map<string, Node>()
+    const calls: Node[] = []
+    return {
+      ImportSpecifier(node) {
+        if (nameOf(child(node, 'imported')) !== 'useChat') return
+        const local = nameOf(child(node, 'local'))
+        if (local !== undefined) aliases.add(local)
+      },
+      VariableDeclarator(node) {
+        const id = nameOf(child(node, 'id'))
+        const init = child(node, 'init')
+        if (id !== undefined && init?.type === 'ObjectExpression') objects.set(id, init)
+      },
+      CallExpression(node) {
+        calls.push(node)
+      },
+      'Program:exit'() {
+        for (const node of calls) {
+          const callee = child(node, 'callee')
+          const member = callee?.type === 'MemberExpression' && callee['computed'] !== true
+          const name = member ? nameOf(child(callee, 'property')) : nameOf(callee)
+          if (name === undefined || !(member ? name === 'useChat' : aliases.has(name))) continue
+          const [first] = children(node, 'arguments')
+          if (first === undefined) {
+            report(node, 'useChat()')
+            continue
+          }
+          const options = first.type === 'Identifier' ? objects.get(first['name'] as string) : first
+          if (options?.type !== 'ObjectExpression') continue
+          if (!carriesChat(options)) report(node, 'useChat()')
+        }
+      },
+    }
+  },
   fix: 'Create the Chat outside the hook and pass it: useChat({ chat })',
   next: 'Render the messages with partView from basalt-ui/ai',
   fixture: 'import-bypass/use-chat-chat.tsx',
@@ -320,7 +351,13 @@ const persistRoute: AstForm = {
 const FORMS: readonly AstForm[] = [
   packageForm(
     'base-ui',
-    ['@base-ui/react', '@base-ui-components/react', 'react-day-picker', '@tanstack/react-virtual'],
+    [
+      '@base-ui/react',
+      '@base-ui-components/react',
+      'react-day-picker',
+      '@tanstack/react-virtual',
+      '@tanstack/virtual-core',
+    ],
     'Import the owned primitive from basalt-ui/ui/<name>: date-picker, virtual-list',
     'Eject the primitive with basalt-ui eject, then edit the copy',
     { allowInEjected: true },
@@ -334,32 +371,34 @@ const FORMS: readonly AstForm[] = [
       '@headlessui/react',
       '@floating-ui/react',
       '@floating-ui/react-dom',
+      'react-aria-components',
+      '@ark-ui',
     ],
-    'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix and Floating UI are not in the stack',
+    'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, React Aria, Ark and Floating UI are not in the stack',
     'Eject the primitive with basalt-ui eject, then edit the copy',
     { except: ['@radix-ui/react-icons'] },
   ),
   packageForm(
     'cmdk',
-    ['cmdk'],
+    ['cmdk', 'kbar'],
     'Use CommandPalette from basalt-ui/shell (+0.9 KB against cmdk +16.0 KB and 24 packages)',
     'defineCommands lists a command in the palette',
   ),
   packageForm(
     'sonner',
-    ['sonner', 'react-hot-toast', 'react-toastify'],
+    ['sonner', 'react-hot-toast', 'react-toastify', 'notistack'],
     'Call notify() and mount ToastHost from basalt-ui/page',
     'ui/toast for a toast with its own placement',
   ),
   packageForm(
     'streamdown',
-    ['streamdown', 'react-markdown', 'markdown-to-jsx', 'marked-react', 'marked'],
+    ['streamdown', 'react-markdown', 'markdown-to-jsx', 'marked-react', 'marked', 'markdown-it'],
     'Render model text with Markdown contentTrust from basalt-ui/content',
     'partView for a streamed part',
   ),
   packageForm(
     'tailwind-merge',
-    ['tailwind-merge'],
+    ['tailwind-merge', 'tailwind-variants'],
     'Compose classes with cn() from basalt-ui; twMerge drops text-red-500 beside text-display',
     'A cva variant per state',
   ),
@@ -368,6 +407,8 @@ const FORMS: readonly AstForm[] = [
     [
       '@visx',
       'recharts',
+      'react-apexcharts',
+      '@mui/x-charts',
       '@tremor/react',
       '@nivo',
       'chart.js',
@@ -380,8 +421,8 @@ const FORMS: readonly AstForm[] = [
   ),
   packageForm(
     'data-library',
-    ['swr', 'socket.io-client', '@microsoft/fetch-event-source'],
-    'Fetch through the query client and liveQuery from basalt-ui/data, and open a stream with createChannel',
+    ['swr', 'socket.io-client', '@microsoft/fetch-event-source', 'react-use-websocket', 'nuqs'],
+    'Fetch through the query client and liveQuery from basalt-ui/data, open a stream with createChannel, and keep URL state in a field from basalt-ui/router',
     'createChannel takes the Transport seam, so a socket is one adapter',
   ),
   engineOutsideList,
