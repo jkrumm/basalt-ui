@@ -61,7 +61,7 @@
         ]
       },
       {
-        "message": "Disallowed `%s: %s`. Spacing and type take --vx tokens, colour roles follow their surface, and a scroll box (overflow auto|scroll) is ui/scroll-area, or let Page own the scroll."
+        "message": "Disallowed `%s: %s`. By property: padding, margin, gap and font size take a --vx token (or 0, auto, %), never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status or chart colour; color-mix runs over --vx tokens or transparent only; overflow auto|scroll is ui/scroll-area, or let Page own the scroll."
       }
     ],
     "declaration-property-value-allowed-list": [
@@ -99,18 +99,21 @@
     "selector-disallowed-list": [
       [
         "/\\[\\s*data-slot/",
-        "/\\.mantine-/"
+        "/\\.mantine-/",
+        "/\\[\\s*data-theme/",
+        "/\\.dark(?![\\w-])/"
       ],
       {
-        "message": "Never select `%s`: a `data-slot` or `.mantine-*` selector reaches into a component. Use the component's own prop or variant, or eject it (basalt-ui eject <name>)."
+        "message": "Never select `%s`. A `data-slot` or `.mantine-*` selector reaches into a component: use the component's own prop or variant, or eject it (basalt-ui eject <name>). A `data-theme` or `.dark` selector forks a colour per scheme: tokens switch per scheme, so use a `--vx-*` token instead."
       }
     ],
     "at-rule-disallowed-list": [
       [
-        "utility"
+        "utility",
+        "theme"
       ],
       {
-        "message": "`@%s` defines a utility class. Compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet."
+        "message": "`%s` adds to what the package owns: a utility class or a theme colour. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app), and compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet."
       }
     ]
   }

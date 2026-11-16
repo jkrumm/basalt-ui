@@ -40,10 +40,14 @@ export const DECORATION_PROPERTIES =
 export const SCROLL_PROPERTIES = '/^overflow(?:-x|-y|-block|-inline)?$/'
 export const SCROLL_VALUES = '/\\b(?:auto|scroll|overlay)\\b/i'
 
-/** `%s` takes the property, then the value; one message per variant so it names only the fixes that apply. */
+/**
+ * `%s` takes the property, then the value. A rule carries one `message`, and the config is JSON, so a
+ * function of the property cannot ship: the message names the fix per property group instead, each
+ * clause led by the properties it answers, and a variant without the scroll clause where the ban is off.
+ */
 const MESSAGE_BASE =
-  'Disallowed `%s: %s`. Spacing and type take --vx tokens, colour roles follow their surface'
-const MESSAGE_SCROLL = `${MESSAGE_BASE}, and a scroll box (overflow auto|scroll) is ui/scroll-area, or let Page own the scroll.`
+  'Disallowed `%s: %s`. By property: padding, margin, gap and font size take a --vx token (or 0, auto, %), never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status or chart colour; color-mix runs over --vx tokens or transparent only'
+const MESSAGE_SCROLL = `${MESSAGE_BASE}; overflow auto|scroll is ui/scroll-area, or let Page own the scroll.`
 const MESSAGE_NO_SCROLL = `${MESSAGE_BASE}.`
 
 /**
@@ -123,17 +127,18 @@ export const STYLELINT_RULES = {
     },
   ],
   'selector-disallowed-list': [
-    ['/\\[\\s*data-slot/', '/\\.mantine-/'],
+    ['/\\[\\s*data-slot/', '/\\.mantine-/', '/\\[\\s*data-theme/', '/\\.dark(?![\\w-])/'],
     {
       message:
-        "Never select `%s`: a `data-slot` or `.mantine-*` selector reaches into a component. Use the component's own prop or variant, or eject it (basalt-ui eject <name>).",
+        "Never select `%s`. A `data-slot` or `.mantine-*` selector reaches into a component: use the component's own prop or variant, or eject it (basalt-ui eject <name>). A `data-theme` or `.dark` selector forks a colour per scheme: tokens switch per scheme, so use a `--vx-*` token instead.",
     },
   ],
   'at-rule-disallowed-list': [
-    ['utility'],
+    ['utility', 'theme'],
     {
+      // `%s` is the at-rule with its `@` already (stylelint passes `@utility`)
       message:
-        '`@%s` defines a utility class. Compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet.',
+        '`%s` adds to what the package owns: a utility class or a theme colour. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app), and compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet.',
     },
   ],
 } as const

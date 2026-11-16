@@ -1,0 +1,2 @@
+:root[data-theme=dark] { background: var(--vx-inset); }
+.dark .hero { background: var(--vx-inset); }
