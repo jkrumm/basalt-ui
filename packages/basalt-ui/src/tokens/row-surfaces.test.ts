@@ -5,7 +5,7 @@
  * the panel by at least as much contrast as the `panelHover` step does.
  */
 import { describe, expect, test } from 'bun:test'
-import { buildPaletteCss, VX } from './index'
+import { buildPaletteCss } from './index'
 import { contrastRatio } from './hct'
 import { DEFAULT_DERIVE_CONFIG, deriveTokens } from './derive'
 import { STATUS_TEXT_CONTRAST_MIN, STATUS_TEXT_SURFACES } from './status-text'
@@ -48,11 +48,9 @@ describe('row surfaces', () => {
     expect(STATUS_TEXT_SURFACES.rowSelected).toBe(true)
   })
 
-  test('emitted as --vx-surface-row-hover / --vx-surface-row-selected and typed on VX.surface', () => {
+  test('emitted as --vx-surface-row-hover / --vx-surface-row-selected', () => {
     const css = buildPaletteCss()
     expect(css).toContain('--vx-surface-row-hover:')
     expect(css).toContain('--vx-surface-row-selected:')
-    expect(VX.surface.rowHover).toBe('var(--vx-surface-row-hover)')
-    expect(VX.surface.rowSelected).toBe('var(--vx-surface-row-selected)')
   })
 })

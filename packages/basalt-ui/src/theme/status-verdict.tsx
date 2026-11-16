@@ -4,7 +4,7 @@
  * bare "Over". Exported from the root; `StatCard` and the notification centre compose it.
  *
  * @example
- * <StatusVerdict color={VX.status.error} word="Over" phrase="Over budget" />
+ * <StatusVerdict color={VX.bad} word="Over" phrase="Over budget" />
  */
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'

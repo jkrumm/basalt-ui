@@ -16,7 +16,7 @@ import * as s from './ai-blocks-schemas'
 
 const c = col<s.Row>()
 const columns = [c.entity('name'), c.text('status'), c.number('value')]
-const color = { light: VX.accent, dark: VX.accent }
+const color = { light: VX.brand, dark: VX.brand }
 const bar = { mark: 'bar', key: 'v', label: 'Value', color, y: (d: s.Point) => d.value } as const
 const x = { value: (d: s.Point) => d.label }
 

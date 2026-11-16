@@ -4,7 +4,7 @@
  * verdict is never colour alone. Exported from the root.
  *
  * @example
- * <StatusDot color={VX.status.ok} />
+ * <StatusDot color={VX.good} />
  */
 import type { CSSProperties } from 'react'
 import { cx } from '../common/props'
@@ -12,7 +12,7 @@ import type { BasaltProps } from '../common/props'
 import classes from './status-dot.module.css'
 
 export type StatusDotProps = BasaltProps & {
-  /** Any CSS colour; callers pass a `VX.status.*` token so it re-resolves per scheme. */
+  /** Any CSS colour; callers pass a `VX.good`, `VX.warn` or `VX.bad` token so it re-resolves per scheme. */
   color: string
 }
 

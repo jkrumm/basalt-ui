@@ -73,7 +73,7 @@ describe('gen-llms signatures', () => {
     const at = text.indexOf('Signature: VX:')
     const block = text.slice(at, text.indexOf('\nSignature: ', at + 1))
     expect(block).not.toContain('…')
-    for (const key of ['ink', 'ink2', 'muted', 'accent', 'surface: {', 'status: {'])
+    for (const key of ['ink', 'inkMuted', 'inkFaint', 'brand', 'canvas', 'card'])
       expect(block).toContain(key)
   })
 

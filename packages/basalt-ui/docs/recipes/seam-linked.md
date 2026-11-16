@@ -18,7 +18,7 @@ import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 
 export type Sample = { day: number; version: string; value: number }
 
-const color = { light: VX.accent, dark: VX.accent }
+const color = { light: VX.brand, dark: VX.brand }
 
 export function SeamLinked({ samples }: { samples: readonly Sample[] }) {
   const focus = useChartFocus(samples, {
