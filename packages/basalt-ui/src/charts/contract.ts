@@ -8,19 +8,10 @@ import type { FootFacts, FrameHead, FrameState, Menu } from '../core/phase'
 import type { BoxSlot, ControlsSlot, Delta, Phase, QueryStateLike, Status } from '../core/ports'
 import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 
-// ---- Frame types the sketch files under ports (absent from ports.ts) ----------------------
+// ---- Frame types ---------------------------------------------------------------------------
 
-// One declaration holds each: `core/phase.ts`, re-exported here so `basalt-ui/charts` names them.
-export type {
-  CardAction,
-  Empty,
-  Fact,
-  FootFacts,
-  FrameHead,
-  FrameState,
-  Menu,
-  MenuEntry,
-} from '../core/phase'
+// One declaration holds each: `core/phase.ts`, exported from `basalt-ui/cards`. `basalt-ui/charts`
+// keeps deprecated aliases for one minor (`charts/index.ts`).
 
 // ---- Series -------------------------------------------------------------------------------
 

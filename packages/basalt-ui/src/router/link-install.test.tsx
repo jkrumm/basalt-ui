@@ -21,7 +21,6 @@ import type { BarListItem } from '../cards/bar-list'
 import type { KanbanCardProps } from '../cards/contract'
 import { KanbanCard } from '../cards/kanban-card'
 import { StatCard } from '../cards/stat-card'
-import type { CardAction as ChartCardAction } from '../charts/contract'
 import { ChartCard } from '../charts/parts/chart-card'
 import type { CardAction } from '../core/phase'
 import { BasaltProvider } from '../core/provider'
@@ -152,7 +151,7 @@ describe('every link prop takes a navTarget', () => {
     const to = navTarget(linkOptions({ to: '/orders' }))
     const accepted = [
       { label: 'Open', href: to } satisfies CardAction,
-      { label: 'Open', href: to } satisfies ChartCardAction,
+      { label: 'Open', href: to } satisfies CardAction,
       { id: 'a', label: 'A', href: to } satisfies InnerNavItem,
       { label: 'argo', value: 1, href: to } satisfies BarListItem,
       col<{ name: string }>().entity('name', { href: () => to }),

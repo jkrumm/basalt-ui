@@ -12,10 +12,9 @@ import { CardMenu } from '../../core/card-menu'
 import { cn } from '../../core/cn'
 import { AppLink } from '../../core/link'
 import { OfflineLine } from '../../core/offline-line'
-import type { Empty, MenuEntry, ResolvedPhase } from '../../core/phase'
+import type { Empty, Fact, FootFacts, MenuEntry, ResolvedPhase } from '../../core/phase'
 import { PhaseBoundary } from '../../core/phase-boundary'
 import type { BoxSlot, ControlsSlot, IconComponent } from '../../core/ports'
-import type { Fact, FootFacts } from '../contract'
 
 const NUMBER = new Intl.NumberFormat('en')
 
