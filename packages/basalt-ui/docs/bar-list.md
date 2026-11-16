@@ -28,7 +28,7 @@ BarList(props: BarListProps): ReactElement
   max?: number  // The scale end every bar fills against
   rows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
   format?: (value: number) => string  // Formats each value
-  focus?: ListFocus<unknown>  // A chart's focus (`useChartFocus(items, …)`): row i is `focus.items[i]`, so pass the list in the same order as…
+  focus?: ListFocus<unknown>  // A chart's focus (`useChartFocus(items, …)`): row i is `focus.items[i]`, so pass the list in the same order as the chart's items
 ```
 
 `Phase`, `QueryStateLike`, `Empty` import from the root: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui'`.
