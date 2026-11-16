@@ -10,6 +10,7 @@
  * descriptionless disables.
  */
 
+import { bridgeEntries } from '../../tokens/table'
 import { zoneAFillOnly } from '../generated/zone-a'
 
 // Every CSS length unit except `%`, which stays legal.
@@ -32,12 +33,14 @@ const MIX_COLOUR = `(?:${VX_VAR}|transparent)`
 const MIX_STOP = `${MIX_COLOUR}(?:\\s+[\\d.]+%)?`
 const CLEAN_MIX_BODY = `\\s*in\\s+[a-z0-9-]+(?:\\s+(?:shorter|longer|increasing|decreasing)\\s+hue)?\\s*,\\s*${MIX_STOP}\\s*,\\s*${MIX_STOP}\\s*\\)`
 
+// Tailwind v4 exposes every token as `--color-<role>`; a value list reads that spelling beside `--vx-<role>`.
+const TOKEN_PREFIX = '--(?:vx|color)-'
+
 // Roles that are spent as text, `fill` or `stroke`, never as a surface, border, outline or shadow.
-const DECORATIVE_ROLE =
-  'var\\(\\s*--vx-(?:(?:good|warn|bad|info|brand|chart|seq)(?:-[a-z0-9-]+)?|[a-z0-9-]*-tint)\\s*[,)]'
+const DECORATIVE_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:(?:good|warn|bad|info|brand|chart|seq|destructive)(?:-[a-z0-9-]+)?|[a-z0-9-]*-tint)\\s*[,)]`
 
 // The fill-only roles (`zoneAFillOnly`): a fill clears 3.0 and text needs 4.5, so never as `color`.
-const FILL_ONLY_ROLE = `var\\(\\s*--vx-(?:${zoneAFillOnly.join('|')})\\s*[,)]`
+const FILL_ONLY_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:${zoneAFillOnly.join('|')})\\s*[,)]`
 // The class rule `fixed-width`: above 384px or from 25rem (`w-[385px]`, `w-[25rem]`).
 export const FIXED_WIDTH = `(?<![\\w.])(?:(?:38[5-9]|39\\d|[4-9]\\d{2}|\\d{4,})(?:\\.\\d+)?px|(?:2[5-9]|[3-9]\\d|\\d{3,})(?:\\.\\d+)?rem)(?![\\w%])`
 
@@ -53,9 +56,20 @@ export const TEXT_COLOUR_PROPERTIES = '/^color$/'
 // A width, and a flex basis (`flex-basis`, the basis of the `flex` shorthand: its grow and shrink
 // are unitless, so a length in it is the basis).
 export const WIDTH_PROPERTIES = '/^(?:(?:min-)?width|flex(?:-basis)?)$/'
-export const TRACK_PROPERTIES = '/^grid-template-(?:columns|rows)$/'
+// the template and its shorthand, and the implicit tracks
+export const TRACK_PROPERTIES = '/^grid-(?:template(?:-columns|-rows)?|auto-(?:columns|rows))$/'
 export const SCROLL_PROPERTIES = '/^overflow(?:-x|-y|-block|-inline)?$/'
 export const SCROLL_VALUES = '/\\b(?:auto|scroll|overlay)\\b/i'
+
+/**
+ * The `--color-*`, `--radius-*` and `--font-*` names the basalt theme defines, from the same
+ * `@theme inline` map that renders `tailwind.css` (`bridgeEntries()`), as one stylelint regex.
+ * An app's own `--my-gap` stays free; re-pointing a theme name overrides the package's mapping.
+ */
+const THEME_NAMES = bridgeEntries()
+  .map((entry) => entry.tw)
+  .filter((name) => /^--(?:color|radius|font)-/.test(name))
+const THEME_PROPERTY = `/^(?:${THEME_NAMES.join('|')})$/`
 
 /** One property group of the value list: the properties, the values banned on them, the fix. */
 type ValueGroup = { properties: string; values: string[]; clause: string; scrollOnly?: true }
@@ -96,7 +110,7 @@ const VALUE_GROUPS: readonly ValueGroup[] = [
     properties: TRACK_PROPERTIES,
     values: [`/${RAW_LENGTH}/i`],
     clause:
-      'grid-template-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length',
+      'grid-template, grid-template-columns and -rows, grid-auto-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length',
   },
   {
     properties: WIDTH_PROPERTIES,
@@ -204,10 +218,10 @@ export const STYLELINT_RULES = {
     },
   ],
   'property-disallowed-list': [
-    ['/^--vx-/'],
+    ['/^--vx-/', THEME_PROPERTY],
     {
       message:
-        'Never declare `%s`: a `--vx-*` token is derived from the palette config, not authored. Read it with `var()`, or retune `basalt()` options.',
+        'Never declare `%s`: a `--vx-*` token is derived from the palette config, and a `--color-*`, `--radius-*` or `--font-*` theme name maps it, so neither is authored. Read it with `var()`, or retune `basalt()` options.',
     },
   ],
   'declaration-no-important': [
@@ -241,11 +255,21 @@ export const STYLELINT_RULES = {
     },
   ],
   'at-rule-disallowed-list': [
-    ['utility', 'theme', 'custom-variant', 'variant', 'plugin', 'apply', 'config', 'custom-media'],
+    [
+      'utility',
+      'theme',
+      'custom-variant',
+      'variant',
+      'plugin',
+      'apply',
+      'config',
+      'custom-media',
+      'tailwind',
+    ],
     {
       // `%s` is the at-rule with its `@` already (stylelint passes `@utility`)
       message:
-        '`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--vx-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet. A `@custom-media` names a viewport query: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`).',
+        "`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--vx-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet. A `@custom-media` names a viewport query: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`). `@tailwind` is Tailwind v3's layer directive: the package owns the layers, so the one basalt stylesheet import is all a module needs, and no layer is written.",
     },
   ],
 } as const

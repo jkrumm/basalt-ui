@@ -1,0 +1,14 @@
+.a {
+  background: var(--color-card);
+  color: var(--color-foreground);
+  border-color: var(--color-border);
+}
+.b {
+  color: var(--color-good);
+  grid-template: auto 1fr / minmax(0, 1fr) 1fr;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-rows: auto;
+}
+:root {
+  --my-gap: 1px;
+}
