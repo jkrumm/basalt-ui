@@ -280,8 +280,10 @@ const offAll = (names: readonly string[]): Rules => Object.fromEntries(names.map
 /**
  * Zones E and S: eject transfers structure, never tokens. The file is the primitive, so the rules that
  * police how a primitive is built from structure go off: the ones in the table, `no-restyle`, and the
- * bought `no-arbitrary-values` and `no-inline-styles` (a primitive's geometry is calc, anchor and
- * position values and a virtualised list's measured height). The colour rules stay on.
+ * bought `no-arbitrary-values`, `no-inline-styles` (a primitive's geometry is calc, anchor and
+ * position values and a virtualised list's measured height) and `require-static-classes` (a seed
+ * builds its classes with `cva` and merges the caller's `className`, the shape that rule cannot
+ * read). The colour rules stay on.
  */
 function structureZone(files: readonly string[], inputs: PresetInputs): Override {
   const input = presetInput(inputs.table)
@@ -293,6 +295,7 @@ function structureZone(files: readonly string[], inputs: PresetInputs): Override
       [qualified(SHADCN_RESTYLE)]: 'off',
       [qualified('no-arbitrary-values')]: 'off',
       [qualified('no-inline-styles')]: 'off',
+      [qualified('require-static-classes')]: 'off',
     },
   }
 }
