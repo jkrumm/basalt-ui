@@ -3,6 +3,8 @@
  * `notify` and `ToastHost` pair, `<html lang>`, the scheme boot script, selectors from the Mantine
  * era, and Playwright when the manifest declares `shot`.
  */
+import { resolveAppDir } from '../index'
+import { typechecksBeforeTree } from '../route-tree'
 import { need, readJson, readText, rootFiles, rootsOf, verdictOf } from './types'
 import type { Check, Ctx } from './types'
 
@@ -49,6 +51,26 @@ function htmlHosts(ctx: Ctx, roots: readonly string[], sources: readonly Source[
 const htmlTag = (text: string): string => /<html\b[^>]*>/s.exec(text)?.[0] ?? ''
 const LITERAL_THEME = /\bdata-theme\s*=\s*(?:"[^"{}]+"|'[^'{}]+')/
 
+/** `build` and `typecheck` scripts of the install root and the app that run `tsc` before the route tree exists. */
+function treeFirstFindings(ctx: Ctx): string[] {
+  const app = resolveAppDir(ctx.root)
+  const files = new Set(['package.json', ...('error' in app ? [] : [`${app.rel}/package.json`])])
+  return [...files].flatMap((file) => {
+    const scripts = (readJson(ctx.root, file.replace(/^\//, ''))?.['scripts'] ?? {}) as Record<
+      string,
+      unknown
+    >
+    return ['build', 'typecheck'].flatMap((name) => {
+      const script = scripts[name]
+      if (typeof script !== 'string' || !typechecksBeforeTree(script)) return []
+      return [
+        `app: ${file} script "${name}" is \`${script}\`: tsc reads src/routeTree.gen.ts before the router plugin writes it, ` +
+          'so it fails on a new route; run `vite build` first (`vite build && tsc -b`) or `tsr generate` before tsc',
+      ]
+    })
+  })
+}
+
 const check12 = (name: string): Check => ({
   id: 12,
   name,
@@ -79,6 +101,9 @@ const check12 = (name: string): Check => ({
       const configs = viteConfigs(ctx, roots)
       if (!configs.some((c) => /autoCodeSplitting\s*:\s*true/.test(c.text))) {
         findings.push('app: autoCodeSplitting is not enabled in the vite config')
+      }
+      if (configs.some((c) => /\btanstackRouter\s*\(/.test(c.text))) {
+        findings.push(...treeFirstFindings(ctx))
       }
     }
 

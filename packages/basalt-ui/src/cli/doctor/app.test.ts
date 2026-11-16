@@ -46,6 +46,25 @@ describe('check 12: app wiring', () => {
     expect(r.detail).toContain('`Register` interface is not declared')
   })
 
+  it.each(['tsc -b && vite build', 'tsc && echo ok', 'tsc -b'])(
+    'fails a build script that runs tsc before the route tree is generated: %s',
+    async (script) => {
+      const pkg = JSON.stringify({ name: 'app', scripts: { build: script } })
+      const r = await runCheck(makeTree('app', { 'package.json': pkg }), 12)
+      expect(r.status).toBe('fail')
+      expect(r.detail).toContain('script "build"')
+      expect(r.detail).toContain('vite build && tsc -b')
+    },
+  )
+
+  it.each(['vite build && tsc -b', 'tsr generate && tsc -b', 'vite build', 'echo done'])(
+    'passes a script that generates the tree first or never runs tsc: %s',
+    async (script) => {
+      const pkg = JSON.stringify({ name: 'app', scripts: { build: script } })
+      expect((await runCheck(makeTree('app', { 'package.json': pkg }), 12)).status).toBe('pass')
+    },
+  )
+
   it('fails without autoCodeSplitting in the vite config', async () => {
     const r = await runCheck(
       makeTree('app', { 'vite.config.ts': 'export default { plugins: [] }\n' }),

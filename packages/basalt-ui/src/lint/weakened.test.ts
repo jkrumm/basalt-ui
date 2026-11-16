@@ -64,15 +64,11 @@ const run = (dir: string, extra: Partial<Parameters<typeof checkWeakenedConfig>[
 const status = (results: WeakenedResult[], check: number) => results[check - 1]?.status
 
 describe('checkWeakenedConfig', () => {
-  it('a healthy config passes checks 1-4; outside a git repo check 5 cannot run and is skipped', async () => {
+  it('a healthy config passes all five checks; outside a git repo the ratchet passes and names `git init`', async () => {
     const results = await run(fixture('healthy'))
-    expect(results.map((r) => r.status)).toEqual([
-      'passed',
-      'passed',
-      'passed',
-      'passed',
-      'skipped',
-    ])
+    expect(results.map((r) => r.status)).toEqual(['passed', 'passed', 'passed', 'passed', 'passed'])
+    expect(results[4]?.detail).toContain('git init')
+    expect(results[4]?.detail).not.toContain('fetch')
   })
 
   it('passes the ratchet on a repo with no remote and names the refs it tried', async () => {

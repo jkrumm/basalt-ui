@@ -15,11 +15,9 @@ export const CONTAINER_CLASSES = { micro: 0, narrow: 240, regular: 480, wide: 80
 export type ContainerClass = keyof typeof CONTAINER_CLASSES
 
 /**
- * `CONTAINER_CLASSES` as the CSS lengths `<SimpleGrid type="container">` keys take — Mantine writes
- * each key verbatim into `@container simple-grid (min-width: <key>)`, so a theme name (`sm`) is a
- * dead query and the key has to be a px length: `cols={{ base: 1, [CONTAINER_KEYS.regular]: 2 }}`.
- * `micro` has no key — `base` is that class. `basalt/raw-breakpoint` judges theme names only, so a
- * computed key is green.
+ * `CONTAINER_CLASSES` as the CSS lengths a container query takes: `@container (min-width: <key>)`
+ * reads a px length, so a theme name (`sm`) is a dead query. `micro` has no key — the unqueried
+ * base is that class.
  */
 export const CONTAINER_KEYS = {
   narrow: `${CONTAINER_CLASSES.narrow}px`,

@@ -465,6 +465,12 @@ function budgetRatchet(
     // A repo with no remote has no base to ratchet against: nothing can have been raised yet. A
     // remote with no resolvable base (a shallow or single-branch checkout) must fail, not pass.
     const remotes = git('remote')
+    if (git('rev-parse', '--git-dir').exitCode === 128) {
+      return result(
+        'passed',
+        `no git repo here (tried ${named}), so no ceiling can have been raised; \`git init\` and a first commit start the ratchet`,
+      )
+    }
     if (remotes.exitCode === 0 && String(remotes.stdout).trim() === '') {
       return result(
         'passed',

@@ -507,13 +507,40 @@ function returnedMembers(checker: ts.TypeChecker, call: ts.Signature, node: ts.N
     methods.length >= 3 &&
     methods.every((s) => checker.getTypeOfSymbolAtLocation(s, node).getCallSignatures().length > 0)
   if (!isFactory) return []
+  const signatures = methods.map(
+    (s) => checker.getTypeOfSymbolAtLocation(s, node).getCallSignatures()[0]!,
+  )
   return [
     `  returns ${returned.aliasSymbol!.name}:`,
-    ...methods.map((s) => {
-      const sig = checker.getTypeOfSymbolAtLocation(s, node).getCallSignatures()[0]!
-      return `    ${s.name}${checker.signatureToString(sig, node, TYPE_FLAGS).replace(/\s+/g, ' ')}`
-    }),
+    ...methods.map(
+      (s, i) =>
+        `    ${s.name}${checker.signatureToString(signatures[i]!, node, TYPE_FLAGS).replace(/\s+/g, ' ')}`,
+    ),
+    ...optionTypeLines(checker, signatures, node),
   ]
+}
+
+/** Each object type a method of the factory takes as an argument (`StatusOptions<O>`), once, with its fields. */
+function optionTypeLines(
+  checker: ts.TypeChecker,
+  signatures: ts.Signature[],
+  node: ts.Node,
+): string[] {
+  const seen = new Set<string>()
+  const lines: string[] = []
+  for (const sig of signatures) {
+    for (const param of sig.getParameters()) {
+      const type = checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(param, node))
+      const name = checker.typeToString(type, node, TYPE_FLAGS).replace(/\s+/g, ' ')
+      const symbol = type.aliasSymbol ?? type.getSymbol()
+      const named = symbol !== undefined && !['__type', '__object', 'Array'].includes(symbol.name)
+      if (!named || seen.has(name) || type.getProperties().length === 0) continue
+      seen.add(name)
+      const fields = docPropLines(checker, type, node)
+      if (fields.length > 0) lines.push('', `  ${name}:`, ...fields.map((l) => `  ${l}`))
+    }
+  }
+  return lines
 }
 
 // ── Examples ─────────────────────────────────────────────────────────────────────────────────────

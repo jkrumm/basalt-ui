@@ -20,7 +20,8 @@ import { BUILD_PEERS, RUNTIME_PEERS, satisfiesRange } from '../peers'
 import { INVOKERS, LINT_INVOCATION } from '../doctor/wiring'
 import { registersRouterPlugin } from '../router-wiring'
 import { parseJsonc, readIfExists } from '../source-text'
-import { findRepoRoot } from '../index'
+import { findRepoRoot, resolveAppDir } from '../index'
+import { swapStockBuild, typechecksBeforeTree } from '../route-tree'
 import { isSiblingApp } from '../resolver'
 import { sync } from '../sync'
 import { claimPrefix } from '../sync/sibling'
@@ -445,6 +446,32 @@ export function wireLintScript(ctx: Ctx): void {
   const indent = /^(\s+)"/m.exec(text)?.[1] ?? '  '
   writeText(ctx.root, 'package.json', `${JSON.stringify({ ...pkg, scripts }, null, indent)}\n`)
   say(`package.json: the lint script runs basalt-ui lint`)
+}
+
+/**
+ * A file-routed app's `build` script: create-vite's `tsc -b && vite build` type-checks before the
+ * router plugin has written the route tree, so it becomes `vite build && tsc -b`. Any other script
+ * that type-checks first is named, never rewritten.
+ */
+export function wireBuildScript(ctx: Ctx): void {
+  if (ctx.args.profile !== 'app' || ctx.routerPlugin !== true) return
+  const app = resolveAppDir(ctx.root)
+  if ('error' in app) return
+  const rel = join(app.rel, 'package.json')
+  const text = readText(ctx.root, rel)
+  const pkg = readPackage(app.dir) as (PackageJson & { scripts?: Record<string, string> }) | null
+  const build = pkg?.scripts?.['build']
+  if (text === null || pkg === null || build === undefined || !typechecksBeforeTree(build)) return
+  const swapped = swapStockBuild(build)
+  if (swapped === null) {
+    return void ctx.todo.push(
+      `${rel}: the build script "${build}" type-checks before the route tree exists; run \`vite build\` (or \`tsr generate\`) before \`tsc\``,
+    )
+  }
+  const indent = /^(\s+)"/m.exec(text)?.[1] ?? '  '
+  const scripts = { ...pkg.scripts, build: swapped }
+  writeText(ctx.root, rel, `${JSON.stringify({ ...pkg, scripts }, null, indent)}\n`)
+  say(`${rel}: build runs \`${swapped}\` (the route tree is written before tsc reads it)`)
 }
 
 // ── DESIGN.md ───────────────────────────────────────────────────────────────────────────────────

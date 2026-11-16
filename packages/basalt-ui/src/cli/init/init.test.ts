@@ -738,6 +738,45 @@ describe('init: the router scaffold', () => {
     expect(read(dir, 'src/App.tsx')).toContain('export default function App')
   })
 
+  it("swaps create-vite's `tsc -b && vite build` so the route tree exists before tsc, and writes the first tree", async () => {
+    const dir = createVite()
+    put(
+      dir,
+      'package.json',
+      JSON.stringify({ name: 'fixture', scripts: { dev: 'vite', build: 'tsc -b && vite build' } }),
+    )
+    const trees: string[] = []
+    const { code, log } = await runInit(['--profile', 'app', '--root', 'src'], dir, {
+      routeTree: async (appDir) => (trees.push(appDir), null),
+    })
+    expect(code).toBe(0)
+    expect(JSON.parse(read(dir, 'package.json')).scripts.build).toBe('vite build && tsc -b')
+    expect(log).toContain('build runs `vite build && tsc -b`')
+    expect(trees).toEqual([dir])
+    const again = await runInit(['--profile', 'app', '--root', 'src'], dir, {
+      routeTree: async () => null,
+    })
+    expect(again.log).not.toContain('build runs')
+    expect(JSON.parse(read(dir, 'package.json')).scripts.build).toBe('vite build && tsc -b')
+  })
+
+  it('prints the line to change for a build script it cannot swap, and when the tree cannot be written', async () => {
+    const dir = createVite()
+    put(
+      dir,
+      'package.json',
+      JSON.stringify({ name: 'fixture', scripts: { build: 'tsc --noEmit; vite build --mode x' } }),
+    )
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir, {
+      routeTree: async () => 'router-plugin is not installed',
+    })
+    expect(JSON.parse(read(dir, 'package.json')).scripts.build).toBe(
+      'tsc --noEmit; vite build --mode x',
+    )
+    expect(log).toContain('type-checks before the route tree exists')
+    expect(log).toContain('run `vite build` once to write src/routeTree.gen.ts')
+  })
+
   it("deletes create-vite's demo App.tsx and App.css it can prove are stock", async () => {
     const dir = createVite()
     put(
