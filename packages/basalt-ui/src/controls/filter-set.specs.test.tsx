@@ -54,6 +54,17 @@ describe('FilterSet specs', () => {
     expect(pills(container)).toEqual([{ text: 'Production', name: 'Environment: Production' }])
   })
 
+  test('an active pill keeps its filter name beside the value', () => {
+    const e = env()
+    const { container } = render(<FilterSet specs={[e]} />)
+    act(() => {
+      ;(e.handle as ReturnType<typeof memoryHandle<string>>).put('staging')
+    })
+    expect(pills(container)).toEqual([
+      { text: 'Environment: Staging', name: 'Environment: Staging' },
+    ])
+  })
+
   test('an off-catalogue value still renders', () => {
     const e = env('retired')
     const { container } = render(<FilterSet specs={[e]} />)
@@ -93,7 +104,7 @@ describe('FilterSet specs', () => {
     act(() => {
       ;(r.handle as ReturnType<typeof memoryHandle<readonly string[]>>).put(['eu', 'us'])
     })
-    expect(pills(container)[0]?.text).toBe('2 selected')
+    expect(pills(container)[0]?.text).toBe('Regions: 2 selected')
     expect(count(container)).toBe('Filters (1)')
   })
 
@@ -106,7 +117,7 @@ describe('FilterSet specs', () => {
       ;(q.handle as ReturnType<typeof memoryHandle<string>>).put('latency')
     })
     expect(count(container)).toBe('Filters (1)')
-    expect(pills(container).map((p) => p.text)).toEqual(['Production', 'latency'])
+    expect(pills(container).map((p) => p.text)).toEqual(['Production', 'Search: latency'])
     act(() => {
       ;(a.handle as ReturnType<typeof memoryHandle<string>>).put('staging')
     })

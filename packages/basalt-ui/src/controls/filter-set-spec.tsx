@@ -29,7 +29,10 @@ import { describeValue } from './renderers'
 
 type T = Translate<typeof filters>
 
-/** The text a pill prints for `value`: the value itself, the filter's name when there is none. */
+/**
+ * The text a pill prints for `value`: the value itself, the filter's name when there is none. A pill
+ * that narrows the rows prefixes its filter's name (`Project: pearl`); the caller does that.
+ */
 function pillText(spec: AnySpec, value: unknown, t: T): string {
   const empty = spec.placeholder ?? spec.label
   switch (spec.handle.kind) {
@@ -86,15 +89,14 @@ function Pill({ spec, size }: { spec: AnySpec; size: 'sm' | 'md' }): ReactElemen
   const [value] = spec.handle.use()
   const text = pillText(spec, value, t)
   const name = text.includes(spec.label) ? text : `${spec.label}: ${text}`
+  const active = isActive(spec, value)
   return (
     <Popover>
       <PopoverTrigger
         render={<Button variant="secondary" size={size} aria-label={name} className="max-w-56" />}
       >
-        <span className="min-w-0 truncate">{text}</span>
-        {isActive(spec, value) && (
-          <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-brand" />
-        )}
+        <span className="min-w-0 truncate">{active ? name : text}</span>
+        {active && <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-brand" />}
       </PopoverTrigger>
       <PopoverContent aria-label={spec.label} align="start" className="w-80 max-w-[90vw]">
         <FoldedControls>
