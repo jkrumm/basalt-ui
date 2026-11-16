@@ -321,6 +321,8 @@ async function bootLayoutSuite(gen: number): Promise<boolean> {
   }
 
   phase = 'launching Chrome'
+  // Read outside the try: an invalid BASALT_TEST_BROWSER must fail the run, not read as 'no browser installed'.
+  const launchOptions = testBrowserOptions(readTestBrowser())
   let chrome: Browser
   let chromeProcess: BrowserServer
   try {
@@ -331,7 +333,7 @@ async function bootLayoutSuite(gen: number): Promise<boolean> {
     chromeProcess = await chromium.launchServer({
       // BASALT_TEST_BROWSER picks installed Chrome (`channel: 'chrome'`, nothing is ever downloaded) or
       // Playwright's chromium-headless-shell (`make browser-shell`); see tests/support/test-browser.ts.
-      ...testBrowserOptions(readTestBrowser()),
+      ...launchOptions,
       // Ubuntu 24.04 on the runner blocks unprivileged user namespaces and the image sets no
       // `apparmor_restrict_unprivileged_userns=0`, which is the classic "no usable sandbox" CI
       // failure. The fixtures are self-authored and served from localhost, so nothing is being
@@ -351,7 +353,8 @@ async function bootLayoutSuite(gen: number): Promise<boolean> {
     // oxlint-disable-next-line no-console -- a skipped gate must announce itself
     console.warn(
       '[layout] SKIPPED — no test browser found. Run `make browser-shell` (or set ' +
-        'BASALT_TEST_BROWSER=chrome with Google Chrome installed); CI runs the suite regardless.',
+        'BASALT_TEST_BROWSER=chrome with Google Chrome installed); CI runs the suite regardless.\n' +
+        String(error),
     )
     return false
   }

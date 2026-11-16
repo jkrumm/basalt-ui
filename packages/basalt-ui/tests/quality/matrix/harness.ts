@@ -173,10 +173,12 @@ export async function bootMatrix(): Promise<MatrixHarness | null> {
     },
   })
 
+  // Read outside the try: an invalid BASALT_TEST_BROWSER must fail the run, not read as 'no browser installed'.
+  const launchOptions = testBrowserOptions(readTestBrowser())
   let chromeProcess: BrowserServer
   let browser: Browser
   try {
-    chromeProcess = await chromium.launchServer(testBrowserOptions(readTestBrowser()))
+    chromeProcess = await chromium.launchServer(launchOptions)
     browser = await chromium.connect(chromeProcess.wsEndpoint())
   } catch (error) {
     server.stop(true)
@@ -189,7 +191,7 @@ export async function bootMatrix(): Promise<MatrixHarness | null> {
     }
     // oxlint-disable-next-line no-console -- a skipped gate must announce itself
     console.warn(
-      '[matrix] SKIPPED: no test browser found, run `make browser-shell` (CI runs it regardless).',
+      `[matrix] SKIPPED: no test browser found, run \`make browser-shell\` (CI runs it regardless).\n${String(error)}`,
     )
     return null
   }
