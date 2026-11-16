@@ -1,0 +1,25 @@
+{
+  "why": "Wiring cycle 4 (docs/v3/cycles/wiring-4.md) converged at 0 P1 and 3 P2; two of the P2s are docs. wiring-4.1: the README's own `./table` example passes `mode: 'client'` to `useDataTable`, which fails `tsc` with `Type 'string' is not assignable to type 'Mode'` (`.evidence/cycle-wiring-4/v2-readme-mode.log`), while `use-data-table.md`, `saved-views.md` and `view-switch.md` pass `mode: { kind: 'client' }`; the README is the first file an author reads, and the cycle's one `.d.ts` read was this. wiring-4.2: `Lines`, `Bars`, `Heatmap` and `BandStrip` have no `docs/<name>.md` and `cartesian-chart.md` has no `subpath:` line (all five sit in `scripts/gen-docs.baseline.json`), though the AGENTS block's form table names `Lines` and `Bars` and tells the author to read `docs/<name>.md` before guessing; and the 26 primitive docs have empty `use when` and `never when` and print only their `*Variants` keys, so `badge.md` gives `DeltaBadge` a `tone: good, bad, neutral` where the component takes `value` and `polarity`, and `button.md` never names `loading`. Riding along: wiring-4.7 (README §1 has the author install the `app` peers that `init` installs itself, at a different `@tanstack/router-plugin` pin; `/basalt-design` step 6 cites internal builder ids `c10, c11, c13, n02`) and wiring-4.8 (`vite.md` calls `.basalt/sources.css` gitignored, but `init` writes no ignore line, so the first `git add -A` commits a generated file).",
+  "what": "Every shipped doc an author reads in the first hour compiles and matches the types, and every public chart kind and primitive has a generated doc with its props.",
+  "owns": [
+    "packages/basalt-ui/README.md (Quick start §1 and the `./table` example)",
+    "packages/basalt-ui/scripts/gen-docs.ts, scripts/gen-docs.baseline.json and the docs they regenerate",
+    "the JSDoc of `src/charts/parts/{lines,bars,heatmap,band-strip,cartesian}.tsx` and of the `src/ui/*` components",
+    "packages/basalt-ui/agent/skills/basalt-design/SKILL.md (step 6 only)",
+    "packages/basalt-ui/src/cli/init (the `.gitignore` line only) and src/cli/doctor (check 12's tracked-file report only), their tests",
+    "a compile check for the README's tsx blocks, beside the recipe typecheck"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) wiring-4.1: the README's table example passes `mode: { kind: 'client' }`; the README's `tsx` blocks are type-checked as the recipes are, so a drift like this fails the gate. (2) wiring-4.2: `Lines`, `Bars`, `Heatmap`, `BandStrip` and `CartesianChart` get their summary, `@useWhen` and `@neverWhen` and leave the gen-docs baseline, so each has a `docs/<name>.md` with its subpath; a primitive's generated doc prints the component's props (as the composites' docs do) beside its variants, with a filled `use when` and `never when`, and a variant that is not a prop (`DeltaBadge`'s tone) is not presented as one. (3) wiring-4.7: README §1 installs `basalt-ui` alone and says `init` installs the profile's peers at the pins it prints; `/basalt-design` step 6 names no internal builder ids. (4) wiring-4.8: `init` adds `.basalt/sources.css` to the app's `.gitignore` (creating the line once, never twice), and doctor check 12 reports the file when it is tracked.",
+  "commits": "docs: or fix: in packages/basalt-ui, one commit per concern; the regenerated docs ride with the JSDoc that produced them.",
+  "proof": "make check; `gen-docs --check` green with the baseline shorter by the five chart entries; the README compile check fails on `mode: 'client'` and passes on the fix.",
+  "acceptance": [
+    "The README's `./table` example type-checks, and a README block that does not type-check fails `make check`",
+    "`docs/lines.md`, `docs/bars.md`, `docs/heatmap.md`, `docs/band-strip.md` exist, and `docs/cartesian-chart.md` names `subpath: basalt-ui/charts`",
+    "`docs/badge.md` lists `DeltaBadge`'s `value` and `polarity` and `docs/button.md` lists `loading`; no primitive doc has an empty `use when`",
+    "README §1 tells the author that `init` installs the profile's peers; `/basalt-design` names no builder ids",
+    "After `init` in a create-vite app, `.basalt/sources.css` is ignored by git",
+    "make check passes"
+  ],
+  "out_of_scope": "Renaming any export (that is `v3-wiring-4-api`); the composites' docs, which already print their props."
+}

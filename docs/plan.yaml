@@ -1370,3 +1370,15 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-expr-4-skill, v3-expr-4-kit-fixes, v3-expr-4-contract, v3-expr-4-rubric]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-5.json' }
+  - key: v3-wiring-4-docs
+    title: 'The README example compiles, every chart kind and primitive has a doc with its props, from wiring cycle 4'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-wiring-4]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-4-docs.json' }
+  - key: v3-wiring-4-api
+    title: 'Each public type has one v3 home and each role one prop name, from wiring cycle 4'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-wiring-4, v3-wiring-4-docs]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-4-api.json' }
