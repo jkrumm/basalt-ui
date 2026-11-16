@@ -285,7 +285,7 @@ Notes on the classes:
   - the docs type every frame's `phase` as `Phase` without naming its import (c10, c13, n02);
   - c11 read the rules as banning engine `text` marks.
 
-- **`primitive`.** Two families account for 22 of the 32 points.
+- **`primitive`.** Two families account for 16 of the 32 points, and the contract row as a whole for 20.
   - Kit lists cannot join a chart's focus: `DataTable` and `BarList` rows take no `focus.item`. This cost n02 an X3 of 0 and c10 and c12 their X3. All of them are in `v3-expr-3-contract` (a).
   - The band axis has no tick step and no edge rule. This cost n02's stage labels, c11's cut-off and c12's day labels: `v3-expr-3-contract` (b), (c).
 
