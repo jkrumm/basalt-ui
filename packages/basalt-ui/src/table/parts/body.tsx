@@ -24,7 +24,6 @@ import { GroupRow } from './group-row'
 import type { BodyItem } from './group-row-model'
 import { useDetailHost } from './detail-sheet'
 import { EmptyRow, ErrorRow, LoadingRows, OfflineRow } from './phases'
-import { unitAttribute } from './tiers'
 import { SelectCell } from './select-cell'
 import { TickCell } from './tick-column'
 
@@ -187,7 +186,7 @@ export function DataRow<T>({
             aria-colindex={index + offset}
             {...cellAttributes(spec)}
             {...tierAttributes(planned)}
-            {...unitAttribute(spec)}
+            data-unit={spec.unit}
             {...(planned.place === 'meta' && spec.kind === 'text' && { 'data-label': spec.header })}
             numeric={numeric}
             className={spec.wrap ? `${className ?? ''} whitespace-normal` : className}
