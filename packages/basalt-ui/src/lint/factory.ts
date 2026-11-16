@@ -12,6 +12,10 @@
  *   ternaries, `&&`, `||`, `??`, arrays and clsx-style object keys; template literals only here
  * - `[...].join(' ')`, every element
  * - object-map values and string arrays outside a class context, when the string is class-shaped
+ * - a top-level `const x = '<classes>'` (string or no-expression template) whose binding reaches a
+ *   class context as a bare identifier (`className={x}`, `cn(x)`, `${x}` inside a template); it is
+ *   read at each use, so the element that takes it is the context. Known limit: a const declared in a function, imported or
+ *   reassigned through a call (`const x = pick('a')`) is not followed.
  *
  * A template literal is read with each `${...}` replaced by {@link TEMPLATE_HOLE}, so
  * `bg-${tone}-600` reaches a pattern as the token `bg-${}-600`.
@@ -118,6 +122,34 @@ function templateText(node: Node): string {
     .join(TEMPLATE_HOLE)
 }
 
+const unwrap = (node: Node | undefined): Node | undefined => {
+  let current = node
+  while (current?.type === 'TSAsExpression' || current?.type === 'TSSatisfiesExpression') {
+    current = child(current, 'expression')
+  }
+  return current
+}
+
+/**
+ * The initialiser of every top-level `const x = <init>` (also under `export`), by name; `as const`
+ * and `satisfies` are looked through. A name declared twice at the top level cannot happen under
+ * `const`, so there is no shadowing to resolve; nested declarations are not read.
+ */
+export function topLevelConsts(program: Node): ReadonlyMap<string, Node> {
+  const consts = new Map<string, Node>()
+  for (const statement of children(program, 'body')) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' ? child(statement, 'declaration') : statement
+    if (declaration?.type !== 'VariableDeclaration' || declaration['kind'] !== 'const') continue
+    for (const declarator of children(declaration, 'declarations')) {
+      const name = identifierName(child(declarator, 'id'))
+      const init = unwrap(child(declarator, 'init'))
+      if (name !== undefined && init) consts.set(name, init)
+    }
+  }
+  return consts
+}
+
 const isJoinWithSpace = (call: Node): boolean => {
   const callee = child(call, 'callee')
   if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return false
@@ -135,6 +167,7 @@ const isJoinWithSpace = (call: Node): boolean => {
 export function classStringVisitor(onString: (node: Node, text: string) => void): Visitor {
   const scanned = new WeakSet<Node>()
   const claimed = new WeakSet<Node>()
+  let consts: ReadonlyMap<string, Node> = new Map()
 
   const scan = (node: Node, text: string): void => {
     if (scanned.has(node)) return
@@ -152,7 +185,23 @@ export function classStringVisitor(onString: (node: Node, text: string) => void)
       }
       case 'TemplateLiteral':
         scan(node, templateText(node))
+        for (const expression of children(node, 'expressions')) {
+          if (expression.type === 'Identifier') collect(expression)
+        }
         return
+      case 'Identifier': {
+        // A same-file const string reaching a class context is read where it is used, so a form
+        // that reads the element (the focus seam) sees the element that takes the class.
+        const init = consts.get(node['name'] as string)
+        if (init?.type === 'Literal') {
+          const text = stringValue(init)
+          if (text !== undefined) scan(node, text)
+        }
+        if (init?.type === 'TemplateLiteral' && children(init, 'expressions').length === 0) {
+          scan(node, templateText(init))
+        }
+        return
+      }
       case 'JSXExpressionContainer':
         collect(child(node, 'expression'))
         return
@@ -224,6 +273,9 @@ export function classStringVisitor(onString: (node: Node, text: string) => void)
   }
 
   return {
+    Program(node) {
+      consts = topLevelConsts(node)
+    },
     JSXAttribute(node) {
       const name = identifierName(child(node, 'name'))
       if (name !== undefined && CLASS_ATTRIBUTE.test(name)) collect(child(node, 'value'))

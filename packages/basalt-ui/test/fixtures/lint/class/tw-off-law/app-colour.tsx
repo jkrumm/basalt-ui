@@ -8,6 +8,7 @@
 // expect: text-good
 // expect: border-brand
 // expect: bg-info-tint
+// expect: text-on-brand
 import { useChartFocus } from 'basalt-ui/charts'
 
 export const a = (
@@ -28,3 +29,5 @@ export function Track({ spans }) {
 }
 
 export const unbound = <div {...other.item(0)} className="bg-info-tint" />
+
+export const loose = <span className="text-on-brand">2 s</span>

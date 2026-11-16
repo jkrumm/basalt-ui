@@ -69,15 +69,18 @@ const colourUtility = new RegExp(
   `^(?!${FOCUS_RING_COLOUR})(?=.*(?:${HEAD}${COLOUR_PREFIX}-(?:${alt(zoneANames)})${TAIL}|${deniedOutright}))`,
 )
 /**
- * The fills a mark can carry: the fill-only and status roles on `bg`, `fill` and `stroke`. Ink,
- * the focus-ring and line roles and every other prefix (text, border, outline) stay out,
- * so a mark on the `useChartFocus` seam is exempt from these and nothing else.
+ * The fills a mark can carry: the fill-only and status roles on `bg`, `fill` and `stroke`, and
+ * `text-on-brand`, the ink a label on a brand fill takes. Other ink, the focus-ring and line roles
+ * and every other prefix (border, outline) stay out, so a mark on the `useChartFocus` seam is
+ * exempt from these and nothing else.
  */
 const FILL_ROLES = [
   ...zoneAFillOnly,
   ...zoneANames.filter((name) => /^(?:brand|good|warn|bad|destructive|info)(?:-tint)?$/.test(name)),
 ]
-const seamMarkFill = new RegExp(`${HEAD}(?:bg|fill|stroke)-(?:${alt(FILL_ROLES)})${TAIL}`)
+const seamMarkFill = new RegExp(
+  `${HEAD}(?:(?:bg|fill|stroke)-(?:${alt(FILL_ROLES)})|text-on-brand)${TAIL}`,
+)
 
 const colourArbitrary = new RegExp(
   `^(?!${FOCUS_RING_COLOUR})(?=.*(?:${HEAD}${COLOUR_PREFIX}-(?:\\(--vx-(?:${alt(zoneANames)})\\)|\\[(?:var\\()?--vx-(?:${alt(zoneANames)})\\)?\\])${TAIL}))`,
@@ -97,6 +100,7 @@ export const CLASS_RULES = defineRules({
     family: 'class',
     profiles: ALL,
     zonesOff: VENDORED,
+    schema: [PROFILE_GATE_SCHEMA],
     defect:
       'console 39 viewport-keyed classes, rollhook 14, shutterflow 16; epos `md:` kill; `max-md:` compiles because `md` and `xl` stay live',
     forms: [
@@ -117,6 +121,9 @@ export const CLASS_RULES = defineRules({
       {
         id: 'media-query',
         detect: mediaQueryForm,
+        // An ejected primitive is chrome: the sheet's one viewport read (its swipe axis) is the
+        // primitive's, so the JS form is off there; its classes stay keyed on the container.
+        zonesOff: ['ejected'],
         fix: 'useSizeClass for chrome; page layout keys on the container with @narrow: @regular: @wide:',
         next: 'viewport-keyed is never file-waivable; fix it at source',
         fixture: 'class/viewport-keyed/media-query.tsx',
@@ -137,7 +144,8 @@ export const CLASS_RULES = defineRules({
     forms: [
       {
         id: 'dark-variant',
-        pattern: /(?:^|:)(?:(?:group|peer|in)-)?(?:dark|data-\[theme=dark\]):/,
+        pattern:
+          /(?:^|:)(?:(?:(?:group|peer|in)-)?(?:dark|data-\[theme=dark\])|\[(?:\[data-theme=["']?dark["']?\]|\.dark)_&\]):/,
         fix: 'Tokens switch per scheme: add the token instead of forking with dark:',
         next: 'A reasoned per-line waiver',
         fixture: 'class/dark-fork/dark-variant.tsx',

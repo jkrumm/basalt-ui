@@ -14,6 +14,7 @@ export function Track({ spans }) {
             <div className="absolute inset-y-0 bg-brand-fill" />
             <div className="absolute inset-y-0 bg-chart-2 fill-seq-3 stroke-dim-bar" />
             <div className="absolute inset-y-0 bg-info-tint" />
+            <span className="data-[spot=inside]:text-on-brand">2 s</span>
             <div className="absolute inset-y-0 w-px bg-brand" />
           </div>
         </div>

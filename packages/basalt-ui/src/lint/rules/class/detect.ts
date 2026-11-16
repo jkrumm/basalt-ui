@@ -4,7 +4,7 @@
  * `parts` upward (guardrails section 4, row 6: "(b, c, h) parts+; rest bridge+").
  */
 import type { FormContext, Node, Visitor } from '../../factory'
-import { classStringVisitor, classTokens, mergeVisitors } from '../../factory'
+import { classStringVisitor, classTokens, mergeVisitors, topLevelConsts } from '../../factory'
 import type { AstForm, ClassForm } from '../../rule-table'
 
 /** Calls whose first argument is a media query string. */
@@ -46,19 +46,26 @@ function literalText(arg: Node | undefined): string | undefined {
  * `viewport-keyed`, JS form: a media query whose literal text names a `width`, or the viewport
  * width read against a number (`window.innerWidth < 768`; an element's `clientWidth` is container-keyed). Reduced-motion,
  * colour-scheme and pointer queries are not viewport-keyed; a non-literal argument stays open
- * (S2: 8 of 28 hits remain once narrowed, all true).
+ * (S2: 8 of 28 hits remain once narrowed, all true). A top-level `const` string or number
+ * (`useMediaQuery(MOBILE_QUERY)`, `window.innerWidth < BREAKPOINT`) is read as its literal.
  */
 export function mediaQueryForm({ report }: FormContext): Visitor {
+  let consts: ReadonlyMap<string, Node> = new Map()
+  const resolve = (node: Node | undefined): Node | undefined =>
+    node?.type === 'Identifier' ? (consts.get(node['name'] as string) ?? node) : node
   return {
+    Program(node) {
+      consts = topLevelConsts(node)
+    },
     CallExpression(node) {
       const name = calleeName(node)
       if (name === undefined || !QUERY_CALLEES.has(name)) return
       const args = Array.isArray(node['arguments']) ? node['arguments'].filter(isNode) : []
-      const text = literalText(args[0])
+      const text = literalText(resolve(args[0]))
       if (text !== undefined && /width/i.test(text)) report(node, `${name}('${text}')`)
     },
     BinaryExpression(node) {
-      const subject = widthComparison(node)
+      const subject = widthComparison(node, resolve)
       if (subject !== undefined) report(node, subject)
     },
   }
@@ -89,11 +96,14 @@ function viewportRead(node: Node | undefined): string | undefined {
 const WIDTH_COMPARISONS: ReadonlySet<string> = new Set(['<', '<=', '>', '>='])
 
 /** `window.innerWidth < 768`: the viewport width against a number, on either side. */
-function widthComparison(node: Node): string | undefined {
+function widthComparison(
+  node: Node,
+  resolve: (node: Node | undefined) => Node | undefined,
+): string | undefined {
   const operator = node['operator'] as string
   if (!WIDTH_COMPARISONS.has(operator)) return undefined
-  const left = field(node, 'left')
-  const right = field(node, 'right')
+  const left = resolve(field(node, 'left'))
+  const right = resolve(field(node, 'right'))
   const leftRead = viewportRead(left)
   if (leftRead !== undefined && right?.type === 'Literal' && typeof right['value'] === 'number') {
     return `${leftRead} ${operator} ${String(right['value'])}`
@@ -144,19 +154,22 @@ export function partsOnly(
 }
 
 const RADIUS = /^rounded(?:-(?!card$|none$|full$)[a-z0-9]+)?$/
-const CARD_PADDING = /^p-(?:[3-9]|\d{2,})$/
+const CARD_PADDING = /^py?-(?:[3-9]|\d{2,})$/
+const CARD_BORDER = /^(?:border|ring(?:-\d+)?)$/
 
 /**
  * `surface-recipe`, whole-string form: a bordered card rebuilt without a card token, a radius, a
- * bare `border` and a padding step of 3 or more in one class string. A dashed or dotted border,
- * a pill (`rounded-full`) and a lone `p-1`/`p-2` are not a card.
+ * bare `border` (or an unprefixed ring width such as ring-1) and a padding step of 3 or more,
+ * all-round or vertical (`p-4`, `py-6`; a lone `px-N` is a button, input or badge, not a card), in one class string. A dashed or dotted border, a pill
+ * (`rounded-full`), a lone `p-1`/`p-2` and a variant-prefixed ring (`focus-visible:ring-2`) are not a card.
  */
 export function borderedCard(tokens: readonly string[]): string | undefined {
   const radius = tokens.find((token) => RADIUS.test(token))
   const padding = tokens.find((token) => CARD_PADDING.test(token))
-  if (radius === undefined || padding === undefined || !tokens.includes('border')) return undefined
+  const border = tokens.find((token) => CARD_BORDER.test(token))
+  if (radius === undefined || padding === undefined || border === undefined) return undefined
   if (tokens.some((token) => /^border-(?:dashed|dotted)$/.test(token))) return undefined
-  return `${radius} border ${padding}`
+  return `${radius} ${border} ${padding}`
 }
 
 const nameOf = (node: Node | undefined): string | undefined =>
