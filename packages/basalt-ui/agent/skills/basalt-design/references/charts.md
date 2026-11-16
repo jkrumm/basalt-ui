@@ -13,7 +13,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - Neutral by default, one accent, one status hue. The accent marks the series the question is about; the rest sit in ink steps.
 - A part of a whole or a category split is read from position, order and a direct label. A hue per part is a rainbow.
 - A ramp starts neutral below its threshold and turns hue only past it; zero stays neutral.
-- A rise is one hue in the chart and in the table pill, and a fall the other; the accent marks the answer (the next run, the leader) and nothing else, so the same word never wears two colours across parts (n13 drew a rise in the chart and a fall in the table).
+- A rise is one hue in the chart and in the table pill, and a fall the other; the accent marks the answer (the next run, the leader) and nothing else, so one word keeps one colour across parts (n13 drew a rise in the chart and a fall in the table).
 - A status hue means a status: carry it with a word or a dot, not hue alone. [lint:status-fill-as-text]
 - A status hue marks a state that needs action; a target rule, a "live" band and a passing delta stay in ink steps, and the failed mark takes the status fill instead of its category hue.
 
@@ -51,7 +51,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 ## One view
 
-- Where two charts share an axis and answer the two halves of one question, they are one chart above and below the axis (a diverging chart) in one card, where two cards and a strip would stack (c13 X2, F1; n01 in cycle 2: a strip, per-day bars, a list and a line as four stacked parts). Two cards stand only when the axes differ. A list longer than the chart sits beside it in its own scroll region at `@wide`, and a box holds its content's height, never a fixed one that leaves a gap or clips (n13, n09, c14, n04).
+- Where two charts share an axis and answer the two halves of one question, they are one chart above and below the axis (a diverging chart) in one card, where two cards and a strip would stack (c13 X2, F1; n01 in cycle 2: a strip, per-day bars, a list and a line as four stacked parts). Two cards stand only when the axes differ. A list longer than the chart sits beside it in its own scroll region at `@wide`, and a box takes its content's height, so a fixed height cannot leave a gap or clip (n13, n09, c14, n04).
 
 ## Honest marks
 
@@ -60,7 +60,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - A fixed row or bar count (`rows={8}`) is derived from the data, so the extreme fixture shows every item: hop 9 hidden behind eight rows, with a headline saying nine hops, is the defect (c10 F5; the bars summed to 18 of 19).
 - An incomplete datum (a partial day, a night missing a stage) is marked on its mark (hatched, hollow or a caption on the bar) and named once; a complete smaller value would misstate it (n12 F5: a night with REM missing read as a finished 305 min; c12 F5: today's partial bar read as a finished day; n01 in cycle 2: a zero or absent day drew neither a mark nor a cue).
 - The fixture shows its zero and its extreme at rest, so the card is judged with an empty hour and an over-limit value on screen. The extreme reads true: rounding or clamping it away hides it. A zero fixture shows a cue (a dash, a baseline) where the marks would be.
-- Binned bars carry a unit caption ("per 15 min"). A count axis and a share-of-limit axis carry a caption (`y.title`: "Requests", "% of limit"), and a `y.format` keeps a decimal for a domain under 2 units (`0.5`, `1.0`, never `1`, `1`, `2`) (c14, n04, n16).
+- Binned bars carry a unit caption ("per 15 min"). A count axis and a share-of-limit axis carry a caption (`y.title`: "Requests", "% of limit"), and a `y.format` keeps a decimal for a domain under 2 units (ticks `0.5`, `1.0`, `1.5`, where `1`, `1`, `2` repeats a label) (c14, n04, n16).
 
 ## Finish of a form the page draws
 
