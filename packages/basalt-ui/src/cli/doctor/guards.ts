@@ -6,7 +6,7 @@
  */
 import { checkWeakenedConfig, defaultBaseRef } from '../../lint/weakened'
 import type { WeakenedResult } from '../../lint/weakened'
-import { BUDGET_PATH, countBreaches, readBudget } from '../budget'
+import { BUDGET_PATH, countBreaches, raiseCommand, readBudget } from '../budget'
 import { tokensCss } from '../tokens-css'
 import { ejectFindings } from './eject'
 import { OXLINT_PRESET } from './wiring'
@@ -127,7 +127,10 @@ const check11 = (name: string): Check => ({
       ...countBreaches(budget.budget, {
         waivers: (text.match(WAIVER) ?? []).length,
         escapes: (text.match(ESCAPE) ?? []).length,
-      }).map((b) => `${b.count} ${b.name} is above the ceiling ${b.ceiling} in ${BUDGET_PATH}`),
+      }).map(
+        (b) =>
+          `${b.count} ${b.name} is above the ceiling ${b.ceiling} in ${BUDGET_PATH}: ${raiseCommand(b.name)}`,
+      ),
       ...ejectFindings(ctx, budget.budget),
       ...designFindings(ctx),
     ]

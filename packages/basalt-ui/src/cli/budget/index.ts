@@ -2,8 +2,9 @@
  * The consumer budget, `.basalt/budget.json` (docs/v3/ARCHITECTURE.md section 2, guardrails
  * section 9): the one schema, reader, writer and base-ref ratchet. `init` seeds it, `lint` and
  * `doctor` read and count it, the migration PR lands the counted waivers and escapes into it.
- * Nothing here is a verb. A ceiling only goes up through `eject --raise` (G1), so `landBudget`
- * never writes `ejects`, `adopted`, `raises` or `profileFloor`.
+ * Nothing here is a verb. A ceiling only goes up through a raise row naming a consumer (G1):
+ * `eject --raise` for `ejects` and `adopted`, `lint --raise <field> --consumer` for `waivers` and
+ * `escapes` (`raiseCeiling`). `landBudget` never writes `ejects`, `adopted`, `raises` or `profileFloor`.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -23,7 +24,7 @@ export type Budget = {
   waivers: number
   escapes: number
   profileFloor: Profile
-  /** Written by `eject --raise` only (G1); its row shape is that verb's to define. */
+  /** Written by `eject --raise` and `lint --raise` only (G1): `{ field, from, to, consumer }`. */
   raises: Record<string, unknown>[]
 }
 
@@ -102,6 +103,49 @@ export function writeBudget(dir: string, budget: Budget): void {
   writeFileSync(path, serializeBudget(budget), 'utf8')
 }
 
+/** The ceilings `lint --raise` lifts; `ejects` has `eject --raise`, which counts what it ejects. */
+export const LINT_RAISABLE = ['waivers', 'escapes'] as const
+export type LintRaisable = (typeof LINT_RAISABLE)[number]
+
+/** The command that lifts one ceiling: the text a breach message hands the reader. */
+export function raiseCommand(field: string): string {
+  return field === 'ejects'
+    ? '`basalt-ui eject <name> --reason "<why>" --raise "<named consumer>"`'
+    : `\`basalt-ui lint --raise ${field} --consumer "<named consumer>"\``
+}
+
+/**
+ * Lifts `field` to the counted figure and appends one `raises` row naming the consumer: the one way
+ * `waivers` and `escapes` go up. Nothing is written when the count is within the ceiling or the
+ * consumer is not one non-empty line.
+ */
+export function raiseCeiling({
+  field,
+  count,
+  consumer,
+  dir = process.cwd(),
+}: {
+  field: LintRaisable
+  count: number
+  consumer: string
+  dir?: string
+}): BudgetRead {
+  const who = consumer.trim()
+  if (who === '' || /[\r\n]/.test(who)) {
+    return { error: '--consumer must be one non-empty line naming who needs the raise' }
+  }
+  const current = readBudget(dir)
+  if ('error' in current) return current
+  const from = current.budget[field]
+  if (count <= from) {
+    return { error: `${field} is ${count}, within the ceiling ${from}: nothing to raise` }
+  }
+  const raises = [...current.budget.raises, { field, from, to: count, consumer: who }]
+  const budget = { ...current.budget, [field]: count, raises }
+  writeBudget(dir, budget)
+  return { budget }
+}
+
 /** Every counted figure above its ceiling, in ceiling order. */
 export function countBreaches(budget: Budget, counts: BudgetCounts): Breach[] {
   const breaches: Breach[] = []
@@ -159,7 +203,7 @@ export function landBudget({
     if (above.length > 0) {
       const lines = above.map((k) => `${k} ${counts[k]} > ${base.budget[k]} at ${baseRef}`)
       return {
-        error: `${BUDGET_PATH}: ${lines.join(', ')}; a ceiling only goes up with \`basalt-ui eject --raise "<named consumer>"\``,
+        error: `${BUDGET_PATH}: ${lines.join(', ')}; a ceiling only goes up with ${above.map(raiseCommand).join(' and ')}`,
       }
     }
   }

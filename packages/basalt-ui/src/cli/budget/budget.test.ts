@@ -13,6 +13,7 @@ import {
   BUDGET_PATH,
   countBreaches,
   landBudget,
+  raiseCeiling,
   parseBudget,
   readBudget,
   seedBudget,
@@ -160,14 +161,14 @@ describe('landBudget', () => {
     expect(onDisk(dir)).toBe(before)
   })
 
-  it('refuses a value above a base copy of 3, names eject --raise and writes nothing', () => {
+  it('refuses a value above a base copy of 3, names lint --raise and writes nothing', () => {
     const dir = repo({
       base: budgetWith({ waivers: 3, escapes: 9 }),
       work: budgetWith({ waivers: 2, escapes: 2 }),
     })
     const before = onDisk(dir)
     const landed = landBudget({ counts, baseRef: BASE_REF, dir })
-    expect(landed).toEqual({ error: expect.stringContaining('eject --raise') })
+    expect(landed).toEqual({ error: expect.stringContaining('lint --raise waivers --consumer') })
     expect(landed).toEqual({ error: expect.stringContaining('waivers 7 > 3') })
     expect(landed).toEqual({ error: expect.not.stringContaining('escapes 7') })
     expect(onDisk(dir)).toBe(before)
@@ -223,5 +224,36 @@ describe('landBudget', () => {
     expect(landBudget({ counts, baseRef: BASE_REF, dir: broken })).toEqual({
       error: expect.stringContaining(BASE_REF),
     })
+  })
+})
+
+describe('raiseCeiling', () => {
+  it('lifts the ceiling to the count and appends a row naming the consumer', () => {
+    const dir = repo({ base: budgetWith({}), work: budgetWith({}) })
+    const out = raiseCeiling({ field: 'escapes', count: 5, consumer: ' probe consumer ', dir })
+    expect(out).toMatchObject({ budget: { escapes: 5, waivers: 0 } })
+    expect(parseBudget(onDisk(dir))).toMatchObject({
+      budget: {
+        escapes: 5,
+        raises: [{ field: 'escapes', from: 3, to: 5, consumer: 'probe consumer' }],
+      },
+    })
+  })
+
+  it('writes nothing for a blank consumer or a count within the ceiling', () => {
+    const dir = repo({ base: budgetWith({}), work: budgetWith({}) })
+    const before = onDisk(dir)
+    expect(raiseCeiling({ field: 'waivers', count: 1, consumer: '', dir })).toHaveProperty('error')
+    expect(raiseCeiling({ field: 'waivers', count: 1, consumer: 'a\nb', dir })).toHaveProperty(
+      'error',
+    )
+    expect(raiseCeiling({ field: 'waivers', count: 0, consumer: 'x', dir })).toHaveProperty('error')
+    expect(onDisk(dir)).toBe(before)
+  })
+
+  it('a hand edit above the base ref is still refused by landBudget, naming the raise command', () => {
+    const dir = repo({ base: budgetWith({}), work: budgetWith({ waivers: 4 }) })
+    const out = landBudget({ counts: { waivers: 4, escapes: 0 }, baseRef: BASE_REF, dir })
+    expect('error' in out && out.error).toContain('lint --raise waivers --consumer')
   })
 })

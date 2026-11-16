@@ -177,7 +177,43 @@ describe('lint', () => {
     const out = await lint(repo({ 'src/w.tsx': waiver(2) }))
     expect(out.code).toBe(1)
     expect(out.log).toContain('2 waivers is above the ceiling 0 in .basalt/budget.json')
-    expect(out.log).toContain('eject --raise')
+    expect(out.log).toContain('basalt-ui lint --raise waivers --consumer "<named consumer>"')
+  })
+
+  it('--raise waivers lifts the ceiling with a raises row, and lint then exits 0', async () => {
+    const dir = repo({ 'src/w.tsx': waiver(2) })
+    expect((await lint(dir)).code).toBe(1)
+    const noWho = await lint(dir, '--raise', 'waivers')
+    expect(noWho.code).toBe(1)
+    expect(noWho.log).toContain('needs --consumer')
+    const blank = await lint(dir, '--raise', 'waivers', '--consumer', '  ')
+    expect(blank.code).toBe(1)
+    expect(budgetOf(dir).waivers).toBe(0)
+
+    const raised = await lint(dir, '--raise', 'waivers', '--consumer', 'probe consumer')
+    expect(raised.code).toBe(0)
+    const after = JSON.parse(readFileSync(join(dir, '.basalt/budget.json'), 'utf8')) as {
+      waivers: number
+      raises: unknown[]
+    }
+    expect(after.waivers).toBe(2)
+    expect(after.raises).toEqual([{ field: 'waivers', from: 0, to: 2, consumer: 'probe consumer' }])
+    expect((await lint(dir)).code).toBe(0)
+
+    const again = await lint(dir, '--raise', 'waivers', '--consumer', 'probe consumer')
+    expect(again.code).toBe(1)
+    expect(again.log).toContain('nothing to raise')
+  })
+
+  it('--raise takes waivers or escapes, and sends ejects to eject', async () => {
+    const dir = repo()
+    const bad = await lint(dir, '--raise', 'bogus', '--consumer', 'x')
+    expect(bad.code).toBe(1)
+    expect(bad.log).toContain('waivers or escapes')
+    const ejects = await lint(dir, '--raise', 'ejects', '--consumer', 'x')
+    expect(ejects.code).toBe(1)
+    expect(ejects.log).toContain('basalt-ui eject')
+    expect((await lint(dir, '--consumer', 'x')).log).toContain('--consumer needs --raise')
   })
 
   it('exits 1 when escapes exceed the ceiling', async () => {
@@ -231,7 +267,7 @@ describe('lint', () => {
     writeFileSync(join(dir, 'src/w.tsx'), waiver(3))
     const raised = await lint(dir, '--stats', '--write-budget')
     expect(raised.code).toBe(1)
-    expect(raised.log).toContain('eject --raise')
+    expect(raised.log).toContain('lint --raise waivers --consumer')
     expect(budgetOf(dir).waivers).toBe(2)
 
     writeFileSync(join(dir, 'src/w.tsx'), waiver(1))

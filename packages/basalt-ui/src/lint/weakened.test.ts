@@ -393,6 +393,24 @@ describe('budget ratchet (check 5)', () => {
     expect(status(await run(repo([3, 0], [4, 0]), { baseRef: 'main' }), 5)).toBe('failed')
   })
 
+  it('passes a raise recorded by a new row naming the consumer, and fails a hand edit or a blank consumer', async () => {
+    const row = (consumer: string) =>
+      `"raises": [{ "field": "waivers", "from": 5, "to": 6, "consumer": "${consumer}" }]`
+    const withRaises = (dir: string, raises: string) => {
+      const path = join(dir, '.basalt/budget.json')
+      writeFileSync(path, readFileSync(path, 'utf8').replace(/"raises": \[\]/, raises))
+      return dir
+    }
+    const ok = withRaises(repo([3, 5], [3, 6]), row('probe consumer'))
+    expect(status(await run(ok, { baseRef: 'main' }), 5)).toBe('passed')
+    const blank = withRaises(repo([3, 5], [3, 6]), row(' '))
+    const failed = await run(blank, { baseRef: 'main' })
+    expect(status(failed, 5)).toBe('failed')
+    expect(failed[4]?.detail).toContain('lint --raise waivers --consumer')
+    const wrong = withRaises(repo([3, 5], [3, 6]), row('x').replace('"to": 6', '"to": 5'))
+    expect(status(await run(wrong, { baseRef: 'main' }), 5)).toBe('failed')
+  })
+
   it('passes on the first landing, when the base holds no copy', async () => {
     expect(status(await run(repo(null, [3, 9]), { baseRef: 'main' }), 5)).toBe('passed')
   })

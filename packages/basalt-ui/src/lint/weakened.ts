@@ -10,7 +10,8 @@ import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { basename, dirname, relative, resolve } from 'node:path'
 
-import { BUDGET_PATH, CEILINGS, parseBudget } from '../cli/budget'
+import { BUDGET_PATH, CEILINGS, parseBudget, raiseCommand } from '../cli/budget'
+import type { Budget } from '../cli/budget'
 import { filesUnder, rootsOf } from '../cli/doctor/types'
 import { MANIFEST_PATH, parseManifest } from '../cli/manifest'
 import { generatedRouteTreeOption } from '../cli/router-wiring'
@@ -398,6 +399,19 @@ function oxlintPin(pin: string, installed: string | null): WeakenedResult {
     : result('failed', `oxlint ${installed} is not the preset pin ${pin}`)
 }
 
+/** A ceiling above the base is a raise only when a row the base lacks names the field, the new ceiling and a consumer. */
+function raisedByRow(current: Budget, base: Budget, field: (typeof CEILINGS)[number]): boolean {
+  const known = new Set(base.raises.map((r) => JSON.stringify(r)))
+  return current.raises.some(
+    (r) =>
+      !known.has(JSON.stringify(r)) &&
+      r['field'] === field &&
+      r['to'] === current[field] &&
+      typeof r['consumer'] === 'string' &&
+      r['consumer'].trim() !== '',
+  )
+}
+
 function budgetRatchet(
   dir: string,
   baseRef: string | null | undefined,
@@ -434,13 +448,13 @@ function budgetRatchet(
     return result('passed', `${BUDGET_PATH} has no copy at ${baseRef} (first landing)`)
   const base = parseBudget(shown.stdout.toString())
   if ('error' in base) return result('failed', `${baseRef}: ${base.error}`)
-  const above = CEILINGS.filter((k) => current.budget[k] > base.budget[k]).map(
-    (k) => `${k} ${current.budget[k]} > ${base.budget[k]} at ${baseRef}`,
+  const above = CEILINGS.filter(
+    (k) => current.budget[k] > base.budget[k] && !raisedByRow(current.budget, base.budget, k),
   )
   return above.length > 0
     ? result(
         'failed',
-        `${above.join(', ')}; a ceiling only goes up with \`basalt-ui eject --raise\``,
+        `${above.map((k) => `${k} ${current.budget[k]} > ${base.budget[k]} at ${baseRef}`).join(', ')}; a ceiling only goes up with ${above.map(raiseCommand).join(' and ')}`,
       )
     : result('passed', `${CEILINGS.join(', ')} are within ${baseRef}`)
 }

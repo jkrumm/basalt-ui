@@ -7,7 +7,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 
-import { BUDGET_PATH, seedBudget, writeBudget } from '../budget'
+import { BUDGET_PATH, raiseCommand, seedBudget, writeBudget } from '../budget'
 import { readManifest, writeManifest } from '../manifest'
 import type { Manifest, Profile } from '../manifest'
 import {
@@ -283,11 +283,13 @@ export function placeManaged(ctx: Ctx): void {
   if (code !== 0) ctx.problems.push('sync could not place the managed files')
 }
 
-/** `.basalt/budget.json` once: a ceiling only moves through `eject --raise`, never through `init`. */
+/** `.basalt/budget.json` once: a ceiling only moves through a raise row (`eject --raise`, `lint --raise`), never through `init`. */
 export function seedBudgetFile(ctx: Ctx): void {
   if (existsSync(resolve(ctx.root, BUDGET_PATH))) return
   writeBudget(ctx.root, seedBudget(ctx.args.profile))
-  say(`wrote ${BUDGET_PATH}`)
+  say(
+    `wrote ${BUDGET_PATH} (waivers 0: the first reasoned waiver needs ${raiseCommand('waivers')})`,
+  )
 }
 
 export { installHook } from '../lint/hook-step'
