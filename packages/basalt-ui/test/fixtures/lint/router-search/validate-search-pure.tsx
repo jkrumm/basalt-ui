@@ -52,3 +52,23 @@ const route = createFileRoute('/runs')({
 const route = createFileRoute('/runs')({
   validateSearch: (input) => ({ window: input.window, document: input.document }),
 })
+
+// @invalid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => ({ id: s.id ?? crypto.randomUUID() }),
+})
+
+// @invalid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => ({ id: s.id ?? globalThis.crypto.randomUUID() }),
+})
+
+// @invalid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => ({ n: s.n ?? crypto.getRandomValues(new Uint8Array(1))[0] }),
+})
+
+// @valid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => ({ crypto: s.crypto, id: s.id }),
+})

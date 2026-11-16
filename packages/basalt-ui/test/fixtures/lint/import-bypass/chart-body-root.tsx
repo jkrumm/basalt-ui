@@ -81,3 +81,53 @@ const a = (
     )}
   />
 )
+// @invalid
+const a = (
+  <section>
+    <Lines data={data} ariaLabel="Load" />
+  </section>
+)
+// @valid
+const a = (
+  <div className="flex">
+    <Lines data={data} ariaLabel="Load" />
+  </div>
+)
+// @invalid
+const a = (
+  <main>
+    <div>
+      <Donut data={data} ariaLabel="Mix" />
+    </div>
+  </main>
+)
+// @valid
+const a = (
+  <section>
+    <ChartCard title="Load" chart={<Lines data={data} ariaLabel="Load" />} />
+  </section>
+)
+// @valid
+const a = (
+  <div>
+    <Card>
+      <Lines data={data} ariaLabel="Load" />
+    </Card>
+  </div>
+)
+// @valid
+const a = (
+  <div>
+    <DataPanel title="Load" body={<Table />}>
+      <Bars data={data} ariaLabel="Load" />
+    </DataPanel>
+  </div>
+)
+// @valid
+const Spark = () => <Sparkline data={data} ariaLabel="Load" />
+// @valid
+const a = (
+  <Stack>
+    <Lines data={data} ariaLabel="Load" />
+  </Stack>
+)

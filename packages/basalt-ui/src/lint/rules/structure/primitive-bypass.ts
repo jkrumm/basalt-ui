@@ -32,6 +32,19 @@
  * - `raw-heading`: an intrinsic element with a literal `role="heading"` reads (`<div role="heading"
  *   aria-level={2}>`); a role held in a variable or a spread is not read, and a component
  *   (`<Box role="heading">`) is left to its own definition.
+ * - `raw-control`: a `div` or `span` with `onClick` and no role is not read (a wrapper that stops
+ *   propagation or delegates is common and `jsx-a11y` owns it); an `li`, `tr`, `td`, `th` or `img`
+ *   with `onClick` and no role reads, and one with a role or a spread passes.
+ * - `chart-body-root`: a chart kind reads outside a card only with a `section`, `main`, `article`
+ *   or `aside` above it in the same JSX tree; one under a `div` or that is the whole return of a
+ *   component (a `ChartCard` may wrap it in another file) is a cross-file fact and passes. A `Card`, `ChartCard`, `DataPanel` or any
+ *   `*Card`/`*Panel` ancestor passes.
+ * - `intl-format`: a dayjs or moment formatter is read by the callee name (`dayjs(...)`,
+ *   `moment(...)`, `.utc()` chains); a value held in a variable first (`const d = dayjs(at)`) is not.
+ * - `raw-heading`: `createElement('h2', ...)` and `React.createElement` read; a tag from a variable
+ *   or a spread of arguments does not.
+ * - `svg-data-marks`: a mark is `aria-hidden` by its own attribute or an ancestor's, read in the
+ *   same file only; the seam spread may sit in another file's component and then it still reports.
  * - `svg-data-marks`: a `<g>` that is not inside an `<svg>` in the file is a marks root too (a
  *   marks component split into its own file); a `.map` of marks under a root a helper component
  *   renders (`<Dots />` returning bare `<circle>`s with no `<g>`) is not read.
@@ -61,7 +74,11 @@ const RAW_CONTROLS: ReadonlySet<string> = new Set([
   'select',
   'textarea',
   'dialog',
+  'progress',
+  'meter',
 ])
+/** Elements that are not interactive by nature: an `onClick` with no role makes a button of them. */
+const CLICKABLE_NON_CONTROLS: ReadonlySet<string> = new Set(['li', 'tr', 'td', 'th', 'img'])
 const HEADINGS: ReadonlySet<string> = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 const SVG_MARKS: ReadonlySet<string> = new Set([
   'rect',
@@ -188,21 +205,33 @@ const isAnchorButton = (node: Node): boolean =>
   !children(node, 'attributes').some((attr) => attr.type === 'JSXSpreadAttribute')
 
 /**
- * Raw `button`, `input`, `select`, `textarea` and the native `dialog`, a `div` or `span` that
- * is a button by `role="button"` and `onClick`, and an `<a onClick>` with no `href`. A
+ * An `li`, `tr`, `td`, `th` or `img` with `onClick` and no `role` (and no spread, which may carry
+ * one): a clickable row that is a button with no semantics and, mostly, no keyboard route.
+ */
+const isClickableRow = (node: Node): boolean =>
+  CLICKABLE_NON_CONTROLS.has(tagOf(node) ?? '') &&
+  attribute(node, 'onClick') !== undefined &&
+  attribute(node, 'role') === undefined &&
+  !children(node, 'attributes').some((attr) => attr.type === 'JSXSpreadAttribute')
+
+/**
+ * Raw `button`, `input`, `select`, `textarea`, the native `dialog`, `progress` and `meter`, a `div`
+ * or `span` that is a button by `role="button"` and `onClick`, an `<a onClick>` with no `href`, and
+ * an `li`, `tr`, `td`, `th` or `img` with `onClick` and no `role`. A
  * `type="file"` input that is visually hidden (a `hidden` attribute, or a `sr-only` or `hidden`
  * class) passes: it sits behind a label, and no
  * primitive wraps a file input. A visible file input still reports.
  */
 const rawControl = form(
   'raw-control',
-  'Use ui/button, ui/input, ui/select, ui/textarea or ui/dialog',
+  'Use ui/button, ui/input, ui/select, ui/textarea, ui/dialog, ui/progress or ui/meter; a clickable row is a link or a button inside the row',
   'Eject the primitive to change its structure',
   ({ report }) =>
     opening((node) => {
       const tag = tagOf(node)
       if (isFakeButton(node)) return report(node, `<${tag} role="button">`)
       if (isAnchorButton(node)) return report(node, '<a onClick> without href')
+      if (isClickableRow(node)) return report(node, `<${tag} onClick> without a role`)
       if (tag === undefined || !RAW_CONTROLS.has(tag)) return
       if (tag === 'input' && (isCheckable(node) || isHiddenFileInput(node))) return
       report(node, `<${tag}>`)
@@ -269,6 +298,11 @@ const rawHeading = form(
         if (name !== undefined && isHeadingTag(child(node, 'init'))) headingTags.add(name)
       },
       JSXOpeningElement: rawHeadingOpening(report, headingTags),
+      CallExpression(node) {
+        if (calleeName(node) !== 'createElement') return
+        const tag = stringValue(children(node, 'arguments')[0])
+        if (tag !== undefined && HEADINGS.has(tag)) report(node, `createElement('${tag}')`)
+      },
     }
   },
 )
@@ -522,12 +556,36 @@ const isBuildCall = (node: Node): boolean => {
   )
 }
 
+/** `aria-hidden`, `aria-hidden="true"` or `aria-hidden={true}`: not `"false"` or `{false}`. */
+const isAriaHidden = (opening: Node): boolean => {
+  const attr = attribute(opening, 'aria-hidden')
+  if (!attr) return false
+  const value = child(attr, 'value')
+  if (!value) return true
+  const inner = value.type === 'JSXExpressionContainer' ? child(value, 'expression') : value
+  return inner?.type === 'Literal' && (inner['value'] === true || inner['value'] === 'true')
+}
+
+/** A mark that is `aria-hidden`, or sits under an `aria-hidden` element: decorative artwork. */
+function isDecorative(mark: Node): boolean {
+  if (isAriaHidden(mark)) return true
+  for (let at = parentOf(parentOf(mark) as Node); at; at = parentOf(at)) {
+    if (at.type !== 'JSXElement') continue
+    const open = child(at, 'openingElement')
+    if (open && isAriaHidden(open)) return true
+  }
+  return false
+}
+
 /**
  * A mark drawn per datum inside an `<svg>`: `data.map((d) => <rect … />)`. Static artwork (an icon,
  * a fixed grid) is not data-mapped and passes, and so does a mark drawn through the geometry seam.
  * One report per map call. A `<path d>` built from data (an inline `.map(...).join(' ')`, or a name
  * a declaration in the file binds to one) is a data mark too; a constant `d` is artwork. A `<g>`
- * outside any `<svg>` roots the same check: the marks component of a chart split into files.
+ * outside any `<svg>` roots the same check: the marks component of a chart split into files. A
+ * mapped mark that is `aria-hidden` (itself or under an `aria-hidden` element) passes in a file
+ * where another mark spreads `focus.item(...)`: it is decoration beside seam marks (an edge between
+ * nodes) and must not take a tab stop. With no seam spread in the file it still reports.
  */
 const svgDataMarks = form(
   'svg-data-marks',
@@ -539,6 +597,8 @@ const svgDataMarks = form(
     const entered = new WeakSet<Node>()
     const seam = dataMarkScope()
     const builtPaths = new Set<string>()
+    const decorative = new Map<Node, { node: Node; message: string }>()
+    let itemSpread = false
     const pathFromData = (opening: Node, name: string): boolean => {
       const value = child(attribute(opening, name) ?? { type: '' }, 'value')
       const expression =
@@ -589,8 +649,22 @@ const svgDataMarks = form(
           }
           if (!scope || !map || tag === undefined || !SVG_MARKS.has(tag)) return
           if (scope.reported.has(map.node) || seam.wired(map)) return
+          if (isDecorative(node)) {
+            if (!decorative.has(map.node)) {
+              decorative.set(map.node, { node, message: `<${tag}> mapped over data` })
+            }
+            return
+          }
           scope.reported.add(map.node)
+          decorative.delete(map.node)
           report(node, `<${tag}> mapped over data`)
+        },
+        JSXSpreadAttribute(node) {
+          if (seamSpread(node)?.half === 'item') itemSpread = true
+        },
+        'Program:exit'() {
+          if (itemSpread) return
+          for (const { node, message } of decorative.values()) report(node, message)
         },
       },
     ])
@@ -887,13 +961,45 @@ function bodyRoots(expression: Node | undefined): Node[] {
   }
 }
 
+/** A card frame: `ChartCard`, `DataPanel`, `Card`, and any `*Card` or `*Panel` (`StatCard`). */
+const isCardFrame = (tag: string): boolean => /^(?:Card|[A-Z]\w*(?:Card|Panel))$/.test(tag)
+
+/** The sectioning elements a page is made of; a `div` is a layout wrapper a card may wrap elsewhere. */
+const PAGE_ELEMENTS: ReadonlySet<string> = new Set(['section', 'main', 'article', 'aside'])
+
+/**
+ * True when a chart kind sits under a page element (`section`, `main`, `article`, `aside`) with no
+ * card frame or chart kind above it: `<section><Lines /></section>`. A chart that is the whole
+ * return of a component, under components only, or under a `div` has no such ancestor and passes.
+ */
+function bareInPage(chart: Node): boolean {
+  let intrinsic = false
+  for (let at = parentOf(parentOf(chart) as Node); at; at = parentOf(at)) {
+    if (at.type !== 'JSXElement') continue
+    const tag = tagOf(child(at, 'openingElement') as Node)
+    if (tag === undefined) continue
+    if (isCardFrame(tag) || CHART_KINDS.has(tag)) return false
+    if (PAGE_ELEMENTS.has(tag)) intrinsic = true
+  }
+  return intrinsic
+}
+
+/**
+ * A chart kind as a `DataPanel` body root, or bare in a page: a page element above it and no
+ * `ChartCard`, `DataPanel`, `Card` or other `*Card` / `*Panel` frame. A plain `Card` passes.
+ */
 const chartBodyRoot = form(
   'chart-body-root',
   'Wrap the chart in ChartCard; DataPanel body is for tables, lists and boards',
   'A bespoke layout is parts inside DataPanel',
   ({ report }) =>
     opening((node) => {
-      if (tagOf(node) !== 'DataPanel') return
+      const own = tagOf(node)
+      if (own !== undefined && CHART_KINDS.has(own)) {
+        if (bareInPage(node)) report(node, `<${own}> outside a card`)
+        return
+      }
+      if (own !== 'DataPanel') return
       const value = child(attribute(node, 'body') ?? { type: '' }, 'value')
       if (value?.type !== 'JSXExpressionContainer') return
       for (const root of bodyRoots(child(value, 'expression'))) {
@@ -923,6 +1029,23 @@ const DATE_FNS_FORMATTERS: ReadonlySet<string> = new Set([
   'formatDuration',
 ])
 
+const MOMENT_LIKE: ReadonlySet<string> = new Set(['dayjs', 'moment'])
+
+/** The `dayjs` or `moment` a call chain starts from: `dayjs(at)`, `dayjs(at).utc()`, `moment.utc(at)`. */
+function momentRoot(node: Node | undefined): string | undefined {
+  let at = node
+  while (at?.type === 'CallExpression' || at?.type === 'MemberExpression') {
+    const next = child(at, at.type === 'CallExpression' ? 'callee' : 'object')
+    const name = nameOf(next)
+    if (name !== undefined) return MOMENT_LIKE.has(name) ? name : undefined
+    at = next
+  }
+  return undefined
+}
+
+const isMomentChain = (node: Node | undefined): boolean =>
+  node?.type === 'CallExpression' && momentRoot(node) !== undefined
+
 /** Wrappers that pass a string through: a template, `+`, a ternary, a cast. */
 const PASS_THROUGH: ReadonlySet<string> = new Set([
   'TemplateLiteral',
@@ -946,7 +1069,8 @@ function rendersAsChild(node: Node): boolean {
 /**
  * `new Intl.*Format(...)`, `toLocale*String(...)`, a `toFixed` rendered as JSX text and a named
  * date-fns formatter pin the locale or the number format in app code. Reading
- * `new Intl.DateTimeFormat().resolvedOptions()` is not formatting and passes. Test files pass.
+ * `new Intl.DateTimeFormat().resolvedOptions()` is not formatting and passes. A `.format(...)` on a
+ * `dayjs(...)` or `moment(...)` call chain reads as a date-fns formatter does. Test files pass.
  */
 const intlFormat: AstForm = {
   ...form(
@@ -992,6 +1116,10 @@ const intlFormat: AstForm = {
             if (method === 'resolvedOptions') {
               const object = child(callee, 'object')
               if (object) resolved.add(object)
+              return
+            }
+            if (method === 'format' && isMomentChain(child(callee, 'object'))) {
+              report(node, `${momentRoot(child(callee, 'object'))}().format()`)
               return
             }
             if (method === 'toFixed') {

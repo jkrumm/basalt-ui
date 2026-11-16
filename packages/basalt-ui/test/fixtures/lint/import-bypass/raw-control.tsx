@@ -57,3 +57,29 @@ const a = (
 )
 // @valid
 const a = <a {...props} onClick={onMore} />
+// @invalid
+const a = (
+  <li tabIndex={0} onClick={open} onKeyDown={onKey}>
+    Row
+  </li>
+)
+// @invalid
+const a = <tr onClick={open} />
+// @invalid
+const a = <img src={src} onClick={zoom} />
+// @valid
+const a = <li role="option">Row</li>
+// @valid
+const a = <li role="option" onClick={pick} />
+// @valid
+const a = <li {...props} onClick={pick} />
+// @valid
+const a = <li>Row</li>
+// @valid
+const a = <div onClick={stop}>Row</div>
+// @invalid
+const a = <progress value={used} max={100} />
+// @invalid
+const a = <meter value={used} min={0} max={100} />
+// @valid
+const a = <Progress value={used} />

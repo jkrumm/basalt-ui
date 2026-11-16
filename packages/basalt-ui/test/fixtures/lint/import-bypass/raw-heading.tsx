@@ -88,3 +88,11 @@ const a = (
     Runs
   </div>
 )
+// @invalid
+const a = createElement('h2', null, text)
+// @invalid
+const a = React.createElement('h4', { className: 'x' }, text)
+// @valid
+const a = createElement('div', null, text)
+// @valid
+const a = createElement(Section, { title })

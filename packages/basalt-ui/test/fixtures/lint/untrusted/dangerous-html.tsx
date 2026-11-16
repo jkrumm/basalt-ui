@@ -77,3 +77,21 @@ const a = <iframe sandbox={mode} srcDoc={m.html} />
 
 // @invalid
 const a = <iframe sandbox="allow-scripts ALLOW-SAME-ORIGIN" srcDoc={m.html} />
+
+// @invalid
+w?.document.write(m.html)
+
+// @invalid
+document.write(`<b>${name}</b>`)
+
+// @invalid
+frame.contentWindow.document.writeln(m.html)
+
+// @valid
+w.document.write('<p>fixed</p>')
+
+// @valid
+w.document.write(`<p>fixed</p>`)
+
+// @valid
+stream.write(m.html)

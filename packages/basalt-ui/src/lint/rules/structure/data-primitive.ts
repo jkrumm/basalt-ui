@@ -8,7 +8,8 @@
  * is flagged only when its callback refetches. Raw `WebSocket` outside a seam is the same form as
  * `EventSource`: the contract ships no client, so the message names `createChannel` and the seam.
  *
- * Known limits: `reader-loop` reads a `for await` over a `.body` member, a `getReader()` read in a
+ * Known limits: `reader-loop` reads a `for await` over a `.body` member, a `.pipeTo(new WritableStream(…))`
+ * on a chain rooted in `.body`, a `getReader()` read in a
  * loop and a `getReader()` whose reader is read inside a named function that refers to itself (a
  * `read().then(function pump() { … read().then(pump) })` or a recursive async function); a pump split
  * across two functions, a reader taken from a parameter and a stream iterated through a helper
@@ -203,6 +204,27 @@ function functionName(fn: Node): string | undefined {
   return parent?.type === 'VariableDeclarator' ? nameOf(child(parent, 'id')) : undefined
 }
 
+/** `res.body!.pipeThrough(new TextDecoderStream()).pipeTo(new WritableStream({ … }))`: a chain rooted in `.body` that ends in a hand-written sink. */
+function isBodyPipeToSink(call: Node): boolean {
+  if (!isMethodCall(call, 'pipeTo')) return false
+  const [sink] = nodesIn(call, 'arguments')
+  if (sink?.type !== 'NewExpression' || nameOf(child(sink, 'callee')) !== 'WritableStream') {
+    return false
+  }
+  let at: Node | undefined = child(child(call, 'callee'), 'object')
+  while (at) {
+    if (at.type === 'TSNonNullExpression' || at.type === 'TSAsExpression') {
+      at = child(at, 'expression')
+    } else if (at.type === 'ChainExpression') at = child(at, 'expression')
+    else if (at.type === 'CallExpression') at = child(child(at, 'callee'), 'object')
+    else if (at.type === 'MemberExpression') {
+      if (at['computed'] !== true && nameOf(child(at, 'property')) === 'body') return true
+      at = child(at, 'object')
+    } else return false
+  }
+  return false
+}
+
 export const readerLoop: AstForm = {
   id: 'reader-loop',
   detect: ({ report }): Visitor => {
@@ -238,6 +260,7 @@ export const readerLoop: AstForm = {
           if (name !== undefined && isMethodCall(init, 'getReader')) readers.set(name, init)
         },
         CallExpression(node) {
+          if (isBodyPipeToSink(node)) report(node, '.body … .pipeTo(new WritableStream)')
           if (!isMethodCall(node, 'read')) return
           const reader = nameOf(child(child(node, 'callee'), 'object'))
           if (reader === undefined) return
@@ -350,17 +373,42 @@ const isEmptyArray = (node: Node | undefined): boolean => {
   return at?.type === 'ArrayExpression' && nodesIn(at, 'elements').length === 0
 }
 
-/** `x ?? []` / `x || []`, or `x ?? EMPTY` where `EMPTY` is a same-file const empty array. */
+/** `x ?? []` / `x || []` / `ok ? x : []`, or `x ?? EMPTY` where `EMPTY` is a same-file const empty array. */
+/** `q.data`, `q.data!` or `q?.data`: a query result's `data` member. */
+const isDataRead = (node: Node | undefined): boolean => {
+  let at = node
+  while (at?.type === 'TSNonNullExpression' || at?.type === 'ChainExpression') {
+    at = child(at, 'expression')
+  }
+  return (
+    at?.type === 'MemberExpression' &&
+    at['computed'] !== true &&
+    nameOf(child(at, 'property')) === 'data'
+  )
+}
+
 const isFallbackExpression = (
   node: Node | undefined,
   emptyConsts: ReadonlySet<string>,
 ): boolean => {
+  const isEmpty = (at: Node | undefined): boolean => {
+    if (isEmptyArray(at)) return true
+    const name = nameOf(at)
+    return name !== undefined && emptyConsts.has(name)
+  }
+  if (node?.type === 'ConditionalExpression') {
+    // Only a query's data against an empty branch (`q.isSuccess ? q.data : []`): a conditional
+    // between an empty state and computed rows (`shot === 'empty' ? [] : rows`) is no fallback.
+    const consequent = child(node, 'consequent')
+    const alternate = child(node, 'alternate')
+    return (
+      (isEmpty(consequent) && isDataRead(alternate)) ||
+      (isEmpty(alternate) && isDataRead(consequent))
+    )
+  }
   if (node?.type !== 'LogicalExpression') return false
   if (node['operator'] !== '??' && node['operator'] !== '||') return false
-  const right = child(node, 'right')
-  if (isEmptyArray(right)) return true
-  const name = nameOf(right)
-  return name !== undefined && emptyConsts.has(name)
+  return isEmpty(child(node, 'right'))
 }
 
 const isConstDeclarator = (node: Node): boolean =>
@@ -384,8 +432,9 @@ function memoReturn(call: Node): Node | undefined {
 
 /**
  * An empty array standing in for a query's data on a chart (a shipped kind, or any element named
- * `*Chart`): written in the prop
- * (`data={q.data ?? []}`), hoisted (`const rows = q.data ?? []` then `data={rows}`), a destructure
+ * `*Chart`): written in the prop (`data={q.data ?? []}`, or a conditional between a `.data` read
+ * and an empty array, `q.isSuccess ? q.data : []`; an empty state against computed rows,
+ * `shot === 'empty' ? [] : rows`, passes), hoisted (`const rows = q.data ?? []` then `data={rows}`), a destructure
  * default off a call (`const { data = [] } = useRuns()` then `data={data}`), a same-file `const`
  * empty array (`q.data ?? EMPTY`), or the same fallback returned by a `useMemo` (an expression
  * body or a single `return`). A name is matched by spelling, not scope. Known limit: a fallback
@@ -424,14 +473,16 @@ export const chartDataFallback: AstForm = {
         const tag = nameOf(element)
         if (tag === undefined || !isChartElement(tag)) return
         const value = child(child(node, 'value'), 'expression')
-        if (value?.type === 'LogicalExpression') inline.push({ node, value })
+        if (value?.type === 'LogicalExpression' || value?.type === 'ConditionalExpression') {
+          inline.push({ node, value })
+        }
         const name = nameOf(value)
         if (name !== undefined) named.push({ node, name })
       },
       'Program:exit'() {
         for (const { node, value } of inline) {
           if (isFallbackExpression(value, emptyConsts)) {
-            report(node, `data={… ${value['operator']} []}`)
+            report(node, `data={… ${value['operator'] ?? '?:'} []}`)
           }
         }
         for (const { node, name } of named) {
