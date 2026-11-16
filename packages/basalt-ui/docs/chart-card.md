@@ -38,6 +38,8 @@ ChartCard(props: ChartCardProps): ReactElement
   chart?: BoxSlot
 ```
 
+`Phase`, `Empty` import from the root: `import type { Phase, Empty } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

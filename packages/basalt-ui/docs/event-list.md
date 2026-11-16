@@ -30,6 +30,8 @@ EventList(props: EventListProps): ReactElement
   now?: number | Date  // The instant "Today" is measured from
 ```
 
+`Phase`, `QueryStateLike`, `Empty` import from the root: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

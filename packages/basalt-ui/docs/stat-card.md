@@ -41,6 +41,8 @@ StatCard(props: StatCardProps): ReactElement
   menu?: Menu
 ```
 
+`Phase`, `QueryStateLike`, `Empty` import from the root: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

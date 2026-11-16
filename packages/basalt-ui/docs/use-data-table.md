@@ -45,6 +45,8 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   onRowActivate?: (row: T) => void
 ```
 
+`Phase`, `QueryStateLike`, `Empty` import from the root: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

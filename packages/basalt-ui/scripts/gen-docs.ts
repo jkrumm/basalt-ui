@@ -520,13 +520,24 @@ function scanExamples(roots: GenRoots): Example[] {
 
 // ── Rendering ────────────────────────────────────────────────────────────────────────────────────
 
+/** The frame types a signature types a `phase` with live in the root entry, not in the subpath the frame comes from. */
+const ROOT_TYPES = ['Phase', 'QueryStateLike', 'Empty', 'FrameState'] as const
+
+/** One line naming the root import of every frame type the signature uses; empty when it uses none. */
+function rootImportLine(signature: string): string {
+  const used = ROOT_TYPES.filter((t) => new RegExp(`\\b${t}\\b`).test(signature))
+  return used.length === 0
+    ? ''
+    : `\n\`${used.join('`, `')}\` import from the root: \`import type { ${used.join(', ')} } from 'basalt-ui'\`.\n`
+}
+
 /** `docs/<kebab-name>.md`: the docs-format text, the signature, then the example regions. */
 function renderDoc(item: Extracted, examples: readonly Example[]): string {
   const { name } = item.info
   const mine = examples.filter((e) => e.name === name || e.name === kebab(name))
   const parts = [
     formatExportDoc(item.info).markdown,
-    `\n## Signature\n\n\`\`\`ts\n${item.signature}\n\`\`\`\n`,
+    `\n## Signature\n\n\`\`\`ts\n${item.signature}\n\`\`\`\n${rootImportLine(item.signature)}`,
     ...item.examples.map((body) => `\n## Example\n\n\`\`\`tsx\n${body}\n\`\`\`\n`),
     ...mine.map(
       (e) =>

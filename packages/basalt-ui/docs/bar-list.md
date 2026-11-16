@@ -30,6 +30,8 @@ BarList(props: BarListProps): ReactElement
   format?: (value: number) => string  // Formats each value
 ```
 
+`Phase`, `QueryStateLike`, `Empty` import from the root: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx
