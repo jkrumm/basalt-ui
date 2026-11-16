@@ -1,0 +1,25 @@
+{
+  "why": "Lint cycle 3 (docs/v3/cycles/lint-3.md, lint-3.1, P1), a regression of lint-2.2. In a fresh app at profile app, `basalt-ui eject --all --reason x --raise y` then `basalt-ui lint` exits 1 on four unedited seeds: `src/components/ui/date-picker.tsx:221 shadcn/require-static-classes: Dynamically built className on <PopoverTrigger> cannot be checked. Use static class strings.`, and the same on `dialog.tsx:216` (`<DialogClose>`), `toast.tsx:160` (`<ToastClose>`) and `toolbar.tsx:130` (`<ToolbarButton>`). Each is the seed's own `cn(xVariants(…), className)`. The zone E override switches the structure rules, the colour forms and `shadcn/no-restyle` off, not `require-static-classes`. v3-lint-2-eject-clean's acceptance was 'An unedited ejected primitive lints clean, for every shipped primitive (test)', and no test under packages/basalt-ui lints an ejected primitive: `eject.e2e.test.ts` ejects all 36 and checks the files, `eject.preset.test.ts` checks the override's keys. An agent that ejects, as the `Next:` rungs tell it to, gets a red gate on code it did not write. Reproduce: `zsh docs/v3/cycles/lint-3/fixtures/run.sh $PWD /tmp/a > /dev/null && zsh docs/v3/cycles/lint-3/fixtures/eject.sh $PWD /tmp/a`.",
+  "what": "Every shipped primitive, ejected unedited, lints clean under the consumer preset with both JS plugins loaded, and a test proves it.",
+  "owns": [
+    "packages/basalt-ui/src/lint/preset.ts (the zone E and zone S overrides)",
+    "packages/basalt-ui/configs/oxlint-*.json (regenerated)",
+    "packages/basalt-ui/src/ui/*.tsx, only where a seed fails a rule zone E keeps on",
+    "a test under packages/basalt-ui/src/cli/eject or tests/ that runs eject --all in a scratch app and then basalt-ui lint"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/**",
+    "packages/basalt-ui/src/lint/rules/** (forms and messages are v3-lint-3-lint's)",
+    "packages/basalt-ui/src/lint/rule-table.ts ID_CEILING"
+  ],
+  "change": "Decide which shadcn token rules an ejected file keeps (guardrails section 6): a seed builds its classes with `cva` and merges a caller's `className`, the shape `require-static-classes` cannot read, so zone E switches it off for `manifest.ejected` paths as it does `no-restyle`; a rule that stays on and fires on a seed is fixed in the seed, never waived. Regenerate the presets. Add the test v3-lint-2-eject-clean promised: a scratch app at profile app with `basalt-ui/lint` and `@shadcn/lint` loaded, `eject --all`, then `basalt-ui lint` exits 0 with no finding under `src/components/ui/`.",
+  "commits": "fix: one or two commits in packages/basalt-ui.",
+  "proof": "eject.sh from lint cycle 3 reports `findings: 0` and `lint rc=0`; the new test passes and fails when the zone E line is removed.",
+  "acceptance": [
+    "An unedited ejected primitive lints clean under both JS plugins, for every shipped primitive (test that runs basalt-ui lint)",
+    "require-static-classes still reports a dynamic className in app code outside zone E (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The rules' misses and messages (v3-lint-3-lint); the eject verb's help (v3-lint-3-wiring)."
+}

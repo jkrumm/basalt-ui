@@ -1,0 +1,195 @@
+// Seeded offenders for basalt/primitive-bypass.
+import { useState } from 'react'
+import { Lines } from 'basalt-ui/charts'
+import { DataPanel } from 'basalt-ui/cards'
+import { Table, TableBody, TableCell, TableRow } from 'basalt-ui/ui/table'
+
+type Run = { id: string; name: string; ms: number; at: Date }
+
+// seed primitive-bypass/raw-control 1: a raw button with a click handler
+export function Refresh({ onRefresh }: { onRefresh: () => void }) {
+  return (
+    <button type="button" className="rounded-control px-3" onClick={onRefresh}>
+      Refresh
+    </button>
+  )
+}
+
+// seed primitive-bypass/raw-control 2: a native select for a page size
+export function PageSize() {
+  const [size, setSize] = useState('25')
+  return (
+    <select value={size} onChange={(e) => setSize(e.target.value)}>
+      <option>25</option>
+      <option>50</option>
+    </select>
+  )
+}
+
+// seed primitive-bypass/raw-control 3: a textarea for a note
+export function Note() {
+  return <textarea rows={3} placeholder="Note" />
+}
+
+// seed primitive-bypass/checkable-input 1: a checkbox input with a label
+export function Agree() {
+  return (
+    <label>
+      <input type="checkbox" /> I agree
+    </label>
+  )
+}
+
+// seed primitive-bypass/checkable-input 2: radio inputs for a choice
+export function Plan() {
+  return <input type="radio" name="plan" value="pro" />
+}
+
+// seed primitive-bypass/raw-heading 1: an h2 above a section
+export function Section() {
+  return <h2 className="text-display">Recent runs</h2>
+}
+
+// seed primitive-bypass/raw-heading 2: an h1 page title in the body
+export function Title() {
+  return <h1>Settings</h1>
+}
+
+// seed primitive-bypass/raw-table 1: a raw table for static content
+export function Shortcuts() {
+  return (
+    <table>
+      <tbody>
+        <tr>
+          <td>⌘K</td>
+          <td>Open the palette</td>
+        </tr>
+      </tbody>
+    </table>
+  )
+}
+
+// seed primitive-bypass/svg-data-marks 1: bars drawn as svg rects from data
+export function Spark({ data }: { data: number[] }) {
+  return (
+    <svg viewBox="0 0 100 20" role="img" aria-label="trend">
+      {data.map((v, i) => (
+        <rect key={i} x={i * 10} y={20 - v} width={8} height={v} />
+      ))}
+    </svg>
+  )
+}
+
+// seed primitive-bypass/svg-data-marks 2: a line drawn as a path built from data
+export function Line({ data }: { data: number[] }) {
+  const d = data.map((v, i) => `${i === 0 ? 'M' : 'L'}${i * 10},${20 - v}`).join(' ')
+  return (
+    <svg viewBox="0 0 100 20" role="img" aria-label="trend">
+      <path d={d} className="stroke-chart-1" fill="none" />
+    </svg>
+  )
+}
+
+// seed primitive-bypass/html-data-marks 1: share bars as divs with a width from data
+export function Shares({ rows }: { rows: { name: string; pct: number }[] }) {
+  return (
+    <div className="flex flex-col gap-1">
+      {rows.map((r) => (
+        <div key={r.name} className="h-2 bg-chart-1" style={{ width: `${r.pct}%` }} />
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/html-data-marks 2: the bar width through a custom property, as no-inline-styles suggests
+export function SharesVar({ rows }: { rows: { name: string; pct: number }[] }) {
+  return (
+    <div className="flex flex-col gap-1">
+      {rows.map((r) => (
+        <div key={r.name} className="h-2 w-(--w) bg-chart-1" style={{ '--w': `${r.pct}%` } as React.CSSProperties} />
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/role-table 1: a div grid with table roles
+export function Grid() {
+  return (
+    <div role="table" aria-label="Runs">
+      <div role="row">
+        <div role="cell">a</div>
+      </div>
+    </div>
+  )
+}
+
+// seed primitive-bypass/table-rows 1: ui/table rows mapped from query data
+export function RunsTable({ runs }: { runs: Run[] }) {
+  return (
+    <Table>
+      <TableBody>
+        {runs.map((r) => (
+          <TableRow key={r.id}>
+            <TableCell>{r.name}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+// seed primitive-bypass/table-rows 2: rows sorted in place before the map
+export function SortedRuns({ runs }: { runs: Run[] }) {
+  const sorted = runs.toSorted((a, b) => a.ms - b.ms)
+  return (
+    <Table>
+      <TableBody>
+        {sorted.map((r) => (
+          <TableRow key={r.id}>
+            <TableCell>{r.ms}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+// seed primitive-bypass/chart-body-root 1: a chart kind as the DataPanel body
+export function Trend({ runs }: { runs: Run[] }) {
+  return <DataPanel title="Trend" body={() => <Lines data={runs} x="at" series={['ms']} />} />
+}
+
+// seed primitive-bypass/chart-body-root 2: the chart kind inside a wrapper div in the body
+export function Trend2({ runs }: { runs: Run[] }) {
+  return (
+    <DataPanel
+      title="Trend"
+      body={() => (
+        <div className="h-64">
+          <Lines data={runs} x="at" series={['ms']} />
+        </div>
+      )}
+    />
+  )
+}
+
+// seed primitive-bypass/intl-format 1: a number formatter built inline
+export function Count({ n }: { n: number }) {
+  return <span>{new Intl.NumberFormat('en-US').format(n)}</span>
+}
+
+// seed primitive-bypass/intl-format 2: toLocaleDateString on a date
+export function When({ run }: { run: Run }) {
+  return <span>{run.at.toLocaleDateString()}</span>
+}
+
+// seed primitive-bypass/intl-format 3: toFixed for a percentage
+export function Pct({ v }: { v: number }) {
+  return <span>{(v * 100).toFixed(1)}%</span>
+}
+
+// seed primitive-bypass/intl-format 4: date-fns format, the library habit
+import { format } from 'date-fns'
+export function Day({ run }: { run: Run }) {
+  return <span>{format(run.at, 'MMM d')}</span>
+}
