@@ -106,6 +106,7 @@ col<T>(): Col<T>
     sortable?: false  // `false` turns sorting off for this column
     polarity: "neutral" | "up-good" | "up-bad"
     unit?: string
+    currency?: string  // A money change: `+€50.00` in the currency's own digits, like `c.money`; wins over `unit`
 
   MeterOptions:
     header?: string  // Header text
