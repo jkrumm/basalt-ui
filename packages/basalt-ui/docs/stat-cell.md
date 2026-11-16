@@ -36,7 +36,7 @@ StatCell(props: StatCellProps): ReactElement
   srText?: string
   meter?: MeterSpec
   chart?: BoxSlot  // Called in a 28 px box
-  rows?: readonly StatRow[] & readonly [StatRow?, StatRow?, StatRow?…
+  rows?: readonly StatRow[] & readonly [StatRow?, StatRow?, StatRow?, StatRow?]
 ```
 
 `Phase`, `QueryStateLike`, `Empty` import from the root: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui'`.
