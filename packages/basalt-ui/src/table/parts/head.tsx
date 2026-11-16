@@ -56,6 +56,7 @@ export function tierAttributes(planned: PlannedColumn): Record<string, string | 
     'data-priority': planned.priority === null ? undefined : String(planned.priority),
     'data-pin': planned.pin ?? undefined,
     'data-identity': planned.identity ? '' : undefined,
+    'data-card': planned.place === 'hidden' ? 'hidden' : undefined,
   }
 }
 
