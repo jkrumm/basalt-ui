@@ -388,10 +388,10 @@ const UTILITY_VAR = /-[([](?:color:)?(?:var\()?(--[a-z][\w-]*)/i
 
 /**
  * `partsOnly` for a colour utility over a custom property, minus a property the same file sets in
- * a `style` object (`style={{ '--part': VX.line }}` with `bg-(--part)`): that value is passed in,
+ * a `style` object (`style={{ '--part': BASALT.line }}` with `bg-(--part)`): that value is passed in,
  * a series colour or a token, and the style's own route holds it (no-inline-styles,
  * html-data-marks). A property declared elsewhere (`--brand-blue` in a module stylesheet) is the
- * app's own palette and reports; a `--vx-*` name reports wherever it is set. Known limit: a
+ * app's own palette and reports; a `--basalt-*` name reports wherever it is set. Known limit: a
  * property set through a spread or a computed key is not read as set, and reports.
  */
 export function partsOnlyExceptStyleVar({ pattern, ...base }: ClassForm): AstForm {
@@ -415,7 +415,7 @@ export function partsOnlyExceptStyleVar({ pattern, ...base }: ClassForm): AstFor
           'Program:exit'() {
             for (const { node, token } of pending) {
               const name = UTILITY_VAR.exec(token)?.[1]
-              if (name !== undefined && !name.startsWith('--vx-') && set.has(name)) continue
+              if (name !== undefined && !name.startsWith('--basalt-') && set.has(name)) continue
               report(node, token)
             }
           },

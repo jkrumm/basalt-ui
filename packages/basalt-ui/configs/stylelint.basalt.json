@@ -76,14 +76,14 @@
     "declaration-property-value-allowed-list": [
       {
         "/^border(?:-[a-z]+)*-radius$/": [
-          "/^(?:(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit)|50%|9999px|calc\\(\\s*infinity\\s*\\*\\s*1px\\s*\\))(?:\\s+(?:(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit)|50%|9999px|calc\\(\\s*infinity\\s*\\*\\s*1px\\s*\\)))*$/i"
+          "/^(?:(?:var\\(--basalt-[a-z0-9-]+\\)|0|none|inherit)|50%|9999px|calc\\(\\s*infinity\\s*\\*\\s*1px\\s*\\))(?:\\s+(?:(?:var\\(--basalt-[a-z0-9-]+\\)|0|none|inherit)|50%|9999px|calc\\(\\s*infinity\\s*\\*\\s*1px\\s*\\)))*$/i"
         ],
         "/^(?:border(?:-[a-z]+)*-radius|box-shadow|line-height|letter-spacing)$/": [
           "/^(?:var\\(--basalt-[a-z0-9-]+\\)|0|none|inherit)(?:\\s*[,\\s]\\s*(?:var\\(--basalt-[a-z0-9-]+\\)|0|none|inherit))*$/i"
         ]
       },
       {
-        "message": "Disallowed `%s: %s`. Radius, shadow, line height and letter spacing take a `--vx-*` token, `0`, `none` or `inherit`; a radius also takes `50%` or `9999px` for a circle or a pill (`rounded-full` in a class)."
+        "message": "Disallowed `%s: %s`. Radius, shadow, line height and letter spacing take a `--basalt-*` token, `0`, `none` or `inherit`; a radius also takes `50%` or `9999px` for a circle or a pill (`rounded-full` in a class)."
       }
     ],
     "property-disallowed-list": [

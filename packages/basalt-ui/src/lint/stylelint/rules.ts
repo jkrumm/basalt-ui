@@ -214,7 +214,7 @@ export const STYLELINT_RULES = {
     },
     {
       message:
-        'Disallowed `%s: %s`. Radius, shadow, line height and letter spacing take a `--vx-*` token, `0`, `none` or `inherit`; a radius also takes `50%` or `9999px` for a circle or a pill (`rounded-full` in a class).',
+        'Disallowed `%s: %s`. Radius, shadow, line height and letter spacing take a `--basalt-*` token, `0`, `none` or `inherit`; a radius also takes `50%` or `9999px` for a circle or a pill (`rounded-full` in a class).',
     },
   ],
   'property-disallowed-list': [

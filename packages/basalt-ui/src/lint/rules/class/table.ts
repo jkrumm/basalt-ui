@@ -103,12 +103,12 @@ const anyVarArbitrary = (hint: string): string =>
 /**
  * A colour utility over a custom property: any variable under a colour utility. A bare
  * `shadow-(--x)` is a box-shadow value, not a colour, so `shadow` takes the `color:` hint, or a
- * `--vx-*` colour name as before.
+ * `--basalt-*` colour name as before.
  */
 const colourArbitrary = new RegExp(
   `^(?!${FOCUS_RING_COLOUR})(?=.*(?:` +
     `${HEAD}(?:${COLOUR_UTILITIES})-(?:${anyVarArbitrary('(?:color:)?')})${TAIL}|` +
-    `${HEAD}shadow-(?:${anyVarArbitrary('color:')}|${vxArbitrary(zoneANames)})${TAIL}))`,
+    `${HEAD}shadow-(?:${anyVarArbitrary('color:')}|${basaltArbitrary(zoneANames)})${TAIL}))`,
 )
 
 /** A fill-only role as text: the named utility, or the variable as an arbitrary value (`text-(color:--basalt-x)`). */
