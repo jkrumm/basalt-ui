@@ -54,12 +54,12 @@ const LITERAL_THEME = /\bdata-theme\s*=\s*(?:"[^"{}]+"|'[^'{}]+')/
 /** `build` and `typecheck` scripts of the install root and the app that run `tsc` before the route tree exists. */
 function treeFirstFindings(ctx: Ctx): string[] {
   const app = resolveAppDir(ctx.root)
-  const files = new Set(['package.json', ...('error' in app ? [] : [`${app.rel}/package.json`])])
+  const files = new Set([
+    'package.json',
+    ...('error' in app ? [] : [app.rel === '' ? 'package.json' : `${app.rel}/package.json`]),
+  ])
   return [...files].flatMap((file) => {
-    const scripts = (readJson(ctx.root, file.replace(/^\//, ''))?.['scripts'] ?? {}) as Record<
-      string,
-      unknown
-    >
+    const scripts = (readJson(ctx.root, file)?.['scripts'] ?? {}) as Record<string, unknown>
     return ['build', 'typecheck'].flatMap((name) => {
       const script = scripts[name]
       if (typeof script !== 'string' || !typechecksBeforeTree(script)) return []

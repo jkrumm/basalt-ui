@@ -79,6 +79,14 @@ describe('checkWeakenedConfig', () => {
     expect(results[4]?.detail).toContain('tried origin/HEAD, origin/main')
   })
 
+  it('skips, never passes, when git fails inside a directory that has a .git entry', async () => {
+    const dir = fixture('healthy')
+    mkdirSync(join(dir, '.git'))
+    const results = await run(dir)
+    expect(status(results, 5)).toBe('skipped')
+    expect(results[4]?.detail).not.toContain('git init')
+  })
+
   it('skips the ratchet when a remote exists but no base ref resolves (a shallow checkout)', async () => {
     const dir = fixture('healthy')
     Bun.spawnSync(['git', '-C', dir, 'init', '-q'])
