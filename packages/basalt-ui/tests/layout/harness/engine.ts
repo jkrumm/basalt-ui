@@ -19,6 +19,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach } from 'bun:test'
 import { chromium } from 'playwright-core'
 import type { Browser, BrowserContext, BrowserServer, Page } from 'playwright-core'
+import { readTestBrowser, testBrowserOptions } from '../../support/test-browser'
 import type { FixtureSpec } from '../fixture/spec'
 import { MAIN } from './slots'
 
@@ -328,32 +329,29 @@ async function bootLayoutSuite(gen: number): Promise<boolean> {
     // 30 s hook budget expired with every assertion green). `BrowserServer.kill()` ends the
     // process in ~20 ms and leaves no orphan to slow the next launch.
     chromeProcess = await chromium.launchServer({
-      // playwright-core's own per-platform table resolves `/opt/google/chrome/chrome` on linux —
-      // exactly what ubuntu-latest's Chrome .deb installs — and the .app bundle on darwin. NOTHING
-      // is ever downloaded. Use the channel, not `executablePath`, which Playwright documents as
-      // "at your own risk".
-      channel: 'chrome',
+      // BASALT_TEST_BROWSER picks installed Chrome (`channel: 'chrome'`, nothing is ever downloaded) or
+      // Playwright's chromium-headless-shell (`make browser-shell`); see tests/support/test-browser.ts.
+      ...testBrowserOptions(readTestBrowser()),
       // Ubuntu 24.04 on the runner blocks unprivileged user namespaces and the image sets no
       // `apparmor_restrict_unprivileged_userns=0`, which is the classic "no usable sandbox" CI
       // failure. The fixtures are self-authored and served from localhost, so nothing is being
-      // protected. Locally the sandbox works, so keep it.
-      chromiumSandbox: !process.env['CI'],
+      // protected. Locally the sandbox works, so keep it (testBrowserOptions sets `chromiumSandbox`).
     })
     chrome = await chromium.connect(chromeProcess.wsEndpoint())
   } catch (error) {
     await discard()
     if (process.env['CI']) {
       throw new Error(
-        'FAILED: could not launch Google Chrome and CI is set. ubuntu-latest ships ' +
-          'google-chrome-stable at /opt/google/chrome/chrome — if this fires, the runner image ' +
-          `changed and the layout suite is no longer running.\n${String(error)}`,
+        'FAILED: could not launch the test browser and CI is set. The shell comes from ' +
+          '`make browser-shell` (ci.yml installs it); BASALT_TEST_BROWSER=chrome wants ' +
+          `/opt/google/chrome/chrome.\n${String(error)}`,
         { cause: error },
       )
     }
     // oxlint-disable-next-line no-console -- a skipped gate must announce itself
     console.warn(
-      '[layout] SKIPPED — no Google Chrome found. Install it to run the layout regression ' +
-        'suite locally (`make layout`); CI runs it regardless.',
+      '[layout] SKIPPED — no test browser found. Run `make browser-shell` (or set ' +
+        'BASALT_TEST_BROWSER=chrome with Google Chrome installed); CI runs the suite regardless.',
     )
     return false
   }

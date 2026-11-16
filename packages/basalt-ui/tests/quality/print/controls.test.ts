@@ -10,6 +10,7 @@
 import { join } from 'node:path'
 import { afterAll, expect, test } from 'bun:test'
 import { chromium } from 'playwright-core'
+import { readTestBrowser, testBrowserOptions } from '../../support/test-browser'
 import { runControls } from './print'
 
 // Under `bun test` the event loop wakes for the browser socket only on its next timer tick (matrix/harness.ts).
@@ -19,7 +20,7 @@ const enabled = (process.env['BASALT_QUALITY_CONTROLS'] ?? '') !== ''
 test.skipIf(!enabled)(
   'every print offender fails its assertion and the clean page passes',
   async () => {
-    const browser = await chromium.launch({ channel: 'chrome' })
+    const browser = await chromium.launch(testBrowserOptions(readTestBrowser()))
     try {
       const page = await (await browser.newContext()).newPage()
       const outcomes = await runControls(page, (name) =>

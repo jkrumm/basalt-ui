@@ -10,7 +10,7 @@ let booted: Promise<MatrixHarness> | undefined
 
 export function sharedExemplar(): Promise<MatrixHarness> {
   booted ??= bootMatrix().then((harness) => {
-    if (harness === null) throw new Error('quality lanes: no Google Chrome to boot the exemplar')
+    if (harness === null) throw new Error('quality lanes: no test browser to boot the exemplar')
     return harness
   })
   return booted
