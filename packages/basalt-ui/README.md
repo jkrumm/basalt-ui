@@ -489,7 +489,7 @@ import { VX } from 'basalt-ui/tokens'
   ariaLabel="Sessions"
   data={rows}
   x={(d) => d.date}
-  series={[{ key: 'sessions', label: 'Sessions', color: VX.accent, getValue: (d) => d.sessions }]}
+  series={[{ key: 'sessions', label: 'Sessions', color: VX.brand, getValue: (d) => d.sessions }]}
   y={{ format: (v) => v.toFixed(0) }}
   height={260}
   marks={(plot) =>

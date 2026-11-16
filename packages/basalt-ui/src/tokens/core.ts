@@ -75,8 +75,8 @@ export type SeriesMap = Record<string, ColorPair>
  * Apply opacity to any palette token, theme-aware. Use instead of raw `rgba()` so the
  * underlying hue still resolves per color scheme.
  *
- *   alpha(VX.neutral, 0.5)        // muted hairline
- *   alpha(VX.status.warn, 0.1)    // zone-band fill
+ *   alpha(VX.inkMuted, 0.5)      // muted hairline
+ *   alpha(VX.warn, 0.1)          // zone-band fill
  */
 export const alpha = (token: string, a: number): string =>
   `color-mix(in srgb, ${token} ${Math.round(a * 100)}%, transparent)`
@@ -170,127 +170,53 @@ export const VX = {
   // use `var(--vx-text-*)` in CSS modules.
   text: TEXT,
 
-  // Single source for the card corner radius — shared by the Mantine-free ChartCard and the
-  // Mantine chrome (Card/Paper resolve to this SAME token). One knob, so cards never diverge.
+  // Every ref below is a name `css/tokens.css` defines (`tokens.test`-held: `vx-resolves.test.ts`), so
+  // a consumer that loads only the v3 sheet paints it. The 2.x names this replaces are `tokens.json`
+  // migration rows (`VX.accent` -> `VX.brand`, `VX.muted` -> `VX.inkMuted`, `VX.surface.panel` -> `VX.card`, …).
+
+  // Single source for the card corner radius — one knob, so cards never diverge.
   radiusCard: 'var(--vx-radius-card)',
   // Single source for the control corner radius (inputs, search, buttons, segmented track).
   radiusCtrl: 'var(--vx-radius-ctrl)',
-  // Fully-rounded pill affordance (scroll-to-bottom button, chips) — fixed, does not track the
-  // radius knob (see `RADIUS_STEP.pill`'s doc in `tokens/palette.ts`).
-  radiusPill: 'var(--vx-radius-pill)',
-  // The pointer-tier hit floor: 44px under `(pointer: coarse)` (WCAG 2.5.5), 24px otherwise
-  // (2.5.8). Density-exempt; `[data-basalt-hit]::after` in `styles.css` reads it.
+  // The pointer-tier hit floor: 44px under `(pointer: coarse)` (WCAG 2.5.5), 24px otherwise (2.5.8).
   hit: 'var(--vx-hit)',
 
-  // Controls tier sizing (`docs/CONTROLS-SPEC.md` §5) — `var()` refs onto the density-tracking
-  // `--vx-space-*` declarations `spaceDecls` emits above (same ref pattern as `radiusCard`/
-  // `radiusCtrl`), so a home/control reads ONE source for its tier height whether it's Mantine
-  // chrome (`cssVariablesResolver`/`CTL_THEME`) or a Mantine-free composed layout.
-  space: {
-    controlHeightTag: 'var(--vx-space-control-height-tag)',
-    controlHeightWidget: 'var(--vx-space-control-height-widget)',
-    controlHeightCtl: 'var(--vx-space-control-height-ctl)',
-    pageBarRowHeight: 'var(--vx-space-page-bar-row-height)',
-    sectionHeaderHeight: 'var(--vx-space-section-header-height)',
-    widgetHeaderHeight: 'var(--vx-space-widget-header-height)',
-    sidebarBlockRowHeight: 'var(--vx-space-sidebar-block-row-height)',
-    controlGap: 'var(--vx-space-control-gap)',
-    sheetRowHeight: 'var(--vx-space-sheet-row-height)',
-  },
+  // Surfaces, back to front: the page, a card on it, a raised layer, then the two row states.
+  canvas: 'var(--vx-canvas)',
+  card: 'var(--vx-card)',
+  raised: 'var(--vx-raised)',
+  hover: 'var(--vx-hover)',
+  selected: 'var(--vx-selected)',
+  hairline: 'var(--vx-hairline)',
+  // The page-coloured surface a mark sits on: a dot's ring, a halo.
+  surface: 'var(--vx-surface)',
 
-  // Semantic fills — consistent opacity across all charts
+  // Ink ramp — primary, secondary, quietest body text.
+  ink: 'var(--vx-ink)',
+  inkMuted: 'var(--vx-ink-muted)',
+  inkFaint: 'var(--vx-ink-faint)',
+
+  // The brand as INK (links, active nav, primary series, focus ring) and as FILL (a control that
+  // carries a label, with `onBrand` on it). Fills use `brandFill`, never `brand`: `brand` inverts across
+  // schemes and is unreadable as a fill on dark.
+  brand: 'var(--vx-brand)',
+  brandFill: 'var(--vx-brand-fill)',
+  onBrand: 'var(--vx-on-brand)',
+
+  // Status INK (text, marks, zones). The tint is `--vx-tint-pct` in a `color-mix`, not a name here.
   good: 'var(--vx-good)',
-  goodSoft: 'var(--vx-good-soft)',
-  bad: 'var(--vx-bad)',
   warn: 'var(--vx-warn)',
-  goodSolid: 'var(--vx-good-solid)',
-  badSolid: 'var(--vx-bad-solid)',
-  warnSolid: 'var(--vx-warn-solid)',
+  bad: 'var(--vx-bad)',
 
-  // Reference/dashed lines for thresholds
-  goodRef: 'var(--vx-good-ref)',
-  badRef: 'var(--vx-bad-ref)',
-  warnRef: 'var(--vx-warn-ref)',
-
-  // Neutral primary line/text color — the default for single-series, no-signal marks
-  // ("white/gray per theme"). Same value as the NEUTRAL.line pair.
+  // Neutral data line, grid and crosshair.
   line: 'var(--vx-line)',
-  line2: 'var(--vx-line2)',
-
-  // Axis label + axis stroke colors (theme-aware). Exposed as flat refs so a bespoke chart that
-  // renders raw <text> labels or axis lines (without the Axis* primitives) needs no hook.
-  axis: 'var(--vx-axis)',
-  axisStroke: 'var(--vx-axis-stroke)',
-
-  // Grid, hover, legend
   grid: 'var(--vx-grid)',
   crosshair: 'var(--vx-crosshair)',
-  dotStroke: 'var(--vx-dot-stroke)',
-  legendText: 'var(--vx-legend-text)',
 
-  // Tooltip chrome — muted (secondary) text inside a bespoke tooltip. The other tooltip vars
-  // (bg/text/border/shadow) reach the engine tooltip as `--ts-chart-tooltip-*` (`charts/core/theme.ts`);
-  // this one is flattened onto `VX` too because bespoke-tooltip authors reached for `VX.muted` (the
-  // general ink-ramp muted) instead and got the wrong token — same pattern as `VX.muted` below.
-  tooltipMuted: 'var(--vx-tooltip-muted)',
-
-  // Base neutral for hairlines / muted text / overlays — apply opacity via alpha()
-  neutral: 'var(--vx-neutral)',
-
-  // Ink text ramp (docs/DESIGN-SPEC.md §2) — primary/emphasis/secondary/tertiary body text.
-  ink: 'var(--vx-ink)',
-  ink2: 'var(--vx-ink2)',
-  muted: 'var(--vx-muted)',
-  faint: 'var(--vx-faint)',
-
-  // The accent as INK — primary series, active-nav icon, links, focus rings. Read against the PAGE,
-  // so it inverts across schemes (light on dark, deep on light).
-  accent: 'var(--vx-accent)',
-  accentHover: 'var(--vx-accent-hover)',
-  // The accent as SURFACE — a filled control that carries a label. Squeezed between white-text
-  // contrast and page contrast, so it is the same hex in both schemes (see ACCENT in palette.ts).
-  // Mantine's `--mantine-color-<primary>-filled` is bridged onto this, so it drives ALL filled
-  // chrome; a raw `--vx-accent` fill would be unreadable on dark. Fills use THIS, never `accent`.
-  accentFill: 'var(--vx-accent-fill)',
-  accentFillHover: 'var(--vx-accent-fill-hover)',
-  onAccent: 'var(--vx-on-accent)',
-
-  // Layout separators (header bottom rule, sidebar child indent) — distinct from `surface.border`.
-  divider: 'var(--vx-divider)',
-
-  // Depth shadows — a whisper shadow + a 1px ring baked into the value (never a `border` prop).
+  // Depth — a whisper shadow, a raised control's drop + inset edge, a floating layer's drop.
   shadowCard: 'var(--vx-shadow-card)',
-  shadowCtrl: 'var(--vx-shadow-ctrl)',
-  // Raised interactive controls — drop + a 1px INSET edge, the one depth every raised Button/
-  // ActionIcon variant shares (works over a fill, a tint or a panel alike; see SHADOW.raised).
   shadowRaised: 'var(--vx-shadow-raised)',
-  // Floating-layer elevation (menus, popovers, tooltips, modals, drawers) — a real drop shadow.
   shadowOverlay: 'var(--vx-shadow-overlay)',
-
-  // App surfaces (cards, borders) — shared with the Mantine chrome
-  surface: {
-    bg: 'var(--vx-surface-bg)',
-    panel: 'var(--vx-surface-panel)',
-    panelHover: 'var(--vx-surface-panel-hover)',
-    rowHover: 'var(--vx-surface-row-hover)', // a hovered row on a panel, visible in both schemes
-    rowSelected: 'var(--vx-surface-row-selected)', // a selected row on a panel
-    elevated: 'var(--vx-surface-elevated)',
-    subtle: 'var(--vx-surface-subtle)',
-    overlay: 'var(--vx-surface-overlay)', // floating layer (menus, popovers, modals, drawers)
-    field: 'var(--vx-surface-field)', // input field surface (slightly inset on a panel)
-    border: 'var(--vx-surface-border)', // "line" — strong border
-    hairline: 'var(--vx-surface-hairline)', // card ring only
-  },
-
-  // Score / zone status scale (excellent → poor)
-  status: {
-    /** FILL-ONLY: zones, bands, heatmap cells. Not AA as text (~3:1 on a light card) — text uses `good`. */
-    excellent: 'var(--vx-status-excellent)',
-    good: 'var(--vx-status-good)',
-    warn: 'var(--vx-status-warn)',
-    bad: 'var(--vx-status-bad)',
-    neutral: 'var(--vx-status-neutral)',
-  },
 
   // Shared sizing — single-sourced from the `SPACE_STEP` chart-margin steps (density-tracking; same
   // static-value/no-live-wiring note as `legendGap` above).
@@ -818,7 +744,9 @@ export function groupTokens<const T extends SeriesMap>(
   const refs = seriesTokens(map, `${name}-`)
   // Non-enumerable, symbol-keyed: a series key can never collide with the brand, and
   // `Object.keys(refs)` still lists exactly the series.
-  Object.defineProperty(refs, SERIES_GROUP, { value: { prefix: `${name}-`, map } })
+  Object.defineProperty(refs, SERIES_GROUP, {
+    value: { prefix: `${name}-`, map },
+  })
   return refs as { readonly [K in keyof T]: GroupRef }
 }
 
