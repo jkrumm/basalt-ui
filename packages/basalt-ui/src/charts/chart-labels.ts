@@ -4,7 +4,7 @@
  * it needs no canvas and no DOM and a server render equals a client render. `place` is pure
  * geometry over those widths.
  */
-import { VX } from '../tokens'
+import { BASALT } from '../tokens'
 import { GLYPHS, WIDTHS } from './chart-labels-widths.gen'
 import { hostObstacles } from './label-obstacles'
 import { trackAxis, trackRow } from './track'
@@ -97,7 +97,7 @@ const BASELINE_OFFSET = 0.35
 /** Default distance in px between the anchor and the label box. */
 const DEFAULT_GAP = 4
 
-const DEFAULT_SIZE: number = VX.text.micro
+const DEFAULT_SIZE: number = BASALT.text.micro
 
 const INDEX = new Map<string, number>([...GLYPHS].map((ch, i) => [ch, i]))
 

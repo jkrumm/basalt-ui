@@ -138,14 +138,14 @@ describe('row selection by import census', () => {
       'areas/c.json': rowsFile({
         rows: [
           { id: 'p', kind: 'removed-prop', from: 'basalt-ui/content#Markdown.className' },
-          { id: 't', kind: 'renamed', from: '--vx-old-token' },
-          { id: 'u', kind: 'renamed', from: '--vx-unused' },
+          { id: 't', kind: 'renamed', from: '--basalt-old-token' },
+          { id: 'u', kind: 'renamed', from: '--basalt-unused' },
         ],
       }),
     })
     const app = tree(tmp(), {
       'a.tsx': "import { Markdown } from 'basalt-ui/content'\n",
-      's.css': '.x { color: var(--vx-old-token) }\n',
+      's.css': '.x { color: var(--basalt-old-token) }\n',
     })
     expect(json(app, pkg, FLAGS).report.rows.map((r) => r.id)).toEqual(['p', 't'])
   })

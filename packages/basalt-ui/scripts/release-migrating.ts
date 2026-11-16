@@ -6,7 +6,7 @@
  *
  * FAILS CLOSED. Unknown keys, wrong types, a wrong `area`, a missing or extra file all throw with
  * the file and path named. The surface-diff gate throws when a release removes or renames a public
- * symbol, subpath or `--vx-*` name that no row names.
+ * symbol, subpath or `--basalt-*` name that no row names.
  *
  * Usage: bun packages/basalt-ui/scripts/release-migrating.ts <version>
  *        bun packages/basalt-ui/scripts/release-migrating.ts --check  (validate + gate, writes nothing)
@@ -363,15 +363,28 @@ export function surfaceIds(surface: Surface): string[] {
   )
 }
 
-export function parseVxNames(source: string): string[] {
-  return [...source.matchAll(/'(--vx-[A-Za-z0-9-]+)'/g)].map((m) => m[1] as string)
+/** Every quoted custom-property name of a name list, under whichever prefix the tag shipped. */
+export function parseBasaltNames(source: string): string[] {
+  return [...source.matchAll(/'(--[a-z]+-[A-Za-z0-9-]+)'/g)].map((m) => m[1] as string)
+}
+
+/**
+ * The prefix renames: a row whose `from` and `to` both end in `*` (the 3.0 `--basalt-*` rename). A name
+ * under the old prefix is covered when its twin under the new one is still emitted.
+ */
+function prefixRenames(merged: Content): [string, string][] {
+  return merged.rows.flatMap((r): [string, string][] =>
+    r.from.endsWith('*') && r.to?.endsWith('*') === true
+      ? [[r.from.slice(0, -1), r.to.slice(0, -1)]]
+      : [],
+  )
 }
 
 export function findUncovered(
   prevSurface: Surface,
   nowSurface: Surface,
-  prevVx: readonly string[],
-  nowVx: readonly string[],
+  prevBasalt: readonly string[],
+  nowBasalt: readonly string[],
   merged: Content,
 ): string[] {
   const fromSet = new Set(merged.rows.map((r) => r.from))
@@ -383,11 +396,17 @@ export function findUncovered(
     (id) => !fromSet.has(id) && !fromSet.has(id.slice(0, id.indexOf('#'))),
   )
 
-  const nowVxSet = new Set(nowVx)
-  const uncoveredVx = prevVx.filter(
-    (name) => !nowVxSet.has(name) && !fromSet.has(name) && !renamedFrom.has(name),
+  const nowBasaltSet = new Set(nowBasalt)
+  const prefixes = prefixRenames(merged)
+  const twinLives = (name: string) =>
+    prefixes.some(
+      ([from, to]) => name.startsWith(from) && nowBasaltSet.has(to + name.slice(from.length)),
+    )
+  const uncoveredBasalt = prevBasalt.filter(
+    (name) =>
+      !nowBasaltSet.has(name) && !fromSet.has(name) && !renamedFrom.has(name) && !twinLives(name),
   )
-  return [...new Set([...uncoveredSymbols, ...uncoveredVx])].toSorted()
+  return [...new Set([...uncoveredSymbols, ...uncoveredBasalt])].toSorted()
 }
 
 function git(rootDir: string, args: string[]): string {
@@ -412,9 +431,12 @@ export function previousTag(rootDir: string, version: string): string | undefine
 const SURFACE_DIR = 'packages/basalt-ui/scripts/export-surface'
 /** The pre-shard single-file snapshot, still what a tag from before the shard split carries. */
 const LEGACY_SURFACE_PATH = 'packages/basalt-ui/scripts/export-surface.json'
-const VX_PATH = 'packages/basalt-ui/src/tokens/vx-names.ts'
-/** Where a tag before the move carries the same list. */
-const LEGACY_VX_PATH = 'packages/basalt-ui/src/guard/vx-names.ts'
+const BASALT_PATH = 'packages/basalt-ui/src/tokens/basalt-names.ts'
+/** Where a tag before the 3.0 rename carries the same list: `src/tokens`, then `src/guard` before the move. */
+const LEGACY_BASALT_PATHS = [
+  'packages/basalt-ui/src/tokens/vx-names.ts',
+  'packages/basalt-ui/src/guard/vx-names.ts',
+]
 
 /** The surface a tag shipped: its shards, or the single-file snapshot of a pre-shard tag. */
 function surfaceAtTag(rootDir: string, tag: string): Surface {
@@ -430,21 +452,21 @@ function surfaceAtTag(rootDir: string, tag: string): Surface {
   return JSON.parse(git(rootDir, ['show', `${tag}:${LEGACY_SURFACE_PATH}`])) as Surface
 }
 
-/** The name list a tag shipped: at its current path, or the `src/guard` one of a tag before the move. */
-function vxSourceAtTag(rootDir: string, tag: string): string {
-  try {
-    return git(rootDir, ['show', `${tag}:${VX_PATH}`])
-  } catch {
-    return git(rootDir, ['show', `${tag}:${LEGACY_VX_PATH}`])
-  }
+/** The name list a tag shipped: at its current path, or at the first legacy path the tag carries. */
+function basaltSourceAtTag(rootDir: string, tag: string): string {
+  const paths = [BASALT_PATH, ...LEGACY_BASALT_PATHS]
+  const found = paths.find(
+    (path) => git(rootDir, ['ls-tree', '--name-only', tag, path]).trim() !== '',
+  )
+  return git(rootDir, ['show', `${tag}:${found ?? BASALT_PATH}`])
 }
 
 function runGate(rootDir: string, tag: string, merged: Content): void {
   const prevSurface = surfaceAtTag(rootDir, tag)
-  const prevVx = parseVxNames(vxSourceAtTag(rootDir, tag))
+  const prevBasalt = parseBasaltNames(basaltSourceAtTag(rootDir, tag))
   const nowSurface: Surface = readShards(join(rootDir, SURFACE_DIR))
-  const nowVx = parseVxNames(readFileSync(join(rootDir, VX_PATH), 'utf8'))
-  const uncovered = findUncovered(prevSurface, nowSurface, prevVx, nowVx, merged)
+  const nowBasalt = parseBasaltNames(readFileSync(join(rootDir, BASALT_PATH), 'utf8'))
+  const uncovered = findUncovered(prevSurface, nowSurface, prevBasalt, nowBasalt, merged)
   if (uncovered.length > 0) {
     throw new Error(
       `release-migrating: ${uncovered.length} removed or renamed public name(s) have no migration row: ${uncovered.join(', ')}`,

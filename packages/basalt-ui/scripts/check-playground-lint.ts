@@ -1,6 +1,6 @@
 /**
  * check-playground-lint: the two scanners of `basalt-ui lint` that the playground's oxlint step
- * does not run, over `apps/playground/src` as an `app` root: the `--vx-*` token check
+ * does not run, over `apps/playground/src` as an `app` root: the `--basalt-*` token check
  * (`basalt/unknown-token`) and the stylelint preset. oxlint stays with `lint:playground` and
  * `check-recipes-lint`. A recipe or a demo that names a token the package does not ship paints
  * nothing, and no other gate sees it.

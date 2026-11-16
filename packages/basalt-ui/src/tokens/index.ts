@@ -11,7 +11,7 @@ export {
   defineSeries,
   groupTokens,
   seriesTokens,
-  VX,
+  BASALT,
   type ColorPair,
   type SeriesGroup,
   type SeriesMap,

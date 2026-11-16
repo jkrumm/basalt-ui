@@ -9,18 +9,18 @@ type MermaidModule = {
 }
 
 /**
- * The diagram's colours as `var(--vx-*)` strings: the SVG references the custom properties through
+ * The diagram's colours as `var(--basalt-*)` strings: the SVG references the custom properties through
  * presentation attributes, so a scheme flip is pure CSS and never re-renders the diagram.
  */
 export const MERMAID_THEME_OPTIONS: RenderOptions = {
-  bg: 'var(--vx-card)',
-  fg: 'var(--vx-ink)',
-  line: 'var(--vx-line)',
-  accent: 'var(--vx-brand)',
-  muted: 'var(--vx-ink-muted)',
-  surface: 'var(--vx-card)',
-  border: 'var(--vx-hairline)',
-  font: 'var(--vx-font-sans)',
+  bg: 'var(--basalt-card)',
+  fg: 'var(--basalt-ink)',
+  line: 'var(--basalt-line)',
+  accent: 'var(--basalt-brand)',
+  muted: 'var(--basalt-ink-muted)',
+  surface: 'var(--basalt-card)',
+  border: 'var(--basalt-hairline)',
+  font: 'var(--basalt-font-sans)',
   transparent: true,
 }
 
@@ -78,7 +78,7 @@ export function MermaidDiagram({ code }: { code: string }): ReactElement {
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
       role="img"
       aria-label={code.split('\n')[0]?.trim() || 'Diagram'}
-      className="overflow-x-auto rounded-inset bg-card p-3 ring-1 ring-border ring-inset in-[.vx-prose]:mt-(--vx-rhythm-2) [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-w-full"
+      className="overflow-x-auto rounded-inset bg-card p-3 ring-1 ring-border ring-inset in-[.basalt-prose]:mt-(--basalt-rhythm-2) [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-w-full"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   )

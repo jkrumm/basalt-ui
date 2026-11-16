@@ -299,7 +299,7 @@ export const SURFACES = {
     rule: 'tokens',
     skill: ['basalt-design', 'basalt-charts'],
     // The type-scale rules live with the tokens, not with `.`: both police a value that left the
-    // `--vx-*` system, which is this surface's whole subject. `token-layer-boundary` is the
+    // `--basalt-*` system, which is this surface's whole subject. `token-layer-boundary` is the
     // repo-local-only rule that keeps the layer upstream of Mantine (see below).
     pluginRules: [
       'no-raw-font-size',
@@ -308,7 +308,7 @@ export const SURFACES = {
       'token-layer-boundary',
     ],
     description:
-      'VX token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha (Mantine-free)',
+      'BASALT token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha (Mantine-free)',
     globs: {
       shipped: ['**/tokens/**'],
       repo: ['packages/basalt-ui/src/tokens/**'],

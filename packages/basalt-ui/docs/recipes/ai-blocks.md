@@ -11,12 +11,12 @@ import { BarList, DataPanel, StatCard } from 'basalt-ui/cards'
 import { Bars, ChartCard } from 'basalt-ui/charts'
 import { Callout } from 'basalt-ui/page'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import * as s from './ai-blocks-schemas'
 
 const c = col<s.Row>()
 const columns = [c.entity('name'), c.text('status'), c.number('value')]
-const color = { light: VX.brand, dark: VX.brand }
+const color = { light: BASALT.brand, dark: BASALT.brand }
 const bar = { mark: 'bar', key: 'v', label: 'Value', color, y: (d: s.Point) => d.value } as const
 const x = { value: (d: s.Point) => d.label }
 

@@ -2,7 +2,7 @@
  * `Heatmap` — a band × band matrix of `cell` marks (`docs/V2-SPEC.md` § 9.3). Intensity is ABSOLUTE:
  * the color scale spans `domain` (default `[0, max]`), never each row's own range, so two grids on
  * one page read against the same ink. A cell with a datum but a `null` value is ABSENT: a flat
- * `--vx-line` fill, no hatch; a cell the consumer names a `states` entry for (failed, idle, …)
+ * `--basalt-line` fill, no hatch; a cell the consumer names a `states` entry for (failed, idle, …)
  * draws that state's flat fill instead, legended next to the gradient. A position with NO datum is
  * inert: it paints the absent fill and answers no pointer — no tooltip, no snap to a neighbour.
  * There is no cursor and no crosshair — the tooltip is per cell, its rows are `tooltip.rows(d)` data.
@@ -17,7 +17,7 @@ import { scaleQuantize } from 'd3-scale'
 import { useId, useMemo } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import type { BasaltProps } from '../../common/props'
-import { alpha, VX } from '../../tokens'
+import { alpha, BASALT } from '../../tokens'
 import { resolveContainerClass } from '../../tokens/size-classes'
 import type { ContainerClass } from '../../tokens/size-classes'
 import { engineRow, strideTicks } from '../core/compile'
@@ -61,7 +61,7 @@ export type HeatmapState<K extends string = string> = Omit<
   'key' | 'tooltip' | 'color'
 > & {
   key: K
-  /** The flat fill, a `VX.*` ref. Needed unless `tone` is set; `color` wins over `tone`. */
+  /** The flat fill, a `BASALT.*` ref. Needed unless `tone` is set; `color` wins over `tone`. */
   color?: string | undefined
 }
 
@@ -80,7 +80,7 @@ type HeatmapBase<T, K extends string> = BasaltProps & {
   /** Explicit band order. Default: first seen in `data`. */
   rows?: readonly string[] | undefined
   cols?: readonly string[] | undefined
-  /** The ink at full intensity, a `VX.*` ref or a series token. Default `VX.line`. */
+  /** The ink at full intensity, a `BASALT.*` ref or a series token. Default `BASALT.line`. */
   color?: string | undefined
   /** The value range the color scale spans. Default `[0, max]` of the data. */
   domain?: readonly [number, number] | undefined
@@ -327,7 +327,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     getRow,
     getCol,
     getValue,
-    color = VX.line,
+    color = BASALT.line,
     domain,
     formatValue = String,
     formatLegend = formatValue,
@@ -455,7 +455,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
             const note = c.datum === undefined ? null : annotate(c.datum)
             return note === null || note === ''
               ? []
-              : [{ ...c, text: note, fill: darkFill(c) ? CV.surface : VX.ink }]
+              : [{ ...c, text: note, fill: darkFill(c) ? CV.surface : BASALT.ink }]
           })
     const tooltipOptions = showTooltip
       ? {
@@ -484,7 +484,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         const ticks = { line: false as const, size: 0 }
         const cls = resolveContainerClass(width)
         const tickLabels = {
-          fontSize: VX.text.micro,
+          fontSize: BASALT.text.micro,
           opacity: 1,
           thin: true,
         }
@@ -529,8 +529,8 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
             })
           }),
           ...cellMark('cells', present, { color: 'value' }),
-          ...centred(glyphs, 'state-glyphs', VX.text.xs),
-          ...centred(annotated, 'annotations', VX.text.nano),
+          ...centred(glyphs, 'state-glyphs', BASALT.text.xs),
+          ...centred(annotated, 'annotations', BASALT.text.nano),
         ]
         return {
           marks,

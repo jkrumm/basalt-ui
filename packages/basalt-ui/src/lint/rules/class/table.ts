@@ -85,11 +85,11 @@ const seamMarkFill = new RegExp(
 )
 
 /**
- * A `--vx-*` variable as an arbitrary value: `(--vx-x)`, `[var(--vx-x)]` or `[--vx-x]`, each with
- * Tailwind v4's optional `color:` type hint (`(color:--vx-x)`, `[color:var(--vx-x)]`).
+ * A `--basalt-*` variable as an arbitrary value: `(--basalt-x)`, `[var(--basalt-x)]` or `[--basalt-x]`, each with
+ * Tailwind v4's optional `color:` type hint (`(color:--basalt-x)`, `[color:var(--basalt-x)]`).
  */
-const vxArbitrary = (names: readonly string[]): string =>
-  `\\((?:color:)?--vx-(?:${alt(names)})\\)|\\[(?:color:)?(?:var\\()?--vx-(?:${alt(names)})\\)?\\]`
+const basaltArbitrary = (names: readonly string[]): string =>
+  `\\((?:color:)?--basalt-(?:${alt(names)})\\)|\\[(?:color:)?(?:var\\()?--basalt-(?:${alt(names)})\\)?\\]`
 
 /**
  * Any custom property as an arbitrary value, bare (`(--brand-blue)`, `[var(--x)]`) or with the
@@ -111,9 +111,9 @@ const colourArbitrary = new RegExp(
     `${HEAD}shadow-(?:${anyVarArbitrary('color:')}|${vxArbitrary(zoneANames)})${TAIL}))`,
 )
 
-/** A fill-only role as text: the named utility, or the variable as an arbitrary value (`text-(color:--vx-x)`). */
+/** A fill-only role as text: the named utility, or the variable as an arbitrary value (`text-(color:--basalt-x)`). */
 const textOnFill = new RegExp(
-  `${HEAD}text-(?:${alt(zoneAFillOnly)}|${vxArbitrary(zoneAFillOnly)})${TAIL}`,
+  `${HEAD}text-(?:${alt(zoneAFillOnly)}|${basaltArbitrary(zoneAFillOnly)})${TAIL}`,
 )
 
 /**

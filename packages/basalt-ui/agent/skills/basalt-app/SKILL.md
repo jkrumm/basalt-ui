@@ -15,7 +15,7 @@ Run the local bin, `./node_modules/.bin/basalt-ui` or a package script; in a wor
 | `init`                    | Place the manifest, the managed rules and skills, the AGENTS block and the `DESIGN.md` seed at the git or workspace root. `--no-install` writes files and prints the install commands. |
 | `doctor`                  | Check this project; read to the last line. `SKIPPED` exits non-zero. `--from <x.y.z>` prints the `MIGRATING.md` changes since that version.                                            |
 | `sync`                    | Refresh every managed file; `--check` writes nothing and exits 1 on a difference (the CI gate); `--force` overwrites a file you edited.                                                |
-| `tokens:css`, `fonts:css` | Emit the `--vx-*` sheet and the font stacks as plain CSS; `--check` is the CI gate.                                                                                                    |
+| `tokens:css`, `fonts:css` | Emit the `--basalt-*` sheet and the font stacks as plain CSS; `--check` is the CI gate.                                                                                                |
 | `migrate`                 | Select the migration rows an app needs from a version; see [migrate](references/migrate.md).                                                                                           |
 | `eject`                   | Take ownership of one primitive, with `--reason`; see [eject](node_modules/basalt-ui/docs/eject.md).                                                                                   |
 | `shot`                    | Render routes to an out dir for the reviewer; see `/basalt-design`.                                                                                                                    |
@@ -26,7 +26,7 @@ The profile is declared in `.basalt/manifest.json` and never inferred. Choose th
 
 | Profile  | The app is                                 | It adds                                                                           |
 | -------- | ------------------------------------------ | --------------------------------------------------------------------------------- |
-| `tokens` | Not React (a static page, Astro, an email) | `--vx-*` and font CSS only                                                        |
+| `tokens` | Not React (a static page, Astro, an email) | `--basalt-*` and font CSS only                                                    |
 | `bridge` | React with its own components              | Tailwind 4, `cn`, the lint preset, the rules                                      |
 | `parts`  | React using shipped parts                  | `basalt-ui/ui/*` and the page, card, control, table, chart and content composites |
 | `app`    | A multi-page app on the shipped frame      | `basalt-ui/shell` and the router                                                  |

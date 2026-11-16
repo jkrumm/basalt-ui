@@ -1,5 +1,5 @@
 /**
- * Status text solver — the `--vx-status-good|warn|bad` solids are painted as TEXT (`DeltaBadge`,
+ * Status text solver — the `--basalt-status-good|warn|bad` solids are painted as TEXT (`DeltaBadge`,
  * a toned breakdown row), so each must clear WCAG AA on every text surface of the palette it ships
  * in. The calibrated stops below are kept unchanged when they already clear every surface (the
  * default config); otherwise each walks along its lightness axis only — light darkens, dark
@@ -87,7 +87,7 @@ export function deriveStatusHexes(
 }
 
 // ── v3: tint-aware solve ─────────────────────────────────────────────────────────────────────────
-// v3 status text is one word per tone (`--vx-good`), painted on every surface, on the row mixes AND
+// v3 status text is one word per tone (`--basalt-good`), painted on every surface, on the row mixes AND
 // on its own tint, so the background list is a function of the candidate: the tint is the candidate
 // mixed into the surface. The walk is the 2.x one (light darkens, dark lightens, hue kept).
 

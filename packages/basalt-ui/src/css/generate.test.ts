@@ -34,10 +34,10 @@ describe('generateCss', () => {
     }
   })
 
-  test('every --vx-* read in the five files is a table name', () => {
+  test('every --basalt-* read in the five files is a table name', () => {
     const known = new Set(tokenNames())
     for (const name of FILES) {
-      for (const [, ref] of generated[name].matchAll(/var\((--vx-[a-z0-9-]+)/g)) {
+      for (const [, ref] of generated[name].matchAll(/var\((--basalt-[a-z0-9-]+)/g)) {
         expect(known.has(ref!), `${name} reads ${ref}`).toBe(true)
       }
     }
@@ -63,7 +63,7 @@ describe('generateCss', () => {
     expect(type).toContain(':where(:root) {')
     expect(type).not.toMatch(/^\s*h[1-6]\b/m)
     expect(type).toContain('@media (prefers-reduced-motion: reduce)')
-    expect(type).toContain('--vx-dur-fast: 0ms !important')
+    expect(type).toContain('--basalt-dur-fast: 0ms !important')
     expect(type).toContain('animation-duration: 0.01ms !important')
     expect(type).toContain('transition-duration: 0.01ms !important')
     expect(type).toContain('@media (forced-colors: active)')

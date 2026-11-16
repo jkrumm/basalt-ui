@@ -20,16 +20,16 @@ const UNITS =
 const RAW_LENGTH = `(?<![\\w])[+-]?(?:\\d*\\.)?\\d+(?:${UNITS})\\b`
 
 // A token reference, and the closed atoms the shape-restricted properties accept.
-const VX_VAR = 'var\\(--vx-[a-z0-9-]+\\)'
-const ATOM = `(?:${VX_VAR}|0|none|inherit)`
+const BASALT_VAR = 'var\\(--basalt-[a-z0-9-]+\\)'
+const ATOM = `(?:${BASALT_VAR}|0|none|inherit)`
 const ALLOWED_SHAPE = `^${ATOM}(?:\\s*[,\\s]\\s*${ATOM})*$`
 // A radius also takes a circle or a pill, which no token stands for: `50%`, `9999px`, `calc(infinity * 1px)`.
 const RADIUS_ATOM = `(?:${ATOM}|50%|9999px|calc\\(\\s*infinity\\s*\\*\\s*1px\\s*\\))`
 const ALLOWED_RADIUS = `^${RADIUS_ATOM}(?:\\s+${RADIUS_ATOM})*$`
 export const RADIUS_PROPERTIES = '/^border(?:-[a-z]+)*-radius$/'
 
-// color-mix(in <space> [<hue-method> hue], <vx var|transparent> [pct], <vx var|transparent> [pct])
-const MIX_COLOUR = `(?:${VX_VAR}|transparent)`
+// color-mix(in <space> [<hue-method> hue], <basalt var|transparent> [pct], <basalt var|transparent> [pct])
+const MIX_COLOUR = `(?:${BASALT_VAR}|transparent)`
 const MIX_STOP = `${MIX_COLOUR}(?:\\s+[\\d.]+%)?`
 const CLEAN_MIX_BODY = `\\s*in\\s+[a-z0-9-]+(?:\\s+(?:shorter|longer|increasing|decreasing)\\s+hue)?\\s*,\\s*${MIX_STOP}\\s*,\\s*${MIX_STOP}\\s*\\)`
 
@@ -85,7 +85,7 @@ const VALUE_GROUPS: readonly ValueGroup[] = [
     properties: SPACING_PROPERTIES,
     values: [`/${RAW_LENGTH}/i`, '/\\bcalc\\(/i'],
     clause:
-      'padding, margin, gap and inset (top, right, bottom, left) take a --vx-rhythm-* token (--vx-rhythm-1 to -3), 0, auto or %, and font size a --vx-text-* token, never a raw length or calc()',
+      'padding, margin, gap and inset (top, right, bottom, left) take a --basalt-rhythm-* token (--basalt-rhythm-1 to -3), 0, auto or %, and font size a --basalt-text-* token, never a raw length or calc()',
   },
   {
     properties: DECORATION_PROPERTIES,
@@ -97,7 +97,7 @@ const VALUE_GROUPS: readonly ValueGroup[] = [
     // colour mixing is only legal over tokens or transparent
     properties: '/.*/',
     values: [`/color-mix\\((?!${CLEAN_MIX_BODY})/i`],
-    clause: 'color-mix runs over --vx tokens or transparent only',
+    clause: 'color-mix runs over --basalt tokens or transparent only',
   },
   {
     // a fill-only role as text and a fixed track length (the class rules' twins, every profile)
@@ -188,21 +188,21 @@ export const STYLELINT_RULES = {
     true,
     {
       message:
-        'A hex colour `%s` is authored colour. Use a `--vx-*` colour token (`var(--vx-ink)`), or `color-mix` over one.',
+        'A hex colour `%s` is authored colour. Use a `--basalt-*` colour token (`var(--basalt-ink)`), or `color-mix` over one.',
     },
   ],
   'color-named': [
     'never',
     {
       message:
-        'The named colour `%s` is authored colour. Use a `--vx-*` colour token, or `color-mix` over one.',
+        'The named colour `%s` is authored colour. Use a `--basalt-*` colour token, or `color-mix` over one.',
     },
   ],
   'function-disallowed-list': [
     ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color', 'light-dark'],
     {
       message:
-        '`%s()` writes a colour by hand. Use a `--vx-*` colour token, or `color-mix(in oklab, var(--vx-token) 40%, transparent)` for an alpha; a token already switches per scheme.',
+        '`%s()` writes a colour by hand. Use a `--basalt-*` colour token, or `color-mix(in oklab, var(--basalt-token) 40%, transparent)` for an alpha; a token already switches per scheme.',
     },
   ],
   'declaration-property-value-disallowed-list': disallowedValueList(true),
@@ -238,7 +238,7 @@ export const STYLELINT_RULES = {
     ],
     {
       message:
-        'The media feature `%s` keys styles on the window or the system scheme. A viewport feature (width, height, aspect ratio, orientation): key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`), or `useSizeClass()` for chrome. `prefers-color-scheme`: tokens switch per scheme, so use a `--vx-*` token instead of a dark fork.',
+        'The media feature `%s` keys styles on the window or the system scheme. A viewport feature (width, height, aspect ratio, orientation): key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`), or `useSizeClass()` for chrome. `prefers-color-scheme`: tokens switch per scheme, so use a `--basalt-*` token instead of a dark fork.',
     },
   ],
   'selector-disallowed-list': [
@@ -251,7 +251,7 @@ export const STYLELINT_RULES = {
     ],
     {
       message:
-        "Never select `%s`. A `data-slot` or `.mantine-*` selector reaches into a component: use the component's own prop or variant, or eject it (basalt-ui eject <name>). A `data-theme` or `.dark` selector forks a colour per scheme: tokens switch per scheme, so use a `--vx-*` token instead.",
+        "Never select `%s`. A `data-slot` or `.mantine-*` selector reaches into a component: use the component's own prop or variant, or eject it (basalt-ui eject <name>). A `data-theme` or `.dark` selector forks a colour per scheme: tokens switch per scheme, so use a `--basalt-*` token instead.",
     },
   ],
   'at-rule-disallowed-list': [

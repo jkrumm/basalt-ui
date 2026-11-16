@@ -364,7 +364,7 @@ const tokens = await import('basalt-ui/tokens')
 if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildPaletteCss missing')
 if (typeof tokens.buildPaletteCss() !== 'string') throw new Error('buildPaletteCss() did not return a string')
 // Render proof: a kind renders the engine's accessible SVG on the server, at the SSR width, with
-// every paint a VX token ref (plain var() strings).
+// every paint a BASALT token ref (plain var() strings).
 const data = [{ at: '2024-01-01', v: 10 }, { at: '2024-01-02', v: 20 }, { at: '2024-01-03', v: 15 }]
 const html = renderToStaticMarkup(
   createElement(charts.Bars, {
@@ -376,7 +376,7 @@ const html = renderToStaticMarkup(
         mark: 'bar',
         key: 'v',
         label: 'Value',
-        color: { light: 'var(--vx-accent)', dark: 'var(--vx-accent)' },
+        color: { light: 'var(--basalt-accent)', dark: 'var(--basalt-accent)' },
         y: (d) => d.v,
       },
     ],

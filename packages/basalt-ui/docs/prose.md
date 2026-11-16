@@ -9,7 +9,7 @@ slots: [prose]
 
 # Prose
 
-The one typography wrapper for long-form content. The `.vx-prose` sheet styles every element
+The one typography wrapper for long-form content. The `.basalt-prose` sheet styles every element
 below it; the density and the measure are set here. `article` (default) is 16px with 1.7 leading;
 `chat` is 15px with 1.55. The measure is 72ch unless `measure={false}`.
 

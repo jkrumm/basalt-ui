@@ -18,7 +18,7 @@ import { Alert } from '../../../src/ui/alert'
 import { Meter } from '../../../src/ui/meter'
 import { Progress, Ring } from '../../../src/ui/progress'
 import { Status, Swatch } from '../../../src/ui/status'
-import { VX } from '../../../src/tokens'
+import { BASALT } from '../../../src/tokens'
 
 const TONES = ['neutral', 'accent', 'good', 'warn', 'bad', 'info'] as const
 const ZONES: [MeterZone, MeterZone, MeterZone] = [
@@ -26,7 +26,7 @@ const ZONES: [MeterZone, MeterZone, MeterZone] = [
   { to: 1.3, tone: 'good', label: 'Optimal' },
   { to: 2, tone: 'bad', label: 'Overreaching' },
 ]
-const SERIES = [VX.good, VX.warn, VX.bad] as const
+const SERIES = [BASALT.good, BASALT.warn, BASALT.bad] as const
 
 function Fixture() {
   return (

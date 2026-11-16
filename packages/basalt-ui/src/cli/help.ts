@@ -102,7 +102,7 @@ export const USAGE =
   '                  eject <name | --all | --adopt <path>> --reason <why> | shot <route…> | shot detect | help>\n\n' +
   'tokens:css [--accent <#hex>] [--neutral <zinc|neutral|stone|slate>] [--vibrancy <-4..5>]\n' +
   '           [--selector <:root[attr]>] [--extra <file>] [--format <css|json>] [--out <path>] [--check]\n' +
-  '  Emit the --vx-* stylesheet (stdout unless --out). Defaults emit the stock identity; commit the output as your tokens file.\n' +
+  '  Emit the --basalt-* stylesheet (stdout unless --out). Defaults emit the stock identity; commit the output as your tokens file.\n' +
   '  --format json emits the resolved #hex per opaque role and scheme, for manifests, theme-color metas and email.\n' +
   '  --selector scopes a tenant sheet (only the roles that differ from the default) to a `:root[…]` selector.\n' +
   '  --extra emits your app-owned tokens (src/basalt.tokens.ts) to --out, plus a sibling <out>.d.ts.\n' +
@@ -153,7 +153,7 @@ export const USAGE =
   '  A component can declare a rest anchor absent in a URL state with data-shot-absent="empty error": that\n' +
   '  cell is recorded `absent`, not `error`.\n\n' +
   'lint [--file <path>… | --changed | --stats [--write-budget] | --raise <field> --consumer "<who>"] [--agent]\n' +
-  '  oxlint, stylelint and the --vx-* name check over the declared roots, then the ceilings of\n' +
+  '  oxlint, stylelint and the --basalt-* name check over the declared roots, then the ceilings of\n' +
   '  .basalt/budget.json. A finding is "<file>:<line> <rule>: <message and fix>"; exit 1 on a finding or\n' +
   '  a ceiling breach, and on a scan of zero files. --file lints the named files, --changed what git\n' +
   '  reports changed (nothing changed is clean). --agent is terse and exits 2 on a finding so a hook\n' +

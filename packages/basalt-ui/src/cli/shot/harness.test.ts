@@ -479,11 +479,11 @@ describe('real Chrome', () => {
           return page.evaluate(readScaleInPage, undefined)
         }
         const tokens = await read(
-          ':root{--vx-space-3:12px;--radius-md:8px;--text-sm:14px}.card{--vx-space-agent-gap:6px;--vx-text-micro:var(--vx-space-3)}.x{color:red}',
+          ':root{--basalt-space-3:12px;--radius-md:8px;--text-sm:14px}.card{--basalt-space-agent-gap:6px;--basalt-text-micro:var(--basalt-space-3)}.x{color:red}',
         )
-        expect(tokens.spacing).toEqual({ 'vx-space-3': 12, 'vx-space-agent-gap': 6 })
+        expect(tokens.spacing).toEqual({ 'basalt-space-3': 12, 'basalt-space-agent-gap': 6 })
         expect(tokens.radius).toEqual({ 'radius-md': 8 })
-        expect(tokens.fontSizes).toEqual({ 'text-sm': 14, 'vx-text-micro': 12 })
+        expect(tokens.fontSizes).toEqual({ 'text-sm': 14, 'basalt-text-micro': 12 })
         // 0.25rem is 4 px at the 16 px root: step N is N × 4.
         const { spacing } = await read(':root{--spacing:0.25rem}')
         expect([spacing['0.5'], spacing['1'], spacing['2'], spacing['24']]).toEqual([2, 4, 8, 96])

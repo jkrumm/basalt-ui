@@ -1,6 +1,6 @@
 /**
  * The seam is contrast-guaranteed under the knobs (docs/DESIGN-SPEC.md §5 "Region seams") — this
- * file is that claim as code. `--vx-divider` is a relative alpha over the derived ink (light) /
+ * file is that claim as code. `--basalt-divider` is a relative alpha over the derived ink (light) /
  * white (dark), not a fixed hex, so a floor here is a floor on every consumer identity, not just
  * the shipped default. If a cell ever fails, raise the alpha in `tokens/palette.ts`'s
  * `SURFACE.divider` — never lower the floor below.

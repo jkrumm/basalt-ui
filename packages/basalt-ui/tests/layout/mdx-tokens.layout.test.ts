@@ -1,6 +1,6 @@
 /**
  * P9, tokens half (docs/v3/concepts/ai-mdx.md section 8): an MDX page rendered as plain elements
- * under `.vx-prose` alone, with no React and no component map, reads the same body size, leading
+ * under `.basalt-prose` alone, with no React and no component map, reads the same body size, leading
  * and measure as the `Prose` article. The markup below is what the fixture compiles to with an
  * empty component map. Chrome only.
  */
@@ -99,11 +99,14 @@ async function measure(html: string, selector: string): Promise<Metrics> {
 }
 
 const both = async () => ({
-  plain: await measure(await doc(`<article class="vx-prose">${PLAIN}</article>`), '.vx-prose'),
+  plain: await measure(
+    await doc(`<article class="basalt-prose">${PLAIN}</article>`),
+    '.basalt-prose',
+  ),
   prose: await measure(await doc(article, await utilities(article)), '[data-slot="prose"]'),
 })
 
-layout('MDX as plain elements under .vx-prose', () => {
+layout('MDX as plain elements under .basalt-prose', () => {
   test('body is 16px, equal to the Prose article', async () => {
     const { plain, prose } = await both()
     expect(plain.fontSize).toBe('16px')

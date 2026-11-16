@@ -1,7 +1,7 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
-import { VX } from '../tokens'
+import { BASALT } from '../tokens'
 import { Status, Swatch, statusParts } from './status'
 
 afterEach(cleanup)
@@ -11,7 +11,7 @@ describe('status module', () => {
     const { container } = render(
       <>
         <Status>Idle</Status>
-        <Swatch color={VX.good} />
+        <Swatch color={BASALT.good} />
       </>,
     )
     const slots = [...container.querySelectorAll('[data-slot]')].map((el) =>
@@ -36,9 +36,9 @@ describe('status module', () => {
   })
 
   test('Swatch carries its colour as a variable and is hidden from assistive tech', () => {
-    const { container } = render(<Swatch color={VX.good} />)
+    const { container } = render(<Swatch color={BASALT.good} />)
     const el = container.firstElementChild as HTMLElement
-    expect(el.style.getPropertyValue('--swatch')).toBe('var(--vx-good)')
+    expect(el.style.getPropertyValue('--swatch')).toBe('var(--basalt-good)')
     expect(el.getAttribute('aria-hidden')).toBe('true')
   })
 })

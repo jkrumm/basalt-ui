@@ -2,51 +2,51 @@
 /* basalt-ui 3.0.0 — `bun packages/basalt-ui/src/css/generate.ts` */
 @layer basalt.type {
   :where(:root) {
-    --vx-text-micro: 0.6875rem;
-    --vx-text-micro-lh: 1rem;
-    --vx-text-xs: 0.75rem;
-    --vx-text-xs-lh: 1rem;
-    --vx-text-sm: 0.8125rem;
-    --vx-text-sm-lh: 1.25rem;
-    --vx-text-md: 0.9375rem;
-    --vx-text-md-lh: 1.25rem;
-    --vx-text-base: 1rem;
-    --vx-text-base-lh: 1.5rem;
-    --vx-text-lg: 1.125rem;
-    --vx-text-lg-lh: 1.5rem;
-    --vx-text-display: 1.875rem;
-    --vx-text-display-lh: 1;
+    --basalt-text-micro: 0.6875rem;
+    --basalt-text-micro-lh: 1rem;
+    --basalt-text-xs: 0.75rem;
+    --basalt-text-xs-lh: 1rem;
+    --basalt-text-sm: 0.8125rem;
+    --basalt-text-sm-lh: 1.25rem;
+    --basalt-text-md: 0.9375rem;
+    --basalt-text-md-lh: 1.25rem;
+    --basalt-text-base: 1rem;
+    --basalt-text-base-lh: 1.5rem;
+    --basalt-text-lg: 1.125rem;
+    --basalt-text-lg-lh: 1.5rem;
+    --basalt-text-display: 1.875rem;
+    --basalt-text-display-lh: 1;
   }
 }
 @layer basalt.type {
   :where(:root) {
-    font-family: var(--vx-font-sans);
-    font-size: var(--vx-text-base);
-    line-height: var(--vx-text-base-lh);
-    font-weight: var(--vx-weight-body);
-    color: var(--vx-ink);
-    background-color: var(--vx-canvas);
+    font-family: var(--basalt-font-sans);
+    font-size: var(--basalt-text-base);
+    line-height: var(--basalt-text-base-lh);
+    font-weight: var(--basalt-weight-body);
+    color: var(--basalt-ink);
+    background-color: var(--basalt-canvas);
     -webkit-font-smoothing: antialiased;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
   :where(code, kbd, samp, pre) {
-    font-family: var(--vx-font-mono);
+    font-family: var(--basalt-font-mono);
     font-variant-ligatures: none;
   }
   :where([data-numeric]) {
-    font-family: var(--vx-font-mono);
+    font-family: var(--basalt-font-mono);
     font-variant-ligatures: none;
     font-variant-numeric: tabular-nums;
   }
   :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-    outline: 2px solid var(--vx-brand);
+    outline: 2px solid var(--basalt-brand);
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {
     :where(:root) {
-      --vx-dur-fast: 0ms !important;
-      --vx-dur-base: 0ms !important;
+      --basalt-dur-fast: 0ms !important;
+      --basalt-dur-base: 0ms !important;
     }
     *,
     ::before,
@@ -64,7 +64,7 @@
   }
   @media print {
     :where(:root) {
-      color: var(--vx-ink);
+      color: var(--basalt-ink);
       background: none;
     }
   }

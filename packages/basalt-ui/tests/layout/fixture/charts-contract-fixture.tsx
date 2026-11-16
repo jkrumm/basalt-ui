@@ -12,7 +12,7 @@ import { createRoot } from 'react-dom/client'
 import { chartLabels } from '../../../src/charts/chart-labels'
 import { CartesianChart } from '../../../src/charts/parts/cartesian'
 import { ChartCard } from '../../../src/charts/parts/chart-card'
-import { VX } from '../../../src/tokens'
+import { BASALT } from '../../../src/tokens'
 
 const blue = { light: '#0b6bcb', dark: '#5aa9f0' }
 const red = { light: '#b42318', dark: '#f97066' }
@@ -60,7 +60,7 @@ function Labels() {
               const dots = plot.rows('d').flatMap((s) => {
                 const px = plot.x(s.perWeek)
                 if (px === null) return []
-                const r = VX.dotR + 1
+                const r = BASALT.dotR + 1
                 return [{ left: px - r, top: plot.y(s.openPct) - r, width: 2 * r, height: 2 * r }]
               })
               const { placed } = chartLabels.place(
@@ -72,7 +72,7 @@ function Labels() {
                 })),
                 { width: plot.plotWidth, height: plot.plotHeight },
                 // The gap clears the anchor's own dot, which is one of the obstacles.
-                { obstacles: dots, gap: VX.dotR + 3 },
+                { obstacles: dots, gap: BASALT.dotR + 3 },
               )
               return [
                 text(placed, {
@@ -83,7 +83,7 @@ function Labels() {
                   dx: (l) => l.dx,
                   dy: (l) => l.dy,
                   anchor: (l) => l.textAnchor,
-                  fontSize: VX.text.micro,
+                  fontSize: BASALT.text.micro,
                 }),
               ]
             })}
@@ -119,7 +119,7 @@ function TimeZone() {
                 from: new Date(Date.UTC(2026, 10, 16, 6)),
                 to: new Date(Date.UTC(2026, 10, 16, 11)),
                 y: { from: 0, to: 15 },
-                fill: 'color-mix(in srgb, var(--vx-brand) 15%, transparent)',
+                fill: 'color-mix(in srgb, var(--basalt-brand) 15%, transparent)',
                 label: 'Best window',
               },
             ]}
@@ -149,7 +149,7 @@ function LogZone() {
                 from: 5,
                 to: 100,
                 y: { from: 0, to: 10 },
-                fill: 'color-mix(in srgb, var(--vx-brand) 15%, transparent)',
+                fill: 'color-mix(in srgb, var(--basalt-brand) 15%, transparent)',
                 label: 'Mute',
               },
             ]}

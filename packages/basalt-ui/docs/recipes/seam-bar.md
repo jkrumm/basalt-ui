@@ -11,11 +11,11 @@ A part names itself only where `chartLabels.fits(label, { width })` says the lab
 
 For marks on a time or value track, see the `seam-track` recipe.
 
-Colours come from the app's series file as `var(--vx-*)` references, never literals.
+Colours come from the app's series file as `var(--basalt-*)` references, never literals.
 
 ```tsx
 import { chartLabels, useChartFocus } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 
 export type Part = { label: string; value: number; color: string }
 
@@ -45,7 +45,7 @@ export function SeamBar({ parts, track }: { parts: readonly Part[]; track: numbe
             {chartLabels.fits(
               p.label,
               { width: (p.value / total) * track },
-              { size: VX.text.xs, pad: 4 },
+              { size: BASALT.text.xs, pad: 4 },
             )
               ? p.label
               : null}

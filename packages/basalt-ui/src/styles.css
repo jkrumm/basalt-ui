@@ -126,9 +126,9 @@
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus {
-    -webkit-text-fill-color: var(--vx-ink);
-    caret-color: var(--vx-ink);
-    box-shadow: 0 0 0 100vmax var(--vx-surface-field) inset;
+    -webkit-text-fill-color: var(--basalt-ink);
+    caret-color: var(--basalt-ink);
+    box-shadow: 0 0 0 100vmax var(--basalt-surface-field) inset;
     transition: background-color 600000s 0s;
   }
 
@@ -163,11 +163,11 @@
      ONE thumb treatment drives every bar, so a page and a sidebar never read as two different
      scrollbar languages. Defined as ink %-mixes (the same idiom as the ink-6% hover tints) rather than a
      surface token: ink inverts across schemes, so one expression stays visible on both pages.
-     `--vx-surface-hairline` is NOT usable here — it's the card-ring token (`#e5e5e5` on light),
+     `--basalt-surface-hairline` is NOT usable here — it's the card-ring token (`#e5e5e5` on light),
      which all but vanishes against the light page. */
   :root {
-    --basalt-scrollbar-thumb: color-mix(in srgb, var(--vx-ink) 25%, transparent);
-    --basalt-scrollbar-thumb-hover: color-mix(in srgb, var(--vx-ink) 40%, transparent);
+    --basalt-scrollbar-thumb: color-mix(in srgb, var(--basalt-ink) 25%, transparent);
+    --basalt-scrollbar-thumb-hover: color-mix(in srgb, var(--basalt-ink) 40%, transparent);
   }
 
   * {
@@ -186,22 +186,22 @@
 
   *::-webkit-scrollbar-thumb {
     background-color: var(--basalt-scrollbar-thumb);
-    border-radius: var(--vx-radius-ctrl);
+    border-radius: var(--basalt-radius-ctrl);
   }
 
   *::-webkit-scrollbar-thumb:hover {
     background-color: var(--basalt-scrollbar-thumb-hover);
   }
 
-  /* Pointer tier: an invisible hit-area expansion to at least `--vx-hit` (44px coarse, 24px fine),
+  /* Pointer tier: an invisible hit-area expansion to at least `--basalt-hit` (44px coarse, 24px fine),
      no layout change. `::after`, not `::before` (a button may own `::before` for its loading overlay).
      `overflow: visible` is load-bearing: a control root that clips to its box would clip the
      overlay; the clip only serves a `[data-loading]` overlay, so it stays then.
      Adopters: `data-basalt-hit` on the control, or `data-basalt-hit-scope` on a home whose
      `button`/`a` descendants (consumer-supplied) adopt it.
-     DECISION: the axis is `pointer: coarse` (the PRIMARY input, via `--vx-hit`), never
+     DECISION: the axis is `pointer: coarse` (the PRIMARY input, via `--basalt-hit`), never
      `any-pointer` — a touch laptop's mouse-first session must not inflate every hit area.
-     OVERLAP CAP: a host with neighbours sets `--vx-hit-gap` (its real gap between controls); the
+     OVERLAP CAP: a host with neighbours sets `--basalt-hit-gap` (its real gap between controls); the
      expansion is then limited to that gap in total (half per side), so adjacent hit boxes never
      overlap and a later sibling never steals a tap. Unset = uncapped (an isolated control). The
      `+ 2px` is the control's own 1px border (a button carries one, transparent or not): `100%`
@@ -222,8 +222,8 @@
     top: 50%;
     left: 50%;
     translate: -50% -50%;
-    width: min(max(100%, var(--vx-hit)), calc(100% + 2px + var(--vx-hit-gap, 100vmax)));
-    height: min(max(100%, var(--vx-hit)), calc(100% + 2px + var(--vx-hit-gap, 100vmax)));
+    width: min(max(100%, var(--basalt-hit)), calc(100% + 2px + var(--basalt-hit-gap, 100vmax)));
+    height: min(max(100%, var(--basalt-hit)), calc(100% + 2px + var(--basalt-hit-gap, 100vmax)));
   }
 }
 
@@ -311,10 +311,10 @@
  * or an equal one later in source. `.maplibregl-ctrl-group` is not here: its 4 px radius is already
  * a scale step. */
 :root:root .maplibregl-ctrl.maplibregl-ctrl-attrib {
-  border-radius: var(--vx-radius-ctrl);
-  background-color: var(--vx-surface-panel);
-  color: var(--vx-muted);
-  font-size: var(--vx-text-micro);
+  border-radius: var(--basalt-radius-ctrl);
+  background-color: var(--basalt-surface-panel);
+  color: var(--basalt-muted);
+  font-size: var(--basalt-text-micro);
 }
 
 :root:root .maplibregl-ctrl-attrib a {
@@ -324,7 +324,7 @@
 /* One step under the box, snapped onto the scale like the SegmentedControl indicator: 2 when the box
  * leaves a 3 px step, else square. */
 :root:root .maplibregl-ctrl-attrib-button {
-  border-radius: round(down, min(2px, max(0px, var(--vx-radius-ctrl) - 3px)), 2px);
+  border-radius: round(down, min(2px, max(0px, var(--basalt-radius-ctrl) - 3px)), 2px);
 }
 
 /* The glyph is maplibre's dark SVG background-image, drawn again as a mask in the muted ink so it
@@ -337,7 +337,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-color: var(--vx-muted);
+  background-color: var(--basalt-muted);
   mask: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0v-3'/%3E%3C/svg%3E")
     center / 24px 24px no-repeat;
 }
@@ -345,19 +345,19 @@
 /* chart-engine:start — generated by scripts/gen-chart-css.ts from chartEngineCss() */
 @layer basalt {
   :root {
-    --ts-chart-1: var(--vx-chart-1);
-    --ts-chart-2: var(--vx-chart-2);
-    --ts-chart-3: var(--vx-chart-3);
-    --ts-chart-4: var(--vx-chart-4);
-    --ts-chart-5: var(--vx-chart-5);
-    --ts-chart-tooltip-background: var(--vx-raised);
-    --ts-chart-tooltip-color: var(--vx-ink);
-    --ts-chart-tooltip-border: var(--vx-hairline);
-    --ts-chart-tooltip-shadow: var(--vx-shadow-overlay);
-    --ts-chart-tooltip-border-radius: var(--vx-radius-ctrl);
-    --ts-chart-crosshair-label-halo: var(--vx-card);
-    --ts-chart-crosshair-marker-fill: var(--vx-card);
-    --ts-chart-focus-fill: var(--vx-card);
+    --ts-chart-1: var(--basalt-chart-1);
+    --ts-chart-2: var(--basalt-chart-2);
+    --ts-chart-3: var(--basalt-chart-3);
+    --ts-chart-4: var(--basalt-chart-4);
+    --ts-chart-5: var(--basalt-chart-5);
+    --ts-chart-tooltip-background: var(--basalt-raised);
+    --ts-chart-tooltip-color: var(--basalt-ink);
+    --ts-chart-tooltip-border: var(--basalt-hairline);
+    --ts-chart-tooltip-shadow: var(--basalt-shadow-overlay);
+    --ts-chart-tooltip-border-radius: var(--basalt-radius-ctrl);
+    --ts-chart-crosshair-label-halo: var(--basalt-card);
+    --ts-chart-crosshair-marker-fill: var(--basalt-card);
+    --ts-chart-focus-fill: var(--basalt-card);
   }
 }
 /* chart-engine:end */

@@ -1,6 +1,6 @@
 /**
  * The card inset is stated in places that must agree: the token (`cardInsetY`/`cardInsetX`, level
- * 0), every reader of `--vx-space-card-inset-*` (each carries a fallback, since a head-injected
+ * 0), every reader of `--basalt-space-card-inset-*` (each carries a fallback, since a head-injected
  * palette renders before the var exists), and the `py`/`px` pair the `basalt/card-inset` rule
  * accepts. One scale, so one test.
  */
@@ -20,11 +20,11 @@ function sources(dir: string): string[] {
   })
 }
 
-test('every bare reader of --vx-space-card-inset-* carries a fallback', () => {
+test('every bare reader of --basalt-space-card-inset-* carries a fallback', () => {
   for (const file of sources(SRC)) {
-    if (/tokens\/core\.ts$|guard\/vx-names\.ts$/.test(file)) continue
+    if (/tokens\/core\.ts$|guard\/basalt-names\.ts$/.test(file)) continue
     const text = readFileSync(file, 'utf8')
-    for (const m of text.matchAll(/var\(--vx-space-card-inset-[xy]\)/g)) {
+    for (const m of text.matchAll(/var\(--basalt-space-card-inset-[xy]\)/g)) {
       throw new Error(`${file.slice(SRC.length)}: ${m[0]} has no fallback`)
     }
   }

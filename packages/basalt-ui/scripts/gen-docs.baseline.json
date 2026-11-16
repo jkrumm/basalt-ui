@@ -7,7 +7,7 @@
   "basalt-ui/tokens#CONTAINER_CLASSES",
   "basalt-ui/tokens#CONTAINER_GRID_BREAKPOINTS",
   "basalt-ui/tokens#CONTAINER_KEYS",
-  "basalt-ui/tokens#VX",
+  "basalt-ui/tokens#BASALT",
   "basalt-ui/tokens#alpha",
   "basalt-ui/tokens#buildPaletteCss",
   "basalt-ui/tokens#defineSeries",

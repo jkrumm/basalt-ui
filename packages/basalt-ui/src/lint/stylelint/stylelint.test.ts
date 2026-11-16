@@ -270,7 +270,7 @@ describe('messages', () => {
     }
   })
 
-  it('a report names only the clause of its own property, and spacing names --vx-rhythm-*', async () => {
+  it('a report names only the clause of its own property, and spacing names --basalt-rhythm-*', async () => {
     const text = async (file: string): Promise<string> => {
       const [finding] = (await lint(`offenders/${file}`)).get(`offenders/${file}`) ?? []
       return valueListMessage(finding?.text.replace(/\s*\([\w-]+\)$/, '') ?? '')
@@ -282,7 +282,7 @@ describe('messages', () => {
     expect(scroll).not.toContain('padding')
     const spacing = await text('rem-padding.css')
     expect(spacing).toMatch(/^Disallowed `padding[a-z-]*: [^`]+`\. Padding, margin, gap/)
-    expect(spacing).toContain('--vx-rhythm-*')
+    expect(spacing).toContain('--basalt-rhythm-*')
     expect(spacing).not.toContain('ui/scroll-area')
     const basis = await text('flex-shorthand.css')
     expect(basis).toBe(

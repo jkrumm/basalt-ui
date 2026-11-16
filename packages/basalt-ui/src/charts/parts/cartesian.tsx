@@ -18,7 +18,7 @@ import { useCallback, useContext, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { VisualSlotContext } from '../visual-slot'
 import { useProviderContext } from '../../core/provider'
-import { VX } from '../../tokens'
+import { BASALT } from '../../tokens'
 import { useInChartCard } from '../card-context'
 import {
   compileCartesian,
@@ -330,7 +330,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
             id,
             x: rowX,
             y: 'y',
-            r: r ? (row: { datum: D }) => r(row.datum) : VX.dotR,
+            r: r ? (row: { datum: D }) => r(row.datum) : BASALT.dotR,
             fill,
             ...(s.axis === 'right' && ctx.y2 !== undefined && { yScale: ctx.y2 }),
           })
@@ -362,7 +362,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
               id: 'selection',
               x: rowX,
               y: 'y',
-              r: VX.dotR + 2,
+              r: BASALT.dotR + 2,
               fill: 'none',
               stroke: CV.brand,
               strokeWidth: 2,
@@ -383,7 +383,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     for (const s of stable.series) {
       if (s.mark !== 'dot' || s.r === undefined) continue
       // A loop, not `Math.max(...radii)`: a spread of a large series overflows the argument limit.
-      let largest = VX.dotR
+      let largest = BASALT.dotR
       for (const d of stable.data) largest = Math.max(largest, s.r(d))
       out.set(s.key, largest)
     }

@@ -11,7 +11,10 @@ import { toEngineSpec } from './cartesian-adapt'
 import { chartSelection, indexMap } from './cartesian-selection'
 import { CartesianChart, TABLE_MAX_POINTS, autoSummary } from './cartesian'
 
-const pair = (v: string): SeriesColor => ({ light: `var(--vx-${v})`, dark: `var(--vx-${v})` })
+const pair = (v: string): SeriesColor => ({
+  light: `var(--basalt-${v})`,
+  dark: `var(--basalt-${v})`,
+})
 type Row = { t: number; v: number | null }
 const rowsOf = (n: number): Row[] =>
   Array.from({ length: n }, (_, i) => ({ t: Date.UTC(2026, 8, 1) + i * 86_400_000, v: i + 1 }))
@@ -191,28 +194,28 @@ describe('marks', () => {
       x,
       series: [v],
       zones: [
-        { from: 1, to: 2, fill: 'var(--vx-good)' },
+        { from: 1, to: 2, fill: 'var(--basalt-good)' },
         {
           axis: 'x',
           from: new Date(0),
           to: new Date(1),
-          fill: 'var(--vx-bad)',
+          fill: 'var(--basalt-bad)',
           y: { from: 0, to: 5 },
           label: 'Window',
         },
-        { axis: 'x', from: 'Mon', to: 'Tue', fill: 'var(--vx-bad)' },
+        { axis: 'x', from: 'Mon', to: 'Tue', fill: 'var(--basalt-bad)' },
       ],
     })
-    expect(spec.zones).toEqual([{ from: 1, to: 2, fill: 'var(--vx-good)' }])
+    expect(spec.zones).toEqual([{ from: 1, to: 2, fill: 'var(--basalt-good)' }])
     expect(spec.xZones).toEqual([
       {
         from: new Date(0),
         to: new Date(1),
-        fill: 'var(--vx-bad)',
+        fill: 'var(--basalt-bad)',
         y: { from: 0, to: 5 },
         label: 'Window',
       },
-      { from: 'Mon', to: 'Tue', fill: 'var(--vx-bad)', align: 'edge' },
+      { from: 'Mon', to: 'Tue', fill: 'var(--basalt-bad)', align: 'edge' },
     ])
   })
 
@@ -231,7 +234,7 @@ describe('marks', () => {
             from: new Date(first + 86_400_000),
             to: new Date(first + 3 * 86_400_000),
             y: { from: 2, to: 4 },
-            fill: 'var(--vx-brand)',
+            fill: 'var(--basalt-brand)',
             label: 'Window',
           },
         ]}

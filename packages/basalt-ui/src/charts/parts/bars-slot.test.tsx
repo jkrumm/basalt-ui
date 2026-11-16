@@ -8,11 +8,14 @@ import type { SeriesColor } from '../contract'
 import type { ChartSeries } from '../types'
 import { Bars } from './bars'
 
-const pair = (v: string): SeriesColor => ({ light: `var(--vx-${v})`, dark: `var(--vx-${v})` })
+const pair = (v: string): SeriesColor => ({
+  light: `var(--basalt-${v})`,
+  dark: `var(--basalt-${v})`,
+})
 type Bin = { bin: string; n: number }
 const data: Bin[] = ['<20', '20–30', '30–40', '40–50', '50+'].map((bin, i) => ({ bin, n: i + 1 }))
 const series: ChartSeries<Bin>[] = [
-  { key: 'n', label: 'Books', color: 'var(--vx-accent)', getValue: (d) => d.n, mark: 'bar' },
+  { key: 'n', label: 'Books', color: 'var(--basalt-accent)', getValue: (d) => d.n, mark: 'bar' },
 ]
 const spec = (bare: boolean, extra: readonly ChartSeries<Bin>[] = []) =>
   compileCartesian<Bin, string>({
@@ -39,7 +42,7 @@ describe('compile: bare', () => {
     const right: ChartSeries<Bin> = {
       key: 'r',
       label: 'Rate',
-      color: 'var(--vx-line)',
+      color: 'var(--basalt-line)',
       getValue: (d) => d.n * 2,
       mark: 'line',
       axis: 'right',

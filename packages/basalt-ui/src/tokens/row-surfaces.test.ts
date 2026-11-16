@@ -1,5 +1,5 @@
 /**
- * `VX.surface.rowHover` / `rowSelected` (argo UPSTREAM Wave 25): a row surface that reads in BOTH
+ * `BASALT.surface.rowHover` / `rowSelected` (argo UPSTREAM Wave 25): a row surface that reads in BOTH
  * schemes. `panelHover` is a LIGHTER step than `panel` in light, so a hovered row on a panel was
  * invisible there. The law: a row surface is the panel mixed toward the ink, and it differs from
  * the panel by at least as much contrast as the `panelHover` step does.
@@ -48,9 +48,9 @@ describe('row surfaces', () => {
     expect(STATUS_TEXT_SURFACES.rowSelected).toBe(true)
   })
 
-  test('emitted as --vx-surface-row-hover / --vx-surface-row-selected', () => {
+  test('emitted as --basalt-surface-row-hover / --basalt-surface-row-selected', () => {
     const css = buildPaletteCss()
-    expect(css).toContain('--vx-surface-row-hover:')
-    expect(css).toContain('--vx-surface-row-selected:')
+    expect(css).toContain('--basalt-surface-row-hover:')
+    expect(css).toContain('--basalt-surface-row-selected:')
   })
 })

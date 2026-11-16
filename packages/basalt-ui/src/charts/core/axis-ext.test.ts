@@ -14,7 +14,7 @@ import {
 import { compileCartesian, xGuide } from './compile'
 import { xScaleFor } from './scales'
 
-const color = { light: 'var(--vx-line)', dark: 'var(--vx-line)' }
+const color = { light: 'var(--basalt-line)', dark: 'var(--basalt-line)' }
 
 describe('strideKeepEnds', () => {
   test('keeps the first and the last at an even stride', () => {

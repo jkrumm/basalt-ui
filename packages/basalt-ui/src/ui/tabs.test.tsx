@@ -48,7 +48,7 @@ describe('tabs module', () => {
   })
 
   test('md follows the density control height and is the default; sm is 24 px', () => {
-    expect(tabsVariants()).toContain('[--tabs-h:var(--vx-ctl-h)]')
+    expect(tabsVariants()).toContain('[--tabs-h:var(--basalt-ctl-h)]')
     expect(tabsVariants({ size: 'sm' })).toContain('[--tabs-h:1.5rem]')
     const { container } = render(<Sample size="sm" />)
     expect(container.querySelector('[data-slot="tabs"]')?.className).toContain('[--tabs-h:1.5rem]')

@@ -57,7 +57,7 @@ export function EmptyState(props: EmptyStateProps): ReactElement {
         'flex min-w-0 flex-col items-center gap-2 text-center',
         tier === 'page'
           ? 'px-6 py-16'
-          : 'rounded-inset px-5 py-8 shadow-[inset_0_0_0_1px_var(--vx-hairline)] forced-colors:border forced-colors:border-current',
+          : 'rounded-inset px-5 py-8 shadow-[inset_0_0_0_1px_var(--basalt-hairline)] forced-colors:border forced-colors:border-current',
       )}
     >
       {Icon !== undefined && (

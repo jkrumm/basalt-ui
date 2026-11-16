@@ -36,7 +36,7 @@ const fontsCss = (): string => header() + template('fonts')
 function typographyCss(): string {
   const vars = resolveTokens()
     .filter(({ def }) => def.family === 'type' && def.name.startsWith('text-'))
-    .map(({ def, value }) => decl(`--vx-${def.name}`, String(value)))
+    .map(({ def, value }) => decl(`--basalt-${def.name}`, String(value)))
     .join('')
   const scale = `@layer basalt.type {\n${rule(':where(:root)', vars).replace(/^(?=.)/gm, '  ')}}\n`
   return header() + scale + template('typography')
@@ -81,21 +81,21 @@ function tailwindCss(): string {
   const others = entries.filter((e) => !e.tw.startsWith('--color-'))
 
   const utilities = [
-    ['h-ctl', ['height: var(--vx-ctl-h)']],
-    ['size-ctl', ['width: var(--vx-ctl-h)', 'height: var(--vx-ctl-h)']],
-    ['min-h-ctl', ['min-height: var(--vx-ctl-h)']],
-    ['min-h-row', ['min-height: var(--vx-row-h)']],
-    ['size-icon', ['width: var(--vx-icon)', 'height: var(--vx-icon)']],
+    ['h-ctl', ['height: var(--basalt-ctl-h)']],
+    ['size-ctl', ['width: var(--basalt-ctl-h)', 'height: var(--basalt-ctl-h)']],
+    ['min-h-ctl', ['min-height: var(--basalt-ctl-h)']],
+    ['min-h-row', ['min-height: var(--basalt-row-h)']],
+    ['size-icon', ['width: var(--basalt-icon)', 'height: var(--basalt-icon)']],
     // Hubot Sans at 88% stretch draws a word space of ~0.15em; with tracking-tight a heading reads as one word.
     ['word-head', ['word-spacing: 0.12em']],
   ] as const
   const utilityCss = utilities.map(([name, lines]) => block(`@utility ${name}`, lines)).join('')
   const focusRing =
-    '@utility focus-ring {\n  /* Focus scrolls the element flush to its scrollport; the margin keeps the 2px ring + 2px offset in view. */\n  scroll-margin: 4px;\n  &:focus-visible {\n    outline: 2px solid var(--vx-brand);\n    outline-offset: 2px;\n  }\n}\n'
-  const link = '@utility link {\n  color: var(--vx-brand);\n  text-underline-offset: 2px;\n}\n'
+    '@utility focus-ring {\n  /* Focus scrolls the element flush to its scrollport; the margin keeps the 2px ring + 2px offset in view. */\n  scroll-margin: 4px;\n  &:focus-visible {\n    outline: 2px solid var(--basalt-brand);\n    outline-offset: 2px;\n  }\n}\n'
+  const link = '@utility link {\n  color: var(--basalt-brand);\n  text-underline-offset: 2px;\n}\n'
 
   const surfaceRules = SURFACES.map(
-    (s) => `  [data-surface='${s}'] {\n    --vx-surface: var(--vx-${s});\n  }\n`,
+    (s) => `  [data-surface='${s}'] {\n    --basalt-surface: var(--basalt-${s});\n  }\n`,
   ).join('')
 
   const base =
@@ -103,9 +103,9 @@ function tailwindCss(): string {
     surfaceRules +
     '  @media (forced-colors: active) {\n    [data-surface] {\n      border: 1px solid CanvasText;\n    }\n  }\n' +
     '  input:-webkit-autofill,\n  textarea:-webkit-autofill,\n  select:-webkit-autofill {\n' +
-    '    -webkit-box-shadow: 0 0 0 100vh var(--vx-surface) inset;\n' +
-    '    -webkit-text-fill-color: var(--vx-ink);\n' +
-    '    caret-color: var(--vx-ink);\n' +
+    '    -webkit-box-shadow: 0 0 0 100vh var(--basalt-surface) inset;\n' +
+    '    -webkit-text-fill-color: var(--basalt-ink);\n' +
+    '    caret-color: var(--basalt-ink);\n' +
     '  }\n' +
     '  @media (pointer: coarse) {\n    input,\n    select,\n    textarea {\n      font-size: max(16px, 1em) !important;\n    }\n  }\n' +
     chartMarkRules +

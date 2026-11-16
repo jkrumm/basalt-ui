@@ -29,7 +29,7 @@ describe.skipIf(!jsdom)('hydrate.subpath', () => {
   test('tokens: the document hydrates clean and the boot script has stamped data-theme', async () => {
     localStorage.setItem('basalt:scheme', 'dark')
     const report = await expectHydrates(tokens, OPTIONS)
-    expect(report.html).toContain('--vx-')
+    expect(report.html).toContain('--basalt-')
     expect(report.html).toContain('data-theme')
     expect(report.theme).toBe('dark')
   }, 60_000)

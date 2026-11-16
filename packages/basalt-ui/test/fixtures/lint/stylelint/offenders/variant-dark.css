@@ -1,6 +1,6 @@
 .hero {
-  background: var(--vx-canvas);
+  background: var(--basalt-canvas);
   @variant dark {
-    background: var(--vx-inset);
+    background: var(--basalt-inset);
   }
 }

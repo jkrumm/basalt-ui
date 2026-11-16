@@ -69,8 +69,8 @@ describe('gen-llms signatures', () => {
     expect(block('FilterSet').length).toBeGreaterThan(0)
   })
 
-  test('VX lists every token, untruncated (row 78 b)', () => {
-    const at = text.indexOf('Signature: VX:')
+  test('BASALT lists every token, untruncated (row 78 b)', () => {
+    const at = text.indexOf('Signature: BASALT:')
     const block = text.slice(at, text.indexOf('\nSignature: ', at + 1))
     expect(block).not.toContain('…')
     for (const key of ['ink', 'inkMuted', 'inkFaint', 'brand', 'canvas', 'card'])

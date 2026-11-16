@@ -18,8 +18,8 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { normalizeColorFunctions, tokensCss } from '../cli/tokens-css'
-import { REMOVED_VX_NAMES } from '../../tests/removed-vx-names'
-import { buildPaletteCss, seriesTokens, VX } from './core'
+import { REMOVED_BASALT_NAMES } from '../../tests/removed-basalt-names'
+import { buildPaletteCss, seriesTokens, BASALT } from './core'
 import {
   DEFAULT_DERIVE_CONFIG,
   DEFAULT_DERIVE_V3_CONFIG,
@@ -214,14 +214,14 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
   test('v3 hairline: --hairline is an ink alpha (the 2.x divider, 9% both schemes) and the ring is drawn once, by Card::after', () => {
     const css = emitTokensCss({ version: '3.0.0' })
     expect(css).toContain(
-      `--vx-hairline: color-mix(in srgb, var(--vx-ink) ${INK_MIX_PCT.hairline.light}%, transparent);`,
+      `--basalt-hairline: color-mix(in srgb, var(--basalt-ink) ${INK_MIX_PCT.hairline.light}%, transparent);`,
     )
     expect(css).toContain(
-      `--vx-hairline: color-mix(in srgb, var(--vx-ink) ${INK_MIX_PCT.hairline.dark}%, transparent);`,
+      `--basalt-hairline: color-mix(in srgb, var(--basalt-ink) ${INK_MIX_PCT.hairline.dark}%, transparent);`,
     )
     // No shadow role embeds the hairline or an outset 1px ring: a second ring is a second edge (d8).
-    expect(css).not.toMatch(/--vx-shadow-[a-z]+:[^;]*var\(--vx-hairline\)/)
-    for (const [, value] of css.matchAll(/--vx-shadow-card: ([^;]+);/g)) {
+    expect(css).not.toMatch(/--basalt-shadow-[a-z]+:[^;]*var\(--basalt-hairline\)/)
+    for (const [, value] of css.matchAll(/--basalt-shadow-card: ([^;]+);/g)) {
       expect(value).not.toMatch(/0 0 0 1px/)
     }
     // The input boundary is a deliberate heavier line, never a scaled hairline (S3).
@@ -230,14 +230,14 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
   })
 
   test('d8 one edge per surface: the card ring lives inside the card shadow and the control shadow draws none', () => {
-    expect(SHADOW.card.light).toContain('0 0 0 1px var(--vx-surface-hairline)')
+    expect(SHADOW.card.light).toContain('0 0 0 1px var(--basalt-surface-hairline)')
     expect(SHADOW.card.dark).toContain('inset 0 0 0 1px')
     for (const side of SIDES) {
       expect(SHADOW.ctrl[side]).not.toMatch(/inset|0 0 0 1px/)
     }
     const css = buildPaletteCss()
-    expect(css).toContain(`--vx-shadow-card: ${SHADOW.card.dark}`)
-    expect(css).toContain(`--vx-shadow-card: ${SHADOW.card.light}`)
+    expect(css).toContain(`--basalt-shadow-card: ${SHADOW.card.dark}`)
+    expect(css).toContain(`--basalt-shadow-card: ${SHADOW.card.light}`)
   })
 
   test.todo('v3 card: Card carries no border, the src/ui scan finds none (tok-t4)', pending)
@@ -249,8 +249,8 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     )
     expect(SHADOW.raised.light).not.toContain('inset')
     const css = buildPaletteCss()
-    expect(css).toContain(`--vx-shadow-raised: ${SHADOW.raised.light}`)
-    expect(css).toContain(`--vx-shadow-raised: ${SHADOW.raised.dark}`)
+    expect(css).toContain(`--basalt-shadow-raised: ${SHADOW.raised.light}`)
+    expect(css).toContain(`--basalt-shadow-raised: ${SHADOW.raised.dark}`)
   })
 
   test('d10 scheme selector specificity: a custom attribute emits :root[attr] (0-2-0), the default path keeps html[attr]', () => {
@@ -296,13 +296,13 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     expect(rule).not.toBeNull()
     expect(rule?.[1]).toContain('max(var(--basalt-input-fz-floor, 16px)')
     expect(rule?.[1]).toContain('!important')
-    expect(VX.text.lg).toBe(16)
+    expect(BASALT.text.lg).toBe(16)
   })
 
   test('d14 pointer tier: the hit floor is coarse (primary pointer), never any-pointer, and the overlay is ::after', () => {
     const css = buildPaletteCss()
-    expect(css).toContain('@media (pointer: coarse) {\n  :root {\n    --vx-hit: 44px;')
-    expect(css).toContain('--vx-hit: 24px')
+    expect(css).toContain('@media (pointer: coarse) {\n  :root {\n    --basalt-hit: 44px;')
+    expect(css).toContain('--basalt-hit: 24px')
     expect(css).not.toContain('any-pointer')
     expect(stylesCss).not.toMatch(/@media[^{]*any-pointer/)
     expect(stylesCss).toMatch(/\[data-basalt-hit\][^{]*::after\s*\{/)
@@ -310,14 +310,14 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
   })
 
   test('d17 type ladder: UI rungs sit 1.06-1.17x apart, lg is 16, and no 20px rung exists', () => {
-    const rungs = Object.values(VX.text)
-    const ui = rungs.filter((size) => size <= VX.text.xl)
+    const rungs = Object.values(BASALT.text)
+    const ui = rungs.filter((size) => size <= BASALT.text.xl)
     for (let i = 1; i < ui.length; i++) {
       const ratio = ui[i]! / ui[i - 1]!
       expect(ratio).toBeGreaterThanOrEqual(1.06)
       expect(ratio).toBeLessThanOrEqual(1.17)
     }
-    expect(VX.text.lg).toBe(16)
+    expect(BASALT.text.lg).toBe(16)
     expect(rungs).not.toContain(20)
   })
 
@@ -327,7 +327,7 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
 
   test('d20 autofill: paints an inset 100vmax shadow in the field surface plus a 600000s transition', () => {
     const block = stylesCss.match(/input:-webkit-autofill,[\s\S]*?\{([^}]*)\}/)?.[1] ?? ''
-    expect(block).toContain('box-shadow: 0 0 0 100vmax var(--vx-surface-field) inset')
+    expect(block).toContain('box-shadow: 0 0 0 100vmax var(--basalt-surface-field) inset')
     expect(block).toContain('transition: background-color 600000s 0s')
   })
 
@@ -342,14 +342,16 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
 
   test('d25 dev gating: the dev check sits behind a literal NODE_ENV read, so production does not throw and dev does', () => {
     const core = readFileSync(join(TOKENS_DIR, 'core.ts'), 'utf8')
-    expect(core).toMatch(/if \(process\.env\.NODE_ENV !== 'production'\) assertConsumerVxName\(/)
+    expect(core).toMatch(
+      /if \(process\.env\.NODE_ENV !== 'production'\) assertConsumerBasaltName\(/,
+    )
     expect(core).not.toMatch(/\bisDev\s*\(/)
 
     const previous = process.env.NODE_ENV
     try {
       process.env.NODE_ENV = 'development'
       expect(() => seriesTokens({ bg: { light: 'x', dark: 'x' } }, 'surface-')).toThrow(
-        /basalt's own --vx-surface family/,
+        /basalt's own --basalt-surface family/,
       )
       process.env.NODE_ENV = 'production'
       expect(() => seriesTokens({ bg: { light: 'x', dark: 'x' } }, 'surface-')).not.toThrow()
@@ -374,14 +376,14 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
 
   test('d28 unknown vars fail silently, so the emitted names are kebab-case and every removed alias is absent', () => {
     const css = buildPaletteCss({ only: 'all' })
-    const emitted = new Set([...css.matchAll(/(--vx-[\w-]+)\s*:/g)].map((m) => m[1]!))
+    const emitted = new Set([...css.matchAll(/(--basalt-[\w-]+)\s*:/g)].map((m) => m[1]!))
     expect(emitted.size).toBeGreaterThan(50)
-    for (const name of emitted) expect(name).toMatch(/^--vx-[a-z0-9-]+$/)
-    for (const [removed, replacement] of Object.entries(REMOVED_VX_NAMES)) {
+    for (const name of emitted) expect(name).toMatch(/^--basalt-[a-z0-9-]+$/)
+    for (const [removed, replacement] of Object.entries(REMOVED_BASALT_NAMES)) {
       expect(emitted.has(removed)).toBe(false)
       if (replacement !== null) expect(emitted.has(replacement)).toBe(true)
     }
-    expect(REMOVED_VX_NAMES['--vx-goodSolid']).toBe('--vx-good-solid')
+    expect(REMOVED_BASALT_NAMES['--basalt-goodSolid']).toBe('--basalt-good-solid')
   })
 
   test('d30 generated stylesheet contract: line 1 is the marker, line 2 the provenance, color args formatter-stable', () => {

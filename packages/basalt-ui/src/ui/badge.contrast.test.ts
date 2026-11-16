@@ -5,8 +5,8 @@
  * no ratio may fall under 4.5:1.
  *
  * The tint is composited the way the CSS paints it: `--color-<tone>-tint` is
- * `color-mix(in srgb, var(--vx-<tone>) var(--vx-tint-pct), transparent)` over the surface, and the
- * neutral pill is `--vx-selected` (ink at `INK_MIX_PCT.selected`) over the surface.
+ * `color-mix(in srgb, var(--basalt-<tone>) var(--basalt-tint-pct), transparent)` over the surface, and the
+ * neutral pill is `--basalt-selected` (ink at `INK_MIX_PCT.selected`) over the surface.
  */
 import { describe, expect, test } from 'bun:test'
 import { DEFAULT_DERIVE_V3_CONFIG, INK_MIX_PCT, TINT_PCT, deriveV3, mixHex } from '../tokens/derive'

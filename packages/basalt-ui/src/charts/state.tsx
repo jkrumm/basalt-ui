@@ -7,7 +7,7 @@ import { splitEmptyCopy } from '../common/empty-copy'
 import { couldNotLoad } from '../common/could-not-load'
 import { toErrorMessage } from '../common/errors'
 import { RetryButton } from '../common/retry-button'
-import { VX } from '../tokens'
+import { BASALT } from '../tokens'
 import { CV } from './core/theme'
 import { ChartBox, growClass, stateClass } from './box'
 import boxClasses from './chart-box.module.css'
@@ -31,13 +31,13 @@ const boxStyle: CSSProperties = {
   justifyContent: 'center',
   gap: 6,
   color: CV.axis,
-  fontSize: VX.text.xs,
+  fontSize: BASALT.text.xs,
   textAlign: 'center',
 }
 
 const pendingStyle: CSSProperties = {
   ...boxStyle,
-  borderRadius: VX.radiusCtrl,
+  borderRadius: BASALT.radiusCtrl,
   background: `linear-gradient(90deg, transparent, ${CV.inset}, transparent)`,
 }
 
@@ -96,7 +96,7 @@ function PlotGhost({ shape = 'bars' }: { shape?: PlotGhostShape }): ReactElement
 }
 
 // The error idiom (D28, SPEC § 6.12): a status dot + a word + the message + the action, on the
-// neutral surface. The dot is drawn from `--vx-*` tokens here — `src/charts/**` stays Mantine-free and `theme/status-dot` sits in the
+// neutral surface. The dot is drawn from `--basalt-*` tokens here — `src/charts/**` stays Mantine-free and `theme/status-dot` sits in the
 // Mantine-coupled theme layer.
 const dotStyle: CSSProperties = {
   display: 'inline-block',
@@ -113,7 +113,7 @@ const errorStyle: CSSProperties = {
   justifyContent: 'flex-start',
   paddingBottom: 6,
   textAlign: 'start',
-  fontSize: VX.text.sm,
+  fontSize: BASALT.text.sm,
   gap: 6,
 }
 // The empty tile's one ring: an inset shadow, never a border, as `EmptyState`'s section tier draws it.
@@ -124,7 +124,7 @@ const errorHeadStyle: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
-  color: VX.ink,
+  color: BASALT.ink,
   fontWeight: 500,
 }
 

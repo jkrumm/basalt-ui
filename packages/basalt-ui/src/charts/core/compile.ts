@@ -28,7 +28,7 @@ import type {
 } from '@tanstack/charts/types/core'
 import { compact } from '../../format/number'
 import { NON_FINITE, numberFormat } from '../../format/shared'
-import { VX } from '../../tokens'
+import { BASALT } from '../../tokens'
 import type { ContainerClass } from '../../tokens/size-classes'
 import { cursorBinding, followerOptions, quietWhileFollowing } from './cursor'
 import { cursorDots } from '../marks'
@@ -153,7 +153,7 @@ export type CartesianInput<T, X extends ChartX> = Pick<
 }
 
 /** The one tick-label size, at every container width: the caption size, so a card never mixes sizes. */
-const TICK_FONT = VX.text.micro
+const TICK_FONT = BASALT.text.micro
 
 /** Tick counts per container class (§ 9.6). */
 const LADDER = {
@@ -1027,7 +1027,7 @@ const refLabelMark = <T, X extends ChartX>(
     plotWidth: ctx.plotWidth,
     plotHeight: ctx.plotHeight,
     label: r.label ?? '',
-    fontSize: VX.text.micro,
+    fontSize: BASALT.text.micro,
     series: ctx.lines(r.axis),
     ...ctx.marks(r.axis),
     claimed: [
@@ -1050,10 +1050,10 @@ const refLabelMark = <T, X extends ChartX>(
         yScale: axes.scaleId(r.axis),
         text: () => r.label ?? '',
         fill: CV.inkMuted,
-        fontSize: VX.text.micro,
+        fontSize: BASALT.text.micro,
         anchor: atStart ? 'start' : 'end',
         dx: atStart ? REF_LABEL_DX : -REF_LABEL_DX,
-        dy: refLabelDy(position, VX.text.micro),
+        dy: refLabelDy(position, BASALT.text.micro),
       }),
     ),
   ]
@@ -1071,7 +1071,7 @@ const xZoneLabelMarks = <T, X extends ChartX>(
   ctx: RefLabelContext<T, X>,
 ): ChartMarks => {
   const { plotWidth, plotHeight, axes, model } = ctx
-  const fontSize = VX.text.micro
+  const fontSize = BASALT.text.micro
   const domain = axes.left.domain
   const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
   const perPx = plotHeight > 0 && hi > lo ? (hi - lo) / plotHeight : 0
@@ -1493,7 +1493,7 @@ export function compileCartesian<T, X extends ChartX>(
       .filter((s) => s.mark === 'dot')
       .flatMap((s) =>
         rows(s.key).flatMap((row) =>
-          row.y === null ? [] : [{ y: row.y, r: input.dotRadius?.get(s.key) ?? VX.dotR }],
+          row.y === null ? [] : [{ y: row.y, r: input.dotRadius?.get(s.key) ?? BASALT.dotR }],
         ),
       )
   }
@@ -1523,7 +1523,7 @@ export function compileCartesian<T, X extends ChartX>(
         const fx = model.fraction(r.x)
         if (fx === null || r.y === null) continue
         if (s.mark === 'dot')
-          dotMarks.push({ fx, y: r.y, r: input.dotRadius?.get(s.key) ?? VX.dotR })
+          dotMarks.push({ fx, y: r.y, r: input.dotRadius?.get(s.key) ?? BASALT.dotR })
         if (!(model.band && s.mark === 'bar')) continue
         const at = bodies.get(fx) ?? { fx, up: 0, down: 0 }
         const stacked = input.stack !== undefined
@@ -1603,7 +1603,7 @@ export function compileCartesian<T, X extends ChartX>(
           lines: input.xRefLines,
           fraction: (x, at) => edgeFraction(model, x, at),
           plotWidth,
-          fontSize: VX.text.micro,
+          fontSize: BASALT.text.micro,
           blocked: xBlocked(plotWidth, size?.height ?? height),
         })
         captions = {
@@ -1613,7 +1613,7 @@ export function compileCartesian<T, X extends ChartX>(
           marks: marksOn,
           xBlocked: xBlocked(plotWidth, size?.height ?? height),
           claimed: claimedLabelBoxes(plot),
-          xCaptions: xRefLabelBoxes(xSpots, { plotWidth, fontSize: VX.text.micro }),
+          xCaptions: xRefLabelBoxes(xSpots, { plotWidth, fontSize: BASALT.text.micro }),
           placed: { left: [], right: [] },
           axes,
           model,

@@ -19,7 +19,7 @@ import { useCallback, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import { oneOf, requiredProp } from '../../common/errors'
 import { NON_FINITE } from '../../format/shared'
-import { VX, alpha } from '../../tokens'
+import { BASALT, alpha } from '../../tokens'
 import { CV } from '../core/theme'
 import { useInChartCard } from '../card-context'
 import { compileCartesian } from '../core/compile'
@@ -65,7 +65,7 @@ export type BandStripSeries<T> = NamedChartState & {
 export type BandSpan = {
   /** A `states` key: the band's legend entry, fill and tooltip row. */
   state: string
-  /** Overrides the state's fill — an intensity ramp WITHIN a state. `alpha(VX.*, …)`, never a hex. */
+  /** Overrides the state's fill — an intensity ramp WITHIN a state. `alpha(BASALT.*, …)`, never a hex. */
   fill?: string | undefined
   /**
    * 0..1 of the band's width that no source sample covers, painted from its right edge in the
@@ -357,7 +357,7 @@ function layoutBands<T>(input: LayoutInput<T>): {
         const fill = span.fill ?? named.color
         paintInto(
           notches,
-          `color-mix(in srgb, ${fill} 50%, ${VX.ink})`,
+          `color-mix(in srgb, ${fill} 50%, ${BASALT.ink})`,
           input.emphasis(span.state),
           {
             f0: cell.f0,
@@ -495,7 +495,7 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
                   xScale: 'zx',
                   text: 'glyph',
                   fill: CV.surface,
-                  fontSize: VX.text.xs,
+                  fontSize: BASALT.text.xs,
                   fontWeight: 600,
                   anchor: 'middle',
                 }),

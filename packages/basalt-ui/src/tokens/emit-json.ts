@@ -27,7 +27,7 @@ type Scheme = 'light' | 'dark'
 export type JsonTokens = {
   $generated: string
   $provenance: string
-  /** `--vx-contract`: the token contract the roles belong to. */
+  /** `--basalt-contract`: the token contract the roles belong to. */
   contract: 3
   schemes: Record<Scheme, Record<string, string>>
 }

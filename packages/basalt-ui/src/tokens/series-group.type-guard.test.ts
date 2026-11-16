@@ -28,8 +28,8 @@ const wideKeysAreExact: Equal<keyof typeof wide, 'a' | 'b'> = true
 void [keysAreExact, wideKeysAreExact]
 
 test('the group emits under the prefix it was named with, and its refs point at it', () => {
-  expect(buildPaletteCss({ groups: [ACTIVITY] })).toContain('--vx-activity-a')
-  expect(String(ACTIVITY.a)).toBe('var(--vx-activity-a)')
+  expect(buildPaletteCss({ groups: [ACTIVITY] })).toContain('--basalt-activity-a')
+  expect(String(ACTIVITY.a)).toBe('var(--basalt-activity-a)')
   expect(Object.keys(ACTIVITY)).toEqual(['a'])
 })
 

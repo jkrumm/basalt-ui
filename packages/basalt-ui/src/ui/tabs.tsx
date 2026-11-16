@@ -6,14 +6,14 @@ import { cn } from '../core/cn'
 
 /**
  * The `Tabs` cva table: the trigger height every part reads. `md` follows the density control
- * height (`--vx-ctl-h`); `sm` is a fixed 24 px row for tabs inside a card header. A coarse pointer
+ * height (`--basalt-ctl-h`); `sm` is a fixed 24 px row for tabs inside a card header. A coarse pointer
  * lifts both to the 44 px floor, so a trigger stays a touch target.
  *
  * @example
  * tabsVariants({ size: 'sm' }) // class string for a non-`Tabs` element
  */
 export const tabsVariants = cva(
-  'flex flex-col gap-3 data-[orientation=vertical]:flex-row [--tabs-h:var(--vx-ctl-h)]',
+  'flex flex-col gap-3 data-[orientation=vertical]:flex-row [--tabs-h:var(--basalt-ctl-h)]',
   {
     variants: {
       size: {

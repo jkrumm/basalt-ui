@@ -22,13 +22,13 @@ afterEach(() => {
 
 describe('check-playground-lint', () => {
   test('a shipped token passes', () => {
-    expect(run({ 'a.tsx': "export const c = 'var(--vx-warn)'\n" }).code).toBe(0)
+    expect(run({ 'a.tsx': "export const c = 'var(--basalt-warn)'\n" }).code).toBe(0)
   })
 
-  test('an unknown --vx-* name fails with the nearest token', () => {
-    const { code, stdout } = run({ 'a.tsx': "export const c = 'var(--vx-warning)'\n" })
+  test('an unknown --basalt-* name fails with the nearest token', () => {
+    const { code, stdout } = run({ 'a.tsx': "export const c = 'var(--basalt-warning)'\n" })
     expect(code).toBe(1)
-    expect(stdout).toContain('--vx-warning is not a token. Did you mean --vx-warn?')
+    expect(stdout).toContain('--basalt-warning is not a token. Did you mean --basalt-warn?')
   })
 
   test('a hex colour in a stylesheet fails the stylelint preset', () => {

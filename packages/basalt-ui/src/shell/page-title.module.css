@@ -10,26 +10,26 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: var(--vx-space-stack-xs);
+  gap: var(--basalt-space-stack-xs);
 }
 
 .titleRow {
   display: flex;
   align-items: center;
-  gap: var(--vx-space-nav-icon-gap, 8px);
+  gap: var(--basalt-space-nav-icon-gap, 8px);
 }
 
 .title {
   margin: 0;
   font-family: var(--basalt-font-head);
-  font-size: var(--vx-text-xl);
+  font-size: var(--basalt-text-xl);
   font-weight: 550;
   font-stretch: 88%;
-  color: var(--vx-ink);
+  color: var(--basalt-ink);
 }
 
 .subtitle {
   margin: 0;
-  font-size: var(--vx-text-sm);
-  color: var(--vx-faint);
+  font-size: var(--basalt-text-sm);
+  color: var(--basalt-faint);
 }

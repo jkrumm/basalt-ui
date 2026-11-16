@@ -15,16 +15,16 @@ export type CtlHeightVar = (typeof CTL_HEIGHT_VARS)[number]
 
 /**
  * The dense-tier rule (SPEC D6), emitted beside `coarseHitBlock` in the palette CSS. A scope that
- * carries `data-basalt-dense` re-points the `ctl` height at `--vx-space-control-height-dense` at
+ * carries `data-basalt-dense` re-points the `ctl` height at `--basalt-space-control-height-dense` at
  * FINE pointers only; a coarse pointer keeps the `ctl` height and the 44px hit overlay.
  */
 export function denseCtlBlock(): string {
-  const height = 'calc(var(--vx-space-control-height-dense) * var(--mantine-scale))'
+  const height = 'calc(var(--basalt-space-control-height-dense) * var(--mantine-scale))'
   const decls = CTL_HEIGHT_VARS.map((name) => `    ${name}: ${height};`).join('\n')
   return [
     '@media (pointer: fine) {',
     '  [data-basalt-dense] {',
-    '    --vx-space-control-height-ctl: var(--vx-space-control-height-dense);',
+    '    --basalt-space-control-height-ctl: var(--basalt-space-control-height-dense);',
     decls,
     '  }',
     '}',

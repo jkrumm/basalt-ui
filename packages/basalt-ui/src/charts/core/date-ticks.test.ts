@@ -6,7 +6,12 @@ import { dateTickFormat } from '../date-tick-format'
 import type { ChartSeries } from '../types'
 
 type Row = { t: Date; v: number }
-const v: ChartSeries<Row> = { key: 'v', label: 'V', color: 'var(--vx-line)', getValue: (d) => d.v }
+const v: ChartSeries<Row> = {
+  key: 'v',
+  label: 'V',
+  color: 'var(--basalt-line)',
+  getValue: (d) => d.v,
+}
 const HOUR = 3_600_000
 const DAY = 24 * HOUR
 

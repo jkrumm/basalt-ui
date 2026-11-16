@@ -33,7 +33,7 @@ const DOCUMENT =
   '@layer utilities { .mt-2 { margin-block-start: 8px; } }\n' +
   '.steps > * { margin-block-start: 0; }\n' +
   '</style></head><body>' +
-  '<article class="vx-prose">' +
+  '<article class="basalt-prose">' +
   '<p id="first">First</p>' +
   '<p id="sibling">Second</p>' +
   '<div class="steps"><p id="stepped">Step</p><p id="stepped-2">Step two</p></div>' +
@@ -86,7 +86,7 @@ const marginTop = async (selector: string): Promise<string> => {
 }
 
 layout('prose in the cascade', () => {
-  test('a plain sibling gets the paragraph rhythm: --vx-rhythm-2 (1.25em of the 16px base)', async () => {
+  test('a plain sibling gets the paragraph rhythm: --basalt-rhythm-2 (1.25em of the 16px base)', async () => {
     expect(await marginTop('#sibling')).toBe('20px')
   })
 

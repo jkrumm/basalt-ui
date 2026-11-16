@@ -1,6 +1,6 @@
 /**
  * Barrel surface guard: `./tokens` and `./charts` are the published, Mantine-free surfaces.
- * `./tokens` is the ONE home of the token layer — consumers reach for `VX` / `alpha` / the factory
+ * `./tokens` is the ONE home of the token layer — consumers reach for `BASALT` / `alpha` / the factory
  * helpers plus the two doctrine-prescribed
  * building blocks `BP` (raw hue families) and `p` (pair-picker), which every consumer series
  * module composes (`hrv: p(BP.blue)` — argo's series.ts, the DESIGN.md recipe). The REST of the
@@ -28,7 +28,7 @@ const RAW_PALETTE_KEYS = [
 ] as const
 
 const REQUIRED_KEYS = [
-  'VX',
+  'BASALT',
   'alpha',
   'buildPaletteCss',
   'defineSeries',

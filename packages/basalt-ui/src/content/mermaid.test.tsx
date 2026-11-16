@@ -56,10 +56,10 @@ describe('MermaidDiagram', () => {
     expect(container.querySelector('[role="img"] svg')).not.toBeNull()
   })
 
-  test('the theme options are var(--vx-*) strings only', async () => {
+  test('the theme options are var(--basalt-*) strings only', async () => {
     const { MERMAID_THEME_OPTIONS } = await import('./mermaid')
     for (const [key, value] of Object.entries(MERMAID_THEME_OPTIONS)) {
-      if (typeof value === 'string') expect(`${key}: ${value}`).toMatch(/var\(--vx-/)
+      if (typeof value === 'string') expect(`${key}: ${value}`).toMatch(/var\(--basalt-/)
     }
   })
 })

@@ -3,7 +3,7 @@
  * into the generated outputs. Everything here is pure and deterministic - no clock, no filesystem,
  * no environment - so emitting twice is byte-identical and the output can be snapshotted.
  *
- * Outputs: `emitTokensCss` (tokens.css and tenant sheets), `emitVxTypes` (the `VX` constant and its
+ * Outputs: `emitTokensCss` (tokens.css and tenant sheets), `emitBasaltTypes` (the `BASALT` constant and its
  * name union), `tokenNames` (the `check-tokens` name list) and `zoneADenial` (the generated half of
  * `tw-off-law`). The Tailwind bridge file, the CLI and the JSON format consume the same table in
  * their own Issues.
@@ -47,13 +47,13 @@ export type EmitOptions = {
 type Side = 'light' | 'dark'
 
 const SCALAR_EXCLUDED = new Set<string>(Object.keys(DENSITY.dense).concat(['hit']))
-// Built, not quoted: `scripts/gen-vx-names.ts` reads every quoted custom-property name in shipped source into
+// Built, not quoted: `scripts/gen-basalt-names.ts` reads every quoted custom-property name in shipped source into
 // the 2.x allowlist, and these v3 names must not enter it.
-const vxDecl = (name: string, value: string): Decl => [`--vx-${name}`, value]
+const basaltDecl = (name: string, value: string): Decl => [`--basalt-${name}`, value]
 
 const decls = (tokens: readonly ResolvedToken[], side: Side): Decl[] =>
   tokens.flatMap(({ def, value }): Decl[] =>
-    isPair(value) ? [[`--vx-${def.name}`, value[side]]] : [],
+    isPair(value) ? [[`--basalt-${def.name}`, value[side]]] : [],
   )
 
 function colorBlocks(
@@ -70,12 +70,12 @@ function colorBlocks(
 
 function scalarBlocks(tokens: readonly ResolvedToken[]): string {
   const scalars = tokens.flatMap(({ def, value }): Decl[] =>
-    isPair(value) || SCALAR_EXCLUDED.has(def.name) ? [] : [[`--vx-${def.name}`, value]],
+    isPair(value) || SCALAR_EXCLUDED.has(def.name) ? [] : [[`--basalt-${def.name}`, value]],
   )
   const density = (key: keyof typeof DENSITY): Decl[] =>
-    Object.entries(DENSITY[key]).map(([name, value]): Decl => [`--vx-${name}`, value])
+    Object.entries(DENSITY[key]).map(([name, value]): Decl => [`--basalt-${name}`, value])
   return (
-    block(':root', [...scalars, vxDecl('hit', tokenScalar(tokens, 'hit'))]) +
+    block(':root', [...scalars, basaltDecl('hit', tokenScalar(tokens, 'hit'))]) +
     block(":root,\n[data-density='dense']", density('dense')) +
     block("[data-density='normal']", density('normal')) +
     block("[data-density='comfortable']", density('comfortable')) +
@@ -84,17 +84,17 @@ function scalarBlocks(tokens: readonly ResolvedToken[]): string {
     `@media (pointer: coarse) {\n` +
     block(
       ":root:not([data-density]),\n[data-density='dense'],\n[data-density='normal']",
-      [vxDecl('row-h', COARSE['row-h'])],
+      [basaltDecl('row-h', COARSE['row-h'])],
       1,
     ) +
-    block(':root', [vxDecl('hit', COARSE.hit)], 1) +
+    block(':root', [basaltDecl('hit', COARSE.hit)], 1) +
     `}\n`
   )
 }
 
 function tokenScalar(tokens: readonly ResolvedToken[], name: string): string {
   const found = tokens.find((t) => t.def.name === name)?.value
-  if (typeof found !== 'string') throw new Error(`--vx-${name} is not a scalar token`)
+  if (typeof found !== 'string') throw new Error(`--basalt-${name} is not a scalar token`)
   return found
 }
 
@@ -151,23 +151,23 @@ export function emitDerived(derived: DerivedV3, options: EmitOptions): string {
   )
 }
 
-/** The public `--vx-*` names, in table order. */
+/** The public `--basalt-*` names, in table order. */
 export function tokenNames(): string[] {
-  return TOKENS.map((t) => `--vx-${t.name}`)
+  return TOKENS.map((t) => `--basalt-${t.name}`)
 }
 
 const camel = (name: string): string =>
   name.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase())
 
-/** TypeScript source for `VX` (each key a `var(--vx-*)` ref) and its name unions. */
-export function emitVxTypes(options: Pick<EmitOptions, 'version' | 'command'>): string {
-  const rows = TOKENS.map((t) => `  ${camel(t.name)}: 'var(--vx-${t.name})',`)
+/** TypeScript source for `BASALT` (each key a `var(--basalt-*)` ref) and its name unions. */
+export function emitBasaltTypes(options: Pick<EmitOptions, 'version' | 'command'>): string {
+  const rows = TOKENS.map((t) => `  ${camel(t.name)}: 'var(--basalt-${t.name})',`)
   const names = tokenNames().map((n) => `  | '${n}'`)
   return (
     provenanceHeader(options.version, options.command ?? 'basalt-ui tokens:css') +
-    `export const VX = {\n${rows.join('\n')}\n} as const\n\n` +
-    `export type VxKey = keyof typeof VX\n\n` +
-    `export type VxVar =\n${names.join('\n')}\n`
+    `export const BASALT = {\n${rows.join('\n')}\n} as const\n\n` +
+    `export type BasaltKey = keyof typeof BASALT\n\n` +
+    `export type BasaltVar =\n${names.join('\n')}\n`
   )
 }
 

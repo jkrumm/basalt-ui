@@ -1,5 +1,5 @@
 /**
- * Reference lines (`--vx-{good,bad,warn}-ref`) are the status solid at `REF_LINE_ALPHA`% over the
+ * Reference lines (`--basalt-{good,bad,warn}-ref`) are the status solid at `REF_LINE_ALPHA`% over the
  * page. A dashed 1 px line has no label to lean on, so its composite must stay visible against
  * the surface it crosses in BOTH schemes, under every derive knob and neutral seed. The old 20–30%
  * left light-scheme `warn` at 1.25:1.
@@ -82,11 +82,11 @@ describe('reference lines are not louder than what they annotate', () => {
 describe('the palette CSS', () => {
   test('the ref tokens are the only declarations that carry the ref alpha', () => {
     const css = buildPaletteCss()
-    const refs = css.split('\n').filter((line) => /--vx-[a-z]+-ref:/.test(line))
+    const refs = css.split('\n').filter((line) => /--basalt-[a-z]+-ref:/.test(line))
     expect(refs.map((line) => line.trim())).toEqual(
       (['good', 'bad', 'warn'] as const).map(
         (k) =>
-          `--vx-${k}-ref: color-mix(in srgb, var(--vx-${k}-solid) ${REF_LINE_ALPHA}%, transparent);`,
+          `--basalt-${k}-ref: color-mix(in srgb, var(--basalt-${k}-solid) ${REF_LINE_ALPHA}%, transparent);`,
       ),
     )
     expect(css.split(`${REF_LINE_ALPHA}%, transparent`).length - 1).toBe(refs.length)

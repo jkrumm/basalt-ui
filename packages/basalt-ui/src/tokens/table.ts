@@ -1,13 +1,13 @@
 /**
  * The v3 token table: the ONE authored list (docs/v3/concepts/tokens-visual.md 3.2). `emit.ts`
- * generates `tokens.css`, the `VX` type, the `check-tokens` name list and the zone A denial from it;
+ * generates `tokens.css`, the `BASALT` type, the `check-tokens` name list and the zone A denial from it;
  * `gates.ts` proves its colours. A name is public once it is a row here, so adding one is a
  * deliberate edit with a count test behind it (`table.test.ts`: 74 booked + `input`, ceiling 90).
  *
  * Colour values come from `deriveV3` (HCT, hex out): the table never carries a hex. A value is a
  * `{ light, dark }` pair, or a scalar string for a scheme-free role. Pre-mixed alpha roles
  * (`hairline`, `hover`, `selected`, `scrim`, `input`, `grid`, `crosshair`) are `color-mix` strings
- * over `var(--vx-ink)`, so `/NN` on them would compound; `tw-off-law` denies it on those flagged `premixed`.
+ * over `var(--basalt-ink)`, so `/NN` on them would compound; `tw-off-law` denies it on those flagged `premixed`.
  *
  * Pure: no React, no Tailwind, no `palette.ts`/`core.ts` (the 2.x modules this replaces).
  */
@@ -36,7 +36,7 @@ export type TokenFamily =
   | 'contract'
 
 export type TokenDef = {
-  /** Name without the `--vx-` prefix. */
+  /** Name without the `--basalt-` prefix. */
   readonly name: string
   readonly family: TokenFamily
   /** One line: what the role is for. */
@@ -58,7 +58,7 @@ export type TokenDef = {
   readonly fillOnly?: true
 }
 
-const ink = (pct: number): string => `color-mix(in srgb, var(--vx-ink) ${pct}%, transparent)`
+const ink = (pct: number): string => `color-mix(in srgb, var(--basalt-ink) ${pct}%, transparent)`
 const inkMix = (key: keyof typeof INK_MIX_PCT) => (): SchemePair => ({
   light: ink(INK_MIX_PCT[key].light),
   dark: ink(INK_MIX_PCT[key].dark),
@@ -120,7 +120,7 @@ export const TOKENS: readonly TokenDef[] = [
     name: 'surface',
     family: 'surface',
     role: 'The current surface; Card and Inset re-point it per nesting level',
-    value: scalar('var(--vx-canvas)'),
+    value: scalar('var(--basalt-canvas)'),
     tw: ['--color-surface'],
   },
   // ── Interaction ───────────────────────────────────────────────────────────────────────────────
@@ -451,7 +451,7 @@ export const TOKENS: readonly TokenDef[] = [
     value: scalar('cubic-bezier(0.4, 0, 0.2, 1)'),
     tw: ['--ease-standard'],
   },
-  { name: 'measure', family: 'rhythm', role: '`.vx-prose` line length', value: scalar('72ch') },
+  { name: 'measure', family: 'rhythm', role: '`.basalt-prose` line length', value: scalar('72ch') },
   { name: 'rhythm-1', family: 'rhythm', role: 'Tight block gap', value: scalar('0.75em') },
   { name: 'rhythm-2', family: 'rhythm', role: 'Block gap', value: scalar('1.25em') },
   { name: 'rhythm-3', family: 'rhythm', role: 'Section gap', value: scalar('2em') },
@@ -474,7 +474,7 @@ export type Density = keyof typeof DENSITY
 /** Primary-pointer overrides: the 2.x 44px floor, asserted in the layout suite (d14). */
 export const COARSE = { 'row-h': '2.75rem', hit: '2.75rem' } as const
 
-/** Tailwind-only colour aliases, which name no `--vx-*` of their own (3.2). */
+/** Tailwind-only colour aliases, which name no `--basalt-*` of their own (3.2). */
 export const COLOR_ALIASES: readonly { readonly tw: string; readonly token: string }[] = [
   { tw: '--color-primary', token: 'ink' },
   { tw: '--color-primary-foreground', token: 'canvas' },
@@ -492,7 +492,7 @@ export const FOREGROUND_PAIRS = [
 export type BridgeEntry = {
   /** The Tailwind theme variable, e.g. `--color-good-tint`. */
   readonly tw: string
-  /** Its value: always a reference to `--vx-*`, so `@theme inline` keeps one truth. */
+  /** Its value: always a reference to `--basalt-*`, so `@theme inline` keeps one truth. */
   readonly value: string
   /** The token the entry resolves to. */
   readonly token: string
@@ -503,7 +503,7 @@ const BY_NAME: ReadonlyMap<string, TokenDef> = new Map(TOKENS.map((t) => [t.name
 
 export function tokenByName(name: string): TokenDef {
   const token = BY_NAME.get(name)
-  if (!token) throw new Error(`unknown token --vx-${name}`)
+  if (!token) throw new Error(`unknown token --basalt-${name}`)
   return token
 }
 
@@ -514,12 +514,12 @@ export function tokenByName(name: string): TokenDef {
 export function bridgeEntries(): BridgeEntry[] {
   const entries: BridgeEntry[] = []
   const tint = (name: string): string =>
-    `color-mix(in srgb, var(--vx-${name}) var(--vx-tint-pct), transparent)`
+    `color-mix(in srgb, var(--basalt-${name}) var(--basalt-tint-pct), transparent)`
   for (const token of TOKENS) {
     for (const tw of token.tw ?? []) {
       entries.push({
         tw,
-        value: `var(--vx-${token.name})`,
+        value: `var(--basalt-${token.name})`,
         token: token.name,
         earned: !!token.earned,
       })
@@ -529,7 +529,12 @@ export function bridgeEntries(): BridgeEntry[] {
     }
   }
   for (const { tw, token } of COLOR_ALIASES) {
-    entries.push({ tw, value: `var(--vx-${token})`, token, earned: !!tokenByName(token).earned })
+    entries.push({
+      tw,
+      value: `var(--basalt-${token})`,
+      token,
+      earned: !!tokenByName(token).earned,
+    })
   }
   return entries
 }

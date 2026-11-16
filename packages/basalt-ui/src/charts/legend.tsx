@@ -6,7 +6,7 @@
  */
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
-import { VX } from '../tokens'
+import { BASALT } from '../tokens'
 import { CV } from './core/theme'
 import classes from './chart-legend.module.css'
 import type { ChartSeries } from './types'
@@ -24,7 +24,7 @@ const ROLE_ORDER = ['series', 'overlay', 'reference'] as const
 
 /**
  * The pitch between dots-mode entries: 8px under the old 38, to pay for the 14px line key so the
- * four-entry legend still fits one row at 390px. `--vx-hit-gap` caps each coarse-pointer hit area
+ * four-entry legend still fits one row at 390px. `--basalt-hit-gap` caps each coarse-pointer hit area
  * at the entry plus 2px and this gap (`styles.css`), so neighbours never overlap; the trade is that
  * a dots-mode hit target is 8 + 2 + 30 = 40px, not 44.
  */
@@ -56,7 +56,7 @@ const rowBaseStyle: CSSProperties = {
   alignItems: 'center',
   rowGap: 4,
   // The tick step: ticks, legend and tooltip are one size, so a chart card has at most three.
-  fontSize: VX.text.micro,
+  fontSize: BASALT.text.micro,
   color: CV.inkMuted,
   lineHeight: 1.35,
 }
@@ -67,7 +67,7 @@ type LegendVars = CSSProperties & Record<'--bc-legend-gap' | '--bc-dots-gap', st
 const { flexWrap: _wrap, ...autoBaseStyle } = rowBaseStyle
 const autoRowStyle: LegendVars = {
   ...autoBaseStyle,
-  '--bc-legend-gap': `${VX.legendGap}px`,
+  '--bc-legend-gap': `${BASALT.legendGap}px`,
   '--bc-dots-gap': `${DOTS_GAP}px`,
 }
 /** The row's layout; a concealed legend keeps it (and so its height) but is not visible. */
@@ -76,12 +76,12 @@ function rowLayout(mode: LegendMode, concealed: boolean): CSSProperties {
   const hide: CSSProperties = concealed ? { visibility: 'hidden' } : {}
   // `display` and the gaps are the stylesheet's in `auto`: the container picks them by width.
   if (mode === 'auto') return { ...autoRowStyle, ...hide }
-  const gap = mode === 'dots' ? DOTS_GAP : VX.legendGap
+  const gap = mode === 'dots' ? DOTS_GAP : BASALT.legendGap
   return {
     ...rowStyle,
     columnGap: gap,
     // Caps each entry's `[data-basalt-hit]` overlay at the real gap between entries.
-    ...({ '--vx-hit-gap': `${gap}px` } as CSSProperties),
+    ...({ '--basalt-hit-gap': `${gap}px` } as CSSProperties),
     ...hide,
   }
 }
@@ -101,7 +101,7 @@ const buttonStyle: CSSProperties = {
   minWidth: 0,
   gap: 6,
   cursor: 'pointer',
-  borderRadius: VX.radiusCtrl,
+  borderRadius: BASALT.radiusCtrl,
 }
 const noteStyle: CSSProperties = { color: CV.axis, flex: 'none' }
 const labelStyle: CSSProperties = { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }

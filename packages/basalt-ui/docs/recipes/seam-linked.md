@@ -13,12 +13,12 @@ Keep a long list in the `ScrollArea` primitive: the keyboard step scrolls the fo
 
 ```tsx
 import { CartesianChart, useChartFocus } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 
 export type Sample = { day: number; version: string; value: number }
 
-const color = { light: VX.brand, dark: VX.brand }
+const color = { light: BASALT.brand, dark: BASALT.brand }
 
 export function SeamLinked({ samples }: { samples: readonly Sample[] }) {
   const focus = useChartFocus(samples, {

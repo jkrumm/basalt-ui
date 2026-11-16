@@ -252,7 +252,7 @@ layout('tokens install (packed tarball, frozen)', () => {
     ).join('')
     const page = await openDocument(
       `<!doctype html><html lang="en" data-density="dense"><head><meta charset="utf-8" />${sheets}<script>${themeScript()}</script></head>` +
-        '<body><div class="canvas" style="background:var(--vx-canvas);color:var(--vx-ink)"><article class="vx-prose"><h2>Tokens only</h2><p>Plain CSS.</p></article></div></body></html>',
+        '<body><div class="canvas" style="background:var(--basalt-canvas);color:var(--basalt-ink)"><article class="basalt-prose"><h2>Tokens only</h2><p>Plain CSS.</p></article></div></body></html>',
       DESKTOP_1440,
     )
     expect(await page.raw.evaluate(() => document.scripts.length)).toBe(1)
@@ -262,8 +262,10 @@ layout('tokens install (packed tarball, frozen)', () => {
     await page.raw.emulateMedia({ colorScheme: 'light' })
     const light = await page.raw.evaluate(() => ({
       canvas: getComputedStyle(document.querySelector('.canvas') as Element).backgroundColor,
-      token: getComputedStyle(document.documentElement).getPropertyValue('--vx-canvas').trim(),
-      h2: parseFloat(getComputedStyle(document.querySelector('.vx-prose h2') as Element).fontSize),
+      token: getComputedStyle(document.documentElement).getPropertyValue('--basalt-canvas').trim(),
+      h2: parseFloat(
+        getComputedStyle(document.querySelector('.basalt-prose h2') as Element).fontSize,
+      ),
     }))
     expect(light.token).not.toBe('')
     expect(light.canvas).not.toBe('rgba(0, 0, 0, 0)')

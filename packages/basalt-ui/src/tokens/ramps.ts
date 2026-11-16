@@ -1,5 +1,5 @@
 /**
- * The 2.x `BP` families, carried hex-identical and kept INTERNAL (tokens-visual 3.8): no `--vx-*`
+ * The 2.x `BP` families, carried hex-identical and kept INTERNAL (tokens-visual 3.8): no `--basalt-*`
  * name, no package export, so `BP` and `p()` can go and no argo/rb series colour shifts. The data
  * form `{ hue: 'forest', light: 3, dark: 4 }` that `defineSeries` accepts resolves through
  * {@link rampPair}; `ramps.test.ts` pins every hex against `palette.ts`'s `BP` until that module

@@ -57,7 +57,7 @@ describe('the status solids clear WCAG AA as text on every text surface', () => 
   const data = deriveTokens(DEFAULT_DERIVE_CONFIG)
   const TEXT_SURFACES = ['bg', 'panel', 'panelHover', 'elevated', 'subtle', 'field'] as const
 
-  // `DeltaBadge` paints `var(--vx-status-good|bad)` as text and a toned `breakdown` row paints
+  // `DeltaBadge` paints `var(--basalt-status-good|bad)` as text and a toned `breakdown` row paints
   // `warn`; a fill-less delta has no tint to lean on, so the solid itself carries the ratio.
   for (const side of ['light', 'dark'] as const) {
     for (const key of ['good', 'warn', 'bad'] as const) {

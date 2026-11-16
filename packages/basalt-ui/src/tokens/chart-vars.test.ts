@@ -19,7 +19,7 @@ import {
 } from './chart-vars'
 import { COLOR_NAMES_V3, DEFAULT_DERIVE_V3_CONFIG, deriveV3 } from './derive'
 import type { DerivedV3 } from './derive'
-import { emitDerived, emitTokensCss, emitVxTypes, tokenNames } from './emit'
+import { emitDerived, emitTokensCss, emitBasaltTypes, tokenNames } from './emit'
 import { checkGates, GateError } from './gates'
 import { contrastRatio, hctToHex, hexToHct } from './hct'
 import { hexToOklab } from './oklab'
@@ -146,7 +146,7 @@ describe('the names', () => {
     for (const n of VIZ_COLOR_NAMES) expect(vars[n]).toEqual(derived.colors[n])
   })
 
-  test('the public --vx-* name count stays at or under the 90 ceiling', () => {
+  test('the public --basalt-* name count stays at or under the 90 ceiling', () => {
     expect(tokenNames().length).toBeLessThanOrEqual(90)
   })
 })
@@ -170,24 +170,24 @@ describe('emit', () => {
       }
       for (const side of SIDES)
         for (const n of [...CHARTS, ...SEQ]) {
-          expect(count(blocks[side], `--vx-${n}:`)).toBe(1)
-          expect(blocks[side]).toContain(`--vx-${n}: ${derived.colors[n][side]};`)
+          expect(count(blocks[side], `--basalt-${n}:`)).toBe(1)
+          expect(blocks[side]).toContain(`--basalt-${n}: ${derived.colors[n][side]};`)
         }
     })
   }
 
-  test('chart-N and seq-N appear in the VX types exactly once each', () => {
-    const source = emitVxTypes(OPTIONS)
+  test('chart-N and seq-N appear in the BASALT types exactly once each', () => {
+    const source = emitBasaltTypes(OPTIONS)
     for (const n of [...CHARTS, ...SEQ]) {
-      expect(count(source, `'var(--vx-${n})'`)).toBe(1)
-      expect(count(source, `| '--vx-${n}'`)).toBe(1)
+      expect(count(source, `'var(--basalt-${n})'`)).toBe(1)
+      expect(count(source, `| '--basalt-${n}'`)).toBe(1)
     }
   })
 
   test('the default emit carries the default derived values', () => {
     const css = emitTokensCss(OPTIONS)
     const { colors } = deriveV3()
-    for (const n of [...CHARTS, ...SEQ]) expect(css).toContain(`--vx-${n}: ${colors[n].light};`)
+    for (const n of [...CHARTS, ...SEQ]) expect(css).toContain(`--basalt-${n}: ${colors[n].light};`)
   })
 
   test('a palette with seq-1 under 1.3:1 on the dark inset makes the emitter throw naming gate and ratio', () => {

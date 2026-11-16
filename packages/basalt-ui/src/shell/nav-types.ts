@@ -76,7 +76,7 @@ export type SidebarSection = {
 
 /**
  * Status tone on a sidebar-block item — byte-identical to the common `Tone` vocabulary
- * (`common/props.ts`, audit A13) and to `StatCard`'s `tone`, whose members are `VX.status` keys by
+ * (`common/props.ts`, audit A13) and to `StatCard`'s `tone`, whose members are `BASALT.status` keys by
  * construction. Declared here rather than aliased to `common`'s `Tone`: this module is the one
  * `./router-tanstack` reads, so it imports nothing from `common/props`. Kept in step with `Tone` by
  * convention, not by import.
@@ -90,7 +90,7 @@ export type SidebarBlockItem = {
   /** Trailing muted text (a timestamp, a count, an owner). */
   meta?: string
   icon?: ReactNode
-  /** Renders a status dot in place of a missing `icon`; reads `--vx-status-*`, never a hex. */
+  /** Renders a status dot in place of a missing `icon`; reads `--basalt-status-*`, never a hex. */
   tone?: SidebarBlockTone
   Anchor?: NavAnchor
   href?: string

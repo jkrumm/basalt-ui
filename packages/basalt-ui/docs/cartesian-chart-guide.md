@@ -58,7 +58,7 @@ other labels. Draw each placed label at its datum with the placed `dx`/`dy`:
 
 ```tsx
 marks={CartesianChart.custom<Sender>((plot) => {
-  const r = VX.dotR + 1
+  const r = BASALT.dotR + 1
   const dots = plot.rows('d').flatMap((s) => {
     const px = plot.x(s.perWeek)
     return px === null ? [] : [{ left: px - r, top: plot.y(s.openPct) - r, width: 2 * r, height: 2 * r }]
@@ -67,7 +67,7 @@ marks={CartesianChart.custom<Sender>((plot) => {
     worst.map((s) => ({ key: s.id, text: s.name, x: plot.x(s.perWeek) ?? 0, y: plot.y(s.openPct) })),
     { width: plot.plotWidth, height: plot.plotHeight },
     // The gap clears the anchor's own dot, which is one of the obstacles.
-    { obstacles: dots, gap: VX.dotR + 3 },
+    { obstacles: dots, gap: BASALT.dotR + 3 },
   )
   return [
     text(placed, {
@@ -94,7 +94,7 @@ beside the zone when it does not fit inside, dropped when no spot stays in the p
 scale cannot place (at or under 0 on a log x, an unknown key) reaches the plot's edge.
 
 ```tsx
-zones={[{ axis: 'x', from: MIN_PER_WEEK, to: weekEnd, y: { from: 0, to: MAX_OPEN_PCT }, fill: alpha(VX.brand, 0.1), label: 'Mute' }]}
+zones={[{ axis: 'x', from: MIN_PER_WEEK, to: weekEnd, y: { from: 0, to: MAX_OPEN_PCT }, fill: alpha(BASALT.brand, 0.1), label: 'Mute' }]}
 ```
 
 ## Axis titles, log x, vertical rules

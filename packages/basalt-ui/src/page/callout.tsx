@@ -48,7 +48,7 @@ export function Callout({ tone, kind, title, className, children }: CalloutProps
     <Alert
       tone={resolved}
       {...(title !== undefined && { title })}
-      className={cn('in-[.vx-prose]:mt-(--vx-rhythm-2)', className)}
+      className={cn('in-[.basalt-prose]:mt-(--basalt-rhythm-2)', className)}
     >
       {title === undefined && kindWord !== undefined && (
         <span className="sr-only" data-callout-kind-word="">

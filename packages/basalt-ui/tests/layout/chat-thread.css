@@ -1,6 +1,6 @@
 /*
  * The chat-thread fixture's Tailwind v4 entry: compiled WITH preflight, like a Tailwind consumer, plus
- * the `.vx-prose` sheet. The layout test compiles it into a temp directory; nothing generated lands
+ * the `.basalt-prose` sheet. The layout test compiles it into a temp directory; nothing generated lands
  * in the repo.
  */
 @import '../../src/css/tailwind.css' source(none);

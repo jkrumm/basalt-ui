@@ -14,7 +14,7 @@
 import type { CSSProperties } from 'react'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { scaleUtc } from '@tanstack/charts/scales/time'
-import { VX } from '../tokens'
+import { BASALT } from '../tokens'
 
 /** What a tick label, a gridline or a row label spreads: classes and a style, no measuring. */
 export type TrackProps = {
@@ -116,7 +116,7 @@ const TICK_GAP = 8
 
 const DEFAULT_GAP = 4
 
-const DEFAULT_SIZE: number = VX.text.micro
+const DEFAULT_SIZE: number = BASALT.text.micro
 
 type Measure = (text: string, size: number) => number
 

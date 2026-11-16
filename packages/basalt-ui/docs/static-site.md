@@ -1,7 +1,7 @@
 # A static site on the tokens
 
 A static page needs no React, no Tailwind and no peers. `basalt-ui` ships the token layer as four
-CSS entries, one head script and one CLI verb. They read the same `--vx-*` variables an app built
+CSS entries, one head script and one CLI verb. They read the same `--basalt-*` variables an app built
 on the component layer reads, so a landing page and the product look like one thing.
 
 ```sh
@@ -19,18 +19,18 @@ Import them in this order from your CSS bundler (Astro, Vite) or copy the files 
 @import 'basalt-ui/fonts.css'; /* @font-face only: needs a bundler or a copy step for the woff2 files */
 @import 'basalt-ui/tokens.css'; /* unlayered on purpose: :root[data-theme] must out-rank :root */
 @import 'basalt-ui/typography.css'; /* @layer basalt.type: the 7-rung type ladder and the base rules */
-@import 'basalt-ui/prose.css'; /* @layer basalt.prose: .vx-prose, every selector inside :where() */
+@import 'basalt-ui/prose.css'; /* @layer basalt.prose: .basalt-prose, every selector inside :where() */
 ```
 
-| Entry            | Holds                                                                                      |
-| ---------------- | ------------------------------------------------------------------------------------------ |
-| `tokens.css`     | the `--vx-*` roles for light and dark, radii, density, the `prefers-color-scheme` fallback |
-| `typography.css` | `--vx-text-*` rungs, `:where(:root)` base, focus ring, reduced-motion reset                |
-| `prose.css`      | `.vx-prose` for h2-h4, paragraphs, lists, code, tables                                     |
-| `fonts.css`      | the `@font-face` rules for the three faces plus Head Digits                                |
+| Entry            | Holds                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| `tokens.css`     | the `--basalt-*` roles for light and dark, radii, density, the `prefers-color-scheme` fallback |
+| `typography.css` | `--basalt-text-*` rungs, `:where(:root)` base, focus ring, reduced-motion reset                |
+| `prose.css`      | `.basalt-prose` for h2-h4, paragraphs, lists, code, tables                                     |
+| `fonts.css`      | the `@font-face` rules for the three faces plus Head Digits                                    |
 
-Your own rules beat `.vx-prose` without `!important`. Read colour, spacing and type through
-`var(--vx-*)`, never a literal.
+Your own rules beat `.basalt-prose` without `!important`. Read colour, spacing and type through
+`var(--basalt-*)`, never a literal.
 
 ## Retune the tokens
 

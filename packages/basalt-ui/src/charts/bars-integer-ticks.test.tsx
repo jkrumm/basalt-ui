@@ -13,7 +13,7 @@ type Row = { x: number; y: number }
 const bar = (getValue: (d: Row) => number): ChartSeries<Row> => ({
   key: 'a',
   label: 'Alpha',
-  color: 'var(--vx-line)',
+  color: 'var(--basalt-line)',
   mark: 'bar',
   getValue,
 })

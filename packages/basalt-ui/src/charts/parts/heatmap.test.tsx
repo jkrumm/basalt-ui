@@ -56,7 +56,7 @@ const inked = (el: HTMLElement): string[] =>
     .map((r) => r.getAttribute('fill') ?? '')
     .filter((f) => f.startsWith('color-mix'))
 const flat = (el: HTMLElement): Element[] =>
-  plotRects(el).filter((r) => r.getAttribute('fill') === 'var(--vx-line)')
+  plotRects(el).filter((r) => r.getAttribute('fill') === 'var(--basalt-line)')
 const bandY = (el: HTMLElement, label: string): number =>
   Number([...el.querySelectorAll('text')].find((t) => t.textContent === label)?.getAttribute('y'))
 const bandX = (el: HTMLElement, label: string): number =>
@@ -201,8 +201,8 @@ describe('Heatmap', () => {
         formatValue={(v) => `${v} km`}
         tooltip={{
           rows: () => [
-            { label: 'Target', value: '5', color: 'var(--vx-good)', swatch: 'dashed' },
-            { label: 'Plain', value: '6', color: 'var(--vx-bad)' },
+            { label: 'Target', value: '5', color: 'var(--basalt-good)', swatch: 'dashed' },
+            { label: 'Plain', value: '6', color: 'var(--basalt-bad)' },
           ],
         }}
       />,
@@ -212,7 +212,7 @@ describe('Heatmap', () => {
       (n) => (n as HTMLElement).style.background,
     )
     expect(swatches.some((b) => b.includes('repeating-linear-gradient'))).toBe(true)
-    expect(swatches.some((b) => b.includes('var(--vx-bad)'))).toBe(true)
+    expect(swatches.some((b) => b.includes('var(--basalt-bad)'))).toBe(true)
   })
 
   test('an absent cell with a datum still opens a tooltip that says so', async () => {
@@ -284,8 +284,8 @@ describe('Heatmap positions without a datum', () => {
 describe('Heatmap states', () => {
   type S = 'failed' | 'idle'
   const states = [
-    { key: 'failed', label: 'Failed', color: 'var(--vx-bad)' },
-    { key: 'idle', label: 'Idle', color: 'var(--vx-good)' },
+    { key: 'failed', label: 'Failed', color: 'var(--basalt-bad)' },
+    { key: 'idle', label: 'Idle', color: 'var(--basalt-good)' },
   ] as const
   const stated: (Cell & { s?: S })[] = [
     { row: 'Mon', col: '0', v: 2 },
@@ -307,9 +307,9 @@ describe('Heatmap states', () => {
 
   test('a stated cell draws its flat state fill; the rest keep the ramp and the absent fill', async () => {
     const el = await mount(<Heatmap {...props} />)
-    expect(fillsOf(el, 'var(--vx-bad)')).toHaveLength(1)
+    expect(fillsOf(el, 'var(--basalt-bad)')).toHaveLength(1)
     // A state beats the value: the idle cell has a value of 8 but is not ramp ink.
-    expect(fillsOf(el, 'var(--vx-good)')).toHaveLength(1)
+    expect(fillsOf(el, 'var(--basalt-good)')).toHaveLength(1)
     expect(inked(el)).toHaveLength(1)
     expect(flat(el)).toHaveLength(1)
   })
@@ -333,7 +333,7 @@ describe('Heatmap states', () => {
 
   test('without getState the grid is unchanged and draws no state legend', async () => {
     const el = await mount(<Heatmap {...props} getState={undefined} states={undefined} />)
-    expect(fillsOf(el, 'var(--vx-bad)')).toHaveLength(0)
+    expect(fillsOf(el, 'var(--basalt-bad)')).toHaveLength(0)
     expect(inked(el)).toHaveLength(2)
     expect(el.querySelector('[data-legend-key]')).toBeNull()
   })
@@ -403,7 +403,7 @@ describe('Heatmap hit-testing at the grid edges', () => {
 
 describe('Heatmap default domain and stated cells', () => {
   type S = Cell & { s?: 'failed' }
-  const states = [{ key: 'failed', label: 'Failed', color: 'var(--vx-bad)' }] as const
+  const states = [{ key: 'failed', label: 'Failed', color: 'var(--basalt-bad)' }] as const
   const data: S[] = [
     { row: 'a', col: 'x', v: 50 },
     { row: 'a', col: 'y', v: 100, s: 'failed' },
@@ -424,7 +424,7 @@ describe('Heatmap default domain and stated cells', () => {
 
 describe('Heatmap states: edges of the contract', () => {
   type S = Cell & { s?: string }
-  const states = [{ key: 'failed', label: 'Failed', color: 'var(--vx-bad)', note: 'retry' }]
+  const states = [{ key: 'failed', label: 'Failed', color: 'var(--basalt-bad)', note: 'retry' }]
   const data: S[] = [
     { row: 'Mon', col: '0', v: 2 },
     { row: 'Mon', col: '1', v: null, s: 'failed' },
@@ -442,7 +442,7 @@ describe('Heatmap states: edges of the contract', () => {
   test('states without getState leave the grid unchanged: no legend, no state fill', async () => {
     const el = await mount(<Heatmap {...props} getState={undefined} />)
     expect(el.querySelector('[data-legend-key]')).toBeNull()
-    expect(plotRects(el).some((r) => r.getAttribute('fill') === 'var(--vx-bad)')).toBe(false)
+    expect(plotRects(el).some((r) => r.getAttribute('fill') === 'var(--basalt-bad)')).toBe(false)
   })
 
   test('the state chips follow the gradient and are named in a labelled legend', async () => {
@@ -459,7 +459,7 @@ describe('Heatmap states: edges of the contract', () => {
     const hidden = [{ ...states[0]!, legend: false as const }]
     const el = await mount(<Heatmap {...props} states={hidden} />)
     expect(el.querySelector('[data-legend-key]')).toBeNull()
-    expect(plotRects(el).some((r) => r.getAttribute('fill') === 'var(--vx-bad)')).toBe(true)
+    expect(plotRects(el).some((r) => r.getAttribute('fill') === 'var(--basalt-bad)')).toBe(true)
   })
 
   test('a state chart conceals the state legend instead of removing it', async () => {
@@ -474,7 +474,7 @@ describe('Heatmap states: edges of the contract', () => {
     try {
       const el = await mount(<Heatmap {...props} getState={() => 'nope'} />)
       expect(inked(el)).toHaveLength(1)
-      expect(plotRects(el).some((r) => r.getAttribute('fill') === 'var(--vx-bad)')).toBe(false)
+      expect(plotRects(el).some((r) => r.getAttribute('fill') === 'var(--basalt-bad)')).toBe(false)
     } finally {
       if (prior === undefined) delete process.env.NODE_ENV
       else process.env.NODE_ENV = prior

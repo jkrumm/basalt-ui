@@ -36,7 +36,7 @@ const press = (target: Element, key: string) =>
     target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
   })
 
-const COLOR = { light: 'var(--vx-line)', dark: 'var(--vx-line)' }
+const COLOR = { light: 'var(--basalt-line)', dark: 'var(--basalt-line)' }
 
 type Pt = { name: string; x: number; y: number }
 /** Sorted by descending x: the data order is not the x order. */
@@ -214,7 +214,7 @@ describe('the tooltip names the held focus', () => {
   const opened: ChartSeries<Sender> = {
     key: 'opened',
     label: 'Opened',
-    color: 'var(--vx-line)',
+    color: 'var(--basalt-line)',
     mark: 'dot',
     getValue: (d) => d.opened,
   }

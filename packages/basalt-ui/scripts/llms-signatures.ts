@@ -209,7 +209,7 @@ function keyTree(checker: ts.TypeChecker, type: ts.Type, node: ts.Node, depth = 
 /**
  * A non-callable value export. A small `as const` map whose every member is a scalar literal
  * (`CONTAINER_KEYS`) prints its values — the values ARE the API. Anything bigger prints its full key
- * tree (`VX`: the whole token vocabulary, never truncated), wrapped to one indented line per nested
+ * tree (`BASALT`: the whole token vocabulary, never truncated), wrapped to one indented line per nested
  * group when it will not fit on the signature line.
  */
 export function valueSignature(

@@ -135,7 +135,7 @@ const SHADOW_SIZES = ['2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', 'inner', 'none
 const PREMIXED_ALPHA = zoneAPremixed.map((name) => `*-${name}`)
 
 /**
- * A `--vx-*` token name written as a class (`bg-hover`, `bg-canvas`) is no class: the theme reads the
+ * A `--basalt-*` token name written as a class (`bg-hover`, `bg-canvas`) is no class: the theme reads the
  * token under another name. Both colour messages print the class for each such token (lint-4.14),
  * generated from the `@theme inline` map, so `bg-hover` is told `bg-accent`, not its nearest spelling.
  */

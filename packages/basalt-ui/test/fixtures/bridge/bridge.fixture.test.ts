@@ -39,21 +39,21 @@ describe('bridge fixture (Tailwind 4 build)', () => {
 
   test('the size utilities are defined', async () => {
     const css = await build()
-    expect(css).toMatch(/\.h-ctl\s*\{\s*height:\s*var\(--vx-ctl-h\)/)
-    expect(css).toMatch(/\.size-ctl\s*\{\s*width:\s*var\(--vx-ctl-h\)/)
-    expect(css).toMatch(/\.min-h-row\s*\{\s*min-height:\s*var\(--vx-row-h\)/)
+    expect(css).toMatch(/\.h-ctl\s*\{\s*height:\s*var\(--basalt-ctl-h\)/)
+    expect(css).toMatch(/\.size-ctl\s*\{\s*width:\s*var\(--basalt-ctl-h\)/)
+    expect(css).toMatch(/\.min-h-row\s*\{\s*min-height:\s*var\(--basalt-row-h\)/)
     expect(css).toContain('.size-icon')
   })
 
   test('text-display compiles to the display font size token', async () => {
     const css = await build()
-    expect(css).toMatch(/\.text-display\s*\{[^}]*font-size:\s*var\(--vx-text-display\)/)
+    expect(css).toMatch(/\.text-display\s*\{[^}]*font-size:\s*var\(--basalt-text-display\)/)
   })
 
   test('bg-accent is the hover wash, not the brand', async () => {
     const css = await build()
-    expect(css).toMatch(/\.bg-accent\s*\{\s*background-color:\s*var\(--vx-hover\)/)
-    expect(css).not.toMatch(/\.bg-accent\s*\{[^}]*--vx-brand/)
+    expect(css).toMatch(/\.bg-accent\s*\{\s*background-color:\s*var\(--basalt-hover\)/)
+    expect(css).not.toMatch(/\.bg-accent\s*\{[^}]*--basalt-brand/)
   })
 
   test('the build is deterministic', async () => {

@@ -188,7 +188,7 @@ describeShell(
 
     /**
      * INVARIANT 4 — the aside header's own bottom seam meets the shell's page-bar band seam, so the
-     * two 1px `--vx-divider` hairlines read as ONE line rather than two 9px apart (MEASURED on
+     * two 1px `--basalt-divider` hairlines read as ONE line rather than two 9px apart (MEASURED on
      * `/cbbi` 1440x900 before the fix: band bottom y87, aside header bottom y96).
      *
      * The band's PAINTED bottom edge is `ROW_2`'s outer wrapper (`app-main.module.css`'s `.band`,
@@ -207,13 +207,13 @@ describeShell(
      *   header PAINTED height  33px     ← 32px of content + 1px border, so the min-height lost
      *   header painted bottom  y77      ← 0.75 past the band. Exactly 32 − 31.25.
      *
-     * The 32 is `.fold`, sized `calc(var(--vx-space-control-height-ctl) * <the library scale var>)`, and
+     * The 32 is `.fold`, sized `calc(var(--basalt-space-control-height-ctl) * <the library scale var>)`, and
      * `controlHeightCtl` grew 30 → 32 in the desktop-shell pass. Under `box-sizing: border-box` a
      * 32.25px `min-height` leaves a 31.25px content box, the 32px toggle does not fit, and content
      * beats `min-height`. At 30 it fit, and the seam met BY COINCIDENCE.
      *
      * The band was the wrong number, not the header. Row 2 has no `min-height`
-     * (`page-bar.module.css` `.row2` is `padding-block: --vx-space-stack-xs` around its content), and
+     * (`page-bar.module.css` `.row2` is `padding-block: --basalt-space-stack-xs` around its content), and
      * the fixture used to hand it a bare `<span>Filters</span>` — 23.25px, where every real row-2
      * slot goes through `CtlSlot` and holds a 32px control, for a 40 → 41px band. `AsideBar` now
      * carries a real `ctl` control (see its docblock) and the two seams meet with the header's own
@@ -243,7 +243,7 @@ describeShell(
       // THE PRECONDITION, asserted rather than assumed — see the docblock. The header's `min-height`
       // is `calc(--basalt-page-bar-h + 1px)` under `box-sizing: border-box`, so the band's PAINTED
       // height also has to cover the header's own tallest child (the `.fold` toggle at
-      // `--vx-space-control-height-ctl`) plus its 1px `border-bottom`. Below that floor the content
+      // `--basalt-space-control-height-ctl`) plus its 1px `border-bottom`. Below that floor the content
       // wins, the header grows past the band, and the seam misses by however much it overflowed.
       // Failing HERE says which of the two numbers moved; failing only above says 0.75 and nothing.
       const fold = await p.box('aside fold toggle', `${ASIDE} ${S('page-aside-fold')}`)
