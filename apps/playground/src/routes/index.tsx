@@ -1,24 +1,6 @@
-import { Link, Outlet, createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { Page, PageBar, Section } from 'basalt-ui/page'
-import { AppShell } from 'basalt-ui/shell'
-import { NAV } from '../demo/nav-model'
 import { SCENARIO_INFO } from '../scenarios/scenario-info'
-
-// #region recipe:app-shell
-// routes/__root.tsx: one AppShell around the outlet. Everything else is data on its props.
-export function ShellRoot() {
-  return (
-    <AppShell
-      nav={NAV}
-      brand={{ name: 'Basalt' }}
-      badges={{ cards: { count: 4 } }}
-      account={{ status: 'signed-out', onSignIn: () => undefined }}
-    >
-      <Outlet />
-    </AppShell>
-  )
-}
-// #endregion
 
 /** The landing page: the shell recipes in one line each, then every scenario a human opens. */
 function IndexRoute() {
