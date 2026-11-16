@@ -233,7 +233,7 @@ function useIssues(): IssueRow[] {
 }
 
 function IssueTable({ phase }: { phase: Phase }): ReactElement {
-  const [, setIssue] = flow.field.issue.use()
+  const [issue, setIssue] = flow.field.issue.use()
   const rows = useIssues()
   const table = useDataTable<IssueRow>({
     id: 'cycle-dogfood-issues',
@@ -247,6 +247,8 @@ function IssueTable({ phase }: { phase: Phase }): ReactElement {
     // cycle-dogfood-1: dogfood-1.12 — the row's detail cannot reach the page's PageAside
     // (shell-1.1, filed as v3-shell-1-detail-host), so the row writes the URL field.
     onRowActivate: (row) => setIssue(row.key),
+    // the URL field names the open row, so a share link and Back mark it too (1541, activeRowId)
+    activeRowId: issue,
   })
   return <DataTable table={table} height="auto" />
 }
