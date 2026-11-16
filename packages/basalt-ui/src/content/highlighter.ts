@@ -98,6 +98,20 @@ function getHighlighter(): Promise<HighlighterCore | null> {
   return highlighterPromise
 }
 
+/**
+ * The first tokenisation of a freshly loaded grammar mis-scopes some tokens (`:` and `=` in
+ * `const x: number = 1` come back variable-blue instead of keyword-red; the second run is right).
+ * One throwaway pass right after the load keeps that wrong result off the screen; without it the
+ * first block to highlight differs from the same code highlighted later.
+ */
+function warmUp(highlighter: HighlighterCore, lang: string): void {
+  try {
+    highlighter.codeToHtml('x', { lang, themes: { light: THEME_LIGHT, dark: THEME_DARK } })
+  } catch {
+    // a grammar that cannot tokenise is reported by the real call
+  }
+}
+
 /** Loads `lang` into the shared highlighter on demand (no-op if already loaded). */
 async function ensureLanguage(highlighter: HighlighterCore, lang: string): Promise<boolean> {
   if (highlighter.getLoadedLanguages().includes(lang)) return true
@@ -105,6 +119,7 @@ async function ensureLanguage(highlighter: HighlighterCore, lang: string): Promi
   if (!loadLang) return false
   try {
     await highlighter.loadLanguage(loadLang() as LanguageInput)
+    warmUp(highlighter, lang)
     return true
   } catch (error) {
     warnMissingPeer(error)
