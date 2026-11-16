@@ -23,19 +23,20 @@ nav you start from.
 
 ```bash
 bun add basalt-ui
-bun add react react-dom @tanstack/react-router @tanstack/react-query @base-ui/react tailwindcss @tailwindcss/vite
-bun add -d vite @tanstack/router-plugin
 ```
 
-That is the set the `app` profile needs: the shell and the primitives draw Base UI, the router and
-query peers carry routing and data, and Tailwind compiles the styles. Install the peers yourself — a
-missing one surfaces as an unresolved import at build time, not as an install warning, and `basalt()`
-(the Vite plugin) names the exact `bun add` line when a subpath you import needs another. Exact
-versions: `peerDependencies` in `package.json`; `basalt-ui doctor` lists what is missing.
+That is the whole install. A create-vite React app already has `react`, `react-dom` and `vite`; `init`
+(step 2) installs the rest of the `app` profile's peers (`tailwindcss`, `@tailwindcss/vite`,
+`@base-ui/react`, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/router-plugin`) at
+the exact pins it prints, so installing them yourself first only pins them twice. A peer a subpath
+needs that `init` does not install (`./charts`, `./table`) is named by `basalt()` (the Vite plugin)
+as the exact `bun add` line, and `basalt-ui doctor` lists what is missing; a missing peer otherwise
+surfaces as an unresolved import at build time, not as an install warning. Exact versions:
+`peerDependencies` in `package.json`.
 
 | Class            | Peers                                                                                                                                                                 | Rule                                                                                                     |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| App              | `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query`, `@base-ui/react`, `tailwindcss`, `@tailwindcss/vite`; dev: `vite`, `@tanstack/router-plugin` | every `app` profile install                                                                              |
+| App              | `react`, `react-dom`, `@tanstack/react-router`, `@tanstack/react-query`, `@base-ui/react`, `tailwindcss`, `@tailwindcss/vite`; dev: `vite`, `@tanstack/router-plugin` | `init` installs all but `react`, `react-dom` and `vite`, the app's own                                   |
 | Subpath-required | `./charts`: `@tanstack/charts`, `d3-scale` · `./table`: `@tanstack/react-table` · `./content`, `./ai`: `react-markdown`, `remark-gfm`, `rehype-sanitize`, `remend`    | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
 | Optional         | `shiki`, `@shikijs/*`, `beautiful-mermaid`, `@tanstack/react-query-devtools`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                    | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
 
@@ -92,6 +93,8 @@ reported — exactly the files Claude reads, which cannot load from `node_module
 `init` has already written the wiring; this is what it is, so you can change it. Three files carry
 the app, and the root barrel (`basalt-ui`) is in none of them.
 
+<!-- readme-check: skip init writes this file and the ones it imports; the template is tested with the CLI -->
+
 ```tsx
 // src/main.tsx — builds the router from `routerDefaults` and mounts it
 import './index.css'
@@ -142,6 +145,8 @@ not-found components are yours; a router with no pending component never shows p
 `doctor` check 12 fails on it. `Register` is what types `defineNav`, `navTarget` and every
 `<Link to>`.
 
+<!-- readme-check: skip init writes this route and the nav it imports; the template is tested with the CLI -->
+
 ```tsx
 // src/routes/_app.tsx — the frame every signed-in page renders in
 import { Outlet, createFileRoute } from '@tanstack/react-router'
@@ -158,6 +163,8 @@ function AppLayout() {
   )
 }
 ```
+
+<!-- readme-check: skip defineNav is typed by the app's Register, which init's router scaffold declares -->
 
 ```tsx
 // src/lib/nav.tsx — the app's ONE navigation declaration; keep it a leaf module
@@ -336,22 +343,29 @@ them); `basalt-ui/charts` re-exports none, and tokens live in `basalt-ui/tokens`
 formatting in `useFormat` from `basalt-ui`.
 
 ```tsx
-import { lineY } from '@tanstack/charts/line'
 import { CartesianChart } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
-;<CartesianChart
-  ariaLabel="Sessions"
-  data={rows}
-  x={(d) => d.date}
-  series={[{ key: 'sessions', label: 'Sessions', color: VX.brand, getValue: (d) => d.sessions }]}
-  y={{ format: (v) => v.toFixed(0) }}
-  height={260}
-  marks={(plot) =>
-    plot.visible.map((s) =>
-      lineY(plot.rows(s.key), { x: (row) => row.x, y: 'y', z: 'series', stroke: s.color }),
-    )
-  }
-/>
+import { defineSeries } from 'basalt-ui/tokens'
+
+const SERIES = defineSeries({ sessions: { light: '#4f78a4', dark: '#7099c4' } })
+
+export const Sessions = () => (
+  <CartesianChart
+    ariaLabel="Sessions"
+    data={rows}
+    x={{ value: (d) => d.date }}
+    series={[
+      {
+        mark: 'line',
+        key: 'sessions',
+        label: 'Sessions',
+        color: SERIES.sessions,
+        y: (d) => d.sessions,
+      },
+    ]}
+    y={{ format: (v) => v.toFixed(0) }}
+    height={260}
+  />
+)
 ```
 
 Shipped kinds are that same composition, pre-wired: `Lines` (n series, `area`, `thresholds`, zones,
@@ -383,7 +397,7 @@ function Orders({ rows }: { rows: readonly Row[] }) {
     columns,
     data: rows,
     getRowId: (row) => row.id,
-    mode: 'client',
+    mode: { kind: 'client' },
   })
   return <DataTable table={table} />
 }
@@ -409,10 +423,18 @@ import { Markdown } from 'basalt-ui/content'
 
 // Model or third-party text: no images (alt text only), links limited to same-origin, https:,
 // mailto: and tel:, and neither `sanitize` nor `rehypePlugins` is accepted.
-<Markdown contentTrust="untrusted" streaming>{part.text}</Markdown>
+export const Reply = () => (
+  <Markdown contentTrust="untrusted" streaming>
+    {part.text}
+  </Markdown>
+)
 
 // Text you author: opt in to extra tags/attributes (additions to a fixed policy that runs last).
-<Markdown contentTrust="trusted" sanitize={{ allowTags: ['details'] }}>{note}</Markdown>
+export const Note = () => (
+  <Markdown contentTrust="trusted" sanitize={{ allowTags: ['details'] }}>
+    {note}
+  </Markdown>
+)
 ```
 
 `contentTrust` is required and has no default. `streaming` is a rendering mode only — it says the
@@ -448,6 +470,8 @@ default icon filenames: `agent/rules/basalt-app.md`.
 ## Type seam (`BasaltRegister`)
 
 `BasaltRegister` is the single declaration-merge interface consumers augment to register their app-specific shapes for exact-keyed typing. It follows the same pattern as TanStack Router's `Register` interface — augment once per concern in the concern's own file, and every battery that reads the slot gets narrow types automatically.
+
+<!-- readme-check: skip the augmentation fragment of the series.ts block above -->
 
 ```ts
 // src/series.ts — augment the series slot
