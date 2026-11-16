@@ -1449,3 +1449,25 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-expr-5-keys, v3-expr-5-kit-fixes, v3-expr-5-skill]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-6.json' }
+  - key: v3-lint-7-lint
+    title: 'The core rule reads the lazy router as a crash and escapes the budget, and missed spellings, from lint cycle 7'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-cycle-lint-7]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-7-lint.json' }
+  - key: v3-lint-import-allowlist
+    title: 'import-boundary decides what a rival package is, a Spec on an allow list after four rings, from lint cycle 7'
+    repo: basalt-ui
+    kind: feature
+    checkpoint: spec
+    seat: { tier: opus, effort: high }
+    after: [v3-cycle-lint-7]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-import-allowlist.json' }
+  - key: v3-cycle-lint-8
+    title: 'Improvement cycle 8: lint and guards, misses and false alarms per rule'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-7-lint, v3-lint-import-allowlist]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-8.json' }
