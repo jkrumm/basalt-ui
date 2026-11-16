@@ -127,7 +127,28 @@ export function useCursorFocus<D>(
       pinned: false,
     })
   }
-  return hostFocusProps(focus, label, undefined, publish)
+  return hostFocusProps(focus, label, (key, index) => stepInX(focus, x, key, index), publish)
+}
+
+/**
+ * The next index for a key, stepping in x order when every x is a number or a time: the data may
+ * come in any order (a ranking, a descending list), the arrow keys walk the axis. A categorical
+ * x keeps the data's own order, which is the axis order of a band.
+ */
+function stepInX<D>(
+  focus: ChartFocus<D>,
+  x: (d: D) => unknown,
+  key: string,
+  index: number | null,
+): number | null | undefined {
+  const keys = focus.items.map((d) => timeOf(x(d)))
+  const ordinal = keys.length > 0 && keys.every((k) => typeof k === 'number' && !Number.isNaN(k))
+  if (!ordinal || (key !== 'ArrowRight' && key !== 'ArrowLeft' && key !== 'Home' && key !== 'End'))
+    return focus.step(key)
+  const order = keys.map((_, i) => i).toSorted((a, b) => (keys[a] as number) - (keys[b] as number))
+  const at = index === null ? null : order.indexOf(index)
+  const next = stepFocus(key, at, order.length)
+  return next === undefined || next === null ? next : order[next]
 }
 
 /** Visually hidden, still read: the live region speaks without taking room. */
