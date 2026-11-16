@@ -11,9 +11,11 @@ import type {
   Series,
   SeriesColor,
   XConfig,
+  YConfig,
 } from '../contract'
 import { resolvePhase } from '../../core/phase'
 import type {
+  AxisConfig,
   ChartMarks,
   ChartSeries,
   ChartState,
@@ -98,6 +100,7 @@ export function toEngineXRefLine(r: XAxisRefLine): XRefLine {
     color: cssColor(r.color),
     ...(r.dashed !== undefined && { dashed: r.dashed }),
     ...(r.label !== undefined && { label: r.label }),
+    ...(r.at !== undefined && { at: r.at }),
   }
 }
 
@@ -129,17 +132,30 @@ export type EngineSpec<D> = {
   data: readonly D[]
   x: (d: D) => ChartX
   series: readonly ChartSeries<D>[]
-  y?: { domain?: readonly [number, number]; title?: string }
+  y?: Omit<AxisConfig<D>, 'domain'> & { domain?: readonly [number, number] }
   y2?: Record<string, never>
   xDomain?: readonly [ChartX, ChartX]
   xTitle?: string
   xScale?: 'linear' | 'log'
+  xTicks?: number | readonly ChartX[]
   formatX?: (x: ChartX) => string
   zones?: readonly ZoneSpec[]
   refLines?: readonly RefLine[]
   xRefLines?: readonly XRefLine[]
   cursorGroup?: string
   tooltip?: EngineTooltip<D> | false
+}
+
+/** `YConfig` as the engine axis: a tuple fixes the domain (the object and function forms are the `y.domain` seam's, which writes a tuple). */
+function toEngineY<D>(y: YConfig | undefined): EngineSpec<D>['y'] {
+  if (y === undefined) return undefined
+  const { domain } = y
+  const axis: AxisConfig<D> = {
+    ...(y.title !== undefined && { title: y.title }),
+    ...(y.format !== undefined && { format: y.format }),
+    ...(Array.isArray(domain) && { domain: domain as [number, number] }),
+  }
+  return Object.keys(axis).length === 0 ? undefined : (axis as EngineSpec<D>['y'])
 }
 
 const asXDomain = (d: NonNullable<XConfig<unknown>['domain']>): readonly [ChartX, ChartX] => d
@@ -150,23 +166,19 @@ export function toEngineSpec<D>(
   series: readonly Series<D>[] = props.series,
 ): EngineSpec<D> {
   const { x, y, zones, refLines, cursor, tooltip } = props
-  const domain = Array.isArray(y?.domain) ? (y.domain as [number, number]) : undefined
+  const engineY = toEngineY<D>(y)
   return {
     data: props.data,
     x: x.value,
     series: series.map(toEngineSeries),
-    ...((domain !== undefined || y?.title !== undefined) && {
-      y: {
-        ...(domain !== undefined && { domain }),
-        ...(y?.title !== undefined && { title: y.title }),
-      },
-    }),
+    ...(engineY !== undefined && { y: engineY }),
     // A right-axis series needs the chart's second axis; the v3 props have no `y2` to spell it.
     ...(series.some((s) => s.axis === 'right') && { y2: {} }),
     ...(x.domain !== undefined && { xDomain: asXDomain(x.domain) }),
     ...(x.format !== undefined && { formatX: x.format }),
     ...(x.title !== undefined && { xTitle: x.title }),
     ...(x.scale !== undefined && { xScale: x.scale }),
+    ...(x.ticks !== undefined && { xTicks: x.ticks as number | readonly ChartX[] }),
     ...(zones !== undefined && { zones: zones.map(toEngineZone) }),
     ...(refLines !== undefined && {
       refLines: refLines.flatMap((r) => (isXRefLine(r) ? [] : [toEngineRefLine(r)])),

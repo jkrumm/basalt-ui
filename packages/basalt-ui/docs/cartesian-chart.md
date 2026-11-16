@@ -17,10 +17,10 @@ to lines, or to bars plus line overlays. Source: `src/charts/parts/`.
 ```ts
 CartesianChart<D>(props: CartesianChartProps<D>): ReactElement
   data: readonly D[]
-  x: { value: (d: D) => number | Date | string; format?; domain?; title?; scale?: 'linear' | 'log' }
+  x: { value: (d: D) => number | Date | string; format?; domain?; title?; scale?: 'linear' | 'log'; ticks?: number | readonly X[] }
   series: readonly Series<D>[]
   ariaLabel: string
-  y?: YConfig // + title?: string
+  y?: YConfig // domain?, gutter?, title?, format?: (v: number) => string
   summary?: string
   table?: boolean
   height?: number | 'fill'
@@ -83,10 +83,23 @@ mark here, placed by [`chartLabels`](chart-labels.md) so it clears the other mar
 
 `x.title` and `y.title` name an axis with its unit. `x.scale: 'log'` puts a numeric x on decades; a
 row with x <= 0 is not drawn. A `refLines` entry with `axis: 'x'` is a full-height rule at a band
-key, number or Date. A `mark: 'dot'` series legends as a dot. Focus and readout: `use-chart-focus.md`.
+key, number or Date; on a band axis `at: 'start' | 'end'` puts it on the band's edge, mid-gap between
+two bars (default `centre`). A `mark: 'dot'` series legends as a dot. Focus and readout:
+`use-chart-focus.md`.
+
+`x.ticks` as a number is the most labels: on a band axis they sit at an even stride that keeps the
+first and the last band (`ticks: 3` over five stages at 390 px); as a list it labels exactly those
+keys. Overlapping labels still thin. `y.format` writes the y tick labels (`2,5`); a series' `format`
+still writes its tooltip value.
+
+## Capping an outlier
+
+`y.domain` as `[min, max]`, `{ floor, ceil, pad }` (the domain always reaches `floor` down and
+`ceil` up) or `(extent) => extent`. A domain narrower than the data, a tuple or a capping function
+(`([lo, hi]) => [lo, Math.min(hi, 80)]`), draws each datum past it on the plot's edge with a caret in
+its series colour; the tooltip and the focus readout read the true value. There is no log y.
 
 ## Not yet applied
 
-`y.domain` as an object or function and `y.gutter` are in the type and read by the consumer seams of
-`v3-charts-2b-seams` (`src/charts/seams.ts`); until then only a `[min, max]` tuple applies. A bar series' `stack` key and `Marker.label` are in the
+A bar series' `stack` key and `Marker.label` are in the
 type and not read: every bar of a chart stacks by the chart's `layout`, and a marker draws its dot only.

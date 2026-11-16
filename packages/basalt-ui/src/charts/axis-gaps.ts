@@ -10,7 +10,7 @@ import { text } from '@tanstack/charts/text'
 import { reportOnce } from '../common/validate'
 import { VX } from '../tokens'
 import { CV, DASH } from './core/theme'
-import type { ChartMarks, ChartX, XRefLine } from './types'
+import type { ChartMarks, ChartX, XRefAt, XRefLine } from './types'
 
 // ---- axis titles -------------------------------------------------------------------------------
 
@@ -177,7 +177,7 @@ export type XRefLabelSpot = {
  */
 export function xRefLabelSpots<X extends ChartX>(opts: {
   lines: readonly XRefLine<X>[] | undefined
-  fraction: (x: X) => number | null
+  fraction: (x: X, at?: XRefAt) => number | null
   plotWidth: number
   fontSize: number
   /** Whether a mark (a bar, a dot) fills the box (px across the plot, px below its top): a caption never sits on one. */
@@ -185,7 +185,7 @@ export function xRefLabelSpots<X extends ChartX>(opts: {
 }): XRefLabelSpot[] {
   const { fraction, plotWidth, fontSize, blocked } = opts
   const named = (opts.lines ?? []).flatMap((r, index) => {
-    const f = r.label ? fraction(r.x) : null
+    const f = r.label ? fraction(r.x, r.at) : null
     return r.label && f !== null && f >= 0 && f <= 1 ? [{ index, f, text: r.label }] : []
   })
   const taken: XRefLabelSpot[] = []
@@ -245,7 +245,7 @@ export function xRefLabelBoxes(
  */
 export function xRefLineMarks<X extends ChartX>(opts: {
   lines: readonly XRefLine<X>[] | undefined
-  fraction: (x: X) => number | null
+  fraction: (x: X, at?: XRefAt) => number | null
   /** The top of the left y domain: where a caption sits. */
   top: number
   /** The plot's width in px, for the collision pass. */
@@ -263,7 +263,7 @@ export function xRefLineMarks<X extends ChartX>(opts: {
   })
   const spotOf = new Map(spots.map((s) => [s.index, s]))
   return (opts.lines ?? []).flatMap((r, i) => {
-    const f = opts.fraction(r.x)
+    const f = opts.fraction(r.x, r.at)
     if (f === null || !(f >= 0 && f <= 1)) return []
     const rule = ruleX([f], {
       id: `xref-${i}`,

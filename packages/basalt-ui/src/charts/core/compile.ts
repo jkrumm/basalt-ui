@@ -33,6 +33,13 @@ import type { ContainerClass } from '../../tokens/size-classes'
 import { cursorBinding, followerOptions, quietWhileFollowing } from './cursor'
 import { cursorDots } from '../marks'
 import { bucketTicks, strideEvery } from './ticks'
+import {
+  clampToDomain,
+  edgeFraction,
+  matchBandKeys,
+  offScaleMarks,
+  strideKeepEnds,
+} from './axis-ext'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
 import { claimedLabelBoxes } from '../labels'
 import { boxesMeet, dotBox, placeRefLabel, refLabelDy } from '../ref-label'
@@ -322,6 +329,8 @@ type YAxis = {
   format: (v: number) => string
   /** Every value on this axis is a whole number and a bar draws it (a count): ticks land on integers. */
   whole?: boolean
+  /** The domain is fixed or bounded: a datum past it is drawn on the edge, with a caret. */
+  bounded?: boolean
 }
 
 /** The page locale's decimal separator (`.` or `,`). */
@@ -445,13 +454,19 @@ function bucketDates<X extends ChartX>(model: XScaleModel<X>): readonly Date[] |
 function xTickPolicy<X extends ChartX>(
   model: XScaleModel<X>,
   xTicks: number | readonly X[],
+  /** The caller wrote `ticks`: a band axis honours the number (first and last kept), not its own ladder. */
+  explicit = false,
 ): { values: readonly ChartValue[] } | { count: number } {
-  if (typeof xTicks === 'object') return { values: xTicks }
+  if (typeof xTicks === 'object')
+    return {
+      values: model.band || model.kind === 'string' ? matchBandKeys(model.values, xTicks) : xTicks,
+    }
   const buckets = typeof xTicks === 'number' && Number.isFinite(xTicks) ? bucketDates(model) : null
   if (buckets !== null && typeof xTicks === 'number')
     return { values: bucketTicks(buckets, xTicks) }
   if (model.log && model.extent) return { values: logTicks(model.extent[0], model.extent[1]) }
-  if (model.band || model.kind === 'string') return { values: model.values }
+  if (model.band || model.kind === 'string')
+    return { values: explicit ? strideKeepEnds(model.values, xTicks) : model.values }
   if (model.kind === 'date' && model.extent)
     return {
       values: dateTicks([new Date(model.extent[0]), new Date(model.extent[1])], xTicks, model.step),
@@ -499,7 +514,7 @@ export function xGuide<X extends ChartX>(opts: {
 }): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
   const { model, xTicks, cls } = opts
   const ladder = LADDER[cls]
-  const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks)
+  const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks, xTicks !== undefined)
   // A Date axis always resolves to `values` (the time scale has an extent; a band axis lists its
   // buckets), so `{ count }` is only ever a number axis and never needs the date formatter.
   const format = xTickFormat(opts.format, 'values' in ticks ? ticks.values : [], opts.locale)
@@ -735,6 +750,10 @@ function wholeCounts<T, X extends ChartX>(
   )
 }
 
+/** An explicit domain (a tuple, or the one the `y.domain` seam wrote): the data may lie past it. An auto domain always holds its data. */
+const isBounded = <T>(cfg: AxisConfig<T> | undefined): boolean =>
+  cfg?.domain !== undefined && cfg.domain !== 'auto'
+
 /** Both y domains (basalt's, from the VISIBLE series plus this axis' overlay bounds) and scales. */
 function resolveAxes<T, X extends ChartX>(
   input: CartesianInput<T, X>,
@@ -755,6 +774,7 @@ function resolveAxes<T, X extends ChartX>(
       tickCount(input.y),
     ),
     format: input.y?.format ?? ((v) => defaultNumberFormat(v, input.locale)),
+    bounded: isBounded(input.y),
     whole: wholeCounts(
       input,
       visible.filter((s) => !onRight(s)),
@@ -770,6 +790,7 @@ function resolveAxes<T, X extends ChartX>(
           tickCount(input.y2),
         ),
         format: input.y2?.format ?? ((v) => defaultNumberFormat(v, input.locale)),
+        bounded: isBounded(input.y2),
       }
     : null
   return {
@@ -1121,6 +1142,7 @@ function unitIsName(label: string, value: string): string | null {
 function rowsOf<T, X extends ChartX>(
   input: CartesianInput<T, X>,
   visibleKeys: ReadonlySet<string>,
+  axes: Axes<T>,
 ): (key: string) => PlotRow<T, X>[] {
   const seriesBy = new Map(input.series.map((s) => [s.key, s]))
   return (key) => {
@@ -1128,11 +1150,18 @@ function rowsOf<T, X extends ChartX>(
     if (!s)
       throw new Error(`[basalt] CartesianChart: marks asked for series "${key}", not in \`series\``)
     if (!visibleKeys.has(key)) return []
+    // A datum past a bounded domain is drawn on the plot's edge; the tooltip reads `getValue`.
+    const axis = axes.axisOf(axes.onRight(s) ? 'right' : 'left')
     return input.data.map((d) => {
       const v = s.getValue(d)
       return {
         x: input.x(d),
-        y: v === null || !Number.isFinite(v) ? null : v,
+        y:
+          v === null || !Number.isFinite(v)
+            ? null
+            : axis.bounded
+              ? clampToDomain(v, axis.domain)
+              : v,
         series: s.key,
         datum: d,
       }
@@ -1281,7 +1310,7 @@ export function compileCartesian<T, X extends ChartX>(
   }
   const shared = axesAt('regular')
   const dots = cursorDotMarks(input, visible, shared)
-  const rows = rowsOf(input, visibleKeys)
+  const rows = rowsOf(input, visibleKeys, shared)
   const formatX = (v: ChartValue): string =>
     input.formatX ? input.formatX(v as X) : defaultFormatX(v, input.locale)
   const gradients = input.series.flatMap((s, i) =>
@@ -1375,7 +1404,7 @@ export function compileCartesian<T, X extends ChartX>(
       const axes = dotRoomAxes(axesAt(cls), access, height)
       const plot = plotContext(
         {
-          rows,
+          rows: rowsOf(input, visibleKeys, axes),
           visible,
           highlighted: input.highlighted ?? null,
           focused: input.focused ?? null,
@@ -1423,7 +1452,7 @@ export function compileCartesian<T, X extends ChartX>(
         const plotWidth = size?.width ?? width
         const xSpots = xRefLabelSpots({
           lines: input.xRefLines,
-          fraction: model.fraction,
+          fraction: (x, at) => edgeFraction(model, x, at),
           plotWidth,
           fontSize: VX.text.micro,
           blocked: xBlocked(plotWidth, size?.height ?? height),
@@ -1445,15 +1474,27 @@ export function compileCartesian<T, X extends ChartX>(
       const hasXCaption = (input.xRefLines ?? []).some((l) => l.label)
       const xPlotWidth = hasXCaption ? captionContext().plotWidth : 0
       const over = refLineMarks(input, axes, captionContext)
+      const offScale = offScaleMarks({
+        series: visible,
+        data: input.data,
+        x: input.x,
+        fraction: model.fraction,
+        domainOf: (s) => {
+          const axis = axes.axisOf(axes.onRight(s) ? 'right' : 'left')
+          return axis.bounded ? axis.domain : null
+        },
+        yScaleOf: (s) => axes.scaleId(axes.onRight(s) ? 'right' : 'left'),
+      })
       return {
         marks: [
           ...under,
           ...kindMarks,
           ...dots,
           ...over,
+          ...offScale,
           ...xRefLineMarks({
             lines: input.xRefLines,
-            fraction: model.fraction,
+            fraction: (x, at) => edgeFraction(model, x, at),
             top: Math.max(...axes.left.domain),
             plotWidth: xPlotWidth,
             blocked: hasXCaption ? captionContext().xBlocked : undefined,
@@ -1466,7 +1507,8 @@ export function compileCartesian<T, X extends ChartX>(
           axes,
           formatX,
           cls,
-          zoneScale: under.length > 0 || names || (input.xRefLines?.length ?? 0) > 0,
+          zoneScale:
+            under.length > 0 || names || (input.xRefLines?.length ?? 0) > 0 || offScale.length > 0,
         }),
         theme: CHART_THEME,
         ...(input.bare === true
