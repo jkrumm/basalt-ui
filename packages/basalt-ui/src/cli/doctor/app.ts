@@ -5,6 +5,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { dirname } from 'node:path'
+import { SOURCES_PATH } from '../../vite/sources'
 import { resolveAppDir } from '../index'
 import { typechecksBeforeTree } from '../route-tree'
 import { need, readJson, readText, rootFiles, rootsOf, verdictOf } from './types'
@@ -73,15 +74,13 @@ function treeFirstFindings(ctx: Ctx): string[] {
   })
 }
 
-const SOURCES_CSS = '.basalt/sources.css'
-
 /** `<vite dir>/.basalt/sources.css` for each Vite config that calls `basalt()`, when git tracks it. */
 function trackedSources(ctx: Ctx, configs: readonly Source[]): string[] {
   const files = configs
     .filter((c) => /\bbasalt\s*\(/.test(c.text))
     .map((c) => {
       const dir = dirname(c.file)
-      return dir === '.' ? SOURCES_CSS : `${dir}/${SOURCES_CSS}`
+      return dir === '.' ? SOURCES_PATH : `${dir}/${SOURCES_PATH}`
     })
   return [...new Set(files)].flatMap((file) => {
     const run = spawnSync('git', ['ls-files', '--error-unmatch', '--', file], {
