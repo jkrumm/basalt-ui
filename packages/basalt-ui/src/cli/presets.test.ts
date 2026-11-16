@@ -130,10 +130,41 @@ describe('renderOxlintPreset', () => {
   })
 
   it('classPrefixes allow a third-party prefix, bare and under a variant', () => {
-    expect(rulesOf(manifest({}))['shadcn/no-unknown-classes']).toBe('error')
-    expect(
+    const allowOf = (rule: unknown): string[] => (rule as [string, { allow: string[] }])[1].allow
+    const plain = allowOf(rulesOf(manifest({}))['shadcn/no-unknown-classes'])
+    expect(plain).not.toContain('maplibregl-*')
+    const prefixed = allowOf(
       rulesOf(manifest({ classPrefixes: ['maplibregl-'] }))['shadcn/no-unknown-classes'],
-    ).toEqual(['error', { allow: ['maplibregl-*', '*:maplibregl-*'] }])
+    )
+    expect(prefixed).toEqual([...plain, 'maplibregl-*', '*:maplibregl-*'])
+  })
+
+  it('no-unknown-classes leaves a viewport variant to viewport-keyed', () => {
+    const rule = rulesOf(manifest({}))['shadcn/no-unknown-classes'] as [string, { allow: string[] }]
+    expect(rule[1].allow).toEqual(
+      expect.arrayContaining(['lg:*', '*:lg:*', 'max-md:*', 'min-[*]:*']),
+    )
+  })
+
+  it('no-raw-colors passes a shadow size and a pre-mixed token, which alpha-on-premixed owns', () => {
+    const rule = rulesOf(manifest({}))['shadcn/no-raw-colors'] as [string, { allow: string[] }]
+    expect(rule[1].allow).toEqual(expect.arrayContaining(['shadow-sm', '*-hover', '*-scrim']))
+    expect(rule[1].allow).not.toContain('shadow-*')
+  })
+
+  it('no-arbitrary-values names the fix by kind of value', () => {
+    const rule = rulesOf(manifest({}))['shadcn/no-arbitrary-values'] as [
+      string,
+      { message: string },
+    ]
+    for (const part of [
+      'Status, Lozenge, DeltaBadge',
+      'ui/scroll-area',
+      'gap on the parent',
+      'spacing ladder',
+    ]) {
+      expect(rule[1].message).toContain(part)
+    }
   })
 })
 

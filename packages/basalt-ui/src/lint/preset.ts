@@ -7,6 +7,7 @@
  * Pure data in, config out: the generator reads the files (pins, contracts, `SLOTS`) and passes
  * them in, so `sync` can call the same builder with a manifest's roots and ejected paths.
  */
+import { zoneAPremixed } from './generated/zone-a'
 import type { Profile, RuleTable } from './rule-table'
 import { PLUGIN_NAME, presetInput } from './rule-table'
 
@@ -76,6 +77,36 @@ export const GRID_TRACKS = [
 ] as const
 
 /**
+ * `no-unknown-classes` leaves a viewport variant to `basalt/viewport-keyed`: its advice (declare it
+ * with `@custom-variant`) would re-add what that rule bans, and the token would be reported twice. An
+ * entry with `:` is a full-token glob, so each breakpoint is listed bare and behind any other variant.
+ */
+const VIEWPORT_VARIANTS = ['sm', 'md', 'lg', 'xl', '2xl'].flatMap((bp) => [
+  bp,
+  `max-${bp}`,
+  `min-${bp}`,
+])
+export const VIEWPORT_ALLOW = [...VIEWPORT_VARIANTS, 'min-[*]', 'max-[*]'].flatMap((variant) => [
+  `${variant}:*`,
+  `*:${variant}:*`,
+])
+
+/**
+ * `no-raw-colors` reads `shadow-<anything>` as a colour utility and flags the shadow sizes; the
+ * sizes are not colours. `shadow-<colour>` stays checked. Limit: the rule cannot tell a type step
+ * (`text-title`) from a colour name, so an unknown `text-*` is still called out as a colour.
+ */
+const SHADOW_SIZES = ['2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', 'inner', 'none'].map(
+  (size) => `shadow-${size}`,
+)
+
+/**
+ * A pre-mixed token carries its alpha already; `basalt/tw-off-law` `alpha-on-premixed` owns the
+ * `bg-hover/60` report, so `no-raw-colors` lets the pre-mixed names through (an entry matches the token without its `/NN` modifier).
+ */
+const PREMIXED_ALPHA = zoneAPremixed.map((name) => `*-${name}`)
+
+/**
  * The `message` option of the bought rules, where the rule's own advice names a fix another shipped
  * rule reports (lint-1.16): `use margin here` against app-spacing, `w-120` against fixed-width, a new
  * `--color-<name>` against the derived palette. Bridge keeps the default where it has no such rule.
@@ -89,10 +120,12 @@ export const SHADCN_MESSAGES: Readonly<
       spacing:
         '"{{className}}" is not allowed on <{{component}}>: it owns its spacing. Use its size prop if it has one, or gap-* on the parent for space around it.',
     },
+    // One string for every kind of value (the option takes no per-kind form), so it names the fix by kind;
+    // only a spacing value takes a ladder step, which is what app-spacing would reject on a margin.
     'no-arbitrary-values':
-      '"{{className}}" hardcodes an off-token value. Use a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container.',
+      '"{{className}}" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container.',
     'no-raw-colors':
-      '"{{className}}" is a raw colour, and app code takes colour from components. Use Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app.',
+      '"{{className}}" is read as a colour the theme does not declare, and app code takes colour from components. Use Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling.',
   }
   return {
     bridge: {
@@ -211,9 +244,10 @@ function shadcnRule(profile: PresetProfile, rule: string, inputs: PresetInputs):
   const message = SHADCN_MESSAGES[profile]?.[rule]
   const options: Record<string, unknown> = {}
   if (rule === 'no-arbitrary-values') options['allow'] = [...GRID_TRACKS]
+  if (rule === 'no-raw-colors') options['allow'] = [...SHADOW_SIZES, ...PREMIXED_ALPHA]
   if (rule === 'no-unknown-classes') {
     const prefixes = inputs.classPrefixes ?? []
-    if (prefixes.length > 0) options['allow'] = prefixes.flatMap((p) => [`${p}*`, `*:${p}*`])
+    options['allow'] = [...VIEWPORT_ALLOW, ...prefixes.flatMap((p) => [`${p}*`, `*:${p}*`])]
   }
   if (message !== undefined) options['message'] = message
   return on(Object.keys(options).length > 0 ? [options] : undefined)
