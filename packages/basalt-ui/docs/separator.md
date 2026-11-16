@@ -19,7 +19,7 @@ A hairline between groups, on Base UI so it carries `role="separator"` and its o
 
 ```ts
 Separator({ orientation, className, ...props }: SeparatorProps): ReactElement
-  orientation?: "vertical" | "horizontal" | null
+  orientation?: "horizontal" | "vertical" | null
   className?: string  // Layout only (`my-4`, `mx-2`)
 ```
 
