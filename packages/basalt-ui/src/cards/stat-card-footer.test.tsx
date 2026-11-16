@@ -1,12 +1,12 @@
 /** `StatCard` footer in a loading or failed card: no figure shows beside a state that says none. */
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
-import type { StatCardProps } from './contract'
+import type { FootFacts, StatCardProps } from './contract'
 import { StatCard } from './stat-card'
 
 afterEach(cleanup)
 
-const footer = [
+const footer: FootFacts = [
   { label: 'Peak', value: 5 },
   { label: 'Open', value: '12' },
 ]
