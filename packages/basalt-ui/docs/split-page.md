@@ -19,8 +19,10 @@ that scrolls the detail.
 ## Signature
 
 ```ts
-SplitPage({ selected, list, detail }: SplitPageProps): ReactElement
+SplitPage({ selected, onBack, backLabel, list, detail, }: SplitPageProps): ReactElement
   selected: boolean  // Narrow: the list while unset, the pane when set
+  onBack?: () => void  // The way back below the `wide` tier, written from the same field that `selected` reads: the pane field's `clear`
+  backLabel?: string  // The back link's text; names the list (`Settings`)
   list: () => ReactNode
   detail: () => ReactNode
 ```
@@ -30,6 +32,7 @@ SplitPage({ selected, list, detail }: SplitPageProps): ReactElement
 ```tsx
 <SplitPage
   selected={store.field.section.useIsSet()}
+  onBack={store.field.section.clear}
   list={() => <InnerNav label="Settings" state={store.field.section} groups={GROUPS} />}
   detail={() => <SettingsPane section={section} />}
 />

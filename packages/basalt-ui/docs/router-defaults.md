@@ -21,6 +21,8 @@ routerDefaults(input?: RouterDefaultsInput): { options: RouterDefaultOptions; li
 ## Example
 
 ```tsx
+// The three screens are the app's own, scaffolded by `basalt-ui init` into `src/components/`;
+// no subpath exports them.
 const { options, link } = routerDefaults({ router: () => router })
 export const router = createRouter({
   routeTree,
