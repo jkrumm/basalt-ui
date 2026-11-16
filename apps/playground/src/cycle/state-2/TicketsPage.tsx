@@ -209,6 +209,7 @@ function EditTicketForm({ ticket }: { ticket: Ticket }): ReactElement {
       // before it closes the record.
       onSubmitAsync: toSubmitErrors(async (values: TicketValues) => {
         await save.mutateAsync(values)
+        // oxlint-disable-next-line no-use-before-define -- `draft` is built from this form, and this runs on submit, after it exists
         draft.clear()
         tickets.field.ticket.clear()
       }),
