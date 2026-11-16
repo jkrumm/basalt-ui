@@ -372,6 +372,13 @@ function layoutBands<T>(input: LayoutInput<T>): {
   }
 }
 
+/**
+ * A one-dimensional strip of gap-free bands over the shared x axis, each band in one of the `states`
+ * (an uptime day, a deploy, a phase), with an optional inset marker.
+ *
+ * @useWhen a single row of states over time is the figure (up, degraded, down; running, failed, idle)
+ * @neverWhen there is a value axis (use Lines or Bars), or two categories cross (use Heatmap)
+ */
 export function BandStrip<T, X extends ChartX = ChartX, K extends string = string>(
   props: BandStripProps<T, X, K>,
 ): ReactElement {

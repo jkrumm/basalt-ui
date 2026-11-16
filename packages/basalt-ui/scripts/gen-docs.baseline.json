@@ -1,10 +1,5 @@
 [
   "basalt-ui#persisted",
-  "basalt-ui/charts#BandStrip",
-  "basalt-ui/charts#Bars",
-  "basalt-ui/charts#CartesianChart",
-  "basalt-ui/charts#Heatmap",
-  "basalt-ui/charts#Lines",
   "basalt-ui/content#Markdown",
   "basalt-ui/router#field",
   "basalt-ui/theme-script#themeScript",

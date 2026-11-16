@@ -19,6 +19,21 @@ export type LinesProps<D> = Omit<CartesianChartProps<D>, 'series' | 'marks'> & {
   naming?: 'auto' | 'legend' | 'endLabels'
 }
 
+/**
+ * `CartesianChart` with the series narrowed to lines: n series, an `area` fade, zones and reference
+ * lines, and names at the line ends or in the legend (`naming`).
+ *
+ * @useWhen a metric over time or an ordered axis reads as one or more lines
+ * @neverWhen the values are counts per category (use Bars), or a word must sit on one mark (compose CartesianChart with a custom text mark)
+ *
+ * @example
+ * <Lines
+ *   ariaLabel="Sessions per day"
+ *   data={rows}
+ *   x={{ value: (d) => d.day }}
+ *   series={[{ mark: 'line', key: 'sessions', label: 'Sessions', color: SERIES.sessions, y: (d) => d.sessions }]}
+ * />
+ */
 export function Lines<D>(props: LinesProps<D>): ReactElement {
   return <CartesianPlot {...props} />
 }
