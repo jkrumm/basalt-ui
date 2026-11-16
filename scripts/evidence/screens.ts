@@ -34,11 +34,8 @@ export const screens: Lane = async ({ outDir, baseUrl, routes, openBrowser }) =>
         colorScheme: scheme,
         reducedMotion: 'reduce',
       })
-      // Mantine's default storage key — the provider reads it before first paint.
-      await context.addInitScript(
-        (value) => localStorage.setItem('mantine-color-scheme-value', value),
-        scheme,
-      )
+      // The scheme key the boot script reads before first paint.
+      await context.addInitScript((value) => localStorage.setItem('basalt:scheme', value), scheme)
       const page = await context.newPage()
       page.setDefaultTimeout(NAV_TIMEOUT_MS)
       for (const route of routes) {

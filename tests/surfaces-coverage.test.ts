@@ -95,21 +95,20 @@ describe('subpath export coverage', () => {
   })
 })
 
-// ── Assertion 7: every headless surface is Mantine-free ─────────────────────
+// ── Assertion 7: every headless surface imports no UI framework ─────────────
 // Coverage is either all 3 forbiddenImports bans, or — for the two surfaces the
 // `basalt/token-layer-boundary` plugin rule actually fires on (charts/tokens path segments) —
 // exemption backed by that rule's LIVE registration in the repo-local `.oxlintrc.json`. It is
 // deliberately registered repo-local ONLY (never the shipped consumer preset): it protects two
-// things — layering (tokens is pure data that `cssVariablesResolver` reads to bind Mantine's
-// surfaces to the same `--basalt-*` vars charts reads — an `@mantine/*` import in either would cycle
-// back through the theme layer or let a chart bypass `--basalt-*` and fork chrome/charts apart) and
-// packaging (`./charts`/`./tokens` resolve and render with no `@mantine/*` installed, CI-tested via
-// `scripts/pack-test.sh` + `scripts/check-dist-layering.mjs`). The LAYER is Mantine-free — the
-// FRAMEWORK is not (`.` requires Mantine as a non-optional peer). Both are a basalt-internal
-// invariant, not a consumer contract. This describe block is basalt's own CI guarantee that a
-// future removal of the rule fails loudly — `checkCoverage()` (a shipped CLI subcommand) cannot
-// verify this itself, since it must run from inside a consumer's node_modules, where the
-// repo-local `.oxlintrc.json` path resolves to the CONSUMER's own config.
+// things — layering (tokens is pure data that the generated stylesheet and charts both read — a
+// UI-layer import in either would cycle back through the token layer or let a chart bypass
+// `--basalt-*` and fork chrome/charts apart) and packaging (`./charts`/`./tokens` resolve and
+// render with no UI framework installed, CI-tested via `scripts/pack-test.sh` +
+// `scripts/check-dist-layering.mjs`). The LAYER imports no UI framework — the app layer does.
+// Both are a basalt-internal invariant, not a consumer contract. This describe block is basalt's
+// own CI guarantee that a future removal of the rule fails loudly — `checkCoverage()` (a shipped
+// CLI subcommand) cannot verify this itself, since it must run from inside a consumer's
+// node_modules, where the repo-local `.oxlintrc.json` path resolves to the CONSUMER's own config.
 
 describe('token-layer boundary coverage', () => {
   const repoConfig = JSON.parse(readFileSync(join(root, '.oxlintrc.json'), 'utf8')) as {
@@ -125,12 +124,12 @@ describe('token-layer boundary coverage', () => {
 
   it('the basalt/token-layer-boundary plugin rule is registered as error in the repo-local config', () => {
     // Load-bearing for the exemption below: if this ever goes false, ./charts and ./tokens have
-    // NO Mantine-free coverage at all (their forbiddenImports are intentionally empty).
+    // NO UI-free coverage at all (their forbiddenImports are intentionally empty).
     expect(tokenLayerBoundaryRegistered).toBe(true)
   })
 
   it('the shipped consumer preset does NOT register basalt/token-layer-boundary (deliberately absent)', () => {
-    // This governs basalt's own internal layering (tokens upstream of Mantine), not a consumer
+    // This governs basalt's own internal layering (tokens upstream of the UI layer), not a consumer
     // contract — it must never leak into the shipped preset.
     expect(hasTokenLayerBoundaryRegistered(shippedConfig.rules)).toBe(false)
   })

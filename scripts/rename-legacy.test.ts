@@ -17,6 +17,7 @@ describe('rewrite', () => {
     ['REMOVED_VX_NAMES, VX_PATH', 'REMOVED_BASALT_NAMES, BASALT_PATH'],
     ['/^--(vx-)?radius-/, --(?!vx-)', '/^--(basalt-)?radius-/, --(?!basalt-)'],
     ['runs over --vx tokens; the vx names', 'runs over --basalt tokens; the basalt names'],
+    ['/\\bVX\\.(\\w+)/g', '/\\bBASALT\\.(\\w+)/g'],
   ])('%s', (from, to) => {
     expect(at(from)).toBe(to)
   })

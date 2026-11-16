@@ -211,7 +211,7 @@ async function discoverViews(page: Page): Promise<View[]> {
   }
   return Promise.all(
     Array.from({ length: count }, async (_, i): Promise<View> => {
-      // `check()` fails on Mantine's clipped input ("outside of the viewport"), so click the label
+      // `check()` fails on a visually hidden input ("outside of the viewport"), so click the label
       // a user clicks.
       const radio = radios.nth(i)
       const [id, value] = await Promise.all([radio.getAttribute('id'), radio.getAttribute('value')])
@@ -231,7 +231,7 @@ export const keyboard: Lane = async ({ outDir, baseUrl, openBrowser }): Promise<
     colorScheme: 'light',
     reducedMotion: 'reduce',
   })
-  await context.addInitScript(() => localStorage.setItem('mantine-color-scheme-value', 'light'))
+  await context.addInitScript(() => localStorage.setItem('basalt:scheme', 'light'))
   const page = await context.newPage()
   page.setDefaultTimeout(NAV_TIMEOUT_MS)
 
