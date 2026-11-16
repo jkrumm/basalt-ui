@@ -200,7 +200,7 @@ const isEmptySlot = (slot: { count: number } | undefined): boolean =>
  * `document.title`, and `actions` claim the header's end; the band holds only `tabs`, `controls`,
  * `connection` and `refresh`. Without a shell `title` is the visible `h1` and `actions` sit in the band. The
  * band is sticky at the nearest scrollport and publishes its measured height as `--page-bar-h`; an
- * empty band renders nothing. `tabs` is `{ handle, label }` of an enum field (a tab strip bound to it;
+ * empty band renders nothing. `tabs` is `{ state, label }` of an enum field (a tab strip bound to it;
  * the phone track and `Select` forms are `ViewTabs` in a slot) or a `ControlsSlot` for custom content. `actions` holds at most five entries and at most one `primary`.
  *
  * @useWhen a screen needs a title, tabs, filters, a refresh button or page-level actions in one sticky band
@@ -216,7 +216,7 @@ const isEmptySlot = (slot: { count: number } | undefined): boolean =>
  * />
  *
  * @example
- * <PageBar title="Orders" tabs={{ handle: store.field.view, label: 'Orders view' }} />
+ * <PageBar title="Orders" tabs={{ state: store.field.view, label: 'Orders view' }} />
  *
  * @example
  * // Date navigation: grouped actions that stay in the phone bar and a text action that does not.

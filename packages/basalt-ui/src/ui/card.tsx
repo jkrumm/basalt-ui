@@ -380,7 +380,7 @@ export type CardPhaseProps = FrameState & {
  *
  * @example
  * <CardPhase phase={query} empty={rows.length ? null : { cause: 'No merges yet' }} height={72}>
- *   {(box) => <Sparkline series={rows} height={box.height} ariaLabel="Shipped per day" />}
+ *   {(box) => <Sparkline series={rows} height={box.height} label="Shipped per day" />}
  * </CardPhase>
  */
 export function CardPhase({

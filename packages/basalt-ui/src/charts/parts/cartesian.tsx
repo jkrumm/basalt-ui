@@ -1,7 +1,7 @@
 /**
  * `CartesianChart` — the one cartesian rung of v3 (`charts/contract.ts`): `Series` is a union by
  * `mark` (line, bar, dot), a series carries only closed vocabulary (`weight`, `dash`, a `{ light,
- * dark }` colour), and `ariaLabel` is required. `Lines` and `Bars` are this component with the series
+ * dark }` colour), and `label` is required. `Lines` and `Bars` are this component with the series
  * narrowed.
  *
  * Three layers, composed here and nowhere else: the width hook (`../sizing`), the bare engine mount
@@ -35,6 +35,7 @@ import { ChartPlaceholder, resolveChartState } from '../state'
 import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext } from '../types'
 import type { CartesianChartProps, CustomMarks, Series } from '../contract'
+import { chartName } from '../chart-name'
 import { applySeams } from '../seams'
 import { asMarks, customPlot, toChartState, toEngineSpec } from './cartesian-adapt'
 import { chartSelection, indexMap } from './cartesian-selection'
@@ -125,7 +126,8 @@ const xLabel = (v: ChartX): string => (v instanceof Date ? v.toISOString().slice
 
 /** The data table behind the picture: every point of every series, up to {@link TABLE_MAX_POINTS}. */
 function DataTable<D>(props: CartesianChartProps<D>): ReactElement | null {
-  const { data, series, x, ariaLabel } = props
+  const { data, series, x } = props
+  const ariaLabel = chartName(props)
   const { locale } = useProviderContext()
   if (data.length > TABLE_MAX_POINTS) return null
   const shown = series.filter((s) => s.failed !== true)
@@ -181,7 +183,7 @@ function custom<D>(build: CustomMarks<D>['build']): CustomMarks<D> {
  *
  * @example
  * <CartesianChart
- *   ariaLabel="Requests per day"
+ *   label="Requests per day"
  *   data={rows}
  *   x={{ value: (d) => d.day }}
  *   series={[{ mark: 'line', key: 'requests', label: 'Requests', color: SERIES.requests, y: (d) => d.requests }]}
@@ -194,7 +196,8 @@ CartesianChart.custom = custom
 
 /** The rung `Lines` and `Bars` render through: the public props plus the kind-only options. */
 export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): ReactElement {
-  const { ariaLabel, summary, table, phase, layout = 'stacked', naming = 'auto' } = props
+  const { summary, table, phase, layout = 'stacked', naming = 'auto' } = props
+  const ariaLabel = chartName(props)
   const chartId = useId()
   const { locale } = useProviderContext()
   const inCard = useInChartCard()

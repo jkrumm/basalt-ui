@@ -80,7 +80,7 @@ const VALUE_ATTRIBUTES: ReadonlySet<string> = new Set([
 ])
 
 const HOMES: ReadonlySet<string> = new Set(['FormField', 'FilterSet', 'ViewTabs', 'ControlHome'])
-const HANDLE_ATTRIBUTES: ReadonlySet<string> = new Set(['handle', 'control', 'field'])
+const HANDLE_ATTRIBUTES: ReadonlySet<string> = new Set(['handle', 'state', 'control', 'field'])
 const STATE_HOOKS: ReadonlySet<string> = new Set(['useState', 'useReducer'])
 
 const isNode = (value: unknown): value is Node =>

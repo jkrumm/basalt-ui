@@ -16,13 +16,13 @@ export function isEmptyTabs<K extends string>(tabs: PageTabs<K> | undefined): bo
  * `ControlsSlot` whose `render` returns a `ViewTabs`.
  */
 function HandleTabs<K extends string>({
-  handle,
+  state,
   label,
 }: {
-  handle: ControlHandle<K>
+  state: ControlHandle<K>
   label: string
 }): ReactElement {
-  const [value, set] = handle.use()
+  const [value, set] = state.use()
   return (
     <Tabs
       value={value}
@@ -31,7 +31,7 @@ function HandleTabs<K extends string>({
       }}
     >
       <TabsList aria-label={label}>
-        {(handle.options ?? []).map((option) => (
+        {(state.options ?? []).map((option) => (
           <TabsTrigger key={option.value} value={option.value}>
             {option.label}
           </TabsTrigger>
@@ -45,5 +45,5 @@ function HandleTabs<K extends string>({
 export function renderTabs<K extends string>(tabs: PageTabs<K> | undefined): ReactNode {
   if (tabs === undefined) return null
   if ('kind' in tabs) return tabs.render()
-  return <HandleTabs handle={tabs.handle} label={tabs.label} />
+  return <HandleTabs state={(tabs.state ?? tabs.handle) as ControlHandle<K>} label={tabs.label} />
 }

@@ -165,7 +165,7 @@ describe('PageBar without a shell', () => {
     })
     render(
       <Page>
-        <PageBar tabs={{ handle: view, label: 'Orders view' }} />
+        <PageBar tabs={{ state: view, label: 'Orders view' }} />
       </Page>,
     )
     const home = band()?.querySelector('[data-slot="page-bar-tabs"]')

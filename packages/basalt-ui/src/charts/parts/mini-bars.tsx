@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import { barGeometry } from '../core/compile-spark'
 import type { MiniBarsProps } from '../contract'
+import { chartName } from '../chart-name'
 import { cn } from '../../core/cn'
 import {
   BAR_CAP,
@@ -22,10 +23,11 @@ import {
  * @neverWhen the bars need axes, a legend, several series or a stack (use a bar chart)
  *
  * @example
- * <MiniBars series={perDay} height={72} axisLabels={['Mon', 'Today', 'Sun']} ariaLabel="Shipped per day" />
+ * <MiniBars series={perDay} height={72} axisLabels={['Mon', 'Today', 'Sun']} label="Shipped per day" />
  */
 export function MiniBars(props: MiniBarsProps): ReactElement {
-  const { series, ariaLabel, height, width, axisLabels, format, highlight = 'last' } = props
+  const { series, height, width, axisLabels, format, highlight = 'last' } = props
+  const ariaLabel = chartName(props)
   const { f, fmt } = useSparkFormat(format)
   const rows = pool(toRows(series), BAR_CAP, 'bar')
   const lit = highlight === 'last' ? rows.length - 1 : highlight

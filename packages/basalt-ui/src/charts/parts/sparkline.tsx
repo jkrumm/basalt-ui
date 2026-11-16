@@ -2,6 +2,7 @@ import { useId } from 'react'
 import type { ReactElement } from 'react'
 import { sparkGeometry } from '../core/compile-spark'
 import type { SparklineProps } from '../contract'
+import { chartName } from '../chart-name'
 import {
   LABEL_ROW,
   LINE_CAP,
@@ -32,10 +33,11 @@ const FLUID_UNITS = 100
  * @neverWhen the reader needs axes, a legend or several series (use a line chart)
  *
  * @example
- * <Sparkline series={perDay} height={72} axisLabels={['Mon', 'Today', 'Sun']} ariaLabel="Shipped per day" />
+ * <Sparkline series={perDay} height={72} axisLabels={['Mon', 'Today', 'Sun']} label="Shipped per day" />
  */
 export function Sparkline(props: SparklineProps): ReactElement {
-  const { series, ariaLabel, height, width, form = 'line', reference, axisLabels, format } = props
+  const { series, height, width, form = 'line', reference, axisLabels, format } = props
+  const ariaLabel = chartName(props)
   const gradient = useId().replaceAll(':', '')
   const { f, fmt } = useSparkFormat(format)
   const rows = pool(toRows(series), LINE_CAP, 'line')

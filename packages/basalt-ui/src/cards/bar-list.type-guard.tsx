@@ -14,7 +14,7 @@ const items = [
 ]
 
 export const validBars: ReactElement = (
-  <BarList title="Top projects" items={items} max={3160} rows={6} />
+  <BarList title="Top projects" items={items} max={3160} bodyRows={6} />
 )
 
 export const validEvents: ReactElement = (
@@ -60,7 +60,7 @@ export const barRowLinkAndButton: ReactElement = (
 
 export const barRowsOutOfRange: ReactElement = (
   // @ts-expect-error the body holds 3 to 10 rows
-  <BarList title="Top projects" items={items} rows={2} />
+  <BarList title="Top projects" items={items} bodyRows={2} />
 )
 
 export const eventNoClassName: ReactElement = (

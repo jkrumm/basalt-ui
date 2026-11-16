@@ -33,7 +33,8 @@ import { useCoarsePointer } from '../../common/use-media-query'
 import { HEIGHT_MAX, HEIGHT_MIN } from '../box'
 import { ChartPlaceholder, resolveChartState } from '../state'
 import { AXIS_LINE, CHART_THEME, CV, CV_STATUS, DIMMED } from '../core/theme'
-import type { ChartFocus } from '../contract'
+import type { ChartFocus, ChartName } from '../contract'
+import { chartName } from '../chart-name'
 import { engineFocusHandler, hostFocusProps } from '../focus'
 import type { ChartSeries, ChartState, ChartTooltipRow, ResponsiveChartHeight } from '../types'
 import type { Empty } from '../../core/phase'
@@ -68,9 +69,7 @@ export type HeatmapState<K extends string = string> = Omit<
 const fillOf = (s: HeatmapState | undefined): string =>
   s?.color ?? (s?.tone === undefined ? CV.neutral : CV_STATUS[s.tone])
 
-export type HeatmapProps<T, K extends string = string> = BasaltProps & {
-  /** The accessible name. Required. */
-  ariaLabel: string
+type HeatmapBase<T, K extends string> = BasaltProps & {
   data: readonly T[]
   /** The y band (a row) of a datum. */
   getRow: (d: T) => string
@@ -149,6 +148,8 @@ export type HeatmapProps<T, K extends string = string> = BasaltProps & {
    */
   annotate?: ((d: T) => string | null) | undefined
 }
+
+export type HeatmapProps<T, K extends string = string> = HeatmapBase<T, K> & ChartName
 
 const ROW_PITCH = 26
 const CHROME = 64
@@ -313,8 +314,8 @@ const inside = (grid: readonly (readonly unknown[])[], r: number, c: number): bo
  * @neverWhen there is one row of states over time (use BandStrip), or the exact value matters more than the pattern (use a table)
  */
 export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement {
+  const ariaLabel = chartName(props)
   const {
-    ariaLabel,
     data,
     getRow,
     getCol,

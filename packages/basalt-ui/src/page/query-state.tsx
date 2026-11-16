@@ -20,7 +20,7 @@ type QueryResultLike = QueryStateLike & {
 
 export type QueryStateProps = {
   /** A `Phase` or the app's query object, as every frame takes it. */
-  phase: Phase | QueryResultLike
+  phase: Phase | QueryStateLike
   /** The measured-empty state; it applies once the query settled and shows `EmptyState`. */
   empty?: Empty | null
   /**

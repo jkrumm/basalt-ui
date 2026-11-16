@@ -206,6 +206,13 @@ describe('Lines', () => {
     expect(content.rows.map((r) => r.label)).toEqual(['Alpha', 'Visible'])
   })
 
+  test('label is the accessible name and ariaLabel its deprecated alias', () => {
+    const named = (props: { label: string } | { ariaLabel: string }): string =>
+      renderToString(<Lines {...props} data={data} x={x} series={[a]} />)
+    expect(named({ label: 'Sessions' })).toContain('aria-label="Sessions"')
+    expect(named({ ariaLabel: 'Sessions' })).toContain('aria-label="Sessions"')
+  })
+
   test('phase replaces the plot with its placeholder', () => {
     expect(
       renderToString(<Lines ariaLabel="L" data={[]} x={x} series={[a]} phase="loading" />),
