@@ -162,7 +162,7 @@ async function main(): Promise<number> {
     // (packages/basalt-ui/tests/layout/harness.ts). Every Chrome opened is killed after its lane.
     openBrowser: async (): Promise<Browser> => {
       const chrome = await chromium.launchServer({
-        channel: 'chrome',
+        channel: 'chrome', // chrome: screenshots a person judges
         chromiumSandbox: !process.env['CI'],
       })
       chromes.push(chrome)
