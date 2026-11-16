@@ -9,7 +9,7 @@ Which form carries which shape of data, and what the marks may say. The question
 - A top-N or a share of a total is a [BarList](node_modules/basalt-ui/docs/bar-list.md). Many rows with several attributes is a [DataTable](node_modules/basalt-ui/docs/data-table.md), unless the question is which items changed state or passed: that is one mark per item (a square per case) with the table holding the detail.
 - A value over time is a chart in a [ChartCard](node_modules/basalt-ui/docs/chart-card.md); compare categories with bars, follow a shape with a line.
 - Events in order are an [EventList](node_modules/basalt-ui/docs/event-list.md). Intervals on a time axis (a stay, a run, a notice window) get one row each, drawn as a bar on the axis.
-- A series that must dim on focus is [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md) marks: `Lines` ignores marks and so cannot dim, while `Bars` dims through its own `opacity`.
+- A series that must dim on focus is [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md) marks: [Lines](node_modules/basalt-ui/docs/lines.md) ignores marks and so cannot dim, while [Bars](node_modules/basalt-ui/docs/bars.md) dims through its own `opacity`.
 
 ## Colour follows the entity
 
