@@ -143,6 +143,104 @@ describe('marks', () => {
     expect(seen).toEqual({ rows: 5, height: expect.any(Number), keys: ['v'] })
   })
 
+  test('custom marks get pixel positions on the axis scales', () => {
+    let seen:
+      | {
+          x0: number | null
+          x4: number | null
+          off: number | null
+          top: number
+          bottom: number
+          width: number
+          height: number
+        }
+      | undefined
+    renderToString(
+      <CartesianChart
+        ariaLabel="V"
+        data={rowsOf(5)}
+        x={x}
+        y={{ domain: [0, 10] }}
+        series={[v]}
+        marks={CartesianChart.custom<Row>((plot) => {
+          const first = rowsOf(5)[0]?.t ?? 0
+          seen = {
+            x0: plot.x(new Date(first)),
+            x4: plot.x(new Date(first + 4 * 86_400_000)),
+            off: plot.x('not a date'),
+            top: plot.y(10),
+            bottom: plot.y(0),
+            width: plot.plotWidth,
+            height: plot.plotHeight,
+          }
+          return []
+        })}
+      />,
+    )
+    expect(seen?.x0).toBe(0)
+    expect(seen?.x4).toBeCloseTo(seen?.width ?? -1, 6)
+    expect(seen?.off).toBeNull()
+    expect(seen?.top).toBe(0)
+    expect(seen?.bottom).toBeCloseTo(seen?.height ?? -1, 6)
+  })
+
+  test('an x zone is an x range with a y bound; a y zone stays a y band', () => {
+    const spec = toEngineSpec({
+      ariaLabel: 'V',
+      data: rowsOf(3),
+      x,
+      series: [v],
+      zones: [
+        { from: 1, to: 2, fill: 'var(--vx-good)' },
+        {
+          axis: 'x',
+          from: new Date(0),
+          to: new Date(1),
+          fill: 'var(--vx-bad)',
+          y: { from: 0, to: 5 },
+          label: 'Window',
+        },
+        { axis: 'x', from: 'Mon', to: 'Tue', fill: 'var(--vx-bad)' },
+      ],
+    })
+    expect(spec.zones).toEqual([{ from: 1, to: 2, fill: 'var(--vx-good)' }])
+    expect(spec.xZones).toEqual([
+      {
+        from: new Date(0),
+        to: new Date(1),
+        fill: 'var(--vx-bad)',
+        y: { from: 0, to: 5 },
+        label: 'Window',
+      },
+      { from: 'Mon', to: 'Tue', fill: 'var(--vx-bad)', align: 'edge' },
+    ])
+  })
+
+  test('a labelled x zone draws its band and its caption', () => {
+    const host = document.createElement('div')
+    const first = rowsOf(5)[0]?.t ?? 0
+    host.innerHTML = renderToString(
+      <CartesianChart
+        ariaLabel="V"
+        data={rowsOf(5)}
+        x={x}
+        series={[v]}
+        zones={[
+          {
+            axis: 'x',
+            from: new Date(first + 86_400_000),
+            to: new Date(first + 3 * 86_400_000),
+            y: { from: 2, to: 4 },
+            fill: 'var(--vx-brand)',
+            label: 'Window',
+          },
+        ]}
+      />,
+    )
+    expect(host.querySelector('[data-ts-key="xzone-0"]')).not.toBeNull()
+    expect(host.textContent).toContain('Window')
+  })
+
   test('a dot series draws one dot per row with a value', () => {
     const host = document.createElement('div')
     host.innerHTML = renderToString(

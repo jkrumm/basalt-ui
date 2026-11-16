@@ -163,6 +163,13 @@ export type XZoneSpec<X extends ChartX = ChartX> = {
   align?: 'center' | 'edge' | undefined
   /** A rule on the band's `start` (`from`) and/or `end` (`to`) boundary; an omitted bound has none. */
   edge?: ZoneEdge<'start' | 'end'> | undefined
+  /** A y bound on the left axis, clamped to its domain. Default: the plot's full height. */
+  y?: { from: number; to: number } | undefined
+  /**
+   * A muted caption at the band's top-start corner; beside the band (after it, then before it) when
+   * it does not fit inside; dropped when no spot stays in the plot clear of the reference captions.
+   */
+  label?: string | undefined
 }
 
 /** Where a rule sits on a band: its centre (default), or the leading or trailing edge between two bars. */

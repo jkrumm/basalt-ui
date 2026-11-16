@@ -49,6 +49,7 @@ import { resolveContainerClass } from '../../tokens/size-classes'
 import { resolveYDomain, xScaleFor, xZoneFractions, yScaleFor } from './scales'
 import type { XScaleModel } from './scales'
 import {
+  captionWidth,
   dotSwatch,
   logTicks,
   ringSwatch,
@@ -907,8 +908,8 @@ function underlayMarks<T, X extends ChartX>(
           id: `xzone-${i}`,
           x1: 'f0',
           x2: 'f1',
-          y1: () => axes.left.domain[0],
-          y2: () => axes.left.domain[1],
+          y1: () => (z.y ? clampTo(z.y.from, axes.left.domain) : axes.left.domain[0]),
+          y2: () => (z.y ? clampTo(z.y.to, axes.left.domain) : axes.left.domain[1]),
           xScale: 'zx',
           fill: z.fill,
           inset: 0,
@@ -1005,6 +1006,74 @@ const refLabelMark = <T, X extends ChartX>(
       }),
     ),
   ]
+}
+
+/**
+ * The captions of the x zones that carry a `label`, over the marks, muted like a reference
+ * caption: inside the zone at its top-start corner; after the zone, then before it, when the
+ * caption is wider than the zone; dropped when no spot stays in the plot clear of the reference
+ * captions and the zone captions placed before it. Reads the plot size, so only a chart with a
+ * zone caption pays the measured re-render.
+ */
+const xZoneLabelMarks = <T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  ctx: RefLabelContext<T, X>,
+): ChartMarks => {
+  const { plotWidth, plotHeight, axes, model } = ctx
+  const fontSize = VX.text.micro
+  const domain = axes.left.domain
+  const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+  const perPx = plotHeight > 0 && hi > lo ? (hi - lo) / plotHeight : 0
+  const avoid = (): LabelBox[] => [
+    ...ctx.xCaptions.map((b) => xCaptionOn(b, domain, plotHeight)),
+    ...ctx.placed.left,
+  ]
+  return (input.xZones ?? []).flatMap((z, i) => {
+    const f = z.label ? xZoneFractions(z, model) : null
+    if (!z.label || f === null) return []
+    const top = z.y ? clampTo(Math.max(z.y.from, z.y.to), domain) : hi
+    const width = captionWidth(z.label, fontSize)
+    const [x0, x1] = [f[0] * plotWidth, f[1] * plotWidth]
+    const spots = [
+      { at: f[0], side: 1, left: x0 + REF_LABEL_DX, inside: true },
+      { at: f[1], side: 1, left: x1 + REF_LABEL_DX, inside: false },
+      { at: f[0], side: -1, left: x0 - REF_LABEL_DX - width, inside: false },
+    ] as const
+    // The caption's line box from the zone's top, in values, for the collision pass.
+    const y1 = top - (fontSize / 2 - 2) * perPx
+    const y0 = top - (fontSize * 1.5 + 2) * perPx
+    const boxOf = (left: number): LabelBox => ({
+      fx0: left / plotWidth,
+      fx1: (left + width) / plotWidth,
+      y0,
+      y1,
+    })
+    const fits = (s: (typeof spots)[number]): boolean =>
+      s.left >= 0 &&
+      s.left + width <= (s.inside ? x1 - REF_LABEL_DX : plotWidth) &&
+      !avoid().some((b) => boxesMeet(boxOf(s.left), b))
+    // Before the plot is measured the caption keeps its first spot.
+    const spot = plotWidth <= 0 ? spots[0] : spots.find(fits)
+    if (spot === undefined) return []
+    if (plotWidth > 0) ctx.placed.left.push(boxOf(spot.left))
+    return [
+      decorative(
+        text([{ f: spot.at }], {
+          id: `xzone-${i}-label`,
+          x: (d: { f: number }) => d.f,
+          y: () => top,
+          xScale: 'zx',
+          yScale: 'y',
+          text: () => z.label ?? '',
+          fill: CV.inkMuted,
+          fontSize,
+          anchor: spot.side === 1 ? 'start' : 'end',
+          dx: spot.side * REF_LABEL_DX,
+          dy: fontSize,
+        }),
+      ),
+    ]
+  })
 }
 
 /** Reference lines, over the marks. `label` reads the plot size, so only a chart with an unpinned caption pays for it. */
@@ -1491,6 +1560,9 @@ export function compileCartesian<T, X extends ChartX>(
       const hasXCaption = (input.xRefLines ?? []).some((l) => l.label)
       const xPlotWidth = hasXCaption ? captionContext().plotWidth : 0
       const over = refLineMarks(input, axes, captionContext)
+      const zoneCaptions = (input.xZones ?? []).some((z) => z.label)
+        ? xZoneLabelMarks(input, captionContext())
+        : []
       const offScale = offScaleMarks({
         series: visible,
         data: input.data,
@@ -1510,6 +1582,7 @@ export function compileCartesian<T, X extends ChartX>(
           ...kindMarks,
           ...dots,
           ...over,
+          ...zoneCaptions,
           ...offScale,
           ...xRefLineMarks({
             lines: input.xRefLines,

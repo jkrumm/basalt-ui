@@ -61,6 +61,13 @@ export type PlacedLabel<K extends string = string> = ChartLabel<K> & {
   baselineY: number
   /** The `x` for a `<text>` element drawn with `textAnchor`. */
   textX: number
+  /**
+   * The text's offset in px from its anchor, for an engine `text` mark drawn at the anchor's datum
+   * (`dx`, `dy`, `anchor: textAnchor`): `textX - x`, and the box's middle less `y`, since that mark
+   * centres its text on `y`.
+   */
+  dx: number
+  dy: number
 }
 
 /** A numeric domain makes a numeric axis and a `Date` domain a time axis, never a literal type. */
@@ -221,18 +228,21 @@ export const chartLabels = {
         const at = boxFor(spot, label.x, label.y, width, height, gap)
         const box = { left: at.left, top: at.top, width, height }
         if (!inside(box, frame) || taken.some((other) => overlaps(box, other))) continue
+        const textX =
+          at.textAnchor === 'start'
+            ? box.left
+            : at.textAnchor === 'end'
+              ? box.left + width
+              : box.left + width / 2
         landed = {
           ...label,
           spot,
           ...box,
           textAnchor: at.textAnchor,
           baselineY: box.top + height / 2 + size * BASELINE_OFFSET,
-          textX:
-            at.textAnchor === 'start'
-              ? box.left
-              : at.textAnchor === 'end'
-                ? box.left + width
-                : box.left + width / 2,
+          textX,
+          dx: textX - label.x,
+          dy: box.top + height / 2 - label.y,
         }
         break
       }
