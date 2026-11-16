@@ -6,9 +6,11 @@ import type { ShotState } from './shot-state'
 export function ScenarioView({
   name,
   shotState,
+  fixture,
 }: {
   name: string
   shotState: ShotState | undefined
+  fixture: string | undefined
 }) {
   const render = findScenario(name)
   if (render === undefined) {
@@ -31,5 +33,5 @@ export function ScenarioView({
       </div>
     )
   }
-  return render({ shotState })
+  return render({ shotState, fixture })
 }

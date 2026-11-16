@@ -13,5 +13,5 @@ export const Route = createFileRoute('/scenarios/$name')({
 function ScenarioRoute() {
   const { name } = Route.useParams()
   const search = Route.useSearch()
-  return <ScenarioView name={name} shotState={search['shot-state']} />
+  return <ScenarioView name={name} shotState={search['shot-state']} fixture={search.fixture} />
 }
