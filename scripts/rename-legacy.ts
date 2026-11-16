@@ -17,7 +17,7 @@
  *   --dry          print what would change, write nothing
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileAllows, lineAllows } from './legacy-names.ts'
 
@@ -149,7 +149,10 @@ if (import.meta.main) {
   }
   const dry = args.includes('--dry')
 
-  const files = git(['ls-files', '-z']).split('\0').filter(Boolean)
+  const files = git(['ls-files', '-z', '--cached', '--others', '--exclude-standard'])
+    .split('\0')
+    .filter(Boolean)
+  const tracked = new Set(git(['ls-files', '-z']).split('\0').filter(Boolean))
   let changed = 0
   for (const path of files) {
     const kept = fileAllows(path, 'vx') && !ROW_FILES.test(path)
@@ -169,7 +172,8 @@ if (import.meta.main) {
     const to = join(dirname(path), base)
     moved++
     if (dry) console.log(`move ${path} -> ${to}`)
-    else git(['mv', path, to])
+    else if (tracked.has(path)) git(['mv', path, to])
+    else renameSync(join(ROOT, path), join(ROOT, to))
   }
   console.log(`rename-legacy: ${changed} files rewritten, ${moved} moved${dry ? ' (dry run)' : ''}`)
   if (!dry && !args.includes('--no-generate')) generate()
