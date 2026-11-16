@@ -19,7 +19,7 @@
     "test": "bun test",
     "test:layout": "bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 .layout.test.ts",
     "test:layout:harness": "bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 packages/basalt-ui/tests/layout/harness",
-    "pre:static": "bun run fmt:check && bun run lint && bun run typecheck && bun run check-budgets && bun run check-literals && bun run check-recipes-lint && bun run check-playground-lint",
+    "pre:static": "bun run fmt:check && bun run lint && bun run typecheck && bun run check-budgets && bun run check-literals && bun run check-recipes-lint && bun run check-readme-types && bun run check-playground-lint",
     "pre": "bun run pre:static && make --no-print-directory test",
     "prepare": "lefthook install",
     "hooks:install": "lefthook install",
@@ -28,6 +28,7 @@
     "check-budgets": "cd packages/basalt-ui && bun scripts/check-budgets.ts",
     "check-literals": "bun packages/basalt-ui/scripts/check-literals.ts",
     "check-recipes-lint": "bun packages/basalt-ui/scripts/check-recipes-lint.ts",
+    "check-readme-types": "bun packages/basalt-ui/scripts/check-readme-types.ts",
     "check-playground-lint": "bun packages/basalt-ui/scripts/check-playground-lint.ts"
   },
   "devDependencies": {
