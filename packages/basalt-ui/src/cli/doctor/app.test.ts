@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 
+import { execFileSync } from 'node:child_process'
+import { rmSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { cleanupTrees, editManifest, makeTree, runCheck } from './fixture.test'
 
 afterEach(cleanupTrees)
@@ -139,5 +143,35 @@ describe('check 12: app wiring', () => {
     const r = await runCheck(dir, 12)
     expect(r.status).toBe('fail')
     expect(r.detail).toContain('Playwright')
+  })
+
+  describe('a generated .basalt/sources.css', () => {
+    const config =
+      "import { basalt } from 'basalt-ui/vite'\nexport default { plugins: [tanstackRouter({ autoCodeSplitting: true }), basalt()] }\n"
+
+    /** A tree on a real git repo, with the generated file added to the index. */
+    function tracked(): string {
+      const dir = makeTree('app', {
+        'vite.config.ts': config,
+        '.basalt/sources.css': '@source "../src";\n',
+      })
+      rmSync(join(dir, '.git'), { recursive: true })
+      execFileSync('git', ['init', '-q'], { cwd: dir })
+      execFileSync('git', ['add', '-f', '.basalt/sources.css'], { cwd: dir })
+      return dir
+    }
+
+    it('is reported when git tracks it', async () => {
+      const r = await runCheck(tracked(), 12)
+      expect(r.status).toBe('fail')
+      expect(r.detail).toContain('.basalt/sources.css is tracked by git')
+      expect(r.detail).toContain('git rm --cached .basalt/sources.css')
+    })
+
+    it('passes once it is untracked', async () => {
+      const dir = tracked()
+      execFileSync('git', ['rm', '-q', '--cached', '.basalt/sources.css'], { cwd: dir })
+      expect((await runCheck(dir, 12)).status).toBe('pass')
+    })
   })
 })

@@ -649,6 +649,21 @@ function patchCss(
   return stock.test(text) ? text.replace(stock, () => entry) : `${entry}\n`
 }
 
+/** The file `basalt()` regenerates on every run: generated, so never committed. */
+export const SOURCES_CSS = '.basalt/sources.css'
+
+/** `<viteDir>/.gitignore` lists `.basalt/sources.css` once; the file is created when it is missing. */
+function ignoreSources(ctx: Ctx, viteDir: string): void {
+  const file = viteDir === '.' ? '.gitignore' : `${viteDir}/.gitignore`
+  const text = readText(ctx.root, file) ?? ''
+  const listed = text
+    .split('\n')
+    .some((line) => [SOURCES_CSS, `/${SOURCES_CSS}`].includes(line.trim()))
+  if (listed) return
+  const lead = text === '' || text.endsWith('\n') ? text : `${text}\n`
+  if (writeText(ctx.root, file, `${lead}${SOURCES_CSS}\n`)) say(`${file}: ignores ${SOURCES_CSS}`)
+}
+
 /** Above `tokens`: the Vite plugin and the Tailwind entry, patched only when the shape is stock. */
 export function wireApp(ctx: Ctx): void {
   if (ctx.args.profile === 'tokens') {
@@ -660,6 +675,7 @@ export function wireApp(ctx: Ctx): void {
     .find((f) => existsSync(resolve(ctx.root, f)))
   const patched =
     vite === undefined ? null : patchVite(readText(ctx.root, vite) ?? '', ctx.routerPlugin === true)
+  if (vite !== undefined) ignoreSources(ctx, dirname(vite))
   if (vite !== undefined && patched !== null) {
     if (writeText(ctx.root, vite, patched)) say(`${vite}: added the Vite plugins`)
   } else {

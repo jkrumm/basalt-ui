@@ -509,6 +509,30 @@ describe('init: the budget, the install and the seeds', () => {
     expect(log).toContain("@import 'basalt-ui/tailwind.css'")
   })
 
+  it('ignores .basalt/sources.css beside the Vite config, once', async () => {
+    const vite = {
+      'vite.config.ts':
+        "import react from '@vitejs/plugin-react'\nexport default { plugins: [react()] }\n",
+    }
+    const fresh = repo(vite)
+    await runInit(['--profile', 'app', '--root', 'src'], fresh)
+    expect(read(fresh, '.gitignore')).toBe('.basalt/sources.css\n')
+    await runInit(['--profile', 'app', '--root', 'src'], fresh)
+    expect(read(fresh, '.gitignore')).toBe('.basalt/sources.css\n')
+
+    const existing = repo({ ...vite, '.gitignore': 'node_modules\ndist' })
+    await runInit(['--profile', 'app', '--root', 'src'], existing)
+    expect(read(existing, '.gitignore')).toBe('node_modules\ndist\n.basalt/sources.css\n')
+
+    const listed = repo({ ...vite, '.gitignore': '/.basalt/sources.css\n' })
+    await runInit(['--profile', 'app', '--root', 'src'], listed)
+    expect(read(listed, '.gitignore')).toBe('/.basalt/sources.css\n')
+
+    const below = repo({ 'apps/web/vite.config.ts': vite['vite.config.ts'] })
+    await runInit(['--profile', 'app', '--root', 'apps/web/src'], below)
+    expect(read(below, 'apps/web/.gitignore')).toBe('.basalt/sources.css\n')
+  })
+
   it('splices the import after a multi-line last import, not inside it', async () => {
     const dir = repo({
       'vite.config.ts':

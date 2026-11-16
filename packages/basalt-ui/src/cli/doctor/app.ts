@@ -3,6 +3,8 @@
  * `notify` and `ToastHost` pair, `<html lang>`, the scheme boot script, selectors from the Mantine
  * era, and Playwright when the manifest declares `shot`.
  */
+import { spawnSync } from 'node:child_process'
+import { dirname } from 'node:path'
 import { resolveAppDir } from '../index'
 import { typechecksBeforeTree } from '../route-tree'
 import { need, readJson, readText, rootFiles, rootsOf, verdictOf } from './types'
@@ -71,6 +73,29 @@ function treeFirstFindings(ctx: Ctx): string[] {
   })
 }
 
+const SOURCES_CSS = '.basalt/sources.css'
+
+/** `<vite dir>/.basalt/sources.css` for each Vite config that calls `basalt()`, when git tracks it. */
+function trackedSources(ctx: Ctx, configs: readonly Source[]): string[] {
+  const files = configs
+    .filter((c) => /\bbasalt\s*\(/.test(c.text))
+    .map((c) => {
+      const dir = dirname(c.file)
+      return dir === '.' ? SOURCES_CSS : `${dir}/${SOURCES_CSS}`
+    })
+  return [...new Set(files)].flatMap((file) => {
+    const run = spawnSync('git', ['ls-files', '--error-unmatch', '--', file], {
+      cwd: ctx.root,
+      stdio: 'ignore',
+    })
+    return run.status === 0
+      ? [
+          `${file} is tracked by git: it is regenerated on every run, so ignore it and \`git rm --cached ${file}\``,
+        ]
+      : []
+  })
+}
+
 const check12 = (name: string): Check => ({
   id: 12,
   name,
@@ -102,6 +127,7 @@ const check12 = (name: string): Check => ({
       if (!configs.some((c) => /autoCodeSplitting\s*:\s*true/.test(c.text))) {
         findings.push('app: autoCodeSplitting is not enabled in the vite config')
       }
+      findings.push(...trackedSources(ctx, configs))
       if (configs.some((c) => /\btanstackRouter\s*\(/.test(c.text))) {
         findings.push(...treeFirstFindings(ctx))
       }

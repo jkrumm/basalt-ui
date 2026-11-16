@@ -71,6 +71,7 @@ plugin, no marketplace and no second version to track. `init` writes at the git 
 - above `tokens`: `.claude/rules/basalt-*.md`, `.claude/skills/basalt-*`, the managed `<!-- basalt:begin/end -->` block in `AGENTS.md`, and a thin `DESIGN.md` seed when no declared root has one
 - `.basalt/budget.json` (the seeded ceilings) and the formatter ignore for the managed paths
 - with `app`, the router scaffold, each file written once and never touched by `sync`: `src/main.tsx` (the entry), `src/routes/__root.tsx`, `src/routes/_app.tsx` (the `AppShell` layout), `src/lib/nav.tsx` (the one `defineNav`) and `src/components/route-{pending,error,missing}.tsx`; a `main.tsx` that is create-vite's stock entry is replaced, any other entry gets the template's lines printed
+- `.basalt/sources.css` in the `.gitignore` beside the Vite config (once; `basalt()` regenerates the file on every run, and `doctor` reports it when git tracks it)
 - in a stock Vite config, `tanstackRouter(...)` and `basalt()` in `plugins`; in a stock stylesheet entry (`src/index.css`), the `tailwindcss` import becomes `basalt-ui/tailwind.css`, the app's `tokens.css` when the `tokens:css` output exists, and `.basalt/sources.css`; any other shape gets the exact lines printed
 
 It ends in `basalt-ui doctor`, which reports. Running `init` twice changes nothing; `sync` refreshes
