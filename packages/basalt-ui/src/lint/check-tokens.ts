@@ -111,22 +111,27 @@ export function kindOfName(name: string): string | undefined {
  * Candidates stay within the kind the name asks for (`--vx-text-muted` never suggests `--vx-text-md`);
  * within that kind a token that shares a name segment is near however many edits away, since a role
  * invented beside a real one (`--vx-brand-500`, `--vx-space-1`) means it. App-owned names carry no
- * kind and always qualify.
+ * kind and always qualify. A known name the unknown one ends with, on a segment boundary, beats
+ * any edit distance: `--vx-color-brand` is `--vx-brand` with a prefix added, not `--vx-on-brand`.
  */
 export function nearestToken(name: string, known: Iterable<string>): string | undefined {
   const kind = kindOfName(name)
   const own = new Set(segmentsOf(name))
+  const tail = name.replace(/^--vx-/, '')
   let best: string | undefined
-  let bestDistance = Infinity
+  let bestRank: [number, number] = [Infinity, Infinity]
   for (const candidate of [...known].toSorted()) {
     const candidateKind = KINDS_BY_NAME.get(candidate)
     if (kind !== undefined && candidateKind !== undefined && candidateKind !== kind) continue
     const distance = editDistance(name, candidate)
     const shares = kind !== undefined && segmentsOf(candidate).some((s) => own.has(s))
     if (distance > NEAR && !shares) continue
-    if (distance < bestDistance) {
+    const suffix = tail.endsWith(`-${candidate.replace(/^--vx-/, '')}`)
+    // A suffix match ranks first, the longest one first; then the fewest edits.
+    const rank: [number, number] = [suffix ? -candidate.length : 0, distance]
+    if (rank[0] < bestRank[0] || (rank[0] === bestRank[0] && rank[1] < bestRank[1])) {
       best = candidate
-      bestDistance = distance
+      bestRank = rank
     }
   }
   return best

@@ -55,6 +55,7 @@ describe('checkTokens', () => {
     expect(nearestToken('--vx-brand-500', known)).toBe('--vx-brand')
     expect(nearestToken('--vx-text-mdd', known)).toBe('--vx-text-md')
     expect(nearestToken('--vx-warning', known)).toBe('--vx-warn')
+    expect(nearestToken('--vx-color-brand', known)).toBe('--vx-brand')
     expect(nearestToken('--vx-qqqqqqqqqqqq', known)).toBeUndefined()
     // the suggestion reaches the finding
     const f = file('k.css', '.a { color: var(--vx-text-muted); }')
