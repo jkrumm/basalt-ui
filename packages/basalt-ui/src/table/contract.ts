@@ -192,7 +192,20 @@ type DetailDoor<T> = {
   activeRowId?: never
 }
 
-export type UseDataTable<T> = {
+/** One page field the table filters by: a row stays while `match(row, value)` holds. */
+export type PageFilter<T, V = unknown> = {
+  field: ControlHandle<V>
+  match: (row: T, value: V) => boolean
+}
+
+/** The filters of `UseDataTable`, one per field, each predicate typed by its own field's value. */
+export type PageFilters<T, F extends readonly unknown[]> = { [K in keyof F]: PageFilter<T, F[K]> }
+
+export type UseDataTable<
+  T,
+  // oxlint-disable-next-line typescript/no-explicit-any -- the default of an unnamed tuple: each field's own `V` is inferred per entry, an explicit `<Row>` call keeps them loose
+  F extends readonly unknown[] = readonly any[],
+> = {
   id: string
   label: string
   columns: readonly KindColumn<T>[]
@@ -215,6 +228,17 @@ export type UseDataTable<T> = {
    * Clear filters (calling `reset`) in place of `action`, and the table's own filters clear with it.
    */
   empty?: Empty | null
+  /**
+   * Page fields that narrow a client table's rows (a Section's filters over it): each is a field
+   * handle with a row predicate, `match(row, value)` typed by that field's value. A field off its
+   * default keeps only the rows its predicate accepts; with none left the empty arm offers Clear
+   * filters, which clears exactly these fields (and the table's own search and filters). Ignored on
+   * a server table, whose rows are the server's to filter.
+   *
+   * @example
+   * filters: [{ field: store.field.project, match: (row, project) => row.project === project }]
+   */
+  filters?: PageFilters<T, F>
   resetOn?: readonly unknown[]
   /**
    * What a narrow table becomes: cards, or the table scrolling sideways with its first column pinned.

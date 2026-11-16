@@ -33,6 +33,8 @@ export type {
   FilterModel,
   KindColumn,
   Mode,
+  PageFilter,
+  PageFilters,
   RowAction,
   Scrollport,
   Selection,
