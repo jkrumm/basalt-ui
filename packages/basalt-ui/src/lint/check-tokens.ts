@@ -7,6 +7,8 @@ import { readFileSync } from 'node:fs'
 import { extname } from 'node:path'
 
 import { tokenNames } from '../tokens/emit'
+import type { TokenFamily } from '../tokens/table'
+import { TOKENS } from '../tokens/table'
 
 const SCANNED_EXTENSIONS: ReadonlySet<string> = new Set(['.css', '.tsx', '.astro', '.mdx'])
 
@@ -46,12 +48,82 @@ function editDistance(a: string, b: string): number {
   return row[b.length] ?? 0
 }
 
-/** The known name closest to `name` (ties go to the first in sort order), or undefined past `NEAR`. */
+/** The kind a family belongs to: every colour role is one kind, a type size is another. */
+const KIND_OF_FAMILY: Readonly<Record<TokenFamily, string>> = {
+  surface: 'colour',
+  interaction: 'colour',
+  line: 'colour',
+  ink: 'colour',
+  brand: 'colour',
+  status: 'colour',
+  viz: 'colour',
+  shadow: 'shadow',
+  radius: 'radius',
+  size: 'size',
+  font: 'font',
+  weight: 'weight',
+  type: 'type',
+  motion: 'motion',
+  rhythm: 'spacing',
+  contract: 'contract',
+}
+
+/** Words an author writes for a kind that no token name carries (`--vx-space-1`). */
+const KIND_WORDS: Readonly<Record<string, string>> = {
+  space: 'spacing',
+  spacing: 'spacing',
+  gap: 'spacing',
+  margin: 'spacing',
+  padding: 'spacing',
+  color: 'colour',
+  colour: 'colour',
+}
+
+const segmentsOf = (name: string): string[] => name.replace(/^--vx-/, '').split('-')
+
+const KINDS_BY_NAME: ReadonlyMap<string, string> = new Map(
+  TOKENS.map((t) => [`--vx-${t.name}`, KIND_OF_FAMILY[t.family]]),
+)
+
+/** The one kind every package token carrying `segment` as a name segment has, else undefined. */
+function kindOfSegment(segment: string): string | undefined {
+  const kinds = new Set<string>()
+  for (const [name, kind] of KINDS_BY_NAME) if (segmentsOf(name).includes(segment)) kinds.add(kind)
+  return kinds.size === 1 ? [...kinds][0] : undefined
+}
+
+/**
+ * The kind an unknown name asks for: its qualifier (last segment, `muted` is a colour) beats its head
+ * (`text` is a type size); a head that is a kind word (`space`) names the kind directly.
+ */
+export function kindOfName(name: string): string | undefined {
+  const known = KINDS_BY_NAME.get(name)
+  if (known !== undefined) return known
+  const segments = segmentsOf(name)
+  const last = segments.at(-1) ?? ''
+  const head = segments[0] ?? ''
+  const byLast = /^\d+$/.test(last) ? undefined : kindOfSegment(last)
+  return byLast ?? kindOfSegment(head) ?? KIND_WORDS[head]
+}
+
+/**
+ * The known name closest to `name` (ties go to the first in sort order), or undefined past `NEAR`.
+ * Candidates stay within the kind the name asks for (`--vx-text-muted` never suggests `--vx-text-md`);
+ * within that kind a token that shares a name segment is near however many edits away, since a role
+ * invented beside a real one (`--vx-brand-500`, `--vx-space-1`) means it. App-owned names carry no
+ * kind and always qualify.
+ */
 export function nearestToken(name: string, known: Iterable<string>): string | undefined {
+  const kind = kindOfName(name)
+  const own = new Set(segmentsOf(name))
   let best: string | undefined
-  let bestDistance = NEAR + 1
+  let bestDistance = Infinity
   for (const candidate of [...known].toSorted()) {
+    const candidateKind = KINDS_BY_NAME.get(candidate)
+    if (kind !== undefined && candidateKind !== undefined && candidateKind !== kind) continue
     const distance = editDistance(name, candidate)
+    const shares = kind !== undefined && segmentsOf(candidate).some((s) => own.has(s))
+    if (distance > NEAR && !shares) continue
     if (distance < bestDistance) {
       best = candidate
       bestDistance = distance
