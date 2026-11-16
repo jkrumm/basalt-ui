@@ -463,7 +463,7 @@ function xTickPolicy<X extends ChartX>(
     }
   const buckets = typeof xTicks === 'number' && Number.isFinite(xTicks) ? bucketDates(model) : null
   if (buckets !== null && typeof xTicks === 'number')
-    return { values: bucketTicks(buckets, xTicks) }
+    return { values: explicit ? strideKeepEnds(buckets, xTicks) : bucketTicks(buckets, xTicks) }
   if (model.log && model.extent) return { values: logTicks(model.extent[0], model.extent[1]) }
   if (model.band || model.kind === 'string')
     return { values: explicit ? strideKeepEnds(model.values, xTicks) : model.values }

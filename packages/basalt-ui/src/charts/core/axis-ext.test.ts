@@ -60,6 +60,12 @@ describe('x ticks on a band axis', () => {
     const days = [new Date(Date.UTC(2026, 0, 1)), new Date(Date.UTC(2026, 0, 2))]
     expect(matchBandKeys(days, [new Date(Date.UTC(2026, 0, 2))])).toEqual([days[1] as Date])
   })
+  test('a band of 30 days with ticks: 3 labels the first, middle and last day', () => {
+    const days = Array.from({ length: 30 }, (_, i) => new Date(Date.UTC(2026, 0, 1 + i)))
+    const guide = xGuide({ model: xScaleFor(days, true), xTicks: 3, cls: 'narrow' })
+    const values = (guide.axis as unknown as { ticks: { values: Date[] } }).ticks.values
+    expect(values.map((d) => d.getUTCDate())).toEqual([1, 16, 30])
+  })
   test('a continuous axis keeps the number as the tick count', () => {
     const guide = xGuide({ model: xScaleFor([0, 10, 20], false), xTicks: 4, cls: 'narrow' })
     expect((guide.axis as unknown as { ticks: { count: number } }).ticks.count).toBe(4)
