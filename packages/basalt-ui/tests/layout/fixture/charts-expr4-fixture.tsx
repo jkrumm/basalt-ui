@@ -96,6 +96,31 @@ function Table(props: { id: string; loading: boolean }) {
   )
 }
 
+function Ring() {
+  const focus = useChartFocus(items, { announce: (d) => d.name })
+  return (
+    <div data-testid="ex-ring" className="min-w-0">
+      <ChartCard
+        title="Ring"
+        chart={() => (
+          <div
+            {...focus.target}
+            aria-label="Items"
+            data-testid="ex-ring-target"
+            className="flex flex-col gap-2 px-2"
+          >
+            {items.slice(0, 3).map((d, i) => (
+              <div key={d.id} {...focus.item(i)} className="text-sm">
+                {d.name}
+              </div>
+            ))}
+          </div>
+        )}
+      />
+    </div>
+  )
+}
+
 function Fixture() {
   return (
     <main className="flex max-w-3xl min-w-0 flex-col gap-6 p-4 text-foreground">
@@ -105,6 +130,7 @@ function Fixture() {
       <Stat id="ex-stat-loading" phase="loading" />
       <Table id="ex-table-ready" loading={false} />
       <Table id="ex-table-loading" loading />
+      <Ring />
       <div data-testid="ex-figure" className="min-w-0">
         <ChartCard
           title="Figure"
