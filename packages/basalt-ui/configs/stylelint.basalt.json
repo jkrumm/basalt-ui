@@ -49,7 +49,7 @@
         "/.*/": [
           "/color-mix\\((?!\\s*in\\s+[a-z0-9-]+(?:\\s+(?:shorter|longer|increasing|decreasing)\\s+hue)?\\s*,\\s*(?:var\\(--vx-[a-z0-9-]+\\)|transparent)(?:\\s+[\\d.]+%)?\\s*,\\s*(?:var\\(--vx-[a-z0-9-]+\\)|transparent)(?:\\s+[\\d.]+%)?\\s*\\))/i"
         ],
-        "/^(?:scroll-)?(?:padding|margin)(?:-[a-z]+)*$|^(?:grid-)?(?:row-|column-)?gap$|^font(?:-size)?$/": [
+        "/^(?:scroll-)?(?:padding|margin)(?:-[a-z]+)*$|^(?:grid-)?(?:row-|column-)?gap$|^inset(?:-[a-z]+)*$|^(?:top|right|bottom|left)$|^font(?:-size)?$/": [
           "/(?<![\\w])[+-]?(?:\\d*\\.)?\\d+(?:px|rem|em|ex|ch|lh|rlh|cap|ic|vw|vh|vmin|vmax|vi|vb|[sld]v[whib]|[sld]vmin|[sld]vmax|cq[whib]|cqmin|cqmax|pt|pc|cm|mm|q|in)\\b/i",
           "/\\bcalc\\(/i"
         ],
@@ -61,7 +61,7 @@
         ]
       },
       {
-        "message": "Disallowed `%s: %s`. By property: padding, margin, gap and font size take a --vx token (or 0, auto, %), never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status or chart colour; color-mix runs over --vx tokens or transparent only; overflow auto|scroll is ui/scroll-area, or let Page own the scroll."
+        "message": "Disallowed `%s: %s`. By property: padding, margin, gap, inset (top, right, bottom, left) and font size take a --vx token (or 0, auto, %), never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status or chart colour; color-mix runs over --vx tokens or transparent only; overflow auto|scroll is ui/scroll-area, or let Page own the scroll."
       }
     ],
     "declaration-property-value-allowed-list": [
@@ -90,10 +90,11 @@
     ],
     "media-feature-name-disallowed-list": [
       [
-        "/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+)$/"
+        "/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+)$/",
+        "prefers-color-scheme"
       ],
       {
-        "message": "A viewport media feature (`%s`) keys layout on the window. Key on the container: `@container` with a named size (`@narrow`, `@regular`, `@wide`), or `useSizeClass()` for chrome."
+        "message": "The media feature `%s` keys styles on the window or the system scheme. A viewport feature: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`), or `useSizeClass()` for chrome. `prefers-color-scheme`: tokens switch per scheme, so use a `--vx-*` token instead of a dark fork."
       }
     ],
     "selector-disallowed-list": [
@@ -110,10 +111,12 @@
     "at-rule-disallowed-list": [
       [
         "utility",
-        "theme"
+        "theme",
+        "custom-variant",
+        "apply"
       ],
       {
-        "message": "`%s` adds to what the package owns: a utility class or a theme colour. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app), and compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet."
+        "message": "`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant or a class list the class rules check. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a dark variant is a `--vx-*` token instead; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet."
       }
     ]
   }
