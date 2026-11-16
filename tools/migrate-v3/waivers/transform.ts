@@ -26,7 +26,7 @@ const START = /(\/\/+|\/\*+)[ \t]*theme-allow(-file)?(?![\w-])/
 
 type Parsed = { ids: string[]; unknown: string | null; reason: string }
 
-/** `theme-allow [<id>[, <id>]…] [<separator>] <reason>`, the 2.x grammar (src/guard/index.ts). */
+/** `theme-allow [<id>[, <id>]…] [<separator>] <reason>`, the 2.x grammar (the plugin's parseThemeAllows). */
 function parseBody(body: string): Parsed {
   const ids: string[] = []
   let unknown: string | null = null

@@ -119,7 +119,7 @@ bun run lint               # oxlint: the repo on the 2.x config, then apps/playg
 bun run fmt                # oxfmt (write)
 bun run fmt:check          # oxfmt (check only)
 bun run typecheck          # tsc across package + playground (see the dist footgun below)
-bun run pre                # fmt:check && lint && typecheck && check-theme && budgets && literals, then `make test`: the unit suite in a host test slot
+bun run pre                # fmt:check && lint && typecheck && budgets && literals, then `make test`: the unit suite in a host test slot
 make check                 # build + pre + the layout suite + pack-test — the full local gate
 make check-fast            # `check` with only the layout files the branch's changes reach — the lead's check; CI runs the rest
 make layout-fast           # just that layout step (BASE=<ref>, default origin/master)
@@ -132,7 +132,7 @@ in part by `make layout-fast` (`scripts/layout-select.ts` picks the files by nam
 the tests named for a changed `src/` file, its folder or the fixture that imports it; a change no name places runs a
 6-file smoke set; a change no page can see, such as docs, scripts or unit tests, runs none). The pick is a heuristic, so CI
 holds the full suite. `make check` builds FIRST on
-purpose — `pre`'s `check-theme` and the playground's typecheck both resolve through `dist`, so a
+purpose — `pre`'s lint (it loads `basalt-ui/lint`) and the playground's typecheck both resolve through `dist`, so a
 check that built last would grade the previous build.
 
 **Package (`packages/basalt-ui`):**
@@ -144,8 +144,8 @@ cd packages/basalt-ui && bun run build   # dist-first tsup + styles.css copy + t
 **The dist-reads-not-src footgun spans two builds you have to trust in order:** the playground's
 typecheck resolves `basalt-ui/*` through `node_modules` → `dist/**/*.d.ts` even though Vite aliases
 it to `src/` for the running app, so a new/widened export is invisible to `bun run typecheck` until
-`bun run build` runs. `packages/basalt-ui/MAINTAINING.md` names the third footgun (`check-theme`) in the
-same family — build before trusting a typecheck or a theme check that spans both packages.
+`bun run build` runs. `packages/basalt-ui/MAINTAINING.md` names the third footgun (a CLI verb reading `dist`) in the
+same family — build before trusting a typecheck or a lint run that spans both packages.
 
 **Pack-test (the dist gate, runs in CI):** `bun pm pack` + scratch-install of the tarball. The
 playground only exercises `src/`, never `dist/` — the pack-test is what proves the published
@@ -154,7 +154,7 @@ artifact resolves.
 ## Validate
 
 `make check` is the local equivalent of CI (`.github/workflows/ci.yml`): it runs the generation sync
-checks, builds first, then `pre` (fmt:check + lint + typecheck + check-theme + check-budgets + unit
+checks, builds first, then `pre` (fmt:check + lint + typecheck + check-budgets + unit
 tests), the layout suite, the coverage and agent-doc-drift gates, and the pack-test. CI runs the same gates as parallel jobs (checks, unit, the layout suite sharded four ways with
 `bun test --shard`) behind one final `ci` job, so the run-level result `make merge-guard` reads still means
 everything passed. `make check` runs them in sequence and is unchanged; `make check-fast` is the same but for the layout
@@ -190,7 +190,7 @@ publishing is NOT a deploy — it is the release process (`make release`, below)
 
 ## Gotchas
 
-- **`dist` is read by typecheck and `check-theme`.** Both resolve `basalt-ui/*` through
+- **`dist` is read by typecheck and lint.** Both resolve `basalt-ui/*` through
   `node_modules → dist/*.d.ts`, so a new or widened export stays invisible until `make check` builds.
   Never trust a bare `bun run typecheck` on a cold tree — `make check` builds FIRST on purpose.
 - **Basalt-ui package changes are their own commit.** The lefthook `isolated-basalt-ui` hook fails a
