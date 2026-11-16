@@ -109,7 +109,8 @@ const PREMIXED_ALPHA = zoneAPremixed.map((name) => `*-${name}`)
 /**
  * The `message` option of the bought rules, where the rule's own advice names a fix another shipped
  * rule reports (lint-1.16): `use margin here` against app-spacing, `w-120` against fixed-width, a new
- * `--color-<name>` against the derived palette. Bridge keeps the default where it has no such rule.
+ * `--color-<name>` against the derived palette, `declare it with @utility` against the stylesheet's
+ * at-rule ban (lint-3.12). Bridge keeps the default where it has no such rule.
  * `{{suggestions|...}}` is a universal slot, so it never prints raw.
  */
 export const SHADCN_MESSAGES: Readonly<
@@ -126,6 +127,9 @@ export const SHADCN_MESSAGES: Readonly<
       '"{{className}}" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container.',
     'no-raw-colors':
       '"{{className}}" is read as a colour the theme does not declare, and app code takes colour from components. Use Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling.',
+    // One string for the unknown class and the unknown variant; `rounded-card` is surface-recipe's to report.
+    'no-unknown-classes':
+      '"{{className}}" is not a class or variant this project\'s Tailwind knows, so no CSS is generated for it. Nearest: {{suggestions|none, check the spelling}}. A radius is rounded-ctrl or rounded-chip, and a card surface (border, radius, shadow) is owned by Card and Inset; no class or variant is declared per app.',
   }
   return {
     bridge: {
