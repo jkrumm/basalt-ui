@@ -14,6 +14,7 @@ import { extname, join, resolve } from 'node:path'
 import { chromium } from 'playwright-core'
 import type { Browser, BrowserContext, BrowserServer, Page } from 'playwright-core'
 import { themeScript } from '../../../src/css/theme-script'
+import { readTestBrowser, testBrowserOptions } from '../../support/test-browser'
 import { PLAYGROUND, REPO } from './routes'
 
 const OFFENDERS = resolve(import.meta.dirname, 'offenders')
@@ -175,19 +176,21 @@ export async function bootMatrix(): Promise<MatrixHarness | null> {
   let chromeProcess: BrowserServer
   let browser: Browser
   try {
-    chromeProcess = await chromium.launchServer({
-      channel: 'chrome',
-      chromiumSandbox: !process.env['CI'],
-    })
+    chromeProcess = await chromium.launchServer(testBrowserOptions(readTestBrowser()))
     browser = await chromium.connect(chromeProcess.wsEndpoint())
   } catch (error) {
     server.stop(true)
     await rm(dir, { recursive: true, force: true })
     if (process.env['CI']) {
-      throw new Error('FAILED: could not launch Google Chrome and CI is set.', { cause: error })
+      throw new Error(
+        'FAILED: could not launch the test browser and CI is set (make browser-shell).',
+        { cause: error },
+      )
     }
     // oxlint-disable-next-line no-console -- a skipped gate must announce itself
-    console.warn('[matrix] SKIPPED: no Google Chrome found (CI runs it regardless).')
+    console.warn(
+      '[matrix] SKIPPED: no test browser found, run `make browser-shell` (CI runs it regardless).',
+    )
     return null
   }
 
