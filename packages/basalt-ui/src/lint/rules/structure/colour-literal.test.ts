@@ -112,7 +112,7 @@ describe('forms', () => {
     expect(fixes['query-client-singleton']).toContain('createQueryClient')
     expect(fixes['chart-data-fallback']).toContain('phase')
     expect(fixes['timer-refetch']).toContain('liveQuery')
-    expect(fixes['raw-storage-write']).toContain('createPersistedState')
+    expect(fixes['raw-storage-write']).toContain('persisted(key)')
   })
 })
 

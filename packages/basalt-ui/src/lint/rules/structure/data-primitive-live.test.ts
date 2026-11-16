@@ -26,7 +26,7 @@ tester.run('data-primitive live clauses', rule, {
   valid: [
     // staleTime 'static': the class, Infinity, a plain queryOptions, a non-query object
     `const o = liveQuery(queryOptions({ queryKey: ['a'], queryFn }), 'static')`,
-    `const o = liveQuery(queryOptions({ queryKey: ['a'], queryFn, staleTime: Infinity }), 'standard')`,
+    `const q = useQuery({ queryKey: ['a'], queryFn, staleTime: Infinity })`,
     `const o = queryOptions({ queryKey: ['a'], queryFn, staleTime: 'static' })`,
     `const label = { staleTime: 'static' }`,
     // refetchIntervalInBackground: the class, no key
@@ -38,6 +38,10 @@ tester.run('data-primitive live clauses', rule, {
     `import { Transport } from 'basalt-ui'\nexport const t = () => new WebSocket(url)`,
   ],
   invalid: [
+    {
+      code: `const o = liveQuery(queryOptions({ queryKey: ['a'], queryFn, staleTime: Infinity }), 'standard')`,
+      errors: [{ messageId: 'live-static-stale-time' }],
+    },
     {
       code: `const o = liveQuery(queryOptions({ queryKey: ['a'], queryFn, staleTime: 'static' }), 'standard')`,
       errors: [{ messageId: 'live-static-stale-time' }],

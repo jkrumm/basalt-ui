@@ -29,3 +29,14 @@ const id = setTimeout(() => setOpen(false), 300)
 
 // @valid
 queryClient.invalidateQueries({ queryKey: ['gyms'] })
+
+// @invalid
+setInterval(() => void router.invalidate(), 15_000)
+
+// @invalid
+window.setTimeout(() => {
+  router.invalidate()
+}, 1000)
+
+// @valid
+router.invalidate()
