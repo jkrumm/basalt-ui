@@ -12,7 +12,7 @@ Every value is a token and the palette is derived, never authored; each bullet n
 ## Colour
 
 - Write no hex, `rgb()`, `hsl()` or `oklch()` literal; use a `VX.*` token, `alpha(VX.x, n)` or the app's series file. [lint:colour-literal]
-- Ink on a brand fill is `on-brand`; never `text-white` or `text-black`. [lint:fixed-colour]
+- A brand fill and its ink come from `Button` variant primary or `Status` in app code; `on-brand` is bridge-only. Never `text-white` or `text-black`. [lint:fixed-colour]
 - Never fork a colour with `dark:`; tokens switch per scheme, so add the token. [lint:dark-fork]
 - A status colour is a fill or a tone prop, never text; text takes `text-good` or `text-brand`. [lint:status-fill-as-text]
 - App code takes colour from the status components, never an arbitrary or raw colour class. [lint:tw-off-law]
