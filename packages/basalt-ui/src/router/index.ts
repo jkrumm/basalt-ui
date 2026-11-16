@@ -3,6 +3,8 @@
 export { defineNav } from './nav/define-nav'
 export { defineControls } from './controls/define'
 export type { Controls, FieldHandle, SearchOf } from './controls/define'
+export type { ControlHandle } from '../core/ports'
+export type { PushField } from '../page/contract'
 export { field } from './controls/field'
 export type { RangeValue } from './controls/codec'
 export { navTarget } from './nav-target'
