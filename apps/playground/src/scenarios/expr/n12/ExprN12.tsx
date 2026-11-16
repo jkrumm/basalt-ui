@@ -1,9 +1,10 @@
 import { StatCell, StatGroup } from 'basalt-ui/cards'
 import { Bars, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import type { ChartFigure } from 'basalt-ui/charts'
-import { date, duration, time } from 'basalt-ui/format'
+import { createFormat } from 'basalt-ui'
 import { Page, PageBar, QueryState } from 'basalt-ui/page'
 import type { ComponentProps } from 'react'
+import { PAGE_FORMAT } from '../../../demo/page-format'
 import { SLEEP_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
 import { NEED_MIN, SHORT_RATIO, STAGES, buildNights, shortStages, usualOf } from './fixture'
@@ -12,9 +13,11 @@ import type { Night, Stage } from './fixture'
 type Phase = ComponentProps<typeof QueryState>['phase']
 
 const LABEL: Record<Stage, string> = { deep: 'Deep', light: 'Light', rem: 'REM', awake: 'Awake' }
-const HM = (min: number) => duration(min * 60, { style: 'compact', largest: 'hour' })
-const DAY = (d: Date) => date(d, { format: 'short', timeZone: 'UTC' })
-const CLOCK = (d: Date) => time(d, { format: 'short', timeZone: 'UTC' })
+const FMT = createFormat(PAGE_FORMAT)
+const HM = (min: number) =>
+  `${Math.floor(min / 60)}h ${String(Math.round(min % 60)).padStart(2, '0')}m`
+const DAY = (d: Date) => FMT.date(d, 'short')
+const CLOCK = (d: Date) => FMT.time(d, { hour: '2-digit', minute: '2-digit' })
 
 const EMPTY = {
   cause: 'No nights logged yet. Wear your tracker tonight and the first night appears tomorrow.',

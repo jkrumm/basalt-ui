@@ -13,7 +13,7 @@ the theme's config knobs (see the `basalt-tokens` rule) — so nothing here rest
 means "inherits the basalt-ui defaults unchanged."**
 
 - **Accent hue:** default (the shipped seed; a single-series mark stays neutral)
-- **Theme knobs:** _(none — `createBasaltTheme()` bare)_ — every `derive`/`fonts`/`radius`/`density`
+- **Theme knobs:** _(none — the bare defaults)_ — every `derive`/`fonts`/`radius`/`density`
   level is 0, the everyday-iteration surface for the package's own defaults.
 
 ## Series dictionary

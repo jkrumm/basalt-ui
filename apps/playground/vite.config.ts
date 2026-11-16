@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { mergeConfig } from 'vite'
 import type { Plugin } from 'vite'
 
-// `basaltViteConfig` supplies the shared spine (Mantine dedupe + optimizeDeps, strictPort dev
+// `basaltViteConfig` supplies the shared spine (React dedupe, strictPort dev
 // server, the __APP_VERSION__ define). Plugins stay app-side — the preset deliberately ships none.
 //
 // `basaltSrc` aliases the `basalt-ui` import to the package's `src/`, so the playground exercises

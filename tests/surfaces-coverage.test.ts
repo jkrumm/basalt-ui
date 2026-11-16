@@ -8,10 +8,9 @@
  *     agent/skills/{skill}/SKILL.md (skills ship in the npm package, placed by init/sync).
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
  *  6. Every surface with non-empty forbiddenImports has a globs field.
- *  7. Every headless surface is Mantine-free — via all 3 forbiddenImports bans, OR (for
- *     TOKEN_LAYER_BOUNDARY_SURFACES members, ./charts/./tokens) exemption backed by the repo-
- *     local-only basalt/token-layer-boundary plugin rule's LIVE registration — verified here, not
- *     in checkCoverage() itself (see scripts/check-coverage.ts's assertion-7 comment for why it can't).
+ *  7. The token-layer boundary (./charts, ./tokens) rests on the repo-local-only
+ *     basalt/token-layer-boundary plugin rule's LIVE registration — verified here, not in
+ *     checkCoverage() itself (a shipped CLI subcommand cannot read the repo-local config).
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
  *
  * Uses checkCoverage() as the primary gate (exit-code assertion), then redundant structural
@@ -142,8 +141,7 @@ describe('subpath export coverage', () => {
 // verify this itself, since it must run from inside a consumer's node_modules, where the
 // repo-local `.oxlintrc.json` path resolves to the CONSUMER's own config.
 
-describe('headless Mantine-ban coverage', () => {
-  const REQUIRED_MANTINE_BANS = ['@mantine/core', '@mantine/hooks', '@mantine/*'] as const
+describe('token-layer boundary coverage', () => {
   const repoConfig = JSON.parse(readFileSync(join(root, '.oxlintrc.json'), 'utf8')) as {
     rules?: Record<string, unknown>
   }
@@ -170,19 +168,6 @@ describe('headless Mantine-ban coverage', () => {
   it('every member of TOKEN_LAYER_BOUNDARY_SURFACES is thereby covered', () => {
     expect(tokenLayerBoundaryRegistered).toBe(true)
     expect([...TOKEN_LAYER_BOUNDARY_SURFACES].toSorted()).toEqual(['./charts', './tokens'])
-  })
-
-  it('every headless surface is Mantine-free (forbiddenImports, or exemption for TOKEN_LAYER_BOUNDARY_SURFACES members)', () => {
-    const missing: string[] = []
-    for (const [key, spec] of Object.entries(SURFACES)) {
-      if (spec.layer !== 'headless') continue
-      if (TOKEN_LAYER_BOUNDARY_SURFACES.has(key)) continue
-      for (const required of REQUIRED_MANTINE_BANS) {
-        const hasBan = spec.forbiddenImports.some((fi) => fi.spec === required)
-        if (!hasBan) missing.push(`${key} missing ban for '${required}'`)
-      }
-    }
-    expect(missing).toEqual([])
   })
 })
 
