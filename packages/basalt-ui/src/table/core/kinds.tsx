@@ -78,7 +78,11 @@ export type EntityOptions<T> = CommonOptions & {
    */
   width?: 'content'
 }
-export type TextOptions = CommonOptions & { filter?: 'text' }
+export type TextOptions = CommonOptions & {
+  filter?: 'text'
+  /** The text of a stored value in the cell and the phone card; the stored value without an entry. Sort and search read the stored value. */
+  labels?: Readonly<Record<string, string>>
+}
 /** A numeric kind's footer: client mode reduces the filtered rows, server mode reads `totals`. */
 export type FooterOption = { footer?: Aggregate }
 export type NumberOptions = CommonOptions & FooterOption & { unit?: string; digits?: number }
@@ -145,7 +149,7 @@ const OPTION_KEYS: Readonly<
   Record<KindName, { allowed: readonly string[]; required: readonly string[] }>
 > = {
   entity: { allowed: [...COMMON, 'href', 'icon', 'sub', 'filter', 'width'], required: [] },
-  text: { allowed: [...COMMON, 'filter'], required: [] },
+  text: { allowed: [...COMMON, 'filter', 'labels'], required: [] },
   number: { allowed: [...COMMON, 'unit', 'digits', 'footer'], required: [] },
   money: { allowed: [...COMMON, 'currency', 'footer'], required: ['currency'] },
   date: { allowed: [...COMMON, 'style'], required: [] },
@@ -391,7 +395,7 @@ export function col<T>(): Col<T> {
         },
       ),
     text: (key, o) =>
-      keyed<T>('text', key, o, (v) => String(v), {
+      keyed<T>('text', key, o, (v) => o?.labels?.[String(v)] ?? String(v), {
         spec: { filter: o?.filter === 'text' ? 'contains' : null },
       }),
     number: (key, o) =>
