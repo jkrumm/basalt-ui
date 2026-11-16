@@ -18,6 +18,7 @@ import { BulkBar } from './bulk-bar'
 import { DataTableFooter, hasFooter } from './footer'
 import { VirtualTable } from './virtual'
 import { DataTableHead, visibleColumns } from './head'
+import { RowFocusProvider, clearOnBlur } from './row-focus'
 import { TablePager } from './pager'
 import { revealFocus, scrollMinWidth, tierAttributesOf, warnWithoutTierSheet } from './tiers'
 import { modelOf } from '../use-data-table'
@@ -95,6 +96,7 @@ export function DataTable<T>({
   detail,
   height = 'auto',
   virtual,
+  focus,
 }: DataTableProps<T>): ReactElement {
   const model = modelOf(table)
   const scrolls = typeof height === 'object' || height === 'fill' || model.phone === 'scroll'
@@ -104,98 +106,105 @@ export function DataTable<T>({
   // A row is a tab stop (roving) once there are rows to activate; before that the scroller is.
   const focusable = model.rows.length > 0 && (phase.tag === 'ready' || phase.tag === 'stale')
   const footerShown = hasFooter(model) && phase.tag === 'ready'
+  const onBlur = clearOnBlur(focus)
   const windowed = virtual !== undefined && (phase.tag === 'ready' || phase.tag === 'stale')
 
   if (windowed) {
     return (
+      <RowFocusProvider focus={focus} getRowId={model.getRowId}>
+        <div
+          data-slot="table-root"
+          data-phase={phase.tag}
+          data-contained=""
+          data-virtual=""
+          data-full-at={model.plan.fullAt ?? undefined}
+          {...tierAttributesOf(model)}
+          onFocus={revealFocus}
+          onBlur={onBlur}
+          // One row size holds the window exact: a windowed table never projects to cards (a card
+          // is as tall as its content) and its cells hold one line; narrow, it scrolls sideways.
+          data-phone="scroll"
+          data-refresh-failed={phase.tag === 'stale' && phase.refreshFailed ? '' : undefined}
+          // A windowed body needs a bounded port: a `fill` table takes the height of its parent.
+          className={cn(
+            'flex max-w-full min-w-0 flex-col [&_[data-slot=table-cell]]:whitespace-nowrap',
+            height === 'fill' && 'h-full min-h-0 flex-1',
+          )}
+        >
+          <BulkBar table={table} />
+          {/* theme-allow hidden-inline-style — the scrollport height and the scroll tier's min width are per-table values */}
+          <div
+            data-slot="table-scroller"
+            ref={warnWithoutTierSheet}
+            style={{ ...scrollportStyle(height), ...scrollMinWidth(model) }}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            <VirtualTable
+              model={model}
+              virtual={virtual}
+              detail={detail}
+              head={
+                <>
+                  <Columns model={model} />
+                  <DataTableHead table={table} rowIndex={1} />
+                </>
+              }
+              footer={<DataTableFooter table={table} rowIndex={model.items.length + 2} />}
+              footerShown={footerShown}
+              colcount={colcount}
+              tabStop={!focusable}
+            />
+          </div>
+          <TablePager table={table} />
+        </div>
+      </RowFocusProvider>
+    )
+  }
+
+  return (
+    <RowFocusProvider focus={focus} getRowId={model.getRowId}>
       <div
         data-slot="table-root"
         data-phase={phase.tag}
         data-contained=""
-        data-virtual=""
         data-full-at={model.plan.fullAt ?? undefined}
         {...tierAttributesOf(model)}
         onFocus={revealFocus}
-        // One row size holds the window exact: a windowed table never projects to cards (a card
-        // is as tall as its content) and its cells hold one line; narrow, it scrolls sideways.
-        data-phone="scroll"
+        onBlur={onBlur}
         data-refresh-failed={phase.tag === 'stale' && phase.refreshFailed ? '' : undefined}
-        // A windowed body needs a bounded port: a `fill` table takes the height of its parent.
-        className={cn(
-          'flex max-w-full min-w-0 flex-col [&_[data-slot=table-cell]]:whitespace-nowrap',
-          height === 'fill' && 'h-full min-h-0 flex-1',
-        )}
+        className="flex max-w-full min-w-0 flex-col"
       >
         <BulkBar table={table} />
         {/* theme-allow hidden-inline-style — the scrollport height and the scroll tier's min width are per-table values */}
         <div
           data-slot="table-scroller"
           ref={warnWithoutTierSheet}
+          role="region"
+          aria-label={model.label}
+          // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrolling region must be keyboard reachable (axe scrollable-region-focusable)
+          tabIndex={scrolls && !focusable ? 0 : undefined}
           style={{ ...scrollportStyle(height), ...scrollMinWidth(model) }}
-          className="flex min-h-0 flex-1 flex-col"
+          className={
+            typeof height === 'object' || height === 'fill'
+              ? 'min-h-0 flex-1 overflow-auto overscroll-contain'
+              : undefined
+          }
         >
-          <VirtualTable
-            model={model}
-            virtual={virtual}
-            detail={detail}
-            head={
-              <>
-                <Columns model={model} />
-                <DataTableHead table={table} rowIndex={1} />
-              </>
-            }
-            footer={<DataTableFooter table={table} rowIndex={model.items.length + 2} />}
-            footerShown={footerShown}
-            colcount={colcount}
-            tabStop={!focusable}
-          />
+          <Table
+            role="table"
+            aria-colcount={colcount}
+            aria-busy={phase.tag === 'loading' || undefined}
+            className="table-fixed"
+          >
+            <TableCaption className="sr-only">{model.label}</TableCaption>
+            <Columns model={model} />
+            <DataTableHead table={table} />
+            <DataTableBody table={table} {...(detail !== undefined && { detail })} />
+            <DataTableFooter table={table} />
+          </Table>
         </div>
         <TablePager table={table} />
       </div>
-    )
-  }
-
-  return (
-    <div
-      data-slot="table-root"
-      data-phase={phase.tag}
-      data-contained=""
-      data-full-at={model.plan.fullAt ?? undefined}
-      {...tierAttributesOf(model)}
-      onFocus={revealFocus}
-      data-refresh-failed={phase.tag === 'stale' && phase.refreshFailed ? '' : undefined}
-      className="flex max-w-full min-w-0 flex-col"
-    >
-      <BulkBar table={table} />
-      {/* theme-allow hidden-inline-style — the scrollport height and the scroll tier's min width are per-table values */}
-      <div
-        data-slot="table-scroller"
-        ref={warnWithoutTierSheet}
-        role="region"
-        aria-label={model.label}
-        // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrolling region must be keyboard reachable (axe scrollable-region-focusable)
-        tabIndex={scrolls && !focusable ? 0 : undefined}
-        style={{ ...scrollportStyle(height), ...scrollMinWidth(model) }}
-        className={
-          typeof height === 'object' || height === 'fill'
-            ? 'min-h-0 flex-1 overflow-auto overscroll-contain'
-            : undefined
-        }
-      >
-        <Table
-          role="table"
-          aria-colcount={colcount}
-          aria-busy={phase.tag === 'loading' || undefined}
-          className="table-fixed"
-        >
-          <TableCaption className="sr-only">{model.label}</TableCaption>
-          <Columns model={model} />
-          <DataTableHead table={table} />
-          <DataTableBody table={table} {...(detail !== undefined && { detail })} />
-          <DataTableFooter table={table} />
-        </Table>
-      </div>
-      <TablePager table={table} />
-    </div>
+    </RowFocusProvider>
   )
 }

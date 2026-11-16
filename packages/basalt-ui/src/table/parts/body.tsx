@@ -24,6 +24,7 @@ import { GroupRow } from './group-row'
 import type { BodyItem } from './group-row-model'
 import { useDetailHost } from './detail-sheet'
 import { EmptyRow, ErrorRow, LoadingRows, OfflineRow } from './phases'
+import { useRowFocusLeave, useRowFocusProps } from './row-focus'
 import { SelectCell } from './select-cell'
 import { TickCell } from './tick-column'
 
@@ -167,7 +168,7 @@ export function DataRow<T>({
   const offset = selection === undefined ? 1 : 2
   const ticked = selection?.isSelected(row.id) === true
   const active = model.activeId === row.id
-  const rowProps = keyboard.rowProps(row.id)
+  const rowProps = useRowFocusProps(row.id, keyboard.rowProps(row.id))
   // Controls in a row are tab stops only in the roving stop; a table without one leaves them all.
   const tabbable = rowProps.tabIndex !== -1
   return (
@@ -283,8 +284,13 @@ export function DataTableBody<T>({
 }): ReactElement {
   const model = modelOf(instance)
   const sheet = useDetailHost(model, detail)
+  const onPointerLeave = useRowFocusLeave()
   return (
-    <TableBody role="rowgroup" {...model.keyboard.rootProps}>
+    <TableBody
+      role="rowgroup"
+      {...model.keyboard.rootProps}
+      {...(onPointerLeave !== undefined && { onPointerLeave })}
+    >
       <PhaseBoundary fallback={({ reset }) => <ErrorRow model={model} retry={reset} />}>
         <Arm model={model} />
       </PhaseBoundary>

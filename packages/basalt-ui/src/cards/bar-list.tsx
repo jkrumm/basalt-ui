@@ -1,7 +1,8 @@
-import type { ReactElement } from 'react'
+import type { FocusEvent, KeyboardEvent, LiHTMLAttributes, PointerEvent, ReactElement } from 'react'
 import { AppLink } from '../core/link'
 import { cn } from '../core/cn'
 import type { FrameState } from '../core/phase'
+import type { ListFocus } from '../core/ports'
 import { useFormat } from '../core/format'
 import { useMessages } from '../core/messages/use-messages'
 import { lists } from '../core/messages/lists'
@@ -37,6 +38,13 @@ export type BarListProps = FrameHead &
     rows?: ListRows
     /** Formats each value. Default: the number in the provider's locale. */
     format?: (value: number) => string
+    /**
+     * A chart's focus (`useChartFocus(items, …)`): row i is `focus.items[i]`, so pass the list in the
+     * same order as the chart's items. Pointing at a row focuses its item, an item focused elsewhere
+     * marks its row, and the list becomes one tab stop whose arrow keys, Home, End and Escape step
+     * the shared focus.
+     */
+    focus?: ListFocus<unknown>
   }
 
 /** A row of body height, in `h-10` (40 px): the label line, a gap and the 4 px track. */
@@ -44,6 +52,50 @@ const ROW = 'flex h-10 w-full min-w-0 flex-col justify-center gap-1.5 rounded-ct
 
 const TARGET =
   'cursor-pointer border-0 bg-transparent text-left text-foreground no-underline hover:bg-accent focus-ring focus-visible:-outline-offset-2'
+
+/** The row's share of a chart's focus: only the keys a list row takes (never the chart's dimming). */
+function rowFocus(
+  focus: ListFocus<unknown>,
+  i: number,
+): LiHTMLAttributes<HTMLLIElement> & {
+  ref: (element: Element | null) => void
+} {
+  const item = focus.item(i)
+  return {
+    ref: item.ref,
+    onPointerEnter: item.onPointerEnter,
+    onPointerDown: item.onPointerDown,
+    onFocus: () => focus.set(i),
+    ...(item['data-focused'] !== undefined && { 'data-focused': '' }),
+  } as LiHTMLAttributes<HTMLLIElement> & { ref: (element: Element | null) => void }
+}
+
+/** The list's own keys, when it is one tab stop for the shared focus. */
+function listFocus(focus: ListFocus<unknown>): {
+  tabIndex: 0
+  onKeyDown: (event: KeyboardEvent<HTMLUListElement>) => void
+  onBlur: (event: FocusEvent<HTMLUListElement>) => void
+  onPointerLeave: (event: PointerEvent<HTMLUListElement>) => void
+} {
+  return {
+    tabIndex: 0,
+    onKeyDown: (event) => {
+      if (event.target !== event.currentTarget) return
+      const next = focus.step(event.key)
+      if (next === undefined) return
+      event.preventDefault()
+      focus.set(next)
+    },
+    onBlur: (event) => {
+      const to = event.relatedTarget
+      if (to instanceof Node && event.currentTarget.contains(to)) return
+      focus.set(null)
+    },
+    onPointerLeave: (event) => {
+      if (event.pointerType !== 'touch') focus.set(null)
+    },
+  }
+}
 
 const isWhole = (items: readonly BarListItem[], max: number | undefined): boolean => {
   if (max === undefined || max <= 0) return false
@@ -89,7 +141,7 @@ function BarSkeleton({ rows }: { rows: number }): ReactElement {
  * />
  */
 export function BarList(props: BarListProps): ReactElement {
-  const { items, max, rows = DEFAULT_ROWS, format, phase, empty } = props
+  const { items, max, rows = DEFAULT_ROWS, format, phase, empty, focus } = props
   const { title, subtitle, icon, info } = props
   const f = useFormat()
   const t = useMessages(lists)
@@ -122,9 +174,16 @@ export function BarList(props: BarListProps): ReactElement {
                   aria-label={title}
                   data-whole={whole ? '' : undefined}
                   className="m-0 list-none p-0"
+                  // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- with a shared focus the list is the one tab stop that steps it
+                  {...(focus !== undefined && listFocus(focus))}
                 >
                   {items.map((item, i) => (
-                    <li key={item.key ?? `${item.label}-${i}`} data-slot="bar-list-row">
+                    <li
+                      key={item.key ?? `${item.label}-${i}`}
+                      data-slot="bar-list-row"
+                      {...(focus !== undefined && rowFocus(focus, i))}
+                      className={focus === undefined ? undefined : '[&[data-focused]>*]:bg-accent'}
+                    >
                       <Row
                         item={item}
                         percent={percentOf(item.value, scale)}

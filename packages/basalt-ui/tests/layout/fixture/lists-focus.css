@@ -1,0 +1,11 @@
+/*
+ * The `lists-focus` fixture's Tailwind v4 entry, compiled WITH preflight like a Tailwind consumer.
+ * `lists-focus.layout.test.ts` compiles it into a temp directory and inlines the tier sheet
+ * `src/table/table.css` beside it.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './lists-focus-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/table';
+@source '../../../src/cards';
+@source '../../../src/charts/parts';

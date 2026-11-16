@@ -26,6 +26,7 @@ import type { DetailHost, VirtualItem, VirtualLike } from '../../core/ports'
 import { TableCaption, tableVariants } from '../../ui/table'
 import type { TableModel } from '../use-data-table'
 import { BodyItemRow, cellEnvOf } from './body'
+import { useRowFocusLeave } from './row-focus'
 
 /** The row height until the first row is measured: `--vx-row-h` at the default density. */
 export const FALLBACK_ROW_PX = 40
@@ -136,6 +137,7 @@ export function VirtualTable<T>({
   })
 
   const env = cellEnvOf(model)
+  const onPointerLeave = useRowFocusLeave()
   const { items } = model
   const kept = keptIndex(model)
   return (
@@ -155,7 +157,11 @@ export function VirtualTable<T>({
           'aria-busy': busy || undefined,
           className: cn(tableVariants(), 'table-fixed'),
         }}
-        bodyProps={{ 'data-slot': 'table-body', role: 'rowgroup' }}
+        bodyProps={{
+          'data-slot': 'table-body',
+          role: 'rowgroup',
+          ...(onPointerLeave !== undefined && { onPointerLeave }),
+        }}
         head={
           <>
             <TableCaption ref={caption} className="sr-only">
