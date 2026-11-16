@@ -1,0 +1,18 @@
+{
+  "why": "Dogfood cycle 2 (docs/v3/cycles/dogfood-2.md, P2 dogfood-2.6): on a phone a `PageAside` bound to a string field shows its header button while the field is empty, and a tap opens nothing: there is no record to show (`probe-phone-issue-chip--light--390x844.png`; `.evidence/cycle-dogfood-2/probe.log`, probe4). On `/cycle/dogfood-2` at 390 px the header reads `Issue` on every load. The console shows the peek only while an Issue is open.",
+  "what": "A record aside shows no phone header button while no record is open.",
+  "owns": [
+    "packages/basalt-ui/src/shell/* (the aside's phone sheet and its header button)",
+    "packages/basalt-ui/src/page/page-aside.tsx (what the region claim carries)",
+    "their tests and one layout test"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "At the compact size, a `PageAside` whose `state` is a string field draws no header button while the field is empty, and draws it (opening the sheet) while the field holds an id or a detail entry is shown. A boolean-bound or unbound aside keeps today's button.",
+  "commits": "fix: commits in packages/basalt-ui.",
+  "proof": "make check-fast; a layout test at 390 px.",
+  "acceptance": [
+    "At 390 px /cycle/dogfood-2 shows no `Issue` header button, and /cycle/dogfood-2?issue=login-crash shows the sheet (layout test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Focus after close (v3-shell-1-shell)."
+}

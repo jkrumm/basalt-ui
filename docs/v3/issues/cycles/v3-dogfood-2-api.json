@@ -1,0 +1,20 @@
+{
+  "why": "Dogfood cycle 2 (docs/v3/cycles/dogfood-2.md) logged one P2 `api` finding and three P3. dogfood-2.5: a client table filtered by page controls cannot take them: the page filters the rows by its three store fields (11 lines) and writes Clear filters (5 lines) for the table's `empty.filtered` (`apps/playground/src/cycle/dogfood-2/FlowOverview.tsx:177`, `:183`), the same code as `cycle/state-3/OrdersPage.tsx:48`, so every app with Section filters over a table repeats it. P3 dogfood-2.10 (was dogfood-1.18): the detail's aside header has no link to the record's full page. P3 dogfood-2.11: `c.text` takes no `labels`, so a row carries a mapped label field (`FlowOverview.tsx:172`). P3 dogfood-2.12 (was dogfood-1.17): an active filter pill shows its value alone (`pearl •`, not `Project: pearl`) and no option shows its count.",
+  "what": "A client table filters by the page's fields itself; the P3s that fit.",
+  "owns": [
+    "packages/basalt-ui/src/table/use-data-table.ts, src/table/contract.ts (with a `chore: contract amendment` commit first)",
+    "packages/basalt-ui/src/table/core/kinds*.ts (`c.text` labels), if the P3 fits",
+    "packages/basalt-ui/src/controls/* (the active pill label, option counts), if the P3 fits",
+    "the generated docs and export-surface snapshots they change, unit and layout tests"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) `useDataTable` on a client table takes the page's filter fields, each with a row predicate (for example `filters: [{ field: store.field.project, match: (row, v) => row.project === v }]`), filters the rows by every field off its default, and with no rows left draws the filtered empty arm with Clear filters that clears exactly those fields (dogfood-2.5). The shape is the implementer's, typed so a predicate's value is the field's value. (2) If they fit: a full-page link on a detail entry or on `PageAside` (2.10); `labels` on `c.text` as on `c.status` (2.11); an active filter pill keeps its label, and a filter spec can carry option counts (2.12). Left out, the PR says so.",
+  "commits": "chore: contract amendment first; then feat: commits in packages/basalt-ui with their regenerated docs.",
+  "proof": "make check-fast; a type test of the predicate's value type; a unit test that Clear filters clears the bound fields.",
+  "acceptance": [
+    "A client table filters by bound page fields without page code, and its Clear filters clears them (unit test)",
+    "The PR states which P3s it fixed",
+    "make check passes"
+  ],
+  "out_of_scope": "Server-mode filtering; the deep-link detail (v3-dogfood-2-deep-link)."
+}

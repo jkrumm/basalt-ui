@@ -1,0 +1,20 @@
+{
+  "why": "Dogfood cycle 2 (docs/v3/cycles/dogfood-2.md) logged one P2 `visual` finding and two P3. dogfood-2.3: at 1800 px the Issues table gives Issue, Project, Kind and Origin 215 px each and Age 104 px, so the relative-time cells cut to `42 minutes…`, `7 minutes …`, `30 minutes…` while `#657` sits in 215 px (`cycle-dogfood-2--dark--1800x1200.png`; `.evidence/cycle-dogfood-2/probe.log`, probe). P3 dogfood-2.4 (was dogfood-1.15): `Sparkline` has no bar form, so the console's Queued `MiniBars` draw as a line, and no future segment, so Working's planned samples draw as past. P3 dogfood-2.9: a page whose `PageBar` holds only a title keeps an empty band of about 60 px above its content at 1800 and 390 px, where the console starts content under its header.",
+  "what": "A relative-time column shows its whole phrase; the stat sparkline draws bars and a future; a title-only page wastes no band.",
+  "owns": [
+    "packages/basalt-ui/src/table/core/kinds*.ts and the column width plan (widths only)",
+    "packages/basalt-ui/src/charts/parts/sparkline*.tsx, if the P3 fits",
+    "packages/basalt-ui/src/page/page.tsx (the band inset), if the P3 fits",
+    "unit and layout tests beside them"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) A `relativeTime` column is at least as wide as its longest phrase at the table's locale (`30 minutes ago`), and a short text column gives width up before it (dogfood-2.3). (2) If it fits: `Sparkline form=\"bar\"` and a dashed segment after `futureFrom` (dogfood-2.4); a page whose `PageBar` shows nothing in the band starts its content at the band's top, unless the one content start rule (`v3-shell-1-visual`) forbids it, in which case `page.md` says why (dogfood-2.9). Left out, the PR says so.",
+  "commits": "fix: commits in packages/basalt-ui.",
+  "proof": "make check-fast; a layout test of the column widths; shots of /cycle/dogfood-2.",
+  "acceptance": [
+    "At 1800 px no Age cell of /cycle/dogfood-2 is truncated (layout test)",
+    "The PR states which P3 it fixed",
+    "make check passes"
+  ],
+  "out_of_scope": "A per-column width option (wiring-3-visual's scope); the console's MiniBars as a part of its own."
+}

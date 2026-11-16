@@ -1,0 +1,19 @@
+{
+  "why": "Dogfood cycle 2 (docs/v3/cycles/dogfood-2.md, P1 dogfood-2.2): a deep link to a table row's detail loses itself. On `/cycle/dogfood-2?issue=login-crash` the table opens #642's detail in the page's `PageAside`, and within 500 ms the URL reads `/cycle/dogfood-2` while the aside still shows `Issue #642`; row #642 carries no `aria-current` and no selected state. A reload or a copied link after that shows nothing, and the screen and the URL disagree. A click on a row keeps `?issue=<id>` and marks the row, so only the load path fails. The result is the same with `PageAside state` bound to the field and without it (`.evidence/cycle-dogfood-2/probe.log`, probe3 and probe5, in the cycle's worktree). The suspect is `src/table/use-data-table.ts:411`: `closeDetail(hostClosed)` clears the field once a row has shown, and the host calls it while the deep-linked detail is still open.",
+  "what": "A deep-linked row detail keeps its id in the URL while it shows, and its row is marked.",
+  "owns": [
+    "packages/basalt-ui/src/table/use-data-table.ts (the `detailState` effect and `closeDetail`)",
+    "packages/basalt-ui/src/page/page-aside.tsx and src/page/page.tsx (the DetailHost's close path), if the cause is there",
+    "unit and layout tests beside them"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "Find why the field clears on load and fix the cause: a `detailState` id that opened its detail from the URL stays in the field until the user closes the detail (close button, Escape, scrim, Back) or `clear()` runs; the table marks that row as it marks a clicked one (`aria-current`, the selected row state). The two paths, a click and a deep link, end in one state. Cover both with a layout test on a table whose detail shows in a `PageAside`, with and without the aside's `state` bound to the same field.",
+  "commits": "fix: commits in packages/basalt-ui.",
+  "proof": "make check-fast; the layout test; the cycle's probe5 on /cycle/dogfood-2?issue=login-crash prints the URL with `issue=login-crash` at 500, 1500 and 3000 ms and row #642 with `aria-current`.",
+  "acceptance": [
+    "On /cycle/dogfood-2?issue=login-crash the URL keeps `issue=login-crash` while the aside shows #642, and row #642 carries aria-current (layout test)",
+    "Closing the detail clears the field and unmarks the row, after a deep link as after a click",
+    "make check passes"
+  ],
+  "out_of_scope": "Focus after close (v3-shell-1-shell); the phone header button (v3-dogfood-2-shell)."
+}
