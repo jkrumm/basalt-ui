@@ -79,7 +79,7 @@ import type {
   FootFacts as CardsFootFacts,
   FrameHead as CardsFrameHead,
   FrameState as CardsFrameState,
-  Menu as CardsMenu,
+  CardMenu as CardsMenu,
   MenuEntry as CardsMenuEntry,
 } from '../core/phase'
 

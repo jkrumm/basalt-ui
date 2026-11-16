@@ -13,7 +13,10 @@ export type CardAction = { label: string } & (
 export type MenuEntry = CardAction & { id: string }
 
 /** The `menu` prop: action data the frame draws as its menu. Min 2 entries; one action is a plain button. */
-export type Menu = readonly [MenuEntry, MenuEntry, ...MenuEntry[]]
+export type CardMenu = readonly [MenuEntry, MenuEntry, ...MenuEntry[]]
+
+/** @deprecated Use `CardMenu`, which `ui/menu` does not share a name with; removed in the next minor. */
+export type Menu = CardMenu
 
 /**
  * The measured-empty state. It cannot lack a cause. `filtered` is the no-results case under active

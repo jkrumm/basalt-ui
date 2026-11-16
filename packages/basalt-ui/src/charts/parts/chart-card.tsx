@@ -2,7 +2,7 @@ import type { ReactElement } from 'react'
 import { cn } from '../../core/cn'
 import { resolvePhase } from '../../core/phase'
 import type { ResolvedPhase } from '../../core/phase'
-import type { Status } from '../../core/ports'
+import type { Verdict } from '../../core/ports'
 import { DeltaBadge } from '../../ui/badge'
 import { ChartCardContext } from '../card-context'
 import type { ChartCardProps, ChartFigure } from '../contract'
@@ -24,7 +24,7 @@ const BOX = {
   fill: 'min-h-40 flex-1',
 } as const
 
-const DOT: Record<Status['tone'], string> = {
+const DOT: Record<Verdict['tone'], string> = {
   good: 'bg-good',
   warn: 'bg-warn',
   bad: 'bg-bad',

@@ -40,8 +40,11 @@ export type Delta = {
   label?: string
 }
 
-/** The verdict home: dot plus word. */
-export type Status = { tone: Tone; label: string }
+/** The verdict a card shows: a tone and a word, the type of `StatCard status`. */
+export type Verdict = { tone: Tone; label: string }
+
+/** @deprecated Use `Verdict`, which no `ui/*` component shares a name with; removed in the next minor. */
+export type Status = Verdict
 
 export type MeterZone = { to: number; tone: Tone; label: string }
 
