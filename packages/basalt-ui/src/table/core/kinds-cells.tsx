@@ -157,12 +157,28 @@ export function DeltaCell({
   polarity,
   format,
   unit,
+  currency,
 }: {
   value: number
   polarity: Delta['polarity']
   format: Format
   unit: string | undefined
+  /** A money delta: the amount in the currency's own digits with its sign, `+€50.00`; wins over `unit`. */
+  currency?: string | undefined
 }): ReactNode {
+  // No change is not a figure: the muted dash, as an absent value (a chip would say `0`).
+  if (value === 0) return <Absent />
+  if (currency !== undefined) {
+    const digits = currencyDigits(currency)
+    const money = format.number(value, {
+      style: 'currency',
+      currency,
+      signDisplay: 'exceptZero',
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    })
+    return <DeltaBadge value={deltaText(money, value)} polarity={polarity} />
+  }
   const shown = deltaText(format.number(value, { signDisplay: 'exceptZero' }), value)
   return <DeltaBadge value={unit === undefined ? shown : `${shown}${unit}`} polarity={polarity} />
 }
@@ -173,7 +189,7 @@ export function DeltaCell({
  * would get the wrong direction and verdict, so the cell then shows the plain number instead.
  */
 export function deltaText(formatted: string, value: number): string {
-  const parsed = Number.parseFloat(formatted.replace('−', '-'))
+  const parsed = Number.parseFloat(formatted.replace('−', '-').replaceAll(/[^\d.,+-]/g, ''))
   return Math.sign(parsed) === Math.sign(value) ? formatted : String(value)
 }
 

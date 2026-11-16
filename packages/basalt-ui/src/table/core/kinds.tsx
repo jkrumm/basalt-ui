@@ -96,7 +96,12 @@ export type StatusOptions<O extends string = string> = CommonOptions & {
   tone?: (value: O) => Tone
   filter?: 'multi'
 }
-export type DeltaOptions = CommonOptions & { polarity: Delta['polarity']; unit?: string }
+export type DeltaOptions = CommonOptions & {
+  polarity: Delta['polarity']
+  unit?: string
+  /** A money change: `+€50.00` in the currency's own digits, like `c.money`; wins over `unit`. */
+  currency?: string
+}
 export type MeterOptions = CommonOptions & { max?: number }
 export type BooleanOptions = CommonOptions & { labels?: readonly [string, string] }
 export type SparkOptions<T> = Omit<CommonOptions, 'id' | 'sortable'> & {
@@ -155,7 +160,7 @@ const OPTION_KEYS: Readonly<
   date: { allowed: [...COMMON, 'style'], required: [] },
   relativeTime: { allowed: COMMON, required: [] },
   status: { allowed: [...COMMON, 'options', 'labels', 'tone', 'filter'], required: ['options'] },
-  delta: { allowed: [...COMMON, 'polarity', 'unit'], required: ['polarity'] },
+  delta: { allowed: [...COMMON, 'polarity', 'unit', 'currency'], required: ['polarity'] },
   meter: { allowed: [...COMMON, 'max'], required: [] },
   boolean: { allowed: [...COMMON, 'labels'], required: [] },
   spark: {
@@ -456,7 +461,13 @@ export function col<T>(): Col<T> {
     delta: (key, o) =>
       keyed<T>('delta', key, o, (v, _row, env) =>
         typeof v === 'number' ? (
-          <DeltaCell value={v} polarity={o.polarity} format={env.format} unit={o.unit} />
+          <DeltaCell
+            value={v}
+            polarity={o.polarity}
+            format={env.format}
+            unit={o.unit}
+            currency={o.currency}
+          />
         ) : (
           String(v)
         ),
