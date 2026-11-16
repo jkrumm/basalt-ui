@@ -415,12 +415,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       if (!hostClosed) detailState?.clear()
       if (detailState === undefined && openId) setOpenId('')
     },
-    activeId:
-      activation.kind === 'detail'
-        ? detailState === undefined
-          ? openedId
-          : openId
-        : options.activeRowId,
+    activeId: activation.kind === 'detail' ? openId : options.activeRowId,
     expandable:
       activation.kind === 'row' &&
       plan.columns.some(
