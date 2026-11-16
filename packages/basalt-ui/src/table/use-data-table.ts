@@ -148,36 +148,27 @@ const NO_DETAIL_STATE = {
   use: (): [string, (id: string) => void] => useState(''),
 }
 
-type PageFilterRun<T> = {
-  /** Whether a bound field is off its default. */
-  active: boolean
-  /** The rows the active fields accept; every row when none is active. */
-  keep(rows: readonly T[]): readonly T[]
-  /** Returns every bound field to its default in one write. */
-  clear(): void
-}
-
 /**
  * The page fields a table filters by (`filters`): reads each field (so the table follows it), and
  * judges "off its default" as a `FilterSet` does. The list must keep its length across renders, as
  * any list of hooks.
  */
 // oxlint-disable-next-line typescript/no-explicit-any -- entries of different value types share one list; `UseDataTable` types each pair
-function usePageFilters<T>(filters: readonly PageFilter<T, any>[] | undefined): PageFilterRun<T> {
-  const bound = filters ?? []
+function usePageFilters<T>(filters: readonly PageFilter<T, any>[] = []) {
   // oxlint-disable-next-line react/rules-of-hooks -- one `use()` per entry, the list is fixed for the table's life
-  const values = bound.map((filter) => filter.field.use()[0])
-  const live = bound.filter((filter, i) =>
-    isActive({ handle: filter.field } as unknown as AnySpec, values[i]),
+  const values = filters.map((filter) => filter.field.use()[0])
+  const live = filters.flatMap((filter, i) =>
+    isActive({ handle: filter.field } as unknown as AnySpec, values[i])
+      ? [{ filter, value: values[i] }]
+      : [],
   )
-  const valueOf = new Map(bound.map((filter, i) => [filter, values[i]] as const))
   return {
     active: live.length > 0,
-    keep: (rows) =>
+    keep: (rows: readonly T[]) =>
       live.length === 0
         ? rows
-        : rows.filter((row) => live.every((filter) => filter.match(row, valueOf.get(filter)))),
-    clear: () => clearTogether(bound.map((filter) => filter.field)),
+        : rows.filter((row) => live.every(({ filter, value }) => filter.match(row, value))),
+    clear: () => clearTogether(filters.map((filter) => filter.field)),
   }
 }
 
@@ -266,7 +257,7 @@ export function useDataTable<
   )
 
   const pageFilters = usePageFilters<T>(server ? undefined : options.filters)
-  const data = pageFilters.keep((options.data ?? NO_ROWS) as T[]) as T[]
+  const data = pageFilters.keep((options.data ?? NO_ROWS) as T[])
   const engine = tableEngine.useAppTable({
     columns: specs.map((spec) => ({
       ...engineColumn(spec as KindSpec<unknown>),

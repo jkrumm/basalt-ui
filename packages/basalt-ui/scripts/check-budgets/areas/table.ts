@@ -48,7 +48,9 @@ export const rows: readonly RowDef[] = [
     // table and for a page-owned `activeRowId`, ~90 B gz.
     // 123500 -> 123900 (Issue 1554): +~330 B gz for the `focus` bridge (row-focus.tsx) that maps a row
     // to a chart's focus item by id and clears it on pointer leave and blur.
-    ceiling: 123900,
+    // 123900 -> 124200 (Issue 1631): +~250 B gz for `filters` (page fields with a row predicate, read by
+    // `useDataTable`) and `labels` on `c.text`; 124144 B measured.
+    ceiling: 124200,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -81,6 +83,13 @@ export const raises: Raises = {
       to: 123900,
       consumer:
         "`DataTable focus`: expression cycle 3's n02 (apps/playground/src/scenarios/expr/n02) swapped its table beside the stage chart for a hand-built row list to link the two, losing sort and the phone card (X3 0)",
+      repo: 'basalt-ui',
+    },
+    {
+      from: 123900,
+      to: 124200,
+      consumer:
+        "`useDataTable filters`: dogfood cycle 2's flow overview (apps/playground/src/cycle/dogfood-2/FlowOverview.tsx) filters its table by three page fields in 11 lines and writes Clear filters in 5, the same code as cycle/state-3/OrdersPage.tsx (dogfood-2.5)",
       repo: 'basalt-ui',
     },
   ],
