@@ -118,3 +118,7 @@ const a = <Lines ariaLabel="Runs" data={rows} series={series} />
 // @valid
 const rows = useMemo(() => q.data ?? [], [q.data])
 const a = <Table data={rows} />
+
+// @invalid
+const EMPTY = []
+const a = <BarChart ariaLabel="Runs" data={q.data ?? EMPTY} />
