@@ -19,3 +19,7 @@ import { rechartsLike } from 'recharts-like'
 import { Lines } from 'basalt-ui/charts'
 // @valid
 import { visx } from 'visx-like'
+// @invalid
+import ReactECharts from 'echarts-for-react'
+// @invalid
+import * as echarts from 'echarts'

@@ -3,7 +3,8 @@
  * the owned entries. 2.x had these as one hand-copied ban that an `extends` silently replaced; here
  * each route is a form with its own fix token and fixture.
  *
- * Twelve forms: seven package bans, the engine allowlist, direct `useReactTable`, the un-ejected
+ * Thirteen forms: eight package bans, the engine allowlist, direct `useReactTable` (an import, or a
+ * re-export of it from a module; `export *` is not read, it names no hook), the un-ejected
  * `@/components/ui/*` path, `useChat()` without a `chat` option and persist libraries outside a
  * `StorageLike` adapter. The repo-only rows (layer table, single `host.tsx` importer) are not
  * here: a form carries no profile of its own and this rule ships at `parts` and `app`.
@@ -186,6 +187,14 @@ const directReactTable: AstForm = {
     ImportSpecifier(node) {
       if (nameOf(child(node, 'imported')) === 'useReactTable') report(node, 'useReactTable')
     },
+    // A re-export from a module reads the hook; `export { useReactTable }` of a local is not one.
+    ExportNamedDeclaration(node) {
+      if (stringValue(child(node, 'source')) === undefined) return
+      for (const specifier of children(node, 'specifiers')) {
+        if (nameOf(child(specifier, 'local')) === 'useReactTable')
+          report(specifier, 'useReactTable')
+      }
+    },
     CallExpression(node) {
       const callee = child(node, 'callee')
       if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return
@@ -254,7 +263,7 @@ const useChatWithoutChat: AstForm = {
     },
   }),
   fix: 'Create the Chat outside the hook and pass it: useChat({ chat })',
-  next: 'useAgentStream from basalt-ui/ai owns the transport',
+  next: 'Render the messages with partView from basalt-ui/ai',
   fixture: 'import-bypass/use-chat-chat.tsx',
 }
 
@@ -305,14 +314,14 @@ const persistRoute: AstForm = {
 const FORMS: readonly AstForm[] = [
   packageForm(
     'base-ui',
-    ['@base-ui/react', '@base-ui-components/react'],
-    'Import the owned primitive from basalt-ui/ui/<name>',
+    ['@base-ui/react', '@base-ui-components/react', 'react-day-picker', '@tanstack/react-virtual'],
+    'Import the owned primitive from basalt-ui/ui/<name>: date-picker, virtual-list',
     'Eject the primitive with basalt-ui eject, then edit the copy',
     { allowInEjected: true },
   ),
   packageForm(
     'radix',
-    ['@radix-ui', 'radix-ui'],
+    ['@radix-ui', 'radix-ui', 'vaul', '@headlessui/react'],
     'Import the owned primitive from basalt-ui/ui/<name>; Radix is not in the stack',
     'Eject the primitive with basalt-ui eject, then edit the copy',
   ),
@@ -324,13 +333,13 @@ const FORMS: readonly AstForm[] = [
   ),
   packageForm(
     'sonner',
-    ['sonner'],
+    ['sonner', 'react-hot-toast'],
     'Call notify() and mount ToastHost from basalt-ui/page',
     'ui/toast for a toast with its own placement',
   ),
   packageForm(
     'streamdown',
-    ['streamdown', 'react-markdown', 'markdown-to-jsx', 'marked-react'],
+    ['streamdown', 'react-markdown', 'markdown-to-jsx', 'marked-react', 'marked'],
     'Render model text with Markdown contentTrust from basalt-ui/content',
     'partView for a streamed part',
   ),
@@ -342,9 +351,24 @@ const FORMS: readonly AstForm[] = [
   ),
   packageForm(
     'visx',
-    ['@visx', 'recharts', '@tremor/react', '@nivo', 'chart.js', 'react-chartjs-2'],
+    [
+      '@visx',
+      'recharts',
+      '@tremor/react',
+      '@nivo',
+      'chart.js',
+      'react-chartjs-2',
+      'echarts',
+      'echarts-for-react',
+    ],
     'Use a chart kind from basalt-ui/charts, or CartesianChart marks',
     'Compose the mark from the allowed engine subpaths',
+  ),
+  packageForm(
+    'data-library',
+    ['swr', 'socket.io-client'],
+    'Fetch through the query client and liveQuery from basalt-ui/data, and open a stream with createChannel',
+    'createChannel takes the Transport seam, so a socket is one adapter',
   ),
   engineOutsideList,
   directReactTable,
