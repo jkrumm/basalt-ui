@@ -13,3 +13,9 @@ import { radix } from 'radix-colors'
 import { Drawer } from 'vaul'
 // @invalid
 import { Listbox } from '@headlessui/react'
+// @valid
+import { ArrowRightIcon } from '@radix-ui/react-icons'
+// @invalid
+import { useFloating, autoUpdate } from '@floating-ui/react'
+// @invalid
+import { useFloating } from '@floating-ui/react-dom'

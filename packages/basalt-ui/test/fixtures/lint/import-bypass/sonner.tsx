@@ -9,3 +9,5 @@ import { notify } from 'basalt-ui'
 import { ToastHost } from 'basalt-ui/page'
 // @invalid
 import toast from 'react-hot-toast'
+// @invalid
+import { ToastContainer, toast } from 'react-toastify'

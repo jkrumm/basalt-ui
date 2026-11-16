@@ -10,8 +10,9 @@
  * here: a form carries no profile of its own and this rule ships at `parts` and `app`.
  *
  * The `ui-path` form reads `@/`, `~/` and relative `components/ui/<name>` paths; an ejected name
- * stays legal however it is spelled. The `visx`, `streamdown` and `persist-storage` forms list the
- * rival packages in the table below.
+ * stays legal however it is spelled. The `radix` form leaves `@radix-ui/react-icons` alone: it is
+ * an icon set, and an icon prop takes the icon library's own component. The `visx`, `streamdown`
+ * and `persist-storage` forms list the rival packages in the table below.
  *
  * Option: `{ ejected?: string[] }`, the paths of `manifest.ejected`. An entry may be a
  * `@/components/ui/<name>` specifier or a file path under `components/ui/`. An ejected file is the
@@ -146,12 +147,16 @@ const packageForm = (
   packages: readonly string[],
   fix: string,
   next: string,
-  { allowInEjected = false }: { allowInEjected?: boolean } = {},
+  {
+    allowInEjected = false,
+    except = [],
+  }: { allowInEjected?: boolean; except?: readonly string[] } = {},
 ): AstForm => ({
   id,
   detect: ({ context, report }) => {
     if (allowInEjected && isEjectedFile(context)) return {}
     return sourceVisitor((node, source) => {
+      if (except.some((pkg) => within(source, pkg))) return
       if (packages.some((pkg) => within(source, pkg))) report(node, source)
     })
   },
@@ -322,9 +327,17 @@ const FORMS: readonly AstForm[] = [
   ),
   packageForm(
     'radix',
-    ['@radix-ui', 'radix-ui', 'vaul', '@headlessui/react'],
-    'Import the owned primitive from basalt-ui/ui/<name>; Radix is not in the stack',
+    [
+      '@radix-ui',
+      'radix-ui',
+      'vaul',
+      '@headlessui/react',
+      '@floating-ui/react',
+      '@floating-ui/react-dom',
+    ],
+    'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, drawer; Radix and Floating UI are not in the stack',
     'Eject the primitive with basalt-ui eject, then edit the copy',
+    { except: ['@radix-ui/react-icons'] },
   ),
   packageForm(
     'cmdk',
@@ -334,7 +347,7 @@ const FORMS: readonly AstForm[] = [
   ),
   packageForm(
     'sonner',
-    ['sonner', 'react-hot-toast'],
+    ['sonner', 'react-hot-toast', 'react-toastify'],
     'Call notify() and mount ToastHost from basalt-ui/page',
     'ui/toast for a toast with its own placement',
   ),
@@ -367,7 +380,7 @@ const FORMS: readonly AstForm[] = [
   ),
   packageForm(
     'data-library',
-    ['swr', 'socket.io-client'],
+    ['swr', 'socket.io-client', '@microsoft/fetch-event-source'],
     'Fetch through the query client and liveQuery from basalt-ui/data, and open a stream with createChannel',
     'createChannel takes the Transport seam, so a socket is one adapter',
   ),
