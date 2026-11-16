@@ -111,8 +111,13 @@ export function ExprC11Scenario({ shotState, fixture }: ScenarioProps) {
               <span id={labelId} className="text-sm font-medium">
                 Relevance cut-off
               </span>
-              <span className="text-sm tabular-nums">{settled ? cutoff.toFixed(2) : '–'}</span>
+              <span className="text-sm tabular-nums">
+                {settled
+                  ? format.number(cutoff, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                  : '–'}
+              </span>
             </div>
+            {/* oxlint-disable-next-line basalt/control-home -- the cut-off is one page-local scalar; FormField, FilterSet and ControlHome all need a field handle and a form or filter store this single slider has no use for */}
             <Slider
               aria-labelledby={labelId}
               min={0}
