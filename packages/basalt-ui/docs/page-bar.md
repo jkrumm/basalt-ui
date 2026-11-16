@@ -19,11 +19,11 @@ that each render a bar fail loudly instead of stacking two bands.
 PageBar<K extends string = string>({ title, parent, controls, tabs, connection, refresh, actions, }: PageBarProps<K>): ReactElement | null
   title?: string  // Breadcrumb leaf and `h1` in a shell; the visible `h1` without one
   parent?: { label: string; href: string | NavTarget; }
-  controls?: { readonly kind: "controls-slot"; readonly count: number; r…
+  controls?: { readonly kind: "controls-slot"; readonly count: number; readonly compact?: boolean; render(): ReactNode; }
   tabs?: PageTabs<K>
   connection?: ConnectionView  // `useConnection()`: draws `ConnectionIndicator` in the end slot, before `refresh`
-  refresh?: { scope: "page" | "global"; } & { syncing: boolean; lastCom…
-  actions?: readonly [PageAction?, PageAction?, PageAction?, PageAction…  // At most 5, at most one `primary`, none required
+  refresh?: { scope: "page" | "global"; } & { syncing: boolean; lastCompletedAt?: number; onSync(): void; error?: string; }
+  actions?: readonly [PageAction?, PageAction?, PageAction?, PageAction?, PageAction?]  // At most 5, at most one `primary`, none required
 ```
 
 ## Example

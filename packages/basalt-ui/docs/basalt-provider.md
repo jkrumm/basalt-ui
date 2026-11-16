@@ -20,8 +20,8 @@ BasaltProvider({ scheme, locale, lang, link, live, children, }: BasaltProviderPr
   scheme?: Scheme  // Stamped on `<html data-theme>` and stored raw
   locale?: string  // BCP 47 tag the formatters read
   lang?: string  // `<html lang>`, written in an effect
-  link?: LinkComponent  // The link every link prop renders through: `routerDefaults().link` for an app on TanStack Router, so a `string…
-  live?: LiveBinding  // A push binding (`bindInvalidation(queryClient, channel, o)`) started once on the client when the provider mou…
+  link?: LinkComponent  // The link every link prop renders through: `routerDefaults().link` for an app on TanStack Router, so a `string | NavTarget` target navigates without a document load
+  live?: LiveBinding  // A push binding (`bindInvalidation(queryClient, channel, o)`) started once on the client when the provider mounts and stopped on unmount; a server render starts nothing
   children?: ReactNode
 ```
 

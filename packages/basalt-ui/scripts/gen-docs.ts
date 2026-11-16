@@ -381,9 +381,39 @@ function carriedProps(checker: ts.TypeChecker, member: ts.Type, node: ts.Node) {
   return out
 }
 
-const oneLine = (text: string, max: number): string => {
-  const flat = text.replace(/\s+/g, ' ').trim()
-  return flat.length <= max ? flat : `${flat.slice(0, max - 1)}…`
+/** The top-level `|` members of a printed type: a `|` inside `()`, `{}`, `[]`, `<>` or a string stays. */
+export function unionMembers(text: string): string[] {
+  const out: string[] = []
+  let depth = 0
+  let quote = ''
+  let start = 0
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]!
+    if (quote !== '') {
+      if (c === '\\') i++
+      else if (c === quote) quote = ''
+    } else if (c === '"' || c === "'" || c === '`') quote = c
+    else if ('({[<'.includes(c)) depth++
+    else if (')}]>'.includes(c) && !(c === '>' && text[i - 1] === '=')) depth--
+    else if (c === '|' && depth === 0) {
+      out.push(text.slice(start, i).trim())
+      start = i + 1
+    }
+  }
+  out.push(text.slice(start).trim())
+  return out.filter((m) => m !== '')
+}
+
+/** A prop's type whole, each union member once: the one-per-arm types merged into one list. */
+function propType(checker: ts.TypeChecker, symbols: ts.Symbol[], node: ts.Node): string {
+  const members = symbols.flatMap((symbol) =>
+    unionMembers(
+      checker
+        .typeToString(checker.getTypeOfSymbolAtLocation(symbol, node), node, TYPE_FLAGS)
+        .replace(/\s+/g, ' '),
+    ),
+  )
+  return [...new Set(members.filter((m) => m !== 'undefined'))].join(' | ')
 }
 
 /** The first sentence of a prop's JSDoc and its `@default`, as one `// ...` comment; '' without either. */
@@ -393,7 +423,7 @@ function propNote(checker: ts.TypeChecker, symbol: ts.Symbol): string {
   const tag = symbol.getJsDocTags(checker).find((t) => t.name === 'default')
   const fallback = tag?.text === undefined ? '' : ts.displayPartsToString(tag.text).trim()
   const parts = [
-    oneLine(first, 110).replace(/\.$/, ''),
+    first.replace(/\s+/g, ' ').trim().replace(/\.$/, ''),
     fallback === '' ? '' : `default ${fallback}`,
   ]
   const note = parts.filter((p) => p !== '').join('; ')
@@ -452,7 +482,17 @@ function docPropLines(checker: ts.TypeChecker, paramType: ts.Type, node: ts.Node
       const symbol = symbolOf(name)
       const note = symbol === undefined ? '' : propNote(checker, symbol)
       const omittable = m[2] === '?' || conditional.has(name)
-      return `  ${name}${omittable ? '?' : ''}: ${rest}${note}`
+      const carriers = members.flatMap((arm) => {
+        const e = arm.get(name)
+        return e?.carried === true ? [e.symbol] : []
+      })
+      const owners = carriers.length > 0 ? carriers : symbol === undefined ? [] : [symbol]
+      const tag = /( {2}\[with .*\])$/.exec(rest)?.[1] ?? ''
+      const type =
+        owners.length > 0
+          ? propType(checker, owners, node)
+          : rest.slice(0, rest.length - tag.length)
+      return `  ${name}${omittable ? '?' : ''}: ${type}${tag}${note}`
     })
   return [...arms, ...body]
 }
@@ -471,7 +511,7 @@ function returnedMembers(checker: ts.TypeChecker, call: ts.Signature, node: ts.N
     `  returns ${returned.aliasSymbol!.name}:`,
     ...methods.map((s) => {
       const sig = checker.getTypeOfSymbolAtLocation(s, node).getCallSignatures()[0]!
-      return `    ${s.name}${oneLine(checker.signatureToString(sig, node, TYPE_FLAGS), 110)}`
+      return `    ${s.name}${checker.signatureToString(sig, node, TYPE_FLAGS).replace(/\s+/g, ' ')}`
     }),
   ]
 }

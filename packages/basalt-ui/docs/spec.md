@@ -22,7 +22,7 @@ spec<T>(handle: WidgetHandle<T>, label: string, options?: SpecOptions<T>): Filte
   kind: "string" | "number" | "boolean" | "enum" | "multi" | "range"
   options?: readonly { value: T; label: string; }[]
   use: () => [T, (v: T) => void]
-  useSource: () => { source: "own" | "inherited" | "override"; inherited…
+  useSource: () => { source: "own" | "inherited" | "override"; inherited: T | undefined; }
   clear: () => void
   isDefault: boolean
   scope: "widget"

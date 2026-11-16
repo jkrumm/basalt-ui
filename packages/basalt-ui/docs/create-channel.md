@@ -28,7 +28,7 @@ createChannel<F = Envelope>(o: ChannelOptions<F>): Channel<F>
   schema?: ChannelSchema<F>
   greeting?: string
   beats?: readonly string[]
-  end?: string | ((raw: { event: string; data: string; }) => boolea…
+  end?: string | ((raw: { event: string; data: string; }) => boolean)
   heartbeatMs?: number
   scheduler?: Scheduler
 ```

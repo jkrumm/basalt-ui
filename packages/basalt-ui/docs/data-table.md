@@ -18,7 +18,7 @@ DataTable<T>({ table, detail, height, virtual, }: DataTableProps<T>): ReactEleme
   // either height + virtual or neither
   table: DataTableInstance<T>
   detail?: DetailHost
-  height?: "auto" | Scrollport | Scrollport
+  height?: "auto" | Scrollport
   virtual?: VirtualLike
 ```
 

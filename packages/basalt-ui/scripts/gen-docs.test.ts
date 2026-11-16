@@ -4,6 +4,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -16,6 +17,7 @@ import {
   generate,
   kebab,
   readBaseline,
+  unionMembers,
   REAL_ROOTS,
   writeDocs,
 } from './gen-docs'
@@ -232,5 +234,31 @@ describe('--check', () => {
 describe('the tree', () => {
   test('is in sync: every export is documented or in the baseline', () => {
     expect(checkDocs(REAL_ROOTS)).toEqual([])
+  })
+})
+
+describe('the printed props', () => {
+  test('a union splits at its top level only', () => {
+    expect(unionMembers('"auto" | { a: 1 | 2; } | Foo<"x" | "y"> | (() => void)')).toEqual([
+      '"auto"',
+      '{ a: 1 | 2; }',
+      'Foo<"x" | "y">',
+      '(() => void)',
+    ])
+  })
+
+  test('no generated doc repeats a union member or ends a prop line in an ellipsis', () => {
+    const dir = join(REAL_ROOTS.pkgRoot, 'docs')
+    const bad: string[] = []
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.md'))) {
+      for (const line of readFileSync(join(dir, file), 'utf8').split('\n')) {
+        const m = /^ {2}\w+\??: (.*?)(?: {2}\/\/ .*)?$/.exec(line)
+        if (m === null) continue
+        const members = unionMembers(m[1]!)
+        if (new Set(members).size !== members.length) bad.push(`${file}: repeats a member: ${line}`)
+        if (line.endsWith('…')) bad.push(`${file}: cut short: ${line}`)
+      }
+    }
+    expect(bad).toEqual([])
   })
 })

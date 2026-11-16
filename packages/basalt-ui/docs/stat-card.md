@@ -35,7 +35,7 @@ StatCard(props: StatCardProps): ReactElement
   status?: Status  // The verdict home: dot plus word
   sub?: string
   chart?: BoxSlot  // Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16)
-  xLabels?: readonly [string, string, string]  // The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alon…
+  xLabels?: readonly [string, string, string]  // The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alone
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
   menu?: Menu

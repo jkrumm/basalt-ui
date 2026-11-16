@@ -21,7 +21,7 @@ mount instead of restored, so `status` stays `'none'`.
 
 ```ts
 useFormDraft<V>(form: FormLike<V>, o: UseFormDraftOptions<V>): UseFormDraftResult
-  state: { values: V; isSubmitting: boolean; canSubmit: boolean; err…  // `errors` are form-level
+  state: { values: V; isSubmitting: boolean; canSubmit: boolean; errors: unknown[]; }  // `errors` are form-level
   options: { defaultValues?: V; }  // Stays the server value under `keepDefaultValues`
   store: { subscribe(cb: () => void): { unsubscribe(): void; }; }
   reset: (values: V, o?: { keepDefaultValues?: boolean; }) => void
