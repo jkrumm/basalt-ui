@@ -10,6 +10,7 @@ import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 
+import { weakeningDenial } from '../../lint/weakening-edit'
 import { OXLINT_PRESET_FILE, STYLELINT_PRESET_FILE } from '../presets'
 import { parseJsonc } from '../source-text'
 import { changedFiles, isScanned, scan } from './engine'
@@ -178,7 +179,7 @@ function denial(
       return `${rel} would set the managed rule ${added.join(', ')} by hand; waive with \`// oxlint-disable-next-line <id> -- <why>\` on the line.`
     }
   }
-  return null
+  return weakeningDenial(project, rel, current, next)
 }
 
 function preEdit(project: Project, input: HookInput): number {

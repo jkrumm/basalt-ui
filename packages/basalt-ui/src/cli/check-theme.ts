@@ -15,6 +15,7 @@ import {
 } from '../guard'
 import type { Finding } from '../guard'
 import { checkSeriesModule } from '../guard/series-file'
+import { v3LaneEntry } from '../lint/bin'
 import { auditAllows } from './audit-allows'
 import { DEFAULT_ROOTS, resolveRoots } from './config'
 import {
@@ -53,7 +54,7 @@ function oxlintLaneAt(dir: string): 'absent' | 'wired' | 'unwired' {
   const plugin = ownRules
     ? [rc?.['jsPlugins']].flat().find((e) => namesShipped(e, OXLINT_FILES.plugin))
     : undefined
-  const entry = basaltPresetEntry(rc?.['extends']) ?? plugin
+  const entry = basaltPresetEntry(rc?.['extends']) ?? v3LaneEntry(rc?.['extends']) ?? plugin
   return entry !== undefined && existsSync(resolve(dir, entry)) ? 'wired' : 'unwired'
 }
 
@@ -76,10 +77,8 @@ function astLaneNotice(cwd: string): string | null {
       ? `every (${OXLINT_FILES.guards} unreadable, so uncounted)`
       : String(preset.match(/"basalt\/[\w-]+":/g)?.length ?? 0)
   return (
-    `ℹ basalt-ui check-theme: AST lane not enforced — ${count} basalt/* rule ids unguarded ` +
-    '(incl. the promoted control-outside-home, raw-breakpoint): no .oxlintrc.json up to the repo ' +
-    'root extends basalt-ui/configs/oxlint.json (or the guards-only oxlint-basalt.json). `basalt-ui ' +
-    'doctor` names the fix.'
+    `ℹ basalt-ui check-theme: AST lane not enforced — ${count} basalt/* rule ids unguarded: no ` +
+    '.oxlintrc.json up to the repo root extends .oxlintrc.basalt.json (`basalt-ui sync` writes it); `basalt-ui doctor` names the fix.'
   )
 }
 

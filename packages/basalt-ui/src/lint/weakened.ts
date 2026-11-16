@@ -281,7 +281,7 @@ function extendsPreset(config: Config | string): WeakenedResult {
 const GENERATED_TREE = /^routeTree\.gen\.[cm]?[jt]sx?$/
 
 /** A gitignore-style glob (`*`, `**`, a bare name at any depth, a directory) as a test on a root-relative path. */
-function ignoreMatcher(pattern: string): (path: string) => boolean {
+export function ignoreMatcher(pattern: string): (path: string) => boolean {
   const trimmed = pattern.replace(/^\.\//, '').replace(/\/$/, '')
   // A slash before the end anchors the pattern to the config's directory; `generated/` does not.
   const anchored = trimmed.includes('/')
@@ -299,16 +299,45 @@ function ignoreMatcher(pattern: string): (path: string) => boolean {
   return (path) => regex.test(path)
 }
 
+/** The patterns of an ignore file's text: no blanks, comments or negations. */
+export function ignoreFilePatterns(text: string): string[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('#') && !line.startsWith('!'))
+}
+
+export const STYLELINTIGNORE = '.stylelintignore'
+const STYLE_SOURCE = /\.(?:css|astro)$/
+
+/** The source files (scripts, or stylesheets) under the declared roots that any of `patterns` names; the router's generated tree is never counted. */
+export function rootFilesNamedBy(
+  dir: string,
+  roots: readonly string[],
+  patterns: readonly string[],
+  kind: 'script' | 'style',
+): string[] {
+  const matchers = patterns.map(ignoreMatcher)
+  const pattern = kind === 'script' ? SCRIPT_FILE : STYLE_SOURCE
+  const files = new Set(roots.flatMap((root) => filesUnder(dir, root, pattern)))
+  return [...files]
+    .filter((file) => !GENERATED_TREE.test(basename(file)))
+    .filter((file) => matchers.some((matches) => matches(file)))
+    .toSorted()
+}
+
+/** The stylesheets under the declared roots that `.stylelintignore` names, which stylelint run on its own then skips. */
+function styleSheetsIgnored(dir: string, roots: readonly string[]): string[] {
+  const path = resolve(dir, STYLELINTIGNORE)
+  if (!existsSync(path)) return []
+  return rootFilesNamedBy(dir, roots, ignoreFilePatterns(readFileSync(path, 'utf8')), 'style')
+}
+
 /** What the lint run leaves alone: the config's `ignorePatterns`, `.oxlintignore`, and the router's generated tree. */
 function ignoredByLint(dir: string, config: Config | string): (file: string) => boolean {
   const patterns = typeof config === 'string' ? [] : asStrings(config['ignorePatterns'])
   const ignoreFile = resolve(dir, '.oxlintignore')
-  if (existsSync(ignoreFile)) {
-    for (const line of readFileSync(ignoreFile, 'utf8').split('\n')) {
-      const text = line.trim()
-      if (text !== '' && !text.startsWith('#') && !text.startsWith('!')) patterns.push(text)
-    }
-  }
+  if (existsSync(ignoreFile)) patterns.push(...ignoreFilePatterns(readFileSync(ignoreFile, 'utf8')))
   const matchers = patterns.map(ignoreMatcher)
   const named = generatedRouteTreeOption(dir)
   return (file) =>
@@ -372,7 +401,15 @@ function managedIds(
   )
   const blanket = blanketDisables(dir, roots, config)
   const nested = nestedConfigsWithoutPreset(dir, roots)
+  const styleIgnored = styleSheetsIgnored(dir, roots)
   const problems: string[] = []
+  if (styleIgnored.length > 0) {
+    const shown = styleIgnored.slice(0, 3).join(', ')
+    const more = styleIgnored.length > 3 ? ` and ${styleIgnored.length - 3} more` : ''
+    problems.push(
+      `${STYLELINTIGNORE} names stylesheets under a declared root: ${shown}${more}; \`basalt-ui lint\` ignores the file, but stylelint run on its own skips them: delete it`,
+    )
+  }
   if (nested.length > 0) {
     problems.push(
       `nested config without ${PRESET_FILE} in extends: ${nested.join(', ')}; it replaces the root config for its subtree`,

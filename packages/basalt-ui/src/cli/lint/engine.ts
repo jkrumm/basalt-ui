@@ -13,7 +13,7 @@ import type { Manifest, Profile } from '../manifest'
 import { findManifestAbove } from '../install-root'
 import { readPackageJson } from '../source-text'
 import { filesUnder, rootsOf } from '../doctor/types'
-import { findBin } from '../../lint/bin'
+import { findBin, STYLELINT_IGNORE_ARGS } from '../../lint/bin'
 import { dropMisreadDirectives } from '../../lint/rules/structure/waiver-needs-reason'
 
 export { findBin }
@@ -168,7 +168,7 @@ export function runStylelint(project: Project, files: readonly string[]): Findin
   const results = batches(files).flatMap((batch): StylelintResult[] => {
     const run = spawn(
       bin,
-      ['--config', STYLELINT_CONFIG, '--formatter', 'json', ...batch],
+      ['--config', STYLELINT_CONFIG, ...STYLELINT_IGNORE_ARGS, '--formatter', 'json', ...batch],
       project.root,
     )
     const text = run.stdout.trim() === '' ? run.stderr : run.stdout

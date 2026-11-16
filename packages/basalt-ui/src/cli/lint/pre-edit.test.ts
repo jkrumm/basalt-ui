@@ -1,0 +1,111 @@
+import { afterEach, describe, expect, it } from 'bun:test'
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { runStylelint } from './engine'
+import type { Project } from './engine'
+import { runHookEvent } from './hook'
+
+const STYLELINT = resolve(
+  fileURLToPath(new URL('../../../node_modules/.bin/stylelint', import.meta.url)),
+)
+
+const dirs: string[] = []
+afterEach(() => {
+  for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
+})
+
+function app(files: Record<string, string>): Project {
+  const root = mkdtempSync(join(tmpdir(), 'basalt-pre-edit-'))
+  dirs.push(root)
+  for (const [path, text] of Object.entries({ 'src/index.ts': 'export {}\n', ...files })) {
+    mkdirSync(dirname(join(root, path)), { recursive: true })
+    writeFileSync(join(root, path), text)
+  }
+  return { root, manifest: null, roots: [['src', 'app']] }
+}
+
+/** The exit code and what the hook told the model for one Write of `content` to `file`. */
+function preEdit(project: Project, file: string, content: string): { code: number; err: string } {
+  const saved = console.error
+  let err = ''
+  console.error = (...args: unknown[]) => void (err += `${args.join(' ')}\n`)
+  try {
+    const code = runHookEvent('pre-edit', project, {
+      cwd: project.root,
+      tool_input: { file_path: join(project.root, file), content },
+    })
+    return { code, err }
+  } finally {
+    console.error = saved
+  }
+}
+
+describe('pre-edit denies what doctor rejects', () => {
+  it('denies ignorePatterns over a declared root', () => {
+    const project = app({ 'src/features/f.tsx': 'export {}\n', '.oxlintrc.json': '{}' })
+    const { code, err } = preEdit(
+      project,
+      '.oxlintrc.json',
+      '{ "ignorePatterns": ["src/features/**"] }',
+    )
+    expect(code).toBe(2)
+    expect(err).toContain('ignorePatterns')
+    expect(err).toContain('src/features/f.tsx')
+  })
+
+  it('allows an ignorePatterns entry outside the roots, and one already there', () => {
+    const project = app({ '.oxlintrc.json': '{ "ignorePatterns": ["src/features/**"] }' })
+    expect(preEdit(project, '.oxlintrc.json', '{ "ignorePatterns": ["dist/**"] }').code).toBe(0)
+    expect(
+      preEdit(project, '.oxlintrc.json', '{ "ignorePatterns": ["src/features/**", "dist/**"] }')
+        .code,
+    ).toBe(0)
+  })
+
+  it('denies a blanket file-level disable and allows a rule-named one', () => {
+    const project = app({})
+    expect(preEdit(project, 'src/a.tsx', '/* oxlint-disable */\nexport {}\n').code).toBe(2)
+    expect(
+      preEdit(
+        project,
+        'src/a.tsx',
+        '/* oxlint-disable basalt/colour-literal -- why */\nexport {}\n',
+      ).code,
+    ).toBe(0)
+  })
+
+  it('does not deny a blanket disable that is already in the file, or outside the roots', () => {
+    const project = app({ 'src/a.tsx': '/* oxlint-disable */\nexport {}\n' })
+    expect(preEdit(project, 'src/a.tsx', '/* oxlint-disable */\nexport const a = 1\n').code).toBe(0)
+    expect(preEdit(project, 'scripts/a.ts', '/* oxlint-disable */\nexport {}\n').code).toBe(0)
+  })
+
+  it('denies a .stylelintignore over a stylesheet under a root', () => {
+    const project = app({ 'src/features/f.module.css': '.a {}\n' })
+    const { code, err } = preEdit(project, '.stylelintignore', 'src/features/\n')
+    expect(code).toBe(2)
+    expect(err).toContain('src/features/f.module.css')
+    expect(preEdit(project, '.stylelintignore', 'dist/\n').code).toBe(0)
+  })
+})
+
+describe('basalt-ui lint ignores a .stylelintignore', () => {
+  it('still reports a stylesheet the file names', () => {
+    const project = app({
+      'src/features/f.module.css': '.list {\n  overflow-y: auto;\n}\n',
+      '.stylelintrc.basalt.json': JSON.stringify({
+        rules: { 'declaration-property-value-disallowed-list': { 'overflow-y': ['auto'] } },
+      }),
+      '.stylelintignore': 'src/features/\n',
+    })
+    mkdirSync(join(project.root, 'node_modules/.bin'), { recursive: true })
+    symlinkSync(STYLELINT, join(project.root, 'node_modules/.bin/stylelint'))
+    const findings = runStylelint(project, ['src/features/f.module.css'])
+    expect(findings.map((f) => f.id)).toEqual([
+      'stylelint/declaration-property-value-disallowed-list',
+    ])
+  })
+})
