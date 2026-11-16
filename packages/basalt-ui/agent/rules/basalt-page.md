@@ -26,7 +26,7 @@ A page is composed from the shipped frame; each bullet names what holds it.
 
 ## Frames and cards
 
-- A frame takes its phase from the query: pass `QueryStateLike` or `Phase`, never `data ?? []`. [type:QueryStateLike] [type:Phase]
+- A frame takes its phase from the query: pass `QueryStateLike` or `Phase`, never `data ?? []`; a figure derived from rows is computed in the ready phase only. [type:QueryStateLike] [type:Phase]
 - Page code keys on its container, never a viewport class, and scrolls through the scroll primitive, never a raw overflow box. [lint:viewport-keyed] [lint:raw-scroll]
 - `InnerNav` state is a push field: a `ControlHandle` with `history: 'push'`; a replace handle does not compile, and a `menu` needs two entries. [type:PushField] [type:InnerNavProps]
 - A card is a link, a button or inert, never both; its footer holds at most two facts, each data, never a node. [type:CardTarget] [type:FootFacts]

@@ -2,7 +2,11 @@
 
 A chart and the list of the same items beside it, one focus. The list scrolls in its own region at the chart's height at a wide container and stacks under the chart at a narrow one; its `onPointerLeave` clears the focus, so the gap between rows never flashes the unfocused state; the kit dims, so the page sets no opacity.
 
+A container query reads an ancestor, never the element itself: `@container` sits on a parent of the grid that carries `@wide:grid-cols-2`, so the two columns form (n18 found `@container` and `@wide:` on one element and wrapped the grid; every page that copies the snippet inherits the order it shows).
+
 The two columns are a named container size with a plain track count (`@wide:grid-cols-2`), never an arbitrary template such as `grid-cols-[3fr_2fr]`: a ratio the page needs is a [CardGrid](node_modules/basalt-ui/docs/card-grid.md) `min` tier or a [SplitPage](node_modules/basalt-ui/docs/split-page.md), the parent's job. `CartesianChart` renders `focus.live` itself, so a page renders the region itself only where no chart takes the focus (a seam-only list or bar): a second `{focus.live}` repeats every announcement (c15, n13: the shoot log read "X | X"). The focus is built over the array the chart draws (`data`), the whole of it: a pointer on a row the focus lacks matches nothing, and neither the hero nor the dim follows (n16 built it over the weigh-in days while the chart drew every day). A list that shows a subset maps its rows to that focus by id (c15 built an id map). Every readout in the list and the card (`tabular-nums`) takes tabular numerals, so a value changing on focus does not shift its neighbours.
+
+A table that shows the chart's items is `DataTable` with `focus={focus}`, never a plain `Table`: it maps a row to its item by `getRowId` and keeps the link through its own sort and filter (n10 fell back to `Table` when sorted rows tripped `primitive-bypass`, and the table drove nothing). A list that only repeats the chart's numbers is folded into the chart card or dropped; it stays only where it adds what the marks cannot (a name, a reason, a second attribute), and then it carries the chart's encoding of a state, never a second one (n07 and n14 drew list dots that differed from the bars). The announcement names the values a viewer compares, not only their difference: `${hour}: ${a} kt, ${b} kt, ${c} kt, ${d} kt`, where "19.4 kt apart" leaves the four models out (n10).
 
 A strip or figure that shows the focused item's breakdown (a night's stages, a release's errors by service) follows `focus` like the list does: it reads `focus.readout(rest, (d) => ...)` or `plot.focused`, so it never keeps showing the last item while the chart focuses another (a night's stage strip left on last night while the chart focused another; a cut-off written by the slider and not by a click on a bar).
 
@@ -19,30 +23,32 @@ const color = { light: VX.brand, dark: VX.brand }
 export function ErrorsByRelease({ releases }: { releases: readonly Release[] }) {
   const focus = useChartFocus(releases, { announce: (r) => `${r.tag}: ${r.errors} errors` })
   return (
-    <div className="@container grid gap-3 @wide:grid-cols-2">
-      <CartesianChart
-        label="Errors per release"
-        data={releases}
-        focus={focus}
-        x={{ value: (r) => r.day }}
-        series={[{ mark: 'dot', key: 'errors', label: 'Errors', color, y: (r) => r.errors }]}
-      />
-      <ScrollArea
-        aria-label="Releases"
-        className="max-h-64"
-        onPointerLeave={focus.target.onPointerLeave}
-      >
-        {releases.map((r, i) => (
-          <div
-            key={r.tag}
-            {...focus.item(i)}
-            className="flex justify-between px-2 py-1 text-sm data-focused:bg-selected"
-          >
-            <span className="font-mono">{r.tag}</span>
-            <span className="tabular-nums">{r.errors}</span>
-          </div>
-        ))}
-      </ScrollArea>
+    <div className="@container">
+      <div className="grid gap-3 @wide:grid-cols-2">
+        <CartesianChart
+          label="Errors per release"
+          data={releases}
+          focus={focus}
+          x={{ value: (r) => r.day }}
+          series={[{ mark: 'dot', key: 'errors', label: 'Errors', color, y: (r) => r.errors }]}
+        />
+        <ScrollArea
+          aria-label="Releases"
+          className="max-h-64"
+          onPointerLeave={focus.target.onPointerLeave}
+        >
+          {releases.map((r, i) => (
+            <div
+              key={r.tag}
+              {...focus.item(i)}
+              className="flex justify-between px-2 py-1 text-sm data-focused:bg-selected"
+            >
+              <span className="font-mono">{r.tag}</span>
+              <span className="tabular-nums">{r.errors}</span>
+            </div>
+          ))}
+        </ScrollArea>
+      </div>
     </div>
   )
 }

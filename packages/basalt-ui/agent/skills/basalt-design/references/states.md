@@ -10,6 +10,7 @@ The phase vocabulary and the words each phase carries. The shapes are owned by t
 - Branch precedence is loading, error, empty, data; a failed query reads as a failure, never as an empty list. [type:FrameState]
 
 - A part keeps every declaration (`sub`, `rows`, `delta`, `footer`) in every phase, with a placeholder value (a dash) where there is none yet: its skeleton draws what it declares, so a prop hidden in loading shrinks the frame (n16's strip lost 56 px and its cards 137 px; n13 passed dash placeholders by hand).
+- A figure, pill, status word or footer value derived from rows is computed in the ready phase only. The page passes the phase and the frame draws the dash; an empty page that computes `0 %` and a green "-80 pts" states a measurement nobody made (n17 .60, n03 .6, n18 .72). Every part keeps its place in every phase, a table included: n10's loading dropped the table.
 
 ## What each state says
 
