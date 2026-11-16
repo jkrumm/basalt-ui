@@ -16,6 +16,7 @@ import {
   PROFILE_GATE_SCHEMA,
   partsOnly,
   partsOnlyExceptSeamMark,
+  partsOnlyExceptStyleVar,
 } from './detect'
 
 const ALL: readonly Profile[] = ['bridge', 'parts', 'app', 'repo']
@@ -43,8 +44,9 @@ const HEAD = '(?:^|:)!?'
 const TAIL = '(?:\\/[^\\s!]+)?!?$'
 
 /** Utilities that take a colour (the zone A denial list, tokens-visual 3.5, plus `text`). */
-const COLOUR_PREFIX =
-  '(?:text|bg|border(?:-[xytrblse])?|ring(?:-offset)?|outline|divide|from|via|to|fill|stroke|decoration|shadow|accent|caret)'
+const COLOUR_UTILITIES =
+  'text|bg|border(?:-[xytrblse])?|ring(?:-offset)?|outline|divide|from|via|to|fill|stroke|decoration|accent|caret'
+const COLOUR_PREFIX = `(?:${COLOUR_UTILITIES}|shadow)`
 
 const SPACING_PREFIX =
   '(?:p[xytrblse]?|m[xytrblse]?|gap(?:-[xy])?|space-[xy]|inset(?:-[xy])?|top|right|bottom|left|start|end|size|w|h|min-w|min-h|max-w|max-h|basis|translate-[xy]|scroll-[mp][xytrblse]?)'
@@ -89,8 +91,24 @@ const seamMarkFill = new RegExp(
 const vxArbitrary = (names: readonly string[]): string =>
   `\\((?:color:)?--vx-(?:${alt(names)})\\)|\\[(?:color:)?(?:var\\()?--vx-(?:${alt(names)})\\)?\\]`
 
+/**
+ * Any custom property as an arbitrary value, bare (`(--brand-blue)`, `[var(--x)]`) or with the
+ * `color:` type hint. `text-(--x)` is read as a colour: Tailwind types it by the hint, and only
+ * `length:` (or `image:`, ...) makes it a size.
+ */
+const ANY_VAR = '--[a-z][\\w-]*'
+const anyVarArbitrary = (hint: string): string =>
+  `\\(${hint}${ANY_VAR}\\)|\\[${hint}(?:var\\()?${ANY_VAR}\\)?\\]`
+
+/**
+ * A colour utility over a custom property: any variable under a colour utility. A bare
+ * `shadow-(--x)` is a box-shadow value, not a colour, so `shadow` takes the `color:` hint, or a
+ * `--vx-*` colour name as before.
+ */
 const colourArbitrary = new RegExp(
-  `^(?!${FOCUS_RING_COLOUR})(?=.*(?:${HEAD}${COLOUR_PREFIX}-(?:${vxArbitrary(zoneANames)})${TAIL}))`,
+  `^(?!${FOCUS_RING_COLOUR})(?=.*(?:` +
+    `${HEAD}(?:${COLOUR_UTILITIES})-(?:${anyVarArbitrary('(?:color:)?')})${TAIL}|` +
+    `${HEAD}shadow-(?:${anyVarArbitrary('color:')}|${vxArbitrary(zoneANames)})${TAIL}))`,
 )
 
 /** A fill-only role as text: the named utility, or the variable as an arbitrary value (`text-(color:--vx-x)`). */
@@ -104,15 +122,20 @@ const textOnFill = new RegExp(
  * peer or an ancestor, each also negated (`not-dark:`, the light-only fork), its arbitrary-selector
  * spellings with or without an element before the attribute (`[[data-theme=dark]_&]:`,
  * `[html[data-theme=dark]_&]:`, `[.dark_&]:`) or inside `:where(…)`/`:is(…)`
- * (`[:where([data-theme=dark])_&]:`), and the colour-scheme media query as an arbitrary variant
+ * (`[:where([data-theme=dark])_&]:`), the v4 self-selector spellings, `&` followed by `:is(…)` or
+ * `:where(…)` holding the class or the attribute, comma lists included (`[&:is(.dark_*)]:`,
+ * `[&:where(.dark,.dark_*)]:`; a `.darker` class or `:is(:hover)` is not one), and the colour-scheme media query as an arbitrary variant
  * (`[@media(prefers-color-scheme:dark)]:`).
  */
 const DARK_VARIANT =
-  '(?:(?:(?:group|peer|in)-)?(?:not-)?(?:dark|data-\\[theme=["\']?dark["\']?\\])(?:\\/[\\w-]+)?|\\[[\\w:-]*(?:\\([\\w-]*)?(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark)\\)?_&\\]|\\[@media_?\\(prefers-color-scheme:_?dark\\)\\]):'
+  '(?:(?:(?:group|peer|in)-)?(?:not-)?(?:dark|data-\\[theme=["\']?dark["\']?\\])(?:\\/[\\w-]+)?|\\[[\\w:-]*(?:\\([\\w-]*)?(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark)\\)?_&\\]|\\[@media_?\\(prefers-color-scheme:_?dark\\)\\]|\\[&:(?:is|where)\\([^()]*?(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark(?![A-Za-z0-9-]))[^()]*\\)\\]):'
+
+/** A raw media query as an arbitrary variant that names a viewport feature, not a user preference. */
+const MEDIA_FEATURE_VARIANT =
+  '\\[@media[^\\]]*(?:width|height|aspect-ratio|orientation|device-)[^\\]]*\\]'
 
 /** A viewport variant anywhere in the token's chain: `viewport-keyed` already reports it. */
-const VIEWPORT_CHAIN =
-  '(?:[^:]+:)*(?:(?:(?:max|min)-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\\[[^\\]]*\\]|\\[@media[^\\]]*width[^\\]]*\\]):'
+const VIEWPORT_CHAIN = `(?:[^:]+:)*(?:(?:(?:max|min)-)?(?:sm|md|lg|xl|2xl)|portrait|landscape|(?:min|max)-\\[[^\\]]*\\]|${MEDIA_FEATURE_VARIANT}):`
 
 export const CLASS_RULES = defineRules({
   'viewport-keyed': {
@@ -125,15 +148,18 @@ export const CLASS_RULES = defineRules({
     forms: [
       {
         id: 'breakpoint-prefix',
-        pattern: /(?:^|:)(?:(?:max|min)-)?(?:sm|md|lg|xl|2xl):/,
+        // `portrait:` and `landscape:` are the orientation variants: the viewport's, not the container's.
+        pattern: /(?:^|:)(?:(?:(?:max|min)-)?(?:sm|md|lg|xl|2xl)|portrait|landscape):/,
         fix: 'Key on the container: @narrow: @regular: @wide:',
         next: 'useSizeClass is for chrome only; viewport-keyed is never file-waivable',
         fixture: 'class/viewport-keyed/breakpoint-prefix.tsx',
       },
       {
         id: 'arbitrary-query',
-        // `min-[900px]:` and the raw media query as an arbitrary variant, `[@media(min-width:900px)]:`.
-        pattern: /(?:^|:)!?(?:(?:min|max)-\[[^\]]*\]|\[@media[^\]]*width[^\]]*\]):/,
+        // `min-[900px]:` and the raw media query as an arbitrary variant, `[@media(min-width:900px)]:`,
+        // read for the viewport features the stylelint preset bans: width, height, aspect ratio,
+        // orientation and the device forms.
+        pattern: new RegExp(`(?:^|:)!?(?:(?:min|max)-\\[[^\\]]*\\]|${MEDIA_FEATURE_VARIANT}):`),
         fix: 'Key on the container: @narrow: @regular: @wide:',
         next: 'useSizeClass is for chrome only; viewport-keyed is never file-waivable',
         fixture: 'class/viewport-keyed/arbitrary-query.tsx',
@@ -269,7 +295,7 @@ export const CLASS_RULES = defineRules({
         },
         seamMarkFill,
       ),
-      partsOnly({
+      partsOnlyExceptStyleVar({
         id: 'app-colour-arbitrary',
         zonesOff: ZONE_COLOUR,
         pattern: colourArbitrary,
@@ -313,9 +339,12 @@ export const CLASS_RULES = defineRules({
       },
       partsOnly({
         id: 'fixed-width',
+        // A step of 97 up or a bracket of 385px/25rem up on `w-`, `min-w-`, `basis-` and `size-`;
+        // the v4 container-scale names `md` (28rem) up on `w-`, `basis-` and `size-`. Known limit:
+        // `min-w-6xl` passes, as a scroll content's floor inside a horizontal ScrollArea writes it.
         pattern: new RegExp(
           `^(?!${VIEWPORT_CHAIN})` +
-            /(?:.*:)?!?(?:(?:min-)?w|basis)-(?:(?:9[7-9]|[1-9]\d{2,})(?:\.\d+)?|\[(?:(?:38[5-9]|39\d|[4-9]\d{2}|\d{4,})(?:\.\d+)?px|(?:2[5-9]|[3-9]\d|\d{3,})(?:\.\d+)?rem)\])!?$/
+            /(?:.*:)?!?(?:(?:(?:min-)?w|basis|size)-(?:(?:9[7-9]|[1-9]\d{2,})(?:\.\d+)?|\[(?:(?:38[5-9]|39\d|[4-9]\d{2}|\d{4,})(?:\.\d+)?px|(?:2[5-9]|[3-9]\d|\d{3,})(?:\.\d+)?rem)\])|(?:w|basis|size)-(?:md|lg|xl|[2-7]xl))!?$/
               .source,
         ),
         fix: 'Parent-owned width: size the container, not the child',

@@ -9,3 +9,4 @@ export const g = <a className="group-data-[state=open]/shell:flex group-hover/sh
 export const h = (
   <div className="not-data-[state=open]:flex [:where([data-theme=light])_&]:flex [:is(.dim)_&]:flex" />
 )
+export const i = <div className="[&:is(:hover)]:bg-inset [&:is(.darker_*)]:flex [&:where(.dim,.dim_*)]:flex [&:is([data-theme=light])]:flex" />

@@ -1,5 +1,10 @@
-export const a = <div className="bg-(--vx-surface) text-(--my-colour) bg-[var(--other)]" />
+export const a = <div className="w-(--sidebar) grow-(--g) h-[var(--row)] shadow-(--elevation)" />
 export const focus = (
   <div className="focus-visible:ring-(--vx-brand) data-focused:outline-[var(--vx-brand)]" />
 )
-export const b = <span className="bg-(color:--vx-surface) text-[color:var(--my-colour)]">w</span>
+export const b = <span className="text-(length:--my-size) bg-(image:--hero) border-(length:--rule)">w</span>
+export const part = (
+  <div className="bg-(--part) rounded-chip" style={{ '--part': 'var(--vx-line)' }}>
+    <span className="text-[var(--ink)]" style={{ '--ink': ink }} />
+  </div>
+)
