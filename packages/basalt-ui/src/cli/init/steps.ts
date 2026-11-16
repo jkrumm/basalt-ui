@@ -4,6 +4,7 @@
  * and the run goes on, so one failed install does not leave the files unplaced. A step is safe to
  * run twice: it writes only what differs. The hook step lives in `../lint/hook-step`.
  */
+import { SOURCES_PATH } from '../../vite/sources'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 
@@ -649,19 +650,16 @@ function patchCss(
   return stock.test(text) ? text.replace(stock, () => entry) : `${entry}\n`
 }
 
-/** The file `basalt()` regenerates on every run: generated, so never committed. */
-export const SOURCES_CSS = '.basalt/sources.css'
-
 /** `<viteDir>/.gitignore` lists `.basalt/sources.css` once; the file is created when it is missing. */
 function ignoreSources(ctx: Ctx, viteDir: string): void {
   const file = viteDir === '.' ? '.gitignore' : `${viteDir}/.gitignore`
   const text = readText(ctx.root, file) ?? ''
   const listed = text
     .split('\n')
-    .some((line) => [SOURCES_CSS, `/${SOURCES_CSS}`].includes(line.trim()))
+    .some((line) => [SOURCES_PATH, `/${SOURCES_PATH}`].includes(line.trim()))
   if (listed) return
   const lead = text === '' || text.endsWith('\n') ? text : `${text}\n`
-  if (writeText(ctx.root, file, `${lead}${SOURCES_CSS}\n`)) say(`${file}: ignores ${SOURCES_CSS}`)
+  if (writeText(ctx.root, file, `${lead}${SOURCES_PATH}\n`)) say(`${file}: ignores ${SOURCES_PATH}`)
 }
 
 /** Above `tokens`: the Vite plugin and the Tailwind entry, patched only when the shape is stock. */
