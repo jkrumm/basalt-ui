@@ -21,7 +21,7 @@ import type { ReactElement } from 'react'
 import { createNavRuntimeDouble } from '../../core/nav-runtime'
 import type { NavRuntimeDouble } from '../../core/nav-runtime'
 import type { CoreNavConfig, CoreNavItem, CoreNavSection } from '../../core/types'
-import { TabBar } from './tab-bar'
+import { TabBar, warnLongShort } from './tab-bar'
 import type { TabBarProps } from './tab-bar'
 
 // ── fixtures ─────────────────────────────────────────────────────────────────────────────────────
@@ -508,11 +508,16 @@ describe('short label warning', () => {
     expect(longWarnings()).toHaveLength(0)
   })
 
-  test('production stays silent', async () => {
+  test('production stays silent', () => {
+    // Called directly: a mounted tree re-renders while NODE_ENV is flipped, and React's dev hook
+    // checks then see deps the production branch of a dependency never recorded.
+    const slots = [{ id: 'home', short: 'Overview page' }] as unknown as Parameters<
+      typeof warnLongShort
+    >[0]
     const saved = process.env.NODE_ENV
     process.env.NODE_ENV = 'production'
     try {
-      await mount(nav, 'home')
+      warnLongShort(slots)
       expect(longWarnings()).toHaveLength(0)
     } finally {
       if (saved === undefined) delete process.env.NODE_ENV

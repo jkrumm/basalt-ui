@@ -122,7 +122,8 @@ function TabFace({ slot }: { slot: PhoneSlot }): ReactElement {
   )
 }
 
-function warnLongShort(slots: readonly PhoneSlot[]): void {
+/** Exported for the production-gate test: flipping `NODE_ENV` across a mounted tree breaks hook deps. */
+export function warnLongShort(slots: readonly PhoneSlot[]): void {
   if (process.env.NODE_ENV === 'production') return
   for (const slot of slots) {
     if (slot.short.length <= SHORT_MAX) continue
