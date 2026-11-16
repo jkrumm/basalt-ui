@@ -283,6 +283,11 @@ export function useChartFocus<D>(
     })
   }
 
+  const firstOfGroup = (i: number): number | undefined => {
+    const name = groupAt(i)
+    return name === undefined ? undefined : items.findIndex((d) => group?.(d) === name)
+  }
+
   // Marks and group rows by key, so a keyboard step can scroll the focused one into view.
   const marks = useRef(new Map<number, Element>())
   const rows = useRef(new Map<string, Element>())
@@ -348,7 +353,10 @@ export function useChartFocus<D>(
     }
   }
   const said = datum === null ? '' : announce(datum)
-  const name = held?.entered === true ? groupAt(index) : undefined
+  // Entering a group at a later item names the group by its first item's announcement, never by its
+  // key (a key is an id as often as a name); entering at the first item says only that datum.
+  const first = held?.entered === true && index !== null ? firstOfGroup(index) : undefined
+  const name = first === undefined || first === index ? undefined : announce(items[first] as D)
   const live: ReactElement = (
     <output aria-live="polite" aria-atomic="true" style={HIDDEN} data-chart-focus-live="">
       {name === undefined ? said : `${name}: ${said}`}
