@@ -10,12 +10,14 @@ import { chartsCommand } from './charts/index.ts'
 import { controlsCommand } from './controls/index.ts'
 import { importsCommand } from './imports/index.ts'
 import { layoutCommand } from './layout/index.ts'
+import { tokensCommand } from './tokens/index.ts'
 
 type Command = (args: string[]) => number | Promise<number>
 
 const commands: Record<string, Command> = {
   layout: layoutCommand,
   imports: importsCommand,
+  tokens: tokensCommand,
   charts: chartsCommand,
   controls: controlsCommand,
   bench: benchCommand,

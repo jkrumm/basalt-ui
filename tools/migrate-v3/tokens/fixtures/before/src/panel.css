@@ -1,0 +1,8 @@
+.vx-prose h2 {
+  color: var(--vx-ink);
+  border-bottom: 1px solid var(--vx-surface-panel);
+}
+
+.note {
+  background: color-mix(in srgb, var(--vx-accent) 10%, transparent);
+}

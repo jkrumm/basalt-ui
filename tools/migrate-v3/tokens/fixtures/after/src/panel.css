@@ -1,0 +1,8 @@
+.basalt-prose h2 {
+  color: var(--basalt-ink);
+  border-bottom: 1px solid var(--basalt-card);
+}
+
+.note {
+  background: color-mix(in srgb, var(--basalt-brand) 10%, transparent);
+}
