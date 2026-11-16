@@ -59,6 +59,18 @@ import { Popper } from '@mui/base'
 import { useDatePicker } from '@react-aria/datepicker'
 // @invalid
 import { ProTable } from '@ant-design/pro-components'
+// @invalid
+import { Dialog } from 'primereact/dialog'
+// @invalid
+import { Button, Modal } from 'react-bootstrap'
+// @invalid
+import { DataTable } from '@carbon/react'
+// @invalid
+export { Popover as Pop } from '@blueprintjs/core'
+// @invalid
+import { Dialog } from '@fluentui/react-components'
+// @invalid
+import { DatePicker } from 'rsuite'
 // @valid
 import AddIcon from '@mui/icons-material/Add'
 // @valid
