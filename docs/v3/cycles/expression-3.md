@@ -34,7 +34,7 @@ The kit cost 32 points, mostly in two places. The kit's own lists cannot join a 
 ### Harness
 
 - **The chart box.** The playground's `index.css` lists its Tailwind `@source` folders by hand, and the list missed `packages/basalt-ui/src/charts`. So no `ChartCard` box-height class was generated, and every loading, empty and error box collapsed to its figure row: 45 px against 545 loaded in c12. The lead measured the missing `h-[clamp(10rem,50cqw,26.25rem)]` in the built CSS. A consumer gets these classes from the Vite plugin's generated `.basalt/sources.css`, so this is a playground defect, not a kit defect. The fix landed between round 0 and round 1, and builders were told not to work around the collapse. Two kit defects showed only once the box had its height. A kind's legend row is clipped at the bottom of the box (c11, c12). The 160 px box at 390 px clips a kind's x axis, its legend and the negative half of a diverging chart (c11, c12, c13, n12). Both are in `v3-expr-3-kit-fixes`.
-- **The shell title.** On every scenario page the shell's header and rail name the first scenario. `resolveActive` matches `/scenarios/$name` as a template and ignores `params`, so every scenario item ties and the first wins. Reviewers were told to ignore the shell. Filed as signal issue 1535.
+- **The shell title.** On every scenario page the shell's header and rail name the first scenario. `resolveActive` matches `/scenarios/$name` as a template and ignores `params`, so every scenario item ties and the first wins. Reviewers were told to ignore the shell. Filed as signal issue 1535, and fixed on master by `7c96294d` after the pin.
 - **Locale.** The shots ran in a Chrome whose locale is German. The chart's axis, its tooltip and its y ticks follow the browser locale while `useFormat` does not, so pages mixed "18. Okt." and "0,8" with English text. That is a kit defect (`v3-expr-3-kit-fixes` (2)), not a shot artefact: a German reader of an English app sees the same.
 - **Fence.** Three slips:
   - c13's builder opened `packages/basalt-ui/src/charts/*` once in round 0 while chasing the box collapse.
@@ -42,6 +42,25 @@ The kit cost 32 points, mostly in two places. The kit's own lists cannot join a 
   - In round 2 c11's builder ran a grep that printed lines from another builder's directory, and it took only the `text` mark's option names from them.
 
   None changed a round-0 build, which is the only round that counts as a first try.
+
+### After scoring: the rebase onto master
+
+The PR rebased from the pin onto `e1f489a3`, and two changes master made after the pin reached the trial builds. Neither changes a score: every round was built and shot on the pin.
+
+- **The app preset lint.** Master now lints the playground through the v3 app preset with `--deny-warnings` (`91d526ef`, `6b0677e6`). It found nine findings in c10, c11, c13 and n02:
+  - three `ScrollArea` restyles;
+  - a `toFixed()`;
+  - a `<Slider>` with no control home;
+  - `text-brand` in app code;
+  - a `role="img"`;
+  - two `primitive-bypass` findings on c10's ring graph.
+
+  As in cycle 2, each builder made a gate-only pass, and the lead shot it in `r2-gate/`. Six findings were fixed with the rule's own remedy and no visible change. Four lines were waived with reasons:
+  - c11's slider, a page-local scalar with no store, under `control-home`;
+  - c13's accent day labels under `tw-off-law`;
+  - c10's edges and nodes under `primitive-bypass`. The nodes spread `focus.item(i)`, but the `focus.target` container sits in the page component that renders them, and the rule looks for it in the same file. That is a false positive of the rule, filed as `v3-expr-3-contract` (f).
+
+- **The 2.x palette shim.** Until `de9cc2f1` the playground defined, at runtime, 2.x `--vx-*` names that v3's `tokens.css` does not emit. The public `VX` object still references 50 such names, among them `VX.neutral`, `VX.muted`, `VX.faint`, `VX.accent`, `VX.ink2`, `VX.surface.*` and `VX.status.*`. The shipped `linked-parts.md` and the `seam-linked` recipe teach `VX.accent`. Five of six builds used one or more: c10, c11, c12, c13 and n02. n12 took its colours from its own series group. On master after the rebase those marks paint black and those swatches empty: c13's bars, c10's and n02's dots (`r2-gate/`). The shots that were scored show the colours the builders chose, because the shim was there at the pin. For a consumer the names were never defined, so the scores could not see a defect every app that follows the reference inherits. Filed as a signal, which triage matched to issue 1539. The scenarios render as the builders left them, and they show the defect until 1539 lands.
 
 ## Numbers
 
@@ -282,7 +301,7 @@ Notes on the classes:
   Builders ran the look step this time, but on a subset of their own frames. Rounds 1 and 2 show they could apply the text when a finding pointed at it. n12 bound its strip to `focus` in one round with no new glue, and c13 merged four parts into one diverging chart. The gap is applying the text before stopping, as in cycle 2, now with a step that ran. Four text defects are real, each with its own change in `v3-expr-3-skill`:
   - the shipped `linked-parts.md` example teaches the arbitrary `@wide:grid-cols-[3fr_2fr]` that K4 marks down (c12, c13);
   - nothing tells a builder that a kind such as `Bars` takes no annotation mark, so the answer on the mark needs `CartesianChart`;
-  - the docs type every frame's `phase` as `Phase` without naming its import (c10, c13, n02);
+  - the docs type every frame's `phase` as `Phase` without naming its import (c10, c13, n02). Since `15a67973`, after the pin, the root `basalt-ui` exports it, and the docs still have to say so;
   - c11 read the rules as banning engine `text` marks.
 
 - **`primitive`.** Two families account for 16 of the 32 points, and the contract row as a whole for 20.
@@ -332,7 +351,7 @@ Two cases were added to the bank:
 
 Factory friction: none this cycle. The plan check's refusals named their cause and the fix, and `factory project plan` gave the open rows that `planned` needs. Cycle 2's signal about it is answered.
 
-The nav defect of § Harness is a kit bug, filed as signal issue 1535 on basalt-ui.
+The nav defect of § Harness is a kit bug. It was filed as signal issue 1535 on basalt-ui, and `7c96294d` fixed it on master after the pin.
 
 ## Hypotheses
 
