@@ -553,6 +553,37 @@ describe('detail bound to a field', () => {
     await waitFor(() => expect(closed()).toBe(true))
   })
 
+  test('a Page aside that closes on its own clears the field and unmarks the row', () => {
+    setWidth(1440)
+    const field = urlField('')
+    function InPage(): ReactElement {
+      const c = col<Row>()
+      const t = useDataTable<Row>({
+        id: 'detail-state-aside-test',
+        label: 'Rows',
+        columns: [c.text('name')],
+        data: ROWS,
+        getRowId: (r) => r.id,
+        mode: { kind: 'client' },
+        detail: (row) => <span>{row.name} body</span>,
+        detailState: field,
+      })
+      return (
+        <Page>
+          <DataTable table={t} />
+          <PageAside title="Inspector">own</PageAside>
+        </Page>
+      )
+    }
+    render(<InPage />)
+    fireEvent.click(document.querySelectorAll('tbody tr')[1] as HTMLElement)
+    expect(field.value()).toBe('b')
+    expect(document.querySelector('tbody tr[aria-current="true"]')).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(field.value()).toBe('')
+    expect(document.querySelector('tbody tr[aria-current]')).toBeNull()
+  })
+
   test('the field going unset (Back) closes the sheet', async () => {
     const field = urlField('a')
     render(<Bound field={field} />)

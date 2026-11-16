@@ -98,7 +98,7 @@ export type TableModel<T> = {
   openDetails(id: string): void
   /**
    * The own sheet closed: unsets the `detailState` field, when one is bound. `hostClosed` is a host
-   * that closed on its own: it only forgets the row the table opened without a field.
+   * that closed on its own: it does the same once a row has shown in it.
    */
   closeDetail(hostClosed?: boolean): void
   /** The row whose detail is open (`detail`) or that the page named (`activeRowId`); the body marks it. */
@@ -411,8 +411,9 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     closeDetail(hostClosed) {
       // `shownFor` keeps the closed id until the field reads empty, so a render that lands before
       // the field clears cannot reopen the sheet the user just closed. A host that closed on its
-      // own leaves the field alone. Guarded: that call comes on every render of the body.
-      if (!hostClosed) detailState?.clear()
+      // own clears the field only once a row has shown in it (a deep link that has not shown yet
+      // keeps its id); the call comes on every render of the body.
+      if (!hostClosed || shownFor.current !== null) detailState?.clear()
       if (detailState === undefined && openId) setOpenId('')
     },
     activeId: activation.kind === 'detail' ? openId : options.activeRowId,
