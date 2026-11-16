@@ -5,7 +5,7 @@
  *
  * Thirteen forms: eight package bans, the engine allowlist, direct `useReactTable` (an import, or a
  * re-export of it from a module; `export *` is not read, it names no hook) or a table engine
- * (`@tanstack/table-core`, AG Grid), the un-ejected
+ * (`@tanstack/table-core`, AG Grid, react-data-grid, MUI X Data Grid), the un-ejected
  * `@/components/ui/*` path, `useChat()` without a `chat` option and persist libraries outside a
  * `StorageLike` adapter. The repo-only rows (layer table, single `host.tsx` importer) are not
  * here: a form carries no profile of its own and this rule ships at `parts` and `app`.
@@ -16,6 +16,11 @@
  * package (the stack 2.x shipped on) but `@mantine/hooks`, a hooks set with no UI whose storage
  * hooks `persist-storage` reads. The `visx`, `streamdown`
  * and `persist-storage` forms list the rival packages in the table below.
+ *
+ * Every package list is a DENYLIST, not a closed set: it names the rivals an agent reaches for first
+ * in each category (headless primitives, form widgets, chart libraries, data and router libraries,
+ * persistence, table engines, markdown renderers, realtime transports); an unlisted package in
+ * the same category passes until it is added to its form.
  *
  * Option: `{ ejected?: string[] }`, the paths of `manifest.ejected`. An entry may be a
  * `@/components/ui/<name>` specifier or a file path under `components/ui/`. An ejected file is the
@@ -69,7 +74,9 @@ const STORAGE_PACKAGES: ReadonlySet<string> = new Set([
   'zustand-persist',
   '@nanostores/persistent',
   '@tanstack/query-sync-storage-persister',
+  '@tanstack/query-async-storage-persister',
   'idb-keyval',
+  'localforage',
 ])
 
 /** Packages that are only a route through named specifiers. */
@@ -104,6 +111,10 @@ const nameOf = (node: Node | undefined): string | undefined =>
 /** `pkg` itself or any subpath of it. */
 const within = (source: string, pkg: string): boolean =>
   source === pkg || source.startsWith(`${pkg}/`)
+
+/** A listed package, or `name*` for a family (`victory-*`): the package itself, a subpath or a sibling. */
+const listed = (source: string, entry: string): boolean =>
+  entry.endsWith('*') ? source.startsWith(entry.slice(0, -1)) : within(source, entry)
 
 /**
  * Every module specifier in a file: static imports, re-exports, `import()` and `require()` with a
@@ -148,6 +159,12 @@ const isEjectedFile = (context: RuleContext): boolean => {
   })
 }
 
+/**
+ * A package ban. Each list is a DENYLIST of the rival packages an agent reaches for first, not a
+ * closed set: an unlisted package in the same category passes. The categories are headless
+ * primitives, form widgets, chart libraries, data and router libraries, persistence, table
+ * engines, markdown renderers and realtime transports. A new rival is a line in its form.
+ */
 const packageForm = (
   id: string,
   packages: readonly string[],
@@ -162,8 +179,8 @@ const packageForm = (
   detect: ({ context, report }) => {
     if (allowInEjected && isEjectedFile(context)) return {}
     return sourceVisitor((node, source) => {
-      if (except.some((pkg) => within(source, pkg))) return
-      if (packages.some((pkg) => within(source, pkg))) report(node, source)
+      if (except.some((pkg) => listed(source, pkg))) return
+      if (packages.some((pkg) => listed(source, pkg))) report(node, source)
     })
   },
   fix,
@@ -194,7 +211,8 @@ const engineOutsideList: AstForm = {
 
 /**
  * Table engines a consumer builds a table on instead of DataTable: TanStack Table's framework-free
- * core (`createTable`) and AG Grid. `@tanstack/react-table` itself stays legal for its column types
+ * core (`createTable`), AG Grid, react-data-grid and MUI X Data Grid (`@mui/x-data-grid*`, its -pro
+ * and -premium too). `@tanstack/react-table` itself stays legal for its column types
  * and helpers; its hook is read by name below.
  */
 const TABLE_PACKAGES: readonly string[] = [
@@ -202,6 +220,8 @@ const TABLE_PACKAGES: readonly string[] = [
   'ag-grid-react',
   'ag-grid-community',
   'ag-grid-enterprise',
+  'react-data-grid',
+  '@mui/x-data-grid*',
 ]
 
 /**
@@ -213,7 +233,7 @@ const directReactTable: AstForm = {
   detect: ({ report }) =>
     mergeVisitors([
       sourceVisitor((node, source) => {
-        if (TABLE_PACKAGES.some((pkg) => within(source, pkg))) report(node, source)
+        if (TABLE_PACKAGES.some((pkg) => listed(source, pkg))) report(node, source)
       }),
       reactTableHook(report),
     ]),
@@ -388,6 +408,8 @@ const FORMS: readonly AstForm[] = [
       '@tanstack/react-virtual',
       '@tanstack/virtual-core',
       'react-virtuoso',
+      'react-window',
+      'react-datepicker',
     ],
     'Import the owned primitive from basalt-ui/ui/<name>: date-picker, virtual-list',
     'Eject the primitive with basalt-ui eject, then edit the copy',
@@ -405,8 +427,12 @@ const FORMS: readonly AstForm[] = [
       'react-aria-components',
       '@ark-ui',
       '@mantine',
+      '@chakra-ui',
+      '@mui/material',
+      '@mui/joy',
+      'react-aria',
     ],
-    'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, Mantine, React Aria, Ark and Floating UI are not in the stack',
+    'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, Mantine, Chakra, MUI, React Aria, Ark and Floating UI are not in the stack',
     'Eject the primitive with basalt-ui eject, then edit the copy',
     { except: ['@radix-ui/react-icons', '@mantine/hooks'] },
   ),
@@ -424,7 +450,16 @@ const FORMS: readonly AstForm[] = [
   ),
   packageForm(
     'streamdown',
-    ['streamdown', 'react-markdown', 'markdown-to-jsx', 'marked-react', 'marked', 'markdown-it'],
+    [
+      'streamdown',
+      'react-markdown',
+      'markdown-to-jsx',
+      'marked-react',
+      'marked',
+      'markdown-it',
+      'showdown',
+      'react-remark',
+    ],
     'Render model text with Markdown contentTrust from basalt-ui/content',
     'partView for a streamed part',
   ),
@@ -447,6 +482,11 @@ const FORMS: readonly AstForm[] = [
       'react-chartjs-2',
       'echarts',
       'echarts-for-react',
+      'highcharts',
+      'highcharts-react-official',
+      'victory',
+      'victory-*',
+      '@observablehq/plot',
     ],
     'Use a chart kind from basalt-ui/charts, or CartesianChart marks',
     'Compose the mark from the allowed engine subpaths',
@@ -462,6 +502,12 @@ const FORMS: readonly AstForm[] = [
       'nuqs',
       'react-router',
       'react-router-dom',
+      'pusher-js',
+      'ably',
+      'react-query',
+      'urql',
+      'wouter',
+      'use-query-params',
     ],
     'Fetch through the query client and liveQuery from basalt-ui/data, open a stream with createChannel, and keep routes and URL state in basalt-ui/router (a field; TanStack Router, never react-router)',
     'createChannel takes the Transport seam, so a socket is one adapter',

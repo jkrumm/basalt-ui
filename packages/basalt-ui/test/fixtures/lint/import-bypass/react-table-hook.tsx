@@ -25,3 +25,9 @@ import { ModuleRegistry } from 'ag-grid-community'
 // @valid
 // @ts
 import type { ColumnDef } from '@tanstack/react-table'
+// @invalid
+import DataGrid from 'react-data-grid'
+// @invalid
+import { DataGrid } from '@mui/x-data-grid'
+// @invalid
+import { DataGridPro } from '@mui/x-data-grid-pro'

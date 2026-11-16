@@ -40,3 +40,7 @@ import { get, set } from 'idb-keyval'
 // @valid
 import { get, set } from 'idb-keyval'
 export const backend = { kind: StorageLike, get, set }
+// @invalid
+import localforage from 'localforage'
+// @invalid
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'

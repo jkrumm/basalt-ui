@@ -23,3 +23,7 @@ import { Virtualizer } from '@tanstack/virtual-core'
 import { Virtuoso } from 'react-virtuoso'
 // @valid
 import { VirtualList } from 'basalt-ui/ui/virtual-list'
+// @invalid
+import { FixedSizeList } from 'react-window'
+// @invalid
+import DatePicker from 'react-datepicker'

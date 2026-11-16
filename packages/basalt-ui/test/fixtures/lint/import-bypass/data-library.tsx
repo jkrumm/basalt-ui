@@ -25,3 +25,15 @@ import { useNavigate } from 'react-router'
 import { useQuery, gql } from '@apollo/client'
 // @valid
 import { useQuery } from '@tanstack/react-query'
+// @invalid
+import { useQuery } from 'react-query'
+// @invalid
+import { useQuery } from 'urql'
+// @invalid
+import { Route } from 'wouter'
+// @invalid
+import { useQueryParam } from 'use-query-params'
+// @invalid
+import Pusher from 'pusher-js'
+// @invalid
+import * as Ably from 'ably'
