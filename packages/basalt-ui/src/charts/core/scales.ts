@@ -194,6 +194,51 @@ function explicitDomain(xDomain: readonly [ChartX, ChartX] | undefined): [number
   return null
 }
 
+type Band<X extends ChartX> = ReturnType<typeof scaleBand<X>>
+
+/**
+ * A band scale that answers a number or a time between two bands, so a mark drawn beside the bars
+ * (an engine `rect` from half a step before a band to half a step after) lands on the plot instead
+ * of at `NaN`. A band's own value stays the engine's (the band's start, to which a mark adds half a
+ * band to centre itself); a value between two bands interpolates between their starts, so a mark
+ * puts `i - 0.5` on the edge between band `i - 1` and band `i`. A value outside the first and last band extends their step; a categorical domain
+ * answers only its own keys, as before.
+ */
+function betweenBands<X extends ChartX>(base: Band<X>): Band<X> {
+  const answer = (value: X): number | undefined => {
+    const hit = base(value)
+    if (hit !== undefined) return hit
+    const at = toNumber(value)
+    const keys = base.domain()
+    if (!Number.isFinite(at) || keys.length === 0) return undefined
+    const nums = keys.map(toNumber)
+    if (!nums.every((n, i) => Number.isFinite(n) && (i === 0 || n > (nums[i - 1] as number))))
+      return undefined
+    const start = (i: number): number => base(keys[i] as X) as number
+    if (keys.length === 1) return start(0)
+    // The pair of neighbours the value sits between, or the nearest pair when it is past an end.
+    const next = nums.findIndex((n) => n > at)
+    const hi = next === -1 ? keys.length - 1 : Math.max(1, next)
+    const lo = hi - 1
+    const t = (at - (nums[lo] as number)) / ((nums[hi] as number) - (nums[lo] as number))
+    return start(lo) + t * (start(hi) - start(lo))
+  }
+  const proxy: Band<X> = new Proxy(base, {
+    apply: (_target, _this, args: [X]) => answer(args[0]),
+    get(target, key) {
+      const member = Reflect.get(target, key) as unknown
+      if (typeof member !== 'function') return member
+      return (...args: unknown[]) => {
+        const out = (member as (...a: unknown[]) => unknown).apply(target, args)
+        // A chained setter or a copy keeps the tolerance; a getter returns its value.
+        if (out === target) return proxy
+        return key === 'copy' ? betweenBands(out as Band<X>) : out
+      }
+    },
+  })
+  return proxy
+}
+
 export function xScaleFor<X extends ChartX>(
   raw: readonly X[],
   /** `'flush'`: a band scale with no outer padding, so the first and last band meet the plot's
@@ -217,7 +262,8 @@ export function xScaleFor<X extends ChartX>(
       // Total width in steps; no data has none, so a step of 1 (a lone flush band spans 0.8 of one).
       const steps = n - BAND_PADDING_INNER + 2 * outer
       const step = 1 / (steps > 0 ? steps : 1)
-      const scale = scaleBand<X>().domain(keys).paddingInner(BAND_PADDING_INNER).paddingOuter(outer)
+      const tuned = scaleBand<X>().domain(keys).paddingInner(BAND_PADDING_INNER).paddingOuter(outer)
+      const scale = kind === 'string' ? tuned : betweenBands(tuned)
       return {
         kind,
         band: true,
