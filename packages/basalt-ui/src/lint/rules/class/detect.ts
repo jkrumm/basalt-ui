@@ -55,7 +55,7 @@ function literalText(arg: Node | undefined): string | undefined {
  * useWindowSize()`, renamed or not). A bare `width` from anywhere else is a chart's plot width and
  * passes. The hook is also read under an alias (`import { useWindowSize as useSize }`), and
  * `screen.width` (`window.screen.width`, `screen.availWidth`) is the device width, read like
- * `innerWidth`. react-responsive's object query reads as its string: a `maxWidth`, `minWidth` (or
+ * `innerWidth`, as is the visual viewport's (`window.visualViewport?.width ?? 0`). react-responsive's object query reads as its string: a `maxWidth`, `minWidth` (or
  * their device forms) key, or a `query` whose literal text names a width. Known limits: the height
  * is not read (as `window.innerHeight` is not), and a binding is matched by spelling within the
  * file, not by scope.
@@ -161,20 +161,46 @@ function windowSizeRead(node: Node | undefined, sizes: WindowSizes): string | un
 
 const GLOBALS: ReadonlySet<string> = new Set(['window', 'globalThis'])
 
-/** `screen`, `window.screen` or `globalThis.screen`: the device's screen object. */
-function screenObject(node: Node | undefined): string | undefined {
-  if (nameOf(node) === 'screen') return 'screen'
+/** The window objects whose `width` is the viewport's: the device screen and the visual viewport. */
+const VIEWPORT_OBJECTS: ReadonlySet<string> = new Set(['screen', 'visualViewport'])
+
+/**
+ * `screen`, `window.screen`, `visualViewport` or `globalThis.visualViewport`: the device's screen
+ * or the visual viewport object.
+ */
+function viewportObject(node: Node | undefined): string | undefined {
+  const bare = nameOf(node)
+  if (bare !== undefined) return VIEWPORT_OBJECTS.has(bare) ? bare : undefined
   if (node?.type !== 'MemberExpression' || node['computed'] === true) return undefined
   const global = nameOf(field(node, 'object'))
-  return global !== undefined && GLOBALS.has(global) && nameOf(field(node, 'property')) === 'screen'
-    ? `${global}.screen`
+  const name = nameOf(field(node, 'property'))
+  return global !== undefined &&
+    GLOBALS.has(global) &&
+    name !== undefined &&
+    VIEWPORT_OBJECTS.has(name)
+    ? `${global}.${name}`
     : undefined
 }
 
 /**
+ * The operand a comparison reads: past parentheses, an optional chain (`visualViewport?.width`),
+ * a non-null assertion and the left side of a fallback (`(… ?? 0)`, `(… || 0)`).
+ */
+function operand(node: Node | undefined): Node | undefined {
+  if (node === undefined) return undefined
+  if (['ParenthesizedExpression', 'ChainExpression', 'TSNonNullExpression'].includes(node.type)) {
+    return operand(field(node, 'expression'))
+  }
+  if (node.type === 'LogicalExpression' && ['??', '||'].includes(node['operator'] as string)) {
+    return operand(field(node, 'left'))
+  }
+  return node
+}
+
+/**
  * The text of a viewport-size read: `window.innerWidth`, `globalThis.outerWidth`,
- * `document.documentElement.clientWidth`, `window.screen.width`. A bare `innerWidth` is not read:
- * charts name a plot width so.
+ * `document.documentElement.clientWidth`, `window.screen.width`, `window.visualViewport.width`.
+ * A bare `innerWidth` is not read: charts name a plot width so.
  */
 function viewportRead(node: Node | undefined): string | undefined {
   if (node?.type !== 'MemberExpression' || node['computed'] === true) return undefined
@@ -186,8 +212,8 @@ function viewportRead(node: Node | undefined): string | undefined {
     return global !== undefined && GLOBALS.has(global) ? `${global}.${prop}` : undefined
   }
   if (prop === 'width' || prop === 'availWidth') {
-    const screen = screenObject(object)
-    return screen === undefined ? undefined : `${screen}.${prop}`
+    const viewport = viewportObject(object)
+    return viewport === undefined ? undefined : `${viewport}.${prop}`
   }
   if (prop !== 'clientWidth' || object?.type !== 'MemberExpression') return undefined
   const root = field(object, 'object')
@@ -208,8 +234,8 @@ function widthComparison(
 ): string | undefined {
   const operator = node['operator'] as string
   if (!WIDTH_COMPARISONS.has(operator)) return undefined
-  const rawLeft = field(node, 'left')
-  const rawRight = field(node, 'right')
+  const rawLeft = operand(field(node, 'left'))
+  const rawRight = operand(field(node, 'right'))
   const read = (raw: Node | undefined): string | undefined =>
     windowSizeRead(raw, sizes) ?? viewportRead(resolve(raw))
   const left = resolve(rawLeft)
@@ -263,23 +289,30 @@ export function partsOnly(
   }
 }
 
-const RADIUS = /^rounded(?:-(?!card$|none$|full$)[a-z0-9]+)?$/
+const RADIUS = /^rounded(?:-(?!card$|none$|full$)[a-z0-9]+|-\([^)]+\)|-\[[^\]]+\])?$/
 const CARD_PADDING = /^py?-(?:[3-9]|\d{2,})$/
 const CARD_BORDER = /^(?:border|ring(?:-\d+)?)$/
+/** A card's elevation: `shadow` and `shadow-sm` up; a control's `shadow-xs`/`shadow-2xs` is not one. */
+const CARD_SHADOW = /^shadow(?:-(?:sm|md|lg|xl|2xl))?$/
 
 /**
- * `surface-recipe`, whole-string form: a bordered card rebuilt without a card token, a radius, a
- * bare `border` (or an unprefixed ring width such as ring-1) and a padding step of 3 or more,
- * all-round or vertical (`p-4`, `py-6`; a lone `px-N` is a button, input or badge, not a card), in one class string. A dashed or dotted border, a pill
- * (`rounded-full`), a lone `p-1`/`p-2` and a variant-prefixed ring (`focus-visible:ring-2`) are not a card.
+ * `surface-recipe`, whole-string form: a bordered card rebuilt without a card token, a radius
+ * (named, or the v4 `rounded-(--x)`/`rounded-[…]` value), a bare `border` (or an unprefixed ring
+ * width such as ring-1) and a third signal in one class string: a padding step of 3 or more,
+ * all-round or vertical (`p-4`, `py-6`; a lone `px-N` is a button, input or badge, not a card), or
+ * a card's shadow (`shadow-sm` up: a tile whose padding comes from a child). A dashed or dotted
+ * border, a pill (`rounded-full`), a lone `p-1`/`p-2`, a control's `shadow-xs` and a
+ * variant-prefixed ring (`focus-visible:ring-2`) are not a card.
  */
 export function borderedCard(tokens: readonly string[]): string | undefined {
   const radius = tokens.find((token) => RADIUS.test(token))
-  const padding = tokens.find((token) => CARD_PADDING.test(token))
+  const third =
+    tokens.find((token) => CARD_PADDING.test(token)) ??
+    tokens.find((token) => CARD_SHADOW.test(token))
   const border = tokens.find((token) => CARD_BORDER.test(token))
-  if (radius === undefined || padding === undefined || border === undefined) return undefined
+  if (radius === undefined || third === undefined || border === undefined) return undefined
   if (tokens.some((token) => /^border-(?:dashed|dotted)$/.test(token))) return undefined
-  return `${radius} ${border} ${padding}`
+  return `${radius} ${border} ${third}`
 }
 
 const nameOf = (node: Node | undefined): string | undefined =>

@@ -17,6 +17,8 @@
 // expect: window.screen.width < 768
 // expect: screen.availWidth >= 1200
 // expect: size.width >= 1024
+// expect: window.visualViewport.width < 640
+// expect: globalThis.visualViewport.width >= 1024
 export const a = window.matchMedia('(min-width: 768px)')
 export const b = useMediaQuery('(max-width: 640px)')
 export const c = matchMedia(`(min-width: ${bp}px)`)
@@ -45,3 +47,5 @@ export function TwoCol() {
   const size = useSize()
   return size.width !== null && size.width >= 1024
 }
+export const o = () => (window.visualViewport?.width ?? 0) < 640
+export const q = globalThis.visualViewport.width >= 1024
