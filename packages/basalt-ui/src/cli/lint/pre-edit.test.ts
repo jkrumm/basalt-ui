@@ -109,3 +109,18 @@ describe('basalt-ui lint ignores a .stylelintignore', () => {
     ])
   })
 })
+
+describe('pre-edit leaves a path the lint config already ignores', () => {
+  it('allows a blanket disable in an ignorePatterns path, and still denies its neighbour', () => {
+    const project = app({ '.oxlintrc.json': '{ "ignorePatterns": ["src/gen/**"] }' })
+    expect(preEdit(project, 'src/gen/api.ts', '/* eslint-disable */\nexport {}\n').code).toBe(0)
+    expect(preEdit(project, 'src/a.ts', '/* eslint-disable */\nexport {}\n').code).toBe(2)
+  })
+
+  it('reads .oxlintignore the same way', () => {
+    const project = app({ '.oxlintignore': 'generated/\n' })
+    expect(preEdit(project, 'src/generated/api.ts', '/* eslint-disable */\nexport {}\n').code).toBe(
+      0,
+    )
+  })
+})
