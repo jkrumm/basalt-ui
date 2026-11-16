@@ -114,6 +114,12 @@ export type FieldHandle<
   readonly params: readonly string[]
   readonly bounds?: NumberBounds | undefined
   link(value: V): LinkWrite<S>
+  /**
+   * Writes what a click on `link(value)` writes: a push enum keeps its fallback in the URL
+   * (`?section=general`, read by `useIsSet()`), where `use()`'s setter unsets it (a view tab back on
+   * its default). What `InnerNav` calls.
+   */
+  choose(value: V): void
   /** The label `.labels()` declared for a member, else the member itself. */
   label(value: Member<V>): string
   /** Chosen: the URL param is present (a push enum keeps its written fallback) or the device or memory value is held. */
@@ -548,8 +554,10 @@ export function defineControls<
     const choice = history === 'push' && spec.kind === 'enum'
     const inUrl = (search: unknown): boolean =>
       entry.params.some((param) => asRecord(search)[param] !== undefined)
+    const atFallback = (value: unknown): boolean => codec.equals(value, fallbackOf(entry))
+    /** A choice: a push enum keeps its fallback in the URL (`?section=general`); `link` and `choose` write it. */
     const encodeWrite = (value: unknown): Raw =>
-      choice && codec.equals(value, fallbackOf(entry))
+      choice && atFallback(value)
         ? { ...codec.encode(name, value), [KEEP_KEY]: [name] }
         : codec.encode(name, value)
     const useUrlField = (): [unknown, (v: unknown) => void] => {
@@ -564,11 +572,11 @@ export function defineControls<
         value,
         (next) => {
           if (spec.kind === 'range' && !writableRange(next as RangeValue)) return
-          const search = router.state.location.search
-          // A write of the live value is a no-op (it must not fire `resets`), unless it chooses a push enum.
-          if (codec.equals(next, readUrl(entry, asRecord(search))) && !(choice && !inUrl(search)))
-            return
-          commit(router, encodeWrite(next), history)
+          // A write of the live value is a no-op: it must not fire `resets` (page back to 1).
+          if (codec.equals(next, readUrl(entry, asRecord(router.state.location.search)))) return
+          // A push enum back on its fallback unsets its key (`ViewTabs` on its default), still as a push.
+          const patch = choice && atFallback(next) ? unsetPatch(entry) : codec.encode(name, next)
+          commit(router, patch, history)
         },
       ]
     }
@@ -615,6 +623,18 @@ export function defineControls<
         return codec.equals(current(), fallbackOf(entry))
       },
       label: (value) => labelOf(spec, value),
+      choose: (value) => {
+        if (!spec.lane.url) {
+          laneOf(entry).write(name, value)
+          return
+        }
+        for (const router of mounts.keys()) {
+          if (scope === 'page' && !runsStore(router, id)) continue
+          const search = asRecord(router.state.location.search)
+          if (codec.equals(value, readUrl(entry, search)) && (!choice || inUrl(search))) continue
+          commit(router, encodeWrite(value), history)
+        }
+      },
       link: (value) => ({
         search: encodeWrite(value),
         replace: history !== 'push',

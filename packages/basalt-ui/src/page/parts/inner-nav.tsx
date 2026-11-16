@@ -26,6 +26,8 @@ type SearchLink = { readonly search: unknown }
  */
 export type InnerNavHandle<K extends string> = PushField<K> & {
   link(value: K): AnchorLink | SearchLink
+  /** A `defineControls` field's choice write: it keeps the fallback pane in the URL, where `use()`'s setter unsets it. */
+  choose?(value: K): void
 }
 
 function handleOf<K extends string>(state: PushField<K>): InnerNavHandle<K> {
@@ -234,7 +236,8 @@ export function InnerNav<K extends string = string>({
   const handle = handleOf(state)
   const [active, set] = state.use()
   const router = useRouter({ warn: false }) as unknown as HrefRouter | undefined
-  const anchor = (value: K): AnchorLink => anchorOf(handle, router, set, value)
+  const pick = (value: K): void => (handle.choose === undefined ? set(value) : handle.choose(value))
+  const anchor = (value: K): AnchorLink => anchorOf(handle, router, pick, value)
   const inSplit = useContext(SplitListContext)
   const strip = !inSplit
   const nav = useRef<HTMLElement>(null)
