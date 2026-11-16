@@ -138,6 +138,15 @@ function content<T>(spec: KindSpec<T>, row: T, env: CellEnv, tabbable: boolean):
   return spec.render?.(row, env) ?? null
 }
 
+/**
+ * The column name a phone card prints before a value: meta and value places are labelled, the title,
+ * subtitle and badge are not. The unit rides on the cell (`data-unit`), so the header's `(EUR)` is dropped.
+ */
+function labelOf<T>(place: string, spec: KindSpec<T>): string {
+  if ((place !== 'meta' && place !== 'value') || spec.header === '') return ''
+  return spec.unit === undefined ? spec.header : spec.header.replace(` (${spec.unit})`, '')
+}
+
 /** What a body cell receives besides the row; one value per render of the body. */
 export function cellEnvOf<T>(model: TableModel<T>): CellEnv {
   return {
@@ -190,7 +199,9 @@ export function DataRow<T>({
             {...cellAttributes(spec)}
             {...tierAttributes(planned)}
             data-unit={spec.unit}
-            {...(planned.place === 'meta' && spec.header !== '' && { 'data-label': spec.header })}
+            {...(labelOf(planned.place, spec) !== '' && {
+              'data-label': labelOf(planned.place, spec),
+            })}
             numeric={numeric}
             className={spec.wrap ? `${className ?? ''} whitespace-normal` : className}
           >
