@@ -16,6 +16,7 @@
 @source './';
 @source '../../../src/ui';
 @source '../../../src/cards';
+@source '../../../src/core/card-menu.tsx';
 @source '../../../src/page';
 @source '../../../src/shell/parts';
 @source '../../../src/shell/app-shell.tsx';
