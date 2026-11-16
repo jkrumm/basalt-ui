@@ -137,7 +137,7 @@ function Loaded({ issues, phase }: { issues: readonly Issue[]; phase: Phase }): 
     <Page area="issues">
       <PageBar title="Stuck Issues" />
       {phase === 'loading' ? (
-        <PageSummary loading facts={[]} />
+        <PageSummary phase="loading" facts={[]} />
       ) : (
         <PageSummary sentence={sentence} facts={[]} />
       )}
@@ -250,7 +250,7 @@ function Loaded({ issues, phase }: { issues: readonly Issue[]; phase: Phase }): 
             title="Open Issues"
             subtitle="longest past typical first"
             phase={phase}
-            skeleton={{ rows: 12 }}
+            bodySize={{ rows: 12 }}
             body={() => <ListRows issues={dots} focus={focus} />}
           />
         )}

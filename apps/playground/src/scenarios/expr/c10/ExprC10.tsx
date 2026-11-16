@@ -62,7 +62,7 @@ export function ExprC10Scenario({ shotState, fixture }: ScenarioProps) {
       subtitle="Nearest first, along the shortest path"
       phase={phase}
       empty={shotState === 'empty' ? { cause: emptyCause } : null}
-      skeleton={{ rows: LIST_SKELETON_ROWS }}
+      bodySize={{ rows: LIST_SKELETON_ROWS }}
       body={() => (
         <ScrollArea aria-label="Resources by hop" className="max-h-full">
           <ol className="m-0 flex list-none flex-col p-0">

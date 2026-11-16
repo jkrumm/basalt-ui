@@ -231,7 +231,7 @@ export function ExprC13Scenario({ shotState, fixture }: ScenarioProps) {
             subtitle="30 days, most first"
             phase={phase}
             empty={hasDays ? null : { cause: 'Days appear with the first alert.' }}
-            skeleton={{ rows: 6 }}
+            bodySize={{ rows: 6 }}
             body={() => (
               <ScrollArea
                 aria-label="Days ranked by escalations"
