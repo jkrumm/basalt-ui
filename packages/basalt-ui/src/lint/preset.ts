@@ -32,18 +32,36 @@ export const JS_PLUGINS = ['basalt-ui/lint', '@shadcn/lint'] as const
 export const PARTS_COMPONENT_IMPORTS = ['^basalt-ui/ui/'] as const
 /** At bridge it recognises only the app's own `components/ui` (zone V is where they live). */
 export const BRIDGE_COMPONENT_IMPORTS = ['(?:^|/)components/ui(?:/|$)'] as const
+/**
+ * Zones E and S: a rule that stays on but loses single forms there gets `formsOff` in its options,
+ * written per profile so the options the profile gives the rule (`bridge`'s gate) are kept.
+ */
+function formZones(files: readonly string[], inputs: PresetInputs): Override[] {
+  const input = presetInput(inputs.table)
+  const formsOff: Record<string, string[]> = {}
+  for (const zone of ['ejected', 'seed'] as const) {
+    for (const [name, ids] of Object.entries(input.formsOff[zone])) {
+      formsOff[name] = [...new Set([...(formsOff[name] ?? []), ...ids])]
+    }
+  }
+  const byProfile = new Map<PresetProfile, string[]>()
+  for (const file of files) {
+    const profile = profileOfPath(file, inputs)
+    byProfile.set(profile, [...(byProfile.get(profile) ?? []), file])
+  }
+  return [...byProfile].flatMap(([profile, group]) => {
+    if (profile === 'tokens') return []
+    const rules: Rules = {}
+    for (const [name, ids] of Object.entries(formsOff)) {
+      if (!input.profiles[profile].includes(name)) continue
+      rules[name] = ['error', { ...(input.options[profile][name]?.[0] as object), formsOff: ids }]
+    }
+    return Object.keys(rules).length > 0 ? [{ files: group, rules }] : []
+  })
+}
+
 /** Zone V: the console's own shadcn files, a bridge-only zone (section 6). */
 export const VENDORED_GLOB = '**/components/ui/**'
-
-/** Base UI sets these on popups; `no-arbitrary-values` allows them in the S and E zones only. */
-export const BASE_UI_VARS = [
-  'origin-(--transform-origin)',
-  'min-w-(--anchor-width)',
-  'max-h-(--available-height)',
-  'max-w-(--available-width)',
-  'h-(--accordion-panel-height)',
-  'h-(--collapsible-panel-height)',
-] as const
 
 /**
  * `no-arbitrary-values` passes a grid track list: `grid-cols-[auto_1fr]` carries no length. A length
@@ -225,7 +243,12 @@ export function rulesFor(profile: PresetProfile, inputs: PresetInputs): Rules {
 
 const offAll = (names: readonly string[]): Rules => Object.fromEntries(names.map((n) => [n, 'off']))
 
-/** Zones E and S: eject transfers structure, never tokens, so only these rules go off. */
+/**
+ * Zones E and S: eject transfers structure, never tokens. The file is the primitive, so the rules that
+ * police how a primitive is built from structure go off: the ones in the table, `no-restyle`, and the
+ * bought `no-arbitrary-values` and `no-inline-styles` (a primitive's geometry is calc, anchor and
+ * position values and a virtualised list's measured height). The colour rules stay on.
+ */
 function structureZone(files: readonly string[], inputs: PresetInputs): Override {
   const input = presetInput(inputs.table)
   const names = [...new Set([...input.zonesOff.ejected, ...input.zonesOff.seed])]
@@ -234,7 +257,8 @@ function structureZone(files: readonly string[], inputs: PresetInputs): Override
     rules: {
       ...offAll(names),
       [qualified(SHADCN_RESTYLE)]: 'off',
-      [qualified('no-arbitrary-values')]: ['error', { allow: [...BASE_UI_VARS, ...GRID_TRACKS] }],
+      [qualified('no-arbitrary-values')]: 'off',
+      [qualified('no-inline-styles')]: 'off',
     },
   }
 }
@@ -265,7 +289,7 @@ function profileOfPath(path: string, inputs: PresetInputs): PresetProfile {
  * owned copies (so a copy may hold its own `@base-ui` import) where that rule runs at all.
  */
 function ejectedZones(ejected: readonly string[], inputs: PresetInputs): Override[] {
-  const zones = [structureZone(ejected, inputs)]
+  const zones = [structureZone(ejected, inputs), ...formZones(ejected, inputs)]
   const boundary = ejected.filter((path) => {
     const profile = profileOfPath(path, inputs)
     return profile === 'parts' || profile === 'app'
@@ -316,7 +340,7 @@ export function buildPreset(inputs: PresetInputs): PresetConfig | undefined {
   const ejected = inputs.ejected ?? []
   if (ejected.length > 0) overrides.push(...ejectedZones(ejected, inputs))
   const seeds = inputs.seeds ?? []
-  if (seeds.length > 0) overrides.push(structureZone(seeds, inputs))
+  if (seeds.length > 0) overrides.push(structureZone(seeds, inputs), ...formZones(seeds, inputs))
 
   return {
     plugins: ['react', 'typescript', 'jsx-a11y'],

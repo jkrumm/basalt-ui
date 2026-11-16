@@ -23,6 +23,12 @@ const PARTS_UP: readonly Profile[] = ['parts', 'app', 'repo']
 /** Zone V (vendored shadcn files, bridge only): the class rules are off there (section 6). */
 const VENDORED: readonly Zone[] = ['vendored']
 
+/**
+ * An ejected or seed file is the primitive: it owns the colour roles and the surface recipe
+ * (guardrails section 6), so the forms written for app code are off there; `alpha-on-premixed` stays on.
+ */
+const ZONE_COLOUR: readonly Zone[] = ['ejected', 'seed']
+
 const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 /** Longest first, so an alternation never settles for a prefix of a longer name. */
 const alt = (items: readonly string[]): string =>
@@ -176,7 +182,7 @@ export const CLASS_RULES = defineRules({
   'raw-scroll': {
     family: 'class',
     profiles: PARTS_UP,
-    zonesOff: VENDORED,
+    zonesOff: [...VENDORED, 'ejected', 'seed'],
     defect:
       'main is the only scrollport; `.module.css` overflow was invisible in 2.x; axe `scrollable-region-focusable` on EventList',
     forms: [
@@ -213,6 +219,8 @@ export const CLASS_RULES = defineRules({
       partsOnly(
         {
           id: 'surface-recipe',
+          // The ejected primitive is the component that owns the recipe.
+          zonesOff: ZONE_COLOUR,
           // A `dark:` token is `dark-fork`'s: one fix at a time, and the recipe fires once it is gone.
           pattern: new RegExp(
             `^(?!.*(?:^|:)(?:(?:group|peer|in)-)?(?:dark|data-\\[theme=dark\\]):)(?:.*:)?!?(?:bg-(?:card|inset)|shadow-card|rounded-card)(?:\\/[^\\s!]+)?!?$`,
@@ -226,6 +234,7 @@ export const CLASS_RULES = defineRules({
       partsOnlyExceptSeamMark(
         {
           id: 'app-colour',
+          zonesOff: ZONE_COLOUR,
           pattern: colourUtility,
           fix: 'Status, Lozenge, DeltaBadge or Num tone own colour in app code',
           next: 'A reasoned waiver',
@@ -235,6 +244,7 @@ export const CLASS_RULES = defineRules({
       ),
       partsOnly({
         id: 'app-colour-arbitrary',
+        zonesOff: ZONE_COLOUR,
         pattern: colourArbitrary,
         fix: 'Status, Lozenge, DeltaBadge or Num tone own colour in app code',
         next: 'A reasoned waiver',
