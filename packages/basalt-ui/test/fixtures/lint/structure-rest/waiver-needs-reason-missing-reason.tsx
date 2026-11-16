@@ -48,3 +48,22 @@ const a = 1
 // @valid
 // oxlint-enable basalt/colour-literal
 const a = 1
+
+// @invalid
+// oxlint-disable-next-line basalt/raw-scroll -- TODO
+const a = 1
+
+// @invalid
+// oxlint-disable-next-line basalt/raw-scroll -- fixme:
+const a = 1
+
+// @invalid
+const a = 1 // oxlint-disable-line basalt/colour-literal -- tbd.
+
+// @invalid
+/* eslint-disable-next-line no-console -- XXX */
+console.log(a)
+
+// @valid
+// oxlint-disable-next-line basalt/raw-scroll -- TODO(EP-12): the chart owns its scroll
+const a = 1

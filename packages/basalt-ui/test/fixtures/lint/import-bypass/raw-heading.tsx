@@ -108,3 +108,9 @@ const a = <H>{text}</H>
 // @ts
 const Tag = 'span' as const
 const a = <Tag>Title</Tag>
+// @invalid
+const a = createElement(`h${level}`, null, text)
+// @invalid
+const a = React.createElement(`h${level}`, { className: 'x' }, text)
+// @valid
+const a = createElement(`div${level}`, null, text)

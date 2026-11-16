@@ -6,8 +6,12 @@
  *   `navigate({ ... })` (`navigate`, `x.navigate`, so `router.navigate` and a `useNavigate()` result bound to that name) or of
  *   `redirect({ ... })` (`throw redirect(...)` in `beforeLoad`; `redirect` or `x.redirect`). A literal pins a default and hits the router traps reproduced on Router 1.170.46;
  *   the link of a store-backed route is `field.link()`.
- * - `loader-deps-search`: `loaderDeps: ({ search }) => search`, `=> ({ search })` and
- *   `=> ({ ...search })`, and the rest of a destructured search returned or spread
+ *   A `?` in the literal text of `to` (a `Link`/`Navigate` attribute, or `navigate({ to })` /
+ *   `redirect({ to })`; string or template) and a `history.pushState` / `replaceState` (also
+ *   `window.history.`, `globalThis.history.`) whose URL argument holds a `?` are the same form: the query is
+ *   written by hand. A URL built by concatenation or held in a variable is not read.
+ * - `loader-deps-search`: `loaderDeps: ({ search }) => search`, `=> ({ search })`,
+ *   `=> ({ ...search })` and `(opts) => ({ ...opts.search })`, and the rest of a destructured search returned or spread
  *   (`({ search: { page, ...rest } }) => ({ page, ...rest })`). Returning the whole search re-runs the loader on every param (argo
  *   `strength-tracker.tsx:53`); the deps are the keys it reads.
  * - `validate-search-pure`: an inline `validateSearch` that reads `window`, `document`,
@@ -125,6 +129,35 @@ const navigationCallee = (node: Node): 'navigate' | 'redirect' | undefined => {
   return name === 'navigate' || name === 'redirect' ? name : undefined
 }
 
+/** A string literal or a template literal whose fixed text holds a `?`: a query written into a URL. */
+const holdsQuery = (node: Node | undefined): boolean => {
+  if (!node) return false
+  if (node.type === 'TemplateLiteral') {
+    return children(node, 'quasis').some((quasi) => {
+      const cooked = (quasi['value'] as { cooked?: string | null } | undefined)?.cooked
+      return typeof cooked === 'string' && cooked.includes('?')
+    })
+  }
+  return stringValue(node)?.includes('?') === true
+}
+
+/** `history.x(...)`, `window.history.x(...)`, `globalThis.history.x(...)`, `x` named by the caller. */
+const isHistoryMethod = (node: Node, methods: ReadonlySet<string>): boolean => {
+  const callee = child(node, 'callee')
+  if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return false
+  if (!methods.has(nameOf(child(callee, 'property')) ?? '')) return false
+  const holder = child(callee, 'object')
+  if (nameOf(holder) === 'history') return true
+  return (
+    holder?.type === 'MemberExpression' &&
+    holder['computed'] !== true &&
+    nameOf(child(holder, 'property')) === 'history' &&
+    ['window', 'globalThis'].includes(nameOf(child(holder, 'object')) ?? '')
+  )
+}
+
+const HISTORY_WRITES: ReadonlySet<string> = new Set(['pushState', 'replaceState'])
+
 const LINK_COMPONENTS: ReadonlySet<string> = new Set(['Link', 'Navigate'])
 
 const literalSearch: AstForm = {
@@ -148,11 +181,30 @@ const literalSearch: AstForm = {
       if (!expression) return
       if (isLiteralSearch(expression)) report(node, 'search={{ … }}')
     },
+    JSXOpeningElement(node) {
+      if (!LINK_COMPONENTS.has(nameOf(child(node, 'name')) ?? '')) return
+      const to = children(node, 'attributes').find(
+        (attribute) =>
+          attribute.type === 'JSXAttribute' && nameOf(child(attribute, 'name')) === 'to',
+      )
+      const value = to ? child(to, 'value') : undefined
+      const target = value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : value
+      if (to && holdsQuery(target)) report(to, 'a query in `to`')
+    },
     CallExpression(node) {
+      if (isHistoryMethod(node, HISTORY_WRITES)) {
+        const url = children(node, 'arguments')[2]
+        if (url && holdsQuery(url)) report(node, 'history.pushState with a query')
+        return
+      }
       const callee = navigationCallee(node)
       if (!callee) return
       const [options] = children(node, 'arguments')
       if (options?.type !== 'ObjectExpression') return
+      const to = children(options, 'properties').find(
+        (property) => property.type === 'Property' && keyOf(property) === 'to',
+      )
+      if (to && holdsQuery(child(to, 'value'))) report(to, `${callee}({ to: '…?…' })`)
       const search = children(options, 'properties').find(
         (property) => property.type === 'Property' && keyOf(property) === 'search',
       )
@@ -192,24 +244,24 @@ const isWholeSearch = (
   expression: Node,
   binding: { name: string } | { object: string },
 ): boolean => {
-  if ('name' in binding) {
-    if (nameOf(expression) === binding.name) return true
-    // `({ search }) => ({ search })`: the whole search under a key is the same dependency
-    // and `({ ...search })` copies it key for key
-    return (
-      expression.type === 'ObjectExpression' &&
-      children(expression, 'properties').some((property) =>
-        property.type === 'SpreadElement'
-          ? nameOf(child(property, 'argument')) === binding.name
-          : property.type === 'Property' && nameOf(child(property, 'value')) === binding.name,
-      )
-    )
-  }
+  const isSearch = (node: Node | undefined): boolean =>
+    node !== undefined &&
+    ('name' in binding
+      ? nameOf(node) === binding.name
+      : node.type === 'MemberExpression' &&
+        node['computed'] !== true &&
+        nameOf(child(node, 'object')) === binding.object &&
+        nameOf(child(node, 'property')) === 'search')
+  if (isSearch(expression)) return true
+  // `({ search }) => ({ search })`: the whole search under a key is the same dependency
+  // and `({ ...search })`, `({ ...opts.search })` copy it key for key
   return (
-    expression.type === 'MemberExpression' &&
-    expression['computed'] !== true &&
-    nameOf(child(expression, 'object')) === binding.object &&
-    nameOf(child(expression, 'property')) === 'search'
+    expression.type === 'ObjectExpression' &&
+    children(expression, 'properties').some((property) =>
+      property.type === 'SpreadElement'
+        ? isSearch(child(property, 'argument'))
+        : property.type === 'Property' && isSearch(child(property, 'value')),
+    )
   )
 }
 

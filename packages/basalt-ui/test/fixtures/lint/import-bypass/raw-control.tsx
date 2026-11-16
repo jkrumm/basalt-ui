@@ -75,7 +75,7 @@ const a = <li role="option" onClick={pick} />
 const a = <li {...props} onClick={pick} />
 // @valid
 const a = <li>Row</li>
-// @valid
+// @invalid
 const a = <div onClick={stop}>Row</div>
 // @invalid
 const a = <progress value={used} max={100} />
@@ -92,3 +92,36 @@ const a = (
 )
 // @valid
 const a = <Collapsible title="Why?">Because.</Collapsible>
+// @invalid
+const a = (
+  <div tabIndex={0} onClick={go} onKeyDown={go}>
+    open
+  </div>
+)
+// @invalid
+const a = <span onClick={() => setOn(!on)}>{on ? 'on' : 'off'}</span>
+// @valid
+const a = <div onClick={(e) => e.stopPropagation()}>{children}</div>
+// @valid
+const a = (
+  <span
+    onClick={(e) => {
+      e.stopPropagation()
+    }}
+  >
+    {children}
+  </span>
+)
+// @valid
+const a = <div {...props} onClick={go} />
+// @valid
+const a = <div role="presentation" onClick={(e) => e.stopPropagation()} />
+// @invalid
+const a = (
+  <div
+    onClick={(e) => {
+      e.stopPropagation()
+      go()
+    }}
+  />
+)

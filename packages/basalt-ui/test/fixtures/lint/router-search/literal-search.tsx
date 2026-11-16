@@ -89,3 +89,39 @@ const a = <Navigate to="/runs" search={(prev) => prev} />
 
 // @valid
 const a = <Navigate to="/runs" />
+
+// @invalid
+const a = <Link to="/runs?status=failed" />
+
+// @invalid
+const a = <Link to={`/runs?status=${status}`} />
+
+// @invalid
+const go = () => navigate({ to: '/runs?status=failed' })
+
+// @invalid
+const go = () => redirect({ to: `/runs?tab=${tab}` })
+
+// @invalid
+const go = (name) => window.history.pushState({}, '', `?tab=${name}`)
+
+// @invalid
+const go = () => history.replaceState(null, '', '/runs?status=failed')
+
+// @valid
+const a = <Link to="/runs/$id" />
+
+// @valid
+const a = <Link to={`/runs/${id}`} />
+
+// @valid
+const go = () => window.history.pushState({}, '', '/runs')
+
+// @valid
+const go = () => window.history.pushState({}, '', url)
+
+// @valid
+const go = () => other.pushState({}, '', '/runs?a=1')
+
+// @valid
+const a = <a href="/runs?status=failed" />

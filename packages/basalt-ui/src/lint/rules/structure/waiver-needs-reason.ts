@@ -5,7 +5,9 @@
  * the token neither disables anything nor trips the rule (lint-edges S4).
  *
  * - `missing-reason`: a `disable`, `disable-next-line` or `disable-line` directive (oxlint or
- *   eslint spelling) with no `-- <why>`; the reason text is never read as rule ids.
+ *   eslint spelling) with no `-- <why>`, or whose reason is only a placeholder (`TODO`, `FIXME`,
+ *   `TBD`, `XXX`, any case, with trailing punctuation): a reason that says nothing is missing. The
+ *   reason text is never read as rule ids.
  * - `file-level-scope`: a file-level `disable` on any rule but `colour-literal`,
  *   `shadcn/no-inline-styles` or `raw-scroll`, naming no rule at all, or in a file outside the
  *   `deepRender` option (the paths `manifest.deepRender` declares). A line directive
@@ -39,6 +41,9 @@ const DIRECTIVE = /^\s*(?:oxlint|eslint)-(disable-next-line|disable-line|disable
 /** A prose dash where `--` belongs: oxlint reads every word after it as a rule id. */
 const EM_DASH = /\s[\u2013\u2014]\s/
 const REASON_SEPARATOR = /(?:^|\s)--+(?:\s|$)/
+
+/** A reason that is only a placeholder tag, `TODO` or `fixme:` and the like. */
+const PLACEHOLDER_REASON = /^(?:todo|fixme|tbd|xxx)[\s.:!?,;-]*$/i
 
 type Directive = {
   readonly kind: 'disable-next-line' | 'disable-line' | 'disable'
@@ -89,7 +94,8 @@ export const missingReason: AstForm = {
     'Program:exit'() {
       for (const comment of commentsOf(context as HostContext)) {
         const directive = parseDirective(comment.value)
-        if (!directive || directive.reason !== '') continue
+        if (!directive) continue
+        if (directive.reason !== '' && !PLACEHOLDER_REASON.test(directive.reason)) continue
         report(
           comment,
           EM_DASH.test(comment.value) ? 'disable directive with an em dash' : 'disable directive',

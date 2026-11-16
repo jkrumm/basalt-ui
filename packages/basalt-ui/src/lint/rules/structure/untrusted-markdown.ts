@@ -11,6 +11,11 @@
  *   (`document.createRange().createContextualFragment(m.html)`) report too, as does
  *   `document.write` / `writeln` on any `….document` chain (`w?.document.write(m.html)`). A sink reached through
  *   a computed key (`el['innerHTML']`) is not read, nor is `createContextualFragment` called bare.
+ *   `new DOMParser().parseFromString(x, 'text/html')` with a non-literal `x` reports too (also
+ *   `application/xhtml+xml`): the result is not traced to its insertion (`replaceChildren`,
+ *   `append`, `innerHTML`), because parsing alone runs nothing yet every use of the parsed
+ *   nodes in the page is the sink (an `onerror` runs once adopted), so the parse of model text is the
+ *   site that names it. A literal `x`, or a `text/xml` or `image/svg+xml` parse, passes.
  * - `rehype-raw`: an import or require of `rehype-raw`, and `allowDangerousHtml: true` in a
  *   `[remarkRehype, { … }]` tuple (`remarkRehype` the default import of `remark-rehype`).
  * - `mdx-evaluate`: `evaluate`/`run` (and their Sync twins) of `@mdx-js/mdx`, by name
@@ -20,6 +25,9 @@
  *   `compile`/`compileSync` report only in a file that also runs code from a string
  *   (`new Function(code)`, `Function(code)`, `eval`): a build step or a test that compiles authored
  *   MDX into a module is not an evaluation. Known limit: compiled code run in another file passes.
+ *   `new Function(…)`, `Function(…)` and `eval(…)` report themselves when any argument is not a
+ *   string literal or a hole-free template (`new Function(code)`, `eval(props.source)`); known limit:
+ *   `window.eval`, `globalThis.Function` and an aliased `Function` are not read.
  * - `trusted-content`: `contentTrust="trusted"`, or a non-literal `contentTrust={trust}` (a
  *   variable, a conditional, a call: the tier cannot be read, so it is treated as `trusted`),
  *   unless every child is a string literal, an imported binding, or the file matches a glob of
@@ -209,6 +217,18 @@ const dangerousHtml: AstForm = {
           if (isDocument && markup && !isLiteralText(markup)) report(node, `.document.${method}()`)
           return
         }
+        if (method === 'parseFromString') {
+          const [markup, mime] = children(node, 'arguments')
+          const type = mime ? literalValue(mime) : undefined
+          if (
+            markup &&
+            !isLiteralText(markup) &&
+            (type === 'text/html' || type === 'application/xhtml+xml')
+          ) {
+            report(node, `.parseFromString(…, '${type}')`)
+          }
+          return
+        }
         if (method === 'createContextualFragment') {
           const markup = children(node, 'arguments')[0]
           if (markup && !isLiteralText(markup)) report(node, '.createContextualFragment()')
@@ -304,9 +324,17 @@ const mdxEvaluate: AstForm = {
       if (COMPILE_NAMES.has(name)) compiles.push({ node, subject })
       else reportNow(node, subject)
     }
+    /** A string run as code: reported itself when any argument is not a literal. */
+    const reportRun = (node: Node): void => {
+      runs = true
+      const name = nameOf(child(node, 'callee')) as string
+      if (!children(node, 'arguments').every(isLiteralText)) {
+        reportNow(node, node.type === 'NewExpression' ? `new ${name}(…)` : `${name}(…)`)
+      }
+    }
     return {
       NewExpression(node) {
-        if (runsString(node)) runs = true
+        if (runsString(node)) reportRun(node)
       },
       'Program:exit'() {
         if (runs) for (const { node, subject } of compiles) reportNow(node, subject)
@@ -332,7 +360,7 @@ const mdxEvaluate: AstForm = {
         if (isMdxModule(module)) report(node, `import('${module}')`)
       },
       CallExpression(node) {
-        if (runsString(node)) runs = true
+        if (runsString(node)) reportRun(node)
         const callee = child(node, 'callee')
         if (callee?.type === 'MemberExpression' && callee['computed'] !== true) {
           const object = nameOf(child(callee, 'object'))

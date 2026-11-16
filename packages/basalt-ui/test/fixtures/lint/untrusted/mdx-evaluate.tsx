@@ -16,7 +16,7 @@ const mod = await mdx.evaluate(source, runtime)
 // @invalid
 import { compile } from '@mdx-js/mdx'
 const code = String(await compile(source, { outputFormat: 'function-body' }))
-const run = new Function(code)
+const run = new Function('return 1')
 
 // @invalid
 import { MDXRemote } from 'next-mdx-remote/rsc'
@@ -27,7 +27,7 @@ import { serialize } from 'next-mdx-remote'
 // @invalid
 import * as mdx from '@mdx-js/mdx'
 const code = mdx.compileSync(source)
-const out = Function(String(code))
+const out = Function('return 1')
 
 // @valid
 import { createProcessor } from '@mdx-js/mdx'
@@ -60,3 +60,18 @@ import { getMDXComponent } from 'mdx-bundler/client'
 
 // @valid
 import { bundleMDX } from 'mdx-bundler'
+
+// @invalid
+const out = new Function(code)()
+
+// @invalid
+const out = Function('props', props.source)
+
+// @invalid
+const out = eval(props.source)
+
+// @valid
+const out = eval('1 + 1')
+
+// @valid
+const out = new Function('a', 'b', 'return a + b')

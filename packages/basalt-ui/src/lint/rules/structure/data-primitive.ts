@@ -18,7 +18,8 @@
  * `useInterval` / `useIntervalEffect` hook by callee name), router invalidation included; a timer
  * that calls a named function which invalidates (`setInterval(refresh, 5000)`) is not followed.
  * `unseamed-transport` reads `EventSource` and `WebSocket`, not a client library's connect call:
- * `io()` from `socket.io-client` is reported at its import by `import-boundary` (`data-library`), as is `swr`;
+ * `io()` from `socket.io-client`, `new Pusher()` from `pusher-js` and `Ably` are reported at their import by
+ * `import-boundary` (`data-library`), as is `swr`;
  * SWR's `refreshInterval` key still reports here as a `refetch-interval`.
  */
 import type { FormContext, Node, Visitor } from '../../factory'
@@ -366,20 +367,34 @@ const TYPE_WRAPPERS: ReadonlySet<string> = new Set([
   'ParenthesizedExpression',
 ])
 
-/** `[]`, also behind a type: `[] as Row[]`, `<Row[]>[]`, `([] satisfies Row[])`. */
-const isEmptyArray = (node: Node | undefined): boolean => {
+const unwrapTypes = (node: Node | undefined): Node | undefined => {
   let at = node
   while (at && TYPE_WRAPPERS.has(at.type)) at = child(at, 'expression')
-  return at?.type === 'ArrayExpression' && nodesIn(at, 'elements').length === 0
+  return at
+}
+
+/**
+ * `[]`, also behind a type: `[] as Row[]`, `<Row[]>[]`, `([] satisfies Row[])`; and the same empty
+ * array spelled `Array.of()`, `Array.of<Row>()`, `new Array()` or `Array()` with no arguments.
+ */
+const isEmptyArray = (node: Node | undefined): boolean => {
+  const at = unwrapTypes(node)
+  if (at?.type === 'ArrayExpression') return nodesIn(at, 'elements').length === 0
+  if (at?.type !== 'CallExpression' && at?.type !== 'NewExpression') return false
+  if (nodesIn(at, 'arguments').length > 0) return false
+  const callee = child(at, 'callee')
+  if (at.type === 'CallExpression' && callee?.type === 'MemberExpression') {
+    return globalName(child(callee, 'object')) === 'Array' && methodName(at) === 'of'
+  }
+  return globalName(callee) === 'Array'
 }
 
 /** `x ?? []` / `x || []` / `ok ? x : []`, or `x ?? EMPTY` where `EMPTY` is a same-file const empty array. */
-/** `q.data`, `q.data!` or `q?.data`: a query result's `data` member. */
+/** `q.data`, `q.data!`, `q?.data` or a destructured `data` (`data as Row[]`): a query result's data. */
 const isDataRead = (node: Node | undefined): boolean => {
-  let at = node
-  while (at?.type === 'TSNonNullExpression' || at?.type === 'ChainExpression') {
-    at = child(at, 'expression')
-  }
+  let at = unwrapTypes(node)
+  while (at?.type === 'ChainExpression') at = unwrapTypes(child(at, 'expression'))
+  if (nameOf(at) === 'data') return true
   return (
     at?.type === 'MemberExpression' &&
     at['computed'] !== true &&
@@ -397,7 +412,8 @@ const isFallbackExpression = (
     return name !== undefined && emptyConsts.has(name)
   }
   if (node?.type === 'ConditionalExpression') {
-    // Only a query's data against an empty branch (`q.isSuccess ? q.data : []`): a conditional
+    // Only a query's data against an empty branch, in either branch (`q.isSuccess ? q.data : []`,
+    // `isLoading ? [] : (data as Row[])`): a conditional
     // between an empty state and computed rows (`shot === 'empty' ? [] : rows`) is no fallback.
     const consequent = child(node, 'consequent')
     const alternate = child(node, 'alternate')
