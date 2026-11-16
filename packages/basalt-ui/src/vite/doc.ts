@@ -46,6 +46,11 @@ Every run it rewrites <root>/.basalt/sources.css (gitignored) when its bytes cha
                                        (its local file is the app's own source)
 An import added in dev is picked up on the next start. sources: false skips the file.
 
+Table tiers: a module of the app that imports basalt-ui/table gets \`import 'basalt-ui/table.css'\`
+appended (the tier sheet: cards below the phone width, in @layer basalt.table), so the app adds no
+import of its own. A module that already imports the sheet, and anything under node_modules, is left
+alone. Without basalt() the app imports basalt-ui/table.css itself.
+
 The head (transformIndexHtml), replacing 2.x basaltAppPlugin:
   <meta charset> hoisted first, a viewport meta when the shell has none, the theme script from
   basalt-ui/theme-script (once; options: themeScript, false to omit), and the theme-color pair
