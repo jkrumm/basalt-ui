@@ -1,11 +1,11 @@
 # Copy
 
-The words on a page state facts: a precise noun, its scope, a live number. Slots and props: [PageBar](docs/page-bar.md), [PageSummary](docs/page-summary.md), [StatCard](docs/stat-card.md). Words for empty, loading and error are in [states](states.md).
+The words on a page state facts: a precise noun, its scope, a live number. Slots and props: [PageBar](node_modules/basalt-ui/docs/page-bar.md), [PageSummary](node_modules/basalt-ui/docs/page-summary.md), [StatCard](node_modules/basalt-ui/docs/stat-card.md). Words for empty, loading and error are in [states](states.md).
 
 ## Titles and summary
 
 - The page title names the subject and its scope ("Pull requests, last 30 days"), the page bar's `title`. [type:PageBarProps]
-- The summary sentence carries a live number and states a fact: "12 tickets open, 3 past SLA". [PageSummary](docs/page-summary.md) renders it; a headline that restates the title is left out.
+- The summary sentence carries a live number and states a fact: "12 tickets open, 3 past SLA". [PageSummary](node_modules/basalt-ui/docs/page-summary.md) renders it; a headline that restates the title is left out.
 - A card title is a noun phrase naming the subject, in sentence case, in the body sans. A category word names nothing.
 
 ## Captions and facts

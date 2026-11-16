@@ -1,12 +1,12 @@
 # States
 
-The phase vocabulary and the words each phase carries. The shapes are owned by the parts; you own what they say. Docs: [QueryState](docs/query-state.md), [EmptyState](docs/empty-state.md), [Skeleton](docs/skeleton.md).
+The phase vocabulary and the words each phase carries. The shapes are owned by the parts; you own what they say. Docs: [QueryState](node_modules/basalt-ui/docs/query-state.md), [EmptyState](node_modules/basalt-ui/docs/empty-state.md), [Skeleton](node_modules/basalt-ui/docs/skeleton.md).
 
 ## The phases
 
 - `ready`: data on screen. `loading`: the first load, drawn as a skeleton in the loaded shape. `stale`: saved data on screen while a refetch runs or has failed, flagged as old. `error`: a failed load with a retry. [type:Phase]
 - `empty` is derived from the cause you pass, never set by hand: it cannot exist without a reason. [type:FrameState]
-- A frame ([StatCard](docs/stat-card.md), [ChartCard](docs/chart-card.md), [DataTable](docs/data-table.md)) takes the query or a phase and draws every phase at its loaded height. A region without a frame goes inside [QueryState](docs/query-state.md). [type:QueryStateLike]
+- A frame ([StatCard](node_modules/basalt-ui/docs/stat-card.md), [ChartCard](node_modules/basalt-ui/docs/chart-card.md), [DataTable](node_modules/basalt-ui/docs/data-table.md)) takes the query or a phase and draws every phase at its loaded height. A region without a frame goes inside [QueryState](node_modules/basalt-ui/docs/query-state.md). [type:QueryStateLike]
 - Branch precedence is loading, error, empty, data; a failed query reads as a failure, never as an empty list. [type:FrameState]
 
 ## What each state says
