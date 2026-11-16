@@ -185,6 +185,76 @@
       "manual": true,
       "note": "the frame value types import from one subpath beside the parts that take them; the charts subpath keeps a deprecated alias of the same type for one minor",
       "verify": "tsc"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "charts-label-CartesianChart",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/charts#CartesianChart.ariaLabel",
+      "to": "label",
+      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "charts-label-Lines",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/charts#Lines.ariaLabel",
+      "to": "label",
+      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "charts-label-Bars",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/charts#Bars.ariaLabel",
+      "to": "label",
+      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "charts-label-Sparkline",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/charts#Sparkline.ariaLabel",
+      "to": "label",
+      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "charts-label-MiniBars",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/charts#MiniBars.ariaLabel",
+      "to": "label",
+      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "charts-label-Heatmap",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/charts#Heatmap.ariaLabel",
+      "to": "label",
+      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "charts-label-BandStrip",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/charts#BandStrip.ariaLabel",
+      "to": "label",
+      "note": "the accessible name is `label` on every part that takes one; `ariaLabel` stays a deprecated alias for one minor (a chart takes exactly one of the two)"
     }
   ],
   "tokens": { "renamed": [], "valueShifts": [] },

@@ -19,7 +19,6 @@ Bars<D>(props: BarsProps<D>): ReactElement
   data: readonly D[]
   x: XConfig<D>
   y?: YConfig
-  ariaLabel: string
   summary?: string
   table?: boolean
   height?: number | "fill"
@@ -30,6 +29,7 @@ Bars<D>(props: BarsProps<D>): ReactElement
   cursor?: string
   selection?: ChartSelection<D>
   focus?: ChartFocus<D>  // Pointer and arrow keys focus a datum of `focus.items`; the rest dims, the readout follows
+  label: string
   series: readonly BarsSeries<D>[]
   layout?: "stacked" | "grouped" | "normalized"  // Default `'stacked'`
 ```
@@ -40,7 +40,7 @@ Bars<D>(props: BarsProps<D>): ReactElement
 
 ```tsx
 <Bars
-  ariaLabel="Orders per week"
+  label="Orders per week"
   data={rows}
   x={{ value: (d) => d.week }}
   series={[{ mark: 'bar', key: 'orders', label: 'Orders', color: SERIES.orders, y: (d) => d.orders }]}

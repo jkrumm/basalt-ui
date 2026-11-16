@@ -244,6 +244,26 @@
       "manual": true,
       "note": "the type of every `menu` prop no longer shares a name with the `Menu` component of `basalt-ui/ui/menu`; `Menu` stays a deprecated alias for one minor",
       "verify": "tsc"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "cards-barlist-bodyrows",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/cards#BarList.rows",
+      "to": "bodyRows",
+      "note": "the body height in rows is `bodyRows`; `rows` stays a deprecated alias for one minor and no longer shares its name with the data rows of `StatCell` and `Facts`"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "cards-eventlist-bodyrows",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/cards#EventList.rows",
+      "to": "bodyRows",
+      "note": "the body height in rows is `bodyRows`; `rows` stays a deprecated alias for one minor and no longer shares its name with the data rows of `StatCell` and `Facts`"
     }
   ],
   "tokens": {

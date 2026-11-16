@@ -41,7 +41,7 @@ PageBar<K extends string = string>({ title, parent, controls, tabs, connection, 
 ## Example
 
 ```tsx
-<PageBar title="Orders" tabs={{ handle: store.field.view, label: 'Orders view' }} />
+<PageBar title="Orders" tabs={{ state: store.field.view, label: 'Orders view' }} />
 ```
 
 ## Example

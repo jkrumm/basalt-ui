@@ -21,7 +21,6 @@ CartesianChart<D>(props: CartesianChartProps<D>): ReactElement
   x: XConfig<D>
   y?: YConfig
   series: readonly Series<D>[]
-  ariaLabel: string
   summary?: string
   table?: boolean
   height?: number | "fill"
@@ -33,6 +32,7 @@ CartesianChart<D>(props: CartesianChartProps<D>): ReactElement
   selection?: ChartSelection<D>
   marks?: CustomMarks<D>
   focus?: ChartFocus<D>  // Pointer and arrow keys focus a datum of `focus.items`; the rest dims, the readout follows
+  label: string
 ```
 
 `Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
@@ -41,7 +41,7 @@ CartesianChart<D>(props: CartesianChartProps<D>): ReactElement
 
 ```tsx
 <CartesianChart
-  ariaLabel="Requests per day"
+  label="Requests per day"
   data={rows}
   x={{ value: (d) => d.day }}
   series={[{ mark: 'line', key: 'requests', label: 'Requests', color: SERIES.requests, y: (d) => d.requests }]}

@@ -9,7 +9,7 @@ slots: []
 
 # ViewTabs
 
-The view switch of a page or a section, bound to a `handle`. The URL (or any lane) owns the
+The view switch of a page or a section, bound to a `state` handle. The URL (or any lane) owns the
 value: a link with `?tab=history` renders History on the first server pass, and Back walks the
 tabs when the field is `history: 'push'`. One mount per form, swapped in CSS at `md`.
 
@@ -17,7 +17,7 @@ tabs when the field is `history: 'push'`. One mount per form, swapped in CSS at 
 
 ```ts
 ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode
-  handle: ControlHandle<T>
+  state: ControlHandle<T>
   options?: readonly ViewTabsOption<T>[]  // Defaults to `handle.options` (every declared value, labelled by `.labels()`)
   label?: string  // The switch's accessible name; both forms carry it; default 'View'
   disabled?: boolean
@@ -30,7 +30,7 @@ ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode
 
 ```tsx
 <ViewTabs
-  handle={overview.field.tab}
+  state={overview.field.tab}
   label="Overview view"
   options={[
     { value: 'all', label: 'All' },

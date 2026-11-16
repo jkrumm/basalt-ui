@@ -24,7 +24,7 @@ is drawn in every phase, so loading does not move the box.
 ChartCard(props: ChartCardProps): ReactElement
   // either title + chart or phase
   empty?: Empty | null
-  phase?: Phase | ChartQueryState | (Phase | ChartQueryState | undefined) & "loading"  // A `Phase` or the query itself
+  phase?: Phase | QueryStateLike  // A `Phase` or the query itself
   figure?: ChartFigure
   legend?: readonly LegendEntry[]  // The legend row for marks the page draws through the seam, drawn in every phase
   footer?: FootFacts
@@ -38,7 +38,7 @@ ChartCard(props: ChartCardProps): ReactElement
   chart?: BoxSlot
 ```
 
-`Phase`, `Empty`, `CardMenu`, `FootFacts` import from `basalt-ui/cards`: `import type { Phase, Empty, CardMenu, FootFacts } from 'basalt-ui/cards'`.
+`Phase`, `QueryStateLike`, `Empty`, `CardMenu`, `FootFacts` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty, CardMenu, FootFacts } from 'basalt-ui/cards'`.
 
 ## Example
 
@@ -48,6 +48,6 @@ ChartCard(props: ChartCardProps): ReactElement
   subtitle="last 30 days"
   figure={{ value: 12840, delta: { value: '+8%', polarity: 'up-good' }, period: 'vs prior' }}
   phase={query}
-  chart={(box) => <Lines height={box.height} ariaLabel="Requests per day" data={rows} x={x} series={series} />}
+  chart={(box) => <Lines height={box.height} label="Requests per day" data={rows} x={x} series={series} />}
 />
 ```

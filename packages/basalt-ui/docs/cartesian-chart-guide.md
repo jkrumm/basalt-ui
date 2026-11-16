@@ -30,7 +30,7 @@ closed stroke scale.
 
 ## Accessibility
 
-- `ariaLabel` is required and names the chart.
+- `label` is required and names the chart.
 - `summary` is read by assistive technology beside the chart; without it the chart states the first
   series' min, max and last value.
 - `table` renders a visually hidden data table for up to 200 points and none above.

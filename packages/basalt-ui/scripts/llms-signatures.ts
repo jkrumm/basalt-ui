@@ -41,6 +41,52 @@ function clip(text: string, max: number): string {
 
 type PropEntry = { sym: ts.Symbol; has: boolean }
 
+/** A prop tagged `@deprecated`: an old spelling kept for one minor, never part of a doc's signature. */
+export const isDeprecatedProp = (checker: ts.TypeChecker, sym: ts.Symbol): boolean =>
+  sym.getJsDocTags(checker).some((tag) => tag.name === 'deprecated')
+
+/** The deprecated props an arm really carries: a `?: undefined` stand-in does not count. */
+function deprecatedIn(checker: ts.TypeChecker, arm: ts.Type, node: ts.Node): Set<string> {
+  const realType = ts.TypeFlags.Never | ts.TypeFlags.Undefined
+  return new Set(
+    arm
+      .getProperties()
+      .filter(
+        (p) =>
+          isDeprecatedProp(checker, p) &&
+          (checker.getTypeOfSymbolAtLocation(p, node).flags & realType) === 0,
+      )
+      .map((p) => p.name),
+  )
+}
+
+/**
+ * The arms of a props type a doc shows: an arm that only adds a deprecated spelling
+ * (`{ label } | { ariaLabel }`) is left out, so the doc names the current one. A deprecated prop every
+ * arm carries (a plain `@deprecated` option) is not an arm's own, and every arm stays when all of
+ * them add one.
+ */
+export function currentArms(checker: ts.TypeChecker, type: ts.Type, node: ts.Node): ts.Type[] {
+  const arms = type.isUnion() ? type.types : [type]
+  const per = arms.map((arm) => deprecatedIn(checker, arm, node))
+  const own = (i: number): boolean => [...per[i]!].some((name) => !per.every((d) => d.has(name)))
+  const current = arms.filter((_, i) => !own(i))
+  return current.length > 0 ? current : arms
+}
+
+/** The names a doc leaves out: every prop tagged `@deprecated` in any arm. */
+export function deprecatedNames(checker: ts.TypeChecker, type: ts.Type): Set<string> {
+  const arms = type.isUnion() ? type.types : [type]
+  return new Set(
+    arms.flatMap((arm) =>
+      arm
+        .getProperties()
+        .filter((p) => isDeprecatedProp(checker, p))
+        .map((p) => p.name),
+    ),
+  )
+}
+
 const isOwn = (p: ts.Symbol): boolean =>
   p.declarations?.some((d) => !d.getSourceFile().fileName.includes('/node_modules/')) === true
 
@@ -64,14 +110,15 @@ export function propShapeLines(
   const type = checker.getNonNullableType(paramType)
   const isShape = (t: ts.Type): boolean =>
     (t.flags & (ts.TypeFlags.Object | ts.TypeFlags.Intersection)) !== 0
-  const members = type.isUnion() ? type.types : [type]
-  if (!members.every(isShape)) return []
+  if (!(type.isUnion() ? type.types : [type]).every(isShape)) return []
+  const members = currentArms(checker, type, node)
+  const dropped = deprecatedNames(checker, type)
 
   // Per member: which own props carry a real type there (not `?: never` / `undefined`).
   const perMember = members.map((m) =>
     m
       .getProperties()
-      .filter(isOwn)
+      .filter((p) => isOwn(p) && !dropped.has(p.name))
       .map<PropEntry>((sym) => ({
         sym,
         has:

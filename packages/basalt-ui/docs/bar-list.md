@@ -11,7 +11,7 @@ slots: [bar-list, bar-list-row]
 
 A ranked list on one shared scale: label, a thin bar against the largest value, the value as
 text and an optional muted second figure. Each row is a link, a button or plain text. It holds
-one body height at every phase, scrolls past `rows`, and its loading skeleton draws the rows it
+one body height at every phase, scrolls past `bodyRows`, and its loading skeleton draws the rows it
 will become. Colour belongs to a verdict, so every bar is neutral.
 
 ## Signature
@@ -26,7 +26,7 @@ BarList(props: BarListProps): ReactElement
   empty?: Empty | null
   items: readonly BarListItem[]  // Rows in display order: sort them yourself, the list does not reorder
   max?: number  // The scale end every bar fills against
-  rows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
+  bodyRows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
   format?: (value: number) => string  // Formats each value
   focus?: ListFocus<unknown>  // A chart's focus (`useChartFocus(items, …)`): row i is `focus.items[i]`, so pass the list in the same order as the chart's items
 ```
