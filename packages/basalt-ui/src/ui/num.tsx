@@ -43,6 +43,8 @@ export type NumProps = Omit<ComponentProps<'span'>, 'className' | 'children' | '
  * finite prints a muted dash, never `NaN`, and keeps `tone` off so a missing figure never reads
  * as a verdict.
  *
+ * @useWhen a figure is printed in the page locale with tabular digits and a muted dash when it is missing
+ * @neverWhen the text is not a number, or the figure belongs to a part that formats its own (StatCard, DataTable)
  * @example
  * <Num value={1234.5} />
  * <Num value={delta} tone={delta < 0 ? 'bad' : 'good'} format={{ style: 'percent' }} />

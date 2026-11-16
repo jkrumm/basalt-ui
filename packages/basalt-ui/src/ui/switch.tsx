@@ -27,6 +27,8 @@ export type SwitchProps = Omit<BaseSwitch.Root.Props, 'className' | 'children'> 
  * An on/off switch on Base UI; Space toggles it. Works with no provider and joins a Base UI `Field`
  * when wrapped in one. Name it with a wrapping `<label>` or `aria-label`.
  *
+ * @useWhen a setting turns on or off and takes effect at once
+ * @neverWhen the choice is submitted with a form (use Checkbox), or there are more than two states (use RadioGroup or Select)
  * @example
  * <label className="flex items-center gap-2 text-sm">
  *   <Switch checked={on} onCheckedChange={setOn} />Notifications

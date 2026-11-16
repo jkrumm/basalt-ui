@@ -20,6 +20,8 @@ export type CollapsibleProps = Omit<BaseCollapsible.Root.Props, 'className'> & L
  * One show and hide region on Base UI, controlled with `open` or left to `defaultOpen`. Works with
  * no provider. For a list of sections that belong together use `Accordion`.
  *
+ * @useWhen one region hides and shows behind a trigger (advanced options)
+ * @neverWhen several sections belong together (use Accordion), or the content must stay visible
  * @example
  * <Collapsible>
  *   <CollapsibleTrigger>Advanced options</CollapsibleTrigger>

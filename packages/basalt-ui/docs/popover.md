@@ -13,6 +13,43 @@ A floating panel anchored to its trigger on Base UI: click or Enter opens it, Es
 outside click close it, focus moves in and returns, and it is always portalled above the page.
 Open state stays with the caller (`open`/`onOpenChange`) or the trigger. Works with no provider.
 
+## Props
+
+### `Popover`
+
+A floating panel anchored to its trigger on Base UI: click or Enter opens it, Escape and an
+outside click close it, focus moves in and returns, and it is always portalled above the page.
+Open state stays with the caller (`open`/`onOpenChange`) or the trigger. Works with no provider.
+
+```ts
+Popover(props: PopoverProps): ReactElement
+```
+
+### `PopoverTrigger`
+
+The element that opens a `Popover`. It carries no look of its own: pass `render={<Button />}`.
+`openOnHover` (with `delay` and `closeDelay`) opens the panel on hover as well as on press.
+
+```ts
+PopoverTrigger({ className, ...props }: PopoverTriggerProps): ReactElement
+  className?: string  // Layout only (`w-96`, `mt-2`)
+```
+
+### `PopoverContent`
+
+The panel, portalled and positioned by Base UI. It must be named: pass `aria-label` or
+`aria-labelledby`, or a missing name fails to type-check. `finalFocus` and `initialFocus` name
+where focus goes when it closes and opens.
+
+```ts
+PopoverContent({ anchor, side, align, sideOffset, alignOffset, container, className, children, ...props }: PopoverContentProps): ReactElement
+  // either aria-label or aria-labelledby
+  aria-label: string
+  className?: string  // Layout only (`w-96`, `mt-2`)
+  container?: HTMLElement | ShadowRoot | React.RefObject<HTMLElement | ShadowRoot | null> | null  // Where the panel renders
+  aria-labelledby: string
+```
+
 ## `popoverContentVariants`
 
 Part `popover-content`.

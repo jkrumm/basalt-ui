@@ -55,6 +55,8 @@ export type StatusProps = Layout &
  * A dot and a word for a verdict: `Healthy`, `Degraded`. The dot is a pseudo-element and not read
  * out; the word is the state.
  *
+ * @useWhen one entity has a verdict word with a dot (Healthy, Degraded) in a row or a header
+ * @neverWhen the word carries a count or a change (use CountBadge or DeltaBadge), or no word fits (a dot alone never ships)
  * @example
  * <Status tone="good">Healthy</Status>
  */

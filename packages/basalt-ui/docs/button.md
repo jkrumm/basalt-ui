@@ -1,7 +1,7 @@
 ---
 name: Button
-use when: ''
-never when: ''
+use when: 'an action the user takes: save, delete, open'
+never when: 'the target is another page (use a link, or `render` a link through Button), or the control is a choice (use Switch, Segmented or Select)'
 subpath: basalt-ui/ui/button
 peers: ['@base-ui/react']
 slots: [button, pressable]
@@ -10,6 +10,34 @@ slots: [button, pressable]
 # Button
 
 A button on Base UI. Works with no provider; polymorphism only through `render`.
+
+## Props
+
+### `Button`
+
+A button on Base UI. Works with no provider; polymorphism only through `render`.
+
+```ts
+Button({ variant, size, shape, loading, disabled, focusableWhenDisabled, className, ...props }: ButtonProps): ReactElement
+  // either aria-label + shape or neither
+  className?: string  // Layout only (`w-full`, `flex-1`, `mt-2`)
+  variant?: "primary" | "secondary" | "ghost" | "danger" | null
+  size?: "md" | "sm" | null
+  loading?: boolean  // Disables interaction and sets `aria-busy`, keeping focus on the button
+  shape?: "default" | "icon"
+  aria-label: string  [with shape="icon"]
+```
+
+### `Pressable`
+
+A whole row, chip or disclosure that is one button. Styled by the caller; it owns focus, the
+pointer-tier hit floor and `size` layout, and nothing else.
+
+```ts
+Pressable({ size, className, ...props }: PressableProps): ReactElement
+  className?: string  // Layout only (`w-full`, `flex-1`, `mt-2`)
+  size?: "none" | "row" | "chip" | null
+```
 
 ## `buttonVariants`
 

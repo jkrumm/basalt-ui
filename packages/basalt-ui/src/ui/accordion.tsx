@@ -26,6 +26,8 @@ export type AccordionProps<Value = unknown> = Omit<BaseAccordion.Root.Props<Valu
  * page searches it and opens it on a match (it wins over `keepMounted`). `keepMounted` keeps a
  * closed panel in the DOM, so a form or a scroll position inside it survives a close.
  *
+ * @useWhen several sections belong together and the reader opens the ones they need
+ * @neverWhen one region alone (use Collapsible), or the content must stay visible (use Section)
  * @example
  * <Accordion hiddenUntilFound defaultValue={['shipping']}>
  *   <AccordionItem value="shipping">

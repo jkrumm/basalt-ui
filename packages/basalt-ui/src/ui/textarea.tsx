@@ -36,6 +36,8 @@ export type TextareaProps = Omit<
  * content from `rows` lines (default 3) to 10, then scrolls; where `field-sizing` is unsupported it
  * stays the fixed `rows` box. Works with no provider and joins a Base UI `Field` when wrapped in one.
  *
+ * @useWhen free text of several lines (a note, a message)
+ * @neverWhen one line (use Input) or markdown the user reads back (use Markdown for the display)
  * @example
  * <Textarea value={note} onValueChange={setNote} rows={4} aria-label="Note" />
  */

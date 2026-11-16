@@ -121,6 +121,8 @@ type Box = { x: number; w: number } | null
  * on and draws one indicator that slides to it; the arrow keys move the selection through the
  * options in DOM order. `multiple` lets several be on and draws no indicator. Works with no provider.
  *
+ * @useWhen a view or a range is one of two to five short options switched in place
+ * @neverWhen the options are more than five (use Select), or they open different pages (use Tabs or InnerNav)
  * @example
  * <Segmented value={range} onValueChange={setRange} aria-label="Range"
  *   options={[{ value: '7d', label: '7 days' }, { value: '30d', label: '30 days' }]} />

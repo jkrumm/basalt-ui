@@ -86,6 +86,9 @@ export type LozengeProps = BadgeProps<'span'> &
 /**
  * A tinted word chip for a state: `Draft`, `Overdue`.
  *
+ * @useWhen a state, a count or a change needs a small chip beside a label: `Lozenge` for a word, `CountBadge` for a number, `DeltaBadge` for a change against a period
+ * @neverWhen the verdict is a dot and a word on one entity (use Status), or the chip would carry colour alone
+ *
  * @example
  * <Lozenge tone="warn">Overdue</Lozenge>
  */

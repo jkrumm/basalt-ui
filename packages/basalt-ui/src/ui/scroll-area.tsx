@@ -52,6 +52,8 @@ function setRef<T>(ref: Ref<T> | undefined, node: T | null): void {
  * `max-h-*` or a flex parent, and name it with `aria-label` (it then reads as a region). Content is
  * wrapped in one plain `div` that the overflow is measured on.
  *
+ * @useWhen a bounded region (a log, a list in a panel) scrolls on its own and must stay keyboard-reachable
+ * @neverWhen the page itself scrolls (the shell owns one scrollport), or the content is a long list (use VirtualList)
  * @example
  * <ScrollArea aria-label="Activity" className="max-h-64">{rows}</ScrollArea>
  */
