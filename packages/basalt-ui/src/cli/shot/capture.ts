@@ -18,6 +18,7 @@ import {
 } from './types'
 import type {
   AnchorMetrics,
+  KeyLog,
   Measurement,
   PageMetrics,
   Scale,
@@ -33,6 +34,8 @@ const NAV_TIMEOUT_MS = 30_000
 const STEP_MS = 5_000
 const SHOT_TIMEOUT_MS = 15_000
 const SETTLE_MS = 60
+/** After a focus or an arrow press: a live region and a focus mark settle within this. */
+const KEYS_MS = 250
 /** Chromium refuses screenshots past ~16k px. */
 const MAX_PX = 16_000
 const FRAMES = 'new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))'
@@ -366,7 +369,7 @@ async function reveal(c: Ctx, name: string, state: ShotState): Promise<void> {
   if (typeof verdict === 'string' && verdict !== '') {
     const note = `not visible at this viewport: ${verdict}`
     const expected =
-      ['hover', 'focus', 'tooltip'].includes(state) || c.facts.absent[name]?.includes(state)
+      ['hover', 'focus', 'keys', 'tooltip'].includes(state) || c.facts.absent[name]?.includes(state)
     throw expected ? new Absent(note) : new Error(note)
   }
   await sleep(SETTLE_MS)
@@ -508,18 +511,108 @@ async function focusCrop(c: Ctx, name: string, path: string): Promise<void> {
   await c.page.evaluate('document.activeElement?.blur()')
 }
 
+/** Runs in the page: focuses the anchor's first visible focus host and names it with the key its role takes; null when it holds none. */
+export function focusKeysHost(el: Element): { host: string; key: KeyLog['key'] } | null {
+  // Inline: the function is serialised into the page, so it reaches no module constant.
+  const chartHost = '[aria-roledescription="chart"]'
+  const rowHost =
+    'tr[tabindex="0"], [role="row"][tabindex="0"], [role="grid"][tabindex="0"], [role="treegrid"][tabindex="0"], [role="listbox"][tabindex="0"]'
+  const visible = (e: Element): boolean => e.checkVisibility()
+  const within = (css: string): Element | undefined =>
+    [el, ...Array.from(el.querySelectorAll(css))].filter((e) => e.matches(css)).find(visible)
+  const chart = within(chartHost)
+  const row = chart ? undefined : within(rowHost)
+  const host = chart ?? row
+  if (!(host instanceof HTMLElement || host instanceof SVGElement)) return null
+  host.focus()
+  const role = host.getAttribute('role') ?? host.getAttribute('aria-roledescription')
+  const label = host.getAttribute('aria-label') ?? ''
+  const tag = host.tagName.toLowerCase()
+  return {
+    host: `${tag}${role ? `[${role}]` : ''} "${label.slice(0, 60)}"`,
+    key: chart ? 'ArrowRight' : 'ArrowDown',
+  }
+}
+
+/** Runs in the page: the `aria-live` text and the focused element, as the keyboard frame records them. */
+export function readKeysInPage(): { live: string; focused: string } {
+  const live = Array.from(document.querySelectorAll('[aria-live]'))
+    .map((n) => n.textContent?.trim() ?? '')
+    .filter(Boolean)
+    .join(' | ')
+    .slice(0, 240)
+  const el = document.activeElement
+  if (!el || el === document.body) return { live, focused: 'body' }
+  const text = (el.getAttribute('aria-label') ?? el.textContent ?? '').replace(/\s+/g, ' ').trim()
+  const role = el.getAttribute('role') ?? el.getAttribute('aria-roledescription')
+  return {
+    live,
+    focused: `${el.tagName.toLowerCase()}${role ? `[${role}]` : ''} "${text.slice(0, 60)}"`,
+  }
+}
+
+/**
+ * Focus the anchor's host, press the arrow key its role takes twice and crop the anchor after the
+ * second press, logging the live text and the focused element after each. A page error during the
+ * presses (or focus lost to `body`) is thrown by name: never a frame of the error screen.
+ */
+async function keysCrop(c: Ctx, name: string, path: string, log: KeyLog[]): Promise<void> {
+  const anchor = anchorOf(c, name)
+  const errors: string[] = []
+  const onError = (error: Error): void => void errors.push(firstLine(error))
+  c.page.on('pageerror', onError)
+  try {
+    await c.page.evaluate('document.activeElement?.blur()')
+    const found = await anchor.evaluate(focusKeysHost)
+    if (!found) throw new NotDeclared('no one-tab-stop focus host in the anchor')
+    const keys: KeyLog = { ...found, presses: [] }
+    log.push(keys)
+    const defect = (when: string): void => {
+      if (errors.length > 0) throw new Error(`page error ${when}: ${errors.join('; ')}`)
+    }
+    await sleep(KEYS_MS)
+    defect('on focus')
+    for (const n of [1, 2]) {
+      await c.page.keyboard.press(keys.key)
+      await sleep(KEYS_MS)
+      keys.presses.push(await c.page.evaluate(readKeysInPage, undefined))
+      defect(`after ${keys.key} press ${n}`)
+      if (keys.presses.at(-1)?.focused === 'body')
+        throw new Error(`focus left the host: ${keys.key} press ${n} left it on body`)
+    }
+    await c.page.evaluate(FRAMES)
+    defect('while settling')
+    await within('re-centring the anchor', anchor.evaluate(revealInPage))
+    await settled('measuring the anchor', () => anchor.boundingBox())
+    const tip = c.page.locator(TOOLTIPS).last()
+    await snapClip(c, path, (await tip.count()) > 0 ? [anchor, tip] : [anchor])
+  } finally {
+    c.page.off('pageerror', onError)
+    await c.page.evaluate('document.activeElement?.blur()').catch(() => undefined)
+  }
+}
+
 async function captureAnchor(c: Ctx, name: string, state: ShotState): Promise<void> {
   if (c.spec.mobile && (state === 'hover' || state === 'tooltip')) {
     record(c, { name, state, status: 'skipped', note: 'touch viewport' })
     return
   }
+  const keyLogs: KeyLog[] = []
   await attempt(c, name, state, (path) =>
     state === 'focus'
       ? focusCrop(c, name, path)
-      : state === 'rest'
-        ? snap(anchorOf(c, name), path)
-        : pointerCrop(c, name, state, path),
+      : state === 'keys'
+        ? keysCrop(c, name, path, keyLogs)
+        : state === 'rest'
+          ? snap(anchorOf(c, name), path)
+          : pointerCrop(c, name, state, path),
   )
+  const shot = c.shots.at(-1)
+  if (state === 'keys' && keyLogs[0] && shot?.name === name && shot.state === 'keys')
+    shot.keys = keyLogs[0]
+  // A page that threw is an error screen now: the next anchor and state need the page back.
+  if (state === 'keys' && shot?.status === 'error' && shot.note?.startsWith('page error'))
+    await visit(c, c.input.base + c.route).catch(() => undefined)
   await c.page.mouse.move(0, 0)
 }
 
@@ -678,7 +771,7 @@ async function capturePage(
     await attempt(c, PAGE_ANCHOR, 'rest', (path) => fullPage(c, path))
   flagProblems(c)
   for (const name of usable) {
-    for (const state of ['rest', 'hover', 'focus', 'tooltip'] as const) {
+    for (const state of ['rest', 'hover', 'focus', 'keys', 'tooltip'] as const) {
       if (!input.states.includes(state)) continue
       await captureAnchor(c, name, state)
       collect(c)

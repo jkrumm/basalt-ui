@@ -48,6 +48,9 @@ export type PwPage = {
   keyboard: { press(key: string): Promise<void> }
   mouse: { move(x: number, y: number): Promise<void> }
   screenshot(options: ShotOptions): Promise<unknown>
+  /** Only `pageerror`: an uncaught exception in the page. */
+  on(event: 'pageerror', handler: (error: Error) => void): unknown
+  off(event: 'pageerror', handler: (error: Error) => void): unknown
 }
 
 export type PwContext = {

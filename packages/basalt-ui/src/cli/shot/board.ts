@@ -18,10 +18,21 @@ figcaption,.mut{color:var(--mut);font-size:11px}img{max-width:100%;height:auto;d
 .empty.error,.bad{color:var(--bad);border-color:var(--bad)}
 `
 
+/** The keyboard frame's reading: per press, the live text and the focused element. */
+const keysNote = (shot: ShotRecord): string =>
+  shot.keys
+    ? `${shot.keys.key} on ${shot.keys.host}: ` +
+      shot.keys.presses
+        .map((p, i) => `press ${i + 1} → focus ${p.focused}, live "${p.live}"`)
+        .join('; ')
+    : ''
+
 const cell = (shot: ShotRecord | undefined, label: string): string => {
   const caption = (extra = ''): string => `<figcaption>${esc(label)}${extra}</figcaption>`
   if (!shot) return `<figure><div class="empty">not captured</div>${caption()}</figure>`
-  const note = [shot.note, shot.ignored && 'ignored the state'].filter(Boolean).join(' · ')
+  const note = [shot.note, shot.ignored && 'ignored the state', keysNote(shot)]
+    .filter(Boolean)
+    .join(' · ')
   if (shot.status === 'ok' && shot.file) {
     const alt = esc(`${shot.name} ${label}`)
     return `<figure><img src="${esc(shot.file)}" loading="lazy" alt="${alt}">${caption(note && ` · ${esc(note)}`)}</figure>`
