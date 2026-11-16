@@ -10,7 +10,7 @@
 // expect: text-[color:var(--my-colour)]
 // expect: shadow-(color:--my-glow)
 export const a = (
-  <div className="bg-(--vx-good) text-(--vx-warn) bg-[var(--vx-brand)] border-(--vx-bad-tint)" />
+  <div className="bg-(--basalt-good) text-(--basalt-warn) bg-[var(--basalt-brand)] border-(--basalt-bad-tint)" />
 )
 export const b = <span className="bg-(color:--vx-warn-tint) border-[color:var(--vx-brand)]">w</span>
 export const c = <div className="bg-(--brand-blue) text-(--brand-ink) bg-[var(--my-divider)]" />

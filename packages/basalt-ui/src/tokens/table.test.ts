@@ -1,6 +1,6 @@
 /**
- * The v3 table (tokens-visual 3.2): the emitted public `--vx-*` name set is the 74 booked names
- * plus `--vx-input`, the one name the S3 spike added (docs/v3/spikes/token-surfaces.md), and stays
+ * The v3 table (tokens-visual 3.2): the emitted public `--basalt-*` name set is the 74 booked names
+ * plus `--basalt-input`, the one name the S3 spike added (docs/v3/spikes/token-surfaces.md), and stays
  * under the 90 ceiling. Values come from the derivation; this file pins the shape, not a hex.
  */
 import { describe, expect, test } from 'bun:test'
@@ -77,7 +77,7 @@ const BOOKED_74: readonly string[] = [
   'rhythm-2',
   'rhythm-3',
   'contract',
-].map((name) => `--vx-${name}`)
+].map((name) => `--basalt-${name}`)
 
 describe('public names', () => {
   test('the 3.2 list is 74 names', () => {
@@ -85,10 +85,10 @@ describe('public names', () => {
     expect(new Set(BOOKED_74).size).toBe(74)
   })
 
-  test('the emitted --vx-* name set equals the 74 names of 3.2 plus --vx-input, and is at most 90', () => {
+  test('the emitted --basalt-* name set equals the 74 names of 3.2 plus --basalt-input, and is at most 90', () => {
     const css = emitTokensCss({ version: '3.0.0' })
-    const emitted = new Set([...css.matchAll(/(--vx-[a-z0-9-]+)\s*:/g)].map((m) => m[1]!))
-    expect([...emitted].sort()).toEqual([...BOOKED_74, '--vx-input'].sort())
+    const emitted = new Set([...css.matchAll(/(--basalt-[a-z0-9-]+)\s*:/g)].map((m) => m[1]!))
+    expect([...emitted].sort()).toEqual([...BOOKED_74, '--basalt-input'].sort())
     expect(emitted.size).toBe(75)
     expect(emitted.size).toBeLessThanOrEqual(90)
     expect([...tokenNames()].sort()).toEqual([...emitted].sort())

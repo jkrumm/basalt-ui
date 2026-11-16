@@ -9,7 +9,7 @@ import { join } from 'node:path'
 
 import { PKG_ROOT } from './lib'
 import type { AreaModule, Ctx, Measured } from './lib'
-import { gzipFileBytes, publicVxNames, tokensPeers } from './areas/tokens'
+import { gzipFileBytes, publicBasaltNames, tokensPeers } from './areas/tokens'
 
 const area = (await import('./areas/tokens')) as AreaModule
 const ctx: Ctx = { once: (_key, build) => build() }
@@ -61,10 +61,10 @@ describe('tokens area', () => {
     expect(gzipFileBytes(file)).toBeGreaterThan(ceiling)
   })
 
-  test('a 91st public --vx-* name fails the names budget', () => {
+  test('a 91st public --basalt-* name fails the names budget', () => {
     const names = Array.from({ length: 91 }, (_, i) => ({ name: `seeded-${i}` }))
-    expect(publicVxNames(names)).toBe(91)
-    expect(publicVxNames(names)).toBeGreaterThan(row('tokens-public-names').ceiling)
+    expect(publicBasaltNames(names)).toBe(91)
+    expect(publicBasaltNames(names)).toBeGreaterThan(row('tokens-public-names').ceiling)
   })
 
   test('a bare import in the tokens layer counts as a peer', () => {

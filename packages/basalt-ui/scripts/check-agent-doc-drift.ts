@@ -271,8 +271,8 @@ export const REMOVED_APIS: Readonly<Record<string, string>> = {
   HatchPattern: 'a flat fill (V2-SPEC § 9.9)',
   hatchFill: 'a flat fill (V2-SPEC § 9.9)',
   hatchSizeFor: 'a flat fill (V2-SPEC § 9.9)',
-  VxThemeProvider: 'var(--vx-*) references',
-  useVxTheme: 'var(--vx-*) references',
+  VxThemeProvider: 'var(--basalt-*) references',
+  useVxTheme: 'var(--basalt-*) references',
   useChartSize: 'the host measures',
   // Cursor: the 1.x store and hooks became `chartCursor(group?)` + `cursorGroup`.
   ChartCursorScope: 'cursorGroup',

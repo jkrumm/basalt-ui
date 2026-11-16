@@ -9,14 +9,14 @@
   height: 600px;
 }
 .c {
-  width: var(--vx-rhythm-1);
+  width: var(--basalt-rhythm-1);
 }
 .d {
-  color: var(--vx-brand);
+  color: var(--basalt-brand);
 }
 .e {
-  color: var(--vx-ink);
-  fill: var(--vx-chart-1);
+  color: var(--basalt-ink);
+  fill: var(--basalt-chart-1);
 }
 .f {
   display: grid;

@@ -1,6 +1,6 @@
 /**
- * `check-tokens` — the `--vx-*` name registry check. A typo in a `--vx-*` name resolves to nothing
- * any linter sees (`bg-(--vx-typo)`), so every spelling in `.css .tsx .astro .mdx` is checked
+ * `check-tokens` — the `--basalt-*` name registry check. A typo in a `--basalt-*` name resolves to nothing
+ * any linter sees (`bg-(--basalt-typo)`), so every spelling in `.css .tsx .astro .mdx` is checked
  * against the token table's names plus the app-owned `extraNames` (tokens-visual 3.8).
  */
 import { readFileSync } from 'node:fs'
@@ -13,7 +13,7 @@ import { bridgeEntries, TOKENS } from '../tokens/table'
 const SCANNED_EXTENSIONS: ReadonlySet<string> = new Set(['.css', '.tsx', '.astro', '.mdx'])
 
 /** A whole name: a trailing `-` or `${` is a template prefix, not a spelling. */
-const VX_NAME = /--vx-[a-z0-9]+(?:-[a-z0-9]+)*(?![\w-]|\$\{)/gi
+const BASALT_NAME = /--basalt-[a-z0-9]+(?:-[a-z0-9]+)*(?![\w-]|\$\{)/gi
 
 export type TokenFinding = {
   file: string
@@ -68,7 +68,7 @@ const KIND_OF_FAMILY: Readonly<Record<TokenFamily, string>> = {
   contract: 'contract',
 }
 
-/** Words an author writes for a kind that no token name carries (`--vx-space-1`). */
+/** Words an author writes for a kind that no token name carries (`--basalt-space-1`). */
 const KIND_WORDS: Readonly<Record<string, string>> = {
   space: 'spacing',
   spacing: 'spacing',
@@ -79,10 +79,10 @@ const KIND_WORDS: Readonly<Record<string, string>> = {
   colour: 'colour',
 }
 
-const segmentsOf = (name: string): string[] => name.replace(/^--vx-/, '').split('-')
+const segmentsOf = (name: string): string[] => name.replace(/^--basalt-/, '').split('-')
 
 const KINDS_BY_NAME: ReadonlyMap<string, string> = new Map(
-  TOKENS.map((t) => [`--vx-${t.name}`, KIND_OF_FAMILY[t.family]]),
+  TOKENS.map((t) => [`--basalt-${t.name}`, KIND_OF_FAMILY[t.family]]),
 )
 
 /** The one kind every package token carrying `segment` as a name segment has, else undefined. */
@@ -97,7 +97,7 @@ const SCALE_STEP = /^(?:\d*x?s|sm|md|lg|\d*x?l)$/
 
 /**
  * The kind an unknown name asks for: its qualifier (last segment, `muted` is a colour) beats its head
- * (`text` is a type size), unless the qualifier is a scale step (`--vx-radius-lg` is a radius, not
+ * (`text` is a type size), unless the qualifier is a scale step (`--basalt-radius-lg` is a radius, not
  * the type size `text-lg`); a head that is a kind word (`space`) names the kind directly.
  */
 export function kindOfName(name: string): string | undefined {
@@ -112,17 +112,17 @@ export function kindOfName(name: string): string | undefined {
   return byLast ?? byHead
 }
 
-/** `--vx-surfaceRaised` as the token table spells names: kebab-case, lower case. */
+/** `--basalt-surfaceRaised` as the token table spells names: kebab-case, lower case. */
 const kebab = (name: string): string => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
 
 /**
- * A shadcn role name written as a token (`--vx-accent`, `--vx-background`) to the token the theme
- * reads under it (`--color-accent: var(--vx-hover)`), from the `@theme inline` map.
+ * A shadcn role name written as a token (`--basalt-accent`, `--basalt-background`) to the token the theme
+ * reads under it (`--color-accent: var(--basalt-hover)`), from the `@theme inline` map.
  */
 const ROLE_TOKENS: ReadonlyMap<string, string> = new Map(
   bridgeEntries()
-    .filter((e) => e.tw.startsWith('--color-') && e.value === `var(--vx-${e.token})`)
-    .map((e) => [`--vx-${e.tw.slice('--color-'.length)}`, `--vx-${e.token}`] as const)
+    .filter((e) => e.tw.startsWith('--color-') && e.value === `var(--basalt-${e.token})`)
+    .map((e) => [`--basalt-${e.tw.slice('--color-'.length)}`, `--basalt-${e.token}`] as const)
     .filter(([role, token]) => role !== token && !KINDS_BY_NAME.has(role)),
 )
 
@@ -151,16 +151,16 @@ const aliasOf = (name: string): string | undefined => {
 
 /**
  * The known name closest to `name` (ties go to the first in sort order), or undefined past `NEAR`.
- * Candidates stay within the kind the name asks for (`--vx-text-muted` never suggests `--vx-text-md`);
+ * Candidates stay within the kind the name asks for (`--basalt-text-muted` never suggests `--basalt-text-md`);
  * within that kind a token that shares a name segment is near however many edits away, since a role
- * invented beside a real one (`--vx-brand-500`, `--vx-space-1`) means it. App-owned names carry no
+ * invented beside a real one (`--basalt-brand-500`, `--basalt-space-1`) means it. App-owned names carry no
  * kind and always qualify. A known name the unknown one ends with, on a segment boundary, beats
- * any edit distance: `--vx-color-brand` is `--vx-brand` with a prefix added, not `--vx-on-brand`.
+ * any edit distance: `--basalt-color-brand` is `--basalt-brand` with a prefix added, not `--basalt-on-brand`.
  * Then a candidate of the same family prefix (`radius-`) beats a closer spelling elsewhere.
  *
- * Before the search a camelCase name is folded to kebab-case (`--vx-surfaceRaised` reads as
- * `--vx-surface-raised`), and a shadcn role name maps to the token the theme reads under it
- * (`--vx-accent` is `--vx-hover`).
+ * Before the search a camelCase name is folded to kebab-case (`--basalt-surfaceRaised` reads as
+ * `--basalt-surface-raised`), and a shadcn role name maps to the token the theme reads under it
+ * (`--basalt-accent` is `--basalt-hover`).
  */
 export function nearestToken(name: string, known: Iterable<string>): string | undefined {
   const knownSet = new Set(known)
@@ -173,7 +173,7 @@ export function nearestToken(name: string, known: Iterable<string>): string | un
   const kind = kindOfName(folded)
   const own = new Set(segmentsOf(folded))
   const head = segmentsOf(folded)[0]
-  const tail = folded.replace(/^--vx-/, '')
+  const tail = folded.replace(/^--basalt-/, '')
   let best: string | undefined
   let bestRank: [number, number, number] = [Infinity, Infinity, Infinity]
   for (const candidate of [...knownSet].toSorted()) {
@@ -182,7 +182,7 @@ export function nearestToken(name: string, known: Iterable<string>): string | un
     const distance = editDistance(folded, candidate)
     const shares = kind !== undefined && segmentsOf(candidate).some((s) => own.has(s))
     if (distance > NEAR && !shares) continue
-    const suffix = tail.endsWith(`-${candidate.replace(/^--vx-/, '')}`)
+    const suffix = tail.endsWith(`-${candidate.replace(/^--basalt-/, '')}`)
     const sameHead = segmentsOf(candidate)[0] === head
     // A suffix match ranks first, the longest one first; then the same family prefix; then the fewest edits.
     const rank: [number, number, number] = [
@@ -220,7 +220,7 @@ export function checkTokens(input: {
     readFileSync(file, 'utf8')
       .split('\n')
       .forEach((text, i) => {
-        for (const [name] of text.matchAll(VX_NAME)) {
+        for (const [name] of text.matchAll(BASALT_NAME)) {
           if (known.has(name)) continue
           const nearest = nearestToken(name, known)
           findings.push({ file, line: i + 1, name, ...(nearest === undefined ? {} : { nearest }) })

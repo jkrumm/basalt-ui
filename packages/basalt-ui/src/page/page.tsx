@@ -144,7 +144,7 @@ export function Page({ area, fill, landmark, children }: PageProps): ReactElemen
               // padding and rule, plus the gap below it), so content starts at one height on every
               // page. A `fill` page owns its region and a shell-less page has no header to clear.
               unbanded &&
-                'not-has-[[data-slot=page-bar]]:pt-[calc(var(--vx-ctl-h)+--spacing(8)+1px)]',
+                'not-has-[[data-slot=page-bar]]:pt-[calc(var(--basalt-ctl-h)+--spacing(8)+1px)]',
             )}
           >
             {children}

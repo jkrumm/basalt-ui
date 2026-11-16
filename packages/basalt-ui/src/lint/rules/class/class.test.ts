@@ -98,8 +98,8 @@ describe('input to id', () => {
       messageId: 'numeric-container',
     },
     {
-      input: 'bg-(--vx-good)',
-      code: `export const a = <div className="bg-(--vx-good)" />`,
+      input: 'bg-(--basalt-good)',
+      code: `export const a = <div className="bg-(--basalt-good)" />`,
       ruleId: 'basalt/tw-off-law',
       messageId: 'app-colour-arbitrary',
     },

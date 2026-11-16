@@ -5,19 +5,19 @@ import { cn } from '../core/cn'
 
 /**
  * The `Table` cva table: the row height every part reads. `md` follows the density row height
- * (`--vx-row-h`); `sm` is a fixed 28 px row for a table that sits in a card and carries many
+ * (`--basalt-row-h`); `sm` is a fixed 28 px row for a table that sits in a card and carries many
  * rows. A coarse pointer takes the density floor in both, so a row stays a touch target.
  *
  * @example
  * tableVariants({ size: 'sm' }) // class string for a non-`Table` element
  */
 export const tableVariants = cva(
-  'w-full caption-bottom border-separate border-spacing-0 text-sm text-foreground [--table-row-h:var(--vx-row-h)]',
+  'w-full caption-bottom border-separate border-spacing-0 text-sm text-foreground [--table-row-h:var(--basalt-row-h)]',
   {
     variants: {
       size: {
         md: '',
-        sm: '[--table-row-h:1.75rem] pointer-coarse:[--table-row-h:var(--vx-row-h)]',
+        sm: '[--table-row-h:1.75rem] pointer-coarse:[--table-row-h:var(--basalt-row-h)]',
       },
     },
     defaultVariants: { size: 'md' },
@@ -76,7 +76,7 @@ export function TableHeader({ className, ...props }: PartProps<'thead'>): ReactE
       {...props}
       data-slot="table-header"
       className={cn(
-        '[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-(--vx-surface) print:[&_th]:static',
+        '[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-(--basalt-surface) print:[&_th]:static',
         className,
       )}
     />

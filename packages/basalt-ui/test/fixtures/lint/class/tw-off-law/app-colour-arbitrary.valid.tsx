@@ -1,6 +1,6 @@
 export const a = <div className="w-(--sidebar) grow-(--g) h-[var(--row)] shadow-(--elevation)" />
 export const focus = (
-  <div className="focus-visible:ring-(--vx-brand) data-focused:outline-[var(--vx-brand)]" />
+  <div className="focus-visible:ring-(--basalt-brand) data-focused:outline-[var(--basalt-brand)]" />
 )
 export const b = <span className="text-(length:--my-size) bg-(image:--hero) border-(length:--rule)">w</span>
 export const part = (

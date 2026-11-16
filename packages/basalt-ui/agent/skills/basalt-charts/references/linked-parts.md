@@ -13,12 +13,12 @@ A strip or figure that shows the focused item's breakdown (a night's stages, a r
 ```tsx
 // @check
 import { CartesianChart, useChartFocus } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 
 type Release = { day: number; tag: string; errors: number }
 
-const color = { light: VX.brand, dark: VX.brand }
+const color = { light: BASALT.brand, dark: BASALT.brand }
 
 export function ErrorsByRelease({ releases }: { releases: readonly Release[] }) {
   const focus = useChartFocus(releases, { announce: (r) => `${r.tag}: ${r.errors} errors` })

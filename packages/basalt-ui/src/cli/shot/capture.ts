@@ -674,7 +674,7 @@ type Steps = Pick<Scale, 'spacing' | 'radius' | 'fontSizes'>
 
 /**
  * Runs in the page: the theme's steps in px. Spacing is Tailwind's `--spacing` unit times the
- * ladder; radius and font size are every `--vx-*`, `--radius-*` and `--text-*` custom property a
+ * ladder; radius and font size are every `--basalt-*`, `--radius-*` and `--text-*` custom property a
  * style rule declares, resolved through a probe's `width` so `calc()` and `rem` read as the page does.
  */
 export function readScaleInPage(): Steps {
@@ -690,9 +690,9 @@ export function readScaleInPage(): Steps {
   }
   const out: Steps = { spacing: {}, radius: {}, fontSizes: {} }
   const kinds: [RegExp, keyof Steps][] = [
-    [/^--vx-space-/, 'spacing'],
-    [/^--(vx-)?radius-/, 'radius'],
-    [/^--(vx-)?text-/, 'fontSizes'],
+    [/^--basalt-space-/, 'spacing'],
+    [/^--(basalt-)?radius-/, 'radius'],
+    [/^--(basalt-)?text-/, 'fontSizes'],
   ]
   const declared = new Map<string, string>()
   const walk = (rules: CSSRuleList): void => {

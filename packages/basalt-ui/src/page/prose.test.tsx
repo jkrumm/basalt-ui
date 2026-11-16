@@ -12,7 +12,7 @@ describe('Prose', () => {
     const { container } = render(<Prose className="mt-4">body</Prose>)
     const el = root(container)
     expect(el.getAttribute('data-slot')).toBe('prose')
-    expect(el.classList.contains('vx-prose')).toBe(true)
+    expect(el.classList.contains('basalt-prose')).toBe(true)
     expect(el.classList.contains('mt-4')).toBe(true)
     expect(el.textContent).toBe('body')
   })

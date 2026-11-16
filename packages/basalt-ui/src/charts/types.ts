@@ -20,7 +20,7 @@ export type ChartX = Date | number | string
 export type ChartSeries<T> = {
   key: string
   label: string
-  /** A `VX.*` ref or a consumer series token (`var(--…)`), never a literal. */
+  /** A `BASALT.*` ref or a consumer series token (`var(--…)`), never a literal. */
   color: string
   /** `null` is an ABSENCE, never a zero: a gap in the line, no tooltip row, out of the domain. A
    * series whose `getValue` is always `null` is a legend-only entry (a zone or reference key). */
@@ -29,7 +29,7 @@ export type ChartSeries<T> = {
   /** `dot` is a filled dot swatch, `ring` a hollow one (a scatter's keys); `hollow` is an outlined
    * square (a seam-drawn open mark). */
   mark?: 'line' | 'bar' | 'area' | 'dot' | 'ring' | 'hollow' | undefined
-  /** Default `'solid'`; `'dashed'` is `VX.dashArray` on the line, the legend and the tooltip. */
+  /** Default `'solid'`; `'dashed'` is `BASALT.dashArray` on the line, the legend and the tooltip. */
   dash?: 'solid' | 'dashed' | undefined
   /** Interpolation between points. Default `'linear'`: discrete values (a daily total, a monthly
    * rate) are joined by straight segments, never by a smoothed curve with crossings between points
@@ -194,7 +194,7 @@ export type RefLine = {
   axis?: 'left' | 'right' | undefined
   /**
    * Names the line on the plot: a small muted caption on one of four spots (the plot's end or
-   * start, above or below the line). It follows the legend toggle. The ink is `--vx-ink-muted`, never
+   * start, above or below the line). It follows the legend toggle. The ink is `--basalt-ink-muted`, never
    * the line colour.
    */
   label?: string | undefined

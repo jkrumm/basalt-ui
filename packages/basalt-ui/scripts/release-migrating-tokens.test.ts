@@ -22,7 +22,7 @@ function censusRows(): { name: string; disposition: string }[] {
     .split('\n')
     .flatMap((line) => {
       const cells = line.split(/(?<!\\)\|/).map((c) => c.trim())
-      const name = /^`((?:--vx-|VX\.)[^`]*)`$/.exec(cells[1] ?? '')?.[1]
+      const name = /^`((?:--basalt-|BASALT\.)[^`]*)`$/.exec(cells[1] ?? '')?.[1]
       return name === undefined ? [] : [{ name, disposition: cells[4] ?? '' }]
     })
 }
@@ -57,11 +57,11 @@ describe('tokens.valueShifts', () => {
   const shifted = new Set(tokens.tokens.valueShifts.map((s) => s.token))
 
   const classes: [string, string[]][] = [
-    ['hue', ['--vx-brand', '--vx-good', '--vx-warn', '--vx-bad']],
-    ['radius', ['--vx-radius-card', '--vx-radius-ctrl']],
-    ['display and kpi', ['--vx-text-display']],
-    ['line heights', ['xs', 'sm', 'md', 'base', 'lg'].map((rung) => `--vx-text-${rung}-lh`)],
-    ['control height', ['--vx-ctl-h']],
+    ['hue', ['--basalt-brand', '--basalt-good', '--basalt-warn', '--basalt-bad']],
+    ['radius', ['--basalt-radius-card', '--basalt-radius-ctrl']],
+    ['display and kpi', ['--basalt-text-display']],
+    ['line heights', ['xs', 'sm', 'md', 'base', 'lg'].map((rung) => `--basalt-text-${rung}-lh`)],
+    ['control height', ['--basalt-ctl-h']],
   ]
   for (const [name, wanted] of classes) {
     test(`has an entry for ${name}`, () => {
@@ -71,8 +71,14 @@ describe('tokens.valueShifts', () => {
 
   test('radius entries carry the 10 to 14 and 6 to 8 steps', () => {
     const pick = (token: string) => tokens.tokens.valueShifts.find((s) => s.token === token)
-    expect([pick('--vx-radius-card')?.from, pick('--vx-radius-card')?.to]).toEqual(['10px', '14px'])
-    expect([pick('--vx-radius-ctrl')?.from, pick('--vx-radius-ctrl')?.to]).toEqual(['6px', '8px'])
+    expect([pick('--basalt-radius-card')?.from, pick('--basalt-radius-card')?.to]).toEqual([
+      '10px',
+      '14px',
+    ])
+    expect([pick('--basalt-radius-ctrl')?.from, pick('--basalt-radius-ctrl')?.to]).toEqual([
+      '6px',
+      '8px',
+    ])
   })
 })
 

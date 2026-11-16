@@ -2,8 +2,8 @@
  * Mantine-free token + palette layer.
  *
  * This module is PURE DATA + string helpers — ZERO UI-library imports (lint-enforced).
- * Colors are CSS custom properties under the `--vx-*` prefix (do NOT rename the prefix).
- * They resolve per color scheme in CSS, so `VX.*` works in components AND in non-component
+ * Colors are CSS custom properties under the `--basalt-*` prefix (do NOT rename the prefix).
+ * They resolve per color scheme in CSS, so `BASALT.*` works in components AND in non-component
  * files. Apply opacity via `alpha(token, a)` (never raw `rgba()`) so the hue keeps resolving.
  *
  * Grounded in argo `packages/charts/src/{tokens,palette,theme-vars,utils/color}.ts`.
@@ -23,8 +23,8 @@ import {
 import type { PaletteData, RadiusValues, SpaceValues } from './palette'
 import { SIZE_CLASSES, sizeClassMaxEm } from './size-classes'
 import { HIT_COARSE, HIT_FINE } from '../common/hit-floor'
-import { BASALT_VX_FAMILIES } from '../common/vx-families'
-import { vxFamilyOf } from '../common/vx-family'
+import { BASALT_FAMILIES } from '../common/basalt-families'
+import { basaltFamilyOf } from '../common/basalt-family'
 
 // The raw hue families + pair-picker — the building blocks a consumer's series module composes
 // (`hrv: p(BP.blue)`). The doctrine sends every consumer to `basalt-ui/tokens`, so they are public
@@ -34,7 +34,7 @@ export { BP, p } from './palette'
 
 // The six-knob derive engine — the generator behind the shipped default palette. Internal: the
 // public barrel (`./index`) does not re-export it; a consumer retunes the palette identity through
-// the `basalt()` configuration without hand-picking hexes, not by building `--vx-*` CSS for a
+// the `basalt()` configuration without hand-picking hexes, not by building `--basalt-*` CSS for a
 // custom config directly.
 export { DEFAULT_DERIVE_CONFIG, deriveTokens, resolveDeriveConfig } from './derive'
 export type { DeriveConfig, DerivedPalette } from './derive'
@@ -74,18 +74,18 @@ export type SeriesMap = Record<string, ColorPair>
  * Apply opacity to any palette token, theme-aware. Use instead of raw `rgba()` so the
  * underlying hue still resolves per color scheme.
  *
- *   alpha(VX.inkMuted, 0.5)      // muted hairline
- *   alpha(VX.warn, 0.1)          // zone-band fill
+ *   alpha(BASALT.inkMuted, 0.5)      // muted hairline
+ *   alpha(BASALT.warn, 0.1)          // zone-band fill
  */
 export const alpha = (token: string, a: number): string =>
   `color-mix(in srgb, ${token} ${Math.round(a * 100)}%, transparent)`
 
 /**
- * VX tokens — `var(--vx-*)` string refs + non-color sizing constants. Colors resolve per
- * color scheme in CSS, so `VX.*` works in components AND in non-component files. Never
- * reference raw hex in chart files — use `VX.*` / `alpha()`.
+ * BASALT tokens — `var(--basalt-*)` string refs + non-color sizing constants. Colors resolve per
+ * color scheme in CSS, so `BASALT.*` works in components AND in non-component files. Never
+ * reference raw hex in chart files — use `BASALT.*` / `alpha()`.
  *
- * The framework ships ONLY generic primitives — no domain `VX.series` tree (apps rebuild
+ * The framework ships ONLY generic primitives — no domain `BASALT.series` tree (apps rebuild
  * that with `seriesTokens` / `groupTokens` against their own series maps).
  */
 /**
@@ -97,9 +97,9 @@ export const alpha = (token: string, a: number): string =>
  * `TEXT_LINE` (below) pins the two dense rungs to grid-aligned line boxes.
  *
  * Two representations are DERIVED from this one object, so they cannot drift:
- *  • `VX.text.*` — plain numbers, for inline `style` objects and visx SVG props (React appends
+ *  • `BASALT.text.*` — plain numbers, for inline `style` objects and visx SVG props (React appends
  *    `px`; SVG presentation attributes can't resolve `var()`, so a ref string would break charts).
- *  • `--vx-text-*` — the CSS-var form (`11px`, …), for CSS modules and the Mantine theme.
+ *  • `--basalt-text-*` — the CSS-var form (`11px`, …), for CSS modules and the Mantine theme.
  *
  * The Mantine theme additionally re-expresses the ladder through Mantine's `rem()` (see
  * `theme/index.ts`), so the component surface scales with the user's browser font-size AND with
@@ -145,7 +145,7 @@ const TEXT = {
  * Mantine `lineHeights` `xs`/`sm`, so a `<Text size="sm">` row is a 20px box and a meta line 16px. */
 export const TEXT_LINE = { xs: 16, sm: 20 } as const
 
-export const VX = {
+export const BASALT = {
   // Non-color sizing constants
   // Stroke WEIGHTS, not spacing — deliberately fixed, never density-tracking (see
   // `SPACE_STEP_BASE`'s "charts" group doc in tokens/palette.ts).
@@ -164,56 +164,56 @@ export const VX = {
   legendGap: SPACE_STEP.chartLegendGap,
 
   // The type scale (px numbers — see TEXT above). Use in inline styles and visx SVG props;
-  // use `var(--vx-text-*)` in CSS modules.
+  // use `var(--basalt-text-*)` in CSS modules.
   text: TEXT,
 
-  // Every ref below is a name `css/tokens.css` defines (`tokens.test`-held: `vx-resolves.test.ts`), so
+  // Every ref below is a name `css/tokens.css` defines (`tokens.test`-held: `basalt-resolves.test.ts`), so
   // a consumer that loads only the v3 sheet paints it. The 2.x names this replaces are `tokens.json`
-  // migration rows (`VX.accent` -> `VX.brand`, `VX.muted` -> `VX.inkMuted`, `VX.surface.panel` -> `VX.card`, …).
+  // migration rows (`BASALT.accent` -> `BASALT.brand`, `BASALT.muted` -> `BASALT.inkMuted`, `BASALT.surface.panel` -> `BASALT.card`, …).
 
   // Single source for the card corner radius — one knob, so cards never diverge.
-  radiusCard: 'var(--vx-radius-card)',
+  radiusCard: 'var(--basalt-radius-card)',
   // Single source for the control corner radius (inputs, search, buttons, segmented track).
-  radiusCtrl: 'var(--vx-radius-ctrl)',
+  radiusCtrl: 'var(--basalt-radius-ctrl)',
   // The pointer-tier hit floor: 44px under `(pointer: coarse)` (WCAG 2.5.5), 24px otherwise (2.5.8).
-  hit: 'var(--vx-hit)',
+  hit: 'var(--basalt-hit)',
 
   // Surfaces, back to front: the page, a card on it, a raised layer, then the two row states.
-  canvas: 'var(--vx-canvas)',
-  card: 'var(--vx-card)',
-  raised: 'var(--vx-raised)',
-  hover: 'var(--vx-hover)',
-  selected: 'var(--vx-selected)',
-  hairline: 'var(--vx-hairline)',
+  canvas: 'var(--basalt-canvas)',
+  card: 'var(--basalt-card)',
+  raised: 'var(--basalt-raised)',
+  hover: 'var(--basalt-hover)',
+  selected: 'var(--basalt-selected)',
+  hairline: 'var(--basalt-hairline)',
   // The page-coloured surface a mark sits on: a dot's ring, a halo.
-  surface: 'var(--vx-surface)',
+  surface: 'var(--basalt-surface)',
 
   // Ink ramp — primary, secondary, quietest body text.
-  ink: 'var(--vx-ink)',
-  inkMuted: 'var(--vx-ink-muted)',
-  inkFaint: 'var(--vx-ink-faint)',
+  ink: 'var(--basalt-ink)',
+  inkMuted: 'var(--basalt-ink-muted)',
+  inkFaint: 'var(--basalt-ink-faint)',
 
   // The brand as INK (links, active nav, primary series, focus ring) and as FILL (a control that
   // carries a label, with `onBrand` on it). Fills use `brandFill`, never `brand`: `brand` inverts across
   // schemes and is unreadable as a fill on dark.
-  brand: 'var(--vx-brand)',
-  brandFill: 'var(--vx-brand-fill)',
-  onBrand: 'var(--vx-on-brand)',
+  brand: 'var(--basalt-brand)',
+  brandFill: 'var(--basalt-brand-fill)',
+  onBrand: 'var(--basalt-on-brand)',
 
-  // Status INK (text, marks, zones). The tint is `--vx-tint-pct` in a `color-mix`, not a name here.
-  good: 'var(--vx-good)',
-  warn: 'var(--vx-warn)',
-  bad: 'var(--vx-bad)',
+  // Status INK (text, marks, zones). The tint is `--basalt-tint-pct` in a `color-mix`, not a name here.
+  good: 'var(--basalt-good)',
+  warn: 'var(--basalt-warn)',
+  bad: 'var(--basalt-bad)',
 
   // Neutral data line, grid and crosshair.
-  line: 'var(--vx-line)',
-  grid: 'var(--vx-grid)',
-  crosshair: 'var(--vx-crosshair)',
+  line: 'var(--basalt-line)',
+  grid: 'var(--basalt-grid)',
+  crosshair: 'var(--basalt-crosshair)',
 
   // Depth — a whisper shadow, a raised control's drop + inset edge, a floating layer's drop.
-  shadowCard: 'var(--vx-shadow-card)',
-  shadowRaised: 'var(--vx-shadow-raised)',
-  shadowOverlay: 'var(--vx-shadow-overlay)',
+  shadowCard: 'var(--basalt-shadow-card)',
+  shadowRaised: 'var(--basalt-shadow-raised)',
+  shadowOverlay: 'var(--basalt-shadow-overlay)',
 
   // Shared sizing — single-sourced from the `SPACE_STEP` chart-margin steps (density-tracking; same
   // static-value/no-live-wiring note as `legendGap` above).
@@ -263,17 +263,17 @@ export const BREAKPOINTS = {
 
 type Side = 'light' | 'dark'
 
-/** A CSS declaration line for a single `--vx-*` custom property. */
-const decl = (name: string, value: string): string => `  --vx-${name}: ${value};`
+/** A CSS declaration line for a single `--basalt-*` custom property. */
+const decl = (name: string, value: string): string => `  --basalt-${name}: ${value};`
 
 /**
  * A px number expressed as the plain rem STRING literal (16px base: `pxRem(6)` → `'0.375rem'`) —
  * NOT Mantine's own `rem()` helper, which instead emits a `calc(...)` expression bound to
  * `--mantine-scale` (a different value; that scaling happens at the Mantine-coupled call site
- * instead — see `theme/index.ts`'s `Input.extend` `vars` for why `--vx-space-input-height` needs
+ * instead — see `theme/index.ts`'s `Input.extend` `vars` for why `--basalt-space-input-height` needs
  * both halves). The SINGLE source for this conversion — `theme/index.ts` imports this instead of
  * keeping its own copy, so the radius/spacing size-scale steps and this module's own rem-emitting
- * vars (`--vx-space-input-height`) can never compute the conversion two different ways.
+ * vars (`--basalt-space-input-height`) can never compute the conversion two different ways.
  */
 export function pxRem(px: number): string {
   return `${px / 16}rem`
@@ -352,7 +352,7 @@ function frameworkPrimitives(side: Side, data: PaletteData): string {
 }
 
 /**
- * The `--vx-space-*` declaration list for a resolved {@link SpaceValues} — every anchor and one-off
+ * The `--basalt-space-*` declaration list for a resolved {@link SpaceValues} — every anchor and one-off
  * that has at least one real `var()` consumer, plus the row line-height. Shared by
  * `frameworkDerived` (emits the shipped defaults unconditionally, called with `DEFAULT_SPACE_
  * VALUES`) and {@link buildDensityCss} (emits an OVERRIDING block for a retuned density level), so
@@ -383,11 +383,11 @@ function frameworkPrimitives(side: Side, data: PaletteData): string {
  * mobileNavBarHeight}` are numeric Mantine component props (Menu `width`, AppShell `header`/
  * `navbar`/`footer`); and `{chartLegendGap,chartMarginTop,chartMarginRight,
  * chartMarginBottom,chartMarginLeft,chartDotR}` are visx SVG props via
- * `VX.legendGap`/`VX.margin`/`VX.dotR` in this file's own `VX` object. The full list is locked
+ * `BASALT.legendGap`/`BASALT.margin`/`BASALT.dotR` in this file's own `BASALT` object. The full list is locked
  * against the `SpaceValues` key set by `tokens/density.test.ts`'s declaration-set test, so adding a
- * one-off silently omits nothing. A `--vx-space-*` declaration for any of them would be dead weight
+ * one-off silently omits nothing. A `--basalt-space-*` declaration for any of them would be dead weight
  * that only looked like the fix for the gap those JS reads actually have (see `deriveSpacing`'s
- * JSDoc in `tokens/palette.ts` for its real scope). `--vx-space-scale-*` was deleted along with
+ * JSDoc in `tokens/palette.ts` for its real scope). `--basalt-space-scale-*` was deleted along with
  * the rest rather than kept as an unread alias.
  */
 function spaceDecls(space: SpaceValues): string[] {
@@ -509,7 +509,7 @@ function spaceDecls(space: SpaceValues): string[] {
     // The page gutter — the ONE `appShell*` dimension that IS emitted, against the JS-number-only
     // rule its five neighbours follow (see the note at the bottom of this list). It earns the
     // exception because it is the most visible spacing number the framework ships — every page's
-    // left edge — and it was, until now, the one number the `--vx-*` layer did not expose at all, so
+    // left edge — and it was, until now, the one number the `--basalt-*` layer did not expose at all, so
     // a consumer retuning its identity could not reach it and had to reach past the token
     // layer into the shell's own styles. Emitted in PLAIN PX, like every
     // other inset/gap in this list and unlike the `pxRem` heights above it: the rem-plus-
@@ -549,7 +549,7 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-virtual-row-inset-y', `${space.step.virtualRowInsetY}px`),
     decl('space-virtual-row-inset-x', `${space.step.virtualRowInsetX}px`),
     // Controls tier row/gap heights (`docs/CONTROLS-SPEC.md` §5) — the current commit's consumers
-    // are `theme/ctl-theme.tsx` (`--vx-space-control-gap`) and the wave-3/4 homes (`PageBar`,
+    // are `theme/ctl-theme.tsx` (`--basalt-space-control-gap`) and the wave-3/4 homes (`PageBar`,
     // `WidgetHeader`, sidebar blocks, the mobile `Filters (n)` sheet) landing next.
     decl('space-page-bar-row-height', pxRem(space.step.pageBarRowHeight)),
     decl('space-section-header-height', pxRem(space.step.sectionHeaderHeight)),
@@ -564,7 +564,7 @@ function spaceDecls(space: SpaceValues): string[] {
     // join that list — but NOT `appShellInset`/`appShellInsetMobile`/`appShellHeaderLeadMin`, which
     // are emitted above and carry their own reason for the exception —
     // `shell/index.tsx` reads all five as JS numbers via `useBasaltSpacing()` (Mantine's `AppShell`
-    // `header`/`navbar`/`aside` props take numbers, not `var()` strings), so a `--vx-space-app-shell-*`
+    // `header`/`navbar`/`aside` props take numbers, not `var()` strings), so a `--basalt-space-app-shell-*`
     // decl here would have had zero consumers, framework-wide, the same dead-weight shape this function's
     // doc already calls out for the chart/Progress/Timeline group. `sidebarAccountMenuWidth`/
     // `sidebarSettingsMenuWidth` join it too — `app-sidebar-account.tsx`/`app-sidebar.tsx` read both
@@ -573,11 +573,11 @@ function spaceDecls(space: SpaceValues): string[] {
 }
 
 /**
- * The `--vx-space-*` names that survive `only: 'core'` — DERIVED from the `SPACE` anchor keys, never
+ * The `--basalt-space-*` names that survive `only: 'core'` — DERIVED from the `SPACE` anchor keys, never
  * hand-listed, so a new `SPACE_STEP` one-off is excluded the moment it is added and a renamed anchor
  * follows automatically. `SPACE` is the generic ladder (the stack rhythm, the two control heights,
  * the row insets); everything else `spaceDecls` emits is named for a basalt COMPONENT and is dead
- * weight outside this framework — including `--vx-space-row-line-height`, which is the NavLink row's
+ * weight outside this framework — including `--basalt-space-row-line-height`, which is the NavLink row's
  * line-height rather than a general anchor and so is (deliberately) in neither set.
  */
 const CORE_SPACE_VARS = new Set(
@@ -590,7 +590,7 @@ const CORE_SPACE_VARS = new Set(
  * call site, so parsing it cannot drift, whereas tagging 104 declarations by hand could.
  */
 function isCoreSpaceDecl(line: string): boolean {
-  const name = /^ {2}--vx-([\w-]+):/.exec(line)?.[1]
+  const name = /^ {2}--basalt-([\w-]+):/.exec(line)?.[1]
   return name !== undefined && CORE_SPACE_VARS.has(name)
 }
 
@@ -640,41 +640,44 @@ function frameworkDerived(data: PaletteData, only: 'core' | 'all'): string {
     // hover along instead of leaving a stale pair. 88% of the fill over black lands ~0.128 luminance:
     // a visible press-darkening that still clears AA for the white label (~5.9:1).
     ...Object.keys(data.FILL).map((name) =>
-      decl(`fill-hover-${name}`, `color-mix(in srgb, var(--vx-fill-${name}) 88%, #000)`),
+      decl(`fill-hover-${name}`, `color-mix(in srgb, var(--basalt-fill-${name}) 88%, #000)`),
     ),
-    // The type scale, emitted from the SAME `TEXT` object `VX.text` reads — CSS modules and the
+    // The type scale, emitted from the SAME `TEXT` object `BASALT.text` reads — CSS modules and the
     // Mantine theme consume these; inline styles / visx read the numbers. One ladder, two forms.
     ...Object.entries(TEXT).map(([step, px]) => decl(`text-${step}`, `${px}px`)),
     decl('area-top', '22%'),
     decl('area-bottom', '1%'),
-    decl('good', 'color-mix(in srgb, var(--vx-good-solid) 18%, transparent)'),
-    decl('good-soft', 'color-mix(in srgb, var(--vx-good-solid) 8%, transparent)'),
-    decl('bad', 'color-mix(in srgb, var(--vx-bad-solid) 18%, transparent)'),
-    decl('warn', 'color-mix(in srgb, var(--vx-warn-solid) 8%, transparent)'),
+    decl('good', 'color-mix(in srgb, var(--basalt-good-solid) 18%, transparent)'),
+    decl('good-soft', 'color-mix(in srgb, var(--basalt-good-solid) 8%, transparent)'),
+    decl('bad', 'color-mix(in srgb, var(--basalt-bad-solid) 18%, transparent)'),
+    decl('warn', 'color-mix(in srgb, var(--basalt-warn-solid) 8%, transparent)'),
     ...(['good', 'bad', 'warn'] as const).map((k) =>
-      decl(`${k}-ref`, `color-mix(in srgb, var(--vx-${k}-solid) ${REF_LINE_ALPHA}%, transparent)`),
+      decl(
+        `${k}-ref`,
+        `color-mix(in srgb, var(--basalt-${k}-solid) ${REF_LINE_ALPHA}%, transparent)`,
+      ),
     ),
   ].join('\n')
   return canonical
 }
 
 /**
- * Throw on a consumer series/group name inside a basalt-owned `--vx-*` family (`surface`, `space`,
+ * Throw on a consumer series/group name inside a basalt-owned `--basalt-*` family (`surface`, `space`,
  * `ink`, …): a consumer name there would shadow
  * a token basalt emits. Dev builds only (the call sits behind a literal NODE_ENV read). The families
- * are the generated `BASALT_VX_FAMILIES`. Checked on the refs, not in `buildPaletteCss`, which runs on every first
+ * are the generated `BASALT_FAMILIES`. Checked on the refs, not in `buildPaletteCss`, which runs on every first
  * paint.
  */
-function assertConsumerVxName(name: string): void {
-  const family = vxFamilyOf(name)
-  if (!BASALT_VX_FAMILIES.includes(family)) return
+function assertConsumerBasaltName(name: string): void {
+  const family = basaltFamilyOf(name)
+  if (!BASALT_FAMILIES.includes(family)) return
   throw new Error(
-    `[basalt] ${name} is inside basalt's own --vx-${family} family — name your series group something basalt does not own (groupTokens('app', …)).`,
+    `[basalt] ${name} is inside basalt's own --basalt-${family} family — name your series group something basalt does not own (groupTokens('app', …)).`,
   )
 }
 
 /**
- * Wrap a map of `{ name: ColorPair }` into `var(--vx-<prefix><name>)` token refs — the runtime
+ * Wrap a map of `{ name: ColorPair }` into `var(--basalt-<prefix><name>)` token refs — the runtime
  * companion to `buildPaletteCss`. Lets a consumer define its own series and read stable refs.
  *
  * Returns an exact-keyed object: the return type mirrors the keys of the input map, so a renamed
@@ -687,8 +690,9 @@ export function seriesTokens<const T extends SeriesMap>(
   const out = {} as { [K in keyof T]: string }
   for (const key of Object.keys(map) as (keyof T)[]) {
     // Literal read at the branch, so a production bundle drops the check (common/dev-gate.test.ts).
-    if (process.env.NODE_ENV !== 'production') assertConsumerVxName(`--vx-${prefix}${String(key)}`)
-    out[key] = `var(--vx-${prefix}${String(key)})`
+    if (process.env.NODE_ENV !== 'production')
+      assertConsumerBasaltName(`--basalt-${prefix}${String(key)}`)
+    out[key] = `var(--basalt-${prefix}${String(key)})`
   }
   return out
 }
@@ -711,7 +715,7 @@ type GroupPayload = {
 
 declare const GROUP_REF: unique symbol
 
-/** A `var(--vx-<name>-<key>)` ref minted by `groupTokens`. The brand lives on the VALUES, so it never shows up in `keyof` the group. */
+/** A `var(--basalt-<name>-<key>)` ref minted by `groupTokens`. The brand lives on the VALUES, so it never shows up in `keyof` the group. */
 export type GroupRef = string & { readonly [GROUP_REF]: true }
 
 /**
@@ -723,7 +727,7 @@ export type GroupRef = string & { readonly [GROUP_REF]: true }
 export type SeriesGroup = { readonly [key: string]: GroupRef }
 
 /**
- * Build a single namespaced group's token refs (`var(--vx-<name>-<key>)`).
+ * Build a single namespaced group's token refs (`var(--basalt-<name>-<key>)`).
  *
  * Returns an exact-keyed object matching the keys of `map` — a stale or renamed key is a tsc
  * error at the call site rather than a silent `Record<string, string>` widening.
@@ -776,7 +780,7 @@ export type BuildPaletteOpts = {
    * `html[…]`, and carries no assumption about the element the attribute lands on.
    *
    * The no-options path keeps emitting `html[data-mantine-color-scheme='…']` verbatim, because a
-   * basalt consumer may already override `--vx-*` under that exact selector — raising basalt's own
+   * basalt consumer may already override `--basalt-*` under that exact selector — raising basalt's own
    * specificity would silently win over their override.
    */
   scheme?: ColorSchemeSelector
@@ -798,12 +802,12 @@ export type BuildPaletteOpts = {
    */
   mediaFallback?: boolean
   /**
-   * How much of the SPACING set to emit. Default: `'all'` (every one of the 108 `--vx-space-*`
+   * How much of the SPACING set to emit. Default: `'all'` (every one of the 108 `--basalt-space-*`
    * declarations the framework's own components read).
    *
    * `'core'` keeps the 9 generic anchors — the stack rhythm, the two control heights, the row
    * insets — and drops the 99 named for a specific basalt component
-   * (`--vx-space-agent-transcript-inset`, `--vx-space-toc-sub-indent`, …), taking the emitted set
+   * (`--basalt-space-agent-transcript-inset`, `--basalt-space-toc-sub-indent`, …), taking the emitted set
    * from 204 variables to 105. Nothing outside basalt's own React components reads those, so a
    * framework-free consumer is carrying them for nothing.
    *
@@ -833,7 +837,7 @@ const indent = (block: string): string =>
  */
 const MOBILE_MEDIA = `@media (max-width: ${sizeClassMaxEm(SIZE_CLASSES.medium)})`
 
-const coarseHitBlock = `@media (pointer: coarse) {\n  :root {\n    --vx-hit: ${HIT_COARSE}px;\n  }\n}`
+const coarseHitBlock = `@media (pointer: coarse) {\n  :root {\n    --basalt-hit: ${HIT_COARSE}px;\n  }\n}`
 
 /**
  * The MOBILE INSET LADDER, and this function is its ONE home — framework-wide, not per module.
@@ -875,7 +879,7 @@ function mobileLadderBlock(space: SpaceValues): string {
 }
 
 /**
- * Emit the `--vx-*` stylesheet: a `:root` block of theme-independent scalars, then the
+ * Emit the `--basalt-*` stylesheet: a `:root` block of theme-independent scalars, then the
  * dark (default) and light primitive blocks under `html[data-mantine-color-scheme='…']`.
  *
  * The framework chrome (STATUS/SEMANTIC/SURFACE pairs + the framework DERIVED defaults) is
@@ -1018,7 +1022,7 @@ export function buildFontsCss(fonts: BasaltFontsConfig | undefined): string {
 }
 
 /**
- * Build the `:root` block of overriding `--vx-radius-*` declarations for a resolved
+ * Build the `:root` block of overriding `--basalt-radius-*` declarations for a resolved
  * `basaltRadius` value — analog of {@link buildFontsCss}.
  * Empty string when `radius` is absent (the default level-0 path never sets `theme.other.basaltRadius`
  * in the first place), so callers can unconditionally concatenate the result. Internal, like
@@ -1027,16 +1031,16 @@ export function buildFontsCss(fonts: BasaltFontsConfig | undefined): string {
 export function buildRadiusCss(radius: RadiusValues | undefined): string {
   if (!radius) return ''
   return `:root {
-  --vx-radius-card: ${radius.card}px;
-  --vx-radius-ctrl: ${radius.ctrl}px;
-  --vx-radius-tight: ${radius.tight}px;
-  --vx-radius-fine: ${radius.fine}px;
-  --vx-radius-floating: ${radius.floating}px;
+  --basalt-radius-card: ${radius.card}px;
+  --basalt-radius-ctrl: ${radius.ctrl}px;
+  --basalt-radius-tight: ${radius.tight}px;
+  --basalt-radius-fine: ${radius.fine}px;
+  --basalt-radius-floating: ${radius.floating}px;
 }`
 }
 
 /**
- * Build the `:root` block of overriding `--vx-space-*` declarations for a resolved `basaltDensity`
+ * Build the `:root` block of overriding `--basalt-space-*` declarations for a resolved `basaltDensity`
  * value — analog of {@link buildRadiusCss}, reusing
  * the SAME `spaceDecls` list `frameworkDerived` emits the shipped defaults from (so the two can
  * never drift). Empty string when `space` is absent (the default level-0 path never sets

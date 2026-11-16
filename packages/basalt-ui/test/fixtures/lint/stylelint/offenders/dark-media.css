@@ -1,2 +1,2 @@
-.hero { background: var(--vx-card); }
-@media (prefers-color-scheme: dark) { .hero { background: var(--vx-inset); } }
+.hero { background: var(--basalt-card); }
+@media (prefers-color-scheme: dark) { .hero { background: var(--basalt-inset); } }

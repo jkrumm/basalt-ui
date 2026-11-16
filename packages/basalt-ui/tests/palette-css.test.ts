@@ -2,7 +2,7 @@
  * The default `buildPaletteCss()` output, held to structural invariants rather than a committed
  * byte-for-byte fixture.
  *
- * `--vx-*` CSS is the framework's widest contract: the Mantine theme, every CSS module, every
+ * `--basalt-*` CSS is the framework's widest contract: the Mantine theme, every CSS module, every
  * chart, and (since the framework-free work) a non-React consumer that ships the emitted string
  * directly all read the same variable set. A byte-snapshot caught any drift, including cosmetic
  * whitespace, at the cost of a fixture (`tests/fixtures/palette-default.css`) that had to be
@@ -13,16 +13,16 @@
  * Run: bun test packages/basalt-ui/tests/palette-css.test.ts
  */
 import { describe, expect, it } from 'bun:test'
-import { REMOVED_VX_NAMES } from './removed-vx-names'
+import { REMOVED_BASALT_NAMES } from './removed-basalt-names'
 import { buildPaletteCss, groupTokens } from '../src/tokens'
 import { buildPaletteData, SPACE, SPACE_STEP } from '../src/tokens/palette'
 
-/** Every `--vx-*` NAME declared inside the block a selector opens, in source order (dupes kept). */
+/** Every `--basalt-*` NAME declared inside the block a selector opens, in source order (dupes kept). */
 function namesInBlock(css: string, selector: string): string[] {
   const start = css.indexOf(`${selector} {`)
   expect(start).toBeGreaterThanOrEqual(0)
   const end = css.indexOf('\n}', start)
-  return [...css.slice(start, end).matchAll(/--vx-([\w-]+):/g)].map((m) => m[1] as string)
+  return [...css.slice(start, end).matchAll(/--basalt-([\w-]+):/g)].map((m) => m[1] as string)
 }
 
 // A handful of fixed structural literals the emitter uses directly (never sourced from the derived
@@ -42,7 +42,7 @@ describe('buildPaletteCss default output', () => {
     expect(css).not.toContain(':root[')
   })
 
-  it('declares the SAME --vx-* names, in the SAME order, under both scheme blocks', () => {
+  it('declares the SAME --basalt-* names, in the SAME order, under both scheme blocks', () => {
     const dark = namesInBlock(css, "html[data-mantine-color-scheme='dark']")
     const light = namesInBlock(css, "html[data-mantine-color-scheme='light']")
     expect(dark.length).toBeGreaterThan(0)
@@ -50,7 +50,7 @@ describe('buildPaletteCss default output', () => {
   })
 
   it('is deterministic — two calls at the same config emit the same variable order', () => {
-    const names = (s: string) => [...s.matchAll(/--vx-([\w-]+):/g)].map((m) => m[1])
+    const names = (s: string) => [...s.matchAll(/--basalt-([\w-]+):/g)].map((m) => m[1])
     expect(names(buildPaletteCss())).toEqual(names(css))
   })
 
@@ -71,7 +71,7 @@ describe('buildPaletteCss default output', () => {
   })
 })
 
-/** Every `--vx-*` name declared inside the block a selector opens, in source order. */
+/** Every `--basalt-*` name declared inside the block a selector opens, in source order. */
 function blockOf(css: string, selector: string): string {
   const start = css.indexOf(`${selector} {`)
   expect(start).toBeGreaterThanOrEqual(0)
@@ -106,7 +106,7 @@ describe('buildPaletteCss color-scheme selector', () => {
     expect(css).toContain(":root[data-theme='dark'] {")
     expect(css).not.toContain(":root,\n:root[data-theme='dark']")
     // …and it wins: light's surface value is what an unattributed document resolves.
-    expect(blockOf(css, ":root,\n:root[data-theme='light']")).toContain('--vx-surface-bg')
+    expect(blockOf(css, ":root,\n:root[data-theme='light']")).toContain('--basalt-surface-bg')
   })
 
   it('`defaultScheme: "none"` leaves the bare `:root` carrying only the scalars', () => {
@@ -116,8 +116,8 @@ describe('buildPaletteCss color-scheme selector', () => {
     expect(css).toContain(":root[data-theme='light'] {")
     // The theme-independent scalars stay on `:root`; no per-scheme primitive joins them.
     const root = blockOf(css, ':root')
-    expect(root).toContain('--vx-radius-card')
-    expect(root).not.toContain('--vx-surface-bg')
+    expect(root).toContain('--basalt-radius-card')
+    expect(root).not.toContain('--basalt-surface-bg')
   })
 
   it('emits an OS fallback for every non-default scheme, ahead of its attribute block', () => {
@@ -147,16 +147,16 @@ describe('buildPaletteCss color-scheme selector', () => {
       mediaFallback: true,
       groups: [groupTokens('x', { hrv: { light: '#111111', dark: '#eeeeee' } })],
     })
-    expect([...css.matchAll(/--vx-x-hrv:/g)]).toHaveLength(4) // 2 attribute blocks + 2 media blocks
+    expect([...css.matchAll(/--basalt-x-hrv:/g)]).toHaveLength(4) // 2 attribute blocks + 2 media blocks
   })
 })
 
-/** Every distinct `--vx-*` name in an emitted stylesheet. */
+/** Every distinct `--basalt-*` name in an emitted stylesheet. */
 function varNames(css: string): Set<string> {
-  return new Set([...css.matchAll(/--vx-([\w-]+):/g)].map((m) => m[1] as string))
+  return new Set([...css.matchAll(/--basalt-([\w-]+):/g)].map((m) => m[1] as string))
 }
 
-/** camelCase key → the `--vx-space-*` suffix `spaceDecls` emits for it. */
+/** camelCase key → the `--basalt-space-*` suffix `spaceDecls` emits for it. */
 const spaceVar = (key: string): string =>
   `space-${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`
 
@@ -198,9 +198,12 @@ describe('buildPaletteCss core-only spacing', () => {
 
 /** The 1.4.0 camelCase aliases deleted from 2.x — `removed name -> canonical kebab name`, from the guard's one map. */
 const REMOVED_ALIASES: Record<string, string> = Object.fromEntries(
-  Object.entries(REMOVED_VX_NAMES)
+  Object.entries(REMOVED_BASALT_NAMES)
     .filter(([name]) => /[a-z][A-Z]/.test(name))
-    .map(([name, kebab]) => [name.replace(/^--vx-/, ''), (kebab ?? '').replace(/^--vx-/, '')]),
+    .map(([name, kebab]) => [
+      name.replace(/^--basalt-/, ''),
+      (kebab ?? '').replace(/^--basalt-/, ''),
+    ]),
 )
 
 describe('the removed camelCase aliases (1.4.0 rename, deleted from 2.x)', () => {
@@ -211,14 +214,14 @@ describe('the removed camelCase aliases (1.4.0 rename, deleted from 2.x)', () =>
   it('emits none of them, while every canonical kebab name still resolves', () => {
     const css = buildPaletteCss()
     for (const [removed, canonical] of Object.entries(REMOVED_ALIASES)) {
-      expect(css).not.toContain(`--vx-${removed}:`)
-      expect(css).toContain(`--vx-${canonical}:`)
+      expect(css).not.toContain(`--basalt-${removed}:`)
+      expect(css).toContain(`--basalt-${canonical}:`)
     }
     expect(css).not.toContain('Deprecated camelCase aliases')
   })
 
   it('emits no camelCase name at all', () => {
-    for (const [, name] of buildPaletteCss().matchAll(/--vx-([\w-]+):/g))
+    for (const [, name] of buildPaletteCss().matchAll(/--basalt-([\w-]+):/g))
       expect(name).not.toMatch(/[a-z][A-Z]/)
   })
 })

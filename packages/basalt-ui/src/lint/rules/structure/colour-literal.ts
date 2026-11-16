@@ -22,7 +22,7 @@
  * `currentColor` and `none` are keywords, not colours, and pass.
  *
  * A bare `hsl(var(--border))`, `rgb(var(--x))` or `oklch(var(--x))` over a variable that is not a
- * `--vx-` token is the shadcn v3 idiom the stylesheet's `function-disallowed-list` bans, and reports.
+ * `--basalt-` token is the shadcn v3 idiom the stylesheet's `function-disallowed-list` bans, and reports.
  * A `*-color` key (`'line-color'`, `'fill-color'`, a maplibre paint object) is a colour slot.
  *
  * A `#` plus digits string under a reference key (`ref`, `id`, `issue`, `number`, `ticket`, or a
@@ -57,7 +57,7 @@ const isIssueReference = (match: string, text: string): boolean =>
   /^#\d{3,4}$/.test(match) && text.trim() !== match
 
 const NON_TOKEN_VAR_FUNCTION =
-  /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*var\(\s*--(?!vx-)[\w-]+\s*(?:,[^)]*)?\)\s*\)/i
+  /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*var\(\s*--(?!basalt-)[\w-]+\s*(?:,[^)]*)?\)\s*\)/i
 
 const REFERENCE_KEY = /^(?:ref|id|issue|number|ticket)$|(?:Ref|Id|Issue|Number|Ticket)$/
 
@@ -237,7 +237,7 @@ export const colourLiteralForm: AstForm = {
       if (found) report(node, found)
     },
   }),
-  fix: 'A VX.* token, alpha(VX.x, n) or the series file (a defineSeries pair); a deep-rendering file takes a reasoned file waiver',
+  fix: 'A BASALT.* token, alpha(BASALT.x, n) or the series file (a defineSeries pair); a deep-rendering file takes a reasoned file waiver',
   next: 'A canvas renderer lists its file in manifest.deepRender and waives colour-literal once with -- <why>; a series colour goes in defineSeries, never a waiver',
   fixture: 'structure-rest/colour-literal.tsx',
 }

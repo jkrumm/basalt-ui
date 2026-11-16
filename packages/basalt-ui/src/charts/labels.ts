@@ -4,7 +4,7 @@
  */
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { text } from '@tanstack/charts/text'
-import { VX } from '../tokens'
+import { BASALT } from '../tokens'
 import { yRangeWithin } from './ref-label'
 import type { LabelBox, RefLabelPoint } from './ref-label'
 import { rowX } from './types'
@@ -37,7 +37,7 @@ const CROSSED_PENALTY = 100
 /** The most flipped labels whose two sides are all tried (2 ** n assignments). */
 const MAX_SIDE_SEARCH = 5
 /** How far a dot mark reaches from its centre, px: its radius and ring. */
-const DOT_REACH = VX.dotR + 1
+const DOT_REACH = BASALT.dotR + 1
 
 export type EndLabelAnchor = 'start' | 'end'
 /** Which side of its line a flipped label sits: away from the line's last segment. */
@@ -157,7 +157,7 @@ export function endLabelPlan<T, X extends ChartX>(
       fraction,
       plotWidth: plot.plotWidth,
       label: series.label,
-      fontSize: VX.text.micro,
+      fontSize: BASALT.text.micro,
     }),
   )
   // Flipped labels (left of their point) sit over their own line. A line falling into its end
@@ -185,10 +185,10 @@ export function endLabelPlan<T, X extends ChartX>(
   const toPx = (y: number): number => ((y - lo) / (hi - lo || 1)) * plot.plotHeight
   const nominal = (i: number, side: EndLabelSide): number =>
     toPx(lineY(i)) - endLabelOffset(anchors[i] as EndLabelAnchor, side).dy
-  const half = (VX.text.micro * BOX_INK) / 2
+  const half = (BASALT.text.micro * BOX_INK) / 2
   const plotW = Math.max(plot.plotWidth, 1)
   const spans = last.map(({ series, fraction }, i) => {
-    const room = (END_LABEL_DX + series.label.length * VX.text.micro * BOX_GLYPH_EM) / plotW
+    const room = (END_LABEL_DX + series.label.length * BASALT.text.micro * BOX_GLYPH_EM) / plotW
     const edge = END_LABEL_DX / plotW
     return anchors[i] === 'end'
       ? ([fraction - room, fraction - edge] as const)
@@ -319,7 +319,7 @@ export function endLabelMarks<T, X extends ChartX>(plan: readonly EndLabel<T, X>
         y: 'y',
         text: () => series.label,
         fill: series.color,
-        fontSize: VX.text.micro,
+        fontSize: BASALT.text.micro,
         anchor,
         dx: endLabelOffset(anchor, side).dx,
         dy: endLabelOffset(anchor, side).dy + nudge,

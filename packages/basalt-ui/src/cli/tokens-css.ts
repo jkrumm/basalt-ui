@@ -226,7 +226,7 @@ function extraOutput(flags: string[], cwd: string, version: string): number {
 }
 
 /**
- * tokens:css — emit the `--vx-*` stylesheet (or, with `--format json`, the resolved hex per opaque
+ * tokens:css — emit the `--basalt-*` stylesheet (or, with `--format json`, the resolved hex per opaque
  * role) for an app that installs nothing: `bunx basalt-ui tokens:css --accent #0f8a7e --out
  * src/tokens.css`. The values come from the v3 emitters (`emitTokensCss`, `emitJsonText`), so the
  * CLI and the API cannot disagree; the CLI adds file framing only: the provenance header already

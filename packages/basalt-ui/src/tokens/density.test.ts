@@ -13,7 +13,7 @@
  * shipped" — the LAW at non-zero levels is a different concern, same split radius already made.
  */
 import { describe, expect, test } from 'bun:test'
-import { buildDensityCss, VX } from './core'
+import { buildDensityCss, BASALT } from './core'
 import { deriveSpacing, scaleSpace } from './palette'
 
 // The "deriveSpacing(0) matches SPACE/SPACE_SCALE/SPACE_STEP/ROW_LINE_HEIGHT byte-for-byte" check
@@ -31,14 +31,14 @@ describe('deriveSpacing(0) reproduces the shipped identity exactly', () => {
   })
 })
 
-describe('VX chart geometry at level 0 (single-sourced from SPACE_STEP)', () => {
+describe('BASALT chart geometry at level 0 (single-sourced from SPACE_STEP)', () => {
   // Locks the shipped identity so a future SPACE_STEP edit can't silently move chart geometry —
-  // `VX.dotR`/`VX.legendGap`/`VX.margin` (`tokens/index.ts`) read straight off `SPACE_STEP`, which
+  // `BASALT.dotR`/`BASALT.legendGap`/`BASALT.margin` (`tokens/index.ts`) read straight off `SPACE_STEP`, which
   // is itself `deriveSpacing(0).step` (see the top describe block above).
-  test('dotR is 5', () => expect(VX.dotR).toBe(5))
-  test('legendGap is 22', () => expect(VX.legendGap).toBe(22))
+  test('dotR is 5', () => expect(BASALT.dotR).toBe(5))
+  test('legendGap is 22', () => expect(BASALT.legendGap).toBe(22))
   test('margin is { top: 12, right: 16, bottom: 30, left: 44 }', () => {
-    expect(VX.margin).toEqual({ top: 12, right: 16, bottom: 30, left: 44 })
+    expect(BASALT.margin).toEqual({ top: 12, right: 16, bottom: 30, left: 44 })
   })
 })
 
@@ -171,7 +171,7 @@ describe('deriveSpacing rejects a malformed level', () => {
   })
 })
 
-/** `SpaceValues` key → the `--vx-` suffix `spaceDecls` emits for it (`rowInsetX` → `space-row-inset-x`). */
+/** `SpaceValues` key → the `--basalt-` suffix `spaceDecls` emits for it (`rowInsetX` → `space-row-inset-x`). */
 const kebab = (key: string): string =>
   `space-${key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`
 
@@ -183,20 +183,20 @@ describe('buildDensityCss', () => {
   test('emits every anchor/one-off declaration under one :root block, at the retuned level', () => {
     const css = buildDensityCss(deriveSpacing(3))
     expect(css).toContain(':root {')
-    expect(css).toContain('--vx-space-row-inset-x: 13px;')
-    expect(css).toContain('--vx-space-row-inset-y: 8px;')
-    expect(css).toContain('--vx-space-row-line-height: 1.64;')
+    expect(css).toContain('--basalt-space-row-inset-x: 13px;')
+    expect(css).toContain('--basalt-space-row-inset-y: 8px;')
+    expect(css).toContain('--basalt-space-row-line-height: 1.64;')
     // REM, not px — see the input-height describe block below for why.
-    expect(css).toContain('--vx-space-input-height: 3.4375rem;')
-    expect(css).toContain('--vx-space-control-height: 3.4375rem;')
+    expect(css).toContain('--basalt-space-input-height: 3.4375rem;')
+    expect(css).toContain('--basalt-space-control-height: 3.4375rem;')
     // 15, not the anchor/scale/step multiplier result for an 84px base — it is DERIVED (exactly
     // anchors.stackMd), see the dedicated describe block above.
-    expect(css).toContain('--vx-space-sticky-header-clearance: 15px;')
-    // JS-number-only constants (Timeline's bulletSize, VX chart geometry, Progress's size) have no
+    expect(css).toContain('--basalt-space-sticky-header-clearance: 15px;')
+    // JS-number-only constants (Timeline's bulletSize, BASALT chart geometry, Progress's size) have no
     // CSS var to override — see `spaceDecls`'s doc in `tokens/index.ts`.
-    expect(css).not.toContain('--vx-space-timeline-bullet')
-    expect(css).not.toContain('--vx-space-chart-legend-gap')
-    expect(css).not.toContain('--vx-space-progress-bar-size')
+    expect(css).not.toContain('--basalt-space-timeline-bullet')
+    expect(css).not.toContain('--basalt-space-chart-legend-gap')
+    expect(css).not.toContain('--basalt-space-progress-bar-size')
   })
 
   // The spot-checks above lock VALUES; this locks the declaration SET. Without it, `spaceDecls`
@@ -207,7 +207,9 @@ describe('buildDensityCss', () => {
   test('emits exactly one var per SpaceValues key, minus the documented JS-number-only reads', () => {
     const space = deriveSpacing(0)
     const emitted = new Set(
-      [...buildDensityCss(space).matchAll(/--vx-(space-[a-z0-9-]+):/g)].map((m) => m[1] as string),
+      [...buildDensityCss(space).matchAll(/--basalt-(space-[a-z0-9-]+):/g)].map(
+        (m) => m[1] as string,
+      ),
     )
     // Read straight off the resolved `SpaceValues` as a JS number instead of through a var — each
     // has zero `var()` consumers, so a declaration would be dead weight. See `spaceDecls`'s doc in
@@ -227,7 +229,7 @@ describe('buildDensityCss', () => {
       'space-app-shell-inset-expanded', // AppShell padding/px responsive object (gutter trial)
       'space-mobile-nav-bar-height', // AppShell footer.height prop
       'space-mobile-nav-menu-width', // Menu width prop
-      'space-chart-legend-gap', // VX.legendGap / VX.margin / VX.dotR — visx SVG props
+      'space-chart-legend-gap', // BASALT.legendGap / BASALT.margin / BASALT.dotR — visx SVG props
       'space-chart-margin-top',
       'space-chart-margin-right',
       'space-chart-margin-bottom',
@@ -236,7 +238,7 @@ describe('buildDensityCss', () => {
     ]
 
     // `space.scale.*` (the generic Mantine scale) resolves through `--mantine-spacing-*`, not a
-    // `--vx-space-*` var, so it is not part of this contract at all.
+    // `--basalt-space-*` var, so it is not part of this contract at all.
     const expected = [
       ...Object.keys(space.anchors).map(kebab),
       ...Object.keys(space.step).map(kebab),
@@ -249,14 +251,14 @@ describe('buildDensityCss', () => {
 
 describe('the input-height var is emitted in REM, never a flat px', () => {
   test("level 0 emits exactly 2.625rem — Mantine's own --input-height-md value", () => {
-    expect(buildDensityCss(deriveSpacing(0))).toContain('--vx-space-input-height: 2.625rem;')
-    expect(buildDensityCss(deriveSpacing(0))).not.toContain('--vx-space-input-height: 42px;')
+    expect(buildDensityCss(deriveSpacing(0))).toContain('--basalt-space-input-height: 2.625rem;')
+    expect(buildDensityCss(deriveSpacing(0))).not.toContain('--basalt-space-input-height: 42px;')
   })
 
   test('a retuned level still emits rem, computed from the scaled px anchor', () => {
     // inputHeight scales like every other anchor (42 -> 55 at level +3, the new endpoint), then
     // converts to rem — the LAW stays px-denominated; only the CSS emission is rem, per `pxRem`.
     expect(deriveSpacing(3).anchors.inputHeight).toBe(55)
-    expect(buildDensityCss(deriveSpacing(3))).toContain('--vx-space-input-height: 3.4375rem;')
+    expect(buildDensityCss(deriveSpacing(3))).toContain('--basalt-space-input-height: 3.4375rem;')
   })
 })

@@ -21,7 +21,10 @@ import type { LineSeries } from './lines'
 beforeEach(() => setFormatDefaults({ locale: 'en-GB' }))
 afterEach(resetFormatDefaults)
 
-const pair = (v: string): SeriesColor => ({ light: `var(--vx-${v})`, dark: `var(--vx-${v})` })
+const pair = (v: string): SeriesColor => ({
+  light: `var(--basalt-${v})`,
+  dark: `var(--basalt-${v})`,
+})
 type Row = { t: Date; a: number | null; b: number; c: number }
 const day = (d: number): Date => new Date(Date.UTC(2026, 8, d))
 const data: Row[] = [1, 2, 3, 4].map((d) => ({ t: day(d), a: d * 10, b: d, c: -d }))
@@ -98,7 +101,7 @@ describe('Lines', () => {
 
   test("a right-axis reference line without a right axis stays inside the left axis' domain", () => {
     const def = compileCartesian(
-      specOf([a], { refLines: [{ value: 200, color: 'var(--vx-bad)', axis: 'right' }] }),
+      specOf([a], { refLines: [{ value: 200, color: 'var(--basalt-bad)', axis: 'right' }] }),
     )
     expect(yDomainOf(def.chart(frame))[1]).toBeGreaterThanOrEqual(200)
   })
@@ -141,7 +144,7 @@ describe('Lines', () => {
           {
             ...a,
             area: 'fade',
-            getMarker: (d) => (d.a === 40 ? { color: 'var(--vx-good)' } : null),
+            getMarker: (d) => (d.a === 40 ? { color: 'var(--basalt-good)' } : null),
           },
           { ...b, dash: true, axis: 'right' },
         ]}
@@ -150,7 +153,7 @@ describe('Lines', () => {
     expect(html).toContain('<linearGradient')
     expect(html).toMatch(/fill="url\(#[^"]*basalt-area-0[^"]*\)"/)
     expect(html).toContain('stroke-dasharray="6 4"')
-    expect(html).toContain('fill="var(--vx-good)"')
+    expect(html).toContain('fill="var(--basalt-good)"')
     expect(html).toContain('y2-tick-label')
   })
 

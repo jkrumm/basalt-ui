@@ -5,13 +5,13 @@
  *   series: { <group>: { <key>: { hue, light?, dark? } | { light: '#hex', dark: '#hex' } } }
  *   vars:   { <name>: '<css value>' }
  *
- * `series` emits `--vx-<group>-<key>` per scheme (ramp steps resolve through `rampPair`), `vars`
- * emits `--vx-<name>` once on `:root`, and a sibling `.d.ts` augments `BasaltRegister` so the series
- * keys are typed. Keys are written verbatim: an app's existing `--vx-usage-*` names stay
+ * `series` emits `--basalt-<group>-<key>` per scheme (ramp steps resolve through `rampPair`), `vars`
+ * emits `--basalt-<name>` once on `:root`, and a sibling `.d.ts` augments `BasaltRegister` so the series
+ * keys are typed. Keys are written verbatim: an app's existing `--basalt-usage-*` names stay
  * byte-identical.
  *
  * Refused (the message names the fix): an emitted name that is a package name, and a `vars` value
- * reading a `--vx-*` that is neither a package name nor a name in this file. Pure apart from
+ * reading a `--basalt-*` that is neither a package name nor a name in this file. Pure apart from
  * {@link loadExtra}: {@link emitExtra} takes the data and the header and returns strings.
  */
 import { createRequire } from 'node:module'
@@ -34,7 +34,7 @@ const SELECTORS = {
 
 const NAME = /^[A-Za-z0-9][A-Za-z0-9-]*$/
 const HEX = /^#[0-9a-fA-F]{3,8}$/
-const VX_REF = /--vx-[A-Za-z0-9_-]+/g
+const BASALT_REF = /--basalt-[A-Za-z0-9_-]+/g
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -165,7 +165,7 @@ export function emitExtra(data: unknown, file: string, header: string): ExtraRes
     for (const [key, entry] of Object.entries(entries)) {
       const path = `series.${group}.${key}`
       if (!NAME.test(key)) return fail(`${path}: the key must match ${NAME}`)
-      const name = `--vx-${group}-${key}`
+      const name = `--basalt-${group}-${key}`
       const collision = claim(name, path)
       if (collision !== null) return fail(collision)
       const pair = resolveEntry(path, entry)
@@ -182,7 +182,7 @@ export function emitExtra(data: unknown, file: string, header: string): ExtraRes
     if (!NAME.test(key)) return fail(`${path}: the name must match ${NAME}`)
     if (typeof value !== 'string' || value.trim() === '')
       return fail(`${path} must be a CSS value string`)
-    const name = `--vx-${key}`
+    const name = `--basalt-${key}`
     const collision = claim(name, path)
     if (collision !== null) return fail(collision)
     varDecls.push([name, value])
@@ -190,10 +190,10 @@ export function emitExtra(data: unknown, file: string, header: string): ExtraRes
 
   const valid = new Set([...packageNames, ...emitted])
   for (const [name, value] of varDecls) {
-    for (const ref of value.match(VX_REF) ?? []) {
+    for (const ref of value.match(BASALT_REF) ?? []) {
       if (valid.has(ref)) continue
       return fail(
-        `vars.${name.slice('--vx-'.length)} reads ${ref}, which is neither a basalt-ui name nor declared in this file; did you mean ${nearestName(ref, valid)}?`,
+        `vars.${name.slice('--basalt-'.length)} reads ${ref}, which is neither a basalt-ui name nor declared in this file; did you mean ${nearestName(ref, valid)}?`,
       )
     }
   }

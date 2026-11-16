@@ -26,9 +26,14 @@ import type { ChartSeries, PlotContext } from '../types'
 type Row = { t: Date; v: number }
 const data: Row[] = [1, 2, 3, 4].map((d) => ({ t: new Date(Date.UTC(2026, 8, d)), v: d * 10 }))
 const x = (d: Row): Date => d.t
-const a: ChartSeries<Row> = { key: 'a', label: 'A', color: 'var(--vx-line)', getValue: (d) => d.v }
+const a: ChartSeries<Row> = {
+  key: 'a',
+  label: 'A',
+  color: 'var(--basalt-line)',
+  getValue: (d) => d.v,
+}
 const b: ChartSeries<Row> = { ...a, key: 'b', label: 'B' }
-const COLOR = { light: 'var(--vx-line)', dark: 'var(--vx-line)' }
+const COLOR = { light: 'var(--basalt-line)', dark: 'var(--basalt-line)' }
 const FRAME = { width: 400, height: 200, defaultTheme: {} as never }
 
 const sized = (main: { width: number; height: number }): PlotSizes => ({ [MAIN_PANE]: main })

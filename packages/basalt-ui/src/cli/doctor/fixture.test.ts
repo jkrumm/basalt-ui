@@ -61,7 +61,7 @@ const STUB_HOOK = `let input = ''
 process.stdin.on('data', (chunk) => (input += chunk))
 process.stdin.on('end', () => {
   if (input.includes('__basalt_seeded_offender__')) {
-    console.error('src/__basalt_seeded_offender__.tsx:1 basalt/colour-literal: hex literal. Use a VX token.')
+    console.error('src/__basalt_seeded_offender__.tsx:1 basalt/colour-literal: hex literal. Use a BASALT token.')
     process.exit(2)
   }
   process.exit(0)
@@ -155,7 +155,7 @@ export function makeTree(profile: Profile = 'app', files: Patch = {}): string {
     }),
   )
 
-  put(dir, 'src/styles.css', '.page { color: var(--vx-ink); }\n')
+  put(dir, 'src/styles.css', '.page { color: var(--basalt-ink); }\n')
   put(dir, 'src/main.tsx', 'export const page = 1\n')
   put(
     dir,

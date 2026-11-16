@@ -86,7 +86,7 @@ describe('tokens:css', () => {
     const css = body(['--accent', '#0f8a7e', '--selector', selector])
     expect(css).toBe(expected({ version: VERSION, config: { accent: '#0f8a7e' }, selector }))
     expect(css).toContain(`${selector}[data-theme='dark']`)
-    expect(css).not.toContain('--vx-canvas')
+    expect(css).not.toContain('--basalt-canvas')
   })
 
   it('a --selector that is not :root[…] exits 1 and writes nothing', () => {
@@ -233,7 +233,7 @@ describe('tokens:css --extra', () => {
     raw: { light: '#112233', dark: '#ddeeff' },
   }
   const VARS = {
-    optimalZone: 'color-mix(in srgb, var(--vx-good) 10%, transparent)',
+    optimalZone: 'color-mix(in srgb, var(--basalt-good) 10%, transparent)',
     hillshadeShadow: 'rgb(0 0 0)',
   }
 
@@ -247,14 +247,14 @@ describe('tokens:css --extra', () => {
     expect(tokensCss(extra(), dir)).toBe(0)
     const css = read('app-tokens.css')
     // Pairs once per scheme: light on :root, dark behind the attribute and again in the OS fallback.
-    expect(css).toContain('--vx-usage-hrv: #38bdf8;')
-    expect(css).toContain('--vx-usage-hrv: #0284c7;')
-    expect(css).toContain('--vx-usage-hrvWeekly: #38bdf8;')
-    expect(css).toContain('--vx-usage-raw: #112233;')
-    expect(css).toContain('--vx-usage-raw: #ddeeff;')
-    expect(css.match(/--vx-optimalZone:/g)).toHaveLength(1)
+    expect(css).toContain('--basalt-usage-hrv: #38bdf8;')
+    expect(css).toContain('--basalt-usage-hrv: #0284c7;')
+    expect(css).toContain('--basalt-usage-hrvWeekly: #38bdf8;')
+    expect(css).toContain('--basalt-usage-raw: #112233;')
+    expect(css).toContain('--basalt-usage-raw: #ddeeff;')
+    expect(css.match(/--basalt-optimalZone:/g)).toHaveLength(1)
     expect(css).toContain(
-      ':root {\n  --vx-optimalZone: color-mix(in srgb, var(--vx-good) 10%, transparent);',
+      ':root {\n  --basalt-optimalZone: color-mix(in srgb, var(--basalt-good) 10%, transparent);',
     )
     const dts = read('app-tokens.css.d.ts')
     expect(dts).toContain("declare module 'basalt-ui'")
@@ -349,33 +349,33 @@ describe('tokens:css --extra', () => {
     it('a group colliding with a package name exits 1', () => {
       const { value, log } = refuse({ series: { chart: { 1: { hue: 'blue' } } } })
       expect(value).toBe(1)
-      expect(log).toContain('--vx-chart-1')
+      expect(log).toContain('--basalt-chart-1')
       expect(log).toContain('basalt-ui name')
     })
 
     it('a var colliding with a package name exits 1', () => {
       const { value, log } = refuse({ vars: { canvas: '#000' } })
       expect(value).toBe(1)
-      expect(log).toContain('--vx-canvas')
+      expect(log).toContain('--basalt-canvas')
     })
 
-    it('a vars value reading --vx-good-solid exits 1 and names --vx-good', () => {
+    it('a vars value reading --basalt-good-solid exits 1 and names --basalt-good', () => {
       const { value, log } = refuse({
-        vars: { zone: 'color-mix(in srgb, var(--vx-good-solid) 10%, transparent)' },
+        vars: { zone: 'color-mix(in srgb, var(--basalt-good-solid) 10%, transparent)' },
       })
       expect(value).toBe(1)
-      expect(log).toContain('--vx-good-solid')
-      expect(log).toContain('did you mean --vx-good?')
+      expect(log).toContain('--basalt-good-solid')
+      expect(log).toContain('did you mean --basalt-good?')
     })
 
     it('a vars value may read a name declared in the same file', () => {
-      write({ series: { usage: SERIES }, vars: { zone: 'var(--vx-usage-hrv)' } })
+      write({ series: { usage: SERIES }, vars: { zone: 'var(--basalt-usage-hrv)' } })
       expect(tokensCss(extra(), dir)).toBe(0)
     })
 
     it('a vars value reading a typo of a package name suggests the nearest one', () => {
-      const { log } = refuse({ vars: { zone: 'var(--vx-brandfill)' } })
-      expect(log).toContain('did you mean --vx-brand-fill?')
+      const { log } = refuse({ vars: { zone: 'var(--basalt-brandfill)' } })
+      expect(log).toContain('did you mean --basalt-brand-fill?')
     })
 
     it.each([
@@ -415,7 +415,7 @@ describe('tokens:css --extra', () => {
   it('never reuses a basalt-ui name: every emitted name is outside the package list', () => {
     write({ series: { usage: SERIES }, vars: VARS })
     tokensCss(extra(), dir)
-    const emitted = [...read('app-tokens.css').matchAll(/(--vx-[\w-]+):/g)].map((m) => m[1]!)
+    const emitted = [...read('app-tokens.css').matchAll(/(--basalt-[\w-]+):/g)].map((m) => m[1]!)
     const names = new Set(tokenNames())
     expect(emitted.length).toBeGreaterThan(0)
     for (const name of emitted) expect(names.has(name)).toBe(false)
@@ -467,7 +467,7 @@ describe('tokens:css --check', () => {
   })
 
   it('STILL fails when a token value actually moved', () => {
-    writeFileSync(resolve(dir, 'out.css'), emit([]).replace('--vx-canvas', '--vx-canvass'))
+    writeFileSync(resolve(dir, 'out.css'), emit([]).replace('--basalt-canvas', '--basalt-canvass'))
     const { code, log } = check('out.css')
     expect(code).toBe(1)
     expect(log).toContain('differs from what')

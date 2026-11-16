@@ -14,7 +14,7 @@ export type ProseProps = {
 }
 
 /**
- * The one typography wrapper for long-form content. The `.vx-prose` sheet styles every element
+ * The one typography wrapper for long-form content. The `.basalt-prose` sheet styles every element
  * below it; the density and the measure are set here. `article` (default) is 16px with 1.7 leading;
  * `chat` is 15px with 1.55. The measure is 72ch unless `measure={false}`.
  *
@@ -37,7 +37,7 @@ export function Prose({
     <div
       data-slot="prose"
       className={cn(
-        'vx-prose',
+        'basalt-prose',
         density === 'chat' ? 'text-[15px] leading-[1.55]' : 'text-base leading-[1.7]',
         measure && 'max-w-[72ch]',
         className,

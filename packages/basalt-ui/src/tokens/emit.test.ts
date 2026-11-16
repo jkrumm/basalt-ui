@@ -7,7 +7,7 @@ import { DEFAULT_DERIVE_V3_CONFIG, deriveV3 } from './derive'
 import {
   emitDerived,
   emitTokensCss,
-  emitVxTypes,
+  emitBasaltTypes,
   GENERATED_HEADER_LINE,
   provenanceHeader,
   tokenNames,
@@ -70,10 +70,10 @@ describe('emitTokensCss', () => {
     expect(css).not.toContain('any-pointer')
   })
 
-  test('declares only --vx-* custom properties and color-scheme', () => {
+  test('declares only --basalt-* custom properties and color-scheme', () => {
     const declared = [...css.matchAll(/^ +([a-z-]+): /gm)].map((m) => m[1]!)
     for (const name of declared)
-      expect(name.startsWith('--vx-') || name === 'color-scheme').toBe(true)
+      expect(name.startsWith('--basalt-') || name === 'color-scheme').toBe(true)
   })
 
   test('refuses a palette that fails a gate, naming the gate', () => {
@@ -95,10 +95,10 @@ describe('tenant sheets', () => {
   })
 
   test('carry only the roles that differ from the default, and no scalars', () => {
-    expect(tenant).toContain('--vx-brand-fill:')
-    expect(tenant).toContain('--vx-chart-1:')
-    expect(tenant).not.toContain('--vx-canvas:')
-    expect(tenant).not.toContain('--vx-radius-card:')
+    expect(tenant).toContain('--basalt-brand-fill:')
+    expect(tenant).toContain('--basalt-chart-1:')
+    expect(tenant).not.toContain('--basalt-canvas:')
+    expect(tenant).not.toContain('--basalt-radius-card:')
     expect(tenant.length).toBeLessThan(emitTokensCss(OPTIONS).length / 2)
   })
 
@@ -121,23 +121,23 @@ describe('tenant sheets', () => {
   })
 })
 
-describe('VX types, names, zone A', () => {
+describe('BASALT types, names, zone A', () => {
   test('tokenNames lists every public name once', () => {
     const names = tokenNames()
     expect(new Set(names).size).toBe(names.length)
-    expect(names.every((n) => n.startsWith('--vx-'))).toBe(true)
+    expect(names.every((n) => n.startsWith('--basalt-'))).toBe(true)
   })
 
-  test('snapshot: VX types', () => {
-    expect(emitVxTypes(OPTIONS)).toMatchSnapshot()
+  test('snapshot: BASALT types', () => {
+    expect(emitBasaltTypes(OPTIONS)).toMatchSnapshot()
   })
 
-  test('VX keys are camelCase refs to the same names, one per token', () => {
-    const source = emitVxTypes(OPTIONS)
+  test('BASALT keys are camelCase refs to the same names, one per token', () => {
+    const source = emitBasaltTypes(OPTIONS)
     expect(source.startsWith(GENERATED_HEADER_LINE)).toBe(true)
-    expect(source).toContain("inkMuted: 'var(--vx-ink-muted)',")
-    expect(source).toContain("chart1: 'var(--vx-chart-1)',")
-    expect(source).toContain("textSmLh: 'var(--vx-text-sm-lh)',")
+    expect(source).toContain("inkMuted: 'var(--basalt-ink-muted)',")
+    expect(source).toContain("chart1: 'var(--basalt-chart-1)',")
+    expect(source).toContain("textSmLh: 'var(--basalt-text-sm-lh)',")
     expect([...source.matchAll(/^ {2}\w+: 'var\(/gm)]).toHaveLength(tokenNames().length)
   })
 

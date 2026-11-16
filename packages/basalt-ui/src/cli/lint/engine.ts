@@ -202,14 +202,14 @@ export function runStylelint(project: Project, files: readonly string[]): Findin
   ])
 }
 
-/** The `--vx-*` names the app's own `--extra` outputs define, read from the generated sheets. */
+/** The `--basalt-*` names the app's own `--extra` outputs define, read from the generated sheets. */
 export function extraNames(project: Project): string[] {
   const names = new Set<string>()
   for (const row of project.manifest?.tokens ?? []) {
     if (!row.flags.includes('--extra')) continue
     try {
       const css = readFileSync(resolve(project.root, row.out), 'utf8')
-      for (const [name] of css.matchAll(/--vx-[a-z0-9]+(?:-[a-z0-9]+)*/gi)) names.add(name)
+      for (const [name] of css.matchAll(/--basalt-[a-z0-9]+(?:-[a-z0-9]+)*/gi)) names.add(name)
     } catch {
       // a missing sheet defines nothing; `doctor` check 10 reports it
     }

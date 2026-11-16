@@ -42,7 +42,7 @@ const ROW =
 
 /** The scroller of a surface: its rows scroll inside it and never chain to the page. */
 const BODY =
-  'min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:var(--vx-line)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin]'
+  'min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:var(--basalt-line)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin]'
 
 /** A `menu` surface sits above the bar: the bar's own height (48 + its 1 px seam) plus the inset. */
 const LIFT = 'mb-[calc(--spacing(12)+1px+env(safe-area-inset-bottom))] rounded-card'

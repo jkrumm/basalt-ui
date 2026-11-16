@@ -24,7 +24,7 @@ Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement
   getValue: (d: T) => number | null  // The intensity; `null` is an absent cell (flat neutral), never a zero
   rows?: readonly string[]  // Explicit band order
   cols?: readonly string[]
-  color?: string  // The ink at full intensity, a `VX.*` ref or a series token
+  color?: string  // The ink at full intensity, a `BASALT.*` ref or a series token
   domain?: readonly [number, number]  // The value range the color scale spans
   formatValue?: ((v: number) => string)  // Tooltip value format
   formatLegend?: ((v: number) => string)  // The gradient legend's two end labels

@@ -641,13 +641,13 @@ describeShell(
       expectStrictlyIncreasing(
         'pill horizontal inset',
         horizontal,
-        'the 12px pill inset must ride `--vx-space-mobile-nav-tab-inset-x` — frozen, the whole bar ' +
+        'the 12px pill inset must ride `--basalt-space-mobile-nav-tab-inset-x` — frozen, the whole bar ' +
           'scales around a pill that does not',
       )
       expectStrictlyIncreasing(
         'pill vertical inset',
         vertical,
-        'the 2px pill inset must ride `--vx-space-mobile-nav-tab-inset-y` for the same reason',
+        'the 2px pill inset must ride `--basalt-space-mobile-nav-tab-inset-y` for the same reason',
       )
     })
 

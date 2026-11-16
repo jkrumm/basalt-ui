@@ -58,7 +58,7 @@ export type BasaltAppOptions = {
 export type HeadOptions = {
   /** Options for the pre-paint scheme script, or `false` to leave it out. */
   themeScript?: ThemeScriptOptions | false
-  /** `'auto'` (default): the `--vx-canvas` pair of the default palette; or a flat pair; `false`: none. */
+  /** `'auto'` (default): the `--basalt-canvas` pair of the default palette; or a flat pair; `false`: none. */
   themeColor?: 'auto' | ColorPair | false
   app?: BasaltAppOptions
 }

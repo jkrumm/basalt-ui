@@ -109,7 +109,7 @@ describe('migrations/areas/ui.json', () => {
   test('each valueShifts target is the value table.ts ships', () => {
     expect(area.tokens.valueShifts.length).toBeGreaterThan(0)
     for (const shift of area.tokens.valueShifts) {
-      const value = tokenByName(shift.token.replace(/^--vx-/, '')).value(deriveV3())
+      const value = tokenByName(shift.token.replace(/^--basalt-/, '')).value(deriveV3())
       expect(shift.to).toBe(value as string)
       expect(shift.from).not.toBe(shift.to)
     }

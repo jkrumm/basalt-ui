@@ -17,7 +17,7 @@ describe('foldBands', () => {
         ariaLabel="Availability"
         data={data}
         x={(d) => d.t}
-        states={[{ key: 'up', label: 'Up', color: 'var(--vx-good)' }]}
+        states={[{ key: 'up', label: 'Up', color: 'var(--basalt-good)' }]}
         getBand={(d) => ({ state: d.s })}
         fold={{
           merge: (g) => {

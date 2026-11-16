@@ -55,10 +55,10 @@
     background-color: var(--color-accent);
   }
   [data-slot='table-row'][data-selected] > [data-slot='table-cell'] {
-    --row-tint: var(--vx-surface-row-selected);
+    --row-tint: var(--basalt-surface-row-selected);
   }
   [data-slot='table-row'][data-selected] {
-    background-color: var(--vx-surface-row-selected);
+    background-color: var(--basalt-surface-row-selected);
   }
 
   /* reduced: priority 3 leaves below data-full-at; a sum above 1800 has no data-full-at */
@@ -169,7 +169,7 @@
       gap: var(--spacing) calc(var(--spacing) * 3);
       padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
       height: auto !important;
-      box-shadow: inset 0 -1px 0 var(--vx-hairline);
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
     }
     [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-cell'] {
       display: block;
@@ -195,7 +195,7 @@
     [data-slot='table-root'][data-below='480'][data-phone='cards']
       [data-slot='table-cell'][data-label]::before {
       content: attr(data-label) ': ';
-      color: var(--vx-ink-muted);
+      color: var(--basalt-ink-muted);
     }
     /* a labelled value reads from the card's start, a number or a boolean included */
     [data-slot='table-root'][data-below='480'][data-phone='cards']
@@ -206,7 +206,7 @@
     [data-slot='table-root'][data-below='480'][data-phone='cards']
       [data-slot='table-cell'][data-unit]::after {
       content: ' ' attr(data-unit);
-      color: var(--vx-ink-muted);
+      color: var(--basalt-ink-muted);
     }
     /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
     [data-slot='table-root'][data-below='480'][data-phone='cards']
@@ -289,7 +289,7 @@
       gap: var(--spacing) calc(var(--spacing) * 3);
       padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
       height: auto !important;
-      box-shadow: inset 0 -1px 0 var(--vx-hairline);
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
     }
     [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-cell'] {
       display: block;
@@ -315,7 +315,7 @@
     [data-slot='table-root'][data-below='800'][data-phone='cards']
       [data-slot='table-cell'][data-label]::before {
       content: attr(data-label) ': ';
-      color: var(--vx-ink-muted);
+      color: var(--basalt-ink-muted);
     }
     /* a labelled value reads from the card's start, a number or a boolean included */
     [data-slot='table-root'][data-below='800'][data-phone='cards']
@@ -326,7 +326,7 @@
     [data-slot='table-root'][data-below='800'][data-phone='cards']
       [data-slot='table-cell'][data-unit]::after {
       content: ' ' attr(data-unit);
-      color: var(--vx-ink-muted);
+      color: var(--basalt-ink-muted);
     }
     /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
     [data-slot='table-root'][data-below='800'][data-phone='cards']
@@ -409,7 +409,7 @@
       gap: var(--spacing) calc(var(--spacing) * 3);
       padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
       height: auto !important;
-      box-shadow: inset 0 -1px 0 var(--vx-hairline);
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
     }
     [data-slot='table-root'][data-below='always'][data-phone='cards'] [data-slot='table-cell'] {
       display: block;
@@ -435,7 +435,7 @@
     [data-slot='table-root'][data-below='always'][data-phone='cards']
       [data-slot='table-cell'][data-label]::before {
       content: attr(data-label) ': ';
-      color: var(--vx-ink-muted);
+      color: var(--basalt-ink-muted);
     }
     /* a labelled value reads from the card's start, a number or a boolean included */
     [data-slot='table-root'][data-below='always'][data-phone='cards']
@@ -446,7 +446,7 @@
     [data-slot='table-root'][data-below='always'][data-phone='cards']
       [data-slot='table-cell'][data-unit]::after {
       content: ' ' attr(data-unit);
-      color: var(--vx-ink-muted);
+      color: var(--basalt-ink-muted);
     }
     /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
     [data-slot='table-root'][data-below='always'][data-phone='cards']

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
-import { alpha, VX } from '../../tokens'
+import { alpha, BASALT } from '../../tokens'
 import { CV } from '../core/theme'
 import { BandStrip } from './band-strip'
 import type { BandSpan, BandStripProps, BandStripSeries } from './band-strip'
@@ -15,17 +15,17 @@ type Slot = { t: string; s: string; loss?: number; a?: number }
 const slots = (n: number, state: (i: number) => string = () => 'up'): Slot[] =>
   Array.from({ length: n }, (_, i) => ({ t: `s${String(i).padStart(3, '0')}`, s: state(i) }))
 
-const up: BandStripSeries<Slot> = { key: 'up', label: 'Up', color: 'var(--vx-good)' }
+const up: BandStripSeries<Slot> = { key: 'up', label: 'Up', color: 'var(--basalt-good)' }
 const down: BandStripSeries<Slot> = {
   key: 'down',
   label: 'Down',
-  color: 'var(--vx-bad)',
+  color: 'var(--basalt-bad)',
   formatValue: (d) => (d.loss === undefined ? null : `${d.loss}% loss`),
 }
 const none: BandStripSeries<Slot> = {
   key: 'none',
   label: 'Not measured',
-  color: 'var(--vx-line)',
+  color: 'var(--basalt-line)',
 }
 
 const getBand = (d: Slot): BandSpan => ({ state: d.s })
@@ -89,11 +89,11 @@ const layerFills = (root: ParentNode): (string | null | undefined)[] =>
   )
 
 const NEUTRAL = alpha(CV.neutral, 1)
-const GOOD = alpha(VX.good, 1)
+const GOOD = alpha(BASALT.good, 1)
 const width = (r: Element): number => Number(r.getAttribute('width'))
 const sumWidth = (rs: Element[]): number => rs.reduce((n, r) => n + width(r), 0)
 const isMeasured = (r: Element): boolean => r.getAttribute('fill') === GOOD
-const isMarker = (r: Element): boolean => r.getAttribute('fill') === VX.good
+const isMarker = (r: Element): boolean => r.getAttribute('fill') === BASALT.good
 const partial = (fraction: number | undefined): BandStripProps<Slot, string> =>
   props({
     states: [up, none],
@@ -142,8 +142,8 @@ describe('BandStrip', () => {
       ).toBeCloseTo(0, 3)
     expect(fills(doc)).toEqual(
       new Set([
-        'color-mix(in srgb, var(--vx-good) 100%, transparent)',
-        'color-mix(in srgb, var(--vx-bad) 100%, transparent)',
+        'color-mix(in srgb, var(--basalt-good) 100%, transparent)',
+        'color-mix(in srgb, var(--basalt-bad) 100%, transparent)',
       ]),
     )
   })
@@ -155,15 +155,17 @@ describe('BandStrip', () => {
           states: [{ ...up, fillOpacity: 0.5 }, down],
           getBand: (d) => ({
             state: d.s,
-            ...(d.s === 'down' && { fill: 'color-mix(in srgb, var(--vx-bad) 30%, transparent)' }),
+            ...(d.s === 'down' && {
+              fill: 'color-mix(in srgb, var(--basalt-bad) 30%, transparent)',
+            }),
           }),
         })}
       />,
     )
     expect(fills(doc)).toEqual(
       new Set([
-        'color-mix(in srgb, var(--vx-good) 50%, transparent)',
-        'color-mix(in srgb, var(--vx-bad) 30%, transparent)',
+        'color-mix(in srgb, var(--basalt-good) 50%, transparent)',
+        'color-mix(in srgb, var(--basalt-bad) 30%, transparent)',
       ]),
     )
   })
@@ -296,7 +298,7 @@ describe('BandStrip', () => {
     })
 
     test('a span fill overrides the primary part only; the absent part keeps its state color', () => {
-      const tint = alpha(VX.good, 0.4)
+      const tint = alpha(BASALT.good, 0.4)
       const doc = html(
         <BandStrip
           {...props({
@@ -395,8 +397,8 @@ describe('BandStrip', () => {
         })}
       />,
     )
-    const inset = bands(doc).filter((r) => r.getAttribute('fill') === 'var(--vx-bad)')
-    const full = bands(doc).filter((r) => r.getAttribute('fill')?.includes('--vx-bad) 100%'))
+    const inset = bands(doc).filter((r) => r.getAttribute('fill') === 'var(--basalt-bad)')
+    const full = bands(doc).filter((r) => r.getAttribute('fill')?.includes('--basalt-bad) 100%'))
     expect(inset.length).toBe(4)
     expect(full.length).toBe(4)
     expect(Number(inset[0]?.getAttribute('y'))).toBeGreaterThan(Number(full[0]?.getAttribute('y')))
@@ -462,7 +464,7 @@ describe('BandStrip', () => {
     if (!(toggle instanceof HTMLButtonElement)) throw new Error('no toggleable legend entry')
     await act(async () => toggle.click())
     expect(bands(el).length).toBe(6)
-    expect(fills(el)).toEqual(new Set(['color-mix(in srgb, var(--vx-good) 100%, transparent)']))
+    expect(fills(el)).toEqual(new Set(['color-mix(in srgb, var(--basalt-good) 100%, transparent)']))
   })
 
   test('a state outside `states` throws in development', () => {
@@ -504,7 +506,7 @@ describe('BandStrip', () => {
       />,
     )
     const order = layerFills(doc)
-    expect(order.at(-1)).toBe('var(--vx-bad)')
+    expect(order.at(-1)).toBe('var(--basalt-bad)')
     expect(order.slice(0, -1).every((f) => f?.startsWith('color-mix'))).toBe(true)
     expect(order.length).toBe(3)
   })
@@ -529,8 +531,8 @@ describe('BandStrip', () => {
         .find((g) => g.querySelector('rect')?.getAttribute('fill')?.includes(fill))
         ?.getAttribute('fill-opacity') ??
       el.querySelector(`[fill*="${fill}"]`)?.getAttribute('fill-opacity')
-    expect(opacity('--vx-bad')).toBeNull()
-    expect(Number(opacity('--vx-good'))).toBeLessThan(1)
+    expect(opacity('--basalt-bad')).toBeNull()
+    expect(Number(opacity('--basalt-good'))).toBeLessThan(1)
   })
 
   test('empty data and a single datum render', () => {

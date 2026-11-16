@@ -49,7 +49,7 @@ describe('table module', () => {
 
   test('md follows the density row height and is the default', () => {
     const { getByLabelText } = render(<Sample />)
-    expect(getByLabelText('Orders').className).toContain('[--table-row-h:var(--vx-row-h)]')
+    expect(getByLabelText('Orders').className).toContain('[--table-row-h:var(--basalt-row-h)]')
     expect(getByLabelText('Orders').className).not.toContain('[--table-row-h:1.75rem]')
   })
 
@@ -57,7 +57,7 @@ describe('table module', () => {
     const { getByLabelText } = render(<Sample size="sm" />)
     const { className } = getByLabelText('Orders')
     expect(className).toContain('[--table-row-h:1.75rem]')
-    expect(className).toContain('pointer-coarse:[--table-row-h:var(--vx-row-h)]')
+    expect(className).toContain('pointer-coarse:[--table-row-h:var(--basalt-row-h)]')
   })
 
   test('the head sticks and rows carry hairlines by default', () => {

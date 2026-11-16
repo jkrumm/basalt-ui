@@ -8,8 +8,8 @@ import type { BarsSeries } from './bars'
 
 type Row = { t: Date; a: number; b: number; c: number }
 const data: Row[] = [1, 2, 3].map((d) => ({ t: new Date(Date.UTC(2026, 8, d)), a: d, b: d, c: d }))
-const accent: SeriesColor = { light: 'var(--vx-accent)', dark: 'var(--vx-accent)' }
-const line: SeriesColor = { light: 'var(--vx-line)', dark: 'var(--vx-line)' }
+const accent: SeriesColor = { light: 'var(--basalt-accent)', dark: 'var(--basalt-accent)' }
+const line: SeriesColor = { light: 'var(--basalt-line)', dark: 'var(--basalt-line)' }
 const bar = (
   key: 'a' | 'b' | 'c',
   extra: Partial<Extract<BarsSeries<Row>, { mark: 'bar' }>> = {},

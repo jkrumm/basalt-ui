@@ -22,7 +22,10 @@ type Row = { t: Date; a: number | null; b: number | null }
 const day = (i: number): Date => new Date(Date.UTC(2026, 8, i + 1))
 const rowsOf = (n: number): Row[] =>
   Array.from({ length: n }, (_, i) => ({ t: day(i), a: i + 1, b: (i + 1) * 2 }))
-const pair = (v: string): SeriesColor => ({ light: `var(--vx-${v})`, dark: `var(--vx-${v})` })
+const pair = (v: string): SeriesColor => ({
+  light: `var(--basalt-${v})`,
+  dark: `var(--basalt-${v})`,
+})
 const x = { value: (d: Row): Date => d.t }
 
 const a: Series<Row> = { mark: 'line', key: 'a', label: 'A', color: pair('line'), y: (d) => d.a }

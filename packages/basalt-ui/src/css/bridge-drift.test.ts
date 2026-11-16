@@ -58,9 +58,9 @@ describe('tailwind bridge drift', () => {
 
   test('compiled: resets hold, accent is hover, brand is the blue', async () => {
     const css = await build(['bg-accent', 'bg-brand', 'text-display', 'bg-blue-500'])
-    expect(css).toMatch(/\.bg-accent\s*\{\s*background-color:\s*var\(--vx-hover\)/)
-    expect(css).not.toMatch(/\.bg-accent\s*\{[^}]*--vx-brand/)
-    expect(css).toMatch(/\.bg-brand\s*\{\s*background-color:\s*var\(--vx-brand\)/)
+    expect(css).toMatch(/\.bg-accent\s*\{\s*background-color:\s*var\(--basalt-hover\)/)
+    expect(css).not.toMatch(/\.bg-accent\s*\{[^}]*--basalt-brand/)
+    expect(css).toMatch(/\.bg-brand\s*\{\s*background-color:\s*var\(--basalt-brand\)/)
     expect(css).toContain('.text-display')
     expect(css).not.toContain('.bg-blue-500')
     expect(css).not.toContain('--color-blue-500')
@@ -74,9 +74,9 @@ describe('tailwind bridge drift', () => {
 
   test('compiled: the size utilities exist', async () => {
     const css = await build(['h-ctl', 'size-ctl', 'min-h-row', 'size-icon', 'focus-ring', 'link'])
-    expect(css).toMatch(/\.h-ctl\s*\{\s*height:\s*var\(--vx-ctl-h\)/)
-    expect(css).toMatch(/\.size-ctl\s*\{\s*width:\s*var\(--vx-ctl-h\)/)
-    expect(css).toMatch(/\.min-h-row\s*\{\s*min-height:\s*var\(--vx-row-h\)/)
+    expect(css).toMatch(/\.h-ctl\s*\{\s*height:\s*var\(--basalt-ctl-h\)/)
+    expect(css).toMatch(/\.size-ctl\s*\{\s*width:\s*var\(--basalt-ctl-h\)/)
+    expect(css).toMatch(/\.min-h-row\s*\{\s*min-height:\s*var\(--basalt-row-h\)/)
     expect(css).toContain('.size-icon')
   })
 

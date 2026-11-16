@@ -339,12 +339,12 @@ layout('print emulation shows light values only', () => {
     await page.raw.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'))
     await frames(page.raw)
     const screenInk = await page.raw.evaluate(() =>
-      getComputedStyle(document.documentElement).getPropertyValue('--vx-ink').trim(),
+      getComputedStyle(document.documentElement).getPropertyValue('--basalt-ink').trim(),
     )
     await page.raw.emulateMedia({ media: 'print' })
     await frames(page.raw)
     const printInk = await page.raw.evaluate(() =>
-      getComputedStyle(document.documentElement).getPropertyValue('--vx-ink').trim(),
+      getComputedStyle(document.documentElement).getPropertyValue('--basalt-ink').trim(),
     )
     expect(printInk).not.toBe(screenInk)
     expect(printInk).toBe('#262629')
@@ -364,7 +364,7 @@ layout('forced colors', () => {
       const { ink, back, brand } = await page.raw.evaluate(() => {
         const card = getComputedStyle(document.querySelector('.card') as Element)
         const probe = document.createElement('i')
-        probe.style.color = 'var(--vx-brand)'
+        probe.style.color = 'var(--basalt-brand)'
         document.body.append(probe)
         const resolved = getComputedStyle(probe).color
         probe.remove()

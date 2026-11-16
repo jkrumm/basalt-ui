@@ -104,7 +104,7 @@ describe('helpers', () => {
   })
 
   it('isClassShaped accepts utilities and refuses prose and URLs', () => {
-    expect(isClassShaped('flex gap-4.5 @narrow:p-2 bg-(--vx-good) !p-0 -mt-1')).toBe(true)
+    expect(isClassShaped('flex gap-4.5 @narrow:p-2 bg-(--basalt-good) !p-0 -mt-1')).toBe(true)
     expect(isClassShaped('Use sm: for small')).toBe(false)
     expect(isClassShaped('https://example.com')).toBe(false)
     expect(isClassShaped('   ')).toBe(false)

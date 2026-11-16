@@ -21,7 +21,7 @@ export const added: Accepts<WithRoomy> = requires
 
 describe('table guard', () => {
   test('every called size value resolves to its row height in the cva table', () => {
-    expect(tableVariants({ size: 'md' })).toContain('[--table-row-h:var(--vx-row-h)]')
+    expect(tableVariants({ size: 'md' })).toContain('[--table-row-h:var(--basalt-row-h)]')
     expect(tableVariants({ size: 'sm' })).toContain('[--table-row-h:1.75rem]')
     expect(tableVariants({})).toBe(tableVariants({ size: 'md' }))
     expect(requires({ size: 'sm' })).toEqual({ size: 'sm' })

@@ -318,7 +318,7 @@ describeShell(
      * saying where they are.
      *
      * The floor is READ OFF THE ELEMENT rather than written down here. That is not laziness about the
-     * number: 96px is a TYPOGRAPHIC argument (~13 characters at `VX.text.lg` / `font-stretch: 88%`),
+     * number: 96px is a TYPOGRAPHIC argument (~13 characters at `BASALT.text.lg` / `font-stretch: 88%`),
      * it lives in one place with the paragraph that justifies it, and a second copy in a test file is
      * a copy that goes stale silently. What this asserts is the invariant the number serves — the
      * fold ran BEFORE the title got crushed — at every width, whatever the floor is set to.
@@ -510,7 +510,7 @@ describeShell(
      * What landed is SPACE, not a seam: `.footer` opens with one `sidebarRegionGap`, and the rows
      * inside it run on the NAV's own 1px pitch (owner feedback, shutterflow round 3: the sidebar bottom
      * must read as one list — an earlier `stack-sm` gap between Settings and the account row put the
-     * footer on a 42px pitch against the nav's 33). A `--vx-divider` hairline on `.footer` was the obvious alternative and
+     * footer on a 42px pitch against the nav's 33). A `--basalt-divider` hairline on `.footer` was the obvious alternative and
      * `app-sidebar.module.css` rejects it in as many words — the boundary is already carried by that
      * padding and by the account row's own inset, so a rule there would answer a question nobody
      * asked (and would put the module into `theme/divider-law.test.ts`'s hairline inventory for it).

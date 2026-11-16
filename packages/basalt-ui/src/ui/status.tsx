@@ -65,11 +65,11 @@ export function Status({ tone, className, ...props }: StatusProps): ReactElement
 }
 
 /**
- * A series colour: a `VX.*` reference (`VX.good`, `VX.warn`) or a `groupTokens` ref. A raw
+ * A series colour: a `BASALT.*` reference (`BASALT.good`, `BASALT.warn`) or a `groupTokens` ref. A raw
  * `#hex`, `rgb()` or colour name does not type-check, nor does a plain string: mint the ref with
  * `groupTokens`.
  */
-export type SwatchColor = `var(--vx-${string})` | SeriesGroup[string]
+export type SwatchColor = `var(--basalt-${string})` | SeriesGroup[string]
 
 export type SwatchProps = Layout & {
   /** The series colour. Required: a swatch with no colour is an empty box. */
@@ -81,7 +81,7 @@ export type SwatchProps = Layout & {
  * it as text.
  *
  * @example
- * <Swatch color={VX.good} /> Revenue
+ * <Swatch color={BASALT.good} /> Revenue
  */
 export function Swatch({ color, className, ...props }: SwatchProps): ReactElement {
   return (

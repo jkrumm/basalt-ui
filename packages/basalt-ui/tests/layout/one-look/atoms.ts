@@ -2,7 +2,7 @@
  * The five atoms a static page and a bridge (Tailwind) page must read identically: surface roles,
  * the ink ramp, the type ladder, radii, and ring plus shadow.
  *
- * One row = one probe element. The tokens page paints it with plain `var(--vx-*)` declarations (what
+ * One row = one probe element. The tokens page paints it with plain `var(--basalt-*)` declarations (what
  * a hand-written stylesheet does); the bridge page paints it with the utility the bridge defines for
  * that role. Chrome then resolves both and the suite compares the computed properties, so a bridge
  * mapping that drifts from the token table, or a token a utility reads wrongly, shows as a diff.
@@ -25,7 +25,7 @@ export interface Atom {
 const surface = (name: string, token: string, utility: string): Atom => ({
   id: `surface-${name}`,
   group: 'surface',
-  declarations: `background-color: var(--vx-${token});`,
+  declarations: `background-color: var(--basalt-${token});`,
   utilities: utility,
   props: ['backgroundColor'],
 })
@@ -33,7 +33,7 @@ const surface = (name: string, token: string, utility: string): Atom => ({
 const ink = (name: string, token: string, utility: string): Atom => ({
   id: `ink-${name}`,
   group: 'ink',
-  declarations: `color: var(--vx-${token});`,
+  declarations: `color: var(--basalt-${token});`,
   utilities: utility,
   props: ['color'],
 })
@@ -42,7 +42,7 @@ const RUNGS = ['micro', 'xs', 'sm', 'md', 'base', 'lg', 'display'] as const
 const rung = (name: (typeof RUNGS)[number]): Atom => ({
   id: `type-${name}`,
   group: 'type',
-  declarations: `font-size: var(--vx-text-${name}); line-height: var(--vx-text-${name}-lh);`,
+  declarations: `font-size: var(--basalt-text-${name}); line-height: var(--basalt-text-${name}-lh);`,
   utilities: `text-${name}`,
   props: ['fontSize', 'lineHeight'],
 })
@@ -50,7 +50,7 @@ const rung = (name: (typeof RUNGS)[number]): Atom => ({
 const radius = (name: string): Atom => ({
   id: `radius-${name}`,
   group: 'radius',
-  declarations: `border-radius: var(--vx-radius-${name});`,
+  declarations: `border-radius: var(--basalt-radius-${name});`,
   utilities: `rounded-${name}`,
   props: ['borderTopLeftRadius', 'borderBottomRightRadius'],
 })
@@ -58,7 +58,7 @@ const radius = (name: string): Atom => ({
 const shadow = (name: string): Atom => ({
   id: `shadow-${name}`,
   group: 'shadow',
-  declarations: `box-shadow: var(--vx-shadow-${name});`,
+  declarations: `box-shadow: var(--basalt-shadow-${name});`,
   utilities: `shadow-${name}`,
   props: ['boxShadow'],
 })

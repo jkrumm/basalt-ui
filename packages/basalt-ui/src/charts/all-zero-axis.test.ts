@@ -9,7 +9,7 @@ describe('an all-zero axis', () => {
   const series = (key: string): ChartSeries<Row> => ({
     key,
     label: key,
-    color: 'var(--vx-line)',
+    color: 'var(--basalt-line)',
     mark: 'line',
     getValue: (d) => d.y,
   })

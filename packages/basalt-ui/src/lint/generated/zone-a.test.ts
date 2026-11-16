@@ -31,7 +31,7 @@ describe('zone-a', () => {
   })
 
   it('carries the pre-mixed theme classes and fill-only names the class rules read', () => {
-    // The theme's class names (`--color-accent: var(--vx-hover)`), never the token names: `bg-hover` is no class.
+    // The theme's class names (`--color-accent: var(--basalt-hover)`), never the token names: `bg-hover` is no class.
     expect([...zoneAPremixed].toSorted()).toEqual(['accent', 'border', 'scrim', 'selected'])
     expect(zoneAFillOnly as readonly string[]).toEqual(
       expect.arrayContaining(['brand-fill', 'dim-bar', 'chart-1', 'seq-5']),

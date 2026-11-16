@@ -7,12 +7,12 @@ A region the question asks about (a ride window, the senders to mute) is a zone,
 ```tsx
 // @check
 import { CartesianChart, chartLabels } from 'basalt-ui/charts'
-import { VX, alpha } from 'basalt-ui/tokens'
+import { BASALT, alpha } from 'basalt-ui/tokens'
 import { text } from '@tanstack/charts/text'
 
 type Sender = { id: string; name: string; perWeek: number; openPct: number }
 
-const color = { light: VX.brand, dark: VX.brand }
+const color = { light: BASALT.brand, dark: BASALT.brand }
 
 export function MuteCandidates({
   senders,
@@ -35,12 +35,12 @@ export function MuteCandidates({
           from: 5,
           to: 500,
           y: { from: 0, to: 10 },
-          fill: alpha(VX.brand, 0.1),
+          fill: alpha(BASALT.brand, 0.1),
           label: 'Mute',
         },
       ]}
       marks={CartesianChart.custom<Sender>((plot) => {
-        const r = VX.dotR + 1
+        const r = BASALT.dotR + 1
         const dots = plot.rows('d').flatMap((s) => {
           const px = plot.x(s.perWeek)
           return px === null
@@ -55,7 +55,7 @@ export function MuteCandidates({
             y: plot.y(s.openPct),
           })),
           { width: plot.plotWidth, height: plot.plotHeight },
-          { obstacles: dots, gap: VX.dotR + 3 },
+          { obstacles: dots, gap: BASALT.dotR + 3 },
         )
         return [
           text(placed, {
@@ -65,8 +65,8 @@ export function MuteCandidates({
             dx: (l) => l.dx,
             dy: (l) => l.dy,
             anchor: (l) => l.textAnchor,
-            fill: VX.ink,
-            fontSize: VX.text.micro,
+            fill: BASALT.ink,
+            fontSize: BASALT.text.micro,
           }),
         ]
       })}

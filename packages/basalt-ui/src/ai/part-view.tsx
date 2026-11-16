@@ -52,7 +52,7 @@ function Fallback({ type, label }: { type: string; label?: string | undefined })
 
 function Text({ text, streaming }: { text: unknown; streaming: boolean }): ReactElement {
   return (
-    <div data-slot="ai-text" className="vx-prose">
+    <div data-slot="ai-text" className="basalt-prose">
       <Markdown contentTrust="untrusted" streaming={streaming}>
         {typeof text === 'string' ? text : ''}
       </Markdown>

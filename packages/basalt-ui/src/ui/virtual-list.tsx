@@ -15,7 +15,7 @@ import type { VirtualItem } from '../core/ports'
  * virtualListVariants() // class string for a non-`VirtualList` scroller
  */
 export const virtualListVariants = cva(
-  'relative min-h-0 min-w-0 overflow-y-auto overscroll-contain [scrollbar-color:var(--vx-line)_transparent] [scrollbar-width:thin]',
+  'relative min-h-0 min-w-0 overflow-y-auto overscroll-contain [scrollbar-color:var(--basalt-line)_transparent] [scrollbar-width:thin]',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */

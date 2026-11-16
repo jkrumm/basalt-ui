@@ -6,7 +6,7 @@ shipped consumer quick reference.
 
 The only published package (npm: `basalt-ui`). An opinionated framework for React apps on Base UI, Tailwind 4 and TanStack
 Charts: `BasaltProvider` (`basalt-ui/router`), an app shell with a page bar and a
-control tier, a TanStack Charts chart system, a three-tier `--vx-*` token system, a Vite preset,
+control tier, a TanStack Charts chart system, a three-tier `--basalt-*` token system, a Vite preset,
 raw toolchain presets, and the `basalt-ui` CLI.
 
 This file is **invariants and footguns** — the things that are load-bearing and not obvious from the
@@ -22,7 +22,7 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 | -------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.`            | coupled  | the state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`)                                                 |
 | `./charts`     | **free** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export |
-| `./tokens`     | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                           |
+| `./tokens`     | **free** | `BASALT`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                       |
 | `./controls`   | free     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                             |
 | `./table`      | free     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                  |
 | `./content`    | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map                                                                                         |
@@ -156,8 +156,8 @@ bun run build   # tsup && tsc --emitDeclarationOnly && copy-assets && fix-esm-ex
 
 ## Token system — the derived palette
 
-Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*` CSS variables**
-(resolution is pure CSS, so a scheme flip restyles everything with no re-render) → **`VX.*` refs**
+Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--basalt-*` CSS variables**
+(resolution is pure CSS, so a scheme flip restyles everything with no re-render) → **`BASALT.*` refs**
 (just `var()` strings plus non-color sizing constants, so they work outside components).
 
 - **The shipped palette is GENERATED, not hand-authored.** `tokens/derive.ts` computes the accent
@@ -175,21 +175,21 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
   so its 2:1 pairs survive every level, several touch targets carry hard floors (mobile bar and row,
   the sidebar search trigger, `touchControlHeight`) because the law would take them below the
   minimum target.
-- **Keep the `--vx-` prefix.** Renaming it costs every consumer and buys nothing.
-- **The one known gap**: `VX.legendGap` / `VX.margin` / `VX.dotR` are
+- **Keep the `--basalt-` prefix.** Renaming it costs every consumer and buys nothing.
+- **The one known gap**: `BASALT.legendGap` / `BASALT.margin` / `BASALT.dotR` are
   frozen at module load from the level-0 snapshot and never re-derive from a `density` option.
   `deriveSpacing`'s JSDoc has the full accounting.
-- **Series color is consumer data.** `VX.series` is not in the framework: an app declares its own in
+- **Series color is consumer data.** `BASALT.series` is not in the framework: an app declares its own in
   one guard-exempt file via `defineSeries` → `seriesTokens`/`groupTokens` → `buildPaletteCss`. Every
   `defineX` factory follows ONE shape — `<const T extends Constraint>(spec: T): T`, exact-keyed, no
   widening annotation, no fluent builder, no accumulating config bag. A new factory matches that
   shape before it reaches the public surface.
 - **The fill band.** A filled control does not invert across schemes, so its color must clear a white
   label AND stay visible on both pages. That pins every fill into one narrow luminance band: hue
-  varies, luminance does not. Never fill with the ink accent — fill with `--vx-accent-fill` /
-  `--vx-fill-{family}`. The derivation holds the band; `src/tokens/invariants.test.ts` asserts the
+  varies, luminance does not. Never fill with the ink accent — fill with `--basalt-accent-fill` /
+  `--basalt-fill-{family}`. The derivation holds the band; `src/tokens/invariants.test.ts` asserts the
   `on-brand` contrast against `brand-fill` per scheme.
-- **On-color in CSS, never in JS.** Basalt emits `--vx-on-{color}` per scheme and every filled
+- **On-color in CSS, never in JS.** Basalt emits `--basalt-on-{color}` per scheme and every filled
   surface reads it; no component resolves a foreground in JS.
 - **Depth is three tokens split control / panel / floating**, and focus LAYERS over the resting
   depth. `shadowRaised` is ring-free-outset on purpose: an outset ring paints in the color of

@@ -65,7 +65,7 @@ async function bridgeCss(markup: string): Promise<string> {
   return build(candidates).replace(/@font-face\s*\{[^}]*\}/g, '')
 }
 
-/** The bridge page: the same atoms, expressed as Tailwind utilities the bridge maps onto `--vx-*`. */
+/** The bridge page: the same atoms, expressed as Tailwind utilities the bridge maps onto `--basalt-*`. */
 export async function bridgePage(): Promise<string> {
   const markup = ATOMS.map((a) => a.bridgeMarkup).join('')
   const css = await bridgeCss(markup)

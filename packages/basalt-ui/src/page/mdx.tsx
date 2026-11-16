@@ -10,7 +10,7 @@ import { Callout } from './callout'
 import type { MDXComponents } from './contract'
 
 /** Vertical rhythm for a block that is not a prose element, so it sits like its siblings. */
-const BLOCK = 'in-[.vx-prose]:mt-(--vx-rhythm-2)'
+const BLOCK = 'in-[.basalt-prose]:mt-(--basalt-rhythm-2)'
 
 function textOf(node: ReactNode): string {
   if (typeof node === 'string' || typeof node === 'number') return String(node)

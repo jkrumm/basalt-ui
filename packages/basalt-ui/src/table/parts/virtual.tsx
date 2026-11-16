@@ -28,7 +28,7 @@ import type { TableModel } from '../use-data-table'
 import { BodyItemRow, cellEnvOf } from './body'
 import { useRowFocusLeave } from './row-focus'
 
-/** The row height until the first row is measured: `--vx-row-h` at the default density. */
+/** The row height until the first row is measured: `--basalt-row-h` at the default density. */
 export const FALLBACK_ROW_PX = 40
 
 /** The attributes the table puts on the port's `<table>` and `<tbody>`. */

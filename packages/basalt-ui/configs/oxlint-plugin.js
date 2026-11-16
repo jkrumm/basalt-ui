@@ -39,10 +39,10 @@
  * protects two things.
  *
  * 1. Layering: `src/tokens/**` is pure data (zero React, zero Mantine) that `cssVariablesResolver`
- *    (Mantine-coupled, `src/theme/**`) reads to bind Mantine's surfaces to the same `--vx-*` vars
+ *    (Mantine-coupled, `src/theme/**`) reads to bind Mantine's surfaces to the same `--basalt-*` vars
  *    `src/charts/**` reads — chrome and charts are ONE source. If `tokens` imported `@mantine/*`
  *    that would cycle (`tokens → theme → tokens`); if `charts` imported `@mantine/*` a chart could
- *    read Mantine's theme directly instead of going through `--vx-*`, forking chrome and charts
+ *    read Mantine's theme directly instead of going through `--basalt-*`, forking chrome and charts
  *    apart. The rule keeps that arrow pointing one way.
  * 2. Packaging: `./charts` and `./tokens` resolve and render with NO `@mantine/*` installed — real
  *    and CI-tested, not aspirational (`scripts/pack-test.sh`'s "charts/tokens-only (no-Mantine)
@@ -140,7 +140,7 @@ export const RETIRED_GUARD_KIND_IDS = new Set([
   'hidden-inline-style',
   'raw-selection-control',
   'raw-media-query',
-  'unknown-vx-token',
+  'unknown-basalt-token',
   'series-palette',
 ])
 
@@ -431,7 +431,7 @@ function unwrapExpressionContainer(node) {
 // ── Rule 1 — no-raw-font-size ───────────────────────────────────────────────────────────────────
 
 const NO_RAW_FONT_SIZE_MESSAGE =
-  'Raw font-size literal — route through VX.text.* (numbers) or --vx-text-* (CSS); em/relative ' +
+  'Raw font-size literal — route through BASALT.text.* (numbers) or --basalt-text-* (CSS); em/relative ' +
   'ratios are allowed. (basalt/no-raw-font-size)'
 
 /** JSX attributes whose value IS a style object — the only object literals this rule reaches into. */
@@ -446,7 +446,7 @@ const STYLE_CONTEXT_MAX_DEPTH = 12
  *
  * `fontSize` is not a reserved word. The rule used to report every object property spelled that
  * way, which fired on an Obsidian `data.json` fixture — `{ settings: { fontSize: 16 } }` inside a
- * string, in a package with no React and no Mantine — where the "route it through VX.text.*" advice
+ * string, in a package with no React and no Mantine — where the "route it through BASALT.text.*" advice
  * is not merely unhelpful, it is about a different domain. Requiring a style context (a
  * `style`/`styles`/`sx` JSX attribute, a `…Style(s)` binding or key, or a `CSSProperties`
  * annotation) keeps every shape that is really styling and drops the ones that never reach CSS.
@@ -526,7 +526,7 @@ const noRawFontSize = {
 // ── Rule 2 — raw-size-literal ───────────────────────────────────────────────────────────────────
 
 const RAW_SIZE_LITERAL_MESSAGE =
-  'Raw CSS length on a size prop — use the scale ("xs".."xl"), or fz={VX.text.*} when the type ' +
+  'Raw CSS length on a size prop — use the scale ("xs".."xl"), or fz={BASALT.text.*} when the type ' +
   'scale has no step for it. (basalt/raw-size-literal)'
 
 /** The size-ish JSX props a CSS-length string can leave the token system through. */
@@ -873,7 +873,7 @@ const rawScrollContainer = {
 // overrides (configs/oxlint.json) verbatim, so the DX doesn't regress.
 const TOKEN_LAYER_BOUNDARY_MESSAGES = {
   charts:
-    'charts must stay upstream-of-Mantine (no Mantine imports) — read color via --vx-* tokens, ' +
+    'charts must stay upstream-of-Mantine (no Mantine imports) — read color via --basalt-* tokens, ' +
     'not the Mantine theme directly. (basalt/token-layer-boundary)',
   tokens:
     'tokens must stay upstream-of-Mantine (no Mantine imports) — importing Mantine here would ' +
@@ -3732,7 +3732,7 @@ const RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE =
 /** rb r2 #5: a `(hover: none)` read was flagged with advice that only covered widths. */
 const RAW_BREAKPOINT_POINTER_HINT =
   'A hover/pointer capability read belongs in CSS: @media (pointer: coarse) in a module (the ' +
-  'query --vx-hit keys on) — (hover: none) is not a sanctioned query. A JS read (mount one of two ' +
+  'query --basalt-hit keys on) — (hover: none) is not a sanctioned query. A JS read (mount one of two ' +
   'branches, a listener) is useSizeClass() from basalt-ui/page for chrome.'
 
 const RAW_BREAKPOINT_BASE_ONLY_MESSAGE =
@@ -4207,11 +4207,11 @@ const routeViewTransition = {
 // ── Rule 36 — status-fill-as-text ───────────────────────────────────────────────────────────────
 
 const STATUS_FILL_AS_TEXT_MESSAGE =
-  'VX.status.excellent is a FILL (about 3:1 on a light card) and fails AA as text. Paint zone words and ' +
-  'numerals with VX.status.good (solved to AA) and keep excellent on a swatch, band or heatmap ' +
+  'BASALT.status.excellent is a FILL (about 3:1 on a light card) and fails AA as text. Paint zone words and ' +
+  'numerals with BASALT.status.good (solved to AA) and keep excellent on a swatch, band or heatmap ' +
   'cell (bg / fill / backgroundColor). (basalt/status-fill-as-text)'
 
-const EXCELLENT_CSS_VAR = /var\(\s*--vx-status-excellent\b/
+const EXCELLENT_CSS_VAR = /var\(\s*--basalt-status-excellent\b/
 
 /** Strips parentheses-equivalent wrappers: TS `as` / `satisfies` / `!` and the JSX expression container. */
 function unwrapExpression(node) {
@@ -4228,7 +4228,7 @@ function unwrapExpression(node) {
   return current
 }
 
-/** True when `node` is `VX.status.excellent` or the string `var(--vx-status-excellent)`. */
+/** True when `node` is `BASALT.status.excellent` or the string `var(--basalt-status-excellent)`. */
 function isExcellentToken(node) {
   if (node?.type === 'MemberExpression' && !node.computed) {
     const status = node.object
@@ -4238,7 +4238,7 @@ function isExcellentToken(node) {
       !status.computed &&
       status.property?.name === 'status' &&
       status.object?.type === 'Identifier' &&
-      status.object.name === 'VX'
+      status.object.name === 'BASALT'
     )
   }
   if (isStringLiteral(node)) return EXCELLENT_CSS_VAR.test(node.value)
@@ -4284,7 +4284,7 @@ const statusFillAsText = {
   meta: {
     type: 'problem',
     docs: {
-      description: 'Disallow the fill-only VX.status.excellent in a text-colour position.',
+      description: 'Disallow the fill-only BASALT.status.excellent in a text-colour position.',
     },
     schema: [],
   },

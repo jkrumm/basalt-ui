@@ -134,7 +134,7 @@ describe('dim: the kit dims a seam-drawn mark as it dims its own', () => {
     expect(Number(rule?.[1])).toBe(DIMMED_TEXT)
     const tokens = readFileSync(join(import.meta.dirname, '../css/tokens.css'), 'utf8')
     const all = (name: string) =>
-      [...tokens.matchAll(new RegExp(`--vx-${name}: (#[0-9a-f]{6});`, 'g'))].map(
+      [...tokens.matchAll(new RegExp(`--basalt-${name}: (#[0-9a-f]{6});`, 'g'))].map(
         (m) => m[1] as string,
       )
     const mix = (fg: string, bg: string): string => {

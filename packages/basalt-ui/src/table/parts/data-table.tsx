@@ -70,7 +70,7 @@ function Columns<T>({ model }: { model: TableModel<T> }): ReactElement {
 function scrollportStyle(height: DataTableProps<unknown>['height']): CSSProperties | undefined {
   if (typeof height === 'object') {
     // The head row plus `maxRows` body rows, in the table's own row height.
-    return { maxHeight: `calc(${height.maxRows + 1} * var(--table-row-h, var(--vx-row-h)))` }
+    return { maxHeight: `calc(${height.maxRows + 1} * var(--table-row-h, var(--basalt-row-h)))` }
   }
   return undefined
 }

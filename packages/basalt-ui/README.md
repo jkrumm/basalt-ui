@@ -16,7 +16,7 @@ Basalt UI is the extraction of that setup from a production app. Install once, g
 ## Quick start
 
 A Vite + React app with TanStack Router. basalt-ui 3 is shadcn-style primitives on Base UI, styled
-with Tailwind 4 over the `--vx-*` token layer; `basalt-ui init` writes the entry, the layout and the
+with Tailwind 4 over the `--basalt-*` token layer; `basalt-ui init` writes the entry, the layout and the
 nav you start from.
 
 ### 1. Install
@@ -304,7 +304,7 @@ declare module 'basalt-ui' {
 // 3. Namespaced token refs — stale keys fail tsc at the call site
 export const GROUP = 'app'
 export const colors = groupTokens(GROUP, SERIES)
-// colors.sessions → 'var(--vx-app-sessions)'
+// colors.sessions → 'var(--basalt-app-sessions)'
 ```
 
 > **Put it at `<first basalt.root>/lib/series.ts`.** `defineSeries` takes hex `ColorPair`s _by

@@ -23,8 +23,8 @@ export function gzipFileBytes(path: string): number {
   return gzipSync(readFileSync(path)).length
 }
 
-/** The public `--vx-*` names: a name is public once it is a row of the token table. */
-export function publicVxNames(tokens: readonly { readonly name: string }[] = TOKENS): number {
+/** The public `--basalt-*` names: a name is public once it is a row of the token table. */
+export function publicBasaltNames(tokens: readonly { readonly name: string }[] = TOKENS): number {
   return new Set(tokens.map((t) => t.name)).size
 }
 
@@ -104,9 +104,9 @@ export const rows: readonly RowDef[] = [
   {
     id: 'tokens-public-names',
     order: 322,
-    label: 'public --vx-* names (exact, src/tokens/table.ts)',
+    label: 'public --basalt-* names (exact, src/tokens/table.ts)',
     ceiling: 90,
-    measure: () => publicVxNames(),
+    measure: () => publicBasaltNames(),
   },
   {
     id: 'tokens-peers',

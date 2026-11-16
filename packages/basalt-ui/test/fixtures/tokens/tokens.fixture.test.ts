@@ -33,7 +33,7 @@ const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
 
 describe('tokens fixture (static, framework-free)', () => {
   test('the four entry sheets are pulled in', () => {
-    expect(css).toContain('--vx-canvas:')
+    expect(css).toContain('--basalt-canvas:')
     expect(css).toContain('@layer basalt.type')
     expect(css).toContain('@layer basalt.prose')
     expect(css).toContain('@font-face')
@@ -57,10 +57,10 @@ describe('tokens fixture (static, framework-free)', () => {
     expect(css.toLowerCase()).not.toContain('react')
   })
 
-  test('every var(--vx-*) the page reads is a real token', () => {
+  test('every var(--basalt-*) the page reads is a real token', () => {
     const known = new Set(tokenNames())
     const read = new Set(
-      [...`${html}\n${css}`.matchAll(/var\((--vx-[a-z0-9-]+)/g)].map((m) => m[1] ?? ''),
+      [...`${html}\n${css}`.matchAll(/var\((--basalt-[a-z0-9-]+)/g)].map((m) => m[1] ?? ''),
     )
     expect(read.size).toBeGreaterThan(0)
     expect([...read].filter((n) => !known.has(n))).toEqual([])

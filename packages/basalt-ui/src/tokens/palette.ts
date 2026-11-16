@@ -1,6 +1,6 @@
 /**
  * palette.ts — Basalt single source of truth for ALL framework color
- * (charts via VX tokens + chrome via the Mantine theme).
+ * (charts via BASALT tokens + chrome via the Mantine theme).
  *
  * Identity: modern zinc (2026-07 redesign, see `docs/DESIGN-SPEC.md`). Cool-neutral zinc surfaces
  * (Tailwind zinc family) — a low-contrast panel lift on a slightly darker page, depth via a
@@ -13,7 +13,7 @@
  *  - Neutral zinc greys carry ~90% of the surface — chrome is monochrome, accent only points.
  *  - Depth = `shadow-card` (a whisper shadow + a 1px ring baked into the SAME shadow value) —
  *    borders-as-borders remain only for genuine layout dividers (the `line` token).
- *  - Interactive neutral fills are INK color-mixes (`alpha(VX.ink, 0.06)` etc.), never grey hexes.
+ *  - Interactive neutral fills are INK color-mixes (`alpha(BASALT.ink, 0.06)` etc.), never grey hexes.
  *  - Each metric is ONE hue; multi-series only where data is genuinely categorical.
  *  - Series colors are per-theme PAIRS: a lighter shade on dark (no glow/bleed on dark
  *    backgrounds), a deeper shade on light (enough contrast). Hue identity stays constant.
@@ -93,12 +93,12 @@ export const p = (fam: readonly string[], light = 2, dark = 3): ColorPair => ({
 /**
  * Card / control depth shadows (`docs/DESIGN-SPEC.md` §2) — depth is a whisper shadow + a 1px
  * ring baked into the SAME value (never a separate `border`). The ring embeds
- * `var(--vx-surface-hairline)` so it stays single-sourced against the hairline pair below.
+ * `var(--basalt-surface-hairline)` so it stays single-sourced against the hairline pair below.
  * Structural — independent of the derive config, unlike everything `buildPaletteData` below emits.
  */
 export const SHADOW = {
   card: {
-    light: '0 1px 2px rgba(28, 25, 23, 0.05), 0 0 0 1px var(--vx-surface-hairline)',
+    light: '0 1px 2px rgba(28, 25, 23, 0.05), 0 0 0 1px var(--basalt-surface-hairline)',
     dark: '0 1px 3px rgba(0, 0, 0, 0.4), inset 0 0 0 1px color-mix(in srgb, #ffffff 4%, transparent)',
   },
   ctrl: {
@@ -109,7 +109,7 @@ export const SHADOW = {
    * Interactive-control depth — the ONE value every raised Button/ActionIcon/Input variant shares
    * (`docs/DESIGN-SPEC.md` §5's Button idiom). Exists rather than reusing `card` because `card`'s
    * ring is OUTSET, and an outset ring paints in the color of whatever it is drawn over: fine
-   * between neutral panels, but on light scheme it resolves to `--vx-surface-hairline` and draws a
+   * between neutral panels, but on light scheme it resolves to `--basalt-surface-hairline` and draws a
    * pale grey outline around a saturated `filled` button, which reads as a rendering defect.
    *
    * THE TWO SCHEMES ARE SHAPED DIFFERENTLY, and the asymmetry is the whole design — do NOT "tidy"
@@ -128,7 +128,7 @@ export const SHADOW = {
    *     honest cue is the shadow it casts. So light casts one and draws nothing.
    *
    * Consequence to know, on light only: a `default` control nested in a Card shares
-   * `--vx-surface-panel` with it and has no boundary but the drop. That is accepted — a wrong-
+   * `--basalt-surface-panel` with it and has no boundary but the drop. That is accepted — a wrong-
    * looking border on every control in the app is worse than a soft edge in one nesting case. If it
    * ever needs more, raise the DROP. Do not reintroduce an edge; both shapes have been tried.
    */
@@ -138,7 +138,7 @@ export const SHADOW = {
   },
   // Floating-layer elevation (menus, popovers, tooltips, modals, drawers) — a REAL drop shadow, a
   // step above `card`, so detached surfaces read as lifted off the page (`docs/DESIGN-SPEC.md` §5).
-  // Unlike `card`, no embedded ring: floating surfaces carry a real 1px `--vx-surface-border` so
+  // Unlike `card`, no embedded ring: floating surfaces carry a real 1px `--basalt-surface-border` so
   // Mantine's rotated-square arrow inherits a proper edge.
   overlay: {
     light: '0 8px 24px rgba(28, 25, 23, 0.1)',
@@ -212,8 +212,8 @@ const DEFAULT_RADIUS_VALUES = deriveRadius(0)
 
 /**
  * Corner-radius anchors (`docs/DESIGN-SPEC.md` §4) — the two independent tiers the Mantine theme
- * (`theme/index.ts`) resolves every component radius to. `card` mirrors the `--vx-radius-card` CSS
- * var, `ctrl` mirrors `--vx-radius-ctrl` (`tokens/index.ts`'s `frameworkDerived` emits both from
+ * (`theme/index.ts`) resolves every component radius to. `card` mirrors the `--basalt-radius-card` CSS
+ * var, `ctrl` mirrors `--basalt-radius-ctrl` (`tokens/index.ts`'s `frameworkDerived` emits both from
  * these SAME numbers), so the var and every JS `defaultProps.radius` in the theme read one source
  * instead of two that can drift apart. `deriveRadius(0)`'s output — structural, independent of the
  * derive config. Values are UNCHANGED from the shipped identity (locked by `theme/radius.test.ts`).
@@ -271,11 +271,11 @@ const CONTROL_HEIGHT_BASE = 42
  * (NavLink root, Menu item), `stackXs`..`stackXl` are the 4px vertical rhythm (rebuilt from ONE
  * scaled unit at non-zero levels — see {@link deriveSpacing}'s doc for why), and `inputHeight`/
  * `controlHeight` are a `size: 'md'` Mantine Input's/Button's/ActionIcon's resolved height
- * (Mantine's own default: `2.625rem` = 42px at the 16px root) — re-pointed onto `--vx-space-input-
- * height`/`--vx-space-control-height` by `theme/index.ts`'s `Input.extend`/`Button.extend`/
+ * (Mantine's own default: `2.625rem` = 42px at the 16px root) — re-pointed onto `--basalt-space-input-
+ * height`/`--basalt-space-control-height` by `theme/index.ts`'s `Input.extend`/`Button.extend`/
  * `ActionIcon.extend` `vars` (see `Input.extend`'s doc comment for why `--input-height`/`--button-
  * height`/`--ai-size`, not `size`, is the override point). `tokens/index.ts`'s `frameworkDerived`
- * emits each of these as a `--vx-space-*` CSS var from these SAME numbers, and `theme/index.ts`
+ * emits each of these as a `--basalt-space-*` CSS var from these SAME numbers, and `theme/index.ts`
  * re-points its NavLink/Menu/Input/Button/ActionIcon geometry onto that var, so the var and every
  * JS default read one source instead of two that can drift apart. This is the BASE (level-0) table
  * {@link deriveSpacing} scales from.
@@ -366,7 +366,7 @@ const SPACE_SCALE_BASE = SPACE_SCALE_LEVEL0
  * own entry instead — see `docs/STATUS.md`'s spacing-sweep note for the specific coincidental calls.
  *
  * Extended again by the density pass (this commit) with the STRUCTURAL chart constants
- * `tokens/index.ts`'s `VX` object used to hardcode directly (`legendGap`/`margin`/`dotR` — see the
+ * `tokens/index.ts`'s `BASALT` object used to hardcode directly (`legendGap`/`margin`/`dotR` — see the
  * "charts" group below) plus `progressBarSize` (the Progress bar's numeric `defaultProps.size`,
  * previously an untokenized literal `6`) — both are numeric Mantine `defaultProps`/SVG-prop sites
  * with the SAME "dev slider can't reach it" limitation as `timelineBullet` (see `deriveSpacing`'s
@@ -457,7 +457,7 @@ const SPACE_STEP_BASE = {
   /** Content-column-to-TOC-rail column gap. The governing `@media (max-width: 1200px)` breakpoint
    *  (`article-layout.module.css`) is deliberately NOT density-coupled — it is a viewport-comfort
    *  threshold for showing the TOC rail at all, not a sum of the column tracks: the grid's first
-   *  column is `minmax(0, var(--vx-prose-measure))`, a FLEXIBLE track that shrinks to fit rather
+   *  column is `minmax(0, var(--basalt-prose-measure))`, a FLEXIBLE track that shrinks to fit rather
    *  than a fixed width the breakpoint would need to sum. A gap and a responsive breakpoint are
    *  different concepts — forcing them to move together would be the coincidence-not-law trap in
    *  reverse (see `articleTocRailWidth` below for the track this gap sits beside, which — unlike
@@ -589,7 +589,7 @@ const SPACE_STEP_BASE = {
   sidebarChildRowIndent: 12,
 
   // ── shell/app-sidebar.tsx & app-sidebar-account.tsx (Mantine `<Menu width={…}>` props) ────────
-  // Both are FIXED dropdown widths (a JSX number prop, not CSS — same "JS-consumed, no --vx-* var"
+  // Both are FIXED dropdown widths (a JSX number prop, not CSS — same "JS-consumed, no --basalt-* var"
   // shape as `appShellNavbarWidth` etc.) holding `Menu.Item` rows padded by `rowInsetX`/`rowInsetY`
   // (`theme/index.ts`'s `Menu.extend`). Unlike `.subnavDropdown`'s `min-width: 180px`
   // (`app-sidebar.module.css`, deliberately left a raw literal — a `min-width` only floors the box
@@ -651,7 +651,7 @@ const SPACE_STEP_BASE = {
   appShellAsideRailWidth: 36,
   /** The PAGE GUTTER — `AppShell.Main`'s own horizontal inset, i.e. the distance from the sidebar
    *  seam (and from the viewport's right edge) to the first pixel of page content. Unlike its
-   *  `appShell*` neighbours above this one IS emitted as a `--vx-*` var (see `spaceDecls`'s doc in
+   *  `appShell*` neighbours above this one IS emitted as a `--basalt-*` var (see `spaceDecls`'s doc in
    *  `tokens/index.ts` for why), because it is the single most visible spacing number the framework
    *  ships and a consumer retuning its identity has to be able to reach it.
    *
@@ -689,7 +689,7 @@ const SPACE_STEP_BASE = {
   /** Tab's icon-to-label gap. */
   mobileNavTabGap: 3,
   /** Bar height, EXCLUDING the safe-area inset — Mantine's own `AppShell.footer` rule adds
-   *  `env(safe-area-inset-bottom)` to it. JS-consumed (AppShell `footer.height`), no `--vx-*` var,
+   *  `env(safe-area-inset-bottom)` to it. JS-consumed (AppShell `footer.height`), no `--basalt-*` var,
    *  same shape as `appShellHeaderHeight`. Floored at 48px in `deriveSpacing`. */
   mobileNavBarHeight: 56,
   /** Slot icon box. Also the MIN box of the icon slot itself, so the active pill keeps its shape
@@ -701,27 +701,27 @@ const SPACE_STEP_BASE = {
   /** Active-pill inset around the slot icon, horizontal. */
   mobileNavTabInsetX: 12,
   /** Menu/sheet row height — the WCAG 2.5.5 44px target, floored at 44 in `deriveSpacing` (the
-   *  pointer tier's `--vx-hit` is the same number under `(pointer: coarse)`). */
+   *  pointer tier's `--basalt-hit` is the same number under `(pointer: coarse)`). */
   mobileNavRowHeight: 44,
   /** More/group `<Menu width={…}>`. JS-consumed, no var — same rationale as
    *  `sidebarSettingsMenuWidth` directly above. */
   mobileNavMenuWidth: 232,
 
-  // ── charts (tokens/index.ts's `VX` object — structural, tracks density) ──────────────────────
-  // `VX.lineWidth`/`VX.line2Width` are DELIBERATELY absent here — they are stroke WEIGHTS (line
-  // thickness), not spacing/gaps/sizes, so they stay fixed regardless of density (see `VX` in
+  // ── charts (tokens/index.ts's `BASALT` object — structural, tracks density) ──────────────────────
+  // `BASALT.lineWidth`/`BASALT.line2Width` are DELIBERATELY absent here — they are stroke WEIGHTS (line
+  // thickness), not spacing/gaps/sizes, so they stay fixed regardless of density (see `BASALT` in
   // `tokens/index.ts`). The six below are gaps/margins/a marker footprint — genuinely spacing.
-  /** The chart legend's column gap (`VX.legendGap`). */
+  /** The chart legend's column gap (`BASALT.legendGap`). */
   chartLegendGap: 22,
-  /** Chart plot-area margin, top (`VX.margin.top`). */
+  /** Chart plot-area margin, top (`BASALT.margin.top`). */
   chartMarginTop: 12,
-  /** Chart plot-area margin, right (`VX.margin.right`). */
+  /** Chart plot-area margin, right (`BASALT.margin.right`). */
   chartMarginRight: 16,
-  /** Chart plot-area margin, bottom (`VX.margin.bottom`). */
+  /** Chart plot-area margin, bottom (`BASALT.margin.bottom`). */
   chartMarginBottom: 30,
-  /** Chart plot-area margin, left (`VX.margin.left`). */
+  /** Chart plot-area margin, left (`BASALT.margin.left`). */
   chartMarginLeft: 44,
-  /** Data-point marker radius (`VX.dotR`) — a discrete visual footprint, not a stroke weight, so
+  /** Data-point marker radius (`BASALT.dotR`) — a discrete visual footprint, not a stroke weight, so
    * (unlike `lineWidth`/`line2Width`) it tracks density: a judgment call, made this way because it
    * reads as a "size" (closer to `sidebarAvatarSize` above) rather than a line thickness. */
   chartDotR: 5,
@@ -821,7 +821,7 @@ const SPACE_STEP_BASE = {
    *  pass that wants denser table rows must not be forced to shrink every section header with them.
    *  Mantine sizes both `th` and `td` from ONE `verticalSpacing` prop, so a 36/40 pair is
    *  unreachable through it — both are applied in `theme/index.ts`'s `Table.extend` as JS numbers,
-   *  which is why (like `progressBarSize`) neither is emitted as a `--vx-*` var. */
+   *  which is why (like `progressBarSize`) neither is emitted as a `--basalt-*` var. */
   tableHeaderHeight: 36,
   /** `BasaltDataTable`'s body row — one step taller than the header, so the mono uppercase `th`
    *  reads as a label band over roomier data rows rather than as the first row of the data. */
@@ -830,7 +830,7 @@ const SPACE_STEP_BASE = {
 
 /**
  * Density-EXEMPT structurals — unlike `SPACE`/`SPACE_STEP` above, these never move with the density
- * knob. `tokens/index.ts` does NOT emit these as `--vx-*` CSS vars (see the comment there for why: a
+ * knob. `tokens/index.ts` does NOT emit these as `--basalt-*` CSS vars (see the comment there for why: a
  * var would only invite someone to think they move).
  */
 export const SPACE_FIXED = {
@@ -976,7 +976,7 @@ const ROW_LINE_HEIGHT_STEP = 1 / 30
  *    What the two consumers need is the chrome INSIDE the scrollport — but `PageBar` row 2 now
  *    portals into a shell-owned band outside the scrollport (see `shell/page-bar.tsx`), so there is
  *    no page-bar term left to add: both `content/prose.module.css`'s `scroll-margin-top` and
- *    `content/article-layout.module.css`'s `.tocRail` now use `--vx-space-sticky-header-clearance`
+ *    `content/article-layout.module.css`'s `.tocRail` now use `--basalt-space-sticky-header-clearance`
  *    alone. Keeping the token free of any chrome assumption is what makes it honest on a page with
  *    no page bar, which is most of them.
  *    The value still tracks density (it IS a density anchor), so the margin never freezes at one
@@ -985,7 +985,7 @@ const ROW_LINE_HEIGHT_STEP = 1 / 30
  *    **Consumer coupling (removed, not hidden):** the value no longer assumes ANY header height, so
  *    a `./content` consumer outside `BasaltShell` (e.g. `Prose`/`ArticleLayout` standalone) gets a
  *    number that is correct for it too. A consumer with its OWN fixed chrome above the scrollport
- *    still overrides `--vx-space-sticky-header-clearance`. Documented on the `./content` surface too
+ *    still overrides `--basalt-space-sticky-header-clearance`. Documented on the `./content` surface too
  *    (`docs/CONTENT-SPEC.md` §5), not only here.
  *
  * `rowLineHeight` is the ONE exception to the multiplier entirely: `1.54 + ROW_LINE_HEIGHT_STEP *
@@ -1000,10 +1000,10 @@ const ROW_LINE_HEIGHT_STEP = 1 / 30
  *
  * `SPACE_FIXED` is NEVER part of this law — see that constant's own doc for why.
  *
- * **What tracks a retuned `level`:** the `--vx-space-*` custom properties `spaceDecls`
+ * **What tracks a retuned `level`:** the `--basalt-space-*` custom properties `spaceDecls`
  * (`tokens/core.ts`) emits from THIS function's output, so every stylesheet and `var()` read follows
- * it. `VX.legendGap`/`VX.margin`/`VX.dotR` (chart legend gap, plot-area margins, marker radius) do
- * not: `VX` is built once at module load from the frozen level-0 `SPACE_STEP` snapshot, because the
+ * it. `BASALT.legendGap`/`BASALT.margin`/`BASALT.dotR` (chart legend gap, plot-area margins, marker radius) do
+ * not: `BASALT` is built once at module load from the frozen level-0 `SPACE_STEP` snapshot, because the
  * chart engine's SVG props read plain JS numbers, not `var()` strings.
  *
  * Throws on a non-integer or out-of-range (`[-3, 3]`) level — same throw-and-propagate discipline as
@@ -1210,7 +1210,7 @@ function buildPaletteDataUncached(config: DeriveConfig) {
     legendText: { light: inkRgba(inkLight, 0.82), dark: 'rgba(255, 255, 255, 0.92)' },
     // Base neutral for hairlines / muted / DIMMED text / overlays — apply opacity via alpha().
     // Binds to --mantine-color-dimmed, so it is THE dimmed-text lever. Equal to `INK.muted` (the
-    // spec's "muted (secondary text)" row) — kept as its own pair for the pre-existing `--vx-neutral`
+    // spec's "muted (secondary text)" row) — kept as its own pair for the pre-existing `--basalt-neutral`
     // name (never renamed), while `INK.muted` below is the new explicit spec-named token. Both read
     // the SAME generated value (`DERIVED.ink.muted`) so a palette retune can't pull them apart.
     neutral: DERIVED.ink.muted,
@@ -1242,8 +1242,8 @@ function buildPaletteDataUncached(config: DeriveConfig) {
    *    that floor holds (a near-black ink otherwise, for a fill brightened past the safety margin).
    *
    * `onAccent` is THE foreground for any accent fill. `theme/index.ts` bridges Mantine's
-   * `--mantine-color-<primary>-filled` onto `--vx-accent-fill` and every filled foreground onto
-   * `--vx-on-accent`, so ONE token drives the chrome — which is also what makes the theme lab able to
+   * `--mantine-color-<primary>-filled` onto `--basalt-accent-fill` and every filled foreground onto
+   * `--basalt-on-accent`, so ONE token drives the chrome — which is also what makes the theme lab able to
    * retune the accent live. Mantine's own `autoContrast` cannot express this (it resolves the
    * foreground scheme-blindly, in JS). Regression-locked by `theme/contrast.test.ts`.
    */

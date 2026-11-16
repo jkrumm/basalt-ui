@@ -52,7 +52,7 @@ describe('kebab', () => {
   test('names a doc file from an export name', () => {
     expect(kebab('StatCard')).toBe('stat-card')
     expect(kebab('createSearchStore')).toBe('create-search-store')
-    expect(kebab('VX')).toBe('vx')
+    expect(kebab('BASALT')).toBe('basalt')
     expect(kebab('BasaltDataTable')).toBe('basalt-data-table')
   })
 })

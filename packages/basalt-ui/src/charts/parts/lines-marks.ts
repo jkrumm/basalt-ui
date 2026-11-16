@@ -7,7 +7,7 @@ import { dot } from '@tanstack/charts/dot'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { areaGradientId } from '../core/compile'
 import { CV } from '../core/theme'
-import { VX } from '../../tokens'
+import { BASALT } from '../../tokens'
 import { chartCurve } from '../core/curves'
 import { claimLabelBoxes, endLabelMarks, endLabelPlan } from '../labels'
 import type { LinesNaming } from '../labels'
@@ -37,7 +37,7 @@ function focusDots<D>(plot: PlotContext<D, ChartX>, lines: readonly ChartSeries<
           id: `${s.key}-focus`,
           x: rowX,
           y: 'y',
-          r: VX.dotR,
+          r: BASALT.dotR,
           fill: s.color,
           stroke: CV.surface,
           strokeWidth: 1.5,

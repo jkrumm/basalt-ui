@@ -24,13 +24,13 @@ const style = { color: 'oklch(0.7 0.1 250)' }
 const shorthand = '1px solid #ddd'
 
 // @valid
-const fill = VX.accent
+const fill = BASALT.accent
 
 // @valid
-const wash = alpha(VX.surface.panel, 0.4)
+const wash = alpha(BASALT.surface.panel, 0.4)
 
 // @valid
-const wrapped = 'rgb(var(--vx-accent) / 50%)'
+const wrapped = 'rgb(var(--basalt-accent) / 50%)'
 
 // @valid
 const gradient = 'url(#fade)'
@@ -68,13 +68,13 @@ const warn = '#ff8800'
 // @errors colour-literal,colour-literal,colour-literal
 
 // @invalid
-const nested = defineSeries({ sessions: { light: VX.accent, extra: '#2871c7' } })
+const nested = defineSeries({ sessions: { light: BASALT.accent, extra: '#2871c7' } })
 
 // @invalid
 ctx.strokeStyle = 'white'
 
 // @invalid
-ctx.fillStyle = dark ? VX.ink : 'Gainsboro'
+ctx.fillStyle = dark ? BASALT.ink : 'Gainsboro'
 
 // @invalid
 ctx.shadowColor = 'red'
@@ -88,9 +88,9 @@ const mark = <rect fill="steelblue" stroke="black" />
 
 // @errors colour-literal,colour-literal
 // @valid
-ctx.strokeStyle = VX.ink
+ctx.strokeStyle = BASALT.ink
 ctx.fillStyle = 'transparent'
-ctx.shadowColor = alpha(VX.ink, 0.2)
+ctx.shadowColor = alpha(BASALT.ink, 0.2)
 
 // @valid
 const style = { color: 'inherit', fill: 'none', stroke: 'currentColor', background: 'transparent' }
@@ -132,8 +132,8 @@ const ring = 'rgb(var(--ring))'
 const tone = `oklch(var(--accent))`
 
 // @valid
-const wrapped = 'hsl(var(--vx-accent))'
-const alpha = 'rgb(var(--vx-accent) / 50%)'
+const wrapped = 'hsl(var(--basalt-accent))'
+const alpha = 'rgb(var(--basalt-accent) / 50%)'
 const label = { 'line-width': 'wide', 'text-field': 'white' }
 
 // @valid
@@ -150,7 +150,7 @@ const wide = 'color(display-p3 0.1 0.5 0.9)'
 const wideTemplate = `color(srgb ${r} ${g} ${b})`
 
 // @valid
-const mixed = 'color-mix(in oklch, var(--vx-accent) 50%, transparent)'
+const mixed = 'color-mix(in oklch, var(--basalt-accent) 50%, transparent)'
 const word = 'color(red)'
 const label = 'Choose a color(s)'
 

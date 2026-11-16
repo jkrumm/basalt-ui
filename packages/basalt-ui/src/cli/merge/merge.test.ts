@@ -49,9 +49,9 @@ describe('seed', () => {
 
   it('moves sibling, core and tokens imports to published specifiers and names the rest', () => {
     const seed =
-      "import { cn } from '../core/cn'\nimport type { Tone } from '../core/ports'\nimport { useMessages } from '../core/messages/use-messages'\nimport { VX } from '../tokens'\nimport { Input } from './input'\nimport x from 'react'\n"
+      "import { cn } from '../core/cn'\nimport type { Tone } from '../core/ports'\nimport { useMessages } from '../core/messages/use-messages'\nimport { BASALT } from '../tokens'\nimport { Input } from './input'\nimport x from 'react'\n"
     expect(ejectedSource(seed)).toEqual({
-      text: "import { cn } from 'basalt-ui/core/cn'\nimport type { Tone } from 'basalt-ui/core/ports'\nimport { useMessages } from 'basalt-ui/core/messages/use-messages'\nimport { VX } from 'basalt-ui/tokens'\nimport { Input } from 'basalt-ui/ui/input'\nimport x from 'react'\n",
+      text: "import { cn } from 'basalt-ui/core/cn'\nimport type { Tone } from 'basalt-ui/core/ports'\nimport { useMessages } from 'basalt-ui/core/messages/use-messages'\nimport { BASALT } from 'basalt-ui/tokens'\nimport { Input } from 'basalt-ui/ui/input'\nimport x from 'react'\n",
     })
     expect(ejectedSource("import { a } from '../common/x'\n")).toEqual({
       error: "imports '../common/x', which no published specifier exports",

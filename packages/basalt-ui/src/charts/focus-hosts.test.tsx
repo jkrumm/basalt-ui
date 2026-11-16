@@ -142,7 +142,7 @@ const STAGES: readonly Stage[] = [
   { stage: 'Test', at: 2, behind: 94 },
   { stage: 'Deploy', at: 3, behind: -8 },
 ]
-const COLOR = { light: 'var(--vx-line)', dark: 'var(--vx-line)' }
+const COLOR = { light: 'var(--basalt-line)', dark: 'var(--basalt-line)' }
 
 function Pace3() {
   const focus = useChartFocus(STAGES, { announce: (d) => `${d.stage}: ${d.behind} s behind` })

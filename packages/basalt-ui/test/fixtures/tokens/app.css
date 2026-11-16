@@ -1,17 +1,17 @@
 .canvas {
-  background: var(--vx-canvas);
-  color: var(--vx-ink);
-  padding: var(--vx-rhythm-3);
+  background: var(--basalt-canvas);
+  color: var(--basalt-ink);
+  padding: var(--basalt-rhythm-3);
 }
 .card {
-  background: var(--vx-card);
-  border-radius: var(--vx-radius-card);
-  box-shadow: var(--vx-shadow-card);
-  padding: var(--vx-rhythm-2);
+  background: var(--basalt-card);
+  border-radius: var(--basalt-radius-card);
+  box-shadow: var(--basalt-shadow-card);
+  padding: var(--basalt-rhythm-2);
 }
 .inset {
-  background: var(--vx-inset);
-  color: var(--vx-ink-muted);
-  box-shadow: inset 0 0 0 1px var(--vx-hairline);
-  padding: var(--vx-rhythm-1);
+  background: var(--basalt-inset);
+  color: var(--basalt-ink-muted);
+  box-shadow: inset 0 0 0 1px var(--basalt-hairline);
+  padding: var(--basalt-rhythm-1);
 }

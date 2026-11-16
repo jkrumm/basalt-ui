@@ -13,51 +13,55 @@
   --breakpoint-*: initial;
 }
 @theme inline {
-  --color-background: var(--vx-canvas);
-  --color-inset: var(--vx-inset);
-  --color-card: var(--vx-card);
-  --color-popover: var(--vx-raised);
-  --color-surface: var(--vx-surface);
-  --color-accent: var(--vx-hover);
-  --color-selected: var(--vx-selected);
-  --color-scrim: var(--vx-scrim);
-  --color-border: var(--vx-hairline);
-  --color-input: var(--vx-input);
-  --color-foreground: var(--vx-ink);
-  --color-muted-foreground: var(--vx-ink-muted);
-  --color-faint: var(--vx-ink-faint);
-  --color-brand: var(--vx-brand);
-  --color-ring: var(--vx-brand);
-  --color-brand-fill: var(--vx-brand-fill);
-  --color-on-brand: var(--vx-on-brand);
-  --color-good: var(--vx-good);
-  --color-good-tint: color-mix(in srgb, var(--vx-good) var(--vx-tint-pct), transparent);
-  --color-warn: var(--vx-warn);
-  --color-warn-tint: color-mix(in srgb, var(--vx-warn) var(--vx-tint-pct), transparent);
-  --color-bad: var(--vx-bad);
-  --color-bad-tint: color-mix(in srgb, var(--vx-bad) var(--vx-tint-pct), transparent);
-  --color-destructive: var(--vx-bad);
-  --color-destructive-tint: color-mix(in srgb, var(--vx-bad) var(--vx-tint-pct), transparent);
-  --color-info: var(--vx-info);
-  --color-info-tint: color-mix(in srgb, var(--vx-info) var(--vx-tint-pct), transparent);
-  --color-line: var(--vx-line);
-  --color-dim-bar: var(--vx-dim-bar);
-  --color-grid: var(--vx-grid);
-  --color-crosshair: var(--vx-crosshair);
-  --color-chart-1: var(--vx-chart-1);
-  --color-chart-2: var(--vx-chart-2);
-  --color-chart-3: var(--vx-chart-3);
-  --color-chart-4: var(--vx-chart-4);
-  --color-chart-5: var(--vx-chart-5);
-  --color-seq-1: var(--vx-seq-1);
-  --color-seq-2: var(--vx-seq-2);
-  --color-seq-3: var(--vx-seq-3);
-  --color-seq-4: var(--vx-seq-4);
-  --color-seq-5: var(--vx-seq-5);
-  --color-primary: var(--vx-ink);
-  --color-primary-foreground: var(--vx-canvas);
-  --color-secondary: var(--vx-raised);
-  --color-muted: var(--vx-card);
+  --color-background: var(--basalt-canvas);
+  --color-inset: var(--basalt-inset);
+  --color-card: var(--basalt-card);
+  --color-popover: var(--basalt-raised);
+  --color-surface: var(--basalt-surface);
+  --color-accent: var(--basalt-hover);
+  --color-selected: var(--basalt-selected);
+  --color-scrim: var(--basalt-scrim);
+  --color-border: var(--basalt-hairline);
+  --color-input: var(--basalt-input);
+  --color-foreground: var(--basalt-ink);
+  --color-muted-foreground: var(--basalt-ink-muted);
+  --color-faint: var(--basalt-ink-faint);
+  --color-brand: var(--basalt-brand);
+  --color-ring: var(--basalt-brand);
+  --color-brand-fill: var(--basalt-brand-fill);
+  --color-on-brand: var(--basalt-on-brand);
+  --color-good: var(--basalt-good);
+  --color-good-tint: color-mix(in srgb, var(--basalt-good) var(--basalt-tint-pct), transparent);
+  --color-warn: var(--basalt-warn);
+  --color-warn-tint: color-mix(in srgb, var(--basalt-warn) var(--basalt-tint-pct), transparent);
+  --color-bad: var(--basalt-bad);
+  --color-bad-tint: color-mix(in srgb, var(--basalt-bad) var(--basalt-tint-pct), transparent);
+  --color-destructive: var(--basalt-bad);
+  --color-destructive-tint: color-mix(
+    in srgb,
+    var(--basalt-bad) var(--basalt-tint-pct),
+    transparent
+  );
+  --color-info: var(--basalt-info);
+  --color-info-tint: color-mix(in srgb, var(--basalt-info) var(--basalt-tint-pct), transparent);
+  --color-line: var(--basalt-line);
+  --color-dim-bar: var(--basalt-dim-bar);
+  --color-grid: var(--basalt-grid);
+  --color-crosshair: var(--basalt-crosshair);
+  --color-chart-1: var(--basalt-chart-1);
+  --color-chart-2: var(--basalt-chart-2);
+  --color-chart-3: var(--basalt-chart-3);
+  --color-chart-4: var(--basalt-chart-4);
+  --color-chart-5: var(--basalt-chart-5);
+  --color-seq-1: var(--basalt-seq-1);
+  --color-seq-2: var(--basalt-seq-2);
+  --color-seq-3: var(--basalt-seq-3);
+  --color-seq-4: var(--basalt-seq-4);
+  --color-seq-5: var(--basalt-seq-5);
+  --color-primary: var(--basalt-ink);
+  --color-primary-foreground: var(--basalt-canvas);
+  --color-secondary: var(--basalt-raised);
+  --color-muted: var(--basalt-card);
 }
 @theme {
   --spacing: 0.25rem;
@@ -68,51 +72,51 @@
   --container-wide: 50rem;
 }
 @theme inline {
-  --shadow-card: var(--vx-shadow-card);
-  --shadow-raised: var(--vx-shadow-raised);
-  --shadow-overlay: var(--vx-shadow-overlay);
-  --radius-card: var(--vx-radius-card);
-  --radius-inset: var(--vx-radius-inset);
-  --radius-ctrl: var(--vx-radius-ctrl);
-  --radius-chip: var(--vx-radius-chip);
-  --font-sans: var(--vx-font-sans);
-  --font-head: var(--vx-font-head);
-  --font-mono: var(--vx-font-mono);
-  --font-weight-normal: var(--vx-weight-body);
-  --font-weight-medium: var(--vx-weight-medium);
-  --font-weight-semibold: var(--vx-weight-strong);
-  --text-micro: var(--vx-text-micro);
-  --text-micro--line-height: var(--vx-text-micro-lh);
-  --text-xs: var(--vx-text-xs);
-  --text-xs--line-height: var(--vx-text-xs-lh);
-  --text-sm: var(--vx-text-sm);
-  --text-sm--line-height: var(--vx-text-sm-lh);
-  --text-md: var(--vx-text-md);
-  --text-md--line-height: var(--vx-text-md-lh);
-  --text-base: var(--vx-text-base);
-  --text-base--line-height: var(--vx-text-base-lh);
-  --text-lg: var(--vx-text-lg);
-  --text-lg--line-height: var(--vx-text-lg-lh);
-  --text-display: var(--vx-text-display);
-  --text-display--line-height: var(--vx-text-display-lh);
-  --ease-standard: var(--vx-ease);
+  --shadow-card: var(--basalt-shadow-card);
+  --shadow-raised: var(--basalt-shadow-raised);
+  --shadow-overlay: var(--basalt-shadow-overlay);
+  --radius-card: var(--basalt-radius-card);
+  --radius-inset: var(--basalt-radius-inset);
+  --radius-ctrl: var(--basalt-radius-ctrl);
+  --radius-chip: var(--basalt-radius-chip);
+  --font-sans: var(--basalt-font-sans);
+  --font-head: var(--basalt-font-head);
+  --font-mono: var(--basalt-font-mono);
+  --font-weight-normal: var(--basalt-weight-body);
+  --font-weight-medium: var(--basalt-weight-medium);
+  --font-weight-semibold: var(--basalt-weight-strong);
+  --text-micro: var(--basalt-text-micro);
+  --text-micro--line-height: var(--basalt-text-micro-lh);
+  --text-xs: var(--basalt-text-xs);
+  --text-xs--line-height: var(--basalt-text-xs-lh);
+  --text-sm: var(--basalt-text-sm);
+  --text-sm--line-height: var(--basalt-text-sm-lh);
+  --text-md: var(--basalt-text-md);
+  --text-md--line-height: var(--basalt-text-md-lh);
+  --text-base: var(--basalt-text-base);
+  --text-base--line-height: var(--basalt-text-base-lh);
+  --text-lg: var(--basalt-text-lg);
+  --text-lg--line-height: var(--basalt-text-lg-lh);
+  --text-display: var(--basalt-text-display);
+  --text-display--line-height: var(--basalt-text-display-lh);
+  --ease-standard: var(--basalt-ease);
 }
 @utility h-ctl {
-  height: var(--vx-ctl-h);
+  height: var(--basalt-ctl-h);
 }
 @utility size-ctl {
-  width: var(--vx-ctl-h);
-  height: var(--vx-ctl-h);
+  width: var(--basalt-ctl-h);
+  height: var(--basalt-ctl-h);
 }
 @utility min-h-ctl {
-  min-height: var(--vx-ctl-h);
+  min-height: var(--basalt-ctl-h);
 }
 @utility min-h-row {
-  min-height: var(--vx-row-h);
+  min-height: var(--basalt-row-h);
 }
 @utility size-icon {
-  width: var(--vx-icon);
-  height: var(--vx-icon);
+  width: var(--basalt-icon);
+  height: var(--basalt-icon);
 }
 @utility word-head {
   word-spacing: 0.12em;
@@ -121,26 +125,26 @@
   /* Focus scrolls the element flush to its scrollport; the margin keeps the 2px ring + 2px offset in view. */
   scroll-margin: 4px;
   &:focus-visible {
-    outline: 2px solid var(--vx-brand);
+    outline: 2px solid var(--basalt-brand);
     outline-offset: 2px;
   }
 }
 @utility link {
-  color: var(--vx-brand);
+  color: var(--basalt-brand);
   text-underline-offset: 2px;
 }
 @layer basalt {
   [data-surface='canvas'] {
-    --vx-surface: var(--vx-canvas);
+    --basalt-surface: var(--basalt-canvas);
   }
   [data-surface='card'] {
-    --vx-surface: var(--vx-card);
+    --basalt-surface: var(--basalt-card);
   }
   [data-surface='inset'] {
-    --vx-surface: var(--vx-inset);
+    --basalt-surface: var(--basalt-inset);
   }
   [data-surface='raised'] {
-    --vx-surface: var(--vx-raised);
+    --basalt-surface: var(--basalt-raised);
   }
   @media (forced-colors: active) {
     [data-surface] {
@@ -150,9 +154,9 @@
   input:-webkit-autofill,
   textarea:-webkit-autofill,
   select:-webkit-autofill {
-    -webkit-box-shadow: 0 0 0 100vh var(--vx-surface) inset;
-    -webkit-text-fill-color: var(--vx-ink);
-    caret-color: var(--vx-ink);
+    -webkit-box-shadow: 0 0 0 100vh var(--basalt-surface) inset;
+    -webkit-text-fill-color: var(--basalt-ink);
+    caret-color: var(--basalt-ink);
   }
   @media (pointer: coarse) {
     input,

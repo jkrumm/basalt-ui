@@ -10,7 +10,10 @@ import type { LegendEntry, Series, SeriesColor } from '../contract'
 import { CartesianChart } from './cartesian'
 import { Legend } from './legend'
 
-const pair = (v: string): SeriesColor => ({ light: `var(--vx-${v})`, dark: `var(--vx-${v})` })
+const pair = (v: string): SeriesColor => ({
+  light: `var(--basalt-${v})`,
+  dark: `var(--basalt-${v})`,
+})
 const html = (node: React.ReactNode): HTMLElement => {
   const el = document.createElement('div')
   el.innerHTML = renderToString(node)

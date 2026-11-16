@@ -1,10 +1,10 @@
 /**
  * Compile-time proof of the `status` guard, checked by `tsc --noEmit`: a props type that drops a
- * `tone` value composites call fails, one that adds a value passes; a `Swatch` takes a `VX` or
+ * `tone` value composites call fails, one that adds a value passes; a `Swatch` takes a `BASALT` or
  * `groupTokens` ref and nothing else.
  */
 import { describe, expect, test } from 'bun:test'
-import { VX, groupTokens } from '../tokens'
+import { BASALT, groupTokens } from '../tokens'
 import type { StatusProps, SwatchProps } from './status'
 import { statusVariants, swatchVariants } from './status'
 import { requires } from './status.guard'
@@ -23,9 +23,9 @@ export const addedTone: Accepts<WithPurple> = requires
 
 const series = groupTokens('probe', { a: { light: '#2f6fed', dark: '#7aa2ff' } })
 
-export const fromVx: SwatchProps = { color: VX.good }
+export const fromBasalt: SwatchProps = { color: BASALT.good }
 export const fromGroup: SwatchProps = { color: series.a }
-// @ts-expect-error a plain `var(--other)` string is not a `--vx-*` reference
+// @ts-expect-error a plain `var(--other)` string is not a `--basalt-*` reference
 export const foreignVar: SwatchProps = { color: 'var(--other)' }
 
 describe('status guard', () => {

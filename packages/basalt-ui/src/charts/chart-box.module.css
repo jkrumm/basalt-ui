@@ -112,8 +112,8 @@
   padding: 12px 4px 0;
   /* The axis baseline: a 1px line painted under the ghosts, not a border (the divider law inventories those). */
   background: linear-gradient(
-      color-mix(in srgb, var(--vx-ink) 24%, var(--vx-card)),
-      color-mix(in srgb, var(--vx-ink) 24%, var(--vx-card))
+      color-mix(in srgb, var(--basalt-ink) 24%, var(--basalt-card)),
+      color-mix(in srgb, var(--basalt-ink) 24%, var(--basalt-card))
     )
     bottom / 100% 1px no-repeat;
 }
@@ -122,7 +122,7 @@
   width: 100%;
   height: 100%;
   fill: none;
-  stroke: color-mix(in srgb, var(--vx-ink) 24%, var(--vx-card));
+  stroke: color-mix(in srgb, var(--basalt-ink) 24%, var(--basalt-card));
   stroke-width: 2px;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -135,7 +135,7 @@
   /* The loaded strip is one row above its axis labels: the row keeps their room. */
   margin-bottom: var(--basalt-ghost-band-axis, 1.5rem);
   border-radius: 3px;
-  background: color-mix(in srgb, var(--vx-ink) 18%, var(--vx-card));
+  background: color-mix(in srgb, var(--basalt-ink) 18%, var(--basalt-card));
 }
 
 /* A pending `Heatmap`: a grid of quiet cells over the plot, the loaded chart's own shape. */
@@ -151,14 +151,14 @@
 
 .ghostCell {
   border-radius: 2px;
-  background: color-mix(in srgb, var(--vx-ink) 12%, var(--vx-card));
+  background: color-mix(in srgb, var(--basalt-ink) 12%, var(--basalt-card));
 }
 
 .ghostBar {
   flex: 1 1 0;
   min-width: 0;
   border-radius: 3px 3px 0 0;
-  background: color-mix(in srgb, var(--vx-ink) 18%, var(--vx-card));
+  background: color-mix(in srgb, var(--basalt-ink) 18%, var(--basalt-card));
 }
 
 /*
@@ -179,7 +179,7 @@
   padding: 0.75rem 1rem;
   overflow: hidden;
   text-align: center;
-  border-radius: var(--vx-radius-card);
+  border-radius: var(--basalt-radius-card);
 }
 
 .emptyCopy {
@@ -190,15 +190,15 @@
 }
 
 .emptyTitle {
-  font-size: var(--vx-text-sm);
+  font-size: var(--basalt-text-sm);
   font-weight: 500;
-  color: var(--vx-ink);
+  color: var(--basalt-ink);
 }
 
 .emptyText {
   max-width: 22.5rem;
-  font-size: var(--vx-text-sm);
-  color: var(--vx-ink-muted);
+  font-size: var(--basalt-text-sm);
+  color: var(--basalt-ink-muted);
 }
 
 /*
@@ -230,10 +230,10 @@
  * own value is inline. */
 :global(.ts-chart-tooltip) {
   background: linear-gradient(
-      var(--basalt-tooltip-surface, var(--vx-raised)),
-      var(--basalt-tooltip-surface, var(--vx-raised))
+      var(--basalt-tooltip-surface, var(--basalt-raised)),
+      var(--basalt-tooltip-surface, var(--basalt-raised))
     )
-    var(--vx-raised) !important;
+    var(--basalt-raised) !important;
 }
 
 /* The engine focuses the plot's `svg.ts-chart` (tabindex 0), not the `.basalt-chart` wrapper
@@ -241,7 +241,7 @@
  * 2px accent ring. The ring is INSET: an outer one is clipped by the card body's overflow at the
  * plot's right and bottom edges (partial edges), an inset one is whole wherever the chart sits. */
 :global(.basalt-chart .ts-chart:focus-visible) {
-  outline: 2px solid var(--vx-brand);
+  outline: 2px solid var(--basalt-brand);
   outline-offset: -0.125rem;
 }
 
@@ -252,7 +252,7 @@
 :global(
   [role='group'][aria-roledescription='chart'][tabindex='0']:not([data-chart-focus]):focus-visible
 ) {
-  outline: 2px solid var(--vx-brand);
+  outline: 2px solid var(--basalt-brand);
   outline-offset: -0.125rem;
 }
 
@@ -272,7 +272,7 @@
 
 /* A sparkline in a stat card rings in the card's own ink: 3:1 on its surface in both schemes. */
 :global([data-slot='stat-chart'] [data-basalt-sparkline] .basalt-chart .ts-chart:focus-visible) {
-  outline-color: var(--vx-ink);
+  outline-color: var(--basalt-ink);
 }
 
 /*
@@ -294,10 +294,10 @@
   overflow: hidden;
   font-family: var(--basalt-font-numeral, var(--basalt-font-sans));
   font-variant-numeric: lining-nums;
-  font-size: var(--vx-text-xs);
+  font-size: var(--basalt-text-xs);
   line-height: calc(1.125rem - 0.3125rem - 2px);
   white-space: nowrap !important;
-  border-radius: var(--vx-radius-ctrl) !important;
+  border-radius: var(--basalt-radius-ctrl) !important;
   box-shadow: none !important;
 }
 

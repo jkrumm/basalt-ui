@@ -12,7 +12,10 @@ import type { SeriesColor } from '../contract'
 import { Bars } from './bars'
 import { Lines } from './lines'
 
-const pair = (v: string): SeriesColor => ({ light: `var(--vx-${v})`, dark: `var(--vx-${v})` })
+const pair = (v: string): SeriesColor => ({
+  light: `var(--basalt-${v})`,
+  dark: `var(--basalt-${v})`,
+})
 type Row = { t: number; a: number; b: number }
 const rowsOf = (n: number): Row[] =>
   Array.from({ length: n }, (_, i) => ({

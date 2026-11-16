@@ -42,7 +42,7 @@ const utilityOf = (token: TokenDef): string =>
   token.family === 'ink' ? 'text' : token.family === 'line' ? 'border' : 'bg'
 
 /**
- * Tokens the theme reads under another name (`--color-accent: var(--vx-hover)`), each with the
+ * Tokens the theme reads under another name (`--color-accent: var(--basalt-hover)`), each with the
  * class an agent writes for it: `bg-hover` is no class, `bg-accent` is.
  */
 function renamedTokens(): (readonly [string, string])[] {

@@ -8,14 +8,14 @@ import { ruleX } from '@tanstack/charts/rule'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { text } from '@tanstack/charts/text'
 import { reportOnce } from '../common/validate'
-import { VX } from '../tokens'
+import { BASALT } from '../tokens'
 import { CV, DASH } from './core/theme'
 import type { ChartMarks, ChartX, XRefAt, XRefLine } from './types'
 
 // ---- axis titles -------------------------------------------------------------------------------
 
 /** The title's text size: the tick font, so a card never mixes sizes. */
-const TITLE_FONT = VX.text.micro
+const TITLE_FONT = BASALT.text.micro
 
 /** The x title as the engine's own axis label: centred under the ticks, its row reserved by the margin solver. */
 export const xTitleLabel = (title: string) => ({
@@ -256,7 +256,7 @@ export function xRefLineMarks<X extends ChartX>(opts: {
   /** See {@link xRefLabelSpots}. */
   blocked?: Parameters<typeof xRefLabelSpots>[0]['blocked']
 }): ChartMarks {
-  const fontSize = VX.text.micro
+  const fontSize = BASALT.text.micro
   const spots = xRefLabelSpots({
     lines: opts.lines,
     fraction: opts.fraction,

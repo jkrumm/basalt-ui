@@ -21,7 +21,7 @@ const ROWS: readonly Row[] = [
   { id: 'meteo', name: 'meteo', value: 310 },
   { id: 'rollhook', name: 'rollhook', value: 120 },
 ]
-const COLOR = { light: 'var(--vx-line)', dark: 'var(--vx-line)' }
+const COLOR = { light: 'var(--basalt-line)', dark: 'var(--basalt-line)' }
 const c = col<Row>()
 
 function Fixture(): ReactElement {

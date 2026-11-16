@@ -32,7 +32,7 @@ const press = (target: Element, key: string) =>
     target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
   })
 
-const COLOR = { light: 'var(--vx-line)', dark: 'var(--vx-line)' }
+const COLOR = { light: 'var(--basalt-line)', dark: 'var(--basalt-line)' }
 
 type Hour = { h: number; a: number; b: number }
 const HOURS: readonly Hour[] = [0, 1, 2, 3].map((h) => ({ h, a: h + 1, b: 5 - h }))
@@ -128,8 +128,8 @@ describe('the dark dim floor', () => {
       ]
       expect(light).toBe(0)
       expect(dark).toBeGreaterThan(0)
-      expect(fill.slice(0, dark)).not.toContain('--vx-ink-muted')
-      expect(fill.slice(dark)).toContain('var(--vx-ink-muted) 30%')
+      expect(fill.slice(0, dark)).not.toContain('--basalt-ink-muted')
+      expect(fill.slice(dark)).toContain('var(--basalt-ink-muted) 30%')
     }
   })
 })

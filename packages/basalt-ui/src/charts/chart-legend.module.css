@@ -19,14 +19,14 @@
     flex-wrap: wrap;
     display: flex;
     column-gap: var(--bc-dots-gap);
-    --vx-hit-gap: var(--bc-dots-gap);
+    --basalt-hit-gap: var(--bc-dots-gap);
   }
 }
 
 @container (min-width: 480px) {
   .auto {
     column-gap: var(--bc-legend-gap);
-    --vx-hit-gap: var(--bc-legend-gap);
+    --basalt-hit-gap: var(--bc-legend-gap);
   }
 
   .auto .dot {

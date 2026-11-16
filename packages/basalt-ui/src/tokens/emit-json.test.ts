@@ -12,13 +12,13 @@ import { GateError } from './gates'
 const OPTIONS = { version: '3.0.0' } as const
 const ALPHA = ['hairline', 'hover', 'selected', 'scrim', 'input', 'grid', 'crosshair']
 
-/** The `--vx-*` declarations of the rule that opens with `selector`, as name -> value. */
+/** The `--basalt-*` declarations of the rule that opens with `selector`, as name -> value. */
 function declsOf(css: string, selector: string): Map<string, string> {
   const start = css.indexOf(`${selector} {\n`)
   expect(start).toBeGreaterThanOrEqual(0)
   const body = css.slice(start, css.indexOf('}', start))
   return new Map(
-    [...body.matchAll(/^\s*(--vx-[\w-]+): (.+);$/gm)].map((m) => [m[1]!, m[2]!] as const),
+    [...body.matchAll(/^\s*(--basalt-[\w-]+): (.+);$/gm)].map((m) => [m[1]!, m[2]!] as const),
   )
 }
 
@@ -42,7 +42,7 @@ describe('emitJson', () => {
       const roles = Object.entries(json.schemes[scheme])
       expect(roles.length).toBeGreaterThan(20)
       for (const [role, hex] of roles) {
-        expect(sides[scheme].get(`--vx-${role}`)).toBe(hex)
+        expect(sides[scheme].get(`--basalt-${role}`)).toBe(hex)
       }
     }
   })

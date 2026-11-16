@@ -54,7 +54,7 @@ function sh(cwd: string, ...args: string[]): void {
   if (!r.success) throw new Error(`${args.join(' ')}: ${r.stderr.toString()}`)
 }
 
-const vxSource = (names: string[]) =>
+const basaltSource = (names: string[]) =>
   `export const N = [\n${names.map((n) => `  '${n}',`).join('\n')}\n]\n`
 
 /** One shard file per subpath, as `export-surface.mjs --update` writes them. */
@@ -89,7 +89,7 @@ function scratch(legacySurface = false): string {
   } else {
     writeSurface(pkg, taggedSurface)
   }
-  writeFileSync(join(pkg, 'src/guard/vx-names.ts'), vxSource(['--vx-a', '--vx-b']))
+  writeFileSync(join(pkg, 'src/guard/basalt-names.ts'), basaltSource(['--basalt-a', '--basalt-b']))
   sh(dir, 'git', 'init', '-q', '-b', 'master')
   sh(dir, 'git', 'config', 'user.email', 't@example.com')
   sh(dir, 'git', 'config', 'user.name', 't')
@@ -100,7 +100,7 @@ function scratch(legacySurface = false): string {
   sh(dir, 'git', 'tag', 'v2.29.0')
   // The tag carries the list at its pre-move path; the working tree carries it where it lives now.
   mkdirSync(join(pkg, 'src/tokens'), { recursive: true })
-  renameSync(join(pkg, 'src/guard/vx-names.ts'), join(pkg, 'src/tokens/vx-names.ts'))
+  renameSync(join(pkg, 'src/guard/basalt-names.ts'), join(pkg, 'src/tokens/basalt-names.ts'))
   return dir
 }
 
@@ -263,25 +263,27 @@ describe('findUncovered', () => {
     expect(findUncovered(prev, moved, [], [], none)).toEqual(['basalt-ui#B'])
   })
 
-  test('removed --vx name needs a row or a tokens.renamed from', () => {
-    expect(findUncovered({}, {}, ['--vx-x'], [], none)).toEqual(['--vx-x'])
-    const row = withRows([{ id: 'v', kind: 'k', from: '--vx-x' }])
-    expect(findUncovered({}, {}, ['--vx-x'], [], row)).toEqual([])
+  test('removed --basalt name needs a row or a tokens.renamed from', () => {
+    expect(findUncovered({}, {}, ['--basalt-x'], [], none)).toEqual(['--basalt-x'])
+    const row = withRows([{ id: 'v', kind: 'k', from: '--basalt-x' }])
+    expect(findUncovered({}, {}, ['--basalt-x'], [], row)).toEqual([])
     const renamed = {
       ...none,
-      tokens: { ...none.tokens, renamed: [{ from: '--vx-x', to: '--vx-y' }] },
+      tokens: { ...none.tokens, renamed: [{ from: '--basalt-x', to: '--basalt-y' }] },
     }
-    expect(findUncovered({}, {}, ['--vx-x'], ['--vx-y'], renamed)).toEqual([])
+    expect(findUncovered({}, {}, ['--basalt-x'], ['--basalt-y'], renamed)).toEqual([])
   })
 
   test('additions never fail', () => {
     const added = { ...prev, './z': ['Q'] }
-    expect(findUncovered(prev, added, ['--vx-a'], ['--vx-a', '--vx-b'], none)).toEqual([])
+    expect(findUncovered(prev, added, ['--basalt-a'], ['--basalt-a', '--basalt-b'], none)).toEqual(
+      [],
+    )
   })
 
   test('result is sorted', () => {
-    expect(findUncovered({ '.': ['Z', 'M'] }, {}, ['--vx-q'], [], none)).toEqual([
-      '--vx-q',
+    expect(findUncovered({ '.': ['Z', 'M'] }, {}, ['--basalt-q'], [], none)).toEqual([
+      '--basalt-q',
       'basalt-ui#M',
       'basalt-ui#Z',
     ])
@@ -373,8 +375,8 @@ describe('MIGRATING.md', () => {
           },
         ],
         tokens: {
-          renamed: [{ from: '--vx-a', to: '--vx-b' }],
-          valueShifts: [{ token: '--vx-c', from: '1', to: '2' }],
+          renamed: [{ from: '--basalt-a', to: '--basalt-b' }],
+          valueShifts: [{ token: '--basalt-c', from: '1', to: '2' }],
         },
         storage: [{ key: 'k', action: 'rename', to: 'k2' }],
         urls: [{ store: 's', golden: 'g' }],

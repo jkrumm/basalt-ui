@@ -8,7 +8,7 @@ import type { BarYOptions } from '@tanstack/charts/bar'
 import { dot } from '@tanstack/charts/dot'
 import { lineY } from '@tanstack/charts/line'
 import { decorative } from '@tanstack/charts/mark/decorative'
-import { VX } from '../tokens'
+import { BASALT } from '../tokens'
 import { chartCurve } from './curves'
 import { CV, DASH, DIMMED, DIMMED_TEXT, LINE_STROKE_WIDTH } from './core/theme'
 import { rowX } from './types'
@@ -108,7 +108,7 @@ export function loneDots<T, X extends ChartX>(
         id: `${s.key}-lone`,
         x: rowX,
         y: 'y',
-        r: Math.max(VX.dotR - 1, (s.strokeWidth ?? LINE_STROKE_WIDTH) * LONE_DOT_STROKE_FACTOR),
+        r: Math.max(BASALT.dotR - 1, (s.strokeWidth ?? LINE_STROKE_WIDTH) * LONE_DOT_STROKE_FACTOR),
         fill: s.color,
         fillOpacity: (s.strokeOpacity ?? 1) * emphasis(highlighted, s),
         ...(yScale !== undefined && { yScale }),
@@ -146,7 +146,7 @@ export function markersOf<T, X extends ChartX>(
       group = { ...paint, rows: [] }
       groups.push(group)
     }
-    group.rows.push({ ...row, r: m.r ?? VX.dotR })
+    group.rows.push({ ...row, r: m.r ?? BASALT.dotR })
   }
   return groups.map((group, i) =>
     decorative(
@@ -193,7 +193,7 @@ export function cursorDots<T, X extends ChartX>(
       id: `${s.key}-cursor`,
       x: rowX,
       y: 'y',
-      r: VX.dotR,
+      r: BASALT.dotR,
       fill: s.color,
       fillOpacity: 0,
       stroke: CV.surface,

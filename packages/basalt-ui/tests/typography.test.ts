@@ -37,7 +37,7 @@ describe('typography.css', () => {
     )
     expect(rungs).toHaveLength(14)
     for (const { def, value } of rungs) {
-      expect(typography, def.name).toContain(`--vx-${def.name}: ${String(value)};`)
+      expect(typography, def.name).toContain(`--basalt-${def.name}: ${String(value)};`)
     }
   })
 })

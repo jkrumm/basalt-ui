@@ -75,7 +75,7 @@ describe('one locale for every chart text', () => {
   const series: ChartSeries<Row> = {
     key: 'v',
     label: 'V',
-    color: 'var(--vx-line)',
+    color: 'var(--basalt-line)',
     mark: 'line',
     getValue: (d) => d.v,
   }
@@ -135,7 +135,7 @@ describe('a dot on the plot floor keeps its room', () => {
   const dots: ChartSeries<Pt> = {
     key: 'v',
     label: 'V',
-    color: 'var(--vx-line)',
+    color: 'var(--basalt-line)',
     mark: 'dot',
     getValue: (d) => d.v,
   }

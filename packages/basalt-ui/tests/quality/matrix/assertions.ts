@@ -183,7 +183,7 @@ const INTERACTIVE =
 
 /**
  * The carried effective-hit-box floor (tests/layout/hit-floor.layout.test.ts): an element's own rect
- * unioned with its `[data-basalt-hit]::after`, capped by `--vx-hit-gap`, is at least 24px on a fine
+ * unioned with its `[data-basalt-hit]::after`, capped by `--basalt-hit-gap`, is at least 24px on a fine
  * pointer and 44px on a coarse one. Inline prose links are exempt (WCAG 2.5.8 inline exception).
  */
 export async function hitFloor(page: Page, pointer: 'fine' | 'coarse'): Promise<number> {
@@ -216,7 +216,7 @@ export async function hitFloor(page: Page, pointer: 'fine' | 'coarse'): Promise<
         const ah = parseFloat(after.height)
         const w = Math.max(r.width, Number.isNaN(aw) || after.content === 'none' ? 0 : aw)
         const h = Math.max(r.height, Number.isNaN(ah) || after.content === 'none' ? 0 : ah)
-        const gap = parseFloat(style.getPropertyValue('--vx-hit-gap')) || 0
+        const gap = parseFloat(style.getPropertyValue('--basalt-hit-gap')) || 0
         const needW = gap ? Math.min(floor, r.width + gap) : floor
         const needH = gap ? Math.min(floor, r.height + gap) : floor
         checked++

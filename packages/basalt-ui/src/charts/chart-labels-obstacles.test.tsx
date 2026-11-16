@@ -27,7 +27,7 @@ async function mount(node: ReactElement): Promise<void> {
   await act(async () => new Promise((r) => setTimeout(r, 20)))
 }
 
-const COLOR = { light: 'var(--vx-line)', dark: 'var(--vx-line)' }
+const COLOR = { light: 'var(--basalt-line)', dark: 'var(--basalt-line)' }
 
 type Seen<D, R> = { plot: ChartPlot<D>; obstacles: readonly LabelBox[]; result: R }
 /**
@@ -201,7 +201,9 @@ describe('line paths, zone captions and rule captions', () => {
   })
 
   const captioned = {
-    zones: [{ axis: 'x' as const, from: 1, to: 3, fill: 'var(--vx-line)', label: 'Models part' }],
+    zones: [
+      { axis: 'x' as const, from: 1, to: 3, fill: 'var(--basalt-line)', label: 'Models part' },
+    ],
     refLines: [{ value: 50, color: COLOR, dashed: true, label: 'Limit' }],
   }
 

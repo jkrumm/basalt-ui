@@ -2,7 +2,7 @@ import type { StatusProps } from './status'
 
 /**
  * Hand-authored guard for `status` (docs/v3/ARCHITECTURE.md 4.2). `requires` survives eject;
- * `closed` is dropped on eject. A `Swatch` colour is a `VX.*` or `groupTokens` ref, never a raw
+ * `closed` is dropped on eject. A `Swatch` colour is a `BASALT.*` or `groupTokens` ref, never a raw
  * colour: the hand-built chip with a literal fill is what `Swatch` replaces.
  */
 

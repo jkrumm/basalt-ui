@@ -19,7 +19,7 @@ const data: Row[] = Array.from({ length: 8 }, (_, i) => ({
 }))
 const lift = (key: 'squat' | 'bench', gaps?: 'break' | 'connect'): LineSeries<Row> => {
   const v = key === 'squat' ? 'line' : 'accent'
-  const color: SeriesColor = { light: `var(--vx-${v})`, dark: `var(--vx-${v})` }
+  const color: SeriesColor = { light: `var(--basalt-${v})`, dark: `var(--basalt-${v})` }
   return {
     mark: 'line',
     key,

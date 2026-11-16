@@ -15,48 +15,53 @@ function file(name: string, text: string): string {
 }
 
 describe('checkTokens', () => {
-  it('passes package names, the bg-(--vx-*) spelling and templates', () => {
-    const f = file('a.tsx', 'x = "bg-(--vx-brand-fill) text-(--vx-ink)"; `--vx-chart-${n}`')
+  it('passes package names, the bg-(--basalt-*) spelling and templates', () => {
+    const f = file(
+      'a.tsx',
+      'x = "bg-(--basalt-brand-fill) text-(--basalt-ink)"; `--basalt-chart-${n}`',
+    )
     expect(checkTokens({ files: [f] }).exitCode).toBe(0)
   })
 
   it('passes an extra name only when declared', () => {
-    const f = file('b.css', '.a { color: var(--vx-usage-hrv); }')
+    const f = file('b.css', '.a { color: var(--basalt-usage-hrv); }')
     expect(checkTokens({ files: [f] }).exitCode).toBe(1)
-    expect(checkTokens({ files: [f], extraNames: ['--vx-usage-hrv'] }).exitCode).toBe(0)
+    expect(checkTokens({ files: [f], extraNames: ['--basalt-usage-hrv'] }).exitCode).toBe(0)
   })
 
-  it('fails --vx-usage-x and bg-(--vx-typo), naming file and line', () => {
-    const f = file('c.mdx', 'ok\n--vx-usage-x\nbg-(--vx-typo)')
-    const r = checkTokens({ files: [f], extraNames: ['--vx-usage-hrv'] })
+  it('fails --basalt-usage-x and bg-(--basalt-typo), naming file and line', () => {
+    const f = file('c.mdx', 'ok\n--basalt-usage-x\nbg-(--basalt-typo)')
+    const r = checkTokens({ files: [f], extraNames: ['--basalt-usage-hrv'] })
     expect(r.exitCode).toBe(1)
     expect(r.findings.map((x) => [x.line, x.name])).toEqual([
-      [2, '--vx-usage-x'],
-      [3, '--vx-typo'],
+      [2, '--basalt-usage-x'],
+      [3, '--basalt-typo'],
     ])
   })
 
   it('names the nearest token for a typo, and none for a stranger', () => {
     const f = file(
       'e.css',
-      '.a { color: var(--vx-ink-mutd); }\n.b { color: var(--vx-qqqqqqqqqqqq); }',
+      '.a { color: var(--basalt-ink-mutd); }\n.b { color: var(--basalt-qqqqqqqqqqqq); }',
     )
     const [typo, stranger] = checkTokens({ files: [f] }).findings
-    expect(typo?.nearest).toBe('--vx-ink-muted')
+    expect(typo?.nearest).toBe('--basalt-ink-muted')
     expect(stranger?.nearest).toBeUndefined()
-    expect(nearestToken('--vx-ink2', ['--vx-ink', '--vx-ink-muted'])).toBe('--vx-ink')
+    expect(nearestToken('--basalt-ink2', ['--basalt-ink', '--basalt-ink-muted'])).toBe(
+      '--basalt-ink',
+    )
   })
 
   it('keeps the nearest name within the kind the unknown name asks for', () => {
     const known = packageTokenNames()
     // a colour role is never a type size, a spacing name gets a spacing token
-    expect(nearestToken('--vx-text-muted', known)).toBe('--vx-ink-muted')
-    expect(nearestToken('--vx-space-1', known)).toBe('--vx-rhythm-1')
-    expect(nearestToken('--vx-brand-500', known)).toBe('--vx-brand')
-    expect(nearestToken('--vx-text-mdd', known)).toBe('--vx-text-md')
-    expect(nearestToken('--vx-warning', known)).toBe('--vx-warn')
-    expect(nearestToken('--vx-color-brand', known)).toBe('--vx-brand')
-    expect(nearestToken('--vx-qqqqqqqqqqqq', known)).toBeUndefined()
+    expect(nearestToken('--basalt-text-muted', known)).toBe('--basalt-ink-muted')
+    expect(nearestToken('--basalt-space-1', known)).toBe('--basalt-rhythm-1')
+    expect(nearestToken('--basalt-brand-500', known)).toBe('--basalt-brand')
+    expect(nearestToken('--basalt-text-mdd', known)).toBe('--basalt-text-md')
+    expect(nearestToken('--basalt-warning', known)).toBe('--basalt-warn')
+    expect(nearestToken('--basalt-color-brand', known)).toBe('--basalt-brand')
+    expect(nearestToken('--basalt-qqqqqqqqqqqq', known)).toBeUndefined()
     // lint-4.16: a scale step keeps the family prefix, camelCase folds, a shadcn role maps to its token
     expect(nearestToken('--vx-radius-lg', known)).toMatch(/^--vx-radius-/)
     expect(nearestToken('--vx-surfaceRaised', known)).toBe('--vx-raised')
@@ -70,12 +75,12 @@ describe('checkTokens', () => {
     expect(nearestToken('--vx-primary-foreground', known)).toBe('--vx-canvas')
     expect(nearestToken('--vx-muted-foreground', known)).toBe('--vx-ink-muted')
     // the suggestion reaches the finding
-    const f = file('k.css', '.a { color: var(--vx-text-muted); }')
-    expect(checkTokens({ files: [f] }).findings[0]?.nearest).toBe('--vx-ink-muted')
+    const f = file('k.css', '.a { color: var(--basalt-text-muted); }')
+    expect(checkTokens({ files: [f] }).findings[0]?.nearest).toBe('--basalt-ink-muted')
   })
 
   it('fails when no file is scanned', () => {
     expect(checkTokens({ files: [] }).exitCode).toBe(1)
-    expect(checkTokens({ files: [file('d.txt', '--vx-brand')] }).exitCode).toBe(1)
+    expect(checkTokens({ files: [file('d.txt', '--basalt-brand')] }).exitCode).toBe(1)
   })
 })
