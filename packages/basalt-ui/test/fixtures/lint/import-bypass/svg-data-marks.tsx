@@ -185,3 +185,41 @@ const a = (
     <polyline points="0,0 10,10" />
   </svg>
 )
+// @valid
+function Rings({ rows, focus }) {
+  return (
+    <svg>
+      {rows.map((r, i) => (
+        <circle key={r.id} cx={r.x} {...focus.item(i)} />
+      ))}
+    </svg>
+  )
+}
+// @valid
+const Rings = (focus, rows) => (
+  <svg>
+    {rows.map((r, i) => (
+      <g key={r.id} {...focus.item(i)}>
+        <circle cx={r.x} />
+      </g>
+    ))}
+  </svg>
+)
+// @invalid
+function Rings({ rows, focus }) {
+  return (
+    <svg>
+      {rows.map((r) => (
+        <circle key={r.id} cx={r.x} />
+      ))}
+    </svg>
+  )
+}
+// @invalid
+const a = (
+  <svg>
+    {data.map((d, i) => (
+      <rect key={d.id} x={d.x} {...d.item(i)} />
+    ))}
+  </svg>
+)

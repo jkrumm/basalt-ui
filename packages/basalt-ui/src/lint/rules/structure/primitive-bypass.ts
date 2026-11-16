@@ -375,18 +375,65 @@ const seamSpread = (attr: Node): { handle: string; half: 'target' | 'item' } | u
   return undefined
 }
 
+/** A type annotation naming `ChartFocus<…>`: `focus: ChartFocus<Row>`. */
+const namesChartFocus = (annotation: Node | undefined): boolean => {
+  const type = annotation && child(annotation, 'typeAnnotation')
+  return type?.type === 'TSTypeReference' && nameOf(child(type, 'typeName')) === 'ChartFocus'
+}
+
+/**
+ * The names a component parameter binds that may hold a focus handle its caller made: a
+ * parameter, or a destructured prop. An annotated one counts only when it names `ChartFocus`; a
+ * props type declared elsewhere (`{ focus }: Props`) is taken on trust.
+ */
+function passedHandles(param: Node | undefined, names: Set<string>): void {
+  const pattern = param?.type === 'AssignmentPattern' ? child(param, 'left') : param
+  if (!pattern) return
+  const annotation = child(pattern, 'typeAnnotation')
+  if (pattern.type === 'Identifier') {
+    if (annotation === undefined || namesChartFocus(annotation)) names.add(nameOf(pattern) ?? '')
+    return
+  }
+  if (pattern.type !== 'ObjectPattern') return
+  const literal = annotation && child(annotation, 'typeAnnotation')
+  const members = literal?.type === 'TSTypeLiteral' ? children(literal, 'members') : undefined
+  for (const prop of children(pattern, 'properties')) {
+    if (prop.type !== 'Property') continue
+    const key = nameOf(child(prop, 'key'))
+    const typed = members?.find((m) => nameOf(child(m, 'key')) === key)
+    if (members !== undefined && !namesChartFocus(typed && child(typed, 'typeAnnotation'))) continue
+    for (const name of bindingNames(child(prop, 'value'))) names.add(name)
+  }
+}
+
+/** A function that is a call's argument (a `.map` callback, an effect): not a component. */
+const isCallback = (fn: Node): boolean => {
+  const parent = parentOf(fn)
+  return parent?.type === 'CallExpression' && children(parent, 'arguments').includes(fn)
+}
+
 /**
  * What the data-mark forms share: the `.map` callbacks around a node, and whether a mark is drawn
  * through the geometry seam. Wired means the mark, or an element between it and its `.map`,
- * spreads `focus.item(i)`, inside an element that spreads the same handle's `focus.target`, where
- * `focus` is the result of `useChartFocus(...)` in this file.
+ * spreads `focus.item(i)`, where either `focus` is the result of `useChartFocus(...)` in this file
+ * and an element around the `.map` spreads the same handle's `focus.target`, or `focus` reaches
+ * this component as a parameter or prop: its caller made it and spreads `focus.target` on the
+ * container that renders this component, so a seam split across two files needs no waiver.
  */
 function dataMarkScope() {
   const handles = new Set<string>()
+  const passed = new Set<string>()
+  const component = (node: Node): void => {
+    if (isCallback(node)) return
+    for (const param of children(node, 'params')) passedHandles(param, passed)
+  }
   const frames: JsxFrame[] = []
   const maps: MapScope[] = []
   const entered = new WeakSet<Node>()
   const visitor: Visitor = {
+    FunctionDeclaration: component,
+    FunctionExpression: component,
+    ArrowFunctionExpression: component,
     VariableDeclarator(node) {
       const init = child(node, 'init')
       const id = child(node, 'id')
@@ -424,8 +471,9 @@ function dataMarkScope() {
       const marked = frames.slice(map.frames).flatMap((frame) => [...frame.items])
       return marked.some(
         (handle) =>
-          handles.has(handle) &&
-          frames.slice(0, map.frames).some((frame) => frame.targets.has(handle)),
+          (passed.has(handle) && !handles.has(handle)) ||
+          (handles.has(handle) &&
+            frames.slice(0, map.frames).some((frame) => frame.targets.has(handle))),
       )
     },
   }
