@@ -96,3 +96,15 @@ const a = React.createElement('h4', { className: 'x' }, text)
 const a = createElement('div', null, text)
 // @valid
 const a = createElement(Section, { title })
+// @invalid
+// @ts
+const H = 'h2' as const
+const a = <H>{text}</H>
+// @invalid
+// @ts
+const H = 'h3' satisfies string
+const a = <H>{text}</H>
+// @valid
+// @ts
+const Tag = 'span' as const
+const a = <Tag>Title</Tag>

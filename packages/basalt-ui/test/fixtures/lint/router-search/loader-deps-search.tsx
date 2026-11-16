@@ -40,3 +40,16 @@ const route = createFileRoute('/runs')({ loaderDeps: pickDeps })
 
 // @valid
 const other = { loaders: ({ search }) => search }
+
+// @invalid
+const route = createFileRoute('/runs')({
+  loaderDeps: ({ search: { page, ...rest } }) => ({ page, ...rest }),
+})
+
+// @invalid
+const route = createFileRoute('/runs')({ loaderDeps: ({ search: { page, ...rest } }) => rest })
+
+// @valid
+const route = createFileRoute('/runs')({
+  loaderDeps: ({ search: { page, range } }) => ({ page, range }),
+})

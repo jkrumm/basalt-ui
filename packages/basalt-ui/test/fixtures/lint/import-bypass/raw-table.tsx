@@ -15,6 +15,25 @@ const a = (
   </dl>
 )
 // @valid
-const a = <dl className="text-sm" />
+const a = <div className="table-fixed table-auto" />
 // @valid
 const a = <Facts rows={rows} />
+// @invalid
+const a = (
+  <dl>
+    <dt>Name</dt>
+    <dd>{r.name}</dd>
+  </dl>
+)
+// @invalid
+const a = (
+  <div className="table w-full">
+    <div className="table-row">
+      <div className="table-cell">{r.name}</div>
+    </div>
+  </div>
+)
+// @invalid
+const a = <span className="table-cell">x</span>
+// @valid
+const a = <TableCell className="table-cell">x</TableCell>

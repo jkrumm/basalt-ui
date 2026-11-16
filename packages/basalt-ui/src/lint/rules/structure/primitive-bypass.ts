@@ -15,7 +15,8 @@
  *   returns the string is not read; only a `d` built in the file with `.map`, `.flatMap` or
  *   `.reduce` is.
  * - `html-data-marks`: a custom-property mark is read only when the class names the property in a
- *   geometry utility (`w-(--w)`, `h-[var(--h)]`); a property read by a stylesheet is out of reach.
+ *   geometry or flex utility (`w-(--w)`, `h-[var(--h)]`, `grow-(--g)`, `basis-(--b)`); a property
+ *   read by a stylesheet is out of reach.
  * - `intl-format`: `toFixed` is read where it renders (a JSX child expression, directly or through
  *   a template literal, `+` or a ternary). One returned from a helper, a key or a CSS value is not
  *   display text by syntax and passes. A date-fns formatter is read through a named import from
@@ -36,11 +37,15 @@
  *   propagation or delegates is common and `jsx-a11y` owns it); an `li`, `tr`, `td`, `th` or `img`
  *   with `onClick` and no role reads, and one with a role or a spread passes.
  * - `chart-body-root`: a chart kind reads outside a card only with a `section`, `main`, `article`
- *   or `aside` above it in the same JSX tree; one under a `div` or that is the whole return of a
+ *   or `aside` above it in the same JSX tree, or a `Section` or `Page` imported from
+ *   `basalt-ui/page`; one under a `div` or that is the whole return of a
  *   component (a `ChartCard` may wrap it in another file) is a cross-file fact and passes. A `Card`, `ChartCard`, `DataPanel` or any
  *   `*Card`/`*Panel` ancestor passes.
  * - `intl-format`: a dayjs or moment formatter is read by the callee name (`dayjs(...)`,
  *   `moment(...)`, `.utc()` chains); a value held in a variable first (`const d = dayjs(at)`) is not.
+ *   luxon's `toFormat` reads on a `DateTime.*(...)` chain rendered as JSX text (its
+ *   `toLocaleString` reads anywhere, as every `toLocale*String` does); one held in a variable or
+ *   returned from a helper is not.
  * - `raw-heading`: `createElement('h2', ...)` and `React.createElement` read; a tag from a variable
  *   or a spread of arguments does not.
  * - `svg-data-marks`: a mark is `aria-hidden` by its own attribute or an ancestor's, read in the
@@ -74,6 +79,7 @@ const RAW_CONTROLS: ReadonlySet<string> = new Set([
   'select',
   'textarea',
   'dialog',
+  'details',
   'progress',
   'meter',
 ])
@@ -215,16 +221,16 @@ const isClickableRow = (node: Node): boolean =>
   !children(node, 'attributes').some((attr) => attr.type === 'JSXSpreadAttribute')
 
 /**
- * Raw `button`, `input`, `select`, `textarea`, the native `dialog`, `progress` and `meter`, a `div`
- * or `span` that is a button by `role="button"` and `onClick`, an `<a onClick>` with no `href`, and
- * an `li`, `tr`, `td`, `th` or `img` with `onClick` and no `role`. A
+ * Raw `button`, `input`, `select`, `textarea`, the native `dialog`, `details`, `progress` and
+ * `meter`, a `div` or `span` that is a button by `role="button"` and `onClick`, an `<a onClick>`
+ * with no `href`, and an `li`, `tr`, `td`, `th` or `img` with `onClick` and no `role`. A
  * `type="file"` input that is visually hidden (a `hidden` attribute, or a `sr-only` or `hidden`
  * class) passes: it sits behind a label, and no
  * primitive wraps a file input. A visible file input still reports.
  */
 const rawControl = form(
   'raw-control',
-  'Use ui/button, ui/input, ui/select, ui/textarea, ui/dialog, ui/progress or ui/meter; a clickable row is a link or a button inside the row',
+  'Use ui/button, ui/input, ui/select, ui/textarea, ui/dialog, ui/progress or ui/meter; a details disclosure is ui/collapsible or ui/accordion; a clickable row is a link or a button inside the row',
   'Eject the primitive to change its structure',
   ({ report }) =>
     opening((node) => {
@@ -307,8 +313,12 @@ const rawHeading = form(
   },
 )
 
-/** A heading tag chosen in a variable: `'h2'`, `cond ? 'h2' : 'h3'`, or `` `h${level}` ``. */
-function isHeadingTag(init: Node | undefined): boolean {
+/**
+ * A heading tag chosen in a variable: `'h2'`, `cond ? 'h2' : 'h3'`, or `` `h${level}` ``, also
+ * under `as const` or `satisfies`.
+ */
+function isHeadingTag(written: Node | undefined): boolean {
+  const init = unwrapped(written)
   if (!init) return false
   if (init.type === 'ConditionalExpression') {
     return isHeadingTag(child(init, 'consequent')) || isHeadingTag(child(init, 'alternate'))
@@ -342,7 +352,24 @@ function rawHeadingOpening(
   }
 }
 
-/** A `<table>`, and a `<dl>` a `grid` class lays out as a key-value table: Facts ships for it. */
+/** Tailwind's whole-table display utility, and the parts that sit in one. */
+const DISPLAY_TABLE = /^(?:[\w-]+:)*table$/
+const DISPLAY_TABLE_PART = /^(?:[\w-]+:)*table-(?:row|cell|row-group|header-group|footer-group)$/
+
+/** True when an ancestor element of `node` carries the whole-table display class. */
+const insideDisplayTable = (node: Node): boolean => {
+  for (let at = enclosingElement(parentOf(node) as Node); at; at = enclosingElement(at)) {
+    const open = child(at, 'openingElement')
+    if (open && classTokens(open).some((token) => DISPLAY_TABLE.test(token))) return true
+  }
+  return false
+}
+
+/**
+ * A `<table>`, a `<dl>` (key-value rows: Facts ships for them), and an intrinsic element laid out
+ * as a table by Tailwind's display utilities (`table`; a `table-row` or `table-cell` outside one,
+ * so a table is one finding). `table-auto` and `table-fixed` set a layout, not a display, and pass.
+ */
 const rawTable = form(
   'raw-table',
   'Use ui/table for a static table, DataTable for data and Facts from basalt-ui/page for key-value rows',
@@ -351,11 +378,15 @@ const rawTable = form(
     opening((node) => {
       const tag = tagOf(node)
       if (tag === 'table') return report(node, '<table>')
-      if (
-        tag === 'dl' &&
-        classTokens(node).some((token) => /^(?:[\w-]+:)*grid(?:-|$)/.test(token))
-      ) {
-        report(node, '<dl> laid out as a grid')
+      if (tag === 'dl') return report(node, '<dl>')
+      if (tag === undefined || !/^[a-z]/.test(tag)) return
+      const tokens = classTokens(node)
+      if (tokens.some((token) => DISPLAY_TABLE.test(token))) {
+        return report(node, `<${tag}> displayed as a table`)
+      }
+      const part = tokens.find((token) => DISPLAY_TABLE_PART.test(token))
+      if (part !== undefined && !insideDisplayTable(node)) {
+        report(node, `<${tag}> displayed as a ${part.replace(/^.*:/, '')}`)
       }
     }),
 )
@@ -678,6 +709,9 @@ const GEOMETRY_STYLE: ReadonlySet<string> = new Set([
   'top',
   'right',
   'bottom',
+  'flex',
+  'flexGrow',
+  'flexBasis',
 ])
 
 const unwrapped = (node: Node | undefined): Node | undefined => {
@@ -692,11 +726,14 @@ const unwrapped = (node: Node | undefined): Node | undefined => {
   return at
 }
 
-/** True when a class names the custom property in a geometry utility: `w-(--w)`, `h-[var(--h)]`. */
+/**
+ * True when a class names the custom property in a geometry utility: `w-(--w)`, `h-[var(--h)]`,
+ * and the flex share of a bar, `grow-(--g)`, `basis-(--b)`, `flex-(--f)`.
+ */
 const sizesFromProperty = (opening: Node, property: string): boolean => {
   const name = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const utility = new RegExp(
-    `^(?:[\\w-]+:)*-?(?:(?:min|max)-)?(?:w|h|size|left|top|right|bottom|inset|basis)-(?:\\(${name}\\)|\\[var\\(${name}\\)\\])$`,
+    `^(?:[\\w-]+:)*-?(?:(?:min|max)-)?(?:w|h|size|left|top|right|bottom|inset|basis|grow|flex-grow|flex)-(?:\\(${name}\\)|\\[var\\(${name}\\)\\])$`,
   )
   return classTokens(opening).some((token) => utility.test(token))
 }
@@ -753,8 +790,9 @@ const percentWidth = (opening: Node): boolean => {
 
 /**
  * An intrinsic element sized or positioned by a datum inside a `.map` callback: a `div` whose
- * `style` sets `width`, `height`, `left`, `top`, `right` or `bottom` (or a custom property a class
- * sizes the element from, `w-(--w)`) from the datum's share. An SVG
+ * `style` sets `width`, `height`, `left`, `top`, `right`, `bottom` or its flex share (`flex`,
+ * `flexGrow`, `flexBasis`), or a custom property a class sizes the element from (`w-(--w)`,
+ * `grow-(--g)`: the route `shadcn/no-inline-styles` names), from the datum's share. An SVG
  * mark is the `svg-data-marks` form's; a mark drawn through the geometry seam passes. One report
  * per map call. Outside a map, a `style` width computed with a percent sign (a fill bar from one
  * value) reports once per element.
@@ -805,7 +843,8 @@ const roleTableOrGrid = form(
           : stringValue(value)
       return text === undefined ? [] : text.split(/\s+/)
     }
-    const isWhole = (token: string): boolean => token === 'table' || token === 'grid'
+    const isWhole = (token: string): boolean =>
+      token === 'table' || token === 'grid' || token === 'treegrid'
     const insideWhole = (attribute: Node): boolean => {
       for (let element = parentOf(attribute); element; element = parentOf(element)) {
         const opening = element.type === 'JSXElement' ? child(element, 'openingElement') : undefined
@@ -972,42 +1011,68 @@ const PAGE_ELEMENTS: ReadonlySet<string> = new Set(['section', 'main', 'article'
  * card frame or chart kind above it: `<section><Lines /></section>`. A chart that is the whole
  * return of a component, under components only, or under a `div` has no such ancestor and passes.
  */
-function bareInPage(chart: Node): boolean {
+function bareInPage(chart: Node, pageParts: ReadonlySet<string>): boolean {
   let intrinsic = false
   for (let at = parentOf(parentOf(chart) as Node); at; at = parentOf(at)) {
     if (at.type !== 'JSXElement') continue
     const tag = tagOf(child(at, 'openingElement') as Node)
     if (tag === undefined) continue
     if (isCardFrame(tag) || CHART_KINDS.has(tag)) return false
-    if (PAGE_ELEMENTS.has(tag)) intrinsic = true
+    if (PAGE_ELEMENTS.has(tag) || pageParts.has(tag)) intrinsic = true
   }
   return intrinsic
 }
 
+/** basalt's own page frames: a `Section` or `Page` from `basalt-ui/page` is never a card. */
+const PAGE_FRAMES: ReadonlySet<string> = new Set(['Section', 'Page'])
+
 /**
- * A chart kind as a `DataPanel` body root, or bare in a page: a page element above it and no
- * `ChartCard`, `DataPanel`, `Card` or other `*Card` / `*Panel` frame. A plain `Card` passes.
+ * A chart kind as a `DataPanel` body root, or bare in a page: a page element (or `Section`/`Page`
+ * imported from `basalt-ui/page`, under any local name) above it and no `ChartCard`, `DataPanel`,
+ * `Card` or other `*Card` / `*Panel` frame. A plain `Card` passes.
  */
 const chartBodyRoot = form(
   'chart-body-root',
   'Wrap the chart in ChartCard; DataPanel body is for tables, lists and boards',
   'A bespoke layout is parts inside DataPanel',
-  ({ report }) =>
-    opening((node) => {
-      const own = tagOf(node)
-      if (own !== undefined && CHART_KINDS.has(own)) {
-        if (bareInPage(node)) report(node, `<${own}> outside a card`)
-        return
-      }
-      if (own !== 'DataPanel') return
-      const value = child(attribute(node, 'body') ?? { type: '' }, 'value')
-      if (value?.type !== 'JSXExpressionContainer') return
-      for (const root of bodyRoots(child(value, 'expression'))) {
-        const tag = tagOf(child(root, 'openingElement') as Node)
-        if (tag !== undefined && CHART_KINDS.has(tag)) report(root, `<${tag}> as DataPanel body`)
-      }
-    }),
+  ({ report }) => {
+    const pageParts = new Set<string>()
+    return mergeVisitors([
+      {
+        ImportDeclaration(node) {
+          if (stringValue(child(node, 'source')) !== 'basalt-ui/page') return
+          for (const spec of children(node, 'specifiers')) {
+            const imported = nameOf(child(spec, 'imported'))
+            const local = nameOf(child(spec, 'local'))
+            if (imported !== undefined && local !== undefined && PAGE_FRAMES.has(imported)) {
+              pageParts.add(local)
+            }
+          }
+        },
+      },
+      opening((node) => chartBodyOpening(node, pageParts, report)),
+    ])
+  },
 )
+
+function chartBodyOpening(
+  node: Node,
+  pageParts: ReadonlySet<string>,
+  report: Parameters<AstForm['detect']>[0]['report'],
+): void {
+  const own = tagOf(node)
+  if (own !== undefined && CHART_KINDS.has(own)) {
+    if (bareInPage(node, pageParts)) report(node, `<${own}> outside a card`)
+    return
+  }
+  if (own !== 'DataPanel') return
+  const value = child(attribute(node, 'body') ?? { type: '' }, 'value')
+  if (value?.type !== 'JSXExpressionContainer') return
+  for (const root of bodyRoots(child(value, 'expression'))) {
+    const tag = tagOf(child(root, 'openingElement') as Node)
+    if (tag !== undefined && CHART_KINDS.has(tag)) report(root, `<${tag}> as DataPanel body`)
+  }
+}
 
 const isIntlFormat = (node: Node): boolean => {
   if (node.type !== 'NewExpression' && node.type !== 'CallExpression') return false
@@ -1031,16 +1096,26 @@ const DATE_FNS_FORMATTERS: ReadonlySet<string> = new Set([
 
 const MOMENT_LIKE: ReadonlySet<string> = new Set(['dayjs', 'moment'])
 
-/** The `dayjs` or `moment` a call chain starts from: `dayjs(at)`, `dayjs(at).utc()`, `moment.utc(at)`. */
-function momentRoot(node: Node | undefined): string | undefined {
+/** The identifier a call or member chain starts from: `DateTime` of `DateTime.fromISO(at).toUTC()`. */
+function chainRoot(node: Node | undefined): string | undefined {
   let at = node
   while (at?.type === 'CallExpression' || at?.type === 'MemberExpression') {
     const next = child(at, at.type === 'CallExpression' ? 'callee' : 'object')
     const name = nameOf(next)
-    if (name !== undefined) return MOMENT_LIKE.has(name) ? name : undefined
+    if (name !== undefined) return name
     at = next
   }
   return undefined
+}
+
+/** A luxon `DateTime` chain: `DateTime.fromISO(at)`, `DateTime.now().setZone(z)`. */
+const isLuxonChain = (node: Node | undefined): boolean =>
+  node?.type === 'CallExpression' && chainRoot(node) === 'DateTime'
+
+/** The `dayjs` or `moment` a call chain starts from: `dayjs(at)`, `dayjs(at).utc()`, `moment.utc(at)`. */
+function momentRoot(node: Node | undefined): string | undefined {
+  const root = chainRoot(node)
+  return root !== undefined && MOMENT_LIKE.has(root) ? root : undefined
 }
 
 const isMomentChain = (node: Node | undefined): boolean =>
@@ -1120,6 +1195,10 @@ const intlFormat: AstForm = {
             }
             if (method === 'format' && isMomentChain(child(callee, 'object'))) {
               report(node, `${momentRoot(child(callee, 'object'))}().format()`)
+              return
+            }
+            if (method === 'toFormat' && isLuxonChain(child(callee, 'object'))) {
+              if (rendersAsChild(node)) report(node, 'DateTime.toFormat()')
               return
             }
             if (method === 'toFixed') {

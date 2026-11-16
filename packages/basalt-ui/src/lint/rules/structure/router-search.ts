@@ -7,7 +7,8 @@
  *   `redirect({ ... })` (`throw redirect(...)` in `beforeLoad`; `redirect` or `x.redirect`). A literal pins a default and hits the router traps reproduced on Router 1.170.46;
  *   the link of a store-backed route is `field.link()`.
  * - `loader-deps-search`: `loaderDeps: ({ search }) => search`, `=> ({ search })` and
- *   `=> ({ ...search })`. Returning the whole search re-runs the loader on every param (argo
+ *   `=> ({ ...search })`, and the rest of a destructured search returned or spread
+ *   (`({ search: { page, ...rest } }) => ({ page, ...rest })`). Returning the whole search re-runs the loader on every param (argo
  *   `strength-tracker.tsx:53`); the deps are the keys it reads.
  * - `validate-search-pure`: an inline `validateSearch` that reads `window`, `document`,
  *   `localStorage`, `sessionStorage`, `Math.random`, `crypto.randomUUID()` / `crypto.getRandomValues()` (also on `globalThis` or `window`) or the clock (`new Date()` with no argument,
@@ -161,7 +162,11 @@ const literalSearch: AstForm = {
   }),
 }
 
-/** The names a loaderDeps function binds its search to: `({ search })`, `({ search: s })`, `(opts)`. */
+/**
+ * The names a loaderDeps function binds its search to: `({ search })`, `({ search: s })`,
+ * `(opts)`, and the rest of a destructured search (`({ search: { page, ...rest } })`), which holds
+ * every key but the ones named beside it.
+ */
 function searchBinding(fn: Node): { name: string } | { object: string } | undefined {
   const [param] = children(fn, 'params')
   if (param?.type === 'Identifier') return { object: param['name'] as string }
@@ -170,10 +175,17 @@ function searchBinding(fn: Node): { name: string } | { object: string } | undefi
     if (property.type !== 'Property' || keyOf(property) !== 'search') continue
     const value = child(property, 'value')
     const target = value?.type === 'AssignmentPattern' ? child(value, 'left') : value
-    const name = nameOf(target)
+    const name = nameOf(target) ?? restName(target)
     if (name !== undefined) return { name }
   }
   return undefined
+}
+
+/** The name of an object pattern's rest element: `rest` of `{ page, ...rest }`. */
+function restName(pattern: Node | undefined): string | undefined {
+  if (pattern?.type !== 'ObjectPattern') return undefined
+  const rest = children(pattern, 'properties').find((property) => property.type === 'RestElement')
+  return rest ? nameOf(child(rest, 'argument')) : undefined
 }
 
 const isWholeSearch = (
