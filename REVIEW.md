@@ -9,7 +9,6 @@ sensitive:
     .releaserc.json,
     commitlint.config.ts,
     packages/basalt-ui/configs/oxlint*,
-    packages/basalt-ui/src/guard/**,
     packages/basalt-ui/src/lint/**,
   ]
 ---

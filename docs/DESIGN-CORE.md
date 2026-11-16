@@ -219,11 +219,10 @@ series map in one guard-exempt file and feeds it through `defineSeries` / `group
 
 The teeth that keep the law from drifting:
 
-- **`basalt check-theme`** — fails on colours bypassing the central palette: raw `hex`/`rgb()`/`hsl()`
-  in component/chart source, off-identity accent props, and raw spacing/radius equal to a scale step.
-  Configurable per consumer via the package.json `"basalt"` key
-  (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`). Exempts the palette/token-definition
-  files; escape hatch is a `theme-allow` line comment.
+- **`basalt-ui lint`** and the shipped oxlint and stylelint presets — fail on colours bypassing the
+  central palette: raw `hex`/`rgb()`/`hsl()` in component/chart source and raw spacing equal to a
+  scale step. Scoped by the package.json `"basalt"` key (`{ roots }`); the escape hatch is a
+  waiver comment with a reason. (`basalt check-theme`, the 2.x text guard, was deleted in 3.0.)
 - **The `basalt` oxlint plugin rules** — `basalt/chart-engine-boundary` bans `@visx/*` and every
   engine import outside the allowlist (`docs/V2-SPEC.md` § 9.8, shipped in the consumer preset
   too); `basalt/token-layer-boundary` keeps `src/charts/**` and `src/tokens/**`

@@ -1,5 +1,4 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
-// theme-allow-file hidden-inline-style — the 2.x guard reads a custom-property style as raw; the v3 lint accepts `--at` and `--bar`
 export type Bar = { id: string; row: string; label: string; from: number; to: number }
 export const LEGEND = [
   {
