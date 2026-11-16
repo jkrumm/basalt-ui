@@ -28,4 +28,14 @@ import Chart from 'react-apexcharts'
 // @invalid
 import { LineChart } from '@mui/x-charts/LineChart'
 // @valid
-import { Button } from '@mui/material/Button'
+import { AddIcon } from '@mui/icons-material/Add'
+// @invalid
+import HighchartsReact from 'highcharts-react-official'
+// @invalid
+import Highcharts from 'highcharts/highstock'
+// @invalid
+import { VictoryChart } from 'victory'
+// @invalid
+import { VictoryLine } from 'victory-line'
+// @invalid
+import * as Plot from '@observablehq/plot'
