@@ -43,6 +43,8 @@ export type SkeletonProps = Omit<ComponentProps<'div'>, 'className' | 'children'
  * `className`. Stack several for a paragraph. It is hidden from assistive tech: name the loading
  * region with `aria-busy` and a status, not each box.
  *
+ * @useWhen a one-line placeholder holds the place of loading text in a hand-built layout
+ * @neverWhen a basalt part already draws its own loading state (give it `phase`), or the wait is an action (use a Spinner or a Button `loading`)
  * @example
  * <Skeleton className="w-40 text-lg" />
  */

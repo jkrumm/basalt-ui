@@ -108,7 +108,7 @@ const FALLBACK_OPTIONS: ts.CompilerOptions = {
   skipLibCheck: true,
 }
 
-function compilerOptions(pkgRoot: string): ts.CompilerOptions {
+export function compilerOptions(pkgRoot: string): ts.CompilerOptions {
   const tsconfig = join(pkgRoot, 'tsconfig.json')
   if (!existsSync(tsconfig)) return FALLBACK_OPTIONS
   const config = ts.getParsedCommandLineOfConfigFile(
@@ -339,7 +339,7 @@ const TYPE_FLAGS =
   ts.TypeFormatFlags.NoTruncation | ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope
 
 /** The signature, then the props block, as `llms.txt` prints them (same `llms-signatures` helpers). */
-function signatureOf(
+export function signatureOf(
   checker: ts.TypeChecker,
   name: string,
   symbol: ts.Symbol,

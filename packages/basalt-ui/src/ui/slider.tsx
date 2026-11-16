@@ -57,6 +57,8 @@ const thumbCount = (value: SliderValue | undefined): number =>
  * `onValueChange` fires on every step while dragging, `onValueCommitted` once on release; use it
  * for a write that is expensive. Arrow keys step by `step`, Shift or Page keys by `largeStep`.
  *
+ * @useWhen a number or a low-high range is picked on a bounded scale and approximate is fine
+ * @neverWhen the exact value matters (use NumberField) or the choices are a few named options (use Segmented or RadioGroup)
  * @example
  * <Slider value={volume} onValueChange={setVolume} aria-label="Volume" />
  * <Slider defaultValue={[20, 80]} thumbLabels={['From', 'To']} onValueCommitted={save} />

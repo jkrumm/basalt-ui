@@ -70,6 +70,8 @@ export type FieldProps = Layout<Omit<BaseField.Root.Props, 'children'>> & {
  * A labelled control with an optional description and an error, on Base UI's `Field`. Works with no
  * provider; a Base UI control inside it picks up the label, description and error on its own.
  *
+ * @useWhen a control needs a label, a description and an error that screen readers connect to it
+ * @neverWhen the control is alone in a toolbar or a table cell (name it with `aria-label`), or the form uses FormField
  * @example
  * <Field label="Email" description="We never share it." error={errors.email}>
  *   <Input type="email" value={email} onValueChange={setEmail} />

@@ -1,7 +1,7 @@
 ---
 name: Status
-use when: ''
-never when: ''
+use when: 'one entity has a verdict word with a dot (Healthy, Degraded) in a row or a header'
+never when: 'the word carries a count or a change (use CountBadge or DeltaBadge), or no word fits (a dot alone never ships)'
 subpath: basalt-ui/ui/status
 peers: ['@base-ui/react']
 slots: [status, swatch]
@@ -11,6 +11,31 @@ slots: [status, swatch]
 
 A dot and a word for a verdict: `Healthy`, `Degraded`. The dot is a pseudo-element and not read
 out; the word is the state.
+
+## Props
+
+### `Status`
+
+A dot and a word for a verdict: `Healthy`, `Degraded`. The dot is a pseudo-element and not read
+out; the word is the state.
+
+```ts
+Status({ tone, className, ...props }: StatusProps): ReactElement
+  className?: string  // Layout only (`ml-auto`, `shrink-0`)
+  tone?: "neutral" | "accent" | "good" | "warn" | "bad" | "info" | null
+  children: string  // The word
+```
+
+### `Swatch`
+
+A chip of one series colour for a legend or a list key. Decorative: the series name sits beside
+it as text.
+
+```ts
+Swatch({ color, className, ...props }: SwatchProps): ReactElement
+  className?: string  // Layout only (`ml-auto`, `shrink-0`)
+  color: SwatchColor  // The series colour
+```
 
 ## `statusVariants`
 

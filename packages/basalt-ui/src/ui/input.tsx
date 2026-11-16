@@ -36,6 +36,8 @@ export type InputProps = Omit<BaseInput.Props, 'className' | 'size'> &
 /**
  * A text input on Base UI. Works with no provider and joins a Base UI `Field` when wrapped in one.
  *
+ * @useWhen one line of free text, a number as text, a search or an email
+ * @neverWhen several lines (use Textarea), a number with steppers (use NumberField), or a choice from known values (use Select or Combobox)
  * @example
  * <Input value={q} onValueChange={setQ} placeholder="Search" />
  * <Input size="sm" aria-label="Quantity" inputMode="numeric" />

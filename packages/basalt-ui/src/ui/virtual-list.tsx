@@ -89,6 +89,8 @@ const withKept =
  * `children` is called once per rendered row with `[item]`. Works with no provider; assignable to
  * the `VirtualLike` port of `src/core/ports.ts`.
  *
+ * @useWhen a list is long enough (hundreds of rows) that mounting every row costs more than the user sees
+ * @neverWhen the list is short or paged (render it plainly)
  * @example
  * <VirtualList className="max-h-96" count={rows.length} estimateSize={() => 32}
  *   getItemKey={(i) => rows[i].id} keepIndex={focusedIndex}>

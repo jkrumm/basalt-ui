@@ -13,6 +13,99 @@ A modal dialog on Base UI: focus is trapped, Escape and the corner close dismiss
 always portalled above the page. Open state stays with the caller (`open`/`onOpenChange`) or the
 trigger. Works with no provider.
 
+## Props
+
+### `Dialog`
+
+A modal dialog on Base UI: focus is trapped, Escape and the corner close dismiss it, and it is
+always portalled above the page. Open state stays with the caller (`open`/`onOpenChange`) or the
+trigger. Works with no provider.
+
+```ts
+Dialog(props: DialogProps): ReactElement
+```
+
+### `DialogTrigger`
+
+The element that opens a `Dialog`. It carries no look of its own: pass `render={<Button />}`.
+
+```ts
+DialogTrigger({ className, ...props }: DialogTriggerProps): ReactElement
+  className?: string  // Layout only (`w-full`, `mt-2`)
+```
+
+### `DialogContent`
+
+The dialog panel with its backdrop. `title` is required and names the dialog; `description` is
+optional. The corner close button is part of the panel and named by the `dialog.close` message.
+
+```ts
+DialogContent({ title, description, size, className, children, ...props }: DialogContentProps): ReactElement
+  className?: string  // Layout only (`w-full`, `mt-2`)
+  title: ReactNode  // The accessible name and the visible heading
+  description?: ReactNode  // One sentence under the title; it also describes the dialog to assistive tech
+  size?: "md" | "sm" | "lg" | null
+```
+
+### `DialogTitle`
+
+The dialog's heading. `DialogContent` renders it from its `title`; use it directly only inside
+a hand-built popup.
+
+```ts
+DialogTitle({ className, ...props }: DialogTitleProps): ReactElement
+  className?: string  // Layout only (`w-full`, `mt-2`)
+```
+
+### `DialogDescription`
+
+The dialog's lead-in sentence. `DialogContent` renders it from its `description`.
+
+```ts
+DialogDescription({ className, ...props }: DialogDescriptionProps): ReactElement
+  className?: string  // Layout only (`w-full`, `mt-2`)
+```
+
+### `DialogClose`
+
+Closes the dialog. With no children it is the corner glyph, named by the `dialog.close` message;
+with children it is a bare close trigger: pass `render={<Button />}` for a Cancel button.
+
+```ts
+DialogClose({ className, children, ...props }: DialogCloseProps): ReactElement
+  className?: string  // Layout only (`w-full`, `mt-2`)
+```
+
+### `AlertDialog`
+
+A confirmation that needs an explicit answer: it has no corner close and an outside click does
+not dismiss it. Use it for a destructive confirm; otherwise use `Dialog`.
+
+```ts
+AlertDialog(props: AlertDialogProps): ReactElement
+```
+
+### `AlertDialogTrigger`
+
+The element that opens an `AlertDialog`. It carries no look of its own: pass `render`.
+
+```ts
+AlertDialogTrigger({ className, ...props }: AlertDialogTriggerProps): ReactElement
+  className?: string  // Layout only (`w-full`, `mt-2`)
+```
+
+### `AlertDialogContent`
+
+The alert panel: required `title`, optional `description`, and the answers as children (each a
+`DialogClose`).
+
+```ts
+AlertDialogContent({ title, description, className, children, ...props }: AlertDialogContentProps): ReactElement
+  className?: string  // Layout only (`w-full`, `mt-2`)
+  title: ReactNode  // The accessible name and the visible heading
+  description?: ReactNode  // One sentence under the title; it also describes the dialog to assistive tech
+```
+
 ## `dialogContentVariants`
 
 Part `dialog-content`.

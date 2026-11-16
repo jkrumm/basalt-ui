@@ -86,6 +86,8 @@ const STEP_ICON = {
  * by `largeStep`. The text is formatted and parsed in `locale` (`1.234,5` in `de-DE`). Works with
  * no provider and joins a Base UI `Field` when wrapped in one.
  *
+ * @useWhen a number the user types or steps (a quantity, a price) with a min, a max and locale formatting
+ * @neverWhen the value is a range on a scale (use Slider), or free text that happens to contain digits (use Input)
  * @example
  * <NumberField value={qty} onValueChange={setQty} min={0} aria-label="Quantity" />
  * <NumberField locale="de-DE" format={{ style: 'currency', currency: 'EUR' }} aria-label="Price" />

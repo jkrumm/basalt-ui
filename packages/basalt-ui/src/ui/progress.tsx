@@ -90,6 +90,8 @@ const fractionOf = (value: number, min: number, max: number): number => {
  * indeterminate. The percentage read out to assistive tech is formatted in the page locale
  * (`useFormat`), so it matches the digits elsewhere on the page.
  *
+ * @useWhen a task has a measure (an upload, an import) or is running with an unknown end (`value={null}`)
+ * @neverWhen a value sits on a scale of zones, not a task (use Meter), or the wait is one action (use a Spinner)
  * @example
  * <Progress value={42} aria-label="Upload" />
  * <Progress value={null} tone="info" aria-labelledby="import-heading" />

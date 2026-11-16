@@ -34,6 +34,8 @@ export type SeparatorProps = Omit<BaseSeparator.Props, 'className' | 'children' 
 /**
  * A hairline between groups, on Base UI so it carries `role="separator"` and its orientation.
  *
+ * @useWhen a hairline divides two groups that are not already apart by a gap or a surface
+ * @neverWhen a gap or a Section heading already separates them (a rule on top of it is noise)
  * @example
  * <Separator />
  * <Separator orientation="vertical" />

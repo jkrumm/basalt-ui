@@ -68,6 +68,8 @@ export type AlertProps = Omit<ComponentProps<'div'>, 'className' | 'children' | 
  * at once; `good`, `info`, `accent` and `neutral` carry `role="status"` and are announced politely.
  * The role follows the tone and cannot be passed.
  *
+ * @useWhen the page must say something about its own state next to the content it concerns: a failed sync, a warning
+ * @neverWhen the message is transient feedback after an action (use `notify`) or a card-level state (use `Callout` or a part's own phase)
  * @example
  * <Alert tone="bad" title="Sync failed">The last run stopped at step 3.</Alert>
  */

@@ -37,6 +37,8 @@ export type KbdProps = Omit<ComponentProps<'kbd'>, 'className' | 'children'> & {
 /**
  * One key of a shortcut. Put a combination in one `Kbd` per key.
  *
+ * @useWhen a shortcut is named in running text or a menu: one `Kbd` per key
+ * @neverWhen the shortcut is registered for a command (name it in `defineCommands`, which prints it)
  * @example
  * <Kbd>Mod</Kbd><Kbd>K</Kbd>
  */

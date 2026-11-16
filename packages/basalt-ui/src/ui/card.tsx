@@ -51,6 +51,8 @@ export type CardProps = Omit<useRender.ComponentProps<'div'>, 'className'> &
  * The base card: a surface with a radius and a ring. Works with no provider; polymorphism only
  * through `render`.
  *
+ * @useWhen a group of content needs a surface of its own in a hand-built layout
+ * @neverWhen a part already frames the content (ChartCard, StatCard, Section), or the content is page text (no surface)
  * @example
  * <Card>Revenue</Card>
  * <Card flush render={<section aria-label="Orders" />}>…</Card>

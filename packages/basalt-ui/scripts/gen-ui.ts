@@ -4,7 +4,9 @@
  *
  * - `src/ui/slots.ts`: `SLOTS`, every module's `<module>Parts` as plain literal data.
  * - `src/ui/no-restyle.generated.json`: one `no-restyle` contract per cva table.
- * - `docs/<module>.md`: the six frontmatter keys of `docs-format.ts`, the axes and the slots.
+ * - `docs/<module>.md`: the six frontmatter keys of `docs-format.ts`, each component's props (read
+ *   through the type checker, as `gen-docs` prints a composite's), the axes and the slots. A module
+ *   without a JSDoc `@useWhen` and `@neverWhen` on its primary export fails the check.
  *
  * A module is every `src/ui/*.tsx` that is not a test or a guard; it must export `<module>Parts`,
  * and each exported `<x>Variants` cva table pairs with the part `kebab(x)`, which must be listed in
@@ -18,9 +20,9 @@ import { existsSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from
 import { join } from 'node:path'
 import ts from 'typescript'
 import { SURFACES } from '../src/surfaces'
-import { formatExportDoc } from './docs-format'
+import { checkExport, formatExportDoc } from './docs-format'
 import type { ExportJsdoc } from './docs-format'
-import { kebab } from './gen-docs'
+import { compilerOptions, kebab, signatureOf } from './gen-docs'
 import { SUBPATH_REQUIRED_PEERS } from './surface-gates'
 
 const REAL_PKG = join(import.meta.dirname, '..')
@@ -83,6 +85,9 @@ type UiModule = {
   tables: Table[]
   jsdoc: ExportJsdoc | null
 }
+
+/** One exported component: its JSDoc summary, its printed signature and the names of its props. */
+type Component = { name: string; summary: string; signature: string; props: ReadonlySet<string> }
 
 /** Modules on disk: `src/ui/*.tsx`, tests and guards left out, sorted. */
 export function moduleFiles(pkgRoot: string): string[] {
@@ -218,12 +223,16 @@ export function readModule(pkgRoot: string, file: string): UiModule {
   const primary = pascal(name)
   let parts: string[] | undefined
   let jsdoc: ExportJsdoc | null = null
+  // A module with no component named after it (`badge`: Lozenge, CountBadge, DeltaBadge) speaks
+  // through its first documented component.
+  let fallback: ExportJsdoc | null = null
   const tables: Table[] = []
 
   for (const statement of source.statements.filter(isExported)) {
     if (ts.isFunctionDeclaration(statement) && statement.name?.text === primary) {
       jsdoc = jsdocOf(statement)
     }
+    if (ts.isFunctionDeclaration(statement) && fallback === null) fallback = jsdocOf(statement)
     if (!ts.isVariableStatement(statement)) continue
     for (const decl of statement.declarationList.declarations) {
       if (!ts.isIdentifier(decl.name) || decl.initializer === undefined) continue
@@ -252,7 +261,43 @@ export function readModule(pkgRoot: string, file: string): UiModule {
       )
     }
   }
-  return { name, parts, tables, jsdoc }
+  return { name, parts, tables, jsdoc: jsdoc ?? fallback }
+}
+
+// ── Props ────────────────────────────────────────────────────────────────────────────────────────
+
+/** Every PascalCase exported function of each module, read through one type-checker program. */
+function readComponents(
+  pkgRoot: string,
+  files: readonly string[],
+): ReadonlyMap<string, readonly Component[]> {
+  const paths = files.map((f) => join(pkgRoot, 'src', 'ui', f))
+  const program = ts.createProgram(paths, compilerOptions(pkgRoot))
+  const checker = program.getTypeChecker()
+  const out = new Map<string, Component[]>()
+  for (const file of files) {
+    const source = program.getSourceFile(join(pkgRoot, 'src', 'ui', file))
+    const components: Component[] = []
+    for (const statement of source?.statements.filter(isExported) ?? []) {
+      const name = ts.isFunctionDeclaration(statement) ? statement.name : undefined
+      if (name === undefined || !/^[A-Z]/.test(name.text)) continue
+      const symbol = checker.getSymbolAtLocation(name)
+      if (symbol === undefined) continue
+      const first = checker.getTypeOfSymbolAtLocation(symbol, statement).getCallSignatures()[0]
+        ?.parameters[0]
+      const type =
+        first === undefined ? undefined : checker.getTypeOfSymbolAtLocation(first, statement)
+      const members = type === undefined ? [] : type.isUnion() ? type.types : [type]
+      components.push({
+        name: name.text,
+        summary: jsdocOf(statement)?.summary ?? '',
+        signature: signatureOf(checker, name.text, symbol, statement),
+        props: new Set(members.flatMap((m) => checker.getPropertiesOfType(m).map((p) => p.name))),
+      })
+    }
+    out.set(file, components)
+  }
+  return out
 }
 
 // ── Rendering ────────────────────────────────────────────────────────────────────────────────────
@@ -356,23 +401,43 @@ function singleQuoteFrontmatter(markdown: string): string {
   return markdown.slice(0, end).replace(/"(?:[^"\\]|\\.)*"/g, requote) + markdown.slice(end)
 }
 
-function renderDoc(m: UiModule, subpath: string, peers: readonly string[]): string {
+function renderDoc(
+  m: UiModule,
+  components: readonly Component[],
+  subpath: string,
+  peers: readonly string[],
+): string {
   const head = singleQuoteFrontmatter(
     formatExportDoc({ name: pascal(m.name), subpath, peers, slots: m.parts, jsdoc: m.jsdoc })
       .markdown,
   )
+  const props =
+    components.length === 0
+      ? []
+      : [
+          `\n## Props\n`,
+          ...components.map(
+            (c) =>
+              `\n### ${code(c.name)}\n\n${c.summary === '' ? '' : `${c.summary}\n\n`}\`\`\`ts\n${c.signature}\n\`\`\`\n`,
+          ),
+        ]
   const tables = m.tables.map((t) => {
+    // An axis the part's component does not take as a prop is the component's own to resolve
+    // (`DeltaBadge`'s `tone` follows `value` and `polarity`); printing it bare reads as a prop.
+    const owner = components.find((c) => kebab(c.name) === t.part)
     const axes =
       t.axes.length === 0
         ? ['No variant axes.']
-        : t.axes.map(
-            (a) =>
-              `- ${code(a.name)}: ${a.values.map(code).join(', ')} (default ${a.default === undefined ? 'none' : code(a.default)})`,
-          )
+        : t.axes.map((a) => {
+            const line = `- ${code(a.name)}: ${a.values.map(code).join(', ')} (default ${a.default === undefined ? 'none' : code(a.default)})`
+            return owner === undefined || owner.props.has(a.name)
+              ? line
+              : `${line}; not a prop of ${code(owner.name)}, which resolves it itself`
+          })
     return `\n## ${code(t.exportName)}\n\nPart ${code(t.part)}.\n\n${axes.join('\n')}\n`
   })
   const slots = `\n## Slots\n\n${m.parts.map((p) => `- ${code(p)}`).join('\n')}\n`
-  return [head, ...tables, slots].join('')
+  return [head, ...props, ...tables, slots].join('')
 }
 
 // ── The run ──────────────────────────────────────────────────────────────────────────────────────
@@ -382,15 +447,32 @@ export function generate(roots: UiRoots): Map<string, string> {
   const pkgName = (
     JSON.parse(readFileSync(join(roots.pkgRoot, 'package.json'), 'utf8')) as { name: string }
   ).name
-  const modules = moduleFiles(roots.pkgRoot).map((f) => readModule(roots.pkgRoot, f))
+  const files = moduleFiles(roots.pkgRoot)
+  const modules = files.map((f) => readModule(roots.pkgRoot, f))
+  const components = readComponents(roots.pkgRoot, files)
   const out = new Map<string, string>([
     [SLOTS_FILE, renderSlots(modules)],
     [CONTRACTS_FILE, renderContracts(modules)],
   ])
-  for (const m of modules) {
-    out.set(`docs/${m.name}.md`, renderDoc(m, `${pkgName}/ui/${m.name}`, roots.peers()))
+  for (const [i, m] of modules.entries()) {
+    const own = components.get(files[i]!) ?? []
+    out.set(`docs/${m.name}.md`, renderDoc(m, own, `${pkgName}/ui/${m.name}`, roots.peers()))
   }
   return out
+}
+
+/** The JSDoc gap of every module's primary export: the docs would print an empty `use when`. */
+export function jsdocGaps(roots: UiRoots): string[] {
+  return moduleFiles(roots.pkgRoot).flatMap((file) => {
+    const m = readModule(roots.pkgRoot, file)
+    return checkExport({
+      name: pascal(m.name),
+      subpath: '',
+      peers: [],
+      slots: m.parts,
+      jsdoc: m.jsdoc,
+    }).map((p) => `src/ui/${file}: ${p.message}`)
+  })
 }
 
 /** The subpath in a generated doc's frontmatter, or undefined for a hand-written file. */
@@ -424,7 +506,10 @@ function clashes(roots: UiRoots, files: ReadonlyMap<string, string>): string[] {
 export function checkUi(roots: UiRoots): string[] {
   const files = generate(roots)
   const clash = new Set(clashes(roots, files))
-  const failures = [...clash].map((rel) => `${rel} exists and is not generated; rename it`)
+  const failures = [
+    ...jsdocGaps(roots),
+    ...[...clash].map((rel) => `${rel} exists and is not generated; rename it`),
+  ]
   for (const [rel, text] of files) {
     if (clash.has(rel)) continue
     const path = join(roots.pkgRoot, rel)

@@ -63,6 +63,8 @@ export function CheckboxGroup({ className, ...props }: CheckboxGroupProps): Reac
  * Its root is a `<span role="checkbox">`, so find it by role `checkbox`, never `button`. The check is
  * drawn by the part; children are not accepted.
  *
+ * @useWhen a yes or no the user sets, or several independent choices in a `CheckboxGroup`
+ * @neverWhen a setting that applies at once (use Switch), or exactly one of several (use RadioGroup)
  * @example
  * <label className="flex items-center gap-2 text-sm">
  *   <Checkbox checked={agreed} onCheckedChange={setAgreed} />I agree

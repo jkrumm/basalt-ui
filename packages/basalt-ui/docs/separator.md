@@ -1,7 +1,7 @@
 ---
 name: Separator
-use when: ''
-never when: ''
+use when: 'a hairline divides two groups that are not already apart by a gap or a surface'
+never when: 'a gap or a Section heading already separates them (a rule on top of it is noise)'
 subpath: basalt-ui/ui/separator
 peers: ['@base-ui/react']
 slots: [separator]
@@ -10,6 +10,18 @@ slots: [separator]
 # Separator
 
 A hairline between groups, on Base UI so it carries `role="separator"` and its orientation.
+
+## Props
+
+### `Separator`
+
+A hairline between groups, on Base UI so it carries `role="separator"` and its orientation.
+
+```ts
+Separator({ orientation, className, ...props }: SeparatorProps): ReactElement
+  orientation?: "vertical" | "horizontal" | null
+  className?: string  // Layout only (`my-4`, `mx-2`)
+```
 
 ## `separatorVariants`
 

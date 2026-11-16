@@ -42,6 +42,8 @@ export type TabsProps = Omit<BaseTabs.Root.Props, 'className'> &
  * Space activates, and the panel is linked by `aria-controls`. Works with no provider and renders
  * no indicator script, so it is safe on a static page.
  *
+ * @useWhen the panels share one page and the reader switches between them in place
+ * @neverWhen the choice changes the page (use InnerNav or a route), or it is a view switch of one figure (use Segmented)
  * @example
  * <Tabs defaultValue="overview">
  *   <TabsList>

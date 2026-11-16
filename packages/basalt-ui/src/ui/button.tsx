@@ -83,6 +83,8 @@ export type ButtonProps = BaseProps &
 /**
  * A button on Base UI. Works with no provider; polymorphism only through `render`.
  *
+ * @useWhen an action the user takes: save, delete, open
+ * @neverWhen the target is another page (use a link, or `render` a link through Button), or the control is a choice (use Switch, Segmented or Select)
  * @example
  * <Button variant="primary" onClick={save}>Save</Button>
  * <Button shape="icon" aria-label="Close" render={<a href="/home" />} nativeButton={false} />

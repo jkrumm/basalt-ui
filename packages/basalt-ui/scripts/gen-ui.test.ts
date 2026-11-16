@@ -44,7 +44,12 @@ export const widgetVariants = cva('base', {
 
 export const widgetParts = ['widget'] as const
 
-/** A widget. */
+/**
+ * A widget.
+ *
+ * @useWhen a test needs a module
+ * @neverWhen a test needs none
+ */
 export function Widget() {
   return null
 }
@@ -140,9 +145,37 @@ describe('the real tree', () => {
     expect(files.get('docs/button.md')).toContain('subpath: basalt-ui/ui/button\n')
     expect(files.get('docs/button.md')).toContain('slots: [button, pressable]\n')
   })
+
+  test('no primitive doc has an empty use when or never when', () => {
+    for (const [doc, text] of generate(REAL_ROOTS)) {
+      if (!doc.startsWith('docs/')) continue
+      expect(text).not.toContain("use when: ''")
+      expect(text).not.toContain("never when: ''")
+    }
+  })
+
+  test("a doc prints each component's props beside the variants", () => {
+    const files = generate(REAL_ROOTS)
+    expect(files.get('docs/button.md')).toMatch(/### `Button`[\s\S]*\n {2}loading\?: boolean/)
+    const badge = files.get('docs/badge.md')!
+    expect(badge).toMatch(/### `DeltaBadge`[\s\S]*\n {2}value: [\s\S]*\n {2}polarity: /)
+  })
+
+  test('a variant axis that is not a prop says so', () => {
+    const badge = generate(REAL_ROOTS).get('docs/badge.md')!
+    expect(badge).toContain('(default `neutral`); not a prop of `DeltaBadge`')
+    expect(badge).not.toMatch(/- `tone`: `neutral`, `accent`[^\n]*not a prop/)
+  })
 })
 
 describe('a fixture package', () => {
+  test('a module with no @useWhen or @neverWhen fails the check by name', () => {
+    const bare = WIDGET.replace(/ \* @useWhen .*\n \* @neverWhen .*\n/, '')
+    const failures = checkUi(fixtureRoots(fixture({ widget: bare })))
+    expect(failures).toContain('src/ui/widget.tsx: Widget: JSDoc lacks @useWhen')
+    expect(failures).toContain('src/ui/widget.tsx: Widget: JSDoc lacks @neverWhen')
+  })
+
   test('drift in a cva table fails --check until it is regenerated', () => {
     const dir = fixture({ widget: WIDGET })
     expect(runCli(dir).exitCode).toBe(0)

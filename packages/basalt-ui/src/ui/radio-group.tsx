@@ -41,6 +41,8 @@ export type RadioProps<Value = string> = Layout<Omit<BaseRadio.Root.Props<Value>
  * provider and joins a Base UI `Field` when wrapped in one. Name each radio with a wrapping
  * `<label>`.
  *
+ * @useWhen one value of a few (up to about five) that the user should see all at once
+ * @neverWhen more than about five options (use Select), several values at once (use Checkbox), or a view switch (use Segmented)
  * @example
  * <RadioGroup value={plan} onValueChange={setPlan} aria-label="Plan">
  *   <label className="flex items-center gap-2 text-sm"><Radio value="free" />Free</label>

@@ -87,6 +87,8 @@ const pct = (fraction: number): string => `${fraction * 100}%`
  * zone must carry a `label`. Without zones it is a neutral bar. `label` names the meter for
  * assistive tech, `format` prints the value (default the page locale's number).
  *
+ * @useWhen a value sits on a scale with named zones (a training load, a quota) and the zone is the message
+ * @neverWhen the value is progress toward a goal (use Progress) or a trend (use Sparkline)
  * @example
  * <Meter
  *   label="Training load"

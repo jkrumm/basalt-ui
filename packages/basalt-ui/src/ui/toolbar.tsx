@@ -56,6 +56,8 @@ export type ToolbarProps = Omit<BaseToolbar.Root.Props, 'className'> &
  * controls (a button, a `Segmented`, a `Select` trigger through `ToolbarButton render`). Works
  * with no provider.
  *
+ * @useWhen a row of related controls should be one tab stop with arrow-key movement (a viewer, an editor)
+ * @neverWhen the controls are navigation (use InnerNav) or a single choice (use Segmented)
  * @example
  * <Toolbar aria-label="View">
  *   <ToolbarGroup aria-label="Zoom"><ToolbarButton shape="icon" aria-label="Zoom in">+</ToolbarButton></ToolbarGroup>
