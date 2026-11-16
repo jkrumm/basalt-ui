@@ -124,11 +124,12 @@ const textOnFill = new RegExp(
  * `[html[data-theme=dark]_&]:`, `[.dark_&]:`) or inside `:where(…)`/`:is(…)`
  * (`[:where([data-theme=dark])_&]:`), the v4 self-selector spellings, `&` followed by `:is(…)` or
  * `:where(…)` holding the class or the attribute, comma lists included (`[&:is(.dark_*)]:`,
- * `[&:where(.dark,.dark_*)]:`; a `.darker` class or `:is(:hover)` is not one), and the colour-scheme media query as an arbitrary variant
+ * `[&:where(.dark,.dark_*)]:`; a `.darker` class or `:is(:hover)` is not one), the v4 `in-`/`group-`/`peer-`
+ * arbitrary form holding the class or the attribute (`in-[.dark]:`, `group-[.dark]/app:`), and the colour-scheme media query as an arbitrary variant
  * (`[@media(prefers-color-scheme:dark)]:`).
  */
 const DARK_VARIANT =
-  '(?:(?:(?:group|peer|in)-)?(?:not-)?(?:dark|data-\\[theme=["\']?dark["\']?\\])(?:\\/[\\w-]+)?|\\[[\\w:-]*(?:\\([\\w-]*)?(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark)\\)?_&\\]|\\[@media_?\\(prefers-color-scheme:_?dark\\)\\]|\\[&:(?:is|where)\\([^()]*?(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark(?![A-Za-z0-9-]))[^()]*\\)\\]):'
+  '(?:(?:(?:group|peer|in)-)?(?:not-)?(?:dark|data-\\[theme=["\']?dark["\']?\\])(?:\\/[\\w-]+)?|(?:group|peer|in)-\\[(?:\\.dark(?![A-Za-z0-9-])|data-theme=["\']?dark["\']?)\\](?:\\/[\\w-]+)?|\\[[\\w:-]*(?:\\([\\w-]*)?(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark)\\)?_&\\]|\\[@media_?\\(prefers-color-scheme:_?dark\\)\\]|\\[&:(?:is|where)\\([^()]*?(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark(?![A-Za-z0-9-]))[^()]*\\)\\]):'
 
 /** A raw media query as an arbitrary variant that names a viewport feature, not a user preference. */
 const MEDIA_FEATURE_VARIANT =
@@ -331,8 +332,9 @@ export const CLASS_RULES = defineRules({
       },
       {
         id: 'template-interpolation',
-        // `bg-${tone}` and `${solid ? 'bg' : 'text'}-brand`: an interpolation on either side of a dash.
-        pattern: /-\$\{\}|\$\{\}-[a-z0-9[(]/,
+        // `bg-${tone}` and `${solid ? 'bg' : 'text'}-brand`: an interpolation on either side of a
+        // dash, or `${at}:hidden`, an interpolated variant prefix.
+        pattern: /-\$\{\}|\$\{\}-[a-z0-9[(]|\$\{\}:/,
         fix: 'A cva variant per value, a tone, size or count: Tailwind cannot scan an interpolated class',
         next: 'Status or Num tone from parts for a colour',
         fixture: 'class/tw-off-law/template-interpolation.tsx',

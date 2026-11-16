@@ -19,6 +19,15 @@
 // expect: size.width >= 1024
 // expect: window.visualViewport.width < 640
 // expect: globalThis.visualViewport.width >= 1024
+// expect: matchMedia('(orientation: portrait)')
+// expect: useMediaQuery('(min-height: 600px)')
+// expect: matchMedia('(min-aspect-ratio: 16/9)')
+// expect: matchMedia('(max-device-width: 480px)')
+// expect: test(navigator.userAgent)
+// expect: navigator.userAgent.includes
+// expect: navigator.userAgent.match
+// expect: isMobile
+// expect: isTablet
 export const a = window.matchMedia('(min-width: 768px)')
 export const b = useMediaQuery('(max-width: 640px)')
 export const c = matchMedia(`(min-width: ${bp}px)`)
@@ -49,3 +58,14 @@ export function TwoCol() {
 }
 export const o = () => (window.visualViewport?.width ?? 0) < 640
 export const q = globalThis.visualViewport.width >= 1024
+export const orient = window.matchMedia('(orientation: portrait)').matches
+export const tall = useMediaQuery('(min-height: 600px)')
+export const wide = matchMedia('(min-aspect-ratio: 16/9)')
+export const dev = matchMedia('(max-device-width: 480px)')
+export const sniff = /Mobi|Android|iPhone/i.test(navigator.userAgent)
+export const sniffed = () => navigator.userAgent.includes('Mobile')
+export const matched = window.navigator.userAgent.match(/iPhone/)
+import { isMobile, isTablet as tablet } from 'react-device-detect'
+export function Layout() {
+  return isMobile ? 'tabs' : tablet ? 'split' : 'rail'
+}
