@@ -7,14 +7,13 @@
  *
  * Scaffold written by `basalt-ui init` to `src/components/route-missing.tsx`. This file is yours — `basalt-ui sync` will not overwrite it.
  */
-import type { NotFoundRouteProps } from '@tanstack/react-router'
 import { EmptyState } from 'basalt-ui/page'
 
 type NotFoundData = { message?: string; link?: { to: string; label: string } }
 
 const HOME = { to: '/', label: 'Go to the start page' }
 
-export function RouteMissing({ data }: Partial<NotFoundRouteProps>) {
+export function RouteMissing({ data }: { data?: unknown }) {
   const { message, link }: NotFoundData = typeof data === 'object' && data !== null ? data : {}
   const back = typeof link?.to === 'string' && typeof link.label === 'string' ? link : HOME
   return (
