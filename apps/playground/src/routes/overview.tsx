@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { PageBar } from 'basalt-ui/page'
+import { CardGrid, PageBar } from 'basalt-ui/page'
 import { BarList, DataPanel, EventList, StatCard, StatCell, StatGroup } from 'basalt-ui/cards'
 import { ChartCard, Lines } from 'basalt-ui/charts'
 import { FilterSet, ViewTabs, filterSlot, spec } from 'basalt-ui/controls'
@@ -140,8 +140,6 @@ const filters = (
 )
 // #endregion
 
-const GRID = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] items-start gap-4'
-
 // #region view-tabs
 const tabs: NonNullable<ComponentProps<typeof PageBar>['tabs']> = {
   kind: 'controls-slot',
@@ -159,14 +157,14 @@ function OverviewRoute(): ReactElement {
       {tab === 'overview' ? (
         <>
           {health}
-          <div className={GRID}>
+          <CardGrid min="regular">
             <div data-testid="ov-bound">{requests}</div>
             <div data-testid="ov-override">{errors}</div>
-          </div>
+          </CardGrid>
           {trend}
         </>
       ) : null}
-      <div className={GRID}>{breakdown}</div>
+      <CardGrid min="regular">{breakdown}</CardGrid>
     </div>
   )
 }
