@@ -335,7 +335,7 @@ const FORMS: readonly AstForm[] = [
       '@floating-ui/react',
       '@floating-ui/react-dom',
     ],
-    'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, drawer; Radix and Floating UI are not in the stack',
+    'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix and Floating UI are not in the stack',
     'Eject the primitive with basalt-ui eject, then edit the copy',
     { except: ['@radix-ui/react-icons'] },
   ),
