@@ -73,6 +73,8 @@ export type StatRow = {
 export type StatCellProps = CardTarget &
   FrameState & {
     label: string
+    /** The series colour of the mark this figure reads, drawn as a dot before the label. */
+    swatch?: { light: string; dark: string }
     qualifier?: string
     info?: string
     value?: number | string | null

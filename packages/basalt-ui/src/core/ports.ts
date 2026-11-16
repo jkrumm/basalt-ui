@@ -54,6 +54,29 @@ export type MeterSpec = {
   format?: (v: number) => string
 }
 
+// ---- A list joined to a chart's focus -----------------------------------------------------
+
+/** What a list row spreads to join a chart's focus: pointing at it focuses its item. */
+export type ListFocusItem = {
+  'data-focused'?: ''
+  ref: (element: Element | null) => void
+  onPointerEnter: () => void
+  onPointerDown: () => void
+}
+
+/**
+ * The part of a chart's focus handle a kit list reads. `useChartFocus` from `basalt-ui/charts`
+ * returns one; this structural copy keeps the list contracts free of `./charts`.
+ */
+export type ListFocus<T> = {
+  readonly items: readonly T[]
+  readonly index: number | null
+  readonly set: (index: number | null) => void
+  readonly item: (index: number) => ListFocusItem
+  /** The index a key moves the focus to (`null` clears, `undefined` is not ours). */
+  readonly step: (key: string) => number | null | undefined
+}
+
 // ---- Icons and links ----------------------------------------------------------------------
 
 /** Structural icon: Lucide, Tabler, Phosphor and a hand-written SVG component all satisfy it. */
