@@ -115,7 +115,8 @@ export const USAGE =
   'shot <route…> (--base <url> | --dist <dir>) --out <dir> [--states <list>]\n' +
   '  Render routes in Chromium (Playwright from YOUR project: bun add -d playwright) and write\n' +
   '  board.html, metrics.json and png/* — every anchor × light/dark × the manifest viewports ×\n' +
-  '  rest, hover, focus, tooltip, empty, loading, error. An anchor is a data-shot element, else the\n' +
+  '  rest, hover, focus, keys, tooltip, empty, loading, error. `keys` focuses a chart or row host, presses its\n' +
+  '  arrow key twice, shoots the frame and logs the live text and focus; a page error is a named defect. An anchor is a data-shot element, else the\n' +
   '  outermost stat-card, chart-card, data-table, section, card or board data-slot. Viewports come from\n' +
   '  .basalt/manifest.json (default 1800x1200 and 390x844). --dist serves a built SPA dir itself.\n' +
   '  --out must resolve inside the project (the app dir in a monorepo, not the repo root); routes are\n' +

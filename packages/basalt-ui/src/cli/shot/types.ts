@@ -1,5 +1,14 @@
 export const SCHEMES = ['light', 'dark'] as const
-export const STATES = ['rest', 'hover', 'focus', 'tooltip', 'empty', 'loading', 'error'] as const
+export const STATES = [
+  'rest',
+  'hover',
+  'focus',
+  'keys',
+  'tooltip',
+  'empty',
+  'loading',
+  'error',
+] as const
 /** The states a page reaches with `?shot-state=<phase>`: an anchor declares them with `data-phase` or `data-shot-states`. */
 export const URL_STATES = ['empty', 'loading', 'error'] as const
 
@@ -60,6 +69,13 @@ export type AnchorMetrics = Measurement & {
   sheet?: string
 }
 
+/** What the `keys` state read: the host it focused, the key its role takes, and the page after each press. */
+export type KeyLog = {
+  host: string
+  key: 'ArrowRight' | 'ArrowDown'
+  presses: { live: string; focused: string }[]
+}
+
 export type ShotRecord = {
   route: string
   name: string
@@ -72,6 +88,8 @@ export type ShotRecord = {
   note?: string
   /** A declared state whose crop is byte-identical to the ready crop: the page ignored `?shot-state`. */
   ignored?: true
+  /** The `keys` state's presses: kept on a failed frame too, so the defect shows what was read before it. */
+  keys?: KeyLog
 }
 
 /** The page-level reading of one route × scheme × viewport. */

@@ -283,7 +283,16 @@ describe('parseShotArgs', () => {
     const a = parseShotArgs(['/', '/dashboard', '--dist', 'dist', '--out', 'shots-1'], src())
     expect(a.routes).toEqual(['/', '/dashboard'])
     expect(a.out).toBe('shots-1')
-    expect(a.states).toEqual(['rest', 'hover', 'focus', 'tooltip', 'empty', 'loading', 'error'])
+    expect(a.states).toEqual([
+      'rest',
+      'hover',
+      'focus',
+      'keys',
+      'tooltip',
+      'empty',
+      'loading',
+      'error',
+    ])
     expect(a.viewports.map((v) => [v.label, v.mobile])).toEqual([
       [DESKTOP, false],
       [PHONE, true],

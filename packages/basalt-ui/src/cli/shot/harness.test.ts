@@ -250,6 +250,32 @@ const SKELETON_FIXTURE = `<!doctype html><style>
 <div data-shot=blank class=card></div>
 <div data-shot=dot class=card style="position:relative"><style>[data-shot=dot]::after{content:'';position:absolute;top:0;left:0;width:8px;height:8px;background:#f00}</style></div>`
 
+/** A chart host that announces, one that throws on the second press (a closure reading a later const), a row host and an anchor with no host. */
+const KEYS_FIXTURE = `<!doctype html><body style="margin:0">
+<div data-shot=good class=card><div tabindex=0 aria-roledescription=chart aria-label="Good chart" style="width:200px;height:100px;background:#00f"><i id=g-live aria-live=polite></i></div></div>
+<div data-shot=boom class=card><div id=boom tabindex=0 aria-roledescription=chart aria-label="Boom chart" style="width:200px;height:100px;background:#00f"></div></div>
+<div data-shot=rows class=card><table><tbody><tr tabindex=0 id=r0><td>one</td></tr><tr tabindex=-1 id=r1><td>two</td></tr><tr tabindex=-1 id=r2><td>three</td></tr></tbody></table><i id=r-live aria-live=polite></i></div>
+<div data-shot=plain class=card><button>Go</button></div>
+<script>
+const chart = (el, live, fail) => {
+  let i = 0
+  el.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowRight') return
+    i++
+    if (fail && i === 2) { setTimeout(() => { throw new Error('announce read a const before its declaration') }); return }
+    live.textContent = 'item ' + i
+  })
+}
+chart(document.querySelector('[aria-label="Good chart"]'), document.getElementById('g-live'), false)
+chart(document.getElementById('boom'), document.getElementById('g-live'), true)
+const rows = [...document.querySelectorAll('tr')]
+rows.forEach((r, n) => r.addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowDown' || !rows[n + 1]) return
+  rows[n + 1].focus()
+  document.getElementById('r-live').textContent = 'row ' + (n + 2)
+}))
+</script>`
+
 const pw = resolvePlaywright(process.cwd())
 const out = mkdtempSync(join(tmpdir(), 'basalt-harness-'))
 afterAll(() => rmSync(out, { recursive: true, force: true }))
@@ -294,17 +320,19 @@ async function shoot(
     res.end(
       req.url?.startsWith('/strip')
         ? STRIP_FIXTURE
-        : req.url === '/reveal'
-          ? REVEAL_FIXTURE
-          : req.url === '/hover'
-            ? HOVER_FIXTURE
-            : req.url === '/slots'
-              ? SLOTS_FIXTURE
-              : req.url?.startsWith('/ignored')
-                ? IGNORED_FIXTURE
-                : req.url === '/skeleton'
-                  ? SKELETON_FIXTURE
-                  : FIXTURE,
+        : req.url === '/keys'
+          ? KEYS_FIXTURE
+          : req.url === '/reveal'
+            ? REVEAL_FIXTURE
+            : req.url === '/hover'
+              ? HOVER_FIXTURE
+              : req.url === '/slots'
+                ? SLOTS_FIXTURE
+                : req.url?.startsWith('/ignored')
+                  ? IGNORED_FIXTURE
+                  : req.url === '/skeleton'
+                    ? SKELETON_FIXTURE
+                    : FIXTURE,
     )
   })
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
@@ -612,6 +640,44 @@ describe('real Chrome', () => {
           expect(row(state).every((s) => s.status === 'ok')).toBe(true)
       },
       '/strip',
+    )
+  }, 120_000)
+})
+
+describe('keys state', () => {
+  test('presses the key the host takes twice, logs live text and focus, and names a page error', async () => {
+    await shoot(
+      ['keys'],
+      async ({ shots }) => {
+        const of = (name: string) => shots.filter((s) => s.name === name && s.state === 'keys')
+        const good = of('good')
+        expect(good).toHaveLength(4)
+        expect(good.map((s) => s.note)).toEqual([])
+        expect(good[0]?.keys).toEqual({
+          host: 'div[chart] "Good chart"',
+          key: 'ArrowRight',
+          presses: [
+            { live: 'item 1', focused: 'div[chart] "Good chart"' },
+            { live: 'item 2', focused: 'div[chart] "Good chart"' },
+          ],
+        })
+        const rows = of('rows')
+        expect(rows.every((s) => s.status === 'ok' && s.keys?.key === 'ArrowDown')).toBe(true)
+        expect(rows[0]?.keys?.presses.map((p) => p.live)).toEqual(['row 2', 'row 3'])
+        // The throwing chart is a named defect with no frame; the log keeps what was read before it.
+        const boom = of('boom')
+        expect(boom).toHaveLength(4)
+        for (const s of boom) {
+          expect(s.status).toBe('error')
+          expect(s.file).toBeNull()
+          expect(s.note).toMatch(
+            /^page error after ArrowRight press 2: announce read a const before its declaration$/,
+          )
+          expect(s.keys?.presses).toHaveLength(2)
+        }
+        expect(of('plain').every((s) => s.status === 'not-declared')).toBe(true)
+      },
+      '/keys',
     )
   }, 120_000)
 })
