@@ -332,6 +332,9 @@ const CHART_ELEMENTS: ReadonlySet<string> = new Set([
   'MirroredBars',
 ])
 
+/** A shipped chart kind, or any element named `*Chart` (an app's own wrapper, `BarChart`). */
+const isChartElement = (tag: string): boolean => CHART_ELEMENTS.has(tag) || tag.endsWith('Chart')
+
 const TYPE_WRAPPERS: ReadonlySet<string> = new Set([
   'TSAsExpression',
   'TSSatisfiesExpression',
@@ -380,7 +383,8 @@ function memoReturn(call: Node): Node | undefined {
 }
 
 /**
- * An empty array standing in for a query's data on a chart: written in the prop
+ * An empty array standing in for a query's data on a chart (a shipped kind, or any element named
+ * `*Chart`): written in the prop
  * (`data={q.data ?? []}`), hoisted (`const rows = q.data ?? []` then `data={rows}`), a destructure
  * default off a call (`const { data = [] } = useRuns()` then `data={data}`), a same-file `const`
  * empty array (`q.data ?? EMPTY`), or the same fallback returned by a `useMemo` (an expression
@@ -418,7 +422,7 @@ export const chartDataFallback: AstForm = {
         if (nameOf(child(node, 'name')) !== 'data') return
         const element = child(node['parent'] as Node, 'name')
         const tag = nameOf(element)
-        if (tag === undefined || !CHART_ELEMENTS.has(tag)) return
+        if (tag === undefined || !isChartElement(tag)) return
         const value = child(child(node, 'value'), 'expression')
         if (value?.type === 'LogicalExpression') inline.push({ node, value })
         const name = nameOf(value)
