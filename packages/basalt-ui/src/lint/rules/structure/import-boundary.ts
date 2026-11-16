@@ -211,8 +211,8 @@ const engineOutsideList: AstForm = {
 
 /**
  * Table engines a consumer builds a table on instead of DataTable: TanStack Table's framework-free
- * core (`createTable`), AG Grid, react-data-grid and MUI X Data Grid (`@mui/x-data-grid*`, its -pro
- * and -premium too). `@tanstack/react-table` itself stays legal for its column types
+ * core (`createTable`), AG Grid, react-data-grid, MUI X Data Grid (`@mui/x-data-grid*`, its -pro
+ * and -premium too), Material React Table and Mantine React Table. `@tanstack/react-table` itself stays legal for its column types
  * and helpers; its hook is read by name below.
  */
 const TABLE_PACKAGES: readonly string[] = [
@@ -222,6 +222,8 @@ const TABLE_PACKAGES: readonly string[] = [
   'ag-grid-enterprise',
   'react-data-grid',
   '@mui/x-data-grid*',
+  'material-react-table',
+  'mantine-react-table',
 ]
 
 /**
@@ -431,6 +433,9 @@ const FORMS: readonly AstForm[] = [
       '@mui/material',
       '@mui/joy',
       'react-aria',
+      'antd',
+      '@heroui',
+      '@nextui-org',
     ],
     'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, Mantine, Chakra, MUI, React Aria, Ark and Floating UI are not in the stack',
     'Eject the primitive with basalt-ui eject, then edit the copy',
@@ -465,7 +470,7 @@ const FORMS: readonly AstForm[] = [
   ),
   packageForm(
     'tailwind-merge',
-    ['tailwind-merge', 'tailwind-variants'],
+    ['tailwind-merge', 'tailwind-variants', 'classnames'],
     'Compose classes with cn() from basalt-ui; twMerge drops text-red-500 beside text-display',
     'A cva variant per state',
   ),
@@ -495,8 +500,11 @@ const FORMS: readonly AstForm[] = [
     'data-library',
     [
       'swr',
+      '@reduxjs/toolkit/query',
       '@apollo/client',
       'socket.io-client',
+      'reconnecting-websocket',
+      'partysocket',
       '@microsoft/fetch-event-source',
       'react-use-websocket',
       'nuqs',
