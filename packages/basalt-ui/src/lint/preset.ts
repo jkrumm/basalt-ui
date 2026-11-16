@@ -145,6 +145,11 @@ export const SHADCN_MESSAGES: Readonly<
     'no-arbitrary-values':
       '"{{className}}" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container.',
     'no-raw-colors': `"{{className}}" is no colour the theme declares. ${TOKEN_CLASSES} Otherwise app colour comes from Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling.`,
+    // One string for the four reports (a property, a dynamic object, a raw colour in a custom
+    // property, a `<style>` element). shadcn's own text sends a dynamic value to a custom property,
+    // and a share bar sized through `grow-(--g)` is still a hand-drawn mark (lint-5.6).
+    'no-inline-styles':
+      'An inline style sets a value outside the design system. A bar, column or mark sized from data is BarList from basalt-ui/cards, ui/progress, ui/meter or a chart kind, also through a CSS custom property; any other value is a class, or a theme token in CSS.',
     // One string for the unknown class and the unknown variant; `rounded-card` is surface-recipe's to report.
     'no-unknown-classes': `"{{className}}" is no class or variant this project's Tailwind knows. ${TOKEN_CLASSES} Nearest spelling: {{suggestions|none}}. A radius is rounded-ctrl or rounded-chip; a card surface is owned by Card and Inset; no class or variant is declared per app.`,
   }
