@@ -26,8 +26,15 @@
  * - `raw-heading`: a tag held in a variable is read where the variable is declared in the file
  *   (`'h2'`, a ternary of heading strings, `` `h${level}` ``); a tag passed in as a prop or built by
  *   a helper is not.
- * - `raw-control`: a `div` or `span` with `role="button"` and `onClick` reads; one that only
- *   forwards a handler through a spread does not.
+ * - `raw-control`: a `div` or `span` with `role="button"` and `onClick` reads, and so does an `<a>`
+ *   with `onClick` and no `href`; one that only forwards a handler through a spread does not, and
+ *   an `<a>` with a spread may carry its `href` there, so it passes.
+ * - `raw-heading`: an intrinsic element with a literal `role="heading"` reads (`<div role="heading"
+ *   aria-level={2}>`); a role held in a variable or a spread is not read, and a component
+ *   (`<Box role="heading">`) is left to its own definition.
+ * - `svg-data-marks`: a `<g>` that is not inside an `<svg>` in the file is a marks root too (a
+ *   marks component split into its own file); a `.map` of marks under a root a helper component
+ *   renders (`<Dots />` returning bare `<circle>`s with no `<g>`) is not read.
  */
 import type { Node, Visitor } from '../../factory'
 import { isTestFile, mergeVisitors } from '../../factory'
@@ -173,10 +180,18 @@ const isFakeButton = (node: Node): boolean => {
   return role?.split(/\s+/).includes('button') === true && attribute(node, 'onClick') !== undefined
 }
 
+/** An `<a onClick>` with no `href` and no spread (which may carry one): a button spelled as a link. */
+const isAnchorButton = (node: Node): boolean =>
+  tagOf(node) === 'a' &&
+  attribute(node, 'onClick') !== undefined &&
+  attribute(node, 'href') === undefined &&
+  !children(node, 'attributes').some((attr) => attr.type === 'JSXSpreadAttribute')
+
 /**
- * Raw `button`, `input`, `select`, `textarea` and the native `dialog`, and a `div` or `span` that
- * is a button by `role="button"` and `onClick`. A `type="file"` input that is visually hidden
- * (a `hidden` attribute, or a `sr-only` or `hidden` class) passes: it sits behind a label, and no
+ * Raw `button`, `input`, `select`, `textarea` and the native `dialog`, a `div` or `span` that
+ * is a button by `role="button"` and `onClick`, and an `<a onClick>` with no `href`. A
+ * `type="file"` input that is visually hidden (a `hidden` attribute, or a `sr-only` or `hidden`
+ * class) passes: it sits behind a label, and no
  * primitive wraps a file input. A visible file input still reports.
  */
 const rawControl = form(
@@ -187,6 +202,7 @@ const rawControl = form(
     opening((node) => {
       const tag = tagOf(node)
       if (isFakeButton(node)) return report(node, `<${tag} role="button">`)
+      if (isAnchorButton(node)) return report(node, '<a onClick> without href')
       if (tag === undefined || !RAW_CONTROLS.has(tag)) return
       if (tag === 'input' && (isCheckable(node) || isHiddenFileInput(node))) return
       report(node, `<${tag}>`)
@@ -279,6 +295,9 @@ function rawHeadingOpening(
   return (node) => {
     const tag = tagOf(node)
     if (tag !== undefined && headingTags.has(tag)) return report(node, `<${tag}> a heading tag`)
+    if (tag !== undefined && /^[a-z]/.test(tag) && attributeText(node, 'role') === 'heading') {
+      return report(node, `<${tag} role="heading">`)
+    }
     if (tag === undefined || !HEADINGS.has(tag)) return
     const group = enclosingElement(parentOf(node) as Node)
     const groupTag = group ? tagOf(child(group, 'openingElement') as Node) : undefined
@@ -507,7 +526,8 @@ const isBuildCall = (node: Node): boolean => {
  * A mark drawn per datum inside an `<svg>`: `data.map((d) => <rect … />)`. Static artwork (an icon,
  * a fixed grid) is not data-mapped and passes, and so does a mark drawn through the geometry seam.
  * One report per map call. A `<path d>` built from data (an inline `.map(...).join(' ')`, or a name
- * a declaration in the file binds to one) is a data mark too; a constant `d` is artwork.
+ * a declaration in the file binds to one) is a data mark too; a constant `d` is artwork. A `<g>`
+ * outside any `<svg>` roots the same check: the marks component of a chart split into files.
  */
 const svgDataMarks = form(
   'svg-data-marks',
@@ -536,7 +556,8 @@ const svgDataMarks = form(
         },
         JSXElement(node) {
           const open = child(node, 'openingElement')
-          if (open && tagOf(open) === 'svg') {
+          const root = open && tagOf(open)
+          if (root === 'svg' || (root === 'g' && scopes.length === 0)) {
             scopes.push({ maps: [], reported: new Set() })
             entered.add(node)
           }
