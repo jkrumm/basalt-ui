@@ -23,13 +23,15 @@
  *
  * A `#` plus digits string under a reference key (`ref`, `id`, `issue`, `number`, `ticket`, or a
  * compound such as `issueRef`, `rowId`, `issueNumber`) is an Issue reference and passes; the same
- * string under `color` or `fill` still reports.
+ * string under `color` or `fill` still reports. An anchor under a link key (`href`, `to`, `hash`,
+ * as a property or a JSX attribute: `{ href: '#add' }`, `<a href="#cafe">`) is a fragment and
+ * passes.
  *
  * Known limit: a named colour that reaches its slot through a variable or a function result is not
  * read (`const c = 'white'; ctx.fillStyle = c` reports nothing: only the slot's own literal is). A
  * short hex-alphabet fragment (`'#feed'`, `'#cafe'`) is indistinguishable from a
- * colour by syntax alone. `url(#id)` and `url('#id')` pass; an anchor or selector string of that
- * shape takes a per-line waiver with a reason.
+ * colour by syntax alone outside a link key. `url(#id)` and `url('#id')` pass; a selector string of
+ * that shape takes a per-line waiver with a reason.
  */
 import type { AstForm } from '../../rule-table'
 import { defineRules } from '../../rule-table'
@@ -48,6 +50,8 @@ const NON_TOKEN_VAR_FUNCTION =
   /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*var\(\s*--(?!vx-)[\w-]+\s*(?:,[^)]*)?\)\s*\)/i
 
 const REFERENCE_KEY = /^(?:ref|id|issue|number|ticket)$|(?:Ref|Id|Issue|Number|Ticket)$/
+
+const LINK_KEY = /^(?:href|to|hash)$/
 
 function literalIn(text: string): string | undefined {
   const fn = COLOUR_FUNCTION.exec(text)
@@ -73,6 +77,17 @@ function isReferenceValue(node: Node): boolean {
   const property = parentOf(node)
   if (property?.type !== 'Property' || property['value'] !== node) return false
   return REFERENCE_KEY.test(keyName(property) ?? '')
+}
+
+/** `{ href: '#add' }` or `<a href="#add">`: an anchor fragment under a link key. */
+function isAnchorValue(node: Node): boolean {
+  const parent = parentOf(node)
+  if (parent?.type === 'Property' && parent['value'] === node) {
+    return LINK_KEY.test(keyName(parent) ?? '')
+  }
+  if (parent?.type !== 'JSXAttribute') return false
+  const name = parent['name'] as Node
+  return name.type === 'JSXIdentifier' && LINK_KEY.test(name['name'] as string)
 }
 
 const isModuleSource = (node: Node): boolean => {
@@ -201,6 +216,7 @@ export const colourLiteralForm: AstForm = {
       if (typeof text !== 'string' || isModuleSource(node) || isSeriesColourPair(node)) return
       // A test passes a colour word as input (`{ color: 'red' }`); a hex is still a literal there.
       if (/^#\d{3,4}$/.test(text.trim()) && isReferenceValue(node)) return
+      if (/^#[\w-]+$/.test(text.trim()) && isAnchorValue(node)) return
       const found = literalIn(text) ?? (isTestFile(context) ? undefined : namedColourIn(node, text))
       if (found) report(node, found)
     },
