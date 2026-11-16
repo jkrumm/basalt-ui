@@ -35,7 +35,7 @@ export function useDetailHost<T>(
     model.setHost(host)
     // A host closes on its own terms (the page's aside, a caller's panel), so the row it showed is
     // no longer the open one.
-    if (!host.isOpen) model.releaseActive()
+    if (!host.isOpen) model.closeDetail(true)
   })
   return (
     <Sheet open={entry !== null} onOpenChange={(open) => !open && close()}>

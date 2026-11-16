@@ -96,12 +96,13 @@ export type TableModel<T> = {
   setHost(host: DetailHost | undefined): void
   /** Opens the sheet derived from the row's columns (the `table-expand` door). */
   openDetails(id: string): void
-  /** The own sheet closed: unsets the `detailState` field, when one is bound. */
-  closeDetail(): void
+  /**
+   * The own sheet closed: unsets the `detailState` field, when one is bound. `hostClosed` is a host
+   * that closed on its own: it only forgets the row the table opened without a field.
+   */
+  closeDetail(hostClosed?: boolean): void
   /** The row whose detail is open (`detail`) or that the page named (`activeRowId`); the body marks it. */
-  activeId: string | undefined
-  /** The host reports nothing open: forgets the row the table opened without a `detailState` field. */
-  releaseActive(): void
+  activeId: string | null | undefined
   /**
    * Whether each row carries the `table-expand` door: `onRowActivate` takes the tap, and a tier can
    * hide a column (priority 3, or a card `detail`), so the derived sheet needs its own way in.
@@ -407,19 +408,18 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       host.current = next
     },
     openDetails: showAuto,
-    closeDetail() {
+    closeDetail(hostClosed) {
       // `shownFor` keeps the closed id until the field reads empty, so a render that lands before
-      // the field clears cannot reopen the sheet the user just closed.
-      detailState?.clear()
-      setOpenedId(null)
-    },
-    releaseActive() {
-      // Guarded: the host calls this on every render of the body, so an unset id must not set state.
+      // the field clears cannot reopen the sheet the user just closed. A host that closed on its
+      // own leaves the field alone. Guarded: that call comes on every render of the body.
+      if (!hostClosed) detailState?.clear()
       if (openedId !== null) setOpenedId(null)
     },
     activeId:
       activation.kind === 'detail'
-        ? (detailState === undefined ? openedId : openId) || undefined
+        ? detailState === undefined
+          ? openedId
+          : openId
         : options.activeRowId,
     expandable:
       activation.kind === 'row' &&
