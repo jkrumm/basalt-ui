@@ -42,7 +42,7 @@ const show = (node: ReactElement, presentation?: ControlPresentation) =>
 
 describe('the two forms', () => {
   test('one mount each: a strip from md up, a track below it, swapped by CSS classes only', () => {
-    const { container } = show(<ViewTabs handle={handleOf()} />)
+    const { container } = show(<ViewTabs state={handleOf()} />)
     const strip = container.querySelectorAll('[data-slot="tabs"]')
     const track = container.querySelectorAll('[data-slot="segmented"]')
     expect(strip).toHaveLength(1)

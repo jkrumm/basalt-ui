@@ -115,6 +115,12 @@ function FigureRow({
   )
 }
 
+/** A query result whose `data` is an empty array: the rows it carries beyond `QueryStateLike`. */
+const hasNoRows = (phase: object): boolean => {
+  const { data } = phase as { data?: unknown }
+  return Array.isArray(data) && data.length === 0
+}
+
 /**
  * The frame every chart sits in: a header (icon, title, definition glyph, subtitle, controls, menu),
  * an inset holding the headline figure with its delta, period and verdict over the chart box, and an
@@ -149,7 +155,7 @@ function FigureRow({
  *   subtitle="last 30 days"
  *   figure={{ value: 12840, delta: { value: '+8%', polarity: 'up-good' }, period: 'vs prior' }}
  *   phase={query}
- *   chart={(box) => <Lines height={box.height} ariaLabel="Requests per day" data={rows} x={x} series={series} />}
+ *   chart={(box) => <Lines height={box.height} label="Requests per day" data={rows} x={x} series={series} />}
  * />
  */
 export function ChartCard(props: ChartCardProps): ReactElement {
@@ -157,11 +163,7 @@ export function ChartCard(props: ChartCardProps): ReactElement {
   const { phase } = props
   // A query phase measures emptiness itself: `empty` applies only when its `data` is an empty array.
   const empty =
-    typeof phase === 'object' &&
-    'isPending' in phase &&
-    !(Array.isArray(phase.data) && phase.data.length === 0)
-      ? null
-      : props.empty
+    typeof phase === 'object' && 'isPending' in phase && !hasNoRows(phase) ? null : props.empty
   const resolved = resolvePhase({ phase, empty })
   // A Suspense fallback has no chart to call, so it can only be loading.
   const effective: ResolvedPhase = chart === undefined ? { tag: 'loading', body: false } : resolved

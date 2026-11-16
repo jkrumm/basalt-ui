@@ -63,7 +63,13 @@ export type PageAction = PageButtonAction | PageTextAction
  */
 export type PageTabs<K extends string = string> =
   | ControlsSlot
-  | { handle: ControlHandle<K>; label: string }
+  | { state: ControlHandle<K>; label: string; handle?: undefined }
+  | {
+      /** @deprecated Use `state`; removed in the next minor. */
+      handle: ControlHandle<K>
+      label: string
+      state?: undefined
+    }
 
 export type PageBarProps<K extends string = string> = {
   /** Breadcrumb leaf and `h1` in a shell; the visible `h1` without one. */

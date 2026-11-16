@@ -243,12 +243,22 @@ export type CustomMarks<D> = {
   readonly build: (plot: ChartPlot<D>) => readonly unknown[]
 }
 
-export type CartesianChartProps<D> = {
+/**
+ * The accessible name of a chart, required: `label`. `ariaLabel` is the deprecated name for one minor;
+ * a chart takes exactly one of the two.
+ */
+export type ChartName =
+  | { label: string; ariaLabel?: undefined }
+  | {
+      /** @deprecated Use `label`; removed in the next minor. */ ariaLabel: string
+      label?: undefined
+    }
+
+export type CartesianChartBase<D> = {
   data: readonly D[]
   x: XConfig<D>
   y?: YConfig
   series: readonly Series<D>[]
-  ariaLabel: string
   summary?: string
   table?: boolean
   height?: number | 'fill'
@@ -263,13 +273,14 @@ export type CartesianChartProps<D> = {
   focus?: ChartFocus<D>
 }
 
+export type CartesianChartProps<D> = CartesianChartBase<D> & ChartName
+
 // ---- Sparkline and MiniBars ---------------------------------------------------------------
 
 export type SparkPoint = number | null | { at: Date | number; value: number | null }
 
-export type SparklineProps = {
+export type SparklineBase = {
   series: readonly SparkPoint[]
-  ariaLabel: string
   height: number | 'fill'
   width?: number
   form?: 'line' | 'area'
@@ -279,9 +290,12 @@ export type SparklineProps = {
   summary?: string
 }
 
-export type MiniBarsProps = Omit<SparklineProps, 'form' | 'reference'> & {
-  highlight?: number | 'last'
-}
+export type SparklineProps = SparklineBase & ChartName
+
+export type MiniBarsProps = Omit<SparklineBase, 'form' | 'reference'> &
+  ChartName & {
+    highlight?: number | 'last'
+  }
 
 // ---- ChartCard ----------------------------------------------------------------------------
 
@@ -293,15 +307,12 @@ export type ChartFigure = {
   status?: Verdict
 }
 
-/** A query result with its rows: `empty` then applies only when `data` is an empty array. */
-type ChartQueryState = QueryStateLike & { data?: unknown }
-
 export type ChartCardProps = Omit<FrameState, 'phase'> & {
   /**
    * A `Phase` or the query itself. With a query, `empty` takes effect only once `data` is an empty
    * array, so it can be passed unconditionally; with a `Phase`, `empty` applies whenever it is set.
    */
-  phase?: Phase | ChartQueryState
+  phase?: Phase | QueryStateLike
 
   figure?: ChartFigure
   /** The legend row for marks the page draws through the seam, drawn in every phase. */

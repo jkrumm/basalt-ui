@@ -7,17 +7,18 @@
  * @neverWhen the values are discrete counts per bucket (use Bars) or the chart is an inline trend (use Sparkline)
  */
 import type { ReactElement } from 'react'
-import type { CartesianChartProps, Series } from '../contract'
+import type { CartesianChartBase, ChartName, Series } from '../contract'
 import { CartesianPlot } from './cartesian'
 
 /** A series of `mark: 'line'`. */
 export type LineSeries<D> = Extract<Series<D>, { mark: 'line' }>
 
-export type LinesProps<D> = Omit<CartesianChartProps<D>, 'series' | 'marks'> & {
-  series: readonly LineSeries<D>[]
-  /** Who names the lines: `'auto'` (end labels from the wide class, the legend below it), `'legend'` or `'endLabels'`. */
-  naming?: 'auto' | 'legend' | 'endLabels'
-}
+export type LinesProps<D> = Omit<CartesianChartBase<D>, 'series' | 'marks'> &
+  ChartName & {
+    series: readonly LineSeries<D>[]
+    /** Who names the lines: `'auto'` (end labels from the wide class, the legend below it), `'legend'` or `'endLabels'`. */
+    naming?: 'auto' | 'legend' | 'endLabels'
+  }
 
 /**
  * `CartesianChart` with the series narrowed to lines: n series, an `area` fade, zones and reference
@@ -28,7 +29,7 @@ export type LinesProps<D> = Omit<CartesianChartProps<D>, 'series' | 'marks'> & {
  *
  * @example
  * <Lines
- *   ariaLabel="Sessions per day"
+ *   label="Sessions per day"
  *   data={rows}
  *   x={{ value: (d) => d.day }}
  *   series={[{ mark: 'line', key: 'sessions', label: 'Sessions', color: SERIES.sessions, y: (d) => d.sessions }]}

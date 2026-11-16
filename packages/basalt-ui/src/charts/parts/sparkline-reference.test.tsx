@@ -22,9 +22,9 @@ const refY = (node: ReactElement): number => Number(refs(node)[0]?.getAttribute(
 const yOf = (v: number, [lo, hi]: [number, number]): number =>
   INSET + (H - 2 * INSET) * (1 - (v - lo) / (hi - lo))
 
-const spark = (props: Partial<Parameters<typeof Sparkline>[0]> = {}): ReactElement => (
-  <Sparkline series={data} ariaLabel="S" height={H} {...props} />
-)
+const spark = (
+  props: Partial<Omit<Parameters<typeof Sparkline>[0], 'label' | 'ariaLabel'>> = {},
+): ReactElement => <Sparkline series={data} label="S" height={H} {...props} />
 
 describe('Sparkline reference', () => {
   test('a number reference draws one rule at y(42), inside the data domain', () => {

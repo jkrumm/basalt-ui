@@ -30,6 +30,8 @@ export type EventListProps = FrameHead &
     /** Events in display order: the list never re-sorts. */
     items: readonly EventListItem[]
     /** The body holds this many rows of height at every phase; more rows scroll. Default 5. */
+    bodyRows?: ListRows
+    /** @deprecated Use `bodyRows`; removed in the next minor. */
     rows?: ListRows
     /** Rows shown before, and added by each "Show more". Default 25. */
     pageSize?: number
@@ -78,7 +80,7 @@ function EventSkeleton({ rows }: { rows: number }): ReactElement {
 /**
  * A day-grouped feed of things that happened: a leading glyph, the actor and a sentence on line one,
  * the time, a body and chips on line two. It reads in order; a table compares rows. It holds one
- * body height at every phase and scrolls past `rows`. It never windows: it shows `pageSize` rows
+ * body height at every phase and scrolls past `bodyRows`. It never windows: it shows `pageSize` rows
  * and a "Show more" control, and warns once in development above 200 rows.
  *
  * @useWhen a card lists activity, history or an audit trail in the order it happened
@@ -92,7 +94,8 @@ function EventSkeleton({ rows }: { rows: number }): ReactElement {
  * />
  */
 export function EventList(props: EventListProps): ReactElement {
-  const { items, rows = DEFAULT_ROWS, pageSize = DEFAULT_PAGE, now, phase, empty } = props
+  const { items, pageSize = DEFAULT_PAGE, now, phase, empty } = props
+  const rows = props.bodyRows ?? props.rows ?? DEFAULT_ROWS
   const { title, subtitle, icon, info } = props
   const f = useFormat()
   const t = useMessages(lists)

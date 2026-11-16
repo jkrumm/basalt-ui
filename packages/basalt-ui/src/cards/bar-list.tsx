@@ -35,6 +35,8 @@ export type BarListProps = FrameHead &
      */
     max?: number
     /** The body holds this many rows of height at every phase; more rows scroll. Default 5. */
+    bodyRows?: ListRows
+    /** @deprecated Use `bodyRows`; removed in the next minor. */
     rows?: ListRows
     /** Formats each value. Default: the number in the provider's locale. */
     format?: (value: number) => string
@@ -126,7 +128,7 @@ function BarSkeleton({ rows }: { rows: number }): ReactElement {
 /**
  * A ranked list on one shared scale: label, a thin bar against the largest value, the value as
  * text and an optional muted second figure. Each row is a link, a button or plain text. It holds
- * one body height at every phase, scrolls past `rows`, and its loading skeleton draws the rows it
+ * one body height at every phase, scrolls past `bodyRows`, and its loading skeleton draws the rows it
  * will become. Colour belongs to a verdict, so every bar is neutral.
  *
  * @useWhen a card ranks a handful of named things by one number, or splits a total into its parts (a top-N list, a breakdown that replaces a donut)
@@ -141,7 +143,8 @@ function BarSkeleton({ rows }: { rows: number }): ReactElement {
  * />
  */
 export function BarList(props: BarListProps): ReactElement {
-  const { items, max, rows = DEFAULT_ROWS, format, phase, empty, focus } = props
+  const { items, max, format, phase, empty, focus } = props
+  const rows = props.bodyRows ?? props.rows ?? DEFAULT_ROWS
   const { title, subtitle, icon, info } = props
   const f = useFormat()
   const t = useMessages(lists)

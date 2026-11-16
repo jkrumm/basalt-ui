@@ -210,13 +210,23 @@ describe('BarList phases', () => {
 
   test('every phase keeps the one body height', () => {
     const heights = (['ready', 'loading', 'stale'] as const).map((phase) => {
-      const { container } = draw({ phase, rows: 6 })
+      const { container } = draw({ phase, bodyRows: 6 })
       const cls = container.querySelector('[data-slot="inset"]')?.className ?? ''
       cleanup()
       return cls
     })
     expect(new Set(heights).size).toBe(1)
     expect(heights[0]).toContain('h-66')
+  })
+
+  test('rows is the deprecated name of bodyRows', () => {
+    const heightOf = (props: { rows?: 6; bodyRows?: 6 }): string => {
+      const { container } = draw(props)
+      const cls = container.querySelector('[data-slot="inset"]')?.className ?? ''
+      cleanup()
+      return cls
+    }
+    expect(heightOf({ rows: 6 })).toBe(heightOf({ bodyRows: 6 }))
   })
 })
 

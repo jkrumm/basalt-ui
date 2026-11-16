@@ -38,6 +38,8 @@ import {
   toneOf,
 } from './band-fold'
 import type { Group, NamedChartState } from './band-fold'
+import { chartName } from '../chart-name'
+import type { ChartName } from '../contract'
 import { emphasis } from '../marks'
 import { rowX } from '../types'
 import type {
@@ -99,20 +101,30 @@ export type BandFold<T> = {
 
 export type BandStripProps<T, X extends ChartX = ChartX, K extends string = string> = Omit<
   CartesianChartProps<T, X>,
-  'marks' | 'series' | 'y' | 'y2' | 'zones' | 'xZones' | 'refLines' | 'focus' | 'xScale'
-> & {
-  states: readonly (BandStripSeries<T> & { key: K })[]
-  /** Which state, fill and marker each datum has. Memoize it: a new function recompiles the chart. */
-  getBand: (d: T) => BandSpan
-  fold?: BandFold<T> | undefined
-  /**
-   * The `states` key that means "not measured". A band in it is flat-filled like any state; a
-   * band in another state paints its `absentFraction` share in this state's color, and the
-   * tooltip adds this state's row. Absent stays a legended, flat state, never a
-   * hatch: it reads as "no data" by hue and by sitting at the band's right edge, not as zero.
-   */
-  absentState?: K | undefined
-}
+  | 'ariaLabel'
+  | 'marks'
+  | 'series'
+  | 'y'
+  | 'y2'
+  | 'zones'
+  | 'xZones'
+  | 'refLines'
+  | 'focus'
+  | 'xScale'
+> &
+  ChartName & {
+    states: readonly (BandStripSeries<T> & { key: K })[]
+    /** Which state, fill and marker each datum has. Memoize it: a new function recompiles the chart. */
+    getBand: (d: T) => BandSpan
+    fold?: BandFold<T> | undefined
+    /**
+     * The `states` key that means "not measured". A band in it is flat-filled like any state; a
+     * band in another state paints its `absentFraction` share in this state's color, and the
+     * tooltip adds this state's row. Absent stays a legended, flat state, never a
+     * hatch: it reads as "no data" by hue and by sitting at the band's right edge, not as zero.
+     */
+    absentState?: K | undefined
+  }
 
 /** The previous object while every field is `Object.is`-equal: a one-dependency memo key. */
 function useShallowStable<V extends Record<string, unknown>>(next: V): V {
@@ -545,7 +557,17 @@ export function BandStrip<T, X extends ChartX = ChartX, K extends string = strin
     }
   }, [tooltip, absentKey, getBand, states])
 
-  const { ariaLabel, legend, height, state: chartState, className, style, ...spec } = rest
+  const {
+    ariaLabel: legacyName,
+    label,
+    legend,
+    height,
+    state: chartState,
+    className,
+    style,
+    ...spec
+  } = rest
+  const ariaLabel = chartName({ label, ariaLabel: legacyName })
   const stable = useShallowStable({
     ...spec,
     data,

@@ -1,6 +1,6 @@
 /**
  * `ViewTabs`: the page's or section's view switch, bound to a `ControlHandle`. A tab is store state
- * like any filter, so it takes `handle` and never `value` or `onChange`: a deep link renders the tab
+ * like any filter, so it takes `state` and never `value` or `onChange`: a deep link renders the tab
  * the link names in the server HTML, and Back returns to the tab the visitor left.
  *
  * The swap between the two forms is CSS, one mount each, never a JS media query (which would paint
@@ -105,12 +105,14 @@ function NarrowForm<T extends string>({
 }
 
 function HandleViewTabs<T extends string>({
-  handle,
+  state,
+  handle: legacy,
   options,
   label = 'View',
   disabled = false,
   className,
 }: HandleProps<T>): ReactElement {
+  const handle = (state ?? legacy) as ControlHandle<T>
   const presentation = use(ControlPresentationContext)
   const labelId = useId()
   const [value, set] = handle.use()
@@ -181,7 +183,7 @@ function HandleViewTabs<T extends string>({
 }
 
 /**
- * The view switch of a page or a section, bound to a `handle`. The URL (or any lane) owns the
+ * The view switch of a page or a section, bound to a `state` handle. The URL (or any lane) owns the
  * value: a link with `?tab=history` renders History on the first server pass, and Back walks the
  * tabs when the field is `history: 'push'`. One mount per form, swapped in CSS at `md`.
  *
@@ -190,7 +192,7 @@ function HandleViewTabs<T extends string>({
  *
  * @example
  * <ViewTabs
- *   handle={overview.field.tab}
+ *   state={overview.field.tab}
  *   label="Overview view"
  *   options={[
  *     { value: 'all', label: 'All' },
