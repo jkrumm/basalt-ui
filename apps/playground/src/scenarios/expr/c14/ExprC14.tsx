@@ -3,7 +3,7 @@ import type { Delta, Phase } from 'basalt-ui/cards'
 import { ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
 import type { LegendEntry } from 'basalt-ui/charts'
 import { Page, PageBar } from 'basalt-ui/page'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import type { CSSProperties } from 'react'
 import type { ScenarioProps } from '../../shot-state'
 import { SUITE, fixtureRuns, leadPoints, rank } from './fixture'
@@ -13,20 +13,25 @@ const LEGEND: readonly LegendEntry[] = [
   {
     key: 'lead',
     label: 'Passed, leader',
-    color: { light: VX.brandFill, dark: VX.brandFill },
+    color: { light: BASALT.brandFill, dark: BASALT.brandFill },
     swatch: 'bar',
   },
   {
     key: 'passed',
     label: 'Passed',
-    color: { light: VX.inkMuted, dark: VX.inkMuted },
+    color: { light: BASALT.inkMuted, dark: BASALT.inkMuted },
     swatch: 'bar',
   },
-  { key: 'failed', label: 'Failed', color: { light: VX.line, dark: VX.line }, swatch: 'bar' },
+  {
+    key: 'failed',
+    label: 'Failed',
+    color: { light: BASALT.line, dark: BASALT.line },
+    swatch: 'bar',
+  },
   {
     key: 'todo',
     label: 'Not run yet',
-    color: { light: VX.inkFaint, dark: VX.inkFaint },
+    color: { light: BASALT.inkFaint, dark: BASALT.inkFaint },
     swatch: 'hollow',
   },
 ]
@@ -157,7 +162,7 @@ export function ExprC14Scenario({ shotState, fixture }: ScenarioProps) {
                       </div>
                       <div
                         className="relative col-span-3 h-6 @regular:h-10 rounded-chip bg-(--part)"
-                        style={{ '--part': VX.selected } as CSSProperties}
+                        style={{ '--part': BASALT.selected } as CSSProperties}
                       >
                         {row.lines.map((t) => (
                           <span key={t.at} {...t.line} />
@@ -165,7 +170,10 @@ export function ExprC14Scenario({ shotState, fixture }: ScenarioProps) {
                         <div
                           className="absolute inset-y-0 left-0 w-(--share) rounded-l-chip bg-(--part)"
                           style={
-                            { '--part': VX.line, '--share': `${doneTo * 100}%` } as CSSProperties
+                            {
+                              '--part': BASALT.line,
+                              '--share': `${doneTo * 100}%`,
+                            } as CSSProperties
                           }
                         />
                         <div
@@ -174,8 +182,8 @@ export function ExprC14Scenario({ shotState, fixture }: ScenarioProps) {
                             {
                               '--part':
                                 r.rate !== null && r.rate === leaderRate
-                                  ? VX.brandFill
-                                  : VX.inkMuted,
+                                  ? BASALT.brandFill
+                                  : BASALT.inkMuted,
                               '--share': `${axis.at(r.passed) * 100}%`,
                             } as CSSProperties
                           }

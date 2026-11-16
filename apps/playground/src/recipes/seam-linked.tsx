@@ -1,12 +1,12 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
 // #region recipe:seam-linked
 import { CartesianChart, useChartFocus } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 
 export type Sample = { day: number; version: string; value: number }
 
-const color = { light: VX.brand, dark: VX.brand }
+const color = { light: BASALT.brand, dark: BASALT.brand }
 
 export function SeamLinked({ samples }: { samples: readonly Sample[] }) {
   const focus = useChartFocus(samples, {

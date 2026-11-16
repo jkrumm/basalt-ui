@@ -40,7 +40,7 @@ One accent, used with intent. Never spend it on UI selection state (active nav r
 — that's not a data signal; the active row is an ink tint, not the accent fill (a filled surface
 keeps a deep accent + white label in BOTH schemes — a light fill can't carry white text and a
 darker one drops below 3:1 on the dark page; never trust Mantine's `autoContrast`, which resolves
-scheme-blindly via a brightness heuristic — the label is a `--vx-on-*` token, resolved in CSS).
+scheme-blindly via a brightness heuristic — the label is a `--basalt-on-*` token, resolved in CSS).
 
 ## Five principles (priority order)
 
@@ -52,7 +52,7 @@ These are settled doctrine, drawn from studied systems and stated to be promotab
    colour should have a reason"_; Datawrapper: _"grey is the most important colour in data
    visualization."_
 2. **Neutral by default.** A single value, a single-series sparkline, one stat tile → neutral
-   (`VX.line`: grey on light, near-white on dark). The label says what it is; the colour says
+   (`BASALT.line`: grey on light, near-white on dark). The label says what it is; the colour says
    nothing, on purpose.
 3. **One identity, reused everywhere.** A small, harmonious accent palette from one designed source,
    reused across every page. Accents are spent sparingly. Never raw Material/AntD/Tailwind
@@ -65,37 +65,37 @@ These are settled doctrine, drawn from studied systems and stated to be promotab
 
 ## Token architecture (three tiers)
 
-Three tiers, matching the W3C Design Tokens model. The structure is the law; basalt's `--vx-*`
+Three tiers, matching the W3C Design Tokens model. The structure is the law; basalt's `--basalt-*`
 prefix is the framework instantiation.
 
-| Tier          | What                 | Where (basalt)                                              | Example                             |
-| ------------- | -------------------- | ----------------------------------------------------------- | ----------------------------------- |
-| **Primitive** | Raw designed hues    | palette data (`BP`, `p()`)                                  | a designed hue stop                 |
-| **Semantic**  | Intent-bearing pairs | `STATUS`/`SEMANTIC`/`NEUTRAL`/`SURFACE` → `--vx-*` → `VX.*` | `VX.good`, `VX.line`, `VX.card`     |
-| **Component** | Element-specific     | Mantine theme + chart primitives                            | `ChartCard`, Mantine `color="blue"` |
+| Tier          | What                 | Where (basalt)                                                      | Example                                     |
+| ------------- | -------------------- | ------------------------------------------------------------------- | ------------------------------------------- |
+| **Primitive** | Raw designed hues    | palette data (`BP`, `p()`)                                          | a designed hue stop                         |
+| **Semantic**  | Intent-bearing pairs | `STATUS`/`SEMANTIC`/`NEUTRAL`/`SURFACE` → `--basalt-*` → `BASALT.*` | `BASALT.good`, `BASALT.line`, `BASALT.card` |
+| **Component** | Element-specific     | Mantine theme + chart primitives                                    | `ChartCard`, Mantine `color="blue"`         |
 
 **Flow** — three layers, strictly separated:
 
-Palette data (pure `{light,dark}` pairs, no React) → `buildPaletteCss()` emits `--vx-*` vars → `VX.*` refs.
+Palette data (pure `{light,dark}` pairs, no React) → `buildPaletteCss()` emits `--basalt-*` vars → `BASALT.*` refs.
 
-Because the tokens are CSS variables, `VX.*` works identically in components **and** non-component
+Because the tokens are CSS variables, `BASALT.*` works identically in components **and** non-component
 files (constants, formulas) — no hook required. The UI-chrome theme (Mantine) is reskinned from the
 **same** palette data via a `cssVariablesResolver` that binds Mantine's surface/border/dimmed
-variables to the same `--vx-*` the charts use, so chrome and charts share one scheme-reactive
+variables to the same `--basalt-*` the charts use, so chrome and charts share one scheme-reactive
 identity. See `MANTINE-THEMING.md` for that wiring.
 
 ## When a hue is earned
 
-Spend a colour only for one of these. Otherwise the mark is neutral (`VX.line`).
+Spend a colour only for one of these. Otherwise the mark is neutral (`BASALT.line`).
 
 | Reason                     | Example                                            | Treatment                                              |
 | -------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
 | **Trend**                  | Hero-card up/down, momentum arrow                  | trend-up / trend-down (direction, not metric), as text |
-| **Signal / status**        | Zone bands, thresholds, good/warn/bad              | `VX.good` / `VX.warn` / `VX.bad`                       |
+| **Signal / status**        | Zone bands, thresholds, good/warn/bad              | `BASALT.good` / `BASALT.warn` / `BASALT.bad`           |
 | **Categorical separation** | Stages, intensity ramp, multi-toggle (2+ series)   | per-series accent (from the consumer's series map)     |
-| _none of the above_        | Single sparkline, one stat tile, single-metric bar | **neutral** `VX.line`                                  |
+| _none of the above_        | Single sparkline, one stat tile, single-metric bar | **neutral** `BASALT.line`                              |
 
-Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line`.
+Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : BASALT.line`.
 
 ## Light / dark, opacity, and reactivity
 
@@ -104,9 +104,9 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
   palette data.
 - **Opacity is always `alpha(token, a)`** = `color-mix(in srgb, token a%, transparent)` — never
   `rgba()`. `rgba()` freezes a literal colour and breaks per-scheme resolution.
-- **Reactivity is pure CSS.** The `--vx-*` variables are redeclared under the light/dark selector,
+- **Reactivity is pure CSS.** The `--basalt-*` variables are redeclared under the light/dark selector,
   so toggling the colour scheme restyles every chart and surface with **no React re-render**. Read
-  `VX.*` (var refs) directly. Never branch on colour scheme in JS; never read `localStorage` theme.
+  `BASALT.*` (var refs) directly. Never branch on colour scheme in JS; never read `localStorage` theme.
 
 ## Layout, elevation, shapes
 
@@ -123,7 +123,7 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
 
   `Card`/`Paper` default to the `shadow-card` token (a low-opacity shadow with the 1px ring baked
   into the shadow itself, no `border` property) — depth comes from that whisper shadow, not a bare
-  hairline. There **is** a card-shadow token (`--vx-shadow-card`); reach for a plain Mantine
+  hairline. There **is** a card-shadow token (`--basalt-shadow-card`); reach for a plain Mantine
   `shadow` prop only for a genuinely one-off floating surface outside the standard card system.
 
 - **Tight radii.** Small radii read precise, not soft; nested surfaces step by at least 3 px. Owned in
@@ -135,14 +135,14 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : VX.line
   and meter figures and body text all use `--basalt-font-numeral` (default
   `var(--basalt-font-sans)`) with `font-variant-numeric: lining-nums`; `tabular-nums` stays in
   table columns and axis ticks, where alignment is the job. The heading face keeps lining figures
-  and no slashed zero. The type ladder itself is defined once in `src/tokens/index.ts` (`VX.text.*` / `--vx-text-*`) — no font-size literals at call sites.
+  and no slashed zero. The type ladder itself is defined once in `src/tokens/index.ts` (`BASALT.text.*` / `--basalt-text-*`) — no font-size literals at call sites.
 - **Responsive is three independent axes, not one breakpoint.** (1) **Size class** — the viewport,
   `compact` < 840 / `medium` < 1200 / `expanded` (`SIZE_CLASSES`); **shell chrome only** (bottom bar,
   rail, sidebar, aside docking); `theme.breakpoints` derives from it. (2) **Container class** — a
   component's own inline size (`CONTAINER_CLASSES`) via `@container`; card chrome and chart tiers
   never read the viewport. A container name is a SHARED boundary, not a per-component scope:
   `StatGroup` and `WidgetGrid` both declare `basalt-grid`, and a query resolves against the nearest.
-  (3) **Pointer tier** — modality, not width: `--vx-hit` 24px (WCAG 2.5.8), 44px under `(pointer:
+  (3) **Pointer tier** — modality, not width: `--basalt-hit` 24px (WCAG 2.5.8), 44px under `(pointer:
   coarse)` (2.5.5); hover gates on `(hover: hover)`. A narrow desktop is not a phone.
 
 ## Scales (decided values)
@@ -194,7 +194,7 @@ config-first props. When to extract one, stay bespoke or add a colour: `docs/V2-
   the chart for the data relationship, then apply the minimum colour.
 - **Area gradients.** A soft single-hue vertical gradient under a line — one `AreaGradient`
   primitive emitting a `<linearGradient>` whose stops are `color-mix` of a CSS-var colour, with
-  global strength knobs (`--vx-area-top` / `--vx-area-bottom`). Default the fill **on** for plain
+  global strength knobs (`--basalt-area-top` / `--basalt-area-bottom`). Default the fill **on** for plain
   metric lines and **off** when the chart already carries zone/threshold fills (avoid double-fill
   haze). Keep stacked-area bands **opaque** — fading them leaks lower bands and hurts readability.
 - **Signal-only colour, sans numbers** (Coinbase): up/down deltas are text colour only, never a fill;
@@ -211,7 +211,7 @@ it to `buildPaletteCss({ series })` (`BasaltProvider`'s `paletteOptions`).
 
 `buildPaletteCss()` with no options already emits **every framework var** (status scale, semantic
 solids, neutral line/axis/grid/tooltip chrome, legend text, surface ramp). There is **no built-in
-`VX.series`** — the framework deliberately doesn't ship a domain dictionary. A consumer rebuilds its
+`BASALT.series`** — the framework deliberately doesn't ship a domain dictionary. A consumer rebuilds its
 series map in one guard-exempt file and feeds it through `defineSeries` / `groupTokens` /
 `paletteOptions`.
 

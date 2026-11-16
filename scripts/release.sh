@@ -205,7 +205,7 @@ ci_green "$BRANCH" || die "CI is not green on the head being released (reason ab
 # run — so the dry run below cannot exercise it and a bad row would only surface in the published
 # tarball. `--check` runs the same validation here, before anything is dispatched: every area file
 # parses strictly, and the surface-diff gate finds no removed or renamed public symbol, subpath or
-# `--vx-*` name that no row names.
+# `--basalt-*` name that no row names.
 bun "$PACKAGE_PATH/scripts/release-migrating.ts" --check ||
   die "migration ledger check failed (reason above) — fix migrations/areas/*.json (add the row for the removed or renamed name), then release."
 

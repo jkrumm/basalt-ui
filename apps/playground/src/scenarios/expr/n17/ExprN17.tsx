@@ -5,7 +5,7 @@ import { useFormat } from 'basalt-ui'
 import { BarList } from 'basalt-ui/cards'
 import { CardGrid } from 'basalt-ui/page'
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { MEM_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
 import { CORES, LIMIT, SWAP_GB, TOTAL_GB, hostMemory } from './fixture'
@@ -134,8 +134,8 @@ export function ExprN17Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                     dx: (l) => l.dx,
                     dy: (l) => l.dy,
                     anchor: (l) => l.textAnchor,
-                    fill: plot.focused === null ? VX.ink : VX.inkFaint,
-                    fontSize: VX.text.micro,
+                    fill: plot.focused === null ? BASALT.ink : BASALT.inkFaint,
+                    fontSize: BASALT.text.micro,
                   }),
                 ]
               })}

@@ -5,7 +5,7 @@ import { rect } from '@tanstack/charts/rect'
 import { text } from '@tanstack/charts/text'
 import { createFormat } from 'basalt-ui'
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
-import { VX, alpha } from 'basalt-ui/tokens'
+import { BASALT, alpha } from 'basalt-ui/tokens'
 import { Card } from 'basalt-ui/ui/card'
 import {
   Table,
@@ -158,7 +158,7 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                     axis: 'x',
                     from: parting.from,
                     to: parting.to,
-                    fill: alpha(VX.ink, 0.06),
+                    fill: alpha(BASALT.ink, 0.06),
                   },
                 ]
               : []
@@ -171,7 +171,7 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                 x: (d: Hour) => d.t,
                 y1: (d: Hour) => d.p10,
                 y2: (d: Hour) => d.p90,
-                fill: alpha(VX.ink, 0.1),
+                fill: alpha(BASALT.ink, 0.1),
               }),
             ]
             // cycle-expression-5: the kit dims no series per datum, so the models a table row does not point at are veiled with a card-coloured line over each.
@@ -182,7 +182,7 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                   lineY(plot.data, {
                     x: (d: Hour) => d.t,
                     y: (d: Hour) => d.speed[m.key],
-                    stroke: VX.card,
+                    stroke: BASALT.card,
                     strokeWidth: 3,
                     strokeOpacity: 0.7,
                   }),
@@ -198,7 +198,7 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                   x2: (d: Hour) => new Date(d.t.getTime() + 1_200_000),
                   y1: () => Math.min(...speeds),
                   y2: () => Math.max(...speeds),
-                  fill: alpha(VX.ink, 0.55),
+                  fill: alpha(BASALT.ink, 0.55),
                 }),
               )
             }
@@ -209,8 +209,8 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                 dot(MODELS, {
                   x: () => at.t,
                   y: (m: (typeof MODELS)[number]) => at.speed[m.key],
-                  r: VX.dotR + 1,
-                  fill: VX.ink,
+                  r: BASALT.dotR + 1,
+                  fill: BASALT.ink,
                 }),
               )
             }
@@ -245,8 +245,8 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                   dx: (l) => l.dx,
                   dy: (l) => l.dy,
                   anchor: (l) => l.textAnchor,
-                  fill: VX.ink,
-                  fontSize: VX.text.micro,
+                  fill: BASALT.ink,
+                  fontSize: BASALT.text.micro,
                 }),
               )
             }

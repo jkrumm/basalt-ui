@@ -1,7 +1,7 @@
 import { BarList, DataPanel } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, useChartFocus, type LegendEntry } from 'basalt-ui/charts'
 import { useFormat } from 'basalt-ui'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 import { text } from '@tanstack/charts/text'
 import { useEffect, type ComponentProps } from 'react'
@@ -23,9 +23,9 @@ type Phase = NonNullable<ComponentProps<typeof ChartCard>['phase']>
 
 const DAY_FORMAT: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: undefined }
 
-const NEUTRAL = { light: VX.inkFaint, dark: VX.inkFaint }
-const INK = { light: VX.ink, dark: VX.ink }
-const ACCENT = { light: VX.brand, dark: VX.brand }
+const NEUTRAL = { light: BASALT.inkFaint, dark: BASALT.inkFaint }
+const INK = { light: BASALT.ink, dark: BASALT.ink }
+const ACCENT = { light: BASALT.brand, dark: BASALT.brand }
 
 const EMPTY = {
   cause: 'No alerts were triaged in the last 30 days. Check that the SIEM export is connected.',
@@ -207,16 +207,16 @@ export function ExprC13Scenario({ shotState, fixture }: ScenarioProps) {
                       y: (d: Day) => -d.escalated,
                       text: dayText,
                       dy: 12,
-                      fontSize: VX.text.nano,
-                      fill: VX.ink,
+                      fontSize: BASALT.text.nano,
+                      fill: BASALT.ink,
                     }),
                     text(rows, {
                       x: (d: Day) => d.date,
                       y: (d: Day) => -d.escalated,
                       text: (d: Day) => d.escalated,
                       dy: 24,
-                      fontSize: VX.text.nano,
-                      fill: VX.ink,
+                      fontSize: BASALT.text.nano,
+                      fill: BASALT.ink,
                     }),
                   ]
                 })}

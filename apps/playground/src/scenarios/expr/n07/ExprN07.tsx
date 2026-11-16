@@ -4,7 +4,7 @@ import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui
 import type { ChartFocus } from 'basalt-ui/charts'
 import { DataPanel } from 'basalt-ui/cards'
 import type { Empty, Phase } from 'basalt-ui/cards'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 import { Status } from 'basalt-ui/ui/status'
 import { NIGHT_SERIES } from '../../../demo/series'
@@ -216,8 +216,8 @@ export function ExprN07Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                     dx: (l) => l.dx,
                     dy: (l) => l.dy,
                     anchor: (l) => l.textAnchor,
-                    fill: VX.ink,
-                    fontSize: VX.text.micro,
+                    fill: BASALT.ink,
+                    fontSize: BASALT.text.micro,
                   }),
                 ]
               })}

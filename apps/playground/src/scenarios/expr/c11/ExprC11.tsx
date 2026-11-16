@@ -2,7 +2,7 @@ import { text } from '@tanstack/charts/text'
 import { useFormat } from 'basalt-ui'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { CardGrid, Page, PageBar } from 'basalt-ui/page'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { Slider } from 'basalt-ui/ui/slider'
 import { useId, useMemo, useState } from 'react'
 import type { ScenarioProps } from '../../shot-state'
@@ -20,8 +20,8 @@ import {
   type Bin,
 } from './fixture'
 
-const KEPT = { light: VX.brand, dark: VX.brand }
-const CUT = { light: VX.inkFaint, dark: VX.inkMuted }
+const KEPT = { light: BASALT.brand, dark: BASALT.brand }
+const CUT = { light: BASALT.inkFaint, dark: BASALT.inkMuted }
 
 const band = (b: Bin): string => `${b.lo.toFixed(2)} to ${b.hi.toFixed(2)}`
 /** A bar is drawn over its whole band, so it is centred on the band's middle. */
@@ -211,17 +211,17 @@ export function ExprC11Scenario({ shotState, fixture }: ScenarioProps) {
                     anchor: 'end',
                     dx: 8,
                     dy: -26,
-                    fontSize: VX.text.nano,
-                    fill: VX.ink,
+                    fontSize: BASALT.text.nano,
+                    fill: BASALT.ink,
                   }),
                   text([densest], {
                     x: mid,
                     y: (b: Bin) => Math.min(b.count, top),
                     text: (b: Bin) => format.number(b.count),
                     dy: clipAt === null ? -8 : 10,
-                    fontSize: VX.text.nano,
+                    fontSize: BASALT.text.nano,
                     fontWeight: 600,
-                    fill: clipAt !== null && isKept(densest) ? VX.onBrand : VX.ink,
+                    fill: clipAt !== null && isKept(densest) ? BASALT.onBrand : BASALT.ink,
                   }),
                 ])}
                 focus={focus}

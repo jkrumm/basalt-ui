@@ -12,8 +12,8 @@ import { Lines } from 'basalt-ui/charts'
 export type Bar = { day: Date; close: number; momentum: number }
 export const GROUP = 'momentum' // one cursor group for both panes
 export const GUTTER = 56 // one y gutter in px for both panes
-const blue = { light: 'var(--vx-info)', dark: 'var(--vx-info)' }
-const amber = { light: 'var(--vx-warn)', dark: 'var(--vx-warn)' }
+const blue = { light: 'var(--basalt-info)', dark: 'var(--basalt-info)' }
+const amber = { light: 'var(--basalt-warn)', dark: 'var(--basalt-warn)' }
 const x = { value: (d: Bar) => d.day }
 export function TwoPane({ bars }: { bars: Bar[] }) {
   return (

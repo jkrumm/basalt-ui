@@ -2,7 +2,7 @@ import { BarList, StatCell, StatGroup } from 'basalt-ui/cards'
 import { Bars, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { useFormat } from 'basalt-ui'
 import { CardGrid, PageBar } from 'basalt-ui/page'
-import { VX, alpha } from 'basalt-ui/tokens'
+import { BASALT, alpha } from 'basalt-ui/tokens'
 import type { ComponentProps } from 'react'
 import type { ScenarioProps } from '../../shot-state'
 import { CURRENCY, MODELS, pickFixture } from './fixture'
@@ -10,7 +10,7 @@ import type { Day, ModelKey, SpendFixture } from './fixture'
 
 type Frame = Pick<ComponentProps<typeof ChartCard>, 'phase' | 'empty'>
 
-const INK_STEPS = [alpha(VX.ink, 0.7), alpha(VX.ink, 0.45), alpha(VX.ink, 0.25)]
+const INK_STEPS = [alpha(BASALT.ink, 0.7), alpha(BASALT.ink, 0.45), alpha(BASALT.ink, 0.25)]
 
 function frameFor(shotState: ScenarioProps['shotState'], range: string): Frame {
   if (shotState === 'loading') return { phase: 'loading' }
@@ -90,7 +90,7 @@ export function ExprC12Scenario({ shotState, fixture }: ScenarioProps) {
 
   const colorOf = (key: ModelKey) => {
     const rank = s.byModel.findIndex((m) => m.key === key)
-    const token = rank === 0 ? VX.brand : (INK_STEPS[rank - 1] ?? VX.inkFaint)
+    const token = rank === 0 ? BASALT.brand : (INK_STEPS[rank - 1] ?? BASALT.inkFaint)
     return { light: token, dark: token }
   }
 
@@ -188,7 +188,7 @@ export function ExprC12Scenario({ shotState, fixture }: ScenarioProps) {
               refLines={[
                 {
                   value: f.weeklyBudget / 7,
-                  color: { light: VX.ink, dark: VX.ink },
+                  color: { light: BASALT.ink, dark: BASALT.ink },
                   dashed: true,
                 },
               ]}

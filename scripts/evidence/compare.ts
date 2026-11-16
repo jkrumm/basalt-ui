@@ -85,7 +85,7 @@ function resolveAnchor({ css, select }: ResolveArgs): Element | null {
   return root && select ? root.querySelector(select) : root
 }
 
-/** Structural metrics of one element. Roles are `--vx-*` names when a token's colour matches exactly. */
+/** Structural metrics of one element. Roles are `--basalt-*` names when a token's colour matches exactly. */
 function measure(node: Node, rowLike: boolean): Metrics {
   const out: Metrics = {}
   if (!(node instanceof Element)) return out
@@ -105,7 +105,7 @@ function measure(node: Node, rowLike: boolean): Metrics {
   const collect = (rules: CSSRuleList): void => {
     for (const rule of Array.from(rules)) {
       if (rule instanceof CSSStyleRule) {
-        for (const name of Array.from(rule.style)) if (name.startsWith('--vx-')) names.add(name)
+        for (const name of Array.from(rule.style)) if (name.startsWith('--basalt-')) names.add(name)
       } else if (rule instanceof CSSGroupingRule) collect(rule.cssRules)
     }
   }

@@ -3,7 +3,7 @@ import type { Format } from 'basalt-ui'
 import type { Empty, Phase } from 'basalt-ui/cards'
 import { text } from '@tanstack/charts/text'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { Facts, Page, PageBar } from 'basalt-ui/page'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { SCHEDULE_SERIES } from '../../../demo/series'
@@ -171,8 +171,8 @@ export function ExprN09Scenario({ shotState, fixture }: ScenarioProps) {
                   text: (l: Label) => l.text,
                   anchor: (l: Label) => l.anchor,
                   dx: (l: Label) => l.dx,
-                  fill: VX.ink,
-                  fontSize: VX.text.xs,
+                  fill: BASALT.ink,
+                  fontSize: BASALT.text.xs,
                 }),
               ])}
               x={{

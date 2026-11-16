@@ -38,8 +38,8 @@ const DATA: readonly Day[] = Array.from({ length: DAYS }, (_, i) => {
 })
 
 const pair = (n: number): { light: string; dark: string } => ({
-  light: `var(--vx-chart-${n})`,
-  dark: `var(--vx-chart-${n})`,
+  light: `var(--basalt-chart-${n})`,
+  dark: `var(--basalt-chart-${n})`,
 })
 const x = { value: (d: Day): Date => d.t }
 const kg = (v: number): string => `${v.toFixed(1)} kg`
@@ -128,7 +128,7 @@ const loadChart = (
         y: (d) => d.lift,
         axis: 'right',
         format: (v) => `${v} kg`,
-        getMarker: () => ({ color: 'var(--vx-chart-3)' }),
+        getMarker: () => ({ color: 'var(--basalt-chart-3)' }),
       },
     ]}
     y={{ domain: ([, hi]) => [0, Math.ceil((hi * 1.25) / 10) * 10], gutter: 44 }}
@@ -204,7 +204,7 @@ const railed = (
           x2: (d: Day) => new Date(d.t.getTime() + 43_200_000),
           y1: () => y1,
           y2: () => y2,
-          fill: 'var(--vx-warn)',
+          fill: 'var(--basalt-warn)',
         }),
       ]
     })}

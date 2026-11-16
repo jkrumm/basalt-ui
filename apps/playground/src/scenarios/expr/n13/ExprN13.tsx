@@ -5,15 +5,15 @@ import { StatCard } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, Sparkline, useChartFocus } from 'basalt-ui/charts'
 import { Page, PageBar, PageSummary, Section } from 'basalt-ui/page'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import type { ScenarioProps } from '../../shot-state'
 import { isFixtureName, loadRows, MONTHS } from './fixture'
 import type { Row } from './fixture'
 
 const CURRENCY = 'EUR'
-const GREW = { light: VX.bad, dark: VX.bad }
-const MINOR = { light: VX.inkMuted, dark: VX.inkMuted }
-const FELL = { light: VX.good, dark: VX.good }
+const GREW = { light: BASALT.bad, dark: BASALT.bad }
+const MINOR = { light: BASALT.inkMuted, dark: BASALT.inkMuted }
+const FELL = { light: BASALT.good, dark: BASALT.good }
 /** A rise under this share of the largest is drawn neutral: the red marks the charges that matter. */
 const MINOR_SHARE = 0.2
 const FLAT_DOMAIN: [number, number] = [-10, 50]
@@ -221,8 +221,8 @@ export function ExprN13Scenario({ shotState, fixture }: ScenarioProps) {
                         text: (r) => signed(r.change),
                         anchor: 'start',
                         dy: -6,
-                        fill: VX.ink,
-                        fontSize: VX.text.micro,
+                        fill: BASALT.ink,
+                        fontSize: BASALT.text.micro,
                       },
                     ),
                     text(
@@ -233,8 +233,8 @@ export function ExprN13Scenario({ shotState, fixture }: ScenarioProps) {
                         text: (r) => signed(r.change),
                         anchor: 'end',
                         dy: -6,
-                        fill: VX.ink,
-                        fontSize: VX.text.micro,
+                        fill: BASALT.ink,
+                        fontSize: BASALT.text.micro,
                       },
                     ),
                   ])}

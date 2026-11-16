@@ -101,8 +101,8 @@ describe('subpath export coverage', () => {
 // exemption backed by that rule's LIVE registration in the repo-local `.oxlintrc.json`. It is
 // deliberately registered repo-local ONLY (never the shipped consumer preset): it protects two
 // things — layering (tokens is pure data that `cssVariablesResolver` reads to bind Mantine's
-// surfaces to the same `--vx-*` vars charts reads — an `@mantine/*` import in either would cycle
-// back through the theme layer or let a chart bypass `--vx-*` and fork chrome/charts apart) and
+// surfaces to the same `--basalt-*` vars charts reads — an `@mantine/*` import in either would cycle
+// back through the theme layer or let a chart bypass `--basalt-*` and fork chrome/charts apart) and
 // packaging (`./charts`/`./tokens` resolve and render with no `@mantine/*` installed, CI-tested via
 // `scripts/pack-test.sh` + `scripts/check-dist-layering.mjs`). The LAYER is Mantine-free — the
 // FRAMEWORK is not (`.` requires Mantine as a non-optional peer). Both are a basalt-internal

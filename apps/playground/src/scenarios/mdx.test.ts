@@ -57,7 +57,7 @@ const page = () =>
   render(
     createElement(
       'div',
-      { className: 'vx-prose' },
+      { className: 'basalt-prose' },
       createElement(Content, { components: mdxComponents }),
     ),
   ).container

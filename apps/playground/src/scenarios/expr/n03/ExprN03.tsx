@@ -3,7 +3,7 @@ import { createFormat } from 'basalt-ui'
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
 import type { ChartPlot, Series } from 'basalt-ui/charts'
 import { CardGrid, PageBar } from 'basalt-ui/page'
-import { VX, alpha } from 'basalt-ui/tokens'
+import { BASALT, alpha } from 'basalt-ui/tokens'
 import type { ReactElement } from 'react'
 import { LOAD_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
@@ -50,8 +50,8 @@ function noteMarks<D>(plot: ChartPlot<D>, notes: readonly Note[], bands: number)
       dx: (l) => l.dx,
       dy: (l) => l.dy,
       anchor: (l) => l.textAnchor,
-      fill: VX.ink,
-      fontSize: VX.text.micro,
+      fill: BASALT.ink,
+      fontSize: BASALT.text.micro,
     }),
   ]
 }
@@ -264,7 +264,7 @@ export function ExprN03Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                   from: weeks[0]?.label ?? '',
                   to: lastKey,
                   y: BAND,
-                  fill: alpha(VX.ink, 0.06),
+                  fill: alpha(BASALT.ink, 0.06),
                 },
               ]}
               refLines={[

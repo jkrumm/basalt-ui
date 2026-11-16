@@ -4,7 +4,7 @@ export const LEGEND = [
   {
     key: 'deploy',
     label: 'Deploy window',
-    color: { light: 'var(--vx-info)', dark: 'var(--vx-info)' },
+    color: { light: 'var(--basalt-info)', dark: 'var(--basalt-info)' },
   },
 ] as const
 

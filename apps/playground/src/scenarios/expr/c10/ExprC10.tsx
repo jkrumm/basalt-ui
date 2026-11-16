@@ -2,7 +2,7 @@ import { ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { DataPanel, StatCell, StatGroup } from 'basalt-ui/cards'
 import type { DataPanelProps } from 'basalt-ui/cards'
 import { Page, PageBar } from 'basalt-ui/page'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 import { Status } from 'basalt-ui/ui/status'
 import type { ScenarioProps } from '../../shot-state'
@@ -29,9 +29,9 @@ const reachLine = (r: Reach): string => (r.hop === null ? 'out of reach' : hopWo
 const pair = (color: string) => ({ light: color, dark: color })
 
 const LEGEND = [
-  { key: 'origin', label: 'Leaked key', color: pair(VX.ink), swatch: 'dot' },
-  { key: 'affected', label: 'Affected', color: pair(VX.bad), swatch: 'dot' },
-  { key: 'reachable', label: 'Reachable', color: pair(VX.inkMuted), swatch: 'dot' },
+  { key: 'origin', label: 'Leaked key', color: pair(BASALT.ink), swatch: 'dot' },
+  { key: 'affected', label: 'Affected', color: pair(BASALT.bad), swatch: 'dot' },
+  { key: 'reachable', label: 'Reachable', color: pair(BASALT.inkMuted), swatch: 'dot' },
 ] as const
 
 export function ExprC10Scenario({ shotState, fixture }: ScenarioProps) {
