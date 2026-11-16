@@ -105,6 +105,9 @@
   width: var(--vx-ctl-h);
   height: var(--vx-ctl-h);
 }
+@utility min-h-ctl {
+  min-height: var(--vx-ctl-h);
+}
 @utility min-h-row {
   min-height: var(--vx-row-h);
 }

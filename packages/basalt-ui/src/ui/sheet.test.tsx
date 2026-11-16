@@ -38,7 +38,7 @@ describe('sheet module', () => {
     }
   })
 
-  test('placement picks the table: bottom caps the height, auto carries both', () => {
+  test('placement picks the table: bottom caps the height, auto follows the width', () => {
     render(
       <Sheet defaultOpen placement="bottom">
         <SheetContent title="Edit">Form</SheetContent>
@@ -47,15 +47,31 @@ describe('sheet module', () => {
     expect(document.querySelector('[data-slot="sheet-content"]')?.className).toContain(
       'max-h-[min(72dvh,560px)]',
     )
-    cleanup()
-    render(
-      <Sheet defaultOpen>
-        <SheetContent title="Edit">Form</SheetContent>
-      </Sheet>,
-    )
-    const auto = document.querySelector('[data-slot="sheet-content"]')?.className ?? ''
-    expect(auto).toContain('max-h-[min(72dvh,560px)]')
-    expect(auto).toContain('md:w-90')
+    const original = window.matchMedia
+    const classesAt = (matches: boolean): string => {
+      cleanup()
+      window.matchMedia = ((query: string) => ({
+        matches,
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      })) as unknown as typeof window.matchMedia
+      render(
+        <Sheet defaultOpen>
+          <SheetContent title="Edit">Form</SheetContent>
+        </Sheet>,
+      )
+      return document.querySelector('[data-slot="sheet-content"]')?.className ?? ''
+    }
+    try {
+      const narrow = classesAt(false)
+      expect(narrow).toContain('max-h-[min(72dvh,560px)]')
+      const wide = classesAt(true)
+      expect(wide).toContain('w-90')
+      expect(narrow + wide).not.toContain('md:')
+    } finally {
+      window.matchMedia = original
+    }
   })
 
   test('the corner close is named by the sheet.close message and an override replaces it', () => {

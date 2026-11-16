@@ -45,7 +45,7 @@ export const comboboxInputVariants = cva(
  * comboboxContentVariants()
  */
 export const comboboxContentVariants = cva(
-  'max-h-(--available-height) min-w-(--anchor-width) overflow-y-auto rounded-ctrl border border-border bg-popover p-1 text-popover-foreground shadow-overlay outline-none',
+  'max-h-(--available-height) min-w-(--anchor-width) overflow-y-auto rounded-ctrl border border-border bg-popover p-1 shadow-overlay outline-none',
 )
 
 /**
@@ -122,7 +122,7 @@ export const autocompleteInputVariants = cva(
  * autocompleteContentVariants()
  */
 export const autocompleteContentVariants = cva(
-  'max-h-(--available-height) min-w-(--anchor-width) overflow-y-auto rounded-ctrl border border-border bg-popover p-1 text-popover-foreground shadow-overlay outline-none',
+  'max-h-(--available-height) min-w-(--anchor-width) overflow-y-auto rounded-ctrl border border-border bg-popover p-1 shadow-overlay outline-none',
 )
 
 /**

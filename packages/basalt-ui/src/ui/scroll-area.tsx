@@ -13,7 +13,7 @@ import { cn } from '../core/cn'
  * scrollAreaVariants({ orientation: 'horizontal' })
  */
 export const scrollAreaVariants = cva(
-  'relative min-h-0 min-w-0 rounded-sm focus-ring [scrollbar-color:var(--vx-line)_transparent] [scrollbar-width:thin]',
+  'relative min-h-0 min-w-0 rounded-chip focus-ring [scrollbar-color:var(--vx-line)_transparent] [scrollbar-width:thin]',
   {
     variants: {
       orientation: {

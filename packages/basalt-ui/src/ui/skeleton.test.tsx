@@ -73,7 +73,7 @@ describe('Spinner', () => {
   test('is one line high and turns only when motion is allowed', () => {
     const { container } = render(<Spinner />)
     const el = container.firstElementChild as HTMLElement
-    expect(el.className).toContain('w-lh')
+    expect(el.className).toContain('aspect-square')
     expect(el.className).toContain('motion-safe:[&>svg]:animate-spin')
     expect(el.className).not.toMatch(/(^| )animate-/)
   })
