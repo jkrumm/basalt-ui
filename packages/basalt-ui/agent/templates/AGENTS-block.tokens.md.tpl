@@ -10,6 +10,6 @@ Placed by `basalt-ui init`, refreshed by `basalt-ui sync` (`--check` gates drift
 
 **Before guessing a token**, read `node_modules/basalt-ui/docs/<name>.md` (`basalt-ui doctor` prints where it is installed).
 
-**Run the local bin** (`./node_modules/.bin/basalt-ui` or a package script), never `bunx`; `init` is the one exception. Run the repo gate before reporting done.
+**Run the local bin** (`./node_modules/.bin/basalt-ui` or a package script), never `bunx`, `init` included: install `basalt-ui` first, then run `init` once from the local bin. Run the repo gate before reporting done.
 
 <!-- basalt:end -->
