@@ -26,3 +26,11 @@ export function Plot({ width }) {
 }
 export const s = (window.visualViewport?.height ?? 0) < 640
 export const t = (box?.width ?? 0) < 640
+export const u = matchMedia('(prefers-reduced-transparency: reduce)')
+export const ua = () => console.log(navigator.userAgent)
+export const lang = navigator.language.includes('de')
+export const ext = () => /bot/i.test(text)
+import { isIOS } from 'react-device-detect'
+import { isMobile } from './local-flags'
+export const own = isMobile || isIOS
+export const key = { isMobile: 1 }.isMobile + other.isMobile

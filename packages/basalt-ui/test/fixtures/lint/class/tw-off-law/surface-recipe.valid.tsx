@@ -21,8 +21,11 @@ export const o = (
   <input className="relative block w-full appearance-none rounded-md border px-2.5 py-2 shadow-sm outline-none transition sm:text-sm" />
 )
 export const p = (
-  <div className="group/trigger cursor-pointer flex w-full select-none items-center justify-between gap-2 truncate rounded-md border px-3 py-2 shadow-sm outline-none transition sm:text-sm" />
+  <label className="group/trigger cursor-pointer flex w-full select-none items-center justify-between gap-2 truncate rounded-md border px-3 py-2 shadow-sm outline-none transition sm:text-sm" />
 )
-export const q = <div className="rounded-md border h-9 shadow-sm" />
+export const q = <select className="rounded-md border h-9 shadow-sm" />
 export const r = <div className="rounded-lg outline-none p-4 outline-hidden outline-offset-2 focus-visible:outline-2" />
 export const s = <div className="rounded-lg outline-offset-2 p-4 hover:outline" />
+export const t = <a className="inline-flex rounded-md border px-4 py-2 shadow-sm">go</a>
+export const field = cva('flex items-center rounded-md border px-4 py-2 shadow-sm')
+export const u = <Trigger className="flex items-center rounded-md border px-4 py-2 shadow-sm" />

@@ -10,3 +10,6 @@ export const h = (
   <div className="not-data-[state=open]:flex [:where([data-theme=light])_&]:flex [:is(.dim)_&]:flex" />
 )
 export const i = <div className="[&:is(:hover)]:bg-inset [&:is(.darker_*)]:flex [&:where(.dim,.dim_*)]:flex [&:is([data-theme=light])]:flex" />
+export const j = (
+  <div className="in-[.dim]:flex group-[.darker]/app:flex in-[.dark-mode]:flex peer-[data-theme=light]:flex in-[:hover]:flex" />
+)

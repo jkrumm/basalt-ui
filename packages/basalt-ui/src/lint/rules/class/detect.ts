@@ -59,15 +59,56 @@ function literalText(arg: Node | undefined): string | undefined {
  * their device forms) key, or a `query` whose literal text names a width. Known limits: the height
  * is not read (as `window.innerHeight` is not), and a binding is matched by spelling within the
  * file, not by scope.
+ *
+ * A media query string is read for the features the class forms and the stylelint list ban: width,
+ * height, aspect ratio, orientation and the device forms. A user-agent test is a viewport guess:
+ * `/Mobi/i.test(navigator.userAgent)` and `navigator.userAgent.includes(..)` (`match`, `indexOf`,
+ * `search`, `startsWith`, `endsWith`) report. `isMobile` and `isTablet` imported from
+ * `react-device-detect` report where they are read. Known limits: a user agent copied into a
+ * variable first (`const ua = navigator.userAgent`) is not followed, and `isMobileOnly`, `isIOS`
+ * and the other flags are not read.
  */
 export function mediaQueryForm({ report }: FormContext): Visitor {
   let consts: ReadonlyMap<string, Node> = new Map()
   const resolve = (node: Node | undefined): Node | undefined =>
     node?.type === 'Identifier' ? (consts.get(node['name'] as string) ?? node) : node
   const sizes: WindowSizes = { objects: new Set(), widths: new Set(), hooks: new Set() }
+  const deviceFlags = new Map<string, string>()
+  const skip = new WeakSet<Node>()
   return {
     Program(node) {
       consts = topLevelConsts(node)
+    },
+    ImportDeclaration(node) {
+      if (field(node, 'source')?.['value'] !== DEVICE_DETECT) return
+      for (const specifier of nodesOf(node, 'specifiers')) {
+        const importedNode = field(specifier, 'imported')
+        if (importedNode !== undefined) skip.add(importedNode)
+        const imported = nameOf(importedNode)
+        const local = field(specifier, 'local')
+        if (imported === undefined || !DEVICE_FLAGS.has(imported)) continue
+        const name = nameOf(local)
+        if (name !== undefined && local !== undefined) {
+          deviceFlags.set(name, imported)
+          skip.add(local)
+        }
+      }
+    },
+    MemberExpression(node) {
+      const property = field(node, 'property')
+      if (property !== undefined && node['computed'] !== true) skip.add(property)
+      const subject = userAgentSniff(node)
+      if (subject !== undefined) report(node, subject)
+    },
+    Property(node) {
+      const key = field(node, 'key')
+      if (key !== undefined && node['computed'] !== true && key !== field(node, 'value')) {
+        skip.add(key)
+      }
+    },
+    Identifier(node) {
+      const imported = deviceFlags.get(node['name'] as string)
+      if (imported !== undefined && !skip.has(node)) report(node, imported)
     },
     ImportSpecifier(node) {
       if (WINDOW_SIZE_HOOKS.has(nameOf(field(node, 'imported')) ?? '')) {
@@ -80,17 +121,57 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
     },
     CallExpression(node) {
       const name = calleeName(node)
-      if (name === undefined || !QUERY_CALLEES.has(name)) return
       const args = Array.isArray(node['arguments']) ? node['arguments'].filter(isNode) : []
+      if (name === 'test' && isUserAgent(args[0])) report(node, 'test(navigator.userAgent)')
+      if (name === undefined || !QUERY_CALLEES.has(name)) return
       const arg = resolve(args[0])
       const text = literalText(arg) ?? objectQueryText(arg, resolve)
-      if (text !== undefined && /width/i.test(text)) report(node, `${name}('${text}')`)
+      if (text !== undefined && VIEWPORT_FEATURE.test(text)) report(node, `${name}('${text}')`)
     },
     BinaryExpression(node) {
       const subject = widthComparison(node, resolve, sizes)
       if (subject !== undefined) report(node, subject)
     },
   }
+}
+
+/** The media features the class forms and the stylelint list ban: width, height, aspect ratio, orientation, the device forms. */
+const VIEWPORT_FEATURE = /width|height|aspect-ratio|orientation|device-/i
+
+/** `react-device-detect`'s viewport-class flags: a user-agent verdict, read as a layout switch. */
+const DEVICE_DETECT = 'react-device-detect'
+const DEVICE_FLAGS: ReadonlySet<string> = new Set(['isMobile', 'isTablet'])
+
+const AGENT_METHODS: ReadonlySet<string> = new Set([
+  'includes',
+  'match',
+  'indexOf',
+  'search',
+  'startsWith',
+  'endsWith',
+  'test',
+])
+
+/** `navigator.userAgent` or `window.navigator.userAgent`, bare. */
+function isUserAgent(node: Node | undefined): boolean {
+  if (node?.type !== 'MemberExpression' || node['computed'] === true) return false
+  if (nameOf(field(node, 'property')) !== 'userAgent') return false
+  const object = field(node, 'object')
+  if (nameOf(object) === 'navigator') return true
+  if (object?.type !== 'MemberExpression' || object['computed'] === true) return false
+  return (
+    nameOf(field(object, 'property')) === 'navigator' &&
+    GLOBALS.has(nameOf(field(object, 'object')) ?? '')
+  )
+}
+
+/** A user-agent method test: `navigator.userAgent.includes(..)`, `.match`, `.indexOf`, `.search`, `.startsWith`, `.endsWith`. */
+function userAgentSniff(node: Node): string | undefined {
+  if (!isUserAgent(field(node, 'object'))) return undefined
+  const method = nameOf(field(node, 'property'))
+  return method !== undefined && AGENT_METHODS.has(method)
+    ? `navigator.userAgent.${method}`
+    : undefined
 }
 
 /** react-responsive's width keys: any of them makes the object query a viewport query. */
@@ -274,18 +355,31 @@ const isBridge = (options: readonly unknown[]): boolean =>
  */
 export function partsOnly(
   { pattern, ...base }: ClassForm,
-  whole?: (tokens: readonly string[]) => string | undefined,
+  whole?: (tokens: readonly string[], element: string | undefined) => string | undefined,
 ): AstForm {
   return {
     ...base,
-    detect: ({ context, report }) =>
-      classStringVisitor((node, text) => {
+    detect: ({ context, report }) => {
+      // The host element whose opening tag holds the string (undefined outside a JSX attribute: a
+      // `cva`/`tv` base, a constant).
+      const elements: (string | undefined)[] = []
+      const tracker: Visitor = {
+        JSXOpeningElement(node) {
+          elements.push(nameOf(field(node, 'name')))
+        },
+        'JSXOpeningElement:exit'() {
+          elements.pop()
+        },
+      }
+      const classes = classStringVisitor((node, text) => {
         if (isBridge(context.options)) return
         const tokens = classTokens(text)
         for (const token of tokens) if (pattern.test(token)) report(node, token)
-        const subject = whole?.(tokens)
+        const subject = whole?.(tokens, elements.at(-1))
         if (subject !== undefined) report(node, subject)
-      }),
+      })
+      return whole === undefined ? classes : mergeVisitors([tracker, classes])
+    },
   }
 }
 
@@ -333,7 +427,7 @@ export function partsOnlyExceptStyleVar({ pattern, ...base }: ClassForm): AstFor
 
 const RADIUS = /^rounded(?:-(?!card$|none$|full$)[a-z0-9]+|-\([^)]+\)|-\[[^\]]+\])?$/
 const CARD_PADDING = /^py?-(?:[3-9]|\d{2,})$/
-const CARD_BORDER = /^(?:border|ring(?:-\d+)?|outline(?:-[12])?)$/
+const CARD_BORDER = /^(?:border(?:-1)?|ring(?:-\d+)?|outline(?:-[12])?)$/
 /** A card's elevation: `shadow` and `shadow-sm` up; a control's `shadow-xs`/`shadow-2xs` is not one. */
 const CARD_SHADOW = /^shadow(?:-(?:sm|md|lg|xl|2xl))?$/
 /**
@@ -344,6 +438,15 @@ const CARD_SHADOW = /^shadow(?:-(?:sm|md|lg|xl|2xl))?$/
 const CONTROL_PADDING_X = /^px-/
 const CONTROL_PADDING_Y = /^py-(?:0|0\.5|1|1\.5|2|px)$/
 const CONTROL_SIGNAL = /^(?:h-(?:8|9|10)|inline-flex)$/
+/** An element that owns a control's shadow: a host `button`, `input`, `select`, `a` or `label`. */
+const INTERACTIVE: ReadonlySet<string> = new Set(['button', 'input', 'select', 'a', 'label'])
+/**
+ * Where a control signal may exempt the shadow: an interactive host element, a component (its
+ * name says nothing about what it renders) or a class string outside JSX (a `cva`/`tv` base). A
+ * host `div`, `section` or `span` with the same classes is a rebuilt surface.
+ */
+const mayBeControl = (element: string | undefined): boolean =>
+  element === undefined || INTERACTIVE.has(element) || !/^[a-z]/.test(element)
 const hasControlSignal = (tokens: readonly string[]): boolean =>
   tokens.some((token) => CONTROL_SIGNAL.test(token)) ||
   (tokens.some((token) => CONTROL_PADDING_X.test(token)) &&
@@ -355,17 +458,21 @@ const hasControlSignal = (tokens: readonly string[]): boolean =>
  * width such as ring-1) and a third signal in one class string: a padding step of 3 or more,
  * all-round or vertical (`p-4`, `py-6`; a lone `px-N` is a button, input or badge, not a card), or
  * a card's shadow (`shadow-sm` up: a tile whose padding comes from a child), which counts only
- * where no control signal sits beside it (`px-3 py-2`, `h-9`, `inline-flex`: a button, input or
- * select). A bare `outline`, `outline-1` or `outline-2` is a border as `ring-1` is
+ * where no control signal sits beside it (`px-3 py-2`, `h-9`, `inline-flex`) on an element that
+ * may be a control: `button`, `input`, `select`, `a`, `label`, a component, or a class string
+ * outside JSX (a `cva` base). On a host `div` or `section` the signal exempts nothing. Known
+ * limit: a component carrying a card recipe is not read as a surface, since its name does not say. A bare `outline`, `outline-1` or `outline-2` is a border as `ring-1` is
  * (`outline-none`, `outline-offset-*` and a variant-prefixed outline are not). A dashed or dotted
  * border, a pill (`rounded-full`), a lone `p-1`/`p-2`, a control's `shadow-xs` and a
  * variant-prefixed ring (`focus-visible:ring-2`) are not a card.
  */
-export function borderedCard(tokens: readonly string[]): string | undefined {
+export function borderedCard(tokens: readonly string[], element?: string): string | undefined {
   const radius = tokens.find((token) => RADIUS.test(token))
   const third =
     tokens.find((token) => CARD_PADDING.test(token)) ??
-    (hasControlSignal(tokens) ? undefined : tokens.find((token) => CARD_SHADOW.test(token)))
+    (mayBeControl(element) && hasControlSignal(tokens)
+      ? undefined
+      : tokens.find((token) => CARD_SHADOW.test(token)))
   const border = tokens.find((token) => CARD_BORDER.test(token))
   if (radius === undefined || third === undefined || border === undefined) return undefined
   if (tokens.some((token) => /^border-(?:dashed|dotted)$/.test(token))) return undefined
