@@ -248,9 +248,14 @@ export const readerLoop: AstForm = {
             const self = fn && functionName(fn)
             if (self === undefined || !readers.has(reader)) continue
             const refersToSelf = someDescendant(fn as Node, (inner) => {
-              return (
-                inner.type === 'Identifier' && inner['name'] === self && inner !== child(fn, 'id')
-              )
+              if (inner.type !== 'Identifier' || inner['name'] !== self) return false
+              if (inner === child(fn, 'id')) return false
+              // `reader.read()` names a property, not the function: only a reference counts.
+              const up = inner['parent'] as Node | undefined
+              const isMemberName =
+                up?.type === 'MemberExpression' && up['property'] === inner && !up['computed']
+              const isKey = up?.type === 'Property' && up['key'] === inner && !up['computed']
+              return !isMemberName && !isKey
             })
             if (refersToSelf) looped.add(reader)
           }

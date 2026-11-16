@@ -77,3 +77,13 @@ async function follow(res) {
 async function readAll(res) {
   for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) handle(chunk)
 }
+
+// @valid
+async function first(res) {
+  const reader = res.body.getReader()
+  async function read() {
+    const { value } = await reader.read()
+    return value
+  }
+  return read()
+}
