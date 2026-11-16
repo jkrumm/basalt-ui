@@ -2,7 +2,8 @@
  * Compile-time proof of the table contract's "never" rows (docs/v3/concepts/data-table.md section
  * 9): one `@ts-expect-error` per bad line, proven by `tsc --noEmit`. Types only; nothing runs.
  */
-import type { VirtualLike } from '../core/ports'
+import type { ControlHandle, VirtualLike } from '../core/ports'
+import { useDataTable } from './use-data-table'
 import type { DataTableInstance, DataTableProps, KindColumn, Mode, UseDataTable } from './contract'
 
 type Row = { id: string }
@@ -55,3 +56,63 @@ table({ table: instance, height: 'auto', virtual })
 
 // @ts-expect-error detail and onRowActivate are exclusive
 acceptUse({ ...base, mode: { kind: 'client' }, detail: () => null, onRowActivate: () => undefined })
+
+// ── Page filters: a predicate's value is its own field's value ────────────────────────────
+
+type Order = { project: string; amount: number }
+declare const project: ControlHandle<string>
+declare const minAmount: ControlHandle<number>
+
+const acceptOrders = (options: UseDataTable<Order, readonly [string, number]>) => options
+acceptOrders({
+  id: 't',
+  label: 'T',
+  columns: [],
+  data: [],
+  getRowId: (row: Order) => row.project,
+  mode: { kind: 'client' },
+  filters: [
+    { field: project, match: (row, value) => row.project === value },
+    { field: minAmount, match: (row, value) => row.amount >= value },
+  ],
+})
+acceptOrders({
+  id: 't',
+  label: 'T',
+  columns: [],
+  data: [],
+  getRowId: (row: Order) => row.project,
+  mode: { kind: 'client' },
+  filters: [
+    { field: project, match: (row, value) => row.project === value },
+    // @ts-expect-error the second field is a number: its predicate takes a number, not a string
+    { field: minAmount, match: (row: Order, value: string) => row.project === value },
+  ],
+})
+
+// Through the hook: each entry's value is inferred from its own field.
+const Inferred = (): void => {
+  useDataTable({
+    id: 't',
+    label: 'T',
+    columns: [] as readonly KindColumn<Order>[],
+    data: [] as Order[],
+    getRowId: (row) => row.project,
+    mode: { kind: 'client' },
+    filters: [
+      { field: project, match: (row, value) => row.project === value },
+      { field: minAmount, match: (row, value) => row.amount >= value },
+    ],
+  })
+  useDataTable({
+    id: 't',
+    label: 'T',
+    columns: [] as readonly KindColumn<Order>[],
+    data: [] as Order[],
+    getRowId: (row) => row.project,
+    mode: { kind: 'client' },
+    // @ts-expect-error `value` is the number field's: a string comparison does not compile
+    filters: [{ field: minAmount, match: (row, value) => row.project === value }],
+  })
+}
+void Inferred
