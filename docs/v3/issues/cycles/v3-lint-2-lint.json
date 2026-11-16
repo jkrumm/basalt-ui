@@ -1,0 +1,27 @@
+{
+  "why": "Lint cycle 2 (docs/v3/cycles/lint-2.md): the class `lint` P2s and P3s. One false alarm another cycle worked around is still live on today's code (lint-2.4), seeded phrasings an agent writes that no rule catches (lint-2.5 to lint-2.17), and messages that name a fix another rule bans or an API the package does not export (lint-2.18 to lint-2.23). Each finding's evidence is the command and the matched line in the cycle file; the seeds are docs/v3/cycles/lint-2/fixtures/*.c2.*.",
+  "what": "Each rule named below reports the missed phrasings that fall inside its stated defect or states the limit, stays silent on an Issue reference, and every message names a fix that no other shipped rule or check rejects.",
+  "owns": [
+    "packages/basalt-ui/src/lint/factory.ts (the class walker, lint-2.5)",
+    "packages/basalt-ui/src/lint/rules/** (class and structure families) with their cases, tests and test/fixtures/lint/**",
+    "packages/basalt-ui/src/lint/preset.ts (the shadcn rule options and messages)",
+    "packages/basalt-ui/src/lint/stylelint/** (rules and messages)",
+    "packages/basalt-ui/src/lint/check-tokens.ts (the nearest-name search)",
+    "packages/basalt-ui/configs/oxlint-*.json and stylelint.basalt.json (regenerated)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/**",
+    "packages/basalt-ui/src/lint/rule-table.ts ID_CEILING"
+  ],
+  "change": "False alarm: colour-literal does not report a `#` plus digits string under a reference key (`ref`, `id`, `issue`, `number`) such as `ref: '#657'`, or its JSDoc and message name the shape and the fix (lint-2.4, dogfood-1.19). Misses, each with an invalid fixture block or a stated limit in the rule's JSDoc: a class string in a same-file `const` that reaches a class context, read by every class form (lint-2.5); `useMediaQuery(CONST)` and `window.innerWidth < CONST` with a same-file constant (lint-2.6); `[[data-theme=dark]_&]:` and a `[data-theme='dark']` selector in app CSS (lint-2.7); the shadcn v4 card class list `rounded-xl border py-6 shadow-sm` and a ring-bordered card (lint-2.8); a named colour under a `*-color` key and `hsl(var(--x))` in TS (lint-2.9); `for await` over a response body, a recursive `read()`, `q.data || ([] as T[])`, `setInterval(() => router.invalidate())`, SWR `refreshInterval` and `socket.io-client` (as import-boundary packages), `staleTime: Infinity` in liveQuery (lint-2.10); `vaul`, `@headlessui/react`, `react-hot-toast`, `marked`, `echarts-for-react`, `react-day-picker`, `@tanstack/react-virtual` and a re-export of `useReactTable` (lint-2.11); `<div role=\"button\" onClick>`, `<dialog>`, a hand `<dl>` grid where `Facts` ships, `<polyline points>` from data, a one-value fill bar where `ui/progress` and `ui/meter` ship, and as P3 a heading tag from a variable, `rowgroup`/`columnheader` roles, a fragment as a DataPanel body root (lint-2.12); `redirect({ search: {…} })` (lint-2.13); `el.innerHTML =`, `insertAdjacentHTML`, MDX `compile` plus `new Function`, `next-mdx-remote`, and as P3 a spread `contentTrust` (lint-2.14); a reasoned line directive that names no rule (lint-2.15); cycle 1's search `Input` and page-level `Tabs` for control-home, caught or stated with the reason, as v3-lint-1-lint's acceptance asked (lint-2.16); `@theme` in app CSS (lint-2.17). Messages: shadcn/no-arbitrary-values names the fix per kind of value (a token for colour, ui/scroll-area for overflow, gap on the parent for margin), never a ladder step for a non-spacing value (lint-2.18); shadcn/no-unknown-classes leaves a viewport variant to viewport-keyed instead of proposing `@custom-variant` (lint-2.19); data-primitive raw-storage-write names `persisted(key)` and a store field, the exported APIs, not `createLocalStore`/`createPersistedState` (lint-2.20); P3: no-raw-colors reports colour utilities only and leaves a pre-mixed alpha to alpha-on-premixed (lint-2.21), the token check's nearest name stays within the token's kind (lint-2.22), the stylelint at-rule message prints one `@` and the value list carries one message per property group (lint-2.23). The id ceiling does not move: every change is a form or an option of an existing id.",
+  "commits": "fix: commits in packages/basalt-ui, one per rule family; split the row with plan rows of its own if it passes one PR.",
+  "proof": "docs/v3/cycles/lint-2/fixtures/run.sh: every seed this row adds a form for reports caught, and every one it states as a limit is named in the rule's JSDoc; the probe of lint-2.4 reports nothing.",
+  "acceptance": [
+    "The Issue-reference shape of lint-2.4 has a valid fixture block that passes, or is a stated limit named by the message",
+    "Each miss of lint-2.5 to lint-2.17 is caught (seed report) or stated as a known limit in its rule's JSDoc",
+    "No shipped message names a fix another shipped rule reports, or an API the package does not export (a test reads the messages)",
+    "make check passes"
+  ],
+  "out_of_scope": "Recipe tokens (v3-lint-2-recipe-tokens), zone E (v3-lint-2-eject-clean), the waiver ceiling (v3-lint-2-waiver-ceiling); fixing the playground or the recipes."
+}

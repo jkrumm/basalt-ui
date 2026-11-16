@@ -1,0 +1,47 @@
+// Seeded offenders for basalt/untrusted-markdown.
+import { Markdown } from 'basalt-ui/content'
+
+type Message = { id: string; text: string; html: string }
+
+// seed untrusted-markdown/dangerous-html 1: model html injected directly
+export function Bubble({ m }: { m: Message }) {
+  return <div dangerouslySetInnerHTML={{ __html: m.html }} />
+}
+
+// seed untrusted-markdown/dangerous-html 2: the html computed by a converter first
+export function Rendered({ m }: { m: Message }) {
+  const html = { __html: m.text.replaceAll('\n', '<br>') }
+  return <div dangerouslySetInnerHTML={html} />
+}
+
+// seed untrusted-markdown/rehype-raw 1: rehype-raw for html inside markdown
+import rehypeRaw from 'rehype-raw'
+export const plugins = [rehypeRaw]
+
+// seed untrusted-markdown/mdx-evaluate 1: evaluate model MDX at runtime
+import { evaluate } from '@mdx-js/mdx'
+export async function runMdx(source: string) {
+  return evaluate(source, { development: false } as never)
+}
+
+// seed untrusted-markdown/mdx-evaluate 2: the namespace import of the same
+import * as mdx from '@mdx-js/mdx'
+export async function runMdx2(source: string) {
+  return mdx.evaluate(source, {} as never)
+}
+
+// seed untrusted-markdown/trusted-content 1: model text marked trusted
+export function Answer({ m }: { m: Message }) {
+  return <Markdown contentTrust="trusted">{m.text}</Markdown>
+}
+
+// seed untrusted-markdown/trusted-content 2: trusted through a children prop
+export function Answer2({ m }: { m: Message }) {
+  return <Markdown contentTrust="trusted" children={m.text} />
+}
+
+// seed untrusted-markdown/trusted-content 3: trusted through a computed value
+export function Answer3({ m }: { m: Message }) {
+  const trust = 'trusted' as const
+  return <Markdown contentTrust={trust}>{m.text}</Markdown>
+}
