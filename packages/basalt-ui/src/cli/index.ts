@@ -743,14 +743,6 @@ export function basaltPresetEntry(entries: unknown): string | null {
 
 // workspace-glob primitives — shared by findBasaltInstall
 
-/**
- * Which shape of consumer a command is looking at: `framework` (the Mantine app the scaffold is
- * for) or `tokens-only` (took the `--vx-*` layer and nothing else, so `init` is the wrong advice).
- * DECLARED only (`--framework` / `--tokens-only` / `basalt.profile`), never inferred; see
- * {@link declaredProfile}.
- */
-export type DoctorProfile = 'framework' | 'tokens-only'
-
 export type WorkspacePackage = { readonly name: string; readonly dir: string }
 
 /** {@link collectWorkspacePackages}'s return: the packages plus whether a `workspaces` field existed. */

@@ -368,9 +368,7 @@ Code cannot load rules or skills from `node_modules`, which is the only reason a
 - **No hex and no pixel constant in a rule.** The palette and the spacing scales are derived from a
   config a consumer may move, so a literal in prose is a value that can go stale silently.
 - `scripts/check-agent-doc-drift.ts` runs in CI: a bolded-backtick name must be a real export, a
-  removed API is denylisted outright (and the denylist itself is asserted still-removed), and the
-  tokens-only kind COUNT is checked against `TOKENS_ONLY_DISABLED_KINDS` across every doc in the
-  repo, because that number was stated by hand in eight of them and shipped stale.
+  removed API is denylisted outright (and the denylist itself is asserted still-removed).
 
 ## Major lines
 

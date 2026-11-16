@@ -40,6 +40,9 @@ const DECLARATION = /(--vx-[A-Za-z0-9-]*[A-Za-z0-9])\s*:/g
 const OVERRIDE_HOOK = /var\(\s*(--vx-[A-Za-z0-9-]*[A-Za-z0-9])\s*,/g
 const QUOTED = /['"](--vx-[A-Za-z0-9-]*[A-Za-z0-9])['"]/g
 
+/** The generator's own outputs: scanning one would keep a name the sources no longer emit alive forever. */
+export const GENERATED_OUTPUTS: ReadonlySet<string> = new Set(['src/tokens/vx-names.ts'])
+
 export function collectVxNames(): string[] {
   const names = new Set<string>()
   const add = (text: string, re: RegExp) => {
@@ -51,6 +54,7 @@ export function collectVxNames(): string[] {
     // `src/css/` is the v3 sheet set: its names are judged by the v3 `check-tokens`, never fed to
     // this 2.x allowlist; `src/tokens/golden/` is the same v3 output pinned byte for byte.
     if (
+      GENERATED_OUTPUTS.has(rel) ||
       rel.startsWith('src/css/') ||
       rel.startsWith('src/tokens/golden/') ||
       /\.test\.tsx?$/.test(rel)

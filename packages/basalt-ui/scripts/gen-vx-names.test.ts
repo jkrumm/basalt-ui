@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
+import { relative, resolve } from 'node:path'
 
 import { BASALT_VX_FAMILIES } from '../src/common/vx-families'
 import { BP, groupTokens, p, seriesTokens } from '../src/tokens/index'
@@ -13,6 +14,7 @@ import { BASALT_VX_NAMES } from '../src/tokens/vx-names'
 import { REMOVED_VX_NAMES } from '../tests/removed-vx-names'
 import {
   collectVxNames,
+  GENERATED_OUTPUTS,
   renderVxFamilies,
   renderVxNames,
   VX_FAMILIES_PATH,
@@ -27,6 +29,12 @@ describe('BASALT_VX_NAMES', () => {
   it('is the generator output byte for byte (no hand edits)', () => {
     expect(readFileSync(VX_NAMES_PATH, 'utf8')).toBe(renderVxNames(collectVxNames()))
     expect(readFileSync(VX_FAMILIES_PATH, 'utf8')).toBe(renderVxFamilies(collectVxNames()))
+  })
+
+  it('never scans its own output, or a name basalt stopped emitting would stay in the list', () => {
+    expect([...GENERATED_OUTPUTS]).toContain(
+      relative(resolve(import.meta.dirname, '..'), VX_NAMES_PATH),
+    )
   })
 
   it('carries every name the v3 token table emits', () => {
