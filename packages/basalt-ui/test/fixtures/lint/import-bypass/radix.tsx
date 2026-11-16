@@ -25,3 +25,9 @@ import { Dialog } from 'react-aria-components'
 import { Dialog } from '@ark-ui/react/dialog'
 // @valid
 import { Dialog } from 'react-aria-lookalike'
+// @invalid
+import { Button, Modal } from '@mantine/core'
+// @invalid
+import { DatePickerInput } from '@mantine/dates'
+// @valid
+import { useDisclosure } from '@mantine/hooks'

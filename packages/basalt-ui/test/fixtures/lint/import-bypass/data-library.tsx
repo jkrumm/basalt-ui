@@ -17,3 +17,11 @@ import useWebSocket from 'react-use-websocket'
 import { useQueryState } from 'nuqs'
 // @valid
 import { field } from 'basalt-ui/router'
+// @invalid
+import { useSearchParams } from 'react-router-dom'
+// @invalid
+import { useNavigate } from 'react-router'
+// @invalid
+import { useQuery, gql } from '@apollo/client'
+// @valid
+import { useQuery } from '@tanstack/react-query'
