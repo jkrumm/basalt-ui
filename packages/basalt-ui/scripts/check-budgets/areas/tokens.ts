@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os'
 import { gzipSync } from 'node:zlib'
 
 import { PKG_ROOT, REPO_ROOT, Unmeasured, walkFiles } from '../lib'
-import type { RowDef } from '../lib'
+import type { Raises, RowDef } from '../lib'
 import { TOKENS } from '../../../src/tokens/table'
 
 const CSS_DIR = join(PKG_ROOT, 'src/css')
@@ -119,3 +119,15 @@ export const rows: readonly RowDef[] = [
     },
   },
 ]
+
+export const raises: Raises = {
+  'tokens-css-gzip': [
+    {
+      from: 1615,
+      to: 1616,
+      consumer:
+        'the `--basalt-*` token prefix (Issue 1703, owner decision): every custom property is four characters longer, +1 B gzip; jkrumm.com reads the plain `tokens.css` and keeps its names in step with basalt',
+      repo: 'jkrumm.com',
+    },
+  ],
+}
