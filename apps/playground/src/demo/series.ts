@@ -24,3 +24,11 @@ export const DEMO_SERIES = defineSeries({
   revenue: { light: '#c07e3c', dark: '#f9a13d' },
   churn: { light: '#af293e', dark: '#e46360' },
 })
+
+/** Sleep stages (scenario expr-n12): one hue per stage, deep darkest, REM the violet. */
+export const SLEEP_SERIES = defineSeries({
+  deep: { light: '#2b4a9b', dark: '#6c8cf0' },
+  light: { light: '#4f93c9', dark: '#8dbbe6' },
+  rem: { light: '#8a4fc7', dark: '#b68cf2' },
+  need: { light: '#4a4a4a', dark: '#c4c4c4' },
+})

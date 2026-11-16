@@ -4,10 +4,22 @@
  * unknown rather than an inherited `Object` member.
  */
 import type { ReactElement } from 'react'
+import { ExprC10Scenario } from './expr/c10/ExprC10'
+import { ExprC11Scenario } from './expr/c11/ExprC11'
+import { ExprC12Scenario } from './expr/c12/ExprC12'
+import { ExprC13Scenario } from './expr/c13/ExprC13'
+import { ExprN02Scenario } from './expr/n02/ExprN02'
+import { ExprN12Scenario } from './expr/n12/ExprN12'
 import { MdxScenario } from './mdx-scenario'
 import type { ScenarioProps } from './shot-state'
 
 const RENDERERS = {
+  'expr-c10': (p) => <ExprC10Scenario {...p} />,
+  'expr-c11': (p) => <ExprC11Scenario {...p} />,
+  'expr-c12': (p) => <ExprC12Scenario {...p} />,
+  'expr-c13': (p) => <ExprC13Scenario {...p} />,
+  'expr-n02': (p) => <ExprN02Scenario {...p} />,
+  'expr-n12': (p) => <ExprN12Scenario {...p} />,
   mdx: () => <MdxScenario />,
 } satisfies Record<string, (props: ScenarioProps) => ReactElement>
 

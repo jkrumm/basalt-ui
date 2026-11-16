@@ -17,6 +17,15 @@ describe('validateShotSearch', () => {
     expect(validateShotSearch({})).toEqual({})
   })
 
+  it('keeps a fixture name beside the shot state, and drops an empty or mistyped one', () => {
+    expect(validateShotSearch({ fixture: 'zero', 'shot-state': 'empty' })).toEqual({
+      fixture: 'zero',
+      'shot-state': 'empty',
+    })
+    expect(validateShotSearch({ fixture: '' })).toEqual({})
+    expect(validateShotSearch({ fixture: 3 })).toEqual({})
+  })
+
   it('isShotState rejects inherited Object members', () => {
     expect(isShotState('constructor')).toBe(false)
   })
