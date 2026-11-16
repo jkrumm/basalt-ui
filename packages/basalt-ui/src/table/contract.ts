@@ -210,6 +210,14 @@ export type UseDataTable<T> = {
        * bound to one keeps its id until the field is cleared. Pass a stable handle across renders.
        */
       detailState?: ControlHandle<string>
+      /**
+       * The body of a record the table has not loaded, for a `detailState` field that names an id no
+       * loaded row has (a share link after the record left the filters, a row on another page of a
+       * server table): once the query settles the detail door opens with this body under the table
+       * label, and the page fetches the record by id. Closing clears the field. Without it a field
+       * naming an unloaded id is cleared and a dev warning names the table and the id.
+       */
+      detailById?: (id: string, box: Box) => ReactNode
       onRowActivate?: never
     }
   | {
@@ -217,5 +225,6 @@ export type UseDataTable<T> = {
       detail?: never
       detailTitle?: never
       detailState?: never
+      detailById?: never
     }
 )
