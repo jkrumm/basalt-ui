@@ -57,3 +57,18 @@ const a = 1
 // @filename src/pages/photos.tsx
 // the oxlint-disable token in prose waives nothing
 const a = 1
+
+// @invalid
+// @filename src/pages/photos.tsx
+// oxlint-disable-next-line -- the generated markup is fixed
+const a = 1
+
+// @invalid
+// @filename src/pages/photos.tsx
+// eslint-disable-next-line -- the generated markup is fixed
+const a = 1
+
+// @valid
+// @filename src/pages/photos.tsx
+// eslint-disable-next-line no-console -- a line directive that names its rule
+console.log(a)

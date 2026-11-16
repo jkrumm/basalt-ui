@@ -8,7 +8,10 @@
  *   eslint spelling) with no `-- <why>`; the reason text is never read as rule ids.
  * - `file-level-scope`: a file-level `disable` on any rule but `colour-literal`,
  *   `shadcn/no-inline-styles` or `raw-scroll`, naming no rule at all, or in a file outside the
- *   `deepRender` option (the paths `manifest.deepRender` declares).
+ *   `deepRender` option (the paths `manifest.deepRender` declares). A line directive
+ *   (`disable-next-line`, `disable-line`) must name a rule id too: with none, even a reasoned one
+ *   (`// oxlint-disable-next-line -- the markup is fixed`) silences every rule on the line. Known limit: a `disable-line` naming no rule also silences this
+ *   report on its own line in the host, so only the `disable-next-line` spelling is caught.
  *
  * Option: `{ deepRender: string[] }`, path suffixes or globs (`*`, `**`) matched against the file.
  */
@@ -108,14 +111,18 @@ export const fileLevelScope: AstForm = {
       const deep = inDeepRender(filename, context.options)
       for (const comment of commentsOf(host)) {
         const directive = parseDirective(comment.value)
-        if (directive?.kind !== 'disable') continue
+        if (!directive) continue
+        if (directive.kind !== 'disable') {
+          if (directive.rules.length === 0) report(comment, `${directive.kind} naming no rule`)
+          continue
+        }
         const unlisted = directive.rules.filter((rule) => !FILE_WAIVABLE.has(rule))
         if (directive.rules.length > 0 && unlisted.length === 0 && deep) continue
         report(comment, directive.rules.length > 0 ? directive.rules.join(', ') : 'all rules')
       }
     },
   }),
-  fix: 'Waive the line (oxlint-disable-next-line <rule> -- <why>); a file-level waiver is only colour-literal, shadcn/no-inline-styles or raw-scroll on a path in manifest.deepRender',
+  fix: 'Name the rule in every directive and waive the line (oxlint-disable-next-line <rule> -- <why>); a file-level waiver is only colour-literal, shadcn/no-inline-styles or raw-scroll on a path in manifest.deepRender',
   next: 'Declare the file in manifest.deepRender, or fix the sites at source',
   fixture: 'structure-rest/waiver-needs-reason-file-level-scope.tsx',
 }
