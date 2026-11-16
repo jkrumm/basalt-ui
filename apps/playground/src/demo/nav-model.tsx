@@ -119,6 +119,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/cycle/state-3' }),
         },
         {
+          id: 'cycle-state-4',
+          label: 'Invoices (state cycle 4)',
+          icon: Table,
+          mobile: 'more',
+          link: linkOptions({ to: '/cycle/state-4' }),
+        },
+        {
           id: 'cycle-dogfood',
           label: 'Flow (dogfood cycle)',
           icon: Dashboard,
