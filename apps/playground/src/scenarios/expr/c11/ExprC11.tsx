@@ -20,8 +20,8 @@ import {
   type Bin,
 } from './fixture'
 
-const KEPT = { light: VX.accent, dark: VX.accent }
-const CUT = { light: VX.faint, dark: VX.muted }
+const KEPT = { light: VX.brand, dark: VX.brand }
+const CUT = { light: VX.inkFaint, dark: VX.inkMuted }
 
 const band = (b: Bin): string => `${b.lo.toFixed(2)} to ${b.hi.toFixed(2)}`
 /** A bar is drawn over its whole band, so it is centred on the band's middle. */
@@ -221,7 +221,7 @@ export function ExprC11Scenario({ shotState, fixture }: ScenarioProps) {
                     dy: clipAt === null ? -8 : 10,
                     fontSize: VX.text.nano,
                     fontWeight: 600,
-                    fill: clipAt !== null && isKept(densest) ? VX.onAccent : VX.ink,
+                    fill: clipAt !== null && isKept(densest) ? VX.onBrand : VX.ink,
                   }),
                 ])}
                 focus={focus}

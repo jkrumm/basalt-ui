@@ -74,8 +74,8 @@ export function ReachRings({
               y={CENTRE - radius + 3}
               textAnchor="middle"
               fontSize={VX.text.nano}
-              fill={VX.muted}
-              stroke={VX.surface.panel}
+              fill={VX.inkMuted}
+              stroke={VX.card}
               strokeWidth={3}
               paintOrder="stroke"
             >
@@ -98,8 +98,8 @@ export function ReachRings({
           cx={x}
           cy={y}
           r={row.hop === 0 ? ORIGIN_R : NODE_R}
-          fill={row.hop === 0 ? VX.ink : row.affected ? VX.bad : VX.neutral}
-          stroke={focus.index === index ? VX.ink : VX.surface.panel}
+          fill={row.hop === 0 ? VX.ink : row.affected ? VX.bad : VX.inkMuted}
+          stroke={focus.index === index ? VX.ink : VX.card}
           strokeWidth={focus.index === index ? 3 : 1.5}
         >
           <title>{row.id}</title>

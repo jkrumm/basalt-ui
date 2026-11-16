@@ -23,8 +23,8 @@ import {
 } from './fixture'
 import type { Issue, Stage } from './fixture'
 
-const NEUTRAL = { light: VX.muted, dark: VX.muted }
-const STUCK = { light: VX.status.bad, dark: VX.status.bad }
+const NEUTRAL = { light: VX.inkMuted, dark: VX.inkMuted }
+const STUCK = { light: VX.bad, dark: VX.bad }
 
 /** The y axis stops here; an Issue beyond it is drawn on the cap and labelled with its true multiple. */
 const CAP = 6
@@ -209,7 +209,7 @@ function Loaded({ issues, phase }: { issues: readonly Issue[]; phase: Phase }): 
                     y: () => top - 0.35,
                     text: (s: Stage) => STAGE_LABEL[s],
                     anchor: 'middle',
-                    fill: VX.ink2,
+                    fill: VX.ink,
                     fontSize: VX.text.micro,
                   }),
                   text(
@@ -223,7 +223,7 @@ function Loaded({ issues, phase }: { issues: readonly Issue[]; phase: Phase }): 
                       text: (r: { label: string }) => r.label,
                       anchor: 'middle',
                       dy: -6,
-                      fill: VX.ink2,
+                      fill: VX.ink,
                       fontSize: VX.text.micro,
                     },
                   ),
@@ -237,7 +237,7 @@ function Loaded({ issues, phase }: { issues: readonly Issue[]; phase: Phase }): 
                     anchor: (d: Dot) => (d.at >= 4 ? 'end' : 'start'),
                     dx: (d: Dot) => (d.at >= 4 ? -9 : 9),
                     dy: 4,
-                    fill: VX.ink2,
+                    fill: VX.ink,
                     fontSize: VX.text.micro,
                   }),
                 ])}
