@@ -132,6 +132,13 @@ export const NAV = defineNav({
           mobile: 'more',
           link: linkOptions({ to: '/cycle/dogfood' }),
         },
+        {
+          id: 'cycle-dogfood-2',
+          label: 'Flow (dogfood cycle 2)',
+          icon: Dashboard,
+          mobile: 'more',
+          link: linkOptions({ to: '/cycle/dogfood-2' }),
+        },
       ],
     },
     // One entry per scenario in the registry.
