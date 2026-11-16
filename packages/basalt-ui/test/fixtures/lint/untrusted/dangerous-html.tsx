@@ -62,3 +62,15 @@ const f = range.createContextualFragment('<hr>')
 
 // @valid
 const f = range.createContextualFragment(`<hr>`)
+
+// @valid
+const a = <iframe title="Preview" sandbox="allow-scripts" srcDoc={CSP + a.body} />
+
+// @valid
+const a = <iframe sandbox srcDoc={m.html} />
+
+// @invalid
+const a = <iframe sandbox="allow-scripts allow-same-origin" srcDoc={m.html} />
+
+// @invalid
+const a = <iframe sandbox={mode} srcDoc={m.html} />
