@@ -54,7 +54,7 @@
             "paths": [
               {
                 "name": "antd",
-                "message": "Use Mantine — antd is not part of the basalt-ui stack."
+                "message": "antd is not part of the basalt-ui stack; compose the shipped basalt-ui parts."
               },
               {
                 "name": "framer-motion",

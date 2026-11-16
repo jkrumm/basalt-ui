@@ -89,7 +89,7 @@ export type Layer = 'mantine-coupled' | 'headless' | 'app-global' | 'non-js-asse
  * is one source.
  *
  * @example
- * const ban: ForbiddenImport = { spec: 'antd', match: 'path', message: 'Use Mantine.', shippedOnly: true }
+ * const ban: ForbiddenImport = { spec: 'antd', match: 'path', message: 'Compose the shipped parts.', shippedOnly: true }
  */
 export type ForbiddenImport = {
   /** Exact module specifier ('antd') OR a glob group ('@visx/*'). */
@@ -666,7 +666,9 @@ export const SURFACES = {
     },
     ruleOverrides: [{ rule: 'no-console', level: 'off', target: 'repo' }], // cli/bin/scripts, repo-local only
     forbiddenImports: [
-      v('antd', 'Use Mantine — antd is not part of the basalt-ui stack.', { shippedOnly: true }),
+      v('antd', 'antd is not part of the basalt-ui stack; compose the shipped basalt-ui parts.', {
+        shippedOnly: true,
+      }),
       v('framer-motion', "Import from 'motion/react', not the raw framer-motion package."),
     ],
   },
