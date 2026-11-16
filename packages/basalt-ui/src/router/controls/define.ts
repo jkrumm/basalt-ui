@@ -696,7 +696,7 @@ export function defineControls<
       for (const handle of only) {
         if (field[handle.key] !== (handle as unknown)) {
           throw new Error(
-            `basalt-ui: controls "${id}": useReset({ only }) names "${handle.key}", which is not a field of this store`,
+            `basalt-ui: controls "${id}": reset names "${handle.key}", not a field of this store`,
           )
         }
       }
