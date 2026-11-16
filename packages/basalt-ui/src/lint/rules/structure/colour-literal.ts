@@ -6,9 +6,9 @@
  *
  * `color(display-p3 0.1 0.5 0.9)` (a `color()` over a colour space) reads as `oklch(` does.
  *
- * A function that wraps a token (`rgb(var(--vx-x) / 50%)`) is not a literal and passes;
- * CSS relative colour syntax (`rgb(from var(--vx-x) r g b / 50%)`, `oklch(from …)`, `color(from …)`)
- * is the alpha the `alpha(VX.x, n)` helper owns and reports; `color-mix` and `light-dark` are the
+ * A function that wraps a token (`rgb(var(--basalt-x) / 50%)`) is not a literal and passes;
+ * CSS relative colour syntax (`rgb(from var(--basalt-x) r g b / 50%)`, `oklch(from …)`, `color(from …)`)
+ * is the alpha the `alpha(BASALT.x, n)` helper owns and reports; `color-mix` and `light-dark` are the
  * stylesheet's, not this rule's.
  *
  * A `light` or `dark` string of a series entry inside a `defineSeries({ name: { light, dark } })`
@@ -46,7 +46,7 @@ import { isTestFile } from '../../factory'
 const HEX = /(?<!url\(['"]?)(?<![\w&#-])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])/gi
 const COLOUR_FUNCTION =
   /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*(?:[-+.\d]|none\b|\$\{\})/i
-/** `rgb(from var(--vx-x) r g b / 50%)`: CSS relative colour syntax, the alpha `alpha(VX.x, n)` owns. */
+/** `rgb(from var(--basalt-x) r g b / 50%)`: CSS relative colour syntax, the alpha `alpha(BASALT.x, n)` owns. */
 const RELATIVE_COLOUR = /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(\s*from\s/i
 /** `color(display-p3 0.1 0.5 0.9)`: the CSS `color()` function over a colour space. */
 const COLOR_SPACE_FUNCTION =
