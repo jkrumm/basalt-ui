@@ -1,0 +1,9 @@
+/*
+ * The `charts-expr4` fixture's Tailwind v4 entry, compiled WITH preflight like `charts-kit-fixes.css`.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './charts-expr4-fixture.tsx';
+@source '../../../src/charts';
+@source '../../../src/cards';
+@source '../../../src/table';
+@source '../../../src/ui';
