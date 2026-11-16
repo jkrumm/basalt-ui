@@ -546,13 +546,11 @@ rows:
     after:
       [
         v3-ai-i6-reference,
-        v3-cli-sibling,
         v3-teardown-peers,
         v3-shell-i10-rules-rows,
         v3-charts-6-two-pane,
         v3-charts-7c-rows,
         v3-table-t5-exemplar,
-        v3-ctl-8-lint,
         v3-ctl-9-rows,
         v3-freeze-g2,
         v3-freeze-g0,
@@ -565,6 +563,8 @@ rows:
         v3-cycle-lint-1,
         v3-cycle-wiring-1,
         v3-cycle-dogfood-1,
+        v3-expr-3-kit-fixes,
+        v3-expr-3-contract,
       ]
     facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-ga-prep.json' }
   - key: v3-cycle-shell-1
@@ -1189,3 +1189,36 @@ rows:
         v3-lint-2-wiring,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-3.json' }
+  - key: v3-expr-3-skill
+    title: 'Expression skill: every frame to open, word economy worked through, card anatomy for lists, incomplete data, Phase import'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-expression-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-3-skill.json' }
+  - key: v3-expr-3-kit-fixes
+    title: 'Label collisions with bars and dots, one chart locale, linked-row dim and scroll, edge dots, chart box at 390 from expression cycle 3'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-3-kit-fixes.json' }
+  - key: v3-expr-3-contract
+    title: 'Kit lists take the chart focus, band tick step and edge rules, log y and y format, StatCell swatch (Spec)'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-cycle-expression-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-3-contract.json' }
+  - key: v3-expr-3-rubric
+    title: 'Expression rubric: how K3 and X4 are evidenced, a pointer sweep in the shoot'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-cycle-expression-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-3-rubric.json' }
+  - key: v3-cycle-expression-4
+    title: 'Improvement cycle 4: expression, six one-shot visualization trials scored against references'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-3-skill, v3-expr-3-kit-fixes, v3-expr-3-contract, v3-expr-3-rubric]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-4.json' }

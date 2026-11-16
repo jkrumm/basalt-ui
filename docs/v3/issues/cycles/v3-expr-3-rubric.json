@@ -1,0 +1,24 @@
+{
+  "why": "Expression cycle 3 (docs/v3/cycles/expression-3.md) logged two `rubric` findings. (1) n02 round 0 scored K3 1 because the keyboard log showed the same focused element before and after two ArrowRight presses. With one tab stop that is correct by design: the chart group keeps DOM focus and the arrow keys move the focus mark, which the log's announcement ('ISS-1486 in Queued: 36m, 0.31 times the typical 2h', the third Issue in reading order) shows. The reviewer marked down a non-defect (P2 expression-3.79). From round 1 the lead's reviewer prompt said so and no reviewer repeated it. (2) X4 asks whether moving the pointer across the gap between two marks flashes the unfocused state, which no still frame can show: five of six round-0 reviewers wrote that they could not judge it and scored X4 2, so X4 cost points for an untested claim rather than an observed defect (n02 P3 expression-3.85, and the same sentence in c11, c12, c13 and n12).",
+  "what": "Rubric text that says how K3 and X4 are evidenced, and the cycle harness that records a pointer sweep for X4.",
+  "owns": [
+    "docs/v3/expression/rubric.md (the K3 and X4 rows and the evidence note under the score table)",
+    "packages/basalt-ui/agent/reviewer/** where it restates those items",
+    "docs/v3/EXPRESSION.md § The loop, step 3, one sentence naming the keyboard frame and the pointer sweep as part of the shoot"
+  ],
+  "must_not_touch": [
+    "Any other rubric item or the severity rule",
+    "packages/basalt-ui/src/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) K3: a one-tab-stop host keeps DOM focus on the host; the reviewer scores arrow movement from the announcement the keyboard log records after the keys, not from the focused element. (2) X4: the shoot records a pointer sweep across the gap between two adjacent marks (a frame at the gap and the dim state it showed), and X4 scores the dimmed rest and that frame; where a cycle has no sweep, X4 scores the dimmed rest alone and says so, rather than a 2 for an untested claim. (3) EXPRESSION.md § The loop, step 3 names the keyboard frame and the pointer sweep as part of every shoot.",
+  "commits": "docs: one commit.",
+  "proof": "The rubric diff and the shot or log that each change answers, cited in the PR.",
+  "acceptance": [
+    "rubric.md K3 says arrow movement is read from the announcement",
+    "rubric.md X4 names the pointer-sweep frame as its evidence and what to score without one",
+    "EXPRESSION.md step 3 names the keyboard frame and the pointer sweep",
+    "No other rubric item or the severity rule changed"
+  ],
+  "out_of_scope": "Any change to what an item asks of a build."
+}
