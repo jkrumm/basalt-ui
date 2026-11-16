@@ -11,7 +11,13 @@ export type ScenarioInfo = {
   blurb: string
 }
 
+// `mdx` stays first: the quality matrix shoots the first entry as `/scenarios/$name`, and its waivers name it.
 export const SCENARIO_INFO: readonly ScenarioInfo[] = [
+  {
+    id: 'mdx',
+    title: 'Authored MDX',
+    blurb: 'An authored page compiled at build time and rendered through one component map.',
+  },
   {
     id: 'expr-c10',
     title: 'Expression c10: leaked key reach',
@@ -41,10 +47,5 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     id: 'expr-n12',
     title: 'Expression n12: last night’s sleep',
     blurb: 'Did I sleep enough, and which stage fell short of my usual?',
-  },
-  {
-    id: 'mdx',
-    title: 'Authored MDX',
-    blurb: 'An authored page compiled at build time and rendered through one component map.',
   },
 ]
