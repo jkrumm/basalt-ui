@@ -63,7 +63,10 @@ const OFFENDERS: [file: string, rule: string][] = [
   ['viewport-media-range.css', 'media-feature-name-disallowed-list'],
   ['data-slot.css', 'selector-disallowed-list'],
   ['mantine-class.css', 'selector-disallowed-list'],
+  ['data-theme.css', 'selector-disallowed-list'],
+  ['dark-class.css', 'selector-disallowed-list'],
   ['utility.css', 'at-rule-disallowed-list'],
+  ['theme.css', 'at-rule-disallowed-list'],
   ['needless-disable.css', '--report-needless-disables'],
   ['reasonless-disable.css', '--report-descriptionless-disables'],
 ]
@@ -154,6 +157,35 @@ describe('messages', () => {
     expect(slot[0]?.text).toContain("component's own prop or variant")
     const media = (await lint('offenders/viewport-media.css')).get('offenders/viewport-media.css')
     expect(media?.[0]?.text).toContain('@container')
+  })
+
+  it('a theme-attribute or .dark selector is told to use a token, in app CSS only', async () => {
+    for (const file of ['data-theme.css', 'dark-class.css']) {
+      const found = (await lint(`offenders/${file}`)).get(`offenders/${file}`) ?? []
+      expect(found.length, file).toBeGreaterThan(0)
+      for (const f of found) expect(f.text, file).toContain('tokens switch per scheme')
+    }
+  })
+
+  it('an at-rule prints one @, and @theme names the status components', async () => {
+    const utility = (await lint('offenders/utility.css')).get('offenders/utility.css') ?? []
+    expect(utility[0]?.text).toContain('`@utility`')
+    expect(utility[0]?.text).not.toContain('@@')
+    const theme = (await lint('offenders/theme.css')).get('offenders/theme.css') ?? []
+    expect(theme[0]?.text).toContain('`@theme`')
+    expect(theme[0]?.text).toContain('Status, Lozenge, DeltaBadge')
+  })
+
+  it('the value list names the fix for each property group', () => {
+    const [, options] = stylelintConfig().rules['declaration-property-value-disallowed-list']
+    for (const part of [
+      'padding, margin, gap',
+      'background, border, outline',
+      'color-mix',
+      'ui/scroll-area',
+    ]) {
+      expect(options.message).toContain(part)
+    }
   })
 })
 
