@@ -1401,10 +1401,13 @@ export function compileCartesian<T, X extends ChartX>(
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {
       const cls = resolveContainerClass(width)
       const access = plotAccess(definition, input.plot, MAIN_PANE)
-      const axes = dotRoomAxes(axesAt(cls), access, height)
+      // `capped` holds the page's domain; `axes` may grow it so an edge dot draws whole. A datum
+      // past the cap is clamped to the cap, so the growth keeps it whole too.
+      const capped = axesAt(cls)
+      const axes = dotRoomAxes(capped, access, height)
       const plot = plotContext(
         {
-          rows: rowsOf(input, visibleKeys, axes),
+          rows: rowsOf(input, visibleKeys, capped),
           visible,
           highlighted: input.highlighted ?? null,
           focused: input.focused ?? null,
@@ -1479,10 +1482,12 @@ export function compileCartesian<T, X extends ChartX>(
         data: input.data,
         x: input.x,
         fraction: model.fraction,
+        // Past the cap the page set (before the dot room grew it); the caret sits on the plot's edge.
         domainOf: (s) => {
-          const axis = axes.axisOf(axes.onRight(s) ? 'right' : 'left')
+          const axis = capped.axisOf(capped.onRight(s) ? 'right' : 'left')
           return axis.bounded ? axis.domain : null
         },
+        edgeOf: (s) => axes.axisOf(axes.onRight(s) ? 'right' : 'left').domain,
         yScaleOf: (s) => axes.scaleId(axes.onRight(s) ? 'right' : 'left'),
       })
       return {

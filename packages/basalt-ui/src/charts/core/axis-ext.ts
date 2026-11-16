@@ -77,7 +77,10 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
   data: readonly T[]
   x: (d: T) => X
   fraction: (x: X) => number | null
+  /** The domain a datum is past (the page's cap), or `null` for an axis with none. */
   domainOf: (s: ChartSeries<T>) => readonly [number, number] | null
+  /** The plotted domain, where the caret sits; the cap's own when absent. */
+  edgeOf?: (s: ChartSeries<T>) => readonly [number, number]
   yScaleOf: (s: ChartSeries<T>) => 'y' | 'y2'
 }): ChartMarks {
   return opts.series.flatMap((s) => {
@@ -98,7 +101,7 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
               text(found[side], {
                 id: `off-scale-${s.key}-${side}`,
                 x: (f: number) => f,
-                y: () => domain[side === 'top' ? 1 : 0],
+                y: () => (opts.edgeOf?.(s) ?? domain)[side === 'top' ? 1 : 0],
                 xScale: 'zx',
                 yScale: opts.yScaleOf(s),
                 text: () => CARETS[side],
