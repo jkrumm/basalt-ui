@@ -1,0 +1,24 @@
+{
+  "why": "Wiring cycle 4 (docs/v3/cycles/wiring-4.md) converged at 0 P1 and 3 P2; one P2 is the export surface. wiring-4.3: the frame types moved to `basalt-ui/cards` in wiring-3.2's fix, but `basalt-ui/charts` still exports `Empty`, `FootFacts`, `FrameState`, `Menu` and `MenuEntry` a second time, while `CardAction` (the type of `EmptyState action`), `Fact` and `FrameHead` export only from `charts` (`charts/index.d.ts:20`); `ControlHandle`, the type of `ViewTabs handle`, `PageAside state` and `Section collapsible.state`, exports only from the root (`index.d.ts:9`), and `PushField`, the type of `InnerNav state`, from nowhere. An app that types an empty-state action or a handle prop imports from a subpath it does not otherwise use. Riding along, three naming P3s: wiring-4.4 (`Status` and `Menu` each name a `ui/*` component and a `cards` type), wiring-4.5 (the docs print the private `QueryResultLike` and `ChartQueryState` for the query a part takes, and `ChartCard`'s phase as an intersection with `\"loading\"`; the accessible name is `label` on `StatGroup`, `ViewTabs`, `InnerNav`, `useDataTable` and `ariaLabel` on the chart kinds; a bound handle is `handle` on `ViewTabs` and `PageBar tabs` and `state` on `InnerNav`, `PageAside`, `Section collapsible`; `rows` is a body height on `BarList` and `EventList` and data rows on `StatCell` and `Facts`) and wiring-4.6 (`Callout kind`, four values, against `Alert tone`, six; `createChannel` on both the root and `basalt-ui/data`).",
+  "what": "Each public type has one v3 subpath beside the parts that take it, and one role has one prop name across the kit.",
+  "owns": [
+    "packages/basalt-ui/src/cards/index.ts, src/charts/index.ts, src/router/index.ts, src/index.ts (the barrels)",
+    "packages/basalt-ui/src/core/ports.ts, src/core/phase.ts, src/cards/contract.ts, src/charts/contract.ts (type names only)",
+    "the props named in wiring-4.5 and wiring-4.6 on `ViewTabs`, `PageBar`, `BarList`, `EventList`, the chart kinds, `QueryState`, `ChartCard` and `Callout`, their tests",
+    "packages/basalt-ui/migrations/areas/*.json and the export-surface snapshot",
+    "the docs `gen-docs.ts` regenerates from them"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) wiring-4.3: `basalt-ui/cards` exports `CardAction`, `Fact` and `FrameHead`; `basalt-ui/charts` stops re-exporting the frame types, keeping deprecated aliases for one minor with migration rows; `ControlHandle` and `PushField` export from `basalt-ui/router` beside `defineControls` and `field`, the root's `ControlHandle` a deprecated alias for one minor. (2) wiring-4.4: the `cards` types `Status` and `Menu` take names no primitive has (`Verdict`, `CardMenu`), the old names deprecated aliases for one minor. (3) wiring-4.5: every query prop's type prints as `Phase | QueryStateLike` in the docs (the private widenings stay internal); one name per role, the other a deprecated alias for one minor: the accessible name is `label` (the chart kinds take `label`, `ariaLabel` the alias), a bound `ControlHandle` is `state` (`ViewTabs` and `PageBar tabs` take `state`, `handle` the alias), and a body height in rows is `bodyRows` on `BarList` and `EventList`. (4) wiring-4.6: `Callout` takes `tone` with `Alert`'s values (`kind` the alias); `createChannel` leaves the root barrel with a migration row. Each rename is a `feat:` with its migration row, never a removal in the same minor.",
+  "commits": "feat: in packages/basalt-ui, one commit per finding; the regenerated docs and the export-surface snapshot ride with the change that moved them.",
+  "proof": "make check; `export-surface --update` diff names only the moves and aliases above; `migrate --check` lists a row for each deprecated name.",
+  "acceptance": [
+    "No frame type exports from both `basalt-ui/cards` and `basalt-ui/charts` except as a deprecated alias, and `CardAction`, `Fact`, `FrameHead` import from `basalt-ui/cards`",
+    "`ControlHandle` and `PushField` import from `basalt-ui/router`",
+    "No exported type shares its name with a `ui/*` component, except as a deprecated alias",
+    "The generated docs name no unexported type in a signature",
+    "The accessible-name prop is `label` and a bound handle prop is `state` on every part named in wiring-4.5, each old name a deprecated alias with a migration row",
+    "make check passes"
+  ],
+  "out_of_scope": "Removing any deprecated alias (the next minor does that); merging `Callout` into `Alert`; the docs fixes of `v3-wiring-4-docs`."
+}
