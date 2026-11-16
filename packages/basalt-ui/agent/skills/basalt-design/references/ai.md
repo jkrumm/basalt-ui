@@ -1,6 +1,6 @@
 # AI
 
-What a model produced is data, never markup the app trusts. The parts own the safe path; you own which one a surface takes and what it says. Docs: [partView](docs/part-view.md), [defineBlock](docs/define-block.md), [defineCatalog](docs/define-catalog.md), [expectCatalog](docs/expect-catalog.md), [CodeBlock](docs/code-block.md), [mdxComponents](docs/mdx-components.md).
+What a model produced is data, never markup the app trusts. The parts own the safe path; you own which one a surface takes and what it says. Docs: [partView](node_modules/basalt-ui/docs/part-view.md), [defineBlock](node_modules/basalt-ui/docs/define-block.md), [defineCatalog](node_modules/basalt-ui/docs/define-catalog.md), [expectCatalog](node_modules/basalt-ui/docs/expect-catalog.md), [CodeBlock](node_modules/basalt-ui/docs/code-block.md), [mdxComponents](node_modules/basalt-ui/docs/mdx-components.md).
 
 ## Pick the renderer
 
@@ -35,14 +35,14 @@ What a model produced is data, never markup the app trusts. The parts own the sa
 
 ## Recipes
 
-- [chat-thread](docs/recipes/chat-thread.md): the thread, the composer and the scroller; the AI SDK chat object lives in `useState`, never in module scope
-- [ai-blocks](docs/recipes/ai-blocks.md): the six seed blocks and their schemas, split so a server imports the schemas alone
-- [ai-sdk-tools](docs/recipes/ai-sdk-tools.md): one `show` tool over the block schemas; the client draws that part itself
-- [ai-external-runtime](docs/recipes/ai-external-runtime.md): TanStack AI, AG-UI and assistant-ui messages mapped into `MessagePart`
-- [ai-card](docs/recipes/ai-card.md): a streamed summary held at one height inside a card
-- [mdx](docs/recipes/mdx.md): authored MDX with `mdxComponents` and the `Prose` look
-- [ai-approvals-sources](docs/recipes/ai-approvals-sources.md): approve before a tool runs, reasoning, cited sources
-- [ai-artifacts](docs/recipes/ai-artifacts.md): a document, block, code or preview beside the chat, with versions
+- [chat-thread](node_modules/basalt-ui/docs/recipes/chat-thread.md): the thread, the composer and the scroller; the AI SDK chat object lives in `useState`, never in module scope
+- [ai-blocks](node_modules/basalt-ui/docs/recipes/ai-blocks.md): the six seed blocks and their schemas, split so a server imports the schemas alone
+- [ai-sdk-tools](node_modules/basalt-ui/docs/recipes/ai-sdk-tools.md): one `show` tool over the block schemas; the client draws that part itself
+- [ai-external-runtime](node_modules/basalt-ui/docs/recipes/ai-external-runtime.md): TanStack AI, AG-UI and assistant-ui messages mapped into `MessagePart`
+- [ai-card](node_modules/basalt-ui/docs/recipes/ai-card.md): a streamed summary held at one height inside a card
+- [mdx](node_modules/basalt-ui/docs/recipes/mdx.md): authored MDX with `mdxComponents` and the `Prose` look
+- [ai-approvals-sources](node_modules/basalt-ui/docs/recipes/ai-approvals-sources.md): approve before a tool runs, reasoning, cited sources
+- [ai-artifacts](node_modules/basalt-ui/docs/recipes/ai-artifacts.md): a document, block, code or preview beside the chat, with versions
 
 ## Deferred: when to ask
 

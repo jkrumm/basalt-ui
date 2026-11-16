@@ -25,7 +25,11 @@ describe('sk-7b references', () => {
 
   test('every cited docs/<export>.md exists', () => {
     for (const name of NAMES) {
-      const cited = [...text(name).matchAll(/\(docs\/([\w/-]+\.md)\)|`docs\/([\w/-]+\.md)`/g)]
+      const cited = [
+        ...text(name).matchAll(
+          /\((?:node_modules\/basalt-ui\/)?docs\/([\w/-]+\.md)\)|`(?:node_modules\/basalt-ui\/)?docs\/([\w/-]+\.md)`/g,
+        ),
+      ]
       expect(cited.length).toBeGreaterThan(0)
       for (const m of cited) {
         expect(existsSync(join(pkgRoot, 'docs', (m[1] ?? m[2]) as string))).toBe(true)
