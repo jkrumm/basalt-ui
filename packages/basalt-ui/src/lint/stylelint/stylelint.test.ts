@@ -93,7 +93,7 @@ const OFFENDERS: [file: string, rule: string][] = [
   ['raw-radius.css', 'declaration-property-value-allowed-list'],
   ['radius-percent.css', 'declaration-property-value-allowed-list'],
   ['raw-line-height.css', 'declaration-property-value-allowed-list'],
-  ['vx-declaration.css', 'property-disallowed-list'],
+  ['basalt-declaration.css', 'property-disallowed-list'],
   ['theme-colour-declared.css', 'property-disallowed-list'],
   ['theme-radius-font-declared.css', 'property-disallowed-list'],
   ['important.css', 'declaration-no-important'],

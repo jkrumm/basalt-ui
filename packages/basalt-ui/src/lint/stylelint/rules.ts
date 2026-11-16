@@ -33,8 +33,8 @@ const MIX_COLOUR = `(?:${BASALT_VAR}|transparent)`
 const MIX_STOP = `${MIX_COLOUR}(?:\\s+[\\d.]+%)?`
 const CLEAN_MIX_BODY = `\\s*in\\s+[a-z0-9-]+(?:\\s+(?:shorter|longer|increasing|decreasing)\\s+hue)?\\s*,\\s*${MIX_STOP}\\s*,\\s*${MIX_STOP}\\s*\\)`
 
-// Tailwind v4 exposes every token as `--color-<role>`; a value list reads that spelling beside `--vx-<role>`.
-const TOKEN_PREFIX = '--(?:vx|color)-'
+// Tailwind v4 exposes every token as `--color-<role>`; a value list reads that spelling beside `--basalt-<role>`.
+const TOKEN_PREFIX = '--(?:basalt|color)-'
 
 // Roles that are spent as text, `fill` or `stroke`, never as a surface, border, outline or shadow.
 const DECORATIVE_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:(?:good|warn|bad|info|brand|chart|seq|destructive)(?:-[a-z0-9-]+)?|[a-z0-9-]*-tint)\\s*[,)]`
@@ -218,10 +218,10 @@ export const STYLELINT_RULES = {
     },
   ],
   'property-disallowed-list': [
-    ['/^--vx-/', THEME_PROPERTY],
+    ['/^--basalt-/', THEME_PROPERTY],
     {
       message:
-        'Never declare `%s`: a `--vx-*` token is derived from the palette config, and a `--color-*`, `--radius-*` or `--font-*` theme name maps it, so neither is authored. Read it with `var()`, or retune `basalt()` options.',
+        'Never declare `%s`: a `--basalt-*` token is derived from the palette config, and a `--color-*`, `--radius-*` or `--font-*` theme name maps it, so neither is authored. Read it with `var()`, or retune `basalt()` options.',
     },
   ],
   'declaration-no-important': [
@@ -269,7 +269,7 @@ export const STYLELINT_RULES = {
     {
       // `%s` is the at-rule with its `@` already (stylelint passes `@utility`)
       message:
-        "`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--vx-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet. A `@custom-media` names a viewport query: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`). `@tailwind` is Tailwind v3's layer directive: the package owns the layers, so the one basalt stylesheet import is all a module needs, and no layer is written.",
+        "`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--basalt-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--basalt-*` token in a module stylesheet. A `@custom-media` names a viewport query: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`). `@tailwind` is Tailwind v3's layer directive: the package owns the layers, so the one basalt stylesheet import is all a module needs, and no layer is written.",
     },
   ],
 } as const
