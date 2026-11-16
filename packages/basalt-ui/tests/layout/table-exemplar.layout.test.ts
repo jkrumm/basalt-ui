@@ -148,6 +148,29 @@ layout('Table exemplar at the phone widths', () => {
         expect(info.color).not.toBe(info.own)
       })
 
+      test('a number, a date and a boolean in the meta name their column and read from the start', async () => {
+        const page = await open(viewport)
+        const cells = await page.raw.evaluate(() =>
+          [
+            ...document.querySelectorAll<HTMLElement>(
+              '[data-testid="te-none"] tbody tr:first-child td',
+            ),
+          ].map((td) => ({
+            label: td.getAttribute('data-label'),
+            before: getComputedStyle(td, '::before').content,
+            align: getComputedStyle(td).textAlign,
+          })),
+        )
+        for (const header of ['Items', 'Booked', 'Open']) {
+          const cell = cells.find((entry) => entry.label === header)
+          expect(cell, `${header} is labelled`).toBeDefined()
+          expect(cell!.before).toBe(`"${header}: "`)
+          expect(cell!.align).toBe('start')
+        }
+        // the title cell stays unlabelled
+        expect(cells[0]!.label).toBeNull()
+      })
+
       for (const probe of PROBES) {
         test(`${probe}: every column of a row is drawn, with its data`, async () => {
           const page = await open(viewport)

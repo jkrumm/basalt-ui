@@ -186,11 +186,16 @@
       grid-column: 1;
       font-weight: 500;
     }
-    /* a text value in the card's meta says which column it is */
+    /* a value placed in the card's meta says which column it is */
     [data-slot='table-root'][data-below='480'][data-phone='cards']
       [data-slot='table-cell'][data-label]::before {
       content: attr(data-label) ': ';
       color: var(--vx-ink-muted);
+    }
+    /* a labelled value reads from the card's start, a number or a boolean included */
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-cell'][data-label] {
+      text-align: start !important;
     }
     /* a money value keeps the currency its column header carried */
     [data-slot='table-root'][data-below='480'][data-phone='cards']
@@ -296,11 +301,16 @@
       grid-column: 1;
       font-weight: 500;
     }
-    /* a text value in the card's meta says which column it is */
+    /* a value placed in the card's meta says which column it is */
     [data-slot='table-root'][data-below='800'][data-phone='cards']
       [data-slot='table-cell'][data-label]::before {
       content: attr(data-label) ': ';
       color: var(--vx-ink-muted);
+    }
+    /* a labelled value reads from the card's start, a number or a boolean included */
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-cell'][data-label] {
+      text-align: start !important;
     }
     /* a money value keeps the currency its column header carried */
     [data-slot='table-root'][data-below='800'][data-phone='cards']
@@ -406,11 +416,16 @@
       grid-column: 1;
       font-weight: 500;
     }
-    /* a text value in the card's meta says which column it is */
+    /* a value placed in the card's meta says which column it is */
     [data-slot='table-root'][data-below='always'][data-phone='cards']
       [data-slot='table-cell'][data-label]::before {
       content: attr(data-label) ': ';
       color: var(--vx-ink-muted);
+    }
+    /* a labelled value reads from the card's start, a number or a boolean included */
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-cell'][data-label] {
+      text-align: start !important;
     }
     /* a money value keeps the currency its column header carried */
     [data-slot='table-root'][data-below='always'][data-phone='cards']
