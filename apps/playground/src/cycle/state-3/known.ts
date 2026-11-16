@@ -11,12 +11,4 @@ interface KnownFinding {
   owner: string
 }
 
-export const known: readonly KnownFinding[] = [
-  {
-    route: '/cycle/state-3',
-    assertion: 'focusNotObscured',
-    item: /th\[table-head\]>button\[pressable\] "Flagged": covered at \(\d+,\d+\) by button\[button\]/,
-    owner:
-      'v3-state-3-visual: a narrow column header column-actions button covers its sort button (state-3.6)',
-  },
-]
+export const known: readonly KnownFinding[] = []
