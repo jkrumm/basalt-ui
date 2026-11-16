@@ -1,0 +1,9 @@
+/*
+ * The `table-deep-link` fixture's Tailwind v4 entry, compiled with preflight the way a Tailwind
+ * consumer renders the page. `table-deep-link.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../src/css/tailwind.css' source(none);
+@source './table-deep-link-fixture.tsx';
+@source '../../src/ui';
+@source '../../src/table';
+@source '../../src/page';

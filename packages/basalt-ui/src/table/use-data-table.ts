@@ -94,8 +94,12 @@ export type TableModel<T> = {
   getRowId: (row: T) => string
   /** A `ViewStore` the caller supplied; absent, the Views panel keeps the views on the device. */
   viewStore: ViewStore | undefined
-  /** The parts hand the detail host here; an activation shows into the latest one. */
-  setHost(host: DetailHost | undefined): void
+  /**
+   * The parts hand the detail host here; an activation shows into the latest one. `kind` names where
+   * the host comes from (the caller's, the page's, the table's own sheet): a host of another kind
+   * replaces the one the entry was shown in, so the entry is hidden there and shown again here.
+   */
+  setHost(host: DetailHost | undefined, kind: string): void
   /** Opens the sheet derived from the row's columns (the `table-expand` door). */
   openDetails(id: string): void
   /**
@@ -293,6 +297,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
   })
 
   const host = useRef<DetailHost | undefined>(undefined)
+  const hostKind = useRef<string | null>(null)
   const byId = new Map(rows.map((row) => [row.id, row.original] as const))
   const activation: Activation<T> =
     options.detail !== undefined
@@ -332,6 +337,14 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       showDetail(row)
     }
   }
+  // Shows the record a field names: its loaded row, else `detailById`'s body.
+  const showField = (id: string): void => {
+    const row = matched.find((r) => getRowId(r) === id)
+    const { detailById } = options
+    if (row !== undefined) showDetail(row)
+    else if (detailById !== undefined)
+      host.current?.show({ title: options.label, body: (box) => detailById(id, box) })
+  }
   // The field is the source of truth: a name that arrives from the URL opens its row once the rows
   // load, and a field that goes unset (Back, `clear()`) closes the sheet the table opened. A name no
   // loaded row has opens `detailById`'s body once the query settled, or is cleared with a dev warning.
@@ -363,8 +376,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     }
     if (host.current === undefined) return
     shownFor.current = openId
-    if (row !== undefined) showDetail(row)
-    else host.current.show({ title: options.label, body: (box) => detailById?.(openId, box) })
+    showField(openId)
   })
   const keyboard = useRowKeyboard({
     rowIds: items.flatMap((item) => (item.type === 'row' ? [item.row.id] : [])),
@@ -408,8 +420,20 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     keyboard,
     getRowId,
     viewStore: options.views?.store,
-    setHost(next) {
+    setHost(next, kind) {
+      const previous = host.current
       host.current = next
+      if (hostKind.current !== kind) {
+        hostKind.current = kind
+        // The page's aside mounts after the table's first render, so a deep link can show in the
+        // table's own sheet first; the entry moves to the host that took over. This runs from the
+        // parts' effect, which a host change reaches while the table's own effect does not.
+        const shown = shownFor.current
+        if (previous !== undefined && next !== undefined && shown !== null) {
+          previous.hide()
+          showField(shown)
+        }
+      }
     },
     openDetails: showAuto,
     closeDetail(hostClosed) {

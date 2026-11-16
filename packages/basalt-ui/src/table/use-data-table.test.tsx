@@ -602,6 +602,48 @@ describe('detail bound to a field', () => {
     expect(document.querySelector('tbody tr[aria-current]')).toBeNull()
   })
 
+  describe.each([{ bound: false }, { bound: true }])(
+    'a deep link into a Page aside (aside state bound: $bound)',
+    ({ bound }) => {
+      function DeepLinked({ field }: { field: ControlHandle<string> }): ReactElement {
+        const c = col<Row>()
+        const t = useDataTable<Row>({
+          id: 'detail-state-deep-link-test',
+          label: 'Rows',
+          columns: [c.text('name')],
+          data: ROWS,
+          getRowId: (r) => r.id,
+          mode: { kind: 'client' },
+          detail: (row) => <span>{row.name} body</span>,
+          detailState: field,
+        })
+        return (
+          <Page>
+            <DataTable table={t} />
+            <PageAside title="Inspector" {...(bound && { state: field })}>
+              own
+            </PageAside>
+          </Page>
+        )
+      }
+
+      test('keeps its id and marks its row until the user closes it', async () => {
+        setWidth(1440)
+        const field = urlField('b')
+        render(<DeepLinked field={field} />)
+        await act(async () => new Promise((r) => setTimeout(r, 50)))
+        expect(field.value()).toBe('b')
+        expect(screen.getByRole('complementary', { name: /./ }).textContent).toContain(
+          'Project 2 body',
+        )
+        expect(document.querySelectorAll('tbody tr[aria-current="true"]')).toHaveLength(1)
+        fireEvent.click(screen.getByRole('button', { name: 'Close panel' }))
+        expect(field.value()).toBe('')
+        expect(document.querySelector('tbody tr[aria-current]')).toBeNull()
+      })
+    },
+  )
+
   test('the field going unset (Back) closes the sheet', async () => {
     const field = urlField('a')
     render(<Bound field={field} />)

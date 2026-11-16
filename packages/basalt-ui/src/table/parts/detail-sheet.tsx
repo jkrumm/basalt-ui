@@ -4,7 +4,7 @@
  * `Page`'s (its `PageAside`, no wiring); without either, the body of the table brings this sheet, so a row tap always lands somewhere and a column a
  * tier hides is reachable.
  */
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import type { ReactElement } from 'react'
 import type { DetailEntry, DetailHost } from '../../core/ports'
 import { DetailHostContext } from '../../page/page'
@@ -31,11 +31,18 @@ export function useDetailHost<T>(
     model.closeDetail()
   }
   const host = detail ?? page ?? own
+  const kind = detail !== undefined ? 'caller' : page !== null ? 'page' : 'own'
+  const wasOpen = useRef(false)
   useEffect(() => {
-    model.setHost(host)
+    model.setHost(host, kind)
     // A host closes on its own terms (the page's aside, a caller's panel), so the row it showed is
-    // no longer the open one.
-    if (!host.isOpen) model.closeDetail(true)
+    // no longer the open one. Only a host seen open can close: one that has not shown the entry yet
+    // (a deep link's first commit, a host that just took over) is not a close.
+    if (host.isOpen) wasOpen.current = true
+    else if (wasOpen.current) {
+      wasOpen.current = false
+      model.closeDetail(true)
+    }
   })
   return (
     <Sheet open={entry !== null} onOpenChange={(open) => !open && close()}>
