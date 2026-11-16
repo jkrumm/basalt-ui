@@ -163,6 +163,10 @@
   [data-chart-mark][data-dimmed] {
     opacity: 0.5;
   }
+  /* A marked row of text keeps its ink readable (charts/core/theme DIMMED_TEXT). */
+  [data-chart-mark][data-dimmed]:not(:where(svg *)) {
+    opacity: 0.7;
+  }
   @media (prefers-reduced-motion: no-preference) {
     [data-chart-mark] {
       transition: opacity 120ms ease-out;
