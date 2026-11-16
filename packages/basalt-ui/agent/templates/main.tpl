@@ -20,6 +20,7 @@ import { RoutePending } from './components/route-pending'
 import { routeTree } from './routeTree.gen'
 
 const queryClient = createQueryClient()
+// oxlint-disable-next-line no-use-before-define -- lazy read: the router is built from these defaults
 const defaults = routerDefaults({ router: (): object => router })
 
 export const router = createRouter({
