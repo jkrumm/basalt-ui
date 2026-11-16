@@ -91,6 +91,14 @@ const textOnFill = new RegExp(
   `${HEAD}text-(?:${alt(zoneAFillOnly)}|\\(--vx-(?:${alt(zoneAFillOnly)})\\)|\\[(?:var\\()?--vx-(?:${alt(zoneAFillOnly)})\\)?\\])${TAIL}`,
 )
 
+/**
+ * A dark-scheme variant: `dark:`, the theme attribute bare or quoted (`data-[theme='dark']:`, as the
+ * Tailwind docs print it), its arbitrary-selector spellings and the colour-scheme media query as an
+ * arbitrary variant (`[@media(prefers-color-scheme:dark)]:`).
+ */
+const DARK_VARIANT =
+  '(?:(?:(?:group|peer|in)-)?(?:dark|data-\\[theme=["\']?dark["\']?\\])|\\[(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark)_&\\]|\\[@media_?\\(prefers-color-scheme:_?dark\\)\\]):'
+
 /** A viewport variant anywhere in the token's chain: `viewport-keyed` already reports it. */
 const VIEWPORT_CHAIN =
   '(?:[^:]+:)*(?:(?:(?:max|min)-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\\[[^\\]]*\\]):'
@@ -144,8 +152,7 @@ export const CLASS_RULES = defineRules({
     forms: [
       {
         id: 'dark-variant',
-        pattern:
-          /(?:^|:)(?:(?:(?:group|peer|in)-)?(?:dark|data-\[theme=dark\])|\[(?:\[data-theme=["']?dark["']?\]|\.dark)_&\]):/,
+        pattern: new RegExp(`(?:^|:)${DARK_VARIANT}`),
         fix: 'Tokens switch per scheme: add the token instead of forking with dark:',
         next: 'A reasoned per-line waiver',
         fixture: 'class/dark-fork/dark-variant.tsx',
@@ -163,7 +170,7 @@ export const CLASS_RULES = defineRules({
       {
         id: 'black-white',
         pattern: new RegExp(`${HEAD}${COLOUR_PREFIX}-(?:black|white)${TAIL}`),
-        fix: 'on-brand for ink on a brand fill; the backdrop is owned by Dialog and Sheet',
+        fix: 'Button variant primary or Status own a brand fill and its ink in app code; on-brand ink on a brand fill at bridge; the backdrop is owned by Dialog and Sheet',
         next: 'A reasoned per-line waiver',
         fixture: 'class/fixed-colour/black-white.tsx',
       },
@@ -231,7 +238,7 @@ export const CLASS_RULES = defineRules({
           zonesOff: ZONE_COLOUR,
           // A `dark:` token is `dark-fork`'s: one fix at a time, and the recipe fires once it is gone.
           pattern: new RegExp(
-            `^(?!.*(?:^|:)(?:(?:group|peer|in)-)?(?:dark|data-\\[theme=dark\\]):)(?:.*:)?!?(?:bg-(?:card|inset)|shadow-card|rounded-card)(?:\\/[^\\s!]+)?!?$`,
+            `^(?!.*(?:^|:)${DARK_VARIANT})(?:.*:)?!?(?:bg-(?:card|inset)|shadow-card|rounded-card)(?:\\/[^\\s!]+)?!?$`,
           ),
           fix: 'Card or Inset own the surface recipe',
           next: 'A reasoned waiver',
@@ -278,14 +285,14 @@ export const CLASS_RULES = defineRules({
         id: 'important-modifier',
         pattern: /(?:^|:)!-?[a-z0-9[]|(?:^|:)-?[a-z][a-z0-9]*(?:-[^\s!:]+)+!$/,
         fix: 'Fix the cascade or add a cva variant instead of forcing with !',
-        next: 'Parent-owned width, or a reasoned waiver',
+        next: 'A reasoned waiver',
         fixture: 'class/tw-off-law/important-modifier.tsx',
       },
       {
         id: 'template-interpolation',
         pattern: /-\$\{\}/,
-        fix: 'A cva variant per tone: Tailwind cannot scan an interpolated class',
-        next: 'Status or Num tone from parts',
+        fix: 'A cva variant per value, a tone, size or count: Tailwind cannot scan an interpolated class',
+        next: 'Status or Num tone from parts for a colour',
         fixture: 'class/tw-off-law/template-interpolation.tsx',
       },
       partsOnly({

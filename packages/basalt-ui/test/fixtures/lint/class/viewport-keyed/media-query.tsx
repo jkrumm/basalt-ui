@@ -8,6 +8,10 @@
 // expect: useMediaQuery('(max-width: 767px)')
 // expect: window.innerWidth < 768
 // expect: 1024 <= window.outerWidth
+// expect: width < 768
+// expect: size.width >= 1024
+// expect: useWindowSize().width < 640
+// expect: w < 768
 export const a = window.matchMedia('(min-width: 768px)')
 export const b = useMediaQuery('(max-width: 640px)')
 export const c = matchMedia(`(min-width: ${bp}px)`)
@@ -21,3 +25,9 @@ const WIDE = 1024
 export const h = useMediaQuery(MOBILE_QUERY)
 export const i = () => window.innerWidth < BREAKPOINT
 export const j = WIDE <= window.outerWidth
+export function Nav() {
+  const { width } = useWindowSize()
+  const size = useWindowSize()
+  const { width: w = 0 } = useWindowSize()
+  return [width < 768, size.width >= 1024, useWindowSize().width < 640, w < BREAKPOINT]
+}

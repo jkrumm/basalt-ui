@@ -48,14 +48,25 @@ function literalText(arg: Node | undefined): string | undefined {
  * colour-scheme and pointer queries are not viewport-keyed; a non-literal argument stays open
  * (S2: 8 of 28 hits remain once narrowed, all true). A top-level `const` string or number
  * (`useMediaQuery(MOBILE_QUERY)`, `window.innerWidth < BREAKPOINT`) is read as its literal.
+ *
+ * A window-size hook (`useWindowSize` of usehooks-ts, `@uidotdev/usehooks` or `react-use`) is
+ * tied by name: its `width` read against a number reports, as `useWindowSize().width`, through a
+ * binding (`const size = useWindowSize()` then `size.width`) or a destructure (`const { width } =
+ * useWindowSize()`, renamed or not). A bare `width` from anywhere else is a chart's plot width and
+ * passes. Known limits: the height is not read (as `window.innerHeight` is not), and a binding is
+ * matched by spelling within the file, not by scope.
  */
 export function mediaQueryForm({ report }: FormContext): Visitor {
   let consts: ReadonlyMap<string, Node> = new Map()
   const resolve = (node: Node | undefined): Node | undefined =>
     node?.type === 'Identifier' ? (consts.get(node['name'] as string) ?? node) : node
+  const sizes: WindowSizes = { objects: new Set(), widths: new Set() }
   return {
     Program(node) {
       consts = topLevelConsts(node)
+    },
+    VariableDeclarator(node) {
+      bindWindowSize(node, sizes)
     },
     CallExpression(node) {
       const name = calleeName(node)
@@ -65,10 +76,52 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
       if (text !== undefined && /width/i.test(text)) report(node, `${name}('${text}')`)
     },
     BinaryExpression(node) {
-      const subject = widthComparison(node, resolve)
+      const subject = widthComparison(node, resolve, sizes)
       if (subject !== undefined) report(node, subject)
     },
   }
+}
+
+/** The names a file binds to a window-size hook: the result object, and a destructured width. */
+type WindowSizes = { objects: Set<string>; widths: Set<string> }
+
+const WINDOW_SIZE_HOOKS: ReadonlySet<string> = new Set(['useWindowSize'])
+
+const isWindowSizeCall = (node: Node | undefined): boolean => {
+  if (node?.type !== 'CallExpression') return false
+  const name = calleeName(node)
+  return name !== undefined && WINDOW_SIZE_HOOKS.has(name)
+}
+
+/** `const size = useWindowSize()` or `const { width: w } = useWindowSize()`. */
+function bindWindowSize(declarator: Node, sizes: WindowSizes): void {
+  if (!isWindowSizeCall(field(declarator, 'init'))) return
+  const id = field(declarator, 'id')
+  if (id?.type === 'Identifier') {
+    sizes.objects.add(id['name'] as string)
+    return
+  }
+  if (id?.type !== 'ObjectPattern') return
+  for (const property of nodesOf(id, 'properties')) {
+    if (property.type !== 'Property' || nameOf(field(property, 'key')) !== 'width') continue
+    const value = field(property, 'value')
+    const local = nameOf(value?.type === 'AssignmentPattern' ? field(value, 'left') : value)
+    if (local !== undefined) sizes.widths.add(local)
+  }
+}
+
+/** The text of a window-size hook's width: `width`, `size.width`, `useWindowSize().width`. */
+function windowSizeRead(node: Node | undefined, sizes: WindowSizes): string | undefined {
+  if (node?.type === 'Identifier') {
+    const name = node['name'] as string
+    return sizes.widths.has(name) ? name : undefined
+  }
+  if (node?.type !== 'MemberExpression' || node['computed'] === true) return undefined
+  if (nameOf(field(node, 'property')) !== 'width') return undefined
+  const object = field(node, 'object')
+  if (isWindowSizeCall(object)) return `${calleeName(object as Node) ?? ''}().width`
+  const name = nameOf(object)
+  return name !== undefined && sizes.objects.has(name) ? `${name}.width` : undefined
 }
 
 /**
@@ -99,16 +152,21 @@ const WIDTH_COMPARISONS: ReadonlySet<string> = new Set(['<', '<=', '>', '>='])
 function widthComparison(
   node: Node,
   resolve: (node: Node | undefined) => Node | undefined,
+  sizes: WindowSizes,
 ): string | undefined {
   const operator = node['operator'] as string
   if (!WIDTH_COMPARISONS.has(operator)) return undefined
-  const left = resolve(field(node, 'left'))
-  const right = resolve(field(node, 'right'))
-  const leftRead = viewportRead(left)
+  const rawLeft = field(node, 'left')
+  const rawRight = field(node, 'right')
+  const read = (raw: Node | undefined): string | undefined =>
+    windowSizeRead(raw, sizes) ?? viewportRead(resolve(raw))
+  const left = resolve(rawLeft)
+  const right = resolve(rawRight)
+  const leftRead = read(rawLeft)
   if (leftRead !== undefined && right?.type === 'Literal' && typeof right['value'] === 'number') {
     return `${leftRead} ${operator} ${String(right['value'])}`
   }
-  const rightRead = viewportRead(right)
+  const rightRead = read(rawRight)
   if (rightRead !== undefined && left?.type === 'Literal' && typeof left['value'] === 'number') {
     return `${String(left['value'])} ${operator} ${rightRead}`
   }
