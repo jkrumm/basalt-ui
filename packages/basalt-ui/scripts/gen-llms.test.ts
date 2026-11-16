@@ -61,7 +61,7 @@ describe('gen-llms signatures', () => {
     const table = block('DataTable')
     expect(table).toContain('  table: DataTableInstance<T>')
     expect(table).toContain('  detail?: DetailHost')
-    expect(block('Bars')).toContain('  ariaLabel: string')
+    expect(block('Bars')).toContain('  label: string')
     // Subpaths beyond table/charts/forms get their props too (friction row 57).
     const aside = block('PageAside')
     expect(aside.some((l) => l.startsWith('  title: '))).toBe(true)

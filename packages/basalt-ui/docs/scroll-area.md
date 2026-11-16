@@ -25,7 +25,7 @@ wrapped in one plain `div` that the overflow is measured on.
 
 ```ts
 ScrollArea({ orientation, className, children, ref, ...props }: ScrollAreaProps): ReactElement
-  orientation?: "vertical" | "horizontal" | "both" | null
+  orientation?: "horizontal" | "vertical" | "both" | null
   className?: string  // Layout and the bound that makes it scroll (`max-h-64`, `h-full`)
 ```
 

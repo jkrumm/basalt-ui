@@ -261,7 +261,7 @@ export const SURFACES = {
       "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
     ],
     description:
-      'The state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`, `useFormat`). Reaches no subpath-required peer.',
+      'The state seams (`persisted`, `notify`, `externalField`, `useNow`, `createFormat`, `useFormat`). Reaches no subpath-required peer.',
     optionalPeers: [
       'remark-gfm',
       'rehype-sanitize',
