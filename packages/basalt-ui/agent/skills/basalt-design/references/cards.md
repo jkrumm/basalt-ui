@@ -19,12 +19,12 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](d
 
 ## A list or a strip is still a card
 
-- A card that holds a list ([DataPanel](docs/data-panel.md)) or a strip states its figure with its pill in the inset and at most two footer pairs, or the page puts the figure in a [ChartCard](docs/chart-card.md) `figure` beside it. A subtitle never carries a figure or a status: a figure in a subtitle has no pill, no delta and no polarity (c10 F8: status facts outside the card; c13 F8 and X5: subtitles in place of the figure; c12 F8: the wrong number in the figure).
+- A card that holds a list ([DataPanel](docs/data-panel.md)) or a strip states its figure with its pill in the inset and at most two footer pairs, or the page puts the figure in a [ChartCard](docs/chart-card.md) `figure` beside it. The figure and the status live in the inset, where a pill, a delta and a polarity can attach; a subtitle carries a fact, and a figure there reads as prose (c10 F8: status facts outside the card; c13 F8 and X5: subtitles in place of the figure; c12 F8: the wrong number in the figure).
 
 ## Every figure has a baseline
 
 - Give the figure a baseline in the card itself: the delta, a target tick, the limit with the distance to it, or a history line.
-- A count over a total is a figure with its share or delta ("13", pill "68% of 19"), never a sentence in prose with no baseline (c10 F3, c11 F3).
+- A count over a total is a figure with its share or delta ("13", pill "68% of 19"), where a sentence in prose gives nothing to compare (c10 F3, c11 F3).
 - A card with none of these is allowed when the number lacks a history, a target and parts.
 
 ## Compose, in this order
