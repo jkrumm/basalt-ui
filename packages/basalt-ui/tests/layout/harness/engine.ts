@@ -289,6 +289,9 @@ async function unscopeContainerNames(dir: string): Promise<void> {
  */
 async function bootLayoutSuite(gen: number): Promise<boolean> {
   const started = performance.now()
+  // Read first, outside any try: an invalid BASALT_TEST_BROWSER must fail the run (before anything is
+  // created), not read as 'no browser installed'.
+  const launchOptions = testBrowserOptions(readTestBrowser())
 
   phase = 'bundling the fixture'
   const dir = await mkdtemp(join(tmpdir(), 'basalt-layout-'))
@@ -321,8 +324,6 @@ async function bootLayoutSuite(gen: number): Promise<boolean> {
   }
 
   phase = 'launching Chrome'
-  // Read outside the try: an invalid BASALT_TEST_BROWSER must fail the run, not read as 'no browser installed'.
-  const launchOptions = testBrowserOptions(readTestBrowser())
   let chrome: Browser
   let chromeProcess: BrowserServer
   try {

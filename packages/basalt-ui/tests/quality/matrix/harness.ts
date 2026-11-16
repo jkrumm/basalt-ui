@@ -146,6 +146,9 @@ export type PageOptions = {
 
 /** Builds, serves and launches Chrome. Returns `null` (with a warning) when Chrome is missing locally; throws under CI. */
 export async function bootMatrix(): Promise<MatrixHarness | null> {
+  // Read first, outside any try: an invalid BASALT_TEST_BROWSER must fail the run (before anything is
+  // created), not read as 'no browser installed'.
+  const launchOptions = testBrowserOptions(readTestBrowser())
   const dir = await mkdtemp(join(tmpdir(), 'basalt-matrix-'))
   const pseudoDir = join(dir, 'pseudo')
   await buildPlayground(dir, false)
@@ -173,8 +176,6 @@ export async function bootMatrix(): Promise<MatrixHarness | null> {
     },
   })
 
-  // Read outside the try: an invalid BASALT_TEST_BROWSER must fail the run, not read as 'no browser installed'.
-  const launchOptions = testBrowserOptions(readTestBrowser())
   let chromeProcess: BrowserServer
   let browser: Browser
   try {
