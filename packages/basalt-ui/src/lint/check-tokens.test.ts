@@ -64,6 +64,11 @@ describe('checkTokens', () => {
     expect(nearestToken('--vx-background', known)).toBe('--vx-canvas')
     expect(nearestToken('--vx-foreground', known)).toBe('--vx-ink')
     expect(nearestToken('--vx-border', known)).toBe('--vx-hairline')
+    // lint-6.15: bold is strong, shadcn's *-foreground is an ink or on-* token
+    expect(nearestToken('--vx-weight-bold', known)).toBe('--vx-weight-strong')
+    expect(nearestToken('--vx-accent-foreground', known)).toBe('--vx-on-brand')
+    expect(nearestToken('--vx-primary-foreground', known)).toBe('--vx-canvas')
+    expect(nearestToken('--vx-muted-foreground', known)).toBe('--vx-ink-muted')
     // the suggestion reaches the finding
     const f = file('k.css', '.a { color: var(--vx-text-muted); }')
     expect(checkTokens({ files: [f] }).findings[0]?.nearest).toBe('--vx-ink-muted')

@@ -1,0 +1,3 @@
+.dot { border-radius: 50%; }
+.pill { border-radius: 9999px; }
+.pill2 { border-top-left-radius: calc(infinity * 1px); }

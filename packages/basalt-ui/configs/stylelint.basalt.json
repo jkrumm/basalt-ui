@@ -75,12 +75,15 @@
     ],
     "declaration-property-value-allowed-list": [
       {
+        "/^border(?:-[a-z]+)*-radius$/": [
+          "/^(?:(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit)|50%|9999px|calc\\(\\s*infinity\\s*\\*\\s*1px\\s*\\))(?:\\s+(?:(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit)|50%|9999px|calc\\(\\s*infinity\\s*\\*\\s*1px\\s*\\)))*$/i"
+        ],
         "/^(?:border(?:-[a-z]+)*-radius|box-shadow|line-height|letter-spacing)$/": [
           "/^(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit)(?:\\s*[,\\s]\\s*(?:var\\(--vx-[a-z0-9-]+\\)|0|none|inherit))*$/i"
         ]
       },
       {
-        "message": "Disallowed `%s: %s`. Radius, shadow, line height and letter spacing take a `--vx-*` token, `0`, `none` or `inherit`."
+        "message": "Disallowed `%s: %s`. Radius, shadow, line height and letter spacing take a `--vx-*` token, `0`, `none` or `inherit`; a radius also takes `50%` or `9999px` for a circle or a pill (`rounded-full` in a class)."
       }
     ],
     "property-disallowed-list": [
@@ -111,7 +114,8 @@
         "/\\[\\s*data-slot/",
         "/\\.mantine-/",
         "/\\[\\s*data-theme/",
-        "/\\.dark(?![\\w-])/"
+        "/\\.dark(?![\\w-])/",
+        "/\\[\\s*class\\s*[~*^]=\\s*[\"']?dark/"
       ],
       {
         "message": "Never select `%s`. A `data-slot` or `.mantine-*` selector reaches into a component: use the component's own prop or variant, or eject it (basalt-ui eject <name>). A `data-theme` or `.dark` selector forks a colour per scheme: tokens switch per scheme, so use a `--vx-*` token instead."
@@ -125,10 +129,11 @@
         "variant",
         "plugin",
         "apply",
-        "config"
+        "config",
+        "custom-media"
       ],
       {
-        "message": "`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--vx-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet."
+        "message": "`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--vx-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet. A `@custom-media` names a viewport query: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`)."
       }
     ]
   }

@@ -127,6 +127,22 @@ const ROLE_TOKENS: ReadonlyMap<string, string> = new Map(
 )
 
 /**
+ * Names an author writes from another vocabulary, to the token that means it: the bold weight is
+ * `strong` (`--vx-weight-body` is 400), and shadcn's `*-foreground` is the ink or the `on-*` token.
+ */
+const ALIAS_TOKENS: ReadonlyMap<string, string> = new Map([
+  ['--vx-weight-bold', '--vx-weight-strong'],
+  ['--vx-weight-semibold', '--vx-weight-strong'],
+  ['--vx-weight-normal', '--vx-weight-body'],
+  ['--vx-accent-foreground', '--vx-on-brand'],
+  ['--vx-primary-foreground', '--vx-canvas'],
+  ['--vx-secondary-foreground', '--vx-ink'],
+  ['--vx-muted-foreground', '--vx-ink-muted'],
+  ['--vx-card-foreground', '--vx-ink'],
+  ['--vx-popover-foreground', '--vx-ink'],
+])
+
+/**
  * The known name closest to `name` (ties go to the first in sort order), or undefined past `NEAR`.
  * Candidates stay within the kind the name asks for (`--vx-text-muted` never suggests `--vx-text-md`);
  * within that kind a token that shares a name segment is near however many edits away, since a role
@@ -142,6 +158,8 @@ const ROLE_TOKENS: ReadonlyMap<string, string> = new Map(
 export function nearestToken(name: string, known: Iterable<string>): string | undefined {
   const knownSet = new Set(known)
   const folded = kebab(name)
+  const alias = ALIAS_TOKENS.get(folded)
+  if (alias !== undefined && knownSet.has(alias)) return alias
   const role = ROLE_TOKENS.get(folded)
   if (role !== undefined && knownSet.has(role)) return role
   if (folded !== name && knownSet.has(folded)) return folded
