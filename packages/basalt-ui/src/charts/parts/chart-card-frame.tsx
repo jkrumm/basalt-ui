@@ -136,7 +136,13 @@ export function Head({
 }
 
 /** The footer: at most two facts, a muted label and a semibold value each. */
-export function Footer({ facts }: { facts: FootFacts | undefined }): ReactElement | null {
+export function Footer({
+  facts,
+  failed = false,
+}: {
+  facts: FootFacts | undefined
+  failed?: boolean
+}): ReactElement | null {
   const shown: Fact[] = []
   for (const fact of facts ?? []) if (fact) shown.push(fact)
   if (shown.length === 0) return null
@@ -148,8 +154,13 @@ export function Footer({ facts }: { facts: FootFacts | undefined }): ReactElemen
       {shown.map((fact) => (
         <div key={fact.label} className="flex min-w-0 items-baseline gap-2">
           <dt className="truncate text-muted-foreground">{fact.label}</dt>
-          <dd className="m-0 text-md font-semibold text-foreground tabular-nums">
-            {typeof fact.value === 'number' ? NUMBER.format(fact.value) : fact.value}
+          <dd
+            className={cn(
+              'm-0 text-md font-semibold tabular-nums',
+              failed ? 'text-muted-foreground' : 'text-foreground',
+            )}
+          >
+            {failed ? '–' : typeof fact.value === 'number' ? NUMBER.format(fact.value) : fact.value}
           </dd>
         </div>
       ))}

@@ -33,9 +33,18 @@ const DOT: Record<Status['tone'], string> = {
   neutral: 'bg-muted-foreground',
 }
 
-function FigureRow({ figure, loading }: { figure: ChartFigure; loading: boolean }): ReactElement {
+function FigureRow({
+  figure,
+  loading,
+  failed,
+}: {
+  figure: ChartFigure
+  loading: boolean
+  failed: boolean
+}): ReactElement {
   const { value, unit, delta, period, status } = figure
-  const text = formatValue(value)
+  // A failed card has no figure to stand behind: the dash holds the row at its ready height.
+  const text = failed ? null : formatValue(value)
   return (
     <div data-slot="chart-figure" className="flex h-9 shrink-0 items-center gap-2">
       {loading ? (
@@ -56,17 +65,17 @@ function FigureRow({ figure, loading }: { figure: ChartFigure; loading: boolean 
               <span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span>
             )}
           </span>
-          {delta !== undefined && (
+          {!failed && delta !== undefined && (
             <DeltaBadge
               value={delta.value}
               polarity={delta.polarity}
               {...(delta.label !== undefined && { label: delta.label })}
             />
           )}
-          {period !== undefined && (
+          {!failed && period !== undefined && (
             <span className="truncate text-xs text-muted-foreground">{period}</span>
           )}
-          {status !== undefined && (
+          {!failed && status !== undefined && (
             <span
               data-slot="chart-status"
               data-tone={status.tone}
@@ -99,7 +108,7 @@ function FigureRow({ figure, loading }: { figure: ChartFigure; loading: boolean 
  *
  * The phase: `ready` shows the chart; `loading` a plot skeleton with bars in the figure row; `stale`
  * the chart and an `Updating` line (`Could not refresh` after a failed refetch); `error` the error arm
- * with Retry (none for a 403), where a throwing slot lands too; `empty` the cause and its action, with
+ * with Retry (none for a 403) under a dashed figure row and footer, where a throwing slot lands too; `empty` the cause and its action, with
  * Clear filters when `filtered`. `empty` wins over `ready` and `stale` once the query settled, and
  * `loading` wins over everything. The phase prints on the card and the box as `data-phase`.
  *
@@ -162,7 +171,11 @@ export function ChartCard(props: ChartCardProps): ReactElement {
             )}
           >
             {figure !== undefined && (
-              <FigureRow figure={figure} loading={effective.tag === 'loading'} />
+              <FigureRow
+                figure={figure}
+                loading={effective.tag === 'loading'}
+                failed={effective.tag === 'error'}
+              />
             )}
             {legend !== undefined && legend.length > 0 && (
               <div
@@ -181,7 +194,7 @@ export function ChartCard(props: ChartCardProps): ReactElement {
               )}
             />
           </div>
-          <Footer facts={footer} />
+          <Footer facts={footer} failed={effective.tag === 'error'} />
         </div>
       </div>
     </ChartCardContext>

@@ -79,7 +79,7 @@ export const table = {
   'table.empty': 'No rows to show',
   'table.noMatches': 'No rows match the current search and filters',
   'table.clearFilters': 'Clear filters',
-  'table.error': 'The rows could not be loaded',
+  'table.error': 'Could not load this.',
   'table.forbidden': 'You do not have access to these rows',
   'table.notFound': 'These rows no longer exist',
   'table.retry': 'Retry',
