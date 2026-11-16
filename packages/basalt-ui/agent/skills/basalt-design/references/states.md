@@ -9,6 +9,8 @@ The phase vocabulary and the words each phase carries. The shapes are owned by t
 - A frame ([StatCard](node_modules/basalt-ui/docs/stat-card.md), [ChartCard](node_modules/basalt-ui/docs/chart-card.md), [DataTable](node_modules/basalt-ui/docs/data-table.md)) takes the query or a phase and draws every phase at its loaded height. A region without a frame goes inside [QueryState](node_modules/basalt-ui/docs/query-state.md). [type:QueryStateLike]
 - Branch precedence is loading, error, empty, data; a failed query reads as a failure, never as an empty list. [type:FrameState]
 
+- A part keeps every declaration (`sub`, `rows`, `delta`, `footer`) in every phase, with a placeholder value (a dash) where there is none yet: its skeleton draws what it declares, so a prop hidden in loading shrinks the frame (n16's strip lost 56 px and its cards 137 px; n13 passed dash placeholders by hand).
+
 ## What each state says
 
 - Empty: the cause, then the next step. A filter caused it: name the filter and offer its reset. "No decisions are waiting. New ones appear when an agent asks for a verdict."

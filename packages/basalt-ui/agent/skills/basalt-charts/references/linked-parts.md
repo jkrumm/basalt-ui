@@ -2,7 +2,7 @@
 
 A chart and the list of the same items beside it, one focus. The list scrolls in its own region at the chart's height at a wide container and stacks under the chart at a narrow one; its `onPointerLeave` clears the focus, so the gap between rows never flashes the unfocused state; the kit dims, so the page sets no opacity.
 
-The two columns are a named container size with a plain track count (`@wide:grid-cols-2`), never an arbitrary template such as `grid-cols-[3fr_2fr]`: a ratio the page needs is a [CardGrid](node_modules/basalt-ui/docs/card-grid.md) `min` tier or a [SplitPage](node_modules/basalt-ui/docs/split-page.md), the parent's job. Every readout in the list and the card (`tabular-nums`) takes tabular numerals, so a value changing on focus does not shift its neighbours.
+The two columns are a named container size with a plain track count (`@wide:grid-cols-2`), never an arbitrary template such as `grid-cols-[3fr_2fr]`: a ratio the page needs is a [CardGrid](node_modules/basalt-ui/docs/card-grid.md) `min` tier or a [SplitPage](node_modules/basalt-ui/docs/split-page.md), the parent's job. `CartesianChart` renders `focus.live` itself, so the page renders none beside it: a second `{focus.live}` announces every step twice (c15, n13: the shoot log read "X | X"). A page renders `focus.live` only where no chart takes the focus (a seam-only list or bar). The focus is built over the array the chart draws (`data`), never over a subset: a pointer on a row the focus lacks matches nothing, and neither the hero nor the dim follows (n16 built it over the weigh-in days while the chart drew every day). A list that shows a subset maps its rows to that focus by id, never by a second focus (c15). Every readout in the list and the card (`tabular-nums`) takes tabular numerals, so a value changing on focus does not shift its neighbours.
 
 A strip or figure that shows the focused item's breakdown (a night's stages, a release's errors by service) follows `focus` like the list does: it reads `focus.readout(rest, (d) => ...)` or `plot.focused`, so it never keeps showing the last item while the chart focuses another (a night's stage strip left on last night while the chart focused another; a cut-off written by the slider and not by a click on a bar).
 
@@ -43,7 +43,6 @@ export function ErrorsByRelease({ releases }: { releases: readonly Release[] }) 
           </div>
         ))}
       </ScrollArea>
-      {focus.live}
     </div>
   )
 }
