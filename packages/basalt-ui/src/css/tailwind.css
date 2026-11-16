@@ -115,6 +115,9 @@
   width: var(--vx-icon);
   height: var(--vx-icon);
 }
+@utility word-head {
+  word-spacing: 0.12em;
+}
 @utility focus-ring {
   /* Focus scrolls the element flush to its scrollport; the margin keeps the 2px ring + 2px offset in view. */
   scroll-margin: 4px;
