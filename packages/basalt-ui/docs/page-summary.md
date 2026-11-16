@@ -22,8 +22,10 @@ PageSummary(props: PageSummaryProps): ReactElement
   sentence?: ReactNode  // The headline sentence
   facts?: readonly Fact[]  // Short facts under the headline, e.g
   aside?: ReactNode  // After the headline: a date or a freshness word
-  phase?: "ready" | "loading"
+  phase?: "ready" | Phase | QueryStateLike
 ```
+
+`Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
 ## Example
 

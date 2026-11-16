@@ -22,7 +22,7 @@ expectCatalog(catalog: CatalogLike): void
   Block?: FC<{ spec: unknown; phase: Phase; }>
 ```
 
-`Phase` import from the root: `import type { Phase } from 'basalt-ui'`.
+`Phase` import from `basalt-ui/cards`: `import type { Phase } from 'basalt-ui/cards'`.
 
 ## Example
 

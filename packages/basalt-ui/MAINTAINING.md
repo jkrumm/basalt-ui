@@ -287,6 +287,16 @@ basalt that can hard-fail their build.
   boundary protects. That change also deleted basalt's own self-exemption for both kinds — basalt
   passes `check-theme` for the same reason a consumer does, not because it silenced itself.
 
+## Frame value types
+
+`basalt-ui/cards` owns the types every frame part shares: `Phase`, `QueryStateLike`, `Empty`,
+`FrameState`, `Menu`, `MenuEntry`, `Delta`, `Status`, `Tone` (the six-member port type) and
+`FootFacts`. They are re-exports of `core/ports` and `core/phase`, never copies. The card
+composites are the frames, so a doc for any frame part (page, table, charts too) names this one
+subpath, and `scripts/gen-docs.ts` writes it. `basalt-ui/charts` keeps its own re-exports of the
+types its contract names; the root keeps `Phase`, `QueryStateLike`, `Empty` and `FrameState` as
+`@deprecated` aliases for one minor (`cards.json` rows `cards-frame-types-*`).
+
 ## Deprecation lifecycle
 
 Returns with the first 2.x deprecation (the `DEPRECATED_EXPORTS` ledger, `basalt/deprecated-export` and `check-grace.ts`'s removal gate); 2.0.0 ships none.

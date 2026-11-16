@@ -35,8 +35,8 @@ CartesianChart<D>(props: CartesianChartProps<D>): ReactElement
 CartesianChart.custom<D>(build: (plot: ChartPlot<D>) => readonly unknown[]): CustomMarks<D>
 ```
 
-`Phase`, `QueryStateLike`, `Empty` and `FrameState` import as types from the root:
-`import type { Phase, QueryStateLike } from 'basalt-ui'`.
+`Phase`, `QueryStateLike`, `Empty` and `FrameState` import as types from `basalt-ui/cards`:
+`import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
 ## Series
 

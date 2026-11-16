@@ -1,4 +1,6 @@
 import type { ReactElement, ReactNode } from 'react'
+import { resolvePhase } from '../core/phase'
+import type { Phase, QueryStateLike } from '../core/ports'
 import { Skeleton } from '../ui/skeleton'
 
 type Fact = ReactNode | null | false | undefined
@@ -13,9 +15,13 @@ type PageSummaryContent = {
   phase?: 'ready'
 }
 
-/** While the sentence's data loads: a skeleton of the same shape, no content props needed. */
+/**
+ * The load state of the sentence's data, as on every data part: a `Phase` or the query result. A
+ * loading phase draws a skeleton of the same shape, so no content props are needed; a settled one
+ * draws the sentence once it exists.
+ */
 type PageSummaryLoading = Partial<Omit<PageSummaryContent, 'phase'>> & {
-  phase: 'loading'
+  phase: Phase | QueryStateLike
 }
 
 export type PageSummaryProps = PageSummaryContent | PageSummaryLoading
@@ -42,7 +48,9 @@ const FACT =
  *
  * `null`, `false`, `undefined` and `''` facts drop, so conditional facts pass inline. `phase="loading"`
  * renders a skeleton of the same shape, with a facts bar when `facts` is passed, so the page does
- * not jump when the numbers arrive.
+ * not jump when the numbers arrive. `phase` takes a `Phase` or the query itself, as on every data
+ * part: a pending query is the skeleton, and a settled one with no `sentence` yet stays one (the
+ * page's `QueryState` owns the error).
  *
  * @useWhen a page opens with a headline that carries its live number and a line of supporting facts
  * @neverWhen the headline would restate the page title (leave it out) or the figure is a KPI card (use `StatCard`)
@@ -58,7 +66,8 @@ const FACT =
  * <PageSummary phase="loading" facts={[]} />
  */
 export function PageSummary(props: PageSummaryProps): ReactElement {
-  if (props.phase === 'loading') {
+  const tag = resolvePhase({ phase: props.phase }).tag
+  if (tag === 'loading' || tag === 'offline' || props.sentence === undefined) {
     return (
       <div data-slot="page-summary" aria-busy="true" className="flex min-w-0 flex-col gap-1">
         <Skeleton className="w-3/5 text-lg" />

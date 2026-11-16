@@ -153,6 +153,8 @@ col<T>(): Col<T>
     prefix?: string
 ```
 
+`Tone` import from `basalt-ui/cards`: `import type { Tone } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx

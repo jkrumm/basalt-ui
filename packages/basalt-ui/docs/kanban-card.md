@@ -29,6 +29,8 @@ KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactElement
   move: "static" | { column: ColumnRef<C>; index: number; columns: readonly ColumnRef<C>[]; onMove: (m: Move<C>) => void; dragging?: boolean; }  // Required: no card exists without the non-drag path
 ```
 
+`MenuEntry`, `Status` import from `basalt-ui/cards`: `import type { MenuEntry, Status } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx
