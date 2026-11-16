@@ -3,16 +3,24 @@
  * `contentTrust` is a required type, but a literal `"trusted"` on model text, `rehype-raw` and MDX
  * evaluation each bypass it. Four forms, none scoped to files that import `basalt-ui/ai`:
  *
- * - `dangerous-html`: `dangerouslySetInnerHTML` whose `__html` is not a string literal.
+ * - `dangerous-html`: `dangerouslySetInnerHTML` whose `__html` is not a string literal, and the DOM
+ *   sinks `el.innerHTML = x`, `el.outerHTML = x` and `el.insertAdjacentHTML(pos, x)` with a
+ *   non-literal value. A sink reached through a computed key (`el['innerHTML']`) is not read.
  * - `rehype-raw`: an import or require of `rehype-raw`.
- * - `mdx-evaluate`: `evaluate`/`run` (and their Sync twins) of `@mdx-js/mdx`, `evaluate` of
- *   `next-mdx-remote`, by name import, namespace member or require.
+ * - `mdx-evaluate`: `evaluate`/`run` (and their Sync twins) of `@mdx-js/mdx`, by name
+ *   import, namespace member or require, and any import of `next-mdx-remote` or a subpath of it.
+ *   `compile`/`compileSync` report only in a file that also runs code from a string
+ *   (`new Function(code)`, `Function(code)`, `eval`): a build step or a test that compiles authored
+ *   MDX into a module is not an evaluation. Known limit: compiled code run in another file passes.
  * - `trusted-content`: `contentTrust="trusted"`, or a non-literal `contentTrust={trust}` (a
  *   variable, a conditional, a call: the tier cannot be read, so it is treated as `trusted`),
  *   unless every child is a string literal, an imported binding, or the file matches a glob of
  *   the `authoredContent` option (the manifest's list of source files that render authored text).
  *   A wrapper that forwards its own `contentTrust` prop is a report too: pass the literal at the
- *   call site that knows the source of the text.
+ *   call site that knows the source of the text. `<Markdown {...trusted}>` is read when `trusted`
+ *   is an object declared in the same file with a `contentTrust` other than the literal
+ *   `'untrusted'`; known limit: a spread of props, an import or a call (`{...props}`) cannot be
+ *   read by syntax, so it passes.
  *
  * Option: `{ authoredContent: string[] }`, path suffixes or globs (`*`, `**`) matched on the file.
  */
@@ -88,11 +96,29 @@ function loadedModule(node: Node): string | undefined {
   return text(children(node, 'arguments')[0])
 }
 
+/** `compile` returns code a caller runs (`new Function(code)`); it reports beside such a run. */
 const MDX_NAMES: Readonly<Record<string, ReadonlySet<string>>> = {
-  '@mdx-js/mdx': new Set(['evaluate', 'evaluateSync', 'run', 'runSync']),
-  'next-mdx-remote': new Set(['evaluate']),
-  'next-mdx-remote/rsc': new Set(['evaluate']),
+  '@mdx-js/mdx': new Set(['evaluate', 'evaluateSync', 'run', 'runSync', 'compile', 'compileSync']),
 }
+const COMPILE_NAMES: ReadonlySet<string> = new Set(['compile', 'compileSync'])
+
+/** `new Function(code)`, `Function(code)` or `eval(code)`: a string run as code. */
+const runsString = (node: Node): boolean => {
+  const name = nameOf(child(node, 'callee'))
+  return node.type === 'NewExpression'
+    ? name === 'Function'
+    : name === 'Function' || name === 'eval'
+}
+
+/** Every `next-mdx-remote` entry compiles and runs MDX at render, so any import of it reports. */
+const isNextMdxRemote = (source: string | undefined): boolean =>
+  source === 'next-mdx-remote' || source?.startsWith('next-mdx-remote/') === true
+
+const isMdxModule = (source: string | undefined): boolean =>
+  source !== undefined && (MDX_NAMES[source] !== undefined || isNextMdxRemote(source))
+
+/** DOM properties that parse a string as markup. */
+const HTML_SINKS: ReadonlySet<string> = new Set(['innerHTML', 'outerHTML'])
 
 const dangerousHtml: AstForm = {
   id: 'dangerous-html',
@@ -111,6 +137,21 @@ const dangerousHtml: AstForm = {
         if (body && isLiteralText(body)) return
       }
       report(node, 'dangerouslySetInnerHTML')
+    },
+    AssignmentExpression(node) {
+      const left = child(node, 'left')
+      if (left?.type !== 'MemberExpression' || left['computed'] === true) return
+      const property = nameOf(child(left, 'property'))
+      const right = child(node, 'right')
+      if (property === undefined || !HTML_SINKS.has(property) || !right) return
+      if (!isLiteralText(right)) report(node, `.${property} =`)
+    },
+    CallExpression(node) {
+      const callee = child(node, 'callee')
+      if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return
+      if (nameOf(child(callee, 'property')) !== 'insertAdjacentHTML') return
+      const html = children(node, 'arguments')[1]
+      if (html && !isLiteralText(html)) report(node, '.insertAdjacentHTML()')
     },
   }),
   fix: FIX,
@@ -138,11 +179,26 @@ const rehypeRaw: AstForm = {
 
 const mdxEvaluate: AstForm = {
   id: 'mdx-evaluate',
-  detect: ({ report }) => {
+  detect: ({ report: reportNow }) => {
     const namespaces = new Map<string, ReadonlySet<string>>()
+    const compiles: { node: Node; subject: string }[] = []
+    let runs = false
+    const report = (node: Node, subject: string): void => {
+      const name = subject.split('.').at(-1) ?? subject
+      if (COMPILE_NAMES.has(name)) compiles.push({ node, subject })
+      else reportNow(node, subject)
+    }
     return {
+      NewExpression(node) {
+        if (runsString(node)) runs = true
+      },
+      'Program:exit'() {
+        if (runs) for (const { node, subject } of compiles) reportNow(node, subject)
+      },
       ImportDeclaration(node) {
-        const names = MDX_NAMES[text(child(node, 'source')) ?? '']
+        const source = text(child(node, 'source'))
+        if (isNextMdxRemote(source)) return report(node, source as string)
+        const names = MDX_NAMES[source ?? '']
         if (!names) return
         for (const specifier of children(node, 'specifiers')) {
           if (specifier.type === 'ImportSpecifier') {
@@ -157,9 +213,10 @@ const mdxEvaluate: AstForm = {
       },
       ImportExpression(node) {
         const module = loadedModule(node)
-        if (module && MDX_NAMES[module]) report(node, `import('${module}')`)
+        if (isMdxModule(module)) report(node, `import('${module}')`)
       },
       CallExpression(node) {
+        if (runsString(node)) runs = true
         const callee = child(node, 'callee')
         if (callee?.type === 'MemberExpression' && callee['computed'] !== true) {
           const object = nameOf(child(callee, 'object'))
@@ -170,7 +227,7 @@ const mdxEvaluate: AstForm = {
           return
         }
         const module = loadedModule(node)
-        if (module && MDX_NAMES[module]) {
+        if (isMdxModule(module)) {
           // `require('@mdx-js/mdx')` yields the whole module; the name comes from the access.
           report(node, `require('${module}')`)
         }
@@ -200,12 +257,27 @@ const trustedContent: AstForm = {
       if (!expression || expression.type === 'JSXEmptyExpression') return true
       return isLiteralText(expression) || importedRoot(expression)
     }
+    const trustProps = new Set<string>()
     return {
       ImportDeclaration(node) {
         for (const specifier of children(node, 'specifiers')) {
           const local = nameOf(child(specifier, 'local'))
           if (local) imported.add(local)
         }
+      },
+      VariableDeclarator(node) {
+        const name = nameOf(child(node, 'id'))
+        let init = child(node, 'init')
+        while (init?.type === 'TSAsExpression' || init?.type === 'TSSatisfiesExpression') {
+          init = child(init, 'expression')
+        }
+        if (name === undefined || init?.type !== 'ObjectExpression') return
+        const trust = children(init, 'properties').find((property) => {
+          const key = child(property, 'key')
+          return property.type === 'Property' && (nameOf(key) ?? text(key)) === 'contentTrust'
+        })
+        const value = trust ? child(trust, 'value') : undefined
+        if (value && literalValue(value) !== 'untrusted') trustProps.add(name)
       },
       JSXOpeningElement(node) {
         const attributes = children(node, 'attributes')
@@ -214,7 +286,16 @@ const trustedContent: AstForm = {
             attribute.type === 'JSXAttribute' &&
             nameOf(child(attribute, 'name')) === 'contentTrust',
         )
-        if (!trust) return
+        if (!trust) {
+          // `<Markdown {...trusted}>` where this file's `trusted` object carries a `contentTrust`
+          // that is not the literal untrusted tier.
+          const carriesTrust = attributes.some((attribute) => {
+            if (attribute.type !== 'JSXSpreadAttribute') return false
+            return trustProps.has(nameOf(child(attribute, 'argument')) ?? '')
+          })
+          if (nameOf(child(node, 'name')) === 'Markdown' && carriesTrust) pending.push(node)
+          return
+        }
         const value = child(trust, 'value')
         const expression =
           value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
