@@ -15,7 +15,7 @@ The height, phase, legend and tooltip rules of `ChartCard`. The props and the ex
 
 | `height`         | Chart box                                                     |
 | ---------------- | ------------------------------------------------------------- |
-| `auto` (default) | half the card's width, between 160 and 420 px, decided in CSS |
+| `auto` (default) | half the card's width, between 192 and 420 px, decided in CSS |
 | `short`          | 160 px                                                        |
 | `fill`           | the card's remainder; the card takes its parent's height      |
 

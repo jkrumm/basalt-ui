@@ -51,6 +51,10 @@
  * parent's definite height, or a percentage on the auto-height frame would resolve to nothing. */
 .fillFrame {
   height: 100%;
+  /* In a column with a legend row (a chart's own root), the box takes what the legend leaves: the
+   * row sits inside the clipping box, never past it. */
+  flex: 0 1 auto;
+  min-height: 0;
 }
 
 .fill {
