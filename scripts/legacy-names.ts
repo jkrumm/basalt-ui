@@ -120,7 +120,7 @@ export const ALLOWED: readonly Allow[] = [
   // Each holds in the source and in its compiled twin in `dist/`, and only on the detecting line.
   ...detector(
     'lint/rules/structure/import-boundary',
-    /@mantine\b|Radix, Mantine,/,
+    /@mantine\b|["']mantine-[a-z-]+["']|Radix, Mantine,|Mantine React Table/,
     'the import ban list',
   ),
   ...detector('lint/stylelint/rules', /\.mantine-/, 'the stylelint selector ban'),
