@@ -35,13 +35,13 @@ describe('charts-api', () => {
 })
 
 describe('charts-g4', () => {
-  test('both marginals hold the 4000 B cap with no raise row', () => {
-    for (const row of g4.rows) expect(row.ceiling).toBeLessThanOrEqual(4000)
+  test('both marginals hold their cap; the heat grid has one raise row, 4000 to 4150 B (Issue 1627)', () => {
+    for (const row of g4.rows) expect(row.ceiling).toBeLessThanOrEqual(4150)
     expect(g4.rows.map((r) => r.id)).toEqual([
       'charts-heatmap-marginal',
       'charts-band-strip-marginal',
     ])
-    expect(g4.raises).toEqual({})
+    expect(Object.keys(g4.raises)).toEqual(['charts-heatmap-marginal'])
   })
 
   test('no chart module imports the deleted 2.x shell or compile', async () => {
