@@ -71,6 +71,16 @@ describe('pre-edit denies what doctor rejects', () => {
     expect(denied.err).toContain('*.gen.*')
   })
 
+  it('denies a hand edit of budget.json naming the raise route, and the rest of .basalt naming its writers', () => {
+    const project = app({ '.basalt/budget.json': '{ "waivers": 0 }\n' })
+    const budget = preEdit(project, '.basalt/budget.json', '{ "waivers": 3 }\n')
+    expect(budget.code).toBe(2)
+    expect(budget.err).toContain('basalt-ui lint --raise <field> --consumer')
+    const shim = preEdit(project, '.basalt/hook.mjs', '')
+    expect(shim.code).toBe(2)
+    expect(shim.err).toContain('`basalt-ui init`, `sync`')
+  })
+
   it('denies a nested .oxlintrc.json without the basalt extends, and allows one that extends it', () => {
     const project = app({ 'src/features/f.tsx': 'export {}\n', '.oxlintrc.json': '{}' })
     const bare = preEdit(project, 'src/features/.oxlintrc.json', '{}')

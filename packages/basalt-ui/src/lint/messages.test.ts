@@ -16,7 +16,7 @@ import { Linter } from 'eslint'
 import { createPlugin, tableOf } from './factory'
 import plugin from './index'
 import type { Contract } from './preset'
-import { SHADCN_MESSAGES, SHIPPED_PROFILES, shippedPreset } from './preset'
+import { SHADCN_MESSAGE_MAX, SHADCN_MESSAGES, SHIPPED_PROFILES, shippedPreset } from './preset'
 import { zoneANames } from './generated/zone-a'
 import { CLASS_RULES } from './rules/class/table'
 import type { Profile } from './rule-table'
@@ -85,9 +85,12 @@ function shippedMessages(): Message[] {
   return messages
 }
 
-/** A class utility a message proposes: a known utility prefix, then a value or a `*` step. */
+/**
+ * A class utility a message proposes: its variants (`dark:`, `hover:`), a known utility prefix, then a
+ * value or a `*` step. The variants stay on the token so a proposed `dark:bg-primary` is read whole.
+ */
 const UTILITY =
-  /(?<![\w-])-?(?:gap|space-[xy]|[pm][xytrblse]?|[wh]|size|max-[wh]|min-[wh]|text|bg|border|rounded|shadow|flex|grid|col|row|justify|items|self|overflow|ring|outline|font|leading|tracking|z|inset|basis|grow|shrink|order)-[A-Za-z0-9*.[\]/%]+(?![\w-])/g
+  /(?<![\w-])(?:[a-z][\w-]*:)*-?(?:gap|space-[xy]|[pm][xytrblse]?|[wh]|size|max-[wh]|min-[wh]|text|bg|border|rounded|shadow|flex|grid|col|row|justify|items|self|overflow|ring|outline|font|leading|tracking|z|inset|basis|grow|shrink|order)-[A-Za-z0-9*.[\]/%]+(?![\w-])/g
 
 /**
  * A colour role named bare (`on-brand`), tried as the ink utility it stands for. Only a hyphenated
@@ -218,6 +221,50 @@ describe('shipped messages', () => {
     expect(atRuleOffenders(at('declare it with @utility in src/index.css', ['app']))).toEqual([
       'probe: @utility',
     ])
+  })
+
+  it('feeds a raw colour per prefix through the bridge no-raw-colors message (lint-4.13)', () => {
+    const rule = preset('bridge').rules['shadcn/no-raw-colors'] as [string, { message: string }]
+    const template = rule[1].message
+    // shadcn's suggestions keep the variant and ignore the role (`dark:bg-primary`, `text-dim-bar`),
+    // and the rule cannot filter them, so the bridge message names its fix by role instead.
+    expect(template).not.toContain('{{suggestions')
+    const raw = [
+      'text-gray-400',
+      'bg-gray-50',
+      'border-gray-200',
+      'ring-blue-500',
+      'dark:bg-gray-900',
+    ]
+    for (const className of raw) {
+      const text = template.replace('"{{className}}"', '').replaceAll('{{className}}', '')
+      expect(classOffenders(at(text, ['bridge'])), className).toEqual([])
+    }
+    // The shapes cycle 4 saw in shadcn's own suggestions would be caught here.
+    expect(classOffenders(at('Use dark:bg-primary or text-dim-bar', ['bridge']))).not.toEqual([])
+  })
+
+  it('names the theme class for a token name written as a class (lint-4.14)', () => {
+    const colourMessages = messages.filter((m) =>
+      /shadcn\/no-(?:raw-colors|unknown-classes) message$/.test(m.source),
+    )
+    expect(colourMessages.length).toBe(5)
+    for (const { source, text } of colourMessages) {
+      expect(text, source).toContain('hover is bg-accent')
+      expect(text, source).toContain('canvas is bg-background')
+    }
+  })
+
+  it('keeps every shadcn message within the option schema, or oxlint refuses the whole preset', () => {
+    for (const { source, text } of messages.filter((m) => m.source.includes(' shadcn/'))) {
+      expect(text.length, source).toBeLessThanOrEqual(SHADCN_MESSAGE_MAX)
+    }
+  })
+
+  it('names the surface for a white or black fill (lint-4.15)', () => {
+    const fix = messages.find((m) => m.source === 'basalt/fixed-colour black-white fix')?.text
+    expect(fix).toContain('surface is Card')
+    expect(fix).toContain('bg-card or bg-background for a surface at bridge')
   })
 
   it('never says use margin, declares a --color-<name>, or proposes a fixed width', () => {

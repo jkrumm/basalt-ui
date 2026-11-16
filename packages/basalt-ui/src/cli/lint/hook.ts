@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 
 import { weakeningDenial } from '../../lint/weakening-edit'
+import { BUDGET_PATH, LINT_RAISABLE, raiseCommand } from '../budget'
 import { OXLINT_PRESET_FILE, STYLELINT_PRESET_FILE } from '../presets'
 import { parseJsonc } from '../source-text'
 import { changedFiles, isScanned, scan } from './engine'
@@ -155,6 +156,10 @@ function denial(
   next: string | null,
   current: string | null,
 ): string | null {
+  if (rel === BUDGET_PATH) {
+    // The route for a ceiling, as the budget breach names it (lint-4.19).
+    return `${BUDGET_PATH} is basalt-ui's ledger; raise a ceiling with ${raiseCommand('<field>')} (${LINT_RAISABLE.join(', ')}) or ${raiseCommand('ejects')}, never by hand.`
+  }
   if (rel === '.basalt' || rel.startsWith('.basalt/')) {
     return ".basalt/** is basalt-ui's ledger and shim; `basalt-ui init`, `sync` and `eject <name> --reason` write it, never edit it by hand."
   }
