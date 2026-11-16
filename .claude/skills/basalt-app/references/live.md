@@ -22,8 +22,7 @@ Pick the least live class that is true for the data; each rung costs more than t
 
 ```tsx
 // @check
-import { createChannel } from 'basalt-ui'
-import { bindInvalidation, createQueryClient } from 'basalt-ui/data'
+import { bindInvalidation, createChannel, createQueryClient } from 'basalt-ui/data'
 import { useEffect } from 'react'
 
 const ROOTS = ['jobs', 'kpis', 'friction'] as const

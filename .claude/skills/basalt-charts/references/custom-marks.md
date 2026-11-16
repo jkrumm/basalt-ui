@@ -24,7 +24,7 @@ export function MuteCandidates({
   const byId = new Map(worst.map((s) => [s.id, s]))
   return (
     <CartesianChart
-      ariaLabel="Open rate against mails a week"
+      label="Open rate against mails a week"
       data={senders}
       x={{ value: (s) => s.perWeek, scale: 'log', title: 'Mails a week' }}
       y={{ title: 'Opened, %', domain: [0, 100] }}
