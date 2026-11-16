@@ -1,0 +1,29 @@
+{
+  "why": "Expression cycle 3 (docs/v3/cycles/expression-3.md) logged `primitive` findings whose fix adds a prop or an option to a shipped contract, so they sit behind a Spec. (a) Linked parts: the skill teaches one `useChartFocus` spread on each list row through `focus.item(i)`, but the kit's own lists cannot take it. `DataTable` rows and `BarList` rows have no focus hook, so n02 scored X3 0 with a table beside its chart and in round 1 replaced the table with a hand-built row list, losing sort and the phone card; c10's per-hop `BarList` and c12's per-model `BarList` stayed unlinked (X3, F7). (b) A band x axis has no tick step: at 390 px it keeps two of five stage labels in n02 (F6, K5), prints an uneven 0.0, 0.2, 0.5, 0.8 on c11's 50 bins (K5) and leaves c12's last bar unlabelled (F6, K5); c11 returned '' from `x.format` to thin labels by hand. (c) A vertical rule on a band axis takes only a band key and lands on the band's centre, so c11's relevance cut-off ran through the middle of a bin (F5) and in round 1 a rule at 0.55 drew nothing; c12 wanted the week boundary between two days. (d) The y axis has no log scale and `y.domain` as an object or function is typed but 'not yet applied' (cartesian-chart.md), so n02's 40x outlier pressed 31 dots into the bottom tenth (K1) and c11's 780-chunk pile-up crushed the distribution (K1); both clamped by hand in round 1. The y axis has no tick format (n02's decimal comma, c13's '-200'). (e) `StatCell` takes no swatch, so a strip cannot say which mark a figure belongs to (n12 F8; c05 and c08 in cycle 2).",
+  "what": "A Spec, then the build: a focus hook on DataTable and BarList rows, a tick step on a band axis, a band-edge or numeric position for a vertical rule on a band axis, the y axis's log scale with the y.domain object applied and a y tick format, and a swatch on StatCell.",
+  "owns": [
+    "packages/basalt-ui/src/charts/contract.ts (XConfig, YConfig, ChartRefLine) and the engine code that reads them",
+    "packages/basalt-ui/src/table/contract.ts and the row rendering in src/table/parts/body.tsx",
+    "packages/basalt-ui/src/cards/contract.ts, bar-list.tsx and stat-cell.tsx",
+    "packages/basalt-ui/src/charts/focus.tsx where a list needs a hook it lacks",
+    "the generated docs, llms.txt, export-surface and budgets these change, and their tests"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md (the Spec names any section it would amend; the owner rules)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "Write the Spec first (one page, checkpoint spec): for each of (a) to (e) the smallest prop or option that closes it, its type, and the cases that ask for it; at most three open choices with defaults. Candidate defaults the Spec may overturn: (a) `DataTable` and `BarList` accept `focus` (the `useChartFocus` handle) and spread `focus.item(i)` on each row in data order, keeping the table's own keyboard model when no focus is passed; (b) `XConfig.ticks?: number | 'all'` for a band axis, keeping first and last; (c) `ChartRefLine` on a band axis takes `at: 'start' | 'end'` beside the key, or a numeric position on a numeric x; (d) `YConfig.scale?: 'linear' | 'log'` like `XConfig.scale`, the `y.domain` object applied with an off-scale marker for a clamped datum, and `YConfig.format`; (e) `StatCell` takes `swatch?: SeriesColor`. After the verdict, build each with a unit and a layout test, update the generated docs, and state in the PR which `// cycle-expression-3:` workarounds in the trial builds each prop retires (the trial files are not edited). Each item names at least two cases it serves, from this cycle or the bank.",
+  "commits": "Each pinned contract file change (charts, table, cards contract.ts) lands as a `chore: contract amendment` commit that updates packages/basalt-ui/scripts/contract-pins.json (ARCHITECTURE.md § 7.1, check-contract-frozen.ts); the behaviour lands in feat: commits behind the Spec.",
+  "proof": "The Spec artifact and its verdict; make check; layout tests per item.",
+  "acceptance": [
+    "A Spec is submitted and its verdict is read before the build",
+    "A DataTable and a BarList beside a CartesianChart share one focus both ways, by pointer and by arrow keys (layout test)",
+    "A band x axis at 390 px with a tick step shows its first and last label and no overlap (layout test)",
+    "A vertical rule on a band axis can sit on a band edge (layout test)",
+    "A y axis with a 40x outlier stays readable through log scale or a clamp with an off-scale marker (layout test), and y ticks format through YConfig.format",
+    "A StatCell swatch matches its series colour in light and dark (test)",
+    "make check passes and the budgets hold or are raised in the same PR with the reason"
+  ],
+  "out_of_scope": "A graph or tree kind (c10's wish) and a histogram kind (c11's wish): each served one case, so each is a recipe at most under the Rule of Three; the skill text (v3-expr-3-skill); the label, locale and clip fixes (v3-expr-3-kit-fixes)."
+}

@@ -1,0 +1,31 @@
+{
+  "why": "Expression cycle 3 (docs/v3/cycles/expression-3.md) lost 80 of 132 round-0 points to `skill`: the builders had the shipped skill, including the surface step and the look-before-you-stop checklist that v3-expr-2-surface added, and still left the devices out. This cycle let every builder build and shoot its own page, so the step ran, but builders opened a handful of their shots, not every state, scheme and width, and none opened a keyboard frame. All six lost X1 (word economy) at 1: the same fact in the headline, the sub line, a label and a caption. c10 stated '13 of 19' and '4 affected' in prose with no baseline (F3) and hid hop 9 behind a fixed row count (F5). c10 and c13 put no figure, delta pill or footer pair in a card (F8, X5). c13 stacked a strip and four cards where one diverging chart answers both halves (X2). n12 drew a night with a missing stage as a complete short night (F5) and left its stage strip on last night while the chart focused another (X3). Two text gaps are real: the docs and llms.txt type every frame's `phase` as `Phase | QueryStateLike` and never say where `Phase` is imported from, so c10, c13 and n02 each re-derived it; and c11 believed an engine `text` mark is banned from a page, while n02 and c13 imported `@tanstack/charts/text` under `import-boundary` without a finding.",
+  "what": "Agent text only: the look step names every frame to open, word economy gets a worked before and after, card anatomy and the incomplete datum get one line each, and the docs name where `Phase` and `QueryStateLike` come from and that engine `text` marks are allowed in custom marks.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** (SKILL.md and references)",
+    "packages/basalt-ui/agent/rules/basalt-charts.md and basalt-page.md (one line each at most, within the shipped-rule budget)",
+    "packages/basalt-ui/docs/** text that names an import (no generated file edited by hand; regenerate)",
+    "packages/basalt-ui/llms.txt through its generator",
+    "the dogfooded copies under .claude/skills and .claude/rules (make sync-self)",
+    "the skill snippet tests and budgets that read these files"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no package source)",
+    "docs/v3/expression/**",
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "(1) Look before you stop (basalt-design step 6, basalt-charts step 6): name the frames to open, not just the widths: rest, each fixture, loading, empty and error, in light and dark at 1800 and 390, plus one keyboard frame after two arrow presses, and say that a frame not opened is a frame not checked (cycle 3: c10, c11, c13 and n02 opened a subset). (2) Word economy (references/copy.md): one worked before and after from a build of this shape, a headline sentence, a sub line, a refLine label and a list badge that each restate one fact, cut to the figure, its pill and one annotation (all six cases, X1). (3) Card anatomy: a card that holds a list (`DataPanel`) or a strip still states its figure with its pill in the inset and at most two footer pairs, or the page puts the figure in a `ChartCard` beside it; subtitles never carry a figure (c10 F8, c13 F8 and X5, c12 F8). (4) Baseline and extreme: a count over a total is a figure with its share or delta, never prose (c10 F3, c11 F3); a fixed row or bar count is derived from the data so the extreme fixture shows every item (c10 F5). (5) An incomplete datum (a partial day, a night missing a stage) is marked on its mark and named once, never drawn as a complete smaller value (n12 F5, c12 F5). (6) Linked parts: a strip or figure that shows the focused item's breakdown follows `focus` like a list does (n12 X3). (7) One view: where two charts share an axis and answer two halves of one question, they are one chart above and below the axis, not two cards (c13 X2, F1). (8) Docs: `Phase` and `QueryStateLike` are named with their import (`basalt-ui/core/ports`) in the frame docs and llms.txt, and `basalt-charts` says that custom marks may return `text` marks from the allowed `@tanstack/charts/*` subpaths, placed by `chartLabels` (c10, c13, n02 wish lists; c11). (9) Answer on the mark: when the answer needs a word on one mark (the slowest, the spike, last night), compose `CartesianChart` with a `text` mark placed by `chartLabels`, because a kind such as `Bars` takes no custom mark; and the figure's readout on focus carries what the mark means (its share, its model, its stage), returning to the answer on leave (F2 and F7 in c11, c12, c13, n02, n12). (10) Form from structure: where the items carry a structure the question asks about (hops in a graph, two scores per item, stages of a pipeline, stages of a night), the form draws that structure, and a ranked list or a total-only stack is the fallback the skill names as such (F1 in c10, c11, c12, n02, n12). (11) Layout tokens: the linked-parts reference (`references/linked-parts.md`) itself uses `@wide:grid-cols-[3fr_2fr]`, which c12 and c13 copied and K4 marked down; replace it with the kit's grid or a named layout, and name tabular numerals on every readout (c10, c12, c13, n12 K4). A skill fix names at least two cases it serves; (5) and (7) carry c12 and n01 (cycle 2) as their second case.",
+  "commits": "feat: commits for skill and rule text, docs: for generated docs regenerated; one package commit per concern.",
+  "proof": "make check; the skill snippet tests; the shipped-rule line budget stays within its ceiling.",
+  "acceptance": [
+    "basalt-design and basalt-charts step 6 name every frame to open, including a keyboard frame",
+    "references/copy.md carries one worked word-economy before and after",
+    "The frame docs and llms.txt name the import of Phase and QueryStateLike",
+    "basalt-charts states that custom marks may return engine text marks placed by chartLabels",
+    "references/linked-parts.md uses no arbitrary grid template",
+    "Each of changes (2) to (11) names at least two cases it serves in the PR body",
+    "make check passes and no file under packages/basalt-ui/src changed"
+  ],
+  "out_of_scope": "Kit changes (v3-expr-3-kit-fixes, v3-expr-3-contract); the rubric; the trial builds."
+}
