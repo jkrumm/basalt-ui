@@ -1,0 +1,22 @@
+{
+  "why": "State cycle 4 (docs/v3/cycles/state-4.md). Cycle 3's phone card fix (state-3.5, `9c9cc5ee`) labels every value placed in a card's meta: `Disputed: ✕ No` and `Issued: 16 Nov 2026` now read from the card's start. A money or number column takes the card's `value` place instead (`table/core/kinds-spec.ts:148,157`, `card: ['value', 'meta']`), which `table/parts/body.tsx:190` leaves unlabelled: the amount still prints `120.00 EUR` alone at the right, on a line of its own between the status and the meta, with no column name, the defect state-3.5 named as `19.00` alone at the right (P2 state-4.3, `.evidence/v3-shots/state-4/cycle-state-4--dark--390x844.png`, `.evidence/cycle-state-4/explore-card.log`: the money cell has no `data-label` and `text-align: right`).",
+  "what": "A phone card's money or number value names its column, or reads as the card's figure beside its title, never alone on a line at the right.",
+  "owns": [
+    "packages/basalt-ui/src/table/parts/body.tsx and src/table/table.css (the card's value place)",
+    "their layout tests (tests/layout/table-exemplar.layout.test.ts) and regenerated docs"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "packages/basalt-ui/src/table/data-table.tsx (the 2.x table)"
+  ],
+  "change": "A card's `value` place is either the card's figure (on the title's line, at the end, as the one number the card leads with) or a labelled line like the meta values (`Amount: 120.00 EUR`, from the card's start); pick the one the design guide ranks higher and apply it to every kind that takes the `value` place (money, number, delta). The title, entity and status badge stay unlabelled.",
+  "commits": "fix: in packages/basalt-ui with its layout test.",
+  "proof": "make check; a layout test at 390 px that a money value in a card either sits on the title's line or carries its column header, and never sits on a line of its own aligned right; shots of /cycle/state-4 at 390x844.",
+  "acceptance": [
+    "A phone card's money value sits beside the title or names its column (layout test)",
+    "No card value is right-aligned alone on its own line at 390 px (layout test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Meta values (done by 9c9cc5ee); the 2.x table; changing the cycle 4 build."
+}

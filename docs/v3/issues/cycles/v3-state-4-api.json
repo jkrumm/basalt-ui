@@ -1,0 +1,21 @@
+{
+  "why": "State cycle 4 (docs/v3/cycles/state-4.md). Cycle 3's detail fix (`detailById`) reached the page: a link that names a record the filters exclude opens it. But the sheet it opens is titled with the table label (`Invoices`), where the same record opened from its row reads `Edit invoice inv_2175`: `detailTitle` takes a loaded row only and the unloaded branch passes `options.label` (`table/use-data-table.ts:357`) (P2 state-4.2, `.evidence/cycle-state-4/actions.log` step 10a against 10b, `.evidence/cycle-state-4/10a-reopen-by-link.png`). A table whose record body fetches by id writes that body twice, once as `detail` and once as `detailById` (`apps/playground/src/cycle/state-4/InvoicesPage.tsx:108,113`, P3 state-4.4). And a Clear filters outside the FilterSet names the filter fields a second time, because `useReset({ only })` takes handles while the page already listed them in `filterSlot([...])` (`InvoicesPage.tsx:51-52` against `:41-46`, P3 state-4.5).",
+  "what": "A record opened by id reads the same title as from its row, a by-id body is written once, and a slot's filters reset without listing them again.",
+  "owns": [
+    "packages/basalt-ui/src/table/use-data-table.ts and src/table/contract.ts (the detail door's title and body options)",
+    "packages/basalt-ui/src/router/controls/define.ts and src/controls/filter-slot.tsx (the subset reset's input)",
+    "their tests, the export surface snapshot and regenerated docs (docs/use-data-table.md, docs/define-controls.md, docs/filter-set.md)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) The detail door titles a record opened by id the way it titles a row: `detailTitle` also receives the id when no loaded row has it (for example `detailTitle?: (row: T | undefined, id: string) => string`, or a title returned beside `detailById`'s body), so a page that titles by id writes one function (state-4.2). (2) With `detailById` set, `detail` may be left out: every activation opens through `detailById(getRowId(row), box)`, so a page that fetches its record by id writes the body once (state-4.4). (3) `useReset({ only })` also takes the `ControlsSlot` `filterSlot` returned (or the slot exposes its handles), so an empty state's Clear filters resets exactly the FilterSet's fields without a second list (state-4.5). Follow the contract amendment process for a changed signature.",
+  "commits": "feat: per change in packages/basalt-ui with its tests; a separate chore: commit for the contract amendment or a regenerated non-package file if any.",
+  "proof": "make check; a table test that a `detailState` naming an unloaded id opens with the title `detailTitle` gives for that id; a test that a table with only `detailById` opens a clicked row through it; a router test that `useReset({ only: slot })` unsets the slot's fields and keeps the view and record.",
+  "acceptance": [
+    "A record opened by id carries the same title the page gives the same record opened from its row (test)",
+    "A table with detailById and no detail opens a clicked row through detailById (test)",
+    "useReset accepts the filterSlot result and unsets exactly its fields (test)",
+    "docs/use-data-table.md and docs/define-controls.md show the new forms",
+    "make check passes"
+  ],
+  "out_of_scope": "The close history (v3-state-4-close-history); changing the cycle 4 build."
+}
