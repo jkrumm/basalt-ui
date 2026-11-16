@@ -35,6 +35,9 @@ CartesianChart<D>(props: CartesianChartProps<D>): ReactElement
 CartesianChart.custom<D>(build: (plot: ChartPlot<D>) => readonly unknown[]): CustomMarks<D>
 ```
 
+`Phase`, `QueryStateLike`, `Empty` and `FrameState` import as types from the root:
+`import type { Phase, QueryStateLike } from 'basalt-ui'`.
+
 ## Series
 
 Every series carries `key`, `label`, `color: { light, dark }` and `y: (d) => number | null` (`null` is
@@ -70,6 +73,11 @@ The server render draws the ring and attaches no handler.
 `plot.data`, `plot.rows(key)` (datums of a visible series), `plot.visible`, `plot.plotHeight` and
 `plot.focused` (the datum `focus` holds, else `null`: dim the rest against it), and returns engine
 marks from the allowed `@tanstack/charts/*` subpaths. They draw after the series' own.
+
+A word on one mark (the slowest, the spike, last night) is an engine `text` mark
+(`import { text } from '@tanstack/charts/text'`), allowed under `import-boundary` like every other
+mark here, placed by [`chartLabels`](chart-labels.md) so it clears the other marks. A kind such as
+`Bars` takes no custom mark, so a chart that needs the word is `CartesianChart` with that mark.
 
 ## Axis titles, log x, vertical rules
 

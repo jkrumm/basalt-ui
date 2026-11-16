@@ -33,6 +33,8 @@ DataPanel(props: DataPanelProps): ReactElement
   body: BoxSlot  // Tables, lists and boards
 ```
 
+`Phase`, `QueryStateLike`, `Empty` import from the root: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

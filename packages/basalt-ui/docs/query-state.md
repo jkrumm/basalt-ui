@@ -25,6 +25,8 @@ QueryState({ phase, empty, tier, skeleton, children, }: QueryStateProps): ReactE
   children?: ReactNode  // Rendered when there is data worth showing
 ```
 
+`Phase`, `Empty` import from the root: `import type { Phase, Empty } from 'basalt-ui'`.
+
 ## Example
 
 ```tsx

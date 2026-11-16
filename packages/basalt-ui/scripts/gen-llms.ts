@@ -162,10 +162,11 @@ export function generateLlmsTxt(): string {
   const lines: string[] = [
     `# ${pkg.name} v${pkg.version}`,
     `# ${pkg.description ?? 'Opinionated framework for React apps on Base UI, Tailwind 4 and TanStack'}`,
-    '# Entry points (the v3 app; `basalt-ui` itself is the 2.x root, never import from it):',
+    '# Entry points (the v3 app; `basalt-ui` itself is the 2.x root, import nothing from it but the frame types named below):',
     ...ENTRY_POINTS.map(([spec, names]) => `# ${spec.padEnd(20)} ${names.join(', ')}`),
     '# Peers of an `app` profile install: react, react-dom, @tanstack/react-router, @tanstack/react-query,',
     '# @base-ui/react, tailwindcss, @tailwindcss/vite; dev: vite, @tanstack/router-plugin. `basalt-ui init --profile app` writes main.tsx, _app.tsx, nav.tsx.',
+    "# A frame's `phase` is `Phase | QueryStateLike`, and `Empty`, `FrameState`, `Phase` and `QueryStateLike` import as types from the root `basalt-ui`: `import type { Phase, QueryStateLike } from 'basalt-ui'`.",
     "# A subpath's `Install:` line is its required peers; `OptionalPeers:` are import()-only, install on use.",
     '',
     `Package: ${pkg.name}`,
