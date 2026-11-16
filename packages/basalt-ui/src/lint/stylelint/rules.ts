@@ -30,8 +30,9 @@ const CLEAN_MIX_BODY = `\\s*in\\s+[a-z0-9-]+(?:\\s+(?:shorter|longer|increasing|
 const DECORATIVE_ROLE =
   'var\\(\\s*--vx-(?:(?:good|warn|bad|info|brand|chart|seq)(?:-[a-z0-9-]+)?|[a-z0-9-]*-tint)\\s*[,)]'
 
+// The class rules' spacing set: padding, margin, gap, the inset and its four sides, the type size.
 export const SPACING_PROPERTIES =
-  '/^(?:scroll-)?(?:padding|margin)(?:-[a-z]+)*$|^(?:grid-)?(?:row-|column-)?gap$|^font(?:-size)?$/'
+  '/^(?:scroll-)?(?:padding|margin)(?:-[a-z]+)*$|^(?:grid-)?(?:row-|column-)?gap$|^inset(?:-[a-z]+)*$|^(?:top|right|bottom|left)$|^font(?:-size)?$/'
 export const SHAPE_PROPERTIES =
   '/^(?:border(?:-[a-z]+)*-radius|box-shadow|line-height|letter-spacing)$/'
 export const DECORATION_PROPERTIES =
@@ -46,7 +47,7 @@ export const SCROLL_VALUES = '/\\b(?:auto|scroll|overlay)\\b/i'
  * clause led by the properties it answers, and a variant without the scroll clause where the ban is off.
  */
 const MESSAGE_BASE =
-  'Disallowed `%s: %s`. By property: padding, margin, gap and font size take a --vx token (or 0, auto, %), never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status or chart colour; color-mix runs over --vx tokens or transparent only'
+  'Disallowed `%s: %s`. By property: padding, margin, gap, inset (top, right, bottom, left) and font size take a --vx token (or 0, auto, %), never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status or chart colour; color-mix runs over --vx tokens or transparent only'
 const MESSAGE_SCROLL = `${MESSAGE_BASE}; overflow auto|scroll is ui/scroll-area, or let Page own the scroll.`
 const MESSAGE_NO_SCROLL = `${MESSAGE_BASE}.`
 
@@ -120,10 +121,10 @@ export const STYLELINT_RULES = {
     },
   ],
   'media-feature-name-disallowed-list': [
-    ['/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+)$/'],
+    ['/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+)$/', 'prefers-color-scheme'],
     {
       message:
-        'A viewport media feature (`%s`) keys layout on the window. Key on the container: `@container` with a named size (`@narrow`, `@regular`, `@wide`), or `useSizeClass()` for chrome.',
+        'The media feature `%s` keys styles on the window or the system scheme. A viewport feature: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`), or `useSizeClass()` for chrome. `prefers-color-scheme`: tokens switch per scheme, so use a `--vx-*` token instead of a dark fork.',
     },
   ],
   'selector-disallowed-list': [
@@ -134,11 +135,11 @@ export const STYLELINT_RULES = {
     },
   ],
   'at-rule-disallowed-list': [
-    ['utility', 'theme'],
+    ['utility', 'theme', 'custom-variant', 'apply'],
     {
       // `%s` is the at-rule with its `@` already (stylelint passes `@utility`)
       message:
-        '`%s` adds to what the package owns: a utility class or a theme colour. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app), and compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet.',
+        '`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant or a class list the class rules check. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a dark variant is a `--vx-*` token instead; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet.',
     },
   ],
 } as const
