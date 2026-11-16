@@ -14,7 +14,7 @@ import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 
 type Release = { day: number; tag: string; errors: number }
 
-const color = { light: VX.accent, dark: VX.accent }
+const color = { light: VX.brand, dark: VX.brand }
 
 export function ErrorsByRelease({ releases }: { releases: readonly Release[] }) {
   const focus = useChartFocus(releases, { announce: (r) => `${r.tag}: ${r.errors} errors` })
