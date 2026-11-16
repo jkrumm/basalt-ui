@@ -219,9 +219,15 @@ export type UseDataTable<T> = {
        */
       detailById?: (id: string, box: Box) => ReactNode
       onRowActivate?: never
+      activeRowId?: never
     }
   | {
       onRowActivate?: (row: T) => void
+      /**
+       * The id of the row the page has open (a detail the page draws itself): that row is drawn as
+       * the selected row and carries `aria-current`. With `detail` the table knows the open row itself.
+       */
+      activeRowId?: string
       detail?: never
       detailTitle?: never
       detailState?: never
