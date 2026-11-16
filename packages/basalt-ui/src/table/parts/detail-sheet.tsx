@@ -30,8 +30,12 @@ export function useDetailHost<T>(
     setEntry(null)
     model.closeDetail()
   }
+  const host = detail ?? page ?? own
   useEffect(() => {
-    model.setHost(detail ?? page ?? own)
+    model.setHost(host)
+    // A host closes on its own terms (the page's aside, a caller's panel), so the row it showed is
+    // no longer the open one.
+    if (!host.isOpen) model.releaseActive()
   })
   return (
     <Sheet open={entry !== null} onOpenChange={(open) => !open && close()}>
