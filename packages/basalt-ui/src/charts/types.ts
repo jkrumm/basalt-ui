@@ -277,6 +277,7 @@ export type ChartState = {
 /** A row of `plot.rows(key)`: one per datum, `y: null` kept as a gap. */
 export type PlotRow<T, X extends ChartX = ChartX> = {
   x: X
+  /** The drawn position: on the plot's edge for a datum past a bounded y domain (its value is `getValue(datum)`). */
   y: number | null
   series: string
   datum: T
