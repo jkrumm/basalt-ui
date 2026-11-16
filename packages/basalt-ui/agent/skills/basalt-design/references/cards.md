@@ -14,7 +14,7 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 ## Console anatomy
 
 - The card is the console card: a header with the title and its context line, the figure with its delta pill inside the inset one surface step down, label and value pairs in the footer. The parts that give it are the [ChartCard](node_modules/basalt-ui/docs/chart-card.md) `figure`, the [StatCard](node_modules/basalt-ui/docs/stat-card.md) and the inset of the [Card](node_modules/basalt-ui/docs/card.md).
-- Every card of a page carries its figure's delta pill and footer pairs, not only the first: the second card without them reads as a lesser one (n13, n16, n04, n09, c14).
+- Every card of a page carries its figure's delta pill and footer pairs, including the second and third: a card without them reads as a lesser one (n13, n16, n04, n09, c14).
 - Ids, repo names, hashes and timestamps are monospace, in the header, the figure's sub line and the footer pairs.
 - The title is a noun phrase in the header and the figure is the largest thing in the inset; a small title over free text on a flush surface is the defect, and the part is reported when it cannot draw the content ([anti-defaults](anti-defaults.md)).
 
