@@ -40,7 +40,10 @@ function walk(dir: string): string[] {
 }
 
 function trackedFiles(): [string, string][] {
-  const r = spawnSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' })
+  const r = spawnSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  })
   if (r.status !== 0) throw new Error(`git ls-files: ${r.stderr}`)
   return r.stdout
     .split('\0')
