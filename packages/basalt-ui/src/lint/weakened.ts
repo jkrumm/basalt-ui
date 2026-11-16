@@ -281,8 +281,10 @@ const GENERATED_TREE = /^routeTree\.gen\.[cm]?[jt]sx?$/
 
 /** A gitignore-style glob (`*`, `**`, a bare name at any depth, a directory) as a test on a root-relative path. */
 function ignoreMatcher(pattern: string): (path: string) => boolean {
-  const anchored = pattern.startsWith('/') || pattern.replace(/^\.\//, '').includes('/')
-  const body = pattern.replace(/^\.\//, '').replace(/^\//, '').replace(/\/$/, '')
+  const trimmed = pattern.replace(/^\.\//, '').replace(/\/$/, '')
+  // A slash before the end anchors the pattern to the config's directory; `generated/` does not.
+  const anchored = trimmed.includes('/')
+  const body = trimmed.replace(/^\//, '')
   const source = body
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
     .replace(/\*\*\//g, '<<DEEP_DIR>>')

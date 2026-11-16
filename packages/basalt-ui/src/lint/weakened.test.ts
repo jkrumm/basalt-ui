@@ -267,6 +267,14 @@ describe('checkWeakenedConfig', () => {
       expect(detail).not.toContain('generated.ts')
     })
 
+    it('reads a trailing-slash directory pattern at any depth', async () => {
+      const dir = withFile('export {}\n')
+      mkdirSync(join(dir, 'src', 'generated'))
+      writeFileSync(join(dir, 'src', 'generated', 'api.ts'), '/* eslint-disable */\n')
+      writeFileSync(join(dir, '.oxlintignore'), 'generated/\n')
+      expect(status(await run(dir), 3)).toBe('passed')
+    })
+
     it('names the ignore route for a generated file in the remedy', async () => {
       const results = await run(withFile('/* eslint-disable */\n'))
       expect(results[2]?.detail).toContain('ignorePatterns')
