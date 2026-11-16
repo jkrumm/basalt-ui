@@ -5,10 +5,14 @@
  *
  * - `dangerous-html`: `dangerouslySetInnerHTML` whose `__html` is not a string literal, and the DOM
  *   sinks `el.innerHTML = x`, `el.outerHTML = x` and `el.insertAdjacentHTML(pos, x)` with a
- *   non-literal value. A sink reached through a computed key (`el['innerHTML']`) is not read.
+ *   non-literal value. `<iframe srcDoc={x} />` with a non-literal `srcDoc` (a string literal or a
+ *   hole-free template is legal) and `x.createContextualFragment(html)` with a non-literal argument
+ *   (`document.createRange().createContextualFragment(m.html)`) report too. A sink reached through
+ *   a computed key (`el['innerHTML']`) is not read, nor is `createContextualFragment` called bare.
  * - `rehype-raw`: an import or require of `rehype-raw`.
  * - `mdx-evaluate`: `evaluate`/`run` (and their Sync twins) of `@mdx-js/mdx`, by name
- *   import, namespace member or require, and any import of `next-mdx-remote` or a subpath of it.
+ *   import, namespace member or require, and any import of `next-mdx-remote`,
+ *   `next-mdx-remote-client` or a subpath of either (`next-mdx-remote-client/rsc`).
  *   `compile`/`compileSync` report only in a file that also runs code from a string
  *   (`new Function(code)`, `Function(code)`, `eval`): a build step or a test that compiles authored
  *   MDX into a module is not an evaluation. Known limit: compiled code run in another file passes.
@@ -110,9 +114,11 @@ const runsString = (node: Node): boolean => {
     : name === 'Function' || name === 'eval'
 }
 
-/** Every `next-mdx-remote` entry compiles and runs MDX at render, so any import of it reports. */
+/** Every `next-mdx-remote` and `next-mdx-remote-client` entry runs MDX at render: any import reports. */
+const NEXT_MDX_REMOTE: readonly string[] = ['next-mdx-remote', 'next-mdx-remote-client']
 const isNextMdxRemote = (source: string | undefined): boolean =>
-  source === 'next-mdx-remote' || source?.startsWith('next-mdx-remote/') === true
+  source !== undefined &&
+  NEXT_MDX_REMOTE.some((name) => source === name || source.startsWith(`${name}/`))
 
 const isMdxModule = (source: string | undefined): boolean =>
   source !== undefined && (MDX_NAMES[source] !== undefined || isNextMdxRemote(source))
@@ -122,38 +128,61 @@ const HTML_SINKS: ReadonlySet<string> = new Set(['innerHTML', 'outerHTML'])
 
 const dangerousHtml: AstForm = {
   id: 'dangerous-html',
-  detect: ({ report }) => ({
-    JSXAttribute(node) {
-      if (nameOf(child(node, 'name')) !== 'dangerouslySetInnerHTML') return
-      const container = child(node, 'value')
-      const value =
-        container?.type === 'JSXExpressionContainer' ? child(container, 'expression') : undefined
-      if (value?.type === 'ObjectExpression') {
-        const html = children(value, 'properties').find((property) => {
-          const key = child(property, 'key')
-          return property.type === 'Property' && (nameOf(key) ?? text(key)) === '__html'
-        })
-        const body = html ? child(html, 'value') : undefined
-        if (body && isLiteralText(body)) return
+  detect: ({ report }) => {
+    /** `<iframe srcDoc={x} />` parses x as a document; a literal or hole-free template is legal. */
+    const reportSrcDoc = (node: Node): void => {
+      const opening = node['parent'] as Node | undefined
+      if (opening?.type !== 'JSXOpeningElement' || nameOf(child(opening, 'name')) !== 'iframe') {
+        return
       }
-      report(node, 'dangerouslySetInnerHTML')
-    },
-    AssignmentExpression(node) {
-      const left = child(node, 'left')
-      if (left?.type !== 'MemberExpression' || left['computed'] === true) return
-      const property = nameOf(child(left, 'property'))
-      const right = child(node, 'right')
-      if (property === undefined || !HTML_SINKS.has(property) || !right) return
-      if (!isLiteralText(right)) report(node, `.${property} =`)
-    },
-    CallExpression(node) {
-      const callee = child(node, 'callee')
-      if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return
-      if (nameOf(child(callee, 'property')) !== 'insertAdjacentHTML') return
-      const html = children(node, 'arguments')[1]
-      if (html && !isLiteralText(html)) report(node, '.insertAdjacentHTML()')
-    },
-  }),
+      const value = child(node, 'value')
+      if (value && text(value) !== undefined) return
+      const expression =
+        value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
+      if (expression && isLiteralText(expression)) return
+      report(node, 'iframe srcDoc')
+    }
+    return {
+      JSXAttribute(node) {
+        const attribute = nameOf(child(node, 'name'))
+        if (attribute === 'srcDoc') return reportSrcDoc(node)
+        if (attribute !== 'dangerouslySetInnerHTML') return
+        const container = child(node, 'value')
+        const value =
+          container?.type === 'JSXExpressionContainer' ? child(container, 'expression') : undefined
+        if (value?.type === 'ObjectExpression') {
+          const html = children(value, 'properties').find((property) => {
+            const key = child(property, 'key')
+            return property.type === 'Property' && (nameOf(key) ?? text(key)) === '__html'
+          })
+          const body = html ? child(html, 'value') : undefined
+          if (body && isLiteralText(body)) return
+        }
+        report(node, 'dangerouslySetInnerHTML')
+      },
+      AssignmentExpression(node) {
+        const left = child(node, 'left')
+        if (left?.type !== 'MemberExpression' || left['computed'] === true) return
+        const property = nameOf(child(left, 'property'))
+        const right = child(node, 'right')
+        if (property === undefined || !HTML_SINKS.has(property) || !right) return
+        if (!isLiteralText(right)) report(node, `.${property} =`)
+      },
+      CallExpression(node) {
+        const callee = child(node, 'callee')
+        if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return
+        const method = nameOf(child(callee, 'property'))
+        if (method === 'createContextualFragment') {
+          const markup = children(node, 'arguments')[0]
+          if (markup && !isLiteralText(markup)) report(node, '.createContextualFragment()')
+          return
+        }
+        if (method !== 'insertAdjacentHTML') return
+        const html = children(node, 'arguments')[1]
+        if (html && !isLiteralText(html)) report(node, '.insertAdjacentHTML()')
+      },
+    }
+  },
   fix: FIX,
   next: NEXT,
   fixture: 'untrusted/dangerous-html.tsx',

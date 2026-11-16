@@ -32,3 +32,33 @@ el.insertAdjacentHTML('beforeend', '<hr>')
 
 // @valid
 el.textContent = m.html
+
+// @invalid
+const a = <iframe srcDoc={m.html} />
+
+// @invalid
+const a = <iframe srcDoc={`<b>${name}</b>`} />
+
+// @valid
+const a = <iframe srcDoc="<b>fixed</b>" />
+
+// @valid
+const a = <iframe srcDoc={'<b>fixed</b>'} />
+
+// @valid
+const a = <iframe srcDoc={`<b>fixed</b>`} />
+
+// @valid
+const a = <iframe src={m.url} />
+
+// @invalid
+const f = document.createRange().createContextualFragment(m.html)
+
+// @invalid
+const f = range.createContextualFragment(`<b>${name}</b>`)
+
+// @valid
+const f = range.createContextualFragment('<hr>')
+
+// @valid
+const f = range.createContextualFragment(`<hr>`)
