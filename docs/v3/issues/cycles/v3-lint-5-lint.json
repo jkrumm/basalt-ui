@@ -1,0 +1,29 @@
+{
+  "why": "Lint cycle 5 (docs/v3/cycles/lint-5.md, lint-5.1 to lint-5.7 P2, lint-5.8 to lint-5.11 P3). The cycle 4 fixes hold: the older seeds are caught at 543 of 573, every lint-4 seed its row turned into a form is caught, no rule fires on correct code (52 valid-code marks, the playground, 36 ejected primitives), and the four cycle 4 message findings are gone. This cycle's 173 phrasings are caught at 136, and the misses are the next spellings an agent writes: Tailwind v4's `not-dark:` and a `:where()` attribute selector, a card rebuilt from radius, border and shadow with no padding, a flex basis as the width, eight more libraries (`@mantine/core`, the 2.x stack, among them), `<dl>`, `<details>`, a heading tag `as const`, a chart in basalt's own `Section`, luxon, and `@config`. One route goes through a message: shadcn's no-inline-styles says to use CSS custom properties, and a share bar sized through `grow-(--g)` then passes every rule. Each seed and its line are in docs/v3/cycles/lint-5/fixtures/results.md; reproduce with `zsh docs/v3/cycles/lint-5/fixtures/run.sh $PWD /tmp/lint-cycle-5` after a package build.",
+  "what": "The misses of lint-5.1 to lint-5.10 caught or stated as known limits, the custom-property route around html-data-marks closed (lint-5.6), and the stylelint value list's message narrowed to the reported property (lint-5.11).",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/** (forms, fixtures, cases, JSDoc, messages)",
+    "packages/basalt-ui/src/lint/stylelint/** and packages/basalt-ui/configs/stylelint.basalt.json (regenerated)",
+    "packages/basalt-ui/src/lint/preset.ts (the shadcn rule options and messages only)",
+    "packages/basalt-ui/src/lint/bin.ts (only if lint-5.11 is fixed where the CLI formats a stylelint report)",
+    "packages/basalt-ui/configs/oxlint-*.json (regenerated)",
+    "packages/basalt-ui/src/lint/messages.test.ts"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/src/lint/rule-table.ts ID_CEILING",
+    "packages/basalt-ui/src/css/** (the theme's class names are the input, not the change)",
+    "apps/**"
+  ],
+  "change": "Misses, each with an invalid fixture block or a stated limit in the rule's JSDoc: `DARK_VARIANT` reads the `not-dark` variant and an arbitrary selector whose theme attribute or `.dark` class sits inside `:where(…)` or `:is(…)` (lint-5.1); `borderedCard` takes a `shadow-*` step as the third signal beside the padding, and `RADIUS` reads `rounded-(…)` and `rounded-[…]` (lint-5.2); fixed-width reads `basis-*` above the threshold as it reads `w-*`, and the stylelint value list reads `flex-basis` and the basis of the `flex` shorthand with the width clause (lint-5.3); import-boundary adds react-virtuoso to `base-ui`, `@mantine/*` to `radix` (its fix names Mantine beside Radix as not in the stack), react-cmdk to `cmdk`, react-router, react-router-dom and `@apollo/client` to `data-library`, `@tanstack/table-core` and `ag-grid-react`/`ag-grid-community` to a DataTable route (the `react-table-hook` form or a package form with its fix), and idb-keyval to `persist-storage` (lint-5.4); primitive-bypass reads `<dl>` under raw-table with the Facts fix, `<details>` under raw-control with `ui/collapsible` or `ui/accordion`, a heading tag whose declaration carries `as const` or `satisfies`, a chart kind under `Section` or `Page` imported from `basalt-ui/page` as outside a card, and luxon's `toFormat(`/`toLocaleString(` on a `DateTime` chain in JSX (lint-5.5); html-data-marks reads `flexGrow`, `flex` and `flexBasis` set from data and a `grow-(--x)`/`basis-(--x)` class whose property is set from data, with the BarList fix (lint-5.6); the stylelint at-rule list takes `config` (lint-5.7). P3: media-query reads `visualViewport.width` (lint-5.8); role-table reads `treegrid`, raw-table reads the `table`/`table-row`/`table-cell` display utilities on an intrinsic element (lint-5.9); loader-deps-search reads a rest element in the destructured `search` that the deps return (lint-5.10); the value list's message prints only the clause for the reported property (a message function in a JS preset, or the clause picked where `basalt-ui lint` formats the report), and the spacing clause names `--vx-rhythm-*` (lint-5.11). The id ceiling does not move: every change is a form, an option or a message of an existing id.",
+  "proof": "run.sh from lint cycle 5 reports every seed of lint-5.1 to lint-5.10 caught or names its stated limit, every `pass` mark silent, and the probe of lint-5.6 (`grow-(--g)` with `style={{ '--g': r.value }}` in a map) reported by html-data-marks.",
+  "commits": "fix: one commit per rule family in packages/basalt-ui (class, import, structure, stylelint, messages).",
+  "acceptance": [
+    "Each miss of lint-5.1 to lint-5.10 is caught (seed report) or stated as a known limit in its rule's JSDoc",
+    "A share bar sized through a custom property set from data is reported by html-data-marks (test)",
+    "A `declaration-property-value-disallowed-list` report names the clause for its own property first, and the spacing clause names `--vx-rhythm-*` (test)",
+    "No rule fires on the 52 `pass` marks of docs/v3/cycles/lint-5/fixtures (seed report)",
+    "make check passes"
+  ],
+  "out_of_scope": "New rule ids; rules for pinned 2.x consumers; the theme's class names themselves (`src/css/**`); app code."
+}

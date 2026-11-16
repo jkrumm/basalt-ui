@@ -1,0 +1,37 @@
+// Seeded offenders for basalt/app-spacing.
+import { Button } from 'basalt-ui/ui/button'
+
+// seed app-spacing/space-between 1: a vertical stack spaced with space-y
+export function Stack() {
+  return (
+    <div className="space-y-4">
+      <p>a</p>
+      <p>b</p>
+    </div>
+  )
+}
+
+// seed app-spacing/space-between 2: a button row spaced with space-x behind a variant
+export function Actions() {
+  return (
+    <div className="flex @regular:space-x-2">
+      <Button>Save</Button>
+      <Button variant="ghost">Cancel</Button>
+    </div>
+  )
+}
+
+// seed app-spacing/margin 1: a margin under a title
+export function Heading() {
+  return <p className="mb-4 text-display">Runs</p>
+}
+
+// seed app-spacing/margin 2: a negative margin to pull an icon up, the optical offset
+export function IconNudge() {
+  return <span className="-mt-0.5 inline-block">i</span>
+}
+
+// seed app-spacing/margin 3: a margin on a basalt Button to push it right
+export function Push() {
+  return <Button className="ml-4">Next</Button>
+}

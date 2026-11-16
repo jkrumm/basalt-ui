@@ -1396,3 +1396,17 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-lint-4-lint]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-5.json' }
+  - key: v3-lint-5-lint
+    title: 'Missed spellings, a flex basis as the width and the custom-property route around data marks, from lint cycle 5'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-cycle-lint-5]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-5-lint.json' }
+  - key: v3-cycle-lint-6
+    title: 'Improvement cycle 6: lint and guards, misses and false alarms per rule'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-5-lint]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-6.json' }

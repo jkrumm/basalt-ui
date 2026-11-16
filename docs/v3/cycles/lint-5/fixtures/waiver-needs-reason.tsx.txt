@@ -1,0 +1,36 @@
+// Seeded offenders for basalt/waiver-needs-reason.
+
+// seed waiver-needs-reason/missing-reason 1: a bare next-line waiver
+export function Legacy() {
+  // oxlint-disable-next-line basalt/dark-fork
+  return <div className="dark:bg-inset">legacy</div>
+}
+
+// seed waiver-needs-reason/missing-reason 2: the eslint dialect, carried over from a shadcn app
+export function Legacy2() {
+  // eslint-disable-next-line basalt/dark-fork
+  return <div className="dark:bg-inset">legacy</div>
+}
+
+// seed waiver-needs-reason/missing-reason 3: a reason after an em dash instead of --
+export function Legacy3() {
+  // oxlint-disable-next-line basalt/dark-fork — the logo needs its own dark tone
+  return <div className="dark:bg-inset">legacy</div>
+}
+
+// seed waiver-needs-reason/missing-reason 4: an end-of-line waiver with no reason
+export function Legacy4() {
+  return <div className="dark:bg-inset">legacy</div> // oxlint-disable-line basalt/dark-fork
+}
+
+// seed waiver-needs-reason/file-level-scope 1: a reasoned file-level waiver for a rule that is not file-waivable
+/* oxlint-disable basalt/viewport-keyed -- the marketing page keys on the viewport */
+export function Marketing() {
+  return <div className="md:flex">hero</div>
+}
+/* oxlint-enable basalt/viewport-keyed */
+
+// seed waiver-needs-reason/file-level-scope 2: a reasoned file-level waiver for colour-literal off the deepRender list
+/* oxlint-disable basalt/colour-literal -- the canvas layer paints with hexes */
+export const BRAND = '#0077bd'
+/* oxlint-enable basalt/colour-literal */
