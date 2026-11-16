@@ -3,8 +3,8 @@
  * money, bytes and signed deltas, dates and durations, and the two measurement units argo needed
  * (`km`/`kcal`).
  *
- * Every formatter takes `(value, opts?)`. `locale` defaults to what `setFormatDefaults` (or
- * the provider's locale and time zone props) set, else the runtime's locale. That default is
+ * Every formatter takes `(value, opts?)`. `locale` defaults to what `setFormatDefaults` set, else
+ * the runtime's locale. That default is
  * ONE value per process; pass `locale` per call to override it. Number formatters accept
  * `null | undefined`, and every non-finite/unparseable input prints the same {@link NON_FINITE}
  * em dash rather than `"NaN"` or throwing.

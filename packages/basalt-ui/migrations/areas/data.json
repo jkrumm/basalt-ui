@@ -18,7 +18,7 @@
       "to": "setFormatDefaults",
       "profiles": ["parts", "app"],
       "manual": true,
-      "note": "one verb: it writes a process-wide default and returns nothing, so it is `set`, beside resetFormatDefaults; `define` is for data. The `BasaltProvider` locale and timeZone props do the same write",
+      "note": "one verb: it writes a process-wide default and returns nothing, so it is `set`, beside resetFormatDefaults; `define` is for data",
       "verify": "tsc: defineFormat is not exported from basalt-ui/format"
     }
   ],

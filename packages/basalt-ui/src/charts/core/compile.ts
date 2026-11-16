@@ -173,8 +173,8 @@ export function bucketDay(d: Date): Date {
 }
 
 /**
- * The tooltip's date: weekday, day, month and year in the page's locale (`setFormatDefaults` /
- * `BasaltProvider`), read in UTC like the time scale; a non-midnight instant adds `HH:MM`. With
+ * The tooltip's date: weekday, day, month and year in the locale `setFormatDefaults` set
+ * (the runtime's when none), read in UTC like the time scale; a non-midnight instant adds `HH:MM`. With
  * `dayOnly` (a day-granular series) the instant is its bucket's DAY, never a clock time: see
  * {@link bucketDay}.
  */
