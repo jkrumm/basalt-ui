@@ -1222,3 +1222,28 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-expr-3-skill, v3-expr-3-kit-fixes, v3-expr-3-contract, v3-expr-3-rubric]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-4.json' }
+  - key: v3-wiring-3-route-tree
+    title: 'The stock build passes right after init and after a new route, first-hour docs match the scaffold, from wiring cycle 3'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-wiring-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-3-route-tree.json' }
+  - key: v3-wiring-3-api
+    title: 'The frame value types import from one v3 subpath, every data part takes phase, from wiring cycle 3'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-wiring-3, v3-teardown-peers]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-3-api.json' }
+  - key: v3-wiring-3-visual
+    title: 'A table column shows its whole header, a section heading keeps its word space, from wiring cycle 3'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-wiring-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-3-visual.json' }
+  - key: v3-cycle-wiring-4
+    title: 'Improvement cycle 4: wiring from init to a first page, and the export surface'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-wiring-3-route-tree, v3-wiring-3-api, v3-wiring-3-visual]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-wiring-4.json' }
