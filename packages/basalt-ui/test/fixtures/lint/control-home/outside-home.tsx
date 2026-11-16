@@ -178,3 +178,48 @@ export const Local = () => <Select value={v} />
 // @valid
 import { Input } from 'basalt-ui/ui/input'
 export const Text = () => <Input value={v} />
+
+// @invalid
+import { useState } from 'react'
+import { Input } from 'basalt-ui/ui/input'
+export function Search() {
+  const [q, setQ] = useState('')
+  return <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search runs" />
+}
+
+// @invalid
+import { useState } from 'react'
+import { Tabs, TabsList, TabsTrigger } from 'basalt-ui/ui/tabs'
+export function Views() {
+  const [view, setView] = useState('table')
+  return (
+    <Tabs value={view} onValueChange={(v) => setView(String(v))}>
+      <TabsList>
+        <TabsTrigger value="table">Table</TabsTrigger>
+        <TabsTrigger value="chart">Chart</TabsTrigger>
+      </TabsList>
+    </Tabs>
+  )
+}
+
+// @valid
+import { Tabs, TabsList, TabsTrigger } from 'basalt-ui/ui/tabs'
+export const Details = () => (
+  <Tabs defaultValue="details">
+    <TabsList>
+      <TabsTrigger value="details">Details</TabsTrigger>
+    </TabsList>
+  </Tabs>
+)
+
+// @valid
+import { useState } from 'react'
+import { Input } from 'basalt-ui/ui/input'
+export function Field() {
+  const [q, setQ] = useState('')
+  return (
+    <FormField label="Name">
+      <Input value={q} onChange={(e) => setQ(e.target.value)} />
+    </FormField>
+  )
+}

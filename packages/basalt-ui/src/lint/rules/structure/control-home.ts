@@ -1,7 +1,8 @@
 /**
  * `basalt/control-home` (guardrails section 4, row 10): one form, `outside-home`. A JSX use of a
  * control primitive (`ui/select`, `combobox`, `segmented`, `number-field`, `slider`, `switch`,
- * `checkbox`, `radio-group`) in app code whose lexical ancestors in the same file are none of a
+ * `checkbox`, `radio-group`, and `input` and `tabs` when their value is `useState` or `useReducer`
+ * state: the search box filtering a list and `Tabs` as the page's view switch) in app code whose lexical ancestors in the same file are none of a
  * home. The predicate is file-local and wrapper-only (controls-url-state section 9, I7): it never
  * infers a home from where a component is rendered, so a control a file renders for another
  * file's home needs its own `ControlHome`. Body children of `Section` and `Page` and the nodes of
@@ -17,6 +18,10 @@
  *   `field` whose value is a `.field.<name>` member chain, or an identifier hoisted from one
  *   (`const range = store.field.range`), resolved at `Program:exit` so the order of the
  *   declaration and the element does not matter.
+ *
+ * Known limit: an `Input` or `Tabs` is a control in a form far more often than a filter, so it
+ * reports only when its value reads state held in the same file; a value from a prop, a store
+ * outside the file or a form library passes, since syntax cannot tell a filter from a form field.
  *
  * Never file-waivable: `waiver-needs-reason` rejects a file-level directive for this id, because
  * each control outside a home is a product signal. A line waiver with a reason is the counted
@@ -35,7 +40,16 @@ const CONTROL_PRIMITIVES: ReadonlySet<string> = new Set([
   'switch',
   'checkbox',
   'radio-group',
+  'input',
+  'tabs',
 ])
+
+/**
+ * Roots read only when their value is held in `useState` or `useReducer` (the search box filtering
+ * a list, the page's view switch): an `Input` or `Tabs` in a form or a `defaultValue` tab set is
+ * not a control with a missing handle, so only a value with no handle reports.
+ */
+const STATE_ONLY_ROOTS: ReadonlySet<string> = new Set(['Input', 'Tabs'])
 
 /** The root component of each primitive: its parts (`SelectItem`, `Radio`) are never controls of their own. */
 const CONTROL_ROOTS: ReadonlySet<string> = new Set([
@@ -50,6 +64,7 @@ const CONTROL_ROOTS: ReadonlySet<string> = new Set([
   'Checkbox',
   'CheckboxGroup',
   'RadioGroup',
+  ...STATE_ONLY_ROOTS,
 ])
 
 /** The props through which a control holds its value: reading state through one means no handle owns it. */
@@ -158,6 +173,8 @@ type Frame =
 type Use = {
   node: Node
   subject: string
+  /** The local name is a state-only root (`Input`, `Tabs`): it reports only on state it reads. */
+  stateOnly: boolean
   frames: Frame[]
   attributes: Node[]
   scope: Node[]
@@ -171,6 +188,7 @@ const outsideHome: AstForm = {
   detect: ({ report }): Visitor => {
     /** Local names bound to a control primitive. */
     const controls = new Set<string>()
+    const stateOnlyLocals = new Set<string>()
     /** Names assigned a `.field.<name>` chain anywhere in the file. */
     const hoisted = new Set<string>()
     /** Render functions handed to `filterSlot.custom`, and the functions that keep state. */
@@ -219,7 +237,9 @@ const outsideHome: AstForm = {
           if (specifier.type === 'ImportSpecifier' && !CONTROL_ROOTS.has(importedName ?? ''))
             continue
           const local = nameOf(child(specifier, 'local'))
-          if (local !== undefined) controls.add(local)
+          if (local === undefined) continue
+          controls.add(local)
+          if (STATE_ONLY_ROOTS.has(importedName ?? '')) stateOnlyLocals.add(local)
         }
       },
       VariableDeclarator(node) {
@@ -283,6 +303,7 @@ const outsideHome: AstForm = {
           uses.push({
             node: opening,
             subject: `<${root}>`,
+            stateOnly: stateOnlyLocals.has(root),
             frames: [...frames],
             scope: [...functions],
             attributes: children(opening, 'attributes').filter((attr) =>
@@ -295,7 +316,10 @@ const outsideHome: AstForm = {
         frames.pop()
       },
       'Program:exit'() {
-        for (const use of uses) if (!homed(use)) report(use.node, use.subject)
+        for (const use of uses) {
+          if (use.stateOnly && !readsState(use)) continue
+          if (!homed(use)) report(use.node, use.subject)
+        }
       },
     }
   },
