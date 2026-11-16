@@ -1,0 +1,28 @@
+{
+  "why": "Expression cycle 6 (docs/v3/cycles/expression-6.md) found two kit gaps that only a contract change closes. (a) Optional props reject `undefined`: the template's `exactOptionalPropertyTypes` makes `figure: { delta: maybeDelta }` or `sub: maybeText` a type error, so n19 wrote about 40 lines of conditional spreads in round 0 (30 in round 1) to pass a `ChartFigure`, a `StatCell` and a `ChartCard` field that may be absent, and n20 put a placeholder 'partial' delta on a figure because it could not leave one empty. (b) No slot sets times or ids in the monospace face the console look asks for: n19's timestamps in a figure `period` and a `StatCell` `sub` (.53) and c16's model ids in a `DataTable` entity column (.14) could not be set mono, and both reviewers marked X5 down for it. Both builders named the gap in their wish lists.",
+  "what": "A Spec, then the build: optional fields of the chart and card contracts accept `undefined`, and a monospace slot for time and id text.",
+  "owns": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/src/cards/contract.ts",
+    "packages/basalt-ui/src/table/contract.ts (the entity column only)",
+    "the components that read the changed fields, and their tests",
+    "packages/basalt-ui/agent/** text that teaches the changed fields, through its generator",
+    "the contract-frozen pins the amendment moves, with the amendment commit the repo's process names"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md (the Spec names any section it would amend; the owner rules)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "Write the Spec first (one page, checkpoint spec): for (a) and (b) the smallest change that closes it, its type, and the cases that ask for it; at most three open choices with defaults. Candidate defaults the Spec may overturn: (a) every optional field of `ChartFigure`, `ChartCardProps`, `StatCell`'s props and `FootFact` is typed `?: T | undefined`, so a page passes a maybe-value without a spread; an `undefined` means the same as an absent key. (b) One shared `mono?: boolean` on the text slots that carry a time or an id (`ChartFigure.period`, `StatCell` `sub`, the entity column's secondary text), drawn in the kit's mono face with tabular numerals; no free `className` on those slots. Both are additive: no existing field changes meaning. The Spec says whether they ship in a 3.x minor or must land before 3.0.",
+  "commits": "feat: per change with its tests; docs: for regenerated agent text; package commits separate from non-package ones.",
+  "proof": "make check; a type test that passes `undefined` to each changed field; a layout test of a mono period and a mono entity column at 390 and 1800; n19's round-1 scenario compiles with its conditional spreads removed in a scratch copy (not committed: the trial builds stay as they are).",
+  "acceptance": [
+    "A Spec is submitted and its verdict is read before the build",
+    "Each optional field of ChartFigure, ChartCardProps, StatCell's props and FootFact accepts undefined, with a type test",
+    "A figure period, a StatCell sub and an entity column's secondary text can be set in the mono face, with a layout test",
+    "The basalt-charts or basalt-page reference names both",
+    "make check passes"
+  ],
+  "out_of_scope": "A marked cell on Heatmap (n08 only, a recipe at most); a figure delta that follows focus (it already can: `focus.readout` is generic, so this is v3-expr-6-skill); the kit behaviours in v3-expr-6-kit-fixes."
+}

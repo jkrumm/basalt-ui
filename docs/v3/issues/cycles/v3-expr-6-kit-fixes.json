@@ -1,0 +1,33 @@
+{
+  "why": "Expression cycle 6 (docs/v3/cycles/expression-6.md) lost 28 of 91 round-0 points to `primitive`, four of them P2. Each is kit behaviour a builder could not reach. (a) A pointer that crosses a chart on its way to a linked `DataTable` row leaves no focus: arriving on the row directly links it (the hero swaps), arriving across the chart does not, and the chart's last tooltip text stays in the live region (c16 .13, P2; lead probe `.evidence/v3-shots/expression-6/probe-steps.ts` in the main checkout: direct 1 `data-focused`, via the chart 0). It is the usual path on a page whose table sits under its chart. (b) Two or more charts on one `useChartFocus` announce one move once per chart: n15's two charts read each week twice, n20's four cards read four unlabelled readouts joined by ' | ' (n15 .34, n20 .61). (c) A `refLines` label with no free spot at its anchor is dropped silently, and the rule's own line is no obstacle for `chartLabels.place`: n21's median label vanished on the full fixture (.71, P2; .76), n15's target label at 390 (.31, .35), n19's limit label ran through a zone at 390 (.43); c16 drew a box at the rule's y by hand; n21 found the label survives anchored at the other end. (d) A capped point gets no caret: `contract.ts:169` promises an off-scale marker for a datum past the domain, and c16's US$21.42 model and n21's 19 h outage sat on the cap with none (c16 .4, .7; n21 .70, P2); n19's capped line did get one. A point at the x domain's edge is cut in half (n21 .70, .74). (e) The tooltip covers the mark it reads: n20's sat on the focused bar's top and the typical rule (.59), n15's covered three bars at 390 (.32). (f) A `Heatmap` with `states` still draws a count gradient that no cell uses ('0 d' to '1 d', n08 .18, P2; .22), clips its legend under `matchHeight` (.21, .26: the builder fell back to a fixed height and a width cap), dims a stated cell until its label is unreadable in both schemes (.27) and sets cell text at about 10 px (.19). (g) `couldNotLoad` lowercases a mixed-case word: 'Wi-Fi signal' became 'Could not load wi-Fi signal' (n19 .47); a `StatCell` in error says 'Could not load this.' while a `ChartCard` names its title (n19 and n20 builder reports). (h) A light series dimmed in light nearly vanishes (n19's noise floor, .52; cycle 5 n10, n17).",
+  "what": "Eight kit behaviours from expression cycle 6, each with a test, none adding an export or a field to charts/contract.ts.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** except contract.ts",
+    "packages/basalt-ui/src/table/parts/row-focus.tsx and what it needs in src/table/**",
+    "packages/basalt-ui/src/cards/** where a frame or the error title is shared",
+    "packages/basalt-ui/src/common/could-not-load.ts",
+    "packages/basalt-ui/docs/** text through its generator",
+    "tests under packages/basalt-ui/tests/** and beside each changed source file"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts and packages/basalt-ui/src/cards/contract.ts (a change there is v3-expr-6-contract or its own Spec row)",
+    "docs/v3/expression/**",
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "(1) A focus a linked row sets on pointer entry survives the chart's own pointer leave, whatever the order the browser fires them in: crossing from a chart onto a `DataTable` row (or any element spreading `focus.item(i)`) leaves that row focused, the chart dimmed against it and the live region reading the row (c16; re-check cycle 5's n10 and n14 list frames, which read NOT LINKED, with the probe). (2) Charts that share one `useChartFocus` announce a move once, through one live region, not once per chart (n15, n20). (3) A `refLines` label that finds no free spot at its anchor tries the rule's other end before it is dropped, and the rule's line is an obstacle to `chartLabels.place` (n21, n15, n19, c16). (4) A point series past a bounded y domain draws the off-scale caret the contract promises, on a numeric x as on a band or time x, and the x domain of a point chart leaves room for a whole dot at each edge (c16, n21). (5) The tooltip anchors beside the focused column or point, never over its top or over a rule's label (n20, n15). (6) `Heatmap` with `states`: no count gradient in the legend when no cell draws the ramp, the legend inside the box under `matchHeight`, a dimmed stated cell whose label stays readable in light and dark, cell text at the body step (n08; any consumer passing `states`). (7) `couldNotLoad` keeps the case of a first word that is not a plain capitalised word ('Wi-Fi', 'iPhone', 'eBay'), and a `StatCell`'s default error title names its label as a `ChartCard`'s does (n19, n20). (8) The light-scheme dim floor keeps a light series visible (n19; cycle 5 n10, n17). If any change turns out to need a new public option or a field on a contract file, it leaves this row: file it as its own row with `checkpoint: spec` and seat opus high, and say so in the PR.",
+  "commits": "fix: per behaviour, each with its test; docs: for regenerated docs; package commits separate from non-package ones.",
+  "proof": "make check; a layout or unit test per change; the trial scenarios' frames from the cycle file re-taken where they show the change (c16 list frame through the lead tool's stepped path, n15 keys log, n21 default, c16 extreme, n20 sweep, n08 rest light and dark, n19 error and its sweep in light).",
+  "acceptance": [
+    "A pointer that crosses a chart onto a linked DataTable row leaves that row focused, with a test",
+    "Charts on one shared focus announce a move once",
+    "A refLines label with no spot at its anchor tries the other end, and the rule line is a placement obstacle, each with a test",
+    "A capped point shows the off-scale caret on a numeric x, and no point is cut at the x edge",
+    "The tooltip never covers the focused mark or a rule label",
+    "A Heatmap with states shows no unused gradient, keeps its legend under matchHeight and keeps dimmed labels readable",
+    "couldNotLoad keeps 'Wi-Fi' as written and a StatCell's error title names its label",
+    "A light series dimmed in light stays visible",
+    "No change to charts/contract.ts or cards/contract.ts and no new export; make check passes"
+  ],
+  "out_of_scope": "A marked Heatmap cell, a figure delta that follows focus, monospace slots and optional props that accept undefined (v3-expr-6-contract); skill text (v3-expr-6-skill); a hatched fill for a partial period (n15 and n20 wished for it; a label in the card answers the defect, which is the skill row's); a comparison form for a group against its control (n21 only, a recipe at most); horizontal bars (c16 only)."
+}
