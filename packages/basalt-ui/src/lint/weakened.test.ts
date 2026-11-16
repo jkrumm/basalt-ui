@@ -216,6 +216,30 @@ describe('checkWeakenedConfig', () => {
     expect(results[2]?.detail).toContain('basalt/primitive-bypass')
   })
 
+  it.each([
+    ['off', 'no-use-before-define'],
+    ['warn', 'no-use-before-define'],
+    ['off', 'eslint/no-use-before-define'],
+  ])('a core rule the preset runs, set %s as %s, fails check 3 (W18)', async (level, id) => {
+    const dir = fixture('healthy')
+    writeFileSync(
+      join(dir, '.oxlintrc.json'),
+      JSON.stringify({ extends: ['./.oxlintrc.basalt.json'], rules: { [id]: level } }),
+    )
+    const results = await run(dir)
+    expect(status(results, 3)).toBe('failed')
+    expect(results[2]?.detail).toContain(`managed ids set by hand: ${id} in rules`)
+  })
+
+  it('a core rule the preset does not run stays the app’s own (check 3 passes)', async () => {
+    const dir = fixture('healthy')
+    writeFileSync(
+      join(dir, '.oxlintrc.json'),
+      JSON.stringify({ extends: ['./.oxlintrc.basalt.json'], rules: { 'no-console': 'error' } }),
+    )
+    expect(status(await run(dir), 3)).toBe('passed')
+  })
+
   describe('a file-level blanket disable under a declared root (check 3)', () => {
     it('fails on a bare oxlint-disable, naming file and line', async () => {
       const results = await run(withFile('export const a = 1\n/* oxlint-disable */\n'))

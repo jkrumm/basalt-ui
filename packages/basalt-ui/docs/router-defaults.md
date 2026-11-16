@@ -14,8 +14,7 @@ The router options basalt holds and the `LinkComponent` that opens a `navTarget`
 ## Signature
 
 ```ts
-routerDefaults(input?: RouterDefaultsInput): { options: RouterDefaultOptions; link: RouterLinkComponent; }
-  router?: () => object  // The router the options go into, read lazily at navigation time (it does not exist yet when the options are built): `routerDefaults({ router: () => router })`
+routerDefaults(): { options: RouterDefaultOptions; link: RouterLinkComponent; bind: (router: object) => void; }
 ```
 
 ## Example
@@ -23,7 +22,7 @@ routerDefaults(input?: RouterDefaultsInput): { options: RouterDefaultOptions; li
 ```tsx
 // The three screens are the app's own, scaffolded by `basalt-ui init` into `src/components/`;
 // no subpath exports them.
-const { options, link } = routerDefaults({ router: () => router })
+const { options, link, bind } = routerDefaults()
 export const router = createRouter({
   routeTree,
   ...options,
@@ -31,8 +30,11 @@ export const router = createRouter({
   defaultErrorComponent: RouteError,
   defaultNotFoundComponent: RouteMissing,
 })
+bind(router)
 
-<BasaltProvider link={link}>
-  <RouterProvider router={router} />
-</BasaltProvider>
+export const app = (
+  <BasaltProvider link={link}>
+    <RouterProvider router={router} />
+  </BasaltProvider>
+)
 ```

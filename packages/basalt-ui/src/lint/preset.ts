@@ -29,13 +29,25 @@ export const SHADCN_RESTYLE = 'no-restyle'
  * Core oxlint rules a profile runs (not the plugin's): `no-use-before-define` at `parts` and `app`
  * flags a binding read before its declaration, a closure above a later `const` included (n18's
  * `announce` read a `const` three lines below it and threw on the first focus). Functions, classes
- * and types hoist, so they stay allowed.
+ * and types hoist, so they stay allowed. A closure that provably runs later (a submit handler
+ * clearing a draft built below it) is the one shape it reports falsely: waive that line with a
+ * reason. They are managed ids like the plugin's (`isManagedRuleId`).
  */
 export const CORE_RULES: Readonly<Record<string, readonly [string, ...unknown[]]>> = {
   'no-use-before-define': [
     'error',
     { functions: false, classes: false, typedefs: false, variables: true },
   ],
+}
+
+/**
+ * The preset's whole rule list: the plugin's (`basalt/*`), shadcn's (`shadcn/*`) and `CORE_RULES`,
+ * which oxlint also spells `eslint/<id>`. `doctor` check 11 refuses one set by hand in
+ * `.oxlintrc.json`, and the waiver budget counts a reasoned waiver of one.
+ */
+export function isManagedRuleId(id: string): boolean {
+  if (id.startsWith('basalt/') || id.startsWith('shadcn/')) return true
+  return Object.hasOwn(CORE_RULES, id.replace(/^eslint\//, ''))
 }
 const CORE_PROFILES: readonly PresetProfile[] = ['parts', 'app']
 const SHADCN_RULES = [...SHADCN_TOKEN_RULES, SHADCN_RESTYLE] as const

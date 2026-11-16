@@ -111,7 +111,7 @@ import { RoutePending } from './components/route-pending'
 import { routeTree } from './routeTree.gen'
 
 const queryClient = createQueryClient()
-const defaults = routerDefaults({ router: (): object => router })
+const defaults = routerDefaults()
 
 export const router = createRouter({
   routeTree,
@@ -124,6 +124,7 @@ export const router = createRouter({
   defaultErrorComponent: RouteError,
   defaultNotFoundComponent: RouteMissing,
 })
+defaults.bind(router)
 
 declare module '@tanstack/react-router' {
   interface Register {

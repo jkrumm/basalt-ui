@@ -7,11 +7,11 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, extname, basename, join, resolve } from 'node:path'
 
+import { isManagedRuleId } from '../../lint/preset'
 import { countRows, rowsOfRoot } from '../eject/ledger'
 import { JS_FILE, runOxlint, STYLE_FILE } from './engine'
 import type { Finding, Project } from './engine'
 
-const MANAGED_ID = /^(?:basalt|shadcn)\//
 const DIRECTIVE = /(?:\/\/|\/\*)\s*(oxlint|stylelint)-disable(-next-line|-line)?(?=\s)([^\n]*)/g
 const ESCAPE = /\b(?:col|chart|field|filterSlot)\.custom\b/g
 
@@ -87,7 +87,7 @@ export function countSource(
     const tool = JS_FILE.test(rel) ? 'oxlint' : STYLE_FILE.test(rel) ? 'stylelint' : null
     if (tool === null) continue
     for (const d of directivesOf(text)) {
-      const ids = d.ids.filter((id) => (tool === 'oxlint' ? MANAGED_ID.test(id) : id !== ''))
+      const ids = d.ids.filter((id) => (tool === 'oxlint' ? isManagedRuleId(id) : id !== ''))
       if (d.tool !== tool || ids.length === 0) continue
       const fileLevel = tool === 'oxlint' && d.kind === '' && deepRender.has(rel)
       const weight = fileLevel ? suppressedBy(project, rel, text, { ...d, ids }) : 1

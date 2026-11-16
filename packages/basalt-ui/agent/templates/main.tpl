@@ -20,8 +20,7 @@ import { RoutePending } from './components/route-pending'
 import { routeTree } from './routeTree.gen'
 
 const queryClient = createQueryClient()
-// oxlint-disable-next-line no-use-before-define -- lazy read: the router is built from these defaults
-const defaults = routerDefaults({ router: (): object => router })
+const defaults = routerDefaults()
 
 export const router = createRouter({
   routeTree,
@@ -34,6 +33,8 @@ export const router = createRouter({
   defaultErrorComponent: RouteError,
   defaultNotFoundComponent: RouteMissing,
 })
+// The route transition reads its direction from the nav `AppShell` registers on this router.
+defaults.bind(router)
 
 declare module '@tanstack/react-router' {
   interface Register {

@@ -95,17 +95,17 @@ describe('route transition types', () => {
     expect(routeTransitionTypes(change('/one', '/elsewhere'), router)).toEqual(['basalt-sibling'])
   })
 
-  test('the thunk reads the router at navigation time, not at build time', () => {
+  test('the bound router is read at navigation time, not at build time', () => {
     const win = globalThis as { window?: unknown }
     const had = win.window
     win.window = { CSS: { supports: () => true } }
     try {
-      let router: object | undefined
-      const { options } = routerDefaults({ router: () => router })
+      const { options, bind } = routerDefaults()
       const vt = options.defaultViewTransition
       if (vt === false) throw new Error('expected a view transition')
       expect(vt.types(change('/one', '/two'))).toEqual(['basalt-sibling'])
-      router = {}
+      const router = {}
+      bind(router)
       registerNav(router, NAV)
       expect(vt.types(change('/one', '/two'))).toEqual(['basalt-forward'])
     } finally {

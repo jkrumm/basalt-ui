@@ -42,15 +42,6 @@ export type RouterDefaultOptions = {
   defaultViewTransition: { types: (change: RouteChange) => string[] | false } | false
 }
 
-export type RouterDefaultsInput = {
-  /**
-   * The router the options go into, read lazily at navigation time (it does not exist yet when the
-   * options are built): `routerDefaults({ router: () => router })`. It gives the transition its
-   * direction from the nav `AppShell` registered; without it every route change is a sibling crossfade.
-   */
-  router?: () => object | undefined
-}
-
 const SELECTOR = '[data-scroll-restoration-id]'
 
 function supportsViewTransitionTypes(): boolean {
@@ -85,7 +76,7 @@ export function routeTransitionTypes(
  * @example
  * // The three screens are the app's own, scaffolded by `basalt-ui init` into `src/components/`;
  * // no subpath exports them.
- * const { options, link } = routerDefaults({ router: () => router })
+ * const { options, link, bind } = routerDefaults()
  * export const router = createRouter({
  *   routeTree,
  *   ...options,
@@ -93,16 +84,24 @@ export function routeTransitionTypes(
  *   defaultErrorComponent: RouteError,
  *   defaultNotFoundComponent: RouteMissing,
  * })
+ * bind(router)
  *
- * <BasaltProvider link={link}>
- *   <RouterProvider router={router} />
- * </BasaltProvider>
+ * export const app = (
+ *   <BasaltProvider link={link}>
+ *     <RouterProvider router={router} />
+ *   </BasaltProvider>
+ * )
  */
-export function routerDefaults(input: RouterDefaultsInput = {}): {
+export function routerDefaults(): {
   options: RouterDefaultOptions
   link: RouterLinkComponent
+  /**
+   * Hands over the router built from `options`, so a route transition takes its direction from the
+   * nav `AppShell` registered on it; unbound, every route change is a sibling crossfade.
+   */
+  bind: (router: object) => void
 } {
-  const { router = () => undefined } = input
+  let router: object | undefined
   return {
     options: {
       defaultPreload: 'intent',
@@ -113,9 +112,12 @@ export function routerDefaults(input: RouterDefaultsInput = {}): {
       scrollRestoration: true,
       scrollToTopSelectors: [SELECTOR],
       defaultViewTransition: supportsViewTransitionTypes()
-        ? { types: (change) => routeTransitionTypes(change, router()) }
+        ? { types: (change) => routeTransitionTypes(change, router) }
         : false,
     },
     link: RouterLinkAdapter,
+    bind: (built) => {
+      router = built
+    },
   }
 }

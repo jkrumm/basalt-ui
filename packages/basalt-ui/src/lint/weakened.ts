@@ -18,6 +18,7 @@ import { generatedRouteTreeOption } from '../cli/router-wiring'
 import { parseJsonc } from '../cli/source-text'
 import { findBin } from './bin'
 import { findBlanketDisables } from './blanket-disable'
+import { isManagedRuleId } from './preset'
 
 export type WeakenedStatus = 'passed' | 'failed' | 'skipped'
 
@@ -37,7 +38,6 @@ export type Offender = { content: string; fired: (id: string) => boolean }
 export const SEEDED_FILE = '__basalt_seeded_offender__.tsx'
 export const PRESET_FILE = '.oxlintrc.basalt.json'
 const OXLINTRC = '.oxlintrc.json'
-const MANAGED_PREFIXES = ['basalt/', 'shadcn/'] as const
 const SCRIPT_FILE = /\.[cm]?[jt]sx?$/
 
 /** A hex literal is `colour-literal`, the one form that runs at every profile that lints a root. */
@@ -399,7 +399,7 @@ function managedIds(
   const hits = tables.flatMap(([where, rules]) =>
     isRecord(rules)
       ? Object.keys(rules)
-          .filter((id) => MANAGED_PREFIXES.some((p) => id.startsWith(p)))
+          .filter(isManagedRuleId)
           .map((id) => `${id} in ${where}`)
       : [],
   )

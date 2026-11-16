@@ -231,6 +231,33 @@ describe('lint', () => {
     expect(out.log).toContain('ejects: 0 of 3')
   })
 
+  it('a reasoned waiver of a core rule the preset runs counts against the ceiling (lint-7.2)', async () => {
+    const dir = repo()
+    writeFileSync(
+      join(dir, '.oxlintrc.basalt.json'),
+      JSON.stringify({
+        jsPlugins: ['./probe-plugin.mjs'],
+        rules: { 'basalt/no-foo': 'error', 'no-use-before-define': 'error' },
+      }),
+    )
+    const late = (i: number, id: string): string =>
+      `// oxlint-disable-next-line ${id} -- runs after b${i} exists\nexport const a${i} = (): number => b${i}\nconst b${i} = ${i}\n`
+    writeFileSync(
+      join(dir, 'src/u.tsx'),
+      [
+        late(0, 'no-use-before-define'),
+        late(1, 'no-use-before-define'),
+        late(2, 'eslint/no-use-before-define'),
+      ].join(''),
+    )
+    const out = await lint(dir, '--stats')
+    expect(out.code).toBe(1)
+    expect(out.log).toContain('3 waivers are above the ceiling 0 in .basalt/budget.json')
+    expect(out.log).toContain(
+      'waivers: 3 of 0 (eslint/no-use-before-define 1, no-use-before-define 2)',
+    )
+  })
+
   it('a file-level directive in a deepRender file counts as the findings it suppresses', async () => {
     const dir = repo({
       'src/deep.tsx': `/* oxlint-disable basalt/no-foo -- deep render */\nexport const a = 'foo'\nexport const b = 'foo'\n`,
