@@ -57,6 +57,13 @@ describe('checkTokens', () => {
     expect(nearestToken('--vx-warning', known)).toBe('--vx-warn')
     expect(nearestToken('--vx-color-brand', known)).toBe('--vx-brand')
     expect(nearestToken('--vx-qqqqqqqqqqqq', known)).toBeUndefined()
+    // lint-4.16: a scale step keeps the family prefix, camelCase folds, a shadcn role maps to its token
+    expect(nearestToken('--vx-radius-lg', known)).toMatch(/^--vx-radius-/)
+    expect(nearestToken('--vx-surfaceRaised', known)).toBe('--vx-raised')
+    expect(nearestToken('--vx-accent', known)).toBe('--vx-hover')
+    expect(nearestToken('--vx-background', known)).toBe('--vx-canvas')
+    expect(nearestToken('--vx-foreground', known)).toBe('--vx-ink')
+    expect(nearestToken('--vx-border', known)).toBe('--vx-hairline')
     // the suggestion reaches the finding
     const f = file('k.css', '.a { color: var(--vx-text-muted); }')
     expect(checkTokens({ files: [f] }).findings[0]?.nearest).toBe('--vx-ink-muted')

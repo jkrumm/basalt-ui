@@ -156,12 +156,12 @@
           "shadow-2xl",
           "shadow-inner",
           "shadow-none",
-          "*-hover",
+          "*-accent",
           "*-selected",
           "*-scrim",
-          "*-hairline"
+          "*-border"
         ],
-        "message": "\"{{className}}\" is read as a colour the theme does not declare, and app code takes colour from components. Use Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling."
+        "message": "\"{{className}}\" is no colour the theme declares. Token names are not classes: canvas is bg-background, raised is bg-popover, hover is bg-accent, hairline is border-border, ink is text-foreground, ink-muted is text-muted-foreground, ink-faint is text-faint. Otherwise app colour comes from Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling."
       }
     ],
     "shadcn/no-arbitrary-values": [
@@ -210,7 +210,7 @@
           "max-[*]:*",
           "*:max-[*]:*"
         ],
-        "message": "\"{{className}}\" is not a class or variant this project's Tailwind knows, so no CSS is generated for it. Nearest: {{suggestions|none, check the spelling}}. A radius is rounded-ctrl or rounded-chip, and a card surface (border, radius, shadow) is owned by Card and Inset; no class or variant is declared per app."
+        "message": "\"{{className}}\" is no class or variant this project's Tailwind knows. Token names are not classes: canvas is bg-background, raised is bg-popover, hover is bg-accent, hairline is border-border, ink is text-foreground, ink-muted is text-muted-foreground, ink-faint is text-faint. Nearest spelling: {{suggestions|none}}. A radius is rounded-ctrl or rounded-chip; a card surface is owned by Card and Inset; no class or variant is declared per app."
       }
     ],
     "shadcn/no-inline-styles": "error",

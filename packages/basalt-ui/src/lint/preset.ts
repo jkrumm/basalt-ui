@@ -7,7 +7,7 @@
  * Pure data in, config out: the generator reads the files (pins, contracts, `SLOTS`) and passes
  * them in, so `sync` can call the same builder with a manifest's roots and ejected paths.
  */
-import { zoneAPremixed } from './generated/zone-a'
+import { zoneAPremixed, zoneATokenClasses } from './generated/zone-a'
 import type { Profile, RuleTable } from './rule-table'
 import { PLUGIN_NAME, presetInput } from './rule-table'
 
@@ -102,16 +102,35 @@ const SHADOW_SIZES = ['2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', 'inner', 'none
 
 /**
  * A pre-mixed token carries its alpha already; `basalt/tw-off-law` `alpha-on-premixed` owns the
- * `bg-hover/60` report, so `no-raw-colors` lets the pre-mixed names through (an entry matches the token without its `/NN` modifier).
+ * `bg-accent/60` report, so `no-raw-colors` lets the pre-mixed theme classes through (an entry
+ * matches the token without its `/NN` modifier). The names are the theme's (`accent`, `border`),
+ * never the token's (`hover`, `hairline`): `bg-hover` is no class.
  */
 const PREMIXED_ALPHA = zoneAPremixed.map((name) => `*-${name}`)
+
+/**
+ * A `--vx-*` token name written as a class (`bg-hover`, `bg-canvas`) is no class: the theme reads the
+ * token under another name. Both colour messages print the class for each such token (lint-4.14),
+ * generated from the `@theme inline` map, so `bg-hover` is told `bg-accent`, not its nearest spelling.
+ */
+const TOKEN_CLASSES = `Token names are not classes: ${Object.entries(zoneATokenClasses)
+  .map(([token, cls]) => `${token} is ${cls}`)
+  .join(', ')}.`
+
+/** oxlint validates a JS plugin's options against its schema: shadcn caps `message` at 500 characters. */
+export const SHADCN_MESSAGE_MAX = 500
 
 /**
  * The `message` option of the bought rules, where the rule's own advice names a fix another shipped
  * rule reports (lint-1.16): `use margin here` against app-spacing, `w-120` against fixed-width, a new
  * `--color-<name>` against the derived palette, `declare it with @utility` against the stylesheet's
- * at-rule ban (lint-3.12). Bridge keeps the default where it has no such rule.
- * `{{suggestions|...}}` is a universal slot, so it never prints raw.
+ * at-rule ban (lint-3.12). `{{suggestions|...}}` is a universal slot, so it never prints raw.
+ *
+ * Bridge's `no-raw-colors` names its fix by role and prints no `{{suggestions}}` (lint-4.13): shadcn
+ * picks them by colour distance alone and keeps the token's variants (`withBase`), so `dark:bg-gray-900`
+ * got `dark:bg-primary` (dark-fork), `text-gray-400` got `text-dim-bar` (status-fill-as-text) and a
+ * border got `border-seq-1`, and the rule takes no option to filter them. The role list holds only
+ * classes the bridge class forms pass.
  */
 export const SHADCN_MESSAGES: Readonly<
   Partial<Record<PresetProfile, Readonly<Record<string, string | Record<string, string>>>>>
@@ -125,16 +144,13 @@ export const SHADCN_MESSAGES: Readonly<
     // only a spacing value takes a ladder step, which is what app-spacing would reject on a margin.
     'no-arbitrary-values':
       '"{{className}}" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container.',
-    'no-raw-colors':
-      '"{{className}}" is read as a colour the theme does not declare, and app code takes colour from components. Use Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling.',
+    'no-raw-colors': `"{{className}}" is no colour the theme declares. ${TOKEN_CLASSES} Otherwise app colour comes from Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling.`,
     // One string for the unknown class and the unknown variant; `rounded-card` is surface-recipe's to report.
-    'no-unknown-classes':
-      '"{{className}}" is not a class or variant this project\'s Tailwind knows, so no CSS is generated for it. Nearest: {{suggestions|none, check the spelling}}. A radius is rounded-ctrl or rounded-chip, and a card surface (border, radius, shadow) is owned by Card and Inset; no class or variant is declared per app.',
+    'no-unknown-classes': `"{{className}}" is no class or variant this project's Tailwind knows. ${TOKEN_CLASSES} Nearest spelling: {{suggestions|none}}. A radius is rounded-ctrl or rounded-chip; a card surface is owned by Card and Inset; no class or variant is declared per app.`,
   }
   return {
     bridge: {
-      'no-raw-colors':
-        '"{{className}}" is a raw colour. Use a theme colour class that is already declared: {{suggestions|see the declared theme colours}}; the palette is derived, so no colour is added per app.',
+      'no-raw-colors': `"{{className}}" is a raw colour. Use one theme class with no dark: variant (tokens switch per scheme): ink is text-foreground or text-muted-foreground, status text text-good or text-brand, a surface bg-background, bg-card or bg-popover, a line border-border. ${TOKEN_CLASSES} No colour is added per app.`,
     },
     parts: owned,
     app: owned,

@@ -8,7 +8,7 @@ import { extname } from 'node:path'
 
 import { tokenNames } from '../tokens/emit'
 import type { TokenFamily } from '../tokens/table'
-import { TOKENS } from '../tokens/table'
+import { bridgeEntries, TOKENS } from '../tokens/table'
 
 const SCANNED_EXTENSIONS: ReadonlySet<string> = new Set(['.css', '.tsx', '.astro', '.mdx'])
 
@@ -92,9 +92,13 @@ function kindOfSegment(segment: string): string | undefined {
   return kinds.size === 1 ? [...kinds][0] : undefined
 }
 
+/** A step of a size scale (`sm`, `lg`, `2xl`): every scale spells it, so it names no kind. */
+const SCALE_STEP = /^(?:\d*x?s|sm|md|lg|\d*x?l)$/
+
 /**
  * The kind an unknown name asks for: its qualifier (last segment, `muted` is a colour) beats its head
- * (`text` is a type size); a head that is a kind word (`space`) names the kind directly.
+ * (`text` is a type size), unless the qualifier is a scale step (`--vx-radius-lg` is a radius, not
+ * the type size `text-lg`); a head that is a kind word (`space`) names the kind directly.
  */
 export function kindOfName(name: string): string | undefined {
   const known = KINDS_BY_NAME.get(name)
@@ -102,9 +106,25 @@ export function kindOfName(name: string): string | undefined {
   const segments = segmentsOf(name)
   const last = segments.at(-1) ?? ''
   const head = segments[0] ?? ''
+  const byHead = kindOfSegment(head) ?? KIND_WORDS[head]
+  if (SCALE_STEP.test(last) && byHead !== undefined) return byHead
   const byLast = /^\d+$/.test(last) ? undefined : kindOfSegment(last)
-  return byLast ?? kindOfSegment(head) ?? KIND_WORDS[head]
+  return byLast ?? byHead
 }
+
+/** `--vx-surfaceRaised` as the token table spells names: kebab-case, lower case. */
+const kebab = (name: string): string => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+
+/**
+ * A shadcn role name written as a token (`--vx-accent`, `--vx-background`) to the token the theme
+ * reads under it (`--color-accent: var(--vx-hover)`), from the `@theme inline` map.
+ */
+const ROLE_TOKENS: ReadonlyMap<string, string> = new Map(
+  bridgeEntries()
+    .filter((e) => e.tw.startsWith('--color-') && e.value === `var(--vx-${e.token})`)
+    .map((e) => [`--vx-${e.tw.slice('--color-'.length)}`, `--vx-${e.token}`] as const)
+    .filter(([role, token]) => role !== token && !KINDS_BY_NAME.has(role)),
+)
 
 /**
  * The known name closest to `name` (ties go to the first in sort order), or undefined past `NEAR`.
@@ -113,23 +133,43 @@ export function kindOfName(name: string): string | undefined {
  * invented beside a real one (`--vx-brand-500`, `--vx-space-1`) means it. App-owned names carry no
  * kind and always qualify. A known name the unknown one ends with, on a segment boundary, beats
  * any edit distance: `--vx-color-brand` is `--vx-brand` with a prefix added, not `--vx-on-brand`.
+ * Then a candidate of the same family prefix (`radius-`) beats a closer spelling elsewhere.
+ *
+ * Before the search a camelCase name is folded to kebab-case (`--vx-surfaceRaised` reads as
+ * `--vx-surface-raised`), and a shadcn role name maps to the token the theme reads under it
+ * (`--vx-accent` is `--vx-hover`).
  */
 export function nearestToken(name: string, known: Iterable<string>): string | undefined {
-  const kind = kindOfName(name)
-  const own = new Set(segmentsOf(name))
-  const tail = name.replace(/^--vx-/, '')
+  const knownSet = new Set(known)
+  const folded = kebab(name)
+  const role = ROLE_TOKENS.get(folded)
+  if (role !== undefined && knownSet.has(role)) return role
+  if (folded !== name && knownSet.has(folded)) return folded
+  const kind = kindOfName(folded)
+  const own = new Set(segmentsOf(folded))
+  const head = segmentsOf(folded)[0]
+  const tail = folded.replace(/^--vx-/, '')
   let best: string | undefined
-  let bestRank: [number, number] = [Infinity, Infinity]
-  for (const candidate of [...known].toSorted()) {
+  let bestRank: [number, number, number] = [Infinity, Infinity, Infinity]
+  for (const candidate of [...knownSet].toSorted()) {
     const candidateKind = KINDS_BY_NAME.get(candidate)
     if (kind !== undefined && candidateKind !== undefined && candidateKind !== kind) continue
-    const distance = editDistance(name, candidate)
+    const distance = editDistance(folded, candidate)
     const shares = kind !== undefined && segmentsOf(candidate).some((s) => own.has(s))
     if (distance > NEAR && !shares) continue
     const suffix = tail.endsWith(`-${candidate.replace(/^--vx-/, '')}`)
-    // A suffix match ranks first, the longest one first; then the fewest edits.
-    const rank: [number, number] = [suffix ? -candidate.length : 0, distance]
-    if (rank[0] < bestRank[0] || (rank[0] === bestRank[0] && rank[1] < bestRank[1])) {
+    const sameHead = segmentsOf(candidate)[0] === head
+    // A suffix match ranks first, the longest one first; then the same family prefix; then the fewest edits.
+    const rank: [number, number, number] = [
+      suffix ? -candidate.length : 0,
+      sameHead ? 0 : 1,
+      distance,
+    ]
+    if (
+      rank[0] < bestRank[0] ||
+      (rank[0] === bestRank[0] &&
+        (rank[1] < bestRank[1] || (rank[1] === bestRank[1] && rank[2] < bestRank[2])))
+    ) {
       best = candidate
       bestRank = rank
     }
