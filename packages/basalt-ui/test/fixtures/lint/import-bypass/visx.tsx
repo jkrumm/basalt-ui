@@ -39,3 +39,5 @@ import { VictoryChart } from 'victory'
 import { VictoryLine } from 'victory-line'
 // @invalid
 import * as Plot from '@observablehq/plot'
+// @invalid
+import { Line } from '@ant-design/charts'

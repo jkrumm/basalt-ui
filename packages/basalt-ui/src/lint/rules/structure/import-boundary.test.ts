@@ -4,7 +4,7 @@
  * suites of both rules). The checks below pin the contract rows the brief names.
  */
 import { afterAll, describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import type { Rule } from 'eslint'
@@ -72,7 +72,7 @@ describe('oxlint plugins-dev RuleTester', () => {
 })
 
 describe('import-boundary forms', () => {
-  it('has the thirteen forms the contract row names, all live', () => {
+  it('has the fourteen forms the contract row names, all live', () => {
     expect(IMPORT_BOUNDARY.forms.map((form) => form.id)).toEqual([
       'base-ui',
       'radix',
@@ -87,6 +87,7 @@ describe('import-boundary forms', () => {
       'ui-path',
       'use-chat-chat',
       'persist-storage',
+      'rival-signature',
     ])
     expect(IMPORT_BOUNDARY.forms.every(isEnabled)).toBe(true)
   })
@@ -112,6 +113,27 @@ describe('import-boundary forms', () => {
 
   it('keeps the engine allowlist at 17 modules and two families', () => {
     expect(ENGINE_SUBPATHS.size + ENGINE_FAMILIES.length).toBe(19)
+  })
+
+  it('keeps every basalt-ui peer and dependency on the stack list or a ban row', () => {
+    const manifest = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, '../../../../package.json'), 'utf8'),
+    ) as { peerDependencies: Record<string, string>; dependencies: Record<string, string> }
+    const rule = enabledRule('import-boundary', IMPORT_BOUNDARY)
+    const linter = new Linter()
+    // `{ Dialog }` is a signature: a package on neither list would report as `rival-signature`.
+    const readAsRival = Object.keys({
+      ...manifest.peerDependencies,
+      ...manifest.dependencies,
+    }).filter((pkg) =>
+      linter
+        .verify(`import { Dialog } from '${pkg}'`, {
+          plugins: { basalt: { rules: { 'import-boundary': rule as unknown as Rule.RuleModule } } },
+          rules: { 'basalt/import-boundary': 'error' },
+        })
+        .some((m) => m.messageId === 'rival-signature'),
+    )
+    expect(readAsRival).toEqual([])
   })
 })
 

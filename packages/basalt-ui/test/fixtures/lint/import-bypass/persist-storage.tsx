@@ -44,3 +44,5 @@ export const backend = { kind: StorageLike, get, set }
 import localforage from 'localforage'
 // @invalid
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
+// @invalid
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
