@@ -3,7 +3,7 @@ name: timeline
 use-when: dated bars on a shared time axis, read-only, in a card frame
 ---
 
-A timeline is a `DataPanel` whose body is a CSS grid in a horizontal `ScrollArea`: a label column, then one column per hour, with `min-w-6xl` keeping the hours legible in a narrow container. Each row is a subgrid, so the hour header and every bar share the columns. A bar's span and the now line's position are data, passed as CSS custom properties (`--at`, `--now`) that the classes read; a bar's colour is the `--bar` property, set once on the grid. The now line is one absolutely placed element in a column-spanning cell. Put a range control in the panel's `toolbar`. The panel owns the phase, so the body runs only when there is data.
+A timeline is a `DataPanel` whose body is a CSS grid in a horizontal `ScrollArea`: a label column, then one column per hour, with `min-w-6xl` keeping the hours legible in a narrow container. Each row is a subgrid, so the hour header and every bar share the columns. A bar's span and the now line's position are data, passed as CSS custom properties (`--at`, `--now`) that the classes read; a bar's colour is the `--bar` property, set once on the grid to the theme variable `--color-info-tint` (`--vx-info-tint` is not a token, and a status colour class is not app code's to use). The now line is one absolutely placed element in a column-spanning cell. Put a range control in the panel's `toolbar`. The panel owns the phase, so the body runs only when there is data.
 
 ```tsx
 import { DataPanel } from 'basalt-ui/cards'
@@ -23,7 +23,7 @@ export function Timeline({ bars, now }: { bars: Bar[]; now: number }) {
         <ScrollArea aria-label="Deploys by hour" orientation="horizontal">
           <div
             className="grid min-w-6xl auto-rows-8 grid-cols-[auto_repeat(24,minmax(0,1fr))] gap-y-2 px-(--card-edge)"
-            style={{ '--bar': 'var(--vx-info-tint)' } as React.CSSProperties}
+            style={{ '--bar': 'var(--color-info-tint)' } as React.CSSProperties}
           >
             <div className="col-span-full grid grid-cols-subgrid text-xs text-muted-foreground">
               {HOURS.map((h) => (
