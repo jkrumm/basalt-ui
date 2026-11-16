@@ -1,5 +1,7 @@
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, mock, test } from 'bun:test'
+import { act } from 'react'
+import { useChartFocus } from '../charts/focus'
 import { renderToString } from 'react-dom/server'
 import { BarList } from './bar-list'
 import type { BarListProps } from './bar-list'
@@ -225,5 +227,71 @@ describe('BarList on the server', () => {
       expect(html).toContain(`data-slot="${slot}"`)
     }
     expect(html).not.toContain('tabindex')
+  })
+})
+
+/** Which rows wear `data-focused`, in order. */
+const rowsOf = (root: ParentNode): boolean[] =>
+  [...root.querySelectorAll('[data-slot="bar-list-row"]')].map((el) =>
+    el.hasAttribute('data-focused'),
+  )
+
+describe('BarList focus', () => {
+  let handle: ReturnType<typeof useChartFocus<(typeof ITEMS)[number]>> | undefined
+  function Linked({ linked = true }: { linked?: boolean }) {
+    const focus = useChartFocus(ITEMS, { announce: (d) => d.label })
+    handle = focus
+    return <BarList title="Top projects" items={ITEMS} {...(linked && { focus })} />
+  }
+  test('pointing at a row sets its index; a focus set elsewhere marks only that row, undimmed', () => {
+    const { container } = render(<Linked />)
+    fireEvent.pointerEnter(container.querySelectorAll('[data-slot="bar-list-row"]')[1] as Element)
+    expect(handle?.index).toBe(1)
+    expect(rowsOf(container)).toEqual([false, true, false])
+    act(() => handle?.set(2))
+    expect(rowsOf(container)).toEqual([false, false, true])
+    expect(container.querySelectorAll('[data-dimmed]')).toHaveLength(0)
+  })
+
+  test('the list is one tab stop and arrows, Home, End and Escape step the focus', () => {
+    const { getByRole } = render(<Linked />)
+    const list = getByRole('list', { name: 'Top projects' })
+    expect(list.getAttribute('tabindex')).toBe('0')
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(handle?.index).toBe(0)
+    fireEvent.keyDown(list, { key: 'ArrowRight' })
+    expect(handle?.index).toBe(1)
+    fireEvent.keyDown(list, { key: 'End' })
+    expect(handle?.index).toBe(2)
+    fireEvent.keyDown(list, { key: 'Home' })
+    expect(handle?.index).toBe(0)
+    fireEvent.keyDown(list, { key: 'Escape' })
+    expect(handle?.index).toBeNull()
+    expect(fireEvent.keyDown(list, { key: 'a' })).toBe(true)
+  })
+
+  test('a mouse leaving or a blur out of the list clears; a link row focuses its item', () => {
+    const onClick = mock(() => undefined)
+    function Buttons() {
+      const focus = useChartFocus(ITEMS, { announce: (d) => d.label })
+      handle = focus
+      return (
+        <BarList title="Top projects" items={ITEMS.map((i) => ({ ...i, onClick }))} focus={focus} />
+      )
+    }
+    const { getByRole, getAllByRole } = render(<Buttons />)
+    act(() => getAllByRole('button')[2]?.focus())
+    expect(handle?.index).toBe(2)
+    act(() => getAllByRole('button')[2]?.blur())
+    expect(handle?.index).toBeNull()
+    act(() => handle?.set(1))
+    fireEvent.pointerLeave(getByRole('list'), { pointerType: 'mouse' })
+    expect(handle?.index).toBeNull()
+  })
+
+  test('without focus the list is not a tab stop and carries no focus attributes', () => {
+    const { getByRole, container } = render(<Linked linked={false} />)
+    expect(getByRole('list').hasAttribute('tabindex')).toBe(false)
+    expect(container.querySelector('[data-focused]')).toBeNull()
   })
 })

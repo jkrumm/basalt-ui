@@ -90,6 +90,8 @@ export type TableModel<T> = {
   bulk: { actions: readonly BulkAction<T>[]; selectAll: boolean; data: readonly T[] } | undefined
   activation: Activation<T>
   keyboard: RowKeyboard
+  /** Identity of a row, for the link to a chart's focus items. */
+  getRowId: (row: T) => string
   /** A `ViewStore` the caller supplied; absent, the Views panel keeps the views on the device. */
   viewStore: ViewStore | undefined
   /** The parts hand the detail host here; an activation shows into the latest one. */
@@ -403,6 +405,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
           },
     activation,
     keyboard,
+    getRowId,
     viewStore: options.views?.store,
     setHost(next) {
       host.current = next

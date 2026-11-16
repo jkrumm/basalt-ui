@@ -49,6 +49,12 @@
   [data-slot='table-row']:hover > [data-slot='table-cell'] {
     --row-tint: var(--color-accent);
   }
+  [data-slot='table-row'][data-focused] > [data-slot='table-cell'] {
+    --row-tint: var(--color-accent);
+  }
+  [data-slot='table-row'][data-focused] {
+    background-color: var(--color-accent);
+  }
   [data-slot='table-row'][data-selected] > [data-slot='table-cell'] {
     --row-tint: var(--vx-surface-row-selected);
   }
