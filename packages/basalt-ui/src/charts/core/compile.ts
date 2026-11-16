@@ -42,6 +42,9 @@ import {
 } from './axis-ext'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
 import { claimedLabelBoxes } from '../labels'
+import type { LabelBox as PxBox } from '../chart-labels'
+import { captionPx, pathBoxes, pxBox, withHostObstacles } from '../label-obstacles'
+import type { PlotPx } from '../label-obstacles'
 import { boxesMeet, dotBox, placeRefLabel, refLabelDy } from '../ref-label'
 import type { DotMark, LabelBox, RefLabelPoint } from '../ref-label'
 import type { PlotAccess, PlotSizes } from './plot-context'
@@ -70,6 +73,7 @@ import {
   CV,
   DASH,
   GRID_LINE,
+  LINE_STROKE_WIDTH,
 } from './theme'
 import type {
   AxisConfig,
@@ -332,6 +336,28 @@ type YAxis = {
   whole?: boolean
   /** The domain is fixed or bounded: a datum past it is drawn on the edge, with a caret. */
   bounded?: boolean
+  /**
+   * Every value is zero and the page set no domain: the engine still needs a span to draw a flat
+   * line on, but the axis labels the zero baseline alone and invents no scale (never a lone `1`).
+   */
+  flat?: boolean
+}
+
+/** Whether every finite value of `series` (and every bound) is zero, with at least one present. */
+function allZero<T>(
+  data: readonly T[],
+  series: readonly ChartSeries<T>[],
+  bounds: readonly number[],
+): boolean {
+  let seen = false
+  const zero = (v: number | null): boolean => {
+    if (v === null || !Number.isFinite(v)) return true
+    seen = true
+    return v === 0
+  }
+  if (!bounds.every(zero)) return false
+  for (const d of data) for (const s of series) if (!zero(s.getValue(d))) return false
+  return seen
 }
 
 /** The page locale's decimal separator (`.` or `,`). */
@@ -429,7 +455,12 @@ export function yGuide<T>(opts: {
       : ((cls === 'narrow' && cfg?.ticks === undefined
           ? withEndTick(cfg, axis, ladder.yTicks)
           : null) ?? { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks })
-  const ticks = axis.whole === true ? wholeTicks(axis, cfg, planned) : planned
+  const ticks =
+    axis.flat === true
+      ? { values: [0] }
+      : axis.whole === true
+        ? wholeTicks(axis, cfg, planned)
+        : planned
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
   const tickFormat = wholeStepFormat(axis, cfg, ticks, locale)
@@ -767,6 +798,17 @@ const isBounded = <T, X extends ChartX>(
   return !stacks && cfg?.domain !== undefined && cfg.domain !== 'auto'
 }
 
+/** An auto-domain axis whose every value is zero: it labels the baseline and invents no scale. */
+const flatAxis = <T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  cfg: AxisConfig<T> | undefined,
+  series: readonly ChartSeries<T>[],
+  bounds: readonly number[],
+): boolean =>
+  (cfg?.domain === undefined || cfg.domain === 'auto') &&
+  input.stack !== 'normalized' &&
+  allZero(input.data, series, bounds)
+
 /** Both y domains (basalt's, from the VISIBLE series plus this axis' overlay bounds) and scales. */
 function resolveAxes<T, X extends ChartX>(
   input: CartesianInput<T, X>,
@@ -788,6 +830,12 @@ function resolveAxes<T, X extends ChartX>(
     ),
     format: input.y?.format ?? ((v) => defaultNumberFormat(v, input.locale)),
     bounded: isBounded(input, input.y),
+    ...(flatAxis(
+      input,
+      input.y,
+      visible.filter((s) => !onRight(s)),
+      bounds.left,
+    ) && { flat: true }),
     whole: wholeCounts(
       input,
       visible.filter((s) => !onRight(s)),
@@ -804,6 +852,7 @@ function resolveAxes<T, X extends ChartX>(
         ),
         format: input.y2?.format ?? ((v) => defaultNumberFormat(v, input.locale)),
         bounded: isBounded(input, input.y2),
+        ...(flatAxis(input, input.y2, visible.filter(onRight), bounds.right) && { flat: true }),
       }
     : null
   return {
@@ -926,6 +975,8 @@ function underlayMarks<T, X extends ChartX>(
 /** A band's bar spans this share of its half step (`paddingInner` 0.2 leaves 0.8 of the step). */
 const BAR_BODY = 0.8
 const REF_LABEL_DX = 6
+/** The share of a bar slot kept between two grouped bars (`group({ padding })` in `bars-marks`). */
+const GROUP_PADDING = 0.1
 
 /** What a reference line's caption needs to choose its spot: the plot in px and the data on its axis. */
 type RefLabelContext<T, X extends ChartX> = {
@@ -1518,7 +1569,6 @@ export function compileCartesian<T, X extends ChartX>(
         },
         access,
       )
-      const kindMarks = input.marks(plot)
       const under = underlayMarks(input, model, axes)
       // Reading the plot size recompiles once on the measured area; the frame stands in before it.
       // Only a chart with a caption pays for it, and the one context serves every caption: the
@@ -1571,11 +1621,116 @@ export function compileCartesian<T, X extends ChartX>(
         return captions
       }
       const hasXCaption = (input.xRefLines ?? []).some((l) => l.label)
-      const xPlotWidth = hasXCaption ? captionContext().plotWidth : 0
-      const over = refLineMarks(input, axes, captionContext)
-      const zoneCaptions = (input.xZones ?? []).some((z) => z.label)
-        ? xZoneLabelMarks(input, captionContext())
-        : []
+      // The captions are placed once, in one order: the vertical rules', then the reference
+      // lines', then the zones'. A page's own labels read the result (`hostBoxes`) while its marks
+      // build, which is after the end labels have claimed their room and before the rest of this pass.
+      let placedCaptions:
+        | { xPlotWidth: number; over: ChartMarks; zoneCaptions: ChartMarks }
+        | undefined
+      const captionMarks = () => {
+        if (placedCaptions !== undefined) return placedCaptions
+        const xPlotWidth = hasXCaption ? captionContext().plotWidth : 0
+        const over = refLineMarks(input, axes, captionContext)
+        const zoneCaptions = (input.xZones ?? []).some((z) => z.label)
+          ? xZoneLabelMarks(input, captionContext())
+          : []
+        placedCaptions = { xPlotWidth, over, zoneCaptions }
+        return placedCaptions
+      }
+      /** The line paths on both axes, as boxes in plot px. */
+      const lineBoxes = (frame: PlotPx): PxBox[] =>
+        visible.flatMap((s) => {
+          if (s.mark !== 'line') return []
+          const [lo, hi] = axes.axisOf(axes.onRight(s) ? 'right' : 'left').domain
+          const span = Math.max(lo, hi) - Math.min(lo, hi) || 1
+          const runs: { x: number; y: number }[][] = [[]]
+          for (const r of rows(s.key)) {
+            const fx = model.fraction(r.x)
+            if (r.y === null || fx === null || !Number.isFinite(r.y)) {
+              if (s.gaps !== 'connect' && runs.at(-1)?.length !== 0) runs.push([])
+              continue
+            }
+            runs
+              .at(-1)
+              ?.push({ x: fx * frame.width, y: ((Math.max(lo, hi) - r.y) / span) * frame.height })
+          }
+          return pathBoxes(runs, s.strokeWidth ?? LINE_STROKE_WIDTH)
+        })
+      /** The bodies of the bars of a band axis, as boxes in plot px: a group splits its band, a stack is one body. */
+      const barBoxes = (frame: PlotPx): PxBox[] => {
+        if (!model.band) return []
+        const bars = visible.filter(isBar)
+        const out: PxBox[] = []
+        for (const side of axes.right === null
+          ? (['left'] as const)
+          : (['left', 'right'] as const)) {
+          const domain = axes.axisOf(side).domain
+          const onSide = bars.filter(
+            (s) => axes.onRight(s) === (side === 'right' && axes.right !== null),
+          )
+          const bodies = new Map<number, { fx: number; up: number; down: number }>()
+          for (const s of onSide) {
+            for (const r of rows(s.key)) {
+              const fx = model.fraction(r.x)
+              if (fx === null || r.y === null || !Number.isFinite(r.y)) continue
+              if (input.stack === undefined) {
+                // Grouped: the body splits into one slot per bar series, 0.1 of a slot between them.
+                const step = (2 * barHalf) / (bars.length - GROUP_PADDING)
+                const at = fx - barHalf + bars.indexOf(s) * step
+                out.push(
+                  pxBox(
+                    {
+                      fx0: at,
+                      fx1: at + step * (1 - GROUP_PADDING),
+                      y0: Math.min(r.y, 0),
+                      y1: Math.max(r.y, 0),
+                    },
+                    domain,
+                    frame,
+                  ),
+                )
+                continue
+              }
+              const body = bodies.get(fx) ?? { fx, up: 0, down: 0 }
+              body.up += Math.max(r.y, 0)
+              body.down += Math.min(r.y, 0)
+              bodies.set(fx, body)
+            }
+          }
+          for (const b of bodies.values()) {
+            const normalized = input.stack === 'normalized'
+            out.push(
+              pxBox(
+                {
+                  fx0: b.fx - barHalf,
+                  fx1: b.fx + barHalf,
+                  y0: normalized ? 0 : b.down,
+                  y1: normalized ? 1 : b.up,
+                },
+                domain,
+                frame,
+              ),
+            )
+          }
+        }
+        return out.filter((b) => b.width > 0 && b.height > 0)
+      }
+      const hostBoxes = (): PxBox[] => {
+        const ctx = captionContext()
+        const frame = { width: ctx.plotWidth, height: ctx.plotHeight }
+        captionMarks()
+        const rightDomain = axes.right?.domain ?? axes.left.domain
+        return [
+          ...ctx.xCaptions.map((b) => captionPx(b, frame)),
+          ...ctx.placed.left.map((b) => pxBox(b, axes.left.domain, frame)),
+          ...ctx.placed.right.map((b) => pxBox(b, rightDomain, frame)),
+          ...ctx.claimed.map((b) => pxBox(b, axes.left.domain, frame)),
+          ...lineBoxes(frame),
+          ...barBoxes(frame),
+        ]
+      }
+      const kindMarks = withHostObstacles(hostBoxes, () => input.marks(plot))
+      const { xPlotWidth, over, zoneCaptions } = captionMarks()
       const offScale = offScaleMarks({
         series: visible,
         data: input.data,
