@@ -173,10 +173,10 @@ export type XConfig<D> = {
 
 export type YConfig = {
   /**
-   * A fixed `[min, max]`; or bounds on the data's own extent (the axis reaches below `floor` and
-   * above `ceil` never, `pad` is the headroom factor over the top); or a function of that extent.
-   * A datum past the domain is drawn on the plot's edge with an off-scale marker, and its tooltip
-   * reads the true value.
+   * A fixed `[min, max]`; or `{ floor, ceil, pad }` on the data's extent (the domain always reaches
+   * `floor` down and `ceil` up, then `pad` adds that share of the span); or a function of that
+   * extent. A datum past the domain (a capped outlier) is drawn on the plot's edge with an
+   * off-scale marker, and its tooltip reads the true value.
    */
   domain?:
     | [number, number]

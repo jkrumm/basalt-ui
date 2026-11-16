@@ -9,7 +9,7 @@
   "packages/basalt-ui/scripts/export-surface/table.json": "97b15c42818985343eaa1c3155e693601337ed2977e05cb3364bf81a44a9f269",
   "packages/basalt-ui/src/ai/contract.ts": "0b5edbbf9cefa4ac9e6f88ae72df3ed75a1af1e7ce19fc4e7460100f639d669c",
   "packages/basalt-ui/src/cards/contract.ts": "1f6e2e807ddf9e4c16e109e2659cb66fb077555cc12ae9345c04f95988b4e3fe",
-  "packages/basalt-ui/src/charts/contract.ts": "8a2727098c09428ba4e774d69194871979e18316570b1ac0ea36233a81892ff5",
+  "packages/basalt-ui/src/charts/contract.ts": "0031d6c139f3aa3e23c76c029b95edd534fb3e7d711b020a1b8b76bee841fb8c",
   "packages/basalt-ui/src/content/contract.ts": "aac81048f2298c66dae01500513764ca0307d959bb3f0e94039fb11c663a32c8",
   "packages/basalt-ui/src/controls/contract.ts": "31e76448b7ba89bdfab114ffd4fdcd5e4333b9c7c6f64b2c287f52fa3fa72e8a",
   "packages/basalt-ui/src/core/ports.ts": "51484a99c828c600b2018af9314f95bc0d18aa56e1edef23baa355da651831a5",
