@@ -166,13 +166,15 @@ export function DataRow<T>({
   const columns = visibleColumns(model.specs, model.plan.columns)
   const offset = selection === undefined ? 1 : 2
   const ticked = selection?.isSelected(row.id) === true
+  const active = model.activeId === row.id
   const rowProps = keyboard.rowProps(row.id)
   // Controls in a row are tab stops only in the roving stop; a table without one leaves them all.
   const tabbable = rowProps.tabIndex !== -1
   return (
     <TableRow
       role="row"
-      data-selected={ticked ? '' : undefined}
+      data-selected={ticked || active ? '' : undefined}
+      aria-current={active ? 'true' : undefined}
       {...(rowIndex !== undefined && { 'aria-rowindex': rowIndex })}
       {...rowProps}
     >

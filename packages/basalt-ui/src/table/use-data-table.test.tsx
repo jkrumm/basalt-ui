@@ -286,6 +286,37 @@ describe('activation and keyboard', () => {
     expect(onRowActivate).toHaveBeenCalledWith(ROWS[0])
   })
 
+  test('activeRowId marks the page-owned open row selected and current, and no other', () => {
+    render(<Subject options={{ onRowActivate: () => undefined, activeRowId: 'b' }} />)
+    const rows = [...document.querySelectorAll('tbody tr')]
+    expect(rows.map((tr) => tr.hasAttribute('data-selected'))).toEqual([false, true, false])
+    expect(rows.map((tr) => tr.getAttribute('aria-current'))).toEqual([null, 'true', null])
+  })
+
+  test('with detail the opened row is marked until its sheet closes', () => {
+    function Detail(): ReactElement {
+      const c = col<Row>()
+      const t = useDataTable<Row>({
+        id: 'detail-active-test',
+        label: 'Rows',
+        columns: [c.text('name')],
+        data: ROWS,
+        getRowId: (r) => r.id,
+        mode: { kind: 'client' },
+        detail: (row) => <span>{row.name} body</span>,
+      })
+      return <DataTable table={t} />
+    }
+    render(<Detail />)
+    expect(document.querySelector('tbody tr[aria-current]')).toBeNull()
+    fireEvent.click(document.querySelectorAll('tbody tr')[2] as HTMLElement)
+    const open = document.querySelector('tbody tr[aria-current="true"]')
+    expect(open?.textContent).toContain('Project 1')
+    expect(open?.hasAttribute('data-selected')).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(document.querySelector('tbody tr[aria-current]')).toBeNull()
+  })
+
   test('detail shows its entry in the host', () => {
     const show = mock((_entry: unknown) => undefined)
     function WithHost(): ReactElement {

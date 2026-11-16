@@ -98,6 +98,8 @@ export type TableModel<T> = {
   openDetails(id: string): void
   /** The own sheet closed: unsets the `detailState` field, when one is bound. */
   closeDetail(): void
+  /** The row whose detail is open (`detail`) or that the page named (`activeRowId`); the body marks it. */
+  activeId: string | undefined
   /**
    * Whether each row carries the `table-expand` door: `onRowActivate` takes the tap, and a tier can
    * hide a column (priority 3, or a card `detail`), so the derived sheet needs its own way in.
@@ -309,6 +311,8 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
   const detailState = options.detailState
   const [openId, setOpenId] = (detailState ?? NO_DETAIL_STATE).use()
   const shownFor = useRef<string | null>(null)
+  // Without a field, the table remembers the row it opened until its own sheet closes.
+  const [openedId, setOpenedId] = useState<string | null>(null)
   const activate = (id: string): void => {
     const row = byId.get(id)
     if (row === undefined) return
@@ -318,7 +322,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       if (detailState !== undefined) {
         shownFor.current = id
         setOpenId(id)
-      }
+      } else setOpenedId(id)
       showDetail(row)
     }
   }
@@ -405,7 +409,14 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       // `shownFor` keeps the closed id until the field reads empty, so a render that lands before
       // the field clears cannot reopen the sheet the user just closed.
       detailState?.clear()
+      setOpenedId(null)
     },
+    activeId:
+      activation.kind === 'row'
+        ? options.activeRowId
+        : activation.kind === 'detail'
+          ? (detailState === undefined ? openedId : openId) || undefined
+          : undefined,
     expandable:
       activation.kind === 'row' &&
       plan.columns.some(

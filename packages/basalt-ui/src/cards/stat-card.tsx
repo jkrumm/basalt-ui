@@ -159,7 +159,10 @@ export function StatCard(props: StatCardProps): ReactElement {
             )}
           </CardPhase>
         </Inset>
-        <StatFooter facts={footer} />
+        <StatFooter
+          facts={footer}
+          phase={resolved.tag === 'loading' || resolved.tag === 'error' ? resolved.tag : 'other'}
+        />
       </Card>
     </div>
   )
