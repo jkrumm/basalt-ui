@@ -1247,3 +1247,21 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-wiring-3-route-tree, v3-wiring-3-api, v3-wiring-3-visual]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-wiring-4.json' }
+  - key: v3-state-4-close-history
+    title: 'Closing a record opened by a push leaves no dead Back step, from state cycle 4'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-state-4]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-4-close-history.json' }
+  - key: v3-state-4-api
+    title: 'A record opened by id keeps its title, a by-id body is written once, a slot resets its own filters, from state cycle 4'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-state-4-close-history]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-4-api.json' }
+  - key: v3-state-4-visual
+    title: 'A phone card money value names its column or sits beside the title, from state cycle 4'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-state-4]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-4-visual.json' }

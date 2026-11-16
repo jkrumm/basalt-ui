@@ -1,0 +1,21 @@
+{
+  "why": "State cycle 4 (docs/v3/cycles/state-4.md). Opening a record through a table's detail door pushes `?invoice=…` (a `history: 'push'` field), but every way of closing it (the sheet's X, Escape, the form's Cancel, the save's `onSuccess`) calls the field's `clear()`, which always replaces (`router/controls/define.ts:619`, `commit(router, unsetPatch(entry), 'replace', …)`; the table's close is `detailState?.clear()` at `table/use-data-table.ts:407`). The entry that showed the record is overwritten with the list's own URL, so the history holds two identical list entries: Back after a close changes nothing, and forward changes nothing either. Each record opened and closed adds one dead Back step (P2 state-4.1, `.evidence/cycle-state-4/explore-back.log`: after Cancel, X and Escape alike, the history length stays put and Back and forward both read `\"\"`).",
+  "what": "Closing a record that was opened by a push leaves no dead history entry: Back after a close moves somewhere.",
+  "owns": [
+    "packages/basalt-ui/src/router/controls/define.ts (a URL field's `clear()` lane)",
+    "packages/basalt-ui/src/table/use-data-table.ts (the detail door's close)",
+    "their tests and regenerated docs (docs/define-controls.md, docs/use-data-table.md)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) A `history: 'push'` URL field's `clear()` writes on its own lane (a push), as its `set` does, so the closed state is an entry of its own and Back returns to the open record; a replace field's `clear()` stays a replace. (2) The table's detail close (X, Escape, `closeDetail`) goes through that `clear()`; if the fix lead finds that stepping back (`router.history.back()`) when the current entry is the one the door's own open pushed reads better than a push, it may take that instead, provided Back after any close is never a no-op and a close of a record opened by a document load (a shared link) still unsets the field. (3) The docs say which history a close leaves.",
+  "commits": "fix: in packages/basalt-ui with its tests; a separate chore: commit for a regenerated non-package file if any.",
+  "proof": "make check; a router test that opens a record by a row click, closes it by `clear()`, by the sheet's close and by Escape, and asserts that Back after each close changes the location; a test that a replace field's `clear()` still replaces.",
+  "acceptance": [
+    "After a record opened by a row click is closed (X, Escape, Cancel through clear()), Back changes the location (test)",
+    "A record opened by a document load (?invoice=… on a fresh load) still closes and unsets the field",
+    "A replace field's clear() is still a replace (test)",
+    "docs/define-controls.md and docs/use-data-table.md say what history a close leaves",
+    "make check passes"
+  ],
+  "out_of_scope": "Other push fields' set() behaviour; changing the cycle 4 build."
+}
