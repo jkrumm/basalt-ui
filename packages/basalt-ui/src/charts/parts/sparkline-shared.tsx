@@ -198,6 +198,8 @@ export function SparkFrame(props: SparkFrameProps): ReactElement {
       style={{ ...sized, width }}
       className={cn(
         'relative flex min-w-0 flex-col outline-offset-2 focus-visible:outline-2 focus-visible:outline-brand',
+        // A box that clips its overflow (a StatCard's chart) would cut the outer ring: it rings inside.
+        "[[data-slot='stat-chart']_&]:-outline-offset-2",
         height === 'fill' && 'h-full',
         width === undefined && 'w-full',
       )}
