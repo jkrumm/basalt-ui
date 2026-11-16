@@ -1,0 +1,217 @@
+/* Cycle 6 phrasings for the stylelint preset, the token check and the class rules written as module CSS.
+   Seed numbers continue cycle 5's. A `pass` mark is valid module CSS beside a shape a cycle 5 fix widened. */
+
+/* seed stylelint/at-rule-disallowed-list 10: a utility declared through v4's @utility with a functional value */
+@utility tab-* {
+  tab-size: --value(integer);
+}
+
+/* seed stylelint/at-rule-disallowed-list 11: a plugin loaded with its options block */
+@plugin '@tailwindcss/typography' {
+  className: prose-app;
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 10: a custom media query naming a breakpoint */
+@custom-media --narrow (width < 640px);
+
+/* seed stylelint/media-feature-name-disallowed-list 11: the range syntax on height */
+@media (height <= 600px) {
+  .hero {
+    display: none;
+  }
+}
+
+/* pass stylelint/media-feature-name-disallowed-list 3: a hover-capable pointer and a print query */
+@media (hover: hover) and (pointer: fine), print {
+  .row {
+    cursor: default;
+  }
+}
+
+/* seed stylelint/selector-disallowed-list 12: the dark class matched by an attribute selector */
+:root[class~='dark'] .tile {
+  background: var(--vx-inset);
+}
+
+/* seed stylelint/selector-disallowed-list 13: a data-slot reached inside :global in a CSS module */
+.wrap :global([data-slot='card-header']) {
+  display: none;
+}
+
+/* pass stylelint/selector-disallowed-list 2: the component's own data attribute for its open state */
+.panel[data-open] {
+  display: block;
+}
+
+/* seed stylelint/property-disallowed-list 9: a token redefined inside a :where scope */
+:where(.campaign) {
+  --vx-brand: var(--vx-good);
+}
+
+/* seed stylelint/property-disallowed-list 10: a token redefined inside @layer */
+@layer app {
+  .dense {
+    --vx-row-h: 28px;
+  }
+}
+
+/* seed stylelint/color-no-hex 8: a short hex in a gradient */
+.hero {
+  background-image: linear-gradient(#fff, transparent);
+}
+
+/* seed stylelint/color-no-hex 9: a hex as an outline colour */
+.lift {
+  outline-color: #0077bd;
+}
+
+/* seed stylelint/color-named 9: a named colour in a border shorthand */
+.box {
+  border: 1px solid gray;
+}
+
+/* seed stylelint/color-named 10: a named colour as a mix operand */
+.wash {
+  background: color-mix(in oklab, var(--vx-card) 80%, white);
+}
+
+/* pass stylelint/color-named 1: currentColor and transparent are no authored colour */
+.icon {
+  fill: currentColor;
+  background: transparent;
+}
+
+/* seed stylelint/function-disallowed-list 9: relative colour syntax over a token */
+.tint {
+  background: oklch(from var(--vx-brand) l c h / 0.2);
+}
+
+/* seed stylelint/function-disallowed-list 10: rgb with an alpha over a token channel triple */
+.veil2 {
+  background: rgb(var(--vx-ink) / 0.4);
+}
+
+/* seed stylelint/declaration-no-important 9: important with a space after the bang */
+.pin {
+  position: sticky ! important;
+}
+
+/* seed stylelint/declaration-no-important 10: important on a custom property read */
+.mute {
+  color: var(--vx-ink-muted) !important;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 9: a circle radius in percent */
+.dot {
+  border-radius: 50%;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 10: a unitless line height on a heading */
+.title {
+  line-height: 1.2;
+}
+
+/* pass stylelint/declaration-property-value-allowed-list 2: a line-height token pair and a shadow token */
+.lead {
+  line-height: var(--vx-text-lg-lh);
+  box-shadow: var(--vx-shadow-card);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 18: padding-inline in rem */
+.inset {
+  padding-inline: 1.25rem;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 19: a gap with max() over a token */
+.cols {
+  gap: max(12px, var(--vx-rhythm-2));
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 20: a font shorthand with a pixel size */
+.label {
+  font: 600 13px/1 var(--vx-font-sans);
+}
+
+/* pass stylelint/declaration-property-value-disallowed-list 4: a flex basis at the threshold, a grow share and a zero basis */
+.side {
+  flex: 0 0 24rem;
+}
+.main {
+  flex: 1 1 0;
+}
+
+/* seed tw-off-law/fixed-width 18: a flex basis in pixels above the threshold */
+.rail {
+  flex-basis: 440px;
+}
+
+/* seed tw-off-law/fixed-width 19: a flex shorthand with a rem basis */
+.aside {
+  flex: 0 0 28rem;
+}
+
+/* seed tw-off-law/numeric-container 13: a numeric container query in a module */
+@container (min-width: 30rem) {
+  .kpi {
+    display: grid;
+  }
+}
+
+/* seed tw-off-law/numeric-container 14: a numeric container query by name and range */
+@container card (width > 420px) {
+  .meta {
+    display: block;
+  }
+}
+
+/* seed tw-off-law/track-length 15: a fixed track in a module */
+.layout {
+  grid-template-columns: 260px 1fr;
+}
+
+/* seed tw-off-law/track-length 16: a repeat of fixed tracks */
+.board {
+  grid-template-columns: repeat(4, 280px);
+}
+
+/* seed raw-scroll/overflow-scroll 26: overflow-block, the logical scroll axis */
+.list {
+  overflow-block: auto;
+}
+
+/* seed raw-scroll/overflow-scroll 27: overflow-y: overlay, the deprecated alias of auto */
+.feed {
+  overflow-y: overlay;
+}
+
+/* seed status-fill-as-text/text-on-fill 20: a chart colour as a caret colour */
+.input {
+  caret-color: var(--vx-chart-3);
+}
+
+/* seed status-fill-as-text/text-on-fill 21: the brand fill as the text decoration colour */
+.link {
+  text-decoration-color: var(--vx-brand-fill);
+}
+
+/* seed unknown-token 16: an accent token named after shadcn's role */
+.pill {
+  color: var(--vx-accent-foreground);
+}
+
+/* seed unknown-token 17: a font-weight token in another spelling */
+.strong {
+  font-weight: var(--vx-weight-bold);
+}
+
+/* seed unknown-token 18: a surface step numbered like a palette */
+.deep {
+  background: var(--vx-surface-2);
+}
+
+/* pass unknown-token 1: shipped tokens across roles */
+.ok {
+  color: var(--vx-ink-faint);
+  background: var(--vx-raised);
+  font-weight: var(--vx-weight-medium);
+}

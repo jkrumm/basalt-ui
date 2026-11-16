@@ -1,0 +1,89 @@
+// Seeded offenders for basalt/import-boundary. Each phrasing is one import an agent writes from habit.
+
+// seed import-boundary/base-ui 1: the Base UI dialog the primitive wraps
+import { Dialog } from '@base-ui/react/dialog'
+
+// seed import-boundary/base-ui 2: the pre-1.0 Base UI package name from older docs
+import { Popover } from '@base-ui-components/react/popover'
+
+// seed import-boundary/radix 1: a Radix primitive from a shadcn snippet
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+
+// seed import-boundary/radix 2: the radix-ui umbrella package
+import { Tooltip } from 'radix-ui'
+
+// seed import-boundary/cmdk 1: the cmdk command menu
+import { Command } from 'cmdk'
+
+// seed import-boundary/sonner 1: a toast from sonner
+import { toast } from 'sonner'
+
+// seed import-boundary/streamdown 1: streamdown for model text
+import { Streamdown } from 'streamdown'
+
+// seed import-boundary/streamdown 2: react-markdown for model text, the more common habit
+import ReactMarkdown from 'react-markdown'
+
+// seed import-boundary/tailwind-merge 1: twMerge for class composition
+import { twMerge } from 'tailwind-merge'
+
+// seed import-boundary/tailwind-merge 2: the shadcn utils file, clsx plus twMerge, imported by name
+import { cn as shadcnCn } from '@/lib/utils'
+
+// seed import-boundary/visx 1: a visx scale
+import { scaleLinear } from '@visx/scale'
+
+// seed import-boundary/visx 2: recharts, the chart library agents reach for first
+import { LineChart, Line } from 'recharts'
+
+// seed import-boundary/engine-subpath 1: the engine's react entry
+import { Chart } from '@tanstack/charts/react'
+
+// seed import-boundary/react-table-hook 1: the table library's hook
+import { useReactTable, getCoreRowModel } from '@tanstack/react-table'
+
+// seed import-boundary/ui-path 1: the shadcn path alias for an un-ejected primitive
+import { Button } from '@/components/ui/button'
+
+// seed import-boundary/ui-path 2: a relative path to the same primitive
+import { Input } from '../components/ui/input'
+
+// seed import-boundary/use-chat-chat 1: useChat with an api option, the AI SDK 4 shape
+import { useChat } from '@ai-sdk/react'
+export function ChatPane() {
+  const chat = useChat({ api: '/api/chat' })
+  return <div>{chat.messages.length}</div>
+}
+
+// seed import-boundary/persist-storage 1: zustand's persist middleware
+import { persist } from 'zustand/middleware'
+
+// seed import-boundary/persist-storage 2: jotai's atomWithStorage
+import { atomWithStorage } from 'jotai/utils'
+
+// seed import-boundary/persist-storage 3: nanostores persistent atom, which examples/react uses
+import { persistentAtom } from '@nanostores/persistent'
+
+export const used = [
+  Dialog,
+  Popover,
+  DropdownMenu,
+  Tooltip,
+  Command,
+  toast,
+  Streamdown,
+  ReactMarkdown,
+  twMerge,
+  shadcnCn,
+  scaleLinear,
+  LineChart,
+  Line,
+  Chart,
+  useReactTable,
+  getCoreRowModel,
+  Button,
+  Input,
+  persist,
+  atomWithStorage,
+  persistentAtom,
+]

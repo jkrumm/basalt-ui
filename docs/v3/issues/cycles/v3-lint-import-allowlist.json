@@ -1,0 +1,25 @@
+{
+  "why": "import-boundary is a denylist of rival packages, and four lint cycles in a row found a new ring of them: lint-4.6, lint-5.4, lint-6.7 (19 packages) and lint-7.5 (6 of 22: antd, HeroUI, RTK Query, classnames, Material React Table, reconnecting-websocket). lint-6.7 and the v3-lint-6-lint brief named a fourth ring as the point where a different design, an allow list of the stack's packages per category, is worth a Spec. Each ring costs a cycle to find and a fix row to add, and an agent who reaches for a kit the list has not met yet is told nothing.",
+  "what": "A one-page Spec on how import-boundary should decide what is a rival package, then the change it settles on.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/structure/import-boundary.ts (forms, cases, JSDoc, messages)",
+    "packages/basalt-ui/test/fixtures/lint/import-bypass/**",
+    "packages/basalt-ui/configs/oxlint-*.json (regenerated)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/src/lint/rule-table.ts ID_CEILING",
+    "apps/**",
+    "examples/**"
+  ],
+  "change": "Spec first (checkpoint `spec`): measure the denylist against the package names in the fixtures of lint cycles 1 to 7 and in the playground's and the examples' `package.json`; state the options with their cost: (a) keep the denylist and grow it per cycle; (b) an allow list per category (UI primitives, charts, data and routing, persistence, markdown, toasts, command palette, tables, class composition), where an import that is not the stack's and matches a category's signature (the package's name pattern, or a known component export) reports; (c) a manifest field naming the app's extra allowed packages beside either. Name the false-alarm risk of each against the playground, the examples and the 36 ejected primitives. Build the option the verdict picks.",
+  "commits": "fix: or feat: one package commit for the form; the Spec is an artifact, not a commit.",
+  "proof": "The lint cycle 7 harness (`docs/v3/cycles/lint-7/fixtures/run.sh`) reports every import-boundary seed of cycles 1 to 7 caught and every import `pass` mark silent; sweep.sh reports 0 import-boundary findings on the playground at `app` and `parts`.",
+  "acceptance": [
+    "A Spec with the measured options and a default is submitted before the code it governs",
+    "Every import-boundary seed of lint cycles 1 to 7 is caught (seed report)",
+    "No import-boundary finding on the playground at `app` or `parts`, the 36 ejected primitives or the import `pass` marks (sweep, eject.sh, seed report)",
+    "make check passes"
+  ],
+  "out_of_scope": "Rules other than import-boundary; rules for pinned 2.x consumers."
+}
