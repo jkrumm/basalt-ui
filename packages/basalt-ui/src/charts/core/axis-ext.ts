@@ -51,19 +51,28 @@ export function edgeFraction<X extends ChartX>(
   return Math.min(1, Math.max(0, shifted))
 }
 
-/** Which plot edge `v` lies past, or `null` inside the domain. */
+/** A domain as `[min, max]`: a reversed tuple (`[100, 0]`, an inverted axis) is a valid domain. */
+const ordered = (domain: readonly [number, number]): [number, number] => [
+  Math.min(domain[0], domain[1]),
+  Math.max(domain[0], domain[1]),
+]
+
+/** Which end of the domain `v` lies past (`top` is the max), or `null` inside it. */
 export function offScaleSide(
   v: number,
   domain: readonly [number, number],
 ): 'top' | 'bottom' | null {
   if (!Number.isFinite(v)) return null
-  if (v > domain[1]) return 'top'
-  return v < domain[0] ? 'bottom' : null
+  const [lo, hi] = ordered(domain)
+  if (v > hi) return 'top'
+  return v < lo ? 'bottom' : null
 }
 
 /** `v` held on the plot edge it lies past. */
-export const clampToDomain = (v: number, domain: readonly [number, number]): number =>
-  Math.min(domain[1], Math.max(domain[0], v))
+export const clampToDomain = (v: number, domain: readonly [number, number]): number => {
+  const [lo, hi] = ordered(domain)
+  return Math.min(hi, Math.max(lo, v))
+}
 
 const CARET_SIZE = 8
 const CARETS = { top: '▲', bottom: '▼' } as const
@@ -101,7 +110,7 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
               text(found[side], {
                 id: `off-scale-${s.key}-${side}`,
                 x: (f: number) => f,
-                y: () => (opts.edgeOf?.(s) ?? domain)[side === 'top' ? 1 : 0],
+                y: () => ordered(opts.edgeOf?.(s) ?? domain)[side === 'top' ? 1 : 0],
                 xScale: 'zx',
                 yScale: opts.yScaleOf(s),
                 text: () => CARETS[side],

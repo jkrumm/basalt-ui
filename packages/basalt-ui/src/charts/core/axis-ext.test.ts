@@ -174,13 +174,42 @@ describe('off-scale', () => {
     expect(marks(false)).toHaveLength(0)
   })
 
-  test('a stacked layout keeps the raw values: no clamp, no caret', () => {
-    for (const stack of ['stacked', 'normalized'] as const) {
+  test('a reversed tuple clamps and names its ends by value', () => {
+    expect(clampToDomain(2400, [120, 0])).toBe(120)
+    expect(clampToDomain(50, [120, 0])).toBe(50)
+    expect(offScaleSide(50, [120, 0])).toBeNull()
+    expect(offScaleSide(2400, [120, 0])).toBe('top')
+  })
+
+  const barA: ChartSeries<Row> = { ...dot, mark: 'bar' }
+  const barB: ChartSeries<Row> = { ...dot, key: 'w', mark: 'bar' }
+  test('a lone bar series in the default stacked layout still clamps', () => {
+    compileCartesian({
+      chartId: 'off-lone',
+      data: rows,
+      x: (r) => r.d,
+      series: [barA],
+      stack: 'stacked',
+      y: { domain: [0, 120] },
+      marks: (plot) => {
+        seen = plot
+        return []
+      },
+    }).chart({ width: 390, height: 240, defaultTheme: {} as never })
+    const ys = (seen as PlotContext<Row, number>).rows('v').map((r) => r.y)
+    expect(Math.max(...(ys as number[]))).toBe(120)
+  })
+
+  test('a stack of bars, or a normalized one, keeps the raw values: no clamp, no caret', () => {
+    for (const [stack, series] of [
+      ['stacked', [barA, barB]],
+      ['normalized', [dot]],
+    ] as const) {
       const def = compileCartesian({
         chartId: 'off-stack',
         data: rows,
         x: (r) => r.d,
-        series: [dot],
+        series,
         stack,
         y: { domain: [0, 120] },
         marks: (plot) => {

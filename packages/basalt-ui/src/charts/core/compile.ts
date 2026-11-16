@@ -752,13 +752,19 @@ function wholeCounts<T, X extends ChartX>(
 
 /**
  * An explicit domain (a tuple, or the one the `y.domain` seam wrote): the data may lie past it. An
- * auto domain always holds its data. A stacked layout never clamps: a part's value is not the
- * height it reaches, and a normalized stack shares out the raw values.
+ * auto domain always holds its data. A stack of two or more bar series never clamps (a part's
+ * value is not the height it reaches), nor does a normalized one (it shares out the raw values); a
+ * lone bar series in the default `stacked` layout is no stack and clamps.
  */
 const isBounded = <T, X extends ChartX>(
   input: CartesianInput<T, X>,
   cfg: AxisConfig<T> | undefined,
-): boolean => input.stack === undefined && cfg?.domain !== undefined && cfg.domain !== 'auto'
+): boolean => {
+  const stacks =
+    input.stack === 'normalized' ||
+    (input.stack === 'stacked' && input.series.filter(isBar).length > 1)
+  return !stacks && cfg?.domain !== undefined && cfg.domain !== 'auto'
+}
 
 /** Both y domains (basalt's, from the VISIBLE series plus this axis' overlay bounds) and scales. */
 function resolveAxes<T, X extends ChartX>(
