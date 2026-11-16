@@ -1,0 +1,291 @@
+// Cycle 5 phrasings for the class family: viewport-keyed, dark-fork, fixed-colour,
+// status-fill-as-text, raw-scroll, tw-off-law, app-spacing. Seed numbers continue cycle 4's.
+// A `pass` mark is valid code beside a shape a cycle 4 fix widened a form to: its rule must stay silent.
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import { cn } from 'basalt-ui'
+import { cva } from 'class-variance-authority'
+
+// seed viewport-keyed/breakpoint-prefix 9: Tailwind v4's max- range variant to hide a column on small screens
+export function Col() {
+  return <td className="max-md:hidden">c</td>
+}
+
+// seed viewport-keyed/breakpoint-prefix 10: a breakpoint inside a cva compound variant
+const grid = cva('grid gap-4', {
+  variants: { dense: { true: 'gap-2' } },
+  compoundVariants: [{ dense: true, class: 'xl:grid-cols-4' }],
+})
+export function Grid() {
+  return <div className={grid({ dense: true })}>g</div>
+}
+
+// seed viewport-keyed/arbitrary-query 5: a rem breakpoint as an arbitrary min variant
+export function Split() {
+  return <div className="flex flex-col min-[48rem]:flex-row">s</div>
+}
+
+// seed viewport-keyed/arbitrary-query 6: the range syntax inside an arbitrary media variant
+export function Rail() {
+  return <nav className="hidden [@media(width>=64rem)]:flex">r</nav>
+}
+
+// seed viewport-keyed/media-query 12: matchMedia behind useSyncExternalStore, the React 18 idiom
+const subscribe = (cb: () => void) => {
+  const mq = window.matchMedia('(max-width: 767px)')
+  mq.addEventListener('change', cb)
+  return () => mq.removeEventListener('change', cb)
+}
+export function useIsMobile() {
+  return useSyncExternalStore(subscribe, () => window.matchMedia('(max-width: 767px)').matches)
+}
+
+// seed viewport-keyed/media-query 13: the document's client width compared to a breakpoint
+export function useNarrowDoc() {
+  return document.documentElement.clientWidth < 768
+}
+
+// seed viewport-keyed/media-query 14: the visual viewport's width read in an effect
+export function useTight() {
+  const [tight, setTight] = useState(false)
+  useEffect(() => setTight((window.visualViewport?.width ?? 0) < 640), [])
+  return tight
+}
+
+// pass viewport-keyed/arbitrary-query 1: reduced motion as an arbitrary media variant
+export function Spinner() {
+  return <span className="animate-spin [@media(prefers-reduced-motion:reduce)]:animate-none">s</span>
+}
+
+// pass viewport-keyed/media-query 3: a pointer query to pick a hover affordance, not a width
+export function useCoarse() {
+  return window.matchMedia('(pointer: coarse)').matches
+}
+
+// seed dark-fork/dark-variant 13: Tailwind v4's in-* variant over the theme attribute
+export function Well() {
+  return <div className="bg-card in-data-[theme=dark]:bg-inset">w</div>
+}
+
+// seed dark-fork/dark-variant 14: the not-dark negation variant for the light-only fill
+export function Hero() {
+  return <section className="not-dark:bg-card">h</section>
+}
+
+// seed dark-fork/dark-variant 15: shadcn's class-based dark ancestor as an arbitrary variant
+export function Code() {
+  return <pre className="bg-card [.dark_&]:bg-inset">c</pre>
+}
+
+// seed dark-fork/dark-variant 16: the root element and attribute in a where() arbitrary selector
+export function Tile() {
+  return <div className="[:where([data-theme=dark])_&]:bg-inset">t</div>
+}
+
+// pass dark-fork/dark-variant 2: a named group on an open state, the shape the /name fix reads
+export function Chevron() {
+  return <span className="group-data-[state=open]/menu:rotate-180">v</span>
+}
+
+// seed fixed-colour/black-white 13: a white stroke on an svg ring
+export function Ring() {
+  return (
+    <svg viewBox="0 0 10 10">
+      <circle cx="5" cy="5" r="4" className="stroke-white" />
+    </svg>
+  )
+}
+
+// seed fixed-colour/black-white 14: a white divider between avatars
+export function Stack() {
+  return <div className="flex divide-x divide-white/20">a</div>
+}
+
+// seed fixed-colour/black-white 15: black placeholder ink on a search box
+export function Search() {
+  return <span className="placeholder:text-black/40">s</span>
+}
+
+// seed status-fill-as-text/text-on-fill 12: a chart fill as text through a bracket var without a type hint
+export function Total() {
+  return <span className="text-[var(--vx-chart-2)]">42</span>
+}
+
+// seed status-fill-as-text/text-on-fill 13: a sequential fill as text behind group-hover
+export function Row() {
+  return <span className="group-hover:text-seq-4">r</span>
+}
+
+// seed status-fill-as-text/text-on-fill 14: a chart fill as an arbitrary color property
+export function Delta() {
+  return <span className="[color:var(--vx-chart-1)]">+4</span>
+}
+
+// pass status-fill-as-text/text-on-fill 1: a type size through the typed bracket, not a colour
+export function Big() {
+  return <span className="text-(length:--vx-text-lg)">B</span>
+}
+
+// seed raw-scroll/overflow-scroll 19: a horizontal chip row that scrolls
+export function Chips() {
+  return <div className="flex gap-2 overflow-x-auto">c</div>
+}
+
+// seed raw-scroll/overflow-scroll 20: a scroll box on every child through an arbitrary child variant
+export function Panes() {
+  return <div className="grid grid-cols-2 [&>div]:overflow-y-auto">p</div>
+}
+
+// seed raw-scroll/overflow-scroll 21: a scroll box opened on a data state
+export function Drawer() {
+  return <div className="data-[state=open]:overflow-y-auto">d</div>
+}
+
+// seed tw-off-law/off-ladder-spacing 9: a half step above four
+export function Pad() {
+  return <div className="p-4.5">p</div>
+}
+
+// seed tw-off-law/off-ladder-spacing 10: a quarter step written as v4 takes any multiple of 0.25
+export function Tight() {
+  return <div className="py-0.75">t</div>
+}
+
+// seed tw-off-law/surface-recipe 12: a tile rebuilt from the radius token through a typed var
+export function Tile2() {
+  return <div className="rounded-(--vx-radius-card) border shadow-sm">t</div>
+}
+
+// seed tw-off-law/surface-recipe 13: a raised panel rebuilt with a large shadow and radius
+export function Panel() {
+  return <div className="rounded-2xl bg-popover shadow-lg">p</div>
+}
+
+// seed tw-off-law/app-colour 9: a status tint as a class in app code
+export function Ok() {
+  return <span className="bg-good-tint">ok</span>
+}
+
+// seed tw-off-law/app-colour 10: Tailwind's palette for a hand-built success pill, as a v3 tutorial writes it
+export function Paid() {
+  return <span className="bg-emerald-500/10 text-emerald-700">paid</span>
+}
+
+// seed tw-off-law/app-colour-arbitrary 6: a chart fill on an svg path through the v4 shorthand
+export function Area() {
+  return (
+    <svg>
+      <path className="fill-(--vx-chart-2)" d="M0 0" />
+    </svg>
+  )
+}
+
+// seed tw-off-law/app-colour-arbitrary 7: a status colour on a border through the typed shorthand
+export function Warn() {
+  return <div className="border border-(color:--vx-bad)">w</div>
+}
+
+// seed tw-off-law/alpha-on-premixed 10: an alpha on the selected fill of an active row
+export function Active() {
+  return <li className="data-[active=true]:bg-selected/40">a</li>
+}
+
+// seed tw-off-law/alpha-on-premixed 11: an arbitrary alpha on the theme's accent class
+export function Hover() {
+  return <li className="hover:bg-accent/[.35]">h</li>
+}
+
+// seed tw-off-law/alpha-on-premixed 12: an alpha on the border class through a ring
+export function Focus() {
+  return <div className="ring-1 ring-border/50">f</div>
+}
+
+// pass tw-off-law/alpha-on-premixed 1: the theme's accent class as it is, on hover
+export function Item() {
+  return <li className="hover:bg-accent">i</li>
+}
+
+// seed tw-off-law/numeric-container 9: a numeric arbitrary min container query
+export function Card2() {
+  return <div className="@container"><div className="@min-[400px]:flex-row">c</div></div>
+}
+
+// seed tw-off-law/numeric-container 10: a Tailwind container size in the max form
+export function Card3() {
+  return <div className="@max-md:flex-col">c</div>
+}
+
+// seed tw-off-law/important-modifier 9: an important bang inside an arbitrary child variant
+export function Icon() {
+  return <span className="[&_svg]:!size-4">i</span>
+}
+
+// seed tw-off-law/important-modifier 10: the v4 trailing bang behind a hover variant in a cva base
+const link = cva('underline hover:no-underline!')
+export function A() {
+  return <a className={link()}>a</a>
+}
+
+// seed tw-off-law/template-interpolation 9: a column count interpolated into a grid utility
+export function Cols({ n }: { n: number }) {
+  return <div className={cn('grid', `grid-cols-${n}`)}>c</div>
+}
+
+// seed tw-off-law/template-interpolation 10: a class joined from parts with join('-')
+export function Tone({ tone }: { tone: string }) {
+  return <span className={['bg', tone].join('-')}>t</span>
+}
+
+// seed tw-off-law/template-interpolation 11: a fraction width built from a template
+export function Bar({ w }: { w: number }) {
+  return <div className={`w-${w}/12`}>b</div>
+}
+
+// seed tw-off-law/fixed-width 11: a fixed width from the v4 spacing scale on a side panel
+export function Side() {
+  return <aside className="w-120 shrink-0">s</aside>
+}
+
+// seed tw-off-law/fixed-width 12: a fixed min width from the spacing scale on a dialog body
+export function Body() {
+  return <div className="min-w-96">b</div>
+}
+
+// seed tw-off-law/track-length 9: a rem sidebar track beside a minmax track
+export function Layout() {
+  return <div className="grid grid-cols-[16rem_minmax(0,1fr)]">l</div>
+}
+
+// seed tw-off-law/track-length 10: a fixed header row track
+export function Frame() {
+  return <div className="grid grid-rows-[48px_1fr]">f</div>
+}
+
+// pass tw-off-law/track-length 1: a fraction track pair, the fix the form names
+export function Halves() {
+  return <div className="grid grid-cols-[minmax(0,1fr)_auto]">h</div>
+}
+
+// seed app-spacing/space-between 9: Tailwind v4's child variant spacing every child
+export function List() {
+  return <ul className="*:mb-2">l</ul>
+}
+
+// seed app-spacing/space-between 10: space-y written for the last child out
+export function Stack2() {
+  return <div className="space-y-4 last:*:mb-0">s</div>
+}
+
+// seed app-spacing/margin 11: a vertical margin around a separator
+export function Sep() {
+  return <hr className="my-6" />
+}
+
+// seed app-spacing/margin 12: a margin on the last item through a last variant
+export function Last() {
+  return <li className="mb-3 last:mb-0">l</li>
+}
+
+// pass app-spacing/margin 2: an auto top margin that pushes a footer down a flex column
+export function Foot() {
+  return <footer className="mt-auto">f</footer>
+}
