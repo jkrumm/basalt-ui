@@ -28,7 +28,7 @@ packages/basalt-ui/configs/stylelint.basalt.json
 # `slots:` lines and the `@example` code of its JSDoc are all text oxfmt would rewrite, which `--check` then
 # reads as drift. The hand-written guides stay formatted.
 packages/basalt-ui/docs/*.md
-!packages/basalt-ui/docs/cartesian-chart.md
+!packages/basalt-ui/docs/cartesian-chart-guide.md
 !packages/basalt-ui/docs/eject.md
 !packages/basalt-ui/docs/persisted.md
 !packages/basalt-ui/docs/static-site.md
