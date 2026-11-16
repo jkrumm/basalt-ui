@@ -51,6 +51,7 @@ col<T>(): Col<T>
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
     filter?: "text"
+    labels?: Readonly<Record<string, string>>  // The text of a stored value in the cell and the phone card; the stored value without an entry
 
   NumberOptions:
     header?: string  // Header text

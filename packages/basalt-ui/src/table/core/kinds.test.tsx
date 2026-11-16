@@ -241,6 +241,13 @@ describe('kind cells', () => {
     expect(specOf(c.status('state', { options: ['Open'] })).labels).toBeUndefined()
   })
 
+  test('text labels replace the stored value in the cell and keep it for sort and search', () => {
+    const labelled = c.text('state', { labels: { Open: 'Offen' } })
+    expect(cell(labelled, { ...ROW, state: 'Open' }).textContent).toBe('Offen')
+    expect(cell(labelled, { ...ROW, state: 'Other' }).textContent).toBe('Other')
+    expect(specOf(labelled).value({ ...ROW, state: 'Open' })).toBe('Open')
+  })
+
   test('entity links through href; spark and custom draw their own content', () => {
     const link = cell(c.entity('name', { href: (r) => `/p/${r.id}` })).querySelector('a')
     expect(link?.getAttribute('href')).toBe('/p/r1')
