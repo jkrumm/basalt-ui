@@ -38,7 +38,6 @@ export type QueryStateLike = CardsQueryStateLike
 export type Empty = CardsEmpty
 /** @deprecated Import `FrameState` from `basalt-ui/cards`; this alias is removed in the next minor. */
 export type FrameState = CardsFrameState
-export { createChannel } from './core/channel'
 export type {
   Channel,
   ChannelOptions,

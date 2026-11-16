@@ -9,24 +9,27 @@ slots: []
 
 # Callout
 
-A tinted note inside an article, keyed to a semantic kind. A thin mapping onto `Alert`: the kind
-is the tone, `title` is the alert's title. Without a title the kind is named in a screen-reader
-word instead. The 2.x `icon` prop is gone; the glyph follows the kind.
+A tinted note inside an article, keyed to a semantic tone. A thin mapping onto `Alert`: `tone`
+is the alert's tone, `title` is its title. Without a title the tone is named in a screen-reader
+word instead (`neutral` and `accent` are plain notes and take none). The 2.x `icon` prop is gone;
+the glyph follows the tone.
 
 ## Signature
 
 ```ts
-Callout({ kind, title, className, children }: CalloutProps): ReactElement
-  kind?: CalloutKind  // Semantic kind: drives the tint, the glyph and the announcement
+Callout({ tone, kind, title, className, children }: CalloutProps): ReactElement
+  tone?: Tone  // Semantic tone, the values of `Alert`: drives the tint, the glyph and the announcement
   title?: string
   className?: string  // Layout only (`my-6`)
   children: ReactNode
 ```
 
+`Tone` import from `basalt-ui/cards`: `import type { Tone } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx
-<Callout kind="warn" title="Heads up">
+<Callout tone="warn" title="Heads up">
   <p>This endpoint is rate-limited to 60 requests/minute.</p>
 </Callout>
 ```

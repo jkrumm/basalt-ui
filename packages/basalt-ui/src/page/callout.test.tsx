@@ -66,3 +66,19 @@ describe('the kind maps onto the alert tone', () => {
     })
   }
 })
+
+describe('tone', () => {
+  test('takes the tone of Alert and wins over the deprecated kind', () => {
+    render(
+      <Callout tone="bad" kind="info">
+        body
+      </Callout>,
+    )
+    expect(screen.getByRole('alert').className).toContain('bg-bad-tint')
+  })
+
+  test('a plain note takes no screen-reader word', () => {
+    const { container } = render(<Callout tone="neutral">body</Callout>)
+    expect(container.querySelector('[data-callout-kind-word]')).toBeNull()
+  })
+})

@@ -1,14 +1,17 @@
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import type { Tone } from '../core/ports'
 import { page } from '../core/messages/page'
 import { useMessages } from '../core/messages/use-messages'
 import { Alert } from '../ui/alert'
 
-/** One of the four callout kinds; each maps onto the `Alert` tone of the same name. */
+/** One of the four 2.x callout kinds; each is the `Alert` tone of the same name. */
 export type CalloutKind = 'info' | 'good' | 'warn' | 'bad'
 
 export type CalloutProps = {
-  /** Semantic kind: drives the tint, the glyph and the announcement. Default `'info'`. */
+  /** Semantic tone, the values of `Alert`: drives the tint, the glyph and the announcement. Default `'info'`. */
+  tone?: Tone
+  /** @deprecated Use `tone`; removed in the next minor. */
   kind?: CalloutKind
   title?: string
   /** Layout only (`my-6`). */
@@ -17,33 +20,37 @@ export type CalloutProps = {
 }
 
 /**
- * A tinted note inside an article, keyed to a semantic kind. A thin mapping onto `Alert`: the kind
- * is the tone, `title` is the alert's title. Without a title the kind is named in a screen-reader
- * word instead. The 2.x `icon` prop is gone; the glyph follows the kind.
+ * A tinted note inside an article, keyed to a semantic tone. A thin mapping onto `Alert`: `tone`
+ * is the alert's tone, `title` is its title. Without a title the tone is named in a screen-reader
+ * word instead (`neutral` and `accent` are plain notes and take none). The 2.x `icon` prop is gone;
+ * the glyph follows the tone.
  *
  * @useWhen an article or reply carries a note, tip, warning or error beside its prose
  * @neverWhen the message is about the state of the page or a form (use Alert directly)
  *
  * @example
- * <Callout kind="warn" title="Heads up">
+ * <Callout tone="warn" title="Heads up">
  *   <p>This endpoint is rate-limited to 60 requests/minute.</p>
  * </Callout>
  */
-export function Callout({ kind = 'info', title, className, children }: CalloutProps): ReactElement {
+export function Callout({ tone, kind, title, className, children }: CalloutProps): ReactElement {
   const t = useMessages(page)
+  const resolved = tone ?? kind ?? 'info'
   const kindWord = {
     info: t('page.kindInfo'),
     good: t('page.kindGood'),
     warn: t('page.kindWarn'),
     bad: t('page.kindBad'),
-  }[kind]
+    accent: undefined,
+    neutral: undefined,
+  }[resolved]
   return (
     <Alert
-      tone={kind}
+      tone={resolved}
       {...(title !== undefined && { title })}
       className={cn('in-[.vx-prose]:mt-(--vx-rhythm-2)', className)}
     >
-      {title === undefined && (
+      {title === undefined && kindWord !== undefined && (
         <span className="sr-only" data-callout-kind-word="">
           {kindWord}
         </span>

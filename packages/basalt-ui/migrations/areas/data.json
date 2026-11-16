@@ -20,6 +20,16 @@
       "manual": true,
       "note": "one verb: it writes a process-wide default and returns nothing, so it is `set`, beside resetFormatDefaults; `define` is for data",
       "verify": "tsc: defineFormat does not exist; basalt-ui/format is gone"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "data-createchannel-root",
+      "kind": "moved",
+      "from": "basalt-ui#createChannel",
+      "to": "basalt-ui/data#createChannel",
+      "note": "one home for the stream client; the root no longer exports it"
     }
   ],
   "tokens": { "renamed": [], "valueShifts": [] },
