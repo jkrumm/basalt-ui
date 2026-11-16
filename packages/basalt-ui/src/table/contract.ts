@@ -150,7 +150,8 @@ export type DataTableProps<T> = {
   /**
    * A chart's focus over the same rows (`useChartFocus(rows, …)`): a row maps to its item by
    * `getRowId`, so sort and filter keep the link. Pointing at a row or moving the table's own row
-   * focus onto it focuses its item; an item focused elsewhere marks its row and scrolls it into view.
+   * focus onto it focuses its item; an item focused elsewhere marks its row, and a chart's keyboard
+   * step onto it scrolls the row into view while it is mounted.
    */
   focus?: ListFocus<T>
 } & (
