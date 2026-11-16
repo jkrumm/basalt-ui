@@ -27,7 +27,7 @@ export const zoneANames = [
   'seq-5',
 ] as const
 
-export const zoneAPremixed = ['hover', 'selected', 'scrim', 'hairline'] as const
+export const zoneAPremixed = ['accent', 'selected', 'scrim', 'border'] as const
 
 export const zoneAFillOnly = [
   'brand-fill',
@@ -54,3 +54,13 @@ export const deniedCurrent = [
   'via-',
   'to-current',
 ] as const
+
+export const zoneATokenClasses = {
+  canvas: 'bg-background',
+  raised: 'bg-popover',
+  hover: 'bg-accent',
+  hairline: 'border-border',
+  ink: 'text-foreground',
+  'ink-muted': 'text-muted-foreground',
+  'ink-faint': 'text-faint',
+} as const

@@ -15,6 +15,10 @@ export const j = useMediaQuery(REDUCED)
 export const k = ref.current.clientWidth < LIMIT
 export const l = window.innerHeight < LIMIT
 export const m = useMediaQuery(other)
+export const n = useMediaQuery({ query: '(prefers-reduced-motion: reduce)' })
+export const o = useMediaQuery({ orientation: 'portrait', query: q })
+export const p = screen.height < 700
+export const r = chart.screen.width < 400
 export function Plot({ width }) {
   const { height } = useWindowSize()
   const box = useElementSize()

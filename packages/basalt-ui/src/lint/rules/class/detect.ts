@@ -53,17 +53,27 @@ function literalText(arg: Node | undefined): string | undefined {
  * tied by name: its `width` read against a number reports, as `useWindowSize().width`, through a
  * binding (`const size = useWindowSize()` then `size.width`) or a destructure (`const { width } =
  * useWindowSize()`, renamed or not). A bare `width` from anywhere else is a chart's plot width and
- * passes. Known limits: the height is not read (as `window.innerHeight` is not), and a binding is
- * matched by spelling within the file, not by scope.
+ * passes. The hook is also read under an alias (`import { useWindowSize as useSize }`), and
+ * `screen.width` (`window.screen.width`, `screen.availWidth`) is the device width, read like
+ * `innerWidth`. react-responsive's object query reads as its string: a `maxWidth`, `minWidth` (or
+ * their device forms) key, or a `query` whose literal text names a width. Known limits: the height
+ * is not read (as `window.innerHeight` is not), and a binding is matched by spelling within the
+ * file, not by scope.
  */
 export function mediaQueryForm({ report }: FormContext): Visitor {
   let consts: ReadonlyMap<string, Node> = new Map()
   const resolve = (node: Node | undefined): Node | undefined =>
     node?.type === 'Identifier' ? (consts.get(node['name'] as string) ?? node) : node
-  const sizes: WindowSizes = { objects: new Set(), widths: new Set() }
+  const sizes: WindowSizes = { objects: new Set(), widths: new Set(), hooks: new Set() }
   return {
     Program(node) {
       consts = topLevelConsts(node)
+    },
+    ImportSpecifier(node) {
+      if (WINDOW_SIZE_HOOKS.has(nameOf(field(node, 'imported')) ?? '')) {
+        const local = nameOf(field(node, 'local'))
+        if (local !== undefined) sizes.hooks.add(local)
+      }
     },
     VariableDeclarator(node) {
       bindWindowSize(node, sizes)
@@ -72,7 +82,8 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
       const name = calleeName(node)
       if (name === undefined || !QUERY_CALLEES.has(name)) return
       const args = Array.isArray(node['arguments']) ? node['arguments'].filter(isNode) : []
-      const text = literalText(resolve(args[0]))
+      const arg = resolve(args[0])
+      const text = literalText(arg) ?? objectQueryText(arg, resolve)
       if (text !== undefined && /width/i.test(text)) report(node, `${name}('${text}')`)
     },
     BinaryExpression(node) {
@@ -82,20 +93,44 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
   }
 }
 
-/** The names a file binds to a window-size hook: the result object, and a destructured width. */
-type WindowSizes = { objects: Set<string>; widths: Set<string> }
+/** react-responsive's width keys: any of them makes the object query a viewport query. */
+const OBJECT_QUERY_WIDTH = /^(?:max|min)(?:Device)?Width$/
+
+/**
+ * The query an object argument spells (`{ maxWidth: 767 }`, `{ query: '(width < 48rem)' }`): the
+ * width key itself, or the literal text of `query`; undefined for any other object.
+ */
+function objectQueryText(
+  arg: Node | undefined,
+  resolve: (node: Node | undefined) => Node | undefined,
+): string | undefined {
+  if (arg?.type !== 'ObjectExpression') return undefined
+  for (const property of nodesOf(arg, 'properties')) {
+    if (property.type !== 'Property') continue
+    const key = nameOf(field(property, 'key'))
+    if (key !== undefined && OBJECT_QUERY_WIDTH.test(key)) return `{ ${key} }`
+    if (key === 'query') return literalText(resolve(field(property, 'value')))
+  }
+  return undefined
+}
+
+/**
+ * The names a file binds to a window-size hook: the result object, a destructured width, and the
+ * local names the hook is imported under (`useWindowSize as useSize`).
+ */
+type WindowSizes = { objects: Set<string>; widths: Set<string>; hooks: Set<string> }
 
 const WINDOW_SIZE_HOOKS: ReadonlySet<string> = new Set(['useWindowSize'])
 
-const isWindowSizeCall = (node: Node | undefined): boolean => {
+const isWindowSizeCall = (node: Node | undefined, sizes: WindowSizes): boolean => {
   if (node?.type !== 'CallExpression') return false
   const name = calleeName(node)
-  return name !== undefined && WINDOW_SIZE_HOOKS.has(name)
+  return name !== undefined && (WINDOW_SIZE_HOOKS.has(name) || sizes.hooks.has(name))
 }
 
 /** `const size = useWindowSize()` or `const { width: w } = useWindowSize()`. */
 function bindWindowSize(declarator: Node, sizes: WindowSizes): void {
-  if (!isWindowSizeCall(field(declarator, 'init'))) return
+  if (!isWindowSizeCall(field(declarator, 'init'), sizes)) return
   const id = field(declarator, 'id')
   if (id?.type === 'Identifier') {
     sizes.objects.add(id['name'] as string)
@@ -119,14 +154,27 @@ function windowSizeRead(node: Node | undefined, sizes: WindowSizes): string | un
   if (node?.type !== 'MemberExpression' || node['computed'] === true) return undefined
   if (nameOf(field(node, 'property')) !== 'width') return undefined
   const object = field(node, 'object')
-  if (isWindowSizeCall(object)) return `${calleeName(object as Node) ?? ''}().width`
+  if (isWindowSizeCall(object, sizes)) return `${calleeName(object as Node) ?? ''}().width`
   const name = nameOf(object)
   return name !== undefined && sizes.objects.has(name) ? `${name}.width` : undefined
 }
 
+const GLOBALS: ReadonlySet<string> = new Set(['window', 'globalThis'])
+
+/** `screen`, `window.screen` or `globalThis.screen`: the device's screen object. */
+function screenObject(node: Node | undefined): string | undefined {
+  if (nameOf(node) === 'screen') return 'screen'
+  if (node?.type !== 'MemberExpression' || node['computed'] === true) return undefined
+  const global = nameOf(field(node, 'object'))
+  return global !== undefined && GLOBALS.has(global) && nameOf(field(node, 'property')) === 'screen'
+    ? `${global}.screen`
+    : undefined
+}
+
 /**
  * The text of a viewport-size read: `window.innerWidth`, `globalThis.outerWidth`,
- * `document.documentElement.clientWidth`. A bare `innerWidth` is not read: charts name a plot width so.
+ * `document.documentElement.clientWidth`, `window.screen.width`. A bare `innerWidth` is not read:
+ * charts name a plot width so.
  */
 function viewportRead(node: Node | undefined): string | undefined {
   if (node?.type !== 'MemberExpression' || node['computed'] === true) return undefined
@@ -135,7 +183,11 @@ function viewportRead(node: Node | undefined): string | undefined {
   const object = field(node, 'object')
   if (prop === 'innerWidth' || prop === 'outerWidth') {
     const global = object?.type === 'Identifier' ? (object['name'] as string) : undefined
-    return global === 'window' || global === 'globalThis' ? `${global}.${prop}` : undefined
+    return global !== undefined && GLOBALS.has(global) ? `${global}.${prop}` : undefined
+  }
+  if (prop === 'width' || prop === 'availWidth') {
+    const screen = screenObject(object)
+    return screen === undefined ? undefined : `${screen}.${prop}`
   }
   if (prop !== 'clientWidth' || object?.type !== 'MemberExpression') return undefined
   const root = field(object, 'object')

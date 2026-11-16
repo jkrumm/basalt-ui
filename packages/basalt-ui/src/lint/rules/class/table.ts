@@ -82,22 +82,31 @@ const seamMarkFill = new RegExp(
   `${HEAD}(?:(?:bg|fill|stroke)-(?:${alt(FILL_ROLES)})|text-on-brand)${TAIL}`,
 )
 
+/**
+ * A `--vx-*` variable as an arbitrary value: `(--vx-x)`, `[var(--vx-x)]` or `[--vx-x]`, each with
+ * Tailwind v4's optional `color:` type hint (`(color:--vx-x)`, `[color:var(--vx-x)]`).
+ */
+const vxArbitrary = (names: readonly string[]): string =>
+  `\\((?:color:)?--vx-(?:${alt(names)})\\)|\\[(?:color:)?(?:var\\()?--vx-(?:${alt(names)})\\)?\\]`
+
 const colourArbitrary = new RegExp(
-  `^(?!${FOCUS_RING_COLOUR})(?=.*(?:${HEAD}${COLOUR_PREFIX}-(?:\\(--vx-(?:${alt(zoneANames)})\\)|\\[(?:var\\()?--vx-(?:${alt(zoneANames)})\\)?\\])${TAIL}))`,
+  `^(?!${FOCUS_RING_COLOUR})(?=.*(?:${HEAD}${COLOUR_PREFIX}-(?:${vxArbitrary(zoneANames)})${TAIL}))`,
 )
 
-/** A fill-only role as text: the named utility, `text-(--vx-x)`, `text-[var(--vx-x)]` or `text-[--vx-x]`. */
+/** A fill-only role as text: the named utility, or the variable as an arbitrary value (`text-(color:--vx-x)`). */
 const textOnFill = new RegExp(
-  `${HEAD}text-(?:${alt(zoneAFillOnly)}|\\(--vx-(?:${alt(zoneAFillOnly)})\\)|\\[(?:var\\()?--vx-(?:${alt(zoneAFillOnly)})\\)?\\])${TAIL}`,
+  `${HEAD}text-(?:${alt(zoneAFillOnly)}|${vxArbitrary(zoneAFillOnly)})${TAIL}`,
 )
 
 /**
  * A dark-scheme variant: `dark:`, the theme attribute bare or quoted (`data-[theme='dark']:`, as the
- * Tailwind docs print it), its arbitrary-selector spellings and the colour-scheme media query as an
- * arbitrary variant (`[@media(prefers-color-scheme:dark)]:`).
+ * Tailwind docs print it) on the element, a group (named or not: `group-data-[theme=dark]/shell:`), a
+ * peer or an ancestor, its arbitrary-selector spellings with or without an element before the
+ * attribute (`[[data-theme=dark]_&]:`, `[html[data-theme=dark]_&]:`, `[.dark_&]:`) and the
+ * colour-scheme media query as an arbitrary variant (`[@media(prefers-color-scheme:dark)]:`).
  */
 const DARK_VARIANT =
-  '(?:(?:(?:group|peer|in)-)?(?:dark|data-\\[theme=["\']?dark["\']?\\])|\\[(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark)_&\\]|\\[@media_?\\(prefers-color-scheme:_?dark\\)\\]):'
+  '(?:(?:(?:group|peer|in)-)?(?:dark|data-\\[theme=["\']?dark["\']?\\])(?:\\/[\\w-]+)?|\\[[\\w:-]*(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark)_&\\]|\\[@media_?\\(prefers-color-scheme:_?dark\\)\\]):'
 
 /** A viewport variant anywhere in the token's chain: `viewport-keyed` already reports it. */
 const VIEWPORT_CHAIN =
@@ -121,7 +130,8 @@ export const CLASS_RULES = defineRules({
       },
       {
         id: 'arbitrary-query',
-        pattern: /(?:^|:)!?(?:min|max)-\[[^\]]*\]:/,
+        // `min-[900px]:` and the raw media query as an arbitrary variant, `[@media(min-width:900px)]:`.
+        pattern: /(?:^|:)!?(?:(?:min|max)-\[[^\]]*\]|\[@media[^\]]*width[^\]]*\]):/,
         fix: 'Key on the container: @narrow: @regular: @wide:',
         next: 'useSizeClass is for chrome only; viewport-keyed is never file-waivable',
         fixture: 'class/viewport-keyed/arbitrary-query.tsx',
@@ -170,7 +180,7 @@ export const CLASS_RULES = defineRules({
       {
         id: 'black-white',
         pattern: new RegExp(`${HEAD}${COLOUR_PREFIX}-(?:black|white)${TAIL}`),
-        fix: 'Button variant primary or Status own a brand fill and its ink in app code; on-brand ink on a brand fill at bridge; the backdrop is owned by Dialog and Sheet',
+        fix: 'Button variant primary or Status own a brand fill and its ink in app code; on-brand ink on a brand fill at bridge; a white or black surface is Card in app code; bg-card or bg-background for a surface at bridge; the backdrop is owned by Dialog and Sheet',
         next: 'A reasoned per-line waiver',
         fixture: 'class/fixed-colour/black-white.tsx',
       },
@@ -265,6 +275,9 @@ export const CLASS_RULES = defineRules({
         next: 'A reasoned waiver',
         fixture: 'class/tw-off-law/app-colour-arbitrary.tsx',
       }),
+      // The pre-mixed tokens by the theme class that reads them (`hover:bg-accent/50`,
+      // `border-border/60`). A token name (`bg-hover/60`) is no class: shadcn's no-unknown-classes
+      // and no-raw-colors report it, and their messages name the theme class (lint-4.4, lint-4.14).
       {
         id: 'alpha-on-premixed',
         pattern: new RegExp(
@@ -290,7 +303,8 @@ export const CLASS_RULES = defineRules({
       },
       {
         id: 'template-interpolation',
-        pattern: /-\$\{\}/,
+        // `bg-${tone}` and `${solid ? 'bg' : 'text'}-brand`: an interpolation on either side of a dash.
+        pattern: /-\$\{\}|\$\{\}-[a-z0-9[(]/,
         fix: 'A cva variant per value, a tone, size or count: Tailwind cannot scan an interpolated class',
         next: 'Status or Num tone from parts for a colour',
         fixture: 'class/tw-off-law/template-interpolation.tsx',

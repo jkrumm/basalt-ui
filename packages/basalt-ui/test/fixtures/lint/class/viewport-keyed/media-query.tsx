@@ -12,6 +12,11 @@
 // expect: size.width >= 1024
 // expect: useWindowSize().width < 640
 // expect: w < 768
+// expect: useMediaQuery('{ maxWidth }')
+// expect: useMediaQuery('(width < 48rem)')
+// expect: window.screen.width < 768
+// expect: screen.availWidth >= 1200
+// expect: size.width >= 1024
 export const a = window.matchMedia('(min-width: 768px)')
 export const b = useMediaQuery('(max-width: 640px)')
 export const c = matchMedia(`(min-width: ${bp}px)`)
@@ -30,4 +35,13 @@ export function Nav() {
   const size = useWindowSize()
   const { width: w = 0 } = useWindowSize()
   return [width < 768, size.width >= 1024, useWindowSize().width < 640, w < BREAKPOINT]
+}
+export const k = useMediaQuery({ maxWidth: 767 })
+export const l = useMediaQuery({ query: '(width < 48rem)' })
+export const m = window.screen.width < 768
+export const n = screen.availWidth >= 1200
+import { useWindowSize as useSize } from '@uidotdev/usehooks'
+export function TwoCol() {
+  const size = useSize()
+  return size.width !== null && size.width >= 1024
 }

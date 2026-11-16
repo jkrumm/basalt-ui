@@ -146,10 +146,12 @@ describe('renderOxlintPreset', () => {
     )
   })
 
-  it('no-raw-colors passes a shadow size and a pre-mixed token, which alpha-on-premixed owns', () => {
+  it('no-raw-colors passes a shadow size and a pre-mixed theme class, which alpha-on-premixed owns', () => {
     const rule = rulesOf(manifest({}))['shadcn/no-raw-colors'] as [string, { allow: string[] }]
-    expect(rule[1].allow).toEqual(expect.arrayContaining(['shadow-sm', '*-hover', '*-scrim']))
+    expect(rule[1].allow).toEqual(expect.arrayContaining(['shadow-sm', '*-accent', '*-scrim']))
     expect(rule[1].allow).not.toContain('shadow-*')
+    // `bg-hover` is a token name, no class: no-raw-colors reports it and names `bg-accent`.
+    expect(rule[1].allow).not.toContain('*-hover')
   })
 
   it('no-arbitrary-values names the fix by kind of value', () => {
