@@ -31,7 +31,9 @@ describe('sk-6 thin basalt-design skill', () => {
   })
 
   test('every export a doc link names resolves to a generated doc', () => {
-    const links = [...skill.matchAll(/\]\(docs\/([\w-]+\.md)\)/g)].map((m) => m[1] as string)
+    const links = [...skill.matchAll(/\]\(node_modules\/basalt-ui\/docs\/([\w-]+\.md)\)/g)].map(
+      (m) => m[1] as string,
+    )
     expect(links.length).toBeGreaterThan(0)
     for (const name of links) expect(existsSync(join(pkgRoot, 'docs', name))).toBe(true)
   })
