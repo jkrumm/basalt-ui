@@ -159,6 +159,39 @@ export type DataTableProps<T> = {
   | { height: Scrollport; virtual: VirtualLike }
 )
 
+/** The options of the detail door, shared by the two forms that open one (`detail`, or `detailById` alone). */
+type DetailDoor<T> = {
+  /** The title of a row's detail entry (the aside or sheet header); the table label when absent. */
+  detailTitle?: (row: T) => string
+  /**
+   * The title of a record opened by id (see `detailById`): a page that titles a record by its id
+   * passes the same function as `detailTitle` reads, so one record has one title however it opened.
+   * The table label when absent.
+   */
+  detailTitleById?: (id: string) => string
+  /**
+   * A string field of row ids that holds the open row: activating a row writes its id, closing
+   * the sheet calls `clear()` (on a `history: 'push'` field the close is an entry of its own, so Back
+   * after it returns to the open record; a name that matches no row is cleared as a replace), and a value that names a loaded row opens its detail on load, on
+   * a share link and on Back. Without it the open row lives in component state. A host
+   * that closes on its own (the page's aside, a caller's panel) clears it too, once a row has
+   * shown there, as long as it reports `isOpen`. Pass a stable handle across renders.
+   */
+  detailState?: ControlHandle<string>
+  /**
+   * The body of a record the page fetches by id: without `detail` it is every row's body (an
+   * activation opens `detailById(getRowId(row), box)`, so the body is written once), with `detail` it
+   * is the body of a record no loaded row has, for a `detailState` field that names an unloaded id (a
+   * share link after the record left the filters, a row on another page of a server table). Once the
+   * query settles the door opens with it, titled by `detailTitleById` (the table label when absent).
+   * Closing clears the field. Without it a field naming an unloaded id is cleared and a dev warning
+   * names the table and the id.
+   */
+  detailById?: (id: string, box: Box) => ReactNode
+  onRowActivate?: never
+  activeRowId?: never
+}
+
 export type UseDataTable<T> = {
   id: string
   label: string
@@ -209,30 +242,8 @@ export type UseDataTable<T> = {
   selection?: { bulk: BulkAction<T>[]; selectAll?: boolean }
   views?: { store?: ViewStore }
 } & (
-  | {
-      detail: (row: T, box: Box) => ReactNode
-      /** The title of a row's detail entry (the aside or sheet header); the table label when absent. */
-      detailTitle?: (row: T) => string
-      /**
-       * A string field of row ids that holds the open row: activating a row writes its id, closing
-       * the sheet calls `clear()` (on a `history: 'push'` field the close is an entry of its own, so Back
-       * after it returns to the open record; a name that matches no row is cleared as a replace), and a value that names a loaded row opens its detail on load, on
-       * a share link and on Back. Without it the open row lives in component state. A host
-       * that closes on its own (the page's aside, a caller's panel) clears it too, once a row has
-       * shown there, as long as it reports `isOpen`. Pass a stable handle across renders.
-       */
-      detailState?: ControlHandle<string>
-      /**
-       * The body of a record the table has not loaded, for a `detailState` field that names an id no
-       * loaded row has (a share link after the record left the filters, a row on another page of a
-       * server table): once the query settles the detail door opens with this body under the table
-       * label, and the page fetches the record by id. Closing clears the field. Without it a field
-       * naming an unloaded id is cleared and a dev warning names the table and the id.
-       */
-      detailById?: (id: string, box: Box) => ReactNode
-      onRowActivate?: never
-      activeRowId?: never
-    }
+  | (DetailDoor<T> & { detail: (row: T, box: Box) => ReactNode })
+  | (DetailDoor<T> & { detail?: never; detailById: NonNullable<DetailDoor<T>['detailById']> })
   | {
       onRowActivate?: (row: T) => void
       /**
@@ -242,6 +253,7 @@ export type UseDataTable<T> = {
       activeRowId?: string
       detail?: never
       detailTitle?: never
+      detailTitleById?: never
       detailState?: never
       detailById?: never
     }
