@@ -10,7 +10,7 @@ import { lineY } from '@tanstack/charts/line'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { VX } from '../tokens'
 import { chartCurve } from './curves'
-import { CV, DASH, DIMMED, LINE_STROKE_WIDTH } from './core/theme'
+import { CV, DASH, DIMMED, DIMMED_TEXT, LINE_STROKE_WIDTH } from './core/theme'
 import { rowX } from './types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from './types'
 
@@ -28,6 +28,23 @@ export function emphasis<T>(
   s: Pick<ChartSeries<T>, 'key' | 'parent'>,
 ): number {
   return highlighted === null || highlighted === s.key || highlighted === s.parent ? 1 : DIMMED
+}
+
+/** The share of the card's muted ink a dimmed mark takes in dark: the floor under a dark series colour. */
+const DARK_DIM_INK = 0.3
+
+const mixed = (color: string, opacity: number): string =>
+  opacity >= 1 ? color : `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`
+
+/**
+ * The paint of a mark while ANOTHER datum holds the focus, `strength` being what it draws at
+ * otherwise: `DIMMED` of it on the light card; on the dark one `DIMMED_TEXT` of it with the card's
+ * muted ink mixed in, so the darkest series colour keeps a floor against the card instead of
+ * vanishing into it. Bars and lines dim through this one function.
+ */
+export function dimmedPaint(color: string, strength = 1): string {
+  const dark = `color-mix(in srgb, ${mixed(color, strength * DIMMED_TEXT)}, ${CV.inkMuted} ${DARK_DIM_INK * 100}%)`
+  return `light-dark(${mixed(color, strength * DIMMED)}, ${dark})`
 }
 
 /** The rows a series' line and area are drawn through: all of them, or only the non-null ones. */
@@ -49,7 +66,8 @@ export function lineMark<T, X extends ChartX>(
     x: rowX,
     y: 'y',
     z: 'series',
-    stroke: s.color,
+    // A `focus` holding a datum dims every line to the level a bar's rest dims to.
+    stroke: plot.focused === null ? s.color : dimmedPaint(s.color),
     strokeWidth: s.strokeWidth ?? LINE_STROKE_WIDTH,
     strokeOpacity: (s.strokeOpacity ?? 1) * emphasis(plot.highlighted, s),
     curve: chartCurve(s.curve ?? 'linear'),

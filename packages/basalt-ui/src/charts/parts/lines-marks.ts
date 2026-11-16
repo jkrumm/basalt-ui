@@ -3,14 +3,51 @@
  * Ported from the 2.x `Lines` kind; `CartesianChart` composes them with the bar and dot marks.
  */
 import { areaY } from '@tanstack/charts/area'
+import { dot } from '@tanstack/charts/dot'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { areaGradientId } from '../core/compile'
+import { CV } from '../core/theme'
+import { VX } from '../../tokens'
 import { chartCurve } from '../core/curves'
 import { claimLabelBoxes, endLabelMarks, endLabelPlan } from '../labels'
 import type { LinesNaming } from '../labels'
 import { drawnRows, lineMark, loneDots, markersOf, yScaleOf } from '../marks'
 import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from '../types'
+
+const timeOf = (x: unknown): unknown => (x instanceof Date ? x.getTime() : x)
+
+/**
+ * A dot on every visible line at the x of the focused datum: the line's own "full strength" while
+ * its rest dims (`lineMark`). A focused datum no row of a line shares an x with marks nothing there.
+ */
+function focusDots<D>(plot: PlotContext<D, ChartX>, lines: readonly ChartSeries<D>[]): ChartMarks {
+  const focused = plot.focused
+  if (focused === null) return []
+  const at = plot.visible.flatMap((s) => plot.rows(s.key)).find((r) => r.datum === focused)?.x
+  if (at === undefined) return []
+  const out: ChartMarks[number][] = []
+  for (const s of lines) {
+    const row = plot.rows(s.key).find((r) => r.y !== null && timeOf(r.x) === timeOf(at))
+    if (row === undefined) continue
+    const yScale = yScaleOf(plot, s)
+    out.push(
+      decorative(
+        dot([row], {
+          id: `${s.key}-focus`,
+          x: rowX,
+          y: 'y',
+          r: VX.dotR,
+          fill: s.color,
+          stroke: CV.surface,
+          strokeWidth: 1.5,
+          ...(yScale !== undefined && { yScale }),
+        }),
+      ),
+    )
+  }
+  return out
+}
 
 const hasValue = <T, X extends ChartX>(r: PlotRow<T, X>): boolean => r.y !== null
 
@@ -56,6 +93,7 @@ export function lineMarks<D>(plot: PlotContext<D, ChartX>, input: LineMarksInput
     out.push(...loneDots(s, drawnRows(plot, s), yScale, plot.highlighted))
     out.push(...markersOf(s, plot.rows(s.key), yScale))
   }
+  out.push(...focusDots(plot, plotted))
   const labelled = plotted.filter((s) => s.role !== 'reference')
   const plan = endLabelPlan(plot, labelled, naming, rules)
   claimLabelBoxes(
