@@ -56,6 +56,36 @@ describe('pre-edit denies what doctor rejects', () => {
     expect(err).toContain('src/features/f.tsx')
   })
 
+  it('allows an ignorePatterns entry over a generated file doctor accepts, and denies a hand-written folder', () => {
+    const project = app({
+      'src/generated/api.gen.ts': 'export {}\n',
+      'src/generated/handwritten.ts': 'export {}\n',
+      '.oxlintrc.json': '{}',
+    })
+    expect(
+      preEdit(project, '.oxlintrc.json', '{ "ignorePatterns": ["src/generated/api.gen.ts"] }').code,
+    ).toBe(0)
+    const denied = preEdit(project, '.oxlintrc.json', '{ "ignorePatterns": ["src/generated/**"] }')
+    expect(denied.code).toBe(2)
+    expect(denied.err).toContain('src/generated/handwritten.ts')
+    expect(denied.err).toContain('*.gen.*')
+  })
+
+  it('denies a nested .oxlintrc.json without the basalt extends, and allows one that extends it', () => {
+    const project = app({ 'src/features/f.tsx': 'export {}\n', '.oxlintrc.json': '{}' })
+    const bare = preEdit(project, 'src/features/.oxlintrc.json', '{}')
+    expect(bare.code).toBe(2)
+    expect(bare.err).toContain('.oxlintrc.basalt.json')
+    expect(
+      preEdit(
+        project,
+        'src/features/.oxlintrc.json',
+        '{ "extends": ["../../.oxlintrc.basalt.json"] }',
+      ).code,
+    ).toBe(0)
+    expect(preEdit(project, 'tools/.oxlintrc.json', '{}').code).toBe(0)
+  })
+
   it('allows an ignorePatterns entry outside the roots, and one already there', () => {
     const project = app({ '.oxlintrc.json': '{ "ignorePatterns": ["src/features/**"] }' })
     expect(preEdit(project, '.oxlintrc.json', '{ "ignorePatterns": ["dist/**"] }').code).toBe(0)
