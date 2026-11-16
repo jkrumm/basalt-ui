@@ -197,7 +197,7 @@ if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildP
 JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint.json'), 'utf8'))
 JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint-basalt.json'), 'utf8'))
 
-// the push channel ships with the data layer (`createChannel` also stays on the root until the teardown)
+// the push channel ships with the data layer only (the root barrel no longer exports `createChannel`)
 const dataMod = await import('basalt-ui/data')
 if (typeof dataMod.createChannel !== 'function') throw new Error('data.createChannel missing')
 console.log('smoke: basalt-ui/data createChannel OK')

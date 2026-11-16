@@ -18,7 +18,7 @@ tabs when the field is `history: 'push'`. One mount per form, swapped in CSS at 
 ```ts
 ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode
   state: ControlHandle<T>
-  options?: readonly ViewTabsOption<T>[]  // Defaults to `handle.options` (every declared value, labelled by `.labels()`)
+  options?: readonly ViewTabsOption<T>[]  // Defaults to `state.options` (every declared value, labelled by `.labels()`)
   label?: string  // The switch's accessible name; both forms carry it; default 'View'
   disabled?: boolean
   className?: string  // Layout only (`w-full`, `ml-auto`)

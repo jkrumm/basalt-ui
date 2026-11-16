@@ -31,7 +31,7 @@ export type ViewTabsOption<T extends string = string> = {
 }
 
 type HandleProps<T extends string> = ContractProps<T> & {
-  /** Defaults to `handle.options` (every declared value, labelled by `.labels()`). */
+  /** Defaults to `state.options` (every declared value, labelled by `.labels()`). */
   options?: readonly ViewTabsOption<T>[]
   /**
    * The switch's accessible name; both forms carry it. Pass a translated string when the app is not
