@@ -14,3 +14,21 @@ const a = <div dangerouslySetInnerHTML={{ __html: '<b>fixed</b>' }} />
 
 // @valid
 const a = <div className="x" />
+
+// @invalid
+el.innerHTML = m.html
+
+// @invalid
+el.outerHTML = `<b>${name}</b>`
+
+// @invalid
+el.insertAdjacentHTML('beforeend', m.html)
+
+// @valid
+el.innerHTML = ''
+
+// @valid
+el.insertAdjacentHTML('beforeend', '<hr>')
+
+// @valid
+el.textContent = m.html

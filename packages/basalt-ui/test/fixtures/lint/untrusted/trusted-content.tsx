@@ -55,3 +55,13 @@ const A = ({ note }) => <Markdown contentTrust="trusted">{note}</Markdown>
 
 // @valid
 const A = ({ reply }) => <Markdown contentTrust="untrusted">{reply}</Markdown>
+
+// @invalid
+// @filename src/chat/reply.tsx
+const trusted = { contentTrust: 'trusted' }
+const A = ({ m }) => <Markdown {...trusted}>{m.text}</Markdown>
+
+// @valid
+// @filename src/chat/reply.tsx
+const safe = { contentTrust: 'untrusted' }
+const A = ({ m }) => <Markdown {...safe}>{m.text}</Markdown>
