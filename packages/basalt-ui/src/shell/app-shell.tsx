@@ -50,6 +50,11 @@ function sectionLabelOf(nav: AnyNavConfig, id: string | undefined): string | und
 const NO_BLOCKS: NonNullable<AppShellProps['blocks']> = []
 const NO_ACTIONS: NonNullable<AppShellProps['globalActions']> = []
 
+/** A record aside with no record open: its header button would open nothing. */
+function emptyRecord(claim: AsideClaim): boolean {
+  return claim.sheet?.record === true && claim.sheet.open !== true
+}
+
 /**
  * On a compact screen the claimed aside is a sheet, opened from the header. A bound aside hands the
  * page's open state and setter in its claim, so the sheet follows that state; an aside without
@@ -212,7 +217,9 @@ export function AppShell<Id extends string = string>({
             actions={actions}
             globalActions={globalActions}
             asideTrigger={
-              claim !== undefined && sizeClass === 'compact' ? <AsideSheet claim={claim} /> : null
+              claim !== undefined && sizeClass === 'compact' && !emptyRecord(claim) ? (
+                <AsideSheet claim={claim} />
+              ) : null
             }
             sizeClass={sizeClass}
             chrome={chrome}

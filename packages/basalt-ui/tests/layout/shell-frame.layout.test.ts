@@ -280,6 +280,34 @@ layout('AppShell frame — real layout', () => {
     expect(await stateOf(p), 'the header button writes true').toBe('true')
   })
 
+  test('a record aside on a phone has no header button while no record is open, and the sheet while one is', async () => {
+    const SHEET = '[data-slot="sheet-content"]'
+    const buttons = (p: LayoutPage): Promise<number> =>
+      p.raw.evaluate(
+        (sel) =>
+          [...document.querySelectorAll(`${sel} button`)].filter(
+            (b) => b.textContent === 'Run details',
+          ).length,
+        HEADER,
+      )
+    const none = await openFixture(specOf({ aside: { record: '' } }), PHONE)
+    expect(await buttons(none), 'no record, no header button').toBe(0)
+    expect(await none.count(SHEET)).toBe(0)
+    const open = await openFixture(specOf({ aside: { record: 'login-crash' } }), PHONE)
+    await open.waitFor(SHEET)
+    expect(await buttons(open), 'an open record keeps its header button').toBe(1)
+    await open.raw.keyboard.press('Escape')
+    await open.quiesce()
+    expect(
+      await open.raw.evaluate(() => document.documentElement.dataset['asideRecord']),
+      'closing the sheet clears the record',
+    ).toBe('')
+    expect(await buttons(open), 'the cleared record drops the button').toBe(0)
+    // A boolean-bound aside keeps its button while closed.
+    const flag = await openFixture(specOf({ aside: { state: false } }), PHONE)
+    expect(await buttons(flag)).toBe(1)
+  })
+
   test('the skip link is the first tab stop and moves focus into Main', async () => {
     const p = await openFixture(specOf(), DESKTOP_1440)
     await p.raw.keyboard.press('Tab')

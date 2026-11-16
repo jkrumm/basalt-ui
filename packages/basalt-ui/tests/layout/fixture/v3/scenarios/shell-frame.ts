@@ -23,6 +23,8 @@ export type ShellFrameSpec = FixtureSpec & {
           width?: number
           /** Binds the aside to an open state starting here; `document.documentElement.dataset.asideState` mirrors it. */
           state?: boolean
+          /** Binds the aside to a string field holding the open record's id, starting here (`''` is none). */
+          record?: string
         }
     /** Mounts a `PageBar` with a title, a control and an action (default true). */
     bar?: boolean
