@@ -170,7 +170,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     align: 'start',
     numerals: 'tabular',
     wrap: false,
-    width: { ch: 10, flex: false },
+    // The longest English phrase, `30 minutes ago`, is 14 characters; a fixed column cuts it at less.
+    width: { ch: 14, flex: false },
     sort: 'datetime',
     card: ['meta'],
     priority: 3,

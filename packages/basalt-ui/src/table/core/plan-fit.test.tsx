@@ -16,6 +16,12 @@ describe('kind widths', () => {
     expect(KIND_DEFAULTS.spark.width).toEqual({ ch: 22, flex: false })
     expect(KIND_DEFAULTS.delta.width).toEqual({ ch: 14, flex: false })
   })
+
+  test('relativeTime holds its longest English phrase, `30 minutes ago`', () => {
+    const width = KIND_DEFAULTS.relativeTime.width
+    expect(width).toEqual({ ch: 14, flex: false })
+    expect('30 minutes ago'.length).toBeLessThanOrEqual(14)
+  })
 })
 
 describe("entity width: 'content'", () => {
