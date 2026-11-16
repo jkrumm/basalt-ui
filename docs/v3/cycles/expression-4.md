@@ -44,6 +44,10 @@ The kit cost 37 points, and one defect accounts for 11 of them. A fill chart ins
 - **The page band.** Every trial page has a title-only `PageBar`, and every one starts its content 61 px below the header. That is `page-main`'s inset (`packages/basalt-ui/src/page/page.tsx:143`, `72af0bbf`), kept so content starts at one height on every page. Reviewers marked it as dead space, so round-1 and round-2 builders were told to leave it. `v3-dogfood-2-visual` (2) owns it.
 - **Fence.** No slip was reported or seen. Builders read their own reviewer's report from `.evidence/` in the repair rounds, which the repair message allowed.
 
+### After the rounds
+
+`make check-fast` ran on the final tree, with every builder done, and passed (rc 0). That covers the static gate, the unit suite in a host slot, the coverage and doc-drift gates and the pack-test. The layout step picked no file, because none of the 26 changed files reaches a layout test, so CI runs the full suite. Two builders' last edits were a token swap and a plural that they gated but did not re-shoot (n09, n13). The shots of their last round are from just before those edits.
+
 ## Numbers
 
 | Number                         | c14                                | c15                            | n04          | n09          | n13          | n16          | Summary                       |
@@ -276,7 +280,7 @@ Notes on the classes:
   - c14 fitted its card to its rows;
   - n13 put its table beside the chart.
 
-- **`primitive`.** One defect, the fill chart, costs 11 points in four builds and caused about 20 glue lines in n04. The 390 figure that ellipsizes costs 6. Loading heights in `StatCard` and `DataTable` cost 4. The arrow order, the group announcement, the `rect` mark beside bars, the money delta, the hidden column, the seam ring, the dark dim, the gap tooltip and the StatCell sub are one-case defects in shipped behaviour. All of these fix inside components (`v3-expr-4-kit-fixes`). Two gaps add a field to `charts/contract.ts`, so they sit behind a Spec (`v3-expr-4-contract`):
+- **`primitive`.** One defect, the fill chart, costs 11 points in three builds (c15, n04, n16), made n13 pin its chart to 160 px, and caused about 20 glue lines in n04. The 390 figure that ellipsizes costs 6. Loading heights in `StatCard` and `DataTable` cost 4. The arrow order, the group announcement, the `rect` mark beside bars, the money delta, the hidden column, the seam ring, the dark dim, the gap tooltip and the StatCell sub are one-case defects in shipped behaviour. All of these fix inside components (`v3-expr-4-kit-fixes`). Two gaps add a field to `charts/contract.ts`, so they sit behind a Spec (`v3-expr-4-contract`):
   - a custom mark gets no pixel position for `chartLabels` (c15, P2 .15; n04, n16 in their repair rounds);
   - a zone takes no x range (c15, n04).
 - **`rubric`.** The keyboard frame pressed ArrowRight on n09's table row, which moves with ArrowDown and is read from the focused row, not from an `aria-live` region. And no frame shows a list row driving the chart, so X3's second direction is never evidenced (n04, n13). `v3-expr-4-rubric` says how both are read and adds a list frame.
