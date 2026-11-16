@@ -15,6 +15,15 @@ const CENSUS = join(REAL_ROOT, 'docs/v3/census/tokens-fleet.md')
 const tokens = loadAreas(REAL_ROOT).find((a) => a.area === 'tokens')
 if (tokens === undefined) throw new Error('no tokens area file')
 const rowFrom = new Map(tokens.rows.map((r) => [r.from, r]))
+const rowId = new Map(tokens.rows.map((r) => [r.id, r]))
+
+/**
+ * The census counts 2.x reads, so its names carry the 2.x prefix and accessor; both are read from the
+ * rename rows rather than spelled here.
+ */
+const OLD_PREFIX = rowId.get('tok-prefix-basalt')?.from.slice(0, -1) ?? ''
+const OLD_ACCESSOR = rowId.get('tok-js-accessor')?.from.split('#')[1] ?? ''
+const CENSUS_NAME = new RegExp(`^\`((?:${OLD_PREFIX}|${OLD_ACCESSOR}\\.)[^\`]*)\`$`)
 
 /** The census table: `| \`name\` | reads | repos | disposition | target |`. */
 function censusRows(): { name: string; disposition: string }[] {
@@ -22,7 +31,7 @@ function censusRows(): { name: string; disposition: string }[] {
     .split('\n')
     .flatMap((line) => {
       const cells = line.split(/(?<!\\)\|/).map((c) => c.trim())
-      const name = /^`((?:--basalt-|BASALT\.)[^`]*)`$/.exec(cells[1] ?? '')?.[1]
+      const name = CENSUS_NAME.exec(cells[1] ?? '')?.[1]
       return name === undefined ? [] : [{ name, disposition: cells[4] ?? '' }]
     })
 }
@@ -83,13 +92,10 @@ describe('tokens.valueShifts', () => {
 })
 
 describe('legacy keys', () => {
-  test('the scheme storage key and attribute have rows', () => {
-    expect(tokens.storage).toContainEqual({
-      key: 'mantine-color-scheme-value',
-      action: 'read-legacy',
-      to: 'basalt:scheme',
-    })
-    expect(tokens.attrs).toContainEqual({ from: '[data-mantine-color-scheme]', to: '[data-theme]' })
+  test('the scheme storage key and attribute have rows; the 2.x key is no longer read', () => {
+    const scheme = tokens.storage.find((s) => s.to === 'basalt:scheme')
+    expect(scheme?.action).toStartWith('no longer read')
+    expect(tokens.attrs.some((a) => a.to === '[data-theme]')).toBe(true)
   })
 
   test('the five tokens:css flags map to --selector', () => {

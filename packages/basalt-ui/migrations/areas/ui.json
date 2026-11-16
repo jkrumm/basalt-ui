@@ -713,7 +713,7 @@
       "id": "mantine-createTheme",
       "kind": "map",
       "from": "@mantine/core#createTheme",
-      "to": "basalt-ui tokens (`--vx-*`); there is no theme object",
+      "to": "basalt-ui tokens (`--basalt-*`); there is no theme object",
       "note": "dies with the Mantine theme layer"
     },
     {
@@ -721,7 +721,7 @@
       "id": "mantine-mergeThemeOverrides",
       "kind": "map",
       "from": "@mantine/core#mergeThemeOverrides",
-      "to": "basalt-ui tokens (`--vx-*`); there is no theme object",
+      "to": "basalt-ui tokens (`--basalt-*`); there is no theme object",
       "note": "dies with the Mantine theme layer"
     },
     {
@@ -753,7 +753,7 @@
       "id": "mantine-useMantineTheme",
       "kind": "map",
       "from": "@mantine/core#useMantineTheme",
-      "to": "the `VX` token map from basalt-ui",
+      "to": "the `BASALT` token map from basalt-ui",
       "note": "dies with the Mantine theme layer"
     },
     {
@@ -948,22 +948,22 @@
     "renamed": [],
     "valueShifts": [
       {
-        "token": "--vx-ctl-h",
+        "token": "--basalt-ctl-h",
         "from": "2.625rem",
         "to": "1.75rem"
       },
       {
-        "token": "--vx-radius-card",
+        "token": "--basalt-radius-card",
         "from": "10px",
         "to": "14px"
       },
       {
-        "token": "--vx-radius-inset",
+        "token": "--basalt-radius-inset",
         "from": "11px",
         "to": "10px"
       },
       {
-        "token": "--vx-radius-ctrl",
+        "token": "--basalt-radius-ctrl",
         "from": "6px",
         "to": "8px"
       }

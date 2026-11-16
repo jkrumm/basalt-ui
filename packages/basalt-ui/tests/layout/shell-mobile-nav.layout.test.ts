@@ -2,9 +2,8 @@
  * Layout invariants for the mobile bottom bar — the ones happy-dom is structurally incapable of
  * observing.
  *
- * THE DEFECT THAT BOUGHT THIS FILE: `<Drawer size="auto">` is a no-op on a bottom Drawer in Mantine
- * 9.3 — `getSize('auto')` emits `var(--drawer-size-auto)`, a custom property `@mantine/core`
- * defines nowhere, so the height fell through to `100%` and the sheet covered the whole viewport.
+ * THE DEFECT THAT BOUGHT THIS FILE: an auto-sized bottom drawer fell through to `100%` height — the
+ * size variable it emitted was defined nowhere — and the sheet covered the whole viewport.
  * It survived a design pass, an adversarial multi-agent review and 1889 green tests, because not
  * one of those tests can see a pixel.
  *
@@ -235,7 +234,7 @@ describeShell(
      * INVARIANT 3 — tapping a `link` slot mounts NO overlay. The core promise of the redesign: a
      * destination navigates; it does not raise chrome.
      *
-     * A census DIFF, not an absolute count — Mantine mounts portal hosts for its own reasons, so an
+     * A census DIFF, not an absolute count — the shell mounts portal hosts for its own reasons, so an
      * absolute assertion is either brittle or vacuously true. And the navigation is asserted too: a
      * tap that raised nothing because it did nothing is not the invariant. Measured: census
      * unchanged, `basaltNavigations` === ['/reports'].
@@ -328,8 +327,8 @@ describeShell(
     }
 
     /**
-     * INVARIANT 5 — no content is trapped under the bar. Mantine sets `--app-shell-footer-offset` to
-     * the RAW footer height, so `AppShell.Main`'s padding-bottom is short by exactly one safe-area
+     * INVARIANT 5 — no content is trapped under the bar. The shell sets `--app-shell-footer-offset` to
+     * the RAW footer height, so the main region's padding-bottom is short by exactly one safe-area
      * inset; `.main`'s own `margin-bottom` calc (`app-main.module.css`) adds it back. Measured: main
      * padding-bottom 69px, content-end bottom 775.25, bar top 788 — clears by 12.75px.
      */
@@ -352,12 +351,12 @@ describeShell(
      * `mobileNavBarHeight` with `Math.max(49, …)` and `mobileNavRowHeight` with `Math.max(44, …)`
      * (tokens/palette.ts — the WCAG 2.5.5 Target Size (Enhanced, AAA) figure; a 40px interlude was
      * the wrong citation and is reverted). This is the end-to-end proof that the floor survives
-     * derive → CSS var → Mantine inline styles → cascade — the row now clears it purely via
+     * derive → CSS var → inline styles → cascade — the row now clears it purely via
      * `min-height`, since the sidebar's own padding + line-height no longer produce a taller row on
      * their own the way the old bespoke touch padding did.
      *
-     * The region seam (docs/DESIGN-SPEC.md §5) is drawn by Mantine's `[data-with-border]` rule
-     * directly on the `AppShell.Footer` box that `mobileNavBarHeight` sizes, not by `.bar` itself —
+     * The region seam (docs/DESIGN-SPEC.md §5) is drawn by the shell's border rule
+     * directly on the footer box that `mobileNavBarHeight` sizes, not by `.bar` itself —
      * under the global `box-sizing: border-box` the 1px `border-top` is carved out of THAT box, so
      * `.bar` (height: 100% of the footer's content box) renders 1px short of the raw floor. The
      * `Math.max(49, …)` buys the pixel the seam claims back; a slot no longer loses a further pixel
@@ -381,7 +380,7 @@ describeShell(
           'the bar keeps its 48px floor at every density level',
         )
         // The BAR (`nav[aria-label="Primary"]`) sits INSIDE the `AppShell.Footer` box that
-        // `mobileNavBarHeight` actually sizes — Mantine draws the region-seam `border-top` on the
+        // `mobileNavBarHeight` actually sizes — the shell draws the region-seam `border-top` on the
         // footer, not on `.bar`, so `.bar` (height: 100% of the footer's content box) renders 1px
         // short of the raw floor under `box-sizing: border-box`. A bare `>= 48` on the bar alone
         // cannot tell the fixed `Math.max(49, …)` floor apart from the old `Math.max(48, …)` bug —

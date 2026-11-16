@@ -1,6 +1,6 @@
 /**
  * palette.ts — Basalt single source of truth for ALL framework color
- * (charts via BASALT tokens + chrome via the Mantine theme).
+ * (charts via BASALT tokens + chrome via the component layer).
  *
  * Identity: modern zinc (2026-07 redesign, see `docs/DESIGN-SPEC.md`). Cool-neutral zinc surfaces
  * (Tailwind zinc family) — a low-contrast panel lift on a slightly darker page, depth via a
@@ -18,8 +18,8 @@
  *  - Series colors are per-theme PAIRS: a lighter shade on dark (no glow/bleed on dark
  *    backgrounds), a deeper shade on light (enough contrast). Hue identity stays constant.
  *
- * This module is pure data — no React, no Mantine, no browser APIs. It is consumed by
- * the token layer (emits the CSS custom properties) and by the Mantine theme.
+ * This module is pure data — no React, no browser APIs. It is consumed by
+ * the token layer (emits the CSS custom properties) and by the component layer.
  *
  * GENERATED vs hand-authored: the accent family, the 12 categorical fills, the surface stops
  * (bg/panel/panelHover/elevated/subtle/field/border/hairline), the ink ramp, and the status
@@ -39,8 +39,8 @@ import type { ColorPair } from './core'
  * `darkGray` / `gray` / `lightGray` are the zinc identity (Tailwind zinc scale, blue channel a
  * whisper above red — cool, not warm) shared by the dark surface ramp, the mid-grey chart-line
  * ramp, and the light surfaces. `blue` is the single saturated sky accent family (built around the
- * `#0077bd` / `#8ec5ff` accent pair — see the `ramp10` pin in `theme/index.ts` for how the Mantine
- * tuple resolves the exact hexes at the fill and ink indices).
+ * `#0077bd` / `#8ec5ff` accent pair; the
+ * ramp resolves the exact hexes at the fill and ink indices).
  *
  * These families are the RAW hues. What a filled control actually paints is `FILL` / `ACCENT`
  * below — the same hues placed in one shared luminance band, which is a hard constraint, not a
@@ -139,7 +139,7 @@ export const SHADOW = {
   // Floating-layer elevation (menus, popovers, tooltips, modals, drawers) — a REAL drop shadow, a
   // step above `card`, so detached surfaces read as lifted off the page (`docs/DESIGN-SPEC.md` §5).
   // Unlike `card`, no embedded ring: floating surfaces carry a real 1px `--basalt-surface-border` so
-  // Mantine's rotated-square arrow inherits a proper edge.
+  // the rotated-square arrow inherits a proper edge.
   overlay: {
     light: '0 8px 24px rgba(28, 25, 23, 0.1)',
     dark: '0 8px 24px rgba(0, 0, 0, 0.5)',
@@ -148,7 +148,7 @@ export const SHADOW = {
 
 /**
  * The resolved shape {@link deriveRadius} returns — the two anchors plus every offset that tracks
- * one of them. The independent Mantine-scale stops (`scaleXs`/`scaleLg`/`scaleXl`) are NOT part of
+ * one of them. The independent scale stops (`scaleXs`/`scaleLg`/`scaleXl`) are NOT part of
  * this shape — they never move with the knob (see `RADIUS_STEP` below).
  */
 export type RadiusValues = {
@@ -179,7 +179,7 @@ export const RADIUS_LEVEL_RANGE = { min: -5, max: 5 } as const
  * The law: `card = 10 + level`, `ctrl = 6 + level`, both clamped to `≥ 0`; every offset then follows
  * its anchor — `floating = card + 1`, `tight = ctrl - 1`, `fine = ctrl - 2` — each ALSO clamped to
  * `≥ 0` (so an aggressive negative level flattens the smaller tiers to square before the larger
- * ones). The three independent Mantine-scale stops (`RADIUS_STEP.scaleXs/scaleLg/scaleXl`) are not
+ * ones). The three independent scale stops (`RADIUS_STEP.scaleXs/scaleLg/scaleXl`) are not
  * part of this law — they stay fixed regardless of `level`.
  *
  * Throws on a non-integer or out-of-range (`[-5, 5]`) level — same throw-and-propagate discipline
@@ -211,26 +211,25 @@ export function deriveRadius(level: number): RadiusValues {
 const DEFAULT_RADIUS_VALUES = deriveRadius(0)
 
 /**
- * Corner-radius anchors (`docs/DESIGN-SPEC.md` §4) — the two independent tiers the Mantine theme
- * (`theme/index.ts`) resolves every component radius to. `card` mirrors the `--basalt-radius-card` CSS
+ * Corner-radius anchors (`docs/DESIGN-SPEC.md` §4) — the two independent tiers every component radius
+ * resolves to. `card` mirrors the `--basalt-radius-card` CSS
  * var, `ctrl` mirrors `--basalt-radius-ctrl` (`tokens/index.ts`'s `frameworkDerived` emits both from
- * these SAME numbers), so the var and every JS `defaultProps.radius` in the theme read one source
+ * these SAME numbers), so the var and every JS radius read one source
  * instead of two that can drift apart. `deriveRadius(0)`'s output — structural, independent of the
  * derive config. Values are UNCHANGED from the shipped identity (locked by `theme/radius.test.ts`).
  */
 export const RADIUS = {
-  /** Card / Paper / `ChartCard` (Mantine-free chart chrome shares this token too). */
+  /** Card / Paper / `ChartCard` (chart chrome shares this token too). */
   card: DEFAULT_RADIUS_VALUES.card,
-  /** Inputs, buttons, segmented-control track — also `defaultRadius: 'md'` in the Mantine `radius`
-   * size-scale below. */
+  /** Inputs, buttons, segmented-control track. */
   ctrl: DEFAULT_RADIUS_VALUES.ctrl,
 } as const
 
 /**
- * Every OTHER radius number the Mantine theme resolves to a literal, named instead of bare. Each
+ * Every OTHER radius number a component resolves to a literal, named instead of bare. Each
  * key is either an explicit offset from a `RADIUS` anchor (named for what tier it belongs to — see
  * `deriveRadius` for the law that carries a retune along) or, where no such relation exists, its own
- * independent constant (the Mantine `radius` scale predates the card/ctrl split). `deriveRadius(0)`'s
+ * independent constant (the radius scale predates the card/ctrl split). `deriveRadius(0)`'s
  * output for the anchor-derived keys — UNCHANGED from the shipped identity (locked by
  * `theme/radius.test.ts`).
  */
@@ -240,15 +239,15 @@ export const RADIUS_STEP = {
   floating: DEFAULT_RADIUS_VALUES.floating, // 11
   /** SegmentedControl's active indicator, Kbd, Code — one step below the control radius. */
   tight: DEFAULT_RADIUS_VALUES.tight, // 5
-  /** Progress bar, and the Mantine scale's `sm` step — two steps below the control radius. (No
+  /** Progress bar, and the scale's `sm` step — two steps below the control radius. (No
    * longer the SegmentedControl indicator: that is the track radius − 3 px snapped down onto the
    * scale, set in `theme/index.ts`.) */
   fine: DEFAULT_RADIUS_VALUES.fine, // 4
-  /** The Mantine `radius` scale's `xs` step — independent of both anchors. */
+  /** The `radius` scale's `xs` step — independent of both anchors. */
   scaleXs: 2,
-  /** The Mantine `radius` scale's `lg` step — independent of both anchors. */
+  /** The `radius` scale's `lg` step — independent of both anchors. */
   scaleLg: 16,
-  /** The Mantine `radius` scale's `xl` step — independent of both anchors. */
+  /** The `radius` scale's `xl` step — independent of both anchors. */
   scaleXl: 32,
   /** Fully-rounded pill affordance (scroll-to-bottom button, chips). Fixed — a pill reads round at
    * any radius level, so it does not track the knob (like the scale stops above). */
@@ -256,7 +255,7 @@ export const RADIUS_STEP = {
 } as const
 
 /**
- * The shared level-0 control-height number — Mantine's own `--input-height-md`/`--button-height-md`
+ * The shared level-0 control-height number — the `--input-height-md`/`--button-height-md` default
  * both resolve to `2.625rem` (42px at the 16px root), and `--ai-size-input-md` matches too. `SPACE_
  * ANCHORS_BASE.controlHeight`/`.inputHeight` below both read THIS one constant (not two independent
  * literals) so a control paired with a `size="md"` Input can never drift from it, no matter how
@@ -270,8 +269,8 @@ const CONTROL_HEIGHT_BASE = 42
  * sweep: `rowInsetX`/`rowInsetY` are the `6px 10px` row inset that appears verbatim in 4 places
  * (NavLink root, Menu item), `stackXs`..`stackXl` are the 4px vertical rhythm (rebuilt from ONE
  * scaled unit at non-zero levels — see {@link deriveSpacing}'s doc for why), and `inputHeight`/
- * `controlHeight` are a `size: 'md'` Mantine Input's/Button's/ActionIcon's resolved height
- * (Mantine's own default: `2.625rem` = 42px at the 16px root) — re-pointed onto `--basalt-space-input-
+ * `controlHeight` are a `size: 'md'` Input's/Button's/ActionIcon's resolved height
+ * (the default: `2.625rem` = 42px at the 16px root) — re-pointed onto `--basalt-space-input-
  * height`/`--basalt-space-control-height` by `theme/index.ts`'s `Input.extend`/`Button.extend`/
  * `ActionIcon.extend` `vars` (see `Input.extend`'s doc comment for why `--input-height`/`--button-
  * height`/`--ai-size`, not `size`, is the override point). `tokens/index.ts`'s `frameworkDerived`
@@ -298,12 +297,12 @@ const SPACE_ANCHORS_BASE = {
   stackLg: 16,
   /** The 4px vertical rhythm's widest step — always `6 * stackXs`. */
   stackXl: 24,
-  /** A `size: 'md'` Mantine Input's resolved height (see the group doc above). */
+  /** A `size: 'md'` Input's resolved height (see the group doc above). */
   inputHeight: CONTROL_HEIGHT_BASE,
-  /** A `size: 'md'` Mantine Button's/ActionIcon's resolved height — the SAME number as `inputHeight`
+  /** A `size: 'md'` Button's/ActionIcon's resolved height — the SAME number as `inputHeight`
    * (both read {@link CONTROL_HEIGHT_BASE}), so a Button/ActionIcon placed beside a `size="md"`
    * Input tracks it at every density level instead of only coinciding at level 0 (the defect this
-   * anchor fixes — Mantine's own `--button-height-md`/`--ai-size` are static, density-blind). */
+   * anchor fixes — a static button height is density-blind). */
   controlHeight: CONTROL_HEIGHT_BASE,
   /** The `size="icon"` count-tag height (`docs/CONTROLS-SPEC.md` §5) — inline chip / table-cell
    * count badge. Floored at 18px in {@link deriveSpacing} (same "negative level can't collapse a
@@ -313,7 +312,7 @@ const SPACE_ANCHORS_BASE = {
   /** The `size="icon"` ActionIcon height (`docs/CONTROLS-SPEC.md` §5) — `WidgetHeader
    * tier="widget"` actions. Floored at 22px in {@link deriveSpacing}. */
   controlHeightWidget: 24,
-  /** The `size="ctl"` Mantine tier's resolved height (`docs/CONTROLS-SPEC.md` §5, C5) —
+  /** The `size="ctl"` tier's resolved height (`docs/CONTROLS-SPEC.md` §5, C5) —
    * `PageBar`/`Section`/table toolbar/sidebar-block controls. Floored at 28px in
    * {@link deriveSpacing}.
    *
@@ -333,7 +332,7 @@ const SPACE_ANCHORS_BASE = {
 } as const
 
 /**
- * The Mantine `spacing` size-scale (`xs`/`sm`/`md`/`lg`/`xl`) — the app-wide generic rhythm every
+ * The `spacing` size-scale (`xs`/`sm`/`md`/`lg`/`xl`) — the app-wide generic rhythm every
  * `p=`/`m=`/`gap=` prop in every consumer resolves through. Density-tracking, like
  * `SPACE_ANCHORS_BASE` above, but deliberately a SEPARATE group — and, since the
  * component-roominess retune, no longer even numerically coincident with one. (`xs`/`sm`/`md`/`xl`
@@ -368,7 +367,7 @@ const SPACE_SCALE_BASE = SPACE_SCALE_LEVEL0
  * Extended again by the density pass (this commit) with the STRUCTURAL chart constants
  * `tokens/index.ts`'s `BASALT` object used to hardcode directly (`legendGap`/`margin`/`dotR` — see the
  * "charts" group below) plus `progressBarSize` (the Progress bar's numeric `defaultProps.size`,
- * previously an untokenized literal `6`) — both are numeric Mantine `defaultProps`/SVG-prop sites
+ * previously an untokenized literal `6`) — both are numeric component-prop and SVG-prop sites
  * with the SAME "dev slider can't reach it" limitation as `timelineBullet` (see `deriveSpacing`'s
  * doc and the `theme-lab` "known constraint" note).
  */
@@ -588,7 +587,7 @@ const SPACE_STEP_BASE = {
   /** Child NavLink row's extra left indent (past the rail guide). */
   sidebarChildRowIndent: 12,
 
-  // ── shell/app-sidebar.tsx & app-sidebar-account.tsx (Mantine `<Menu width={…}>` props) ────────
+  // ── shell/app-sidebar.tsx & app-sidebar-account.tsx (menu `width` props) ────────
   // Both are FIXED dropdown widths (a JSX number prop, not CSS — same "JS-consumed, no --basalt-* var"
   // shape as `appShellNavbarWidth` etc.) holding `Menu.Item` rows padded by `rowInsetX`/`rowInsetY`
   // (`theme/index.ts`'s `Menu.extend`). Unlike `.subnavDropdown`'s `min-width: 180px`
@@ -688,7 +687,7 @@ const SPACE_STEP_BASE = {
   // ── shell/app-mobile-nav.module.css ───────────────────────────────────────────────────────────
   /** Tab's icon-to-label gap. */
   mobileNavTabGap: 3,
-  /** Bar height, EXCLUDING the safe-area inset — Mantine's own `AppShell.footer` rule adds
+  /** Bar height, EXCLUDING the safe-area inset — the shell footer rule adds
    *  `env(safe-area-inset-bottom)` to it. JS-consumed (AppShell `footer.height`), no `--basalt-*` var,
    *  same shape as `appShellHeaderHeight`. Floored at 48px in `deriveSpacing`. */
   mobileNavBarHeight: 56,
@@ -727,7 +726,7 @@ const SPACE_STEP_BASE = {
   chartDotR: 5,
 
   // ── theme/index.ts's Progress `defaultProps.size` (previously an untokenized literal `6`) ──────
-  /** Progress bar thickness (`components.Progress.defaultProps.size`) — a numeric Mantine size prop,
+  /** Progress bar thickness (`components.Progress.defaultProps.size`) — a numeric size prop,
    * same "dev slider can't reach it, production `{ density }` rebuilds it" limitation as
    * `timelineBullet` above (see `deriveSpacing`'s doc). */
   progressBarSize: 6,
@@ -770,8 +769,8 @@ const SPACE_STEP_BASE = {
   // it never moved, so a 390px phone still read "content spacing too big" after the gutter fix.
   //
   // Each value is deliberately the rung of an existing ladder rather than a fresh literal: the card
-  // inset IS `SPACE_SCALE.sm`/`.md` (12/16; the compact horizontal step is `.sm`) (which is what `StatCard`/`ChartCard` spelled as
-  // `--mantine-spacing-xs`/`-sm` before they were named here) and the Section gap IS
+  // inset IS `SPACE_SCALE.sm`/`.md` (12/16; the compact horizontal step is `.sm`)
+  // (the `xs`/`sm` spacing steps `StatCard`/`ChartCard` used before they were named here) and the Section gap IS
   // `SPACE.stackMd`. Naming them buys the ROLE, not a new number — a role the `< sm` override can
   // then re-point without touching the scale every other consumer of `xs`/`sm` reads.
   //
@@ -819,7 +818,7 @@ const SPACE_STEP_BASE = {
   /** `BasaltDataTable`'s header row. Its own entry rather than a reuse of `sectionHeaderHeight`
    *  (which is 36 too at level 0): one is a heading's box, this is a table's `th`, and a density
    *  pass that wants denser table rows must not be forced to shrink every section header with them.
-   *  Mantine sizes both `th` and `td` from ONE `verticalSpacing` prop, so a 36/40 pair is
+   *  The table sizes both `th` and `td` from ONE `verticalSpacing` prop, so a 36/40 pair is
    *  unreachable through it — both are applied in `theme/index.ts`'s `Table.extend` as JS numbers,
    *  which is why (like `progressBarSize`) neither is emitted as a `--basalt-*` var. */
   tableHeaderHeight: 36,
@@ -1064,7 +1063,7 @@ export function deriveSpacing(level: number): SpaceValues {
   // sidebar search trigger's 24px floor directly above.
   //
   // The floor is 49, not 48: this value feeds `AppShell.Footer`'s `height` prop directly
-  // (shell/index.tsx), and Mantine draws the region-seam `border-top` ON THAT BOX
+  // (shell/index.tsx), and the shell draws the region-seam `border-top` ON THAT BOX
   // (`[data-with-border]`, docs/DESIGN-SPEC.md §5) under global `box-sizing: border-box`. The
   // border eats 1px of the box the floor sizes, so `.bar` (height: 100% of the footer's content
   // box) would render at 47px if the floor stopped at 48. +1 buys back exactly the pixel the seam
@@ -1105,7 +1104,7 @@ export const DEFAULT_SPACE_VALUES = deriveSpacing(0)
  * shipped identity (locked by `theme/spacing.test.ts`). */
 export const SPACE = DEFAULT_SPACE_VALUES.anchors
 
-/** The Mantine `spacing` size-scale at the shipped identity — see `SPACE_SCALE_BASE`'s doc.
+/** The `spacing` size-scale at the shipped identity — see `SPACE_SCALE_BASE`'s doc.
  * `deriveSpacing(0)`'s `scale`, UNCHANGED from the shipped identity (locked by
  * `theme/spacing.test.ts`). */
 export const SPACE_SCALE = DEFAULT_SPACE_VALUES.scale
@@ -1209,7 +1208,7 @@ function buildPaletteDataUncached(config: DeriveConfig) {
     // `inkLight`; dark stays flat white like every other neutral chart-chrome pair here).
     legendText: { light: inkRgba(inkLight, 0.82), dark: 'rgba(255, 255, 255, 0.92)' },
     // Base neutral for hairlines / muted / DIMMED text / overlays — apply opacity via alpha().
-    // Binds to --mantine-color-dimmed, so it is THE dimmed-text lever. Equal to `INK.muted` (the
+    // It is THE dimmed-text lever. Equal to `INK.muted` (the
     // spec's "muted (secondary text)" row) — kept as its own pair for the pre-existing `--basalt-neutral`
     // name (never renamed), while `INK.muted` below is the new explicit spec-named token. Both read
     // the SAME generated value (`DERIVED.ink.muted`) so a palette retune can't pull them apart.
@@ -1241,10 +1240,10 @@ function buildPaletteDataUncached(config: DeriveConfig) {
    *    on both pages, so the fill is the SAME hex in both schemes, and `onAccent` is white whenever
    *    that floor holds (a near-black ink otherwise, for a fill brightened past the safety margin).
    *
-   * `onAccent` is THE foreground for any accent fill. `theme/index.ts` bridges Mantine's
-   * `--mantine-color-<primary>-filled` onto `--basalt-accent-fill` and every filled foreground onto
+   * `onAccent` is THE foreground for any accent fill. `theme/index.ts` bridges the
+   * primary filled colour onto `--basalt-accent-fill` and every filled foreground onto
    * `--basalt-on-accent`, so ONE token drives the chrome — which is also what makes the theme lab able to
-   * retune the accent live. Mantine's own `autoContrast` cannot express this (it resolves the
+   * retune the accent live. An automatic contrast pick cannot express this (it resolves the
    * foreground scheme-blindly, in JS). Regression-locked by `theme/contrast.test.ts`.
    */
   const ACCENT = {
@@ -1256,7 +1255,7 @@ function buildPaletteDataUncached(config: DeriveConfig) {
   } as const
 
   /**
-   * Filled-surface hexes for the Mantine accent families — THE FILL BAND. The LAW below lives in
+   * Filled-surface hexes for the accent families — THE FILL BAND. The LAW below lives in
    * `./derive.ts`, not in a hand-picked hex here.
    *
    * A filled control is constrained from both sides at once (the `ACCENT` note above derives this
@@ -1292,13 +1291,13 @@ function buildPaletteDataUncached(config: DeriveConfig) {
   } as const
 
   /**
-   * App chrome surfaces — the zinc identity for the Mantine theme (`docs/DESIGN-SPEC.md` §2). Only
+   * App chrome surfaces — the zinc identity for the chrome (`docs/DESIGN-SPEC.md` §2). Only
    * `overlay`/`divider` (structural, not part of the generator's surface-stop set) stay
    * hand-authored below.
    *
    * `border` ("line") is the STRONG border used broadly for layout/control chrome (AppShell, Table,
-   * Input, Divider, Tabs, Popover, Accordion — everything bound through `--mantine-color-default-
-   * border` / `--mantine-color-gray-{2,3,4}` in the resolver below). `hairline` ("card ring") is a
+   * Input, Divider, Tabs, Popover, Accordion — everything bound through the default-border and
+   * gray steps in the resolver below). `hairline` ("card ring") is a
    * DISTINCT, thinner pair used ONLY inside `shadow-card`'s embedded ring — cards carry no `border`
    * property at all, the ring lives in the shadow. Never conflate the two.
    */
@@ -1310,7 +1309,7 @@ function buildPaletteDataUncached(config: DeriveConfig) {
     // schemes where `panelHover` (lighter than `panel` in light) is not.
     rowHover: DERIVED.surface.rowHover,
     rowSelected: DERIVED.surface.rowSelected,
-    // Elevated surface (chart area, `--mantine-color-default-hover`) — same lift as panel-hover.
+    // Elevated surface (chart area) — same lift as panel-hover.
     elevated: DERIVED.surface.elevated,
     border: DERIVED.surface.border, // "line" — strong border (layout/control chrome, NOT the card ring)
     hairline: DERIVED.surface.hairline, // card ring only — consumed by `SHADOW.card`
@@ -1320,7 +1319,7 @@ function buildPaletteDataUncached(config: DeriveConfig) {
     // Floating-layer surface (menus, popovers, tooltips, modals, drawers). Hand-authored: the
     // generator has no `overlay` stop. On light it reads pure white — a clean lift above the panel;
     // on dark it reuses the `panelHover` elevated step so detached surfaces sit a shade above the
-    // panel. Paired with `SHADOW.overlay` + a real `border` so Mantine's arrow renders a proper edge
+    // panel. Paired with `SHADOW.overlay` + a real `border` so the arrow renders a proper edge
     // (`docs/DESIGN-SPEC.md` §5).
     overlay: {
       light: '#ffffff',
@@ -1405,10 +1404,10 @@ export const INK = STATIC_PALETTE_DATA.INK
 /** The one saturated sky-blue accent. GENERATED — see `buildPaletteData` above. */
 export const ACCENT = STATIC_PALETTE_DATA.ACCENT
 
-/** Filled-surface hexes for the Mantine accent families — THE FILL BAND. GENERATED — see
+/** Filled-surface hexes for the accent families — THE FILL BAND. GENERATED — see
  * `buildPaletteData` above. */
 export const FILL = STATIC_PALETTE_DATA.FILL
 
-/** App chrome surfaces — the zinc identity for the Mantine theme (`docs/DESIGN-SPEC.md` §2).
+/** App chrome surfaces — the zinc identity for the chrome (`docs/DESIGN-SPEC.md` §2).
  * GENERATED — see `buildPaletteData` above. */
 export const SURFACE = STATIC_PALETTE_DATA.SURFACE

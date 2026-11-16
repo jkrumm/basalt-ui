@@ -14,7 +14,7 @@ const OWNED = [
 const BANNED = /from\s+'(cmdk|@radix-ui\/[^']*|@tanstack\/react-hotkeys)'/
 
 describe('the commands and chrome sources', () => {
-  test('import no cmdk, Radix, Mantine or hotkeys library: the matcher and the palette are our own', () => {
+  test('import no cmdk, Radix or hotkeys library: the matcher and the palette are our own', () => {
     expect(OWNED.length).toBeGreaterThan(5)
     for (const file of OWNED)
       expect([file, BANNED.test(readFileSync(file, 'utf8'))]).toEqual([file, false])

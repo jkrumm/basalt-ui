@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Dist-layering guard: walks the built dist/ graph of the Mantine-free subpaths and
-// fails on any @mantine/* or @visx/* import reachable from them, holds the ./charts graph to its
+// Dist-layering guard: walks the built dist/ graph of the UI-free subpaths and
+// fails on any 2.x UI-stack or @visx/* import reachable from them, holds the ./charts graph to its
 // docs/V2-SPEC.md § 9.8 import set (the engine's subpaths, d3-scale, react), and asserts the root
 // barrel (dist/index.js) never RE-EXPORTS the ./charts or ./tokens entry.
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
@@ -73,10 +73,10 @@ function walkGraph(entry, { staticOnly = false } = {}) {
   return { files: seen, bare }
 }
 
-// Mantine-free Layer-0 subpath dist entries (2.0: `./agent` left the set — Mantine is a required peer
-// and the chat UI ships in it; its runtime half stays Mantine-free as a repo-local lint boundary).
+// UI-free Layer-0 subpath dist entries (2.0: `./agent` left the set — the chat UI ships in it; its runtime
+// half stays UI-free as a repo-local lint boundary).
 // visx is gone (2.0): banned on every graph. `onlyBare` pins a graph's external imports to a set.
-// The v3 `ChartCard` (v3 state-1 wiring) composes `ui/badge` (cva + `cn`, no Base UI, no Mantine) and `cn`'s `clsx`.
+// The v3 `ChartCard` (v3 state-1 wiring) composes `ui/badge` (cva + `cn`, no Base UI) and `cn`'s `clsx`.
 const CHART_BARE = [
   /^@tanstack\/charts\//,
   /^d3-scale$/,
@@ -95,7 +95,7 @@ for (const { rel, onlyBare } of subpaths) {
   let subpathFailed = false
   for (const spec of bare) {
     if (spec.startsWith('@mantine/')) {
-      fail(`${rel} graph reaches Mantine import: ${spec}`)
+      fail(`${rel} graph reaches a 2.x UI-stack import: ${spec}`)
       subpathFailed = true
     }
     if (spec.startsWith('@visx/')) {
@@ -107,7 +107,7 @@ for (const { rel, onlyBare } of subpaths) {
       subpathFailed = true
     }
   }
-  if (!subpathFailed) console.log(`Mantine-free OK: ${rel} (${files.size} files in graph)`)
+  if (!subpathFailed) console.log(`UI-free OK: ${rel} (${files.size} files in graph)`)
 }
 
 // `react-day-picker` is an optional peer of `ui/date-picker` ALONE (docs/v3/ARCHITECTURE.md section 3).

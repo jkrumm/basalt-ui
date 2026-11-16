@@ -1894,7 +1894,7 @@ describe('real-data run', () => {
     expect(scripts).toHaveLength(2)
     expect(scripts[0]).toContain("setItem('basalt:scheme','dark')")
     expect(scripts[0]).toContain("setAttribute('data-theme','dark')")
-    expect(scripts[0]).not.toContain('mantine')
+    expect(scripts[0]).not.toContain('color-scheme-value')
     expect(scripts[1]).toBe(seedScript([['auth', 'a"b']], 'http://app'))
     expect(scripts[1]).toContain('location.origin!=="http://app"')
     await openContext(browser as never, 'light', phone)

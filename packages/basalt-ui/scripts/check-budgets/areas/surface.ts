@@ -242,7 +242,7 @@ export const raises: Raises = {
       from: 136,
       to: 139,
       consumer:
-        '`settled`, `installDomShims` and `SLOTS` from `./testing`: shutterflow replaces its Mantine-keyed e2e selectors with `SLOTS` and its hand-rolled DOM stubs with the kit',
+        '`settled`, `installDomShims` and `SLOTS` from `./testing`: shutterflow replaces its class-keyed e2e selectors with `SLOTS` and its hand-rolled DOM stubs with the kit',
       repo: 'shutterflow',
     },
     {

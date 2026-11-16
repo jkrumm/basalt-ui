@@ -1,5 +1,5 @@
 /**
- * The derived legend — HTML, Mantine-free, outside the engine. Entries come from `series` only (a
+ * The derived legend — HTML, outside the engine. Entries come from `series` only (a
  * legend cannot name what the plot does not draw); a companion (`legend: false` + `parent`) rides
  * its parent's entry. Toggling an entry hides the series from the plot, the tooltip and the auto
  * domain together; hovering one emphasizes it (the definition is rebuilt with `highlighted`).

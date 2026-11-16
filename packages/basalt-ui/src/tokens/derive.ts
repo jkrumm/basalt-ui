@@ -128,7 +128,7 @@ const ACCENT_HOVER_DARK_CHROMA_DELTA = 18
 const ON_ACCENT_DARK_TONE = 10
 const ON_ACCENT_DARK_CHROMA = 8
 // White floor is 3.0:1 — the WCAG 1.4.11 non-text/UI-component (and large-text) level, which is
-// what button labels on filled controls target (Mantine's autoContrast aims at effectively the
+// what button labels on filled controls target (an automatic contrast pick aims at effectively the
 // same bar). 4.5 was too strict: at brightness +1/+2 (fill tone ~52.6/57.6) white sits at
 // ~3.4-4.4:1 and would flip dark even though white labels still read fine there. The dark-ink
 // flip remains only as a safety for genuinely light fills (e.g. a yellow-ish seed at high

@@ -165,7 +165,7 @@
  * The empty body (SPEC § 6.11): a ring-edged tile (one inset ring, set inline in `state.tsx` so the divider ledger does not read it as a rule; card radius) filling the chart's
  * own box, so the D37 height holds, with its copy centred: the title at `sm` 500, the size of the
  * host's own title in every chart host, and one muted line. `EmptyState`'s section anatomy, in plain CSS
- * because `src/charts/**` is Mantine-free.
+ * because `src/charts/**` imports no UI layer.
  */
 .emptyTile {
   box-sizing: border-box;

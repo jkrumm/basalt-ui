@@ -1,5 +1,5 @@
 /**
- * Mantine-free token + palette layer.
+ * Token + palette layer (imports no UI framework).
  *
  * This module is PURE DATA + string helpers — ZERO UI-library imports (lint-enforced).
  * Colors are CSS custom properties under the `--basalt-*` prefix (do NOT rename the prefix).
@@ -99,11 +99,9 @@ export const alpha = (token: string, a: number): string =>
  * Two representations are DERIVED from this one object, so they cannot drift:
  *  • `BASALT.text.*` — plain numbers, for inline `style` objects and visx SVG props (React appends
  *    `px`; SVG presentation attributes can't resolve `var()`, so a ref string would break charts).
- *  • `--basalt-text-*` — the CSS-var form (`11px`, …), for CSS modules and the Mantine theme.
+ *  • `--basalt-text-*` — the CSS-var form (`11px`, …), for CSS modules and components.
  *
- * The Mantine theme additionally re-expresses the ladder through Mantine's `rem()` (see
- * `theme/index.ts`), so the component surface scales with the user's browser font-size AND with
- * `--mantine-scale`. `md` is the body step; `lg` is pinned at exactly 16px because it doubles as
+ * `md` is the body step; `lg` is pinned at exactly 16px because it doubles as
  * the iOS input floor (see the `styles.css` floor — Safari zooms the viewport on focus below 16px).
  *
  * ## Adding a rung
@@ -141,8 +139,7 @@ const TEXT = {
   display: 30, // a numeral read at arm's length (a keypad readout, a timer, a kiosk figure) — not a heading
 } as const
 
-/** Grid-aligned line boxes (px) for the two dense rungs — `theme/index.ts` re-expresses them as the
- * Mantine `lineHeights` `xs`/`sm`, so a `<Text size="sm">` row is a 20px box and a meta line 16px. */
+/** Grid-aligned line boxes (px) for the two dense rungs: a `sm` row is a 20px box and a meta line 16px. */
 export const TEXT_LINE = { xs: 16, sm: 20 } as const
 
 export const BASALT = {
@@ -248,8 +245,8 @@ export const BASALT = {
  * `styles.floor.test.ts`).
  *
  * Only breakpoints that are genuinely a CSS-authored `@media` belong here. A component that can
- * measure its own box uses the measurement instead (`CONTAINER_CLASSES`), and Mantine chrome uses
- * `theme.breakpoints`.
+ * measure its own box uses the measurement instead (`CONTAINER_CLASSES`), and chrome uses
+ * `useSizeClass()`.
  */
 export const BREAKPOINTS = {
   /**
@@ -267,11 +264,8 @@ type Side = 'light' | 'dark'
 const decl = (name: string, value: string): string => `  --basalt-${name}: ${value};`
 
 /**
- * A px number expressed as the plain rem STRING literal (16px base: `pxRem(6)` → `'0.375rem'`) —
- * NOT Mantine's own `rem()` helper, which instead emits a `calc(...)` expression bound to
- * `--mantine-scale` (a different value; that scaling happens at the Mantine-coupled call site
- * instead — see `theme/index.ts`'s `Input.extend` `vars` for why `--basalt-space-input-height` needs
- * both halves). The SINGLE source for this conversion — `theme/index.ts` imports this instead of
+ * A px number expressed as the plain rem STRING literal (16px base: `pxRem(6)` → `'0.375rem'`),
+ * never a `calc(...)` expression. The SINGLE source for this conversion — `theme/index.ts` imports this instead of
  * keeping its own copy, so the radius/spacing size-scale steps and this module's own rem-emitting
  * vars (`--basalt-space-input-height`) can never compute the conversion two different ways.
  */
@@ -373,15 +367,14 @@ function frameworkPrimitives(side: Side, data: PaletteData): string {
  * only invite someone to think it does.
  *
  * Deliberately DOES NOT emit a var for every `SpaceValues` number — `space.scale.*` (the generic
- * Mantine spacing scale) and seventeen `space.step.*` keys have ZERO `var()` consumers anywhere in
+ * spacing scale) and seventeen `space.step.*` keys have ZERO `var()` consumers anywhere in
  * the framework or its tests beyond the CSS-emission test itself. Each is read straight off the
  * resolved `SpaceValues` as a JS NUMBER instead, in one of three ways:
- * `{timelineBullet,progressBarSize}` are Mantine `defaultProps` (`theme/index.ts`'s Timeline/
- * Progress); `{sidebarAccountMenuWidth,sidebarSettingsMenuWidth,mobileNavMenuWidth,
+ * `{timelineBullet,progressBarSize}` are numeric component props (Timeline/Progress);
+ * `{sidebarAccountMenuWidth,sidebarSettingsMenuWidth,mobileNavMenuWidth,
  * appShellHeaderHeight,appShellNavbarWidth,appShellNavbarRailWidth,appShellAsideWidth,
  * appShellAsideRailWidth,
- * mobileNavBarHeight}` are numeric Mantine component props (Menu `width`, AppShell `header`/
- * `navbar`/`footer`); and `{chartLegendGap,chartMarginTop,chartMarginRight,
+ * mobileNavBarHeight}` are numeric component props (menu width, shell regions); and `{chartLegendGap,chartMarginTop,chartMarginRight,
  * chartMarginBottom,chartMarginLeft,chartDotR}` are visx SVG props via
  * `BASALT.legendGap`/`BASALT.margin`/`BASALT.dotR` in this file's own `BASALT` object. The full list is locked
  * against the `SpaceValues` key set by `tokens/density.test.ts`'s declaration-set test, so adding a
@@ -397,25 +390,16 @@ function spaceDecls(space: SpaceValues): string[] {
     // Additive law, not the multiplier — see `deriveSpacing`'s doc in `tokens/palette.ts`. No unit:
     // `line-height` is a unitless CSS value.
     decl('space-row-line-height', `${space.rowLineHeight}`),
-    // A `size: 'md'` Input's resolved height. Mantine's own `--input-height-md` is
-    // `calc(2.625rem * var(--mantine-scale))` (BOTH `styles.css` and `styles.layer.css`, verified
-    // in the installed package) — REM-relative to the root font size AND scale-aware, not a flat
-    // px. Emitting this in REM (via `pxRem`, not a bare `${…}px`) preserves the rem half; the
-    // `* var(--mantine-scale))` half is reconstructed at the Mantine-coupled call site
-    // (`theme/index.ts`'s `Input.extend` `vars`, which wraps this var in the matching `calc(...)`)
-    // — this module stays Mantine-free, so it cannot reference `--mantine-scale` itself. Flattening
-    // either half into a flat px would desync input height from the user's root font size (an
-    // accessibility regression) and from Mantine's global `--mantine-scale` knob.
+    // A `size: 'md'` Input's resolved height, REM-relative to the root font size, not a flat px.
+    // Emitting this in REM (via `pxRem`, not a bare `${…}px`) keeps input height in step with the
+    // user's root font size; flattening it into px would desync them (an accessibility regression).
     decl('space-input-height', pxRem(space.anchors.inputHeight)),
-    // A `size: 'md'` Button's/ActionIcon's resolved height — SAME rem-plus-scale reasoning and
-    // reconstruction as `space-input-height` above (`theme/index.ts`'s `Button.extend`/
-    // `ActionIcon.extend` `vars`), single-sourced from the SAME `controlHeight` anchor
+    // A `size: 'md'` Button's/ActionIcon's resolved height — SAME rem reasoning as
+    // `space-input-height` above, single-sourced from the SAME `controlHeight` anchor
     // `space-input-height` reads from (`SPACE_ANCHORS_BASE`'s doc in `tokens/palette.ts`).
     decl('space-control-height', pxRem(space.anchors.controlHeight)),
-    // Controls tier heights (`docs/CONTROLS-SPEC.md` §5) — same rem-plus-`--mantine-scale`
-    // reconstruction as `space-input-height`/`space-control-height` above; `theme/ctl-theme.tsx`'s
-    // `CTL_THEME` and the `cssVariablesResolver`'s `-ctl`/`-icon` var sets both wrap these in the
-    // matching `calc(... * var(--mantine-scale))`.
+    // Controls tier heights (`docs/CONTROLS-SPEC.md` §5) — the same rem form as
+    // `space-input-height`/`space-control-height` above.
     decl('space-control-height-tag', pxRem(space.anchors.controlHeightTag)),
     decl('space-control-height-widget', pxRem(space.anchors.controlHeightWidget)),
     decl('space-control-height-ctl', pxRem(space.anchors.controlHeightCtl)),
@@ -513,8 +497,7 @@ function spaceDecls(space: SpaceValues): string[] {
     // a consumer retuning its identity could not reach it and had to reach past the token
     // layer into the shell's own styles. Emitted in PLAIN PX, like every
     // other inset/gap in this list and unlike the `pxRem` heights above it: the rem-plus-
-    // `var(--mantine-scale)` reconstruction exists so a CONTROL's box tracks the root font size and
-    // Mantine's global scale knob; a page gutter is a layout margin against a viewport, not a box
+    // rem form exists so a CONTROL's box tracks the root font size; a page gutter is a layout margin against a viewport, not a box
     // sized to text, so scaling it with the font would make a large-type user's content column
     // narrower rather than more legible.
     decl('space-app-shell-inset', `${space.step.appShellInset}px`),
@@ -563,12 +546,12 @@ function spaceDecls(space: SpaceValues): string[] {
     // `appShellNavbarWidth`/`appShellNavbarRailWidth`/`appShellAsideWidth`/`appShellAsideRailWidth`
     // join that list — but NOT `appShellInset`/`appShellInsetMobile`/`appShellHeaderLeadMin`, which
     // are emitted above and carry their own reason for the exception —
-    // `shell/index.tsx` reads all five as JS numbers via `useBasaltSpacing()` (Mantine's `AppShell`
-    // `header`/`navbar`/`aside` props take numbers, not `var()` strings), so a `--basalt-space-app-shell-*`
+    // `shell/index.tsx` reads all five as JS numbers via `useBasaltSpacing()` (the shell
+    // regions take numbers, not `var()` strings), so a `--basalt-space-app-shell-*`
     // decl here would have had zero consumers, framework-wide, the same dead-weight shape this function's
     // doc already calls out for the chart/Progress/Timeline group. `sidebarAccountMenuWidth`/
     // `sidebarSettingsMenuWidth` join it too — `app-sidebar-account.tsx`/`app-sidebar.tsx` read both
-    // as JS numbers via `useBasaltSpacing()` (Mantine's `<Menu width={…}>` also takes a number).
+    // as JS numbers via `useBasaltSpacing()` (a menu `width` also takes a number).
   ]
 }
 
@@ -643,7 +626,7 @@ function frameworkDerived(data: PaletteData, only: 'core' | 'all'): string {
       decl(`fill-hover-${name}`, `color-mix(in srgb, var(--basalt-fill-${name}) 88%, #000)`),
     ),
     // The type scale, emitted from the SAME `TEXT` object `BASALT.text` reads — CSS modules and the
-    // Mantine theme consume these; inline styles / visx read the numbers. One ladder, two forms.
+    // components consume these; inline styles / chart SVG props read the numbers. One ladder, two forms.
     ...Object.entries(TEXT).map(([step, px]) => decl(`text-${step}`, `${px}px`)),
     decl('area-top', '22%'),
     decl('area-bottom', '1%'),
@@ -746,8 +729,8 @@ export function groupTokens<const T extends SeriesMap>(
 }
 
 /**
- * The attribute + values the per-scheme blocks key off. Defaults reproduce Mantine's own toggle
- * (`data-mantine-color-scheme` = `dark` / `light`), so a consumer only names the axis it differs
+ * The attribute + values the per-scheme blocks key off. Defaults are v3's own toggle
+ * (`data-theme` = `dark` / `light`), so a consumer only names the axis it differs
  * on. Supplying this object at all switches the emitter onto the framework-neutral selector shape
  * — see {@link BuildPaletteOpts.scheme}.
  */
@@ -765,8 +748,7 @@ export type BuildPaletteOpts = {
   derived?: string[]
   /**
    * Attribute + values the per-scheme blocks key off — for a consumer whose scheme toggle is not
-   * Mantine's (a static site on `data-theme`, say). Default: Mantine's own
-   * `data-mantine-color-scheme` = `dark` / `light`.
+   * `data-theme` (a site on `data-mode`, say). Default: `data-theme` = `dark` / `light`.
    *
    * Setting ANY of `scheme` / `defaultScheme` / `mediaFallback` moves the emitter off the legacy
    * `html[…]` selector onto `:root[…]`. That is deliberate and load-bearing, NOT cosmetic:
@@ -779,7 +761,7 @@ export type BuildPaletteOpts = {
    * outright — dark mode silently does nothing. `:root[…]` sits above both a bare `:root` and
    * `html[…]`, and carries no assumption about the element the attribute lands on.
    *
-   * The no-options path keeps emitting `html[data-mantine-color-scheme='…']` verbatim, because a
+   * The no-options path keeps emitting `html[data-theme='…']` verbatim, because a
    * basalt consumer may already override `--basalt-*` under that exact selector — raising basalt's own
    * specificity would silently win over their override.
    */
@@ -818,8 +800,8 @@ export type BuildPaletteOpts = {
   only?: 'core' | 'all'
 }
 
-/** Mantine's own color-scheme attribute — the default {@link ColorSchemeSelector.attribute}. */
-const MANTINE_SCHEME_ATTRIBUTE = 'data-mantine-color-scheme'
+/** The scheme attribute — the default {@link ColorSchemeSelector.attribute}. */
+const DEFAULT_SCHEME_ATTRIBUTE = 'data-theme'
 
 /** Indent an already-2-space-indented declaration block one level deeper (for `@media` nesting). */
 const indent = (block: string): string =>
@@ -880,7 +862,7 @@ function mobileLadderBlock(space: SpaceValues): string {
 
 /**
  * Emit the `--basalt-*` stylesheet: a `:root` block of theme-independent scalars, then the
- * dark (default) and light primitive blocks under `html[data-mantine-color-scheme='…']`.
+ * dark (default) and light primitive blocks under `html[data-theme='…']`.
  *
  * The framework chrome (STATUS/SEMANTIC/SURFACE pairs + the framework DERIVED defaults) is
  * built in, so an empty `buildPaletteCss()` already emits every framework var. Consumer
@@ -891,9 +873,9 @@ function mobileLadderBlock(space: SpaceValues): string {
  * (this is how a retuned `derive` config reaches the sheet).
  *
  * Dark is the default (`:root`) since the framework defaults to dark; the
- * `[data-mantine-color-scheme]` selectors track Mantine's toggle on `<html>`.
+ * `[data-theme]` selectors track the scheme toggle on `<html>`.
  *
- * A non-Mantine consumer retargets all three of those choices — the attribute, which scheme rides
+ * A consumer on another attribute retargets all three of those choices — the attribute, which scheme rides
  * the bare `:root`, and whether the OS preference is honoured — via `opts.scheme` /
  * `opts.defaultScheme` / `opts.mediaFallback`. Setting any of them also moves the per-scheme
  * selector from `html[…]` to the framework-neutral, higher-specificity `:root[…]`; see
@@ -938,15 +920,15 @@ export function buildPaletteCss(
   if (opts.scheme === undefined && opts.defaultScheme === undefined && !opts.mediaFallback) {
     return `${rootBlock}
 :root,
-html[data-mantine-color-scheme='dark'] {
+html[data-theme='dark'] {
 ${side('dark')}
 }
-html[data-mantine-color-scheme='light'] {
+html[data-theme='light'] {
 ${side('light')}
 }`
   }
 
-  const attribute = opts.scheme?.attribute ?? MANTINE_SCHEME_ATTRIBUTE
+  const attribute = opts.scheme?.attribute ?? DEFAULT_SCHEME_ATTRIBUTE
   const value: Record<Side, string> = {
     dark: opts.scheme?.darkValue ?? 'dark',
     light: opts.scheme?.lightValue ?? 'light',
@@ -978,7 +960,7 @@ ${side('light')}
  * The `fonts` option's resolved shape — a full CSS font-family stack string per slot (with its own
  * fallback chain), riding the `--basalt-font-sans/head/mono` override seam `styles.css` ships
  * fallbacks for. Omitted keys keep the shipped fallback untouched. Lives here because its
- * builder `buildFontsCss` below is a pure, Mantine-free string builder that belongs in the tokens
+ * builder `buildFontsCss` below is a pure string builder that belongs in the tokens
  * layer.
  */
 export type BasaltFontsConfig = {

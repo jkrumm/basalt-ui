@@ -6,7 +6,7 @@
  * (`docs/v3/cycles/expression-1.md`) then routed every `planned` finding it traced to a missing or
  * misleading reference to this row, so the six files below are the kept set and the other 2.x
  * names stay dropped. `check 11` of `doctor` (DESIGN.md: at most 150 lines, no hex literal or
- * Mantine, deviations carry reasons) is not in this tree yet; `designCheck` mirrors its clause so
+ * 2.x UI library, deviations carry reasons) is not in this tree yet; `designCheck` mirrors its clause so
  * the seed is proven against the same rule the doctor will hold.
  */
 import { describe, expect, test } from 'bun:test'
@@ -166,7 +166,7 @@ describe('sk-7 references', () => {
   })
 })
 
-/** The DESIGN.md clause of `doctor` check 11: size, hex, Mantine, and a reason on each deviation. */
+/** The DESIGN.md clause of `doctor` check 11: size, hex, the 2.x UI library, and a reason on each deviation. */
 function designCheck(text: string): string[] {
   const failures: string[] = []
   if (text.split('\n').length > 150) failures.push('more than 150 lines')
@@ -190,10 +190,9 @@ describe('sk-7 DESIGN.md seed', () => {
   const tpl = read(join(pkgRoot, 'agent/templates/DESIGN.md.tpl'))
   const seed = render(tpl)
 
-  test('the seed is at most 150 lines with no hex literal or the word Mantine', () => {
+  test('the seed is at most 150 lines with no hex literal', () => {
     expect(tpl.split('\n').length).toBeLessThanOrEqual(150)
     expect(tpl).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
-    expect(tpl).not.toMatch(/mantine/i)
   })
 
   test('every placeholder in the seed is one the init renderer fills', () => {

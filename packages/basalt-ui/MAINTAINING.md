@@ -18,17 +18,17 @@ code. Mechanics live where they can't drift: **API shape → the JSDoc on the ex
 
 Named exports only — **no default exports**. Files `kebab-case`, components `PascalCase`.
 
-| Subpath        | Mantine? | Owns                                                                                                                                                |
-| -------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`            | coupled  | the state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`)                                                 |
-| `./charts`     | **free** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export |
-| `./tokens`     | **free** | `BASALT`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                       |
-| `./controls`   | free     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                             |
-| `./table`      | free     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                  |
-| `./content`    | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map                                                                                         |
-| `./vite`       | —        | `basaltViteConfig` (config only, never `plugins`) + `basalt()` (gates, sources.css, head/PWA)                                                       |
-| `./styles.css` | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                 |
-| `./configs/*`  | —        | raw toolchain presets (real paths — `extends` needs them)                                                                                           |
+| Subpath        | UI?          | Owns                                                                                                                                                |
+| -------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`            | ui           | the state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`)                                                 |
+| `./charts`     | **headless** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export |
+| `./tokens`     | **headless** | `BASALT`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                       |
+| `./controls`   | headless     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                             |
+| `./table`      | headless     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                  |
+| `./content`    | ui           | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map                                                                                         |
+| `./vite`       | —            | `basaltViteConfig` (config only, never `plugins`) + `basalt()` (gates, sources.css, head/PWA)                                                       |
+| `./styles.css` | —            | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                 |
+| `./configs/*`  | —            | raw toolchain presets (real paths — `extends` needs them)                                                                                           |
 
 **2.0:** 15 published subpaths (V2-SPEC § 1), plus the v3 subpaths added since; `./forms`, `./commands`, `./agent` and `./state` were deleted in 3.0 with the 2.x runtime (`removed-2x.json` names each export); `./guard`, `./data/virtual`,
 `./llms.txt` and `./package.json` are no longer exports. **C1 (1.29.0):** `./query`, `./connectivity` and bare `./data` were dropped — 26 published subpaths
@@ -66,18 +66,18 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
   reference adoptions.
 - **Every message is built in `common/errors.ts`** — `requiredProp` / `oneOf` /
   `duplicateMount` over one `BASALT_PREFIX`, so consumers can grep `[basalt] <Component>:`.
-- **The module is Mantine-free and `@visx`-free** (the test keeps the `@visx` ban as a tripwire for a stray import), enforced twice: a `no-restricted-imports`
+- **The module imports no UI framework and is `@visx`-free** (the test keeps the `@visx` ban as a tripwire for a stray import), enforced twice: a `no-restricted-imports`
   override in `.oxlintrc.json` (repo-local, like `state`/`query`/`guard`) and
   `src/common/boundary.test.ts`, which also forbids a VALUE import reaching outside `common/` or
   `utils/`. That is what lets `./charts` and `./tokens` reach `cx`/`mergeRefs` without breaching the
   layer boundary. `Tier` is re-exported from `widget-header` **type-only**, so it emits no runtime
-  edge into the Mantine-coupled half.
+  edge into the UI half.
 - `Tone`/`ToneWithNeutral` is the ONE status vocabulary. Forks exist (`SidebarBlockTone`
   byte-identical; `CalloutKind`, `AccountBadgeTone`, `NotificationIntent`
   differ) — an adopter ALIASES its fork to this type; nothing gets renamed out from under a
   consumer.
 
-## Layering: Mantine-coupled vs Mantine-free
+## Layering: UI vs headless
 
 - `src/charts/**` and `src/tokens/**` import no UI framework. The chart engine is
   `@tanstack/charts` `1.5.0` (+ `d3-scale` `4.0.2`, exact optional peers, subpath-required for
@@ -156,7 +156,7 @@ bun run build   # tsup && tsc --emitDeclarationOnly && copy-assets && fix-esm-ex
 
 ## Token system — the derived palette
 
-Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--basalt-*` CSS variables**
+Three tiers: **palette data** (pure data, zero React/DOM) → **`--basalt-*` CSS variables**
 (resolution is pure CSS, so a scheme flip restyles everything with no re-render) → **`BASALT.*` refs**
 (just `var()` strings plus non-color sizing constants, so they work outside components).
 
@@ -198,7 +198,7 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--basal
 
 ## Shell, homes and the control tier
 
-The 2.x Mantine shell (`BasaltShell`, `PageBar`, `PageAside`, `projectMobileNav`, the sidebar and
+The 2.x shell (`BasaltShell`, `PageBar`, `PageAside`, `projectMobileNav`, the sidebar and
 mobile-nav modules) and the 2.x control tier (`FilterSet` children, `SettingsRow`, the `ctl` size
 slots) were deleted in 3.0; their invariants went with them. The v3 shell, homes and controls are
 specified in `../../docs/v3/ARCHITECTURE.md` and its concepts, and their maintainer-facing
@@ -268,7 +268,7 @@ basalt that can hard-fail their build.
   comment is outside the ledger, so `raw-size-literal` spent several minors telling readers it
   shipped `warn` while the preset said `error`.
 - **A relaxation needs no entry.** `inline-display`/`raw-html-layout` no longer fire inside
-  `src/charts/**` because both remedies name a Mantine primitive the boundary already forbids there,
+  `src/charts/**` because both remedies name a UI-library primitive the boundary already forbids there,
   so the finding was unactionable and the only fix was a waiver written inside the directory the
   boundary protects.
 
@@ -301,7 +301,7 @@ promotion state there, never from prose here.** Five things about it that are no
   sources import each other relatively; a consumer of basalt always names the package, so one local
   `function PanelRow` can no longer switch three rules off for a whole consumer file.
 - **A BOUND control's homelessness is a different rule from a raw one's**, and deliberately a
-  different ID: `control-outside-home` matches `@mantine/*` tags, `bound-control-outside-home`
+  different ID: `control-outside-home` matches third-party tags, `bound-control-outside-home`
   matches `basalt-ui`-imported ones. Both read the same three SUBTREE homes — `FilterSet`,
   `PageAside`, `PanelRow`, where the children ARE the home, provenance-gated because `PanelRow` is
   an ordinary name for a consumer's own helper — and the bound one never had a text-lane twin,
@@ -309,8 +309,8 @@ promotion state there, never from prose here.** Five things about it that are no
   rather than widening is C16 mechanics: a
   level is per-id, so widening would have shipped the new form at the old rule's level with no
   grace, and widened it mid-grace besides.
-- **The raw-filter rules gate on the tag's `@mantine/*` IMPORT, not its name** — a consumer's own
-  `Select` is not Mantine's, and an ALIAS (`Select as MantineSelect`) or a namespace (`M.Select`)
+- **The raw-filter rules gate on the tag's third-party IMPORT, not its name** — a consumer's own
+  `Select` is not the library's, and an ALIAS (`Select as LibSelect`) or a namespace (`M.Select`)
   resolves through the local→imported map, because the wrapper case is exactly the one the
   provenance test exists for. **The HOME tag is gated the same way**, against `basalt-ui`/
   `basalt-ui/*` (plus a relative import inside basalt's own `src/`, or the dogfood surface goes
@@ -361,7 +361,7 @@ Code cannot load rules or skills from `node_modules`, which is the only reason a
   sharing that `rule`), `--check` is the CI gate, and a block that DISAGREES is a hard failure. `not guarded`
   is printed even when empty, because a rule claiming full coverage is a claim someone can check.
 - **Say each thing once**: the identity and the `theme-allow` grammar live in `basalt-tokens.md`, the
-  precedence in `AGENTS-block.md.tpl`, the overlay mount in `basalt-mantine.md`, the Eden footguns in
+  precedence in `AGENTS-block.md.tpl`, the overlay mount in `basalt-ui.md`, the Eden footguns in
   `basalt-batteries.md`. The guard-kind list lives nowhere — the generated headers carry it.
 - **No API reference, no version history, no incident narrative in a rule.** Those belong in JSDoc /
   `llms.txt`, and `CHANGELOG.md` / `MIGRATING.md`.
@@ -386,7 +386,7 @@ impossible, land a one-release `releaseRules` override (`{"breaking":true,"relea
 
 - Strict TS, no `any`, explicit types on public exports; typed object params, low nesting, early
   returns. Function components only; no `React.FC`, no default exports.
-- Respect the Mantine-free boundary and the chart-engine boundary (`host.tsx` is the one `@tanstack/charts/react` importer).
+- Respect the token-layer boundary and the chart-engine boundary (`host.tsx` is the one `@tanstack/charts/react` importer).
 - Don't reintroduce Tailwind, OKLCH foundation palettes, ShadCN/Tremor/Starlight compat, or any
   `import.meta.env` reference in shipped code.
 - **One verb per role.** `define` declares a value that is data (`defineNav`, `defineControls`);

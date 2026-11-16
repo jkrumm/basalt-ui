@@ -6,7 +6,7 @@
  * the hook identity is stable across every render of every caller.
  *
  * Lives in `common/` rather than beside the shell because both halves use it — the shell chrome, the
- * provider, and the Mantine-free measured-fold core — and `common/` is the one module both may
+ * provider, and the measured-fold core — and `common/` is the one module both may
  * import from. One module rather than one `const` per file. Not exported from any barrel; import it
  * by path.
  */

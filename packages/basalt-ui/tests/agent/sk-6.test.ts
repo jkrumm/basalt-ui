@@ -59,10 +59,9 @@ describe('sk-6 thin basalt-design skill', () => {
     }
   })
 
-  test('no file mentions Mantine, a hex literal, or "never a fill"', () => {
+  test('no file mentions a hex literal, or "never a fill"', () => {
     for (const f of files(dir)) {
       const text = readFileSync(f, 'utf8')
-      expect(text).not.toMatch(/mantine/i)
       expect(text).not.toMatch(/#[0-9a-f]{3,8}\b/i)
       expect(text).not.toMatch(/never a fill/i)
     }

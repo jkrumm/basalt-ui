@@ -149,7 +149,7 @@ describe('check 11: budgets, ejects, weakened config, DESIGN.md', () => {
     expect(missing.detail).toContain('budget-ratchet')
   })
 
-  it('fails a DESIGN.md that is missing, too long, holds a hex or names Mantine', async () => {
+  it('fails a DESIGN.md that is missing, too long, holds a hex or names the 2.x UI library', async () => {
     expect((await runCheck(healthy('app', { 'DESIGN.md': null }), 11)).detail).toContain(
       'DESIGN.md is missing',
     )

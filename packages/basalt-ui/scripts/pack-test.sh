@@ -91,6 +91,12 @@ tar -xzOf "$TGZ" package/package.json >"$LLMS_DIR/package.json"
 node scripts/gen-llms-assert.mjs "$LLMS_DIR/llms.txt" "$LLMS_DIR/package.json"
 rm -rf "$LLMS_DIR"
 
+echo "==> legacy names (the 2.x names, in the artifact outside the allowlist)"
+NAMES_DIR=$(mktemp -d)
+tar -xzf "$TGZ" -C "$NAMES_DIR"
+bun ../../scripts/check-legacy-names.ts --package "$NAMES_DIR/package"
+rm -rf "$NAMES_DIR"
+
 echo "==> tarball parity (every CLI-read source ships in the artifact)"
 node scripts/check-tarball-parity.mjs "$LISTFILE"
 
@@ -589,7 +595,7 @@ const result = await build({
 const bundle = Array.isArray(result) ? result[0] : result
 const out = bundle.output.filter((o) => o.fileName.endsWith('.css')).map((o) => String(o.source)).join('\n')
 if (!out.includes('@layer basalt{')) throw new Error('@layer basalt is missing from the bundled CSS')
-if (css.includes('@mantine/')) throw new Error('the shipped styles.css still imports a Mantine package')
+if (css.includes('@mantine/')) throw new Error('the shipped styles.css still imports a 2.x UI-stack package')
 if (!/@font-face\s*\{[^}]*Basalt Head Digits/.test(css)) throw new Error("the shipped styles.css lacks the 'Basalt Head Digits' @font-face")
 const digitsFont = bundle.output.find((o) => /nunito-sans-latin-wght-normal.*\.woff2$/.test(o.fileName))
 if (!digitsFont) throw new Error('the Basalt Head Digits url() did not resolve to a Nunito woff2 asset in the bundled CSS')

@@ -7,7 +7,7 @@
  * (argo's `lib/error-boundary.tsx:36`, `lib/auth-gate.tsx:30` — each a bare `<Title order={2}>` +
  * a muted subtitle line, hand-copied).
  *
- * A plain `<h1>` + CSS module, NOT Mantine's `<Title>` component — same reason `page-bar.tsx`'s
+ * A plain `<h1>` + CSS module, NOT a `<Title>` component — same reason `page-bar.tsx`'s
  * own `title` row does (`page-bar.module.css`'s `.title`): `basalt/in-body-page-title` and its
  * text-lane twin both match the JSX tag `<Title`, so a THIRD sanctioned spot built out of that
  * same tag would need a waiver on itself. A raw, styled `<h1>` needs none — it IS the remedy, not

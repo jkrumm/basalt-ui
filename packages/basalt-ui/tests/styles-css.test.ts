@@ -46,7 +46,7 @@ describe('styles.css layer and imports', () => {
   })
 
   it('imports no UI framework', () => {
-    expect(declarations).not.toContain('@mantine/')
+    expect(declarations).not.toContain('@base-ui/')
   })
 
   it('places every @import before any rule', () => {

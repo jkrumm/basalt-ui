@@ -33,7 +33,7 @@ Progress({ tone, className, value, min, max, ...props }: ProgressProps): ReactEl
 ### `Ring`
 
 A circular gauge with its percentage printed in the middle, in the page locale (`useFormat`):
-`42.5%` in `en`, `42,5 %` in `de-DE`. The replacement for Mantine's `RingProgress`.
+`42.5%` in `en`, `42,5 %` in `de-DE`.
 
 ```ts
 Ring({ tone, className, value, min, max, digits, ...props }: RingProps): ReactElement

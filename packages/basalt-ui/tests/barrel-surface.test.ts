@@ -1,5 +1,5 @@
 /**
- * Barrel surface guard: `./tokens` and `./charts` are the published, Mantine-free surfaces.
+ * Barrel surface guard: `./tokens` and `./charts` are the published surfaces that import no UI framework.
  * `./tokens` is the ONE home of the token layer — consumers reach for `BASALT` / `alpha` / the factory
  * helpers plus the two doctrine-prescribed
  * building blocks `BP` (raw hue families) and `p` (pair-picker), which every consumer series

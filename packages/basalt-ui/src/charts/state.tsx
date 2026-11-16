@@ -96,8 +96,7 @@ function PlotGhost({ shape = 'bars' }: { shape?: PlotGhostShape }): ReactElement
 }
 
 // The error idiom (D28, SPEC § 6.12): a status dot + a word + the message + the action, on the
-// neutral surface. The dot is drawn from `--basalt-*` tokens here — `src/charts/**` stays Mantine-free and `theme/status-dot` sits in the
-// Mantine-coupled theme layer.
+// neutral surface. The dot is drawn from `--basalt-*` tokens here — `src/charts/**` imports no UI layer.
 const dotStyle: CSSProperties = {
   display: 'inline-block',
   flex: 'none',
@@ -220,7 +219,7 @@ export function ChartPlaceholder(props: {
       </output>,
     )
   // The § 6.11 empty tile inside the chart's own box: one ring, card radius, the title at `sm` 500
-  // and a muted line, centred. `EmptyState` is Mantine-coupled, so the anatomy is plain HTML here.
+  // and a muted line, centred; the anatomy is plain HTML here, not `EmptyState`.
   // The live region holds the copy only; the action is its sibling, so a button is not announced.
   const { title, description } = splitEmptyCopy(label)
   return fit(

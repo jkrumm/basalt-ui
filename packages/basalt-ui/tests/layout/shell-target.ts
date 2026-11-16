@@ -24,6 +24,7 @@ import { afterAll, describe, test } from 'bun:test'
 import { existsSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { registerOverlaySelectors } from './harness'
 import { LAYOUT_TARGET } from './shell-slots'
 import type { ShellSlot } from './shell-slots'
 import { providedSlots } from './fixture/v3/registry'
@@ -73,6 +74,13 @@ function setupV2(): void {
   }
   process.env['LAYOUT_FIXTURE_ENTRY'] = entry
   process.env['LAYOUT_FIXTURE_HTML'] = html
+  // The oracle's overlays, counted by `census()` on top of the engine's own `[role="dialog"]`.
+  registerOverlaySelectors(
+    '.mantine-Drawer-root',
+    '.mantine-Modal-root',
+    '.mantine-Menu-dropdown',
+    '.mantine-Popover-dropdown',
+  )
 }
 
 /**

@@ -1,10 +1,10 @@
 /*
- * The one Retry. ErrorState (Mantine, StatCard / pages), ChartCard's placeholder and a strip cell's
+ * The one Retry. ErrorState, StatCard / pages, ChartCard's placeholder and a strip cell's
  * error all render this, so the three read as one button. It is a plain element because `./charts`
- * resolves with no Mantine, and it is styled to be a Mantine `size="xs" variant="default"` Button
- * reading the same `--basalt-*` tokens the theme binds that button to: panel fill (elevated on hover),
- * `shadow-raised`, the control radius, the xs type size, the theme's inline padding step and
- * Mantine's 30px xs height. `--mantine-scale` carries the app's scale knob, 1 where Mantine is absent.
+ * resolves with only its own peers, and it is styled as an extra-small default button
+ * reading the same `--basalt-*` tokens: panel fill (elevated on hover),
+ * `shadow-raised`, the control radius, the xs type size, the inline padding step and
+ * a 30px height.
  */
 .retry {
   display: inline-flex;
@@ -12,17 +12,17 @@
   justify-content: center;
   flex: none;
   box-sizing: border-box;
-  height: calc(1.875rem * var(--mantine-scale, 1));
+  height: 1.875rem;
   padding-block: 0;
-  padding-inline: calc(var(--basalt-space-stack-md, 0.75rem) * var(--mantine-scale, 1));
+  padding-inline: var(--basalt-space-stack-md, 0.75rem);
   /* A visible edge: the panel fill and `shadow-raised` alone read as a pale chip on the page or a card,
    so the border is ink mixed into the panel (>= 3:1 against it in both schemes), not the hairline. */
-  border: calc(0.0625rem * var(--mantine-scale, 1)) solid var(--basalt-muted);
+  border: 0.0625rem solid var(--basalt-muted);
   border-color: color-mix(in srgb, var(--basalt-ink) 55%, var(--basalt-surface-panel));
   border-radius: var(--basalt-radius-ctrl);
   background: var(--basalt-surface-panel);
   box-shadow: var(--basalt-shadow-raised);
-  color: var(--mantine-color-default-color, var(--basalt-ink));
+  color: var(--basalt-ink);
   font: inherit;
   font-size: var(--basalt-text-xs);
   font-weight: 500;
@@ -34,9 +34,8 @@
 }
 
 .retry:focus-visible {
-  outline: calc(0.125rem * var(--mantine-scale, 1)) solid
-    var(--mantine-primary-color-filled, var(--basalt-accent-fill));
-  outline-offset: calc(0.125rem * var(--mantine-scale, 1));
+  outline: 0.125rem solid var(--basalt-accent-fill);
+  outline-offset: 0.125rem;
 }
 
 /* Hover is a pointer affordance: a touch tap would leave it stuck on. */
@@ -46,11 +45,11 @@
   }
 }
 
-/* Busy is Mantine's disabled paint: its own disabled colour and background, flat, no border. */
+/* Busy is the disabled paint: the muted colour and subtle background, flat, no border. */
 .retry:disabled {
-  background: var(--mantine-color-disabled, var(--basalt-surface-subtle));
+  background: var(--basalt-surface-subtle);
   border-color: transparent;
-  color: var(--mantine-color-disabled-color, var(--basalt-muted));
+  color: var(--basalt-muted);
   box-shadow: none;
   cursor: not-allowed;
 }

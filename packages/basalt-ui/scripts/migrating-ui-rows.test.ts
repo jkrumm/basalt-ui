@@ -1,5 +1,5 @@
 /**
- * The `ui` migration rows (docs/v3/concepts/primitives-distribution.md section 9): every Mantine
+ * The `ui` migration rows (docs/v3/concepts/primitives-distribution.md section 9): every 2.x
  * symbol the census names has a row, no row points at a primitive outside the 36 modules, and each
  * `valueShifts` target is the value `src/tokens/table.ts` ships.
  */

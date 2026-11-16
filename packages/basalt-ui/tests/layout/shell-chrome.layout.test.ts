@@ -372,10 +372,10 @@ describeShell(
        * a "responsive" gutter whose two halves collapsed to one value would satisfy every reading below
        * and is a real regression, so it is checked directly rather than implied.
        *
-       * The two props take DIFFERENT roads through Mantine — `AppShell padding` through
-       * `assign-padding-variables.mjs`, `AppShell.Header px` through `parse-style-props.mjs` — and only
-       * agree because both resolve `sm` from `theme.breakpoints`. That is exactly the kind of agreement
-       * that holds until a Mantine minor, and exactly what a real browser is for.
+       * The two props take DIFFERENT roads — `AppShell padding` through
+       * the shell padding var, the header `px` through its own style prop — and only
+       * agree because both resolve `sm` from one breakpoint table. That is exactly the kind of
+       * agreement that can drift, and exactly what a real browser is for.
        */
       test('the mobile and desktop gutters are a genuine pair', () => {
         const mobile = SPACE_STEP.appShellInsetMobile
@@ -422,7 +422,7 @@ describeShell(
             'AppShell.Header',
             S('shell-header'),
             expected,
-            'the header takes the SAME gutter as Main by a different Mantine road (a Box style prop, ' +
+            'the header takes the SAME gutter as Main by a different road (a style prop, ' +
               "not the shell padding var) — the breadcrumb's left edge and the globals' right edge " +
               "land on the card column's edges only while the two agree",
           )
@@ -862,7 +862,7 @@ describeShell(
      *
      * Default (prop omitted) is the token, unchanged. Overridden to a native unified-toolbar 52, the
      * header, the navbar's and aside's top, the page-bar band and Main all follow it — they derive
-     * from the same Mantine var, so this measures that nothing kept a copy of 44 — and the row's
+     * from the same var, so this measures that nothing kept a copy of 44 — and the row's
      * content (brand, toggle, breadcrumb) stays vertically centred in it.
      */
     const ASIDE_HEADER_SPEC: FixtureSpec = { ...HEADER_PAGE, aside: { title: 'Inspector' } }

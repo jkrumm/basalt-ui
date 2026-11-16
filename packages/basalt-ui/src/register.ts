@@ -3,7 +3,7 @@
  * primitives (AsyncState, assertNever), and the vendored Standard Schema v1 contract.
  *
  * Re-exported from the root barrel '.' so `declare module 'basalt-ui'` augmentation works.
- * Mantine-free. Imports only a type from ./tokens (erased at runtime).
+ * Imports only a type from ./tokens (erased at runtime).
  */
 import type { SeriesMap } from './tokens'
 

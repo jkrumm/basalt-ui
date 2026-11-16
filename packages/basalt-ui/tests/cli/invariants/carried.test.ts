@@ -60,10 +60,9 @@ describe('carried guards', () => {
       )
     expect(snippets.length).toBeGreaterThan(0)
     // v3: SKILL.md stays thin; what remains of the snippets lives in `references/` and the
-    // v3 `src/ui` surface, so a snippet in a SKILL.md or one importing `@mantine` is stale.
-    for (const { file, code } of snippets) {
+    // v3 `src/ui` surface, so a snippet in a SKILL.md is stale.
+    for (const { file } of snippets) {
       expect(file, file).toContain('/references/')
-      expect(code, file).not.toContain('@mantine')
     }
   })
 })

@@ -36,13 +36,13 @@ if (result.exitCode !== 0) {
   )
 }
 
-// What the compiled sheet must NOT carry, because this fixture renders the 2.x Mantine tree and
+// What the compiled sheet must NOT carry, because this fixture renders a tree whose reset is its own, and
 // measures it against what that tree looked like before Tailwind joined the page:
 //
 // - `@font-face`. `fonts.css` is inlined with its relative `url(./files/…)` un-rebased (the bundle
 //   cannot resolve them), and its faces (the `wdth` Hubot cut, `Head Digits`) would redefine the
 //   families `styles.css` already loads, moving every head-face and digit measurement.
-// - Tailwind's preflight, the top-level `@layer base { … }`. A Mantine app brings its own reset, and
+// - Tailwind's preflight, the top-level `@layer base { … }`. The app brings its own reset, and
 //   preflight's element defaults shift form-row geometry (VERIFIED: dropping only this block takes
 //   `forms-w46` from 3.6 px off-centre back to green).
 //

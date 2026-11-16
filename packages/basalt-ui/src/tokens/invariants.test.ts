@@ -259,7 +259,7 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     expect(custom).toContain(":root[data-theme='light']")
     expect(custom).not.toMatch(/^html\[/m)
     const legacy = buildPaletteCss()
-    expect(legacy).toContain("html[data-mantine-color-scheme='light']")
+    expect(legacy).toContain("html[data-theme='light']")
     expect(legacy).not.toContain(':root[')
   })
 
@@ -343,7 +343,7 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
   test('d25 dev gating: the dev check sits behind a literal NODE_ENV read, so production does not throw and dev does', () => {
     const core = readFileSync(join(TOKENS_DIR, 'core.ts'), 'utf8')
     expect(core).toMatch(
-      /if \(process\.env\.NODE_ENV !== 'production'\) assertConsumerBasaltName\(/,
+      /if \(process\.env\.NODE_ENV !== 'production'\)\s*assertConsumerBasaltName\(/,
     )
     expect(core).not.toMatch(/\bisDev\s*\(/)
 
@@ -361,7 +361,7 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     }
   })
 
-  test('d26 layering: ./tokens imports nothing but relative modules, so it resolves with no Mantine or React', () => {
+  test('d26 layering: ./tokens imports nothing but relative modules, so it resolves with no UI library or React', () => {
     const offenders: string[] = []
     for (const file of readdirSync(TOKENS_DIR).filter(
       (f) => f.endsWith('.ts') && !f.includes('.test.'),

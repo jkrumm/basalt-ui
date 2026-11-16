@@ -1,6 +1,6 @@
 /**
  * `defineOverlays` and `OverlayHost`: typed keys, one stack, dialog or sheet, open-before-mount,
- * and no base-ui or Mantine import in the two modules (they sit on `ui/dialog` and `ui/sheet`).
+ * and no base-ui import in the two modules (they sit on `ui/dialog` and `ui/sheet`).
  */
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'

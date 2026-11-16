@@ -237,7 +237,7 @@ describe('buildDensityCss', () => {
       'space-chart-dot-r',
     ]
 
-    // `space.scale.*` (the generic Mantine scale) resolves through `--mantine-spacing-*`, not a
+    // `space.scale.*` (the generic spacing scale) resolves through the spacing ladder, not a
     // `--basalt-space-*` var, so it is not part of this contract at all.
     const expected = [
       ...Object.keys(space.anchors).map(kebab),
@@ -250,7 +250,7 @@ describe('buildDensityCss', () => {
 })
 
 describe('the input-height var is emitted in REM, never a flat px', () => {
-  test("level 0 emits exactly 2.625rem — Mantine's own --input-height-md value", () => {
+  test('level 0 emits exactly 2.625rem', () => {
     expect(buildDensityCss(deriveSpacing(0))).toContain('--basalt-space-input-height: 2.625rem;')
     expect(buildDensityCss(deriveSpacing(0))).not.toContain('--basalt-space-input-height: 42px;')
   })

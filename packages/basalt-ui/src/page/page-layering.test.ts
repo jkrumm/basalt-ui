@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 /**
  * The v3 page half (Prose, Callout, Toc, ArticleLayout and their helpers) imports nothing from the
- * 2.x `content` module, nothing from Mantine and none of the markdown pipeline packages.
+ * 2.x `content` module, and none of the markdown pipeline packages.
  */
 const DIR = import.meta.dir
 const SOURCES = [
@@ -25,7 +25,7 @@ const BANNED = /(^|\/)content(\/|$)|^(react-markdown|remark-gfm|rehype-sanitize|
 
 describe('src/page layering', () => {
   for (const file of SOURCES) {
-    test(`${file} imports nothing from content, Mantine or the markdown pipeline`, () => {
+    test(`${file} imports nothing from content or the markdown pipeline`, () => {
       const specs = importsOf(readFileSync(join(DIR, file), 'utf8'))
       for (const spec of specs) expect(`${file}: ${spec}`).not.toMatch(BANNED)
     })

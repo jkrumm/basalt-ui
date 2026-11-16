@@ -93,8 +93,8 @@ const isOwn = (p: ts.Symbol): boolean =>
 /**
  * A first parameter's own top-level members as `name?: type` lines, empty unless it is an object
  * type or a union of them (a primitive has no shape). Nullability is stripped first, so an optional
- * `props?` still gets its block. Members inherited from node_modules (Mantine's `BoxProps`, DOM
- * attributes) are dropped: they are Mantine's to document and would drown the few props basalt-ui
+ * `props?` still gets its block. Members inherited from node_modules (a UI library's own props, DOM
+ * attributes) are dropped: they are that library's to document and would drown the few props basalt-ui
  * adds.
  *
  * A union is a props type with modes (`BasaltProvider`: `router` XOR `children`). Every member's

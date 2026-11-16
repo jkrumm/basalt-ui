@@ -22,7 +22,7 @@ describe('size-class em literals', () => {
 })
 
 describe('CONTAINER_GRID_BREAKPOINTS', () => {
-  test('maps all five Mantine sizes onto a CONTAINER_CLASSES boundary', () => {
+  test('maps all five sizes onto a CONTAINER_CLASSES boundary', () => {
     const { narrow, regular, wide } = CONTAINER_CLASSES
     expect(CONTAINER_GRID_BREAKPOINTS).toEqual({
       xs: `${narrow}px`,

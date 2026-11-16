@@ -62,7 +62,7 @@ describe('consumerViolations', () => {
 })
 
 test('packageOf', () => {
-  expect(packageOf('@mantine/core/styles.css')).toBe('@mantine/core')
+  expect(packageOf('@tanstack/charts/react')).toBe('@tanstack/charts')
   expect(packageOf('motion/react')).toBe('motion')
   expect(packageOf('react')).toBe('react')
 })
@@ -75,10 +75,7 @@ describe('peerClassViolations', () => {
     writeFileSync(join(root, rel), body)
   }
 
-  write(
-    'dist/index.js',
-    "import { MantineProvider } from '@mantine/core'\nexport * from './lazy-host.js'\n",
-  )
+  write('dist/index.js', "import { clsx } from 'clsx'\nexport * from './lazy-host.js'\n")
   write('dist/index.d.ts', "export type { A } from './a.js'\n")
   write('dist/a.d.ts', "export type A = import('@tanstack/react-router').Router\n")
   write('dist/lazy-host.js', "export const load = () => import('shiki')\n")

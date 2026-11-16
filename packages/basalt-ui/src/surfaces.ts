@@ -1,6 +1,6 @@
 /**
  * SURFACES registry — the one hard source for the enforcement seam.
- * Mantine-free, dependency-free.
+ * Dependency-free.
  *
  * SURFACES: the discriminated doctrine|tooling registry for all basalt subpaths and advisory surfaces.
  * RULE_NAMES: derived projection — the deduped set of doctrine rule names (PROJECTION 1).
@@ -19,7 +19,7 @@
  * const r: RuleName = 'tokens' // ok
  * // const bad: RuleName = 'overlays' // tsc error — not in the union
  */
-export type RuleName = 'tokens' | 'charts' | 'mantine' | 'state' | 'controls' | 'batteries'
+export type RuleName = 'tokens' | 'charts' | 'ui' | 'state' | 'controls' | 'batteries'
 
 /**
  * Every rule the shipped oxlint JS plugin registers (`configs/oxlint-plugin.js` → `rules`), as one
@@ -80,7 +80,7 @@ export type SkillName = 'basalt-app' | 'basalt-design' | 'basalt-charts'
  * @example
  * const l: Layer = 'headless'
  */
-export type Layer = 'mantine-coupled' | 'headless' | 'app-global' | 'non-js-asset' | 'build-tooling'
+export type Layer = 'ui' | 'headless' | 'app-global' | 'non-js-asset' | 'build-tooling'
 
 /**
  * A single import ban. `{ctx}` in the message is filled per target so shipped/repo wording
@@ -155,7 +155,7 @@ type BaseSurface = {
 export type DoctrineSpec = BaseSurface & {
   readonly kind: 'doctrine'
   readonly rule: RuleName
-  /** A LIST (skill↔surface is many-to-one — basalt-design covers tokens AND mantine AND state). */
+  /** A LIST (skill↔surface is many-to-one — basalt-design covers tokens AND ui AND state). */
   readonly skill: readonly SkillName[]
   /**
    * The oxlint plugin rules this surface's doctrine is enforced by. Required (`[]` is legal, and
@@ -219,8 +219,8 @@ export const SURFACES = {
   // ── JS-subpath surfaces ──────────────────────────────────────────────────────────────────────
   '.': {
     kind: 'doctrine',
-    layer: 'mantine-coupled',
-    rule: 'mantine',
+    layer: 'ui',
+    rule: 'ui',
     skill: ['basalt-app', 'basalt-design'],
     // The chrome half of the plugin: the shell, the card idiom, the page title and the scroll
     // doctrine. `hand-rolled-shell` sits here rather than on a shell-shaped surface because
@@ -253,7 +253,7 @@ export const SURFACES = {
       'agent-no-raw-usechat',
       'ai-sdk-major',
     ],
-    // agent/rules/basalt-mantine.md — stated, not guarded. This law has no AST form to catch, because
+    // agent/rules/basalt-ui.md — stated, not guarded. This law has no AST form to catch, because
     // `cssVariablesResolver` is now `Omit`ted from the accepted prop type and a hand-built
     // `createTheme` is a consumer's own call to make. (`duplicate-notifications-mount`, the
     // other 1.28.0 mount-order rule, retired — `BasaltNotifications` no longer exists.)
@@ -279,7 +279,7 @@ export const SURFACES = {
     skill: ['basalt-charts'],
     pluginRules: ['chart-in-raw-surface', 'chart-engine-boundary', 'chart-host-single'],
     description:
-      'CartesianChart (the TanStack Charts rung), the Lines, Bars, Sparkline, Heatmap and BandStrip kinds, ChartCard, the shared chartCursor and the geometry seam: useChartFocus (focus, dim the rest, one bound readout) and chartLabels (server-equal label width and placement) (Mantine-free; @tanstack/charts + d3-scale peers)',
+      'CartesianChart (the TanStack Charts rung), the Lines, Bars, Sparkline, Heatmap and BandStrip kinds, ChartCard, the shared chartCursor and the geometry seam: useChartFocus (focus, dim the rest, one bound readout) and chartLabels (server-equal label width and placement) (no React UI library; @tanstack/charts + d3-scale peers)',
     optionalPeers: ['@tanstack/charts', 'd3-scale'],
     globs: {
       shipped: ['**/charts/**'],
@@ -287,7 +287,7 @@ export const SURFACES = {
     },
     // The engine boundary (@visx/* banned, @tanstack/charts allowlisted) is enforced by the
     // `basalt/chart-engine-boundary` oxlint plugin rule, `@tanstack/charts/react` by the
-    // repo-local `basalt/chart-host-single`, and the Mantine-free boundary by `basalt/token-layer-boundary` (repo-local only — see
+    // repo-local `basalt/chart-host-single`, and the token-layer boundary by `basalt/token-layer-boundary` (repo-local only — see
     // that rule's file-header comment for why) — both configs/oxlint-plugin.js, not
     // no-restricted-imports.
     forbiddenImports: [],
@@ -300,7 +300,7 @@ export const SURFACES = {
     skill: ['basalt-design', 'basalt-charts'],
     // The type-scale rules live with the tokens, not with `.`: both police a value that left the
     // `--basalt-*` system, which is this surface's whole subject. `token-layer-boundary` is the
-    // repo-local-only rule that keeps the layer upstream of Mantine (see below).
+    // repo-local-only rule that keeps the layer free of UI imports (see below).
     pluginRules: [
       'no-raw-font-size',
       'raw-size-literal',
@@ -308,12 +308,12 @@ export const SURFACES = {
       'token-layer-boundary',
     ],
     description:
-      'BASALT token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha (Mantine-free)',
+      'BASALT token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha',
     globs: {
       shipped: ['**/tokens/**'],
       repo: ['packages/basalt-ui/src/tokens/**'],
     },
-    // Mantine-free boundary enforced by `basalt/token-layer-boundary`, repo-local only (see
+    // Token-layer boundary enforced by `basalt/token-layer-boundary`, repo-local only (see
     // ./charts above and that rule's file-header comment for why).
     forbiddenImports: [],
   },
@@ -327,7 +327,7 @@ export const SURFACES = {
   },
   './table': {
     kind: 'doctrine',
-    layer: 'mantine-coupled',
+    layer: 'ui',
     rule: 'batteries',
     skill: ['basalt-design'],
     pluginRules: [],
@@ -338,7 +338,7 @@ export const SURFACES = {
   },
   './content': {
     kind: 'doctrine',
-    layer: 'mantine-coupled',
+    layer: 'ui',
     rule: 'batteries',
     skill: ['basalt-design'],
     pluginRules: [],
@@ -358,7 +358,7 @@ export const SURFACES = {
   },
   './controls': {
     kind: 'doctrine',
-    layer: 'mantine-coupled',
+    layer: 'ui',
     rule: 'controls',
     skill: ['basalt-design'],
     // The text lane of law C1 — the plugin's `control-outside-home` seen through a host-tag nesting
@@ -381,7 +381,7 @@ export const SURFACES = {
       'C12 — one shape for refresh/sync (RefreshButton); only the alias table sees a renamed copy',
     ],
     description:
-      'The control tier (docs/v3/concepts/controls-url-state.md). Exports: `FilterSet` (a list of `spec(...)`s as one nowrap row of pills, a measured +N fold and the mobile Filters (n) sheet), `ViewTabs` bound to a control handle, `ControlView`, `ControlHome`, `filterSlot`, `spec`, and the v3 forms `FormField`/`FormRow`/`FormFooter`/`useFormDraft`/`toSubmitErrors`. The home picks the presentation (pill, row, inline), never a prop. Every control owns its own desktop/mobile swap in CSS and resolves with no Mantine installed.',
+      'The control tier (docs/v3/concepts/controls-url-state.md). Exports: `FilterSet` (a list of `spec(...)`s as one nowrap row of pills, a measured +N fold and the mobile Filters (n) sheet), `ViewTabs` bound to a control handle, `ControlView`, `ControlHome`, `filterSlot`, `spec`, and the v3 forms `FormField`/`FormRow`/`FormFooter`/`useFormDraft`/`toSubmitErrors`. The home picks the presentation (pill, row, inline), never a prop. Every control owns its own desktop/mobile swap in CSS and resolves with only its own peers.',
     optionalPeers: [],
     globs: {
       shipped: [],
@@ -446,7 +446,7 @@ export const SURFACES = {
   },
   './shell': {
     kind: 'tooling',
-    layer: 'mantine-coupled',
+    layer: 'ui',
     description:
       'App shell — AppShell, the CSS-grid frame: header, rail, one scrollport, aside and phone tab bar from one defineNav',
     forbiddenImports: [],
@@ -519,7 +519,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'non-js-asset',
     description:
-      'Mandatory CSS import (after the Mantine styles.layer.css bundles) — @layer basalt base styles, iOS input safety net, font stack',
+      'Mandatory CSS import — @layer basalt base styles, iOS input safety net, font stack',
     forbiddenImports: [],
   },
   './configs/*': {
@@ -539,13 +539,13 @@ export const SURFACES = {
     skill: ['basalt-app'],
     // query-fn-unwrap: reassigned here from the now-dropped `./query` surface (C1 consolidation —
     // createBasaltQueryClient/unwrap/BasaltQueryDevtools are root barrel exports now, but their
-    // doctrine stays `batteries` — "use the shipped thing" — not `mantine`). `query-dual-import`
+    // doctrine stays `batteries` — "use the shipped thing" — not `ui`). `query-dual-import`
     // was retired alongside it — its premise (a raw `@tanstack/react-query` import beside
     // `basalt-ui/query`) is unreachable now that the `./query` subpath is gone.
     pluginRules: ['query-fn-unwrap'],
     globs: {
       // Shipped is a catch-all (not just src/**+app/**) so consumer code under components/, lib/,
-      // features/, etc. is also covered. The chart-engine and Mantine-free charts/tokens
+      // features/, etc. is also covered. The chart-engine and token-layer
       // boundaries used to live here too and need last-writer-wins EMIT_ORDER games against the
       // narrower ./tokens/./charts overrides — they're now enforced by `basalt/chart-engine-boundary` and
       // `basalt/token-layer-boundary` (plugin rules, immune to that class of clobbering) instead,
@@ -575,7 +575,7 @@ export const SURFACES = {
 
 /**
  * Derived, deduped set of doctrine rule names. Projection 1 of SURFACES.
- * → ['mantine', 'charts', 'tokens', 'batteries', 'state', 'controls'] (order is insertion order of Set)
+ * → ['ui', 'charts', 'tokens', 'batteries', 'state', 'controls'] (order is insertion order of Set)
  *
  * @example
  * RULE_NAMES.includes('tokens') // true

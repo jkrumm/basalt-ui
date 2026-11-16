@@ -2,7 +2,7 @@
  * The default `buildPaletteCss()` output, held to structural invariants rather than a committed
  * byte-for-byte fixture.
  *
- * `--basalt-*` CSS is the framework's widest contract: the Mantine theme, every CSS module, every
+ * `--basalt-*` CSS is the framework's widest contract: the component layer, every CSS module, every
  * chart, and (since the framework-free work) a non-React consumer that ships the emitted string
  * directly all read the same variable set. A byte-snapshot caught any drift, including cosmetic
  * whitespace, at the cost of a fixture (`tests/fixtures/palette-default.css`) that had to be
@@ -32,19 +32,19 @@ const NON_PALETTE_HEX = new Set(['#000'])
 describe('buildPaletteCss default output', () => {
   const css = buildPaletteCss()
 
-  it('keeps the legacy `html[data-mantine-color-scheme]` selectors on the default path', () => {
-    // The default output tracks Mantine's own toggle attribute on <html>, at 0-1-1 specificity.
+  it('keeps the `html[data-theme]` selectors on the default path', () => {
+    // The default output tracks the scheme attribute on <html>, at 0-1-1 specificity.
     // Consumers override basalt vars under that same selector; raising it (to `:root[…]`, 0-2-0)
     // would silently win over their override. The custom-selector path emits `:root[…]` instead —
     // see `BuildPaletteOpts.scheme`.
-    expect(css).toContain("html[data-mantine-color-scheme='dark']")
-    expect(css).toContain("html[data-mantine-color-scheme='light']")
+    expect(css).toContain("html[data-theme='dark']")
+    expect(css).toContain("html[data-theme='light']")
     expect(css).not.toContain(':root[')
   })
 
   it('declares the SAME --basalt-* names, in the SAME order, under both scheme blocks', () => {
-    const dark = namesInBlock(css, "html[data-mantine-color-scheme='dark']")
-    const light = namesInBlock(css, "html[data-mantine-color-scheme='light']")
+    const dark = namesInBlock(css, "html[data-theme='dark']")
+    const light = namesInBlock(css, "html[data-theme='light']")
     expect(dark.length).toBeGreaterThan(0)
     expect(light).toEqual(dark)
   })
@@ -93,9 +93,9 @@ describe('buildPaletteCss color-scheme selector', () => {
     expect(css).toContain(":root[data-mode='light']")
   })
 
-  it("defaults to Mantine's attribute at `:root` specificity when only `defaultScheme` is set", () => {
+  it('defaults to the `data-theme` attribute at `:root` specificity when only `defaultScheme` is set', () => {
     const css = buildPaletteCss({ defaultScheme: 'light' })
-    expect(css).toContain(":root[data-mantine-color-scheme='light']")
+    expect(css).toContain(":root[data-theme='light']")
     expect(css).not.toContain('html[')
   })
 
@@ -125,9 +125,7 @@ describe('buildPaletteCss color-scheme selector', () => {
     // Dark rides `:root`, so the fallback covers light only.
     expect(css).toContain('@media (prefers-color-scheme: light) {')
     expect(css).not.toContain('@media (prefers-color-scheme: dark) {')
-    expect(css.indexOf('@media')).toBeLessThan(
-      css.indexOf(":root[data-mantine-color-scheme='light'] {"),
-    )
+    expect(css.indexOf('@media')).toBeLessThan(css.indexOf(":root[data-theme='light'] {"))
   })
 
   it('`defaultScheme: "none"` + `mediaFallback` covers both schemes', () => {
@@ -137,7 +135,7 @@ describe('buildPaletteCss color-scheme selector', () => {
   })
 
   it('leaves the legacy selector alone — `only` is orthogonal to the scheme options', () => {
-    expect(buildPaletteCss({ only: 'core' })).toContain("html[data-mantine-color-scheme='dark']")
+    expect(buildPaletteCss({ only: 'core' })).toContain("html[data-theme='dark']")
   })
 
   it('carries consumer `groups` into every emitted scheme block', () => {
