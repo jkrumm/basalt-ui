@@ -39,7 +39,7 @@ states, backgrounds, general icons) stays zinc-neutral. Status colours stay rese
 One accent, used with intent. Never spend it on UI selection state (active nav row, selected tab)
 — that's not a data signal; the active row is an ink tint, not the accent fill (a filled surface
 keeps a deep accent + white label in BOTH schemes — a light fill can't carry white text and a
-darker one drops below 3:1 on the dark page; never trust Mantine's `autoContrast`, which resolves
+darker one drops below 3:1 on the dark page; never trust a library's auto-contrast, which resolves
 scheme-blindly via a brightness heuristic — the label is a `--basalt-on-*` token, resolved in CSS).
 
 ## Five principles (priority order)
@@ -72,17 +72,16 @@ prefix is the framework instantiation.
 | ------------- | -------------------- | ------------------------------------------------------------------- | ------------------------------------------- |
 | **Primitive** | Raw designed hues    | palette data (`BP`, `p()`)                                          | a designed hue stop                         |
 | **Semantic**  | Intent-bearing pairs | `STATUS`/`SEMANTIC`/`NEUTRAL`/`SURFACE` → `--basalt-*` → `BASALT.*` | `BASALT.good`, `BASALT.line`, `BASALT.card` |
-| **Component** | Element-specific     | Mantine theme + chart primitives                                    | `ChartCard`, Mantine `color="blue"`         |
+| **Component** | Element-specific     | `ui/*` primitives + chart primitives                                | `ChartCard`, `Button` variant `primary`     |
 
 **Flow** — three layers, strictly separated:
 
 Palette data (pure `{light,dark}` pairs, no React) → `buildPaletteCss()` emits `--basalt-*` vars → `BASALT.*` refs.
 
 Because the tokens are CSS variables, `BASALT.*` works identically in components **and** non-component
-files (constants, formulas) — no hook required. The UI-chrome theme (Mantine) is reskinned from the
-**same** palette data via a `cssVariablesResolver` that binds Mantine's surface/border/dimmed
-variables to the same `--basalt-*` the charts use, so chrome and charts share one scheme-reactive
-identity. See `MANTINE-THEMING.md` for that wiring.
+files (constants, formulas) — no hook required. The `ui/*` primitives read the
+**same** `--basalt-*` variables through the Tailwind `@theme inline` bridge, so chrome and charts
+share one scheme-reactive identity.
 
 ## When a hue is earned
 
@@ -123,8 +122,8 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : BASALT.
 
   `Card`/`Paper` default to the `shadow-card` token (a low-opacity shadow with the 1px ring baked
   into the shadow itself, no `border` property) — depth comes from that whisper shadow, not a bare
-  hairline. There **is** a card-shadow token (`--basalt-shadow-card`); reach for a plain Mantine
-  `shadow` prop only for a genuinely one-off floating surface outside the standard card system.
+  hairline. There **is** a card-shadow token (`--basalt-shadow-card`); reach for `shadow-raised`
+  only for a genuinely one-off floating surface outside the standard card system.
 
 - **Tight radii.** Small radii read precise, not soft; nested surfaces step by at least 3 px. Owned in
   the theme (the `radius` knob shifts all). Values: § Scales.
@@ -226,8 +225,8 @@ The teeth that keep the law from drifting:
 - **The `basalt` oxlint plugin rules** — `basalt/chart-engine-boundary` bans `@visx/*` and every
   engine import outside the allowlist (`docs/V2-SPEC.md` § 9.8, shipped in the consumer preset
   too); `basalt/token-layer-boundary` keeps `src/charts/**` and `src/tokens/**`
-  Mantine-free — upstream of Mantine in the layering (repo-local only, a basalt-internal invariant,
-  not a consumer contract) AND resolving/rendering with no `@mantine/*` installed (CI-tested via
+  free of React UI code — upstream of the UI layer (repo-local only, a basalt-internal invariant,
+  not a consumer contract) AND resolving with only their own peers installed (CI-tested via
   `scripts/pack-test.sh` + `scripts/check-dist-layering.mjs`).
 - **The `ChartCard` contract is social** — it's easier to compose the
   primitives than to work around them. A markdown rule alone drifts; the colour/spacing guard is the
