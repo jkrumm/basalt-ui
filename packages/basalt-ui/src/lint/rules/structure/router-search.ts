@@ -45,6 +45,15 @@ const IMPURE_GLOBALS: ReadonlySet<string> = new Set([
   'performance',
 ])
 
+/** TS nodes that wrap a value expression: an identifier under one is still a read. */
+const TS_VALUE_WRAPPERS: ReadonlySet<string> = new Set([
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'TSNonNullExpression',
+  'TSTypeAssertion',
+  'TSInstantiationExpression',
+])
+
 /** The names a binding pattern declares: `a`, `{ a, b: c, ...d }`, `[a, , b]`, `a = 1`. */
 function patternNames(pattern: Node | undefined, into: Set<string>): void {
   if (!pattern) return
@@ -63,7 +72,11 @@ function patternNames(pattern: Node | undefined, into: Set<string>): void {
 function isLocallyBound(node: Node, name: string): boolean {
   for (let up = node['parent'] as Node | undefined; up; up = up['parent'] as Node | undefined) {
     const names = new Set<string>()
-    if (up.type === 'ArrowFunctionExpression' || up.type === 'FunctionExpression') {
+    if (
+      up.type === 'ArrowFunctionExpression' ||
+      up.type === 'FunctionExpression' ||
+      up.type === 'FunctionDeclaration'
+    ) {
       for (const param of children(up, 'params')) patternNames(param, names)
     } else if (up.type === 'CatchClause') patternNames(child(up, 'param'), names)
     else if (up.type === 'BlockStatement' || up.type === 'Program') {
@@ -365,7 +378,9 @@ function impureRead(root: Node): string | undefined {
         (parent?.type === 'Property' &&
           parent['computed'] !== true &&
           child(parent, 'key') === node)
-      if (!isKey) found = node['name'] as string
+      // A type position (`{ location?: string }`) names no value; `location!` and `location as X` do.
+      const isType = parent?.type.startsWith('TS') === true && !TS_VALUE_WRAPPERS.has(parent.type)
+      if (!isKey && !isType) found = node['name'] as string
     } else if (
       (node.type === 'NewExpression' || node.type === 'CallExpression') &&
       nameOf(child(node, 'callee')) === 'Date' &&
