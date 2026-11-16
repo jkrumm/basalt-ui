@@ -35,6 +35,7 @@ check-fast: ## Local check for a lead: `check` with only the layout files the br
 check-pre:
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts --check
 	@$(MAKE) --no-print-directory gen-check
+	@bun scripts/check-legacy-names.ts
 	@cd packages/basalt-ui && bun run build
 	@bun run pre
 	@bun --filter @basalt-ui/playground build

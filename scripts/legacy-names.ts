@@ -4,7 +4,7 @@
  * `--vx-*` and the `VX` accessor were the visx/Mantine era's names; v3 owns its styling, so it owns its names
  * (`--basalt-*`, `BASALT`). Mantine is gone from the runtime. Two consumers read this module:
  *
- * - `scripts/rename-vx.ts`, the re-runnable codemod, skips every path and line allowed here;
+ * - `scripts/rename-legacy.ts`, the re-runnable codemod, skips every path and line allowed here;
  * - `scripts/check-legacy-names.ts`, the gate in `make check` and CI, fails on any spelling outside it, in the
  *   source tree and in the packed tarball.
  *
@@ -72,10 +72,28 @@ export const ALLOWED: readonly Allow[] = [
     reason: 'content-frozen 2.x site, rebuilt on v3 later (AGENTS.md Structure)',
   },
   { path: 'bun.lock', reason: 'integrity hashes, not names' },
+  // The v3 design records argue the move off Mantine, so they name it; their token names are the new ones.
+  ...['docs/v3/ARCHITECTURE.md', 'docs/v3/DIRECTION.md', 'docs/v3/concepts/'].map((path) => ({
+    path,
+    kinds: ['mantine'] as const,
+    reason: 'the v3 rationale names the library v3 replaced',
+  })),
+  // The 2.x lint plugin behind `configs/oxlint.json`: its rules detect Mantine constructs, and it retires
+  // whole with the 2.x preset (the v3 presets load `basalt-ui/lint`), not rule by rule.
+  ...[
+    'packages/basalt-ui/configs/oxlint-plugin.js',
+    'packages/basalt-ui/configs/oxlint-plugin.test.ts',
+    'packages/basalt-ui/scripts/gen-oxlint.ts',
+  ].map((path) => ({
+    path,
+    kinds: ['mantine'] as const,
+    reason:
+      'the 2.x lint plugin and the generator of its `@mantine` bans, retired with the 2.x preset',
+  })),
   // The rename and its gate name what they rename and refuse.
   { path: 'scripts/legacy-names.ts', reason: 'this allowlist' },
-  { path: 'scripts/rename-vx.ts', reason: 'the codemod rewrites these spellings' },
-  { path: 'scripts/rename-vx.test.ts', reason: 'the codemod fixtures' },
+  { path: 'scripts/rename-legacy.ts', reason: 'the codemod rewrites these spellings' },
+  { path: 'scripts/rename-legacy.test.ts', reason: 'the codemod fixtures' },
   { path: 'scripts/check-legacy-names.ts', reason: 'the gate names what it refuses' },
   { path: 'scripts/check-legacy-names.test.ts', reason: 'the gate plants offenders' },
   // Lines that read what a 2.x tag carries, or ban a removed 2.x API by its name.

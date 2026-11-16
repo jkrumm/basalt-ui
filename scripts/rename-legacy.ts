@@ -11,7 +11,7 @@
  * gets its own new lines renamed. Paths and lines `scripts/legacy-names.ts` allows are never touched; that
  * module is also the gate (`scripts/check-legacy-names.ts`) that proves nothing was left behind.
  *
- * Usage: bun scripts/rename-vx.ts [--prefix basalt] [--no-generate] [--dry]
+ * Usage: bun scripts/rename-legacy.ts [--prefix basalt] [--no-generate] [--dry]
  *   --prefix       the one parameter: the new name (`basalt` gives `--basalt-*`, `BASALT`, `BasaltVar`)
  *   --no-generate  rewrite and move only, skip the generators
  *   --dry          print what would change, write nothing
@@ -59,13 +59,21 @@ export function rules(prefix: string): Rule[] {
   ]
 }
 
+/**
+ * Migration rows keep the 2.x name they map `from`; the v3 name they map `to` (and a value shift's `token`)
+ * follows the rename, so a row never points at a name v3 does not emit.
+ */
+const ROW_FILES = /^packages\/basalt-ui\/migrations\/areas\/[^/]+\.json$/
+const ROW_TARGET = /^\s*"(to|token)": /
+
 /** Rewrite one file's text; lines `lineAllows` keeps (and the protected names) pass through. */
 export function rewrite(text: string, path: string, prefix: string): string {
   const all = rules(prefix)
+  const rows = ROW_FILES.test(path)
   return text
     .split('\n')
     .map((line) => {
-      if (lineAllows(path, 'vx', line)) return line
+      if (rows ? !ROW_TARGET.test(line) : lineAllows(path, 'vx', line)) return line
       const held: string[] = []
       let out = line
       for (const name of PROTECTED) {
@@ -136,7 +144,7 @@ if (import.meta.main) {
   const at = args.indexOf('--prefix')
   const prefix = at === -1 ? 'basalt' : (args[at + 1] ?? '')
   if (!/^[a-z][a-z0-9]*$/.test(prefix)) {
-    console.error(`rename-vx: --prefix takes a lowercase word, got '${prefix}'`)
+    console.error(`rename-legacy: --prefix takes a lowercase word, got '${prefix}'`)
     process.exit(2)
   }
   const dry = args.includes('--dry')
@@ -144,7 +152,8 @@ if (import.meta.main) {
   const files = git(['ls-files', '-z']).split('\0').filter(Boolean)
   let changed = 0
   for (const path of files) {
-    if (!TEXT.test(path) || fileAllows(path, 'vx') || !existsSync(join(ROOT, path))) continue
+    const kept = fileAllows(path, 'vx') && !ROW_FILES.test(path)
+    if (!TEXT.test(path) || kept || !existsSync(join(ROOT, path))) continue
     const text = readFileSync(join(ROOT, path), 'utf8')
     const next = rewrite(text, path, prefix)
     if (next === text) continue
@@ -162,6 +171,6 @@ if (import.meta.main) {
     if (dry) console.log(`move ${path} -> ${to}`)
     else git(['mv', path, to])
   }
-  console.log(`rename-vx: ${changed} files rewritten, ${moved} moved${dry ? ' (dry run)' : ''}`)
+  console.log(`rename-legacy: ${changed} files rewritten, ${moved} moved${dry ? ' (dry run)' : ''}`)
   if (!dry && !args.includes('--no-generate')) generate()
 }
