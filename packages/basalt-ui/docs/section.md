@@ -26,6 +26,8 @@ Section<K extends string = string>(props: SectionProps<K>): ReactElement
   children?: ReactNode
 ```
 
+`ControlHandle` import from `basalt-ui/router`: `import type { ControlHandle } from 'basalt-ui/router'`.
+
 ## Example
 
 ```tsx

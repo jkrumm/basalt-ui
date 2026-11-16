@@ -29,6 +29,8 @@ InnerNav<K extends string = string>({ label, state, filter, groups, }: InnerNavP
   groups: readonly InnerNavGroup[]
 ```
 
+`PushField` import from `basalt-ui/router`: `import type { PushField } from 'basalt-ui/router'`.
+
 ## Example
 
 ```tsx

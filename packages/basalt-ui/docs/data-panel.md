@@ -27,13 +27,13 @@ DataPanel(props: DataPanelProps): ReactElement
   empty?: Empty | null
   controls?: ControlsSlot<"widget">
   toolbar?: ControlsSlot<"widget">
-  menu?: Menu
+  menu?: CardMenu
   legend?: readonly LegendEntry[]
   bodySize: { rows: number; } | { height: number; }  // Required: the loading card draws its final shape
   body: BoxSlot  // Tables, lists and boards
 ```
 
-`Phase`, `QueryStateLike`, `Empty`, `Menu` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty, Menu } from 'basalt-ui/cards'`.
+`Phase`, `QueryStateLike`, `Empty`, `CardMenu` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty, CardMenu } from 'basalt-ui/cards'`.
 
 ## Example
 

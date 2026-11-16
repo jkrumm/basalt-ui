@@ -594,20 +594,34 @@ const FRAME_TYPES = [
   'QueryStateLike',
   'Empty',
   'FrameState',
-  'Menu',
+  'FrameHead',
+  'CardAction',
+  'CardMenu',
   'MenuEntry',
   'Delta',
-  'Status',
+  'Verdict',
   'Tone',
+  'Fact',
   'FootFacts',
 ] as const
 
-/** One line naming the import of every frame type the signature uses; empty when it uses none. */
+/** The subpath that owns the bound-handle types, beside `defineControls` and `field`. */
+const HANDLE_TYPES_SUBPATH = 'basalt-ui/router'
+const HANDLE_TYPES = ['ControlHandle', 'PushField'] as const
+
+/** One line per subpath naming the import of every shared type the signature uses; empty when it uses none. */
 function frameTypesImportLine(signature: string): string {
-  const used = FRAME_TYPES.filter((t) => new RegExp(`\\b${t}\\b`).test(signature))
+  return [
+    importLine(FRAME_TYPES, FRAME_TYPES_SUBPATH, signature),
+    importLine(HANDLE_TYPES, HANDLE_TYPES_SUBPATH, signature),
+  ].join('')
+}
+
+function importLine(names: readonly string[], subpath: string, signature: string): string {
+  const used = names.filter((t) => new RegExp(`\\b${t}\\b`).test(signature))
   return used.length === 0
     ? ''
-    : `\n\`${used.join('`, `')}\` import from \`${FRAME_TYPES_SUBPATH}\`: \`import type { ${used.join(', ')} } from '${FRAME_TYPES_SUBPATH}'\`.\n`
+    : `\n\`${used.join('`, `')}\` import from \`${subpath}\`: \`import type { ${used.join(', ')} } from '${subpath}'\`.\n`
 }
 
 /** `docs/<kebab-name>.md`: the docs-format text, the signature, then the example regions. */

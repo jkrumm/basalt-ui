@@ -24,12 +24,12 @@ KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactElement
   meta?: readonly [string, string] | readonly [string]
   chips?: readonly [CardChip?, CardChip?, CardChip?, CardChip?]
   reason?: { icon?: IconComponent; text: string; }
-  status?: Status
+  status?: Verdict
   menu?: readonly MenuEntry[]  // Entries after the move rows the card always offers, so one entry is enough
   move: "static" | { column: ColumnRef<C>; index: number; columns: readonly ColumnRef<C>[]; onMove: (m: Move<C>) => void; dragging?: boolean; }  // Required: no card exists without the non-drag path
 ```
 
-`MenuEntry`, `Status` import from `basalt-ui/cards`: `import type { MenuEntry, Status } from 'basalt-ui/cards'`.
+`MenuEntry`, `Verdict` import from `basalt-ui/cards`: `import type { MenuEntry, Verdict } from 'basalt-ui/cards'`.
 
 ## Example
 

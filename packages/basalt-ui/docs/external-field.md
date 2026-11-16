@@ -22,6 +22,8 @@ externalField<T>(store: PlainStore<T>, o: FieldBase<T>): ControlHandle<T>
   subscribe: (onChange: () => void) => () => void
 ```
 
+`ControlHandle` import from `basalt-ui/router`: `import type { ControlHandle } from 'basalt-ui/router'`.
+
 ## Example
 
 ```tsx
