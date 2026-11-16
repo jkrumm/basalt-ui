@@ -3,7 +3,8 @@
  *
  * - `literal-search`: `search=` on a `Link` whose value is an object literal, or a function
  *   returning one; the same value as the `search` of `navigate({ ... })` (`navigate`,
- *   `x.navigate`, so `router.navigate` and a `useNavigate()` result bound to that name). A literal pins a default and hits the router traps reproduced on Router 1.170.46;
+ *   `x.navigate`, so `router.navigate` and a `useNavigate()` result bound to that name) or of
+ *   `redirect({ ... })` (`throw redirect(...)` in `beforeLoad`; `redirect` or `x.redirect`). A literal pins a default and hits the router traps reproduced on Router 1.170.46;
  *   the link of a store-backed route is `field.link()`.
  * - `loader-deps-search`: `loaderDeps: ({ search }) => search`, `=> ({ search })` and
  *   `=> ({ ...search })`. Returning the whole search re-runs the loader on every param (argo
@@ -111,13 +112,16 @@ const isLiteralSearch = (expression: Node): boolean =>
   expression.type === 'ObjectExpression' ||
   (isFunction(expression) && returned(expression).some((r) => r.type === 'ObjectExpression'))
 
-/** `navigate(...)` or `x.navigate(...)`, not `x['navigate']`. */
-const isNavigateCall = (node: Node): boolean => {
+/** `navigate(...)` / `redirect(...)`, bare or `x.`-qualified, not `x['navigate']`; the callee name. */
+const navigationCallee = (node: Node): 'navigate' | 'redirect' | undefined => {
   const callee = child(node, 'callee')
-  if (callee?.type === 'MemberExpression') {
-    return callee['computed'] !== true && nameOf(child(callee, 'property')) === 'navigate'
-  }
-  return nameOf(callee) === 'navigate'
+  const name =
+    callee?.type === 'MemberExpression'
+      ? callee['computed'] === true
+        ? undefined
+        : nameOf(child(callee, 'property'))
+      : nameOf(callee)
+  return name === 'navigate' || name === 'redirect' ? name : undefined
 }
 
 const literalSearch: AstForm = {
@@ -137,14 +141,15 @@ const literalSearch: AstForm = {
       if (isLiteralSearch(expression)) report(node, 'search={{ … }}')
     },
     CallExpression(node) {
-      if (!isNavigateCall(node)) return
+      const callee = navigationCallee(node)
+      if (!callee) return
       const [options] = children(node, 'arguments')
       if (options?.type !== 'ObjectExpression') return
       const search = children(options, 'properties').find(
         (property) => property.type === 'Property' && keyOf(property) === 'search',
       )
       const value = search ? child(search, 'value') : undefined
-      if (search && value && isLiteralSearch(value)) report(search, 'navigate({ search: { … } })')
+      if (search && value && isLiteralSearch(value)) report(search, `${callee}({ search: { … } })`)
     },
   }),
 }
