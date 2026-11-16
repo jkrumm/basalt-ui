@@ -24,6 +24,20 @@ export const SHADCN_TOKEN_RULES = [
   'require-static-classes',
 ] as const
 export const SHADCN_RESTYLE = 'no-restyle'
+
+/**
+ * Core oxlint rules a profile runs (not the plugin's): `no-use-before-define` at `parts` and `app`
+ * flags a binding read before its declaration, a closure above a later `const` included (n18's
+ * `announce` read a `const` three lines below it and threw on the first focus). Functions, classes
+ * and types hoist, so they stay allowed.
+ */
+export const CORE_RULES: Readonly<Record<string, readonly [string, ...unknown[]]>> = {
+  'no-use-before-define': [
+    'error',
+    { functions: false, classes: false, typedefs: false, variables: true },
+  ],
+}
+const CORE_PROFILES: readonly PresetProfile[] = ['parts', 'app']
 const SHADCN_RULES = [...SHADCN_TOKEN_RULES, SHADCN_RESTYLE] as const
 
 /** The npm specifiers oxlint loads as JS plugins; the shipped file extends from a consumer's tree. */
@@ -281,9 +295,11 @@ function shadcnRule(profile: PresetProfile, rule: string, inputs: PresetInputs):
 /** Every rule the preset can set, each `off`: the base a profile's rules are written over. */
 function allOff(table: RuleTable): Rules {
   return Object.fromEntries(
-    [...Object.keys(table).map((id) => `${PLUGIN_NAME}/${id}`), ...SHADCN_RULES.map(qualified)].map(
-      (name) => [name, 'off'],
-    ),
+    [
+      ...Object.keys(table).map((id) => `${PLUGIN_NAME}/${id}`),
+      ...SHADCN_RULES.map(qualified),
+      ...Object.keys(CORE_RULES),
+    ].map((name) => [name, 'off']),
   )
 }
 
@@ -295,6 +311,8 @@ export function rulesFor(profile: PresetProfile, inputs: PresetInputs): Rules {
   for (const name of input.profiles[profile]) rules[name] = on(input.options[profile][name])
   for (const rule of SHADCN_TOKEN_RULES) rules[qualified(rule)] = shadcnRule(profile, rule, inputs)
   rules[qualified(SHADCN_RESTYLE)] = restyleOptions(profile, inputs.contracts)
+  if (CORE_PROFILES.includes(profile))
+    for (const [name, setting] of Object.entries(CORE_RULES)) rules[name] = [...setting]
   return rules
 }
 

@@ -225,7 +225,8 @@
         "componentImports": ["(?:^|/)components/ui(?:/|$)"],
         "contracts": []
       }
-    ]
+    ],
+    "no-use-before-define": "off"
   },
   "overrides": [
     {

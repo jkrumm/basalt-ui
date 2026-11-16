@@ -609,6 +609,15 @@
           }
         ]
       }
+    ],
+    "no-use-before-define": [
+      "error",
+      {
+        "functions": false,
+        "classes": false,
+        "typedefs": false,
+        "variables": true
+      }
     ]
   },
   "overrides": [
