@@ -323,7 +323,8 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     }
   }
   // The field is the source of truth: a name that arrives from the URL opens its row once the rows
-  // load, and a field that goes unset (Back, `clear()`) closes the sheet the table opened.
+  // load, and a field that goes unset (Back, `clear()`) closes the sheet the table opened. A name no
+  // loaded row has opens `detailById`'s body once the query settled, or is cleared with a dev warning.
   useEffect(() => {
     if (detailState === undefined) return
     if (!openId) {
@@ -333,10 +334,27 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       return
     }
     if (shownFor.current === openId) return
-    const row = byId.get(openId)
-    if (row === undefined || host.current === undefined) return
+    // `matched` is every row the request matches (all pages of a client table), so a row off the
+    // current page still opens its `detail`.
+    const row = matched.find((r) => getRowId(r) === openId)
+    const { detailById } = options
+    if (row === undefined) {
+      if (phase.tag !== 'ready' && phase.tag !== 'empty') return
+      if (detailById === undefined) {
+        if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console -- dev-only diagnostic
+          console.warn(
+            `basalt-ui/table: "${options.id}" detailState names "${openId}", no loaded row; cleared. Pass detailById to open it.`,
+          )
+        }
+        detailState.clear()
+        return
+      }
+    }
+    if (host.current === undefined) return
     shownFor.current = openId
-    showDetail(row)
+    if (row !== undefined) showDetail(row)
+    else host.current.show({ title: options.label, body: (box) => detailById?.(openId, box) })
   })
   const keyboard = useRowKeyboard({
     rowIds: items.flatMap((item) => (item.type === 'row' ? [item.row.id] : [])),
