@@ -4,9 +4,8 @@
  * always complete, and a default never reaches the URL (the strip middleware removes it), except
  * a push enum's fallback once chosen (`?section=general`): `useIsSet()` reads it until `clear()`.
  *
- * Route ownership is the brand on `validateSearch` (`./brand`), read off the matched routes: a page
- * store's write from a route that does not run it is refused, and a global store mounted anywhere
- * but the root route is refused in development.
+ * Route ownership is the brand on `validateSearch` (`./brand`): a page store's write from a route
+ * that does not run it is refused, and a global store off the root route is refused in development.
  */
 import { useEffect, useSyncExternalStore } from 'react'
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router'
@@ -29,7 +28,7 @@ import type {
 import { labelOf, optionsOf } from './field'
 import type { ValuesOf, WindowOf } from './values'
 import { KEEP_KEY, chosenStrip, orderMiddlewares } from './middleware'
-import { assertNoUrlThunk, claimParams, conflictOf } from './ownership'
+import { assertNoConflict, assertNoUrlThunk, claimParams } from './ownership'
 import { attachWidgets } from './widgets'
 import type {
   Overrides,
@@ -507,8 +506,7 @@ export function defineControls<
   // Routers lent by mounted hooks, so `clear()` (an event handler, no hook in reach) navigates.
   const mounts = new Map<LooseRouter, number>()
   const useLend = (router: LooseRouter): void => {
-    const conflict = conflictOf(id)
-    if (conflict !== undefined) throw new Error(conflict)
+    assertNoConflict(id)
     useEffect(() => {
       assertGlobalsOnRoot(router)
       mounts.set(router, (mounts.get(router) ?? 0) + 1)
