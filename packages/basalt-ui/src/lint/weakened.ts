@@ -449,6 +449,14 @@ function raisedByRow(current: Budget, base: Budget, field: (typeof CEILINGS)[num
   )
 }
 
+/** A `.git` entry (a directory, or a worktree's file) at `dir` or above it. */
+function hasGitEntry(dir: string): boolean {
+  for (let at = resolve(dir); ; at = dirname(at)) {
+    if (existsSync(resolve(at, '.git'))) return true
+    if (dirname(at) === at) return false
+  }
+}
+
 function budgetRatchet(
   dir: string,
   baseRef: string | null | undefined,
@@ -465,7 +473,7 @@ function budgetRatchet(
     // A repo with no remote has no base to ratchet against: nothing can have been raised yet. A
     // remote with no resolvable base (a shallow or single-branch checkout) must fail, not pass.
     const remotes = git('remote')
-    if (git('rev-parse', '--git-dir').exitCode === 128) {
+    if (git('rev-parse', '--git-dir').exitCode === 128 && !hasGitEntry(dir)) {
       return result(
         'passed',
         `no git repo here (tried ${named}), so no ceiling can have been raised; \`git init\` and a first commit start the ratchet`,

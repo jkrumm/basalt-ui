@@ -54,6 +54,7 @@ describe('check 12: app wiring', () => {
       expect(r.status).toBe('fail')
       expect(r.detail).toContain('script "build"')
       expect(r.detail).toContain('vite build && tsc -b')
+      expect(r.detail.split('script "build"')).toHaveLength(2)
     },
   )
 

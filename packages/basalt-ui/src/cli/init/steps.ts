@@ -21,7 +21,7 @@ import { INVOKERS, LINT_INVOCATION } from '../doctor/wiring'
 import { registersRouterPlugin } from '../router-wiring'
 import { parseJsonc, readIfExists } from '../source-text'
 import { findRepoRoot, resolveAppDir } from '../index'
-import { swapStockBuild, typechecksBeforeTree } from '../route-tree'
+import { ROUTER_PLUGIN_OPTIONS, swapStockBuild, typechecksBeforeTree } from '../route-tree'
 import { isSiblingApp } from '../resolver'
 import { sync } from '../sync'
 import { claimPrefix } from '../sync/sibling'
@@ -507,7 +507,7 @@ const VITE_CONFIGS = ['vite.config.ts', 'vite.config.mts', 'vite.config.js', 'vi
 const CSS_ENTRIES = ['index.css', 'styles.css', 'main.css', 'app.css', 'globals.css']
 const BASALT_IMPORT = "import { basalt } from 'basalt-ui/vite'"
 const ROUTER_IMPORT = "import { tanstackRouter } from '@tanstack/router-plugin/vite'"
-const ROUTER_PLUGIN = "tanstackRouter({ target: 'react', autoCodeSplitting: true })"
+const ROUTER_PLUGIN = `tanstackRouter({ target: '${ROUTER_PLUGIN_OPTIONS.target}', autoCodeSplitting: ${ROUTER_PLUGIN_OPTIONS.autoCodeSplitting} })`
 
 /** The directories an app's build config or stylesheet entry sits in, nearest the declared roots. */
 function appDirs(ctx: Ctx): string[] {
