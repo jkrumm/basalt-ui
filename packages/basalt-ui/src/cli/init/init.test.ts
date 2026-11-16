@@ -443,6 +443,19 @@ describe('init: the budget, the install and the seeds', () => {
     ])
   })
 
+  it("an app ignores the router's generated tree for the linter and the formatter", async () => {
+    const dir = repo({ '.oxlintrc.json': JSON.stringify({ extends: ['./.oxlintrc.basalt.json'] }) })
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    const lint = JSON.parse(read(dir, '.oxlintrc.json')) as { ignorePatterns: string[] }
+    const fmt = JSON.parse(read(dir, '.oxfmtrc.json')) as { ignorePatterns: string[] }
+    expect(lint.ignorePatterns).toEqual(['src/routeTree.gen.ts'])
+    expect(fmt.ignorePatterns).toContain('src/routeTree.gen.ts')
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect((JSON.parse(read(dir, '.oxlintrc.json')) as typeof lint).ignorePatterns).toEqual([
+      'src/routeTree.gen.ts',
+    ])
+  })
+
   it('appends to a .prettierignore for a prettier repo', async () => {
     const dir = repo({ '.prettierignore': 'dist' })
     await runInit(['--profile', 'tokens'], dir)

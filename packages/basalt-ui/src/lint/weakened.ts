@@ -13,6 +13,7 @@ import { basename, dirname, relative, resolve } from 'node:path'
 import { BUDGET_PATH, CEILINGS, parseBudget } from '../cli/budget'
 import { filesUnder, rootsOf } from '../cli/doctor/types'
 import { MANIFEST_PATH, parseManifest } from '../cli/manifest'
+import { generatedRouteTreeOption } from '../cli/router-wiring'
 import { parseJsonc } from '../cli/source-text'
 import { findBin } from './bin'
 import { findBlanketDisables } from './blanket-disable'
@@ -276,18 +277,59 @@ function extendsPreset(config: Config | string): WeakenedResult {
       )
 }
 
-/** File-level directives under the declared roots that leave `waiver-needs-reason` unable to report. */
-function blanketDisables(dir: string, roots: readonly string[]): string[] {
-  const files = new Set(roots.flatMap((root) => filesUnder(dir, root, SCRIPT_FILE)))
-  return [...files].toSorted().flatMap((file) => {
-    let source: string
-    try {
-      source = readFileSync(resolve(dir, file), 'utf8')
-    } catch {
-      return []
+const GENERATED_TREE = /^routeTree\.gen\.[cm]?[jt]sx?$/
+
+/** A gitignore-style glob (`*`, `**`, a bare name at any depth, a directory) as a test on a root-relative path. */
+function ignoreMatcher(pattern: string): (path: string) => boolean {
+  const anchored = pattern.startsWith('/') || pattern.replace(/^\.\//, '').includes('/')
+  const body = pattern.replace(/^\.\//, '').replace(/^\//, '').replace(/\/$/, '')
+  const source = body
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*\//g, '<<DEEP_DIR>>')
+    .replace(/\*\*/g, '<<DEEP>>')
+    .replace(/\*/g, '[^/]*')
+    .replace(/\?/g, '[^/]')
+    .replace(/<<DEEP_DIR>>/g, '(?:.*/)?')
+    .replace(/<<DEEP>>/g, '.*')
+  // The pattern names the path itself or a directory above it.
+  const regex = new RegExp(`^${anchored ? '' : '(?:.*/)?'}${source}(?:/.*)?$`)
+  return (path) => regex.test(path)
+}
+
+/** What the lint run leaves alone: the config's `ignorePatterns`, `.oxlintignore`, and the router's generated tree. */
+function ignoredByLint(dir: string, config: Config | string): (file: string) => boolean {
+  const patterns = typeof config === 'string' ? [] : asStrings(config['ignorePatterns'])
+  const ignoreFile = resolve(dir, '.oxlintignore')
+  if (existsSync(ignoreFile)) {
+    for (const line of readFileSync(ignoreFile, 'utf8').split('\n')) {
+      const text = line.trim()
+      if (text !== '' && !text.startsWith('#') && !text.startsWith('!')) patterns.push(text)
     }
-    return findBlanketDisables(source).map((d) => `${file}:${d.line} (${d.reach})`)
-  })
+  }
+  const matchers = patterns.map(ignoreMatcher)
+  const named = generatedRouteTreeOption(dir)
+  return (file) =>
+    GENERATED_TREE.test(basename(file)) ||
+    file === named ||
+    matchers.some((matches) => matches(file))
+}
+
+/** File-level directives under the declared roots that leave `waiver-needs-reason` unable to report. */
+function blanketDisables(dir: string, roots: readonly string[], config: Config | string): string[] {
+  const ignored = ignoredByLint(dir, config)
+  const files = new Set(roots.flatMap((root) => filesUnder(dir, root, SCRIPT_FILE)))
+  return [...files]
+    .filter((file) => !ignored(file))
+    .toSorted()
+    .flatMap((file) => {
+      let source: string
+      try {
+        source = readFileSync(resolve(dir, file), 'utf8')
+      } catch {
+        return []
+      }
+      return findBlanketDisables(source).map((d) => `${file}:${d.line} (${d.reach})`)
+    })
 }
 
 /** `.oxlintrc.json` files under the declared roots (below the install root) that do not extend the preset. */
@@ -325,7 +367,7 @@ function managedIds(
           .map((id) => `${id} in ${where}`)
       : [],
   )
-  const blanket = blanketDisables(dir, roots)
+  const blanket = blanketDisables(dir, roots, config)
   const nested = nestedConfigsWithoutPreset(dir, roots)
   const problems: string[] = []
   if (nested.length > 0) {
@@ -338,7 +380,7 @@ function managedIds(
   }
   if (blanket.length > 0) {
     problems.push(
-      `file-level disable silences waiver-needs-reason: ${blanket.join(', ')}; waive the line with a reason, or declare the path in manifest.deepRender and name colour-literal, shadcn/no-inline-styles or raw-scroll`,
+      `file-level disable silences waiver-needs-reason: ${blanket.join(', ')}; waive the line with a reason, declare the path in manifest.deepRender and name colour-literal, shadcn/no-inline-styles or raw-scroll, or, for a generated file, add its path to ignorePatterns in ${OXLINTRC}`,
     )
   }
   return problems.length > 0

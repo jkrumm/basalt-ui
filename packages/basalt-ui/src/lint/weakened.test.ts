@@ -10,6 +10,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -239,6 +240,36 @@ describe('checkWeakenedConfig', () => {
     it('passes a directive naming only other rules', async () => {
       const results = await run(withFile('/* oxlint-disable basalt/colour-literal -- canvas */\n'))
       expect(status(results, 3)).toBe('passed')
+    })
+
+    it("leaves the router plugin's generated route tree alone", async () => {
+      const results = await run(withFile('/* eslint-disable */\n', 'routeTree.gen.ts'))
+      expect(status(results, 3)).toBe('passed')
+    })
+
+    it('leaves the tree a vite config names with generatedRouteTree alone', async () => {
+      const dir = withFile('/* eslint-disable */\n', 'tree.ts')
+      writeFileSync(
+        join(dir, 'vite.config.ts'),
+        "export default { plugins: [tanstackRouter({ generatedRouteTree: './src/tree.ts' })] }\n",
+      )
+      expect(status(await run(dir), 3)).toBe('passed')
+    })
+
+    it('leaves a path the oxlint config ignores alone, and still fails its neighbour', async () => {
+      const dir = withFile('/* eslint-disable */\n', 'generated.ts')
+      writeFileSync(join(dir, 'src', 'screen.tsx'), '/* eslint-disable */\n')
+      const path = join(dir, '.oxlintrc.json')
+      const config = JSON.parse(readFileSync(path, 'utf8')) as object
+      writeFileSync(path, JSON.stringify({ ...config, ignorePatterns: ['src/generated.ts'] }))
+      const detail = (await run(dir))[2]?.detail
+      expect(detail).toContain('src/screen.tsx:1')
+      expect(detail).not.toContain('generated.ts')
+    })
+
+    it('names the ignore route for a generated file in the remedy', async () => {
+      const results = await run(withFile('/* eslint-disable */\n'))
+      expect(results[2]?.detail).toContain('ignorePatterns')
     })
 
     it('does not read a file outside the declared roots', async () => {
