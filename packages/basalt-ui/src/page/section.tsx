@@ -13,7 +13,7 @@ import { isEmptyTabs, renderTabs } from './page-tabs'
  * margin is `--page-sticky-top`, so a `#hash` jump, a skip link or `scrollIntoView` lands the
  * heading just below the page band instead of under it. Outside a `Page` the offset is zero.
  *
- * `tabs` is the section's view switch: `{ handle, label }` of an enum field draws a tab strip
+ * `tabs` is the section's view switch: `{ state, label }` of an enum field draws a tab strip
  * bound to it, a `ControlsSlot` renders as is.
  *
  * `summary` is one line beside the title, shown while the section is collapsed too. `collapsible`
