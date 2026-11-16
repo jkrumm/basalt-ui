@@ -107,7 +107,6 @@ export function StatCell(props: StatCellProps): ReactElement {
       {onClick !== undefined && <Target label={label} onClick={onClick} />}
       <div data-slot="stat-caption" className={T_CAPTION}>
         {swatch !== undefined && (
-          // theme-allow hidden-inline-style — the colour is the series pair the page passes, per scheme
           <span
             data-slot="stat-swatch"
             aria-hidden="true"
