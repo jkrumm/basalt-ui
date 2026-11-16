@@ -1,15 +1,9 @@
 /**
- * basalt-ui root barrel — the theme and the state seams. The Mantine-free token/chart layer is published under `basalt-ui/tokens` and
- * `basalt-ui/charts`, NOT re-exported here, so a tokens/charts-only consumer never pulls in
- * `@mantine/*`. One import path per symbol: `docs/V2-SPEC.md` § 1; the per-symbol verdicts are
- * `docs/waves/v2-surface.md`.
+ * basalt-ui root barrel — the state seams only. The token/chart layer is published under
+ * `basalt-ui/tokens` and `basalt-ui/charts`, NOT re-exported here, so a tokens/charts-only consumer
+ * pulls in no UI library. One import path per symbol: `docs/v3/ARCHITECTURE.md` § 4.
  */
 
-export { scrollParentOf, useCoarsePointer, type Tone } from './common'
-export { createBasaltTheme } from './theme'
-export { ThemeToggle } from './theme/theme-toggle'
-export { StatusDot, type StatusDotProps } from './theme/status-dot'
-export { StatusVerdict, type StatusVerdictProps } from './theme/status-verdict'
 export {
   persisted,
   type Persisted,
@@ -38,6 +32,8 @@ export type {
 } from './core/channel'
 export { useNow } from './core/use-now'
 export { createFormat, useFormat } from './core/format'
+export { setFormatDefaults } from './format/shared'
+export type { FormatDefaults } from './format/shared'
 export type { BasaltMessages, CalendarDate, Format, Msg } from './core/format'
 
 // The one augmentable seam: `declare module 'basalt-ui' { interface BasaltRegister { … } }` only

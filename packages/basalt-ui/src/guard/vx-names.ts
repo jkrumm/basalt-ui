@@ -159,7 +159,6 @@ export const BASALT_VX_NAMES: readonly string[] = [
   '--vx-space-guide-body-gap-bottom',
   '--vx-space-guide-footer-gap-top',
   '--vx-space-guide-footer-inset-top',
-  '--vx-space-icon-size',
   '--vx-space-input-height',
   '--vx-space-mermaid-container-inset',
   '--vx-space-mobile-nav-icon-size',

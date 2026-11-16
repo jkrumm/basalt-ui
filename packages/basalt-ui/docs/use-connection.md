@@ -3,7 +3,7 @@ name: useConnection
 use when: 'a live surface shows whether its data is streaming, polling or cut off'
 never when: 'the app needs to gate a fetch on the network (read the `onlineManager` of Query; this hook never flips it)'
 subpath: basalt-ui/data
-peers: []
+peers: ['@tanstack/react-query']
 slots: []
 ---
 

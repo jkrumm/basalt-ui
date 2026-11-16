@@ -3,7 +3,7 @@ name: CommandPalette
 use when: 'the app has commands, shortcuts or a destination list worth reaching from the keyboard'
 never when: 'the app has a handful of screens and no actions (the rail is the whole navigation)'
 subpath: basalt-ui/shell
-peers: ['@base-ui/react']
+peers: ['@base-ui/react', '@tanstack/react-router']
 slots: [command-palette, command-palette-list]
 ---
 

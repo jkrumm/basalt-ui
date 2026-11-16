@@ -3,7 +3,7 @@ name: navTarget
 use when: 'a prop that takes a link (a breadcrumb parent, a card `href`, an inner-nav entry) must open a typed route'
 never when: 'the destination is an external URL or a plain path string (pass the string)'
 subpath: basalt-ui/router
-peers: []
+peers: ['@tanstack/react-router']
 slots: []
 ---
 

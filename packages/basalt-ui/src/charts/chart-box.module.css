@@ -6,8 +6,7 @@
  *
  * `box.tsx` writes the four per-class heights as `--bc-*`; the unnamed container queries below pick
  * one by the frame's inline size. The literals are CONTAINER_CLASSES (a query cannot read a custom
- * property); `breakpoint-literals.test.ts` pins them. Mantine-free: `src/charts/**` imports no
- * `@mantine/*`.
+ * property); `breakpoint-literals.test.ts` pins them. `src/charts/**` imports no UI library.
  */
 
 .frame {

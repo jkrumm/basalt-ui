@@ -1,7 +1,7 @@
 /**
  * Mantine-free token + palette layer.
  *
- * This module is PURE DATA + string helpers — ZERO `@mantine/*` imports (lint-enforced).
+ * This module is PURE DATA + string helpers — ZERO UI-library imports (lint-enforced).
  * Colors are CSS custom properties under the `--vx-*` prefix (do NOT rename the prefix).
  * They resolve per color scheme in CSS, so `VX.*` works in components AND in non-component
  * files. Apply opacity via `alpha(token, a)` (never raw `rgba()`) so the hue keeps resolving.

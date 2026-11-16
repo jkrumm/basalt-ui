@@ -1150,7 +1150,7 @@ export const ROW_LINE_HEIGHT = DEFAULT_SPACE_VALUES.rowLineHeight
  * Assemble every derive-config-dependent palette family from a resolved {@link DeriveConfig},
  * merged with the structural hand-authored tokens (neutrals' chart-chrome rgba()s, the floating
  * overlay surface, the divider fade) that never vary with the config. Pure function of `config` —
- * zero React, zero `@mantine/*`, zero browser API (the Mantine-free boundary applies here).
+ * zero React, zero browser API (the framework-free boundary applies here).
  *
  * `ACCENT` / `FILL` / `SURFACE` / `INK` / `SEMANTIC` / `STATUS` below are GENERATED from
  * `deriveTokens(config)` (`./derive.ts`) — never hand-edit one of those hexes; retune the derive

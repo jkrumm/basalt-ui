@@ -496,7 +496,7 @@ describe('raw-html-layout', () => {
     expect(kinds(f)).not.toContain('raw-html-layout')
   })
 
-  it('does NOT flag a raw <div> with inline display:flex in a chart file — the Flex/Grid/Group remedy is @mantine/*, banned in the Mantine-free chart layer', () => {
+  it('does NOT flag a raw <div> with inline display:flex in a chart file — the Flex/Grid/Group remedy is a Mantine component, banned in the Mantine-free chart layer', () => {
     const f = find(`<div style={{ display: 'flex', gap: 8 }} />`, CHART_PATH)
     expect(kinds(f)).not.toContain('raw-html-layout')
   })
@@ -624,7 +624,7 @@ describe('inline-display', () => {
     expect(kinds(f)).not.toContain('inline-display')
   })
 
-  it('does NOT flag display: "flex" in a chart file — the Flex/Grid/Group remedy is @mantine/*, banned in the Mantine-free chart layer', () => {
+  it('does NOT flag display: "flex" in a chart file — the Flex/Grid/Group remedy is a Mantine component, banned in the Mantine-free chart layer', () => {
     const f = find(`<Box style={{ display: 'flex' }} />`, CHART_PATH)
     expect(kinds(f)).not.toContain('inline-display')
   })
@@ -2644,11 +2644,6 @@ describe('raw-selection-control', () => {
     expect(kinds(f)).toContain('raw-selection-control')
   })
 
-  it('does NOT flag anything in a file importing @mantine/form', () => {
-    const f = find(`import { useForm } from '@mantine/form'\n<Select data={[]} />`)
-    expect(kinds(f)).not.toContain('raw-selection-control')
-  })
-
   /**
    * ONE LAW, TWO IDS. This kind and `basalt/control-outside-home` are the same law read by two
    * engines, and this kind's own message says so — but a `theme-allow control-outside-home` used
@@ -3154,7 +3149,7 @@ describe("profile: 'tokens-only'", () => {
     'inline-font-size': false,
     'hidden-inline-style': true,
     // The two wave-6 control kinds: `<Title>` is a Mantine component, and the remedy for either is
-    // a Mantine-rendered home (PageBar / WidgetHeader) or a basalt control over @mantine/core.
+    // a Mantine-rendered home (PageBar / WidgetHeader) or a basalt control over Mantine.
     'in-body-page-title': true,
     'raw-selection-control': true,
     // A raw @media/@container/pointer condition in CSS — the remedy is another CSS literal
@@ -3183,8 +3178,7 @@ describe("profile: 'tokens-only'", () => {
   })
 
   it('no surviving kind tells a Mantine-free app to reach for a Mantine component', () => {
-    const MANTINE_REMEDY =
-      /@mantine\/|\b(?:Box|Flex|Grid|Stack|Group|TextInput|NumberInput|Select|Textarea)\b/
+    const MANTINE_REMEDY = /\b(?:Box|Flex|Grid|Stack|Group|TextInput|NumberInput|Select|Textarea)\b/
     for (const kind of Object.keys(GUARD_RULES) as GuardKind[]) {
       if (TOKENS_ONLY_DISABLED_KINDS.has(kind)) continue
       expect([kind, MANTINE_REMEDY.test(GUARD_RULES[kind].message)]).toEqual([kind, false])

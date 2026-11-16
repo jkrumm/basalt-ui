@@ -77,7 +77,7 @@ describe('breakpoint literals', () => {
   const files = [...new Bun.Glob('**/*.css').scanSync({ cwd: SRC })]
 
   test('finds the stylesheets', () => {
-    expect(files.length).toBeGreaterThan(20)
+    expect(files.length).toBeGreaterThan(10)
   })
 
   test.each(files)('%s writes only SIZE_CLASSES literals', (file) => {

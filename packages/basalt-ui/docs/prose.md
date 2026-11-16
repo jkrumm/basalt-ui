@@ -3,7 +3,7 @@ name: Prose
 use when: 'long-form or chat text is rendered as HTML or Markdown and needs the article typography'
 never when: 'the content is an app screen made of cards, tables and controls'
 subpath: basalt-ui/page
-peers: ['@base-ui/react']
+peers: ['@base-ui/react', '@tanstack/react-router']
 slots: [prose]
 ---
 

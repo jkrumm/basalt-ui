@@ -350,7 +350,7 @@ export type CartesianChartProps<T, X extends ChartX = ChartX> = BasaltProps & {
    * Tick label for an x value. Default: compact numbers, strings verbatim, and dates by tick step
    * (`HH:MM` with the day on midnight, the day (`4 Oct`, in the page locale), a month with the year on January; a label recurs
    * only behind a day or year label). On a time axis omit it (ticks and tooltip are written in the page locale); a custom
-   * date text is `date(x, { timeZone: 'UTC' })` from `basalt-ui/format`, as the `basalt-charts` rule says.
+   * date text is `createFormat({ timeZone: 'UTC' }).date(x)` from `basalt-ui`, as the `basalt-charts` rule says.
    */
   formatX?: ((x: X) => string) | undefined
   zones?: readonly ZoneSpec[] | undefined

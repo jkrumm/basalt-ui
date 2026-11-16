@@ -11,7 +11,7 @@ const OWNED = [
   (file) => /\.tsx?$/.test(file) && !file.endsWith('.test.ts') && !file.endsWith('.test.tsx'),
 )
 
-const BANNED = /from\s+'(cmdk|@radix-ui\/[^']*|@mantine\/[^']*|@tanstack\/react-hotkeys)'/
+const BANNED = /from\s+'(cmdk|@radix-ui\/[^']*|@tanstack\/react-hotkeys)'/
 
 describe('the commands and chrome sources', () => {
   test('import no cmdk, Radix, Mantine or hotkeys library: the matcher and the palette are our own', () => {

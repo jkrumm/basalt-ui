@@ -19,13 +19,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 import { GUARD_RULES } from '../src/guard'
-import {
-  PLUGIN_RULE_ID_LIST,
-  AGENT_NAMES,
-  SKILL_NAMES,
-  SURFACES,
-  TOKEN_LAYER_BOUNDARY_SURFACES,
-} from '../src/surfaces'
+import { PLUGIN_RULE_ID_LIST, AGENT_NAMES, SKILL_NAMES, SURFACES } from '../src/surfaces'
 import type { DoctrineSpec, SurfaceSpec } from '../src/surfaces'
 
 const PKG_ROOT = join(import.meta.dir, '..')
@@ -103,16 +97,10 @@ export const AGENT_LAYER_TOTAL_BUDGET = 625 // v3 rules: five files at 215 lines
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
  *  5. Every real package.json exports key has a SURFACES entry.
  *  6. Every surface with non-empty forbiddenImports has a globs field.
- *  7. Every headless surface is Mantine-free — via all 3 `forbiddenImports` bans, OR (for
- *     `TOKEN_LAYER_BOUNDARY_SURFACES` members, `./charts`/`./tokens`) exemption, since their
- *     Mantine-free guarantee is covered by the repo-local-only `basalt/token-layer-boundary`
- *     plugin rule instead — this assertion cannot verify that rule's live registration itself (see
- *     the assertion's own comment below for why); basalt's own CI does
- *     (`tests/surfaces-coverage.test.ts`).
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
  *  9. Every registered oxlint plugin rule (PLUGIN_RULE_ID_LIST) maps to EXACTLY ONE surface's
  *     `pluginRules` — so a new rule cannot ship homeless, and one rule cannot be counted twice as
- *     coverage. Like assertion 7 this reads SURFACES only: whether the plugin really registers
+ *     coverage. This reads SURFACES only: whether the plugin really registers
  *     those ids is asserted against the plugin itself in `configs/oxlint-plugin.test.ts`.
  * 10. Every shipped agent-layer file is inside its line budget, and rules + skills + the AGENTS block are inside the
  *     whole-layer total (`AGENT_LINE_BUDGETS` / `AGENT_LAYER_TOTAL_BUDGET`).
@@ -220,22 +208,6 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
       failures.push(
         `SURFACES['${key}'] has non-empty forbiddenImports but no globs field (required for oxlint emission)`,
       )
-    }
-  }
-
-  // ── Assertion 7: every headless surface is Mantine-free ──────────────────────
-  const REQUIRED_MANTINE_BANS = ['@mantine/core', '@mantine/hooks', '@mantine/*'] as const
-
-  for (const [key, spec] of allSpecs) {
-    if (spec.layer !== 'headless') continue
-    if (TOKEN_LAYER_BOUNDARY_SURFACES.has(key)) continue
-    for (const required of REQUIRED_MANTINE_BANS) {
-      const hasBan = spec.forbiddenImports.some((fi) => fi.spec === required)
-      if (!hasBan) {
-        failures.push(
-          `SURFACES['${key}'] is headless but missing Mantine ban for '${required}' in forbiddenImports`,
-        )
-      }
     }
   }
 

@@ -243,7 +243,7 @@ describe.skipIf(!existsSync(OXLINT_BIN))('check-theme --audit-allows — oxlint 
     write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
     write(
       'src/features/detail.tsx',
-      "import { Drawer, Stack, Title } from '@mantine/core'\n\n" +
+      "import { Drawer, Stack, Title } from 'ui-kit'\n\n" +
         'export const Detail = () => (\n' +
         '  <Stack>\n' +
         '    {/* theme-allow in-body-page-title — detail route; the breadcrumb names the parent list */}\n' +

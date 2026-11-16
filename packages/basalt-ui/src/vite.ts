@@ -1,15 +1,12 @@
 /**
  * basaltViteConfig — a partial Vite config for apps consuming basalt-ui.
  *
- * Grounded verbatim in argo `apps/dashboard/vite.config.ts`: the Mantine dedupe list, the Mantine
- * subpackage `optimizeDeps.include`, the `strictPort` dev server with `allowedHosts`, the `/api`
- * prefix-strip proxy, the `__APP_VERSION__` define, and the local-checkout `BASALT_LOCAL` alias
- * branch.
+ * Grounded verbatim in argo `apps/dashboard/vite.config.ts`: the React dedupe list, the
+ * `strictPort` dev server with `allowedHosts`, the `/api` prefix-strip proxy, the
+ * `__APP_VERSION__` define, and the local-checkout `BASALT_LOCAL` alias branch.
  *
  * Returns ONLY config (no `plugins`) — plugins stay app-side, since they carry app-specific
- * concerns (router codegen, PWA, react-compiler babel) that don't belong in a shared spine. Argo's
- * `@mantine/schedule` is likewise app-domain and is not pre-bundled here; consumers add their own
- * extra subpackages to `optimizeDeps.include` if needed.
+ * concerns (router codegen, PWA, react-compiler babel) that don't belong in a shared spine.
  *
  * NEVER reference `import.meta.env` here — this file is invoked inside the consumer's vite config
  * at config-evaluation time (plain Node), where only `process.env` exists.
@@ -128,21 +125,8 @@ export function basaltViteConfig(opts: BasaltViteOptions): UserConfig {
       'process.env.NODE_ENV': JSON.stringify(process.env['NODE_ENV'] ?? 'development'),
     },
     resolve: {
-      // Force these packages to a single instance. Without dedupe, Vite's optimizer can stamp a
-      // second copy of @mantine/core into another subpackage's pre-bundle, which breaks
-      // MantineProvider context.
-      dedupe: ['react', 'react-dom', '@mantine/core', '@mantine/hooks'],
-    },
-    optimizeDeps: {
-      // Pre-bundle the Mantine subpackages together so they share one @mantine/core instance (and
-      // one MantineProvider context). Consumers append their own (e.g. @mantine/schedule).
-      include: [
-        '@mantine/core',
-        '@mantine/hooks',
-        '@mantine/form',
-        '@mantine/modals',
-        '@mantine/notifications',
-      ],
+      // Force React to a single instance: a second copy in another pre-bundle breaks hook context.
+      dedupe: ['react', 'react-dom'],
     },
     server: {
       port,

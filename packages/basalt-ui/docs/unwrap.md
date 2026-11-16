@@ -3,7 +3,7 @@ name: unwrap
 use when: 'a queryFn or mutationFn calls a transport that returns `{ data, error }` envelopes'
 never when: 'the call already throws on failure and never returns an envelope'
 subpath: basalt-ui/data
-peers: []
+peers: ['@tanstack/react-query']
 slots: []
 ---
 

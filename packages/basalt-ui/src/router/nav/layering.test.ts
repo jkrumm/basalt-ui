@@ -28,8 +28,8 @@ describe('src/router/nav layering', () => {
     })
   }
 
-  test('nothing under the folder (tests included) reaches ui, base-ui, query, shell, provider or mantine', () => {
-    const banned = /(\/ui\b|@base-ui\/react|@tanstack\/react-query|\/shell\b|\/provider\b|@mantine)/
+  test('nothing under the folder (tests included) reaches ui, base-ui, query, shell or provider', () => {
+    const banned = /(\/ui\b|@base-ui\/react|@tanstack\/react-query|\/shell\b|\/provider\b)/
     for (const file of files) {
       if (file === 'layering.test.ts') continue
       for (const spec of importsOf(readFileSync(join(DIR, file), 'utf8'))) {

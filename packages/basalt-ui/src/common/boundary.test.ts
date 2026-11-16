@@ -1,8 +1,8 @@
 /**
  * `src/common/**` is the ONE module both halves of the library import, so it has to obey the
- * stricter half's rule: no `@mantine/*`, no `@visx/*`, and no runtime edge back into the
- * Mantine-coupled tree. Without this, `./charts` reaching `cx`/`mergeRefs` would quietly pull
- * Mantine into a subpath the pack-test proves resolves without it.
+ * stricter half's rule: no `@visx/*` and no runtime edge back out of `common/`. Without this,
+ * `./charts` reaching `cx` would quietly pull a heavier module into a subpath the pack-test
+ * proves resolves on its own.
  *
  * Source-text, not a dist walk: `check-dist-layering.mjs` covers the built graph, and this fails at
  * the moment the import is WRITTEN rather than after a build. `.oxlintrc.json` carries the same ban
@@ -26,7 +26,7 @@ function specifiers(source: string): string[] {
   return [...source.matchAll(SPECIFIER)].map((m) => m[1] ?? '')
 }
 
-describe('src/common is Mantine-free', () => {
+describe('src/common is a leaf', () => {
   test('enumerates every source file (so a new one cannot slip past)', () => {
     expect(SOURCES.length).toBeGreaterThanOrEqual(5)
   })
@@ -34,10 +34,8 @@ describe('src/common is Mantine-free', () => {
   for (const file of SOURCES) {
     const source = readFileSync(join(DIR, file), 'utf8')
 
-    test(`${file} imports no @mantine/* and no @visx/*`, () => {
-      const banned = specifiers(source).filter(
-        (s) => s.startsWith('@mantine/') || s.startsWith('@visx/'),
-      )
+    test(`${file} imports no @visx/*`, () => {
+      const banned = specifiers(source).filter((s) => s.startsWith('@visx/'))
       expect(banned).toEqual([])
     })
 

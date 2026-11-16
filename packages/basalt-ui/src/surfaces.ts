@@ -208,24 +208,6 @@ const v = (spec: string, message: string, extra?: Partial<ForbiddenImport>): For
   message,
   ...extra,
 })
-const vg = (spec: string, message: string, extra?: Partial<ForbiddenImport>): ForbiddenImport => ({
-  spec,
-  match: 'group',
-  message,
-  ...extra,
-})
-
-// Mantine-free ban for headless surfaces the `basalt/token-layer-boundary` plugin rule does NOT
-// cover (it only enforces charts/tokens path segments, and is registered repo-local only — see
-// oxlint-plugin.js). `./charts` and `./tokens` no longer use this: their Mantine-free boundary is
-// enforced by that plugin rule instead (and their engine boundary by `basalt/chart-engine-boundary`), so
-// duplicating the ban here would be redundant no-restricted-imports config.
-const MANTINE_BANS = [
-  v('@mantine/core', '{ctx} must be Mantine-free — no Mantine imports allowed.'),
-  v('@mantine/hooks', '{ctx} must be Mantine-free — no Mantine imports allowed.'),
-  vg('@mantine/*', '{ctx} must be Mantine-free — no Mantine imports allowed.'),
-] as const
-
 // ── SURFACES ──────────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -305,7 +287,7 @@ export const SURFACES = {
       "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
     ],
     description:
-      'The theme (`createBasaltTheme`, `ThemeToggle`, `StatusDot`, `StatusVerdict`, `useCoarsePointer`) and the state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`). Reaches no subpath-required peer.',
+      'The state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`, `useFormat`). Reaches no subpath-required peer.',
     optionalPeers: [
       'remark-gfm',
       'rehype-sanitize',
@@ -392,17 +374,6 @@ export const SURFACES = {
     optionalPeers: ['vite-plugin-pwa'],
     forbiddenImports: [],
   },
-  './format': {
-    kind: 'tooling',
-    layer: 'headless',
-    description:
-      'integer/money/percent/durationClock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; the chart layer formats through the same implementation',
-    globs: {
-      shipped: [],
-      repo: ['packages/basalt-ui/src/format/**'],
-    },
-    forbiddenImports: [...MANTINE_BANS],
-  },
   './table': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
@@ -464,32 +435,11 @@ export const SURFACES = {
     description:
       'The control tier (docs/v3/concepts/controls-url-state.md). Exports: `FilterSet` (a list of `spec(...)`s as one nowrap row of pills, a measured +N fold and the mobile Filters (n) sheet), `ViewTabs` bound to a control handle, `ControlView`, `ControlHome`, `filterSlot`, `spec`, and the v3 forms `FormField`/`FormRow`/`FormFooter`/`useFormDraft`/`toSubmitErrors`. The home picks the presentation (pill, row, inline), never a prop. Every control owns its own desktop/mobile swap in CSS and resolves with no Mantine installed.',
     optionalPeers: [],
-    // `@mantine/dates` is an optional peer basaltViteConfig pre-bundles the whole @mantine scope
-    // for — a consumer without the peer (linewatch) must never resolve it through this surface.
-    // Nothing under src/controls may import it, statically or lazily — repo-local only, same
-    // pattern as MANTINE_BANS above (a shipped ban would be redundant with peerDependenciesMeta).
     globs: {
       shipped: [],
       repo: ['packages/basalt-ui/src/controls/**'],
     },
-    forbiddenImports: [
-      v(
-        '@mantine/dates',
-        '@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. Nothing under src/controls reaches it.',
-      ),
-      vg(
-        '@mantine/dates/*',
-        '@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. Nothing under src/controls reaches it.',
-      ),
-      v(
-        '@mantine/form',
-        '@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Nothing in the package needs it.',
-      ),
-      vg(
-        '@mantine/form/*',
-        '@mantine/form is an OPTIONAL peer — ./controls (which owns the form layout since 1.36.0) must resolve with no @mantine/form installed. Nothing in the package needs it.',
-      ),
-    ],
+    forbiddenImports: [],
   },
 
   // ── v3 skeleton (additive stubs; each row is filled by its owning v3 Issue) ──────────────────
@@ -498,7 +448,7 @@ export const SURFACES = {
     layer: 'headless',
     description: 'v3 router bridge — nav, controls and search-state defaults on TanStack Router',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/router/**'] },
-    forbiddenImports: [...MANTINE_BANS],
+    forbiddenImports: [],
   },
   './data': {
     kind: 'tooling',
@@ -506,21 +456,21 @@ export const SURFACES = {
     description:
       'v3 data layer — query client, unwrap, optimistic and live queries on TanStack Query',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/data/**'] },
-    forbiddenImports: [...MANTINE_BANS],
+    forbiddenImports: [],
   },
   './page': {
     kind: 'tooling',
     layer: 'headless',
     description: 'v3 page composites — Page, PageBar, Section, QueryState, overlays',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/page/**'] },
-    forbiddenImports: [...MANTINE_BANS],
+    forbiddenImports: [],
   },
   './cards': {
     kind: 'tooling',
     layer: 'headless',
     description: 'v3 card composites — StatCard, StatGroup, BarList, EventList',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/cards/**'] },
-    forbiddenImports: [...MANTINE_BANS],
+    forbiddenImports: [],
   },
   './ai': {
     kind: 'tooling',
@@ -528,7 +478,7 @@ export const SURFACES = {
     description: 'v3 AI-chat part views — partView, defineBlock, defineCatalog',
     optionalPeers: ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/ai/**'] },
-    forbiddenImports: [...MANTINE_BANS],
+    forbiddenImports: [],
   },
   './ui/*': {
     kind: 'tooling',
@@ -536,7 +486,7 @@ export const SURFACES = {
     description: 'v3 primitives — one module per primitive on Base UI, wildcard entry',
     optionalPeers: ['@base-ui/react'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/ui/**'] },
-    forbiddenImports: [...MANTINE_BANS],
+    forbiddenImports: [],
   },
   './core/*': {
     kind: 'tooling',
@@ -544,7 +494,7 @@ export const SURFACES = {
     description:
       'v3 core modules (cn, format, messages, phase, ports) — the paths an ejected primitive imports; wildcard entry',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/core/**'] },
-    forbiddenImports: [...MANTINE_BANS],
+    forbiddenImports: [],
   },
   './shell': {
     kind: 'tooling',
@@ -717,29 +667,16 @@ export const AGENT_NAMES = ['basalt-design-reviewer'] as const
 // ── Token-layer-boundary-via-plugin membership ────────────────────────────────────────────────────
 
 /**
- * Headless SURFACES keys whose Mantine-free guarantee is enforced by the `basalt/token-layer-
- * boundary` oxlint plugin rule (`configs/oxlint-plugin.js`) instead of a `forbiddenImports`
- * no-restricted-imports ban — the rule fires on `charts`/`tokens` path segments only, so ONLY
- * these two surfaces qualify (every other headless surface still carries its Mantine ban in
- * `forbiddenImports`).
+ * Headless SURFACES keys whose framework-free guarantee is enforced by the `basalt/token-layer-
+ * boundary` oxlint plugin rule (`configs/oxlint-plugin.js`): the rule fires on `charts`/`tokens`
+ * path segments only, so ONLY these two surfaces qualify.
  *
  * `basalt/token-layer-boundary` is registered ONLY in the repo-local `.oxlintrc.json`, never the
- * shipped consumer preset. It protects two things: layering — `tokens` is pure data that
- * `cssVariablesResolver` (Mantine-coupled) reads to bind Mantine's surfaces to the same `--vx-*`
- * vars `charts` reads, so an `@mantine/*` import in either would cycle back through the theme
- * layer or let a chart bypass `--vx-*` and fork chrome/charts apart — and packaging: `./charts`
- * and `./tokens` resolve and render with NO `@mantine/*` installed, real and CI-tested
- * (`scripts/pack-test.sh`'s "charts/tokens-only (no-Mantine) resolution + render" step,
- * `scripts/check-dist-layering.mjs`'s dist-graph walk). The LAYER is Mantine-free — the FRAMEWORK
- * is not (`.` requires Mantine as a non-optional peer; these two subpaths don't). Both are a
- * basalt-internal invariant, not a consumer contract (a consumer's own `charts/`/`tokens/`-named
- * directories carry no such obligation), which is why it stays repo-local. Because
- * of that, `checkCoverage()`'s assertion 7 treats membership here as a pure EXEMPTION from the
- * forbiddenImports requirement — it does NOT (and, being a shipped CLI subcommand that must run
- * from inside a consumer's node_modules, CANNOT) verify the rule's live registration itself. That
- * "fails loudly if enforcement is removed" guarantee lives in basalt's own CI instead
- * (`tests/surfaces-coverage.test.ts`, via `hasTokenLayerBoundaryRegistered` against
- * `.oxlintrc.json`).
+ * shipped consumer preset: it is a basalt-internal invariant (`./charts` and `./tokens` resolve and
+ * render with no UI framework installed, real and CI-tested by `scripts/pack-test.sh` and
+ * `scripts/check-dist-layering.mjs`), not a consumer contract. The "fails loudly if enforcement is
+ * removed" guarantee lives in basalt's own CI (`tests/surfaces-coverage.test.ts`, via
+ * `hasTokenLayerBoundaryRegistered` against `.oxlintrc.json`).
  */
 export const TOKEN_LAYER_BOUNDARY_SURFACES: ReadonlySet<string> = new Set(['./charts', './tokens'])
 

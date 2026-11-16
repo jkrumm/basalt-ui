@@ -3,7 +3,7 @@ name: PageBar
 use when: 'a screen needs a title, tabs, filters, a refresh button or page-level actions in one sticky band'
 never when: 'the screen has none of those (leave the bar out) or the title belongs to a card (use the card title)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react']
+peers: ['@base-ui/react', '@tanstack/react-router']
 slots: [page-bar, page-bar-controls, page-bar-tabs, page-breadcrumb-parent]
 ---
 

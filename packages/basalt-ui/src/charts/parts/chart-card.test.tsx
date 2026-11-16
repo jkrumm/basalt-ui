@@ -371,12 +371,8 @@ describe('closure', () => {
     return bare
   }
 
-  test('ChartCard reaches no @base-ui/react and no @mantine', () => {
+  test('ChartCard reaches no @base-ui/react', () => {
     const bare = [...bareImports(join(import.meta.dirname, 'chart-card.tsx'))]
-    expect(
-      bare.filter(
-        (s) => s.startsWith('@base-ui/') || s.startsWith('@mantine/') || s.startsWith('@visx/'),
-      ),
-    ).toEqual([])
+    expect(bare.filter((s) => s.startsWith('@base-ui/') || s.startsWith('@visx/'))).toEqual([])
   })
 })

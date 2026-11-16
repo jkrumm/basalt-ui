@@ -5,7 +5,6 @@
   "keywords": [
     "charts",
     "design-system",
-    "mantine",
     "oxlint",
     "react",
     "tanstack-charts",
@@ -80,11 +79,6 @@
       "types": "./dist/table/index.d.ts",
       "import": "./dist/table/index.js",
       "default": "./dist/table/index.js"
-    },
-    "./format": {
-      "types": "./dist/format/index.d.ts",
-      "import": "./dist/format/index.js",
-      "default": "./dist/format/index.js"
     },
     "./content": {
       "types": "./dist/content/index.d.ts",
@@ -174,6 +168,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@fontsource-variable/hubot-sans": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@fontsource-variable/nunito-sans": "5.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "eventsource-parser": "^4.1.3"
@@ -183,16 +180,11 @@
     "@arethetypeswrong/cli": "0.18.5",
     "@axe-core/playwright": "4.14.0",
     "@base-ui/react": "~1.9.0",
-    "@fontsource-variable/hubot-sans": "5.3.0",
-    "@fontsource-variable/jetbrains-mono": "5.3.0",
-    "@fontsource-variable/nunito-sans": "5.3.0",
-    "@mantine/dates": "9.7.1",
     "@shadcn/lint": "0.2.5",
     "@shikijs/langs": "^4.5.0",
     "@shikijs/themes": "^4.5.0",
     "@tailwindcss/vite": "4.3.5",
     "@tanstack/charts": "1.5.0",
-    "@tanstack/react-hotkeys": "0.13.0",
     "@tanstack/react-query": "5.107.1",
     "@tanstack/react-router-devtools": "^1.167.2",
     "@tanstack/react-table": "9.2.8",
@@ -222,30 +214,17 @@
     "tailwindcss": "4.3.5",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
-    "use-stick-to-bottom": "^1.1.6",
     "vite": "^8.3.0",
     "vite-plugin-pwa": "^1.3.0",
     "zod": "4.6.7"
   },
   "peerDependencies": {
-    "@ai-sdk/provider": "^4.0.26",
     "@axe-core/playwright": "4.14.0",
     "@base-ui/react": "~1.9.0",
-    "@fontsource-variable/hubot-sans": "5.3.0",
-    "@fontsource-variable/jetbrains-mono": "5.3.0",
-    "@fontsource-variable/nunito-sans": "5.3.0",
-    "@mantine/core": "^9.7.0",
-    "@mantine/dates": "^9.7.0",
-    "@mantine/form": "^9.7.0",
-    "@mantine/hooks": "^9.7.0",
-    "@mantine/modals": "^9.7.0",
-    "@mantine/notifications": "^9.7.0",
-    "@mantine/spotlight": "^9.7.0",
     "@shadcn/lint": "0.2.5",
     "@shikijs/langs": "^4.5.0",
     "@shikijs/themes": "^4.5.0",
     "@tanstack/charts": "1.5.0",
-    "@tanstack/react-hotkeys": "0.13.0",
     "@tanstack/react-query": "^5.104.0",
     "@tanstack/react-query-devtools": "^5.104.0",
     "@tanstack/react-router": "^1.170.0",
@@ -255,7 +234,6 @@
     "ai": "^7.0.137",
     "beautiful-mermaid": "^1.1.0",
     "d3-scale": "4.0.2",
-    "dayjs": "^1.11.0",
     "motion": "^14.1.0",
     "postcss-html": "2.0.0",
     "react": "^19.3.0",
@@ -268,24 +246,14 @@
     "shiki": "^4.5.0",
     "stylelint": "18.0.0",
     "tailwindcss": "4.3.5",
-    "use-stick-to-bottom": "^1.1.6",
     "vite": "^7 || ^8",
     "vite-plugin-pwa": "^1.3.0"
   },
   "peerDependenciesMeta": {
-    "@ai-sdk/provider": {
-      "optional": true
-    },
     "@axe-core/playwright": {
       "optional": true
     },
     "@base-ui/react": {
-      "optional": true
-    },
-    "@mantine/dates": {
-      "optional": true
-    },
-    "@mantine/form": {
       "optional": true
     },
     "@shadcn/lint": {
@@ -300,10 +268,13 @@
     "@tanstack/charts": {
       "optional": true
     },
-    "@tanstack/react-hotkeys": {
+    "@tanstack/react-query": {
       "optional": true
     },
     "@tanstack/react-query-devtools": {
+      "optional": true
+    },
+    "@tanstack/react-router": {
       "optional": true
     },
     "@tanstack/react-router-devtools": {
@@ -324,16 +295,19 @@
     "d3-scale": {
       "optional": true
     },
-    "dayjs": {
-      "optional": true
-    },
     "motion": {
       "optional": true
     },
     "postcss-html": {
       "optional": true
     },
+    "react": {
+      "optional": true
+    },
     "react-day-picker": {
+      "optional": true
+    },
+    "react-dom": {
       "optional": true
     },
     "react-markdown": {
@@ -357,9 +331,6 @@
     "tailwindcss": {
       "optional": true
     },
-    "use-stick-to-bottom": {
-      "optional": true
-    },
     "vite": {
       "optional": true
     },
@@ -376,7 +347,6 @@
       "src/tokens/core.ts",
       "src/tokens/derive.ts",
       "src/tokens/hct.ts",
-      "src/theme/index.ts",
       "src/guard/index.ts",
       "src/cli/index.ts"
     ],

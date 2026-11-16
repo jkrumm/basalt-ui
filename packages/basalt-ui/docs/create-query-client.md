@@ -3,7 +3,7 @@ name: createQueryClient
 use when: 'an app or an SSR request needs its QueryClient, built once per router or per request'
 never when: 'a module-level `new QueryClient()` would be shared across requests or tests'
 subpath: basalt-ui/data
-peers: []
+peers: ['@tanstack/react-query']
 slots: []
 ---
 

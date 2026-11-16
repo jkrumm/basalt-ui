@@ -13,9 +13,8 @@
  * NAMES in its own props type — `SlotStylesProps<'root' | 'header' | 'body'>` — so the slot set is
  * a documented, compiler-checked union rather than an open record.
  *
- * This module is **Mantine-free and React-type-only** so `./charts` and `./tokens` may reach it
- * without breaching the layer boundary (`common/boundary.test.ts` pins that, and `.oxlintrc.json`
- * bans `@mantine/*` here the same way it does for `state`/`query`/`guard`).
+ * This module is **React-type-only** so `./charts` and `./tokens` may reach it
+ * without breaching the layer boundary (`common/boundary.test.ts` pins that).
  */
 import type { CSSProperties } from 'react'
 

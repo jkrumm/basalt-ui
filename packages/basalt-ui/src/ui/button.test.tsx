@@ -1,6 +1,4 @@
 import { cleanup, fireEvent, render } from '@testing-library/react'
-import { readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
 import { Button, Pressable, buttonParts } from './button'
@@ -77,15 +75,5 @@ describe('button module', () => {
   test('Pressable has no colour of its own', () => {
     const { getByRole } = render(<Pressable size="chip">Tag</Pressable>)
     expect(getByRole('button').className).not.toContain('bg-')
-  })
-})
-
-describe('layer boundary', () => {
-  test('src/ui imports no Mantine', () => {
-    const dir = new URL('.', import.meta.url).pathname
-    for (const name of readdirSync(dir)) {
-      if (!/^(button|input)/.test(name) || name.endsWith('.test.tsx')) continue
-      expect(readFileSync(join(dir, name), 'utf8')).not.toContain('@mantine')
-    }
   })
 })

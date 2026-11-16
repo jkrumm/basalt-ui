@@ -3,7 +3,7 @@ name: defineControls
 use when: 'a page or the whole app has filters, tabs, a range or pagination that belong in the URL or on the device'
 never when: 'the state is the draft of a form (use a form) or owned by another store (use externalField)'
 subpath: basalt-ui/router
-peers: []
+peers: ['@tanstack/react-router']
 slots: []
 ---
 

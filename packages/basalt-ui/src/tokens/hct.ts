@@ -6,7 +6,7 @@
  * helpers. Zero-dependency — every conversion is self-contained (sRGB -> linear -> XYZ ->
  * CIELab -> polar HCT, and back via a 16-iteration chroma-reduction gamut search).
  *
- * Pure math/data — no React, no `@mantine/*`, no browser APIs (the Mantine-free boundary applies
+ * Pure math/data — no React, no browser APIs (the framework-free boundary applies
  * to `src/tokens/**`, which this satisfies naturally). See `derive.ts` for the basalt-specific
  * palette derivation built on top of this.
  */

@@ -3,7 +3,7 @@
 # Dist gate for the unbundled tsup build. The playground only exercises src/,
 # so this is the only thing that proves the published tarball actually resolves.
 # Builds, packs, asserts tarball contents, and scratch-installs the tarball to
-# confirm every subpath export resolves and the Mantine-free tokens entry loads.
+# confirm every subpath export resolves and the tokens entry loads.
 #
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -94,7 +94,7 @@ rm -rf "$LLMS_DIR"
 echo "==> tarball parity (every CLI-read source ships in the artifact)"
 node scripts/check-tarball-parity.mjs "$LISTFILE"
 
-echo "==> dist layering guard (Mantine-free subpaths + root-barrel re-export)"
+echo "==> dist layering guard (framework-free subpaths + root-barrel re-export)"
 node scripts/check-dist-layering.mjs
 
 # Install into a scratch consumer: quiet on success, but dump the installer's full output on
@@ -161,7 +161,6 @@ const subpaths = [
   'basalt-ui/tokens',
   'basalt-ui/controls',
   'basalt-ui/table',
-  'basalt-ui/format',
   'basalt-ui/content',
   'basalt-ui/vite',
   'basalt-ui/styles.css',
@@ -190,16 +189,9 @@ for (const s of subpaths) {
   console.log('resolved', s)
 }
 
-// the Mantine-free tokens entry must fully load (no peer deps required)
+// the tokens entry must fully load (no peer deps required)
 const tokens = await import('basalt-ui/tokens')
 if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildPaletteCss missing')
-
-// the Mantine-free, React-free format entry must load and format
-const format = await import('basalt-ui/format')
-if (typeof format.money !== 'function') throw new Error('format.money missing')
-if (format.money(1234, { currency: 'USD', locale: 'en-US' }) !== '$1,234.00') {
-  throw new Error('format.money did not format as expected')
-}
 
 // the raw oxlint preset must resolve via ./configs/* and be valid JSON
 JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint.json'), 'utf8'))
@@ -209,13 +201,6 @@ JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint-basalt.json'),
 const dataMod = await import('basalt-ui/data')
 if (typeof dataMod.createChannel !== 'function') throw new Error('data.createChannel missing')
 console.log('smoke: basalt-ui/data createChannel OK')
-
-// the status mark is a root export (argo status chips): both components resolve from `basalt-ui`
-const rootMod = await import('basalt-ui')
-for (const name of ['StatusDot', 'StatusVerdict']) {
-  if (typeof rootMod[name] !== 'function') throw new Error(`basalt-ui.${name} missing`)
-}
-console.log('smoke: basalt-ui status exports OK')
 
 // eject (docs/v3/ARCHITECTURE.md 4.1): a seed's `../core/*` and `../tokens` imports are published
 // subpaths, and no compiled file reaches a primitive by a relative path an alias cannot follow.
@@ -391,16 +376,12 @@ cat >tsconfig.dist-vantage.json <<'JSON'
 }
 JSON
 # Write a consumer .ts that imports from the installed basalt-ui dist .d.ts files.
-# Uses createBasaltTheme's literal-union knobs, groupTokens' branded SeriesGroup, the BasaltRegister
-# augmentation seam and SeriesKey — one per published surface.
+# Uses groupTokens' branded SeriesGroup, the BasaltRegister augmentation seam and SeriesKey — one
+# per published surface.
 cat >dist-vantage.ts <<'TS'
-import { createBasaltTheme } from 'basalt-ui'
 import type { BasaltRegister } from 'basalt-ui'
 import { buildPaletteCss, defineSeries, groupTokens } from 'basalt-ui/tokens'
 import type { SeriesKey } from 'basalt-ui'
-
-// radius/density are literal unions (V2-SPEC section 3)
-const _theme = createBasaltTheme(undefined, { radius: 2, density: -1 })
 
 // groupTokens returns a branded SeriesGroup that paletteOptions.groups accepts
 const _group = groupTokens('x', defineSeries({ a: { light: '#111111', dark: '#eeeeee' } }))
@@ -410,7 +391,7 @@ const _css = buildPaletteCss({ groups: [_group] })
 const _k: keyof BasaltRegister = undefined as never
 const _sk: SeriesKey = undefined as never
 
-export { _theme, _css, _k, _sk }
+export { _css, _k, _sk }
 TS
 bunx tsc --project tsconfig.dist-vantage.json
 echo "dist-vantage tsc OK"
@@ -432,7 +413,7 @@ JSON
 done
 rm -f extends-probe.ts tsconfig.extends-base.json tsconfig.extends-react-app.json tsconfig.extends-node.json
 
-echo "==> charts/tokens-only (no-Mantine) resolution + render"
+echo "==> charts/tokens-only resolution + render"
 SCRATCH2=$(mktemp -d)
 cd "$SCRATCH2"
 echo '{ "name": "scratch-free", "private": true, "type": "module" }' >package.json
@@ -441,7 +422,7 @@ scratch_install "$ABS_TGZ" react react-dom "@tanstack/charts@1.5.0" "d3-scale@4.
 cat >free.mjs <<'JS'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-// The Mantine-free subpaths must load with NO @mantine installed.
+// The charts and tokens subpaths must load with no UI framework installed.
 const charts = await import('basalt-ui/charts')
 const tokens = await import('basalt-ui/tokens')
 if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildPaletteCss missing')
@@ -476,28 +457,14 @@ JS
 # nothing about the layering it exists to prove.
 node --import "$PKGDIR/scripts/css-noop-register.mjs" free.mjs
 
-echo "==> controls without @mantine/dates (the 2.x date peer)"
-# `@mantine/dates` is an optional peer, and only ONE subpath needs it. The claim `docs/CONTROLS-SPEC.md`
-# §3 makes — and that linewatch, which has no date picker, depends on — is that `basalt-ui/controls`
-# resolves and RENDERS with the peer genuinely absent, which no source-level test can prove: a lazy
-# `import('@mantine/dates')` anywhere under `src/controls/**` passes a static scan and fails here.
-# The mirror of the charts/tokens-only step above, and asserted in BOTH directions: `./controls`
-# resolves and `./controls-dates` is gone from the export map.
+echo "==> controls resolve and render with only their own peers"
 SCRATCH5=$(mktemp -d)
 cd "$SCRATCH5"
 echo '{ "name": "scratch-no-dates", "private": true, "type": "module" }' >package.json
-# v3 ctl-4: `./controls` now draws `ui/*` (Base UI), the one peer its subpath-required list adds.
-scratch_install "$ABS_TGZ" react react-dom @mantine/core @mantine/hooks @base-ui/react
-if [ -d node_modules/@mantine/dates ]; then
-  echo "FAILED: @mantine/dates ended up in a scratch install that never requested it — test setup is broken, not a package defect"
-  exit 1
-fi
-# Same for `@mantine/form`: the form layout (FormRow & co) lives in ./controls since 1.36.0 so a
-# consumer rendering one never installs the form library.
-if [ -d node_modules/@mantine/form ]; then
-  echo "FAILED: @mantine/form ended up in a scratch install that never requested it — test setup is broken, not a package defect"
-  exit 1
-fi
+# `./controls` draws `ui/*` (Base UI), the one peer its subpath-required list adds. The claim is that
+# it resolves and RENDERS with every other optional peer genuinely absent, which no source-level
+# test can prove: a lazy `import()` of a missing peer passes a static scan and fails here.
+scratch_install "$ABS_TGZ" react react-dom @base-ui/react
 cat >controls.mjs <<'JS'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -550,9 +517,9 @@ const html = renderToStaticMarkup(tree)
 if (!html.includes('USD')) throw new Error('FilterSet did not render its first child filter')
 if (!html.includes('web')) throw new Error('FilterSet did not render its second child filter')
 if (!html.includes('Filters')) throw new Error('FilterSet did not render its mobile sheet pill')
-console.log('controls without @mantine/dates: resolution + render OK')
+console.log('controls: resolution + render OK')
 
-// The form parts, with `@mantine/form` genuinely absent: resolve AND render.
+// The form parts, with no form library installed: resolve AND render.
 for (const name of ['FormField', 'FormRow']) {
   if (typeof controls[name] !== 'function') throw new Error(`controls.${name} missing`)
 }
@@ -567,7 +534,7 @@ const rowHtml = renderToStaticMarkup(
 )
 if (!rowHtml.includes('Email')) throw new Error('FormField did not render its label')
 if (!rowHtml.includes('Contact')) throw new Error('FormRow did not render its legend')
-console.log('controls without @mantine/form: FormField and FormRow resolution + render OK')
+console.log('controls: FormField and FormRow resolution + render OK')
 
 // The retired 2.x date subpath is gone from the export map: it must not resolve at all.
 let datesResolved = false
@@ -597,17 +564,17 @@ echo "==> subpath-required peers: installed vs absent (docs/V2-SPEC.md § 1 Peer
 SCRATCH4=$(mktemp -d)
 cd "$SCRATCH4"
 echo '{ "name": "scratch-peers", "private": true, "type": "module" }' >package.json
-REQUIRED_PEER_NAMES=()
-while IFS= read -r name; do REQUIRED_PEER_NAMES+=("$name"); done < <(bun "$PKGDIR/scripts/surface-peers.ts" required)
+BASE_PEER_NAMES=()
+while IFS= read -r name; do BASE_PEER_NAMES+=("$name"); done < <(bun "$PKGDIR/scripts/surface-peers.ts" base)
 SUBPATH_PEER_NAMES=()
 while IFS= read -r name; do SUBPATH_PEER_NAMES+=("$name"); done < <(bun "$PKGDIR/scripts/surface-peers.ts" subpath)
 OWN_PEERS=$(bun "$PKGDIR/scripts/surface-peers.ts" own)
 export OWN_PEERS
-peer_array REQUIRED_PEERS "${REQUIRED_PEER_NAMES[@]}"
-scratch_install "$ABS_TGZ" "${REQUIRED_PEERS[@]}"
+peer_array BASE_PEERS "${BASE_PEER_NAMES[@]}"
+scratch_install "$ABS_TGZ" "${BASE_PEERS[@]}"
 for absent in remend "${SUBPATH_PEER_NAMES[@]}"; do
   if [ -d "node_modules/$absent" ]; then
-    echo "FAILED: $absent ended up in the required-peers-only install — test setup is broken, not a package defect"
+    echo "FAILED: $absent ended up in the React-only install — test setup is broken, not a package defect"
     exit 1
   fi
 done
@@ -617,11 +584,8 @@ cat >peers.mjs <<'JS'
 // the peer-free subpaths are listed here so they are still imported.
 const own = {
   ...JSON.parse(process.env.OWN_PEERS),
-  'basalt-ui/format': [],
   'basalt-ui/tokens': [],
-  // v3 skeleton stubs import no peer, so they must load in both phases (`./ai` is no stub: it has a subpath-required row)
-  'basalt-ui/router': [],
-  'basalt-ui/data': [],
+  // peer-free subpaths must load in both phases (`./router` and `./data` have subpath-required rows)
   'basalt-ui/lint': [],
   'basalt-ui/stylelint': [],
   'basalt-ui/testing': [],
@@ -650,7 +614,7 @@ node --import "$PKGDIR/scripts/css-noop-register.mjs" peers.mjs absent
 INSTALL_PEER_NAMES=()
 for name in "${SUBPATH_PEER_NAMES[@]}"; do [ "$name" = vite ] || INSTALL_PEER_NAMES+=("$name"); done
 peer_array SUBPATH_PEERS "${INSTALL_PEER_NAMES[@]}"
-scratch_install "$ABS_TGZ" "${SUBPATH_PEERS[@]}" "use-stick-to-bottom@^1.1.6" "@tanstack/react-virtual@>=3.14.0 <4" "vite@8.0.16"
+scratch_install "$ABS_TGZ" "${SUBPATH_PEERS[@]}" "@tanstack/react-virtual@>=3.14.0 <4" "vite@8.0.16"
 node --import "$PKGDIR/scripts/css-noop-register.mjs" peers.mjs present
 
 # V2-SPEC § 8 Store row: Router, Table and Hotkeys all depend on @tanstack/react-store (and it on
@@ -667,26 +631,16 @@ done
 echo "@tanstack/react-store + @tanstack/store dedupe to one version each"
 echo "subpath-required peers OK (absent: own-peer failures only; present: every subpath loads)"
 
-echo "==> ./styles.css @importing Mantine's layer CSS (V2-SPEC.md § 1 Open)"
-# The shipped stylesheet must itself `@import` the layered bundle of every Mantine package the
-# provider mounts (core, notifications, spotlight), and bundling it with the bundler consumers run
-# (Vite, i.e. Rolldown) must land ALL of them inside `@layer mantine{…}`, before `@layer basalt{`, so
-# basalt wins by layer order exactly as the declared `@layer mantine, basalt;` promises. The `@layer`
-# statement itself is folded away by the bundler; declaration order is what survives, so that is what
-# is asserted. A class hook (not a custom property) is probed: an UNLAYERED bundle still carries the
-# custom properties, but its class rules fall outside the `@layer mantine{…}` span.
+echo "==> ./styles.css bundles for a consumer (layer + head-digits font)"
+# The shipped stylesheet must bundle with the bundler consumers run (Vite, i.e. Rolldown): its `@layer
+# basalt` block survives and the head-digits face's url() resolves to the emitted Nunito woff2 asset
+# from the packed tarball.
 cat >styles-proof.mjs <<'JS'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { build } from 'vite'
 const require = createRequire(import.meta.url)
 const css = readFileSync(require.resolve('basalt-ui/styles.css'), 'utf8')
-const PACKAGES = ['core', 'notifications', 'spotlight']
-for (const pkg of PACKAGES) {
-  if (!css.includes(`@import '@mantine/${pkg}/styles.layer.css'`)) {
-    throw new Error(`the shipped styles.css does not \`@import '@mantine/${pkg}/styles.layer.css'\``)
-  }
-}
 mkdirSync('styles-proof', { recursive: true })
 writeFileSync('styles-proof/styles.css', css)
 writeFileSync('styles-proof/main.js', "import './styles.css'\n")
@@ -698,33 +652,20 @@ const result = await build({
 })
 const bundle = Array.isArray(result) ? result[0] : result
 const out = bundle.output.filter((o) => o.fileName.endsWith('.css')).map((o) => String(o.source)).join('\n')
-const mantine = out.indexOf('@layer mantine{')
-const basalt = out.indexOf('@layer basalt{')
-if (mantine === -1 || basalt === -1) throw new Error(`layers missing from the bundled CSS (mantine ${mantine}, basalt ${basalt})`)
-if (mantine > basalt) throw new Error('@layer basalt precedes @layer mantine: basalt would lose to Mantine')
-// The first hashed root class each package's own layer file declares; Mantine bumps rehash it, so it
-// is read from the installed file rather than pinned here.
-for (const pkg of PACKAGES) {
-  const file = readFileSync(require.resolve(`@mantine/${pkg}/styles.layer.css`), 'utf8')
-  const hook = file.match(/\.m_[a-z0-9]+/)?.[0]
-  if (!hook) throw new Error(`no class hook found in @mantine/${pkg}/styles.layer.css`)
-  const at = out.indexOf(hook)
-  if (at === -1) throw new Error(`${hook} (@mantine/${pkg}) is missing from the bundled CSS`)
-  if (at < mantine || at > basalt) throw new Error(`${hook} (@mantine/${pkg}) is outside @layer mantine{…}: its CSS is unlayered`)
-}
-// The head-digits face's url must resolve from the packed tarball: Vite emits the font file as an asset.
+if (!out.includes('@layer basalt{')) throw new Error('@layer basalt is missing from the bundled CSS')
+if (css.includes('@mantine/')) throw new Error('the shipped styles.css still imports a Mantine package')
 if (!/@font-face\s*\{[^}]*Basalt Head Digits/.test(css)) throw new Error("the shipped styles.css lacks the 'Basalt Head Digits' @font-face")
 const digitsFont = bundle.output.find((o) => /nunito-sans-latin-wght-normal.*\.woff2$/.test(o.fileName))
 if (!digitsFont) throw new Error('the Basalt Head Digits url() did not resolve to a Nunito woff2 asset in the bundled CSS')
 const face = out.match(/@font-face\s*\{[^}]*Basalt Head Digits[^}]*\}/)?.[0] ?? ''
 if (!face.includes(digitsFont.fileName)) throw new Error('the bundled Basalt Head Digits @font-face does not point at the emitted woff2')
-console.log('styles.css + Mantine layer CSS OK (shipped import); head-digits font resolves')
+console.log('styles.css bundles; head-digits font resolves')
 JS
 node styles-proof.mjs
 
 echo "==> tokens-only install is light (no peers at all)"
 # The property this whole change exists to prove: a consumer who only wants the token layer
-# installs basalt-ui and gets NOTHING else — no chart engine, no fonts, no Mantine. Every
+# installs basalt-ui and gets NOTHING else — no chart engine and no React (the three fonts ride along as dependencies). Every
 # peer above (including the fourteen moved out of `dependencies` in this change) is optional, so a
 # bare `bun add basalt-ui` must not pull any of them in transitively.
 SCRATCH3=$(mktemp -d)

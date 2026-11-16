@@ -293,9 +293,6 @@ export const REMOVED_APIS: Readonly<Record<string, string>> = {
   autoXLabelRotate: 'xTicks + tickLabels.thin (labels never rotate)',
   chartMargin: 'the engine measured guides',
   ChartMargin: 'the engine measured guides',
-  // Formatters: `./format` only.
-  fmtAxisDate: 'basalt-ui/format',
-  fmtTooltipDate: 'basalt-ui/format',
   // ── 1.19.0 native mobile nav: the render-callback seam became a component seam ──
   // `SidebarItem.Anchor` (a `NavAnchor`) replaces all three render callbacks, and the mobile
   // model's own row/section types moved into `src/nav/types.ts`.
@@ -773,10 +770,8 @@ export function checkLlmsNames(
  * appear in that subpath's prose and still be absent from its exports (a test holds both).
  */
 export const CHECK_I_NON_EXPORTS: ReadonlySet<string> = new Set([
-  'basalt-ui/format:Intl', // the platform API the formatters wrap
   'basalt-ui/charts:marks', // prose: the marks a chart kind fixes
   'basalt-ui/controls:ctl', // the size tier
-  'basalt-ui/format:locale', // an option of the formatters
   'basalt-ui/content:streaming', // a prop of Markdown
   'basalt-ui/content:contentTrust', // a prop of Markdown
   'basalt-ui/content:sanitize', // a prop of Markdown

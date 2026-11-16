@@ -3,7 +3,7 @@ name: createSyncedState
 use when: 'a preference object follows the person across devices and the server stores it whole or per field'
 never when: 'the value is device-local (`persisted`), a form draft, or a record list (`optimistic` on a mutation)'
 subpath: basalt-ui/data
-peers: []
+peers: ['@tanstack/react-query']
 slots: []
 ---
 

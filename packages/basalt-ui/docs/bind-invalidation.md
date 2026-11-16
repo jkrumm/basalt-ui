@@ -3,7 +3,7 @@ name: bindInvalidation
 use when: 'an app pushes changes over a channel and queries should refetch from them instead of polling'
 never when: 'the frame carries the whole entity and a cache write is enough (use `patch` alone and have `map` skip it), or the data is only polled'
 subpath: basalt-ui/data
-peers: []
+peers: ['@tanstack/react-query']
 slots: []
 ---
 

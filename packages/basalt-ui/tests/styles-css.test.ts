@@ -1,13 +1,12 @@
 /**
  * `styles.css` reach guards — the rules that fire on a consumer's own markup.
  *
- * Everything in this stylesheet lands in every consumer app, and two of its rules used to match
- * elements basalt does not own. The print rule matched bare `nav`/`header`/`footer`, so a page with
- * a real landmark and no `BasaltShell` printed it blank; being unlayered and `!important` it could
- * not be overridden either. The heading rule matches bare `h1`–`h6` by design, but hardcoded its
- * width, so a consumer layering its own base type had no knob to reach for.
+ * Everything in this stylesheet lands in every consumer app. The heading rule matches bare `h1`–`h6`
+ * by design, but must read a width knob so a consumer layering its own base type has one to reach
+ * for. The stylesheet declares its own layer before its imports so basalt's cascade position holds
+ * whatever order a bundler emits the files in.
  *
- * Both are text assertions rather than rendered ones on purpose: this is a shipped ASSET, not a
+ * These are text assertions rather than rendered ones on purpose: this is a shipped ASSET, not a
  * module — no bundler, no jsdom, and the two properties that matter (which layer a rule sits in,
  * and which selectors it carries) are visible in the source and invisible to a render test.
  *
@@ -20,33 +19,6 @@ import { describe, expect, it } from 'bun:test'
 const css = readFileSync(join(import.meta.dir, '..', 'src', 'styles.css'), 'utf8')
 /** Declarations only — the comments discuss `!important` at length and would skew the count. */
 const declarations = css.replace(/\/\*[\s\S]*?\*\//g, '')
-
-/** The `@media print { … }` block and its selector list. */
-const printBlock = /@media print \{([\s\S]*?)\n {2}\}/.exec(css)?.[1] ?? ''
-
-describe('styles.css print rule', () => {
-  it('exists', () => {
-    expect(printBlock).not.toBe('')
-  })
-
-  it('hides the shell chrome by class hook, never by bare landmark element', () => {
-    expect(printBlock).toContain('.mantine-AppShell-navbar')
-    expect(printBlock).toContain('.mantine-AppShell-header')
-    expect(printBlock).toContain('.mantine-AppShell-footer')
-    // A consumer's own <nav>/<header>/<footer> must survive printing.
-    expect(/^\s*(nav|header|footer),?\s*$/m.test(printBlock)).toBe(false)
-  })
-
-  it('sits inside @layer basalt, so a consumer can override it', () => {
-    const layerStart = css.indexOf('@layer basalt {')
-    expect(layerStart).toBeGreaterThanOrEqual(0)
-    expect(css.indexOf('@media print')).toBeGreaterThan(layerStart)
-  })
-
-  it('carries no !important — layer order already wins', () => {
-    expect(printBlock).not.toContain('!important')
-  })
-})
 
 describe('styles.css heading width', () => {
   it('reads a knob instead of hardcoding the condensed width', () => {
@@ -65,20 +37,16 @@ describe('styles.css !important budget', () => {
   })
 })
 
-describe('styles.css Mantine layer imports', () => {
-  const layerAt = declarations.indexOf('@layer mantine, basalt;')
-  const importsAt = ['core', 'notifications', 'spotlight'].map((pkg) =>
-    declarations.indexOf(`@import '@mantine/${pkg}/styles.layer.css';`),
-  )
+describe('styles.css layer and imports', () => {
+  const layerAt = declarations.indexOf('@layer basalt;')
 
-  it('declares the layer order before the imports', () => {
+  it('declares its layer before any import', () => {
     expect(layerAt).toBeGreaterThanOrEqual(0)
-    expect(importsAt.every((at) => at > layerAt)).toBe(true)
+    expect(declarations.indexOf('@import')).toBeGreaterThan(layerAt)
   })
 
-  it('imports core, then notifications, then spotlight', () => {
-    expect(importsAt.every((at) => at >= 0)).toBe(true)
-    expect(importsAt).toEqual([...importsAt].toSorted((a, b) => a - b))
+  it('imports no UI framework', () => {
+    expect(declarations).not.toContain('@mantine/')
   })
 
   it('places every @import before any rule', () => {

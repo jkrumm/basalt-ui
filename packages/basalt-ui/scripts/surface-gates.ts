@@ -102,21 +102,19 @@ export function consumerViolations(
 
 // ── Peer classes ────────────────────────────────────────────────────────────────────────────────
 
-/** § 1 "Peers": installed by every consumer; `.` or `./styles.css` imports or names it. */
-export const REQUIRED_PEERS: readonly string[] = [
-  'react',
-  'react-dom',
-  '@mantine/core',
-  '@mantine/hooks',
-  '@mantine/modals',
-  '@mantine/notifications',
-  '@mantine/spotlight',
-  '@tanstack/react-router',
-  '@tanstack/react-query',
-  '@fontsource-variable/hubot-sans',
-  '@fontsource-variable/jetbrains-mono',
-  '@fontsource-variable/nunito-sans',
-]
+/**
+ * ARCHITECTURE § 4.3 "Peers": no peer is required. `tokens` installs no React and no Tailwind, so
+ * even `react` is optional; the set stays a list so `tests/required-peers.test.ts` and the gate
+ * below name it and cannot be re-grown by accident.
+ */
+export const REQUIRED_PEERS: readonly string[] = []
+
+/**
+ * Optional in `package.json` because `tokens` and `charts`-free installs need no React, yet every
+ * React-rendering subpath imports them: the gate allows them on any subpath and `pack-test.sh`
+ * installs them in its base phase. They are the only peers that are not classified per subpath.
+ */
+export const REACT_PEERS: readonly string[] = ['react', 'react-dom']
 
 /**
  * § 1 "Peers": per subpath, the optional-in-`package.json` peers its consumers must install because
@@ -127,15 +125,18 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   './table': ['@tanstack/react-table', '@base-ui/react'],
   // `ui/card` imports Base UI `useRender`, so `StatCard` reaches it; the concept (charts-cards-kanban 3, 'Shared frame') wants no Base UI import there. Remove this row when `ui/card` drops it.
   './cards': ['@base-ui/react'],
-  './page': ['@base-ui/react'],
+  './page': ['@base-ui/react', '@tanstack/react-router'],
   // v3 shell: the header's popover actions and the compact aside sheet draw `ui/popover`, `ui/sheet` and `ui/button`, which wrap Base UI.
-  './shell': ['@base-ui/react'],
+  './shell': ['@base-ui/react', '@tanstack/react-router'],
   // v3 ctl-4: `ControlView` and its renderers draw `ui/select`, `ui/combobox`, `ui/segmented`, `ui/number-field` and `ui/switch`, which wrap Base UI.
   './controls': ['@base-ui/react'],
   // `CodeBlock` renders `ui/button`, which wraps Base UI; `./page` (above) takes the same peer for `ui/alert`, `ui/popover`, `ui/dialog` and `ui/sheet`.
   './content': ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend', '@base-ui/react'],
   // `partView` renders `Markdown`, so it needs the same four peers, and `ui/collapsible` and `ui/status` wrap Base UI.
   './ai': ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend', '@base-ui/react'],
+  // `BasaltProvider` and the route-aware views read the router; the data layer is TanStack Query's.
+  './router': ['@tanstack/react-router'],
+  './data': ['@tanstack/react-query'],
   './vite': ['vite'],
   [CHART_SUBPATH]: ['@tanstack/charts', 'd3-scale'],
 }
@@ -262,7 +263,7 @@ export function peerClassViolations(root: string, manifest: Manifest): string[] 
     const allowed = SUBPATH_REQUIRED_PEERS[subpath] ?? []
     const reached = new Set([...staticPeers, ...typePeers])
     for (const name of reached) {
-      if (!peers.includes(name) || REQUIRED_PEERS.includes(name)) continue
+      if (!peers.includes(name) || REACT_PEERS.includes(name)) continue
       if (allowed.includes(name)) continue
       if (DEFERRED_PEER_GAPS.tolerated[subpath]?.includes(name)) continue
       const how = staticPeers.has(name) ? 'imports' : 'names in its .d.ts'

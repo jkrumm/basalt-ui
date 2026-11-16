@@ -331,11 +331,7 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     expect(block).toContain('transition: background-color 600000s 0s')
   })
 
-  test('d21 focus ring is accent as ink, not the fill: the outline reads --vx-accent and dark ink clears 4.5:1', () => {
-    const rule =
-      stylesCss.match(/\.mantine-focus-auto:focus-visible,[\s\S]*?\{([^}]*)\}/)?.[1] ?? ''
-    expect(rule).toMatch(/outline-color:\s*var\(--vx-accent\);/)
-    expect(rule).not.toContain('accent-fill')
+  test('d21 focus ring is accent as ink, not the fill: dark accent ink clears 4.5:1 on the page', () => {
     for (const config of surfaceGrid()) {
       const palette = deriveTokens(config)
       expect(contrastRatio(palette.accent.dark, palette.surface.bg.dark)).toBeGreaterThanOrEqual(

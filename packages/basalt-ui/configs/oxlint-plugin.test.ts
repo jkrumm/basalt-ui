@@ -13,7 +13,6 @@ import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 // eslint-disable-next-line -- the plugin is plain JS; the ledger + id set are named exports beside it
 import basaltPlugin, {
-  CTL_THEME_TAGS,
   WAIVER_ID_ALIASES,
   KNOWN_RULE_IDS,
   CHART_ENGINE_ALLOWED_PREFIXES,
@@ -23,7 +22,6 @@ import basaltPlugin, {
   RAW_BREAKPOINT_RECIPE,
   RETIRED_RULE_IDS,
 } from './oxlint-plugin.js'
-import { CTL_THEME } from '../src/theme/ctl-theme'
 import {
   GRACE_PERIOD_KINDS,
   GUARD_RULES,
@@ -2824,18 +2822,6 @@ ${MANTINE_IMPORT}` +
   })
 })
 
-// `control-size-literal`'s scope is a copy of the theme's own re-tiering list, because a plain-JS
-// plugin shipped to consumers cannot import Mantine-coupled TS. This is the pin that makes the copy
-// safe: a component added to (or dropped from) CTL_THEME without the rule following is a rule
-// telling someone to drop a prop nothing else sets — or silently ignoring one that matters.
-describe('CTL_THEME_TAGS ↔ CTL_THEME', () => {
-  it('is exactly the component map the slot theme re-tiers', () => {
-    expect([...(CTL_THEME_TAGS as Set<string>)].toSorted()).toEqual(
-      Object.keys(CTL_THEME.components ?? {}).toSorted(),
-    )
-  })
-})
-
 describe('basalt/in-body-page-title', () => {
   it.each([1, 2])('flags <Title order={%i}> in the body', (order) => {
     const { code, rules } = run(`export const C = () => <Title order={${order}}>Page</Title>\n`)
@@ -3974,7 +3960,7 @@ describe('basalt/raw-breakpoint', () => {
         `export const useTouch = () => useMediaQuery('(hover: none)')\n`,
     )
     expect(output).toContain('@media (pointer: coarse)')
-    expect(output).toContain('useCoarsePointer() from basalt-ui')
+    expect(output).toContain('useSizeClass() from basalt-ui/page')
   })
 
   // obsidian r2 #7: a test-setup polyfill lives in `tests/`, not in a `.test` file.

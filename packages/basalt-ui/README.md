@@ -39,10 +39,10 @@ versions: `peerDependencies` in `package.json`; `basalt-ui doctor` lists what is
 | Subpath-required | `./charts`: `@tanstack/charts`, `d3-scale` · `./table`: `@tanstack/react-table` · `./content`, `./ai`: `react-markdown`, `remark-gfm`, `rehype-sanitize`, `remend`    | needed only by consumers of that subpath; declared `optional` in `peerDependenciesMeta`                  |
 | Optional         | `shiki`, `@shikijs/*`, `beautiful-mermaid`, `@tanstack/react-query-devtools`, `@tanstack/react-router-devtools`, `vite-plugin-pwa`                                    | reached through `import()` only; absent, the feature degrades (dev devtools panels, plain-text markdown) |
 
-The `@mantine/*` and `@fontsource-variable/*` peers are declared required for the root theme (see
-[The root](#the-root)); your package manager places them, and a v3 app imports none of them.
+No peer is required: every peer above is optional, `react` included, so an install pulls in only what the
+subpaths you import need. The three `@fontsource-variable/*` faces are regular dependencies.
 
-**No React?** `./tokens` imports no `@mantine/*`, and the token system is consumable with no package
+**No React?** `./tokens` imports no UI framework, and the token system is consumable with no package
 at all:
 
 ```bash
@@ -331,28 +331,18 @@ The value **is** the reason: omitting the key, or setting it to `true` or `""`, 
 
 ## The root
 
-The root barrel, `basalt-ui`, holds the theme (`createBasaltTheme`, `ThemeToggle`, `StatusDot`,
-`StatusVerdict`) and the state seams (`persisted`, `notify`, `createChannel`, `externalField`,
-`useNow`, `createFormat`). A v3 app wires itself through `basalt-ui/router` (`BasaltProvider`,
+The root barrel, `basalt-ui`, holds the state seams only (`persisted`, `notify`, `createChannel`,
+`externalField`, `useNow`, `createFormat`, `useFormat`). A v3 app wires itself through `basalt-ui/router` (`BasaltProvider`,
 `routerDefaults`) and `basalt-ui/data` (`createQueryClient`, `unwrap`). The 2.x provider, router
 factory, command bus, agent runtime, form adapter and store layer are removed: every symbol and its
 replacement is a row in [`MIGRATING.md`](./MIGRATING.md).
 
-### Theming (2.x)
+### Theming
 
 The shipped palette isn't a fixed set of hexes — it's **generated** from one accent seed + five
-bounded knobs, with contrast guaranteed by derivation rather than hand-tuning:
-
-```ts
-const theme = createBasaltTheme(
-  {/* app deltas only */},
-  { derive: { accent: '#7c3aed', neutral: 'zinc', vibrancy: 1 } },
-)
-```
-
-`derive` accepts `accent` (hex seed), `neutral` (`'zinc' | 'neutral' | 'stone' | 'slate'`), and
-`lightLevel` / `darkLevel` / `vibrancy` / `accentBrightness` (`-5..5`, all optional — omitted knobs
-keep the shipped default). Never hand-edit a palette hex to retune the identity.
+bounded knobs (`tokens/derive.ts`), with contrast guaranteed by derivation rather than hand-tuning.
+Never hand-edit a palette hex to retune the identity. The 2.x entry, `createBasaltTheme`, is removed
+with the Mantine theme it built; its row in [`MIGRATING.md`](./MIGRATING.md) names the replacement.
 
 ```tsx
 // Shell — header, rail, one scrollport and (on a phone) a tab bar, resolved against the router from `nav`
@@ -360,28 +350,23 @@ import { AppShell } from 'basalt-ui/shell'
 import { PageBar } from 'basalt-ui/page'
 ```
 
-> Use the **layered** `*.layer.css` bundles, never the plain ones — Mantine's unlayered bundle
-> outranks basalt's `@layer basalt` styles (including the iOS 16px input floor) regardless of
-> specificity. `basalt-ui/styles.css` already imports the core layer bundle.
-
 ---
 
 ## Subpath exports
 
 The subpaths below, plus the v3 ones a new app imports: `./shell` (`AppShell`), `./router`, `./data`, `./page`, `./cards`, `./ai`, `./ui/*` and `./core/*`; each is a `## basalt-ui/<subpath>` section of `llms.txt`. One import path per symbol; named exports only — no default exports.
 
-| Subpath        | Purpose                                                                                                                                                                                                                                     |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`            | The theme (`createBasaltTheme`, `ThemeToggle`, `StatusDot`, `StatusVerdict`, `useCoarsePointer`) and the state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`). Reaches no subpath-required peer. |
-| `./tokens`     | **Mantine-free.** `VX` token refs, `alpha`, `defineSeries`, `seriesTokens`, `groupTokens`, `buildPaletteCss`, layout (`BP`, `p`, `CONTAINER_*`)                                                                                             |
-| `./charts`     | **Mantine-free.** `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip` kinds, `ChartCard`, `chartCursor` on `@tanstack/charts`                                                                                           |
-| `./controls`   | `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot`, `FormField`, `FormRow`, `FormFooter`, `useFormDraft`, `toSubmitErrors`                                                                                |
-| `./table`      | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`, the contract types                                                                                                                                      |
-| `./format`     | `Intl`-backed, React-free formatting: `integer`, `money`, `percent`, `durationClock`, `relativeTime`, `weekday`, `km`, `kcal`                                                                                                               |
-| `./content`    | `Markdown` (required `contentTrust`; the untrusted arm renders no images)                                                                                                                                                                   |
-| `./vite`       | `basaltViteConfig(opts)` preset, `basalt(opts)` build gates, sources.css, head / manifest                                                                                                                                                   |
-| `./styles.css` | The one stylesheet: `@layer basalt` base styles, iOS input floor, fonts                                                                                                                                                                     |
-| `./configs/*`  | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                                                                                             |
+| Subpath        | Purpose                                                                                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.`            | The state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`, `useFormat`). Reaches no subpath-required peer.          |
+| `./tokens`     | **Mantine-free.** `VX` token refs, `alpha`, `defineSeries`, `seriesTokens`, `groupTokens`, `buildPaletteCss`, layout (`BP`, `p`, `CONTAINER_*`)              |
+| `./charts`     | **Mantine-free.** `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip` kinds, `ChartCard`, `chartCursor` on `@tanstack/charts`            |
+| `./controls`   | `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot`, `FormField`, `FormRow`, `FormFooter`, `useFormDraft`, `toSubmitErrors` |
+| `./table`      | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`, the contract types                                                       |
+| `./content`    | `Markdown` (required `contentTrust`; the untrusted arm renders no images)                                                                                    |
+| `./vite`       | `basaltViteConfig(opts)` preset, `basalt(opts)` build gates, sources.css, head / manifest                                                                    |
+| `./styles.css` | The one stylesheet: `@layer basalt` base styles, iOS input floor, fonts                                                                                      |
+| `./configs/*`  | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                              |
 
 **Static pages and CSS entries.** `./tokens.css`, `./typography.css`, `./prose.css` and `./fonts.css` are plain CSS with no JS, Tailwind or framework behind them, so an Astro or any static page takes the same tokens as an app: `@import 'basalt-ui/tokens.css'` (and the others it needs). `./table.css` is the same kind of entry (the table tiers, in `@layer basalt.table`); `basalt()` imports it for any module that imports `./table`; an app without the plugin imports it itself. `./tailwind.css` is the Tailwind 4 bridge and the only one that needs Tailwind.
 
@@ -390,11 +375,11 @@ The subpaths below, plus the v3 ones a new app imports: `./shell` (`AppShell`), 
 
 ---
 
-## Mantine-free boundary
+## Framework-free boundary
 
-`./charts` and `./tokens` import zero `@mantine/*`. `@visx/*` is banned everywhere, and `@tanstack/charts/react` is imported by `src/charts/host.tsx` alone. The root barrel (`.`) does not re-export `./charts` or `./tokens`.
+`./charts` and `./tokens` import no UI framework. `@visx/*` is banned everywhere, and `@tanstack/charts/react` is imported by `src/charts/host.tsx` alone. The root barrel (`.`) does not re-export `./charts` or `./tokens`.
 
-The Mantine-free part protects two things. First, layering: `tokens` is pure data that `cssVariablesResolver` reads to bind Mantine's surfaces to the same `--vx-*` vars charts use, so an `@mantine/*` import in either would cycle back through the theme layer or let a chart bypass `--vx-*` and fork chrome/charts apart. Second, packaging: `./charts` and `./tokens` resolve and render with **no `@mantine/*` installed** — a charts/tokens-only consumer never pulls Mantine into their bundle. This is real and CI-tested (`scripts/pack-test.sh`'s "charts/tokens-only (no-Mantine) resolution + render" step scratch-installs the tarball with only `react`/`react-dom` and SSR-renders `basalt-ui/charts`; `scripts/check-dist-layering.mjs` walks the built dist graph and fails if those entries reach `@mantine/*`; the root barrel not re-exporting them is the third leg). The LAYER is Mantine-free — the FRAMEWORK is not: `.` requires Mantine (`@mantine/core`/`@mantine/hooks` are required, non-optional peers); only `./charts`/`./tokens` don't. Both consequences are a basalt-internal invariant enforced by the repo-local-only `basalt/token-layer-boundary` oxlint plugin rule — not a consumer contract, so it is deliberately absent from the shipped consumer preset. The chart-engine part (`basalt/chart-engine-boundary`: no `@visx/*`, and `@tanstack/charts` only through an allowlist of mark subpaths) IS shipped, so that constraint holds downstream too.
+The boundary protects two things. First, layering: `tokens` is pure data that `charts` reads, so a chart cannot fork the palette. Second, packaging: `./charts` and `./tokens` resolve and render with only `react`/`react-dom` installed, real and CI-tested (`scripts/pack-test.sh`'s "charts/tokens-only resolution + render" step scratch-installs the tarball and SSR-renders `basalt-ui/charts`; `scripts/check-dist-layering.mjs` walks the built dist graph; the root barrel not re-exporting them is the third leg). It is enforced by the repo-local-only `basalt/token-layer-boundary` oxlint plugin rule, a basalt-internal invariant and not a consumer contract, so it is deliberately absent from the shipped consumer preset. The chart-engine part (`basalt/chart-engine-boundary`: no `@visx/*`, and `@tanstack/charts` only through an allowlist of mark subpaths) IS shipped, so that constraint holds downstream too.
 
 ---
 
@@ -467,7 +452,7 @@ The optional-peer batteries extend the core. Install only what you use — core 
 bun add @tanstack/charts d3-scale
 ```
 
-`./charts` is Mantine-free (see [Mantine-free boundary](#mantine-free-boundary) above) but not
+`./charts` is framework-free (see [Framework-free boundary](#framework-free-boundary) above) but not
 dependency-free: it needs `@tanstack/charts` and `d3-scale`, both pinned exact (`1.5.0` and
 `4.0.2`). They ship as optional peers, not bundled dependencies, so a `./tokens`-only consumer never
 installs them. visx is gone: no dependency, peer or re-export.
@@ -478,8 +463,8 @@ keyboard focus, the legend and the derived tooltip, so a chart supplies its `ser
 only marks. `ariaLabel` is required. The x scale follows the value `x` returns: a `Date` is a
 proportional time axis, a `number` is linear, a `string` is a point (lines) or band (bars) scale.
 Marks come straight from `@tanstack/charts/*` subpaths (`basalt/chart-engine-boundary` allowlists
-them); `basalt-ui/charts` re-exports none, and tokens and formatters live in `basalt-ui/tokens` and
-`basalt-ui/format`.
+them); `basalt-ui/charts` re-exports none, and tokens live in `basalt-ui/tokens` and
+formatting in `useFormat` from `basalt-ui`.
 
 ```tsx
 import { lineY } from '@tanstack/charts/line'
