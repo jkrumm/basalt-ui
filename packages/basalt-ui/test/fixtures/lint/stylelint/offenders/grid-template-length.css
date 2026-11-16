@@ -1,0 +1,7 @@
+.layout {
+  grid-template: auto 1fr / 240px 1fr;
+}
+.lanes {
+  grid-auto-columns: 280px;
+  grid-auto-rows: 4rem;
+}
