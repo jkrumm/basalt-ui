@@ -13,7 +13,7 @@ export type Bar = { day: Date; close: number; momentum: number }
 export const GROUP = 'momentum' // one cursor group for both panes
 export const GUTTER = 56 // one y gutter in px for both panes
 const blue = { light: 'var(--vx-info)', dark: 'var(--vx-info)' }
-const amber = { light: 'var(--vx-warning)', dark: 'var(--vx-warning)' }
+const amber = { light: 'var(--vx-warn)', dark: 'var(--vx-warn)' }
 const x = { value: (d: Bar) => d.day }
 export function TwoPane({ bars }: { bars: Bar[] }) {
   return (

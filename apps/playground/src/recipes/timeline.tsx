@@ -1,5 +1,5 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
-// theme-allow-file hidden-inline-style, unknown-vx-token — the 2.x guard reads a custom-property style and the v3 tint token as raw; the v3 lint accepts both
+// theme-allow-file hidden-inline-style — the 2.x guard reads a custom-property style as raw; the v3 lint accepts `--at` and `--bar`
 export type Bar = { id: string; row: string; label: string; from: number; to: number }
 export const LEGEND = [
   {
@@ -27,7 +27,7 @@ export function Timeline({ bars, now }: { bars: Bar[]; now: number }) {
         <ScrollArea aria-label="Deploys by hour" orientation="horizontal">
           <div
             className="grid min-w-6xl auto-rows-8 grid-cols-[auto_repeat(24,minmax(0,1fr))] gap-y-2 px-(--card-edge)"
-            style={{ '--bar': 'var(--vx-info-tint)' } as React.CSSProperties}
+            style={{ '--bar': 'var(--color-info-tint)' } as React.CSSProperties}
           >
             <div className="col-span-full grid grid-cols-subgrid text-xs text-muted-foreground">
               {HOURS.map((h) => (
