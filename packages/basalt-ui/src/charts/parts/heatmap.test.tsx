@@ -231,6 +231,33 @@ describe('Heatmap', () => {
     expect(empty.querySelector('svg')).toBeNull()
     expect(empty.textContent).toContain('Nothing plotted in this range')
   })
+
+  test('phase and empty replace the grid like state does', async () => {
+    const loading = await mount(<Heatmap ariaLabel="H" data={cells} {...grid} phase="loading" />)
+    expect(loading.querySelector('svg')).toBeNull()
+    expect(loading.querySelector('[aria-busy="true"]')).not.toBeNull()
+    const query = {
+      isPending: true,
+      isError: false,
+      error: null,
+    } as const
+    const pending = await mount(<Heatmap ariaLabel="H" data={[]} {...grid} phase={query} />)
+    expect(pending.querySelector('[aria-busy="true"]')).not.toBeNull()
+    const empty = await mount(
+      <Heatmap ariaLabel="H" data={[]} {...grid} empty={{ cause: 'No runs this week' }} />,
+    )
+    expect(empty.querySelector('svg')).toBeNull()
+    expect(empty.textContent).toContain('No runs this week')
+    const none = await mount(<Heatmap ariaLabel="H" data={cells} {...grid} empty={null} />)
+    expect(none.querySelector('svg')).not.toBeNull()
+  })
+
+  test('the deprecated state still applies when phase and empty say nothing', async () => {
+    const el = await mount(
+      <Heatmap ariaLabel="H" data={cells} {...grid} state={{ pending: true }} phase="ready" />,
+    )
+    expect(el.querySelector('svg')).toBeNull()
+  })
 })
 
 describe('Heatmap positions without a datum', () => {

@@ -324,7 +324,7 @@
       "id": "removed-2x-root-Tone",
       "kind": "removed",
       "from": "basalt-ui#Tone",
-      "note": "the 2.x theme is deleted in 3.0; instead: the Tone type from basalt-ui/core/ports"
+      "note": "the 2.x theme is deleted in 3.0; instead: the six-member Tone type (good, warn, bad, info, accent, neutral) from basalt-ui/cards"
     },
     {
       "id": "removed-2x-root-StatusDotProps",

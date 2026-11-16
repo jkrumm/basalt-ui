@@ -174,6 +174,56 @@
       "profiles": ["parts", "app"],
       "manual": true,
       "note": "one name for an action's activation callback"
+    },
+    {
+      "id": "cards-frame-types-Phase",
+      "kind": "moved",
+      "from": "basalt-ui#Phase",
+      "to": "basalt-ui/cards#Phase",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the frame's value types import from one subpath; the root keeps a deprecated alias of the same type for one minor",
+      "verify": "tsc"
+    },
+    {
+      "id": "cards-frame-types-QueryStateLike",
+      "kind": "moved",
+      "from": "basalt-ui#QueryStateLike",
+      "to": "basalt-ui/cards#QueryStateLike",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "root alias kept for one minor",
+      "verify": "tsc"
+    },
+    {
+      "id": "cards-frame-types-Empty",
+      "kind": "moved",
+      "from": "basalt-ui#Empty",
+      "to": "basalt-ui/cards#Empty",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "root alias kept for one minor",
+      "verify": "tsc"
+    },
+    {
+      "id": "cards-frame-types-FrameState",
+      "kind": "moved",
+      "from": "basalt-ui#FrameState",
+      "to": "basalt-ui/cards#FrameState",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "root alias kept for one minor",
+      "verify": "tsc"
+    },
+    {
+      "id": "cards-frame-types-Delta-Status-Tone",
+      "kind": "moved",
+      "from": "basalt-ui/core/ports#Delta, Status, Tone",
+      "to": "basalt-ui/cards#Delta, Status, Tone",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the types of StatCard `delta` and `status`, and the six-member Tone, are public on the cards subpath; the `core/*` path stays for an ejected primitive",
+      "verify": "tsc: `Record<'late' | 'open', Tone>` with 'info' compiles from basalt-ui/cards"
     }
   ],
   "tokens": {

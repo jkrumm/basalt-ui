@@ -17,6 +17,10 @@ export type {
   Menu,
   MenuEntry,
 } from './contract'
+// The frame's value types, one subpath for every frame part's doc (wiring-3.2): `Phase` and
+// `QueryStateLike` type the `phase` of `StatCard`, `ChartCard`, `QueryState` and `useDataTable` alike.
+export type { Empty, FootFacts, FrameState } from '../core/phase'
+export type { Delta, Phase, QueryStateLike, Status, Tone } from '../core/ports'
 export type { StatGroupProps } from './stat-group'
 export type { StatCellProps } from './stat-cell'
 export type { BarListProps } from './bar-list'

@@ -46,7 +46,7 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   activeRowId?: string  // The id of the row the page has open (a detail the page draws itself): that row is drawn as the selected row and carries `aria-current`
 ```
 
-`Phase`, `QueryStateLike`, `Empty` import from the root: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui'`.
+`Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
 
 ## Example
 

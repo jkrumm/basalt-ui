@@ -57,6 +57,19 @@ describe('PageSummary', () => {
     expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2)
   })
 
+  test('a pending query is the skeleton and a settled one shows the sentence', () => {
+    const pending = { isPending: true, isError: false, error: null }
+    const { rerender } = render(<PageSummary phase={pending} facts={['x']} />)
+    expect(document.querySelector('[data-slot="page-summary"]')?.getAttribute('aria-busy')).toBe(
+      'true',
+    )
+    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2)
+    rerender(
+      <PageSummary phase={{ isPending: false, isError: false, error: null }} sentence="3 open" />,
+    )
+    expect(screen.getByRole('heading', { level: 2, name: '3 open' })).toBeDefined()
+  })
+
   test('server markup carries the slots', () => {
     const html = renderToString(<PageSummary sentence="1 open" facts={['a', 'b']} />)
     expect(html).toContain('data-slot="page-summary-facts"')

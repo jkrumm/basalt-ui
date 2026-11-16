@@ -17,8 +17,21 @@ export {
   type StateFieldOptions,
   type StateStore,
 } from './core/external-field'
-export type { ControlHandle, Phase, QueryStateLike, StorageLike } from './core/ports'
-export type { Empty, FrameState } from './core/phase'
+export type { ControlHandle, StorageLike } from './core/ports'
+
+// The frame's value types live on `basalt-ui/cards`; these four stay one minor as aliases of the
+// same types (migration rows `cards-frame-types-*` in `migrations/areas/cards.json`).
+import type { Empty as CardsEmpty, FrameState as CardsFrameState } from './core/phase'
+import type { Phase as CardsPhase, QueryStateLike as CardsQueryStateLike } from './core/ports'
+
+/** @deprecated Import `Phase` from `basalt-ui/cards`; this alias is removed in the next minor. */
+export type Phase = CardsPhase
+/** @deprecated Import `QueryStateLike` from `basalt-ui/cards`; this alias is removed in the next minor. */
+export type QueryStateLike = CardsQueryStateLike
+/** @deprecated Import `Empty` from `basalt-ui/cards`; this alias is removed in the next minor. */
+export type Empty = CardsEmpty
+/** @deprecated Import `FrameState` from `basalt-ui/cards`; this alias is removed in the next minor. */
+export type FrameState = CardsFrameState
 export { createChannel } from './core/channel'
 export type {
   Channel,

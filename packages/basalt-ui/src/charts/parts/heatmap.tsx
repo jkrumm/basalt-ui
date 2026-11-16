@@ -36,6 +36,9 @@ import { AXIS_LINE, CHART_THEME, CV, CV_STATUS, DIMMED } from '../core/theme'
 import type { ChartFocus } from '../contract'
 import { engineFocusHandler, hostFocusProps } from '../focus'
 import type { ChartSeries, ChartState, ChartTooltipRow, ResponsiveChartHeight } from '../types'
+import type { Empty } from '../../core/phase'
+import type { Phase, QueryStateLike } from '../../core/ports'
+import { toChartState } from './cartesian-adapt'
 
 /**
  * A named cell state, the same base `BandStrip`'s `states` use (`NamedChartState`): `color` and
@@ -128,6 +131,11 @@ export type HeatmapProps<T, K extends string = string> = BasaltProps & {
    * (`ChartBox`, no measuring, SSR-stable), so the parent needs a definite CSS height — a grid or
    * flex stretch, `h-full`, an explicit height — which no kind can read off an auto-height parent. */
   matchHeight?: boolean | undefined
+  /** The load state, as on every data part: a `Phase` or a query result. */
+  phase?: Phase | QueryStateLike | undefined
+  /** The measured-empty state once the query settled; `cause` is the line the tile prints. */
+  empty?: Empty | null | undefined
+  /** @deprecated Use `phase` and `empty`; removed in the next minor. */
   state?: ChartState | undefined
   /**
    * `useChartFocus(data, …)`: pointing at a cell or stepping with the arrow keys focuses its datum,
@@ -317,12 +325,16 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     tooltip,
     height,
     matchHeight = false,
-    state,
+    phase,
+    empty,
+    state: legacyState,
     className,
     style,
     focus,
     annotate,
   } = props
+  // `phase` and `empty` say pending, error, then the empty cause; the deprecated `state` fills in when they say nothing.
+  const state = toChartState(phase, empty, legacyState)
   const chartId = useId()
   const focused = focus?.datum ?? null
   const ownsKeys = focus !== undefined
