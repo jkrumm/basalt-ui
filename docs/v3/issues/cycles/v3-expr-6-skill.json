@@ -1,0 +1,29 @@
+{
+  "why": "Expression cycle 6 (docs/v3/cycles/expression-6.md) lost 63 of 91 round-0 points to `skill`, 69 %, with eight P2s. The builders did not know to do what the kit already could. (a) Measure: n21's hero measured minutes after a reboot while its dots measured total minutes down, its baseline stood against nothing, and a comparison of rebooted drops against their control was a date scatter (.66, .67, .68, all P2); c16 had two heroes on one page (.2), n19 a 'too weak' total against nothing (.41), n15 a red shortfall on a week not over (.29). (b) Word economy, for the fourth cycle: c16 named its current model five times (.11, P2), n20 one fact four times (.63, P2), n19 its limit three times (.50), n08 its verdict three times (.25), n15 and n21 their baselines twice (.36, .77). Cycle 5's skill (5) added a worked before and after; prose has not moved it. (c) One view: n19 stacked a strip and two full-width cards with the second chart below the fold (.51, P2), c16 stacked three surfaces with a 490 px chart for eight dots (.12, P2), n15 and n20 drew short charts across 750 and 550 px boxes (.37, .64). (d) Threshold beside the figure: n08 printed '4 of 15' and left the 40 % line to the legend (.16, P2). (e) Phases: placeholder pills, dashes and deltas outside the ready phase (n15 .33, n08 .23, c16 .8), a strip that grows 40 px when `sub` appears (n19 .49), a loaded summary taller than its skeleton at 390 (n20 .62, n08 .24). (f) Numbers: a hero at '-56.083 dBm' with an ASCII hyphen beside a rounded tooltip (n19 .44), '$' beside 'US$' (c16 .9). (g) An unfinished period with no name in its card (n15 .30, n20 .57). (h) One colour per state across linked views (c16 .3, .6). (i) A figure's delta and status follow focus through `focus.readout`, which is generic (contract.ts:134): c16 believed a delta could not follow focus (.14) and n20 put a placeholder 'partial' delta on its figure. (j) None of the six builders shot the keyboard frame that step 6 names (`basalt-ui shot --states keys`); no point was lost to it this cycle.",
+  "what": "Skill and rule text for the method gaps of expression cycle 6, each with a worked case from it.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** (SKILL.md and references)",
+    "packages/basalt-ui/agent/rules/basalt-charts.md and basalt-page.md (one line each at most, within the shipped-rule budget)",
+    "packages/basalt-ui/docs/** text through its generator (no generated file edited by hand)",
+    "packages/basalt-ui/llms.txt through its generator",
+    "the dogfooded copies under .claude/skills and .claude/rules (make sync-self, its own commit)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no package source)",
+    "docs/v3/expression/**",
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "(1) One measure: the hero, the marks and the baseline measure one quantity; a question that compares a group against its control draws both groups on one axis and leads with the signed difference; a target for an unfinished period is prorated or its pill stays neutral (n21, c16, n19, n15). (2) Word economy as a count, not prose: step 6 of basalt-design and basalt-charts lists each fact the page states and where, and any fact in two places is cut to one (c16, n20, n19, n08, n15, n21). (3) One view: charts on one x share one card or sit side by side inside 1800x1200; a table of the chart's items joins its card; a chart is as tall as its marks need (n19, c16, n15, n20). (4) A share and its threshold read as one line beside the hero ('27 % strong, under 40 %'), and the threshold is drawn where the marks allow (n08, n19). (5) Phases: no pill, dash or delta outside the ready phase; every `StatCell` declares the same slots in every phase; the loaded summary is no taller than its skeleton at 390 (n15, n08, c16, n19, n20). (6) Numbers: hero, tooltip and announcement go through one `useFormat` call at one precision, with a true minus and one currency style per page (n19, c16). (7) An unfinished period is named in its card ('W16 so far') as well as drawn lighter (n15, n20). (8) A state has one colour in every linked view, and the legend's swatches and a table's status dots match the marks (c16, n08). (9) `focus.readout` takes any value: the figure's delta and status follow focus the way its value does (c16, n20). (10) Step 6's keyboard frame becomes a checklist line a builder ticks, with what a page error looks like in it (0 of 6 shot it this cycle, 0 of 6 in cycle 5).",
+  "commits": "feat: commits for skill and rule text, docs: for regenerated docs; one package commit per concern; make sync-self its own non-package commit.",
+  "proof": "make check; the skill snippet tests; the shipped-rule line budget within its ceiling.",
+  "acceptance": [
+    "The skill states one measure for hero, marks and baseline, with n21 as the worked case",
+    "Step 6 of basalt-design and basalt-charts has a fact count that cuts a repeated fact",
+    "The one-view text says charts on one x share a card or sit side by side within the fold",
+    "The skill says focus.readout takes the delta and status too",
+    "Changes (4) to (8) and (10) each land as at most a few lines with a worked case, within the budgets",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit changes (v3-expr-6-kit-fixes, v3-expr-6-contract); the rubric; the trial builds."
+}

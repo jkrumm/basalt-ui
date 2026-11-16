@@ -1490,3 +1490,30 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-shell-2-crumb, v3-shell-2-shell]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-shell-3.json' }
+  - key: v3-expr-6-kit-fixes
+    title: 'A focus survives the chart-to-row crossing, shared focus announces once, rule labels and capped points hold, from expression cycle 6'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-6]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-6-kit-fixes.json' }
+  - key: v3-expr-6-contract
+    title: 'Optional chart and card fields accept undefined, a monospace slot for times and ids (Spec)'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-cycle-expression-6]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-6-contract.json' }
+  - key: v3-expr-6-skill
+    title: 'Expression skill: one measure, a fact count, one view, readout for the delta, from expression cycle 6'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-expression-6]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-6-skill.json' }
+  - key: v3-cycle-expression-7
+    title: 'Improvement cycle 7: expression, six one-shot visualization trials'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-6-kit-fixes, v3-expr-6-contract, v3-expr-6-skill]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-7.json' }
