@@ -2,7 +2,9 @@
  * Every shipped primitive, ejected unedited, lints clean (v3-lint-2-eject-clean's acceptance, which no
  * test held until lint cycle 3). A scratch app at profile `app` loads both JS plugins, `eject --all`
  * writes zone E into its preset, then the real `basalt-ui lint` must exit 0 with nothing under
- * `src/components/ui/`. Runs the built CLI (`bin` reads `dist`), as a consumer does.
+ * `src/components/ui/`. Runs the built CLI (`bin` reads `dist`), as a consumer does, so it grades the
+ * last `bun run build`: after editing `src/lint/preset.ts`, build before trusting this test
+ * (`make check` builds first).
  *
  * The second test keeps `require-static-classes` honest outside zone E: the rule stays on in app code.
  */
