@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useFormat } from 'basalt-ui'
 import { filterSlot, spec } from 'basalt-ui/controls'
-import { Section } from 'basalt-ui/page'
+import { Facts, Section } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
 import { col, DataTable, TableToolbar, tableCodec, useDataTable } from 'basalt-ui/table'
 import type { DetailEntry, DetailHost } from 'basalt-ui/core/ports'
@@ -162,18 +162,15 @@ function serve(request: Value['request'], month: string) {
 function BookingDetail({ row }: { row: Booking }): ReactElement {
   const f = useFormat()
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-      <dt className="text-muted-foreground">Payee</dt>
-      <dd>{row.payee}</dd>
-      <dt className="text-muted-foreground">Category</dt>
-      <dd>{row.category}</dd>
-      <dt className="text-muted-foreground">State</dt>
-      <dd>{row.state}</dd>
-      <dt className="text-muted-foreground">Amount</dt>
-      <dd data-numeric>{f.money(row.amount, 'EUR')}</dd>
-      <dt className="text-muted-foreground">Booked</dt>
-      <dd>{row.at.slice(0, 10)}</dd>
-    </dl>
+    <Facts
+      rows={[
+        { label: 'Payee', value: row.payee },
+        { label: 'Category', value: row.category },
+        { label: 'State', value: row.state },
+        { label: 'Amount', value: <span data-numeric>{f.money(row.amount, 'EUR')}</span> },
+        { label: 'Booked', value: row.at.slice(0, 10) },
+      ]}
+    />
   )
 }
 
