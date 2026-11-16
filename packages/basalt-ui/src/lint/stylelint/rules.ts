@@ -146,8 +146,9 @@ const REPORTED = /^Disallowed `([^:`]+): ([^`]*)`\./
 /**
  * The value list's report narrowed to the clause of the reported property: the groups whose
  * properties and banned values both match it, so `overflow: auto` reads only the scroll clause and
- * `padding: 13px` only the spacing one. Any other text (another rule, an unparsed report) is
- * returned as it is.
+ * `padding: 13px` only the spacing one. Text with no `Disallowed` head or no matching group is
+ * returned as it is. The allowed-list rule prints the same head, so the caller passes this rule's
+ * reports only.
  */
 export function valueListMessage(text: string): string {
   const match = REPORTED.exec(text)

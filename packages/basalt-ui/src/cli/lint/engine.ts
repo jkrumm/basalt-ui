@@ -161,6 +161,13 @@ type StylelintResult = {
   parseErrors?: { line?: number; text: string }[]
 }
 
+/**
+ * The value list's one message carries every property group's clause; its report keeps only its
+ * own. The allowed-list rule prints the same `Disallowed` head, so the rule picks, not the text.
+ */
+const narrowed = (rule: string, text: string): string =>
+  rule === 'declaration-property-value-disallowed-list' ? valueListMessage(text) : text
+
 /** stylelint with the generated preset over `files`; its JSON arrives on stderr (stdout in some builds). */
 export function runStylelint(project: Project, files: readonly string[]): Finding[] {
   if (files.length === 0 || !existsSync(resolve(project.root, STYLELINT_CONFIG))) return []
@@ -185,7 +192,7 @@ export function runStylelint(project: Project, files: readonly string[]): Findin
       file: posix(relative(project.root, r.source)),
       line: w.line,
       id: `stylelint/${w.rule}`,
-      message: valueListMessage(w.text.replace(new RegExp(`\\s*\\(${w.rule}\\)$`), '')),
+      message: narrowed(w.rule, w.text.replace(new RegExp(`\\s*\\(${w.rule}\\)$`), '')),
     })),
     ...(r.parseErrors ?? []).map((e) => ({
       file: posix(relative(project.root, r.source)),
