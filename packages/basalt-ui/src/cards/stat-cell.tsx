@@ -87,7 +87,7 @@ const rowsOf = (rows: StatCellProps['rows']): StatRow[] => {
  */
 export function StatCell(props: StatCellProps): ReactElement {
   const { label, qualifier, info, value, unit, delta, status, sub, srText, meter, chart } = props
-  const { href, onClick, phase, empty } = props
+  const { href, onClick, phase, empty, swatch } = props
   const variant = useContext(StatGroupContext)
   const about = useAboutLabel()
   const resolved = resolvePhase({ phase, empty })
@@ -106,6 +106,15 @@ export function StatCell(props: StatCellProps): ReactElement {
       {href !== undefined && <Target label={label} href={href} />}
       {onClick !== undefined && <Target label={label} onClick={onClick} />}
       <div data-slot="stat-caption" className={T_CAPTION}>
+        {swatch !== undefined && (
+          // theme-allow hidden-inline-style — the colour is the series pair the page passes, per scheme
+          <span
+            data-slot="stat-swatch"
+            aria-hidden="true"
+            className="mr-0.5 size-2 shrink-0 rounded-full"
+            style={{ background: `light-dark(${swatch.light}, ${swatch.dark})` }}
+          />
+        )}
         <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
         {qualifier !== undefined && (
           <p className="shrink-[2] truncate text-xs text-muted-foreground/70">{qualifier}</p>

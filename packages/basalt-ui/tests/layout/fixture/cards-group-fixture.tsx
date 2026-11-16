@@ -35,6 +35,9 @@ type Probe = (typeof PROBES)[number]
 
 const retry = (): undefined => undefined
 
+/** The series colour the Upstream figure belongs to; the layout test reads it back per scheme. */
+const UPSTREAM = { light: '#0b6bcb', dark: '#5aa9f0' }
+
 const phaseOf = (probe: Probe): Pick<StatCellProps, 'phase' | 'empty'> => {
   if (probe === 'loading' || probe === 'stale') return { phase: probe }
   if (probe === 'error') return { phase: { tag: 'error', retry } }
@@ -74,7 +77,7 @@ const cells = (probe: Probe): StatCellElement[] => {
       sub="Measured 06:40"
       {...phase}
     />,
-    <StatCell key="up" label="Upstream" value={44} unit="Mbit/s" {...phase} />,
+    <StatCell key="up" label="Upstream" swatch={UPSTREAM} value={44} unit="Mbit/s" {...phase} />,
     <StatCell
       key="recovery"
       label="Recovery"
