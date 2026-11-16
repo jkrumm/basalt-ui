@@ -179,6 +179,21 @@ function filterFnOf(spec: KindSpec<never>) {
 }
 
 /**
+ * The skeleton rows of a table that has shown none: the rows of the page it will show (its page
+ * size, less what the known count leaves for the page), so loading is as tall as loaded. Unpaged
+ * tables, whose size nothing states, keep the default.
+ */
+function plannedRows(
+  paged: boolean,
+  request: { page: number; pageSize: number },
+  count: number | undefined,
+): number | undefined {
+  if (!paged) return undefined
+  if (count === undefined) return request.pageSize
+  return Math.max(1, Math.min(request.pageSize, count - (request.page - 1) * request.pageSize))
+}
+
+/**
  * The table's state, engine, selection and phase in one call. Hand the result to `DataTable` or
  * to the parts. A narrow table becomes cards: `phone` defaults to `'cards'` (`'scroll'` pins the
  * name and scrolls sideways) and `cardsBelow` to `'regular'` (480 px of the table's own width, 800 px
@@ -439,7 +454,9 @@ export function useDataTable<
     matched,
     totals: mode.kind === 'server' && 'totals' in mode ? mode.totals : undefined,
     phase,
-    skeletonRows: lastRows,
+    skeletonRows:
+      lastRows ??
+      plannedRows(paged, request, server ? countOf(mode) : settled ? matching : undefined),
     count: server ? countOf(mode) : matching,
     pager,
     phone: options.phone ?? 'cards',
