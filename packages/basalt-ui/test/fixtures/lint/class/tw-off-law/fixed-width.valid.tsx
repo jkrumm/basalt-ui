@@ -7,3 +7,5 @@ export const b = (
 )
 export const c = <div className="[@media(min-width:900px)]:w-[500px]" />
 export const d = <div className="basis-1/3 basis-full basis-0 basis-96 basis-[300px] grow" />
+export const e = <div className="max-w-lg max-w-md min-w-6xl w-sm w-xs size-4 size-8 size-96 w-full" />
+export const f = <div className="md:w-lg portrait:size-120" />

@@ -14,6 +14,9 @@
 // expect: not-dark:bg-card
 // expect: [:where([data-theme=dark])_&]:bg-inset
 // expect: [:is(.dark)_&]:text-muted
+// expect: [&:is(.dark_*)]:bg-inset
+// expect: [&:where(.dark,.dark_*)]:bg-inset
+// expect: [&:where([data-theme=dark],[data-theme=dark]_*)]:bg-inset
 export const a = <div className="flex dark:bg-neutral-900 dark:hover:text-neutral-50" />
 export const b = (
   <div className="data-[theme=dark]:bg-inset group-data-[theme=dark]:text-muted in-data-[theme=dark]:bg-card" />
@@ -29,3 +32,5 @@ export const j = <section className="not-dark:bg-card">h</section>
 export const k = (
   <div className="[:where([data-theme=dark])_&]:bg-inset [:is(.dark)_&]:text-muted">t</div>
 )
+export const l = <div className="[&:is(.dark_*)]:bg-inset [&:where(.dark,.dark_*)]:bg-inset" />
+export const m = <div className="[&:where([data-theme=dark],[data-theme=dark]_*)]:bg-inset" />

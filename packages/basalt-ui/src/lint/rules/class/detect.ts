@@ -289,18 +289,75 @@ export function partsOnly(
   }
 }
 
+/** The custom property an arbitrary utility value reads: `bg-(--x)`, `bg-[var(--x)]`, `bg-(color:--x)`. */
+const UTILITY_VAR = /-[([](?:color:)?(?:var\()?(--[a-z][\w-]*)/i
+
+/**
+ * `partsOnly` for a colour utility over a custom property, minus a property the same file sets in
+ * a `style` object (`style={{ '--part': VX.line }}` with `bg-(--part)`): that value is passed in,
+ * a series colour or a token, and the style's own route holds it (no-inline-styles,
+ * html-data-marks). A property declared elsewhere (`--brand-blue` in a module stylesheet) is the
+ * app's own palette and reports; a `--vx-*` name reports wherever it is set. Known limit: a
+ * property set through a spread or a computed key is not read as set, and reports.
+ */
+export function partsOnlyExceptStyleVar({ pattern, ...base }: ClassForm): AstForm {
+  return {
+    ...base,
+    detect: ({ context, report }) => {
+      const set = new Set<string>()
+      const pending: { node: Node; token: string }[] = []
+      return mergeVisitors([
+        classStringVisitor((node, text) => {
+          if (isBridge(context.options)) return
+          for (const token of classTokens(text))
+            if (pattern.test(token)) pending.push({ node, token })
+        }),
+        {
+          Property(node) {
+            const key = field(node, 'key')
+            const name = key?.type === 'Literal' ? key['value'] : undefined
+            if (typeof name === 'string' && name.startsWith('--')) set.add(name)
+          },
+          'Program:exit'() {
+            for (const { node, token } of pending) {
+              const name = UTILITY_VAR.exec(token)?.[1]
+              if (name !== undefined && !name.startsWith('--vx-') && set.has(name)) continue
+              report(node, token)
+            }
+          },
+        },
+      ])
+    },
+  }
+}
+
 const RADIUS = /^rounded(?:-(?!card$|none$|full$)[a-z0-9]+|-\([^)]+\)|-\[[^\]]+\])?$/
 const CARD_PADDING = /^py?-(?:[3-9]|\d{2,})$/
-const CARD_BORDER = /^(?:border|ring(?:-\d+)?)$/
+const CARD_BORDER = /^(?:border|ring(?:-\d+)?|outline(?:-[12])?)$/
 /** A card's elevation: `shadow` and `shadow-sm` up; a control's `shadow-xs`/`shadow-2xs` is not one. */
 const CARD_SHADOW = /^shadow(?:-(?:sm|md|lg|xl|2xl))?$/
+/**
+ * A hand-built control beside a shadow: a horizontal padding with `py-2` or less, a fixed control
+ * height (`h-8` to `h-10`) or `inline-flex`. shadcn v3 and Tremor give buttons, inputs and selects
+ * `shadow-sm`, so the shadow is not a card's there; primitive-bypass owns a hand-built control.
+ */
+const CONTROL_PADDING_X = /^px-/
+const CONTROL_PADDING_Y = /^py-(?:0|0\.5|1|1\.5|2|px)$/
+const CONTROL_SIGNAL = /^(?:h-(?:8|9|10)|inline-flex)$/
+const hasControlSignal = (tokens: readonly string[]): boolean =>
+  tokens.some((token) => CONTROL_SIGNAL.test(token)) ||
+  (tokens.some((token) => CONTROL_PADDING_X.test(token)) &&
+    tokens.some((token) => CONTROL_PADDING_Y.test(token)))
 
 /**
  * `surface-recipe`, whole-string form: a bordered card rebuilt without a card token, a radius
  * (named, or the v4 `rounded-(--x)`/`rounded-[…]` value), a bare `border` (or an unprefixed ring
  * width such as ring-1) and a third signal in one class string: a padding step of 3 or more,
  * all-round or vertical (`p-4`, `py-6`; a lone `px-N` is a button, input or badge, not a card), or
- * a card's shadow (`shadow-sm` up: a tile whose padding comes from a child). A dashed or dotted
+ * a card's shadow (`shadow-sm` up: a tile whose padding comes from a child), which counts only
+ * where no control signal sits beside it (`px-3 py-2`, `h-9`, `inline-flex`: a button, input or
+ * select). A bare `outline`, `outline-1` or `outline-2` is a border as `ring-1` is
+ * (`outline-none`, `outline-offset-*` and a variant-prefixed outline are not). A dashed or dotted
  * border, a pill (`rounded-full`), a lone `p-1`/`p-2`, a control's `shadow-xs` and a
  * variant-prefixed ring (`focus-visible:ring-2`) are not a card.
  */
@@ -308,7 +365,7 @@ export function borderedCard(tokens: readonly string[]): string | undefined {
   const radius = tokens.find((token) => RADIUS.test(token))
   const third =
     tokens.find((token) => CARD_PADDING.test(token)) ??
-    tokens.find((token) => CARD_SHADOW.test(token))
+    (hasControlSignal(tokens) ? undefined : tokens.find((token) => CARD_SHADOW.test(token)))
   const border = tokens.find((token) => CARD_BORDER.test(token))
   if (radius === undefined || third === undefined || border === undefined) return undefined
   if (tokens.some((token) => /^border-(?:dashed|dotted)$/.test(token))) return undefined

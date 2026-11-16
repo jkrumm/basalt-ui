@@ -13,3 +13,16 @@ export const mediaDark = <div className="[@media(prefers-color-scheme:dark)]:bg-
 export const k = <input className="rounded-md border px-3 py-1 shadow-xs" />
 export const l = <div className="rounded-lg shadow-sm" />
 export const m = <div className="rounded-full border shadow-md" />
+// hand-built controls with a shadow (tremor Button, Input, Select), primitive-bypass's
+export const n = (
+  <button className="relative inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-2 text-center text-sm font-medium shadow-sm transition-all duration-100 ease-in-out" />
+)
+export const o = (
+  <input className="relative block w-full appearance-none rounded-md border px-2.5 py-2 shadow-sm outline-none transition sm:text-sm" />
+)
+export const p = (
+  <div className="group/trigger cursor-pointer flex w-full select-none items-center justify-between gap-2 truncate rounded-md border px-3 py-2 shadow-sm outline-none transition sm:text-sm" />
+)
+export const q = <div className="rounded-md border h-9 shadow-sm" />
+export const r = <div className="rounded-lg outline-none p-4 outline-hidden outline-offset-2 focus-visible:outline-2" />
+export const s = <div className="rounded-lg outline-offset-2 p-4 hover:outline" />
