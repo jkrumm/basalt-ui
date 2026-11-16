@@ -295,8 +295,13 @@ function ruleMeta(description: string, forms: readonly Form[], schema: readonly 
   }
 }
 
+/** The form ids a zone block switched off for this file: the rule's `formsOff` option. */
+const formsOffOf = (context: RuleContext): readonly string[] =>
+  (context.options[0] as { formsOff?: readonly string[] } | undefined)?.formsOff ?? []
+
 function createVisitor(context: RuleContext, forms: readonly Form[]): Visitor {
-  const live = forms.filter(isEnabled)
+  const off = formsOffOf(context)
+  const live = forms.filter(isEnabled).filter((form) => !off.includes(form.id))
   const classForms = live.filter(isClassForm)
   const visitors: Visitor[] = []
   if (classForms.length > 0) {

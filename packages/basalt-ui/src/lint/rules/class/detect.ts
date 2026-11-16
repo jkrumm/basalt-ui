@@ -105,10 +105,16 @@ function widthComparison(node: Node): string | undefined {
   return undefined
 }
 
-/** The options a gated rule accepts: `{ profile: 'bridge' }` switches its parts-only forms off. */
+/**
+ * The options a gated rule accepts: `{ profile: 'bridge' }` switches its parts-only forms off, and
+ * `{ formsOff: [...] }` is a zone block switching single forms off (an ejected file).
+ */
 export const PROFILE_GATE_SCHEMA = {
   type: 'object',
-  properties: { profile: { enum: ['bridge', 'parts'] } },
+  properties: {
+    profile: { enum: ['bridge', 'parts'] },
+    formsOff: { type: 'array', items: { type: 'string' } },
+  },
   additionalProperties: false,
 } as const
 

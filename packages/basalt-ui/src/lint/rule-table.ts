@@ -37,6 +37,11 @@ type FormBase = {
   readonly fixture: string
   /** `false` builds the form but runs nothing; the coverage block prints it as `not guarded:`. */
   readonly enabled?: boolean
+  /**
+   * Zones this one form is off in, where the rest of its rule stays on. The preset writes the id
+   * into the rule's `formsOff` option for the files of that zone; the rule needs `schema` for it.
+   */
+  readonly zonesOff?: readonly Zone[]
   /** Required when `enabled` is false: why the form is off and what turns it on. */
   readonly reason?: string
 }
@@ -137,6 +142,12 @@ function tableProblems(entries: readonly (readonly [string, RuleEntry])[]): stri
     if (entry.defect.trim() === '') problems.push(`${id}: no recorded defect`)
     const formIds = new Set<string>()
     for (const form of entry.forms) {
+      for (const zone of form.zonesOff ?? []) {
+        if (!ZONES.includes(zone)) problems.push(`${id}/${form.id}: unknown zone "${zone}"`)
+      }
+      if (form.zonesOff?.length && entry.schema === undefined) {
+        problems.push(`${id}/${form.id}: a form zone needs a rule schema for formsOff`)
+      }
       if (formIds.has(form.id)) problems.push(`${id}/${form.id}: duplicate form id`)
       formIds.add(form.id)
       problems.push(...formProblems(id, form))
@@ -194,6 +205,8 @@ export type PresetInput = {
   readonly options: Readonly<Record<Profile, Readonly<Record<string, readonly unknown[]>>>>
   /** Qualified rule names switched off per zone, for the preset's `overrides`. */
   readonly zonesOff: Readonly<Record<Zone, readonly string[]>>
+  /** Per zone, the form ids switched off inside a rule that stays on, keyed by qualified rule name. */
+  readonly formsOff: Readonly<Record<Zone, Readonly<Record<string, readonly string[]>>>>
 }
 
 /** What the preset generator (v3-gr-4) reads; it never lists an id by hand. */
@@ -204,6 +217,13 @@ export function presetInput(table: RuleTable): PresetInput {
     entries.filter(([, e]) => e.profiles.includes(profile)).map(([id]) => qualified(id))
   const byZone = (zone: Zone): string[] =>
     entries.filter(([, e]) => e.zonesOff?.includes(zone)).map(([id]) => qualified(id))
+  const formsByZone = (zone: Zone): Record<string, readonly string[]> =>
+    Object.fromEntries(
+      entries.flatMap(([id, e]) => {
+        const ids = e.forms.filter((f) => f.zonesOff?.includes(zone)).map((f) => f.id)
+        return ids.length > 0 ? [[qualified(id), ids]] : []
+      }),
+    )
   const optionsFor = (profile: Profile): Record<string, readonly unknown[]> =>
     Object.fromEntries(
       entries.flatMap(([id, e]) => {
@@ -226,6 +246,11 @@ export function presetInput(table: RuleTable): PresetInput {
       repo: byProfile('repo'),
     },
     zonesOff: { ejected: byZone('ejected'), seed: byZone('seed'), vendored: byZone('vendored') },
+    formsOff: {
+      ejected: formsByZone('ejected'),
+      seed: formsByZone('seed'),
+      vendored: formsByZone('vendored'),
+    },
   }
 }
 

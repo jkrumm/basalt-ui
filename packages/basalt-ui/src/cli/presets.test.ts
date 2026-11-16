@@ -107,15 +107,26 @@ describe('renderOxlintPreset', () => {
     expect(restyle[1].message?.spacing).not.toContain('margin')
   })
 
-  it('zone E merges the Base UI vars with the grid track allow', () => {
+  it('zone E turns the structure rules off for the file and the colour rules stay on', () => {
     const path = 'src/components/ui/button.tsx'
     const zone = overridesOf(manifest({ ejected: { '.#button': row(path) } })).find(
       (o) => o.files.includes(path) && 'shadcn/no-restyle' in o.rules,
     )
-    const rule = zone?.rules['shadcn/no-arbitrary-values'] as [string, { allow: string[] }]
-    const options = rule[1]
-    expect(options.allow).toContain('origin-(--transform-origin)')
-    expect(options.allow).toContain('grid-cols-[*]')
+    expect(zone?.rules).toMatchObject({
+      'shadcn/no-arbitrary-values': 'off',
+      'shadcn/no-inline-styles': 'off',
+      'basalt/raw-scroll': 'off',
+      'basalt/app-spacing': 'off',
+    })
+    expect(zone?.rules['shadcn/no-raw-colors']).toBeUndefined()
+    expect(zone?.rules['basalt/tw-off-law']).toBeUndefined()
+    const forms = overridesOf(manifest({ ejected: { '.#button': row(path) } })).find(
+      (o) => o.files.includes(path) && 'basalt/tw-off-law' in o.rules,
+    )
+    expect(forms?.rules['basalt/tw-off-law']).toEqual([
+      'error',
+      { formsOff: ['surface-recipe', 'app-colour', 'app-colour-arbitrary'] },
+    ])
   })
 
   it('classPrefixes allow a third-party prefix, bare and under a variant', () => {

@@ -203,7 +203,29 @@ describe('derived lists', () => {
         seed: ['basalt/app-spacing'],
         vendored: ['basalt/dark-fork', 'basalt/app-spacing'],
       },
+      formsOff: { ejected: {}, seed: {}, vendored: {} },
     })
+  })
+
+  it('lists a form that is off in a zone under its rule, which keeps running', () => {
+    const table = defineRules({
+      gated: entry({
+        schema: [{ type: 'object' }],
+        forms: [form('one', { zonesOff: ['ejected'] }), form('two')],
+      }),
+    })
+    const input = presetInput(table)
+    expect(input.formsOff.ejected).toEqual({ 'basalt/gated': ['one'] })
+    expect(input.formsOff.seed).toEqual({})
+    expect(input.zonesOff.ejected).toEqual([])
+  })
+
+  it('refuses a form zone on a rule with no schema to carry formsOff', () => {
+    expect(
+      problemsOf(() =>
+        defineRules({ gated: entry({ forms: [form('one', { zonesOff: ['ejected'] })] }) }),
+      ),
+    ).toEqual(['gated/one: a form zone needs a rule schema for formsOff'])
   })
 })
 
