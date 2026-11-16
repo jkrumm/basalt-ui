@@ -10,6 +10,8 @@
  * descriptionless disables.
  */
 
+import { zoneAFillOnly } from '../generated/zone-a'
+
 // Every CSS length unit except `%`, which stays legal.
 const UNITS =
   'px|rem|em|ex|ch|lh|rlh|cap|ic|vw|vh|vmin|vmax|vi|vb|[sld]v[whib]|[sld]vmin|[sld]vmax|cq[whib]|cqmin|cqmax|pt|pc|cm|mm|q|in'
@@ -30,6 +32,11 @@ const CLEAN_MIX_BODY = `\\s*in\\s+[a-z0-9-]+(?:\\s+(?:shorter|longer|increasing|
 const DECORATIVE_ROLE =
   'var\\(\\s*--vx-(?:(?:good|warn|bad|info|brand|chart|seq)(?:-[a-z0-9-]+)?|[a-z0-9-]*-tint)\\s*[,)]'
 
+// The fill-only roles (`zoneAFillOnly`): a fill clears 3.0 and text needs 4.5, so never as `color`.
+const FILL_ONLY_ROLE = `var\\(\\s*--vx-(?:${zoneAFillOnly.join('|')})\\s*[,)]`
+// The class rule `fixed-width`: above 384px or from 25rem (`w-[385px]`, `w-[25rem]`).
+const FIXED_WIDTH = `(?<![\\w.])(?:(?:38[5-9]|39\\d|[4-9]\\d{2}|\\d{4,})(?:\\.\\d+)?px|(?:2[5-9]|[3-9]\\d|\\d{3,})(?:\\.\\d+)?rem)(?![\\w%])`
+
 // The class rules' spacing set: padding, margin, gap, the inset and its four sides, the type size.
 export const SPACING_PROPERTIES =
   '/^(?:scroll-)?(?:padding|margin)(?:-[a-z]+)*$|^(?:grid-)?(?:row-|column-)?gap$|^inset(?:-[a-z]+)*$|^(?:top|right|bottom|left)$|^font(?:-size)?$/'
@@ -38,6 +45,9 @@ export const SHAPE_PROPERTIES =
 export const DECORATION_PROPERTIES =
   '/^(?:background(?:-[a-z]+)*|border(?:-[a-z]+)*|outline(?:-[a-z]+)*|box-shadow)$/'
 // `overlay` is the deprecated alias of `auto`; `hidden`, `clip` and `visible` do not scroll.
+export const TEXT_COLOUR_PROPERTIES = '/^color$/'
+export const WIDTH_PROPERTIES = '/^(?:min-)?width$/'
+export const TRACK_PROPERTIES = '/^grid-template-(?:columns|rows)$/'
 export const SCROLL_PROPERTIES = '/^overflow(?:-x|-y|-block|-inline)?$/'
 export const SCROLL_VALUES = '/\\b(?:auto|scroll|overlay)\\b/i'
 
@@ -47,14 +57,14 @@ export const SCROLL_VALUES = '/\\b(?:auto|scroll|overlay)\\b/i'
  * clause led by the properties it answers, and a variant without the scroll clause where the ban is off.
  */
 const MESSAGE_BASE =
-  'Disallowed `%s: %s`. By property: padding, margin, gap, inset (top, right, bottom, left) and font size take a --vx token (or 0, auto, %), never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status or chart colour; color-mix runs over --vx tokens or transparent only'
-const MESSAGE_SCROLL = `${MESSAGE_BASE}; overflow auto|scroll is ui/scroll-area, or let Page own the scroll.`
+  'Disallowed `%s: %s`. By property: padding, margin, gap, inset (top, right, bottom, left) and font size take a --vx token (or 0, auto, %), never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status or chart colour; color-mix runs over --vx tokens or transparent only; color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill); grid-template-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length'
+const MESSAGE_SCROLL = `${MESSAGE_BASE}; width and min-width above 384px are parent-owned (size the container, not the child); overflow auto|scroll is ui/scroll-area, or let Page own the scroll.`
 const MESSAGE_NO_SCROLL = `${MESSAGE_BASE}.`
 
 /**
- * The value-disallowed list. `scroll` adds the scroll-container ban, the stylesheet twin of the
- * raw-scroll class rule: it holds from `parts` up, where `ui/scroll-area` ships; a `tokens` or
- * `bridge` file has no such primitive, so its config omits the entry.
+ * The value-disallowed list. `scroll` adds the bans that hold from `parts` up, as their class rules
+ * do: the scroll container (raw-scroll; `ui/scroll-area` ships there) and the fixed width
+ * (`tw-off-law` `fixed-width`, a parts-only form). A `tokens` or `bridge` file omits both.
  */
 export function disallowedValueList(
   scroll: boolean,
@@ -67,7 +77,12 @@ export function disallowedValueList(
       [SPACING_PROPERTIES]: [`/${RAW_LENGTH}/i`, '/\\bcalc\\(/i'],
       // colour as decoration
       [DECORATION_PROPERTIES]: [`/${DECORATIVE_ROLE}/i`],
-      ...(scroll ? { [SCROLL_PROPERTIES]: [SCROLL_VALUES] } : {}),
+      // a fill-only role as text and a fixed track length (the class rules' twins, every profile)
+      [TEXT_COLOUR_PROPERTIES]: [`/${FILL_ONLY_ROLE}/i`],
+      [TRACK_PROPERTIES]: [`/${RAW_LENGTH}/i`],
+      ...(scroll
+        ? { [WIDTH_PROPERTIES]: [`/${FIXED_WIDTH}/i`], [SCROLL_PROPERTIES]: [SCROLL_VALUES] }
+        : {}),
     },
     { message: scroll ? MESSAGE_SCROLL : MESSAGE_NO_SCROLL },
   ]
@@ -121,10 +136,13 @@ export const STYLELINT_RULES = {
     },
   ],
   'media-feature-name-disallowed-list': [
-    ['/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+)$/', 'prefers-color-scheme'],
+    [
+      '/^(?:min-|max-)?(?:width|height|aspect-ratio|device-[a-z-]+|orientation)$/',
+      'prefers-color-scheme',
+    ],
     {
       message:
-        'The media feature `%s` keys styles on the window or the system scheme. A viewport feature: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`), or `useSizeClass()` for chrome. `prefers-color-scheme`: tokens switch per scheme, so use a `--vx-*` token instead of a dark fork.',
+        'The media feature `%s` keys styles on the window or the system scheme. A viewport feature (width, height, aspect ratio, orientation): key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`), or `useSizeClass()` for chrome. `prefers-color-scheme`: tokens switch per scheme, so use a `--vx-*` token instead of a dark fork.',
     },
   ],
   'selector-disallowed-list': [
@@ -135,11 +153,11 @@ export const STYLELINT_RULES = {
     },
   ],
   'at-rule-disallowed-list': [
-    ['utility', 'theme', 'custom-variant', 'apply'],
+    ['utility', 'theme', 'custom-variant', 'variant', 'plugin', 'apply'],
     {
       // `%s` is the at-rule with its `@` already (stylelint passes `@utility`)
       message:
-        '`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant or a class list the class rules check. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a dark variant is a `--vx-*` token instead; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet.',
+        '`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin or a class list the class rules check. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--vx-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet.',
     },
   ],
 } as const

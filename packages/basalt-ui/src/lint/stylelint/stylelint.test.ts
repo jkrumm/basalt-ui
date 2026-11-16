@@ -62,7 +62,12 @@ const OFFENDERS: [file: string, rule: string][] = [
   ['important.css', 'declaration-no-important'],
   ['viewport-media.css', 'media-feature-name-disallowed-list'],
   ['viewport-media-range.css', 'media-feature-name-disallowed-list'],
+  ['orientation-media.css', 'media-feature-name-disallowed-list'],
   ['dark-media.css', 'media-feature-name-disallowed-list'],
+  ['color-chart-fill.css', 'declaration-property-value-disallowed-list'],
+  ['fixed-width.css', 'declaration-property-value-disallowed-list'],
+  ['fixed-min-width.css', 'declaration-property-value-disallowed-list'],
+  ['grid-track-length.css', 'declaration-property-value-disallowed-list'],
   ['data-slot.css', 'selector-disallowed-list'],
   ['mantine-class.css', 'selector-disallowed-list'],
   ['data-theme.css', 'selector-disallowed-list'],
@@ -71,6 +76,8 @@ const OFFENDERS: [file: string, rule: string][] = [
   ['theme.css', 'at-rule-disallowed-list'],
   ['custom-variant.css', 'at-rule-disallowed-list'],
   ['apply.css', 'at-rule-disallowed-list'],
+  ['variant-dark.css', 'at-rule-disallowed-list'],
+  ['plugin.css', 'at-rule-disallowed-list'],
   ['needless-disable.css', '--report-needless-disables'],
   ['reasonless-disable.css', '--report-descriptionless-disables'],
 ]
@@ -180,12 +187,38 @@ describe('messages', () => {
     expect(theme[0]?.text).toContain('Status, Lozenge, DeltaBadge')
   })
 
+  it('a @variant dark fork and a @plugin name their fix', async () => {
+    const dark = (await lint('offenders/variant-dark.css')).get('offenders/variant-dark.css') ?? []
+    expect(dark[0]?.text).toContain('`@variant`')
+    expect(dark[0]?.text).toContain('add the token instead of forking')
+    const plugin = (await lint('offenders/plugin.css')).get('offenders/plugin.css') ?? []
+    expect(plugin[0]?.text).toContain('`@plugin`')
+    expect(plugin[0]?.text).toContain('`Prose`')
+  })
+
+  it('a fill-only colour, a fixed width and a fixed track each fire once, a legal twin none', async () => {
+    for (const file of [
+      'color-chart-fill.css',
+      'fixed-width.css',
+      'fixed-min-width.css',
+      'grid-track-length.css',
+    ]) {
+      const found = (await lint(`offenders/${file}`)).get(`offenders/${file}`) ?? []
+      expect(found, file).toHaveLength(1)
+    }
+    const clean = (await lint('clean/size-and-track.css')).get('clean/size-and-track.css')
+    expect(clean).toEqual([])
+  })
+
   it('the value list names the fix for each property group', () => {
     const [, options] = stylelintConfig().rules['declaration-property-value-disallowed-list']
     for (const part of [
       'padding, margin, gap',
       'background, border, outline',
       'color-mix',
+      'Status or Num tone from parts',
+      'size the container, not the child',
+      'fr, auto or minmax(0,1fr)',
       'ui/scroll-area',
     ]) {
       expect(options.message).toContain(part)
@@ -247,6 +280,15 @@ describe('scroll ban per root', () => {
     const config = stylelintConfig()
     expect(scrollOf(config.rules[OVERRIDE])).toBe(true)
     expect(config.overrides).toHaveLength(1)
+  })
+
+  it('a scroll-free base drops the fixed-width ban with it, as fixed-width is parts-only', () => {
+    const bridge = JSON.stringify(
+      stylelintConfig({ scroll: { base: false, roots: {} } }).rules[OVERRIDE],
+    )
+    expect(bridge).not.toContain('width')
+    expect(bridge).toContain('grid-template')
+    expect(JSON.stringify(stylelintConfig().rules[OVERRIDE])).toContain('size the container')
   })
 
   it('a scroll-free base drops the entry and its message, and a parts root turns it back on', async () => {
