@@ -1,33 +1,41 @@
-// Fixture: import-boundary/rival-signature. A package on no ban row, outside the stack.
+// Fixture: import-boundary/rival-signature. An unscoped package on no ban row, outside the stack.
 // @invalid
 import Modal from 'react-modal'
 // @invalid
 import { createChart } from 'lightweight-charts'
 // @invalid
-import MDEditor from '@uiw/react-markdown-preview'
+import MarkdownView from 'react-markdown-view'
 // @invalid
 import { Tooltip } from 'react-tooltip'
 // @invalid
-import { Dialog } from 'primereact/dialog'
+import { Dialog } from 'tiny-kit/dialog'
 // @invalid
-import { Button, Modal } from 'react-bootstrap'
+import { Button, Modal } from 'tiny-ui-kit'
 // @invalid
-import { DataTable } from '@carbon/react'
+import { DataTable } from 'grid-kit'
 // @invalid
-import { DatePicker } from 'rsuite'
+import { DatePicker } from 'picker-kit'
 // @invalid
-export { Popover as Pop } from '@blueprintjs/core'
+export { Popover as Pop } from 'overlay-kit'
 // @invalid
 import { useTable } from 'react-table'
 // @invalid
 import { ResponsiveFunnelChart } from 'some-chart-kit'
 // @invalid
 import useLocalStorageState from 'react-localstorage-hook'
+// @invalid
+import { cmdkLike } from 'cmdk-lite'
 // @valid
 import useLocalStorageState from 'react-localstorage-hook'
 export const adapter = { kind: StorageLike, getItem, setItem }
-// @invalid
-import { cmdkLike } from 'cmdk-lite'
+// @valid
+import { Dialog, DataTable } from '@repo/ui'
+// @valid
+import { Modal } from '@ui/dialog'
+// @valid
+import { Dialog } from 'ui/dialog'
+// @valid
+import { PieChart } from 'react-feather'
 // @valid
 import { Panel, PanelGroup } from 'react-resizable-panels'
 // @valid

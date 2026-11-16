@@ -21,8 +21,8 @@
  *
  * Two layers decide what a rival is (the Spec on lint-7.5). The ban rows are a DENYLIST, the
  * precise layer: each names the rival packages an agent reaches for first in its category and the
- * basalt part that replaces them. Under it, `rival-signature` reads a package on no row and outside
- * the stack by its signature: a category word in its name or an overlay, picker or grid it is
+ * basalt part that replaces them. Under it, `rival-signature` reads an unscoped package on no row
+ * and outside the stack by its signature: a category word in its name or an overlay, picker or grid it is
  * imported for. An allow list in place of the rows was measured and rejected: it lost 29 of 111
  * seeds and reported domain libraries (React Email's `Button`, react-leaflet's `Tooltip`).
  *
@@ -135,13 +135,21 @@ const packageOf = (source: string): string =>
     .slice(0, source.startsWith('@') ? 2 : 1)
     .join('/')
 
+/** Icon sets whose name carries no `icon` (`react-feather` exports `PieChart`, a chart's name). */
+const ICON_SETS: ReadonlySet<string> = new Set([
+  'lucide',
+  'lucide-react',
+  'react-feather',
+  'phosphor-react',
+])
+
 /**
  * An icon set (`@radix-ui/react-icons`, `@mui/icons-material`, `react-icons`, lucide): an icon prop
  * takes the icon library's own component, so no form reports one, even inside a banned kit's scope.
  */
 const isIconSet = (source: string): boolean => {
   const pkg = packageOf(source)
-  return pkg === 'lucide-react' || /icons?(?:[-/]|$)/.test(pkg)
+  return ICON_SETS.has(pkg) || /icons?(?:[-/]|$)/.test(pkg)
 }
 
 /**
@@ -470,6 +478,16 @@ const PACKAGE_BANS: readonly PackageBan[] = [
       '@ant-design/*',
       '@heroui',
       '@nextui-org',
+      '@fluentui',
+      '@carbon',
+      '@blueprintjs',
+      '@shopify/polaris',
+      '@zag-js',
+      'primereact',
+      'react-bootstrap',
+      'rsuite',
+      'flowbite-react',
+      'semantic-ui-react',
     ],
     fix: 'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, Mantine, Chakra, MUI, Ant Design, HeroUI, React Aria, Ark and Floating UI are not in the stack',
     next: 'Eject the primitive with basalt-ui eject, then edit the copy',
@@ -587,8 +605,8 @@ const isOnAList = (source: string): boolean =>
   STORAGE_NAMES[source] !== undefined
 
 /**
- * The stack's own packages, which `rival-signature` never reads: basalt-ui's peers and
- * dependencies (a unit test holds every one of them here or on a ban row) and the scopes below.
+ * The stack's own unscoped packages, which `rival-signature` never reads: basalt-ui's peers and
+ * dependencies (a unit test holds every one of them here, on a ban row or scoped).
  */
 const STACK_PACKAGES: ReadonlySet<string> = new Set([
   'basalt-ui',
@@ -610,18 +628,6 @@ const STACK_PACKAGES: ReadonlySet<string> = new Set([
   'stylelint',
   'postcss-html',
 ])
-const STACK_SCOPES: readonly string[] = [
-  '@tanstack',
-  '@ai-sdk',
-  '@base-ui',
-  '@internationalized',
-  '@shikijs',
-  '@fontsource-variable',
-  '@shadcn',
-  '@axe-core',
-  '@types',
-]
-
 /** The first segment of a `baseUrl`-rooted path an app writes (`components/DataTable`), not a package. */
 const LOCAL_ROOTS: ReadonlySet<string> = new Set([
   'src',
@@ -635,16 +641,19 @@ const LOCAL_ROOTS: ReadonlySet<string> = new Set([
   'routes',
   'modules',
   'shared',
+  'ui',
 ])
 
-/** A package specifier: not relative, not an alias (`@/`, `~/`, `#/`), not `node:` or `bun:`. */
-const isPackage = (source: string): boolean =>
-  !/^(?:\.|\/|[@~#]\/|[a-z]+:)/.test(source) && !LOCAL_ROOTS.has(source.split('/')[0] ?? '')
+/**
+ * An unscoped package specifier: not relative, not an alias (`@/`, `~/`, `#/`), not `node:` or
+ * `bun:`, not a `baseUrl` root. A scoped name is never read: a workspace package (`@repo/ui`, an
+ * app's own `parts` package on basalt) and a path alias (`@ui/dialog`) look the same as a vendor's,
+ * so a scoped kit is a ban row's scope entry instead.
+ */
+const isUnscopedPackage = (source: string): boolean =>
+  !/^(?:\.|\/|[@~#]|[a-z]+:)/.test(source) && !LOCAL_ROOTS.has(source.split('/')[0] ?? '')
 
-const isStack = (source: string): boolean => {
-  const pkg = packageOf(source)
-  return STACK_PACKAGES.has(pkg) || STACK_SCOPES.some((scope) => pkg.startsWith(`${scope}/`))
-}
+const isStack = (source: string): boolean => STACK_PACKAGES.has(packageOf(source))
 
 type RivalPart = {
   readonly kind: string
@@ -739,9 +748,9 @@ const rivalOf = (node: Node, source: string): { part: RivalPart; by: string } | 
 }
 
 /**
- * `rival-signature`: a package on no ban row and outside the stack that reads as a part basalt
- * ships, by a word in its name (`react-modal`, `lightweight-charts`) or by the overlay, picker or
- * grid it is imported for (`{ Dialog } from 'primereact/dialog'`). It catches the next ring of
+ * `rival-signature`: an unscoped package on no ban row and outside the stack that reads as a part
+ * basalt ships, by a word in its name (`react-modal`, `lightweight-charts`) or by the overlay,
+ * picker or grid it is imported for (`{ Dialog } from 'tiny-kit/dialog'`). It catches the next ring of
  * rivals before a cycle seeds them; a package that only shares a word is waived on its line.
  */
 const rivalSignature: AstForm = {
@@ -751,7 +760,8 @@ const rivalSignature: AstForm = {
     let adapter = false
     return {
       ...sourceVisitor((node, source) => {
-        if (!isPackage(source) || isStack(source) || isIconSet(source) || isOnAList(source)) return
+        if (!isUnscopedPackage(source) || isStack(source) || isIconSet(source) || isOnAList(source))
+          return
         const rival = rivalOf(node, source)
         if (!rival) return
         const subject = `${source}, a ${rival.part.kind} package by ${rival.by}; basalt's is ${rival.part.part}`
