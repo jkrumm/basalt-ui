@@ -70,12 +70,12 @@ duration/spring/ease literal in a `transition={{...}}` prop (enforced by `basalt
 
 ## Key commands
 
-`init` and `tokens:css`/`fonts:css` are the only commands with no install to resolve, so `bunx` is
-correct for them **and only while basalt is not installed here** — once it is, they run through the
-local bin like everything else. See the note below.
+`tokens:css`/`fonts:css` are the only commands with no install to resolve, so `bunx` is correct for
+them **and only while basalt is not installed here** — once it is, they run through the local bin
+like everything else. `init` always runs from the local bin: install `basalt-ui` first. See the note below.
 
 ```bash
-bunx basalt-ui init         # FIRST STEP: scaffold .claude/rules/ + .claude/skills/, managed AGENTS.md block, DESIGN.md seed, toolchain seeds
+./node_modules/.bin/basalt-ui init   # FIRST STEP, after `bun add basalt-ui`: scaffold .claude/rules/ + .claude/skills/, managed AGENTS.md block, DESIGN.md seed, toolchain seeds
 basalt-ui --version         # one bare line, exit 0 — which CLI is actually running (also -v / version)
 basalt-ui check-theme       # fail on off-palette colors in consumer source
 basalt-ui sync              # reconcile managed files (.claude/rules/, .claude/skills/, AGENTS.md block) + delete the ones this version retired
