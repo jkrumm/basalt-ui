@@ -1,0 +1,28 @@
+{
+  "why": "Lint cycle 3 (docs/v3/cycles/lint-3.md, lint-3.2 to lint-3.12 P2, lint-3.16 and lint-3.17 P3). The cycle 2 forms hold; this cycle's phrasings are caught at 83 of 108, and the misses are the next spellings an agent writes. One false alarm: import-boundary reports `@radix-ui/react-icons`, an icon set, while basalt-ui.md tells an app to pass its icon library's own component. Two messages name a fix another shipped rule rejects: fixed-colour's `on-brand` is reported by tw-off-law app-colour at parts and app, and shadcn/no-unknown-classes tells an agent to declare `@utility`, which the stylelint preset bans. Each seed and its line are in docs/v3/cycles/lint-3/fixtures/results.md; reproduce with `zsh docs/v3/cycles/lint-3/fixtures/run.sh $PWD /tmp/lint-cycle-3`.",
+  "what": "The misses of lint-3.3 to lint-3.10 caught or stated as known limits, the radix icon false alarm gone, and the two messages naming a fix that passes every other rule.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/** (forms, fixtures, JSDoc, messages)",
+    "packages/basalt-ui/configs/stylelint.basalt.json and its generator",
+    "packages/basalt-ui/src/lint/preset.ts (the shadcn rule options and messages only)",
+    "packages/basalt-ui/src/lint/check-tokens.ts (the nearest-name search only)",
+    "packages/basalt-ui/configs/oxlint-*.json (regenerated)",
+    "packages/basalt-ui/src/lint/messages.test.ts"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/**",
+    "packages/basalt-ui/src/cli/** (v3-lint-3-wiring's)",
+    "packages/basalt-ui/src/lint/rule-table.ts ID_CEILING"
+  ],
+  "change": "False alarm: the radix form of import-boundary leaves `@radix-ui/react-icons` alone, with a valid fixture (lint-3.2). Misses, each with an invalid fixture block or a stated limit in the rule's JSDoc: dark-variant reads a quoted attribute value (`data-[theme='dark']:`) and the `[@media(prefers-color-scheme:dark)]:` arbitrary variant, and the stylelint preset bans `prefers-color-scheme` as a media feature and `@custom-variant` as an at-rule in app CSS, with dark-fork's fix (lint-3.3); viewport-keyed reads a `useWindowSize()` result compared to a number, tied to the hook by name since a bare `width` is a chart's (lint-3.4); import-boundary adds `@floating-ui/react`, `react-toastify` and `@microsoft/fetch-event-source` to the forms whose defect they repeat (lint-3.5); primitive-bypass reads `<a onClick>` with no `href`, `role=\"heading\"`, and a `.map` of svg marks under a `<g>` root (lint-3.6); data-primitive reads a `useInterval`-style hook that invalidates, a same-file alias of `localStorage`, `?? EMPTY` with a named empty-array const and a fallback inside `useMemo` (lint-3.7); router-search reads the `search` prop of `Navigate` (lint-3.8); untrusted-markdown reads a non-literal `srcDoc`, `createContextualFragment` and `next-mdx-remote-client` (lint-3.9); the stylelint preset bans `@apply` in app CSS and its spacing value group takes `inset`, `top`, `right`, `bottom` and `left` (lint-3.10). Messages: fixed-colour at parts and app names the shipped part that owns a brand fill (Button's brand variant, Status) and keeps `on-brand` for bridge (lint-3.11); the preset gives no-unknown-classes a message naming the shipped radius classes (`rounded-card`, `rounded-ctrl`, `rounded-chip`) and the surface components, never `@utility` (lint-3.12); messages.test.ts checks a class a fix names against the class forms of the same profile. P3: colour-literal's reference keys take `href`, `to` and `hash` (lint-3.16); important-modifier's `Next:` stops naming a width for a padding, template-interpolation stops saying 'per tone' for a size or count, raw-storage-write names a reset for `clear()`, and the token check prefers a suffix match (`--vx-color-brand` to `--vx-brand`) (lint-3.17). The id ceiling does not move: every change is a form or an option of an existing id.",
+  "commits": "fix: one commit per rule family in packages/basalt-ui.",
+  "proof": "run.sh from lint cycle 3 reports every seed of lint-3.3 to lint-3.10 caught or names its stated limit, and the `pass` probe for `@radix-ui/react-icons` silent.",
+  "acceptance": [
+    "Each miss of lint-3.3 to lint-3.10 is caught (seed report) or stated as a known limit in its rule's JSDoc",
+    "`@radix-ui/react-icons` has a valid fixture block that passes",
+    "No shipped message names a class or at-rule another shipped rule reports at the same profile (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The eject zone (v3-lint-3-eject-static); CLI help, doctor and the editor hook (v3-lint-3-wiring); the seam-mark false alarm across files (v3-expr-3-contract (f))."
+}

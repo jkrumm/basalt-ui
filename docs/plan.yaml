@@ -1265,3 +1265,29 @@ rows:
     kind: bug
     after: [v3-cycle-state-4]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-state-4-visual.json' }
+  - key: v3-lint-3-eject-static
+    title: 'Every ejected primitive lints clean with both JS plugins, tested by running lint, from lint cycle 3'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-lint-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-3-eject-static.json' }
+  - key: v3-lint-3-lint
+    title: 'Missed spellings, a Radix icon false alarm and two fixes another rule bans, from lint cycle 3'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-3-eject-static]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-3-lint.json' }
+  - key: v3-lint-3-wiring
+    title: 'Eject help is reachable, doctor and pre-edit agree on generated files, check-theme reads no prose, from lint cycle 3'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-lint-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-3-wiring.json' }
+  - key: v3-cycle-lint-4
+    title: 'Improvement cycle 4: lint and guards, misses and false alarms per rule'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-3-eject-static, v3-lint-3-lint, v3-lint-3-wiring]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-4.json' }
