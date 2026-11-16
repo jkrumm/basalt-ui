@@ -94,7 +94,7 @@ const weightSeries: Series<Day>[] = [
 
 const weightChart = (
   <CartesianChart
-    ariaLabel="Body weight with its 7-day mean"
+    label="Body weight with its 7-day mean"
     data={DATA}
     x={x}
     height={220}
@@ -107,7 +107,7 @@ const weightChart = (
 // #region domain-chart
 const loadChart = (
   <CartesianChart
-    ariaLabel="Training load with the envelope in the domain"
+    label="Training load with the envelope in the domain"
     data={DATA}
     x={x}
     height={220}
@@ -142,7 +142,7 @@ const longWindow = DATA
 // #region shared-x
 const sharedX = (data: readonly Day[]): ReactElement => (
   <CartesianChart
-    ariaLabel={`Load, first ${data.length} days`}
+    label={`Load, first ${data.length} days`}
     data={data}
     x={{ value: (d) => d.t, domain: [day(0), day(DAYS - 1)] }}
     height={120}
@@ -154,7 +154,7 @@ const sharedX = (data: readonly Day[]): ReactElement => (
 
 const bars = (
   <CartesianChart
-    ariaLabel="Spikes, older bars fade"
+    label="Spikes, older bars fade"
     data={DATA}
     x={x}
     height={180}
@@ -175,7 +175,7 @@ const bars = (
 const RAIL_PX = 4
 const railed = (
   <CartesianChart
-    ariaLabel="Load with absent days on a 4 px rail"
+    label="Load with absent days on a 4 px rail"
     data={DATA}
     x={x}
     height={200}
@@ -214,7 +214,7 @@ const railed = (
 
 const lone = (
   <CartesianChart
-    ariaLabel="A lift logged on three days, one of them alone"
+    label="A lift logged on three days, one of them alone"
     data={DATA}
     x={x}
     height={180}

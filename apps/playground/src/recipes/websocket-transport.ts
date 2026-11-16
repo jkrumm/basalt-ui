@@ -1,5 +1,5 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
-import { createChannel } from 'basalt-ui'
+import { createChannel } from 'basalt-ui/data'
 // #region recipe:websocket-transport
 import type { Transport, Wire } from 'basalt-ui'
 

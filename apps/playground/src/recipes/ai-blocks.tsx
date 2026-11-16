@@ -27,7 +27,7 @@ export const catalog = defineCatalog([
     render: (p) => (
       <ChartCard
         title={p.title}
-        chart={() => <Bars data={p.points} ariaLabel={p.title} x={x} series={[bar]} />}
+        chart={() => <Bars data={p.points} label={p.title} x={x} series={[bar]} />}
       />
     ),
   }),
@@ -37,7 +37,7 @@ export const catalog = defineCatalog([
       <DataPanel title={p.title} bodySize={{ rows: 4 }} body={() => <Rows data={p.rows} />} />
     ),
   }),
-  defineBlock({ ...s.callout, render: (p) => <Callout kind={p.kind}>{p.text}</Callout> }),
+  defineBlock({ ...s.callout, render: (p) => <Callout tone={p.kind}>{p.text}</Callout> }),
   defineBlock({ ...s.list, render: (p) => <BarList title={p.title} items={p.items} /> }),
   defineBlock({
     ...s.layout,

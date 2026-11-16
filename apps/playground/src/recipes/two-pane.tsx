@@ -19,7 +19,7 @@ export function TwoPane({ bars }: { bars: Bar[] }) {
   return (
     <div className="flex flex-col gap-1">
       <Lines
-        ariaLabel="Price"
+        label="Price"
         data={bars}
         x={x}
         y={{ gutter: GUTTER }}
@@ -28,7 +28,7 @@ export function TwoPane({ bars }: { bars: Bar[] }) {
         series={[{ mark: 'line', key: 'close', label: 'Close', color: blue, y: (d) => d.close }]}
       />
       <Lines
-        ariaLabel="Momentum"
+        label="Momentum"
         data={bars}
         x={x}
         y={{ gutter: GUTTER }}

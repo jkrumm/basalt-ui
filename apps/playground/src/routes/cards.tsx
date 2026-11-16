@@ -36,7 +36,7 @@ function ShippedTrend({ height }: { height: number | 'fill' }): ReactElement {
       series={PER_DAY}
       height={height}
       axisLabels={X_LABELS}
-      ariaLabel={`Shipped per day, ${PER_DAY.length} days`}
+      label={`Shipped per day, ${PER_DAY.length} days`}
     />
   )
 }

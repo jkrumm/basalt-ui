@@ -20,7 +20,7 @@ export function MarkdownRegion() {
       meta={{ title: 'Markdown and code', description: 'One renderer.', readingTime: 3 }}
       readingProgress
     >
-      <Callout kind="info" title="Trust">
+      <Callout tone="info" title="Trust">
         Author text may be `trusted`; text from a model never is.
       </Callout>
       <Markdown contentTrust="untrusted">{reply}</Markdown>
