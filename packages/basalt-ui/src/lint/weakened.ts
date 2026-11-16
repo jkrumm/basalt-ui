@@ -308,7 +308,7 @@ export function ignoreFilePatterns(text: string): string[] {
 }
 
 export const STYLELINTIGNORE = '.stylelintignore'
-const STYLE_SOURCE = /\.(?:css|astro)$/
+const STYLE_SOURCE = /\.(?:css|astro|mdx|html)$/
 
 /** The source files (scripts, or stylesheets) under the declared roots that any of `patterns` names; the router's generated tree is never counted. */
 export function rootFilesNamedBy(

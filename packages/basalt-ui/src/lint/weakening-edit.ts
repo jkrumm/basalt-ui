@@ -4,11 +4,12 @@
  * `.stylelintignore` line that covers a file under a declared root, and a file-level disable that
  * reaches every rule. Only what the edit adds counts, so a file that already has one can be edited.
  */
-import { basename } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { basename, resolve } from 'node:path'
 
 import { parseJsonc } from '../cli/source-text'
 import { findBlanketDisables } from './blanket-disable'
-import { ignoreFilePatterns, rootFilesNamedBy, STYLELINTIGNORE } from './weakened'
+import { ignoreFilePatterns, ignoreMatcher, rootFilesNamedBy, STYLELINTIGNORE } from './weakened'
 
 const SCRIPT = /\.[cm]?[jt]sx?$/
 const GENERATED_TREE = /^routeTree\.gen\.[cm]?[jt]sx?$/
@@ -17,6 +18,9 @@ const ignorePatternsIn = (text: string | null): string[] => {
   const patterns = text === null ? undefined : parseJsonc(text)?.['ignorePatterns']
   return [patterns].flat().filter((p): p is string => typeof p === 'string')
 }
+
+const readIfPresent = (dir: string, name: string): string | null =>
+  existsSync(resolve(dir, name)) ? readFileSync(resolve(dir, name), 'utf8') : null
 
 const added = (before: readonly string[], after: readonly string[]): string[] =>
   after.filter((p) => !before.includes(p))
@@ -58,6 +62,12 @@ export function weakeningDenial(
   }
   const inRoot = roots.some((r) => r === '.' || rel === r || rel.startsWith(`${r}/`))
   if (!inRoot || !SCRIPT.test(rel) || GENERATED_TREE.test(basename(rel))) return null
+  // A path the lint config already ignores is where doctor sends a generated file's disable.
+  const ignored = [
+    ...ignorePatternsIn(readIfPresent(dir, '.oxlintrc.json')),
+    ...ignoreFilePatterns(readIfPresent(dir, '.oxlintignore') ?? ''),
+  ]
+  if (ignored.map(ignoreMatcher).some((matches) => matches(rel))) return null
   const before = current === null ? 0 : findBlanketDisables(current).length
   const blanket = findBlanketDisables(next)
   return blanket.length > before
