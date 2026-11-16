@@ -196,7 +196,22 @@ export type ChartTooltipConfig<D> = {
 }
 
 // minimal; concept elides it
-export type ChartZone = { from: number; to: number; fill: string; axis?: 'left' | 'right' }
+export type ChartZone =
+  | { from: number; to: number; fill: string; axis?: 'left' | 'right' }
+  /**
+   * A band between two x values: numbers (a log axis too), `Date`s, or band keys (both bands
+   * covered whole). `y` bounds it on the left axis (default: the plot's height). `label` is a muted
+   * caption at the zone's top-start corner, beside the zone when it does not fit inside, dropped
+   * when neither spot stays in the plot.
+   */
+  | {
+      axis: 'x'
+      from: number | Date | string
+      to: number | Date | string
+      fill: string
+      y?: { from: number; to: number }
+      label?: string
+    }
 
 // minimal; concept elides it
 export type ChartRefLine = {
@@ -220,7 +235,13 @@ export type ChartPlot<D> = {
   data: readonly D[]
   rows: (key: string) => readonly D[]
   visible: readonly Series<D>[]
+  /** The plot area in px; the frame for `chartLabels.place`. The first pass reports the frame. */
+  plotWidth: number
   plotHeight: number
+  /** An x value's px from the plot's left, on the axis' scale (a band key: its centre); `null` off it. */
+  x: (value: number | Date | string) => number | null
+  /** A y value's px from the plot's top, on the left axis or the right one. */
+  y: (value: number, axis?: 'left' | 'right') => number
   /** The datum the chart's `focus` holds; `null` without one. Dim the rest against it. */
   focused: D | null
 }
