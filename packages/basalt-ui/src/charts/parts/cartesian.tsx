@@ -17,6 +17,7 @@ import { dot } from '@tanstack/charts/dot'
 import { useCallback, useContext, useId, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { VisualSlotContext } from '../visual-slot'
+import { useProviderContext } from '../../core/provider'
 import { VX } from '../../tokens'
 import { useInChartCard } from '../card-context'
 import {
@@ -97,7 +98,10 @@ const finite = (v: number | null): v is number => v !== null && Number.isFinite(
  * The text a chart states for assistive technology when `summary` is not given: the first series'
  * range and last value. Honest about an empty series rather than inventing a number.
  */
-export function autoSummary<D>(props: Pick<CartesianChartProps<D>, 'data' | 'series'>): string {
+export function autoSummary<D>(
+  props: Pick<CartesianChartProps<D>, 'data' | 'series'>,
+  locale?: string,
+): string {
   const first = props.series.find((s) => s.failed !== true)
   if (first === undefined) return ''
   // A loop, not `Math.min(...values)`: a spread of a large series overflows the argument limit.
@@ -112,7 +116,8 @@ export function autoSummary<D>(props: Pick<CartesianChartProps<D>, 'data' | 'ser
     last = v
   }
   if (last === undefined) return `${first.label}: no data`
-  const fmt = (v: number): string => first.format?.(v, props.data[0] as D) ?? defaultNumberFormat(v)
+  const fmt = (v: number): string =>
+    first.format?.(v, props.data[0] as D) ?? defaultNumberFormat(v, locale)
   return `${first.label}: min ${fmt(min)}, max ${fmt(max)}, last ${fmt(last)}`
 }
 
@@ -121,6 +126,7 @@ const xLabel = (v: ChartX): string => (v instanceof Date ? v.toISOString().slice
 /** The data table behind the picture: every point of every series, up to {@link TABLE_MAX_POINTS}. */
 function DataTable<D>(props: CartesianChartProps<D>): ReactElement | null {
   const { data, series, x, ariaLabel } = props
+  const { locale } = useProviderContext()
   if (data.length > TABLE_MAX_POINTS) return null
   const shown = series.filter((s) => s.failed !== true)
   return (
@@ -147,7 +153,7 @@ function DataTable<D>(props: CartesianChartProps<D>): ReactElement | null {
                   const v = s.y(d)
                   return (
                     <td key={s.key}>
-                      {v === null ? '' : (s.format?.(v, d) ?? defaultNumberFormat(v))}
+                      {v === null ? '' : (s.format?.(v, d) ?? defaultNumberFormat(v, locale))}
                     </td>
                   )
                 })}
@@ -185,9 +191,13 @@ CartesianChart.custom = custom
 
 /** The rung `Lines` and `Bars` render through: the public props plus the kind-only options. */
 export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): ReactElement {
-  const { ariaLabel, summary, table, height, phase, layout = 'stacked', naming = 'auto' } = props
+  const { ariaLabel, summary, table, phase, layout = 'stacked', naming = 'auto' } = props
   const chartId = useId()
+  const { locale } = useProviderContext()
   const inCard = useInChartCard()
+  // A chart in a card takes the card's box, whatever the slot passed: its own height law is taller
+  // than the card's at 390 and the box would clip the x axis and the legend.
+  const height = props.height ?? (inCard ? 'fill' : undefined)
   const bare = useContext(VisualSlotContext) !== null
   const { ref, width: measured, coarse } = useChartSize()
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
@@ -361,12 +371,31 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     [stable, spec, effective, controller, indexOf, opacityOf],
   )
 
+  // The largest radius each dot series draws: the plot keeps that much room at its edge.
+  const dotRadius = useMemo(
+    () =>
+      new Map(
+        stable.series.flatMap((s) =>
+          s.mark === 'dot' && s.r !== undefined
+            ? [
+                [
+                  s.key,
+                  Math.max(VX.dotR, ...stable.data.map((d) => (s.r as (d: D) => number)(d))),
+                ] as const,
+              ]
+            : [],
+        ),
+      ),
+    [stable.series, stable.data],
+  )
   const width = measured || INITIAL_WIDTH
   const definition = useMemo(() => {
     const compiled = compileCartesian<D, ChartX>({
       ...spec,
       marks,
       chartId,
+      locale,
+      dotRadius,
       hidden,
       highlighted,
       coarse,
@@ -390,6 +419,8 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     spec,
     marks,
     chartId,
+    locale,
+    dotRadius,
     hidden,
     highlighted,
     coarse,
@@ -438,7 +469,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     />
   ) : null
 
-  const text = summary ?? autoSummary(stable)
+  const text = summary ?? autoSummary(stable, locale)
   return (
     <>
       <div ref={ref} data-basalt-chart="" data-in-card={inCard ? '' : undefined} style={rootStyle}>

@@ -36,6 +36,8 @@ const LINE_AIR = 4.5
 const CROSSED_PENALTY = 100
 /** The most flipped labels whose two sides are all tried (2 ** n assignments). */
 const MAX_SIDE_SEARCH = 5
+/** How far a dot mark reaches from its centre, px: its radius and ring. */
+const DOT_REACH = VX.dotR + 1
 
 export type EndLabelAnchor = 'start' | 'end'
 /** Which side of its line a flipped label sits: away from the line's last segment. */
@@ -207,7 +209,10 @@ export function endLabelPlan<T, X extends ChartX>(
         else {
           if (before !== undefined) pts.push(before)
           before = undefined
-          pts.push(pt)
+          // A dot fills its radius above and below its centre: a label keeps off the whole mark.
+          if (s.mark === 'dot')
+            pts.push({ fx, y: pt.y - DOT_REACH }, pt, { fx, y: pt.y + DOT_REACH })
+          else pts.push(pt)
         }
       }
       if (before !== undefined) pts.push(before)

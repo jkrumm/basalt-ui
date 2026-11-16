@@ -35,9 +35,9 @@ import { cursorDots } from '../marks'
 import { bucketTicks, strideEvery } from './ticks'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
 import { claimedLabelBoxes } from '../labels'
-import { placeRefLabel, refLabelDy } from '../ref-label'
-import type { LabelBox, RefLabelPoint } from '../ref-label'
-import type { PlotSizes } from './plot-context'
+import { boxesMeet, dotBox, placeRefLabel, refLabelDy } from '../ref-label'
+import type { DotMark, LabelBox, RefLabelPoint } from '../ref-label'
+import type { PlotAccess, PlotSizes } from './plot-context'
 import { resolveContainerClass } from '../../tokens/size-classes'
 import { resolveYDomain, xScaleFor, xZoneFractions, yScaleFor } from './scales'
 import type { XScaleModel } from './scales'
@@ -106,6 +106,10 @@ export type CartesianInput<T, X extends ChartX> = Pick<
 > & {
   /** Unique per mounted chart (React `useId`): owns what this chart publishes to the cursor. */
   chartId: string
+  /** The locale of every default chart text: ticks, tooltip header, y numbers (the provider's). */
+  locale?: string
+  /** The largest radius a dot series draws, px by series key: the plot keeps room for it at its edge. */
+  dotRadius?: ReadonlyMap<string, number>
   /** Series keys the legend has toggled off. */
   hidden?: ReadonlySet<string>
   /** The legend entry under the pointer. */
@@ -154,8 +158,8 @@ const LADDER = {
  */
 const LEFT_EDGE_SHARE = 0.05
 
-export function defaultNumberFormat(v: number): string {
-  return compact(v, { digits: Math.abs(v) >= 1000 ? 1 : 2 })
+export function defaultNumberFormat(v: number, locale?: string): string {
+  return compact(v, { digits: Math.abs(v) >= 1000 ? 1 : 2, locale })
 }
 
 /**
@@ -173,16 +177,16 @@ export function bucketDay(d: Date): Date {
 }
 
 /**
- * The tooltip's date: weekday, day, month and year in the locale `setFormatDefaults` set
- * (the runtime's when none), read in UTC like the time scale; a non-midnight instant adds `HH:MM`. With
+ * The tooltip's date: weekday, day, month and year in the chart's `locale` (the provider's; else the
+ * one `setFormatDefaults` set, else the runtime's), read in UTC like the time scale; a non-midnight instant adds `HH:MM`. With
  * `dayOnly` (a day-granular series) the instant is its bucket's DAY, never a clock time: see
  * {@link bucketDay}.
  */
-export function utcHeaderDate(d: Date, dayOnly = false): string {
+export function utcHeaderDate(d: Date, dayOnly = false, locale?: string): string {
   if (!Number.isFinite(d.getTime())) return NON_FINITE
-  const date = headerDay(dayOnly ? bucketDay(d) : d)
+  const date = headerDay(dayOnly ? bucketDay(d) : d, locale)
   if (dayOnly || d.getTime() % DAY_MS === 0) return date
-  return `${date} ${readoutClock(d)}`
+  return `${date} ${readoutClock(d, locale)}`
 }
 
 const DAY_MS = 86_400_000
@@ -212,9 +216,9 @@ export function dateTicks(domain: readonly [Date, Date], count: number, stepMs: 
   return ticks
 }
 
-export function defaultFormatX(v: ChartValue): string {
-  if (v instanceof Date) return utcAxisDate(v)
-  if (typeof v === 'number') return defaultNumberFormat(v)
+export function defaultFormatX(v: ChartValue, locale?: string): string {
+  if (v instanceof Date) return utcAxisDate(v, locale)
+  if (typeof v === 'number') return defaultNumberFormat(v, locale)
   return String(v)
 }
 
@@ -321,8 +325,8 @@ type YAxis = {
 }
 
 /** The page locale's decimal separator (`.` or `,`). */
-const decimalSeparator = (): string =>
-  numberFormat(undefined, {})
+const decimalSeparator = (locale?: string): string =>
+  numberFormat(locale, {})
     .formatToParts(1.1)
     .find((p) => p.type === 'decimal')?.value ?? '.'
 
@@ -341,12 +345,13 @@ function wholeStepFormat<T>(
   axis: YAxis,
   cfg: AxisConfig<T> | undefined,
   ticks: { values: readonly number[] } | { count: number },
+  locale?: string,
 ): (v: number) => string {
   const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
   const values =
     'values' in ticks ? ticks.values : scaleLinear().domain([lo, hi]).ticks(ticks.count)
   if (values.length === 0 || !values.every(Number.isInteger)) return axis.format
-  const padded = zeroFraction(decimalSeparator())
+  const padded = zeroFraction(decimalSeparator(locale))
   return (v) => axis.format(v).replace(padded, '$1')
 }
 
@@ -403,8 +408,10 @@ export function yGuide<T>(opts: {
   cls: ContainerClass
   side: 'left' | 'right'
   grid: boolean
+  /** The locale the default tick numbers read; absent, the format defaults'. */
+  locale?: string | undefined
 }): Omit<ChartPositionScaleOptions<number>, 'scale'> {
-  const { cfg, axis, cls, side, grid } = opts
+  const { cfg, axis, cls, side, grid, locale } = opts
   const ladder = LADDER[cls]
   const planned =
     typeof cfg?.ticks === 'object'
@@ -415,7 +422,7 @@ export function yGuide<T>(opts: {
   const ticks = axis.whole === true ? wholeTicks(axis, cfg, planned) : planned
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
-  const tickFormat = wholeStepFormat(axis, cfg, ticks)
+  const tickFormat = wholeStepFormat(axis, cfg, ticks, locale)
   // Labels sit in a gutter OUTSIDE the plot, against its edge: a line never runs through one.
   return {
     ...gridLine,
@@ -469,12 +476,14 @@ export function strideTicks<V>(values: readonly V[], cls: ContainerClass): V[] {
 export function xTickFormat(
   consumer: ((v: ChartValue) => string) | undefined,
   tickValues: readonly ChartValue[],
+  locale?: string,
 ): (v: ChartValue) => string {
   if (consumer) return consumer
+  const plain = (v: ChartValue): string => defaultFormatX(v, locale)
   if (tickValues.length === 0 || !tickValues.every((v): v is Date => v instanceof Date))
-    return defaultFormatX
-  const dateFormat = dateTickFormat(tickValues)
-  return (v) => (v instanceof Date ? dateFormat(v) : defaultFormatX(v))
+    return plain
+  const dateFormat = dateTickFormat(tickValues, locale)
+  return (v) => (v instanceof Date ? dateFormat(v) : plain(v))
 }
 
 export function xGuide<X extends ChartX>(opts: {
@@ -485,13 +494,15 @@ export function xGuide<X extends ChartX>(opts: {
   /** The axis name, drawn centred under the ticks by the engine's own axis label. */
   title?: string | undefined
   cls: ContainerClass
+  /** The locale the default tick text reads; absent, the format defaults'. */
+  locale?: string | undefined
 }): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
   const { model, xTicks, cls } = opts
   const ladder = LADDER[cls]
   const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks)
   // A Date axis always resolves to `values` (the time scale has an extent; a band axis lists its
   // buckets), so `{ count }` is only ever a number axis and never needs the date formatter.
-  const format = xTickFormat(opts.format, 'values' in ticks ? ticks.values : [])
+  const format = xTickFormat(opts.format, 'values' in ticks ? ticks.values : [], opts.locale)
   // A continuous scale's domain start and span; a band scale pads its first slot, so none applies.
   const [leftEdgeX, spanX] =
     !model.band && model.extent
@@ -645,6 +656,41 @@ type Axes<T> = {
   scaleId: (side: 'left' | 'right' | undefined) => 'y' | 'y2'
 }
 
+/** The ring a dot draws round its radius, px: the room a dot needs is its radius and this. */
+const DOT_RING = 1
+
+/**
+ * `axis` with its domain grown so every dot (`dots`: its value and radius) sits whole inside the
+ * plot, which clips its marks at the edge: a dot centred on the floor draws half. Grown only on a
+ * side a dot reaches, by the radius in px of the grown plot (`plotHeight`). A domain with a bar on it
+ * keeps its floor: the bars stand on it.
+ */
+function roomForDots(
+  axis: YAxis,
+  dots: readonly { y: number; r: number }[],
+  plotHeight: number,
+): YAxis {
+  const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
+  if (dots.length === 0 || plotHeight <= 0 || hi === lo) return axis
+  const r = Math.max(...dots.map((d) => d.r)) + DOT_RING
+  const [low, high] = [Math.min(...dots.map((d) => d.y)), Math.max(...dots.map((d) => d.y))]
+  let [from, to] = [lo, hi]
+  // The room is a share of the grown span, so it is found by settling: a few passes converge.
+  for (let i = 0; i < 4; i++) {
+    const room = (r * (to - from)) / plotHeight
+    from = Math.min(lo, low - room)
+    to = Math.max(hi, high + room)
+  }
+  if (from === lo && to === hi) return axis
+  return { ...axis, domain: axis.domain[0] <= axis.domain[1] ? [from, to] : [to, from] }
+}
+
+/** Only a dot within a tenth of the span of an end can touch the plot's edge: the rest never read the size. */
+const nearEnd = (axis: YAxis, dots: readonly { y: number }[]): boolean => {
+  const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
+  return dots.some((d) => d.y - lo < (hi - lo) * 0.1 || hi - d.y < (hi - lo) * 0.1)
+}
+
 /** Overlay bounds per axis; `'right'` without a `y2` lands on the left. */
 function overlayBounds<T, X extends ChartX>(
   input: CartesianInput<T, X>,
@@ -708,7 +754,7 @@ function resolveAxes<T, X extends ChartX>(
       bounds.left,
       tickCount(input.y),
     ),
-    format: input.y?.format ?? defaultNumberFormat,
+    format: input.y?.format ?? ((v) => defaultNumberFormat(v, input.locale)),
     whole: wholeCounts(
       input,
       visible.filter((s) => !onRight(s)),
@@ -723,7 +769,7 @@ function resolveAxes<T, X extends ChartX>(
           bounds.right,
           tickCount(input.y2),
         ),
-        format: input.y2?.format ?? defaultNumberFormat,
+        format: input.y2?.format ?? ((v) => defaultNumberFormat(v, input.locale)),
       }
     : null
   return {
@@ -853,6 +899,10 @@ type RefLabelContext<T, X extends ChartX> = {
   plotHeight: number
   /** One polyline per visible series on the line's axis. */
   lines: (side: 'left' | 'right' | undefined) => readonly (readonly RefLabelPoint[])[]
+  /** Whether a bar or a dot on the left axis fills a box of a rule caption (px across, px below the plot top). */
+  xBlocked: NonNullable<Parameters<typeof xRefLabelSpots>[0]['blocked']>
+  /** The bar bodies and dots on the line's axis: a caption keeps off them. */
+  marks: (side: 'left' | 'right' | undefined) => { bars: LabelBox[]; dots: DotMark[] }
   /** The end labels placed on the left axis: a caption there keeps clear of them. */
   claimed: readonly LabelBox[]
   /** The vertical rules' captions, px below the plot top: a reference caption keeps clear of them. */
@@ -894,6 +944,7 @@ const refLabelMark = <T, X extends ChartX>(
     label: r.label ?? '',
     fontSize: VX.text.micro,
     series: ctx.lines(r.axis),
+    ...ctx.marks(r.axis),
     claimed: [
       ...(startFirst ? [] : ctx.claimed),
       ...ctx.xCaptions.map((b) => xCaptionOn(b, domain, ctx.plotHeight)),
@@ -982,6 +1033,7 @@ function buildScales<T, X extends ChartX>(opts: {
         format: input.formatX ? formatX : undefined,
         title: cls === 'micro' ? undefined : input.xTitle,
         cls,
+        locale: input.locale,
       }),
     },
     y: {
@@ -992,6 +1044,7 @@ function buildScales<T, X extends ChartX>(opts: {
         cls,
         side: 'left',
         grid: input.y?.grid ?? true,
+        locale: input.locale,
       }),
     },
     ...(right && {
@@ -1004,6 +1057,7 @@ function buildScales<T, X extends ChartX>(opts: {
           cls,
           side: 'right',
           grid: input.y2?.grid ?? false,
+          locale: input.locale,
         }),
       },
     }),
@@ -1031,7 +1085,8 @@ function tooltipHeader<T, X extends ChartX>(
   d: T,
 ): string {
   if (input.tooltip && input.tooltip.formatHeader) return input.tooltip.formatHeader(v as X, d)
-  if (v instanceof Date && (!input.formatX || dayOnly)) return utcHeaderDate(v, dayOnly)
+  if (v instanceof Date && (!input.formatX || dayOnly))
+    return utcHeaderDate(v, dayOnly, input.locale)
   return formatX(v)
 }
 
@@ -1228,7 +1283,7 @@ export function compileCartesian<T, X extends ChartX>(
   const dots = cursorDotMarks(input, visible, shared)
   const rows = rowsOf(input, visibleKeys)
   const formatX = (v: ChartValue): string =>
-    input.formatX ? input.formatX(v as X) : defaultFormatX(v)
+    input.formatX ? input.formatX(v as X) : defaultFormatX(v, input.locale)
   const gradients = input.series.flatMap((s, i) =>
     s.area ? [seriesAreaGradient(s, i, input, shared)] : [],
   )
@@ -1254,11 +1309,70 @@ export function compileCartesian<T, X extends ChartX>(
         }),
       )
 
+  // The dots of one axis side: their value and radius. A side with a bar keeps its floor, so none.
+  const dotsOn = (side: 'left' | 'right'): { y: number; r: number }[] => {
+    const onSide = visible.filter((s) => shared.onRight(s) === (side === 'right'))
+    if (onSide.some(isBar)) return []
+    return onSide
+      .filter((s) => s.mark === 'dot')
+      .flatMap((s) =>
+        rows(s.key).flatMap((row) =>
+          row.y === null ? [] : [{ y: row.y, r: input.dotRadius?.get(s.key) ?? VX.dotR }],
+        ),
+      )
+  }
+  const dotRoomAxes = (base: Axes<T>, access: PlotAccess, frameHeight: number): Axes<T> => {
+    const onLeft = dotsOn('left')
+    const onRight = base.right === null ? [] : dotsOn('right')
+    if (!nearEnd(base.left, onLeft) && !(base.right && nearEnd(base.right, onRight))) return base
+    access.read()
+    const plotHeight = access.size()?.height ?? frameHeight
+    const left = roomForDots(base.left, onLeft, plotHeight)
+    const right = base.right && roomForDots(base.right, onRight, plotHeight)
+    if (left === base.left && right === base.right) return base
+    return { ...base, left, right, axisOf: (side) => (side === 'right' && right ? right : left) }
+  }
+
+  // The bar bodies and dots a caption must not sit on, on one axis. A stack's body runs to the sum
+  // of its positive parts (and down to its negative ones); a grouped bar is taken at the band's full
+  // width at its own height, which over-covers by a slot and never under-covers.
+  const marksOn = (side: 'left' | 'right' | undefined): { bars: LabelBox[]; dots: DotMark[] } => {
+    const onSide = visible.filter(
+      (s) => shared.onRight(s) === (side === 'right' && shared.right !== null),
+    )
+    const bodies = new Map<number, { fx: number; up: number; down: number }>()
+    const dotMarks: DotMark[] = []
+    for (const s of onSide) {
+      for (const r of rows(s.key)) {
+        const fx = model.fraction(r.x)
+        if (fx === null || r.y === null) continue
+        if (s.mark === 'dot')
+          dotMarks.push({ fx, y: r.y, r: input.dotRadius?.get(s.key) ?? VX.dotR })
+        if (!(model.band && s.mark === 'bar')) continue
+        const at = bodies.get(fx) ?? { fx, up: 0, down: 0 }
+        const stacked = input.stack !== undefined
+        at.up = stacked ? at.up + Math.max(r.y, 0) : Math.max(at.up, r.y)
+        at.down = stacked ? at.down + Math.min(r.y, 0) : Math.min(at.down, r.y)
+        bodies.set(fx, at)
+      }
+    }
+    const normalized = input.stack === 'normalized'
+    return {
+      dots: dotMarks,
+      bars: [...bodies.values()].map((b) => ({
+        fx0: b.fx - barHalf,
+        fx1: b.fx + barHalf,
+        y0: normalized ? 0 : b.down,
+        y1: normalized ? 1 : b.up,
+      })),
+    }
+  }
+
   const definition: CartesianDefinition = {
     chart: ({ width, height }: ChartBuildContext): StoredChartSpec => {
       const cls = resolveContainerClass(width)
-      const axes = axesAt(cls)
       const access = plotAccess(definition, input.plot, MAIN_PANE)
+      const axes = dotRoomAxes(axesAt(cls), access, height)
       const plot = plotContext(
         {
           rows,
@@ -1282,6 +1396,25 @@ export function compileCartesian<T, X extends ChartX>(
       // Only a chart with a caption pays for it, and the one context serves every caption: the
       // vertical rules' captions are placed first, and a reference caption keeps clear of them and of
       // the captions placed before it.
+      // Whether a bar or a dot on the left axis fills a rule caption's box: it moves or drops.
+      const xBlocked =
+        (plotWidth: number, plotHeight: number): RefLabelContext<T, X>['xBlocked'] =>
+        (box) => {
+          const [lo, hi] = [Math.min(...axes.left.domain), Math.max(...axes.left.domain)]
+          if (plotWidth <= 0 || plotHeight <= 0 || hi === lo) return false
+          const perPx = (hi - lo) / plotHeight
+          const at = {
+            fx0: box.x0 / plotWidth,
+            fx1: box.x1 / plotWidth,
+            y0: hi - box.bottom * perPx,
+            y1: hi - box.top * perPx,
+          }
+          const { bars, dots } = marksOn('left')
+          return (
+            bars.some((b) => boxesMeet(at, b)) ||
+            dots.some((d) => boxesMeet(at, dotBox(d, plotWidth, perPx)))
+          )
+        }
       let captions: RefLabelContext<T, X> | undefined
       const captionContext = (): RefLabelContext<T, X> => {
         if (captions !== undefined) return captions
@@ -1293,11 +1426,14 @@ export function compileCartesian<T, X extends ChartX>(
           fraction: model.fraction,
           plotWidth,
           fontSize: VX.text.micro,
+          blocked: xBlocked(plotWidth, size?.height ?? height),
         })
         captions = {
           plotWidth,
           plotHeight: size?.height ?? height,
           lines: linesOn,
+          marks: marksOn,
+          xBlocked: xBlocked(plotWidth, size?.height ?? height),
           claimed: claimedLabelBoxes(plot),
           xCaptions: xRefLabelBoxes(xSpots, { plotWidth, fontSize: VX.text.micro }),
           placed: { left: [], right: [] },
@@ -1320,6 +1456,7 @@ export function compileCartesian<T, X extends ChartX>(
             fraction: model.fraction,
             top: Math.max(...axes.left.domain),
             plotWidth: xPlotWidth,
+            blocked: hasXCaption ? captionContext().xBlocked : undefined,
           }),
           ...(input.crosshair === false ? [] : [crosshair({ x: CROSSHAIR, y: false })]),
         ],
