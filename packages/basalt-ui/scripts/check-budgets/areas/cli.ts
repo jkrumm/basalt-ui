@@ -51,11 +51,12 @@ export const rows: readonly RowDef[] = [
   // 11886 -> 11933 (v3-lint-1-eject-zones): `sync` and `eject` write the consumer oxlint preset through `buildPreset`, so a bridge root's vendored zone and an ejected primitive's structure zone are in it (cli/presets.ts +37, cli/eject/index.ts +10: eject rewrites the preset when a row changes). Consumer: console, whose ejected primitives lint clean right after `eject`.
   // 11933 -> 12047 (v3-wiring-1-init-scaffold): `init --profile app` writes the router scaffold its templates promise (cli/init/router-seeds.ts, the seed-to-template map in cli/router-wiring.ts, the router plugin in the Vite patch, +113). Consumer: shutterflow's `app` install, which wrote these seven files by hand.
   // 12047 -> 12245 (v3-wiring-1-wiring): `init` installs the `app` profile's runtime and build peers from one table (cli/peers.ts), patches the stock Vite config and stylesheet to the one entry and wires the lint script (cli/init/steps.ts +153); doctor resolves `oxlint` from the project's bin and passes the ratchet on a repo with no base. Consumer: a fresh create-vite `app` install, which needed each of these by hand.
+  // 12245 -> 12281 (v3-wiring-2-generated-tree): `init --profile app` writes the router's generated tree (`src/routeTree.gen.ts` under each declared root) into the `.oxlintrc.json` and formatter ignores (cli/init/steps.ts +30 net) and doctor reads the vite config's `generatedRouteTree` (cli/router-wiring.ts +7). Consumer: a built create-vite `app`, whose doctor check 11 failed on TanStack's own `/* eslint-disable */`.
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 12245,
+    ceiling: 12281,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -123,6 +124,13 @@ export const raises: Raises = {
       from: 12047,
       to: 12245,
       consumer: '`init --profile app` and `doctor` on a fresh create-vite app, with no hand edit',
+      repo: 'shutterflow',
+    },
+    {
+      from: 12245,
+      to: 12281,
+      consumer:
+        '`init --profile app` and `doctor` on a built create-vite app with a generated route tree',
       repo: 'shutterflow',
     },
   ],

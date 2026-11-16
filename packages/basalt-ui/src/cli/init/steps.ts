@@ -296,9 +296,19 @@ export const FORMATTER_IGNORE = [
   STYLELINT_PRESET_FILE,
 ] as const
 
+/**
+ * The router plugin's generated tree under each declared root of an `app`: TanStack writes it with
+ * a file-level `/* eslint-disable *\/` and asks to have it excluded from the linter and formatter.
+ */
+export function generatedTreeIgnores(args: Pick<Args, 'profile' | 'roots'>): string[] {
+  if (args.profile !== 'app') return []
+  return args.roots.map((root) => `${root === '.' ? 'src' : root}/routeTree.gen.ts`)
+}
+
 function ignoreFile(ctx: Ctx): void {
+  const ignored = [...FORMATTER_IGNORE, ...generatedTreeIgnores(ctx.args)]
   const missing = (text: string): string[] =>
-    FORMATTER_IGNORE.filter((p) => !text.split('\n').some((line) => line.trim() === p))
+    ignored.filter((p) => !text.split('\n').some((line) => line.trim() === p))
   const prettier = readText(ctx.root, '.prettierignore')
   const oxfmt = readText(ctx.root, '.oxfmtrc.json')
 
@@ -315,7 +325,7 @@ function ignoreFile(ctx: Ctx): void {
     writeText(
       ctx.root,
       '.oxfmtrc.json',
-      `${JSON.stringify({ ignorePatterns: FORMATTER_IGNORE }, null, 2)}\n`,
+      `${JSON.stringify({ ignorePatterns: ignored }, null, 2)}\n`,
     )
     return say('wrote .oxfmtrc.json (ignorePatterns for the managed paths)')
   }
@@ -323,7 +333,7 @@ function ignoreFile(ctx: Ctx): void {
   const listed = Array.isArray(config?.['ignorePatterns'])
     ? (config['ignorePatterns'] as string[])
     : []
-  const add = FORMATTER_IGNORE.filter((p) => !listed.includes(p))
+  const add = ignored.filter((p) => !listed.includes(p))
   if (add.length === 0) return
   // A commented file cannot be rewritten without losing the comments: print the lines instead.
   if (config === null || !isStrictJson(oxfmt)) {
@@ -345,7 +355,9 @@ function oxlintExtends(ctx: Ctx): void {
   const line = `./${OXLINT_PRESET_FILE}`
   const text = readText(ctx.root, '.oxlintrc.json')
   if (text === null) {
-    writeText(ctx.root, '.oxlintrc.json', `${JSON.stringify({ extends: [line] }, null, 2)}\n`)
+    const ignorePatterns = generatedTreeIgnores(ctx.args)
+    const fresh = { extends: [line], ...(ignorePatterns.length > 0 ? { ignorePatterns } : {}) }
+    writeText(ctx.root, '.oxlintrc.json', `${JSON.stringify(fresh, null, 2)}\n`)
     return say('wrote .oxlintrc.json (extends the basalt preset)')
   }
   const config = parseJsonc(text)
@@ -359,12 +371,30 @@ function oxlintExtends(ctx: Ctx): void {
   const stock = strict && isStockRouteRule(rule)
   if (rule !== undefined && !stock)
     ctx.todo.push('delete react/only-export-components from .oxlintrc.json')
-  if (hasExtends && !stock) return
-  if (!strict) return void ctx.todo.push(`add "${line}" to "extends" in .oxlintrc.json`)
-  const next = { ...config, extends: hasExtends ? extended : [line, ...extended] }
+  const listed = Array.isArray(config?.['ignorePatterns'])
+    ? (config['ignorePatterns'] as string[])
+    : []
+  const trees = generatedTreeIgnores(ctx.args).filter((p) => !listed.includes(p))
+  if (hasExtends && !stock && trees.length === 0) return
+  if (!strict) {
+    if (!hasExtends) ctx.todo.push(`add "${line}" to "extends" in .oxlintrc.json`)
+    if (trees.length > 0)
+      ctx.todo.push(`add to ignorePatterns in .oxlintrc.json: ${trees.join(', ')}`)
+    return
+  }
+  const next = {
+    ...config,
+    extends: hasExtends ? extended : [line, ...extended],
+    ...(trees.length > 0 ? { ignorePatterns: [...listed, ...trees] } : {}),
+  }
   const out = JSON.stringify(stock ? { ...next, rules: kept } : next, null, 2)
   writeText(ctx.root, '.oxlintrc.json', `${out}\n`)
-  say(`.oxlintrc.json: extends ${line}${stock ? ' and drops the stock route rule' : ''}`)
+  const said = [
+    hasExtends ? '' : `extends ${line}`,
+    stock ? 'drops the stock route rule' : '',
+    trees.length > 0 ? `ignores ${trees.join(', ')}` : '',
+  ].filter(Boolean)
+  say(`.oxlintrc.json: ${said.join(' and ')}`)
 }
 
 export function wireFormatterAndLint(ctx: Ctx): void {

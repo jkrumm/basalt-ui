@@ -129,6 +129,13 @@ export function routeTreeDirs(entry: string): string[] {
   return [...new Set([dirname(entry), 'src'])]
 }
 
+/** The router plugin's `generatedRouteTree` option in the vite config, relative to the install root. */
+export function generatedRouteTreeOption(dir: string): string | null {
+  const vite = VITE_CONFIGS.map((f) => readIfExists(resolve(dir, f))).find((t) => t !== null) ?? ''
+  const named = /\bgeneratedRouteTree\s*:\s*(['"`])([^'"`]+)\1/.exec(vite)?.[2]
+  return named === undefined ? null : named.replace(/^\.\//, '')
+}
+
 /** A TanStack router plugin in the vite config, or a `routeTree.gen.*` in `routeTreeDirs`. */
 export function hasRouteTree(dir: string, entry: string): boolean {
   const vite = VITE_CONFIGS.map((f) => readIfExists(resolve(dir, f))).find((t) => t !== null) ?? ''
