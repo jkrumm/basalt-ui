@@ -1144,3 +1144,48 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-state-3-detail-link, v3-state-3-api, v3-state-3-visual]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-state-4.json' }
+  - key: v3-lint-2-recipe-tokens
+    title: 'Shipped recipes use shipped tokens, and the gate runs the token check over the playground, from lint cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-lint-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-2-recipe-tokens.json' }
+  - key: v3-lint-2-eject-clean
+    title: 'An unedited ejected primitive lints clean, every primitive tested, from lint cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-lint-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-2-eject-clean.json' }
+  - key: v3-lint-2-waiver-ceiling
+    title: 'The waiver ceiling has a raise command and the breach message names it, from lint cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-lint-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-2-waiver-ceiling.json' }
+  - key: v3-lint-2-lint
+    title: 'Missed spellings, an Issue-reference false alarm and wrong-fix messages of the shipped rules, from lint cycle 2'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-2-eject-clean]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-2-lint.json' }
+  - key: v3-lint-2-wiring
+    title: 'A stylelint ignore file fails doctor, check-theme leaves the v3 surface, from lint cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-lint-2-recipe-tokens]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-2-wiring.json' }
+  - key: v3-cycle-lint-3
+    title: 'Improvement cycle 3: lint and guards, misses and false alarms per rule'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-lint-2-recipe-tokens,
+        v3-lint-2-eject-clean,
+        v3-lint-2-waiver-ceiling,
+        v3-lint-2-lint,
+        v3-lint-2-wiring,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-3.json' }

@@ -1,0 +1,25 @@
+{
+  "why": "Lint cycle 2 (docs/v3/cycles/lint-2.md, lint-2.3, P1). A fresh app after `basalt-ui init` has `\"waivers\": 0` in `.basalt/budget.json`. One reasoned waiver (`// oxlint-disable-next-line basalt/dark-fork -- the logo keeps its own dark tone`) makes `basalt-ui lint` exit 1 with `1 waivers is above the ceiling 0 in .basalt/budget.json; remove waivers, or raise it with basalt-ui eject --raise \"<named consumer>\"`. That route does not exist for waivers: `eject --raise` without a primitive is refused, `eject badge --reason x --raise \"probe consumer\"` writes a raise row for `ejects` (from 3 to 3) and leaves the waiver ceiling at 0, and `lint --stats --write-budget` answers `a ceiling only goes up with basalt-ui eject --raise`. Every table rule's message names a reasoned waiver as its `Next:` rung, and waiver-needs-reason teaches the `-- <why>` shape, so an app that follows a message to its last rung has a red gate and no command to answer it. The playground, which has no budget file, carries three reasoned lint waivers, each justified in the cycle file.",
+  "what": "The waiver ceiling can be raised the way the ledger intends, by a command that records a named consumer, and the breach message names that command.",
+  "owns": [
+    "packages/basalt-ui/src/cli/lint/index.ts and stats.ts (the breach message and the budget read)",
+    "packages/basalt-ui/src/cli/eject/ledger.ts (or wherever the raise rows are written)",
+    "packages/basalt-ui/docs/eject.md and the lint verb's doc (the raise route)",
+    "their tests"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/**",
+    "packages/basalt-ui/src/lint/rules/**"
+  ],
+  "change": "Give the waivers ceiling (and the escapes ceiling, which has the same shape) a raise that appends a raises row naming the field, the from and to counts and a named consumer, through the verb the budget belongs to (for example `basalt-ui lint --raise waivers \"<named consumer>\"`, or `eject --raise` taking the field); keep the ratchet: a ceiling still only goes up through that row. The breach message names the exact command for the field it reports. Read guardrails section 9 for whether a fresh app starts at 0; if it does, the init output or the AGENTS block says how the first waiver is raised.",
+  "commits": "fix: one commit in packages/basalt-ui.",
+  "proof": "The lint-2.3 probe: a fresh app with one reasoned waiver; the message's command lifts the ceiling to 1 with a raises row, and `basalt-ui lint` exits 0.",
+  "acceptance": [
+    "The waivers ceiling has a raise command that writes a raises row with a named consumer (test)",
+    "The breach message names that command for the field it reports (test)",
+    "A raise without a named consumer, or a hand edit above the base ref, is still refused (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The rule messages' `Next:` texts (v3-lint-2-lint); the ejects ceiling's existing raise."
+}

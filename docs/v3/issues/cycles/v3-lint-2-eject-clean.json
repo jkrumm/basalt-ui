@@ -1,0 +1,26 @@
+{
+  "why": "Lint cycle 2 (docs/v3/cycles/lint-2.md, lint-2.2, P1). `basalt-ui eject button --reason x` then `basalt-ui lint` in a fresh app at profile app reports 5 findings on the unedited seed: `src/components/ui/button.tsx:24 basalt/tw-off-law: 'forced-colors:border-current': Status, Lozenge, DeltaBadge or Num tone own colour in app code`, and on line 26 the same for `bg-bad-tint`, `text-bad`, `hover:bg-bad-tint/80`, plus `'hover:bg-bad-tint/80': Use the pre-mixed token as it is`. The zone E override in `.oxlintrc.basalt.json` switches off app-spacing, primitive-bypass, shadcn/no-restyle and no-arbitrary-values only. v3-lint-1-eject-zones' acceptance was 'An ejected primitive lints clean right after eject'; its PR (0b0a7d08) recorded the 5 remaining findings as out of scope and filed nothing. The shipped button itself puts an alpha on a pre-mixed tint, the shape alpha-on-premixed bans in app code. An agent that ejects, as the rules tell it to when a primitive does not fit, gets a red lint on code it did not write and learns to waive.",
+  "what": "An unedited ejected primitive lints clean under the consumer preset, every shipped primitive tested, and the shipped primitives obey the token rule they hold apps to.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/class/table.ts (zonesOff of the tw-off-law colour forms only)",
+    "packages/basalt-ui/src/lint/rules/class/detect.ts (if the gate lives there)",
+    "packages/basalt-ui/src/ui/button.tsx (the danger variant's hover) and any other src/ui primitive the test finds",
+    "packages/basalt-ui/configs/oxlint-*.json (regenerated)",
+    "a test under packages/basalt-ui/src/cli/eject or tests/ that ejects every shipped primitive into a scratch app and lints it"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/**",
+    "packages/basalt-ui/src/lint/rule-table.ts ID_CEILING"
+  ],
+  "change": "Decide per tw-off-law form whether an ejected file keeps it (guardrails section 6): the colour forms (app-colour, app-colour-arbitrary) exist for app code and are off in zone E, as primitive-bypass is; alpha-on-premixed stays on, and the shipped button's danger hover stops putting `/80` on `bg-bad-tint` (a hover token, or the tint's own hover role). Regenerate the presets. Add a test that ejects every primitive `basalt-ui eject --all` would eject into a scratch app at profile app and asserts `basalt-ui lint` reports 0 findings on the ejected files; a primitive that fails is fixed at its source, not waived.",
+  "commits": "fix: one or two commits in packages/basalt-ui.",
+  "proof": "The scratch run of lint-2.2 (eject button, lint) reports 0 findings on src/components/ui/button.tsx; the new test passes for every shipped primitive.",
+  "acceptance": [
+    "An unedited ejected primitive lints clean, for every shipped primitive (test)",
+    "No shipped primitive in src/ui puts an alpha on a pre-mixed token",
+    "tw-off-law still reports app-colour in app code outside zone E (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Which rules a bridge root keeps (zone V, unchanged); the class rules' misses (v3-lint-2-lint)."
+}
