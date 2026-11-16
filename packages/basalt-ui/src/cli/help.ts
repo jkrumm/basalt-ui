@@ -99,7 +99,7 @@ export const USAGE =
   'Usage: basalt-ui <--version | init --profile <tokens|bridge|parts|app> [--root <path>]… [--no-install] |\n' +
   '                  sync [--check] [--force] |\n' +
   '                  doctor [--from <x.y.z>] | lint [--file <p>… | --changed | --stats | --raise <field> --consumer <who>] | tokens:css | fonts:css |\n' +
-  '                  shot <route…> | shot detect | help>\n\n' +
+  '                  eject <name | --all | --adopt <path>> --reason <why> | shot <route…> | shot detect | help>\n\n' +
   'tokens:css [--accent <#hex>] [--neutral <zinc|neutral|stone|slate>] [--vibrancy <-4..5>]\n' +
   '           [--selector <:root[attr]>] [--extra <file>] [--format <css|json>] [--out <path>] [--check]\n' +
   '  Emit the --vx-* stylesheet (stdout unless --out). Defaults emit the stock identity; commit the output as your tokens file.\n' +
@@ -187,7 +187,7 @@ export const USAGE =
   'invocation cwd — nothing inferred, nothing descended into (sync alone looks UP for the manifest\n' +
   'that declares the directory).\n' +
   '\n' +
-  'Every subcommand accepts --help / -h to print this message and exit without running.\n' +
+  'Every subcommand accepts --help / -h to print this message and exit without running; `eject --help` prints the eject flags and exit codes.\n' +
   '--version / -v prints the resolved package version and exits 0 — the one command that proves\n' +
   'WHICH basalt-ui ran, which a `bunx` cache can otherwise make a lie. An unknown command or an\n' +
   'unrecognized flag exits 1 and names what it did not understand; neither is ever ignored.'
