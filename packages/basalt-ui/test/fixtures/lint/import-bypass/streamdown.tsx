@@ -15,3 +15,5 @@ import { Markdown } from 'marked-react'
 import { marked } from 'marked'
 // @valid
 import { Markdown } from 'basalt-ui/content'
+// @invalid
+import MarkdownIt from 'markdown-it'

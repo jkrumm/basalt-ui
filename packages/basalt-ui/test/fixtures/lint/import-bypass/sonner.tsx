@@ -11,3 +11,5 @@ import { ToastHost } from 'basalt-ui/page'
 import toast from 'react-hot-toast'
 // @invalid
 import { ToastContainer, toast } from 'react-toastify'
+// @invalid
+import { SnackbarProvider } from 'notistack'

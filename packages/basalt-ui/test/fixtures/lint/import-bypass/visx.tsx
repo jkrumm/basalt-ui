@@ -23,3 +23,9 @@ import { visx } from 'visx-like'
 import ReactECharts from 'echarts-for-react'
 // @invalid
 import * as echarts from 'echarts'
+// @invalid
+import Chart from 'react-apexcharts'
+// @invalid
+import { LineChart } from '@mui/x-charts/LineChart'
+// @valid
+import { Button } from '@mui/material/Button'
