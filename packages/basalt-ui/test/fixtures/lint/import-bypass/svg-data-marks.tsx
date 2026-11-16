@@ -205,6 +205,16 @@ const Rings = (focus, rows) => (
     ))}
   </svg>
 )
+// @valid
+const Rings = memo(function Rings({ rows, focus }) {
+  return (
+    <svg>
+      {rows.map((r, i) => (
+        <circle key={r.id} cx={r.x} {...focus.item(i)} />
+      ))}
+    </svg>
+  )
+})
 // @invalid
 function Rings({ rows, focus }) {
   return (

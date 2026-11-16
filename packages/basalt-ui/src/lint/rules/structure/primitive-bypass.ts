@@ -406,10 +406,22 @@ function passedHandles(param: Node | undefined, names: Set<string>): void {
   }
 }
 
-/** A function that is a call's argument (a `.map` callback, an effect): not a component. */
+/** The wrappers a component is declared through: `memo(function Rings(…))`, `forwardRef(…)`. */
+const COMPONENT_WRAPPERS: ReadonlySet<string> = new Set(['memo', 'forwardRef'])
+
+const calleeName = (call: Node): string | undefined => {
+  const callee = child(call, 'callee')
+  return callee?.type === 'MemberExpression' ? nameOf(child(callee, 'property')) : nameOf(callee)
+}
+
+/** A function that is a call's argument (a `.map` callback, an effect), and not a wrapped component. */
 const isCallback = (fn: Node): boolean => {
   const parent = parentOf(fn)
-  return parent?.type === 'CallExpression' && children(parent, 'arguments').includes(fn)
+  return (
+    parent?.type === 'CallExpression' &&
+    children(parent, 'arguments').includes(fn) &&
+    !COMPONENT_WRAPPERS.has(calleeName(parent) ?? '')
+  )
 }
 
 /**
