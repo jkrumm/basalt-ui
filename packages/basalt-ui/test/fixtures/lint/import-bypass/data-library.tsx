@@ -41,9 +41,13 @@ import * as Ably from 'ably'
 import { useGetRunsQuery } from '@reduxjs/toolkit/query/react'
 // @invalid
 import { createApi } from '@reduxjs/toolkit/query'
+// @invalid
+import { createApi } from '@reduxjs/toolkit/query/react'
 // @valid
 import { configureStore } from '@reduxjs/toolkit'
 // @invalid
 import ReconnectingWebSocket from 'reconnecting-websocket'
 // @invalid
 import PartySocket from 'partysocket'
+// @invalid
+import { usePartySocket } from 'partysocket/react'

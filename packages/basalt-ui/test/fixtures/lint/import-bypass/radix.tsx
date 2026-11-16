@@ -24,7 +24,7 @@ import { Dialog } from 'react-aria-components'
 // @invalid
 import { Dialog } from '@ark-ui/react/dialog'
 // @valid
-import { Dialog } from 'react-aria-lookalike'
+import { useLookalike } from 'react-aria-lookalike'
 // @invalid
 import { Button, Modal } from '@mantine/core'
 // @invalid
@@ -49,3 +49,17 @@ import { Button } from '@heroui/react'
 import { Button } from '@nextui-org/react'
 // @valid
 import { Button } from 'antd-lookalike'
+// @invalid
+import { Button as AntButton } from 'antd'
+// @invalid
+import { Modal } from '@heroui/react'
+// @invalid
+import { Popper } from '@mui/base'
+// @invalid
+import { useDatePicker } from '@react-aria/datepicker'
+// @invalid
+import { ProTable } from '@ant-design/pro-components'
+// @valid
+import AddIcon from '@mui/icons-material/Add'
+// @valid
+import { SearchOutlined } from '@ant-design/icons'

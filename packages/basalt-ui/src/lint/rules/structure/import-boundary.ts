@@ -3,24 +3,28 @@
  * the owned entries. 2.x had these as one hand-copied ban that an `extends` silently replaced; here
  * each route is a form with its own fix token and fixture.
  *
- * Thirteen forms: eight package bans, the engine allowlist, direct `useReactTable` (an import, or a
+ * Fourteen forms: eight package bans, the engine allowlist, direct `useReactTable` (an import, or a
  * re-export of it from a module; `export *` is not read, it names no hook) or a table engine
- * (`@tanstack/table-core`, AG Grid, react-data-grid, MUI X Data Grid), the un-ejected
- * `@/components/ui/*` path, `useChat()` without a `chat` option and persist libraries outside a
- * `StorageLike` adapter. The repo-only rows (layer table, single `host.tsx` importer) are not
- * here: a form carries no profile of its own and this rule ships at `parts` and `app`.
+ * (`@tanstack/table-core`, AG Grid, react-data-grid, MUI X Data Grid, Material React Table), the
+ * un-ejected `@/components/ui/*` path, `useChat()` without a `chat` option, persist libraries
+ * outside a `StorageLike` adapter and `rival-signature`. The repo-only rows (layer table, single
+ * `host.tsx` importer) are not here: a form carries no profile of its own and this rule ships at
+ * `parts` and `app`.
  *
  * The `ui-path` form reads `@/`, `~/`, `#/`, `src/` and relative `components/ui/<name>` paths; an ejected name
- * stays legal however it is spelled. The `radix` form leaves `@radix-ui/react-icons` alone: it is
- * an icon set, and an icon prop takes the icon library's own component; it reads every package of the
- * 2.x UI stack but its hooks set, a set with no UI whose storage
- * hooks `persist-storage` reads. The `visx`, `streamdown`
- * and `persist-storage` forms list the rival packages in the table below.
+ * stays legal however it is spelled. No form reports an icon set (`@radix-ui/react-icons`,
+ * `@mui/icons-material`): an icon prop takes the icon library's own component. The `radix` form
+ * bans a kit's whole npm scope (`@mui/*`, `@heroui/*`, every package of the 2.x UI stack) but the
+ * 2.x stack's hooks set, a set with no UI whose storage hooks `persist-storage` reads. The
+ * `tailwind-merge` form also reads `cn` imported from the shadcn `lib/utils` file, which is clsx
+ * plus twMerge.
  *
- * Every package list is a DENYLIST, not a closed set: it names the rivals an agent reaches for first
- * in each category (headless primitives, form widgets, chart libraries, data and router libraries,
- * persistence, table engines, markdown renderers, realtime transports); an unlisted package in
- * the same category passes until it is added to its form.
+ * Two layers decide what a rival is (the Spec on lint-7.5). The ban rows are a DENYLIST, the
+ * precise layer: each names the rival packages an agent reaches for first in its category and the
+ * basalt part that replaces them. Under it, `rival-signature` reads a package on no row and outside
+ * the stack by its signature: a category word in its name or an overlay, picker or grid it is
+ * imported for. An allow list in place of the rows was measured and rejected: it lost 29 of 111
+ * seeds and reported domain libraries (React Email's `Button`, react-leaflet's `Tooltip`).
  *
  * Option: `{ ejected?: string[] }`, the paths of `manifest.ejected`. An entry may be a
  * `@/components/ui/<name>` specifier or a file path under `components/ui/`. An ejected file is the
@@ -75,6 +79,7 @@ const STORAGE_PACKAGES: ReadonlySet<string> = new Set([
   '@nanostores/persistent',
   '@tanstack/query-sync-storage-persister',
   '@tanstack/query-async-storage-persister',
+  '@tanstack/react-query-persist-client',
   'idb-keyval',
   'localforage',
 ])
@@ -108,6 +113,13 @@ const stringValue = (node: Node | undefined): string | undefined =>
 const nameOf = (node: Node | undefined): string | undefined =>
   node?.type === 'Identifier' ? (node['name'] as string) : undefined
 
+/** The names a declaration imports or re-exports by name (`{ Dialog }`, `export { Dialog } from`). */
+const importedNames = (node: Node): string[] =>
+  children(node, 'specifiers').flatMap((s) => {
+    const name = nameOf(child(s, 'imported')) ?? nameOf(child(s, 'local'))
+    return s.type === 'ImportSpecifier' || s.type === 'ExportSpecifier' ? [name ?? ''] : []
+  })
+
 /** `pkg` itself or any subpath of it. */
 const within = (source: string, pkg: string): boolean =>
   source === pkg || source.startsWith(`${pkg}/`)
@@ -115,6 +127,22 @@ const within = (source: string, pkg: string): boolean =>
 /** A listed package, or `name*` for a family (`victory-*`): the package itself, a subpath or a sibling. */
 const listed = (source: string, entry: string): boolean =>
   entry.endsWith('*') ? source.startsWith(entry.slice(0, -1)) : within(source, entry)
+
+/** The npm package a specifier names: `@scope/name` or `name`, without the subpath. */
+const packageOf = (source: string): string =>
+  source
+    .split('/')
+    .slice(0, source.startsWith('@') ? 2 : 1)
+    .join('/')
+
+/**
+ * An icon set (`@radix-ui/react-icons`, `@mui/icons-material`, `react-icons`, lucide): an icon prop
+ * takes the icon library's own component, so no form reports one, even inside a banned kit's scope.
+ */
+const isIconSet = (source: string): boolean => {
+  const pkg = packageOf(source)
+  return pkg === 'lucide-react' || /icons?(?:[-/]|$)/.test(pkg)
+}
 
 /**
  * Every module specifier in a file: static imports, re-exports, `import()` and `require()` with a
@@ -160,32 +188,35 @@ const isEjectedFile = (context: RuleContext): boolean => {
 }
 
 /**
- * A package ban. Each list is a DENYLIST of the rival packages an agent reaches for first, not a
- * closed set: an unlisted package in the same category passes. The categories are headless
- * primitives, form widgets, chart libraries, data and router libraries, persistence, table
- * engines, markdown renderers and realtime transports. A new rival is a line in its form.
+ * A package ban: one row of the DENYLIST of the rival packages an agent reaches for first. An entry
+ * is a package, a `name*` family or a whole npm scope (`@mui/*`); an icon set never reports. A
+ * package on no list is read by `rival-signature` below. A new rival is a line in its row.
  */
-const packageForm = (
-  id: string,
-  packages: readonly string[],
-  fix: string,
-  next: string,
-  {
-    allowInEjected = false,
-    except = [],
-  }: { allowInEjected?: boolean; except?: readonly string[] } = {},
-): AstForm => ({
-  id,
+type PackageBan = {
+  readonly id: string
+  readonly packages: readonly string[]
+  readonly fix: string
+  readonly next: string
+  readonly allowInEjected?: boolean
+  readonly except?: readonly string[]
+}
+
+const isBanned = ({ packages, except = [] }: PackageBan, source: string): boolean =>
+  !isIconSet(source) &&
+  !except.some((pkg) => listed(source, pkg)) &&
+  packages.some((pkg) => listed(source, pkg))
+
+const packageForm = (ban: PackageBan): AstForm => ({
+  id: ban.id,
   detect: ({ context, report }) => {
-    if (allowInEjected && isEjectedFile(context)) return {}
+    if (ban.allowInEjected === true && isEjectedFile(context)) return {}
     return sourceVisitor((node, source) => {
-      if (except.some((pkg) => listed(source, pkg))) return
-      if (packages.some((pkg) => listed(source, pkg))) report(node, source)
+      if (isBanned(ban, source)) report(node, source)
     })
   },
-  fix,
-  next,
-  fixture: `import-bypass/${id}.tsx`,
+  fix: ban.fix,
+  next: ban.next,
+  fixture: `import-bypass/${ban.id}.tsx`,
 })
 
 const isAllowedEngineSubpath = (subpath: string): boolean => {
@@ -211,8 +242,8 @@ const engineOutsideList: AstForm = {
 
 /**
  * Table engines a consumer builds a table on instead of DataTable: TanStack Table's framework-free
- * core (`createTable`), AG Grid, react-data-grid, MUI X Data Grid (`@mui/x-data-grid*`, its -pro
- * and -premium too), Material React Table and Mantine React Table. `@tanstack/react-table` itself stays legal for its column types
+ * core (`createTable`), AG Grid, react-data-grid and MUI X Data Grid (`@mui/x-data-grid*`, its -pro
+ * and -premium too). `@tanstack/react-table` itself stays legal for its column types
  * and helpers; its hook is read by name below.
  */
 const TABLE_PACKAGES: readonly string[] = [
@@ -400,10 +431,10 @@ const persistRoute: AstForm = {
   fixture: 'import-bypass/persist-storage.tsx',
 }
 
-const FORMS: readonly AstForm[] = [
-  packageForm(
-    'base-ui',
-    [
+const PACKAGE_BANS: readonly PackageBan[] = [
+  {
+    id: 'base-ui',
+    packages: [
       '@base-ui/react',
       '@base-ui-components/react',
       'react-day-picker',
@@ -413,49 +444,52 @@ const FORMS: readonly AstForm[] = [
       'react-window',
       'react-datepicker',
     ],
-    'Import the owned primitive from basalt-ui/ui/<name>: date-picker, virtual-list',
-    'Eject the primitive with basalt-ui eject, then edit the copy',
-    { allowInEjected: true },
-  ),
-  packageForm(
-    'radix',
-    [
+    fix: 'Import the owned primitive from basalt-ui/ui/<name>: date-picker, virtual-list',
+    next: 'Eject the primitive with basalt-ui eject, then edit the copy',
+    allowInEjected: true,
+  },
+  {
+    id: 'radix',
+    // A kit's whole npm scope: `@mui/*` but its charts and grids, which `visx` and
+    // `react-table-hook` name, and `@ant-design/*` but its charts.
+    packages: [
       '@radix-ui',
       'radix-ui',
       'vaul',
-      '@headlessui/react',
-      '@floating-ui/react',
-      '@floating-ui/react-dom',
+      '@headlessui',
+      '@floating-ui',
       'react-aria-components',
+      'react-aria',
+      '@react-aria',
+      '@react-stately',
       '@ark-ui',
       '@mantine',
       '@chakra-ui',
-      '@mui/material',
-      '@mui/joy',
-      'react-aria',
+      '@mui/*',
       'antd',
+      '@ant-design/*',
       '@heroui',
       '@nextui-org',
     ],
-    'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, Mantine, Chakra, MUI, React Aria, Ark and Floating UI are not in the stack',
-    'Eject the primitive with basalt-ui eject, then edit the copy',
-    { except: ['@radix-ui/react-icons', '@mantine/hooks'] },
-  ),
-  packageForm(
-    'cmdk',
-    ['cmdk', 'react-cmdk', 'kbar'],
-    'Use CommandPalette from basalt-ui/shell (+0.9 KB against cmdk +16.0 KB and 24 packages)',
-    'defineCommands lists a command in the palette',
-  ),
-  packageForm(
-    'sonner',
-    ['sonner', 'react-hot-toast', 'react-toastify', 'notistack'],
-    'Call notify() and mount ToastHost from basalt-ui/page',
-    'ui/toast for a toast with its own placement',
-  ),
-  packageForm(
-    'streamdown',
-    [
+    fix: 'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, Mantine, Chakra, MUI, Ant Design, HeroUI, React Aria, Ark and Floating UI are not in the stack',
+    next: 'Eject the primitive with basalt-ui eject, then edit the copy',
+    except: ['@mantine/hooks', '@mui/x-*', '@ant-design/charts', '@ant-design/plots'],
+  },
+  {
+    id: 'cmdk',
+    packages: ['cmdk', 'react-cmdk', 'kbar'],
+    fix: 'Use CommandPalette from basalt-ui/shell (+0.9 KB against cmdk +16.0 KB and 24 packages)',
+    next: 'defineCommands lists a command in the palette',
+  },
+  {
+    id: 'sonner',
+    packages: ['sonner', 'react-hot-toast', 'react-toastify', 'notistack'],
+    fix: 'Call notify() and mount ToastHost from basalt-ui/page',
+    next: 'ui/toast for a toast with its own placement',
+  },
+  {
+    id: 'streamdown',
+    packages: [
       'streamdown',
       'react-markdown',
       'markdown-to-jsx',
@@ -465,18 +499,18 @@ const FORMS: readonly AstForm[] = [
       'showdown',
       'react-remark',
     ],
-    'Render model text with Markdown contentTrust from basalt-ui/content',
-    'partView for a streamed part',
-  ),
-  packageForm(
-    'tailwind-merge',
-    ['tailwind-merge', 'tailwind-variants', 'classnames'],
-    'Compose classes with cn() from basalt-ui; twMerge drops text-red-500 beside text-display',
-    'A cva variant per state',
-  ),
-  packageForm(
-    'visx',
-    [
+    fix: 'Render model text with Markdown contentTrust from basalt-ui/content',
+    next: 'partView for a streamed part',
+  },
+  {
+    id: 'tailwind-merge',
+    packages: ['tailwind-merge', 'tailwind-variants', 'clsx', 'classnames'],
+    fix: 'Compose classes with cn() from basalt-ui; twMerge drops text-red-500 beside text-display',
+    next: 'A cva variant per state',
+  },
+  {
+    id: 'visx',
+    packages: [
       '@visx',
       'recharts',
       'react-apexcharts',
@@ -492,39 +526,261 @@ const FORMS: readonly AstForm[] = [
       'victory',
       'victory-*',
       '@observablehq/plot',
+      '@ant-design/charts',
+      '@ant-design/plots',
     ],
-    'Use a chart kind from basalt-ui/charts, or CartesianChart marks',
-    'Compose the mark from the allowed engine subpaths',
-  ),
-  packageForm(
-    'data-library',
-    [
+    fix: 'Use a chart kind from basalt-ui/charts, or CartesianChart marks',
+    next: 'Compose the mark from the allowed engine subpaths',
+  },
+  {
+    id: 'data-library',
+    packages: [
       'swr',
-      '@reduxjs/toolkit/query',
       '@apollo/client',
       'socket.io-client',
-      'reconnecting-websocket',
-      'partysocket',
       '@microsoft/fetch-event-source',
       'react-use-websocket',
+      'reconnecting-websocket',
+      'partysocket',
       'nuqs',
       'react-router',
       'react-router-dom',
       'pusher-js',
       'ably',
       'react-query',
+      '@reduxjs/toolkit/query',
       'urql',
       'wouter',
       'use-query-params',
     ],
-    'Fetch through the query client and liveQuery from basalt-ui/data, open a stream with createChannel, and keep routes and URL state in basalt-ui/router (a field; TanStack Router, never react-router)',
-    'createChannel takes the Transport seam, so a socket is one adapter',
+    fix: 'Fetch through the query client and liveQuery from basalt-ui/data, open a stream with createChannel, and keep routes and URL state in basalt-ui/router (a field; TanStack Router, never react-router)',
+    next: 'createChannel takes the Transport seam, so a socket is one adapter',
+  },
+]
+
+/** The shadcn utils file (`@/lib/utils`, `~/lib/utils`, `../lib/utils`): its `cn` is clsx plus twMerge. */
+const isShadcnUtils = (source: string): boolean =>
+  /^(?:[@~#]\/|src\/|(?:\.{1,2}\/)+(?:[^/]+\/)*?)lib\/utils(?:\.[cm]?[jt]sx?)?$/.test(source)
+
+/**
+ * A ban row that also reads the shadcn utils file: `import { cn } from '@/lib/utils'` is the
+ * `tailwind-merge` row's defect under a local name.
+ */
+const withShadcnCn = (form: AstForm): AstForm => ({
+  ...form,
+  detect: (args) =>
+    mergeVisitors([
+      form.detect(args),
+      sourceVisitor((node, source) => {
+        if (isShadcnUtils(source) && importedNames(node).includes('cn'))
+          args.report(node, `cn from ${source}`)
+      }),
+    ]),
+})
+
+/** Every package a row bans; `rival-signature` leaves them to their row. */
+const isOnAList = (source: string): boolean =>
+  PACKAGE_BANS.some((ban) => isBanned(ban, source)) ||
+  within(source, ENGINE) ||
+  TABLE_PACKAGES.some((pkg) => listed(source, pkg)) ||
+  [...STORAGE_PACKAGES].some((pkg) => within(source, pkg)) ||
+  STORAGE_NAMES[source] !== undefined
+
+/**
+ * The stack's own packages, which `rival-signature` never reads: basalt-ui's peers and
+ * dependencies (a unit test holds every one of them here or on a ban row) and the scopes below.
+ */
+const STACK_PACKAGES: ReadonlySet<string> = new Set([
+  'basalt-ui',
+  'react',
+  'react-dom',
+  'ai',
+  'motion',
+  'd3-scale',
+  'class-variance-authority',
+  'rehype-sanitize',
+  'remark-gfm',
+  'remend',
+  'shiki',
+  'beautiful-mermaid',
+  'eventsource-parser',
+  'tailwindcss',
+  'vite',
+  'vite-plugin-pwa',
+  'stylelint',
+  'postcss-html',
+])
+const STACK_SCOPES: readonly string[] = [
+  '@tanstack',
+  '@ai-sdk',
+  '@base-ui',
+  '@internationalized',
+  '@shikijs',
+  '@fontsource-variable',
+  '@shadcn',
+  '@axe-core',
+  '@types',
+]
+
+/** The first segment of a `baseUrl`-rooted path an app writes (`components/DataTable`), not a package. */
+const LOCAL_ROOTS: ReadonlySet<string> = new Set([
+  'src',
+  'app',
+  'components',
+  'features',
+  'lib',
+  'hooks',
+  'utils',
+  'pages',
+  'routes',
+  'modules',
+  'shared',
+])
+
+/** A package specifier: not relative, not an alias (`@/`, `~/`, `#/`), not `node:` or `bun:`. */
+const isPackage = (source: string): boolean =>
+  !/^(?:\.|\/|[@~#]\/|[a-z]+:)/.test(source) && !LOCAL_ROOTS.has(source.split('/')[0] ?? '')
+
+const isStack = (source: string): boolean => {
+  const pkg = packageOf(source)
+  return STACK_PACKAGES.has(pkg) || STACK_SCOPES.some((scope) => pkg.startsWith(`${scope}/`))
+}
+
+type RivalPart = {
+  readonly kind: string
+  readonly part: string
+  /** Words a package name starts a segment with (`react-hot-toast`, `@uiw/react-markdown-preview`). */
+  readonly words: string
+  /** Named imports of a part basalt owns the behaviour of: an overlay, a picker, a grid. */
+  readonly names?: readonly string[]
+  readonly suffix?: RegExp
+  /** A storage route: an adapter file (one that names `StorageLike`) may import it. */
+  readonly storage?: true
+}
+
+/**
+ * The parts basalt ships, by the signature a rival package carries. Generic names (`Button`,
+ * `Card`, `Tooltip`, `Menu`, `Table`) are left out on purpose: domain libraries reuse them
+ * (React Email's `Button`, react-leaflet's `Tooltip`).
+ */
+const RIVAL_PARTS: readonly RivalPart[] = [
+  {
+    kind: 'chart',
+    part: 'a chart kind from basalt-ui/charts',
+    words: 'charts?|plotly',
+    suffix: /Chart$/,
+  },
+  { kind: 'markdown', part: 'Markdown from basalt-ui/content', words: 'markdown|marked' },
+  {
+    kind: 'toast',
+    part: 'notify() from basalt-ui',
+    words: 'toast|snackbar',
+    names: ['Toaster', 'Snackbar'],
+  },
+  {
+    kind: 'table',
+    part: 'DataTable from basalt-ui/table',
+    words: 'table|data-?grid',
+    names: ['DataGrid', 'DataTable'],
+  },
+  {
+    kind: 'command palette',
+    part: 'CommandPalette from basalt-ui/shell',
+    words: 'cmdk|kbar|command-?palette',
+    names: ['CommandPalette', 'Spotlight'],
+  },
+  {
+    kind: 'dialog',
+    part: 'basalt-ui/ui/dialog or ui/sheet',
+    words: 'modal|dialog|drawer',
+    names: ['Dialog', 'AlertDialog', 'Modal', 'Drawer', 'Sheet'],
+  },
+  {
+    kind: 'popover',
+    part: 'basalt-ui/ui/popover or ui/tooltip',
+    words: 'popover|tooltip',
+    names: ['Popover'],
+  },
+  {
+    kind: 'combobox',
+    part: 'basalt-ui/ui/combobox',
+    words: 'combobox',
+    names: ['Combobox', 'Autocomplete'],
+  },
+  {
+    kind: 'date picker',
+    part: 'basalt-ui/ui/date-picker',
+    words: 'date-?picker|day-?picker',
+    names: ['DatePicker', 'DateRangePicker', 'DayPicker'],
+  },
+  {
+    kind: 'storage',
+    part: 'persisted(key) from basalt-ui',
+    words: 'local-?storage|session-?storage|persist',
+    storage: true,
+  },
+]
+
+const wordOf = (part: RivalPart): RegExp => new RegExp(`(?:^|[-/@.])(?:${part.words})`)
+const BY_WORD: readonly (readonly [RegExp, RivalPart])[] = RIVAL_PARTS.map((p) => [wordOf(p), p])
+
+/** The part a package reads as, by its name first, then by what it is imported for. */
+const rivalOf = (node: Node, source: string): { part: RivalPart; by: string } | undefined => {
+  const pkg = packageOf(source)
+  const byWord = BY_WORD.find(([word]) => word.test(pkg))?.[1]
+  if (byWord) return { part: byWord, by: 'its name' }
+  for (const name of importedNames(node)) {
+    const part = RIVAL_PARTS.find(
+      (p) => p.names?.includes(name) === true || p.suffix?.test(name) === true,
+    )
+    if (part) return { part, by: `its ${name}` }
+  }
+  return undefined
+}
+
+/**
+ * `rival-signature`: a package on no ban row and outside the stack that reads as a part basalt
+ * ships, by a word in its name (`react-modal`, `lightweight-charts`) or by the overlay, picker or
+ * grid it is imported for (`{ Dialog } from 'primereact/dialog'`). It catches the next ring of
+ * rivals before a cycle seeds them; a package that only shares a word is waived on its line.
+ */
+const rivalSignature: AstForm = {
+  id: 'rival-signature',
+  detect: ({ report }) => {
+    const found: { node: Node; subject: string; storage: boolean }[] = []
+    let adapter = false
+    return {
+      ...sourceVisitor((node, source) => {
+        if (!isPackage(source) || isStack(source) || isIconSet(source) || isOnAList(source)) return
+        const rival = rivalOf(node, source)
+        if (!rival) return
+        const subject = `${source}, a ${rival.part.kind} package by ${rival.by}; basalt's is ${rival.part.part}`
+        found.push({ node, subject, storage: rival.part.storage === true })
+      }),
+      Identifier(node) {
+        if (node['name'] === 'StorageLike') adapter = true
+      },
+      'Program:exit'() {
+        for (const { node, subject, storage } of found)
+          if (!(storage && adapter)) report(node, subject)
+      },
+    }
+  },
+  fix: "A package outside basalt's stack for a part basalt ships: import basalt's part, which the subject names",
+  next: 'A package that only shares the word is waived on its line, with the reason',
+  fixture: 'import-bypass/rival-signature.tsx',
+}
+
+const FORMS: readonly AstForm[] = [
+  ...PACKAGE_BANS.map((ban) =>
+    ban.id === 'tailwind-merge' ? withShadcnCn(packageForm(ban)) : packageForm(ban),
   ),
   engineOutsideList,
   directReactTable,
   uiPath,
   useChatWithoutChat,
   persistRoute,
+  rivalSignature,
 ]
 
 export const IMPORT_BOUNDARY: RuleEntry = {
