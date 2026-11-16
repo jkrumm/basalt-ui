@@ -232,173 +232,49 @@ framework-agnostic and does not guess at the boundary.
 
 ## Configuration (the `basalt` key)
 
-`check-theme` scans `src/` by default; `init` writes a real `"basalt"` key from your actual layout,
-and everything derives from it — the guard's scan, the seeded CI `oxfmt` globs, the default scan
-exemption:
+`init` writes a real `"basalt"` key from your actual layout, and everything derives from it — the
+lint and stylelint scan, the seeded CI `oxfmt` globs, the rule `paths:`:
 
 ```json
 // package.json — `roots` is written by init and backfilled by sync; the rest are yours to add
 {
   "basalt": {
-    "roots": ["apps/web/src"],
-    "include": ["app/manifest.json"],
-    "profile": "tokens-only",
-    "exemptRules": {
-      "inline-display": ["agent"],
-      "raw-hex": {
-        "paths": ["public/site.webmanifest"],
-        "reason": "a PWA manifest theme_color MUST be a literal hex — JSON cannot reference a CSS var"
-      }
-    }
+    "roots": ["apps/web/src"]
   }
 }
 ```
 
-`check-theme` fails loudly (instead of a false `✓`) when the configured roots resolve to zero
-scanned files; `doctor` check 5 says the same of the v3 lint and stylelint scans. Each root's **parent** also
-contributes its `index.html` and its `public/` tree — the Vite layout `basaltViteConfig` assumes,
-and where a raw `theme-color` or webmanifest `background_color` actually lives. `.json` is never
-blanket-scanned; `include` names one explicitly and is the only route to it. `profile:
-"tokens-only"` turns off the 16 kinds whose remedy is a Mantine component or prop, and must be
-declared (or `--tokens-only`) — it is deliberately never inferred from a missing `@mantine/core`,
-which would silence half the guard on any repo keeping Mantine in a different workspace package.
-Other keys (`exempt`, `severity`, `spacingSteps`, `forbiddenAccents`, …) are documented on the
-`BasaltConfig` type.
+`doctor` check 5 fails loudly (instead of a false `✓`) when the configured roots resolve to zero
+files for the v3 lint and stylelint scans. Each root's **parent** also contributes its `index.html`
+and its `public/` tree — the Vite layout `basaltViteConfig` assumes. The keys of the 2.x text guard
+(`exempt`, `include`, `profile`, `severity`, `exemptRules`, `spacingSteps`, `forbiddenAccents`,
+`rawRadius` and the per-kind switches) are gone with `check-theme`; `MIGRATING.md` lists the row.
 
-**`exemptRules`** turns one kind off along a path. A pattern is a relative path
-(`public/site.webmanifest`, or `src/agent` for everything under it), a glob (`*` stops at `/`, `**`
-does not, and a slash-free glob is also tried against the basename, so `*.module.css` works), A bare
-segment (`agent`) matches only a root-level path, never `src/agent`. The object form records the
-reason, which is what a `theme-allow` always carried and this key could not. A pattern that
-suppresses nothing is now reported by a normal run and fails `--audit-allows`.
+`sync` **backfills `roots`** when the key is absent. A declared value is never overwritten; a
+layout it does not cover is reported as one line, because `roots` being a subset is the normal case
+in a monorepo, not drift.
 
-`sync` **backfills `roots`** when the key is absent — only `init` used to write it, so every
-existing consumer stayed on the undeclared `src` default while the guard passed anyway. A
-declared value is never overwritten; a layout it does not cover is reported as one line, because
-`roots` being a subset is the normal case in a monorepo, not drift.
-
-Basalt-emitted LINES are skipped, not whole files. The file has to earn it first — a `.css` path,
-the `@generated basalt-ui` header verbatim on line 1, the version + invocation line on line 2 — and
-then each line does too: at brace depth 0 a selector or a self-closing comment, inside a block only
-a `--vx-*` / `--basalt-*` declaration whose value carries no `;`, a `}`, or a comment. So the
-stylesheet `tokens:css` just wrote is not reported back at you, pasting the marker into a `.tsx`
-suppresses nothing, and an ordinary declaration smuggled into a sheet wearing the header is
-reported on its own line.
-
-**The escape hatch is scoped, and since 1.21.0 the two scopes are spelled apart:**
+**The escape hatch is scoped, and the two scopes are spelled apart:**
 
 ```text
-theme-allow                                  → nothing                      (reports theme-allow-unscoped)
-theme-allow <id>[, <id>…] [— <why>]          → this node/line, those rules
-theme-allow-file <id>[, <id>…] — <why>       → the WHOLE FILE, those rules
-"basalt:theme-allow[-file]": "<id>… — <why>" → the same two, for JSON / .webmanifest
+theme-allow                                  → nothing
+theme-allow <id>[, <id>…] [— <why>]          → this node/line, that `basalt/*` plugin rule
+theme-allow-file <id>[, <id>…] — <why>       → the WHOLE FILE, that rule
 ```
 
 An annotation must **start** its comment (after `//`, `/*`, `<!--`, a block gutter `*`, or
-whitespace) — before 1.21.0 any comment merely mentioning the token parsed as a blanket waiver, so a
-file documenting its own waivers disarmed itself; a bare annotation now waives nothing. Placements: the reported line, a comment-only
+whitespace); a bare annotation waives nothing. Placements: the reported line, or a comment-only
 line directly above it (the only form JSX can express, and it reaches the first CODE line below,
-walking through the rest of its comment block), or — in CSS — a trailing comment reaching back over
-the declaration it terminates. The id slot is read strictly: a word there that names no rule waives
-nothing, so a typo never widens a waiver.
-
-`basalt-ui check-theme --audit-allows` reports every annotation and every `exemptRules` entry with
-what it still suppresses, proved by re-running the scan with that one waiver neutralized. Exits 1 on
-a dead waiver, so it is usable as a CI gate. Since 1.22.0 it runs **both** halves — `checkSource` for
-a guard kind, oxlint over one neutralized sibling file for a plugin rule — so a waiver naming
-a plugin rule is judged rather than skipped. **It needs oxlint reachable**; where it is not, the
-verdict is "cannot judge", never "dead". The report prints the scope it audited, because `0 dead`
-over `basalt.roots` is not `0 dead anywhere`. Two known gaps: `basalt.exempt` is not audited at all,
-and the `scoped to …` line does not distinguish `theme-allow` from `theme-allow-file`.
-
-`doctor` check 3 carries `ai-major-parity`: `ai` must be on one major across the workspace packages
-(declared and installed), and `@ai-sdk/react` must sit on the major that pairs with it (`ai` 7 with
-`@ai-sdk/react` 4: the react major is the `ai` major minus 3). A split between packages that is
-intentional is written down, and the written reason is the exemption:
-
-```json
-// package.json (repo root)
-{
-  "basalt": {
-    "aiMajorSkewReason": "apps/api streams on ai@5, apps/dashboard parses on ai@7 — the one enum value that differs is neutralized by a producer-side TransformStream in apps/api/src/stream-transform.ts"
-  }
-}
-```
-
-The value **is** the reason: omitting the key, or setting it to `true` or `""`, exempts nothing. The
-
----
-
-## The root
-
-The root barrel, `basalt-ui`, holds the state seams only (`persisted`, `notify`, `createChannel`,
-`externalField`, `useNow`, `createFormat`, `useFormat`). A v3 app wires itself through `basalt-ui/router` (`BasaltProvider`,
-`routerDefaults`) and `basalt-ui/data` (`createQueryClient`, `unwrap`). The 2.x provider, router
-factory, command bus, agent runtime, form adapter and store layer are removed: every symbol and its
-replacement is a row in [`MIGRATING.md`](./MIGRATING.md).
-
-### Theming
-
-The shipped palette isn't a fixed set of hexes — it's **generated** from one accent seed + five
-bounded knobs (`tokens/derive.ts`), with contrast guaranteed by derivation rather than hand-tuning.
-Never hand-edit a palette hex to retune the identity. The 2.x entry, `createBasaltTheme`, is removed
-with the Mantine theme it built; its row in [`MIGRATING.md`](./MIGRATING.md) names the replacement.
-
-```tsx
-// Shell — header, rail, one scrollport and (on a phone) a tab bar, resolved against the router from `nav`
-import { AppShell } from 'basalt-ui/shell'
-import { PageBar } from 'basalt-ui/page'
-```
-
----
-
-## Subpath exports
-
-The subpaths below, plus the v3 ones a new app imports: `./shell` (`AppShell`), `./router`, `./data`, `./page`, `./cards`, `./ai`, `./ui/*` and `./core/*`; each is a `## basalt-ui/<subpath>` section of `llms.txt`. One import path per symbol; named exports only — no default exports.
-
-| Subpath        | Purpose                                                                                                                                                      |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `.`            | The state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`, `useFormat`). Reaches no subpath-required peer.          |
-| `./tokens`     | **Mantine-free.** `VX` token refs, `alpha`, `defineSeries`, `seriesTokens`, `groupTokens`, `buildPaletteCss`, layout (`BP`, `p`, `CONTAINER_*`)              |
-| `./charts`     | **Mantine-free.** `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip` kinds, `ChartCard`, `chartCursor` on `@tanstack/charts`            |
-| `./controls`   | `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot`, `FormField`, `FormRow`, `FormFooter`, `useFormDraft`, `toSubmitErrors` |
-| `./table`      | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`, the contract types                                                       |
-| `./content`    | `Markdown` (required `contentTrust`; the untrusted arm renders no images)                                                                                    |
-| `./vite`       | `basaltViteConfig(opts)` preset, `basalt(opts)` build gates, sources.css, head / manifest                                                                    |
-| `./styles.css` | The one stylesheet: `@layer basalt` base styles, iOS input floor, fonts                                                                                      |
-| `./configs/*`  | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                              |
-
-**Static pages and CSS entries.** `./tokens.css`, `./typography.css`, `./prose.css` and `./fonts.css` are plain CSS with no JS, Tailwind or framework behind them, so an Astro or any static page takes the same tokens as an app: `@import 'basalt-ui/tokens.css'` (and the others it needs). `./table.css` is the same kind of entry (the table tiers, in `@layer basalt.table`); `basalt()` imports it for any module that imports `./table`; an app without the plugin imports it itself. `./tailwind.css` is the Tailwind 4 bridge and the only one that needs Tailwind.
-
-`basalt-ui tokens:css` emits the prebuilt `--vx-*` stylesheet. Every dropped 1.x subpath and its new home:
-[`MIGRATING.md`](./MIGRATING.md) § 2.x to 3.0.
-
----
-
-## Framework-free boundary
-
-`./charts` and `./tokens` import no UI framework. `@visx/*` is banned everywhere, and `@tanstack/charts/react` is imported by `src/charts/host.tsx` alone. The root barrel (`.`) does not re-export `./charts` or `./tokens`.
-
-The boundary protects two things. First, layering: `tokens` is pure data that `charts` reads, so a chart cannot fork the palette. Second, packaging: `./charts` and `./tokens` resolve and render with only `react`/`react-dom` installed, real and CI-tested (`scripts/pack-test.sh`'s "charts/tokens-only resolution + render" step scratch-installs the tarball and SSR-renders `basalt-ui/charts`; `scripts/check-dist-layering.mjs` walks the built dist graph; the root barrel not re-exporting them is the third leg). It is enforced by the repo-local-only `basalt/token-layer-boundary` oxlint plugin rule, a basalt-internal invariant and not a consumer contract, so it is deliberately absent from the shipped consumer preset. The chart-engine part (`basalt/chart-engine-boundary`: no `@visx/*`, and `@tanstack/charts` only through an allowlist of mark subpaths) IS shipped, so that constraint holds downstream too.
-
----
-
-## Token system (`--vx-*`, three tiers)
-
-```
-Tier 1 — Palette data     Pure data + string helpers (BP, p()). Zero React, zero Mantine, zero browser.
-Tier 2 — CSS variables    Emitted as --vx-* custom properties under light/dark color-scheme. Pure CSS.
-Tier 3 — Token refs       VX.* — just var(--vx-*) strings. Work in components and non-component files.
-```
-
-Apply opacity with `alpha(token, a)` (backed by `color-mix`) — never `rgba()`, so the hue keeps resolving per scheme.
+walking through the rest of its comment block). The id slot is read strictly: a word there that
+names no rule waives nothing, so a typo never widens a waiver. The ids of the retired 2.x text guard
+still parse, as dead waivers.
 
 ### Consumer-series extensibility
 
 App-specific series colors live in the consumer, not the framework. The framework ships the factories:
 
 ```ts
-// src/lib/series.ts — the ONE path check-theme exempts by default (see the note below)
+// src/lib/series.ts — the app's one series file
 import { defineSeries, groupTokens } from 'basalt-ui/tokens'
 
 // 1. Declare the series with light/dark pairs (ColorPair shape — hex strings per scheme)
@@ -422,21 +298,14 @@ export const colors = groupTokens(GROUP, SERIES)
 // colors.sessions → 'var(--vx-app-sessions)'
 ```
 
-> **Put it at `<first basalt.root>/lib/series.ts`, or the guard reports it.** `defineSeries` takes
-> hex `ColorPair`s _by type_, so this is the one file the doctrine tells you to write raw hex in —
-> and the exemption is an exact PATH, not a shape: `check-theme` skips
-> `<first basalt.root>/lib/series.ts` (the same value `DESIGN.md`'s `{{SERIES_MODULE_PATH}}`
-> renders, so the two cannot drift), and nothing special-cases a file merely _because_ it calls
-> `defineSeries`. A series module anywhere else — `src/theme/series.ts`, say — reports `raw-hex`
-> twice per pair. Two ways out, and the second is not the same as the first:
+> **Put it at `<first basalt.root>/lib/series.ts`.** `defineSeries` takes hex `ColorPair`s _by
+> type_, so this is the one file the doctrine tells you to write raw hex in. `seriesModulePath` in
+> the `basalt` key moves the path `DESIGN.md`'s `{{SERIES_MODULE_PATH}}` renders:
 >
 > ```json
-> // package.json — `seriesModulePath` MOVES the default exemption; `exempt` REPLACES it wholesale
+> // package.json
 > { "basalt": { "seriesModulePath": "src/theme/series.ts" } }
 > ```
->
-> Writing your own `basalt.exempt` array REPLACES the series default rather than adding to it, so
-> list your series module in that array explicitly whenever you use the key at all.
 
 Every `defineX` factory is const-generic and exact-keyed — the return type mirrors the literal input shape, so `tsc` catches stale keys.
 

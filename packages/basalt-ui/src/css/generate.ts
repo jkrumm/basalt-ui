@@ -5,7 +5,6 @@
  *
  * `bun packages/basalt-ui/src/css/generate.ts` writes the files; `--check` exits 1 on drift.
  */
-// theme-allow-file unknown-vx-token — the v3 names are not in the 2.x allowlist `gen-vx-names` builds.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { emitTokensCss, provenanceHeader } from '../tokens/emit'
@@ -21,14 +20,7 @@ export type CssFileName =
 const CONTRACT_VERSION = '3.0.0'
 const COMMAND = 'bun packages/basalt-ui/src/css/generate.ts'
 
-/**
- * The provenance header plus a file-level waiver: the 2.x guard (`check-theme`) knows no v3 name
- * and reads these sheets as consumer CSS. `tokens.css` needs none, its header is the guard's own
- * generated-sheet shape; `check-tokens` (tok-t4) judges the rest.
- */
-const WAIVER = 'theme-allow' + '-file' // split: the guard reads a literal annotation in this file too
-const headerWaiving = (ids: string): string =>
-  `${provenanceHeader(CONTRACT_VERSION, COMMAND)}/* ${WAIVER} ${ids} — v3 sheet generated from the token table */\n`
+const header = (): string => provenanceHeader(CONTRACT_VERSION, COMMAND)
 
 const decl = (name: string, value: string): string => `  ${name}: ${value};\n`
 const rule = (selector: string, body: string): string => `${selector} {\n${body}}\n`
@@ -38,7 +30,7 @@ const rule = (selector: string, body: string): string => `${selector} {\n${body}
 const template = (name: 'fonts' | 'typography' | 'prose'): string =>
   readFileSync(join(import.meta.dir, 'templates', `${name}.css`), 'utf8')
 
-const fontsCss = (): string => headerWaiving('raw-font-family') + template('fonts')
+const fontsCss = (): string => header() + template('fonts')
 
 /** The seven rungs' size and line height, straight from the table, then the static base. */
 function typographyCss(): string {
@@ -47,12 +39,12 @@ function typographyCss(): string {
     .map(({ def, value }) => decl(`--vx-${def.name}`, String(value)))
     .join('')
   const scale = `@layer basalt.type {\n${rule(':where(:root)', vars).replace(/^(?=.)/gm, '  ')}}\n`
-  return headerWaiving('unknown-vx-token') + scale + template('typography')
+  return header() + scale + template('typography')
 }
 
 // ── prose.css ───────────────────────────────────────────────────────────────────────────────────
 
-const proseCss = (): string => headerWaiving('inline-spacing, unknown-vx-token') + template('prose')
+const proseCss = (): string => header() + template('prose')
 
 // ── tailwind.css ────────────────────────────────────────────────────────────────────────────────
 
@@ -121,7 +113,7 @@ function tailwindCss(): string {
     '}\n'
 
   return (
-    headerWaiving('unknown-vx-token') +
+    header() +
     '@layer theme, base, basalt, components, utilities;\n' +
     "@import 'tailwindcss';\n" +
     "@import './tokens.css' layer(theme);\n" +

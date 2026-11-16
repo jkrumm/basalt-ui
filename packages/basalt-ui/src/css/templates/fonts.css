@@ -1,4 +1,3 @@
-/* theme-allow-file raw-font-family — the faces are declared here, once, by name */
 /* @font-face only: latin and latin-ext of the three variable faces, the one weight/width axis each,
    plus Head Digits (Nunito's digits behind the Hubot heading face). Files resolve through the bundler
    or sit next to this sheet; nothing is imported, so unused weights, italics and scripts never ship. */

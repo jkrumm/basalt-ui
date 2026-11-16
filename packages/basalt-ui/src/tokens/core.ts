@@ -33,23 +33,22 @@ import { vxFamilyOf } from '../common/vx-family'
 export { BP, p } from './palette'
 
 // The six-knob derive engine — the generator behind the shipped default palette. Internal: the
-// public barrel (`./index`) does not re-export it; a consumer retunes the palette identity via
-// `createBasaltTheme(overrides, { derive })` (see `../theme`) without hand-picking hexes, and
-// reaches a derived palette through that, not by building `--vx-*` CSS for a custom config directly.
+// public barrel (`./index`) does not re-export it; a consumer retunes the palette identity through
+// the `basalt()` configuration without hand-picking hexes, not by building `--vx-*` CSS for a
+// custom config directly.
 export { DEFAULT_DERIVE_CONFIG, deriveTokens, resolveDeriveConfig } from './derive'
 export type { DeriveConfig, DerivedPalette } from './derive'
 
-// The radius analog of the derive engine — the law behind `createBasaltTheme(overrides, { radius })`
-// (see `../theme`). `RADIUS`/`RADIUS_STEP` stay internal to the theme layer; a consumer retunes the
-// two anchors through `createBasaltTheme`, not by calling `deriveRadius` directly (it is exposed for
-// the law itself to be inspectable/testable, same rationale as `deriveTokens`).
+// The radius analog of the derive engine — the law behind the `radius` configuration.
+// `RADIUS`/`RADIUS_STEP` stay internal; a consumer retunes the two anchors through the `basalt()`
+// configuration, not by calling `deriveRadius` directly (it is exposed for the law itself to be
+// inspectable/testable, same rationale as `deriveTokens`).
 export { deriveRadius } from './palette'
 export type { RadiusValues } from './palette'
 
-// The density analog of the derive engine — the law behind `createBasaltTheme(overrides, {
-// density })` (see `../theme`). `SPACE`/`SPACE_SCALE`/`SPACE_STEP`/`ROW_LINE_HEIGHT` stay internal
-// to the theme layer; a consumer retunes them through `createBasaltTheme`, not by calling
-// `deriveSpacing` directly (it is exposed for the law itself to be inspectable/testable, same
+// The density analog of the derive engine — the law behind the `density` configuration.
+// `SPACE`/`SPACE_SCALE`/`SPACE_STEP`/`ROW_LINE_HEIGHT` stay internal; a consumer retunes them
+// through the `basalt()` configuration, not by calling `deriveSpacing` directly (it is exposed for the law itself to be inspectable/testable, same
 // rationale as `deriveRadius`).
 export { deriveSpacing } from './palette'
 export type { SpaceValues } from './palette'
@@ -160,10 +159,8 @@ export const VX = {
   dashArray: '6 4' as const,
   // Legend layout — single-sourced from `SPACE_STEP.chartLegendGap` (density-tracking; see that
   // constant's doc). Still a raw number here (not `var()`) — the chart legend applies it via inline
-  // `style`, and this is the one static (level-0) value; `createBasaltTheme({ density })` has no
-  // wiring into chart render props yet, so this number does NOT move live with the knob (same
-  // "dev slider/production JS defaultProps" gap as Timeline's `bulletSize` — see `deriveSpacing`'s
-  // doc in tokens/palette.ts).
+  // `style`, and this is the one static (level-0) value, so this number does NOT move with the
+  // density knob (see `deriveSpacing`'s doc in tokens/palette.ts).
   legendGap: SPACE_STEP.chartLegendGap,
 
   // The type scale (px numbers — see TEXT above). Use in inline styles and visx SVG props;
@@ -389,13 +386,9 @@ function frameworkPrimitives(side: Side, data: PaletteData): string {
  * `VX.legendGap`/`VX.margin`/`VX.dotR` in this file's own `VX` object. The full list is locked
  * against the `SpaceValues` key set by `tokens/density.test.ts`'s declaration-set test, so adding a
  * one-off silently omits nothing. A `--vx-space-*` declaration for any of them would be dead weight
- * that only looked like the fix for
- * the dev-slider/production gap those JS reads actually have (see `deriveSpacing`'s JSDoc in
- * `tokens/palette.ts` for the real scope of that gap — it is materially bigger than "a var these
- * numbers could round-trip through"). `theme.spacing` (the generic scale, JS) already resolves
- * through `--mantine-spacing-*` on the PRODUCTION `createBasaltTheme({ density })` path
- * (`theme/index.ts`'s `buildTheme`), so nothing downstream of the generic scale actually needed
- * `--vx-space-scale-*` either — deleted along with the rest rather than kept as an unread alias.
+ * that only looked like the fix for the gap those JS reads actually have (see `deriveSpacing`'s
+ * JSDoc in `tokens/palette.ts` for its real scope). `--vx-space-scale-*` was deleted along with
+ * the rest rather than kept as an unread alias.
  */
 function spaceDecls(space: SpaceValues): string[] {
   return [
@@ -517,8 +510,8 @@ function spaceDecls(space: SpaceValues): string[] {
     // rule its five neighbours follow (see the note at the bottom of this list). It earns the
     // exception because it is the most visible spacing number the framework ships — every page's
     // left edge — and it was, until now, the one number the `--vx-*` layer did not expose at all, so
-    // a consumer retuning its identity through `createBasaltTheme` could not reach it and had to
-    // reach past the token layer into `AppShell.Main`'s own styles. Emitted in PLAIN PX, like every
+    // a consumer retuning its identity could not reach it and had to reach past the token
+    // layer into the shell's own styles. Emitted in PLAIN PX, like every
     // other inset/gap in this list and unlike the `pxRem` heights above it: the rem-plus-
     // `var(--mantine-scale)` reconstruction exists so a CONTROL's box tracks the root font size and
     // Mantine's global scale knob; a page gutter is a layout margin against a viewport, not a box
@@ -602,8 +595,8 @@ function isCoreSpaceDecl(line: string): boolean {
 }
 
 /** The shipped, level-0 spacing values — `frameworkDerived`'s `spaceDecls(...)` call below. No
- * `createBasaltTheme({ density })` retuning applies here; that path calls `buildDensityCss` with a
- * different resolved {@link SpaceValues} instead (see `../theme` and `../provider`). */
+ * density retuning applies here; a retuned config calls `buildDensityCss` with a different
+ * resolved {@link SpaceValues} instead. */
 const DEFAULT_SPACE_VALUES: SpaceValues = {
   anchors: SPACE,
   scale: SPACE_SCALE,
@@ -667,11 +660,9 @@ function frameworkDerived(data: PaletteData, only: 'core' | 'all'): string {
 
 /**
  * Throw on a consumer series/group name inside a basalt-owned `--vx-*` family (`surface`, `space`,
- * `ink`, …): `check-theme`'s `unknown-vx-token` judges every name there against what basalt emits,
- * which is sound only while no consumer REF points there. Dev builds only (the call sits behind a
- * literal NODE_ENV read); `unknown-vx-token` left the grace ledger at 1.36.0, which is when this
- * went from a once-per-name warning to a throw. The families are the guard's own generated
- * `BASALT_VX_FAMILIES`. Checked on the refs, not in `buildPaletteCss`, which runs on every first
+ * `ink`, …): a consumer name there would shadow
+ * a token basalt emits. Dev builds only (the call sits behind a literal NODE_ENV read). The families
+ * are the generated `BASALT_VX_FAMILIES`. Checked on the refs, not in `buildPaletteCss`, which runs on every first
  * paint.
  */
 function assertConsumerVxName(name: string): void {
@@ -857,7 +848,7 @@ const coarseHitBlock = `@media (pointer: coarse) {\n  :root {\n    --vx-hit: ${H
  * INLINE styles in TSX (`dashboard/stat-card.tsx`, `charts/primitives/ChartCard.tsx`), and an
  * inline style cannot carry a media query at all. The only surface that reaches all three is a
  * custom property whose VALUE moves at the breakpoint, and the only stylesheet guaranteed present
- * wherever those components render is this one — `BasaltProvider` injects `buildPaletteCss()`, and
+ * wherever those components render is this one — the generated token sheet, while
  * a component's own CSS module is loaded only if a bundler kept that module. So the law is one
  * `@media` block emitted beside the base declarations it overrides, and every consuming site is a
  * plain `var()` read with no breakpoint knowledge. A media query copied into three files (or into
@@ -893,8 +884,7 @@ function mobileLadderBlock(space: SpaceValues): string {
  *
  * `data` defaults to the static, shipped palette (`buildPaletteData()` at `DEFAULT_DERIVE_CONFIG`)
  * — pass the result of `buildPaletteData(config)` to emit CSS for a retuned derive config instead
- * (this is how `BasaltProvider` follows `createBasaltTheme`'s `{ derive }` option; see `../theme`
- * and `../provider`).
+ * (this is how a retuned `derive` config reaches the sheet).
  *
  * Dark is the default (`:root`) since the framework defaults to dark; the
  * `[data-mantine-color-scheme]` selectors track Mantine's toggle on `<html>`.
@@ -983,10 +973,9 @@ ${side('light')}
 /**
  * The `fonts` option's resolved shape — a full CSS font-family stack string per slot (with its own
  * fallback chain), riding the `--basalt-font-sans/head/mono` override seam `styles.css` ships
- * fallbacks for. Omitted keys keep the shipped fallback untouched. Lives here (not in `../theme`,
- * which only re-exports the type) because its builder `buildFontsCss` below is a pure, Mantine-free
- * string builder that belongs in the tokens layer — see `../theme`'s
- * `CreateBasaltThemeOptions.fonts` for the production entry point that sets it.
+ * fallbacks for. Omitted keys keep the shipped fallback untouched. Lives here because its
+ * builder `buildFontsCss` below is a pure, Mantine-free string builder that belongs in the tokens
+ * layer.
  */
 export type BasaltFontsConfig = {
   sans?: string
@@ -1003,11 +992,10 @@ const FONT_VAR_NAMES = {
 
 /**
  * Build the `:root` block of `--basalt-font-*` declarations for a resolved `basaltFonts` config —
- * only for the keys the consumer actually set (`createBasaltTheme(overrides, { fonts })`); an
+ * only for the keys the consumer actually set; an
  * omitted key keeps the shipped `styles.css` fallback chain untouched. Empty string when `fonts` is
  * absent or every key is omitted, so callers can unconditionally concatenate the result. Internal
- * (not on the `basalt-ui/tokens` barrel) — `BasaltProvider`'s bridge (`../provider`) calls this
- * directly to append declarations to its injected `<style>`.
+ * (not on the `basalt-ui/tokens` barrel).
  */
 export function buildFontsCss(fonts: BasaltFontsConfig | undefined): string {
   if (!fonts) return ''
@@ -1031,7 +1019,7 @@ export function buildFontsCss(fonts: BasaltFontsConfig | undefined): string {
 
 /**
  * Build the `:root` block of overriding `--vx-radius-*` declarations for a resolved
- * `basaltRadius` value (`createBasaltTheme(overrides, { radius })`) — analog of {@link buildFontsCss}.
+ * `basaltRadius` value — analog of {@link buildFontsCss}.
  * Empty string when `radius` is absent (the default level-0 path never sets `theme.other.basaltRadius`
  * in the first place), so callers can unconditionally concatenate the result. Internal, like
  * `buildFontsCss` above.
@@ -1049,7 +1037,7 @@ export function buildRadiusCss(radius: RadiusValues | undefined): string {
 
 /**
  * Build the `:root` block of overriding `--vx-space-*` declarations for a resolved `basaltDensity`
- * value (`createBasaltTheme(overrides, { density })`) — analog of {@link buildRadiusCss}, reusing
+ * value — analog of {@link buildRadiusCss}, reusing
  * the SAME `spaceDecls` list `frameworkDerived` emits the shipped defaults from (so the two can
  * never drift). Empty string when `space` is absent (the default level-0 path never sets
  * `theme.other.basaltDensity` in the first place), so callers can unconditionally concatenate the

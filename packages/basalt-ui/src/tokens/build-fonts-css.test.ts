@@ -1,10 +1,7 @@
 /**
- * `buildFontsCss` — the pure CSS-building half of the `{ fonts }` option (see
- * `../theme/fonts-option.test.ts` for the `theme.other.basaltFonts` round-trip this consumes).
- * `BasaltBridge` calls this directly to append `--basalt-font-*` declarations to the same injected
- * `<style>` as the palette CSS. A DOM harness now exists (`tests/setup/dom.ts`, preloaded via the
- * root `bunfig.toml`), but this pure function needs no render at all — it's the testable seam on
- * its own, so this suite calls it directly rather than mounting anything.
+ * `buildFontsCss` — the pure CSS-building half of the `{ fonts }` option: the `--basalt-font-*`
+ * declarations for a resolved config. It needs no render at all, so this suite calls it directly
+ * rather than mounting anything.
  */
 import { describe, expect, test } from 'bun:test'
 import { buildFontsCss } from './core'

@@ -45,7 +45,6 @@ export function Textarea({ className, rows = 3, style, ...props }: TextareaProps
       // The textarea attributes are a superset of what Base UI's input props type; the runtime
       // control is the same Field.Control and the element is swapped by `render`.
       {...(props as BaseInput.Props)}
-      // theme-allow raw-form-control — this primitive is the themed textarea: Base UI's Input renders it
       render={<textarea rows={rows} />}
       style={{ ...style, '--textarea-rows': rows } as CSSProperties}
       data-slot="textarea"

@@ -69,6 +69,7 @@ const STORAGE_PACKAGES: ReadonlySet<string> = new Set([
 const STORAGE_NAMES: Readonly<Record<string, ReadonlySet<string>>> = {
   'zustand/middleware': new Set(['persist', 'createJSONStorage']),
   'jotai/utils': new Set(['atomWithStorage', 'createJSONStorage']),
+  // A consumer's own Mantine storage hook is a persistence route; basalt itself depends on none.
   '@mantine/hooks': new Set(['useLocalStorage', 'useSessionStorage']),
   'usehooks-ts': new Set(['useLocalStorage', 'useSessionStorage']),
   'react-use': new Set(['useLocalStorage', 'useSessionStorage']),

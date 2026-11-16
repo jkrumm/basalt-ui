@@ -1,9 +1,8 @@
 /**
  * A `--vx-*` name's FAMILY — its leading lowercase run: `--vx-surface-bg` → `surface`, `--vx-ink2`
  * → `ink`, `--vx-tooltip-bg` → `tooltip`, `--vx-fill-hover-cyan` → `fill`. Dependency-free, because
- * three sides must agree on it byte for byte: the generator that writes `BASALT_VX_FAMILIES`, the
- * guard that judges every name inside one of those families, and the token factories that refuse a
- * consumer name inside one — the refusal is what makes the guard's judgement honest.
+ * the generator that writes `BASALT_VX_FAMILIES` and the token factories that refuse a consumer
+ * name inside one must agree on it byte for byte.
  */
 export function vxFamilyOf(name: string): string {
   return /^--vx-([a-z]*)/.exec(name)?.[1] ?? ''

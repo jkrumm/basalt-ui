@@ -162,7 +162,6 @@ export function CardInfo({ label, children, className, ...props }: CardInfoProps
           <circle cx="8" cy="5" r="0.9" fill="currentColor" />
         </svg>
       </button>
-      {/* theme-allow hidden-inline-style — the anchor name is unique per instance, so it cannot be a class */}
       <div
         id={id}
         popover="auto"
@@ -336,7 +335,6 @@ function Skeleton({ shape }: { shape: CardPhaseProps['skeleton'] }): ReactElemen
   }
   return (
     <div aria-hidden="true" className="h-full px-(--card-edge) py-3">
-      {/* theme-allow raw-html-layout — a per-instance box height is data, not a class */}
       <div className={cn(bar, 'h-full min-h-4')} style={{ height: shape?.height }} />
     </div>
   )

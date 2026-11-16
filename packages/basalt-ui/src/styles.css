@@ -20,7 +20,6 @@
  * face covers U+0030-0039 only, cut from the Nunito Sans variable file, and leads
  * `--basalt-font-head`, so Hubot draws every letter and Nunito every digit. */
 @font-face {
-  /* theme-allow raw-font-family — declares the face, uses nothing */
   font-family: 'Basalt Head Digits';
   font-style: normal;
   font-display: swap;
@@ -108,9 +107,8 @@
      inline `style` attribute outranks EVERY stylesheet rule regardless of layer or specificity, so
      without `!important` a consumer's `style={{ fontSize: 13 }}` on a raw `<input>` silently wins
      and re-opens the zoom bug — a floor a `style` prop can override is not a floor, it's a
-     suggestion. `check-theme`'s `raw-form-control` + `sub-16-input-font` guard kinds catch the
-     authoring mistake at build time; this `!important` is the runtime backstop that makes it
-     un-defeatable even when a violation slips through.
+     suggestion. the lint presets catch the authoring mistake at build time; this `!important` is the runtime
+     backstop that makes it un-defeatable even when a violation slips through.
 
      `--basalt-input-fz-floor` defaults to 16px; the theme `inputs` option that lowered it is gone
      (V2-SPEC § 4), so an app that never runs on iOS Safari can set the var itself. */
@@ -326,7 +324,6 @@
 /* One step under the box, snapped onto the scale like the SegmentedControl indicator: 2 when the box
  * leaves a 3 px step, else square. */
 :root:root .maplibregl-ctrl-attrib-button {
-  /* theme-allow css-raw-surface — a snapped nested step: the scale's 2 px xs, or square under a small box */
   border-radius: round(down, min(2px, max(0px, var(--vx-radius-ctrl) - 3px)), 2px);
 }
 

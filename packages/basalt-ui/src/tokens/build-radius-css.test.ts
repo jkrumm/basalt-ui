@@ -1,8 +1,6 @@
 /**
- * `buildRadiusCss` — the pure CSS-building half of the `{ radius }` option (see
- * `../theme/radius-option.test.ts` for the `theme.other.basaltRadius` round-trip this consumes).
- * `BasaltBridge` calls this directly to append overriding `--vx-radius-*` declarations to the same
- * injected `<style>` as the palette CSS; mirrors `build-fonts-css.test.ts`.
+ * `buildRadiusCss` — the pure CSS-building half of the `{ radius }` option: the overriding
+ * `--vx-radius-*` declarations for a resolved value; mirrors `build-fonts-css.test.ts`.
  */
 import { describe, expect, test } from 'bun:test'
 import { deriveRadius } from './palette'

@@ -1,5 +1,3 @@
-// theme-allow-file raw-hex — board.html is a standalone artefact: no basalt tokens exist in it
-// theme-allow-file inline-spacing — board.html is a standalone artefact: no spacing props
 /** `board.html`: one self-contained page (inline CSS, relative image paths) over a metrics.json. */
 import { PAGE_ANCHOR } from './types'
 import type { AnchorMetrics, ShotMetrics, ShotRecord } from './types'

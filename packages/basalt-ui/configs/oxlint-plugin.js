@@ -1,16 +1,14 @@
 // oxlint-disable import/no-default-export -- oxlint's JS plugin loader requires a default export
 /**
  * basalt — the shipped oxlint JS plugin (alpha `jsPlugins`, ESLint-v9-compatible `create(context)`
- * API). Design-guard AST rules steering consumers onto the token/idiom system that `src/guard`
- * (the regex-based `check-theme` CLI) cannot see from a raw-text scan alone, plus three
+ * API). Design-guard AST rules steering consumers onto the token/idiom system, plus three
  * independent architecture-boundary rules (see below).
  *
  * Ships inside `configs/` so the shipped preset (`configs/oxlint.json`) can reference it as
  * `./oxlint-plugin.js` — a consumer `extends`-ing that preset inherits `jsPlugins` too, and the
  * path resolves relative to the preset file, not the consumer's own config.
  *
- * The design-guard rules below support the same `theme-allow` escape as `src/guard`, and the same
- * two-scope grammar: `theme-allow [<id>…] [— <why>]` at the START of a comment on the reported
+ * The design-guard rules below support the `theme-allow` escape, in two scopes: `theme-allow [<id>…] [— <why>]` at the START of a comment on the reported
  * node's own line or the line above skips THAT node; `theme-allow-file <id>… — <why>` anywhere in
  * the file skips every node of the named rules in it. Both halves are load-bearing — see
  * {@link parseThemeAllows} for why the prefix matters and {@link hasFileDeclaration} for why file
@@ -80,9 +78,8 @@ import { fileURLToPath } from 'node:url'
 // ── Shared helpers ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Guard kinds and plugin rules RETIRED — kept recognized by `KNOWN_RULE_IDS` (below) and the
- * guard's own `PLUGIN_RULE_IDS` copy so an existing `theme-allow <id>` reads as a dead waiver via
- * `check-theme --audit-allows`, never as a typo.
+ * Plugin rules RETIRED — kept recognized by `KNOWN_RULE_IDS` (below) so an existing
+ * `theme-allow <id>` parses as a (dead) waiver, never as a typo.
  *
  * - `unframed-chart` (regex: a `<ChartLegend items={[...]}>` array literal) →
  *   `basalt/chart-legend-literal`, itself retired in 2.0 with the public `ChartLegend`.
@@ -114,12 +111,46 @@ export const RETIRED_RULE_IDS = new Set([
 ])
 
 /**
- * Rule ids a `theme-allow` may name — this plugin's own rules plus `src/guard`'s kinds. Duplicated
+ * The kinds of the 2.x text guard (`check-theme`, deleted), kept recognized so a `theme-allow <kind>`
+ * left in a consumer's source parses as a (dead) waiver rather than as an unknown-id typo.
+ * `in-body-page-title` is not here: it is also a live plugin rule.
+ */
+export const RETIRED_GUARD_KIND_IDS = new Set([
+  'raw-hex',
+  'raw-color-fn',
+  'localstorage-theme',
+  'off-identity-accent',
+  'mantine-shade-index',
+  'raw-spacing',
+  'raw-radius',
+  'raw-surface',
+  'card-with-border',
+  'off-system-surface-var',
+  'raw-html-layout',
+  'inline-spacing',
+  'inline-display',
+  'raw-motion-value',
+  'raw-form-control',
+  'sub-16-input-font',
+  'raw-font-family',
+  'theme-allow-unscoped',
+  'surface-shadow-override',
+  'css-raw-surface',
+  'inline-font-size',
+  'hidden-inline-style',
+  'raw-selection-control',
+  'raw-media-query',
+  'unknown-vx-token',
+  'series-palette',
+])
+
+/**
+ * Rule ids a `theme-allow` may name — this plugin's own rules plus the retired ones. Duplicated
  * by hand for the same reason `majorOf` is: this file loads standalone out of a consumer's
  * node_modules and must not import from the package.
  *
  * Exported, and `oxlint-plugin.test.ts` asserts it is EXACTLY the plugin's own rule ids plus
- * `GUARD_RULES`'s keys plus `RETIRED_RULE_IDS`. Forgetting an entry here is not a cosmetic
+ * `RETIRED_GUARD_KIND_IDS` plus `RETIRED_RULE_IDS`. Forgetting an entry here is not a cosmetic
  * omission — an id this set does not know is treated as a typo, so the annotation naming it waives
  * nothing (see {@link parseThemeAllow}); before the fail-closed change it was worse still, silently
  * widening to a blanket waiver.
@@ -143,8 +174,6 @@ export const KNOWN_RULE_IDS = new Set([
   'query-dual-import',
   'query-fn-unwrap',
   'forms-field-key',
-  // `in-body-page-title` is BOTH a plugin rule and a guard kind — one id, two lanes, so one
-  // annotation waives both. It is listed once, below, with the guard kinds.
   'chart-engine-boundary',
   'chart-host-single',
   'token-layer-boundary',
@@ -153,58 +182,26 @@ export const KNOWN_RULE_IDS = new Set([
   'no-dev-helper',
   'route-view-transition',
   'status-fill-as-text',
+  // Also a guard kind of the retired text guard — one id, so one annotation waived both lanes.
+  'in-body-page-title',
   // These two honour `basalt-agent-allow`, never `theme-allow` — but they are real ids, so an
   // annotation naming one must parse as a (useless) scoped annotation rather than as prose.
   'agent-no-raw-usechat',
   'ai-sdk-major',
-  // src/guard kinds
-  'raw-hex',
-  'raw-color-fn',
-  'localstorage-theme',
-  'off-identity-accent',
-  'mantine-shade-index',
-  'raw-spacing',
-  'raw-radius',
-  'raw-surface',
-  'card-with-border',
-  'off-system-surface-var',
-  'raw-html-layout',
-  'inline-spacing',
-  'inline-display',
-  'raw-motion-value',
-  'raw-form-control',
-  'sub-16-input-font',
-  'raw-font-family',
-  'theme-allow-unscoped',
-  'surface-shadow-override',
-  'css-raw-surface',
-  'inline-font-size',
-  'hidden-inline-style',
-  'in-body-page-title',
-  'raw-selection-control',
-  'raw-media-query',
-  'unknown-vx-token',
-  'series-palette',
-  // Retired guard kinds — no longer in GUARD_RULES, but a `theme-allow` naming one must still
-  // parse as a real (dead) waiver rather than an unknown-id typo. See RETIRED_RULE_IDS above.
+  // Retired ids — no longer registered, but a `theme-allow` naming one must still parse as a real
+  // (dead) waiver rather than an unknown-id typo.
+  ...RETIRED_GUARD_KIND_IDS,
   ...RETIRED_RULE_IDS,
 ])
 
 /**
  * ONE LAW, TWO RULE IDS — the ids that waive each other, in BOTH directions.
  *
- * `basalt/control-outside-home` (this plugin, AST) and `raw-selection-control` (`src/guard`'s text
- * lane) are the same law read by two engines, and the guard's own message says so. They could not
- * share one id the way `in-body-page-title` does, because the two lanes disagree often enough that
- * a consumer needs to be able to name which one they are waiving — but a consumer waiving the law
- * should not have to know that, and before this map they did: `theme-allow control-outside-home`
- * silenced oxlint and left check-theme reporting, so the only working annotation was
- * `theme-allow raw-selection-control control-outside-home` — two ids, undocumented, discovered one
- * debug cycle per consumer.
- *
- * Mirrored VERBATIM by `src/guard`'s copy (this file must not import from the package — see the
- * header); `check-source.test.ts` asserts the two agree. An alias only ever WIDENS what an
- * annotation covers, so a waiver can never become stricter by being spelled the other way.
+ * `basalt/control-outside-home` (this plugin, AST) and `raw-selection-control` (the retired text
+ * guard's id) were the same law read by two engines. An annotation written for either spelling
+ * still covers the plugin rule, so a `theme-allow raw-selection-control` left in source keeps
+ * working. An alias only ever WIDENS what an annotation covers, so a waiver can never become
+ * stricter by being spelled the other way.
  */
 export const WAIVER_ID_ALIASES = {
   'control-outside-home': ['raw-selection-control'],
@@ -229,9 +226,7 @@ const ALLOW_TOKEN = /theme-allow(-file)?(?![\w-])/
  * Without this the parser did a bare `indexOf('theme-allow')`, so a comment that merely MENTIONED
  * the token in prose parsed as the blanket form and switched every rule off on the node below it.
  * linewatch documented its own waivers in a docblock and thereby disarmed the file: a false
- * NEGATIVE, and worse than the whole-file hole 1.20.0 closed. `src/guard`'s `ANNOTATION_PREFIX` is
- * the same test against raw source text (which still carries its `//` / `/*` opener; a comment
- * NODE's `value` does not, hence the two spellings).
+ * NEGATIVE, and worse than the whole-file hole 1.20.0 closed.
  */
 const ALLOW_LINE_PREFIX = /^\s*\*?\s*$/
 
@@ -251,7 +246,7 @@ function parseAllowBody(rest, scope) {
 /**
  * Every annotation one comment carries. A docblock can hold more than one, so this returns a list.
  *
- * The grammar, and it is the same one `src/guard` parses:
+ * The grammar:
  *
  * ```text
  * theme-allow                             → nothing (a bare annotation waives no rule)
@@ -298,12 +293,10 @@ function allComments(context) {
  * Every comment that REACHES `nodeLine` — the comment on the node's own line, the one directly
  * above it, and any further comment separated from that one by nothing but comment.
  *
- * This is the plugin's half of "which node does this annotation scope to", and it has to answer the
- * same question `src/guard`'s forward walk answers: **an annotation reaches the first line below its
- * comment that is not itself comment.** The test used to be a flat `end.line === nodeLine ||
- * nodeLine - 1`, which is the same rule only when the annotation is the LAST comment above the node
- * — so anything sitting between the annotation and the node, comment included, was reported here
- * while the guard waived it:
+ * **An annotation reaches the first line below its comment that is not itself comment.** The test
+ * used to be a flat `end.line === nodeLine || nodeLine - 1`, which is the same rule only when the
+ * annotation is the LAST comment above the node — so anything sitting between the annotation and
+ * the node, comment included, was reported:
  *
  * ```text
  * // theme-allow raw-hex — the vendor brand hex, kept in sync with     ← a reason that wrapped
@@ -315,8 +308,7 @@ function allComments(context) {
  * <Card p={0} />
  * ```
  *
- * The wrapped-reason one is not hypothetical: it is pinned in the guard's tests as a shape argo
- * writes. A blank line still separates, because a blank line is not comment — which is what makes
+ * The wrapped-reason one is not hypothetical: it is a shape argo writes. A blank line still separates, because a blank line is not comment — which is what makes
  * "this comment is not about the next statement" expressible in both halves.
  *
  * Returned bottom-up, which is also the cheap order to walk: stop at the first gap.
@@ -1603,9 +1595,8 @@ function shadowBasaltExportMessage(name) {
  * Flags a local declaration whose name collides with a live basalt export.
  *
  * The cheapest possible detector for the whole absorption class: argo shipped its own `EmptyState`
- * (a full duplicate of the shipped one) and rb a local `StatCard`, and both passed `check-theme`,
- * `oxlint` and `doctor` clean — off-palette code fails, a forked component that uses the correct
- * tokens does not. `error` since 2.0 (the major is the channel); a genuinely different `Composer`
+ * (a full duplicate of the shipped one) and rb a local `StatCard`, and both passed `oxlint` and
+ * `doctor` clean — off-palette code fails, a forked component that uses the correct tokens does not. `error` since 2.0 (the major is the channel); a genuinely different `Composer`
  * takes a `theme-allow shadow-basalt-export — <why>`.
  */
 // Ships: error
@@ -1973,8 +1964,7 @@ const OVERLAY_CONVENTION_PASCAL = /^[A-Z]\w*(?:Modal|Drawer|Popover|Panel|Form)\
 /**
  * The single predicate both `control-outside-home` and `bound-control-outside-home` ask — see
  * {@link OVERLAY_CONVENTION_KEBAB} for the whole trade. One function, so the two rules can never
- * disagree about what the convention IS; `src/guard/index.ts` carries the text-lane copy of the
- * same two dialects (`raw-selection-control`), pinned by both test files.
+ * disagree about what the convention IS.
  */
 function isOverlayConventionFile(filename) {
   const basename = filename.slice(filename.lastIndexOf('/') + 1)
@@ -3158,12 +3148,6 @@ function viewTabsInRefusedSlot(slots, captured) {
  * consumer's own `SelectFilter` is not this one. The exemptions are the sibling rule's minus the
  * `@mantine/form` one — a form input is a raw input, and a `FieldHandle`-bound filter in a form
  * module is homeless there exactly as it is anywhere else.
- *
- * **There is deliberately NO text-lane twin in `src/guard`.** `raw-selection-control` can key on a
- * bare Mantine tag name because that name is Mantine's whatever the file does with it; a bound
- * control's name says nothing without the import graph and the ancestry, and a regex over a
- * 12-line window has neither. A text heuristic here would report a consumer's own `SelectFilter` in
- * its own `filters` slot — signal the plugin already has, noise the guard would add.
  */
 // Ships: error
 const boundControlOutsideHome = {
@@ -4331,7 +4315,7 @@ const statusFillAsText = {
 
 /**
  * Plugin rules still inside their grace minor — `warn` in the shipped consumer preset, `error`
- * repo-locally. Empty since 2.26.0: `card-inset` (since 2.16.0), the last tenant, promoted. This is the plugin's counterpart to `src/guard`'s `GRACE_PERIOD_KINDS`, and it
+ * repo-locally. Empty since 2.26.0: `card-inset` (since 2.16.0), the last tenant, promoted. It
  * exists because its ABSENCE is what let three rules sit at `warn` for up to twelve minors with
  * nothing tracking them: `configs/oxlint.json` is generated and its top-level keys are fixed by
  * oxlint's own parser, so the ledger cannot live there.

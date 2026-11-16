@@ -6,10 +6,9 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, relative, resolve } from 'node:path'
 
-import { GENERATED_HEADER_LINE } from '../guard'
 import { VIBRANCY_RANGE_V3 } from '../tokens/derive'
 import type { DeriveV3Config, NeutralV3 } from '../tokens/derive'
-import { emitTokensCss } from '../tokens/emit'
+import { GENERATED_HEADER_LINE, emitTokensCss } from '../tokens/emit'
 import { emitJsonText } from '../tokens/emit-json'
 import { packageRoot, readFrameworkVersion, readIfExists, readSource } from './index'
 import { emitExtra, loadExtra } from './tokens-css-extra'

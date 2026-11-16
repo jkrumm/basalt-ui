@@ -18,7 +18,6 @@ export const requires = (c: Called): Pick<StatusProps, 'tone'> => c
 export const closedTone: Pick<StatusProps, 'tone'> = { tone: 'purple' }
 
 // @ts-expect-error a raw hex colour is not a series colour
-// theme-allow raw-hex — the guard proves a raw colour fails to type-check
 export const rawHex: Pick<import('./status').SwatchProps, 'color'> = { color: '#2f6fed' }
 
 // @ts-expect-error a colour name is not a series colour

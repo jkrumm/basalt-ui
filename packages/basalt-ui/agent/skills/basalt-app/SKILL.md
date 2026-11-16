@@ -15,7 +15,6 @@ Run the local bin, `./node_modules/.bin/basalt-ui` or a package script; in a wor
 | `init`                    | Place the manifest, the managed rules and skills, the AGENTS block and the `DESIGN.md` seed at the git or workspace root. `--no-install` writes files and prints the install commands. |
 | `doctor`                  | Check this project; read to the last line. `SKIPPED` exits non-zero. `--from <x.y.z>` prints the `MIGRATING.md` changes since that version.                                            |
 | `sync`                    | Refresh every managed file; `--check` writes nothing and exits 1 on a difference (the CI gate); `--force` overwrites a file you edited.                                                |
-| `check-theme`             | Scan for hand-written colour; `--audit-allows` lists waivers that suppress nothing.                                                                                                    |
 | `tokens:css`, `fonts:css` | Emit the `--vx-*` sheet and the font stacks as plain CSS; `--check` is the CI gate.                                                                                                    |
 | `migrate`                 | Select the migration rows an app needs from a version; see [migrate](references/migrate.md).                                                                                           |
 | `eject`                   | Take ownership of one primitive, with `--reason`; see [eject](node_modules/basalt-ui/docs/eject.md).                                                                                   |
@@ -49,7 +48,7 @@ The profile is declared in `.basalt/manifest.json` and never inferred. Choose th
 
 5. `app` profile: the entry `init` writes mounts `BasaltProvider` from `basalt-ui/router` once ([basalt-provider](node_modules/basalt-ui/docs/basalt-provider.md)); mount the frame once in the `_app` layout route ([app-shell recipe](references/recipes.md)), declare `NAV` once with [defineNav](node_modules/basalt-ui/docs/define-nav.md), and gate an authenticated app in the `_app` layout route's `beforeLoad`, never the root's (`login` sits outside `_app`) (the shell has no auth seam and loaders fire before any gate component renders).
 6. Fill in `DESIGN.md` (identity, series dictionary, deviations); `/basalt-design` reads it before every page.
-7. Run the repo gate (`make check` or the package's own), which runs lint, `check-theme` and typecheck. Fix findings at their source.
+7. Run the repo gate (`make check` or the package's own), which runs lint and typecheck. Fix findings at their source.
 
 ## Add what the app needs
 

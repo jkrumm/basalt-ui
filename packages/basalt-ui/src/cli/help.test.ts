@@ -127,9 +127,9 @@ describe('run() --version and the unknown-flag gate', () => {
   })
 
   it('a near-miss flag does not slip through as a silent no-op', () => {
-    const { code, log } = capture(() => run(['check-theme', '--audit-allow'], dir))
+    const { code, log } = capture(() => run(['doctor', '--fro'], dir))
     expect(code).toBe(1)
-    expect(log).toContain("unrecognized flag '--audit-allow'")
+    expect(log).toContain("unrecognized flag '--fro'")
   })
 
   it('a value-taking flag does not make its VALUE look like an unknown flag', () => {
@@ -139,9 +139,9 @@ describe('run() --version and the unknown-flag gate', () => {
   })
 
   it('an unknown COMMAND names what it did not understand, above the usage block', () => {
-    const { code, log } = capture(() => run(['check-theme --audit-allows'], dir))
+    const { code, log } = capture(() => run(['doctor --from 2.30.0'], dir))
     expect(code).toBe(1)
-    expect(log).toContain("unknown command 'check-theme --audit-allows'")
+    expect(log).toContain("unknown command 'doctor --from 2.30.0'")
     expect(log).toContain('Usage: basalt')
   })
 

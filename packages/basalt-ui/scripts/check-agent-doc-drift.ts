@@ -60,7 +60,6 @@ import { REPO_LOCAL_RULES } from './check-coverage'
 import { checkAllRuleFiles } from './check-rule-tags'
 import * as pluginModule from '../configs/oxlint-plugin.js'
 import { SURFACES } from '../src/surfaces'
-import { TOKENS_ONLY_DISABLED_KINDS } from '../src/guard/index'
 
 const pkgRoot = join(import.meta.dirname, '..')
 
@@ -541,12 +540,11 @@ export function checkD(
   return failures
 }
 
-// ── Check C: the tokens-only kind count, restated by hand in eight docs ───────
+// ── Repo markdown (Check D's input) ────────────────────────────────────────────
 
 /**
  * Every markdown file in the repo, minus the directories nothing here owns. Wider than Check A/B's
- * `agent/**` on purpose — the count below is stated in the package README, the root AGENTS.md,
- * MAINTAINING.md, MIGRATING, two `agent/` docs and two root `docs/` pages. `.claude/` is excluded: its
+ * `agent/**` on purpose — a deleted-doc citation can sit in any of them. `.claude/` is excluded: its
  * only markdown is gitignored agent scratch (review dumps, wave notes) that a CI checkout never
  * has, so scanning it would make the check depend on the working tree it happens to sit in.
  */
@@ -560,35 +558,6 @@ export function findRepoMdFiles(root: string = join(pkgRoot, '..', '..')): strin
       return entry.name.endsWith('.md') ? [join(dir, entry.name)] : []
     })
   return walk(root)
-}
-
-/**
- * The phrasing every doc uses for "how many kinds `profile: 'tokens-only'` disables". `hidden-
- * inline-style` took the set from 16 to 17; code and tests were updated in that commit and eight
- * docs were not — including the two under `agent/`, which `init`/`sync` PLACE INTO consumer repos,
- * so the stale number shipped.
- *
- * Asserted rather than generated: templating one integer into prose costs a build step and a
- * generated-file gate, while this is one regex in a check CI already runs, and it fails in the
- * same commit that changes the set.
- */
-const KIND_COUNT_CLAIM = /(?:disables|silences|turns off)\s+(?:the\s+)?(\d+)\s+kinds\b/g
-
-export type CheckCFailure = { file: string; line: number; claimed: number }
-
-export function checkC(mdFiles: readonly string[], actual: number): CheckCFailure[] {
-  const failures: CheckCFailure[] = []
-  for (const file of mdFiles) {
-    const lines = readFileSync(file, 'utf8').split('\n')
-    lines.forEach((lineText, idx) => {
-      for (const match of lineText.matchAll(KIND_COUNT_CLAIM)) {
-        const claimed = Number(match[1])
-        if (claimed === actual) continue
-        failures.push({ file: relative(pkgRoot, file), line: idx + 1, claimed })
-      }
-    })
-  }
-  return failures
 }
 
 // ── Check E: import specifiers in fenced code blocks resolve against package.json exports ──────
@@ -869,7 +838,6 @@ function main(): void {
 
   const aFailures = checkA(mdFiles, validNames)
   const bFailures = [...checkB(mdFiles), ...checkBSrc(srcTsFiles)]
-  const cFailures = checkC(repoMdFiles, TOKENS_ONLY_DISABLED_KINDS.size)
   // `repoMdFiles` already contains `mdFiles`; configs `.js` are raw (their message strings are
   // consumer-visible), only `src/**` goes through the comment mask.
   const dFailures = checkD([...repoMdFiles, ...configsJsFiles], srcTsFiles)
@@ -894,11 +862,6 @@ function main(): void {
     ...bFailures.map(
       (f) =>
         `${f.file}:${f.line}: references removed API '${f.name}' — use '${f.replacement}' instead`,
-    ),
-    ...cFailures.map(
-      (f) =>
-        `${f.file}:${f.line}: says tokens-only disables ${f.claimed} kinds, but ` +
-        `TOKENS_ONLY_DISABLED_KINDS has ${TOKENS_ONLY_DISABLED_KINDS.size}`,
     ),
     ...dFailures.map(
       (f) => `${f.file}:${f.line}: cites deleted doc '${f.doc}' — use ${f.replacement} instead`,

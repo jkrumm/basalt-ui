@@ -39,7 +39,6 @@ export function CardMenu({
           <circle cx="12.5" cy="8" r="1.25" />
         </svg>
       </button>
-      {/* theme-allow hidden-inline-style — the anchor name is unique per instance, so it cannot be a class */}
       <div
         id={id}
         popover="auto"

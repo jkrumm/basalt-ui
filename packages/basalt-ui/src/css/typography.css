@@ -1,6 +1,5 @@
 /* @generated basalt-ui — do not edit; regenerate with the command on the next line */
 /* basalt-ui 3.0.0 — `bun packages/basalt-ui/src/css/generate.ts` */
-/* theme-allow-file unknown-vx-token — v3 sheet generated from the token table */
 @layer basalt.type {
   :where(:root) {
     --vx-text-micro: 0.6875rem;
@@ -19,7 +18,6 @@
     --vx-text-display-lh: 1;
   }
 }
-/* theme-allow-file unknown-vx-token — v3 names are not in the 2.x allowlist the guard reads */
 @layer basalt.type {
   :where(:root) {
     font-family: var(--vx-font-sans);

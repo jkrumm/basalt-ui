@@ -288,71 +288,7 @@ for preset in oxlint oxlint-basalt; do
 done
 echo "scratch-consumer oxlint preset contract OK"
 
-echo "==> scratch-consumer theme guard (the shipped rules, run against a consumer tree)"
-# The only step here that exercises the guard the way a CONSUMER meets it: the real CLI, from the
-# real tarball, over a real `basalt.roots` tree. Every other gate above checks the artifact's SHAPE.
-#
-# Added because two enforcement bugs shipped and were found by a consumer within the hour: a step
-# list that had drifted from the token scale (so `p={16}` was flagged in favour of a token worth
-# 18), and a CSS-module scan with no sub-scale escape (so a 4px cluster gap was unfixable). Both
-# are invisible to publint/attw/export-surface — they are about what the guard SAYS, not what the
-# package contains. The fixture below encodes one of each direction: something that must flag, and
-# something that must not.
-bun -e "
-import { readFileSync, writeFileSync } from 'node:fs'
-const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
-pkg.basalt = { roots: ['guard-fixture'] }
-writeFileSync('package.json', JSON.stringify(pkg))
-"
-mkdir -p guard-fixture
-# The spacing line is GENERATED from the tarball's own `deriveSpacing(0).scale.md`, never typed as
-# a literal: the bug being guarded against IS a literal that stopped matching the scale. Written
-# this way, the step asserts the shipped guard and the shipped tokens agree — from a consumer's
-# vantage, against the real artifact — which is the check that was missing when they disagreed.
-# `deriveSpacing` is internal since 2.0, so it is read off the installed file, not the export map.
-bun -e "
-import { deriveSpacing } from './node_modules/basalt-ui/dist/tokens/palette.js'
-import { writeFileSync } from 'node:fs'
-const md = deriveSpacing(0).scale.md
-writeFileSync(
-  'guard-fixture/violation.tsx',
-  \`export const Swatch = () => <div style={{ color: '#ff00ff' }} p={\${md}} />\n\`,
-)
-console.log('guard fixture: scale md =', md)
-"
-# Sub-scale micro-spacing in CSS: doctrine says allowed raw (no token exists below the scale
-# floor), so a finding here is the guard contradicting its own rule file.
-cat >guard-fixture/ok.module.css <<'CSS'
-.cluster {
-  gap: 2px;
-  padding: 4px 6px;
-}
-CSS
-GUARD_LOG=$(mktemp)
-set +e
-bunx basalt-ui check-theme >"$GUARD_LOG" 2>&1
-GUARD_EXIT=$?
-set -e
-cat "$GUARD_LOG"
-if [ "$GUARD_EXIT" -eq 0 ]; then
-  echo "FAILED: check-theme passed a tree containing a raw hex — the shipped guard is not enforcing"
-  exit 1
-fi
-if ! grep -qF "raw-hex" "$GUARD_LOG"; then
-  echo "FAILED: check-theme did not report the raw hex in guard-fixture/violation.tsx"
-  exit 1
-fi
-if ! grep -qF "raw-spacing" "$GUARD_LOG"; then
-  echo "FAILED: the guard's spacing steps have drifted from deriveSpacing()'s scale — a prop value"
-  echo "        equal to the shipped \`md\` stop went unflagged. This is the 1.2.0 bug."
-  exit 1
-fi
-if grep -qF "ok.module.css" "$GUARD_LOG"; then
-  echo "FAILED: check-theme flagged sub-scale CSS micro-spacing, which the tokens rule allows raw"
-  exit 1
-fi
-rm -rf guard-fixture "$GUARD_LOG" "$OXLINT_LOG"
-echo "scratch-consumer theme guard OK"
+rm -f "$OXLINT_LOG"
 
 echo "==> dist-vantage tsc assertion (catches .d.ts declaration-emit regressions)"
 # Write a strict tsconfig matching the package's own flags — the .d.ts vantage only

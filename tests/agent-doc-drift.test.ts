@@ -71,7 +71,7 @@ describe('agent-doc-drift guard', () => {
   })
 
   it('Check A ignores bold-backtick spans that are not a single identifier', () => {
-    withFixture('Run **`basalt-ui check-theme`** before committing.\n', (file) => {
+    withFixture('Run **`basalt-ui doctor`** before committing.\n', (file) => {
       expect(checkA([file], validNames)).toEqual([])
     })
   })

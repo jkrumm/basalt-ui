@@ -6,7 +6,7 @@
  * to 1.33.0 and shipped in 1.33.0 anyway: the floor test went red on master only after the
  * release, exactly like the grace case below.
  *
- * The test-time gate (`configs/oxlint-plugin.test.ts`, `src/guard/grace.test.ts`) measures
+ * The test-time gate (`configs/oxlint-plugin.test.ts`) measures
  * `package.json`'s CURRENT version, which is the version already published — by construction it can
  * only go red AFTER the release that shipped the due entry. And nothing catches it there either:
  * semantic-release writes the new version in a `chore: release … [skip ci]` commit, so CI never
@@ -33,7 +33,6 @@ import { resolve } from 'node:path'
 // oxlint-disable-next-line -- the plugin is plain JS; the ledgers are named exports beside it
 import { readShards } from './export-surface-shards.mjs'
 import { PLUGIN_RULE_GRACE } from '../configs/oxlint-plugin.js'
-import { GRACE_PERIOD_KINDS } from '../src/guard/index'
 
 type GraceEntry = { since: string; promote: string; why: string }
 type DeprecationRow = {
@@ -103,15 +102,12 @@ function main(): void {
     process.exit(2)
   }
 
-  const grace: Record<string, GraceEntry | undefined> = {
-    ...Object.fromEntries(
-      Object.entries(PLUGIN_RULE_GRACE as Record<string, GraceEntry>).map(([id, entry]) => [
-        `basalt/${id}`,
-        entry,
-      ]),
-    ),
-    ...GRACE_PERIOD_KINDS,
-  }
+  const grace: Record<string, GraceEntry | undefined> = Object.fromEntries(
+    Object.entries(PLUGIN_RULE_GRACE as Record<string, GraceEntry>).map(([id, entry]) => [
+      `basalt/${id}`,
+      entry,
+    ]),
+  )
   // 2.0.0 ships no deprecations (V2-SPEC § 3): the ledger is gone, the check stays for the first 2.x one.
   const deprecations: readonly DeprecationRow[] = []
   const surface: ExportSurface = readShards(resolve(import.meta.dirname, 'export-surface'))

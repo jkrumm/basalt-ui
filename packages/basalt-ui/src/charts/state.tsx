@@ -103,7 +103,6 @@ const dotStyle: CSSProperties = {
   flex: 'none',
   width: 6,
   height: 6,
-  // theme-allow raw-surface — a 6px status dot, not a surface
   borderRadius: '50%',
   background: CV.bad,
 }
@@ -119,7 +118,6 @@ const errorStyle: CSSProperties = {
 }
 // The empty tile's one ring: an inset shadow, never a border, as `EmptyState`'s section tier draws it.
 const tileStyle: CSSProperties = {
-  // theme-allow surface-shadow-override — an inset ring on a tile inside a surface, not a card's depth
   boxShadow: `var(--basalt-state-ring, inset 0 0 0 1px ${CV.hairline})`,
 }
 const errorHeadStyle: CSSProperties = {

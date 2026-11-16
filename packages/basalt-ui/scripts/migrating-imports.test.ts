@@ -1,5 +1,5 @@
 /**
- * Every import MIGRATING.md and the raw-breakpoint guard messages TELL a consumer to write must
+ * Every import MIGRATING.md and the oxlint plugin's messages TELL a consumer to write must
  * resolve against the published subpath it names.
  *
  * 1.31.0 and 1.32.0 documented `CONTAINER_CLASSES` / `SIZE_CLASSES` as `basalt-ui/tokens` exports
@@ -10,7 +10,7 @@
  * - every `import { … } from 'basalt-ui[/sub]'` in a fenced ts/tsx block (including one written in
  *   a code comment);
  * - every prose claim of the form `` `Symbol[.member]` (`basalt-ui/sub` `` and every
- *   `SYMBOL, basalt-ui/sub` recipe in `configs/oxlint-plugin.js` / `src/guard/index.ts`.
+ *   `SYMBOL, basalt-ui/sub` recipe in `configs/oxlint-plugin.js`.
  *
  * Resolution goes through the TypeScript checker over the src barrels each `package.json#exports`
  * `types` path mirrors (dist/X.d.ts ⇄ src/X.ts[x]) — no build needed, and type-only exports count.
@@ -127,7 +127,7 @@ function migratingClaims(): Claim[] {
 }
 
 function guardMessageClaims(): Claim[] {
-  return ['configs/oxlint-plugin.js', 'src/guard/index.ts'].flatMap((rel) => {
+  return ['configs/oxlint-plugin.js'].flatMap((rel) => {
     const text = readFileSync(join(PKG, rel), 'utf8')
     return [...text.matchAll(RECIPE_CLAIM)].map((m) => ({
       symbol: m[1],

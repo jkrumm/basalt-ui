@@ -42,7 +42,6 @@ const SCRIPT_FILE = /\.[cm]?[jt]sx?$/
 
 /** A hex literal is `colour-literal`, the one form that runs at every profile that lints a root. */
 export const DEFAULT_OFFENDER: Offender = {
-  // theme-allow raw-hex — the seeded offender is a hex literal on purpose
   content: "export const seeded = '#ff0000'\n",
   fired: (id) => id === 'basalt/colour-literal',
 }

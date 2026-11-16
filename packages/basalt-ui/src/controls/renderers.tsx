@@ -1,4 +1,3 @@
-// theme-allow-file raw-selection-control — the selects here are the v3 ui/select primitive, bound to a ControlHandle by ControlView
 /**
  * One renderer per `handle.kind`. A renderer draws the input only: the label, the override cue and
  * the reset belong to `ControlView`, so a renderer cannot forget them. The `as` hint of a spec picks

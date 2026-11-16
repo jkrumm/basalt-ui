@@ -53,7 +53,6 @@
  * row is a clip box.
  */
 .toggle:focus-visible {
-  /* theme-allow raw-hex — one literal that clears 3:1 on the light page and the dark card (see above) */
   outline: 2px solid #5d86b2 !important;
   outline-offset: -2px !important;
 }

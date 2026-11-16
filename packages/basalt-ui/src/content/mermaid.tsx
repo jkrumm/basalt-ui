@@ -17,7 +17,6 @@ export const MERMAID_THEME_OPTIONS: RenderOptions = {
   fg: 'var(--vx-ink)',
   line: 'var(--vx-line)',
   accent: 'var(--vx-brand)',
-  // theme-allow unknown-vx-token — a v3 token (css/tokens.css); the guard's name list is 2.x
   muted: 'var(--vx-ink-muted)',
   surface: 'var(--vx-card)',
   border: 'var(--vx-hairline)',

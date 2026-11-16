@@ -144,7 +144,6 @@ export function ShellGrid({
 }: ShellGridProps): ReactElement {
   const style: RootStyle = { '--shell-aside-w': `${asideWidth}px` }
   return (
-    // theme-allow hidden-inline-style — one custom property carries the aside's reserved width; no layout is styled inline
     <div
       ref={rootRef}
       data-slot="shell"

@@ -132,7 +132,6 @@ export function DataTable<T>({
           )}
         >
           <BulkBar table={table} />
-          {/* theme-allow hidden-inline-style — the scrollport height and the scroll tier's min width are per-table values */}
           <div
             data-slot="table-scroller"
             ref={warnWithoutTierSheet}
@@ -175,7 +174,6 @@ export function DataTable<T>({
         className="flex max-w-full min-w-0 flex-col"
       >
         <BulkBar table={table} />
-        {/* theme-allow hidden-inline-style — the scrollport height and the scroll tier's min width are per-table values */}
         <div
           data-slot="table-scroller"
           ref={warnWithoutTierSheet}

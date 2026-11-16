@@ -101,7 +101,6 @@ export function TablePager<T>({
         {label}
       </span>
       <div className="flex items-center gap-2">
-        {/* theme-allow raw-selection-control — the page size is table state, not a page filter */}
         <NativeSelect
           size="sm"
           aria-label={t('table.pageSize')}

@@ -1,6 +1,5 @@
 /* @generated basalt-ui — do not edit; regenerate with the command on the next line */
 /* basalt-ui 3.0.0 — `bun packages/basalt-ui/src/css/generate.ts` */
-/* theme-allow-file unknown-vx-token — v3 sheet generated from the token table */
 @layer theme, base, basalt, components, utilities;
 @import 'tailwindcss';
 @import './tokens.css' layer(theme);
