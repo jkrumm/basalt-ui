@@ -6,7 +6,7 @@ import type { Delta, Phase } from 'basalt-ui/cards'
 import { Bars, ChartCard, Lines, useChartFocus } from 'basalt-ui/charts'
 import type { ChartFigure, ChartZone } from 'basalt-ui/charts'
 import { PageBar } from 'basalt-ui/page'
-import { VX, alpha } from 'basalt-ui/tokens'
+import { BASALT, alpha } from 'basalt-ui/tokens'
 import { WEALTH_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
 import { buildMonths, total } from './fixture'
@@ -70,7 +70,7 @@ export function ExprN14Scenario({ shotState, fixture }: ScenarioProps): ReactEle
     axis: 'x',
     from: run.from,
     to: run.to,
-    fill: alpha(VX.inkMuted, 0.14),
+    fill: alpha(BASALT.inkMuted, 0.14),
     ...(i === runs.length - 1 ? { label: 'Estimated' } : {}),
   }))
 

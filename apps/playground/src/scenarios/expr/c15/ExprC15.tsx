@@ -7,7 +7,7 @@ import type { ChartFigure, Empty, FootFacts } from 'basalt-ui/charts'
 import { DataPanel } from 'basalt-ui/cards'
 import type { Delta, Phase } from 'basalt-ui/cards'
 import { Page, PageBar } from 'basalt-ui/page'
-import { alpha, VX } from 'basalt-ui/tokens'
+import { alpha, BASALT } from 'basalt-ui/tokens'
 import { Num } from 'basalt-ui/ui/num'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 import { useState } from 'react'
@@ -16,8 +16,8 @@ import type { ScenarioProps } from '../../shot-state'
 import { MAX_OPEN_PCT, MIN_PER_WEEK, mailbox } from './fixture'
 import type { Sender } from './fixture'
 
-const MUTE = { light: VX.brand, dark: VX.brand }
-const KEEP = { light: VX.inkMuted, dark: VX.inkMuted }
+const MUTE = { light: BASALT.brand, dark: BASALT.brand }
+const KEEP = { light: BASALT.inkMuted, dark: BASALT.inkMuted }
 
 const CARD_HEIGHT = 'h-128'
 const BODY_HEIGHT = 444
@@ -194,7 +194,7 @@ export function ExprC15Scenario({ shotState, fixture }: ScenarioProps) {
                         x2: () => weekEnd,
                         y1: () => 0,
                         y2: () => MAX_OPEN_PCT,
-                        fill: alpha(VX.brand, 0.1),
+                        fill: alpha(BASALT.brand, 0.1),
                       }),
                       // cycle-expression-4: no pixel scale in custom marks for chartLabels.place, so the worst senders are labelled in a right-aligned data-space stack above the box (ranked, no leader line)
                       text(top, {
@@ -202,8 +202,8 @@ export function ExprC15Scenario({ shotState, fixture }: ScenarioProps) {
                         y: (s: Sender) => LABEL_TOP - LABEL_STEP * top.indexOf(s),
                         text: (s: Sender) => s.name,
                         anchor: 'end',
-                        fill: VX.ink,
-                        fontSize: VX.text.micro,
+                        fill: BASALT.ink,
+                        fontSize: BASALT.text.micro,
                       }),
                     ]
                   })}

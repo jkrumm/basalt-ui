@@ -1,7 +1,7 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
 // #region recipe:seam-bar
 import { chartLabels, useChartFocus } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 
 export type Part = { label: string; value: number; color: string }
 
@@ -31,7 +31,7 @@ export function SeamBar({ parts, track }: { parts: readonly Part[]; track: numbe
             {chartLabels.fits(
               p.label,
               { width: (p.value / total) * track },
-              { size: VX.text.xs, pad: 4 },
+              { size: BASALT.text.xs, pad: 4 },
             )
               ? p.label
               : null}

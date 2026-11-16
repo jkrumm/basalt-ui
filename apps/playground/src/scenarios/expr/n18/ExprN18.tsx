@@ -3,7 +3,7 @@ import { useFormat } from 'basalt-ui'
 import { DataPanel } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { PageBar } from 'basalt-ui/page'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 import { text } from '@tanstack/charts/text'
 import { WAIT_SERIES } from '../../../demo/series'
@@ -124,8 +124,8 @@ export function ExprN18Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                     text: (r) => `${hours(r.totalHours)} h`,
                     dy: -8,
                     anchor: 'middle',
-                    fill: VX.ink,
-                    fontSize: VX.text.micro,
+                    fill: BASALT.ink,
+                    fontSize: BASALT.text.micro,
                   }),
                 ])}
               />

@@ -1,7 +1,7 @@
 /**
  * App-side series colors — the consumer-series pattern.
  *
- * The framework ships NO `VX.series` tree (series colors are domain data). A consumer declares its
+ * The framework ships NO `BASALT.series` tree (series colors are domain data). A consumer declares its
  * own series with `defineSeries` (a typed `{ name: ColorPair }` map) and hands the `{ light, dark }`
  * pairs to the chart series, which resolve them per scheme.
  */

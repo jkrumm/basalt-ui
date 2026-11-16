@@ -5,7 +5,7 @@ import { ChartCard, Lines } from 'basalt-ui/charts'
 import { FilterSet, ViewTabs, filterSlot, spec } from 'basalt-ui/controls'
 import { defineControls, field } from 'basalt-ui/router'
 import type { ComponentProps, ReactElement } from 'react'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 
 const globals = defineControls({
   id: 'overview-globals',
@@ -36,7 +36,7 @@ const overview = defineControls({
   },
 })
 
-const ACCENT = { light: VX.brand, dark: VX.brand }
+const ACCENT = { light: BASALT.brand, dark: BASALT.brand }
 
 const NOW = Date.UTC(2026, 10, 12, 12, 0)
 

@@ -479,7 +479,7 @@ describe('zones and roots', () => {
     })
     const code = [
       'export const a = <div className="bg-bad-tint text-bad border-current" />',
-      'export const b = <div className="bg-(--vx-bad-tint) hover:bg-bad-tint/80 hover:bg-accent/50" />',
+      'export const b = <div className="bg-(--basalt-bad-tint) hover:bg-bad-tint/80 hover:bg-accent/50" />',
       'export const c = <div className="!p-2" />',
     ].join('\n')
     const dir = project('zone-e-forms', config, {

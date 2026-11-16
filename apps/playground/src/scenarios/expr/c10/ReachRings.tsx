@@ -1,4 +1,4 @@
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import type { ChartFocus } from 'basalt-ui/charts'
 import type { Reach } from './fixture'
 
@@ -68,14 +68,14 @@ export function ReachRings({
         const count = rows.filter((r) => r.hop === hop).length
         return (
           <g key={hop}>
-            <circle cx={CENTRE} cy={CENTRE} r={radius} fill="none" stroke={VX.grid} />
+            <circle cx={CENTRE} cy={CENTRE} r={radius} fill="none" stroke={BASALT.grid} />
             <text
               x={CENTRE}
               y={CENTRE - radius + 3}
               textAnchor="middle"
-              fontSize={VX.text.nano}
-              fill={VX.inkMuted}
-              stroke={VX.card}
+              fontSize={BASALT.text.nano}
+              fill={BASALT.inkMuted}
+              stroke={BASALT.card}
               strokeWidth={3}
               paintOrder="stroke"
             >
@@ -88,7 +88,15 @@ export function ReachRings({
         const from = row.via === null ? undefined : placed.get(row.via)
         if (from === undefined) return null
         return (
-          <line key={row.id} x1={from.x} y1={from.y} x2={x} y2={y} stroke={VX.line} aria-hidden />
+          <line
+            key={row.id}
+            x1={from.x}
+            y1={from.y}
+            x2={x}
+            y2={y}
+            stroke={BASALT.line}
+            aria-hidden
+          />
         )
       })}
       {nodes.map(({ row, index, x, y }) => (
@@ -98,8 +106,8 @@ export function ReachRings({
           cx={x}
           cy={y}
           r={row.hop === 0 ? ORIGIN_R : NODE_R}
-          fill={row.hop === 0 ? VX.ink : row.affected ? VX.bad : VX.inkMuted}
-          stroke={focus.index === index ? VX.ink : VX.card}
+          fill={row.hop === 0 ? BASALT.ink : row.affected ? BASALT.bad : BASALT.inkMuted}
+          stroke={focus.index === index ? BASALT.ink : BASALT.card}
           strokeWidth={focus.index === index ? 3 : 1.5}
         >
           <title>{row.id}</title>

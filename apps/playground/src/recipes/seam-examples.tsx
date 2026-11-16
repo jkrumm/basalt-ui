@@ -1,6 +1,6 @@
 // The worked examples of the geometry seam; gen-docs copies each `example:` region into its doc.
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 
 type Stage = { name: string; at: number; behind: number }
 
@@ -12,7 +12,7 @@ const STAGES: readonly Stage[] = [
   { name: 'Deploy', at: 5, behind: 18 },
 ]
 const STAGES_TOTAL = STAGES.reduce((sum, s) => sum + s.behind, 0)
-const PACE = { light: VX.brand, dark: VX.brand }
+const PACE = { light: BASALT.brand, dark: BASALT.brand }
 
 // #region example:useChartFocus
 export function PipelinePace() {

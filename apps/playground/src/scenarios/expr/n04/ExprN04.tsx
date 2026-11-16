@@ -7,7 +7,7 @@ import type { Phase } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import type { ChartFigure, LegendEntry } from 'basalt-ui/charts'
 import { Page, PageBar } from 'basalt-ui/page'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 import { RIDE_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
@@ -243,7 +243,7 @@ export function ExprN04Scenario({ shotState, fixture }: ScenarioProps) {
                         x2: (d: Run) => at(d.to + 0.5),
                         y1: () => 0,
                         y2: () => yTop,
-                        fill: VX.brand,
+                        fill: BASALT.brand,
                         fillOpacity: band(r),
                       }),
                     )
@@ -257,7 +257,7 @@ export function ExprN04Scenario({ shotState, fixture }: ScenarioProps) {
                               x2: (d: Hour) => at(d.i + 0.5),
                               y1: () => 0,
                               y2: () => yTop,
-                              fill: VX.brand,
+                              fill: BASALT.brand,
                               fillOpacity: CURSOR_FILL,
                             }),
                           ]
@@ -272,8 +272,8 @@ export function ExprN04Scenario({ shotState, fixture }: ScenarioProps) {
                               text: (r: Run) =>
                                 next === null ? `${r.hours} h` : `Best ${r.hours} h`,
                               anchor: () => 'middle' as const,
-                              fill: VX.ink,
-                              fontSize: VX.text.xs,
+                              fill: BASALT.ink,
+                              fontSize: BASALT.text.xs,
                             }),
                           ]
                     return [...bands, ...cursor, ...mark]

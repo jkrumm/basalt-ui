@@ -108,8 +108,8 @@ describe('metrics table', () => {
     expect(metricDelta(12.5, 10)).toBe('-2.5')
     expect(metricDelta(7, 7)).toBe('0')
     expect(metricDelta(-0.001, 0)).toBe('0')
-    expect(metricDelta('--vx-ink', '--vx-ink')).toBe('=')
-    expect(metricDelta('--vx-ink', 'unknown')).toBe('≠')
+    expect(metricDelta('--basalt-ink', '--basalt-ink')).toBe('=')
+    expect(metricDelta('--basalt-ink', 'unknown')).toBe('≠')
     expect(metricDelta(1, 'unknown')).toBe('–')
   })
 
