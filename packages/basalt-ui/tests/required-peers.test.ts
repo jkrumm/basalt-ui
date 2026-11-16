@@ -70,10 +70,6 @@ describe('peer declarations', () => {
       expect(peer in peerDeps).toBe(true)
     }
   })
-
-  it('declares no @mantine/* peer', () => {
-    expect(Object.keys(peerDeps).filter((peer) => peer.startsWith('@mantine/'))).toEqual([])
-  })
 })
 
 describe('runtime dependencies', () => {

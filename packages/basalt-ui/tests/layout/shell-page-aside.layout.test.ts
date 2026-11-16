@@ -116,7 +116,7 @@ describeShell(
 
     /**
      * INVARIANT 2 — at 390 the aside region is gone and the panel is a pill in row 2. The region's
-     * node still EXISTS (Mantine collapses it, it does not unmount it), which is exactly why the
+     * node still EXISTS (the shell collapses it, it does not unmount it), which is exactly why the
      * assertion counts the panel inside it rather than the region itself.
      */
     test('phone 390: nothing is in the aside — row 2 carries the Panel pill instead', async () => {

@@ -1,6 +1,6 @@
 /**
  * `renderApp(ui, options?)`: the seed of the v3 test wrapper (docs/v3/concepts/migration-release.md
- * section 8, port order step 3). It replaces the hand-rolled `MantineProvider` wrapper the swap-only
+ * section 8, port order step 3). It replaces the hand-rolled provider wrapper the swap-only
  * 2.x tests carried.
  *
  * What it does: wraps `ui` in `BasaltProvider`, stamps the `scheme` option on `<html data-theme>`

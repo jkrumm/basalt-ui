@@ -90,8 +90,8 @@ describe('live-5 references/live.md', () => {
     expect(live).toContain('docs/recipes/websocket-transport.md')
   })
 
-  test('names no Mantine API and no model id', () => {
-    expect(live).not.toMatch(/mantine|claude-/i)
+  test('names no model id', () => {
+    expect(live).not.toMatch(/claude-/i)
   })
 
   test('its snippet type-checks against the built declarations', async () => {

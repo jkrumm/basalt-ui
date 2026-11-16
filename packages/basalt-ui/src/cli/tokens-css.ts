@@ -304,7 +304,7 @@ function readShippedFontDecls(pkgRoot: string): {
  * The typeface half of the framework-free route, which had no supported path at all: `tokens.css`
  * emits no font vars, `styles.css` is the one place the defaults live and a framework-free consumer
  * is told not to import it, and `buildFontsCss` returns `''` unless the caller already knows the
- * stacks. The one non-Mantine consumer lost its font identity entirely and hardcoded the stacks.
+ * stacks. A consumer without it lost its font identity entirely and hardcoded the stacks.
  * The declarations (and the `Basalt Head Digits` face the head stack leads with) are READ from the
  * shipped stylesheet, so this command and `basalt-ui/styles.css` can never name different
  * typefaces. The fonts are `@fontsource-variable/*` packages (the face's `url()` is a bare package

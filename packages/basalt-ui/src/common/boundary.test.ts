@@ -14,7 +14,7 @@ import { join } from 'node:path'
 
 const DIR = import.meta.dir
 // `.tsx` too, and not because one exists today: `common/` is where a shared primitive lands, and a
-// filter that only saw `.ts` would have let the first JSX file in it import Mantine unpoliced.
+// filter that only saw `.ts` would have let the first JSX file in it import a UI library unpoliced.
 const SOURCE_EXT = /\.tsx?$/
 const TEST_EXT = /\.test\.tsx?$/
 const SOURCES = readdirSync(DIR).filter((f) => SOURCE_EXT.test(f) && !TEST_EXT.test(f))

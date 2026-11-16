@@ -95,7 +95,7 @@ describe('check 12: app wiring', () => {
     expect(r.detail).toContain('<html> has no lang')
   })
 
-  it('fails a legacy [data-mantine-color-scheme] selector', async () => {
+  it('fails a legacy scheme-attribute selector', async () => {
     const css = '[data-mantine-color-scheme="dark"] .a { color: red }\n'
     const r = await runCheck(makeTree('app', { 'src/legacy.css': css }), 12)
     expect(r.status).toBe('fail')

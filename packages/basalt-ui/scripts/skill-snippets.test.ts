@@ -1,7 +1,7 @@
 /**
  * The shipped skills carry code a consumer agent copies verbatim, so a snippet that stops
  * compiling must fail `bun test`. A ```tsx fence whose FIRST line is `// @check` is extracted,
- * written to a scratch directory inside the package (so `react`, `@mantine/*` and TanStack resolve
+ * written to a scratch directory inside the package (so `react`, `@base-ui/react` and TanStack resolve
  * from its `node_modules`), and type-checked together with the others under the shipped
  * `configs/tsconfig.react-app.json`, with `basalt-ui` and `basalt-ui/*` path-mapped to the built `dist/*.d.ts` — the declarations a consumer
  * gets. (Mapping to `src/` would type-check basalt's own source under the snippet's `Register`

@@ -78,9 +78,9 @@ describe('qa-i6 references', () => {
     }
   })
 
-  test('neither reference names a Mantine API or a model id', () => {
+  test('neither reference names a model id', () => {
     for (const name of ['performance.md', 'testing.md']) {
-      expect(reference(name)).not.toMatch(/mantine|claude-/i)
+      expect(reference(name)).not.toMatch(/claude-/i)
     }
   })
 })

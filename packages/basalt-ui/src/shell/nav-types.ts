@@ -1,6 +1,6 @@
 /**
  * The shared nav vocabulary. TYPE-ONLY BY CONTRACT — never add a value export here.
- * `src/shell/**` (Mantine) and `src/router-tanstack/**` (headless) both `import type` from it,
+ * `src/shell/**` and `src/router-tanstack/**` (headless) both `import type` from it,
  * which is erased by tsup, so `dist/router-tanstack/index.js` gains no edge into `shell/` and
  * `scripts/check-dist-layering.mjs` stays green with no config change.
  */
@@ -11,7 +11,7 @@ export type NavMobilePlacement = 'tab' | 'more' | 'hidden'
 
 /**
  * Props basalt hands a nav anchor. Deliberately a PLAIN FUNCTION TYPE, not `ComponentType`
- * or `ElementType`: both are unions, and a union defeats Mantine's polymorphic `component`
+ * or `ElementType`: both are unions, and a union defeats a polymorphic `component`
  * inference (`<NavLink component={…}>` then rejects `label`). VERIFIED both ways.
  */
 export type NavAnchorProps = {

@@ -89,8 +89,8 @@ export const rows: readonly RowDef[] = [
     id: 'tokens-css-gzip',
     order: 320,
     label: 'tokens.css (gzip B, src/css/tokens.css)',
-    // 1538 B measured (zlib default level), +5 percent rounded up.
-    ceiling: 1615,
+    // 1539 B measured (zlib default level), +5 percent rounded up.
+    ceiling: 1616,
     measure: () => gzipFileBytes(join(CSS_DIR, 'tokens.css')),
   },
   {

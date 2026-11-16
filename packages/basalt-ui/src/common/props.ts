@@ -8,8 +8,8 @@
  *
  * **`className` + per-slot `classNames`, and nothing else.** No `styles` object, no `vars`: basalt
  * does not spread `...rest` onto the DOM (which is why the harness saw zero unknown-attribute
- * warnings), and a `styles`/`vars` surface would re-open the styling seam Mantine already owns for
- * the primitives underneath. A composite that needs more than its root styled declares its SLOT
+ * warnings), and a `styles`/`vars` surface would re-open the styling seam the primitives already own for
+ * the parts underneath. A composite that needs more than its root styled declares its SLOT
  * NAMES in its own props type — `SlotStylesProps<'root' | 'header' | 'body'>` — so the slot set is
  * a documented, compiler-checked union rather than an open record.
  *

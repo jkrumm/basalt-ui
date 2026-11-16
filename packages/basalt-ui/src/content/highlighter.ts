@@ -3,7 +3,7 @@
  * optional-peer pattern (dynamic import + `.catch` degrade, no unhandled rejection, no crash).
  *
  * Dual TextMate themes (`github-light`/`github-dark`) baked into the output as `--shiki-*` CSS
- * vars via `defaultColor: false` (docs/CONTENT-SPEC.md decision 3) — a Mantine scheme flip is then
+ * vars via `defaultColor: false` (docs/CONTENT-SPEC.md decision 3) — a scheme flip is then
  * pure CSS with zero re-highlighting. The `createJavaScriptRegexEngine({ forgiving: true })` engine
  * never throws on partial/streamed code (vs the default Oniguruma/wasm engine).
  *

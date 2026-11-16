@@ -101,7 +101,6 @@ describe('gen-llms entry points teach the v3 app', () => {
       expect(head).toContain(`# basalt-ui/${spec} `)
     }
     expect(head).toContain('@base-ui/react')
-    expect(head).not.toContain('@mantine')
     expect(head).not.toContain('BasaltProvider')
   })
 

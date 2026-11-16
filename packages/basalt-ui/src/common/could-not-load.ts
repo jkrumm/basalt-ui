@@ -10,7 +10,7 @@ export const HostTitleContext = createContext<string | undefined>(undefined)
 /**
  * The error title a component names itself in: "Revenue" → "Could not load revenue". A leading
  * capital followed by another capital or a non-letter ("KPI", "MRR", "2024 sales") keeps its case;
- * a missing or blank label stays the bare "Could not load". Mantine-free: `charts/**` imports it.
+ * a missing or blank label stays the bare "Could not load". `charts/**` imports it.
  */
 export function couldNotLoad(label?: string): string {
   const noun = label?.trim()

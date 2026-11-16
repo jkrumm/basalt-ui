@@ -140,7 +140,7 @@ export const RETIRED_GUARD_KIND_IDS = new Set([
   'hidden-inline-style',
   'raw-selection-control',
   'raw-media-query',
-  'unknown-basalt-token',
+  'unknown-vx-token',
   'series-palette',
 ])
 

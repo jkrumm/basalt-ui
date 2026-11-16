@@ -12,8 +12,8 @@
  *
  * The `ui-path` form reads `@/`, `~/`, `#/`, `src/` and relative `components/ui/<name>` paths; an ejected name
  * stays legal however it is spelled. The `radix` form leaves `@radix-ui/react-icons` alone: it is
- * an icon set, and an icon prop takes the icon library's own component; it reads every `@mantine/*`
- * package (the stack 2.x shipped on) but `@mantine/hooks`, a hooks set with no UI whose storage
+ * an icon set, and an icon prop takes the icon library's own component; it reads every package of the
+ * 2.x UI stack but its hooks set, a set with no UI whose storage
  * hooks `persist-storage` reads. The `visx`, `streamdown`
  * and `persist-storage` forms list the rival packages in the table below.
  *
@@ -83,7 +83,7 @@ const STORAGE_PACKAGES: ReadonlySet<string> = new Set([
 const STORAGE_NAMES: Readonly<Record<string, ReadonlySet<string>>> = {
   'zustand/middleware': new Set(['persist', 'createJSONStorage']),
   'jotai/utils': new Set(['atomWithStorage', 'createJSONStorage']),
-  // A consumer's own Mantine storage hook is a persistence route; basalt itself depends on none.
+  // A 2.x storage hook is a persistence route; basalt itself depends on none.
   '@mantine/hooks': new Set(['useLocalStorage', 'useSessionStorage']),
   'usehooks-ts': new Set(['useLocalStorage', 'useSessionStorage']),
   'react-use': new Set(['useLocalStorage', 'useSessionStorage']),

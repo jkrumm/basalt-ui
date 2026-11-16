@@ -140,7 +140,7 @@ const STROKE = 4
 
 /**
  * A circular gauge with its percentage printed in the middle, in the page locale (`useFormat`):
- * `42.5%` in `en`, `42,5 %` in `de-DE`. The replacement for Mantine's `RingProgress`.
+ * `42.5%` in `en`, `42,5 %` in `de-DE`.
  *
  * @example
  * <Ring value={42.5} aria-label="Storage used" tone="warn" />

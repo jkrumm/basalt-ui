@@ -1,5 +1,5 @@
 /**
- * OKLab / OKLCH and colour-vision-deficiency simulation — Mantine-free, dependency-free.
+ * OKLab / OKLCH and colour-vision-deficiency simulation — dependency-free.
  *
  * OKLab is Ottosson's definition (https://bottosson.github.io/posts/oklab/); the CVD matrices are
  * Machado, Oliveira & Fernandes (2009), "A Physiologically-based Model for Simulation of Color

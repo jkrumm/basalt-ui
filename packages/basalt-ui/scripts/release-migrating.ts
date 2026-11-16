@@ -433,7 +433,7 @@ const SURFACE_DIR = 'packages/basalt-ui/scripts/export-surface'
 const LEGACY_SURFACE_PATH = 'packages/basalt-ui/scripts/export-surface.json'
 const BASALT_PATH = 'packages/basalt-ui/src/tokens/basalt-names.ts'
 /** Where a tag before the 3.0 rename carries the same list: `src/tokens`, then `src/guard` before the move. */
-const LEGACY_BASALT_PATHS = [
+export const LEGACY_BASALT_PATHS = [
   'packages/basalt-ui/src/tokens/vx-names.ts',
   'packages/basalt-ui/src/guard/vx-names.ts',
 ]

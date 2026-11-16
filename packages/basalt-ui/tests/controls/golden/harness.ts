@@ -1,5 +1,5 @@
 /**
- * Mantine-free memory-history router harness for the invariant tests: no dev server, no browser.
+ * Memory-history router harness for the invariant tests: no dev server, no browser.
  * `probe` runs inside a component under the root route, so handle hooks (`use()`, `useValues()`)
  * work. Navigation is observed through `router.state.location`.
  */

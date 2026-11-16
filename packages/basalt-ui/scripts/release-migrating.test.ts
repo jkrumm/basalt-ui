@@ -23,6 +23,7 @@ import {
   DIGEST_RE,
   digestOf,
   findUncovered,
+  LEGACY_BASALT_PATHS,
   loadAreas,
   mergeAreas,
   renderMigrating,
@@ -89,7 +90,9 @@ function scratch(legacySurface = false): string {
   } else {
     writeSurface(pkg, taggedSurface)
   }
-  writeFileSync(join(pkg, 'src/guard/basalt-names.ts'), basaltSource(['--basalt-a', '--basalt-b']))
+  // A 2.x tag carries the list at its oldest path, under the 2.x name.
+  const tagged = join(dir, LEGACY_BASALT_PATHS.at(-1) as string)
+  writeFileSync(tagged, basaltSource(['--basalt-a', '--basalt-b']))
   sh(dir, 'git', 'init', '-q', '-b', 'master')
   sh(dir, 'git', 'config', 'user.email', 't@example.com')
   sh(dir, 'git', 'config', 'user.name', 't')
@@ -100,7 +103,7 @@ function scratch(legacySurface = false): string {
   sh(dir, 'git', 'tag', 'v2.29.0')
   // The tag carries the list at its pre-move path; the working tree carries it where it lives now.
   mkdirSync(join(pkg, 'src/tokens'), { recursive: true })
-  renameSync(join(pkg, 'src/guard/basalt-names.ts'), join(pkg, 'src/tokens/basalt-names.ts'))
+  renameSync(tagged, join(pkg, 'src/tokens/basalt-names.ts'))
   return dir
 }
 
@@ -272,6 +275,13 @@ describe('findUncovered', () => {
       tokens: { ...none.tokens, renamed: [{ from: '--basalt-x', to: '--basalt-y' }] },
     }
     expect(findUncovered({}, {}, ['--basalt-x'], ['--basalt-y'], renamed)).toEqual([])
+  })
+
+  test('a prefix row covers every old name whose new twin is still emitted, and only those', () => {
+    const prefix = withRows([{ id: 'p', kind: 'renamed', from: '--old-*', to: '--basalt-*' }])
+    expect(findUncovered({}, {}, ['--old-x', '--old-gone'], ['--basalt-x'], prefix)).toEqual([
+      '--old-gone',
+    ])
   })
 
   test('additions never fail', () => {

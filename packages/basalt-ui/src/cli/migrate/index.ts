@@ -4,7 +4,7 @@
  *
  * Reads the app's imports (the census), selects the migration rows that apply from `--from` and
  * whose symbol the app imports, and prints what changes. Never writes, never touches the network.
- * `--check` exits 1 while a removed symbol is still imported, a legacy `[data-mantine-color-scheme]`
+ * `--check` exits 1 while a removed symbol is still imported, a legacy scheme-attribute
  * selector remains, or a legacy-namespace storage or url key has no row.
  *
  * `--json` shape: `MigrateReport` below, `schema: 1`. Changing a field name is a schema bump.
@@ -38,7 +38,7 @@ const OPTIONS = {
 /** A symbol the migration removes from the old name: importing it still is a failure under `--check`. */
 const REMOVING = new Set(['removed', 'renamed', 'moved'])
 const REMOVING_PROP = new Set(['removed-prop', 'renamed-prop'])
-/** Always a legacy selector, rows or not (the v2 Mantine scheme attribute). */
+/** Always a legacy selector, rows or not (the 2.x scheme attribute). */
 const BUILTIN_SELECTOR = '[data-mantine-color-scheme'
 
 export interface ReportRow extends MigrationRow {
@@ -76,7 +76,7 @@ export interface MigrateReport {
   rules: RuleRow[]
   /** Imported basalt-ui symbols (`module#name`) that no row mentions. */
   unmapped: { symbol: string; at: string[] }[]
-  /** Legacy-namespace keys (`mantine-*`, `basalt-*`) the app uses that no row maps. */
+  /** Legacy-namespace keys (the 2.x and `basalt-*` prefixes) the app uses that no row maps. */
   unknownKeys: { store: 'storage' | 'url'; key: string; at: string[] }[]
   /** What `--check` fails on; present with or without `--check`. */
   failures: Failure[]

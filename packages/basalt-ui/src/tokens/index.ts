@@ -1,5 +1,5 @@
 /**
- * `basalt-ui/tokens` — the Mantine-free token layer's public surface. The implementation lives in
+ * `basalt-ui/tokens` — the token layer's public surface. The implementation lives in
  * `./core` (internal: the provider, CLI and theme import it from there); only what a consumer
  * names is re-exported here.
  */

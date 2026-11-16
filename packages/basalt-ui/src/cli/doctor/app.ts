@@ -1,6 +1,6 @@
 /**
  * Check 12: app wiring. Textual, no TS program: the router defaults a profile `app` must set, the
- * `notify` and `ToastHost` pair, `<html lang>`, the scheme boot script, selectors from the Mantine
+ * `notify` and `ToastHost` pair, `<html lang>`, the scheme boot script, selectors from the 2.x
  * era, and Playwright when the manifest declares `shot`.
  */
 import { spawnSync } from 'node:child_process'

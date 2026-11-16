@@ -213,7 +213,7 @@
       "id": "legacy-1x-charts-VX",
       "kind": "moved",
       "from": "basalt-ui/charts#VX",
-      "to": "basalt-ui#VX",
+      "to": "basalt-ui#BASALT",
       "verify": "ast",
       "manual": false
     },
@@ -540,7 +540,7 @@
       "id": "legacy-1x-tokens-VX",
       "kind": "moved",
       "from": "basalt-ui/tokens#VX",
-      "to": "basalt-ui#VX",
+      "to": "basalt-ui#BASALT",
       "verify": "ast",
       "manual": false,
       "note": "the member names have their own tok-ts rows"

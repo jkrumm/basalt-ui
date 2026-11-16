@@ -228,7 +228,7 @@ describe('--check', () => {
     expect(capture(() => migrate([...FLAGS, '--check'], aliased, p)).code).toBe(1)
   })
 
-  it('fails on a legacy [data-mantine-color-scheme] selector with no row at all', () => {
+  it('fails on a legacy scheme-attribute selector with no row at all', () => {
     const app = tree(tmp(), { 'a.css': ':root[data-mantine-color-scheme="dark"] { color: red }\n' })
     const r = capture(() => migrate([...FLAGS, '--check'], app, pkg()))
     expect(r.code).toBe(1)
@@ -238,12 +238,10 @@ describe('--check', () => {
   it('fails on a legacy-namespace storage or url key no row maps, passes one that a row maps', () => {
     const p = pkgWith({
       'areas/a.json': rowsFile({
-        storage: [
-          { key: 'mantine-color-scheme-value', action: 'read-legacy', to: 'basalt:scheme' },
-        ],
+        storage: [{ key: 'basalt-scheme-old', action: 'read-legacy', to: 'basalt:scheme' }],
       }),
     })
-    const mapped = tree(tmp(), { 'a.ts': "localStorage.getItem('mantine-color-scheme-value')\n" })
+    const mapped = tree(tmp(), { 'a.ts': "localStorage.getItem('basalt-scheme-old')\n" })
     expect(capture(() => migrate([...FLAGS, '--check'], mapped, p)).code).toBe(0)
     const store = tree(tmp(), { 'a.ts': "localStorage.setItem('basalt-sidebar', '1')\n" })
     expect(capture(() => migrate([...FLAGS, '--check'], store, p)).code).toBe(1)

@@ -1,5 +1,5 @@
 /**
- * The two responsive tables (`docs/DESIGN-CORE.md` § Layout, elevation, shapes) — pure data, Mantine-free. Each
+ * The two responsive tables (`docs/DESIGN-CORE.md` § Layout, elevation, shapes) — pure data. Each
  * value is the class's minimum width in px.
  *
  * A `@media`/`@container` condition cannot read a custom property, so CSS writes the literal and
@@ -26,8 +26,8 @@ export const CONTAINER_KEYS = {
 } as const
 
 /**
- * `CONTAINER_CLASSES` as the five-key map `<Grid type="container" breakpoints={…}>` takes (Mantine
- * types it `Record<MantineSize, string>`), so `Grid.Col` keys resolve onto the grid's own width:
+ * `CONTAINER_CLASSES` as the five-key map a container grid takes (`xs`..`xl`), so its columns
+ * resolve onto the grid's own width:
  * `xs` opens narrow, `sm` regular, `md`/`lg`/`xl` wide. `basalt/raw-breakpoint` trusts this import
  * by name (from `basalt-ui/tokens`) — any other imported map is unreadable to it and flagged.
  */
@@ -48,7 +48,7 @@ export function resolveContainerClass(px: number): ContainerClass {
 }
 
 /**
- * `theme.breakpoints`, derived — a consumer cannot retune it. Mantine needs all five keys:
+ * `theme.breakpoints`, derived — a consumer cannot retune it. It carries all five keys:
  * `base` (no key) is compact, `xs`/`sm` open the medium class, `md`/`lg`/`xl` the expanded one, so
  * every `visibleFrom`/`hiddenFrom` in the package stays "desktop chrome" from `sm` up.
  */
@@ -65,7 +65,7 @@ export function toEm(px: number): string {
   return `${Number((px / 16).toFixed(5))}em`
 }
 
-/** The `max-width` complement of a class boundary — 0.1px under it, Mantine's own convention. */
+/** The `max-width` complement of a class boundary — 0.1px under it, the usual convention. */
 export function sizeClassMaxEm(minPx: number): string {
   return toEm(minPx - 0.1)
 }

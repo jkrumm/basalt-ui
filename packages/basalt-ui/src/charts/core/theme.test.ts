@@ -9,7 +9,16 @@ const CHARTS = join(import.meta.dir, '..')
 const SHEET = readFileSync(join(CHARTS, '..', 'css', 'tokens.css'), 'utf8')
 const DEFINED = new Set(SHEET.match(/--basalt-[a-z0-9-]+(?=\s*:)/g))
 /** Set by a chart file itself on the element that reads it (`legend.tsx`), with a fallback at the read. */
-const LOCAL = new Set(['--basalt-hit-gap'])
+const LOCAL = new Set([
+  '--basalt-hit-gap',
+  // Override hooks that were `--basalt-*` before the token rename: a host sets them, every read carries
+  // a fallback (or `styles.css` declares it), so the v3 sheet need not.
+  '--basalt-chart-font',
+  '--basalt-state-ring',
+  '--basalt-ghost-band-axis',
+  '--basalt-tooltip-surface',
+  '--basalt-font-numeral',
+])
 
 const sources = (dir: string): string[] =>
   readdirSync(dir).flatMap((name) => {
@@ -34,7 +43,7 @@ describe('chart layer reads v3 tokens only', () => {
     const bad: string[] = []
     for (const file of sources(CHARTS)) {
       for (const [, path] of readFileSync(file, 'utf8').matchAll(
-        /\bVX\.([A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*)/g,
+        /\bBASALT\.([A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*)/g,
       )) {
         const value = path!
           .split('.')
