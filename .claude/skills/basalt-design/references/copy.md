@@ -36,6 +36,10 @@ Cut to what the marks cannot say: the figure `13` with its pill `of 19`, one ann
 
 A build said "last 30 days" in the title, the caption, the axis title and the footer, and the hero repeated the count the chart's pill carried. Keep the period in the card's `figure` period slot and the count in the figure; the axis title names the unit only ("Deploys"), the footer holds two facts the marks do not (the busiest day, the slowest run). Six cycle 4 builds (n13, n09, c15, c14, n04, n16) stated one fact three to five times.
 
+### Worked: a number four times, a leader three times
+
+n10 printed "19.4 kt" in the hero, the bracket, the footer and the table; n18 named its leader in the hero, the list and a note. Keep it where the reader looks first and where a mark can carry it (the bracket on the chart), and let the hero, period, pill, footer and list each state something the others do not (n10 .38, n18 .76, n03 .9, n07 .21, n14 .50, n17 .62).
+
 ## Say each thing once
 
 - A figure appears once per page, in the summary line, the card or the table cell, whichever the reader reaches first.

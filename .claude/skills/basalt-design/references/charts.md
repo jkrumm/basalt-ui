@@ -22,6 +22,8 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - Give every headline figure a baseline: a zero line, a reference line, a zone, or a signed delta that names its period. `refLines` and `zones` are data on [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md). [type:ChartRefLine] [type:ChartZone]
 - Against a limit, draw the limit and print the distance to it; "steady at 1.6x" without the 3x line is a claim without a scale. A limit that exists only as a colour rule becomes geometry or a signed distance.
 
+- The threshold that defines the answer is drawn, never only stated in a footer: where "part" means 4 kt apart, a `refLines` rule or a zone at 4 kt shows it, and the mark that matters carries why it matters ("Models part: over 4 kt apart"), not only its name (n10 .27, n07 .12, n14 .43, n17 .53, n03 .1: the number was in the footer and no mark showed it).
+
 ## Label and annotate the mark that matters
 
 - Label marks directly with `text` marks placed by [chartLabels](node_modules/basalt-ui/docs/chart-labels.md): it measures, avoids overlaps and drops what is too wide. The worked example is region `example:chartLabels` in `apps/playground/src/recipes/seam-examples.tsx`.
@@ -52,6 +54,14 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 ## One view
 
 - Where two charts share an axis and answer the two halves of one question, they are one chart above and below the axis (a diverging chart) in one card, where two cards and a strip would stack (c13 X2, F1; n01 in cycle 2: a strip, per-day bars, a list and a line as four stacked parts). Two cards stand only when the axes differ. A list longer than the chart sits beside it in its own scroll region at `@wide`, and a box takes its content's height, so a fixed height cannot leave a gap or clip (n13, n09, c14, n04).
+
+- A table that shows the chart's items is `DataTable` with `focus`, which keeps the link through its own sort; a list that only repeats the chart's numbers is folded into the chart card or dropped (n18, n10, n03, n14, n17, n07).
+
+## Encodings
+
+- A share bar is scaled to the whole its caption names: "of 64 GB" is 64 GB, never the sum of the classes shown (n17 .55).
+- A list carries the chart's encoding of a state (the same fill, the same grey), never a second one (n07 .15, .17; n14 .47; n10 .28).
+- A ranking prints its values on the bars; at 390 a band axis names every key through a short `x.ticks` label ("Owner", "CI"), where a number only thins the keys away (n18 .68, .75).
 
 ## Honest marks
 
