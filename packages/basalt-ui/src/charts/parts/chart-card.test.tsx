@@ -218,6 +218,23 @@ describe('anatomy', () => {
     }
   })
 
+  test('a failed card dashes its figure and footer at the ready row height', () => {
+    const props = {
+      title: 'R',
+      chart: () => null,
+      figure: { value: 14, unit: 'Issues', delta: { value: '+8%', polarity: 'up-good' as const } },
+      footer: [{ label: 'Fewest done', value: 'Cinder' }] as [{ label: string; value: string }],
+    }
+    const ready = html(<ChartCard {...props} />)
+    const failed = html(<ChartCard {...props} phase={{ tag: 'error' }} />)
+    const row = failed.querySelector('[data-slot="chart-figure"]')
+    expect(row?.textContent).toBe('–')
+    expect(row?.className).toBe(ready.querySelector('[data-slot="chart-figure"]')?.className)
+    expect(failed.querySelector('[data-slot="delta-badge"]')).toBeNull()
+    expect(failed.querySelector('[data-slot="chart-footer"] dd')?.textContent).toBe('–')
+    expect(ready.querySelector('[data-slot="chart-footer"] dd')?.textContent).toBe('Cinder')
+  })
+
   test('no figure, no figure row', () => {
     expect(
       html(<ChartCard title="R" chart={() => null} />).querySelector('[data-slot="chart-figure"]'),
