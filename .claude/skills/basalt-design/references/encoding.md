@@ -4,12 +4,12 @@ Which form carries which shape of data, and what the marks may say. The question
 
 ## Is it a chart at all
 
-- One current value is a [StatCard](docs/stat-card.md); a handful of headline values is a [StatGroup](docs/stat-group.md) strip.
-- One ratio against a limit is a [Meter](docs/meter.md) with its zones; the verdict is a word under the marker.
-- A top-N or a share of a total is a [BarList](docs/bar-list.md). Many rows with several attributes is a [DataTable](docs/data-table.md), unless the question is which items changed state or passed: that is one mark per item (a square per case) with the table holding the detail.
-- A value over time is a chart in a [ChartCard](docs/chart-card.md); compare categories with bars, follow a shape with a line.
-- Events in order are an [EventList](docs/event-list.md). Intervals on a time axis (a stay, a run, a notice window) get one row each, drawn as a bar on the axis.
-- A series that must dim on focus is [CartesianChart](docs/cartesian-chart.md) marks: `Lines` ignores marks and so cannot dim, while `Bars` dims through its own `opacity`.
+- One current value is a [StatCard](node_modules/basalt-ui/docs/stat-card.md); a handful of headline values is a [StatGroup](node_modules/basalt-ui/docs/stat-group.md) strip.
+- One ratio against a limit is a [Meter](node_modules/basalt-ui/docs/meter.md) with its zones; the verdict is a word under the marker.
+- A top-N or a share of a total is a [BarList](node_modules/basalt-ui/docs/bar-list.md). Many rows with several attributes is a [DataTable](node_modules/basalt-ui/docs/data-table.md), unless the question is which items changed state or passed: that is one mark per item (a square per case) with the table holding the detail.
+- A value over time is a chart in a [ChartCard](node_modules/basalt-ui/docs/chart-card.md); compare categories with bars, follow a shape with a line.
+- Events in order are an [EventList](node_modules/basalt-ui/docs/event-list.md). Intervals on a time axis (a stay, a run, a notice window) get one row each, drawn as a bar on the axis.
+- A series that must dim on focus is [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md) marks: `Lines` ignores marks and so cannot dim, while `Bars` dims through its own `opacity`.
 
 ## Colour follows the entity
 
@@ -31,13 +31,13 @@ Which form carries which shape of data, and what the marks may say. The question
 
 ## Filters
 
-- One left-aligned filter row above what it scopes, the date range first ([FilterSet](docs/filter-set.md)); a filter scopes everything below it. [type:ControlHandle]
-- A filter that empties the view offers its own reset in the empty state ([EmptyState](docs/empty-state.md)).
+- One left-aligned filter row above what it scopes, the date range first ([FilterSet](node_modules/basalt-ui/docs/filter-set.md)); a filter scopes everything below it. [type:ControlHandle]
+- A filter that empties the view offers its own reset in the empty state ([EmptyState](node_modules/basalt-ui/docs/empty-state.md)).
 
 ## Numbers
 
 - Compact from 1,000 (`12.9K`, `$4.2M`); ticks compact the same way. Every number carries its unit inline, and a rate or a total carries its period.
-- Format through [useFormat](docs/use-format.md) or pass the number to the part, which formats it.
+- Format through [useFormat](node_modules/basalt-ui/docs/use-format.md) or pass the number to the part, which formats it.
 
 not guarded:
 

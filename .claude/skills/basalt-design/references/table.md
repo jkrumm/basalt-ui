@@ -1,6 +1,6 @@
 # Table
 
-A table is one `useDataTable` and one `<DataTable>`; the kinds, the tiers and the phone cards are decided for you. Props are in the generated docs: [DataTable](docs/data-table.md), [useDataTable](docs/use-data-table.md). The composed exemplar is `apps/playground/src/routes/table.tsx`: server mode with chips, facets and bulk actions, 10k virtual rows with `c.select`, and one grouped table.
+A table is one `useDataTable` and one `<DataTable>`; the kinds, the tiers and the phone cards are decided for you. Props are in the generated docs: [DataTable](node_modules/basalt-ui/docs/data-table.md), [useDataTable](node_modules/basalt-ui/docs/use-data-table.md). The composed exemplar is `apps/playground/src/routes/table.tsx`: server mode with chips, facets and bulk actions, 10k virtual rows with `c.select`, and one grouped table.
 
 Requires TanStack Table's own `table-state` skill for anything under `t.table`: this file does not restate v9.
 

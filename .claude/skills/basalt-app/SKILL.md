@@ -15,7 +15,6 @@ Run the local bin, `./node_modules/.bin/basalt-ui` or a package script; in a wor
 | `init`                    | Place the manifest, the managed rules and skills, the AGENTS block and the `DESIGN.md` seed at the git or workspace root. `--no-install` writes files and prints the install commands. |
 | `doctor`                  | Check this project; read to the last line. `SKIPPED` exits non-zero. `--from <x.y.z>` prints the `MIGRATING.md` changes since that version.                                            |
 | `sync`                    | Refresh every managed file; `--check` writes nothing and exits 1 on a difference (the CI gate); `--force` overwrites a file you edited.                                                |
-| `check-theme`             | Scan for hand-written colour; `--audit-allows` lists waivers that suppress nothing.                                                                                                    |
 | `tokens:css`, `fonts:css` | Emit the `--vx-*` sheet and the font stacks as plain CSS; `--check` is the CI gate.                                                                                                    |
 | `migrate`                 | Select the migration rows an app needs from a version; see [migrate](references/migrate.md).                                                                                           |
 | `eject`                   | Take ownership of one primitive, with `--reason`; see [eject](node_modules/basalt-ui/docs/eject.md).                                                                                   |
@@ -37,7 +36,7 @@ The profile is declared in `.basalt/manifest.json` and never inferred. Choose th
 1. `bun add basalt-ui`, then `./node_modules/.bin/basalt-ui init --profile <profile>` at the repo root (install `basalt-ui` first, then run `init` once from the local bin, never `bunx`, `init` included). `init` installs the profile's peers (`app`: `tailwindcss`, `@tailwindcss/vite`, `@base-ui/react`, `@tanstack/react-query`, `@tanstack/react-router`, `@tanstack/router-plugin`, plus the lint tools and `oxfmt`). Install the peers of each further subpath you import: the generated doc of the export names its `peers`, and `llms.txt` lists them per subpath.
 2. Confirm `profile` in `.basalt/manifest.json`, then run `doctor` and fix every finding it prints until it is clean.
 3. Tokens: `init` generates `src/tokens.css` (`tokens:css --out`), the app's own file, committed. A `tokens` app imports it and stops here. Re-run `tokens:css` with `--accent` or `--neutral` to retune; `fonts:css --out src/fonts.css` only to change the stacks, imported after `tokens.css`.
-4. Vite apps (`bridge` and above): one stylesheet entry and one plugin order, both written by `init` into a stock `index.css` and `vite.config.ts` ([vite](node_modules/basalt-ui/docs/vite.md), [basalt](node_modules/basalt-ui/docs/basalt.md)). `plugins: [react(), tailwindcss(), basalt()]`, and the entry:
+4. Vite apps (`bridge` and above): one stylesheet entry and one plugin order, both written by `init` into a stock `index.css` and `vite.config.ts` ([vite](node_modules/basalt-ui/docs/vite.md), [basalt](node_modules/basalt-ui/docs/basalt.md)). `plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), tailwindcss(), basalt()]` (`tanstackRouter` first, only at `app`; below it the list is `[react(), tailwindcss(), basalt()]`), and the entry:
 
    ```css
    @import 'basalt-ui/tailwind.css';
@@ -49,7 +48,7 @@ The profile is declared in `.basalt/manifest.json` and never inferred. Choose th
 
 5. `app` profile: the entry `init` writes mounts `BasaltProvider` from `basalt-ui/router` once ([basalt-provider](node_modules/basalt-ui/docs/basalt-provider.md)); mount the frame once in the `_app` layout route ([app-shell recipe](references/recipes.md)), declare `NAV` once with [defineNav](node_modules/basalt-ui/docs/define-nav.md), and gate an authenticated app in the `_app` layout route's `beforeLoad`, never the root's (`login` sits outside `_app`) (the shell has no auth seam and loaders fire before any gate component renders).
 6. Fill in `DESIGN.md` (identity, series dictionary, deviations); `/basalt-design` reads it before every page.
-7. Run the repo gate (`make check` or the package's own), which runs lint, `check-theme` and typecheck. Fix findings at their source.
+7. Run the repo gate (`make check` or the package's own), which runs lint and typecheck. Fix findings at their source.
 
 ## Add what the app needs
 
