@@ -276,6 +276,28 @@ layout('StatGroup, StatCell and DataPanel', () => {
         }
       })
 
+      for (const [scheme, colour] of [
+        [undefined, 'rgb(11, 107, 203)'],
+        ['dark', 'rgb(90, 169, 240)'],
+      ] as const) {
+        test(`a swatch paints its series colour${scheme ? ` in ${scheme}` : ''}, before the label`, async () => {
+          const page = await open(viewport, scheme)
+          const swatches = await page.raw.evaluate(() =>
+            [...document.querySelectorAll('[data-slot="stat-swatch"]')].map((el) => {
+              const label = el.nextElementSibling?.getBoundingClientRect()
+              const box = el.getBoundingClientRect()
+              return {
+                fill: getComputedStyle(el).backgroundColor,
+                size: [box.width, box.height],
+                before: label !== undefined && box.right <= label.left,
+              }
+            }),
+          )
+          expect(swatches.length).toBeGreaterThan(0)
+          for (const s of swatches) expect(s).toEqual({ fill: colour, size: [8, 8], before: true })
+        })
+      }
+
       for (const scheme of [undefined, 'dark'] as const) {
         test(`axe finds nothing serious or critical${scheme ? ` in ${scheme}` : ''}, in every state`, async () => {
           const page = await open(viewport, scheme)

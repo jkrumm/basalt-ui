@@ -4,7 +4,7 @@ use when: 'a status bar or KPI row shows one figure with its qualifier, meter, t
 never when: 'the figure stands alone as a card (use a stat card) or the rows are the content (use a list)'
 subpath: basalt-ui/cards
 peers: ['@base-ui/react']
-slots: [stat-caption, stat-cell, stat-chart, stat-empty, stat-foot, stat-meter, stat-row]
+slots: [stat-caption, stat-cell, stat-chart, stat-empty, stat-foot, stat-meter, stat-row, stat-swatch]
 ---
 
 # StatCell
@@ -26,6 +26,7 @@ StatCell(props: StatCellProps): ReactElement
   phase?: Phase | QueryStateLike
   empty?: Empty | null
   label: string
+  swatch?: { light: string; dark: string; }  // The series colour of the mark this figure reads, drawn as a dot before the label
   qualifier?: string
   info?: string
   value?: string | number | null
