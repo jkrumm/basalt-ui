@@ -2,8 +2,10 @@
  * No shipped message names a fix another shipped rule reports (lint cycle 1, lint-1.16). The
  * messages are collected from every surface that writes one: the rule table's `fix` and `next`, the
  * `message` options the preset writes for each shipped profile, the generated no-restyle contracts
- * and the stylelint preset. The class-utility tokens they propose run through the class rules at the
- * app profile, where nothing stands down.
+ * and the stylelint preset. The class-utility tokens and bare colour roles they propose run through
+ * the class rules at each profile the message ships at (lint-3.11), and the at-rules they name
+ * through the stylesheet's at-rule ban (lint-3.12). A clause that says `at bridge` is read at that
+ * profile only.
  */
 import { describe, expect, it } from 'bun:test'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
@@ -15,7 +17,9 @@ import { createPlugin, tableOf } from './factory'
 import plugin from './index'
 import type { Contract } from './preset'
 import { SHADCN_MESSAGES, SHIPPED_PROFILES, shippedPreset } from './preset'
+import { zoneANames } from './generated/zone-a'
 import { CLASS_RULES } from './rules/class/table'
+import type { Profile } from './rule-table'
 import { presetInput } from './rule-table'
 import { stylelintConfig } from './stylelint/render'
 import { SLOTS } from '../ui/slots'
@@ -37,7 +41,11 @@ const preset = (profile: (typeof SHIPPED_PROFILES)[number]) =>
     uiSlots: SLOTS,
   })
 
-type Message = { source: string; text: string }
+type ShippedProfile = (typeof SHIPPED_PROFILES)[number]
+type Message = { source: string; text: string; profiles: readonly ShippedProfile[] }
+
+const shippedAt = (profiles: readonly Profile[]): ShippedProfile[] =>
+  SHIPPED_PROFILES.filter((profile) => profiles.includes(profile))
 
 const flatten = (value: unknown): string[] =>
   typeof value === 'string'
@@ -50,9 +58,10 @@ const flatten = (value: unknown): string[] =>
 function shippedMessages(): Message[] {
   const messages: Message[] = []
   for (const [id, entry] of Object.entries(table)) {
+    const profiles = shippedAt(entry.profiles)
     for (const form of entry.forms) {
-      messages.push({ source: `basalt/${id} ${form.id} fix`, text: form.fix })
-      messages.push({ source: `basalt/${id} ${form.id} next`, text: form.next })
+      messages.push({ source: `basalt/${id} ${form.id} fix`, text: form.fix, profiles })
+      messages.push({ source: `basalt/${id} ${form.id} next`, text: form.next, profiles })
     }
   }
   for (const profile of SHIPPED_PROFILES) {
@@ -61,14 +70,17 @@ function shippedMessages(): Message[] {
       if (!name.startsWith('shadcn/') || !Array.isArray(value)) continue
       const options = value[1] as { message?: unknown } | undefined
       for (const text of flatten(options?.message)) {
-        messages.push({ source: `${profile} ${name} message`, text })
+        messages.push({ source: `${profile} ${name} message`, text, profiles: [profile] })
       }
     }
   }
-  for (const c of contracts) messages.push({ source: `contract ${c.pattern}`, text: c.message })
+  // The contracts ship from parts up; the stylesheet preset at every profile.
+  for (const c of contracts) {
+    messages.push({ source: `contract ${c.pattern}`, text: c.message, profiles: ['parts', 'app'] })
+  }
   for (const [rule, value] of Object.entries(stylelintConfig().rules)) {
     const text = Array.isArray(value) ? (value[1] as { message?: string } | undefined)?.message : ''
-    messages.push({ source: `stylelint ${rule}`, text: text ?? '' })
+    messages.push({ source: `stylelint ${rule}`, text: text ?? '', profiles: SHIPPED_PROFILES })
   }
   return messages
 }
@@ -77,43 +89,96 @@ function shippedMessages(): Message[] {
 const UTILITY =
   /(?<![\w-])-?(?:gap|space-[xy]|[pm][xytrblse]?|[wh]|size|max-[wh]|min-[wh]|text|bg|border|rounded|shadow|flex|grid|col|row|justify|items|self|overflow|ring|outline|font|leading|tracking|z|inset|basis|grow|shrink|order)-[A-Za-z0-9*.[\]/%]+(?![\w-])/g
 
-/** `gap-*` proposes a step: the `*` is any one value, tried as `4`. */
-const proposedTokens = (text: string): string[] =>
-  [...text.matchAll(UTILITY)].map(([token]) => token.replaceAll('*', '4'))
-
 /**
- * A class a message names for a profile other than app, exempt from the app-profile check. Each
- * entry is `<source>: <token>` with the reason beside it.
+ * A colour role named bare (`on-brand`), tried as the ink utility it stands for. Only a hyphenated
+ * role reads: a one-word role (`brand`, `ink`) is also a plain English word in the prose.
  */
-const NAMED_FOR_OTHER_PROFILES: ReadonlySet<string> = new Set([
-  // "text-good or text-brand at bridge": app-colour rejects them at parts and app, and says so.
-  'basalt/status-fill-as-text text-on-fill fix: text-good',
-  'basalt/status-fill-as-text text-on-fill fix: text-brand',
-])
+const ROLE = new RegExp(
+  `(?<![\\w-])(?:${zoneANames
+    .filter((name) => name.includes('-'))
+    .toSorted((a, b) => b.length - a.length)
+    .join('|')})(?![\\w-])`,
+  'g',
+)
+
+/** `gap-*` proposes a step: the `*` is any one value, tried as `4`. */
+const proposedTokens = (text: string): string[] => [
+  ...[...text.matchAll(UTILITY)].map(([token]) => token.replaceAll('*', '4')),
+  ...[...text.replace(UTILITY, ' ').matchAll(ROLE)].map(([role]) => `text-${role}`),
+]
+
+/** A clause that names its profile (`text-good or text-brand at bridge`) is read there only. */
+const AT_PROFILE = /\bat (bridge|parts|app)\b/g
+
+function clauses(message: Message): { text: string; profiles: readonly ShippedProfile[] }[] {
+  return message.text.split(/;|\.\s/).map((text) => {
+    const named = [...text.matchAll(AT_PROFILE)].map(([, p]) => p as ShippedProfile)
+    return {
+      text,
+      profiles:
+        named.length > 0 ? message.profiles.filter((p) => named.includes(p)) : message.profiles,
+    }
+  })
+}
 
 const linter = new Linter()
-const classIds = presetInput(CLASS_RULES).profiles.app
-const classOptions = presetInput(CLASS_RULES).options.app
-const classRules = Object.fromEntries(
-  classIds.map((name) => [name, ['error', ...(classOptions[name] ?? [])]]),
-) as Record<string, ['error', ...unknown[]]>
+const plugins = { basalt: createPlugin(CLASS_RULES) as unknown as ESLint.Plugin }
+const classRulesAt = (profile: ShippedProfile): Record<string, ['error', ...unknown[]]> => {
+  const input = presetInput(CLASS_RULES)
+  return Object.fromEntries(
+    input.profiles[profile].map((name) => [
+      name,
+      ['error', ...(input.options[profile][name] ?? [])],
+    ]),
+  ) as Record<string, ['error', ...unknown[]]>
+}
 
-/** The class-rule findings on `<div className="token" />` at the app profile. */
-const reported = (token: string): string[] =>
+/** The class-rule findings on `<div className="token" />` at one profile. */
+const reported = (token: string, profile: ShippedProfile): string[] =>
   linter
     .verify(
       `const a = <div className="${token}" />`,
       [
         {
           files: ['**/*.tsx'],
-          plugins: { basalt: createPlugin(CLASS_RULES) as unknown as ESLint.Plugin },
+          plugins,
           languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
-          rules: classRules,
+          rules: classRulesAt(profile),
         },
       ],
       'input.tsx',
     )
     .map((m) => m.ruleId ?? m.message)
+
+/** Every class a message proposes that a class rule reports at a profile the clause ships at. */
+const classOffenders = (message: Message): string[] =>
+  clauses(message).flatMap(({ text, profiles }) =>
+    proposedTokens(text).flatMap((token) =>
+      profiles.flatMap((profile) => {
+        const found = reported(token, profile)
+        return found.length > 0 ? [`${message.source}: ${token} at ${profile} -> ${found}`] : []
+      }),
+    ),
+  )
+
+const atRuleList = stylelintConfig().rules['at-rule-disallowed-list']
+const BANNED_AT_RULES: ReadonlySet<string> = new Set(
+  Array.isArray(atRuleList) ? (atRuleList[0] as readonly string[]) : [],
+)
+
+/** An at-rule a message names that the stylesheet preset bans; the ban's own message names them. */
+const atRuleOffenders = (message: Message): string[] =>
+  message.source === 'stylelint at-rule-disallowed-list'
+    ? []
+    : [...message.text.matchAll(/(?<![\w-])@([a-z][a-z-]*)/g)]
+        .filter(([, name]) => BANNED_AT_RULES.has(name ?? ''))
+        .map(([rule]) => `${message.source}: ${rule}`)
+
+const at = (text: string, profiles: readonly ShippedProfile[]): Message => ({
+  source: 'probe',
+  text,
+  profiles,
+})
 
 describe('shipped messages', () => {
   const messages = shippedMessages()
@@ -135,16 +200,24 @@ describe('shipped messages', () => {
     }
   })
 
-  it('names no class another shipped rule reports', () => {
-    const offenders = messages.flatMap(({ source, text }) =>
-      proposedTokens(text)
-        .filter((token) => !NAMED_FOR_OTHER_PROFILES.has(`${source}: ${token}`))
-        .flatMap((token) => {
-          const found = reported(token)
-          return found.length > 0 ? [`${source}: ${token} -> ${found.join(', ')}`] : []
-        }),
+  it('names no class another shipped rule reports at the same profile', () => {
+    expect(messages.flatMap(classOffenders)).toEqual([])
+  })
+
+  it('names no at-rule the stylesheet preset bans', () => {
+    expect(BANNED_AT_RULES.has('utility')).toBe(true)
+    expect(messages.flatMap(atRuleOffenders)).toEqual([])
+  })
+
+  it('would flag a fix another rule rejects at its profile', () => {
+    // cycle 3's fixed-colour message (lint-3.11) and shadcn's own no-unknown-classes advice (lint-3.12)
+    expect(classOffenders(at('on-brand for ink on a brand fill', ['parts']))).not.toEqual([])
+    expect(classOffenders(at('on-brand ink on a brand fill at bridge', ['bridge', 'app']))).toEqual(
+      [],
     )
-    expect(offenders).toEqual([])
+    expect(atRuleOffenders(at('declare it with @utility in src/index.css', ['app']))).toEqual([
+      'probe: @utility',
+    ])
   })
 
   it('never says use margin, declares a --color-<name>, or proposes a fixed width', () => {
@@ -263,6 +336,7 @@ const NOT_PACKAGE_APIS: Readonly<Record<string, string>> = {
   oklch: 'CSS function',
   localStorage: 'web platform global the message bans',
   sessionStorage: 'web platform global the message bans',
+  clear: 'the Storage method raw-storage-write names as the thing to avoid',
   EventSource: 'web platform class the message bans',
   WebSocket: 'web platform class the message bans',
   TanStack: 'the library name',

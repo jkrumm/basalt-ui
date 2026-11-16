@@ -209,7 +209,8 @@
           "*:min-[*]:*",
           "max-[*]:*",
           "*:max-[*]:*"
-        ]
+        ],
+        "message": "\"{{className}}\" is not a class or variant this project's Tailwind knows, so no CSS is generated for it. Nearest: {{suggestions|none, check the spelling}}. A radius is rounded-ctrl or rounded-chip, and a card surface (border, radius, shadow) is owned by Card and Inset; no class or variant is declared per app."
       }
     ],
     "shadcn/no-inline-styles": "error",
