@@ -6,7 +6,8 @@
  * - `dangerous-html`: `dangerouslySetInnerHTML` whose `__html` is not a string literal, and the DOM
  *   sinks `el.innerHTML = x`, `el.outerHTML = x` and `el.insertAdjacentHTML(pos, x)` with a
  *   non-literal value. `<iframe srcDoc={x} />` with a non-literal `srcDoc` (a string literal or a
- *   hole-free template is legal) and `x.createContextualFragment(html)` with a non-literal argument
+ *   hole-free template is legal, and so is a frame whose `sandbox` leaves out
+ *   `allow-same-origin`) and `x.createContextualFragment(html)` with a non-literal argument
  *   (`document.createRange().createContextualFragment(m.html)`) report too. A sink reached through
  *   a computed key (`el['innerHTML']`) is not read, nor is `createContextualFragment` called bare.
  * - `rehype-raw`: an import or require of `rehype-raw`.
@@ -126,6 +127,22 @@ const isMdxModule = (source: string | undefined): boolean =>
 /** DOM properties that parse a string as markup. */
 const HTML_SINKS: ReadonlySet<string> = new Set(['innerHTML', 'outerHTML'])
 
+/**
+ * An iframe whose `sandbox` is bare or a literal that leaves out `allow-same-origin`: the document
+ * runs in an opaque origin and cannot reach the app, which is how the ai-artifacts recipe previews
+ * model HTML. A `sandbox` held in a variable is not read.
+ */
+function isIsolatedFrame(opening: Node): boolean {
+  const sandbox = children(opening, 'attributes').find(
+    (attribute) => nameOf(child(attribute, 'name')) === 'sandbox',
+  )
+  if (!sandbox) return false
+  const value = child(sandbox, 'value')
+  if (value === undefined) return true
+  const tokens = text(value)
+  return tokens !== undefined && !tokens.split(/\s+/).includes('allow-same-origin')
+}
+
 const dangerousHtml: AstForm = {
   id: 'dangerous-html',
   detect: ({ report }) => {
@@ -140,7 +157,8 @@ const dangerousHtml: AstForm = {
       const expression =
         value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
       if (expression && isLiteralText(expression)) return
-      report(node, 'iframe srcDoc')
+      if (isIsolatedFrame(opening)) return
+      report(node, 'iframe srcDoc without a sandbox')
     }
     return {
       JSXAttribute(node) {
