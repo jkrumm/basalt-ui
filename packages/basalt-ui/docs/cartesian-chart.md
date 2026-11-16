@@ -70,14 +70,57 @@ The server render draws the ring and attaches no handler.
 ## Custom marks
 
 `CartesianChart.custom((plot) => marks)` is the only way to build the `marks` prop. The builder gets
-`plot.data`, `plot.rows(key)` (datums of a visible series), `plot.visible`, `plot.plotHeight` and
-`plot.focused` (the datum `focus` holds, else `null`: dim the rest against it), and returns engine
-marks from the allowed `@tanstack/charts/*` subpaths. They draw after the series' own.
+`plot.data`, `plot.rows(key)` (datums of a visible series), `plot.visible`, `plot.plotWidth` and
+`plot.plotHeight` (the plot area in px), `plot.x(value)` and `plot.y(value, axis?)` (a value's px
+from the plot's top-left on the axis' own scale: time, log or a band key's centre; `x` is `null` off
+the scale) and `plot.focused` (the datum `focus` holds, else `null`: dim the rest against it), and
+returns engine marks from the allowed `@tanstack/charts/*` subpaths. They draw after the series' own.
 
 A word on one mark (the slowest, the spike, last night) is an engine `text` mark
 (`import { text } from '@tanstack/charts/text'`), allowed under `import-boundary` like every other
-mark here, placed by [`chartLabels`](chart-labels.md) so it clears the other marks. A kind such as
-`Bars` takes no custom mark, so a chart that needs the word is `CartesianChart` with that mark.
+mark here, placed by [`chartLabels`](chart-labels.md) in plot pixels so it clears the dots and the
+other labels. Draw each placed label at its datum with the placed `dx`/`dy`:
+
+```tsx
+marks={CartesianChart.custom<Sender>((plot) => {
+  const r = VX.dotR + 1
+  const dots = plot.rows('d').flatMap((s) => {
+    const px = plot.x(s.perWeek)
+    return px === null ? [] : [{ left: px - r, top: plot.y(s.openPct) - r, width: 2 * r, height: 2 * r }]
+  })
+  const { placed } = chartLabels.place(
+    worst.map((s) => ({ key: s.id, text: s.name, x: plot.x(s.perWeek) ?? 0, y: plot.y(s.openPct) })),
+    { width: plot.plotWidth, height: plot.plotHeight },
+    // The gap clears the anchor's own dot, which is one of the obstacles.
+    { obstacles: dots, gap: VX.dotR + 3 },
+  )
+  return [
+    text(placed, {
+      x: (l) => byId.get(l.key)!.perWeek,
+      y: (l) => byId.get(l.key)!.openPct,
+      text: (l) => l.text,
+      dx: (l) => l.dx,
+      dy: (l) => l.dy,
+      anchor: (l) => l.textAnchor,
+    }),
+  ]
+})}
+```
+
+A label with no clear spot is dropped; name it in `summary`. A kind such as `Bars` takes no custom
+mark, so a chart that needs the word is `CartesianChart` with that mark.
+
+## Zones
+
+A `zones` entry is a y band (`{ from, to, fill, axis?: 'left' | 'right' }`), or with `axis: 'x'` an
+x range: `from` and `to` are numbers (a log x too), `Date`s or band keys (both bands covered whole),
+`y: { from, to }` bounds it on the left axis and `label` is a muted caption at its top-start corner,
+beside the zone when it does not fit inside, dropped when no spot stays in the plot. A bound the
+scale cannot place (at or under 0 on a log x, an unknown key) reaches the plot's edge.
+
+```tsx
+zones={[{ axis: 'x', from: MIN_PER_WEEK, to: weekEnd, y: { from: 0, to: MAX_OPEN_PCT }, fill: alpha(VX.brand, 0.1), label: 'Mute' }]}
+```
 
 ## Axis titles, log x, vertical rules
 

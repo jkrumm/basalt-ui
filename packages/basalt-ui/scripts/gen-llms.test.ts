@@ -85,7 +85,7 @@ describe('gen-llms signatures', () => {
 
   test('the glossary spells out a named literal union, in declaration order (row 78 a)', () => {
     expect(text).toMatch(
-      /^Type: ChartZone = \{ from: number, to: number, fill: string, axis\?: 'left' \| 'right' \}/m,
+      /^Type: ChartZone = \{ from: number; to: number; fill: string; axis\?: 'left' \| 'right'; \} \| \{ axis: 'x'; from: number \| Date \| string;/m,
     )
   })
 

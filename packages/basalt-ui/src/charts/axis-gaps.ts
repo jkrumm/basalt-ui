@@ -144,6 +144,9 @@ export function logTicks(lo: number, hi: number): number[] {
 const X_REF_LABEL_DX = 6
 /** A rule caption's glyph advance as a share of the font size (proportional Latin, capitals included). */
 const X_LABEL_GLYPH_EM = 0.68
+/** A muted caption's estimated width in px: the rule and zone captions, no width table in the bundle. */
+export const captionWidth = (label: string, fontSize: number): number =>
+  label.length * fontSize * X_LABEL_GLYPH_EM
 /** Air kept between two captions on one row, px. */
 const X_LABEL_AIR = 4
 /** A second row of captions hangs under the first before one drops. */
@@ -190,7 +193,7 @@ export function xRefLabelSpots<X extends ChartX>(opts: {
   })
   const taken: XRefLabelSpot[] = []
   for (const { index, f, text: label } of named.toSorted((a, b) => a.f - b.f)) {
-    const width = label.length * fontSize * X_LABEL_GLYPH_EM + X_REF_LABEL_DX
+    const width = captionWidth(label, fontSize) + X_REF_LABEL_DX
     const at = f * plotWidth
     const preferRight = f <= 0.5
     const spots: XRefLabelSpot[] = []

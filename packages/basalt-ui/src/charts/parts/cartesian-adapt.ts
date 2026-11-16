@@ -25,8 +25,10 @@ import type {
   PlotContext,
   RefLine,
   XRefLine,
+  XZoneSpec,
   ZoneSpec,
 } from '../types'
+import { plotScales } from '../seams/plot-scales'
 
 /** The closed stroke scale: `weight` is the only way to thicken or soften a line. */
 export const WEIGHT_WIDTH = { quiet: 1.25, strong: 2.5 } as const
@@ -69,12 +71,32 @@ export function toEngineSeries<D>(s: Series<D>): ChartSeries<D> {
   }
 }
 
-export function toEngineZone(z: ChartZone): ZoneSpec {
+/** A y band (`axis` left, right or absent). */
+export type YZone = Exclude<ChartZone, { axis: 'x' }>
+/** An x range (`axis: 'x'`). */
+export type XAxisZone = Extract<ChartZone, { axis: 'x' }>
+
+export const isXZone = (z: ChartZone): z is XAxisZone => z.axis === 'x'
+
+export function toEngineZone(z: YZone): ZoneSpec {
   return {
     from: z.from,
     to: z.to,
     fill: z.fill,
     ...(z.axis !== undefined && { axisSide: z.axis }),
+  }
+}
+
+/** A band key bound covers its band whole; a continuous bound is exact. */
+export function toEngineXZone(z: XAxisZone): XZoneSpec {
+  const keyed = typeof z.from === 'string' || typeof z.to === 'string'
+  return {
+    from: z.from,
+    to: z.to,
+    fill: z.fill,
+    ...(keyed && { align: 'edge' as const }),
+    ...(z.y !== undefined && { y: z.y }),
+    ...(z.label !== undefined && { label: z.label }),
   }
 }
 
@@ -149,6 +171,7 @@ export type EngineSpec<D> = {
   xTicks?: number | readonly ChartX[]
   formatX?: (x: ChartX) => string
   zones?: readonly ZoneSpec[]
+  xZones?: readonly XZoneSpec[]
   refLines?: readonly RefLine[]
   xRefLines?: readonly XRefLine[]
   cursorGroup?: string
@@ -188,7 +211,10 @@ export function toEngineSpec<D>(
     ...(x.title !== undefined && { xTitle: x.title }),
     ...(x.scale !== undefined && { xScale: x.scale }),
     ...(x.ticks !== undefined && { xTicks: x.ticks as number | readonly ChartX[] }),
-    ...(zones !== undefined && { zones: zones.map(toEngineZone) }),
+    ...(zones?.some((z) => !isXZone(z)) === true && {
+      zones: zones.flatMap((z) => (isXZone(z) ? [] : [toEngineZone(z)])),
+    }),
+    ...(zones?.some(isXZone) === true && { xZones: zones.filter(isXZone).map(toEngineXZone) }),
     ...(refLines !== undefined && {
       refLines: refLines.flatMap((r) => (isXRefLine(r) ? [] : [toEngineRefLine(r)])),
     }),
@@ -212,7 +238,19 @@ export function customPlot<D>(
       const v3 = byKey.get(s.key)
       return v3 === undefined ? [] : [v3]
     }),
+    plotWidth: plot.plotWidth,
     plotHeight: plot.plotHeight,
+    x: (value) => {
+      const fraction = plot.xFraction(value)
+      return fraction === null ? null : fraction * plot.plotWidth
+    },
+    y: (value, axis) => {
+      const yDomain = axis === 'right' ? (plot.y2Domain ?? plot.yDomain) : plot.yDomain
+      return plotScales(
+        { plotWidth: plot.plotWidth, plotHeight: plot.plotHeight, yDomain },
+        [0, 1],
+      ).y(value)
+    },
     focused: plot.focused,
   }
 }

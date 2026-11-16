@@ -78,6 +78,14 @@ describe('place', () => {
     expect(first?.textX).toBe(104)
     expect(first?.height).toBeCloseTo(12, 9)
   })
+  test('dx and dy offset the text from its anchor for a mark drawn at the datum', () => {
+    const { placed } = chartLabels.place([label('a', { spots: ['above-left'] })], FRAME)
+    const l = placed[0]
+    expect(l?.dx).toBe((l?.textX ?? 0) - 100)
+    expect(l?.dx).toBe(-4)
+    // The engine `text` mark centres on its y: the box's middle, 4 px gap plus half the box above.
+    expect(l?.dy).toBeCloseTo(-(4 + 6), 9)
+  })
   test('the higher priority wins a contested spot; ties keep input order', () => {
     const low = label('low', { spots: ['right'] })
     const high = label('high', { spots: ['right'], priority: 5 })
