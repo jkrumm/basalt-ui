@@ -12,7 +12,7 @@ Every chart is a shipped kind or `CartesianChart`; props live in the shipped typ
 ## Composition
 
 - Use a shipped kind when one fits; otherwise compose `CartesianChart` with custom marks. [type:CartesianChartProps] [type:CustomMarks]
-- `ariaLabel` is required on every chart. [type:CartesianChartProps]
+- `label` is required on every chart. [type:CartesianChartProps]
 - Custom marks return engine marks (a `text` mark included, placed by `chartLabels`) from a `ChartPlot` and nothing else; margins, scales, axes, grid, cursor, legend and tooltip are the host's. [type:ChartPlot]
 - Supply `series` once; a legend entry with no series is a `LegendEntry`, never a fake series. [type:LegendEntry]
 - Wrap a chart in `ChartCard`; its headline figure and period are the `figure`, not a filler `subtitle`. [type:ChartCardProps]
