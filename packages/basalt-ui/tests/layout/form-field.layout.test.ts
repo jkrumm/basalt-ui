@@ -159,6 +159,31 @@ layout('FormField and FormRow', () => {
         expect(result.clipped).toBe(0)
       })
 
+      test('a switch and a checkbox keep their own size in a field; an input fills it', async () => {
+        const page = await open(viewport)
+        const sizes = await page.raw.evaluate(() => {
+          const box = (slot: string): { width: number; height: number } => {
+            const el = document.querySelector<HTMLElement>(
+              `[data-testid="ff-kinds"] [data-slot="field-control"] [data-slot="${slot}"]`,
+            )!
+            const r = el.getBoundingClientRect()
+            return { width: r.width, height: r.height }
+          }
+          const control = document.querySelector<HTMLElement>(
+            '[data-testid="ff-kinds"] [data-slot="field-control"]',
+          )!
+          return {
+            switch: box('switch'),
+            checkbox: box('checkbox'),
+            input: box('input'),
+            control: control.getBoundingClientRect().width,
+          }
+        })
+        expect(sizes.switch).toEqual({ width: 36, height: 20 })
+        expect(sizes.checkbox.width).toBeLessThan(32)
+        expect(sizes.input.width).toBeCloseTo(sizes.control, 0)
+      })
+
       test('the required mark is a visible glyph, not colour alone', async () => {
         const page = await open(viewport)
         const mark = await page.raw.evaluate(() => {

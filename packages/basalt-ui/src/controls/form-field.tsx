@@ -184,7 +184,10 @@ function Frame({
       {...(dirty && { 'data-dirty': '' })}
       className={cn('min-w-0', className)}
     >
-      <div data-slot="field-control" className="min-w-0 *:w-full">
+      <div
+        data-slot="field-control"
+        className="min-w-0 *:not-data-[slot=switch]:not-data-[slot=checkbox]:w-full"
+      >
         {children}
       </div>
       {description ? <FieldDescription>{description}</FieldDescription> : null}
