@@ -4,7 +4,7 @@ use when: 'an app has more than one destination and wants one rail, header and t
 never when: 'the app is one screen or keeps its own frame (use Page, PageBar and Section inside your own main)'
 subpath: basalt-ui/shell
 peers: ['@base-ui/react', '@tanstack/react-router']
-slots: [page-breadcrumb-leaf]
+slots: [page-breadcrumb-leaf, page-breadcrumb-parent]
 ---
 
 # AppShell

@@ -6,6 +6,8 @@
  * handed to the doctor check.
  */
 import { afterEach, describe, expect, test } from 'bun:test'
+import { createElement } from 'react'
+import type { ReactElement } from 'react'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { managedFiles } from '../../src/cli'
@@ -140,6 +142,37 @@ describe('router templates', () => {
     expect(text).toMatch(/router\.invalidate\(\)/)
     expect(text).toMatch(/onClick: retry/)
     expect(text).not.toMatch(/onClick: reset/)
+  })
+
+  test('the missing screen takes its message and link from notFound data, else links home', async () => {
+    const src = filled('_app-missing.tpl').replace(
+      "'basalt-ui/page'",
+      JSON.stringify(join(pkgRoot, 'src/page/index')),
+    )
+    const dir = mkdtempSync(join(pkgRoot, 'tests/agent/.missing-'))
+    try {
+      const file = join(dir, 'route-missing.tsx')
+      writeFileSync(file, src)
+      const { RouteMissing } = (await import(file)) as {
+        RouteMissing: (props: Record<string, unknown>) => ReactElement
+      }
+      const { render, cleanup } = await import('@testing-library/react')
+      const shown = render(createElement(RouteMissing, {}))
+      expect(shown.container.textContent).toContain('This address does not match any page.')
+      expect(shown.container.querySelector('a')?.getAttribute('href')).toBe('/')
+      cleanup()
+      const data = { message: 'No run "r9".', link: { to: '/runs', label: 'All runs' } }
+      const named = render(
+        createElement(RouteMissing, { data, isNotFound: true, routeId: '__root__' }),
+      )
+      expect(named.container.textContent).toContain('No run "r9".')
+      const link = named.container.querySelector('a')
+      expect(link?.getAttribute('href')).toBe('/runs')
+      expect(link?.textContent).toBe('All runs')
+      cleanup()
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 
   test('the seeded files type-check against the built dist', async () => {

@@ -1,15 +1,27 @@
 /**
- * `defaultNotFoundComponent`: a path no route matched.
+ * `defaultNotFoundComponent`: a path no route matched, or a loader that threw `notFound()`.
+ *
+ * A loader shapes the screen with `throw notFound({ data: { message, link } })`: a missing record
+ * says which one, and the link goes back to where the reader came from. Without data the screen
+ * says the address matches no page and links home.
  *
  * Scaffold written by `basalt-ui init` to `src/components/route-missing.tsx`. This file is yours — `basalt-ui sync` will not overwrite it.
  */
+import type { NotFoundRouteProps } from '@tanstack/react-router'
 import { EmptyState } from 'basalt-ui/page'
 
-export function RouteMissing() {
+type NotFoundData = { message?: string; link?: { to: string; label: string } }
+
+const HOME = { to: '/', label: 'Go to the start page' }
+
+export function RouteMissing({ data }: Partial<NotFoundRouteProps>) {
+  const { message, link }: NotFoundData = typeof data === 'object' && data !== null ? data : {}
+  const back = typeof link?.to === 'string' && typeof link.label === 'string' ? link : HOME
   return (
     <EmptyState
-      cause="This page does not exist. Check the address, or start from the home page."
-      action={{ label: 'Go home', href: '/' }}
+      title="Page not found"
+      cause={typeof message === 'string' ? message : 'This address does not match any page.'}
+      action={{ label: back.label, href: back.to }}
     />
   )
 }
