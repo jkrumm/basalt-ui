@@ -48,3 +48,29 @@ const a = <Link to="/runs" />
 
 // @valid
 const a = <a href="/runs" search={{ range: '30d' }} />
+
+// @invalid
+const route = {
+  beforeLoad: () => {
+    throw redirect({ to: '/runs', search: { status: 'all' } })
+  },
+}
+
+// @invalid
+const route = {
+  beforeLoad: () => router.redirect({ to: '/runs', search: (prev) => ({ ...prev }) }),
+}
+
+// @valid
+const route = {
+  beforeLoad: () => {
+    throw redirect({ to: '/runs', search: store.field.status.link('all') })
+  },
+}
+
+// @valid
+const route = {
+  beforeLoad: () => {
+    throw redirect({ to: '/login' })
+  },
+}
