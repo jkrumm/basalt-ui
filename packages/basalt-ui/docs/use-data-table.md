@@ -41,6 +41,7 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   detail?: (row: T, box: Box) => ReactNode
   detailTitle?: (row: T) => string  [with detail]  // The title of a row's detail entry (the aside or sheet header); the table label when absent
   detailState?: ControlHandle<string>  [with detail]  // A string field of row ids that holds the open row: activating a row writes its id, closing the sheet calls `c…
+  detailById?: (id: string, box: Box) => ReactNode  [with detail]  // The body of a record the table has not loaded, for a `detailState` field that names an id no loaded row has (…
   onRowActivate?: (row: T) => void
 ```
 
