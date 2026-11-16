@@ -59,3 +59,25 @@ const a = (
     )}
   />
 )
+// @invalid
+const a = (
+  <DataPanel
+    title="Share"
+    body={() => (
+      <>
+        <Lines ariaLabel="share" data={rows} x="at" series={['share']} />
+      </>
+    )}
+  />
+)
+// @valid
+const a = (
+  <DataPanel
+    title="Rows"
+    body={() => (
+      <>
+        <DataTable rows={rows} columns={columns} />
+      </>
+    )}
+  />
+)

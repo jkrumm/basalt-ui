@@ -22,7 +22,12 @@
  *   `date-fns` or `date-fns/format`; a namespace import is out of reach. Test files
  *   (`*.test.*`, `*.spec.*`) are skipped: they compute expected text.
  * - `chart-body-root`: a wrapper that is a component (`<Stack>`) passes; only a lowercase element
- *   is looked through.
+ *   or a fragment is looked through.
+ * - `raw-heading`: a tag held in a variable is read where the variable is declared in the file
+ *   (`'h2'`, a ternary of heading strings, `` `h${level}` ``); a tag passed in as a prop or built by
+ *   a helper is not.
+ * - `raw-control`: a `div` or `span` with `role="button"` and `onClick` reads; one that only
+ *   forwards a handler through a spread does not.
  */
 import type { Node, Visitor } from '../../factory'
 import { isTestFile, mergeVisitors } from '../../factory'
@@ -43,7 +48,13 @@ export const CHART_KINDS: ReadonlySet<string> = new Set([
   'MirroredBars',
 ])
 
-const RAW_CONTROLS: ReadonlySet<string> = new Set(['button', 'input', 'select', 'textarea'])
+const RAW_CONTROLS: ReadonlySet<string> = new Set([
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'dialog',
+])
 const HEADINGS: ReadonlySet<string> = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 const SVG_MARKS: ReadonlySet<string> = new Set([
   'rect',
@@ -154,18 +165,28 @@ const isHiddenFileInput = (node: Node): boolean =>
   (attribute(node, 'hidden') !== undefined ||
     classTokens(node).some((token) => token === 'sr-only' || token === 'hidden'))
 
+/** A `div` or `span` that is a button by role and click handler: `<div role="button" onClick>`. */
+const isFakeButton = (node: Node): boolean => {
+  const tag = tagOf(node)
+  if (tag !== 'div' && tag !== 'span') return false
+  const role = attributeText(node, 'role')
+  return role?.split(/\s+/).includes('button') === true && attribute(node, 'onClick') !== undefined
+}
+
 /**
- * Raw `button`, `input`, `select` and `textarea`. A `type="file"` input that is visually hidden
+ * Raw `button`, `input`, `select`, `textarea` and the native `dialog`, and a `div` or `span` that
+ * is a button by `role="button"` and `onClick`. A `type="file"` input that is visually hidden
  * (a `hidden` attribute, or a `sr-only` or `hidden` class) passes: it sits behind a label, and no
  * primitive wraps a file input. A visible file input still reports.
  */
 const rawControl = form(
   'raw-control',
-  'Use ui/button, ui/input, ui/select or ui/textarea',
+  'Use ui/button, ui/input, ui/select, ui/textarea or ui/dialog',
   'Eject the primitive to change its structure',
   ({ report }) =>
     opening((node) => {
       const tag = tagOf(node)
+      if (isFakeButton(node)) return report(node, `<${tag} role="button">`)
       if (tag === undefined || !RAW_CONTROLS.has(tag)) return
       if (tag === 'input' && (isCheckable(node) || isHiddenFileInput(node))) return
       report(node, `<${tag}>`)
@@ -224,31 +245,65 @@ const rawHeading = form(
   'raw-heading',
   'Name the area with Section or PageBar; text-display is the title style',
   'A heading inside prose is Prose',
-  ({ report }) =>
-    opening((node) => {
-      const tag = tagOf(node)
-      if (tag === undefined || !HEADINGS.has(tag)) return
-      const group = enclosingElement(parentOf(node) as Node)
-      const groupTag = group ? tagOf(child(group, 'openingElement') as Node) : undefined
-      if (
-        group &&
-        groupTag !== undefined &&
-        GROUP_ELEMENTS.has(groupTag) &&
-        returnedFromMap(group)
-      ) {
-        return
-      }
-      report(node, `<${tag}>`)
-    }),
+  ({ report }) => {
+    const headingTags = new Set<string>()
+    return {
+      VariableDeclarator(node) {
+        const name = nameOf(child(node, 'id'))
+        if (name !== undefined && isHeadingTag(child(node, 'init'))) headingTags.add(name)
+      },
+      JSXOpeningElement: rawHeadingOpening(report, headingTags),
+    }
+  },
 )
 
+/** A heading tag chosen in a variable: `'h2'`, `cond ? 'h2' : 'h3'`, or `` `h${level}` ``. */
+function isHeadingTag(init: Node | undefined): boolean {
+  if (!init) return false
+  if (init.type === 'ConditionalExpression') {
+    return isHeadingTag(child(init, 'consequent')) || isHeadingTag(child(init, 'alternate'))
+  }
+  if (init.type === 'TemplateLiteral') {
+    const [first] = children(init, 'quasis')
+    const text = (first?.['value'] as { cooked?: string | null; raw: string } | undefined)?.cooked
+    return text === 'h' && children(init, 'expressions').length === 1
+  }
+  const text = stringValue(init)
+  return text !== undefined && HEADINGS.has(text)
+}
+
+function rawHeadingOpening(
+  report: Parameters<AstForm['detect']>[0]['report'],
+  headingTags: ReadonlySet<string>,
+): (node: Node) => void {
+  return (node) => {
+    const tag = tagOf(node)
+    if (tag !== undefined && headingTags.has(tag)) return report(node, `<${tag}> a heading tag`)
+    if (tag === undefined || !HEADINGS.has(tag)) return
+    const group = enclosingElement(parentOf(node) as Node)
+    const groupTag = group ? tagOf(child(group, 'openingElement') as Node) : undefined
+    if (group && groupTag !== undefined && GROUP_ELEMENTS.has(groupTag) && returnedFromMap(group)) {
+      return
+    }
+    report(node, `<${tag}>`)
+  }
+}
+
+/** A `<table>`, and a `<dl>` a `grid` class lays out as a key-value table: Facts ships for it. */
 const rawTable = form(
   'raw-table',
-  'Use ui/table for a static table and DataTable for data',
+  'Use ui/table for a static table, DataTable for data and Facts from basalt-ui/page for key-value rows',
   'Eject ui/table to change its structure',
   ({ report }) =>
     opening((node) => {
-      if (tagOf(node) === 'table') report(node, '<table>')
+      const tag = tagOf(node)
+      if (tag === 'table') return report(node, '<table>')
+      if (
+        tag === 'dl' &&
+        classTokens(node).some((token) => /^(?:[\w-]+:)*grid(?:-|$)/.test(token))
+      ) {
+        report(node, '<dl> laid out as a grid')
+      }
     }),
 )
 
@@ -404,13 +459,13 @@ const svgDataMarks = form(
     const entered = new WeakSet<Node>()
     const seam = dataMarkScope()
     const builtPaths = new Set<string>()
-    const pathFromData = (opening: Node): boolean => {
-      const value = child(attribute(opening, 'd') ?? { type: '' }, 'value')
+    const pathFromData = (opening: Node, name: string): boolean => {
+      const value = child(attribute(opening, name) ?? { type: '' }, 'value')
       const expression =
         value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
       if (!expression) return false
-      const name = nameOf(expression)
-      return name !== undefined ? builtPaths.has(name) : someNode(expression, isBuildCall)
+      const bound = nameOf(expression)
+      return bound !== undefined ? builtPaths.has(bound) : someNode(expression, isBuildCall)
     }
     return mergeVisitors([
       seam.visitor,
@@ -443,9 +498,11 @@ const svgDataMarks = form(
           const scope = scopes.at(-1)
           const map = scope?.maps.at(-1)
           const tag = tagOf(node)
-          if (tag === 'path' && !map && pathFromData(node)) {
+          const built =
+            tag === 'path' ? 'd' : tag === 'polyline' || tag === 'polygon' ? 'points' : ''
+          if (built && !map && pathFromData(node, built)) {
             if (!children(node, 'attributes').some((attr) => seamSpread(attr))) {
-              report(node, '<path> d built from data')
+              report(node, `<${tag}> ${built} built from data`)
             }
             return
           }
@@ -513,15 +570,43 @@ const datumGeometry = (opening: Node, names: ReadonlySet<string>): string | unde
 }
 
 /**
+ * A fill bar: a `style` width computed with a percent sign, as a template ending in `%` or a
+ * `+ '%'` concatenation. A literal width (`'50%'`) is not computed.
+ */
+const percentWidth = (opening: Node): boolean => {
+  const value = child(attribute(opening, 'style') ?? { type: '' }, 'value')
+  const style = unwrapped(
+    value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined,
+  )
+  if (style?.type !== 'ObjectExpression') return false
+  return children(style, 'properties').some((prop) => {
+    if (prop.type !== 'Property' || prop['computed'] === true) return false
+    const key = child(prop, 'key')
+    if ((nameOf(key) ?? stringValue(key)) !== 'width') return false
+    const expression = unwrapped(child(prop, 'value'))
+    if (expression?.type === 'TemplateLiteral') {
+      const quasis = children(expression, 'quasis')
+      const last = quasis.at(-1)?.['value'] as { cooked?: string | null; raw: string } | undefined
+      return children(expression, 'expressions').length > 0 && (last?.cooked ?? last?.raw) === '%'
+    }
+    if (expression?.type === 'BinaryExpression' && expression['operator'] === '+') {
+      return stringValue(child(expression, 'right')) === '%'
+    }
+    return false
+  })
+}
+
+/**
  * An intrinsic element sized or positioned by a datum inside a `.map` callback: a `div` whose
  * `style` sets `width`, `height`, `left`, `top`, `right` or `bottom` (or a custom property a class
  * sizes the element from, `w-(--w)`) from the datum's share. An SVG
  * mark is the `svg-data-marks` form's; a mark drawn through the geometry seam passes. One report
- * per map call.
+ * per map call. Outside a map, a `style` width computed with a percent sign (a fill bar from one
+ * value) reports once per element.
  */
 const htmlDataMarks = form(
   'html-data-marks',
-  `Use BarList from basalt-ui/cards for a share bar, or ${SEAM_FIX}`,
+  `Use ui/progress or ui/meter for one value, BarList from basalt-ui/cards for a share bar, or ${SEAM_FIX}`,
   'CartesianChart marks for a mark the kinds lack',
   ({ report }) => {
     const seam = dataMarkScope()
@@ -541,6 +626,9 @@ const htmlDataMarks = form(
             }
             return
           }
+          if (percentWidth(node)) {
+            report(node, `<${tag}> width set to a computed percentage`)
+          }
         },
       },
     ])
@@ -551,19 +639,40 @@ const roleTableOrGrid = form(
   'role-table',
   'Use ui/table, or DataTable for data, which carry the table semantics',
   'Eject ui/table to change its structure',
-  ({ report }) => ({
-    JSXAttribute(node) {
-      if (nameOf(child(node, 'name')) !== 'role') return
-      const value = child(node, 'value')
+  ({ report }) => {
+    // `rowgroup` and `columnheader` are the parts of a table; one outside an element with a table
+    // or grid role is reported, so a table that is already reported is one finding.
+    const roleTokens = (attribute: Node): string[] => {
+      const value = child(attribute, 'value')
       const text =
         value?.type === 'JSXExpressionContainer'
           ? stringValue(child(value, 'expression'))
           : stringValue(value)
-      if (text === undefined) return
-      const role = text.split(/\s+/).find((token) => token === 'table' || token === 'grid')
-      if (role) report(node, `role="${role}"`)
-    },
-  }),
+      return text === undefined ? [] : text.split(/\s+/)
+    }
+    const isWhole = (token: string): boolean => token === 'table' || token === 'grid'
+    const insideWhole = (attribute: Node): boolean => {
+      for (let element = parentOf(attribute); element; element = parentOf(element)) {
+        const opening = element.type === 'JSXElement' ? child(element, 'openingElement') : undefined
+        if (!opening) continue
+        const roles = children(opening, 'attributes').filter(
+          (a) => a.type === 'JSXAttribute' && nameOf(child(a, 'name')) === 'role',
+        )
+        if (roles.some((a) => roleTokens(a).some(isWhole))) return true
+      }
+      return false
+    }
+    return {
+      JSXAttribute(node) {
+        if (nameOf(child(node, 'name')) !== 'role') return
+        const tokens = roleTokens(node)
+        const role = tokens.find(isWhole)
+        if (role) return report(node, `role="${role}"`)
+        const part = tokens.find((token) => token === 'rowgroup' || token === 'columnheader')
+        if (part && !insideWhole(node)) report(node, `role="${part}"`)
+      },
+    }
+  },
 )
 
 /** True when a `.map` receiver is a chain through `.sort`, `.toSorted` or `.slice`. */
@@ -679,6 +788,8 @@ function bodyRoots(expression: Node | undefined): Node[] {
           : []
       return [expression, ...inside]
     }
+    case 'JSXFragment':
+      return children(expression, 'children').flatMap(bodyRoots)
     case 'JSXExpressionContainer':
       return bodyRoots(child(expression, 'expression'))
     case 'ArrowFunctionExpression':

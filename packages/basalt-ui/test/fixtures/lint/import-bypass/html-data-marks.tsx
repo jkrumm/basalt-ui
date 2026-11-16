@@ -133,3 +133,15 @@ const a = (
     ))}
   </div>
 )
+// @invalid
+const a = (
+  <div className="h-2 bg-inset">
+    <div className="h-full bg-brand-fill" style={{ width: `${used * 100}%` }} />
+  </div>
+)
+// @invalid
+const a = <div style={{ width: pct + '%' }} />
+// @valid
+const a = <div style={{ width: '50%' }} />
+// @valid
+const a = <Progress value={used} />

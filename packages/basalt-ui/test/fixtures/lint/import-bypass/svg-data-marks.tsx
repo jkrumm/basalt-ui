@@ -166,3 +166,22 @@ const a = (
     <path d={d} {...focus.item(0)} />
   </svg>
 )
+// @invalid
+const points = rows.map((r, i) => `${i * 4},${40 - r.share}`).join(' ')
+const a = (
+  <svg aria-hidden="true">
+    <polyline points={points} />
+  </svg>
+)
+// @invalid
+const a = (
+  <svg>
+    <polygon points={rows.map((r, i) => `${i},${r.share}`).join(' ')} />
+  </svg>
+)
+// @valid
+const a = (
+  <svg>
+    <polyline points="0,0 10,10" />
+  </svg>
+)

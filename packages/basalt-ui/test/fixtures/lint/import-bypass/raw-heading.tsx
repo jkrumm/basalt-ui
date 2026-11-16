@@ -67,3 +67,12 @@ const a = (
     <h1>Settings</h1>
   </main>
 )
+// @invalid
+const Tag = level === 2 ? 'h2' : 'h3'
+const a = <Tag>Title</Tag>
+// @invalid
+const H = `h${level}`
+const a = <H>Title</H>
+// @valid
+const Tag = 'div'
+const a = <Tag>Title</Tag>
