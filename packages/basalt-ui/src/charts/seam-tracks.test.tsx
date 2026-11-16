@@ -162,10 +162,10 @@ describe('group stepping', () => {
     const track = el.querySelector('[data-track]') as Element
     await press(track, 'PageDown')
     expect(day(el, 1).hasAttribute('data-focused')).toBe(true)
-    expect(live(el)).toBe('v1: day 1: 99%')
+    expect(live(el)).toBe('day 1: 99%')
     await press(track, 'PageDown')
     expect(day(el, 3).hasAttribute('data-focused')).toBe(true)
-    expect(live(el)).toBe('v2: day 3: 91%')
+    expect(live(el)).toBe('day 3: 91%')
     // Within a group, an arrow says only the datum.
     await press(track, 'ArrowRight')
     expect(live(el)).toBe('day 4: 97%')
@@ -174,11 +174,11 @@ describe('group stepping', () => {
     expect(day(el, 3).hasAttribute('data-focused')).toBe(true)
     await press(track, 'PageUp')
     expect(day(el, 1).hasAttribute('data-focused')).toBe(true)
-    expect(live(el)).toBe('v1: day 1: 99%')
+    expect(live(el)).toBe('day 1: 99%')
     // An arrow that crosses into the next group names it.
     await press(track, 'ArrowRight')
     await press(track, 'ArrowRight')
-    expect(live(el)).toBe('v2: day 3: 91%')
+    expect(live(el)).toBe('day 3: 91%')
     // The last group stays put.
     await press(track, 'End')
     await press(track, 'PageDown')
