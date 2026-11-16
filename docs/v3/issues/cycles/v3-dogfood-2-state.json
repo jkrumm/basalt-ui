@@ -16,5 +16,8 @@
     "The PR states which parts of dogfood-2.8 it fixed",
     "make check passes"
   ],
-  "out_of_scope": "The deep-link detail (v3-dogfood-2-deep-link)."
+  "out_of_scope": "The deep-link detail (v3-dogfood-2-deep-link).",
+  "notes": [
+    "From v3-cycle-expression-4 (docs/v3/cycles/expression-4.md), class planned, findings expression-4.7 and .19. Two trial builds met change (1) and (2) cold. c14 round 0: in `error` its ChartCard kept the stale hero 'Dryad leads +1.9 pts vs Cinder' and the footer 'Fewest done Cinder' above 'Could not load this.' (shot r0/scenarios-expr-c14-shot-state-error--light--1800x1200.png); its builder hid the figure by hand in round 1. c15 round 0: empty and error drew a bare '—' figure, the empty sentence twice (chart card and list panel) and the generic error title. Builders of c14, c15 and n16 each wrote that the kit's error line reads 'Could not load this.' although the card has a title, and n16's StatCells ignore the error `message` the page passes (n16 round 1 report). Change (2)'s one error sentence would have closed both."
+  ]
 }
