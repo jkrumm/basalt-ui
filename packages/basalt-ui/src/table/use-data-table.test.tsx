@@ -553,6 +553,24 @@ describe('detail bound to a field', () => {
     await waitFor(() => expect(closed()).toBe(true))
   })
 
+  test('a close clears on the field lane; a name no row has is cleared as a replace', async () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+    const calls: (object | undefined)[] = []
+    const base = urlField('')
+    const field = { ...base, clear: (o?: object) => (calls.push(o), base.set('')) }
+    render(<Bound field={field} />)
+    fireEvent.click(document.querySelectorAll('tbody tr')[1] as HTMLElement)
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(calls).toEqual([undefined])
+    await waitFor(() => expect(closed()).toBe(true))
+    cleanup()
+    calls.length = 0
+    const stale = { ...urlField('zzz'), clear: (o?: object) => void calls.push(o) }
+    render(<Bound field={stale} />)
+    expect(calls).toEqual([{ replace: true }])
+    warn.mockRestore()
+  })
+
   test('a Page aside that closes on its own clears the field and unmarks the row', () => {
     setWidth(1440)
     const field = urlField('')

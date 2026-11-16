@@ -18,7 +18,7 @@ custom, params, window })` with `toWindow(value)`, `composite(codec)`; options l
 persist }` for a device (`basalt:<id>`) or memory field; only those may take a thunk fallback.
 Mount `validateSearch` (or `extend(schema)` for foreign params; never a hand wrapper, which loses
 the brand) with `search: { middlewares }`. A handle's `use()` gives `[value, set]`, `clear()`
-unsets (explicit `undefined`), `link(v)` spreads into a typed `Link`; `resets` unsets sibling
+unsets (explicit `undefined`; a push field unsets as a push, `clear({ replace: true })` or a `batchWrites` reset replaces), `link(v)` spreads into a typed `Link`; `resets` unsets sibling
 params in the same navigate. Defaults stay out of the URL while the validated search is
 complete. A global's params are exclusive (a second store naming one throws at definition), a
 page store refuses a write from a route that does not run it, and a global mounted below the

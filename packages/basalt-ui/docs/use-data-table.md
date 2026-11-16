@@ -40,7 +40,7 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   views?: { store?: ViewStore; }
   detail?: (row: T, box: Box) => ReactNode
   detailTitle?: (row: T) => string  [with detail]  // The title of a row's detail entry (the aside or sheet header); the table label when absent
-  detailState?: ControlHandle<string>  [with detail]  // A string field of row ids that holds the open row: activating a row writes its id, closing the sheet calls `clear()`, and a value that names a loaded row opens its detail on load, on a share link and on Back
+  detailState?: ControlHandle<string>  [with detail]  // A string field of row ids that holds the open row: activating a row writes its id, closing the sheet calls `clear()` (on a `history: 'push'` field the close is an entry of its own, so Back after it returns to the open record; a name that matches no row is cleared as a replace), and a value that names a loaded row opens its detail on load, on a share link and on Back
   detailById?: (id: string, box: Box) => ReactNode  [with detail]  // The body of a record the table has not loaded, for a `detailState` field that names an id no loaded row has (a share link after the record left the filters, a row on another page of a server table): once the query settles the detail door opens with this body under the table label, and the page fetches the record by id
   onRowActivate?: (row: T) => void
   activeRowId?: string  // The id of the row the page has open (a detail the page draws itself): that row is drawn as the selected row and carries `aria-current`
