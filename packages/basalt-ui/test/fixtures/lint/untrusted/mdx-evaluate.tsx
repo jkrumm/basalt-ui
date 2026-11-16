@@ -42,3 +42,15 @@ const { evaluate } = await import('@mdx-js/mdx')
 import { compile } from '@mdx-js/mdx'
 const code = String(await compile(source))
 writeFileSync(out, code)
+
+// @invalid
+import { MDXRemote } from 'next-mdx-remote-client'
+
+// @invalid
+import { MDXRemote } from 'next-mdx-remote-client/rsc'
+
+// @invalid
+const mod = await import('next-mdx-remote-client/csr')
+
+// @valid
+import { other } from 'next-mdx-remote-clients'
