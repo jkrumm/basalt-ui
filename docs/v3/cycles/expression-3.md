@@ -55,7 +55,7 @@ The PR rebased from the pin onto `e1f489a3`, and two changes master made after t
   - a `role="img"`;
   - two `primitive-bypass` findings on c10's ring graph.
 
-  As in cycle 2, each builder made a gate-only pass, and the lead shot it in `r2-gate/`. Six findings were fixed with the rule's own remedy and no visible change. Four lines were waived with reasons:
+  As in cycle 2, each builder made a gate-only pass, and the lead shot it in `r2-gate/`. Five findings were fixed with the rule's own remedy and no visible change. Four lines were waived with reasons:
   - c11's slider, a page-local scalar with no store, under `control-home`;
   - c13's accent day labels under `tw-off-law`;
   - c10's edges and nodes under `primitive-bypass`. The nodes spread `focus.item(i)`, but the `focus.target` container sits in the page component that renders them, and the rule looks for it in the same file. That is a false positive of the rule, filed as `v3-expr-3-contract` (f).
