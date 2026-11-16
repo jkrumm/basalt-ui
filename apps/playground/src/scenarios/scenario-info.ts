@@ -109,4 +109,36 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     title: 'Expression n18: queue waits',
     blurb: 'What did queued Issues wait for this week, and which reason cost the most hours?',
   },
+  {
+    id: 'expr-c16',
+    title: 'Expression c16: model choice',
+    blurb:
+      'Which model suits this chat, how do the models compare, and what would this chat have cost on each?',
+  },
+  {
+    id: 'expr-n08',
+    title: 'Expression n08: train today',
+    blurb:
+      'Given recovery and the planned load, should I train, and how often has this pairing come up?',
+  },
+  {
+    id: 'expr-n15',
+    title: 'Expression n15: walking pad',
+    blurb: 'Did I walk enough this week, and is my pace getting better?',
+  },
+  {
+    id: 'expr-n19',
+    title: 'Expression n19: backup radio path',
+    blurb: 'Would Wi-Fi carry a failover today, and when this week was its signal too weak to?',
+  },
+  {
+    id: 'expr-n20',
+    title: 'Expression n20: weekly volume',
+    blurb: 'Is each lift inside its productive range, and which one is drifting out of it?',
+  },
+  {
+    id: 'expr-n21',
+    title: 'Expression n21: line interventions',
+    blurb: 'Does a router reboot fix a drop, or would the line have come back on its own?',
+  },
 ]

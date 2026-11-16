@@ -101,3 +101,44 @@ export const WIND_SERIES = defineSeries({
   arome: { light: '#8a4fc7', dark: '#b68cf2' },
   other: { light: '#7a7a7a', dark: '#9c9c9c' },
 })
+
+/** Weekly volume (scenario expr-n20): the accent is the work sets that count toward the range; warm-ups, drop sets and AMRAPs sit in ink steps, the typical rule in a mid step. */
+export const VOLUME_SERIES = defineSeries({
+  warmup: { light: '#c2c2c2', dark: '#5c5c5c' },
+  work: { light: '#2871c7', dark: '#5190f7' },
+  drop: { light: '#8a8a8a', dark: '#8f8f8f' },
+  amrap: { light: '#262626', dark: '#e6e6e6' },
+  out: { light: '#c07e3c', dark: '#f9a13d' },
+  typical: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Line interventions (scenario expr-n21): the accent is the drop a reboot met; other actions sit in an ink step, drops left alone in a pale one, the median rule in a mid step. */
+export const LINE_SERIES = defineSeries({
+  rebooted: { light: '#2871c7', dark: '#5190f7' },
+  other: { light: '#5c5c5c', dark: '#c8c8c8' },
+  alone: { light: '#9a9a9a', dark: '#7d7d7d' },
+  median: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Backup radio path (scenario expr-n19): the accent is the Wi-Fi signal and its round trip; noise and the limit sit in ink steps, the wired path in the neutral `other` grey. */
+export const RADIO_SERIES = defineSeries({
+  signal: { light: '#2871c7', dark: '#5190f7' },
+  noise: { light: '#8a8a8a', dark: '#8f8f8f' },
+  limit: { light: '#4a4a4a', dark: '#c4c4c4' },
+  other: { light: '#7a7a7a', dark: '#9c9c9c' },
+})
+
+/** Walking pad (scenario expr-n15): the accent is the week's minutes and the pace the question asks about; the weekly target and the prior-pace rule sit in an ink step. */
+export const WALK_SERIES = defineSeries({
+  minutes: { light: '#2871c7', dark: '#5190f7' },
+  pace: { light: '#2871c7', dark: '#5190f7' },
+  target: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Model choice (scenario expr-c16): the accent is the recommended model; models that can take the chat sit in an ink step, models that cannot in a pale one, the current model's cost rule in a mid step. */
+export const MODEL_SERIES = defineSeries({
+  pick: { light: '#2871c7', dark: '#5190f7' },
+  fits: { light: '#262626', dark: '#e6e6e6' },
+  blocked: { light: '#9a9a9a', dark: '#7d7d7d' },
+  current: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
