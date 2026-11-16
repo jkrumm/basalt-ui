@@ -15,7 +15,10 @@ function IndexRoute() {
           </li>
           <li>
             <span className="font-medium">app-shell</span>
-            <span className="text-muted-foreground"> — one AppShell in the root route.</span>
+            <span className="text-muted-foreground">
+              {' '}
+              — one AppShell in the `_app` layout route.
+            </span>
           </li>
           <li>
             <Link to="/shell" className="font-medium underline-offset-4 hover:underline">
