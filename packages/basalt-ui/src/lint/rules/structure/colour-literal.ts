@@ -25,7 +25,8 @@
  * compound such as `issueRef`, `rowId`, `issueNumber`) is an Issue reference and passes; the same
  * string under `color` or `fill` still reports. An anchor under a link key (`href`, `to`, `hash`,
  * as a property or a JSX attribute: `{ href: '#add' }`, `<a href="#cafe">`) is a fragment and
- * passes.
+ * passes, a hex-shaped one included: `{ from: '#fff', to: '#000' }` reports only `#fff`, since
+ * `#add` and `#000` are the same shape.
  *
  * Known limit: a named colour that reaches its slot through a variable or a function result is not
  * read (`const c = 'white'; ctx.fillStyle = c` reports nothing: only the slot's own literal is). A
