@@ -106,3 +106,9 @@ export const LINE_STROKE_WIDTH = 1.9
  * the inset in both schemes; 0.25 left it at 1.7:1 (owner calibration, expression cycle 2).
  */
 export const DIMMED = 0.5
+/**
+ * The same for a mark that carries text, a row linked to the chart (`[data-chart-mark][data-dimmed]`
+ * outside an svg): ink at this opacity clears the 4.5:1 the inks are gated at, on the canvas, the
+ * card and the inset in both schemes (0.5 gave 3.8:1 on the dark card).
+ */
+export const DIMMED_TEXT = 0.7

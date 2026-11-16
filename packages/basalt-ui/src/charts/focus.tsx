@@ -192,6 +192,23 @@ export function stepFocus(
   }
 }
 
+/** Whether `node` has an ancestor that scrolls (the list's own region, not only the page). */
+function inScrollRegion(node: Element | undefined): node is Element {
+  if (node === undefined || typeof getComputedStyle === 'undefined') return false
+  for (let at = node.parentElement; at !== null; at = at.parentElement) {
+    const { overflowY } = getComputedStyle(at)
+    if ((overflowY === 'auto' || overflowY === 'scroll') && at.scrollHeight > at.clientHeight)
+      return true
+  }
+  return false
+}
+
+/** Brings `node` into view by the least scroll, at once: a list that glides under a pointer, or under reduced motion, is motion nobody asked for. */
+function scrollNodeIntoView(node: Element | undefined): void {
+  if (node === undefined || typeof node.scrollIntoView !== 'function') return
+  node.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' })
+}
+
 /**
  * The focus handle for `items`, in reading order (the order arrow keys step).
  *
@@ -225,8 +242,12 @@ export function useChartFocus<D>(
     const d = i === null ? undefined : items[i]
     return group === undefined || d === undefined ? undefined : group(d)
   }
-  const set = (next: number | null): void => {
+  // `reveal`: the focus came from outside the rows (the chart's pointer, a host's keys), so the
+  // row it names comes into view in the scroll region it sits in. A row the pointer entered is
+  // already under it, and a repeat of the held index never scrolls a list the viewer moved.
+  const apply = (next: number | null, reveal: boolean): void => {
     if (next === null || next < 0 || next >= items.length) return setHeld(null)
+    if (reveal && next !== index) revealInRegion(next)
     setHeld((was) => {
       const from = was === null || was.index >= items.length ? null : was.index
       // The same index keeps the same state: an engine host reports its focus on every render.
@@ -242,8 +263,14 @@ export function useChartFocus<D>(
   const reveal = (next: number): void => {
     const name = groupAt(next)
     const nodes = [marks.current.get(next), name === undefined ? undefined : rows.current.get(name)]
-    for (const node of nodes) node?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+    for (const node of nodes) scrollNodeIntoView(node)
   }
+  const revealInRegion = (next: number): void => {
+    const name = groupAt(next)
+    const nodes = [marks.current.get(next), name === undefined ? undefined : rows.current.get(name)]
+    for (const node of nodes) if (inScrollRegion(node)) scrollNodeIntoView(node)
+  }
+  const set = (next: number | null): void => apply(next, true)
 
   const step = (key: string): number | null | undefined => {
     const next =
@@ -278,8 +305,8 @@ export function useChartFocus<D>(
       if (element === null) marks.current.delete(i)
       else marks.current.set(i, element)
     },
-    onPointerEnter: () => set(i),
-    onPointerDown: () => set(i),
+    onPointerEnter: () => apply(i, false),
+    onPointerDown: () => apply(i, false),
   })
   const groupItem = (name: string): ChartFocusGroupItem => {
     const first = group === undefined ? -1 : items.findIndex((d) => group(d) === name)
@@ -289,8 +316,8 @@ export function useChartFocus<D>(
         if (element === null) rows.current.delete(name)
         else rows.current.set(name, element)
       },
-      onPointerEnter: () => set(first),
-      onPointerDown: () => set(first),
+      onPointerEnter: () => apply(first, false),
+      onPointerDown: () => apply(first, false),
     }
   }
   const said = datum === null ? '' : announce(datum)

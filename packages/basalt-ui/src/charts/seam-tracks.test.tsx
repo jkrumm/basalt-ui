@@ -14,7 +14,7 @@ import { renderToString } from 'react-dom/server'
 import { contrastRatio } from '../tokens/hct'
 import { chartLabels } from './chart-labels'
 import type { ChartFocus } from './contract'
-import { DIMMED } from './core/theme'
+import { DIMMED, DIMMED_TEXT } from './core/theme'
 import { useChartFocus } from './focus'
 import { ChartCard } from './parts/chart-card'
 
@@ -127,26 +127,31 @@ describe('dim: the kit dims a seam-drawn mark as it dims its own', () => {
     expect(css).toMatch(/prefers-reduced-motion: no-preference\) \{\s*\[data-chart-mark\]/)
   })
 
-  test('the dimmed rest stays readable: ink at DIMMED clears 3:1 on the inset, light and dark', () => {
+  test('a dimmed row of text keeps its ink at 4.5:1 on the canvas, the card and the inset, light and dark', () => {
+    const css = readFileSync(join(import.meta.dirname, '../css/tailwind.css'), 'utf8')
+    const rule =
+      /\[data-chart-mark\]\[data-dimmed\]:not\(:where\(svg \*\)\) \{\s*opacity: ([\d.]+);/.exec(css)
+    expect(Number(rule?.[1])).toBe(DIMMED_TEXT)
     const tokens = readFileSync(join(import.meta.dirname, '../css/tokens.css'), 'utf8')
     const all = (name: string) =>
-      [...tokens.matchAll(new RegExp(`--vx-${name}: (#[0-9a-f]{6});`, 'g'))].map((m) => m[1])
-    const [inkLight, inkDark] = all('ink')
-    const [insetLight, insetDark] = all('inset')
+      [...tokens.matchAll(new RegExp(`--vx-${name}: (#[0-9a-f]{6});`, 'g'))].map(
+        (m) => m[1] as string,
+      )
     const mix = (fg: string, bg: string): string => {
       const ch = (hex: string, i: number) => Number.parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16)
       const out = [0, 1, 2].map((i) =>
-        Math.round(ch(fg, i) * DIMMED + ch(bg, i) * (1 - DIMMED))
+        Math.round(ch(fg, i) * DIMMED_TEXT + ch(bg, i) * (1 - DIMMED_TEXT))
           .toString(16)
           .padStart(2, '0'),
       )
       return `#${out.join('')}`
     }
-    for (const [ink, inset] of [
-      [inkLight, insetLight],
-      [inkDark, insetDark],
-    ] as [string, string][]) {
-      expect(contrastRatio(mix(ink, inset), inset)).toBeGreaterThanOrEqual(3)
+    for (const scheme of [0, 1]) {
+      for (const surface of ['canvas', 'card', 'inset']) {
+        const bg = all(surface)[scheme] as string
+        const ink = all('ink')[scheme] as string
+        expect(contrastRatio(mix(ink, bg), bg), `${surface} ${scheme}`).toBeGreaterThanOrEqual(4.5)
+      }
     }
   })
 })

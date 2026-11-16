@@ -66,12 +66,17 @@ const SURFACES = ['canvas', 'card', 'inset', 'raised'] as const
 /**
  * A mark a page draws through `useChartFocus` (`focus.item(i)` sets `data-chart-mark`) dims as the
  * kit's own marks do: the number is `DIMMED` in `charts/core/theme.ts`, and a charts test holds the
- * two equal. The fade is skipped under reduced motion.
+ * two equal. A mark that is not drawn in an svg carries text (a linked row), and ink at half
+ * strength reads 3.8:1 on the dark card: it dims to `DIMMED_TEXT` instead, which keeps the text at
+ * the 4.5:1 the inks are gated at. The fade is skipped under reduced motion.
  */
 const CHART_MARK_DIM = 0.5
+const CHART_TEXT_MARK_DIM = 0.7
 const chartMarkRules =
   '  /* A mark drawn through useChartFocus dims as the kit marks do (charts/core/theme DIMMED). */\n' +
   `  [data-chart-mark][data-dimmed] {\n    opacity: ${CHART_MARK_DIM};\n  }\n` +
+  '  /* A marked row of text keeps its ink readable (charts/core/theme DIMMED_TEXT). */\n' +
+  `  [data-chart-mark][data-dimmed]:not(:where(svg *)) {\n    opacity: ${CHART_TEXT_MARK_DIM};\n  }\n` +
   '  @media (prefers-reduced-motion: no-preference) {\n    [data-chart-mark] {\n      transition: opacity 120ms ease-out;\n    }\n  }\n'
 
 /** The reading-progress bar's keyframes (`page/article-progress.tsx`): a scroll or view timeline plays them. */
