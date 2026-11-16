@@ -29,7 +29,7 @@ ChartCard(props: ChartCardProps): ReactElement
   legend?: readonly LegendEntry[]  // The legend row for marks the page draws through the seam, drawn in every phase
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
-  menu?: Menu
+  menu?: CardMenu
   height?: "fill" | "auto" | "short"
   title?: string
   subtitle?: string
@@ -38,7 +38,7 @@ ChartCard(props: ChartCardProps): ReactElement
   chart?: BoxSlot
 ```
 
-`Phase`, `Empty`, `Menu`, `FootFacts` import from `basalt-ui/cards`: `import type { Phase, Empty, Menu, FootFacts } from 'basalt-ui/cards'`.
+`Phase`, `Empty`, `CardMenu`, `FootFacts` import from `basalt-ui/cards`: `import type { Phase, Empty, CardMenu, FootFacts } from 'basalt-ui/cards'`.
 
 ## Example
 

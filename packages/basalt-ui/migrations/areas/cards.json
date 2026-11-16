@@ -224,6 +224,26 @@
       "manual": true,
       "note": "the types of StatCard `delta` and `status`, and the six-member Tone, are public on the cards subpath; the `core/*` path stays for an ejected primitive",
       "verify": "tsc: `Record<'late' | 'open', Tone>` with 'info' compiles from basalt-ui/cards"
+    },
+    {
+      "id": "cards-verdict",
+      "kind": "renamed",
+      "from": "basalt-ui/cards#Status",
+      "to": "basalt-ui/cards#Verdict",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the type of `StatCard status` no longer shares a name with the `Status` component of `basalt-ui/ui/status`; `Status` stays a deprecated alias for one minor",
+      "verify": "tsc"
+    },
+    {
+      "id": "cards-cardmenu",
+      "kind": "renamed",
+      "from": "basalt-ui/cards#Menu",
+      "to": "basalt-ui/cards#CardMenu",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the type of every `menu` prop no longer shares a name with the `Menu` component of `basalt-ui/ui/menu`; `Menu` stays a deprecated alias for one minor",
+      "verify": "tsc"
     }
   ],
   "tokens": {

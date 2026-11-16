@@ -27,6 +27,8 @@ EmptyState(props: EmptyStateProps): ReactElement
   filtered?: { reset: () => void; }
 ```
 
+`CardAction` import from `basalt-ui/cards`: `import type { CardAction } from 'basalt-ui/cards'`.
+
 ## Example
 
 ```tsx

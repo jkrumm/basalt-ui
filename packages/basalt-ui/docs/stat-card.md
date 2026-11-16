@@ -32,16 +32,16 @@ StatCard(props: StatCardProps): ReactElement
   value: string | number | null  // `null` renders a muted dash: absent, never zero
   unit?: string
   delta?: Delta  // A change against a period; `value` prints as given, so pass `'+12%'`, never the fraction 0.12
-  status?: Status  // The verdict home: dot plus word
+  status?: Verdict  // The verdict home: dot plus word
   sub?: string
   chart?: BoxSlot  // Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16)
   xLabels?: readonly [string, string, string]  // The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alone
   footer?: FootFacts
   controls?: ControlsSlot<"widget">
-  menu?: Menu
+  menu?: CardMenu
 ```
 
-`Phase`, `QueryStateLike`, `Empty`, `Menu`, `Delta`, `Status`, `FootFacts` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty, Menu, Delta, Status, FootFacts } from 'basalt-ui/cards'`.
+`Phase`, `QueryStateLike`, `Empty`, `CardMenu`, `Delta`, `Verdict`, `FootFacts` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty, CardMenu, Delta, Verdict, FootFacts } from 'basalt-ui/cards'`.
 
 ## Example
 

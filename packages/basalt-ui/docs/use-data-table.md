@@ -50,6 +50,8 @@ useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: Us
 
 `Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
 
+`ControlHandle` import from `basalt-ui/router`: `import type { ControlHandle } from 'basalt-ui/router'`.
+
 ## Example
 
 ```tsx

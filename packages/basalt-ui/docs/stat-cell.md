@@ -32,7 +32,7 @@ StatCell(props: StatCellProps): ReactElement
   value?: string | number | null
   unit?: string
   delta?: Delta
-  status?: Status
+  status?: Verdict
   sub?: string
   srText?: string
   meter?: MeterSpec
@@ -40,7 +40,7 @@ StatCell(props: StatCellProps): ReactElement
   rows?: readonly StatRow[] & readonly [StatRow?, StatRow?, StatRow?, StatRow?]
 ```
 
-`Phase`, `QueryStateLike`, `Empty`, `Delta`, `Status` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty, Delta, Status } from 'basalt-ui/cards'`.
+`Phase`, `QueryStateLike`, `Empty`, `Delta`, `Verdict` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty, Delta, Verdict } from 'basalt-ui/cards'`.
 
 ## Example
 
