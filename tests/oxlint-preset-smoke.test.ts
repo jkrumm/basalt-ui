@@ -12,6 +12,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import {
   copyFileSync,
+  cpSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -22,6 +23,13 @@ import {
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 
+import {
+  cleanup,
+  makeConsumer,
+  run as eject,
+} from '../packages/basalt-ui/test/fixtures/eject/harness'
+
+import { OXLINT_PRESET_FILE } from '../packages/basalt-ui/src/cli/presets'
 import plugin from '../packages/basalt-ui/src/lint'
 import { findBlanketDisables } from '../packages/basalt-ui/src/lint/blanket-disable'
 import { tableOf } from '../packages/basalt-ui/src/lint/factory'
@@ -430,4 +438,70 @@ describe('zones and roots', () => {
       else expect(inside.map((d) => d.code)).toContain('basalt(viewport-keyed)')
     }
   })
+
+  it('zone E turns the colour forms off for an ejected file and keeps the rest of tw-off-law', () => {
+    const config = generated({
+      ...base,
+      profile: 'app',
+      ejected: ['src/components/ui/card.tsx'],
+    })
+    const code = [
+      'export const a = <div className="bg-bad-tint text-bad border-current" />',
+      'export const b = <div className="bg-(--vx-bad-tint) hover:bg-bad-tint/80 hover:bg-accent/50" />',
+      'export const c = <div className="!p-2" />',
+    ].join('\n')
+    const dir = project('zone-e-forms', config, {
+      'src/components/ui/card.tsx': code,
+      'src/page.tsx': code,
+    })
+    const found = lint(dir, ['src/components', 'src/page.tsx'])
+    const forms = (file: string): string[] =>
+      found
+        .filter((d) => d.filename === file && d.code === 'basalt(tw-off-law)')
+        .map((d) => d.message)
+    const named = (file: string, text: string): boolean => forms(file).some((m) => m.includes(text))
+    // App code outside zone E still reports every colour form.
+    expect(named('src/page.tsx', 'own colour in app code')).toBe(true)
+    // The ejected file keeps no colour form, and still reports the alpha on a pre-mixed token and `!`.
+    expect(named('src/components/ui/card.tsx', 'own colour in app code')).toBe(false)
+    expect(named('src/components/ui/card.tsx', 'pre-mixed token')).toBe(true)
+    expect(named('src/components/ui/card.tsx', 'cascade')).toBe(true)
+  })
+
+  it('an unedited ejected primitive lints clean, for every shipped primitive', () => {
+    const fx = makeConsumer('linewatch', { git: true })
+    try {
+      writeFileSync(
+        join(fx.dir, '.basalt/manifest.json'),
+        readFileSync(join(fx.dir, '.basalt/manifest.json'), 'utf8')
+          .replace('"profile": "parts"', '"profile": "app"')
+          .replace('"src": "parts"', '"src": "app"'),
+      )
+      mkdirSync(join(fx.pkg, 'configs'), { recursive: true })
+      for (const profile of SHIPPED) {
+        cpSync(
+          join(PKG, `configs/oxlint-${profile}.json`),
+          join(fx.pkg, `configs/oxlint-${profile}.json`),
+        )
+      }
+      writeFileSync(join(fx.dir, OXLINT_PRESET_FILE), '{}\n')
+      const result = eject(fx, ['--all', '--reason', 'every primitive', '--raise', 'lint cycle 2'])
+      expect(result.log).toContain('button -> src/components/ui/button.tsx')
+      expect(result.code).toBe(0)
+
+      const dir = join(tmp, 'eject-all')
+      cpSync(join(tmp, 'app'), dir, { recursive: true })
+      cpSync(join(fx.dir, 'src/components/ui'), join(dir, 'src/components/ui'), { recursive: true })
+      const preset = JSON.parse(readFileSync(join(fx.dir, OXLINT_PRESET_FILE), 'utf8')) as object
+      write(join(dir, '.oxlintrc.json'), JSON.stringify(preset))
+      const ejected = (preset as { overrides: { files: string[] }[] }).overrides.flatMap(
+        (o) => o.files,
+      )
+      expect(ejected.length).toBeGreaterThan(30)
+      const found = lint(dir, ['src/components/ui'])
+      expect(found.map((d) => `${d.filename}: ${d.code} ${d.message}`)).toEqual([])
+    } finally {
+      cleanup()
+    }
+  }, 120_000)
 })

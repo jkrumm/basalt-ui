@@ -1,4 +1,4 @@
-import type { AutocompleteInputProps, ComboboxChipsProps, ComboboxInputProps } from './combobox'
+import type { ComboboxChipsProps, ComboboxInputProps } from './combobox'
 
 /**
  * Hand-authored guard for `combobox` (docs/v3/ARCHITECTURE.md 4.2). `requires` survives eject;
@@ -20,6 +20,7 @@ export const requiresComboboxChips = (
 // @ts-expect-error a ComboboxInput without an accessible name does not type-check
 export const unnamed: Pick<ComboboxInputProps, 'aria-label'> = {}
 // @ts-expect-error an AutocompleteInput without an accessible name does not type-check
-export const unnamedAutocomplete: Pick<AutocompleteInputProps, 'aria-label'> = {}
+export const unnamedAutocomplete: Pick<import('./combobox').AutocompleteInputProps, 'aria-label'> =
+  {}
 // @ts-expect-error a size outside the union is a type error
 export const closedSize: Pick<ComboboxInputProps, 'size'> = { size: 'unknown' }

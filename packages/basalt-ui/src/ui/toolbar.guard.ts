@@ -1,4 +1,4 @@
-import type { ToolbarButtonProps, ToolbarProps } from './toolbar'
+import type { ToolbarButtonProps } from './toolbar'
 
 /**
  * Hand-authored guard for `toolbar` (docs/v3/ARCHITECTURE.md 4.2). `requires` survives eject;
@@ -22,4 +22,4 @@ export const closedVariant: Pick<ToolbarButtonProps, 'variant'> = { variant: 'un
 export const unnamedIcon: ToolbarButtonProps = { shape: 'icon' }
 
 // @ts-expect-error a toolbar needs a name
-export const unnamedToolbar: ToolbarProps = {}
+export const unnamedToolbar: import('./toolbar').ToolbarProps = {}

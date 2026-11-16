@@ -86,6 +86,7 @@ function tailwindCss(): string {
   const utilities = [
     ['h-ctl', ['height: var(--vx-ctl-h)']],
     ['size-ctl', ['width: var(--vx-ctl-h)', 'height: var(--vx-ctl-h)']],
+    ['min-h-ctl', ['min-height: var(--vx-ctl-h)']],
     ['min-h-row', ['min-height: var(--vx-row-h)']],
     ['size-icon', ['width: var(--vx-icon)', 'height: var(--vx-icon)']],
   ] as const

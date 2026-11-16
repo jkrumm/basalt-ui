@@ -16,11 +16,15 @@ const WIDE = '(min-width: 840px)'
 
 const PlacementContext = createContext<Placement>('auto')
 
+const BOTTOM =
+  'mt-auto max-h-[min(72dvh,560px)] w-full rounded-t-card translate-y-[var(--drawer-swipe-movement-y,0px)] data-starting-style:translate-y-full data-ending-style:translate-y-full'
+
 /**
  * The `SheetContent` cva table: a panel that slides in from an edge. `bottom` caps its height at
  * `min(72dvh,560px)`, `right` is a full-height column 360 px wide (a `w-80`, `w-90`, `w-120` or
- * `w-160` class in `className` picks 320, 360, 480 or 640), and `auto` is `bottom` below the `md`
- * breakpoint and `right` from it. The axis is set on `Sheet`, not on the content.
+ * `w-160` class in `className` picks 320, 360, 480 or 640), and `auto` is the `bottom` table: `Sheet`
+ * resolves `auto` to `bottom` below the `md` breakpoint and `right` from it, and hands `SheetContent`
+ * the result. The axis is set on `Sheet`, not on the content.
  *
  * @example
  * sheetContentVariants({ placement: 'right' }) // class string for a hand-built popup
@@ -30,11 +34,10 @@ export const sheetContentVariants = cva(
   {
     variants: {
       placement: {
-        bottom:
-          'mt-auto max-h-[min(72dvh,560px)] w-full rounded-t-card translate-y-[var(--drawer-swipe-movement-y,0px)] data-starting-style:translate-y-full data-ending-style:translate-y-full',
+        bottom: BOTTOM,
         right:
           'ml-auto h-full w-90 max-w-full translate-x-[var(--drawer-swipe-movement-x,0px)] data-starting-style:translate-x-full data-ending-style:translate-x-full',
-        auto: 'mt-auto max-h-[min(72dvh,560px)] w-full rounded-t-card translate-y-[var(--drawer-swipe-movement-y,0px)] data-starting-style:translate-y-full data-ending-style:translate-y-full md:mt-0 md:ml-auto md:h-full md:max-h-none md:w-90 md:max-w-full md:rounded-t-none md:translate-x-[var(--drawer-swipe-movement-x,0px)] md:data-starting-style:translate-x-full md:data-starting-style:translate-y-0 md:data-ending-style:translate-x-full md:data-ending-style:translate-y-0',
+        auto: BOTTOM,
       },
     },
     defaultVariants: { placement: 'auto' },
@@ -87,8 +90,8 @@ const serverWide = (): boolean => false
 
 /**
  * A panel beside the page on Base UI Drawer: edit a record without leaving it. `placement="auto"`
- * moves it with CSS; the swipe-to-dismiss axis follows the same width from a media query that
- * reads as narrow on the server and during hydration, so server and client markup never differ.
+ * moves it with the width: one media query read picks the edge and the swipe-to-dismiss axis, and
+ * it reads as narrow on the server and during hydration, so server and client markup never differ.
  * Open state stays with the caller or the trigger, or binds to a handle: `state` is a boolean field
  * (open while true) or a string field (open while non-empty, the record a URL names), and closing
  * calls its `clear()`, as `PageAside`'s `state` does. A string-bound sheet opens by writing the
@@ -138,9 +141,10 @@ function BoundSheet({
 
 function PlainSheet({ placement = 'auto', ...props }: SheetBase): ReactElement {
   const wide = useSyncExternalStore(subscribeWide, readWide, serverWide)
-  const swipe: Swipe = placement === 'right' || (placement === 'auto' && wide) ? 'right' : 'down'
+  const resolved: Placement = placement === 'auto' ? (wide ? 'right' : 'bottom') : placement
+  const swipe: Swipe = resolved === 'right' ? 'right' : 'down'
   return (
-    <PlacementContext value={placement}>
+    <PlacementContext value={resolved}>
       <BaseDrawer.Root {...props} swipeDirection={swipe} />
     </PlacementContext>
   )
@@ -167,7 +171,7 @@ export function SheetTrigger({ className, ...props }: SheetTriggerProps): ReactE
  * button is named by the `sheet.close` message.
  *
  * @example
- * <SheetContent title="Edit record" className="md:w-120">Form</SheetContent>
+ * <SheetContent title="Edit record">Form</SheetContent>
  */
 export function SheetContent({
   title,

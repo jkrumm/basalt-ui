@@ -22,7 +22,7 @@ export const buttonVariants = cva(
         secondary:
           'bg-secondary text-foreground shadow-raised hover:bg-accent forced-colors:border forced-colors:border-current',
         ghost: 'text-foreground hover:bg-accent',
-        danger: 'bg-bad-tint text-bad hover:bg-bad-tint/80',
+        danger: 'bg-bad-tint text-bad hover:brightness-90',
       },
       size: {
         md: '',

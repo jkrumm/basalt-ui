@@ -1,4 +1,4 @@
-import type { StatusProps, SwatchProps } from './status'
+import type { StatusProps } from './status'
 
 /**
  * Hand-authored guard for `status` (docs/v3/ARCHITECTURE.md 4.2). `requires` survives eject;
@@ -19,10 +19,10 @@ export const closedTone: Pick<StatusProps, 'tone'> = { tone: 'purple' }
 
 // @ts-expect-error a raw hex colour is not a series colour
 // theme-allow raw-hex — the guard proves a raw colour fails to type-check
-export const rawHex: Pick<SwatchProps, 'color'> = { color: '#2f6fed' }
+export const rawHex: Pick<import('./status').SwatchProps, 'color'> = { color: '#2f6fed' }
 
 // @ts-expect-error a colour name is not a series colour
-export const rawName: Pick<SwatchProps, 'color'> = { color: 'red' }
+export const rawName: Pick<import('./status').SwatchProps, 'color'> = { color: 'red' }
 
 // @ts-expect-error a swatch with no colour is an empty box
-export const noColor: Pick<SwatchProps, 'color'> = {}
+export const noColor: Pick<import('./status').SwatchProps, 'color'> = {}

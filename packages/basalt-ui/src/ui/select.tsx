@@ -41,7 +41,7 @@ export const selectTriggerVariants = cva(
  * selectContentVariants()
  */
 export const selectContentVariants = cva(
-  'max-h-(--available-height) min-w-(--anchor-width) overflow-y-auto rounded-ctrl border border-border bg-popover p-1 text-popover-foreground shadow-overlay outline-none',
+  'max-h-(--available-height) min-w-(--anchor-width) overflow-y-auto rounded-ctrl border border-border bg-popover p-1 shadow-overlay outline-none',
 )
 
 /**

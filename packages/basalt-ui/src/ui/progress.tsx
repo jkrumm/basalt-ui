@@ -40,7 +40,7 @@ export const ringVariants = cva('relative inline-grid size-12 shrink-0 place-ite
   variants: {
     tone: {
       neutral: 'text-muted-foreground',
-      accent: 'text-brand-fill',
+      accent: 'text-brand',
       good: 'text-good',
       warn: 'text-warn',
       bad: 'text-bad',

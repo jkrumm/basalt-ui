@@ -14,7 +14,7 @@ import { base } from '../core/messages/base'
  * skeletonVariants() // class string for a hand-built placeholder
  */
 export const skeletonVariants = cva(
-  'block h-lh w-full rounded-sm bg-selected motion-safe:animate-pulse',
+  'block h-lh w-full rounded-chip bg-selected motion-safe:animate-pulse',
 )
 
 /**
@@ -26,7 +26,7 @@ export const skeletonVariants = cva(
  * spinnerVariants() // class string for a hand-built spinner
  */
 export const spinnerVariants = cva(
-  'inline-block h-lh w-lh shrink-0 align-top text-muted-foreground [&>svg]:size-full motion-safe:[&>svg]:animate-spin',
+  'inline-block aspect-square h-lh shrink-0 align-top text-muted-foreground [&>svg]:size-full motion-safe:[&>svg]:animate-spin',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */

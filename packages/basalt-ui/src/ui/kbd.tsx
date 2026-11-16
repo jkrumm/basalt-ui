@@ -10,7 +10,7 @@ import { cn } from '../core/cn'
  * kbdVariants() // class string for a hand-built key cap
  */
 export const kbdVariants = cva(
-  'inline-flex h-5 min-w-5 items-center justify-center rounded-sm border border-border bg-inset px-1 font-sans text-micro font-medium whitespace-nowrap text-muted-foreground',
+  'inline-flex h-5 min-w-5 items-center justify-center rounded-chip border border-border bg-inset px-1 font-sans text-micro font-medium whitespace-nowrap text-muted-foreground',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */

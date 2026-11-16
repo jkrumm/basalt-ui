@@ -22,6 +22,6 @@ describe('skeleton guard', () => {
   test('every called prop is accepted and the tables resolve', () => {
     expect(requires({ className: 'w-8', id: 'x' })).toEqual({ className: 'w-8', id: 'x' })
     expect(skeletonVariants()).toContain('h-lh')
-    expect(spinnerVariants()).toContain('w-lh')
+    expect(spinnerVariants()).toContain('aspect-square')
   })
 })
