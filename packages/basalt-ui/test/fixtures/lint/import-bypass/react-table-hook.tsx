@@ -31,3 +31,7 @@ import DataGrid from 'react-data-grid'
 import { DataGrid } from '@mui/x-data-grid'
 // @invalid
 import { DataGridPro } from '@mui/x-data-grid-pro'
+// @invalid
+import { MaterialReactTable } from 'material-react-table'
+// @invalid
+import { MantineReactTable } from 'mantine-react-table'

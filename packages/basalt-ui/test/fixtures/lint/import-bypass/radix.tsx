@@ -41,3 +41,11 @@ import { Button } from '@mui/joy'
 import { useButton } from 'react-aria'
 // @valid
 import { DataGrid } from 'basalt-ui/table'
+// @invalid
+import { Button } from 'antd'
+// @invalid
+import { Button } from '@heroui/react'
+// @invalid
+import { Button } from '@nextui-org/react'
+// @valid
+import { Button } from 'antd-lookalike'

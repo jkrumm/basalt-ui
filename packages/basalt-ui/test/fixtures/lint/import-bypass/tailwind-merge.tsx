@@ -9,3 +9,5 @@ import { cn } from 'basalt-ui'
 import { cx } from 'class-variance-authority'
 // @invalid
 import { tv } from 'tailwind-variants'
+// @invalid
+import classNames from 'classnames'
