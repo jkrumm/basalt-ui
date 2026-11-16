@@ -31,3 +31,19 @@ const a = <input type="file" hidden onChange={pick} />
 const a = <input type="file" onChange={pick} />
 // @invalid
 const a = <input type="file" className="md:hidden" onChange={pick} />
+// @invalid
+const a = (
+  <div role="button" tabIndex={0} onClick={open}>
+    Open
+  </div>
+)
+// @invalid
+const a = <span role="button" onClick={open} />
+// @invalid
+const a = <dialog open>Delete?</dialog>
+// @valid
+const a = <div role="button" />
+// @valid
+const a = <div role="group" onClick={open} />
+// @valid
+const a = <Dialog open />

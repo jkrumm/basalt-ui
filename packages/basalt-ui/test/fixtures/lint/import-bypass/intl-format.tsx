@@ -36,7 +36,7 @@ const s = ago(run.at)
 // @valid
 const key = `k-${n.toFixed(1)}`
 // @valid
-const a = <div style={{ width: `${pct.toFixed(1)}%` }} />
+const a = <div style={{ flexBasis: `${pct.toFixed(1)}%` }} />
 // @valid
 const a = <Meter value={n.toFixed(1)} />
 // @valid
