@@ -21,6 +21,17 @@ The words on a page state facts: a precise noun, its scope, a live number. Slots
 - A sentence appears only where the marks cannot say it. A line that describes what the chart shows is cut; a line that names what the reader cannot see (a cause, a scope) stays.
 - The hero's verb ("Runs out 13:52") is the answer, and the sentences around it say something else: the headline, the sub line, the annotation and the caption state it once between them.
 
+### Worked: one fact, four lines, one figure
+
+A build of an incident page said the same fact four times:
+
+- Headline: "13 of 19 services are affected right now"
+- Sub line: "13 services affected out of 19 in total"
+- `refLine` label: "Limit: 19 services"
+- Badge on the list: "13 affected"
+
+Cut to what the marks cannot say: the figure `13` with its pill `of 19`, one annotation on the mark that needs the eye ("Worst: payments, 4 h"), and nothing else. The headline sentence, the sub line, the limit label (the line is the limit) and the badge (the list is the affected items) each restate the figure. Six cycle 3 builds (c10, c11, c12, c13, n02, n12) lost word economy to this shape; read each line aloud against the mark beside it, and cut every line that says what the figure, its pill or the annotation already says.
+
 ## Say each thing once
 
 - A figure appears once per page, in the summary line, the card or the table cell, whichever the reader reaches first.
