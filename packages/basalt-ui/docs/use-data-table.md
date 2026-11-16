@@ -20,7 +20,7 @@ table). The tiers live in `basalt-ui/table.css`, which `basalt()` imports for an
 
 ```ts
 useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
-  // either detail or onRowActivate + activeRowId
+  // either detail, detailById or onRowActivate + activeRowId
   id: string
   label: string
   columns: readonly KindColumn<T>[]
@@ -38,12 +38,13 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   group?: { by: string; summary?: (rows: readonly T[], box: Box) => ReactNode; }  // A type error unless `mode.kind` is `'client'` (enforced in `useDataTable` at the call site)
   selection?: { bulk: BulkAction<T>[]; selectAll?: boolean; }
   views?: { store?: ViewStore; }
-  detail?: (row: T, box: Box) => ReactNode
   detailTitle?: (row: T) => string  [with detail]  // The title of a row's detail entry (the aside or sheet header); the table label when absent
+  detailTitleById?: (id: string) => string  [with detail]  // The title of a record opened by id (see `detailById`): a page that titles a record by its id passes the same function as `detailTitle` reads, so one record has one title however it opened
   detailState?: ControlHandle<string>  [with detail]  // A string field of row ids that holds the open row: activating a row writes its id, closing the sheet calls `clear()` (on a `history: 'push'` field the close is an entry of its own, so Back after it returns to the open record; a name that matches no row is cleared as a replace), and a value that names a loaded row opens its detail on load, on a share link and on Back
-  detailById?: (id: string, box: Box) => ReactNode  [with detail]  // The body of a record the table has not loaded, for a `detailState` field that names an id no loaded row has (a share link after the record left the filters, a row on another page of a server table): once the query settles the detail door opens with this body under the table label, and the page fetches the record by id
+  detailById?: (id: string, box: Box) => ReactNode  [with detail]  // The body of a record the page fetches by id: without `detail` it is every row's body (an activation opens `detailById(getRowId(row), box)`, so the body is written once), with `detail` it is the body of a record no loaded row has, for a `detailState` field that names an unloaded id (a share link after the record left the filters, a row on another page of a server table)
   onRowActivate?: (row: T) => void
   activeRowId?: string  // The id of the row the page has open (a detail the page draws itself): that row is drawn as the selected row and carries `aria-current`
+  detail?: (row: T, box: Box) => ReactNode
 ```
 
 `Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.

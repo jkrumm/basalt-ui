@@ -740,5 +740,41 @@ describe('detail bound to a field', () => {
       expect(field.value()).toBe('c')
       expect(screen.getByRole('dialog').textContent).toContain('Project 1 body')
     })
+
+    test('a record opened by id carries the title detailTitleById gives it, a row the one detailTitle gives', () => {
+      const field = urlField('zzz')
+      const title = (id: string): string => `Edit ${id}`
+      render(
+        <Bound
+          field={field}
+          byId={byId}
+          extra={{ detailTitle: (row: Row) => title(row.id), detailTitleById: title }}
+        />,
+      )
+      expect(screen.getByRole('dialog', { name: 'Edit zzz' }).textContent).toContain('fetched zzz')
+      act(() => field.set('b'))
+      expect(screen.getByRole('dialog', { name: 'Edit b' }).textContent).toContain('Project 2 body')
+    })
+
+    test('without detail every activation opens through detailById, on the row id', () => {
+      function ByIdOnly(): ReactElement {
+        const c = col<Row>()
+        const t = useDataTable<Row>({
+          id: 'detail-by-id-only',
+          label: 'Rows',
+          columns: [c.text('name', { filter: 'text' })],
+          data: ROWS,
+          getRowId: (r) => r.id,
+          mode: { kind: 'client' },
+          detailTitle: (row) => `Edit ${row.id}`,
+          detailById: byId,
+        })
+        return <DataTable table={t} />
+      }
+      render(<ByIdOnly />)
+      fireEvent.click(document.querySelectorAll('tbody tr')[1] as HTMLElement)
+      const dialog = screen.getByRole('dialog', { name: 'Edit b' })
+      expect(dialog.textContent).toContain('fetched b')
+    })
   })
 })

@@ -302,9 +302,11 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
   const activation: Activation<T> =
     options.detail !== undefined
       ? { kind: 'detail', render: options.detail }
-      : options.onRowActivate !== undefined
-        ? { kind: 'row', run: options.onRowActivate }
-        : { kind: 'auto' }
+      : options.detailById !== undefined
+        ? { kind: 'detail', render: (row, box) => options.detailById?.(getRowId(row), box) }
+        : options.onRowActivate !== undefined
+          ? { kind: 'row', run: options.onRowActivate }
+          : { kind: 'auto' }
 
   const showAuto = (id: string): void => {
     const row = byId.get(id)
@@ -343,7 +345,10 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
     const { detailById } = options
     if (row !== undefined) showDetail(row)
     else if (detailById !== undefined)
-      host.current?.show({ title: options.label, body: (box) => detailById(id, box) })
+      host.current?.show({
+        title: options.detailTitleById?.(id) ?? options.label,
+        body: (box) => detailById(id, box),
+      })
   }
   // The field is the source of truth: a name that arrives from the URL opens its row once the rows
   // load, and a field that goes unset (Back, `clear()`) closes the sheet the table opened. A name no
