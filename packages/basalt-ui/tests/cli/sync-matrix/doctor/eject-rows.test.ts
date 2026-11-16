@@ -116,7 +116,7 @@ describe('doctor eject rows', () => {
     [
       'ejects over budget.json',
       (d) => writeBudget(d, { ...seedBudget('parts'), ejects: 0 }),
-      '1 ejects is above the ceiling 0 in .basalt/budget.json (root src)',
+      '1 eject is above the ceiling 0 in .basalt/budget.json (root src)',
     ],
     [
       'adopted over budget.json',

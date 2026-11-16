@@ -176,7 +176,7 @@ describe('lint', () => {
   it('exits 1 when counted waivers exceed the ceiling, and names the way up', async () => {
     const out = await lint(repo({ 'src/w.tsx': waiver(2) }))
     expect(out.code).toBe(1)
-    expect(out.log).toContain('2 waivers is above the ceiling 0 in .basalt/budget.json')
+    expect(out.log).toContain('2 waivers are above the ceiling 0 in .basalt/budget.json')
     expect(out.log).toContain('basalt-ui lint --raise waivers --consumer "<named consumer>"')
   })
 
@@ -220,7 +220,7 @@ describe('lint', () => {
     const text = 'export const e = [col.custom, chart.custom, field.custom, filterSlot.custom]\n'
     const out = await lint(repo({ 'src/e.tsx': text }))
     expect(out.code).toBe(1)
-    expect(out.log).toContain('4 escapes is above the ceiling 3')
+    expect(out.log).toContain('4 escapes are above the ceiling 3')
   })
 
   it('--stats prints findings, waivers and escapes per rule against the ceilings', async () => {

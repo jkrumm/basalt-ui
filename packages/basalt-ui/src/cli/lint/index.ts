@@ -12,6 +12,7 @@ import { parseArgs } from 'node:util'
 import {
   BUDGET_PATH,
   countBreaches,
+  countedFigure,
   landBudget,
   LINT_RAISABLE,
   raiseCeiling,
@@ -175,7 +176,7 @@ export function lint(flags: readonly string[], invocationCwd: string): number {
   const breaches = budget === null ? [] : countBreaches(budget.budget, stats.counts)
   for (const b of breaches) {
     say(
-      `${b.count} ${b.name} is above the ceiling ${b.ceiling} in ${BUDGET_PATH}; remove ${b.name}, or raise it with ${raiseCommand(b.name)}`,
+      `${countedFigure(b.name, b.count)} above the ceiling ${b.ceiling} in ${BUDGET_PATH}; remove ${b.name}, or raise it with ${raiseCommand(b.name)}`,
     )
   }
   if (breaches.length > 0) return 1
