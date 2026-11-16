@@ -87,8 +87,9 @@ export function ReachRings({
       {nodes.map(({ row, x, y }) => {
         const from = row.via === null ? undefined : placed.get(row.via)
         if (from === undefined) return null
-        // oxlint-disable-next-line basalt/primitive-bypass -- focus.target is spread by the page wrapper in ExprC10.tsx, one tab stop over the list and these marks
-        return <line key={row.id} x1={from.x} y1={from.y} x2={x} y2={y} stroke={VX.line} />
+        return (
+          <line key={row.id} x1={from.x} y1={from.y} x2={x} y2={y} stroke={VX.line} aria-hidden />
+        )
       })}
       {nodes.map(({ row, index, x, y }) => (
         <circle
