@@ -35,7 +35,7 @@ const DECORATIVE_ROLE =
 // The fill-only roles (`zoneAFillOnly`): a fill clears 3.0 and text needs 4.5, so never as `color`.
 const FILL_ONLY_ROLE = `var\\(\\s*--vx-(?:${zoneAFillOnly.join('|')})\\s*[,)]`
 // The class rule `fixed-width`: above 384px or from 25rem (`w-[385px]`, `w-[25rem]`).
-const FIXED_WIDTH = `(?<![\\w.])(?:(?:38[5-9]|39\\d|[4-9]\\d{2}|\\d{4,})(?:\\.\\d+)?px|(?:2[5-9]|[3-9]\\d|\\d{3,})(?:\\.\\d+)?rem)(?![\\w%])`
+export const FIXED_WIDTH = `(?<![\\w.])(?:(?:38[5-9]|39\\d|[4-9]\\d{2}|\\d{4,})(?:\\.\\d+)?px|(?:2[5-9]|[3-9]\\d|\\d{3,})(?:\\.\\d+)?rem)(?![\\w%])`
 
 // The class rules' spacing set: padding, margin, gap, the inset and its four sides, the type size.
 export const SPACING_PROPERTIES =
