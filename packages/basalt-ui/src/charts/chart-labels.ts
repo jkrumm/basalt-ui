@@ -6,6 +6,7 @@
  */
 import { VX } from '../tokens'
 import { GLYPHS, WIDTHS } from './chart-labels-widths.gen'
+import { hostObstacles } from './label-obstacles'
 import { trackAxis, trackRow } from './track'
 import type {
   RowLabel,
@@ -205,6 +206,10 @@ export const chartLabels = {
    * Place each label on the first free spot, highest `priority` first (ties keep input order). A
    * spot is free when its box lies fully inside `frame` and overlaps no placed label and no
    * obstacle; a label with no free spot is returned in `dropped`.
+   *
+   * Called from `CartesianChart.custom`'s `build`, it also keeps clear of what the host drew under
+   * the marks, with no option to pass: the zone and rule captions, the end labels, the line paths
+   * and the bodies of the bars (`frame` is the plot, as `ChartPlot.plotWidth` and `plotHeight`).
    */
   place<K extends string>(
     labels: readonly ChartLabel<K>[],
@@ -212,7 +217,7 @@ export const chartLabels = {
     options: { gap?: number; obstacles?: readonly LabelBox[] } = {},
   ): { placed: PlacedLabel<K>[]; dropped: ChartLabel<K>[] } {
     const gap = options.gap ?? DEFAULT_GAP
-    const taken: LabelBox[] = [...(options.obstacles ?? [])]
+    const taken: LabelBox[] = [...(options.obstacles ?? []), ...hostObstacles()]
     const placed: PlacedLabel<K>[] = []
     const dropped: ChartLabel<K>[] = []
     const ranked = labels
