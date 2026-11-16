@@ -9,8 +9,8 @@
  *    React 19 + Testing Library can render into a real DOM under `bun test`.
  *
  * 2. happy-dom does not implement `ResizeObserver`, `window.matchMedia`, or `document.fonts`,
- *    all of which Mantine v9 components touch during mount — `document.fonts` specifically via
- *    `Textarea`'s autosize implementation (`@mantine/core/components/Textarea/Autosize`), which
+ *    all of which components touch during mount — `document.fonts` specifically via
+ *    textarea autosize implementations, which
  *    calls `document.fonts.addEventListener('loadingdone', ...)` on mount and
  *    `removeEventListener` on unmount to re-measure once web fonts settle. Shimmed here, guarded
  *    by `typeof x === 'undefined'` so a future happy-dom release that ships any of the three wins
@@ -94,8 +94,8 @@ if (typeof window.ResizeObserver === 'undefined') {
 
 /**
  * `IntersectionObserver` — happy-dom does not implement it, and `@floating-ui/dom`'s `autoUpdate`
- * mounts one on every open floating element. That means ANY Mantine `Menu`/`Popover`/`Tooltip` test
- * throws on open, with an error that reads like a Mantine bug rather than a missing DOM API. A
+ * mounts one on every open floating element. That means ANY menu, popover or tooltip test
+ * throws on open, with an error that reads like a component bug rather than a missing DOM API. A
  * no-op is correct here: the harness never scrolls, so no intersection ever changes, and every
  * position `autoUpdate` would recompute is untestable under happy-dom anyway (`matchMedia` is
  * pinned to `matches: false` and layout is not evaluated).
@@ -134,7 +134,7 @@ if (typeof document.fonts === 'undefined') {
   // `document.fonts` (the CSS Font Loading API's `FontFaceSet`) is `readonly` on `Document`,
   // so — unlike `window.matchMedia` above — it cannot be restored with a plain assignment;
   // `defineProperty` is the only way to install it. Only `addEventListener`/`removeEventListener`
-  // are exercised (Mantine never calls `check`/`load`/`ready`/etc), so this deliberately stops at
+  // are exercised (components never call `check`/`load`/`ready`/etc), so this deliberately stops at
   // those two rather than reimplementing the full `FontFaceSet` interface.
   Object.defineProperty(document, 'fonts', {
     configurable: true,

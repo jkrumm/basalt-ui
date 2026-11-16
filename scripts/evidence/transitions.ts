@@ -46,7 +46,7 @@ declare global {
 
 /** Runs before any page script. `window.__vt` is the whole observation surface. */
 const INIT = ({ variant, scheme }: { variant: Variant; scheme: Scheme }) => {
-  localStorage.setItem('mantine-color-scheme-value', scheme)
+  localStorage.setItem('basalt:scheme', scheme)
   const probe: Probe = {
     calls: 0,
     timedAnimations: 0,
@@ -118,7 +118,7 @@ declare global {
 }
 
 const ROUTE_INIT = ({ observe }: { observe: boolean }) => {
-  localStorage.setItem('mantine-color-scheme-value', 'light')
+  localStorage.setItem('basalt:scheme', 'light')
   const probe: RouteProbe = {
     calls: [],
     errors: [],
@@ -165,8 +165,8 @@ const ROUTE_INIT = ({ observe }: { observe: boolean }) => {
 }
 
 /** The playground sidebar's links; the lane clicks these, and their DOM order is the nav order. */
-const SIDEBAR_LINK = '.mantine-AppShell-navbar a[href^="/"]'
-const sidebarLink = (path: string): string => `.mantine-AppShell-navbar a[href^="${path}"]`
+const SIDEBAR_LINK = '[data-slot="shell-rail"] a[href^="/"]'
+const sidebarLink = (path: string): string => `[data-slot="shell-rail"] a[href^="${path}"]`
 
 async function routeSection(
   browser: import('playwright-core').Browser,

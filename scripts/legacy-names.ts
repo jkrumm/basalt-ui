@@ -28,7 +28,7 @@ export type Allow = {
 export const FINDERS: Readonly<Record<Kind, readonly RegExp[]>> = {
   // `vx` opening a word in any case (`--vx-ink`, `.vx-prose`, `VX.ink`, `VxVar`, `REMOVED_VX_NAMES`), and `Vx`
   // inside a camel-case identifier (`collectVxNames`). Base64 runs such as `1YVxB` match neither.
-  vx: [/(?<![A-Za-z0-9])vx/i, /(?<=[a-z0-9])Vx(?![a-z])/],
+  vx: [/(?:(?<![A-Za-z0-9])|(?<=\\[bBdDsSwW]))vx/i, /(?<=[a-z0-9])Vx(?![a-z])/],
   mantine: [/mantine/i],
 }
 
@@ -109,14 +109,87 @@ export const ALLOWED: readonly Allow[] = [
     line: /^ {2}(VxThemeProvider|useVxTheme): /,
     reason: 'the removed-API denylist bans the 1.x names as they were spelled',
   },
-  // Bans on Mantine imports: the ban list has to name the package it bans.
   {
-    path: 'packages/basalt-ui/src/lint/rules/structure/import-boundary.ts',
-    kinds: ['mantine'],
-    line: /@mantine\b|\bmantine\b.*(ban|refus|import)/i,
-    reason: 'the import-boundary ban list forbids `@mantine/*`',
+    path: 'packages/basalt-ui/configs/oxlint-plugin.js',
+    kinds: ['vx'],
+    line: /^ {2}'unknown-vx-token',$/,
+    reason:
+      'a retired 2.x waiver kind, recognized as 2.x apps wrote it (tools/migrate-v3 waivers maps it)',
   },
+  // Detectors: a ban list, or a check that reports what a 2.x app still carries, has to name what it refuses.
+  // Each holds in the source and in its compiled twin in `dist/`, and only on the detecting line.
+  ...detector(
+    'lint/rules/structure/import-boundary',
+    /@mantine\b|Radix, Mantine,/,
+    'the import ban list',
+  ),
+  ...detector('lint/stylelint/rules', /\.mantine-/, 'the stylelint selector ban'),
+  ...detector(
+    'cli/migrate/index',
+    /data-mantine-color-scheme/,
+    '`migrate --check` finds the 2.x scheme selector',
+  ),
+  ...detector('cli/migrate/census', /\(mantine-\|/, 'the migrate census finds 2.x storage keys'),
+  ...detector(
+    'cli/doctor/app',
+    /data-mantine-color-scheme/,
+    '`doctor` finds the 2.x scheme selector',
+  ),
+  ...detector(
+    'cli/doctor/guards',
+    /\/mantine\/i.*DESIGN\.md mentions Mantine/,
+    '`doctor` finds a DESIGN.md on the 2.x stack',
+  ),
+  {
+    path: 'packages/basalt-ui/configs/stylelint.basalt.json',
+    kinds: ['mantine'],
+    line: /\.mantine-/,
+    reason: 'the stylelint selector ban, generated from src/lint/stylelint/rules.ts',
+  },
+  // The detectors' offender fixtures and the tests that plant them.
+  ...[
+    'packages/basalt-ui/test/fixtures/lint/import-bypass/',
+    'packages/basalt-ui/test/fixtures/lint/stylelint/offenders/mantine-class.css',
+    'packages/basalt-ui/src/lint/stylelint/stylelint.test.ts',
+    'packages/basalt-ui/src/cli/doctor/app.test.ts',
+    'packages/basalt-ui/src/cli/doctor/guards.test.ts',
+    'packages/basalt-ui/tests/agent/sk-7.test.ts',
+    'packages/basalt-ui/tests/cli/migrate/migrate.test.ts',
+  ].map((path) => ({ path, kinds: ['mantine'] as const, reason: 'a detector offender fixture' })),
+  // Artifact guards: the packed tarball must not reach the 2.x stack.
+  ...[
+    'packages/basalt-ui/scripts/check-dist-layering.mjs',
+    'packages/basalt-ui/scripts/pack-test.sh',
+  ].map((path) => ({
+    path,
+    kinds: ['mantine'] as const,
+    reason: 'a pack-test guard refuses a 2.x import in the artifact',
+  })),
+  {
+    path: 'packages/basalt-ui/scripts/migrating-ui-rows.test.ts',
+    kinds: ['mantine'],
+    reason: 'the 2.x symbol census the ui migration rows must cover',
+  },
+  // The 2.x layout oracle (`LAYOUT_TARGET=v2`) measures the 2.x DOM by its own class names.
+  ...[
+    'packages/basalt-ui/tests/layout/shell-slots.ts',
+    'packages/basalt-ui/tests/layout/shell-target.ts',
+  ].map((path) => ({
+    path,
+    kinds: ['mantine'] as const,
+    reason: 'the 2.x layout oracle selectors',
+  })),
 ]
+
+/** A detector's source module and its compiled twins, line-scoped. */
+function detector(module: string, line: RegExp, reason: string): Allow[] {
+  return [`src/${module}.ts`, `dist/${module}.js`, `dist/${module}.d.ts`].map((rel) => ({
+    path: `packages/basalt-ui/${rel}`,
+    kinds: ['mantine'],
+    line,
+    reason,
+  }))
+}
 
 const toPosix = (path: string): string => path.split('\\').join('/')
 

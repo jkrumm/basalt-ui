@@ -27,8 +27,6 @@ export type ShotArgs = {
 
 /** The localStorage key `basalt-ui`'s boot script and `setScheme` read (`core/scheme.ts`). */
 export const SCHEME_KEY = 'basalt:scheme'
-/** The key Mantine's own scheme manager reads — the 2.x routes still ignore `basalt:scheme`. */
-export const LEGACY_SCHEME_KEY = 'mantine-color-scheme-value'
 
 const DESKTOP: ShotViewport = { width: 1800, height: 1200 }
 const PHONE: ShotViewport = { width: 390, height: 844 }
@@ -145,7 +143,7 @@ async function capture(args: ShotArgs): Promise<string[]> {
           // oxlint-disable-next-line basalt/data-primitive -- a Playwright init script seeds the stored scheme before the app boots; no app store exists in that context
           for (const key of keys) window.localStorage.setItem(key, value)
         },
-        { keys: [SCHEME_KEY, LEGACY_SCHEME_KEY], value: shot.scheme },
+        { keys: [SCHEME_KEY], value: shot.scheme },
       )
       try {
         for (const route of args.routes) {

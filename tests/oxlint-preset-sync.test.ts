@@ -52,7 +52,7 @@ describe('oxlint preset sync contract', () => {
     expect(committed).toEqual(projected)
   })
 
-  // ── @visx/*-only-in-charts + Mantine-free charts/tokens: moved to basalt/chart-engine-boundary + ────────
+  // ── @visx/*-only-in-charts + framework-free charts/tokens: moved to basalt/chart-engine-boundary + ────────
   // ── basalt/token-layer-boundary ──────────────────────────────────────────────────────────────
   // These boundaries used to live in per-glob no-restricted-imports overrides, with the charts
   // block's implicit OMISSION of the @visx/* ban acting as the "re-allow" — an artifact of oxlint's

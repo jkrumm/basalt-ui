@@ -1,6 +1,6 @@
 # Migrate a 2.x app to 3.x
 
-Procedure for moving an app that imports basalt-ui 2.x (Mantine) to 3.x (shadcn, Base UI, Tailwind 4). Pick the shape first; the `migrate` verb then keeps the list of what is left. The law stays in `.claude/rules/basalt-*.md`; each prohibition below carries its guard tag, and what nothing guards sits under `not guarded:`.
+Procedure for moving an app that imports basalt-ui 2.x to 3.x (shadcn, Base UI, Tailwind 4). Pick the shape first; the `migrate` verb then keeps the list of what is left. The law stays in `.claude/rules/basalt-*.md`; each prohibition below carries its guard tag, and what nothing guards sits under `not guarded:`.
 
 ## The four shapes
 
@@ -21,7 +21,7 @@ In a sibling app, import nothing from the old app into the new one; the new app'
 
 1. `./node_modules/.bin/basalt-ui migrate --from <version> --profile <profile>` prints the rows this app needs, selected by its own imports, and what changes for each. Add `--json` for the machine report (`schema: 1`: `rows`, `tokens`, `storage`, `urls`, `attrs`, `rules`, `unmapped`, `failures`). It reads the tree and never writes.
 2. Work the report in this order: specifier moves first (they cascade into every later error), wiring, removed exports, then components, charts and tables, one file at a time.
-3. `./node_modules/.bin/basalt-ui migrate --from <version> --profile <profile> --check` exits 1 while a removed symbol is still imported, a legacy `[data-mantine-color-scheme]` selector remains, or a legacy storage or URL key has no row. Run it before every push.
+3. `./node_modules/.bin/basalt-ui migrate --from <version> --profile <profile> --check` exits 1 while a removed symbol is still imported, a legacy scheme-attribute selector remains, or a legacy storage or URL key has no row. Run it before every push.
 4. `./node_modules/.bin/basalt-ui doctor --from <version>` prints the consumer-visible `MIGRATING.md` changes since that version; read it once per bump.
 5. Run `sync`, `doctor` and the repo gate; the preset retires 2.x rule ids, so a leftover `theme-allow` waiver becomes `// oxlint-disable-next-line basalt/<id> -- <why>`.
 

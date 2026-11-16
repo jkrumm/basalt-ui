@@ -46,14 +46,14 @@ export function rules(prefix: string): Rule[] {
     { from: new RegExp(`${prefix}Vx(?=[A-Z])`, 'g'), to: prefix },
     { from: new RegExp(`${title}Vx(?=[A-Z])`, 'g'), to: title },
     // Kebab names: classes, files, lint ids (`.vx-prose`, `gen-vx-names`, `unknown-vx-token`).
-    { from: /(?<![A-Za-z0-9])vx-(?=[A-Za-z$])/g, to: `${prefix}-` },
+    { from: /(?:(?<![A-Za-z0-9])|(?<=\\[bBdDsSwW]))vx-(?=[A-Za-z$])/g, to: `${prefix}-` },
     // The accessor and its constants: `VX`, `VX.ink`, `VX_PATH`, `REMOVED_VX_NAMES`.
-    { from: /(?<![A-Za-z0-9])VXI(?![A-Za-z0-9])/g, to: `${upper}_IMPORT` },
-    { from: /(?<![A-Za-z0-9])VX(?![A-Za-z0-9])/g, to: upper },
+    { from: /(?:(?<![A-Za-z0-9])|(?<=\\[bBdDsSwW]))VXI(?![A-Za-z0-9])/g, to: `${upper}_IMPORT` },
+    { from: /(?:(?<![A-Za-z0-9])|(?<=\\[bBdDsSwW]))VX(?![A-Za-z0-9])/g, to: upper },
     // Types and camel case: `VxVar`, `collectVxNames`, `uncoveredVx`, `vxFamilyOf`.
-    { from: /(?<![A-Za-z0-9])Vx(?=[A-Z0-9_]|(?![A-Za-z0-9]))/g, to: title },
+    { from: /(?:(?<![A-Za-z0-9])|(?<=\\[bBdDsSwW]))Vx(?=[A-Z0-9_]|(?![A-Za-z0-9]))/g, to: title },
     { from: /(?<=[a-z0-9])Vx(?![a-z])/g, to: title },
-    { from: /(?<![A-Za-z0-9])vx(?=[A-Z])/g, to: prefix },
+    { from: /(?:(?<![A-Za-z0-9])|(?<=\\[bBdDsSwW]))vx(?=[A-Z])/g, to: prefix },
     // The bare word in prose: "the vx names".
     { from: /(?<![A-Za-z0-9-])vx(?![A-Za-z0-9-])/g, to: prefix },
   ]
