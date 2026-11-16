@@ -337,7 +337,7 @@ installs them. visx is gone: no dependency, peer or re-export.
 `CartesianChart` is the entry point: it compiles one engine definition and owns the measured
 margins, both y domains, the x scale, the grid, zones, the page-shared cursor, the crosshair,
 keyboard focus, the legend and the derived tooltip, so a chart supplies its `series` and returns
-only marks. `ariaLabel` is required. The x scale follows the value `x` returns: a `Date` is a
+only marks. `label` is required. The x scale follows the value `x` returns: a `Date` is a
 proportional time axis, a `number` is linear, a `string` is a point (lines) or band (bars) scale.
 Marks come straight from `@tanstack/charts/*` subpaths (`basalt/chart-engine-boundary` allowlists
 them); `basalt-ui/charts` re-exports none, and tokens live in `basalt-ui/tokens` and
@@ -351,7 +351,7 @@ const SERIES = defineSeries({ sessions: { light: '#4f78a4', dark: '#7099c4' } })
 
 export const Sessions = () => (
   <CartesianChart
-    ariaLabel="Sessions"
+    label="Sessions"
     data={rows}
     x={{ value: (d) => d.date }}
     series={[

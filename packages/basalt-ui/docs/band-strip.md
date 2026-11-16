@@ -18,7 +18,6 @@ A one-dimensional strip of gap-free bands over the shared x axis, each band in o
 BandStrip<T, X extends ChartX = ChartX, K extends string = string>(props: BandStripProps<T, X, K>): ReactElement
   data: readonly T[]
   x: (d: T) => X
-  ariaLabel: string  // The accessible name
   height?: number | ResponsiveChartHeight  // Default: the height law (measured width × class ratio, 160–420px, ≤ 45vh on touch)
   tooltip?: false | ChartTooltipConfig<T, X>
   legend?: false | ChartLegendConfig  // `false` hides the legend
@@ -32,6 +31,7 @@ BandStrip<T, X extends ChartX = ChartX, K extends string = string>(props: BandSt
   state?: ChartState
   cursorGroup?: string  // Joins a named cursor group instead of the page-shared default
   cursorResolution?: CursorResolution  // Default `'nearest'`
+  label: string
   states: readonly (Pick<ChartSeries<never>, "tooltip" | "legend" | "key" | "label" | "color" | "note" | "fillOpacity"> & { glyph?: string | undefined; tone?: StatusTone | undefined; } & { formatValue?: ((d: T) => string | null) | undefined; } & { key: K; })[]
   getBand: (d: T) => BandSpan  // Which state, fill and marker each datum has
   fold?: BandFold<T>

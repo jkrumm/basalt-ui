@@ -20,7 +20,6 @@ delta or status and is neutral outside a frame.
 ```ts
 Sparkline(props: SparklineProps): ReactElement
   series: readonly SparkPoint[]
-  ariaLabel: string
   height: number | "fill"
   width?: number
   form?: "line" | "area"
@@ -28,10 +27,11 @@ Sparkline(props: SparklineProps): ReactElement
   axisLabels?: readonly [string, string, string]
   format?: (v: number) => string
   summary?: string
+  label: string
 ```
 
 ## Example
 
 ```tsx
-<Sparkline series={perDay} height={72} axisLabels={['Mon', 'Today', 'Sun']} ariaLabel="Shipped per day" />
+<Sparkline series={perDay} height={72} axisLabels={['Mon', 'Today', 'Sun']} label="Shipped per day" />
 ```

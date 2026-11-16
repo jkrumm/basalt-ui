@@ -18,7 +18,6 @@ named states for cells that are failed, idle or absent.
 Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement
   className?: string  // Appended to the root element's own class — never replaces it
   style?: CSSProperties  // Merged onto the root element's own inline style, if it has one
-  ariaLabel: string  // The accessible name
   data: readonly T[]
   getRow: (d: T) => string  // The y band (a row) of a datum
   getCol: (d: T) => string  // The x band (a column) of a datum
@@ -40,9 +39,9 @@ Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement
   matchHeight?: boolean  // Fill the parent's height instead
   phase?: Phase | QueryStateLike  // The load state, as on every data part: a `Phase` or a query result
   empty?: Empty | null  // The measured-empty state once the query settled; `cause` is the line the tile prints
-  state?: ChartState
   focus?: ChartFocus<T>  // `useChartFocus(data, …)`: pointing at a cell or stepping with the arrow keys focuses its datum, every other cell dims, and `focus.readout` drives a card fact
   annotate?: ((d: T) => string | null)  // A short mark in the cell (an onset glyph, a two-digit hour), `null` for none
+  label: string
 ```
 
 `Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.

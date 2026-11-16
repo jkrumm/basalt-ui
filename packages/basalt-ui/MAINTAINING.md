@@ -293,7 +293,7 @@ promotion state there, never from prose here.** Five things about it that are no
 - **The control guards share ONE ancestry walk** (`createSlotContext`) that stops at a slot
   ATTRIBUTE, never at the element — so a control in a TIERED home's CHILDREN (the body form) never
   fires, while a hoisted `const pills = <Select/>` handed to `filters={pills}` does. The SUBTREE
-  homes are the mirror image and take the same hoisted hop: a `const rows = <ViewTabs handle={tab} />`
+  homes are the mirror image and take the same hoisted hop: a `const rows = <ViewTabs state={tab} />`
   rendered as `<PageAside>{rows}</PageAside>` is inside that aside. That is why the ancestry facts
   are captured during the visit and resolved at `Program:exit`.
 - **The owner exemption needs a second half**: a file DEFINING `PanelRow`/`EnumFilter`/

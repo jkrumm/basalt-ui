@@ -35,7 +35,7 @@ export function PipelinePace() {
       chart={() => (
         <CartesianChart
           data={STAGES}
-          ariaLabel="Seconds behind the best run for each of five pipeline stages"
+          label="Seconds behind the best run for each of five pipeline stages"
           x={{ value: (s) => s.at, format: (at) => STAGES[Number(at) - 1]?.name ?? '' }}
           y={{ title: 'Seconds behind best' }}
           series={[

@@ -11,7 +11,7 @@ slots: [event-list, event-list-day, event-list-header, event-list-more]
 
 A day-grouped feed of things that happened: a leading glyph, the actor and a sentence on line one,
 the time, a body and chips on line two. It reads in order; a table compares rows. It holds one
-body height at every phase and scrolls past `rows`. It never windows: it shows `pageSize` rows
+body height at every phase and scrolls past `bodyRows`. It never windows: it shows `pageSize` rows
 and a "Show more" control, and warns once in development above 200 rows.
 
 ## Signature
@@ -25,7 +25,7 @@ EventList(props: EventListProps): ReactElement
   phase?: Phase | QueryStateLike
   empty?: Empty | null
   items: readonly EventListItem[]  // Events in display order: the list never re-sorts
-  rows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
+  bodyRows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
   pageSize?: number  // Rows shown before, and added by each "Show more"
   now?: number | Date  // The instant "Today" is measured from
 ```

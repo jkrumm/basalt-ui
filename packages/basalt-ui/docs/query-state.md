@@ -18,14 +18,14 @@ for lack of a connection, with nothing to show, reads Offline instead of spinnin
 
 ```ts
 QueryState({ phase, empty, tier, skeleton, children, }: QueryStateProps): ReactElement
-  phase: Phase | QueryResultLike  // A `Phase` or the app's query object, as every frame takes it
+  phase: Phase | QueryStateLike  // A `Phase` or the app's query object, as every frame takes it
   empty?: Empty | null  // The measured-empty state; it applies once the query settled and shows `EmptyState`
   tier?: "page" | "section"  // `page` for a route body, `section` for a region in a card or panel; default 'page'
   skeleton?: ReactNode  // Replaces the default spinner while loading, e.g
   children?: ReactNode  // Rendered when there is data worth showing
 ```
 
-`Phase`, `Empty` import from `basalt-ui/cards`: `import type { Phase, Empty } from 'basalt-ui/cards'`.
+`Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
 
 ## Example
 

@@ -21,7 +21,7 @@ export function ErrorsByRelease({ releases }: { releases: readonly Release[] }) 
   return (
     <div className="@container grid gap-3 @wide:grid-cols-2">
       <CartesianChart
-        ariaLabel="Errors per release"
+        label="Errors per release"
         data={releases}
         focus={focus}
         x={{ value: (r) => r.day }}

@@ -19,7 +19,6 @@ Lines<D>(props: LinesProps<D>): ReactElement
   data: readonly D[]
   x: XConfig<D>
   y?: YConfig
-  ariaLabel: string
   summary?: string
   table?: boolean
   height?: number | "fill"
@@ -30,6 +29,7 @@ Lines<D>(props: LinesProps<D>): ReactElement
   cursor?: string
   selection?: ChartSelection<D>
   focus?: ChartFocus<D>  // Pointer and arrow keys focus a datum of `focus.items`; the rest dims, the readout follows
+  label: string
   series: readonly (SeriesBase<D> & Y<D> & { mark: "line"; curve?: CurveName; dash?: boolean; area?: "fade"; weight?: "quiet" | "strong"; gaps?: "connect"; parent?: string; })[]
   naming?: "auto" | "legend" | "endLabels"  // Who names the lines: `'auto'` (end labels from the wide class, the legend below it), `'legend'` or `'endLabels'`
 ```
@@ -40,7 +40,7 @@ Lines<D>(props: LinesProps<D>): ReactElement
 
 ```tsx
 <Lines
-  ariaLabel="Sessions per day"
+  label="Sessions per day"
   data={rows}
   x={{ value: (d) => d.day }}
   series={[{ mark: 'line', key: 'sessions', label: 'Sessions', color: SERIES.sessions, y: (d) => d.sessions }]}

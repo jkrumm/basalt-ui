@@ -26,7 +26,7 @@ import ts from 'typescript'
 import { SURFACES } from '../src/surfaces'
 import { checkExport, formatExportDoc } from './docs-format'
 import type { ExportInfo, ExportJsdoc } from './docs-format'
-import { propShapeLines, valueSignature } from './llms-signatures'
+import { currentArms, propShapeLines, valueSignature } from './llms-signatures'
 import { SUBPATH_REQUIRED_PEERS } from './surface-gates'
 
 const REAL_PKG = join(import.meta.dirname, '..')
@@ -413,7 +413,10 @@ function propType(checker: ts.TypeChecker, symbols: ts.Symbol[], node: ts.Node):
         .replace(/\s+/g, ' '),
     ),
   )
-  return [...new Set(members.filter((m) => m !== 'undefined'))].join(' | ')
+  // An arm that narrows another arm's prop to a literal (`phase: 'loading'` against `Phase | QueryStateLike`)
+  // prints as `(<that union>) & "loading"`: the wider arm already names it, so the intersection is noise.
+  const narrowed = /^\(.*\) & ("[^"]*"|'[^']*')$/
+  return [...new Set(members.filter((m) => m !== 'undefined' && !narrowed.test(m)))].join(' | ')
 }
 
 /** The first sentence of a prop's JSDoc and its `@default`, as one `// ...` comment; '' without either. */
@@ -440,7 +443,7 @@ function docPropLines(checker: ts.TypeChecker, paramType: ts.Type, node: ts.Node
   const lines = propShapeLines(checker, paramType, node, TYPE_FLAGS)
   if (lines.length === 0) return lines
   const type = checker.getNonNullableType(paramType)
-  const members = (type.isUnion() ? type.types : [type]).map((m) => carriedProps(checker, m, node))
+  const members = currentArms(checker, type, node).map((m) => carriedProps(checker, m, node))
   const names = new Set(members.flatMap((m) => [...m.keys()]))
   const carriedBy = (name: string): number => members.filter((m) => m.get(name)?.carried).length
   const conditional = new Set(

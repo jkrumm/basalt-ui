@@ -254,12 +254,19 @@
       "profiles": ["app"],
       "manual": true,
       "verify": "tsc, then migrate --check"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "controls-viewtabs-state",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/controls#ViewTabs.handle",
+      "to": "state",
+      "note": "a bound `ControlHandle` is `state` on every part that takes one; `handle` stays a deprecated alias for one minor"
     }
   ],
-  "tokens": {
-    "renamed": [],
-    "valueShifts": []
-  },
+  "tokens": { "renamed": [], "valueShifts": [] },
   "storage": [
     {
       "key": "basalt:<key> (a URL field's persist mirror)",
