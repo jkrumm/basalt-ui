@@ -1,0 +1,58 @@
+// Seeded offenders for basalt/dark-fork, basalt/fixed-colour and basalt/status-fill-as-text.
+import { cn } from 'basalt-ui'
+import { readScheme } from 'basalt-ui/core/scheme'
+
+// seed dark-fork/dark-variant 1: the shadcn habit, a light and a dark background side by side
+export function Panel() {
+  return <div className="bg-background dark:bg-muted">panel</div>
+}
+
+// seed dark-fork/dark-variant 2: a dark fork inside cn() behind a hover variant
+export function Row({ active }: { active: boolean }) {
+  return <div className={cn('rounded-chip', active && 'hover:dark:bg-accent')}>row</div>
+}
+
+// seed dark-fork/dark-variant 3: the fork spelled as the data-theme attribute the scheme sets
+export function Hero() {
+  return <div className="bg-card data-[theme=dark]:bg-inset">hero</div>
+}
+
+// seed dark-fork/dark-variant 4: a JS fork on the resolved scheme
+export function Logo() {
+  const scheme = readScheme()
+  return <div className={scheme === 'dark' ? 'bg-inset' : 'bg-card'}>logo</div>
+}
+
+// seed fixed-colour/black-white 1: white ink on a brand button
+export function Cta() {
+  return <span className="bg-brand text-white">Buy</span>
+}
+
+// seed fixed-colour/black-white 2: a black backdrop for a hand-built overlay, with alpha
+export function Scrim() {
+  return <div className="fixed inset-0 bg-black/50" />
+}
+
+// seed fixed-colour/black-white 3: an svg icon filled white
+export function Glyph() {
+  return (
+    <svg className="fill-white" viewBox="0 0 8 8" aria-hidden="true">
+      <circle cx="4" cy="4" r="4" />
+    </svg>
+  )
+}
+
+// seed status-fill-as-text/text-on-fill 1: a series label coloured with its chart fill
+export function SeriesLabel() {
+  return <span className="text-chart-2 text-xs">Signups</span>
+}
+
+// seed status-fill-as-text/text-on-fill 2: a link-like accent written with the brand fill
+export function MoreLink() {
+  return <a className="text-brand-fill underline" href="/runs">All runs</a>
+}
+
+// seed status-fill-as-text/text-on-fill 3: the fill as text through an arbitrary var
+export function Kpi() {
+  return <span className="text-(--vx-brand-fill) font-medium">42</span>
+}

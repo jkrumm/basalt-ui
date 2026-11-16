@@ -1,0 +1,122 @@
+// Cycle 2 phrasings for basalt/data-primitive. Seed numbers continue cycle 1's.
+import { useEffect } from 'react'
+import { QueryClient, queryOptions, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import useSWR from 'swr'
+import { io } from 'socket.io-client'
+import { Lines } from 'basalt-ui/charts'
+import { liveQuery } from 'basalt-ui/data'
+
+const fetchRuns = async (): Promise<{ at: number; v: number }[]> => []
+
+// seed data-primitive/refetch-interval 3: a polling suspense query
+export function useRuns() {
+  return useSuspenseQuery({ queryKey: ['runs'], queryFn: fetchRuns, refetchInterval: 10_000 })
+}
+
+// seed data-primitive/refetch-interval 4: SWR's refreshInterval, the other polling library
+export function useRunsSwr() {
+  return useSWR('/api/runs', fetchRuns, { refreshInterval: 5000 })
+}
+
+// seed data-primitive/unseamed-transport 3: a socket.io client in an effect
+export function useFeed() {
+  useEffect(() => {
+    const socket = io('/feed')
+    return () => {
+      socket.close()
+    }
+  }, [])
+}
+
+// seed data-primitive/unseamed-transport 4: an EventSource reached through window
+export function useEvents() {
+  useEffect(() => {
+    const es = new window.EventSource('/api/events')
+    return () => es.close()
+  }, [])
+}
+
+// seed data-primitive/reader-loop 2: a for await loop over the response body
+export async function readAll(url: string) {
+  const res = await fetch(url)
+  const decoder = new TextDecoder()
+  for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) decoder.decode(chunk)
+}
+
+// seed data-primitive/reader-loop 3: getReader with a recursive pump
+export async function pump(url: string) {
+  const reader = (await fetch(url)).body!.getReader()
+  const step = async (): Promise<void> => {
+    const { done } = await reader.read()
+    if (!done) return step()
+  }
+  return step()
+}
+
+// seed data-primitive/deprecated-fetch 3: fetchQuery in a route loader
+export async function loader(qc: QueryClient) {
+  return qc.fetchQuery({ queryKey: ['runs'], queryFn: fetchRuns })
+}
+
+// seed data-primitive/deprecated-fetch 4: prefetchInfiniteQuery on hover
+export function usePrefetch() {
+  const qc = useQueryClient()
+  return () => qc.prefetchInfiniteQuery({ queryKey: ['runs'], queryFn: fetchRuns, initialPageParam: 0 } as never)
+}
+
+// seed data-primitive/query-client-singleton 3: the client exported from a lib file
+export const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000 } } })
+
+// seed data-primitive/query-client-singleton 4: a client created inside a component without a ref
+export function Providers() {
+  const client = new QueryClient()
+  return client ? null : null
+}
+
+// seed data-primitive/chart-data-fallback 4: a nested field with an empty fallback in the prop
+export function Chart() {
+  const q = useQuery({ queryKey: ['s'], queryFn: async () => ({ rows: [] as { at: number; v: number }[] }) })
+  return <Lines ariaLabel="s" data={q.data?.rows ?? []} x="at" series={[]} />
+}
+
+// seed data-primitive/chart-data-fallback 5: the logical-or spelling with a typed empty array
+export function Chart2() {
+  const q = useQuery({ queryKey: ['s'], queryFn: fetchRuns })
+  return <Lines ariaLabel="s" data={q.data || ([] as { at: number; v: number }[])} x="at" series={[]} />
+}
+
+// seed data-primitive/timer-refetch 3: a setTimeout loop that invalidates
+export function useTick() {
+  const qc = useQueryClient()
+  useEffect(() => {
+    const id = setTimeout(function tick() {
+      void qc.invalidateQueries({ queryKey: ['runs'] })
+      setTimeout(tick, 5000)
+    }, 5000)
+    return () => clearTimeout(id)
+  }, [qc])
+}
+
+// seed data-primitive/timer-refetch 4: an interval that invalidates the router's loaders
+export function useRouterTick(router: { invalidate(): Promise<void> }) {
+  useEffect(() => {
+    const id = setInterval(() => void router.invalidate(), 15_000)
+    return () => clearInterval(id)
+  }, [router])
+}
+
+// seed data-primitive/raw-storage-write 4: removeItem on a stored filter
+export function forget() {
+  localStorage.removeItem('runs:filter')
+}
+
+// seed data-primitive/raw-storage-write 5: storage written through globalThis
+export function remember(v: string) {
+  globalThis.localStorage.setItem('runs:view', v)
+}
+
+// seed data-primitive/live-static-stale-time 4: staleTime Infinity inside a liveQuery call
+export const runsLive = liveQuery({ queryKey: ['runs'], queryFn: fetchRuns, staleTime: Infinity }, 'standard')
+
+// seed data-primitive/live-static-stale-time 5: static staleTime inside queryOptions(), the TanStack idiom
+export const runsLive2 = liveQuery(queryOptions({ queryKey: ['r'], queryFn: fetchRuns, staleTime: 'static' }), 'standard')

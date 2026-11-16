@@ -1382,3 +1382,17 @@ rows:
     kind: feature
     after: [v3-cycle-wiring-4, v3-wiring-4-docs]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-4-api.json' }
+  - key: v3-lint-4-lint
+    title: 'Missed spellings, alpha on the theme class names and three messages naming a banned fix, from lint cycle 4'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-cycle-lint-4]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-4-lint.json' }
+  - key: v3-cycle-lint-5
+    title: 'Improvement cycle 5: lint and guards, misses and false alarms per rule'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-4-lint]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-5.json' }
