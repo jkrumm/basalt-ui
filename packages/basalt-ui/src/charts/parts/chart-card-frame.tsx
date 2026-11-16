@@ -9,6 +9,7 @@
 import { useId } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { CardMenu } from '../../core/card-menu'
+import { couldNotLoad } from '../../common/could-not-load'
 import { cn } from '../../core/cn'
 import { AppLink } from '../../core/link'
 import { OfflineLine } from '../../core/offline-line'
@@ -134,13 +135,17 @@ export function Head({
   )
 }
 
-/** The footer: at most two facts, a muted label and a semibold value each. */
+/**
+ * The footer: at most two facts, a muted label and a semibold value each. While the card loads a
+ * value is a bar and once it failed a muted dash, so no fact (a page's derived figure) shows
+ * beside a state that says there is none; the labels stay and the row keeps its height.
+ */
 export function Footer({
   facts,
-  failed = false,
+  phase = 'other',
 }: {
   facts: FootFacts | undefined
-  failed?: boolean
+  phase?: 'loading' | 'error' | 'other'
 }): ReactElement | null {
   const shown: Fact[] = []
   for (const fact of facts ?? []) if (fact) shown.push(fact)
@@ -154,12 +159,21 @@ export function Footer({
         <div key={fact.label} className="flex min-w-0 items-baseline gap-2">
           <dt className="truncate text-muted-foreground">{fact.label}</dt>
           <dd
+            data-state={phase === 'other' ? undefined : phase}
             className={cn(
               'm-0 text-md font-semibold tabular-nums',
-              failed ? 'text-muted-foreground' : 'text-foreground',
+              phase === 'error' ? 'text-muted-foreground' : 'text-foreground',
             )}
           >
-            {failed ? '–' : typeof fact.value === 'number' ? NUMBER.format(fact.value) : fact.value}
+            {phase === 'loading' ? (
+              <span aria-hidden="true" className={cn(BAR, 'block h-3 w-10')} />
+            ) : phase === 'error' ? (
+              '–'
+            ) : typeof fact.value === 'number' ? (
+              NUMBER.format(fact.value)
+            ) : (
+              fact.value
+            )}
           </dd>
         </div>
       ))}
@@ -177,10 +191,13 @@ function ErrorArm({
   resolved,
   retry,
   caught = false,
+  title,
 }: {
   resolved?: Extract<ResolvedPhase, { tag: 'error' }>
   retry?: (() => void) | undefined
   caught?: boolean
+  /** The card's title: the default text names it ("Could not load revenue."). */
+  title?: string | undefined
 }): ReactElement {
   const kind = resolved?.kind
   const message = resolved?.message
@@ -191,7 +208,11 @@ function ErrorArm({
       data-phase={caught ? 'error' : undefined}
       className="flex h-full min-h-24 flex-col items-center justify-center gap-2 px-(--card-edge) py-3 text-center"
     >
-      <p className="text-sm text-foreground">{ERROR_TEXT[kind ?? 'default']}</p>
+      <p className="text-sm text-foreground">
+        {kind === undefined && title?.trim()
+          ? `${couldNotLoad(title)}.`
+          : ERROR_TEXT[kind ?? 'default']}
+      </p>
       {message !== undefined && kind === undefined && (
         <p className="text-xs text-muted-foreground">{message}</p>
       )}
@@ -260,6 +281,8 @@ function Slot({ chart, phase }: { chart: BoxSlot; phase: 'ready' | 'stale' }): R
 }
 
 export type PhaseBoxProps = {
+  /** The card's title: a failed card's default text names it. */
+  title?: string | undefined
   resolved: ResolvedPhase
   /** `undefined` when the card is a Suspense fallback: there is no chart to call. */
   chart: BoxSlot | undefined
@@ -271,7 +294,7 @@ export type PhaseBoxProps = {
  * offline line, the error arm, the empty arm or the chart. The slot is called only in `ready` and `stale`; whatever it
  * draws is clipped, so a taller chart cannot move the card.
  */
-export function PhaseBox({ resolved, chart, className }: PhaseBoxProps): ReactElement {
+export function PhaseBox({ resolved, chart, className, title }: PhaseBoxProps): ReactElement {
   const phase = resolved.tag === 'stale' ? 'stale' : 'ready'
   return (
     <div
@@ -282,11 +305,11 @@ export function PhaseBox({ resolved, chart, className }: PhaseBoxProps): ReactEl
     >
       {resolved.tag === 'loading' && <PlotSkeleton />}
       {resolved.tag === 'offline' && <OfflineArm />}
-      {resolved.tag === 'error' && <ErrorArm resolved={resolved} />}
+      {resolved.tag === 'error' && <ErrorArm resolved={resolved} title={title} />}
       {resolved.tag === 'empty' && <EmptyArm empty={resolved.empty} />}
       {resolved.body && chart !== undefined && (
         <>
-          <PhaseBoundary fallback={({ reset }) => <ErrorArm retry={reset} caught />}>
+          <PhaseBoundary fallback={({ reset }) => <ErrorArm retry={reset} caught title={title} />}>
             <div className="min-h-0 flex-1 [&>[data-basalt-chart]]:h-full">
               <Slot chart={chart} phase={phase} />
             </div>

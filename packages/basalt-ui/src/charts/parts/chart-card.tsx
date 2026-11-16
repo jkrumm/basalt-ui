@@ -212,6 +212,7 @@ export function ChartCard(props: ChartCardProps): ReactElement {
               </div>
             )}
             <PhaseBox
+              title={props.title}
               resolved={effective}
               chart={chart}
               className={cn(
@@ -220,7 +221,16 @@ export function ChartCard(props: ChartCardProps): ReactElement {
               )}
             />
           </div>
-          <Footer facts={footer} failed={effective.tag === 'error'} />
+          <Footer
+            facts={footer}
+            phase={
+              effective.tag === 'loading'
+                ? 'loading'
+                : effective.tag === 'error'
+                  ? 'error'
+                  : 'other'
+            }
+          />
         </div>
       </div>
     </ChartCardContext>

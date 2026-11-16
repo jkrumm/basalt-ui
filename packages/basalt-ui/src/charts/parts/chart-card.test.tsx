@@ -235,6 +235,39 @@ describe('anatomy', () => {
     expect(ready.querySelector('[data-slot="chart-footer"] dd')?.textContent).toBe('Cinder')
   })
 
+  test('a loading card shows a placeholder for each footer value, never a stale fact', () => {
+    const footer = [
+      { label: 'Best', value: 'Cinder' },
+      { label: 'Total', value: 1234 },
+    ] as [{ label: string; value: string }, { label: string; value: number }]
+    const loading = html(<ChartCard title="R" chart={() => null} footer={footer} phase="loading" />)
+    const values = [...loading.querySelectorAll('[data-slot="chart-footer"] dd')]
+    expect(values).toHaveLength(2)
+    for (const dd of values) {
+      expect(dd.textContent).toBe('')
+      expect(dd.getAttribute('data-state')).toBe('loading')
+    }
+    expect(loading.querySelector('[data-slot="chart-footer"]')?.textContent).toContain('Best')
+    expect(loading.querySelector('[data-slot="chart-footer"]')?.textContent).not.toContain('Cinder')
+    const fallback = html(<ChartCard footer={footer} phase="loading" />)
+    expect(fallback.querySelector('[data-slot="chart-footer"]')?.textContent).not.toContain('1,234')
+  })
+
+  test('a failed card names its title in the default error text', () => {
+    const named = html(<ChartCard title="Revenue" chart={() => null} phase={{ tag: 'error' }} />)
+    expect(named.querySelector('[role="alert"] p')?.textContent).toBe('Could not load revenue.')
+    const kpi = html(<ChartCard title="MRR" chart={() => null} phase={{ tag: 'error' }} />)
+    expect(kpi.querySelector('[role="alert"] p')?.textContent).toBe('Could not load MRR.')
+    const bare = html(<ChartCard title=" " chart={() => null} phase={{ tag: 'error' }} />)
+    expect(bare.querySelector('[role="alert"] p')?.textContent).toBe('Could not load this.')
+    const denied = html(
+      <ChartCard title="Revenue" chart={() => null} phase={{ tag: 'error', kind: 'forbidden' }} />,
+    )
+    expect(denied.querySelector('[role="alert"] p')?.textContent).toBe(
+      'You do not have access to this.',
+    )
+  })
+
   test('no figure, no figure row', () => {
     expect(
       html(<ChartCard title="R" chart={() => null} />).querySelector('[data-slot="chart-figure"]'),
