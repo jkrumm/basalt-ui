@@ -3,7 +3,7 @@
  * concepts/quality-contract.md section 6, ARCHITECTURE.md section 3: +4 KB each). A marginal is the
  * three-kind fixture (`charts-three-kind` in `charts.ts`: Sparkline, Lines, Bars) plus the kind,
  * minus the same fixture without it, each gzip over a build with peers bundled. Ceiling = measured
- * +5% rounded up to 0.5 KB, at most 4000 B (above that is an amendment, not a raise). Ratcheted down only.
+ * +5% rounded up to 0.5 KB, at most 4000 B until Issue 1627 raised the heat grid to 4150 B (above that is an amendment, not a raise). Ratcheted down only.
  * BandStrip and Heatmap compose `core/compile`, the host and the card portal like the v3 kinds (Issue 1417), so
  * the Issue 1227 and 1407 amendments are gone: Heatmap measures 3969 B (ceiling at the 4000 B cap), BandStrip
  * 2438 B (3000 B).
@@ -35,7 +35,10 @@ export const rows: readonly RowDef[] = [
     order: 24,
     label: 'charts Heatmap marginal (gzip B over Sparkline + Lines + Bars)',
     // 3969 B measured on the v3 three-kind fixture; at the cap.
-    ceiling: 4000,
+    // 4000 -> 4150 (Issue 1627): 4063 B measured, +~65 B gz over master (3998) for x-order arrow stepping and the
+    // band scale that answers between bands, which the heat grid's closure carries. Master had 2 B of headroom, so
+    // no chart change fits the old cap.
+    ceiling: 4150,
     measure: () => marginal(HEATMAP),
   },
   {
@@ -48,4 +51,14 @@ export const rows: readonly RowDef[] = [
   },
 ]
 
-export const raises: Raises = {}
+export const raises: Raises = {
+  'charts-heatmap-marginal': [
+    {
+      from: 4000,
+      to: 4150,
+      consumer:
+        "the chart kit fixes of expression cycle 4: c15's scatter (apps/playground/src/scenarios/expr/c15) wrote its own arrow-key handler because ArrowRight did not follow x, and n04 drew rain as a line because a `rect` mark did not draw beside bars (Issue 1627)",
+      repo: 'basalt-ui',
+    },
+  ],
+}
