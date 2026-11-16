@@ -170,7 +170,14 @@ type Mark = { id: number; row: string; col: string; text: string; fill: string }
 
 const identityLabel = (band: string): string => band
 
-const firstSeen = (keys: Iterable<string>): string[] => [...new Set(keys)]
+/** The bands in use: the explicit order, else first seen in `data`. */
+function useBands<T>(
+  explicit: readonly string[] | undefined,
+  data: readonly T[],
+  get: (d: T) => string,
+): readonly string[] {
+  return useMemo(() => explicit ?? [...new Set(data.map(get))], [explicit, data, get])
+}
 
 const ramp = (color: string): string[] => RAMP_OPACITIES.map((a) => alpha(color, a))
 
@@ -353,8 +360,8 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
   const tooltipConfig = tooltip === false ? undefined : tooltip
   const tooltipRows = tooltipConfig?.rows
   const valueLabel = tooltipConfig?.valueLabel ?? 'Value'
-  const rows = useMemo(() => props.rows ?? firstSeen(data.map(getRow)), [props.rows, data, getRow])
-  const cols = useMemo(() => props.cols ?? firstSeen(data.map(getCol)), [props.cols, data, getCol])
+  const rows = useBands(props.rows, data, getRow)
+  const cols = useBands(props.cols, data, getCol)
   const statedHeight = height ?? heightOfRows(rows.length)
   const coarse = useCoarsePointer()
   const boxHeight = matchHeight ? 'fill' : statedHeight
