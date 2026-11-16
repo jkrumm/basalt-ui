@@ -372,22 +372,17 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
   )
 
   // The largest radius each dot series draws: the plot keeps that much room at its edge.
-  const dotRadius = useMemo(
-    () =>
-      new Map(
-        stable.series.flatMap((s) =>
-          s.mark === 'dot' && s.r !== undefined
-            ? [
-                [
-                  s.key,
-                  Math.max(VX.dotR, ...stable.data.map((d) => (s.r as (d: D) => number)(d))),
-                ] as const,
-              ]
-            : [],
-        ),
-      ),
-    [stable.series, stable.data],
-  )
+  const dotRadius = useMemo(() => {
+    const out = new Map<string, number>()
+    for (const s of stable.series) {
+      if (s.mark !== 'dot' || s.r === undefined) continue
+      // A loop, not `Math.max(...radii)`: a spread of a large series overflows the argument limit.
+      let largest = VX.dotR
+      for (const d of stable.data) largest = Math.max(largest, s.r(d))
+      out.set(s.key, largest)
+    }
+    return out
+  }, [stable.series, stable.data])
   const width = measured || INITIAL_WIDTH
   const definition = useMemo(() => {
     const compiled = compileCartesian<D, ChartX>({
