@@ -1,0 +1,23 @@
+{
+  "why": "A rule earns its place by catching the mistake an agent actually makes, and by staying silent on correct code. In 2.x some rules fired on valid code and taught agents to write waivers, while others missed the real mistake. The owner asked for repeated improvement cycles on the lint rules, and docs/v3/CYCLES.md is the protocol. Cycle 1 (docs/v3/cycles/lint-1.md) found 7 P1 and 12 P2; cycle 2 (docs/v3/cycles/lint-2.md) found 3 P1 and 19 P2; cycle 3 (docs/v3/cycles/lint-3.md) found 1 P1 and 14 P2; cycle 4 (docs/v3/cycles/lint-4.md) found 0 P1 and 15 P2, with no false alarm on correct code; this cycle measures again on the fixes.",
+  "what": "Cycle 5 of the lint and guards area: measure the shipped rules (generated oxlint preset, stylelint preset, the token check, doctor's weakened-config check, the waiver budget and the editor hook) for misses and false alarms, log, file. Protocol: docs/v3/CYCLES.md.",
+  "owns": [
+    "docs/v3/cycles/lint-5.md",
+    "docs/v3/issues/cycles/**",
+    "docs/plan.yaml (append rows only)",
+    "docs/v3/cycles/lint-5/fixtures/** (the seeded offenders as .tsx.txt and .css.txt, so the repo's own lint, format and typecheck never see them; the run copies them into a scratch app outside the repo)"
+  ],
+  "must_not_touch": ["packages/basalt-ui/**", "apps/**", "docs/v3/ARCHITECTURE.md"],
+  "change": "(1) False alarms: run every shipped preset and `basalt-ui lint` as a whole (oxlint, stylelint and the token check) over apps/playground and examples/*, the code we call correct, and judge each finding as true or false with a reason; the playground reported 0 from every tool in cycles 3 and 4, so every finding is a regression or a new rule's false alarm. Eject every shipped primitive into the scratch app and lint it (v3-lint-3-eject-static; 0 findings on 36 in cycle 4); re-run eject.sh, budget.sh, hook.sh (H1 to H14) and weaken.sh. (2) Misses: start from docs/v3/cycles/lint-4/fixtures (copy them, keep their seed ids) and add at least two new phrasings per rule the way an agent writes it, drawn from the 2.x friction rows in docs/ and the v3 concepts; every lint-4 miss its row turned into a form must now be caught, and every one it listed as a known limit stays marked so. Run the presets with run.sh and record what was caught. (3) Messages: for each rule that fired, judge whether its message alone tells an agent the fix, whether that fix passes every other rule, and whether its `Next:` rung (a reasoned waiver) passes the waiver budget of a fresh app. (4) Weakened config: re-run the probes W0 to W17. Count: rules; false alarms per rule; misses per rule; messages without a fix; waivers in playground and examples, each with whether it is justified. Count among the false alarms the ones other cycles logged and worked around, re-probed on today's code.",
+  "commits": "One docs: commit with the findings, the fixtures and the plan rows. No package commit.",
+  "proof": "docs/v3/cycles/lint-5.md with the sha, one row per rule (fired correctly, false alarms, misses, message ok), and the findings table.",
+  "acceptance": [
+    "docs/v3/cycles/lint-5.md exists, names the master sha, and has a per-rule table covering every rule in the generated rule table",
+    "Every rule has at least two seeded phrasings in the fixtures, each marked caught or missed",
+    "Every false alarm and miss is a finding with evidence (the command and the matched line)",
+    "Every P1 has its own plan row with a brief; the P2s are grouped one row per class; or the file states convergence",
+    "If the cycle did not converge, a v3-cycle-lint-6 row exists after every fix row",
+    "git diff --name-only origin/master...HEAD lists nothing under packages/basalt-ui/ or apps/"
+  ],
+  "out_of_scope": "Changing any rule, preset or waiver in this PR; rules for pinned 2.x consumers."
+}
