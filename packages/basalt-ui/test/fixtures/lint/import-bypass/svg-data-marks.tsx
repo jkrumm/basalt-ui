@@ -233,3 +233,27 @@ const a = (
     ))}
   </svg>
 )
+// @invalid
+const a = (
+  <g>
+    {pts.map((p) => (
+      <circle key={p.id} cx={p.x} cy={p.y} r={3} />
+    ))}
+  </g>
+)
+// @valid
+const a = (
+  <g>
+    <circle cx={4} cy={4} r={3} />
+  </g>
+)
+// @valid
+function Dots({ pts, focus }) {
+  return (
+    <g>
+      {pts.map((p, i) => (
+        <circle key={p.id} cx={p.x} cy={p.y} r={3} {...focus.item(i)} />
+      ))}
+    </g>
+  )
+}

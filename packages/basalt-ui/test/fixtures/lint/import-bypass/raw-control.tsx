@@ -47,3 +47,13 @@ const a = <div role="button" />
 const a = <div role="group" onClick={open} />
 // @valid
 const a = <Dialog open />
+// @invalid
+const a = <a onClick={onMore}>More</a>
+// @valid
+const a = (
+  <a href="/runs" onClick={track}>
+    Runs
+  </a>
+)
+// @valid
+const a = <a {...props} onClick={onMore} />
