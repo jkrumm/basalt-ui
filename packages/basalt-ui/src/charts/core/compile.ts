@@ -750,9 +750,15 @@ function wholeCounts<T, X extends ChartX>(
   )
 }
 
-/** An explicit domain (a tuple, or the one the `y.domain` seam wrote): the data may lie past it. An auto domain always holds its data. */
-const isBounded = <T>(cfg: AxisConfig<T> | undefined): boolean =>
-  cfg?.domain !== undefined && cfg.domain !== 'auto'
+/**
+ * An explicit domain (a tuple, or the one the `y.domain` seam wrote): the data may lie past it. An
+ * auto domain always holds its data. A stacked layout never clamps: a part's value is not the
+ * height it reaches, and a normalized stack shares out the raw values.
+ */
+const isBounded = <T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  cfg: AxisConfig<T> | undefined,
+): boolean => input.stack === undefined && cfg?.domain !== undefined && cfg.domain !== 'auto'
 
 /** Both y domains (basalt's, from the VISIBLE series plus this axis' overlay bounds) and scales. */
 function resolveAxes<T, X extends ChartX>(
@@ -774,7 +780,7 @@ function resolveAxes<T, X extends ChartX>(
       tickCount(input.y),
     ),
     format: input.y?.format ?? ((v) => defaultNumberFormat(v, input.locale)),
-    bounded: isBounded(input.y),
+    bounded: isBounded(input, input.y),
     whole: wholeCounts(
       input,
       visible.filter((s) => !onRight(s)),
@@ -790,7 +796,7 @@ function resolveAxes<T, X extends ChartX>(
           tickCount(input.y2),
         ),
         format: input.y2?.format ?? ((v) => defaultNumberFormat(v, input.locale)),
-        bounded: isBounded(input.y2),
+        bounded: isBounded(input, input.y2),
       }
     : null
   return {

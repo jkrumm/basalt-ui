@@ -174,6 +174,27 @@ describe('off-scale', () => {
     expect(marks(false)).toHaveLength(0)
   })
 
+  test('a stacked layout keeps the raw values: no clamp, no caret', () => {
+    for (const stack of ['stacked', 'normalized'] as const) {
+      const def = compileCartesian({
+        chartId: 'off-stack',
+        data: rows,
+        x: (r) => r.d,
+        series: [dot],
+        stack,
+        y: { domain: [0, 120] },
+        marks: (plot) => {
+          seen = plot
+          return []
+        },
+      })
+      const spec = build(def)
+      const ys = (seen as PlotContext<Row, number>).rows('v').map((r) => r.y)
+      expect(Math.max(...(ys as number[]))).toBe(2400)
+      expect(JSON.stringify(spec.marks)).not.toContain('off-scale')
+    }
+  })
+
   test('the compiled chart carries the caret and the zx scale it draws on', () => {
     const spec = build(compile({ domain: [0, 120] }))
     expect(JSON.stringify(Object.keys(spec.scales))).toContain('zx')
