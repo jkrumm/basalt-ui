@@ -99,8 +99,9 @@ export type TableModel<T> = {
   /** Opens the sheet derived from the row's columns (the `table-expand` door). */
   openDetails(id: string): void
   /**
-   * The own sheet closed: unsets the `detailState` field, when one is bound. `hostClosed` is a host
-   * that closed on its own: it does the same once a row has shown in it.
+   * The own sheet closed: unsets the `detailState` field, when one is bound; a push field leaves the
+   * close as its own history entry, so Back returns to the open record. `hostClosed` is a host that
+   * closed on its own: it does the same once a row has shown in it.
    */
   closeDetail(hostClosed?: boolean): void
   /** The row whose detail is open (`detail`) or that the page named (`activeRowId`); the body marks it. */
@@ -356,7 +357,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
             `basalt-ui/table: "${options.id}" detailState names "${openId}", no loaded row; cleared. Pass detailById to open it.`,
           )
         }
-        detailState.clear()
+        detailState.clear({ replace: true })
         return
       }
     }

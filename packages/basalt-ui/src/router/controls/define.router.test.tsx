@@ -236,6 +236,71 @@ describe('defineControls: values and writes', () => {
     expect(router.state.location.href).toBe('/s?q=x&section=billing')
   })
 
+  test("clear() leaves a push field's close as its own entry; a replace field's clear() replaces", async () => {
+    const store = defineControls({
+      id: 'history-clear',
+      scope: 'page',
+      fields: {
+        record: field.string('', { history: 'push' }),
+        q: field.string(''),
+      },
+    })
+    const history = createMemoryHistory({ initialEntries: ['/s'] })
+    const root = createRootRoute({
+      component: () => {
+        store.field.record.use()
+        store.field.q.use()
+        return createElement(Outlet)
+      },
+    })
+    const s = createRoute({
+      getParentRoute: () => root,
+      path: '/s',
+      validateSearch: store.validateSearch,
+      search: { middlewares: store.middlewares },
+    })
+    const router = createRouter({ routeTree: root.addChildren([s]), history })
+    await router.load()
+    render(createElement(RouterProvider as never, { router }))
+    const run = async (fn: () => void): Promise<void> => {
+      await act(async () => {
+        fn()
+        await router.load()
+      })
+    }
+    const href = (): string => router.state.location.href
+
+    // Open by a push, close by clear(): the close is its own entry and Back returns to the record.
+    await run(() => router.navigate({ to: '.', search: { record: 'inv-1' } }) as unknown as void)
+    const open = history.length
+    await run(() => store.field.record.clear())
+    expect(href()).toBe('/s')
+    expect(history.length).toBe(open + 1)
+    await run(() => history.back())
+    expect(href()).toBe('/s?record=inv-1')
+
+    // clear({ replace: true }) overwrites the open entry (a cleanup, not a user close).
+    const before = history.length
+    await run(() => store.field.record.clear({ replace: true }))
+    expect(href()).toBe('/s')
+    expect(history.length).toBe(before)
+
+    // A record that came with the document load still closes and unsets the field.
+    await run(
+      () =>
+        router.navigate({ to: '.', search: { record: 'inv-2' }, replace: true }) as unknown as void,
+    )
+    await run(() => store.field.record.clear())
+    expect(href()).toBe('/s')
+
+    // A replace field's clear() stays a replace.
+    await run(() => router.navigate({ to: '.', search: { q: 'x' } }) as unknown as void)
+    const len = history.length
+    await run(() => store.field.q.clear())
+    expect(href()).toBe('/s')
+    expect(history.length).toBe(len)
+  })
+
   test('useReset({ only }) unsets the named fields in one navigate and keeps the rest', async () => {
     const store = defineControls({
       id: 'reset-only',

@@ -23,7 +23,7 @@ spec<T>(handle: WidgetHandle<T>, label: string, options?: SpecOptions<T>): Filte
   options?: readonly { value: T; label: string; }[]
   use: () => [T, (v: T) => void]
   useSource: () => { source: "own" | "inherited" | "override"; inherited: T | undefined; }
-  clear: () => void
+  clear: (options?: { replace?: boolean; }) => void
   isDefault: boolean
   scope: "widget"
 ```
