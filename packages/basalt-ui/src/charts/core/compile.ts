@@ -1327,15 +1327,28 @@ function tooltipSpec<T, X extends ChartX>(opts: {
         ? { placement: SLOT_TOOLTIP_PLACEMENT, offset: 0 }
         : { placement: STRIP_TOOLTIP_PLACEMENT, offset: STRIP_TOOLTIP_OFFSET })),
     content: (points: readonly ChartPoint[]) => {
-      const primary = points[0]
-      if (!primary) return { rows: [] }
+      const first = points[0]
+      if (!first) return { rows: [] }
       // A point's datum is a `plot.rows()` row, or a consumer mark's own datum (taken as `T`).
-      const datum = primary.datum
-      const row =
-        typeof datum === 'object' && datum !== null && 'datum' in datum && 'series' in datum
+      const rowOf = (point: ChartPoint): PlotRow<T, X> | undefined => {
+        const datum = point.datum
+        return typeof datum === 'object' && datum !== null && 'datum' in datum && 'series' in datum
           ? (datum as PlotRow<T, X>)
           : undefined
-      const [x, d] = row && keys.has(row.series) ? [row.x, row.datum] : [primary.xValue, datum as T]
+      }
+      // A held focus names the tooltip: the cursor carries only an x, so at a gap or where several
+      // data share one x the engine's nearest point is another datum than the one the hero reads.
+      const held = input.focused ?? null
+      const heldPoint =
+        held === null ? undefined : points.find((point) => rowOf(point)?.datum === held)
+      const primary = heldPoint ?? first
+      const row = rowOf(primary)
+      const [x, d] =
+        held !== null && heldPoint === undefined
+          ? [input.x(held), held]
+          : row && keys.has(row.series)
+            ? [row.x, row.datum]
+            : [primary.xValue, primary.datum as T]
       const rows: EngineTooltipRow[] = []
       for (const s of rowSeries) {
         const v = s.getValue(d)
