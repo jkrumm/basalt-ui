@@ -101,7 +101,7 @@ export type GuardConfig = {
    * on purpose: they resolve through the theme, so they flip correctly across color schemes. This
    * kind polices the SHADE INDEX, which does not — a pinned step is one fixed swatch in both
    * schemes, so a `yellow.7` legible on the dark page is the one that fails contrast on the light
-   * one. Status color belongs on `VX.status.*` (`--vx-status-warn|bad|good|…`), which is emitted per
+   * one. Status color belongs on `VX.good`, `VX.warn` or `VX.bad`, which is emitted per
    * scheme.
    *
    * `gray-*`/`dark-*` in `var()` form are excluded here because `off-system-surface-var` already

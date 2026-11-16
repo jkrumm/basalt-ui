@@ -76,7 +76,7 @@ export type BasaltConfig = {
   rawRadius?: boolean
   /**
    * Flag ad-hoc inline surface styling (`border`/`borderRadius`/`boxShadow` literals in a `style={{}}`)
-   * that bypasses the radius-token + `VX.surface.*` + `VX.shadowCard` system. Default: `true` (ON).
+   * that bypasses the radius-token + `VX.card`/`VX.raised` + `VX.shadowCard` system. Default: `true` (ON).
    * Set `false` to disable the `raw-surface` check.
    */
   rawSurface?: boolean
@@ -97,7 +97,7 @@ export type BasaltConfig = {
   /**
    * Flag a SHADE-PINNED Mantine color — `c="yellow.7"`, `bg="blue.4"`,
    * `var(--mantine-color-red-6)`. A pinned step is one fixed swatch in BOTH color schemes, so it
-   * cannot stay legible in either; route a verdict color through `VX.status.*` / `--vx-status-*`,
+   * cannot stay legible in either; route a verdict color through `VX.good`, `VX.warn` or `VX.bad`,
    * or drop the index (`c="red"`) and let the theme resolve the shade per scheme. `gray-*`/`dark-*`
    * in `var()` form belong to `off-system-surface-var` instead. Default: `true` (ON). Set `false`
    * to disable the `mantine-shade-index` check.

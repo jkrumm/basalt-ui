@@ -93,7 +93,7 @@ const SURFACE_RADIUS = /\bborderRadius\s*:\s*(?:[0-9]+|['"`](?!\s*var\()[^'"`]*[
  *
  * The old `SURFACE_SHADOW` skipped any value containing `var(` or `${`, which reads as "already
  * system-routed" and is wrong for the shape a token-fluent consumer actually writes:
- * `` boxShadow: `0 0 0 2px ${VX.accent}` `` on a `Paper` is built entirely from tokens and still
+ * `` boxShadow: `0 0 0 2px ${VX.brand}` `` on a `Paper` is built entirely from tokens and still
  * REPLACES `--vx-shadow-card`, leaving that one card with no depth while every other card in the
  * app has it. Composing WITH card depth (`` `${VX.shadowCard}, 0 0 0 1px …` ``) is the legitimate
  * shape and the one this must not touch — so the discriminator is whether the value still names
@@ -2032,7 +2032,7 @@ export const GUARD_RULES = {
     pattern: MANTINE_SHADE_INDEX,
     enabled: (cfg: GuardConfig) => cfg.mantineShadeIndex,
     message:
-      'Shade-pinned Mantine color — one fixed swatch in BOTH color schemes, so it cannot stay legible in either. Use VX.status.* / --vx-status-* for a verdict color, or the bare hue name (c="red") to let the theme resolve the shade per scheme.',
+      'Shade-pinned Mantine color — one fixed swatch in BOTH color schemes, so it cannot stay legible in either. Use VX.good, VX.warn or VX.bad (--vx-good|warn|bad) for a verdict color, or the bare hue name (c="red") to let the theme resolve the shade per scheme.',
   },
   'raw-spacing': {
     kind: 'raw-spacing',
@@ -2059,7 +2059,7 @@ export const GUARD_RULES = {
     pattern: SURFACE_BORDER, // handled inline; this entry exists so the registry is complete
     enabled: (cfg: GuardConfig) => cfg.rawSurface,
     message:
-      'Inline border/radius/shadow on a surface — a card already carries its depth (VX.shadowCard) and shape (var(--vx-radius-card)) from the theme; use VX.surface.* / a radius token instead.',
+      'Inline border/radius/shadow on a surface — a card already carries its depth (VX.shadowCard) and shape (var(--vx-radius-card)) from the theme; use VX.canvas, VX.card or VX.raised, or a radius token, instead.',
   },
   'card-with-border': {
     kind: 'card-with-border',
@@ -2075,7 +2075,7 @@ export const GUARD_RULES = {
     pattern: OFF_SYSTEM_SURFACE_VAR,
     enabled: (cfg: GuardConfig) => cfg.offSystemSurfaceVar,
     message:
-      'Raw Mantine ramp step bypasses the basalt surface tokens — use VX.surface.* / --vx-surface-* instead.',
+      'Raw Mantine ramp step bypasses the basalt surface tokens — use VX.canvas, VX.card or VX.raised (--vx-canvas, --vx-card, --vx-raised) instead.',
   },
   'raw-html-layout': {
     kind: 'raw-html-layout',
