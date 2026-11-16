@@ -13,6 +13,9 @@ packages/basalt-ui/tests/fixtures/palette-default.css
 # tokens.css is `emitTokensCss` output byte for byte (src/css/generate.test.ts pins committed ==
 # generated); oxfmt would wrap its long shadow and font lines and break that equality.
 packages/basalt-ui/src/css/tokens.css
+# tailwind.css is the same generator's output under the same pin; the `--basalt-*` names put its
+# `color-mix` lines past the print width.
+packages/basalt-ui/src/css/tailwind.css
 
 # Package fixture trees are byte-exact (deliberate offenders, golden files); never formatted.
 packages/basalt-ui/test/fixtures/**
