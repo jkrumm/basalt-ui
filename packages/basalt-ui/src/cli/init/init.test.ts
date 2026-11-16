@@ -376,6 +376,24 @@ describe('init: the budget, the install and the seeds', () => {
     expect(commands.flat().join(' ')).not.toContain('@tanstack/react-query')
   })
 
+  it('keeps a newer in-range @tanstack/router-plugin and pins it only where it is older or absent', async () => {
+    const withPlugin = (spec: string): string => {
+      const dir = repo()
+      put(
+        dir,
+        'package.json',
+        JSON.stringify({ name: 'fixture', devDependencies: { '@tanstack/router-plugin': spec } }),
+      )
+      return dir
+    }
+    const newer = await runInit(['--profile', 'app', '--root', 'src'], withPlugin('^1.169.0'))
+    expect(newer.commands.flat().join(' ')).not.toContain('@tanstack/router-plugin')
+    expect(newer.commands.flat().some((arg) => arg.startsWith('@tailwindcss/vite@'))).toBe(true)
+
+    const older = await runInit(['--profile', 'app', '--root', 'src'], withPlugin('1.100.0'))
+    expect(older.commands.flat().join(' ')).toContain('@tanstack/router-plugin@1.168.40')
+  })
+
   it('installs every peer the app profile needs, and no oxfmt for a Prettier repo', async () => {
     const { commands } = await runInit(['--profile', 'app', '--root', 'src'], repo())
     const all = commands.flat().map((s) => s.replace(/@[\d~^].*$/, ''))
@@ -718,6 +736,32 @@ describe('init: the router scaffold', () => {
     expect(log).toContain("src/main.tsx: replaced create-vite's entry")
     expect(log).toContain('wrote src/routes/_app.tsx')
     expect(read(dir, 'src/App.tsx')).toContain('export default function App')
+  })
+
+  it("deletes create-vite's demo App.tsx and App.css it can prove are stock", async () => {
+    const dir = createVite()
+    put(
+      dir,
+      'src/App.tsx',
+      "import reactLogo from './assets/react.svg'\nimport './App.css'\nexport default () => <h1>Vite + React</h1>\n",
+    )
+    put(
+      dir,
+      'src/App.css',
+      '.logo { height: 6em }\n@keyframes logo-spin { to { rotate: 1turn } }\n',
+    )
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(existsSync(join(dir, 'src/App.tsx'))).toBe(false)
+    expect(existsSync(join(dir, 'src/App.css'))).toBe(false)
+    expect(log).toContain('removed src/App.tsx')
+    expect(log).toContain('removed src/App.css')
+  })
+
+  it('names an App.tsx it cannot prove stock as dead and leaves it', async () => {
+    const dir = createVite()
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(read(dir, 'src/App.tsx')).toContain('export default function App')
+    expect(log).toContain('src/App.tsx is no longer imported by the entry')
   })
 
   it('writes the seeds into an empty src/', async () => {

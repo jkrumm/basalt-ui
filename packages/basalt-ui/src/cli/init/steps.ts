@@ -16,7 +16,7 @@ import {
   readShippedPreset,
   STYLELINT_PRESET_FILE,
 } from '../presets'
-import { BUILD_PEERS, RUNTIME_PEERS } from '../peers'
+import { BUILD_PEERS, RUNTIME_PEERS, satisfiesRange } from '../peers'
 import { INVOKERS, LINT_INVOCATION } from '../doctor/wiring'
 import { registersRouterPlugin } from '../router-wiring'
 import { parseJsonc, readIfExists } from '../source-text'
@@ -178,7 +178,16 @@ function formatsWithPrettier(root: string): boolean {
 }
 
 /** What `init` installs: runtime peers into `dependencies`, the lint and build tools into `devDependencies`. */
-export type PeerPlan = { runtime: Record<string, string>; dev: Record<string, string> }
+export type PeerPlan = {
+  runtime: Record<string, string>
+  dev: Record<string, string>
+  /**
+   * What an already-declared version must meet for `init` to leave it alone: the peer range, else
+   * `^<pin>` for a tool the package only pins in dev. A declared version outside it is installed
+   * at the pin; one inside it is never reinstalled down.
+   */
+  ranges: Record<string, string>
+}
 
 /**
  * The installs for a profile, read from the package that ships them: its peer entry (an exact pin
@@ -187,11 +196,16 @@ export type PeerPlan = { runtime: Record<string, string>; dev: Record<string, st
  */
 export function peerPlan(pkgRoot: string, profile: Profile, oxfmt: boolean): PeerPlan {
   const own = readPackage(pkgRoot)
+  const ranges: Record<string, string> = {}
   const spec = (name: string, presetPin?: string): string => {
     // The peer range wins over the package's own dev pin, so an app already on a newer version in
-    // range is never reinstalled down to it; a tool the package only pins in dev uses that pin.
-    const found = presetPin ?? own?.peerDependencies?.[name] ?? own?.devDependencies?.[name]
+    // range is never reinstalled down to it; a tool the package only pins in dev uses that pin,
+    // and a newer version of the same major is as good as the pin.
+    const peer = own?.peerDependencies?.[name]
+    const found = presetPin ?? peer ?? own?.devDependencies?.[name]
     if (found === undefined) throw new Error(`${pkgRoot}/package.json pins ${name} nowhere`)
+    const devOnly = presetPin === undefined && peer === undefined && /^\d+\.\d+\.\d+$/.test(found)
+    ranges[name] = devOnly ? `^${found}` : found
     return found
   }
   const dev: Record<string, string> = {
@@ -205,7 +219,8 @@ export function peerPlan(pkgRoot: string, profile: Profile, oxfmt: boolean): Pee
   }
   if (oxfmt) dev['oxfmt'] = spec('oxfmt')
   for (const name of BUILD_PEERS[profile]) dev[name] = spec(name)
-  return { runtime: Object.fromEntries(RUNTIME_PEERS[profile].map((n) => [n, spec(n)])), dev }
+  const runtime = Object.fromEntries(RUNTIME_PEERS[profile].map((n) => [n, spec(n)]))
+  return { runtime, dev, ranges }
 }
 
 /** `add` (`--dev` for tools) with exact resolution, for the package manager the lockfile names (npm without one). */
@@ -226,12 +241,18 @@ export function installPeers(ctx: Ctx): void {
   const plan = peerPlan(ctx.pkgRoot, ctx.args.profile, !formatsWithPrettier(ctx.root))
   const own = readPackage(ctx.root)
   const have = { ...own?.dependencies, ...own?.devDependencies }
-  // A pin is met only by itself; a range, by any declaration (doctor check 3 holds the major).
+  // Installed only where nothing meets the range: an exact declaration must sit in it, a ranged
+  // one is kept (doctor check 3 holds the installed version).
+  const met = (name: string, spec: string): boolean => {
+    const declared = have[name]
+    if (declared === undefined) return false
+    if (!/^\d+\.\d+\.\d+$/.test(spec) && plan.ranges[name] === spec) return true
+    const version = /^[~^]?(\d+\.\d+\.\d+)$/.exec(declared)?.[1]
+    return version !== undefined && satisfiesRange(version, plan.ranges[name] ?? spec)
+  }
   const missing = (group: Record<string, string>): string[] =>
     Object.entries(group)
-      .filter(([name, spec]) =>
-        /^\d+\.\d+\.\d+$/.test(spec) ? have[name] !== spec : !(name in have),
-      )
+      .filter(([name, spec]) => !met(name, spec))
       .map(([name, spec]) => `${name}@${spec}`)
   const base = isSiblingApp(ctx.root) ? findRepoRoot(ctx.root) : ctx.root
   const runtime = missing(plan.runtime)

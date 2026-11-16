@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 
 import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 
 import { cleanupTrees, editManifest, HEALTHY, makeTree, runCheck } from './fixture.test'
 
@@ -139,6 +140,39 @@ describe('check 3: peers and ai-major-parity', () => {
       expect(r.status).toBe('fail')
       expect(r.detail).toContain(`${peer} is not declared`)
     }
+  })
+
+  it('fails a declared optional peer installed outside its range, naming both versions', async () => {
+    const withTable = (installed: string): Record<string, string | null> => {
+      const base = JSON.parse(readFileSync(`${makeTree('app')}/package.json`, 'utf8')) as {
+        dependencies: Record<string, string>
+      }
+      return {
+        'package.json': JSON.stringify({
+          name: 'app',
+          dependencies: { ...base.dependencies, '@tanstack/react-table': installed },
+        }),
+        'node_modules/@tanstack/react-table/package.json': JSON.stringify({ version: installed }),
+      }
+    }
+    const bad = await runCheck(makeTree('app', withTable('9.3.1')), 3)
+    expect(bad.status).toBe('fail')
+    expect(bad.detail).toContain('@tanstack/react-table 9.3.1')
+    expect(bad.detail).toContain('9.2.8')
+    expect(bad.detail).toContain('bun add @tanstack/react-table@9.2.8')
+    expect((await runCheck(makeTree('app', withTable('9.2.8')), 3)).status).toBe('pass')
+  })
+
+  it('fails a profile peer installed outside its range and prints the declared spec', async () => {
+    const r = await runCheck(
+      makeTree('app', {
+        'node_modules/tailwindcss/package.json': JSON.stringify({ version: '4.9.0' }),
+      }),
+      3,
+    )
+    expect(r.status).toBe('fail')
+    expect(r.detail).toContain('tailwindcss 4.9.0')
+    expect(r.detail).toContain('bun add tailwindcss@4.3.5')
   })
 
   it('fails when a declared peer is not installed', async () => {

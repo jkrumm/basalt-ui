@@ -8,8 +8,8 @@ import { EmptyState } from 'basalt-ui/page'
 
 export function RoutePending() {
   return (
-    <div role="status" aria-live="polite">
+    <output>
       <EmptyState cause="Loading this page." />
-    </div>
+    </output>
   )
 }

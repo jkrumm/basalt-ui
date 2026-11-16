@@ -9,7 +9,7 @@ import { readBudget } from '../budget'
 import { findBasaltInstall } from '../index'
 import { defaultBaseRef, rootFindings } from '../../lint/weakened'
 import type { Profile } from '../manifest'
-import { BUILD_PEERS, RUNTIME_PEERS } from '../peers'
+import { BUILD_PEERS, peerSpec, RUNTIME_PEERS, satisfiesRange } from '../peers'
 import {
   compareVersions,
   fail,
@@ -142,13 +142,6 @@ function installedVersion(dir: string, name: string): string | null {
   }
 }
 
-/** True when `installed` meets `range`: equal for a pin, else the same major at or above the base. */
-function meets(installed: string, range: string): boolean {
-  if (/^\d+\.\d+\.\d+$/.test(range)) return installed === range
-  const base = /\d+\.\d+\.\d+/.exec(range)?.[0] ?? `${majorOf(range) ?? 0}.0.0`
-  return majorOf(installed) === majorOf(range) && compareVersions(installed, base) >= 0
-}
-
 /** `@ai-sdk/react` 4 pairs with `ai` 7 (docs/v3/DIRECTION.md); the react major is the `ai` major minus 3. */
 const AI_REACT_OFFSET = 3
 
@@ -214,18 +207,30 @@ const check3 = (name: string): Check => ({
         ...RUNTIME_PEERS[manifest.profile],
         ...BUILD_PEERS[manifest.profile],
       ]
-      for (const peer of required) {
+      // The profile's peers must be declared; any other peer the app declares (an optional one
+      // such as the table library) is held to its range the same way.
+      const declaredExtras = Object.keys(ranges ?? {}).filter(
+        (peer) => !required.includes(peer) && packages.some((p) => peer in p.deps),
+      )
+      for (const peer of [...required, ...declaredExtras]) {
         const declared = packages.find((p) => peer in p.deps)
+        const range = ranges?.[peer]
         if (declared === undefined) {
-          findings.push(`${peer} is not declared (needed by profile ${manifest.profile})`)
+          findings.push(
+            `${peer} is not declared (needed by profile ${manifest.profile}): run bun add ${peerSpec(peer, range)}`,
+          )
           continue
         }
         const installed = installedVersion(declared.dir, peer)
-        const range = ranges?.[peer]
-        if (installed === null)
-          findings.push(`${peer} is declared but not installed: run bun install`)
-        else if (range !== undefined && !meets(installed, range)) {
-          findings.push(`${peer} ${installed} does not meet ${range}`)
+        if (installed === null) {
+          // An optional peer the app declares is held to its range only once it is installed.
+          if (required.includes(peer)) {
+            findings.push(`${peer} is declared but not installed: run bun install`)
+          }
+        } else if (range !== undefined && !satisfiesRange(installed, range)) {
+          findings.push(
+            `${peer} ${installed} is installed but basalt-ui declares ${range}: run bun add ${peerSpec(peer, range)}`,
+          )
         }
       }
     }
