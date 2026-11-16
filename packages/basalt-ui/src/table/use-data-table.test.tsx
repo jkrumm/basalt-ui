@@ -778,3 +778,81 @@ describe('detail bound to a field', () => {
     })
   })
 })
+
+/** An enum field with a fallback, as a page store's filter: `clear()` returns it to `all`. */
+function filterField(key: string): ControlHandle<string> & { set(v: string): void } {
+  let value = 'all'
+  const listeners = new Set<() => void>()
+  const set = (next: string): void => {
+    value = next
+    for (const listener of listeners) listener()
+  }
+  return {
+    key,
+    kind: 'enum',
+    get isDefault() {
+      return value === 'all'
+    },
+    use: () => [
+      useSyncExternalStore(
+        (listener) => {
+          listeners.add(listener)
+          return () => listeners.delete(listener)
+        },
+        () => value,
+        () => value,
+      ),
+      set,
+    ],
+    useSource: () => ({ source: 'own', inherited: undefined }),
+    clear: () => set('all'),
+    set,
+  }
+}
+
+describe('page filters bound to the table', () => {
+  const state = filterField('state')
+  const name = filterField('name')
+  function Bound(): ReactElement {
+    return (
+      <Subject
+        options={
+          {
+            filters: [
+              { field: state, match: (row: Row, value: string) => row.state === value },
+              { field: name, match: (row: Row, value: string) => row.name === value },
+            ],
+          } as Options
+        }
+      />
+    )
+  }
+  afterEach(() => {
+    state.clear()
+    name.clear()
+  })
+
+  test('rows narrow by every field off its default, with no page code', () => {
+    render(<Bound />)
+    expect(names()).toHaveLength(3)
+    act(() => state.set('Eng'))
+    expect(names()).toEqual(['Project 2'])
+    act(() => state.set('Engineering'))
+    expect(names()).toHaveLength(2)
+    act(() => name.set('Project 1'))
+    expect(names()).toEqual(['Project 1'])
+  })
+
+  test('no row left draws Clear filters, which clears exactly the bound fields', () => {
+    render(<Bound />)
+    act(() => {
+      state.set('Eng')
+      name.set('Project 1')
+    })
+    expect(document.querySelector('[data-slot="table-empty"]')?.textContent).toContain('No')
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(state.isDefault).toBe(true)
+    expect(name.isDefault).toBe(true)
+    expect(names()).toHaveLength(3)
+  })
+})

@@ -19,7 +19,7 @@ table). The tiers live in `basalt-ui/table.css`, which `basalt()` imports for an
 ## Signature
 
 ```ts
-useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
+useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: UseDataTable<T, F>): DataTableInstance<T>
   // either detail, detailById or onRowActivate + activeRowId
   id: string
   label: string
@@ -31,6 +31,7 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   phase?: Phase | QueryStateLike
   now?: number  // A fixed clock in epoch ms for the relative-time cells (a fixture, a test)
   empty?: Empty | null  // Why the table has no rows, and what to do about it: its `cause` replaces the default sentence and its `action` renders beside it
+  filters?: PageFilters<T, F>  // Page fields that narrow a client table's rows (a Section's filters over it): each is a field handle with a row predicate, `match(row, value)` typed by that field's value
   resetOn?: readonly unknown[]
   phone?: "cards" | "scroll"  // What a narrow table becomes: cards, or the table scrolling sideways with its first column pinned; default 'cards'
   cardsBelow?: "regular" | "wide" | "always"  // The width below which the table becomes cards (`regular` is 480 px, `wide` 800 px, `always` never a table); default 'regular'
