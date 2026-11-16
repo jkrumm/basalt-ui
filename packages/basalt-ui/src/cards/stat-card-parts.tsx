@@ -22,6 +22,8 @@ export function useStaleText(refreshFailed: boolean): string {
   return refreshFailed ? t('cards.refreshFailed') : t('cards.updating')
 }
 
+const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
+
 const DOT: Record<Status['tone'], string> = {
   good: 'bg-good',
   warn: 'bg-warn',
@@ -47,9 +49,17 @@ export function StatusMark({ status }: { status: Status }): ReactElement {
 
 /**
  * The footer on the shell: at most two facts, a muted label and a semibold value each, spread
- * across the width from the card's left edge.
+ * across the width from the card's left edge. While the card loads a value is a bar, and once it
+ * failed a muted dash: no figure shows beside a state that says there is none. The labels stay, and
+ * the row keeps its height.
  */
-export function StatFooter({ facts }: { facts: FootFacts | undefined }): ReactElement | null {
+export function StatFooter({
+  facts,
+  phase,
+}: {
+  facts: FootFacts | undefined
+  phase: 'loading' | 'error' | 'other'
+}): ReactElement | null {
   const shown: Fact[] = []
   for (const fact of facts ?? []) if (fact) shown.push(fact)
   if (shown.length === 0) return null
@@ -61,8 +71,22 @@ export function StatFooter({ facts }: { facts: FootFacts | undefined }): ReactEl
       {shown.map((fact) => (
         <div key={fact.label} className="flex min-w-0 items-baseline gap-2">
           <dt className="truncate text-muted-foreground">{fact.label}</dt>
-          <dd className="m-0 text-md font-semibold text-foreground tabular-nums">
-            {typeof fact.value === 'number' ? NUMBER.format(fact.value) : fact.value}
+          <dd
+            data-state={phase === 'other' ? undefined : phase}
+            className={cn(
+              'm-0 text-md font-semibold tabular-nums',
+              phase === 'error' ? 'text-muted-foreground' : 'text-foreground',
+            )}
+          >
+            {phase === 'loading' ? (
+              <span aria-hidden="true" className={cn(BAR, 'block h-3 w-10')} />
+            ) : phase === 'error' ? (
+              '–'
+            ) : typeof fact.value === 'number' ? (
+              NUMBER.format(fact.value)
+            ) : (
+              fact.value
+            )}
           </dd>
         </div>
       ))}
@@ -127,8 +151,6 @@ export function StatHead({
     </div>
   )
 }
-
-const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
 
 /**
  * The loading anatomy, in the rows the ready card draws: a figure and its pill, a sub line, and a
