@@ -135,7 +135,11 @@ type Direction = 'up' | 'down' | 'zero'
 
 /** Direction from the sign of a number, or of a string such as `+12%`, `-3.1` or `0`. */
 function directionOf(value: Delta['value']): Direction {
-  const number = typeof value === 'number' ? value : Number.parseFloat(value.replace('−', '-'))
+  // The sign and the first number, whatever symbol sits between them: `-€5.66`, `+12%`, `−3.1`.
+  const number =
+    typeof value === 'number'
+      ? value
+      : Number.parseFloat(value.replace('−', '-').replaceAll(/[^\d.+-]/g, ''))
   if (Number.isNaN(number)) return 'up'
   if (number === 0) return 'zero'
   return number > 0 ? 'up' : 'down'
