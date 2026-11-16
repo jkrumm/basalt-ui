@@ -1,0 +1,128 @@
+/**
+ * The 2.x spellings v3 no longer carries, and the only places allowed to keep them (Issue 1703).
+ *
+ * `--vx-*` and the `VX` accessor were the visx/Mantine era's names; v3 owns its styling, so it owns its names
+ * (`--basalt-*`, `BASALT`). Mantine is gone from the runtime. Two consumers read this module:
+ *
+ * - `scripts/rename-vx.ts`, the re-runnable codemod, skips every path and line allowed here;
+ * - `scripts/check-legacy-names.ts`, the gate in `make check` and CI, fails on any spelling outside it, in the
+ *   source tree and in the packed tarball.
+ *
+ * An entry names its reason. History keeps its words (migration data, changelogs, filed briefs, spike runs);
+ * everything a v3 reader or consumer sees does not.
+ */
+
+export type Kind = 'vx' | 'mantine'
+
+export type Allow = {
+  /** A repo-relative path: a directory when it ends in `/`, else one file. */
+  path: string
+  /** The spellings it may keep; both when absent. */
+  kinds?: readonly Kind[]
+  /** Only lines matching this; the whole file when absent. */
+  line?: RegExp
+  reason: string
+}
+
+/** Each finder matches one spelling; the gate reports a line when any of them hits. */
+export const FINDERS: Readonly<Record<Kind, readonly RegExp[]>> = {
+  // `vx` opening a word in any case (`--vx-ink`, `.vx-prose`, `VX.ink`, `VxVar`, `REMOVED_VX_NAMES`), and `Vx`
+  // inside a camel-case identifier (`collectVxNames`). Base64 runs such as `1YVxB` match neither.
+  vx: [/(?<![A-Za-z0-9])vx/i, /(?<=[a-z0-9])Vx(?![a-z])/],
+  mantine: [/mantine/i],
+}
+
+const HISTORY = 'history: a record of what was, kept in its own words'
+
+export const ALLOWED: readonly Allow[] = [
+  // The issue's own allowlist.
+  { path: 'tools/migrate-v3/', reason: 'the 2.x -> 3.x consumer codemod reads the old names' },
+  {
+    path: 'packages/basalt-ui/migrations/',
+    reason: 'migration rows name the 2.x spelling they map from',
+  },
+  {
+    path: 'packages/basalt-ui/MIGRATING.md',
+    reason: 'the migration guide names what it migrates from',
+  },
+  { path: 'packages/basalt-ui/CHANGELOG.md', reason: HISTORY },
+  { path: 'docs/archive/', reason: HISTORY },
+  { path: 'docs/waves/', reason: HISTORY },
+  // Historical v3 records: filed briefs, cycle reports, evidence, spikes, panels and verdicts, as written then.
+  ...[
+    'docs/v3/issues/',
+    'docs/v3/cycles/',
+    'docs/v3/evidence/',
+    'docs/v3/spikes/',
+    'docs/v3/panel/',
+    'docs/v3/verdicts/',
+    'docs/v3/census/',
+    'docs/v3/acceptance/',
+    'docs/v3/inspo/',
+    'docs/v3/BRIEF.md',
+    'docs/v3/DISCOVERY-DIGEST.md',
+    'docs/v3/PHASE-0.md',
+    'docs/v3/PLAN-REVISION.md',
+    'docs/v3/IMPLEMENTATION-PLAN.md',
+    'docs/research/',
+    'tools/spikes/',
+  ].map((path) => ({ path, reason: HISTORY })),
+  {
+    path: 'apps/marketing/',
+    reason: 'content-frozen 2.x site, rebuilt on v3 later (AGENTS.md Structure)',
+  },
+  { path: 'bun.lock', reason: 'integrity hashes, not names' },
+  // The rename and its gate name what they rename and refuse.
+  { path: 'scripts/legacy-names.ts', reason: 'this allowlist' },
+  { path: 'scripts/rename-vx.ts', reason: 'the codemod rewrites these spellings' },
+  { path: 'scripts/rename-vx.test.ts', reason: 'the codemod fixtures' },
+  { path: 'scripts/check-legacy-names.ts', reason: 'the gate names what it refuses' },
+  { path: 'scripts/check-legacy-names.test.ts', reason: 'the gate plants offenders' },
+  // Lines that read what a 2.x tag carries, or ban a removed 2.x API by its name.
+  {
+    path: 'packages/basalt-ui/scripts/release-migrating.ts',
+    kinds: ['vx'],
+    line: /^ {2}'packages\/basalt-ui\/src\/(tokens|guard)\/vx-names\.ts',$/,
+    reason: 'the name list at a 2.x tag lives at its 2.x path',
+  },
+  {
+    path: 'packages/basalt-ui/scripts/check-agent-doc-drift.ts',
+    kinds: ['vx'],
+    line: /^ {2}(VxThemeProvider|useVxTheme): /,
+    reason: 'the removed-API denylist bans the 1.x names as they were spelled',
+  },
+  // Bans on Mantine imports: the ban list has to name the package it bans.
+  {
+    path: 'packages/basalt-ui/src/lint/rules/structure/import-boundary.ts',
+    kinds: ['mantine'],
+    line: /@mantine\b|\bmantine\b.*(ban|refus|import)/i,
+    reason: 'the import-boundary ban list forbids `@mantine/*`',
+  },
+]
+
+const toPosix = (path: string): string => path.split('\\').join('/')
+
+/** The entries that let `path` keep `kind`; empty when none do. */
+export function allowsFor(path: string, kind: Kind): Allow[] {
+  const p = toPosix(path)
+  return ALLOWED.filter(
+    (a) =>
+      (a.path.endsWith('/') ? p.startsWith(a.path) : p === a.path) &&
+      (a.kinds === undefined || a.kinds.includes(kind)),
+  )
+}
+
+/** Whether a whole file may keep `kind` (an entry with no `line`). */
+export function fileAllows(path: string, kind: Kind): boolean {
+  return allowsFor(path, kind).some((a) => a.line === undefined)
+}
+
+/** Whether one line of `path` may keep `kind`. */
+export function lineAllows(path: string, kind: Kind, text: string): boolean {
+  return allowsFor(path, kind).some((a) => a.line === undefined || a.line.test(text))
+}
+
+/** The kinds `text` spells, in FINDERS order. */
+export function spelled(text: string): Kind[] {
+  return (Object.keys(FINDERS) as Kind[]).filter((k) => FINDERS[k].some((re) => re.test(text)))
+}
