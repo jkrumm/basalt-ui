@@ -317,6 +317,40 @@ describe('activation and keyboard', () => {
     expect(document.querySelector('tbody tr[aria-current]')).toBeNull()
   })
 
+  test('a Page aside that closes on its own unmarks the row it showed', () => {
+    setWidth(1440)
+    function InPage(): ReactElement {
+      const c = col<Row>()
+      const t = useDataTable<Row>({
+        id: 'detail-aside-active-test',
+        label: 'Rows',
+        columns: [c.text('name')],
+        data: ROWS,
+        getRowId: (r) => r.id,
+        mode: { kind: 'client' },
+        detail: (row) => <span>{row.name} body</span>,
+      })
+      return (
+        <Page>
+          <DataTable table={t} />
+          <PageAside title="Inspector">own</PageAside>
+        </Page>
+      )
+    }
+    render(<InPage />)
+    fireEvent.click(document.querySelectorAll('tbody tr')[1] as HTMLElement)
+    expect(document.querySelector('tbody tr[aria-current="true"]')?.textContent).toContain(
+      'Project 2',
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(document.querySelector('tbody tr[aria-current]')).toBeNull()
+  })
+
+  test('activeRowId marks the row with no onRowActivate too', () => {
+    render(<Subject options={{ activeRowId: 'c' }} />)
+    expect(document.querySelectorAll('tbody tr[aria-current="true"]')).toHaveLength(1)
+  })
+
   test('detail shows its entry in the host', () => {
     const show = mock((_entry: unknown) => undefined)
     function WithHost(): ReactElement {

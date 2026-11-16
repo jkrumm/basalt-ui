@@ -100,6 +100,8 @@ export type TableModel<T> = {
   closeDetail(): void
   /** The row whose detail is open (`detail`) or that the page named (`activeRowId`); the body marks it. */
   activeId: string | undefined
+  /** The host reports nothing open: forgets the row the table opened without a `detailState` field. */
+  releaseActive(): void
   /**
    * Whether each row carries the `table-expand` door: `onRowActivate` takes the tap, and a tier can
    * hide a column (priority 3, or a card `detail`), so the derived sheet needs its own way in.
@@ -411,12 +413,14 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       detailState?.clear()
       setOpenedId(null)
     },
+    releaseActive() {
+      // Guarded: the host calls this on every render of the body, so an unset id must not set state.
+      if (openedId !== null) setOpenedId(null)
+    },
     activeId:
-      activation.kind === 'row'
-        ? options.activeRowId
-        : activation.kind === 'detail'
-          ? (detailState === undefined ? openedId : openId) || undefined
-          : undefined,
+      activation.kind === 'detail'
+        ? (detailState === undefined ? openedId : openId) || undefined
+        : options.activeRowId,
     expandable:
       activation.kind === 'row' &&
       plan.columns.some(
