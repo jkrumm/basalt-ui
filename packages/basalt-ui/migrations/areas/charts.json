@@ -175,6 +175,16 @@
       "manual": true,
       "note": "Heatmap takes `phase` (a Phase or the query) and `empty: Empty | null` like every data part; `state` is a deprecated alias for one minor and applies only when `phase` and `empty` say nothing",
       "verify": "tsc"
+    },
+    {
+      "id": "charts-frame-types-CardAction Empty Fact FootFacts FrameHead FrameState Menu MenuEntry",
+      "kind": "moved",
+      "from": "basalt-ui/charts#CardAction Empty Fact FootFacts FrameHead FrameState Menu MenuEntry",
+      "to": "basalt-ui/cards#CardAction Empty Fact FootFacts FrameHead FrameState Menu MenuEntry",
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "note": "the frame value types import from one subpath beside the parts that take them; the charts subpath keeps a deprecated alias of the same type for one minor",
+      "verify": "tsc"
     }
   ],
   "tokens": { "renamed": [], "valueShifts": [] },
