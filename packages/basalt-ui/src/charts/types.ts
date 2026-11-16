@@ -165,9 +165,14 @@ export type XZoneSpec<X extends ChartX = ChartX> = {
   edge?: ZoneEdge<'start' | 'end'> | undefined
 }
 
+/** Where a rule sits on a band: its centre (default), or the leading or trailing edge between two bars. */
+export type XRefAt = 'start' | 'centre' | 'end'
+
 /** A vertical reference rule at an x value (a band key on a band x): annotation only. */
 export type XRefLine<X extends ChartX = ChartX> = {
   x: X
+  /** A band axis only; a continuous x ignores it. */
+  at?: XRefAt | undefined
   color: string
   dashed?: boolean | undefined
   /** A small muted caption at the rule's top, on the side with room. */
