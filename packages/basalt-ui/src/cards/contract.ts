@@ -8,7 +8,7 @@
  * `FrameHead`) are declared once in `core/phase.ts`. `LegendEntry` is still repeated here,
  * structurally identical.
  */
-import type { Fact, FootFacts, FrameHead, FrameState, Menu, MenuEntry } from '../core/phase'
+import type { Fact, FootFacts, FrameHead, FrameState, CardMenu, MenuEntry } from '../core/phase'
 import type {
   BoxSlot,
   ControlsSlot,
@@ -16,12 +16,12 @@ import type {
   IconComponent,
   MeterSpec,
   NavTarget,
-  Status,
+  Verdict,
 } from '../core/ports'
 
 // ---- Frame types the sketch files under ports (absent from ports.ts) ----------------------
 
-export type { Fact, FootFacts, FrameHead, Menu, MenuEntry }
+export type { Fact, FootFacts, FrameHead, CardMenu, MenuEntry }
 
 /** A chip on a `KanbanCard`. Minimal; the concept elides it. */
 export type CardChip = { label: string; icon?: IconComponent }
@@ -52,7 +52,7 @@ export type StatCardProps = CardTarget &
     /** A change against a period; `value` prints as given, so pass `'+12%'`, never the fraction 0.12. */
     delta?: Delta
     /** The verdict home: dot plus word. A card never takes a hue. */
-    status?: Status
+    status?: Verdict
     sub?: string
     /** Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16). */
     chart?: BoxSlot
@@ -60,7 +60,7 @@ export type StatCardProps = CardTarget &
     xLabels?: readonly [string, string, string]
     footer?: FootFacts
     controls?: ControlsSlot<'widget'>
-    menu?: Menu
+    menu?: CardMenu
   }
 
 export type StatRow = {
@@ -80,7 +80,7 @@ export type StatCellProps = CardTarget &
     value?: number | string | null
     unit?: string
     delta?: Delta
-    status?: Status
+    status?: Verdict
     sub?: string
     srText?: string
     meter?: MeterSpec
@@ -93,7 +93,7 @@ export type DataPanelProps = FrameHead &
   FrameState & {
     controls?: ControlsSlot<'widget'>
     toolbar?: ControlsSlot<'widget'>
-    menu?: Menu
+    menu?: CardMenu
     legend?: readonly LegendEntry[]
     /** Required: the loading card draws its final shape. */
     bodySize: { rows: number } | { height: number }
@@ -118,7 +118,7 @@ export type KanbanCardProps<C extends string> = {
   meta?: readonly [string] | readonly [string, string]
   chips?: readonly [CardChip?, CardChip?, CardChip?, CardChip?]
   reason?: { icon?: IconComponent; text: string }
-  status?: Status
+  status?: Verdict
   /** Entries after the move rows the card always offers, so one entry is enough. */
   menu?: readonly MenuEntry[]
   /** Required: no card exists without the non-drag path. `'static'` is a read-only board. */

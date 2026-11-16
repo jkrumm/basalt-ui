@@ -7,11 +7,11 @@ import type {
   Empty,
   FootFacts,
   FrameState,
-  Menu,
+  CardMenu,
   MenuEntry,
   Phase,
   QueryStateLike,
-  Status,
+  Verdict,
   Tone,
 } from './index'
 
@@ -21,12 +21,12 @@ export const tones: Record<'late' | 'open' | 'calm', Tone> = {
   calm: 'neutral',
 }
 
-export const status: Status = { tone: 'info', label: 'Syncing' }
+export const status: Verdict = { tone: 'info', label: 'Syncing' }
 export const delta: Delta = { value: '+12%', polarity: 'up-good' }
 export const empty: Empty = { cause: 'No runs yet' }
 export const footer: FootFacts = [{ label: 'Open', value: 1 }, null]
 export const entry: MenuEntry = { id: 'a', label: 'A', onClick: () => {} }
-export const menu: Menu = [entry, { id: 'b', label: 'B', href: '/b' }]
+export const menu: CardMenu = [entry, { id: 'b', label: 'B', href: '/b' }]
 export const query: QueryStateLike = { isPending: false, isError: false, error: null }
 export const phase: Phase = query as unknown as Phase
 export const frame: FrameState = { phase: query, empty }

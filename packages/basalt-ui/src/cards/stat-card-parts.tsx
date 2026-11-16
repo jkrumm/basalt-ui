@@ -3,7 +3,7 @@ import { cn } from '../core/cn'
 import { CardMenu } from '../core/card-menu'
 import { cards } from '../core/messages/cards'
 import { useMessages } from '../core/messages/use-messages'
-import type { ControlsSlot, IconComponent, Status } from '../core/ports'
+import type { ControlsSlot, IconComponent, Verdict } from '../core/ports'
 import { CardInfo, IconTile } from '../ui/card'
 import type { Fact, FootFacts, MenuEntry } from './contract'
 
@@ -24,7 +24,7 @@ export function useStaleText(refreshFailed: boolean): string {
 
 const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
 
-const DOT: Record<Status['tone'], string> = {
+const DOT: Record<Verdict['tone'], string> = {
   good: 'bg-good',
   warn: 'bg-warn',
   bad: 'bg-bad',
@@ -34,7 +34,7 @@ const DOT: Record<Status['tone'], string> = {
 }
 
 /** The verdict home: a dot and a word. The dot is never the only carrier. */
-export function StatusMark({ status }: { status: Status }): ReactElement {
+export function StatusMark({ status }: { status: Verdict }): ReactElement {
   return (
     <span
       data-slot="stat-status"

@@ -4,8 +4,8 @@
  * `chore: contract amendment` commit. Sketched in docs/v3/concepts/charts-cards-kanban.md
  * section 4 (the `src/charts/contract.ts` block, plus the frame types it names).
  */
-import type { FootFacts, FrameHead, FrameState, Menu } from '../core/phase'
-import type { BoxSlot, ControlsSlot, Delta, Phase, QueryStateLike, Status } from '../core/ports'
+import type { FootFacts, FrameHead, FrameState, CardMenu } from '../core/phase'
+import type { BoxSlot, ControlsSlot, Delta, Phase, QueryStateLike, Verdict } from '../core/ports'
 import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 
 // ---- Frame types ---------------------------------------------------------------------------
@@ -290,7 +290,7 @@ export type ChartFigure = {
   unit?: string
   delta?: Delta
   period?: string
-  status?: Status
+  status?: Verdict
 }
 
 /** A query result with its rows: `empty` then applies only when `data` is an empty array. */
@@ -308,7 +308,7 @@ export type ChartCardProps = Omit<FrameState, 'phase'> & {
   legend?: readonly LegendEntry[]
   footer?: FootFacts
   controls?: ControlsSlot<'widget'>
-  menu?: Menu
+  menu?: CardMenu
   height?: 'auto' | 'short' | 'fill'
 } & (
     | (FrameHead & { chart: BoxSlot })

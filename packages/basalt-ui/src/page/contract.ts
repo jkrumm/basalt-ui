@@ -5,7 +5,7 @@
  * 3.2, 3.3 and 3.6, and docs/v3/concepts/ai-mdx.md section 4 (`MDXComponents`).
  */
 import type { ComponentType, ReactNode } from 'react'
-import type { Menu } from '../core/phase'
+import type { CardMenu } from '../core/phase'
 import type {
   ConnectionView,
   ControlHandle,
@@ -120,7 +120,7 @@ export type InnerNavItem = {
   /** Leaves the field: a route or URL the item opens instead of writing the field. A `navTarget` is a typed route. */
   href?: string | NavTarget
   badge?: NavBadge
-  menu?: Menu
+  menu?: CardMenu
 }
 
 export type InnerNavGroup = { id: string; label: string; items: readonly InnerNavItem[] }
