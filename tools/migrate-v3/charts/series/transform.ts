@@ -384,7 +384,7 @@ export function transformSeries(source: string, { file }: SeriesOptions): Series
       flag(
         'series-review',
         ticks,
-        'bars-1x: xTicks has no v3 field and was dropped; ticks are automatic',
+        'bars-1x: xTicks was dropped; on a band axis `x: { ticks: n }` keeps at most n labels, first and last kept',
       )
     }
     for (const name of BARS_1X_LEFT) {
