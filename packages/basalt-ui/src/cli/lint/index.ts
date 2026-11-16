@@ -9,7 +9,16 @@ import { readFileSync } from 'node:fs'
 import { isAbsolute, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
-import { BUDGET_PATH, countBreaches, landBudget, readBudget } from '../budget'
+import {
+  BUDGET_PATH,
+  countBreaches,
+  landBudget,
+  LINT_RAISABLE,
+  raiseCeiling,
+  raiseCommand,
+  readBudget,
+} from '../budget'
+import type { LintRaisable } from '../budget'
 import { noteRelocation, resolveProjectDir } from '../index'
 import { changedFiles, defaultBaseRef, inRoots, loadProject, rootFiles, scan } from './engine'
 import type { Finding, Project } from './engine'
@@ -24,6 +33,8 @@ export const LINT_OPTIONS = {
   changed: { type: 'boolean' },
   stats: { type: 'boolean' },
   'write-budget': { type: 'boolean' },
+  raise: { type: 'string' },
+  consumer: { type: 'string' },
   hook: { type: 'string' },
 } as const
 
@@ -94,6 +105,11 @@ export function lint(flags: readonly string[], invocationCwd: string): number {
   const files = values.file ?? []
   const wantsStats = values.stats === true
   if (values['write-budget'] === true && !wantsStats) return fail('--write-budget needs --stats')
+  const raising = values.raise !== undefined
+  if (values.consumer !== undefined && !raising) return fail('--consumer needs --raise <field>')
+  if (raising && (wantsStats || files.length > 0 || values.changed === true)) {
+    return fail('--raise counts the whole install; drop --stats, --file and --changed')
+  }
   if (wantsStats && (files.length > 0 || values.changed === true)) {
     return fail('--stats counts the whole install; drop --file and --changed')
   }
@@ -104,6 +120,8 @@ export function lint(flags: readonly string[], invocationCwd: string): number {
   noteRelocation('lint', resolved)
   const project = loadProject(resolved.dir)
   if ('error' in project) return fail(project.error)
+
+  if (raising) return raise(project, values.raise, values.consumer)
 
   const partial = files.length > 0 || values.changed === true
   let targets: string[]
@@ -157,7 +175,7 @@ export function lint(flags: readonly string[], invocationCwd: string): number {
   const breaches = budget === null ? [] : countBreaches(budget.budget, stats.counts)
   for (const b of breaches) {
     say(
-      `${b.count} ${b.name} is above the ceiling ${b.ceiling} in ${BUDGET_PATH}; remove waivers, or raise it with \`basalt-ui eject --raise "<named consumer>"\``,
+      `${b.count} ${b.name} is above the ceiling ${b.ceiling} in ${BUDGET_PATH}; remove ${b.name}, or raise it with ${raiseCommand(b.name)}`,
     )
   }
   if (breaches.length > 0) return 1
@@ -176,5 +194,32 @@ function writeBudget(project: Project, counts: Counts): number {
   })
   if ('error' in landed) return (console.error(`✖ basalt-ui lint: ${landed.error}`), 1)
   console.log(`wrote ${BUDGET_PATH}: waivers ${counts.waivers}, escapes ${counts.escapes}`)
+  return 0
+}
+
+/**
+ * `--raise <field> --consumer "<who>"`: lifts the `waivers` or `escapes` ceiling to the counted
+ * figure and records one raises row naming the consumer; `ejects` has its own raise on `eject`. */
+function raise(project: Project, field: string | undefined, consumer: string | undefined): number {
+  const fail = (why: string): number => (console.error(`✖ basalt-ui lint: ${why}`), 1)
+  if (field === 'ejects') return fail(`ejects go up with ${raiseCommand('ejects')}`)
+  if (!(LINT_RAISABLE as readonly string[]).includes(field ?? '')) {
+    return fail(`--raise takes ${LINT_RAISABLE.join(' or ')}, got "${field ?? ''}"`)
+  }
+  if (consumer === undefined) {
+    return fail(
+      `--raise ${field} needs --consumer "<named consumer>": who needs the higher ceiling`,
+    )
+  }
+  let files: string[]
+  try {
+    files = rootFiles(project)
+  } catch (error) {
+    return fail((error as Error).message)
+  }
+  const count = countSource(project, files)[field as LintRaisable]
+  const raised = raiseCeiling({ field: field as LintRaisable, count, consumer, dir: project.root })
+  if ('error' in raised) return fail(raised.error)
+  console.log(`raised ${field} to ${count} in ${BUDGET_PATH} for ${consumer.trim()}`)
   return 0
 }

@@ -41,5 +41,5 @@ tsconfig cannot be edited (the line to add is printed); --all has no --raise; --
 file outside <root>/components/ui, a shipped name not on the merge base, or a new local file
 without --raise.
 The ejects count per root is printed against .basalt/budget.json (start 3); until 3.0.0 it is
-counted, not enforced.
+counted, not enforced. waivers and escapes go up with: lint --raise <field> --consumer "<who>".
 ```
