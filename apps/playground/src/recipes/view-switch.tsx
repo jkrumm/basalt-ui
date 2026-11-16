@@ -21,7 +21,7 @@ const runs = defineControls({
 const tabs: NonNullable<ComponentProps<typeof PageBar>['tabs']> = {
   kind: 'controls-slot',
   count: 1,
-  render: () => <ViewTabs handle={runs.field.as} label="Runs view" />,
+  render: () => <ViewTabs state={runs.field.as} label="Runs view" />,
 }
 
 export function Runs({ data }: { data: readonly Run[] }) {

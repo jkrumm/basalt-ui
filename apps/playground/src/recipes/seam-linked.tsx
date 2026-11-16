@@ -21,7 +21,7 @@ export function SeamLinked({ samples }: { samples: readonly Sample[] }) {
       </div>
       <CartesianChart<Sample>
         data={samples}
-        ariaLabel="Daily samples, one value per day"
+        label="Daily samples, one value per day"
         x={{ value: (s) => s.day }}
         series={[{ mark: 'dot', key: 'value', label: 'Value', color, y: (s) => s.value }]}
         focus={focus}

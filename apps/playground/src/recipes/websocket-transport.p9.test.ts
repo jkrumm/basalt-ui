@@ -3,7 +3,7 @@
  * `Bun.serve` websocket and `fakeChannel`. The adapter is at most 40 lines, a reconnect carries the
  * cursor, a ping is a beat, a 4401 close never retries and an abort closes the socket.
  */
-import { createChannel } from 'basalt-ui'
+import { createChannel } from 'basalt-ui/data'
 import type { Channel, Delivered } from 'basalt-ui'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'

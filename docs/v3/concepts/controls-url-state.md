@@ -109,7 +109,7 @@ filterSlot(specs) -> ControlsSlot                                       // filte
 <ChartCard title="Latency" controls={filterSlot([spec(overview.widget.latency.range, 'Range')])} chart={...} />
 <StatCard title="Errors" {...} />                                       // bound to the global via `widgets`: shows the effective value, no control, no cue
 <ControlHome home="aside"><FilterSet specs={[...]} /></ControlHome>     // home -> presentation: pill | row | inline
-<ViewTabs handle={overview.field.tab} />                                // store-bound tab strip, CSS swap, one mount
+<ViewTabs state={overview.field.tab} />                                // store-bound tab strip, CSS swap, one mount
 <FormField field={form.field} label="Name" />  <FormField control={prefs.field.density} label="Density" />
 // useFormDraft(form, { key, version, schema, owner }), FormFooter, toSubmitErrors and the guard recipe: state-persistence-forms
 ```

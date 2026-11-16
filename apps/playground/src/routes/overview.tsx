@@ -101,7 +101,7 @@ const trend = (
     figure={{ value: '12,840' }}
     chart={() => (
       <Lines
-        ariaLabel="Requests per day, 30 days"
+        label="Requests per day, 30 days"
         data={DAYS}
         x={{ value: (d) => d.day }}
         series={[
@@ -144,7 +144,7 @@ const filters = (
 const tabs: NonNullable<ComponentProps<typeof PageBar>['tabs']> = {
   kind: 'controls-slot',
   count: 1,
-  render: () => <ViewTabs handle={overview.field.tab} label="Overview view" />,
+  render: () => <ViewTabs state={overview.field.tab} label="Overview view" />,
 }
 // #endregion
 
