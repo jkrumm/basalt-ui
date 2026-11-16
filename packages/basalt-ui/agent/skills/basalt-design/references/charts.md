@@ -26,6 +26,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - Label marks directly with `text` marks placed by [chartLabels](docs/chart-labels.md): it measures, avoids overlaps and drops what is too wide. The worked example is region `example:chartLabels` in `apps/playground/src/recipes/seam-examples.tsx`.
 - Annotate the one mark the page is about (the best run, the onset, the live stage) and let the rest recede. [useChartFocus](docs/use-chart-focus.md) holds one focused datum for the marks, the card fact and the live region; region `example:useChartFocus` in the same file.
 - The hero states the answer with its verb ("Runs out 13:52", where "13:52" alone answers nothing) and at most one phrase of baseline; the one mark the page is about carries the annotation at rest, so the sentences around it say something else ([copy](copy.md)). A list keeps the answer above its cut.
+- When the answer needs a word on one mark (the slowest, the spike, last night), compose `CartesianChart` with a `text` mark placed by `chartLabels`: a kind such as `Bars` takes no custom mark. Engine `text` marks from `@tanstack/charts/text` are allowed in custom marks. On focus the figure's readout carries what the mark means (its share, its model, its stage) and returns to the answer on leave (c11, c12, c13, n02, n12: the answer was a sentence, or the readout a bare total).
 - Custom marks read `plot.rows(key)` and `plot.visible`, so a legend toggle hides the mark. [type:ChartPlot]
 
 ## Anatomy of a chart card
@@ -42,10 +43,20 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - A list of groups (versions, releases) beside samples of those groups spreads `focus.groupItem(name)` on each row instead; the recipe is `seam-linked` in `docs/recipes/`.
 - The kit owns the dim and the clear: the page takes the kit's dim for a seam-drawn mark, and rows that take focus sit under a container whose pointer leave clears (`focus.target`), so the gap between two rows keeps the last focus.
 
+## Form from structure
+
+- Where the items carry a structure the question asks about (hops in a graph, two scores per item, the stages of a pipeline, the stages of a night), the form draws that structure: the hops as a path, the pair as a scatter or paired marks, the stages as segments. A ranked list or a total-only stack is the fallback, and the page names it as the fallback (c10, c11, c12, n02, n12 F1).
+
+## One view
+
+- Where two charts share an axis and answer the two halves of one question, they are one chart above and below the axis (a diverging chart), not two cards and a strip (c13 X2, F1; n01 in cycle 2: a strip, per-day bars, a list and a line as four stacked parts). Two cards stand only when the axes differ.
+
 ## Honest marks
 
 - Every fill a mark uses has a legend entry: a series, or a legend-only entry for a fill with no series of its own. [type:LegendEntry]
 - A stepped or binned scale says its step in a caption; a size channel gets a key.
+- A fixed row or bar count (`rows={8}`) is derived from the data, so the extreme fixture shows every item: hop 9 hidden behind eight rows, with a headline saying nine hops, is the defect (c10 F5; the bars summed to 18 of 19).
+- An incomplete datum (a partial day, a night missing a stage) is marked on its mark (hatched, hollow or a caption on the bar) and named once; it is never drawn as a complete smaller value (n12 F5: a night with REM missing read as a finished 305 min; c12 F5: today's partial bar read as a finished day; n01 in cycle 2: a zero or absent day drew no mark and no cue).
 - The fixture shows its zero and its extreme at rest, so the card is judged with an empty hour and an over-limit value on screen. The extreme reads true: rounding or clamping it away hides it. A zero fixture shows a cue (a dash, a baseline) where the marks would be.
 - Binned bars carry a unit caption ("per 15 min").
 
