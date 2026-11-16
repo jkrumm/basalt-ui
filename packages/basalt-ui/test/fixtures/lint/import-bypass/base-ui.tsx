@@ -19,3 +19,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { DatePicker } from 'basalt-ui/ui/date-picker'
 // @invalid
 import { Virtualizer } from '@tanstack/virtual-core'
+// @invalid
+import { Virtuoso } from 'react-virtuoso'
+// @valid
+import { VirtualList } from 'basalt-ui/ui/virtual-list'

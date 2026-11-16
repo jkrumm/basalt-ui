@@ -16,3 +16,12 @@ export { createColumnHelper } from '@tanstack/react-table'
 // @valid
 const useReactTable = () => 1
 export { useReactTable }
+// @invalid
+import { createTable, getCoreRowModel } from '@tanstack/table-core'
+// @invalid
+import { AgGridReact } from 'ag-grid-react'
+// @invalid
+import { ModuleRegistry } from 'ag-grid-community'
+// @valid
+// @ts
+import type { ColumnDef } from '@tanstack/react-table'

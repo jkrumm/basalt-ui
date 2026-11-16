@@ -4,14 +4,17 @@
  * each route is a form with its own fix token and fixture.
  *
  * Thirteen forms: eight package bans, the engine allowlist, direct `useReactTable` (an import, or a
- * re-export of it from a module; `export *` is not read, it names no hook), the un-ejected
+ * re-export of it from a module; `export *` is not read, it names no hook) or a table engine
+ * (`@tanstack/table-core`, AG Grid), the un-ejected
  * `@/components/ui/*` path, `useChat()` without a `chat` option and persist libraries outside a
  * `StorageLike` adapter. The repo-only rows (layer table, single `host.tsx` importer) are not
  * here: a form carries no profile of its own and this rule ships at `parts` and `app`.
  *
  * The `ui-path` form reads `@/`, `~/`, `#/`, `src/` and relative `components/ui/<name>` paths; an ejected name
  * stays legal however it is spelled. The `radix` form leaves `@radix-ui/react-icons` alone: it is
- * an icon set, and an icon prop takes the icon library's own component. The `visx`, `streamdown`
+ * an icon set, and an icon prop takes the icon library's own component; it reads every `@mantine/*`
+ * package (the stack 2.x shipped on) but `@mantine/hooks`, a hooks set with no UI whose storage
+ * hooks `persist-storage` reads. The `visx`, `streamdown`
  * and `persist-storage` forms list the rival packages in the table below.
  *
  * Option: `{ ejected?: string[] }`, the paths of `manifest.ejected`. An entry may be a
@@ -19,6 +22,7 @@
  * primitive's owned copy, so its own `@base-ui` import is the one thing it exists to hold.
  */
 import type { Node, RuleContext, Visitor } from '../../factory'
+import { mergeVisitors } from '../../factory'
 import type { AstForm, RuleEntry } from '../../rule-table'
 import { defineRules } from '../../rule-table'
 
@@ -65,6 +69,7 @@ const STORAGE_PACKAGES: ReadonlySet<string> = new Set([
   'zustand-persist',
   '@nanostores/persistent',
   '@tanstack/query-sync-storage-persister',
+  'idb-keyval',
 ])
 
 /** Packages that are only a route through named specifiers. */
@@ -187,10 +192,38 @@ const engineOutsideList: AstForm = {
   fixture: 'import-bypass/engine-subpath.tsx',
 }
 
-/** `import { useReactTable }` from anywhere, and `Table.useReactTable()` through a namespace. */
+/**
+ * Table engines a consumer builds a table on instead of DataTable: TanStack Table's framework-free
+ * core (`createTable`) and AG Grid. `@tanstack/react-table` itself stays legal for its column types
+ * and helpers; its hook is read by name below.
+ */
+const TABLE_PACKAGES: readonly string[] = [
+  '@tanstack/table-core',
+  'ag-grid-react',
+  'ag-grid-community',
+  'ag-grid-enterprise',
+]
+
+/**
+ * `import { useReactTable }` from anywhere, `Table.useReactTable()` through a namespace, and any
+ * import of a table engine in `TABLE_PACKAGES`.
+ */
 const directReactTable: AstForm = {
   id: 'react-table-hook',
-  detect: ({ report }) => ({
+  detect: ({ report }) =>
+    mergeVisitors([
+      sourceVisitor((node, source) => {
+        if (TABLE_PACKAGES.some((pkg) => within(source, pkg))) report(node, source)
+      }),
+      reactTableHook(report),
+    ]),
+  fix: 'Render the table with DataTable from basalt-ui/table',
+  next: 'A static table is ui/table',
+  fixture: 'import-bypass/react-table-hook.tsx',
+}
+
+function reactTableHook(report: (node: Node, subject: string) => void): Visitor {
+  return {
     ImportSpecifier(node) {
       if (nameOf(child(node, 'imported')) === 'useReactTable') report(node, 'useReactTable')
     },
@@ -207,10 +240,7 @@ const directReactTable: AstForm = {
       if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return
       if (nameOf(child(callee, 'property')) === 'useReactTable') report(node, 'useReactTable()')
     },
-  }),
-  fix: 'Render the table with DataTable from basalt-ui/table',
-  next: 'A static table is ui/table',
-  fixture: 'import-bypass/react-table-hook.tsx',
+  }
 }
 
 const UI_PREFIX = 'components/ui/'
@@ -357,6 +387,7 @@ const FORMS: readonly AstForm[] = [
       'react-day-picker',
       '@tanstack/react-virtual',
       '@tanstack/virtual-core',
+      'react-virtuoso',
     ],
     'Import the owned primitive from basalt-ui/ui/<name>: date-picker, virtual-list',
     'Eject the primitive with basalt-ui eject, then edit the copy',
@@ -373,14 +404,15 @@ const FORMS: readonly AstForm[] = [
       '@floating-ui/react-dom',
       'react-aria-components',
       '@ark-ui',
+      '@mantine',
     ],
-    'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, React Aria, Ark and Floating UI are not in the stack',
+    'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, Mantine, React Aria, Ark and Floating UI are not in the stack',
     'Eject the primitive with basalt-ui eject, then edit the copy',
-    { except: ['@radix-ui/react-icons'] },
+    { except: ['@radix-ui/react-icons', '@mantine/hooks'] },
   ),
   packageForm(
     'cmdk',
-    ['cmdk', 'kbar'],
+    ['cmdk', 'react-cmdk', 'kbar'],
     'Use CommandPalette from basalt-ui/shell (+0.9 KB against cmdk +16.0 KB and 24 packages)',
     'defineCommands lists a command in the palette',
   ),
@@ -421,8 +453,17 @@ const FORMS: readonly AstForm[] = [
   ),
   packageForm(
     'data-library',
-    ['swr', 'socket.io-client', '@microsoft/fetch-event-source', 'react-use-websocket', 'nuqs'],
-    'Fetch through the query client and liveQuery from basalt-ui/data, open a stream with createChannel, and keep URL state in a field from basalt-ui/router',
+    [
+      'swr',
+      '@apollo/client',
+      'socket.io-client',
+      '@microsoft/fetch-event-source',
+      'react-use-websocket',
+      'nuqs',
+      'react-router',
+      'react-router-dom',
+    ],
+    'Fetch through the query client and liveQuery from basalt-ui/data, open a stream with createChannel, and keep routes and URL state in basalt-ui/router (a field; TanStack Router, never react-router)',
     'createChannel takes the Transport seam, so a socket is one adapter',
   ),
   engineOutsideList,

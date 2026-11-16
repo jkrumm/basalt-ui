@@ -35,3 +35,8 @@ export { persist } from 'zustand/middleware'
 // @invalid
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 export const persister = createSyncStoragePersister({ storage: window.localStorage })
+// @invalid
+import { get, set } from 'idb-keyval'
+// @valid
+import { get, set } from 'idb-keyval'
+export const backend = { kind: StorageLike, get, set }

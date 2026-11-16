@@ -9,3 +9,5 @@ import { CommandPalette } from 'basalt-ui/shell'
 import { cmdkLike } from 'cmdk-lite'
 // @invalid
 import { KBarProvider } from 'kbar'
+// @invalid
+import CommandPalette from 'react-cmdk'

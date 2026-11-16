@@ -13,7 +13,13 @@ import { Linter, RuleTester } from 'eslint'
 import { formMessage } from '../../factory'
 import { isEnabled } from '../../rule-table'
 import { IMPORT_BOUNDARY, ENGINE_FAMILIES, ENGINE_SUBPATHS } from './import-boundary'
-import { enabledRule, fixtureSuites, readFixture, SUITES } from './import-boundary.cases'
+import {
+  enabledRule,
+  fixtureSuites,
+  readFixture,
+  SUITES,
+  tsCaseCount,
+} from './import-boundary.cases'
 
 RuleTester.describe = describe
 RuleTester.it = it
@@ -45,6 +51,7 @@ describe('oxlint plugins-dev RuleTester', () => {
       {
         env: {
           ...process.env,
+          BASALT_HOST: 'oxlint',
           BASALT_LINT_FIXTURES: resolve(
             import.meta.dirname,
             '../../../../test/fixtures/lint/import-bypass',
@@ -58,7 +65,7 @@ describe('oxlint plugins-dev RuleTester', () => {
     expect(result.failures).toEqual([])
     const total = SUITES.reduce(
       (sum, { cases }) => sum + cases.valid.length + cases.invalid.length,
-      0,
+      tsCaseCount(),
     )
     expect(result.passed).toBe(total)
   }, 60_000)
