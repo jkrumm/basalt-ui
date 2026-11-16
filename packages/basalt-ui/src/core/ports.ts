@@ -106,14 +106,18 @@ export type LinkComponent = (props: {
 
 // ---- Controls and forms (controls-url-state 5, state-persistence-forms 6) -----------------
 
-/** The only thing `./controls` sees of the router half. `clear()` unsets, never writes the fallback. */
+/**
+ * The only thing `./controls` sees of the router half. `clear()` unsets, never writes the fallback;
+ * a `history: 'push'` URL field unsets as a push too (the close is an entry Back can leave), and
+ * `clear({ replace: true })` overwrites the current entry instead (a cleanup, not a user close).
+ */
 export type ControlHandle<T> = {
   key: string
   kind: 'enum' | 'multi' | 'string' | 'number' | 'boolean' | 'range'
   options?: readonly { value: T; label: string }[]
   use(): [T, (v: T) => void]
   useSource(): { source: 'own' | 'inherited' | 'override'; inherited: T | undefined }
-  clear(): void
+  clear(options?: { replace?: boolean }): void
   isDefault: boolean
 }
 

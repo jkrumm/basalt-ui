@@ -215,7 +215,8 @@ export type UseDataTable<T> = {
       detailTitle?: (row: T) => string
       /**
        * A string field of row ids that holds the open row: activating a row writes its id, closing
-       * the sheet calls `clear()`, and a value that names a loaded row opens its detail on load, on
+       * the sheet calls `clear()` (on a `history: 'push'` field the close is an entry of its own, so Back
+       * after it returns to the open record; a name that matches no row is cleared as a replace), and a value that names a loaded row opens its detail on load, on
        * a share link and on Back. Without it the open row lives in component state. A host
        * that closes on its own (the page's aside, a caller's panel) clears it too, once a row has
        * shown there, as long as it reports `isOpen`. Pass a stable handle across renders.
