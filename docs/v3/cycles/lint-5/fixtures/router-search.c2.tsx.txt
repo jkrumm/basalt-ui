@@ -1,0 +1,53 @@
+// Cycle 2 phrasings for basalt/router-search. Seed numbers continue cycle 1's.
+import { Link, createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
+import { z } from 'zod'
+
+// seed router-search/literal-search 4: a redirect with a literal search in beforeLoad
+export const Route = createFileRoute('/runs')({
+  beforeLoad: () => {
+    throw redirect({ to: '/runs', search: { status: 'all' } })
+  },
+})
+
+// seed router-search/literal-search 5: router.navigate with a literal search
+export function useJump() {
+  const router = useRouter()
+  return () => router.navigate({ to: '/runs', search: { page: 1 } })
+}
+
+// seed router-search/literal-search 6: a Link search updater returning a fresh literal
+export function Reset() {
+  return (
+    <Link to="/runs" search={() => ({ status: 'failed', page: 1 })}>
+      Failed
+    </Link>
+  )
+}
+
+// seed router-search/literal-search 7: navigate from useNavigate bound to another name (a stated known limit)
+export function useGo() {
+  const go = useNavigate()
+  return () => go({ to: '/runs', search: { status: 'ok' } })
+}
+
+// seed router-search/loader-deps-search 3: loaderDeps returns the search under a key
+export const Route2 = createFileRoute('/jobs')({
+  loaderDeps: ({ search }) => ({ search }),
+  loader: () => null,
+})
+
+// seed router-search/loader-deps-search 4: loaderDeps spreads search and defaults one key
+export const Route3 = createFileRoute('/logs')({
+  loaderDeps: ({ search }) => ({ ...search, page: search.page ?? 1 }),
+  loader: () => null,
+})
+
+// seed router-search/validate-search-pure 3: a zod default reading the clock
+export const Route4 = createFileRoute('/usage')({
+  validateSearch: z.object({ to: z.string().default(new Date().toISOString()) }),
+})
+
+// seed router-search/validate-search-pure 4: a validator reading sessionStorage
+export const Route5 = createFileRoute('/board')({
+  validateSearch: (s: Record<string, unknown>) => ({ lane: (s.lane as string) ?? sessionStorage.getItem('lane') }),
+})

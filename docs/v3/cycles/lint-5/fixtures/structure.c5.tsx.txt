@@ -1,0 +1,669 @@
+// Cycle 5 phrasings for the structure family: import-boundary, primitive-bypass, colour-literal,
+// waiver-needs-reason, data-primitive, router-search, control-home, untrusted-markdown. Seed numbers
+// continue cycle 4's. A `pass` mark is valid code beside a shape a cycle 4 fix widened a form to.
+import { useEffect, useRef, useState } from 'react'
+import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
+import { QueryClient, useQuery, useQueryClient } from '@tanstack/react-query'
+import { liveQuery } from 'basalt-ui/data'
+import { Markdown } from 'basalt-ui/content'
+import { Card } from 'basalt-ui/ui/card'
+import { Switch } from 'basalt-ui/ui/switch'
+import { Progress } from 'basalt-ui/ui/progress'
+import { Slider } from 'basalt-ui/ui/slider'
+import { ChartCard, Lines, Sparkline, Bars } from 'basalt-ui/charts'
+import { Section } from 'basalt-ui/page'
+
+type Row = { id: string; name: string; value: number; html: string; text: string; at: string }
+const runsQuery = { queryKey: ['runs'], queryFn: async () => [] as Row[] }
+
+// seed import-boundary/base-ui 8: react-day-picker for a date field, under the shipped date-picker
+import { DayPicker } from 'react-day-picker'
+export const DP = DayPicker
+
+// seed import-boundary/base-ui 9: react-virtuoso for a long list, under the shipped virtual-list
+import { Virtuoso } from 'react-virtuoso'
+export const VL = Virtuoso
+
+// seed import-boundary/radix 10: Headless UI's menu, another primitive stack
+import { Menu as HeadlessMenu } from '@headlessui/react'
+export const HM = HeadlessMenu
+
+// seed import-boundary/radix 11: Mantine, the stack basalt 2.x shipped on, as an agent trained on 2.x writes it
+import { Popover as MantinePopover } from '@mantine/core'
+export const MP = MantinePopover
+
+// seed import-boundary/cmdk 5: react-cmdk for a command palette
+import CommandPalette from 'react-cmdk'
+export const CP = CommandPalette
+
+// seed import-boundary/sonner 6: react-hot-toast for a saved toast
+import toast from 'react-hot-toast'
+export const saved = () => toast.success('Saved')
+
+// seed import-boundary/sonner 7: react-toastify's toast with its container
+import { ToastContainer } from 'react-toastify'
+export const TC = ToastContainer
+
+// seed import-boundary/streamdown 6: react-markdown imported directly to render a reply
+import ReactMarkdown from 'react-markdown'
+export const RM = ReactMarkdown
+
+// seed import-boundary/streamdown 7: marked's parse imported by name
+import { parse as parseMd } from 'marked'
+export const html = (s: string) => parseMd(s)
+
+// seed import-boundary/tailwind-merge 6: clsx imported on its own for class composition
+import clsx from 'clsx'
+export const cx = clsx
+
+// seed import-boundary/visx 8: react-chartjs-2 for a line chart
+import { Line as ChartJsLine } from 'react-chartjs-2'
+export const CJ = ChartJsLine
+
+// seed import-boundary/visx 9: Tremor's chart, the examples app's stack
+import { AreaChart as TremorArea } from '@tremor/react'
+export const TA = TremorArea
+
+// seed import-boundary/visx 10: nivo's line chart
+import { ResponsiveLine } from '@nivo/line'
+export const NL = ResponsiveLine
+
+// seed import-boundary/data-library 6: react-router's search params for a filter
+import { useSearchParams } from 'react-router-dom'
+export const SP = useSearchParams
+
+// seed import-boundary/data-library 7: Apollo's client for a GraphQL query
+import { useQuery as useApolloQuery } from '@apollo/client'
+export const AQ = useApolloQuery
+
+// seed import-boundary/engine-subpath 5: the engine's root entry
+import * as Engine from '@tanstack/charts'
+export const E = Engine
+
+// seed import-boundary/react-table-hook 6: the table core's createTable for a hand-built table
+import { createTable } from '@tanstack/table-core'
+export const CT = createTable
+
+// seed import-boundary/react-table-hook 7: AG Grid for a data grid
+import { AgGridReact } from 'ag-grid-react'
+export const AG = AgGridReact
+
+// seed import-boundary/ui-path 6: the Remix tilde alias to the shadcn folder
+import { Button as TildeButton } from '~/components/ui/button'
+export const TB = TildeButton
+
+// seed import-boundary/ui-path 7: a relative path into the shadcn folder
+import { Dialog as RelDialog } from '../../components/ui/dialog'
+export const RD = RelDialog
+
+// pass import-boundary/ui-path 1: a package.json imports alias to the app's own api module
+import { api } from '#/lib/api'
+export const A1 = api
+
+// pass import-boundary/ui-path 2: a baseUrl-rooted import of a feature module
+import { runsApi } from 'src/features/runs/api'
+export const A2 = runsApi
+
+// seed import-boundary/use-chat-chat 6: AI SDK 5's transport option and no chat
+import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport } from 'ai'
+export function Chat5() {
+  return useChat({ transport: new DefaultChatTransport({ api: '/api/chat' }) })
+}
+
+// seed import-boundary/use-chat-chat 7: useChat with no argument
+export function ChatBare() {
+  return useChat()
+}
+
+// seed import-boundary/persist-storage 8: zustand's persist over localStorage
+import { createJSONStorage } from 'zustand/middleware'
+export const zs = createJSONStorage(() => localStorage)
+
+// seed import-boundary/persist-storage 9: idb-keyval as a cache store
+import { set as idbSet } from 'idb-keyval'
+export const keep = (v: string) => idbSet('k', v)
+
+// seed primitive-bypass/raw-control 11: a clickable table row with no role
+export function Rows({ rows, open }: { rows: Row[]; open: (id: string) => void }) {
+  return (
+    <tbody>
+      {rows.map((r) => (
+        <tr key={r.id} onClick={() => open(r.id)}>
+          <td>{r.name}</td>
+        </tr>
+      ))}
+    </tbody>
+  )
+}
+
+// seed primitive-bypass/raw-control 12: a range input for a volume
+export function Volume() {
+  return <input type="range" min={0} max={100} />
+}
+
+// seed primitive-bypass/raw-control 13: a native details disclosure for an FAQ
+export function Faq() {
+  return (
+    <details>
+      <summary>Why?</summary>
+      Because.
+    </details>
+  )
+}
+
+// pass primitive-bypass/raw-control 2: a list item holding a button, the fix the form names
+import { Button } from 'basalt-ui/ui/button'
+export function PickRow({ r, onPick }: { r: Row; onPick: (id: string) => void }) {
+  return (
+    <li>
+      <Button variant="ghost" onClick={() => onPick(r.id)}>
+        {r.name}
+      </Button>
+    </li>
+  )
+}
+
+// seed primitive-bypass/checkable-input 8: a visually hidden peer checkbox styled as a toggle
+export function Toggle() {
+  return (
+    <label>
+      <input type="checkbox" className="peer sr-only" />
+      <span className="peer-checked:bg-accent">t</span>
+    </label>
+  )
+}
+
+// seed primitive-bypass/checkable-input 9: a button acting as a switch through aria-checked
+export function Flip({ on, set }: { on: boolean; set: (v: boolean) => void }) {
+  return <button type="button" role="switch" aria-checked={on} onClick={() => set(!on)} />
+}
+
+// seed primitive-bypass/raw-heading 9: a heading tag held in a variable
+export function Head({ text }: { text: string }) {
+  const H = 'h2' as const
+  return <H>{text}</H>
+}
+
+// seed primitive-bypass/raw-heading 10: an h3 in a card body for a group title
+export function Group() {
+  return (
+    <Card>
+      <h3>Billing</h3>
+    </Card>
+  )
+}
+
+// seed primitive-bypass/raw-table 7: a description list for a record's facts
+export function Facts2({ r }: { r: Row }) {
+  return (
+    <dl>
+      <dt>Name</dt>
+      <dd>{r.name}</dd>
+    </dl>
+  )
+}
+
+// seed primitive-bypass/raw-table 8: a table built from display table classes
+export function Kv({ r }: { r: Row }) {
+  return (
+    <div className="table w-full">
+      <div className="table-row">
+        <div className="table-cell">{r.name}</div>
+      </div>
+    </div>
+  )
+}
+
+// seed primitive-bypass/svg-data-marks 9: circles of a scatter plot mapped from data
+export function Scatter({ rows }: { rows: Row[] }) {
+  return (
+    <svg>
+      {rows.map((r, i) => (
+        <circle key={r.id} cx={i * 10} cy={r.value} r={3} />
+      ))}
+    </svg>
+  )
+}
+
+// seed primitive-bypass/svg-data-marks 10: a path whose d is built from data with a d3-shape line
+import { line } from 'd3-shape'
+export function Trend({ rows }: { rows: Row[] }) {
+  const d = line<Row>((_, i) => i * 10, (r) => r.value)(rows) ?? ''
+  return (
+    <svg>
+      <path d={d} />
+    </svg>
+  )
+}
+
+// pass primitive-bypass/html-data-marks 1: the shipped Progress for one value, the fix the form names
+export function Used({ used }: { used: number }) {
+  return <Progress value={used} />
+}
+
+// seed primitive-bypass/html-data-marks 8: column heights set from data in percent
+export function Cols({ rows }: { rows: Row[] }) {
+  return (
+    <div className="flex items-end">
+      {rows.map((r) => (
+        <div key={r.id} style={{ height: `${r.value}%` }} />
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/html-data-marks 9: a stacked share bar through flex-grow
+export function Share({ rows }: { rows: Row[] }) {
+  return (
+    <div className="flex h-2">
+      {rows.map((r) => (
+        <div key={r.id} style={{ flexGrow: r.value }} />
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/role-table 6: a treegrid of divs
+export function Tree({ rows }: { rows: Row[] }) {
+  return (
+    <div role="treegrid">
+      {rows.map((r) => (
+        <div role="row" key={r.id}>
+          {r.name}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/role-table 7: a role table on a list
+export function Listing({ rows }: { rows: Row[] }) {
+  return (
+    <ul role="table">
+      {rows.map((r) => (
+        <li role="row" key={r.id}>
+          {r.name}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// seed primitive-bypass/table-rows 7: TableRow mapped from a sorted page slice
+import { Table, TableBody, TableCell, TableRow } from 'basalt-ui/ui/table'
+export function Paged({ rows, page }: { rows: Row[]; page: number }) {
+  return (
+    <Table>
+      <TableBody>
+        {rows
+          .toSorted((a, b) => a.value - b.value)
+          .slice(page * 20, page * 20 + 20)
+          .map((r) => (
+            <TableRow key={r.id}>
+              <TableCell>{r.name}</TableCell>
+            </TableRow>
+          ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+// seed primitive-bypass/table-rows 8: TableRow mapped from a filtered list
+export function Filtered({ rows, q }: { rows: Row[]; q: string }) {
+  return (
+    <Table>
+      <TableBody>
+        {rows
+          .filter((r) => r.name.includes(q))
+          .map((r) => (
+            <TableRow key={r.id}>
+              <TableCell>{r.name}</TableCell>
+            </TableRow>
+          ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+// seed primitive-bypass/chart-body-root 8: a chart kind bare in a basalt Section
+export function Usage({ rows }: { rows: Row[] }) {
+  return (
+    <Section title="Usage">
+      <Bars data={rows} x="name" series={['value']} ariaLabel="Usage" />
+    </Section>
+  )
+}
+
+// seed primitive-bypass/chart-body-root 9: a sparkline in a hand-styled div tile
+export function Mini({ rows }: { rows: Row[] }) {
+  return (
+    <div className="rounded-card border p-3">
+      <Sparkline data={rows} x="at" series={['value']} ariaLabel="Mini" />
+    </div>
+  )
+}
+
+// pass primitive-bypass/chart-body-root 1: a chart body split into its own component, used inside a ChartCard
+export function TrendBody({ rows }: { rows: Row[] }) {
+  return <Lines data={rows} x="at" series={['value']} ariaLabel="Trend" />
+}
+export function TrendCard({ rows }: { rows: Row[] }) {
+  return (
+    <ChartCard title="Trend">
+      <TrendBody rows={rows} />
+    </ChartCard>
+  )
+}
+
+// seed primitive-bypass/intl-format 12: a date formatted with toLocaleString and a locale
+export function Stamp({ at }: { at: string }) {
+  return <time>{new Date(at).toLocaleString('de-DE')}</time>
+}
+
+// seed primitive-bypass/intl-format 13: a relative time from Intl.RelativeTimeFormat
+export function Ago({ days }: { days: number }) {
+  return <span>{new Intl.RelativeTimeFormat('en').format(-days, 'day')}</span>
+}
+
+// seed primitive-bypass/intl-format 14: luxon's toFormat in JSX
+import { DateTime } from 'luxon'
+export function Lux({ at }: { at: string }) {
+  return <time>{DateTime.fromISO(at).toFormat('dd.MM.yyyy')}</time>
+}
+
+// pass primitive-bypass/intl-format 1: dayjs used for a comparison, not for display text
+export function Late({ at }: { at: string }) {
+  return <span>{dayjs(at).isBefore(dayjs()) ? 'late' : 'due'}</span>
+}
+import dayjs from 'dayjs'
+
+// seed colour-literal/colour-literal 17: an hsl template literal over a computed hue
+export const hueOf = (h: number) => `hsl(${h} 70% 50%)`
+
+// seed colour-literal/colour-literal 18: a four-digit hex with alpha
+export const veil = '#0008'
+
+// seed colour-literal/colour-literal 19: an oklch colour in a canvas fill style
+export function paint(ctx: CanvasRenderingContext2D) {
+  ctx.fillStyle = 'oklch(0.7 0.1 240)'
+}
+
+// pass colour-literal/colour-literal 1: a heading anchor hash
+export const anchor = '#billing'
+
+// seed waiver-needs-reason/missing-reason 13: a same-line disable with no reason
+export function W1() {
+  return <div className="dark:bg-card">w</div> // oxlint-disable-line basalt/dark-fork
+}
+
+// seed waiver-needs-reason/missing-reason 14: an empty reason after the two dashes
+export function W2() {
+  // oxlint-disable-next-line basalt/dark-fork --
+  return <div className="dark:bg-card">w</div>
+}
+
+// seed waiver-needs-reason/missing-reason 15: a block-comment line waiver with no reason
+export function W3() {
+  /* oxlint-disable-next-line basalt/dark-fork */
+  return <div className="dark:bg-card">w</div>
+}
+
+// seed waiver-needs-reason/file-level-scope 7: a mid-file disable naming the rule with a reason, never re-enabled
+// oxlint-disable basalt/dark-fork -- the legacy screen keeps its forks
+export function W4() {
+  return <div className="dark:bg-card">w</div>
+}
+
+// seed waiver-needs-reason/file-level-scope 8: a block disable and enable around one function in the eslint dialect
+/* eslint-disable basalt/dark-fork -- legacy */
+export function W5() {
+  return <div className="dark:bg-card">w</div>
+}
+/* eslint-enable basalt/dark-fork */
+
+// seed data-primitive/refetch-interval 8: a refetch interval switched by a live flag
+export function useRuns(live: boolean) {
+  return useQuery({ ...runsQuery, refetchInterval: live ? 5000 : false })
+}
+
+// seed data-primitive/refetch-interval 9: a background refetch flag beside the interval in shared defaults
+export const defaults = { queries: { refetchInterval: 30_000, refetchIntervalInBackground: true } }
+
+// seed data-primitive/unseamed-transport 8: Microsoft's fetch-event-source for an SSE stream
+import { fetchEventSource } from '@microsoft/fetch-event-source'
+export function useFeed() {
+  useEffect(() => {
+    void fetchEventSource('/api/feed', { onmessage: () => {} })
+  }, [])
+}
+
+// seed data-primitive/unseamed-transport 9: a socket opened in a class field
+export class Live {
+  ws = new WebSocket('wss://example.com/live')
+}
+
+// seed data-primitive/reader-loop 7: async iteration over a response body
+export async function readAll(res: Response) {
+  for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
+    void chunk
+  }
+}
+
+// seed data-primitive/reader-loop 8: a recursive pump over reader.read()
+export function pump(res: Response) {
+  const reader = res.body!.getReader()
+  const next = (): Promise<void> => reader.read().then(({ done }) => (done ? undefined : next()))
+  return next()
+}
+
+// seed data-primitive/deprecated-fetch 7: the infinite prefetch in a loader
+export const loader = ({ context }: { context: { queryClient: QueryClient } }) =>
+  context.queryClient.prefetchInfiniteQuery({ queryKey: ['feed'], queryFn: async () => [], initialPageParam: 0, getNextPageParam: () => 1 })
+
+// seed data-primitive/deprecated-fetch 8: ensureInfiniteQueryData before a render
+export const ensureFeed = (qc: QueryClient) =>
+  qc.ensureInfiniteQueryData({ queryKey: ['feed'], queryFn: async () => [], initialPageParam: 0, getNextPageParam: () => 1 })
+
+// seed data-primitive/query-client-singleton 7: a client held in state, the Next.js idiom
+export function Providers() {
+  const [client] = useState(() => new QueryClient())
+  return client ? null : null
+}
+
+// seed data-primitive/query-client-singleton 8: a client with default options exported from a lib module
+export const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } })
+
+// seed data-primitive/chart-data-fallback 10: an empty-array constant as the fallback
+const EMPTY: Row[] = []
+export function RunsChart() {
+  const q = useQuery(runsQuery)
+  return (
+    <ChartCard title="Runs">
+      <Lines data={q.data || EMPTY} x="at" series={['value']} ariaLabel="Runs" />
+    </ChartCard>
+  )
+}
+
+// seed data-primitive/chart-data-fallback 11: the fallback hoisted into a local before the chart
+export function RunsChart2() {
+  const q = useQuery(runsQuery)
+  const rows = q.data ?? []
+  return (
+    <ChartCard title="Runs">
+      <Lines data={rows} x="at" series={['value']} ariaLabel="Runs" />
+    </ChartCard>
+  )
+}
+
+// seed data-primitive/timer-refetch 9: usehooks-ts' useInterval calling refetch
+import { useInterval } from 'usehooks-ts'
+export function usePoll() {
+  const q = useQuery(runsQuery)
+  useInterval(() => void q.refetch(), 5000)
+}
+
+// seed data-primitive/timer-refetch 10: setInterval calling a query's refetch
+export function usePoll2() {
+  const q = useQuery(runsQuery)
+  useEffect(() => {
+    const t = setInterval(() => void q.refetch(), 10_000)
+    return () => clearInterval(t)
+  }, [q])
+}
+
+// seed data-primitive/raw-storage-write 10: an index assignment on localStorage
+export const remember = (v: string) => {
+  window.localStorage['basalt:last'] = v
+}
+
+// seed data-primitive/raw-storage-write 11: localStorage cleared on sign-out
+export const signOut = () => localStorage.clear()
+
+// seed data-primitive/live-static-stale-time 9: an infinite staleTime spelled with Number in liveQuery
+export const docsQuery = liveQuery({ ...runsQuery, staleTime: Number.POSITIVE_INFINITY }, 'live')
+
+// seed data-primitive/live-static-stale-time 10: a literal static staleTime in a plain useQuery
+export function useStatic() {
+  return useQuery({ ...runsQuery, staleTime: 'static' })
+}
+
+// seed router-search/literal-search 12: a functional search updater with a literal key
+export function Next() {
+  const navigate = useNavigate()
+  return () => navigate({ to: '.', search: (prev: Record<string, unknown>) => ({ ...prev, page: 2 }) })
+}
+
+// seed router-search/literal-search 13: router.navigate with a literal search object
+export function Jump() {
+  const router = useRouter()
+  return () => router.navigate({ to: '/runs', search: { q: 'failed' } })
+}
+
+// seed router-search/literal-search 14: a redirect in beforeLoad with a literal search object
+export const RunsRoute = createFileRoute('/runs')({
+  beforeLoad: () => {
+    throw redirect({ to: '/runs', search: { tab: 'all' } })
+  },
+})
+
+// seed router-search/loader-deps-search 8: the whole search spread into the deps
+export const R2 = createFileRoute('/r2')({
+  loaderDeps: ({ search }) => ({ ...search }),
+})
+
+// seed router-search/loader-deps-search 9: a rest spread of the search beside one key
+export const R3 = createFileRoute('/r3')({
+  loaderDeps: ({ search: { page, ...rest } }) => ({ page, ...rest }),
+})
+
+// seed router-search/validate-search-pure 9: a default date from new Date() in the validator
+export const R4 = createFileRoute('/r4')({
+  validateSearch: (s: Record<string, unknown>) => ({ day: (s.day as string) ?? new Date().toISOString().slice(0, 10) }),
+})
+
+// seed router-search/validate-search-pure 10: a default read from sessionStorage in the validator
+export const R5 = createFileRoute('/r5')({
+  validateSearch: (s: Record<string, unknown>) => ({ tab: (s.tab as string) ?? sessionStorage.getItem('tab') ?? 'all' }),
+})
+
+// pass router-search/validate-search-pure 1: crypto.randomUUID in an event handler, not a validator
+export function NewDraft() {
+  const navigate = useNavigate()
+  return () => navigate({ to: '/drafts/$id', params: { id: crypto.randomUUID() } })
+}
+
+// seed control-home/outside-home 16: a Switch with checked and onCheckedChange in a card body
+export function Notify() {
+  const [on, setOn] = useState(false)
+  return (
+    <Card>
+      <Switch checked={on} onCheckedChange={setOn} />
+    </Card>
+  )
+}
+
+// seed control-home/outside-home 17: a Segmented view switch on local state, imported under another name
+import { Segmented as ViewSwitch } from 'basalt-ui/ui/segmented'
+export function View() {
+  const [v, setV] = useState('list')
+  return (
+    <ViewSwitch
+      value={v}
+      onValueChange={setV}
+      aria-label="View"
+      options={[
+        { value: 'list', label: 'List' },
+        { value: 'board', label: 'Board' },
+      ]}
+    />
+  )
+}
+
+// seed control-home/outside-home 18: a Slider bound to local state as a threshold filter
+export function Threshold() {
+  const [t, setT] = useState(50)
+  return <Slider value={t} onValueChange={(v: number | number[]) => setT(Array.isArray(v) ? v[0]! : v)} />
+}
+
+// seed untrusted-markdown/dangerous-html 10: innerHTML set from a ref in an effect
+export function Reply({ m }: { m: Row }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (ref.current) ref.current.innerHTML = m.html
+  }, [m])
+  return <div ref={ref} />
+}
+
+// seed untrusted-markdown/dangerous-html 11: insertAdjacentHTML for a streamed chunk
+export function append(el: HTMLElement, chunk: string) {
+  el.insertAdjacentHTML('beforeend', chunk)
+}
+
+// seed untrusted-markdown/dangerous-html 12: an iframe srcDoc of model html
+export function Preview({ m }: { m: Row }) {
+  return <iframe srcDoc={m.html} title="preview" />
+}
+
+// pass untrusted-markdown/dangerous-html 1: document.write of a literal into a print window
+export function printShell(w: Window) {
+  w.document.write('<p>Printing…</p>')
+}
+
+// seed untrusted-markdown/rehype-raw 6: rehype-raw imported under another name
+import raw from 'rehype-raw'
+export function Doc({ m }: { m: Row }) {
+  return (
+    <Markdown contentTrust="trusted" rehypePlugins={[raw]}>
+      {m.text}
+    </Markdown>
+  )
+}
+
+// seed untrusted-markdown/rehype-raw 7: rehype-raw in a unified pipeline for model text
+import { unified } from 'unified'
+import remarkParse from 'remark-parse'
+import remarkRehype from 'remark-rehype'
+import rehypeStringify from 'rehype-stringify'
+import rehypeRaw from 'rehype-raw'
+export const render = (m: Row) =>
+  unified().use(remarkParse).use(remarkRehype).use(rehypeRaw).use(rehypeStringify).processSync(m.text)
+
+// seed untrusted-markdown/mdx-evaluate 8: @mdx-js/mdx's run over compiled model output
+import { run } from '@mdx-js/mdx'
+export const runModel = (code: string) => run(code, { baseUrl: import.meta.url })
+
+// seed untrusted-markdown/mdx-evaluate 9: next-mdx-remote's MDXRemote on model source
+import { MDXRemote } from 'next-mdx-remote'
+export const MR = MDXRemote
+
+// seed untrusted-markdown/trusted-content 9: trust picked by a role flag on model text
+export function Msg({ m, admin }: { m: Row; admin: boolean }) {
+  return <Markdown contentTrust={admin ? 'trusted' : 'untrusted'}>{m.text}</Markdown>
+}
+
+// seed untrusted-markdown/trusted-content 10: trusted spread in from a props object on model text
+const trusted = { contentTrust: 'trusted' } as const
+export function Msg2({ m }: { m: Row }) {
+  return <Markdown {...trusted}>{m.text}</Markdown>
+}
