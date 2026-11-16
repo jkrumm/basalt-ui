@@ -146,17 +146,72 @@
     "shadcn/no-raw-colors": [
       "error",
       {
-        "message": "\"{{className}}\" is a raw colour, and app code takes colour from components. Use Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app."
+        "allow": [
+          "shadow-2xs",
+          "shadow-xs",
+          "shadow-sm",
+          "shadow-md",
+          "shadow-lg",
+          "shadow-xl",
+          "shadow-2xl",
+          "shadow-inner",
+          "shadow-none",
+          "*-hover",
+          "*-selected",
+          "*-scrim",
+          "*-hairline"
+        ],
+        "message": "\"{{className}}\" is read as a colour the theme does not declare, and app code takes colour from components. Use Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling."
       }
     ],
     "shadcn/no-arbitrary-values": [
       "error",
       {
         "allow": ["grid-cols-[*]", "grid-rows-[*]", "*:grid-cols-[*]", "*:grid-rows-[*]"],
-        "message": "\"{{className}}\" hardcodes an off-token value. Use a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container."
+        "message": "\"{{className}}\" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container."
       }
     ],
-    "shadcn/no-unknown-classes": "error",
+    "shadcn/no-unknown-classes": [
+      "error",
+      {
+        "allow": [
+          "sm:*",
+          "*:sm:*",
+          "max-sm:*",
+          "*:max-sm:*",
+          "min-sm:*",
+          "*:min-sm:*",
+          "md:*",
+          "*:md:*",
+          "max-md:*",
+          "*:max-md:*",
+          "min-md:*",
+          "*:min-md:*",
+          "lg:*",
+          "*:lg:*",
+          "max-lg:*",
+          "*:max-lg:*",
+          "min-lg:*",
+          "*:min-lg:*",
+          "xl:*",
+          "*:xl:*",
+          "max-xl:*",
+          "*:max-xl:*",
+          "min-xl:*",
+          "*:min-xl:*",
+          "2xl:*",
+          "*:2xl:*",
+          "max-2xl:*",
+          "*:max-2xl:*",
+          "min-2xl:*",
+          "*:min-2xl:*",
+          "min-[*]:*",
+          "*:min-[*]:*",
+          "max-[*]:*",
+          "*:max-[*]:*"
+        ]
+      }
+    ],
     "shadcn/no-inline-styles": "error",
     "shadcn/require-static-classes": "error",
     "shadcn/no-restyle": [

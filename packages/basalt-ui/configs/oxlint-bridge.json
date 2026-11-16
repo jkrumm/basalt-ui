@@ -151,6 +151,21 @@
     "shadcn/no-raw-colors": [
       "error",
       {
+        "allow": [
+          "shadow-2xs",
+          "shadow-xs",
+          "shadow-sm",
+          "shadow-md",
+          "shadow-lg",
+          "shadow-xl",
+          "shadow-2xl",
+          "shadow-inner",
+          "shadow-none",
+          "*-hover",
+          "*-selected",
+          "*-scrim",
+          "*-hairline"
+        ],
         "message": "\"{{className}}\" is a raw colour. Use a theme colour class that is already declared: {{suggestions|see the declared theme colours}}; the palette is derived, so no colour is added per app."
       }
     ],
@@ -160,7 +175,47 @@
         "allow": ["grid-cols-[*]", "grid-rows-[*]", "*:grid-cols-[*]", "*:grid-rows-[*]"]
       }
     ],
-    "shadcn/no-unknown-classes": "error",
+    "shadcn/no-unknown-classes": [
+      "error",
+      {
+        "allow": [
+          "sm:*",
+          "*:sm:*",
+          "max-sm:*",
+          "*:max-sm:*",
+          "min-sm:*",
+          "*:min-sm:*",
+          "md:*",
+          "*:md:*",
+          "max-md:*",
+          "*:max-md:*",
+          "min-md:*",
+          "*:min-md:*",
+          "lg:*",
+          "*:lg:*",
+          "max-lg:*",
+          "*:max-lg:*",
+          "min-lg:*",
+          "*:min-lg:*",
+          "xl:*",
+          "*:xl:*",
+          "max-xl:*",
+          "*:max-xl:*",
+          "min-xl:*",
+          "*:min-xl:*",
+          "2xl:*",
+          "*:2xl:*",
+          "max-2xl:*",
+          "*:max-2xl:*",
+          "min-2xl:*",
+          "*:min-2xl:*",
+          "min-[*]:*",
+          "*:min-[*]:*",
+          "max-[*]:*",
+          "*:max-[*]:*"
+        ]
+      }
+    ],
     "shadcn/no-inline-styles": "error",
     "shadcn/require-static-classes": "error",
     "shadcn/no-restyle": [
