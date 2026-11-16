@@ -3,7 +3,7 @@
 A recipe is the shipped answer to a pattern basalt composes but does not export: a compiled example in `node_modules/basalt-ui/docs/recipes/<name>.md`, its region built by the playground typecheck. Read the one that matches before writing the pattern; a missing export is a recipe, never a local copy. One line per recipe: when to use it, then the file. A new recipe adds its own line here.
 
 - [add-page](node_modules/basalt-ui/docs/recipes/add-page.md): adding a destination to an AppShell app: one file route, one nav entry
-- [app-shell](node_modules/basalt-ui/docs/recipes/app-shell.md): mounting the application frame once, in the root route
+- [app-shell](node_modules/basalt-ui/docs/recipes/app-shell.md): mounting the application frame once, in the `_app` layout route
 - [ai-approvals-sources](node_modules/basalt-ui/docs/recipes/ai-approvals-sources.md): a chat asks before a tool runs, shows reasoning and cites sources, which `partView` leaves to the app
 - [ai-artifacts](node_modules/basalt-ui/docs/recipes/ai-artifacts.md): a model produces a document, a block, code or an html preview that opens beside the chat and keeps its versions
 - [ai-blocks](node_modules/basalt-ui/docs/recipes/ai-blocks.md): a model may show a stat, chart, table, callout, list or layout in the chat, as typed blocks that stay on-brand
