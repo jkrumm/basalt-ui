@@ -3,7 +3,7 @@
  * selection (one writer, cleared by `resetOn`), the empty arms and the activation contract.
  */
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import { useSyncExternalStore } from 'react'
 import type { ReactElement } from 'react'
 import type { ControlHandle } from '../core/ports'
@@ -41,7 +41,11 @@ function Subject({ options = {} }: { options?: Options }): ReactElement {
     columns: [
       c.text('name', { header: 'Name', filter: 'text' }),
       c.money('amount', { currency: 'EUR', header: 'Amount' }),
-      c.status('state', { options: ['Engineering', 'Eng'], filter: 'multi', header: 'State' }),
+      c.status('state', {
+        options: ['Engineering', 'Eng'],
+        filter: 'multi',
+        header: 'State',
+      }),
     ],
     data: ROWS,
     getRowId: (r) => r.id,
@@ -91,7 +95,14 @@ describe('client filter and paging', () => {
       [
         {
           v: 1,
-          request: { q: '', filters: [], sort: [], page: 1, pageSize: 25, ...patch },
+          request: {
+            q: '',
+            filters: [],
+            sort: [],
+            page: 1,
+            pageSize: 25,
+            ...patch,
+          },
           display: { visibility: {} },
         },
         () => undefined,
@@ -102,7 +113,9 @@ describe('client filter and paging', () => {
     render(
       <Subject
         options={{
-          state: state({ filters: [{ id: 'state', op: 'anyOf', values: ['Eng'] }] }),
+          state: state({
+            filters: [{ id: 'state', op: 'anyOf', values: ['Eng'] }],
+          }),
         }}
       />,
     )
@@ -126,7 +139,10 @@ describe('client filter and paging', () => {
       <Subject
         options={{
           data: [],
-          empty: { cause: 'No orders this week.', action: { label: 'New order', onClick: run } },
+          empty: {
+            cause: 'No orders this week.',
+            action: { label: 'New order', onClick: run },
+          },
         }}
       />,
     )
@@ -210,7 +226,11 @@ describe('client filter and paging', () => {
       expect(() =>
         render(
           <Subject
-            options={{ state: state({ filters: [{ id: 'nope', op: 'contains', values: ['x'] }] }) }}
+            options={{
+              state: state({
+                filters: [{ id: 'nope', op: 'contains', values: ['x'] }],
+              }),
+            }}
           />,
         ),
       ).toThrow(/nope/)
@@ -401,17 +421,30 @@ const closed = (): boolean => {
 }
 
 describe('detail bound to a field', () => {
-  function Bound({ field }: { field: ControlHandle<string> }): ReactElement {
+  function Bound({
+    field,
+    phase,
+    byId,
+    extra,
+  }: {
+    field: ControlHandle<string>
+    phase?: 'loading'
+    byId?: (id: string) => ReactElement
+    extra?: object
+  }): ReactElement {
     const c = col<Row>()
     const t = useDataTable<Row>({
       id: 'detail-state-test',
       label: 'Rows',
-      columns: [c.text('name')],
+      columns: [c.text('name', { filter: 'text' })],
       data: ROWS,
       getRowId: (r) => r.id,
       mode: { kind: 'client' },
+      ...(phase !== undefined && { phase }),
       detail: (row) => <span>{row.name} body</span>,
       detailState: field,
+      ...(byId !== undefined && { detailById: (id: string) => byId(id) }),
+      ...extra,
     })
     return <DataTable table={t} />
   }
@@ -421,9 +454,27 @@ describe('detail bound to a field', () => {
     expect(screen.getByRole('dialog', { name: 'Rows' }).textContent).toContain('Project 2 body')
   })
 
-  test('a field that names no row opens nothing', () => {
-    render(<Bound field={urlField('zzz')} />)
+  test('a field that names no row opens nothing and is cleared with a dev warning', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+    const field = urlField('zzz')
+    render(<Bound field={field} />)
     expect(screen.queryByRole('dialog')).toBeNull()
+    expect(field.value()).toBe('')
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(String(warn.mock.calls[0]?.[0])).toContain('detail-state-test')
+    expect(String(warn.mock.calls[0]?.[0])).toContain('zzz')
+    warn.mockRestore()
+  })
+
+  test('a field naming an unloaded id waits for the query, then clears', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+    const field = urlField('zzz')
+    const { rerender } = render(<Bound field={field} phase="loading" />)
+    expect(field.value()).toBe('zzz')
+    expect(warn).not.toHaveBeenCalled()
+    rerender(<Bound field={field} />)
+    expect(field.value()).toBe('')
+    warn.mockRestore()
   })
 
   test('activating a row writes its id, closing the sheet clears the field', async () => {
@@ -461,5 +512,77 @@ describe('detail bound to a field', () => {
     render(<Bound field={field} />)
     act(() => field.set('c'))
     expect(screen.getByRole('dialog').textContent).toContain('Project 1 body')
+  })
+
+  const filtered = (q: string): object => ({
+    state: {
+      use: () =>
+        [
+          {
+            v: 1,
+            request: { q, filters: [], sort: [], page: 1, pageSize: 1 },
+            display: { visibility: {} },
+          },
+          () => undefined,
+        ] as never,
+    },
+    pager: 'pages',
+  })
+
+  test('a row on another page of a client table still opens its detail', () => {
+    render(<Bound field={urlField('c')} extra={filtered('')} />)
+    expect(names()).toEqual(['Project 10'])
+    expect(screen.getByRole('dialog').textContent).toContain('Project 1 body')
+  })
+
+  test('a row the client filter excludes opens detailById, else clears', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+    render(
+      <Bound
+        field={urlField('c')}
+        byId={(id) => <span>fetched {id}</span>}
+        extra={filtered('Project 2')}
+      />,
+    )
+    expect(screen.getByRole('dialog').textContent).toContain('fetched c')
+    cleanup()
+    const field = urlField('c')
+    render(<Bound field={field} extra={filtered('Project 2')} />)
+    expect(field.value()).toBe('')
+    warn.mockRestore()
+  })
+
+  describe('detailById', () => {
+    const byId = (id: string): ReactElement => <span>fetched {id}</span>
+
+    test('opens a record no loaded row has, once the query settled', () => {
+      const field = urlField('zzz')
+      const { rerender } = render(<Bound field={field} byId={byId} phase="loading" />)
+      expect(screen.queryByRole('dialog')).toBeNull()
+      rerender(<Bound field={field} byId={byId} />)
+      const dialog = screen.getByRole('dialog', { name: 'Rows' })
+      expect(dialog.textContent).toContain('fetched zzz')
+      expect(field.value()).toBe('zzz')
+    })
+
+    test('closing it clears the field', async () => {
+      const field = urlField('zzz')
+      render(<Bound field={field} byId={byId} />)
+      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+      expect(field.value()).toBe('')
+      await waitFor(() => expect(closed()).toBe(true))
+    })
+
+    test('a loaded row still opens through detail, from the field and on click', () => {
+      const field = urlField('b')
+      render(<Bound field={field} byId={byId} />)
+      expect(screen.getByRole('dialog').textContent).toContain('Project 2 body')
+      act(() => field.set('zzz'))
+      expect(screen.getByRole('dialog').textContent).toContain('fetched zzz')
+      act(() => field.set(''))
+      fireEvent.click(document.querySelectorAll('tbody tr')[2] as HTMLElement)
+      expect(field.value()).toBe('c')
+      expect(screen.getByRole('dialog').textContent).toContain('Project 1 body')
+    })
   })
 })
