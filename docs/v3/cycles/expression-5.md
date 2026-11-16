@@ -8,7 +8,7 @@ The P1 is a page that throws on the first arrow key. n18's `announce` callback r
 
 Repair rounds passed two more cases in round 1, n03 at 81 and n18 at 82, and two in round 2, n07 at 86 and n17 at 80. Only n10 did not pass: it ended at 74, held back by line charts that cannot dim. The last-round median is 81.5, and 83 on the F and K items, the first above 80 in any cycle.
 
-What is left is mostly `skill`, 62 of 103 points. Two defects are in the shipped text itself: the linked-parts snippet puts `@container` on the grid it queries, and nothing names the muted text class. The kit cost 37 points. Ten of them are the P1. Most of the rest is label placement that cannot see zone labels, rule labels or bars, and line charts that do not dim on focus.
+What is left is mostly `skill`, 62 of 103 points. Two defects are in the shipped text itself: the linked-parts snippet puts `@container` on the grid it queries, and nothing names the muted text class. The kit cost 37 points. Twelve of them are the P1. Most of the rest is label placement that cannot see zone labels, rule labels or bars, and line charts that do not dim on focus.
 
 ## Pin
 
@@ -111,13 +111,13 @@ The first-try median rose for the first time since cycle 1: by 9.5 on the F and 
 
 - **Round 0, 75.** Dark hours per night coloured by verdict, beside a list that shares the focus both ways, and a hero "Wed 18 Nov, 4.4 h dark". "Best" straddled its bar's top, the ticks repeated "Tue" and "Wed", and the loading footer showed real numbers. Shots `r0/scenarios-expr-n07*`.
 - **Round 1, 77.** A delta pill against the longest ruled-out night, day-number ticks, and the costliest reason on its bar. The tooltip covered neighbouring bars, and the list dots still differed from the bars.
-- **Round 2, 86, passed.** A one-word reason on every ruled-out bar, the tooltip off, a pill against the longest other night, and verdict greys that sit apart in both schemes. At 390 the placer still drops some reasons.**
+- **Round 2, 86, passed.** A one-word reason on every ruled-out bar, the tooltip off, a pill against the longest other night, and verdict greys that sit apart in both schemes. At 390 the placer still drops some reasons.
 
 ### n10: do the wind models agree (native)
 
 - **Round 0, 56.** Four model lines with an ensemble band, a "Models part" zone and a hero "Part from Wed 13:00, up to 19.4 kt apart", beside a per-model table. The 4 kt rule that defines "part" was never drawn. At 390 the zone label and the placed label overprinted. Nothing dimmed, the table did not drive the chart, and loading dropped the table. Shots `r0/scenarios-expr-n10*`.
 - **Round 1, 74.** A bracket between the fastest and slowest model, direct labels, an announcement naming all four values, loading that keeps the table, and dots on every line at the focused hour. Still nothing dims, and the table only overdraws a line.
-- **Round 2, 74 (76 on F and K).** A table row now veils the other lines with card-coloured overlays, the bracket carries "19.4 kt", and the 4 kt gap is a signed footer fact. Hour focus still dims nothing, the 4 kt rule is still not drawn, and at 390 the focus readout moves the chart 20 px. The builder left the dim as kit-owned.**
+- **Round 2, 74 (76 on F and K).** A table row now veils the other lines with card-coloured overlays, the bracket carries "19.4 kt", and the 4 kt gap is a signed footer fact. Hour focus still dims nothing, the 4 kt rule is still not drawn, and at 390 the focus readout moves the chart 20 px. The builder left the dim as kit-owned.
 
 ### n14: are we getting wealthier (native)
 
@@ -127,7 +127,7 @@ The first-try median rose for the first time since cycle 1: by 9.5 on the F and 
 
 - **Round 0, 70.** A pressure line against an 80 % limit rule with swap on a right axis, a hero "62 %" with "-18 pts to limit", and a class list. The class bars said "of 64 GB" but scaled to the classes' sum. Empty read "0 %" and a green pill. Nothing dimmed. Shots `r0/scenarios-expr-n17*`.
 - **Round 1, 70.** Shares of 64 GB, a dashed empty state, the top class marked, and the spike labelled. The swap line went unnamed, and labels dropped at 390.
-- **Round 2, 80, passed.** The swap line and right axis gone, the kit's own limit label, shares of 64 GB with a "Free" row, and capacities in the footer. The line still does not dim on focus.**
+- **Round 2, 80, passed.** The swap line and right axis gone, the kit's own limit label, shares of 64 GB with a "Free" row, and capacities in the footer. The line still does not dim on focus.
 
 ### n18: what queued Issues waited for (native)
 
@@ -263,9 +263,9 @@ What the classes hold:
 - **`skill`.** Builders skipped devices the shipped text names. The threshold that defines the answer was left undrawn (n10's 4 kt). A figure was computed from no rows (n17's empty "0 %"). A part was dropped in loading (n10's table). One fact was stated three or four times, and two cards stood where one would do. The repair rounds show the text gets there once it is pointed at: n18 moved from 52 to 82 and n03 from 78 to 81 on reviewer findings alone. Two defects are in the shipped text itself:
   - `references/linked-parts.md:22` puts `@container` and `@wide:grid-cols-2` on one element, so the two columns never form. n18 found it and wrapped the grid.
   - No shipped text names `text-muted-foreground`. n07 and n18 wrote `text-muted`, which paints the card colour.
-- **`primitive`.** Ten points are the P1, n18's crash, which a keyboard frame or a lint rule would have caught (`v3-expr-5-keys`). The rest fix inside components, with no export and no contract change (`v3-expr-5-kit-fixes`):
-  - label placement that does not see zone labels, rule labels, line paths or bars: 13 points in five builds, two P2s;
-  - lines that do not dim on focus: 8 points in two builds, three P2s;
+- **`primitive`.** Twelve points are the P1, n18's crash, which a keyboard frame or a lint rule would have caught (`v3-expr-5-keys`). The rest fix inside components, with no export and no contract change (`v3-expr-5-kit-fixes`):
+  - label placement that does not see zone labels, rule labels, line paths or bars: 13 points in five builds, three P2s;
+  - lines that do not dim on focus: 7 points in two builds, three P2s;
   - an all-zero axis that invents a 0 to 1 domain;
   - a loading footer that prints real facts;
   - an error title that names nothing;
