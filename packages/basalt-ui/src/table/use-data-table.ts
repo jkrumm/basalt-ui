@@ -102,7 +102,7 @@ export type TableModel<T> = {
    */
   closeDetail(hostClosed?: boolean): void
   /** The row whose detail is open (`detail`) or that the page named (`activeRowId`); the body marks it. */
-  activeId: string | null | undefined
+  activeId: string | undefined
   /**
    * Whether each row carries the `table-expand` door: `onRowActivate` takes the tap, and a tier can
    * hide a column (priority 3, or a card `detail`), so the derived sheet needs its own way in.
@@ -128,9 +128,13 @@ export function modelOf<T>(instance: DataTableInstance<T>): TableModel<T> {
 
 const MINUTE = 60_000
 
-/** Stands in for an absent `detailState`, so `use()` is called on every render either way. */
+/**
+ * Stands in for an absent `detailState`, so `use()` is called on every render either way; the table
+ * then remembers the row it opened in component state.
+ */
 const NO_DETAIL_STATE = {
-  use: (): [string, (id: string) => void] => ['', () => undefined],
+  // oxlint-disable-next-line react/hook-use-state -- hands back the pair as the field handle's `use` does
+  use: (): [string, (id: string) => void] => useState(''),
 }
 
 function filterFnOf(spec: KindSpec<never>) {
@@ -314,18 +318,14 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
   const detailState = options.detailState
   const [openId, setOpenId] = (detailState ?? NO_DETAIL_STATE).use()
   const shownFor = useRef<string | null>(null)
-  // Without a field, the table remembers the row it opened until its own sheet closes.
-  const [openedId, setOpenedId] = useState<string | null>(null)
   const activate = (id: string): void => {
     const row = byId.get(id)
     if (row === undefined) return
     if (activation.kind === 'row') activation.run(row)
     else if (activation.kind === 'auto') showAuto(id)
     else if (activation.kind === 'detail') {
-      if (detailState !== undefined) {
-        shownFor.current = id
-        setOpenId(id)
-      } else setOpenedId(id)
+      if (detailState !== undefined) shownFor.current = id
+      setOpenId(id)
       showDetail(row)
     }
   }
@@ -413,7 +413,7 @@ export function useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T> 
       // the field clears cannot reopen the sheet the user just closed. A host that closed on its
       // own leaves the field alone. Guarded: that call comes on every render of the body.
       if (!hostClosed) detailState?.clear()
-      if (openedId !== null) setOpenedId(null)
+      if (detailState === undefined && openId) setOpenId('')
     },
     activeId:
       activation.kind === 'detail'
