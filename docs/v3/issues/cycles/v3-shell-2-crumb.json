@@ -1,0 +1,21 @@
+{
+  "why": "Shell cycle 2 (docs/v3/cycles/shell-2.md, P1 shell-2.1): a selection's crumb parent, the documented way up from a SplitPage selection (`<PageBar parent={{ label, href }} />`, app-shell.md), has no working form. The shell draws the bar's `PageCrumb` element as is (`src/shell/app-shell.tsx:185-195`). `PageCrumb` (`src/page/page-bar.tsx:40-47`) renders a string `href` as a bare `<a>`, so a click reloads the whole document under an installed `BasaltProvider link` and drops the page's other search params. It renders a `NavTarget`, which `src/page/contract.ts:77` types, as a `<span>` with no link (`.evidence/cycle-shell-2/parent.log`, `parent-navtarget.log`). Its JSDoc says the shell draws the crumb with its own link adapter; nothing does. P3 shell-2.6 rides along: app-shell.md says a phone shows no ancestors, but the phone header shows the page's parent beside the SplitPage back link.",
+  "what": "A crumb parent is an in-app link in both forms, and the phone crumb rule is one rule in docs and code.",
+  "owns": [
+    "packages/basalt-ui/src/page/page-bar.tsx and its tests",
+    "packages/basalt-ui/src/shell/app-shell.tsx (the crumb trail only)",
+    "packages/basalt-ui/docs/app-shell.md, packages/basalt-ui/docs/page-bar.md",
+    "packages/basalt-ui/tests/layout/** (one crumb test)"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "`PageCrumb` renders the parent through `AppLink` (the provider's link) for a string and a `NavTarget` alike, as the bar's own trail already does (`page-bar.tsx:338`); its JSDoc says what it does. `app-shell.md` shows the `NavTarget` form that keeps the page's params and clears the selection: `navTarget({ to, ...field.link('') })`. Check that form clears the field before documenting it. For shell-2.6, pick one rule: hide the page's parent at `compact`, where the SplitPage back link is the way back, or document that a phone keeps the parent and drops the section. Make app-shell.md and app-shell.tsx agree.",
+  "commits": "fix: commits in packages/basalt-ui, granular (crumb link, phone rule).",
+  "proof": "make check; a layout test clicks a crumb parent and finds the document kept and the other search params in the URL; a test renders a NavTarget parent as a link.",
+  "acceptance": [
+    "A string and a NavTarget crumb parent both render as links through the provider's link; a click keeps the document (layout test)",
+    "The documented NavTarget form keeps the page's other params and clears the selection (test)",
+    "app-shell.md and the compact crumb agree on whether a phone shows the page's parent",
+    "make check passes"
+  ],
+  "out_of_scope": "Focus after a SplitPage swap and the other shell P3s (v3-shell-2-shell)."
+}
