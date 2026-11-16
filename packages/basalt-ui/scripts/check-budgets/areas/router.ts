@@ -16,13 +16,21 @@ export const rows: readonly RowDef[] = [
     // instead of a hand-rolled click, preload and href path.
     // 12045 B measured at the G2 freeze, re-seeded plus 5 percent.
     // 13000 -> 13500 (v3-wiring-1-wiring): `BasaltProvider` joins the barrel (13113 B measured with it).
-    ceiling: 13500,
+    // 13500 -> 14000 (v3-shell-1-shell): a page store taking a global's param raises at mount, naming the fix (+143 B: the per-store message and the first-claimant rule in `ownership.ts`).
+    ceiling: 14000,
     measure: () => measureSource(reExportAll({ router: 'router/index' })),
   },
 ]
 
 export const raises: Raises = {
   'router-subpath': [
+    {
+      from: 13500,
+      to: 14000,
+      consumer:
+        "a page store whose field shares a global store's param: the playground `/overview` defined one at import and blanked every route (shell-1.17); the collision now raises when that page mounts, with the fix named",
+      repo: 'basalt-ui',
+    },
     {
       from: 13000,
       to: 13500,
