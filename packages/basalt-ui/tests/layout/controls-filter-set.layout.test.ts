@@ -221,7 +221,7 @@ layout('FilterSet', () => {
         expect(counts).toEqual(['Filters (3)', 'Filters (3)', 'Filters (3)', 'Filters (3)'])
       })
 
-      test('a pill prints the value at its default and the filter names it', async () => {
+      test('a pill prints the value at its default, and the filter name once it narrows', async () => {
         const page = await open(viewport)
         const pills = await page.raw.evaluate(() =>
           [
@@ -232,11 +232,11 @@ layout('FilterSet', () => {
         )
         expect(pills).toEqual([
           [
-            'Staging deployment with preview data',
+            'Environment of the deployment: Staging deployment with preview data',
             'Environment of the deployment: Staging deployment with preview data',
           ],
-          ['2 selected', 'Operating regions worldwide: 2 selected'],
-          ['latency regression', 'Search the full text: latency regression'],
+          ['Operating regions worldwide: 2 selected', 'Operating regions worldwide: 2 selected'],
+          ['Search the full text: latency regression', 'Search the full text: latency regression'],
           ['Free', 'Subscription tier: Free'],
           ['20', 'Maximum rows per page: 20'],
           ['Live updates: On', 'Live updates: On'],
@@ -265,7 +265,11 @@ layout('FilterSet', () => {
           })
           expect(inside).toEqual({ pills: 0, rows: 8, reset: false })
         } else {
-          await page.raw.click(`${frame} button[aria-label="Subscription tier: Free"]`)
+          // The longer active pills (`Environment: Staging ...`) can fold the tier pill into `+n`.
+          const tier = `${frame} button[aria-label="Subscription tier: Free"]`
+          await page.raw.click(
+            (await page.raw.isVisible(tier)) ? tier : `${frame} [data-fold-trigger]`,
+          )
           await page.raw.waitForSelector('[data-slot="popover-content"] [data-slot="control-view"]')
           const inside = await page.raw.evaluate(() => {
             const popup = document.querySelector('[data-slot="popover-content"]')!
@@ -273,14 +277,13 @@ layout('FilterSet', () => {
               pills: popup.querySelectorAll(
                 '[data-presentation="pill"], [data-slot="filter-set-pill"]',
               ).length,
-              rows: popup.querySelectorAll('[data-slot="control-view"][data-presentation="row"]')
-                .length,
+              hasTier: popup.querySelector('[aria-label="Subscription tier"]') !== null,
             }
           })
-          expect(inside).toEqual({ pills: 0, rows: 1 })
+          expect(inside).toEqual({ pills: 0, hasTier: true })
         }
         await page.raw.click(
-          '[data-slot="sheet-content"] [data-slot="select-trigger"][aria-label="Subscription tier"], [data-slot="popover-content"] [data-slot="select-trigger"]',
+          '[data-slot="sheet-content"] [data-slot="select-trigger"][aria-label="Subscription tier"], [data-slot="popover-content"] [data-slot="select-trigger"][aria-label="Subscription tier"]',
         )
         await page.raw.waitForSelector('[data-slot="select-item"]')
         const items = await page.raw.evaluate(() =>
