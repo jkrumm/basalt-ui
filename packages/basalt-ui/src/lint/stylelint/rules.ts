@@ -46,46 +46,121 @@ export const DECORATION_PROPERTIES =
   '/^(?:background(?:-[a-z]+)*|border(?:-[a-z]+)*|outline(?:-[a-z]+)*|box-shadow)$/'
 // `overlay` is the deprecated alias of `auto`; `hidden`, `clip` and `visible` do not scroll.
 export const TEXT_COLOUR_PROPERTIES = '/^color$/'
-export const WIDTH_PROPERTIES = '/^(?:min-)?width$/'
+// A width, and a flex basis (`flex-basis`, the basis of the `flex` shorthand: its grow and shrink
+// are unitless, so a length in it is the basis).
+export const WIDTH_PROPERTIES = '/^(?:(?:min-)?width|flex(?:-basis)?)$/'
 export const TRACK_PROPERTIES = '/^grid-template-(?:columns|rows)$/'
 export const SCROLL_PROPERTIES = '/^overflow(?:-x|-y|-block|-inline)?$/'
 export const SCROLL_VALUES = '/\\b(?:auto|scroll|overlay)\\b/i'
 
-/**
- * `%s` takes the property, then the value. A rule carries one `message`, and the config is JSON, so a
- * function of the property cannot ship: the message names the fix per property group instead, each
- * clause led by the properties it answers, and a variant without the scroll clause where the ban is off.
- */
-const MESSAGE_BASE =
-  'Disallowed `%s: %s`. By property: padding, margin, gap, inset (top, right, bottom, left) and font size take a --vx token (or 0, auto, %), never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status or chart colour; color-mix runs over --vx tokens or transparent only; color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill); grid-template-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length'
-const MESSAGE_SCROLL = `${MESSAGE_BASE}; width and min-width above 384px are parent-owned (size the container, not the child); overflow auto|scroll is ui/scroll-area, or let Page own the scroll.`
-const MESSAGE_NO_SCROLL = `${MESSAGE_BASE}.`
+/** One property group of the value list: the properties, the values banned on them, the fix. */
+type ValueGroup = { properties: string; values: string[]; clause: string; scrollOnly?: true }
 
 /**
- * The value-disallowed list. `scroll` adds the bans that hold from `parts` up, as their class rules
- * do: the scroll container (raw-scroll; `ui/scroll-area` ships there) and the fixed width
- * (`tw-off-law` `fixed-width`, a parts-only form). A `tokens` or `bridge` file omits both.
+ * The groups in message order. `scrollOnly` marks the bans that hold from `parts` up, as their
+ * class rules do: the scroll container (raw-scroll; `ui/scroll-area` ships there) and the fixed
+ * width (`tw-off-law` `fixed-width`, a parts-only form).
+ */
+const VALUE_GROUPS: readonly ValueGroup[] = [
+  {
+    // raw lengths and calc() on spacing and the type size (D0: tokens, 0, auto, %)
+    properties: SPACING_PROPERTIES,
+    values: [`/${RAW_LENGTH}/i`, '/\\bcalc\\(/i'],
+    clause:
+      'padding, margin, gap and inset (top, right, bottom, left) take a --vx-rhythm-* token (--vx-rhythm-1 to -3), 0, auto or %, and font size a --vx-text-* token, never a raw length or calc()',
+  },
+  {
+    properties: DECORATION_PROPERTIES,
+    values: [`/${DECORATIVE_ROLE}/i`],
+    clause:
+      'background, border, outline and shadow take the colour role of their surface, never a status or chart colour',
+  },
+  {
+    // colour mixing is only legal over tokens or transparent
+    properties: '/.*/',
+    values: [`/color-mix\\((?!${CLEAN_MIX_BODY})/i`],
+    clause: 'color-mix runs over --vx tokens or transparent only',
+  },
+  {
+    // a fill-only role as text and a fixed track length (the class rules' twins, every profile)
+    properties: TEXT_COLOUR_PROPERTIES,
+    values: [`/${FILL_ONLY_ROLE}/i`],
+    clause:
+      'color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill)',
+  },
+  {
+    properties: TRACK_PROPERTIES,
+    values: [`/${RAW_LENGTH}/i`],
+    clause:
+      'grid-template-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length',
+  },
+  {
+    properties: WIDTH_PROPERTIES,
+    values: [`/${FIXED_WIDTH}/i`],
+    clause:
+      'width, min-width and a flex basis above 384px are parent-owned (size the container, not the child)',
+    scrollOnly: true,
+  },
+  {
+    properties: SCROLL_PROPERTIES,
+    values: [SCROLL_VALUES],
+    clause: 'overflow auto|scroll is ui/scroll-area, or let Page own the scroll',
+    scrollOnly: true,
+  },
+]
+
+const groupsFor = (scroll: boolean): readonly ValueGroup[] =>
+  VALUE_GROUPS.filter((group) => scroll || group.scrollOnly !== true)
+
+/**
+ * `%s` takes the property, then the value. The rendered config is JSON, so the message cannot be a
+ * function of the property: it carries every clause, each led by the properties it answers, and
+ * `basalt-ui lint` narrows a report to its own clause (`valueListMessage`).
+ */
+const fullMessage = (scroll: boolean): string =>
+  `Disallowed \`%s: %s\`. By property: ${groupsFor(scroll)
+    .map((group) => group.clause)
+    .join('; ')}.`
+
+/**
+ * The value-disallowed list. `scroll` adds the bans that hold from `parts` up; a `tokens` or
+ * `bridge` file omits both.
  */
 export function disallowedValueList(
   scroll: boolean,
 ): readonly [Record<string, string[]>, { message: string }] {
   return [
-    {
-      // colour mixing is only legal over tokens or transparent
-      '/.*/': [`/color-mix\\((?!${CLEAN_MIX_BODY})/i`],
-      // raw lengths and calc() on spacing and the type size (D0: tokens, 0, auto, %)
-      [SPACING_PROPERTIES]: [`/${RAW_LENGTH}/i`, '/\\bcalc\\(/i'],
-      // colour as decoration
-      [DECORATION_PROPERTIES]: [`/${DECORATIVE_ROLE}/i`],
-      // a fill-only role as text and a fixed track length (the class rules' twins, every profile)
-      [TEXT_COLOUR_PROPERTIES]: [`/${FILL_ONLY_ROLE}/i`],
-      [TRACK_PROPERTIES]: [`/${RAW_LENGTH}/i`],
-      ...(scroll
-        ? { [WIDTH_PROPERTIES]: [`/${FIXED_WIDTH}/i`], [SCROLL_PROPERTIES]: [SCROLL_VALUES] }
-        : {}),
-    },
-    { message: scroll ? MESSAGE_SCROLL : MESSAGE_NO_SCROLL },
+    Object.fromEntries(groupsFor(scroll).map((group) => [group.properties, group.values])),
+    { message: fullMessage(scroll) },
   ]
+}
+
+/** A stylelint `"/source/flags"` string as a RegExp. */
+const regexOf = (text: string): RegExp => {
+  const match = /^\/(.*)\/([a-z]*)$/s.exec(text)
+  return match ? new RegExp(match[1] as string, match[2]) : new RegExp(text)
+}
+
+const REPORTED = /^Disallowed `([^:`]+): ([^`]*)`\./
+
+/**
+ * The value list's report narrowed to the clause of the reported property: the groups whose
+ * properties and banned values both match it, so `overflow: auto` reads only the scroll clause and
+ * `padding: 13px` only the spacing one. Any other text (another rule, an unparsed report) is
+ * returned as it is.
+ */
+export function valueListMessage(text: string): string {
+  const match = REPORTED.exec(text)
+  if (!match) return text
+  const [head, property = '', value = ''] = match
+  const clauses = VALUE_GROUPS.filter(
+    (group) =>
+      regexOf(group.properties).test(property) &&
+      group.values.some((pattern) => regexOf(pattern).test(value)),
+  ).map((group) => group.clause)
+  if (clauses.length === 0) return text
+  const body = clauses.join('; ')
+  return `${head} ${body.charAt(0).toUpperCase()}${body.slice(1)}.`
 }
 
 /** The ten rules, keyed by stylelint rule name. Order is the order of the section 4.2 table. */
@@ -153,11 +228,11 @@ export const STYLELINT_RULES = {
     },
   ],
   'at-rule-disallowed-list': [
-    ['utility', 'theme', 'custom-variant', 'variant', 'plugin', 'apply'],
+    ['utility', 'theme', 'custom-variant', 'variant', 'plugin', 'apply', 'config'],
     {
       // `%s` is the at-rule with its `@` already (stylelint passes `@utility`)
       message:
-        '`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin or a class list the class rules check. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--vx-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet.',
+        '`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--vx-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet.',
     },
   ],
 } as const

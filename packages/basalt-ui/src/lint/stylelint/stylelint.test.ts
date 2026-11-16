@@ -14,7 +14,7 @@ import stylelint from 'stylelint'
 import { SHIPPED_CONFIG } from './gen'
 import preset from './index'
 import { renderStylelintConfig, stylelintConfig } from './render'
-import { FIXED_WIDTH } from './rules'
+import { FIXED_WIDTH, valueListMessage } from './rules'
 import { createPlugin } from '../factory'
 import { CLASS_RULES } from '../rules/class/table'
 
@@ -98,6 +98,8 @@ const OFFENDERS: [file: string, rule: string][] = [
   ['color-chart-fill.css', 'declaration-property-value-disallowed-list'],
   ['fixed-width.css', 'declaration-property-value-disallowed-list'],
   ['fixed-min-width.css', 'declaration-property-value-disallowed-list'],
+  ['flex-basis.css', 'declaration-property-value-disallowed-list'],
+  ['flex-shorthand.css', 'declaration-property-value-disallowed-list'],
   ['grid-track-length.css', 'declaration-property-value-disallowed-list'],
   ['data-slot.css', 'selector-disallowed-list'],
   ['mantine-class.css', 'selector-disallowed-list'],
@@ -109,6 +111,7 @@ const OFFENDERS: [file: string, rule: string][] = [
   ['apply.css', 'at-rule-disallowed-list'],
   ['variant-dark.css', 'at-rule-disallowed-list'],
   ['plugin.css', 'at-rule-disallowed-list'],
+  ['config.css', 'at-rule-disallowed-list'],
   ['needless-disable.css', '--report-needless-disables'],
   ['reasonless-disable.css', '--report-descriptionless-disables'],
 ]
@@ -232,6 +235,8 @@ describe('messages', () => {
       'color-chart-fill.css',
       'fixed-width.css',
       'fixed-min-width.css',
+      'flex-basis.css',
+      'flex-shorthand.css',
       'grid-track-length.css',
     ]) {
       const found = (await lint(`offenders/${file}`)).get(`offenders/${file}`) ?? []
@@ -254,6 +259,32 @@ describe('messages', () => {
     ]) {
       expect(options.message).toContain(part)
     }
+  })
+
+  it('a report names only the clause of its own property, and spacing names --vx-rhythm-*', async () => {
+    const text = async (file: string): Promise<string> => {
+      const [finding] = (await lint(`offenders/${file}`)).get(`offenders/${file}`) ?? []
+      return valueListMessage(finding?.text.replace(/\s*\([\w-]+\)$/, '') ?? '')
+    }
+    const scroll = await text('overflow-scroll.css')
+    expect(scroll).toMatch(
+      /^Disallowed `overflow-?[a-z]*: [^`]+`\. Overflow auto\|scroll is ui\/scroll-area/,
+    )
+    expect(scroll).not.toContain('padding')
+    const spacing = await text('rem-padding.css')
+    expect(spacing).toMatch(/^Disallowed `padding[a-z-]*: [^`]+`\. Padding, margin, gap/)
+    expect(spacing).toContain('--vx-rhythm-*')
+    expect(spacing).not.toContain('ui/scroll-area')
+    const basis = await text('flex-shorthand.css')
+    expect(basis).toBe(
+      'Disallowed `flex: 0 0 420px`. Width, min-width and a flex basis above 384px are parent-owned (size the container, not the child).',
+    )
+  })
+
+  it('leaves another rule and an unparsed report as it is', () => {
+    expect(valueListMessage('Never force a style with `!important`.')).toBe(
+      'Never force a style with `!important`.',
+    )
   })
 })
 
