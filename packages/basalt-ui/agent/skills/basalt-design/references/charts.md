@@ -1,12 +1,12 @@
 # Charts
 
-How a chart earns its place and its marks. Props are in the generated docs: [CartesianChart](docs/cartesian-chart.md), [ChartCard](docs/chart-card.md); the law is `basalt-charts.md`.
+How a chart earns its place and its marks. Props are in the generated docs: [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md), [ChartCard](node_modules/basalt-ui/docs/chart-card.md); the law is `basalt-charts.md`.
 
 ## Pick the form
 
-- Start from the question's row in the AGENTS block table; a chart is the answer only when the reader compares or follows a shape. One value, fewer than four points or a ratio against a limit is a [StatCard](docs/stat-card.md) or a [Meter](docs/meter.md).
-- A ranked list or a split of a total is a [BarList](docs/bar-list.md): one shared scale, the value printed, the legend left out.
-- More than about seven classes to tell apart is a [DataTable](docs/data-table.md).
+- Start from the question's row in the AGENTS block table; a chart is the answer only when the reader compares or follows a shape. One value, fewer than four points or a ratio against a limit is a [StatCard](node_modules/basalt-ui/docs/stat-card.md) or a [Meter](node_modules/basalt-ui/docs/meter.md).
+- A ranked list or a split of a total is a [BarList](node_modules/basalt-ui/docs/bar-list.md): one shared scale, the value printed, the legend left out.
+- More than about seven classes to tell apart is a [DataTable](node_modules/basalt-ui/docs/data-table.md).
 
 ## Colour budget
 
@@ -18,28 +18,28 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 ## A headline value has a baseline
 
-- Give every headline figure a baseline: a zero line, a reference line, a zone, or a signed delta that names its period. `refLines` and `zones` are data on [CartesianChart](docs/cartesian-chart.md). [type:ChartRefLine] [type:ChartZone]
+- Give every headline figure a baseline: a zero line, a reference line, a zone, or a signed delta that names its period. `refLines` and `zones` are data on [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md). [type:ChartRefLine] [type:ChartZone]
 - Against a limit, draw the limit and print the distance to it; "steady at 1.6x" without the 3x line is a claim without a scale. A limit that exists only as a colour rule becomes geometry or a signed distance.
 
 ## Label and annotate the mark that matters
 
-- Label marks directly with `text` marks placed by [chartLabels](docs/chart-labels.md): it measures, avoids overlaps and drops what is too wide. The worked example is region `example:chartLabels` in `apps/playground/src/recipes/seam-examples.tsx`.
-- Annotate the one mark the page is about (the best run, the onset, the live stage) and let the rest recede. [useChartFocus](docs/use-chart-focus.md) holds one focused datum for the marks, the card fact and the live region; region `example:useChartFocus` in the same file.
+- Label marks directly with `text` marks placed by [chartLabels](node_modules/basalt-ui/docs/chart-labels.md): it measures, avoids overlaps and drops what is too wide. The worked example is region `example:chartLabels` in `apps/playground/src/recipes/seam-examples.tsx`.
+- Annotate the one mark the page is about (the best run, the onset, the live stage) and let the rest recede. [useChartFocus](node_modules/basalt-ui/docs/use-chart-focus.md) holds one focused datum for the marks, the card fact and the live region; region `example:useChartFocus` in the same file.
 - The hero states the answer with its verb ("Runs out 13:52", where "13:52" alone answers nothing) and at most one phrase of baseline; the one mark the page is about carries the annotation at rest, so the sentences around it say something else ([copy](copy.md)). A list keeps the answer above its cut.
-- When the answer needs a word on one mark (the slowest, the spike, last night), compose [CartesianChart](docs/cartesian-chart.md) with a `text` mark placed by `chartLabels`: a kind such as `Bars` takes only its own marks. Engine `text` marks from `@tanstack/charts/text` are allowed in custom marks. On focus the figure's readout carries what the mark means (its share, its model, its stage) and returns to the answer on leave (c11, c12, c13, n02, n12: the answer was a sentence, or the readout a bare total).
+- When the answer needs a word on one mark (the slowest, the spike, last night), compose [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md) with a `text` mark placed by `chartLabels`: a kind such as `Bars` takes only its own marks. Engine `text` marks from `@tanstack/charts/text` are allowed in custom marks. On focus the figure's readout carries what the mark means (its share, its model, its stage) and returns to the answer on leave (c11, c12, c13, n02, n12: the answer was a sentence, or the readout a bare total).
 - Custom marks read `plot.rows(key)` and `plot.visible`, so a legend toggle hides the mark. [type:ChartPlot]
 
 ## Anatomy of a chart card
 
 - The headline figure, its unit, delta, period and status live in the card's `figure`; a card action lives in the card's own menu or controls, not in the page bar. [type:ChartCardProps]
-- The status is a dot and its word ([Status](docs/status.md)), in the figure. [lint:status-fill-as-text]
+- The status is a dot and its word ([Status](node_modules/basalt-ui/docs/status.md)), in the figure. [lint:status-fill-as-text]
 - The footer holds at most two facts. [type:FootFacts]
 - Region `chart-card` in `apps/playground/src/routes/overview.tsx` is the composed card; regions `weight-chart`, `domain-chart`, `shared-x` and `plot-marks` in `apps/playground/src/routes/charts.tsx` are the chart bodies.
 
 ## Linked parts
 
 - Where a chart and a list, a table or a timeline show the same items, they share one focus: pointing at or stepping to an item in either focuses it in the other, both ways, and the rest dims in both.
-- One [useChartFocus](docs/use-chart-focus.md) is passed to the chart host as `focus` and spread on each row of the list through `focus.item(i)`; the list sits in its own [ScrollArea](docs/scroll-area.md) at the chart's height, and the keyboard step scrolls the focused row into view. The wiring is the snippet in the basalt-charts skill.
+- One [useChartFocus](node_modules/basalt-ui/docs/use-chart-focus.md) is passed to the chart host as `focus` and spread on each row of the list through `focus.item(i)`; the list sits in its own [ScrollArea](node_modules/basalt-ui/docs/scroll-area.md) at the chart's height, and the keyboard step scrolls the focused row into view. The wiring is the snippet in the basalt-charts skill.
 - A list of groups (versions, releases) beside samples of those groups spreads `focus.groupItem(name)` on each row instead; the recipe is `seam-linked` in `docs/recipes/`.
 - The kit owns the dim and the clear: the page takes the kit's dim for a seam-drawn mark, and rows that take focus sit under a container whose pointer leave clears (`focus.target`), so the gap between two rows keeps the last focus.
 
@@ -68,10 +68,10 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 ## One tab stop, one answer at 390
 
-- One visualization is one tab stop: focus moves between datums with the arrows through [useChartFocus](docs/use-chart-focus.md), instead of a second grid of focusable cells.
+- One visualization is one tab stop: focus moves between datums with the arrows through [useChartFocus](node_modules/basalt-ui/docs/use-chart-focus.md), instead of a second grid of focusable cells.
 - Keep the column that carries the answer at 390 wide and put the answer above the fold; a column that drops is one the answer can spare.
 
 not guarded:
 
-- Draw no `data ?? []` fallback and no second cursor; charts share one by default and isolate through a cursor group ([chartCursor](docs/chart-cursor.md)).
+- Draw no `data ?? []` fallback and no second cursor; charts share one by default and isolate through a cursor group ([chartCursor](node_modules/basalt-ui/docs/chart-cursor.md)).
 - A tooltip repeats what the surface already says; every value is reachable without hover.

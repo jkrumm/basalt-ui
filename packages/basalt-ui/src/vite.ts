@@ -99,7 +99,7 @@ function warnIfUnenforced(cwd: string): void {
   console.warn(
     '\n[basalt-ui] Installed, but `basalt-ui init` has never run here — no oxlint preset, no theme\n' +
       '            guard, no agent rules. You have the components and none of the enforcement.\n' +
-      '            Fix: `bunx basalt-ui init`, then add `oxlint . && basalt-ui check-theme` as your\n' +
+      '            Fix: `./node_modules/.bin/basalt-ui init`, then add `oxlint . && basalt-ui check-theme` as your\n' +
       '            lint script. Silence: pass `enforcementNotice: false` to basaltViteConfig().\n',
   )
 }

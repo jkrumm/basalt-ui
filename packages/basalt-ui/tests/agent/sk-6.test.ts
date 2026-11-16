@@ -38,6 +38,16 @@ describe('sk-6 thin basalt-design skill', () => {
     for (const name of links) expect(existsSync(join(pkgRoot, 'docs', name))).toBe(true)
   })
 
+  test('no reference links a bare docs/<name>.md; each doc link is the installed path and resolves', () => {
+    for (const f of files(dir).filter((p) => p.endsWith('.md'))) {
+      const text = readFileSync(f, 'utf8')
+      expect(text).not.toMatch(/\]\(docs\//)
+      for (const m of text.matchAll(/\]\(node_modules\/basalt-ui\/docs\/([\w-]+\.md)\)/g)) {
+        expect(existsSync(join(pkgRoot, 'docs', m[1] as string))).toBe(true)
+      }
+    }
+  })
+
   test('the 2.x references stay folded away; sk-7 owns the kept set beside anti-defaults.md', () => {
     const rel = files(dir)
       .map((f) => f.slice(dir.length + 1))
