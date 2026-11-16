@@ -27,7 +27,10 @@ import type { ControlSize } from './renderers'
 export const FILTER_SLOT_CUSTOM = 'filterSlot.custom'
 
 /** A slot made by `filterSlot.custom`: a `ControlsSlot` that says it is an escape. */
-export type CustomControlsSlot = ControlsSlot & { readonly escape: typeof FILTER_SLOT_CUSTOM }
+export type CustomControlsSlot = ControlsSlot & {
+  readonly escape: typeof FILTER_SLOT_CUSTOM
+  readonly handles: readonly { readonly key: string }[]
+}
 
 /** What `filterSlot.custom` hands its `render`: the bound value and the way to change it. */
 export type CustomControlState<T> = {
@@ -168,10 +171,11 @@ function CustomView<T>({
 export function filterSlot<Scope extends FilterScope>(
   // oxlint-disable-next-line typescript/no-explicit-any -- the concept's `FilterSpec<any>[]`: handles of different `T` share one list
   specs: readonly FilterSpec<any, Scope>[],
-): ControlsSlot<Scope> {
+): ControlsSlot<Scope> & { readonly handles: readonly { readonly key: string }[] } {
   return {
     kind: 'controls-slot',
     count: specs.length,
+    handles: specs.map((s) => s.handle),
     render: () => (specs.length === 0 ? null : <SlotView specs={specs} />),
   }
 }
@@ -195,6 +199,7 @@ filterSlot.custom = function custom<T>(
   return {
     kind: 'controls-slot',
     count: 1,
+    handles: [handle],
     escape: FILTER_SLOT_CUSTOM,
     render: () => <CustomView handle={handle} label={label} render={render} />,
   }

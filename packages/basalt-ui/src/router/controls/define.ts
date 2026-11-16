@@ -11,7 +11,7 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router'
 import { persisted } from '../../core/persisted'
-import type { ControlHandle } from '../../core/ports'
+import type { ControlHandle, ControlsSlot } from '../../core/ports'
 import { batching, clearTogether, onBatchEnd } from '../../core/write-batch'
 import { brandOf, brandedValidator, extendValidator } from './brand'
 import type { ControlsValidator, Scope, StandardSchemaV1 } from './brand'
@@ -210,7 +210,9 @@ export type Controls<Id extends string, Scp extends Scope, F, W = {}> = {
    * those fields in one navigate and keeps every other param: a Clear filters beside `empty.filtered`.
    */
   useReset(options?: {
-    readonly only: readonly { [K in keyof F & string]: HandleOf<K, F[K]> }[keyof F & string][]
+    readonly only:
+      | readonly { [K in keyof F & string]: HandleOf<K, F[K]> }[keyof F & string][]
+      | NamedSlot
   }): () => void
 }
 
@@ -309,6 +311,7 @@ type LocalLane = {
   unset(names: readonly string[]): void
   subscribe(cb: () => void): () => void
 }
+type NamedSlot = ControlsSlot & { readonly handles: readonly { readonly key: string }[] }
 
 const EMPTY_RECORD: Raw = Object.freeze({})
 const serverSnapshot = (): Raw => EMPTY_RECORD
@@ -405,7 +408,7 @@ type Entry = { name: string; spec: AnyFieldSpec; codec: Codec<unknown>; params: 
  * `Filters (n)`); `useReset()` returns the callback that unsets every field, the view tab and the open
  * record with the filters; `useReset({ only: [list.field.q, list.field.status] })` unsets just those
  * in one navigate and keeps the rest: the Clear filters of a table's or chart card's `empty.filtered`
- * (`FilterSet`'s Reset all is the same call). A push enum set back to its fallback (`ViewTabs` on its
+ * (`FilterSet`'s Reset all is the same call); `only` also takes the `filterSlot([...])` the page draws, so the fields are named once. A push enum set back to its fallback (`ViewTabs` on its
  * default) leaves the URL and still pushes; `InnerNav` keeps the fallback pane via `choose(v)`. A `range` with `window:
  * { '7d': (now) => ({ from, to }) }` makes `toWindow(value)` return `{ from, to }` ISO days for that
  * preset, resolved at call time (a preset without a resolver gives `{ window: preset }`; with every preset resolved the type has no `{ window }` member), so the
@@ -437,7 +440,7 @@ type Entry = { name: string; spec: AnyFieldSpec; codec: Codec<unknown>; params: 
  * const [q, setQ] = list.field.q.use()
  * <Link to="/list" {...list.field.status.link(['open'])} />
  * // beside `empty: { filtered: { reset } }`: clear the filters, keep the view and the open record
- * const reset = list.useReset({ only: [list.field.q, list.field.status] })
+ * const reset = list.useReset({ only: [list.field.q, list.field.status] }) // or `{ only: slot }`, the page's filterSlot([...])
  * ```
  */
 export function defineControls<
@@ -682,11 +685,14 @@ export function defineControls<
     return urlCount + localCount
   }
 
-  const useReset = (options?: { readonly only: readonly FieldHandle<never>[] }): (() => void) => {
+  const useReset = (options?: {
+    readonly only: readonly FieldHandle<never>[] | NamedSlot
+  }): (() => void) => {
     const router = useLooseRouter()
     useLend(router)
-    const only = options?.only
-    if (only !== undefined) {
+    const given = options?.only
+    if (given !== undefined) {
+      const only = ((given as Partial<NamedSlot>).handles ?? given) as readonly FieldHandle<never>[]
       for (const handle of only) {
         if (field[handle.key] !== (handle as unknown)) {
           throw new Error(

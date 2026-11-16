@@ -17,6 +17,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { defineControls, resetControlsOwnersForTests } from '../router/controls/define'
 import { field } from '../router/controls/field'
 import { FilterSet } from './filter-set'
+import { filterSlot } from './filter-slot'
 import { spec } from './spec'
 
 afterEach(cleanup)
@@ -108,5 +109,36 @@ describe('the desktop row Reset all', () => {
     await waitFor(() => {
       expect(router.state.location.search).toEqual({ view: 'chart', order: '7' })
     })
+  })
+})
+
+describe('useReset({ only: slot })', () => {
+  test('unsets exactly the fields the slot draws and keeps the view and the record', async () => {
+    const slot = filterSlot([
+      spec(store.field.currency, 'Currency'),
+      spec(store.field.region, 'Region'),
+    ])
+    let reset = () => {}
+    const router = await mount(
+      '/dashboard?currency=EUR&region=eu&view=chart&order=7',
+      (): ReactNode => {
+        reset = store.useReset({ only: slot })
+        return null
+      },
+    )
+    await act(async () => {
+      reset()
+    })
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ view: 'chart', order: '7' })
+    })
+  })
+
+  test('a slot that names no fields does not compile', () => {
+    const bare = { kind: 'controls-slot', count: 0, render: () => null } as const
+    const call = (): unknown =>
+      // @ts-expect-error -- only a filterSlot(...) names its fields
+      store.useReset({ only: bare })
+    expect(call).toBeInstanceOf(Function)
   })
 })
