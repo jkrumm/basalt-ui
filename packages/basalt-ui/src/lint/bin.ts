@@ -20,3 +20,15 @@ export function findBin(
   }
   return null
 }
+
+/**
+ * `--ignore-path` replaces stylelint's own `.stylelintignore`, as `basalt-ui lint` passes oxlint none:
+ * a file the app lists there is linted anyway and `doctor` reports the file. Nothing writes this path.
+ */
+export const STYLELINT_IGNORE_ARGS = ['--ignore-path', '.basalt/stylelintignore'] as const
+
+/** The v3 lane's oxlint config in an `extends` list: the generated `.oxlintrc.basalt.json` or the shipped app preset. */
+export const v3LaneEntry = (entries: unknown): string | undefined =>
+  [entries]
+    .flat()
+    .find((e): e is string => /(?:\.oxlintrc\.basalt|oxlint-app)\.json$/.test(String(e)))

@@ -419,3 +419,27 @@ describe('budget ratchet (check 5)', () => {
     expect(status(await run(repo([3, 0], [3, 0]), { baseRef: 'origin/nope' }), 5)).toBe('skipped')
   })
 })
+
+describe('a .stylelintignore under a declared root (check 3)', () => {
+  const sheet = (dir: string) => {
+    mkdirSync(join(dir, 'src', 'features'), { recursive: true })
+    writeFileSync(join(dir, 'src', 'features', 'f.module.css'), '.a {}\n')
+  }
+
+  it('fails when it names a stylesheet, and names the file', async () => {
+    const dir = fixture('healthy')
+    sheet(dir)
+    writeFileSync(join(dir, '.stylelintignore'), 'src/features/\n')
+    const results = await run(dir)
+    expect(status(results, 3)).toBe('failed')
+    expect(results[2]?.detail).toContain('.stylelintignore')
+    expect(results[2]?.detail).toContain('src/features/f.module.css')
+  })
+
+  it('passes when it names nothing under a root', async () => {
+    const dir = fixture('healthy')
+    sheet(dir)
+    writeFileSync(join(dir, '.stylelintignore'), '# built\ndist/\n')
+    expect(status(await run(dir), 3)).toBe('passed')
+  })
+})

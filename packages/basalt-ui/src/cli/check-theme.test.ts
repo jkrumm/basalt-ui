@@ -950,3 +950,29 @@ describe('series-palette — the exempt series file is judged by computed checks
     expect(run().err).not.toContain('series-palette')
   })
 })
+
+describe('check-theme — the v3 surface', () => {
+  const CLEAN = 'export const C = () => null\n'
+
+  it('counts the generated .oxlintrc.basalt.json and the app preset as the AST lane', () => {
+    fixture(CLEAN)
+    wireOxlint(dir, './.oxlintrc.basalt.json')
+    expect(run().err).not.toContain('AST lane')
+    wireOxlint(dir, './node_modules/basalt-ui/configs/oxlint-app.json')
+    expect(run().err).not.toContain('AST lane')
+  })
+
+  it('points an unwired app at the v3 preset, not the 2.x config', () => {
+    fixture(CLEAN)
+    const { err } = run()
+    expect(err).toContain('.oxlintrc.basalt.json')
+    expect(err).not.toContain('configs/oxlint.json')
+  })
+
+  it('reports nothing on an Issue reference, and still reports a colour', () => {
+    fixture("export const issues = [{ ref: '#657' }, { id: '#1042' }, { number: \"#123\" }]\n")
+    expect(run().code).toBe(0)
+    fixture("export const c = '#657'\nexport const d = { color: '#ff0000' }\n")
+    expect(run().code).toBe(1)
+  })
+})

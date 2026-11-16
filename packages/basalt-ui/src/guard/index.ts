@@ -44,6 +44,13 @@ export type { Finding, GuardConfig, GuardKind, GuardSeverity }
  */
 const HEX = /#(?!(?<=&#)\d+;)[0-9a-fA-F]{3,8}\b/g
 
+/** An all-digit `#657` string value under a reference key (`ref`, `id`, `issue`, `number`, `pr`) is an Issue number, not a colour. */
+const REFERENCE_KEY_BEFORE = /\b(?:ref|id|issue|number|pr)['"]?\s*[:=]\s*['"`]$/i
+
+function isIssueReference(line: string, at: number, match: string): boolean {
+  return /^#\d+$/.test(match) && REFERENCE_KEY_BEFORE.test(line.slice(0, at))
+}
+
 /**
  * A raw `rgb()`/`rgba()`/`hsl()`/`hsla()` color function.
  *
@@ -2409,6 +2416,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
 
     // Always-on kinds (raw-hex, raw-color-fn, localstorage-theme) — patterns from GUARD_RULES.
     for (const m of line.matchAll(GUARD_RULES['raw-hex'].pattern as RegExp)) {
+      if (isIssueReference(line, m.index ?? 0, m[0])) continue
       push('raw-hex', i + 1, m[0])
     }
     for (const m of line.matchAll(GUARD_RULES['raw-color-fn'].pattern as RegExp)) {
