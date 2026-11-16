@@ -68,11 +68,11 @@ These are settled doctrine, drawn from studied systems and stated to be promotab
 Three tiers, matching the W3C Design Tokens model. The structure is the law; basalt's `--vx-*`
 prefix is the framework instantiation.
 
-| Tier          | What                 | Where (basalt)                                              | Example                                         |
-| ------------- | -------------------- | ----------------------------------------------------------- | ----------------------------------------------- |
-| **Primitive** | Raw designed hues    | palette data (`BP`, `p()`)                                  | a designed hue stop                             |
-| **Semantic**  | Intent-bearing pairs | `STATUS`/`SEMANTIC`/`NEUTRAL`/`SURFACE` → `--vx-*` → `VX.*` | `VX.status.good`, `VX.line`, `VX.surface.panel` |
-| **Component** | Element-specific     | Mantine theme + chart primitives                            | `ChartCard`, Mantine `color="blue"`             |
+| Tier          | What                 | Where (basalt)                                              | Example                             |
+| ------------- | -------------------- | ----------------------------------------------------------- | ----------------------------------- |
+| **Primitive** | Raw designed hues    | palette data (`BP`, `p()`)                                  | a designed hue stop                 |
+| **Semantic**  | Intent-bearing pairs | `STATUS`/`SEMANTIC`/`NEUTRAL`/`SURFACE` → `--vx-*` → `VX.*` | `VX.good`, `VX.line`, `VX.card`     |
+| **Component** | Element-specific     | Mantine theme + chart primitives                            | `ChartCard`, Mantine `color="blue"` |
 
 **Flow** — three layers, strictly separated:
 
@@ -91,7 +91,7 @@ Spend a colour only for one of these. Otherwise the mark is neutral (`VX.line`).
 | Reason                     | Example                                            | Treatment                                              |
 | -------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
 | **Trend**                  | Hero-card up/down, momentum arrow                  | trend-up / trend-down (direction, not metric), as text |
-| **Signal / status**        | Zone bands, thresholds, good/warn/bad              | `VX.status.*` / semantic fills                         |
+| **Signal / status**        | Zone bands, thresholds, good/warn/bad              | `VX.good` / `VX.warn` / `VX.bad`                       |
 | **Categorical separation** | Stages, intensity ramp, multi-toggle (2+ series)   | per-series accent (from the consumer's series map)     |
 | _none of the above_        | Single sparkline, one stat tile, single-metric bar | **neutral** `VX.line`                                  |
 
