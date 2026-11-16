@@ -21,7 +21,7 @@ KanbanCard<C extends string>(props: KanbanCardProps<C>): ReactElement
   title: string
   href?: string | NavTarget
   age?: string
-  meta?: readonly [string] | readonly [string, string]
+  meta?: readonly [string, string] | readonly [string]
   chips?: readonly [CardChip?, CardChip?, CardChip?, CardChip?]
   reason?: { icon?: IconComponent; text: string; }
   status?: Status

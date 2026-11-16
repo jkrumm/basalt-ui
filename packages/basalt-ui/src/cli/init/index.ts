@@ -13,7 +13,8 @@ import { isAbsolute } from 'node:path'
 import { parseArgs } from 'node:util'
 
 import { doctor } from '../doctor'
-import { packageRoot } from '../index'
+import { packageRoot, resolveAppDir } from '../index'
+import { generateRouteTree } from '../route-tree'
 import { PROFILES } from '../manifest'
 import { isSiblingApp } from '../resolver'
 import type { Profile } from '../manifest'
@@ -25,9 +26,11 @@ import {
   installRoot,
   skipPlacements,
   placeManaged,
+  say,
   seedBudgetFile,
   seedDesign,
   wireApp,
+  wireBuildScript,
   wireFormatterAndLint,
   wireLintScript,
 } from './steps'
@@ -41,6 +44,8 @@ export type InitDeps = {
   pkgRoot?: string
   /** The closing report; defaults to `doctor`. */
   doctor?: (root: string) => Promise<number>
+  /** Writes the first route tree in an app directory; null on success. Defaults to the router generator. */
+  routeTree?: (appDir: string) => Promise<string | null>
 }
 
 /** Longest an install waits. */
@@ -167,12 +172,22 @@ export async function init(
     seedDesign,
     placeRouterSeeds,
     wireApp,
+    wireBuildScript,
     wireLintScript,
   ]) {
     try {
       step(ctx)
     } catch (error) {
       ctx.problems.push((error as Error).message)
+    }
+  }
+
+  if (ctx.routerPlugin === true && !args.noInstall) {
+    const app = resolveAppDir(root)
+    if (!('error' in app)) {
+      const failure = await (deps.routeTree ?? generateRouteTree)(app.dir)
+      if (failure === null) say('wrote src/routeTree.gen.ts, the first route tree')
+      else ctx.todo.push(`run \`vite build\` once to write src/routeTree.gen.ts (${failure})`)
     }
   }
 

@@ -54,11 +54,12 @@ export const rows: readonly RowDef[] = [
   // 12245 -> 12281 (v3-wiring-2-generated-tree): `init --profile app` writes the router's generated tree (`src/routeTree.gen.ts` under each declared root) into the `.oxlintrc.json` and formatter ignores (cli/init/steps.ts +30 net) and doctor reads the vite config's `generatedRouteTree` (cli/router-wiring.ts +7). Consumer: a built create-vite `app`, whose doctor check 11 failed on TanStack's own `/* eslint-disable */`.
   // 12281 -> 12418 (v3-wiring-2-wiring): `init` keeps a declared peer version that meets the profile's range instead of pinning it down, deletes create-vite's stock `App.tsx` and `App.css` once the entry is replaced (cli/init/steps.ts +21, cli/init/router-seeds.ts +44), and doctor check 3 holds every declared peer to its range and names the spec to add, both through one range matcher (cli/peers.ts +67, cli/doctor/install.ts +5). Consumer: a create-vite `app` whose README step installs a newer router plugin before `init`.
   // 12418 -> 12517 (v3-lint-2-waiver-ceiling): `lint --raise <field> --consumer` lifts the waivers and escapes ceilings through a raises row (cli/budget/index.ts `raiseCeiling` and `raiseCommand`, cli/lint/index.ts, +99); every breach message names the command for its field. Consumer: an app that follows a rule's last `Next:` rung to a reasoned waiver and has no command to answer the gate.
+  // 12517 -> 12641 (v3-wiring-3-route-tree): `init --profile app` writes the first `src/routeTree.gen.ts` through the router plugin's own generator and swaps create-vite's `tsc -b && vite build` to `vite build && tsc -b` (cli/route-tree.ts +59, cli/init/steps.ts +31, cli/init/index.ts +15); doctor check 12 fails a script that runs `tsc` before the tree exists (cli/doctor/app.ts +23). Consumer: a create-vite `app` whose own build was red right after `init` and after every new route.
   {
     id: 'cli-lines',
     order: 110,
     label: 'CLI non-test lines (src/cli/**)',
-    ceiling: 12517,
+    ceiling: 12641,
     measure: () =>
       totalLines(
         walkFiles(join(PKG_ROOT, 'src/cli'), /\.tsx?$/).filter((p) => !/\.test\.tsx?$/.test(p)),
@@ -147,6 +148,13 @@ export const raises: Raises = {
       to: 12517,
       consumer:
         '`lint --raise waivers` on an app whose first reasoned waiver breaches the seeded ceiling 0',
+      repo: 'shutterflow',
+    },
+    {
+      from: 12517,
+      to: 12641,
+      consumer:
+        '`bun run build` right after `init --profile app` and after a new route file on a create-vite app',
       repo: 'shutterflow',
     },
   ],

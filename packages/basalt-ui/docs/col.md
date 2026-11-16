@@ -31,6 +31,126 @@ col<T>(): Col<T>
     actions(actions: readonly RowAction<T>[], o?: { header?: string; }): KindColumn<T>
     custom(id: string, o: CustomOptions<T>): KindColumn<T>
     codec<const M extends Readonly<Record<string, CodecKind>>>(kinds: M, o?: CodecOptions): TableSchema<M>
+
+  EntityOptions<T>:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    href?: (row: T) => string | NavTarget
+    icon?: (row: T) => IconComponent
+    sub?: (row: T) => string | null
+    filter?: "text"
+    width?: "content"  // `'content'` sizes the column to its widest loaded value, name or sub line (floor 18ch, cap 40ch), instead of a flexible share of what the other columns leave
+
+  TextOptions:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    filter?: "text"
+
+  NumberOptions:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    footer?: Aggregate
+    unit?: string
+    digits?: number
+
+  MoneyOptions:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    footer?: Aggregate
+    currency: string
+
+  DateOptions:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    style?: DateStyle
+
+  CommonOptions:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+
+  StatusOptions<O>:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    options: readonly O[]
+    labels?: Readonly<Record<O, string>>  // The text of each option in the cell, the phone card and the column filter; the stored value without it
+    tone?: (value: O) => Tone  // Receives the closed option union `options` declares, so a `Record<Option, Tone>` indexes without a cast
+    filter?: "multi"
+
+  DeltaOptions:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    polarity: "neutral" | "up-good" | "up-bad"
+    unit?: string
+
+  MeterOptions:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    max?: number
+
+  BooleanOptions:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    labels?: readonly [string, string]
+
+  SparkOptions<T>:
+    header?: string  // Header text
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    label: string
+    render: (row: T, box: Box) => ReactNode
+
+  SelectOptions<T>:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    label: (row: T) => string
+    options: readonly string[]
+    commit: (row: T, value: string) => unknown
+
+  CustomOptions<T>:
+    header?: string
+    render: (row: T, env: CellEnv) => ReactNode
+    sortValue: (row: T) => string | number | null  // Required: the value the column sorts by
+    card: CardSlot  // Required: where the column sits in a card
+    priority: Priority  // Required: what survives a narrow tier
+    width?: number  // Width in `ch`
+    align?: Align
+
+  CodecOptions:
+    defaults?: Partial<TableRequest>
+    prefix?: string
 ```
 
 ## Example

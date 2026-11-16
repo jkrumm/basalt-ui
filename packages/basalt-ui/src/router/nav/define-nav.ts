@@ -25,7 +25,7 @@ import type {
  *
  * @example
  * ```ts
- * // src/lib/nav.ts, module scope: anchor identity keys on these objects
+ * // src/lib/nav.tsx, module scope: anchor identity keys on these objects
  * export const NAV = defineNav({
  *   sections: [
  *     {

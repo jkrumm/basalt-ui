@@ -20,7 +20,7 @@ defineNav<const S extends ReadonlyArray<AnyNavSection>, const P extends Readonly
 ## Example
 
 ```tsx
-// src/lib/nav.ts, module scope: anchor identity keys on these objects
+// src/lib/nav.tsx, module scope: anchor identity keys on these objects
 export const NAV = defineNav({
   sections: [
     {
