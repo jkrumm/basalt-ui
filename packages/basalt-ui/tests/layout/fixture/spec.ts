@@ -1,5 +1,3 @@
-import type { BasaltDensityLevel, BasaltRadiusLevel } from '../../../src/theme'
-
 /**
  * The wire format between a layout test (Bun) and the fixture app (browser).
  *
@@ -331,7 +329,7 @@ export type FixtureSpec = {
   dash?: true
   nav?: { maxTabs?: number; menuMax?: number; moreLabel?: string }
   /** −3..+3 density knob. Every touch-target floor must hold at every level. */
-  density?: BasaltDensityLevel
+  density?: number
   /**
    * `false` builds every destination WITHOUT an `icon` — a consumer shipping no icon dependency,
    * which basalt supports. The active pill is the icon slot's own background, so this is the shape
@@ -339,7 +337,7 @@ export type FixtureSpec = {
    */
   icons?: boolean
   /** −5..+5 radius knob. */
-  radius?: BasaltRadiusLevel
+  radius?: number
   colorScheme?: 'light' | 'dark'
   /** Filler height in px above the `[data-testid="content-end"]` sentinel. */
   bodyHeight?: number

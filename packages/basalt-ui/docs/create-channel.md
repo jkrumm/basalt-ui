@@ -3,7 +3,7 @@ name: createChannel
 use when: 'an app reads a server push stream (SSE, a WebSocket behind a `Transport`) and needs resume, a watchdog and a connection status instead of a hand-rolled `EventSource`.'
 never when: 'the data is polled (use a query with a cadence), or you need to send over the same socket (a transport is receive-only; keep the send path on the app''s socket).'
 subpath: basalt-ui/data
-peers: []
+peers: ['@tanstack/react-query']
 slots: []
 ---
 

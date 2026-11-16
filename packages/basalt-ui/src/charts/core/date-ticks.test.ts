@@ -1,7 +1,6 @@
 /** The default Date x labels follow the tick step and never repeat on one axis (ledger row 137). */
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { setFormatDefaults } from '../../format'
-import { resetFormatDefaults } from '../../format/shared'
+import { resetFormatDefaults, setFormatDefaults } from '../../format/shared'
 import { compileCartesian, dateTicks } from './compile'
 import { dateTickFormat } from '../date-tick-format'
 import type { ChartSeries } from '../types'

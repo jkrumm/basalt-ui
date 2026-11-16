@@ -1,13 +1,20 @@
 /**
- * The anti-FOUC test's host: Mantine's scheme attribute under basalt's `styles.css` (which declares
- * `@layer mantine, basalt` and imports Mantine's layered core bundle), and nothing else. The cascade
- * outcome that file measures is Mantine's `color-scheme` layer against the plugin's boot rule, so the
- * page needs exactly those two and no scenario.
+ * The anti-FOUC test's host: a layered `color-scheme` rule keyed on `data-mantine-color-scheme` (the
+ * rule Mantine's own layered core bundle shipped, written out here so the fixture needs no Mantine
+ * package) under basalt's `styles.css`, and nothing else. The cascade outcome that file measures is that
+ * layered rule against the plugin's boot rule, so the page needs exactly those two and no scenario.
  */
 import '../../../../src/styles.css'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import type { FixtureSpec } from '../spec'
+
+const layeredScheme = document.createElement('style')
+layeredScheme.textContent =
+  '@layer mantine{:root{color-scheme:var(--mantine-color-scheme)}' +
+  ":root[data-mantine-color-scheme='dark']{--mantine-color-scheme:dark}" +
+  ":root[data-mantine-color-scheme='light']{--mantine-color-scheme:light}}"
+document.head.append(layeredScheme)
 
 const container = document.getElementById('root')
 if (!container) throw new Error('fixture host is missing #root')

@@ -36,8 +36,7 @@ describe('BASALT_VX_NAMES', () => {
   })
 
   it('carries --vx-hit and the component-scoped names', () => {
-    for (const n of ['--vx-hit', '--vx-hit-gap', '--vx-space-icon-size'])
-      expect(BASALT_VX_NAMES).toContain(n)
+    for (const n of ['--vx-hit', '--vx-hit-gap']) expect(BASALT_VX_NAMES).toContain(n)
   })
 
   it('never lists a removed name, and every named replacement is live', () => {

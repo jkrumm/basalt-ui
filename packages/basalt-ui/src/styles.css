@@ -1,29 +1,13 @@
 /**
  * basalt-ui global styles — plain global CSS (NOT a CSS module).
  *
- * Kept in a dedicated `@layer basalt` so consumer styles and Mantine's own layers can win or lose
- * deterministically by import order. Carries cross-app safety nets that have no app coupling.
+ * Kept in a dedicated `@layer basalt` so consumer styles can win or lose deterministically by
+ * import order. Carries cross-app safety nets that have no app coupling.
  */
 
-/* Layer order — LOW to HIGH priority. Declared up front (a `@layer` statement is allowed before
- * `@import`) so it holds no matter which order the consumer's bundler emits the stylesheets in.
- *
- * This is load-bearing, not decorative: any Mantine CSS a consumer adds must be the `.layer.css`
- * variant, never the plain `styles.css`. Mantine's default bundles are entirely UNLAYERED, and
- * unlayered author styles outrank EVERY layered rule regardless of specificity — so with a plain
- * bundle this whole `@layer basalt` block silently loses to Mantine, including the iOS input floor
- * below. This file already imports core, notifications and spotlight; `basalt doctor` flags the
- * plain variant. */
-@layer mantine, basalt;
-
-/* Every Mantine layer bundle the provider mounts (core, Notifications, Spotlight; `@mantine/modals`
- * ships no CSS), imported here so a consumer's one `import 'basalt-ui/styles.css'` carries them
- * (docs/V2-SPEC.md § 1 Open). `@mantine/dates` is not here: nothing in the package needs it, so it
- * stays the consumer's import. After the `@layer` statement above on purpose: the order is already
- * fixed, so the imports cannot reorder the layers whichever way the bundler emits them. */
-@import '@mantine/core/styles.layer.css';
-@import '@mantine/notifications/styles.layer.css';
-@import '@mantine/spotlight/styles.layer.css';
+/* Layer order: `basalt` is declared up front (a `@layer` statement is allowed before `@import`) so it
+ * holds no matter which order the consumer's bundler emits the stylesheets in. */
+@layer basalt;
 
 /* The three-font system (docs/DESIGN-SPEC.md §3) — exact-pinned @fontsource-variable deps. Bare
  * specifiers so consumer bundlers resolve them. */
@@ -85,7 +69,7 @@
 
   /* Mono data text drops its ligatures: `<>` in a facts line is two characters, not a diamond. Reaches
      the mono stack by element (code, kbd, samp, pre), by contract (`data-numeric`, `data-monospace`),
-     by Mantine's `ff="monospace"` inline style, and by the stack's own var in an inline style. Body
+     by a `monospace` family inline style, and by the stack's own var in an inline style. Body
      sans keeps its ligatures. A CSS-module class that only sets the mono family is out of reach. */
   code,
   kbd,
@@ -94,9 +78,7 @@
   [data-numeric],
   [data-monospace],
   [style*='font-family-monospace'],
-  [style*='basalt-font-mono'],
-  .mantine-Code-root,
-  .mantine-Kbd-root {
+  [style*='basalt-font-mono'] {
     font-variant-ligatures: none;
   }
 
@@ -111,17 +93,6 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* A long-press on a control must not select its label or pop the iOS callout menu — inputs and
-     prose content stay selectable. Same Mantine class-hook targets argo's own rule used
-     (`.mantine-Button-root`/`.mantine-NavLink-root`/`.mantine-Burger-root`): the theme layer is
-     the one place allowed to reach for a Mantine class hook directly, per `basalt-mantine.md`. */
-  .mantine-Button-root,
-  .mantine-NavLink-root,
-  .mantine-Burger-root {
-    -webkit-touch-callout: none;
-    user-select: none;
-  }
-
   /* iOS input-zoom FLOOR. Safari zooms the viewport whenever a focused input computes below 16px,
      and never zooms back out on blur — the single worst mobile-form defect. 16px is the only clean
      fix: `maximum-scale=1` / `user-scalable=no` block pinch-zoom on Android (WCAG 1.4.4),
@@ -130,12 +101,8 @@
 
      `max()` makes this a FLOOR, not a pin: a deliberately larger input keeps its own size, and the
      scale can grow without this rule fighting it. Being a CSS rule on the ELEMENT (rather than
-     per-component `defaultProps`) it reaches every input Mantine ships — Autocomplete, MultiSelect,
-     TagsInput, PinInput, NativeSelect, … — plus any consumer that passes an explicit `size="xs"`.
+     per-component `defaultProps`) it reaches every input a consumer renders, plus any that passes an explicit small size.
      Enumerating components could never cover that; the previous attempt missed seven of them.
-
-     Deliberate side effect: it also overrides Mantine's `[data-monospace]` −2px shrink, which would
-     otherwise drop a mono input back under the threshold.
 
      `!important` is deliberate and singular — the one legitimate use of it in this framework. An
      inline `style` attribute outranks EVERY stylesheet rule regardless of layer or specificity, so
@@ -167,41 +134,19 @@
     transition: background-color 600000s 0s;
   }
 
-  /* A Slider's bar and thumb fill in ink, not the accent, unless it encodes a status: an explicit
-     `color=` writes `--slider-color` inline, which outranks this. Mantine's own default sits in
-     `@layer mantine`, so this layer wins. In the dark scheme the thumb is filled with the same var,
-     a light disc with its white border; the drag-value label does not read it. */
-  .mantine-Slider-root,
-  .mantine-RangeSlider-root {
-    --slider-color: var(--vx-ink);
-  }
-
   /* `data-numeric` — one typographic law, every element. A number read as a MEASUREMENT (a preset
      like `7d`/`30d`, a KPI value, a table cell, a count tag) is mono with tabular figures, so
      digits line up column-wise and a changing value does not reflow its neighbours. Declared here,
-     unscoped, because the attribute is the contract: `theme/segmented-control.module.css` and
-     `controls/controls.module.css` were each carrying their own copy, which is why a plain
-     `<Text data-numeric>` in a consumer silently rendered in the sans face. Those two module rules
-     STAY — they additionally set `font-size` for their own component, which is a component
-     decision, not a law. */
+     unscoped, because the attribute is the contract: a module that carried its own copy left a plain
+     element with `data-numeric` in a consumer rendering in the sans face. A module rule may still
+     set `font-size` for its own component, which is a component decision, not a law. */
   [data-numeric] {
     font-family: var(--basalt-font-mono);
     font-variant-numeric: tabular-nums;
   }
 
-  /* Focus ring = the accent as INK, not as a fill. Mantine hardcodes the ring to
-     `var(--mantine-primary-color-filled)` — the SURFACE token, which is deliberately deep in both
-     schemes so a white label sits on it (see ACCENT in tokens/palette.ts). A ring is read against
-     the PAGE, though, so on dark it must be the light ink accent (8.64:1) rather than the deep fill
-     (3.26:1 — legal under WCAG 1.4.11, but a barely-there ring). Same specificity as Mantine's own
-     rule, but `@layer basalt` outranks `@layer mantine`, so this wins. */
-  .mantine-focus-auto:focus-visible,
-  .mantine-focus-always:focus {
-    outline-color: var(--vx-accent);
-  }
-
   /* Hubot Sans is a condensed display face — the spec pins it at 88% font-stretch everywhere it
-     lands (headings + the Mantine Title component). Read from the knob declared above rather than
+     lands (headings). Read from the knob declared above rather than
      hardcoded here, so a consumer retunes it in one declaration instead of fighting these bare
      element selectors with a more specific rule of their own. */
   h1,
@@ -209,8 +154,7 @@
   h3,
   h4,
   h5,
-  h6,
-  .mantine-Title-root {
+  h6 {
     font-stretch: var(--basalt-font-head-stretch, 88%);
     font-variant-numeric: lining-nums;
   }
@@ -218,9 +162,8 @@
   /* Scrollbars (docs/DESIGN-SPEC.md §5): 9px, ink-mix thumb (stronger on hover), radius 6,
      transparent track.
 
-     ONE thumb treatment drives BOTH bars — the native page bar below and Mantine's ScrollArea
-     overlay bar further down — so a page and a sidebar never read as two different scrollbar
-     languages. Defined as ink %-mixes (the same idiom as the ink-6% hover tints) rather than a
+     ONE thumb treatment drives every bar, so a page and a sidebar never read as two different
+     scrollbar languages. Defined as ink %-mixes (the same idiom as the ink-6% hover tints) rather than a
      surface token: ink inverts across schemes, so one expression stays visible on both pages.
      `--vx-surface-hairline` is NOT usable here — it's the card-ring token (`#e5e5e5` on light),
      which all but vanishes against the light page. */
@@ -252,49 +195,10 @@
     background-color: var(--basalt-scrollbar-thumb-hover);
   }
 
-  /* Mantine ScrollArea draws its OWN overlay scrollbars and hides the native one on its viewport
-     (which is `overflow: scroll`). The `*` rules above re-expose that native bar, so a ScrollArea
-     shows TWO bars — plus an always-on native gutter on both axes even when nothing overflows (the
-     white bars seen inside Spotlight). Re-hide the native bar on ScrollArea viewports so only
-     Mantine's styled overlay bar remains. */
-  .mantine-ScrollArea-viewport {
-    scrollbar-width: none;
-  }
-
-  .mantine-ScrollArea-viewport::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Re-point Mantine's overlay bar at the same treatment. Its own thumb is a hardcoded
-     rgba(0,0,0,0.4) / rgba(255,255,255,0.4) and its track picks up a gray-0/dark-8 fill on hover —
-     both off-palette, and visibly heavier than the native bar they sit beside. No `!important`:
-     Mantine ships layered CSS (`@mantine/core/styles.layer.css`) and `@layer basalt` is declared
-     after `@layer mantine`, so this layer wins on order regardless of specificity. */
-  .mantine-ScrollArea-scrollbar {
-    background-color: transparent;
-  }
-
-  .mantine-ScrollArea-thumb {
-    background-color: var(--basalt-scrollbar-thumb);
-  }
-
-  .mantine-ScrollArea-scrollbar:hover .mantine-ScrollArea-thumb,
-  .mantine-ScrollArea-scrollbar:active .mantine-ScrollArea-thumb {
-    background-color: var(--basalt-scrollbar-thumb-hover);
-  }
-
-  /* Bottom-anchored toasts clear the shell's bottom bar + safe area (docs/CONTROLS-SPEC.md §2). */
-  .mantine-Notifications-root[data-position^='bottom'] {
-    bottom: calc(
-      var(--app-shell-footer-offset, 0px) + env(safe-area-inset-bottom, 0px) +
-        var(--mantine-spacing-md)
-    );
-  }
-
   /* Pointer tier: an invisible hit-area expansion to at least `--vx-hit` (44px coarse, 24px fine),
-     no layout change. `::after`, not `::before` — Mantine's Button owns `::before` for its loading
-     overlay. `overflow: visible` is load-bearing: Button/ActionIcon roots clip to their box, which
-     would clip the overlay; the clip only serves their `[data-loading]` overlay, so it stays then.
+     no layout change. `::after`, not `::before` (a button may own `::before` for its loading overlay).
+     `overflow: visible` is load-bearing: a control root that clips to its box would clip the
+     overlay; the clip only serves a `[data-loading]` overlay, so it stays then.
      Adopters: `data-basalt-hit` on the control, or `data-basalt-hit-scope` on a home whose
      `button`/`a` descendants (consumer-supplied) adopt it.
      DECISION: the axis is `pointer: coarse` (the PRIMARY input, via `--vx-hit`), never
@@ -302,7 +206,7 @@
      OVERLAP CAP: a host with neighbours sets `--vx-hit-gap` (its real gap between controls); the
      expansion is then limited to that gap in total (half per side), so adjacent hit boxes never
      overlap and a later sibling never steals a tap. Unset = uncapped (an isolated control). The
-     `+ 2px` is the control's own 1px border (Mantine buttons carry one, transparent or not): `100%`
+     `+ 2px` is the control's own 1px border (a button carries one, transparent or not): `100%`
      is the PADDING box, the gap is measured between border boxes.
      `position: relative` is the ::after's containing block; an adopter that must be
      absolute/sticky sets its own `position` in an unlayered rule, which outranks this layer. */
@@ -322,20 +226,6 @@
     translate: -50% -50%;
     width: min(max(100%, var(--vx-hit)), calc(100% + 2px + var(--vx-hit-gap, 100vmax)));
     height: min(max(100%, var(--vx-hit)), calc(100% + 2px + var(--vx-hit-gap, 100vmax)));
-  }
-
-  /* Print: hide the BasaltShell chrome so only page content prints.
-     Scoped to AppShell's own class hooks, NOT to bare nav/header/footer. The element form matched
-     any landmark on the page — a consumer with a real <nav> and no BasaltShell silently printed a
-     blank one, and being unlayered with `!important` there was nothing they could do about it
-     either. `@layer basalt` already outranks `@layer mantine`, so no `!important` is needed to win
-     against the AppShell's own display rules. */
-  @media print {
-    .mantine-AppShell-navbar,
-    .mantine-AppShell-header,
-    .mantine-AppShell-footer {
-      display: none;
-    }
   }
 }
 
@@ -413,7 +303,7 @@
  * this only restyles the control a consumer's map renders, onto the radius scale and the micro text
  * size: the shipped 12 px radius on the box and its 24 px button is off the scale and, over a card,
  * a nested step under 3 px. The box takes the control tier (4 px under a flush card), the button the
- * Mantine `xs` step (4 px under the box).
+ * `xs` step (4 px under the box).
  *
  * UNLAYERED on purpose: `maplibre-gl.css` is unlayered, and an unlayered rule beats every layered
  * one whatever the specificity, so a `@layer basalt` block would lose to it. The doubled `:root`

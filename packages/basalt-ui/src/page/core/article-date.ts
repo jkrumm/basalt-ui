@@ -1,4 +1,4 @@
-/** Article date formatting for `ArticleLayout` — pure, no React, no `@mantine/*`. */
+/** Article date formatting for `ArticleLayout` — pure, no React. */
 
 /**
  * Formats an ISO 8601 date string via `Intl.DateTimeFormat` → `'Jul 16, 2026'`.

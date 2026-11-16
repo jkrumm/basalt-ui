@@ -3,7 +3,7 @@
  * Mantine-free: the rung (`CartesianChart`), the kinds (`Lines`, `Bars`, `Sparkline`,
  * `Heatmap`, `BandStrip`), the card (`ChartCard`), the shared cursor (`chartCursor`) and the geometry seam (`useChartFocus`, `chartLabels`). Engine marks for
  * `CartesianChart`'s `marks` are imported from the allowed `@tanstack/charts/*` subpaths directly;
- * tokens come from `basalt-ui/tokens`, formatters from `basalt-ui/format`. Nothing here re-exports
+ * tokens come from `basalt-ui/tokens`, formatters from the root `basalt-ui` entry. Nothing here re-exports
  * either, or the engine.
  */
 export { CartesianChart } from './parts/cartesian'

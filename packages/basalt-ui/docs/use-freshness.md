@@ -3,7 +3,7 @@ name: useFreshness
 use when: 'a page shows how old its data is, or wires a refresh button to the queries it reads'
 never when: 'the refresh is a server job with its own state (pass the `RefreshButton` its own props)'
 subpath: basalt-ui/data
-peers: []
+peers: ['@tanstack/react-query']
 slots: []
 ---
 

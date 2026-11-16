@@ -142,7 +142,7 @@ describe('check-theme — tokens-only profile', () => {
   })
 
   it('is never INFERRED — an undeclared Mantine-free repo keeps every kind live', () => {
-    // Silencing 17 kinds off the mere absence of @mantine/core is this round's own failure mode:
+    // Silencing 17 kinds off the mere absence of Mantine is this round's own failure mode:
     // a repo holding Mantine in a workspace package would switch off half its guard silently.
     write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
     write('src/form.tsx', 'export const F = () => <input />\n')

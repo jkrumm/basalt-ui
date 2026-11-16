@@ -3,7 +3,7 @@ name: InnerNav
 use when: 'a page has named sections or panes the URL should remember (settings, the sections of a record)'
 never when: 'the state is a `replace` field (it is a type error) or the choices are views of one dataset (use `ViewTabs`) or an inspector for a row (use `PageAside`)'
 subpath: basalt-ui/page
-peers: ['@base-ui/react']
+peers: ['@base-ui/react', '@tanstack/react-router']
 slots: [inner-nav, inner-nav-filter]
 ---
 

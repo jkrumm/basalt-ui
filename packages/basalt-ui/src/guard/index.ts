@@ -770,9 +770,8 @@ function insideHostTag(codeText: string, offset: number): boolean {
  * `PascalCase.tsx` for component files (basalt's own root `AGENTS.md` included). Each needs the
  * leading SUBJECT — a bare `modal.tsx` / `Panel.tsx` is a page module, not the convention.
  *
- * The trade is that a whole file goes unscanned on a naming convention — the same bargain
- * {@link MANTINE_FORM_IMPORT} already buys, and a smaller one than promoting the kind with 9 known
- * false positives. Basename only: a `modal/` DIRECTORY holds the page pieces around the modals too.
+ * The trade is that a whole file goes unscanned on a naming convention — a smaller
+ * trade than promoting the kind with 9 known false positives. Basename only: a `modal/` DIRECTORY holds the page pieces around the modals too.
  */
 const OVERLAY_CONVENTION_KEBAB = /^[^/]*-(?:modal|drawer|popover|panel|form)\.[jt]sx$/
 const OVERLAY_CONVENTION_PASCAL = /^[A-Z]\w*(?:Modal|Drawer|Popover|Panel|Form)\.[jt]sx$/
@@ -800,9 +799,6 @@ const CONTROL_OWNER_DEF =
  * own helpers; basalt's own control sources import each other relatively and never by package name.
  */
 const BASALT_ANY_IMPORT = /\b(?:from|import)\s+['"]basalt-ui(?:\/[^'"]*)?['"]/
-
-/** `@mantine/form` — a form is C1's third home, and its inputs are not filters. */
-const MANTINE_FORM_IMPORT = /from\s+['"]@mantine\/form['"]/
 
 // A Mantine `styles={{ input: {...} }}` per-part style — the `input` key specifically targets the
 // rendered <input>/<textarea> part of TextInput/Select/Textarea/etc. Requires `input` be the FIRST
@@ -1761,7 +1757,7 @@ export const TOKENS_ONLY_DISABLED_KINDS: ReadonlySet<GuardKind> = new Set([
   'raw-form-control',
   'sub-16-input-font',
   // Both wave-6 control kinds: `<Title>` is a Mantine component and the remedy for either one is a
-  // Mantine-rendered home (PageBar / WidgetHeader) or a basalt control over @mantine/core. Neither
+  // Mantine-rendered home (PageBar / WidgetHeader) or a basalt control over Mantine. Neither
   // sentence is followable in a consumer that installs the token layer and nothing else.
   'in-body-page-title',
   'raw-selection-control',
@@ -2019,7 +2015,7 @@ export const GUARD_RULES = {
   'raw-font-family': {
     kind: 'raw-font-family',
     pattern: RAW_FONT_FAMILY,
-    message: `Route the font stack through createBasaltTheme(overrides, { fonts }) / the shipped --basalt-font-sans|head|mono vars instead of a hardcoded fontFamily literal (${FONTS_CSS_HINT}).`,
+    message: `Route the font stack through the shipped --basalt-font-sans|head|mono vars instead of a hardcoded fontFamily literal (${FONTS_CSS_HINT}).`,
   },
   'off-identity-accent': {
     kind: 'off-identity-accent',
@@ -2089,7 +2085,7 @@ export const GUARD_RULES = {
     pattern: RAW_HTML_TAG, // handled inline (3-condition conjunction); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.rawHtmlLayout,
     // JSX-tag-shaped (`<div style={{...}}>`) — never appears in CSS text. Also excluded from
-    // chart files: the remedy (Box/Flex/Grid/Stack/Group) is `@mantine/*`, and src/charts/** is a
+    // chart files: the remedy (Box/Flex/Grid/Stack/Group) is a Mantine component, and src/charts/** is a
     // lint-enforced Mantine-free layer (basalt/token-layer-boundary) — so inside a chart file the
     // finding is unactionable, not merely inconvenient, and the only "fix" would be a theme-allow
     // comment written inside the very directory this rule protects.
@@ -2109,7 +2105,7 @@ export const GUARD_RULES = {
     enabled: (cfg: GuardConfig) => cfg.inlineDisplay,
     // JSX-object-shaped (`display: 'flex'`, quoted value) — CSS never quotes a keyword value
     // (`display: flex;` is bare), so the pattern's quote anchor can never match real CSS. Also
-    // excluded from chart files: the remedy (Flex/Grid/Group) is `@mantine/*`, and src/charts/**
+    // excluded from chart files: the remedy (Flex/Grid/Group) is a Mantine component, and src/charts/**
     // is a lint-enforced Mantine-free layer (basalt/token-layer-boundary) — so inside a chart file
     // the finding is unactionable, not merely inconvenient, and the only "fix" would be a
     // theme-allow comment written inside the very directory this rule protects.
@@ -2134,7 +2130,7 @@ export const GUARD_RULES = {
     // `<`, so the pattern's anchor can never match real CSS.
     appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
-      'Raw <input>/<select>/<textarea> bypasses the ENTIRE theme, not just the font-size floor — no field surface, no shadow-card depth, no focus ring, no --input-* vars. Use TextInput / NumberInput / Select / Textarea from @mantine/core, or variant="unstyled" for a genuinely borderless/bespoke look.',
+      'Raw <input>/<select>/<textarea> bypasses the ENTIRE theme, not just the font-size floor — no field surface, no shadow-card depth, no focus ring, no --input-* vars. Use TextInput / NumberInput / Select / Textarea from Mantine, or variant="unstyled" for a genuinely borderless/bespoke look.',
   },
   'sub-16-input-font': {
     kind: 'sub-16-input-font',
@@ -2672,16 +2668,14 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   }
 
   // raw-selection-control — full-text tag scan plus the host ancestry walk (see insideHostTag).
-  // Three file-level exemptions mirror the plugin rule's, so the two lanes agree on the same file:
+  // Two file-level exemptions mirror the plugin rule's, so the two lanes agree on the same file:
   // a file that DEFINES a basalt control (and imports none — see CONTROL_OWNER_DEF) cannot be told
-  // to use one, a file importing `@mantine/form` is a form — C1's third home, whose inputs are not
-  // filters — and a file NAMED as an overlay body carries its `<Modal>` in the parent, where no
+  // to use one, and a file NAMED as an overlay body carries its `<Modal>` in the parent, where no
   // scan of this file can reach it.
   if (
     ruleApplies('raw-selection-control', relPath) &&
     !isOverlayConventionFile(relPath) &&
-    !(CONTROL_OWNER_DEF.test(codeText) && !BASALT_ANY_IMPORT.test(codeText)) &&
-    !MANTINE_FORM_IMPORT.test(codeText)
+    !(CONTROL_OWNER_DEF.test(codeText) && !BASALT_ANY_IMPORT.test(codeText))
   ) {
     for (const m of codeText.matchAll(RAW_SELECTION_CONTROL_TAG)) {
       const startLine = codeText.slice(0, m.index ?? 0).split('\n').length
@@ -2730,7 +2724,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   //   • §exemptRules — per-rule, per-path consumer exemptions;
   //   • markup       — an HTML document / JSON manifest has no JSX and no CSS-in-JS, so only the
   //                    color/typography kinds are meaningful there;
-  //   • profile      — a tokens-only consumer is not told to install @mantine/core.
+  //   • profile      — a tokens-only consumer is not told to install Mantine.
   //
   // `text` is stamped here too, in the same single post-pass, off the ORIGINAL (unstripped) `lines`
   // split — never `codeLines` — so a finding on a line whose comment was stripped still reports the

@@ -3,7 +3,7 @@ name: BasaltProvider
 use when: 'an app mounts its tree once at the entry, so the colour scheme, the locale, the link every link prop renders through and the push binding are set in one place'
 never when: 'a leaf renders on its own (it needs no provider: English, `auto` scheme, a plain anchor)'
 subpath: basalt-ui/router
-peers: []
+peers: ['@tanstack/react-router']
 slots: []
 ---
 

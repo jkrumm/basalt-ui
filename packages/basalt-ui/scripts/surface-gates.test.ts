@@ -162,15 +162,6 @@ describe('peerClassViolations', () => {
     )
   })
 
-  test('a required peer marked optional fails', () => {
-    const v = peerClassViolations(root, {
-      exports: {},
-      peerDependencies: peers,
-      peerDependenciesMeta: { ...meta, react: { optional: true } },
-    })
-    expect(v).toContain('react: required peer is marked optional')
-  })
-
   test('a non-required peer that is not optional fails', () => {
     const v = peerClassViolations(root, {
       exports: {},

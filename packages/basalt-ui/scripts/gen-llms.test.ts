@@ -320,8 +320,7 @@ describe('option types (row 187)', () => {
         ts.isTypeAliasDeclaration(n) || ts.isInterfaceDeclaration(n),
     )!
 
-  test('llms.txt expands the three shapes an agent had to grep dist for', () => {
-    expect(text).toMatch(/^Type: DateOptions = .*format\?: 'short' \| 'medium' \| 'long'/m)
+  test('llms.txt expands the shapes an agent had to grep dist for', () => {
     expect(text).toMatch(/^Type: ChartLegendConfig = .*placement\?: 'top' \| 'bottom' \| 'header'/m)
     expect(text).toMatch(/^Type: ResponsiveChartHeight = \{ base: number, regular\?/m)
   })

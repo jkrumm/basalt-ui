@@ -3,7 +3,7 @@ name: defineNav
 use when: 'an app declares its rail, tab bar, breadcrumb and palette destinations once, at module scope'
 never when: 'the destinations are one-off links with no shared nav (use a plain Link)'
 subpath: basalt-ui/router
-peers: []
+peers: ['@tanstack/react-router']
 slots: []
 ---
 

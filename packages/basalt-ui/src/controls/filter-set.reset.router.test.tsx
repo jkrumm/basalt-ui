@@ -4,7 +4,6 @@
  * spec in a single navigate.
  */
 import type { ReactNode } from 'react'
-import { MantineProvider } from '@mantine/core'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import {
   createMemoryHistory,
@@ -53,11 +52,7 @@ async function mount(entry: string, page: () => ReactNode): Promise<Loose> {
     routeTree: rootRoute.addChildren([pageRoute] as never),
     history: createMemoryHistory({ initialEntries: [entry] }),
   })
-  render(
-    <MantineProvider>
-      <RouterProvider router={router as never} />
-    </MantineProvider>,
-  )
+  render(<RouterProvider router={router as never} />)
   await waitFor(() => expect(router.state.status).toBe('idle'))
   return router
 }

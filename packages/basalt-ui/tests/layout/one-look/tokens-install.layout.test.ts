@@ -6,13 +6,9 @@
  * Lives under tests/layout because it packs (`bun pm pack` runs the build) and installs from the
  * registry, and drives Chrome for the no-bundler page; the fast unit loop runs none of that.
  *
- * Two claims are not true of the 2.x package yet, and are recorded as `todo` instead of passing a
- * weaker test: (1) the 2.x runtime peers (Mantine, React, ...) are still required until
- * `v3-teardown-peers`, so a bare install of the real tarball also resolves them; (2) `init` has no
- * `--profile` flag until `v3-sk-3-init-doctor`. For (1) the exact-set assertion runs against a
- * projection of the real tarball whose only edit is marking those 2.x peers optional, which is what
- * the teardown does; `dependencies`, the fonts and the dist graph are the real ones. Each `todo`
- * names what lifts it, and the real-tarball test replaces the projection once that is empty.
+ * One claim is not true of the package yet, and is recorded as `todo` instead of passing a weaker
+ * test: `init` has no `--profile` flag until `v3-sk-3-init-doctor`. The three fonts are regular
+ * dependencies (docs/v3/DIRECTION.md section 5), so the install carries them and no peer.
  *
  * Chrome only. Firefox and Safari are NOT run: they are unverified here (row U of the concept).
  */
@@ -107,20 +103,6 @@ function manifestOf(tgz: string): Manifest {
   return JSON.parse(readFileSync(join(dir, 'package/package.json'), 'utf8')) as Manifest
 }
 
-/** The real tarball with every non-font peer marked optional: the state `v3-teardown-peers` ships. */
-function project(tgz: string, manifest: Manifest, legacy: string[]): string {
-  const dir = mkTmp('projection')
-  must(['tar', '-xzf', tgz, '-C', dir], dir)
-  const file = join(dir, 'package/package.json')
-  const next = JSON.parse(readFileSync(file, 'utf8')) as Manifest
-  next.peerDependenciesMeta = { ...manifest.peerDependenciesMeta }
-  for (const name of legacy) next.peerDependenciesMeta[name] = { optional: true }
-  writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`)
-  const out = join(mkTmp('projected-tgz'), 'basalt-ui-projected.tgz')
-  must(['tar', '-czf', out, '-C', dir, 'package'], dir)
-  return out
-}
-
 interface Install {
   readonly dir: string
   readonly output: string
@@ -176,17 +158,7 @@ function cssGraph(dir: string): string[] {
 
 const tarball = ready ? pack() : ''
 const manifest = ready ? manifestOf(tarball) : {}
-const legacyRequired = Object.keys(manifest.peerDependencies ?? {}).filter(
-  (name) =>
-    !(FONTS as readonly string[]).includes(name) &&
-    manifest.peerDependenciesMeta?.[name]?.optional !== true,
-)
-const subject = ready
-  ? legacyRequired.length > 0
-    ? project(tarball, manifest, legacyRequired)
-    : tarball
-  : ''
-const install = ready ? frozenInstall(subject) : { dir: '', output: '' }
+const install = ready ? frozenInstall(tarball) : { dir: '', output: '' }
 const installed = ready ? topLevelPackages(install.dir) : []
 const sheet = (name: string): string => join(install.dir, 'node_modules/basalt-ui/dist/css', name)
 
@@ -226,37 +198,22 @@ const initRun = ready
 const initHasProfiles = !/unrecognized flag '--profile'/.test(initRun.result.out)
 
 layout('tokens install (packed tarball, frozen)', () => {
-  test('dependencies are exactly clsx, class-variance-authority and eventsource-parser', () => {
-    expect(Object.keys(manifest.dependencies ?? {}).toSorted()).toEqual([
-      'class-variance-authority',
-      'clsx',
-      'eventsource-parser',
-    ])
+  test('dependencies are exactly clsx, class-variance-authority, eventsource-parser and the three fonts', () => {
+    expect(Object.keys(manifest.dependencies ?? {}).toSorted()).toEqual(
+      [...FONTS, 'class-variance-authority', 'clsx', 'eventsource-parser'].toSorted(),
+    )
   })
 
-  test('the fonts are required peers of the tokens install', () => {
-    for (const font of FONTS) {
-      expect(manifest.peerDependencies?.[font]).toBeDefined()
-      expect(manifest.peerDependenciesMeta?.[font]?.optional).not.toBe(true)
-    }
+  test('a bare frozen install resolves exactly basalt-ui, clsx, cva, eventsource-parser and the three fonts', () => {
+    expect(installed).toEqual(EXPECTED_PACKAGES)
   })
 
-  test(
-    legacyRequired.length > 0
-      ? 'a bare frozen install resolves exactly basalt-ui, clsx, cva, eventsource-parser and the three fonts (tarball with the 2.x peers marked optional)'
-      : 'a bare frozen install resolves exactly basalt-ui, clsx, cva, eventsource-parser and the three fonts',
-    () => {
-      expect(installed).toEqual(EXPECTED_PACKAGES)
-    },
-  )
-
-  const real = legacyRequired.length > 0 ? test.todo : test
-  real(
-    `the REAL tarball declares no required peer but the fonts (blocked until v3-teardown-peers drops: ${legacyRequired.join(', ')})`,
-    () => {
-      expect(legacyRequired).toEqual([])
-    },
-  )
+  test('the real tarball declares no required peer', () => {
+    const required = Object.keys(manifest.peerDependencies ?? {}).filter(
+      (name) => manifest.peerDependenciesMeta?.[name]?.optional !== true,
+    )
+    expect(required).toEqual([])
+  })
 
   test('the frozen install prints no peer warning', () => {
     const peerLines = install.output

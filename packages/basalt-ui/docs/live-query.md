@@ -3,7 +3,7 @@ name: liveQuery
 use when: 'a query is polled, pushed, cross-device or static and its cadence belongs in the factory, not the component'
 never when: 'an observer would set its own `staleTime` or `refetchInterval`; the class owns both'
 subpath: basalt-ui/data
-peers: []
+peers: ['@tanstack/react-query']
 slots: []
 ---
 

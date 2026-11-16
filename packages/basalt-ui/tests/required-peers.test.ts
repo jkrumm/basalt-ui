@@ -1,45 +1,33 @@
 /**
- * Peer declaration invariants (V2-SPEC section 1, "Peers, defined once").
+ * Peer declaration invariants (docs/v3/ARCHITECTURE.md § 4.3 "Peers"): zero required peers.
  *
- * Required peers carry no `optional` flag: every consumer installs them, because `.` or
- * `./styles.css` imports them statically or names them. Everything else stays `optional`, either
- * subpath-required (named by one subpath's public types or imported statically by it) or genuinely
- * optional (reached only through `import()`). npm has no per-subpath optionality, so the
- * subpath-required class is asserted by `scripts/surface-gates.ts` over the built dist graph; this
- * file pins the manifest and the source-level facts that graph rests on.
+ * Every declared peer carries `optional: true`, so `basalt-ui/tokens` installs no React, no Tailwind
+ * and no UI library (epos rejected basalt over a required set, rb `3517e01` is the frozen-install
+ * failure this reopens unless the five conditions hold). Which peer a subpath still needs is
+ * asserted by `scripts/surface-gates.ts` over the built dist graph; this file pins the manifest and
+ * the source-level facts that graph rests on.
  *
  * Dropping a peer from `peerDependencies` (rather than marking it optional) would silently lose the
- * version-mismatch warning, so every peer named here must stay declared.
+ * version-mismatch warning, so the declared set is pinned to the subpath-required peers plus React.
  *
  * Run: bun test packages/basalt-ui/tests/required-peers.test.ts
  */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'bun:test'
+import { REQUIRED_PEERS, SUBPATH_REQUIRED_PEERS } from '../scripts/surface-gates'
 
 const pkgRoot = join(import.meta.dir, '..')
 
-/** V2-SPEC section 1: required = no `optional` flag. */
-const REQUIRED_PEERS = [
+/** Runtime dependencies: the three fonts ship with every install (DIRECTION § 5), so no peer is required for them. */
+const V3_DEPENDENCIES = [
   '@fontsource-variable/hubot-sans',
   '@fontsource-variable/jetbrains-mono',
   '@fontsource-variable/nunito-sans',
-  '@mantine/core',
-  '@mantine/hooks',
-  '@mantine/modals',
-  '@mantine/notifications',
-  '@mantine/spotlight',
-  '@tanstack/react-query',
-  '@tanstack/react-router',
-  'react',
-  'react-dom',
+  'class-variance-authority',
+  'clsx',
+  'eventsource-parser',
 ]
-
-/** Peers the v3 skeleton added; none may join the required set. */
-const V3_OPTIONAL_PEERS = ['@base-ui/react', 'tailwindcss']
-
-/** Runtime dependencies the v3 skeleton added (the barrel rule allows `.` no peer but react). */
-const V3_DEPENDENCIES = ['class-variance-authority', 'clsx', 'eventsource-parser']
 
 const REMEND_BLOCK_COMMENT_RE = /\/\*[\s\S]*?\*\//g
 const REMEND_LINE_COMMENT_RE = /\/\/.*$/gm
@@ -62,25 +50,29 @@ describe('peer declarations', () => {
   const peerDeps = pkg.peerDependencies ?? {}
   const peerMeta = pkg.peerDependenciesMeta ?? {}
 
-  for (const peer of REQUIRED_PEERS) {
-    it(`'${peer}' is declared and required`, () => {
-      expect(peer in peerDeps).toBe(true)
-      expect(peerMeta[peer]?.optional).not.toBe(true)
-    })
-  }
+  it('declares peers at all, so the empty-required assertion below is not vacuous', () => {
+    expect(Object.keys(peerDeps).length).toBeGreaterThan(0)
+  })
 
-  // v3 skeleton (docs/v3/ARCHITECTURE.md § 3): every added peer is optional, so the 2.x required set
-  // above cannot grow by accident.
-  for (const peer of V3_OPTIONAL_PEERS) {
-    it(`'${peer}' (v3 skeleton) is declared and optional`, () => {
-      expect(peer in peerDeps).toBe(true)
-      expect(peerMeta[peer]?.optional).toBe(true)
-    })
-  }
-
-  it('exactly the section 1 required set is non-optional', () => {
+  it('the required set is empty', () => {
+    expect(REQUIRED_PEERS).toEqual([])
     const nonOptional = Object.keys(peerDeps).filter((peer) => peerMeta[peer]?.optional !== true)
-    expect(nonOptional.sort()).toEqual([...REQUIRED_PEERS].sort())
+    expect(nonOptional).toEqual([])
+  })
+
+  it('no peerDependenciesMeta entry names a peer that is not declared', () => {
+    expect(Object.keys(peerMeta).filter((peer) => !(peer in peerDeps))).toEqual([])
+  })
+
+  it('declares react, react-dom and every subpath-required peer', () => {
+    const subpathPeers = Object.values(SUBPATH_REQUIRED_PEERS).flat()
+    for (const peer of ['react', 'react-dom', ...subpathPeers]) {
+      expect(peer in peerDeps).toBe(true)
+    }
+  })
+
+  it('declares no @mantine/* peer', () => {
+    expect(Object.keys(peerDeps).filter((peer) => peer.startsWith('@mantine/'))).toEqual([])
   })
 })
 

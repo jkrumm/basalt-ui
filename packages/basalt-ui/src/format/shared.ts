@@ -1,5 +1,5 @@
 /**
- * Shared low-level pieces of `basalt-ui/format`: the {@link NON_FINITE} sentinel, the default
+ * Shared low-level pieces of the formatters: the {@link NON_FINITE} sentinel, the default
  * locale / time zone ({@link setFormatDefaults}), the memoized `Intl` caches and the number-input
  * guard every formatter in this module reuses. The subpath is the single implementation; the chart
  * layer imports it directly (`docs/V2-SPEC.md` § 9).
@@ -35,12 +35,17 @@ const dateCaches = new Map<string, Map<string, Intl.DateTimeFormat>>()
 let defaults: FormatDefaults = {}
 
 /**
- * Sets the locale / time zone every formatter in `basalt-ui/format` falls back to when a call
+ * Sets the locale / time zone every formatter, and the chart layer's date labels, fall back to when a call
  * passes none. Merges: only DEFINED fields are applied, `undefined` leaves the earlier value.
  *
  * The default is ONE module-global per process (formatters are plain functions, not hooks), so it
  * is an app-wide setting, not a per-request one — a server rendering many locales passes `locale`
  * per call instead.
+ *
+ * @useWhen the app has one page locale or time zone and charts must print dates in it before any
+ * component mounts (call it once at startup, beside `routerDefaults`).
+ * @neverWhen only text in components needs the locale (use `useFormat` or `createFormat`, which
+ * take it per call), or a server renders many locales.
  */
 export function setFormatDefaults(next: FormatDefaults = {}): void {
   const merged: FormatDefaults = {

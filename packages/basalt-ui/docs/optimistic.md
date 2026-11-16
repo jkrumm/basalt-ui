@@ -3,7 +3,7 @@ name: optimistic
 use when: 'a mutation should show its result in the cache before the server answers'
 never when: 'the server response is the first honest state (use a plain mutation and invalidate)'
 subpath: basalt-ui/data
-peers: []
+peers: ['@tanstack/react-query']
 slots: []
 ---
 

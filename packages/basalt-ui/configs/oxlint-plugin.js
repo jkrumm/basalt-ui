@@ -3749,7 +3749,7 @@ const RAW_BREAKPOINT_RESPONSIVE_PROP_MESSAGE =
 const RAW_BREAKPOINT_POINTER_HINT =
   'A hover/pointer capability read belongs in CSS: @media (pointer: coarse) in a module (the ' +
   'query --vx-hit keys on) — (hover: none) is not a sanctioned query. A JS read (mount one of two ' +
-  'branches, a listener) is useCoarsePointer() from basalt-ui.'
+  'branches, a listener) is useSizeClass() from basalt-ui/page for chrome.'
 
 const RAW_BREAKPOINT_BASE_ONLY_MESSAGE =
   'Responsive-object prop with only a base key — there is no breakpoint in it at all, so drop the ' +

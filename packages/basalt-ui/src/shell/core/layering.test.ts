@@ -41,7 +41,7 @@ describe('src/shell/core layering', () => {
   }
 
   test('nothing under the folder, tests included, imports ui, page, router, base-ui or mantine', () => {
-    const banned = /(\/ui\b|\/page\b|\/router\b|@base-ui\/react|@mantine|@tanstack\/react-router)/
+    const banned = /(\/ui\b|\/page\b|\/router\b|@base-ui\/react|@tanstack\/react-router)/
     for (const file of files) {
       if (file === 'layering.test.ts') continue
       for (const { spec } of importsOf(readFileSync(join(DIR, file), 'utf8'))) {

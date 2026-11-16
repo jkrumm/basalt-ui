@@ -164,8 +164,8 @@ describe('defineOverlays + OverlayHost', () => {
 describe('the overlay modules sit on the primitives', () => {
   const read = (name: string): string => readFileSync(join(import.meta.dirname, name), 'utf8')
   for (const file of ['define-overlays.ts', 'overlay-host.tsx']) {
-    test(`${file} imports no @mantine and no @base-ui/react`, () => {
-      expect(read(file)).not.toMatch(/from '(@mantine|@base-ui\/react)/)
+    test(`${file} imports no @base-ui/react`, () => {
+      expect(read(file)).not.toMatch(/from '@base-ui\/react/)
     })
   }
 

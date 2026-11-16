@@ -21,8 +21,7 @@ const SOURCES = [
 const importsOf = (source: string): string[] =>
   [...source.matchAll(/(?:from|import)\s+['"]([^'"]+)['"]/g)].map((m) => m[1]!)
 
-const BANNED =
-  /(^|\/)content(\/|$)|^@mantine(\/|$)|^(react-markdown|remark-gfm|rehype-sanitize|remend)(\/|$)/
+const BANNED = /(^|\/)content(\/|$)|^(react-markdown|remark-gfm|rehype-sanitize|remend)(\/|$)/
 
 describe('src/page layering', () => {
   for (const file of SOURCES) {

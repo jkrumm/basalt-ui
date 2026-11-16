@@ -73,7 +73,7 @@ export const rows: readonly RowDef[] = [
     order: 40,
     label: 'published subpaths (package.json exports)',
     // 2.0 target 15.
-    ceiling: 33, // v3 table-ga: `./table.css`, the table tier sheet (plain CSS; an app that imports `./table` imports it, Issue 1146); v3 eject: `./core/*`, the module paths an ejected seed imports (Issue 849); v3 skeleton: 15 (2.x) + 16 additive entries (see docs/v3/ARCHITECTURE.md § 3); consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router; ratchets down as 2.x subpaths retire
+    ceiling: 27, // v3 teardown-peers: the count after `./format` retired with src/format (the 2.x subpaths are gone; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router)
     measure: () => Object.keys(readManifest().exports ?? {}).length,
   },
 ]

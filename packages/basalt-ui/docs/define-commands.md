@@ -3,7 +3,7 @@ name: defineCommands
 use when: 'an app has shortcuts, a palette or a native menu: declare them once, here'
 never when: 'the action is a destination (a `defineNav` item lists itself) or belongs to one control (use its own onClick)'
 subpath: basalt-ui/shell
-peers: ['@base-ui/react']
+peers: ['@base-ui/react', '@tanstack/react-router']
 slots: []
 ---
 

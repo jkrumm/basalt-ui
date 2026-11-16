@@ -295,6 +295,54 @@
       "kind": "removed",
       "from": "basalt-ui/state",
       "note": "the 2.x runtime is deleted in 3.0; instead: defineControls and field from basalt-ui/router for URL state; persisted and createSyncedState from basalt-ui and basalt-ui/data"
+    },
+    {
+      "id": "removed-2x-root-StatusDot",
+      "kind": "removed",
+      "from": "basalt-ui#StatusDot",
+      "note": "the 2.x theme is deleted in 3.0; instead: Status from basalt-ui/ui/status"
+    },
+    {
+      "id": "removed-2x-root-StatusVerdict",
+      "kind": "removed",
+      "from": "basalt-ui#StatusVerdict",
+      "note": "the 2.x theme is deleted in 3.0; instead: Status from basalt-ui/ui/status with the verdict word as its label"
+    },
+    {
+      "id": "removed-2x-root-ThemeToggle",
+      "kind": "removed",
+      "from": "basalt-ui#ThemeToggle",
+      "note": "the 2.x theme is deleted in 3.0; instead: a Button or Segmented from basalt-ui/ui calling setScheme from basalt-ui/core/scheme"
+    },
+    {
+      "id": "removed-2x-root-scrollParentOf",
+      "kind": "removed",
+      "from": "basalt-ui#scrollParentOf",
+      "note": "the 2.x helpers are deleted in 3.0; instead: no replacement is published; the page owns the scroll, and ScrollArea from basalt-ui/ui is the scroll primitive"
+    },
+    {
+      "id": "removed-2x-root-Tone",
+      "kind": "removed",
+      "from": "basalt-ui#Tone",
+      "note": "the 2.x theme is deleted in 3.0; instead: the Tone type from basalt-ui/core/ports"
+    },
+    {
+      "id": "removed-2x-root-StatusDotProps",
+      "kind": "removed",
+      "from": "basalt-ui#StatusDotProps",
+      "note": "the 2.x theme is deleted in 3.0; instead: the props of Status from basalt-ui/ui/status"
+    },
+    {
+      "id": "removed-2x-root-StatusVerdictProps",
+      "kind": "removed",
+      "from": "basalt-ui#StatusVerdictProps",
+      "note": "the 2.x theme is deleted in 3.0; instead: the props of Status from basalt-ui/ui/status"
+    },
+    {
+      "id": "removed-2x-format",
+      "kind": "removed",
+      "from": "basalt-ui/format",
+      "note": "the 2.x subpath is deleted in 3.0; instead: useFormat or createFormat from basalt-ui, and the column kinds of basalt-ui/table"
     }
   ],
   "tokens": {

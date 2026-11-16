@@ -4,8 +4,8 @@ The maintainer invariants file for the package. Lives in the repo only — it is
 ships in the tarball. The repo-root `AGENTS.md` is the monorepo file; `AGENTS.md` next to this one is the
 shipped consumer quick reference.
 
-The only published package (npm: `basalt-ui`). An opinionated framework for Mantine v9 + TanStack Charts
-React apps: a Mantine theme + `cssVariablesResolver`, `BasaltProvider` (`basalt-ui/router`), an app shell with a page bar and a
+The only published package (npm: `basalt-ui`). An opinionated framework for React apps on Base UI, Tailwind 4 and TanStack
+Charts: `BasaltProvider` (`basalt-ui/router`), an app shell with a page bar and a
 control tier, a TanStack Charts chart system, a three-tier `--vx-*` token system, a Vite preset,
 raw toolchain presets, and the `basalt-ui` CLI.
 
@@ -18,17 +18,17 @@ code. Mechanics live where they can't drift: **API shape → the JSDoc on the ex
 
 Named exports only — **no default exports**. Files `kebab-case`, components `PascalCase`.
 
-| Subpath        | Mantine? | Owns                                                                                                                                                               |
-| -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `.`            | coupled  | the theme factory, `ThemeToggle`, `StatusDot`/`StatusVerdict`, the state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`) |
-| `./charts`     | **free** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export                |
-| `./tokens`     | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                                          |
-| `./controls`   | free     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                                            |
-| `./table`      | free     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                                 |
-| `./content`    | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map                                                                                                        |
-| `./vite`       | —        | `basaltViteConfig` (config only, never `plugins`) + `basalt()` (gates, sources.css, head/PWA)                                                                      |
-| `./styles.css` | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                |
-| `./configs/*`  | —        | raw toolchain presets (real paths — `extends` needs them)                                                                                                          |
+| Subpath        | Mantine? | Owns                                                                                                                                                |
+| -------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`            | coupled  | the state seams (`persisted`, `notify`, `createChannel`, `externalField`, `useNow`, `createFormat`)                                                 |
+| `./charts`     | **free** | `CartesianChart` + the `Lines`/`Bars`/`Sparkline`/`Heatmap`/`BandStrip` kinds, `ChartCard`, `chartCursor` — no token, formatter or engine re-export |
+| `./tokens`     | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`                                                           |
+| `./controls`   | free     | the control tier: `FilterSet` over `spec(...)`, `ViewTabs`, `ControlView`, `ControlHome`, `filterSlot` and the v3 forms                             |
+| `./table`      | free     | `col<Row>()` kind columns, `useDataTable`, `DataTable` and its parts, `tableCodec`                                                                  |
+| `./content`    | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map                                                                                         |
+| `./vite`       | —        | `basaltViteConfig` (config only, never `plugins`) + `basalt()` (gates, sources.css, head/PWA)                                                       |
+| `./styles.css` | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                 |
+| `./configs/*`  | —        | raw toolchain presets (real paths — `extends` needs them)                                                                                           |
 
 **2.0:** 15 published subpaths (V2-SPEC § 1), plus the v3 subpaths added since; `./forms`, `./commands`, `./agent` and `./state` were deleted in 3.0 with the 2.x runtime (`removed-2x.json` names each export); `./guard`, `./data/virtual`,
 `./llms.txt` and `./package.json` are no longer exports. **C1 (1.29.0):** `./query`, `./connectivity` and bare `./data` were dropped — 26 published subpaths
@@ -79,28 +79,26 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
 
 ## Layering: Mantine-coupled vs Mantine-free
 
-- `src/charts/**` and `src/tokens/**` import zero `@mantine/*`. The chart engine is
+- `src/charts/**` and `src/tokens/**` import no UI framework. The chart engine is
   `@tanstack/charts` `1.5.0` (+ `d3-scale` `4.0.2`, exact optional peers, subpath-required for
   `./charts`); `@visx/*` is banned everywhere. `src/charts/**` imports only `@tanstack/charts/*`,
-  `d3-scale`, `react`, `../tokens`, `../format` and `../common`. Three independent oxlint plugin
+  `d3-scale`, `react`, `../tokens`, `../format/{shared,number}` and `../common`. Three independent oxlint plugin
   rules enforce it: `basalt/chart-engine-boundary` ships in the consumer preset too (`@visx/*`
   banned; outside basalt `@tanstack/charts` is an allowlist of mark subpaths, the bare root is an
   error); `basalt/token-layer-boundary` and `basalt/chart-host-single` are **repo-local only** — the
   latter keeps `@tanstack/charts/react` inside `src/charts/host.tsx`, the single importer of the
   engine's DOM host.
-- It protects two things. **Layering**: `tokens` is pure data that `cssVariablesResolver`
-  (Mantine-coupled) reads to bind Mantine's surfaces to the same vars charts read, so an import the
-  other way cycles through the theme layer or lets a chart fork chrome and charts apart.
-  **Packaging**: `./charts`/`./tokens` (and `./format`) resolve with **no `@mantine/*` installed** — CI-tested by
+- It protects two things. **Layering**: `tokens` is pure data that the generated stylesheet and the
+  chart layer both read, so an import the other way cycles through the token layer or lets a chart
+  fork chrome and charts apart.
+  **Packaging**: `./charts`/`./tokens` resolve with **no UI framework installed** — CI-tested by
   `scripts/check-dist-layering.mjs` (dist-graph walk) and `scripts/pack-test.sh` (scratch install +
-  SSR render). **The LAYER is Mantine-free; the FRAMEWORK is not** — `.` requires Mantine.
+  SSR render).
 - **The root barrel does not re-export `./tokens` / `./charts`.** It keeps the arrow pointing one
-  way, and it means a charts-only consumer never pulls Mantine in by importing the root.
-- `motion` is framework-agnostic, so `src/motion` is importable from both halves. Only `@mantine/*`
-  is banned in the free layer.
-- `./controls` must never reach any `@mantine/*` package, statically OR lazily: `peer-boundary.test.ts`
-  walks the relative-import closure, `check-dist-layering.mjs` the built graph, `pack-test.sh`
-  renders one with the peers absent.
+  way, and it means a charts-only consumer never pulls the app layer in by importing the root.
+- `motion` is framework-agnostic, so `src/motion` is importable from both halves.
+- `./controls` resolves with only its own peers: `check-dist-layering.mjs` walks the built graph and
+  `pack-test.sh` renders one with every other peer absent.
 
 ## Tests
 
@@ -143,15 +141,14 @@ bun run build   # tsup && tsc --emitDeclarationOnly && copy-assets && fix-esm-ex
 
 ## Dependencies
 
-- **`dependencies` is empty.** `bun add basalt-ui` with no peers pulls exactly one package.
-- **Every peer is `optional` in `peerDependenciesMeta`**, including the five the root `.` entry
-  hard-requires (`react`, `react-dom`, `@mantine/core`, `@mantine/hooks`, `@tanstack/react-query`),
-  because npm expresses optionality per PACKAGE and never per SUBPATH — and `./tokens`/`./charts`/
-  `./format` really do resolve without them. The trade: a missing peer is a bundler
+- **`dependencies` are the three variable fonts plus `clsx`, `class-variance-authority` and `eventsource-parser`.** `bun add basalt-ui` with no peers pulls those and nothing else (`tests/layout/one-look/tokens-install.layout.test.ts` holds the exact set).
+- **Every peer is `optional` in `peerDependenciesMeta`** — no peer is required, `react` included —
+  because npm expresses optionality per PACKAGE and never per SUBPATH, and `./tokens`/`./charts`
+  really do resolve without them. The trade: a missing peer is a bundler
   resolution error instead of an install warning. Version-mismatch warnings are unaffected and must
   stay that way, so every peer stays listed in `peerDependencies` (`tests/required-peers.test.ts`
   pins both halves).
-- Exact-pinned peers: `@tanstack/charts`, `d3-scale`, `remend`, the three `@fontsource-variable/*`.
+- Exact-pinned: `@tanstack/charts`, `d3-scale`, `remend` (peers) and the three `@fontsource-variable/*` (dependencies).
   `motion` is caret-ranged (`^14.1.0`); no reason for an exact pin is recorded.
   `remend` is `./content`'s one eagerly-imported peer.
 - **NO** zustand, **NO** `@tanstack/*` as a dependency, **NO** icon package — icons are `ReactNode`.
@@ -169,21 +166,19 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
   palette hex** — retune the config or the calibrated constants. `derive.ts`/`hct.ts` are themselves
   exempt from the `raw-hex` guard because they ARE the source. Structural, non-derived tokens
   (shadows, the overlay surface, dividers, the raw hue ramps) stay hand-authored.
-- **Four config dimensions, ONE entry point**, and never a second config surface:
-  `createBasaltTheme(overrides?, { derive, fonts, radius, density })`. `derive` is one accent seed
-  plus five bounded knobs; `fonts` is the only route to the `--basalt-font-*` vars; `radius` and
-  `density` are integer LEVELS over a law (`deriveRadius` / `deriveSpacing`), with level 0 pinned to
-  today's values by `theme/{radius,spacing}.test.ts` and cross-level relations by
-  `theme/density-relations.test.ts`.
+- **Four config dimensions, ONE entry point**, and never a second config surface: `derive` is one
+  accent seed plus five bounded knobs; `fonts` is the only route to the `--basalt-font-*` vars;
+  `radius` and `density` are integer LEVELS over a law (`deriveRadius` / `deriveSpacing`), with
+  level 0 pinned to the shipped values.
 - **Density is a multiplier with named exceptions, and the exceptions are the interesting part**:
   `SPACE_FIXED` structurals are exempt by design, the 4px stack rhythm rebuilds from one shared unit
   so its 2:1 pairs survive every level, several touch targets carry hard floors (mobile bar and row,
   the sidebar search trigger, `touchControlHeight`) because the law would take them below the
-  minimum target, and `input-height` must keep its `rem × --mantine-scale` form.
+  minimum target.
 - **Keep the `--vx-` prefix.** Renaming it costs every consumer and buys nothing.
 - **The one known gap**: `VX.legendGap` / `VX.margin` / `VX.dotR` are
-  frozen at module load from the level-0 snapshot and never re-derive from a `density` option, even
-  through `createBasaltTheme`. `deriveSpacing`'s JSDoc has the full accounting.
+  frozen at module load from the level-0 snapshot and never re-derive from a `density` option.
+  `deriveSpacing`'s JSDoc has the full accounting.
 - **Series color is consumer data.** `VX.series` is not in the framework: an app declares its own in
   one guard-exempt file via `defineSeries` → `seriesTokens`/`groupTokens` → `buildPaletteCss`. Every
   `defineX` factory follows ONE shape — `<const T extends Constraint>(spec: T): T`, exact-keyed, no
@@ -192,24 +187,14 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
 - **The fill band.** A filled control does not invert across schemes, so its color must clear a white
   label AND stay visible on both pages. That pins every fill into one narrow luminance band: hue
   varies, luminance does not. Never fill with the ink accent — fill with `--vx-accent-fill` /
-  `--vx-fill-{family}`. Retuning a fill outside the band fails `theme/contrast.test.ts`.
-- **On-color in CSS, never in JS.** Mantine resolves a filled foreground once, scheme-blindly, by a
-  brightness heuristic that does not track WCAG contrast. Basalt emits `--vx-on-{color}` per scheme
-  and re-points every filled surface at it — including the seven components that bypass
-  `variantColorResolver` and call `getContrastColor` themselves.
-- **The surface system is strict**: Mantine components read raw ramp steps directly, so
-  `cssVariablesResolver` collapses those steps onto the `--vx-surface-*` tokens. One border shade,
-  one card background, one radius, across every component.
+  `--vx-fill-{family}`. The derivation holds the band; `src/tokens/invariants.test.ts` asserts the
+  `on-brand` contrast against `brand-fill` per scheme.
+- **On-color in CSS, never in JS.** Basalt emits `--vx-on-{color}` per scheme and every filled
+  surface reads it; no component resolves a foreground in JS.
 - **Depth is three tokens split control / panel / floating**, and focus LAYERS over the resting
   depth. `shadowRaised` is ring-free-outset on purpose: an outset ring paints in the color of
   whatever it is drawn over, so one value could not otherwise ride a fill, a tint and a panel alike.
   Depth is static — a hover lift and a materializing `subtle` shadow were both tried and reverted.
-  `theme/border-coverage.test.ts` enumerates every `@mantine/core` component whose shipped CSS
-  declares a border and requires it themed or allowlisted with a reason;
-  `theme/shadow-surfaces.test.ts` requires every shadow site to name where its box's radius comes
-  from, because the baked ring is drawn by that box's own corners.
-- **`ThemeToggle` is tri-state** (Mantine's own toggle only flips two) with one sun/moon glyph —
-  never a third monitor icon.
 
 ## Shell, homes and the control tier
 
@@ -414,7 +399,7 @@ impossible, land a one-release `releaseRules` override (`{"breaking":true,"relea
 - **One verb per role.** `define` declares a value that is data (`defineNav`, `defineControls`);
   `create` builds an instance that holds state or a connection (`createQueryClient`,
   `createSyncedState`, `createChannel`); `set` writes a process-wide default and returns nothing
-  (`setFormatDefaults`, beside `resetFormatDefaults`). `make` is not a verb of this
+  (`setFormatDefaults`). `make` is not a verb of this
   surface. An activation callback is `onClick` on every action, card target and menu item; the
   empty sentence is `cause`; a frame's pending node is `skeleton`, and `loading` is a boolean.
   An action's identity is `id`; every data part takes `phase`; a width has one word (`compact` is

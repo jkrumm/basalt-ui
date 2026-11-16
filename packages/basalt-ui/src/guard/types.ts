@@ -160,9 +160,9 @@ export type GuardConfig = {
    * Which kinds apply to this consumer. `'mantine'` (default) is the full framework guard.
    *
    * `'tokens-only'` is for a consumer that installs the TOKEN LAYER and nothing else — no
-   * `@mantine/core`, often no React (`basalt-ui tokens:css` + `basalt-ui/tokens`). Every kind whose
+   * Mantine, often no React (`basalt-ui tokens:css` + `basalt-ui/tokens`). Every kind whose
    * remedy is a Mantine component or prop is disabled there, because "use `TextInput` from
-   * `@mantine/core`" is not advice, it is a dependency the consumer deliberately does not have.
+   * Mantine" is not advice, it is a dependency the consumer deliberately does not have.
    * The color/typography kinds stay on — those are the tokens, which is the whole surface they DO
    * consume. See `TOKENS_ONLY_DISABLED_KINDS` in `./index` for the exact set.
    *
