@@ -129,7 +129,7 @@ type UseDataTable<T> = {
   views?: { store?: ViewStore }
 } & (
   | { detail: (row: T, box: Box) => ReactNode; onRowActivate?: never }
-  | { onRowActivate?: (row: T) => void; detail?: never }
+  | { onRowActivate?: (row: T) => void; activeRowId?: string; detail?: never }
 )
 ```
 
