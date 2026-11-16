@@ -43,7 +43,8 @@ export const rows: readonly RowDef[] = [
     // 111000 -> 123000 (Issue 1146): 121455 B measured, +15.9 KB gz for the default detail sheet. A row tap
     // with no `detail` host opens a Base UI Drawer (`ui/sheet`), so the drawer and its swipe code join
     // the table's closure; the auto sheet, the Details door and the view-store hook are the rest.
-    ceiling: 123000,
+    // 123000 -> 123100 (Issue 1543): +~40 B gz for `detailById`, the detail door of a record the table has not loaded.
+    ceiling: 123100,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -56,6 +57,13 @@ export const raises: Raises = {
       consumer:
         "the default detail sheet of `DataTable`: linewatch's outage table (web/src/components/outage-table.tsx) has a `detail` and no aside host, so a row tap opens the table's own sheet instead of nothing (Issue 1146)",
       repo: 'linewatch',
+    },
+    {
+      from: 123000,
+      to: 123100,
+      consumer:
+        "`detailById`: a table's `detailState` field that names a record the filters exclude opens it instead of clearing, the state cycle 3 orders page (apps/playground/src/cycle/state-3/OrdersPage.tsx) takes it in the next cycle, and any app whose notification or share link names a record (Issue 1543)",
+      repo: 'basalt-ui',
     },
   ],
 }
