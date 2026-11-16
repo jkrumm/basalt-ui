@@ -16,6 +16,12 @@ import { ExprN09Scenario } from './expr/n09/ExprN09'
 import { ExprN12Scenario } from './expr/n12/ExprN12'
 import { ExprN13Scenario } from './expr/n13/ExprN13'
 import { ExprN16Scenario } from './expr/n16/ExprN16'
+import { ExprN03Scenario } from './expr/n03/ExprN03'
+import { ExprN07Scenario } from './expr/n07/ExprN07'
+import { ExprN10Scenario } from './expr/n10/ExprN10'
+import { ExprN14Scenario } from './expr/n14/ExprN14'
+import { ExprN17Scenario } from './expr/n17/ExprN17'
+import { ExprN18Scenario } from './expr/n18/ExprN18'
 import { MdxScenario } from './mdx-scenario'
 import type { ScenarioProps } from './shot-state'
 
@@ -32,6 +38,12 @@ const RENDERERS = {
   'expr-n09': (p) => <ExprN09Scenario {...p} />,
   'expr-n13': (p) => <ExprN13Scenario {...p} />,
   'expr-n16': (p) => <ExprN16Scenario {...p} />,
+  'expr-n03': (p) => <ExprN03Scenario {...p} />,
+  'expr-n07': (p) => <ExprN07Scenario {...p} />,
+  'expr-n10': (p) => <ExprN10Scenario {...p} />,
+  'expr-n14': (p) => <ExprN14Scenario {...p} />,
+  'expr-n17': (p) => <ExprN17Scenario {...p} />,
+  'expr-n18': (p) => <ExprN18Scenario {...p} />,
   mdx: () => <MdxScenario />,
 } satisfies Record<string, (props: ScenarioProps) => ReactElement>
 

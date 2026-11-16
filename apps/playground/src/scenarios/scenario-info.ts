@@ -78,4 +78,35 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     title: 'Expression n16: cut progress',
     blurb: 'Is weight falling at the planned rate, and is it fat rather than lean mass?',
   },
+  {
+    id: 'expr-n03',
+    title: 'Expression n03: training load',
+    blurb: "Is this week's training load inside the target band, against the last eight weeks?",
+  },
+  {
+    id: 'expr-n07',
+    title: 'Expression n07: observing nights',
+    blurb: 'Which of the next ten nights is best, and why is each other night ruled out?',
+  },
+  {
+    id: 'expr-n10',
+    title: 'Expression n10: wind models',
+    blurb:
+      'Do the forecast models agree on the wind for the next 72 hours, and where do they part?',
+  },
+  {
+    id: 'expr-n14',
+    title: 'Expression n14: net worth',
+    blurb: 'Are we getting wealthier, and which accounts hold it?',
+  },
+  {
+    id: 'expr-n17',
+    title: 'Expression n17: host memory',
+    blurb: 'Is memory the limit right now, and which kind of process holds it?',
+  },
+  {
+    id: 'expr-n18',
+    title: 'Expression n18: queue waits',
+    blurb: 'What did queued Issues wait for this week, and which reason cost the most hours?',
+  },
 ]
