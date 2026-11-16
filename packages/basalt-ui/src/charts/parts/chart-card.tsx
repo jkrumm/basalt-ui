@@ -35,6 +35,8 @@ const DOT: Record<Status['tone'], string> = {
 
 /** A figure longer than this steps down a size where the card is narrower than `regular`. */
 const LONG_FIGURE = 10
+/** Below `regular` the period takes a line of its own, in every phase, so loading and failed hold the ready height. */
+const PERIOD_LINE = 'hidden h-4 basis-full items-center @max-regular:flex'
 
 function FigureRow({
   figure,
@@ -51,49 +53,64 @@ function FigureRow({
   return (
     <div
       data-slot="chart-figure"
-      className="flex min-h-9 shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5"
+      className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5"
     >
-      {loading ? (
-        <>
-          <div aria-hidden="true" className={cn(BAR, 'h-7 w-24')} />
-          <div aria-hidden="true" className={cn(BAR, 'h-6 w-14 rounded-full')} />
-        </>
-      ) : (
-        <>
-          <span
-            className={cn(
-              'max-w-full truncate text-display font-semibold tabular-nums',
-              (text?.length ?? 0) + (unit?.length ?? 0) > LONG_FIGURE && '@max-regular:text-lg',
-              text === null && 'text-muted-foreground',
-            )}
-          >
-            {text ?? '–'}
-            {text !== null && unit !== undefined && (
-              <span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span>
-            )}
-          </span>
-          {!failed && delta !== undefined && (
-            <DeltaBadge
-              value={delta.value}
-              polarity={delta.polarity}
-              {...(delta.label !== undefined && { label: delta.label })}
-            />
-          )}
-          {!failed && period !== undefined && (
-            <span className="min-w-0 text-xs text-muted-foreground">{period}</span>
-          )}
-          {!failed && status !== undefined && (
+      {/* The figure line has one height in every phase; the period joins it from `regular` up and takes the line under it below. */}
+      <div className="flex h-9 max-w-full min-w-0 items-center gap-2">
+        {loading ? (
+          <>
+            <div aria-hidden="true" className={cn(BAR, 'h-7 w-24')} />
+            <div aria-hidden="true" className={cn(BAR, 'h-6 w-14 rounded-full')} />
+          </>
+        ) : (
+          <>
             <span
-              data-slot="chart-status"
-              data-tone={status.tone}
-              className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground"
+              className={cn(
+                'min-w-0 truncate text-display font-semibold tabular-nums',
+                (text?.length ?? 0) + (unit?.length ?? 0) > LONG_FIGURE && '@max-regular:text-lg',
+                text === null && 'text-muted-foreground',
+              )}
             >
-              <span aria-hidden="true" className={cn('size-1.5 rounded-full', DOT[status.tone])} />
-              {status.label}
+              {text ?? '–'}
+              {text !== null && unit !== undefined && (
+                <span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span>
+              )}
             </span>
-          )}
-        </>
-      )}
+            {!failed && delta !== undefined && (
+              <DeltaBadge
+                value={delta.value}
+                polarity={delta.polarity}
+                {...(delta.label !== undefined && { label: delta.label })}
+              />
+            )}
+            {!failed && status !== undefined && (
+              <span
+                data-slot="chart-status"
+                data-tone={status.tone}
+                className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground"
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn('size-1.5 rounded-full', DOT[status.tone])}
+                />
+                {status.label}
+              </span>
+            )}
+          </>
+        )}
+      </div>
+      {period !== undefined &&
+        (loading ? (
+          <div aria-hidden="true" className={PERIOD_LINE}>
+            <div className={cn(BAR, 'h-3 w-32')} />
+          </div>
+        ) : failed ? (
+          <span aria-hidden="true" className={PERIOD_LINE} />
+        ) : (
+          <span className="min-w-0 text-xs text-muted-foreground @max-regular:basis-full">
+            {period}
+          </span>
+        ))}
     </div>
   )
 }
