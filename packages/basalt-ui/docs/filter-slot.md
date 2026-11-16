@@ -18,7 +18,7 @@ several specs adds `Reset all`. No specs, nothing drawn. The slot keeps its spec
 ## Signature
 
 ```ts
-filterSlot<Scope extends FilterScope>(specs: readonly FilterSpec<any, Scope>[]): ControlsSlot<Scope>
+filterSlot<Scope extends FilterScope>(specs: readonly FilterSpec<any, Scope>[]): ControlsSlot<Scope> & { readonly handles: readonly { readonly key: string; }[]; }
 ```
 
 ## Example

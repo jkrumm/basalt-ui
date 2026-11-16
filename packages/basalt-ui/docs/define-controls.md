@@ -31,7 +31,7 @@ The store reads whole: `useValues()` gives every URL field's value in one call, 
 `Filters (n)`); `useReset()` returns the callback that unsets every field, the view tab and the open
 record with the filters; `useReset({ only: [list.field.q, list.field.status] })` unsets just those
 in one navigate and keeps the rest: the Clear filters of a table's or chart card's `empty.filtered`
-(`FilterSet`'s Reset all is the same call). A push enum set back to its fallback (`ViewTabs` on its
+(`FilterSet`'s Reset all is the same call); `only` also takes the `filterSlot([...])` the page draws, so the fields are named once. A push enum set back to its fallback (`ViewTabs` on its
 default) leaves the URL and still pushes; `InnerNav` keeps the fallback pane via `choose(v)`. A `range` with `window:
 { '7d': (now) => ({ from, to }) }` makes `toWindow(value)` return `{ from, to }` ISO days for that
 preset, resolved at call time (a preset without a resolver gives `{ window: preset }`; with every preset resolved the type has no `{ window }` member), so the
@@ -73,5 +73,5 @@ createFileRoute('/list')({
 const [q, setQ] = list.field.q.use()
 <Link to="/list" {...list.field.status.link(['open'])} />
 // beside `empty: { filtered: { reset } }`: clear the filters, keep the view and the open record
-const reset = list.useReset({ only: [list.field.q, list.field.status] })
+const reset = list.useReset({ only: [list.field.q, list.field.status] }) // or `{ only: slot }`, the page's filterSlot([...])
 ```
