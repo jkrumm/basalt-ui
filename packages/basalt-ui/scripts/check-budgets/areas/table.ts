@@ -50,7 +50,9 @@ export const rows: readonly RowDef[] = [
     // to a chart's focus item by id and clears it on pointer leave and blur.
     // 123900 -> 124200 (Issue 1631): +~250 B gz for `filters` (page fields with a row predicate, read by
     // `useDataTable`) and `labels` on `c.text`; 124144 B measured.
-    ceiling: 124200,
+    // 124200 -> 124600 (Issue 1627): +~400 B gz for the money `delta` (`currency`), the `card: 'hidden'` marker and
+    // the skeleton rows of a paged table, the kit fixes of expression cycle 4.
+    ceiling: 124600,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -90,6 +92,13 @@ export const raises: Raises = {
       to: 124200,
       consumer:
         "`useDataTable filters`: dogfood cycle 2's flow overview (apps/playground/src/cycle/dogfood-2/FlowOverview.tsx) filters its table by three page fields in 11 lines and writes Clear filters in 5, the same code as cycle/state-3/OrdersPage.tsx (dogfood-2.5)",
+      repo: 'basalt-ui',
+    },
+    {
+      from: 124200,
+      to: 124600,
+      consumer:
+        "the table kit fixes of expression cycle 4: n13's recurring-charges table (apps/playground/src/scenarios/expr/n13) hand-formatted its money change, n09's job table printed its group name on every card, and a loading table drew six rows against 18 (Issue 1627)",
       repo: 'basalt-ui',
     },
   ],
