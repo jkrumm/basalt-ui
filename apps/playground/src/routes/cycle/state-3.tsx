@@ -22,7 +22,7 @@ function Entry(): ReactElement {
 }
 
 // State cycle 3 (docs/v3/cycles/state-3.md). A route of its own, not a scenario: the scenario route's
-// `validateShotSearch` drops every search key but `shot-state`, and this page's state is all in the URL.
+// `validateShotSearch` drops every search key but `shot-state` and `fixture`, and this page's state is all in the URL.
 export const Route = createFileRoute('/cycle/state-3')({
   staticData: { title: 'Orders (state cycle 3)' },
   validateSearch: orders.validateSearch,
