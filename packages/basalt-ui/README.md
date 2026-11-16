@@ -55,12 +55,12 @@ for the selector-specificity trap, the `color-mix` opacity law, and the surface-
 ### 2. Scaffold the app and the repo doctrine (`basalt-ui init`)
 
 ```bash
-bunx basalt-ui init --profile app --root src
+./node_modules/.bin/basalt-ui init --profile app --root src
 ```
 
 `--profile` is required and never inferred: `tokens`, `bridge`, `parts` or `app`. Each `--root`
-(default `.`, paths relative to the repo root) is declared with it. `bunx` is the one sanctioned
-entry here, because nothing is installed yet; every later command runs the local bin. There is no
+(default `.`, paths relative to the repo root) is declared with it. Step 1 installed the package, so
+`init` runs from the local bin like every later command, never `bunx`. There is no
 plugin, no marketplace and no second version to track. `init` writes at the git root:
 
 - `.basalt/manifest.json` — the profile, the declared roots, the `tokens:css` outputs and the sha256 of every managed file `sync` placed
@@ -613,8 +613,7 @@ Current slots: `series` (read by `./charts` + `./tokens`) and `notifications` (t
 `basalt-ui help` prints full usage (every subcommand also takes `--help`/`-h`); `AGENTS.md` at the
 install directory is the machine-readable companion. Run the **local bin, not `bunx`** —
 `./node_modules/.bin/basalt-ui` or a `package.json` script; `bunx` can silently run a cached version
-you've upgraded away from. The one sanctioned `bunx` invocation is `init`, because nothing is
-installed yet.
+you've upgraded away from. That includes `init`: install the package first.
 
 ## Toolchain
 

@@ -29,7 +29,7 @@ Placed by `basalt-ui init`, refreshed by `basalt-ui sync` (`--check` gates drift
 - `/basalt-app`: set up, upgrade or migrate the app (`init`, `doctor`, `sync`).
 - `basalt-design-reviewer` (subagent): scores a `basalt-ui shot` out dir per component; run it after every round, never on your own work. Without it, say "reviewer not run".
 
-**Run the local bin** (`./node_modules/.bin/basalt-ui` or a package script), never `bunx`; `init` is the one exception. In a workspace: the app package's `node_modules/.bin/basalt-ui`. Run the repo gate before reporting done.
+**Run the local bin** (`./node_modules/.bin/basalt-ui` or a package script), never `bunx`, `init` included: install `basalt-ui` first, then run `init` once from the local bin. In a workspace: the app package's `node_modules/.bin/basalt-ui`. Run the repo gate before reporting done.
 
 **Never `shadcn add` a primitive basalt ships.** Eject it (`basalt-ui eject <name> --reason`) to change it.
 
