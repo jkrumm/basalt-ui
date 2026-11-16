@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { checkTokens, nearestToken } from './check-tokens'
+import { checkTokens, nearestToken, packageTokenNames } from './check-tokens'
 
 const dir = mkdtempSync(join(tmpdir(), 'check-tokens-'))
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
@@ -45,6 +45,20 @@ describe('checkTokens', () => {
     expect(typo?.nearest).toBe('--vx-ink-muted')
     expect(stranger?.nearest).toBeUndefined()
     expect(nearestToken('--vx-ink2', ['--vx-ink', '--vx-ink-muted'])).toBe('--vx-ink')
+  })
+
+  it('keeps the nearest name within the kind the unknown name asks for', () => {
+    const known = packageTokenNames()
+    // a colour role is never a type size, a spacing name gets a spacing token
+    expect(nearestToken('--vx-text-muted', known)).toBe('--vx-ink-muted')
+    expect(nearestToken('--vx-space-1', known)).toBe('--vx-rhythm-1')
+    expect(nearestToken('--vx-brand-500', known)).toBe('--vx-brand')
+    expect(nearestToken('--vx-text-mdd', known)).toBe('--vx-text-md')
+    expect(nearestToken('--vx-warning', known)).toBe('--vx-warn')
+    expect(nearestToken('--vx-qqqqqqqqqqqq', known)).toBeUndefined()
+    // the suggestion reaches the finding
+    const f = file('k.css', '.a { color: var(--vx-text-muted); }')
+    expect(checkTokens({ files: [f] }).findings[0]?.nearest).toBe('--vx-ink-muted')
   })
 
   it('fails when no file is scanned', () => {
