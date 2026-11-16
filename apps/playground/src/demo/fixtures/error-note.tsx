@@ -18,7 +18,7 @@ export function ErrorNote({
   return (
     <Stack gap="xs" role="alert">
       <Group gap="xs" wrap="nowrap">
-        <StatusDot color={VX.status.bad} />
+        <StatusDot color={VX.bad} />
         <Text size="sm" fw={500}>
           {title}
         </Text>

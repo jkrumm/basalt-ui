@@ -12,7 +12,7 @@ const STAGES: readonly Stage[] = [
   { name: 'Deploy', at: 5, behind: 18 },
 ]
 const STAGES_TOTAL = STAGES.reduce((sum, s) => sum + s.behind, 0)
-const PACE = { light: VX.accent, dark: VX.accent }
+const PACE = { light: VX.brand, dark: VX.brand }
 
 // #region example:useChartFocus
 export function PipelinePace() {

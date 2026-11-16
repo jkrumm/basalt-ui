@@ -36,7 +36,7 @@ const overview = defineControls({
   },
 })
 
-const ACCENT = { light: VX.accent, dark: VX.accent }
+const ACCENT = { light: VX.brand, dark: VX.brand }
 
 const NOW = Date.UTC(2026, 10, 12, 12, 0)
 
