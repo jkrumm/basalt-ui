@@ -1,0 +1,11 @@
+// Fixture: import-boundary/data-library
+// @invalid
+import useSWR from 'swr'
+// @invalid
+import useSWRInfinite from 'swr/infinite'
+// @invalid
+import { io } from 'socket.io-client'
+// @valid
+import { liveQuery } from 'basalt-ui/data'
+// @valid
+import { createChannel } from 'basalt-ui'

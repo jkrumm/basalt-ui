@@ -7,3 +7,5 @@ import { Toaster } from 'sonner'
 import { notify } from 'basalt-ui'
 // @valid
 import { ToastHost } from 'basalt-ui/page'
+// @invalid
+import toast from 'react-hot-toast'

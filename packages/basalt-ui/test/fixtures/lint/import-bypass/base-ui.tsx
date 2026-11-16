@@ -11,3 +11,9 @@ export { Tabs } from '@base-ui/react/tabs'
 import { Dialog } from 'basalt-ui/ui/dialog'
 // @valid
 import { base } from '@base-ui-kit/other'
+// @invalid
+import { DayPicker } from 'react-day-picker'
+// @invalid
+import { useVirtualizer } from '@tanstack/react-virtual'
+// @valid
+import { DatePicker } from 'basalt-ui/ui/date-picker'
