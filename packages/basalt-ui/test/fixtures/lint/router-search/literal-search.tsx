@@ -74,3 +74,18 @@ const route = {
     throw redirect({ to: '/login' })
   },
 }
+
+// @invalid
+const a = <Navigate to="/runs" search={{ status: 'all' }} />
+
+// @invalid
+const a = <Navigate to="/runs" search={(prev) => ({ ...prev, status: 'all' })} />
+
+// @valid
+const a = <Navigate to="/runs" search={store.field.status.link('all')} />
+
+// @valid
+const a = <Navigate to="/runs" search={(prev) => prev} />
+
+// @valid
+const a = <Navigate to="/runs" />
