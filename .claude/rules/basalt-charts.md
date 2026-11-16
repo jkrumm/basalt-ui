@@ -17,6 +17,7 @@ Every chart is a shipped kind or `CartesianChart`; props live in the shipped typ
 - Supply `series` once; a legend entry with no series is a `LegendEntry`, never a fake series. [type:LegendEntry]
 - Wrap a chart in `ChartCard`; its headline figure and period are the `figure`, not a filler `subtitle`. [type:ChartCardProps]
 - A pending, failed or empty query is `FrameState`, never `data ?? []`; a Suspense fallback is the same card with `phase: 'loading'`. [type:FrameState]
+- A chart's `useChartFocus` is built over the array the chart draws; a list of a subset maps its rows to that focus by id. [type:ChartFocus]
 - Zones, thresholds and reference lines are data. [type:ChartZone] [type:ChartRefLine]
 - Extra tooltip rows are data, never markup. [type:ChartTooltipConfig]
 - A card footer holds at most two facts. [type:FootFacts]
