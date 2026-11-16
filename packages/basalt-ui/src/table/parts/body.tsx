@@ -187,7 +187,7 @@ export function DataRow<T>({
             {...cellAttributes(spec)}
             {...tierAttributes(planned)}
             data-unit={spec.unit}
-            {...(planned.place === 'meta' && spec.kind === 'text' && { 'data-label': spec.header })}
+            {...(planned.place === 'meta' && spec.header !== '' && { 'data-label': spec.header })}
             numeric={numeric}
             className={spec.wrap ? `${className ?? ''} whitespace-normal` : className}
           >
