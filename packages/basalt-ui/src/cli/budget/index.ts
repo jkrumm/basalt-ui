@@ -146,6 +146,12 @@ export function raiseCeiling({
   return { budget }
 }
 
+/** `1 waiver is` / `2 waivers are`: the counted figure and its verb agreeing in number (`adopted` has no plural). */
+export function countedFigure(name: string, count: number): string {
+  const noun = name === 'adopted' || count !== 1 ? name : name.replace(/s$/, '')
+  return `${count} ${noun} ${count === 1 ? 'is' : 'are'}`
+}
+
 /** Every counted figure above its ceiling, in ceiling order. */
 export function countBreaches(budget: Budget, counts: BudgetCounts): Breach[] {
   const breaches: Breach[] = []

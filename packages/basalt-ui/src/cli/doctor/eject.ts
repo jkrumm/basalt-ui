@@ -9,7 +9,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
 import { SLOTS } from '../../ui/slots'
-import { BUDGET_PATH } from '../budget'
+import { BUDGET_PATH, countedFigure } from '../budget'
 import type { Budget } from '../budget'
 import { basePath, countRows, rowsOfRoot } from '../eject/ledger'
 import type { EjectedRow } from '../eject/ledger'
@@ -121,7 +121,7 @@ export function ejectFindings(ctx: Ctx, budget: Budget): string[] {
     for (const field of ['ejects', 'adopted'] as const) {
       if (counts[field] > budget[field]) {
         findings.push(
-          `${counts[field]} ${field} is above the ceiling ${budget[field]} in ${BUDGET_PATH} (root ${root}): \`basalt-ui eject --undo <name>\`, or raise it with \`--raise "<named consumer>"\``,
+          `${countedFigure(field, counts[field])} above the ceiling ${budget[field]} in ${BUDGET_PATH} (root ${root}): \`basalt-ui eject --undo <name>\`, or raise it with \`--raise "<named consumer>"\``,
         )
       }
     }

@@ -65,14 +65,14 @@ describe('check 11: budgets, ejects, weakened config, DESIGN.md', () => {
     })
     const r = await runCheck(dir, 11)
     expect(r.status).toBe('fail')
-    expect(r.detail).toContain('1 waivers is above the ceiling 0')
+    expect(r.detail).toContain('1 waiver is above the ceiling 0')
   })
 
   it('fails when escapes pass the ceiling', async () => {
     const source = 'export const a = [col.custom, col.custom, chart.custom, field.custom]\n'
     const r = await runCheck(healthy('app', { 'src/page.tsx': source }), 11)
     expect(r.status).toBe('fail')
-    expect(r.detail).toContain('4 escapes is above the ceiling 3')
+    expect(r.detail).toContain('4 escapes are above the ceiling 3')
   })
 
   it('fails when .basalt/budget.json is missing', async () => {
@@ -112,7 +112,7 @@ describe('check 11: budgets, ejects, weakened config, DESIGN.md', () => {
     })
     const r = await runCheck(dir, 11)
     expect(r.status).toBe('fail')
-    expect(r.detail).toContain('4 ejects is above the ceiling 3')
+    expect(r.detail).toContain('4 ejects are above the ceiling 3')
   })
 
   it('fails when the weakened-config check finds the seeded offender dead', async () => {
