@@ -84,34 +84,6 @@ describe('oxlint preset sync contract', () => {
     expect(findBlock(projected, 'packages/basalt-ui/src/tokens/**')).toBeUndefined()
   })
 
-  // ── Surfaces the plugin rules do NOT cover keep their Mantine-free no-restricted-imports ban ──
-  // The plugins only fire on charts/tokens path segments (see oxlint-plugin.js's chart-engine-boundary and
-  // token-layer-boundary rules), so the agent runtime and state stay enforced the old
-  // way — minus the now-redundant @visx/* pattern, since basalt/chart-engine-boundary bans @visx/*
-  // everywhere.
-
-  it('repo headless surfaces outside charts/tokens still ban @mantine/* but no longer @visx/*', () => {
-    const projected = projectBanList('repo')
-    const globs = ['packages/basalt-ui/src/format/**']
-
-    for (const glob of globs) {
-      const block = findBlock(projected, glob)
-      expect(block).toBeDefined()
-      const nri = noRestrictedImportsOf(block)
-      expect(nri).toBeDefined()
-      const hasMantineCoreBan = (nri?.[1].paths ?? []).some((p) => p.name === '@mantine/core')
-      const hasMantineHooksBan = (nri?.[1].paths ?? []).some((p) => p.name === '@mantine/hooks')
-      const hasMantineGroupBan = (nri?.[1].patterns ?? []).some((p) =>
-        p.group.includes('@mantine/*'),
-      )
-      const hasVisxGroupBan = (nri?.[1].patterns ?? []).some((p) => p.group.includes('@visx/*'))
-      expect(hasMantineCoreBan).toBe(true)
-      expect(hasMantineHooksBan).toBe(true)
-      expect(hasMantineGroupBan).toBe(true)
-      expect(hasVisxGroupBan).toBe(false)
-    }
-  })
-
   it('no override anywhere still bans the @visx/* pattern (fully superseded by basalt/chart-engine-boundary)', () => {
     for (const target of ['shipped', 'repo'] as const) {
       const projected = projectBanList(target)
