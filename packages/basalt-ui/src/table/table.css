@@ -208,6 +208,11 @@
       content: ' ' attr(data-unit);
       color: var(--vx-ink-muted);
     }
+    /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
+    [data-slot='table-root'][data-below='480'][data-phone='cards']
+      [data-slot='table-cell'][data-card='hidden'] {
+      display: none;
+    }
     [data-slot='table-root'][data-below='480'][data-phone='cards']
       [data-slot='table-cell'][data-kind='actions'] {
       grid-column: 2;
@@ -323,6 +328,11 @@
       content: ' ' attr(data-unit);
       color: var(--vx-ink-muted);
     }
+    /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
+    [data-slot='table-root'][data-below='800'][data-phone='cards']
+      [data-slot='table-cell'][data-card='hidden'] {
+      display: none;
+    }
     [data-slot='table-root'][data-below='800'][data-phone='cards']
       [data-slot='table-cell'][data-kind='actions'] {
       grid-column: 2;
@@ -437,6 +447,11 @@
       [data-slot='table-cell'][data-unit]::after {
       content: ' ' attr(data-unit);
       color: var(--vx-ink-muted);
+    }
+    /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-cell'][data-card='hidden'] {
+      display: none;
     }
     [data-slot='table-root'][data-below='always'][data-phone='cards']
       [data-slot='table-cell'][data-kind='actions'] {
