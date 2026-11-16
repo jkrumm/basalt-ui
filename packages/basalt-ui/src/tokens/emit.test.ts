@@ -3,7 +3,6 @@
  * guarantee of the whole sheet, and a refusal when a gate fails.
  */
 import { describe, expect, test } from 'bun:test'
-import { GENERATED_HEADER_LINE as GUARD_HEADER_LINE } from '../guard'
 import { DEFAULT_DERIVE_V3_CONFIG, deriveV3 } from './derive'
 import {
   emitDerived,
@@ -28,8 +27,7 @@ describe('emitTokensCss', () => {
 
   test('starts with the two-line provenance header the raw-hex scan keys on', () => {
     const [line1, line2] = css.split('\n')
-    expect(line1).toBe(GUARD_HEADER_LINE)
-    expect(GENERATED_HEADER_LINE).toBe(GUARD_HEADER_LINE)
+    expect(line1).toBe(GENERATED_HEADER_LINE)
     expect(line2).toBe('/* basalt-ui 3.0.0 — `basalt-ui tokens:css` */')
     expect(line2).toMatch(/^\/\* basalt-ui \d+\.\d+\.\d+\S* — `basalt-ui tokens:css[^`]*` \*\/$/)
     expect(provenanceHeader('1.2.3', 'basalt-ui tokens:css --accent #0f8a7e')).toBe(
@@ -136,7 +134,7 @@ describe('VX types, names, zone A', () => {
 
   test('VX keys are camelCase refs to the same names, one per token', () => {
     const source = emitVxTypes(OPTIONS)
-    expect(source.startsWith(GUARD_HEADER_LINE)).toBe(true)
+    expect(source.startsWith(GENERATED_HEADER_LINE)).toBe(true)
     expect(source).toContain("inkMuted: 'var(--vx-ink-muted)',")
     expect(source).toContain("chart1: 'var(--vx-chart-1)',")
     expect(source).toContain("textSmLh: 'var(--vx-text-sm-lh)',")

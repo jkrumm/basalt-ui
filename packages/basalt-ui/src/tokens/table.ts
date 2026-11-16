@@ -11,7 +11,6 @@
  *
  * Pure: no React, no Tailwind, no `palette.ts`/`core.ts` (the 2.x modules this replaces).
  */
-// theme-allow-file raw-hex, raw-color-fn — the table is the one authored list; its shadow pairs and scrim carry constant shadow colours, and every role colour comes from deriveV3.
 import { DEFAULT_DERIVE_V3_CONFIG, INK_MIX_PCT, TINT_PCT, deriveV3 } from './derive'
 import type { ColorNameV3, DerivedV3, DeriveV3Config } from './derive'
 

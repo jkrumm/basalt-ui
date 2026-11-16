@@ -1,12 +1,10 @@
 /**
  * SURFACES registry — the one hard source for the enforcement seam.
- * Mantine-free, dependency-free. Imports only ./guard/types.
+ * Mantine-free, dependency-free.
  *
  * SURFACES: the discriminated doctrine|tooling registry for all basalt subpaths and advisory surfaces.
  * RULE_NAMES: derived projection — the deduped set of doctrine rule names (PROJECTION 1).
  */
-import type { GuardKind } from './guard/types'
-
 // ── Scalar types ──────────────────────────────────────────────────────────────────────────────────
 
 /** The 6 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
@@ -146,12 +144,12 @@ type BaseSurface = {
 }
 
 /**
- * A doctrine surface owes the full triad (rule + skill[] + guardKinds[]).
+ * A doctrine surface owes the triad (rule + skill[] + pluginRules[]).
  * A bad rule/skill/kind name is a tsc error (literal-union).
  *
  * @example
  * const s: DoctrineSpec = { kind: 'doctrine', layer: 'headless', rule: 'tokens',
- *   skill: ['basalt-design'], guardKinds: ['raw-hex'], pluginRules: ['no-raw-font-size'],
+ *   skill: ['basalt-design'], pluginRules: ['no-raw-font-size'],
  *   forbiddenImports: [] }
  */
 export type DoctrineSpec = BaseSurface & {
@@ -159,13 +157,11 @@ export type DoctrineSpec = BaseSurface & {
   readonly rule: RuleName
   /** A LIST (skill↔surface is many-to-one — basalt-design covers tokens AND mantine AND state). */
   readonly skill: readonly SkillName[]
-  /** Required, but [] is legal for advisory surfaces (the batteries: rule only, no guard). */
-  readonly guardKinds: readonly GuardKind[]
   /**
-   * The oxlint plugin rules this surface's doctrine is enforced by — the AST half of the same seam
-   * `guardKinds` covers with text scans. Required (`[]` is legal, and says "no AST rule guards
-   * this"), because the ABSENCE of the field is what let the generated coverage headers claim a
-   * rule was "backed by" a guard kind while the plugin rule doing the real work went unnamed (D8).
+   * The oxlint plugin rules this surface's doctrine is enforced by. Required (`[]` is legal, and
+   * says "no AST rule guards this"), because the ABSENCE of the field is what let the generated
+   * coverage headers claim a rule was "backed by" a guard while the plugin rule doing the real work
+   * went unnamed (D8).
    *
    * Every id in {@link PLUGIN_RULE_ID_LIST} maps to EXACTLY ONE surface — asserted by
    * `check-coverage` and by `oxlint-plugin.test.ts`, so a new plugin rule cannot ship without a
@@ -192,7 +188,6 @@ export type ToolingSpec = BaseSurface & {
   readonly kind: 'tooling'
   readonly rule?: never
   readonly skill?: never
-  readonly guardKinds?: never
   readonly pluginRules?: never
   readonly advisoryLaws?: never
 }
@@ -227,27 +222,6 @@ export const SURFACES = {
     layer: 'mantine-coupled',
     rule: 'mantine',
     skill: ['basalt-app', 'basalt-design'],
-    guardKinds: [
-      'raw-motion-value',
-      'card-with-border',
-      'raw-form-control',
-      'sub-16-input-font',
-      'mantine-shade-index',
-      // The text lane of the kinds whose remedy IS a Mantine primitive or a Mantine-owned prop:
-      // C8's page title (same id as the plugin rule, so one annotation waives both lanes), the
-      // spacing props, and the layout primitives an inline `display`/raw element replaces.
-      'in-body-page-title',
-      'raw-spacing',
-      'inline-spacing',
-      'inline-display',
-      'raw-html-layout',
-      'hidden-inline-style',
-      // The CSS-text twin of `raw-breakpoint` (below) — a width @media, an undeclared @container
-      // name/literal, or a non-coarse pointer query, the shape a JSX-only AST rule cannot see.
-      'raw-media-query',
-      // The persisted-theme read the scheme boot owns.
-      'localstorage-theme',
-    ],
     // The chrome half of the plugin: the shell, the card idiom, the page title and the scroll
     // doctrine. `hand-rolled-shell` sits here rather than on a shell-shaped surface because
     // the shell (`AppShell`, from `./shell`) IS the framework's promise (docs/CONTROLS-SPEC.md §6 wave 6).
@@ -303,7 +277,6 @@ export const SURFACES = {
     layer: 'headless',
     rule: 'charts',
     skill: ['basalt-charts'],
-    guardKinds: ['raw-hex', 'raw-color-fn'],
     pluginRules: ['chart-in-raw-surface', 'chart-engine-boundary', 'chart-host-single'],
     description:
       'CartesianChart (the TanStack Charts rung), the Lines, Bars, Sparkline, Heatmap and BandStrip kinds, ChartCard, the shared chartCursor and the geometry seam: useChartFocus (focus, dim the rest, one bound readout) and chartLabels (server-equal label width and placement) (Mantine-free; @tanstack/charts + d3-scale peers)',
@@ -325,28 +298,6 @@ export const SURFACES = {
     layer: 'headless',
     rule: 'tokens',
     skill: ['basalt-design', 'basalt-charts'],
-    guardKinds: [
-      'raw-hex',
-      'raw-color-fn',
-      'off-identity-accent',
-      'off-system-surface-var',
-      // The rest of the value lane: every kind whose remedy is a `--vx-*` token or a theme knob,
-      // in TSX and in kebab CSS alike.
-      'raw-font-family',
-      'raw-radius',
-      'raw-surface',
-      'inline-font-size',
-      'css-raw-surface',
-      'surface-shadow-override',
-      // A `var(--vx-*)` naming a token basalt no longer (or never) emits.
-      'unknown-vx-token',
-      // The series file's computed palette checks (lightness, chroma, CVD separation, contrast).
-      'series-palette',
-      // Not a token kind — the kind that judges the ANNOTATION rather than the code. It lands here
-      // because `agent/rules/basalt-tokens.md` is where the `theme-allow` grammar is documented
-      // (said once, on purpose), so this is the header that must name its enforcement.
-      'theme-allow-unscoped',
-    ],
     // The type-scale rules live with the tokens, not with `.`: both police a value that left the
     // `--vx-*` system, which is this surface's whole subject. `token-layer-boundary` is the
     // repo-local-only rule that keeps the layer upstream of Mantine (see below).
@@ -379,7 +330,6 @@ export const SURFACES = {
     layer: 'mantine-coupled',
     rule: 'batteries',
     skill: ['basalt-design'],
-    guardKinds: [],
     pluginRules: [],
     description:
       '`DataTable` over `useDataTable`, the `col` kind columns, the parts `DataTable` composes (`TableToolbar`, `DataTableBody`, `TablePager`, `BulkBar`) and `tableCodec`, on TanStack Table v9 and `ui/*` primitives',
@@ -391,7 +341,6 @@ export const SURFACES = {
     layer: 'mantine-coupled',
     rule: 'batteries',
     skill: ['basalt-design'],
-    guardKinds: [],
     pluginRules: [],
     description:
       'Markdown (react-markdown + remark-gfm + rehype-sanitize + remend, all required peers, every import static so server, client and hydrate render the same tree; `contentTrust` is REQUIRED and independent of `streaming`, which is a rendering mode only — render agent or model output with `contentTrust="untrusted"`: no `<img>` (alt text; `images="same-origin"` admits relative srcs), links limited to same-origin, https:, mailto: and tel:, and no `sanitize` or `rehypePlugins`; `contentTrust="trusted"` takes `sanitize` ({ allowTags, allowAttrs } additions over a fixed policy that runs last) and `rehypePlugins`; a missing or unknown `contentTrust` renders as untrusted) — the content surface',
@@ -414,7 +363,6 @@ export const SURFACES = {
     skill: ['basalt-design'],
     // The text lane of law C1 — the plugin's `control-outside-home` seen through a host-tag nesting
     // count, since a regex scan has no AST. Same law, same wave, same promotion.
-    guardKinds: ['raw-selection-control'],
     // The control tier itself (laws C1/C3/C5/C9), every rule at `error`. The action budgets are
     // types (`PageBarActions` / `SectionActions`, `controls/actions.tsx`).
     pluginRules: [
@@ -589,7 +537,6 @@ export const SURFACES = {
     layer: 'app-global',
     rule: 'batteries',
     skill: ['basalt-app'],
-    guardKinds: [],
     // query-fn-unwrap: reassigned here from the now-dropped `./query` surface (C1 consolidation —
     // createBasaltQueryClient/unwrap/BasaltQueryDevtools are root barrel exports now, but their
     // doctrine stays `batteries` — "use the shipped thing" — not `mantine`). `query-dual-import`

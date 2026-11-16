@@ -20,14 +20,9 @@ import basaltPlugin, {
   isAllowedChartEngineSubpath,
   PLUGIN_RULE_GRACE,
   RAW_BREAKPOINT_RECIPE,
+  RETIRED_GUARD_KIND_IDS,
   RETIRED_RULE_IDS,
 } from './oxlint-plugin.js'
-import {
-  GRACE_PERIOD_KINDS,
-  GUARD_RULES,
-  PLUGIN_RULE_IDS,
-  WAIVER_ID_ALIASES as GUARD_WAIVER_ID_ALIASES,
-} from '../src/guard/index.ts'
 import { PLUGIN_RULE_ID_LIST, SURFACES } from '../src/surfaces.ts'
 import { CONTAINER_CLASSES } from '../src/tokens/size-classes.ts'
 
@@ -1231,13 +1226,8 @@ describe('basalt/shadow-basalt-export', () => {
 // ── theme-allow shape grid (the plugin half of the annotation contract) ──────
 
 /**
- * The plugin's copy of the grid pinned in `src/guard/check-source.test.ts`, row name for row name.
- *
- * Five holes in four rounds, twice because the two parsers disagreed about what an annotation IS —
- * so the shapes are enumerated over the axes that vary (comment style × token position × where the
- * closer falls × what follows), not collected as anecdotes. Every row here has a twin there; the
- * guard-only dialects (CSS continuation lines, HTML, the JSON member form) have no twin because
- * oxlint never parses those files.
+ * Five holes in four rounds — so the shapes are enumerated over the axes that vary (comment style ×
+ * token position × where the closer falls × what follows), not collected as anecdotes.
  *
  * `no-raw-font-size` is the vehicle — a JSXAttribute rule, so the reported node's line is exactly
  * the line an annotation has to reach.
@@ -1476,51 +1466,6 @@ describe('assertGraceLedger', () => {
   })
 })
 
-// ── twin lanes: one law, two lanes, one promotion ─────────────────────────────
-// A guard kind and a plugin rule that enforce ONE law in two lanes (CSS/text vs. JSX AST) must
-// promote together — a consumer failing one spelling and warned on the other is the confusion the
-// pairing exists to prevent. `raw-media-query` split from `basalt/raw-breakpoint` exactly that way
-// (1.32.0 vs 1.33.0). Twins are DERIVED from declarations that outlive the grace window: a
-// `WAIVER_ID_ALIASES` pair, and a guard kind whose registry message names its `basalt/<id>` twin.
-// (Deriving them from the ledger, as this did until 1.33.0, went vacuous the moment the last pair
-// promoted.)
-
-const pluginGrace = PLUGIN_RULE_GRACE as Record<string, GraceEntry>
-const guardGrace = GRACE_PERIOD_KINDS as Record<string, GraceEntry>
-
-/** A guard message that NAMES a plugin rule in its remedy without being that rule's twin. */
-const REFERRALS = new Set(['card-with-border:card-inset'])
-
-function twinLanes(): Array<[kind: string, rule: string]> {
-  const pairs = new Map<string, string>()
-  for (const [kind, aliases] of Object.entries(WAIVER_ID_ALIASES)) {
-    if (!Object.hasOwn(GUARD_RULES, kind)) continue
-    for (const rule of aliases) pairs.set(kind, rule)
-  }
-  for (const [kind, rule] of Object.entries(GUARD_RULES)) {
-    for (const m of rule.message.matchAll(/basalt\/([a-z-]+)/g)) {
-      if (REFERRALS.has(`${kind}:${m[1]}`)) continue
-      if (m[1] !== undefined && m[1] in basaltPlugin.rules) pairs.set(kind, m[1])
-    }
-  }
-  return [...pairs]
-}
-
-describe('twin lanes share one promotion', () => {
-  it('derives the known pairs (the derivation is not silently empty)', () => {
-    expect(twinLanes()).toContainEqual(['raw-media-query', 'raw-breakpoint'])
-    expect(twinLanes()).toContainEqual(['raw-selection-control', 'control-outside-home'])
-  })
-
-  it.each(twinLanes())('%s and basalt/%s share one grace state and promote', (kind, rule) => {
-    expect([kind, rule, guardGrace[kind]?.promote]).toEqual([
-      kind,
-      rule,
-      pluginGrace[rule]?.promote,
-    ])
-  })
-})
-
 describe('PLUGIN_RULE_GRACE', () => {
   const shipped = JSON.parse(
     readFileSync(resolve(import.meta.dirname, 'oxlint-basalt.json'), 'utf8'),
@@ -1657,73 +1602,46 @@ describe('KNOWN_RULE_IDS', () => {
     }
   })
 
-  it('contains every guard kind', () => {
-    for (const kind of Object.keys(GUARD_RULES)) {
+  it('contains every retired 2.x guard kind', () => {
+    expect(RETIRED_GUARD_KIND_IDS.size).toBeGreaterThan(0)
+    for (const kind of RETIRED_GUARD_KIND_IDS) {
       expect([kind, KNOWN_RULE_IDS.has(kind)]).toEqual([kind, true])
     }
   })
 
-  // Deduped, because ONE id is deliberately in both registries: `in-body-page-title` is a plugin
-  // rule AND a guard kind (law C8 has an AST half and a text half), so one `theme-allow
-  // in-body-page-title — <why>` waives both lanes rather than needing a different word per lane.
-  // `RETIRED_RULE_IDS` adds a third component: an id that used to be a guard kind or a plugin
-  // rule, is in neither live registry, and must still parse as a (dead) waiver rather than a typo.
-  it('contains nothing else — it is exactly the union of the two registries plus retired ids', () => {
+  it('keeps a live plugin rule out of the retired sets', () => {
+    for (const id of Object.keys(basaltPlugin.rules)) {
+      expect([id, RETIRED_GUARD_KIND_IDS.has(id) || RETIRED_RULE_IDS.has(id)]).toEqual([id, false])
+    }
+  })
+
+  it('contains nothing else — exactly the plugin rules plus the retired ids', () => {
     const expected = [
       ...new Set([
         ...Object.keys(basaltPlugin.rules),
-        ...Object.keys(GUARD_RULES),
+        ...RETIRED_GUARD_KIND_IDS,
         ...RETIRED_RULE_IDS,
       ]),
     ].toSorted()
     expect([...KNOWN_RULE_IDS].toSorted()).toEqual(expected)
-  })
-
-  it('shares exactly one id between the two registries — the C8 pair', () => {
-    const shared = Object.keys(basaltPlugin.rules).filter((id) => Object.hasOwn(GUARD_RULES, id))
-    expect(shared).toEqual(['in-body-page-title'])
-  })
-
-  // The guard's own copy (`PLUGIN_RULE_IDS`) is what `check-theme --audit-allows` classifies an
-  // annotation against: an id in neither registry reads as a typo and is reported unscoped. A new
-  // plugin rule missing from it would make every waiver naming it look like a mistake.
-  it('every plugin rule is classifiable by the guard — its own id set or a guard kind', () => {
-    for (const id of Object.keys(basaltPlugin.rules)) {
-      expect([id, PLUGIN_RULE_IDS.has(id) || Object.hasOwn(GUARD_RULES, id)]).toEqual([id, true])
-    }
-  })
-
-  // A retired id has to be classifiable too, on both sides — `RETIRED_RULE_IDS` is this plugin's
-  // copy, `PLUGIN_RULE_IDS` (src/guard) is the guard's. Drift between them would mean
-  // `--audit-allows` classifies a retired id one way from `check-theme` and another from oxlint.
-  it('every retired id is in the guard’s PLUGIN_RULE_IDS too', () => {
-    for (const id of RETIRED_RULE_IDS) {
-      expect([id, PLUGIN_RULE_IDS.has(id)]).toEqual([id, true])
-    }
   })
 })
 
 // ── one law, two rule ids ──────────────────────────────────────────────────────────────────────
 
 /**
- * `basalt/control-outside-home` and the guard's `raw-selection-control` are the SAME law read by
- * two engines — the guard's own message says so — and a waiver naming either used to silence only
- * the lane whose id it spelled. The working annotation was `theme-allow raw-selection-control
- * control-outside-home`: two ids, undocumented, one silent debug cycle per consumer.
+ * `basalt/control-outside-home` and the retired text guard's `raw-selection-control` were the SAME
+ * law read by two engines; an annotation spelling either id still waives the plugin rule.
  */
 describe('WAIVER_ID_ALIASES', () => {
-  it('is identical in both lanes', () => {
-    expect(WAIVER_ID_ALIASES).toEqual(GUARD_WAIVER_ID_ALIASES)
-  })
-
-  it('names only ids both registries know', () => {
+  it('names only ids the plugin knows', () => {
     for (const [id, aliases] of Object.entries(WAIVER_ID_ALIASES)) {
       expect([id, KNOWN_RULE_IDS.has(id)]).toEqual([id, true])
       for (const alias of aliases) expect([alias, KNOWN_RULE_IDS.has(alias)]).toEqual([alias, true])
     }
   })
 
-  it('waives the plugin rule under the TEXT lane’s id', () => {
+  it('waives the plugin rule under the retired text guard’s id', () => {
     const { code, rules } = run(
       `import { Select } from '@mantine/core'\nexport const C = () => (\n  <div>\n` +
         `    {/* theme-allow raw-selection-control — the Tauri header has no shell */}\n` +
@@ -3975,31 +3893,6 @@ describe('basalt/raw-breakpoint', () => {
   it('still flags a file whose name merely contains "test" outside a test dir', () => {
     const { rules } = run(`const mq = window.matchMedia('(max-width: 600px)')\n`, 'src/latest/a.ts')
     expect(rules).toContain('raw-breakpoint')
-  })
-})
-
-// ── control homes: text lane ≡ plugin ────────────────────────────────────────
-
-// 1.32.1 (B2): the plugin homed FormRow/FormGroup while check-theme's `raw-selection-control` did
-// not, so a correctly migrated form reported in one lane only. Both lists are module-private (the
-// guard is dependency-free, the plugin cannot import TS), so this reads them out of the source.
-describe('control homes — lane parity', () => {
-  const pluginSource = readFileSync(PLUGIN_PATH, 'utf8')
-  const guardSource = readFileSync(resolve(import.meta.dirname, '../src/guard/index.ts'), 'utf8')
-
-  const pluginSet = (name: string): string[] => {
-    const body = pluginSource.match(new RegExp(`const ${name} = new Set\\(\\[([^\\]]*)\\]`))?.[1]
-    if (body === undefined) throw new Error(`${name} not found in oxlint-plugin.js`)
-    return [...body.matchAll(/'([^']+)'/g)].map((m) => m[1] as string)
-  }
-
-  it('check-theme CONTROL_HOST_TAG names exactly CONTROL_HOST_TAGS ∪ BASALT_HOST_TAGS', () => {
-    const alternation = guardSource.match(/const CONTROL_HOST_TAG =\s*\/<\(\?:([^)]*)\)/)?.[1]
-    if (alternation === undefined) throw new Error('CONTROL_HOST_TAG not found in guard/index.ts')
-    const textLane = alternation.split('|').map((tag) => tag.replaceAll('\\.', '.'))
-    const pluginLane = [...pluginSet('CONTROL_HOST_TAGS'), ...pluginSet('BASALT_HOST_TAGS')]
-    expect(pluginLane).toContain('FormRow')
-    expect(textLane.toSorted()).toEqual(pluginLane.toSorted())
   })
 })
 

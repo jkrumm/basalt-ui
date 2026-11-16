@@ -12,8 +12,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
-import { DEFAULT_GUARD_CONFIG, GENERATED_HEADER_LINE, checkSource } from '../guard'
-import { emitTokensCss, tokenNames } from '../tokens/emit'
+import { GENERATED_HEADER_LINE, emitTokensCss, tokenNames } from '../tokens/emit'
 import { emitJsonText } from '../tokens/emit-json'
 import { normalizeColorFunctions, run, tokensCss } from './index'
 
@@ -274,9 +273,6 @@ describe('tokens:css --extra', () => {
         `/* basalt-ui ${VERSION} — \`basalt-ui tokens:css --extra ${FILE} --out app-tokens.css\` */`,
       )
     }
-    expect(checkSource(read('app-tokens.css'), 'src/app-tokens.css', DEFAULT_GUARD_CONFIG)).toEqual(
-      [],
-    )
   })
 
   it('uses the scheme selectors of the stock sheet', () => {
@@ -485,9 +481,5 @@ describe('tokens:css --check', () => {
     const lines = emit([]).split('\n')
     expect(lines[0]).toBe(GENERATED_HEADER_LINE)
     expect(lines[1]).toMatch(/^\/\* basalt-ui [\d.]+ — `basalt-ui tokens:css --out out\.css` \*\/$/)
-  })
-
-  it('the emitted header is still guard-exempt — checkSource reports nothing in it', () => {
-    expect(checkSource(emit([]), 'src/tokens.css', DEFAULT_GUARD_CONFIG)).toEqual([])
   })
 })

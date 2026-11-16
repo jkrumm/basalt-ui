@@ -1,4 +1,3 @@
-/* theme-allow-file unknown-vx-token — v3 names are not in the 2.x allowlist the guard reads */
 @layer basalt.type {
   :where(:root) {
     font-family: var(--vx-font-sans);

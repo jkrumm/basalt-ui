@@ -366,7 +366,6 @@ export function NativeSelect({
 }: NativeSelectProps): ReactElement {
   return (
     <div data-slot="native-select" className={cn(nativeSelectVariants({ size }), className)}>
-      {/* theme-allow raw-form-control — NativeSelect is the primitive that draws the native select; its table styles it */}
       <select {...props}>
         {options === undefined
           ? children

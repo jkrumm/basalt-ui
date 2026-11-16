@@ -18,7 +18,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { normalizeColorFunctions, tokensCss } from '../cli/tokens-css'
-import { GENERATED_HEADER_LINE, REMOVED_VX_NAMES } from '../guard'
+import { REMOVED_VX_NAMES } from '../../tests/removed-vx-names'
 import { buildPaletteCss, seriesTokens, VX } from './core'
 import {
   DEFAULT_DERIVE_CONFIG,
@@ -29,7 +29,7 @@ import {
   statusBackgrounds,
 } from './derive'
 import type { DeriveConfig, DeriveV3Config, FillFamily, SurfaceKey } from './derive'
-import { emitTokensCss } from './emit'
+import { GENERATED_HEADER_LINE, emitTokensCss } from './emit'
 import { PAIRS } from './gates'
 import { FOREGROUND_PAIRS } from './table'
 import { contrastRatio, relativeLuminance } from './hct'

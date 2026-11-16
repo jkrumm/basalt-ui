@@ -1,8 +1,6 @@
 # basalt-ui consumer CI seed — placed at .github/workflows/check.yml by `basalt-ui init`,
 # then owned by the consumer (sync never touches it again). Mirrors the basalt-ui gate
-# order: frozen install -> lint + theme guard -> doctrine drift gate -> format check.
-# `basalt-ui check-theme` is the palette guard shipped by basalt-ui (fails on raw
-# color literals / off-identity accents that bypass the --vx-* token system).
+# order: frozen install -> lint -> doctrine drift gate -> format check.
 # `basalt-ui sync --check` fails when the basalt-managed files (rules, skills, the
 # AGENTS block) have drifted from the installed basalt-ui version.
 # The oxfmt globs below are rendered from `basalt.roots` at init time — `init` writes that
@@ -15,7 +13,7 @@
 # runs a version nobody pinned.
 # The gate is the consumer's when it has one: with a Makefile `check:` target the workflow runs
 # `make check` (after `doctor` and `sync --check`, which always run first so drift can never be
-# skipped by a custom gate); without one it runs the built-in lint + theme guard + format steps.
+# skipped by a custom gate); without one it runs the built-in lint + format steps.
 # `init` decides once, when it seeds this file. Add gates to your `make check`, not to this file.
 name: check
 on:

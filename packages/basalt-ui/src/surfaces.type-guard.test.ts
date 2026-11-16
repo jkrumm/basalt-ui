@@ -14,8 +14,6 @@ const broken: SurfaceSpec = {
   rule: 'not-a-rule',
   // @ts-expect-error 'nope' is not a SkillName
   skill: ['nope'],
-  // @ts-expect-error 'fake-guard' is not a GuardKind
-  guardKinds: ['fake-guard'],
   forbiddenImports: [],
 }
 const badTooling: SurfaceSpec = {

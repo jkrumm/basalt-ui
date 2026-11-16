@@ -1,5 +1,5 @@
 /**
- * `check-coverage` — the 11 assertions (SURFACES consistency + the agent-layer shape and line
+ * `check-coverage` — the 9 assertions (SURFACES consistency + the agent-layer shape and line
  * budgets).
  *
  * A repo-internal script, not a shipped CLI subcommand — nothing outside this repo's own tooling
@@ -18,7 +18,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import { GUARD_RULES } from '../src/guard'
 import { PLUGIN_RULE_ID_LIST, AGENT_NAMES, SKILL_NAMES, SURFACES } from '../src/surfaces'
 import type { DoctrineSpec, SurfaceSpec } from '../src/surfaces'
 
@@ -52,7 +51,7 @@ export const REPO_LOCAL_RULES: ReadonlySet<string> = new Set([
 ])
 
 // ──────────────────────────────────────────────────────────────────────────────
-// check-coverage — 11-assertion coverage gate
+// check-coverage — 9-assertion coverage gate
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -85,12 +84,11 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
 export const AGENT_LAYER_TOTAL_BUDGET = 625 // v3 rules: five files at 215 lines (was six at 266), block 38; skills unchanged until G1
 
 /**
- * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer.
+ * Assert the 9 invariants against the live SURFACES + the shipped agent layer.
  * Returns 0 when all pass; 1 when any fail (console.error each failure). `--check` is accepted for
  * the Makefile's call; every assertion always runs. `--write` is retired and fails.
  *
- * Eleven assertions:
- *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
+ * Nine assertions (the numbers 2–10 stay stable; 1 and 11 covered the retired text-lane guard):
  *  2. `agent/rules/` lists exactly the five {@link SHIPPED_RULES} files, totalling at most
  *     {@link RULES_TOTAL_BUDGET} lines.
  *  3. Every doctrine skill (deduped) maps to agent/skills/{skill}/SKILL.md on disk.
@@ -103,15 +101,9 @@ export const AGENT_LAYER_TOTAL_BUDGET = 625 // v3 rules: five files at 215 lines
  *     coverage. This reads SURFACES only: whether the plugin really registers
  *     those ids is asserted against the plugin itself in `configs/oxlint-plugin.test.ts`.
  * 10. Every shipped agent-layer file is inside its line budget, and rules + skills + the AGENTS block are inside the
- *     whole-layer total (`AGENT_LINE_BUDGETS` / `AGENT_LAYER_TOTAL_BUDGET`).
- * 11. Every `GUARD_RULES` kind appears on at least one doctrine surface — assertion 9's twin for
- *     the text lane. Without it a kind could ship, be documented as a law in the spec, and be
- *     omitted from every generated coverage header. Unlike 9 this is one-directional: a kind may
- *     legitimately appear on SEVERAL surfaces (`raw-hex` is on `./charts` and `./tokens`), because
- *     a text scan is not partitioned by subpath the way a plugin rule id is.
- *
- * Tooling surfaces are exempt from assertions 1–3 by the discriminant.
- * Synthetic #-keys participate in assertions 1 and 2 but feed assertion 3 only
+ *     whole-layer total (`AGENT_LINE_BUDGETS` / `AGENT_LAYER_TOTAL_BUDGET`). *
+ * Tooling surfaces are exempt from assertions 2–3 by the discriminant.
+ * Synthetic #-keys participate in assertion 2 but feed assertion 3 only
  * via the deduped skill union (no independent per-#-surface skill row).
  */
 export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = PKG_ROOT): number {
@@ -121,19 +113,6 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
   const doctrineSpecs = (Object.values(SURFACES) as SurfaceSpec[]).filter(
     (s): s is DoctrineSpec => s.kind === 'doctrine',
   )
-
-  // ── Assertion 1: every doctrine spec's guardKinds ⊆ keyof GUARD_RULES ──────
-  const validGuardKinds = new Set(Object.keys(GUARD_RULES))
-  for (const [key, spec] of allSpecs) {
-    if (spec.kind !== 'doctrine') continue
-    for (const kind of spec.guardKinds) {
-      if (!validGuardKinds.has(kind)) {
-        failures.push(
-          `SURFACES['${key}'].guardKinds includes '${kind}' which is not in GUARD_RULES`,
-        )
-      }
-    }
-  }
 
   // ── Assertion 2: agent/rules/ lists exactly the five shipped rule files, inside the total ──
   const rulesDir = resolve(pkgRoot, 'agent/rules')
@@ -300,16 +279,6 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
     )
   }
 
-  // ── Assertion 11: every guard kind maps to at least one surface ──────────────
-  const surfacedGuardKinds = new Set<string>()
-  for (const spec of doctrineSpecs) {
-    for (const kind of spec.guardKinds) surfacedGuardKinds.add(kind)
-  }
-  for (const kind of Object.keys(GUARD_RULES)) {
-    if (surfacedGuardKinds.has(kind)) continue
-    failures.push(`Guard kind '${kind}' maps to no surface — add it to one surface's guardKinds`)
-  }
-
   // ── The retired coverage-header writer ──────────────────────────────────────
   if (flags.includes('--write')) {
     failures.push(
@@ -321,7 +290,7 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
   // ── Report ──────────────────────────────────────────────────────────────────
 
   if (failures.length === 0) {
-    console.log('✓ check-coverage: all 11 assertions pass.')
+    console.log('✓ check-coverage: all 9 assertions pass.')
     return 0
   }
 

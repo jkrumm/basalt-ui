@@ -5,8 +5,8 @@
  * Every flag each subcommand accepts, as a `node:util` `parseArgs` options schema — one per
  * command, replacing a hand-rolled flag table + a value-flag lookahead set + a manual scan.
  *
- * An unrecognized flag used to be SILENTLY IGNORED and the command exited 0: `check-theme
- * --audit-allow` scanned normally and reported success, `doctor --json` printed the human report.
+ * An unrecognized flag used to be SILENTLY IGNORED and the command exited 0: a typo'd flag ran the
+ * command normally and reported success, `doctor --json` printed the human report.
  * That is the same fail-open shape `--version` had, and it is worse on a CLI agents drive
  * programmatically, where a typo'd gate reads as a passing gate.
  */
@@ -32,11 +32,6 @@ export const COMMAND_OPTIONS: Record<
     force: { type: 'boolean' },
     check: { type: 'boolean' },
   },
-  'check-theme': {
-    'audit-allows': { type: 'boolean' },
-    'tokens-only': { type: 'boolean' },
-    framework: { type: 'boolean' },
-  },
   doctor: { from: { type: 'string' } },
   lint: {
     file: { type: 'string', multiple: true },
@@ -48,7 +43,6 @@ export const COMMAND_OPTIONS: Record<
     consumer: { type: 'string' },
     hook: { type: 'string' },
   },
-  'guard-hook': {},
   'tokens:css': {
     out: { type: 'string' },
     check: { type: 'boolean' },
@@ -104,14 +98,8 @@ export function unknownFlag(cmd: string, flags: readonly string[]): string | nul
 export const USAGE =
   'Usage: basalt-ui <--version | init --profile <tokens|bridge|parts|app> [--root <path>]… [--no-install] |\n' +
   '                  sync [--check] [--force] |\n' +
-  '                  check-theme [--audit-allows] |\n' +
-  '                  doctor [--from <x.y.z>] | lint [--file <p>… | --changed | --stats | --raise <field> --consumer <who>] | guard-hook | tokens:css | fonts:css |\n' +
+  '                  doctor [--from <x.y.z>] | lint [--file <p>… | --changed | --stats | --raise <field> --consumer <who>] | tokens:css | fonts:css |\n' +
   '                  shot <route…> | shot detect | help>\n\n' +
-  'check-theme [--tokens-only|--framework] [--audit-allows]\n' +
-  '  --audit-allows reports instead of scanning: every `theme-allow` annotation and every\n' +
-  '  `basalt.exemptRules` entry, with what each one still suppresses — proved by re-running the\n' +
-  '  guard with that one waiver neutralized, not by reading its text. Exits 1 on a waiver that\n' +
-  '  suppresses nothing (dead), which is what makes it usable as a CI gate.\n\n' +
   'tokens:css [--accent <#hex>] [--neutral <zinc|neutral|stone|slate>] [--vibrancy <-4..5>]\n' +
   '           [--selector <:root[attr]>] [--extra <file>] [--format <css|json>] [--out <path>] [--check]\n' +
   '  Emit the --vx-* stylesheet (stdout unless --out). Defaults emit the stock identity; commit the output as your tokens file.\n' +
@@ -195,10 +183,10 @@ export const USAGE =
   '  left and reported; --force overwrites it. A retired file is deleted if untouched, else left.\n' +
   '  An ejected primitive is three-way merged with the new seed (adopted: base advanced, file kept);\n' +
   '  a conflict leaves diff3 markers, advances the base and exits 1.\n\n' +
-  'check-theme / doctor / sync all resolve their project the same way: BASALT_CWD, else the\n' +
+  'doctor / sync / lint all resolve their project the same way: BASALT_CWD, else the\n' +
   'invocation cwd — nothing inferred, nothing descended into (sync alone looks UP for the manifest\n' +
   'that declares the directory).\n' +
-  '--tokens-only and --framework are alternatives; passing both is an error.\n\n' +
+  '\n' +
   'Every subcommand accepts --help / -h to print this message and exit without running.\n' +
   '--version / -v prints the resolved package version and exits 0 — the one command that proves\n' +
   'WHICH basalt-ui ran, which a `bunx` cache can otherwise make a lie. An unknown command or an\n' +

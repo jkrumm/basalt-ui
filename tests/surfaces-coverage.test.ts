@@ -2,7 +2,6 @@
  * Surfaces coverage.
  *
  * Asserts:
- *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
  *  2. Every shipped rule (SHIPPED_RULES, the v3 five) is on disk, and agent/rules/ holds no other file.
  *  3. Every doctrine skill (deduped via SKILL_NAMES) maps to an on-disk
  *     agent/skills/{skill}/SKILL.md (skills ship in the npm package, placed by init/sync).
@@ -20,7 +19,6 @@ import { describe, expect, it } from 'bun:test'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { GUARD_RULES } from '../packages/basalt-ui/src/guard'
 import {
   hasTokenLayerBoundaryRegistered,
   SKILL_NAMES,
@@ -49,36 +47,8 @@ function packageExports(): Set<string> {
 // ── gate: checkCoverage() must return 0 ─────────────────────────────────────
 
 describe('check-coverage gate', () => {
-  it('checkCoverage() returns 0 (all 8 assertions pass)', () => {
+  it('checkCoverage() returns 0 (all 9 assertions pass)', () => {
     expect(checkCoverage()).toBe(0)
-  })
-})
-
-// ── Assertion 1: doctrine guardKinds ⊆ keyof GUARD_RULES ────────────────────
-
-describe('guardKinds coverage', () => {
-  const validKinds = new Set(Object.keys(GUARD_RULES))
-
-  for (const [key, spec] of Object.entries(SURFACES) as [string, { kind: string }][]) {
-    if (spec.kind !== 'doctrine') continue
-    const doctrine = spec as unknown as DoctrineSpec
-    for (const kind of doctrine.guardKinds) {
-      it(`SURFACES['${key}'].guardKinds: '${kind}' is in GUARD_RULES`, () => {
-        expect(validKinds.has(kind)).toBe(true)
-      })
-    }
-  }
-
-  it('all doctrine specs have only valid guardKinds', () => {
-    const bad: string[] = []
-    for (const [key, spec] of Object.entries(SURFACES) as [string, { kind: string }][]) {
-      if (spec.kind !== 'doctrine') continue
-      const doctrine = spec as unknown as DoctrineSpec
-      for (const kind of doctrine.guardKinds) {
-        if (!validKinds.has(kind)) bad.push(`${key}:${kind}`)
-      }
-    }
-    expect(bad).toEqual([])
   })
 })
 

@@ -158,7 +158,6 @@ export function VirtualList({
 }
 
 function gap(kind: 'div' | 'tr', key: string, height: number, columns: number): ReactElement {
-  // theme-allow hidden-inline-style — the height is per-render window data, not a style choice
   const style = { height }
   if (kind === 'tr') {
     return (
@@ -168,6 +167,5 @@ function gap(kind: 'div' | 'tr', key: string, height: number, columns: number): 
       </tr>
     )
   }
-  // theme-allow hidden-inline-style — the height is per-render window data, not a style choice
   return <div key={key} aria-hidden="true" style={style} />
 }

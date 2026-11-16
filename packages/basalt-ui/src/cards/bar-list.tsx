@@ -241,7 +241,6 @@ function Row({ item, percent, value, secondary }: RowProps): ReactElement {
         aria-hidden="true"
         className="block h-1 rounded-full bg-selected"
       >
-        {/* theme-allow hidden-inline-style — the width is the row's data (a share of the scale), not styling */}
         <span
           data-slot="bar-list-fill"
           className="block h-full rounded-full bg-muted-foreground"

@@ -193,7 +193,6 @@ export function Segmented(props: SegmentedProps): ReactElement {
         }}
       >
         {!multiple && box !== null ? (
-          // theme-allow hidden-inline-style — the measured box is per-instance data; the table reads it through two CSS variables
           <span
             aria-hidden
             data-pill=""

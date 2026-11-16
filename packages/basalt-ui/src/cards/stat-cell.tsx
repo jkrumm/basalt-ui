@@ -300,7 +300,6 @@ function Row({ row }: { row: StatRow }): ReactElement {
       <span className="min-w-0 flex-1 truncate text-muted-foreground">{row.label}</span>
       {row.bar !== undefined && (
         <span aria-hidden="true" className="block h-1 w-10 shrink-0 rounded-full bg-selected">
-          {/* theme-allow hidden-inline-style — the width is the row's data (a share of its max), not styling */}
           <span
             className="block h-full rounded-full bg-muted-foreground"
             style={{ width: `${barPercent(row.bar)}%` }}

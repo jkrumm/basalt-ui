@@ -1,5 +1,5 @@
 /**
- * `check-coverage` — the 11 assertions (SURFACES consistency + the agent-layer shape and line
+ * `check-coverage` — the 9 assertions (SURFACES consistency + the agent-layer shape and line
  * budgets).
  *
  * The fs half runs against a TEMP package root, never the real `agent/**`: a test that wrote into
@@ -12,7 +12,6 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
-import { GUARD_RULES } from '../src/guard/index'
 import { SKILL_NAMES, SURFACES } from '../src/surfaces'
 import {
   AGENT_LAYER_TOTAL_BUDGET,
@@ -37,7 +36,7 @@ const pkgRoot = resolve(import.meta.dir, '..')
 const lines = (rel: string, root = pkgRoot) =>
   readFileSync(resolve(root, rel), 'utf8').split('\n').length - 1
 
-// ── the 11 assertions ────────────────────────────────────────────────────────
+// ── the 9 assertions ────────────────────────────────────────────────────────
 
 describe('checkCoverage', () => {
   it('passes against the live registry', () => {
@@ -99,19 +98,5 @@ describe('SURFACES.pluginRules', () => {
       if (spec.kind !== 'doctrine') continue
       expect([key, Array.isArray(spec.pluginRules)]).toEqual([key, true])
     }
-  })
-})
-
-describe('SURFACES.guardKinds — assertion 11', () => {
-  // The twin of assertion 9 for the text lane: a kind shipped on no surface is a kind no doctrine
-  // names.
-  it('places every GUARD_RULES kind on at least one doctrine surface', () => {
-    const surfaced = new Set<string>()
-    for (const spec of Object.values(SURFACES)) {
-      if (spec.kind !== 'doctrine') continue
-      for (const kind of spec.guardKinds) surfaced.add(kind)
-    }
-    const orphans = Object.keys(GUARD_RULES).filter((kind) => !surfaced.has(kind))
-    expect(orphans).toEqual([])
   })
 })

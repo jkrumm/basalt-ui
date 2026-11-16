@@ -1000,35 +1000,11 @@ const ROW_LINE_HEIGHT_STEP = 1 / 30
  *
  * `SPACE_FIXED` is NEVER part of this law — see that constant's own doc for why.
  *
- * **What actually tracks a retuned `level`, end to end, and what doesn't** (the real scope of the
- * "dev slider gap" — bigger than "a few numeric `defaultProps`", but ALSO narrower than it looks at
- * first glance — see the Input/Button/ActionIcon note below):
- *  - `createBasaltTheme({ density })` (`../theme`) rebuilds `theme.spacing` (the generic Mantine
- *    scale) AND every density-anchored `defaultProps`/`styles` number (Timeline's `bulletSize`,
- *    Progress's `size`) from THIS function's output — this is the one production entry point, and it
- *    is complete for all of those.
- *  - `theme-lab/DeriveControls` (the DEV-tool slider) can only move `--vx-*` CSS custom properties
- *    via an injected `<style>` — it CANNOT reach a numeric `defaultProps`/SVG-prop value baked into
- *    the theme object at all, so Timeline's `bulletSize` and Progress's `size` stay visibly static
- *    there. The SAME limitation applies to `theme.spacing` itself (the generic Mantine `xs`/`sm`/
- *    `md`/`lg`/`xl` scale): `createBasaltTheme({ density })` bakes it into the theme object as
- *    rem strings (`theme/index.ts`'s `buildTheme`), and `spaceDecls` (`tokens/index.ts`) deliberately
- *    emits no `--vx-space-scale-*`/`--mantine-spacing-*` var for it (see that function's own doc) —
- *    so the dev slider's injected `<style>` cannot reach it either, and a component reading
- *    `var(--mantine-spacing-sm)` (e.g. `shell/app-header.module.css`) stays at its level-0 value
- *    under the dev slider even though it correctly retunes on the production path. Input's/Button's/
- *    ActionIcon's `size="md"` height is NOT in this bucket, despite reading
- *    like the same shape of gap: `theme/index.ts`'s `Input.extend`/`Button.extend`/`ActionIcon.extend`
- *    resolve their height through `vars` (`--input-height`/`--button-height`/`--ai-size`, each wrapping
- *    `var(--vx-space-input-height)`/`var(--vx-space-control-height)` in a `calc(...)`), not a numeric
- *    `defaultProps` literal — a CSS custom property the dev slider's injected `<style>` CAN reach, so
- *    it DOES visibly follow the Density slider there too, not only in production.
- *  - `tokens/index.ts`'s `VX.legendGap`/`VX.margin`/`VX.dotR` (chart legend gap, plot-area margins,
- *    marker radius) are the ONE case that fails BOTH paths — including the PRODUCTION one. `VX` is
- *    built once at module load from the frozen level-0 `SPACE_STEP` snapshot (visx SVG props read
- *    plain JS numbers, not `var()` strings), so it never re-reads a `density` option passed to
- *    `createBasaltTheme` at all — a genuine, currently-unfixed production gap, not merely a
- *    dev-tool-only limitation like the `defaultProps` above.
+ * **What tracks a retuned `level`:** the `--vx-space-*` custom properties `spaceDecls`
+ * (`tokens/core.ts`) emits from THIS function's output, so every stylesheet and `var()` read follows
+ * it. `VX.legendGap`/`VX.margin`/`VX.dotR` (chart legend gap, plot-area margins, marker radius) do
+ * not: `VX` is built once at module load from the frozen level-0 `SPACE_STEP` snapshot, because the
+ * chart engine's SVG props read plain JS numbers, not `var()` strings.
  *
  * Throws on a non-integer or out-of-range (`[-3, 3]`) level — same throw-and-propagate discipline as
  * `deriveRadius`/`deriveTokens`'s accent-seed validation.
@@ -1120,9 +1096,8 @@ export function deriveSpacing(level: number): SpaceValues {
 /** `deriveSpacing(0)` — the shipped identity's spacing values, computed once. `SPACE`/`SPACE_SCALE`/
  * `SPACE_STEP`/`ROW_LINE_HEIGHT` below are defined FROM this, the same way `RADIUS`/`RADIUS_STEP`
  * are defined from `DEFAULT_RADIUS_VALUES = deriveRadius(0)` — one source, so the two can never
- * drift. Exported so `theme/use-basalt-spacing.ts`'s `useBasaltSpacing` can fall back to it when
- * `theme.other.basaltDensity` is absent (the level-0 case — `createBasaltTheme` deliberately omits
- * that key at level 0, see `theme/index.ts`'s `isDefaultDensity` short-circuit). */
+ * drift. The level-0 values, for a reader
+ * that needs the shipped numbers without a resolved config. */
 export const DEFAULT_SPACE_VALUES = deriveSpacing(0)
 
 /** Density-tracking semantic spacing anchors at the shipped identity — see `SPACE_ANCHORS_BASE`'s
@@ -1381,8 +1356,7 @@ let defaultPaletteData: ReturnType<typeof buildPaletteDataUncached> | undefined
  * {@link DEFAULT_DERIVE_CONFIG}, the shipped identity). The default config always resolves to one
  * pinned singleton (see `defaultPaletteData` above); any other config is memoized by value (not
  * reference) in `paletteDataCache`, capped at `PALETTE_DATA_CACHE_MAX` entries (FIFO eviction), so
- * repeated calls with an equal config — e.g. from `BasaltProvider` on every render — are a cache
- * hit, not a re-derivation.
+ * repeated calls with an equal config are a cache hit, not a re-derivation.
  */
 export function buildPaletteData(config: DeriveConfig = DEFAULT_DERIVE_CONFIG): PaletteData {
   if (isDefaultDeriveConfig(config)) {

@@ -129,10 +129,10 @@ bun run build   # tsup && tsc --emitDeclarationOnly && copy-assets && fix-esm-ex
 
 **Three footguns all of the same shape — a gate reading `dist`, not your working tree:**
 
-1. `bin/basalt-ui.mjs` imports `../dist/cli/index.js`, so `check-theme` / `check-coverage` /
-   `doctor` validate the last BUILD. After touching `src/guard/**` or `src/cli/**`, build before
-   trusting them — and `bun run pre` runs `check-theme`, so a stale `dist` can make `pre` green over
-   source it never read.
+1. `bin/basalt-ui.mjs` imports `../dist/cli/index.js`, so `lint` / `doctor` validate the last
+   BUILD. After touching `src/lint/**` or `src/cli/**`, build before trusting them — and
+   `bun run pre`'s `lint` loads `basalt-ui/lint` from `dist`, so a stale `dist` can make `pre` green
+   over source it never read.
 2. `apps/playground/tsconfig.json` declares no `paths`, so its `tsc` resolves `basalt-ui/*` through
    node_modules → `exports` → `dist/**/*.d.ts`, while Vite aliases the RUNNING playground to `src/`.
    A new export or a widened signature is invisible to `bun run typecheck` until you build.
@@ -208,8 +208,8 @@ guards that hold them are named.
 ## CLI
 
 One bin, **named like the package** so `bunx basalt-ui` can never resolve a stranger (an unrelated
-`basalt` exists on npm — never print `bunx basalt`): `init | sync | check-theme | doctor |
-guard-hook | tokens:css | fonts:css | help` (C2, 1.29.0: `info` is gone — nothing published it
+`basalt` exists on npm — never print `bunx basalt`): `init | sync | doctor | lint |
+tokens:css | fonts:css | help` (C2, 1.29.0: `info` is gone — nothing published it
 depended on; `check-coverage` moved to `bun scripts/check-coverage.ts`, a repo-internal script, not
 a CLI subcommand). Each subcommand's mechanics live in its own JSDoc in `src/cli/index.ts`; what
 belongs here is the properties that are easy to break:
@@ -219,11 +219,11 @@ belongs here is the properties that are easy to break:
    not accept (`doctor --json` used to run doctor and exit 0); an unknown COMMAND says so above the
    usage block rather than dumping help and reading like a choice.
 2. **One resolver: `BASALT_CWD` → cwd, and a declared `basalt.roots` — nothing inferred** (C2
-   deletes the two-level descend and the ascend-to-nearest-ancestor fallback `check-theme`/`doctor`/
-   `sync` used to share). Two candidates is reported as ambiguous, never guessed. The pre-C2 ascend
-   existed because `check-theme` used to FABRICATE `roots: ["src"]` and report the invention back
-   under that name — 22 of 44 files scanned, exit 0, no note; the fix is a declared root, not a
-   smarter guess.
+   deletes the two-level descend and the ascend-to-nearest-ancestor fallback `doctor`/`sync` used
+   to share). Two candidates is reported as ambiguous, never guessed. The pre-C2 ascend existed
+   because the 2.x text guard used to FABRICATE `roots: ["src"]` and report the invention back under
+   that name — 22 of 44 files scanned, exit 0, no note; the fix is a declared root, not a smarter
+   guess.
 3. **`sync` refreshes; `init` creates.** `sync` exits 1 rather than scaffolding a second consumer,
    and the refusal runs BEFORE the `basalt.roots` backfill, which was half the damage. It also
    **prunes the rule/skill files a newer basalt no longer ships** (the derived namespaces are the
@@ -233,32 +233,18 @@ belongs here is the properties that are easy to break:
 4. **Every invocation the CLI EMITS goes through `basaltBinCommand()`** — the resolved local bin,
    falling back to `bunx` only when nothing resolves. `bunx` does not re-resolve a cached package,
    which is how a consumer filed a P0 against a 1.20.0 cache while pinned to 1.22.0.
-5. **`--audit-allows` proves a waiver by re-running the scan with that one occurrence neutralized**,
-   and exits 1 on a dead one. It judges plugin-rule waivers too, by re-running oxlint over one
-   neutralized sibling file; where oxlint is unreachable the verdict is "cannot judge", never "dead".
-   It prints the SCOPE it audited, because `0 dead` is not `0 dead anywhere` — that is exactly the
-   claim standing in the wrong directory used to buy.
-
-Two guard-scan invariants worth holding: **`profile: 'tokens-only'` must be DECLARED, never
-inferred** (inferring from a missing `@mantine/core` would silence the Mantine-remedy kinds on any
-repo keeping Mantine in a sibling package) — by every command, `doctor` included, all through
-`declaredProfile`. And **basalt-emitted CSS is
-skipped per LINE, not per file**: the canonical two-line `@generated` header earns the file nothing
-more than a chance, and then each line has to be a basalt custom property, a selector, a `}` or a
-self-closing comment. Whole-file marker trust was forgeable twice over.
 
 ## Guards — shipping a stricter one
 
-**A change that makes the guard reject code it previously accepted ships `warn` for one minor, then
+**A change that makes a lint rule reject code it previously accepted ships `warn` for one minor, then
 promotes to `error`.** The justification is specific: between majors (see [Major lines](#major-lines)) a
-consumer has no semver channel telling them enforcement tightened, and the guard is the one part of
+consumer has no semver channel telling them enforcement tightened, and lint is the one part of
 basalt that can hard-fail their build.
 
-- Mechanically: a `{ since, promote, why }` entry in `GRACE_PERIOD_KINDS` (guard kinds,
-  `src/guard/index.ts`) or `PLUGIN_RULE_GRACE` (oxlint rules, exported beside the plugin in
-  `configs/oxlint-plugin.js` — it cannot live in `oxlint.json`, whose top-level keys are fixed by
+- Mechanically: a `{ since, promote, why }` entry in `PLUGIN_RULE_GRACE` (oxlint rules, exported
+  beside the plugin in `configs/oxlint-plugin.js` — it cannot live in `oxlint.json`, whose top-level keys are fixed by
   oxlint's parser). **Deleting the entry IS the promotion**, and it belongs in its own commit.
-- **The promise is machine-checked** (law C16): `grace.test.ts` and `oxlint-plugin.test.ts` fail the
+- **The promise is machine-checked** (law C16): `oxlint-plugin.test.ts` fails the
   build once `package.json`'s version reaches an entry's `promote` while it is still there, assert
   `since` precedes `promote`, and assert the ledger against the shipped preset in BOTH directions.
   Before that gate existed, five kinds sat at `warn` for five minors. **Those tests read the version
@@ -284,8 +270,7 @@ basalt that can hard-fail their build.
 - **A relaxation needs no entry.** `inline-display`/`raw-html-layout` no longer fire inside
   `src/charts/**` because both remedies name a Mantine primitive the boundary already forbids there,
   so the finding was unactionable and the only fix was a waiver written inside the directory the
-  boundary protects. That change also deleted basalt's own self-exemption for both kinds — basalt
-  passes `check-theme` for the same reason a consumer does, not because it silenced itself.
+  boundary protects.
 
 ## Frame value types
 
@@ -319,9 +304,9 @@ promotion state there, never from prose here.** Five things about it that are no
   different ID: `control-outside-home` matches `@mantine/*` tags, `bound-control-outside-home`
   matches `basalt-ui`-imported ones. Both read the same three SUBTREE homes — `FilterSet`,
   `PageAside`, `PanelRow`, where the children ARE the home, provenance-gated because `PanelRow` is
-  an ordinary name for a consumer's own helper — and the bound one is the only control rule with no
-  text-lane twin in `src/guard`, because a bound control's name carries no provenance a 12-line
-  regex window could read. Splitting rather than widening is C16 mechanics: a
+  an ordinary name for a consumer's own helper — and the bound one never had a text-lane twin,
+  because a bound control's name carries no provenance a 12-line regex window could read. Splitting
+  rather than widening is C16 mechanics: a
   level is per-id, so widening would have shipped the new form at the old rule's level with no
   grace, and widened it mid-grace besides.
 - **The raw-filter rules gate on the tag's `@mantine/*` IMPORT, not its name** — a consumer's own
@@ -367,7 +352,7 @@ Code cannot load rules or skills from `node_modules`, which is the only reason a
   ceilings in `AGENT_LINE_BUDGETS` and a whole-layer ceiling (rules + skills + the AGENTS block) in
   `AGENT_LAYER_TOTAL_BUDGET`, both set to the LANDED values (W9: rules 271, layer 576; W10: layer 616, `basalt-app` 257 for the streaming snippet; layer 659, `basalt-app` 300 for the form-dialog snippet; W31: layer 679, `basalt-design` 36 for the design-round procedure, +2 for the AGENTS block naming the skills and reviewer) so the next
   edit fails CI on growth. `check-budgets.ts` `ruleLines` bounds the rules alone (spec target 450).
-  A rule bullet ends in its enforcement tag (`[basalt/<rule>]`, `[check-theme <kind>]`,
+  A rule bullet ends in its enforcement tag (`[basalt/<rule>]`, `[lint:<id>]`,
   `[type <Name>]`); `check-agent-doc-drift.ts` (Checks F–H) resolves the tags, rejects prose
   outside bullets, repo-local and removed rule ids, and unpublished names in the llms.txt header.
 - **Rule `paths:` differs by copy**: a consumer's installed rules get `'<root>/**'` per `basalt.roots` (rendered by `init`/`sync`); this repo's `/.claude/rules` keep the shipped `'**/src/**'` verbatim (`make sync-self`), which loads for `packages/*/src/**` and `apps/*/src/**`.

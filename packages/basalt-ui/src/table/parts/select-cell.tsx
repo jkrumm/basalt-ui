@@ -84,7 +84,6 @@ export function SelectCell<T>({ row, value, edit, tabbable }: SelectCellProps<T>
           </ComboboxContent>
         </Combobox>
       ) : (
-        // theme-allow raw-selection-control — the `c.select` cell editor: the row is its state and `commit` the app mutation (concept section 3, Inline edit)
         <Select
           items={edit.options.map((o) => ({ value: o, label: o }))}
           value={value}

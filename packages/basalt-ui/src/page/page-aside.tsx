@@ -47,7 +47,6 @@ export function PageAsidePanel({
   const t = useMessages(page)
   const style: PanelStyle = { '--page-aside-w': `${width}px` }
   return (
-    // theme-allow hidden-inline-style — one custom property carries the measured width; no layout is styled inline
     <aside
       data-slot="page-aside"
       data-dock={dock}

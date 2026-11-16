@@ -64,7 +64,6 @@ function Legend({ entries }: { entries: readonly LegendEntry[] }): ReactElement 
     >
       {entries.map((entry) => (
         <li key={entry.key} className="flex min-w-0 items-center gap-1.5">
-          {/* theme-allow hidden-inline-style — a series colour is app data (a light and a dark value), so it enters as two custom properties */}
           <span
             aria-hidden="true"
             style={

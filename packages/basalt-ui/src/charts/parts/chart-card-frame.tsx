@@ -55,7 +55,6 @@ function Info({ title, children }: { title: string; children: string }): ReactEl
           <circle cx="8" cy="5" r="0.9" fill="currentColor" />
         </svg>
       </button>
-      {/* theme-allow hidden-inline-style — the anchor name is unique per instance, so it cannot be a class */}
       <div
         id={id}
         popover="auto"

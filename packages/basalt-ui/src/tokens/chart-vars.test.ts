@@ -5,7 +5,6 @@
  * wrong pair would still be caught.
  */
 import { describe, expect, test } from 'bun:test'
-import { CVD_ADJACENT_MIN } from '../guard/palette'
 import {
   CHART_CVD_MIN,
   CHART_HUE_GAP,
@@ -102,10 +101,6 @@ describe('the Viz roles, both seeds, light and dark', () => {
       })
     })
   }
-
-  test('the CVD floor is the 2.x series-palette floor', () => {
-    expect(CHART_CVD_MIN).toBe(CVD_ADJACENT_MIN)
-  })
 
   test('derivation is deterministic', () => {
     expect(deriveV3()).toEqual(deriveV3())

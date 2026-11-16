@@ -9,7 +9,6 @@
  *
  * Utilities sit above `basalt` in the layer order, so the few declarations that fight a part's
  * utility (cell hairline and nowrap) are `!important`, which layers invert in our favour.
- * theme-allow-file raw-media-query, css-raw-surface — container queries, not viewport media
  */
 @layer basalt.table {
   [data-slot='table-scroller'] {

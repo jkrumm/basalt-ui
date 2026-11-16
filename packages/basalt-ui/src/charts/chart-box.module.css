@@ -287,7 +287,6 @@
   line-height: calc(1.125rem - 0.3125rem - 2px);
   white-space: nowrap !important;
   border-radius: var(--vx-radius-ctrl) !important;
-  /* theme-allow css-raw-surface — the chip is flat, like the Sparkline's, not a floating panel */
   box-shadow: none !important;
 }
 

@@ -6,8 +6,6 @@
  * is deleted.
  */
 
-// theme-allow-file raw-hex — the ramp data IS hex; series colour is app data resolved through here.
-
 /** Five steps, darkest first for the colour families (a grey family runs dark-surface to light). */
 export const RAMPS = {
   darkGray: ['#18181b', '#27272a', '#3f3f46', '#52525c', '#71717a'],

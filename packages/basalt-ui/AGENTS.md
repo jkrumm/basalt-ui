@@ -61,7 +61,7 @@ CSS vars. Never write `#rrggbb`, `rgb(…)`, or `hsl(…)` in component or style
 **Motion discipline**: import animation from `motion/react`, never the raw `framer-motion`
 package (enforced by oxlint `no-restricted-imports`). Route transition timing through the shared
 `MOTION_DURATION` / `MOTION_SPRING` / `MOTION_EASE_STANDARD` tokens — never a hardcoded
-duration/spring/ease literal in a `transition={{...}}` prop (enforced by `basalt-ui check-theme`).
+duration/spring/ease literal in a `transition={{...}}` prop.
 
 ## Key commands
 
@@ -72,20 +72,18 @@ like everything else. `init` always runs from the local bin: install `basalt-ui`
 ```bash
 ./node_modules/.bin/basalt-ui init   # FIRST STEP, after `bun add basalt-ui`: scaffold .claude/rules/ + .claude/skills/, managed AGENTS.md block, DESIGN.md seed, toolchain seeds
 basalt-ui --version         # one bare line, exit 0 — which CLI is actually running (also -v / version)
-basalt-ui check-theme       # fail on off-palette colors in consumer source
 basalt-ui sync              # reconcile managed files (.claude/rules/, .claude/skills/, AGENTS.md block) + delete the ones this version retired
 basalt-ui sync --check      # CI freshness gate — exits non-zero if any managed file drifted or a retired one is still present
 basalt-ui doctor            # integration health — SKIPPED is a third outcome and exits non-zero
 bunx basalt-ui tokens:css   # emit the --vx-* stylesheet (no React, no Mantine, no bundler) — bunx ONLY if basalt is not installed
 bunx basalt-ui fonts:css    # emit the shipped --basalt-font-* stacks — same exception
-basalt-ui guard-hook        # PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies off-palette writes
 ```
 
 Every subcommand rejects a flag it does not accept, exiting 1 and naming it; an unknown command says
 so above the usage block. Neither is ever ignored — `doctor --json` used to run doctor and exit 0.
 
 **One resolver (C2, 1.29.0): `BASALT_CWD` → cwd, and a declared `basalt.roots` — nothing inferred.**
-`check-theme`, `doctor` and `sync` all resolve their project the same way; there is no ascend/descend
+`doctor`, `sync` and `lint` all resolve their project the same way; there is no ascend/descend
 guess. Two candidates is ambiguous and reported, never guessed. `sync` on a `tokens-only` consumer
 prints `n/a` and exits 0.
 
@@ -95,21 +93,15 @@ believing it was on 1.22.0. `init` and `sync` render every seeded script, CI ste
 resolved local bin for this reason (`BASALT_BIN` overrides it). `basalt-ui --version` is the
 one-second check.
 
-Register `guard-hook` in `.claude/settings.json` under `hooks.PreToolUse` with matcher
-`Write|Edit|MultiEdit` and command `./node_modules/.bin/basalt-ui guard-hook` (what `init` seeds) so the agent can't write off-palette
-colors without a `theme-allow` comment.
+The editor hook is `.basalt/hook.mjs` (`basalt-ui lint --hook`), placed and registered in
+`.claude/settings.json` by `init` and `sync`, so the agent's off-law edits are caught as it writes.
 
-**The escape hatch is `theme-allow <rule-id> — <reason>`**, scoped to that one kind and to that one
-node/line. It must START its comment (after `//`, `/*`, `<!--`, a block gutter `*`, or whitespace),
-and is honoured on the reported line, on a comment-only line directly above it (reaching the first
-CODE line below, through the rest of its comment block), and — in CSS — from a trailing comment back
-over the declaration it terminates. Whole-file scope is `theme-allow-file <id>… — <why>`; a bare
-`theme-allow-file` waives nothing. A bare `theme-allow` waives nothing and
-reports `theme-allow-unscoped`. A word in the id slot that names no rule waives nothing.
-`.json`/`.webmanifest` use a `"basalt:theme-allow[-file]"` member. Audit them all with
-`basalt-ui check-theme --audit-allows`, which exits 1 on a waiver that suppresses nothing. It judges
-plugin-rule waivers too (since 1.22.0), by re-running oxlint — so it needs oxlint reachable;
-otherwise the verdict is "cannot judge", never "dead".
+**The escape hatch is `theme-allow <rule-id> — <reason>`**, scoped to that one `basalt/*` plugin rule
+and to that one node/line. It must START its comment (after `//`, `/*`, `<!--`, a block gutter `*`,
+or whitespace), and is honoured on the reported line and on a comment-only line directly above it.
+Whole-file scope is `theme-allow-file <id>… — <why>`. A bare `theme-allow` waives nothing, and a
+word in the id slot that names no rule waives nothing. The kinds of the retired 2.x text guard
+(`check-theme`, deleted in 3.0) still parse, as dead waivers.
 
 > **Framework-internal only** — `bun scripts/check-coverage.ts` (a script, not a CLI subcommand
 > as of C2/1.29.0) is a self-consistency gate for the basalt-ui repo itself (asserts SURFACES ↔

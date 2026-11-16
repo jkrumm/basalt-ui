@@ -11,9 +11,24 @@
       "manual": true,
       "note": "basalt() absorbs the head plugin: the theme script replaces the anti-FOUC style and the bootScript, colorScheme and backgroundColor paint options; icons take only the explicit list (the six-file default and { dir } are gone); themeColor moves to the top level",
       "verify": "vite build: index.html carries the theme script once, no <style>, and site.webmanifest when app is set"
+    },
+    {
+      "id": "cli-check-theme",
+      "kind": "removed",
+      "from": "basalt-ui check-theme",
+      "note": "the 2.x text guard is deleted in 3.0, with its `basalt.severity`, `exempt`, `exemptRules` and `include` config keys; instead: `basalt-ui lint` and the oxlint and stylelint presets, which also read the app's own waivers"
+    },
+    {
+      "id": "cli-guard-hook",
+      "kind": "removed",
+      "from": "basalt-ui guard-hook",
+      "note": "the 2.x PreToolUse theme-guard adapter is deleted in 3.0; instead: the editor hook `.basalt/hook.mjs` (`basalt-ui lint --hook`), placed by `basalt-ui init` and `sync`; remove the old `guard-hook` entry from `.claude/settings.json`"
     }
   ],
-  "tokens": { "renamed": [], "valueShifts": [] },
+  "tokens": {
+    "renamed": [],
+    "valueShifts": []
+  },
   "storage": [],
   "urls": [],
   "attrs": [],

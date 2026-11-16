@@ -412,7 +412,9 @@ export function previousTag(rootDir: string, version: string): string | undefine
 const SURFACE_DIR = 'packages/basalt-ui/scripts/export-surface'
 /** The pre-shard single-file snapshot, still what a tag from before the shard split carries. */
 const LEGACY_SURFACE_PATH = 'packages/basalt-ui/scripts/export-surface.json'
-const VX_PATH = 'packages/basalt-ui/src/guard/vx-names.ts'
+const VX_PATH = 'packages/basalt-ui/src/tokens/vx-names.ts'
+/** Where a tag before the move carries the same list. */
+const LEGACY_VX_PATH = 'packages/basalt-ui/src/guard/vx-names.ts'
 
 /** The surface a tag shipped: its shards, or the single-file snapshot of a pre-shard tag. */
 function surfaceAtTag(rootDir: string, tag: string): Surface {
@@ -428,9 +430,18 @@ function surfaceAtTag(rootDir: string, tag: string): Surface {
   return JSON.parse(git(rootDir, ['show', `${tag}:${LEGACY_SURFACE_PATH}`])) as Surface
 }
 
+/** The name list a tag shipped: at its current path, or the `src/guard` one of a tag before the move. */
+function vxSourceAtTag(rootDir: string, tag: string): string {
+  try {
+    return git(rootDir, ['show', `${tag}:${VX_PATH}`])
+  } catch {
+    return git(rootDir, ['show', `${tag}:${LEGACY_VX_PATH}`])
+  }
+}
+
 function runGate(rootDir: string, tag: string, merged: Content): void {
   const prevSurface = surfaceAtTag(rootDir, tag)
-  const prevVx = parseVxNames(git(rootDir, ['show', `${tag}:${VX_PATH}`]))
+  const prevVx = parseVxNames(vxSourceAtTag(rootDir, tag))
   const nowSurface: Surface = readShards(join(rootDir, SURFACE_DIR))
   const nowVx = parseVxNames(readFileSync(join(rootDir, VX_PATH), 'utf8'))
   const uncovered = findUncovered(prevSurface, nowSurface, prevVx, nowVx, merged)

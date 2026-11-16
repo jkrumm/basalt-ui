@@ -1,5 +1,5 @@
 /**
- * basalt-ui CLI — the dispatcher plus the plumbing `init`, `sync`, `check-theme` and `doctor` (each
+ * basalt-ui CLI — the dispatcher plus the plumbing `init`, `sync`, `lint` and `doctor` (each
  * in its own file) share. `init`/`sync` reconcile the agentic surface and the toolchain seeds into
  * a consumer repo through a sha256 manifest (three-way, idempotent). Runtime-agnostic and
  * dependency-free — Node/Bun built-ins only, no `bun`-module import. Config is the consuming
@@ -10,13 +10,9 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { DEFAULT_GUARD_CONFIG, guardWaiverHint } from '../guard'
-import type { GuardConfig, GuardKind, GuardSeverity } from '../guard'
 import { AGENT_NAMES, RULE_NAMES, SKILL_NAMES } from '../surfaces'
-import { checkTheme } from './check-theme'
 import { doctor } from './doctor'
 import { eject } from './eject'
-import { guardHook } from './guard-hook'
 import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init/index'
 import { isHookCall, lint } from './lint'
@@ -29,59 +25,11 @@ import { routerSeedDest } from './router-wiring'
 export type { BasaltInstall }
 import { hasDependency, readIfExists, readPackageJson } from './source-text'
 import { fontsCss, normalizeColorFunctions, tokensCss } from './tokens-css'
-import { DEFAULT_ROOT, exemptRulePaths, resolveRoots } from './config'
+import { DEFAULT_ROOT, resolveRoots } from './config'
 import type { BasaltConfig } from './config'
 
 /**
- * The consumer's `GuardConfig`: every `basalt` key the guard knows, over `DEFAULT_GUARD_CONFIG`.
- * One builder for `check-theme` and `guard-hook`, so the hook never judges an edit by a different
- * config than the build. `exemptRules` reaches the guard as paths only — the reason the object form
- * carries is accountability for a human and for `--audit-allows`, not a second shape to scan.
- */
-type PassthroughKey = Exclude<keyof GuardConfig, 'allowComment' | 'exemptRules' | 'profile'>
-
-/**
- * The `basalt` keys that reach the guard verbatim — named, never matched by name at runtime.
- * `satisfies Record<…>` makes a GuardConfig key missing here, or one that is not a key, a tsc error.
- */
-const GUARD_PASSTHROUGH = {
-  spacingSteps: true,
-  rawRadius: true,
-  forbiddenAccents: true,
-  mantineShadeIndex: true,
-  rawSurface: true,
-  cardWithBorder: true,
-  offSystemSurfaceVar: true,
-  rawHtmlLayout: true,
-  inlineSpacing: true,
-  inlineDisplay: true,
-  rawMotionValue: true,
-  rawFormControl: true,
-  sub16InputFont: true,
-  severity: true,
-} as const satisfies Record<PassthroughKey, true>
-
-export function resolveGuardConfig(cfg: BasaltConfig, profile: DoctorProfile): GuardConfig {
-  const exemptRules: Partial<Record<GuardKind, string[]>> = {}
-  for (const [kind, entry] of Object.entries(cfg.exemptRules ?? {})) {
-    exemptRules[kind as GuardKind] = exemptRulePaths(entry)
-  }
-  // Typed as the guard's shape, so a BasaltConfig field whose type drifts from it fails to compile.
-  const from: Partial<Pick<GuardConfig, PassthroughKey>> = cfg
-  const set = (Object.keys(GUARD_PASSTHROUGH) as PassthroughKey[]).filter(
-    (k) => (from[k] ?? null) !== null,
-  )
-  return {
-    ...DEFAULT_GUARD_CONFIG,
-    ...Object.fromEntries(set.map((k) => [k, from[k]])),
-    allowComment: 'theme-allow',
-    exemptRules,
-    ...(profile === 'tokens-only' ? { profile: 'tokens-only' as const } : {}),
-  }
-}
-
-/**
- * The one consumer series path (DESIGN.md's `{{SERIES_MODULE_PATH}}`, the default scan exemption,
+ * The one consumer series path (DESIGN.md's `{{SERIES_MODULE_PATH}}`,
  * the skills' prose). Derived from the FIRST configured root (`<root>/lib/series.ts`), since a
  * monorepo with `roots: ['apps/web/src']` has no top-level `src/`. `seriesModulePath` overrides.
  */
@@ -102,47 +50,6 @@ function toRootGlob(root: string): string {
   return `'${root.replace(/'/g, `'\\''`)}/**'`
 }
 
-/**
- * Default scan exemption — a bare consumer's only palette source is its series module (the doctrine
- * directs every consumer to put raw hex series colors there). Shares `resolveSeriesModulePath` with
- * `buildTemplateVars`'s `{{SERIES_MODULE_PATH}}`, so the seeded path and the exemption can't drift.
- */
-export function defaultExempt(cfg: BasaltConfig): string[] {
-  return [resolveSeriesModulePath(cfg)]
-}
-
-export const SKIP = /\.gen\.ts$|\.test\.[tj]sx?$|\.d\.ts$/
-/** Filenames that look like they ARE the palette source, for the check-theme escape-hatch hint. */
-export const SERIES_MODULE_HINT_RE = /(series|palette)\.tsx?$/i
-
-const SEVERITY_VALUES: readonly string[] = ['warn', 'error']
-
-/**
- * Drop `basalt.severity` entries whose value is not `'warn'` / `'error'`, loudly: a typo there would
- * silently REMOVE enforcement. The kind falls back to its default instead (stricter, and told about).
- */
-function sanitizeSeverity(cfg: BasaltConfig): BasaltConfig {
-  const raw: unknown = cfg.severity
-  if (raw === undefined) return cfg
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
-    console.error('⚠ basalt.severity is not an object — ignoring it; every kind keeps its default.')
-    const { severity: _dropped, ...rest } = cfg
-    return rest
-  }
-  const kept: Record<string, GuardSeverity> = {}
-  for (const [kind, value] of Object.entries(raw)) {
-    if (typeof value === 'string' && SEVERITY_VALUES.includes(value)) {
-      kept[kind] = value as GuardSeverity
-      continue
-    }
-    console.error(
-      `⚠ basalt.severity["${kind}"] is ${JSON.stringify(value)}, not 'warn' or 'error' — ` +
-        'ignoring it; that kind keeps its default severity.',
-    )
-  }
-  return { ...cfg, severity: kept as Partial<Record<GuardKind, GuardSeverity>> }
-}
-
 /** Does `cwd`'s own `package.json` carry a `basalt` key? — "misconfigured roots" vs "wrong
  *  directory", the failure a root-invoked hook hits since 1.29.0's single resolver. Never a walk. */
 export function hasBasaltKey(cwd: string): boolean {
@@ -150,39 +57,7 @@ export function hasBasaltKey(cwd: string): boolean {
 }
 
 export function readBasaltConfig(cwd: string): BasaltConfig {
-  return sanitizeSeverity(readPackageJson<{ basalt?: BasaltConfig }>(cwd)?.basalt ?? {})
-}
-
-/**
- * Extensions the walker collects: source (`.astro`/`.jsx`/`.vue` and the `.mjs`/`.cjs`/`.mts`/`.cts`
- * module spellings) plus `html?`/`webmanifest`, where raw hex ships in `theme-color` and friends.
- */
-const SCANNABLE_EXT = /\.(?:tsx?|jsx|[cm][jt]s|astro|vue|css|html?|webmanifest)$/
-
-/**
- * Recursively collect scannable files under a root, skipping dependency/build dirs. `.json` is NOT
- * scanned (config, fixtures, lockfiles: false positives); name a design-surface JSON in `basalt.include`.
- */
-function walkSourceFiles(dir: string, out: string[] = []): string[] {
-  let entries: string[]
-  try {
-    entries = readdirSync(dir)
-  } catch {
-    return out // root absent — nothing to scan
-  }
-  for (const name of entries) {
-    if (name === 'node_modules' || name === '.git' || name === 'dist') continue
-    const abs = resolve(dir, name)
-    let isDir: boolean
-    try {
-      isDir = statSync(abs).isDirectory()
-    } catch {
-      continue
-    }
-    if (isDir) walkSourceFiles(abs, out)
-    else if (SCANNABLE_EXT.test(name)) out.push(abs)
-  }
-  return out
+  return readPackageJson<{ basalt?: BasaltConfig }>(cwd)?.basalt ?? {}
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -249,7 +124,7 @@ function shippedAssetPath(install: BasaltInstall, fromDir: string, asset: string
 }
 
 /**
- * Which directory a project-scoped command (`check-theme`, `doctor`) reads: `BASALT_CWD` when set,
+ * Which directory a project-scoped command (`doctor`, `sync`, `lint`) reads: `BASALT_CWD` when set,
  * else the invocation cwd. Nothing is inferred (workspace discovery was deleted). The scan scope
  * within it is `basalt.roots` in `package.json` (default `src`).
  */
@@ -276,104 +151,11 @@ export function resolveProjectDir(cwd: string): ProjectResolution {
   return { dir, relocatedFrom: dir === cwd ? null : cwd }
 }
 
-/**
- * Which shape of consumer a project-scoped command is looking at — DECLARED, never inferred
- * (`--tokens-only`, or `"basalt": { "profile": "tokens-only" }`), because the answer switches the
- * Mantine-remedy guard kinds off. Why that direction: package MAINTAINING.md § CLI.
- */
-export function declaredProfile(cfg: BasaltConfig, flags: readonly string[]): DoctorProfile {
-  if (flags.includes('--tokens-only')) return 'tokens-only'
-  if (flags.includes('--framework')) return 'framework'
-  return cfg.profile === 'tokens-only' ? 'tokens-only' : 'framework'
-}
-
-/**
- * `--tokens-only` and `--framework` are alternatives, so passing both is a contradiction rather
- * than a precedence question — the same reading `tokens:css` already applies to `--selector-class`
- * vs `--selector-attribute`. Silently preferring one meant a CI step that accumulated both flags
- * enforced whichever the code happened to test first.
- */
-export function conflictingProfileFlags(command: string, flags: readonly string[]): boolean {
-  const both = flags.includes('--tokens-only') && flags.includes('--framework')
-  if (both)
-    console.error(
-      `basalt-ui ${command}: --tokens-only and --framework are alternatives — pass one.`,
-    )
-  return both
-}
-
 /** Says so when `BASALT_CWD` moved the command off the directory it was invoked in. */
 export function noteRelocation(command: string, project: ProjectResolution): void {
   if (project.relocatedFrom === null) return
   console.log(
     `basalt-ui ${command}: BASALT_CWD relocated from ${project.relocatedFrom} to ${project.dir}.`,
-  )
-}
-
-/**
- * The relative paths `check-theme` would actually scan for a given config — the ONE place the walk
- * + `SKIP` + `exempt` filtering lives, so `doctor`'s "the guard sees zero files" check can never
- * disagree with what `check-theme` does.
- */
-export function scannableFiles(cwd: string, cfg: BasaltConfig): string[] {
-  const exempt = new Set(cfg.exempt ?? defaultExempt(cfg))
-  const seen = new Set<string>()
-  const out: string[] = []
-  const add = (abs: string): void => {
-    // Normalize to forward slashes so path matching (SKIP, exempt, isChartFile) is
-    // identical on Windows (where `relative` yields backslashes) and POSIX.
-    const rel = relative(cwd, abs).replace(/\\/g, '/')
-    if (rel.startsWith('..') || SKIP.test(rel) || exempt.has(rel) || seen.has(rel)) return
-    seen.add(rel)
-    out.push(rel)
-  }
-
-  for (const root of resolveRoots(cfg)) {
-    const rootAbs = resolve(cwd, root)
-    for (const f of walkSourceFiles(rootAbs)) add(f)
-    for (const f of appShellFiles(rootAbs)) add(f)
-  }
-  // Explicitly named files, the one route by which a `.json` is ever scanned.
-  for (const rel of cfg.include ?? []) add(resolve(cwd, rel))
-  return out
-}
-
-/**
- * The app-shell files that sit BESIDE a source root rather than inside it: `index.html` and anything
- * under `public/` (argo's raw hex lives in `apps/dashboard/index.html`, with `roots` on `…/src`).
- * Nothing else in the parent is walked.
- */
-function appShellFiles(rootAbs: string): string[] {
-  const appDir = dirname(rootAbs)
-  const out: string[] = []
-  for (const name of ['index.html', 'index.htm']) {
-    const abs = resolve(appDir, name)
-    if (existsSync(abs)) out.push(abs)
-  }
-  out.push(...walkSourceFiles(resolve(appDir, 'public')))
-  return out
-}
-
-/**
- * A path in the JSON family that is NOT a manifest — the sentinel that gets `guardWaiverHint`'s
- * plain-JSON closer. Used only by {@link waiverHintFor}; see its doc for why.
- */
-const PLAIN_JSON_HINT_PATH = 'manifest.json'
-
-/**
- * The waiver closer for a file, gated on the profile. `guardWaiverHint` leads a `.webmanifest` with
- * `basaltAppPlugin` — right for a Mantine app, advice a `profile: tokens-only` consumer cannot take
- * (rollhook's Astro site has no `index.html` for the plugin and owns its maskable icons). There the
- * manifest is plain JSON — the member is the whole answer, plus one sentence on the withheld remedy.
- * The remedy text still comes from the guard's registry; only the class mapping is decided here.
- */
-export function waiverHintFor(relPath: string, profile: DoctorProfile): string {
-  if (profile !== 'tokens-only' || !relPath.endsWith('.webmanifest')) {
-    return guardWaiverHint(relPath)
-  }
-  return (
-    `${guardWaiverHint(PLAIN_JSON_HINT_PATH)} (basaltAppPlugin would emit the file instead, but ` +
-    "it needs basalt's Vite/React layer, which a tokens-only consumer has opted out of.)"
   )
 }
 
@@ -489,7 +271,7 @@ export const OXLINT_IGNORE_FLAG = "--ignore-pattern '.claude/worktrees/**'"
 /**
  * The consumer owns the CI gate when its Makefile has a `check:` target: `doctor` and `sync --check`
  * stay as steps of their own (drift is never skippable), then `make check` replaces the built-in
- * lint/theme/format steps. Without one, the built-in steps run. Rendered at `{{GATE_STEPS}}`.
+ * lint/format steps. Without one, the built-in steps run. Rendered at `{{GATE_STEPS}}`.
  */
 function ciGateSteps(cwd: string): string {
   const owned = /^check\s*:/m.test(readIfExists(resolve(cwd, 'Makefile')) ?? '')
@@ -499,7 +281,6 @@ function ciGateSteps(cwd: string): string {
     : [
         `- run: bunx oxlint ${OXLINT_IGNORE_FLAG} .`,
         drift[0],
-        "- run: '{{BASALT_BIN}} check-theme'",
         drift[1],
         "- run: bunx oxfmt {{ROOTS_GLOBS}} '!**/dist/**' --check",
       ]
@@ -769,7 +550,7 @@ export function managedFiles(
   }
 
   // Seed a lefthook.yml that `extends` the shipped preset — the consumer owns the file (their own
-  // commands merge alongside), while the preset's oxlint/oxfmt/check-theme jobs auto-update with
+  // commands merge alongside), while the preset's oxlint/oxfmt jobs auto-update with
   // the package. `source` names the preset the stub references; the stub itself is emitted inline.
   const lefthook: ManagedFile = {
     dest: 'lefthook.yml',
@@ -777,7 +558,7 @@ export function managedFiles(
     source: 'configs/lefthook.yml',
     render: (ctx) =>
       '# Seeded by basalt-ui init — you own this file; sync never touches it again.\n' +
-      '# The extends target supplies oxlint + oxfmt + check-theme pre-commit jobs and\n' +
+      '# The extends target supplies oxlint + oxfmt pre-commit jobs and\n' +
       '# auto-updates with the basalt-ui package. Add your own commands alongside.\n' +
       '# The path is RESOLVED from where basalt-ui actually installed, not assumed at the\n' +
       '# repo root — under an isolated linker it lives beside the package that depends on it.\n' +
@@ -787,19 +568,7 @@ export function managedFiles(
       "# the preset's command names is discarded silently. `env:`, `exclude:`, `skip:` and your own\n" +
       '# command names merge. See the preset itself for the sanctioned override seams.\n' +
       'extends:\n' +
-      `  - ${ctx.vars.LEFTHOOK_PRESET_PATH.replace(/^\.\//, '')}\n` +
-      // The one seam that has to be RENDERED rather than documented: the preset is read in place
-      // out of node_modules, so it cannot template the resolved bin the way check.yml does. Its
-      // default (`bunx --no-install basalt-ui`) fails loudly rather than fetching a stranger's
-      // copy; this pins it to the local one whenever basalt actually resolved.
-      (ctx.vars.BASALT_BIN.startsWith('bunx ')
-        ? ''
-        : '\n# The theme guard runs the LOCAL bin, not a copy `bunx` fetches from npm.\n' +
-          'pre-commit:\n' +
-          '  commands:\n' +
-          '    check-theme:\n' +
-          '      env:\n' +
-          `        BASALT_BIN: ${ctx.vars.BASALT_BIN}\n`),
+      `  - ${ctx.vars.LEFTHOOK_PRESET_PATH.replace(/^\.\//, '')}\n`,
   }
 
   // CI is inherently repo-shaped (a monorepo's check.yml needs its own scripts), and GitHub Actions
@@ -1117,7 +886,6 @@ export function isStringArray(value: unknown): value is string[] {
  * checked first, so a mutating command (`sync`, `init`) never runs just because the caller only
  * asked to read about it.
  *
- * The `guard-hook` subcommand is async (reads stdin); all others are synchronous.
  */
 export function run(argv: string[], cwd: string = process.cwd()): number | Promise<number> {
   const [cmd, ...flags] = argv
@@ -1153,12 +921,8 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
       return init(flags, cwd)
     case 'sync':
       return sync({ force: flags.includes('--force'), check: flags.includes('--check') }, cwd)
-    case 'check-theme':
-      return checkTheme(cwd, flags)
     case 'doctor':
       return doctor(cwd, flags)
-    case 'guard-hook':
-      return guardHook(cwd)
     case 'tokens:css':
       return tokensCss(flags, cwd)
     case 'fonts:css':
@@ -1174,7 +938,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     default:
       // Named, not just implied by a usage dump: a full-screen help block with no error line reads
       // like the command ran and chose to print help. Reported by a consumer who passed
-      // `"check-theme --audit-allows"` as ONE argument and could not tell what had been rejected.
+      // `"doctor --from 2.30.0"` as ONE argument and could not tell what had been rejected.
       console.error(
         cmd === undefined
           ? 'basalt-ui: no command given.\n'
@@ -1193,6 +957,6 @@ export type { ManagedFile }
 
 // Re-export every split-out command so `import { X } from './index'` keeps working — `index.ts` is
 // dispatch + shared helpers only (C2); the command implementations live in their own files.
-export { checkTheme, doctor, guardHook, init, sync, fontsCss, normalizeColorFunctions, tokensCss }
+export { doctor, init, sync, fontsCss, normalizeColorFunctions, tokensCss }
 export type { SyncOptions } from './sync'
 export type { DoctorOptions, Result as DoctorResult } from './doctor'

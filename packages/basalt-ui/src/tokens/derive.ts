@@ -66,8 +66,7 @@ const DERIVE_CONFIG_KEYS = Object.keys(DEFAULT_DERIVE_CONFIG) as (keyof DeriveCo
 
 /**
  * Resolve a partial derive config against {@link DEFAULT_DERIVE_CONFIG} — the single place a
- * consumer-supplied `{ derive }` option (`createBasaltTheme`'s second argument) becomes a full,
- * six-knob `DeriveConfig`. Omitted knobs fall back to the shipped default for that knob.
+ * consumer-supplied `derive` option becomes a full, six-knob `DeriveConfig`. Omitted knobs fall back to the shipped default for that knob.
  */
 export function resolveDeriveConfig(partial?: Partial<DeriveConfig>): DeriveConfig {
   return { ...DEFAULT_DERIVE_CONFIG, ...partial }
@@ -75,8 +74,8 @@ export function resolveDeriveConfig(partial?: Partial<DeriveConfig>): DeriveConf
 
 /**
  * Whether a resolved config is identical to {@link DEFAULT_DERIVE_CONFIG} — the gate
- * `createBasaltTheme` and `BasaltProvider` use to stay on the pre-baked static path (zero extra
- * derivation work) instead of re-deriving the palette.
+ * that keeps a default config on the pre-baked static path (zero extra derivation work) instead of
+ * re-deriving the palette.
  */
 export function isDefaultDeriveConfig(config: DeriveConfig): boolean {
   return DERIVE_CONFIG_KEYS.every((key) => config[key] === DEFAULT_DERIVE_CONFIG[key])

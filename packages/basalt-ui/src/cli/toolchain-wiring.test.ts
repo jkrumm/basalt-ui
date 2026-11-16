@@ -3,11 +3,11 @@
  *
  * Five consumers hit one bug in five shapes — `doctor` counting checks it could not run as passes,
  * `init` scaffolding a guard that scans zero files, seeded configs whose `extends` resolved to
- * nothing, and `tokens:css` output basalt's own guard rejected. Every test below pins one of those
+ * nothing, and `tokens:css` output a gate rejected. Every test below pins one of those
  * false-greens shut. The unit under test is always "does the tool TELL you", not "does it work".
  *
  * C2 (the CLI-consolidation wave) deleted the multi-repo/workspace project-DISCOVERY `doctor` and
- * `check-theme`/`sync` used to share (`resolveProjectDir` is now BASALT_CWD → cwd, nothing
+ * `sync` used to share (`resolveProjectDir` is now BASALT_CWD → cwd, nothing
  * inferred, nothing ascended/descended) and narrowed `doctor` to four checks (manifest exists,
  * oxlint-preset, lefthook wired via `lefthook dump`, ai-major-parity within one package.json). The
  * describe blocks below that tested the deleted relocation/ambiguity/icon/spacing-scale/
@@ -21,7 +21,7 @@ import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { emitTokensCss } from '../tokens/emit'
-import { checkTheme, fontsCss, normalizeColorFunctions, tokensCss } from './index.ts'
+import { fontsCss, normalizeColorFunctions, tokensCss } from './index.ts'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const CLI_VERSION = (
@@ -40,7 +40,7 @@ function read(relPath: string): string {
   return readFileSync(join(dir, relPath), 'utf8')
 }
 
-/** Captures both streams — doctor/init/check-theme pick one or the other by outcome. */
+/** Captures both streams — doctor/init pick one or the other by outcome. */
 function capture(fn: () => number): { code: number; log: string } {
   const originalLog = console.log
   const originalError = console.error
@@ -66,92 +66,6 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true })
 })
 
-describe('--tokens-only and --framework are alternatives, not a precedence question', () => {
-  it('check-theme rejects both together', () => {
-    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    const { code, log } = capture(() => checkTheme(dir, ['--tokens-only', '--framework']))
-    expect(code).toBe(1)
-    expect(log).toContain('alternatives')
-  })
-})
-
-describe('check-theme — the markup scan reaches the app shell', () => {
-  it('scans index.html and public/*.webmanifest beside a root, not just inside it', () => {
-    // The exact argo shape: roots point at `apps/dashboard/src`, the raw hex lives one level up in
-    // index.html and in public/site.webmanifest. Widening the extension filter alone missed both.
-    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['apps/web/src'] } }))
-    write('apps/web/src/app.tsx', 'export const App = () => null\n')
-    write('apps/web/index.html', '<meta name="theme-color" content="#EDEFF2" />\n')
-    write('apps/web/public/site.webmanifest', '{ "theme_color": "#242424" }\n')
-    const { code, log } = capture(() => checkTheme(dir))
-    expect(log).toContain('apps/web/index.html')
-    expect(log).toContain('apps/web/public/site.webmanifest')
-    expect(code).toBe(1)
-  })
-
-  it('leaves a sibling docs/ full of throwaway HTML alone', () => {
-    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    write('docs/poc.html', '<div style="color: #ff0000">x</div>\n')
-    const { code, log } = capture(() => checkTheme(dir))
-    expect(log).not.toContain('docs/poc.html')
-    expect(code).toBe(0)
-  })
-
-  it('never blanket-scans .json, but scans one named in basalt.include', () => {
-    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    write('src/fixtures/data.json', '{ "note": "#ff0000 in a test fixture" }\n')
-    expect(capture(() => checkTheme(dir)).code).toBe(0)
-
-    write(
-      'package.json',
-      JSON.stringify({ name: 'app', basalt: { roots: ['src'], include: ['app/manifest.json'] } }),
-    )
-    write('app/manifest.json', '{ "theme_color": "#EDEFF2" }\n')
-    const { code, log } = capture(() => checkTheme(dir))
-    expect(log).toContain('app/manifest.json')
-    expect(log).not.toContain('data.json')
-    expect(code).toBe(1)
-  })
-})
-
-describe('check-theme — tokens-only profile', () => {
-  function mantineFreeApp(): void {
-    write(
-      'package.json',
-      JSON.stringify({ name: 'site', basalt: { roots: ['src'], profile: 'tokens-only' } }),
-    )
-    write('src/form.tsx', "export const F = () => <input />\nexport const C = '#ff0000'\n")
-  }
-
-  it('drops the Mantine-coupled kinds while the color kinds keep firing', () => {
-    mantineFreeApp()
-    const { log } = capture(() => checkTheme(dir))
-    expect(log).toContain('tokens-only profile')
-    expect(log).not.toContain('raw-form-control')
-    expect(log).toContain('raw-hex')
-  })
-
-  it('--framework forces the full kind set back on', () => {
-    mantineFreeApp()
-    const { log } = capture(() => checkTheme(dir, ['--framework']))
-    expect(log).not.toContain('tokens-only profile')
-    expect(log).toContain('raw-form-control')
-  })
-
-  it('is never INFERRED — an undeclared Mantine-free repo keeps every kind live', () => {
-    // Silencing 17 kinds off the mere absence of Mantine is this round's own failure mode:
-    // a repo holding Mantine in a workspace package would switch off half its guard silently.
-    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
-    write('src/form.tsx', 'export const F = () => <input />\n')
-    const { log } = capture(() => checkTheme(dir))
-    expect(log).not.toContain('tokens-only profile')
-    expect(log).toContain('raw-form-control')
-  })
-})
-
 describe('tokens:css — a committable artifact', () => {
   // Restated verbatim on purpose: the guard compares line 1 byte-for-byte, so a reword is a
   // contract change. It is command-NEUTRAL — it used to name `tokens:css`, which told anyone
@@ -165,7 +79,7 @@ describe('tokens:css — a committable artifact', () => {
     return read(out)
   }
 
-  it('opens with the exact @generated marker the theme guard skips on', () => {
+  it('opens with the exact @generated marker the lint lanes skip on', () => {
     const css = emit([])
     expect(css.split('\n')[0]).toBe(GENERATED_FIRST_LINE)
     expect(css.split('\n')[1]).toContain(`basalt-ui ${CLI_VERSION}`)
@@ -222,68 +136,6 @@ describe('tokens:css — a committable artifact', () => {
   })
 })
 
-describe('the @generated marker, end to end — emit, then scan', () => {
-  /** A tokens-only consumer whose only CSS is the sheet `tokens:css` writes into its own src/. */
-  function siteWithEmittedTokens(flags: string[] = []): void {
-    write(
-      'package.json',
-      JSON.stringify({ name: 'site', basalt: { roots: ['src'], profile: 'tokens-only' } }),
-    )
-    write('src/app.tsx', 'export const App = () => null\n')
-    expect(tokensCss([...flags, '--out', 'src/tokens.css'], dir)).toBe(0)
-  }
-
-  it('the sheet tokens:css just wrote scans to zero findings — 116 was the round-4 bug', () => {
-    siteWithEmittedTokens()
-    // Sanity: it really is full of the raw hex the guard would otherwise report.
-    expect(read('src/tokens.css').match(/#[0-9a-f]{6}/gi)?.length ?? 0).toBeGreaterThan(50)
-    const { code, log } = capture(() => checkTheme(dir))
-    expect(log).not.toContain('src/tokens.css')
-    expect(code).toBe(0)
-  })
-
-  it('holds for every emission shape, not just the default', () => {
-    for (const flags of [
-      [],
-      ['--vibrancy', '1'],
-      ['--accent', '#0f8a7e'],
-      ['--selector', ":root[data-tenant='teal']", '--accent', '#0f8a7e'],
-    ]) {
-      rmSync(join(dir, 'src'), { recursive: true, force: true })
-      siteWithEmittedTokens(flags)
-      expect(capture(() => checkTheme(dir)).code).toBe(0)
-    }
-  })
-
-  it('a HAND-FORGED marker on ordinary source suppresses nothing', () => {
-    siteWithEmittedTokens()
-    const header = read('src/tokens.css').split('\n').slice(0, 2).join('\n')
-    // Exactly what an agent (or anyone) could do: copy the two header lines onto a real file.
-    write('src/forged.css', `${header}\n.btn { color: #ff0000; }\n`)
-    const { code, log } = capture(() => checkTheme(dir))
-    expect(log).toContain('src/forged.css')
-    expect(log).toContain('raw-hex')
-    expect(code).toBe(1)
-  })
-
-  it('a STRIPPED marker makes the emitted sheet ordinary source again', () => {
-    siteWithEmittedTokens()
-    const stripped = read('src/tokens.css').split('\n').slice(2).join('\n')
-    write('src/tokens.css', stripped)
-    const { code, log } = capture(() => checkTheme(dir))
-    expect(log).toContain('src/tokens.css')
-    expect(code).toBe(1)
-  })
-
-  it('appending a real rule to the emitted sheet un-exempts it', () => {
-    siteWithEmittedTokens()
-    write('src/tokens.css', `${read('src/tokens.css')}.btn { color: #ff0000; }\n`)
-    const { code, log } = capture(() => checkTheme(dir))
-    expect(log).toContain('src/tokens.css')
-    expect(code).toBe(1)
-  })
-})
-
 describe('fonts:css — the typeface half of the token layer', () => {
   it('emits the shipped --basalt-font-* stacks under the generated header', () => {
     write('package.json', JSON.stringify({ name: 'fixture' }))
@@ -297,13 +149,6 @@ describe('fonts:css — the typeface half of the token layer', () => {
     expect(css).toMatch(/@font-face\s*\{[^}]*'Basalt Head Digits'[^}]*unicode-range: U\+0030-0039/)
     expect(css).toMatch(/--basalt-font-head: 'Basalt Head Digits', 'Hubot Sans Variable'/)
     expect(css.endsWith('}\n')).toBe(true)
-  })
-
-  it('emits a stylesheet check-theme accepts end to end', () => {
-    write('package.json', JSON.stringify({ name: 'site', basalt: { roots: ['src'] } }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    expect(fontsCss(['--out', 'src/fonts.css'], dir)).toBe(0)
-    expect(capture(() => checkTheme(dir)).code).toBe(0)
   })
 
   // The header used to hard-code `regenerate with \`bunx basalt-ui tokens:css\`` on every emitted
@@ -326,33 +171,19 @@ describe('fonts:css — the typeface half of the token layer', () => {
 })
 
 /**
- * The shipped preset broke ITSELF for every non-root consumer at 1.29.0. Lefthook runs commands at
- * the repo ROOT and `extends` merges commands WITHOUT a working directory, so after the resolver
- * change (BASALT_CWD, else cwd, nothing inferred) `check-theme` reported `0 files scanned` — a hard
- * failure — in any repo whose app is not at the root, and the default bin `bunx --no-install
- * basalt-ui` resolved to nothing there under bun's isolated linker. image-share hand-patched
- * `env: { BASALT_BIN, BASALT_CWD }` into it to commit at all.
+ * The shipped preset broke ITSELF for every non-root consumer at 1.29.0: lefthook runs commands at
+ * the repo ROOT and `extends` merges commands WITHOUT a working directory.
  */
 describe('the shipped lefthook preset — a monorepo consumer must not have to patch it', () => {
   const preset = readFileSync(resolve(PKG_ROOT, 'configs/lefthook.yml'), 'utf8')
 
-  it('derives the bin from BASALT_CWD instead of bunx', () => {
-    expect(preset).toContain(
-      'run: ${BASALT_BIN:-${BASALT_CWD:+$BASALT_CWD/}node_modules/.bin/basalt-ui} check-theme',
-    )
-    expect(preset).not.toContain('bunx --no-install basalt-ui} check-theme')
-  })
-
   it('names `root:` as a merging seam and spells the monorepo recipe out', () => {
     expect(preset).toContain('MONOREPO RECIPE')
-    expect(preset).toContain("check-theme: { root: 'apps/web/' }")
+    expect(preset).toContain("oxlint: { root: 'apps/web/' }")
   })
 
-  // The preset claimed `check-theme` "now relocates to the single workspace package carrying a
-  // basalt config" — true until 1.29.0 deleted every inference, and a lie in the shipped file for
-  // three minors after.
-  it('no longer claims the CLI relocates itself', () => {
-    expect(preset).not.toContain('relocates to the single workspace package')
+  it('carries no command of the retired 2.x theme guard', () => {
+    expect(preset).not.toContain('check-theme')
   })
 })
 

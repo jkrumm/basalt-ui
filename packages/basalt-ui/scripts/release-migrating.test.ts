@@ -6,6 +6,7 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  renameSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -97,6 +98,9 @@ function scratch(legacySurface = false): string {
   sh(dir, 'git', 'add', '-A')
   sh(dir, 'git', 'commit', '-q', '-m', 'init')
   sh(dir, 'git', 'tag', 'v2.29.0')
+  // The tag carries the list at its pre-move path; the working tree carries it where it lives now.
+  mkdirSync(join(pkg, 'src/tokens'), { recursive: true })
+  renameSync(join(pkg, 'src/guard/vx-names.ts'), join(pkg, 'src/tokens/vx-names.ts'))
   return dir
 }
 

@@ -13,7 +13,7 @@
  * Run: bun test packages/basalt-ui/tests/palette-css.test.ts
  */
 import { describe, expect, it } from 'bun:test'
-import { REMOVED_VX_NAMES } from '../src/guard'
+import { REMOVED_VX_NAMES } from './removed-vx-names'
 import { buildPaletteCss, groupTokens } from '../src/tokens'
 import { buildPaletteData, SPACE, SPACE_STEP } from '../src/tokens/palette'
 
