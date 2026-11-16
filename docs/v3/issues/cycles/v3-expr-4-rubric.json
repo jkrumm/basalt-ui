@@ -1,0 +1,24 @@
+{
+  "why": "Expression cycle 4 (docs/v3/cycles/expression-4.md) logged four `rubric` points: evidence the shoot does not record. (1) n09 round 0 was a table. The lead's keyboard frame focuses the first tabbable element in `<main>` (a table row) and presses ArrowRight twice; a table moves with ArrowUp and ArrowDown, and a roving row focus is a real focus move that a screen reader reads from the row itself, so the log showed no aria-live text. The reviewer scored K3 1 for an unproven move (P2 expression-4.54). (2) X3 asks for linked parts both ways, and the shoot records the chart side only: the keyboard frame and the sweep start on the chart, so a list row driving the chart is never in a frame. n04 (X3 2, .44) and n13 (X3 2, .76) wired both ways in source and lost a point to the missing frame; n04's keyboard frame also landed on a skip hour that no list row shows.",
+  "what": "Rubric text that says how K3 is read for a host whose focus moves natively, and how X3's list-to-chart direction is evidenced; one shoot frame for the second.",
+  "owns": [
+    "docs/v3/expression/rubric.md (the evidence note under the score table, and the K3 and X3 rows)",
+    "packages/basalt-ui/agent/reviewer/** where it restates those items",
+    "docs/v3/EXPRESSION.md § The loop, step 3, one clause naming the list frame"
+  ],
+  "must_not_touch": [
+    "Any other rubric item or the severity rule",
+    "packages/basalt-ui/src/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) K3: the keyboard frame presses the arrow keys the focused host's role takes (ArrowDown for a grid or table row, ArrowRight for a chart group); where the keys move DOM focus between rows, the reviewer reads the move from the focused element, and an aria-live announcement is not required. (2) X3: the shoot records one more frame, the pointer on the second row of a list that shares a chart's focus, with the chart's dim state; X3 scores both directions from it and the keyboard frame, and with no such list X3 is n/a as today. (3) EXPRESSION.md step 3 names the list frame beside the keyboard frame and the sweep.",
+  "commits": "docs: one commit.",
+  "proof": "The rubric diff and the log or shot each change answers, cited in the PR.",
+  "acceptance": [
+    "rubric.md says K3 reads a native row focus from the focused element, with the keys the role takes",
+    "rubric.md says how X3's list-to-chart direction is evidenced",
+    "EXPRESSION.md step 3 names the list frame",
+    "No other rubric item or the severity rule changed"
+  ],
+  "out_of_scope": "Any change to what an item asks of a build."
+}

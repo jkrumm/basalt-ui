@@ -1,0 +1,26 @@
+{
+  "why": "Expression cycle 4 (docs/v3/cycles/expression-4.md) logged `primitive` findings whose fix adds a field to a shipped contract, so they sit behind a Spec. (a) Label placement in custom marks: `ChartPlot` (`src/charts/contract.ts`, `dist/charts/contract.d.ts:197`) hands a custom mark `data`, `rows`, `visible`, `plotHeight` and `focused`, but no scale, so `chartLabels.place` cannot run on a pixel position and a label is placed in data space with `dx`/`dy` guesses. c15 could name one of its 12 mute candidates in round 0 and three in round 1, with no leader line, and at 390 px the label sits on the dot cluster (P2 expression-4.15, P3 .18). n04 drew its window labels and line-end labels as `text` marks in data space and they graze the lines at 390 (round 1 report); n16 left its lines legend-only because a direct label needed a custom mark it could not place (round 1 report). Census V3 (`docs/v3/spikes/viz-census.md`) names `scale`, `label-fit` and `packing` among the helpers apps write. (b) An x range as data: `ChartZone` is `{ from, to, fill, axis?: 'left' | 'right' }`, a y band only. c15's candidate region (5 or more a week and opened under 10 %) became a full-width y band, so low-volume senders sat inside the shaded zone as Keep dots (.14); n04's ride windows, the answer to its question, are hand-drawn `rect` marks with no label (.29). Both are an x range, one with a y bound.",
+  "what": "A Spec, then the build: `ChartPlot` gives a custom mark the plot's x and y position functions (or a `place` that takes data coordinates), and `ChartZone` takes an x range with an optional y bound and a label.",
+  "owns": [
+    "packages/basalt-ui/src/charts/contract.ts (ChartPlot, ChartZone) and the engine code that reads them",
+    "packages/basalt-ui/src/charts/chart-labels.ts where a placement takes a pixel position",
+    "packages/basalt-ui/docs/** through its generator, and the basalt-charts skill reference that teaches custom marks",
+    "unit and layout tests beside them"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md (the Spec names any section it would amend; the owner rules)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "Write the Spec first (one page, checkpoint spec): for (a) and (b) the smallest field that closes it, its type, and the cases that ask for it; at most three open choices with defaults. Candidate defaults the Spec may overturn: (a) `ChartPlot` gains `x(value)` and `y(value, axis?)`, returning the pixel position the engine uses, so `chartLabels.place` takes a custom mark's anchors; no raw scale object leaves the host. (b) `ChartZone` gains `axis: 'x'` with `from` and `to` in x-domain values (number, Date or band key), an optional `y: { from, to }` bound and an optional `label` placed like a refLine label. Both are additive: no existing field changes meaning, so they may ship in a 3.x minor, and the Spec says whether they should gate 3.0 anyway.",
+  "commits": "The charts contract.ts change lands as a `chore: contract amendment` commit that updates packages/basalt-ui/scripts/contract-pins.json (ARCHITECTURE.md § 7.1, check-contract-frozen.ts); the behaviour lands in feat: commits behind the Spec.",
+  "proof": "The Spec artifact and its verdict; make check; a layout test per item.",
+  "acceptance": [
+    "A Spec is submitted and its verdict is read before the build",
+    "A custom mark places three text labels through chartLabels at pixel positions, clear of the dots, at 390 and 1800 px (layout test)",
+    "An x-range zone with a y bound and a label draws over a time axis and a log axis (layout test)",
+    "The basalt-charts reference that teaches custom marks shows both",
+    "make check passes"
+  ],
+  "out_of_scope": "A horizontal bar kind and a two-segment progress part (c14's wishes, one case each: a recipe at most under the Rule of Three); a category y axis (n09's wish, one case); the fixes inside components (v3-expr-4-kit-fixes); the skill text (v3-expr-4-skill)."
+}

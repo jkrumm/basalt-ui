@@ -1337,3 +1337,36 @@ rows:
         v3-shell-1-shell,
       ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-3.json' }
+  - key: v3-expr-4-skill
+    title: 'Expression skill: linked parts announce once, focus over the drawn data, name the marks that matter, every phase keeps its declarations'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-expression-4]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-4-skill.json' }
+  - key: v3-expr-4-kit-fixes
+    title: 'A fill chart fills its card box, the figure fits at 390, loading keeps its height, arrow order follows x, from expression cycle 4'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-4]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-4-kit-fixes.json' }
+  - key: v3-expr-4-contract
+    title: 'Custom marks get pixel positions for labels, a zone takes an x range (Spec)'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-cycle-expression-4]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-4-contract.json' }
+  - key: v3-expr-4-rubric
+    title: 'Expression rubric: K3 for a native row focus, X3 evidenced both ways'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-cycle-expression-4]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-4-rubric.json' }
+  - key: v3-cycle-expression-5
+    title: 'Improvement cycle 5: expression, six one-shot visualization trials'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-4-skill, v3-expr-4-kit-fixes, v3-expr-4-contract, v3-expr-4-rubric]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-5.json' }

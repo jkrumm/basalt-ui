@@ -16,5 +16,8 @@
     "The PR states which P3 it fixed",
     "make check passes"
   ],
-  "out_of_scope": "A per-column width option (wiring-3-visual's scope); the console's MiniBars as a part of its own."
+  "out_of_scope": "A per-column width option (wiring-3-visual's scope); the console's MiniBars as a part of its own.",
+  "notes": [
+    "From v3-cycle-expression-4 (docs/v3/cycles/expression-4.md), class planned, finding expression-4.57. Every trial page has a title-only PageBar, and every one kept the empty band above its first content: 61 px of `page-main` top padding at 1800 (lead probe, `page.tsx:143`, from 72af0bbf). Two builders (n09, c15) and three reviewers (n09 K6, c15 X2, n04 X2) named it unprompted, and n09 lost a K6 point to it (shot r0/scenarios-expr-n09--light--1800x1200.png, y 48 to 125). The P3 'if it fits' in change (2) is the most visible defect on a chart page; the lead told round-1 builders to leave it."
+  ]
 }
