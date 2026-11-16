@@ -19,6 +19,21 @@ export type BarsProps<D> = Omit<CartesianChartProps<D>, 'series' | 'marks'> & {
   layout?: 'stacked' | 'grouped' | 'normalized'
 }
 
+/**
+ * `CartesianChart` with the series narrowed to bars, plus line overlays: stacked, grouped or
+ * normalised by `layout`.
+ *
+ * @useWhen values are counts or amounts per category or per period, or parts of a whole stack
+ * @neverWhen the trend is the point (use Lines), or a custom mark is needed (compose CartesianChart: Bars takes none)
+ *
+ * @example
+ * <Bars
+ *   ariaLabel="Orders per week"
+ *   data={rows}
+ *   x={{ value: (d) => d.week }}
+ *   series={[{ mark: 'bar', key: 'orders', label: 'Orders', color: SERIES.orders, y: (d) => d.orders }]}
+ * />
+ */
 export function Bars<D>(props: BarsProps<D>): ReactElement {
   return <CartesianPlot {...props} naming="legend" />
 }

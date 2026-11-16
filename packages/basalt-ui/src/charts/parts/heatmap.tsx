@@ -305,6 +305,13 @@ const STEPS: Record<string, readonly [number, number]> = {
 const inside = (grid: readonly (readonly unknown[])[], r: number, c: number): boolean =>
   r >= 0 && r < grid.length && c >= 0 && c < (grid[r]?.length ?? 0)
 
+/**
+ * A band by band grid of cells whose intensity is absolute (one scale across the whole grid), with
+ * named states for cells that are failed, idle or absent.
+ *
+ * @useWhen two ordered categories cross (weekday by hour, service by day) and the cell value is the answer
+ * @neverWhen there is one row of states over time (use BandStrip), or the exact value matters more than the pattern (use a table)
+ */
 export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement {
   const {
     ariaLabel,

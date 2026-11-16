@@ -173,16 +173,19 @@ function custom<D>(build: CustomMarks<D>['build']): CustomMarks<D> {
 
 /**
  * The cartesian chart. `series` is the single source of colour, legend entry and tooltip row; custom
- * engine marks come from `CartesianChart.custom` and are drawn after the series' own.
+ * engine marks come from `CartesianChart.custom` and are drawn after the series' own. The series
+ * fields, selection, custom marks, axis titles and y capping are in `cartesian-chart-guide.md`.
  *
- * ```tsx
+ * @useWhen a metric needs a time or category chart, or a mix of lines, bars and dots
+ * @neverWhen the chart is a tiny inline trend (use Sparkline) or a one-value readout (use a StatCard)
+ *
+ * @example
  * <CartesianChart
  *   ariaLabel="Requests per day"
  *   data={rows}
  *   x={{ value: (d) => d.day }}
  *   series={[{ mark: 'line', key: 'requests', label: 'Requests', color: SERIES.requests, y: (d) => d.requests }]}
  * />
- * ```
  */
 export function CartesianChart<D>(props: CartesianChartProps<D>): ReactElement {
   return <CartesianPlot {...props} />

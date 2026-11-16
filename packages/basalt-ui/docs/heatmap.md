@@ -1,0 +1,48 @@
+---
+name: Heatmap
+use when: 'two ordered categories cross (weekday by hour, service by day) and the cell value is the answer'
+never when: 'there is one row of states over time (use BandStrip), or the exact value matters more than the pattern (use a table)'
+subpath: basalt-ui/charts
+peers: ['@tanstack/charts', d3-scale]
+slots: []
+---
+
+# Heatmap
+
+A band by band grid of cells whose intensity is absolute (one scale across the whole grid), with
+named states for cells that are failed, idle or absent.
+
+## Signature
+
+```ts
+Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>): ReactElement
+  className?: string  // Appended to the root element's own class — never replaces it
+  style?: CSSProperties  // Merged onto the root element's own inline style, if it has one
+  ariaLabel: string  // The accessible name
+  data: readonly T[]
+  getRow: (d: T) => string  // The y band (a row) of a datum
+  getCol: (d: T) => string  // The x band (a column) of a datum
+  getValue: (d: T) => number | null  // The intensity; `null` is an absent cell (flat neutral), never a zero
+  rows?: readonly string[]  // Explicit band order
+  cols?: readonly string[]
+  color?: string  // The ink at full intensity, a `VX.*` ref or a series token
+  domain?: readonly [number, number]  // The value range the color scale spans
+  formatValue?: ((v: number) => string)  // Tooltip value format
+  formatLegend?: ((v: number) => string)  // The gradient legend's two end labels
+  getState?: ((d: T) => K | undefined)  // The state a datum is in, a `states` key, or `undefined` for the plain value ramp
+  states?: readonly HeatmapState<K>[]  // The named states `getState` may return, legended after the gradient (hidden with `legend={false}`)
+  formatRow?: ((row: string) => string)  // Band tick and tooltip header labels
+  formatCol?: ((col: string) => string)
+  tickCols?: readonly string[]  // Column keys whose x tick must survive the kit's thinning (an onset hour)
+  legend?: false | { label?: string | undefined; }  // `false` hides the gradient legend; `label` titles it
+  tooltip?: false | { rows?: ((d: T) => readonly ChartTooltipRow[]) | undefined; valueLabel?: string | undefined; }  // Rows after the value row, per cell (a sample count, a failure reason)
+  height?: number | ResponsiveChartHeight  // A fixed height, or one per container class
+  matchHeight?: boolean  // Fill the parent's height instead
+  phase?: Phase | QueryStateLike  // The load state, as on every data part: a `Phase` or a query result
+  empty?: Empty | null  // The measured-empty state once the query settled; `cause` is the line the tile prints
+  state?: ChartState
+  focus?: ChartFocus<T>  // `useChartFocus(data, …)`: pointing at a cell or stepping with the arrow keys focuses its datum, every other cell dims, and `focus.readout` drives a card fact
+  annotate?: ((d: T) => string | null)  // A short mark in the cell (an onset glyph, a two-digit hour), `null` for none
+```
+
+`Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
