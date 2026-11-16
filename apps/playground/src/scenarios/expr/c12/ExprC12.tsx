@@ -90,7 +90,7 @@ export function ExprC12Scenario({ shotState, fixture }: ScenarioProps) {
 
   const colorOf = (key: ModelKey) => {
     const rank = s.byModel.findIndex((m) => m.key === key)
-    const token = rank === 0 ? VX.accent : (INK_STEPS[rank - 1] ?? VX.faint)
+    const token = rank === 0 ? VX.brand : (INK_STEPS[rank - 1] ?? VX.inkFaint)
     return { light: token, dark: token }
   }
 

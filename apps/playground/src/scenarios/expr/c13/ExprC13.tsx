@@ -23,9 +23,9 @@ type Phase = NonNullable<ComponentProps<typeof ChartCard>['phase']>
 
 const DAY_FORMAT: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: undefined }
 
-const NEUTRAL = { light: VX.faint, dark: VX.faint }
-const INK = { light: VX.ink2, dark: VX.ink2 }
-const ACCENT = { light: VX.accent, dark: VX.accent }
+const NEUTRAL = { light: VX.inkFaint, dark: VX.inkFaint }
+const INK = { light: VX.ink, dark: VX.ink }
+const ACCENT = { light: VX.brand, dark: VX.brand }
 
 const EMPTY = {
   cause: 'No alerts were triaged in the last 30 days. Check that the SIEM export is connected.',

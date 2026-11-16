@@ -31,7 +31,7 @@ const pair = (color: string) => ({ light: color, dark: color })
 const LEGEND = [
   { key: 'origin', label: 'Leaked key', color: pair(VX.ink), swatch: 'dot' },
   { key: 'affected', label: 'Affected', color: pair(VX.bad), swatch: 'dot' },
-  { key: 'reachable', label: 'Reachable', color: pair(VX.neutral), swatch: 'dot' },
+  { key: 'reachable', label: 'Reachable', color: pair(VX.inkMuted), swatch: 'dot' },
 ] as const
 
 export function ExprC10Scenario({ shotState, fixture }: ScenarioProps) {
