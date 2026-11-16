@@ -1,9 +1,9 @@
 /**
  * `basalt/router-search` (guardrails section 4, row 11): three forms.
  *
- * - `literal-search`: `search=` on a `Link` whose value is an object literal, or a function
- *   returning one; the same value as the `search` of `navigate({ ... })` (`navigate`,
- *   `x.navigate`, so `router.navigate` and a `useNavigate()` result bound to that name) or of
+ * - `literal-search`: `search=` on a `Link` or a `Navigate` (TanStack's redirect component) whose
+ *   value is an object literal, or a function returning one; the same value as the `search` of
+ *   `navigate({ ... })` (`navigate`, `x.navigate`, so `router.navigate` and a `useNavigate()` result bound to that name) or of
  *   `redirect({ ... })` (`throw redirect(...)` in `beforeLoad`; `redirect` or `x.redirect`). A literal pins a default and hits the router traps reproduced on Router 1.170.46;
  *   the link of a store-backed route is `field.link()`.
  * - `loader-deps-search`: `loaderDeps: ({ search }) => search`, `=> ({ search })` and
@@ -15,9 +15,9 @@
  *   and `Date.parse` are pure and pass. A validator named by reference is not read: the rule is
  *   file-local.
  *
- * Known limits: a `useNavigate()` result bound to another name (`const go = useNavigate()`), a
- * `search` object built in a variable before the call, and a `loaderDeps` that spreads a copy of
- * search (`const s = search; ({ ...s })`) are not read: the rule is file-local and names, not
+ * Known limits: `Navigate` or `Link` imported under another name, a `useNavigate()` result bound
+ * to another name (`const go = useNavigate()`), a `search` object built in a variable before the
+ * call, and a `loaderDeps` that spreads a copy of search (`const s = search; ({ ...s })`) are not read: the rule is file-local and names, not
  * flow. A `search` key of a `navigate` argument that is itself a variable passes.
  *
  * The `<ViewTransition>` around `Outlet` form of the original row was removed on 2026-11-11 (zero
@@ -124,6 +124,8 @@ const navigationCallee = (node: Node): 'navigate' | 'redirect' | undefined => {
   return name === 'navigate' || name === 'redirect' ? name : undefined
 }
 
+const LINK_COMPONENTS: ReadonlySet<string> = new Set(['Link', 'Navigate'])
+
 const literalSearch: AstForm = {
   id: 'literal-search',
   fix: 'Build the search from the route store: search={field.link()} on a Link, search: field.link(value) in navigate(), which keeps the keys the route owns',
@@ -133,7 +135,12 @@ const literalSearch: AstForm = {
     JSXAttribute(node) {
       if (nameOf(child(node, 'name')) !== 'search') return
       const opening = node['parent'] as Node | undefined
-      if (opening?.type !== 'JSXOpeningElement' || nameOf(child(opening, 'name')) !== 'Link') return
+      if (
+        opening?.type !== 'JSXOpeningElement' ||
+        !LINK_COMPONENTS.has(nameOf(child(opening, 'name')) ?? '')
+      ) {
+        return
+      }
       const value = child(node, 'value')
       const expression =
         value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
