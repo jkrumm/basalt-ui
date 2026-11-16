@@ -47,6 +47,26 @@
       "profiles": ["parts", "app"],
       "manual": true,
       "note": "loading is a boolean on Button and PageSummary; the pending node takes its own name"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "page-pagebar-tabs-state",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/page#PageBar.tabs.handle",
+      "to": "tabs.state",
+      "note": "`tabs` is `{ state, label }`; `handle` stays a deprecated alias for one minor (also `Section tabs`)"
+    },
+    {
+      "profiles": ["parts", "app"],
+      "manual": true,
+      "verify": "tsc",
+      "id": "page-callout-tone",
+      "kind": "renamed-prop",
+      "from": "basalt-ui/page#Callout.kind",
+      "to": "tone",
+      "note": "`Callout` takes `Alert`'s six tones (`neutral` and `accent` added to `info`, `good`, `warn`, `bad`); `kind` stays a deprecated alias for one minor"
     }
   ],
   "tokens": { "renamed": [], "valueShifts": [] },
