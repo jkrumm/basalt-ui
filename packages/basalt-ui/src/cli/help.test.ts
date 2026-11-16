@@ -68,6 +68,15 @@ describe('run() --help short-circuits before dispatch', () => {
     expect(existsSync(resolve(dir, MANIFEST_PATH))).toBe(false)
   })
 
+  it('`eject --help` prints the eject usage, and the top-level usage lists eject', () => {
+    const eject = capture(() => run(['eject', '--help'], dir))
+    expect(eject.code).toBe(0)
+    expect(eject.log).toContain('Usage: basalt-ui eject <name> --reason')
+    expect(eject.log).toContain('--adopt <path>')
+    expect(readdirSync(dir)).toEqual(['package.json'])
+    expect(capture(() => run(['--help'], dir)).log).toContain('eject <name')
+  })
+
   it('the bare `help` command prints usage and exits 0', () => {
     const { code, log } = capture(() => run(['help'], dir))
     expect(code).toBe(0)

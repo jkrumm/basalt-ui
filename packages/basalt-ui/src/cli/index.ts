@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url'
 import { AGENT_NAMES, RULE_NAMES, SKILL_NAMES } from '../surfaces'
 import { doctor } from './doctor'
 import { eject } from './eject'
+import { EJECT_HELP } from './eject/help'
 import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
 import { init } from './init/index'
 import { isHookCall, lint } from './lint'
@@ -888,7 +889,8 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     flags.includes('--help') ||
     flags.includes('-h')
   ) {
-    console.log(USAGE)
+    // A command with its own help text prints it; the rest print the one usage.
+    console.log(cmd === 'eject' ? EJECT_HELP : USAGE)
     return 0
   }
   // Before dispatch, like --help: it answers "which basalt-ui is running" as one bare line.
