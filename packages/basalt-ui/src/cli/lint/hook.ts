@@ -10,6 +10,7 @@ import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 
+import { isManagedRuleId } from '../../lint/preset'
 import { weakeningDenial } from '../../lint/weakening-edit'
 import { BUDGET_PATH, LINT_RAISABLE, raiseCommand } from '../budget'
 import { OXLINT_PRESET_FILE, STYLELINT_PRESET_FILE } from '../presets'
@@ -128,8 +129,6 @@ function after(current: string | null, input: NonNullable<HookInput['tool_input'
   return text
 }
 
-const MANAGED_ID = /^(?:basalt|shadcn)\//
-
 /** Managed rule ids set by hand in `rules` or any `overrides[].rules` of an oxlint config text. */
 function managedIds(text: string): Set<string> {
   const config = parseJsonc(text)
@@ -141,7 +140,7 @@ function managedIds(text: string): Set<string> {
   ]
   return new Set(
     tables.flatMap((t) =>
-      typeof t === 'object' && t !== null ? Object.keys(t).filter((id) => MANAGED_ID.test(id)) : [],
+      typeof t === 'object' && t !== null ? Object.keys(t).filter(isManagedRuleId) : [],
     ),
   )
 }

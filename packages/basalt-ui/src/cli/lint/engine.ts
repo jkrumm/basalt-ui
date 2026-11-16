@@ -8,6 +8,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 
 import { checkTokens } from '../../lint/check-tokens'
+import { isManagedRuleId } from '../../lint/preset'
 import { readManifest } from '../manifest'
 import type { Manifest, Profile } from '../manifest'
 import { findManifestAbove } from '../install-root'
@@ -107,8 +108,6 @@ function normalizeId(code: string | undefined): string {
   return paren === null ? code : `${paren[1]}/${paren[2]}`
 }
 
-const MANAGED = /^(?:basalt|shadcn)\//
-
 type OxlintDiagnostic = {
   message?: string
   code?: string
@@ -141,7 +140,7 @@ export function runOxlint(project: Project, targets: readonly string[]): Finding
   })
   const findings = diagnostics.flatMap((d) => {
     const id = normalizeId(d.code)
-    if (d.severity !== 'error' && !MANAGED.test(id) && d.code !== undefined) return []
+    if (d.severity !== 'error' && !isManagedRuleId(id) && d.code !== undefined) return []
     const help = d.help === undefined ? '' : ` ${d.help}`
     return [
       {
