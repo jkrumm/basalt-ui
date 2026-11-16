@@ -2,7 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Page, PageBar, Section } from 'basalt-ui/page'
 
 // #region recipe:add-page
-// A page is one file route plus one nav entry in the app's `defineNav` declaration, e.g.:
+// src/routes/_app/runs.tsx: a page is one file under `_app`, the layout that mounts the shell,
+// plus one nav entry in `src/lib/nav.tsx`, e.g.:
 //   { id: 'runs', label: 'Runs', icon: Flask, mobile: 'tab', link: linkOptions({ to: '/runs' }) }
 // The shell names the page from that entry and `PageBar title` renders the one h1.
 function RunsPage() {
@@ -19,5 +20,5 @@ function RunsPage() {
   )
 }
 
-export const Route = createFileRoute('/overview')({ component: RunsPage })
+export const Route = createFileRoute('/_app/runs')({ component: RunsPage })
 // #endregion
