@@ -12,7 +12,7 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router'
 import { persisted } from '../../core/persisted'
 import type { ControlHandle } from '../../core/ports'
-import { batching, onBatchEnd } from '../../core/write-batch'
+import { batching, clearTogether, onBatchEnd } from '../../core/write-batch'
 import { brandOf, brandedValidator, extendValidator } from './brand'
 import type { ControlsValidator, Scope, StandardSchemaV1 } from './brand'
 import { writableRange } from './codec'
@@ -29,7 +29,8 @@ import type {
 import { labelOf, optionsOf } from './field'
 import type { ValuesOf, WindowOf } from './values'
 import { KEEP_KEY, chosenStrip, orderMiddlewares } from './middleware'
-import { attachWidgets, resetWidgetOwnersForTests } from './widgets'
+import { assertNoUrlThunk, claimParams } from './ownership'
+import { attachWidgets } from './widgets'
 import type {
   Overrides,
   StoreIo,
@@ -39,6 +40,8 @@ import type {
   WidgetStore,
   WidgetsInput,
 } from './widgets'
+
+export { resetControlsOwnersForTests } from './ownership'
 
 // ---------------------------------------------------------------------------- type plumbing
 
@@ -195,8 +198,14 @@ export type Controls<Id extends string, Scp extends Scope, F, W = {}> = {
   useValues(): ValuesOf<F>
   /** How many fields differ from their fallback: the `n` of `Filters (n)`. */
   useActiveCount(): number
-  /** Unsets every field (one navigate for the URL fields); never writes a fallback. */
-  useReset(): () => void
+  /**
+   * Unsets every field of the store (one navigate for the URL fields), the view tab and the open
+   * record with the filters; never writes a fallback. `useReset({ only: [handle, …] })` unsets just
+   * those fields in one navigate and keeps every other param: a Clear filters beside `empty.filtered`.
+   */
+  useReset(options?: {
+    readonly only: readonly { [K in keyof F & string]: HandleOf<K, F[K]> }[keyof F & string][]
+  }): () => void
 }
 
 // --------------------------------------------------------------------------- router access
@@ -284,56 +293,6 @@ const runsStore = (router: LooseRouter, id: string): boolean =>
   router.state.matches.some(
     (match) => brandOf(router.routesById[match.routeId]?.options.validateSearch)?.id === id,
   )
-
-// ---------------------------------------------------------------------------- ownership
-
-/** Param to owning store, process-wide: a global's params are exclusive. */
-const owners = new Map<string, { id: string; scope: Scope }>()
-
-function claimParams(id: string, scope: Scope, params: readonly string[]): void {
-  const seen = new Set<string>()
-  for (const param of params) {
-    if (param.startsWith('w.')) {
-      throw new Error(`basalt-ui: controls "${id}": "w." is a reserved param prefix ("${param}")`)
-    }
-    if (seen.has(param)) {
-      throw new Error(`basalt-ui: controls "${id}": two fields own the param "${param}"`)
-    }
-    seen.add(param)
-    // Page stores may share a name on different routes (argo's `window`, `from`, `to`); the brand
-    // keeps their writes apart. A global's param is everywhere, so it is exclusive.
-    const owner = owners.get(param)
-    if (owner && owner.id !== id && (owner.scope === 'global' || scope === 'global')) {
-      throw new Error(
-        `basalt-ui: controls "${id}": the param "${param}" is already owned by "${owner.id}" ` +
-          `(${owner.scope}); a global store's params are its own on every route`,
-      )
-    }
-  }
-  // A redefinition under the same id (HMR, a test) replaces its own claims.
-  for (const [param, owner] of owners) if (owner.id === id) owners.delete(param)
-  for (const param of params) owners.set(param, { id, scope })
-}
-
-/**
- * @internal Tests only. Bun runs every test file in one module registry, so a global defined by one
- * file would own its params in the next; a test file that defines throwaway stores resets first.
- */
-export function resetControlsOwnersForTests(): void {
-  owners.clear()
-  resetWidgetOwnersForTests()
-}
-
-function assertNoUrlThunk(id: string, fields: Record<string, AnyFieldSpec>): void {
-  for (const [name, spec] of Object.entries(fields)) {
-    if (!spec.lane.url || typeof spec.fallback !== 'function') continue
-    throw new Error(
-      `basalt-ui: controls "${id}": field "${name}" has a thunk fallback on the URL. ` +
-        'validateSearch would evaluate it on every navigation and pin the result into links. ' +
-        'Pass a value, or move the field off the URL ({ url: false }).',
-    )
-  }
-}
 
 // ---------------------------------------------------------------------- device and memory
 
@@ -437,7 +396,11 @@ type Entry = { name: string; spec: AnyFieldSpec; codec: Codec<unknown>; params: 
  * `w.<card>.<field>` key (`store.widget`, `store.useOverrides()`; see `docs/widgets.md`).
  * The store reads whole: `useValues()` gives every URL field's value in one call, as its `use()` returns it
  * (a range as its `RangeValue`, so `toWindow(values.opened)` compiles), instead of one `use()` per field; `useActiveCount()` counts the fields that differ from their fallback (the `n` of
- * `Filters (n)`); `useReset()` returns the callback that unsets every field. A `range` with `window:
+ * `Filters (n)`); `useReset()` returns the callback that unsets every field, the view tab and the open
+ * record with the filters; `useReset({ only: [list.field.q, list.field.status] })` unsets just those
+ * in one navigate and keeps the rest: the Clear filters of a table's or chart card's `empty.filtered`
+ * (`FilterSet`'s Reset all is the same call). A push enum set back to its fallback (`ViewTabs` on its
+ * default) leaves the URL and still pushes; `InnerNav` keeps the fallback pane via `choose(v)`. A `range` with `window:
  * { '7d': (now) => ({ from, to }) }` makes `toWindow(value)` return `{ from, to }` ISO days for that
  * preset, resolved at call time (a preset without a resolver gives `{ window: preset }`; with every preset resolved the type has no `{ window }` member), so the
  * result goes straight into a query key.
@@ -467,6 +430,8 @@ type Entry = { name: string; spec: AnyFieldSpec; codec: Codec<unknown>; params: 
  *
  * const [q, setQ] = list.field.q.use()
  * <Link to="/list" {...list.field.status.link(['open'])} />
+ * // beside `empty: { filtered: { reset } }`: clear the filters, keep the view and the open record
+ * const reset = list.useReset({ only: [list.field.q, list.field.status] })
  * ```
  */
 export function defineControls<
@@ -696,9 +661,20 @@ export function defineControls<
     return urlCount + localCount
   }
 
-  const useReset = (): (() => void) => {
+  const useReset = (options?: { readonly only: readonly FieldHandle<never>[] }): (() => void) => {
     const router = useLooseRouter()
     useLend(router)
+    const only = options?.only
+    if (only !== undefined) {
+      for (const handle of only) {
+        if (field[handle.key] !== (handle as unknown)) {
+          throw new Error(
+            `basalt-ui: controls "${id}": useReset({ only }) names "${handle.key}", which is not a field of this store`,
+          )
+        }
+      }
+      return () => clearTogether(only)
+    }
     return () => {
       if (urlEntries.length > 0 && (scope === 'global' || runsStore(router, id))) {
         commit(router, Object.fromEntries(keys.map((param) => [param, undefined])), 'replace')

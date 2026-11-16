@@ -29,6 +29,8 @@ const store = defineControls({
   fields: {
     currency: field.enum(['USD', 'EUR'], 'USD'),
     region: field.enum(['all', 'eu'], 'all'),
+    view: field.enum(['table', 'chart'], 'table', { history: 'push' }),
+    order: field.string('', { history: 'push' }),
   },
 })
 
@@ -96,5 +98,20 @@ describe('the desktop row Reset all', () => {
     })
     expect(navigates).toBe(1)
     expect(screen.queryByText('Reset all')).toBeNull()
+  })
+
+  test('keeps the view and the open record, as useReset({ only }) does', async () => {
+    const router = await mount('/dashboard?currency=EUR&region=eu&view=chart&order=7', Page)
+    const reset = await waitFor(() => {
+      const el = document.querySelector<HTMLButtonElement>('[data-slot="filter-reset"]')
+      expect(el).not.toBeNull()
+      return el!
+    })
+    await act(async () => {
+      fireEvent.click(reset)
+    })
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ view: 'chart', order: '7' })
+    })
   })
 })

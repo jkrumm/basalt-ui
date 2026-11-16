@@ -27,3 +27,14 @@ export function batchWrites(run: () => void): void {
     }
   }
 }
+
+/**
+ * Unsets `handles` in one batch: every URL field leaves in one navigate per router and a device or
+ * memory field is dropped with them. The one reset a store's `useReset({ only })` and a `FilterSet`'s
+ * `Reset all` share.
+ */
+export function clearTogether(handles: readonly { clear(): void }[]): void {
+  batchWrites(() => {
+    for (const handle of handles) handle.clear()
+  })
+}

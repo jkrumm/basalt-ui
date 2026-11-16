@@ -3,7 +3,7 @@
  * their defaults. It reads the handles, never the DOM, so the count is the same whichever surface
  * (pill row, fold panel, phone sheet) is mounted, hidden or clipped.
  */
-import { batchWrites } from '../core/write-batch'
+import { clearTogether } from '../core/write-batch'
 import type { FilterSpec } from './contract'
 
 // oxlint-disable-next-line typescript/no-explicit-any -- the concept's `FilterSpec<any>[]`: handles of different `T` share one list
@@ -94,9 +94,7 @@ export function useCensus(specs: readonly AnySpec[]): { count: number; reset(): 
   return {
     count: active.length,
     reset() {
-      batchWrites(() => {
-        for (const s of active) s.handle.clear()
-      })
+      clearTogether(active.map((s) => s.handle))
     },
   }
 }

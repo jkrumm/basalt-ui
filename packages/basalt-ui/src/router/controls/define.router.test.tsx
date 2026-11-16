@@ -236,6 +236,75 @@ describe('defineControls: values and writes', () => {
     expect(router.state.location.href).toBe('/s?q=x&section=billing')
   })
 
+  test('useReset({ only }) unsets the named fields in one navigate and keeps the rest', async () => {
+    const store = defineControls({
+      id: 'reset-only',
+      scope: 'page',
+      fields: {
+        q: field.string(''),
+        flagged: field.boolean(false),
+        view: field.enum(['table', 'chart'], 'table', { history: 'push' }),
+        order: field.string('', { history: 'push' }),
+      },
+    })
+    let reset = () => {}
+    let resetAll = () => {}
+    const router = await mount({
+      root: store,
+      pages: { '/o': undefined },
+      url: '/o?q=zzz&flagged=true&view=chart&order=7',
+      probe: () => {
+        const { q, flagged } = store.field
+        reset = store.useReset({ only: [q, flagged] })
+        resetAll = store.useReset()
+      },
+    })
+    let navigates = 0
+    const navigate = router.navigate.bind(router)
+    router.navigate = (o) => {
+      navigates += 1
+      return navigate(o)
+    }
+    await act(async () => {
+      reset()
+      await router.load()
+    })
+    expect(navigates).toBe(1)
+    expect(router.state.location.search).toEqual({ view: 'chart', order: '7' })
+    await act(async () => {
+      resetAll()
+      await router.load()
+    })
+    expect(router.state.location.href).toBe('/o')
+  })
+
+  test('useReset({ only }) refuses a handle of another store', async () => {
+    const mine = defineControls({
+      id: 'reset-mine',
+      scope: 'global',
+      fields: { a: field.string('') },
+    })
+    const other = defineControls({
+      id: 'reset-other',
+      scope: 'global',
+      fields: { b: field.string('') },
+    })
+    let thrown: unknown
+    await mount({
+      root: mine,
+      pages: { '/t': undefined },
+      url: '/t',
+      probe: () => {
+        try {
+          mine.useReset({ only: [other.field.b as never] })
+        } catch (error) {
+          thrown = error
+        }
+      },
+    })
+    expect(String(thrown)).toContain('not a field of this store')
+  })
+
   test('link() gives typed Link props with only the field params', () => {
     const store = defineControls({
       id: 'link-props',
