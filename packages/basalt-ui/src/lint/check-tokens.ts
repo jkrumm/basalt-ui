@@ -128,9 +128,9 @@ const ROLE_TOKENS: ReadonlyMap<string, string> = new Map(
 
 /**
  * Names an author writes from another vocabulary, to the token that means it: the bold weight is
- * `strong` (`--vx-weight-body` is 400), and shadcn's `*-foreground` is the ink or the `on-*` token.
- * Keyed without the `--vx-` prefix, so the invented names never read as emitted ones
- * (`scripts/gen-vx-names.ts` collects every quoted `--vx-*` string in `src/`).
+ * `strong` (`--basalt-weight-body` is 400), and shadcn's `*-foreground` is the ink or the `on-*` token.
+ * Keyed without the `--basalt-` prefix, so the invented names never read as emitted ones
+ * (`scripts/gen-basalt-names.ts` collects every quoted `--basalt-*` string in `src/`).
  */
 const ALIAS_TOKENS: ReadonlyMap<string, string> = new Map([
   ['weight-bold', 'weight-strong'],
@@ -145,8 +145,10 @@ const ALIAS_TOKENS: ReadonlyMap<string, string> = new Map([
 ])
 
 const aliasOf = (name: string): string | undefined => {
-  const alias = name.startsWith('--vx-') ? ALIAS_TOKENS.get(name.slice(5)) : undefined
-  return alias === undefined ? undefined : `--vx-${alias}`
+  const alias = name.startsWith('--basalt-')
+    ? ALIAS_TOKENS.get(name.slice('--basalt-'.length))
+    : undefined
+  return alias === undefined ? undefined : `--basalt-${alias}`
 }
 
 /**

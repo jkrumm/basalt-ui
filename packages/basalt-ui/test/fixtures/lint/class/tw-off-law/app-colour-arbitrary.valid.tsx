@@ -4,7 +4,7 @@ export const focus = (
 )
 export const b = <span className="text-(length:--my-size) bg-(image:--hero) border-(length:--rule)">w</span>
 export const part = (
-  <div className="bg-(--part) rounded-chip" style={{ '--part': 'var(--vx-line)' }}>
+  <div className="bg-(--part) rounded-chip" style={{ '--part': 'var(--basalt-line)' }}>
     <span className="text-[var(--ink)]" style={{ '--ink': ink }} />
   </div>
 )

@@ -1,3 +1,3 @@
-:root[class~='dark'] .tile { background: var(--vx-inset); }
-:root[class*="dark"] .tile { background: var(--vx-inset); }
-:root[class^=dark] .tile { background: var(--vx-inset); }
+:root[class~='dark'] .tile { background: var(--basalt-inset); }
+:root[class*="dark"] .tile { background: var(--basalt-inset); }
+:root[class^=dark] .tile { background: var(--basalt-inset); }
