@@ -111,3 +111,13 @@ const route = createFileRoute('/runs')({
     return { location, performance: s.performance, navigator: s.navigator }
   },
 })
+
+// @valid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => {
+    function pick(location) {
+      return String(location)
+    }
+    return { at: pick(s.at) }
+  },
+})
