@@ -26,3 +26,10 @@
 .g {
   grid-template-columns: 1fr 2fr;
 }
+.h {
+  flex: 1 1 0;
+  flex-basis: 50%;
+}
+.i {
+  flex: 0 0 240px;
+}

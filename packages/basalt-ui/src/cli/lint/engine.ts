@@ -15,6 +15,7 @@ import { readPackageJson } from '../source-text'
 import { filesUnder, rootsOf } from '../doctor/types'
 import { findBin, STYLELINT_IGNORE_ARGS } from '../../lint/bin'
 import { dropMisreadDirectives } from '../../lint/rules/structure/waiver-needs-reason'
+import { valueListMessage } from '../../lint/stylelint/rules'
 
 export { findBin }
 
@@ -184,7 +185,7 @@ export function runStylelint(project: Project, files: readonly string[]): Findin
       file: posix(relative(project.root, r.source)),
       line: w.line,
       id: `stylelint/${w.rule}`,
-      message: w.text.replace(new RegExp(`\\s*\\(${w.rule}\\)$`), ''),
+      message: valueListMessage(w.text.replace(new RegExp(`\\s*\\(${w.rule}\\)$`), '')),
     })),
     ...(r.parseErrors ?? []).map((e) => ({
       file: posix(relative(project.root, r.source)),
