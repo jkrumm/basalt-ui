@@ -28,12 +28,6 @@ pre-commit:
       glob: 'docs/plan.yaml'
       run: command -v factory >/dev/null 2>&1 || exit 0; git show :docs/plan.yaml | factory plan check -
 
-    check-theme:
-      glob: 'packages/basalt-ui/src/**'
-      # Run inside the package so its own `basalt` config (roots: ["src"] + framework-internal
-      # rule opt-outs) applies — from the repo root the CLI sees no config and scans nothing.
-      run: cd packages/basalt-ui && bun bin/basalt-ui.mjs check-theme
-
     # Two runs, as in `bun run lint`: the playground's config loads the v3 plugin and the root's the
     # 2.x one, both registered as `basalt`, so one oxlint process cannot load both.
     oxlint:

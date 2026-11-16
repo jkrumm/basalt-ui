@@ -1,5 +1,3 @@
-import type { GuardKind } from '../../../packages/basalt-ui/src/guard/types.ts'
-
 /**
  * One 2.x waiver id and where it lands in v3, per lane. A lane left out has no v3 twin and the site
  * goes to the worklist: a waiver is never rewritten to an id that does not stand for the same law.
@@ -7,8 +5,8 @@ import type { GuardKind } from '../../../packages/basalt-ui/src/guard/types.ts'
  */
 export type IdTarget = { readonly ts?: string; readonly css?: string; readonly retired?: true }
 
-/** Exhaustive over the 2.x guard kinds (`GuardKind`): a new kind is a type error here. */
-const GUARD_KINDS = {
+/** The 2.x text-guard kinds (`check-theme`, deleted); `waivers.test.ts` holds it equal to the plugin's `RETIRED_GUARD_KIND_IDS`. */
+export const GUARD_KINDS = {
   'raw-hex': { ts: 'colour-literal', css: 'color-no-hex' },
   'raw-color-fn': { ts: 'colour-literal', css: 'function-disallowed-list' },
   'localstorage-theme': {},
@@ -39,9 +37,9 @@ const GUARD_KINDS = {
   'raw-media-query': { ts: 'viewport-keyed', css: 'media-feature-name-disallowed-list' },
   'unknown-vx-token': {},
   'series-palette': {},
-} as const satisfies Record<GuardKind, IdTarget>
+} as const satisfies Record<string, IdTarget>
 
-/** The 2.x oxlint-plugin ids (`PLUGIN_RULE_IDS` in src/guard/index.ts) that are valid in a `theme-allow`. */
+/** The 2.x oxlint-plugin ids (`KNOWN_RULE_IDS` in configs/oxlint-plugin.js) that are valid in a `theme-allow`. */
 const PLUGIN_IDS = {
   'no-raw-font-size': {},
   'raw-size-literal': {},

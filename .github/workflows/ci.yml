@@ -58,14 +58,6 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Theme guard (dogfood check-theme on basalt's own src)
-        working-directory: packages/basalt-ui
-        run: bun ./bin/basalt-ui.mjs check-theme
-
-      - name: Theme guard (playground)
-        working-directory: apps/playground
-        run: bun ../../packages/basalt-ui/bin/basalt-ui.mjs check-theme
-
       - name: Build playground (the review shots and the layout harness serve this build)
         run: bun --filter @basalt-ui/playground build
 

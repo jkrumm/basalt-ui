@@ -30,7 +30,6 @@ export function FileDrop(p: {
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- the label is the Button's render target; its text and the input inside are its children */}
       <Button variant="secondary" nativeButton={false} render={<label />}>
         {p.label}
-        {/* theme-allow raw-form-control — the input is never painted: it is visually hidden and the label's button is the control */}
         <input
           type="file"
           multiple

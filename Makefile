@@ -14,7 +14,7 @@ SLOT_PROJECT = basalt-ui
 slot = $(if $(shell command -v factory 2>/dev/null),factory slot run --name "$(SLOT_PROJECT) $(1)" --,)
 
 # The local gate: the validation CI runs (.github/workflows/ci.yml), all in one target. Builds FIRST
-# on purpose — `bun run pre` runs `check-theme`, and the playground's typecheck resolves
+# on purpose — the playground's typecheck and `bun run pre`'s lint resolve
 # `basalt-ui/*` through the package's `exports` — both read `dist`, not the working tree, so a gate
 # that built last would grade the previous build (packages/basalt-ui/MAINTAINING.md, "a gate reading
 # dist"). `pack-test` rebuilds anyway; the point of the first build is what `pre` reads.
@@ -67,7 +67,7 @@ deploy: ## No-op — the site is deployed by CI on push (npm publishing is `make
 logs: ## Print the last 200 lines of the production container's logs, then exit
 	@ssh vps 'docker logs --tail 200 $$(docker ps -q --filter "label=com.docker.compose.service=basalt-ui-marketing" | head -n1)'
 
-pre: ## fmt:check + lint + typecheck + check-theme + budgets + literals + the unit suite in a slot (run before committing)
+pre: ## fmt:check + lint + typecheck + budgets + literals + the unit suite in a slot (run before committing)
 	@bun run pre
 
 # One `bun test` over the whole suite peaked at 6.1 GiB; scripts/unit-test.ts runs it as consecutive processes.
