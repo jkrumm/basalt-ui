@@ -72,3 +72,42 @@ const route = createFileRoute('/runs')({
 const route = createFileRoute('/runs')({
   validateSearch: (s) => ({ crypto: s.crypto, id: s.id }),
 })
+
+// @invalid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => ({ q: s.q ?? new URLSearchParams(location.search).get('q') }),
+})
+
+// @invalid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => ({ at: s.at ?? performance.now() }),
+})
+
+// @invalid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => ({ lang: s.lang ?? navigator.language }),
+})
+
+// @invalid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => ({ q: s.q ?? window.location.hash }),
+})
+
+// @valid
+const route = createFileRoute('/runs')({
+  validateSearch: ({ location }) => ({ location }),
+})
+
+// @valid
+const location = useLocation()
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => ({ at: s.at, path: location.pathname }),
+})
+
+// @valid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => {
+    const location = String(s.location)
+    return { location, performance: s.performance, navigator: s.navigator }
+  },
+})

@@ -48,7 +48,10 @@
  *   luxon's `toFormat`, `toRelative` and `toRelativeCalendar` read on a `DateTime.*(...)` chain
  *   rendered as JSX text (its
  *   `toLocaleString` reads anywhere, as every `toLocale*String` does); one held in a variable or
- *   returned from a helper is not.
+ *   returned from a helper is not. `toDateString`, `toTimeString` and `toUTCString` (English-only
+ *   date text) read rendered as JSX text, as `toFixed` does; one in a prop, an object value or a
+ *   template literal is not read, since `toUTCString` is also the HTTP date a header or a cookie
+ *   takes.
  * - `raw-heading`: `createElement('h2', ...)`, `createElement(`h${level}`, ...)` and
  *   `React.createElement` read; a tag from a variable or a spread of arguments does not.
  * - `role-table`: a `row`, `gridcell`, `cell`, `columnheader`, `rowheader` or `rowgroup` role reads
@@ -119,6 +122,12 @@ const LOCALE_METHODS: ReadonlySet<string> = new Set([
   'toLocaleString',
   'toLocaleDateString',
   'toLocaleTimeString',
+])
+/** English-only date text, read where it renders as JSX text: `toUTCString` is also the HTTP date a header or cookie takes. */
+const ENGLISH_DATE_METHODS: ReadonlySet<string> = new Set([
+  'toDateString',
+  'toTimeString',
+  'toUTCString',
 ])
 
 const isNode = (value: unknown): value is Node =>
@@ -1306,8 +1315,11 @@ const intlFormat: AstForm = {
               if (rendersAsChild(node)) report(node, `DateTime.${method}()`)
               return
             }
-            if (method === 'toFixed') {
-              if (rendersAsChild(node)) report(node, 'toFixed()')
+            if (
+              method === 'toFixed' ||
+              (method !== undefined && ENGLISH_DATE_METHODS.has(method))
+            ) {
+              if (rendersAsChild(node)) report(node, `${method}()`)
               return
             }
             if (method !== undefined && LOCALE_METHODS.has(method)) {
