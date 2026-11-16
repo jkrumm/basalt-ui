@@ -22,6 +22,10 @@ const RAW_LENGTH = `(?<![\\w])[+-]?(?:\\d*\\.)?\\d+(?:${UNITS})\\b`
 const VX_VAR = 'var\\(--vx-[a-z0-9-]+\\)'
 const ATOM = `(?:${VX_VAR}|0|none|inherit)`
 const ALLOWED_SHAPE = `^${ATOM}(?:\\s*[,\\s]\\s*${ATOM})*$`
+// A radius also takes a circle or a pill, which no token stands for: `50%`, `9999px`, `calc(infinity * 1px)`.
+const RADIUS_ATOM = `(?:${ATOM}|50%|9999px|calc\\(\\s*infinity\\s*\\*\\s*1px\\s*\\))`
+const ALLOWED_RADIUS = `^${RADIUS_ATOM}(?:\\s+${RADIUS_ATOM})*$`
+export const RADIUS_PROPERTIES = '/^border(?:-[a-z]+)*-radius$/'
 
 // color-mix(in <space> [<hue-method> hue], <vx var|transparent> [pct], <vx var|transparent> [pct])
 const MIX_COLOUR = `(?:${VX_VAR}|transparent)`
@@ -190,11 +194,13 @@ export const STYLELINT_RULES = {
   'declaration-property-value-disallowed-list': disallowedValueList(true),
   'declaration-property-value-allowed-list': [
     {
+      // radius first: stylelint reads the first property key that matches
+      [RADIUS_PROPERTIES]: [`/${ALLOWED_RADIUS}/i`],
       [SHAPE_PROPERTIES]: [`/${ALLOWED_SHAPE}/i`],
     },
     {
       message:
-        'Disallowed `%s: %s`. Radius, shadow, line height and letter spacing take a `--vx-*` token, `0`, `none` or `inherit`.',
+        'Disallowed `%s: %s`. Radius, shadow, line height and letter spacing take a `--vx-*` token, `0`, `none` or `inherit`; a radius also takes `50%` or `9999px` for a circle or a pill (`rounded-full` in a class).',
     },
   ],
   'property-disallowed-list': [
@@ -222,18 +228,24 @@ export const STYLELINT_RULES = {
     },
   ],
   'selector-disallowed-list': [
-    ['/\\[\\s*data-slot/', '/\\.mantine-/', '/\\[\\s*data-theme/', '/\\.dark(?![\\w-])/'],
+    [
+      '/\\[\\s*data-slot/',
+      '/\\.mantine-/',
+      '/\\[\\s*data-theme/',
+      '/\\.dark(?![\\w-])/',
+      '/\\[\\s*class\\s*[~*^]=\\s*["\']?dark/',
+    ],
     {
       message:
         "Never select `%s`. A `data-slot` or `.mantine-*` selector reaches into a component: use the component's own prop or variant, or eject it (basalt-ui eject <name>). A `data-theme` or `.dark` selector forks a colour per scheme: tokens switch per scheme, so use a `--vx-*` token instead.",
     },
   ],
   'at-rule-disallowed-list': [
-    ['utility', 'theme', 'custom-variant', 'variant', 'plugin', 'apply', 'config'],
+    ['utility', 'theme', 'custom-variant', 'variant', 'plugin', 'apply', 'config', 'custom-media'],
     {
       // `%s` is the at-rule with its `@` already (stylelint passes `@utility`)
       message:
-        '`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--vx-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet.',
+        '`%s` adds to or rebuilds what the package owns: a utility class, a theme colour, a variant, the classes of a plugin, a class list the class rules check or a tailwind.config file that declares them. Take colour from Status, Lozenge, DeltaBadge or a Num tone (the palette is derived, never declared per app); tokens switch per scheme, so a `@variant dark` fork is a `--vx-*` token instead (add the token instead of forking); long-form text is `Prose` from basalt-ui/page, never a typography plugin; compose the shipped component and its variants, or a `--vx-*` token in a module stylesheet. A `@custom-media` names a viewport query: key on the container, `@container` with a named size (`@narrow`, `@regular`, `@wide`).',
     },
   ],
 } as const
