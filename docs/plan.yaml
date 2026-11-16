@@ -1410,6 +1410,20 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-lint-5-lint]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-6.json' }
+  - key: v3-lint-6-lint
+    title: 'A control read as a card, missed spellings, and two messages whose fix cannot be followed, from lint cycle 6'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-cycle-lint-6]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-6-lint.json' }
+  - key: v3-cycle-lint-7
+    title: 'Improvement cycle 7: lint and guards, misses and false alarms per rule'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-6-lint]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-7.json' }
   - key: v3-expr-5-keys
     title: 'basalt-ui shot shoots a keyboard frame and the app preset flags a read before declaration, from expression cycle 5'
     repo: basalt-ui

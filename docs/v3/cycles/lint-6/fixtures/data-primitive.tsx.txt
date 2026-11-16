@@ -1,0 +1,132 @@
+// Seeded offenders for basalt/data-primitive.
+import { useEffect } from 'react'
+import { QueryClient, queryOptions, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Bars, ChartCard, Lines } from 'basalt-ui/charts'
+import { liveQuery } from 'basalt-ui/data'
+
+const runsQuery = queryOptions({ queryKey: ['runs'], queryFn: () => fetch('/api/runs').then((r) => r.json()) })
+
+// seed data-primitive/refetch-interval 1: a polling query
+export function useRuns() {
+  return useQuery({ ...runsQuery, refetchInterval: 5_000 })
+}
+
+// seed data-primitive/refetch-interval 2: a polling interval computed from the data
+export function useJob(id: string) {
+  return useQuery({
+    queryKey: ['job', id],
+    queryFn: () => fetch(`/api/jobs/${id}`).then((r) => r.json()),
+    refetchInterval: (q) => (q.state.data?.done ? false : 2_000),
+  })
+}
+
+// seed data-primitive/unseamed-transport 1: an EventSource opened in an effect
+export function useEvents(onEvent: (e: MessageEvent) => void) {
+  useEffect(() => {
+    const es = new EventSource('/api/events')
+    es.onmessage = onEvent
+    return () => es.close()
+  }, [onEvent])
+}
+
+// seed data-primitive/unseamed-transport 2: a raw WebSocket client
+export function connect() {
+  const ws = new WebSocket('wss://example.com/live')
+  ws.onmessage = (e) => console.info(e.data)
+  return ws
+}
+
+// seed data-primitive/reader-loop 1: a fetch stream read by hand
+export async function readStream(onChunk: (s: string) => void) {
+  const res = await fetch('/api/stream')
+  const reader = res.body!.getReader()
+  const decoder = new TextDecoder()
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    onChunk(decoder.decode(value))
+  }
+}
+
+// seed data-primitive/deprecated-fetch 1: ensureQueryData in a loader
+export const loader = ({ context }: { context: { queryClient: QueryClient } }) =>
+  context.queryClient.ensureQueryData(runsQuery)
+
+// seed data-primitive/deprecated-fetch 2: prefetchQuery on hover
+export function usePrefetch() {
+  const qc = useQueryClient()
+  return () => qc.prefetchQuery(runsQuery)
+}
+
+// seed data-primitive/query-client-singleton 1: a module-level client, as the TanStack quick start writes it
+export const queryClient = new QueryClient()
+
+// seed data-primitive/query-client-singleton 2: a client with its own defaults
+export const tunedClient = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } })
+
+// seed data-primitive/chart-data-fallback 1: an empty array while the query loads
+export function Trend() {
+  const q = useRuns()
+  return <ChartCard title="Runs" chart={<Lines data={q.data ?? []} x="at" series={['ms']} />} />
+}
+
+// seed data-primitive/chart-data-fallback 2: the fallback hoisted into a const first
+export function Trend2() {
+  const q = useRuns()
+  const rows = q.data ?? []
+  return <ChartCard title="Runs" chart={<Lines data={rows} x="at" series={['ms']} />} />
+}
+
+// seed data-primitive/chart-data-fallback 3: an empty-array default in the destructure
+export function Trend3() {
+  const { data = [] } = useRuns()
+  return <ChartCard title="Runs" chart={<Bars data={data} x="at" series={['ms']} />} />
+}
+
+// seed data-primitive/timer-refetch 1: an interval that invalidates
+export function useTicker() {
+  const qc = useQueryClient()
+  useEffect(() => {
+    const id = setInterval(() => qc.invalidateQueries({ queryKey: ['runs'] }), 10_000)
+    return () => clearInterval(id)
+  }, [qc])
+}
+
+// seed data-primitive/timer-refetch 2: an interval that calls the query's refetch
+export function useTicker2() {
+  const q = useRuns()
+  useEffect(() => {
+    const id = setInterval(() => void q.refetch(), 10_000)
+    return () => clearInterval(id)
+  }, [q])
+}
+
+// seed data-primitive/raw-storage-write 1: remember a choice in localStorage
+export function remember(view: string) {
+  localStorage.setItem('runs:view', view)
+}
+
+// seed data-primitive/raw-storage-write 2: sessionStorage through window
+export function rememberTab(tab: string) {
+  window.sessionStorage.setItem('tab', tab)
+}
+
+// seed data-primitive/raw-storage-write 3: index assignment on localStorage
+export function rememberDensity(d: string) {
+  localStorage['density'] = d
+}
+
+// seed data-primitive/live-static-stale-time 3: static inside a liveQuery call, the shape the form reads
+export const configQuery = liveQuery(
+  queryOptions({ queryKey: ['config'], queryFn: () => fetch('/api/config'), staleTime: 'static' }),
+  'live',
+)
+
+// seed data-primitive/live-static-stale-time 1: a one-shot query marked static by hand
+export function useConfig() {
+  return useQuery({ queryKey: ['config'], queryFn: () => fetch('/api/config'), staleTime: 'static' })
+}
+
+// seed data-primitive/live-static-stale-time 2: the static options hoisted, then passed to liveQuery by name
+const flagsOptions = queryOptions({ queryKey: ['flags'], queryFn: () => fetch('/api/flags'), staleTime: 'static' })
+export const flagsQuery = liveQuery(flagsOptions, 'live')

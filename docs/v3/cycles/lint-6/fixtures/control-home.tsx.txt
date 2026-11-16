@@ -1,0 +1,71 @@
+// Seeded offenders for basalt/control-home.
+import { useState } from 'react'
+import { PageBar } from 'basalt-ui/page'
+import { Section } from 'basalt-ui/page'
+import { Input } from 'basalt-ui/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'basalt-ui/ui/select'
+import { Segmented, SegmentedItem } from 'basalt-ui/ui/segmented'
+import { Switch } from 'basalt-ui/ui/switch'
+import { Tabs, TabsList, TabsTrigger } from 'basalt-ui/ui/tabs'
+
+// seed control-home/outside-home 1: a status filter Select on useState in the page body
+export function RunsPage() {
+  const [status, setStatus] = useState('all')
+  return (
+    <Section title="Runs">
+      <Select value={status} onValueChange={(v) => setStatus(String(v))}>
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All</SelectItem>
+        </SelectContent>
+      </Select>
+    </Section>
+  )
+}
+
+// seed control-home/outside-home 2: a Segmented range switch passed to PageBar actions
+export function UsagePage() {
+  const [range, setRange] = useState('7d')
+  return (
+    <PageBar
+      title="Usage"
+      actions={
+        <Segmented value={range} onValueChange={(v) => setRange(String(v))}>
+          <SegmentedItem value="7d">7d</SegmentedItem>
+          <SegmentedItem value="30d">30d</SegmentedItem>
+        </Segmented>
+      }
+    />
+  )
+}
+
+// seed control-home/outside-home 3: a "show archived" Switch in a toolbar div
+export function Toolbar() {
+  const [archived, setArchived] = useState(false)
+  return (
+    <div className="flex gap-2">
+      <Switch checked={archived} onCheckedChange={setArchived} />
+    </div>
+  )
+}
+
+// seed control-home/outside-home 4: a search Input filtering a list, the commonest filter of all
+export function Search() {
+  const [q, setQ] = useState('')
+  return <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search runs" />
+}
+
+// seed control-home/outside-home 5: Tabs used as the page's view switch instead of ViewTabs
+export function Views() {
+  const [view, setView] = useState('table')
+  return (
+    <Tabs value={view} onValueChange={(v) => setView(String(v))}>
+      <TabsList>
+        <TabsTrigger value="table">Table</TabsTrigger>
+        <TabsTrigger value="chart">Chart</TabsTrigger>
+      </TabsList>
+    </Tabs>
+  )
+}
