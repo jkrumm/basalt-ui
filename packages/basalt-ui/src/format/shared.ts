@@ -40,7 +40,7 @@ let defaults: FormatDefaults = {}
  *
  * The default is ONE module-global per process (formatters are plain functions, not hooks), so it
  * is an app-wide setting, not a per-request one — a server rendering many locales passes `locale`
- * per call instead. `BasaltProvider`'s `locale` / `timeZone` props call this.
+ * per call instead.
  */
 export function setFormatDefaults(next: FormatDefaults = {}): void {
   const merged: FormatDefaults = {
