@@ -145,3 +145,14 @@ const anchor = <a href="#add">Add</a>
 
 // @invalid
 const notAnchor = { label: '#add' }
+
+// @invalid
+const wide = 'color(display-p3 0.1 0.5 0.9)'
+
+// @invalid
+const wideTemplate = `color(srgb ${r} ${g} ${b})`
+
+// @valid
+const mixed = 'color-mix(in oklch, var(--vx-accent) 50%, transparent)'
+const word = 'color(red)'
+const label = 'Choose a color(s)'

@@ -54,3 +54,9 @@ const mod = await import('next-mdx-remote-client/csr')
 
 // @valid
 import { other } from 'next-mdx-remote-clients'
+
+// @invalid
+import { getMDXComponent } from 'mdx-bundler/client'
+
+// @valid
+import { bundleMDX } from 'mdx-bundler'

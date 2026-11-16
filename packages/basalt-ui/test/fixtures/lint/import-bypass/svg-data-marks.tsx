@@ -257,3 +257,61 @@ function Dots({ pts, focus }) {
     </g>
   )
 }
+// @valid
+const focus = useChartFocus(rows)
+const a = (
+  <svg {...focus.target}>
+    {edges.map((e) => (
+      <line key={e.id} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} aria-hidden />
+    ))}
+    {rows.map((r, i) => (
+      <circle key={r.id} cx={r.x} {...focus.item(i)} />
+    ))}
+  </svg>
+)
+// @valid
+const focus = useChartFocus(rows)
+const a = (
+  <svg {...focus.target}>
+    {rows.map((r, i) => (
+      <circle key={r.id} cx={r.x} {...focus.item(i)} />
+    ))}
+    <g aria-hidden="true">
+      {edges.map((e) => (
+        <line key={e.id} x1={e.x1} />
+      ))}
+    </g>
+  </svg>
+)
+// @invalid
+const focus = useChartFocus(rows)
+const a = (
+  <svg {...focus.target}>
+    {edges.map((e) => (
+      <line key={e.id} x1={e.x1} aria-hidden="false" />
+    ))}
+    {rows.map((r, i) => (
+      <circle key={r.id} cx={r.x} {...focus.item(i)} />
+    ))}
+  </svg>
+)
+// @invalid
+const focus = useChartFocus(rows)
+const a = (
+  <svg {...focus.target}>
+    {edges.map((e) => (
+      <line key={e.id} x1={e.x1} />
+    ))}
+    {rows.map((r, i) => (
+      <circle key={r.id} cx={r.x} {...focus.item(i)} />
+    ))}
+  </svg>
+)
+// @invalid
+const a = (
+  <svg>
+    {edges.map((e) => (
+      <line key={e.id} x1={e.x1} aria-hidden />
+    ))}
+  </svg>
+)

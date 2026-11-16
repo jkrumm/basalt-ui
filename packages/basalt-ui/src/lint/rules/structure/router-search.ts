@@ -10,7 +10,7 @@
  *   `=> ({ ...search })`. Returning the whole search re-runs the loader on every param (argo
  *   `strength-tracker.tsx:53`); the deps are the keys it reads.
  * - `validate-search-pure`: an inline `validateSearch` that reads `window`, `document`,
- *   `localStorage`, `sessionStorage`, `Math.random` or the clock (`new Date()` with no argument,
+ *   `localStorage`, `sessionStorage`, `Math.random`, `crypto.randomUUID()` / `crypto.getRandomValues()` (also on `globalThis` or `window`) or the clock (`new Date()` with no argument,
  *   `Date.now()`, `Date()`), through a Zod `.default(() => new Date())` too. `new Date(input)`
  *   and `Date.parse` are pure and pass. A validator named by reference is not read: the rule is
  *   file-local.
@@ -228,6 +228,17 @@ function impureRead(root: Node): string | undefined {
       const property = nameOf(child(node, 'property'))
       if (object === 'Math' && property === 'random') found = 'Math.random'
       else if (object === 'Date' && property === 'now') found = 'Date.now'
+      else if (property === 'randomUUID' || property === 'getRandomValues') {
+        // `crypto.x`, `globalThis.crypto.x`, `window.crypto.x`
+        const holder = child(node, 'object')
+        const isCrypto =
+          object === 'crypto' ||
+          (holder?.type === 'MemberExpression' &&
+            nameOf(child(holder, 'property')) === 'crypto' &&
+            (nameOf(child(holder, 'object')) === 'globalThis' ||
+              nameOf(child(holder, 'object')) === 'window'))
+        if (isCrypto) found = `crypto.${property}`
+      }
     } else if (node.type === 'Identifier' && IMPURE_GLOBALS.has(node['name'] as string)) {
       const parent = node['parent'] as Node | undefined
       const isKey =

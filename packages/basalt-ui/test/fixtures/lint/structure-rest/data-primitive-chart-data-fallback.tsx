@@ -122,3 +122,22 @@ const a = <Table data={rows} />
 // @invalid
 const EMPTY = []
 const a = <BarChart ariaLabel="Runs" data={q.data ?? EMPTY} />
+
+// @invalid
+const a = <BarChart ariaLabel="Runs" data={q.isSuccess ? q.data : []} />
+
+// @invalid
+const a = <BarChart ariaLabel="Runs" data={q.isPending ? [] : q.data} />
+
+// @valid
+const a = <BarChart ariaLabel="Runs" data={q.isSuccess ? q.data : previous} />
+
+// @valid
+const a = <Table data={q.isSuccess ? q.data : []} />
+
+// @valid
+const a = <Lines ariaLabel="Runs" data={shot === 'empty' ? [] : rows} series={series} />
+
+// @valid
+const hours = shot === 'empty' ? [] : all
+const a = <Bars ariaLabel="Hours" data={hours} />

@@ -87,3 +87,21 @@ async function first(res) {
   }
   return read()
 }
+
+// @invalid
+// @ts
+async function sink(res) {
+  await res
+    .body!.pipeThrough(new TextDecoderStream())
+    .pipeTo(new WritableStream({ write: onChunk }))
+}
+
+// @valid
+async function copy(src, dest) {
+  await src.pipeTo(dest)
+}
+
+// @valid
+async function toFile(res, file) {
+  await res.blob().then((b) => b.stream().pipeTo(file))
+}

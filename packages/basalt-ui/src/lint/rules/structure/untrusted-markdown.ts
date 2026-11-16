@@ -8,12 +8,15 @@
  *   non-literal value. `<iframe srcDoc={x} />` with a non-literal `srcDoc` (a string literal or a
  *   hole-free template is legal, and so is a frame whose `sandbox` leaves out
  *   `allow-same-origin`) and `x.createContextualFragment(html)` with a non-literal argument
- *   (`document.createRange().createContextualFragment(m.html)`) report too. A sink reached through
+ *   (`document.createRange().createContextualFragment(m.html)`) report too, as does
+ *   `document.write` / `writeln` on any `….document` chain (`w?.document.write(m.html)`). A sink reached through
  *   a computed key (`el['innerHTML']`) is not read, nor is `createContextualFragment` called bare.
- * - `rehype-raw`: an import or require of `rehype-raw`.
+ * - `rehype-raw`: an import or require of `rehype-raw`, and `allowDangerousHtml: true` in a
+ *   `[remarkRehype, { … }]` tuple (`remarkRehype` the default import of `remark-rehype`).
  * - `mdx-evaluate`: `evaluate`/`run` (and their Sync twins) of `@mdx-js/mdx`, by name
  *   import, namespace member or require, and any import of `next-mdx-remote`,
- *   `next-mdx-remote-client` or a subpath of either (`next-mdx-remote-client/rsc`).
+ *   `next-mdx-remote-client` or a subpath of either (`next-mdx-remote-client/rsc`), and
+ *   `mdx-bundler/client`.
  *   `compile`/`compileSync` report only in a file that also runs code from a string
  *   (`new Function(code)`, `Function(code)`, `eval`): a build step or a test that compiles authored
  *   MDX into a module is not an evaluation. Known limit: compiled code run in another file passes.
@@ -115,8 +118,12 @@ const runsString = (node: Node): boolean => {
     : name === 'Function' || name === 'eval'
 }
 
-/** Every `next-mdx-remote` and `next-mdx-remote-client` entry runs MDX at render: any import reports. */
-const NEXT_MDX_REMOTE: readonly string[] = ['next-mdx-remote', 'next-mdx-remote-client']
+/** Every `next-mdx-remote`, `next-mdx-remote-client` and `mdx-bundler/client` (`getMDXComponent`) entry runs MDX at render: any import reports. */
+const NEXT_MDX_REMOTE: readonly string[] = [
+  'next-mdx-remote',
+  'next-mdx-remote-client',
+  'mdx-bundler/client',
+]
 const isNextMdxRemote = (source: string | undefined): boolean =>
   source !== undefined &&
   NEXT_MDX_REMOTE.some((name) => source === name || source.startsWith(`${name}/`))
@@ -190,6 +197,18 @@ const dangerousHtml: AstForm = {
         const callee = child(node, 'callee')
         if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return
         const method = nameOf(child(callee, 'property'))
+        if (method === 'write' || method === 'writeln') {
+          // `document.write(x)`, `w.document.write(x)`, `w?.document.write(x)`
+          const holder = child(callee, 'object')
+          const isDocument =
+            nameOf(holder) === 'document' ||
+            (holder?.type === 'MemberExpression' &&
+              holder['computed'] !== true &&
+              nameOf(child(holder, 'property')) === 'document')
+          const markup = children(node, 'arguments')[0]
+          if (isDocument && markup && !isLiteralText(markup)) report(node, `.document.${method}()`)
+          return
+        }
         if (method === 'createContextualFragment') {
           const markup = children(node, 'arguments')[0]
           if (markup && !isLiteralText(markup)) report(node, '.createContextualFragment()')
@@ -206,19 +225,61 @@ const dangerousHtml: AstForm = {
   fixture: 'untrusted/dangerous-html.tsx',
 }
 
+/** `{ allowDangerousHtml: true }`: the option that keeps raw HTML nodes for rehype-raw or a stringify. */
+const allowsDangerousHtml = (node: Node | undefined): boolean =>
+  node?.type === 'ObjectExpression' &&
+  children(node, 'properties').some((property) => {
+    if (property.type !== 'Property' || property['computed'] === true) return false
+    const key = child(property, 'key')
+    const value = child(property, 'value')
+    return (
+      (nameOf(key) ?? text(key)) === 'allowDangerousHtml' &&
+      value?.type === 'Literal' &&
+      value['value'] === true
+    )
+  })
+
 const rehypeRaw: AstForm = {
   id: 'rehype-raw',
-  detect: ({ report }) => ({
-    ImportDeclaration(node) {
-      if (text(child(node, 'source')) === 'rehype-raw') report(node, 'rehype-raw')
-    },
-    ImportExpression(node) {
-      if (loadedModule(node) === 'rehype-raw') report(node, 'rehype-raw')
-    },
-    CallExpression(node) {
-      if (loadedModule(node) === 'rehype-raw') report(node, 'rehype-raw')
-    },
-  }),
+  detect: ({ report }) => {
+    // The default import of `remark-rehype`, whatever it is called, with the options it is given
+    // as the tuple `[remarkRehype, { allowDangerousHtml: true }]`.
+    const remarkRehype = new Set<string>()
+    const options: { node: Node; callee: string | undefined; options: Node | undefined }[] = []
+    return {
+      ArrayExpression(node) {
+        const [plugin, config] = children(node, 'elements')
+        if (plugin?.type === 'Identifier')
+          options.push({ node, callee: nameOf(plugin), options: config })
+      },
+      'Program:exit'() {
+        for (const found of options) {
+          if (
+            found.callee &&
+            remarkRehype.has(found.callee) &&
+            allowsDangerousHtml(found.options)
+          ) {
+            report(found.node, 'remark-rehype allowDangerousHtml')
+          }
+        }
+      },
+      ImportDeclaration(node) {
+        const source = text(child(node, 'source'))
+        if (source === 'rehype-raw') report(node, 'rehype-raw')
+        if (source !== 'remark-rehype') return
+        for (const specifier of children(node, 'specifiers')) {
+          const local = nameOf(child(specifier, 'local'))
+          if (specifier.type === 'ImportDefaultSpecifier' && local) remarkRehype.add(local)
+        }
+      },
+      ImportExpression(node) {
+        if (loadedModule(node) === 'rehype-raw') report(node, 'rehype-raw')
+      },
+      CallExpression(node) {
+        if (loadedModule(node) === 'rehype-raw') report(node, 'rehype-raw')
+      },
+    }
+  },
   fix: FIX,
   next: NEXT,
   fixture: 'untrusted/rehype-raw.tsx',

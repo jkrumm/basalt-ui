@@ -59,3 +59,15 @@ const a = <span>{n.toFixed(1)}</span>
 // @invalid
 // @filename recipes/dates.ts
 const s = d.toLocaleDateString()
+// @invalid
+const a = <span>{dayjs(at).format('DD.MM.YYYY')}</span>
+// @invalid
+const s = moment(at).utc().format('LL')
+// @invalid
+const s = dayjs.utc(at).format('LL')
+// @valid
+const s = dayjs(at).toISOString()
+// @valid
+const s = useFormat().time(at)
+// @valid
+const s = template(text).format(data)

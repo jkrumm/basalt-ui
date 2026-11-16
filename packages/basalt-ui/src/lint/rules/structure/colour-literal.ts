@@ -4,6 +4,8 @@
  * 11 canvas waivers; an AST rule reads strings and template quasis and nothing else. Deep-rendering
  * files take one file-level waiver on a path in `manifest.deepRender` (`waiver-needs-reason`).
  *
+ * `color(display-p3 0.1 0.5 0.9)` (a `color()` over a colour space) reads as `oklch(` does.
+ *
  * A function that wraps a token (`rgb(var(--vx-x) / 50%)`, `oklch(from var(--vx-x) l c h)`) is not
  * a literal and passes; `color-mix` and `light-dark` are the stylesheet's, not this rule's.
  *
@@ -42,6 +44,9 @@ import { isTestFile } from '../../factory'
 const HEX = /(?<!url\(['"]?)(?<![\w&#-])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])/gi
 const COLOUR_FUNCTION =
   /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*(?:[-+.\d]|none\b|\$\{\})/i
+/** `color(display-p3 0.1 0.5 0.9)`: the CSS `color()` function over a colour space. */
+const COLOR_SPACE_FUNCTION =
+  /(?<![\w-])color\(\s*(?:srgb(?:-linear)?|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz(?:-d50|-d65)?)\s/i
 
 /** `#123` in prose is an issue number, not a colour; a bare `'#123'` string still is one. */
 const isIssueReference = (match: string, text: string): boolean =>
@@ -55,7 +60,7 @@ const REFERENCE_KEY = /^(?:ref|id|issue|number|ticket)$|(?:Ref|Id|Issue|Number|T
 const LINK_KEY = /^(?:href|to|hash)$/
 
 function literalIn(text: string): string | undefined {
-  const fn = COLOUR_FUNCTION.exec(text)
+  const fn = COLOUR_FUNCTION.exec(text) ?? COLOR_SPACE_FUNCTION.exec(text)
   if (fn) return `${fn[0].replace(/\(.*$/s, '')}()`
   const bare = NON_TOKEN_VAR_FUNCTION.exec(text)
   if (bare) return `${bare[0].replace(/\(.*$/s, '')}(var())`
