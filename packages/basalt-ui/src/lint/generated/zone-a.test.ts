@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
-import { deniedCurrent, zoneAFillOnly, zoneANames, zoneAPremixed } from './zone-a'
+import {
+  deniedCurrent,
+  zoneAFillOnly,
+  zoneANames,
+  zoneAPremixed,
+  zoneATokenClasses,
+} from './zone-a'
 import { renderZoneA, ZONE_A_PATH } from './gen-zone-a'
 
 describe('zone-a', () => {
@@ -24,13 +30,23 @@ describe('zone-a', () => {
     expect(deniedCurrent as readonly string[]).toContain('bg-current')
   })
 
-  it('carries the pre-mixed and fill-only names the class rules read', () => {
-    expect(zoneAPremixed as readonly string[]).toEqual(
-      expect.arrayContaining(['hairline', 'hover', 'selected', 'scrim']),
-    )
+  it('carries the pre-mixed theme classes and fill-only names the class rules read', () => {
+    // The theme's class names (`--color-accent: var(--vx-hover)`), never the token names: `bg-hover` is no class.
+    expect([...zoneAPremixed].toSorted()).toEqual(['accent', 'border', 'scrim', 'selected'])
     expect(zoneAFillOnly as readonly string[]).toEqual(
       expect.arrayContaining(['brand-fill', 'dim-bar', 'chart-1', 'seq-5']),
     )
+  })
+
+  it('maps a token the theme renames to the class that reads it', () => {
+    expect(zoneATokenClasses).toMatchObject({
+      hover: 'bg-accent',
+      canvas: 'bg-background',
+      hairline: 'border-border',
+      ink: 'text-foreground',
+      raised: 'bg-popover',
+    })
+    expect(Object.keys(zoneATokenClasses)).not.toContain('card')
   })
 
   it('leaves fill, stroke and text current allowed', () => {
