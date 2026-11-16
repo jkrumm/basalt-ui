@@ -1,0 +1,29 @@
+{
+  "why": "Expression cycle 5 (docs/v3/cycles/expression-5.md) has one P1, expression-5.73: n18's page throws on the first focus, so ArrowRight leaves focus on `body` with nothing announced (K3 0), and its F7, X3 and X4 (expression-5.69, .78, .79) score 0 for the same crash. The cause is one line of builder code: the `announce` callback passed to `useChartFocus` reads a `const` declared three lines below it (`src-r0/n18/ExprN18.tsx:23-26` in the cycle's evidence), which is fine at rest and throws once an item is focused. The builder never pressed a key. basalt-design and basalt-charts step 6 ask for a keyboard frame after two arrow presses, and nothing shipped shoots one: `basalt-ui shot`'s `focus` state tabs to an anchor and presses no arrow key, and the playground's `shots.ts` presses none either. In cycle 5 none of six builders opened a keyboard frame; in cycle 4 four of six reported they could not and two wrote their own script. n07 and n18 asked for 'a shot step that presses arrow keys' in round 1, and n18 shipped its crash fix unverified for the same reason. The app lint preset would have caught the line at the gate, but no shipped preset enables `no-use-before-define`, which oxlint implements.",
+  "what": "The kit's own tools catch a page that breaks under the keyboard: `basalt-ui shot` shoots a keyboard frame, and the app lint preset flags a binding read before its declaration.",
+  "owns": [
+    "packages/basalt-ui/src/cli/shot/** (a keyboard state, its tests)",
+    "packages/basalt-ui/configs/oxlint-app.json and the other preset files only where the rule belongs, with the guards that check preset levels",
+    "packages/basalt-ui/agent/skills/basalt-design/SKILL.md and basalt-charts/SKILL.md step 6 (one clause each naming the command)",
+    "packages/basalt-ui/docs/** text through its generator",
+    "the dogfooded copies (make sync-self, its own commit)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "docs/v3/expression/**",
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "(1) `basalt-ui shot` gains a keyboard frame (a `keys` state beside `focus`, or the `focus` state extended, whichever the shot code ranks better): for each anchor holding a one-tab-stop focus host (`aria-roledescription=\"chart\"`, a row host), focus it, press the arrow key its role takes twice (ArrowRight for a chart group, ArrowDown for a grid or table row), write the frame after the second press, and write the `aria-live` text and the focused element after each press into `metrics.json` and the board. A page error during the presses is a defect the shot reports by name, never a silent frame of the error screen. The cycle's lead tool `.evidence/v3-shots/expression-5/lead-shots.ts` in the main checkout on the dev host is a working sketch of the presses and the log; it is evidence, not code to copy. (2) The app preset (`configs/oxlint-app.json`, and wherever a consumer's app code is linted) enables oxlint's `no-use-before-define` at error for variables read before their declaration in the same scope, including inside a closure defined above the declaration; functions and types may stay allowed if the rule's options separate them. Check the rule's options against the installed oxlint before choosing them (research-first), and run it over `apps/playground` and `examples/*`: every hit is fixed or the option set is narrowed, with the count in the PR. (3) basalt-design and basalt-charts step 6 name the command that shoots the keyboard frame, in one clause each, within the shipped-text budget.",
+  "commits": "feat: for the shot state, feat: for the preset rule, docs: for regenerated docs; package commits separate from non-package ones; make sync-self its own commit.",
+  "proof": "make check; a shot unit test that drives a fixture chart with a throwing announce and asserts the defect is reported; a lint test where a closure reads a later const and fails.",
+  "acceptance": [
+    "basalt-ui shot writes a keyboard frame after two presses of the key the focused host's role takes, with the live text and the focused element after each press recorded",
+    "A page that throws during the presses is reported as a named defect",
+    "The app lint preset fails a closure that reads a const declared after it, as n18's round-0 code did",
+    "apps/playground and examples/* pass the new rule, with the hits fixed counted in the PR",
+    "basalt-design and basalt-charts step 6 name the command",
+    "make check passes"
+  ],
+  "out_of_scope": "Changing the trial scenarios; a pointer-sweep or list frame in `shot` (later work if a cycle shows the need); any chart behaviour."
+}
