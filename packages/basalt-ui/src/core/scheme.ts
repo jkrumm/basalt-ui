@@ -1,7 +1,6 @@
 /** Scheme state: `data-theme` on `<html>` plus the raw-string `basalt:scheme` device key. Imports nothing. */
 
 export const SCHEME_KEY = 'basalt:scheme'
-export const LEGACY_SCHEME_KEY = 'mantine-color-scheme-value'
 export const SCHEME_ATTRIBUTE = 'data-theme'
 
 export type Scheme = 'light' | 'dark' | 'auto'
@@ -35,14 +34,12 @@ function readCookie(name: string): Scheme | undefined {
   return undefined
 }
 
-/** First valid value of the key, the legacy Mantine key, then the cookie (only when named). */
+/** First valid value of the key, then the cookie (only when named). */
 export function readScheme(
   options: { key?: string; cookie?: string | undefined } = {},
 ): Scheme | undefined {
   const { key = SCHEME_KEY, cookie } = options
-  return (
-    readStorage(key) ?? readStorage(LEGACY_SCHEME_KEY) ?? (cookie ? readCookie(cookie) : undefined)
-  )
+  return readStorage(key) ?? (cookie ? readCookie(cookie) : undefined)
 }
 
 function apply(value: Scheme): void {

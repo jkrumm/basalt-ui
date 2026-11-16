@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { LEGACY_SCHEME_KEY, readScheme, SCHEME_KEY, setScheme } from '../core/scheme'
+import { readScheme, SCHEME_KEY, setScheme } from '../core/scheme'
 import type { Scheme } from '../core/scheme'
 import { themeScript } from './theme-script'
 
@@ -27,7 +27,6 @@ function run(options?: Parameters<typeof themeScript>[0]): string | null {
 interface Golden {
   name: string
   key?: string
-  legacy?: string
   cookie?: string
   default?: Scheme
   expected: string | null
@@ -37,12 +36,9 @@ const GOLDEN: Golden[] = [
   { name: 'new key dark', key: 'dark', expected: 'dark' },
   { name: 'new key light', key: 'light', expected: 'light' },
   { name: 'new key auto stamps nothing', key: 'auto', default: 'dark', expected: null },
-  { name: 'legacy key when new absent', legacy: 'dark', expected: 'dark' },
-  { name: 'new key beats legacy', key: 'light', legacy: 'dark', expected: 'light' },
-  { name: 'invalid new key falls to legacy', key: 'bogus', legacy: 'dark', expected: 'dark' },
   { name: 'cookie when storage empty', cookie: 'dark', expected: 'dark' },
-  { name: 'storage beats cookie', legacy: 'light', cookie: 'dark', expected: 'light' },
-  { name: 'invalid everywhere ignored', key: 'x', legacy: '{}', cookie: 'y', expected: null },
+  { name: 'storage beats cookie', key: 'light', cookie: 'dark', expected: 'light' },
+  { name: 'invalid everywhere ignored', key: 'x', cookie: 'y', expected: null },
   { name: 'default light', default: 'light', expected: 'light' },
   { name: 'default dark', default: 'dark', expected: 'dark' },
   { name: 'default auto', default: 'auto', expected: null },
@@ -53,7 +49,6 @@ describe('themeScript golden fixture (script and setScheme() agree)', () => {
   for (const g of GOLDEN) {
     const seed = (): void => {
       if (g.key !== undefined) localStorage.setItem(SCHEME_KEY, g.key)
-      if (g.legacy !== undefined) localStorage.setItem(LEGACY_SCHEME_KEY, g.legacy)
       if (g.cookie !== undefined) document.cookie = `sf=${g.cookie}; path=/`
     }
 
@@ -97,8 +92,7 @@ describe('themeScript behavior', () => {
   })
 
   test('never writes storage', () => {
-    localStorage.setItem(LEGACY_SCHEME_KEY, 'dark')
-    run()
+    run({ default: 'dark' })
     expect(localStorage.getItem(SCHEME_KEY)).toBeNull()
   })
 

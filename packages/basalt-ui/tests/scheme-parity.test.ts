@@ -2,13 +2,12 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { themeScript } from '../src/css/theme-script'
-import { LEGACY_SCHEME_KEY, readScheme, SCHEME_KEY, setScheme } from '../src/core/scheme'
+import { readScheme, SCHEME_KEY, setScheme } from '../src/core/scheme'
 import type { Scheme } from '../src/core/scheme'
 
 interface ParityCase {
   name: string
   stored?: string
-  legacy?: string
   cookie?: string
   os?: 'light' | 'dark'
   default?: Scheme
@@ -43,7 +42,6 @@ afterEach(reset)
 
 function seed(c: ParityCase): void {
   if (c.stored !== undefined) localStorage.setItem(SCHEME_KEY, c.stored)
-  if (c.legacy !== undefined) localStorage.setItem(LEGACY_SCHEME_KEY, c.legacy)
   if (c.cookie !== undefined) document.cookie = `${COOKIE}=${c.cookie}; path=/`
   if (c.attribute !== undefined) root().setAttribute('data-theme', c.attribute)
   if (c.storage === 'throws') {

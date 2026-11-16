@@ -1,12 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import {
-  LEGACY_SCHEME_KEY,
-  parseScheme,
-  readScheme,
-  SCHEME_ATTRIBUTE,
-  SCHEME_KEY,
-  setScheme,
-} from './scheme'
+import { parseScheme, readScheme, SCHEME_ATTRIBUTE, SCHEME_KEY, setScheme } from './scheme'
 
 // happy-dom drops path-scoped cookies on about:blank
 ;(window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(
@@ -41,24 +34,14 @@ describe('parseScheme', () => {
 describe('readScheme', () => {
   test('reads the basalt:scheme key first', () => {
     localStorage.setItem(SCHEME_KEY, 'dark')
-    localStorage.setItem(LEGACY_SCHEME_KEY, 'light')
     document.cookie = 'sf=light; path=/'
     expect(readScheme({ cookie: 'sf' })).toBe('dark')
   })
 
-  test('reads the legacy key when the new key is absent or invalid', () => {
-    localStorage.setItem(LEGACY_SCHEME_KEY, 'light')
-    expect(readScheme()).toBe('light')
-    localStorage.setItem(SCHEME_KEY, 'bogus')
-    expect(readScheme()).toBe('light')
-  })
-
-  test('reads the cookie only when named, after both storage keys', () => {
+  test('reads the cookie only when named, after storage', () => {
     document.cookie = 'sf=dark; path=/'
     expect(readScheme()).toBeUndefined()
     expect(readScheme({ cookie: 'sf' })).toBe('dark')
-    localStorage.setItem(LEGACY_SCHEME_KEY, 'light')
-    expect(readScheme({ cookie: 'sf' })).toBe('light')
   })
 
   test('tolerates throwing storage', () => {
@@ -80,21 +63,13 @@ describe('readScheme', () => {
 })
 
 describe('setScheme', () => {
-  test('dark and light stamp the attribute, overriding, and write only the new key', () => {
+  test('dark and light stamp the attribute, overriding, and write the key', () => {
     root().setAttribute(SCHEME_ATTRIBUTE, 'light')
     setScheme('dark')
     expect(root().getAttribute(SCHEME_ATTRIBUTE)).toBe('dark')
     expect(localStorage.getItem(SCHEME_KEY)).toBe('dark')
-    expect(localStorage.getItem(LEGACY_SCHEME_KEY)).toBeNull()
     setScheme('light')
     expect(root().getAttribute(SCHEME_ATTRIBUTE)).toBe('light')
-    expect(localStorage.getItem(LEGACY_SCHEME_KEY)).toBeNull()
-  })
-
-  test('does not touch an existing legacy value', () => {
-    localStorage.setItem(LEGACY_SCHEME_KEY, 'light')
-    setScheme('dark')
-    expect(localStorage.getItem(LEGACY_SCHEME_KEY)).toBe('light')
   })
 
   test('auto removes the attribute and stores auto', () => {
