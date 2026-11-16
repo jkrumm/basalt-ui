@@ -125,34 +125,40 @@ export function DataTableHead<T>({
               {spec.kind === 'actions' ? (
                 <span className="sr-only">{spec.header === '' ? actionsLabel : spec.header}</span>
               ) : (
-                <>
+                <div
+                  className={cn(
+                    'flex min-w-0 items-center gap-1',
+                    numeric && 'flex-row-reverse',
+                    spec.align === 'center' && 'justify-center',
+                  )}
+                >
                   {sortable ? (
                     <Pressable
                       data-slot="table-sort"
                       className={cn(
-                        'group/sort inline-flex min-h-6 items-center gap-1 pointer-coarse:after:-inset-x-1',
+                        'group/sort inline-flex min-h-6 min-w-0 items-center gap-1 pointer-coarse:after:-inset-x-1',
                         numeric && 'flex-row-reverse',
                       )}
                       onClick={() => model.toggleSort(spec.id)}
                     >
-                      <span>{spec.header}</span>
+                      <span className="truncate">{spec.header}</span>
                       <SortMark direction={direction} />
                     </Pressable>
                   ) : (
-                    spec.header
+                    <span className="min-w-0 truncate">{spec.header}</span>
                   )}
-                  {/* out of flow: the menu never widens a header past its planned column; on touch its hit area grows away from the sort button */}
+                  {/* beside the sort button, never over it: a narrow column truncates the label and keeps both targets; on touch the hit area grows away from the sort button */}
                   <ColumnActionsMenu
                     table={instance}
                     column={spec.id}
                     className={cn(
-                      'absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/head:opacity-100 focus-visible:opacity-100 data-popup-open:opacity-100 pointer-coarse:opacity-100',
+                      'shrink-0 opacity-0 group-hover/head:opacity-100 focus-visible:opacity-100 data-popup-open:opacity-100 pointer-coarse:opacity-100',
                       numeric
-                        ? 'start-5 pointer-coarse:after:inset-x-auto pointer-coarse:after:right-0 pointer-coarse:after:w-11'
-                        : 'end-5 pointer-coarse:after:inset-x-auto pointer-coarse:after:left-0 pointer-coarse:after:w-11',
+                        ? 'pointer-coarse:after:inset-x-auto pointer-coarse:after:right-0 pointer-coarse:after:w-11'
+                        : 'pointer-coarse:after:inset-x-auto pointer-coarse:after:left-0 pointer-coarse:after:w-11',
                     )}
                   />
-                </>
+                </div>
               )}
             </TableHead>
           )
