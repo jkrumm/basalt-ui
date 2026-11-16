@@ -33,9 +33,6 @@ const wash = alpha(VX.surface.panel, 0.4)
 const wrapped = 'rgb(var(--vx-accent) / 50%)'
 
 // @valid
-const relative = 'oklch(from var(--vx-accent) l c h)'
-
-// @valid
 const gradient = 'url(#fade)'
 
 // @valid
@@ -156,3 +153,20 @@ const wideTemplate = `color(srgb ${r} ${g} ${b})`
 const mixed = 'color-mix(in oklch, var(--vx-accent) 50%, transparent)'
 const word = 'color(red)'
 const label = 'Choose a color(s)'
+
+// @invalid
+const style = { boxShadow: '0 0 8px rgb(from var(--vx-brand) r g b / 50%)' }
+
+// @invalid
+const tint = 'oklch(from var(--vx-accent) l c h / 40%)'
+
+// @invalid
+const wash = `hsl(from var(--vx-accent) h s l / ${pct}%)`
+
+// @invalid
+const wide = 'color(from var(--vx-accent) srgb r g b / 50%)'
+
+// @valid
+const nearby = 'url(#from)'
+const word = 'Choose a colour from the palette'
+const fn = 'format(from the list)'

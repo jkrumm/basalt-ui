@@ -15,10 +15,13 @@
  *   (`({ search: { page, ...rest } }) => ({ page, ...rest })`). Returning the whole search re-runs the loader on every param (argo
  *   `strength-tracker.tsx:53`); the deps are the keys it reads.
  * - `validate-search-pure`: an inline `validateSearch` that reads `window`, `document`,
- *   `localStorage`, `sessionStorage`, `Math.random`, `crypto.randomUUID()` / `crypto.getRandomValues()` (also on `globalThis` or `window`) or the clock (`new Date()` with no argument,
+ *   `localStorage`, `sessionStorage`, `location`, `navigator`, `performance` (`performance.now()`), `Math.random`, `crypto.randomUUID()` / `crypto.getRandomValues()` (also on `globalThis` or `window`) or the clock (`new Date()` with no argument,
  *   `Date.now()`, `Date()`), through a Zod `.default(() => new Date())` too. `new Date(input)`
  *   and `Date.parse` are pure and pass. A validator named by reference is not read: the rule is
- *   file-local.
+ *   file-local. A name bound in the file (a parameter, a variable, a function or an import above
+ *   the read, such as `({ location }) =>` or `const location = useLocation()`) is not the global
+ *   and passes; `globalThis.location` and a binding made by a hoisted `var` in a nested block are
+ *   not read.
  *
  * Known limits: `Navigate` or `Link` imported under another name, a `useNavigate()` result bound
  * to another name (`const go = useNavigate()`), a `search` object built in a variable before the
@@ -37,7 +40,53 @@ const IMPURE_GLOBALS: ReadonlySet<string> = new Set([
   'document',
   'localStorage',
   'sessionStorage',
+  'location',
+  'navigator',
+  'performance',
 ])
+
+/** The names a binding pattern declares: `a`, `{ a, b: c, ...d }`, `[a, , b]`, `a = 1`. */
+function patternNames(pattern: Node | undefined, into: Set<string>): void {
+  if (!pattern) return
+  if (pattern.type === 'Identifier') into.add(pattern['name'] as string)
+  else if (pattern.type === 'ObjectPattern') {
+    for (const property of children(pattern, 'properties')) {
+      patternNames(property.type === 'Property' ? child(property, 'value') : property, into)
+    }
+  } else if (pattern.type === 'ArrayPattern') {
+    for (const element of children(pattern, 'elements')) patternNames(element, into)
+  } else if (pattern.type === 'AssignmentPattern') patternNames(child(pattern, 'left'), into)
+  else if (pattern.type === 'RestElement') patternNames(child(pattern, 'argument'), into)
+}
+
+/** True when `name` is declared by a parameter, a variable, a function or an import above `node`. */
+function isLocallyBound(node: Node, name: string): boolean {
+  for (let up = node['parent'] as Node | undefined; up; up = up['parent'] as Node | undefined) {
+    const names = new Set<string>()
+    if (up.type === 'ArrowFunctionExpression' || up.type === 'FunctionExpression') {
+      for (const param of children(up, 'params')) patternNames(param, names)
+    } else if (up.type === 'CatchClause') patternNames(child(up, 'param'), names)
+    else if (up.type === 'BlockStatement' || up.type === 'Program') {
+      for (const statement of children(up, 'body')) {
+        const declaration =
+          (statement.type === 'ExportNamedDeclaration'
+            ? child(statement, 'declaration')
+            : undefined) ?? statement
+        if (declaration.type === 'VariableDeclaration') {
+          for (const d of children(declaration, 'declarations')) patternNames(child(d, 'id'), names)
+        } else if (declaration.type === 'FunctionDeclaration') {
+          patternNames(child(declaration, 'id'), names)
+        } else if (declaration.type === 'ImportDeclaration') {
+          for (const spec of children(declaration, 'specifiers')) {
+            patternNames(child(spec, 'local'), names)
+          }
+        }
+      }
+    }
+    if (names.has(name)) return true
+  }
+  return false
+}
 
 const isNode = (value: unknown): value is Node =>
   typeof value === 'object' && value !== null && typeof (value as Node).type === 'string'
@@ -303,7 +352,11 @@ function impureRead(root: Node): string | undefined {
               nameOf(child(holder, 'object')) === 'window'))
         if (isCrypto) found = `crypto.${property}`
       }
-    } else if (node.type === 'Identifier' && IMPURE_GLOBALS.has(node['name'] as string)) {
+    } else if (
+      node.type === 'Identifier' &&
+      IMPURE_GLOBALS.has(node['name'] as string) &&
+      !isLocallyBound(node, node['name'] as string)
+    ) {
       const parent = node['parent'] as Node | undefined
       const isKey =
         (parent?.type === 'MemberExpression' &&

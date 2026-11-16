@@ -85,3 +85,19 @@ const a = <span>{DateTime.fromISO(at).toRelative()}</span>
 const a = <span>{DateTime.fromISO(at).toRelativeCalendar()}</span>
 // @valid
 const key = DateTime.fromISO(at).toRelative()
+
+// @invalid
+const a = <span>{new Date(r.at).toDateString()}</span>
+
+// @invalid
+const a = <time>{d.toTimeString()}</time>
+
+// @invalid
+const a = <p>Since {d.toUTCString()}</p>
+
+// @valid
+const s = d.toISOString()
+const t = d.getTime()
+// @valid
+document.cookie = `seen=1; expires=${d.toUTCString()}`
+const headers = { 'If-Modified-Since': d.toUTCString() }

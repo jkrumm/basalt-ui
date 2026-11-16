@@ -15,8 +15,11 @@
  * across two functions, a reader taken from a parameter and a stream iterated through a helper
  * are out of reach. `timer-refetch` reads any `.invalidate()` / `invalidateQueries` /
  * `refetchQueries` / `refetch` call in a timer callback (`setInterval`, `setTimeout`, or a
- * `useInterval` / `useIntervalEffect` hook by callee name), router invalidation included; a timer
- * that calls a named function which invalidates (`setInterval(refresh, 5000)`) is not followed.
+ * `useInterval` / `useIntervalEffect` hook by callee name), router invalidation included, and a timer
+ * handed one of those names by reference (`setInterval(refetch, 5000)`, `setInterval(query.refetch, 5000)`);
+ * a timer that calls a named wrapper which invalidates (`setInterval(refresh, 5000)`) is not followed.
+ * `reader-loop` also reads a reader taken through an optional chain (`res.body?.getReader()`), as it
+ * reads one through `!`.
  * `unseamed-transport` reads `EventSource` and `WebSocket`, not a client library's connect call:
  * `io()` from `socket.io-client`, `new Pusher()` from `pusher-js` and `Ably` are reported at their import by
  * `import-boundary` (`data-library`), as is `swr`;
@@ -257,6 +260,8 @@ export const readerLoop: AstForm = {
         VariableDeclarator(node) {
           let init = child(node, 'init')
           if (init?.type === 'AwaitExpression') init = child(init, 'argument')
+          // `res.body?.getReader()` is a ChainExpression around the call: read it as `res.body!.getReader()`.
+          if (init?.type === 'ChainExpression') init = child(init, 'expression')
           const name = nameOf(child(node, 'id'))
           if (name !== undefined && isMethodCall(init, 'getReader')) readers.set(name, init)
         },
@@ -526,6 +531,12 @@ const REFETCH_CALLS: ReadonlySet<string> = new Set([
 const INTERVAL_HOOKS: ReadonlySet<string> = new Set(['useInterval', 'useIntervalEffect'])
 
 const refetchesIn = (callback: Node | undefined): boolean => {
+  if (callback?.type === 'Identifier') return REFETCH_CALLS.has(callback['name'] as string)
+  if (callback?.type === 'MemberExpression') {
+    return (
+      callback['computed'] !== true && REFETCH_CALLS.has(nameOf(child(callback, 'property')) ?? '')
+    )
+  }
   if (callback?.type !== 'ArrowFunctionExpression' && callback?.type !== 'FunctionExpression') {
     return false
   }

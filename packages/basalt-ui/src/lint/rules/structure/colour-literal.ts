@@ -6,8 +6,10 @@
  *
  * `color(display-p3 0.1 0.5 0.9)` (a `color()` over a colour space) reads as `oklch(` does.
  *
- * A function that wraps a token (`rgb(var(--vx-x) / 50%)`, `oklch(from var(--vx-x) l c h)`) is not
- * a literal and passes; `color-mix` and `light-dark` are the stylesheet's, not this rule's.
+ * A function that wraps a token (`rgb(var(--vx-x) / 50%)`) is not a literal and passes;
+ * CSS relative colour syntax (`rgb(from var(--vx-x) r g b / 50%)`, `oklch(from …)`, `color(from …)`)
+ * is the alpha the `alpha(VX.x, n)` helper owns and reports; `color-mix` and `light-dark` are the
+ * stylesheet's, not this rule's.
  *
  * A `light` or `dark` string of a series entry inside a `defineSeries({ name: { light, dark } })`
  * call is the colour pair the series file exists to hold, and is not reported; a hex beside it, in
@@ -44,6 +46,8 @@ import { isTestFile } from '../../factory'
 const HEX = /(?<!url\(['"]?)(?<![\w&#-])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])/gi
 const COLOUR_FUNCTION =
   /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*(?:[-+.\d]|none\b|\$\{\})/i
+/** `rgb(from var(--vx-x) r g b / 50%)`: CSS relative colour syntax, the alpha `alpha(VX.x, n)` owns. */
+const RELATIVE_COLOUR = /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(\s*from\s/i
 /** `color(display-p3 0.1 0.5 0.9)`: the CSS `color()` function over a colour space. */
 const COLOR_SPACE_FUNCTION =
   /(?<![\w-])color\(\s*(?:srgb(?:-linear)?|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz(?:-d50|-d65)?)\s/i
@@ -62,6 +66,8 @@ const LINK_KEY = /^(?:href|to|hash)$/
 function literalIn(text: string): string | undefined {
   const fn = COLOUR_FUNCTION.exec(text) ?? COLOR_SPACE_FUNCTION.exec(text)
   if (fn) return `${fn[0].replace(/\(.*$/s, '')}()`
+  const relative = RELATIVE_COLOUR.exec(text)
+  if (relative) return `${relative[0].replace(/\(.*$/s, '')}(from …)`
   const bare = NON_TOKEN_VAR_FUNCTION.exec(text)
   if (bare) return `${bare[0].replace(/\(.*$/s, '')}(var())`
   for (const hex of text.matchAll(HEX)) {

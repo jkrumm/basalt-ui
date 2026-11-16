@@ -105,3 +105,22 @@ async function copy(src, dest) {
 async function toFile(res, file) {
   await res.blob().then((b) => b.stream().pipeTo(file))
 }
+
+// @invalid
+// @ts
+async function follow(res: Response) {
+  const reader = res.body?.getReader()
+  if (!reader) return
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    handle(value)
+  }
+}
+
+// @valid
+// @ts
+async function first(res: Response) {
+  const reader = res.body?.getReader()
+  return reader?.read()
+}

@@ -57,3 +57,21 @@ useInterval(refresh, 5000)
 
 // @valid
 useTimeout(() => qc.invalidateQueries({ queryKey: ['runs'] }), 5000)
+
+// @invalid
+setInterval(refetch, 5000)
+
+// @invalid
+setInterval(query.refetch, 5000)
+
+// @invalid
+window.setTimeout(router.invalidate, 1000)
+
+// @invalid
+useInterval(refetch, 5000)
+
+// @valid
+setInterval(tick, 5000)
+
+// @valid
+setInterval(query.poll, 5000)
