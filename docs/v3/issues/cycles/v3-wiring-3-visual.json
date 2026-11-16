@@ -1,0 +1,19 @@
+{
+  "why": "Wiring cycle 3 (docs/v3/cycles/wiring-3.md, P2 wiring-3.3): `c.money('total', { header: 'Total', currency: 'EUR' })` renders the header `Total (EUR)`, cut to `Total (E…` in a 120 px column at 1800 px while the entity column takes 1,152 px (`.evidence/cycle-wiring-3/p2.log`, `shots/money-header.png`, `shots/orders--*--1800x1200.png`). `CommonOptions` has no width, so the app cannot widen it: every money column with a currency header shows it. Riding along: wiring-3.6, the `Section` title `All orders` (`h2`, Hubot Sans 15 px, tracking -0.375 px) draws its word space 2.3 px wide and reads as one word at both widths (`p2.log`).",
+  "what": "A table column shows its whole header when the row has room, and a section heading's words stay apart.",
+  "owns": [
+    "packages/basalt-ui/src/table (the kind column sizing and the money kind's header), its tests",
+    "packages/basalt-ui/src/css heading tokens for the section step",
+    "the quality-matrix assertions that cover them"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) wiring-3.3: a kind column's floor width counts its own header, the money kind's currency suffix included, while the table has free width; the header still truncates when the row has none, with its full text reachable (title or tooltip). (2) wiring-3.6: the section heading step keeps a word space that reads as one at its size (a `word-spacing` floor or less negative tracking at that step), checked at 15 px in light and dark.",
+  "commits": "fix: in packages/basalt-ui; changed shots named in the commit body.",
+  "proof": "make check; the table matrix at 1800x1200 shows `Total (EUR)` whole; a measured word space at the section step.",
+  "acceptance": [
+    "At 1800x1200 a money column with `header: 'Total', currency: 'EUR'` beside one entity column shows `Total (EUR)` whole",
+    "The section heading's word space measures at least a quarter of its font size",
+    "make check passes"
+  ],
+  "out_of_scope": "A per-column width option on `CommonOptions`; the heading face itself."
+}

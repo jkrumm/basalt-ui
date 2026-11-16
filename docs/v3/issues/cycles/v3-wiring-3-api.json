@@ -1,0 +1,28 @@
+{
+  "why": "Wiring cycle 3 (docs/v3/cycles/wiring-3.md, P2 wiring-3.2): the frame's value types have no one v3 home. Nine generated docs (`stat-card`, `use-data-table`, `query-state`, `data-panel`, `chart-card`, `bar-list`, `event-list`, `stat-cell`, `expect-catalog`) say \"`Phase`, `QueryStateLike`, `Empty` import from the root\"; `basalt-ui/charts` re-exports `Empty`, `FrameState`, `FootFacts`, `Fact`, `FrameHead`, `CardAction`, `Menu`, `MenuEntry`; `basalt-ui/cards` re-exports `Menu` and `MenuEntry`; `page` and `table` re-export none; `Delta` and `Status`, the types of `StatCard delta` and `status`, are public only through the `core/*` eject path. The root `Tone` is the 2.x three-member type from `src/common`, while `StatusOptions.tone`, `Alert`, `Badge` and `Num` take the six-member `core/ports` `Tone`: `Record<'late' | 'open', Tone>` with `'info'` imported from the root fails `tsc` (`.evidence/cycle-wiring-3/l3.log`, `s19.log`). Riding along: wiring-3.7, `PageSummary phase` takes only `'ready' | 'loading'` where every other data part takes `Phase | QueryStateLike`, and `Heatmap state` is a `{ pending, error, empty: boolean | string }` shape where every other part takes `phase` and `empty: Empty`.",
+  "what": "An app imports every frame value type from one v3 subpath the docs name, and every data part takes its load state the same way.",
+  "owns": [
+    "packages/basalt-ui/src/core/ports.ts and src/core/phase.ts (exports only)",
+    "the barrels of the v3 subpaths that carry the frame types, and the root barrel's type lines",
+    "packages/basalt-ui/scripts/gen-docs.ts (the import sentence) and the docs it regenerates",
+    "packages/basalt-ui/src/page/page-summary.tsx, its tests",
+    "packages/basalt-ui/src/charts/parts/heatmap.tsx, its tests",
+    "packages/basalt-ui/scripts/export-surface/*.json snapshots it changes, MIGRATING.md rows"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "src/common, src/theme, src/format (v3-teardown-peers deletes them)"
+  ],
+  "change": "(1) wiring-3.2: `Phase`, `QueryStateLike`, `Empty`, `FrameState`, `Menu`, `MenuEntry`, `Delta`, `Status`, `Tone`, `FootFacts` export from one v3 subpath (the one every frame part already imports from, or each part's own subpath, decided by what `MAINTAINING.md` says a subpath owns; record the choice there), with the six-member `Tone`; `gen-docs.ts` writes that subpath in the import sentence in place of the root. The root keeps the old type names as deprecated aliases for one minor with a migration row, as the 3.x upgrade rule requires. (2) wiring-3.7: `PageSummary` takes `phase?: Phase | QueryStateLike` and renders its skeleton for any loading phase; `Heatmap` takes `phase` and `empty: Empty | null`, with `state` kept as a deprecated alias for one minor and a migration row.",
+  "commits": "feat: in packages/basalt-ui; regenerated docs and export-surface snapshots in the same commit as their source.",
+  "proof": "make check; `release-migrating --check`; a type test that imports each listed type from the chosen subpath and assigns `'info'` to its `Tone`.",
+  "acceptance": [
+    "Every listed type imports from the subpath the generated docs name, and no generated doc says 'import from the root'",
+    "That subpath's `Tone` accepts `'info'`, `'accent'` and `'neutral'`",
+    "`PageSummary` accepts a query object as `phase`; `Heatmap` takes `phase` and `empty`",
+    "Every rename has a migration row and `release-migrating --check` passes",
+    "make check passes"
+  ],
+  "out_of_scope": "Deleting the 2.x root modules (v3-teardown-peers); the `KanbanCard menu` arity, which its move rows justify."
+}

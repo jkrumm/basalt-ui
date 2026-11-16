@@ -1,0 +1,25 @@
+{
+  "why": "Wiring cycle 3 (docs/v3/cycles/wiring-3.md, P1 wiring-3.1): create-vite's stock `\"build\": \"tsc -b && vite build\"`, which `init` leaves untouched, fails right after `init` and again after every new route, because `tsc -b` reads `src/routeTree.gen.ts` before the TanStack router plugin has written or updated it (`.evidence/cycle-wiring-3/s8.log`: `Cannot find module './routeTree.gen'`, a `'\"/_app\"' is not assignable to parameter of type 'undefined'` and a `NavConfig` mismatch on `AppShell nav`; `s9.log`: `'\"/orders\"' is not assignable to type '\".\" | \"..\" | \"/\"'` and the same on both pages). The errors point at the nav and the pages, not at the missing tree, and doctor reports 12 pass throughout. `vite build` first and the script is green (`s20.log`). Every app that runs its own build or typecheck as the gate, which the AGENTS block tells an agent to do before reporting done, hits it once per new page. Riding along: wiring-3.4 (doctor exits 1 in a directory with no git repo, create-vite's default, with advice for a repo that has none) and wiring-3.5 (four docs that disagree with what `init` writes or print a type by name only).",
+  "what": "An app's own build and typecheck pass right after `init` and right after a new route file, and the first-hour docs match the scaffold.",
+  "owns": [
+    "packages/basalt-ui/src/cli/init (the scaffold step and the `package.json` script patch), its tests",
+    "packages/basalt-ui/src/cli/doctor (check 12 app-wiring), its tests",
+    "packages/basalt-ui/src/lint/weakened.ts (the ratchet's no-git branch only), its tests",
+    "the add-page recipe region the playground typecheck builds",
+    "packages/basalt-ui/agent/skills/basalt-app/SKILL.md (step 4 only)",
+    "packages/basalt-ui/scripts/gen-docs.ts (the option types a `col` method takes) and the docs it regenerates",
+    "the `defineNav` example comment and the `CONTAINER_KEYS` doc comment"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) The route tree exists before `tsc` reads it: `init --profile app` writes the first `src/routeTree.gen.ts` with the scaffold (by running the router generator the router plugin already depends on, or the generator CLI), and patches create-vite's stock `build` script so the tree is generated before `tsc -b` runs; any other script shape gets the line to change printed. (2) Doctor check 12 fails a `build` or `typecheck` script that runs `tsc` before the tree is generated, naming the fix. (3) The add-page recipe says a new route file regenerates the tree on the next `vite` run or the generator, before `tsc`. (4) wiring-3.4: with no git repo the budget ratchet passes as it already does with no remote, or its message names `git init`; never 'fetch the base branch'. (5) wiring-3.5: `/basalt-app` step 4 shows the plugin list `init` writes (`tanstackRouter(...)` first); `gen-docs.ts` prints each option type a `col` method takes (`StatusOptions`, `MoneyOptions`, ...), with its fields; the `defineNav` example names `src/lib/nav.tsx`; the `CONTAINER_KEYS` comment names no Mantine part.",
+  "commits": "fix: in packages/basalt-ui; regenerated docs and recipes in the same commit as their source.",
+  "proof": "make check; an init test on a stock create-vite `package.json`; a scratch app from the packed tarball where `bun run build` passes right after `init` and right after a second route file is added, with no `vite build` in between.",
+  "acceptance": [
+    "A scratch app from the packed tarball: `bun run build` exits 0 right after `init --profile app`, and again right after a new file under `src/routes/_app/` with its nav entry",
+    "Doctor check 12 fails on a `build` script that runs `tsc -b` before the route tree is generated",
+    "Doctor in a directory with no git repo reports no SKIPPED budget check telling the author to fetch a base branch",
+    "`docs/col.md` prints the fields of `StatusOptions`; `/basalt-app` step 4 lists `tanstackRouter`; `docs/define-nav.md` names `nav.tsx`; no `CONTAINER_KEYS` comment names Mantine",
+    "make check passes"
+  ],
+  "out_of_scope": "Next.js and Astro hosts; changing TanStack Router's generator; the frame types' subpath (v3-wiring-3-api)."
+}
