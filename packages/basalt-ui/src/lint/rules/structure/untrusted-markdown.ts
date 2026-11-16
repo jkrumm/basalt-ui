@@ -140,7 +140,7 @@ function isIsolatedFrame(opening: Node): boolean {
   const value = child(sandbox, 'value')
   if (value === undefined) return true
   const tokens = text(value)
-  return tokens !== undefined && !tokens.split(/\s+/).includes('allow-same-origin')
+  return tokens !== undefined && !tokens.toLowerCase().split(/\s+/).includes('allow-same-origin')
 }
 
 const dangerousHtml: AstForm = {

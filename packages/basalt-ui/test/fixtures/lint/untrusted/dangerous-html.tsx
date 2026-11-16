@@ -74,3 +74,6 @@ const a = <iframe sandbox="allow-scripts allow-same-origin" srcDoc={m.html} />
 
 // @invalid
 const a = <iframe sandbox={mode} srcDoc={m.html} />
+
+// @invalid
+const a = <iframe sandbox="allow-scripts ALLOW-SAME-ORIGIN" srcDoc={m.html} />
