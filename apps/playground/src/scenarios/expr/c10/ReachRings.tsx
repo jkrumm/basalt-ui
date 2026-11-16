@@ -91,7 +91,6 @@ export function ReachRings({
         return <line key={row.id} x1={from.x} y1={from.y} x2={x} y2={y} stroke={VX.line} />
       })}
       {nodes.map(({ row, index, x, y }) => (
-        // oxlint-disable-next-line basalt/primitive-bypass -- focus.target is spread by the page wrapper in ExprC10.tsx, one tab stop over the list and these marks
         <circle
           key={row.id}
           {...focus.item(index)}
