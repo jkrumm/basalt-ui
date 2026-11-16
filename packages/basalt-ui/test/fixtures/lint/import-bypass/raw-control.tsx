@@ -83,3 +83,12 @@ const a = <progress value={used} max={100} />
 const a = <meter value={used} min={0} max={100} />
 // @valid
 const a = <Progress value={used} />
+// @invalid
+const a = (
+  <details>
+    <summary>Why?</summary>
+    Because.
+  </details>
+)
+// @valid
+const a = <Collapsible title="Why?">Because.</Collapsible>

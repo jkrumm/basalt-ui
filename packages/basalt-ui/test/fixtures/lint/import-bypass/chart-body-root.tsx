@@ -131,3 +131,31 @@ const a = (
     <Lines data={data} ariaLabel="Load" />
   </Stack>
 )
+// @invalid
+import { Section } from 'basalt-ui/page'
+const a = (
+  <Section title="Usage">
+    <Bars data={rows} ariaLabel="Usage" />
+  </Section>
+)
+// @invalid
+import { Page as Frame } from 'basalt-ui/page'
+const a = (
+  <Frame>
+    <Lines data={rows} ariaLabel="Load" />
+  </Frame>
+)
+// @valid
+import { Section } from 'basalt-ui/page'
+const a = (
+  <Section title="Usage">
+    <ChartCard title="Usage" chart={<Bars data={rows} ariaLabel="Usage" />} />
+  </Section>
+)
+// @valid
+import { Section } from './my-section'
+const a = (
+  <Section title="Usage">
+    <Bars data={rows} ariaLabel="Usage" />
+  </Section>
+)

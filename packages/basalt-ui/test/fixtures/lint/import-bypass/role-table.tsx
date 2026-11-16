@@ -36,3 +36,5 @@ const a = (
     </div>
   </>
 )
+// @invalid
+const a = <div role="treegrid" />

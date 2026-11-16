@@ -71,3 +71,11 @@ const s = dayjs(at).toISOString()
 const s = useFormat().time(at)
 // @valid
 const s = template(text).format(data)
+// @invalid
+const a = <time>{DateTime.fromISO(at).toFormat('dd.MM.yyyy')}</time>
+// @invalid
+const a = <time>{DateTime.fromISO(at).toLocaleString(DateTime.DATE_MED)}</time>
+// @valid
+const key = DateTime.fromISO(at).toFormat('yyyy-MM-dd')
+// @valid
+const a = <span>{duration.toFormat('hh:mm')}</span>

@@ -145,3 +145,43 @@ const a = <div style={{ width: pct + '%' }} />
 const a = <div style={{ width: '50%' }} />
 // @valid
 const a = <Progress value={used} />
+// @invalid
+const a = (
+  <div className="flex h-2">
+    {rows.map((r) => (
+      <div key={r.id} style={{ flexGrow: r.value }} />
+    ))}
+  </div>
+)
+// @invalid
+const a = (
+  <div className="flex h-2">
+    {rows.map((r) => (
+      <div key={r.id} style={{ flex: `${r.value} 1 0` }} />
+    ))}
+  </div>
+)
+// @invalid
+const a = (
+  <div className="flex h-2">
+    {rows.map((r) => (
+      <div key={r.id} className="grow-(--g)" style={{ '--g': r.value }} />
+    ))}
+  </div>
+)
+// @invalid
+const a = (
+  <div className="flex h-2">
+    {rows.map((r) => (
+      <div key={r.id} className="basis-(--b)" style={{ '--b': `${r.share}%` }} />
+    ))}
+  </div>
+)
+// @valid
+const a = (
+  <div className="flex">
+    {rows.map((r) => (
+      <div key={r.id} style={{ flexGrow: 1 }} />
+    ))}
+  </div>
+)
