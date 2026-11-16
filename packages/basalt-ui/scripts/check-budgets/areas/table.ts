@@ -46,7 +46,9 @@ export const rows: readonly RowDef[] = [
     // 123000 -> 123100 (Issue 1543): +~40 B gz for `detailById`, the detail door of a record the table has not loaded.
     // 123100 -> 123500 (Issue 1541): the open-row mark (`aria-current`, the selected row state) for a `detail`
     // table and for a page-owned `activeRowId`, ~90 B gz.
-    ceiling: 123500,
+    // 123500 -> 123900 (Issue 1554): +~330 B gz for the `focus` bridge (row-focus.tsx) that maps a row
+    // to a chart's focus item by id and clears it on pointer leave and blur.
+    ceiling: 123900,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -72,6 +74,13 @@ export const raises: Raises = {
       to: 123100,
       consumer:
         "`detailById`: a table's `detailState` field that names a record the filters exclude opens it instead of clearing, the state cycle 3 orders page (apps/playground/src/cycle/state-3/OrdersPage.tsx) takes it in the next cycle, and any app whose notification or share link names a record (Issue 1543)",
+      repo: 'basalt-ui',
+    },
+    {
+      from: 123500,
+      to: 123900,
+      consumer:
+        "`DataTable focus`: expression cycle 3's n02 (apps/playground/src/scenarios/expr/n02) swapped its table beside the stage chart for a hand-built row list to link the two, losing sort and the phone card (X3 0)",
       repo: 'basalt-ui',
     },
   ],
