@@ -141,14 +141,12 @@ function stepInX<D>(
   key: string,
   index: number | null,
 ): number | null | undefined {
-  const keys = focus.items.map((d) => timeOf(x(d)))
-  const ordinal = keys.length > 0 && keys.every((k) => typeof k === 'number' && !Number.isNaN(k))
-  if (!ordinal || (key !== 'ArrowRight' && key !== 'ArrowLeft' && key !== 'Home' && key !== 'End'))
+  const xs = focus.items.map((d) => timeOf(x(d)) as number)
+  if (!/^(Arrow(Left|Right)|Home|End)$/.test(key) || xs.some((v) => typeof v !== 'number'))
     return focus.step(key)
-  const order = keys.map((_, i) => i).toSorted((a, b) => (keys[a] as number) - (keys[b] as number))
-  const at = index === null ? null : order.indexOf(index)
-  const next = stepFocus(key, at, order.length)
-  return next === undefined || next === null ? next : order[next]
+  const order = xs.map((_, i) => i).sort((a, b) => xs[a]! - xs[b]!)
+  const next = stepFocus(key, index === null ? null : order.indexOf(index), xs.length)
+  return typeof next === 'number' ? order[next] : next
 }
 
 /** Visually hidden, still read: the live region speaks without taking room. */
@@ -283,11 +281,6 @@ export function useChartFocus<D>(
     })
   }
 
-  const firstOfGroup = (i: number): number | undefined => {
-    const name = groupAt(i)
-    return name === undefined ? undefined : items.findIndex((d) => group?.(d) === name)
-  }
-
   // Marks and group rows by key, so a keyboard step can scroll the focused one into view.
   const marks = useRef(new Map<number, Element>())
   const rows = useRef(new Map<string, Element>())
@@ -355,8 +348,11 @@ export function useChartFocus<D>(
   const said = datum === null ? '' : announce(datum)
   // Entering a group at a later item names the group by its first item's announcement, never by its
   // key (a key is an id as often as a name); entering at the first item says only that datum.
-  const first = held?.entered === true && index !== null ? firstOfGroup(index) : undefined
-  const name = first === undefined || first === index ? undefined : announce(items[first] as D)
+  const lead =
+    held?.entered === true && index !== null && group !== undefined
+      ? items.findIndex((d) => group(d) === groupAt(index))
+      : -1
+  const name = lead < 0 || lead === index ? undefined : announce(items[lead] as D)
   const live: ReactElement = (
     <output aria-live="polite" aria-atomic="true" style={HIDDEN} data-chart-focus-live="">
       {name === undefined ? said : `${name}: ${said}`}
