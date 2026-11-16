@@ -15,3 +15,8 @@ export const j = useMediaQuery(REDUCED)
 export const k = ref.current.clientWidth < LIMIT
 export const l = window.innerHeight < LIMIT
 export const m = useMediaQuery(other)
+export function Plot({ width }) {
+  const { height } = useWindowSize()
+  const box = useElementSize()
+  return [width < 120, height < 600, box.width < 400]
+}

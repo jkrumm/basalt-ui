@@ -8,3 +8,5 @@ export const g = <div className="in-data-[theme=dark]:bg-card group-dark:bg-inse
 export const h = <button className="rounded-md border px-4 py-2 focus-visible:ring-2">go</button>
 export const i = <div className="rounded-lg p-4 focus-visible:ring-2 ring-offset-2">x</div>
 export const j = <div className="rounded-lg py-2 ring-1" />
+export const quotedDark = <div className="data-[theme='dark']:bg-inset" />
+export const mediaDark = <div className="[@media(prefers-color-scheme:dark)]:bg-card" />
