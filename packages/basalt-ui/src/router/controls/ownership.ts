@@ -54,8 +54,11 @@ export function claimParams(id: string, scope: Scope, params: readonly string[])
   for (const param of params) if (!taken.has(param)) owners.set(param, { id, scope })
 }
 
-/** The message a page store's mount raises for a param a global owns, if any. */
-export const conflictOf = (id: string): string | undefined => conflicts.get(id)
+/** Throws, from a page store's mount, when it declares a param a global store owns. */
+export function assertNoConflict(id: string): void {
+  const message = conflicts.get(id)
+  if (message !== undefined) throw new Error(message)
+}
 
 /**
  * @internal Tests only. Bun runs every test file in one module registry, so a global defined by one
