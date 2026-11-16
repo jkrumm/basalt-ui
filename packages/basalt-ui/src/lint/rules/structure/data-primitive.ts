@@ -13,10 +13,11 @@
  * `read().then(function pump() { … read().then(pump) })` or a recursive async function); a pump split
  * across two functions, a reader taken from a parameter and a stream iterated through a helper
  * are out of reach. `timer-refetch` reads any `.invalidate()` / `invalidateQueries` /
- * `refetchQueries` / `refetch` call in a timer callback, router invalidation included; a timer
- * that calls a named function which invalidates is not followed. `unseamed-transport` reads
- * `EventSource` and `WebSocket`, not a client library's connect call: `io()` from
- * `socket.io-client` is reported at its import by `import-boundary` (`data-library`), as is `swr`;
+ * `refetchQueries` / `refetch` call in a timer callback (`setInterval`, `setTimeout`, or a
+ * `useInterval` / `useIntervalEffect` hook by callee name), router invalidation included; a timer
+ * that calls a named function which invalidates (`setInterval(refresh, 5000)`) is not followed.
+ * `unseamed-transport` reads `EventSource` and `WebSocket`, not a client library's connect call:
+ * `io()` from `socket.io-client` is reported at its import by `import-boundary` (`data-library`), as is `swr`;
  * SWR's `refreshInterval` key still reports here as a `refetch-interval`.
  */
 import type { FormContext, Node, Visitor } from '../../factory'
@@ -346,35 +347,71 @@ const isEmptyArray = (node: Node | undefined): boolean => {
   return at?.type === 'ArrayExpression' && nodesIn(at, 'elements').length === 0
 }
 
-const isFallbackExpression = (node: Node | undefined): boolean =>
-  node?.type === 'LogicalExpression' &&
-  (node['operator'] === '??' || node['operator'] === '||') &&
-  isEmptyArray(child(node, 'right'))
+/** `x ?? []` / `x || []`, or `x ?? EMPTY` where `EMPTY` is a same-file const empty array. */
+const isFallbackExpression = (
+  node: Node | undefined,
+  emptyConsts: ReadonlySet<string>,
+): boolean => {
+  if (node?.type !== 'LogicalExpression') return false
+  if (node['operator'] !== '??' && node['operator'] !== '||') return false
+  const right = child(node, 'right')
+  if (isEmptyArray(right)) return true
+  const name = nameOf(right)
+  return name !== undefined && emptyConsts.has(name)
+}
+
+const isConstDeclarator = (node: Node): boolean =>
+  (node['parent'] as Node | undefined)?.['kind'] === 'const'
+
+/** What a `useMemo(() => expr)` or `useMemo(() => { return expr })` returns. */
+function memoReturn(call: Node): Node | undefined {
+  if (methodName(call) !== 'useMemo') return undefined
+  const [factory] = nodesIn(call, 'arguments')
+  if (factory?.type !== 'ArrowFunctionExpression' && factory?.type !== 'FunctionExpression') {
+    return undefined
+  }
+  const body = child(factory, 'body')
+  if (body?.type !== 'BlockStatement') return body
+  const statements = nodesIn(body, 'body')
+  const [only] = statements
+  return statements.length === 1 && only?.type === 'ReturnStatement'
+    ? child(only, 'argument')
+    : undefined
+}
 
 /**
  * An empty array standing in for a query's data on a chart: written in the prop
- * (`data={q.data ?? []}`), hoisted (`const rows = q.data ?? []` then `data={rows}`), or a
- * destructure default off a call (`const { data = [] } = useRuns()` then `data={data}`). A name is
- * matched by spelling, not scope. Known limit: a fallback that reaches the chart through a helper,
- * a prop or another file is out of reach.
+ * (`data={q.data ?? []}`), hoisted (`const rows = q.data ?? []` then `data={rows}`), a destructure
+ * default off a call (`const { data = [] } = useRuns()` then `data={data}`), a same-file `const`
+ * empty array (`q.data ?? EMPTY`), or the same fallback returned by a `useMemo` (an expression
+ * body or a single `return`). A name is matched by spelling, not scope. Known limit: a fallback
+ * that reaches the chart through a helper, a prop or another file is out of reach, and a
+ * `useMemo` with more than one statement is not followed.
  */
 export const chartDataFallback: AstForm = {
   id: 'chart-data-fallback',
   detect: ({ report }): Visitor => {
-    const fallbacks = new Set<string>()
+    const emptyConsts = new Set<string>()
+    // A name bound to an expression that is a fallback when it tests as one; `undefined` is a
+    // destructure default, which always is.
+    const sources = new Map<string, Node | undefined>()
+    const inline: { node: Node; value: Node }[] = []
     const named: { node: Node; name: string }[] = []
     return {
       VariableDeclarator(node) {
         const id = child(node, 'id')
         const init = child(node, 'init')
         const name = nameOf(id)
-        if (name !== undefined && isFallbackExpression(init)) fallbacks.add(name)
+        if (name !== undefined && init) {
+          if (isConstDeclarator(node) && isEmptyArray(init)) emptyConsts.add(name)
+          sources.set(name, init.type === 'CallExpression' ? (memoReturn(init) ?? init) : init)
+        }
         if (id?.type !== 'ObjectPattern' || init?.type !== 'CallExpression') return
         for (const prop of nodesIn(id, 'properties')) {
           const value = child(prop, 'value')
           if (value?.type !== 'AssignmentPattern' || !isEmptyArray(child(value, 'right'))) continue
           const local = nameOf(child(value, 'left'))
-          if (local !== undefined) fallbacks.add(local)
+          if (local !== undefined) sources.set(local, undefined)
         }
       },
       JSXAttribute(node) {
@@ -383,16 +420,22 @@ export const chartDataFallback: AstForm = {
         const tag = nameOf(element)
         if (tag === undefined || !CHART_ELEMENTS.has(tag)) return
         const value = child(child(node, 'value'), 'expression')
-        if (isFallbackExpression(value)) {
-          report(node, `data={… ${(value as Node)['operator']} []}`)
-          return
-        }
+        if (value?.type === 'LogicalExpression') inline.push({ node, value })
         const name = nameOf(value)
         if (name !== undefined) named.push({ node, name })
       },
       'Program:exit'() {
+        for (const { node, value } of inline) {
+          if (isFallbackExpression(value, emptyConsts)) {
+            report(node, `data={… ${value['operator']} []}`)
+          }
+        }
         for (const { node, name } of named) {
-          if (fallbacks.has(name)) report(node, `data={${name}} (an empty-array fallback)`)
+          if (!sources.has(name)) continue
+          const source = sources.get(name)
+          if (source === undefined || isFallbackExpression(source, emptyConsts)) {
+            report(node, `data={${name}} (an empty-array fallback)`)
+          }
         }
       },
     }
@@ -409,22 +452,32 @@ const REFETCH_CALLS: ReadonlySet<string> = new Set([
   'refetch',
 ])
 
+const INTERVAL_HOOKS: ReadonlySet<string> = new Set(['useInterval', 'useIntervalEffect'])
+
+const refetchesIn = (callback: Node | undefined): boolean => {
+  if (callback?.type !== 'ArrowFunctionExpression' && callback?.type !== 'FunctionExpression') {
+    return false
+  }
+  return someDescendant(callback, (inner) => {
+    if (inner.type !== 'CallExpression') return false
+    const name = methodName(inner)
+    return name !== undefined && REFETCH_CALLS.has(name)
+  })
+}
+
 export const timerRefetch: AstForm = {
   id: 'timer-refetch',
   detect: ({ report }: FormContext): Visitor => ({
     CallExpression(node) {
-      const timer = globalName(child(node, 'callee'))
-      if (timer !== 'setInterval' && timer !== 'setTimeout') return
       const [callback] = nodesIn(node, 'arguments')
-      if (callback?.type !== 'ArrowFunctionExpression' && callback?.type !== 'FunctionExpression') {
+      const hook = methodName(node)
+      if (hook !== undefined && INTERVAL_HOOKS.has(hook)) {
+        if (refetchesIn(callback)) report(node, `${hook}(… refetch)`)
         return
       }
-      const refetches = someDescendant(callback, (inner) => {
-        if (inner.type !== 'CallExpression') return false
-        const name = methodName(inner)
-        return name !== undefined && REFETCH_CALLS.has(name)
-      })
-      if (refetches) report(node, `${timer}(… refetch)`)
+      const timer = globalName(child(node, 'callee'))
+      if (timer !== 'setInterval' && timer !== 'setTimeout') return
+      if (refetchesIn(callback)) report(node, `${timer}(… refetch)`)
     },
   }),
   fix: 'liveQuery(queryOptions, class) owns the timer, pauses while mutating and stops in the background',
@@ -441,39 +494,62 @@ const storageName = (node: Node | undefined): string | undefined => {
   return name !== undefined && STORAGE_OBJECTS.has(name) ? name : undefined
 }
 
-/** A write in a test file (`*.test.*`, `*.spec.*`) seeds storage for a read and passes. */
+/**
+ * A write in a test file (`*.test.*`, `*.spec.*`) seeds storage for a read and passes. A `const`
+ * alias of the storage global (`const store = window.localStorage`) is followed within the file,
+ * by spelling; a storage reached through a parameter, a property or another file is out of reach.
+ * `clear()` wipes every key, which `persisted` has no call for: reset the owner's keys with
+ * `persisted.clearOwner(owner)` or each field with its own `reset()`.
+ */
 export const rawStorageWrite: AstForm = {
   id: 'raw-storage-write',
   detect: ({ context, report }): Visitor => {
     if (isTestFile(context)) return {}
     const adapter = seamTracker('StorageLike')
-    const pending: { node: Node; subject: string }[] = []
+    const aliases = new Map<string, string>()
+    const pending: { node: Node; object: Node; method: string | undefined }[] = []
+    const resolve = (object: Node | undefined): string | undefined => {
+      const direct = storageName(object)
+      if (direct !== undefined) return direct
+      const alias = object?.type === 'Identifier' ? nameOf(object) : undefined
+      return alias === undefined ? undefined : aliases.get(alias)
+    }
     return mergeVisitors([
       adapter.visitor,
       {
+        VariableDeclarator(node) {
+          const alias = nameOf(child(node, 'id'))
+          const storage = storageName(child(node, 'init'))
+          if (alias !== undefined && storage !== undefined && isConstDeclarator(node)) {
+            aliases.set(alias, storage)
+          }
+        },
         CallExpression(node) {
           const callee = child(node, 'callee')
-          if (callee?.type !== 'MemberExpression') return
-          const storage = storageName(child(callee, 'object'))
+          const object = child(callee, 'object')
+          if (callee?.type !== 'MemberExpression' || !object) return
           const method = methodName(node)
-          if (storage !== undefined && method !== undefined && STORAGE_WRITES.has(method)) {
-            pending.push({ node, subject: `${storage}.${method}()` })
+          if (method !== undefined && STORAGE_WRITES.has(method)) {
+            pending.push({ node, object, method })
           }
         },
         AssignmentExpression(node) {
           const target = child(node, 'left')
-          const storage =
-            target?.type === 'MemberExpression' ? storageName(child(target, 'object')) : undefined
-          if (storage !== undefined) pending.push({ node, subject: `${storage} assignment` })
+          const object = target?.type === 'MemberExpression' ? child(target, 'object') : undefined
+          if (object) pending.push({ node, object, method: undefined })
         },
         'Program:exit'() {
           if (adapter.declared()) return
-          for (const { node, subject } of pending) report(node, subject)
+          for (const { node, object, method } of pending) {
+            const storage = resolve(object)
+            if (storage === undefined) continue
+            report(node, method === undefined ? `${storage} assignment` : `${storage}.${method}()`)
+          }
         },
       },
     ])
   },
-  fix: 'Persist through persisted(key) from basalt-ui or a store field, which write through the StorageLike seam',
+  fix: 'Persist through persisted(key) from basalt-ui or a store field, which write through the StorageLike seam; a sign-out wipe is persisted.clearOwner(owner), not clear()',
   next: 'persisted.setStorage selects the app-wide backend; implement StorageLike in its own adapter file that imports the type',
   fixture: 'structure-rest/data-primitive-raw-storage-write.tsx',
 }

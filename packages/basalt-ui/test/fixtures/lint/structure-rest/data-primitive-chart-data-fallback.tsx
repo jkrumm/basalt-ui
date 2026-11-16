@@ -73,3 +73,48 @@ const a = <Lines data={rows} />
 // @valid
 // @ts
 const a = <Lines data={q.data ?? ([] as Row[]).concat(extra)} />
+
+// @invalid
+const EMPTY = []
+const a = <Lines ariaLabel="Runs" data={q.data ?? EMPTY} series={series} />
+
+// @invalid
+// @ts
+const EMPTY: Row[] = []
+const a = <Bars ariaLabel="Runs" data={q.data ?? EMPTY} series={series} />
+
+// @invalid
+// @ts
+const EMPTY = [] as const
+const rows = q.data || EMPTY
+const a = <Lines ariaLabel="Runs" data={rows} series={series} />
+
+// @invalid
+const rows = useMemo(() => q.data ?? [], [q.data])
+const a = <Bars ariaLabel="Runs" data={rows} series={series} />
+
+// @invalid
+const rows = useMemo(() => {
+  return q.data || []
+}, [q.data])
+const a = <Sparkline ariaLabel="Runs" data={rows} />
+
+// @valid
+const FALLBACK = previous
+const a = <Lines ariaLabel="Runs" data={q.data ?? FALLBACK} series={series} />
+
+// @valid
+const EMPTY = []
+const a = <Table data={q.data ?? EMPTY} />
+
+// @valid
+const rows = useMemo(() => q.data.map(toRow), [q.data])
+const a = <Lines ariaLabel="Runs" data={rows} series={series} />
+
+// @valid
+const rows = useMemo(() => q.data ?? previous, [q.data])
+const a = <Lines ariaLabel="Runs" data={rows} series={series} />
+
+// @valid
+const rows = useMemo(() => q.data ?? [], [q.data])
+const a = <Table data={rows} />

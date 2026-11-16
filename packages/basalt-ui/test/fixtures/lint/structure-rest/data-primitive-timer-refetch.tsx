@@ -40,3 +40,20 @@ window.setTimeout(() => {
 
 // @valid
 router.invalidate()
+
+// @invalid
+useInterval(() => void qc.invalidateQueries({ queryKey: ['runs'] }), 10_000)
+
+// @invalid
+useInterval(function () {
+  void query.refetch()
+}, 5000)
+
+// @valid
+useInterval(() => setTick((n) => n + 1), 1000)
+
+// @valid
+useInterval(refresh, 5000)
+
+// @valid
+useTimeout(() => qc.invalidateQueries({ queryKey: ['runs'] }), 5000)

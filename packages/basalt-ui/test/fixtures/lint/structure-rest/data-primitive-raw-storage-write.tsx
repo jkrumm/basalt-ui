@@ -51,3 +51,36 @@ localStorage.setItem('theme', 'dark')
 // @invalid
 // @filename recipes/test-utils.ts
 localStorage.setItem('theme', 'dark')
+
+// @invalid
+const store = window.localStorage
+store.setItem('view', v)
+
+// @invalid
+const local = localStorage
+local.removeItem('view')
+
+// @invalid
+const session = globalThis.sessionStorage
+session.clear()
+
+// @invalid
+const store = localStorage
+store.compact = '1'
+
+// @valid
+const store = window.localStorage
+const view = store.getItem('view')
+
+// @valid
+const cache = new Map()
+cache.setItem('view', v)
+
+// @valid
+let store = other
+store = localStorage
+store.setItem('view', v)
+
+// @valid
+const store = createStore()
+store.clear()
