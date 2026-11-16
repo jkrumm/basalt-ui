@@ -152,6 +152,12 @@ const X_LABEL_ROWS = 2
 /** The centre of a caption row below the plot top, px (the engine centres text on its y). */
 const xLabelDy = (row: number, fontSize: number): number => fontSize + row * (fontSize + 6)
 
+/** A caption row's extent below the plot top, px: its centre and the drawn line box round it. */
+function captionRows(row: number, fontSize: number): { top: number; bottom: number } {
+  const half = (fontSize + 4) / 2 + 1
+  return { top: xLabelDy(row, fontSize) - half, bottom: xLabelDy(row, fontSize) + half }
+}
+
 /** Where one rule caption sits: which side of its rule, on which row, and the px span it covers. */
 export type XRefLabelSpot = {
   /** The line's index in `xRefLines`. */
@@ -174,8 +180,10 @@ export function xRefLabelSpots<X extends ChartX>(opts: {
   fraction: (x: X) => number | null
   plotWidth: number
   fontSize: number
+  /** Whether a mark (a bar, a dot) fills the box (px across the plot, px below its top): a caption never sits on one. */
+  blocked?: ((box: { x0: number; x1: number; top: number; bottom: number }) => boolean) | undefined
 }): XRefLabelSpot[] {
-  const { fraction, plotWidth, fontSize } = opts
+  const { fraction, plotWidth, fontSize, blocked } = opts
   const named = (opts.lines ?? []).flatMap((r, index) => {
     const f = r.label ? fraction(r.x) : null
     return r.label && f !== null && f >= 0 && f <= 1 ? [{ index, f, text: r.label }] : []
@@ -197,6 +205,8 @@ export function xRefLabelSpots<X extends ChartX>(opts: {
         })
     const clear = (c: XRefLabelSpot): boolean =>
       (plotWidth <= 0 || (c.x0 >= 0 && c.x1 <= plotWidth)) &&
+      (blocked === undefined ||
+        !blocked({ x0: c.x0, x1: c.x1, ...captionRows(c.row, fontSize) })) &&
       taken.every(
         (t) => t.row !== c.row || t.x1 + X_LABEL_AIR <= c.x0 || t.x0 >= c.x1 + X_LABEL_AIR,
       )
@@ -220,12 +230,10 @@ export function xRefLabelBoxes(
   const { plotWidth, fontSize } = opts
   if (plotWidth <= 0) return []
   // The drawn line box (about 1.35 of the font size) and a pixel of air.
-  const half = (fontSize + 4) / 2 + 1
   return spots.map((s) => ({
     fx0: s.x0 / plotWidth,
     fx1: s.x1 / plotWidth,
-    top: xLabelDy(s.row, fontSize) - half,
-    bottom: xLabelDy(s.row, fontSize) + half,
+    ...captionRows(s.row, fontSize),
   }))
 }
 
@@ -242,6 +250,8 @@ export function xRefLineMarks<X extends ChartX>(opts: {
   top: number
   /** The plot's width in px, for the collision pass. */
   plotWidth?: number | undefined
+  /** See {@link xRefLabelSpots}. */
+  blocked?: Parameters<typeof xRefLabelSpots>[0]['blocked']
 }): ChartMarks {
   const fontSize = VX.text.micro
   const spots = xRefLabelSpots({
@@ -249,6 +259,7 @@ export function xRefLineMarks<X extends ChartX>(opts: {
     fraction: opts.fraction,
     plotWidth: opts.plotWidth ?? 0,
     fontSize,
+    blocked: opts.blocked,
   })
   const spotOf = new Map(spots.map((s) => [s.index, s]))
   return (opts.lines ?? []).flatMap((r, i) => {

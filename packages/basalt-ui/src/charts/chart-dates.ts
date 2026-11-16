@@ -6,25 +6,27 @@
  */
 import { dateFormat } from '../format/shared'
 
-const utcFormat = (options: Intl.DateTimeFormatOptions, d: Date): string =>
-  dateFormat(undefined, { ...options, timeZone: 'UTC' }).format(d)
+const utcFormat = (options: Intl.DateTimeFormatOptions, d: Date, locale?: string): string =>
+  dateFormat(locale, { ...options, timeZone: 'UTC' }).format(d)
 
 /** An axis tick's day: `4 Oct` (the page locale's own order). */
-export const axisDay = (d: Date): string => utcFormat({ day: 'numeric', month: 'short' }, d)
+export const axisDay = (d: Date, locale?: string): string =>
+  utcFormat({ day: 'numeric', month: 'short' }, d, locale)
 
 /** {@link axisDay} with a two-digit year. */
-export const axisDayYear = (d: Date): string =>
-  utcFormat({ day: 'numeric', month: 'short', year: '2-digit' }, d)
+export const axisDayYear = (d: Date, locale?: string): string =>
+  utcFormat({ day: 'numeric', month: 'short', year: '2-digit' }, d, locale)
 
-export const monthName = (d: Date): string => utcFormat({ month: 'short' }, d)
+export const monthName = (d: Date, locale?: string): string =>
+  utcFormat({ month: 'short' }, d, locale)
 
 /** The tooltip header's date: weekday, day, month and year. */
-export const headerDay = (d: Date): string =>
-  utcFormat({ weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }, d)
+export const headerDay = (d: Date, locale?: string): string =>
+  utcFormat({ weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }, d, locale)
 
 /** A day written out for a readout (`12 Oct`): the same format as an axis tick. */
 export const readoutDay = axisDay
 
 /** A clock time for a readout, `HH:MM` in the page locale's digits. */
-export const readoutClock = (d: Date): string =>
-  utcFormat({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }, d)
+export const readoutClock = (d: Date, locale?: string): string =>
+  utcFormat({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }, d, locale)

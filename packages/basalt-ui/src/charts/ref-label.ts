@@ -16,12 +16,32 @@ const EDGE_INSET = 6
 const LINE_GAP = 3
 /** What a placed caption's claim adds above and below its glyph band: the line box is taller (15 px at 11), px. */
 const CLAIM_PAD = 2
+/** Air a dot keeps round its radius (its ring and a pixel), px. */
+const DOT_AIR = 2
 
 /**
  * A box another label has claimed in the same plot: a share of the plot width and a span of values
  * on the left axis. A caption never takes a spot that overlaps one.
  */
 export type LabelBox = { fx0: number; fx1: number; y0: number; y1: number }
+
+/** A dot mark a caption keeps off: its centre as a share of the plot width, its value, its radius in px. */
+export type DotMark = { fx: number; y: number; r: number }
+
+/** Whether two label boxes overlap. */
+export const boxesMeet = (a: LabelBox, b: LabelBox): boolean =>
+  !(b.fx1 < a.fx0 || b.fx0 > a.fx1 || b.y1 < a.y0 || b.y0 > a.y1)
+
+/** A dot as the box it fills (a ring and a pixel of air included), in a plot `perPx` values per px tall. */
+export function dotBox(dot: DotMark, plotWidth: number, perPx: number): LabelBox {
+  const reach = dot.r + DOT_AIR
+  return {
+    fx0: dot.fx - reach / plotWidth,
+    fx1: dot.fx + reach / plotWidth,
+    y0: dot.y - reach * perPx,
+    y1: dot.y + reach * perPx,
+  }
+}
 
 const ORDER_END: readonly RefLabelPosition[] = [
   'end-above',
@@ -89,6 +109,10 @@ type RefLabelOpts = {
   series: readonly (readonly RefLabelPoint[])[]
   /** Labels already placed on this axis (end labels, other captions): a caption keeps clear of them too. */
   claimed?: readonly LabelBox[] | undefined
+  /** Bar bodies on this axis as boxes: a caption never sits on one (it flips, or drops). */
+  bars?: readonly LabelBox[] | undefined
+  /** Dot marks on this axis: a caption never sits on one either. */
+  dots?: readonly DotMark[] | undefined
 }
 
 /**
@@ -96,13 +120,14 @@ type RefLabelOpts = {
  * another caption: a caption never overprints a caption, so it drops (a line that must stay named
  * takes `RefLine.legend`). The order is the pinned spot, then the four in the end's order; a spot
  * clear of every data line and caption wins, else the first clear of the captions, else the first
- * inside the plot. Never `null` when nothing is claimed.
+ * inside the plot. A bar body or a dot is never covered, whatever else gives way: a caption whose
+ * four spots all meet one drops. Never `null` when nothing is claimed and no mark is in the way.
  */
 export function placeRefLabel(
   opts: RefLabelOpts,
 ): { position: RefLabelPosition; box: LabelBox } | null {
   const { pinned, startFirst, value, plotWidth, plotHeight, label, fontSize, series } = opts
-  const { claimed = [] } = opts
+  const { claimed = [], bars = [], dots = [] } = opts
   const natural = startFirst ? ORDER_START : ORDER_END
   const order = pinned === undefined ? natural : [pinned, ...natural.filter((p) => p !== pinned)]
   const [lo, hi] = [Math.min(...opts.domain), Math.max(...opts.domain)]
@@ -130,11 +155,17 @@ export function placeRefLabel(
     const [from, to] = bandOf(position)
     return from >= lo && to <= hi
   }
-  const meets = (a: LabelBox, b: LabelBox): boolean =>
-    !(b.fx1 < a.fx0 || b.fx0 > a.fx1 || b.y1 < a.y0 || b.y0 > a.y1)
+  const meets = boxesMeet
+  const solids = [...bars, ...dots.map((d) => dotBox(d, plotWidth, perPx))]
   const capsClear = (position: RefLabelPosition): boolean => {
     const box = boxOf(position)
     return claimed.every((b) => !meets(box, b))
+  }
+  // The drawn glyph band, not the claim: the caption sits close to its line and bars end at it.
+  const marksClear = (position: RefLabelPosition): boolean => {
+    const [y0, y1] = bandOf(position)
+    const [fx0, fx1] = spanOf(position)
+    return solids.every((b) => !meets({ fx0, fx1, y0, y1 }, b))
   }
   const linesClear = (position: RefLabelPosition): boolean => {
     const [from, to] = bandOf(position)
@@ -145,10 +176,10 @@ export function placeRefLabel(
     })
   }
   const spot =
-    order.find((p) => inPlot(p) && capsClear(p) && linesClear(p)) ??
-    order.find((p) => inPlot(p) && capsClear(p))
+    order.find((p) => inPlot(p) && capsClear(p) && marksClear(p) && linesClear(p)) ??
+    order.find((p) => inPlot(p) && capsClear(p) && marksClear(p))
   if (spot !== undefined) return { position: spot, box: boxOf(spot) }
-  // Nothing clear of the captions: drop. A plot too small for any spot keeps the first one.
+  // Nothing clear of the captions and the marks: drop. A plot too small for any spot keeps the first one.
   return order.some(inPlot) ? null : { position: first, box: boxOf(first) }
 }
 
