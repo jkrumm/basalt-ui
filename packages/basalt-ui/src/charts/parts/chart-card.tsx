@@ -33,6 +33,9 @@ const DOT: Record<Status['tone'], string> = {
   neutral: 'bg-muted-foreground',
 }
 
+/** A figure longer than this steps down a size where the card is narrower than `regular`. */
+const LONG_FIGURE = 10
+
 function FigureRow({
   figure,
   loading,
@@ -46,7 +49,10 @@ function FigureRow({
   // A failed card has no figure to stand behind: the dash holds the row at its ready height.
   const text = failed ? null : formatValue(value)
   return (
-    <div data-slot="chart-figure" className="flex h-9 shrink-0 items-center gap-2">
+    <div
+      data-slot="chart-figure"
+      className="flex min-h-9 shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5"
+    >
       {loading ? (
         <>
           <div aria-hidden="true" className={cn(BAR, 'h-7 w-24')} />
@@ -56,7 +62,8 @@ function FigureRow({
         <>
           <span
             className={cn(
-              'truncate text-display font-semibold tabular-nums',
+              'max-w-full truncate text-display font-semibold tabular-nums',
+              (text?.length ?? 0) + (unit?.length ?? 0) > LONG_FIGURE && '@max-regular:text-lg',
               text === null && 'text-muted-foreground',
             )}
           >
@@ -73,7 +80,7 @@ function FigureRow({
             />
           )}
           {!failed && period !== undefined && (
-            <span className="truncate text-xs text-muted-foreground">{period}</span>
+            <span className="min-w-0 text-xs text-muted-foreground">{period}</span>
           )}
           {!failed && status !== undefined && (
             <span

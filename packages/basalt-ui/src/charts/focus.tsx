@@ -70,6 +70,12 @@ export function hostFocusProps<D>(
   }
 }
 
+/**
+ * The focus wrapper takes the place a bare engine box has in the chart root: the root's height
+ * (`100%`, shrunk by the legend row under it), so a `fill` box inside it still fills its card.
+ */
+const WRAP_STYLE: CSSProperties = { height: '100%', flex: '0 1 auto', minHeight: 0 }
+
 /** An engine host's body: wrapped in the focus tab stop with its live region, or as it is. */
 export function FocusWrap(props: {
   props: HostFocusProps | undefined
@@ -78,7 +84,7 @@ export function FocusWrap(props: {
 }): ReactElement {
   if (props.props === undefined) return props.children
   return (
-    <div {...props.props}>
+    <div {...props.props} style={WRAP_STYLE}>
       {props.children}
       {props.live}
     </div>
