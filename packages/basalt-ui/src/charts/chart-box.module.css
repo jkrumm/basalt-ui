@@ -245,6 +245,17 @@
   outline-offset: -0.125rem;
 }
 
+/* A hand-drawn list of marks (`focus.target` on a container of `focus.item` rows) is one tab stop
+ * whose box often fills its card body, where an outer ring is clipped by the body and half of it
+ * lands on the first letters of the rows. The ring is inset, whole at every edge, like a chart's.
+ * An engine host's wrapper (`data-chart-focus`) rings through its svg and is not matched. */
+:global(
+  [role='group'][aria-roledescription='chart'][tabindex='0']:not([data-chart-focus]):focus-visible
+) {
+  outline: 2px solid var(--vx-brand);
+  outline-offset: -0.125rem;
+}
+
 /* A bare Sparkline keeps the outer ring: its cell reserves the clearance (the readout chip and the end
  * marker are placed against it). */
 :global([data-basalt-sparkline] .basalt-chart .ts-chart:focus-visible) {
