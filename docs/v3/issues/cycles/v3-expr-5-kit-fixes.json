@@ -1,0 +1,29 @@
+{
+  "why": "Expression cycle 5 (docs/v3/cycles/expression-5.md) lost 37 of 103 round-0 points to `primitive`. Ten of them are the P1 crash that `v3-expr-5-keys` owns. The other 27, with six P2s, are kit behaviour a builder could not reach. (a) Label placement: `chartLabels.place` does not see a zone label, a `refLines` label or the bars of a band axis as obstacles, so placed text lands on them: n03's zone and ref-line labels collided and one was dropped, and its note sat on the bars at 390 (.3, P2; .2, .8); n07's 'Best' straddled its bar's top (.16, P2; .18); n10's zone label and its placed label overprinted at 390 (.30, P2; .33); n17's limit label sat on the swap line (.56); n18's 'Most hours' touched its bar even with `gap: 12` (.67, .71). n03 guessed the bar box at 70 % of the band and n17 sampled the lines for obstacles by hand. (b) Lines do not answer to focus: on a line chart the host marks one series at the focused x and dims nothing, so F7 and X4 cannot be met on a time series (n10 .31, .41, both P2; n17 .57, .64, P2; cycle 4 n04). n10 drew dots on all four lines and an emphasis overlay by hand in round 1. (c) An all-zero series gets an invented 0 to 1 domain with a lone '1' tick (n03 .5, n17 .59). (d) `ChartCard` dashes its footer facts in error (`chart-card-frame.tsx:163`) but prints them in loading, so a page passing derived values shows real numbers under a skeleton (n07 .19; n18 and n17 asked for it). (e) `ChartCard`'s default error text is 'Could not load this.' (`chart-card-frame.tsx:170-174`) while `couldNotLoad` already names a StatCell's title (n14 .48; n17 wished for it). (f) Dimmed bars of the darkest series nearly vanish in dark (n07 .23; cycle 4 n13).",
+  "what": "Placed labels clear zone and rule labels and bars, lines answer to focus, a flat zero gets no invented scale, a loading card shows no stale facts, and a failed card names itself.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** except contract.ts",
+    "packages/basalt-ui/src/cards/** where a frame is shared",
+    "packages/basalt-ui/docs/** text through its generator",
+    "tests under packages/basalt-ui/tests/** for each change"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts (a change there is a Spec row, not this one)",
+    "docs/v3/expression/**",
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "(1) `chartLabels.place` treats the host's zone labels, `refLines` labels, line paths and the boxes of the bars it draws on a band axis as obstacles, so a placed label never sits on any of them; a label with no free spot is dropped, as today (n03, n07, n10, n17, n18). (2) A line series answers to focus: with a focus held, the host marks every visible line at the focused x and dims each line's rest the way a bar's rest dims, through the same dim levels in light and dark, and the pointer crossing between two x positions keeps the held focus (n10, n17; cycle 4 n04). (3) An axis whose series are all zero draws a zero baseline and no invented domain, or the domain of its sibling axis, never a lone '1' (n03, n17). (4) `ChartCard`, and every frame that shares its footer, draws a footer value as a placeholder in loading as it does in error (n07, n18, n17). (5) `ChartCard`'s default error title goes through `couldNotLoad(title)`, as a StatCell's does (n14, n17). (6) The dim floor in dark keeps the darkest series' dimmed bars readable against the card (n07; cycle 4 n13). If any change turns out to need a new public option or a field on `charts/contract.ts`, it leaves this row: file it as its own row with `checkpoint: spec` and seat opus high, and say so in the PR.",
+  "commits": "fix: per behaviour, each with its test; docs: for regenerated docs; package commits separate from non-package ones.",
+  "proof": "make check; a layout or unit test per change; the trial scenarios' shots from the cycle file re-taken where they show the change (n03 zero at 390, n07 extreme at 390, n10 at 390, n17 idle, n14 error).",
+  "acceptance": [
+    "A placed label clears zone labels, rule labels, line paths and the bars on a band axis, with a test for each",
+    "A focus on a line chart marks every line at the focused x and dims the rest",
+    "An all-zero axis shows no invented 0 to 1 domain",
+    "A loading ChartCard shows placeholders for its footer values",
+    "A failed ChartCard's default title names its title",
+    "The dimmed darkest series stays readable in dark",
+    "No change to charts/contract.ts and no new export; make check passes"
+  ],
+  "out_of_scope": "A keyboard frame and lint rule (v3-expr-5-keys); skill text (v3-expr-5-skill); a series-level focus for a list of a chart's series (n14 .52, one case: a recipe at most); a band series between two lines (n10's wish, one case)."
+}

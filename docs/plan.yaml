@@ -1410,3 +1410,28 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-lint-5-lint]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-6.json' }
+  - key: v3-expr-5-keys
+    title: 'basalt-ui shot shoots a keyboard frame and the app preset flags a read before declaration, from expression cycle 5'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-5]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-5-keys.json' }
+  - key: v3-expr-5-kit-fixes
+    title: 'Placed labels clear zone, rule and bar boxes, lines answer to focus, a loading card shows no stale facts, from expression cycle 5'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-5]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-5-kit-fixes.json' }
+  - key: v3-expr-5-skill
+    title: 'Expression skill: the linked-parts container is the parent, the threshold is drawn, no reading outside the ready phase, one view, from expression cycle 5'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-expression-5]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-5-skill.json' }
+  - key: v3-cycle-expression-6
+    title: 'Improvement cycle 6: expression, six one-shot visualization trials'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-5-keys, v3-expr-5-kit-fixes, v3-expr-5-skill]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-6.json' }

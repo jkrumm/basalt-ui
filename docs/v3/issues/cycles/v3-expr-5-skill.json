@@ -1,0 +1,29 @@
+{
+  "why": "Expression cycle 5 (docs/v3/cycles/expression-5.md) lost 62 of 103 round-0 points to `skill`, with 9 of its 18 P2s. Two defects are in the shipped text itself: (a) `basalt-charts/references/linked-parts.md:22` puts `@container` and `@wide:grid-cols-2` on one element, and a container query never matches its own element, so the two columns never form (n18 found it and wrapped the grid; n14 and n07 put the list beside the chart by other means); (b) nothing shipped names the muted text class: n07 and n18 wrote `text-muted`, which paints the card colour, and found `text-muted-foreground` only by grepping the playground. The rest are devices the text names and builders skipped: the threshold that defines the answer left undrawn (n10 .27, P2: 'part' means 4 kt apart and no rule shows it; n07 .12-.14; n14 .43, .44; n17 .53, .54; n03 .1), a figure computed from no rows (n17 .60, P2: an empty page read '0 %' and a green '-80 pts'; n03 .6; n18 .72), a part dropped in loading (n10 .34, P2: the table vanished and the card shrank 36 to 53 px), one fact stated three to four times (n10 .38, n18 .76, both P2; n03 .9; n07 .21; n14 .50; n17 .62), two cards where one would do (n18 .77, P2; n03 .10; n07 .22; n10 .39; n14 .51; n17 .63), a table beside a chart with no link (n10 .40, P2: the builder fell back to `Table` when sorted rows tripped `primitive-bypass`, and `DataTable focus` sorts itself), a share scaled to the wrong whole (n17 .55, P2), bars with no values and band keys thinned away at 390 (n18 .68, P2, .75), a second encoding of one state in the list (n07 .15, .17; n14 .47; n10 .28), and anatomy short of the console look (n03 .11; n07 .24; n10 .32, .42; n17 .58, .65; n18 .70, .80).",
+  "what": "Agent text only: the linked-parts snippet's container is the parent, the muted text class is named, and the form, states, word-economy, one-view and anatomy lines get the worked cases this cycle lost points on.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** (SKILL.md and references)",
+    "packages/basalt-ui/agent/rules/basalt-charts.md, basalt-page.md and basalt-tokens.md (one line each at most, within the shipped-rule budget)",
+    "packages/basalt-ui/docs/** text through its generator (no generated file edited by hand)",
+    "packages/basalt-ui/llms.txt through its generator",
+    "the dogfooded copies under .claude/skills and .claude/rules (make sync-self, its own commit)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no package source)",
+    "docs/v3/expression/**",
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "(1) `references/linked-parts.md`: the `@container` sits on a parent of the grid that carries `@wide:grid-cols-2`, and one sentence says a container query reads an ancestor, never the element itself (n18, and every page that copies the snippet). (2) The muted text class: `basalt-tokens.md` or the design reference names `text-muted-foreground` for secondary text and says `text-muted` is a surface (n07, n18). (3) Answer on the mark: the threshold that defines the answer is drawn (a `refLines` rule or a zone), never only stated in a footer, and the mark that matters carries why it matters, not only its name (n10, n07, n17, n14, n03). (4) States: a figure, a pill, a status word or a footer value derived from rows is not computed in empty, loading or error; the page passes the phase and the frame draws the placeholder (n17, n03, n18), and every part of the page keeps its place in every phase, a table included (n10). (5) Word economy: one more worked before and after from this cycle (n10's '19.4 kt' four times, n18's leader in hero, list and note), one fact once across hero, period, pill, footer and list (n10, n18, n03, n07, n14, n17). (6) One view: a list that repeats the chart's numbers is folded into the chart card or dropped; a table that shows the chart's items is `DataTable` with `focus`, which keeps the link through its own sort, never a plain `Table` (n18, n10, n03, n14, n17, n07). (7) Encodings: a share bar is scaled to the whole its caption names; a list carries the chart's encoding of a state, never a second one; a ranking prints its values on the bars, and at 390 a band axis names every key through a short `x.ticks` label (n17, n07, n14, n18, n10). (8) Anatomy: every card carries its delta pill and context line, and dates and ids are monospace through the format the kit's `useFormat` takes, with the time zone named once (n03, n07, n10, n17, n18). (9) The announcement names the values a viewer compares, not only their difference (n10, and n18's round-1 list).",
+  "commits": "feat: commits for skill and rule text, docs: for regenerated docs; one package commit per concern; make sync-self its own non-package commit.",
+  "proof": "make check; the skill snippet tests; the shipped-rule line budget within its ceiling.",
+  "acceptance": [
+    "linked-parts.md puts @container on a parent of the grid, and says why",
+    "A shipped rule or reference names text-muted-foreground for secondary text",
+    "The skill says the threshold that defines the answer is drawn, and that a value derived from rows is not computed outside the ready phase",
+    "The one-view text names DataTable with focus for a table that shows the chart's items",
+    "Changes (5) to (9) each land as at most a few lines with a worked case, within the budgets",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit changes (v3-expr-5-keys, v3-expr-5-kit-fixes); the rubric; the trial builds."
+}
