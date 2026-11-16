@@ -32,3 +32,25 @@ export const SLEEP_SERIES = defineSeries({
   rem: { light: '#8a4fc7', dark: '#b68cf2' },
   need: { light: '#4a4a4a', dark: '#c4c4c4' },
 })
+
+/** Cut progress (scenario expr-n16): the accent is the question's series; daily readings, lean mass and the plan sit in ink steps. */
+export const CUT_SERIES = defineSeries({
+  trend: { light: '#2871c7', dark: '#5190f7' },
+  daily: { light: '#7a7a7a', dark: '#9c9c9c' },
+  plan: { light: '#4a4a4a', dark: '#c4c4c4' },
+  lean: { light: '#6b6b6b', dark: '#a8a8a8' },
+})
+
+/** Ride windows (scenario expr-n04): rain and wind as a share of the rider's own limits; the limit rule sits in an ink step. */
+export const RIDE_SERIES = defineSeries({
+  rain: { light: '#7a7a7a', dark: '#9c9c9c' },
+  wind: { light: '#1f1f1f', dark: '#ededed' },
+  limit: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Job schedule (scenario expr-n09): the accent is the next run; the rest of the 24 h and the later jobs sit in ink steps. */
+export const SCHEDULE_SERIES = defineSeries({
+  next: { light: '#2871c7', dark: '#5190f7' },
+  soon: { light: '#262626', dark: '#e6e6e6' },
+  later: { light: '#9a9a9a', dark: '#7d7d7d' },
+})

@@ -48,4 +48,34 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     title: 'Expression n12: last night’s sleep',
     blurb: 'Did I sleep enough, and which stage fell short of my usual?',
   },
+  {
+    id: 'expr-c14',
+    title: 'Expression c14: live eval race',
+    blurb: 'Who leads the live eval, by how much, and how far along is everyone?',
+  },
+  {
+    id: 'expr-c15',
+    title: 'Expression c15: mailbox clean-up',
+    blurb: 'Which senders mail often and are rarely opened, and what would leaving them save?',
+  },
+  {
+    id: 'expr-n04',
+    title: 'Expression n04: ride windows',
+    blurb: 'Which windows in the next 48 hours are dry and calm enough to ride?',
+  },
+  {
+    id: 'expr-n09',
+    title: 'Expression n09: job schedule',
+    blurb: 'What runs next, when, and what is already beyond the next 24 hours?',
+  },
+  {
+    id: 'expr-n13',
+    title: 'Expression n13: recurring charges',
+    blurb: 'What do we commit to each month, and which charges grew this year?',
+  },
+  {
+    id: 'expr-n16',
+    title: 'Expression n16: cut progress',
+    blurb: 'Is weight falling at the planned rate, and is it fat rather than lean mass?',
+  },
 ]
