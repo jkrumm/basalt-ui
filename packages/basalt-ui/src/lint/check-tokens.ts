@@ -129,18 +129,25 @@ const ROLE_TOKENS: ReadonlyMap<string, string> = new Map(
 /**
  * Names an author writes from another vocabulary, to the token that means it: the bold weight is
  * `strong` (`--vx-weight-body` is 400), and shadcn's `*-foreground` is the ink or the `on-*` token.
+ * Keyed without the `--vx-` prefix, so the invented names never read as emitted ones
+ * (`scripts/gen-vx-names.ts` collects every quoted `--vx-*` string in `src/`).
  */
 const ALIAS_TOKENS: ReadonlyMap<string, string> = new Map([
-  ['--vx-weight-bold', '--vx-weight-strong'],
-  ['--vx-weight-semibold', '--vx-weight-strong'],
-  ['--vx-weight-normal', '--vx-weight-body'],
-  ['--vx-accent-foreground', '--vx-on-brand'],
-  ['--vx-primary-foreground', '--vx-canvas'],
-  ['--vx-secondary-foreground', '--vx-ink'],
-  ['--vx-muted-foreground', '--vx-ink-muted'],
-  ['--vx-card-foreground', '--vx-ink'],
-  ['--vx-popover-foreground', '--vx-ink'],
+  ['weight-bold', 'weight-strong'],
+  ['weight-semibold', 'weight-strong'],
+  ['weight-normal', 'weight-body'],
+  ['accent-foreground', 'on-brand'],
+  ['primary-foreground', 'canvas'],
+  ['secondary-foreground', 'ink'],
+  ['muted-foreground', 'ink-muted'],
+  ['card-foreground', 'ink'],
+  ['popover-foreground', 'ink'],
 ])
+
+const aliasOf = (name: string): string | undefined => {
+  const alias = name.startsWith('--vx-') ? ALIAS_TOKENS.get(name.slice(5)) : undefined
+  return alias === undefined ? undefined : `--vx-${alias}`
+}
 
 /**
  * The known name closest to `name` (ties go to the first in sort order), or undefined past `NEAR`.
@@ -158,7 +165,7 @@ const ALIAS_TOKENS: ReadonlyMap<string, string> = new Map([
 export function nearestToken(name: string, known: Iterable<string>): string | undefined {
   const knownSet = new Set(known)
   const folded = kebab(name)
-  const alias = ALIAS_TOKENS.get(folded)
+  const alias = aliasOf(folded)
   if (alias !== undefined && knownSet.has(alias)) return alias
   const role = ROLE_TOKENS.get(folded)
   if (role !== undefined && knownSet.has(role)) return role
