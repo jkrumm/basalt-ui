@@ -33,8 +33,14 @@ export function useDetailHost<T>(
   const host = detail ?? page ?? own
   const kind = detail !== undefined ? 'caller' : page !== null ? 'page' : 'own'
   const wasOpen = useRef(false)
+  const seenKind = useRef(kind)
   useEffect(() => {
     model.setHost(host, kind)
+    // The host that took over has not shown the entry yet: what the last one showed is not its close.
+    if (seenKind.current !== kind) {
+      seenKind.current = kind
+      wasOpen.current = false
+    }
     // A host closes on its own terms (the page's aside, a caller's panel), so the row it showed is
     // no longer the open one. Only a host seen open can close: one that has not shown the entry yet
     // (a deep link's first commit, a host that just took over) is not a close.
