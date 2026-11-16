@@ -281,7 +281,7 @@ describe('height', () => {
     ).querySelector('[data-slot="chart-box"]')?.className
 
   test('auto and short state a height in CSS, fill takes the remainder', () => {
-    expect(boxOf(undefined)).toContain('h-[clamp(10rem,50cqw,26.25rem)]')
+    expect(boxOf(undefined)).toContain('h-[clamp(12rem,50cqw,26.25rem)]')
     expect(boxOf('auto')).toBe(boxOf(undefined))
     expect(boxOf('short')).toContain('h-40')
     expect(boxOf('fill')).toContain('flex-1')
