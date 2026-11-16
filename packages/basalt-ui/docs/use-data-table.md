@@ -43,7 +43,7 @@ useDataTable<T>(options: UseDataTable<T>): DataTableInstance<T>
   detailState?: ControlHandle<string>  [with detail]  // A string field of row ids that holds the open row: activating a row writes its id, closing the sheet calls `clear()`, and a value that names a loaded row opens its detail on load, on a share link and on Back
   detailById?: (id: string, box: Box) => ReactNode  [with detail]  // The body of a record the table has not loaded, for a `detailState` field that names an id no loaded row has (a share link after the record left the filters, a row on another page of a server table): once the query settles the detail door opens with this body under the table label, and the page fetches the record by id
   onRowActivate?: (row: T) => void
-  activeRowId?: string  // The id of the row the page has open (a detail the page draws itself): that row is drawn as the selected row a…
+  activeRowId?: string  // The id of the row the page has open (a detail the page draws itself): that row is drawn as the selected row and carries `aria-current`
 ```
 
 `Phase`, `QueryStateLike`, `Empty` import from the root: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui'`.
