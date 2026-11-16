@@ -7,8 +7,8 @@ import { barY } from '@tanstack/charts/bar'
 import { dot } from '@tanstack/charts/dot'
 import { group } from '@tanstack/charts/group'
 import { stack } from '@tanstack/charts/stack'
-import { CV, DIMMED, DIMMED_TEXT } from '../core/theme'
-import { emphasis } from '../marks'
+import { CV } from '../core/theme'
+import { dimmedPaint, emphasis } from '../marks'
 import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from '../types'
 
@@ -99,10 +99,9 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
     if (!bar) return 'transparent'
     const base = opacityOf?.(row.datum, row.series) ?? bar.fillOpacity ?? DEFAULT_BAR_OPACITY
     const strength = base * emphasis(h, { key: row.series })
-    // A `focus` holding a datum dims every other bar: to `DIMMED` on the light card, and to the
-    // stronger `DIMMED_TEXT` on the dark one, where half a series colour is slate on near-black.
+    // A `focus` holding a datum dims every other bar (`dimmedPaint`: the dark card's floor included).
     if (plot.focused === null || row.datum === plot.focused) return paint(bar.color, strength)
-    return `light-dark(${paint(bar.color, strength * DIMMED)}, ${paint(bar.color, strength * DIMMED_TEXT)})`
+    return dimmedPaint(bar.color, strength)
   }
   const order = visibleBars.map((s) => s.key)
   return [
