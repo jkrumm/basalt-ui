@@ -439,6 +439,37 @@ describe('zones and roots', () => {
     }
   })
 
+  it('no-use-before-define fails a closure that reads a later const, at parts and app, never at bridge', () => {
+    // n18's round-0 shape: the `announce` callback reads a `const` three lines below it.
+    const reads = [
+      'export function useIt(open: (cb: () => string) => void) {',
+      '  open(() => `${total} items`)',
+      '  const total = 3',
+      '  return total',
+      '}',
+    ].join('\n')
+    // Hoisted names stay allowed: a function and a type read above their declaration.
+    const hoisted = [
+      'export const a = (): Later => later()',
+      'function later(): Later { return 1 }',
+      'type Later = number',
+    ].join('\n')
+    for (const profile of SHIPPED) {
+      const dir = join(tmp, `before-define-${profile}`)
+      write(
+        join(dir, '.oxlintrc.json'),
+        JSON.stringify({ extends: [`../${extend(profile).slice(2)}`] }),
+      )
+      write(join(dir, 'src/reads.ts'), reads)
+      write(join(dir, 'src/hoisted.ts'), hoisted)
+      const found = lint(dir).filter((d) => d.code === 'eslint(no-use-before-define)')
+      expect(found.filter((d) => d.filename === 'src/hoisted.ts')).toEqual([])
+      const hits = found.filter((d) => d.filename === 'src/reads.ts')
+      if (profile === 'bridge') expect(hits).toEqual([])
+      else expect(hits.map((d) => d.message)).toEqual([expect.stringContaining("'total'")])
+    }
+  })
+
   it('zone E turns the colour forms off for an ejected file and keeps the rest of tw-off-law', () => {
     const config = generated({
       ...base,

@@ -13,6 +13,7 @@ import { PAGE_FORMAT } from './demo/page-format'
 import { routeTree } from './routeTree.gen'
 
 const queryClient = createQueryClient()
+// oxlint-disable-next-line no-use-before-define -- lazy read: `router` is built from these defaults
 const defaults = routerDefaults({ router: (): object => router })
 
 const router = createRouter({

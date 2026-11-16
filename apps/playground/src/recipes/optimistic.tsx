@@ -1,20 +1,4 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
-// #region recipe:optimistic
-import { useMutation } from '@tanstack/react-query'
-import { optimistic } from 'basalt-ui/data'
-
-export function useSaveRun(id: string) {
-  return useMutation({
-    mutationFn: (values: RunValues) => runsApi.save(values),
-    ...optimistic<RunValues>({
-      key: runKey(id),
-      targets: [
-        { queryKey: runKey(id), apply: (prev, values) => ({ ...(prev as Run), ...values }) },
-      ],
-    }),
-  })
-}
-// #endregion
 
 export type RunValues = {
   title: string
@@ -69,3 +53,21 @@ export const runsApi = {
 }
 
 export const runKey = (id: string) => ['run', id] as const
+
+// The recipe sits below the stand-in server it reads: a binding is declared before the closure that reads it.
+// #region recipe:optimistic
+import { useMutation } from '@tanstack/react-query'
+import { optimistic } from 'basalt-ui/data'
+
+export function useSaveRun(id: string) {
+  return useMutation({
+    mutationFn: (values: RunValues) => runsApi.save(values),
+    ...optimistic<RunValues>({
+      key: runKey(id),
+      targets: [
+        { queryKey: runKey(id), apply: (prev, values) => ({ ...(prev as Run), ...values }) },
+      ],
+    }),
+  })
+}
+// #endregion
