@@ -1291,3 +1291,49 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-lint-3-eject-static, v3-lint-3-lint, v3-lint-3-wiring]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-4.json' }
+  - key: v3-dogfood-2-deep-link
+    title: 'A deep-linked row detail keeps its id in the URL and marks its row, from dogfood cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-dogfood-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-2-deep-link.json' }
+  - key: v3-dogfood-2-state
+    title: 'A failed chart card shows no figure, frames say error and stale one way, from dogfood cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-dogfood-2-deep-link]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-2-state.json' }
+  - key: v3-dogfood-2-visual
+    title: 'A relative-time column shows its whole phrase, from dogfood cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-dogfood-2]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-2-visual.json' }
+  - key: v3-dogfood-2-api
+    title: 'A client table filters by the page fields itself, from dogfood cycle 2'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-dogfood-2-deep-link, v3-dogfood-2-visual]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-2-api.json' }
+  - key: v3-dogfood-2-shell
+    title: 'A record aside shows no phone header button while no record is open, from dogfood cycle 2'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-dogfood-2, v3-shell-1-shell]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-2-shell.json' }
+  - key: v3-cycle-dogfood-3
+    title: 'Improvement cycle 3: rebuild the factory console overview slice on v3'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-dogfood-2-deep-link,
+        v3-dogfood-2-state,
+        v3-dogfood-2-visual,
+        v3-dogfood-2-api,
+        v3-dogfood-2-shell,
+        v3-wiring-3-api,
+        v3-shell-1-shell,
+      ]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-3.json' }

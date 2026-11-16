@@ -1,0 +1,20 @@
+{
+  "why": "Dogfood cycle 2 (docs/v3/cycles/dogfood-2.md) logged one P2 `state` finding and one P3. dogfood-2.7: in `error` the `ChartCard` prints its figure (`14 Issues today`) above `Could not load this.`, while the `StatCard`s beside it hide their figure and dash their footer (shots `cycle-dogfood-2-screen-error--light--1800x1200.png`, `--dark--390x844.png`). P3 dogfood-2.8 (was dogfood-1.14): in `error` the page shows six Retry buttons in two wordings (`Could not load this.` on the cards, `The rows could not be loaded` on the table), and in `stale` five frames say `Updating` while the table says nothing.",
+  "what": "A failed chart card shows no figure; the frames say error and stale one way.",
+  "owns": [
+    "packages/basalt-ui/src/charts/parts/chart-card.tsx and its parts",
+    "packages/basalt-ui/src/core/messages/* (the error and stale wording)",
+    "packages/basalt-ui/src/table/parts/* (a stale mark), if the P3 fits",
+    "unit and layout tests beside them"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) `ChartCard` draws its `figure` value as the muted dash in `error`, as `StatCard` does with its value, at the same height (dogfood-2.7). (2) If it fits: one error sentence across the frames (cards, chart card, table), a stale mark on the table like the other frames', and one phase line for cards of one `CardGrid` or `StatGroup` that share a phase (dogfood-2.8); left out, the PR says so.",
+  "commits": "fix: commits in packages/basalt-ui.",
+  "proof": "make check-fast; unit tests; shots of /cycle/dogfood-2?screen=error and ?screen=stale.",
+  "acceptance": [
+    "A ChartCard in error shows no figure value, at the ready card's height (unit or layout test)",
+    "The PR states which parts of dogfood-2.8 it fixed",
+    "make check passes"
+  ],
+  "out_of_scope": "The deep-link detail (v3-dogfood-2-deep-link)."
+}
