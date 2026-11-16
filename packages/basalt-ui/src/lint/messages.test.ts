@@ -6,8 +6,8 @@
  * app profile, where nothing stands down.
  */
 import { describe, expect, it } from 'bun:test'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import type { ESLint } from 'eslint'
 import { Linter } from 'eslint'
 
@@ -156,5 +156,183 @@ describe('shipped messages', () => {
         source,
       ).toEqual([])
     }
+  })
+})
+
+// ── names a message proposes must be exported ────────────────────────────────────────────────────
+
+type ExportsMap = Record<string, string | { types?: string }>
+const EXPORTS = (
+  JSON.parse(readFileSync(resolve(PKG, 'package.json'), 'utf8')) as {
+    exports: ExportsMap
+  }
+).exports
+
+/** The source file behind a path without its extension: `<path>.ts(x)` or `<path>/index.ts(x)`. */
+const resolveSource = (base: string): string | undefined =>
+  [`${base}.ts`, `${base}.tsx`, `${base}/index.ts`, `${base}/index.tsx`].find(existsSync)
+
+/** The source of a built `./dist/<path>.d.ts`. */
+const sourceOf = (types: string): string | undefined =>
+  resolveSource(resolve(PKG, 'src', types.replace(/^\.\/dist\//, '').replace(/\.d\.ts$/, '')))
+
+const DECLARATION =
+  /^export\s+(?:declare\s+)?(?:async\s+)?(?:function\*?|const|let|class|abstract\s+class|type|interface|enum)\s+([A-Za-z_$][\w$]*)/gm
+const NAMED = /^export\s+(?:type\s+)?\{([^}]*)\}(?:\s+from\s+['"]([^'"]+)['"])?/gm
+const STAR = /^export\s+\*(?:\s+as\s+([A-Za-z_$][\w$]*))?\s+from\s+['"]([^'"]+)['"]/gm
+
+/** Every name a module exports, following its relative re-exports (`export * from './x'`). */
+function exportedNames(file: string, seen = new Set<string>()): Set<string> {
+  const names = new Set<string>()
+  if (seen.has(file)) return names
+  seen.add(file)
+  const text = readFileSync(file, 'utf8')
+  const follow = (from: string): void => {
+    if (!from.startsWith('.')) return
+    const target = resolveSource(resolve(dirname(file), from))
+    if (target) for (const n of exportedNames(target, seen)) names.add(n)
+  }
+  for (const [, name] of text.matchAll(DECLARATION)) if (name) names.add(name)
+  for (const [, list, from] of text.matchAll(NAMED)) {
+    for (const item of (list ?? '').split(',')) {
+      const name = item
+        .trim()
+        .replace(/^type\s+/, '')
+        .split(/\s+as\s+/)
+        .at(-1)
+        ?.trim()
+      if (name) names.add(name)
+    }
+    if (from) follow(from)
+  }
+  for (const [, ns, from] of text.matchAll(STAR)) {
+    if (ns) names.add(ns)
+    else if (from) follow(from)
+  }
+  return names
+}
+
+/** Every published subpath, `.` first, wildcards expanded to the files they stand for. */
+function publishedSubpaths(): Map<string, string[]> {
+  const subpaths = new Map<string, string[]>()
+  for (const [key, value] of Object.entries(EXPORTS)) {
+    if (typeof value === 'string' || !value.types) continue
+    const specifier = key === '.' ? 'basalt-ui' : `basalt-ui/${key.slice(2)}`
+    if (!key.endsWith('/*')) {
+      const file = sourceOf(value.types)
+      if (file) subpaths.set(specifier, [file])
+      continue
+    }
+    const folder = value.types.replace(/^\.\/dist\//, '').replace(/\*\.d\.ts$/, '')
+    for (const entry of readdirSync(resolve(PKG, 'src', folder))) {
+      const name = entry.replace(/\.tsx?$/, '')
+      if (name === entry || /\.(?:test|guard|gen|type-guard)$/.test(name)) continue
+      const file = sourceOf(`./dist/${folder}${name}.d.ts`)
+      if (file) subpaths.set(`${specifier.slice(0, -1)}${name}`, [file])
+    }
+  }
+  return subpaths
+}
+
+const subpaths = publishedSubpaths()
+const packageNames = new Set(
+  [...subpaths.values()].flatMap((files) => files.flatMap((f) => [...exportedNames(f)])),
+)
+
+/** A call, `persisted(key)`: not a method (`.query(`) and not a CSS function (`color-mix(`). */
+const CALL = /(?<![\w.$%-])([A-Za-z_$][\w$]*)\(/g
+/** A component or hook name: two humps (`DeltaBadge`), or `use`/`create`/`define` + a name. */
+const CAMEL =
+  /(?<![\w.$@/-])((?:[A-Z][a-z0-9]+){2,}|(?:use|create|define)[A-Z][A-Za-z0-9]*)(?![\w-])/g
+/** A backticked one-word name with a capital: `Page`, `useSizeClass`. */
+const TICKED = /`([A-Za-z_$][\w$]*[A-Z][\w$]*|[A-Z][a-z0-9]+)`/g
+const IMPORT_PATH = /\bbasalt-ui(?:\/[\w*/-]+)?/g
+
+/**
+ * Names a message writes that are not exports of this package, each with the reason it is allowed.
+ * Every entry is a name another system owns: CSS, the web platform, a library the message bans or
+ * the rule table's own vocabulary. A package API never belongs here: export it or fix the message.
+ */
+const NOT_PACKAGE_APIS: Readonly<Record<string, string>> = {
+  calc: 'CSS function',
+  minmax: 'CSS function',
+  var: 'CSS function',
+  rgb: 'CSS function',
+  rgba: 'CSS function',
+  hsl: 'CSS function',
+  oklch: 'CSS function',
+  localStorage: 'web platform global the message bans',
+  sessionStorage: 'web platform global the message bans',
+  EventSource: 'web platform class the message bans',
+  WebSocket: 'web platform class the message bans',
+  TanStack: 'the library name',
+  ESLint: 'tool name',
+  useState: 'React hook the message bans for URL state',
+  useEffect: 'React hook named as the thing to avoid',
+  useMemo: 'React hook named as the thing to avoid',
+  useReactTable: 'the banned table-library hook',
+  useChat: 'the AI SDK hook the import-boundary form constrains',
+  navigate: 'the router call literal-search reads',
+  QueryClientProvider: 'the TanStack Query component the app mounts the client in',
+  useSearch: 'the router hook the message bans a literal `from` on',
+}
+
+/** The API names and import paths a message proposes. */
+function proposedApis(text: string): { names: string[]; paths: string[] } {
+  const plain = text.replace(/\{\{[^}]*\}\}/g, '')
+  const names = new Set<string>()
+  for (const re of [CALL, CAMEL, TICKED])
+    for (const [, name] of plain.matchAll(re)) names.add(name ?? '')
+  return {
+    names: [...names].filter(Boolean),
+    paths: [...plain.matchAll(IMPORT_PATH)].map(([p]) => p),
+  }
+}
+
+/** A path ending in `/` is a wildcard folder (`basalt-ui/ui/<name>`): it holds when a subpath sits under it. */
+const isPublishedPath = (path: string): boolean =>
+  path.endsWith('/') ? [...subpaths.keys()].some((s) => s.startsWith(path)) : subpaths.has(path)
+
+describe('shipped messages propose only exported APIs', () => {
+  const messages = shippedMessages()
+
+  it('reads the package exports', () => {
+    expect(subpaths.has('basalt-ui')).toBe(true)
+    expect(subpaths.has('basalt-ui/ui/scroll-area')).toBe(true)
+    expect(packageNames.has('persisted')).toBe(true)
+    expect(packageNames.has('DeltaBadge')).toBe(true)
+    expect(packageNames.has('useSizeClass')).toBe(true)
+  })
+
+  it('names no function, component or hook the package does not export', () => {
+    const offenders = messages.flatMap(({ source, text }) =>
+      proposedApis(text)
+        .names.filter((name) => !packageNames.has(name) && !(name in NOT_PACKAGE_APIS))
+        .map((name) => `${source}: ${name}`),
+    )
+    expect(offenders).toEqual([])
+  })
+
+  it('names no basalt-ui import path the package does not publish', () => {
+    const offenders = messages.flatMap(({ source, text }) =>
+      proposedApis(text)
+        .paths.filter((path) => !isPublishedPath(path))
+        .map((path) => `${source}: ${path}`),
+    )
+    expect(offenders).toEqual([])
+  })
+
+  it('would flag a name the package does not export', () => {
+    const { names } = proposedApis(
+      'Persist through createLocalStore or persisted(key) from basalt-ui',
+    )
+    expect(names).toEqual(expect.arrayContaining(['createLocalStore', 'persisted']))
+    expect(packageNames.has('createLocalStore')).toBe(false)
+    expect(packageNames.has('persisted')).toBe(true)
+  })
+
+  it('keeps the allow list honest: no entry is a package export', () => {
+    for (const name of Object.keys(NOT_PACKAGE_APIS))
+      expect(packageNames.has(name), name).toBe(false)
   })
 })
