@@ -9,3 +9,5 @@ import { io } from 'socket.io-client'
 import { liveQuery } from 'basalt-ui/data'
 // @valid
 import { createChannel } from 'basalt-ui'
+// @invalid
+import { fetchEventSource } from '@microsoft/fetch-event-source'
