@@ -64,6 +64,10 @@ jobs:
       - name: Coverage check (SURFACES projection gate)
         run: bun packages/basalt-ui/scripts/check-coverage.ts --check
 
+      # The tarball half runs inside pack-test below.
+      - name: Legacy names (the 2.x names, outside scripts/legacy-names.ts)
+        run: bun scripts/check-legacy-names.ts
+
       - name: Agent doc drift check (removed-API guard on agent/**)
         run: bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
 

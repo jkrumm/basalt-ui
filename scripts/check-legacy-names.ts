@@ -6,7 +6,7 @@
  * Usage: bun scripts/check-legacy-names.ts                      every tracked file of the repo
  *        bun scripts/check-legacy-names.ts --package <dir>      an unpacked tarball (`package/`): every file in it,
  *                                                               judged as `packages/basalt-ui/<path>`
- * A finding prints `path:line: <kind>: <text>`; the fix is the codemod (`bun scripts/rename-vx.ts`) for a `vx`
+ * A finding prints `path:line: <kind>: <text>`; the fix is the codemod (`bun scripts/rename-legacy.ts`) for a `vx`
  * spelling, a rewrite for a Mantine mention, or an allowlist entry with its reason.
  */
 import { spawnSync } from 'node:child_process'
@@ -77,7 +77,7 @@ if (import.meta.main) {
   }
   for (const f of findings) console.error(`${f.path}:${f.line}: ${f.kind}: ${f.text}`)
   console.error(
-    `✖ legacy names: ${findings.length} finding(s) in ${where}. A vx spelling: run \`bun scripts/rename-vx.ts\`; ` +
+    `✖ legacy names: ${findings.length} finding(s) in ${where}. A vx spelling: run \`bun scripts/rename-legacy.ts\`; ` +
       'a Mantine mention: rewrite it; history that must keep its words: an entry in scripts/legacy-names.ts.',
   )
   process.exit(1)
