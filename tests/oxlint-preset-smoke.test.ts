@@ -244,7 +244,8 @@ beforeAll(async () => {
   }
 }, 120_000)
 
-afterAll(() => rmSync(tmp, { recursive: true, force: true }))
+// Explicit ceiling: bun's 5 s default hook timeout also fails a sync teardown stalled by host load.
+afterAll(() => rmSync(tmp, { recursive: true, force: true }), 60_000)
 
 describe('every form fires through the shipped preset', () => {
   const enabled = BLOCKS.filter((b) => b.kind === 'invalid' && isEnabled(b.form))
