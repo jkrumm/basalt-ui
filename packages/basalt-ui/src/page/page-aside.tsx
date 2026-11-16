@@ -99,6 +99,8 @@ type ViewProps = Omit<PageAsideProps, 'state'> & {
   onOpenChange: (open: boolean) => void
   /** The aside has state to close it with. */
   closable: boolean
+  /** The state is a string field holding the open record's id. */
+  record?: boolean
 }
 
 const DETAIL_BOX = { height: 'fill', phase: 'ready' } as const
@@ -144,6 +146,7 @@ function AsideView({
   open,
   onOpenChange,
   closable,
+  record = false,
   children,
 }: ViewProps): ReactElement | null {
   const context = useContext(PageContext)
@@ -197,6 +200,7 @@ function AsideView({
           if (next) onOpenChange(true)
           else close()
         },
+        record,
       }
     : undefined
 
@@ -214,6 +218,8 @@ function AsideView({
   if (!owns || host !== null) return null
 
   if (context !== null && !wide) {
+    // A record aside with no record open has nothing for the button to show.
+    if (record && !isOpen) return null
     return (
       <Sheet
         open={isOpen}
@@ -256,7 +262,7 @@ function BoundAside({
     const onOpenChange = (next: boolean): void => {
       if (!next) state.clear()
     }
-    return <AsideView {...props} open={value !== ''} onOpenChange={onOpenChange} closable />
+    return <AsideView {...props} open={value !== ''} onOpenChange={onOpenChange} closable record />
   }
   return (
     <AsideView {...props} open={value} onOpenChange={set as (open: boolean) => void} closable />

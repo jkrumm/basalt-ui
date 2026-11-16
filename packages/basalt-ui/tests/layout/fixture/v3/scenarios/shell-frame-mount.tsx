@@ -113,6 +113,42 @@ function boundAsideState(initial: boolean): ControlHandle<boolean> {
   }
 }
 
+/** A string handle over a module cell: the open record's id, `''` when none. */
+function boundRecordState(initial: string): ControlHandle<string> {
+  let value = initial
+  const listeners = new Set<() => void>()
+  const publish = (): void => {
+    document.documentElement.dataset['asideRecord'] = value
+    for (const listener of listeners) listener()
+  }
+  publish()
+  const subscribe = (listener: () => void): (() => void) => {
+    listeners.add(listener)
+    return () => listeners.delete(listener)
+  }
+  return {
+    key: 'record',
+    kind: 'string',
+    use: () => [
+      useSyncExternalStore(
+        subscribe,
+        () => value,
+        () => value,
+      ),
+      (next) => {
+        value = next
+        publish()
+      },
+    ],
+    useSource: () => ({ source: 'own', inherited: undefined }),
+    clear: () => {
+      value = ''
+      publish()
+    },
+    isDefault: false,
+  }
+}
+
 type Run = { id: string; name: string; seconds: number }
 
 const RUNS: readonly Run[] = Array.from({ length: 6 }, (_, i) => ({
@@ -139,8 +175,11 @@ function DetailTable(): ReactElement {
 
 function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> }): ReactElement {
   const { rows = 12, aside = false, bar = true, detailTable = false } = options
-  const { state, ...asideProps } = typeof aside === 'object' ? aside : {}
-  const [handle] = useState(() => (state === undefined ? undefined : boundAsideState(state)))
+  const { state, record, ...asideProps } = typeof aside === 'object' ? aside : {}
+  const [handle] = useState<ControlHandle<boolean> | ControlHandle<string> | undefined>(() => {
+    if (record !== undefined) return boundRecordState(record)
+    return state === undefined ? undefined : boundAsideState(state)
+  })
   return (
     <Page area="runs">
       {bar && (

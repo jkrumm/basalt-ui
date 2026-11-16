@@ -22,6 +22,8 @@ export type AsideSheetState = {
   /** `undefined` until the field is set; a shown detail counts as open. */
   open: boolean | undefined
   onOpenChange: (open: boolean) => void
+  /** The field holds a record's id: with none open there is nothing to show, so no trigger. */
+  record: boolean
 }
 
 /**

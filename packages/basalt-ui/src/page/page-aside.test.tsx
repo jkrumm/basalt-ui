@@ -948,7 +948,53 @@ describe('PageAside bound to a string field (the open record id)', () => {
       sheet?: AsideSheetState
     }>
     expect(element.props.sheet?.open).toBe(true)
+    expect(element.props.sheet?.record).toBe(true)
     act(() => element.props.onClose?.())
     expect(clears()).toBe(1)
+  })
+
+  test('under a shell an empty record claims as a record, a boolean one does not', () => {
+    const shell = fakeHost()
+    const none = recordHandle('')
+    const flag = handle(false)
+    render(
+      <PageHostContext value={shell.host}>
+        <Page>
+          <PageAside title="Deploy" state={none.bound}>
+            facts
+          </PageAside>
+        </Page>
+      </PageHostContext>,
+    )
+    const sheetOf = (): AsideSheetState | undefined =>
+      (shell.of('aside')[0]!.node as React.ReactElement<{ sheet?: AsideSheetState }>).props.sheet
+    expect(sheetOf()).toMatchObject({ open: false, record: true })
+    cleanup()
+    const flagged = fakeHost()
+    render(
+      <PageHostContext value={flagged.host}>
+        <Page>
+          <PageAside title="Deploy" state={flag.bound}>
+            facts
+          </PageAside>
+        </Page>
+      </PageHostContext>,
+    )
+    const props = (flagged.of('aside')[0]!.node as React.ReactElement<{ sheet?: AsideSheetState }>)
+      .props
+    expect(props.sheet?.record).toBe(false)
+  })
+
+  test('shell-less on a narrow page an empty record draws no trigger', () => {
+    setWidth(NARROW)
+    const { bound } = recordHandle('')
+    render(
+      <Page>
+        <PageAside title="Deploy" state={bound}>
+          facts
+        </PageAside>
+      </Page>,
+    )
+    expect(trigger()).toBeNull()
   })
 })
