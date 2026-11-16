@@ -14,8 +14,10 @@
  * - object-map values and string arrays outside a class context, when the string is class-shaped
  * - a top-level `const x = '<classes>'` (string or no-expression template) whose binding reaches a
  *   class context as a bare identifier (`className={x}`, `cn(x)`, `${x}` inside a template); it is
- *   read at each use, so the element that takes it is the context. Known limit: a const declared in a function, imported or
- *   reassigned through a call (`const x = pick('a')`) is not followed.
+ *   read at each use, so the element that takes it is the context. Known limits: a const declared
+ *   in a function, imported or set from a call (`const x = pick('a')`) is not followed, and the
+ *   name is matched without scope, so a parameter or local that shadows the top-level const is read
+ *   as the const's string.
  *
  * A template literal is read with each `${...}` replaced by {@link TEMPLATE_HOLE}, so
  * `bg-${tone}-600` reaches a pattern as the token `bg-${}-600`.
@@ -132,8 +134,8 @@ const unwrap = (node: Node | undefined): Node | undefined => {
 
 /**
  * The initialiser of every top-level `const x = <init>` (also under `export`), by name; `as const`
- * and `satisfies` are looked through. A name declared twice at the top level cannot happen under
- * `const`, so there is no shadowing to resolve; nested declarations are not read.
+ * and `satisfies` are looked through; nested declarations are not read. A caller matches a name
+ * against the map without scope analysis, so a nested binding of the same name is not told apart.
  */
 export function topLevelConsts(program: Node): ReadonlyMap<string, Node> {
   const consts = new Map<string, Node>()
