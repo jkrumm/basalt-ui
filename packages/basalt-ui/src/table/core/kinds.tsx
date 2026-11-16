@@ -37,6 +37,7 @@ import type {
   KindName,
   KindSpec,
   SelectEdit,
+  Width,
 } from './kinds-spec'
 
 export { checkSchema } from './kinds-codec'
@@ -262,6 +263,18 @@ type Base<T> = {
   extra?: Partial<KindSpec<T>>
 }
 
+/** Room beside a header's text in `ch`: the sort mark, the gap and the column menu button. */
+const HEADER_CHROME_CH = 5
+/** A header asks for floor room up to this many `ch`; a longer one truncates (its title shows it whole). */
+const HEADER_MAX_CH = 24
+
+/** A column's floor counts its own header, unit suffix included, so a roomy row shows it whole. */
+function floorOf(width: Width, header: string): Width {
+  if (width === 'icon') return width
+  const want = Math.min(HEADER_MAX_CH, header.length + HEADER_CHROME_CH)
+  return want > width.ch ? { ...width, ch: want } : width
+}
+
 function build<T>(b: Base<T>): KindColumn<T> {
   const defaults = KIND_DEFAULTS[b.kind]
   const common = b.common ?? {}
@@ -289,7 +302,7 @@ function build<T>(b: Base<T>): KindColumn<T> {
     align: defaults.align,
     numerals: defaults.numerals,
     wrap: defaults.wrap,
-    width: defaults.width,
+    width: floorOf(defaults.width, b.header),
     sort,
     filter: null,
     card: common.card === undefined ? defaults.card : [common.card, ...defaults.card],

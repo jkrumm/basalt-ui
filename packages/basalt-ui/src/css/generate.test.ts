@@ -70,6 +70,12 @@ describe('generateCss', () => {
     expect(type).toContain('@media print')
   })
 
+  test('word-head lifts a heading word space past a quarter of its size', () => {
+    // wiring-3.6 measured the word space at 2.3px of 15px (0.153em, tracking included); the utility
+    // adds 0.12em, so 0.273em: past the 0.25em floor.
+    expect(generated['tailwind.css']).toContain('@utility word-head {\n  word-spacing: 0.12em;\n}')
+  })
+
   test('fonts declares the Head Digits face over the digit range only', () => {
     const fonts = generated['fonts.css']
     expect(fonts).toContain("font-family: 'Head Digits'")

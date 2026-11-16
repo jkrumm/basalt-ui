@@ -27,6 +27,11 @@ describe('Section', () => {
     expect(section().textContent).toContain('body')
   })
 
+  test('the heading keeps a word space at its step', () => {
+    render(<Section title="All orders">body</Section>)
+    expect(screen.getByRole('heading', { level: 2 }).className).toContain('word-head')
+  })
+
   test('is a region named by its title', () => {
     render(<Section title="Latency" />)
     expect(screen.getByRole('region', { name: 'Latency' })).toBe(section())

@@ -141,11 +141,15 @@ export function DataTableHead<T>({
                       )}
                       onClick={() => model.toggleSort(spec.id)}
                     >
-                      <span className="truncate">{spec.header}</span>
+                      <span className="truncate" title={spec.header}>
+                        {spec.header}
+                      </span>
                       <SortMark direction={direction} />
                     </Pressable>
                   ) : (
-                    <span className="min-w-0 truncate">{spec.header}</span>
+                    <span className="min-w-0 truncate" title={spec.header}>
+                      {spec.header}
+                    </span>
                   )}
                   {/* beside the sort button, never over it: a narrow column truncates the label and keeps both targets; on touch the hit area grows away from the sort button */}
                   <ColumnActionsMenu

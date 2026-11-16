@@ -94,6 +94,8 @@ function tailwindCss(): string {
     ['min-h-ctl', ['min-height: var(--vx-ctl-h)']],
     ['min-h-row', ['min-height: var(--vx-row-h)']],
     ['size-icon', ['width: var(--vx-icon)', 'height: var(--vx-icon)']],
+    // Hubot Sans at 88% stretch draws a word space of ~0.15em; with tracking-tight a heading reads as one word.
+    ['word-head', ['word-spacing: 0.12em']],
   ] as const
   const utilityCss = utilities.map(([name, lines]) => block(`@utility ${name}`, lines)).join('')
   const focusRing =

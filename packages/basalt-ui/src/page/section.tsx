@@ -85,7 +85,7 @@ function SectionFrame<K extends string>({
   const heading = (
     <h2
       id={headingId}
-      className="m-0 min-w-0 font-head text-md font-semibold tracking-tight text-foreground"
+      className="m-0 min-w-0 font-head text-md font-semibold tracking-tight word-head text-foreground"
     >
       {collapse === undefined ? (
         title
