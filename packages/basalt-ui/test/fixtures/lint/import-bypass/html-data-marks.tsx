@@ -185,3 +185,81 @@ const a = (
     ))}
   </div>
 )
+// @invalid
+const a = (
+  <div>
+    {rows.map((r) => (
+      <div
+        key={r.id}
+        className="h-2 origin-left scale-x-(--s) bg-muted"
+        style={{ '--s': r.share }}
+      />
+    ))}
+  </div>
+)
+// @invalid
+const a = (
+  <div>
+    {rows.map((r) => (
+      <div key={r.id} className="origin-bottom scale-y-(--s)" style={{ '--s': r.share }} />
+    ))}
+  </div>
+)
+// @invalid
+const a = (
+  <div>
+    {rows.map((r) => (
+      <div key={r.id} className="translate-x-(--t)" style={{ '--t': `${r.at}%` }} />
+    ))}
+  </div>
+)
+// @invalid
+const a = (
+  <div>
+    {rows.map((r) => (
+      <div key={r.id} style={{ inlineSize: `${r.share}%` }} />
+    ))}
+  </div>
+)
+// @invalid
+const a = (
+  <div>
+    {rows.map((r) => (
+      <div key={r.id} style={{ blockSize: r.value }} />
+    ))}
+  </div>
+)
+// @invalid
+const a = (
+  <div>
+    {rows.map((r) => (
+      <div key={r.id} style={{ transform: `scaleX(${r.share})` }} />
+    ))}
+  </div>
+)
+// @invalid
+const a = (
+  <div>
+    {rows.map((r) => (
+      <div key={r.id} style={{ transform: `scaleY(${r.share})` }} />
+    ))}
+  </div>
+)
+// @valid
+const a = (
+  <div>
+    {rows.map((r) => (
+      <div key={r.id} className="scale-x-(--s)" style={{ '--s': 1 }} />
+    ))}
+  </div>
+)
+// @valid
+const a = (
+  <div>
+    {rows.map((r) => (
+      <div key={r.id} style={{ transform: 'scaleX(0.5)' }} />
+    ))}
+  </div>
+)
+// @valid
+const a = <div className="scale-x-(--s)" style={{ '--s': flip }} />

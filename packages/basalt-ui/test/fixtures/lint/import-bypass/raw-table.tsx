@@ -1,10 +1,22 @@
 // Fixture: primitive-bypass/raw-table
 // @invalid
-const a = <table><tbody><tr><td>1</td></tr></tbody></table>
+const a = (
+  <table>
+    <tbody>
+      <tr>
+        <td>1</td>
+      </tr>
+    </tbody>
+  </table>
+)
 // @invalid
 const a = <table className="w-full" />
 // @valid
-const a = <Table><TableBody /></Table>
+const a = (
+  <Table>
+    <TableBody />
+  </Table>
+)
 // @valid
 const a = <DataTable rows={rows} columns={columns} />
 // @invalid
@@ -37,3 +49,11 @@ const a = (
 const a = <span className="table-cell">x</span>
 // @valid
 const a = <TableCell className="table-cell">x</TableCell>
+// @invalid
+const a = (
+  <ul className="inline-table">
+    <li>{r.name}</li>
+  </ul>
+)
+// @valid
+const a = <ul className="inline-flex">x</ul>

@@ -137,3 +137,25 @@ const a = (
 )
 // @valid
 const a = <TableHead>Name</TableHead>
+// @invalid
+const a = (
+  <TableBody>
+    {Array.from(data ?? [], (r) => (
+      <TableRow key={r.id}>
+        <TableCell>{r.name}</TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+)
+// @valid
+const a = (
+  <TableBody>
+    {Array.from([a, b], (r) => (
+      <TableRow key={r}>
+        <TableCell>{r}</TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+)
+// @valid
+const a = <TableBody>{Array.from(data).length}</TableBody>

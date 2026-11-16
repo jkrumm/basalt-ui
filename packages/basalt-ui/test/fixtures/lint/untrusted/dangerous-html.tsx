@@ -95,3 +95,19 @@ w.document.write(`<p>fixed</p>`)
 
 // @valid
 stream.write(m.html)
+
+// @invalid
+const doc = new DOMParser().parseFromString(r.html, 'text/html')
+el.replaceChildren(...doc.body.childNodes)
+
+// @invalid
+const doc = parser.parseFromString(`<p>${name}</p>`, 'text/html')
+
+// @valid
+const doc = new DOMParser().parseFromString('<p>fixed</p>', 'text/html')
+
+// @valid
+const doc = new DOMParser().parseFromString(m.xml, 'text/xml')
+
+// @valid
+const doc = new DOMParser().parseFromString(m.svg, 'image/svg+xml')

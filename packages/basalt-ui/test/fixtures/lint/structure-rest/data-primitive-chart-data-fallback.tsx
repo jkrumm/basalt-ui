@@ -141,3 +141,32 @@ const a = <Lines ariaLabel="Runs" data={shot === 'empty' ? [] : rows} series={se
 // @valid
 const hours = shot === 'empty' ? [] : all
 const a = <Bars ariaLabel="Hours" data={hours} />
+
+// @invalid
+const a = <Lines ariaLabel="Runs" data={isLoading ? [] : data} />
+
+// @invalid
+// @ts
+const a = <Lines ariaLabel="Runs" data={isLoading ? [] : (data as Row[])} />
+
+// @invalid
+const a = <Bars ariaLabel="Runs" data={data ?? Array.of()} />
+
+// @invalid
+// @ts
+const a = <Bars ariaLabel="Runs" data={data ?? Array.of<Row>()} />
+
+// @invalid
+const a = <Bars ariaLabel="Runs" data={q.data ?? new Array()} />
+
+// @invalid
+const a = <Bars ariaLabel="Runs" data={q.data || Array()} />
+
+// @valid
+const a = <Bars ariaLabel="Runs" data={q.data ?? Array.of(first)} />
+
+// @valid
+const a = <Bars ariaLabel="Runs" data={q.data ?? new Array(3)} />
+
+// @valid
+const a = <Lines ariaLabel="Runs" data={isLoading ? [] : rows} />

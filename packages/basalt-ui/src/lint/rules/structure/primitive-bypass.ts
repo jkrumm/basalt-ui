@@ -15,8 +15,9 @@
  *   returns the string is not read; only a `d` built in the file with `.map`, `.flatMap` or
  *   `.reduce` is.
  * - `html-data-marks`: a custom-property mark is read only when the class names the property in a
- *   geometry or flex utility (`w-(--w)`, `h-[var(--h)]`, `grow-(--g)`, `basis-(--b)`); a property
- *   read by a stylesheet is out of reach.
+ *   geometry or flex utility (`w-(--w)`, `h-[var(--h)]`, `grow-(--g)`, `basis-(--b)`, `scale-x-(--s)`,
+ *   `translate-y-(--t)`); a property read by a stylesheet is out of reach. A `transform` reads
+ *   only as `scale`, `scaleX` or `scaleY` of a datum; a `translate` transform is not.
  * - `intl-format`: `toFixed` is read where it renders (a JSX child expression, directly or through
  *   a template literal, `+` or a ternary). One returned from a helper, a key or a CSS value is not
  *   display text by syntax and passes. A date-fns formatter is read through a named import from
@@ -33,9 +34,10 @@
  * - `raw-heading`: an intrinsic element with a literal `role="heading"` reads (`<div role="heading"
  *   aria-level={2}>`); a role held in a variable or a spread is not read, and a component
  *   (`<Box role="heading">`) is left to its own definition.
- * - `raw-control`: a `div` or `span` with `onClick` and no role is not read (a wrapper that stops
- *   propagation or delegates is common and `jsx-a11y` owns it); an `li`, `tr`, `td`, `th` or `img`
- *   with `onClick` and no role reads, and one with a role or a spread passes.
+ * - `raw-control`: a `div`, `span`, `li`, `tr`, `td`, `th` or `img` with an explicit `onClick` and no
+ *   role reads; one with a role or a spread (which may carry the role) passes, and so does a
+ *   handler whose only statement is a `stopPropagation()` call (an arrow or a function body); a
+ *   handler held in a variable that stops propagation reads, as the body is not visible.
  * - `chart-body-root`: a chart kind reads outside a card only with a `section`, `main`, `article`
  *   or `aside` above it in the same JSX tree, or a `Section` or `Page` imported from
  *   `basalt-ui/page`; one under a `div` or that is the whole return of a
@@ -43,11 +45,19 @@
  *   `*Card`/`*Panel` ancestor passes.
  * - `intl-format`: a dayjs or moment formatter is read by the callee name (`dayjs(...)`,
  *   `moment(...)`, `.utc()` chains); a value held in a variable first (`const d = dayjs(at)`) is not.
- *   luxon's `toFormat` reads on a `DateTime.*(...)` chain rendered as JSX text (its
+ *   luxon's `toFormat`, `toRelative` and `toRelativeCalendar` read on a `DateTime.*(...)` chain
+ *   rendered as JSX text (its
  *   `toLocaleString` reads anywhere, as every `toLocale*String` does); one held in a variable or
  *   returned from a helper is not.
- * - `raw-heading`: `createElement('h2', ...)` and `React.createElement` read; a tag from a variable
- *   or a spread of arguments does not.
+ * - `raw-heading`: `createElement('h2', ...)`, `createElement(`h${level}`, ...)` and
+ *   `React.createElement` read; a tag from a variable or a spread of arguments does not.
+ * - `role-table`: a `row`, `gridcell`, `cell`, `columnheader`, `rowheader` or `rowgroup` role reads
+ *   on an intrinsic element (a component owns its markup) unless an ancestor in the file carries a `table`, `grid` or `treegrid` role (which reads on
+ *   its own); a role held in a variable or set by a component's own markup is not read.
+ * - `table-rows`: `Array.from(rows, (r) => <TableRow />)` reads as `.map` does; `Array.from`
+ *   with no mapper does not.
+ * - `chart-body-root`: `Section` and `Page` read through a namespace import
+ *   (`import * as P from 'basalt-ui/page'`, `<P.Section>`) as through a named one.
  * - `svg-data-marks`: a mark is `aria-hidden` by its own attribute or an ancestor's, read in the
  *   same file only; the seam spread may sit in another file's component and then it still reports.
  * - `svg-data-marks`: a `<g>` that is not inside an `<svg>` in the file is a marks root too (a
@@ -84,7 +94,15 @@ const RAW_CONTROLS: ReadonlySet<string> = new Set([
   'meter',
 ])
 /** Elements that are not interactive by nature: an `onClick` with no role makes a button of them. */
-const CLICKABLE_NON_CONTROLS: ReadonlySet<string> = new Set(['li', 'tr', 'td', 'th', 'img'])
+const CLICKABLE_NON_CONTROLS: ReadonlySet<string> = new Set([
+  'div',
+  'span',
+  'li',
+  'tr',
+  'td',
+  'th',
+  'img',
+])
 const HEADINGS: ReadonlySet<string> = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 const SVG_MARKS: ReadonlySet<string> = new Set([
   'rect',
@@ -210,20 +228,48 @@ const isAnchorButton = (node: Node): boolean =>
   attribute(node, 'href') === undefined &&
   !children(node, 'attributes').some((attr) => attr.type === 'JSXSpreadAttribute')
 
+/** `e.stopPropagation()`, as an expression or as the only statement of a block. */
+const isStopPropagationCall = (node: Node | undefined): boolean => {
+  const call = node?.type === 'ExpressionStatement' ? child(node, 'expression') : node
+  if (call?.type !== 'CallExpression') return false
+  const callee = child(call, 'callee')
+  return (
+    callee?.type === 'MemberExpression' &&
+    callee['computed'] !== true &&
+    nameOf(child(callee, 'property')) === 'stopPropagation'
+  )
+}
+
+/** An `onClick` that only stops the event: a wrapper that keeps a click from reaching its parent. */
+const onlyStopsPropagation = (node: Node): boolean => {
+  const value = child(attribute(node, 'onClick') ?? { type: '' }, 'value')
+  const handler = value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
+  if (handler?.type !== 'ArrowFunctionExpression' && handler?.type !== 'FunctionExpression') {
+    return false
+  }
+  const body = child(handler, 'body')
+  if (body?.type !== 'BlockStatement') return isStopPropagationCall(body)
+  const statements = children(body, 'body')
+  return statements.length === 1 && isStopPropagationCall(statements[0])
+}
+
 /**
- * An `li`, `tr`, `td`, `th` or `img` with `onClick` and no `role` (and no spread, which may carry
- * one): a clickable row that is a button with no semantics and, mostly, no keyboard route.
+ * A `div`, `span`, `li`, `tr`, `td`, `th` or `img` with `onClick` and no `role` (and no spread,
+ * which may carry one): a clickable element that is a button with no semantics and, mostly, no
+ * keyboard route. A handler that only calls `stopPropagation` is a wrapper, not a control.
  */
 const isClickableRow = (node: Node): boolean =>
   CLICKABLE_NON_CONTROLS.has(tagOf(node) ?? '') &&
   attribute(node, 'onClick') !== undefined &&
   attribute(node, 'role') === undefined &&
-  !children(node, 'attributes').some((attr) => attr.type === 'JSXSpreadAttribute')
+  !children(node, 'attributes').some((attr) => attr.type === 'JSXSpreadAttribute') &&
+  !onlyStopsPropagation(node)
 
 /**
  * Raw `button`, `input`, `select`, `textarea`, the native `dialog`, `details`, `progress` and
  * `meter`, a `div` or `span` that is a button by `role="button"` and `onClick`, an `<a onClick>`
- * with no `href`, and an `li`, `tr`, `td`, `th` or `img` with `onClick` and no `role`. A
+ * with no `href`, and a `div`, `span`, `li`, `tr`, `td`, `th` or `img` with `onClick` and no `role`
+ * (unless the handler only calls `stopPropagation`). A
  * `type="file"` input that is visually hidden (a `hidden` attribute, or a `sr-only` or `hidden`
  * class) passes: it sits behind a label, and no
  * primitive wraps a file input. A visible file input still reports.
@@ -306,8 +352,9 @@ const rawHeading = form(
       JSXOpeningElement: rawHeadingOpening(report, headingTags),
       CallExpression(node) {
         if (calleeName(node) !== 'createElement') return
-        const tag = stringValue(children(node, 'arguments')[0])
-        if (tag !== undefined && HEADINGS.has(tag)) report(node, `createElement('${tag}')`)
+        const first = children(node, 'arguments')[0]
+        if (!isHeadingTag(first)) return
+        report(node, `createElement(${stringValue(unwrapped(first)) ?? 'a heading tag'})`)
       },
     }
   },
@@ -353,7 +400,7 @@ function rawHeadingOpening(
 }
 
 /** Tailwind's whole-table display utility, and the parts that sit in one. */
-const DISPLAY_TABLE = /^(?:[\w-]+:)*table$/
+const DISPLAY_TABLE = /^(?:[\w-]+:)*(?:inline-)?table$/
 const DISPLAY_TABLE_PART = /^(?:[\w-]+:)*table-(?:row|cell|row-group|header-group|footer-group)$/
 
 /** True when an ancestor element of `node` carries the whole-table display class. */
@@ -367,7 +414,7 @@ const insideDisplayTable = (node: Node): boolean => {
 
 /**
  * A `<table>`, a `<dl>` (key-value rows: Facts ships for them), and an intrinsic element laid out
- * as a table by Tailwind's display utilities (`table`; a `table-row` or `table-cell` outside one,
+ * as a table by Tailwind's display utilities (`table`, `inline-table`; a `table-row` or `table-cell` outside one,
  * so a table is one finding). `table-auto` and `table-fixed` set a layout, not a display, and pass.
  */
 const rawTable = form(
@@ -712,6 +759,8 @@ const GEOMETRY_STYLE: ReadonlySet<string> = new Set([
   'flex',
   'flexGrow',
   'flexBasis',
+  'inlineSize',
+  'blockSize',
 ])
 
 const unwrapped = (node: Node | undefined): Node | undefined => {
@@ -728,12 +777,13 @@ const unwrapped = (node: Node | undefined): Node | undefined => {
 
 /**
  * True when a class names the custom property in a geometry utility: `w-(--w)`, `h-[var(--h)]`,
- * and the flex share of a bar, `grow-(--g)`, `basis-(--b)`, `flex-(--f)`.
+ * the flex share of a bar, `grow-(--g)`, `basis-(--b)`, `flex-(--f)`, and the scale or offset of one,
+ * `scale-x-(--s)`, `translate-y-(--t)`.
  */
 const sizesFromProperty = (opening: Node, property: string): boolean => {
   const name = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const utility = new RegExp(
-    `^(?:[\\w-]+:)*-?(?:(?:min|max)-)?(?:w|h|size|left|top|right|bottom|inset|basis|grow|flex-grow|flex)-(?:\\(${name}\\)|\\[var\\(${name}\\)\\])$`,
+    `^(?:[\\w-]+:)*-?(?:(?:min|max)-)?(?:w|h|size|left|top|right|bottom|inset|basis|grow|flex-grow|flex|(?:scale|translate)(?:-[xy])?)-(?:\\(${name}\\)|\\[var\\(${name}\\)\\])$`,
   )
   return classTokens(opening).some((token) => utility.test(token))
 }
@@ -754,7 +804,10 @@ const datumGeometry = (opening: Node, names: ReadonlySet<string>): string | unde
     const key = child(prop, 'key')
     const keyName = nameOf(key) ?? stringValue(key)
     if (keyName === undefined) continue
-    const geometry = GEOMETRY_STYLE.has(keyName)
+    const geometry =
+      GEOMETRY_STYLE.has(keyName) ||
+      (keyName === 'transform' &&
+        stringsIn(child(prop, 'value')).some((t) => /scale[XY]?\(/.test(t)))
     if (!geometry && !(keyName.startsWith('--') && sizesFromProperty(opening, keyName))) continue
     for (const used of identifiersIn(child(prop, 'value'))) if (names.has(used)) return keyName
   }
@@ -791,8 +844,8 @@ const percentWidth = (opening: Node): boolean => {
 /**
  * An intrinsic element sized or positioned by a datum inside a `.map` callback: a `div` whose
  * `style` sets `width`, `height`, `left`, `top`, `right`, `bottom` or its flex share (`flex`,
- * `flexGrow`, `flexBasis`), or a custom property a class sizes the element from (`w-(--w)`,
- * `grow-(--g)`: the route `shadcn/no-inline-styles` names), from the datum's share. An SVG
+ * `flexGrow`, `flexBasis`, `inlineSize`, `blockSize`, a `transform` of `scale`, `scaleX` or `scaleY`), or a custom property a class sizes the element from (`w-(--w)`,
+ * `grow-(--g)`, `scale-x-(--s)`: the route `shadcn/no-inline-styles` names), from the datum's share. An SVG
  * mark is the `svg-data-marks` form's; a mark drawn through the geometry seam passes. One report
  * per map call. Outside a map, a `style` width computed with a percent sign (a fill bar from one
  * value) reports once per element.
@@ -828,12 +881,24 @@ const htmlDataMarks = form(
   },
 )
 
+/** The roles that only make sense inside a table, grid or treegrid. */
+const TABLE_PARTS: ReadonlySet<string> = new Set([
+  'rowgroup',
+  'columnheader',
+  'rowheader',
+  'row',
+  'gridcell',
+  'cell',
+])
+
+const INTRINSIC_ONLY_PARTS: ReadonlySet<string> = new Set(['row', 'gridcell', 'cell', 'rowheader'])
+
 const roleTableOrGrid = form(
   'role-table',
   'Use ui/table, or DataTable for data, which carry the table semantics',
   'Eject ui/table to change its structure',
   ({ report }) => {
-    // `rowgroup` and `columnheader` are the parts of a table; one outside an element with a table
+    // `row`, `gridcell`, `rowgroup` and the headers are the parts of a table; one outside an element with a table
     // or grid role is reported, so a table that is already reported is one finding.
     const roleTokens = (attribute: Node): string[] => {
       const value = child(attribute, 'value')
@@ -862,7 +927,13 @@ const roleTableOrGrid = form(
         const tokens = roleTokens(node)
         const role = tokens.find(isWhole)
         if (role) return report(node, `role="${role}"`)
-        const part = tokens.find((token) => token === 'rowgroup' || token === 'columnheader')
+        // `row`, `gridcell`, `cell` and `rowheader` are read on an intrinsic element only: a
+        // component (`<TableRow role="row">`) owns its markup.
+        const owner = parentOf(node)
+        const intrinsic = /^[a-z]/.test((owner && tagOf(owner)) ?? '')
+        const part = tokens.find(
+          (token) => TABLE_PARTS.has(token) && (intrinsic || !INTRINSIC_ONLY_PARTS.has(token)),
+        )
         if (part && !insideWhole(node)) report(node, `role="${part}"`)
       },
     }
@@ -879,6 +950,18 @@ const isShapedRows = (receiver: Node | undefined): boolean => {
     node = child(callee, 'object')
   }
   return false
+}
+
+/** The collection and the mapper of `rows.map(fn)`, `rows.flatMap(fn)` or `Array.from(rows, fn)`. */
+const mappedRows = (node: Node): { receiver: Node | undefined } | undefined => {
+  if (isMapCall(node)) return { receiver: child(child(node, 'callee') as Node, 'object') }
+  const callee = child(node, 'callee')
+  if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return undefined
+  if (nameOf(child(callee, 'object')) !== 'Array' || nameOf(child(callee, 'property')) !== 'from') {
+    return undefined
+  }
+  const args = children(node, 'arguments')
+  return args.length > 1 ? { receiver: args[0] } : undefined
 }
 
 const FIXED_ROWS = /^[A-Z][A-Z0-9_]*$/
@@ -942,11 +1025,12 @@ const tableRows = form(
         if (bodies.at(-1) === node) bodies.pop()
       },
       CallExpression(node) {
-        if (bodies.length === 0 || !isMapCall(node)) return
+        const rows = bodies.length === 0 ? undefined : mappedRows(node)
+        if (!rows) return
         mapped.add(node)
         depth += 1
         if (depth > 1) return
-        const receiver = child(child(node, 'callee') as Node, 'object')
+        const { receiver } = rows
         if (isFixedRows(receiver, fixed)) return
         const hoisted = shaped.has(nameOf(receiver) ?? '')
         report(
@@ -1011,11 +1095,21 @@ const PAGE_ELEMENTS: ReadonlySet<string> = new Set(['section', 'main', 'article'
  * card frame or chart kind above it: `<section><Lines /></section>`. A chart that is the whole
  * return of a component, under components only, or under a `div` has no such ancestor and passes.
  */
+/** `P.Section`, a member tag with an identifier object: `P.Section`. */
+const qualifiedTag = (opening: Node): string | undefined => {
+  const name = child(opening, 'name')
+  if (name?.type !== 'JSXMemberExpression') return undefined
+  const object = nameOf(child(name, 'object'))
+  const property = nameOf(child(name, 'property'))
+  return object !== undefined && property !== undefined ? `${object}.${property}` : undefined
+}
+
 function bareInPage(chart: Node, pageParts: ReadonlySet<string>): boolean {
   let intrinsic = false
   for (let at = parentOf(parentOf(chart) as Node); at; at = parentOf(at)) {
     if (at.type !== 'JSXElement') continue
-    const tag = tagOf(child(at, 'openingElement') as Node)
+    const open = child(at, 'openingElement') as Node
+    const tag = tagOf(open) ?? qualifiedTag(open)
     if (tag === undefined) continue
     if (isCardFrame(tag) || CHART_KINDS.has(tag)) return false
     if (PAGE_ELEMENTS.has(tag) || pageParts.has(tag)) intrinsic = true
@@ -1028,7 +1122,7 @@ const PAGE_FRAMES: ReadonlySet<string> = new Set(['Section', 'Page'])
 
 /**
  * A chart kind as a `DataPanel` body root, or bare in a page: a page element (or `Section`/`Page`
- * imported from `basalt-ui/page`, under any local name) above it and no `ChartCard`, `DataPanel`,
+ * imported from `basalt-ui/page`, under any local name or through a namespace import) above it and no `ChartCard`, `DataPanel`,
  * `Card` or other `*Card` / `*Panel` frame. A plain `Card` passes.
  */
 const chartBodyRoot = form(
@@ -1042,6 +1136,12 @@ const chartBodyRoot = form(
         ImportDeclaration(node) {
           if (stringValue(child(node, 'source')) !== 'basalt-ui/page') return
           for (const spec of children(node, 'specifiers')) {
+            if (spec.type === 'ImportNamespaceSpecifier') {
+              const namespace = nameOf(child(spec, 'local'))
+              if (namespace === undefined) continue
+              for (const frame of PAGE_FRAMES) pageParts.add(`${namespace}.${frame}`)
+              continue
+            }
             const imported = nameOf(child(spec, 'imported'))
             const local = nameOf(child(spec, 'local'))
             if (imported !== undefined && local !== undefined && PAGE_FRAMES.has(imported)) {
@@ -1197,8 +1297,13 @@ const intlFormat: AstForm = {
               report(node, `${momentRoot(child(callee, 'object'))}().format()`)
               return
             }
-            if (method === 'toFormat' && isLuxonChain(child(callee, 'object'))) {
-              if (rendersAsChild(node)) report(node, 'DateTime.toFormat()')
+            if (
+              (method === 'toFormat' ||
+                method === 'toRelative' ||
+                method === 'toRelativeCalendar') &&
+              isLuxonChain(child(callee, 'object'))
+            ) {
+              if (rendersAsChild(node)) report(node, `DateTime.${method}()`)
               return
             }
             if (method === 'toFixed') {

@@ -53,3 +53,12 @@ const route = createFileRoute('/runs')({ loaderDeps: ({ search: { page, ...rest 
 const route = createFileRoute('/runs')({
   loaderDeps: ({ search: { page, range } }) => ({ page, range }),
 })
+
+// @invalid
+const route = { loaderDeps: (opts) => ({ ...opts.search }) }
+
+// @invalid
+const route = { loaderDeps: (opts) => ({ all: opts.search }) }
+
+// @valid
+const route = { loaderDeps: (opts) => ({ range: opts.search.range }) }

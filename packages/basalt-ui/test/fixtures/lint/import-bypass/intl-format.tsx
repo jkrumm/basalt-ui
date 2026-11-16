@@ -79,3 +79,9 @@ const a = <time>{DateTime.fromISO(at).toLocaleString(DateTime.DATE_MED)}</time>
 const key = DateTime.fromISO(at).toFormat('yyyy-MM-dd')
 // @valid
 const a = <span>{duration.toFormat('hh:mm')}</span>
+// @invalid
+const a = <span>{DateTime.fromISO(at).toRelative()}</span>
+// @invalid
+const a = <span>{DateTime.fromISO(at).toRelativeCalendar()}</span>
+// @valid
+const key = DateTime.fromISO(at).toRelative()

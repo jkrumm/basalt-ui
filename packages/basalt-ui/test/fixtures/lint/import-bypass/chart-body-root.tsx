@@ -159,3 +159,24 @@ const a = (
     <Bars data={rows} ariaLabel="Usage" />
   </Section>
 )
+// @invalid
+import * as P from 'basalt-ui/page'
+const a = (
+  <P.Section title="Trend">
+    <Lines data={rows} x="at" y="value" />
+  </P.Section>
+)
+// @valid
+import * as P from 'basalt-ui/page'
+const a = (
+  <P.Section title="Trend">
+    <ChartCard title="Trend" chart={<Lines data={rows} x="at" y="value" />} />
+  </P.Section>
+)
+// @valid
+import * as P from './my-page'
+const a = (
+  <P.Section title="Trend">
+    <Lines data={rows} x="at" y="value" />
+  </P.Section>
+)
