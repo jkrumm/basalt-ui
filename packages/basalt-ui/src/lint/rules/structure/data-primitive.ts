@@ -7,6 +7,17 @@
  * A plain `setInterval` is deliberately not a form (4 of 5 console hits are legitimate); a timer
  * is flagged only when its callback refetches. Raw `WebSocket` outside a seam is the same form as
  * `EventSource`: the contract ships no client, so the message names `createChannel` and the seam.
+ *
+ * Known limits: `reader-loop` reads a `for await` over a `.body` member, a `getReader()` read in a
+ * loop and a `getReader()` whose reader is read inside a named function that refers to itself (a
+ * `read().then(function pump() { … read().then(pump) })` or a recursive async function); a pump split
+ * across two functions, a reader taken from a parameter and a stream iterated through a helper
+ * are out of reach. `timer-refetch` reads any `.invalidate()` / `invalidateQueries` /
+ * `refetchQueries` / `refetch` call in a timer callback, router invalidation included; a timer
+ * that calls a named function which invalidates is not followed. `unseamed-transport` reads
+ * `EventSource` and `WebSocket`, not a client library's connect call: `io()` from
+ * `socket.io-client` is reported at its import by `import-boundary` (`data-library`), as is `swr`;
+ * SWR's `refreshInterval` key still reports here as a `refetch-interval`.
  */
 import type { FormContext, Node, Visitor } from '../../factory'
 import { isTestFile, mergeVisitors } from '../../factory'
@@ -111,11 +122,18 @@ function someDescendant(root: Node, test: (node: Node) => boolean): boolean {
   return false
 }
 
+/** TanStack Query's polling keys, and SWR's `refreshInterval` (the import itself is import-boundary's). */
+const REFETCH_INTERVAL_KEYS: ReadonlySet<string> = new Set([
+  'refetchInterval',
+  'refetchIntervalInBackground',
+  'refreshInterval',
+])
+
 export const refetchInterval: AstForm = {
   id: 'refetch-interval',
   detect: ({ report }): Visitor => {
     const check = (node: Node, name: string | undefined): void => {
-      if (name === 'refetchInterval' || name === 'refetchIntervalInBackground') report(node, name)
+      if (REFETCH_INTERVAL_KEYS.has(name ?? '')) report(node, name ?? '')
     }
     return {
       Property(node) {
@@ -163,11 +181,33 @@ const LOOP_TYPES = [
   'ForOfStatement',
 ]
 
+const FUNCTION_TYPES: ReadonlySet<string> = new Set([
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'ArrowFunctionExpression',
+])
+
+function enclosingFunction(node: Node): Node | undefined {
+  for (let at = node['parent'] as Node | undefined; at; at = at['parent'] as Node | undefined) {
+    if (FUNCTION_TYPES.has(at.type)) return at
+  }
+  return undefined
+}
+
+/** The name a function is called by: its own id, or the variable it is assigned to. */
+function functionName(fn: Node): string | undefined {
+  const own = nameOf(child(fn, 'id'))
+  if (own !== undefined) return own
+  const parent = fn['parent'] as Node | undefined
+  return parent?.type === 'VariableDeclarator' ? nameOf(child(parent, 'id')) : undefined
+}
+
 export const readerLoop: AstForm = {
   id: 'reader-loop',
   detect: ({ report }): Visitor => {
     const readers = new Map<string, Node>()
     const looped = new Set<string>()
+    const reads: { reader: string; fn: Node | undefined }[] = []
     let depth = 0
     const loops: Record<string, () => void> = {}
     for (const type of LOOP_TYPES) {
@@ -181,6 +221,15 @@ export const readerLoop: AstForm = {
     return mergeVisitors([
       loops as unknown as Visitor,
       {
+        ForOfStatement(node) {
+          let source = child(node, 'right')
+          while (source?.type === 'TSAsExpression' || source?.type === 'TSNonNullExpression') {
+            source = child(source, 'expression')
+          }
+          if (node['await'] !== true || source?.type !== 'MemberExpression') return
+          if (source['computed'] === true || nameOf(child(source, 'property')) !== 'body') return
+          report(node, 'for await … .body')
+        },
         VariableDeclarator(node) {
           let init = child(node, 'init')
           if (init?.type === 'AwaitExpression') init = child(init, 'argument')
@@ -188,11 +237,23 @@ export const readerLoop: AstForm = {
           if (name !== undefined && isMethodCall(init, 'getReader')) readers.set(name, init)
         },
         CallExpression(node) {
-          if (depth === 0 || !isMethodCall(node, 'read')) return
+          if (!isMethodCall(node, 'read')) return
           const reader = nameOf(child(child(node, 'callee'), 'object'))
-          if (reader !== undefined) looped.add(reader)
+          if (reader === undefined) return
+          reads.push({ reader, fn: enclosingFunction(node) })
+          if (depth > 0) looped.add(reader)
         },
         'Program:exit'() {
+          for (const { reader, fn } of reads) {
+            const self = fn && functionName(fn)
+            if (self === undefined || !readers.has(reader)) continue
+            const refersToSelf = someDescendant(fn as Node, (inner) => {
+              return (
+                inner.type === 'Identifier' && inner['name'] === self && inner !== child(fn, 'id')
+              )
+            })
+            if (refersToSelf) looped.add(reader)
+          }
           for (const [name, call] of readers) if (looped.has(name)) report(call, '.getReader()')
         },
       },
@@ -265,8 +326,20 @@ const CHART_ELEMENTS: ReadonlySet<string> = new Set([
   'MirroredBars',
 ])
 
-const isEmptyArray = (node: Node | undefined): boolean =>
-  node?.type === 'ArrayExpression' && nodesIn(node, 'elements').length === 0
+const TYPE_WRAPPERS: ReadonlySet<string> = new Set([
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'TSTypeAssertion',
+  'TSNonNullExpression',
+  'ParenthesizedExpression',
+])
+
+/** `[]`, also behind a type: `[] as Row[]`, `<Row[]>[]`, `([] satisfies Row[])`. */
+const isEmptyArray = (node: Node | undefined): boolean => {
+  let at = node
+  while (at && TYPE_WRAPPERS.has(at.type)) at = child(at, 'expression')
+  return at?.type === 'ArrayExpression' && nodesIn(at, 'elements').length === 0
+}
 
 const isFallbackExpression = (node: Node | undefined): boolean =>
   node?.type === 'LogicalExpression' &&
@@ -325,6 +398,7 @@ export const chartDataFallback: AstForm = {
 }
 
 const REFETCH_CALLS: ReadonlySet<string> = new Set([
+  'invalidate',
   'invalidateQueries',
   'refetchQueries',
   'refetch',
@@ -394,8 +468,8 @@ export const rawStorageWrite: AstForm = {
       },
     ])
   },
-  fix: 'Persist through a createLocalStore field or createPersistedState, which write through the StorageLike seam',
-  next: 'Implement StorageLike in its own adapter file that imports the type',
+  fix: 'Persist through persisted(key) from basalt-ui or a store field, which write through the StorageLike seam',
+  next: 'persisted.setStorage selects the app-wide backend; implement StorageLike in its own adapter file that imports the type',
   fixture: 'structure-rest/data-primitive-raw-storage-write.tsx',
 }
 

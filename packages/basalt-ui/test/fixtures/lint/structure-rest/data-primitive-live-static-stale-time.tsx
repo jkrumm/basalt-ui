@@ -7,13 +7,23 @@ const o = liveQuery(queryOptions({ queryKey: ['gyms'], queryFn, staleTime: 'stat
 const o = liveQuery({ queryKey: ['gyms'], queryFn, staleTime: 'static' }, 'static')
 
 // @invalid
-const o = liveQuery({ ...base, 'staleTime': 'static' }, { class: 'standard', onFocus: true })
+const o = liveQuery({ ...base, staleTime: 'static' }, { class: 'standard', onFocus: true })
 
 // @invalid
-const o = live.liveQuery(queryOptions({ queryKey: ['gyms'], queryFn, staleTime: 'static' }), 'static')
+const o = live.liveQuery(
+  queryOptions({ queryKey: ['gyms'], queryFn, staleTime: 'static' }),
+  'static',
+)
 
-// @valid
+// @invalid
 const o = liveQuery(queryOptions({ queryKey: ['gyms'], queryFn, staleTime: Infinity }), 'standard')
+
+// @invalid
+const o = liveQuery({ queryKey: ['gyms'], queryFn, staleTime: Number.POSITIVE_INFINITY }, 'static')
+
+// @invalid
+const opts = queryOptions({ queryKey: ['gyms'], queryFn, staleTime: Infinity })
+const o = liveQuery(opts, 'standard')
 
 // @valid
 const o = liveQuery(queryOptions({ queryKey: ['gyms'], queryFn }), 'static')

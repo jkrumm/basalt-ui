@@ -56,3 +56,20 @@ const a = <Lines ariaLabel="Runs" data={data} series={series} />
 // @valid
 const { data } = useRuns()
 const a = <Lines ariaLabel="Runs" data={data} state={{ pending }} series={series} />
+
+// @invalid
+// @ts
+const a = <Lines data={q.data || ([] as Row[])} />
+
+// @invalid
+// @ts
+const a = <Bars data={q.data ?? ([] as Row[])} />
+
+// @invalid
+// @ts
+const rows = q.data ?? ([] satisfies Row[])
+const a = <Lines data={rows} />
+
+// @valid
+// @ts
+const a = <Lines data={q.data ?? ([] as Row[]).concat(extra)} />

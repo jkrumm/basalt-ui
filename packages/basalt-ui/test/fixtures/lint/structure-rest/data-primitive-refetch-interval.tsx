@@ -10,7 +10,7 @@ const q = useQuery({ queryKey: ['gyms'], queryFn, refetchInterval: (query) => po
 const q = useQuery({ queryKey: ['gyms'], queryFn, refetchInterval: false })
 
 // @invalid
-const q = useQuery({ queryKey: ['gyms'], queryFn, 'refetchIntervalInBackground': true })
+const q = useQuery({ queryKey: ['gyms'], queryFn, refetchIntervalInBackground: true })
 
 // @invalid
 const q = <Poller refetchInterval={5000} />
@@ -23,3 +23,6 @@ const q = useQuery(liveQuery(gymsOptions, 'fast'))
 
 // @valid
 const { refetchInterval } = props
+
+// @invalid
+const q = useSWR('/api/runs', fetchRuns, { refreshInterval: 5000 })

@@ -3,7 +3,10 @@
  * `staleTime: 'static'` inside a `liveQuery` argument, inside the options of a `useQuery`,
  * `useSuspenseQuery`, `useInfiniteQuery` or `useSuspenseInfiniteQuery` call, or in options bound to
  * a name that is then passed to `liveQuery` by name (`const opts = queryOptions({ staleTime:
- * 'static' }); liveQuery(opts, ...)`). A plain `queryOptions({ staleTime: 'static' })` that nothing
+ * 'static' }); liveQuery(opts, ...)`). `staleTime: Infinity` (or `Number.POSITIVE_INFINITY`) inside
+ * a `liveQuery` argument, or in options passed to it by name, reports too: the class owns
+ * `staleTime`, and the dev assert in `liveQuery` throws on the key; `Infinity` in a plain
+ * `useQuery` stays legal. A plain `queryOptions({ staleTime: 'static' })` that nothing
  * in the file passes on stays legal. A query with a `'static'` observer is immune
  * to `invalidateQueries` and `refetchQueries`, so the same options object used in a loader and a
  * component silently ignores a push, a global refresh and a deploy. `liveQuery(..., 'static')`
@@ -38,8 +41,14 @@ function isLiveQueryCall(call: Node): boolean {
   )
 }
 
-/** A non-computed `staleTime: 'static'` property. */
-function isStaticStaleTime(node: Node): boolean {
+const isInfinity = (value: Node): boolean =>
+  nameOf(value) === 'Infinity' ||
+  (value.type === 'MemberExpression' &&
+    nameOf(value['object']) === 'Number' &&
+    nameOf(value['property']) === 'POSITIVE_INFINITY')
+
+/** A non-computed `staleTime: 'static'` property, or `Infinity` when `live` options are read. */
+function isStaticStaleTime(node: Node, live: boolean): boolean {
   if (node.type !== 'Property' || node['computed'] === true) return false
   const key = node['key']
   const keyName =
@@ -47,21 +56,18 @@ function isStaticStaleTime(node: Node): boolean {
       ? key['value']
       : nameOf(key)
   const value = node['value']
-  return (
-    keyName === 'staleTime' &&
-    isNode(value) &&
-    value.type === 'Literal' &&
-    value['value'] === 'static'
-  )
+  if (keyName !== 'staleTime' || !isNode(value)) return false
+  if (live && isInfinity(value)) return true
+  return value.type === 'Literal' && value['value'] === 'static'
 }
 
 /** Every `staleTime: 'static'` property under `root`, skipping the `parent` back-reference. */
-function staticStaleTimes(root: Node): Node[] {
+function staticStaleTimes(root: Node, live = false): Node[] {
   const found: Node[] = []
   const stack: Node[] = [root]
   while (stack.length > 0) {
     const node = stack.pop() as Node
-    if (isStaticStaleTime(node)) found.push(node)
+    if (isStaticStaleTime(node, live)) found.push(node)
     for (const [key, value] of Object.entries(node)) {
       if (key === 'parent' || key === 'loc' || key === 'range') continue
       if (Array.isArray(value)) stack.push(...value.filter(isNode))
@@ -70,6 +76,11 @@ function staticStaleTimes(root: Node): Node[] {
   }
   return found
 }
+
+const staleTimeSubject = (property: Node): string =>
+  isInfinity(property['value'] as Node)
+    ? 'staleTime: Infinity inside liveQuery'
+    : "staleTime: 'static'"
 
 const QUERY_HOOKS: ReadonlySet<string> = new Set([
   'useQuery',
@@ -89,7 +100,7 @@ export const liveStaticStale: AstForm = {
         const init = node['init']
         if (name === undefined || !isNode(init)) return
         if (init.type === 'CallExpression' && isLiveQueryCall(init)) return
-        const [property] = staticStaleTimes(init)
+        const [property] = staticStaleTimes(init, true)
         if (property) staticOptions.set(name, property)
       },
       CallExpression(node) {
@@ -98,7 +109,9 @@ export const liveStaticStale: AstForm = {
         if (isLiveQueryCall(node)) {
           const name = nameOf(options)
           if (name !== undefined) passed.push({ node: options, name })
-          for (const property of staticStaleTimes(options)) report(property, "staleTime: 'static'")
+          for (const property of staticStaleTimes(options, true)) {
+            report(property, staleTimeSubject(property))
+          }
           return
         }
         if (!QUERY_HOOKS.has(nameOf(node['callee']) ?? '')) return
@@ -107,7 +120,7 @@ export const liveStaticStale: AstForm = {
       'Program:exit'() {
         for (const { node, name } of passed) {
           if (staticOptions.has(name))
-            report(node, `${name}: staleTime 'static' passed to liveQuery`)
+            report(node, `${name}: staleTime 'static' or Infinity passed to liveQuery`)
         }
       },
     }
