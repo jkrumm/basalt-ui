@@ -5,3 +5,4 @@ export const a = (
 export const b = (
   <div className="md:w-120 max-md:w-120 hover:lg:min-w-[420px] min-[600px]:w-[420px]" />
 )
+export const c = <div className="[@media(min-width:900px)]:w-[500px]" />

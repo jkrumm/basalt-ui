@@ -8,10 +8,41 @@ import { describe, expect, it } from 'bun:test'
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
+import type { ESLint } from 'eslint'
+import { Linter } from 'eslint'
 import stylelint from 'stylelint'
 import { SHIPPED_CONFIG } from './gen'
 import preset from './index'
 import { renderStylelintConfig, stylelintConfig } from './render'
+import { FIXED_WIDTH } from './rules'
+import { createPlugin } from '../factory'
+import { CLASS_RULES } from '../rules/class/table'
+
+/** True when the class rule's fixed-width form reports `className` at parts. */
+const classReports = (className: string): boolean =>
+  new Linter()
+    .verify(
+      `const a = <div className="${className}" />`,
+      [
+        {
+          files: ['**/*.tsx'],
+          plugins: { basalt: createPlugin(CLASS_RULES) as unknown as ESLint.Plugin },
+          languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
+          rules: { 'basalt/tw-off-law': ['error', { profile: 'parts' }] },
+        },
+      ],
+      'input.tsx',
+    )
+    .some((m) => m.messageId === 'fixed-width')
+
+describe('the width ban agrees with the class rule fixed-width', () => {
+  it('reports the same lengths at the threshold, in a module and as an arbitrary class', () => {
+    const css = new RegExp(FIXED_WIDTH, 'i')
+    for (const length of ['384px', '385px', '420px', '24rem', '25rem', '24.5rem', '1200px']) {
+      expect(css.test(length), length).toBe(classReports(`w-[${length}]`))
+    }
+  })
+})
 
 const PKG = resolve(import.meta.dirname, '..', '..', '..')
 const FIXTURES = join(PKG, 'test', 'fixtures', 'lint', 'stylelint')

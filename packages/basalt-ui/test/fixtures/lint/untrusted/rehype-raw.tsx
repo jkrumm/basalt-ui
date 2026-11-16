@@ -29,3 +29,11 @@ const plugins = [[remarkRehype, { allowDangerousHtml: false }]]
 
 // @valid
 const plugins = [[other, { allowDangerousHtml: true }]]
+
+// @invalid
+import remarkRehype from 'remark-rehype'
+const html = unified().use(remarkParse).use(remarkRehype, { allowDangerousHtml: true })
+
+// @valid
+import remarkRehype from 'remark-rehype'
+const html = unified().use(remarkParse).use(remarkRehype)

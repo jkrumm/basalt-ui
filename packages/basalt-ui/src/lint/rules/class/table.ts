@@ -110,7 +110,7 @@ const DARK_VARIANT =
 
 /** A viewport variant anywhere in the token's chain: `viewport-keyed` already reports it. */
 const VIEWPORT_CHAIN =
-  '(?:[^:]+:)*(?:(?:(?:max|min)-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\\[[^\\]]*\\]):'
+  '(?:[^:]+:)*(?:(?:(?:max|min)-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\\[[^\\]]*\\]|\\[@media[^\\]]*width[^\\]]*\\]):'
 
 export const CLASS_RULES = defineRules({
   'viewport-keyed': {

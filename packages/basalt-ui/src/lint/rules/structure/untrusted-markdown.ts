@@ -243,7 +243,8 @@ const rehypeRaw: AstForm = {
   id: 'rehype-raw',
   detect: ({ report }) => {
     // The default import of `remark-rehype`, whatever it is called, with the options it is given
-    // as the tuple `[remarkRehype, { allowDangerousHtml: true }]`.
+    // as the tuple `[remarkRehype, { allowDangerousHtml: true }]` or to unified's
+    // `.use(remarkRehype, { allowDangerousHtml: true })`.
     const remarkRehype = new Set<string>()
     const options: { node: Node; callee: string | undefined; options: Node | undefined }[] = []
     return {
@@ -277,6 +278,13 @@ const rehypeRaw: AstForm = {
       },
       CallExpression(node) {
         if (loadedModule(node) === 'rehype-raw') report(node, 'rehype-raw')
+        const callee = child(node, 'callee')
+        if (callee?.type !== 'MemberExpression' || nameOf(child(callee, 'property')) !== 'use') {
+          return
+        }
+        const [plugin, config] = children(node, 'arguments')
+        if (plugin?.type === 'Identifier')
+          options.push({ node, callee: nameOf(plugin), options: config })
       },
     }
   },
