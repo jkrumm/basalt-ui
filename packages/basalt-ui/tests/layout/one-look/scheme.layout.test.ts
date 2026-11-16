@@ -190,30 +190,17 @@ layout('P9: the shutterflow and argo cases', () => {
     expect(result.canvas).toBe(ref.dark)
   })
 
-  test('the raw legacy key mantine-color-scheme-value=dark is read', async () => {
-    const page = await open(script)
-    await page.raw.evaluate(() => localStorage.setItem('mantine-color-scheme-value', 'dark'))
-    await page.raw.emulateMedia({ colorScheme: 'light' })
-    await page.raw.reload()
-    const result = await painted(page.raw)
-    expect(result.theme).toBe('dark')
-    expect(result.canvas).toBe(ref.dark)
-  })
-
-  test('the declared key beats the legacy key, which beats the cookie', async () => {
+  test('the declared key beats the cookie', async () => {
     const page = await open(script)
     await page.raw.context().addCookies([{ name: COOKIE, value: 'dark', url: page.raw.url() }])
-    await page.raw.evaluate(() => {
-      localStorage.setItem('mantine-color-scheme-value', 'dark')
-      localStorage.setItem('basalt:scheme', 'light')
-    })
+    await page.raw.evaluate(() => localStorage.setItem('basalt:scheme', 'light'))
     await page.raw.reload()
     expect((await painted(page.raw)).theme).toBe('light')
     await page.raw.evaluate(() => localStorage.removeItem('basalt:scheme'))
     await page.raw.context().clearCookies()
     await page.raw.context().addCookies([{ name: COOKIE, value: 'light', url: page.raw.url() }])
     await page.raw.reload()
-    expect((await painted(page.raw)).theme).toBe('dark')
+    expect((await painted(page.raw)).theme).toBe('light')
   })
 
   test('a late setScheme() after a simulated bootUiPrefs() re-stamps', async () => {

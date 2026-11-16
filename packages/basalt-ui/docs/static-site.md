@@ -57,14 +57,14 @@ default output; a test keeps it byte-equal to `themeScript()`.
 (function(){var d=document.documentElement,a="data-theme",c=null,v;if(d.hasAttribute(a))return
 function t(f){try{var x=f();if(x==="light"||x==="dark"||x==="auto")return x}catch(e){}}
 function s(k){return t(function(){return localStorage.getItem(k)})}
-v=s("basalt:scheme")||s("mantine-color-scheme-value")||t(function(){return c&&document.cookie.split(/;\s*/).reduce(function(r,p){
+v=s("basalt:scheme")||t(function(){return c&&document.cookie.split(/;\s*/).reduce(function(r,p){
 return r||(p.indexOf(c+"=")===0?p.slice(c.length+1):r)},"")})||"auto"
 if(v==="light"||v==="dark")d.setAttribute(a,v)})()
 </script>
 ```
 
-It reads `localStorage['basalt:scheme']` (a raw `light`, `dark` or `auto` string), then the legacy
-`mantine-color-scheme-value` key, then the cookie if you name one, then the default. It stamps
+It reads `localStorage['basalt:scheme']` (a raw `light`, `dark` or `auto` string), then the cookie
+if you name one, then the default. It stamps
 `data-theme` only for `light` or `dark`, never overrides an attribute already present, and survives
 storage that throws.
 
