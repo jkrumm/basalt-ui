@@ -6,6 +6,8 @@ import { Page, PageBar, Section } from 'basalt-ui/page'
 // plus one nav entry in `src/lib/nav.tsx`, e.g.:
 //   { id: 'runs', label: 'Runs', icon: Flask, mobile: 'tab', link: linkOptions({ to: '/runs' }) }
 // The shell names the page from that entry and `PageBar title` renders the one h1.
+// The route tree (`src/routeTree.gen.ts`) is written by the router plugin on the next `vite` run;
+// `tsc` reads it, so `build` is `vite build && tsc -b`, never `tsc -b` first.
 function RunsPage() {
   return (
     <Page area="runs">
