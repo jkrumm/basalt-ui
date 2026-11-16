@@ -59,7 +59,6 @@ export function ReachRings({
   return (
     <svg
       viewBox={`0 0 ${SIZE} ${SIZE}`}
-      role="img"
       aria-label="The leaked key at the centre, each reachable resource on the ring of its hop count"
       className="size-full"
     >
@@ -88,9 +87,11 @@ export function ReachRings({
       {nodes.map(({ row, x, y }) => {
         const from = row.via === null ? undefined : placed.get(row.via)
         if (from === undefined) return null
+        // oxlint-disable-next-line basalt/primitive-bypass -- focus.target is spread by the page wrapper in ExprC10.tsx, one tab stop over the list and these marks
         return <line key={row.id} x1={from.x} y1={from.y} x2={x} y2={y} stroke={VX.line} />
       })}
       {nodes.map(({ row, index, x, y }) => (
+        // oxlint-disable-next-line basalt/primitive-bypass -- focus.target is spread by the page wrapper in ExprC10.tsx, one tab stop over the list and these marks
         <circle
           key={row.id}
           {...focus.item(index)}

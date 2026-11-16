@@ -235,7 +235,7 @@ export function ExprC13Scenario({ shotState, fixture }: ScenarioProps) {
             body={() => (
               <ScrollArea
                 aria-label="Days ranked by escalations"
-                className="h-full"
+                className="max-h-64"
                 onPointerLeave={focus.target.onPointerLeave}
               >
                 {ranked.map(({ d, i }) => (
@@ -245,6 +245,7 @@ export function ExprC13Scenario({ shotState, fixture }: ScenarioProps) {
                     id={rowId(i)}
                     className="flex items-baseline justify-between gap-3 px-3 py-1.5 text-sm data-focused:bg-selected"
                   >
+                    {/* oxlint-disable-next-line basalt/tw-off-law -- no kit part takes a day label in the accent tone; it marks the spike days the bars mark */}
                     <span className={isSpike(d, base) ? 'font-mono text-brand' : 'font-mono'}>
                       {dayText(d)}
                     </span>

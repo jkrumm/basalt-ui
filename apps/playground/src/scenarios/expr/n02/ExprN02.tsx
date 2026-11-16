@@ -70,7 +70,7 @@ function ListRows({ issues, focus }: { issues: readonly Dot[]; focus: Focus }): 
   return (
     <ScrollArea
       aria-label="Open Issues, longest past typical first"
-      className="h-full"
+      className="max-h-125"
       onPointerLeave={focus.target.onPointerLeave}
     >
       {issues.map((issue, i) => (
