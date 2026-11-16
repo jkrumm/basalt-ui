@@ -17,6 +17,14 @@
  * ternary or `||` too). The same word anywhere else is a plain string. `transparent`, `inherit`,
  * `currentColor` and `none` are keywords, not colours, and pass.
  *
+ * A bare `hsl(var(--border))`, `rgb(var(--x))` or `oklch(var(--x))` over a variable that is not a
+ * `--vx-` token is the shadcn v3 idiom the stylesheet's `function-disallowed-list` bans, and reports.
+ * A `*-color` key (`'line-color'`, `'fill-color'`, a maplibre paint object) is a colour slot.
+ *
+ * A `#` plus digits string under a reference key (`ref`, `id`, `issue`, `number`, `ticket`, or a
+ * compound such as `issueRef`, `rowId`, `issueNumber`) is an Issue reference and passes; the same
+ * string under `color` or `fill` still reports.
+ *
  * Known limit: a named colour that reaches its slot through a variable or a function result is not
  * read (`const c = 'white'; ctx.fillStyle = c` reports nothing: only the slot's own literal is). A
  * short hex-alphabet fragment (`'#feed'`, `'#cafe'`) is indistinguishable from a
@@ -36,9 +44,16 @@ const COLOUR_FUNCTION =
 const isIssueReference = (match: string, text: string): boolean =>
   /^#\d{3,4}$/.test(match) && text.trim() !== match
 
+const NON_TOKEN_VAR_FUNCTION =
+  /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*var\(\s*--(?!vx-)[\w-]+\s*(?:,[^)]*)?\)\s*\)/i
+
+const REFERENCE_KEY = /^(?:ref|id|issue|number|ticket)$|(?:Ref|Id|Issue|Number|Ticket)$/
+
 function literalIn(text: string): string | undefined {
   const fn = COLOUR_FUNCTION.exec(text)
   if (fn) return `${fn[0].replace(/\(.*$/s, '')}()`
+  const bare = NON_TOKEN_VAR_FUNCTION.exec(text)
+  if (bare) return `${bare[0].replace(/\(.*$/s, '')}(var())`
   for (const hex of text.matchAll(HEX)) {
     if (!isIssueReference(hex[0], text)) return hex[0]
   }
@@ -52,6 +67,13 @@ const templateText = (node: Node): string =>
       return value.cooked ?? value.raw
     })
     .join('${}')
+
+/** `{ ref: '#657' }`: the string is the value of a reference-named property. */
+function isReferenceValue(node: Node): boolean {
+  const property = parentOf(node)
+  if (property?.type !== 'Property' || property['value'] !== node) return false
+  return REFERENCE_KEY.test(keyName(property) ?? '')
+}
 
 const isModuleSource = (node: Node): boolean => {
   const parent = node['parent'] as Node | undefined
@@ -159,7 +181,10 @@ function inColourSlot(literal: Node): boolean {
     if (left.type !== 'MemberExpression' || left['computed']) return false
     return COLOUR_SLOTS.has(((left['property'] as Node)['name'] as string | undefined) ?? '')
   }
-  if (up?.type === 'Property' && up['value'] === at) return COLOUR_SLOTS.has(keyName(up) ?? '')
+  if (up?.type === 'Property' && up['value'] === at) {
+    const key = keyName(up) ?? ''
+    return COLOUR_SLOTS.has(key) || key.endsWith('-color')
+  }
   if (up?.type !== 'JSXAttribute') return false
   const name = up['name'] as Node
   return name.type === 'JSXIdentifier' && COLOUR_ATTRIBUTES.has(name['name'] as string)
@@ -175,6 +200,7 @@ export const colourLiteralForm: AstForm = {
       const text = node['value']
       if (typeof text !== 'string' || isModuleSource(node) || isSeriesColourPair(node)) return
       // A test passes a colour word as input (`{ color: 'red' }`); a hex is still a literal there.
+      if (/^#\d{3,4}$/.test(text.trim()) && isReferenceValue(node)) return
       const found = literalIn(text) ?? (isTestFile(context) ? undefined : namedColourIn(node, text))
       if (found) report(node, found)
     },

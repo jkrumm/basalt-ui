@@ -109,3 +109,32 @@ const text = <span title="red">white</span>
 // @valid
 // @filename scenarios/swatch.test.tsx
 const input = { color: 'red' }
+
+// @valid
+const issues = [{ ref: '#657' }, { issue: '#1042', id: '#123', issueRef: '#881' }]
+const row = { rowId: '#456', number: '#789' }
+
+// @invalid
+const mark = { color: '#123', fill: '#456' }
+// @errors colour-literal,colour-literal
+
+// @invalid
+const paint = { 'line-color': 'crimson' }
+
+// @invalid
+const circle = { 'circle-color': 'white', 'fill-color': 'steelblue' }
+// @errors colour-literal,colour-literal
+
+// @invalid
+const edge = { stroke: 'hsl(var(--border))' }
+
+// @invalid
+const ring = 'rgb(var(--ring))'
+
+// @invalid
+const tone = `oklch(var(--accent))`
+
+// @valid
+const wrapped = 'hsl(var(--vx-accent))'
+const alpha = 'rgb(var(--vx-accent) / 50%)'
+const label = { 'line-width': 'wide', 'text-field': 'white' }
