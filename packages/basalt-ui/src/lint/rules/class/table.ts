@@ -101,12 +101,14 @@ const textOnFill = new RegExp(
 /**
  * A dark-scheme variant: `dark:`, the theme attribute bare or quoted (`data-[theme='dark']:`, as the
  * Tailwind docs print it) on the element, a group (named or not: `group-data-[theme=dark]/shell:`), a
- * peer or an ancestor, its arbitrary-selector spellings with or without an element before the
- * attribute (`[[data-theme=dark]_&]:`, `[html[data-theme=dark]_&]:`, `[.dark_&]:`) and the
- * colour-scheme media query as an arbitrary variant (`[@media(prefers-color-scheme:dark)]:`).
+ * peer or an ancestor, each also negated (`not-dark:`, the light-only fork), its arbitrary-selector
+ * spellings with or without an element before the attribute (`[[data-theme=dark]_&]:`,
+ * `[html[data-theme=dark]_&]:`, `[.dark_&]:`) or inside `:where(…)`/`:is(…)`
+ * (`[:where([data-theme=dark])_&]:`), and the colour-scheme media query as an arbitrary variant
+ * (`[@media(prefers-color-scheme:dark)]:`).
  */
 const DARK_VARIANT =
-  '(?:(?:(?:group|peer|in)-)?(?:dark|data-\\[theme=["\']?dark["\']?\\])(?:\\/[\\w-]+)?|\\[[\\w:-]*(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark)_&\\]|\\[@media_?\\(prefers-color-scheme:_?dark\\)\\]):'
+  '(?:(?:(?:group|peer|in)-)?(?:not-)?(?:dark|data-\\[theme=["\']?dark["\']?\\])(?:\\/[\\w-]+)?|\\[[\\w:-]*(?:\\([\\w-]*)?(?:\\[data-theme=["\']?dark["\']?\\]|\\.dark)\\)?_&\\]|\\[@media_?\\(prefers-color-scheme:_?dark\\)\\]):'
 
 /** A viewport variant anywhere in the token's chain: `viewport-keyed` already reports it. */
 const VIEWPORT_CHAIN =
@@ -313,7 +315,7 @@ export const CLASS_RULES = defineRules({
         id: 'fixed-width',
         pattern: new RegExp(
           `^(?!${VIEWPORT_CHAIN})` +
-            /(?:.*:)?!?(?:min-)?w-(?:(?:9[7-9]|[1-9]\d{2,})(?:\.\d+)?|\[(?:(?:38[5-9]|39\d|[4-9]\d{2}|\d{4,})(?:\.\d+)?px|(?:2[5-9]|[3-9]\d|\d{3,})(?:\.\d+)?rem)\])!?$/
+            /(?:.*:)?!?(?:(?:min-)?w|basis)-(?:(?:9[7-9]|[1-9]\d{2,})(?:\.\d+)?|\[(?:(?:38[5-9]|39\d|[4-9]\d{2}|\d{4,})(?:\.\d+)?px|(?:2[5-9]|[3-9]\d|\d{3,})(?:\.\d+)?rem)\])!?$/
               .source,
         ),
         fix: 'Parent-owned width: size the container, not the child',

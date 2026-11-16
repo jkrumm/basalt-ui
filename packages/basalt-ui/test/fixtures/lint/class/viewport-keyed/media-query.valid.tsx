@@ -24,3 +24,5 @@ export function Plot({ width }) {
   const box = useElementSize()
   return [width < 120, height < 600, box.width < 400]
 }
+export const s = (window.visualViewport?.height ?? 0) < 640
+export const t = (box?.width ?? 0) < 640

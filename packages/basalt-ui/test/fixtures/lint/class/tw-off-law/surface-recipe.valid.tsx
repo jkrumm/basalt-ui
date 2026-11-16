@@ -10,3 +10,6 @@ export const i = <div className="rounded-lg p-4 focus-visible:ring-2 ring-offset
 export const j = <div className="rounded-lg py-2 ring-1" />
 export const quotedDark = <div className="data-[theme='dark']:bg-inset" />
 export const mediaDark = <div className="[@media(prefers-color-scheme:dark)]:bg-card" />
+export const k = <input className="rounded-md border px-3 py-1 shadow-xs" />
+export const l = <div className="rounded-lg shadow-sm" />
+export const m = <div className="rounded-full border shadow-md" />

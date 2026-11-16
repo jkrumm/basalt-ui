@@ -11,6 +11,9 @@
 // expect: group-data-[theme=dark]/shell:bg-inset
 // expect: [html[data-theme=dark]_&]:bg-inset
 // expect: [:root.dark_&]:text-muted
+// expect: not-dark:bg-card
+// expect: [:where([data-theme=dark])_&]:bg-inset
+// expect: [:is(.dark)_&]:text-muted
 export const a = <div className="flex dark:bg-neutral-900 dark:hover:text-neutral-50" />
 export const b = (
   <div className="data-[theme=dark]:bg-inset group-data-[theme=dark]:text-muted in-data-[theme=dark]:bg-card" />
@@ -22,3 +25,7 @@ export const f = <div className="data-[theme='dark']:bg-inset" />
 export const g = <div className="[@media(prefers-color-scheme:dark)]:bg-inset" />
 export const h = <a className="group-data-[theme=dark]/shell:bg-inset">n</a>
 export const i = <span className="[html[data-theme=dark]_&]:bg-inset [:root.dark_&]:text-muted">b</span>
+export const j = <section className="not-dark:bg-card">h</section>
+export const k = (
+  <div className="[:where([data-theme=dark])_&]:bg-inset [:is(.dark)_&]:text-muted">t</div>
+)

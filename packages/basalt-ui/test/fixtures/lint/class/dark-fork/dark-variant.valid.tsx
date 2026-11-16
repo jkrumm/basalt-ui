@@ -6,3 +6,6 @@ export const d = <div className="[[data-theme=light]_&]:flex [.dim_&]:flex" />
 export const e = <div className="data-[theme='light']:flex [@media(prefers-color-scheme:light)]:flex" />
 export const f = <div className="[@media(prefers-reduced-motion:reduce)]:flex" />
 export const g = <a className="group-data-[state=open]/shell:flex group-hover/shell:underline [html[data-theme=light]_&]:flex" />
+export const h = (
+  <div className="not-data-[state=open]:flex [:where([data-theme=light])_&]:flex [:is(.dim)_&]:flex" />
+)
