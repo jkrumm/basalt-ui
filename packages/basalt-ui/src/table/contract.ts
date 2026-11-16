@@ -12,6 +12,7 @@ import type {
   ControlHandle,
   DetailHost,
   IconComponent,
+  ListFocus,
   Phase,
   QueryStateLike,
   VirtualLike,
@@ -143,7 +144,16 @@ export type RowAction<T> = {
 
 export type Scrollport = 'fill' | { maxRows: number }
 
-export type DataTableProps<T> = { table: DataTableInstance<T>; detail?: DetailHost } & (
+export type DataTableProps<T> = {
+  table: DataTableInstance<T>
+  detail?: DetailHost
+  /**
+   * A chart's focus over the same rows (`useChartFocus(rows, …)`): a row maps to its item by
+   * `getRowId`, so sort and filter keep the link. Pointing at a row or moving the table's own row
+   * focus onto it focuses its item; an item focused elsewhere marks its row and scrolls it into view.
+   */
+  focus?: ListFocus<T>
+} & (
   | { height?: 'auto' | Scrollport; virtual?: never }
   | { height: Scrollport; virtual: VirtualLike }
 )

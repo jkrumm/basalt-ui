@@ -164,9 +164,20 @@ export type XConfig<D> = {
   title?: string
   /** `log` is a numeric x on decades; a non-positive row is not drawn. Default `linear`. */
   scale?: 'linear' | 'log'
+  /**
+   * A number is the most labels; on a band axis they sit at an even stride that keeps the first
+   * and the last band. A list labels exactly those values. Overlapping labels still thin.
+   */
+  ticks?: number | readonly (number | Date | string)[]
 }
 
 export type YConfig = {
+  /**
+   * A fixed `[min, max]`; or bounds on the data's own extent (the axis reaches below `floor` and
+   * above `ceil` never, `pad` is the headroom factor over the top); or a function of that extent.
+   * A datum past the domain is drawn on the plot's edge with an off-scale marker, and its tooltip
+   * reads the true value.
+   */
   domain?:
     | [number, number]
     | { floor?: number; ceil?: number; pad?: number }
@@ -174,6 +185,8 @@ export type YConfig = {
   gutter?: number
   /** The axis name with its unit, drawn above the ticks. */
   title?: string
+  /** Writes the y tick labels (a series' `format` still writes its tooltip value). */
+  format?: (v: number) => string
 }
 
 // minimal; concept elides it
@@ -192,8 +205,11 @@ export type ChartRefLine = {
   label?: string
 } & (
   | { value: number; axis?: 'left' | 'right' }
-  /** A vertical rule at an x: a band key, a number or a Date. */
-  | { value: number | Date | string; axis: 'x' }
+  /**
+   * A vertical rule at an x: a band key, a number or a Date. On a band axis `at` puts it on the
+   * band's leading or trailing edge, between two bars; default `centre`. A continuous x ignores it.
+   */
+  | { value: number | Date | string; axis: 'x'; at?: 'start' | 'centre' | 'end' }
 )
 
 // minimal; concept elides it
