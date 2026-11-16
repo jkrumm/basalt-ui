@@ -171,6 +171,29 @@ layout('Table exemplar at the phone widths', () => {
         expect(cells[0]!.label).toBeNull()
       })
 
+      test('a money value in the card names its column and never stands alone at the right', async () => {
+        const page = await open(viewport)
+        const cells = await page.raw.evaluate(() => {
+          const row = document.querySelector('[data-testid="te-none"] tbody tr:first-child')!
+          return [...row.querySelectorAll<HTMLElement>('td')].map((td) => {
+            return {
+              label: td.getAttribute('data-label'),
+              before: getComputedStyle(td, '::before').content,
+              after: getComputedStyle(td, '::after').content,
+              align: getComputedStyle(td).textAlign,
+            }
+          })
+        })
+        const money = cells.find((entry) => entry.label === 'Amount')
+        expect(money, 'Amount is labelled').toBeDefined()
+        expect(money!.before).toBe('"Amount: "')
+        expect(money!.after).toBe('" EUR"')
+        expect(money!.align).toBe('start')
+        // no card value is aligned right on a line of its own
+        for (const cell of cells.filter((entry) => entry.label !== null))
+          expect(cell.align, `${cell.label} reads from the start`).toBe('start')
+      })
+
       for (const probe of PROBES) {
         test(`${probe}: every column of a row is drawn, with its data`, async () => {
           const page = await open(viewport)
