@@ -21,7 +21,7 @@ slot = $(if $(shell command -v factory 2>/dev/null),factory slot run --name "$(S
 # `check` and `check-fast` differ in ONE step, the layout suite: `check` runs all of it, `check-fast` the files the
 # branch's changes reach (scripts/layout-select.ts). CI runs the full suite on every pull request head.
 check: ## Local CI gate: gen sync checks + build + pre + playground build + layout + coverage/doc-drift + pack-test
-	@$(MAKE) --no-print-directory check-pre
+	@$(MAKE) --no-print-directory check-pre browser-shell
 	@$(call slot,layout) sh -c 'bun run test:layout && bun run test:layout:harness'
 	@$(MAKE) --no-print-directory check-post
 
@@ -76,17 +76,18 @@ test: ## Run the unit suite in a host test slot (scripts/unit-test.ts: consecuti
 
 # The browser of the layout and quality-matrix suites is BASALT_TEST_BROWSER=shell|chrome (tests/support/test-browser.ts).
 # `chrome` is the installed Google Chrome and downloads nothing; `shell` is Playwright's chromium-headless-shell,
-# fetched here and nowhere else (a no-op when the pinned revision is already in the Playwright cache).
+# fetched here and nowhere else (a no-op when the pinned revision is already in the Playwright cache). `check`,
+# `layout`, `layout-fast` and `quality-matrix` depend on it, so a local gate never skips for a missing shell.
 browser-shell: ## Install Playwright's chromium-headless-shell (BASALT_TEST_BROWSER=shell)
 	@bun x playwright-core install --only-shell chromium
 
-layout: ## Run the layout regression suite (real CSS geometry, headless shell)
+layout: browser-shell ## Run the layout regression suite (real CSS geometry, headless shell)
 	@$(call slot,layout) sh -c 'bun run test:layout && bun run test:layout:harness'
 
 # The layout files the branch's changes reach (scripts/layout-select.ts prints them and why, on stderr), plus the
 # harness self-test when any of them runs. No layout input changed: no slot is taken, nothing runs.
 LAYOUT_BUN = bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000
-layout-fast: ## Run only the layout files the branch's changes reach (BASE=<ref>, default origin/master)
+layout-fast: browser-shell ## Run only the layout files the branch's changes reach (BASE=<ref>, default origin/master)
 	@files="$$(bun scripts/layout-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
 	if [ -z "$$files" ]; then exit 0; fi; \
 	$(call slot,layout-fast) sh -c '$(LAYOUT_BUN) '"$$(echo $$files)"' && bun run test:layout:harness'
@@ -114,7 +115,7 @@ evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> 
 # check` runs (1800 light en + 390 dark pseudo-locale per route); `make evidence` runs `full` (x both
 # schemes) unless LANES excludes `quality`. Needs the built package and playground deps, like `check`.
 QUALITY_MATRIX ?= sampled
-quality-matrix: ## Quality matrix in a real browser: make quality-matrix [QUALITY_MATRIX=sampled|full]
+quality-matrix: browser-shell ## Quality matrix in a real browser: make quality-matrix [QUALITY_MATRIX=sampled|full]
 	@$(call slot,quality-matrix) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 packages/basalt-ui/tests/quality/matrix'
 
 # Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the local
