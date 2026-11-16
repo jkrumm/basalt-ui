@@ -44,13 +44,22 @@ export const rows: readonly RowDef[] = [
     // with no `detail` host opens a Base UI Drawer (`ui/sheet`), so the drawer and its swipe code join
     // the table's closure; the auto sheet, the Details door and the view-store hook are the rest.
     // 123000 -> 123100 (Issue 1543): +~40 B gz for `detailById`, the detail door of a record the table has not loaded.
-    ceiling: 123100,
+    // 123100 -> 123500 (Issue 1541): the open-row mark (`aria-current`, the selected row state) for a `detail`
+    // table and for a page-owned `activeRowId`, ~90 B gz.
+    ceiling: 123500,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 123100,
+      to: 123500,
+      consumer:
+        "the open-row mark of `DataTable`: linewatch's outage table (web/src/components/outage-table.tsx) has a `detail` and no aside host, so the row its sheet shows is now drawn selected with `aria-current` (Issue 1541)",
+      repo: 'linewatch',
+    },
     {
       from: 111000,
       to: 123000,
