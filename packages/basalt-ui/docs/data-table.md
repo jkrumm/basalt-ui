@@ -4,7 +4,7 @@ use when: 'a page lists records that sort, filter, page, select or open in a det
 never when: 'the rows are static with no behaviour (use `ui/table`) or a chart says it better'
 subpath: basalt-ui/table
 peers: ['@base-ui/react', '@tanstack/react-table']
-slots: [table-root, table-scroller]
+slots: [table-root, table-rows-shown, table-scroller]
 ---
 
 # DataTable
