@@ -1,5 +1,5 @@
 /**
- * The RuleTester suites of `control-home` and `router-search`, built from their fixture files with
+ * The RuleTester suites of `control-home`, built from its fixture files with
  * the grammar of `colour-literal.cases.ts` (every `// @valid` / `// @invalid` block is one case).
  * ESLint runs them in process from the `*.test.ts` files; oxlint's `plugins-dev` runs a bundled
  * copy under Node through `../../factory.oxlint.mjs`.

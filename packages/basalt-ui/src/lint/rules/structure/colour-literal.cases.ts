@@ -85,7 +85,8 @@ export function parseFixture(text: string): Block[] {
 const readFixture = (form: Form): string =>
   readFileSync(resolve(FIXTURES_ROOT, form.fixture), 'utf8')
 
-function suiteFor(table: RuleTable, id: string): Suite {
+/** One suite per rule; a `// @ts` block (a TS parser's case) runs under oxlint's tester only. */
+export function suiteFor(table: RuleTable, id: string): Suite {
   const entry = table[id]
   if (!entry) throw new Error(`${id}: not in the table`)
   const suite: Suite = { name: id, rule: buildRule(id, entry), cases: { valid: [], invalid: [] } }
