@@ -644,6 +644,89 @@ describe('detail bound to a field', () => {
     },
   )
 
+  describe('the Page aside follows the table', () => {
+    const OTHER: Row[] = [{ id: 'z', name: 'Other 1', amount: 1, state: 'Eng' }]
+
+    function Pane({
+      field,
+      keyed,
+      data,
+    }: {
+      field: ControlHandle<string>
+      keyed: string
+      data: Row[]
+    }): ReactElement {
+      const c = col<Row>()
+      const t = useDataTable<Row>({
+        id: 'detail-state-follow-test',
+        label: 'Rows',
+        columns: [c.text('name')],
+        data,
+        getRowId: (r) => r.id,
+        mode: { kind: 'client' },
+        detail: (row) => <span>{row.name} body</span>,
+        detailState: field,
+        resetOn: [keyed],
+      })
+      return <DataTable table={t} />
+    }
+    const asideText = (): string | null =>
+      document.querySelector('[data-slot="page-aside"]')?.textContent ?? null
+
+    test('a table that unmounts takes its shown record out of the aside', () => {
+      setWidth(1440)
+      const field = urlField('')
+      const view = (shown: boolean): ReactElement => (
+        <Page>
+          {shown && <Pane field={field} keyed="x" data={ROWS} />}
+          <PageAside title="Inspector">own</PageAside>
+        </Page>
+      )
+      const { rerender } = render(view(true))
+      fireEvent.click(document.querySelectorAll('tbody tr')[1] as HTMLElement)
+      expect(asideText()).toContain('Project 2 body')
+      rerender(view(false))
+      expect(asideText()).toContain('own')
+      expect(asideText()).not.toContain('Project 2 body')
+    })
+
+    test('a resetOn change whose rows lack the open id clears the field and the aside', () => {
+      setWidth(1440)
+      const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+      const field = urlField('')
+      const view = (keyed: string, data: Row[]): ReactElement => (
+        <Page>
+          <Pane field={field} keyed={keyed} data={data} />
+          <PageAside title="Inspector">own</PageAside>
+        </Page>
+      )
+      const { rerender } = render(view('x', ROWS))
+      fireEvent.click(document.querySelectorAll('tbody tr')[1] as HTMLElement)
+      expect(field.value()).toBe('b')
+      expect(asideText()).toContain('Project 2 body')
+      rerender(view('y', OTHER))
+      expect(field.value()).toBe('')
+      expect(asideText()).not.toContain('Project 2 body')
+      warn.mockRestore()
+    })
+
+    test('a resetOn change whose rows keep the open id keeps it open', () => {
+      setWidth(1440)
+      const field = urlField('')
+      const view = (keyed: string): ReactElement => (
+        <Page>
+          <Pane field={field} keyed={keyed} data={ROWS} />
+          <PageAside title="Inspector">own</PageAside>
+        </Page>
+      )
+      const { rerender } = render(view('x'))
+      fireEvent.click(document.querySelectorAll('tbody tr')[1] as HTMLElement)
+      rerender(view('y'))
+      expect(field.value()).toBe('b')
+      expect(asideText()).toContain('Project 2 body')
+    })
+  })
+
   test('the field going unset (Back) closes the sheet', async () => {
     const field = urlField('a')
     render(<Bound field={field} />)

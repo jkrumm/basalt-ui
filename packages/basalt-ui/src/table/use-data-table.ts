@@ -240,6 +240,7 @@ export function useDataTable<
   const known = new Set(specs.map((spec) => spec.id))
 
   const clearRef = useRef<() => void>(() => undefined)
+  const recheckRef = useRef<() => void>(() => undefined)
   const [clientCount, setClientCount] = useState<number | undefined>(undefined)
   const state = useTableState({
     id: options.id,
@@ -247,7 +248,10 @@ export function useDataTable<
     count: server ? countOf(mode) : clientCount,
     paged,
     resetOn: options.resetOn,
-    onReset: () => clearRef.current(),
+    onReset: () => {
+      clearRef.current()
+      recheckRef.current()
+    },
   })
   const { request, display } = state
 
@@ -381,6 +385,24 @@ export function useDataTable<
   const detailState = options.detailState
   const [openId, setOpenId] = (detailState ?? NO_DETAIL_STATE).use()
   const shownFor = useRef<string | null>(null)
+  // Set when a `resetOn` change dropped the shown id for a re-check: the old entry is still up.
+  const staleShown = useRef(false)
+  useEffect(() => {
+    // The rows reset: the open id is checked against the new ones, as a URL id is at load.
+    recheckRef.current = () => {
+      if (shownFor.current === null) return
+      shownFor.current = null
+      staleShown.current = true
+    }
+  })
+  // A table that unmounts takes the record it showed with it (a pane that drops the table).
+  useEffect(
+    () => () => {
+      if (shownFor.current === null && !staleShown.current) return
+      host.current?.hide()
+    },
+    [],
+  )
   const activate = (id: string): void => {
     const row = byId.get(id)
     if (row === undefined) return
@@ -428,11 +450,14 @@ export function useDataTable<
             `basalt-ui/table: "${options.id}" detailState names "${openId}", no loaded row; cleared. Pass detailById to open it.`,
           )
         }
+        if (staleShown.current) host.current?.hide()
+        staleShown.current = false
         detailState.clear({ replace: true })
         return
       }
     }
     if (host.current === undefined) return
+    staleShown.current = false
     shownFor.current = openId
     showField(openId)
   })
