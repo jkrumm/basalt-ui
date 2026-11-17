@@ -7,6 +7,15 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - Start from the question's row in the AGENTS block table; a chart is the answer only when the reader compares or follows a shape. One value, fewer than four points or a ratio against a limit is a [StatCard](node_modules/basalt-ui/docs/stat-card.md) or a [Meter](node_modules/basalt-ui/docs/meter.md).
 - A ranked list or a split of a total is a [BarList](node_modules/basalt-ui/docs/bar-list.md): one shared scale, the value printed, the legend left out.
 - More than about seven classes to tell apart is a [DataTable](node_modules/basalt-ui/docs/data-table.md).
+- A part-to-whole of a few named parts is a one-row stacked [BarList](node_modules/basalt-ui/docs/bar-list.md) (`series` names the parts, the row's `parts` carries their values) or, for one value on named zones, a [Meter](node_modules/basalt-ui/docs/meter.md), where a bar of hand-sized `div`s draws none of that ([part to whole](#part-to-whole)).
+- Two weekday-by-hour (or service-by-day) grids on one scale are [Heatmap](node_modules/basalt-ui/docs/heatmap.md)s that share one focus ([heatmap tools](#heatmap-tools)).
+
+## Part to whole
+
+- The row takes its parts' colours from the app's series file, in the order `series` lists them, so the bar, its legend rows and every other list of the same parts show one colour per part. A second blue for the same part (n29 used `BASALT.brand` on the bar and the series blue in the list) breaks "swatches match the marks" (.27, .30).
+- The parts are named where the eye is: the part that answers carries its value on its segment (`chartLabels.fits` places it where it fits), so segments are read by name where a legend would be read by order (.25, .28).
+- The legend rows join the page's focus both ways: spread `focus.item(i)` (rows of the page's items) or `focus.seriesItem(key)` (rows that stand for a series) on each, so a focused segment lights its row and a focused row lights its segment, and the hero follows through `focus.readout` (.29, .35). Two near greys for a dimmed part and a focused one read as equal: take the dim from the kit alone (.36).
+- Worked, n29 (how much of the year is tagged): round 0 drew the tags as `div` segments, listed them in a legend that joined neither focus nor series, spent a second blue on the untagged segment and left its 38 % in the legend (X3 scored a P2). Round 1 spread `tagFocus.item(i)` on the rows, used one blue and labelled the segments, and passed at 84. Draw it as one stacked [BarList](node_modules/basalt-ui/docs/bar-list.md) row from the start: the colours, the focus and the labels are then the kit's.
 
 ## Colour budget
 
@@ -17,6 +26,8 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - A status hue means a status: carry it with a word or a dot, not hue alone. [lint:status-fill-as-text]
 - The accent goes to the item that answers (the culprit hop, the signal that leads the verdict), chosen from the data, so it follows the culprit whichever series that is: n26 fixed it to the gateway, so with the home fixture the culprit router was grey (.74); n11 spent it on a 6 px difficulty dot while the progress bars carried none (.4). One fact takes one hue: a red delta pill beside an amber 'Behind pace' dot said one fact twice (n25 .61), and a Down figure drawn without a hue beside table dots with one split a state in two (n23 .33).
 - A status hue marks a state that needs action; a target rule, a "live" band and a passing delta stay in ink steps, and the failed mark takes the status fill instead of its category hue.
+- The common state stays neutral and the state that needs action takes the hue: n32 put amber "Waiting" on 16 of 25 rows, so the one row that needed a hand stayed hidden among them (.54); colour the few.
+- A quiet or zero day reads as calm, and its delta stays neutral: n31's delta pill turned red on an empty Saturday ("−3.1 vs 3.1 a day"). A delta against an empty or partial period stays neutral, and two kinds one grey step apart (Fix, Chore) take distinct ink steps or a direct label (.46).
 
 ## One measure
 
@@ -39,7 +50,12 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - When the answer needs a word on one mark (the slowest, the spike, last night), compose [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md) with a `text` mark placed by `chartLabels`: a kind such as [Bars](node_modules/basalt-ui/docs/bars.md) takes only its own marks. Engine `text` marks from `@tanstack/charts/text` are allowed in custom marks. On focus the figure's readout carries what the mark means, delta and status included (`focus.readout` takes any value: [linked parts](#linked-parts)) (its share, its model, its stage) and returns to the answer on leave (c11, c12, c13, n02, n12: the answer was a sentence, or the readout a bare total).
 - Name the few marks that matter. On a band axis `x.ticks` as a list of keys labels exactly those bands (`ticks: ['Acme', 'Globex']`); a number only thins. Elsewhere an engine `text` mark placed by `chartLabels`. A band or zone that is the answer carries its words on the mark, where a faint fill with an empty face leaves the reader to guess (n13, n04, c15, n16).
 - The mark that answers carries the answer at rest, placed by `chartLabels`: the leading line's end value, the total on each top bar, the gap at today. Worked: n25's hero said "−3 vs pace" and nothing on the chart marked today or the gap to the pace line (n25 .60); n22 left the RHR line that exits the band unmarked (n22 .16); n24 printed a value on none of its bars (n24 .46). The hero and the annotation state it once between them.
+- The answer sits on the mark that answers, as its value or its name, with the hero or a footer as a second place at most. Cycle 8 cases: the untagged share on its 38 % segment (n29 .25), the production sha on the "Deployed" rule's label (n31 .45), the top blocker's row and bar (n32 .53), the slid measures named in the headline and the 38 h spike labelled (n27 .2), the mover's figure beside its name (n28 .12). A label the plot edge drops is placed again inside the plot.
 - Custom marks read `plot.rows(key)` and `plot.visible`, so a legend toggle hides the mark. [type:ChartPlot]
+
+## One name
+
+- An item has one name across the axis, the list and the hero. n28's axis said "Food", "Trips", "Power" while the list and the hero said the full category names (.11, .23). A name that is too long is cut by the kit's own truncation; an invented short one splits the item in two.
 
 ## One readout
 
@@ -71,6 +87,9 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 - Where two charts share an axis and answer the two halves of one question, they are one chart above and below the axis (a diverging chart) in one card, where two cards and a strip would stack (c13 X2, F1; n01 in cycle 2: a strip, per-day bars, a list and a line as four stacked parts). Charts on one x share one card, or sit side by side inside the 1800x1200 fold; the second below the fold is the defect (n19). Two cards stand only when the axes differ. A list longer than the chart sits beside it in its own scroll region at `@wide`, and a box takes its content's height, so a fixed height cannot leave a gap or clip (n13, n09, c14, n04). A chart is as tall as its marks need: c16 drew eight dots in a 490 px chart, n15 and n20 short charts across 750 and 550 px boxes.
 
+- Cards in one row end at one height: a short card is given its content's height or a second fact, so the row ends flush (n28's row-1 cards ended at 597 and 647 px; n29's legend left 140 px empty to match its list; n27's cards were 240 px each for a figure and a line: .9, .22, .34, .61).
+- Two parts that share a focus share one legend and one caption: n30's two heatmaps on one scale carried two legends and two captions, and the lower half of the 1800 frame was empty (.44). One legend sits above both, one caption under them; a chart and its day list are one card (n31 .50), the list scrolling in its own region with a cue where it is cut.
+- A page of many small cards groups them by verdict and leads with the group that needs action (n27 sorted slid first but nothing marked where the slid group ended, so the viewer scanned pill colours, .1); on a phone the verdict reads above the fold (n27's eight cards ran 2,000 px at 390 and two and a half showed above the tab bar, .7), and every phone card keeps a label for its figure (n32's showed an Issue id over "Unblocks: 23", .59).
 - Three stacked bands that share one focus apiece are three pages in one: n23 drew a strip, five bars 1,480 px wide and, below them, the table of the same monitors (n23 .41). Join the list to the bars through one focus and put them side by side at `@wide`; run the check on your own 1800 shot before the fact count.
 - A table that shows the chart's items is [DataTable](node_modules/basalt-ui/docs/data-table.md) with `focus`, which keeps the link through its own sort; a list that only repeats the chart's numbers is folded into the chart card or dropped (n18, n10, n03, n14, n17, n07); a table of the chart's items joins its card instead of a third stacked surface (c16).
 
@@ -89,6 +108,13 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - The fixture shows its zero and its extreme at rest, so the card is judged with an empty hour and an over-limit value on screen. The extreme reads true: rounding or clamping it away hides it. A zero fixture shows a cue (a dash, a baseline) where the marks would be.
 - One value that crushes the rest is capped with `y.domain`: the kit draws the off-scale caret and the tooltip keeps the true value (n26's 420 ms rescaled the axis and flattened every other hop, .79; n24's eleven bars shrank to slivers, .47). A ranking that saturates says how many are hidden (n23's five identical 1,440 min bars with fifteen more cut, .37), and a zero series gets a visible mark: a finished line at zero lay on the baseline rule and read as absent (n25 .64).
 - Binned bars carry a unit caption ("per 15 min"). A count axis and a share-of-limit axis carry a caption (`y.title`: "Requests", "% of limit"), and a `y.format` keeps a decimal for a domain under 2 units (ticks `0.5`, `1.0`, `1.5`, where `1`, `1`, `2` repeats a label) (c14, n04, n16).
+
+## Heatmap tools
+
+- A [Heatmap](node_modules/basalt-ui/docs/heatmap.md) shows magnitude by hue, so the cells that answer carry their value: `annotate` returns a short mark for a datum (a two-digit hour, a peak glyph) and `null` for the rest, and the few cells that matter are the few it marks.
+- A cell that is partial (a bucket that missed some of its samples) is a `states` entry returned by `getState`, drawn and legended as its own state; without it an hour that missed one to three of its buckets looks complete.
+- `tickCols` keeps the column ticks the reader tells time by: the kit thins ticks to 00, 05, 10, which fall on odd hours; list the stops that matter ("00", "06", "12", "18") and they survive.
+- Worked, n30 (when the line is busiest): the case passed at 88 and still lost three points to unused tools. Cells that answered ("Busiest Thu 20:15") showed their value only by hue (`annotate`, .38), a partial hour looked complete (`states`, .39) and a bare "0" on Mon 04:00 stood without a key beside hour ticks at 00, 05, 10 (`tickCols`, .40). Two grids on one scale also share one legend and one caption ([one view](#one-view)).
 
 ## A time window picks its resolution
 
