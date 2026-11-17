@@ -9,12 +9,14 @@
  * `EventSource`: the contract ships no client, so the message names `createChannel` and the seam.
  *
  * Known limits: `reader-loop` reads a `for await` over a `.body` member or a `.body.pipeThrough(…)`
- * chain (a decoded body), inline or through a `const` bound to one (top level or block, by spelling), a `.pipeTo(new WritableStream(…))`
+ * chain (a decoded body), inline or through a `const` or `let` bound to one (top level or block, by
+ * spelling) or rooted in a stream parameter (one typed `ReadableStream`, or untyped and named `body`
+ * or `stream`: a helper handed the body), a `.pipeTo(new WritableStream(…))`
  * on a chain rooted in `.body`, a `getReader()` read in a
  * loop and a `getReader()` whose reader is read inside a named function that refers to itself (a
  * `read().then(function pump() { … read().then(pump) })` or a recursive async function); a pump split
- * across two functions, a reader taken from a parameter and a stream iterated through a helper
- * are out of reach. `timer-refetch` reads any `.invalidate()` / `invalidateQueries` /
+ * across two functions, a parameter's `.pipeThrough(…)` or `.getReader()` that is never looped on
+ * here, and a caller handing the body to a helper in another file are out of reach. `timer-refetch` reads any `.invalidate()` / `invalidateQueries` /
  * `refetchQueries` / `refetch` call in a timer callback (`setInterval`, `setTimeout`, or a
  * `useInterval` / `useIntervalEffect` hook by callee name), router invalidation included, and a timer
  * handed one of those names by reference (`setInterval(refetch, 5000)`, `setInterval(query.refetch, 5000)`);
@@ -243,13 +245,57 @@ function unwrapped(node: Node | undefined): Node | undefined {
   return at
 }
 
-/** `res.body` or `res.body!.pipeThrough(new TextDecoderStream())…`: a body, or a pipeThrough chain on one. */
-function isBodyStream(node: Node | undefined): boolean {
+/**
+ * `res.body` or `res.body!.pipeThrough(new TextDecoderStream())…`: a body, or a pipeThrough chain
+ * on one. `named` says whether a bare name is a stream (a binding of one, a stream parameter).
+ */
+function isBodyStream(node: Node | undefined, named: (id: Node) => boolean): boolean {
   const at = unwrapped(node)
+  if (at?.type === 'Identifier') return named(at)
   if (at?.type === 'MemberExpression') {
     return at['computed'] !== true && nameOf(child(at, 'property')) === 'body'
   }
-  return isMethodCall(at, 'pipeThrough') && isBodyStream(child(child(at, 'callee'), 'object'))
+  return (
+    isMethodCall(at, 'pipeThrough') && isBodyStream(child(child(at, 'callee'), 'object'), named)
+  )
+}
+
+/** The bare names a stream parameter goes by when it carries no type. */
+const STREAM_PARAMS: ReadonlySet<string> = new Set(['body', 'stream'])
+
+/** A `ReadableStream` type annotation (`ReadableStream<Uint8Array>`, or one member of a union). */
+function isStreamType(annotation: Node | undefined): boolean {
+  const type = child(annotation, 'typeAnnotation')
+  const members = type?.type === 'TSUnionType' ? nodesIn(type, 'types') : type ? [type] : []
+  return members.some(
+    (member) =>
+      member.type === 'TSTypeReference' && nameOf(child(member, 'typeName')) === 'ReadableStream',
+  )
+}
+
+/**
+ * The stream parameters of a function: one typed `ReadableStream`, or untyped and named `body` or
+ * `stream` (lint-10.5: a helper handed the body, the shape a refactor produces).
+ */
+function streamParams(fn: Node): Set<string> {
+  const names = new Set<string>()
+  for (const param of nodesIn(fn, 'params')) {
+    const id = param.type === 'AssignmentPattern' ? child(param, 'left') : param
+    const name = nameOf(id)
+    if (name === undefined || id === undefined) continue
+    const annotation = child(id, 'typeAnnotation')
+    if (annotation ? isStreamType(annotation) : STREAM_PARAMS.has(name)) names.add(name)
+  }
+  return names
+}
+
+/** Whether `id` names a stream parameter of a function it sits in. */
+function isStreamParam(id: Node): boolean {
+  const name = id['name'] as string
+  for (let at = enclosingFunction(id); at; at = enclosingFunction(at)) {
+    if (streamParams(at).has(name)) return true
+  }
+  return false
 }
 
 export const readerLoop: AstForm = {
@@ -270,6 +316,7 @@ export const readerLoop: AstForm = {
         depth -= 1
       }
     }
+    const named = (id: Node): boolean => bodyStreams.has(id['name'] as string) || isStreamParam(id)
     return mergeVisitors([
       loops as unknown as Visitor,
       {
@@ -277,8 +324,9 @@ export const readerLoop: AstForm = {
           if (node['await'] !== true) return
           const source = unwrapped(child(node, 'right'))
           const name = nameOf(source)
-          if (name !== undefined && bodyStreams.has(name)) report(node, `for await … ${name}`)
-          else if (isBodyStream(source)) {
+          if (name !== undefined && source !== undefined && named(source)) {
+            report(node, `for await … ${name}`)
+          } else if (isBodyStream(source, named)) {
             report(
               node,
               isMethodCall(source, 'pipeThrough')
@@ -290,10 +338,11 @@ export const readerLoop: AstForm = {
         VariableDeclarator(node) {
           const parent = node['parent'] as Node | undefined
           const id = nameOf(child(node, 'id'))
+          // A `let` is read as a `const` is (lint-10.5): its first value is the stream it loops on.
           if (
-            parent?.['kind'] === 'const' &&
+            (parent?.['kind'] === 'const' || parent?.['kind'] === 'let') &&
             id !== undefined &&
-            isBodyStream(child(node, 'init'))
+            isBodyStream(child(node, 'init'), named)
           ) {
             bodyStreams.add(id)
           }
@@ -334,7 +383,9 @@ export const readerLoop: AstForm = {
     ])
   },
   fix: 'createChannel owns fetch-SSE reading, reconnect and dedupe; pass a Transport for a custom stream',
-  next: 'Keep the byte stream inside the Transport adapter file',
+  // A byte stream that is no event stream (a download's progress, an upload) has no channel and no
+  // Transport to keep it in (lint-10.7): its rung is the reasoned line waiver.
+  next: 'Keep an event stream inside the Transport adapter file; a byte stream that is no event stream (a download counting its progress, an upload) is waived on its line, with the reason',
   fixture: 'structure-rest/data-primitive-reader-loop.tsx',
 }
 

@@ -4,7 +4,8 @@
  * `useSuspenseQuery`, `useInfiniteQuery` or `useSuspenseInfiniteQuery` call, or in options bound to
  * a name that is then passed to `liveQuery` by name (`const opts = queryOptions({ staleTime:
  * 'static' }); liveQuery(opts, ...)`). Any `staleTime` key inside a `liveQuery` argument, or in
- * options passed to it by name, reports too, whatever its value (`Infinity`, `60 * 60 * 1000`, a
+ * options passed to it by name or spread into its options object (`liveQuery({ ...runsQuery,
+ * ...freshFor30s }, 'live')`, lint-10.8), reports too, whatever its value (`Infinity`, `60 * 60 * 1000`, a
  * top-level `const FOREVER = Infinity`): the class owns `staleTime`, and the dev assert in
  * `liveQuery` throws on the key; a numeric or `Infinity` stale time in a plain `useQuery` stays legal. A plain `queryOptions({ staleTime: 'static' })` that nothing
  * in the file passes on stays legal. A query with a `'static'` observer is immune
@@ -14,9 +15,8 @@
  *
  * `refetchInterval`, `refetchIntervalInBackground`, `new EventSource` and timer-driven invalidation
  * stay gr-3b's forms in `data-primitive.ts`; this file adds no duplicate of them. Syntactic only,
- * and one file deep. Known limits: options imported from another file, built by a helper, reached
- * through a spread of a name (`liveQuery({ ...opts }, ...)`) or handed to `useQuery` by name are out
- * of reach; a name is matched by spelling, not scope.
+ * and one file deep. Known limits: options imported from another file, built by a helper or handed
+ * to `useQuery` by name are out of reach; a name is matched by spelling, not scope.
  */
 import type { Node, Visitor } from '../../factory'
 import type { AstForm } from '../../rule-table'
@@ -88,6 +88,18 @@ const staleTimeSubject = (property: Node): string => {
     : 'staleTime inside liveQuery'
 }
 
+/** The names an options object literal spreads in (`{ ...runsQuery, ...freshFor30s }`). */
+function spreadNames(options: Node): { node: Node; name: string }[] {
+  if (options.type !== 'ObjectExpression') return []
+  const properties = Array.isArray(options['properties'])
+    ? options['properties'].filter(isNode)
+    : []
+  return properties.flatMap((property) => {
+    const name = property.type === 'SpreadElement' ? nameOf(property['argument']) : undefined
+    return name === undefined ? [] : [{ node: property, name }]
+  })
+}
+
 const QUERY_HOOKS: ReadonlySet<string> = new Set([
   'useQuery',
   'useSuspenseQuery',
@@ -115,6 +127,8 @@ export const liveStaticStale: AstForm = {
         if (isLiveQueryCall(node)) {
           const name = nameOf(options)
           if (name !== undefined) passed.push({ node: options, name })
+          // `liveQuery({ ...runsQuery, ...freshFor30s }, 'live')`: a spread name is passed too.
+          for (const spread of spreadNames(options)) passed.push(spread)
           for (const property of staticStaleTimes(options, true)) {
             report(property, staleTimeSubject(property))
           }

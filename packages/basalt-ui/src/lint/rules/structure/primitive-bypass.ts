@@ -16,7 +16,7 @@
  *   `.reduce` is.
  * - `html-data-marks`: a custom-property mark is read only when the class names the property in a
  *   geometry or flex utility (`w-(--w)`, `h-[var(--h)]`, `grow-(--g)`, `basis-(--b)`, `scale-x-(--s)`,
- *   `translate-y-(--t)`); a property read by a stylesheet is out of reach. A `transform` reads
+ *   `translate-y-(--t)`, `[width:var(--w)]`); a property read by a stylesheet is out of reach. A `transform` reads
  *   only as `scale`, `scaleX` or `scaleY` of a datum; a `translate` transform is not.
  * - `intl-format`: `toFixed` is read where it renders (a JSX child expression, directly or through
  *   a template literal, `+` or a ternary). One returned from a helper, a key or a CSS value is not
@@ -794,7 +794,50 @@ const sizesFromProperty = (opening: Node, property: string): boolean => {
   const utility = new RegExp(
     `^(?:[\\w-]+:)*-?(?:(?:min|max)-)?(?:w|h|size|left|top|right|bottom|inset|basis|grow|flex-grow|flex|(?:scale|translate)(?:-[xy])?)-(?:\\(${name}\\)|\\[var\\(${name}\\)\\])$`,
   )
-  return classTokens(opening).some((token) => utility.test(token))
+  return classTokens(opening).some((token) => utility.test(token) || sizes(name).test(token))
+}
+
+/**
+ * A class that sizes the element (its width, height or flex share) from the custom property:
+ * `w-(--w)`, `h-[var(--h)]`, `basis-(--b)`, or the arbitrary property `[width:var(--w)]`. Scale,
+ * translate and offsets are left out: a flip or a nudge is no measure of a datum.
+ */
+const sizes = (name: string): RegExp =>
+  new RegExp(
+    `^(?:[\\w-]+:)*(?:(?:(?:min|max)-)?(?:w|h|size)|basis|grow|flex-grow|flex)-(?:\\(${name}\\)|\\[var\\(${name}\\)\\])$|^(?:[\\w-]+:)*\\[(?:(?:min-|max-)?(?:width|height|inline-size|block-size)|flex|flex-basis|flex-grow):var\\(${name}\\)\\]$`,
+  )
+
+const sizedByProperty = (opening: Node, property: string): boolean => {
+  const name = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return classTokens(opening).some((token) => sizes(name).test(token))
+}
+
+/** A value computed at runtime: anything but a string or number literal or a template with no holes. */
+const isComputed = (value: Node | undefined): boolean => {
+  const at = unwrapped(value)
+  if (at === undefined || at.type === 'Literal') return false
+  return at.type !== 'TemplateLiteral' || children(at, 'expressions').length > 0
+}
+
+/**
+ * Outside a map: a custom property set inline from a computed value that a class on the same
+ * element sizes it by (`className="w-(--w)" style={{ '--w': `${share * 100}%` }}`), a bar sized
+ * from data through the route `shadcn/no-inline-styles` names (lint-10.4). Returns the property.
+ */
+const computedSizeProperty = (opening: Node): string | undefined => {
+  const value = child(attribute(opening, 'style') ?? { type: '' }, 'value')
+  const style = unwrapped(
+    value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined,
+  )
+  if (style?.type !== 'ObjectExpression') return undefined
+  for (const prop of children(style, 'properties')) {
+    if (prop.type !== 'Property' || prop['computed'] === true) continue
+    const key = child(prop, 'key')
+    const keyName = nameOf(key) ?? stringValue(key)
+    if (keyName === undefined || !keyName.startsWith('--')) continue
+    if (isComputed(child(prop, 'value')) && sizedByProperty(opening, keyName)) return keyName
+  }
+  return undefined
 }
 
 /**
@@ -857,7 +900,9 @@ const percentWidth = (opening: Node): boolean => {
  * `grow-(--g)`, `scale-x-(--s)`: the route `shadcn/no-inline-styles` names), from the datum's share. An SVG
  * mark is the `svg-data-marks` form's; a mark drawn through the geometry seam passes. One report
  * per map call. Outside a map, a `style` width computed with a percent sign (a fill bar from one
- * value) reports once per element.
+ * value) reports once per element, as does a custom property set from a computed value that a
+ * class on the element sizes it by (`w-(--w)`, `h-(--h)`, `[width:var(--w)]`, cast or not), unless
+ * the element sits in a seam-wired map.
  */
 const htmlDataMarks = form(
   'html-data-marks',
@@ -883,6 +928,13 @@ const htmlDataMarks = form(
           }
           if (percentWidth(node)) {
             report(node, `<${tag}> width set to a computed percentage`)
+            return
+          }
+          // A mark of a seam-wired `.map` (`focus.item(i)`) is the seam's, however it is sized.
+          if (seam.maps.some((map) => seam.wired(map))) return
+          const property = computedSizeProperty(node)
+          if (property !== undefined) {
+            report(node, `<${tag}> sized by ${property}, set from a computed value`)
           }
         },
       },
