@@ -12,6 +12,31 @@ export function focusMain(): void {
   document.getElementById(SHELL_MAIN_ID)?.focus({ preventScroll: true })
 }
 
+/** An overlay still on screen: the palette's dialog or the More sheet, in or on its way out. */
+const OVERLAY = '[data-slot="dialog-content"], [data-slot="sheet-content"]'
+
+/**
+ * Puts focus on main once no overlay is left and two frames have passed since, the overlay's own
+ * focus return (to the control that opened it) having finished by then. It gives up waiting for the
+ * overlay after `HAND_OFF_MS`. Returns the cancel.
+ */
+export function focusMainWhenClear(): () => void {
+  const until = Date.now() + HAND_OFF_MS
+  let clear = 0
+  let frame = 0
+  const tick = (): void => {
+    if (document.querySelector(OVERLAY) !== null && Date.now() < until) {
+      clear = 0
+    } else if (++clear >= 2) {
+      focusMain()
+      return
+    }
+    frame = requestAnimationFrame(tick)
+  }
+  frame = requestAnimationFrame(tick)
+  return () => cancelAnimationFrame(frame)
+}
+
 /** How long a hand-off request waits for its navigation, in ms. */
 const HAND_OFF_MS = 4000
 

@@ -10,7 +10,13 @@ import { useRouter, useRouterState } from '@tanstack/react-router'
 import type { AnyRouter } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent, ReactElement } from 'react'
-import { SHELL_MAIN_ID, focusLost, focusMain, takeMainFocusRequest } from '../../common/focus'
+import {
+  SHELL_MAIN_ID,
+  focusLost,
+  focusMain,
+  focusMainWhenClear,
+  takeMainFocusRequest,
+} from '../../common/focus'
 import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
 
 export { SHELL_MAIN_ID }
@@ -105,7 +111,10 @@ export function useDocumentTitle(title: string): void {
  *
  * A navigation that started from the palette or the More sheet asked for the hand-off
  * (`requestMainFocus`): focus is then on a control the overlay returned it to, not on the new page,
- * so main takes it wherever it is, two frames in, after the overlay's own return has finished.
+ * so main takes it wherever it is, as soon as the navigation starts and the overlay has left (two
+ * frames after, its own return having finished), not when the page arrives: a pending loader keeps
+ * main focused and the arrival moves nothing. The pathname and `onResolved` paths below answer a
+ * request the start did not see.
  *
  * A search-only change (the crumb parent going up from a selection) answers a pending request the
  * same way and is otherwise left alone: the filter that was just typed in keeps its focus. It is
@@ -136,7 +145,16 @@ export function useRouteFocus(pathname: string): void {
   useEffect(() => {
     let second = 0
     const first = { id: 0 }
-    const stop = (router as AnyRouter | undefined)?.subscribe('onResolved', (event) => {
+    let early = (): void => {}
+    const r = router as AnyRouter | undefined
+    // A navigation to another page that asked for the hand-off: main takes focus as the overlay
+    // leaves, not when the page arrives, so a pending loader never leaves focus on `<body>`.
+    const stopStart = r?.subscribe('onBeforeNavigate', (event) => {
+      if (!event.pathChanged || !takeMainFocusRequest()) return
+      early()
+      early = focusMainWhenClear()
+    })
+    const stop = r?.subscribe('onResolved', (event) => {
       if (event.fromLocation?.pathname !== event.toLocation.pathname) return
       if (event.fromLocation.href === event.toLocation.href || !takeMainFocusRequest()) return
       first.id = requestAnimationFrame(() => {
@@ -144,7 +162,9 @@ export function useRouteFocus(pathname: string): void {
       })
     })
     return () => {
+      stopStart?.()
       stop?.()
+      early()
       cancelAnimationFrame(first.id)
       cancelAnimationFrame(second)
     }
