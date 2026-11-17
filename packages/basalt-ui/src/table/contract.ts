@@ -222,8 +222,10 @@ export type UseDataTable<
   now?: number
   /**
    * Why the table has no rows, and what to do about it: its `cause` replaces the default sentence
-   * and its `action` renders beside it. A table filtered by its own search or filters keeps the
-   * no-matches sentence and Clear filters; `null` and `undefined` both keep the default.
+   * and its `action` renders beside it. A table with no rows left by the page's `filters` shows the
+   * `cause` with Clear filters; one filtered by its own search or column filters keeps the
+   * no-matches sentence (naming the search only when a phrase is set) and Clear filters;
+   * `null` and `undefined` both keep the default.
    * A page that filters the rows itself passes `filtered: { reset }`: the empty arm then offers
    * Clear filters (calling `reset`) in place of `action`, and the table's own filters clear with it.
    */
