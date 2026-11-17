@@ -1,0 +1,29 @@
+{
+  "why": "Expression cycle 7 (docs/v3/cycles/expression-7.md) lost 72 of 102 round-0 points to `skill`, ten of them P2: the builder did not know to do what the kit could. The skill text of cycle 6 (v3-expr-6-skill) landed before the pin and the same habits still cost points, so this row is about where the text sits as much as what it says: step 6 of both skills is already one dense paragraph that names the fact count, one view and linked parts, and still every case lost a point on X1 (word economy) and X2 (one view). The P2s: a table of the page's items that joins no focus although `DataTable focus` and `BarList focus` exist (n11 .7, n23 .35, .42: X3 0 with the BarList and the table listing the same monitors); a page of rows with no card anatomy (n11 .8, .15); a headline with no baseline the data offers (n23 .32, n26 .73); a difficulty read as words in a generic table (n11 .1); a page of three stacked bands (n23 .41); a phone table on `phone: 'scroll'` that pushes the answer column off screen (n25 .66). The P3s repeat across cases: no annotation on the mark that answers (F2 in all six), extremes that crush the other marks or vanish at zero (n24, n26, n23, n22, n25), the accent on the wrong item and two status hues for one fact (n26, n25, n11, n23), three readouts where one follows focus (n24, n26), loading frames that leave out the footer the ready frame draws (n25, n22), and an announcement that names a verdict without its values (n22; n25 and n23 in round 1). Repairs lifted every case with the reviewer's findings in hand, which is what a skill fix promises.",
+  "what": "The expression skill text that closes cycle 7's skill findings, placed where a builder reads it in the step it is working on, within the skills' line budgets.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** (SKILL.md and references)",
+    "packages/basalt-ui/agent/rules/basalt-charts.md and basalt-page.md (one line each at most, within the shipped-rule budget)",
+    "packages/basalt-ui/docs/** text through its generator (no generated file edited by hand)",
+    "packages/basalt-ui/llms.txt through its generator",
+    "the dogfooded copies under .claude/skills and .claude/rules (make sync-self, its own commit)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no package source)",
+    "docs/v3/expression/**",
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "(1) Linked parts: every list of the page's items (a `DataTable`, a `BarList`) takes `focus` from the one `useChartFocus`, with or without a chart on the page, and the figure's readout names the focused item; a row with no entry in the focus clears it (n23, n11). (2) Anatomy for a page of rows: the page still leads with a card whose figure, context line and footer answer the question; a strip of counts beside a flush table is not the anatomy (n11, n23). (3) Baseline: every headline stands against the reference the data offers (yesterday, a usual day, the rest of the day, the goal's pace) as a signed delta; name the base in words where it is not obvious (n23, n26). (4) The answer on the mark: annotate the mark that answers with a `text` mark placed by `chartLabels` (the leading line's end value, the totals on the top bars, the gap at today); a band axis names the keys that matter (n22, n24, n25, n26, n11, n23). (5) Phone tables: `phone: 'scroll'` only when the first column answers the question; otherwise column priorities keep the answer column and drop the rest (n25, n26, n23, n11). (6) Extremes and zeros: cap the domain where one value crushes the rest and let the kit's off-scale caret mark the cut; a ranking that saturates says how many are hidden; a zero series gets a visible mark (n24, n26, n23, n22, n25). (7) Colour: the accent goes to the item that answers (the culprit hop, the signal that leads the verdict), and one fact takes one status hue (n26, n22, n25, n11, n23). (8) Form: an ordinal (a difficulty, a level) is a mark, not a word in a column; the items the question names go on the chart's axis (the stalled books on the time axis, the hops in path order) (n11, n25, n26, n23, n24). (9) One readout: when the figure follows focus, the tooltip is off (n24, n26). (10) Phases: a loading frame passes the footer and status rows the ready frame draws (the rule exists; give it a worked case) (n25, n22). (11) Word economy and one view as checks a builder runs on its own 1800 shot, at the top of step 6 rather than inside its paragraph: no fact twice, no empty third of the page, no card for one number, a table no wider than its columns (all six cases lost a point on X1 and on X2). (12) The announcement names the focused item's values, not only a verdict, in the order the tooltip would (n22, n25, n23). Keep the additions short: the skills are near their budgets; cut text the kit now enforces before adding.",
+  "commits": "feat: commits for skill and rule text, docs: for regenerated docs; one package commit per concern; make sync-self its own non-package commit.",
+  "proof": "make check; the skill snippet tests; the shipped-rule line budget within its ceiling.",
+  "acceptance": [
+    "The skill says every list of the page's items joins the one focus, with n23 as the worked case",
+    "The skill gives a page of rows the card anatomy and every headline a named baseline",
+    "The answer-on-the-mark, extremes, colour, form and one-readout lines land with a worked case each",
+    "Step 6 of basalt-design and basalt-charts opens with the word-economy and one-view checks as separate lines",
+    "The phone-table and phases lines and the announcement line land",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit changes (v3-expr-7-kit-fixes, v3-expr-7-contract); the rubric (v3-expr-7-rubric); the trial builds."
+}

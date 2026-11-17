@@ -17,5 +17,8 @@
     "The PR states which P3 it fixed",
     "make check passes"
   ],
-  "out_of_scope": "A per-column width option; the console's MiniBars as a part of its own."
+  "out_of_scope": "A per-column width option; the console's MiniBars as a part of its own.",
+  "notes": [
+    "From v3-cycle-expression-7 (docs/v3/cycles/expression-7.md), class planned, finding expression-7.13. n11's catalogue table at 1800 gives its entity column (the course title) about 830 px, so the difficulty pips and the progress bar sit far right of the name they describe (round-0 X2; round 1 still starts the pips at x=845 although the builder set `width: 'content'` on the course column: shots r0/ and r1/scenarios-expr-n11--light--1800x1200.png under .evidence/v3-shots/expression-7/ in the main checkout). This row hands freed width to the entity column; check that a short entity title next to narrow mark columns does not take the whole surplus, so marks stay next to the name."
+  ]
 }

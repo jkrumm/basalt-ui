@@ -1,0 +1,26 @@
+{
+  "why": "Expression cycle 7 (docs/v3/cycles/expression-7.md) lost 7 of 102 round-0 points to `rubric`: reviewers that did not build the cases read three items three ways, so the same build scored differently by who read it. Two of them are P2. (a) X4 where nothing responds to the pointer: n11's round-0 reviewer scored X4 1 on a table that dims nothing ('no dimmed state to read', .14) and n23's scored it 1 for the same reason (.43), while n11's round-1 reviewer, on a build that still dims nothing, scored X4 3 and wrote 'the missing dim is scored under F7'; n22's round-1 reviewer read 'an untested gap claim is never a 2' as a cap of 1 with no sweep, and n26's round-0 reviewer took a point with no defect named (.85). The rubric's X4 sentence (`docs/v3/expression/rubric.md`, the paragraph above the item tables) says both 'scores the dimmed rest alone' and 'never a 2', and leaves out the page that has no marks to sweep. (b) The loading-to-loaded jump: n11, n22 and n24's round-0 reviewers charged it under K2 and again under K6 (.11, .25; .54 also cites it), while n25 and n26's charged it once, under K2. (c) X3 for a list of different items: n25's round-0 reviewer ruled X3 `n/a` because the table's books are not the chart's weeks, and its round-1 reviewer scored the same structure 1 ('a stall mark per book on the time axis would have made one'). EXPRESSION.md § Guards: a rubric change needs a `rubric` finding with a shot that shows the reviewer was wrong; the shots are `.evidence/v3-shots/expression-7/r0/scenarios-expr-n11--list--light--1800x1200.png` and `r1/` of the same name (one build state, X4 1 then 3), and `r0/` and `r1/scenarios-expr-n25--list--light--1800x1200.png` (X3 n/a then 1).",
+  "what": "Three rubric sentences made unambiguous, and the shipped reviewer's text matched to them.",
+  "owns": [
+    "docs/v3/expression/rubric.md (the three sentences only)",
+    "packages/basalt-ui/agent/** reviewer text that restates these items, through its generator",
+    "the dogfooded copies under .claude/ (make sync-self, its own commit)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/cases.md and references.md",
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) X4: where no mark on the page responds to the pointer, X4 is `n/a` and the missing response is F7's; where marks respond but the shoot has no sweep, X4 scores the dimmed rest and is at most 2. (2) A jump between the loading frame and the ready frame is K2's; K6 reads a jump in the ready phase after measuring, and a reviewer charges one defect once. (3) X3 is `n/a` only when no list on the page shows any of the chart's items or series; a list whose rows are the chart's series, or items the chart could draw, is scored (and the cost of not drawing them is F1 or X2's). Change the shipped reviewer's text where it restates these items. No other rubric text changes.",
+  "commits": "docs: for the rubric; feat: or docs: for the shipped reviewer text as the repo's process names it; package commits separate from non-package ones.",
+  "proof": "make check; the three sentences quoted in the PR beside the shots that asked for them.",
+  "acceptance": [
+    "rubric.md says when X4 is n/a and caps it at 2 without a sweep",
+    "rubric.md charges a loading-to-ready jump under K2 only",
+    "rubric.md says when X3 is n/a",
+    "The shipped reviewer's text agrees, or the PR names where none restates them",
+    "make check passes"
+  ],
+  "out_of_scope": "Any other rubric item; the expression thresholds; skill and kit text."
+}
