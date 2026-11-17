@@ -208,8 +208,7 @@ export const SURFACES = {
       shipped: ['**/tokens/**'],
       repo: ['packages/basalt-ui/src/tokens/**'],
     },
-    // Token-layer boundary enforced by `basalt/token-layer-boundary`, repo-local only (see
-    // ./charts above and that rule's file-header comment for why).
+    // The UI-free layering is held on the built graph by `scripts/check-dist-layering.mjs`.
     forbiddenImports: [],
   },
   './vite': {

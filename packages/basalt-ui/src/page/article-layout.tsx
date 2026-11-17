@@ -52,13 +52,13 @@ export type ArticleLayoutProps = {
 const RAIL_QUERY = '(min-width: 1200px)'
 
 function subscribeRail(onChange: () => void): () => void {
-  // theme-allow raw-breakpoint — the TOC swap needs one of two branches mounted, not both hidden by CSS
+  // the TOC swap needs one of two branches mounted, not both hidden by CSS
   const list = window.matchMedia(RAIL_QUERY)
   list.addEventListener('change', onChange)
   return () => list.removeEventListener('change', onChange)
 }
 
-// theme-allow raw-breakpoint — the same TOC swap read
+// the same TOC swap read
 const railSnapshot = (): boolean => window.matchMedia(RAIL_QUERY).matches
 // Below the breakpoint until the client says otherwise: the trigger is the safe first paint.
 const railServerSnapshot = (): boolean => false

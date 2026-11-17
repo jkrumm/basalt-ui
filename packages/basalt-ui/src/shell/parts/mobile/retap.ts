@@ -41,7 +41,7 @@ export function deepestScrolledDescendant(root: ParentNode | null): HTMLElement 
 }
 
 function prefersReducedMotion(): boolean {
-  // theme-allow raw-breakpoint — a reduced-motion read (the scroll behaviour), not a viewport read
+  // a reduced-motion read (the scroll behaviour), not a viewport read
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
