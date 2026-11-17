@@ -15,6 +15,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - A ramp starts neutral below its threshold and turns hue only past it; zero stays neutral.
 - A state has one colour in every linked view: the legend swatches and a table's status dots match the marks (c16, n08); a rise is one hue in the chart and in the table pill, and a fall the other; the accent marks the answer (the next run, the leader) and nothing else, so one word keeps one colour across parts (n13 drew a rise in the chart and a fall in the table).
 - A status hue means a status: carry it with a word or a dot, not hue alone. [lint:status-fill-as-text]
+- The accent goes to the item that answers (the culprit hop, the signal that leads the verdict), chosen from the data, so it follows the culprit whichever series that is: n26 fixed it to the gateway, so with the home fixture the culprit router was grey (.74); n11 spent it on a 6 px difficulty dot while the progress bars carried none (.4). One fact takes one hue: a red delta pill beside an amber 'Behind pace' dot said one fact twice (n25 .61), and a Down figure drawn without a hue beside table dots with one split a state in two (n23 .33).
 - A status hue marks a state that needs action; a target rule, a "live" band and a passing delta stay in ink steps, and the failed mark takes the status fill instead of its category hue.
 
 ## One measure
@@ -37,7 +38,13 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - The hero states the answer with its verb ("Runs out 13:52", where "13:52" alone answers nothing) and at most one phrase of baseline; the one mark the page is about carries the annotation at rest, so the sentences around it say something else ([copy](copy.md)). A list keeps the answer above its cut.
 - When the answer needs a word on one mark (the slowest, the spike, last night), compose [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md) with a `text` mark placed by `chartLabels`: a kind such as [Bars](node_modules/basalt-ui/docs/bars.md) takes only its own marks. Engine `text` marks from `@tanstack/charts/text` are allowed in custom marks. On focus the figure's readout carries what the mark means, delta and status included (`focus.readout` takes any value: [linked parts](#linked-parts)) (its share, its model, its stage) and returns to the answer on leave (c11, c12, c13, n02, n12: the answer was a sentence, or the readout a bare total).
 - Name the few marks that matter. On a band axis `x.ticks` as a list of keys labels exactly those bands (`ticks: ['Acme', 'Globex']`); a number only thins. Elsewhere an engine `text` mark placed by `chartLabels`. A band or zone that is the answer carries its words on the mark, where a faint fill with an empty face leaves the reader to guess (n13, n04, c15, n16).
+- The mark that answers carries the answer at rest, placed by `chartLabels`: the leading line's end value, the total on each top bar, the gap at today. Worked: n25's hero said "−3 vs pace" and nothing on the chart marked today or the gap to the pace line (n25 .60); n22 left the RHR line that exits the band unmarked (n22 .16); n24 printed a value on none of its bars (n24 .46). The hero and the annotation state it once between them.
 - Custom marks read `plot.rows(key)` and `plot.visible`, so a legend toggle hides the mark. [type:ChartPlot]
+
+## One readout
+
+- When the figure follows focus, the tooltip is off (`tooltip={false}`) and the hero, the dimmed marks and the list row are the one readout. n24 and n26 showed a tooltip, a swapped hero and a lit row: three readouts for one pointer (n24 .49, n26 .77).
+- The announcement names the focused item's values in the tooltip's order (`name: a, b, c`), and a verdict alone is too little: n22 announced "stable" with the values left out, n25 and n23 the same in round 1 (n22 .23).
 
 ## Anatomy of a chart card
 
@@ -56,12 +63,15 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 ## Form from structure
 
+- An ordinal (a difficulty, a level, a rank) is a mark, where a word in a column reads rather than sees: n11 printed '4 Hard' (n11 .1); five pips or a segmented [Meter](node_modules/basalt-ui/docs/meter.md) draw it.
+- The items the question names go on the chart's axis: the stalled books on the time axis, linked to their rows (n25 .59), the hops in path order (n26 .71), where a table beside a chart of something else leaves the question to the reader.
 - Where the items carry a structure the question asks about (hops in a graph, two scores per item, the stages of a pipeline, the stages of a night), the form draws that structure: the hops as a path, the pair as a scatter or paired marks, the stages as segments. A ranked list or a total-only stack is the fallback, and the page names it as the fallback (c10, c11, c12, n02, n12 F1).
 
 ## One view
 
 - Where two charts share an axis and answer the two halves of one question, they are one chart above and below the axis (a diverging chart) in one card, where two cards and a strip would stack (c13 X2, F1; n01 in cycle 2: a strip, per-day bars, a list and a line as four stacked parts). Charts on one x share one card, or sit side by side inside the 1800x1200 fold; the second below the fold is the defect (n19). Two cards stand only when the axes differ. A list longer than the chart sits beside it in its own scroll region at `@wide`, and a box takes its content's height, so a fixed height cannot leave a gap or clip (n13, n09, c14, n04). A chart is as tall as its marks need: c16 drew eight dots in a 490 px chart, n15 and n20 short charts across 750 and 550 px boxes.
 
+- Three stacked bands that share one focus apiece are three pages in one: n23 drew a strip, five bars 1,480 px wide and, below them, the table of the same monitors (n23 .41). Join the list to the bars through one focus and put them side by side at `@wide`; run the check on your own 1800 shot before the fact count.
 - A table that shows the chart's items is [DataTable](node_modules/basalt-ui/docs/data-table.md) with `focus`, which keeps the link through its own sort; a list that only repeats the chart's numbers is folded into the chart card or dropped (n18, n10, n03, n14, n17, n07); a table of the chart's items joins its card instead of a third stacked surface (c16).
 
 ## Encodings
@@ -77,6 +87,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - A fixed row or bar count (`rows={8}`) is derived from the data, so the extreme fixture shows every item: hop 9 hidden behind eight rows, with a headline saying nine hops, is the defect (c10 F5; the bars summed to 18 of 19).
 - An incomplete datum (a partial day, a night missing a stage) is marked on its mark (hatched, hollow or a caption on the bar) and named once; a complete smaller value would misstate it (n12 F5: a night with REM missing read as a finished 305 min; c12 F5: today's partial bar read as a finished day; n01 in cycle 2: a zero or absent day drew neither a mark nor a cue).
 - The fixture shows its zero and its extreme at rest, so the card is judged with an empty hour and an over-limit value on screen. The extreme reads true: rounding or clamping it away hides it. A zero fixture shows a cue (a dash, a baseline) where the marks would be.
+- One value that crushes the rest is capped with `y.domain`: the kit draws the off-scale caret and the tooltip keeps the true value (n26's 420 ms rescaled the axis and flattened every other hop, .79; n24's eleven bars shrank to slivers, .47). A ranking that saturates says how many are hidden (n23's five identical 1,440 min bars with fifteen more cut, .37), and a zero series gets a visible mark: a finished line at zero lay on the baseline rule and read as absent (n25 .64).
 - Binned bars carry a unit caption ("per 15 min"). A count axis and a share-of-limit axis carry a caption (`y.title`: "Requests", "% of limit"), and a `y.format` keeps a decimal for a domain under 2 units (ticks `0.5`, `1.0`, `1.5`, where `1`, `1`, `2` repeats a label) (c14, n04, n16).
 
 ## A time window picks its resolution

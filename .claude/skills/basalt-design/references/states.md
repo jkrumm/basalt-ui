@@ -12,6 +12,8 @@ The phase vocabulary and the words each phase carries. The shapes are owned by t
 - A part declares the same slots in every phase (`sub`, `rows`, `delta`, `footer`; every [StatCell](node_modules/basalt-ui/docs/stat-cell.md) of a strip alike), so its skeleton holds the loaded height: a slot that appears only when data does grows the strip 40 px (n19 .49), and a dropped one shrinks a loading frame (n16's strip lost 56 px and its cards 137 px). The loaded summary is at most as tall as its skeleton at 390 (n20 .62, n08 .24).
 - The slot is held and left empty before ready: the page passes the phase and the frame draws the skeleton, while a hand-passed dash, a "partial" pill or a green "-80 pts" on an empty page states a measurement nobody made (n15 .33, n08 .23, c16 .8, n17 .60, n03 .6, n18 .72, n13). A figure, pill, status word or footer value derived from rows is computed in the ready phase only. Every part keeps its place in every phase, a table included: n10's loading dropped the table.
 
+- A loading frame passes the footer and status rows the ready frame draws: n25 left the footer row out of loading and the frame stood 36 px short of the loaded card (n25 .65; n22 .22 charged the same jump). Pass the same slots in both phases, the values held back until ready.
+
 ## What each state says
 
 - Empty: the cause, then the next step. A filter caused it: name the filter and offer its reset. "No decisions are waiting. New ones appear when an agent asks for a verdict."
