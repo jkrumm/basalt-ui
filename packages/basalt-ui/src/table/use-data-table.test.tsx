@@ -856,3 +856,68 @@ describe('page filters bound to the table', () => {
     expect(names()).toHaveLength(3)
   })
 })
+
+describe('the empty sentence of a table the page filtered', () => {
+  const state = filterField('state')
+  const name = filterField('name')
+  const bound = (empty?: Options['empty']): ReactElement => (
+    <Subject
+      options={
+        {
+          filters: [
+            { field: state, match: (row: Row, value: string) => row.state === value },
+            { field: name, match: (row: Row, value: string) => row.name === value },
+          ],
+          ...(empty !== undefined && { empty }),
+        } as Options
+      }
+    />
+  )
+  const sentence = (): string | null | undefined =>
+    document.querySelector('[data-slot="table-empty"]')?.textContent
+  afterEach(() => {
+    state.clear()
+    name.clear()
+  })
+
+  test('the page cause replaces the default and Clear filters stays', () => {
+    render(bound({ cause: 'No Issue matches this filter.' }))
+    act(() => state.set('Nope'))
+    expect(sentence()).toContain('No Issue matches this filter.')
+    expect(sentence()).not.toContain('No rows match')
+    expect(screen.getByRole('button', { name: 'Clear filters' })).toBeTruthy()
+  })
+
+  test('without a cause the default names filters only, there being no search', () => {
+    render(bound())
+    act(() => state.set('Nope'))
+    expect(sentence()).toContain('No rows match the current filters')
+    expect(sentence()).not.toContain('search')
+  })
+
+  test('a search phrase keeps the default that names the search, over the page cause', () => {
+    render(
+      <Subject
+        options={
+          {
+            state: {
+              use: () =>
+                [
+                  {
+                    v: 1,
+                    request: { q: 'zzz', filters: [], sort: [], page: 1, pageSize: 25 },
+                    display: { visibility: {} },
+                  },
+                  () => undefined,
+                ] as never,
+            },
+            filters: [{ field: state, match: (row: Row, value: string) => row.state === value }],
+            empty: { cause: 'No Issue matches this filter.' },
+          } as Options
+        }
+      />,
+    )
+    act(() => state.set('Eng'))
+    expect(sentence()).toContain('No rows match the current search and filters')
+  })
+})

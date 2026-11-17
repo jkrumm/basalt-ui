@@ -319,13 +319,17 @@ export function useDataTable<
   const filtering = request.q !== '' || request.filters.length > 0 || pageFilters.active
   const settled = options.data !== undefined
   const pageFiltered = options.empty?.filtered
+  const ownNarrowing = request.q !== '' || request.filters.length > 0
+  // The page's own sentence stands when the page narrowed the rows; a phrase or column filter the
+  // user set keeps the table's, which names the search only when one is set.
+  const pageCause =
+    pageFiltered || (pageFilters.active && !ownNarrowing) ? options.empty?.cause : undefined
   const empty: Empty | null =
     settled && rows.length === 0
       ? filtering
         ? {
-            cause: pageFiltered
-              ? (options.empty?.cause ?? t('table.noMatches'))
-              : t('table.noMatches'),
+            cause:
+              pageCause ?? (request.q === '' ? t('table.noMatchesFilters') : t('table.noMatches')),
             filtered: {
               reset: () => {
                 state.setRequest({ q: '', filters: [] })

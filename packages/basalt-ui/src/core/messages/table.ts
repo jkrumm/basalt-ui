@@ -12,6 +12,7 @@ export type TableMessages = Record<
   | 'table.actions'
   | 'table.empty'
   | 'table.noMatches'
+  | 'table.noMatchesFilters'
   | 'table.clearFilters'
   | 'table.error'
   | 'table.forbidden'
@@ -78,6 +79,7 @@ export const table = {
   'table.actions': 'Row actions',
   'table.empty': 'No rows to show',
   'table.noMatches': 'No rows match the current search and filters',
+  'table.noMatchesFilters': 'No rows match the current filters',
   'table.clearFilters': 'Clear filters',
   'table.error': 'Could not load this.',
   'table.forbidden': 'You do not have access to these rows',
