@@ -41,8 +41,9 @@ autonomously execute large roadmap phases.
   `docs/**`, the package MAINTAINING.md and this file too.
 - **Budgets are numbers**, checked by `scripts/check-budgets.ts` in `pre`: public symbols, published
   subpaths, shipped rule lines, spec prose, playground routes, `cli/index.ts` size.
-- **Dogfood.** The repo loads its own shipped rules/skills; `/.oxlintrc.json` levels match
-  `configs/oxlint-basalt.json` (the `basalt/*` levels `configs/oxlint.json` extends).
+- **Dogfood.** The repo loads its own shipped rules/skills; `apps/playground` lints on the shipped v3 app preset
+  (`configs/oxlint-app.json`) and `/.oxlintrc.json` lints the package source on plain oxlint rules plus the import bans
+  `scripts/gen-oxlint.ts` projects from `SURFACES`. The 2.x `basalt` lint plugin and its presets are retired.
 
 ## Critical Rules (READ FIRST)
 
@@ -75,8 +76,9 @@ surface and `@visx/*`. Ground truth: `docs/v3/ARCHITECTURE.md`.
 
 ## Layer Boundary
 
-`src/charts/**`/`src/tokens/**` stay free of React UI code; `@tanstack/charts/react` is imported by
-`src/charts/host.tsx` alone — independent oxlint rules. Full layering + packaging rationale
+`src/charts/**`/`src/tokens/**` stay free of React UI code (`check-dist-layering.mjs` walks the built graph);
+`@tanstack/charts/react` is imported by `src/charts/host.tsx` alone (a `no-restricted-imports` override
+`gen-oxlint.ts` projects). Full layering + packaging rationale
 (repo-internal, not a consumer contract): `packages/basalt-ui/MAINTAINING.md` § Layering.
 
 ## Tech Stack

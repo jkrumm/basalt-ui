@@ -5,7 +5,7 @@
  */
 export type IdTarget = { readonly ts?: string; readonly css?: string; readonly retired?: true }
 
-/** The 2.x text-guard kinds (`check-theme`, deleted); `waivers.test.ts` holds it equal to the plugin's `RETIRED_GUARD_KIND_IDS`. */
+/** The 2.x text-guard kinds (`check-theme`, deleted): the one list of them, now that the 2.x plugin that also recognized them is retired. */
 export const GUARD_KINDS = {
   'raw-hex': { ts: 'colour-literal', css: 'color-no-hex' },
   'raw-color-fn': { ts: 'colour-literal', css: 'function-disallowed-list' },
@@ -39,7 +39,7 @@ export const GUARD_KINDS = {
   'series-palette': {},
 } as const satisfies Record<string, IdTarget>
 
-/** The 2.x oxlint-plugin ids (`KNOWN_RULE_IDS` in configs/oxlint-plugin.js) that are valid in a `theme-allow`. */
+/** The 2.x oxlint-plugin ids (retired with `configs/oxlint-plugin.js`) that were valid in a `theme-allow`. */
 const PLUGIN_IDS = {
   'no-raw-font-size': {},
   'raw-size-literal': {},

@@ -2,8 +2,6 @@ import { describe, expect, test } from 'bun:test'
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { RETIRED_GUARD_KIND_IDS } from '../../../packages/basalt-ui/configs/oxlint-plugin.js'
-import { GUARD_KINDS } from './idmap.ts'
 import { runWaivers } from './index.ts'
 import { transformWaivers } from './transform.ts'
 import type { Lane } from './idmap.ts'
@@ -27,14 +25,6 @@ describe('fixtures', () => {
     const second = transformWaivers(first.text, { lane })
     expect(second.text).toBe(first.text)
     expect(second.rewritten).toHaveLength(0)
-  })
-})
-
-describe('idmap', () => {
-  test('maps exactly the 2.x guard kinds the plugin still recognizes', () => {
-    expect(Object.keys(GUARD_KINDS).toSorted()).toEqual(
-      [...RETIRED_GUARD_KIND_IDS, 'in-body-page-title'].toSorted(),
-    )
   })
 })
 

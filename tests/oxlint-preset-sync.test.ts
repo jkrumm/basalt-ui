@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
+  CHART_HOST_FILE,
   COMPILER_RULES,
   PKG_ROOT,
   PLAYGROUND_COMPILER_RULE_EXEMPTIONS,
@@ -9,14 +10,10 @@ import {
   projectBanList,
   projectPlaygroundOverrides,
 } from '../packages/basalt-ui/scripts/gen-oxlint'
-import { hasTokenLayerBoundaryRegistered } from '../packages/basalt-ui/src/surfaces'
 
 const root = join(import.meta.dir, '..')
 const OXLINT_BIN = join(root, 'node_modules', '.bin', 'oxlint')
-const SHIPPED_CONFIG_PATH = join(root, 'packages/basalt-ui/configs/oxlint.json')
-const GUARDS_CONFIG_PATH = join(root, 'packages/basalt-ui/configs/oxlint-basalt.json')
 const FIXTURE_PATH = join(root, 'tests/fixtures/oxlint-parse-fixture.ts')
-const EQEQEQ_FIXTURE_PATH = join(root, 'tests/fixtures/eqeqeq-smart-fixture.ts')
 
 type OverrideBlock = { files: string[]; rules: Record<string, unknown> }
 type NoRestrictedImportsValue = [
@@ -39,88 +36,46 @@ function noRestrictedImportsOf(
   return block?.rules['no-restricted-imports'] as NoRestrictedImportsValue | undefined
 }
 
-describe('oxlint preset sync contract', () => {
-  it('shipped configs/oxlint.json overrides match the projection (drift = red)', () => {
-    const projected = projectBanList('shipped')
-    const committed = readOverrides(join(root, 'packages/basalt-ui/configs/oxlint.json'))
-    expect(committed).toEqual(projected)
-  })
-
+describe('repo oxlint config sync contract', () => {
   it('repo .oxlintrc.json overrides match the projection (drift = red)', () => {
-    const projected = projectBanList('repo')
-    const committed = readOverrides(join(root, '.oxlintrc.json'))
-    expect(committed).toEqual(projected)
+    expect(readOverrides(join(root, '.oxlintrc.json'))).toEqual(projectBanList())
   })
 
-  // ── @visx/*-only-in-charts + framework-free charts/tokens: moved to basalt/chart-engine-boundary + ────────
-  // ── basalt/token-layer-boundary ──────────────────────────────────────────────────────────────
-  // These boundaries used to live in per-glob no-restricted-imports overrides, with the charts
-  // block's implicit OMISSION of the @visx/* ban acting as the "re-allow" — an artifact of oxlint's
-  // last-writer-wins override resolution, which a consumer's own no-restricted-imports override on
-  // an overlapping glob could silently clobber. They're now enforced by the `basalt/chart-engine-boundary`
-  // and `basalt/token-layer-boundary` oxlint plugin rules instead (configs/oxlint-plugin.js), each
-  // of which a consumer can only disable explicitly, by name — never silently. The generator
-  // therefore no longer emits a no-restricted-imports override for charts/tokens at all.
-
-  it('shipped no longer carries a charts override (boundary moved to basalt/chart-engine-boundary)', () => {
-    const projected = projectBanList('shipped')
-    expect(findBlock(projected, '**/charts/**')).toBeUndefined()
+  it('the repo config loads no JS plugin: the 2.x `basalt` plugin is retired', () => {
+    const parsed = JSON.parse(readFileSync(join(root, '.oxlintrc.json'), 'utf8')) as {
+      jsPlugins?: string[]
+      rules?: Record<string, unknown>
+    }
+    expect(parsed.jsPlugins).toBeUndefined()
+    expect(Object.keys(parsed.rules ?? {}).filter((id) => id.startsWith('basalt/'))).toEqual([])
   })
 
-  it('repo charts override keeps only its non-import rule, no no-restricted-imports', () => {
-    const projected = projectBanList('repo')
-    const chartsBlock = findBlock(projected, 'packages/basalt-ui/src/charts/**')
-    expect(chartsBlock).toBeDefined()
+  it('src/charts keeps only its non-import rule', () => {
+    const chartsBlock = findBlock(projectBanList(), 'packages/basalt-ui/src/charts/**')
     expect(chartsBlock?.rules).toEqual({ 'no-underscore-dangle': 'off' })
   })
 
-  it('shipped no longer carries a tokens override (boundary moved to basalt/token-layer-boundary)', () => {
-    const projected = projectBanList('shipped')
-    expect(findBlock(projected, '**/tokens/**')).toBeUndefined()
+  it('src bans @visx/* and the engine host; the host file alone may import the host', () => {
+    const blocks = projectBanList()
+    const app = noRestrictedImportsOf(findBlock(blocks, 'packages/basalt-ui/src/**'))?.[1]
+    expect(app?.patterns?.flatMap((p) => p.group).toSorted()).toEqual([
+      '@tanstack/charts/react/*',
+      '@visx/*',
+    ])
+    expect(app?.paths?.map((p) => p.name).toSorted()).toEqual([
+      '@tanstack/charts/react',
+      'framer-motion',
+    ])
+
+    const host = noRestrictedImportsOf(findBlock(blocks, CHART_HOST_FILE))?.[1]
+    expect(host?.paths?.map((p) => p.name)).toEqual(['framer-motion'])
+    expect(host?.patterns?.flatMap((p) => p.group)).toEqual(['@visx/*'])
+    // Last, so oxlint's last-writer-wins resolution picks it for the host file.
+    expect(blocks.at(-1)?.files).toEqual([CHART_HOST_FILE])
   })
 
-  it('repo no longer carries a tokens override (boundary moved to basalt/token-layer-boundary)', () => {
-    const projected = projectBanList('repo')
-    expect(findBlock(projected, 'packages/basalt-ui/src/tokens/**')).toBeUndefined()
-  })
-
-  it('no override anywhere still bans the @visx/* pattern (fully superseded by basalt/chart-engine-boundary)', () => {
-    for (const target of ['shipped', 'repo'] as const) {
-      const projected = projectBanList(target)
-      for (const block of projected as OverrideBlock[]) {
-        const nri = noRestrictedImportsOf(block)
-        const hasVisxGroupBan = (nri?.[1].patterns ?? []).some((p) => p.group.includes('@visx/*'))
-        expect(hasVisxGroupBan).toBe(false)
-      }
-    }
-  })
-
-  it('shipped overrides carry exactly the #app catch-all block and the route-file block (no narrower boundary overrides remain)', () => {
-    const overrides = readOverrides(SHIPPED_CONFIG_PATH) as OverrideBlock[]
-    expect(overrides).toHaveLength(2)
-    expect(overrides[0]?.files).toEqual(['**/*.{ts,tsx}'])
-    expect(overrides[1]).toEqual({
-      files: ['**/routes/**', '**/__root.tsx'],
-      rules: { 'react/only-export-components': 'off' },
-    })
-
-    const nri = noRestrictedImportsOf(overrides[0])
-    const paths = nri?.[1].paths ?? []
-    expect(paths.map((p) => p.name).toSorted()).toEqual(['antd', 'framer-motion'])
-  })
-
-  it('the route-file override is shipped-only (inert in the repo-local config)', () => {
-    expect(findBlock(projectBanList('repo'), '**/__root.tsx')).toBeUndefined()
-  })
-
-  // ── Playground dogfooding: it consumes the SHIPPED app preset, not the repo-local config ───────
-  // apps/playground is the model consumer, so it must see exactly what a v3 app sees. Its own
-  // apps/playground/.oxlintrc.json extends configs/oxlint-app.json; the root lint skips the
-  // subtree (`--ignore-pattern`, since the v3 and 2.x plugins both register as `basalt` and one
-  // oxlint run cannot load both) and `lint:playground` runs oxlint from that directory.
-
-  it('#app repo globs exclude apps/playground (it is governed by its own nested config)', () => {
-    const block = findBlock(projectBanList('repo'), 'packages/basalt-ui/src/**')
+  it('src/** blocks exclude apps/playground (it is governed by its own nested config)', () => {
+    const block = findBlock(projectBanList(), 'packages/basalt-ui/src/**')
     expect(block).toBeDefined()
     expect(block?.files.some((f) => f.startsWith('apps/playground'))).toBe(false)
   })
@@ -132,51 +87,16 @@ describe('oxlint preset sync contract', () => {
     expect(parsed.extends).toEqual(['./node_modules/basalt-ui/configs/oxlint-app.json'])
   })
 
-  // The basalt/* levels live in the guards-only preset, which the full one extends.
-  it('the 2.x shipped preset carries the engine boundary but NOT the repo-only boundaries', () => {
-    const shipped = JSON.parse(readFileSync(SHIPPED_CONFIG_PATH, 'utf8')) as { extends?: string[] }
-    expect(shipped.extends).toEqual(['./oxlint-basalt.json'])
-    const rules = (
-      JSON.parse(readFileSync(GUARDS_CONFIG_PATH, 'utf8')) as {
-        rules?: Record<string, unknown>
-      }
-    ).rules
-    expect(rules?.['basalt/chart-engine-boundary']).toBe('error')
-    expect(rules?.['basalt/visx-boundary']).toBeUndefined()
-    expect(rules?.['basalt/visx-tooltip']).toBeUndefined()
-    // Repo-only like token-layer-boundary: `@tanstack/charts/react` is basalt's own host seam.
-    expect(rules?.['basalt/chart-host-single']).toBeUndefined()
-    // Repo-local by design — guards basalt's internal layering, never a consumer contract.
-    // surfaces-coverage.test.ts asserts the mirror image against the repo-local config.
-    expect(hasTokenLayerBoundaryRegistered(rules)).toBe(false)
-  })
-
-  it.each([SHIPPED_CONFIG_PATH, GUARDS_CONFIG_PATH])('%s actually parses in oxlint', (config) => {
-    const result = Bun.spawnSync([OXLINT_BIN, '--config', config, FIXTURE_PATH])
+  it('the repo config actually parses in oxlint', () => {
+    const result = Bun.spawnSync([
+      OXLINT_BIN,
+      '--config',
+      join(root, '.oxlintrc.json'),
+      FIXTURE_PATH,
+    ])
     const output = `${result.stdout}${result.stderr}`
     expect(output).not.toContain('Failed to parse')
     expect(output).not.toContain('unknown field')
-    // A config-parse failure exits non-zero before any lint findings are produced; a clean
-    // config run may still exit non-zero on lint findings, which is fine — only the parse
-    // failure text above is the actual gate here.
-  })
-})
-
-describe('shipped preset — eqeqeq smart mode', () => {
-  // `eqeqeq: "error"` (bare) flags the deliberate `x != null` nullish idiom, which cost a real
-  // consumer 4 false positives. "smart" allows it while still catching a genuine loose compare.
-  // Asserted against oxlint's ACTUAL output, since this hinges on oxlint's option semantics.
-  const output = (): string => {
-    const result = Bun.spawnSync([OXLINT_BIN, '--config', SHIPPED_CONFIG_PATH, EQEQEQ_FIXTURE_PATH])
-    return `${result.stdout}${result.stderr}`
-  }
-
-  it('allows `!= null`', () => {
-    expect(output()).not.toContain('Expected !== and instead saw !=')
-  })
-
-  it('still flags a genuine loose comparison', () => {
-    expect(output()).toContain('Expected === and instead saw ==')
   })
 })
 

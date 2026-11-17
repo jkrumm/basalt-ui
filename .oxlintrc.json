@@ -1,7 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "typescript", "import", "unicorn", "jsx-a11y", "promise", "oxc"],
-  "jsPlugins": ["./packages/basalt-ui/configs/oxlint-plugin.js"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
@@ -32,34 +31,7 @@
       {
         "allowAsProps": true
       }
-    ],
-    "basalt/no-raw-font-size": "error",
-    "basalt/raw-size-literal": "error",
-    "basalt/card-inset": "error",
-    "basalt/chart-in-raw-surface": "error",
-    "basalt/shadow-basalt-export": "error",
-    "basalt/hand-rolled-shell": "error",
-    "basalt/raw-scroll-container": "error",
-    "basalt/hand-rolled-filter": "error",
-    "basalt/control-outside-home": "error",
-    "basalt/bound-control-outside-home": "error",
-    "basalt/control-size-literal": "error",
-    "basalt/in-body-page-title": "error",
-    "basalt/responsive-twin": "error",
-    "basalt/search-literal-link": "error",
-    "basalt/use-search-from-literal": "error",
-    "basalt/query-fn-unwrap": "error",
-    "basalt/forms-field-key": "error",
-    "basalt/chart-engine-boundary": "error",
-    "basalt/chart-host-single": "error",
-    "basalt/token-layer-boundary": "error",
-    "basalt/agent-no-raw-usechat": "error",
-    "basalt/ai-sdk-major": "error",
-    "basalt/raw-breakpoint": "error",
-    "basalt/no-dev-helper": "error",
-    "basalt/route-view-transition": "error",
-    "basalt/status-fill-as-text": "error",
-    "basalt/no-import-meta-env": "error"
+    ]
   },
   "ignorePatterns": [
     ".claude/**",
@@ -82,6 +54,20 @@
               {
                 "name": "framer-motion",
                 "message": "Import from 'motion/react', not the raw framer-motion package."
+              },
+              {
+                "name": "@tanstack/charts/react",
+                "message": "Only src/charts/host.tsx imports the engine host; render charts through it."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@visx/*"],
+                "message": "@visx/* is not part of basalt-ui; draw charts through the engine subpaths."
+              },
+              {
+                "group": ["@tanstack/charts/react/*"],
+                "message": "Only src/charts/host.tsx imports the engine host; render charts through it."
               }
             ]
           }
@@ -102,6 +88,28 @@
       ],
       "rules": {
         "no-console": "off"
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/charts/host.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "framer-motion",
+                "message": "Import from 'motion/react', not the raw framer-motion package."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@visx/*"],
+                "message": "@visx/* is not part of basalt-ui; draw charts through the engine subpaths."
+              }
+            ]
+          }
+        ]
       }
     }
   ]
