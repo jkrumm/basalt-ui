@@ -32,6 +32,8 @@ autonomously execute large roadmap phases.
 
 Before a consolidation PR (deleting or adopting exports) or touching the stack and structure, Read `docs/repo-reference.md`: adopt-or-delete, net-negative waves, one doctrine one home.
 
+Before changing anything under `packages/basalt-ui/`, Read `packages/basalt-ui/AGENTS.md`. Before changing anything under `apps/marketing/`, Read `apps/marketing/AGENTS.md`: its Biome and Prettier lines are stale, this file wins.
+
 ## Critical Rules (READ FIRST)
 
 - **Runtime**: Bun (not npm/pnpm)
