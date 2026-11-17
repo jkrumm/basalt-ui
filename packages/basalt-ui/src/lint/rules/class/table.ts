@@ -1,5 +1,5 @@
 /**
- * The class-rule family: seven ids, twenty enabled forms and one built-but-off form, all data
+ * The class-rule family: seven ids, twenty-one enabled forms and one built-but-off form, all data
  * (guardrails section 4, rows 1-7). The factory turns each entry into an oxlint/ESLint rule; this
  * module holds the patterns, the fix each message names and the next rung of the bending ladder.
  *
