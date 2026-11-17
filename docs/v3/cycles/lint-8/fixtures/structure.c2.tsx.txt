@@ -1,0 +1,148 @@
+// Cycle 2 phrasings for basalt/control-home, basalt/untrusted-markdown, basalt/colour-literal and
+// basalt/waiver-needs-reason. Seed numbers continue cycle 1's.
+import { useState } from 'react'
+import { Markdown } from 'basalt-ui/content'
+import { Card } from 'basalt-ui/ui/card'
+import { Checkbox } from 'basalt-ui/ui/checkbox'
+import { Combobox } from 'basalt-ui/ui/combobox'
+import { RadioGroup, Radio } from 'basalt-ui/ui/radio-group'
+import { Slider } from 'basalt-ui/ui/slider'
+import { Toolbar } from 'basalt-ui/ui/toolbar'
+
+type Message = { id: string; text: string; html: string }
+
+// seed control-home/outside-home 6: a Slider threshold in a card body on local state
+export function Threshold() {
+  const [v, setV] = useState(50)
+  return (
+    <Card>
+      <Slider value={v} onValueChange={(n) => setV(Number(n))} />
+    </Card>
+  )
+}
+
+// seed control-home/outside-home 7: a RadioGroup in the toolbar primitive
+export function Density() {
+  const [d, setD] = useState('compact')
+  return (
+    <Toolbar>
+      <RadioGroup value={d} onValueChange={(x) => setD(String(x))}>
+        <Radio value="compact" />
+      </RadioGroup>
+    </Toolbar>
+  )
+}
+
+// seed control-home/outside-home 8: a Combobox owner filter inside a local wrapper component
+function FilterBar({ children }: { children: React.ReactNode }) {
+  return <div className="flex gap-2">{children}</div>
+}
+export function Owners() {
+  const [owner, setOwner] = useState<string | null>(null)
+  return (
+    <FilterBar>
+      <Combobox value={owner} onValueChange={setOwner} items={[]} />
+    </FilterBar>
+  )
+}
+
+// seed control-home/outside-home 9: a Checkbox "only mine" with no value binding at all
+export function OnlyMine() {
+  return <Checkbox defaultChecked />
+}
+
+// seed untrusted-markdown/dangerous-html 3: innerHTML assigned from model text in an effect
+export function useInject(el: HTMLElement | null, m: Message) {
+  if (el) el.innerHTML = m.html
+}
+
+// seed untrusted-markdown/dangerous-html 4: insertAdjacentHTML with model html
+export function append(el: HTMLElement, m: Message) {
+  el.insertAdjacentHTML('beforeend', m.html)
+}
+
+// seed untrusted-markdown/rehype-raw 2: rehype-raw passed inline to the trusted Markdown
+import rehypeRaw from 'rehype-raw'
+export function Doc({ m }: { m: Message }) {
+  return (
+    <Markdown contentTrust="trusted" rehypePlugins={[rehypeRaw]}>
+      {m.text}
+    </Markdown>
+  )
+}
+
+// seed untrusted-markdown/rehype-raw 3: rehype-raw loaded by a dynamic import
+export const loadRaw = () => import('rehype-raw')
+
+// seed untrusted-markdown/mdx-evaluate 3: MDX compiled and run with new Function
+import { compile } from '@mdx-js/mdx'
+export async function compileRun(source: string) {
+  const code = String(await compile(source, { outputFormat: 'function-body' }))
+  return new Function(code)
+}
+
+// seed untrusted-markdown/mdx-evaluate 4: next-mdx-remote for model MDX
+import { MDXRemote } from 'next-mdx-remote/rsc'
+export const R = MDXRemote
+
+// seed untrusted-markdown/trusted-content 4: trusted chosen by a ternary on the role
+export function Bubble({ m, role }: { m: Message; role: 'user' | 'assistant' }) {
+  return <Markdown contentTrust={role === 'assistant' ? 'trusted' : 'untrusted'}>{m.text}</Markdown>
+}
+
+// seed untrusted-markdown/trusted-content 5: trusted spread from a props object
+const trusted = { contentTrust: 'trusted' as const }
+export function Answer({ m }: { m: Message }) {
+  return <Markdown {...trusted}>{m.text}</Markdown>
+}
+
+// seed colour-literal/colour-literal 6: a named colour in a map style paint object
+export const layer = { id: 'route', type: 'line', paint: { 'line-color': 'crimson', 'line-width': 2 } }
+
+// seed colour-literal/colour-literal 7: an hsl(var()) colour, the shadcn v3 idiom
+export const grid = { stroke: 'hsl(var(--border))' }
+
+// seed colour-literal/colour-literal 8: a hex inside a CSS custom property set from TS
+export function Tint() {
+  return <div style={{ ['--accent' as string]: '#22c55e' }}>t</div>
+}
+
+// seed colour-literal/colour-literal 9: a numeric hex for a WebGL clear colour
+export function clear(gl: { clearColor(c: number): void }) {
+  gl.clearColor(0xffffff)
+}
+
+// seed waiver-needs-reason/missing-reason 5: a JSX-comment waiver with no reason
+export function Legacy() {
+  return (
+    <>
+      {/* oxlint-disable-next-line basalt/dark-fork */}
+      <div className="dark:bg-inset">legacy</div>
+    </>
+  )
+}
+
+// seed waiver-needs-reason/missing-reason 6: a reason after a colon instead of --
+export function Legacy2() {
+  // oxlint-disable-next-line basalt/dark-fork: the logo needs its own dark tone
+  return <div className="dark:bg-inset">legacy</div>
+}
+
+// seed waiver-needs-reason/missing-reason 7: a next-line waiver naming no rule, with no reason
+export function Legacy3() {
+  // oxlint-disable-next-line
+  return <div className="dark:bg-inset">legacy</div>
+}
+
+// seed waiver-needs-reason/file-level-scope 3: a mid-file block disable for a block of lines
+/* oxlint-disable basalt/dark-fork -- a legacy block */
+export function Legacy4() {
+  return <div className="dark:bg-inset">legacy</div>
+}
+/* oxlint-enable basalt/dark-fork */
+
+// seed waiver-needs-reason/file-level-scope 4: a reasoned next-line waiver that names no rule
+export function Legacy5() {
+  // oxlint-disable-next-line -- the generated markup is fixed
+  return <div className="dark:bg-inset">legacy</div>
+}

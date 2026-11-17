@@ -1,0 +1,45 @@
+// Cycle 7 phrasings for waiver-needs-reason, in a file of their own: a range waiver silences
+// the rest of the file. Seed numbers continue cycle 6's.
+
+// seed waiver-needs-reason/missing-reason 20: a single dash where the reason marker is two
+export function A() {
+  // oxlint-disable-next-line basalt/raw-scroll - legacy panel
+  return <div className="overflow-y-auto">a</div>
+}
+
+// seed waiver-needs-reason/missing-reason 21: a trailing block-comment waiver with no reason
+export function B() {
+  return <div className="overflow-y-auto">b</div> /* oxlint-disable-line basalt/raw-scroll */
+}
+
+// seed waiver-needs-reason/missing-reason 22: a bare waiver of the core rule the preset turns on
+const later = () => value
+// oxlint-disable-next-line no-use-before-define
+const read = () => value
+const value = 1
+export const C = [later, read]
+
+// seed waiver-needs-reason/missing-reason 23: a reason that only points elsewhere
+export function D() {
+  // oxlint-disable-next-line basalt/raw-scroll -- see above
+  return <div className="overflow-y-auto">d</div>
+}
+
+// pass waiver-needs-reason/missing-reason 2: the template's reasoned waiver of the core rule
+// oxlint-disable-next-line no-use-before-define -- lazy read: the router is built from these defaults
+const defaults = { router: (): object => router }
+const router = { defaults }
+export const E = router
+
+// seed waiver-needs-reason/file-level-scope 11: a reasoned range disable of control-home, never file-waivable
+/* oxlint-disable basalt/control-home -- the settings page is all local toggles */
+export function Settings() {
+  return <span>s</span>
+}
+/* oxlint-enable basalt/control-home */
+
+// seed waiver-needs-reason/file-level-scope 12: a line-comment range disable with no enable after it
+// oxlint-disable basalt/fixed-colour
+export function Mark() {
+  return <span className="bg-white">m</span>
+}

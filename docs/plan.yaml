@@ -1542,3 +1542,17 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-dogfood-3-row-mark, v3-dogfood-3-visual, v3-dogfood-3-api]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-4.json' }
+  - key: v3-lint-8-lint
+    title: 'The rival net reads an icon set and a serialiser, the glyph sniff gets a layout fix, an inert shadcn rule and missed spellings, from lint cycle 8'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-cycle-lint-8]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-8-lint.json' }
+  - key: v3-cycle-lint-9
+    title: 'Improvement cycle 9: lint and guards, misses and false alarms per rule'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-8-lint]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-9.json' }

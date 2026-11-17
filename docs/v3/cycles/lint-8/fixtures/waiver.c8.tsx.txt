@@ -1,0 +1,40 @@
+// Cycle 8 phrasings for waiver-needs-reason, in a file of their own: a range waiver silences
+// the rest of the file. Seed numbers continue cycle 7's.
+
+// seed waiver-needs-reason/missing-reason 24: an eslint-dialect line waiver with no reason
+export function A() {
+  // eslint-disable-next-line basalt/raw-scroll
+  return <div className="overflow-y-auto">a</div>
+}
+
+// seed waiver-needs-reason/missing-reason 25: a reason in parentheses instead of after --
+export function B() {
+  // oxlint-disable-next-line basalt/raw-scroll (legacy panel)
+  return <div className="overflow-y-auto">b</div>
+}
+
+// seed waiver-needs-reason/missing-reason 26: a bare waiver of the core rule under its eslint/ spelling
+const early = () => late
+// oxlint-disable-next-line eslint/no-use-before-define
+const read = () => late
+const late = 1
+export const C = [early, read]
+
+// pass waiver-needs-reason/missing-reason 3: a reasoned eslint-dialect waiver
+export function D() {
+  // eslint-disable-next-line basalt/raw-scroll -- the log viewer scrolls on its own, ejected next
+  return <div className="overflow-y-auto">d</div>
+}
+
+// seed waiver-needs-reason/file-level-scope 13: a reasoned range disable of tw-off-law over a component
+/* oxlint-disable basalt/tw-off-law -- the marketing hero is hand-tuned */
+export function Hero() {
+  return <div className="p-[13px]">h</div>
+}
+/* oxlint-enable basalt/tw-off-law */
+
+// seed waiver-needs-reason/file-level-scope 14: an eslint-dialect range disable with no enable after it
+/* eslint-disable basalt/app-spacing */
+export function Spaced() {
+  return <div className="mt-4">s</div>
+}

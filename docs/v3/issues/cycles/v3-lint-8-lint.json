@@ -1,0 +1,30 @@
+{
+  "why": "Lint cycle 8 (docs/v3/cycles/lint-8.md, lint-8.1 to lint-8.6 P2, lint-8.7 to lint-8.10 P3). The cycle 7 fixes hold: the routerDefaults doc example and the init template lint clean with no waiver, the core rule is a managed id (W18 to W18d fail doctor, H15 is denied, a reasoned waiver counts against the ceiling), 26 earlier misses are now caught with none lost, and the playground, the 36 ejected primitives and 122 of 125 valid-code marks are silent. The rest: a user-agent test that picks the shortcut glyph gets a size-class fix although basalt ships `<Kbd>Mod</Kbd>` (lint-8.1); cycle 7's rival-signature net reads an icon set's `Chart` icon (`iconsax-react`) and the `markdown-table` serialiser as rivals (lint-8.2) and misses react-select, react-date-range and reactjs-popup (lint-8.3); a trailing `!` on a one-word utility (`hidden!`, `hover:underline!`) passes, as the pattern needs a dash segment (lint-8.4); a status tint read as text through `--color-*-tint` in CSS passes every rule (lint-8.5); and `shadcn/require-static-classes` never fires at `app` or `parts`, because it finds components through a components.json ui directory and the preset hands basalt's primitives to `no-restyle` only (lint-8.6). Each seed and its line are in docs/v3/cycles/lint-8/fixtures/results.md; reproduce with `zsh docs/v3/cycles/lint-8/fixtures/run.sh $PWD /tmp/lint-cycle-8` after a package build.",
+  "what": "The two rival-signature false alarms gone, and the misses and message gaps of lint-8.1 and lint-8.3 to lint-8.10 caught, fixed or stated as known limits.",
+  "owns": [
+    "packages/basalt-ui/src/lint/rules/** (forms, fixtures, cases, JSDoc, messages)",
+    "packages/basalt-ui/src/lint/stylelint/** and packages/basalt-ui/configs/stylelint.basalt.json (regenerated)",
+    "packages/basalt-ui/src/lint/preset.ts (the shadcn rule options and SHADCN_TOKEN_RULES, lint-8.6 only)",
+    "packages/basalt-ui/configs/oxlint-*.json (regenerated)",
+    "packages/basalt-ui/src/lint/messages.test.ts"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "packages/basalt-ui/src/lint/rule-table.ts ID_CEILING",
+    "packages/basalt-ui/src/css/** (the theme's class names and tokens are the input, not the change)",
+    "packages/basalt-ui/src/ui/** (Kbd is named by the message, not changed)",
+    "examples/**",
+    "apps/**"
+  ],
+  "change": "False alarms first. lint-8.2: `isIconSet` reads a package name that starts with `icon` (`iconsax-react`, `iconoir-react`) as it reads `react-icons`, and the markdown signature skips a package that writes Markdown rather than renders it (`markdown-table`, a name ending in `-to-markdown`); the two `pass` marks `import-boundary/rival-signature 1` and `2` in docs/v3/cycles/lint-8/fixtures/structure.c8.tsx.txt go silent. Messages: lint-8.1, media-query's `navigator.userAgent` test whose pattern names platforms only (Mac, Win, Linux, iPhone, iPad; no `Mobi`, `Android` or `Tablet`) reports with the fix `<Kbd>Mod</Kbd>` from basalt-ui/ui/kbd (a registered command prints its own chord) instead of `useSizeClass`; a device sniff keeps the layout fix. lint-8.10 (P3): the stylelint value list's message for a background names the brand beside status and chart and points a tinted background to `--basalt-selected` or a surface token, and `function-disallowed-list`'s rgb() message says the token keeps the property's role. Misses, each with an invalid fixture block or a stated limit in the rule's JSDoc: rival-signature reads `select` and `popup` as combobox and overlay words and `date-?range` and `calendar` as date-picker words, or react-select and react-date-range join the radix row by name (lint-8.3); important-modifier's trailing-bang alternative takes zero or more dash segments (`hidden!`, `hover:underline!`, lint-8.4); the `color` value list reads the status tints (`--color-<status>-tint` and the basalt names they map) as fill-only (lint-8.5); `shadcn/require-static-classes` receives basalt's primitives as `no-restyle` does, or, if the rule cannot take a package specifier, leaves `SHADCN_TOKEN_RULES` at `app` and `parts` with the coverage block naming tw-off-law's template form as the guard (lint-8.6; read `componentsFor` in @shadcn/lint 0.2.5 first). The P3s: track-length reads `auto-rows-[…]` and `auto-cols-[…]` (lint-8.7); validate-search-pure reads `history` and `screen` as impure globals (lint-8.8); ui-path reads a `components/ui/` specifier (lint-8.9).",
+  "commits": "fix: one commit per rule family in packages/basalt-ui (class, import, structure, stylelint, preset). No app or example commit.",
+  "proof": "run.sh from lint cycle 8 reports every seed of lint-8.3 to lint-8.9 caught or names its stated limit, the seed `viewport-keyed/media-query 23` caught with the Kbd fix in its message, and every `pass` mark silent but `core/no-use-before-define 3` (the stated shape); the probes `<div className=\"hidden! flex! truncate!\">` (lint-8.4), `color: var(--color-good-tint)` (lint-8.5) and `<Button className={parts.join(' ')}>` (lint-8.6, or its stated removal) are reported; sweep.sh reports 0 at `app` and `parts` for the playground; eject.sh reports 0 findings on the 36 ejected primitives.",
+  "acceptance": [
+    "The two rival-signature `pass` marks of docs/v3/cycles/lint-8/fixtures (iconsax-react's `Chart`, `markdown-table`) are silent (seed report)",
+    "The user-agent shortcut-glyph seed reports with a message naming `<Kbd>Mod</Kbd>`, and a device sniff keeps the layout fix (test)",
+    "Each miss of lint-8.3 to lint-8.9 is caught (seed report) or stated as a known limit in its rule's JSDoc; `shadcn/require-static-classes` fires on a basalt primitive or is no longer listed at `app` and `parts`",
+    "No other `pass` mark of docs/v3/cycles/lint-8/fixtures fires, and the playground copy at `app` and `parts` reports 0 (seed report, sweep)",
+    "make check passes"
+  ],
+  "out_of_scope": "New rule ids; the core rule's closure shape (stated in CORE_RULES' JSDoc); rules for pinned 2.x consumers; the theme's class names and tokens (`src/css/**`); app and example code."
+}

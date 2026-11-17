@@ -1,0 +1,102 @@
+// Seeded offenders for basalt/tw-off-law, one or more phrasings per form.
+import { cn } from 'basalt-ui'
+
+// seed tw-off-law/off-ladder-spacing 1: the shadcn nudge, a quarter step to match a mock
+export function Tile() {
+  return <div className="flex flex-col gap-2.75 p-4">tile</div>
+}
+
+// seed tw-off-law/off-ladder-spacing 2: a fractional width step
+export function Thumb() {
+  return <div className="h-12 w-12.5">thumb</div>
+}
+
+// seed tw-off-law/surface-recipe 1: a hand-built card from the card tokens
+export function StatTile() {
+  return <div className="rounded-card bg-card p-4 shadow-card">42</div>
+}
+
+// seed tw-off-law/surface-recipe 2: a bordered card the shadcn way, no card token named
+export function Bordered() {
+  return <div className="rounded-lg border border-border p-4">bordered</div>
+}
+
+// seed tw-off-law/surface-recipe 3: an inset well built from the inset token
+export function Well() {
+  return <div className="rounded-control bg-inset p-3">well</div>
+}
+
+// seed tw-off-law/app-colour 1: a warning banner painted with the status tint
+export function Banner() {
+  return <div className="bg-warn-tint text-warn">Quota at 90%</div>
+}
+
+// seed tw-off-law/app-colour 2: a coloured left bar on a list row
+export function FlaggedRow() {
+  return <div className="border-l-2 border-bad pl-2">flagged</div>
+}
+
+// seed tw-off-law/app-colour-arbitrary 1: the same status colour through an arbitrary var
+export function Pill() {
+  return <span className="bg-(--basalt-good) px-2">ok</span>
+}
+
+// seed tw-off-law/app-colour-arbitrary 2: the v3 bracket spelling
+export function Dot() {
+  return <span className="bg-[var(--basalt-bad)] size-2 rounded-full" />
+}
+
+// seed tw-off-law/alpha-on-premixed 1: a faded tint
+export function Soft() {
+  return <div className="bg-info-tint/50">soft</div>
+}
+
+// seed tw-off-law/alpha-on-premixed 2: an alpha on the pre-mixed hover token
+export function HoverRow() {
+  return <div className="hover:bg-hover/60">row</div>
+}
+
+// seed tw-off-law/numeric-container 1: a Tailwind container size instead of a named tier
+export function Cards() {
+  return <div className="grid @md:grid-cols-2">cards</div>
+}
+
+// seed tw-off-law/numeric-container 2: an arbitrary container width
+export function Split() {
+  return <div className="flex flex-col @[640px]:flex-row">split</div>
+}
+
+// seed tw-off-law/important-modifier 1: a leading bang to beat a primitive's padding
+export function Tight() {
+  return <div className="!p-0">tight</div>
+}
+
+// seed tw-off-law/important-modifier 2: the v4 trailing bang
+export function Wider() {
+  return <div className="w-full!">wider</div>
+}
+
+// seed tw-off-law/template-interpolation 1: a tone interpolated into the class
+export function Tone({ tone }: { tone: 'good' | 'bad' }) {
+  return <span className={`text-${tone}`}>x</span>
+}
+
+// seed tw-off-law/template-interpolation 2: string concatenation instead of a template
+export function ToneConcat({ tone }: { tone: 'good' | 'bad' }) {
+  return <span className={cn('rounded-chip', 'bg-' + tone + '-tint')}>x</span>
+}
+
+// seed tw-off-law/fixed-width 1: a fixed side panel width
+export function SidePanel() {
+  return <aside className="w-[480px] shrink-0">panel</aside>
+}
+
+// seed tw-off-law/fixed-width 2: a fixed min width on a search box
+export function SearchBox() {
+  return <div className="min-w-120">search</div>
+}
+
+// seed tw-off-law/fixed-width 3: the width as an inline style
+export function Drawer() {
+  return <div style={{ width: 560 }}>drawer</div>
+}
