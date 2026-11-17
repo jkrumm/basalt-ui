@@ -67,7 +67,7 @@ const [count, setCount] = flow.widget.trend.count.use()
 - A deep link with an override and a global both set shows the override and rewrites nothing.
 - `useSource()` returns `'override'` or `'inherited'`, and `inherited` is the value the widget shows with no override. A widget handle's `isDefault` means "no override".
 - A widget field binds or owns a scalar kind (`enum`, `string`, `number`, `boolean`); a `multi` or `range` field is a type error. A widget has at most two fields; three is a type error.
-- `w.` is a reserved param prefix, and widget ids are plain identifiers, app-unique.
+- `w.` is a reserved param prefix, and widget ids are plain identifiers. The key `w.<widget>.<field>` lives in each page's own URL, so two page stores on sibling routes may each declare `trend`. Two stores mounted at once (a layout store and its child page's) may not: the dev build throws from the store's mount, naming both, on the routes that use it and nowhere else.
 - A widget write is one `replace` navigate that sets its own key and nothing else: it never resets a page's `resets` params, and an equal override is a no-op.
 - `useOverrides()` reports `{ keys, widgets, clearAll }`; `clearAll()` unsets every `w.` key of the store in one navigate.
 

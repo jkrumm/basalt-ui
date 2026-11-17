@@ -506,7 +506,7 @@ export function defineControls<
   // Routers lent by mounted hooks, so `clear()` (an event handler, no hook in reach) navigates.
   const mounts = new Map<LooseRouter, number>()
   const useLend = (router: LooseRouter): void => {
-    assertNoConflict(id)
+    assertNoConflict(id, (other) => runsStore(router, other))
     useEffect(() => {
       assertGlobalsOnRoot(router)
       mounts.set(router, (mounts.get(router) ?? 0) + 1)
