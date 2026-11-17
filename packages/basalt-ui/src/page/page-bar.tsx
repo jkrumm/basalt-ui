@@ -1,6 +1,7 @@
 import { useCallback, useContext, useId, useState, useSyncExternalStore } from 'react'
-import type { ReactElement, ReactNode } from 'react'
+import type { MouseEvent, ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
+import { requestMainFocus } from '../common/focus'
 import { cn } from '../core/cn'
 import { AppLink } from '../core/link'
 import { page } from '../core/messages/page'
@@ -18,6 +19,12 @@ import { RefreshButton } from './refresh-button'
 
 type Parent = NonNullable<PageBarProps['parent']>
 
+/** A click the browser would follow in this document: main takes focus once the page it opens is in. */
+function handOffOnPlainClick(event: MouseEvent<HTMLAnchorElement>): void {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  requestMainFocus()
+}
+
 /** `Page`'s element, where `--page-bar-h` is written; the document without one. */
 function publishTarget(node: HTMLElement): HTMLElement {
   return node.closest<HTMLElement>('[data-slot="page"]') ?? document.documentElement
@@ -27,6 +34,9 @@ function publishTarget(node: HTMLElement): HTMLElement {
  * The breadcrumb a bar claims for a shell's header: the optional parent, then the leaf. Internal:
  * the shell draws this element as is, and the parent is a link through the provider's `link` for a
  * path string and a `NavTarget` alike, so a click navigates in the router and keeps the document.
+ * The parent is the way up, never the current page (the adapter marks a link current only on an
+ * exact match), and the leaf it replaces takes focus with it, so a click asks the shell to hand
+ * focus to main.
  */
 export function PageCrumb({
   title,
@@ -42,6 +52,7 @@ export function PageCrumb({
           href={parent.href}
           data-slot="page-breadcrumb-parent"
           className="focus-ring hover:text-foreground"
+          onClick={handOffOnPlainClick}
         >
           {parent.label}
         </AppLink>

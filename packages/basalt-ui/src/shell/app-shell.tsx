@@ -83,8 +83,9 @@ function AsideSheet({ claim }: { claim: AsideClaim }): ReactElement {
  * The parent is a link through the provider's `link`, a path string or a `NavTarget` alike, so a
  * click keeps the document; the `NavTarget` form shown clears the selection and keeps the params the
  * page's store `retain`s (`services` is that store). A phone drops the nav section and keeps the
- * page's parent and title, so the way up stays one tap away. A page with no bar shows its nav label,
- * and a path no route matches shows `Not found`, in the crumb and in the document title.
+ * page's parent and title, so the way up stays one tap away. The parent is the way up, never the
+ * current page: it carries no `aria-current`, and a click hands focus to main. A page with no bar
+ * shows its nav label, and a path no route matches shows `Not found`, in the crumb and in the document title.
  *
  * The document never scrolls: `Main` is the scrollport and the `<main>` landmark. The shell also
  * renders what a repeated block needs and a consumer cannot be trusted to remember: a skip link, a
@@ -95,6 +96,7 @@ function AsideSheet({ claim }: { claim: AsideClaim }): ReactElement {
  * While a navigation waits past the router's `defaultPendingMs`, main is `aria-busy` and draws a
  * hairline bar; the rail, the crumb and the title keep naming the page on screen until the next
  * one arrives, then change together. A navigation that leaves focus on `<body>` hands it to main.
+ * Two palette entries of one label name their section (`Go to Services · Fleet`).
  *
  * Needs TanStack Router; another router or none uses `./page` with its own frame.
  *
