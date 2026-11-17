@@ -47,3 +47,13 @@ import { Dialog } from 'components/ui/dialog'
 import { Dialog } from 'components/ui/dialog'
 // @valid
 import { Page } from 'components/page'
+// @invalid
+import { Skeleton } from './ui/skeleton'
+// @invalid
+import { Button } from '../ui/button.tsx'
+// @valid {"ejected":["src/components/ui/skeleton.tsx"]}
+import { Skeleton } from './ui/skeleton'
+// @valid
+import { Kpi } from './ui/kpi'
+// @valid
+import { Button } from './my-ui/button'

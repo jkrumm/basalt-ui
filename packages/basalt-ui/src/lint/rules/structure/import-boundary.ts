@@ -12,7 +12,8 @@
  * `host.tsx` importer) are not here: a form carries no profile of its own and this rule ships at
  * `parts` and `app`.
  *
- * The `ui-path` form reads `@/`, `~/`, `#/`, `src/`, `baseUrl`-rooted and relative `components/ui/<name>` paths; an ejected name
+ * The `ui-path` form reads `@/`, `~/`, `#/`, `src/`, `baseUrl`-rooted and relative `components/ui/<name>` paths, and a
+ * relative path ending `ui/<shipped primitive name>` (`./ui/skeleton` from `components/`); an ejected name
  * stays legal however it is spelled. No form reports an icon set (`@radix-ui/react-icons`,
  * `@mui/icons-material`): an icon prop takes the icon library's own component. The `radix` form
  * bans a kit's whole npm scope (`@mui/*`, `@heroui/*`, every package of the 2.x UI stack) but the
@@ -332,7 +333,63 @@ const uiName = (path: string): string => {
  * or a relative path into `components/ui`, not a package's own (`some-kit/components/ui/button`).
  */
 const isUiPath = (source: string): boolean =>
-  /^(?:[@~#]\/|src\/|(?:\.{1,2}\/)+(?:[^/]+\/)*?)?components\/ui(?:\/|$)/.test(source)
+  /^(?:[@~#]\/|src\/|(?:\.{1,2}\/)+(?:[^/]+\/)*?)?components\/ui(?:\/|$)/.test(source) ||
+  relativeUiName(source) !== undefined
+
+/**
+ * Every `basalt-ui/ui/*` module name (the keys of `SLOTS` in `src/ui/slots.ts`, which a test holds
+ * this list to): a relative path ending `ui/<one of these>` is a shadcn copy reached from a sibling
+ * folder (`./ui/skeleton` from `components/`).
+ */
+export const SHIPPED_PRIMITIVES: ReadonlySet<string> = new Set([
+  'accordion',
+  'alert',
+  'badge',
+  'button',
+  'card',
+  'checkbox',
+  'collapsible',
+  'combobox',
+  'date-picker',
+  'dialog',
+  'field',
+  'info-hint',
+  'input',
+  'kbd',
+  'menu',
+  'meter',
+  'num',
+  'number-field',
+  'popover',
+  'preview-card',
+  'progress',
+  'radio-group',
+  'scroll-area',
+  'segmented',
+  'select',
+  'separator',
+  'sheet',
+  'skeleton',
+  'slider',
+  'status',
+  'switch',
+  'table',
+  'tabs',
+  'textarea',
+  'toast',
+  'toolbar',
+  'tooltip',
+  'virtual-list',
+])
+
+/** `./ui/skeleton`, `../ui/button.tsx`: the shipped primitive a relative `ui/<name>` path names. */
+function relativeUiName(source: string): string | undefined {
+  const match = /^(?:\.{1,2}\/)+(?:[^/]+\/)*?ui\/([\w-]+)(?:\.[cm]?[jt]sx?)?(?:\/index)?$/.exec(
+    source,
+  )
+  const name = match?.[1]
+  return name !== undefined && SHIPPED_PRIMITIVES.has(name) ? name : undefined
+}
 
 const ejectedNames = (options: readonly unknown[]): Set<string> => {
   const [first] = options
@@ -346,7 +403,7 @@ const uiPath: AstForm = {
     const ejected = ejectedNames(context.options)
     return sourceVisitor((node, source) => {
       if (!isUiPath(source)) return
-      if (ejected.has(uiName(source))) return
+      if (ejected.has(relativeUiName(source) ?? uiName(source))) return
       report(node, source)
     })
   },
@@ -557,6 +614,7 @@ const PACKAGE_BANS: readonly PackageBan[] = [
       '@visx',
       'recharts',
       'react-apexcharts',
+      'apexcharts',
       '@mui/x-charts*',
       '@tremor/react',
       '@nivo',
