@@ -32,6 +32,7 @@
 // expect: navigator.userAgentData.mobile
 // expect: navigator.userAgentData.mobile
 // expect: navigator.userAgentData.mobile
+// expect: navigator.userAgentData.mobile
 export const a = window.matchMedia('(min-width: 768px)')
 export const b = useMediaQuery('(max-width: 640px)')
 export const c = matchMedia(`(min-width: ${bp}px)`)
@@ -83,3 +84,4 @@ export function HintNav() {
   const handset = navigator.userAgentData?.mobile
   return handset && <Tabs />
 }
+export const Stack = () => <div className={cn({ 'flex-col': navigator.userAgentData?.mobile })} />
