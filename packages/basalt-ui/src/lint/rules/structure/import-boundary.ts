@@ -364,6 +364,7 @@ export const SHIPPED_PRIMITIVES: ReadonlySet<string> = new Set([
   'preview-card',
   'progress',
   'radio-group',
+  'resizable',
   'scroll-area',
   'segmented',
   'select',
