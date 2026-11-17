@@ -30,6 +30,8 @@
 // expect: isTablet
 // expect: navigator.userAgentData.mobile
 // expect: navigator.userAgentData.mobile
+// expect: navigator.userAgentData.mobile
+// expect: navigator.userAgentData.mobile
 export const a = window.matchMedia('(min-width: 768px)')
 export const b = useMediaQuery('(max-width: 640px)')
 export const c = matchMedia(`(min-width: ${bp}px)`)
@@ -73,3 +75,11 @@ export function Layout() {
 }
 export const handheld = () => navigator.userAgentData?.mobile === true
 export const hinted = window.navigator.userAgentData.mobile ? 'tabs' : 'rail'
+export function HintShell() {
+  const { mobile } = navigator.userAgentData ?? { mobile: false }
+  return <main className={mobile ? 'p-2' : 'p-6'} />
+}
+export function HintNav() {
+  const handset = navigator.userAgentData?.mobile
+  return handset && <Tabs />
+}
