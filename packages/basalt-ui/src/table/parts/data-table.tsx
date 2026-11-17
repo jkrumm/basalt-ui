@@ -11,8 +11,7 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
 import type { CSSProperties, ReactElement } from 'react'
 import { cn } from '../../core/cn'
-import { lists } from '../../core/messages/lists'
-import { useMessages } from '../../core/messages/use-messages'
+import { useRowsShown } from '../../core/rows-shown'
 import type { DataTableProps } from '../contract'
 import { TableCaption, Table } from '../../ui/table'
 import { DataTableBody } from './body'
@@ -126,7 +125,7 @@ export function DataTable<T>({
   // A row is a tab stop (roving) once there are rows to activate; before that the scroller is.
   const focusable = model.rows.length > 0 && (phase.tag === 'ready' || phase.tag === 'stale')
   const footerShown = hasFooter(model) && phase.tag === 'ready'
-  const t = useMessages(lists)
+  const rowsShown = useRowsShown()
   const clipped = clippedRows(model, height)
   const link = rowLinkOf(focus, focusSeries, model.getRowId)
   const onBlur = clearOnBlur(link)
@@ -225,7 +224,7 @@ export function DataTable<T>({
           </Table>
           {clipped !== undefined && (
             <div data-slot="table-rows-shown" aria-live="polite">
-              {t('lists.rowsShown', clipped.shown, clipped.total)}
+              {rowsShown(clipped.shown, clipped.total)}
             </div>
           )}
         </div>

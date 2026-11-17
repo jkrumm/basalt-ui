@@ -13,6 +13,7 @@ import { resolvePhase } from '../core/phase'
 import type { FrameState } from '../core/phase'
 import type { ListFocus } from '../core/ports'
 import { useFormat } from '../core/format'
+import { useRowsShown } from '../core/rows-shown'
 import { useMessages } from '../core/messages/use-messages'
 import { lists } from '../core/messages/lists'
 import { Card, CardBand, CardPhase, Inset } from '../ui/card'
@@ -175,6 +176,7 @@ export function BarList(props: BarListProps): ReactElement {
   const { title, subtitle, icon, info } = props
   const f = useFormat()
   const t = useMessages(lists)
+  const rowsShown = useRowsShown()
   const scale = max ?? items.reduce((top, item) => Math.max(top, item.value || 0), 0)
   const whole = isWhole(items, max)
   const show = format ?? ((n: number): string => f.number(n))
@@ -196,7 +198,7 @@ export function BarList(props: BarListProps): ReactElement {
                 data-slot="bar-list-scroll-cue"
                 className="text-xs whitespace-nowrap text-muted-foreground tabular-nums"
               >
-                {t('lists.rowsShown', rows, items.length)}
+                {rowsShown(rows, items.length)}
               </span>
             ),
           })}
