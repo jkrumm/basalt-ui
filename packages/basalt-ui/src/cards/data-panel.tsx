@@ -53,7 +53,8 @@ function PanelSkeleton({ size }: { size: DataPanelProps['bodySize'] }): ReactEle
   )
 }
 
-function Legend({ entries }: { entries: readonly LegendEntry[] }): ReactElement {
+/** The legend row of a card: one swatch and label per entry, under the header. `BarList` draws it too. */
+export function Legend({ entries }: { entries: readonly LegendEntry[] }): ReactElement {
   const t = useMessages(cards)
   return (
     <ul

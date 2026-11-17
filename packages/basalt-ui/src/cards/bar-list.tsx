@@ -1,4 +1,11 @@
-import type { FocusEvent, KeyboardEvent, LiHTMLAttributes, PointerEvent, ReactElement } from 'react'
+import type {
+  CSSProperties,
+  FocusEvent,
+  KeyboardEvent,
+  LiHTMLAttributes,
+  PointerEvent,
+  ReactElement,
+} from 'react'
 import { AppLink } from '../core/link'
 import { cn } from '../core/cn'
 import type { FrameState } from '../core/phase'
@@ -9,7 +16,8 @@ import { lists } from '../core/messages/lists'
 import { Card, CardBand, CardPhase, Inset } from '../ui/card'
 import { BAR_BODY_HEIGHT, DEFAULT_ROWS, ScrollRegion } from './bar-list-scroll'
 import type { ListRows } from './bar-list-scroll'
-import type { CardTarget, FrameHead } from './contract'
+import type { CardTarget, FrameHead, LegendEntry } from './contract'
+import { Legend } from './data-panel'
 
 /**
  * One ranked row. A row is a link, a button or inert; never a link and a button at once. The type
@@ -22,6 +30,11 @@ export type BarListItem = CardTarget & {
   value: number
   /** A muted second figure or word after the label (a share, a status word). */
   secondary?: string
+  /**
+   * The row's segments by series key (`BarListProps.series`), stacked in the series' order on the
+   * list's one scale. `value` stays the printed total, so the parts sum to it.
+   */
+  parts?: Readonly<Record<string, number>>
 }
 
 export type BarListProps = FrameHead &
@@ -47,6 +60,12 @@ export type BarListProps = FrameHead &
      * the shared focus.
      */
     focus?: ListFocus<unknown>
+    /**
+     * The series a row's `parts` stack by: their order (first at the bar's start), their colour and
+     * a legend row under the header. With it each row's track draws its parts in the series colours,
+     * 8 px tall; without it every bar is one neutral fill.
+     */
+    series?: readonly LegendEntry[]
   }
 
 /** A row of body height, in `h-10` (40 px): the label line, a gap and the 4 px track. */
@@ -129,9 +148,10 @@ function BarSkeleton({ rows }: { rows: number }): ReactElement {
  * A ranked list on one shared scale: label, a thin bar against the largest value, the value as
  * text and an optional muted second figure. Each row is a link, a button or plain text. It holds
  * one body height at every phase, scrolls past `bodyRows`, and its loading skeleton draws the rows it
- * will become. Colour belongs to a verdict, so every bar is neutral.
+ * will become. Colour belongs to a verdict, so a single bar is neutral; a row with `parts` stacks
+ * them in the colours of `series`, and the name stays on its own line above the bar at every width.
  *
- * @useWhen a card ranks a handful of named things by one number, or splits a total into its parts (a top-N list, a breakdown that replaces a donut)
+ * @useWhen a card ranks a handful of named things by one number, or splits a total into its parts (a top-N list, a breakdown that replaces a donut), or ranks long names by a total stacked by kind (horizontal stacked bars)
  * @neverWhen the rows have several columns to compare (use a table) or the list is a stream of things that happened (use an event list)
  *
  * @example
@@ -143,7 +163,7 @@ function BarSkeleton({ rows }: { rows: number }): ReactElement {
  * />
  */
 export function BarList(props: BarListProps): ReactElement {
-  const { items, max, format, phase, empty, focus } = props
+  const { items, max, format, phase, empty, focus, series } = props
   const rows = props.bodyRows ?? props.rows ?? DEFAULT_ROWS
   const { title, subtitle, icon, info } = props
   const f = useFormat()
@@ -161,6 +181,7 @@ export function BarList(props: BarListProps): ReactElement {
           {...(icon !== undefined && { icon })}
           {...(info !== undefined && { info })}
         />
+        {series !== undefined && series.length > 0 && <Legend entries={series} />}
         <Inset className={cn('flex flex-col', BAR_BODY_HEIGHT[rows])}>
           <CardPhase
             phase={phase}
@@ -190,6 +211,9 @@ export function BarList(props: BarListProps): ReactElement {
                       <Row
                         item={item}
                         percent={percentOf(item.value, scale)}
+                        segments={
+                          series === undefined ? undefined : segmentsOf(item, series, scale, show)
+                        }
                         value={Number.isFinite(item.value) ? show(item.value) : '—'}
                         secondary={
                           item.secondary ??
@@ -212,14 +236,78 @@ export function BarList(props: BarListProps): ReactElement {
   )
 }
 
+/** One drawn part of a stacked row: its series, its share of the track and its value as text. */
+type Segment = {
+  key: string
+  label: string
+  color: LegendEntry['color']
+  percent: number
+  text: string
+}
+
+/** A row's parts in the series' order; a part that is zero, negative or not a number draws nothing. */
+function segmentsOf(
+  item: BarListItem,
+  series: readonly LegendEntry[],
+  scale: number,
+  show: (n: number) => string,
+): Segment[] {
+  return series.flatMap((s) => {
+    const value = item.parts?.[s.key]
+    if (value === undefined || !Number.isFinite(value) || value <= 0) return []
+    return [
+      {
+        key: s.key,
+        label: s.label,
+        color: s.color,
+        percent: percentOf(value, scale),
+        text: show(value),
+      },
+    ]
+  })
+}
+
 type RowProps = {
   item: BarListItem
   percent: number
+  /** Present on a stacked list: the track draws these in place of the one neutral fill. */
+  segments: readonly Segment[] | undefined
   value: string
   secondary: string | undefined
 }
 
-function Row({ item, percent, value, secondary }: RowProps): ReactElement {
+/** The 8 px track of a stacked row: each part in its series colour, a hairline between parts. */
+function StackedTrack({ segments }: { segments: readonly Segment[] }): ReactElement {
+  return (
+    <>
+      <span
+        data-slot="bar-list-track"
+        data-stacked=""
+        aria-hidden="true"
+        className="flex h-2 gap-px overflow-clip rounded-full bg-selected"
+      >
+        {segments.map((s) => (
+          <span
+            key={s.key}
+            data-slot="bar-list-segment"
+            data-series={s.key}
+            className="block h-full shrink-0 bg-(--swatch-light) dark:bg-(--swatch-dark)"
+            style={
+              {
+                width: `${s.percent}%`,
+                '--swatch-light': s.color.light,
+                '--swatch-dark': s.color.dark,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </span>
+      <span className="sr-only">{segments.map((s) => `${s.label} ${s.text}`).join(', ')}</span>
+    </>
+  )
+}
+
+function Row({ item, percent, segments, value, secondary }: RowProps): ReactElement {
   const content = (
     <>
       <span className="flex min-w-0 items-baseline gap-2">
@@ -239,17 +327,21 @@ function Row({ item, percent, value, secondary }: RowProps): ReactElement {
           {value}
         </span>
       </span>
-      <span
-        data-slot="bar-list-track"
-        aria-hidden="true"
-        className="block h-1 rounded-full bg-selected"
-      >
+      {segments === undefined ? (
         <span
-          data-slot="bar-list-fill"
-          className="block h-full rounded-full bg-muted-foreground"
-          style={{ width: `${percent}%` }}
-        />
-      </span>
+          data-slot="bar-list-track"
+          aria-hidden="true"
+          className="block h-1 rounded-full bg-selected"
+        >
+          <span
+            data-slot="bar-list-fill"
+            className="block h-full rounded-full bg-muted-foreground"
+            style={{ width: `${percent}%` }}
+          />
+        </span>
+      ) : (
+        <StackedTrack segments={segments} />
+      )}
     </>
   )
   if (item.href !== undefined) {
