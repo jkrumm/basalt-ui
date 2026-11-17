@@ -42,3 +42,4 @@ not guarded:
 - Wrap every API-client call in `unwrap()` so an error branch throws.
 - Keep `ai` and `@ai-sdk/*` on one major across packages; `doctor` checks it at install, the editor does not.
 - A text box that commits on Enter is a `useCommittedField`; a hand-written Enter handler ignores `isComposing` and breaks IME input.
+- A frame declares the same slots in every phase and fills none before ready: no pill, dash or delta outside the ready phase.
