@@ -219,3 +219,40 @@ export const SPRINT_SERIES = defineSeries({
   points: { light: '#6b6b6b', dark: '#a8a8a8' },
   pace: { light: '#262626', dark: '#e6e6e6' },
 })
+
+/** Task list (scenario expr-n40): overdue takes the status red, the tasks due today the accent, later ones an ink step; in the weekly backlog the list that keeps growing takes the dark ink step and the other lists share a mid one, tasks done per day sit in a dark ink step and the today rule in the same one. */
+export const TASK_SERIES = defineSeries({
+  overdue: { light: '#af293e', dark: '#e46360' },
+  today: { light: '#2871c7', dark: '#5190f7' },
+  later: { light: '#7a7a7a', dark: '#9c9c9c' },
+  grows: { light: '#262626', dark: '#e6e6e6' },
+  lists: { light: '#6b6b6b', dark: '#a8a8a8' },
+  done: { light: '#3d3d3d', dark: '#d4d4d4' },
+  rule: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Router health (scenario expr-n42): the accent is memory, the load that rose before the drop; CPU sits in an ink step, the healthy limit in a mid step, the line events in the dark one. */
+export const ROUTER_SERIES = defineSeries({
+  memory: { light: '#2871c7', dark: '#5190f7' },
+  cpu: { light: '#4a4a4a', dark: '#c4c4c4' },
+  limit: { light: '#6b6b6b', dark: '#a8a8a8' },
+  event: { light: '#262626', dark: '#e6e6e6' },
+})
+
+/** Night frost (scenario expr-n39): the accent is the one model that runs warm; the other two models sit in ink steps, the dew point in a pale step, the 0 °C rule in a mid step. */
+export const FROST_SERIES = defineSeries({
+  warm: { light: '#2871c7', dark: '#5190f7' },
+  first: { light: '#262626', dark: '#e6e6e6' },
+  second: { light: '#6b6b6b', dark: '#a8a8a8' },
+  dew: { light: '#a3a3a3', dark: '#757575' },
+  limit: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Model router (scenario expr-n41): one ink step per model in the chart and the list; the accent is not a model colour. Each pair is `light-dark()` in both halves (cycle-expression-10: BarList paints only the light half while the scheme is auto-dark), which the browser resolves per scheme. */
+export const SERVED_SERIES = defineSeries({
+  atlasLarge: { light: 'light-dark(#262626, #ececec)', dark: 'light-dark(#262626, #ececec)' },
+  atlasFast: { light: 'light-dark(#5c5c5c, #c4c4c4)', dark: 'light-dark(#5c5c5c, #c4c4c4)' },
+  novaCode: { light: 'light-dark(#858585, #9a9a9a)', dark: 'light-dark(#858585, #9a9a9a)' },
+  lumenEmbed: { light: 'light-dark(#adadad, #737373)', dark: 'light-dark(#adadad, #737373)' },
+  lumenLite: { light: 'light-dark(#d6d6d6, #4a4a4a)', dark: 'light-dark(#d6d6d6, #4a4a4a)' },
+})
