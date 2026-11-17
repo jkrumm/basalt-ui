@@ -1,0 +1,169 @@
+/* Cycle 7 phrasings for the stylelint preset, the token check and the class rules written as module CSS.
+   Seed numbers continue cycle 6's. A `pass` mark is valid module CSS beside a shape a cycle 6 fix widened
+   (the circle and pill radius, the custom-media and class-attribute bans). */
+
+/* seed stylelint/at-rule-disallowed-list 12: Tailwind v3's layer directive in a module */
+@tailwind utilities;
+
+/* seed stylelint/at-rule-disallowed-list 13: shadcn v4's dark custom variant redeclared by the app */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* seed stylelint/media-feature-name-disallowed-list 12: a width query nested inside a rule */
+.panel {
+  display: grid;
+  @media (max-width: 600px) {
+    display: block;
+  }
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 13: a media condition on an import */
+@import url('./narrow.css') (max-width: 600px);
+
+/* pass stylelint/media-feature-name-disallowed-list 4: reduced motion and forced colours */
+@media (prefers-reduced-motion: reduce), (forced-colors: active) {
+  .bar {
+    transition: none;
+  }
+}
+
+/* seed stylelint/selector-disallowed-list 14: the dark class and the attribute in one :is() */
+:is([data-theme='dark'], .dark) .tile {
+  opacity: 0.9;
+}
+
+/* seed stylelint/selector-disallowed-list 15: a bare data-slot presence selector */
+.card [data-slot] {
+  gap: 0;
+}
+
+/* seed stylelint/property-disallowed-list 11: shadcn's primary re-pointed at a basalt fill */
+:root {
+  --primary: var(--basalt-brand-fill);
+}
+
+/* seed stylelint/property-disallowed-list 12: a Tailwind theme colour re-pointed in the app */
+:root {
+  --color-card: var(--basalt-inset);
+}
+
+/* seed stylelint/color-no-hex 10: a hex in an app custom property */
+.promo {
+  --promo-bg: #0077bd;
+}
+
+/* seed stylelint/color-no-hex 11: an eight-digit hex with alpha in a shadow */
+.lift {
+  filter: drop-shadow(0 1px 2px #00000040);
+}
+
+/* seed stylelint/color-named 11: a named colour as an svg fill */
+.glyph {
+  fill: white;
+}
+
+/* seed stylelint/color-named 12: a capitalised named colour */
+.note {
+  color: Black;
+}
+
+/* seed stylelint/function-disallowed-list 11: an upper-case colour function */
+.mark {
+  color: HSL(200 80% 40%);
+}
+
+/* seed stylelint/function-disallowed-list 12: light-dark() choosing a surface per scheme */
+.well {
+  background: light-dark(var(--basalt-card), var(--basalt-inset));
+}
+
+/* seed stylelint/declaration-no-important 11: an upper-case important */
+.pin {
+  position: sticky !IMPORTANT;
+}
+
+/* seed stylelint/declaration-no-important 12: important behind a comment */
+.mute {
+  color: var(--basalt-ink-muted) /* force */ !important;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 11: a pixel radius on a tile */
+.tile2 {
+  border-radius: 12px;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 12: an em letter spacing on a label */
+.label {
+  letter-spacing: -0.01em;
+}
+
+/* pass stylelint/declaration-property-value-allowed-list 3: a pill and a circle radius */
+.pill {
+  border-radius: 9999px;
+}
+.dot {
+  border-radius: 50%;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 21: a logical block margin in rem */
+.stack {
+  margin-block: 1.5rem;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 22: a logical inset in pixels */
+.badge {
+  position: absolute;
+  inset-inline-start: 12px;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 23: a column gap in pixels */
+.row {
+  column-gap: 10px;
+}
+
+/* pass stylelint/declaration-property-value-disallowed-list 5: safe-area padding, a zero inset, an auto margin */
+.dock {
+  padding-bottom: env(safe-area-inset-bottom);
+  inset: 0;
+  margin: auto;
+}
+
+/* seed raw-scroll/overflow-scroll 30: the two-value overflow shorthand */
+.feed {
+  overflow: hidden auto;
+}
+
+/* seed raw-scroll/overflow-scroll 31: a scroll snap strip */
+.strip {
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+}
+
+/* seed status-fill-as-text/text-on-fill 22: a chart fill read through the Tailwind theme variable */
+.legend {
+  color: var(--color-chart-3);
+}
+
+/* seed status-fill-as-text/text-on-fill 23: the brand fill read through the Tailwind theme variable */
+.link {
+  color: var(--color-brand-fill);
+}
+
+/* seed tw-off-law/track-length 19: a fixed track in a grid-template shorthand */
+.layout {
+  grid-template: auto 1fr / 240px 1fr;
+}
+
+/* seed tw-off-law/track-length 20: a fixed track in grid-auto-columns */
+.lanes {
+  grid-auto-columns: 280px;
+}
+
+/* seed unknown-token 23: a radius step named like Tailwind's */
+.box {
+  border-radius: var(--basalt-radius-lg);
+}
+
+/* seed unknown-token 24: a spacing token guessed from another kit */
+.pad {
+  padding: var(--basalt-space-2);
+}

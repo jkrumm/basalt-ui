@@ -1,0 +1,77 @@
+// Cycle 2 phrasings for basalt/import-boundary. Seed numbers continue cycle 1's.
+
+// seed import-boundary/base-ui 3: a Base UI part reached through a dynamic import
+export const loadMenu = () => import('@base-ui/react/menu')
+
+// seed import-boundary/radix 3: a Radix slot re-exported from a local utils file
+export { Slot } from '@radix-ui/react-slot'
+
+// seed import-boundary/radix 4: vaul, the drawer the shadcn Drawer is built on
+import { Drawer } from 'vaul'
+export const D = Drawer
+
+// seed import-boundary/radix 5: Headless UI for a listbox, a second primitive library
+import { Listbox } from '@headlessui/react'
+export const L = Listbox
+
+// seed import-boundary/cmdk 2: cmdk's Command re-exported for a palette file
+export { Command as CommandRoot } from 'cmdk'
+
+// seed import-boundary/sonner 2: react-hot-toast, the other toast habit
+import toast from 'react-hot-toast'
+export const t = toast
+
+// seed import-boundary/streamdown 3: marked plus dangerouslySetInnerHTML's converter
+import { marked } from 'marked'
+export const md = marked
+
+// seed import-boundary/tailwind-merge 3: twJoin from the same package by require
+const { twJoin } = require('tailwind-merge')
+export const j = twJoin
+
+// seed import-boundary/visx 3: echarts through its React wrapper
+import ReactECharts from 'echarts-for-react'
+export const E = ReactECharts
+
+// seed import-boundary/visx 4: a nivo chart package
+import { ResponsiveLine } from '@nivo/line'
+export const N = ResponsiveLine
+
+// seed import-boundary/engine-subpath 2: a deep engine module outside the allow list
+import { createChart } from '@tanstack/charts/core'
+export const C = createChart
+
+// seed import-boundary/react-table-hook 2: the table library hook through a re-export
+export { useReactTable as useTable } from '@tanstack/react-table'
+
+// seed import-boundary/base-ui 5: the virtualizer under the virtual-list primitive
+import { useVirtualizer } from '@tanstack/react-virtual'
+export const V = useVirtualizer
+
+// seed import-boundary/ui-path 3: the shadcn alias for a primitive that is not ejected, dialog
+import { Dialog } from '@/components/ui/dialog'
+export const Dg = Dialog
+
+// seed import-boundary/base-ui 4: react-day-picker, the calendar the date-picker primitive wraps
+import { DayPicker } from 'react-day-picker'
+export const Dp = DayPicker
+
+// seed import-boundary/use-chat-chat 2: useChat with only an id and an onFinish callback
+import { useChat } from '@ai-sdk/react'
+export function Chat() {
+  const chat = useChat({ id: 'support', onFinish: () => undefined })
+  return chat.status
+}
+
+// seed import-boundary/use-chat-chat 3: useChat with no argument
+export function Chat2() {
+  return useChat().status
+}
+
+// seed import-boundary/persist-storage 4: Mantine's useLocalStorage carried over from 2.x
+import { useLocalStorage } from '@mantine/hooks'
+export const ls = useLocalStorage
+
+// seed import-boundary/persist-storage 5: usehooks-ts useLocalStorage
+import { useLocalStorage as useStored } from 'usehooks-ts'
+export const us = useStored

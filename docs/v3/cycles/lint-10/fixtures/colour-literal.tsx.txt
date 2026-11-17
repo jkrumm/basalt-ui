@@ -1,0 +1,26 @@
+// Seeded offenders for basalt/colour-literal.
+
+// seed colour-literal/colour-literal 1: a hex for a chart series in a component
+export const SERIES = { revenue: '#0077bd', cost: '#c2410c' }
+
+// seed colour-literal/colour-literal 2: an rgba shadow string in a style object
+export function Glow() {
+  return <div style={{ boxShadow: '0 0 0 4px rgba(0, 119, 189, 0.3)' }}>glow</div>
+}
+
+// seed colour-literal/colour-literal 3: an oklch literal for a canvas fill
+export function paint(ctx: CanvasRenderingContext2D) {
+  ctx.fillStyle = 'oklch(0.62 0.15 240)'
+  ctx.fillRect(0, 0, 4, 4)
+}
+
+// seed colour-literal/colour-literal 4: a named CSS colour for a canvas stroke
+export function outline(ctx: CanvasRenderingContext2D) {
+  ctx.strokeStyle = 'white'
+  ctx.strokeRect(0, 0, 4, 4)
+}
+
+// seed colour-literal/colour-literal 5: a hex inside a template literal for a gradient
+export function Fade({ to }: { to: string }) {
+  return <div style={{ background: `linear-gradient(#ffffff, ${to})` }}>fade</div>
+}
