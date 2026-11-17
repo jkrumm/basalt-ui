@@ -31,13 +31,51 @@ export type FocusedRowProps = RowProps & {
 }
 
 type SeriesLink<T> = NonNullable<DataTableProps<T>['focusSeries']>
+type ItemsLink<T, I> = NonNullable<DataTableProps<T, I>['focusItems']>
+
+/**
+ * A row that stands for items of another grain: it holds every item `holds` accepts, pointing at it
+ * holds them all, and it is marked while any item it holds is focused.
+ */
+function itemsLink<T, I>({ focus, holds }: ItemsLink<T, I>): RowLink {
+  const heldBy = (row: T): number[] =>
+    focus.items.flatMap((item, i) => (holds(row, item) ? [i] : []))
+  return {
+    item: (_, row) => {
+      const indexes = heldBy(row as T)
+      const first = indexes[0]
+      if (first === undefined) return undefined
+      const marked = focus.span.some((item) => holds(row as T, item))
+      const props: ListFocusItem & MarkedItem = {
+        'data-chart-mark': '',
+        ...(marked && { 'data-focused': '' as const }),
+        ...(focus.index !== null && !marked && { 'data-dimmed': '' as const }),
+        // The row stands in for its first item, so a chart's keyboard step onto it scrolls the row.
+        ref: focus.item(first).ref,
+        onPointerEnter: () => focus.hold(indexes),
+        onPointerDown: () => focus.hold(indexes),
+      }
+      return props
+    },
+    enter: (_, row) => {
+      const indexes = heldBy(row as T)
+      if (indexes.length > 0) focus.hold(indexes)
+    },
+    clear: () => focus.set(null),
+  }
+}
 
 /** The link of a table's focus props, or `undefined` without one. */
-export function rowLinkOf<T>(
-  focus: ListFocus<T> | undefined,
-  focusSeries: SeriesLink<T> | undefined,
+export function rowLinkOf<T, I>(
+  links: {
+    focus: ListFocus<T> | undefined
+    focusSeries: SeriesLink<T> | undefined
+    focusItems: ItemsLink<T, I> | undefined
+  },
   getRowId: (row: T) => string,
 ): RowLink | undefined {
+  const { focus, focusSeries, focusItems } = links
+  if (focusItems !== undefined) return itemsLink(focusItems)
   if (focusSeries !== undefined) {
     const { focus: series, key } = focusSeries
     return {
