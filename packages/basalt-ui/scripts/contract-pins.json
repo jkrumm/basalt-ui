@@ -18,5 +18,5 @@
   "packages/basalt-ui/src/shell/contract.ts": "907e45e1c597a5f104a5cd01b04100ec448236aded0ae468422555c41e427bb0",
   "packages/basalt-ui/src/shell/index.ts": "9ffa5036e71bb8396edeeecf7a7f2266bd993628265f8b78ce30e854ec0a5f30",
   "packages/basalt-ui/src/table/contract.ts": "7c2dbda9d6156f80ddb20e9d7709cb6a13b5718066cf364a69cbb422b31f9910",
-  "packages/basalt-ui/src/ui/slots.ts": "e1e43905cf565f5ad8f3d679901e90f328bf102295317cfb70f1c6332860fac0"
+  "packages/basalt-ui/src/ui/slots.ts": "bf074882816faa0126efcb5ce8e7fa3a8e94de21fa1e9fbafbd3d2b8c33dc63c"
 }
