@@ -290,26 +290,11 @@ rows:
   - key: v3-charts-2b-seams
     issue: 831
   - key: v3-mig-bench
-    title: 'Migration bench, oracle and check subcommands'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-mig-codemod, v3-tok-t5-rows, v3-sk-4-hook-shim, v3-layout-harness]
-    facts: { 'brief': 'docs/v3/issues/g0/v3-mig-bench.json' }
+    issue: 1214
   - key: v3-spike-table-bytes
     issue: 876
   - key: v3-cli-sibling
-    title: 'basalt.sibling key: app-scoped init and sync, name prefix'
-    repo: basalt-ui
-    kind: feature
-    after:
-      [
-        v3-sk-3-init-doctor,
-        v3-sk-5-rules,
-        v3-sk-8-basalt-app,
-        v3-sk-4-hook-shim,
-        v3-sk-7-references,
-      ]
-    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-cli-sibling.json' }
+    issue: 1215
   - key: v3-gr-intl-enable
     issue: 948
   - key: v3-sk-7b-state-references
@@ -341,19 +326,7 @@ rows:
   - key: v3-charts-5-heatmap
     issue: 834
   - key: v3-charts-6-two-pane
-    title: 'Two-pane recipe and S10 on argo momentum chart'
-    repo: basalt-ui
-    kind: feature
-    seat: { tier: sonnet, effort: medium }
-    after:
-      [
-        v3-charts-2-kinds,
-        v3-cards-3-kanban,
-        v3-sk-8-basalt-app,
-        v3-layout-harness,
-        v3-playground-reset,
-      ]
-    facts: { 'brief': 'docs/v3/issues/g4/v3-charts-6-two-pane.json' }
+    issue: 1067
   - key: v3-spike-q2-map
     issue: 835
   - key: v3-charts-7a-card-codemods
@@ -369,23 +342,7 @@ rows:
   - key: v3-ai-i8-chat-recipe
     issue: 1068
   - key: v3-freeze-g0
-    title: 'Freeze G0 layers: tokens budgets, no release'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: sonnet, effort: medium }
-    after:
-      [
-        v3-tok-t5-rows,
-        v3-st-7-tokens-fixture,
-        v3-gr-5-weakened-config,
-        v3-gr-6-waiver-codemod,
-        v3-sk-4-hook-shim,
-        v3-sk-5-rules,
-        v3-rel-7-skeleton,
-        v3-spike-epos-bridge-probe,
-        v3-unhot-budgets,
-      ]
-    facts: { 'brief': 'docs/v3/issues/g0/v3-freeze-g0.json' }
+    issue: 1216
   - key: v3-freeze-g1
     issue: 975
   - key: v3-shell-i3-projector
@@ -415,51 +372,9 @@ rows:
   - key: v3-verdict-shell
     issue: 944
   - key: v3-shell-i10-rules-rows
-    title: 'basalt-page rule bullets and shell migration rows'
-    repo: basalt-ui
-    kind: chore
-    after:
-      [
-        v3-sk-5-rules,
-        v3-mig-cli,
-        v3-unhot-migrating-llms,
-        v3-shell-i2-nav-core,
-        v3-shell-i3-projector,
-        v3-shell-i3b-page-core,
-        v3-shell-i4-page,
-        v3-shell-i4b-page-kit,
-        v3-shell-i5b-rail,
-        v3-shell-i6-tabbar,
-        v3-shell-i8-commands,
-        v3-shell-i9-router-defaults,
-        v3-ai-i2-codeblock-prose,
-        v3-ai-i7-mdx,
-        v3-sk-6-thin-skill-fold,
-        v3-shell-i7b-settings,
-      ]
-    facts: { 'brief': 'docs/v3/issues/g2/v3-shell-i10-rules-rows.json' }
+    issue: 1169
   - key: v3-freeze-g2
-    title: 'Freeze G2 layers: page, shell, nav, content budgets and pins'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: sonnet, effort: medium }
-    after:
-      [
-        v3-shell-i9-router-defaults,
-        v3-shell-i8-commands,
-        v3-shell-i6-tabbar,
-        v3-shell-i5c-exemplar,
-        v3-shell-i4b-page-kit,
-        v3-ai-i2-codeblock-prose,
-        v3-ai-i7-mdx,
-        v3-freeze-g1,
-        v3-shell-i7b-settings,
-      ]
-    facts:
-      {
-        'brief': 'docs/v3/issues/g2/v3-freeze-g2.json',
-        'note': 'v3-flags-delete-g2 is conditional and not in this plan; if docs/v3 shows it ran, merge it first.',
-      }
+    issue: 1170
   - key: v3-table-t3-toolbar
     issue: 888
   - key: v3-table-t4-virtual
@@ -477,20 +392,7 @@ rows:
   - key: v3-state-4b-recipes
     issue: 1072
   - key: v3-ctl-8-lint
-    title: 'control-home and router-search rule bodies with fixtures through the hook'
-    repo: basalt-ui
-    kind: feature
-    after:
-      [
-        v3-ctl-5-filterset,
-        v3-gr-3b-structure-rest,
-        v3-spike-control-home,
-        v3-sk-4-hook-shim,
-        v3-gr-4-preset,
-        v3-ctl-6-viewtabs,
-        v3-ctl-7-formfield,
-      ]
-    facts: { 'brief': 'docs/v3/issues/g3/v3-ctl-8-lint.json' }
+    issue: 1217
   - key: v3-freeze-g3
     issue: 1080
   - key: v3-contract-amendment-late
@@ -502,127 +404,25 @@ rows:
   - key: v3-ai-i6-reference
     issue: 1130
   - key: v3-freeze-g4
-    title: 'Freeze G4 layers: charts API and bundle marginals'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: sonnet, effort: medium }
-    after:
-      [
-        v3-charts-5-heatmap,
-        v3-freeze-g3,
-        v3-rel-7-skeleton,
-        v3-contract-amendment-late,
-        v3-cycle-expression-1,
-        v3-expr-1-doctrine,
-        v3-expr-1-seam,
-        v3-expr-1-kit-fixes,
-        v3-expr-1-bypass-seam,
-        v3-expr-2-kit-fixes,
-        v3-expr-2-seam-tracks,
-      ]
-    facts: { 'brief': 'docs/v3/issues/g4/v3-freeze-g4.json' }
+    issue: 1227
   - key: v3-teardown-views
-    title: 'Delete the 2.x view layer: dashboard, charts, table, controls, shell, content'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-freeze-g4]
-    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-teardown-views.json' }
+    issue: 1407
   - key: v3-teardown-runtime
-    title: 'Delete the 2.x runtime: provider, commands, agent, theme-lab, guard, forms'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-teardown-views]
-    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-teardown-runtime.json' }
+    issue: 1522
   - key: v3-teardown-peers
-    title: 'Delete the last 2.x modules and bring required peers to zero'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-teardown-runtime]
-    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-teardown-peers.json' }
+    issue: 1530
   - key: v3-ga-prep
-    title: "GA prep: make check, playground and examples/* green, recorded for the owner's go; nothing published"
-    repo: basalt-ui
-    kind: chore
-    after:
-      [
-        v3-ai-i6-reference,
-        v3-teardown-peers,
-        v3-shell-i10-rules-rows,
-        v3-charts-6-two-pane,
-        v3-charts-7c-rows,
-        v3-table-t5-exemplar,
-        v3-ctl-9-rows,
-        v3-freeze-g2,
-        v3-freeze-g0,
-        v3-prim-p8-sync-matrix,
-        v3-prim-rows,
-        v3-mig-bench,
-        v3-gr-intl-enable,
-        v3-sk-7b-state-references,
-        v3-state-4b-recipes,
-        v3-cycle-lint-1,
-        v3-cycle-wiring-1,
-        v3-cycle-dogfood-1,
-        v3-expr-3-kit-fixes,
-        v3-expr-3-contract,
-      ]
-    facts: { 'brief': 'docs/v3/issues/g5-ga-g6/v3-ga-prep.json' }
+    issue: 1581
   - key: v3-cycle-shell-1
-    title: 'Improvement cycle 1: AppShell and page kit, built as a three-page app'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-shell-i5c-exemplar,
-        v3-shell-i6-tabbar,
-        v3-shell-i8-commands,
-        v3-shell-i7b-settings,
-        v3-shell-i9-router-defaults,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-shell-1.json' }
+    issue: 1171
   - key: v3-cycle-state-1
     issue: 1103
   - key: v3-cycle-lint-1
-    title: 'Improvement cycle 1: lint and guards, misses and false alarms per rule'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-gr-1-rule-table,
-        v3-gr-2-class-family,
-        v3-gr-3b-structure-rest,
-        v3-gr-4-preset,
-        v3-gr-5-weakened-config,
-        v3-gr-6-waiver-codemod,
-        v3-ctl-8-lint,
-        v3-ai-i5-lint,
-        v3-live-5-lint-recipes,
-        v3-st-6-stylelint,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-1.json' }
+    issue: 1401
   - key: v3-cycle-wiring-1
-    title: 'Improvement cycle 1: wiring from init to a first page, and the export surface'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-sk-3-init-doctor,
-        v3-sk-8-basalt-app,
-        v3-cli-sibling,
-        v3-gr-4-preset,
-        v3-shell-i9-router-defaults,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-wiring-1.json' }
+    issue: 1403
   - key: v3-cycle-dogfood-1
-    title: 'Improvement cycle 1: rebuild the factory console overview slice on v3'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-cycle-shell-1, v3-cycle-state-1, v3-playground-overview, v3-table-t3b-selection]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-1.json' }
+    issue: 1261
   - key: v3-cycle-expression-1
     issue: 940
   - key: v3-spike-viz-census
@@ -646,19 +446,7 @@ rows:
   - key: v3-expr-2-surface
     issue: 1121
   - key: v3-cycle-expression-3
-    title: 'Improvement cycle 3: expression, six one-shot visualization trials scored against references'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-expr-2-skill,
-        v3-expr-2-kit-fixes,
-        v3-expr-2-seam-tracks,
-        v3-expr-2-surface,
-        v3-teardown-runtime,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-3.json' }
+    issue: 1531
   - key: v3-state-1-router-client
     issue: 1138
   - key: v3-state-1-spec-handles
@@ -670,937 +458,273 @@ rows:
   - key: v3-state-1-state
     issue: 1142
   - key: v3-state-1-api
-    title: 'Tabs and Sheet bind a handle; four casts removed, from state cycle 1'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-state-1, v3-state-1-spec-handles]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-api.json' }
+    issue: 1176
   - key: v3-state-1-shell
-    title: 'PageBar takes the connection indicator, from state cycle 1'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-state-1-api]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-shell.json' }
+    issue: 1267
   - key: v3-state-1-wiring
-    title: 'v3 ChartCard exported, createChannel on ./data, the router starts the binding, from state cycle 1'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-state-1-router-client]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-wiring.json' }
+    issue: 1172
   - key: v3-state-1-docs
     issue: 1143
   - key: v3-state-1-lint
     issue: 1144
   - key: v3-state-1-visual
-    title: 'One FilterSet form at any width; DataTable head and ConnectionIndicator pass the matrix, from state cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-state-1-state, v3-state-1-lint]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-1-visual.json' }
+    issue: 1200
   - key: v3-cycle-state-2
-    title: 'Improvement cycle 2: state, stores and controls, built as one data page'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-state-1-router-client,
-        v3-state-1-spec-handles,
-        v3-state-1-multi-escape,
-        v3-state-1-draft-formrow,
-        v3-state-1-state,
-        v3-state-1-api,
-        v3-state-1-shell,
-        v3-state-1-wiring,
-        v3-state-1-docs,
-        v3-state-1-lint,
-        v3-state-1-visual,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-state-2.json' }
+    issue: 1479
   - key: v3-shell-1-inner-nav
-    title: 'InnerNav draws real links from a defineControls push field, from shell cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-shell-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-inner-nav.json' }
+    issue: 1262
   - key: v3-shell-1-detail-host
-    title: 'A table row detail opens in the page aside with no wiring, from shell cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-shell-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-detail-host.json' }
+    issue: 1263
   - key: v3-shell-1-split-selected
-    title: 'SplitPage opens every pane on a phone, the fallback included, from shell cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-shell-1-inner-nav]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-split-selected.json' }
+    issue: 1428
   - key: v3-shell-1-route-retry
-    title: 'Try again on the route error screen re-runs the loader, from shell cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-shell-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-route-retry.json' }
+    issue: 1264
   - key: v3-shell-1-phone-aside
-    title: 'The phone aside sheet follows the bound PageAside state, from shell cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-shell-1-detail-host]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-phone-aside.json' }
+    issue: 1318
   - key: v3-shell-1-palette
-    title: 'One palette per app lists every defineNav item under the v3 shell, from shell cycle 1'
-    repo: basalt-ui
-    kind: bug
-    seat: { tier: opus, effort: high }
-    after: [v3-cycle-shell-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-palette.json' }
+    issue: 1265
   - key: v3-shell-1-api
-    title: 'PageAside binds a record field, Facts ships, a handle names its value, from shell cycle 1'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-shell-1-phone-aside, v3-shell-1-split-selected]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-api.json' }
+    issue: 1492
   - key: v3-shell-1-shell
-    title: 'Route states, focus and the phone way back in the shell, from shell cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-shell-1-route-retry, v3-shell-1-split-selected]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-shell.json' }
+    issue: 1493
   - key: v3-shell-1-visual
-    title: 'A readable phone header and one content start on every page, from shell cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-shell-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-visual.json' }
+    issue: 1266
   - key: v3-shell-1-lint
-    title: 'A cycle route and its matrix waivers stay inside the cycle, from shell cycle 1'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-shell-1-inner-nav, v3-shell-1-visual]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-1-lint.json' }
+    issue: 1429
   - key: v3-cycle-shell-2
-    title: 'Improvement cycle 2: AppShell and page kit, built as a three-page app'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-shell-1-inner-nav,
-        v3-shell-1-detail-host,
-        v3-shell-1-split-selected,
-        v3-shell-1-route-retry,
-        v3-shell-1-phone-aside,
-        v3-shell-1-palette,
-        v3-shell-1-api,
-        v3-shell-1-shell,
-        v3-shell-1-visual,
-        v3-shell-1-lint,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-shell-2.json' }
+    issue: 1724
   - key: v3-mwg-textarea-field-sizing
-    title: 'A Textarea that grows with its content on field-sizing, from the modern-web-guidance research'
-    repo: basalt-ui
-    kind: feature
-    checkpoint: spec
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-mwg-textarea-field-sizing.json' }
+    issue: 1350
   - key: v3-mwg-progress-timeline
-    title: 'The reading-progress bar on a scroll timeline instead of a scroll listener, from the modern-web-guidance research'
-    repo: basalt-ui
-    kind: chore
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-mwg-progress-timeline.json' }
+    issue: 1351
   - key: v3-wiring-1-init-scaffold
-    title: 'basalt-ui init writes the router scaffold its templates promise, from wiring cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-wiring-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-init-scaffold.json' }
+    issue: 1419
   - key: v3-wiring-1-entry-docs
-    title: 'README and llms.txt teach the v3 app, from wiring cycle 1'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-wiring-1-init-scaffold]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-entry-docs.json' }
+    issue: 1485
   - key: v3-wiring-1-router-link
-    title: 'Every link prop navigates through the router and takes a NavTarget, from wiring cycle 1'
-    repo: basalt-ui
-    kind: feature
-    checkpoint: spec
-    after: [v3-cycle-wiring-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-router-link.json' }
+    issue: 1420
   - key: v3-wiring-1-statcard-target
-    title: 'The whole linked StatCard takes the click; a title-only PageBar draws no band, from wiring cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-wiring-1-router-link]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-statcard-target.json' }
+    issue: 1480
   - key: v3-wiring-1-phone-entity
-    title: 'A phone table never hides the row name, from wiring cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-wiring-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-phone-entity.json' }
+    issue: 1421
   - key: v3-wiring-1-wiring
-    title: 'init installs and patches the app profile; doctor runs from the local bin; the v3 provider has a home, from wiring cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-wiring-1-init-scaffold]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-wiring.json' }
+    issue: 1486
   - key: v3-wiring-1-docs
-    title: 'Generated docs show union arms, defaults and examples, from wiring cycle 1'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-wiring-1-entry-docs]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-docs.json' }
+    issue: 1503
   - key: v3-wiring-1-api
-    title: 'One prop name per role, and the table takes empty, from wiring cycle 1'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-wiring-1-router-link]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-api.json' }
+    issue: 1481
   - key: v3-wiring-1-lint
-    title: 'The export-surface snapshot covers ./shell and ui/*, from wiring cycle 1'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-cycle-wiring-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-1-lint.json' }
+    issue: 1422
   - key: v3-cycle-wiring-2
-    title: 'Improvement cycle 2: wiring from init to a first page, and the export surface'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-wiring-1-init-scaffold,
-        v3-wiring-1-entry-docs,
-        v3-wiring-1-router-link,
-        v3-wiring-1-statcard-target,
-        v3-wiring-1-phone-entity,
-        v3-wiring-1-wiring,
-        v3-wiring-1-docs,
-        v3-wiring-1-api,
-        v3-wiring-1-lint,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-wiring-2.json' }
+    issue: 1526
   - key: v3-lint-1-series-file
-    title: 'colour-literal stays silent on the series file it names, from lint cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-lint-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-series-file.json' }
+    issue: 1438
   - key: v3-lint-1-blanket-disable
-    title: 'doctor reports a file-level disable that silences every rule, from lint cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-lint-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-blanket-disable.json' }
+    issue: 1439
   - key: v3-lint-1-eject-zones
-    title: 'An ejected primitive and a bridge root lint clean in the consumer preset, from lint cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-lint-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-eject-zones.json' }
+    issue: 1440
   - key: v3-lint-1-seam-colour
-    title: 'A mark drawn through the chart focus seam takes a fill token without a finding, from lint cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-lint-1-series-file]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-seam-colour.json' }
+    issue: 1476
   - key: v3-lint-1-stylesheet-scroll
-    title: 'The stylelint preset reports a scroll box in app CSS, from lint cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-lint-1-seam-colour]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-stylesheet-scroll.json' }
+    issue: 1490
   - key: v3-lint-1-lint
-    title: 'False alarms, missed spellings and fix-less messages of the shipped rules, from lint cycle 1'
-    repo: basalt-ui
-    kind: bug
-    seat: { tier: opus, effort: high }
-    after: [v3-lint-1-stylesheet-scroll]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-lint.json' }
+    issue: 1507
   - key: v3-lint-1-wiring
-    title: 'The weakened-config check catches a guard switched off for a subtree, from lint cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-lint-1-blanket-disable]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-wiring.json' }
+    issue: 1477
   - key: v3-lint-1-recipes
-    title: 'Every shipped recipe lints clean under the app preset, gated, from lint cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-lint-1-seam-colour, v3-lint-1-lint]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-recipes.json' }
+    issue: 1518
   - key: v3-lint-1-dogfood
-    title: 'The playground lints through the generated app preset at zero findings, from lint cycle 1'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-lint-1-recipes, v3-lint-1-eject-zones]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-1-dogfood.json' }
+    issue: 1524
   - key: v3-cycle-lint-2
-    title: 'Improvement cycle 2: lint and guards, misses and false alarms per rule'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-lint-1-series-file,
-        v3-lint-1-blanket-disable,
-        v3-lint-1-eject-zones,
-        v3-lint-1-seam-colour,
-        v3-lint-1-stylesheet-scroll,
-        v3-lint-1-lint,
-        v3-lint-1-wiring,
-        v3-lint-1-recipes,
-        v3-lint-1-dogfood,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-2.json' }
+    issue: 1539
   - key: v3-dogfood-1-card-grid
-    title: 'A CardGrid row of cards leaves no empty track, from dogfood cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-dogfood-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-card-grid.json' }
+    issue: 1444
   - key: v3-dogfood-1-filtered-empty
-    title: 'A table filtered by page controls says so and offers Clear filters, from dogfood cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-dogfood-1, v3-wiring-1-api]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-filtered-empty.json' }
+    issue: 1527
   - key: v3-dogfood-1-entity-sub
-    title: 'An entity cell never truncates its title for its sub, from dogfood cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-dogfood-1]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-entity-sub.json' }
+    issue: 1445
   - key: v3-dogfood-1-api
-    title: 'Phase types exported, StatCard x labels, a table clock and status labels, from dogfood cycle 1'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-dogfood-1-filtered-empty, v3-dogfood-1-entity-sub]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-api.json' }
+    issue: 1536
   - key: v3-dogfood-1-state
-    title: 'A loading StatCard hides its footer values and the open row is marked, from dogfood cycle 1'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-dogfood-1-api]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-state.json' }
+    issue: 1541
   - key: v3-dogfood-1-visual
-    title: 'A stat row scrolls sideways on a phone and the StatCard passes the quality matrix, from dogfood cycle 1'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-dogfood-1-card-grid, v3-wiring-1-statcard-target]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-1-visual.json' }
+    issue: 1512
   - key: v3-cycle-dogfood-2
-    title: 'Improvement cycle 2: rebuild the factory console overview slice on v3'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-dogfood-1-card-grid,
-        v3-dogfood-1-filtered-empty,
-        v3-dogfood-1-entity-sub,
-        v3-dogfood-1-api,
-        v3-dogfood-1-state,
-        v3-dogfood-1-visual,
-        v3-state-1-wiring,
-        v3-shell-1-detail-host,
-        v3-shell-1-api,
-        v3-shell-1-phone-aside,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-2.json' }
+    issue: 1567
   - key: v3-state-2-draft-unmount
-    title: 'A successful save never leaves a form draft behind, from state cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-state-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-draft-unmount.json' }
+    issue: 1497
   - key: v3-state-2-wiring
-    title: 'The v3 provider starts the push binding, and the router live option takes the client, from state cycle 2'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-state-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-wiring.json' }
+    issue: 1498
   - key: v3-state-2-api
-    title: 'useValues returns a range value, status columns take labels, from state cycle 2'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-state-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-api.json' }
+    issue: 1499
   - key: v3-state-2-state
-    title: 'v3 frames read Offline for a paused query, the table detail binds a field, from state cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-state-2-api]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-state.json' }
+    issue: 1515
   - key: v3-state-2-visual
-    title: 'The page bar keeps its focus rings, integer count ticks, labelled card meta, from state cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-state-2-api]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-visual.json' }
+    issue: 1516
   - key: v3-state-2-docs
-    title: 'FilterSet, useFormDraft and createChannel references match the code, from state cycle 2'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-state-2-draft-unmount, v3-state-2-visual]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-docs.json' }
+    issue: 1525
   - key: v3-state-2-lint
-    title: 'The theme guard and the control-home rule home a control inside a v3 FormField, from state cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-state-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-2-lint.json' }
+    issue: 1500
   - key: v3-cycle-state-3
-    title: 'Improvement cycle 3: state, stores and controls, built as one data page'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-state-2-draft-unmount,
-        v3-state-2-wiring,
-        v3-state-2-api,
-        v3-state-2-state,
-        v3-state-2-visual,
-        v3-state-2-docs,
-        v3-state-2-lint,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-state-3.json' }
+    issue: 1528
   - key: v3-wiring-2-route-split
-    title: 'Route files keep their component unexported, so the scaffold splits, from wiring cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-wiring-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-route-split.json' }
+    issue: 1532
   - key: v3-wiring-2-generated-tree
-    title: 'Doctor and init leave the generated route tree alone, from wiring cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-wiring-2-route-split]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-generated-tree.json' }
+    issue: 1542
   - key: v3-wiring-2-table-css
-    title: 'The table tiers reach the app without a second import, from wiring cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-wiring-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-table-css.json' }
+    issue: 1533
   - key: v3-wiring-2-wiring
-    title: 'init never downgrades a peer, doctor fails an out-of-range one, a stock app lints clean, from wiring cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-wiring-2-generated-tree]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-wiring.json' }
+    issue: 1550
   - key: v3-wiring-2-docs
-    title: 'Recipes match the scaffold, init runs one way, generated docs print whole, from wiring cycle 2'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-wiring-2-route-split, v3-wiring-2-table-css]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-docs.json' }
+    issue: 1549
   - key: v3-wiring-2-api
-    title: 'One menu shape, one word per width, one name per role, from wiring cycle 2'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-wiring-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-2-api.json' }
+    issue: 1534
   - key: v3-cycle-wiring-3
-    title: 'Improvement cycle 3: wiring from init to a first page, and the export surface'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-wiring-2-route-split,
-        v3-wiring-2-generated-tree,
-        v3-wiring-2-table-css,
-        v3-wiring-2-wiring,
-        v3-wiring-2-docs,
-        v3-wiring-2-api,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-wiring-3.json' }
+    issue: 1562
   - key: v3-state-3-detail-link
-    title: 'A table detail field naming an unloaded record opens it or clears, from state cycle 3'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-state-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-3-detail-link.json' }
+    issue: 1543
   - key: v3-state-3-api
-    title: 'The store resets only the fields it is given, a field at its fallback leaves the URL, from state cycle 3'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-state-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-3-api.json' }
+    issue: 1544
   - key: v3-state-3-visual
-    title: 'Switches keep their size in a form field, card values name their column, headers keep sort reachable, from state cycle 3'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-state-3-detail-link]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-3-visual.json' }
+    issue: 1560
   - key: v3-cycle-state-4
-    title: 'Improvement cycle 4: state, stores and controls, built as one data page'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-state-3-detail-link, v3-state-3-api, v3-state-3-visual]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-state-4.json' }
+    issue: 1563
   - key: v3-lint-2-recipe-tokens
-    title: 'Shipped recipes use shipped tokens, and the gate runs the token check over the playground, from lint cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-lint-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-2-recipe-tokens.json' }
+    issue: 1546
   - key: v3-lint-2-eject-clean
-    title: 'An unedited ejected primitive lints clean, every primitive tested, from lint cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-lint-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-2-eject-clean.json' }
+    issue: 1547
   - key: v3-lint-2-waiver-ceiling
-    title: 'The waiver ceiling has a raise command and the breach message names it, from lint cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-lint-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-2-waiver-ceiling.json' }
+    issue: 1548
   - key: v3-lint-2-lint
-    title: 'Missed spellings, an Issue-reference false alarm and wrong-fix messages of the shipped rules, from lint cycle 2'
-    repo: basalt-ui
-    kind: bug
-    seat: { tier: opus, effort: high }
-    after: [v3-lint-2-eject-clean]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-2-lint.json' }
+    issue: 1559
   - key: v3-lint-2-wiring
-    title: 'A stylelint ignore file fails doctor, check-theme leaves the v3 surface, from lint cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-lint-2-recipe-tokens]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-2-wiring.json' }
+    issue: 1557
   - key: v3-cycle-lint-3
-    title: 'Improvement cycle 3: lint and guards, misses and false alarms per rule'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-lint-2-recipe-tokens,
-        v3-lint-2-eject-clean,
-        v3-lint-2-waiver-ceiling,
-        v3-lint-2-lint,
-        v3-lint-2-wiring,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-3.json' }
+    issue: 1565
   - key: v3-expr-3-skill
-    title: 'Expression skill: every frame to open, word economy worked through, card anatomy for lists, incomplete data, Phase import'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-expression-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-3-skill.json' }
+    issue: 1552
   - key: v3-expr-3-kit-fixes
-    title: 'Label collisions with bars and dots, one chart locale, linked-row dim and scroll, edge dots, chart box at 390 from expression cycle 3'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-expression-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-3-kit-fixes.json' }
+    issue: 1553
   - key: v3-expr-3-contract
-    title: 'Kit lists take the chart focus, band tick step and edge rules, log y and y format, StatCell swatch (Spec)'
-    repo: basalt-ui
-    kind: feature
-    seat: { tier: opus, effort: high }
-    checkpoint: spec
-    after: [v3-cycle-expression-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-3-contract.json' }
+    issue: 1554
   - key: v3-expr-3-rubric
-    title: 'Expression rubric: how K3 and X4 are evidenced, a pointer sweep in the shoot'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-cycle-expression-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-3-rubric.json' }
+    issue: 1555
   - key: v3-cycle-expression-4
-    title: 'Improvement cycle 4: expression, six one-shot visualization trials scored against references'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-expr-3-skill, v3-expr-3-kit-fixes, v3-expr-3-contract, v3-expr-3-rubric]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-4.json' }
+    issue: 1582
   - key: v3-wiring-3-route-tree
-    title: 'The stock build passes right after init and after a new route, first-hour docs match the scaffold, from wiring cycle 3'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-wiring-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-3-route-tree.json' }
+    issue: 1569
   - key: v3-wiring-3-api
-    title: 'The frame value types import from one v3 subpath, every data part takes phase, from wiring cycle 3'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-wiring-3, v3-teardown-peers]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-3-api.json' }
+    issue: 1574
   - key: v3-wiring-3-visual
-    title: 'A table column shows its whole header, a section heading keeps its word space, from wiring cycle 3'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-wiring-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-3-visual.json' }
+    issue: 1570
   - key: v3-cycle-wiring-4
-    title: 'Improvement cycle 4: wiring from init to a first page, and the export surface'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-wiring-3-route-tree, v3-wiring-3-api, v3-wiring-3-visual]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-wiring-4.json' }
+    issue: 1589
   - key: v3-state-4-close-history
-    title: 'Closing a record opened by a push leaves no dead Back step, from state cycle 4'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-state-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-4-close-history.json' }
+    issue: 1575
   - key: v3-state-4-api
-    title: 'A record opened by id keeps its title, a by-id body is written once, a slot resets its own filters, from state cycle 4'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-state-4-close-history]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-4-api.json' }
+    issue: 1590
   - key: v3-state-4-visual
-    title: 'A phone card money value names its column or sits beside the title, from state cycle 4'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-state-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-state-4-visual.json' }
+    issue: 1576
   - key: v3-lint-3-eject-static
-    title: 'Every ejected primitive lints clean with both JS plugins, tested by running lint, from lint cycle 3'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-lint-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-3-eject-static.json' }
+    issue: 1577
   - key: v3-lint-3-lint
-    title: 'Missed spellings, a Radix icon false alarm and two fixes another rule bans, from lint cycle 3'
-    repo: basalt-ui
-    kind: bug
-    seat: { tier: opus, effort: high }
-    after: [v3-lint-3-eject-static]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-3-lint.json' }
+    issue: 1614
   - key: v3-lint-3-wiring
-    title: 'Eject help is reachable, doctor and pre-edit agree on generated files, check-theme reads no prose, from lint cycle 3'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-lint-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-3-wiring.json' }
+    issue: 1578
   - key: v3-cycle-lint-4
-    title: 'Improvement cycle 4: lint and guards, misses and false alarms per rule'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-lint-3-eject-static, v3-lint-3-lint, v3-lint-3-wiring]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-4.json' }
+    issue: 1633
   - key: v3-dogfood-2-deep-link
-    title: 'A deep-linked row detail keeps its id in the URL and marks its row, from dogfood cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-dogfood-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-2-deep-link.json' }
+    issue: 1583
   - key: v3-dogfood-2-state
-    title: 'A failed chart card shows no figure, frames say error and stale one way, from dogfood cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-dogfood-2-deep-link]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-2-state.json' }
+    issue: 1618
   - key: v3-dogfood-2-visual
-    title: 'A relative-time column shows its whole phrase, from dogfood cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-dogfood-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-2-visual.json' }
+    issue: 1584
   - key: v3-dogfood-2-api
-    title: 'A client table filters by the page fields itself, from dogfood cycle 2'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-dogfood-2-deep-link, v3-dogfood-2-visual]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-2-api.json' }
+    issue: 1631
   - key: v3-dogfood-2-shell
-    title: 'A record aside shows no phone header button while no record is open, from dogfood cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-dogfood-2, v3-shell-1-shell]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-2-shell.json' }
+    issue: 1725
   - key: v3-cycle-dogfood-3
-    title: 'Improvement cycle 3: rebuild the factory console overview slice on v3'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-dogfood-2-deep-link,
-        v3-dogfood-2-state,
-        v3-dogfood-2-visual,
-        v3-dogfood-2-api,
-        v3-dogfood-2-shell,
-        v3-wiring-3-api,
-        v3-shell-1-shell,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-3.json' }
+    issue: 1772
   - key: v3-expr-4-skill
-    title: 'Expression skill: linked parts announce once, focus over the drawn data, name the marks that matter, every phase keeps its declarations'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-expression-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-4-skill.json' }
+    issue: 1626
   - key: v3-expr-4-kit-fixes
-    title: 'A fill chart fills its card box, the figure fits at 390, loading keeps its height, arrow order follows x, from expression cycle 4'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-expression-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-4-kit-fixes.json' }
+    issue: 1627
   - key: v3-expr-4-contract
-    title: 'Custom marks get pixel positions for labels, a zone takes an x range (Spec)'
-    repo: basalt-ui
-    kind: feature
-    seat: { tier: opus, effort: high }
-    checkpoint: spec
-    after: [v3-cycle-expression-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-4-contract.json' }
+    issue: 1628
   - key: v3-expr-4-rubric
-    title: 'Expression rubric: K3 for a native row focus, X3 evidenced both ways'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-cycle-expression-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-4-rubric.json' }
+    issue: 1629
   - key: v3-cycle-expression-5
-    title: 'Improvement cycle 5: expression, six one-shot visualization trials'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-expr-4-skill, v3-expr-4-kit-fixes, v3-expr-4-contract, v3-expr-4-rubric]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-5.json' }
+    issue: 1654
   - key: v3-wiring-4-docs
-    title: 'The README example compiles, every chart kind and primitive has a doc with its props, from wiring cycle 4'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-wiring-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-4-docs.json' }
+    issue: 1630
   - key: v3-wiring-4-api
-    title: 'Each public type has one v3 home and each role one prop name, from wiring cycle 4'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-wiring-4, v3-wiring-4-docs]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-wiring-4-api.json' }
+    issue: 1648
   - key: v3-lint-4-lint
-    title: 'Missed spellings, alpha on the theme class names and three messages naming a banned fix, from lint cycle 4'
-    repo: basalt-ui
-    kind: bug
-    seat: { tier: opus, effort: high }
-    after: [v3-cycle-lint-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-4-lint.json' }
+    issue: 1646
   - key: v3-cycle-lint-5
-    title: 'Improvement cycle 5: lint and guards, misses and false alarms per rule'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-lint-4-lint]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-5.json' }
+    issue: 1652
   - key: v3-lint-5-lint
-    title: 'Missed spellings, a flex basis as the width and the custom-property route around data marks, from lint cycle 5'
-    repo: basalt-ui
-    kind: bug
-    seat: { tier: opus, effort: high }
-    after: [v3-cycle-lint-5]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-5-lint.json' }
+    issue: 1660
   - key: v3-cycle-lint-6
-    title: 'Improvement cycle 6: lint and guards, misses and false alarms per rule'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-lint-5-lint]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-6.json' }
+    issue: 1668
   - key: v3-lint-6-lint
-    title: 'A control read as a card, missed spellings, and two messages whose fix cannot be followed, from lint cycle 6'
-    repo: basalt-ui
-    kind: bug
-    seat: { tier: opus, effort: high }
-    after: [v3-cycle-lint-6]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-6-lint.json' }
+    issue: 1670
   - key: v3-cycle-lint-7
-    title: 'Improvement cycle 7: lint and guards, misses and false alarms per rule'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-lint-6-lint]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-7.json' }
+    issue: 1707
   - key: v3-expr-5-keys
-    title: 'basalt-ui shot shoots a keyboard frame and the app preset flags a read before declaration, from expression cycle 5'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-expression-5]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-5-keys.json' }
+    issue: 1665
   - key: v3-expr-5-kit-fixes
-    title: 'Placed labels clear zone, rule and bar boxes, lines answer to focus, a loading card shows no stale facts, from expression cycle 5'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-expression-5]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-5-kit-fixes.json' }
+    issue: 1666
   - key: v3-expr-5-skill
-    title: 'Expression skill: the linked-parts container is the parent, the threshold is drawn, no reading outside the ready phase, one view, from expression cycle 5'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-expression-5]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-5-skill.json' }
+    issue: 1667
   - key: v3-cycle-expression-6
-    title: 'Improvement cycle 6: expression, six one-shot visualization trials'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-expr-5-keys, v3-expr-5-kit-fixes, v3-expr-5-skill]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-6.json' }
+    issue: 1704
   - key: v3-lint-7-lint
-    title: 'The core rule reads the lazy router as a crash and escapes the budget, and missed spellings, from lint cycle 7'
-    repo: basalt-ui
-    kind: bug
-    seat: { tier: opus, effort: high }
-    after: [v3-cycle-lint-7]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-7-lint.json' }
+    issue: 1737
   - key: v3-lint-import-allowlist
-    title: 'import-boundary decides what a rival package is, a Spec on an allow list after four rings, from lint cycle 7'
-    repo: basalt-ui
-    kind: feature
-    checkpoint: spec
-    seat: { tier: opus, effort: high }
-    after: [v3-cycle-lint-7]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-import-allowlist.json' }
+    issue: 1738
   - key: v3-cycle-lint-8
-    title: 'Improvement cycle 8: lint and guards, misses and false alarms per rule'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-lint-7-lint, v3-lint-import-allowlist]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-8.json' }
+    issue: 1829
   - key: v3-shell-2-crumb
-    title: 'A crumb parent links in-app in both forms, and one phone crumb rule, from shell cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-shell-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-2-crumb.json' }
+    issue: 1779
   - key: v3-shell-2-shell
-    title: 'Focus follows a split-page swap, a retry, an aside close and a jump; route screens name themselves, from shell cycle 2'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-shell-2]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-2-shell.json' }
+    issue: 1780
   - key: v3-cycle-shell-3
-    title: 'Improvement cycle 3: AppShell and page kit, built as a three-page app'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-shell-2-crumb, v3-shell-2-shell]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-shell-3.json' }
+    issue: 1837
   - key: v3-expr-6-kit-fixes
-    title: 'A focus survives the chart-to-row crossing, shared focus announces once, rule labels and capped points hold, from expression cycle 6'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-expression-6]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-6-kit-fixes.json' }
+    issue: 1811
   - key: v3-expr-6-contract
-    title: 'Optional chart and card fields accept undefined, a monospace slot for times and ids (Spec)'
-    repo: basalt-ui
-    kind: feature
-    seat: { tier: opus, effort: high }
-    checkpoint: spec
-    after: [v3-cycle-expression-6]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-6-contract.json' }
+    issue: 1812
   - key: v3-expr-6-skill
-    title: 'Expression skill: one measure, a fact count, one view, readout for the delta, from expression cycle 6'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-expression-6]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-6-skill.json' }
+    issue: 1813
   - key: v3-cycle-expression-7
-    title: 'Improvement cycle 7: expression, six one-shot visualization trials'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-expr-6-kit-fixes, v3-expr-6-contract, v3-expr-6-skill]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-7.json' }
+    issue: 1853
   - key: v3-dogfood-3-row-mark
-    title: 'A selected or open table row is tinted again, from dogfood cycle 3'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-dogfood-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-3-row-mark.json' }
+    issue: 1830
   - key: v3-dogfood-3-visual
-    title: 'Short text columns give their width to the entity column, from dogfood cycle 3'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-dogfood-3-row-mark]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-3-visual.json' }
+    issue: 1864
   - key: v3-dogfood-3-api
-    title: 'A card owns a choice without a second store, a filtered table says what the page asks, from dogfood cycle 3'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-dogfood-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-3-api.json' }
+    issue: 1831
   - key: v3-cycle-dogfood-4
-    title: 'Improvement cycle 4: rebuild the factory console overview slice on v3'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-dogfood-3-row-mark, v3-dogfood-3-visual, v3-dogfood-3-api]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-4.json' }
+    issue: 1882
   - key: v3-lint-8-lint
-    title: 'The rival net reads an icon set and a serialiser, the glyph sniff gets a layout fix, an inert shadcn rule and missed spellings, from lint cycle 8'
-    repo: basalt-ui
-    kind: bug
-    seat: { tier: opus, effort: high }
-    after: [v3-cycle-lint-8]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-8-lint.json' }
+    issue: 1855
   - key: v3-cycle-lint-9
-    title: 'Improvement cycle 9: lint and guards, misses and false alarms per rule'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-lint-8-lint]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-9.json' }
+    issue: 1866
   - key: v3-shell-3-aside
-    title: 'The aside closes with its field and drops a record its table no longer holds, from shell cycle 3'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-shell-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-3-aside.json' }
+    issue: 1859
   - key: v3-shell-3-shell
-    title: 'The crumb parent is not the current page and hands focus to main; same-label palette entries name their section, from shell cycle 3'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-shell-3]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-3-shell.json' }
+    issue: 1860
   - key: v3-cycle-shell-4
-    title: 'Improvement cycle 4: AppShell and page kit, built as a three-page app'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-shell-3-aside, v3-shell-3-shell]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-shell-4.json' }
+    issue: 1908
   - key: v3-expr-7-kit-fixes
-    title: 'Titled table errors, one strip error, labels clear lines, lines keep their hue on focus, frames hold height, ticks apart, from expression cycle 7'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-expression-7]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-7-kit-fixes.json' }
+    issue: 1872
   - key: v3-expr-7-contract
-    title: 'A list row stands for a chart series, mono entity text and footer values, a ranked bar form that keeps every name (Spec)'
-    repo: basalt-ui
-    kind: feature
-    seat: { tier: opus, effort: high }
-    checkpoint: spec
-    after: [v3-cycle-expression-7]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-7-contract.json' }
+    issue: 1873
   - key: v3-expr-7-skill
-    title: 'Expression skill: linked lists, anatomy for rows, a named baseline, the answer on the mark, phone tables, from expression cycle 7'
-    repo: basalt-ui
-    kind: feature
-    after: [v3-cycle-expression-7]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-7-skill.json' }
+    issue: 1874
   - key: v3-expr-7-rubric
-    title: 'Expression rubric: when X4 and X3 are n/a, a loading jump charged once, from expression cycle 7'
-    repo: basalt-ui
-    kind: chore
-    after: [v3-cycle-expression-7]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-7-rubric.json' }
+    issue: 1875
   - key: v3-cycle-expression-8
     title: 'Improvement cycle 8: expression, six one-shot visualization trials'
     repo: basalt-ui
@@ -1609,31 +733,13 @@ rows:
     after: [v3-expr-7-kit-fixes, v3-expr-7-contract, v3-expr-7-skill, v3-expr-7-rubric]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-8.json' }
   - key: v3-lint-9-lint
-    title: 'The rival net reads utilities and misses downshift, a JS scheme fork, a decoded body loop, a status-tint message, from lint cycle 9'
-    repo: basalt-ui
-    kind: bug
-    seat: { tier: opus, effort: high }
-    after: [v3-cycle-lint-9]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-9-lint.json' }
+    issue: 1903
   - key: v3-cycle-lint-10
-    title: 'Improvement cycle 10: lint and guards, misses and false alarms per rule'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after: [v3-lint-9-lint]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-10.json' }
+    issue: 1928
   - key: v3-shell-4-sheet
-    title: 'A deep-linked record leaves no stuck table sheet beside the aside, from shell cycle 4'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-shell-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-4-sheet.json' }
+    issue: 1936
   - key: v3-shell-4-shell
-    title: 'A palette jump hands focus to main while the next page loads, from shell cycle 4'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-shell-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-4-shell.json' }
+    issue: 1937
   - key: v3-cycle-shell-5
     title: 'Improvement cycle 5: AppShell and page kit, built as a three-page app'
     repo: basalt-ui
@@ -1642,11 +748,7 @@ rows:
     after: [v3-shell-4-sheet, v3-shell-4-shell]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-shell-5.json' }
   - key: v3-dogfood-4-api
-    title: 'A second page may reuse a widget id another page holds, from dogfood cycle 4'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-dogfood-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-4-api.json' }
+    issue: 1942
   - key: v3-dogfood-4-visual
     title: 'A card-header segmented group fits its labels on a track, a status column fits its widest label, from dogfood cycle 4'
     repo: basalt-ui
@@ -1654,11 +756,7 @@ rows:
     after: [v3-cycle-dogfood-4]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-4-visual.json' }
   - key: v3-dogfood-4-state
-    title: 'A page summary in an error phase is not busy, from dogfood cycle 4'
-    repo: basalt-ui
-    kind: bug
-    after: [v3-cycle-dogfood-4]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-4-state.json' }
+    issue: 1944
   - key: v3-cycle-dogfood-5
     title: 'Improvement cycle 5: rebuild the factory console overview slice on v3'
     repo: basalt-ui
@@ -1667,12 +765,7 @@ rows:
     after: [v3-dogfood-4-api, v3-dogfood-4-visual, v3-dogfood-4-state]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-5.json' }
   - key: v3-lint-10-lint
-    title: 'The rival net reads converters, scheme forks and stores slip past, a custom-property bar and a helper stream pass, from lint cycle 10'
-    repo: basalt-ui
-    kind: bug
-    seat: { tier: opus, effort: high }
-    after: [v3-cycle-lint-10]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-10-lint.json' }
+    issue: 1950
   - key: v3-cycle-lint-11
     title: 'Improvement cycle 11: lint and guards, misses and false alarms per rule'
     repo: basalt-ui
