@@ -67,16 +67,15 @@ describe('lines answer to focus', () => {
     expect(focusDots(el).length).toBe(0)
   })
 
-  test('with a focus every line dims as a bar does and every line marks the focused x', async () => {
+  test('with a focus each of two lines dims in its own hue and every line marks the focused x', async () => {
     const el = await mount(<TwoLines />)
     const wrap = el.querySelector('[data-chart-focus]') as Element
     await press(wrap, 'ArrowRight')
     await press(wrap, 'ArrowRight')
     for (const stroke of strokes(el)) {
-      // The bars' levels: half in light, 70% in dark.
+      // Two lines keep their hue at 80% (`kit-fixes-expr7-focus.test.tsx`); a lone line dims as a bar does.
       expect(stroke).toStartWith('light-dark(color-mix')
-      expect(stroke).toContain(' 50%')
-      expect(stroke).toContain(' 70%')
+      expect(stroke).toContain(' 80%')
     }
     // One dot per line, on the focused hour.
     expect(focusDots(el).length).toBe(2)
