@@ -53,23 +53,23 @@ Repair rounds passed every case but n27: n32 and n29 in round 1 (81, 84) and n28
 
 ### After the rounds
 
-`make check-fast` on the final tree: see the commit's gate run, recorded in the PR.
+`make check-fast` ran on the final tree after every builder was done, on the pinned base, and passed (rc 0). That covers the static gate (fmt, lint, typecheck, the 77 budgets, the literal, recipe and playground lint checks), the unit suite in a host slot, the playground build, and the coverage, contract-frozen and pack-test steps. The layout step picked no file, because none of the 25 changed files reaches a layout test, so CI runs the full suite.
 
 ## Numbers
 
-| Number                         | n27       | n28                                     | n29                             | n30    | n31                   | n32                    | Summary                   |
-| ------------------------------ | --------- | --------------------------------------- | ------------------------------- | ------ | --------------------- | ---------------------- | ------------------------- |
-| First-try score (round 0)      | 76        | 72                                      | 75                              | 88     | 88                    | 70                     | median 75.5, minimum 70   |
-| First-try score, F and K only  | 79        | 71                                      | 81                              | 88     | 90                    | 74                     | median 80, minimum 71     |
-| Round 1 score (F and K)        | 70 (71)   | 74 (74)                                 | 84 (90)                         | passed | passed                | 81 (83)                | median 82.5 (85.5)        |
-| Round 2 score (F and K)        | 75 (76)   | 86 (86)                                 | passed                          | passed | passed                | passed                 | last-round median 85 (87) |
-| Rounds-to-pass (F and K)       | 3 (3)     | 2 (2)                                   | 1 (0)                           | 0 (0)  | 0 (0)                 | 1 (1)                  | mean 1.17 (1.0)           |
-| Verdict                        | n/a       | n/a                                     | n/a                             | n/a    | n/a                   | n/a                    | none (no referenced case) |
-| Glue lines, round 0            | ~45       | ~60                                     | ~25                             | ~20    | ~45                   | ~25                    | median 35                 |
-| Glue lines, last round         | ~80       | ~95                                     | ~40                             | ~20    | ~45                   | ~45                    | median 45                 |
-| Escape hatches, round 0        | none      | 2 `as const`, 3 markers                 | 2 `as CSSProperties`            | none   | `as const`, 2 markers | 1 `as const`           | hand `<svg>` 0 of 6       |
-| Escape hatches, last round     | 2 markers | 2 `as const`, a reload retry, 7 markers | 2 `as CSSProperties`, 3 markers | none   | as round 0            | 2 `as const`, 1 marker | hand `<svg>` 0 of 6       |
-| Devices used unasked (round 0) | 4         | 8                                       | 6                               | 10     | 9                     | 4                      | median 7 of 12            |
+| Number                         | n27       | n28                                     | n29                             | n30    | n31                  | n32                    | Summary                   |
+| ------------------------------ | --------- | --------------------------------------- | ------------------------------- | ------ | -------------------- | ---------------------- | ------------------------- |
+| First-try score (round 0)      | 76        | 72                                      | 75                              | 88     | 88                   | 70                     | median 75.5, minimum 70   |
+| First-try score, F and K only  | 79        | 71                                      | 81                              | 88     | 90                   | 74                     | median 80, minimum 71     |
+| Round 1 score (F and K)        | 70 (71)   | 74 (74)                                 | 84 (90)                         | passed | passed               | 81 (83)                | median 82.5 (85.5)        |
+| Round 2 score (F and K)        | 75 (76)   | 86 (86)                                 | passed                          | passed | passed               | passed                 | last-round median 85 (87) |
+| Rounds-to-pass (F and K)       | 3 (3)     | 2 (2)                                   | 1 (0)                           | 0 (0)  | 0 (0)                | 1 (1)                  | mean 1.17 (1.0)           |
+| Verdict                        | n/a       | n/a                                     | n/a                             | n/a    | n/a                  | n/a                    | none (no referenced case) |
+| Glue lines, round 0            | ~45       | ~60                                     | ~25                             | ~20    | ~45                  | ~25                    | median 35                 |
+| Glue lines, last round         | ~80       | ~95                                     | ~40                             | ~20    | ~45                  | ~45                    | median 45                 |
+| Escape hatches, round 0        | none      | 2 `as const`, 3 markers                 | 2 `as CSSProperties`            | none   | `as const`, 1 marker | 1 `as const`           | hand `<svg>` 0 of 6       |
+| Escape hatches, last round     | 2 markers | 2 `as const`, a reload retry, 8 markers | 2 `as CSSProperties`, 2 markers | none   | as round 0           | 2 `as const`, 1 marker | hand `<svg>` 0 of 6       |
+| Devices used unasked (round 0) | 4         | 8                                       | 6                               | 10     | 9                    | 4                      | median 7 of 12            |
 
 A case that passed carries its passing score into later rows. The pass mark is 80 on all items. Rounds-to-pass in brackets is the first round whose F and K score reached 80: n29 did in round 0 (81) without passing on all items. n27's score fell in round 1 (76 to 70). Its builder cut repeats and named the slid measures, but left the Sparkline's readout as the kit's, and the round-1 reviewer read F3 and K5 a point apart from round 0's on the same structure.
 
