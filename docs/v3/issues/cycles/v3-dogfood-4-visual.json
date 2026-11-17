@@ -1,0 +1,27 @@
+{
+  "why": "Dogfood cycle 4 (docs/v3/cycles/dogfood-4.md) logged two P2 `visual` findings and two P3. dogfood-4.2 (was 3.6, P3): a card-header segmented group gives every option one equal cell of 43 px and draws no track, so the console's four counts read `RunningPaused`, `Not` over `started` on two lines, then `Checking`, at 1800 px and at 390 px; the console draws each group on a `bg-muted` track, options `px-2.5`, one line each (`components/kit/segments.tsx`). Evidence: `.evidence/cycle-dogfood-4/probe.log` `widget.groups` (`Running 1350..1393`, `Paused 1393..1436`, `Not started 1436..1479`, group background the card's), `crops/segments-{light,dark}.png`, `cycle-dogfood-4--dark--390x844.png`. dogfood-4.4: a `status` column plans a fixed 120 px whatever its labels: `Closed recently` needs 137 px, its td clips it with no ellipsis (the label is an inline-flex `Status`), and it reads `Closed recently.` against the Since column (`probe-status.log`, `cycle-dogfood-4--dark--1800x1200.png`). The short text columns now size to their values (6d1432b1b); the status kind does not. P3 dogfood-4.3 (was 3.4, 2.4, 1.15): `Sparkline` has no bar form and no future segment. P3 dogfood-4.7 (was 3.8, 2.9): 61 px of empty band between the shell header and the first content (`probe.log` `band`: header bottom 48, summary top 109).",
+  "what": "A card-header segmented group fits its labels on a track; a status column fits its widest label; the P3s that fit.",
+  "owns": [
+    "packages/basalt-ui/src/ui/segmented.tsx and the card-header presentation in src/controls/*",
+    "packages/basalt-ui/src/table/core/kinds*.ts and the column width plan (the status kind's width)",
+    "packages/basalt-ui/src/charts/parts/sparkline*.tsx, if the P3 fits",
+    "packages/basalt-ui/src/page/page.tsx (the band inset), if the P3 fits",
+    "unit and layout tests beside them",
+    "apps/playground/src/cycle/dogfood-4/known.ts (remove the two dogfood-4.2 entries)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/** except dogfood-4/known.ts"
+  ],
+  "change": "(1) A segmented group in a card header sizes each option to its label on one line, with equal padding, on a visible track with the pressed option raised, at desktop and phone widths; a group that does not fit wraps as a whole or folds, never breaks a label (dogfood-4.2). (2) A `status` column plans to its widest label plus the dot and padding, as a short `text` column does, and a label that is still cut ends in an ellipsis (4.4). (3) If they fit: `Sparkline form=\"bar\"` and a dashed segment after `futureFrom` (4.3); a page whose `PageBar` shows nothing in the band starts its content at the band's top, or `page.md` says why not (4.7). Left out, the PR says so.",
+  "commits": "fix: commits in packages/basalt-ui.",
+  "proof": "make check-fast; layout tests of a four-option card-header group at 1800 and 390 px and of a status column with a 15-character label; shots of /cycle/dogfood-4.",
+  "acceptance": [
+    "In a card header a four-option segmented group with a two-word option draws every label on one line, no two options touching, on a track (layout test, both widths)",
+    "A status column whose widest label is `Closed recently` shows it whole at 1800 px (layout test)",
+    "The two dogfood-4.2 entries are gone from apps/playground/src/cycle/dogfood-4/known.ts and the quality matrix passes on /cycle/dogfood-4",
+    "The PR states which P3s it fixed",
+    "make check passes"
+  ],
+  "out_of_scope": "A per-column width option; the console's MiniBars as a part of its own."
+}

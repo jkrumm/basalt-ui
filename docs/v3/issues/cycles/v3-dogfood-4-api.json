@@ -1,0 +1,21 @@
+{
+  "why": "Dogfood cycle 4 (docs/v3/cycles/dogfood-4.md) logged one P2 `api` finding and three P3. dogfood-4.1: widget ids are app-unique, held only by a throw when the module that calls `defineControls` loads (`router/controls/widgets.ts:194-197`). Cycle 4 named its chart card's widget `trend`, the name cycle 3's page already holds, and the throw (`basalt-ui: controls \"cycle-dogfood-4-overview\": widget id \"trend\" is already used by \"cycle-dogfood-3-cards\"; widget ids are app-unique`) blanked every route of the playground, cycle 3's included, while `tsc` and the lint passed. The key `w.<widget>.<field>` lives in each page's own URL, and two pages each with an \"Issues over time\" card is the ordinary case. P3s: dogfood-4.8 (was 3.9, 2.10, 1.18), the aside has no full-page link; dogfood-4.9 (was 3.10, 2.12, 1.17), a client table filtering by page fields supplies no facet counts to the filter pills; dogfood-4.11, the console's page header shows the screen's question under its title (`components/page.tsx`, `purposeOfLabel`), and `PageBar` in a shell has no line for it.",
+  "what": "A second page's widget can reuse a widget id another page holds; the P3s that fit.",
+  "owns": [
+    "packages/basalt-ui/src/router/controls/widgets.ts and define.ts (the widget id registry)",
+    "packages/basalt-ui/docs/widgets.md",
+    "packages/basalt-ui/src/page/page-aside.tsx and src/table/use-data-table.ts, if the P3s fit",
+    "unit and router tests beside them"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) A widget id is unique among the stores that can be mounted together (one route subtree), not process-wide: two page stores on sibling routes may each declare `trend`, and a real clash, two stores mounted at once that write the same `w.` key, still fails, in dev, naming both stores, without blanking routes that never mount them; or, if the registry must stay process-wide, the clash is a type or lint error at build and `widgets.md` says why (dogfood-4.1). (2) If they fit: a full-page link on a detail entry or on `PageAside` (4.8); `useDataTable` exposes facet counts for its `filters` fields that a `spec` takes (4.9); a page's purpose line under its title, from the nav entry or `PageBar` (4.11). Left out, the PR says so.",
+  "commits": "fix: or feat: commits in packages/basalt-ui; a contract amendment in its own chore: commit if a public type changes.",
+  "proof": "make check-fast; a router test with two page stores on sibling routes that declare the same widget id; /cycle/dogfood-3 and /cycle/dogfood-4 both render in one build.",
+  "acceptance": [
+    "Two page stores on sibling routes that declare the same widget id both render and keep their own `w.` keys (router test)",
+    "A clash between two stores mounted at once still fails and names both stores (unit test)",
+    "The PR states which P3s it fixed",
+    "make check passes"
+  ],
+  "out_of_scope": "Renaming the `w.` prefix; widgets on a global store."
+}
