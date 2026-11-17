@@ -122,7 +122,7 @@ const a = (
     ))}
   </div>
 )
-// @valid
+// @invalid
 const a = <div className="w-(--w)" style={{ '--w': `${pct}%` }} />
 // @valid
 const focus = useChartFocus(rows)
@@ -263,3 +263,32 @@ const a = (
 )
 // @valid
 const a = <div className="scale-x-(--s)" style={{ '--s': flip }} />
+// @invalid
+const Fill = ({ row }) => (
+  <div className="h-2 w-(--w) bg-muted" style={{ '--w': `${row.share * 100}%` }} />
+)
+// @invalid
+// @ts
+const Fill = ({ v }: { v: number }) => (
+  <div className="h-2 w-(--w) bg-muted" style={{ '--w': `${v}%` } as CSSProperties} />
+)
+// @invalid
+const Fill = ({ v }) => <div className="[width:var(--w)]" style={{ '--w': v + '%' }} />
+// @valid
+const Fill = () => <div className="w-(--w)" style={{ '--w': '40%' }} />
+// @valid
+const Track = ({ pad }) => <div className="p-2" style={{ '--pad': `${pad}px` }} />
+// @valid
+const focus = useChartFocus(rows)
+const a = (
+  <div {...focus.target}>
+    {rows.map((r, i) => {
+      const to = axis.at(r.done)
+      return (
+        <div key={r.name} {...focus.item(i)}>
+          <div className="w-(--share)" style={{ '--share': `${to * 100}%` }} />
+        </div>
+      )
+    })}
+  </div>
+)

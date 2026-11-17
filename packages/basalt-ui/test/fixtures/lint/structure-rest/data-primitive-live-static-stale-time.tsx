@@ -75,3 +75,11 @@ const o = liveQuery(opts, 'standard')
 
 // @valid
 const q = useQuery({ queryKey: ['runs'], queryFn, staleTime: 30_000 })
+
+// @invalid
+const freshFor30s = { staleTime: 30_000 }
+const o = liveQuery({ ...runsQuery, ...freshFor30s }, 'live')
+
+// @valid
+const shared = { queryKey: ['runs'], queryFn }
+const o = liveQuery({ ...shared, enabled: true }, 'live')

@@ -154,3 +154,32 @@ const pages = client.pages.pipeThrough(toRows())
 async function follow() {
   for await (const page of pages) handle(page)
 }
+
+// @invalid
+async function* lines(body) {
+  for await (const chunk of body.pipeThrough(new TextDecoderStream())) yield chunk
+}
+
+// @invalid
+async function* chunks(stream) {
+  for await (const chunk of stream) yield chunk
+}
+
+// @invalid
+// @ts
+async function* bytes(source: ReadableStream<Uint8Array>) {
+  for await (const chunk of source) yield chunk
+}
+
+// @invalid
+async function readLet(res, on) {
+  let text = res.body.pipeThrough(new TextDecoderStream())
+  for await (const chunk of text) on(chunk)
+  text = undefined
+}
+
+// @valid
+// @ts
+async function* each(rows: AsyncIterable<string>, body: string) {
+  for await (const row of rows) yield row + body
+}
