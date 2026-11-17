@@ -68,11 +68,16 @@ describe('DataTable focus', () => {
     expect(focused()).toEqual(['Alpha', null, null])
   })
 
-  test('a focus set elsewhere marks only its row, and never dims one', () => {
+  test('a focus set elsewhere marks only its row and dims the others, until it clears', () => {
     render(<Subject />)
+    const dimmed = (): boolean[] => bodyRows().map((tr) => tr.hasAttribute('data-dimmed'))
+    expect(dimmed()).toEqual([false, false, false])
     act(() => seen.handle?.set(2))
     expect(focused()).toEqual([null, null, 'Bravo'])
-    expect(document.querySelectorAll('[data-dimmed]')).toHaveLength(0)
+    expect(dimmed()).toEqual([true, true, false])
+    expect(bodyRows().every((tr) => tr.hasAttribute('data-chart-mark'))).toBe(true)
+    act(() => seen.handle?.set(null))
+    expect(dimmed()).toEqual([false, false, false])
   })
 
   test('row DOM focus sets the item; leaving the rows or the table clears it', () => {

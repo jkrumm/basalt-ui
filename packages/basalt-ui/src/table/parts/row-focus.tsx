@@ -19,7 +19,12 @@ type RowLink = {
   clear: () => void
 }
 
+/** What `useChartFocus` puts on an item beyond `ListFocusItem`: the kit dims a `data-dimmed` row. */
+type MarkedItem = { 'data-chart-mark'?: ''; 'data-dimmed'?: '' }
+
 export type FocusedRowProps = RowProps & {
+  'data-chart-mark'?: ''
+  'data-dimmed'?: ''
   'data-focused'?: ''
   onPointerEnter?: () => void
   onPointerDown?: () => void
@@ -77,6 +82,10 @@ export function useRowFocusProps(id: string, row: unknown, base: RowProps): Focu
   if (link === undefined || item === undefined) return base
   return {
     ...base,
+    ...((item as MarkedItem)['data-chart-mark'] !== undefined && {
+      'data-chart-mark': '' as const,
+    }),
+    ...((item as MarkedItem)['data-dimmed'] !== undefined && { 'data-dimmed': '' as const }),
     ...(item['data-focused'] !== undefined && { 'data-focused': '' as const }),
     ref: (el) => {
       base.ref?.(el)
