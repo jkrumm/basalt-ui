@@ -282,6 +282,9 @@ const HEADER_CHROME_CH = 5
 /** A header asks for floor room up to this many `ch`; a longer one truncates (its title shows it whole). */
 const HEADER_MAX_CH = 24
 
+/** A `text` column whose widest loaded value is at most this many `ch` sizes to it; a longer one stays flexible. */
+const SHORT_TEXT_MAX_CH = 24
+
 /** A column's floor counts its own header, unit suffix included, so a roomy row shows it whole. */
 function floorOf(width: Width, header: string): Width {
   if (width === 'icon') return width
@@ -407,7 +410,22 @@ export function col<T>(): Col<T> {
       ),
     text: (key, o) =>
       keyed<T>('text', key, o, (v) => o?.labels?.[String(v)] ?? String(v), {
-        spec: { filter: o?.filter === 'text' ? 'contains' : null },
+        spec: {
+          filter: o?.filter === 'text' ? 'contains' : null,
+          content: {
+            measure: (row: T) => {
+              const value = read<T>(key)(row)
+              return isAbsent(value) ? 1 : (o?.labels?.[String(value)] ?? String(value)).length
+            },
+            short: {
+              minCh: Math.min(
+                HEADER_MAX_CH,
+                (o?.header ?? humanize(o?.id ?? key)).length + HEADER_CHROME_CH,
+              ),
+              maxCh: SHORT_TEXT_MAX_CH,
+            },
+          },
+        },
       }),
     number: (key, o) =>
       keyed<T>(

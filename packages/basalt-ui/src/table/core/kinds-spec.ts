@@ -88,8 +88,12 @@ export type KindSpec<T> = {
   card: readonly CardPlace[]
   /** The caller named a card slot: the plan places this column before the ones left to a default. */
   cardFirst?: boolean
-  /** `entity` with `width: 'content'`: sized to its widest loaded value (`measure`, in `ch`). */
-  content?: { measure: (row: T) => number }
+  /**
+   * `entity` with `width: 'content'`: sized to its widest loaded value (`measure`, in `ch`). A `text`
+   * column carries `short` too: it takes that width only while the widest value stays within
+   * `maxCh`, never below `minCh` (its header), and otherwise stays a flexible column.
+   */
+  content?: { measure: (row: T) => number; short?: { minCh: number; maxCh: number } }
   /** `null` for `actions`: never hidden by a tier. */
   priority: Priority | null
   pin: 'start' | 'end' | null

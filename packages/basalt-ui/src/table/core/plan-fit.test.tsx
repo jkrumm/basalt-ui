@@ -72,3 +72,40 @@ describe('card slot order', () => {
     expect(plan.columns.map((column) => column.place)).toEqual(['title', 'value', 'meta'])
   })
 })
+
+describe('text width: short values size the column', () => {
+  const text = col<{ ref: string; long: string }>().text('ref', { header: 'Issue' })
+  const widthAt = (ch: number | undefined) =>
+    planTable([text], {
+      ...quiet,
+      ...(ch !== undefined && { contentCh: { ref: ch } }),
+    }).columns[0]
+  const headerFloor = widthPx({ ch: 'Issue'.length + 5, flex: false })
+
+  test('without loaded values the column keeps its kind width and stays flexible', () => {
+    expect(widthAt(undefined)?.widthPx).toBe(widthPx({ ch: 16, flex: true }))
+    expect(widthAt(undefined)?.flex).toBe(true)
+  })
+
+  test('a short widest value sizes the column to it, never under its header', () => {
+    expect(widthAt(4)?.widthPx).toBe(headerFloor)
+    expect(widthAt(4)?.flex).toBe(false)
+    expect(widthAt(20)?.widthPx).toBe(widthPx({ ch: 20, flex: false }))
+  })
+
+  test('a value past the short cap leaves the column flexible', () => {
+    expect(widthAt(25)?.flex).toBe(true)
+    expect(widthAt(25)?.widthPx).toBe(widthPx({ ch: 16, flex: true }))
+  })
+
+  test('measures the label drawn, not the stored value', () => {
+    const labelled = col<{ ref: string }>().text('ref', { labels: { f: 'Factory' } })
+    expect(specOf(labelled).content?.measure({ ref: 'f' })).toBe(7)
+    expect(specOf(labelled).content?.measure({ ref: undefined as unknown as string })).toBe(1)
+  })
+
+  test('an entity column is flexible unless it asks for its content', () => {
+    expect(planTable([c.entity('name')], quiet).columns[0]?.flex).toBe(true)
+    expect(planTable([c.entity('name', { width: 'content' })], quiet).columns[0]?.flex).toBe(false)
+  })
+})

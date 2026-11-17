@@ -135,13 +135,17 @@ describe('geometry across phases', () => {
     fullAt: container.querySelector('[data-slot="table-root"]')?.getAttribute('data-full-at'),
   })
 
+  // A text column sizes to its loaded values, so the phases are compared over the same rows: a refetch
+  // or an error beside stale rows. An initial load has no values yet and takes the kind widths.
   test('ready, loading and error share one colgroup, head and table', () => {
-    const ready = shape(render(<Subject columns={8} />).container)
+    const data = rows(5)
+    const ready = shape(render(<Subject columns={8} data={data} phase="ready" />).container)
     cleanup()
-    const loading = shape(render(<Subject columns={8} phase="loading" />).container)
+    const loading = shape(render(<Subject columns={8} data={data} phase="loading" />).container)
     cleanup()
     const error = shape(
-      render(<Subject columns={8} phase={{ tag: 'error', message: 'boom' }} />).container,
+      render(<Subject columns={8} data={data} phase={{ tag: 'error', message: 'boom' }} />)
+        .container,
     )
     expect(ready.colgroup).toContain('<col')
     expect(loading).toEqual(ready)
