@@ -26,6 +26,8 @@ export type ShellFrameSpec = FixtureSpec & {
           /** Binds the aside to a string field holding the open record's id, starting here (`''` is none). */
           record?: string
         }
+    /** Mounts an open `Peek` beside the page (a long body, so its own scroll shows); closing it sets `data-peek-closed` on the document. */
+    peek?: boolean
     /** Mounts a `PageBar` with a title, a control and an action (default true). */
     bar?: boolean
     /** Mounts `compactHeader: 'hidden'`. */
@@ -48,6 +50,7 @@ export const shellFrameScenario: Scenario = {
     'page-bar',
     'shell-aside',
     'page-aside',
+    'peek',
     'shell-tab-bar',
   ],
   matches: (spec) => (spec as ShellFrameSpec).shellFrame !== undefined,

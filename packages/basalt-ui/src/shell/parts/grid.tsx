@@ -317,13 +317,17 @@ export function useAsideModel(
 export function AsideRegion({
   claim,
   model,
+  regionRef,
 }: {
   claim: AsideClaim | undefined
   model: AsideModel
+  /** Hands the region element to the shell, which shares it with `Peek` through `ShellOverlayContext`. */
+  regionRef?: (el: HTMLDivElement | null) => void
 }): ReactElement {
   const shown = claim !== undefined && (model.docks || model.overlay)
   return (
     <div
+      ref={regionRef}
       data-slot="shell-aside"
       data-state={model.docks ? 'docked' : model.overlay ? 'overlay' : 'none'}
       className={cn('relative min-h-0 min-w-0 [grid-area:aside]', PRINT_OFF)}

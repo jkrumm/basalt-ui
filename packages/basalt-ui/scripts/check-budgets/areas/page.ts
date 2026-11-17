@@ -14,7 +14,7 @@ export const rows: readonly RowDef[] = [
     id: 'page-symbols',
     order: 440,
     label: 'public value symbols, ./page (exact, export-surface shard)',
-    ceiling: 22, // v3 shell-1-api: `Facts`
+    ceiling: 23, // v3 peek: `Peek`
     measure: () => readSurface()['./page']?.length ?? 0,
   },
   {
@@ -29,6 +29,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'page-symbols': [
+    {
+      from: 22,
+      to: 23,
+      consumer:
+        '`Peek` from `./page`: software-factory console components/kit/peek.tsx hand-builds the non-modal record panel its lists open through one click handler',
+      repo: 'software-factory',
+    },
     {
       from: 21,
       to: 22,

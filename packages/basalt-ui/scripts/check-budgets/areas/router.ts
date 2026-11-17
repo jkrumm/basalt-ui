@@ -17,13 +17,21 @@ export const rows: readonly RowDef[] = [
     // 12045 B measured at the G2 freeze, re-seeded plus 5 percent.
     // 13000 -> 13500 (v3-wiring-1-wiring): `BasaltProvider` joins the barrel (13113 B measured with it).
     // 13500 -> 14000 (v3-shell-1-shell): a page store taking a global's param raises at mount, naming the fix (+143 B: the per-store message and the first-claimant rule in `ownership.ts`).
-    ceiling: 14000,
+    // 14000 -> 15000 (v3 peek): `usePeek` joins the barrel (14503 B measured with it).
+    ceiling: 15000,
     measure: () => measureSource(reExportAll({ router: 'router/index' })),
   },
 ]
 
 export const raises: Raises = {
   'router-subpath': [
+    {
+      from: 14000,
+      to: 15000,
+      consumer:
+        '`usePeek` from `./router`: software-factory console components/peek/host.tsx hand-builds the `?peek=` address, the one click handler, the one-entry history and the Escape rule',
+      repo: 'software-factory',
+    },
     {
       from: 13500,
       to: 14000,

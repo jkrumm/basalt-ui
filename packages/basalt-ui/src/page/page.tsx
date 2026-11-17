@@ -40,6 +40,13 @@ export const PageContext = createContext<PageContextValue | null>(null)
 export const PageHostContext = createContext<PageHost | null>(null)
 
 /**
+ * The shell's aside region element, a positioned box between the header and the footer that sits
+ * outside the scrolling main: where a non-modal overlay (`Peek`) portals so it stays put while the
+ * page scrolls. `null` outside a shell and until the region mounts. Internal.
+ */
+export const ShellOverlayContext = createContext<HTMLElement | null>(null)
+
+/**
  * The page's `DetailHost`: `PageAside` hosts it. `null` while no aside is mounted, where a
  * consumer (`DataTable detail`, `SplitPage`) falls back to its own sheet. Internal.
  */
