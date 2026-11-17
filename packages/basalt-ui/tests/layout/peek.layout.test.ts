@@ -94,6 +94,64 @@ layout('Peek over the shell at 1440', () => {
   })
 })
 
+layout('Peek width handle at 1440', () => {
+  const HANDLE = `${PEEK} [data-slot="peek-handle"]`
+
+  test('a drag toward the start widens the panel, clamps at the content area less 3rem, and the page behind stays put', async () => {
+    const page = await openFixture(SPEC, DESKTOP_1440)
+    const before = (await page.box('peek', PEEK)).box
+    const handle = (await page.box('handle', HANDLE)).box
+    const y = handle.top + handle.height / 2
+    const x = handle.left + handle.width / 2
+    await page.raw.mouse.move(x, y)
+    await page.raw.mouse.down()
+    await page.raw.mouse.move(x - 100, y, { steps: 4 })
+    await page.raw.mouse.up()
+    const widened = (await page.box('peek', PEEK)).box
+    expect(Math.abs(widened.width - (before.width + 100))).toBeLessThanOrEqual(TOLERANCE)
+    expect(Math.abs(widened.right - DESKTOP_1440.width)).toBeLessThanOrEqual(TOLERANCE)
+
+    const nowHandle = (await page.box('handle', HANDLE)).box
+    await page.raw.mouse.move(nowHandle.left + 2, y)
+    await page.raw.mouse.down()
+    await page.raw.mouse.move(2, y, { steps: 4 })
+    await page.raw.mouse.up()
+    const widest = (await page.box('peek', PEEK)).box
+    expect(widest.width).toBeLessThanOrEqual(DESKTOP_1440.width - 3 * REM + TOLERANCE)
+    expect(widest.width).toBeGreaterThan(widened.width)
+  })
+
+  test('the keyboard resizes the focused handle and Enter returns to the default', async () => {
+    const page = await openFixture(SPEC, DESKTOP_1440)
+    const start = (await page.box('peek', PEEK)).box
+    await page.raw.focus(HANDLE)
+    await page.raw.keyboard.press('ArrowLeft')
+    const wider = (await page.box('peek', PEEK)).box
+    expect(Math.abs(wider.width - (start.width + 16))).toBeLessThanOrEqual(TOLERANCE)
+    await page.raw.keyboard.press('Home')
+    const home = (await page.box('peek', PEEK)).box
+    expect(Math.abs(home.width - 24 * REM)).toBeLessThanOrEqual(TOLERANCE)
+    await page.raw.keyboard.press('Enter')
+    const reset = (await page.box('peek', PEEK)).box
+    expect(Math.abs(reset.width - start.width)).toBeLessThanOrEqual(TOLERANCE)
+    // The value is read in a passive effect, a frame after the press.
+    await page.raw.waitForFunction(
+      ({ sel, want }) => {
+        const now = Number(document.querySelector(sel)?.getAttribute('aria-valuenow'))
+        return Math.abs(now - want) <= 1
+      },
+      { sel: HANDLE, want: start.width },
+    )
+  })
+})
+
+layout('Peek over the shell at 390 has no handle', () => {
+  test('the whole-area panel draws no width handle', async () => {
+    const page = await openFixture(SPEC, PHONE)
+    expect(await page.count(`${PEEK} [data-slot="peek-handle"]`)).toBe(0)
+  })
+})
+
 layout('Peek over the shell at 390', () => {
   test('fills the whole content area, between the header and the tab bar', async () => {
     const page = await openFixture(SPEC, PHONE)

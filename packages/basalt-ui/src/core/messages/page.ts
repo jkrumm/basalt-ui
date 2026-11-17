@@ -5,7 +5,7 @@ import type { BasaltMessages } from './index'
  * The strings `./page` prints itself. `page.toc` titles the table of contents, `page.tocTrigger` is
  * the button that opens it below 1200px, and
  * `page.kind*` name a title-less callout's kind for assistive tech, and `page.moreActions`
- * `page.closeAside` and `page.backToList` name the page bar's overflow button, the aside's close button, `page.closePeek` a `Peek`'s or `Dock`'s, `page.pinPanel` a `Peek`'s dock button, and a split page's way back to its list, `page.openFullPage` names a `Peek`'s link to the record's own page, and `page.itemAttention` and `page.itemActions` name an `InnerNav` item's dot
+ * `page.closeAside` and `page.backToList` name the page bar's overflow button, the aside's close button, `page.closePeek` a `Peek`'s or `Dock`'s, `page.pinPanel` a `Peek`'s dock button, `page.resizePeek` the label of its width handle, and a split page's way back to its list, `page.openFullPage` names a `Peek`'s link to the record's own page, and `page.itemAttention` and `page.itemActions` name an `InnerNav` item's dot
  * and its actions menu.
  */
 export type PageMessages = Record<
@@ -21,6 +21,7 @@ export type PageMessages = Record<
   | 'page.closeAside'
   | 'page.closePeek'
   | 'page.pinPanel'
+  | 'page.resizePeek'
   | 'page.openFullPage'
   | 'page.backToList'
   | 'page.itemAttention',
@@ -42,6 +43,7 @@ export const page = {
   'page.closeAside': 'Close panel',
   'page.closePeek': 'Close panel',
   'page.pinPanel': 'Dock panel',
+  'page.resizePeek': 'Resize panel',
   'page.openFullPage': 'Open full page',
   'page.backToList': 'Back',
   'page.itemAttention': 'Needs attention',
