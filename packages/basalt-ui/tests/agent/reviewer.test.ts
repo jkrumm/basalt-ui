@@ -38,7 +38,7 @@ describe('reviewer rubric', () => {
   it('lists every rubric item in order', () => {
     expect(KNOWN['Craft']).toEqual([1, 2, 3, 4, 5, 6, 7])
     expect(KNOWN['Expression']).toEqual([1, 2, 3, 4, 5])
-    expect(KNOWN['Communication']).toEqual([1, 2, 3, 4, 5, 6])
+    expect(KNOWN['Communication']).toEqual([1, 2, 3, 4, 5, 6, 7])
   })
 
   it('cites only rubric items that exist, in the rubric and in the wrapper', () => {

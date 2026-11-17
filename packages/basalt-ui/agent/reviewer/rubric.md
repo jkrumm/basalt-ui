@@ -62,6 +62,7 @@ Score per component, then add one line per page for the page items (Communicatio
 4. Titles are precise nouns with their scope ("Ride distance, 7 days"), not categories ("Metrics").
 5. **[page]** A page is not three rows of KPI cards, and not a single table when its data has one of the shapes in the question-to-form table. At 1800x1200 the page's questions are answered in the first screen without a scroll, nothing is told twice, and a working screen runs full width, not in a narrow column (only running prose caps its measure).
 6. Empty and error states say why and what to do, per `node_modules/basalt-ui/docs/empty-state.md`: an error is one "Could not load <thing>" title, the cause, one Retry, with the error dot and no empty-state glyph; a loading state is a skeleton in the loaded shape; one wording per repeated gap across cards.
+7. The three Console copy rules hold on every card: a KPI card carries one plain sentence of what its figure means and which way is good; a figure nobody counted is a dash with its reason ("Not measured, <why>"), where a 0 or "None" states a measurement nobody made; a time is relative with the absolute time on hover, and an origin is a word plus its source. Judge the sentence and the dash from the ready crop and the time from the hover crop.
 
 ### Banned filler
 
@@ -101,7 +102,7 @@ The counts and the score cover the `new` and `carried` findings. The verdict is 
 
 Strict. Nothing before the table (but the `DEGRADED` line when it applies), no praise, no summary, no code rewrites. Name the defect, not the fix. Order every list **content** → **layout** → **style** (what the surface says, where it sits, how it looks):
 
-- **content**: Communication 1–4 and 6, Expression 1, 2 and 4, Craft 5 (colour-only distinction).
+- **content**: Communication 1–4, 6 and 7, Expression 1, 2 and 4, Craft 5 (colour-only distinction).
 - **layout**: Craft 1, 3, 6 and 7, Communication 5, Expression 5.
 - **style**: Craft 2 and 4, Expression 3.
 

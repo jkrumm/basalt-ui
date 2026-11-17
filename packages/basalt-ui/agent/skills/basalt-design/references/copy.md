@@ -16,6 +16,13 @@ The words on a page state facts: a precise noun, its scope, a live number. Slots
 - The footer states two facts at most. [type:FootFacts]
 - A domain word that is unfamiliar to a stranger carries an [InfoHint](node_modules/basalt-ui/docs/info-hint.md) whose definition is read from the app's glossary (`defineGlossary`) and retyped nowhere.
 
+## Meaning, missing and time
+
+- Every KPI card has one plain sentence of what its figure means and which way is good ("Merged pull requests. Higher is better."), in the `info` slot of the [StatCard](node_modules/basalt-ui/docs/stat-card.md); the delta's polarity says the same in colour. [type:StatCardProps]
+- A figure nobody counted is a dash with its reason, "Not measured, <why>" ("Not measured, no agent has reported yet"). `value: null` on the [StatCard](node_modules/basalt-ui/docs/stat-card.md) draws the dash; the caption or the sub line names the reason.
+- A time reads relative ("3 hours ago") with the absolute time on hover: `useFormat().relative` for the text, the `dateTime` form for the hover, or the table's `relativeTime` column, which carries both.
+- An origin is a word plus its source ("Manual, from the CLI"; "Webhook, from GitHub"), where a bare word leaves the reader guessing who or what made it.
+
 ## Word economy
 
 - Marks and numbers carry the change. The hero is the answer with its verb and at most one phrase of baseline; the delta pill, the annotation on the mark and the footer pair say the rest.
@@ -74,3 +81,5 @@ not guarded:
 - Avoid filler: "Overview" or "Dashboard" alone, "Metrics", "Stay informed", "Oops", "No data".
 - Avoid title case, a trailing colon on a caption and a leading "+" on a delta that has its own sign.
 - Write no raw key or parameter dump into a footer.
+- Print no 0 and no "None" for a figure nobody counted; a zero is a measurement.
+- Print no bare ISO timestamp where a reader wants the age; the absolute time sits on hover.
