@@ -511,25 +511,6 @@ export function yGuide<T>(opts: {
   }
 }
 
-/** The most of the plot's width one band label takes before it is cut. */
-const BAND_LABEL_SHARE = 0.35
-
-/** `format` that cuts a label wider than { BAND_LABEL_SHARE} of the plot with an ellipsis; as it was when the width is unknown. */
-function cutBandLabels(
-  format: (v: ChartValue) => string,
-  width: number | undefined,
-): (v: ChartValue) => string {
-  if (width === undefined || !Number.isFinite(width)) return format
-  const chars = Math.max(
-    4,
-    Math.floor(((width - Y_GUTTER) * BAND_LABEL_SHARE) / captionWidth('n', TICK_FONT)),
-  )
-  return (v) => {
-    const text = format(v)
-    return text.length > chars ? `${text.slice(0, chars - 1)}…` : text
-  }
-}
-
 /**
  * The anchor of a band axis label that is wider than its slot and would hang past the plot's edge:
  * `end` at the last bands, `start` at the first, so the plot keeps its width. `undefined` (centred)
@@ -626,10 +607,7 @@ export function xGuide<X extends ChartX>(opts: {
   const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks, xTicks !== undefined)
   // A Date axis always resolves to `values` (the time scale has an extent; a band axis lists its
   // buckets), so `{ count }` is only ever a number axis and never needs the date formatter.
-  const plain = xTickFormat(opts.format, 'values' in ticks ? ticks.values : [], opts.locale)
-  // A band label longer than a third of the plot is cut with an ellipsis: a name the width cannot
-  // hold would take its neighbours' room, or hang over the edge and shrink the plot.
-  const format = model.band ? cutBandLabels(plain, opts.width) : plain
+  const format = xTickFormat(opts.format, 'values' in ticks ? ticks.values : [], opts.locale)
   // A continuous scale's domain start and span; a band scale pads its first slot, so none applies.
   const [leftEdgeX, spanX] =
     !model.band && model.extent

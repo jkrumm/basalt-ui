@@ -110,7 +110,9 @@ export function StatCell(props: StatCellProps): ReactElement {
     variant === null ? 'grid-rows-[repeat(9,auto)]' : 'row-span-9 mb-3 grid-rows-subgrid',
     // The group draws one message over the cells: a strip keeps each caption, cards hold only their size.
     collapsed && variant === 'cards' && 'invisible',
-    collapsed && variant === 'strip' && '[&>:not([data-slot=stat-caption])]:invisible',
+    collapsed &&
+      variant === 'strip' &&
+      '[&>:not([data-slot=stat-caption]):not([data-slot=stat-target])]:invisible',
   )
   const inner = (
     <>
