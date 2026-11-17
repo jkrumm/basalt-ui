@@ -493,7 +493,7 @@ const PACKAGE_BANS: readonly PackageBan[] = [
     next: 'Eject the primitive with basalt-ui eject, then edit the copy',
     except: [
       '@mantine/hooks',
-      '@mui/x-charts',
+      '@mui/x-charts*',
       '@mui/x-data-grid*',
       '@ant-design/charts',
       '@ant-design/plots',
@@ -538,7 +538,7 @@ const PACKAGE_BANS: readonly PackageBan[] = [
       '@visx',
       'recharts',
       'react-apexcharts',
-      '@mui/x-charts',
+      '@mui/x-charts*',
       '@tremor/react',
       '@nivo',
       'chart.js',
