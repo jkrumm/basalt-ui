@@ -25,8 +25,8 @@ function publishTarget(node: HTMLElement): HTMLElement {
 
 /**
  * The breadcrumb a bar claims for a shell's header: the optional parent, then the leaf. Internal:
- * the shell reads `title` and `parent` off this element's props and draws them with its own link
- * adapter (a `NavTarget` is opened only there); rendered as is, it is a plain trail.
+ * the shell draws this element as is, and the parent is a link through the provider's `link` for a
+ * path string and a `NavTarget` alike, so a click navigates in the router and keeps the document.
  */
 export function PageCrumb({
   title,
@@ -37,14 +37,15 @@ export function PageCrumb({
 }): ReactElement {
   return (
     <>
-      {parent !== undefined &&
-        (typeof parent.href === 'string' ? (
-          <a data-slot="page-breadcrumb-parent" href={parent.href}>
-            {parent.label}
-          </a>
-        ) : (
-          <span data-slot="page-breadcrumb-parent">{parent.label}</span>
-        ))}
+      {parent !== undefined && (
+        <AppLink
+          href={parent.href}
+          data-slot="page-breadcrumb-parent"
+          className="focus-ring hover:text-foreground"
+        >
+          {parent.label}
+        </AppLink>
+      )}
       <span data-slot="page-breadcrumb-leaf">{title}</span>
     </>
   )
@@ -196,7 +197,8 @@ const isEmptySlot = (slot: { count: number } | undefined): boolean =>
  * that each render a bar fail loudly instead of stacking two bands.
  *
  * Where it renders follows the context, never a prop. Under an `AppShell` `title` claims the
- * header's breadcrumb leaf (`parent` the trail before it), names the in-flow screen-reader `h1` and
+ * header's breadcrumb leaf (`parent` the trail before it, a link through the provider's `link` for a
+ * path string and a `NavTarget` alike, so a click keeps the document), names the in-flow screen-reader `h1` and
  * `document.title`, and `actions` claim the header's end; the band holds only `tabs`, `controls`,
  * `connection` and `refresh`. Without a shell `title` is the visible `h1` and `actions` sit in the band. The
  * band is sticky at the nearest scrollport and publishes its measured height as `--page-bar-h`; an

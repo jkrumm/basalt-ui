@@ -120,6 +120,12 @@ export type BarSpec = {
    * A desktop test opts in; the phone sweeps keep the shape they were written against.
    */
   actionIcons?: true
+  /**
+   * The bar's crumb parent: a path string, installed through the provider's router link. The page also
+   * prints the router's location (`data-testid="location"`), because a memory history never shows in
+   * the browser's own address.
+   */
+  parent?: { label: string; href: string }
 }
 
 /**
