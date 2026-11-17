@@ -5,7 +5,7 @@
   "packages/basalt-ui/scripts/export-surface/controls.json": "6e418d91b323f3232db76af708766ba06f7b744830ec5da1325d04322b338f6c",
   "packages/basalt-ui/scripts/export-surface/data.json": "7a51ed563cd61af2abb38975490f55d3a9941ffbaa196ad010280949577961ae",
   "packages/basalt-ui/scripts/export-surface/page.json": "198ea013a24a9b27849f58092932d3a24d4b06d2ee2f7035adfbea71105b12ed",
-  "packages/basalt-ui/scripts/export-surface/router.json": "c1a21e2f811dcc52258c6a52a70e5608b45b53202c62e7b61cd6861028d4ea80",
+  "packages/basalt-ui/scripts/export-surface/router.json": "ef955c20de48b1f8b74b092232edfdb152c3e160a921fc261ccbda0ba2cb217f",
   "packages/basalt-ui/scripts/export-surface/table.json": "97b15c42818985343eaa1c3155e693601337ed2977e05cb3364bf81a44a9f269",
   "packages/basalt-ui/src/ai/contract.ts": "0b5edbbf9cefa4ac9e6f88ae72df3ed75a1af1e7ce19fc4e7460100f639d669c",
   "packages/basalt-ui/src/cards/contract.ts": "ae5a9853b38bc76a559b79db0461a58ad4b6b9f0c275851abe85062ff420e6a0",
@@ -14,9 +14,9 @@
   "packages/basalt-ui/src/controls/contract.ts": "3a1ea086e12cb451c658114c26185a7e72a68dc20ea419782f850eaf73a329c9",
   "packages/basalt-ui/src/core/ports.ts": "fd309568bda80ba542cf696cd7c73dae57a4fa0656020ab9433aba0dae87c4ec",
   "packages/basalt-ui/src/page/contract.ts": "1c7fecb2abf888174eadbc23f36ac84b3dbff63843ad364cce44dfa8b42bd089",
-  "packages/basalt-ui/src/router/index.ts": "c4905f8ab897105cbed4aaf9f42addaa4612046e10548cd8a3e7a4aa59e276da",
+  "packages/basalt-ui/src/router/index.ts": "c2dba6c8d4ce5722913e24efee7d3fa82c559d3b00af8b82f93d425b6d2c6395",
   "packages/basalt-ui/src/shell/contract.ts": "907e45e1c597a5f104a5cd01b04100ec448236aded0ae468422555c41e427bb0",
   "packages/basalt-ui/src/shell/index.ts": "9ffa5036e71bb8396edeeecf7a7f2266bd993628265f8b78ce30e854ec0a5f30",
   "packages/basalt-ui/src/table/contract.ts": "de85534c229d87255d0c5464ab4e30fb8743a5e5deb7c14a53ee838430625c10",
-  "packages/basalt-ui/src/ui/slots.ts": "bf074882816faa0126efcb5ce8e7fa3a8e94de21fa1e9fbafbd3d2b8c33dc63c"
+  "packages/basalt-ui/src/ui/slots.ts": "69ccbab862d79ed8e863308b657eb9a535d36fb9af63894aed33eb07721a62eb"
 }
