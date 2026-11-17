@@ -8,15 +8,15 @@ import { createContext } from 'react'
 export const HostTitleContext = createContext<string | undefined>(undefined)
 
 /**
- * The error title a component names itself in: "Revenue" → "Could not load revenue". A leading
- * capital followed by another capital or a non-letter ("KPI", "MRR", "2024 sales") keeps its case;
- * a missing or blank label stays the bare "Could not load". `charts/**` imports it.
+ * The error title a component names itself in: "Revenue" → "Could not load revenue". Only a first
+ * word that is a plain capitalised word ("Revenue", "Weekly") lowercases; "KPI", "MRR", "2024
+ * sales", "Wi-Fi", "iPhone" and "eBay" keep their case. A missing or blank label stays the bare
+ * "Could not load". `charts/**` and `cards/**` import it.
  */
 export function couldNotLoad(label?: string): string {
   const noun = label?.trim()
   if (!noun) return 'Could not load'
-  const lead = noun.charAt(0)
-  const second = noun.charAt(1)
-  const lowers = second !== '' && second === second.toLowerCase() && second !== second.toUpperCase()
-  return `Could not load ${lowers ? lead.toLowerCase() : lead}${noun.slice(1)}`
+  const [first = ''] = noun.split(/\s/)
+  const plain = /^\p{Lu}\p{Ll}+[,.:;]?$/u.test(first)
+  return `Could not load ${plain ? noun.charAt(0).toLowerCase() : noun.charAt(0)}${noun.slice(1)}`
 }
