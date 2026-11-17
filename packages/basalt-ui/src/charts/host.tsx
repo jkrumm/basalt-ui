@@ -1,6 +1,6 @@
 /**
  * The bare engine mount — the ONLY module that imports `@tanstack/charts/react`
- * (`basalt/chart-host-single`). It knows a compiled definition, a size and an accessible name, and
+ * (a `no-restricted-imports` override in `/.oxlintrc.json`). It knows a compiled definition, a size and an accessible name, and
  * nothing about legends, placeholders or cards (`docs/V2-SPEC.md` § 9.2).
  *
  * The engine is never given a height: it fills a CSS-owned {@link ChartBox} and measures it, so the

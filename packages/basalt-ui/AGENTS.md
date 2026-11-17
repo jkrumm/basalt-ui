@@ -40,9 +40,9 @@ Also published, but not JS subpaths: `basalt-ui/styles.css` (the one stylesheet:
 ## Hard rules
 
 **Framework-free boundary**: the layer is `basalt-ui/charts` and `basalt-ui/tokens`; each imports no UI
-framework. `@visx/*` is banned everywhere and `@tanstack/charts` is an allowlist of mark subpaths
-(`basalt/chart-engine-boundary`, enforced in both the repo and the shipped consumer preset);
-`@tanstack/charts/react` is imported by `src/charts/host.tsx` alone (`basalt/chart-host-single`, repo-local).
+framework. `@visx/*` is banned everywhere, in consumers by `basalt/import-boundary` and in this repo's
+own source by a `no-restricted-imports` override; `@tanstack/charts/react` is imported by
+`src/charts/host.tsx` alone (the same override, lifted for that one file).
 
 The boundary protects **layering** (`tokens` is pure data that `charts` reads, so a chart cannot fork
 the palette) and **packaging** (the dist entries resolve with only `react`/`react-dom` installed —
@@ -51,8 +51,7 @@ the palette) and **packaging** (the dist entries resolve with only `react`/`reac
 `basalt-ui/charts` + `basalt-ui/tokens` live). **No peer is required**: every peer is optional in
 `peerDependenciesMeta` and `tests/required-peers.test.ts` asserts the empty required set.
 
-Enforcement is repo-local ONLY, not in the shipped preset: `./charts`/`./tokens` via the
-`basalt/token-layer-boundary` plugin rule.
+The UI-free layering of `./charts`/`./tokens` is held by `scripts/check-dist-layering.mjs` on the built graph.
 
 **No raw hex or raw color functions**: route every color through `BASALT.*` tokens or the shipped
 CSS vars. Never write `#rrggbb`, `rgb(…)`, or `hsl(…)` in component or style code. Use
@@ -96,12 +95,9 @@ one-second check.
 The editor hook is `.basalt/hook.mjs` (`basalt-ui lint --hook`), placed and registered in
 `.claude/settings.json` by `init` and `sync`, so the agent's off-law edits are caught as it writes.
 
-**The escape hatch is `theme-allow <rule-id> — <reason>`**, scoped to that one `basalt/*` plugin rule
-and to that one node/line. It must START its comment (after `//`, `/*`, `<!--`, a block gutter `*`,
-or whitespace), and is honoured on the reported line and on a comment-only line directly above it.
-Whole-file scope is `theme-allow-file <id>… — <why>`. A bare `theme-allow` waives nothing, and a
-word in the id slot that names no rule waives nothing. The kinds of the retired 2.x text guard
-(`check-theme`, deleted in 3.0) still parse, as dead waivers.
+**The escape hatch is `// oxlint-disable-next-line basalt/<rule-id> -- <why>`**, scoped to that one rule
+and line; a waiver without `-- <why>` is itself a finding (`basalt/waiver-needs-reason`). The 2.x
+`theme-allow` and `theme-allow-file` annotations are inert: no rule reads them.
 
 > **Framework-internal only** — `bun scripts/check-coverage.ts` (a script, not a CLI subcommand
 > as of C2/1.29.0) is a self-consistency gate for the basalt-ui repo itself (asserts SURFACES ↔

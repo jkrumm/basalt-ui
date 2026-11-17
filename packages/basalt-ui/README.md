@@ -263,20 +263,14 @@ and its `public/` tree — the Vite layout `basaltViteConfig` assumes. The keys 
 layout it does not cover is reported as one line, because `roots` being a subset is the normal case
 in a monorepo, not drift.
 
-**The escape hatch is scoped, and the two scopes are spelled apart:**
+**The escape hatch is a native oxlint directive that names the rule and ends in a reason:**
 
 ```text
-theme-allow                                  → nothing
-theme-allow <id>[, <id>…] [— <why>]          → this node/line, that `basalt/*` plugin rule
-theme-allow-file <id>[, <id>…] — <why>       → the WHOLE FILE, that rule
+// oxlint-disable-next-line basalt/<id> -- <why>
 ```
 
-An annotation must **start** its comment (after `//`, `/*`, `<!--`, a block gutter `*`, or
-whitespace); a bare annotation waives nothing. Placements: the reported line, or a comment-only
-line directly above it (the only form JSX can express, and it reaches the first CODE line below,
-walking through the rest of its comment block). The id slot is read strictly: a word there that
-names no rule waives nothing, so a typo never widens a waiver. The ids of the retired 2.x text guard
-still parse, as dead waivers.
+A directive without `-- <why>` is itself a finding (`basalt/waiver-needs-reason`), and an unknown id
+waives nothing. The 2.x `theme-allow` and `theme-allow-file` annotations are inert: no rule reads them.
 
 ### Consumer-series extensibility
 
@@ -340,8 +334,8 @@ margins, both y domains, the x scale, the grid, zones, the page-shared cursor, t
 keyboard focus, the legend and the derived tooltip, so a chart supplies its `series` and returns
 only marks. `label` is required. The x scale follows the value `x` returns: a `Date` is a
 proportional time axis, a `number` is linear, a `string` is a point (lines) or band (bars) scale.
-Marks come straight from `@tanstack/charts/*` subpaths (`basalt/chart-engine-boundary` allowlists
-them); `basalt-ui/charts` re-exports none, and tokens live in `basalt-ui/tokens` and
+Marks come straight from `@tanstack/charts/*` subpaths (`basalt/import-boundary` bans the engine's
+react entry); `basalt-ui/charts` re-exports none, and tokens live in `basalt-ui/tokens` and
 formatting in `useFormat` from `basalt-ui`.
 
 ```tsx

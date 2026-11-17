@@ -79,12 +79,12 @@ export type SheetCloseProps = Layout<BaseDrawer.Close.Props>
 
 /** The `auto` width flip as an external store: the server and the hydration pass read `false`. */
 const subscribeWide = (notify: () => void): (() => void) => {
-  // theme-allow raw-breakpoint — the one viewport read a primitive makes: the swipe axis
+  // the one viewport read a primitive makes: the swipe axis
   const query = window.matchMedia(WIDE)
   query.addEventListener('change', notify)
   return () => query.removeEventListener('change', notify)
 }
-// theme-allow raw-breakpoint — the same swipe-axis read
+// the same swipe-axis read
 const readWide = (): boolean => window.matchMedia(WIDE).matches
 const serverWide = (): boolean => false
 
