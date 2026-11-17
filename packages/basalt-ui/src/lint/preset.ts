@@ -295,6 +295,11 @@ function shadcnRule(profile: PresetProfile, rule: string, inputs: PresetInputs):
   const message = SHADCN_MESSAGES[profile]?.[rule]
   const options: Record<string, unknown> = {}
   if (rule === 'no-arbitrary-values') options['allow'] = [...GRID_TRACKS]
+  // It finds a design-system component as `no-restyle` does; with no option it reads only a
+  // components.json ui directory, which a basalt app has none of, and never fires (lint-8.6).
+  if (rule === 'require-static-classes')
+    options['componentImports'] =
+      profile === 'bridge' ? [...BRIDGE_COMPONENT_IMPORTS] : [...PARTS_COMPONENT_IMPORTS]
   if (rule === 'no-raw-colors') options['allow'] = [...SHADOW_SIZES, ...PREMIXED_ALPHA]
   if (rule === 'no-unknown-classes') {
     const prefixes = inputs.classPrefixes ?? []
