@@ -1666,3 +1666,17 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-dogfood-4-api, v3-dogfood-4-visual, v3-dogfood-4-state]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-5.json' }
+  - key: v3-lint-10-lint
+    title: 'The rival net reads converters, scheme forks and stores slip past, a custom-property bar and a helper stream pass, from lint cycle 10'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-cycle-lint-10]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-10-lint.json' }
+  - key: v3-cycle-lint-11
+    title: 'Improvement cycle 11: lint and guards, misses and false alarms per rule'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-10-lint]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-11.json' }

@@ -1,0 +1,166 @@
+/* Cycle 10 phrasings for the stylelint preset and the token check, written as module CSS. Seed numbers
+   continue cycle 9's. The three last background seeds read the role-named clause of the decoration value
+   list (lint-9.4): a status colour, a chart colour and a brand tint each get their own message. A `pass`
+   mark is valid module CSS beside a shape a seed's rule could swallow. */
+
+/* seed stylelint/at-rule-disallowed-list 18: Tailwind v4's @variant body written in a module */
+.pane {
+  @variant dark {
+    background: var(--basalt-inset);
+  }
+}
+
+/* seed stylelint/at-rule-disallowed-list 19: Tailwind v3's @tailwind layer directive */
+@tailwind base;
+
+/* seed stylelint/media-feature-name-disallowed-list 19: a min-height media query */
+@media (min-height: 700px) {
+  .sticky {
+    position: sticky;
+  }
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 20: an aspect-ratio media query */
+@media (min-aspect-ratio: 16/9) {
+  .stage {
+    display: grid;
+  }
+}
+
+/* pass stylelint/media-feature-name-disallowed-list 6: a hover capability query, the input device */
+@media (hover: hover) {
+  .row:hover {
+    background: var(--basalt-hover);
+  }
+}
+
+/* seed stylelint/selector-disallowed-list 20: the theme attribute with a quoted dark value */
+[data-theme="dark"] .panel {
+  background: var(--basalt-inset);
+}
+
+/* seed stylelint/selector-disallowed-list 21: a Mantine class reached from a module */
+.shell .mantine-Button-root {
+  border-width: 0;
+}
+
+/* seed stylelint/property-disallowed-list 17: the theme's font variable re-pointed on a section */
+.docs {
+  --font-sans: Georgia, serif;
+}
+
+/* seed stylelint/property-disallowed-list 18: the muted-foreground theme colour re-pointed */
+.quiet {
+  --color-muted-foreground: var(--basalt-ink-faint);
+}
+
+/* pass stylelint/property-disallowed-list 2: an app custom property that merely reads a token */
+.local {
+  --row-gap-local: var(--basalt-rhythm-2);
+}
+
+/* seed stylelint/color-no-hex 16: a hex in a custom property value */
+.theme-a {
+  --brand-edge: #0a84ff;
+}
+
+/* seed stylelint/color-no-hex 17: a hex in a gradient stop */
+.fade {
+  background: linear-gradient(#fff, var(--basalt-inset));
+}
+
+/* seed stylelint/color-named 17: a named colour as a text decoration colour */
+.link {
+  text-decoration-color: tomato;
+}
+
+/* seed stylelint/color-named 18: a named colour in a caret colour */
+.field {
+  caret-color: rebeccapurple;
+}
+
+/* seed stylelint/function-disallowed-list 17: an rgba() shadow colour */
+.lift {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* seed stylelint/function-disallowed-list 18: light-dark() choosing a text colour per scheme */
+.ink {
+  color: light-dark(var(--basalt-ink), var(--basalt-ink-muted));
+}
+
+/* seed stylelint/declaration-no-important 17: important on a display of a hidden state */
+.gone {
+  display: none !important;
+}
+
+/* seed stylelint/declaration-no-important 18: important on a token-valued colour */
+.force {
+  color: var(--basalt-ink) !important;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 17: a pixel line height on a paragraph */
+.para {
+  line-height: 20px;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 18: a pixel letter spacing on a label */
+.cap {
+  letter-spacing: 0.5px;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 19: a literal shadow on a card */
+.card {
+  box-shadow: 0 2px 8px var(--basalt-scrim);
+}
+
+/* pass stylelint/declaration-property-value-allowed-list 3: a token radius, the pill and the circle */
+.avatar {
+  border-radius: var(--basalt-radius-chip);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 29: a calc() margin */
+.offset {
+  margin-left: calc(var(--basalt-rhythm-2) * 2);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 30: a pixel font size shorthand */
+.type {
+  font: 14px/1.4 var(--basalt-font-sans);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 31: color-mix over a hex-free literal colour name */
+.wash {
+  background: color-mix(in oklab, var(--basalt-brand) 20%, white);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 32: a status colour as a background, the role-named clause for status */
+.alert {
+  background: var(--color-bad);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 33: a chart colour as a background, the role-named clause for chart */
+.bar {
+  background-color: var(--basalt-chart-3);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 34: a brand tint as a background, the role-named clause for brand */
+.hero {
+  background: var(--basalt-brand-tint);
+}
+
+/* pass stylelint/declaration-property-value-disallowed-list 8: a spacing token and a surface token */
+.tidy {
+  padding: var(--basalt-rhythm-2);
+  background: var(--basalt-surface);
+}
+
+/* seed unknown-token 33: a muted ink step spelled the shadcn way */
+.muted {
+  color: var(--basalt-ink-strong);
+}
+
+/* seed unknown-token 34: a spacing scale step past the three rhythm tokens */
+.roomy {
+  padding: var(--basalt-rhythm-4);
+}

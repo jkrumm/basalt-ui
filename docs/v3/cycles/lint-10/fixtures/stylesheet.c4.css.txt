@@ -1,0 +1,172 @@
+/* Cycle 4 phrasings for the stylelint preset and the token check. Seed numbers continue cycle 3's. */
+
+/* seed stylelint/at-rule-disallowed-list 6: a dark fork through Tailwind v4's @variant in a module */
+.hero {
+  background: var(--basalt-canvas);
+  @variant dark {
+    background: var(--basalt-inset);
+  }
+}
+
+/* seed stylelint/at-rule-disallowed-list 7: a Tailwind plugin that adds its own utility classes */
+@plugin '@tailwindcss/typography';
+
+/* seed stylelint/media-feature-name-disallowed-list 6: a range-syntax viewport query */
+@media (width >= 48rem) {
+  .cols {
+    display: grid;
+  }
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 7: an orientation query to switch a layout */
+@media (orientation: portrait) {
+  .board {
+    display: block;
+  }
+}
+
+/* pass stylelint/media-feature-name-disallowed-list 1: reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}
+
+/* seed stylelint/selector-disallowed-list 7: the theme attribute on html with double quotes */
+html[data-theme="dark"] .panel {
+  background: var(--basalt-inset);
+}
+
+/* seed stylelint/selector-disallowed-list 8: a shell region reached through its data-slot inside :is */
+:is([data-slot="sidebar"], [data-slot="header"]) a {
+  color: var(--basalt-ink);
+}
+
+/* seed stylelint/color-named 5: a named colour for a highlight */
+.mark {
+  background: var(--basalt-hover);
+  color: rebeccapurple;
+}
+
+/* seed stylelint/color-named 6: a named colour in a border shorthand */
+.sep {
+  border: 1px solid gainsboro;
+}
+
+/* seed stylelint/color-no-hex 4: an 8-digit hex in a gradient stop */
+.fade {
+  background: linear-gradient(to bottom, transparent, #0077bd80);
+}
+
+/* seed stylelint/color-no-hex 5: a short hex in an outline */
+.focus {
+  outline: 2px solid #09f;
+}
+
+/* seed stylelint/function-disallowed-list 5: light-dark() forking ink per scheme */
+.label {
+  color: light-dark(var(--basalt-ink), var(--basalt-canvas));
+}
+
+/* seed stylelint/function-disallowed-list 6: relative colour syntax over a token */
+.tint {
+  background: rgb(from var(--basalt-brand) r g b / 50%);
+}
+
+/* seed stylelint/declaration-no-important 5: an uppercase important */
+.force {
+  color: var(--basalt-ink) !IMPORTANT;
+}
+
+/* seed stylelint/declaration-no-important 6: important on a custom property read */
+.force2 {
+  padding: var(--basalt-rhythm-2) !important;
+}
+
+/* seed stylelint/property-disallowed-list 5: a token declared inside a scheme selector */
+:root {
+  --basalt-brand: #0077bd;
+}
+
+/* seed stylelint/property-disallowed-list 6: a token overridden on a component class */
+.callout {
+  --basalt-ink: var(--basalt-brand);
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 5: a pill radius in pixels */
+.chip {
+  border-radius: 9999px;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 6: a unitless line height */
+.dense {
+  line-height: 1.2;
+}
+
+/* pass stylelint/declaration-property-value-allowed-list 1: a radius token pair */
+.corner {
+  border-radius: var(--basalt-radius-card) 0;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 11: a status colour as a background in a module */
+.ok {
+  background-color: var(--basalt-good);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 12: a logical inset in pixels */
+.pin {
+  position: absolute;
+  inset-block-start: 6px;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 13: a margin from calc over a token */
+.pull {
+  margin-inline: calc(var(--basalt-rhythm-3) * -1);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 14: overflow overlay on a list */
+.list {
+  overflow-y: overlay;
+}
+
+/* pass stylelint/declaration-property-value-disallowed-list 2: a sticky header pinned at zero */
+.head {
+  position: sticky;
+  top: 0;
+}
+
+/* seed raw-scroll/overflow-scroll 18: the overflow shorthand with two values in a module */
+.pane {
+  overflow: hidden auto;
+}
+
+/* seed status-fill-as-text/text-on-fill 11: a chart fill as text colour in a module */
+.legend-label {
+  color: var(--basalt-chart-1);
+}
+
+/* seed tw-off-law/fixed-width 10: a fixed width on a side panel in a module */
+.side {
+  width: 420px;
+}
+
+/* seed tw-off-law/track-length 8: a fixed-length grid track in a module */
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+}
+
+/* seed unknown-token 10: a camelCase surface name in a module */
+.card2 {
+  background: var(--basalt-surfaceRaised);
+}
+
+/* seed unknown-token 11: a radius token named after Tailwind's scale */
+.round {
+  border-radius: var(--basalt-radius-lg);
+}
+
+/* seed unknown-token 12: a token read inside color-mix */
+.wash {
+  background: color-mix(in oklab, var(--basalt-accent) 20%, transparent);
+}

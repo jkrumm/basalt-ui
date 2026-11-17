@@ -1,0 +1,52 @@
+// Cycle 9 phrasings for waiver-needs-reason, in a file of their own: a range waiver silences
+// the rest of the file. Seed numbers continue cycle 8's.
+
+// seed waiver-needs-reason/missing-reason 27: a same-line waiver with no reason
+export function A() {
+  return <div className="overflow-y-auto">a</div> // oxlint-disable-line basalt/raw-scroll
+}
+
+// seed waiver-needs-reason/missing-reason 28: a reason after a single dash instead of --
+export function B() {
+  // oxlint-disable-next-line basalt/raw-scroll - the log pane scrolls on its own
+  return <div className="overflow-y-auto">b</div>
+}
+
+// seed waiver-needs-reason/missing-reason 29: a block-comment next-line waiver with no reason
+export function C() {
+  /* oxlint-disable-next-line basalt/raw-scroll */
+  return <div className="overflow-y-auto">c</div>
+}
+
+// seed waiver-needs-reason/missing-reason 30: a JSX-expression comment waiver with no reason
+export function D() {
+  return (
+    <section>
+      {/* oxlint-disable-next-line basalt/raw-scroll */}
+      <div className="overflow-y-auto">d</div>
+    </section>
+  )
+}
+
+// pass waiver-needs-reason/missing-reason 4: a reasoned JSX-expression comment waiver
+export function E() {
+  return (
+    <section>
+      {/* oxlint-disable-next-line basalt/raw-scroll -- the log pane scrolls on its own, ejected next */}
+      <div className="overflow-y-auto">e</div>
+    </section>
+  )
+}
+
+// seed waiver-needs-reason/file-level-scope 15: a reasoned eslint-dialect range over two components
+// eslint-disable basalt/app-spacing -- legacy marketing block, rebuilt next sprint
+export function F() {
+  return <div className="mt-4">f</div>
+}
+// eslint-enable basalt/app-spacing
+
+// seed waiver-needs-reason/file-level-scope 16: a mid-file blanket disable with no rule named
+/* oxlint-disable */
+export function G() {
+  return <div className="p-[13px]">g</div>
+}
