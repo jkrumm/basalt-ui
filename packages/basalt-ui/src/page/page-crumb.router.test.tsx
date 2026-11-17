@@ -100,4 +100,17 @@ describe('PageCrumb through the installed link', () => {
     expect(await act(async () => click(parent))).toBe(false)
     await waitFor(() => expect(router.state.location.search).toEqual({ status: 'down' }))
   })
+
+  test('is the way up, never the current page, on the URL its target is part of', async () => {
+    for (const href of [
+      '/services',
+      navTarget(linkOptions({ to: '/services', ...services.field.service.link('') })),
+    ]) {
+      cleanup()
+      await mount({ label: 'Services', href }, '/services?service=checkout&status=down')
+      const parent = await screen.findByText('Services')
+      expect(parent.hasAttribute('aria-current')).toBe(false)
+      expect(parent.hasAttribute('data-status')).toBe(false)
+    }
+  })
 })
