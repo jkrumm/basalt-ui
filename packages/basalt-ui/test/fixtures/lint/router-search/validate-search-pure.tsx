@@ -98,6 +98,21 @@ const route = createFileRoute('/runs')({
   validateSearch: ({ location }) => ({ location }),
 })
 
+// @invalid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => ({ ...s, from: history.state?.from }),
+})
+
+// @invalid
+const route = createFileRoute('/runs')({
+  validateSearch: (s) => ({ ...s, wide: screen.width > 1200 }),
+})
+
+// @valid
+const route = createFileRoute('/runs')({
+  validateSearch: ({ history, screen }) => ({ history, screen: screen ?? 'list' }),
+})
+
 // @valid
 const location = useLocation()
 const route = createFileRoute('/runs')({
