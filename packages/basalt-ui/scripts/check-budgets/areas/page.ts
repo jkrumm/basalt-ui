@@ -23,13 +23,21 @@ export const rows: readonly RowDef[] = [
     label: 'page, whole barrel (gzip B minus base0, src/page, peers bundled)',
     // 107199 B measured.
     // 113000 -> 114000 (v3 dock): `Dock` and the shared record-panel parts join the barrel (113303 B measured with them).
-    ceiling: 114000,
+    // 114000 -> 115500 (v3 peek width): the width handle (peek-handle.tsx) joins the barrel.
+    ceiling: 115500,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
   'page-subpath': [
+    {
+      from: 114000,
+      to: 115500,
+      consumer:
+        "the `Peek` width handle (`defaultWidth`, `onWidthChange` and the drag and key handle on its start edge): the software-factory console's record panel takes it and saves the width the reader chose",
+      repo: 'software-factory',
+    },
     {
       from: 113000,
       to: 114000,

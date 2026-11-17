@@ -14,18 +14,24 @@ mounted, so its scroll, filters and selection are where they were when the panel
 not modal (no scrim, nothing inert), so another link can be clicked to swap what it shows. Under
 an `AppShell` it sits over main between the header and the footer and does not scroll with the
 page; without one it is a block in flow. Focus moves in when it opens and back to the opener
-when it closes. `onPin` adds a button that moves the record into the shell's `Dock`. It draws no address and binds no keys: `usePeek` from `basalt-ui/router` owns
+when it closes. `onPin` adds a button that moves the record into the shell's `Dock`. Under a shell a drag handle on
+its start edge resizes it (pointer, or ArrowLeft and ArrowRight on the focused handle; Home and End for the
+narrowest and the widest, Enter to reset): the width is one `--peek-w`, kept in the panel for as long as it
+stays open, and `onWidthChange` hands it to the app to save and `defaultWidth` takes it back; basalt stores
+nothing. It draws no address and binds no keys: `usePeek` from `basalt-ui/router` owns
 the `?peek=` address, the click handler, history and Escape, and hands this panel its `onClose`.
 
 ## Signature
 
 ```ts
-Peek({ title, tag, fullPage, onClose, onPin, children, }: PeekProps): ReactElement | null
+Peek({ title, tag, fullPage, onClose, onPin, defaultWidth, onWidthChange, children, }: PeekProps): ReactElement | null
   title: string  // The accessible name and the visible heading: what is shown (`Issue 12`)
   tag?: string  // A short mono tag before the title (`#12`), for what the heading does not say
   fullPage?: string | NavTarget  // The record's own page
   onClose: () => void  // Escape, the close button and Back: the caller decides how the address changes (`usePeek().close`)
   onPin?: () => void  // Draws a button that moves the record into the shell's `Dock` (`usePeek().pin`)
+  defaultWidth?: number  // The width in px the panel opens at, from where the app saved it; the default tiers when absent
+  onWidthChange?: (px: number | null) => void  // The width in px once the user released the pointer or pressed a key on the handle, `null` once Enter or a double click put it back at the default: the app saves it, basalt stores nothing
   children?: ReactNode
 ```
 
