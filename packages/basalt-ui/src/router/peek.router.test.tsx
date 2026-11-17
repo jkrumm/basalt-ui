@@ -29,9 +29,14 @@ type Loose = {
 const KINDS = { issue: '/issues/$id', artifact: '/artifacts/$id' } as const
 
 let peek: PeekState | undefined
+let dockOn = true
 
 function Probe(): null {
-  const state = usePeek({ field: globals.field.peek, kinds: KINDS })
+  const state = usePeek({
+    field: globals.field.peek,
+    ...(dockOn && { dockField: globals.field.dock }),
+    kinds: KINDS,
+  })
   useEffect(() => {
     peek = state
   })
@@ -41,7 +46,11 @@ function Probe(): null {
 // Defined per test: `resetControlsOwnersForTests` frees the global's params.
 let globals: ReturnType<typeof makeGlobals>
 const makeGlobals = () =>
-  defineControls({ id: 'globals', scope: 'global', fields: { peek: field.string('') } })
+  defineControls({
+    id: 'globals',
+    scope: 'global',
+    fields: { peek: field.string(''), dock: field.string('') },
+  })
 
 const LINKS = (
   <nav>
@@ -122,6 +131,7 @@ const key = async (name: string, target: Element | Window = window): Promise<voi
 }
 
 const peekParam = (router: Loose): unknown => router.state.location.search['peek']
+const dockParam = (router: Loose): unknown => router.state.location.search['dock']
 
 beforeEach(() => {
   ;(window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(
@@ -130,6 +140,7 @@ beforeEach(() => {
   resetControlsOwnersForTests()
   globals = makeGlobals()
   peek = undefined
+  dockOn = true
 })
 afterEach(cleanup)
 
@@ -308,5 +319,78 @@ describe('recordAt', () => {
     expect(recordAt(KINDS, '/other')).toBeNull()
     expect(recordAt(KINDS, '/issues/12/notes')).toBeNull()
     expect(recordAt(KINDS, '/issues/100%')).toBeNull()
+  })
+})
+
+describe('usePeek: the dock', () => {
+  test('?dock=issue/12 opens the docked record and names its own page', async () => {
+    await mount('/?dock=issue/12')
+    expect(peek?.dock.open).toEqual({ kind: 'issue', id: '12' })
+    expect(peek?.dock.fullPage).toBe('/issues/12')
+    expect(peek?.open).toBeNull()
+  })
+
+  test('without a dockField the dock is always closed and pin does nothing', async () => {
+    dockOn = false
+    const router = await mount('/')
+    await click('issue 12')
+    await act(async () => peek?.pin())
+    expect(peek?.open).toEqual({ kind: 'issue', id: '12' })
+    expect(dockParam(router)).toBeFalsy()
+  })
+
+  test('a docked record stays through a pathname change; a peek does not', async () => {
+    const router = await mount('/?dock=issue/12&peek=issue/13')
+    expect(peek?.open).toEqual({ kind: 'issue', id: '13' })
+    await act(async () => {
+      await router.navigate({ to: '/other', search: (prev: object) => prev })
+    })
+    expect(router.state.location.pathname).toBe('/other')
+    expect(peek?.dock.open).toEqual({ kind: 'issue', id: '12' })
+    expect(peek?.open).toBeNull()
+  })
+
+  test('while a dock is open a plain click swaps its record, opens no peek and adds no history', async () => {
+    const router = await mount('/?dock=issue/12')
+    const before = router.history.length
+    expect(await click('issue 13')).toBe(false)
+    expect(dockParam(router)).toBe('issue/13')
+    expect(peekParam(router)).toBeFalsy()
+    expect(router.history.length).toBe(before)
+    expect(peek?.dock.open).toEqual({ kind: 'issue', id: '13' })
+  })
+
+  test('an open dock takes the click on a record page too, and holds a click on the docked record', async () => {
+    const router = await mount('/issues/12?dock=issue/12')
+    expect(await click('issue 13')).toBe(false)
+    expect(dockParam(router)).toBe('issue/13')
+    expect(await click('issue 13')).toBe(false)
+    expect(dockParam(router)).toBe('issue/13')
+  })
+
+  test('pin moves the open peek into the dock in one replace', async () => {
+    const router = await mount('/')
+    await click('issue 12')
+    const after = router.history.length
+    await act(async () => peek?.pin())
+    expect(dockParam(router)).toBe('issue/12')
+    expect(peekParam(router)).toBeFalsy()
+    expect(router.history.length).toBe(after)
+    expect(peek?.open).toBeNull()
+    expect(peek?.dock.open).toEqual({ kind: 'issue', id: '12' })
+  })
+
+  test('pin with no peek open writes nothing', async () => {
+    const router = await mount('/')
+    await act(async () => peek?.pin())
+    expect(dockParam(router)).toBeFalsy()
+  })
+
+  test('dock.close clears the field in place', async () => {
+    const router = await mount('/?dock=issue/12')
+    const before = router.history.length
+    await act(async () => peek?.dock.close())
+    expect(peek?.dock.open).toBeNull()
+    expect(router.history.length).toBe(before)
   })
 })

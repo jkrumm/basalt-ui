@@ -59,6 +59,15 @@ describe('Peek: standalone', () => {
     expect(anchor.closest('[data-peek="off"]')).not.toBeNull()
   })
 
+  test('the pin button shows only with onPin, and calls it', () => {
+    const onPin = mock(() => {})
+    const { rerender } = render(<Peek title="Issue 12" onClose={() => {}} />)
+    expect(screen.queryByRole('button', { name: 'Dock panel' })).toBeNull()
+    rerender(<Peek title="Issue 12" onClose={() => {}} onPin={onPin} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Dock panel' }))
+    expect(onPin).toHaveBeenCalledTimes(1)
+  })
+
   test('draws no link without a full page', () => {
     render(<Peek title="Issue 12" onClose={() => {}} />)
     expect(screen.queryByRole('link')).toBeNull()

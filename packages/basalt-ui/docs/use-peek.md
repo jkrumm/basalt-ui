@@ -15,9 +15,10 @@ reload or a shared link restores it; `kinds` names each record kind's page (`/is
 ## Signature
 
 ```ts
-usePeek<const K extends PeekKinds>({ field, kinds, }: PeekOptions<K>): PeekState<keyof K & string>
+usePeek<const K extends PeekKinds>({ field, kinds, dockField, }: PeekOptions<K>): PeekState<keyof K & string>
   field: PeekField
   kinds: K
+  dockField?: PeekField  // A second URL field (`?dock=kind/id`) for the shell's `Dock`: the record kept open beside the screen
 ```
 
 ## Example

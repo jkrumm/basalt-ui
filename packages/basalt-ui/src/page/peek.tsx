@@ -1,16 +1,10 @@
 import { useContext, useRef } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { focusLost, focusMain } from '../common/focus'
-import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { cn } from '../core/cn'
-import { AppLink } from '../core/link'
-import { page } from '../core/messages/page'
-import { useMessages } from '../core/messages/use-messages'
 import type { NavTarget } from '../core/ports'
-import { Button, buttonVariants } from '../ui/button'
-import { ScrollArea } from '../ui/scroll-area'
 import { PageHostContext, ShellOverlayContext } from './page'
+import { RecordPanelBody, RecordPanelHeader, useFocusIn } from './record-panel'
 import { useSizeClass } from './use-size-class'
 import type { SizeClass } from './use-size-class'
 
@@ -23,6 +17,8 @@ export type PeekProps = {
   fullPage?: string | NavTarget
   /** Escape, the close button and Back: the caller decides how the address changes (`usePeek().close`). */
   onClose: () => void
+  /** Draws a button that moves the record into the shell's `Dock` (`usePeek().pin`). Not drawn on a phone. */
+  onPin?: () => void
   children?: ReactNode
 }
 
@@ -43,34 +39,12 @@ function peekWidth(sizeClass: SizeClass, shelled: boolean): string {
 }
 
 /**
- * Takes focus into the panel when it mounts and gives it back to what had it when it unmounts,
- * else to the shell's main: closing removes the panel, and focus left on `<body>` makes the next
- * Tab start at the skip link. Focus that already went somewhere real (the reader moved on) stays.
- */
-function useFocusIn(panel: { current: HTMLDialogElement | null }, mounted: boolean): void {
-  useIsomorphicLayoutEffect(() => {
-    if (!mounted) return undefined
-    const el = panel.current
-    const active = document.activeElement
-    const opener = active instanceof HTMLElement && active !== document.body ? active : null
-    el?.focus({ preventScroll: true })
-    return () => {
-      const now = document.activeElement
-      const inside = now instanceof HTMLElement && el?.contains(now) === true
-      if (!focusLost() && !inside) return
-      if (opener?.isConnected === true) opener.focus({ preventScroll: true })
-      else focusMain()
-    }
-  }, [panel, mounted])
-}
-
-/**
  * A right-side panel (a non-modal `<dialog open>`) over the page it was opened from, for a record: the page underneath stays
  * mounted, so its scroll, filters and selection are where they were when the panel closes. It is
  * not modal (no scrim, nothing inert), so another link can be clicked to swap what it shows. Under
  * an `AppShell` it sits over main between the header and the footer and does not scroll with the
  * page; without one it is a block in flow. Focus moves in when it opens and back to the opener
- * when it closes. It draws no address and binds no keys: `usePeek` from `basalt-ui/router` owns
+ * when it closes. `onPin` adds a button that moves the record into the shell's `Dock`. It draws no address and binds no keys: `usePeek` from `basalt-ui/router` owns
  * the `?peek=` address, the click handler, history and Escape, and hands this panel its `onClose`.
  *
  * @useWhen a plain click on a record link should show the record beside a list or a graph without leaving it (master-detail with the list kept live)
@@ -84,8 +58,14 @@ function useFocusIn(panel: { current: HTMLDialogElement | null }, mounted: boole
  *   </Peek>
  * )}
  */
-export function Peek({ title, tag, fullPage, onClose, children }: PeekProps): ReactElement | null {
-  const t = useMessages(page)
+export function Peek({
+  title,
+  tag,
+  fullPage,
+  onClose,
+  onPin,
+  children,
+}: PeekProps): ReactElement | null {
   const host = useContext(PageHostContext)
   const slot = useContext(ShellOverlayContext)
   const sizeClass = useSizeClass()
@@ -113,42 +93,14 @@ export function Peek({ title, tag, fullPage, onClose, children }: PeekProps): Re
         sizeClass !== 'compact' && 'rounded-s-card',
       )}
     >
-      <header className="flex shrink-0 items-center gap-2 px-4 pt-3 pb-2">
-        {tag !== undefined && (
-          <span className="font-mono text-xs text-muted-foreground">{tag}</span>
-        )}
-        <h2 className="m-0 min-w-0 flex-1 truncate font-head text-sm font-semibold text-foreground">
-          {title}
-        </h2>
-        <div className="flex items-center gap-1" data-peek="off">
-          {fullPage !== undefined && (
-            <AppLink
-              href={fullPage}
-              data-slot="peek-full-page"
-              className={buttonVariants({ variant: 'ghost', size: 'sm' })}
-            >
-              {t('page.openFullPage')}
-            </AppLink>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            shape="icon"
-            aria-label={t('page.closePeek')}
-            onClick={onClose}
-          >
-            <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
-              <path
-                d="M4 4l8 8M12 4l-8 8"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-          </Button>
-        </div>
-      </header>
-      <ScrollArea className="flex-1 overscroll-contain px-4 pb-4">{children}</ScrollArea>
+      <RecordPanelHeader
+        title={title}
+        tag={tag}
+        fullPage={fullPage}
+        onClose={onClose}
+        onPin={sizeClass === 'compact' ? undefined : onPin}
+      />
+      <RecordPanelBody>{children}</RecordPanelBody>
     </dialog>
   )
   return shelled && slot !== null ? createPortal(node, slot) : node

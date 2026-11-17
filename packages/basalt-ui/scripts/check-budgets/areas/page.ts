@@ -14,7 +14,7 @@ export const rows: readonly RowDef[] = [
     id: 'page-symbols',
     order: 440,
     label: 'public value symbols, ./page (exact, export-surface shard)',
-    ceiling: 23, // v3 peek: `Peek`
+    ceiling: 24, // v3 dock: `Dock`; v3 peek: `Peek`
     measure: () => readSurface()['./page']?.length ?? 0,
   },
   {
@@ -22,13 +22,30 @@ export const rows: readonly RowDef[] = [
     order: 441,
     label: 'page, whole barrel (gzip B minus base0, src/page, peers bundled)',
     // 107199 B measured.
-    ceiling: 113000,
+    // 113000 -> 114000 (v3 dock): `Dock` and the shared record-panel parts join the barrel (113303 B measured with them).
+    ceiling: 114000,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
+  'page-subpath': [
+    {
+      from: 113000,
+      to: 114000,
+      consumer:
+        '`Dock` from `./page`: the software-factory console, the `Peek` consumer (Issue 1819), pins a peeked record into a docked panel that stays beside every page; rung 3 of that ladder (Issue 1958)',
+      repo: 'software-factory',
+    },
+  ],
   'page-symbols': [
+    {
+      from: 23,
+      to: 24,
+      consumer:
+        '`Dock` from `./page`: the software-factory console, the `Peek` consumer (Issue 1819), pins a peeked record into a docked panel that stays beside every page; rung 3 of that ladder (Issue 1958)',
+      repo: 'software-factory',
+    },
     {
       from: 22,
       to: 23,

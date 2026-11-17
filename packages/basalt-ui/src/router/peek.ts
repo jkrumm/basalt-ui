@@ -29,6 +29,21 @@ export type PeekField = Pick<ControlHandle<string>, 'use' | 'clear'> & {
 export type PeekOptions<K extends PeekKinds> = {
   field: PeekField
   kinds: K
+  /**
+   * A second URL field (`?dock=kind/id`) for the shell's `Dock`: the record kept open beside the
+   * screen. Without it there is no dock, `pin` does nothing and `dock.open` stays `null`.
+   */
+  dockField?: PeekField
+}
+
+/** The docked record: the same three members as a peek, minus history (the dock is layout, not a place). */
+export type DockedState<K extends string = string> = {
+  /** The record to show, or `null` while no dock is open or it names an unknown kind. It stays through route changes. */
+  open: PeekTarget<K> | null
+  /** Clears the dock field in place. */
+  close: () => void
+  /** The open record's own page, to pass to `Dock fullPage`. */
+  fullPage: string | null
 }
 
 export type PeekState<K extends string = string> = {
@@ -38,6 +53,10 @@ export type PeekState<K extends string = string> = {
   close: () => void
   /** The open record's own page, to pass to `Peek fullPage`. */
   fullPage: string | null
+  /** Moves the open peek's record into the dock and closes the peek, in one replace. Nothing while no peek is open or there is no `dockField`. */
+  pin: () => void
+  /** The docked record, when `dockField` is given. */
+  dock: DockedState<K>
 }
 
 /** Another popup (a popover, the palette, a menu) is open: Escape is its, not the panel's. */
@@ -64,6 +83,13 @@ function matchPath(matchers: readonly Matcher[], pathname: string): PeekTarget |
     }
   }
   return null
+}
+
+/** No `dockField`: a field that is always empty and never written. */
+const NO_DOCK: PeekField = {
+  use: () => ['', () => {}],
+  clear: () => {},
+  link: () => ({ search: {} }),
 }
 
 /** `kind/id` as written in the address; `null` for an empty value or a kind the app did not declare. */
@@ -131,7 +157,13 @@ const isField = (target: EventTarget | null): target is HTMLElement =>
  * Escape belongs to an open popover, menu or listbox first; inside a field it only leaves the field.
  * The peek belongs to the page it was opened on: on another pathname it is closed with a replace.
  *
- * Mount it once, inside the router and (for `Peek`) inside `AppShell`.
+ * With `dockField` the same hook serves the shell's `Dock`: `pin()` moves an open peek's record into
+ * the dock (one replace, so the entry the peek pushed now holds the dock), and while a dock is open
+ * a plain click on a record link swaps the dock's record instead of opening a peek, on any page,
+ * a record's own page included. The dock, unlike the peek, survives a pathname change; opening,
+ * swapping and closing it replace the entry, so it adds no history.
+ *
+ * Mount it once, inside the router and (for `Peek` and `Dock`) inside `AppShell`.
  *
  * @useWhen records are listed on many pages and a plain click on any link to one should open it in a side panel beside the list
  * @neverWhen one page owns the record and its panel (use `PageAside` with a string field), or the click must always navigate
@@ -143,11 +175,14 @@ const isField = (target: EventTarget | null): target is HTMLElement =>
 export function usePeek<const K extends PeekKinds>({
   field,
   kinds,
+  dockField = NO_DOCK,
 }: PeekOptions<K>): PeekState<keyof K & string> {
   const router = useRouter()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const [value] = field.use()
   const target = parse(value, kinds)
+  const [dockValue] = dockField.use()
+  const dockTarget = parse(dockValue, kinds)
 
   // The page the panel was opened on: a reload into an open peek adopts the page it lands on.
   const [openedOn, setOpenedOn] = useState<string | null>(null)
@@ -185,10 +220,55 @@ export function usePeek<const K extends PeekKinds>({
     write(null, true)
   }
 
+  const writeDock = (next: string | null): void => {
+    if (next === null) {
+      dockField.clear({ replace: true })
+      return
+    }
+    const { search } = dockField.link(next)
+    void router.navigate({
+      to: '.',
+      search: (prev: Record<string, unknown>) => ({ ...prev, ...search }),
+      replace: true,
+      resetScroll: false,
+    } as never)
+  }
+
+  const pin = (): void => {
+    if (target === null || !live || dockField === NO_DOCK) return
+    pushed.current = false
+    const docked = dockField.link(format(target)).search
+    const cleared = field.link('').search
+    void router.navigate({
+      to: '.',
+      search: (prev: Record<string, unknown>) => ({ ...prev, ...docked, ...cleared }),
+      replace: true,
+      resetScroll: false,
+    } as never)
+  }
+
   // The latest of everything the document listeners read: they are installed once.
-  const latest = useRef({ kinds, value, write, close, open: live })
+  const latest = useRef({
+    kinds,
+    value,
+    write,
+    close,
+    open: live,
+    dockValue,
+    writeDock,
+    docked: dockTarget !== null,
+  })
   useIsomorphicLayoutEffect(() => {
-    latest.current = { kinds, value, write, close, open: live }
+    latest.current = {
+      kinds,
+      value,
+      write,
+      close,
+      open: live,
+      dockValue,
+      writeDock,
+      docked: dockTarget !== null,
+    }
   })
 
   useEffect(() => {
@@ -208,11 +288,22 @@ export function usePeek<const K extends PeekKinds>({
       const now = latest.current
       const matchers = Object.entries(now.kinds).map(([kind, path]) => matcherOf(kind, path))
       // The record's own page is the full view: its links go there (the peek opens over lists).
-      if (!now.open && matchPath(matchers, router.state.location.pathname) !== null) return
+      // An open dock is the reader's chosen pane, so it takes the click on any page.
+      if (
+        !now.open &&
+        !now.docked &&
+        matchPath(matchers, router.state.location.pathname) !== null
+      ) {
+        return
+      }
       const next = matchPath(matchers, url.pathname)
       if (next === null) return
       event.preventDefault()
       event.stopPropagation()
+      if (now.docked) {
+        if (now.dockValue !== format(next)) now.writeDock(format(next))
+        return
+      }
       if (now.open && now.value === format(next)) return
       if (!now.open) pushed.current = true
       now.write(format(next), now.open)
@@ -238,11 +329,23 @@ export function usePeek<const K extends PeekKinds>({
   }, [live])
 
   const open = live ? target : null
-  const path = open === null ? undefined : kinds[open.kind]
   return {
     open: open as PeekTarget<keyof K & string> | null,
     close,
-    fullPage:
-      path === undefined || open === null ? null : path.replace('$id', encodeURIComponent(open.id)),
+    fullPage: pageOf(kinds, open),
+    pin,
+    dock: {
+      open: dockTarget as PeekTarget<keyof K & string> | null,
+      close: () => writeDock(null),
+      fullPage: pageOf(kinds, dockTarget),
+    },
   }
+}
+
+/** The record's own page, `/issues/12` for `issue/12`; `null` for no record. */
+function pageOf(kinds: PeekKinds, target: PeekTarget | null): string | null {
+  const path = target === null ? undefined : kinds[target.kind]
+  return path === undefined || target === null
+    ? null
+    : path.replace('$id', encodeURIComponent(target.id))
 }
