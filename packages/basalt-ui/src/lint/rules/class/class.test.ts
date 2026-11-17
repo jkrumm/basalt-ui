@@ -177,6 +177,7 @@ describe('forms', () => {
     'breakpoint-prefix': '@narrow:',
     'arbitrary-query': '@narrow:',
     'media-query': 'useSizeClass',
+    'platform-glyph': '<Kbd>Mod</Kbd>',
     'dark-variant': 'Tokens switch per scheme',
     'black-white': 'on-brand',
     'text-on-fill': 'Status',
@@ -199,7 +200,7 @@ describe('forms', () => {
     entry.forms.map((form) => ({ id, form })),
   )
 
-  it('is nineteen enabled forms in seven ids, plus the padding form', () => {
+  it('is twenty enabled forms in seven ids, plus the padding form', () => {
     expect(Object.keys(CLASS_RULES)).toEqual([
       'viewport-keyed',
       'dark-fork',
@@ -209,8 +210,8 @@ describe('forms', () => {
       'tw-off-law',
       'app-spacing',
     ])
-    expect(all.filter(({ form }) => isEnabled(form))).toHaveLength(19)
-    expect(all).toHaveLength(20)
+    expect(all.filter(({ form }) => isEnabled(form))).toHaveLength(20)
+    expect(all).toHaveLength(21)
   })
 
   it('runs viewport-keyed, dark-fork, fixed-colour and status-fill-as-text from bridge up', () => {

@@ -1,5 +1,5 @@
 /**
- * The class-rule family: seven ids, nineteen enabled forms and one built-but-off form, all data
+ * The class-rule family: seven ids, twenty enabled forms and one built-but-off form, all data
  * (guardrails section 4, rows 1-7). The factory turns each entry into an oxlint/ESLint rule; this
  * module holds the patterns, the fix each message names and the next rung of the bending ladder.
  *
@@ -13,6 +13,7 @@ import { defineRules } from '../../rule-table'
 import {
   borderedCard,
   mediaQueryForm,
+  platformGlyphForm,
   PROFILE_GATE_SCHEMA,
   partsOnly,
   partsOnlyExceptSeamMark,
@@ -175,6 +176,14 @@ export const CLASS_RULES = defineRules({
         next: 'viewport-keyed is never file-waivable; fix it at source',
         fixture: 'class/viewport-keyed/media-query.tsx',
       },
+      {
+        id: 'platform-glyph',
+        detect: platformGlyphForm,
+        zonesOff: ['ejected'],
+        fix: 'A shortcut glyph is <Kbd>Mod</Kbd> from basalt-ui/ui/kbd (⌘ on Apple, Ctrl elsewhere); a registered command prints its own chord',
+        next: 'viewport-keyed is never file-waivable; fix it at source',
+        fixture: 'class/viewport-keyed/platform-glyph.tsx',
+      },
     ],
   },
 
@@ -325,7 +334,9 @@ export const CLASS_RULES = defineRules({
       },
       {
         id: 'important-modifier',
-        pattern: /(?:^|:)!-?[a-z0-9[]|(?:^|:)-?[a-z][a-z0-9]*(?:-[^\s!:]+)+!$/,
+        // Both v4 spellings: the leading `!p-0` and the trailing `p-0!`, one-word utilities
+        // (`hidden!`, `hover:underline!`) included.
+        pattern: /(?:^|:)!-?[a-z0-9[]|(?:^|:)-?[a-z][a-z0-9]*(?:-[^\s!:]+)*!$/,
         fix: 'Fix the cascade or add a cva variant instead of forcing with !',
         next: 'A reasoned waiver',
         fixture: 'class/tw-off-law/important-modifier.tsx',
@@ -355,9 +366,10 @@ export const CLASS_RULES = defineRules({
       }),
       {
         id: 'track-length',
-        // A grid track list with a fixed length; `fr`, `auto`, `minmax(0,1fr)` and `%` stay legal.
+        // A grid track list with a fixed length, explicit (`grid-rows-[…]`) or implicit
+        // (`auto-rows-[…]`, `auto-cols-[…]`); `fr`, `auto`, `minmax(0,1fr)` and `%` stay legal.
         pattern:
-          /(?:^|:)!?grid-(?:cols|rows)-\[[^\]]*[\d.](?:px|r?em|ch|vw|vh|vmin|vmax|[sdl]v[wh]|cq[wh]|cm|mm|in|pt|pc)(?![a-z])[^\]]*\]!?$/,
+          /(?:^|:)!?(?:grid|auto)-(?:cols|rows)-\[[^\]]*[\d.](?:px|r?em|ch|vw|vh|vmin|vmax|[sdl]v[wh]|cq[wh]|cm|mm|in|pt|pc)(?![a-z])[^\]]*\]!?$/,
         fix: 'Size tracks by fr, auto or minmax(0,1fr); a card grid is CardGrid with a min tier, and the container owns the width',
         next: 'A reasoned waiver',
         fixture: 'class/tw-off-law/track-length.tsx',

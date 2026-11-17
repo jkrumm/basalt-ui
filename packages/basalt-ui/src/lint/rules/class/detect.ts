@@ -66,7 +66,9 @@ function literalText(arg: Node | undefined): string | undefined {
  * `search`, `startsWith`, `endsWith`) report. `isMobile` and `isTablet` imported from
  * `react-device-detect` report where they are read. Known limits: a user agent copied into a
  * variable first (`const ua = navigator.userAgent`) is not followed, and `isMobileOnly`, `isIOS`
- * and the other flags are not read.
+ * and the other flags are not read. A test whose literal pattern names platforms only, a desktop
+ * one among them (`/Mac|iPhone|iPad/`, `.includes('Win')`), picks a shortcut glyph, not a layout:
+ * it is `platform-glyph`'s, below, and this form leaves it.
  */
 export function mediaQueryForm({ report }: FormContext): Visitor {
   let consts: ReadonlyMap<string, Node> = new Map()
@@ -97,8 +99,8 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
     MemberExpression(node) {
       const property = field(node, 'property')
       if (property !== undefined && node['computed'] !== true) skip.add(property)
-      const subject = userAgentSniff(node)
-      if (subject !== undefined) report(node, subject)
+      const sniff = userAgentTest(node, resolve)
+      if (sniff !== undefined && !sniff.platform) report(node, sniff.subject)
     },
     Property(node) {
       const key = field(node, 'key')
@@ -122,7 +124,8 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
     CallExpression(node) {
       const name = calleeName(node)
       const args = Array.isArray(node['arguments']) ? node['arguments'].filter(isNode) : []
-      if (name === 'test' && isUserAgent(args[0])) report(node, 'test(navigator.userAgent)')
+      const sniff = userAgentTest(node, resolve)
+      if (sniff !== undefined && !sniff.platform) report(node, sniff.subject)
       if (name === undefined || !QUERY_CALLEES.has(name)) return
       const arg = resolve(args[0])
       const text = literalText(arg) ?? objectQueryText(arg, resolve)
@@ -172,6 +175,85 @@ function userAgentSniff(node: Node): string | undefined {
   return method !== undefined && AGENT_METHODS.has(method)
     ? `navigator.userAgent.${method}`
     : undefined
+}
+
+/** A platform name a user agent carries: the desktop systems and Apple's handhelds, never `Mobi` or `Android`. */
+const PLATFORM_WORD =
+  /^(?:mac(?:intosh|intel)?|mac ?os(?: ?x)?|win(?:dows|32|64)?|linux|ip(?:hone|ad|od))$/i
+const DESKTOP_WORD = /^(?:mac|win|linux)/i
+
+/**
+ * Whether a literal pattern names platforms only, a desktop one among them: `/Mac|iPhone|iPad/`
+ * picks the `⌘` glyph. `/iPhone/` alone or `/Mobi|Android/` is a device sniff, a layout guess.
+ */
+function isPlatformPattern(pattern: string | undefined): boolean {
+  if (pattern === undefined) return false
+  const words = pattern
+    .replaceAll('\\b', '')
+    .replaceAll('?:', '')
+    .replaceAll(/[\^$()]/g, '')
+    .split('|')
+    .map((word) => word.trim())
+  return (
+    words.every((word) => PLATFORM_WORD.test(word)) && words.some((word) => DESKTOP_WORD.test(word))
+  )
+}
+
+/** A regex literal's source or a string literal's text; any other node is open. */
+function patternText(node: Node | undefined): string | undefined {
+  const regex = node?.['regex'] as { pattern?: unknown } | undefined
+  if (typeof regex?.pattern === 'string') return regex.pattern
+  return node?.type === 'Literal' && typeof node['value'] === 'string' ? node['value'] : undefined
+}
+
+/**
+ * A user-agent test at this node: `re.test(navigator.userAgent)` on a call, or a method sniff
+ * (`navigator.userAgent.includes(..)`) on a member, with whether its literal pattern names platforms only.
+ */
+function userAgentTest(
+  node: Node,
+  resolve: (node: Node | undefined) => Node | undefined,
+): { subject: string; platform: boolean } | undefined {
+  if (node.type === 'CallExpression') {
+    const callee = field(node, 'callee')
+    const args = Array.isArray(node['arguments']) ? node['arguments'].filter(isNode) : []
+    if (calleeName(node) !== 'test' || !isUserAgent(args[0])) return undefined
+    const pattern = callee?.type === 'MemberExpression' ? field(callee, 'object') : undefined
+    return {
+      subject: 'test(navigator.userAgent)',
+      platform: isPlatformPattern(patternText(resolve(pattern))),
+    }
+  }
+  const subject = userAgentSniff(node)
+  if (subject === undefined) return undefined
+  const parent = node['parent'] as Node | undefined
+  const call =
+    parent?.type === 'CallExpression' && field(parent, 'callee') === node ? parent : undefined
+  const args = call && Array.isArray(call['arguments']) ? call['arguments'].filter(isNode) : []
+  return { subject, platform: isPlatformPattern(patternText(resolve(args[0]))) }
+}
+
+/**
+ * `viewport-keyed`, `platform-glyph`: a user-agent test whose literal pattern names platforms
+ * only, a desktop one among them (`/Mac|iPhone|iPad/.test(navigator.userAgent)` choosing `⌘K` or
+ * `Ctrl K`). The report is right, the fix is not a size class: `<Kbd>Mod</Kbd>` renders the
+ * platform's glyph. Known limit: `navigator.platform` and `userAgentData.platform` are not read.
+ */
+export function platformGlyphForm({ report }: FormContext): Visitor {
+  let consts: ReadonlyMap<string, Node> = new Map()
+  const resolve = (node: Node | undefined): Node | undefined =>
+    node?.type === 'Identifier' ? (consts.get(node['name'] as string) ?? node) : node
+  const onSniff = (node: Node): void => {
+    const sniff = userAgentTest(node, resolve)
+    if (sniff?.platform === true) report(node, sniff.subject)
+  }
+  return {
+    Program(node) {
+      consts = topLevelConsts(node)
+    },
+    MemberExpression: onSniff,
+    CallExpression: onSniff,
+  }
 }
 
 /** react-responsive's width keys: any of them makes the object query a viewport query. */
