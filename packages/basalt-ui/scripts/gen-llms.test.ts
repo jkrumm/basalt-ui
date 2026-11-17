@@ -325,7 +325,8 @@ describe('option types (row 187)', () => {
   })
 
   test('the slot and composite types an agent builds first are expanded (row 197)', () => {
-    expect(text).toMatch(/^Type: ChartFigure = \{ value: number \| string \| null/m)
+    // A member with its own JSDoc (`periodMono`) prints the members one per line.
+    expect(text).toMatch(/^Type: ChartFigure = \{\s+value: number \| string \| null/m)
     expect(text).toMatch(/^Type: QueryStateLike = \{/m)
     expect(text).toMatch(/^Type: LegendEntry = \{/m)
     expect(text).toMatch(/^Type: XConfig<D> = \{/m)
