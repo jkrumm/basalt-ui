@@ -20,6 +20,9 @@ const LINE_AIR = 1.5
 /** The longest stretch of a path one box covers, px: a long diagonal is many small boxes, not one tall one. */
 const PIECE_PX = 6
 
+/** Half the height of a rule's box, px: its half stroke and the air a label keeps. */
+const RULE_REACH = 2
+
 let current: (() => readonly LabelBox[]) | undefined
 
 /** Runs `run` with `boxes` as the host's obstacles; read lazily, once, on the first `place`. */
@@ -62,6 +65,22 @@ export const captionPx = (
   width: (box.fx1 - box.fx0) * plot.width,
   height: box.bottom - box.top,
 })
+
+/**
+ * Reference lines as boxes: each rule spans the plot's width at its value's y, a hairline and its
+ * air tall, so a label never runs along or through a drawn rule. `domain` is the rule's own axis.
+ */
+export function ruleBoxes(
+  rules: readonly { value: number; domain: readonly [number, number] }[],
+  plot: PlotPx,
+): LabelBox[] {
+  return rules.flatMap(({ value, domain }) => {
+    const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+    if (!Number.isFinite(value) || value < lo || value > hi) return []
+    const y = ((hi - value) / (hi - lo || 1)) * plot.height
+    return [{ left: 0, top: y - RULE_REACH, width: plot.width, height: 2 * RULE_REACH }]
+  })
+}
 
 /**
  * A line path as boxes: each stretch of at most {@link PIECE_PX} gets the box of its two ends, so a
