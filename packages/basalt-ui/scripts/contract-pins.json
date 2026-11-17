@@ -9,7 +9,7 @@
   "packages/basalt-ui/scripts/export-surface/table.json": "97b15c42818985343eaa1c3155e693601337ed2977e05cb3364bf81a44a9f269",
   "packages/basalt-ui/src/ai/contract.ts": "0b5edbbf9cefa4ac9e6f88ae72df3ed75a1af1e7ce19fc4e7460100f639d669c",
   "packages/basalt-ui/src/cards/contract.ts": "ae5a9853b38bc76a559b79db0461a58ad4b6b9f0c275851abe85062ff420e6a0",
-  "packages/basalt-ui/src/charts/contract.ts": "01d49c7466cdab0af8a7aa0ff54288f4dc27b8fcd567d3a097fb249d99297114",
+  "packages/basalt-ui/src/charts/contract.ts": "06fbd15a8c2323ade89592dd192c52943aed77f74dd82d52bd98606b522f132c",
   "packages/basalt-ui/src/content/contract.ts": "aac81048f2298c66dae01500513764ca0307d959bb3f0e94039fb11c663a32c8",
   "packages/basalt-ui/src/controls/contract.ts": "3a1ea086e12cb451c658114c26185a7e72a68dc20ea419782f850eaf73a329c9",
   "packages/basalt-ui/src/core/ports.ts": "fd309568bda80ba542cf696cd7c73dae57a4fa0656020ab9433aba0dae87c4ec",
@@ -17,6 +17,6 @@
   "packages/basalt-ui/src/router/index.ts": "c4905f8ab897105cbed4aaf9f42addaa4612046e10548cd8a3e7a4aa59e276da",
   "packages/basalt-ui/src/shell/contract.ts": "907e45e1c597a5f104a5cd01b04100ec448236aded0ae468422555c41e427bb0",
   "packages/basalt-ui/src/shell/index.ts": "9ffa5036e71bb8396edeeecf7a7f2266bd993628265f8b78ce30e854ec0a5f30",
-  "packages/basalt-ui/src/table/contract.ts": "7c2dbda9d6156f80ddb20e9d7709cb6a13b5718066cf364a69cbb422b31f9910",
+  "packages/basalt-ui/src/table/contract.ts": "de85534c229d87255d0c5464ab4e30fb8743a5e5deb7c14a53ee838430625c10",
   "packages/basalt-ui/src/ui/slots.ts": "bf074882816faa0126efcb5ce8e7fa3a8e94de21fa1e9fbafbd3d2b8c33dc63c"
 }
