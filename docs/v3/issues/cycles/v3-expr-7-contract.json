@@ -1,0 +1,29 @@
+{
+  "why": "Expression cycle 7 (docs/v3/cycles/expression-7.md) found three gaps the kit cannot close without amending a contract file. (a) A list whose rows are a chart's series cannot share its focus. n26's table lists the four hops its chart draws as four lines; `DataTable focus` maps a row to one chart item by id, and the chart's items are minutes, so neither direction links (.84, X3 0, P2; the builder named it in rounds 0 and 1). `ChartFocus.groupItem` (`charts/contract.ts:140`) links a row to a contiguous group of items, not to a series across every x. n22's two signal cards stand for the chart's two series and could follow the focused morning only through `focus.readout`, with no way to emphasise their line (round-0 review finding 5). (b) A time or an id outside the three mono slots cycle 6 added has no mono face: an entity column's main text (n24's workflow ids, .58; n23's monitor names, round-1 X5) and a footer fact's value (n25's '21 Oct', .70; the builder: 'the kit only takes a string value there'). (c) A ranked list of long names has no bar form that keeps every name: n24 stacked spend by purpose per workflow on a band axis that shows 4 of 12 names at 1800 and 2 at 390 (.48, F6 1, P2), and wished for horizontal stacked bars; cycle 6's c16 wished for horizontal bars too and drew a scatter instead (expression-6 Hypotheses). `BarList` draws one value per row and does not stack.",
+  "what": "A Spec, then the smallest contract amendment for a series-linked list, a mono flag on an entity's main text and on a footer value, and a horizontal bar form, or the Spec's ruling against any of them.",
+  "owns": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/src/cards/contract.ts",
+    "packages/basalt-ui/src/table/contract.ts (the entity column and the row focus only)",
+    "the components that read the changed fields, and their tests",
+    "packages/basalt-ui/agent/** text that teaches the changed fields, through its generator",
+    "the contract-frozen pins the amendment moves, with the amendment commit the repo's process names"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md (the Spec names any section it would amend; the owner rules)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "Write the Spec first (one page, checkpoint spec): for (a), (b) and (c) the smallest change that closes it, its type, and the cases that ask for it; at most three open choices with defaults. Candidate defaults the Spec may overturn: (a) `ChartFocus` gains a series handle, `focus.series(key)`, that a list row spreads: pointing at the row emphasises that series across every x and dims the others, and a focus on any datum of the series marks the row; `DataTable` takes a `focusSeries` mapping a row to a series key beside its `focus` by id (n26, n22). (b) An entity column's main text and a `FootFact` value take the `mono` flag cycle 6 gave the period, the stat sub and the entity sub; no free class (n24, n25, n23). (c) `Bars` takes `orientation: 'horizontal'`, ranked bars with the category on the band axis at the left, stacking as it does today, every name drawn in the left gutter (n24, c16); the alternative the Spec weighs is a `BarList` that stacks segments. The Spec says whether each ships in a 3.x minor or must land before 3.0, and whether (c) is a new form under the Rule of Three (EXPRESSION.md hypothesis 3) or a prop of a shipped kind.",
+  "commits": "feat: per change with its tests; docs: for regenerated agent text; package commits separate from non-package ones.",
+  "proof": "make check; a unit test that a row with a series handle emphasises its series and is marked by a focus on that series; a layout test of a mono entity main text and a mono footer value at 390 and 1800; a layout test of horizontal stacked bars with twelve long names at 390 and 1800 if the Spec keeps (c).",
+  "acceptance": [
+    "A Spec is submitted and its verdict is read before the build",
+    "A list row can stand for a chart series: pointing at it emphasises the series, and focus on the series marks the row, with a test, or the Spec rules it out",
+    "An entity column's main text and a footer fact value can be set in the mono face, with a layout test, or the Spec rules it out",
+    "A ranked bar form keeps every name at 390 and 1800, with a layout test, or the Spec rules it out",
+    "The basalt-charts or basalt-page reference names what shipped",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit behaviours that need no contract field (v3-expr-7-kit-fixes); skill text (v3-expr-7-skill); lanes of charts inside one card (n26 only); a rating column kind (n11 only)."
+}
