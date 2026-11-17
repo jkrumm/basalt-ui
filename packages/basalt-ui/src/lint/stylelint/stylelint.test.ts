@@ -292,6 +292,24 @@ describe('messages', () => {
     )
   })
 
+  it('names the decoration fix by the value role: status, chart or brand', async () => {
+    const text = async (file: string): Promise<string> => {
+      const [finding] = (await lint(`offenders/${file}`)).get(`offenders/${file}`) ?? []
+      return valueListMessage(finding?.text.replace(/\s*\([\w-]+\)$/, '') ?? '')
+    }
+    const status = await text('background-tint.css')
+    expect(status).toContain('Status, Lozenge, DeltaBadge or a Num tone')
+    expect(status).not.toContain('--basalt-selected')
+    expect(await text('outline-status.css')).toContain('Status, Lozenge, DeltaBadge')
+    const chart = await text('shadow-chart.css')
+    expect(chart).toContain('chart kind')
+    expect(chart).not.toContain('--basalt-selected')
+    expect(await text('border-left-brand.css')).toContain('var(--basalt-selected)')
+    expect(
+      valueListMessage('Disallowed `background: var(--color-warn-tint)`. By property: x.'),
+    ).toContain('Status, Lozenge, DeltaBadge')
+  })
+
   it('leaves another rule and an unparsed report as it is', () => {
     expect(valueListMessage('Never force a style with `!important`.')).toBe(
       'Never force a style with `!important`.',

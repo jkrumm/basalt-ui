@@ -72,8 +72,23 @@ const THEME_NAMES = bridgeEntries()
   .filter((name) => /^--(?:color|radius|font)-/.test(name))
 const THEME_PROPERTY = `/^(?:${THEME_NAMES.join('|')})$/`
 
-/** One property group of the value list: the properties, the values banned on them, the fix. */
-type ValueGroup = { properties: string; values: string[]; clause: string; scrollOnly?: true }
+/**
+ * One property group of the value list: the properties, the values banned on them, the fix.
+ * `roles` narrows the fix by the reported value: `basalt-ui lint` quotes the first role whose
+ * pattern the value matches, in place of the group's clause.
+ */
+type ValueGroup = {
+  properties: string
+  values: string[]
+  clause: string
+  roles?: readonly { value: string; clause: string }[]
+  scrollOnly?: true
+}
+
+const STATUS_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:good|warn|bad|info|destructive)(?:-[a-z0-9-]+)?\\s*[,)]`
+const CHART_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:chart|seq)(?:-[a-z0-9-]+)?\\s*[,)]`
+const DECORATION_LEAD =
+  'background, border, outline and shadow take the colour role of their surface'
 
 /**
  * The groups in message order. `scrollOnly` marks the bans that hold from `parts` up, as their
@@ -91,8 +106,21 @@ const VALUE_GROUPS: readonly ValueGroup[] = [
   {
     properties: DECORATION_PROPERTIES,
     values: [`/${DECORATIVE_ROLE}/i`],
-    clause:
-      'background, border, outline and shadow take the colour role of their surface, never a status, chart or brand colour (a tinted background is var(--basalt-selected) or a surface token)',
+    clause: `${DECORATION_LEAD}, never a status, chart or brand colour: a status colour or tint is Status, Lozenge, DeltaBadge or a Num tone, a chart colour belongs to a chart kind, and only a brand tint is var(--basalt-selected) or a surface token`,
+    roles: [
+      {
+        value: `/${STATUS_ROLE}/i`,
+        clause: `${DECORATION_LEAD}, never a status colour or tint: Status, Lozenge, DeltaBadge or a Num tone own status colour in app code`,
+      },
+      {
+        value: `/${CHART_ROLE}/i`,
+        clause: `${DECORATION_LEAD}, never a chart colour: a series colour belongs to a chart kind from basalt-ui/charts`,
+      },
+      {
+        value: `/${DECORATIVE_ROLE}/i`,
+        clause: `${DECORATION_LEAD}, never a brand colour (a tinted background is var(--basalt-selected) or a surface token)`,
+      },
+    ],
   },
   {
     // colour mixing is only legal over tokens or transparent
@@ -177,7 +205,9 @@ export function valueListMessage(text: string): string {
     (group) =>
       regexOf(group.properties).test(property) &&
       group.values.some((pattern) => regexOf(pattern).test(value)),
-  ).map((group) => group.clause)
+  ).map(
+    (group) => group.roles?.find((role) => regexOf(role.value).test(value))?.clause ?? group.clause,
+  )
   if (clauses.length === 0) return text
   const body = clauses.join('; ')
   return `${head} ${body.charAt(0).toUpperCase()}${body.slice(1)}.`
