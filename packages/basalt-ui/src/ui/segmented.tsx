@@ -9,14 +9,15 @@ import { cn } from '../core/cn'
 /**
  * The `Segmented` cva table: a track holding a row of options, with one raised indicator under the
  * selected one. The track is tinted with an ink mix, so it reads on a card and on the page alike. Each
- * option sizes to its label, and a label wraps only when the track alone is wider than its box; the
- * track is at least one control high and a coarse pointer gets the 44 px floor.
+ * option sizes to its label on one line; a track wider than its box scrolls sideways rather than break
+ * a label, and the focus ring sits inside the option so the scroll box does not clip it. The track is at
+ * least one control high and a coarse pointer gets the 44 px floor.
  *
  * @example
  * segmentedVariants({ size: 'sm' })
  */
 export const segmentedVariants = cva(
-  'group/segmented relative inline-flex max-w-full items-stretch rounded-ctrl bg-accent p-0.5 pointer-coarse:min-h-12',
+  'group/segmented relative inline-flex max-w-full items-stretch overflow-x-auto rounded-ctrl bg-accent p-0.5 [scrollbar-width:none] pointer-coarse:min-h-12',
   {
     variants: {
       size: {
@@ -41,7 +42,7 @@ const OWN_FACE =
  * segmentedItemVariants({ size: 'md' })
  */
 export const segmentedItemVariants = cva(
-  `relative z-10 flex min-w-0 flex-auto cursor-pointer pointer-coarse:min-w-11 items-center justify-center gap-1.5 rounded-[calc(var(--radius-ctrl)-2px)] text-center font-medium text-muted-foreground transition-colors select-none motion-reduce:transition-none focus-ring after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-6 after:-translate-y-1/2 pointer-coarse:after:min-h-11 hover:text-foreground data-pressed:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 ${OWN_FACE}`,
+  `relative z-10 flex flex-auto shrink-0 cursor-pointer whitespace-nowrap pointer-coarse:min-w-11 items-center justify-center gap-1.5 rounded-[calc(var(--radius-ctrl)-2px)] text-center font-medium text-muted-foreground transition-colors select-none motion-reduce:transition-none focus-ring focus-visible:-outline-offset-2 after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-6 after:-translate-y-1/2 pointer-coarse:after:min-h-11 hover:text-foreground data-pressed:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 ${OWN_FACE}`,
   {
     variants: {
       size: {
