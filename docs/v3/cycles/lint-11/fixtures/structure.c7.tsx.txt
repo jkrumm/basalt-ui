@@ -1,0 +1,610 @@
+// Cycle 7 phrasings for the structure family: import-boundary, primitive-bypass, colour-literal,
+// data-primitive, router-search, control-home, untrusted-markdown. Seed numbers continue cycle 6's.
+// A `pass` mark is valid code beside a shape a cycle 6 fix widened a form to (a role-less clickable
+// element, a custom-property or transform mark, an empty array in either ternary branch).
+// Every non-seeded import sits here, above its first use; a seeded import sits in its own span.
+import { createElement, useEffect, useMemo, useRef, useState } from 'react'
+import { createFileRoute, Link, redirect, useNavigate, useRouter } from '@tanstack/react-router'
+import { QueryClient, queryOptions, useQuery, useQueryClient } from '@tanstack/react-query'
+import { liveQuery } from 'basalt-ui/data'
+import { Markdown } from 'basalt-ui/content'
+import { Switch } from 'basalt-ui/ui/switch'
+import { ToggleGroup, ToggleGroupItem } from 'basalt-ui/ui/toggle-group'
+import { TableBody, TableRow, TableCell } from 'basalt-ui/ui/table'
+import { ChartCard, Lines, Bars } from 'basalt-ui/charts'
+import { Section as S } from 'basalt-ui/page'
+import { scaleLinear } from 'd3-scale'
+
+type Row = { id: string; name: string; value: number; share: number; html: string; at: string }
+const runsQuery = { queryKey: ['runs'], queryFn: async () => [] as Row[] }
+
+// seed import-boundary/radix 15: Headless UI's dialog, Tailwind Labs' kit
+import { Dialog as HDialog } from '@headlessui/react'
+export const HD = HDialog
+
+// seed import-boundary/radix 16: Ant Design's component kit
+import { Button as AntButton } from 'antd'
+export const AB = AntButton
+
+// seed import-boundary/radix 17: HeroUI, the renamed NextUI kit
+import { Modal as HeroModal } from '@heroui/react'
+export const HM = HeroModal
+
+// seed import-boundary/base-ui 12: vaul's drawer, under the shipped sheet
+import { Drawer } from 'vaul'
+export const VD = Drawer
+
+// seed import-boundary/base-ui 13: TanStack Virtual's hook, under the shipped virtual list
+import { useVirtualizer } from '@tanstack/react-virtual'
+export const UV = useVirtualizer
+
+// seed import-boundary/visx 14: ECharts' React wrapper
+import ReactECharts from 'echarts-for-react'
+export const RE = ReactECharts
+
+// seed import-boundary/visx 15: Nivo's line chart
+import { ResponsiveLine } from '@nivo/line'
+export const NL = ResponsiveLine
+
+// seed import-boundary/visx 16: react-chartjs-2 over Chart.js
+import { Line as ChartJsLine } from 'react-chartjs-2'
+export const CL = ChartJsLine
+
+// seed import-boundary/data-library 12: Apollo's GraphQL client and its cache
+import { useQuery as useApolloQuery } from '@apollo/client'
+export const AQ = useApolloQuery
+
+// seed import-boundary/data-library 13: RTK Query's React entry
+import { createApi } from '@reduxjs/toolkit/query/react'
+export const CA = createApi
+
+// seed import-boundary/persist-storage 12: idb-keyval as a persisted store
+import { set as idbSet } from 'idb-keyval'
+export const IS = idbSet
+
+// seed import-boundary/persist-storage 13: zustand's persist middleware
+import { persist } from 'zustand/middleware'
+export const ZP = persist
+
+// seed import-boundary/sonner 9: react-toastify's toast
+import { toast } from 'react-toastify'
+export const RT = toast
+
+// seed import-boundary/sonner 10: notistack's snackbar hook
+import { useSnackbar } from 'notistack'
+export const NS = useSnackbar
+
+// seed import-boundary/cmdk 7: kbar's command palette
+import { KBarProvider } from 'kbar'
+export const KB = KBarProvider
+
+// seed import-boundary/streamdown 10: marked rendering a reply to html
+import { marked } from 'marked'
+export const MK = marked
+
+// seed import-boundary/streamdown 11: markdown-it rendering a reply
+import MarkdownIt from 'markdown-it'
+export const MI = MarkdownIt
+
+// seed import-boundary/tailwind-merge 7: classnames for class composition
+import classNames from 'classnames'
+export const CN = classNames
+
+// seed import-boundary/tailwind-merge 8: tailwind-variants, which merges through tailwind-merge
+import { tv } from 'tailwind-variants'
+export const TV = tv
+
+// seed import-boundary/react-table-hook 10: AG Grid's React grid
+import { AgGridReact } from 'ag-grid-react'
+export const AG = AgGridReact
+
+// seed import-boundary/react-table-hook 11: Material React Table over TanStack Table
+import { MaterialReactTable } from 'material-react-table'
+export const MRT = MaterialReactTable
+
+// pass import-boundary/radix 2: an icon package of a kit the stack bans, an icon library
+import AddIcon from '@mui/icons-material/Add'
+export const AI = AddIcon
+
+// pass import-boundary/base-ui 1: react-aria's date library, a value type and no component
+import { parseDate } from '@internationalized/date'
+export const PD = parseDate
+
+// seed primitive-bypass/raw-control 16: a native disclosure for a details panel
+export function More() {
+  return (
+    <details>
+      <summary>More</summary>
+      <p>hidden</p>
+    </details>
+  )
+}
+
+// seed primitive-bypass/raw-control 17: a role-less div that acts on pointer down, not on click
+export function Pick({ go }: { go: () => void }) {
+  return <div className="cursor-pointer" onPointerDown={go}>pick</div>
+}
+
+// seed primitive-bypass/raw-control 18: a role-less div that acts on mouse down
+export function Grab({ go }: { go: () => void }) {
+  return <div className="cursor-grab" onMouseDown={go}>grab</div>
+}
+
+// pass primitive-bypass/raw-control 3: a span whose only job is to stop the click reaching its row
+export function Guard() {
+  return (
+    <span
+      onClick={(e) => {
+        e.stopPropagation()
+      }}
+    >
+      g
+    </span>
+  )
+}
+
+// pass primitive-bypass/raw-control 4: a key handler on a container that holds focusable children
+export function Grid({ move }: { move: (k: string) => void }) {
+  return (
+    <div onKeyDown={(e) => move(e.key)}>
+      <a href="/a">a</a>
+    </div>
+  )
+}
+
+// seed primitive-bypass/checkable-input 12: a checkbox given the switch role
+export function Toggle() {
+  return <input type="checkbox" role="switch" aria-label="on" />
+}
+
+// seed primitive-bypass/checkable-input 13: a hidden checkbox driving a peer-styled switch
+export function Peer() {
+  return (
+    <label>
+      <input type="checkbox" className="peer sr-only" />
+      <span className="peer-checked:bg-brand-fill">s</span>
+    </label>
+  )
+}
+
+// seed primitive-bypass/raw-heading 13: a paragraph styled as a section heading
+export function Title() {
+  return <p className="text-lg font-semibold">Recent runs</p>
+}
+
+// seed primitive-bypass/raw-heading 14: React.createElement with a literal heading tag
+import * as React from 'react'
+export function Head() {
+  return React.createElement('h3', null, 'Runs')
+}
+
+// seed primitive-bypass/raw-table 11: rows of records laid out on a grid, one column per field
+export function Records({ rows }: { rows: Row[] }) {
+  return (
+    <div className="grid grid-cols-[auto_1fr_auto]">
+      {rows.map((r) => (
+        <div key={r.id} className="contents">
+          <span>{r.name}</span>
+          <span>{r.at}</span>
+          <span>{r.value}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/raw-table 12: CSS table-row and table-cell displays on divs
+export function Sheet() {
+  return (
+    <div className="table">
+      <div className="table-row">
+        <div className="table-cell">a</div>
+      </div>
+    </div>
+  )
+}
+
+// seed primitive-bypass/role-table 10: a treegrid role on a hand-built tree
+export function Tree() {
+  return (
+    <div role="treegrid">
+      <div role="row">t</div>
+    </div>
+  )
+}
+
+// seed primitive-bypass/role-table 11: a row role set in an expression container
+export function Line() {
+  return (
+    <div role={'row'}>
+      <span role={'gridcell'}>l</span>
+    </div>
+  )
+}
+
+// seed primitive-bypass/table-rows 11: TableRow mapped from Object.entries over grouped data
+export function Grouped({ byName }: { byName: Record<string, number> }) {
+  return (
+    <TableBody>
+      {Object.entries(byName).map(([k, v]) => (
+        <TableRow key={k}>
+          <TableCell>{k}</TableCell>
+          <TableCell>{v}</TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  )
+}
+
+// seed primitive-bypass/table-rows 12: rows pushed in a loop and rendered
+export function Looped({ rows }: { rows: Row[] }) {
+  const out: React.ReactNode[] = []
+  for (const r of rows)
+    out.push(
+      <TableRow key={r.id}>
+        <TableCell>{r.name}</TableCell>
+      </TableRow>,
+    )
+  return <TableBody>{out}</TableBody>
+}
+
+// seed primitive-bypass/svg-data-marks 13: rects sized through a d3 scale
+export function Columns({ rows }: { rows: Row[] }) {
+  const y = scaleLinear().domain([0, 100]).range([0, 80])
+  return (
+    <svg viewBox="0 0 100 80" aria-label="columns">
+      {rows.map((r, i) => (
+        <rect key={r.id} x={i * 10} width={8} height={y(r.value)} />
+      ))}
+    </svg>
+  )
+}
+
+// seed primitive-bypass/svg-data-marks 14: a polyline whose points are computed in a memo first
+export function Trend({ rows }: { rows: Row[] }) {
+  const pts = useMemo(() => rows.map((r, i) => `${i * 10},${20 - r.value}`).join(' '), [rows])
+  return (
+    <svg viewBox="0 0 100 20" aria-label="trend">
+      <polyline points={pts} />
+    </svg>
+  )
+}
+
+// seed primitive-bypass/html-data-marks 12: a bar moved by the translate property from data
+export function Marker({ rows }: { rows: Row[] }) {
+  return (
+    <div className="relative h-2">
+      {rows.map((r) => (
+        <span key={r.id} className="absolute size-2" style={{ translate: `${r.share * 100}% 0` }} />
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/html-data-marks 13: a bar spanning grid columns from data
+export function Gantt({ rows }: { rows: Row[] }) {
+  return (
+    <div className="grid grid-cols-12">
+      {rows.map((r) => (
+        <div key={r.id} className="h-2 bg-brand-fill" style={{ gridColumn: `span ${r.value}` }} />
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/html-data-marks 14: a bar sized by the flex shorthand from data
+export function Stack({ rows }: { rows: Row[] }) {
+  return (
+    <div className="flex h-2">
+      {rows.map((r) => (
+        <div key={r.id} className="bg-brand-fill" style={{ flex: r.share }} />
+      ))}
+    </div>
+  )
+}
+
+// pass primitive-bypass/html-data-marks 2: a constant translate that centres a tooltip
+export function Tip() {
+  return <div className="absolute" style={{ translate: '-50% 0' }} />
+}
+
+// seed primitive-bypass/chart-body-root 12: a chart kind in basalt's Section imported under another name
+export function Usage({ rows }: { rows: Row[] }) {
+  return (
+    <S title="Usage">
+      <Lines label="usage" data={rows} x="at" y="value" />
+    </S>
+  )
+}
+
+// seed primitive-bypass/chart-body-root 13: a chart kind in a main element through a fragment
+export function Board({ rows }: { rows: Row[] }) {
+  return (
+    <main>
+      <>
+        <Bars label="runs" data={rows} x="name" y="value" />
+      </>
+    </main>
+  )
+}
+
+// pass primitive-bypass/chart-body-root 2: a chart in its ChartCard inside a renamed Section
+export function Usage2({ rows }: { rows: Row[] }) {
+  return (
+    <S title="Usage">
+      <ChartCard title="Usage">
+        <Lines label="usage" data={rows} x="at" y="value" />
+      </ChartCard>
+    </S>
+  )
+}
+
+// seed primitive-bypass/intl-format 18: Intl's relative time formatter in JSX
+export function Ago({ days }: { days: number }) {
+  return <span>{new Intl.RelativeTimeFormat('en').format(-days, 'day')}</span>
+}
+
+// seed primitive-bypass/intl-format 19: a date's English toDateString as display text
+export function Day({ r }: { r: Row }) {
+  return <time dateTime={r.at}>{new Date(r.at).toDateString()}</time>
+}
+
+// pass primitive-bypass/intl-format 3: toFixed into a style value, not display text
+export function Faded({ r }: { r: Row }) {
+  return <div style={{ opacity: r.share.toFixed(2) }}>f</div>
+}
+
+// seed colour-literal/colour-literal 23: CSS relative colour syntax in an inline style
+export function Glow() {
+  return <div style={{ boxShadow: '0 0 8px rgb(from var(--basalt-brand) r g b / 50%)' }}>g</div>
+}
+
+// seed colour-literal/colour-literal 24: a named colour in a style object
+export function Badge() {
+  return <span style={{ color: 'rebeccapurple' }}>b</span>
+}
+
+// seed colour-literal/colour-literal 25: an oklch colour built in a template from data
+export function Heat({ r }: { r: Row }) {
+  return <td style={{ background: `oklch(0.8 0.1 ${r.value})` }}>h</td>
+}
+
+// pass colour-literal/colour-literal 5: currentColor, inherit and transparent are no colour literals
+export function Plain() {
+  return <svg style={{ color: 'inherit', fill: 'currentColor', background: 'transparent' }} aria-hidden />
+}
+
+// seed data-primitive/refetch-interval 12: refetchInterval inside queryOptions
+export const pollOpts = queryOptions({ ...runsQuery, refetchInterval: 5000 })
+
+// seed data-primitive/refetch-interval 13: refetchInterval that stops when the run is done
+export function Watch() {
+  const { data } = useQuery({ ...runsQuery, refetchInterval: (q) => (q.state.data?.length ? false : 2000) })
+  return <div>{data?.length}</div>
+}
+
+// seed data-primitive/unseamed-transport 12: a WebSocket from the window object
+export function useFeed(url: string) {
+  useEffect(() => {
+    const ws = new window.WebSocket(url)
+    return () => ws.close()
+  }, [url])
+}
+
+// seed data-primitive/unseamed-transport 13: reconnecting-websocket's client in an effect
+import ReconnectingWebSocket from 'reconnecting-websocket'
+export function useFeed2(url: string) {
+  useEffect(() => {
+    const ws = new ReconnectingWebSocket(url)
+    return () => ws.close()
+  }, [url])
+}
+
+// seed data-primitive/reader-loop 11: a reader taken through optional chaining and read in a loop
+export async function tail(url: string, on: (b: Uint8Array) => void) {
+  const res = await fetch(url)
+  const reader = res.body?.getReader()
+  while (reader) {
+    const r = await reader.read()
+    if (r.done) break
+    on(r.value)
+  }
+}
+
+// seed data-primitive/reader-loop 12: a decoded stream piped to a writable sink
+export async function sink(url: string, on: (s: string) => void) {
+  const res = await fetch(url)
+  await res.body!.pipeThrough(new TextDecoderStream()).pipeTo(new WritableStream({ write: on }))
+}
+
+// seed data-primitive/deprecated-fetch 9: prefetchInfiniteQuery in a loader
+export const RouteF = createFileRoute('/f')({
+  loader: ({ context }: { context: { queryClient: QueryClient } }) =>
+    context.queryClient.prefetchInfiniteQuery({ ...runsQuery, initialPageParam: 0, getNextPageParam: () => 1 }),
+})
+
+// seed data-primitive/deprecated-fetch 10: fetchQuery through the hook's client in a handler
+export function Refresh() {
+  const qc = useQueryClient()
+  return <button type="button" onClick={() => void qc.fetchQuery(runsQuery)}>r</button>
+}
+
+// seed data-primitive/query-client-singleton 11: a client in a useMemo
+export function Root() {
+  const client = useMemo(() => new QueryClient(), [])
+  return <div>{String(Boolean(client))}</div>
+}
+
+// seed data-primitive/query-client-singleton 12: a client built inline in the router context
+export const ctx = { context: { queryClient: new QueryClient() } }
+
+// seed data-primitive/chart-data-fallback 14: a logical-or fallback
+export function Load() {
+  const { data } = useQuery(runsQuery)
+  return <Lines label="runs" data={data || []} x="at" y="value" />
+}
+
+// seed data-primitive/chart-data-fallback 15: a fallback on a nested field of the data
+export function Load2() {
+  const q = useQuery({ queryKey: ['page'], queryFn: async () => ({ rows: [] as Row[] }) })
+  return <Bars label="runs" data={q.data?.rows ?? []} x="name" y="value" />
+}
+
+// pass data-primitive/chart-data-fallback 2: an empty state chosen against computed rows
+export function Shot({ shot, rows }: { shot: string; rows: Row[] }) {
+  return <Bars label="runs" data={shot === 'empty' ? [] : rows} x="name" y="value" />
+}
+
+// seed data-primitive/timer-refetch 13: refetch handed to setInterval by reference
+export function Tick() {
+  const { refetch } = useQuery(runsQuery)
+  useEffect(() => {
+    const t = setInterval(refetch, 5000)
+    return () => clearInterval(t)
+  }, [refetch])
+  return null
+}
+
+// seed data-primitive/timer-refetch 14: a window timeout that refetches after a mutation
+export function After() {
+  const q = useQuery(runsQuery)
+  return <button type="button" onClick={() => window.setTimeout(() => void q.refetch(), 1000)}>a</button>
+}
+
+// seed data-primitive/raw-storage-write 14: a localStorage removal
+export function forget(k: string) {
+  localStorage.removeItem(k)
+}
+
+// seed data-primitive/raw-storage-write 15: usehooks-ts' local storage hook
+import { useLocalStorage } from 'usehooks-ts'
+export function useDensity() {
+  return useLocalStorage('density', 0)
+}
+
+// seed data-primitive/live-static-stale-time 13: an infinite staleTime spelled through Number
+export const live3 = liveQuery({ ...runsQuery, staleTime: Number.POSITIVE_INFINITY })
+
+// seed data-primitive/live-static-stale-time 14: Infinity beside an infinite gcTime
+export const live4 = liveQuery({ ...runsQuery, gcTime: Infinity, staleTime: Infinity })
+
+// seed router-search/literal-search 18: a literal search in a redirect from beforeLoad
+export const RouteG = createFileRoute('/g')({
+  beforeLoad: () => {
+    throw redirect({ to: '/runs', search: { page: 1 } })
+  },
+})
+
+// seed router-search/literal-search 19: router.navigate with a literal search object
+export function useJump() {
+  const router = useRouter()
+  return () => router.navigate({ to: '/runs', search: { tab: 'logs' } })
+}
+
+// seed router-search/literal-search 20: a Link whose search is a literal object
+export function Logs() {
+  return <Link to="/runs" search={{ tab: 'logs' }}>logs</Link>
+}
+
+// seed router-search/loader-deps-search 12: the whole search wrapped in an object
+export const RouteH = createFileRoute('/h')({
+  loaderDeps: ({ search }) => ({ search }),
+})
+
+// seed router-search/loader-deps-search 13: a structured clone of the search
+export const RouteI = createFileRoute('/i')({
+  loaderDeps: ({ search }) => structuredClone(search),
+})
+
+// seed router-search/validate-search-pure 13: validateSearch that reads the bare location global
+export const RouteJ = createFileRoute('/j')({
+  validateSearch: (s: Record<string, unknown>) => ({
+    q: String(s.q ?? new URLSearchParams(location.search).get('q') ?? ''),
+  }),
+})
+
+// seed router-search/validate-search-pure 14: validateSearch that reads a performance timestamp
+export const RouteK = createFileRoute('/k')({
+  validateSearch: (s: Record<string, unknown>) => ({ ...s, t: performance.now() }),
+})
+
+// pass router-search/validate-search-pure 2: a date parsed from the input is pure
+export const RouteL = createFileRoute('/l')({
+  validateSearch: (s: Record<string, unknown>) => ({ from: new Date(String(s.from ?? '2026-01-01')) }),
+})
+
+// seed control-home/outside-home 21: a Switch on local state as a page filter
+export function OnlyFailed() {
+  const [on, setOn] = useState(false)
+  return <Switch checked={on} onCheckedChange={setOn} aria-label="failed only" />
+}
+
+// seed control-home/outside-home 22: a ToggleGroup on local state switching the view
+export function View() {
+  const [view, setView] = useState<string[]>(['list'])
+  return (
+    <ToggleGroup value={view} onValueChange={setView}>
+      <ToggleGroupItem value="list">List</ToggleGroupItem>
+      <ToggleGroupItem value="grid">Grid</ToggleGroupItem>
+    </ToggleGroup>
+  )
+}
+
+// seed untrusted-markdown/dangerous-html 16: model html as an iframe's srcDoc
+export function Frame({ r }: { r: Row }) {
+  return <iframe title="reply" srcDoc={r.html} />
+}
+
+// seed untrusted-markdown/dangerous-html 17: model html written with insertAdjacentHTML
+export function Append({ r }: { r: Row }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    ref.current?.insertAdjacentHTML('beforeend', r.html)
+  }, [r.html])
+  return <div ref={ref} />
+}
+
+// seed untrusted-markdown/rehype-raw 10: hast-util-to-html told to keep raw html
+import { toHtml } from 'hast-util-to-html'
+export const render = (tree: Parameters<typeof toHtml>[0]) => toHtml(tree, { allowDangerousHtml: true })
+
+// seed untrusted-markdown/rehype-raw 11: rehype-raw listed in a plugin array constant
+import rehypeRaw from 'rehype-raw'
+export const PLUGINS = [rehypeRaw]
+
+// seed untrusted-markdown/mdx-evaluate 12: compiled MDX run with @mdx-js/mdx's run
+import { run } from '@mdx-js/mdx'
+export const exec = (code: string, runtime: Parameters<typeof run>[1]) => run(code, runtime)
+
+// seed untrusted-markdown/mdx-evaluate 13: eval on a model reply
+export function Evil({ r }: { r: Row }) {
+  return <span>{String(eval(r.html))}</span>
+}
+
+// seed untrusted-markdown/trusted-content 13: the trusted tier held in a const
+const TRUST = 'trusted' as const
+export function Reply({ r }: { r: Row }) {
+  return <Markdown contentTrust={TRUST}>{r.html}</Markdown>
+}
+
+// seed untrusted-markdown/trusted-content 14: the trusted tier spread from an object
+export function Reply2({ r }: { r: Row }) {
+  return <Markdown {...{ contentTrust: 'trusted' as const }}>{r.html}</Markdown>
+}
+
+// pass untrusted-markdown/trusted-content 1: a model reply with the untrusted tier
+export function Reply3({ r }: { r: Row }) {
+  return <Markdown contentTrust="untrusted">{r.html}</Markdown>
+}
+
+// pass untrusted-markdown/dangerous-html 3: text, never html, written into a node
+export function Text({ r }: { r: Row }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (ref.current) ref.current.textContent = r.html
+  }, [r.html])
+  return <div ref={ref} />
+}
+
+// keep the unused imports referenced
+export const _keep = [createElement, useNavigate]

@@ -1,0 +1,105 @@
+// Cycle 11 phrasings for waiver-needs-reason, in a file of their own: a range waiver silences
+// the rest of the file, so the range seeds sit at the end. Seed numbers continue cycle 10's.
+// Cycle 11 reads more spellings of a reason that is not one (a block comment with none, one dash, a
+// trailing separator, a colon, a trailing same-line directive, words after a TODO) and more ranges that
+// are wider than the rule allows (a rule in no allowance, a non-basalt rule, an allowed rule in a file
+// no manifest declares deep, a bare disable of everything).
+
+// seed waiver-needs-reason/missing-reason 36: a block-comment directive with no reason
+export function A() {
+  /* oxlint-disable-next-line basalt/raw-scroll */
+  return <div className="overflow-y-auto">a</div>
+}
+
+// seed waiver-needs-reason/missing-reason 37: a single hyphen where the reason marker belongs
+export function B() {
+  // oxlint-disable-next-line basalt/raw-scroll - the log pane scrolls on its own
+  return <div className="overflow-y-auto">b</div>
+}
+
+// seed waiver-needs-reason/missing-reason 38: a JSX comment directive with a separator and nothing after it
+export function C() {
+  return (
+    <section>
+      {/* oxlint-disable-next-line basalt/raw-scroll -- */}
+      <div className="overflow-y-auto">c</div>
+    </section>
+  )
+}
+
+// seed waiver-needs-reason/missing-reason 39: a same-line disable-line directive with no reason
+export function D() {
+  return <div className="overflow-y-auto">d</div> // oxlint-disable-line basalt/raw-scroll
+}
+
+// seed waiver-needs-reason/missing-reason 40: a lower-case fixme as the whole reason
+export function E() {
+  // oxlint-disable-next-line basalt/raw-scroll -- fixme
+  return <div className="overflow-y-auto">e</div>
+}
+
+// seed waiver-needs-reason/missing-reason 41: a colon where the reason marker belongs
+export function F() {
+  // oxlint-disable-next-line basalt/raw-scroll: the log pane scrolls on its own
+  return <div className="overflow-y-auto">f</div>
+}
+
+// seed waiver-needs-reason/missing-reason 42: a TODO with words after it as the reason
+export function G() {
+  // oxlint-disable-next-line basalt/raw-scroll -- todo: move this to ScrollArea
+  return <div className="overflow-y-auto">g</div>
+}
+
+// pass waiver-needs-reason/missing-reason 6: a JSX comment waiver naming its rule and a reason
+export function H() {
+  return (
+    <section>
+      {/* oxlint-disable-next-line basalt/raw-scroll -- the console pane scrolls on its own, ejected next */}
+      <div className="overflow-y-auto">h</div>
+    </section>
+  )
+}
+
+// pass waiver-needs-reason/missing-reason 7: a comment that only mentions the directive token
+export function I() {
+  // the oxlint-disable-next-line directive needs a reason after two hyphens
+  return <p>i</p>
+}
+
+// seed waiver-needs-reason/file-level-scope 21: a reasoned block range of a primitive rule outside the allowance
+/* oxlint-disable basalt/primitive-bypass -- the legacy table is rebuilt next sprint */
+export function J() {
+  return <table>j</table>
+}
+/* oxlint-enable basalt/primitive-bypass */
+
+// seed waiver-needs-reason/file-level-scope 22: a reasoned range of a non-basalt rule
+/* eslint-disable react-hooks/exhaustive-deps -- the effect reads a ref on purpose */
+export function K() {
+  return <p>k</p>
+}
+/* eslint-enable react-hooks/exhaustive-deps */
+
+// seed waiver-needs-reason/file-level-scope 23: a reasoned range of colour-literal and viewport-keyed together
+/* eslint-disable basalt/colour-literal, basalt/viewport-keyed -- the marketing hero is art-directed */
+export function L() {
+  return <p>l</p>
+}
+/* eslint-enable basalt/colour-literal, basalt/viewport-keyed */
+
+// seed waiver-needs-reason/file-level-scope 24: a reasoned range of colour-literal, allowed only on a declared deep-render path
+/* eslint-disable basalt/colour-literal -- the chart palette file holds the series pairs */
+export const SERIES = ['a', 'b']
+/* eslint-enable basalt/colour-literal */
+
+// seed waiver-needs-reason/file-level-scope 25: a line-comment range of app-spacing left open to the end of the file
+// eslint-disable basalt/app-spacing -- the legacy admin screens use margins everywhere
+export function M() {
+  return <p>m</p>
+}
+
+// seed waiver-needs-reason/file-level-scope 26: a bare disable of every rule with a reason
+/* eslint-disable -- generated file, never edited by hand */
+export function N() {
+  return <p>n</p>
+}

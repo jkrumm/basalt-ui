@@ -1,0 +1,219 @@
+// Cycle 2 phrasings for basalt/primitive-bypass. Seed numbers continue cycle 1's.
+import { Table, TableBody, TableCell, TableRow } from 'basalt-ui/ui/table'
+import { Lines } from 'basalt-ui/charts'
+import { DataPanel } from 'basalt-ui/page'
+
+type Run = { id: string; name: string; share: number; at: Date }
+
+// seed primitive-bypass/raw-control 4: a div with role button and a click handler
+export function FakeButton({ onOpen }: { onOpen: () => void }) {
+  return (
+    <div role="button" tabIndex={0} onClick={onOpen}>
+      Open
+    </div>
+  )
+}
+
+// seed primitive-bypass/raw-control 5: a range input for a threshold
+export function Threshold() {
+  return <input type="range" min={0} max={100} />
+}
+
+// seed primitive-bypass/raw-control 6: a native dialog element for a confirm step
+export function Confirm() {
+  return (
+    <dialog open>
+      <p>Delete?</p>
+    </dialog>
+  )
+}
+
+// seed primitive-bypass/checkable-input 3: a switch drawn as a checkbox input with role switch
+export function Toggle() {
+  return <input type="checkbox" role="switch" />
+}
+
+// seed primitive-bypass/checkable-input 4: a checkbox input inside a JSX map of options
+export function Options({ opts }: { opts: string[] }) {
+  return (
+    <>
+      {opts.map((o) => (
+        <label key={o}>
+          <input type="checkbox" value={o} /> {o}
+        </label>
+      ))}
+    </>
+  )
+}
+
+// seed primitive-bypass/raw-heading 3: an h3 card title inside a card body
+export function CardTitle() {
+  return <h3 className="text-title">Latency</h3>
+}
+
+// seed primitive-bypass/raw-heading 4: a heading chosen by level from a prop
+export function Heading({ level }: { level: 2 | 3 }) {
+  const Tag = level === 2 ? 'h2' : 'h3'
+  return <Tag>Title</Tag>
+}
+
+// seed primitive-bypass/raw-table 2: a raw table with a thead for a key-value list
+export function Specs() {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Key</th>
+        </tr>
+      </thead>
+    </table>
+  )
+}
+
+// seed primitive-bypass/raw-table 3: a definition list styled as a two-column table
+export function Facts() {
+  return (
+    <dl className="grid grid-cols-2">
+      <dt>Owner</dt>
+      <dd>ops</dd>
+    </dl>
+  )
+}
+
+// seed primitive-bypass/svg-data-marks 3: circles placed from data in an svg scatter
+export function Scatter({ rows }: { rows: Run[] }) {
+  return (
+    <svg aria-hidden="true">
+      {rows.map((r, i) => (
+        <circle key={r.id} cx={i * 10} cy={100 - r.share} r={3} />
+      ))}
+    </svg>
+  )
+}
+
+// seed primitive-bypass/svg-data-marks 4: a polyline points string built from data
+export function Spark({ rows }: { rows: Run[] }) {
+  const points = rows.map((r, i) => `${i * 4},${40 - r.share}`).join(' ')
+  return (
+    <svg aria-hidden="true">
+      <polyline points={points} />
+    </svg>
+  )
+}
+
+// seed primitive-bypass/html-data-marks 3: a bar height through an inline style from data
+export function Columns({ rows }: { rows: Run[] }) {
+  return (
+    <div className="flex items-end gap-1">
+      {rows.map((r) => (
+        <div key={r.id} className="w-2 bg-brand-fill" style={{ height: `${r.share}%` }} />
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/html-data-marks 4: a progress fill width from a single value
+export function Usage({ used }: { used: number }) {
+  return (
+    <div className="h-2 bg-inset">
+      <div className="h-full bg-brand-fill" style={{ width: `${used * 100}%` }} />
+    </div>
+  )
+}
+
+// seed primitive-bypass/role-table 2: a list of rows with role row and gridcell
+export function Grid({ rows }: { rows: Run[] }) {
+  return (
+    <div role="grid">
+      {rows.map((r) => (
+        <div role="row" key={r.id}>
+          <span role="gridcell">{r.name}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/role-table 3: role rowgroup and columnheader on divs
+export function Head() {
+  return (
+    <div role="rowgroup">
+      <span role="columnheader">Name</span>
+    </div>
+  )
+}
+
+// seed primitive-bypass/table-rows 3: ui/table rows from a filtered list
+export function Failed({ rows }: { rows: Run[] }) {
+  return (
+    <Table>
+      <TableBody>
+        {rows
+          .filter((r) => r.share > 0)
+          .map((r) => (
+            <TableRow key={r.id}>
+              <TableCell>{r.name}</TableCell>
+            </TableRow>
+          ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+// seed primitive-bypass/table-rows 4: rows from Object.entries of a record
+export function Totals({ totals }: { totals: Record<string, number> }) {
+  return (
+    <Table>
+      <TableBody>
+        {Object.entries(totals).map(([k, v]) => (
+          <TableRow key={k}>
+            <TableCell>{v}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+// seed primitive-bypass/chart-body-root 3: a chart kind inside a fragment as the body
+export function Panel({ rows }: { rows: Run[] }) {
+  return (
+    <DataPanel
+      title="Share"
+      body={() => (
+        <>
+          <Lines ariaLabel="share" data={rows} x="at" series={['share']} />
+        </>
+      )}
+    />
+  )
+}
+
+// seed primitive-bypass/chart-body-root 4: a chart kind under a section element, the body as an element
+export function Panel2({ rows }: { rows: Run[] }) {
+  return (
+    <DataPanel
+      title="Share"
+      body={
+        <section className="h-64">
+          <Lines ariaLabel="share" data={rows} x="at" series={['share']} />
+        </section>
+      }
+    />
+  )
+}
+
+// seed primitive-bypass/intl-format 5: toLocaleString on a number in JSX
+export function Count({ n }: { n: number }) {
+  return <span>{n.toLocaleString('en-US')}</span>
+}
+
+// seed primitive-bypass/intl-format 6: a relative time formatter built inline
+export function Ago({ s }: { s: number }) {
+  return <span>{new Intl.RelativeTimeFormat('en').format(-s, 'second')}</span>
+}
+
+// seed primitive-bypass/intl-format 7: a date sliced from an ISO string for display
+export function Day({ at }: { at: Date }) {
+  return <span>{at.toISOString().slice(0, 10)}</span>
+}

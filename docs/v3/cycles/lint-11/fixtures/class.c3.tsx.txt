@@ -1,0 +1,245 @@
+// Cycle 3 phrasings for the class family: viewport-keyed, dark-fork, fixed-colour,
+// status-fill-as-text, raw-scroll, tw-off-law, app-spacing. Seed numbers continue cycle 2's.
+// A `pass` mark is valid code beside a shape a cycle 2 fix widened a form to: its rule must stay silent.
+import { useEffect, useState } from 'react'
+import { cn } from 'basalt-ui'
+import { cva } from 'class-variance-authority'
+
+// seed viewport-keyed/breakpoint-prefix 5: a viewport class as a clsx object key
+export function Row({ wrap }: { wrap: boolean }) {
+  return <div className={cn('flex gap-2', { 'md:flex-row': wrap })}>row</div>
+}
+
+// seed viewport-keyed/breakpoint-prefix 6: a column count per size in a top-level record the JSX indexes
+const COLS = { compact: 'grid-cols-1', roomy: 'grid-cols-1 lg:grid-cols-3' } as const
+export function Grid({ size }: { size: keyof typeof COLS }) {
+  return <div className={cn('grid gap-4', COLS[size])}>g</div>
+}
+
+// seed viewport-keyed/arbitrary-query 2: an exact max-width breakpoint to stack a toolbar
+export function Bar() {
+  return <div className="flex max-[640px]:flex-col">b</div>
+}
+
+// seed viewport-keyed/media-query 6: the usehooks-ts window size compared to a breakpoint
+import { useWindowSize } from 'usehooks-ts'
+export function useStacked() {
+  const { width } = useWindowSize()
+  return width < 768
+}
+
+// seed viewport-keyed/media-query 7: matchMedia over a template built from a named breakpoint
+const MOBILE_BREAKPOINT = 768
+export function useIsMobile() {
+  const [mobile, setMobile] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const on = () => setMobile(mql.matches)
+    mql.addEventListener('change', on)
+    return () => mql.removeEventListener('change', on)
+  }, [])
+  return mobile
+}
+
+// seed dark-fork/dark-variant 7: the theme attribute variant with quotes, as the Tailwind docs print it
+export function Hero() {
+  return <section className="bg-card data-[theme='dark']:bg-inset">h</section>
+}
+
+// seed dark-fork/dark-variant 8: the colour-scheme media query as an arbitrary variant
+export function Logo() {
+  return <span className="bg-canvas [@media(prefers-color-scheme:dark)]:bg-inset">l</span>
+}
+
+// seed dark-fork/dark-variant 9: a dark fork in a hoisted top-level class string
+const tileClass = 'bg-card dark:bg-inset'
+export function Tile() {
+  return <div className={tileClass}>t</div>
+}
+
+// seed fixed-colour/black-white 7: a gradient scrim over a cover image
+export function Cover() {
+  return <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+}
+
+// seed fixed-colour/black-white 8: a white focus ring on a brand button
+export function Cta() {
+  return <a className="bg-brand text-on-brand focus-visible:ring-2 focus-visible:ring-white">go</a>
+}
+
+// seed fixed-colour/black-white 9: white placeholder ink on a brand search field
+export function Search() {
+  return <input className="bg-brand placeholder:text-white/60" />
+}
+
+// seed status-fill-as-text/text-on-fill 7: a series label coloured with its fill in a hoisted class string
+const seriesLabel = 'text-chart-2 text-xs'
+export function Legend() {
+  return <span className={seriesLabel}>p95</span>
+}
+
+// seed status-fill-as-text/text-on-fill 8: the fill as placeholder text
+export function Note() {
+  return <textarea className="placeholder:text-chart-3" />
+}
+
+// seed raw-scroll/overflow-scroll 11: a scrolling body as a cva variant
+export const sheetBody = cva('flex flex-col', {
+  variants: { scroll: { true: 'max-h-96 overflow-y-auto overscroll-contain' } },
+})
+
+// seed raw-scroll/overflow-scroll 12: a scroll box assembled from a class array joined at the use
+export function Log({ lines }: { lines: string[] }) {
+  return <pre className={['font-mono', 'max-h-64', 'overflow-auto'].join(' ')}>{lines.join('\n')}</pre>
+}
+
+// seed tw-off-law/surface-recipe 6: the shadcn v4 card list in a cva base
+export const panel = cva('flex flex-col gap-6 rounded-xl border py-6 shadow-sm', {
+  variants: { tone: { muted: 'opacity-80' } },
+})
+
+// seed tw-off-law/surface-recipe 7: a stat card the v0 way, outline border and xs shadow
+export function Stat() {
+  return <div className="rounded-lg border p-4 shadow-xs">42</div>
+}
+
+// seed tw-off-law/app-colour 5: a selected row painted with the status tint behind a data variant
+export function Item() {
+  return <li className="data-[selected]:bg-good-tint data-[selected]:text-good">i</li>
+}
+
+// seed tw-off-law/app-colour 6: a warning dot as a status fill
+export function Dot() {
+  return <span className="size-2 rounded-full bg-warn" />
+}
+
+// seed tw-off-law/off-ladder-spacing 5: an icon nudged by a quarter step
+export function Glyph() {
+  return <svg className="size-4.5 translate-y-0.25" />
+}
+
+// seed tw-off-law/off-ladder-spacing 6: a half step above four
+export function Gutter() {
+  return <div className="px-5.5">g</div>
+}
+
+// seed tw-off-law/fixed-width 6: a dialog content width in arbitrary pixels
+export function Dlg() {
+  return <div className="w-[420px]">d</div>
+}
+
+// seed tw-off-law/fixed-width 7: a min width on a select trigger
+export function Trigger() {
+  return <button className="min-w-120">t</button>
+}
+
+// seed tw-off-law/track-length 4: a label and value grid with a fixed first column
+export function Kv() {
+  return <dl className="grid grid-cols-[120px_1fr] gap-2" />
+}
+
+// seed tw-off-law/track-length 5: an auto-fit card grid with a minimum in rem
+export function Cards() {
+  return <div className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-4" />
+}
+
+// seed tw-off-law/numeric-container 5: a named container with a numeric size
+export function Main() {
+  return <main className="@container/main @3xl/main:grid-cols-2">m</main>
+}
+
+// seed tw-off-law/numeric-container 6: the arbitrary min form
+export function Side() {
+  return <aside className="@min-[30rem]:flex">s</aside>
+}
+
+// seed tw-off-law/important-modifier 5: a bang on an icon size through a child variant
+export function IconBtn() {
+  return <button className="[&>svg]:size-4!">i</button>
+}
+
+// seed tw-off-law/important-modifier 6: a leading bang on a padding override inside cn()
+export function Pad({ dense }: { dense: boolean }) {
+  return <div className={cn('p-4', dense && '!p-2')}>p</div>
+}
+
+// seed tw-off-law/template-interpolation 5: a column count interpolated into the grid utility
+export function Cols({ n }: { n: number }) {
+  return <div className={`grid grid-cols-${n}`}>c</div>
+}
+
+// seed tw-off-law/template-interpolation 6: a text size interpolated from a prop
+export function Title({ size }: { size: 'sm' | 'lg' }) {
+  return <p className={`text-${size} font-medium`}>t</p>
+}
+
+// seed tw-off-law/alpha-on-premixed 4: an alpha on the brand tint inside cn()
+export function Chip({ on }: { on: boolean }) {
+  return <span className={cn('rounded-chip', on && 'bg-good-tint/50')}>c</span>
+}
+
+// seed tw-off-law/alpha-on-premixed 5: a hover tint faded on a bad-tint row
+export function Bad() {
+  return <tr className="hover:bg-bad-tint/70">b</tr>
+}
+
+// seed app-spacing/margin 7: a shadcn Separator with vertical margin
+export function Divider() {
+  return <hr className="my-6" />
+}
+
+// seed app-spacing/margin 8: a full-bleed list pulled out of a card's padding
+export function Bleed() {
+  return <ul className="-mx-6">b</ul>
+}
+
+// seed app-spacing/space-between 5: a stack spaced with space-y in a hoisted class string
+const stack = 'flex flex-col space-y-3'
+export function Stack() {
+  return <div className={stack}>s</div>
+}
+
+// seed app-spacing/space-between 6: space-x inside a clsx object
+export function Chips({ wide }: { wide: boolean }) {
+  return <div className={cn('flex', { 'space-x-4': wide })}>c</div>
+}
+
+// pass viewport-keyed/breakpoint-prefix 1: a function-local const named like a viewport class that holds a plain id
+export function Plain() {
+  const gridClass = 'md'
+  return <div data-size={gridClass}>p</div>
+}
+
+// pass raw-scroll/overflow-scroll 1: a hoisted const holding a scroll class that never reaches a class context
+const SCROLL_TOKENS = 'overflow-y-auto'
+export function describe() {
+  return `The banned class is ${SCROLL_TOKENS}`
+}
+
+// pass tw-off-law/surface-recipe 1: a bordered list row with axis padding, not a card
+export function ListRow() {
+  return <li className="flex items-center gap-2 border-b py-2">r</li>
+}
+
+// pass tw-off-law/surface-recipe 2: a focus ring on a padded link, not a ring-bordered card
+export function Focusable() {
+  return <a className="rounded-md p-2 focus-visible:ring-2 focus-visible:ring-ring">f</a>
+}
+
+// pass fixed-colour/black-white 1: the on-brand ink on a brand fill
+export function Good() {
+  return <button className="bg-brand text-on-brand">ok</button>
+}
+
+// seed unknown-token 8: an invented token in a bracket class
+export function Raised() {
+  return <div className="bg-(--basalt-surface-raised)">r</div>
+}
+
+// seed unknown-token 9: an invented token in a style object
+export const mutedInk = { color: 'var(--basalt-text-muted)' }
+
+// pass unknown-token 1: a token name built from a tone in a template
+export function toneVar(tone: 'good' | 'bad') {
+  return `var(--basalt-${tone})`
+}

@@ -806,3 +806,10 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-expr-8-kit-fixes, v3-expr-8-contract, v3-expr-8-skill, v3-expr-8-rubric]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-9.json' }
+  - key: v3-lint-11-lint
+    title: 'A class in a template hole, three scheme tests and a cast in front of a shape slip past, from lint cycle 11'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-cycle-lint-11]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-11-lint.json' }

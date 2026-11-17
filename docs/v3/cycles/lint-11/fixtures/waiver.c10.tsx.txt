@@ -1,0 +1,68 @@
+// Cycle 10 phrasings for waiver-needs-reason, in a file of their own: a range waiver silences
+// the rest of the file. Seed numbers continue cycle 9's. Cycle 10 reads how an agent writes the
+// reason separator wrong (a semicolon, an em dash, a second comment, a placeholder with a full stop)
+// and how it scopes a waiver too wide (a rule that is never file-waivable, a line waiver naming no
+// rule, a range over several rules).
+
+// seed waiver-needs-reason/missing-reason 31: a semicolon where the reason marker belongs
+export function A() {
+  // oxlint-disable-next-line basalt/raw-scroll; the log pane scrolls on its own
+  return <div className="overflow-y-auto">a</div>
+}
+
+// seed waiver-needs-reason/missing-reason 32: an em dash where the reason marker belongs
+export function B() {
+  // oxlint-disable-next-line basalt/raw-scroll — the log pane scrolls on its own
+  return <div className="overflow-y-auto">b</div>
+}
+
+// seed waiver-needs-reason/missing-reason 33: the reason written in a second comment after the directive
+export function C() {
+  // oxlint-disable-next-line basalt/raw-scroll // the log pane scrolls on its own
+  return <div className="overflow-y-auto">c</div>
+}
+
+// seed waiver-needs-reason/missing-reason 34: a placeholder reason with a full stop
+export function D() {
+  // oxlint-disable-next-line basalt/raw-scroll -- tbd.
+  return <div className="overflow-y-auto">d</div>
+}
+
+// seed waiver-needs-reason/missing-reason 35: a waiver of two rules with no reason at all
+export function E() {
+  // oxlint-disable-next-line basalt/raw-scroll, basalt/viewport-keyed
+  return <div className="overflow-y-auto">e</div>
+}
+
+// pass waiver-needs-reason/missing-reason 5: the correct waiver, the rule id and a reason after --
+export function F() {
+  // oxlint-disable-next-line basalt/raw-scroll -- the log pane scrolls on its own, ejected next
+  return <div className="overflow-y-auto">f</div>
+}
+
+// seed waiver-needs-reason/file-level-scope 17: a reasoned line waiver that names no rule
+export function G() {
+  // oxlint-disable-next-line -- the markup is fixed and reviewed
+  return <div className="overflow-y-auto">g</div>
+}
+
+// seed waiver-needs-reason/file-level-scope 18: a reasoned block range of viewport-keyed, never file-waivable
+/* eslint-disable basalt/viewport-keyed -- the marketing hero keys on the viewport on purpose */
+export function H() {
+  return <div className="md:flex">h</div>
+}
+/* eslint-enable basalt/viewport-keyed */
+
+// seed waiver-needs-reason/file-level-scope 19: a reasoned range disable naming two rules
+/* oxlint-disable basalt/raw-control, basalt/raw-heading -- legacy admin screen, rebuilt next sprint */
+export function I() {
+  return <h2>i</h2>
+}
+/* oxlint-enable basalt/raw-control, basalt/raw-heading */
+
+// seed waiver-needs-reason/file-level-scope 20: a reasoned range disable of a shadcn rule across a component
+/* eslint-disable shadcn/no-arbitrary-values -- the mock pins this toolbar to 52px */
+export function J() {
+  return <div className="h-[52px]">j</div>
+}
+/* eslint-enable shadcn/no-arbitrary-values */

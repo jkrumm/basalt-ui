@@ -1,0 +1,224 @@
+// Cycle 10 phrasings for the shapes the lint-9 fixes widened: the rival net's binding-shape test
+// and its except names (lint-9.1), a part's names read as `use<Name>` hooks (lint-9.2), the
+// scheme-library row and the scheme-fork form (lint-9.3), `for await` over a decoded body
+// (lint-9.5), any `staleTime` in `liveQuery` (lint-9.6), the mobile client hint (lint-9.7) and the
+// installer exemption of platform-glyph (lint-9.8). Seed numbers continue cycle 9's. A `pass` mark
+// is valid code beside a shape a fix widened a form to.
+// Every non-seeded import sits here, above its first use; a seeded import sits in its own span.
+import { useState } from 'react'
+import { queryOptions, useQuery } from '@tanstack/react-query'
+import { liveQuery } from 'basalt-ui/data'
+import { setScheme, type Scheme } from 'basalt-ui/core/scheme'
+import { Button } from 'basalt-ui/ui/button'
+import { cn } from 'basalt-ui'
+
+type Run = { id: string; name: string }
+const runsQuery = { queryKey: ['runs'], queryFn: async () => [] as Run[] }
+
+// seed import-boundary/rival-signature 12: markdown-to-jsx's component, a Markdown renderer by its name
+import Markdown from 'markdown-to-jsx'
+export const MD = Markdown
+
+// seed import-boundary/rival-signature 13: a modal hook from a package named for the modal
+import { useModal } from 'react-modal-hook'
+export const UM = useModal
+
+// seed import-boundary/rival-signature 14: react-modern-drawer's drawer for a filter panel
+import Drawer from 'react-modern-drawer'
+export const RD = Drawer
+
+// seed import-boundary/rival-signature 15: react-popper's hook positioning a hand-built popover
+import { usePopper } from 'react-popper'
+export const UP = usePopper
+
+// seed import-boundary/rival-signature 16: dayzed's headless date-picker hook, whose name carries no part word
+import { useDayzed } from 'dayzed'
+export const DZ = useDayzed
+
+// pass import-boundary/rival-signature 9: remove-markdown strips Markdown to plain text for a search index
+import removeMarkdown from 'remove-markdown'
+export const plain = (s: string) => removeMarkdown(s)
+
+// pass import-boundary/rival-signature 10: node-html-markdown's converter for a copy-as-Markdown action
+import { NodeHtmlMarkdown } from 'node-html-markdown'
+export const toMd = (html: string) => NodeHtmlMarkdown.translate(html)
+
+// pass import-boundary/rival-signature 11: react-supabase's select hook, a database query, no control
+import { useSelect } from 'react-supabase'
+export const US = useSelect
+
+// pass import-boundary/rival-signature 12: tablemark writes a Markdown table string; a lower-case utility
+import tablemark from 'tablemark'
+export const asTable = (rows: Record<string, string>[]) => tablemark(rows)
+
+// seed import-boundary/scheme-library 1: shadcn's theme-provider.tsx wrapping next-themes
+import { ThemeProvider as NextThemesProvider } from 'next-themes'
+export const NT = NextThemesProvider
+
+// seed import-boundary/scheme-library 2: remix-themes' hook
+import { useTheme as useRemixTheme } from 'remix-themes'
+export const RT = useRemixTheme
+
+// seed import-boundary/scheme-library 3: usehooks-ts' dark-mode hook as the scheme store
+import { useDarkMode } from 'usehooks-ts'
+export function SchemeToggle() {
+  const { isDarkMode, toggle } = useDarkMode()
+  return (
+    <Button variant="ghost" onClick={toggle}>
+      {isDarkMode ? 'Light' : 'Dark'}
+    </Button>
+  )
+}
+
+// pass import-boundary/scheme-library 1: basalt's own scheme setter from a settings row
+export function SchemeChoice({ value }: { value: Scheme }) {
+  return <Button onClick={() => setScheme(value)}>{value}</Button>
+}
+
+// seed dark-fork/scheme-fork 1: a theme prop compared with dark choosing an inverted logo class
+export function Logo({ theme }: { theme: string }) {
+  return <img src="/logo.svg" alt="" className={theme === 'dark' ? 'invert' : undefined} />
+}
+
+// seed dark-fork/scheme-fork 2: a settings object's colorScheme gating a class with &&
+export function Panel({ settings }: { settings: { colorScheme: string } }) {
+  return <div className={cn('rounded-md', settings.colorScheme !== 'light' && 'opacity-90')}>x</div>
+}
+
+// seed dark-fork/scheme-fork 3: a theme comparison as the value of a class key in cn()
+export function Avatar({ resolvedTheme }: { resolvedTheme?: string }) {
+  return <img src="/a.png" alt="" className={cn('size-8', { invert: resolvedTheme === 'dark' })} />
+}
+
+// seed dark-fork/scheme-fork 4: usehooks-ts' boolean choosing the class
+export function Mark() {
+  const { isDarkMode } = useDarkMode()
+  return <img src="/m.svg" alt="" className={isDarkMode ? 'invert' : ''} />
+}
+
+// seed dark-fork/scheme-fork 5: a fork inside a template literal's hole (the form's stated limit)
+export function Brand({ resolvedTheme }: { resolvedTheme?: string }) {
+  return <img src="/b.svg" alt="" className={`h-6 ${resolvedTheme === 'dark' ? 'invert' : ''}`} />
+}
+
+// seed dark-fork/scheme-fork 6: shadcn's Vite theme provider writing a .dark class on the root
+export function applyTheme(theme: 'dark' | 'light') {
+  const root = window.document.documentElement
+  root.classList.remove('light', 'dark')
+  root.classList.add(theme)
+}
+
+// seed dark-fork/scheme-fork 7: the system scheme read in JS choosing a class
+export function Hero() {
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  return <div className={dark ? 'opacity-90' : 'opacity-100'}>x</div>
+}
+
+// pass dark-fork/scheme-fork 1: the scheme choosing a highlighter theme name, not a class
+function Highlighter(props: { theme: string; code: string }) {
+  return <pre data-theme={props.theme}>{props.code}</pre>
+}
+export function Snippet({ resolvedTheme }: { resolvedTheme?: string }) {
+  return <Highlighter code="x" theme={resolvedTheme === 'dark' ? 'github-dark' : 'github-light'} />
+}
+
+// seed data-primitive/reader-loop 17: SSE events through eventsource-parser's stream after the decoder
+import { EventSourceParserStream } from 'eventsource-parser/stream'
+export async function events(res: Response, on: (data: string) => void) {
+  const stream = res.body!.pipeThrough(new TextDecoderStream()).pipeThrough(new EventSourceParserStream())
+  for await (const event of stream) on(event.data)
+}
+
+// seed data-primitive/reader-loop 18: a generator over a body handed in as a parameter
+export async function* lines(body: ReadableStream<Uint8Array>) {
+  for await (const chunk of body.pipeThrough(new TextDecoderStream())) yield chunk
+}
+
+// seed data-primitive/reader-loop 19: the decoded body bound with let
+export async function readLet(res: Response, on: (s: string) => void) {
+  let text = res.body!.pipeThrough(new TextDecoderStream())
+  for await (const chunk of text) on(chunk)
+  text = new ReadableStream()
+}
+
+// seed data-primitive/reader-loop 20: the decoded body through optional chaining, guarded
+export async function readGuarded(res: Response, on: (s: string) => void) {
+  const text = res.body?.pipeThrough(new TextDecoderStream())
+  if (!text) return
+  for await (const chunk of text) on(chunk)
+}
+
+// pass data-primitive/reader-loop 1: a dropped CSV file read as text, no network
+export async function readCsv(file: File, on: (s: string) => void) {
+  for await (const chunk of file.stream().pipeThrough(new TextDecoderStream())) on(chunk)
+}
+
+// pass data-primitive/reader-loop 2: a download's bytes counted for a progress bar
+export async function download(url: string, onProgress: (n: number) => void) {
+  const res = await fetch(url)
+  let received = 0
+  for await (const chunk of res.body!) {
+    received += chunk.byteLength
+    onProgress(received)
+  }
+}
+
+// seed data-primitive/live-static-stale-time 17: a zero staleTime inside liveQuery
+export const live6 = liveQuery({ ...runsQuery, staleTime: 0 }, 'live')
+
+// seed data-primitive/live-static-stale-time 18: staleTime spread in from a shared options const
+const freshFor30s = { staleTime: 30_000 }
+export const live7 = liveQuery({ ...runsQuery, ...freshFor30s }, 'live')
+
+// seed data-primitive/live-static-stale-time 19: staleTime inside queryOptions nested in liveQuery
+export const live8 = liveQuery(queryOptions({ queryKey: ['jobs'], queryFn: async () => [] as Run[], staleTime: 5_000 }), 'standard')
+
+// seed data-primitive/live-static-stale-time 20: a refetchInterval inside liveQuery, which the same dev assert throws on
+export const live9 = liveQuery({ ...runsQuery, refetchInterval: 5_000 }, 'live')
+
+// pass data-primitive/live-static-stale-time 1: a numeric staleTime on a plain useQuery
+export function useRuns() {
+  return useQuery({ ...runsQuery, staleTime: 30_000 })
+}
+
+// seed viewport-keyed/media-query 27: the client-hints flag through the cast TypeScript needs
+type UAData = { userAgentData?: { mobile: boolean } }
+export function Nav() {
+  const mobile = (navigator as Navigator & UAData).userAgentData?.mobile
+  return <nav className={mobile ? 'flex-col' : 'flex-row'}>x</nav>
+}
+
+// seed viewport-keyed/media-query 28: the client-hints flag destructured
+export function Shell() {
+  const { mobile } = (navigator as Navigator & UAData).userAgentData ?? { mobile: false }
+  return <main className={mobile ? 'p-2' : 'p-6'}>x</main>
+}
+
+// pass viewport-keyed/media-query 5: the client-hints flag sent with an analytics event, no layout (an app that augments Navigator)
+export function trackOpen(track: (e: string, p: object) => void) {
+  track('open', { mobile: navigator.userAgentData?.mobile })
+}
+
+// seed viewport-keyed/platform-glyph 4: the sniff hoisted into a const, then the glyph chosen by it
+export function ShortcutHint() {
+  const isMac = /Mac/.test(navigator.userAgent)
+  return <span>{isMac ? '⌘' : 'Ctrl'} K</span>
+}
+
+// seed viewport-keyed/platform-glyph 5: the client-hints platform choosing the glyph (the form's stated limit)
+export function ShortcutHint2() {
+  const mac = (navigator as Navigator & { userAgentData?: { platform: string } }).userAgentData?.platform === 'macOS'
+  return <span>{mac ? '⌘' : 'Ctrl'} K</span>
+}
+
+// pass viewport-keyed/platform-glyph 2: a versioned installer chosen by the platform, through templates
+export function DownloadLink({ v }: { v: string }) {
+  const href = /Mac/.test(navigator.userAgent) ? `/dl/app-${v}.dmg` : `/dl/app-${v}.exe`
+  return <a href={href}>Download</a>
+}
+
+// pass viewport-keyed/platform-glyph 3: a state holding the chosen installer
+export function DownloadPicker() {
+  const [file] = useState(() => (navigator.userAgent.includes('Win') ? 'app.msi' : 'app.pkg'))
+  return <a href={`/dl/${file}`}>Download</a>
+}
