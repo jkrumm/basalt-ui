@@ -207,7 +207,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
   const bare = useContext(VisualSlotContext) !== null
   const { ref, width: measured, coarse } = useChartSize()
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
-  const [highlighted, setHighlighted] = useState<string | null>(null)
+  const [ownHighlight, setOwnHighlight] = useState<string | null>(null)
   const [plot, setPlot] = useState<PlotSizes | null>(null)
   const onPlot = useCallback((next: PlotSizes) => {
     setPlot((prev) => (samePlots(prev, next) ? prev : next))
@@ -218,6 +218,10 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
   const hostFocus = useCursorFocus(focus, { group: cursor, x: x.value, label: ariaLabel })
   const ownsKeys = hostFocus !== undefined
   const focused = focus?.datum ?? null
+  // With a `focus` the emphasised series is the shared one: a list row of a series and the legend
+  // set the same key, so either marks the other.
+  const highlighted = focus === undefined ? ownHighlight : focus.series
+  const setHighlighted = focus === undefined ? setOwnHighlight : focus.setSeries
   const stable = useShallowStable({
     data,
     x,

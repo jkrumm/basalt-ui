@@ -138,6 +138,20 @@ export type ChartFocus<D> = {
   readonly item: (index: number) => ChartFocusItem
   /** The props of a list row that stands for one group (`options.group`). */
   readonly groupItem: (name: string) => ChartFocusGroupItem
+  /**
+   * The key of the series emphasised across every x, or `null`. A chart with this `focus` draws it
+   * as its legend highlight: that series at full strength, the others dimmed.
+   */
+  readonly series: string | null
+  /** Emphasises one series by key (`null` clears); a chart's legend hover writes it too. */
+  readonly setSeries: (key: string | null) => void
+  /**
+   * The props of a list row that stands for one series of the chart (a key of its `series`):
+   * pointing at it emphasises that series, and it is marked while the series is emphasised, from the
+   * row, the chart's legend or a table row. Not a tab stop; the list's own pointer leave calls
+   * `setSeries(null)`, as `DataTable focusSeries` does.
+   */
+  readonly seriesItem: (key: string) => ChartFocusGroupItem
   /** The index a key moves the focus to (`null` clears, `undefined` is not ours); hosts step with it. */
   readonly step: (key: string) => number | null | undefined
   /** The polite live region; a host renders it, a hand-drawn container renders it once. */
