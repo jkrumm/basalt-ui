@@ -641,8 +641,38 @@ describe('detail bound to a field', () => {
         expect(field.value()).toBe('')
         expect(document.querySelector('tbody tr[aria-current]')).toBeNull()
       })
+
+      test('leaves no sheet of the table in the document once the aside took it over', async () => {
+        setWidth(1440)
+        render(<DeepLinked field={urlField('b')} />)
+        await act(async () => new Promise((r) => setTimeout(r, 50)))
+        expect(document.querySelector('[data-slot="sheet-content"]')).toBeNull()
+      })
     },
   )
+
+  test('a deep link with no page host opens in the table’s own sheet', async () => {
+    setWidth(1440)
+    function Bare(): ReactElement {
+      const c = col<Row>()
+      const t = useDataTable<Row>({
+        id: 'detail-state-bare-test',
+        label: 'Rows',
+        columns: [c.text('name')],
+        data: ROWS,
+        getRowId: (r) => r.id,
+        mode: { kind: 'client' },
+        detail: (row) => <span>{row.name} body</span>,
+        detailState: urlField('b'),
+      })
+      return <DataTable table={t} />
+    }
+    render(<Bare />)
+    await act(async () => new Promise((r) => setTimeout(r, 50)))
+    expect(document.querySelector('[data-slot="sheet-content"]')?.textContent).toContain(
+      'Project 2 body',
+    )
+  })
 
   describe('the Page aside follows the table', () => {
     const OTHER: Row[] = [{ id: 'z', name: 'Other 1', amount: 1, state: 'Eng' }]
