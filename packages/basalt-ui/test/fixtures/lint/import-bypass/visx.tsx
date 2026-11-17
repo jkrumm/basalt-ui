@@ -41,3 +41,5 @@ import { VictoryLine } from 'victory-line'
 import * as Plot from '@observablehq/plot'
 // @invalid
 import { Line } from '@ant-design/charts'
+// @invalid
+import { LineChartPro } from '@mui/x-charts-pro/LineChartPro'
