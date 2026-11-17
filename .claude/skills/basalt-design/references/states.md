@@ -14,11 +14,14 @@ The phase vocabulary and the words each phase carries. The shapes are owned by t
 
 - A loading frame passes the footer and status rows the ready frame draws: n25 left the footer row out of loading and the frame stood 36 px short of the loaded card (n25 .65; n22 .22 charged the same jump). Pass the same slots in both phases, the values held back until ready.
 
+- A title or figure reads only from loaded data: n28's loading and error frames printed "Energy per month" and "€1,606 in 12 months" from rows still in flight (.18). The title is a fixed noun, the figure a held slot, and every phase declares the same slots, so the error footer holds its place rather than blanking the contract it already knows (n30 .41).
+
 ## What each state says
 
 - Empty: the cause, then the next step. A filter caused it: name the filter and offer its reset. "No decisions are waiting. New ones appear when an agent asks for a verdict."
 - Loading: a skeleton in the loaded shape and height; the title row stays put.
-- Error: one title, "Could not load <thing>", the cause in one line, one Retry.
+- Error: one title, "Could not load <thing>", the cause in one line, one Retry. n28, n30 and n32 shipped an error that named neither its cause nor a retry (.18, .41, .57).
+- Empty says the next step on one line (n32 printed it on three, .57; n30's named none, .41).
 - Stale: the data stays and the line says it is old and when it was fresh.
 - A missing value prints a dash and a caption that names the gap ("No sleep logged since Tue."); a zero reads as a measurement.
 
