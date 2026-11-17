@@ -20,7 +20,8 @@ export type ListsMessages = Record<
   Record<
     'lists.showMore' | 'lists.eventCount' | 'lists.stepDuration' | 'lists.stepScale',
     (f: Format, n: number) => string
-  >
+  > &
+  Record<'lists.rowsShown', (f: Format, shown: number, total: number) => string>
 
 /** A step's working time, not the clock form of `Format.duration`: sub-second steps read in ms. */
 function stepDuration(f: Format, ms: number): string {
@@ -44,6 +45,7 @@ export const lists = {
   'lists.today': 'Today',
   'lists.yesterday': 'Yesterday',
   'lists.showMore': (f, n) => `Show more (${f.number(n)})`,
+  'lists.rowsShown': (f, shown, total) => `${f.number(shown)} of ${f.number(total)} shown`,
   'lists.eventCount': (f, n) => `${f.number(n)} ${f.plural(n) === 'one' ? 'event' : 'events'}`,
   'lists.stepFailed': 'Failed',
   'lists.stepColumn': 'Step',

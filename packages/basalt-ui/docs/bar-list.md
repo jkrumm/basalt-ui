@@ -4,7 +4,7 @@ use when: 'a card ranks a handful of named things by one number, or splits a tot
 never when: 'the rows have several columns to compare (use a table) or the list is a stream of things that happened (use an event list)'
 subpath: basalt-ui/cards
 peers: ['@base-ui/react']
-slots: [bar-list, bar-list-row]
+slots: [bar-list, bar-list-row, bar-list-scroll-cue]
 ---
 
 # BarList

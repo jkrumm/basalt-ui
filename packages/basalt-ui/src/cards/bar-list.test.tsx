@@ -230,6 +230,47 @@ describe('BarList phases', () => {
   })
 })
 
+describe('BarList error title', () => {
+  const failed = { tag: 'error' as const, retry: () => undefined }
+  const alert = (root: ParentNode): string | null | undefined =>
+    root.querySelector('[role="alert"] p')?.textContent
+
+  test('a list in error names its title, as a ChartCard does', () => {
+    const { container } = draw({ title: 'Top projects', phase: failed })
+    expect(alert(container)).toBe('Could not load top projects.')
+  })
+
+  test('a blank title keeps the bare sentence', () => {
+    const { container } = draw({ title: ' ', phase: failed })
+    expect(alert(container)).toBe('Could not load this.')
+  })
+})
+
+describe('BarList scroll cue', () => {
+  const MANY = Array.from({ length: 13 }, (_, i) => ({ label: `row ${i}`, value: 100 - i }))
+  const cue = (root: ParentNode): string | null | undefined =>
+    root.querySelector('[data-slot="bar-list-scroll-cue"]')?.textContent
+
+  test('a list with more rows than bodyRows says how many show', () => {
+    expect(cue(draw({ items: MANY, bodyRows: 4 }).container)).toBe('4 of 13 shown')
+  })
+
+  test('the default five rows count the same way', () => {
+    expect(cue(draw({ items: MANY }).container)).toBe('5 of 13 shown')
+  })
+
+  test('a list that fits says nothing', () => {
+    expect(cue(draw({ items: MANY.slice(0, 5) }).container)).toBeUndefined()
+  })
+
+  test('says nothing before ready: loading, error and empty keep the header bare', () => {
+    expect(cue(draw({ items: MANY, phase: 'loading' }).container)).toBeUndefined()
+    expect(
+      cue(draw({ items: MANY, phase: { tag: 'error', retry: () => undefined } }).container),
+    ).toBeUndefined()
+  })
+})
+
 describe('BarList on the server', () => {
   test('renders with no provider and keeps its slots; the scroller is not yet a tab stop', () => {
     const html = renderToString(<BarList title="Top projects" items={ITEMS} />)
@@ -253,14 +294,23 @@ describe('BarList focus', () => {
     handle = focus
     return <BarList title="Top projects" items={ITEMS} {...(linked && { focus })} />
   }
-  test('pointing at a row sets its index; a focus set elsewhere marks only that row, undimmed', () => {
+  const dimmedRows = (root: ParentNode): boolean[] =>
+    [...root.querySelectorAll('[data-slot="bar-list-row"]')].map((el) =>
+      el.hasAttribute('data-dimmed'),
+    )
+
+  test('pointing at a row sets its index; a focus set elsewhere marks only that row and dims the rest', () => {
     const { container } = render(<Linked />)
+    expect(dimmedRows(container)).toEqual([false, false, false])
     fireEvent.pointerEnter(container.querySelectorAll('[data-slot="bar-list-row"]')[1] as Element)
     expect(handle?.index).toBe(1)
     expect(rowsOf(container)).toEqual([false, true, false])
+    expect(dimmedRows(container)).toEqual([true, false, true])
     act(() => handle?.set(2))
     expect(rowsOf(container)).toEqual([false, false, true])
-    expect(container.querySelectorAll('[data-dimmed]')).toHaveLength(0)
+    expect(dimmedRows(container)).toEqual([true, true, false])
+    act(() => handle?.set(null))
+    expect(dimmedRows(container)).toEqual([false, false, false])
   })
 
   test('the list is one tab stop and arrows, Home, End and Escape step the focus', () => {

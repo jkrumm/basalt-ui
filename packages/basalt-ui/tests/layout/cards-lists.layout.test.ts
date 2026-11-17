@@ -147,6 +147,30 @@ layout('BarList and EventList', () => {
         })
       }
 
+      test('a BarList that hides rows says how many show, on one line inside its header', async () => {
+        const page = await open(viewport)
+        const cue = within('cl-bar-ready', '[data-slot="bar-list-scroll-cue"]')
+        expect(await page.raw.textContent(cue)).toBe('5 of 12 shown')
+        const card = await page.box('card', within('cl-bar-ready', '[data-slot="card"]'))
+        const band = await page.box('band', within('cl-bar-ready', '[data-slot="card-band"]'))
+        const note = await page.box('cue', cue)
+        const title = await page.box('title', within('cl-bar-ready', '[data-slot="card-band"] p'))
+        expect(note.box.right, 'inside the card').toBeLessThanOrEqual(card.box.right + TOLERANCE)
+        expect(note.box.height, 'one line').toBeLessThanOrEqual(20)
+        expect(note.box.bottom, 'inside the header').toBeLessThanOrEqual(
+          band.box.bottom + TOLERANCE,
+        )
+        expect(title.box.right, 'the title yields to it').toBeLessThanOrEqual(
+          note.box.left + TOLERANCE,
+        )
+        for (const quiet of ['cl-bar-loading', 'cl-bar-error', 'cl-bar-empty', 'cl-bar-short']) {
+          expect(
+            await page.count(within(quiet, '[data-slot="bar-list-scroll-cue"]')),
+            `${quiet} has no cue`,
+          ).toBe(0)
+        }
+      })
+
       test('a long label truncates and never widens its card', async () => {
         const page = await open(viewport)
         const card = await page.box('card', within('cl-bar-ready', '[data-slot="card"]'))
