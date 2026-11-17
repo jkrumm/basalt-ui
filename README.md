@@ -32,8 +32,6 @@ Not a React app? The token system works without one — no React, no bundler:
 bunx basalt-ui tokens:css --out src/tokens.css
 ```
 
-See [Framework-free token consumption](./docs/FRAMEWORK-FREE.md).
-
 ## Repository Structure
 
 ```
