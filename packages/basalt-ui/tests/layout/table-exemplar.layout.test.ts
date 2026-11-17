@@ -131,7 +131,7 @@ layout('Table exemplar at the phone widths', () => {
         const page = await open(viewport)
         const info = await page.raw.evaluate(() => {
           const cell = document.querySelector<HTMLElement>(
-            '[data-testid="te-none"] tbody tr:first-child td[data-label]',
+            '[data-testid="te-none"] tbody tr:first-child td[data-label="Owner"]',
           )!
           const before = getComputedStyle(cell, '::before')
           return {
