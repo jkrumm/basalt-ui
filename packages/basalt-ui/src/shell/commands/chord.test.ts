@@ -1,5 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { chordId, chordKeys, matchesChord, mayFireOn, parseChord } from './chord'
+import {
+  chordId,
+  chordKeys,
+  matchesChord,
+  mayFireOn,
+  parseChord,
+  parseChordSequence,
+  sequenceId,
+} from './chord'
 
 const key = (init: Partial<KeyboardEvent> & { key: string }) => ({
   code: '',
@@ -22,6 +30,14 @@ describe('parseChord', () => {
     expect(() => parseChord('Mod+Shift')).toThrow('no key')
   })
 
+  test('a sequence is chords split on a space; spaces around a plus stay inside a chord', () => {
+    expect(parseChordSequence('g n').map(chordId)).toEqual(['g', 'n'])
+    expect(parseChordSequence('Mod + K  Mod+S').map(chordId)).toEqual(['mod+k', 'mod+s'])
+    expect(parseChordSequence('Mod+K').map(chordId)).toEqual(['mod+k'])
+    expect(sequenceId(parseChordSequence('G  N'))).toBe('g n')
+    expect(() => parseChordSequence('')).toThrow('empty part')
+  })
+
   test('chordKeys keeps Mod for Kbd to draw', () => {
     expect(chordKeys(parseChord('Mod+Shift+p'))).toEqual(['Mod', 'Shift', 'P'])
     expect(chordKeys(parseChord('Mod+Enter'))).toEqual(['Mod', 'Enter'])
@@ -41,6 +57,14 @@ describe('matchesChord', () => {
   test('an extra modifier is a different chord', () => {
     expect(matchesChord(key({ key: 'K', metaKey: true, shiftKey: true }), modK, true)).toBe(false)
     expect(matchesChord(key({ key: 'k', metaKey: true, altKey: true }), modK, true)).toBe(false)
+  })
+
+  test('a symbol key like ? matches with or without Shift, a letter does not', () => {
+    const help = parseChord('?')
+    expect(matchesChord(key({ key: '?', shiftKey: true }), help, true)).toBe(true)
+    expect(matchesChord(key({ key: '?' }), help, true)).toBe(true)
+    expect(matchesChord(key({ key: '?', shiftKey: true, ctrlKey: true }), help, false)).toBe(false)
+    expect(matchesChord(key({ key: 'g', shiftKey: true }), parseChord('g'), true)).toBe(false)
   })
 
   test('the physical digit key matches when shift or the layout changed the character', () => {
