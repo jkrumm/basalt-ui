@@ -17,13 +17,12 @@ Every chart is a shipped kind or `CartesianChart`; props live in the shipped typ
 - Supply `series` once; a legend entry with no series is a `LegendEntry`, never a fake series. [type:LegendEntry]
 - Wrap a chart in `ChartCard`; its headline figure and period are the `figure`, not a filler `subtitle`. [type:ChartCardProps]
 - A pending, failed or empty query is `FrameState`, never `data ?? []`; a Suspense fallback is the same card with `phase: 'loading'`. [type:FrameState]
-- A chart's `useChartFocus` is built over the array the chart draws; a list of a subset maps its rows to that focus by id. [type:ChartFocus]
+- A chart's `useChartFocus` is built over the array the chart draws; a list of a subset maps its rows to that focus by id, and a list of its series spreads `focus.seriesItem(key)` (a table passes `focusSeries`). [type:ChartFocus] [type:DataTableProps]
 - The threshold that defines the answer is drawn as a zone or reference line, never only stated in a footer. [type:ChartZone] [type:ChartRefLine]
 - Extra tooltip rows are data, never markup. [type:ChartTooltipConfig]
 - A card footer holds at most two facts. [type:FootFacts]
 - An optional figure, card or footer field takes a maybe-value straight; `undefined` is an absent key, so never a conditional spread or a placeholder. [type:ChartFigure] [type:StatCellProps]
 - A time or an id in a figure `period`, a stat card's `sub`, an entity column's name or `sub` or a footer fact's value sets `periodMono`, `subMono` or `mono`; never a class. [type:ChartFigure] [type:StatCellProps] [type:FootFacts]
-- A list whose rows are the chart's series (one row per line) spreads `focus.seriesItem(key)`, and a table passes `focusSeries`; never `focus.item` by position. [type:ChartFocus] [type:DataTableProps]
 
 ## Boundaries
 
