@@ -231,4 +231,9 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     title: 'Expression n38: what waits on the owner',
     blurb: 'Which questions, reviews and chores wait, and which hold up the most work?',
   },
+  {
+    id: 'linked-windows',
+    title: 'Linked windows: a table of runs beside an hourly chart',
+    blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',
+  },
 ]
