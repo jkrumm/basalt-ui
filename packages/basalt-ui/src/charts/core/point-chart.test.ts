@@ -61,6 +61,10 @@ describe('the x domain of a point chart', () => {
   test('is left alone when no dot reaches an end', () => {
     expect(xRoomForDots([0, 100], [40, 60], 6, 300)).toBeNull()
   })
+  test('a dot past a fixed window never widens it', () => {
+    const grown = xRoomForDots([0, 6], [2.1, 5, 40], 6, 300)
+    expect(grown === null || grown[1] === 6).toBe(true)
+  })
   test('a compiled point chart scales x wider than its data', () => {
     const { spec } = build((r) => r.d)
     const scale = (spec.scales as unknown as { x: { scale: { domain: () => number[] } } }).x.scale

@@ -142,9 +142,9 @@ layout('chart axes', () => {
     const carets = await boxes(page, 'ax-clamp', 'text[data-ts-key^="off-scale-v-top"]')
     expect(carets).toHaveLength(1)
     expect(carets[0]!.text).toBe('▲')
-    // The dot room grows the domain past the cap's gridline by a dot's radius and ring (under 8 px),
-    // so the plot's edge, where the caret sits, is at most that far above it.
-    expect(carets[0]!.t).toBeGreaterThanOrEqual(plot.t - 8)
+    // The dot room grows the domain past the cap's gridline by a dot's radius, its ring and the
+    // caret's own size, so the caret sits clear above the capped dot, under 24 px off the gridline.
+    expect(carets[0]!.t).toBeGreaterThanOrEqual(plot.t - 24)
     expect(carets[0]!.t - plot.t).toBeLessThan(height * 0.15)
   })
 

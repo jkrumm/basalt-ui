@@ -129,7 +129,7 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
 /**
  * The x domain of a point chart grown so every dot (`xs`: the dots' x as numbers, `r` the radius and
  * ring in px) sits whole inside the plot, which clips its marks at the edge: a dot centred on the
- * domain's end draws half. Grown only at an end a dot reaches, found by settling (the room is a
+ * domain's end draws half. Grown only at an end a dot inside the domain reaches, found by settling (the room is a
  * share of the grown span). `null` when no dot reaches an end.
  */
 export function xRoomForDots(
@@ -139,7 +139,8 @@ export function xRoomForDots(
   plotWidth: number,
 ): [number, number] | null {
   const [lo, hi] = extent
-  const finite = xs.filter(Number.isFinite)
+  // A dot past the domain is clipped by design (a fixed window), never a reason to widen it.
+  const finite = xs.filter((x) => x >= lo && x <= hi)
   if (finite.length === 0 || plotWidth <= 0 || !(hi > lo)) return null
   const [low, high] = [Math.min(...finite), Math.max(...finite)]
   let [from, to] = [lo, hi]
