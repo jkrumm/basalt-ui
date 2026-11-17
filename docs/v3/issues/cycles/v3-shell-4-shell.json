@@ -1,0 +1,26 @@
+{
+  "why": "Shell cycle 4 (docs/v3/cycles/shell-4.md, P3 shell-4.2, class shell; the cycle has no P2 row for it to ride with): a palette jump to a page whose loader is still pending leaves focus on `<body>` until the page arrives. A jump to Services on its first load (a 700 ms loader) holds `<body>` from about 210 to 730 ms and lands in main at about 850 ms, by click and by Enter alike. A jump to a page with no loader lands in main by 105 ms (`.evidence/cycle-shell-4/inspect.log` I5). The palette asks for the hand-off (`src/shell/commands/command-palette.tsx:110`, `requestMainFocus`), and `useRouteFocus` answers it only once the new pathname renders (`src/shell/parts/a11y.tsx:121`). A Tab in the gap starts at the skip link.",
+  "what": "A palette or More-sheet jump puts focus in main as the overlay closes, and main keeps it while the next page loads and after it arrives.",
+  "owns": [
+    "packages/basalt-ui/src/shell/parts/a11y.tsx (useRouteFocus) and its tests",
+    "packages/basalt-ui/src/shell/commands/command-palette.tsx (the jump's hand-off) and its tests",
+    "packages/basalt-ui/src/shell/parts/mobile/more-surface.tsx (the More sheet's hand-off, only if it shares the gap)",
+    "packages/basalt-ui/src/common/focus.ts",
+    "packages/basalt-ui/docs/app-shell.md (only where the hand-off is described)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "packages/basalt-ui/src/table/** (v3-shell-4-sheet)"
+  ],
+  "change": "A navigation that asked for the hand-off focuses main as soon as the overlay has closed, not only once the new pathname renders; the pending page keeps main focused and busy, and the arrival does not move focus again. A navigation that did not ask (a rail link, an in-page link) is left as it is.",
+  "commits": "fix: commit in packages/basalt-ui.",
+  "proof": "make check; a router test that jumps from the palette to a route whose loader is pending and finds focus in main before the loader settles and after it.",
+  "acceptance": [
+    "A palette jump to a route with a pending loader has focus in main while it waits (test)",
+    "After the page arrives, focus is still in main (test)",
+    "A rail link click keeps focus on the link as now (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The table's stuck sheet on a deep link (v3-shell-4-sheet)."
+}
