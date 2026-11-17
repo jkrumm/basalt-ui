@@ -8,6 +8,7 @@ import '../../tailwind.generated.css'
 import {
   Outlet,
   RouterProvider,
+  useLocation,
   createMemoryHistory,
   createRootRoute,
   createRoute,
@@ -19,10 +20,12 @@ import type { Root } from 'react-dom/client'
 import { memoryHandle } from '../../../../../src/controls/control-view.handles'
 import { globalControls } from '../../../../../src/controls/globals'
 import { spec as filterSpec } from '../../../../../src/controls/spec'
+import { LinkContext } from '../../../../../src/core/link'
 import type { ControlsSlot, IconComponent } from '../../../../../src/core/ports'
 import { Page } from '../../../../../src/page/page'
 import { PageAside } from '../../../../../src/page/page-aside'
 import { PageBar } from '../../../../../src/page/page-bar'
+import { routerDefaults } from '../../../../../src/router/defaults'
 import { Section } from '../../../../../src/page/section'
 import { AppShell } from '../../../../../src/shell/app-shell'
 import type {
@@ -210,6 +213,12 @@ const HEADER_GLOBALS = globalControls([
   ),
 ])
 
+/** The router's location, for a test that cannot read a memory history from the address bar. */
+function LocationProbe(): ReactElement {
+  const href = useLocation({ select: (location) => location.href })
+  return <output data-testid="location">{href}</output>
+}
+
 function Body({ spec }: { spec: FixtureSpec }): ReactElement {
   const { bar, aside } = spec
   const actions =
@@ -227,6 +236,7 @@ function Body({ spec }: { spec: FixtureSpec }): ReactElement {
       {bar !== undefined && (
         <PageBar
           {...(bar.title !== undefined && { title: bar.title })}
+          {...(bar.parent !== undefined && { parent: bar.parent })}
           {...(bar.pills !== undefined && bar.pills > 0 && { controls: controls(bar.pills) })}
           {...(actions !== undefined && {
             actions: actions as unknown as NonNullable<
@@ -235,6 +245,7 @@ function Body({ spec }: { spec: FixtureSpec }): ReactElement {
           })}
         />
       )}
+      {bar?.parent !== undefined && <LocationProbe />}
       <Section title="Overview">
         <div style={{ height: spec.bodyHeight ?? 200 }} data-testid="content-end" />
       </Section>
@@ -301,8 +312,18 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
   })
   const router = createRouter({
     routeTree: rootRoute.addChildren([page]),
-    history: createMemoryHistory({ initialEntries: [`/${active?.key ?? ''}`] }),
+    history: createMemoryHistory({
+      initialEntries: [options.entry ?? `/${active?.key ?? ''}`],
+    }),
   })
   root = createRoot(container)
-  root.render(<RouterProvider router={router} />)
+  const tree = <RouterProvider router={router} />
+  // A crumb parent is a link: installed as an app installs it, a click stays in the router.
+  root.render(
+    spec.bar?.parent === undefined ? (
+      tree
+    ) : (
+      <LinkContext value={routerDefaults().link}>{tree}</LinkContext>
+    ),
+  )
 }

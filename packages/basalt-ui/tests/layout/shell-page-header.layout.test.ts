@@ -123,3 +123,28 @@ layout('content starts at one height on every page', () => {
     expect(Math.abs(bare - banded)).toBeLessThanOrEqual(4)
   })
 })
+
+layout('a crumb parent is an in-app link', () => {
+  for (const viewport of [DESKTOP_1800, PHONE]) {
+    test(`${viewport.name}: a click keeps the document and the page's other search params`, async () => {
+      const spec = {
+        ...specOf({ title: 'Run 7', parent: { label: 'Runs', href: '/fleet?q=open' } }),
+        entry: '/fleet?q=open&sel=7',
+      }
+      const page = await openFixture(spec, viewport)
+      const parent = 'a[data-slot="page-breadcrumb-parent"]'
+      await page.raw.waitForSelector(parent)
+      await page.raw.evaluate(() => {
+        ;(window as unknown as { __kept: boolean }).__kept = true
+      })
+      await page.raw.click(parent)
+      await page.raw.waitForFunction(
+        () => document.querySelector('[data-testid="location"]')?.textContent === '/fleet?q=open',
+      )
+      const kept = await page.raw.evaluate(
+        () => (window as unknown as { __kept?: boolean }).__kept === true,
+      )
+      expect(kept, 'the click did not reload the document').toBe(true)
+    })
+  }
+})

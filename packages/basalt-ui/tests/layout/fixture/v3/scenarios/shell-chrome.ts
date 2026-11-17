@@ -18,6 +18,8 @@ export type ShellChromeSpec = FixtureSpec & {
   globalControls?: true
   /** The persisted rail state to start from. */
   rail?: 'collapsed' | 'expanded'
+  /** The memory history's first entry, path and search (default: the active item's path). */
+  entry?: string
 }
 
 const OWN_FIELDS = ['sidebar', 'bar', 'globals', 'aside', 'cluster', 'globalControls'] as const
