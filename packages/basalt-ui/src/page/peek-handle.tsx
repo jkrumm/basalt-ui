@@ -87,7 +87,8 @@ export function PeekHandle({ panel, onResize, onCommit, label }: PeekHandleProps
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId)
     }
-    onCommit(d.last)
+    // A click that never moved the edge chose nothing: the width stays the responsive default.
+    if (d.last !== d.start) onCommit(d.last)
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
