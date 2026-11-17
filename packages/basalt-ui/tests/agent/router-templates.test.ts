@@ -160,6 +160,10 @@ describe('router templates', () => {
       const shown = render(createElement(RouteMissing, {}))
       expect(shown.container.textContent).toContain('This address does not match any page.')
       expect(shown.container.querySelector('a')?.getAttribute('href')).toBe('/')
+      // The screen names itself once, like every page: one h1.
+      expect([...shown.container.querySelectorAll('h1')].map((h) => h.textContent)).toEqual([
+        'Not found',
+      ])
       cleanup()
       const data = { message: 'No run "r9".', link: { to: '/runs', label: 'All runs' } }
       const named = render(
@@ -169,6 +173,56 @@ describe('router templates', () => {
       const link = named.container.querySelector('a')
       expect(link?.getAttribute('href')).toBe('/runs')
       expect(link?.textContent).toBe('All runs')
+      cleanup()
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('the error screen names itself with one h1 and hands focus to main after a retry', async () => {
+    const src = filled('_app-error.tpl')
+      .replace("'basalt-ui/page'", JSON.stringify(join(pkgRoot, 'src/page/index')))
+      .replace(
+        "import { useRouter } from '@tanstack/react-router'",
+        'const useRouter = () => ({ invalidate: async () => {} })',
+      )
+    const dir = mkdtempSync(join(pkgRoot, 'tests/agent/.error-'))
+    try {
+      const file = join(dir, 'route-error.tsx')
+      writeFileSync(file, src)
+      const { RouteError } = (await import(file)) as {
+        RouteError: (props: Record<string, unknown>) => ReactElement
+      }
+      const { render, cleanup, fireEvent, screen, act } = await import('@testing-library/react')
+      const main = document.createElement('main')
+      main.id = 'shell-main'
+      main.tabIndex = -1
+      document.body.append(main)
+      let resets = 0
+      const shown = render(
+        createElement(RouteError, {
+          error: new Error('boom'),
+          reset: () => {
+            resets += 1
+          },
+        }),
+      )
+      expect([...shown.container.querySelectorAll('h1')].map((h) => h.textContent)).toEqual([
+        'Something went wrong',
+      ])
+      const retry = screen.getByRole('button', { name: 'Try again' })
+      retry.focus()
+      await act(async () => {
+        fireEvent.click(retry)
+        // The retry replaces this screen: the button, and the focus on it, go.
+        shown.unmount()
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve(null))),
+        )
+      })
+      expect(resets).toBe(1)
+      expect(document.activeElement).toBe(main)
+      main.remove()
       cleanup()
     } finally {
       rmSync(dir, { recursive: true, force: true })
