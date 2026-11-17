@@ -40,6 +40,14 @@ export const COMMANDS = defineCommands({
       console.log('[basalt commands] command triggered')
     },
   },
+  'demo:sequence': {
+    label: 'Greet user (sequence)',
+    group: 'Demo',
+    chord: 'g h',
+    run: () => {
+      alert('Hello from a sequence!')
+    },
+  },
   'demo:async': {
     label: 'Async command (1s delay)',
     group: 'Demo',
