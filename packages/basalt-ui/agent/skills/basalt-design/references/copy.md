@@ -92,3 +92,14 @@ not guarded:
 - Write no raw key or parameter dump into a footer.
 - Print no 0 and no "None" for a figure nobody counted; a zero is a measurement.
 - Print no bare ISO timestamp where a reader wants the age; the absolute time sits on hover.
+
+Cycle 9 repeated it on pages of tables, again in every case:
+
+- n33 (.9): `needs a fix`: strip and 'Failing' column; `F-232`: twice; `retry`: three buttons; a label on every line of a phone card. One verdict word, one id place, one Retry for the page.
+- n34 (.17): `the go windows: hero, bands, table`. The hero states the next window, the bands carry the words, the table lists only what they do not.
+- n36 (.38): `lane: a column that repeats each group header`, `you: every Waiting on cell and 'Author: you'`, `5 rows: beside the 5 in the card`. A group header says it once; a column that repeats it is cut.
+- n37 (.45, .48, .49): `points: axis title, y ticks, labelled bars, hero unit`, `Points (pts):` on every phone card, `'Not started, 13 pts'` beside a Points column of 13, `days left: '3 days left' and 'day 7 of 10'`. A unit stands once, beside the figure; a period stands in one phrase.
+- n35 (.26): `5 h free: hero and mark`, `longest block: legend and mark`. The mark carries it, the legend names the form.
+- n38 (.61): `Issues held up: hero unit, axis title, label`, `ahead in N h: rows, footer, rule`, the empty sentence twice.
+
+The repeat that a builder cannot see by reading is the one a unit or a window makes: list where each unit and each window is stated, then keep the one a mark carries.

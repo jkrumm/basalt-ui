@@ -42,6 +42,11 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 - `priority` says what survives a narrow table: 1 always, 2 at reduced width, 3 at full width only. Give an identity column 1; at most two columns are 1, the rest demote in declaration order.
 - Absent values print a dash; a zero is a zero.
 
+## An age or a duration is a meter
+
+- A column of ages or durations (waiting for, open for, run time) is `c.meter(key, { max })` with `max` the oldest in view, so the eye reads the long ones before it reads a number; bare text ('3 weeks ago') draws nothing to compare (n33 .1 and n36 .29: both builders found `c.meter` only in round 1).
+- State the rule that makes an item late where the reader meets the column: the column `header` ('Waiting, late after 48 h') or the card's context line. A threshold that lives only in the code leaves every row unexplained (n36 .32: the stuck rule was on no row and no caption). The row that crosses it carries its verdict word in its own column ('Stuck', 'Overdue') and takes the one status hue ([charts](charts.md)).
+
 ## Where state lives
 
 - `request` (search, filters, sort, page) is the query key and belongs in the URL; `display` (hidden columns) is the device's. Bind `state` to a `field.composite` of a `defineControls` store, or omit it for a table that holds its own memory.
@@ -82,6 +87,13 @@ export function Orders({ rows, total }: { rows: readonly Order[]; total: number 
   return <DataTable table={t} />
 }
 ```
+
+## Anatomy of a table part
+
+- A table on a page is a [DataPanel](node_modules/basalt-ui/docs/data-panel.md) or a card with a title and a context line (`subtitle`: its scope and its rule, a fact), never a flush [Section](node_modules/basalt-ui/docs/section.md) with a small heading beside a card. n33 stood two tables in `Section`s with no context line, n36's table was a flush small title under an uninset figure, n37's at-risk table a flush section (.6, .35, .52); n33's round 1 moved the tables into `DataPanel`s and scored for it.
+- A card whose state answers shows its [Status](node_modules/basalt-ui/docs/status.md) at rest, and a coloured band on a chart has a key (n34 passed `undefined` for the status and drew bands with no key, .15).
+- Mono goes to ids and times only (a merge request id, a finding id, an opened timestamp), and nothing else: not a measurement phrase ('tide 2.1 m, swell 0.5 m, 6 s', n34 .20), not an absent value ('None open' set mono by `subMono`, n33 .12). A time or an id in the body face is the opposite defect (n36 .42 opened times, n38 .64 ids and hours; a `BarList` label takes no mono, so the id sits in a part that does, such as a footer fact).
+- A stat cell beside a long table sits in a strip sized to its content, not 750 px wide with its value and footer 700 px apart (n36 .39).
 
 not guarded:
 
