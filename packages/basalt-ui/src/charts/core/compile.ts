@@ -174,7 +174,7 @@ const LADDER = {
 const LEFT_EDGE_SHARE = 0.05
 
 /** Air the engine keeps between two x tick labels, px: at 4 a date pair reads as one string (`27 Sep 4 Oct`). */
-const TICK_MIN_GAP = 12
+const TICK_MIN_GAP = 8
 /** The width a y axis takes from the chart's width: what the x tick anchors count against, px. */
 const Y_GUTTER = 44
 
@@ -512,24 +512,23 @@ export function yGuide<T>(opts: {
 }
 
 /**
- * The anchor of a band axis label that is wider than its slot and would hang past the plot's edge:
- * `end` at the last bands, `start` at the first, so the plot keeps its width. `undefined` (centred)
- * when it fits or the width is not known.
+ * How far a band axis label wider than its slot hangs past the plot's right edge, px: the engine would
+ * shrink the plot to make room for it. Such a label is right-aligned to the plot edge instead
+ * (anchor `end`, shifted by the distance from its band centre to the edge). `undefined` when it fits or
+ * the width is not known.
  */
-function bandAnchor<X extends ChartX>(
+function bandEdgeShift<X extends ChartX>(
   model: XScaleModel<X>,
   value: ChartValue,
   text: string,
   width: number | undefined,
-): 'start' | 'end' | undefined {
+): number | undefined {
   if (width === undefined || !Number.isFinite(width)) return undefined
   const plotWidth = Math.max(0, width - Y_GUTTER)
   const centre = model.fraction(value as X)
   if (centre === null || plotWidth <= 0) return undefined
-  const half = captionWidth(text, TICK_FONT) / 2
-  if (centre * plotWidth < half) return 'start'
-  if ((1 - centre) * plotWidth < half) return 'end'
-  return undefined
+  const toEdge = (1 - centre) * plotWidth
+  return captionWidth(text, TICK_FONT) / 2 > toEdge ? toEdge : undefined
 }
 
 /** The buckets of a band Date axis, or `null` for any other axis. */
@@ -624,15 +623,20 @@ export function xGuide<X extends ChartX>(opts: {
         thin: { minGap: TICK_MIN_GAP },
         // A label centred on a tick near the plot's left edge hangs left of it, under the gutter's
         // lowest y label: start-anchor it. `+value` is a Date's timestamp, or the number itself.
-        // On a band axis a label wider than its slot hangs over the plot's edge and the engine would
-        // shrink the plot for it: it anchors inward instead, and the thinning drops what it covers.
+        // On a band axis a label that hangs over the plot's right edge would make the engine shrink the
+        // plot: it is right-aligned to the edge instead (see `dx`).
         anchor: ({ value }: { value: ChartValue }) => {
-          if (model.band) return bandAnchor(model, value, format(value), opts.width)
+          if (model.band)
+            return bandEdgeShift(model, value, format(value), opts.width) === undefined
+              ? undefined
+              : ('end' as const)
           const share = model.log
             ? (model.fraction(value as X) ?? Number.NaN)
             : (+value - leftEdgeX) / spanX
           return share >= 0 && share <= LEFT_EDGE_SHARE ? ('start' as const) : undefined
         },
+        dx: ({ value }: { value: ChartValue }) =>
+          model.band ? bandEdgeShift(model, value, format(value), opts.width) : undefined,
       },
     },
   }
