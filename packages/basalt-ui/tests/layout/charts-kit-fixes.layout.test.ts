@@ -179,6 +179,17 @@ layout('chart kit fixes', () => {
         expect(Math.abs((await height('error')) - readyHeight), 'error').toBeLessThanOrEqual(0.5)
       })
 
+      test('a card that declares no period before ready ends loading and error at the ready height', async () => {
+        const page = await open(viewport)
+        const height = async (phase: string): Promise<number> =>
+          (await page.box(phase, `[data-testid="kf-lazy-${phase}"] [data-slot="card"]`)).box.height
+        const readyHeight = await height('ready')
+        expect(Math.abs((await height('loading')) - readyHeight), 'loading').toBeLessThanOrEqual(
+          0.5,
+        )
+        expect(Math.abs((await height('error')) - readyHeight), 'error').toBeLessThanOrEqual(0.5)
+      })
+
       test('a dot on the plot floor draws whole', async () => {
         const page = await open(viewport)
         const circle = await page.raw.evaluate(() => {

@@ -502,6 +502,48 @@ describe('the ready frame declares the slots a loading, empty or failed frame ho
     )
   })
 
+  test('a card that mounts in loading with a figure and no period holds one period line', () => {
+    const el = html(
+      <ChartCard title="R" chart={() => null} phase="loading" figure={{ value: null }} />,
+    )
+    const line = el.querySelector('[data-slot="chart-figure"] > div[aria-hidden="true"]')
+    expect(line?.className).toContain('@max-regular:flex')
+    expect(el.querySelector('[data-slot="chart-period-hold"]')).toBeNull()
+  })
+
+  test('a card that was ready without a period holds none, and one that had a period keeps it', async () => {
+    const root = document.createElement('div')
+    document.body.append(root)
+    const view = createRoot(root)
+    const lines = (): number =>
+      root.querySelectorAll('[data-slot="chart-figure"] > :is(div, span)[aria-hidden="true"]')
+        .length
+    await act(async () =>
+      view.render(<ChartCard title="R" chart={() => null} figure={{ value: 5 }} />),
+    )
+    await act(async () =>
+      view.render(
+        <ChartCard title="R" chart={() => null} phase="loading" figure={{ value: null }} />,
+      ),
+    )
+    expect(lines()).toBe(0)
+    await act(async () =>
+      view.render(
+        <ChartCard title="R" chart={() => null} figure={{ value: 5, period: 'vs prior' }} />,
+      ),
+    )
+    await act(async () =>
+      view.render(
+        <ChartCard title="R" chart={() => null} phase="loading" figure={{ value: null }} />,
+      ),
+    )
+    expect(root.querySelector('[data-slot="chart-period-hold"]')?.getAttribute('data-hold')).toBe(
+      'vs prior',
+    )
+    act(() => view.unmount())
+    root.remove()
+  })
+
   test('a card that was never ready has nothing to hold', () => {
     const el = html(<ChartCard title="R" chart={() => null} phase="loading" />)
     expect(el.querySelector('[data-slot="chart-footer"]')).toBeNull()
