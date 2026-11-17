@@ -209,6 +209,13 @@ type PackageBan = {
   readonly next: string
   readonly allowInEjected?: boolean
   readonly except?: readonly string[]
+  /**
+   * Named imports banned from a package the row does not ban whole (usehooks-ts' `useDarkMode`):
+   * its other exports stay legal.
+   */
+  readonly names?: Readonly<Record<string, readonly string[]>>
+  /** The subject the message names, from the package it reports (default: the specifier). */
+  readonly subject?: (source: string) => string
 }
 
 const isBanned = ({ packages, except = [] }: PackageBan, source: string): boolean =>
@@ -216,12 +223,17 @@ const isBanned = ({ packages, except = [] }: PackageBan, source: string): boolea
   !except.some((pkg) => listed(source, pkg)) &&
   packages.some((pkg) => listed(source, pkg))
 
+/** A named import the row bans from a package it does not ban whole. */
+const bansName = ({ names }: PackageBan, node: Node, source: string): boolean =>
+  names?.[source]?.some((name) => importedNames(node).includes(name)) === true
+
 const packageForm = (ban: PackageBan): AstForm => ({
   id: ban.id,
   detect: ({ context, report }) => {
     if (ban.allowInEjected === true && isEjectedFile(context)) return {}
     return sourceVisitor((node, source) => {
-      if (isBanned(ban, source)) report(node, source)
+      if (isBanned(ban, source) || bansName(ban, node, source))
+        report(node, ban.subject?.(source) ?? source)
     })
   },
   fix: ban.fix,
@@ -471,6 +483,8 @@ const PACKAGE_BANS: readonly PackageBan[] = [
       'vaul',
       '@headlessui',
       '@floating-ui',
+      'react-popper',
+      '@popperjs/core',
       'react-aria-components',
       'react-aria',
       '@react-aria',
@@ -494,7 +508,7 @@ const PACKAGE_BANS: readonly PackageBan[] = [
       'flowbite-react',
       'semantic-ui-react',
     ],
-    fix: 'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, Mantine, Chakra, MUI, Ant Design, HeroUI, React Aria, Ark and Floating UI are not in the stack',
+    fix: 'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, Mantine, Chakra, MUI, Ant Design, HeroUI, React Aria, Ark, Floating UI and Popper are not in the stack',
     next: 'Eject the primitive with basalt-ui eject, then edit the copy',
     except: [
       '@mantine/hooks',
@@ -587,10 +601,14 @@ const PACKAGE_BANS: readonly PackageBan[] = [
   },
   {
     // A scheme store of its own: next-themes writes a `.dark` class (and its own storage key) by
-    // default, and basalt's tokens key on `[data-theme]`, so its fork reaches no token.
+    // default, and basalt's tokens key on `[data-theme]`, so its fork reaches no token. usehooks-ts'
+    // two scheme hooks join by name (lint-10.3); its other hooks stay legal, and its storage hooks
+    // are `persist-storage`'s. The subject names the package it reports (lint-10.10).
     id: 'scheme-library',
     packages: ['next-themes', 'remix-themes', 'use-dark-mode'],
-    fix: "BasaltProvider owns the scheme: pass its scheme prop and switch it with setScheme from basalt-ui/core/scheme; basalt's tokens key on [data-theme], and next-themes writes a .dark class no token reads",
+    names: { 'usehooks-ts': ['useDarkMode', 'useTernaryDarkMode'] },
+    subject: (source) => `${source} keeps a scheme of its own`,
+    fix: "BasaltProvider owns the scheme: pass its scheme prop and switch it with setScheme from basalt-ui/core/scheme; basalt's tokens key on [data-theme], and a scheme store of the app's own writes a class or a key no token reads",
     next: 'Tokens switch per scheme, so a component reads no scheme to pick a class',
   },
 ]
@@ -681,8 +699,13 @@ type RivalPart = {
   readonly words: string
   /** Named imports of a part basalt owns the behaviour of, each also read as its `use<Name>` hook. */
   readonly names?: readonly string[]
-  /** Hooks of the part whose name is not one of `names` (downshift's `useSelect` is a combobox). */
-  readonly hooks?: readonly string[]
+  /**
+   * Hooks of the part whose name is not one of `names`, keyed by the package that ships them:
+   * downshift's `useSelect` is a combobox, react-supabase's is a database query (lint-10.1).
+   */
+  readonly hooks?: Readonly<Record<string, readonly string[]>>
+  /** A call of the binding renders the part: a toast is shown by `toast('saved')`, never a tag. */
+  readonly calls?: true
   readonly suffix?: RegExp
   /** A package the word reads but that is not this part (a serialiser that writes Markdown). */
   readonly except?: RegExp
@@ -714,6 +737,7 @@ const RIVAL_PARTS: readonly RivalPart[] = [
     part: 'notify() from basalt-ui',
     words: 'toast|snackbar',
     names: ['Toaster', 'Snackbar'],
+    calls: true,
   },
   {
     kind: 'table',
@@ -746,7 +770,7 @@ const RIVAL_PARTS: readonly RivalPart[] = [
     words: 'combobox|select(?![a-z])',
     names: ['Combobox', 'Autocomplete'],
     // downshift's `useSelect` is its select; a bare `Select` is too generic a name to read.
-    hooks: ['useSelect'],
+    hooks: { downshift: ['useSelect'] },
     // A selector engine queries a tree (css-select's `CSSselect`, hast-util-select's `select`); it
     // renders no control.
     except: /^css-select$|-util-select$/,
@@ -754,7 +778,7 @@ const RIVAL_PARTS: readonly RivalPart[] = [
   {
     kind: 'date picker',
     part: 'basalt-ui/ui/date-picker',
-    words: 'date-?picker|day-?picker|date-?range|calendar',
+    words: 'date-?picker|day-?picker|date-?range|calendar|dayzed',
     names: ['DatePicker', 'DateRangePicker', 'DayPicker'],
     // A scheduler's calendar (react-big-calendar) lays out events; it picks no date.
     except: /big-calendar/,
@@ -789,57 +813,158 @@ const boundNames = (node: Node): string[] | undefined => {
   return names.length > 0 ? names : undefined
 }
 
-/** A part's named import, read whole or as its `use<Name>` hook, or one of its other hooks. */
-const namesPart = (part: RivalPart, name: string): boolean =>
+/** A part's named import, read whole or as its `use<Name>` hook, or a hook its package ships. */
+const namesPart = (part: RivalPart, name: string, pkg: string): boolean =>
   part.names?.some((n) => name === n || name === `use${n}`) === true ||
-  part.hooks?.includes(name) === true ||
+  part.hooks?.[pkg]?.includes(name) === true ||
   part.suffix?.test(name) === true
+
+type Rival = {
+  readonly part: RivalPart
+  readonly by: string
+  /**
+   * The local names a by-word import binds, judged by their use at `Program:exit`; undefined when
+   * the verdict is already in (a name match, a storage route, an import that binds no name).
+   */
+  readonly locals?: readonly string[]
+  /** The lint-9.1 shape test's verdict, kept for an import the file never uses. */
+  readonly shape: boolean
+}
 
 /**
  * The part a package reads as, by its name first, then by what it is imported for. A by-word
- * match holds only when the import binds a render shape or a name ending in the part's word; a
- * lower-case function import (`markdownEscape`, `google` from calendar-link) is a utility.
+ * match carries its local names for the use test and the shape test's verdict: a render shape or a
+ * name ending in the part's word reports, a lower-case function import (`markdownEscape`, `google`
+ * from calendar-link) is a utility.
  */
-const rivalOf = (node: Node, source: string): { part: RivalPart; by: string } | undefined => {
+const rivalOf = (node: Node, source: string): Rival | undefined => {
   const pkg = packageOf(source)
   const byWord = BY_WORD.find(([word]) => word.test(pkg))?.[1]
   if (byWord?.except?.test(pkg) === true) return undefined
   if (byWord) {
     // A storage route renders nothing: its lower-case `store` is the route itself.
     const bound = byWord.storage === true ? undefined : boundNames(node)
-    const renders =
-      bound === undefined || bound.some((n) => isRenderShape(n) || endsWithWord(byWord, n))
-    return renders ? { part: byWord, by: 'its name' } : undefined
+    if (bound === undefined) return { part: byWord, by: 'its name', shape: true }
+    const locals = children(node, 'specifiers').flatMap((s) => nameOf(child(s, 'local')) ?? [])
+    const shape = bound.some((n) => isRenderShape(n) || endsWithWord(byWord, n))
+    return { part: byWord, by: 'its name', locals, shape }
   }
   for (const name of importedNames(node)) {
-    const part = RIVAL_PARTS.find((p) => namesPart(p, name))
-    if (part) return { part, by: `its ${name}` }
+    const part = RIVAL_PARTS.find((p) => namesPart(p, name, pkg))
+    if (part) return { part, by: `its ${name}`, shape: true }
   }
   return undefined
+}
+
+/**
+ * How the file uses a name at one reference: `render` for a JSX tag (`<Markdown>`, `<Toast.Root>`)
+ * or a hook call, `call` for a plain or `new` call, `member` for the object of a member read
+ * (`NodeHtmlMarkdown.translate`), `other` for any other reference (`export const MD = Markdown`, an
+ * argument). Undefined for a position that is no reference to the binding: an import or JSX
+ * attribute name, a property key, a member's property, a type, a declaration of its own.
+ */
+type Use = 'render' | 'call' | 'member' | 'other'
+
+const NOT_A_REFERENCE: ReadonlySet<string> = new Set([
+  'ImportSpecifier',
+  'ImportDefaultSpecifier',
+  'ImportNamespaceSpecifier',
+  'JSXClosingElement',
+  'JSXAttribute',
+  'JSXNamespacedName',
+])
+const TS_EXPRESSIONS: ReadonlySet<string> = new Set([
+  'TSAsExpression',
+  'TSNonNullExpression',
+  'TSSatisfiesExpression',
+])
+
+const referenceKind = (node: Node): Use | undefined => {
+  const parent = node['parent'] as Node | undefined
+  if (!parent) return 'other'
+  const is = (key: string): boolean => parent[key] === node
+  if (NOT_A_REFERENCE.has(parent.type)) return undefined
+  if (parent.type.startsWith('TS') && !TS_EXPRESSIONS.has(parent.type)) return undefined
+  switch (parent.type) {
+    case 'JSXOpeningElement':
+      return is('name') ? 'render' : undefined
+    case 'JSXMemberExpression':
+      return is('object') ? 'render' : undefined
+    case 'CallExpression':
+      if (!is('callee')) return 'other'
+      return /^use[A-Z0-9]/.test(node['name'] as string) ? 'render' : 'call'
+    case 'NewExpression':
+      return is('callee') ? 'call' : 'other'
+    case 'MemberExpression':
+      if (is('object')) return 'member'
+      return parent['computed'] === true ? 'other' : undefined
+    case 'Property':
+    case 'MethodDefinition':
+    case 'PropertyDefinition':
+      return is('key') && parent['computed'] !== true && parent['shorthand'] !== true
+        ? undefined
+        : 'other'
+    case 'VariableDeclarator':
+    case 'FunctionDeclaration':
+    case 'ClassDeclaration':
+      return is('id') ? undefined : 'other'
+    default:
+      return 'other'
+  }
+}
+
+/**
+ * The use test (lint-10.1): a by-word import reports when the file renders its binding (a JSX tag
+ * or a hook call; a call for a part shown by one, a toast) and passes when every use is a plain
+ * call or a member read (`removeMarkdown(s)`, `NodeHtmlMarkdown.translate(html)`), a converter
+ * that renders nothing. Any other use, or none, leaves the verdict to the shape test.
+ */
+const verdictOf = (rival: Rival, uses: ReadonlyMap<string, readonly Use[]>): boolean => {
+  if (rival.locals === undefined) return rival.shape
+  const seen = rival.locals.flatMap((name) => uses.get(name) ?? [])
+  if (seen.includes('render') || (rival.part.calls === true && seen.includes('call'))) return true
+  if (seen.length > 0 && seen.every((use) => use === 'call' || use === 'member')) return false
+  return rival.shape
 }
 
 /**
  * `rival-signature`: an unscoped package on no ban row and outside the stack that reads as a part
  * basalt ships, by a word in its name (`react-modal`, `lightweight-charts`) or by the overlay,
  * picker or grid it is imported for (`{ Dialog } from 'tiny-kit/dialog'`, downshift's `useCombobox`
- * and `useSelect`: a part's name is also read as its `use<Name>` hook). It catches the next ring of
- * rivals before a cycle seeds them; a package that only shares a word is waived on its line.
+ * and `useSelect`: a part's name is also read as its `use<Name>` hook, and a hook of another name
+ * only from the package that ships it). It catches the next ring of rivals before a cycle seeds
+ * them; a package that only shares a word is waived on its line.
  *
- * Shape test (lint-9.1): a by-word match reports only when the import binds a component
- * (PascalCase, a namespace included) or a hook (`use*`), the shapes that render a rival part, or a
- * name whose last word is the part's own (`createChart` from lightweight-charts, `marked`, `toast`).
- * A lower-case function import is a utility and passes: `markdownEscape` from markdown-escape,
- * `google` from calendar-link. An import that binds nothing by name (a stylesheet, `import()`,
- * `require()`) and a storage package keep the word alone. The test made the `markdown-table`
- * except entry redundant (its `markdownTable` is a utility) and it is gone; `-to-markdown`
- * (`toMarkdown` ends in the word), `css-select` (its default `CSSselect`), `-util-select`
- * (`select`) and `big-calendar` (`Calendar`) stay, as each binds a shape the test reads.
+ * Use test (lint-10.1): a by-word import is judged by how the file uses its binding. A JSX tag or a
+ * hook call renders a part and reports (a call does too for the toast part, which is shown by
+ * one); a binding only called as a function or reached through a member is a utility and passes:
+ * remove-markdown's `removeMarkdown(s)`, node-html-markdown's `NodeHtmlMarkdown.translate(html)`.
+ * It replaces the lint-9.1 shape test wherever the file uses the binding that way, the half of the
+ * shape test that judged a name it could see used: a PascalCase converter class and a name ending
+ * in the part's word (`removeMarkdown`) no longer report on their shape.
+ *
+ * Shape test (lint-9.1), kept for an import the file never uses or only passes on (a re-export, an
+ * argument): a by-word match reports only when the import binds a component (PascalCase, a
+ * namespace included) or a hook (`use*`), or a name whose last word is the part's own (`createChart`
+ * from lightweight-charts, `toast`). A lower-case function import is a utility and passes:
+ * `markdownEscape` from markdown-escape, `google` from calendar-link. An import that binds nothing
+ * by name (a stylesheet, `import()`, `require()`) and a storage package keep the word alone.
+ * `-to-markdown` (`toMarkdown` ends in the word), `css-select` (its default `CSSselect`),
+ * `-util-select` (`select`) and `big-calendar` (`Calendar`) stay except entries, as each binds a
+ * shape the test reads.
  */
 const rivalSignature: AstForm = {
   id: 'rival-signature',
   detect: ({ report }) => {
-    const found: { node: Node; subject: string; storage: boolean }[] = []
+    const found: { node: Node; subject: string; rival: Rival }[] = []
+    const uses = new Map<string, Use[]>()
     let adapter = false
+    const record = (node: Node): void => {
+      const use = referenceKind(node)
+      if (use === undefined) return
+      const name = node['name'] as string
+      uses.set(name, [...(uses.get(name) ?? []), use])
+    }
     return {
       ...sourceVisitor((node, source) => {
         if (!isUnscopedPackage(source) || isStack(source) || isIconSet(source) || isOnAList(source))
@@ -847,14 +972,18 @@ const rivalSignature: AstForm = {
         const rival = rivalOf(node, source)
         if (!rival) return
         const subject = `${source}, a ${rival.part.kind} package by ${rival.by}; basalt's is ${rival.part.part}`
-        found.push({ node, subject, storage: rival.part.storage === true })
+        found.push({ node, subject, rival })
       }),
       Identifier(node) {
         if (node['name'] === 'StorageLike') adapter = true
+        record(node)
       },
+      JSXIdentifier: record,
       'Program:exit'() {
-        for (const { node, subject, storage } of found)
-          if (!(storage && adapter)) report(node, subject)
+        for (const { node, subject, rival } of found) {
+          if (rival.part.storage === true && adapter) continue
+          if (verdictOf(rival, uses)) report(node, subject)
+        }
       },
     }
   },

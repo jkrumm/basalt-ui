@@ -77,3 +77,7 @@ import { DatePicker } from 'rsuite'
 import AddIcon from '@mui/icons-material/Add'
 // @valid
 import { SearchOutlined } from '@ant-design/icons'
+// @invalid
+import { usePopper } from 'react-popper'
+// @invalid
+import { createPopper } from '@popperjs/core'

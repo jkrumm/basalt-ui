@@ -11,3 +11,9 @@ import useDarkMode from 'use-dark-mode'
 import { setScheme } from 'basalt-ui/core/scheme'
 // @valid
 import { BasaltProvider } from 'basalt-ui/router'
+// @invalid
+import { useDarkMode } from 'usehooks-ts'
+// @invalid
+import { useTernaryDarkMode } from 'usehooks-ts'
+// @valid
+import { useDebounceValue, useMediaQuery } from 'usehooks-ts'

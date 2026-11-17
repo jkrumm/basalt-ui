@@ -104,3 +104,33 @@ import markdownEscape from 'markdown-escape'
 import { google as calendarLink } from 'calendar-link'
 // @valid
 import removeMd from 'remove-markdown'
+// @valid
+import removeMarkdown from 'remove-markdown'
+export const plain = (s) => removeMarkdown(s)
+// @valid
+import { NodeHtmlMarkdown } from 'node-html-markdown'
+export const toMd = (html) => NodeHtmlMarkdown.translate(html)
+// @valid
+import { NodeHtmlMarkdown } from 'node-html-markdown'
+export const converter = new NodeHtmlMarkdown()
+// @valid
+import { useSelect } from 'react-supabase'
+export const US = useSelect
+// @invalid
+import { render as markdown } from 'markdown-view-lite'
+export const Doc = ({ text }) => <markdown.View>{text}</markdown.View>
+// @invalid
+import MarkdownView from 'markdown-view-lite'
+export const MD = MarkdownView
+// @invalid
+import { useModal } from 'react-modal-hook'
+export function Open() {
+  const [show] = useModal(() => null)
+  return show
+}
+// @invalid
+import { toast } from 'toastify-lite'
+export const saved = () => toast('Saved')
+// @invalid
+import { useDayzed } from 'dayzed'
+export const DZ = useDayzed
