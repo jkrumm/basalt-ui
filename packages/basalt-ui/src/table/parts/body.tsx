@@ -177,7 +177,7 @@ export function DataRow<T>({
   const offset = selection === undefined ? 1 : 2
   const ticked = selection?.isSelected(row.id) === true
   const active = model.activeId === row.id
-  const rowProps = useRowFocusProps(row.id, keyboard.rowProps(row.id))
+  const rowProps = useRowFocusProps(row.id, row.original, keyboard.rowProps(row.id))
   // Controls in a row are tab stops only in the roving stop; a table without one leaves them all.
   const tabbable = rowProps.tabIndex !== -1
   return (

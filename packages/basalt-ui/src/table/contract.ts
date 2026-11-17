@@ -13,6 +13,7 @@ import type {
   DetailHost,
   IconComponent,
   ListFocus,
+  ListFocusItem,
   Phase,
   QueryStateLike,
   VirtualLike,
@@ -147,17 +148,34 @@ export type Scrollport = 'fill' | { maxRows: number }
 export type DataTableProps<T> = {
   table: DataTableInstance<T>
   detail?: DetailHost
-  /**
-   * A chart's focus over the same rows (`useChartFocus(rows, …)`): a row maps to its item by
-   * `getRowId`, so sort and filter keep the link. Pointing at a row or moving the table's own row
-   * focus onto it focuses its item; an item focused elsewhere marks its row, and a chart's keyboard
-   * step onto it scrolls the row into view while it is mounted.
-   */
-  focus?: ListFocus<T>
 } & (
-  | { height?: 'auto' | Scrollport; virtual?: never }
-  | { height: Scrollport; virtual: VirtualLike }
-)
+  | {
+      /**
+       * A chart's focus over the same rows (`useChartFocus(rows, …)`): a row maps to its item by
+       * `getRowId`, so sort and filter keep the link. Pointing at a row or moving the table's own row
+       * focus onto it focuses its item; an item focused elsewhere marks its row, and a chart's keyboard
+       * step onto it scrolls the row into view while it is mounted.
+       */
+      focus?: ListFocus<T>
+      focusSeries?: never
+    }
+  | {
+      focus?: never
+      /**
+       * A chart's focus whose series the rows stand for (one row per line): `key` maps a row to its
+       * series key. Pointing at a row or moving the table's own row focus onto it emphasises that
+       * series across every x; a series emphasised elsewhere (the chart's legend) marks its row.
+       */
+      focusSeries: {
+        focus: {
+          readonly setSeries: (key: string | null) => void
+          readonly seriesItem: (key: string) => ListFocusItem
+        }
+        key: (row: T) => string
+      }
+    }
+) &
+  ({ height?: 'auto' | Scrollport; virtual?: never } | { height: Scrollport; virtual: VirtualLike })
 
 /** The options of the detail door, shared by the two forms that open one (`detail`, or `detailById` alone). */
 type DetailDoor<T> = {

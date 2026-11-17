@@ -172,6 +172,8 @@ function stepInX<D>(
   return typeof next === 'number' ? order[next] : next
 }
 
+const noRef = (): void => undefined
+
 /** Visually hidden, still read: the live region speaks without taking room. */
 const HIDDEN: CSSProperties = {
   position: 'absolute',
@@ -310,7 +312,9 @@ function scrollNodeIntoView(node: Element | undefined): void {
  * A mark spreading `focus.item(i)` is dimmed by the kit while another is focused, at the opacity
  * the kit's own marks use; a page sets no opacity of its own. With `group`, PageUp and PageDown step
  * by group, and a list of groups beside the marks spreads `focus.groupItem(name)` on each row to
- * share the focus both ways. A list of the same grain spreads `focus.item(i)` instead. Leaving a row
+ * share the focus both ways. A list of the same grain spreads `focus.item(i)` instead. A list whose
+ * rows are the chart's series (one row per line) spreads `focus.seriesItem(key)`: pointing at a row
+ * emphasises its series across every x as the legend does, and the legend marks the row. Leaving a row
  * keeps its group focused, so crossing the gap to the next row or to the chart never flickers; leaving
  * the chart's container or a blur clears it.
  *
@@ -324,6 +328,8 @@ export function useChartFocus<D>(
   const { announce, columns, group } = options
   // `entered`: the focus came into its group from outside it, so the announcement names the group.
   const [held, setHeld] = useState<{ index: number; entered: boolean } | null>(null)
+  // The series a list row or the chart's legend emphasises across every x.
+  const [series, setSeries] = useState<string | null>(null)
   // An index past the end (the items shrank) is no focus, without an effect to clear it.
   const index = held !== null && held.index < items.length ? held.index : null
   const datum = index === null ? null : (items[index] as D)
@@ -392,11 +398,16 @@ export function useChartFocus<D>(
       event.preventDefault()
       set(next)
     },
-    onBlur: () => set(null),
+    onBlur: () => {
+      set(null)
+      setSeries(null)
+    },
     // The container clears, never a mark: crossing the gap between two marks keeps the last one.
     onPointerLeave: (event: PointerEvent<Element>) => {
       // A tap ends in a leave: the tapped mark stays focused until the next tap or blur.
-      if (event.pointerType !== 'touch') set(null)
+      if (event.pointerType === 'touch') return
+      set(null)
+      setSeries(null)
     },
   }
   const item = (i: number): ChartFocusItem => ({
@@ -422,6 +433,14 @@ export function useChartFocus<D>(
       onPointerDown: () => point(first),
     }
   }
+  // A row per series: it emphasises its series on pointing and is marked while the series is. No
+  // keyboard step lands on a series, so its row never needs scrolling into view: the ref is inert.
+  const seriesItem = (key: string): ChartFocusGroupItem => ({
+    ...(series === key && { 'data-focused': '' as const }),
+    ref: noRef,
+    onPointerEnter: () => setSeries(key),
+    onPointerDown: () => setSeries(key),
+  })
   const said = datum === null ? '' : announce(datum)
   // Entering a group at a later item names the group by its first item's announcement, never by its
   // key (a key is an id as often as a name); entering at the first item says only that datum.
@@ -445,6 +464,9 @@ export function useChartFocus<D>(
     target,
     item,
     groupItem,
+    series,
+    setSeries,
+    seriesItem,
     step,
     live,
   }

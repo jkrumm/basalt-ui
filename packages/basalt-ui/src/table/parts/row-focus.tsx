@@ -1,16 +1,22 @@
 /**
- * A table's link to a chart's shared focus (`DataTable focus`). `DataTable` provides it; a data row
- * reads it, so `DataRow` stays one markup with or without a focus. A row maps to its focus item by
- * `getRowId`, never by position, so a sort or a filter keeps the link.
+ * A table's link to a chart's shared focus (`DataTable focus` or `focusSeries`). `DataTable`
+ * provides it; a data row reads it, so `DataRow` stays one markup with or without a focus. A row
+ * maps to its focus item by `getRowId`, or to its series by `focusSeries.key`, never by position,
+ * so a sort or a filter keeps the link.
  */
 import { createContext, useContext } from 'react'
 import type { FocusEvent, PointerEvent, ReactElement, ReactNode } from 'react'
-import type { ListFocus } from '../../core/ports'
+import type { ListFocus, ListFocusItem } from '../../core/ports'
+import type { DataTableProps } from '../contract'
 import type { RowProps } from '../core/keyboard'
 
-type RowFocus = {
-  focus: ListFocus<unknown>
-  indexOf: (id: string) => number | undefined
+/** What a row of a linked table reads: its item's props, the keyboard's entry and the clear. */
+type RowLink = {
+  /** The props of the row's item or series, or `undefined` when it stands for nothing. */
+  item: (id: string, row: unknown) => ListFocusItem | undefined
+  /** The table's own row focus moved onto the row. */
+  enter: (id: string, row: unknown) => void
+  clear: () => void
 }
 
 export type FocusedRowProps = RowProps & {
@@ -19,31 +25,56 @@ export type FocusedRowProps = RowProps & {
   onPointerDown?: () => void
 }
 
-const RowFocusContext = createContext<RowFocus | undefined>(undefined)
+type SeriesLink<T> = NonNullable<DataTableProps<T>['focusSeries']>
 
-export function RowFocusProvider<T>({
-  focus,
-  getRowId,
-  children,
-}: {
-  focus: ListFocus<T> | undefined
-  getRowId: (row: T) => string
-  children: ReactNode
-}): ReactElement {
-  if (focus === undefined) return <>{children}</>
+/** The link of a table's focus props, or `undefined` without one. */
+export function rowLinkOf<T>(
+  focus: ListFocus<T> | undefined,
+  focusSeries: SeriesLink<T> | undefined,
+  getRowId: (row: T) => string,
+): RowLink | undefined {
+  if (focusSeries !== undefined) {
+    const { focus: series, key } = focusSeries
+    return {
+      item: (_, row) => series.seriesItem(key(row as T)),
+      enter: (_, row) => series.setSeries(key(row as T)),
+      clear: () => series.setSeries(null),
+    }
+  }
+  if (focus === undefined) return undefined
   const ids = new Map<string, number>()
   focus.items.forEach((item, i) => ids.set(getRowId(item), i))
-  const value: RowFocus = { focus: focus as ListFocus<unknown>, indexOf: (id) => ids.get(id) }
-  return <RowFocusContext.Provider value={value}>{children}</RowFocusContext.Provider>
+  return {
+    item: (id) => {
+      const index = ids.get(id)
+      return index === undefined ? undefined : focus.item(index)
+    },
+    enter: (id) => {
+      const index = ids.get(id)
+      if (index !== undefined) focus.set(index)
+    },
+    clear: () => focus.set(null),
+  }
+}
+
+const RowFocusContext = createContext<RowLink | undefined>(undefined)
+
+export function RowFocusProvider({
+  link,
+  children,
+}: {
+  link: RowLink | undefined
+  children: ReactNode
+}): ReactElement {
+  if (link === undefined) return <>{children}</>
+  return <RowFocusContext.Provider value={link}>{children}</RowFocusContext.Provider>
 }
 
 /** The row props with the focus item merged in; a row with no item, or no focus, is `base` as it is. */
-export function useRowFocusProps(id: string, base: RowProps): FocusedRowProps {
+export function useRowFocusProps(id: string, row: unknown, base: RowProps): FocusedRowProps {
   const link = useContext(RowFocusContext)
-  const index = link?.indexOf(id)
-  if (link === undefined || index === undefined) return base
-  const { focus } = link
-  const item = focus.item(index)
+  const item = link?.item(id, row)
+  if (link === undefined || item === undefined) return base
   return {
     ...base,
     ...(item['data-focused'] !== undefined && { 'data-focused': '' as const }),
@@ -55,7 +86,7 @@ export function useRowFocusProps(id: string, base: RowProps): FocusedRowProps {
     onPointerDown: item.onPointerDown,
     onFocus: (event: FocusEvent<HTMLElement>) => {
       base.onFocus?.(event)
-      if (event.target === event.currentTarget) focus.set(index)
+      if (event.target === event.currentTarget) link.enter(id, row)
     },
   }
 }
@@ -65,18 +96,18 @@ export function useRowFocusLeave(): ((event: PointerEvent<Element>) => void) | u
   const link = useContext(RowFocusContext)
   if (link === undefined) return undefined
   return (event) => {
-    if (event.pointerType !== 'touch') link.focus.set(null)
+    if (event.pointerType !== 'touch') link.clear()
   }
 }
 
 /** The table root's blur: focus leaving the table entirely clears the focus. */
 export function clearOnBlur(
-  focus: ListFocus<unknown> | undefined,
+  link: RowLink | undefined,
 ): ((event: FocusEvent<Element>) => void) | undefined {
-  if (focus === undefined) return undefined
+  if (link === undefined) return undefined
   return (event) => {
     const next = event.relatedTarget
     if (next instanceof Node && event.currentTarget.contains(next)) return
-    focus.set(null)
+    link.clear()
   }
 }

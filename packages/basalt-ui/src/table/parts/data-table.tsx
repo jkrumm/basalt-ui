@@ -18,7 +18,7 @@ import { BulkBar } from './bulk-bar'
 import { DataTableFooter, hasFooter } from './footer'
 import { VirtualTable } from './virtual'
 import { DataTableHead, visibleColumns } from './head'
-import { RowFocusProvider, clearOnBlur } from './row-focus'
+import { RowFocusProvider, clearOnBlur, rowLinkOf } from './row-focus'
 import { TablePager } from './pager'
 import { revealFocus, scrollMinWidth, tierAttributesOf, warnWithoutTierSheet } from './tiers'
 import { modelOf } from '../use-data-table'
@@ -95,6 +95,7 @@ export function DataTable<T>({
   height = 'auto',
   virtual,
   focus,
+  focusSeries,
 }: DataTableProps<T>): ReactElement {
   const model = modelOf(table)
   const scrolls = typeof height === 'object' || height === 'fill' || model.phone === 'scroll'
@@ -104,12 +105,13 @@ export function DataTable<T>({
   // A row is a tab stop (roving) once there are rows to activate; before that the scroller is.
   const focusable = model.rows.length > 0 && (phase.tag === 'ready' || phase.tag === 'stale')
   const footerShown = hasFooter(model) && phase.tag === 'ready'
-  const onBlur = clearOnBlur(focus)
+  const link = rowLinkOf(focus, focusSeries, model.getRowId)
+  const onBlur = clearOnBlur(link)
   const windowed = virtual !== undefined && (phase.tag === 'ready' || phase.tag === 'stale')
 
   if (windowed) {
     return (
-      <RowFocusProvider focus={focus} getRowId={model.getRowId}>
+      <RowFocusProvider link={link}>
         <div
           data-slot="table-root"
           data-phase={phase.tag}
@@ -159,7 +161,7 @@ export function DataTable<T>({
   }
 
   return (
-    <RowFocusProvider focus={focus} getRowId={model.getRowId}>
+    <RowFocusProvider link={link}>
       <div
         data-slot="table-root"
         data-phase={phase.tag}
