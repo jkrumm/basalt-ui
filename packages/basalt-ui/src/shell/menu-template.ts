@@ -83,7 +83,12 @@ export function toMenuTemplate<T extends CommandMap>(
   const order =
     options.order ??
     commands.entries
-      .filter((entry) => entry.chord !== undefined && entry.id !== 'shell.palette')
+      .filter(
+        (entry) =>
+          entry.steps.length === 1 &&
+          entry.id !== 'shell.palette' &&
+          entry.id !== 'shell.shortcuts',
+      )
       .map((entry) => entry.id)
   const items: MenuTemplateItem[] = []
   for (const id of order) {
@@ -95,6 +100,11 @@ export function toMenuTemplate<T extends CommandMap>(
     if (entry === undefined) throw new Error(`[basalt] toMenuTemplate: no command "${id}"`)
     if (entry.chord === undefined) {
       throw new Error(`[basalt] toMenuTemplate: "${id}" has no chord, so a menu cannot dispatch it`)
+    }
+    if (entry.steps.length > 1) {
+      throw new Error(
+        `[basalt] toMenuTemplate: "${id}" is a sequence (${entry.chord}), which a native menu cannot dispatch`,
+      )
     }
     items.push({
       type: 'item',

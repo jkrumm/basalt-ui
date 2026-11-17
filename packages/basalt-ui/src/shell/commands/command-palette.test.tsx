@@ -385,3 +385,74 @@ describe('palette', () => {
     expect((screen.getByLabelText('Search commands') as HTMLInputElement).value).toBe('')
   })
 })
+
+describe('sequences', () => {
+  const run = mock(() => {})
+  const go = (chord = 'g n') =>
+    defineCommands({
+      'nav.next': { label: 'Next', chord, run },
+      'nav.files': { label: 'Files', chord: 'g f', run: () => {} },
+    })
+
+  test('the steps in order run the command; the first step alone does nothing', async () => {
+    run.mockClear()
+    await mountShell({ commands: go() })
+    const first = press('g')
+    expect(run).toHaveBeenCalledTimes(0)
+    expect(first.defaultPrevented).toBe(true)
+    press('n')
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  test('a wrong second key drops the sequence, and a repeated first key restarts it', async () => {
+    run.mockClear()
+    await mountShell({ commands: go() })
+    press('g')
+    press('x')
+    press('n')
+    expect(run).toHaveBeenCalledTimes(0)
+    press('g')
+    press('g')
+    press('n')
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  test('a modifier key between the steps does not break the sequence', async () => {
+    run.mockClear()
+    await mountShell({ commands: go() })
+    press('g')
+    press('Shift')
+    press('n')
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  test('a sequence waits one second, then starts over', async () => {
+    run.mockClear()
+    await mountShell({ commands: go() })
+    press('g')
+    await new Promise((resolve) => setTimeout(resolve, 1100))
+    press('n')
+    expect(run).toHaveBeenCalledTimes(0)
+  })
+
+  test('a bare-key sequence never starts in a text field', async () => {
+    run.mockClear()
+    await mountShell({ commands: go(), body: <input aria-label="name" /> })
+    const input = screen.getByLabelText('name')
+    input.focus()
+    press('g', { target: input })
+    press('n', { target: input })
+    expect(run).toHaveBeenCalledTimes(0)
+  })
+
+  test('the palette lists a sequence as its steps with then between them', async () => {
+    await mountShell({ commands: go() })
+    press('k', { mod: true })
+    await waitFor(() => expect(labels()).toContain('Next'))
+    const row = screen.getByText('Next').closest('[data-slot="autocomplete-item"]')
+    expect(row?.textContent).toContain('then')
+    expect(
+      [...(row?.querySelectorAll('[data-slot="kbd"]') ?? [])].map((k) => k.textContent),
+    ).toEqual(['G', 'N'])
+  })
+})

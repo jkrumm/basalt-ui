@@ -49,10 +49,12 @@ describe('defineCommands', () => {
     expect(set.entries.map((entry) => entry.id)).toEqual([
       'shell.toggle-rail',
       'shell.palette',
+      'shell.shortcuts',
       'b',
       'a',
     ])
-    expect(set.entries.find((entry) => entry.id === 'a')?.parsed?.key).toBe('j')
+    expect(set.entries.find((entry) => entry.id === 'a')?.steps[0]?.key).toBe('j')
+    expect(set.entries.find((entry) => entry.id === 'b')?.steps).toEqual([])
   })
 
   test('the built-ins run what the mounted shell binds, and nothing once unbound', () => {
@@ -61,11 +63,67 @@ describe('defineCommands', () => {
     const unbind = set.bind({
       toggleRail: () => calls.push('rail'),
       togglePalette: () => calls.push('palette'),
+      toggleShortcuts: () => calls.push('shortcuts'),
     })
     for (const entry of set.entries) void entry.run()
-    expect(calls).toEqual(['rail', 'palette'])
+    expect(calls).toEqual(['rail', 'palette', 'shortcuts'])
     unbind()
     for (const entry of set.entries) void entry.run()
-    expect(calls).toEqual(['rail', 'palette'])
+    expect(calls).toEqual(['rail', 'palette', 'shortcuts'])
+  })
+
+  test('two hosts bind their own built-ins; the shortcut list is inert with no host', () => {
+    const set = defineCommands({})
+    const shortcuts = set.entries.find((entry) => entry.id === 'shell.shortcuts')
+    expect(shortcuts?.enabled?.()).toBe(false)
+    const unbindList = set.bind({ toggleShortcuts: () => {} })
+    const unbindPalette = set.bind({ toggleRail: () => {}, togglePalette: () => {} })
+    expect(shortcuts?.enabled?.()).toBe(true)
+    unbindPalette()
+    expect(shortcuts?.enabled?.()).toBe(true)
+    unbindList()
+    expect(shortcuts?.enabled?.()).toBe(false)
+  })
+
+  test('a sequence is declared as chords separated by a space', () => {
+    const set = defineCommands({ go: { label: 'Go', chord: 'g n', run } })
+    expect(set.entries.find((entry) => entry.id === 'go')?.steps.map((step) => step.key)).toEqual([
+      'g',
+      'n',
+    ])
+  })
+
+  test('a chord that begins another, or is a sequence it duplicates, throws in one scope', () => {
+    expect(() =>
+      defineCommands({
+        'a.go': { label: 'Go', chord: 'g n', run },
+        'a.goto': { label: 'Goto', chord: 'G N', run },
+      }),
+    ).toThrow('share the chord G N')
+    expect(() =>
+      defineCommands({
+        'a.g': { label: 'G', chord: 'g', run },
+        'a.go': { label: 'Go', chord: 'g n', run },
+      }),
+    ).toThrow('overlap: "g" and "g n"')
+    expect(() =>
+      defineCommands({
+        'a.g': { label: 'G', chord: 'g', area: 'runs', run },
+        'a.go': { label: 'Go', chord: 'g n', run },
+      }),
+    ).not.toThrow()
+    expect(() =>
+      defineCommands({
+        'a.go': { label: 'Go', chord: 'g n', run },
+        'a.gf': { label: 'Files', chord: 'g f', run },
+      }),
+    ).not.toThrow()
+  })
+
+  test('a sequence may not begin with a chord the shell reserves', () => {
+    expect(() => defineCommands({ x: { label: 'X', chord: 'Mod+K s', run } })).toThrow(
+      'shell.palette',
+    )
+    expect(() => defineCommands({ x: { label: 'X', chord: '?', run } })).toThrow('shell.shortcuts')
   })
 })

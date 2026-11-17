@@ -13,7 +13,7 @@ export type PaletteItem = Pick<
   | 'group'
   | 'keywords'
   | 'icon'
-  | 'parsed'
+  | 'steps'
   | 'chord'
   | 'area'
   | 'enabled'

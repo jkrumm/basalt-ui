@@ -4,14 +4,18 @@
  * set and owns the one `keydown` listener; `toMenuTemplate` reads the same set for the host menu.
  */
 import type { IconComponent } from '../../core/ports'
-import { chordId, parseChord } from './chord'
+import { chordId, parseChord, parseChordSequence, sequenceId } from './chord'
 import type { Chord } from './chord'
 
 /** What a command is. Everything but `label` and `run` is optional. */
 export type Command = {
   /** The palette row and the menu item. */
   label: string
-  /** `Mod+Shift+P`. `Mod` is the platform's command key. Reserved: `Mod+K`, `Mod+B`, `Mod+1`..`Mod+9`. */
+  /**
+   * `Mod+Shift+P`. `Mod` is the platform's command key. A sequence is chords separated by a space,
+   * pressed one after the other (`g n`); a step must follow within a second. Reserved: `Mod+K`,
+   * `Mod+B`, `?`, `Mod+1`..`Mod+9`, and no sequence may begin with one of them.
+   */
   chord?: string
   /**
    * The focus scope: the command fires only while focus is inside a `<Page area="…">` of this name,
@@ -32,37 +36,73 @@ export type Command = {
 
 export type CommandMap = Record<string, Command>
 
-/** One command of a set, resolved: its id and its parsed chord. */
+/** One command of a set, resolved: its id and the steps of its chord (empty without one). */
 export type CommandEntry = Command & {
   readonly id: string
-  readonly parsed: Chord | undefined
+  readonly steps: readonly Chord[]
   /** True for the commands the shell itself adds (`shell.*`). */
   readonly builtin: boolean
 }
 
-/** What the palette host binds into the shell's own commands when it mounts. */
-export type ShellActions = { toggleRail(): void; togglePalette(): void }
+/** What `CommandPalette` binds into the shell's own commands when it mounts. */
+export type ShellActions = {
+  toggleRail(): void
+  togglePalette(): void
+  toggleShortcuts(): void
+}
 
 export type CommandSet<T extends CommandMap = CommandMap> = {
   /** The declared commands, as written. */
   readonly commands: Readonly<T>
   /** Built-ins first, then the declared commands in declaration order. */
   readonly entries: readonly CommandEntry[]
-  /** Binds the built-ins to the mounted shell. Called by `CommandPalette`; returns the unbind. */
-  bind(actions: ShellActions): () => void
+  /** Binds built-ins to the mounted shell. Called by `CommandPalette` and its shortcut list; returns the unbind. */
+  bind(actions: Partial<ShellActions>): () => void
 }
 
 /** The built-in ids. `shell.toggle-rail` replaces 2.x `toggleSidebar`. */
 export const SHELL_TOGGLE_RAIL = 'shell.toggle-rail'
 export const SHELL_PALETTE = 'shell.palette'
+export const SHELL_SHORTCUTS = 'shell.shortcuts'
 
 /** The nav chords: `Mod+1`..`Mod+9` go to the Nth top-level `defineNav` item. */
 export const NAV_CHORD_COUNT = 9
 
-const BUILTINS: ReadonlyArray<{ id: string; label: string; chord: string; listed: boolean }> = [
-  { id: SHELL_TOGGLE_RAIL, label: 'Toggle sidebar', chord: 'Mod+B', listed: true },
-  { id: SHELL_PALETTE, label: 'Command palette', chord: 'Mod+K', listed: false },
+const BUILTINS: ReadonlyArray<{
+  id: string
+  label: string
+  chord: string
+  listed: boolean
+  action: keyof ShellActions
+}> = [
+  {
+    id: SHELL_TOGGLE_RAIL,
+    label: 'Toggle sidebar',
+    chord: 'Mod+B',
+    listed: true,
+    action: 'toggleRail',
+  },
+  {
+    id: SHELL_PALETTE,
+    label: 'Command palette',
+    chord: 'Mod+K',
+    listed: false,
+    action: 'togglePalette',
+  },
+  {
+    id: SHELL_SHORTCUTS,
+    label: 'Keyboard shortcuts',
+    chord: '?',
+    listed: true,
+    action: 'toggleShortcuts',
+  },
 ]
+
+/** Whether `a` is `b` or its first steps; two commands in one scope may not be. */
+function overlaps(a: readonly Chord[], b: readonly Chord[]): boolean {
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a]
+  return short.every((step, i) => chordId(step) === chordId(long[i] as Chord))
+}
 
 /** Chords the shell owns; a declared command may not take one. */
 function reservedChords(): Map<string, string> {
@@ -81,7 +121,8 @@ function reservedChords(): Map<string, string> {
  *
  * Every `defineNav` item lists itself in the palette and `Mod+1`..`Mod+9` go to the first nine
  * top-level items in declaration order; declare no command for either. `shell.toggle-rail` (`Mod+B`)
- * is built in. A chord with no modifier never fires in a text field, and a bare `Enter` or `Space`
+ * and `shell.shortcuts` (`?`, the shortcut list `CommandPalette` renders) are built in. A chord can
+ * be a sequence (`g n`): two commands in one scope may not share a chord or begin with one another. A chord with no modifier never fires in a text field, and a bare `Enter` or `Space`
  * never fires on a focused button, link or menu item, so the control keeps its own key.
  *
  * @useWhen an app has shortcuts, a palette or a native menu: declare them once, here
@@ -97,59 +138,67 @@ function reservedChords(): Map<string, string> {
  */
 export function defineCommands<const T extends CommandMap>(spec: T): CommandSet<T> {
   const reserved = reservedChords()
-  const taken = new Map<string, string>()
+  /** The chords taken per scope (the area, or `''` for global), as steps. */
+  const taken = new Map<string, { id: string; chord: string; steps: readonly Chord[] }[]>()
   const entries: CommandEntry[] = []
-  const handlers: { current: ShellActions | undefined } = { current: undefined }
+  const handlers: Partial<ShellActions> = {}
 
   for (const builtin of BUILTINS) {
     entries.push({
       id: builtin.id,
       label: builtin.label,
       chord: builtin.chord,
-      parsed: parseChord(builtin.chord),
+      steps: [parseChord(builtin.chord)],
       group: 'Shell',
       listed: builtin.listed,
       builtin: true,
-      run: () => {
-        if (handlers.current === undefined) return
-        if (builtin.id === SHELL_TOGGLE_RAIL) handlers.current.toggleRail()
-        else handlers.current.togglePalette()
-      },
+      // The shortcut list binds only once it mounts, so until then `?` is inert and unlisted. The
+      // rail and palette keep no gate: a native menu reads them with no shell mounted.
+      ...(builtin.id === SHELL_SHORTCUTS && {
+        enabled: () => handlers[builtin.action] !== undefined,
+      }),
+      run: () => handlers[builtin.action]?.(),
     })
   }
 
   for (const [id, command] of Object.entries(spec)) {
-    let parsed: Chord | undefined
+    let steps: readonly Chord[] = []
     if (command.chord !== undefined) {
-      parsed = parseChord(command.chord)
-      const canonical = chordId(parsed)
-      const owner = reserved.get(canonical)
+      steps = parseChordSequence(command.chord)
+      const first = steps[0] as Chord
+      const owner = reserved.get(chordId(first))
       if (owner !== undefined) {
         throw new Error(
           `[basalt] defineCommands: "${id}" takes ${command.chord}, which the shell reserves for ${owner}`,
         )
       }
-      const scope = `${canonical}@${command.area ?? ''}`
-      const other = taken.get(scope)
+      const scope = command.area ?? ''
+      const inScope = taken.get(scope) ?? []
+      const other = inScope.find((entry) => overlaps(entry.steps, steps))
       if (other !== undefined) {
+        const same = sequenceId(other.steps) === sequenceId(steps)
         throw new Error(
-          `[basalt] defineCommands: "${other}" and "${id}" share the chord ${command.chord}${
-            command.area === undefined ? '' : ` in area "${command.area}"`
-          }`,
+          `[basalt] defineCommands: "${other.id}" and "${id}" ${
+            same
+              ? `share the chord ${command.chord}`
+              : `overlap: "${other.chord}" and "${command.chord}", one starts the other`
+          }${command.area === undefined ? '' : ` in area "${command.area}"`}`,
         )
       }
-      taken.set(scope, id)
+      inScope.push({ id, chord: command.chord, steps })
+      taken.set(scope, inScope)
     }
-    entries.push({ ...command, id, parsed, builtin: false })
+    entries.push({ ...command, id, steps, builtin: false })
   }
 
   return {
     commands: spec,
     entries,
     bind(actions) {
-      handlers.current = actions
+      const keys = Object.keys(actions) as (keyof ShellActions)[]
+      for (const key of keys) Object.assign(handlers, { [key]: actions[key] })
       return () => {
-        if (handlers.current === actions) handlers.current = undefined
+        for (const key of keys) if (handlers[key] === actions[key]) delete handlers[key]
       }
     },
   }

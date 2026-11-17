@@ -19,7 +19,7 @@ Only a command with a chord can be in a menu, because the chord is what the host
 toMenuTemplate<T extends CommandMap>(commands: CommandSet<T>, options?: MenuTemplateOptions<T>): MenuTemplate
   commands: Readonly<T>  // The declared commands, as written
   entries: readonly CommandEntry[]  // Built-ins first, then the declared commands in declaration order
-  bind: (actions: ShellActions) => () => void  // Binds the built-ins to the mounted shell
+  bind: (actions: Partial<ShellActions>) => () => void  // Binds built-ins to the mounted shell
 ```
 
 ## Example

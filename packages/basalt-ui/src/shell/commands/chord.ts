@@ -5,7 +5,8 @@
  *
  * A chord is `Mod+Shift+P`: modifiers `Mod` (the platform's command key), `Ctrl`, `Meta`, `Alt` and
  * `Shift` in any order, then one key. Named keys are `Enter`, `Space`, `Escape`, `Tab`, the arrows,
- * `Backspace`, `Delete`, `Home`, `End`, `PageUp`, `PageDown` and `F1`..`F12`.
+ * `Backspace`, `Delete`, `Home`, `End`, `PageUp`, `PageDown` and `F1`..`F12`. A sequence is chords
+ * separated by a space, pressed one after the other: `g n`, `Mod+K Mod+S`.
  */
 
 export type Chord = {
@@ -39,6 +40,15 @@ export function parseChord(source: string): Chord {
   return { ...flags, key }
 }
 
+/** Parses a chord or a sequence of chords (`g n`) into its steps; throws like `parseChord`. */
+export function parseChordSequence(source: string): Chord[] {
+  return source
+    .replace(/\s*\+\s*/g, '+')
+    .trim()
+    .split(/\s+/)
+    .map(parseChord)
+}
+
 /** The canonical text of a chord: two spellings of one chord compare equal. */
 export function chordId(chord: Chord): string {
   const parts = [
@@ -50,6 +60,11 @@ export function chordId(chord: Chord): string {
     chord.key,
   ]
   return parts.filter((part) => part !== false).join('+')
+}
+
+/** The canonical text of a sequence: two spellings of one sequence compare equal. */
+export function sequenceId(steps: readonly Chord[]): string {
+  return steps.map(chordId).join(' ')
 }
 
 const GLYPHS: Readonly<Record<string, string>> = {
@@ -102,7 +117,10 @@ export function matchesChord(event: KeyEventLike, chord: Chord, apple: boolean):
   const wantMeta = chord.meta || (chord.mod && apple)
   const wantCtrl = chord.ctrl || (chord.mod && !apple)
   if (event.metaKey !== wantMeta || event.ctrlKey !== wantCtrl) return false
-  if (event.altKey !== chord.alt || event.shiftKey !== chord.shift) return false
+  if (event.altKey !== chord.alt) return false
+  // A symbol key (`?`) already says whether Shift is down; some layouts need it, some do not.
+  const symbol = chord.key.length === 1 && !/[a-z0-9 ]/.test(chord.key)
+  if (event.shiftKey !== chord.shift && !(symbol && !chord.shift)) return false
   const key = event.key.toLowerCase()
   if (key === chord.key) return true
   // Shift turns `1` into `!` and Alt turns `k` into a dead character; the physical key is the chord.
