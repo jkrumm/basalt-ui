@@ -9,7 +9,7 @@
  *   markup, so hydration has nothing to reconcile.
  * - The count and `Reset all` come from the handles (`useCensus`), not from what is mounted.
  */
-import { use, useEffect, useRef, useState } from 'react'
+import { use, useRef, useState } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
@@ -84,24 +84,31 @@ function RowView({ spec }: { spec: AnySpec }): ReactElement {
 
 type Census = { count: number; reset(): void }
 
+/** What a pill's popover closes on: an enum's value, a range's preset; a custom range and the rest never close it. */
+function pickKey(kind: AnySpec['handle']['kind'], value: unknown): unknown {
+  if (kind === 'enum') return value
+  if (kind !== 'range') return undefined
+  const preset = (value as { preset?: string } | null | undefined)?.preset
+  return preset === 'custom' ? undefined : preset
+}
+
 function Pill({ spec, size }: { spec: AnySpec; size: 'sm' | 'md' }): ReactElement {
   const t = useMessages(filters)
   const [value] = spec.handle.use()
   const text = pillText(spec, value, t)
   const name = text.includes(spec.label) ? text : `${spec.label}: ${text}`
   const active = isActive(spec, value)
-  // A single-value choice (an enum, a range) is the whole job of its popover: it closes on the pick.
+  // A single-value choice is the whole job of its popover: it closes on the pick. An enum is one choice;
+  // a range is one only while it picks a preset, its custom dates take two edits and stay open.
   const [open, setOpen] = useState(false)
-  const opened = useRef(value)
-  const single = spec.handle.kind === 'enum' || spec.handle.kind === 'range'
-  useEffect(() => {
-    if (open && single && value !== opened.current) setOpen(false)
-  }, [open, single, value])
+  const picked = pickKey(spec.handle.kind, value)
+  const [pickedAtOpen, setPickedAtOpen] = useState(picked)
+  if (open && picked !== undefined && picked !== pickedAtOpen) setOpen(false)
   return (
     <Popover
       open={open}
       onOpenChange={(next) => {
-        if (next) opened.current = value
+        if (next) setPickedAtOpen(picked)
         setOpen(next)
       }}
     >

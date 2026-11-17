@@ -133,6 +133,37 @@ describe('FilterSet specs', () => {
     expect(pills(container).map((p) => p.text)).toEqual(['Production', 'Search'])
   })
 
+  test('an enum pill closes on the pick; a range pill stays open while its custom days are edited', () => {
+    type Range = { preset: string; from?: string; to?: string }
+    const range = memoryHandle<Range>(
+      'range.pill',
+      { preset: 'custom', from: '2026-01-01', to: '2026-01-31' },
+      {
+        kind: 'range',
+        options: [
+          { value: '7d', label: '7 days' },
+          { value: 'custom', label: 'Custom' },
+        ] as never,
+      },
+    )
+    const e = env()
+    const { container, getByLabelText, queryByLabelText } = render(
+      <FilterSet specs={[spec(range, 'Range'), e]} />,
+    )
+    const trigger = (label: string): HTMLElement =>
+      container.querySelector<HTMLElement>(
+        `[data-slot="filter-set-pill"] button[aria-label^="${label}"]`,
+      )!
+    fireEvent.click(trigger('Range'))
+    fireEvent.change(getByLabelText('Range: to'), { target: { value: '2026-02-01' } })
+    expect(range.writes.at(-1)).toEqual({ preset: 'custom', from: '2026-01-01', to: '2026-02-01' })
+    expect(queryByLabelText('Range: to'), 'a custom day edit keeps the popover open').not.toBeNull()
+    act(() => {
+      range.put({ preset: '7d' })
+    })
+    expect(queryByLabelText('Range: to'), 'a preset pick closes it').toBeNull()
+  })
+
   test('no specs draws nothing', () => {
     const { container } = render(<FilterSet specs={[]} />)
     expect(container.innerHTML).toBe('')
