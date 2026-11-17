@@ -15,6 +15,7 @@ import { shellChromeScenario } from './scenarios/shell-chrome'
 import { shellFrameScenario } from './scenarios/shell-frame'
 import { shellMobileScenario } from './scenarios/shell-mobile'
 import { shellNativeScenario } from './scenarios/shell-native'
+import { staleAsideScenario } from './scenarios/stale-aside'
 
 export type ShellSlotName = string
 
@@ -33,6 +34,7 @@ export const SCENARIOS: Readonly<Record<string, Scenario>> = {
   'page-kit': pageKitScenario,
   'page-core': pageCoreScenario,
   'inner-nav': innerNavScenario,
+  'stale-aside': staleAsideScenario,
   'shell-frame': shellFrameScenario,
   'shell-native': shellNativeScenario,
   // Before shell-mobile: that scenario claims every spec with sections, this one a narrower set.
