@@ -16,6 +16,7 @@ import { useState, useSyncExternalStore } from 'react'
 import type { ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
+import { Dock } from '../../../../../src/page/dock'
 import { Page } from '../../../../../src/page/page'
 import { PageAside } from '../../../../../src/page/page-aside'
 import { Peek } from '../../../../../src/page/peek'
@@ -174,6 +175,37 @@ function DetailTable(): ReactElement {
   return <DataTable table={table} />
 }
 
+/** An open `Dock`, or one a button opens and closes (`dock: 'toggle'`). */
+function DockHarness({ mode }: { mode: true | 'toggle' }): ReactElement {
+  const [open, setOpen] = useState(mode === true)
+  return (
+    <>
+      {mode === 'toggle' && (
+        <button type="button" data-testid="dock-toggle" onClick={() => setOpen((v) => !v)}>
+          toggle dock
+        </button>
+      )}
+      {open && (
+        <Dock
+          title="Issue 12"
+          tag="#12"
+          fullPage="/runs"
+          onClose={() => {
+            setOpen(false)
+            document.documentElement.dataset['dockClosed'] = ''
+          }}
+        >
+          {Array.from({ length: 60 }, (_, i) => (
+            <p key={i} data-testid="dock-line">
+              Line {i}
+            </p>
+          ))}
+        </Dock>
+      )}
+    </>
+  )
+}
+
 function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> }): ReactElement {
   const { rows = 12, aside = false, bar = true, detailTable = false } = options
   const { state, record, ...asideProps } = typeof aside === 'object' ? aside : {}
@@ -223,6 +255,7 @@ function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> 
           ))}
         </Peek>
       )}
+      {options.dock !== undefined && options.dock !== false && <DockHarness mode={options.dock} />}
       {aside !== false && (
         <PageAside
           title="Run details"

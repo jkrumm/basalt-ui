@@ -23,11 +23,15 @@ export type ShellRegions = {
   readonly breadcrumb: ClaimStore<ReactNode>
   readonly aside: ClaimStore<ReactNode>
   readonly title: ClaimStore<ReactNode>
+  /** A `Dock` is mounted: the region reserves its width. The value is unused. */
+  readonly dock: ClaimStore<true>
 }
 
 export type ShellHost = {
   readonly host: PageHost
   readonly regions: ShellRegions
+  /** Tells the region a `Dock` is mounted; returns its release. A stable function, so an effect keyed on it runs once. */
+  readonly claimDock: (id: string) => () => void
   /** The shell root: where the band height is mirrored. Attached by the root's ref callback. */
   attachRoot(el: HTMLElement | null): void
 }
@@ -38,6 +42,7 @@ export function createShellHost(): ShellHost {
     breadcrumb: createClaimStore<ReactNode>({ policy: 'newest' }),
     aside: createClaimStore<ReactNode>({ policy: 'newest' }),
     title: createClaimStore<ReactNode>({ policy: 'newest' }),
+    dock: createClaimStore<true>({ policy: 'newest' }),
   }
   let root: HTMLElement | null = null
   let height = 0
@@ -61,6 +66,7 @@ export function createShellHost(): ShellHost {
   return {
     host,
     regions,
+    claimDock: (id) => regions.dock.claim(id, true).release,
     attachRoot(el) {
       root = el
       apply()

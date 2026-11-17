@@ -32,6 +32,12 @@ export type AsideSheetState = {
  */
 export const MAIN_MIN_WIDTH = 720
 
+/**
+ * The shell `Dock`'s width in px. It docks by the same room rule as an `'auto'` aside (rail, the
+ * aside's reserved width, this and `MAIN_MIN_WIDTH` must fit), so the shell and the panel read one number.
+ */
+export const DOCK_WIDTH = 416
+
 export type AsideDockingInput = {
   claimed: boolean
   folded: boolean

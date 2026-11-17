@@ -18,13 +18,21 @@ export const rows: readonly RowDef[] = [
     // 13000 -> 13500 (v3-wiring-1-wiring): `BasaltProvider` joins the barrel (13113 B measured with it).
     // 13500 -> 14000 (v3-shell-1-shell): a page store taking a global's param raises at mount, naming the fix (+143 B: the per-store message and the first-claimant rule in `ownership.ts`).
     // 14000 -> 15000 (v3 peek): `usePeek` joins the barrel (14503 B measured with it).
-    ceiling: 15000,
+    // 15000 -> 15500 (v3 dock): `usePeek` gains `dockField`, `pin` and the docked state (15038 B measured with them).
+    ceiling: 15500,
     measure: () => measureSource(reExportAll({ router: 'router/index' })),
   },
 ]
 
 export const raises: Raises = {
   'router-subpath': [
+    {
+      from: 15000,
+      to: 15500,
+      consumer:
+        '`usePeek` from `./router`: the software-factory console, the `Peek` consumer (Issue 1819), pins a peeked record into a docked panel through `dockField` and `pin` (rung 3 of that ladder, Issue 1958)',
+      repo: 'software-factory',
+    },
     {
       from: 14000,
       to: 15000,

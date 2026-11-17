@@ -2,7 +2,8 @@ import { useRouter, useRouterState } from '@tanstack/react-router'
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
-import { ShellOverlayContext } from '../page/page'
+import { ShellDockContext, ShellOverlayContext } from '../page/page'
+import type { ShellDock } from '../page/page'
 import { useSizeClass } from '../page/use-size-class'
 import { registerNav } from '../router/nav/registry'
 import { flattenNavEntries, resolveActive } from '../router/nav/resolve-active'
@@ -27,11 +28,13 @@ import {
 import {
   AsideRegion,
   DEFAULT_STORAGE_KEY,
+  DockRegion,
   RailControlProvider,
   ShellGrid,
   ShellMain,
   readAsideClaim,
   useAsideModel,
+  useDockModel,
   useDocumentFrame,
   useRailState,
 } from './parts/grid'
@@ -160,6 +163,7 @@ export function AppShell<Id extends string = string>({
 
   const [shellHost] = useState(createShellHost)
   const [overlaySlot, setOverlaySlot] = useState<HTMLElement | null>(null)
+  const [dockSlot, setDockSlot] = useState<HTMLElement | null>(null)
   const attachRoot = useChromeRoot(shellHost.attachRoot, chrome)
   const breadcrumb = useClaim(shellHost.regions.breadcrumb)
   const actions = useClaim(shellHost.regions.actions)
@@ -185,6 +189,17 @@ export function AppShell<Id extends string = string>({
   // closed one is no region.
   const regionClaim = claim?.sheet?.open === false ? undefined : claim
   const model = useAsideModel(regionClaim, sizeClass, rail.state)
+  const dockOpen = useSyncExternalStore(
+    shellHost.regions.dock.subscribe,
+    () => shellHost.regions.dock.getSnapshot().count > 0,
+    () => false,
+  )
+  const dockModel = useDockModel(dockOpen, sizeClass, rail.state, model.width)
+  const dock: ShellDock = {
+    slot: dockSlot,
+    docked: dockModel.docks,
+    claim: shellHost.claimDock,
+  }
   useDocumentFrame()
   usePrintScheme()
 
@@ -210,48 +225,52 @@ export function AppShell<Id extends string = string>({
     <ChromeHost chrome={chrome} host={shellHost.host}>
       <RailControlProvider value={rail}>
         <ShellOverlayContext value={overlaySlot}>
-          <ShellGrid
-            rootRef={attachRoot}
-            rail={rail.state}
-            compactHeader={compactHeader}
-            asideWidth={model.width}
-          >
-            <SkipLink />
-            <RouteAnnouncer message={announcement} />
-            <Header
-              brand={brand}
-              breadcrumb={trail}
-              globalControls={globalControls}
-              actions={actions}
-              globalActions={globalActions}
-              asideTrigger={
-                claim !== undefined && sizeClass === 'compact' && !emptyRecord(claim) ? (
-                  <AsideSheet claim={claim} />
-                ) : null
-              }
-              sizeClass={sizeClass}
-              chrome={chrome}
-            />
-            <RailMount
-              runtime={runtime}
-              brand={brand}
-              badges={badges as AppShellProps['badges']}
-              blocks={blocks}
-              settings={settings}
-              account={account}
-              search={search}
-            />
-            <ShellMain pending={pending}>{children}</ShellMain>
-            <AsideRegion claim={regionClaim} model={model} regionRef={setOverlaySlot} />
-            <TabBarMount
-              runtime={runtime}
-              badges={badges as AppShellProps['badges']}
-              blocks={blocks}
-              globalActions={globalActions}
-              settings={settings}
-              account={account}
-            />
-          </ShellGrid>
+          <ShellDockContext value={dock}>
+            <ShellGrid
+              rootRef={attachRoot}
+              rail={rail.state}
+              compactHeader={compactHeader}
+              asideWidth={model.width}
+              dockWidth={dockModel.width}
+            >
+              <SkipLink />
+              <RouteAnnouncer message={announcement} />
+              <Header
+                brand={brand}
+                breadcrumb={trail}
+                globalControls={globalControls}
+                actions={actions}
+                globalActions={globalActions}
+                asideTrigger={
+                  claim !== undefined && sizeClass === 'compact' && !emptyRecord(claim) ? (
+                    <AsideSheet claim={claim} />
+                  ) : null
+                }
+                sizeClass={sizeClass}
+                chrome={chrome}
+              />
+              <RailMount
+                runtime={runtime}
+                brand={brand}
+                badges={badges as AppShellProps['badges']}
+                blocks={blocks}
+                settings={settings}
+                account={account}
+                search={search}
+              />
+              <ShellMain pending={pending}>{children}</ShellMain>
+              <AsideRegion claim={regionClaim} model={model} regionRef={setOverlaySlot} />
+              <DockRegion model={dockModel} regionRef={setDockSlot} />
+              <TabBarMount
+                runtime={runtime}
+                badges={badges as AppShellProps['badges']}
+                blocks={blocks}
+                globalActions={globalActions}
+                settings={settings}
+                account={account}
+              />
+            </ShellGrid>
+          </ShellDockContext>
         </ShellOverlayContext>
       </RailControlProvider>
     </ChromeHost>

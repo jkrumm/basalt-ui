@@ -1,18 +1,21 @@
 /**
  * The frame: one CSS grid of five areas, owned here and nowhere else (concept section 1, decision 1).
  *
- *     header  header  header
- *     rail    main    aside
- *     footer  footer  footer
+ *     header  header  header  header
+ *     rail    main    aside   dock
+ *     footer  footer  footer  footer
  *
  * The root is `h-dvh` and the document never scrolls: `Main` is the one scrollport and carries the
- * `<main>` landmark. Four custom properties are the frame's whole public geometry, set on the root
+ * `<main>` landmark. Five custom properties are the frame's whole public geometry, set on the root
  * and read by the parts and by a page:
  *
  * - `--shell-header-h`: one height at every width (48), shorter on a landscape phone.
  * - `--shell-rail-w`: 0 compact, 64 medium, 240 expanded; `data-rail` overrides it once the user
  *   toggled the rail (`auto` is the CSS default, so server HTML is right for anyone who never did).
  * - `--shell-aside-w`: 0 while no `PageAside` is mounted, no 1 px ghost.
+ * - `--shell-dock-w`: 0 while no `Dock` docks beside main (an overlaid one reserves nothing). It
+ *   eases from 0 to the dock's width and back, and only while it changes: the rail and the aside
+ *   keep their instant reflow.
  * - `--shell-gutter`: the page's inline inset, 8, 16, 24 by size class; `Main` hands it to `Page` as
  *   `--page-gutter`.
  *
@@ -32,7 +35,7 @@ import type { CSSProperties, ReactElement, ReactNode, RefObject } from 'react'
 import { useMediaQuery } from '../../common/use-media-query'
 import { cn } from '../../core/cn'
 import { persisted } from '../../core/persisted'
-import { asideDockQuery, resolveAsideDocking } from '../../page/core/docking'
+import { DOCK_WIDTH, asideDockQuery, resolveAsideDocking } from '../../page/core/docking'
 import type { AsideDock, AsideSheetState } from '../../page/core/docking'
 import type { SizeClass } from '../contract'
 import { SHELL_MAIN_ID } from './a11y'
@@ -123,7 +126,7 @@ export function useDocumentFrame(): void {
 
 // ---- The root -----------------------------------------------------------------------------------
 
-type RootStyle = CSSProperties & { '--shell-aside-w': string }
+type RootStyle = CSSProperties & { '--shell-aside-w': string; '--shell-dock-w': string }
 
 export type ShellGridProps = {
   rootRef: (el: HTMLDivElement | null) => void
@@ -131,7 +134,47 @@ export type ShellGridProps = {
   compactHeader: 'show' | 'hidden'
   /** The width the aside region reserves, in px. */
   asideWidth: number
+  /** The width the dock region reserves, in px: 0 while the dock overlays main or is closed. */
+  dockWidth: number
   children: ReactNode
+}
+
+/** How long the dock's width takes to ease, in ms: `duration-300`, plus a frame of margin. */
+const DOCK_SHIFT_MS = 350
+
+/** What arms the dock's easing: a reader's own input. A dock present at load never eases. */
+const INPUT_EVENTS = ['pointerdown', 'keydown', 'click'] as const
+
+/**
+ * Whether the dock's reserved width changed within the last `DOCK_SHIFT_MS` after the reader had
+ * given input: the one window in which the grid eases its columns. Derived in render, so the class
+ * that turns the transition on lands in the same commit as the new width. A route's content mounts
+ * after the shell has painted, so "first render" cannot tell a dock restored from the address from
+ * one the reader just opened; input can. Reduced motion is the stylesheet's (`motion-safe`).
+ */
+function useDockShift(dockWidth: number): boolean {
+  const [seen, setSeen] = useState(dockWidth)
+  const [armed, setArmed] = useState(false)
+  const [shifting, setShifting] = useState(false)
+  if (seen !== dockWidth) {
+    setSeen(dockWidth)
+    if (armed) setShifting(true)
+  }
+  useEffect(() => {
+    if (armed) return undefined
+    const arm = (): void => setArmed(true)
+    for (const name of INPUT_EVENTS)
+      window.addEventListener(name, arm, { capture: true, once: true })
+    return () => {
+      for (const name of INPUT_EVENTS) window.removeEventListener(name, arm, { capture: true })
+    }
+  }, [armed])
+  useEffect(() => {
+    if (!shifting) return undefined
+    const timer = setTimeout(() => setShifting(false), DOCK_SHIFT_MS)
+    return () => clearTimeout(timer)
+  }, [shifting, dockWidth])
+  return shifting
 }
 
 /** The root element: the grid, its four geometry properties and the print fallback. */
@@ -140,18 +183,25 @@ export function ShellGrid({
   rail,
   compactHeader,
   asideWidth,
+  dockWidth,
   children,
 }: ShellGridProps): ReactElement {
-  const style: RootStyle = { '--shell-aside-w': `${asideWidth}px` }
+  const shifting = useDockShift(dockWidth)
+  const style: RootStyle = {
+    '--shell-aside-w': `${asideWidth}px`,
+    '--shell-dock-w': `${dockWidth}px`,
+  }
   return (
     <div
       ref={rootRef}
       data-slot="shell"
+      data-dock-shift={shifting ? '' : undefined}
       data-rail={rail}
       data-compact-header={compactHeader}
       style={style}
       className={cn(
-        'group/shell grid h-dvh w-full grid-cols-[var(--shell-rail-w)_minmax(0,1fr)_var(--shell-aside-w)] grid-rows-[var(--shell-header-h)_minmax(0,1fr)_auto] bg-background font-sans text-foreground [grid-template-areas:"header_header_header"_"rail_main_aside"_"footer_footer_footer"]',
+        'group/shell grid h-dvh w-full grid-cols-[var(--shell-rail-w)_minmax(0,1fr)_var(--shell-aside-w)_var(--shell-dock-w)] grid-rows-[var(--shell-header-h)_minmax(0,1fr)_auto] bg-background font-sans text-foreground [grid-template-areas:"header_header_header_header"_"rail_main_aside_dock"_"footer_footer_footer_footer"]',
+        'motion-safe:data-dock-shift:transition-[grid-template-columns] motion-safe:data-dock-shift:duration-300 motion-safe:data-dock-shift:ease-standard',
         '[--shell-header-h:--spacing(12)] [--shell-rail-w:0px] [--shell-gutter:--spacing(2)]',
         'md:[--shell-rail-w:--spacing(16)] md:[--shell-gutter:--spacing(4)]',
         'xl:[--shell-rail-w:--spacing(60)] xl:[--shell-gutter:--spacing(6)]',
@@ -308,6 +358,61 @@ export function useAsideModel(
     asideRailWidth: 0,
     dock: claim?.dock ?? 'auto',
   })
+}
+
+export type DockModel = {
+  /** An open dock pushes main; else it overlays it (no room, or a phone). */
+  readonly docks: boolean
+  /** The width the grid reserves for the region, in px. */
+  readonly width: number
+}
+
+/**
+ * The dock region's docking decision, from the same room rule as the aside's: the rail and the
+ * aside's reserved width come off the viewport, and main must keep its floor. The aside decides
+ * first and is never pushed out by a dock; a compact screen never docks.
+ */
+export function useDockModel(
+  open: boolean,
+  sizeClass: SizeClass,
+  rail: RailState,
+  asideReserved: number,
+): DockModel {
+  const room = useMediaQuery(
+    asideDockQuery({
+      navbarWidth: railWidth(sizeClass, rail) + asideReserved,
+      asideWidth: DOCK_WIDTH,
+    }),
+    false,
+  )
+  const docks = open && sizeClass !== 'compact' && room
+  return { docks, width: docks ? DOCK_WIDTH : 0 }
+}
+
+/**
+ * The dock region: zero wide while no dock is docked, the panel's column when one is. The panel
+ * portals in and is pinned to the end edge, so an overlaid one needs no width here.
+ */
+export function DockRegion({
+  model,
+  regionRef,
+}: {
+  model: DockModel
+  regionRef: (el: HTMLDivElement | null) => void
+}): ReactElement {
+  return (
+    <div
+      ref={regionRef}
+      data-slot="shell-dock"
+      data-state={model.docks ? 'docked' : 'overlay'}
+      className={cn(
+        'relative min-h-0 min-w-0 [grid-area:dock]',
+        // Docked, the column's growing edge reveals the panel; overlaid, the panel spills over main.
+        model.docks && 'overflow-hidden',
+        PRINT_OFF,
+      )}
+    />
+  )
 }
 
 /**

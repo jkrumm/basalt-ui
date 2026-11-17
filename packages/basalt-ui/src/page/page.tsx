@@ -47,6 +47,20 @@ export const PageHostContext = createContext<PageHost | null>(null)
 export const ShellOverlayContext = createContext<HTMLElement | null>(null)
 
 /**
+ * The shell's dock region: the global panel beside main that `Dock` portals into and claims through.
+ * `slot` is `null` until the region mounts; `docked` is whether the panel pushes main (else it
+ * overlays it); `claim` tells the shell a `Dock` is open, so the region reserves its width. `null`
+ * outside a shell. Internal.
+ */
+export type ShellDock = {
+  readonly slot: HTMLElement | null
+  readonly docked: boolean
+  readonly claim: (id: string) => () => void
+}
+
+export const ShellDockContext = createContext<ShellDock | null>(null)
+
+/**
  * The page's `DetailHost`: `PageAside` hosts it. `null` while no aside is mounted, where a
  * consumer (`DataTable detail`, `SplitPage`) falls back to its own sheet. Internal.
  */

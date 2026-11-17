@@ -28,6 +28,11 @@ export type ShellFrameSpec = FixtureSpec & {
         }
     /** Mounts an open `Peek` beside the page (a long body, so its own scroll shows); closing it sets `data-peek-closed` on the document. */
     peek?: boolean
+    /**
+     * Mounts a `Dock` (a long body). `true` starts it open; `'toggle'` starts it closed and draws a
+     * `[data-testid="dock-toggle"]` button in the page that opens and closes it, for the reflow's motion.
+     */
+    dock?: boolean | 'toggle'
     /** Mounts a `PageBar` with a title, a control and an action (default true). */
     bar?: boolean
     /** Mounts `compactHeader: 'hidden'`. */
@@ -51,6 +56,8 @@ export const shellFrameScenario: Scenario = {
     'shell-aside',
     'page-aside',
     'peek',
+    'shell-dock',
+    'dock',
     'shell-tab-bar',
   ],
   matches: (spec) => (spec as ShellFrameSpec).shellFrame !== undefined,
