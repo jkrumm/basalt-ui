@@ -1,5 +1,5 @@
 /**
- * Renders the five committed CSS entries (`tokens`, `typography`, `prose`, `fonts`, `tailwind`) from
+ * Renders the six committed CSS entries (`tokens`, `typography`, `prose`, `fonts`, `tailwind`, `archify`) from
  * the token table. Pure and deterministic: no clock, no environment. The provenance version is the
  * fixed contract major, so a release bump never dirties a committed file.
  *
@@ -16,6 +16,7 @@ export type CssFileName =
   | 'prose.css'
   | 'fonts.css'
   | 'tailwind.css'
+  | 'archify.css'
 
 const CONTRACT_VERSION = '3.0.0'
 const COMMAND = 'bun packages/basalt-ui/src/css/generate.ts'
@@ -146,11 +147,71 @@ function tailwindCss(): string {
   )
 }
 
+// ── archify.css ─────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The 32 variables archify's own `classic` theme block sets, each read from a token. A category's
+ * stroke is its token and its fill is the same token at the kit's status tint (`--basalt-tint-pct`:
+ * 12 % light, 16 % dark). No `[data-theme]` pair and no hex: the tokens already switch per scheme and
+ * a `var()` resolves on the element, so the diagram follows the page. Unlayered on purpose: archify's
+ * own theme blocks are unlayered and an unlayered rule out-ranks a layered one whatever the order.
+ */
+export const ARCHIFY_CATEGORIES = [
+  ['frontend', 'chart-1'],
+  ['backend', 'chart-3'],
+  ['database', 'chart-4'],
+  ['cloud', 'chart-2'],
+  ['messagebus', 'chart-5'],
+  ['security', 'bad'],
+  ['external', 'line'],
+] as const
+
+export const ARCHIFY_VARS: Readonly<Record<string, string>> = {
+  '--bg': 'var(--basalt-surface)',
+  '--mask': 'var(--basalt-surface)',
+  '--grid': 'var(--basalt-grid)',
+  '--text': 'var(--basalt-ink)',
+  '--text-muted': 'var(--basalt-ink-muted)',
+  '--text-dim': 'var(--basalt-ink-faint)',
+  '--text-faint': 'var(--basalt-ink-faint)',
+  '--panel': 'var(--basalt-card)',
+  '--panel-border': 'var(--basalt-hairline)',
+  '--lane-fill': 'var(--basalt-hover)',
+  '--lane-stroke': 'var(--basalt-dim-bar)',
+  '--arrow': 'var(--basalt-line)',
+  '--arrow-emphasis': 'var(--basalt-brand)',
+  ...Object.fromEntries(
+    ARCHIFY_CATEGORIES.flatMap(([name, token]) => [
+      [
+        `--${name}-fill`,
+        `color-mix(in srgb, var(--basalt-${token}) var(--basalt-tint-pct), transparent)`,
+      ],
+      [`--${name}-stroke`, `var(--basalt-${token})`],
+    ]),
+  ),
+  '--toolbar-bg': 'var(--basalt-raised)',
+  '--toolbar-border': 'var(--basalt-hairline)',
+  '--toolbar-text': 'var(--basalt-ink)',
+  '--toolbar-hover': 'var(--basalt-hover)',
+  '--toolbar-menu-bg': 'var(--basalt-raised)',
+}
+
+const archifyCss = (): string =>
+  header() +
+  '/* An archify diagram: put data-preset="basalt" on the svg or its wrapper, with tokens.css loaded. */\n' +
+  rule(
+    "[data-preset='basalt']",
+    Object.entries(ARCHIFY_VARS)
+      .map(([name, value]) => decl(name, value))
+      .join(''),
+  )
+
 // ── entry ───────────────────────────────────────────────────────────────────────────────────────
 
-/** The five CSS entries, byte for byte as committed. */
+/** The six CSS entries, byte for byte as committed. */
 export function generateCss(): Record<CssFileName, string> {
   return {
+    'archify.css': archifyCss(),
     'tokens.css': emitTokensCss({ version: CONTRACT_VERSION }),
     'typography.css': typographyCss(),
     'prose.css': proseCss(),

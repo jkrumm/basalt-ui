@@ -1,0 +1,37 @@
+/* @generated basalt-ui — do not edit; regenerate with the command on the next line */
+/* basalt-ui 3.0.0 — `bun packages/basalt-ui/src/css/generate.ts` */
+/* An archify diagram: put data-preset="basalt" on the svg or its wrapper, with tokens.css loaded. */
+[data-preset='basalt'] {
+  --bg: var(--basalt-surface);
+  --mask: var(--basalt-surface);
+  --grid: var(--basalt-grid);
+  --text: var(--basalt-ink);
+  --text-muted: var(--basalt-ink-muted);
+  --text-dim: var(--basalt-ink-faint);
+  --text-faint: var(--basalt-ink-faint);
+  --panel: var(--basalt-card);
+  --panel-border: var(--basalt-hairline);
+  --lane-fill: var(--basalt-hover);
+  --lane-stroke: var(--basalt-dim-bar);
+  --arrow: var(--basalt-line);
+  --arrow-emphasis: var(--basalt-brand);
+  --frontend-fill: color-mix(in srgb, var(--basalt-chart-1) var(--basalt-tint-pct), transparent);
+  --frontend-stroke: var(--basalt-chart-1);
+  --backend-fill: color-mix(in srgb, var(--basalt-chart-3) var(--basalt-tint-pct), transparent);
+  --backend-stroke: var(--basalt-chart-3);
+  --database-fill: color-mix(in srgb, var(--basalt-chart-4) var(--basalt-tint-pct), transparent);
+  --database-stroke: var(--basalt-chart-4);
+  --cloud-fill: color-mix(in srgb, var(--basalt-chart-2) var(--basalt-tint-pct), transparent);
+  --cloud-stroke: var(--basalt-chart-2);
+  --messagebus-fill: color-mix(in srgb, var(--basalt-chart-5) var(--basalt-tint-pct), transparent);
+  --messagebus-stroke: var(--basalt-chart-5);
+  --security-fill: color-mix(in srgb, var(--basalt-bad) var(--basalt-tint-pct), transparent);
+  --security-stroke: var(--basalt-bad);
+  --external-fill: color-mix(in srgb, var(--basalt-line) var(--basalt-tint-pct), transparent);
+  --external-stroke: var(--basalt-line);
+  --toolbar-bg: var(--basalt-raised);
+  --toolbar-border: var(--basalt-hairline);
+  --toolbar-text: var(--basalt-ink);
+  --toolbar-hover: var(--basalt-hover);
+  --toolbar-menu-bg: var(--basalt-raised);
+}

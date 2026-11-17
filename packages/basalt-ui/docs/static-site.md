@@ -32,6 +32,17 @@ Import them in this order from your CSS bundler (Astro, Vite) or copy the files 
 Your own rules beat `.basalt-prose` without `!important`. Read colour, spacing and type through
 `var(--basalt-*)`, never a literal.
 
+## Diagrams (archify)
+
+A fifth, opt-in entry themes an [archify](https://github.com/tt-a1i/archify) diagram: load
+`basalt-ui/archify.css` after `tokens.css` and set `data-preset="basalt"` on the inline `<svg>` or its
+wrapper. The one `[data-preset='basalt']` block maps all 32 archify variables to `--basalt-*` tokens, so the
+diagram follows the page's light and dark scheme with no second palette. The diagram's background reads
+`--basalt-surface` (the canvas); on a card, set `--basalt-surface: var(--basalt-card)` on the card, or
+`data-surface='card'` where `tailwind.css` is loaded (it owns that attribute rule). The file is unlayered on purpose (archify's
+own theme blocks are, and an unlayered rule out-ranks a layered one); it needs `tokens.css` loaded, since
+it carries no fallback colours.
+
 ## Retune the tokens
 
 `tokens.css` is replaced, never stacked on. Emit your own with `tokens:css` and commit the file:

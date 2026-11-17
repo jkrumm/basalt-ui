@@ -151,6 +151,7 @@
     "./fonts.css": "./dist/css/fonts.css",
     "./table.css": "./dist/table/table.css",
     "./tailwind.css": "./dist/css/tailwind.css",
+    "./archify.css": "./dist/css/archify.css",
     "./styles.css": "./dist/styles.css",
     "./configs/*": "./configs/*"
   },

@@ -21,7 +21,7 @@ echo "==> publint"
 bunx publint --strict "$TGZ"
 
 echo "==> attw (are-the-types-wrong)"
-bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./typography.css ./prose.css ./fonts.css ./tailwind.css ./table.css
+bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./typography.css ./prose.css ./fonts.css ./tailwind.css ./archify.css ./table.css
 
 echo "==> assert tarball contents"
 # Assert against a FILE, never `echo "$LIST" | grep -q`. Under this script's `set -o pipefail`,
@@ -46,7 +46,7 @@ for f in \
   dist/shell/index.js \
   dist/router/index.js dist/data/index.js dist/page/index.js dist/cards/index.js dist/ai/index.js \
   dist/lint/index.js dist/lint/stylelint/index.js dist/testing/index.js dist/ui/index.js dist/css/theme-script.js \
-  dist/css/tokens.css dist/css/typography.css dist/css/prose.css dist/css/fonts.css dist/css/tailwind.css dist/table/table.css \
+  dist/css/tokens.css dist/css/typography.css dist/css/prose.css dist/css/fonts.css dist/css/tailwind.css dist/css/archify.css dist/table/table.css \
   dist/controls/index.js dist/controls/index.d.ts \
   src/index.ts \
   configs/oxlint-app.json configs/oxlint-parts.json configs/oxlint-bridge.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
@@ -187,6 +187,7 @@ const subpaths = [
   'basalt-ui/prose.css',
   'basalt-ui/fonts.css',
   'basalt-ui/tailwind.css',
+  'basalt-ui/archify.css',
   'basalt-ui/table.css',
 ]
 for (const s of subpaths) {
