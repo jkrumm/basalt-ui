@@ -171,4 +171,34 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     title: 'Expression n26: line path probes',
     blurb: 'Is the delay and loss in the home network, at the provider, or at the far end?',
   },
+  {
+    id: 'expr-n27',
+    title: 'Expression n27: factory health measures',
+    blurb: 'Which health measures moved the right way this week, and which slid?',
+  },
+  {
+    id: 'expr-n28',
+    title: 'Expression n28: household spending',
+    blurb: 'Where does the money go, and which category moved most last month?',
+  },
+  {
+    id: 'expr-n29',
+    title: 'Expression n29: tax-year tags',
+    blurb: 'How much of the year is tagged for tax, and which merchants hold untagged bookings?',
+  },
+  {
+    id: 'expr-n30',
+    title: 'Expression n30: line throughput',
+    blurb: 'When is the line busiest, and how close does it come to the contracted rate?',
+  },
+  {
+    id: 'expr-n31',
+    title: "Expression n31: a project's week",
+    blurb: 'What shipped on each day, and what is in production now?',
+  },
+  {
+    id: 'expr-n32',
+    title: 'Expression n32: plan waits',
+    blurb: 'Which open Issues wait on others, and which one would unblock the most?',
+  },
 ]

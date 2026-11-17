@@ -25,6 +25,12 @@ export const DEMO_SERIES = defineSeries({
   churn: { light: '#af293e', dark: '#e46360' },
 })
 
+/** Factory health (scenario expr-n27): one ink step for every measure's weekly line; the delta pill carries the only hue. */
+export const HEALTH_SERIES = defineSeries({
+  weekly: { light: '#4a4a4a', dark: '#c4c4c4' },
+  median: { light: '#9a9a9a', dark: '#7d7d7d' },
+})
+
 /** Sleep stages (scenario expr-n12): one hue per stage, deep darkest, REM the violet. */
 export const SLEEP_SERIES = defineSeries({
   deep: { light: '#2b4a9b', dark: '#6c8cf0' },
@@ -173,4 +179,20 @@ export const FITNESS_SERIES = defineSeries({
   rhr: { light: '#2871c7', dark: '#5190f7' },
   hrv: { light: '#262626', dark: '#e6e6e6' },
   limit: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Shipped Issues (scenario expr-n31): the accent is features; fixes and chores sit in ink steps, the deploy rule in an ink step. */
+export const SHIP_SERIES = defineSeries({
+  feat: { light: '#2871c7', dark: '#5190f7' },
+  fix: { light: '#4a4a4a', dark: '#c4c4c4' },
+  chore: { light: '#9a9a9a', dark: '#7d7d7d' },
+  deploy: { light: '#262626', dark: '#e6e6e6' },
+})
+
+/** Household spending (scenario expr-n28): the accent is the category that moved most or is in focus; other categories and months sit in an ink step, the last complete month in a dark one, the partial month in a pale one. */
+export const HOUSEHOLD_SERIES = defineSeries({
+  mover: { light: '#2871c7', dark: '#5190f7' },
+  rest: { light: '#6b6b6b', dark: '#a8a8a8' },
+  partial: { light: '#b8b8b8', dark: '#5c5c5c' },
+  october: { light: '#262626', dark: '#e6e6e6' },
 })
