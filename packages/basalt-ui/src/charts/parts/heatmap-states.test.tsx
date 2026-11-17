@@ -130,6 +130,28 @@ function Focused(): ReactElement {
   )
 }
 
+describe('a keyboard-focused cell', () => {
+  const key = (el: HTMLElement, k: string) =>
+    act(async () => {
+      el.querySelector('[data-chart-focus]')?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: k, bubbles: true }),
+      )
+    })
+  const ring = (el: HTMLElement) => el.querySelectorAll('g[data-ts-key="focus-ring"] rect')
+
+  test('draws one ring on the cell the arrow keys reached, and none at rest or after Escape', async () => {
+    const el = await mount(<Focused />)
+    expect(ring(el).length).toBe(0)
+    await key(el, 'ArrowRight')
+    const cells = ring(el)
+    expect(cells.length).toBe(1)
+    expect(cells[0]?.getAttribute('stroke')).toBe('var(--basalt-brand)')
+    expect(cells[0]?.getAttribute('stroke-width')).toBe('2')
+    await key(el, 'Escape')
+    expect(ring(el).length).toBe(0)
+  })
+})
+
 const labelFills = (el: HTMLElement) =>
   [...el.querySelectorAll('g[data-ts-key="annotations"] text')].map((t) => t.getAttribute('fill'))
 
