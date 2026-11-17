@@ -196,3 +196,26 @@ export const HOUSEHOLD_SERIES = defineSeries({
   partial: { light: '#b8b8b8', dark: '#5c5c5c' },
   october: { light: '#262626', dark: '#e6e6e6' },
 })
+
+/** Owner queue (scenario expr-n38): the accent is the decision, the kind that waits on a person; reviews sit in a dark ink step, chores in a pale one, the 24 h rule in a mid step. */
+export const OWNER_SERIES = defineSeries({
+  decision: { light: '#2871c7', dark: '#5190f7' },
+  review: { light: '#4a4a4a', dark: '#d4d4d4' },
+  chore: { light: '#9a9a9a', dark: '#7d7d7d' },
+  rule: { light: '#6b6b6b', dark: '#a8a8a8' },
+  soon: { light: '#c07e3c', dark: '#f9a13d' },
+})
+
+/** Harbour bar (scenario expr-n34): tide in the dark ink step, swell in a mid step; the two limits sit in rule steps, the go windows are the accent's tint. */
+export const BAR_SERIES = defineSeries({
+  tide: { light: '#262626', dark: '#e6e6e6' },
+  swell: { light: '#7a7a7a', dark: '#9c9c9c' },
+  need: { light: '#4a4a4a', dark: '#c4c4c4' },
+  limit: { light: '#6b6b6b', dark: '#a8a8a8' },
+})
+
+/** Sprint (scenario expr-n37): the accent is the done work, from highlight; the other statuses sit in an ink step, the pace rule in a mid step. */
+export const SPRINT_SERIES = defineSeries({
+  points: { light: '#6b6b6b', dark: '#a8a8a8' },
+  pace: { light: '#262626', dark: '#e6e6e6' },
+})
