@@ -47,13 +47,19 @@ export function Sparkline(props: SparklineProps): ReactElement {
   const plotH = fill ? FILL_UNITS : Math.max(1, height - (axisLabels === undefined ? 0 : LABEL_ROW))
   const plotW = width === undefined ? FLUID_UNITS : Math.max(1, width - 2 * PLOT_INSET)
   const refValue = reference === 'mean' ? meanOf(rows) : reference
-  const ref = refValue !== undefined && Number.isFinite(refValue) ? refValue : undefined
+  const refEnds =
+    typeof refValue === 'object'
+      ? [Math.min(refValue.min, refValue.max), Math.max(refValue.min, refValue.max)]
+      : refValue === undefined
+        ? []
+        : [refValue]
+  const refs = refEnds.every(Number.isFinite) ? refEnds : []
   const g = sparkGeometry({
     values,
     width: plotW,
     height: plotH,
     padY: fill ? FILL_INSET : PLOT_INSET,
-    ...(ref === undefined ? {} : { reference: ref }),
+    ...(refs.length === 0 ? {} : { reference: refs }),
   })
   const place = (i: number): { x: number; y: number } | null => {
     const v = values[i]
@@ -98,19 +104,31 @@ export function Sparkline(props: SparklineProps): ReactElement {
                   <path d={g.area} fill={`url(#${gradient})`} stroke="none" />
                 </>
               )}
-              {ref === undefined ? null : (
+              {refs.length === 2 && (
+                <rect
+                  data-slot="spark-band"
+                  x={0}
+                  y={g.y(refs[1]!)}
+                  width={plotW}
+                  height={Math.max(0, g.y(refs[0]!) - g.y(refs[1]!))}
+                  className="fill-line"
+                  fillOpacity={0.25}
+                />
+              )}
+              {refs.map((v, i) => (
                 <line
+                  key={i}
                   data-slot="spark-reference"
                   x1={0}
                   x2={plotW}
-                  y1={g.y(ref)}
-                  y2={g.y(ref)}
+                  y1={g.y(v)}
+                  y2={g.y(v)}
                   className="stroke-line"
                   strokeWidth={1}
                   strokeDasharray="2 3"
                   vectorEffect="non-scaling-stroke"
                 />
-              )}
+              ))}
               <path
                 data-slot="spark-line"
                 d={g.line}
