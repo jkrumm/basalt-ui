@@ -32,19 +32,25 @@ export function emphasis<T>(
 
 /** The share of the card's muted ink a dimmed mark takes in dark: the floor under a dark series colour. */
 const DARK_DIM_INK = 0.3
+/** The same in light, where the dim fades a light series colour into the pale card: the floor keeps it at 3:1. */
+const LIGHT_DIM_INK = 0.6
 
 const mixed = (color: string, opacity: number): string =>
   opacity >= 1 ? color : `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`
 
+const withFloor = (paint: string, ink: number): string =>
+  `color-mix(in srgb, ${paint}, ${CV.inkMuted} ${Math.round(ink * 100)}%)`
+
 /**
  * The paint of a mark while ANOTHER datum holds the focus, `strength` being what it draws at
- * otherwise: `DIMMED` of it on the light card; on the dark one `DIMMED_TEXT` of it with the card's
- * muted ink mixed in, so the darkest series colour keeps a floor against the card instead of
- * vanishing into it. Bars and lines dim through this one function.
+ * otherwise: `DIMMED` of it with the card's muted ink mixed in on the light card, `DIMMED_TEXT` of
+ * it with the same ink on the dark one, so a series colour near the card's own keeps a floor against
+ * the card instead of vanishing into it. Bars and lines dim through this one function.
  */
 export function dimmedPaint(color: string, strength = 1): string {
-  const dark = `color-mix(in srgb, ${mixed(color, strength * DIMMED_TEXT)}, ${CV.inkMuted} ${DARK_DIM_INK * 100}%)`
-  return `light-dark(${mixed(color, strength * DIMMED)}, ${dark})`
+  const light = withFloor(mixed(color, strength * DIMMED), LIGHT_DIM_INK)
+  const dark = withFloor(mixed(color, strength * DIMMED_TEXT), DARK_DIM_INK)
+  return `light-dark(${light}, ${dark})`
 }
 
 /** The rows a series' line and area are drawn through: all of them, or only the non-null ones. */

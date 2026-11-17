@@ -113,7 +113,7 @@ describe('the dark dim floor', () => {
     )
   }
 
-  test('a dimmed bar mixes the card muted ink in dark and stays plain in light', async () => {
+  test('a dimmed bar mixes the card muted ink in both schemes, more in light', async () => {
     const el = await mount(<Bars />)
     const wrap = el.querySelector('[data-chart-focus]') as Element
     await press(wrap, 'ArrowRight')
@@ -128,7 +128,7 @@ describe('the dark dim floor', () => {
       ]
       expect(light).toBe(0)
       expect(dark).toBeGreaterThan(0)
-      expect(fill.slice(0, dark)).not.toContain('--basalt-ink-muted')
+      expect(fill.slice(0, dark)).toContain('var(--basalt-ink-muted) 60%')
       expect(fill.slice(dark)).toContain('var(--basalt-ink-muted) 30%')
     }
   })
