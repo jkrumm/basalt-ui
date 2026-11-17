@@ -15,6 +15,11 @@ export function focusMain(): void {
 /** An overlay still on screen: the palette's dialog or the More sheet, in or on its way out. */
 const OVERLAY = '[data-slot="dialog-content"], [data-slot="sheet-content"]'
 
+/** Whether an overlay is still on screen. */
+export function overlayOpen(): boolean {
+  return document.querySelector(OVERLAY) !== null
+}
+
 /**
  * Puts focus on main once no overlay is left and two frames have passed since, the overlay's own
  * focus return (to the control that opened it) having finished by then. It gives up waiting for the

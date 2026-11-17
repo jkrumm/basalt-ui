@@ -217,6 +217,46 @@ describe('focus while the next page loads', () => {
     expect(document.activeElement === main()).toBe(true)
   })
 
+  test('a Tab during a pending jump neither enters the old page nor leaves main', async () => {
+    const { router, release } = mount('/f')
+    await waitFor(() => expect(crumb()).toBe('Fleet overview'))
+    const leave = document.querySelector<HTMLElement>('[data-testid="leave"]')
+    leave?.focus()
+    requestMainFocus()
+    act(() => {
+      void router.navigate({ to: '/f/services' })
+    })
+    // Before main has taken focus (the old page is still focused) and after it has.
+    const early = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+    leave?.dispatchEvent(early)
+    expect(early.defaultPrevented).toBe(true)
+    await waitFor(() => expect(document.activeElement === main()).toBe(true))
+    await waitFor(() => expect(main().getAttribute('aria-busy')).toBe('true'))
+    const late = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+    main().dispatchEvent(late)
+    expect(late.defaultPrevented).toBe(true)
+    expect(document.activeElement === main()).toBe(true)
+    await act(async () => release())
+    await waitFor(() => expect(crumb()).toBe('Services'))
+    // The jump is over: Tab is the browser's again.
+    const after = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+    main().dispatchEvent(after)
+    expect(after.defaultPrevented).toBe(false)
+  })
+
+  test('a Tab on a plain rail navigation is left alone', async () => {
+    const { router, release } = mount('/f')
+    await waitFor(() => expect(crumb()).toBe('Fleet overview'))
+    act(() => {
+      void router.navigate({ to: '/f/services' })
+    })
+    await waitFor(() => expect(main().getAttribute('aria-busy')).toBe('true'))
+    const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+    main().dispatchEvent(tab)
+    expect(tab.defaultPrevented).toBe(false)
+    await act(async () => release())
+  })
+
   test('waits for the overlay to leave before taking focus', async () => {
     const { router, release } = mount('/f')
     await waitFor(() => expect(crumb()).toBe('Fleet overview'))
