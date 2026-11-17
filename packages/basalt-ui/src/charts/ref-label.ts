@@ -18,6 +18,8 @@ const LINE_GAP = 3
 const CLAIM_PAD = 2
 /** Air a dot keeps round its radius (its ring and a pixel), px. */
 const DOT_AIR = 2
+/** Air a data line keeps from a caption box (its stroke and an end dot), px. */
+const LINE_AIR = 3
 
 /**
  * A box another label has claimed in the same plot: a share of the plot width and a span of values
@@ -172,7 +174,9 @@ export function placeRefLabel(
     const [fx0, fx1] = spanOf(position)
     return series.every((points) => {
       const range = yRangeWithin(points, fx0, fx1)
-      return range === null || range[1] < from || range[0] > to
+      // A line keeps its air from the caption: a label that touches a stroke or an end dot is struck.
+      const air = LINE_AIR * perPx
+      return range === null || range[1] + air < from || range[0] - air > to
     })
   }
   const spot =
