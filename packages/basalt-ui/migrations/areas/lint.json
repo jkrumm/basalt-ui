@@ -1,7 +1,20 @@
 {
   "schema": 1,
   "area": "lint",
-  "rows": [],
+  "rows": [
+    {
+      "id": "lint-preset-oxlint",
+      "kind": "removed",
+      "from": "basalt-ui/configs/oxlint.json",
+      "note": "the 2.x oxlint preset and its `basalt` JS plugin (`configs/oxlint-plugin.js`) are deleted in 3.0, with the `basalt/*` 2.x rule ids and the `theme-allow` annotation; instead: `basalt-ui init` (or `sync`) writes `.oxlintrc.basalt.json` for your profile and `basalt-ui lint` runs it; a waiver is `// oxlint-disable-next-line basalt/<id> -- <why>`, and the 2.x ids map to the 15 v3 rule ids"
+    },
+    {
+      "id": "lint-preset-oxlint-basalt",
+      "kind": "removed",
+      "from": "basalt-ui/configs/oxlint-basalt.json",
+      "note": "the 2.x guards-only preset is deleted in 3.0 with the plugin it loaded; instead: the `bridge` profile, the lightest of the three generated presets (`configs/oxlint-{bridge,parts,app}.json`), for a repo with history to take first"
+    }
+  ],
   "tokens": { "renamed": [], "valueShifts": [] },
   "storage": [],
   "urls": [],

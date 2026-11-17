@@ -49,7 +49,7 @@ for f in \
   dist/css/tokens.css dist/css/typography.css dist/css/prose.css dist/css/fonts.css dist/css/tailwind.css dist/table/table.css \
   dist/controls/index.js dist/controls/index.d.ts \
   src/index.ts \
-  configs/oxlint.json configs/oxlint-basalt.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
+  configs/oxlint-app.json configs/oxlint-parts.json configs/oxlint-bridge.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
   agent/rules/basalt-tokens.md agent/rules/basalt-ui.md agent/rules/basalt-page.md \
   agent/rules/basalt-state.md agent/rules/basalt-charts.md \
   agent/templates/DESIGN.md.tpl agent/templates/AGENTS-block.md.tpl \
@@ -199,9 +199,13 @@ for (const s of subpaths) {
 const tokens = await import('basalt-ui/tokens')
 if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildPaletteCss missing')
 
-// the raw oxlint preset must resolve via ./configs/* and be valid JSON
-JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint.json'), 'utf8'))
-JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint-basalt.json'), 'utf8'))
+// the raw oxlint presets must resolve via ./configs/* and be valid JSON, each loading the rule plugin
+for (const profile of ['app', 'parts', 'bridge']) {
+  const preset = JSON.parse(
+    readFileSync(require.resolve(`basalt-ui/configs/oxlint-${profile}.json`), 'utf8'),
+  )
+  if (!preset.jsPlugins?.includes('basalt-ui/lint')) throw new Error(`oxlint-${profile}.json does not load basalt-ui/lint`)
+}
 
 // the push channel ships with the data layer only (the root barrel no longer exports `createChannel`)
 const dataMod = await import('basalt-ui/data')
@@ -262,39 +266,6 @@ echo "==> export-surface snapshot (named-export completeness per subpath)"
 PKGDIR="$(dirname "$ABS_TGZ")"
 node --import "$PKGDIR/scripts/css-noop-register.mjs" "$PKGDIR/scripts/export-surface.mjs" \
   --base "$SCRATCH/node_modules/basalt-ui"
-
-echo "==> scratch-consumer oxlint preset contract (extends the shipped preset for real)"
-# Exercises the real consumer contract against the tarball: a fresh .oxlintrc.json that
-# extends the shipped preset via the documented node_modules-relative path, linted for real.
-# A config PARSE failure (e.g. an unknown top-level key) must fail the pack test; ordinary
-# lint findings on the trivial fixture below are expected and must NOT fail it.
-# Both presets: the full one, and the guards-only one it extends. The `.tsx` fixture trips
-# basalt/card-inset, proving the chained extends still loads the plugin from inside the tarball.
-cat >lint-fixture.tsx <<'TSX'
-import { Card } from '@mantine/core'
-export const ScratchLintFixture = () => <Card padding="lg" />
-TSX
-# Captured to a file, then grepped from the file — same reason as `require` above: a
-# `echo "$VAR" | grep -q` pipeline can report SIGPIPE (141) instead of grep's own verdict.
-OXLINT_LOG=$(mktemp)
-for preset in oxlint oxlint-basalt; do
-  printf '{ "extends": ["./node_modules/basalt-ui/configs/%s.json"] }\n' "$preset" >.oxlintrc.json
-  set +e
-  bunx oxlint lint-fixture.tsx >"$OXLINT_LOG" 2>&1
-  set -e
-  cat "$OXLINT_LOG"
-  if grep -qiF "failed to parse" "$OXLINT_LOG"; then
-    echo "FAILED: shipped $preset.json does not parse for a real consumer (config parse failure)"
-    exit 1
-  fi
-  if ! grep -qF "basalt/card-inset" "$OXLINT_LOG"; then
-    echo "FAILED: extending $preset.json did not run the basalt/* rules"
-    exit 1
-  fi
-done
-echo "scratch-consumer oxlint preset contract OK"
-
-rm -f "$OXLINT_LOG"
 
 echo "==> dist-vantage tsc assertion (catches .d.ts declaration-emit regressions)"
 # Write a strict tsconfig matching the package's own flags — the .d.ts vantage only

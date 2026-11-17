@@ -217,8 +217,6 @@ type TemplateVars = {
   ROOTS_GLOBS: string
   /** The roots a rule's `paths:` renders from: `basalt.roots` (init/sync write the inferred ones first), else {@link LEGACY_RULE_ROOTS}. */
   RULE_ROOTS: string[]
-  /** Path to the shipped oxlint preset from the consumer dir — RESOLVED, never assumed at the root. */
-  OXLINT_PRESET_PATH: string
   /** Path to the shipped lefthook preset from the consumer dir — same resolution. */
   LEFTHOOK_PRESET_PATH: string
   /**
@@ -298,7 +296,6 @@ function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): Tem
     SERIES_MODULE_PATH: resolveSeriesModulePath(cfg),
     ROOTS_GLOBS: resolveRoots(cfg).map(toRootGlob).join(' '),
     RULE_ROOTS: cfg.roots ?? [],
-    OXLINT_PRESET_PATH: shippedAssetPath(install, cwd, OXLINT_FILES.preset),
     LEFTHOOK_PRESET_PATH: shippedAssetPath(install, cwd, 'configs/lefthook.yml'),
     BASALT_BIN: basaltBinCommand(install, cwd),
     GATE_STEPS: ciGateSteps(cwd),
@@ -588,16 +585,6 @@ export function managedFiles(
     },
   }
 
-  // Seed an `.oxlintrc.json` that extends the shipped preset (written once, then consumer-owned).
-  // `render` emits the stub inline rather than copying `source`; `source` names the preset the stub
-  // extends, and the `seed` mode never reports drift, so it is not read back at sync time.
-  const oxlintrc: ManagedFile = {
-    dest: '.oxlintrc.json',
-    mode: 'seed',
-    source: OXLINT_FILES.preset,
-    render: (ctx) => `{\n  "extends": ["${ctx.vars.OXLINT_PRESET_PATH}"]\n}\n`,
-  }
-
   // ── Seed scaffolds: written by init, never overwritten by sync ─────────────
   // These are starting-point files owned entirely by the consumer after first write.
 
@@ -651,17 +638,7 @@ export function managedFiles(
   // both (the root often has its own), and `sync` reports on the root's files instead.
   const rootTooling: ManagedFile[] = placement.isPackageRepoRoot ? [lefthook, ci] : []
 
-  return [
-    ...rules,
-    ...skills,
-    ...agents,
-    agentsBlock,
-    design,
-    oxfmt,
-    ...rootTooling,
-    oxlintrc,
-    ...scaffolds,
-  ]
+  return [...rules, ...skills, ...agents, agentsBlock, design, oxfmt, ...rootTooling, ...scaffolds]
 }
 
 export type Manifest = {
@@ -718,28 +695,6 @@ export function renderContext(
 ): RenderContext {
   const vars = buildTemplateVars(pkgRoot, cwd, readBasaltConfig(cwd))
   return { pkgRoot, vars: ruleRoots === undefined ? vars : { ...vars, RULE_ROOTS: [...ruleRoots] } }
-}
-
-/** The shipped oxlint files, package-relative — the one spelling every reader of them uses. */
-export const OXLINT_FILES = {
-  preset: 'configs/oxlint.json',
-  guards: 'configs/oxlint-basalt.json',
-  plugin: 'configs/oxlint-plugin.js',
-} as const
-
-/** Whether an `extends`/`jsPlugins` entry names that shipped basalt-ui file. */
-export const namesShipped = (entry: unknown, file: string): entry is string =>
-  typeof entry === 'string' && entry.endsWith(`basalt-ui/${file}`)
-
-/**
- * The `extends` entry naming a shipped preset (full or guards-only), or null. The ENTRY, not a
- * boolean: a well-shaped `./node_modules/basalt-ui/configs/oxlint.json` can resolve to nothing
- * (an upgrade, an isolated linker), and oxlint then dies `NotFound` while a check built to prove the
- * lane is ON reports green — callers resolve it against the config's own directory.
- */
-export function basaltPresetEntry(entries: unknown): string | null {
-  const presets = [OXLINT_FILES.preset, OXLINT_FILES.guards]
-  return [entries].flat().find((e): e is string => presets.some((f) => namesShipped(e, f))) ?? null
 }
 
 // workspace-glob primitives — shared by findBasaltInstall

@@ -1,10 +1,9 @@
 /**
- * Generates the no-restricted-imports overrides for both oxlint configs from SURFACES.
- * The hand-maintained base (plugins, categories, rules, ignorePatterns) is read from the
- * current files and spliced in unchanged — only the overrides array is replaced. Unknown
- * top-level keys are stripped on read: oxlint hard-errors on any field outside its known
- * schema (e.g. a doc-comment `"//"` key), so the base must be whitelisted before re-emitting.
- *
+ * Generates the repo's own `.oxlintrc.json` `overrides` (the import bans of `packages/basalt-ui/src`)
+ * from SURFACES. The hand-maintained base (plugins, categories, rules, ignorePatterns) is read from the
+ * current file and spliced in unchanged — only the overrides array is replaced. Unknown top-level keys
+ * are stripped on read: oxlint hard-errors on any field outside its known schema (e.g. a doc-comment
+ * `"//"` key), so the base must be whitelisted before re-emitting.
  *
  * It also writes the v3 shipped presets from the rule table (`src/lint/preset.ts`): one
  * `configs/oxlint-<profile>.json` per shipped profile (`tokens` ships none) and the oxfmt
@@ -26,7 +25,7 @@ import { SLOTS } from '../src/ui/slots'
 
 // The exact set oxlint's own config parser accepts at the top level (per oxlint 1.68.0's
 // "unknown field" parse error) — anything else (e.g. a doc-comment `"//"` key) is stripped
-// before re-emitting so the shipped/repo configs stay parseable by oxlint itself.
+// before re-emitting so the repo config stays parseable by oxlint itself.
 const ALLOWED_TOP_LEVEL_KEYS: ReadonlySet<string> = new Set([
   '$schema',
   'plugins',
@@ -42,19 +41,6 @@ const ALLOWED_TOP_LEVEL_KEYS: ReadonlySet<string> = new Set([
   'extends',
 ])
 
-// Agent worktrees (`.claude/worktrees/<name>`) are full checkouts: their files are never this
-// checkout's to lint. NOTE this only drops their SOURCE files — oxlint (1.87) still discovers and
-// loads a nested `.oxlintrc.json` there regardless of any ignorePatterns, which is the
-// "Plugin name basalt is already registered" failure; that is closed by the `--ignore-pattern` flag
-// on the lint invocations `init` writes (`OXLINT_IGNORE_FLAG` in src/cli/index.ts).
-const WORKTREE_IGNORE = '.claude/worktrees/**'
-
-function withWorktreeIgnore(base: Record<string, unknown>): Record<string, unknown> {
-  const existing = Array.isArray(base['ignorePatterns']) ? (base['ignorePatterns'] as string[]) : []
-  if (existing.includes(WORKTREE_IGNORE)) return base
-  return { ...base, ignorePatterns: [...existing, WORKTREE_IGNORE] }
-}
-
 function stripUnknownTopLevelKeys(base: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(base)) {
@@ -65,8 +51,6 @@ function stripUnknownTopLevelKeys(base: Record<string, unknown>): Record<string,
 
 // ── Types ────────────────────────────────────────────────────────────────────────────────────────
 
-export type Target = 'shipped' | 'repo'
-
 type OxlintPath = { name: string; message: string }
 type OxlintPattern = { group: readonly [string]; message: string }
 type NoRestrictedImports = { paths?: OxlintPath[]; patterns?: OxlintPattern[] }
@@ -76,54 +60,29 @@ type OverrideBlock = {
   rules: Record<string, unknown>
 }
 
-// ── Context resolution — fills the {ctx} placeholder per import spec + target ────────────────────
-
-function resolveCtx(spec: string, surfaceName: string): string {
-  // @mantine/* paths and groups: ctx is the surface name (the boundary being protected). The
-  // @visx/tooltip and @visx/* boundaries used to resolve a {ctx} here too, but they're enforced
-  // by the `basalt/chart-engine-boundary` plugin rule now (see surfaces.ts's
-  // ./charts comment) — no ForbiddenImport in SURFACES carries those specs any more.
-  if (spec.startsWith('@mantine/') || spec === '@mantine/*') return surfaceName
-  // antd, framer-motion, and others carry no {ctx} placeholder; return empty string (no substitution needed)
-  return ''
-}
-
-function fillCtx(message: string, ctx: string): string {
-  return message.replace('{ctx}', ctx)
-}
-
 // ── Core projection — derive the overrides array for a given target ───────────────────────────────
 
 /**
- * Derives the `overrides` array for the given target from SURFACES.
+ * Derives the repo's `overrides` array from SURFACES.
  * A surface emits a block when it has a `globs` field AND (non-empty forbiddenImports OR a
  * ruleOverride relevant to `target` — see `hasRelevantRuleOverride`).
  *
  * Emission order is LOAD-BEARING — oxlint resolves per-glob `no-restricted-imports`
  * last-writer-wins (a later matching block REPLACES an earlier one). The broad `#app` (src/**)
- * block must come FIRST so narrower overrides win for files they match. The chart-engine
- * and Mantine-free charts/tokens boundaries no longer depend on this ordering at all — they're
- * enforced by the `basalt/chart-engine-boundary` and `basalt/token-layer-boundary` plugin rules, which are
- * immune to override-clobbering by construction. `#app`'s remaining bans (antd, framer-motion)
- * have no narrower re-allow to out-order, but #app is still emitted first, both for readability
- * and in case a future ban needs it.
+ * block must come FIRST so narrower overrides win for files they match. The one narrower re-allow
+ * is the chart host file, emitted last (`CHART_HOST_FILE`).
  *
  * The SURFACES insertion order already reflects this: #app is last in the dict but first in
  * EMIT_ORDER. We derive EMIT_ORDER from SURFACES key order, but move #app to the front.
  */
 /**
- * True when `surface` carries a non-no-console ruleOverride that applies to `target` — the signal
- * a candidate surface needs an override block even with empty forbiddenImports (e.g. `./charts`'s
- * repo-only `no-underscore-dangle: off`, now that its import bans moved to the
- * `basalt/chart-engine-boundary`/`basalt/token-layer-boundary` plugin rules instead of
- * no-restricted-imports).
+ * True when `surface` carries a non-no-console ruleOverride for the repo — the signal a candidate
+ * surface needs an override block even with empty forbiddenImports (e.g. `./charts`'s
+ * `no-underscore-dangle: off`).
  */
-function hasRelevantRuleOverride(
-  ruleOverrides: readonly RuleOverride[] | undefined,
-  target: Target,
-): boolean {
+function hasRelevantRuleOverride(ruleOverrides: readonly RuleOverride[] | undefined): boolean {
   return (ruleOverrides ?? []).some(
-    (ro) => ro.rule !== 'no-console' && (ro.target === undefined || ro.target === target),
+    (ro) => ro.rule !== 'no-console' && (ro.target === undefined || ro.target === 'repo'),
   )
 }
 
@@ -134,20 +93,7 @@ function hasRelevantRuleOverride(
 // never a blanket off. Delete an entry when its file is reworked; the sync test pins the output.
 export const PKG_ROOT = 'packages/basalt-ui/'
 
-/**
- * TanStack file routes export `Route` beside their component. The router plugin owns fast refresh
- * for route files (it splits the component out of the route chunk), so the generic fast-refresh
- * export check is noise there. The rule's `allowExportNames` does not help: oxlint 1.87 still warns
- * on the file's local component. Colocated non-route folders under `routes/` (e.g. `-components`)
- * are exempted too — accepted for simplicity. Shipped preset only: the repo-local config lints no
- * file routes, so the block would be inert there.
- */
-export const ROUTE_FILE_OVERRIDE: OverrideBlock = {
-  files: ['**/routes/**', '**/__root.tsx'],
-  rules: { 'react/only-export-components': 'off' },
-}
-
-/** The React-compiler rules plus its sibling, `error` at the top level of both repo configs. */
+/** The React-compiler rules plus its sibling, `error` at the top level of the repo configs. */
 export const COMPILER_RULES = [
   'react/globals',
   'react/immutability',
@@ -173,7 +119,15 @@ export function projectPlaygroundOverrides(): OverrideBlock[] {
   }))
 }
 
-export function projectBanList(target: Target): OverrideBlock[] {
+/** The one file allowed to import the chart engine's DOM host (`@tanstack/charts/react`). */
+export const CHART_HOST_FILE = `${PKG_ROOT}src/charts/host.tsx`
+
+const CHART_HOST_SPECS: ReadonlySet<string> = new Set([
+  '@tanstack/charts/react',
+  '@tanstack/charts/react/*',
+])
+
+export function projectBanList(): OverrideBlock[] {
   const blocks: OverrideBlock[] = []
 
   // Build the ordered emit list from SURFACES: surfaces with globs, and either non-empty
@@ -185,7 +139,7 @@ export function projectBanList(target: Target): OverrideBlock[] {
     .filter(
       ([, spec]) =>
         spec.globs !== undefined &&
-        (spec.forbiddenImports.length > 0 || hasRelevantRuleOverride(spec.ruleOverrides, target)),
+        (spec.forbiddenImports.length > 0 || hasRelevantRuleOverride(spec.ruleOverrides)),
     )
     .map(([key]) => key)
 
@@ -199,21 +153,16 @@ export function projectBanList(target: Target): OverrideBlock[] {
     const surface = SURFACES[key as keyof typeof SURFACES]
     if (!surface.globs) continue
 
-    const files = [...surface.globs[target]]
+    const files = [...surface.globs.repo]
     if (files.length === 0) continue
-
-    // Derive the surface name for Mantine ban ctx (e.g. './charts' → 'charts', '#app' → 'app')
-    const surfaceName = key.startsWith('#') ? key.slice(1) : key.replace(/^\.\//, '')
 
     const paths: OxlintPath[] = []
     const patterns: OxlintPattern[] = []
 
     for (const fi of surface.forbiddenImports as readonly ForbiddenImport[]) {
-      if (fi.shippedOnly === true && target === 'repo') continue
-      if (fi.repoOnly === true && target === 'shipped') continue
+      if (fi.shippedOnly === true) continue
 
-      const ctx = resolveCtx(fi.spec, surfaceName)
-      const message = fillCtx(fi.message, ctx)
+      const { message } = fi
 
       if (fi.match === 'path') {
         paths.push({ name: fi.spec, message })
@@ -226,7 +175,7 @@ export function projectBanList(target: Target): OverrideBlock[] {
     const extraRules: Record<string, unknown> = {}
     for (const ro of (surface.ruleOverrides ?? []) as readonly RuleOverride[]) {
       if (ro.rule === 'no-console') continue
-      if (ro.target !== undefined && ro.target !== target) continue
+      if (ro.target === 'shipped') continue
       extraRules[ro.rule] = ro.level
     }
 
@@ -238,18 +187,16 @@ export function projectBanList(target: Target): OverrideBlock[] {
       rules['no-restricted-imports'] = ['error', nriValue]
     }
 
-    // Nothing left to enforce for this surface/target (e.g. ./charts under 'shipped', now that its
-    // import bans moved to the basalt/chart-engine-boundary and basalt/token-layer-boundary plugin rules) — skip
-    // rather than emit a vestigial empty override block.
+    // Nothing left to enforce for this surface — skip rather than emit a vestigial empty block.
     if (Object.keys(rules).length === 0) continue
 
     blocks.push({ files, rules })
   }
 
-  // Repo-local only: emit the cli/bin/scripts no-console:off block.
+  // Emit the cli/bin/scripts no-console:off block.
   // Source signal: #app ruleOverride { rule: 'no-console', level: 'off', target: 'repo' }.
   // The design notes this is MIS-SCOPED if placed on the #app glob — the real scope is cli/bin/scripts.
-  if (target === 'repo') {
+  {
     const appSurface = SURFACES['#app']
     const hasNoConsole = (appSurface.ruleOverrides ?? []).some(
       (ro): ro is RuleOverride =>
@@ -263,13 +210,28 @@ export function projectBanList(target: Target): OverrideBlock[] {
     }
   }
 
-  if (target === 'repo') {
-    for (const { rule, files } of REPO_COMPILER_RULE_EXEMPTIONS) {
-      blocks.push({ files, rules: { [rule]: 'off' } })
-    }
+  for (const { rule, files } of REPO_COMPILER_RULE_EXEMPTIONS) {
+    blocks.push({ files, rules: { [rule]: 'off' } })
   }
 
-  if (target === 'shipped') blocks.push(ROUTE_FILE_OVERRIDE)
+  // Last, so it wins over `#app`: the host file gets `#app`'s bans minus the host ban.
+  const app = blocks.find((block) => block.files.includes(`${PKG_ROOT}src/**`))
+  const appBans = app?.rules['no-restricted-imports'] as [string, NoRestrictedImports] | undefined
+  if (appBans !== undefined) {
+    const [level, { paths = [], patterns = [] }] = appBans
+    blocks.push({
+      files: [CHART_HOST_FILE],
+      rules: {
+        'no-restricted-imports': [
+          level,
+          {
+            paths: paths.filter((entry) => !CHART_HOST_SPECS.has(entry.name)),
+            patterns: patterns.filter((entry) => !CHART_HOST_SPECS.has(entry.group[0])),
+          },
+        ],
+      },
+    })
+  }
 
   return blocks
 }
@@ -278,7 +240,6 @@ export function projectBanList(target: Target): OverrideBlock[] {
 
 const root = join(import.meta.dirname, '..', '..', '..')
 const pkgRoot = join(root, 'packages/basalt-ui')
-const shippedPath = join(root, 'packages/basalt-ui/configs/oxlint.json')
 const repoPath = join(root, '.oxlintrc.json')
 
 // ── v3 presets — generated from the rule table ───────────────────────────────────────────────────
@@ -377,57 +338,28 @@ function v3Drift(files: ReadonlyMap<string, string>, configsDir: string | undefi
   return drift
 }
 
-// ── Main — regenerate both config files ──────────────────────────────────────────────────────────
+// ── Main — regenerate the repo config and the v3 presets ─────────────────────────────────────────
 
-function generate(): {
-  shippedResult: Record<string, unknown>
-  repoResult: Record<string, unknown>
-} {
-  // Read and parse the hand-maintained base (preserves all known keys except overrides;
-  // unknown top-level keys — e.g. a stray doc-comment key — are dropped, never re-emitted)
-  const shippedBase = withWorktreeIgnore(
-    stripUnknownTopLevelKeys(
-      JSON.parse(readFileSync(shippedPath, 'utf8')) as Record<string, unknown>,
-    ),
-  )
-  const repoBase = stripUnknownTopLevelKeys(
+/** The repo config: its hand-maintained base plus the projected `overrides`. */
+function generateRepo(): Record<string, unknown> {
+  // Unknown top-level keys (e.g. a stray doc-comment key) are dropped, never re-emitted.
+  const base = stripUnknownTopLevelKeys(
     JSON.parse(readFileSync(repoPath, 'utf8')) as Record<string, unknown>,
   )
-
-  return {
-    shippedResult: { ...shippedBase, overrides: projectBanList('shipped') },
-    repoResult: { ...repoBase, overrides: projectBanList('repo') },
-  }
+  return { ...base, overrides: projectBanList() }
 }
 
 function main(): void {
   const args = process.argv.slice(2)
-  const checkMode = args.includes('--check')
-
-  const { shippedResult, repoResult } = generate()
+  const repoResult = generateRepo()
   const v3Files = projectV3Files()
 
-  if (checkMode) {
-    // Parse the committed files and deep-compare (format-agnostic) against generated output
-    const committedShipped = JSON.parse(readFileSync(shippedPath, 'utf8')) as Record<
-      string,
-      unknown
-    >
-    const committedRepo = JSON.parse(readFileSync(repoPath, 'utf8')) as Record<string, unknown>
-
-    const genShippedJson = JSON.stringify(shippedResult, null, 2) + '\n'
-    const genRepoJson = JSON.stringify(repoResult, null, 2) + '\n'
-    const committedShippedJson = JSON.stringify(committedShipped, null, 2) + '\n'
-    const committedRepoJson = JSON.stringify(committedRepo, null, 2) + '\n'
-
+  if (args.includes('--check')) {
+    // Deep-compare parsed JSON (format-agnostic) against the generated output.
+    const committed = JSON.parse(readFileSync(repoPath, 'utf8')) as Record<string, unknown>
     let driftFound = false
 
-    if (genShippedJson !== committedShippedJson) {
-      console.error('✖ gen-oxlint --check: packages/basalt-ui/configs/oxlint.json is out of sync.')
-      console.error('  Run: bun packages/basalt-ui/scripts/gen-oxlint.ts')
-      driftFound = true
-    }
-    if (genRepoJson !== committedRepoJson) {
+    if (JSON.stringify(repoResult) !== JSON.stringify(committed)) {
       console.error('✖ gen-oxlint --check: .oxlintrc.json is out of sync.')
       console.error('  Run: bun packages/basalt-ui/scripts/gen-oxlint.ts')
       driftFound = true
@@ -440,25 +372,19 @@ function main(): void {
       driftFound = true
     }
 
-    if (driftFound) {
-      process.exit(1)
-    }
+    if (driftFound) process.exit(1)
     console.log(
-      `✓ gen-oxlint --check: both oxlint configs match SURFACES, ${v3Files.size} v3 presets match the rule table.`,
+      `✓ gen-oxlint --check: .oxlintrc.json matches SURFACES, ${v3Files.size} v3 presets match the rule table.`,
     )
     return
   }
 
-  // The 2.x pair is compared as parsed JSON (oxfmt lays the committed files out): rewrite only on a
-  // semantic change, so a regeneration never reformats a file that is already right.
-  for (const [path, result] of [
-    [shippedPath, shippedResult],
-    [repoPath, repoResult],
-  ] as const) {
-    const committed = JSON.stringify(JSON.parse(readFileSync(path, 'utf8')))
-    if (committed === JSON.stringify(result)) continue
-    writeFileSync(path, JSON.stringify(result, null, 2) + '\n', 'utf8')
-    console.log(`wrote ${path}`)
+  // Compared as parsed JSON (oxfmt lays the committed file out): rewrite only on a semantic change,
+  // so a regeneration never reformats a file that is already right.
+  const committed = JSON.stringify(JSON.parse(readFileSync(repoPath, 'utf8')))
+  if (committed !== JSON.stringify(repoResult)) {
+    writeFileSync(repoPath, JSON.stringify(repoResult, null, 2) + '\n', 'utf8')
+    console.log(`wrote ${repoPath}`)
   }
   for (const [path, text] of v3Files) {
     writeFileSync(join(root, path), text, 'utf8')

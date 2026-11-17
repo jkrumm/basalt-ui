@@ -6,9 +6,8 @@
  * to 1.33.0 and shipped in 1.33.0 anyway: the floor test went red on master only after the
  * release, exactly like the grace case below.
  *
- * The test-time gate (`configs/oxlint-plugin.test.ts`) measures
- * `package.json`'s CURRENT version, which is the version already published — by construction it can
- * only go red AFTER the release that shipped the due entry. And nothing catches it there either:
+ * A test-time gate measures `package.json`'s CURRENT version, which is the version already
+ * published — by construction it can only go red AFTER the release that shipped the due entry. And nothing catches it there either:
  * semantic-release writes the new version in a `chore: release … [skip ci]` commit, so CI never
  * runs on it, and `release.yml` runs no tests of its own. The first unrelated push afterwards is
  * what fails, one minor too late, with the promotion only landable in the minor after that.
@@ -30,9 +29,7 @@
  * Usage: bun packages/basalt-ui/scripts/check-grace.ts <version>
  */
 import { resolve } from 'node:path'
-// oxlint-disable-next-line -- the plugin is plain JS; the ledgers are named exports beside it
 import { readShards } from './export-surface-shards.mjs'
-import { PLUGIN_RULE_GRACE } from '../configs/oxlint-plugin.js'
 
 type GraceEntry = { since: string; promote: string; why: string }
 type DeprecationRow = {
@@ -102,12 +99,9 @@ function main(): void {
     process.exit(2)
   }
 
-  const grace: Record<string, GraceEntry | undefined> = Object.fromEntries(
-    Object.entries(PLUGIN_RULE_GRACE as Record<string, GraceEntry>).map(([id, entry]) => [
-      `basalt/${id}`,
-      entry,
-    ]),
-  )
+  // No lint rule is in a grace minor: the 2.x plugin and its ledger retired with it, and the v3 rule
+  // table promotes by its own commit. `findReleaseBlockers` still takes any ledger.
+  const grace: Record<string, GraceEntry | undefined> = {}
   // 2.0.0 ships no deprecations (V2-SPEC § 3): the ledger is gone, the check stays for the first 2.x one.
   const deprecations: readonly DeprecationRow[] = []
   const surface: ExportSurface = readShards(resolve(import.meta.dirname, 'export-surface'))

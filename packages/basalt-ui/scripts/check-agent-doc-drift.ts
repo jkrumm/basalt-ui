@@ -56,9 +56,7 @@ import { join, relative } from 'node:path'
 
 import { readShards } from './export-surface-shards.mjs'
 import { generateLlmsTxt } from './gen-llms'
-import { REPO_LOCAL_RULES } from './check-coverage'
 import { checkAllRuleFiles } from './check-rule-tags'
-import * as pluginModule from '../configs/oxlint-plugin.js'
 import { SURFACES } from '../src/surfaces'
 
 const pkgRoot = join(import.meta.dirname, '..')
@@ -621,43 +619,20 @@ export function checkE(
 export const REMOVED_RULES: Readonly<Record<string, string>> = {
   'provider-above-router': 'BasaltProvider mounts the router',
   'page-bar-budget': 'the PageBar actions tuple type',
-  'agent-resume-guard': 'basalt/agent-no-raw-usechat',
+  'agent-resume-guard': 'nothing: the 2.x agent runtime is gone',
   'deprecated-export': 'nothing: 2.0 ships no deprecations',
 }
 
-export type PluginShape = {
-  readonly default?: { readonly rules?: Readonly<Record<string, unknown>> }
-}
-
-/** The registry's rule ids; throws a named error when the plugin's default export is not a plugin. */
-export function pluginRuleIds(plugin: PluginShape): string[] {
-  const rules = plugin.default?.rules
-  if (rules === undefined || typeof rules !== 'object') {
-    throw new Error(
-      "configs/oxlint-plugin.js: the default export has no 'rules' object — the tag check cannot " +
-        'read the plugin registry',
-    )
-  }
-  return Object.keys(rules)
-}
-
 /**
- * The two hand-kept sets must not rot: every repo-local id is still registered (else the entry
- * guards nothing) and every removed id is retired in the plugin (else it was never removed).
+ * Plugin rules that never shipped to a consumer's `configs/` (they guarded this repo's own source)
+ * and went with the 2.x plugin. A shipped agent file naming one is drift, like a removed rule.
  */
-export function checkRuleSets(
-  registered: readonly string[],
-  retired: ReadonlySet<string>,
-): string[] {
-  return [
-    ...[...REPO_LOCAL_RULES]
-      .filter((id) => !registered.includes(id))
-      .map((id) => `REPO_LOCAL_RULES['${id}'] is not registered in configs/oxlint-plugin.js`),
-    ...Object.keys(REMOVED_RULES)
-      .filter((id) => !retired.has(id))
-      .map((id) => `REMOVED_RULES['${id}'] is not in RETIRED_RULE_IDS (configs/oxlint-plugin.js)`),
-  ]
-}
+export const REPO_LOCAL_RULES: ReadonlySet<string> = new Set([
+  'chart-host-single',
+  'token-layer-boundary',
+  'no-dev-helper',
+  'no-import-meta-env',
+])
 
 // ── Check G: no agent file names a repo-local or removed plugin rule ──────────────────────────────
 
@@ -850,7 +825,6 @@ function main(): void {
   const selfFailures = [
     ...checkDenylistIsGenuinelyRemoved(validNames),
     ...checkMasksUrlSlashesCorrectly(),
-    ...checkRuleSets(pluginRuleIds(pluginModule), pluginModule.RETIRED_RULE_IDS),
   ]
 
   const messages: string[] = [
