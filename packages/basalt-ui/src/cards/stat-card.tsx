@@ -81,7 +81,8 @@ const bodyHeight = (hasSub: boolean, hasChart: boolean): string =>
  * />
  */
 export function StatCard(props: StatCardProps): ReactElement {
-  const { title, value, unit, delta, status, sub, chart, xLabels, footer, href, onClick } = props
+  const { title, value, unit, delta, status, sub, subMono, chart, xLabels, footer, href, onClick } =
+    props
   const { phase, empty, subtitle, icon, info, controls, menu } = props
   const figure = formatValue(value)
   const resolved = resolvePhase({ phase, empty })
@@ -142,7 +143,11 @@ export function StatCard(props: StatCardProps): ReactElement {
                 {sub !== undefined && (
                   <p
                     data-slot="stat-sub"
-                    className="m-0 h-5 shrink-0 truncate text-sm text-muted-foreground @max-narrow:hidden"
+                    data-monospace={subMono === true ? '' : undefined}
+                    className={cn(
+                      'm-0 h-5 shrink-0 truncate text-sm text-muted-foreground @max-narrow:hidden',
+                      subMono === true && 'font-mono tabular-nums',
+                    )}
                   >
                     {sub}
                   </p>

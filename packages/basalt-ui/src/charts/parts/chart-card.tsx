@@ -33,6 +33,8 @@ const DOT: Record<Verdict['tone'], string> = {
   neutral: 'bg-muted-foreground',
 }
 
+/** A time or an id: the mono face with tabular numerals (`data-monospace` drops its ligatures). */
+const MONO = 'font-mono tabular-nums'
 /** A figure longer than this steps down a size where the card is narrower than `regular`. */
 const LONG_FIGURE = 10
 /** Below `regular` the period takes a line of its own, in every phase, so loading and failed hold the ready height. */
@@ -47,7 +49,7 @@ function FigureRow({
   loading: boolean
   failed: boolean
 }): ReactElement {
-  const { value, unit, delta, period, status } = figure
+  const { value, unit, delta, period, periodMono, status } = figure
   // A failed card has no figure to stand behind: the dash holds the row at its ready height.
   const text = failed ? null : formatValue(value)
   return (
@@ -107,7 +109,13 @@ function FigureRow({
         ) : failed ? (
           <span aria-hidden="true" className={PERIOD_LINE} />
         ) : (
-          <span className="min-w-0 text-xs text-muted-foreground @max-regular:basis-full">
+          <span
+            data-monospace={periodMono === true ? '' : undefined}
+            className={cn(
+              'min-w-0 text-xs text-muted-foreground @max-regular:basis-full',
+              periodMono === true && MONO,
+            )}
+          >
             {period}
           </span>
         ))}

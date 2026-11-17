@@ -71,6 +71,8 @@ export type EntityOptions<T> = CommonOptions & {
   href?: (row: T) => string | NavTarget | undefined
   icon?: (row: T) => IconComponent | undefined
   sub?: (row: T) => string | null | undefined
+  /** The secondary text is a time or an id: drawn in the mono face with tabular numerals. */
+  subMono?: boolean
   filter?: 'text'
   /**
    * `'content'` sizes the column to its widest loaded value, name or sub line (floor 18ch, cap
@@ -153,7 +155,10 @@ const COMMON = ['header', 'id', 'priority', 'card', 'sortable'] as const
 const OPTION_KEYS: Readonly<
   Record<KindName, { allowed: readonly string[]; required: readonly string[] }>
 > = {
-  entity: { allowed: [...COMMON, 'href', 'icon', 'sub', 'filter', 'width'], required: [] },
+  entity: {
+    allowed: [...COMMON, 'href', 'icon', 'sub', 'subMono', 'filter', 'width'],
+    required: [],
+  },
   text: { allowed: [...COMMON, 'filter', 'labels'], required: [] },
   number: { allowed: [...COMMON, 'unit', 'digits', 'footer'], required: [] },
   money: { allowed: [...COMMON, 'currency', 'footer'], required: ['currency'] },
@@ -382,6 +387,7 @@ export function col<T>(): Col<T> {
             href={o?.href?.(row)}
             icon={o?.icon?.(row)}
             sub={o?.sub?.(row) ?? undefined}
+            subMono={o?.subMono === true}
           />
         ),
         {

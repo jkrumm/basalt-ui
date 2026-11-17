@@ -11,6 +11,7 @@ import { StatCard } from './stat-card'
 import { StatCell } from './stat-cell'
 
 declare const text: string | undefined
+declare const flag: boolean | undefined
 declare const value: number | string | null | undefined
 declare const delta: Delta | undefined
 declare const status: Verdict | undefined
@@ -37,6 +38,7 @@ export const everyCellField: ReactElement = (
     delta={delta}
     status={status}
     sub={text}
+    subMono={flag}
     srText={text}
     meter={meter}
     chart={chart}
@@ -55,6 +57,7 @@ export const everyCardField: ReactElement = (
     delta={delta}
     status={status}
     sub={text}
+    subMono={flag}
     chart={chart}
     xLabels={xLabels}
     footer={footer}
@@ -66,6 +69,10 @@ export const everyCardField: ReactElement = (
 /** A maybe-fact drops itself like `null`, in either position. */
 export const maybeFacts: FootFacts = [fact, fact]
 export const leadingUndefined: FootFacts = [undefined, { label: 'Merged', value: 4 }]
+
+export const monoSub: ReactElement = (
+  <StatCell label="Last drop" value={3} unit="min" sub="2026-11-16 03:12" subMono />
+)
 
 // @ts-expect-error a footer still holds at most two facts
 export const noThirdFact: FootFacts = [fact, fact, fact]
