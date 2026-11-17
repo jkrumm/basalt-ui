@@ -40,3 +40,7 @@ export function report(send) {
   const handset = navigator.userAgentData?.mobile
   send({ handset })
 }
+export function markTouch() {
+  if (navigator.maxTouchPoints > 0) document.documentElement.classList.add('is-touch')
+}
+export const onDown = (e) => ('ontouchstart' in window ? e.preventDefault() : undefined)
