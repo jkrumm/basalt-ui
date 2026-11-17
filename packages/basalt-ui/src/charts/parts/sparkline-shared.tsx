@@ -18,8 +18,10 @@ export const PLOT_INSET = 3
 /** The densest a pooled line or bar series may draw (one point per pixel of a 480 px cell, halved). */
 export const LINE_CAP = 240
 export const BAR_CAP = 120
+/** The glyph `offScaleMarks` draws past a bounded axis; a capped spark point takes the same. */
+export const OFF_SCALE_CARET = '▲'
 
-export type Row = { v: number | null; at: Date | null }
+export type Row = { v: number | null; at: Date | null; label: string | null }
 
 const finite = (v: number | null): v is number => v !== null && Number.isFinite(v)
 
@@ -32,13 +34,17 @@ const toDate = (at: Date | number): Date | null => {
 export function toRows(series: readonly SparkPoint[]): Row[] {
   return series.map((p) => {
     if (typeof p === 'object' && p !== null) {
-      return { v: finite(p.value) ? p.value : null, at: toDate(p.at) }
+      return {
+        v: finite(p.value) ? p.value : null,
+        at: p.at === undefined ? null : toDate(p.at),
+        label: p.label === undefined || p.label === '' ? null : p.label,
+      }
     }
-    return { v: finite(p) ? p : null, at: null }
+    return { v: finite(p) ? p : null, at: null, label: null }
   })
 }
 
-const GAP = (at: Date | null): Row => ({ v: null, at })
+const GAP = (at: Date | null): Row => ({ v: null, at, label: null })
 
 /** The rows of a run of finite values that hold its peak and its dip, in order. */
 function peaks(run: readonly Row[]): Row[] {
@@ -105,12 +111,28 @@ export const meanOf = (rows: readonly Row[]): number | undefined => {
 export const compactNumber = (f: Format) => (v: number) =>
   f.number(v, { notation: 'compact', maximumFractionDigits: 1 })
 
-/** `42 · 12 Oct` for a dated point, `42` for a plain one, an em dash for a gap. */
+/** A point's name: its `label`, else its day, else `null`. */
+export function pointName(row: Row | undefined, f: Format): string | null {
+  if (row === undefined) return null
+  if (row.label !== null) return row.label
+  return row.at === null ? null : f.date(row.at, 'short', { year: undefined })
+}
+
+/** `42 · W41` for a named point, `42 · 12 Oct` for a dated one, `42` for a plain one, an em dash for a gap. */
 export function readoutOf(row: Row | undefined, format: (v: number) => string, f: Format): string {
   if (row === undefined || !finite(row.v)) return NON_FINITE
-  return row.at === null
-    ? format(row.v)
-    : `${format(row.v)} · ${f.date(row.at, 'short', { year: undefined })}`
+  const name = pointName(row, f)
+  return name === null ? format(row.v) : `${format(row.v)} · ${name}`
+}
+
+/**
+ * The polite announcement of a step: `W41: 42` (the name first, as a sentence reads), `42` for a
+ * plain point, `W41: no data` for a gap.
+ */
+export function announceOf(row: Row | undefined, format: (v: number) => string, f: Format): string {
+  const name = pointName(row, f)
+  const value = row === undefined || !finite(row.v) ? 'no data' : format(row.v)
+  return name === null ? value : `${name}: ${value}`
 }
 
 /** The sentence every chart carries: min, max and last. */
@@ -137,18 +159,22 @@ export type SparkFrameProps = {
   axisLabels: readonly [string, string, string] | undefined
   rows: readonly Row[]
   readout: (row: Row | undefined) => string
+  /** The sentence the live region reads for a step. */
+  announce: (row: Row | undefined) => string
   /** The row under a pointer, from its x and the plot element. */
   indexAt: (clientX: number, plot: HTMLElement) => number
   children: (active: number | null) => ReactNode
 }
 
 /**
- * The frame. Without `axisLabels` it is an image with a name and no tab stop. With them it is a
- * `slider` that can answer: arrow keys, Home and End (or a pointer) move a readout into the middle
- * slot of the label row, which at rest holds its own label.
+ * The frame. Without `axisLabels` it is an image with a name and no tab stop. With them it is a chart
+ * host as the chart kinds are (a `group` described as a chart, one tab stop) that can answer: arrow
+ * keys, Home and End (or a pointer) move a readout naming the point into the middle slot of the label
+ * row, which at rest holds its own label, and a polite live region reads each step.
  */
 export function SparkFrame(props: SparkFrameProps): ReactElement {
-  const { slot, ariaLabel, summary, height, width, axisLabels, rows, readout, indexAt } = props
+  const { slot, ariaLabel, summary, height, width, axisLabels, rows, readout, announce, indexAt } =
+    props
   const summaryId = useId()
   const [active, setActive] = useState<number | null>(null)
   const interactive = axisLabels !== undefined && rows.length > 0
@@ -177,13 +203,10 @@ export function SparkFrame(props: SparkFrameProps): ReactElement {
 
   const a11y = interactive
     ? ({
-        role: 'slider',
+        role: 'group',
+        'aria-roledescription': 'chart',
         tabIndex: 0,
-        'aria-orientation': 'horizontal',
-        'aria-valuemin': 0,
-        'aria-valuemax': last,
-        'aria-valuenow': current,
-        'aria-valuetext': readout(rows[current]),
+        'data-active-index': active ?? undefined,
         onKeyDown,
         onFocus: () => setActive((a) => a ?? last),
         onBlur: () => setActive(null),
@@ -208,6 +231,11 @@ export function SparkFrame(props: SparkFrameProps): ReactElement {
       <span id={summaryId} className="sr-only">
         {summary}
       </span>
+      {interactive && (
+        <span data-slot="spark-live" aria-live="polite" className="sr-only">
+          {active === null ? '' : announce(rows[active])}
+        </span>
+      )}
       <div
         data-slot="spark-plot"
         className="relative mx-0.75 min-h-0 flex-1"

@@ -528,9 +528,11 @@ export function focusKeysHost(el: Element): { host: string; key: KeyLog['key'] }
   const role = host.getAttribute('role') ?? host.getAttribute('aria-roledescription')
   const label = host.getAttribute('aria-label') ?? ''
   const tag = host.tagName.toLowerCase()
+  // A sparkline or mini bars rest on their latest point: stepping back is the move that answers.
+  const resting = host.matches('[data-slot="sparkline"], [data-slot="mini-bars"]')
   return {
     host: `${tag}${role ? `[${role}]` : ''} "${label.slice(0, 60)}"`,
-    key: chart ? 'ArrowRight' : 'ArrowDown',
+    key: !chart ? 'ArrowDown' : resting ? 'ArrowLeft' : 'ArrowRight',
   }
 }
 

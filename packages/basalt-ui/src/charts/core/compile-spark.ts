@@ -13,6 +13,8 @@ export type SparkInput = {
   height: number
   /** Vertical inset, px, so a stroke or the now dot at the extremes is not clipped. */
   padY?: number
+  /** Extra inset above the plot, px: the room an off-scale caret takes over a capped point. */
+  padTop?: number
   /** Reference values (a target, the mean, a band's two ends): they join the y domain and map through the same scale. */
   reference?: readonly number[]
 }
@@ -60,14 +62,15 @@ function runs(input: SparkInput, g: Pick<SparkGeometry, 'x' | 'y'>) {
 }
 
 export function sparkGeometry(input: SparkInput): SparkGeometry {
-  const { values, width, height, padY = 0, reference } = input
+  const { values, width, height, padY = 0, padTop = 0, reference } = input
   const known = values.filter(finite)
   const domain = extent([...known, ...(reference ?? [])]) ?? [0, 1]
   const [lo, hi] = domain
   const n = values.length
+  const top = padY + padTop
   const x = (i: number): number => (n <= 1 ? width / 2 : (i / (n - 1)) * width)
   const y = (v: number): number =>
-    hi === lo ? height / 2 : padY + (1 - (v - lo) / (hi - lo)) * (height - 2 * padY)
+    hi === lo ? (top + height - padY) / 2 : top + (1 - (v - lo) / (hi - lo)) * (height - top - padY)
   const parts = runs(input, { x, y })
   const line = parts
     .map(
@@ -88,6 +91,24 @@ export function sparkGeometry(input: SparkInput): SparkGeometry {
   const lastIndex = values.findLastIndex(finite)
   const last = lastIndex < 0 ? null : { x: x(lastIndex), y: y(values[lastIndex] as number) }
   return { line, area, x, y, domain, last }
+}
+
+/**
+ * Values held at `cap`: a value above it plots at the cap, and its index joins `over` (where the
+ * off-scale caret goes). Without a finite cap the values come back as they are.
+ */
+export function capValues(
+  values: readonly SparkValue[],
+  cap: number | undefined,
+): { values: readonly SparkValue[]; over: readonly number[] } {
+  if (cap === undefined || !Number.isFinite(cap)) return { values, over: [] }
+  const over: number[] = []
+  const held = values.map((v, i) => {
+    if (!finite(v) || v <= cap) return v
+    over.push(i)
+    return cap
+  })
+  return { values: held, over }
 }
 
 export type BarInput = {

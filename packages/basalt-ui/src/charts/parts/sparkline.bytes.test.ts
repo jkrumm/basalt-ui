@@ -23,9 +23,12 @@ export const ceilingKb = (measured: number): number => ceilingOf(measured) / KB
 /** charts-1a S2, gz over base0: the sparkline probe (40,699 B) and the bar probe (42,344 B) on the engine. */
 const S2 = { sparkline: 40_699, bar: 42_344 } as const
 
-/** Measured 2026-11-11, Vite 8 / Rolldown, React 19.3.0, minus base0 (gz bytes). */
-const MEASURED = { sparkline: 8924, miniBars: 8197, both: 9596 }
-const CEILING_KB = { sparkline: 9.5, miniBars: 8.5, both: 10 }
+/**
+ * Measured 2026-11-17, Vite 8 / Rolldown, React 19.3.0, minus base0 (gz bytes): +591 B on 2026-11-11
+ * for the chart host's live region, named points, the cap and its caret, and the dim on a step.
+ */
+const MEASURED = { sparkline: 9515, miniBars: 8591, both: 10268 }
+const CEILING_KB = { sparkline: 10, miniBars: 9, both: 11 }
 
 async function gzOf(entry: string): Promise<number> {
   const result = await build({

@@ -170,7 +170,7 @@ layout('Sparkline and MiniBars', () => {
   }
 
   describe('keyboard and pointer, desktop', () => {
-    const slider = IN('cs-line', '[role="slider"]')
+    const slider = IN('cs-line', '[aria-roledescription="chart"]')
     const middle = (page: LayoutPage): Promise<string> =>
       page.raw.evaluate(
         () =>
@@ -237,5 +237,48 @@ layout('Sparkline and MiniBars', () => {
       await page.settle()
       expect(await middle(page)).toBe('Today')
     })
+  })
+
+  describe('a named, capped sparkline in a StatCard (n27)', () => {
+    const host = IN('cs-weeks', '[aria-roledescription="chart"]')
+    const read = (page: LayoutPage) =>
+      page.raw.evaluate(() => {
+        const box = document.querySelector('[data-testid="cs-weeks"]')!
+        return {
+          middle: box.querySelector('[data-slot="spark-labels"]')!.children[1]!.textContent ?? '',
+          live: box.querySelector('[data-slot="spark-live"]')?.textContent ?? '',
+          stroke: box.querySelector('[data-slot="spark-line"]')?.getAttribute('stroke-opacity'),
+        }
+      })
+
+    test('two steps back each name the week, are announced, and dim the line', async () => {
+      const page = await open(DESKTOP_1440)
+      await page.raw.focus(host)
+      await page.raw.keyboard.press('ArrowLeft')
+      expect(await read(page)).toEqual({ middle: '7.9 h · W51', live: 'W51: 7.9 h', stroke: '0.5' })
+      await page.raw.keyboard.press('ArrowLeft')
+      expect(await read(page)).toMatchObject({ middle: '6.6 h · W50', live: 'W50: 6.6 h' })
+      await page.raw.keyboard.press('Tab')
+      expect(await read(page)).toEqual({ middle: 'Weekly', live: '', stroke: '1' })
+    })
+
+    for (const viewport of [DESKTOP_1440, PHONE_SMALL]) {
+      test(`the outlier's caret sits inside the chart box at ${viewport.width}`, async () => {
+        const page = await open(viewport)
+        const probe = await page.raw.evaluate(() => {
+          const box = document.querySelector('[data-testid="cs-weeks"] [data-slot="sparkline"]')!
+          const carets = [...box.querySelectorAll('[data-slot="spark-caret"]')]
+          const outer = box.getBoundingClientRect()
+          return {
+            count: carets.length,
+            inside: carets.every((c) => {
+              const r = c.getBoundingClientRect()
+              return r.top >= outer.top - 0.5 && r.width > 0 && r.left >= outer.left - 0.5
+            }),
+          }
+        })
+        expect(probe).toEqual({ count: 1, inside: true })
+      })
+    }
   })
 })
