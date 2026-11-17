@@ -9,6 +9,9 @@ import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { StrictMode } from 'react'
 import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { RouteError } from './components/route-error'
+import { RouteMissing } from './components/route-missing'
+import { RoutePending } from './components/route-pending'
 import { PAGE_FORMAT } from './demo/page-format'
 import { routeTree } from './routeTree.gen'
 
@@ -19,6 +22,9 @@ const router = createRouter({
   routeTree,
   context: { queryClient },
   ...defaults.options,
+  defaultPendingComponent: RoutePending,
+  defaultErrorComponent: RouteError,
+  defaultNotFoundComponent: RouteMissing,
   Wrap: ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   ),
