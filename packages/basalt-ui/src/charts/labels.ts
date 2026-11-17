@@ -310,7 +310,11 @@ export function endLabelOffset(
   return { dx: -END_LABEL_DX, dy: side === 'above' ? END_LABEL_FLIP_DY : END_LABEL_FLIP_DY_BELOW }
 }
 
-export function endLabelMarks<T, X extends ChartX>(plan: readonly EndLabel<T, X>[]): ChartMarks {
+/** `paint` is the label's fill for a series colour: its line's own paint, so a label dims with its line. */
+export function endLabelMarks<T, X extends ChartX>(
+  plan: readonly EndLabel<T, X>[],
+  paint: (color: string) => string = (color) => color,
+): ChartMarks {
   return plan.map(({ series, row, anchor, side, nudge }) =>
     decorative(
       text([row], {
@@ -318,7 +322,7 @@ export function endLabelMarks<T, X extends ChartX>(plan: readonly EndLabel<T, X>
         x: rowX,
         y: 'y',
         text: () => series.label,
-        fill: series.color,
+        fill: paint(series.color),
         fontSize: BASALT.text.micro,
         anchor,
         dx: endLabelOffset(anchor, side).dx,
