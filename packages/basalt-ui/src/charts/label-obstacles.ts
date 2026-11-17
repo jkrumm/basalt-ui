@@ -83,6 +83,20 @@ export function ruleBoxes(
 }
 
 /**
+ * Vertical reference rules as boxes: each spans the plot's height at its share of the width, a
+ * hairline and its air wide. `fractions` are the rules' plot fractions (a rule off the plot has none).
+ */
+export const xRuleBoxes = (fractions: readonly number[], plot: PlotPx): LabelBox[] =>
+  fractions
+    .filter((f) => f >= 0 && f <= 1)
+    .map((f) => ({
+      left: f * plot.width - RULE_REACH,
+      top: 0,
+      width: 2 * RULE_REACH,
+      height: plot.height,
+    }))
+
+/**
  * A line path as boxes: each stretch of at most {@link PIECE_PX} gets the box of its two ends, so a
  * diagonal costs the label only the room under it. A run of one point is a small box. `runs` are
  * polylines in plot px, broken where the line has a gap.

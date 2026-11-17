@@ -38,15 +38,24 @@ import {
   edgeFraction,
   matchBandKeys,
   offScaleMarks,
+  stackCapMarks,
   CARET_SIZE,
   offScaleSide,
   xRoomForDots,
   strideKeepEnds,
 } from './axis-ext'
+import { barValueLabels } from './bar-values'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
 import { claimedLabelBoxes } from '../labels'
 import type { LabelBox as PxBox } from '../chart-labels'
-import { captionPx, pathBoxes, pxBox, ruleBoxes, withHostObstacles } from '../label-obstacles'
+import {
+  captionPx,
+  pathBoxes,
+  pxBox,
+  ruleBoxes,
+  withHostObstacles,
+  xRuleBoxes,
+} from '../label-obstacles'
 import type { PlotPx } from '../label-obstacles'
 import { boxesMeet, dotBox, placeRefLabel, refLabelDy } from '../ref-label'
 import type { DotMark, LabelBox, RefLabelPoint } from '../ref-label'
@@ -1547,7 +1556,9 @@ function tooltipSpec<T, X extends ChartX>(opts: {
           : axes.axisOf(axes.onRight(s) ? 'right' : 'left').format(v)
         // A lone series whose value already ends in its own name (`27 sessions`) prints the name once.
         const bare = input.series.length === 1 ? unitIsName(s.label, text) : null
-        rows.push(seriesRow(s, bare ?? text, input.highlighted === s.key))
+        // A highlighted datum's swatch wears the accent, as its bar does.
+        const swatch = s.highlight?.(d) ? { ...s, color: CV.brand } : s
+        rows.push(seriesRow(swatch, bare ?? text, input.highlighted === s.key))
       }
       const extra: readonly ChartTooltipRow[] =
         (input.tooltip || undefined)?.rows?.(d, { visible, hidden }) ?? []
@@ -1889,7 +1900,8 @@ export function compileCartesian<T, X extends ChartX>(
         }
         return out.filter((b) => b.width > 0 && b.height > 0)
       }
-      const hostBoxes = (): PxBox[] => {
+      /** Everything a label keeps clear of but the bar bodies, in plot px. */
+      const hostBoxesBesidesBars = (): PxBox[] => {
         const ctx = captionContext()
         const frame = { width: ctx.plotWidth, height: ctx.plotHeight }
         captionMarks()
@@ -1900,7 +1912,6 @@ export function compileCartesian<T, X extends ChartX>(
           ...ctx.placed.right.map((b) => pxBox(b, rightDomain, frame)),
           ...ctx.claimed.map((b) => pxBox(b, axes.left.domain, frame)),
           ...lineBoxes(frame),
-          ...barBoxes(frame),
           ...ruleBoxes(
             (input.refLines ?? []).flatMap((r, i) =>
               input.hidden?.has(refLegendKey(i))
@@ -1909,12 +1920,70 @@ export function compileCartesian<T, X extends ChartX>(
             ),
             frame,
           ),
+          ...xRuleBoxes(
+            (input.xRefLines ?? []).flatMap((l) => edgeFraction(model, l.x, l.at) ?? []),
+            frame,
+          ),
         ]
       }
-      const kindMarks = withHostObstacles(hostBoxes, () => input.marks(plot))
+      const hostBoxes = (): PxBox[] => {
+        const ctx = captionContext()
+        return [
+          ...hostBoxesBesidesBars(),
+          ...barBoxes({ width: ctx.plotWidth, height: ctx.plotHeight }),
+        ]
+      }
+      // The value labels of the bars that ask for them, placed before the page's own marks so those
+      // keep clear of the labels too. Reading the plot size recompiles once on the measured area.
+      const valueLabels = (() => {
+        const bars = visible.filter(isBar)
+        const none = { marks: [] as ChartMarks, boxes: [] as PxBox[] }
+        if (!model.band || !bars.some((s) => s.values !== undefined && s.values !== false))
+          return none
+        const ctx = captionContext()
+        const onRight = (s: ChartSeries<T>): 'left' | 'right' =>
+          axes.onRight(s) && axes.right !== null ? 'right' : 'left'
+        return barValueLabels<T, X>({
+          series: bars,
+          data: input.data,
+          x: input.x,
+          fraction: model.fraction,
+          barHalf,
+          stack: input.stack,
+          sideOf: onRight,
+          domainOf: (side) => axes.axisOf(side).domain,
+          scaleOf: (side) => axes.scaleId(side),
+          formatOf: (side) => axes.axisOf(side).format,
+          frame: { width: ctx.plotWidth, height: ctx.plotHeight },
+          focused: input.focused ?? null,
+          obstacles: hostBoxes(),
+          clear: hostBoxesBesidesBars(),
+        })
+      })()
+      const kindMarks = withHostObstacles(
+        () => [...hostBoxes(), ...valueLabels.boxes],
+        () => input.marks(plot),
+      )
       const { xPlotWidth, over, zoneCaptions } = captionMarks()
+      // A stack's bars are capped together: its total past the edge is one caret, not one per segment.
+      const stacked = input.stack === 'stacked'
+      const stackedBars = stacked ? visible.filter((s) => isBar(s) && !axes.onRight(s)) : []
+      // `isBounded` leaves a stack out (a stack's domain grows to its totals), so a page's own
+      // domain is the cap here: a total past it is what the plot's edge clips.
+      const stackCapped = input.y?.domain !== undefined && input.y.domain !== 'auto'
+      const stackCaps =
+        stackedBars.length === 0 || !stackCapped
+          ? []
+          : stackCapMarks({
+              series: stackedBars,
+              data: input.data,
+              x: input.x,
+              fraction: model.fraction,
+              domain: capped.axisOf('left').domain,
+              edge: axes.left.domain,
+            })
       const offScale = offScaleMarks({
-        series: visible,
+        series: stacked ? visible.filter((s) => !stackedBars.includes(s)) : visible,
         data: input.data,
         x: input.x,
         fraction: model.fraction,
@@ -1934,6 +2003,8 @@ export function compileCartesian<T, X extends ChartX>(
           ...over,
           ...zoneCaptions,
           ...offScale,
+          ...stackCaps,
+          ...valueLabels.marks,
           ...xRefLineMarks({
             lines: input.xRefLines,
             fraction: (x, at) => edgeFraction(model, x, at),
@@ -1951,7 +2022,11 @@ export function compileCartesian<T, X extends ChartX>(
           cls,
           width,
           zoneScale:
-            under.length > 0 || names || (input.xRefLines?.length ?? 0) > 0 || offScale.length > 0,
+            under.length > 0 ||
+            names ||
+            (input.xRefLines?.length ?? 0) > 0 ||
+            offScale.length > 0 ||
+            stackCaps.length > 0,
         }),
         theme: CHART_THEME,
         ...(input.bare === true

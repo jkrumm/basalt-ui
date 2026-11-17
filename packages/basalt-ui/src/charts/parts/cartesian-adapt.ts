@@ -59,6 +59,12 @@ export function toEngineSeries<D>(s: Series<D>): ChartSeries<D> {
     }),
   }
   if (s.failed === true) return { ...base, note: s.note ?? 'unavailable' }
+  if (s.mark === 'bar')
+    return {
+      ...base,
+      ...(s.values !== undefined && { values: s.values }),
+      ...(s.highlight !== undefined && { highlight: s.highlight }),
+    }
   if (s.mark !== 'line') return base
   return {
     ...base,
