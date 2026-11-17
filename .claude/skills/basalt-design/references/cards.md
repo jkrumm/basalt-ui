@@ -16,6 +16,7 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 
 - The card is the console card: a header with the title and its context line, the figure with its delta pill inside the inset one surface step down, label and value pairs in the footer. The parts that give it are the [ChartCard](node_modules/basalt-ui/docs/chart-card.md) `figure`, the [StatCard](node_modules/basalt-ui/docs/stat-card.md) and the inset of the [Card](node_modules/basalt-ui/docs/card.md).
 - Every card of a page carries its figure's delta pill and footer pairs, including the second and third: a card without them reads as a lesser one (n13, n16, n04, n09, c14).
+- The secondary card is a card too: the per-month chart under n28's headline was a flush chart without inset, figure or footer, and its subtitle repeated its title (.16, .24); n32's bar list lacked the inset and the footer (.64). Give each its figure with its pill and its two footer pairs, with a subtitle that states a fact.
 - Ids, repo names, hashes and timestamps are monospace (a `font-mono` text whose date comes from the kit's `useFormat`), in the header, the figure's sub line and the footer pairs; the time zone is named once, in the context line (n03, n07, n10, n17, n18).
 - The title is a noun phrase in the header and the figure is the largest thing in the inset; a small title over free text on a flush surface is the defect, and the part is reported when it cannot draw the content ([anti-defaults](anti-defaults.md)).
 
