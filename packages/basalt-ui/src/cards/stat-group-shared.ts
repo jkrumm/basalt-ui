@@ -7,6 +7,9 @@ export type StatGroupVariant = 'strip' | 'cards'
 
 export const StatGroupContext = createContext<StatGroupVariant | null>(null)
 
+/** True while the group draws one message for all its cells (every cell failed or is empty alike). */
+export const StatGroupCollapsedContext = createContext(false)
+
 /** How many frames (`DataPanel`, `StatGroup`) enclose the reader. */
 export const FrameDepthContext = createContext(0)
 

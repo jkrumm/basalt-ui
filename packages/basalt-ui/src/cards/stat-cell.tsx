@@ -15,7 +15,13 @@ import { Meter } from '../ui/meter'
 import { couldNotLoad } from '../common/could-not-load'
 import type { CardTarget, StatCellProps as ContractProps, StatRow } from './contract'
 import { StatusMark, formatValue, useStaleText } from './stat-card-parts'
-import { MAX_ROWS, StatGroupContext, useAboutLabel, warnOnce } from './stat-group-shared'
+import {
+  MAX_ROWS,
+  StatGroupCollapsedContext,
+  StatGroupContext,
+  useAboutLabel,
+  warnOnce,
+} from './stat-group-shared'
 
 /**
  * The contract's `StatCellProps` with `rows` also held to a tuple of at most four, so a fifth row is a
@@ -90,6 +96,7 @@ export function StatCell(props: StatCellProps): ReactElement {
   const { label, qualifier, info, value, unit, delta, status, sub, srText, meter, chart } = props
   const { href, onClick, phase, empty, swatch, subMono } = props
   const variant = useContext(StatGroupContext)
+  const collapsed = useContext(StatGroupCollapsedContext)
   const about = useAboutLabel()
   const resolved = resolvePhase({ phase, empty })
   const staleText = useStaleText(resolved.tag === 'stale' && resolved.refreshFailed)
@@ -101,6 +108,9 @@ export function StatCell(props: StatCellProps): ReactElement {
   const root = cn(
     'relative grid min-w-0 grid-cols-1',
     variant === null ? 'grid-rows-[repeat(9,auto)]' : 'row-span-9 mb-3 grid-rows-subgrid',
+    // The group draws one message over the cells: a strip keeps each caption, cards hold only their size.
+    collapsed && variant === 'cards' && 'invisible',
+    collapsed && variant === 'strip' && '[&>:not([data-slot=stat-caption])]:invisible',
   )
   const inner = (
     <>
@@ -142,6 +152,7 @@ export function StatCell(props: StatCellProps): ReactElement {
         solo={!spans}
         label={label}
         empty={resolved.tag === 'empty' ? resolved.empty : undefined}
+        collapsed={collapsed}
       />
       {meter !== undefined && (
         <div data-slot="stat-meter" aria-hidden={hidden} className={T_METER}>
@@ -169,7 +180,7 @@ export function StatCell(props: StatCellProps): ReactElement {
           {body && <Row row={row} />}
         </div>
       ))}
-      {resolved.tag === 'empty' && spans && (
+      {resolved.tag === 'empty' && spans && !collapsed && (
         <div data-slot="stat-empty" className={SPAN_BODY}>
           <EmptyLine empty={resolved.empty} />
         </div>
@@ -232,6 +243,8 @@ type FigureProps = {
   /** The cell's label: the default error text names it, as a card's title does. */
   label: string
   empty: Empty | undefined
+  /** The group draws one message for every cell: this figure track holds its height and says nothing. */
+  collapsed: boolean
 }
 
 function Figure({
@@ -244,7 +257,11 @@ function Figure({
   solo,
   label,
   empty,
+  collapsed,
 }: FigureProps): ReactElement {
+  if (collapsed && (resolved.tag === 'error' || resolved.tag === 'empty')) {
+    return <div data-slot="stat-figure" aria-hidden="true" className={T_FIGURE} />
+  }
   if (resolved.tag === 'loading') {
     return (
       <div data-slot="stat-figure" aria-hidden="true" className={T_FIGURE}>
@@ -358,7 +375,7 @@ function MeterSkeleton(): ReactElement {
   )
 }
 
-function ErrorLine({
+export function ErrorLine({
   kind,
   message,
   retry,
@@ -401,7 +418,7 @@ function ErrorLine({
   )
 }
 
-function EmptyLine({ empty }: { empty: Empty }): ReactNode {
+export function EmptyLine({ empty }: { empty: Empty }): ReactNode {
   const t = useMessages(cards)
   const { cause, action, filtered } = empty
   return (
