@@ -8,7 +8,8 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { useEffect } from 'react'
 import { useChartFocus } from './focus'
 import { dimmedHuePaint, dimmedPaint, linePaint } from './marks'
-import { CartesianChart } from './parts/cartesian'
+import { Lines } from './parts/lines'
+import type { LineSeries } from './parts/lines'
 import type { ChartSeries, PlotContext } from './types'
 
 afterEach(cleanup)
@@ -19,24 +20,24 @@ const A = { light: 'var(--basalt-line)', dark: 'var(--basalt-line)' }
 const B = { light: 'var(--basalt-good)', dark: 'var(--basalt-good)' }
 let handle: ReturnType<typeof useChartFocus<Row>> | undefined
 
+const SERIES: LineSeries<Row>[] = [
+  { key: 'a', label: 'Alpha', color: A, mark: 'line', y: (d) => d.a },
+  { key: 'b', label: 'Beta', color: B, mark: 'line', y: (d) => d.b },
+]
+
 function Chart({ lines }: { lines: 1 | 2 }) {
   const focus = useChartFocus(ROWS, { announce: (d) => String(d.at) })
   useEffect(() => {
     handle = focus
   })
   return (
-    <CartesianChart
-      ariaLabel="Two lines"
+    <Lines<Row>
+      label="Two lines"
       data={ROWS}
       x={{ value: (d) => d.at }}
       focus={focus}
       naming="endLabels"
-      series={[
-        { key: 'a', label: 'Alpha', color: A, mark: 'line', y: (d) => d.a },
-        ...(lines === 2
-          ? [{ key: 'b', label: 'Beta', color: B, mark: 'line' as const, y: (d) => d.b }]
-          : []),
-      ]}
+      series={SERIES.slice(0, lines)}
     />
   )
 }
