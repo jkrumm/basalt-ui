@@ -34,7 +34,9 @@ describe('home to presentation', () => {
       test(`${home} draws ${presentation}`, () => {
         expect(presentationOf(home)).toBe(presentation as ControlPresentation)
         const { container } = render(
-          <ControlHome home={home}>{filterSlot([enumSpec(`k.${home}`)]).render()}</ControlHome>,
+          <ControlHome home={home}>
+            {filterSlot([enumSpec(`k.${home}`), enumSpec(`j.${home}`)]).render()}
+          </ControlHome>,
         )
         // A page-bar or section-header slot draws the folding FilterSet, which carries the presentation.
         const folding = home === 'page-bar' || home === 'section-header'
@@ -45,6 +47,14 @@ describe('home to presentation', () => {
       })
     }
   }
+
+  test('a pill home draws a lone enum as its input, not as a pill', () => {
+    const { container } = render(
+      <ControlHome home="page-bar">{filterSlot([enumSpec('lone')]).render()}</ControlHome>,
+    )
+    expect(container.querySelector('[data-slot="filter-set"]')).toBeNull()
+    expect(container.querySelector('[data-slot="control-view"]')).not.toBeNull()
+  })
 
   test('every home is covered', () => {
     expect(homes.toSorted()).toEqual(Object.values(expected).flat().toSorted())

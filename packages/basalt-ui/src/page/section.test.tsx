@@ -203,6 +203,10 @@ describe('Section controls home', () => {
         }),
         'Range',
       ),
+      spec(
+        memoryHandle<string>('t', 'a', { kind: 'enum', options: [{ value: 'a', label: 'A' }] }),
+        'Team',
+      ),
     ])
     render(<Section title="Latency" controls={slot} />)
     expect(

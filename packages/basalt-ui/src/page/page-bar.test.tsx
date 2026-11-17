@@ -134,7 +134,18 @@ describe('PageBar without a shell', () => {
     })
     render(
       <Page>
-        <PageBar controls={filterSlot([spec(range, 'Range')])} />
+        <PageBar
+          controls={filterSlot([
+            spec(range, 'Range'),
+            spec(
+              memoryHandle<string>('team', 'a', {
+                kind: 'enum',
+                options: [{ value: 'a', label: 'A' }],
+              }),
+              'Team',
+            ),
+          ])}
+        />
       </Page>,
     )
     const controls = band()!.querySelector('[data-slot="page-bar-controls"]')!
