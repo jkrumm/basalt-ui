@@ -8,7 +8,8 @@
  * is flagged only when its callback refetches. Raw `WebSocket` outside a seam is the same form as
  * `EventSource`: the contract ships no client, so the message names `createChannel` and the seam.
  *
- * Known limits: `reader-loop` reads a `for await` over a `.body` member, a `.pipeTo(new WritableStream(…))`
+ * Known limits: `reader-loop` reads a `for await` over a `.body` member or a `.body.pipeThrough(…)`
+ * chain (a decoded body), inline or through a `const` bound to one (top level or block, by spelling), a `.pipeTo(new WritableStream(…))`
  * on a chain rooted in `.body`, a `getReader()` read in a
  * loop and a `getReader()` whose reader is read inside a named function that refers to itself (a
  * `read().then(function pump() { … read().then(pump) })` or a recursive async function); a pump split
@@ -229,9 +230,33 @@ function isBodyPipeToSink(call: Node): boolean {
   return false
 }
 
+/** Through `!`, `as` and `?.`: the expression the wrapper holds. */
+function unwrapped(node: Node | undefined): Node | undefined {
+  let at = node
+  while (
+    at?.type === 'TSNonNullExpression' ||
+    at?.type === 'TSAsExpression' ||
+    at?.type === 'ChainExpression'
+  ) {
+    at = child(at, 'expression')
+  }
+  return at
+}
+
+/** `res.body` or `res.body!.pipeThrough(new TextDecoderStream())…`: a body, or a pipeThrough chain on one. */
+function isBodyStream(node: Node | undefined): boolean {
+  const at = unwrapped(node)
+  if (at?.type === 'MemberExpression') {
+    return at['computed'] !== true && nameOf(child(at, 'property')) === 'body'
+  }
+  return isMethodCall(at, 'pipeThrough') && isBodyStream(child(child(at, 'callee'), 'object'))
+}
+
 export const readerLoop: AstForm = {
   id: 'reader-loop',
   detect: ({ report }): Visitor => {
+    // `const s = res.body!.pipeThrough(…)`, at the top level or in a block: a stream by spelling.
+    const bodyStreams = new Set<string>()
     const readers = new Map<string, Node>()
     const looped = new Set<string>()
     const reads: { reader: string; fn: Node | undefined }[] = []
@@ -249,15 +274,29 @@ export const readerLoop: AstForm = {
       loops as unknown as Visitor,
       {
         ForOfStatement(node) {
-          let source = child(node, 'right')
-          while (source?.type === 'TSAsExpression' || source?.type === 'TSNonNullExpression') {
-            source = child(source, 'expression')
+          if (node['await'] !== true) return
+          const source = unwrapped(child(node, 'right'))
+          const name = nameOf(source)
+          if (name !== undefined && bodyStreams.has(name)) report(node, `for await … ${name}`)
+          else if (isBodyStream(source)) {
+            report(
+              node,
+              isMethodCall(source, 'pipeThrough')
+                ? 'for await … .body.pipeThrough'
+                : 'for await … .body',
+            )
           }
-          if (node['await'] !== true || source?.type !== 'MemberExpression') return
-          if (source['computed'] === true || nameOf(child(source, 'property')) !== 'body') return
-          report(node, 'for await … .body')
         },
         VariableDeclarator(node) {
+          const parent = node['parent'] as Node | undefined
+          const id = nameOf(child(node, 'id'))
+          if (
+            parent?.['kind'] === 'const' &&
+            id !== undefined &&
+            isBodyStream(child(node, 'init'))
+          ) {
+            bodyStreams.add(id)
+          }
           let init = child(node, 'init')
           if (init?.type === 'AwaitExpression') init = child(init, 'argument')
           // `res.body?.getReader()` is a ChainExpression around the call: read it as `res.body!.getReader()`.

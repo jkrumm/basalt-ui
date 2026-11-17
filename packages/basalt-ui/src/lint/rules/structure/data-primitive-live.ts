@@ -3,10 +3,10 @@
  * `staleTime: 'static'` inside a `liveQuery` argument, inside the options of a `useQuery`,
  * `useSuspenseQuery`, `useInfiniteQuery` or `useSuspenseInfiniteQuery` call, or in options bound to
  * a name that is then passed to `liveQuery` by name (`const opts = queryOptions({ staleTime:
- * 'static' }); liveQuery(opts, ...)`). `staleTime: Infinity` (or `Number.POSITIVE_INFINITY`) inside
- * a `liveQuery` argument, or in options passed to it by name, reports too: the class owns
- * `staleTime`, and the dev assert in `liveQuery` throws on the key; `Infinity` in a plain
- * `useQuery` stays legal. A plain `queryOptions({ staleTime: 'static' })` that nothing
+ * 'static' }); liveQuery(opts, ...)`). Any `staleTime` key inside a `liveQuery` argument, or in
+ * options passed to it by name, reports too, whatever its value (`Infinity`, `60 * 60 * 1000`, a
+ * top-level `const FOREVER = Infinity`): the class owns `staleTime`, and the dev assert in
+ * `liveQuery` throws on the key; a numeric or `Infinity` stale time in a plain `useQuery` stays legal. A plain `queryOptions({ staleTime: 'static' })` that nothing
  * in the file passes on stays legal. A query with a `'static'` observer is immune
  * to `invalidateQueries` and `refetchQueries`, so the same options object used in a loader and a
  * component silently ignores a push, a global refresh and a deploy. `liveQuery(..., 'static')`
@@ -47,7 +47,10 @@ const isInfinity = (value: Node): boolean =>
     nameOf(value['object']) === 'Number' &&
     nameOf(value['property']) === 'POSITIVE_INFINITY')
 
-/** A non-computed `staleTime: 'static'` property, or `Infinity` when `live` options are read. */
+/**
+ * A non-computed `staleTime: 'static'` property, or any `staleTime` when `live` options are read:
+ * liveQuery's dev assert throws on the key whatever its value, as the class owns it.
+ */
 function isStaticStaleTime(node: Node, live: boolean): boolean {
   if (node.type !== 'Property' || node['computed'] === true) return false
   const key = node['key']
@@ -57,7 +60,7 @@ function isStaticStaleTime(node: Node, live: boolean): boolean {
       : nameOf(key)
   const value = node['value']
   if (keyName !== 'staleTime' || !isNode(value)) return false
-  if (live && isInfinity(value)) return true
+  if (live) return true
   return value.type === 'Literal' && value['value'] === 'static'
 }
 
@@ -77,10 +80,13 @@ function staticStaleTimes(root: Node, live = false): Node[] {
   return found
 }
 
-const staleTimeSubject = (property: Node): string =>
-  isInfinity(property['value'] as Node)
-    ? 'staleTime: Infinity inside liveQuery'
-    : "staleTime: 'static'"
+const staleTimeSubject = (property: Node): string => {
+  const value = property['value'] as Node
+  if (isInfinity(value)) return 'staleTime: Infinity inside liveQuery'
+  return value.type === 'Literal' && value['value'] === 'static'
+    ? "staleTime: 'static'"
+    : 'staleTime inside liveQuery'
+}
 
 const QUERY_HOOKS: ReadonlySet<string> = new Set([
   'useQuery',
@@ -119,13 +125,12 @@ export const liveStaticStale: AstForm = {
       },
       'Program:exit'() {
         for (const { node, name } of passed) {
-          if (staticOptions.has(name))
-            report(node, `${name}: staleTime 'static' or Infinity passed to liveQuery`)
+          if (staticOptions.has(name)) report(node, `${name}: staleTime passed to liveQuery`)
         }
       },
     }
   },
-  fix: "Declare a one-shot query with liveQuery(queryOptions, 'static') (the class is staleTime Infinity); a literal staleTime 'static' makes the query immune to invalidateQueries, so a pushed invalidation, a global refresh and a deploy never reach it",
+  fix: "The freshness class owns staleTime (liveQuery throws in dev on the key): drop it and name the class, liveQuery(queryOptions, 'static') for a one-shot query (the class is staleTime Infinity); a literal staleTime 'static' makes the query immune to invalidateQueries, so a pushed invalidation, a global refresh and a deploy never reach it",
   next: "Use the 'standard' class when the data should refresh on focus",
   fixture: 'structure-rest/data-primitive-live-static-stale-time.tsx',
 }
