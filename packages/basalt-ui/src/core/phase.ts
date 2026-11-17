@@ -33,11 +33,18 @@ export type FrameState = {
 /** One labelled fact in a footer. `value` is data, never a node, so every card formats alike. */
 export type Fact = { label: string; value: string | number }
 
-/** Capped at 2; `null` drops one, so a conditional fact type-checks without a hole. */
-export type FootFacts = readonly [Fact | null, (Fact | null)?]
+/**
+ * Capped at 2; `null` or `undefined` drops one, so a conditional fact type-checks without a hole.
+ */
+export type FootFacts = readonly [Fact | null | undefined, (Fact | null | undefined)?]
 
-/** The header every frame shares. */
-export type FrameHead = { title: string; subtitle?: string; icon?: IconComponent; info?: string }
+/** The header every frame shares. An `undefined` field is an absent one. */
+export type FrameHead = {
+  title: string
+  subtitle?: string | undefined
+  icon?: IconComponent | undefined
+  info?: string | undefined
+}
 
 /** The six states `data-phase` prints. */
 export type PhaseTag = 'ready' | 'loading' | 'offline' | 'stale' | 'error' | 'empty'

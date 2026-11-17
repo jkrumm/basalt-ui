@@ -43,24 +43,25 @@ export type CardTarget =
   | { onClick: () => void; href?: never }
   | { href?: never; onClick?: never }
 
+/** An `undefined` field is an absent one, so a maybe-value passes straight. */
 export type StatCardProps = CardTarget &
   FrameHead &
   FrameState & {
     /** `null` renders a muted dash: absent, never zero. */
     value: number | string | null
-    unit?: string
+    unit?: string | undefined
     /** A change against a period; `value` prints as given, so pass `'+12%'`, never the fraction 0.12. */
-    delta?: Delta
+    delta?: Delta | undefined
     /** The verdict home: dot plus word. A card never takes a hue. */
-    status?: Verdict
-    sub?: string
+    status?: Verdict | undefined
+    sub?: string | undefined
     /** Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16). */
-    chart?: BoxSlot
+    chart?: BoxSlot | undefined
     /** The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alone. */
-    xLabels?: readonly [string, string, string]
-    footer?: FootFacts
-    controls?: ControlsSlot<'widget'>
-    menu?: CardMenu
+    xLabels?: readonly [string, string, string] | undefined
+    footer?: FootFacts | undefined
+    controls?: ControlsSlot<'widget'> | undefined
+    menu?: CardMenu | undefined
   }
 
 export type StatRow = {
@@ -70,23 +71,24 @@ export type StatRow = {
   bar?: { value: number; max: number }
 }
 
+/** An `undefined` field is an absent one, so a maybe-value passes straight. */
 export type StatCellProps = CardTarget &
   FrameState & {
     label: string
     /** The series colour of the mark this figure reads, drawn as a dot before the label. */
-    swatch?: { light: string; dark: string }
-    qualifier?: string
-    info?: string
-    value?: number | string | null
-    unit?: string
-    delta?: Delta
-    status?: Verdict
-    sub?: string
-    srText?: string
-    meter?: MeterSpec
+    swatch?: { light: string; dark: string } | undefined
+    qualifier?: string | undefined
+    info?: string | undefined
+    value?: number | string | null | undefined
+    unit?: string | undefined
+    delta?: Delta | undefined
+    status?: Verdict | undefined
+    sub?: string | undefined
+    srText?: string | undefined
+    meter?: MeterSpec | undefined
     /** Called in a 28 px box. */
-    chart?: BoxSlot
-    rows?: readonly StatRow[]
+    chart?: BoxSlot | undefined
+    rows?: readonly StatRow[] | undefined
   }
 
 export type DataPanelProps = FrameHead &
