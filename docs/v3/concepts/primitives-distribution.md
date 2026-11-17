@@ -96,7 +96,7 @@ Every part sets `data-slot` to the kebab-case of its export (`DialogContent` is 
 | `md` + `shape="icon"` | `size-ctl`                                   | 44 visible                   | `ActionIcon` `md` 28, `lg` 34, `size={28}`, `size={40}`       |
 | `sm` + `shape="icon"` | 24                                           | 24 visible, `::after` hit 44 | `ActionIcon` `xs` 18, `sm` 22, `size={24}`                    |
 
-**Unwrapped on purpose:** avatar, context-menu (`MenuContent anchor` covers it), menubar, navigation-menu, otp-field, preview-card, each reachable through CE2. `merge-props` and `use-render` stay internal; `csp-provider` and `direction-provider` have no consumer.
+**Unwrapped on purpose:** avatar, context-menu (`MenuContent anchor` covers it), menubar, navigation-menu, otp-field, each reachable through CE2. `merge-props` and `use-render` stay internal; `csp-provider` and `direction-provider` have no consumer.
 
 **Which job, which part:** fewer than 10 known values, `Select`; row-level or an OS picker on phones, `NativeSelect`; search, async, multi or 50+ options, `Combobox`; free text with suggestions, `Autocomplete`; a whole row, chip or disclosure that is one button, `Pressable`; modal decision, `Dialog`, destructive confirm `AlertDialog`; edit beside the page, `Sheet`; name an icon, `Tooltip`; explain something on a frame, the `info` prop; anywhere else, `Popover`.
 
