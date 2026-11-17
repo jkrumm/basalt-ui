@@ -1,0 +1,30 @@
+{
+  "why": "Expression cycle 9 (docs/v3/cycles/expression-9.md) lost round-0 points to kit behaviours that need no contract field. Each serves two cases or more. (1) At 390 a card's loading frame stands 18 to 19 px shorter than its rest frame wherever the rest frame's period or legend wraps: n34 (.16), n35 (.24) and n38 (.59), after v3-expr-8-kit-fixes made a card hold the lines its period wraps to; n38's round-1 builder cut its period to get equal heights. (2) `chartLabels` drops labels that fit: `place` drops n38's top-item label at 390 and clips its tail at the plot edge at 1800 (.54, .57, .60; the builder hand-placed a fallback spot in round 1, marked), and `row` sizes for the narrowest track, so n35's day track loses most event titles at 1800 and all at 390 (.23). (3) A `refLines` label is struck through by the series lines at 390 (n34 .14), the gap cycle 7's n21 found and cycles 8 and 9 probed again. (4) A mark clamped by a bounded `y.domain` draws the caret but never its true value, so the worst item under-reads (n38 .56; cycle 8's n27 capped peak, expression-8.3). (5) The dim is too weak or too strong by surface: grey bars dim one grey step, so the focused bar is hard to find (n37 .46), and accent dots in dark fall to a navy that is hard to see (n38 .63). (6) Phone cards and table states: a value of a column with no header prints bare ('You', 'Passed', n36 .37); a card list clipped by `maxRows` stops mid-card with no 'n of m' cue (n33 .8); the header row of an empty or failed table collapses to the left (n33 .7) or truncates its headers to 'T…' (n37, round 1); and a table in a half-width cell drops a priority-2 column at 1800 with no word in the docs on which width each tier needs (n33 .4; n37, round 1).",
+  "what": "Six kit behaviours, each with a test, no export and no contract change.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/cards/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/table/** (behaviour only, not contract.ts)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/src/table/contract.ts",
+    "packages/basalt-ui/src/core/ports.ts",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) A card that mounts in loading at 390 reserves the line its rest period and legend wrap to, so loading and rest end at one height on n34, n35 and n38; find what still differs after the cycle-8 fix and say it in the PR. (2) `chartLabels.place` keeps a short label it can fit inside the plot (measured text, not clipped at the edge, falling back to the side with room), and `chartLabels.row` places per row by that row's free width, not the narrowest track. (3) A reference-rule label at 390 finds a spot clear of the series lines, or moves to the plot edge with a leader, instead of sitting on them. (4) A clamped mark's caret carries its true value as a label the kit places. (5) The dim keeps the focused mark distinct on a neutral palette (a grey bar among grey bars) and the dimmed accent legible in dark: one rule, tested in both schemes. (6) A phone card labels every value whose column has a header, and names a headerless one by its column id; a card list clipped by `maxRows` says 'n of m shown' as BarList does since cycle 8; an empty or failed table keeps its header row at full width with untruncated headers; the table doc says which container width each priority tier needs. If any of these needs a field, split it into its own row behind a Spec and say so in the PR.",
+  "acceptance": [
+    "n34, n35 and n38 at 390 end loading and rest at one height (layout test)",
+    "chartLabels.place keeps n38's top-item label at 390 and 1800 unclipped, and chartLabels.row labels each track by its own width (unit or layout test)",
+    "A refLine label at 390 sits clear of the lines (layout test)",
+    "A clamped mark shows its true value beside the caret (unit test)",
+    "The focused bar among grey bars and a dimmed accent dot in dark both read, in light and dark (test)",
+    "Phone cards label each value, a clipped card list says how many show, and an empty or failed table keeps a full header (tests)",
+    "No export added and no contract file changed; make check passes"
+  ],
+  "out_of_scope": "The grain join and the loading row count (v3-expr-9-contract); skill text (v3-expr-9-skill); a focus-ring inset on a hand-drawn host (n35 only); grouping a table by a column it hides (n36 only); one page-level Retry across frames (n33 only).",
+  "proof": "make check; the tests named in acceptance; shots of n34, n35, n38 at 390 in rest and loading.",
+  "commits": "fix: per behaviour with its test."
+}

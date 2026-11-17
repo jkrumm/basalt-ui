@@ -1,0 +1,24 @@
+{
+  "why": "Expression cycle 9 (docs/v3/cycles/expression-9.md) lost 48 of its 76 round-0 points to `skill`: the kit could, and the builder did not know to. Six of its ten P2s are skill: two pages of tables that never wired a focus (n33 .5, n36 .34), a stuck rule that no row shows (n36 .30), a fact said three times (n36 .38), flush table sections with ids and times in the wrong face (n33 .12), and a chart and a list at two grains when one bar per item would have joined them (n37 .51, which its builder found in round 1). The rest repeat cycle 8's lessons on new pages: word economy, one view, the answer on the mark, and anatomy for every part.",
+  "what": "The shipped skills teach eight lessons with this cycle's worked failures, within the skills' budgets.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/**",
+    "packages/basalt-ui/agent/rules/** (through their generator)",
+    "the dogfooded copies the repo syncs from them"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) Linked parts without a chart, and at the list's grain: a page of tables still takes one `useChartFocus` over the rows it shows, so a focused row dims the rest and the hero reads it (n33 .5, n36 .34); where a chart and a list could show different grains, draw the chart at the list's grain (one bar per ticket, grouped by status zones) so `DataTable focus` joins them by id (n37 .51); parts that answer one question sit beside each other in one view (.10, .18, .50, .62). (2) An age or a duration column is a `c.meter` scaled to the oldest, not bare text (.1, .29), and the rule that makes an item late is stated on the column or the card (.32). (3) The answer on the mark at rest: the rows that answer carry a verdict (stuck, overdue), the failing items are named, the window or the tide that never clears is annotated, the at-risk tickets are marked on the chart (.2, .13, .30, .44). (4) Progress against a target is a `Meter` with zones or a done-against-pace form, never a rule drawn over bars it does not measure (.43); the hero stands against the reference the data holds (working hours, approvals needed, a 24 h default) (.21, .31, .55). (5) Colour: one status hue for the state that needs action, and kinds told apart by the series file's pairs, which `seriesTokens` or `groupTokens` from `basalt-ui/tokens` turn into CSS variables for HTML marks (.3, .22, .28, .53). (6) The fact count again, with this cycle's repeats: a column that repeats its group header, a unit in a header and an axis title beside labelled bars, a window stated in the hero, the bands and a table (.9, .17, .26, .38, .45, .48, .49, .61). (7) Anatomy for a table part: a table is a `DataPanel` or a card with a title and a context line, never a flush `Section` beside a card; mono goes to ids and times only, never a measurement phrase or a 'None' (.6, .12, .15, .20, .35, .39, .42, .52, .64). (8) At 390 a chart keeps a plot tall enough for its axis and the page keeps one line of detail per item (.27, .58). Keep step 6 within the skills' budgets; move worked cases to the references where a step would grow.",
+  "acceptance": [
+    "The skill teaches a focus over a page of tables, and drawing a chart at the list's grain, with n33, n36 and n37 as worked cases",
+    "The skill teaches an age column as c.meter and the late rule stated, with n36 as the worked case",
+    "The answer-on-the-mark, target, colour (seriesTokens for HTML marks), fact-count, table-anatomy and 390 lines land with a worked case each",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit behaviour (v3-expr-9-kit-fixes); contract fields (v3-expr-9-contract); the rubric (v3-expr-9-rubric).",
+  "proof": "make check, including the skill-reference, budget and drift tests.",
+  "commits": "feat: the skill text; docs: the synced copies."
+}

@@ -1,0 +1,23 @@
+{
+  "why": "Expression cycle 9 (docs/v3/cycles/expression-9.md) lost 3 round-0 points to two rubric sentences that reviewers read two ways on pages with no chart. (1) X3: the rubric names 'a chart and a list, table or timeline'. n36's round-0 reviewer scored X3 1 on two stat cells over one table, and said in its own report that the lead might rule a stat strip no chart part (.40, P2); n36's round-1 reviewer ruled X3 `n/a` on the same structure ('there is no chart and the stat cards show counts, not items'). n33's two reviewers scored X3 on two tables of related items (a probe and its findings), with no chart on the page, which neither reading of the sentence settles. (2) X4: with no sweep and nothing that dims, n33's round-0 reviewer ruled X4 `n/a` ('no marks dim; the missing response is F7's'), and n36's round-0 reviewer scored the same evidence 2 ('nothing dims, which caps it at 2') (.41).",
+  "what": "Two rubric sentences that leave one reading on a page with no chart, and the shipped reviewer agreeing with them.",
+  "owns": [
+    "docs/v3/expression/rubric.md",
+    "the shipped reviewer's text in packages/basalt-ui/agent/** (the design reviewer subagent and its references), through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/cases.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) X3 says what it scores on a page with no chart: whether two lists that show related items (a parent and its children) count as linked parts, and whether a stat strip that counts a list's rows is a part; one reading, with n33 and n36 quoted. (2) X4 says what it scores when no sweep exists and nothing dims: `n/a` (the missing response is F7's), or a capped score; one reading, with n33 and n36 quoted.",
+  "acceptance": [
+    "rubric.md gives X3 one reading on a page with no chart, quoting n33 and n36",
+    "rubric.md gives X4 one reading when there is no sweep and nothing dims, quoting n33 and n36",
+    "The shipped reviewer's text agrees, or the PR names where none restates them",
+    "make check passes"
+  ],
+  "out_of_scope": "Changing an item's weight or adding an item; skill text (v3-expr-9-skill).",
+  "proof": "make check; the rubric diff quotes the cycle 9 round-0 and round-1 reviews of n33 and n36 that read the two sentences apart.",
+  "commits": "docs: the rubric text; feat: the shipped reviewer text if it changes; package commits separate from non-package ones."
+}

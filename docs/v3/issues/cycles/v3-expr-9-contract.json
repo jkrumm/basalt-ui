@@ -1,0 +1,28 @@
+{
+  "why": "Expression cycle 9 (docs/v3/cycles/expression-9.md) found two gaps the kit cannot close without a contract field, and they hold three of its P2s. (a) A list whose rows are not the chart's items cannot join the chart's focus. `DataTable focus` maps a row to an item by `getRowId`, and `focusSeries` maps a row to a series, but nothing maps a row to an item of another grain. n34's go-window table (one row per window of several hours) never joins the hourly tide chart: X3 0 (expression-9.19), after its builder looked in cartesian-chart-guide.md and the `ListFocus` type. n33's findings table (one row per finding) cannot follow its probes table (one row per probe): X3 1 in round 0 (.11), and its round-1 build joins the two with a hand `useEffect` between two `useChartFocus` hooks, about 25 lines, that lights only a probe's first finding. n37 met the same wall and got round it in round 1 by drawing one bar per ticket, so the grain matched (.51); where the list is a window, a range or a parent, no such redraw exists. (b) A `DataTable` that mounts straight into loading draws six skeleton rows (`SKELETON_ROWS`, src/table/parts/phases.tsx), whatever the page will show, and a client table has no field to declare how many. n36 lost K2 2 (.36): six rows against eighteen, about 370 px of jump, and its round-1 `min-h-140` wrapper was still about 50 px short; n37 lost a point to six rows against nine (.47, round 1 the same). The card frames hold what the page declares since v3-expr-8-kit-fixes; the table does not.",
+  "what": "A Spec, then the fields it keeps: a list row that joins a chart's focus through an item of another grain (a key, or a range of items), and a declared skeleton row count for a table that mounts in loading, or the Spec's ruling against each.",
+  "owns": [
+    "packages/basalt-ui/src/table/contract.ts (the focus mapping and the loading row field)",
+    "packages/basalt-ui/src/core/ports.ts (ListFocus, only if the Spec needs it)",
+    "packages/basalt-ui/src/cards/contract.ts (the BarList focus mapping, only if the Spec keeps it for lists too)",
+    "the components that read the changed fields, and their tests",
+    "packages/basalt-ui/agent/** text that teaches the changed fields, through its generator",
+    "the contract-frozen pins the amendment moves, with the amendment commit the repo's process names"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md (the Spec names any section it would amend; the owner rules)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "Write a Spec before any code. (a) Grain join: a `DataTable` (and, if the Spec keeps it, a `BarList`) row names the chart item or items it stands for, so pointing at a row focuses them and dims the rest, and a focused chart item marks every row that holds it. Cover a row that stands for a run of items on a band or time axis (n34: a window of hours) and a row whose parent is the chart's item (n33: a finding under its probe). Say whether one row may focus several items at once or only the first, and how the keyboard frame announces it. (b) Loading rows: a table that mounts in loading draws the number of skeleton rows the page declares (a field on the table or on `useDataTable`), falling back to today's six; a table that has shown rows keeps its last height as today. Name the field by the kit's naming of `bodyRows` and `maxRows`. For each, say what the cheapest recipe would be instead, and why the field beats it.",
+  "acceptance": [
+    "A Spec is submitted and its verdict is read before the build",
+    "A table row that stands for a range of a chart's items, or for a child of one, joins the chart's focus both ways with a test, or the Spec rules it out",
+    "A table that mounts in loading draws the declared skeleton row count with a layout test at 390 and 1800, or the Spec rules it out",
+    "The basalt-page or basalt-charts reference names what shipped",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit behaviours that need no contract field (v3-expr-9-kit-fixes); skill text (v3-expr-9-skill); hiding a table's group-key column (n36 only); a unit on `c.meter` and a `StatCell` that takes a list focus (n36 round 1 only); a footer slot on `DataPanel` (n33 round 1 only); a new chart kind.",
+  "proof": "make check; a unit test per kept field; a layout test of a loading table's height at 390 and 1800; `basalt-ui shot --states keys` on a page whose table rows are windows of an hourly chart logs the window announced.",
+  "commits": "feat: per change with its tests; chore: the contract amendment as the repo's process names it; docs: regenerated agent text; package commits separate from non-package ones."
+}
