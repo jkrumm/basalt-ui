@@ -1,0 +1,26 @@
+{
+  "why": "Shell cycle 3 (docs/v3/cycles/shell-3.md), two P2s and one P3 of class shell:\n- shell-3.2: the crumb parent carries `aria-current=\"page\"` and `data-status=\"active\"`. On `?team=payments&service=checkout` the router's link counts as active because the URL includes its path and search, which a parent's always does. A screen reader announces the way up as the current page (`.evidence/cycle-shell-3/parent.log` P1-1800, P1-390).\n- shell-3.3: a click on the crumb parent drops focus to `<body>`. The clicked link becomes the leaf `<span>` and goes; a page action, a palette jump and a More-sheet jump hand focus to main (`parent.log` P3-1800, P3-390).\n- shell-3.4: two nav sections with items of the same label give palette entries that cannot be told apart (two \"Go to Services\"), because the trail is the item's ancestors and never its section (`src/shell/commands/nav-commands.ts:27`; `desktop.log` A14).",
+  "what": "The crumb parent is a plain way up: not announced as the current page, and focus lands in main after it. Palette entries of the same label name their section.",
+  "owns": [
+    "packages/basalt-ui/src/page/page-bar.tsx (PageCrumb) and its tests",
+    "packages/basalt-ui/src/shell/app-shell.tsx (the crumb trail only)",
+    "packages/basalt-ui/src/shell/commands/nav-commands.ts and its tests",
+    "packages/basalt-ui/docs/app-shell.md, packages/basalt-ui/docs/page-bar.md",
+    "packages/basalt-ui/tests/layout/** (crumb focus)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "packages/basalt-ui/src/page/page-aside.tsx, packages/basalt-ui/src/table/use-data-table.ts (v3-shell-3-aside)"
+  ],
+  "change": "Fixes by finding:\n- shell-3.2: `PageCrumb` draws its parent without the active state: no `aria-current` on the parent (an exact active match, or the attribute dropped) (`src/page/page-bar.tsx:31-51`).\n- shell-3.3: a crumb parent navigation hands focus to main through the path a navigating page action uses.\n- shell-3.4: where two nav commands would share a label, each names its section (`Go to Services · Fleet`) in `nav-commands.ts`.",
+  "commits": "fix: commits in packages/basalt-ui, one per finding.",
+  "proof": "make check; a test that renders a selection crumb and finds no `aria-current` on the parent; a layout test at 1800 and 390 that clicks the crumb parent and finds focus in main; a unit test of two same-label nav items.",
+  "acceptance": [
+    "A crumb parent carries no aria-current=\"page\" (test)",
+    "After a crumb parent click, focus is in main at 1800 and 390 (layout test)",
+    "Two nav items with one label give two palette entries that differ in text (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The stale aside (v3-shell-3-aside)."
+}
