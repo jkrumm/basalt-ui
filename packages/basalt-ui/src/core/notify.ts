@@ -28,6 +28,12 @@ export type NotificationPayload = {
   /** Milliseconds, clamped to at least 5000; `false` keeps the toast until dismissed. */
   autoClose?: number | false
   undo?: NotifyUndo
+  /**
+   * Names the event this notification reports (`'sync-failed'`). A later `notify` with the same key
+   * replaces the earlier one: its toast closes, and `onShow` sees the key so an inbox keeps one
+   * entry per key. `notify.dismiss(key)` retracts it when a later event makes it moot.
+   */
+  key?: string
 }
 
 /** Called as a notification of the kind is delivered; see `notify.onShow`. */
@@ -77,9 +83,11 @@ const recent = new Map<string, { id: string; at: number }>()
 const live = new Map<string, { revert?: () => void; done: () => boolean }>()
 
 function dedupKey(kind: string, p: NotificationPayload): string {
-  return JSON.stringify([kind, p.title ?? null, p.message, p.undo === undefined])
+  return JSON.stringify([kind, p.title ?? null, p.message, p.undo === undefined, p.key ?? null])
 }
 
+/** Per key: the id of the notification that currently owns it. */
+const keyed = new Map<string, string>()
 const hooks = new Map<string, NotifyShowHook>()
 const payloads = new Map<string, NotificationPayload>()
 
@@ -87,6 +95,19 @@ function deliver(entry: NotifyEntry, payload: NotificationPayload): void {
   payloads.delete(entry.id)
   sink?.add(entry)
   hooks.get(entry.kind)?.(payload, entry.id)
+}
+
+/** Close or unqueue the notification that owns `key`; true when there was one. */
+function retire(key: string): boolean {
+  const id = keyed.get(key)
+  if (id === undefined) return false
+  keyed.delete(key)
+  for (const [dedup, entry] of recent) if (entry.id === id) recent.delete(dedup)
+  live.delete(id)
+  payloads.delete(id)
+  if (pending.some((e) => e.id === id)) pending = pending.filter((e) => e.id !== id)
+  else sink?.close(id)
+  return true
 }
 
 function armNoHostWarning(): void {
@@ -104,7 +125,8 @@ function armNoHostWarning(): void {
 /**
  * Show a toast. Returns its id. Errors stay until dismissed; every other kind closes after 5 s; an
  * explicit `autoClose` under 5000 is raised to 5000. An identical payload within 1,500 ms returns
- * the first toast's id and shows nothing new.
+ * the first toast's id and shows nothing new. A `key` makes a re-emit replace the earlier toast of
+ * that key instead of stacking beside it.
  *
  * @useWhen a result needs a short, passing note the user can ignore
  * @neverWhen the message must be read to continue, or belongs next to a field
@@ -112,6 +134,7 @@ function armNoHostWarning(): void {
  * @example
  * notify('success', { message: 'Saved' })
  * notify('error', { message: 'Upload failed', title: 'photo.jpg' })
+ * notify('error', { message: 'Sync failed', key: 'sync' })
  */
 export function notify(kind: NotifyKind, payload: NotificationPayload): string {
   const now = Date.now()
@@ -120,8 +143,10 @@ export function notify(kind: NotifyKind, payload: NotificationPayload): string {
   const last = payload.undo === undefined ? recent.get(key) : undefined
   if (last !== undefined && now - last.at < NOTIFY_DEDUP_MS) return last.id
 
+  if (payload.key !== undefined) retire(payload.key)
   sequence += 1
   const id = `basalt-notify-${sequence}`
+  if (payload.key !== undefined) keyed.set(payload.key, id)
   recent.set(key, { id, at: now })
   if (recent.size > NOTIFY_QUEUE_CAP) {
     const oldest = recent.keys().next().value
@@ -166,6 +191,8 @@ export function notify(kind: NotifyKind, payload: NotificationPayload): string {
       if (dropped !== undefined) {
         live.delete(dropped.id)
         payloads.delete(dropped.id)
+        const droppedKey = [...keyed].find(([, owner]) => owner === dropped.id)?.[0]
+        if (droppedKey !== undefined) keyed.delete(droppedKey)
       }
     }
     armNoHostWarning()
@@ -191,6 +218,18 @@ notify.undo = function undo(id: string): boolean {
   if (wasPending) pending = pending.filter((e) => e.id !== id)
   else sink?.close(id)
   return true
+}
+
+/**
+ * Retract the notification that owns `key`: its toast closes, or it leaves the queue unshown.
+ * Call it when a later event makes it moot (the sync that failed has since succeeded). Returns
+ * false when no notification holds the key.
+ *
+ * @example
+ * notify.dismiss('sync')
+ */
+notify.dismiss = function dismiss(key: string): boolean {
+  return retire(key)
 }
 
 /**
@@ -239,6 +278,7 @@ export function resetNotify(): void {
   if (warnTimer !== undefined) clearTimeout(warnTimer)
   warnTimer = undefined
   recent.clear()
+  keyed.clear()
   live.clear()
   payloads.clear()
   hooks.clear()
