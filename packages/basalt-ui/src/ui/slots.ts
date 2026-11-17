@@ -62,6 +62,7 @@ export const SLOTS = {
   'preview-card': ['preview-card-trigger', 'preview-card-content'],
   progress: ['progress', 'ring'],
   'radio-group': ['radio-group', 'radio'],
+  resizable: ['resizable-panel-group', 'resizable-panel', 'resizable-handle'],
   'scroll-area': ['scroll-area'],
   segmented: ['segmented', 'segmented-item'],
   select: [

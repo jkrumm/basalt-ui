@@ -110,12 +110,15 @@ for (const { rel, onlyBare } of subpaths) {
   if (!subpathFailed) console.log(`UI-free OK: ${rel} (${files.size} files in graph)`)
 }
 
-// `react-day-picker` is an optional peer of `ui/date-picker` ALONE (docs/v3/ARCHITECTURE.md section 3).
-// No other published entry may load it up front: every export of package.json except `./ui/*` is
-// walked over its static imports (a dynamic `import()` is the lazy edge `./controls` may use), and
-// `dist/ui/date-picker.js` must still reach it, so this check cannot pass by walking the wrong files.
-{
-  const PEER = 'react-day-picker'
+// An optional peer owned by one primitive (`react-day-picker` by `ui/date-picker`, docs/v3/ARCHITECTURE.md
+// section 3; `react-resizable-panels` by `ui/resizable`). No other published entry may load it up
+// front: every export of package.json except `./ui/*` is walked over its static imports (a dynamic
+// `import()` is the lazy edge `./controls` may use), and the primitive's own `dist/ui/<name>.js` must
+// still reach it, so this check cannot pass by walking the wrong files.
+for (const { PEER, MODULE } of [
+  { PEER: 'react-day-picker', MODULE: 'date-picker' },
+  { PEER: 'react-resizable-panels', MODULE: 'resizable' },
+]) {
   const exportsMap = JSON.parse(readFileSync(resolve(DIST, '..', 'package.json'), 'utf8')).exports
   const entries = new Set()
   for (const [key, value] of Object.entries(exportsMap)) {
@@ -138,16 +141,16 @@ for (const { rel, onlyBare } of subpaths) {
     reached += 1
     if ([...bare].some((spec) => spec === PEER || spec.startsWith(`${PEER}/`))) {
       fail(
-        `${entry.slice(DIST.length + 1)} eagerly reaches ${PEER}, an optional peer of ui/date-picker alone`,
+        `${entry.slice(DIST.length + 1)} eagerly reaches ${PEER}, an optional peer of ui/${MODULE} alone`,
       )
       eagerFailed = true
     }
   }
-  const picker = resolve(DIST, 'ui/date-picker.js')
-  if (!existsSync(picker)) {
-    fail('missing dist entry: ui/date-picker.js')
-  } else if (![...walkGraph(picker, { staticOnly: true }).bare].includes(PEER)) {
-    fail(`ui/date-picker.js no longer reaches ${PEER}: the eager check above proves nothing`)
+  const owner = resolve(DIST, `ui/${MODULE}.js`)
+  if (!existsSync(owner)) {
+    fail(`missing dist entry: ui/${MODULE}.js`)
+  } else if (![...walkGraph(owner, { staticOnly: true }).bare].includes(PEER)) {
+    fail(`ui/${MODULE}.js no longer reaches ${PEER}: the eager check above proves nothing`)
     eagerFailed = true
   }
   if (!eagerFailed)

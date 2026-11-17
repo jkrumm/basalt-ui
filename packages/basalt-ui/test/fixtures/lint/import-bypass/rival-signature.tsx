@@ -37,7 +37,7 @@ import { Dialog } from 'ui/dialog'
 // @valid
 import { PieChart } from 'react-feather'
 // @valid
-import { Panel, PanelGroup } from 'react-resizable-panels'
+import { Allotment } from 'allotment'
 // @valid
 import { MapContainer, Tooltip, Popup } from 'react-leaflet'
 // @valid

@@ -27,3 +27,7 @@ import { VirtualList } from 'basalt-ui/ui/virtual-list'
 import { FixedSizeList } from 'react-window'
 // @invalid
 import DatePicker from 'react-datepicker'
+// @invalid
+import { Group, Panel } from 'react-resizable-panels'
+// @valid
+import { ResizablePanelGroup } from 'basalt-ui/ui/resizable'

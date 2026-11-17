@@ -65,6 +65,7 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   popover: 47000, // 44567 B
   progress: 10500, // 9676 B
   'radio-group': 18500, // 17153 B
+  resizable: 23500, // 22370 B, react-resizable-panels bundled
   'scroll-area': 6000, // 5254 B
   segmented: 15000, // 14087 B
   select: 54500, // 51614 B
@@ -122,15 +123,22 @@ export const rows: readonly RowDef[] = [
     id: 'ui-value-exports',
     order: 350,
     label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
-    // 222 measured. Exact: a new value export is a row here and a consumer named for it; a lower
+    // 226 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
-    ceiling: 222,
+    ceiling: 226,
     measure: valueExports,
   },
 ]
 
 export const raises: Raises = {
   'ui-value-exports': [
+    {
+      from: 222,
+      to: 226,
+      consumer:
+        '`ResizablePanelGroup`, `ResizablePanel`, `ResizableHandle` and `resizableParts` from `basalt-ui/ui/resizable`: the software-factory console splits a page from its docked record panel with them (Issue 1958), and `react-resizable-panels` stays an optional peer of this module alone (Issue 1959)',
+      repo: 'software-factory',
+    },
     {
       from: 218,
       to: 222,
