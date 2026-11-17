@@ -861,9 +861,10 @@ function wholeCounts<T, X extends ChartX>(
 
 /**
  * An explicit domain (a tuple, or the one the `y.domain` seam wrote): the data may lie past it. An
- * auto domain always holds its data. A stack of two or more bar series never clamps (a part's
- * value is not the height it reaches), nor does a normalized one (it shares out the raw values); a
- * lone bar series in the default `stacked` layout is no stack and clamps.
+ * auto domain always holds its data. A stack of two or more bar series is not bounded per series
+ * (a part's value is not the height it reaches): `clampStacks` and `stackCapMarks` cap its total
+ * instead. A normalized one never clamps (it shares out the raw values); a lone bar series in the
+ * default `stacked` layout is no stack and clamps here.
  */
 const isBounded = <T, X extends ChartX>(
   input: CartesianInput<T, X>,

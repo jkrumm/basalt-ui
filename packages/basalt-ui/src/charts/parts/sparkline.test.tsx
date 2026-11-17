@@ -129,6 +129,24 @@ describe('Sparkline frame', () => {
 })
 
 describe('Sparkline cap', () => {
+  test('a target range past the cap keeps its band, held at the cap; a lone line past it is not drawn', () => {
+    const range = dom(
+      <Sparkline
+        series={[2, 3, 4]}
+        ariaLabel="S"
+        height={40}
+        cap={6}
+        reference={{ min: 2, max: 20 }}
+      />,
+    )
+    expect(range.querySelectorAll('[data-slot="spark-reference"]')).toHaveLength(2)
+    expect(range.querySelector('[data-slot="spark-band"]')).not.toBeNull()
+    const line = dom(
+      <Sparkline series={[2, 3, 4]} ariaLabel="S" height={40} cap={6} reference={9} />,
+    )
+    expect(line.querySelector('[data-slot="spark-reference"]')).toBeNull()
+  })
+
   test('a point above the cap is held on the top edge under a caret; the summary keeps it', () => {
     const el = dom(<Sparkline series={[2, 3, 38, 4]} ariaLabel="S" height={40} cap={6} />)
     const carets = el.querySelectorAll('[data-slot="spark-caret"]')
