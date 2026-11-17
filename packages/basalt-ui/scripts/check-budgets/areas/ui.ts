@@ -122,15 +122,22 @@ export const rows: readonly RowDef[] = [
     id: 'ui-value-exports',
     order: 350,
     label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
-    // 218 measured. Exact: a new value export is a row here and a consumer named for it; a lower
+    // 222 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
-    ceiling: 218,
+    ceiling: 222,
     measure: valueExports,
   },
 ]
 
 export const raises: Raises = {
   'ui-value-exports': [
+    {
+      from: 218,
+      to: 222,
+      consumer:
+        "`PreviewCard`, `PreviewCardTrigger`, `PreviewCardContent` and `previewCardParts` from `basalt-ui/ui/preview-card`: the software-factory console shows a record summary on a link's hover, focus and tap through them, fed by the `kinds` its peek already declares (Issue 1957)",
+      repo: 'software-factory',
+    },
     {
       from: 215,
       to: 218,

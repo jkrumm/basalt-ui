@@ -73,6 +73,7 @@
   "persisted": "argo:apps/dashboard/src/lib/window-stores.ts",
   "Prose": "rb:apps/web/src/features/course/page.tsx",
   "quality": "shutterflow:e2e/desktop/a11y/keyboard.spec.ts",
+  "recordAt": "software-factory:apps/console/src/components/peek/host.tsx",
   "QueryState": "argo:apps/dashboard/src/features/m365-explorer/explorer-page.tsx",
   "RefreshButton": "argo:apps/dashboard/src/routes/__root.tsx",
   "routerDefaults": "linewatch:web/src/lib/router.ts",

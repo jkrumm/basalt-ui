@@ -72,6 +72,8 @@
         "PopoverContent": "div",
         "PopoverTrigger": "div",
         "Pressable": "button",
+        "PreviewCardContent": "div",
+        "PreviewCardTrigger": "div",
         "Progress": "div",
         "Radio": "div",
         "RadioGroup": "div",

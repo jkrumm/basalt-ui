@@ -1,1 +1,10 @@
-["BasaltProvider", "defineControls", "defineNav", "field", "navTarget", "routerDefaults", "usePeek"]
+[
+  "BasaltProvider",
+  "defineControls",
+  "defineNav",
+  "field",
+  "navTarget",
+  "recordAt",
+  "routerDefaults",
+  "usePeek"
+]

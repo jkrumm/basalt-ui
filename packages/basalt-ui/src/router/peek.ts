@@ -69,6 +69,35 @@ function parse(value: string, kinds: PeekKinds): PeekTarget | null {
   return Object.hasOwn(kinds, kind) ? { kind, id: value.slice(cut + 1) } : null
 }
 
+/**
+ * The record a link points at, by the same `kinds` a `usePeek` is given: `null` for an address
+ * that is another origin, not a kind's page or unparseable. It reads the path only, so a query or
+ * a hash does not matter. Use it to feed a `PreviewCard` (`basalt-ui/ui/preview-card`) the summary
+ * of what a link opens, from the one declaration the peek already uses.
+ *
+ * @useWhen a link to a record should show that record's summary on hover, focus or tap, and the app already declares its record kinds for `usePeek`
+ * @neverWhen the address is not a record page, or the app has no `kinds` (a card on any link takes its content directly)
+ *
+ * @example
+ * recordAt({ issue: '/issues/$id' }, '/issues/12?tab=notes') // { kind: 'issue', id: '12' }
+ * recordAt({ issue: '/issues/$id' }, '/pulls/12') // null
+ */
+export function recordAt<const K extends PeekKinds>(
+  kinds: K,
+  href: string,
+): PeekTarget<keyof K & string> | null {
+  const base = typeof window === 'undefined' ? 'http://localhost' : window.location.origin
+  let url: URL
+  try {
+    url = new URL(href, base)
+  } catch {
+    return null
+  }
+  if (url.origin !== base) return null
+  const matchers = Object.entries(kinds).map(([kind, path]) => matcherOf(kind, path))
+  return matchPath(matchers, url.pathname) as PeekTarget<keyof K & string> | null
+}
+
 const format = (target: PeekTarget): string => `${target.kind}/${target.id}`
 
 /** The click the browser would follow itself in this tab: not another button, a modifier or a new-tab link. */
@@ -167,6 +196,8 @@ export function usePeek<const K extends PeekKinds>({
       const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null
       if (!(anchor instanceof HTMLAnchorElement) || anchor.target !== '') return
       if (anchor.hasAttribute('download') || anchor.closest('[data-peek="off"]') !== null) return
+      // A touch tap on a `PreviewCardTrigger` whose card is closed shows the card; the next one gets here.
+      if (anchor.hasAttribute('data-preview-first-tap')) return
       const url = new URL(anchor.href)
       if (url.origin !== window.location.origin) return
       const now = latest.current

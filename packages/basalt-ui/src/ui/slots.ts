@@ -59,6 +59,7 @@ export const SLOTS = {
   num: ['num'],
   'number-field': ['number-field'],
   popover: ['popover-trigger', 'popover-content'],
+  'preview-card': ['preview-card-trigger', 'preview-card-content'],
   progress: ['progress', 'ring'],
   'radio-group': ['radio-group', 'radio'],
   'scroll-area': ['scroll-area'],
