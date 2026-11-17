@@ -222,6 +222,13 @@ const FLAG_WRAPPERS: ReadonlySet<string> = new Set([
   'BinaryExpression',
 ])
 
+/** What a class-key object sits in between it and its cn() call: `&&`, `||`, a conditional, an array. */
+const CLASS_ARG_WRAPPERS: ReadonlySet<string> = new Set([
+  'LogicalExpression',
+  'ConditionalExpression',
+  'ArrayExpression',
+])
+
 /**
  * Where a flag ends up once its wrappers are climbed: `data` when it is passed as data (an object
  * literal's value but a cn()/clsx class key's, a call's argument, an array element:
@@ -242,8 +249,10 @@ function flagPosition(node: Node): { kind: 'data' | 'choice' } | { kind: 'bindin
   if (up?.type === 'Property' && field(up, 'value') === at) {
     const owner = up['parent'] as Node | undefined
     if (owner?.type !== 'ObjectExpression') return { kind: 'choice' }
-    // A class-key object of cn()/clsx/cva (`cn({ 'p-2': mobile })`): the value chooses the class.
-    const call = owner['parent'] as Node | undefined
+    // A class-key object of cn()/clsx/cva (`cn({ 'p-2': mobile })`, also under `&&`, a
+    // conditional or an array: `cn(ready && { 'p-2': mobile })`): the value chooses the class.
+    let call = owner['parent'] as Node | undefined
+    while (call && CLASS_ARG_WRAPPERS.has(call.type)) call = call['parent'] as Node | undefined
     const callee = call?.type === 'CallExpression' ? nameOf(field(call, 'callee')) : undefined
     return { kind: callee !== undefined && CLASS_CALLEES.has(callee) ? 'choice' : 'data' }
   }
