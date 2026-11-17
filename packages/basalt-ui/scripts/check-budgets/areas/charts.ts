@@ -38,7 +38,9 @@ export const rows: readonly RowDef[] = [
     order: 22,
     label: 'charts Sparkline + Lines + Bars (gzip B minus base0, src/charts, peers bundled)',
     // 120524 B measured. Informative target 46.5 KB, and + 4 KB per further kind: not pins.
-    ceiling: 121500,
+    // 121500 -> 121800 (Issue 2039): 121562 B measured, +~60 B gz over the cap for the edge slide, the rule
+    // caption's step and leader and the clamped value label, the kit fixes of expression cycle 9.
+    ceiling: 121800,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -54,6 +56,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 121500,
+      to: 121800,
+      consumer:
+        "the label kit fixes of expression cycle 9 (Issue 2039): n38's top-item label dropped at 390 and its clamped item drew no value, n34's rule captions sat on the series lines, and n35 hand-placed row labels by its narrowest track",
+      repo: 'basalt-ui',
+    },
     {
       from: 117500,
       to: 121500,
