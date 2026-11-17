@@ -47,6 +47,7 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 ## Neighbours
 
 - A top-N or a breakdown is a [BarList](node_modules/basalt-ui/docs/bar-list.md) in a [ChartCard](node_modules/basalt-ui/docs/chart-card.md) so the row reads as one surface level.
+- Steps with a duration each (a deploy, a job run, a trace summary) are a [StepRail](node_modules/basalt-ui/docs/step-rail.md): bars scaled to the longest step, composed in a [DataPanel](node_modules/basalt-ui/docs/data-panel.md).
 - A feed of things that happened is an [EventList](node_modules/basalt-ui/docs/event-list.md); a record's facts beside a list is [PageAside](node_modules/basalt-ui/docs/page-aside.md).
 
 not guarded:
