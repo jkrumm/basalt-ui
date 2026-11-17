@@ -1,0 +1,21 @@
+{
+  "why": "Dogfood cycle 3 (docs/v3/cycles/dogfood-3.md) logged one P2 `visual` finding and three P3. dogfood-3.3 (the half of dogfood-2.3 that `v3-dogfood-2-visual` left): at 1800 px the Issues table gives Issue, Project and Origin 251 px each (`#657`, `pearl`, `You`) and Title 502 px, so four of ten reasons cut mid-word (`Waiting for the answer to a Decision: which s…`), and more with the aside open (`.evidence/cycle-dogfood-3/probe.log`, `columns` and `cutCells`; `cycle-dogfood-3--dark--1800x1200.png`, `cycle-dogfood-3-issue-login-crash--dark--1800x1200.png`). P3 dogfood-3.4 (was 2.4, 1.15): `Sparkline` has no bar form and no future segment (`FlowOverview.tsx:54`). P3 dogfood-3.6: in a card header two segmented specs draw with no track: the first group's options touch (`Working|Waiting|Queued`), the second's sit in wide cells, and an unpressed option reads as plain text, where the console draws each group on a `bg-muted` track with the pressed one raised (`crops/segments-{light,dark}.png`; console `components/flow/trend-chart.tsx:26`). P3 dogfood-3.8 (was 2.9): a title-only `PageBar` still leaves about 60 px of empty band above the stat row at 1800 and 390 px.",
+  "what": "Short text columns give their width to the entity column; the P3s that fit.",
+  "owns": [
+    "packages/basalt-ui/src/table/core/kinds*.ts and the column width plan (widths only)",
+    "packages/basalt-ui/src/ui/segmented.tsx and the card-header presentation in src/controls/*, if the P3 fits",
+    "packages/basalt-ui/src/charts/parts/sparkline*.tsx, if the P3 fits",
+    "packages/basalt-ui/src/page/page.tsx (the band inset), if the P3 fits",
+    "unit and layout tests beside them"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) A `text` column whose loaded values are short sizes to its widest value and header (as `relativeTime` now does), and the width it frees goes to the flexible `entity` column, so a title with its sub line keeps its words before a short column keeps empty space (dogfood-3.3). (2) If they fit: a card-header segmented group draws on a track with the pressed option raised and equal option padding in both groups (3.6); `Sparkline form=\"bar\"` and a dashed segment after `futureFrom` (3.4); a page whose `PageBar` shows nothing in the band starts its content at the band's top or `page.md` says why not (3.8). Left out, the PR says so.",
+  "commits": "fix: commits in packages/basalt-ui.",
+  "proof": "make check-fast; a layout test of the column widths on a table shaped like /cycle/dogfood-3's; shots of /cycle/dogfood-3.",
+  "acceptance": [
+    "At 1800 px no text column of /cycle/dogfood-3's shape is wider than its widest value plus padding while an entity sub line is cut (layout test)",
+    "The PR states which P3 it fixed",
+    "make check passes"
+  ],
+  "out_of_scope": "A per-column width option; the console's MiniBars as a part of its own."
+}

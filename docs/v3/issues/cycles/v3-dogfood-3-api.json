@@ -1,0 +1,21 @@
+{
+  "why": "Dogfood cycle 3 (docs/v3/cycles/dogfood-3.md) logged two P2 `api` findings and two P3. dogfood-3.1: the console's chart card carries its own Count and Window choice (`useState` in `components/flow/trend-chart.tsx:53`); in v3 a card's `controls` slot takes widget specs only, and a widget field only inherits a page or global handle that exists before `defineControls` runs. So the page declares `count` and `window` as page fields it never shows, a second page store `cards` with `fields: {}` and the widget, and a layout route to mount the first store above the child that mounts the second (`apps/playground/src/cycle/dogfood-3/flow-store.ts:29`, `:37`; `routes/cycle/dogfood-3.tsx`, `routes/cycle/dogfood-3/index.tsx`): about 20 lines and a route file for two segmented buttons. It works (`.evidence/cycle-dogfood-3/probe2.log`: `?project=argo&w.trend.count=queued`, the page key untouched, the choice survives a reload). dogfood-3.5: a client table with `filters` that leave no rows draws `No rows match the current search and filters` (`core/messages/table.ts:80`) on a table with no search, and drops the page's `empty.cause`, which `use-data-table.md` says replaces the default sentence (`FlowOverview.tsx:205`; `cycle-dogfood-3-project-pearl-state-waiting--light--1800x1200.png`). P3 dogfood-3.9 (was 2.10, 1.18): the aside header has no full-page link. P3 dogfood-3.10: a filter spec takes `facets` (option counts), but a client table that filters by the same fields cannot supply them, so the page would count its rows itself; the console shows each project's and origin's open count.",
+  "what": "A card owns a choice without a second store; a filtered table says what the page asks; the P3s that fit.",
+  "owns": [
+    "packages/basalt-ui/src/router/controls/* (widget fields), with a `chore: contract amendment` commit first if the contract changes",
+    "packages/basalt-ui/src/table/use-data-table.ts, src/table/parts/* (the filtered empty arm)",
+    "packages/basalt-ui/src/core/messages/table.ts",
+    "the generated docs and export-surface snapshots they change, unit and type tests"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) A widget field can be declared with its own fallback and no inherited handle (for example `widgets: { trend: { count: field.enum(['working', 'waiting', 'queued'], 'working') } }`), keeping the `w.<widget>.<field>` key and the two-field cap, so a card's own choice needs no page field and no second store (dogfood-3.1). The shape is the implementer's; `widgets.md` gains the case. (2) A table filtered to no rows by its `filters` shows the page's `empty.cause` when one is given, and its default sentence names search only when the table has a search (dogfood-3.5). (3) If they fit: a full-page link on a detail entry or on `PageAside` (3.9); `useDataTable` exposes facet counts for its `filters` fields that a `spec` can take (3.10). Left out, the PR says so.",
+  "commits": "chore: contract amendment first if the contract changes; then feat: or fix: commits in packages/basalt-ui with their regenerated docs.",
+  "proof": "make check-fast; a type test of a widget field with its own fallback; a router test that it writes only its `w.` key; a unit test of the filtered empty sentence with and without `empty.cause`.",
+  "acceptance": [
+    "A card's own segmented choice binds through a widget declared on the page's one store, with no page field and no second store (type and router test)",
+    "A client table filtered to no rows shows the page's empty cause, and its default names search only with a search (unit test)",
+    "The PR states which P3s it fixed",
+    "make check passes"
+  ],
+  "out_of_scope": "Server-mode filtering and facets; the row mark (v3-dogfood-3-row-mark)."
+}
