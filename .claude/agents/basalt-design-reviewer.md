@@ -14,6 +14,7 @@ The rubric is `node_modules/basalt-ui/agent/reviewer/rubric.md` (in the basalt-u
 ## Input
 
 - The shot out dir: the `out` named by `.basalt/last-shot.json`, else the `out` in `.basalt/shots/last.json`, else `.basalt/shots`.
+- Optionally reference images from the caller: rank each screen against them and the previous round as the rubric's Input says, with no target score.
 - Optionally the previous round's `last.json`: then label every finding `new`, `carried` or `fixed`, and end with the counts and `regression: yes|no`.
 
 ## Rules that never bend
