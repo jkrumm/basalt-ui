@@ -52,7 +52,6 @@ A page is composed from the shipped frame; each bullet names what holds it.
 
 not guarded:
 
-- A frame declares the same slots in every phase and fills none before ready: no pill, dash or delta outside the ready phase.
 - A section, card or table title is its frame's `title`; never an in-body heading.
 - Date range navigation sits in the `controls` slot, not in `actions`; count and reset active filters with the store.
 - `CardGrid` takes a `min` tier (`narrow`, `regular`, `wide`), never a column count or a width.

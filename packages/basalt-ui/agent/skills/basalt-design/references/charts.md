@@ -20,7 +20,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 ## One measure
 
 - The hero, the marks and the baseline measure one quantity. n21's hero was minutes down after a reboot while its dots were total minutes down and its baseline stood against nothing: three quantities, three P2s. Pick the quantity the question names, then derive the hero, the marks and the baseline from it.
-- A question that compares a group against its control draws both groups on one axis and leads with the signed difference ("-2 min vs held back"); drops after a reboot against their control are not a date scatter.
+- A question that compares a group against its control draws both groups on one axis and leads with the signed difference ("-2 min vs held back"); drops after a reboot against their control read on one axis, and a date scatter hides the comparison.
 - A target for an unfinished period is prorated, or its pill stays neutral ([copy](copy.md)).
 
 ## A headline value has a baseline
@@ -49,7 +49,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 ## Linked parts
 
 - Where a chart and a list, a table or a timeline show the same items, they share one focus: pointing at or stepping to an item in either focuses it in the other, both ways, and the rest dims in both.
-- The figure's delta and status follow focus through `focus.readout(rest, read)`, which takes any value: `delta: focus.readout(restDelta, (d) => ...)` (c16 believed a delta could not follow focus; n20 put a placeholder 'partial' delta on its figure).
+- The figure's delta and status follow focus through `focus.readout(rest, read)`, which takes any value: `delta: focus.readout(restDelta, (d) => ...)` (c16 believed a delta stays fixed under focus; n20 put a placeholder 'partial' delta on its figure).
 - One [useChartFocus](node_modules/basalt-ui/docs/use-chart-focus.md) is passed to the chart host as `focus` and spread on each row of the list through `focus.item(i)`; the list sits in its own [ScrollArea](node_modules/basalt-ui/docs/scroll-area.md) at the chart's height, and the keyboard step scrolls the focused row into view. The wiring is the snippet in the basalt-charts skill.
 - A list of groups (versions, releases) beside samples of those groups spreads `focus.groupItem(name)` on each row instead; the recipe is `seam-linked` in `docs/recipes/`.
 - The kit owns the dim and the clear: the page takes the kit's dim for a seam-drawn mark, and rows that take focus sit under a container whose pointer leave clears (`focus.target`), so the gap between two rows keeps the last focus.
@@ -62,7 +62,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 - Where two charts share an axis and answer the two halves of one question, they are one chart above and below the axis (a diverging chart) in one card, where two cards and a strip would stack (c13 X2, F1; n01 in cycle 2: a strip, per-day bars, a list and a line as four stacked parts). Charts on one x share one card, or sit side by side inside the 1800x1200 fold; the second below the fold is the defect (n19). Two cards stand only when the axes differ. A list longer than the chart sits beside it in its own scroll region at `@wide`, and a box takes its content's height, so a fixed height cannot leave a gap or clip (n13, n09, c14, n04). A chart is as tall as its marks need: c16 drew eight dots in a 490 px chart, n15 and n20 short charts across 750 and 550 px boxes.
 
-- A table that shows the chart's items is [DataTable](node_modules/basalt-ui/docs/data-table.md) with `focus`, which keeps the link through its own sort; a list that only repeats the chart's numbers is folded into the chart card or dropped (n18, n10, n03, n14, n17, n07); a table of the chart's items joins its card, not a third stacked surface (c16).
+- A table that shows the chart's items is [DataTable](node_modules/basalt-ui/docs/data-table.md) with `focus`, which keeps the link through its own sort; a list that only repeats the chart's numbers is folded into the chart card or dropped (n18, n10, n03, n14, n17, n07); a table of the chart's items joins its card instead of a third stacked surface (c16).
 
 ## Encodings
 
