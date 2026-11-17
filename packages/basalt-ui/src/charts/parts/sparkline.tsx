@@ -49,7 +49,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
   const refValue = reference === 'mean' ? meanOf(rows) : reference
   const refEnds =
     typeof refValue === 'object'
-      ? [Math.min(refValue.min, refValue.max), Math.max(refValue.min, refValue.max)]
+      ? [refValue.min, refValue.max]
       : refValue === undefined
         ? []
         : [refValue]
@@ -108,9 +108,9 @@ export function Sparkline(props: SparklineProps): ReactElement {
                 <rect
                   data-slot="spark-band"
                   x={0}
-                  y={g.y(refs[1]!)}
+                  y={Math.min(g.y(refs[0]!), g.y(refs[1]!))}
                   width={plotW}
-                  height={Math.max(0, g.y(refs[0]!) - g.y(refs[1]!))}
+                  height={Math.abs(g.y(refs[0]!) - g.y(refs[1]!))}
                   className="fill-line"
                   fillOpacity={0.25}
                 />

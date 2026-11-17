@@ -58,7 +58,7 @@ describe('sparkGeometry', () => {
   })
 
   test('a reference value maps through the same y scale and widens the domain', () => {
-    const g = sparkGeometry({ values: [2, 4], width: 100, height: 20, reference: 10 })
+    const g = sparkGeometry({ values: [2, 4], width: 100, height: 20, reference: [10] })
     expect(g.domain[1]).toBe(10)
     expect(g.y(10)).toBe(0)
   })
