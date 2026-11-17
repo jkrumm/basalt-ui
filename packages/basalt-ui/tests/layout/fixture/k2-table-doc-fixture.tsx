@@ -10,7 +10,9 @@
  * - `k2-table-title-first`: a 60-character title with a 70-character sub in a 1500 px table beside
  *   six short columns;
  * - `k2-table-ready-<14|17>`: a loaded table of that many rows;
- * - `k2-table-reload-<14|17>`: the same, flipped to loading by `window.k2Loading(id, true)`.
+ * - `k2-table-reload-<14|17>`: the same, flipped to loading by `window.k2Loading(id, true)`;
+ * - `k2-table-first-load-<18|9>`: a table that mounts loading with `bodyRows` of that count,
+ *   flipped to its rows by `window.k2Loading(id, false)`.
  */
 import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -128,12 +130,15 @@ function Probe({
   id,
   count,
   phone,
+  bodyRows,
 }: {
   id: string
   count: number
   phone?: 'cards' | 'scroll'
+  bodyRows?: number
 }): ReactElement {
-  const [loading, setLoading] = useState(false)
+  // A probe that declares `bodyRows` mounts loading, as a page whose query is pending does.
+  const [loading, setLoading] = useState(bodyRows !== undefined)
   loaders.set(id, setLoading)
   const t = useDataTable<Row>({
     id,
@@ -143,11 +148,20 @@ function Probe({
     getRowId: (r) => r.id,
     mode: { kind: 'client' },
     ...(phone !== undefined && { phone }),
+    ...(bodyRows !== undefined && { bodyRows }),
   })
   return <DataTable table={t} />
 }
 
-const PROBES: { id: string; count: number; phone?: 'cards' | 'scroll'; width?: number }[] = [
+type ProbeSpec = {
+  id: string
+  count: number
+  phone?: 'cards' | 'scroll'
+  width?: number
+  bodyRows?: number
+}
+
+const PROBES: ProbeSpec[] = [
   { id: 'k2-table-entity', count: 4 },
   { id: 'k2-table-narrow', count: 4 },
   { id: 'k2-table-scroll', count: 4, phone: 'scroll' },
@@ -156,6 +170,8 @@ const PROBES: { id: string; count: number; phone?: 'cards' | 'scroll'; width?: n
   { id: 'k2-table-ready-17', count: 17 },
   { id: 'k2-table-reload-14', count: 14 },
   { id: 'k2-table-reload-17', count: 17 },
+  { id: 'k2-table-first-load-18', count: 18, bodyRows: 18 },
+  { id: 'k2-table-first-load-9', count: 9, bodyRows: 9 },
 ]
 
 function Fixture(): ReactElement {
@@ -168,14 +184,19 @@ function Fixture(): ReactElement {
       <div data-testid="k2-table-title-first" className="min-w-0" style={{ width: 1500 }}>
         <TitleFirst />
       </div>
-      {PROBES.map(({ id, count, phone, width }) => (
+      {PROBES.map(({ id, count, phone, width, bodyRows }) => (
         <div
           key={id}
           data-testid={id}
           className="min-w-0"
           style={width === undefined ? undefined : { width }}
         >
-          <Probe id={id} count={count} {...(phone !== undefined && { phone })} />
+          <Probe
+            id={id}
+            count={count}
+            {...(phone !== undefined && { phone })}
+            {...(bodyRows !== undefined && { bodyRows })}
+          />
         </div>
       ))}
       <K2TableFixture />
