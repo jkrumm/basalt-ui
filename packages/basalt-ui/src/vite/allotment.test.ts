@@ -13,11 +13,12 @@ describe('allotment.gen.ts', () => {
     expect(ALLOTMENT).toEqual(parseAllotment(readFileSync(ARCHITECTURE, 'utf8')))
   })
 
-  it('reads the twelve runtime subpaths, 36 primitives and the two primitive peers', () => {
+  it('reads the twelve runtime subpaths, 37 primitives and the three primitive peers', () => {
     expect(Object.keys(ALLOTMENT.subpaths)).toHaveLength(12)
-    expect(ALLOTMENT.primitives).toHaveLength(36)
+    expect(ALLOTMENT.primitives).toHaveLength(37)
     expect(ALLOTMENT.primitivePeers).toEqual({
       'date-picker': ['react-day-picker'],
+      resizable: ['react-resizable-panels'],
       'virtual-list': ['@tanstack/react-virtual'],
     })
     expect(ALLOTMENT.subpaths['content']?.lazy).toEqual(['shiki', 'beautiful-mermaid'])
