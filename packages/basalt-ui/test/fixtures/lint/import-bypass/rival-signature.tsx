@@ -134,3 +134,12 @@ export const saved = () => toast('Saved')
 // @invalid
 import { useDayzed } from 'dayzed'
 export const DZ = useDayzed
+// @invalid
+import { createChart } from 'lightweight-charts'
+export const draw = (el) => createChart(el)
+// @invalid
+import toast from 'toastify-lite'
+export const saved = () => toast.success('Saved')
+// @valid
+import tablemark from 'tablemark'
+export const asTable = (rows) => tablemark(rows)

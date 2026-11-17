@@ -704,8 +704,13 @@ type RivalPart = {
    * downshift's `useSelect` is a combobox, react-supabase's is a database query (lint-10.1).
    */
   readonly hooks?: Readonly<Record<string, readonly string[]>>
-  /** A call of the binding renders the part: a toast is shown by `toast('saved')`, never a tag. */
-  readonly calls?: true
+  /**
+   * The part's word also names converters and serialisers that render nothing (remove-markdown,
+   * node-html-markdown, tablemark): a binding the file only calls or reads through a member is a
+   * utility. Every other part is driven imperatively too (`createChart(el)`, `toast.success()`), so
+   * such a use proves nothing there and the shape test decides.
+   */
+  readonly converters?: true
   readonly suffix?: RegExp
   /** A package the word reads but that is not this part (a serialiser that writes Markdown). */
   readonly except?: RegExp
@@ -731,19 +736,20 @@ const RIVAL_PARTS: readonly RivalPart[] = [
     words: 'markdown|marked',
     // A serialiser writes a Markdown string (mdast-util-to-markdown's `toMarkdown`); it renders nothing.
     except: /-to-markdown$/,
+    converters: true,
   },
   {
     kind: 'toast',
     part: 'notify() from basalt-ui',
     words: 'toast|snackbar',
     names: ['Toaster', 'Snackbar'],
-    calls: true,
   },
   {
     kind: 'table',
     part: 'DataTable from basalt-ui/table',
     words: 'table|data-?grid',
     names: ['DataGrid', 'DataTable'],
+    converters: true,
   },
   {
     kind: 'command palette',
@@ -915,15 +921,16 @@ const referenceKind = (node: Node): Use | undefined => {
 
 /**
  * The use test (lint-10.1): a by-word import reports when the file renders its binding (a JSX tag
- * or a hook call; a call for a part shown by one, a toast) and passes when every use is a plain
- * call or a member read (`removeMarkdown(s)`, `NodeHtmlMarkdown.translate(html)`), a converter
- * that renders nothing. Any other use, or none, leaves the verdict to the shape test.
+ * or a hook call). For a part whose word also names converters (markdown, table) it passes when
+ * every use is a plain call or a member read (`removeMarkdown(s)`, `NodeHtmlMarkdown.translate(html)`),
+ * a converter that renders nothing. Any other use, or none, leaves the verdict to the shape test.
  */
 const verdictOf = (rival: Rival, uses: ReadonlyMap<string, readonly Use[]>): boolean => {
   if (rival.locals === undefined) return rival.shape
   const seen = rival.locals.flatMap((name) => uses.get(name) ?? [])
-  if (seen.includes('render') || (rival.part.calls === true && seen.includes('call'))) return true
-  if (seen.length > 0 && seen.every((use) => use === 'call' || use === 'member')) return false
+  if (seen.includes('render')) return true
+  const utility = seen.length > 0 && seen.every((use) => use === 'call' || use === 'member')
+  if (rival.part.converters === true && utility) return false
   return rival.shape
 }
 
@@ -936,15 +943,16 @@ const verdictOf = (rival: Rival, uses: ReadonlyMap<string, readonly Use[]>): boo
  * them; a package that only shares a word is waived on its line.
  *
  * Use test (lint-10.1): a by-word import is judged by how the file uses its binding. A JSX tag or a
- * hook call renders a part and reports (a call does too for the toast part, which is shown by
- * one); a binding only called as a function or reached through a member is a utility and passes:
+ * hook call renders a part and reports. For the parts whose word also names converters (markdown,
+ * table), a binding only called as a function or reached through a member is a utility and passes:
  * remove-markdown's `removeMarkdown(s)`, node-html-markdown's `NodeHtmlMarkdown.translate(html)`.
- * It replaces the lint-9.1 shape test wherever the file uses the binding that way, the half of the
- * shape test that judged a name it could see used: a PascalCase converter class and a name ending
- * in the part's word (`removeMarkdown`) no longer report on their shape.
+ * There it replaces the half of the lint-9.1 shape test that judged a name it could see used: a
+ * PascalCase converter class and a name ending in the part's word (`removeMarkdown`) no longer
+ * report on their shape. A chart, a toast or an overlay is driven by calls too (`createChart(el)`,
+ * `toast.success()`), so for those parts a call proves nothing and the shape test stays.
  *
- * Shape test (lint-9.1), kept for an import the file never uses or only passes on (a re-export, an
- * argument): a by-word match reports only when the import binds a component (PascalCase, a
+ * Shape test (lint-9.1), kept for an import the file never uses, only passes on (a re-export, an
+ * argument) or, outside the converter parts, only calls: a by-word match reports only when the import binds a component (PascalCase, a
  * namespace included) or a hook (`use*`), or a name whose last word is the part's own (`createChart`
  * from lightweight-charts, `toast`). A lower-case function import is a utility and passes:
  * `markdownEscape` from markdown-escape, `google` from calendar-link. An import that binds nothing
