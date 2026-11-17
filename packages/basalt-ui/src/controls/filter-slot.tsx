@@ -2,7 +2,8 @@
  * `filterSlot(specs)`: the typed-data channel a composite takes its controls through. A composite
  * (`PageBar`, `Section`, `StatCard`, `ChartCard`, `DataPanel`, `AppShell globalControls`) gets a
  * `ControlsSlot`, never children, so a page author cannot hand it a raw `Select`. The slot draws
- * each spec with `ControlView`, which reads its presentation from the home around it.
+ * each spec with `ControlView`, which reads its presentation from the home around it; a pill home
+ * folds several filters into a `FilterSet` and draws a lone enum filter as its input.
  *
  * `filterSlot.custom(handle, label, render)` is the one escape: the author draws the input, the slot
  * keeps the label, the override cue and the reset. It is counted (`countEscapes`), and an app's
@@ -75,8 +76,12 @@ function ResetAll({ specs }: { specs: readonly AnySpec[] }): ReactElement | null
 function SlotView({ specs }: { specs: readonly AnySpec[] }): ReactElement | null {
   const presentation = use(ControlPresentationContext)
   const home = use(SlotHomeContext)
-  // A pill home (`page-bar`, `section-header`) draws the folding `FilterSet`.
-  if (home !== undefined && presentation === 'pill') return <SpecFilterSet specs={specs} />
+  // A pill home (`page-bar`, `section-header`) draws the folding `FilterSet`, except for one enum:
+  // its input is drawn as it is, so the choice is two interactions where a pill and its popover
+  // make three.
+  const loneEnum = specs.length === 1 && specs[0]?.handle.kind === 'enum'
+  if (home !== undefined && presentation === 'pill' && !loneEnum)
+    return <SpecFilterSet specs={specs} />
   return (
     <>
       {specs.map((s) => (

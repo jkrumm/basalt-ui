@@ -9,7 +9,7 @@
  *   markup, so hydration has nothing to reconcile.
  * - The count and `Reset all` come from the handles (`useCensus`), not from what is mounted.
  */
-import { use, useRef } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
@@ -90,8 +90,21 @@ function Pill({ spec, size }: { spec: AnySpec; size: 'sm' | 'md' }): ReactElemen
   const text = pillText(spec, value, t)
   const name = text.includes(spec.label) ? text : `${spec.label}: ${text}`
   const active = isActive(spec, value)
+  // A single-value choice (an enum, a range) is the whole job of its popover: it closes on the pick.
+  const [open, setOpen] = useState(false)
+  const opened = useRef(value)
+  const single = spec.handle.kind === 'enum' || spec.handle.kind === 'range'
+  useEffect(() => {
+    if (open && single && value !== opened.current) setOpen(false)
+  }, [open, single, value])
   return (
-    <Popover>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (next) opened.current = value
+        setOpen(next)
+      }}
+    >
       <PopoverTrigger
         render={<Button variant="secondary" size={size} aria-label={name} className="max-w-56" />}
       >
