@@ -8,6 +8,7 @@ Requires TanStack Table's own `table-state` skill for anything under `t.table`: 
 
 - Fewer than about 200 rows and all in hand: `mode: { kind: 'client' }`. Above 500 client rows add `virtual` and a fixed `height`; above that the rows belong on a server.
 - The server pages and filters: `mode: { kind: 'server', rowCount }`. Pass `rowCount` as `undefined` until it is known; the table never prints "of 0". A cursor API passes `cursor` instead, never both.
+- A table that mounts loading draws six skeleton rows unless the page says how many it expects: `bodyRows: 18` on `useDataTable` draws eighteen, so the frame does not jump when they arrive (n36 jumped 370 px from six to eighteen; a `min-h-*` wrapper missed by the row height). A paged table caps it at the page; once rows have shown, loading keeps their height.
 - Rows that never sort, filter or select are `ui/table`, not this.
 - Rows under a parent (who waits on whom, the jobs of a run) are a client table with `group: { by: '<parent column>' }`: one collapsible group row per parent, its toggle a button, with a `summary`. There is no tree field, so never indent a `c.custom` cell by hand to fake one (n32).
 
@@ -40,6 +41,7 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 
 - A column is a kind (`c.entity`, `c.money`, `c.status`, `c.date`, ...); the kind sets alignment, numerals, width, sort, filter and card slot. A raw column or a free `cell` does not exist. `c.custom` is the one counted escape and must declare `sortValue`, `card` and `priority`.
 - `priority` says what survives a narrow table: 1 always, 2 at reduced width, 3 at full width only. Give an identity column 1; at most two columns are 1, the rest demote in declaration order.
+- Priority is decided against the table's container, not the viewport: priority 3 shows only from `data-full-at`, the smallest of 800, 1000, 1200, 1440 or 1800 px that holds every visible column (`ch` x 8 px + 24 px each, 44 px for an icon column); priority 1 and 2 show from 480 px, or 800 px once they sum above 480 px, and the last priority 2 columns drop to 3 while they sum above 800 px. A table in a half-width cell (about 900 px at 1800) therefore loses a priority 2 column when priority 1 and 2 sum above 800 px (n33 .4).
 - Absent values print a dash; a zero is a zero.
 
 ## An age or a duration is a meter
@@ -56,6 +58,7 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 ## Phone and the 390 px check
 
 - Below 480 px the same rows become cards: sort moves to the toolbar, selection to an explicit Select mode, the row's actions to a kebab. `phone: 'scroll'` keeps a numeric matrix a table, and only where the first column answers the question: it pins the first column and pushes every other off screen (n25 .66 lost the answer column that way). Otherwise `priority` keeps the answer column and drops the rest.
+- A phone card labels every value but the title with its column header, and a headerless column with its id: the title is the only bare value, so give every column a header that reads well beside its value (n36 .37).
 - A unit travels with its number where a phone card drops the column header: the unit in the cell, never only the header "% of lessons" (n11 .5). A strip cell fits one line at 390, one name and a count ("Nextcloud +1"), where three names clip (n23 .34). An ordinal (a difficulty, a level) is a mark in the cell, not a word.
 - `t.table` is the read view of what the table shows (`rows`, `matched`, `columns`) for an export or a board over the same rows. Saved views live on the device unless `views: { store }` hands them a `ViewStore`.
 - Every column's data must be reachable on a phone. With `detail`, tapping a row opens it; with `onRowActivate`, the row navigates and a Details door opens the sheet; with neither, tapping opens the auto sheet of every column.
