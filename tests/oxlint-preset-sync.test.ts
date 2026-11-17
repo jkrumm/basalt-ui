@@ -123,7 +123,9 @@ describe('the import bans fire for real', () => {
       )
       mkdirSync(dirname(join(dir, file)), { recursive: true })
       writeFileSync(join(dir, file), SOURCE)
-      const result = Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', file], { cwd: dir })
+      const result = Bun.spawnSync([OXLINT_BIN, '--format=unix', '-c', '.oxlintrc.json', file], {
+        cwd: dir,
+      })
       return `${result.stdout}${result.stderr}`
     } finally {
       rmSync(dir, { recursive: true, force: true })
