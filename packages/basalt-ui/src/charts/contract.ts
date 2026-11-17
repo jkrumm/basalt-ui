@@ -299,28 +299,30 @@ export type MiniBarsProps = Omit<SparklineBase, 'form' | 'reference'> &
 
 // ---- ChartCard ----------------------------------------------------------------------------
 
+/** An `undefined` field is an absent one, so a maybe-value passes straight. */
 export type ChartFigure = {
   value: number | string | null
-  unit?: string
-  delta?: Delta
-  period?: string
-  status?: Verdict
+  unit?: string | undefined
+  delta?: Delta | undefined
+  period?: string | undefined
+  status?: Verdict | undefined
 }
 
+/** An `undefined` field is an absent one, so a maybe-value passes straight. */
 export type ChartCardProps = Omit<FrameState, 'phase'> & {
   /**
    * A `Phase` or the query itself. With a query, `empty` takes effect only once `data` is an empty
    * array, so it can be passed unconditionally; with a `Phase`, `empty` applies whenever it is set.
    */
-  phase?: Phase | QueryStateLike
+  phase?: Phase | QueryStateLike | undefined
 
-  figure?: ChartFigure
+  figure?: ChartFigure | undefined
   /** The legend row for marks the page draws through the seam, drawn in every phase. */
-  legend?: readonly LegendEntry[]
-  footer?: FootFacts
-  controls?: ControlsSlot<'widget'>
-  menu?: CardMenu
-  height?: 'auto' | 'short' | 'fill'
+  legend?: readonly LegendEntry[] | undefined
+  footer?: FootFacts | undefined
+  controls?: ControlsSlot<'widget'> | undefined
+  menu?: CardMenu | undefined
+  height?: 'auto' | 'short' | 'fill' | undefined
 } & (
     | (FrameHead & { chart: BoxSlot })
     /** A Suspense fallback. */

@@ -23,7 +23,7 @@ import { MAX_ROWS, StatGroupContext, useAboutLabel, warnOnce } from './stat-grou
  * not an `Omit`: `Omit` would flatten the link-or-button union of `CardTarget`.)
  */
 export type StatCellProps = ContractProps & {
-  rows?: readonly [StatRow?, StatRow?, StatRow?, StatRow?]
+  rows?: readonly [StatRow?, StatRow?, StatRow?, StatRow?] | undefined
 }
 
 /** The chart box: the one track a cell gives a trend. */
