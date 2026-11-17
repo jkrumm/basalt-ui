@@ -33,4 +33,5 @@ not guarded:
 
 - Draw `plot.rows(key)` and `plot.visible`, never the `series` prop, so a legend toggle hides the mark; a size in a mark reads `plot.plotHeight`.
 - Date text on a time axis comes from `useFormat` or `createFormat`, never a raw `Intl` call.
+- The hero, the marks and the baseline measure one quantity; the figure's delta and status follow focus through `focus.readout`, which takes any value.
 - Charts share one cursor by default; a chart that must not share isolates itself with a cursor group.
