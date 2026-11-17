@@ -223,7 +223,8 @@ notify.undo = function undo(id: string): boolean {
 /**
  * Retract the notification that owns `key`: its toast closes, or it leaves the queue unshown.
  * Call it when a later event makes it moot (the sync that failed has since succeeded). Returns
- * false when no notification holds the key.
+ * true when a notification was registered under the key (it may already have closed on its own),
+ * false when none was.
  *
  * @example
  * notify.dismiss('sync')
