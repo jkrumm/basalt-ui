@@ -434,7 +434,7 @@ export function useChartFocus<D>(
   const live: ReactElement = (
     <FocusLive claims={claims} text={name === undefined ? said : `${name}: ${said}`} />
   )
-  return {
+  const handle: ChartFocus<D> & ChartSide = {
     [CHART_SET]: fromChart,
     items,
     index,
@@ -448,6 +448,7 @@ export function useChartFocus<D>(
     step,
     live,
   }
+  return handle
 }
 
 /**
