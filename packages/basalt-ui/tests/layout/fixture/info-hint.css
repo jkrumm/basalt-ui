@@ -1,0 +1,8 @@
+/*
+ * The `info-hint` fixture's Tailwind v4 entry, compiled with preflight by `info-hint.layout.test.ts`
+ * into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './info-hint-fixture.tsx';
+@source '../../../src/ui/info-hint.tsx';
+@source '../../../src/ui/popover.tsx';

@@ -51,6 +51,7 @@
         "FieldsetLegend": "legend",
         "Form": "form",
         "IconTile": "div",
+        "InfoHint": "div",
         "Input": "input",
         "Inset": "div",
         "Kbd": "kbd",
