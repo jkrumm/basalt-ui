@@ -111,13 +111,6 @@ describe('cell text', () => {
     expect(sizes.length).toBeGreaterThan(0)
     expect(new Set(sizes)).toEqual(new Set([String(BASALT.text.md)]))
   })
-
-  test('the row labels sit clear of the svg edge the focus ring is drawn on', async () => {
-    const el = await mount(<Plain data={MIXED} />)
-    const label = el.querySelector('text[data-ts-key^="y-tick-label"]') as Element
-    // End-anchored at the plot edge: x is the plot's left less the tick gap; the ring is 2px wide.
-    expect(Number(label.getAttribute('x'))).toBeGreaterThanOrEqual(2 + 6 + 4)
-  })
 })
 
 function Focused(): ReactElement {

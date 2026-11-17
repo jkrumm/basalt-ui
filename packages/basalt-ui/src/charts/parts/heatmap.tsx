@@ -262,10 +262,6 @@ const fillStyle: CSSProperties = {
   minHeight: HEIGHT_MIN,
 }
 
-/** The row-label gutter's air beyond the tick gap: keeps the focus ring (2px, inset) off the label. */
-const RING_CLEARANCE = 6
-const TICK_GAP = 4
-
 /**
  * A stated cell's label while the cell is dimmed: the fill dims toward the card (`dimmedPaint`), so
  * the light-on-saturated ink of the resting cell loses its ground. In light the dimmed fill is pale
@@ -578,16 +574,6 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         ]
         return {
           marks,
-          // The row labels hug the svg edge, where the focus ring is drawn: lock a left gutter that
-          // holds the widest label with air to spare (the labels are right-aligned to the plot).
-          margin: {
-            left:
-              Math.ceil(
-                Math.max(0, ...rows.map((r) => captionWidth(formatRow(r), BASALT.text.micro))),
-              ) +
-              TICK_GAP +
-              RING_CLEARANCE,
-          },
           scales: {
             x: {
               scale: scaleBand<string>().domain(cols).paddingInner(0).paddingOuter(0),
