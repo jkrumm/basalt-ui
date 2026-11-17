@@ -73,7 +73,7 @@ export const rows: readonly RowDef[] = [
     order: 40,
     label: 'published subpaths (package.json exports)',
     // 2.0 target 15.
-    ceiling: 27, // v3 teardown-peers: the count after `./format` retired with src/format (the 2.x subpaths are gone; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router)
+    ceiling: 28, // `./archify.css` (raise row below); was 27: v3 teardown-peers: the count after `./format` retired with src/format (the 2.x subpaths are gone; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router)
     measure: () => Object.keys(readManifest().exports ?? {}).length,
   },
 ]
@@ -423,6 +423,13 @@ export const raises: Raises = {
     },
   ],
   subpaths: [
+    {
+      from: 27,
+      to: 28,
+      consumer:
+        "`./archify.css`: the software-factory guide (docs/guide/, issue_1797) embeds archify SVGs inline and themes them through `data-preset='basalt'`; the one generated block maps archify's 32 variables to the tokens",
+      repo: 'software-factory',
+    },
     {
       from: 32,
       to: 33,

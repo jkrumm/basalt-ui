@@ -382,6 +382,13 @@ export const SURFACES = {
     description: 'v3 font faces, frozen per major',
     forbiddenImports: [],
   },
+  './archify.css': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description:
+      "v3 archify diagram theme — one [data-preset='basalt'] block mapping archify's variables to the --basalt-* tokens; opt-in, needs tokens.css",
+    forbiddenImports: [],
+  },
   './table.css': {
     kind: 'tooling',
     layer: 'non-js-asset',

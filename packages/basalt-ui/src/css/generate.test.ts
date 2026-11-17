@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { deriveV3, DEFAULT_DERIVE_V3_CONFIG } from '../tokens/derive'
 import { tokenNames } from '../tokens/emit'
-import { generateCss } from './generate'
+import { contrastRatio } from '../tokens/hct'
+import { ARCHIFY_CATEGORIES, ARCHIFY_VARS, generateCss } from './generate'
 import type { CssFileName } from './generate'
 
 const FILES: readonly CssFileName[] = [
@@ -11,6 +13,7 @@ const FILES: readonly CssFileName[] = [
   'prose.css',
   'fonts.css',
   'tailwind.css',
+  'archify.css',
 ]
 
 describe('generateCss', () => {
@@ -34,7 +37,7 @@ describe('generateCss', () => {
     }
   })
 
-  test('every --basalt-* read in the five files is a table name', () => {
+  test('every --basalt-* read in the six files is a table name', () => {
     const known = new Set(tokenNames())
     for (const name of FILES) {
       for (const [, ref] of generated[name].matchAll(/var\((--basalt-[a-z0-9-]+)/g)) {
@@ -83,5 +86,78 @@ describe('generateCss', () => {
     expect(fonts).toContain("font-family: 'Hubot Sans Variable'")
     expect(fonts).not.toContain('@import')
     expect(fonts).not.toContain('Fallback')
+  })
+})
+
+// The variables archify's own `classic` theme block sets (assets/template.html, 2.17 and 3.x): the
+// contract the preset must cover. A new archify variable is added here and to ARCHIFY_VARS.
+const ARCHIFY_CLASSIC_VARS = [
+  '--bg',
+  '--grid',
+  '--text',
+  '--text-muted',
+  '--text-dim',
+  '--text-faint',
+  '--panel',
+  '--panel-border',
+  '--lane-fill',
+  '--lane-stroke',
+  '--arrow',
+  '--arrow-emphasis',
+  '--mask',
+  ...['frontend', 'backend', 'database', 'cloud', 'security', 'messagebus', 'external'].flatMap(
+    (c) => [`--${c}-fill`, `--${c}-stroke`],
+  ),
+  '--toolbar-bg',
+  '--toolbar-border',
+  '--toolbar-text',
+  '--toolbar-hover',
+  '--toolbar-menu-bg',
+]
+
+describe('archify.css', () => {
+  const css = generateCss()['archify.css']
+
+  test('one unlayered theme-agnostic block that sets every archify classic variable', () => {
+    expect(css).not.toContain('@layer')
+    expect(css).not.toContain('data-theme')
+    expect(css.match(/^\S.*\{$/gm)).toEqual(["[data-preset='basalt'] {"])
+    const set = [...css.matchAll(/^ {2}(--[a-z-]+):/gm)].map((m) => m[1])
+    expect(set.toSorted()).toEqual(ARCHIFY_CLASSIC_VARS.toSorted())
+  })
+
+  test('carries no colour literal: every value is a token read', () => {
+    for (const value of Object.values(ARCHIFY_VARS)) {
+      expect(value).toMatch(/var\(--basalt-[a-z0-9-]+\)/)
+      expect(value).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsl|oklch\(/i)
+    }
+  })
+
+  test('strokes hold 3:1 and text 4.5:1 against the canvas, in both schemes', () => {
+    const derived = deriveV3(DEFAULT_DERIVE_V3_CONFIG)
+    const token = (value: string): string => /var\(--basalt-([a-z0-9-]+)\)/.exec(value)![1]!
+    for (const scheme of ['light', 'dark'] as const) {
+      const canvas = derived.colors.canvas[scheme]
+      const read = (name: string) =>
+        derived.colors[token(name) as keyof typeof derived.colors][scheme]
+      for (const [category] of ARCHIFY_CATEGORIES) {
+        const stroke = ARCHIFY_VARS[`--${category}-stroke`]!
+        expect(contrastRatio(read(stroke), canvas), `${category} ${scheme}`).toBeGreaterThanOrEqual(
+          3,
+        )
+      }
+      for (const name of ['--arrow', '--arrow-emphasis']) {
+        expect(
+          contrastRatio(read(ARCHIFY_VARS[name]!), canvas),
+          `${name} ${scheme}`,
+        ).toBeGreaterThanOrEqual(3)
+      }
+      for (const name of ['--text', '--text-muted', '--text-faint']) {
+        expect(
+          contrastRatio(read(ARCHIFY_VARS[name]!), canvas),
+          `${name} ${scheme}`,
+        ).toBeGreaterThanOrEqual(4.5)
+      }
+    }
   })
 })
