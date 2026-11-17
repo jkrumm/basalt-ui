@@ -86,6 +86,7 @@
   "StatCard": "argo:apps/dashboard/src/features/warden/funnel-stats.tsx",
   "StatCell": "linewatch:web/src/components/status-bar.tsx",
   "StatGroup": "argo:apps/dashboard/src/features/warden/stat-strip.tsx",
+  "StepRail": "software-factory:apps/console/src/components/kit/step-rail.tsx",
   "tableCodec": "linewatch:web/src/components/outage-table.tsx",
   "TablePager": "linewatch:web/src/components/outage-table.tsx",
   "TableToolbar": "linewatch:web/src/components/outage-table.tsx",
