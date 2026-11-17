@@ -156,6 +156,64 @@ describe('onShow', () => {
   })
 })
 
+describe('key', () => {
+  test('a re-emit with the same key closes the earlier toast and shows the new one', () => {
+    const h = host()
+    const first = notify('error', { message: 'Sync failed', key: 'sync' })
+    const second = notify('error', { message: 'Sync failed: offline', key: 'sync' })
+    expect(second).not.toBe(first)
+    expect(h.closed).toEqual([first])
+    expect(h.entries.map((e) => e.id)).toEqual([first, second])
+  })
+
+  test('different keys, or no key, stack', () => {
+    const h = host()
+    notify('error', { message: 'a', key: 'one' })
+    notify('error', { message: 'b', key: 'two' })
+    notify('error', { message: 'c' })
+    expect(h.closed).toEqual([])
+    expect(h.entries).toHaveLength(3)
+  })
+
+  test('a keyed re-emit before the host mounts replaces the queued one', () => {
+    notify('error', { message: 'old', key: 'sync' })
+    notify('error', { message: 'new', key: 'sync' })
+    expect(host().entries.map((e) => e.message)).toEqual(['new'])
+  })
+
+  test('onShow sees the key, so an inbox keeps one entry per key', () => {
+    const seen: (string | undefined)[] = []
+    notify.onShow('error', (p) => seen.push(p.key))
+    host()
+    notify('error', { message: 'a', key: 'sync' })
+    notify('error', { message: 'b', key: 'sync' })
+    expect(seen).toEqual(['sync', 'sync'])
+  })
+
+  test('dismiss closes the shown toast and reports whether one held the key', () => {
+    const h = host()
+    const id = notify('error', { message: 'Sync failed', key: 'sync' })
+    expect(notify.dismiss('sync')).toBe(true)
+    expect(h.closed).toEqual([id])
+    expect(notify.dismiss('sync')).toBe(false)
+    expect(notify.dismiss('never')).toBe(false)
+  })
+
+  test('dismiss on a queued notification means it is never shown', () => {
+    notify('error', { message: 'x', key: 'sync' })
+    expect(notify.dismiss('sync')).toBe(true)
+    expect(host().entries).toHaveLength(0)
+  })
+
+  test('the same text re-emitted right after a dismiss shows again', () => {
+    const h = host()
+    notify('error', { message: 'Sync failed', key: 'sync' })
+    notify.dismiss('sync')
+    notify('error', { message: 'Sync failed', key: 'sync' })
+    expect(h.entries).toHaveLength(2)
+  })
+})
+
 describe('no host', () => {
   test('warns in dev once a notification has waited 3 s with no host', () => {
     jest.useFakeTimers()

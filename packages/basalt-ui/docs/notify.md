@@ -11,7 +11,8 @@ slots: []
 
 Show a toast. Returns its id. Errors stay until dismissed; every other kind closes after 5 s; an
 explicit `autoClose` under 5000 is raised to 5000. An identical payload within 1,500 ms returns
-the first toast's id and shows nothing new.
+the first toast's id and shows nothing new. A `key` makes a re-emit replace the earlier toast of
+that key instead of stacking beside it.
 
 ## Signature
 
@@ -24,4 +25,5 @@ notify(kind: NotifyKind, payload: NotificationPayload): string
 ```tsx
 notify('success', { message: 'Saved' })
 notify('error', { message: 'Upload failed', title: 'photo.jpg' })
+notify('error', { message: 'Sync failed', key: 'sync' })
 ```
