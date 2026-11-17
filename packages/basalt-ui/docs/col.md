@@ -41,6 +41,7 @@ col<T>(): Col<T>
     href?: (row: T) => string | NavTarget
     icon?: (row: T) => IconComponent
     sub?: (row: T) => string | null
+    subMono?: boolean  // The secondary text is a time or an id: drawn in the mono face with tabular numerals
     filter?: "text"
     width?: "content"  // `'content'` sizes the column to its widest loaded value, name or sub line (floor 18ch, cap 40ch), instead of a flexible share of what the other columns leave
 

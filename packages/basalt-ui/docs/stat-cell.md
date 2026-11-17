@@ -4,7 +4,8 @@ use when: 'a status bar or KPI row shows one figure with its qualifier, meter, t
 never when: 'the figure stands alone as a card (use a stat card) or the rows are the content (use a list)'
 subpath: basalt-ui/cards
 peers: ['@base-ui/react']
-slots: [stat-caption, stat-cell, stat-chart, stat-empty, stat-foot, stat-meter, stat-row, stat-swatch]
+slots:
+  [stat-caption, stat-cell, stat-chart, stat-empty, stat-foot, stat-meter, stat-row, stat-swatch]
 ---
 
 # StatCell
@@ -34,10 +35,11 @@ StatCell(props: StatCellProps): ReactElement
   delta?: Delta
   status?: Verdict
   sub?: string
+  subMono?: boolean  // The sub line is a time or an id: drawn in the mono face with tabular numerals
   srText?: string
   meter?: MeterSpec
   chart?: BoxSlot  // Called in a 28 px box
-  rows?: readonly StatRow[] & readonly [StatRow?, StatRow?, StatRow?, StatRow?]
+  rows?: (readonly StatRow[] & readonly [StatRow?, StatRow?, StatRow?, StatRow?])
 ```
 
 `Phase`, `QueryStateLike`, `Empty`, `Delta`, `Verdict` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty, Delta, Verdict } from 'basalt-ui/cards'`.
@@ -52,7 +54,10 @@ StatCell(props: StatCellProps): ReactElement
   unit="%"
   status={{ tone: 'good', label: 'Optimal' }}
   meter={{ label: 'Recovery', value: 82, max: 100 }}
-  rows={[{ label: 'HRV', value: '64 ms' }, { label: 'Resting', value: '48 bpm' }]}
+  rows={[
+    { label: 'HRV', value: '64 ms' },
+    { label: 'Resting', value: '48 bpm' },
+  ]}
   phase={query}
 />
 ```
