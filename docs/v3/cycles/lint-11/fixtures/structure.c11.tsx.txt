@@ -1,0 +1,555 @@
+// Cycle 11 phrasings for the structure family: import-boundary (every form but the rival-signature
+// and scheme-library ones, which the lead seeds), primitive-bypass (every form but html-data-marks),
+// colour-literal and the shadcn structure rules `no-restyle`, `require-static-classes` and
+// `no-inline-styles`. Seed numbers continue cycle 10's. Cycle 11 draws on 2.x friction and on
+// shadcn recipe habits: the Sonner `Toaster` wrapper a recipe copies, `buttonVariants` and
+// `ButtonProps` imported from the ejected-looking `components/ui/button` path, the shadcn `cn` from
+// `lib/utils` under a relative path, a `useChat` read through a namespace import, a `Table` wrapper
+// that renders the raw element, a `<Input type="checkbox">`, an icon button pinned with `size-8`,
+// and a class string built by concatenation. A `pass` mark is valid code beside a shape a rule
+// might read as a defect (an allowed engine subpath, a non-`cn` export of the utils file, a
+// `components/ui-kit` path, a fixed table mapped from an UPPER_CASE constant, a custom-property
+// style, a `useChat` that carries its `chat` through a spread or a prop).
+// Every non-seeded import sits here, above its first use; a seeded import sits in its own span.
+import { createElement, useMemo, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
+import * as AI from '@ai-sdk/react'
+import { useChat } from '@ai-sdk/react'
+import { formatDistanceToNow as ago } from 'date-fns'
+import moment from 'moment'
+import { cn } from 'basalt-ui'
+import { Section } from 'basalt-ui/page'
+import { Bars, Donut, Heatmap, Lines, Sparkline } from 'basalt-ui/charts'
+import { Badge } from 'basalt-ui/ui/badge'
+import { Button } from 'basalt-ui/ui/button'
+import { Card } from 'basalt-ui/ui/card'
+import { Checkbox } from 'basalt-ui/ui/checkbox'
+import { Input } from 'basalt-ui/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from 'basalt-ui/ui/table'
+
+type Row = { id: string; name: string; value: number; share: number; at: string; group: string }
+const GROUPS: Record<string, Row[]> = {}
+const COLUMNS = ['Name', 'Value', 'Share']
+
+// seed import-boundary/base-ui 18: a barrel re-exporting Base UI's tooltip for the app's own ui folder
+export * from '@base-ui/react/tooltip'
+
+// seed import-boundary/base-ui 19: react-datepicker loaded lazily behind a Suspense boundary
+import { lazy } from 'react'
+export const LazyDatePicker = lazy(() => import('react-datepicker'))
+
+// seed import-boundary/cmdk 12: cmdk as a namespace, the way its README mounts the dialog
+import * as Cmdk from 'cmdk'
+export const CK = Cmdk
+
+// seed import-boundary/cmdk 13: kbar's useKBar hook to open a palette from a button
+import { useKBar } from 'kbar'
+export const UK = useKBar
+
+// seed import-boundary/data-library 20: socket.io-client's io for a live feed
+import { io } from 'socket.io-client'
+export const connectLive = () => io('/live')
+
+// seed import-boundary/data-library 21: React Router 7's unified package for the search params
+import { useSearchParams as useRouterSearch } from 'react-router'
+export const URS = useRouterSearch
+
+// seed import-boundary/data-library 22: pusher-js for a channel subscription
+import Pusher from 'pusher-js'
+export const PS = Pusher
+
+// seed import-boundary/engine-subpath 11: the engine's bare transform module, which only its family subpaths are allowed from
+import { bin } from '@tanstack/charts/transform'
+export const BN = bin
+
+// seed import-boundary/engine-subpath 12: a legend mark from the engine's mark folder
+import { legend } from '@tanstack/charts/mark/legend'
+export const LG = legend
+
+// pass import-boundary/engine-subpath 1: the engine's stack module, one of the allowed subpaths
+import { stack } from '@tanstack/charts/stack'
+export const ST = stack
+
+// seed import-boundary/persist-storage 20: use-local-storage-state for a sidebar flag
+import useLocalStorageState from 'use-local-storage-state'
+export const ULSS = useLocalStorageState
+
+// seed import-boundary/persist-storage 21: @uidotdev/usehooks' storage hook
+import { useLocalStorage as useStoredValue } from '@uidotdev/usehooks'
+export const USV = useStoredValue
+
+// seed import-boundary/persist-storage 22: react-use's useLocalStorage for a draft
+import { useLocalStorage as useDraftStore } from 'react-use'
+export const UDS = useDraftStore
+
+// seed import-boundary/persist-storage 23: redux-persist's storage engine
+import storage from 'redux-persist/lib/storage'
+export const RPS = storage
+
+// pass import-boundary/persist-storage 3: react-use's media query hook, which holds no storage
+import { useMedia } from 'react-use'
+export const UM = useMedia
+
+// seed import-boundary/radix 23: react-bootstrap's modal
+import { Modal } from 'react-bootstrap'
+export const RBM = Modal
+
+// seed import-boundary/radix 24: Radix Themes' Theme provider, the other Radix package
+import { Theme } from '@radix-ui/themes'
+export const RTH = Theme
+
+// seed import-boundary/radix 25: Radix's dialog as a namespace, the shadcn Dialog's own import
+import * as DialogPrimitive from '@radix-ui/react-dialog'
+export const DP = DialogPrimitive
+
+// seed import-boundary/radix 26: Fluent UI's React Components kit
+import { FluentProvider } from '@fluentui/react-components'
+export const FP = FluentProvider
+
+// pass import-boundary/radix 4: Mantine's hooks package, a set with no UI
+import { useHotkeys } from '@mantine/hooks'
+export const UHK = useHotkeys
+
+// seed import-boundary/react-table-hook 18: AG Grid's community core with its createGrid
+import { createGrid } from 'ag-grid-community'
+export const CG = createGrid
+
+// seed import-boundary/react-table-hook 19: MUI X's pro data grid
+import { DataGridPro } from '@mui/x-data-grid-pro'
+export const DGP = DataGridPro
+
+// seed import-boundary/react-table-hook 20: Material React Table's hook
+import { useMaterialReactTable } from 'material-react-table'
+export const UMT = useMaterialReactTable
+
+// pass import-boundary/react-table-hook 3: TanStack Table's flexRender, a helper with no hook
+import { flexRender } from '@tanstack/react-table'
+export const FR = flexRender
+
+// seed import-boundary/sonner 16: the shadcn sonner.tsx recipe's Toaster import with its props type
+import { Toaster as Sonner, type ToasterProps } from 'sonner'
+export const SN = (props: ToasterProps) => <Sonner {...props} />
+
+// seed import-boundary/sonner 17: react-toastify's stylesheet imported beside the container
+import 'react-toastify/dist/ReactToastify.css'
+
+// seed import-boundary/streamdown 16: marked-react for a chat bubble
+import Markdown2 from 'marked-react'
+export const M2 = Markdown2
+
+// seed import-boundary/streamdown 17: markdown-to-jsx' compiler on a model reply
+import { compiler } from 'markdown-to-jsx'
+export const MC = compiler
+
+// seed import-boundary/tailwind-merge 15: clsx with its ClassValue type, the first line of the shadcn utils file
+import { clsx, type ClassValue } from 'clsx'
+export const cx2 = (...inputs: ClassValue[]) => clsx(inputs)
+
+// seed import-boundary/tailwind-merge 16: the shadcn cn under a relative path
+import { cn as localCn } from '../lib/utils'
+export const LC = localCn
+
+// seed import-boundary/tailwind-merge 17: createTailwindMerge with the default config
+import { createTailwindMerge, getDefaultConfig } from 'tailwind-merge'
+export const twMerge3 = createTailwindMerge(getDefaultConfig)
+
+// pass import-boundary/tailwind-merge 2: a formatter from the shadcn utils file, not its cn
+import { formatBytes } from '@/lib/utils'
+export const FB = formatBytes
+
+// seed import-boundary/ui-path 16: buttonVariants from the shadcn button file, for a link styled as a button
+import { buttonVariants } from '@/components/ui/button'
+export const BV = buttonVariants
+
+// seed import-boundary/ui-path 17: a type import of ButtonProps from the shadcn path
+import type { ButtonProps } from '@/components/ui/button'
+export type BP = ButtonProps
+
+// seed import-boundary/ui-path 18: a barrel re-exporting the shadcn card file
+export * from '@/components/ui/card'
+
+// seed import-boundary/ui-path 19: a sibling ui folder reached by a relative path from components/
+import { Skeleton } from './ui/skeleton'
+export const SK = Skeleton
+
+// pass import-boundary/ui-path 4: a ui-kit folder of the app's own, a different name from components/ui
+import { Kpi } from '@/components/ui-kit/kpi'
+export const KP = Kpi
+
+// seed import-boundary/visx 23: visx's xychart
+import { XYChart } from '@visx/xychart'
+export const XY = XYChart
+
+// seed import-boundary/visx 24: recharts' pie inside its responsive container
+import { PieChart, ResponsiveContainer } from 'recharts'
+export const RPC = [PieChart, ResponsiveContainer]
+
+// seed import-boundary/visx 25: Chart.js through its auto entry
+import Chart from 'chart.js/auto'
+export const CJA = Chart
+
+// seed import-boundary/visx 26: Victory's pie, a sibling package of its family
+import { VictoryPie } from 'victory-pie'
+export const VP = VictoryPie
+
+// seed import-boundary/use-chat-chat 15: useChat read through a namespace import with an api option
+export function Chat6() {
+  const chat = AI.useChat({ api: '/api/chat' })
+  return <p>{chat.status}</p>
+}
+
+// seed import-boundary/use-chat-chat 16: useChat with initial messages and an error handler, no chat
+export function Chat7({ initial }: { initial: never[] }) {
+  const chat = useChat({ messages: initial, onError: (e) => console.error(e) })
+  return <p>{chat.status}</p>
+}
+
+// pass import-boundary/use-chat-chat 2: a chat carried through a spread of a same-file options object
+const supportOptions = { chat: new AI.Chat({}) }
+export function Chat8() {
+  const chat = useChat({ ...supportOptions, experimental_throttle: 50 })
+  return <p>{chat.status}</p>
+}
+
+// pass import-boundary/use-chat-chat 3: the options come in as a prop and may carry the chat
+export function Chat9(props: Parameters<typeof useChat>[0]) {
+  const chat = useChat(props)
+  return <p>{chat.status}</p>
+}
+
+// seed primitive-bypass/raw-control 25: a raw progress element for an upload
+export function Upload({ row }: { row: Row }) {
+  return <progress value={row.share} max={1} />
+}
+
+// seed primitive-bypass/raw-control 26: a native date input for a range start
+export function From() {
+  const [from, setFrom] = useState('')
+  return <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+}
+
+// seed primitive-bypass/raw-control 27: an image that opens a preview on click
+export function Thumb({ open }: { open: () => void }) {
+  return <img src="/preview.png" alt="preview" onClick={open} />
+}
+
+// pass primitive-bypass/raw-control 6: the Button primitive carrying the click handler
+export function ClearAll({ clear }: { clear: () => void }) {
+  return <Button onClick={clear}>clear</Button>
+}
+
+// seed primitive-bypass/checkable-input 20: a checkbox whose ref sets the indeterminate state
+export function AllRows({ some }: { some: boolean }) {
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <input
+      type="checkbox"
+      ref={(el) => {
+        if (el) el.indeterminate = some
+        ref.current = el
+      }}
+      aria-label="select all"
+    />
+  )
+}
+
+// seed primitive-bypass/checkable-input 21: the Input primitive given type checkbox
+export function Agree() {
+  return <Input type="checkbox" aria-label="agree" />
+}
+
+// pass primitive-bypass/checkable-input 1: the Checkbox primitive for a row choice
+export function RowPick() {
+  return <Checkbox defaultChecked aria-label="select row" />
+}
+
+// seed primitive-bypass/raw-heading 21: a heading level chosen with a conditional of two elements
+export function Level({ top }: { top: boolean }) {
+  return top ? <h1>Overview</h1> : <h2>Overview</h2>
+}
+
+// seed primitive-bypass/raw-heading 22: an hgroup holding a title and a subtitle
+export function Masthead() {
+  return (
+    <hgroup>
+      <h1>Runs</h1>
+      <p>last 30 days</p>
+    </hgroup>
+  )
+}
+
+// pass primitive-bypass/raw-heading 1: a titled part through Section, which owns the h2
+export function Latency() {
+  return <Section title="Latency">p95</Section>
+}
+
+// seed primitive-bypass/raw-table 20: the shadcn Table recipe, a wrapper that renders the raw element
+export function RawTable(props: React.ComponentProps<'table'>) {
+  return <table className="w-full text-sm" {...props} />
+}
+
+// seed primitive-bypass/raw-table 21: one raw table per group, mapped
+export function PerGroup() {
+  return (
+    <div>
+      {Object.keys(GROUPS).map((g) => (
+        <table key={g}>
+          <tbody>
+            <tr>
+              <td>{g}</td>
+            </tr>
+          </tbody>
+        </table>
+      ))}
+    </div>
+  )
+}
+
+// pass primitive-bypass/raw-table 2: the table primitive for a static two-column list
+export function Legend2() {
+  return (
+    <Table>
+      <TableBody>
+        <TableRow>
+          <TableCell>ok</TableCell>
+          <TableCell>green</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  )
+}
+
+// seed primitive-bypass/role-table 18: a div header row of sortable column headers
+export function SortHead() {
+  return (
+    <div role="row">
+      <div role="columnheader" aria-sort="ascending">
+        Name
+      </div>
+    </div>
+  )
+}
+
+// seed primitive-bypass/role-table 19: a row header cell on a span beside a plain value
+export function Label() {
+  return (
+    <div>
+      <span role="rowheader">Region</span>
+    </div>
+  )
+}
+
+// seed primitive-bypass/table-rows 19: rows from the values of a grouped record, sorted by toSorted
+export function Grouped() {
+  return (
+    <TableBody>
+      {Object.values(GROUPS)
+        .toSorted((a, b) => a.length - b.length)
+        .map((g) => (
+          <TableRow key={g[0]?.group}>
+            <TableCell>{g.length}</TableCell>
+          </TableRow>
+        ))}
+    </TableBody>
+  )
+}
+
+// seed primitive-bypass/table-rows 20: a row renderer passed to map by reference
+const renderRow = (r: Row) => (
+  <TableRow key={r.id}>
+    <TableCell>{r.name}</TableCell>
+  </TableRow>
+)
+export function ByRef({ rows }: { rows: Row[] }) {
+  return <TableBody>{rows.map(renderRow)}</TableBody>
+}
+
+// pass primitive-bypass/table-rows 1: a fixed header row mapped from an UPPER_CASE constant
+export function Head3() {
+  return (
+    <TableHeader>
+      <TableRow>
+        {COLUMNS.map((c) => (
+          <TableHead key={c}>{c}</TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+  )
+}
+
+// seed primitive-bypass/svg-data-marks 21: text labels placed from the data
+export function Labels({ rows }: { rows: Row[] }) {
+  return (
+    <svg viewBox="0 0 100 100">
+      {rows.map((r, i) => (
+        <text key={r.id} x={i * 10} y={90}>
+          {r.name}
+        </text>
+      ))}
+    </svg>
+  )
+}
+
+// seed primitive-bypass/svg-data-marks 22: a radar polygon whose points are joined from the data
+export function Radar({ rows }: { rows: Row[] }) {
+  const points = rows.map((r, i) => `${50 + r.value * Math.cos(i)},${50 + r.value * Math.sin(i)}`)
+  return (
+    <svg viewBox="0 0 100 100">
+      <polygon points={points.join(' ')} />
+    </svg>
+  )
+}
+
+// pass primitive-bypass/svg-data-marks 4: a static rect and no data behind it
+export function Frame() {
+  return (
+    <svg viewBox="0 0 10 10" aria-hidden>
+      <rect width={10} height={10} />
+    </svg>
+  )
+}
+
+// seed primitive-bypass/chart-body-root 20: a bars chart shown under a main once data is ready
+export function ReadyBars({ rows, ready }: { rows: Row[]; ready: boolean }) {
+  return (
+    <main>
+      <h1 hidden>runs</h1>
+      {ready && <Bars label="runs" data={rows} x="at" series={[{ key: 'value', label: 'v' }]} />}
+    </main>
+  )
+}
+
+// seed primitive-bypass/chart-body-root 21: a chart per metric, mapped straight under a section
+export function PerMetric({ metrics }: { metrics: { key: string; rows: Row[] }[] }) {
+  return (
+    <section>
+      {metrics.map((m) => (
+        <Sparkline key={m.key} label={m.key} data={m.rows} x="at" y="value" />
+      ))}
+    </section>
+  )
+}
+
+// pass primitive-bypass/chart-body-root 4: a donut under a Panel component of the page
+function ConsolePanel({ children }: { children: React.ReactNode }) {
+  return <Card>{children}</Card>
+}
+export function MixPanel({ rows }: { rows: Row[] }) {
+  return (
+    <main>
+      <ConsolePanel>
+        <Donut label="mix" data={rows} />
+      </ConsolePanel>
+    </main>
+  )
+}
+
+// seed primitive-bypass/intl-format 28: Intl.ListFormat joining tags in JSX
+export function Tags({ tags }: { tags: string[] }) {
+  return <span>{new Intl.ListFormat('en', { type: 'conjunction' }).format(tags)}</span>
+}
+
+// seed primitive-bypass/intl-format 29: date-fns' formatDistanceToNow under a short local name
+export function Ago({ row }: { row: Row }) {
+  return <span>{ago(new Date(row.at), { addSuffix: true })}</span>
+}
+
+// seed primitive-bypass/intl-format 30: moment's long date format in JSX
+export function Long({ row }: { row: Row }) {
+  return <time>{moment(row.at).format('LL')}</time>
+}
+
+// pass primitive-bypass/intl-format 7: reading the resolved time zone, which formats nothing
+export const zone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+// seed colour-literal/colour-literal 35: a named colour chosen by a ternary on an svg stroke
+export function Pulse({ live }: { live: boolean }) {
+  return (
+    <svg aria-hidden>
+      <circle r={4} stroke={live ? 'green' : 'gray'} />
+    </svg>
+  )
+}
+
+// seed colour-literal/colour-literal 36: a hex colour stop on a canvas gradient
+export function fadeOut(ctx: CanvasRenderingContext2D) {
+  const g = ctx.createLinearGradient(0, 0, 0, 100)
+  g.addColorStop(0, '#0077bd')
+  return g
+}
+
+// pass colour-literal/colour-literal 10: a stroke read from a basalt token variable
+export const axisLine = { stroke: 'var(--basalt-line)' }
+
+// seed shadcn/no-inline-styles 7: a grid template in an inline style
+export function Cols() {
+  return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>c</div>
+}
+
+// seed shadcn/no-inline-styles 8: a style object held in a const and passed by reference
+const boxStyle: CSSProperties = { padding: 16, border: '1px solid' }
+export function Boxed() {
+  return <div style={boxStyle}>b</div>
+}
+
+// seed shadcn/no-inline-styles 9: a style element holding a rule for one component
+export function Scoped() {
+  return (
+    <div>
+      <style>{'.scoped { margin: 0 }'}</style>
+      <p className="scoped">s</p>
+    </div>
+  )
+}
+
+// pass shadcn/no-inline-styles 1: a dynamic value handed to a custom property
+export function Cells({ cols }: { cols: number }) {
+  return <div className="grid gap-4" style={{ '--cols': cols } as CSSProperties} />
+}
+
+// seed shadcn/no-restyle 7: an icon button pinned to a size with its padding removed
+export function IconBtn() {
+  return (
+    <Button className="size-8 rounded-full p-0" aria-label="more">
+      m
+    </Button>
+  )
+}
+
+// seed shadcn/no-restyle 8: the shadcn input recipe's classes copied onto the Input primitive
+export function Search() {
+  return <Input className="h-9 w-full rounded-md border bg-transparent px-3 py-1" aria-label="s" />
+}
+
+// seed shadcn/no-restyle 9: a Card whose padding and gap are zeroed through cn()
+export function Bare({ extra }: { extra?: string }) {
+  return <Card className={cn('gap-0 p-0', extra)}>b</Card>
+}
+
+// seed shadcn/require-static-classes 7: a width class built by string concatenation
+export function Wid({ width }: { width: number }) {
+  return <Badge className={'w-' + width}>w</Badge>
+}
+
+// seed shadcn/require-static-classes 8: a class returned by a helper call
+const toneClass = (failed: boolean) => (failed ? 'text-danger' : 'text-good')
+export function Tone({ failed }: { failed: boolean }) {
+  return <Badge className={toneClass(failed)}>t</Badge>
+}
+
+// seed shadcn/require-static-classes 9: a template literal inside cn() on a Button
+export function Gapped({ gap }: { gap: number }) {
+  return <Button className={cn('px-2', `gap-${gap}`)}>g</Button>
+}
+
+// pass shadcn/require-static-classes 4: cn() with an object of static class keys
+export function Quiet({ busy }: { busy: boolean }) {
+  return <Button className={cn('w-full', { 'opacity-50': busy })}>q</Button>
+}

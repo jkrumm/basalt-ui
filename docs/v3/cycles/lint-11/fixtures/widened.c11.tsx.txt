@@ -1,0 +1,246 @@
+// Cycle 11 phrasings for the shapes the lint-10 fixes widened: the rival net's use test and its
+// package-keyed hooks (lint-10.1, lint-10.9), the scheme-fork form on a cn() key, a hoisted test, a
+// dark-named boolean and a root class store, usehooks-ts' scheme hooks on the scheme-library row
+// (lint-10.2, lint-10.3, lint-10.10), a data-computed custom property a size class reads
+// (lint-10.4), a stream parameter of a helper (lint-10.5, lint-10.7), a spread staleTime
+// (lint-10.8) and the client hint through a cast (lint-10.6). Seed numbers continue cycle 10's. A
+// `pass` mark is valid code beside a shape a fix widened a form to.
+// Every non-seeded import sits here, above its first use; a seeded import sits in its own span.
+import { useMemo, useState } from 'react'
+import type { CSSProperties } from 'react'
+import { remark } from 'remark'
+import { cva } from 'class-variance-authority'
+import { useDebounceValue } from 'usehooks-ts'
+import { liveQuery } from 'basalt-ui/data'
+import { cn } from 'basalt-ui'
+import { fresh } from './query-defaults'
+
+type Run = { id: string; name: string; share: number; count: number }
+type UAData = { userAgentData?: { mobile: boolean; platform: string } }
+const runsQuery = { queryKey: ['runs'], queryFn: async () => [] as Run[] }
+declare const resolvedTheme: string | undefined
+declare function track(event: string, props: Record<string, unknown>): void
+
+// seed import-boundary/rival-signature 17: markdown-to-jsx's compiler called on model text, a renderer driven by a call
+import { compiler } from 'markdown-to-jsx'
+export function Note({ md }: { md: string }) {
+  return <div>{compiler(md)}</div>
+}
+
+// seed import-boundary/rival-signature 18: a markdown-it instance built with new, its HTML set on a div
+import MarkdownIt from 'markdown-it'
+const mdit = new MarkdownIt()
+export function Answer({ text }: { text: string }) {
+  return <div dangerouslySetInnerHTML={{ __html: mdit.render(text) }} />
+}
+
+// seed import-boundary/rival-signature 19: ApexCharts driven imperatively on a ref
+import ApexCharts from 'apexcharts'
+export function mountTrend(el: HTMLElement, data: number[]) {
+  return new ApexCharts(el, { series: [{ data }], chart: { type: 'line' } }).render()
+}
+
+// pass import-boundary/rival-signature 13: markdown-table writes a table as Markdown text for the clipboard
+import { markdownTable } from 'markdown-table'
+export function copyAsMarkdown(rows: string[][]) {
+  return navigator.clipboard.writeText(markdownTable(rows))
+}
+
+// pass import-boundary/rival-signature 14: strip-markdown handed to remark as a plugin, for a search excerpt
+import strip from 'strip-markdown'
+export async function excerpt(md: string) {
+  return String(await remark().use(strip).process(md))
+}
+
+// seed import-boundary/scheme-library 4: flowbite-react's theme-mode hook behind a toggle
+import { useThemeMode } from 'flowbite-react'
+export function FlowbiteToggle() {
+  const { toggleMode } = useThemeMode()
+  return toggleMode
+}
+
+// seed import-boundary/scheme-library 5: @reactuses/core's preferred-dark hook as the scheme store
+import { usePreferredDark } from '@reactuses/core'
+export const UPD = usePreferredDark
+
+// pass import-boundary/scheme-library 2: a usehooks-ts hook that is no scheme store, beside its scheme hooks
+export function Search({ q }: { q: string }) {
+  const [debounced] = useDebounceValue(q, 200)
+  return <output>{debounced}</output>
+}
+
+// seed dark-fork/scheme-fork 8: a cva variant keyed by the scheme, called with the resolved theme
+const logo = cva('size-8', { variants: { scheme: { dark: 'invert', light: '' } } })
+export function Logo() {
+  return <img alt="" src="/logo.svg" className={logo({ scheme: resolvedTheme as 'dark' | 'light' })} />
+}
+
+// seed dark-fork/scheme-fork 9: the scheme test hoisted through useMemo, then choosing a class
+export function Avatar() {
+  const dark = useMemo(() => resolvedTheme === 'dark', [])
+  return <img alt="" src="/a.png" className={dark ? 'opacity-90' : 'opacity-100'} />
+}
+
+// seed dark-fork/scheme-fork 10: usehooks-ts' media hook on the colour-scheme query choosing a class
+import { useMediaQuery } from 'usehooks-ts'
+export function Chip() {
+  const prefersDark = useMediaQuery('(prefers-color-scheme: dark)')
+  return <span className={cn('rounded-sm', prefersDark && 'opacity-80')}>c</span>
+}
+
+// seed dark-fork/scheme-fork 11: basalt's own attribute written by hand from a settings toggle
+export function applyScheme(next: 'dark' | 'light') {
+  document.documentElement.setAttribute('data-theme', next)
+}
+
+// seed dark-fork/scheme-fork 12: an Astro-style inline script setting the root className
+export function boot() {
+  const stored = localStorage.getItem('theme') ?? 'light'
+  document.documentElement.className = stored === 'dark' ? 'dark' : ''
+}
+
+// seed dark-fork/scheme-fork 13: a hook returning the class chosen by the scheme (the form's stated limit)
+export function useLogoClass() {
+  return resolvedTheme === 'dark' ? 'invert' : ''
+}
+
+// seed dark-fork/scheme-fork 14: a dark-theme prop in a clsx object key
+export function Frame({ isDarkTheme }: { isDarkTheme: boolean }) {
+  return <div className={cn('rounded-md', { 'opacity-90': isDarkTheme })}>f</div>
+}
+
+// pass dark-fork/scheme-fork 2: a root class for a flag that is no scheme
+export function markTouch() {
+  if (navigator.maxTouchPoints > 0) document.documentElement.classList.add('is-touch')
+}
+
+// seed data-primitive/reader-loop 21: a helper destructuring the body out of the response it is handed
+export const readEvents = async ({ body }: Response, onLine: (s: string) => void) => {
+  for await (const chunk of body!.pipeThrough(new TextDecoderStream())) onLine(chunk)
+}
+
+// seed data-primitive/reader-loop 22: a parameter typed as the response's body, read by a reader loop
+export async function pump(body: Response['body'], onChunk: (c: Uint8Array) => void) {
+  const reader = body!.getReader()
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) return
+    onChunk(value)
+  }
+}
+
+// seed data-primitive/reader-loop 23: a client class whose method loops over a stream it is handed
+export class SseClient {
+  async consume(stream: ReadableStream<Uint8Array>, onEvent: (s: string) => void) {
+    for await (const part of stream.pipeThrough(new TextDecoderStream())) onEvent(part)
+  }
+}
+
+// pass data-primitive/reader-loop 3: a stream handed on to an upload, never read here
+export function upload(body: ReadableStream<Uint8Array>) {
+  return fetch('/api/upload', { method: 'POST', body, duplex: 'half' } as RequestInit)
+}
+
+// pass data-primitive/reader-loop 4: a parameter named stream that is an async iterable of rows, no byte stream
+export async function drain(stream: AsyncIterable<Run>) {
+  const out: Run[] = []
+  for await (const run of stream) out.push(run)
+  return out
+}
+
+// seed data-primitive/live-static-stale-time 21: staleTime spread in from a const imported from another module
+export const live21 = liveQuery({ ...runsQuery, ...fresh }, 'live')
+
+// seed data-primitive/live-static-stale-time 22: staleTime merged in by Object.assign
+export const live22 = liveQuery(Object.assign({}, runsQuery, { staleTime: 5_000 }), 'live')
+
+// pass data-primitive/live-static-stale-time 2: a spread const that carries no staleTime
+const tagged = { meta: { area: 'runs' } }
+export const live2 = liveQuery({ ...runsQuery, ...tagged }, 'live')
+
+// seed viewport-keyed/media-query 29: the client hint bound to a const through the cast, then choosing the overlay
+export function Picker() {
+  const phone = (navigator as Navigator & UAData).userAgentData?.mobile ?? false
+  return phone ? <div className="flex-col">sheet</div> : <div className="flex-row">dialog</div>
+}
+
+// seed viewport-keyed/media-query 30: touch points as a stand-in for a phone, choosing columns
+export function Gallery() {
+  return <div className={navigator.maxTouchPoints > 0 ? 'grid grid-cols-1' : 'grid grid-cols-3'}>g</div>
+}
+
+// seed viewport-keyed/media-query 31: ontouchstart probed on window to stack a toolbar
+export function Toolbar() {
+  return <div className={cn('flex', 'ontouchstart' in window && 'flex-col')}>t</div>
+}
+
+// seed viewport-keyed/media-query 32: the client hint read once into state, then choosing the layout
+export function Shell() {
+  const [mobile] = useState(() => (navigator as Navigator & UAData).userAgentData?.mobile ?? false)
+  return <main className={mobile ? 'flex-col' : 'flex-row'}>m</main>
+}
+
+// pass viewport-keyed/media-query 6: the client hint put in a context object for a log line
+export function logOpen() {
+  const ctx = { mobile: (navigator as Navigator & UAData).userAgentData?.mobile }
+  track('open', ctx)
+}
+
+// seed viewport-keyed/platform-glyph 6: a user-agent regex choosing the command glyph
+export function Hint() {
+  return <kbd>{/Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘K' : 'Ctrl K'}</kbd>
+}
+
+// seed viewport-keyed/platform-glyph 7: the platform upper-cased and searched (the form's stated limit, navigator.platform)
+export function Hint2() {
+  return <kbd>{navigator.platform.toUpperCase().includes('MAC') ? '⌘' : 'Ctrl'}</kbd>
+}
+
+// seed viewport-keyed/platform-glyph 8: the platform choosing which modifier key a save handler reads, the chord defineCommands owns
+export function isSaveCombo(e: KeyboardEvent) {
+  const mac = /Mac/.test(navigator.userAgent)
+  return (mac ? e.metaKey : e.ctrlKey) && e.key === 's'
+}
+
+// seed primitive-bypass/html-data-marks 21: the share set on a parent, read by the child's width class
+export function ShareRow({ row }: { row: Run }) {
+  return (
+    <div style={{ '--w': `${row.share * 100}%` } as CSSProperties}>
+      <div className="h-2 w-(--w) bg-muted" />
+    </div>
+  )
+}
+
+// seed primitive-bypass/html-data-marks 22: a computed custom-property key cast to string
+export function ShareRow2({ pct }: { pct: number }) {
+  return <div className="h-2 w-(--pct) bg-muted" style={{ ['--pct' as string]: `${pct}%` }} />
+}
+
+// seed primitive-bypass/html-data-marks 23: the share as a raw number scaled in a calc width
+export function ShareRow3({ row }: { row: Run }) {
+  return <div className="h-2 w-[calc(var(--s)*100%)] bg-muted" style={{ '--s': row.share } as CSSProperties} />
+}
+
+// seed primitive-bypass/html-data-marks 24: stacked segments grown by their counts through flex-grow
+export function Stack({ rows }: { rows: Run[] }) {
+  return (
+    <div className="flex h-2">
+      {rows.map((r) => (
+        <span key={r.id} className="grow-(--g) bg-muted" style={{ '--g': r.count } as CSSProperties} />
+      ))}
+    </div>
+  )
+}
+
+// pass primitive-bypass/html-data-marks 4: a stagger delay from the index, no measure of a datum
+export function Stagger({ rows }: { rows: Run[] }) {
+  return (
+    <ul>
+      {rows.map((r, i) => (
+        <li key={r.id} className="animate-in [animation-delay:var(--d)]" style={{ '--d': `${i * 40}ms` } as CSSProperties}>
+          {r.name}
+        </li>
+      ))}
+    </ul>
+  )
+}

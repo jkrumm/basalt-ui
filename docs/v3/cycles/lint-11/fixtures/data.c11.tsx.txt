@@ -1,0 +1,510 @@
+// Cycle 11 phrasings for the data family: data-primitive (every form but reader-loop and
+// live-static-stale-time), router-search, control-home, untrusted-markdown and the core rule the
+// preset turns on (`no-use-before-define`, keyed `core/`). Seed numbers continue cycle 10's.
+// Cycle 11 draws on 2.x friction: a test helper that builds its own QueryClient, the Next.js
+// `getQueryClient` cache idiom, a storage handle guarded for SSR, a poll preset spread into every
+// query, a route component declared below the route that names it, a search validator that wants
+// the browser's language, model html run through a sanitiser and then trusted, and a prop-fed
+// wrapper that hides the tier from the reader. A `pass` mark is valid code beside a shape a rule
+// might read as a defect (a clock that is not a refetch, `search` forwarded by the route's own
+// link, a changelog imported from a file, a hole-free `srcDoc`).
+// Every non-seeded import sits here, above its first use; a seeded import sits in its own span.
+import { cache, useEffect, useMemo, useState, useReducer, useSyncExternalStore } from 'react'
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useSearch,
+} from '@tanstack/react-router'
+import {
+  QueryClient,
+  queryOptions,
+  useQueries,
+  useQuery,
+} from '@tanstack/react-query'
+import { cva } from 'class-variance-authority'
+import { z } from 'zod'
+import DOMPurify from 'dompurify'
+import { unified } from 'unified'
+import remarkRehype from 'remark-rehype'
+import { useInterval, useLocalStorage } from 'usehooks-ts'
+import { useIntervalEffect } from '@react-hookz/web'
+import { SWRConfig } from 'swr'
+import CHANGELOG from './CHANGELOG.md?raw'
+import { Markdown } from 'basalt-ui/content'
+import { ControlHome, FormField } from 'basalt-ui/controls'
+import { createChannel, createQueryClient, liveQuery } from 'basalt-ui/data'
+import { persisted } from 'basalt-ui'
+import { Bars, Heatmap, Lines } from 'basalt-ui/charts'
+import { Checkbox } from 'basalt-ui/ui/checkbox'
+import { Combobox } from 'basalt-ui/ui/combobox'
+import { NumberField } from 'basalt-ui/ui/number-field'
+import { RadioGroup, Radio } from 'basalt-ui/ui/radio-group'
+import { Segmented } from 'basalt-ui/ui/segmented'
+import { Select, SelectContent, SelectItem, SelectTrigger } from 'basalt-ui/ui/select'
+import { Switch } from 'basalt-ui/ui/switch'
+
+type Row = { id: string; name: string; value: number; at: string }
+type Msg = { id: string; role: string; text: string; html: string }
+type RunsSearch = { page: number; q: string; tab: string }
+const runsQuery = { queryKey: ['runs'], queryFn: async () => [] as Row[] }
+const fetchRuns = async (): Promise<Row[]> => []
+const TRUST: Record<string, 'trusted' | 'untrusted'> = { system: 'trusted', user: 'untrusted' }
+
+// seed data-primitive/chart-data-fallback 22: the empty array behind a type assertion in the prop
+export function CastFallback() {
+  const castQ = useQuery(runsQuery)
+  return (
+    <Bars
+      label="runs"
+      data={(castQ.data ?? []) as Row[]}
+      x="at"
+      series={[{ key: 'value', label: 'v' }]}
+    />
+  )
+}
+
+// seed data-primitive/chart-data-fallback 23: the fallback hidden in a helper the prop calls
+const orEmpty = <T,>(list: T[] | undefined): T[] => list ?? []
+export function HelperFallback() {
+  const helperQ = useQuery(runsQuery)
+  return (
+    <Lines
+      label="runs"
+      data={orEmpty(helperQ.data)}
+      x="at"
+      series={[{ key: 'value', label: 'v' }]}
+    />
+  )
+}
+
+// seed data-primitive/chart-data-fallback 24: a renamed destructure default of an empty array
+export function RenamedDefault() {
+  const { data: heatRows = [] } = useQuery(runsQuery)
+  return <Heatmap label="runs" data={heatRows} x="at" y="name" value="value" />
+}
+
+// pass data-primitive/chart-data-fallback 4: the chart drawn only on success, from the query's own data
+export function OnSuccess() {
+  const okQ = useQuery(runsQuery)
+  return okQ.isSuccess && okQ.data ? (
+    <Lines label="runs" data={okQ.data} x="at" series={[{ key: 'value', label: 'v' }]} />
+  ) : null
+}
+
+// seed data-primitive/deprecated-fetch 17: prefetchQuery on two queries awaited together in a loader
+export const RouteWarm = createFileRoute('/warm')({
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.prefetchQuery(runsQuery),
+      context.queryClient.prefetchQuery({ queryKey: ['teams'], queryFn: fetchRuns }),
+    ])
+  },
+})
+
+// seed data-primitive/deprecated-fetch 18: ensureQueryData reached through an optional call
+export function warmOnFocus(client?: QueryClient) {
+  return client?.ensureQueryData(runsQuery)
+}
+
+// pass data-primitive/deprecated-fetch 2: cache reads and writes, no fetch of its own
+export function patchRun(client: QueryClient, next: Row[]) {
+  client.setQueryData(['runs'], next)
+  return client.getQueryData<Row[]>(['runs'])
+}
+
+// seed data-primitive/query-client-singleton 19: a client built by a test render helper in src
+export function renderClient() {
+  const testClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return testClient
+}
+
+// seed data-primitive/query-client-singleton 20: Next.js' cached getQueryClient helper
+export const getQueryClient = cache(() => new QueryClient())
+
+// pass data-primitive/query-client-singleton 2: the one client from createQueryClient, with a default
+export const appClient = createQueryClient({ defaultOptions: { queries: { staleTime: 5_000 } } })
+
+// seed data-primitive/raw-storage-write 22: a persist middleware's storage object writing through
+export const sidebarStorage = {
+  getItem: (key: string) => localStorage.getItem(key),
+  setItem: (key: string, value: string) => localStorage.setItem(key, value),
+}
+
+// seed data-primitive/raw-storage-write 23: a storage handle guarded for SSR, then written
+const guarded = typeof window !== 'undefined' ? window.localStorage : null
+export function rememberDensity(density: string) {
+  guarded?.setItem('density', density)
+}
+
+// seed data-primitive/raw-storage-write 24: a property assignment on localStorage
+export function rememberSidebar(open: boolean) {
+  localStorage.sidebar = String(open)
+}
+
+// pass data-primitive/raw-storage-write 3: a device preference through persisted
+const railOpen = persisted('shell:rail-open', { version: 1, initial: true })
+export function RailToggle() {
+  const [open, setOpen] = railOpen.use()
+  return <button onClick={() => setOpen(!open)}>{String(open)}</button>
+}
+
+// seed data-primitive/refetch-interval 20: a poll on every entry of a useQueries fan-out
+export function useFanOut(ids: string[]) {
+  return useQueries({
+    queries: ids.map((id) => ({
+      queryKey: ['run', id],
+      queryFn: fetchRuns,
+      refetchInterval: 10_000,
+    })),
+  })
+}
+
+// seed data-primitive/refetch-interval 21: a poll set as the client's per-key default
+export function pollRuns(client: QueryClient) {
+  client.setQueryDefaults(['runs'], { refetchInterval: 5_000 })
+}
+
+// seed data-primitive/refetch-interval 22: SWR's global config polling every hook below it
+export function PollingTree({ children }: { children: React.ReactNode }) {
+  return <SWRConfig value={{ refreshInterval: 1_000 }}>{children}</SWRConfig>
+}
+
+// pass data-primitive/refetch-interval 1: the cadence declared once with liveQuery
+export const liveRuns = () =>
+  liveQuery(queryOptions({ queryKey: ['runs'], queryFn: fetchRuns }), {
+    class: 'ticker',
+    every: 5_000,
+  })
+
+// seed data-primitive/timer-refetch 21: an async interval that refetches, then bumps a counter
+export function useAsyncTick(refetch: () => Promise<unknown>) {
+  const [, setTicks] = useState(0)
+  useEffect(() => {
+    const id = setInterval(async () => {
+      await refetch()
+      setTicks((t) => t + 1)
+    }, 5_000)
+    return () => clearInterval(id)
+  }, [refetch])
+}
+
+// seed data-primitive/timer-refetch 22: a hook handed the refetch itself
+export function useByHook(refetch: () => unknown) {
+  useIntervalEffect(refetch, 30_000)
+}
+
+// seed data-primitive/timer-refetch 23: an interval that refetches only while the tab is visible
+export function useVisibleTick(refetch: () => unknown) {
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!document.hidden) refetch()
+    }, 15_000)
+    return () => clearInterval(id)
+  }, [refetch])
+}
+
+// pass data-primitive/timer-refetch 4: a debounce timer that only moves state
+export function useDebounced(q: string) {
+  const [debounced, setDebounced] = useState(q)
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(q), 300)
+    return () => clearTimeout(id)
+  }, [q])
+  return debounced
+}
+
+// seed data-primitive/unseamed-transport 20: an EventSource opened once at module scope
+export const runsSource = new EventSource('/api/runs/stream', { withCredentials: true })
+
+// seed data-primitive/unseamed-transport 21: a WebSocket opened inside a useSyncExternalStore subscribe
+export function useSocketStatus(url: string) {
+  const subscribe = (notify: () => void) => {
+    const ws = new WebSocket(url)
+    ws.onopen = notify
+    ws.onclose = notify
+    return () => ws.close()
+  }
+  return useSyncExternalStore(subscribe, () => true, () => false)
+}
+
+// pass data-primitive/unseamed-transport 1: the stream opened by createChannel
+export const runChannel = createChannel({ url: '/v1/runs/stream', greeting: 'hello' })
+
+// seed router-search/literal-search 30: a Link resetting the search with an empty literal
+export function ResetLink() {
+  return (
+    <Link to="/runs" search={{}}>
+      reset
+    </Link>
+  )
+}
+
+// seed router-search/literal-search 31: navigate without a `to`, a literal search and replace
+export function SortDesc() {
+  const navigate = useNavigate()
+  return <button onClick={() => navigate({ search: { sort: 'desc' }, replace: true })}>desc</button>
+}
+
+// seed router-search/literal-search 32: replaceState writing the query by concatenation
+export function syncQuery(q: string) {
+  window.history.replaceState(null, '', '?q=' + encodeURIComponent(q))
+}
+
+// seed router-search/literal-search 33: a Link whose search is a variable built just above it
+export function ViaVariable() {
+  const nextSearch = { page: 1, tab: 'open' }
+  return (
+    <Link to="/runs" search={nextSearch}>
+      first
+    </Link>
+  )
+}
+
+// seed router-search/literal-search 34: a Link spreading the current search into a fresh literal
+export function NextFromCurrent() {
+  const current = useSearch({ from: '/runs' })
+  return (
+    <Link to="/runs" search={{ ...current, page: 2 }}>
+      next
+    </Link>
+  )
+}
+
+// pass router-search/literal-search 4: a link built from the store field's own link()
+export function StatusLink({ list }: { list: { field: { status: { link: (v: string[]) => object } } } }) {
+  return <Link to="/list" {...list.field.status.link(['open'])} />
+}
+
+// seed router-search/loader-deps-search 20: loaderDeps returning the search under a type assertion
+export const RouteDepsCast = createFileRoute('/deps-cast')({
+  loaderDeps: ({ search }) => search as RunsSearch,
+})
+
+// seed router-search/loader-deps-search 21: the rest of the search collected inside a block body
+export const RouteDepsBlock = createFileRoute('/deps-block')({
+  loaderDeps: ({ search }) => {
+    const { page, ...rest } = search as RunsSearch
+    return { page, ...rest }
+  },
+})
+
+// seed router-search/loader-deps-search 22: the search copied with Object.assign
+export const RouteDepsAssign = createFileRoute('/deps-assign')({
+  loaderDeps: ({ search }) => Object.assign({}, search),
+})
+
+// pass router-search/loader-deps-search 3: only the two keys the loader reads, by member
+export const RouteDepsKeys = createFileRoute('/deps-keys')({
+  loaderDeps: ({ search }) => ({ page: (search as RunsSearch).page, q: (search as RunsSearch).q }),
+})
+
+// seed router-search/validate-search-pure 22: validateSearch defaulting the locale from the browser
+export const RouteLocale = createFileRoute('/locale')({
+  validateSearch: (s: Record<string, unknown>) => ({ ...s, lang: s.lang ?? navigator.language }),
+})
+
+// seed router-search/validate-search-pure 23: a schema with a clock default, handed over by reference
+const clockSchema = z.object({ day: z.string().default(() => new Date().toISOString().slice(0, 10)) })
+export const RouteClock = createFileRoute('/clock')({
+  validateSearch: clockSchema,
+})
+
+// seed router-search/validate-search-pure 24: validateSearch reading where the visitor came from
+export const RouteReferrer = createFileRoute('/referrer')({
+  validateSearch: (s: Record<string, unknown>) => ({ ...s, from: document.referrer }),
+})
+
+// pass router-search/validate-search-pure 6: a schema with fixed catch values only
+export const RouteFixed = createFileRoute('/fixed')({
+  validateSearch: z.object({ page: z.number().catch(1), q: z.string().catch('') }),
+})
+
+// pass router-search/validate-search-pure 7: a date string parsed from the input, never the clock
+export const RouteParsed = createFileRoute('/parsed')({
+  validateSearch: (s: Record<string, unknown>) => ({ at: Date.parse(String(s.at)) }),
+})
+
+// seed control-home/outside-home 30: a NumberField for the page size on local state
+export function PageSize() {
+  const [size, setSize] = useState(25)
+  return <NumberField value={size} onValueChange={(v) => setSize(Number(v))} />
+}
+
+// seed control-home/outside-home 31: row-selection Checkboxes whose checked state is a Set in state
+export function PickRows({ rows }: { rows: Row[] }) {
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  return (
+    <ul>
+      {rows.map((r) => (
+        <li key={r.id}>
+          <Checkbox
+            checked={picked.has(r.id)}
+            onCheckedChange={() => setPicked(new Set(picked).add(r.id))}
+          />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// seed control-home/outside-home 32: a Segmented range switch in a card header, on a reducer
+export function RangeHeader() {
+  const [state, dispatch] = useReducer(
+    (_: { range: string }, range: string) => ({ range }),
+    { range: '7d' },
+  )
+  return <Segmented value={state.range} onValueChange={(v) => dispatch(String(v))} />
+}
+
+// seed control-home/outside-home 33: a Select whose value comes from a persisted-state hook
+export function OwnerPick() {
+  const [owner, setOwner] = useLocalStorage('owner', 'all')
+  return (
+    <Select value={owner} onValueChange={(v) => setOwner(String(v))}>
+      <SelectTrigger />
+      <SelectContent>
+        <SelectItem value="all">All</SelectItem>
+      </SelectContent>
+    </Select>
+  )
+}
+
+// seed control-home/outside-home 34: a RadioGroup for density with a default and a state setter
+export function DensityPick() {
+  const [, setDensity] = useState('comfortable')
+  return (
+    <RadioGroup defaultValue="comfortable" onValueChange={(v) => setDensity(String(v))}>
+      <Radio value="comfortable" />
+      <Radio value="compact" />
+    </RadioGroup>
+  )
+}
+
+// pass control-home/outside-home 4: a Segmented bound to a store field handle
+export function RangeField({ overview }: { overview: { field: { range: never } } }) {
+  return <Segmented field={overview.field.range} />
+}
+
+// pass control-home/outside-home 5: a panel-local Switch inside a ControlHome
+export function LivePanel() {
+  const [live, setLive] = useState(false)
+  return (
+    <ControlHome home="aside">
+      <Switch checked={live} onCheckedChange={setLive} />
+    </ControlHome>
+  )
+}
+
+// seed untrusted-markdown/dangerous-html 25: model html run through a sanitiser, then injected
+export function Sanitised({ m }: { m: Msg }) {
+  return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(m.html) }} />
+}
+
+// seed untrusted-markdown/dangerous-html 26: the markup object made by a helper
+const createMarkup = (html: string) => ({ __html: html })
+export function ViaHelper({ m }: { m: Msg }) {
+  return <div dangerouslySetInnerHTML={createMarkup(m.html)} />
+}
+
+// seed untrusted-markdown/dangerous-html 27: streamed chunks appended with += on innerHTML
+export function appendChunk(host: HTMLElement, chunk: string) {
+  host.innerHTML += chunk
+}
+
+// seed untrusted-markdown/dangerous-html 28: the newer setHTMLUnsafe on a node
+export function mountHtml(host: HTMLElement, m: Msg) {
+  host.setHTMLUnsafe(m.html)
+}
+
+// pass untrusted-markdown/dangerous-html 5: an iframe srcDoc that is a hole-free template
+export function Blank() {
+  return <iframe title="blank" srcDoc={`<p>No preview</p>`} />
+}
+
+// pass untrusted-markdown/dangerous-html 6: model svg parsed as an image, which runs nothing
+export function parseSvg(markup: string) {
+  return new DOMParser().parseFromString(markup, 'image/svg+xml')
+}
+
+// seed untrusted-markdown/rehype-raw 17: remark-rehype handed raw html as the plugin's option
+export const rawPipeline = unified().use(remarkRehype, { allowDangerousHtml: true })
+
+// seed untrusted-markdown/rehype-raw 18: rehype-raw re-exported from a plugins barrel
+export { default as rehypeRawPlugin } from 'rehype-raw'
+
+// pass untrusted-markdown/rehype-raw 1: remark-rehype with raw html left off
+export const safePipeline = [remarkRehype, { allowDangerousHtml: false }]
+
+// seed untrusted-markdown/mdx-evaluate 21: evaluate pulled from @mdx-js/mdx by a dynamic import
+export async function runMdx(source: string) {
+  const { evaluate } = await import('@mdx-js/mdx')
+  return evaluate(source, {} as never)
+}
+
+// seed untrusted-markdown/mdx-evaluate 22: next-mdx-remote's rsc entry for a reply
+import { MDXRemote as RemoteReply } from 'next-mdx-remote/rsc'
+export const RR = RemoteReply
+
+// seed untrusted-markdown/mdx-evaluate 23: eval reached through window
+export function runReply(reply: string) {
+  return window.eval(reply)
+}
+
+// pass untrusted-markdown/mdx-evaluate 2: a Function built from a hole-free template
+export const one = new Function(`return 1`)
+
+// seed untrusted-markdown/trusted-content 22: the tier looked up from a role map
+export function ByRole({ m }: { m: Msg }) {
+  return <Markdown contentTrust={TRUST[m.role]}>{m.text}</Markdown>
+}
+
+// seed untrusted-markdown/trusted-content 23: the trusted tier with the text passed as a children prop
+export function AsChildrenProp({ m }: { m: Msg }) {
+  return <Markdown contentTrust="trusted" children={m.text} />
+}
+
+// seed untrusted-markdown/trusted-content 24: a wrapper marked trusted whose text arrives as a prop
+export function Bubble({ m }: { m: Msg }) {
+  return <Message contentTrust="trusted" text={m.text} />
+}
+
+// pass untrusted-markdown/trusted-content 3: the trusted tier over a changelog imported from a file
+export function Changelog() {
+  return <Markdown contentTrust="trusted">{CHANGELOG}</Markdown>
+}
+
+// pass untrusted-markdown/trusted-content 4: the untrusted tier written as an expression
+export function Untrusted({ m }: { m: Msg }) {
+  return <Markdown contentTrust={'untrusted'}>{m.text}</Markdown>
+}
+
+// seed core/no-use-before-define 7: a route naming its component, a const declared below it
+export const RouteLate = createFileRoute('/late')({ component: LatePage })
+const LatePage = () => <div>late</div>
+
+// seed core/no-use-before-define 8: a zod schema nesting another schema declared below it
+export const Outer = z.object({ inner: Inner })
+const Inner = z.string()
+
+// seed core/no-use-before-define 9: a cva call built from a base const declared below it
+export const tag = cva(TAG_BASE, { variants: { tone: { ok: 'text-ok', bad: 'text-danger' } } })
+const TAG_BASE = 'inline-flex items-center'
+
+// seed core/no-use-before-define 10: a useMemo whose dependency list names a const declared below
+export function Totals({ rows }: { rows: Row[] }) {
+  const sum = useMemo(() => rows.reduce((a, r) => a + r.value, 0), [rows, offset])
+  const offset = 10
+  return <span>{sum + offset}</span>
+}
+
+// pass core/no-use-before-define 7: consts declared above the function declaration that reads them
+const LABELS = ['open', 'done']
+function pickLabel() {
+  return LABELS[0]
+}
+export const firstLabel = pickLabel()
+
+// pass core/no-use-before-define 8: a closure that runs after the binding exists (the waived shape, not counted)
+export const onReset = () => resetValue.length
+const resetValue = 'x'

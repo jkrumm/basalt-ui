@@ -1,0 +1,211 @@
+/* Cycle 11 phrasings for the stylelint preset and the token check, written as module CSS. Seed numbers
+   continue cycle 10's. The cycle draws on shadcn recipe habits (the base layer's @apply, tailwindcss-animate,
+   the .dark\:bg-* escape) and on the names 2.x and shadcn taught (foreground, border, a size-named shadow).
+   A `pass` mark is valid module CSS beside a shape a seed's rule could swallow. */
+
+/* seed stylelint/at-rule-disallowed-list 20: shadcn's base layer, @apply of border and outline utilities */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+}
+
+/* seed stylelint/at-rule-disallowed-list 21: a @theme default block adding a font family */
+@theme default {
+  --font-display: "Inter Display", sans-serif;
+}
+
+/* seed stylelint/at-rule-disallowed-list 22: shadcn's tailwindcss-animate plugin loaded by @plugin */
+@plugin "tailwindcss-animate";
+
+/* seed stylelint/color-named 19: a named colour as a gradient stop */
+.sheen {
+  background: linear-gradient(to right, white, var(--basalt-inset));
+}
+
+/* seed stylelint/color-named 20: a named colour in a scrollbar colour pair */
+.rail {
+  scrollbar-color: gray transparent;
+}
+
+/* pass stylelint/color-named 2: currentColor on an svg fill and a transparent stroke */
+.glyph {
+  fill: currentColor;
+  stroke: transparent;
+}
+
+/* seed stylelint/color-no-hex 18: a hex as an accent colour */
+.check {
+  accent-color: #0a84ff;
+}
+
+/* seed stylelint/color-no-hex 19: a hex for print ink inside a media query */
+@media print {
+  .sheet {
+    color: #000;
+  }
+}
+
+/* seed stylelint/declaration-no-important 19: important on a visually-hidden position */
+.sr-only-local {
+  position: absolute !important;
+}
+
+/* seed stylelint/declaration-no-important 20: important with no space, in a print query */
+@media print {
+  .noprint {
+    display: none!important;
+  }
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 20: a pixel radius on one corner */
+.tab {
+  border-top-left-radius: 8px;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 21: a token shadow stacked with a literal ring */
+.field-ring {
+  box-shadow: var(--basalt-shadow-card), 0 0 0 1px var(--basalt-hairline);
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 22: the normal keyword as a letter spacing reset */
+.reset-type {
+  letter-spacing: normal;
+}
+
+/* pass stylelint/declaration-property-value-allowed-list 4: a token radius on the top corners, zero below */
+.sheet-top {
+  border-radius: var(--basalt-radius-card) var(--basalt-radius-card) 0 0;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 35: a two-value gap in pixels */
+.matrix {
+  gap: 12px 16px;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 36: a padding with max() over rem and a safe-area inset */
+.dock {
+  padding: 0 max(1rem, env(safe-area-inset-left));
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 37: a fluid font size with clamp() */
+.display {
+  font-size: clamp(1rem, 2vw, 1.5rem);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 38: a status colour as a border colour */
+.ok-edge {
+  border-color: var(--basalt-good);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 39: the brand fill as a text colour */
+.accent-text {
+  color: var(--basalt-brand-fill);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 40: a fixed 480px width on a dialog body */
+.dialog-body {
+  width: 480px;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 41: color-mix over currentColor instead of a token */
+.hover-wash {
+  background: color-mix(in oklab, currentColor 12%, transparent);
+}
+
+/* pass stylelint/declaration-property-value-disallowed-list 9: a width under the threshold, a zero min width and clipped overflow */
+.clip {
+  width: min(100%, 24rem);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* seed stylelint/function-disallowed-list 19: a display-p3 colour() literal */
+.vivid {
+  background: color(display-p3 1 0.5 0);
+}
+
+/* seed stylelint/function-disallowed-list 20: an hwb() border colour */
+.cool-edge {
+  border-color: hwb(200 10% 10%);
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 21: the light colour-scheme media query */
+@media (prefers-color-scheme: light) {
+  .logo {
+    filter: none;
+  }
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 22: an only-screen query with min-width */
+@media only screen and (min-width: 768px) {
+  .split {
+    display: grid;
+  }
+}
+
+/* pass stylelint/media-feature-name-disallowed-list 7: a fine-pointer capability query */
+@media (pointer: fine) {
+  .handle {
+    cursor: grab;
+  }
+}
+
+/* seed stylelint/property-disallowed-list 19: shadcn's accent theme colour re-pointed on a print class */
+.accented {
+  --color-accent: var(--basalt-selected);
+}
+
+/* seed stylelint/property-disallowed-list 20: the row height token tuned on a dense table */
+.dense {
+  --basalt-row-h: 40px;
+}
+
+/* pass stylelint/property-disallowed-list 3: an app property naming a local size, fed by a token */
+.stack-local {
+  --stack-gap-local: var(--basalt-rhythm-3);
+}
+
+/* seed stylelint/selector-disallowed-list 22: the dark class negated on html */
+html:not(.dark) .logo-mark {
+  opacity: 1;
+}
+
+/* seed stylelint/selector-disallowed-list 23: Tailwind's escaped dark: class written as a selector */
+.dark\:bg-inset {
+  background: var(--basalt-inset);
+}
+
+/* pass stylelint/selector-disallowed-list 3: an ARIA state attribute on a local class */
+.disclosure[aria-expanded="true"] {
+  background: var(--basalt-selected);
+}
+
+/* seed unknown-token 35: the shadcn foreground name read as a basalt token */
+.copy {
+  color: var(--basalt-foreground);
+}
+
+/* seed unknown-token 36: the shadcn border name read as a basalt token */
+.divided {
+  border-color: var(--basalt-border);
+}
+
+/* seed unknown-token 37: a size-named shadow */
+.pop {
+  box-shadow: var(--basalt-shadow-lg);
+}
+
+/* seed unknown-token 38: an invented ink step with a real token as the fallback */
+.hint {
+  color: var(--basalt-ink-subtle, var(--basalt-ink-muted));
+}
+
+/* pass unknown-token 2: control height, hit area, control radius and easing, all shipped */
+.btn-local {
+  min-height: var(--basalt-hit);
+  height: var(--basalt-row-h);
+  border-radius: var(--basalt-radius-ctrl);
+  transition: background 120ms var(--basalt-ease);
+}
