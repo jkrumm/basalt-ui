@@ -28,6 +28,8 @@
 // expect: navigator.userAgent.match
 // expect: isMobile
 // expect: isTablet
+// expect: navigator.userAgentData.mobile
+// expect: navigator.userAgentData.mobile
 export const a = window.matchMedia('(min-width: 768px)')
 export const b = useMediaQuery('(max-width: 640px)')
 export const c = matchMedia(`(min-width: ${bp}px)`)
@@ -69,3 +71,5 @@ import { isMobile, isTablet as tablet } from 'react-device-detect'
 export function Layout() {
   return isMobile ? 'tabs' : tablet ? 'split' : 'rail'
 }
+export const handheld = () => navigator.userAgentData?.mobile === true
+export const hinted = window.navigator.userAgentData.mobile ? 'tabs' : 'rail'

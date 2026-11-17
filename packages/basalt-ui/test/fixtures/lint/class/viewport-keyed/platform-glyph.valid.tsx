@@ -7,3 +7,5 @@ export const Shortcut = () => (
 )
 export const named = /Mac|Win/.test(fileName)
 export const logged = () => console.log(navigator.userAgent)
+export const href = /Mac|Win/.test(navigator.userAgent) ? '/dl/app.dmg' : '/dl/app.exe'
+export const build = navigator.userAgent.includes('Win') ? `/dl/setup.msi` : '/dl/app.AppImage'
