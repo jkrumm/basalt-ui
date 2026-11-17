@@ -52,7 +52,9 @@ export const rows: readonly RowDef[] = [
     // `useDataTable`) and `labels` on `c.text`; 124144 B measured.
     // 124200 -> 124600 (Issue 1627): +~400 B gz for the money `delta` (`currency`), the `card: 'hidden'` marker and
     // the skeleton rows of a paged table, the kit fixes of expression cycle 4.
-    ceiling: 124600,
+    // 124600 -> 124800 (Issue 1872): 124705 B measured, +110 B gz over master (124595) for the error row that names
+    // its panel or table, the kit fixes of expression cycle 7.
+    ceiling: 124800,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -99,6 +101,13 @@ export const raises: Raises = {
       to: 124600,
       consumer:
         "the table kit fixes of expression cycle 4: n13's recurring-charges table (apps/playground/src/scenarios/expr/n13) hand-formatted its money change, n09's job table printed its group name on every card, and a loading table drew six rows against 18 (Issue 1627)",
+      repo: 'basalt-ui',
+    },
+    {
+      from: 124600,
+      to: 124800,
+      consumer:
+        "the table kit fixes of expression cycle 7: n11's and n26's tables in error said 'Could not load this.' where a chart card names its title, so the error row now reads 'Could not load <panel title or table label>.' (Issue 1872)",
       repo: 'basalt-ui',
     },
   ],
