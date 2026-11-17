@@ -1,0 +1,10 @@
+/*
+ * The `fit-labels` fixture's Tailwind v4 entry, compiled WITH preflight the way a Tailwind consumer
+ * renders a card and a table. `fit-labels.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './fit-labels-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/controls';
+@source '../../../src/charts/parts';
+@source '../../../src/table';

@@ -31,8 +31,9 @@ describe('status module', () => {
         <Status>Idle</Status>
       </>,
     )
-    expect(getByText('Down').className).toContain('before:bg-bad')
-    expect(getByText('Idle').className).toContain('before:bg-muted-foreground')
+    expect(getByText('Down').parentElement?.className).toContain('before:bg-bad')
+    expect(getByText('Idle').parentElement?.className).toContain('before:bg-muted-foreground')
+    expect(getByText('Down').className).toContain('truncate')
   })
 
   test('Swatch carries its colour as a variable and is hidden from assistive tech', () => {

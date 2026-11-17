@@ -12,7 +12,7 @@ import type { SeriesGroup } from '../tokens'
  * statusVariants({ tone: 'warn' }) // class string for a non-`Status` element
  */
 export const statusVariants = cva(
-  'inline-flex items-center gap-1.5 text-sm whitespace-nowrap text-foreground before:size-2 before:shrink-0 before:rounded-full',
+  'inline-flex max-w-full items-center gap-1.5 text-sm whitespace-nowrap text-foreground before:size-2 before:shrink-0 before:rounded-full',
   {
     variants: {
       tone: {
@@ -53,15 +53,19 @@ export type StatusProps = Layout &
 
 /**
  * A dot and a word for a verdict: `Healthy`, `Degraded`. The dot is a pseudo-element and not read
- * out; the word is the state.
+ * out; the word is the state. A word wider than its box ends in an ellipsis.
  *
  * @useWhen one entity has a verdict word with a dot (Healthy, Degraded) in a row or a header
  * @neverWhen the word carries a count or a change (use CountBadge or DeltaBadge), or no word fits (a dot alone never ships)
  * @example
  * <Status tone="good">Healthy</Status>
  */
-export function Status({ tone, className, ...props }: StatusProps): ReactElement {
-  return <span {...props} data-slot="status" className={cn(statusVariants({ tone }), className)} />
+export function Status({ tone, className, children, ...props }: StatusProps): ReactElement {
+  return (
+    <span {...props} data-slot="status" className={cn(statusVariants({ tone }), className)}>
+      <span className="min-w-0 truncate">{children}</span>
+    </span>
+  )
 }
 
 /**

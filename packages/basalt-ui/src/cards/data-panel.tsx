@@ -127,7 +127,7 @@ function PanelHead(
       {controls !== undefined && (
         <div
           data-slot="data-panel-controls"
-          className="order-1 flex w-full items-center gap-2 @regular:order-none @regular:w-auto"
+          className="order-1 flex w-full flex-wrap items-center gap-2 @regular:order-none @regular:w-auto @regular:shrink-0"
         >
           {controls.render()}
         </div>

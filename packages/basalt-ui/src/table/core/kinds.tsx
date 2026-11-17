@@ -287,6 +287,9 @@ const HEADER_MAX_CH = 24
 /** A `text` column whose widest loaded value is at most this many `ch` sizes to it; a longer one stays flexible. */
 const SHORT_TEXT_MAX_CH = 24
 
+/** The dot and its gap beside a status word, in `ch` (8 px dot, 6 px gap, at 8 px a `ch`). */
+const STATUS_DOT_CH = 2
+
 /** A column's floor counts its own header, unit suffix included, so a roomy row shows it whole. */
 function floorOf(width: Width, header: string): Width {
   if (width === 'icon') return width
@@ -479,6 +482,19 @@ export function col<T>(): Col<T> {
         ),
         {
           spec: {
+            // The options are a closed list, so the widest word is known before a row loads.
+            width: floorOf(
+              {
+                ch: Math.max(
+                  0,
+                  ...(o?.options ?? []).map(
+                    (option) => (o?.labels?.[option] ?? option).length + STATUS_DOT_CH,
+                  ),
+                ),
+                flex: false,
+              },
+              o?.header ?? humanize(o?.id ?? key),
+            ),
             options: o?.options ?? [],
             ...(o?.labels !== undefined && { labels: o.labels }),
             filter: o?.filter === 'multi' ? 'anyOf' : null,

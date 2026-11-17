@@ -34,6 +34,12 @@ const WIDTH: Record<ControlPresentation, string> = {
   row: 'w-full',
   inline: 'w-32 max-w-full',
 }
+/** A segmented group sizes to its labels; only a `row` stretches it to the column. */
+const SEGMENTED_WIDTH: Record<ControlPresentation, string> = {
+  ...WIDTH,
+  pill: 'max-w-full',
+  inline: 'max-w-full',
+}
 
 function ResetIcon(): ReactElement {
   return (
@@ -80,7 +86,7 @@ export function ControlView({ spec, className }: ControlViewProps): ReactElement
         spec.handle.clear()
       }}
       size={SIZE[presentation]}
-      className={WIDTH[presentation]}
+      className={(spec.as === 'segmented' ? SEGMENTED_WIDTH : WIDTH)[presentation]}
     />
   )
 
