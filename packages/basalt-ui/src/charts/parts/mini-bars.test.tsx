@@ -71,13 +71,21 @@ describe('MiniBars', () => {
     const view = render(
       <MiniBars series={[1, 2, 3]} ariaLabel="Shipped" height={72} axisLabels={['a', 'b', 'c']} />,
     )
-    const slider = screen.getByRole('slider', { name: 'Shipped' })
+    const host = screen.getByRole('group', { name: 'Shipped' })
+    expect(host.getAttribute('aria-roledescription')).toBe('chart')
     expect(lit(view.container)).toEqual([2])
-    fireEvent.keyDown(slider, { key: 'Home' })
+    fireEvent.keyDown(host, { key: 'Home' })
     expect(lit(view.container)).toEqual([0])
-    expect(slider.getAttribute('aria-valuetext')).toBe('1')
-    fireEvent.keyDown(slider, { key: 'End' })
+    expect(view.container.querySelector('[data-slot="spark-live"]')?.textContent).toBe('1')
+    fireEvent.keyDown(host, { key: 'End' })
     expect(lit(view.container)).toEqual([2])
+  })
+
+  test('a bar above the cap is held at the top under a caret', () => {
+    const el = dom(<MiniBars series={[1, 2, 40]} ariaLabel="S" height={40} cap={4} />)
+    expect(el.querySelectorAll('[data-slot="spark-caret"]')).toHaveLength(1)
+    expect(el.querySelector('[data-index="2"] [data-slot="spark-caret"]')).not.toBeNull()
+    expect(el.textContent).toContain('max 40')
   })
 
   test('long series pool to the bar cap', () => {

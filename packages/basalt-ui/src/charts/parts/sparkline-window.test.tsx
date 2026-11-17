@@ -42,7 +42,7 @@ describe('Sparkline label row', () => {
     expect(el.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 100 72')
   })
 
-  test('the row is hidden from assistive tech: the slider carries the readout', () => {
+  test('the row is hidden from assistive tech: the live region carries the readout', () => {
     const el = document.createElement('div')
     el.innerHTML = renderToString(
       <Sparkline series={points} ariaLabel="S" height={72} axisLabels={['a', 'b', 'c']} />,
@@ -55,8 +55,7 @@ describe('Sparkline label row', () => {
     const { getByRole } = render(
       <Sparkline series={hourly} ariaLabel="S" height={72} axisLabels={['0h', 'now', '2h']} />,
     )
-    const slider = getByRole('slider')
-    fireEvent.keyDown(slider, { key: 'Home' })
-    expect(slider.getAttribute('aria-valuetext')).toContain('Oct 1')
+    fireEvent.keyDown(getByRole('group'), { key: 'Home' })
+    expect(document.querySelector('[data-slot="spark-live"]')?.textContent).toContain('Oct 1')
   })
 })

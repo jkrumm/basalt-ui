@@ -7,6 +7,7 @@
  * Probes, each in a `data-testid` box:
  * - `cs-line`, `cs-area`, `cs-bars`: a `StatCard` whose chart slot draws the kind at `box.height`
  *   with `axisLabels`;
+ * - `cs-weeks`: a `StatCard` sparkline of twelve named weeks with a 38 h outlier held by `cap`;
  * - `cs-image`: a bare `Sparkline` with no `axisLabels` (an image, no tab stop);
  * - `cs-wide`: five `MiniBars` in a wide box (the 24 px bar cap and the 3 px gap).
  */
@@ -17,6 +18,8 @@ import { Sparkline } from '../../../src/charts/parts/sparkline'
 
 const DAYS = [12, 18, 9, 24, 31, 22, 40, 36, 28, 33, 45, 38, 52, 47]
 const LABELS = ['Mon', 'Today', 'Sun'] as const
+/** Twelve weeks with one 38 h outlier the `cap` holds (n27, expression-8.3). */
+const WEEKS = [6.2, 7.1, 5.8, 38, 6.9, 7.4, 6.1, 8.1, 7.7, 6.6, 7.9, 7.4]
 const GLYPH = (props: { className?: string }) => (
   <svg viewBox="0 0 16 16" className={props.className} fill="none" aria-hidden="true">
     <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.5" />
@@ -73,6 +76,25 @@ function Fixture() {
               height={box.height}
               axisLabels={LABELS}
               ariaLabel="Reviews per day"
+            />
+          )}
+        />
+      </div>
+      <div data-testid="cs-weeks">
+        <StatCard
+          icon={GLYPH}
+          title="Time in queue"
+          value={7.4}
+          unit="h"
+          phase="ready"
+          chart={(box) => (
+            <Sparkline
+              series={WEEKS.map((value, i) => ({ value, label: `W${41 + i}` }))}
+              cap={12}
+              format={(v) => `${v} h`}
+              height={box.height}
+              axisLabels={['W41', 'Weekly', 'W52']}
+              ariaLabel="Time in queue per week"
             />
           )}
         />

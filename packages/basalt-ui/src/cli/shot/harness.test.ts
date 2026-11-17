@@ -256,7 +256,17 @@ const KEYS_FIXTURE = `<!doctype html><body style="margin:0">
 <div data-shot=boom class=card><div id=boom tabindex=0 aria-roledescription=chart aria-label="Boom chart" style="width:200px;height:100px;background:#00f"></div></div>
 <div data-shot=rows class=card><table><tbody><tr tabindex=0 id=r0><td>one</td></tr><tr tabindex=-1 id=r1><td>two</td></tr><tr tabindex=-1 id=r2><td>three</td></tr></tbody></table><i id=r-live aria-live=polite></i></div>
 <div data-shot=plain class=card><button>Go</button></div>
+<div data-shot=spark class=card><div data-slot=sparkline role=group tabindex=0 aria-roledescription=chart aria-label="Queue per week" style="width:200px;height:56px;background:#00f"><i id=s-live aria-live=polite></i></div></div>
 <script>
+{
+  const spark = document.querySelector('[aria-label="Queue per week"]')
+  let at = 11
+  spark.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft') return
+    at--
+    document.getElementById('s-live').textContent = 'W' + (41 + at)
+  })
+}
 const chart = (el, live, fail) => {
   let i = 0
   el.addEventListener('keydown', (e) => {
@@ -664,6 +674,14 @@ describe('keys state', () => {
         const rows = of('rows')
         expect(rows.every((s) => s.status === 'ok' && s.keys?.key === 'ArrowDown')).toBe(true)
         expect(rows[0]?.keys?.presses.map((p) => p.live)).toEqual(['row 2', 'row 3'])
+        // A sparkline rests on its latest point: the keys state steps it back.
+        const spark = of('spark')
+        expect(spark.every((s) => s.status === 'ok' && s.keys?.key === 'ArrowLeft')).toBe(true)
+        // The live text joins every region on the page; the rows anchor's stays from its own presses.
+        expect(spark[0]?.keys?.presses.map((p) => p.live.split(' | ').at(-1))).toEqual([
+          'W51',
+          'W50',
+        ])
         // The throwing chart is a named defect with no frame; the log keeps what was read before it.
         const boom = of('boom')
         expect(boom).toHaveLength(4)

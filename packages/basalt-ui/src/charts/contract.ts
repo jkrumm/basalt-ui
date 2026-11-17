@@ -291,7 +291,14 @@ export type CartesianChartProps<D> = CartesianChartBase<D> & ChartName
 
 // ---- Sparkline and MiniBars ---------------------------------------------------------------
 
-export type SparkPoint = number | null | { at: Date | number; value: number | null }
+/**
+ * A value, or a value with its name: `label` (a week, a build) names the point in the readout and the
+ * announcement, `at` dates it (shown when there is no `label`). A `null` value is a gap.
+ */
+export type SparkPoint =
+  | number
+  | null
+  | { value: number | null; at?: Date | number | undefined; label?: string | undefined }
 
 export type SparklineBase = {
   series: readonly SparkPoint[]
@@ -300,6 +307,17 @@ export type SparklineBase = {
   form?: 'line' | 'area'
   /** A value, the `'mean'`, or a target range: two dashed lines with a faint band between. */
   reference?: number | 'mean' | { min: number; max: number }
+  /**
+   * The highest value the plot scales to: a point above it is drawn on the top edge with the
+   * off-scale caret, so one outlier does not flatten the rest. The readout, the announcement and the
+   * summary keep the true value.
+   */
+  cap?: number | undefined
+  /**
+   * The label row (start, middle, end). With it the sparkline answers: arrow keys, Home, End or a
+   * pointer step a readout naming the point into the middle slot, announce it politely, and dim the
+   * line round the point.
+   */
   axisLabels?: readonly [string, string, string]
   format?: (v: number) => string
   summary?: string

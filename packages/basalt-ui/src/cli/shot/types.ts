@@ -72,7 +72,7 @@ export type AnchorMetrics = Measurement & {
 /** What the `keys` state read: the host it focused, the key its role takes, and the page after each press. */
 export type KeyLog = {
   host: string
-  key: 'ArrowRight' | 'ArrowDown'
+  key: 'ArrowRight' | 'ArrowLeft' | 'ArrowDown'
   presses: { live: string; focused: string }[]
 }
 

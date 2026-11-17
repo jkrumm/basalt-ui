@@ -1,11 +1,13 @@
 import type { ReactElement } from 'react'
-import { barGeometry } from '../core/compile-spark'
+import { barGeometry, capValues } from '../core/compile-spark'
 import type { MiniBarsProps } from '../contract'
 import { chartName } from '../chart-name'
 import { cn } from '../../core/cn'
 import {
   BAR_CAP,
+  OFF_SCALE_CARET,
   SparkFrame,
+  announceOf,
   pool,
   readoutOf,
   summaryOf,
@@ -26,13 +28,18 @@ import {
  * <MiniBars series={perDay} height={72} axisLabels={['Mon', 'Today', 'Sun']} label="Shipped per day" />
  */
 export function MiniBars(props: MiniBarsProps): ReactElement {
-  const { series, height, width, axisLabels, format, highlight = 'last' } = props
+  const { series, height, width, axisLabels, format, cap, highlight = 'last' } = props
   const ariaLabel = chartName(props)
   const { f, fmt } = useSparkFormat(format)
   const rows = pool(toRows(series), BAR_CAP, 'bar')
   const lit = highlight === 'last' ? rows.length - 1 : highlight
+  const { values, over } = capValues(
+    rows.map((r) => r.v),
+    cap,
+  )
+  const capped = new Set(over)
   // Percent space: only the vertical part is read, the flex row places the bars across.
-  const rects = barGeometry({ values: rows.map((r) => r.v), width: 100, height: 100, gap: 0 })
+  const rects = barGeometry({ values, width: 100, height: 100, gap: 0 })
 
   return (
     <SparkFrame
@@ -44,6 +51,7 @@ export function MiniBars(props: MiniBarsProps): ReactElement {
       axisLabels={axisLabels}
       rows={rows}
       readout={(row) => readoutOf(row, fmt, f)}
+      announce={(row) => announceOf(row, fmt, f)}
       indexAt={(clientX, plot) => {
         let best = rows.length - 1
         let distance = Number.POSITIVE_INFINITY
@@ -61,7 +69,13 @@ export function MiniBars(props: MiniBarsProps): ReactElement {
       {(active) => {
         const on = active ?? lit
         return (
-          <div className="absolute inset-0 flex items-stretch justify-center gap-0.75">
+          <div
+            className={cn(
+              'absolute inset-x-0 bottom-0 flex items-stretch justify-center gap-0.75',
+              // A capped bar keeps the room its off-scale caret takes over it.
+              capped.size === 0 ? 'top-0' : 'top-1.5',
+            )}
+          >
             {rects.map((r, i) => (
               <span
                 // Rows are positional and never reorder.
@@ -88,6 +102,16 @@ export function MiniBars(props: MiniBarsProps): ReactElement {
                         : {}),
                     }}
                   />
+                )}
+                {capped.has(i) && r !== null && (
+                  <span
+                    data-slot="spark-caret"
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-1/2 -translate-x-1/2 -translate-y-full text-[6px] leading-none text-muted-foreground"
+                    style={{ top: `${r.y}%` }}
+                  >
+                    {OFF_SCALE_CARET}
+                  </span>
                 )}
               </span>
             ))}

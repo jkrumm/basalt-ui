@@ -15,6 +15,10 @@ const dom = (node: ReactElement): HTMLElement => {
   return el
 }
 const segments = (d: string | null | undefined): number => (d ?? '').split('M').length - 1
+const middle = (): string | null =>
+  document.querySelector('[data-slot="spark-labels"]')!.children[1]!.textContent
+const live = (): string | null =>
+  document.querySelector('[data-slot="spark-live"]')?.textContent ?? null
 
 describe('Sparkline frame', () => {
   test('without axisLabels it is an image with the name and no tab stop', () => {
@@ -25,37 +29,66 @@ describe('Sparkline frame', () => {
     expect(document.querySelectorAll('[tabindex="0"]')).toHaveLength(0)
   })
 
-  test('with axisLabels it is one tab stop that answers: arrows, Home and End move the readout', () => {
+  test('with axisLabels it is one chart tab stop that answers: arrows, Home and End move the readout', () => {
     render(
       <Sparkline series={[10, 20, 30, 40]} ariaLabel="Shipped" height={72} axisLabels={LABELS} />,
     )
-    const slider = screen.getByRole('slider', { name: 'Shipped' })
-    expect(slider.getAttribute('tabindex')).toBe('0')
-    expect(slider.getAttribute('aria-valuenow')).toBe('3')
-    const middle = (): string | null =>
-      document.querySelector('[data-slot="spark-labels"]')!.children[1]!.textContent
+    const host = screen.getByRole('group', { name: 'Shipped' })
+    expect(host.getAttribute('aria-roledescription')).toBe('chart')
+    expect(host.getAttribute('tabindex')).toBe('0')
     expect(middle()).toBe('Today')
-    fireEvent.keyDown(slider, { key: 'Home' })
-    expect(slider.getAttribute('aria-valuenow')).toBe('0')
-    expect(slider.getAttribute('aria-valuetext')).toBe('10')
+    fireEvent.keyDown(host, { key: 'Home' })
+    expect(host.getAttribute('data-active-index')).toBe('0')
+    expect(live()).toBe('10')
     expect(middle()).toBe('10')
-    fireEvent.keyDown(slider, { key: 'ArrowRight' })
-    expect(slider.getAttribute('aria-valuenow')).toBe('1')
-    fireEvent.keyDown(slider, { key: 'ArrowLeft' })
-    fireEvent.keyDown(slider, { key: 'ArrowLeft' })
-    expect(slider.getAttribute('aria-valuenow')).toBe('0')
-    fireEvent.keyDown(slider, { key: 'End' })
-    expect(slider.getAttribute('aria-valuenow')).toBe('3')
+    fireEvent.keyDown(host, { key: 'ArrowRight' })
+    expect(host.getAttribute('data-active-index')).toBe('1')
+    fireEvent.keyDown(host, { key: 'ArrowLeft' })
+    fireEvent.keyDown(host, { key: 'ArrowLeft' })
+    expect(host.getAttribute('data-active-index')).toBe('0')
+    fireEvent.keyDown(host, { key: 'End' })
+    expect(host.getAttribute('data-active-index')).toBe('3')
     expect(middle()).toBe('40')
-    fireEvent.blur(slider)
+    fireEvent.blur(host)
     expect(middle()).toBe('Today')
+    expect(live()).toBe('')
   })
 
   test('a plain key does nothing', () => {
     render(<Sparkline series={[1, 2]} ariaLabel="S" height={72} axisLabels={LABELS} />)
-    const slider = screen.getByRole('slider')
-    fireEvent.keyDown(slider, { key: 'a' })
-    expect(slider.getAttribute('aria-valuenow')).toBe('1')
+    const host = screen.getByRole('group')
+    fireEvent.focus(host)
+    fireEvent.keyDown(host, { key: 'a' })
+    expect(host.getAttribute('data-active-index')).toBe('1')
+  })
+
+  test('a named point reads its name in the readout and is announced name first', () => {
+    const weeks = [8.1, 6, 38, 7].map((value, i) => ({ value, label: `W${41 + i}` }))
+    render(
+      <Sparkline
+        series={weeks}
+        ariaLabel="Time in queue"
+        height={72}
+        axisLabels={['W41', 'Time in queue', 'W44']}
+        format={(v) => `${v} h`}
+      />,
+    )
+    const host = screen.getByRole('group', { name: 'Time in queue' })
+    fireEvent.keyDown(host, { key: 'Home' })
+    expect(middle()).toBe('8.1 h · W41')
+    expect(live()).toBe('W41: 8.1 h')
+    fireEvent.keyDown(host, { key: 'ArrowRight' })
+    expect(live()).toBe('W42: 6 h')
+  })
+
+  test('a stepped point dims the line and draws a guide at it; rest is full strength', () => {
+    render(<Sparkline series={[1, 3, 2]} ariaLabel="S" height={72} axisLabels={LABELS} />)
+    const line = (): Element => document.querySelector('[data-slot="spark-line"]')!
+    expect(line().getAttribute('stroke-opacity')).toBe('1')
+    expect(document.querySelector('[data-slot="spark-guide"]')).toBeNull()
+    fireEvent.keyDown(screen.getByRole('group'), { key: 'Home' })
+    expect(Number(line().getAttribute('stroke-opacity'))).toBeLessThan(1)
+    expect(document.querySelector('[data-slot="spark-guide"]')?.getAttribute('x1')).toBe('0')
   })
 
   test('the text alternative is a summary of min, max and last unless one is given', () => {
@@ -85,11 +118,42 @@ describe('Sparkline frame', () => {
         format={(v) => `${v} items`}
       />,
     )
-    const slider = screen.getByRole('slider')
-    fireEvent.keyDown(slider, { key: 'Home' })
-    expect(slider.getAttribute('aria-valuetext')).toBe('3 items · Oct 12')
-    fireEvent.keyDown(slider, { key: 'End' })
-    expect(slider.getAttribute('aria-valuetext')).toBe('—')
+    const host = screen.getByRole('group')
+    fireEvent.keyDown(host, { key: 'Home' })
+    expect(middle()).toBe('3 items · Oct 12')
+    expect(live()).toBe('Oct 12: 3 items')
+    fireEvent.keyDown(host, { key: 'End' })
+    expect(middle()).toBe('—')
+    expect(live()).toBe('Oct 13: no data')
+  })
+})
+
+describe('Sparkline cap', () => {
+  test('a point above the cap is held on the top edge under a caret; the summary keeps it', () => {
+    const el = dom(<Sparkline series={[2, 3, 38, 4]} ariaLabel="S" height={40} cap={6} />)
+    const carets = el.querySelectorAll('[data-slot="spark-caret"]')
+    expect(carets).toHaveLength(1)
+    expect(carets[0]?.textContent).toBe('▲')
+    expect(el.textContent).toContain('max 38')
+    // The plot scales to the cap: the held point and the cap share the top, under the caret's room.
+    const d = el.querySelector('[data-slot="spark-line"]')?.getAttribute('d') ?? ''
+    const ys = [...d.matchAll(/[ML][\d.]+,([\d.]+)/g)].map((m) => Number(m[1]))
+    expect(Math.min(...ys)).toBeGreaterThan(3)
+  })
+
+  test('the readout of a held point reads its true value', () => {
+    render(<Sparkline series={[2, 38]} ariaLabel="S" height={72} axisLabels={LABELS} cap={6} />)
+    fireEvent.keyDown(screen.getByRole('group'), { key: 'End' })
+    expect(middle()).toBe('38')
+  })
+
+  test('no point above the cap draws no caret and keeps the data extent', () => {
+    const capped = dom(<Sparkline series={[2, 3, 4]} ariaLabel="S" height={40} cap={60} />)
+    const bare = dom(<Sparkline series={[2, 3, 4]} ariaLabel="S" height={40} />)
+    expect(capped.querySelector('[data-slot="spark-caret"]')).toBeNull()
+    expect(capped.querySelector('[data-slot="spark-line"]')?.getAttribute('d')).toBe(
+      bare.querySelector('[data-slot="spark-line"]')?.getAttribute('d') ?? '',
+    )
   })
 })
 

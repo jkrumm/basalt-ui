@@ -1,13 +1,15 @@
 import { useId } from 'react'
 import type { ReactElement } from 'react'
-import { sparkGeometry } from '../core/compile-spark'
+import { capValues, sparkGeometry } from '../core/compile-spark'
 import type { SparklineProps } from '../contract'
 import { chartName } from '../chart-name'
 import {
   LABEL_ROW,
   LINE_CAP,
+  OFF_SCALE_CARET,
   PLOT_INSET,
   SparkFrame,
+  announceOf,
   meanOf,
   pool,
   readoutOf,
@@ -21,12 +23,22 @@ const FILL_INSET = 5
 const FILL_UNITS = 100
 /** The unit width a plot is drawn in when `width` is not given: the box stretches it. */
 const FLUID_UNITS = 100
+/** The room over the plot an off-scale caret takes: px, and units of a `'fill'` plot's 100. */
+const CARET_ROOM = 6
+const FILL_CARET_ROOM = 8
+/**
+ * The strength the line keeps round a stepped point: the kinds' `DIMMED`, restated so the sparkline
+ * does not pull the chart theme (and the token table) into its bundle.
+ */
+const DIMMED = 0.5
 
 /**
  * A quiet inline trend: a neutral line, or an area that fades to nothing, with the now dot on the
  * last point. Hand SVG, no engine and no tooltip. Without `axisLabels` it is an image with a name and
- * no tab stop; with them the arrow keys, Home and End (or a pointer) move a readout into the label
- * row's middle slot. No `tone`, no `color`: the dot reads `--spark-now`, which the frame sets from its
+ * no tab stop; with them it is a chart host: the arrow keys, Home and End (or a pointer) move a readout
+ * naming the point (its `label`, else its day) into the label row's middle slot, a polite live region
+ * reads each step, and the line dims round the point. `cap` holds an outlier on the top edge under an
+ * off-scale caret. No `tone`, no `color`: the dot reads `--spark-now`, which the frame sets from its
  * delta or status and is neutral outside a frame.
  *
  * @useWhen a card, a table row or a strip shows the trend of one metric in a small box
@@ -34,14 +46,24 @@ const FLUID_UNITS = 100
  *
  * @example
  * <Sparkline series={perDay} height={72} axisLabels={['Mon', 'Today', 'Sun']} label="Shipped per day" />
+ * <Sparkline
+ *   series={weeks.map((w) => ({ value: w.hours, label: w.name }))}
+ *   cap={12}
+ *   height={56}
+ *   axisLabels={['W41', 'Time in queue', 'W52']}
+ *   label="Time in queue per week"
+ * />
  */
 export function Sparkline(props: SparklineProps): ReactElement {
-  const { series, height, width, form = 'line', reference, axisLabels, format } = props
+  const { series, height, width, form = 'line', reference, cap, axisLabels, format } = props
   const ariaLabel = chartName(props)
   const gradient = useId().replaceAll(':', '')
   const { f, fmt } = useSparkFormat(format)
   const rows = pool(toRows(series), LINE_CAP, 'line')
-  const values = rows.map((r) => r.v)
+  const { values, over } = capValues(
+    rows.map((r) => r.v),
+    cap,
+  )
 
   const fill = height === 'fill'
   const plotH = fill ? FILL_UNITS : Math.max(1, height - (axisLabels === undefined ? 0 : LABEL_ROW))
@@ -53,12 +75,16 @@ export function Sparkline(props: SparklineProps): ReactElement {
       : refValue === undefined
         ? []
         : [refValue]
-  const refs = refEnds.every(Number.isFinite) ? refEnds : []
+  // A reference above the cap would stretch the plot past it again: it is not drawn.
+  const refs = refEnds.every(Number.isFinite)
+    ? refEnds.filter((v) => cap === undefined || v <= cap)
+    : []
   const g = sparkGeometry({
     values,
     width: plotW,
     height: plotH,
     padY: fill ? FILL_INSET : PLOT_INSET,
+    padTop: over.length === 0 ? 0 : fill ? FILL_CARET_ROOM : CARET_ROOM,
     ...(refs.length === 0 ? {} : { reference: refs }),
   })
   const place = (i: number): { x: number; y: number } | null => {
@@ -76,6 +102,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
       axisLabels={axisLabels}
       rows={rows}
       readout={(row) => readoutOf(row, fmt, f)}
+      announce={(row) => announceOf(row, fmt, f)}
       indexAt={(clientX, plot) => {
         const box = plot.getBoundingClientRect()
         const fraction = box.width === 0 ? 1 : (clientX - box.left) / box.width
@@ -84,6 +111,9 @@ export function Sparkline(props: SparklineProps): ReactElement {
     >
       {(active) => {
         const now = active === null ? g.last : place(active)
+        // A stepped point is the mark in focus: the line dims round it, as a chart kind dims the rest.
+        const dim = active === null ? 1 : DIMMED
+        const guideX = active === null ? null : g.x(active)
         return (
           <>
             <svg
@@ -101,8 +131,21 @@ export function Sparkline(props: SparklineProps): ReactElement {
                       <stop offset="1" stopColor="currentColor" stopOpacity="0" />
                     </linearGradient>
                   </defs>
-                  <path d={g.area} fill={`url(#${gradient})`} stroke="none" />
+                  <path d={g.area} fill={`url(#${gradient})`} fillOpacity={dim} stroke="none" />
                 </>
+              )}
+              {guideX === null ? null : (
+                <line
+                  data-slot="spark-guide"
+                  x1={guideX}
+                  x2={guideX}
+                  y1={0}
+                  y2={plotH}
+                  stroke="currentColor"
+                  strokeOpacity={DIMMED}
+                  strokeWidth={1}
+                  vectorEffect="non-scaling-stroke"
+                />
               )}
               {refs.length === 2 && (
                 <rect
@@ -134,12 +177,27 @@ export function Sparkline(props: SparklineProps): ReactElement {
                 d={g.line}
                 fill="none"
                 stroke="currentColor"
+                strokeOpacity={dim}
                 strokeWidth={1.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
               />
             </svg>
+            {over.map((i) => (
+              <span
+                key={i}
+                data-slot="spark-caret"
+                aria-hidden="true"
+                className="pointer-events-none absolute -translate-x-1/2 -translate-y-full text-[6px] leading-none text-muted-foreground"
+                style={{
+                  left: `${(g.x(i) / plotW) * 100}%`,
+                  top: `${(g.y(cap ?? 0) / plotH) * 100}%`,
+                }}
+              >
+                {OFF_SCALE_CARET}
+              </span>
+            ))}
             {now === null ? null : (
               <span
                 data-slot="spark-now"
