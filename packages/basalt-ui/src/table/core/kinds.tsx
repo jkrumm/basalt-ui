@@ -72,7 +72,7 @@ export type EntityOptions<T> = CommonOptions & {
   icon?: (row: T) => IconComponent | undefined
   sub?: (row: T) => string | null | undefined
   /** The secondary text is a time or an id: drawn in the mono face with tabular numerals. */
-  subMono?: boolean
+  subMono?: boolean | undefined
   filter?: 'text'
   /**
    * `'content'` sizes the column to its widest loaded value, name or sub line (floor 18ch, cap

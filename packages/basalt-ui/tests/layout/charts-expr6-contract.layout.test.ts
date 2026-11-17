@@ -101,7 +101,7 @@ const facesOf = (page: LayoutPage, id: string): Promise<Face[]> =>
       const edge = root.getBoundingClientRect().right
       const leaves = [...root.querySelectorAll<HTMLElement>('*')].filter(
         (el) =>
-          el.dataset.slot === 'table-entity-sub' ||
+          el.dataset['slot'] === 'table-entity-sub' ||
           (el.children.length === 0 && el.textContent === when),
       )
       return leaves
