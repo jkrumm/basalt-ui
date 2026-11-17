@@ -49,7 +49,8 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 
 ## Phone and the 390 px check
 
-- Below 480 px the same rows become cards: sort moves to the toolbar, selection to an explicit Select mode, the row's actions to a kebab. `phone: 'scroll'` keeps a numeric matrix a table.
+- Below 480 px the same rows become cards: sort moves to the toolbar, selection to an explicit Select mode, the row's actions to a kebab. `phone: 'scroll'` keeps a numeric matrix a table, and only where the first column answers the question: it pins the first column and pushes every other off screen (n25 .66 lost the answer column that way). Otherwise `priority` keeps the answer column and drops the rest.
+- A unit travels with its number where a phone card drops the column header: the unit in the cell, never only the header "% of lessons" (n11 .5). A strip cell fits one line at 390, one name and a count ("Nextcloud +1"), where three names clip (n23 .34). An ordinal (a difficulty, a level) is a mark in the cell, not a word.
 - `t.table` is the read view of what the table shows (`rows`, `matched`, `columns`) for an export or a board over the same rows. Saved views live on the device unless `views: { store }` hands them a `ViewStore`.
 - Every column's data must be reachable on a phone. With `detail`, tapping a row opens it; with `onRowActivate`, the row navigates and a Details door opens the sheet; with neither, tapping opens the auto sheet of every column.
 - Render the page at 390 wide before you stop and count the cards: a column that appears nowhere is a defect.
