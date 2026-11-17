@@ -21,12 +21,25 @@ export function useDetailHost<T>(
 ): ReactElement {
   const page = useContext(DetailHostContext)
   const [entry, setEntry] = useState<DetailEntry | null>(null)
+  // A sheet hidden before its open animation finished (a deep link the page's aside took over)
+  // never runs an exit: its popup would stay mounted, closed and focusable. A new key drops it.
+  const [generation, setGeneration] = useState(0)
+  const painted = useRef(false)
+  const shown = useRef(false)
   const own: DetailHost = {
     isOpen: entry !== null,
-    show: setEntry,
-    hide: () => setEntry(null),
+    show: (next) => {
+      shown.current = true
+      setEntry(next)
+    },
+    hide: () => {
+      setEntry(null)
+      if (shown.current && !painted.current) setGeneration((n) => n + 1)
+      shown.current = false
+    },
   }
   const close = (): void => {
+    shown.current = false
     setEntry(null)
     model.closeDetail()
   }
@@ -51,7 +64,14 @@ export function useDetailHost<T>(
     }
   })
   return (
-    <Sheet open={entry !== null} onOpenChange={(open) => !open && close()}>
+    <Sheet
+      key={generation}
+      open={entry !== null}
+      onOpenChange={(open) => !open && close()}
+      onOpenChangeComplete={(open) => {
+        painted.current = open
+      }}
+    >
       <SheetContent title={entry?.title ?? ''}>
         {entry?.body({ height: 'fill', phase: 'ready' })}
       </SheetContent>
