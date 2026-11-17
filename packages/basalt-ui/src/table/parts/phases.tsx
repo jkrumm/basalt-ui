@@ -7,7 +7,7 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
 import { useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
-import { HostTitleContext } from '../../common/could-not-load'
+import { HostTitleContext } from '../../core/could-not-load'
 import { useMessages } from '../../core/messages/use-messages'
 import { OfflineLine } from '../../core/offline-line'
 import { table } from '../../core/messages/table'

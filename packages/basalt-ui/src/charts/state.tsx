@@ -4,7 +4,7 @@
  */
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { splitEmptyCopy } from '../common/empty-copy'
-import { couldNotLoad } from '../common/could-not-load'
+import { couldNotLoad } from '../core/could-not-load'
 import { toErrorMessage } from '../common/errors'
 import { RetryButton } from '../common/retry-button'
 import { BASALT } from '../tokens'

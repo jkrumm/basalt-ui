@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
-import { HostTitleContext } from '../common/could-not-load'
+import { HostTitleContext } from '../core/could-not-load'
 import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
 import { cards } from '../core/messages/cards'
