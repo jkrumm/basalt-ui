@@ -217,7 +217,12 @@
       }
     ],
     "shadcn/no-inline-styles": "error",
-    "shadcn/require-static-classes": "error",
+    "shadcn/require-static-classes": [
+      "error",
+      {
+        "componentImports": ["(?:^|/)components/ui(?:/|$)"]
+      }
+    ],
     "shadcn/no-restyle": [
       "error",
       {

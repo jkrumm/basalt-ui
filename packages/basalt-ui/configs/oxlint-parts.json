@@ -219,7 +219,12 @@
         "message": "An inline style sets a value outside the design system. A bar, column or mark sized from data is BarList from basalt-ui/cards, ui/progress, ui/meter or a chart kind, also through a CSS custom property; any other value is a class, or a theme token in CSS."
       }
     ],
-    "shadcn/require-static-classes": "error",
+    "shadcn/require-static-classes": [
+      "error",
+      {
+        "componentImports": ["^basalt-ui/ui/"]
+      }
+    ],
     "shadcn/no-restyle": [
       "error",
       {
