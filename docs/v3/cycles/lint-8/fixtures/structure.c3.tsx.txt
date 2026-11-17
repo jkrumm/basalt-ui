@@ -1,0 +1,401 @@
+// Cycle 3 phrasings for the structure family: import-boundary, primitive-bypass, colour-literal,
+// waiver-needs-reason, data-primitive, router-search, control-home, untrusted-markdown. Seed numbers
+// continue cycle 2's. A `pass` mark is valid code beside a shape a cycle 2 fix widened a form to.
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Navigate, Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { liveQuery } from 'basalt-ui/data'
+import { Markdown } from 'basalt-ui/content'
+import { Card } from 'basalt-ui/ui/card'
+import { Input } from 'basalt-ui/ui/input'
+import { Select } from 'basalt-ui/ui/select'
+import { Segmented } from 'basalt-ui/ui/segmented'
+import { Table, TableBody, TableCell, TableRow } from 'basalt-ui/ui/table'
+import { BarChart } from 'basalt-ui/charts'
+import { z } from 'zod'
+
+type Row = { id: string; name: string; value: number; html: string; text: string }
+const runsQuery = { queryKey: ['runs'], queryFn: async () => [] as Row[] }
+
+// seed import-boundary/radix 6: floating-ui to position a hand-built popover
+import { useFloating } from '@floating-ui/react'
+export function usePop() {
+  return useFloating({ placement: 'bottom' })
+}
+
+// seed import-boundary/radix 7: react-resizable-panels, the shadcn Resizable's engine
+import { Panel, PanelGroup } from 'react-resizable-panels'
+export function Split() {
+  return (
+    <PanelGroup direction="horizontal">
+      <Panel>a</Panel>
+    </PanelGroup>
+  )
+}
+
+// seed import-boundary/sonner 3: react-toastify, the third toast habit
+import { toast } from 'react-toastify'
+export const saved = () => toast.success('Saved')
+
+// seed import-boundary/visx 5: Chart.js through its React wrapper
+import { Line } from 'react-chartjs-2'
+export function Trend() {
+  return <Line data={{ labels: [], datasets: [] }} />
+}
+
+// seed import-boundary/data-library 3: Microsoft's fetch-event-source for an SSE feed
+import { fetchEventSource } from '@microsoft/fetch-event-source'
+export function openFeed() {
+  return fetchEventSource('/api/feed', { onmessage: () => {} })
+}
+
+// seed import-boundary/react-table-hook 3: the table hook through a namespace import
+import * as RT from '@tanstack/react-table'
+export function useGrid(data: Row[]) {
+  return RT.useReactTable({ data, columns: [], getCoreRowModel: RT.getCoreRowModel() })
+}
+
+// pass import-boundary/radix 1: an icon from Radix's icon set passed to an icon prop
+import { ArrowRightIcon } from '@radix-ui/react-icons'
+export function Next() {
+  return <ArrowRightIcon />
+}
+
+// seed primitive-bypass/raw-control 7: a native search input for a quick filter
+export function Quick() {
+  return <input type="search" placeholder="Filter" />
+}
+
+// seed primitive-bypass/raw-control 8: an anchor with a click handler and no href, used as a button
+export function More({ onMore }: { onMore: () => void }) {
+  return <a onClick={onMore}>More</a>
+}
+
+// seed primitive-bypass/raw-heading 5: a div given the heading role, the a11y fix for a styled title
+export function SectionTitle() {
+  return (
+    <div role="heading" aria-level={2}>
+      Runs
+    </div>
+  )
+}
+
+// seed primitive-bypass/raw-heading 6: an h4 inside a card body
+export function CardTitle() {
+  return (
+    <Card>
+      <h4>Throughput</h4>
+    </Card>
+  )
+}
+
+// seed primitive-bypass/raw-table 4: a hand-drawn table with a caption
+export function Limits() {
+  return (
+    <table>
+      <caption>Limits</caption>
+      <tbody>
+        <tr>
+          <td>CPU</td>
+        </tr>
+      </tbody>
+    </table>
+  )
+}
+
+// seed primitive-bypass/role-table 4: a virtual list given grid roles
+export function VList({ rows }: { rows: Row[] }) {
+  return (
+    <div role="grid">
+      {rows.map((r) => (
+        <div key={r.id} role="row">
+          {r.name}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/table-rows 5: ui/table rows from a memoised sort
+export function Sorted({ rows }: { rows: Row[] }) {
+  const sorted = useMemo(() => rows.toSorted((a, b) => a.value - b.value), [rows])
+  return (
+    <Table>
+      <TableBody>
+        {sorted.map((r) => (
+          <TableRow key={r.id}>
+            <TableCell>{r.name}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+// seed primitive-bypass/svg-data-marks 5: tick lines placed from data
+export function Ticks({ rows }: { rows: Row[] }) {
+  return (
+    <svg>
+      {rows.map((r, i) => (
+        <line key={r.id} x1={i * 10} x2={i * 10} y1={0} y2={r.value} />
+      ))}
+    </svg>
+  )
+}
+
+// seed primitive-bypass/html-data-marks 5: a sparkline of div columns sized from data
+export function Spark({ rows }: { rows: Row[] }) {
+  return (
+    <div className="flex items-end gap-1">
+      {rows.map((r) => (
+        <div key={r.id} style={{ height: `${r.value}%` }} />
+      ))}
+    </div>
+  )
+}
+
+// seed primitive-bypass/intl-format 8: a time of day from toLocaleTimeString
+export function Clock({ at }: { at: Date }) {
+  return <time>{at.toLocaleTimeString()}</time>
+}
+
+// seed primitive-bypass/intl-format 9: a module-level Intl formatter used in JSX
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+export function Price({ v }: { v: number }) {
+  return <span>{money.format(v)}</span>
+}
+
+// seed primitive-bypass/checkable-input 5: a react-hook-form checkbox
+export function Agree({ register }: { register: (n: string) => object }) {
+  return <input type="checkbox" {...register('agree')} />
+}
+
+// seed primitive-bypass/chart-body-root 5: a chart kind as the bare child of a Card
+export function Chart({ rows }: { rows: Row[] }) {
+  return (
+    <Card>
+      <BarChart data={rows} ariaLabel="Runs" />
+    </Card>
+  )
+}
+
+// seed colour-literal/colour-literal 10: a status-to-colour record for chart series
+export const STATUS_COLOURS = { ok: '#16a34a', failed: '#dc2626' }
+
+// seed colour-literal/colour-literal 11: a fallback hex when the token read comes back empty
+export function brand(el: HTMLElement) {
+  return getComputedStyle(el).getPropertyValue('--basalt-brand') || '#0077bd'
+}
+
+// seed colour-literal/colour-literal 12: an rgb border colour in a style object
+export const ruleStyle = { borderColor: 'rgb(0 0 0 / 0.1)' }
+
+// seed colour-literal/colour-literal 13: a named colour handed to a canvas through a variable (the stated limit)
+export function paint(ctx: CanvasRenderingContext2D) {
+  const ink = 'black'
+  ctx.fillStyle = ink
+}
+
+// pass colour-literal/colour-literal 1: a PR title that names an Issue number
+export const pr = { title: 'Fix the flaky test, closes #123', ref: '#1565' }
+
+// pass colour-literal/colour-literal 2: a fragment link to a section anchor
+export const toc = [{ href: '#add', label: 'Add' }]
+
+// seed waiver-needs-reason/missing-reason 8: a reason after a single dash
+// oxlint-disable-next-line basalt/primitive-bypass - the native picker is wanted here
+export const Picker = () => <input type="date" />
+
+// seed waiver-needs-reason/missing-reason 9: an empty reason after the double dash
+// oxlint-disable-next-line basalt/primitive-bypass --
+export const Picker2 = () => <input type="time" />
+
+// seed waiver-needs-reason/file-level-scope 5: a block disable with an enable later, reasoned, mid-file
+/* oxlint-disable basalt/primitive-bypass -- the legacy form below is replaced in Q1 */
+export const Legacy = () => <select />
+/* oxlint-enable basalt/primitive-bypass */
+
+// pass waiver-needs-reason/missing-reason 1: a reasoned next-line waiver naming two rules
+// oxlint-disable-next-line basalt/primitive-bypass, basalt/fixed-colour -- the print sheet is black on white by spec
+export const Print = () => <button className="text-black">Print</button>
+
+// seed data-primitive/timer-refetch 5: usehooks-ts useInterval that invalidates
+import { useInterval } from 'usehooks-ts'
+export function useAutoRefresh() {
+  const qc = useQueryClient()
+  useInterval(() => void qc.invalidateQueries({ queryKey: ['runs'] }), 10_000)
+}
+
+// seed data-primitive/timer-refetch 6: an interval calling a named refresh function
+export function useTicker() {
+  const qc = useQueryClient()
+  useEffect(() => {
+    const refresh = () => qc.invalidateQueries({ queryKey: ['runs'] })
+    const id = setInterval(refresh, 5000)
+    return () => clearInterval(id)
+  }, [qc])
+}
+
+// seed data-primitive/refetch-interval 5: a polling interval behind a live toggle
+export function useRuns(live: boolean) {
+  return useQuery({ ...runsQuery, refetchInterval: live ? 5000 : false })
+}
+
+// seed data-primitive/raw-storage-write 6: storage reached through an alias
+export function remember(v: string) {
+  const store = window.localStorage
+  store.setItem('view', v)
+}
+
+// seed data-primitive/raw-storage-write 7: the stored choice cleared on sign-out
+export function signOut() {
+  localStorage.clear()
+}
+
+// seed data-primitive/chart-data-fallback 6: a named empty array as the fallback
+const EMPTY: Row[] = []
+export function Runs() {
+  const q = useQuery(runsQuery)
+  return <BarChart data={q.data ?? EMPTY} ariaLabel="Runs" />
+}
+
+// seed data-primitive/chart-data-fallback 7: the fallback in a useMemo before the chart
+export function Runs2() {
+  const q = useQuery(runsQuery)
+  const rows = useMemo(() => q.data ?? [], [q.data])
+  return <BarChart data={rows} ariaLabel="Runs" />
+}
+
+// seed data-primitive/unseamed-transport 5: a WebSocket kept in a ref
+export function useSocket() {
+  const ws = useRef<WebSocket | null>(null)
+  useEffect(() => {
+    ws.current = new WebSocket('wss://example.com/feed')
+    return () => ws.current?.close()
+  }, [])
+}
+
+// seed data-primitive/reader-loop 4: a decoded stream read in a while loop
+export async function readAll(res: Response) {
+  const reader = res.body!.pipeThrough(new TextDecoderStream()).getReader()
+  while (true) {
+    const { done } = await reader.read()
+    if (done) break
+  }
+}
+
+// seed data-primitive/live-static-stale-time 6: Infinity spread over live options
+export const pinned = liveQuery({ ...runsQuery, staleTime: Infinity }, 'live')
+
+// seed router-search/literal-search 8: the Navigate component with a literal search
+export function Home() {
+  return <Navigate to="/runs" search={{ status: 'all' }} />
+}
+
+// seed router-search/literal-search 9: navigate to the current route with a literal search
+export function useTab() {
+  const navigate = useNavigate()
+  return () => navigate({ to: '.', search: { tab: 'logs' } })
+}
+
+// seed router-search/loader-deps-search 5: loaderDeps returning the search off an undestructured argument
+export const R1 = createFileRoute('/a')({
+  loaderDeps: (opts) => opts.search,
+})
+
+// seed router-search/validate-search-pure 5: a zod default from the clock evaluated at parse
+export const R2 = createFileRoute('/b')({
+  validateSearch: z.object({ from: z.string().default(new Date().toISOString()) }),
+})
+
+// seed router-search/validate-search-pure 6: a validator function reading the clock
+export const R3 = createFileRoute('/c')({
+  validateSearch: (s: Record<string, unknown>) => ({ at: Number(s.at ?? Date.now()) }),
+})
+
+// pass router-search/literal-search 1: a Link with no search, only params
+export function ToRun({ id }: { id: string }) {
+  return (
+    <Link to="/runs/$id" params={{ id }}>
+      Open
+    </Link>
+  )
+}
+
+// seed control-home/outside-home 10: a sort Select above a table in a card body
+export function SortBy() {
+  const [sort, setSort] = useState('name')
+  return (
+    <Card>
+      <Select value={sort} onValueChange={(v) => setSort(String(v))} />
+    </Card>
+  )
+}
+
+// seed control-home/outside-home 11: a grid or list Segmented switch in the page body
+export function Layout() {
+  const [mode, setMode] = useState<'grid' | 'list'>('grid')
+  return <Segmented value={mode} onValueChange={(v) => setMode(v as 'grid' | 'list')} />
+}
+
+// seed control-home/outside-home 12: a search Input on a reducer
+export function Find() {
+  const [state, dispatch] = useReducer((s: { q: string }, q: string) => ({ ...s, q }), { q: '' })
+  return <Input value={state.q} onChange={(e) => dispatch(e.target.value)} />
+}
+import { useReducer } from 'react'
+
+// pass control-home/outside-home 1: an Input in a form field bound to the form library
+export function NameField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return <Input value={value} onChange={(e) => onChange(e.target.value)} />
+}
+
+// seed untrusted-markdown/dangerous-html 5: model html in an iframe srcDoc
+export function Preview({ m }: { m: Row }) {
+  return <iframe srcDoc={m.html} />
+}
+
+// seed untrusted-markdown/dangerous-html 6: model html parsed into a fragment and appended
+export function mount(el: HTMLElement, m: Row) {
+  el.append(document.createRange().createContextualFragment(m.html))
+}
+
+// seed untrusted-markdown/mdx-evaluate 5: the next-mdx-remote-client fork for model MDX
+import { MDXRemote } from 'next-mdx-remote-client/rsc'
+export function Answer({ m }: { m: Row }) {
+  return <MDXRemote source={m.text} />
+}
+
+// seed untrusted-markdown/trusted-content 6: a wrapper that hard-codes trusted around a text prop
+export function Reply({ text }: { text: string }) {
+  return <Markdown contentTrust="trusted">{text}</Markdown>
+}
+
+// pass untrusted-markdown/dangerous-html 1: a static SVG sprite string injected
+export function Sprite() {
+  return <div dangerouslySetInnerHTML={{ __html: '<svg><use href="#i" /></svg>' }} />
+}
+
+// seed primitive-bypass/svg-data-marks 6: a marks component split out of the chart, rooted at a g
+type Pt = { id: string; x: number; y: number; index: number }
+export function Dots({ pts }: { pts: Pt[] }) {
+  return (
+    <g>
+      {pts.map((p) => (
+        <circle key={p.id} cx={p.x} cy={p.y} r={3} />
+      ))}
+    </g>
+  )
+}
+
+// pass primitive-bypass/svg-data-marks 1: seam marks in their own file, focus from the page that spreads focus.target (expression-3 (f), c10's ReachRings)
+import type { ChartFocus } from 'basalt-ui/charts'
+export function Rings({ pts, focus }: { pts: Pt[]; focus: ChartFocus<Pt> }) {
+  return (
+    <svg>
+      {pts.map(({ id, index, x, y }) => (
+        <circle key={id} {...focus.item(index)} cx={x} cy={y} r={4} />
+      ))}
+    </svg>
+  )
+}

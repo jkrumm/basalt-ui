@@ -1,0 +1,116 @@
+/* Cycle 3 phrasings for the stylelint preset and the token check. Seed numbers continue cycle 2's. */
+
+/* seed stylelint/at-rule-disallowed-list 4: the shadcn v4 dark variant declared in app CSS */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* seed stylelint/at-rule-disallowed-list 5: a card recipe rebuilt with @apply in a module */
+.card {
+  @apply rounded-xl border bg-card p-6 shadow-sm;
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 4: a dark fork on the colour-scheme media query */
+@media (prefers-color-scheme: dark) {
+  .hero {
+    background: var(--basalt-inset);
+  }
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 5: a viewport query nested in a rule */
+.grid {
+  @media (min-width: 64rem) {
+    display: grid;
+  }
+}
+
+/* seed stylelint/selector-disallowed-list 5: the shadcn dark class on the root */
+:root.dark .panel {
+  background: var(--basalt-inset);
+}
+
+/* seed stylelint/selector-disallowed-list 6: a primitive reached through its data-slot inside :where */
+:where([data-slot='card']) {
+  border-radius: 0;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 3: a radius in rem */
+.pill {
+  border-radius: 9999rem;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 4: a shadow built over a token */
+.lift {
+  box-shadow: 0 1px 2px var(--basalt-line);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 8: margin-block in px */
+.lede {
+  margin-block: 12px;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 9: an inset in px on an overlay */
+.badge-pos {
+  inset-inline-end: 6px;
+}
+
+/* seed stylelint/function-disallowed-list 4: an rgb() over a shadcn variable */
+.ring {
+  outline-color: rgb(var(--ring));
+}
+
+/* seed stylelint/color-named 4: transparent-to-black gradient */
+.scrim {
+  background: linear-gradient(to top, black, transparent);
+}
+
+/* seed stylelint/color-no-hex 3: a hex with alpha */
+.veil {
+  background: #00000080;
+}
+
+/* seed stylelint/property-disallowed-list 4: a token tuned inside a container query */
+@container (min-width: 30rem) {
+  .kpi {
+    --basalt-text-lg: 2rem;
+  }
+}
+
+/* seed stylelint/declaration-no-important 4: important on a display value */
+.hide {
+  display: none !important;
+}
+
+/* seed raw-scroll/overflow-scroll 13: overflow-x scroll on a chip rail */
+.rail-x {
+  overflow-x: scroll;
+}
+
+/* seed raw-scroll/overflow-scroll 14: overflow-block, the logical vertical */
+.feed {
+  overflow-block: auto;
+}
+
+/* seed unknown-token 5: a surface step from another system */
+.well {
+  background: var(--basalt-surface-2);
+}
+
+/* seed unknown-token 6: a prefixed colour name */
+.mark {
+  color: var(--basalt-color-brand);
+}
+
+/* pass stylelint/declaration-property-value-disallowed-list 1: a gap on the ladder through Tailwind's spacing function */
+.stack {
+  display: flex;
+  gap: --spacing(2);
+}
+
+/* seed unknown-token 7: the spacing token the value-list message sends an author to */
+.stack-2 {
+  gap: var(--basalt-space-2);
+}
+
+/* pass stylelint/selector-disallowed-list 1: a class whose name starts with dark */
+.darkroom-frame {
+  border-radius: var(--basalt-radius-card);
+}

@@ -1,0 +1,303 @@
+// Cycle 8 phrasings for the class family: viewport-keyed, dark-fork, fixed-colour,
+// status-fill-as-text, raw-scroll, tw-off-law, app-spacing, the token check on a class and the
+// shadcn class rules. Seed numbers continue cycle 7's. A `pass` mark is valid code beside a shape a
+// cycle 7 fix widened a form to (a JS media query, a user-agent read, the `in-`/`group-` arbitrary
+// dark spelling, the surface-recipe control signal, an interpolated variant prefix).
+import { useEffect, useState } from 'react'
+import { useMediaQuery } from 'react-responsive'
+import { cva } from 'class-variance-authority'
+import { cn } from 'basalt-ui'
+
+// seed viewport-keyed/media-query 20: react-responsive's object query, the hook an agent installs
+export function useNarrow() {
+  return useMediaQuery({ maxWidth: 767 })
+}
+
+// seed viewport-keyed/media-query 21: the visual viewport's width against a breakpoint
+export function useSheetMode() {
+  const [sheet, setSheet] = useState(false)
+  useEffect(() => setSheet((window.visualViewport?.width ?? 0) < 640), [])
+  return sheet
+}
+
+// seed viewport-keyed/media-query 22: the screen orientation API choosing a layout
+export function useLandscape() {
+  return window.screen.orientation.type.startsWith('landscape')
+}
+
+// seed viewport-keyed/media-query 23: a user-agent read that picks a shortcut glyph, which Kbd's Mod owns
+export function ShortcutHint() {
+  const mac = /Mac|iPhone|iPad/.test(navigator.userAgent)
+  return <kbd>{mac ? '⌘K' : 'Ctrl K'}</kbd>
+}
+
+// pass viewport-keyed/media-query 4: a user-preference query in JS
+export function useCalm() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+// seed viewport-keyed/breakpoint-prefix 15: a viewport class handed down through an item-class prop
+export function Gallery({ Grid }: { Grid: (p: { itemClassName: string }) => null }) {
+  return <Grid itemClassName="col-span-1 md:col-span-2" />
+}
+
+// seed viewport-keyed/breakpoint-prefix 16: a viewport class behind a condition in a cn() list
+export function Board({ wide }: { wide: boolean }) {
+  return <div className={cn('grid gap-4', wide && 'lg:grid-cols-3')}>b</div>
+}
+
+// seed viewport-keyed/arbitrary-query 11: the media range syntax in an arbitrary variant
+export function Strip() {
+  return <div className="flex-col [@media(width>=48rem)]:flex-row">s</div>
+}
+
+// seed viewport-keyed/arbitrary-query 12: v4's arbitrary max breakpoint
+export function Crumbs() {
+  return <nav className="flex max-[600px]:hidden">c</nav>
+}
+
+// pass viewport-keyed/arbitrary-query 3: a forced-colours media feature, a user setting
+export function Chip() {
+  return <span className="rounded-ctrl [@media(forced-colors:active)]:border">c</span>
+}
+
+// seed dark-fork/dark-variant 22: v4's group-data variant over the theme attribute
+export function Pane() {
+  return <section className="bg-card group-data-[theme=dark]:bg-inset">p</section>
+}
+
+// seed dark-fork/dark-variant 23: the theme attribute as an ancestor in an arbitrary variant
+export function Code() {
+  return <pre className="bg-card [[data-theme=dark]_&]:bg-inset">c</pre>
+}
+
+// seed dark-fork/dark-variant 24: v4's documented dark custom-variant body written inline
+export function Quote() {
+  return <blockquote className="bg-card [&:where(.dark,.dark_*)]:bg-inset">q</blockquote>
+}
+
+// pass dark-fork/dark-variant 4: `in-` and named-group arbitrary variants over a state, not the scheme
+export function Row() {
+  return <li className="in-data-[state=open]:bg-muted group-[.is-active]/row:bg-muted">r</li>
+}
+
+// seed fixed-colour/black-white 21: black placeholder ink at an alpha
+export function Search() {
+  return <input aria-label="q" className="placeholder:text-black/40" />
+}
+
+// seed fixed-colour/black-white 22: a white underline colour on a hero link
+export function HeroLink() {
+  return (
+    <a href="/start" className="underline decoration-white/50">
+      start
+    </a>
+  )
+}
+
+// seed fixed-colour/black-white 23: a black shadow colour under a floating bar
+export function FloatingBar() {
+  return <div className="shadow-lg shadow-black/20">f</div>
+}
+
+// pass fixed-colour/black-white 3: transparent and currentColor, which carry no scheme
+export function Ghost() {
+  return <span className="bg-transparent text-current">g</span>
+}
+
+// seed status-fill-as-text/text-on-fill 24: a status tint as an svg icon's colour through text-*
+export function WarnIcon() {
+  return <svg className="size-4 text-warn-tint" aria-hidden />
+}
+
+// seed status-fill-as-text/text-on-fill 25: the brand fill as text behind a group-hover
+export function NavItem() {
+  return <a href="/n" className="group-hover:text-brand-fill">n</a>
+}
+
+// seed status-fill-as-text/text-on-fill 26: a sequential step as text in a cva variant
+export const heat = cva('tabular-nums', { variants: { level: { hot: 'text-seq-5', cold: 'text-seq-1' } } })
+
+// seed raw-scroll/overflow-scroll 32: a horizontal scroll box for a wide toolbar
+export function Toolbar() {
+  return <div className="flex gap-2 overflow-x-auto">t</div>
+}
+
+// seed raw-scroll/overflow-scroll 33: overflow-scroll on a fixed-height log
+export function Log() {
+  return <pre className="h-64 overflow-scroll">l</pre>
+}
+
+// seed raw-scroll/overflow-scroll 34: a scroll box behind a container variant in a cva base
+export const panel = cva('flex flex-col @wide:max-h-96 @wide:overflow-y-auto')
+
+// seed tw-off-law/off-ladder-spacing 15: an off-ladder half step above four
+export function Cell() {
+  return <td className="px-5.5">c</td>
+}
+
+// seed tw-off-law/off-ladder-spacing 16: an off-ladder half-step inset on an absolutely placed badge
+export function Corner() {
+  return <span className="absolute top-4.5 right-4.5">c</span>
+}
+
+// seed tw-off-law/surface-recipe 22: a card rebuilt from a ring, a radius and a shadow on an article
+export function Post() {
+  return <article className="rounded-xl p-6 shadow-sm ring-1 ring-border">p</article>
+}
+
+// seed tw-off-law/surface-recipe 23: shadcn's card base in a cva variant
+export const tile = cva('', { variants: { raised: { true: 'rounded-xl border bg-card shadow-sm' } } })
+
+// pass tw-off-law/surface-recipe 4: a raised control, a button with its own shadow
+export function Fab() {
+  return <button type="button" className="rounded-ctrl border px-4 py-2 shadow-sm">f</button>
+}
+
+// seed tw-off-law/app-colour 15: a palette colour on a progress track
+export function Track() {
+  return <div className="h-1 bg-slate-200">t</div>
+}
+
+// seed tw-off-law/app-colour 16: a palette ring around a selected avatar
+export function Avatar() {
+  return <img alt="a" className="rounded-full ring-2 ring-indigo-500" />
+}
+
+// seed tw-off-law/app-colour-arbitrary 12: an arbitrary hsl colour on a badge
+export function Tag() {
+  return <span className="bg-[hsl(210_40%_96%)]">t</span>
+}
+
+// seed tw-off-law/app-colour-arbitrary 13: the v4 shorthand over an app variable on a stroke
+export function Spark() {
+  return <svg className="stroke-(--spark-line)" aria-hidden />
+}
+
+// seed tw-off-law/alpha-on-premixed 17: an alpha on the pre-mixed good tint
+export function OkRow() {
+  return <tr className="bg-good-tint/60">o</tr>
+}
+
+// seed tw-off-law/alpha-on-premixed 18: an alpha on the selected token behind aria-selected
+export function Option() {
+  return <li className="aria-selected:bg-selected/70">o</li>
+}
+
+// seed tw-off-law/numeric-container 17: an arbitrary container width variant
+export function Pair() {
+  return <div className="flex flex-col @[40rem]:flex-row">p</div>
+}
+
+// seed tw-off-law/numeric-container 18: a named Tailwind container size on a named container
+export function Split() {
+  return <div className="grid @2xl/main:grid-cols-2">s</div>
+}
+
+// seed tw-off-law/important-modifier 15: a leading bang inside a cva variant
+export const pill = cva('', { variants: { flush: { true: '!p-0' } } })
+
+// seed tw-off-law/important-modifier 16: v4's trailing bang behind a hover
+export function Plain() {
+  return <a href="/p" className="hover:underline!">p</a>
+}
+
+// seed tw-off-law/template-interpolation 16: an interpolated variant prefix in a template with a gap
+export function Stack({ at }: { at: string }) {
+  return <div className={`flex ${at}:flex-row`}>s</div>
+}
+
+// seed tw-off-law/template-interpolation 17: a tone interpolated into a colour utility
+export function Dot({ tone }: { tone: string }) {
+  return <span className={`size-2 rounded-full bg-${tone}`}>d</span>
+}
+
+// pass tw-off-law/template-interpolation 2: a template joining whole class names, no partial token
+export function Joined({ extra }: { extra: string }) {
+  return <div className={`flex gap-2 ${extra}`}>j</div>
+}
+
+// seed tw-off-law/fixed-width 23: a fixed pixel width on a sidebar column
+export function SideCol() {
+  return <aside className="w-[280px]">s</aside>
+}
+
+// seed tw-off-law/fixed-width 24: a fixed max width in rem on a form
+export function Narrow() {
+  return <form className="max-w-[32rem]">n</form>
+}
+
+// seed tw-off-law/track-length 21: a fixed-pixel first track in an arbitrary grid template
+export function Layout2() {
+  return <div className="grid grid-cols-[240px_1fr]">l</div>
+}
+
+// seed tw-off-law/track-length 22: fixed auto-rows for a list of cards
+export function Feed() {
+  return <div className="grid auto-rows-[120px]">f</div>
+}
+
+// seed app-spacing/space-between 15: space-y behind a condition in cn()
+export function Stack2({ dense }: { dense: boolean }) {
+  return <div className={cn('flex flex-col', !dense && 'space-y-4')}>s</div>
+}
+
+// seed app-spacing/space-between 16: a reversed vertical space on a column-reverse list
+export function Thread() {
+  return <ol className="flex flex-col-reverse space-y-reverse space-y-2">t</ol>
+}
+
+// pass app-spacing/margin 4: an auto margin pushing the last toolbar item to the end
+export function Bar() {
+  return <span className="ml-auto">b</span>
+}
+
+// seed app-spacing/margin 19: a vertical margin around a divider
+export function Rule() {
+  return <hr className="my-2" />
+}
+
+// seed app-spacing/margin 20: a block-end margin under a paragraph in a prose-free page
+export function Lead() {
+  return <p className="mb-6">l</p>
+}
+
+// seed unknown-token 25: an invented token in a v4 custom-property shorthand
+export function Ink() {
+  return <p className="text-(--basalt-ink-soft)">i</p>
+}
+
+// seed unknown-token 26: an invented token in an arbitrary value
+export function Pad() {
+  return <div className="p-[var(--basalt-space-card)]">p</div>
+}
+
+// seed shadcn/no-arbitrary-values 1: an arbitrary pixel padding to match a mock
+export function MockPad() {
+  return <div className="p-[13px]">m</div>
+}
+
+// seed shadcn/no-arbitrary-values 2: an arbitrary text size
+export function Tiny() {
+  return <small className="text-[11px]">t</small>
+}
+
+// seed shadcn/no-unknown-classes 1: shadcn v3's border colour name that the theme does not declare
+export function Old() {
+  return <div className="border-gray-150">o</div>
+}
+
+// seed shadcn/no-unknown-classes 2: a radius name the theme does not declare
+export function Old2() {
+  return <div className="rounded-ctrl-lg">o</div>
+}
+
+// seed shadcn/no-raw-colors 1: a palette text colour on a delta
+export function Delta() {
+  return <span className="text-green-600">+4%</span>
+}
+
+// seed shadcn/no-raw-colors 2: a palette fill on a progress value
+export function Fill() {
+  return <div className="h-1 bg-blue-500">f</div>
+}

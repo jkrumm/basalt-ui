@@ -1,0 +1,74 @@
+/* Cycle 2 phrasings for the stylelint preset and the token check. Seed numbers continue cycle 1's. */
+
+/* seed raw-scroll/overflow-scroll 9: the overflow shorthand with two values */
+.log {
+  max-height: 12rem;
+  overflow: hidden auto;
+}
+
+/* seed raw-scroll/overflow-scroll 10: the logical overflow property */
+.rail {
+  overflow-inline: scroll;
+}
+
+/* seed stylelint/color-named 3: a named colour inside light-dark() */
+.chip {
+  color: light-dark(black, white);
+}
+
+/* seed stylelint/function-disallowed-list 3: an hsl() literal from a shadcn theme */
+.badge {
+  background: hsl(210 40% 96%);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 6: a margin in px on a heading */
+.title {
+  margin-block-end: 12px;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 7: a font size in px */
+.kpi {
+  font-size: 28px;
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 3: a viewport query on max-width in em */
+@media (max-width: 48em) {
+  .side {
+    display: none;
+  }
+}
+
+/* seed stylelint/selector-disallowed-list 3: a dark fork through the theme attribute selector */
+[data-theme='dark'] .hero {
+  background: var(--basalt-inset);
+}
+
+/* seed stylelint/selector-disallowed-list 4: the shell scrollport targeted by its attribute */
+[data-basalt-scrollport] > * {
+  border: 0;
+}
+
+/* seed stylelint/property-disallowed-list 3: a token set on a component class for one section */
+.danger-zone {
+  --basalt-brand: var(--basalt-bad);
+}
+
+/* seed stylelint/declaration-no-important 3: important on a spacing token */
+.tight {
+  gap: var(--basalt-space-1) !important;
+}
+
+/* seed stylelint/at-rule-disallowed-list 3: an app @theme block that adds a colour */
+@theme {
+  --color-acme: var(--basalt-brand);
+}
+
+/* seed unknown-token 3: a scale-step token name from another design system */
+.ring {
+  outline-color: var(--basalt-brand-500);
+}
+
+/* seed unknown-token 4: a camelCase token name copied from a BASALT ref */
+.note {
+  color: var(--basalt-inkMuted);
+}
