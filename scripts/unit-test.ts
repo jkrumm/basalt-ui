@@ -12,11 +12,18 @@
  */
 import { existsSync, readFileSync } from 'node:fs'
 
-/** Files whose own process peaked above 1.3 GiB (measured alone). A rename fails loudly rather than going unnoticed. */
+/**
+ * Files whose own process peaked above 800 MiB (measured alone, 2026-11-17); two of them in one chunk stacked to
+ * 2.4 GiB. A rename fails loudly rather than going unnoticed.
+ */
 const HEAVY = [
   'packages/basalt-ui/scripts/check-agent-doc-drift.test.ts',
+  'packages/basalt-ui/scripts/gen-docs.test.ts',
   'packages/basalt-ui/scripts/gen-llms-assert.test.ts',
   'packages/basalt-ui/scripts/gen-llms.test.ts',
+  'packages/basalt-ui/scripts/gen-ui.test.ts',
+  'packages/basalt-ui/scripts/migrating-imports.test.ts',
+  'packages/basalt-ui/src/page/define-overlays.test.tsx',
   'tests/agent-doc-drift.test.ts',
 ]
 
