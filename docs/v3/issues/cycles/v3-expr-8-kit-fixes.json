@@ -1,0 +1,27 @@
+{
+  "why": "Expression cycle 8 (docs/v3/cycles/expression-8.md) found kit behaviours that cost points in round 0 and need no new field. Each is a P3 that serves two cases or more. The lead's probes before round 0 also showed two cycle 7 fixes that did not reach every case: a `refLines` label with marks on every side is still dropped at 390 (n21), and a `ChartCard` that mounts straight into loading holds only the rows its loading frame declares (n24, 80 px short at 1800).",
+  "what": "A heatmap cell focused by keys draws the focus ring; a BarList in error names itself; a loading frame keeps the ready height at 390; a scrolling BarList shows that rows are hidden; a list joined to a focus dims its other rows.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (the heatmap focus mark, the loading figure)",
+    "packages/basalt-ui/src/cards/** (BarList error copy and scroll cue)",
+    "packages/basalt-ui/src/table/** (row dim on focus)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts, src/cards/contract.ts, src/table/contract.ts (a change that needs a field leaves this row)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) A `Heatmap` cell reached by the arrow keys draws the same ring a pointer focus draws, so a keyboard user sees the cell among 168 (n30 K3, expression-8.42; c02's 8 by 24 grid in the bank). (2) A `BarList` in error reads 'Could not load <title>.' from its title, as `DataTable`, `DataPanel` and `ChartCard` do since cycle 7 (n29 K2, .31; the lead's probe of cycle 7's n23 at 390; n28's builder in round 1). (3) A `ChartCard` loading frame at 390 reserves the lines its ready figure wraps to, the period chip included, so loading and ready share one height (n31 K2, .48: 19 px; n29 K2, .31: 55 px, where the frame mounted in loading). Re-check cycle 7's n24 `?shot-state=loading` against its rest at 1800 (80 px short) and say whether a card that mounts in loading can know the ready rows; if not, the skill row teaches it to declare them. (4) A `BarList` whose `bodyRows` hides rows shows that it scrolls and how many rows are hidden (n32 F5, .55: 4 of 13 shown; n28's builder cut its data to 10 categories because `bodyRows` caps at 10). (5) A `DataTable` or `BarList` that takes `focus` dims its other rows while one is focused, as a chart dims its other marks (n32 F7 and X4, .56, .63; cycle 7's n11 and n23 tables were marked down for the same). If any change needs a new public option or a contract field, it leaves this row: file it as its own row with `checkpoint: spec` and seat opus high, and say so in the PR.",
+  "acceptance": [
+    "A keyboard-focused heatmap cell draws the focus ring, with a test",
+    "A BarList in error names its title, with a test",
+    "A ChartCard's loading frame at 390 matches the ready height with a wrapped period, with a layout test, and the PR states what a card that mounts in loading can hold",
+    "A BarList that hides rows shows a scroll cue with the hidden count, with a layout test",
+    "A focused list row dims the other rows, with a test",
+    "No contract file is touched and no export is added; make check passes"
+  ],
+  "out_of_scope": "Contract fields (v3-expr-8-contract); skill text (v3-expr-8-skill); a 390 sweep that loses a band chart's focus at a gap (n31 only, .51); a y-axis gutter that shifts when a focused series rescales (n28 only, .20).",
+  "proof": "make check; a unit test per change; layout tests at 390 and 1800 for (3) and (4).",
+  "commits": "fix: per change with its tests; package commits separate from non-package ones."
+}

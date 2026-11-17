@@ -1,0 +1,25 @@
+{
+  "why": "Expression cycle 8 (docs/v3/cycles/expression-8.md) lost 42 of its 73 round-0 points to `skill`: the builder did not know to do something the kit could. Three of its nine P2s are skill: n27 and n32 stated facts several times (expression-8.8, .60, X1 1), and n29's legend rows listed the parts of its split bar without joining their focus (.35, X3 1). Word economy and one view cost a point in every case again, as in cycles 6 and 7, although step 6 of both skills names them as checks. Builders did not reach shipped tools that would have closed points: n30 left `annotate`, `states` and `tickCols` on its `Heatmap` unused (.38 to .40), n29 hand-drew a part-to-whole bar from divs where the stacked `BarList` shipped since cycle 7 draws parts by series with the series file's colours and joins a focus (.27, .28, .30, .36).",
+  "what": "The basalt-design and basalt-charts skills teach this cycle's skill findings, each with a worked case.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/**",
+    "packages/basalt-ui/agent/rules/** (through their generator)",
+    "the dogfooded copies the repo syncs from them"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) Word economy as a count, not a reminder: the step-6 fact count lists each fact and where it stands, and the worked failures are this cycle's: a direction sentence on all eight cards (n27), the top Issue named in the hero, the row and the title (n32), the contract named three times per card (n30), a legend that repeats its card's title (n29) (.8, .60, .43, .33, .21, .49). (2) One view: cards in a row end at one height, no dead band under a short card, two parts that share a focus share one legend and one caption (.9, .22, .34, .44, .50, .61). (3) The answer on the mark: the mark that answers carries its value or name (the untagged share on its segment, the sha on the deploy rule, the top Issue's row, the slid measures named in the headline), not only the hero or a footer (.2, .12, .25, .45, .53). (4) A part-to-whole of a few named parts is a one-row stacked `BarList` (series and parts) or a `Meter`, coloured from the series file and joined to the page's focus; its legend rows spread `focus.item(i)` or `focus.seriesItem(key)` so they light both ways (n29: .27, .28, .29, .30, .35, .36). (5) Heatmap tools: `annotate` puts the value on the few cells that answer, a `states` entry marks a partial bucket, `tickCols` keeps clock-stop ticks (n30: .38, .39, .40). (6) Colour: the status hue goes to the state that needs action and the common state stays neutral; a quiet or zero day is not a fault, so its delta is neutral (.54, .46). (7) One name per item: the axis, the list and the hero use the same name; a long name is cut by the kit, never replaced by an invented short one (.11, .23). (8) A page of many small cards groups them by verdict and leads with the group that needs action; on a phone the verdict reads above the fold (.1, .7, .59). (9) Phases and copy: empty says what to do next, error names the cause and offers Retry, a title never comes from data that has not loaded, and every phase declares the same slots (.18, .41, .57). (10) Anatomy for every card on the page, the secondary ones included (.16, .24, .64). Keep step 6's lines within the skills' budgets; move worked cases to references where the step would grow.",
+  "acceptance": [
+    "Step 6 of basalt-design and basalt-charts turns word economy into a fact count with this cycle's worked failures",
+    "The skill teaches a part-to-whole as a stacked BarList row or Meter with linked legend rows, with n29 as the worked case",
+    "The heatmap reference names annotate, states and tickCols with n30 as the worked case",
+    "The answer-on-the-mark, one-view, colour, one-name, card-group, phases and anatomy lines land with a worked case each",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit behaviour (v3-expr-8-kit-fixes) and contract fields (v3-expr-8-contract); rubric text (v3-expr-8-rubric).",
+  "proof": "make check; the skill-reference and budget tests pass with the new text.",
+  "commits": "feat: the skill text; docs: the dogfooded copies; package commits separate from non-package ones."
+}
