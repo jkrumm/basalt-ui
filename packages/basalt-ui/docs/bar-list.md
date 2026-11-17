@@ -1,6 +1,6 @@
 ---
 name: BarList
-use when: 'a card ranks a handful of named things by one number, or splits a total into its parts (a top-N list, a breakdown that replaces a donut)'
+use when: 'a card ranks a handful of named things by one number, or splits a total into its parts (a top-N list, a breakdown that replaces a donut), or ranks long names by a total stacked by kind (horizontal stacked bars)'
 never when: 'the rows have several columns to compare (use a table) or the list is a stream of things that happened (use an event list)'
 subpath: basalt-ui/cards
 peers: ['@base-ui/react']
@@ -12,7 +12,8 @@ slots: [bar-list, bar-list-row]
 A ranked list on one shared scale: label, a thin bar against the largest value, the value as
 text and an optional muted second figure. Each row is a link, a button or plain text. It holds
 one body height at every phase, scrolls past `bodyRows`, and its loading skeleton draws the rows it
-will become. Colour belongs to a verdict, so every bar is neutral.
+will become. Colour belongs to a verdict, so a single bar is neutral; a row with `parts` stacks
+them in the colours of `series`, and the name stays on its own line above the bar at every width.
 
 ## Signature
 
@@ -29,6 +30,7 @@ BarList(props: BarListProps): ReactElement
   bodyRows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
   format?: (value: number) => string  // Formats each value
   focus?: ListFocus<unknown>  // A chart's focus (`useChartFocus(items, …)`): row i is `focus.items[i]`, so pass the list in the same order as the chart's items
+  series?: readonly LegendEntry[]  // The series a row's `parts` stack by: their order (first at the bar's start), their colour and a legend row under the header
 ```
 
 `Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
