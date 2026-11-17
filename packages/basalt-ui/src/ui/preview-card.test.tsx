@@ -87,6 +87,18 @@ describe('PreviewCard', () => {
     expect(card()).toBeNull()
   })
 
+  test('a touch that turns into a scroll leaves no first-tap marker', async () => {
+    render(<Fixture />)
+    await act(async () => {
+      fireEvent.pointerDown(link(), { pointerType: 'touch' })
+    })
+    expect(link().hasAttribute('data-preview-first-tap')).toBe(true)
+    await act(async () => {
+      fireEvent.pointerCancel(link(), { pointerType: 'touch' })
+    })
+    expect(link().hasAttribute('data-preview-first-tap')).toBe(false)
+  })
+
   test('a mouse click follows the link and marks nothing', async () => {
     render(<Fixture />)
     const click = new MouseEvent('click', { bubbles: true, cancelable: true })

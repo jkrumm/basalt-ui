@@ -307,5 +307,6 @@ describe('recordAt', () => {
     expect(recordAt(KINDS, 'https://elsewhere.example/issues/12')).toBeNull()
     expect(recordAt(KINDS, '/other')).toBeNull()
     expect(recordAt(KINDS, '/issues/12/notes')).toBeNull()
+    expect(recordAt(KINDS, '/issues/100%')).toBeNull()
   })
 })

@@ -56,7 +56,12 @@ function matcherOf(kind: string, path: PeekPattern): Matcher {
 function matchPath(matchers: readonly Matcher[], pathname: string): PeekTarget | null {
   for (const { kind, pattern } of matchers) {
     const id = pattern.exec(pathname)?.[1]
-    if (id !== undefined) return { kind, id: decodeURIComponent(id) }
+    if (id === undefined) continue
+    try {
+      return { kind, id: decodeURIComponent(id) }
+    } catch {
+      return null // a malformed percent escape is no record's address
+    }
   }
   return null
 }
