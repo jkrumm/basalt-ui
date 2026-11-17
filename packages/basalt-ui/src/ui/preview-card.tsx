@@ -97,6 +97,7 @@ const touchLike = (event: PointerEvent): boolean => event.pointerType !== 'mouse
 export function PreviewCardTrigger({
   className,
   onPointerDown,
+  onPointerCancel,
   onClick,
   ...props
 }: PreviewCardTriggerProps): ReactElement {
@@ -110,6 +111,10 @@ export function PreviewCardTrigger({
         onPointerDown?.(event)
         if (control === null || control.open || !touchLike(event)) return
         event.currentTarget.setAttribute(FIRST_TAP, '')
+      }}
+      onPointerCancel={(event) => {
+        onPointerCancel?.(event)
+        event.currentTarget.removeAttribute(FIRST_TAP)
       }}
       onClick={(event) => {
         onClick?.(event)
