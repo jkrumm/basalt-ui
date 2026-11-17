@@ -52,7 +52,7 @@ A page is composed from the shipped frame; each bullet names what holds it.
 
 not guarded:
 
-- A section, card or table title is its frame's `title`; never an in-body heading.
+- A section, card or table title is its frame's `title`; never an in-body heading. A page of rows leads with a card of figure, context line and footer; every headline names its base as a signed delta.
 - Date range navigation sits in the `controls` slot, not in `actions`; count and reset active filters with the store.
 - `CardGrid` takes a `min` tier (`narrow`, `regular`, `wide`), never a column count or a width.
 - One `PageBar` per `Page`, one lit attention badge, one chord per command in an area: the dev build asserts the first two, `defineCommands` throws on the third.
