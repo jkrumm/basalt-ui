@@ -15,7 +15,8 @@
  *   (`({ search: { page, ...rest } }) => ({ page, ...rest })`). Returning the whole search re-runs the loader on every param (argo
  *   `strength-tracker.tsx:53`); the deps are the keys it reads.
  * - `validate-search-pure`: an inline `validateSearch` that reads `window`, `document`,
- *   `localStorage`, `sessionStorage`, `location`, `navigator`, `performance` (`performance.now()`), `Math.random`, `crypto.randomUUID()` / `crypto.getRandomValues()` (also on `globalThis` or `window`) or the clock (`new Date()` with no argument,
+ *   `localStorage`, `sessionStorage`, `location`, `navigator`, `performance` (`performance.now()`), `history`
+ *   (`history.state`), `screen` (`screen.width`), `Math.random`, `crypto.randomUUID()` / `crypto.getRandomValues()` (also on `globalThis` or `window`) or the clock (`new Date()` with no argument,
  *   `Date.now()`, `Date()`), through a Zod `.default(() => new Date())` too. `new Date(input)`
  *   and `Date.parse` are pure and pass. A validator named by reference is not read: the rule is
  *   file-local. A name bound in the file (a parameter, a variable, a function or an import above
@@ -43,6 +44,8 @@ const IMPURE_GLOBALS: ReadonlySet<string> = new Set([
   'location',
   'navigator',
   'performance',
+  'history',
+  'screen',
 ])
 
 /** TS nodes that wrap a value expression: an identifier under one is still a read. */
