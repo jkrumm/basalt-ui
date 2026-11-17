@@ -9,7 +9,7 @@
 import { useId } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { CardMenu } from '../../core/card-menu'
-import { couldNotLoad } from '../../common/could-not-load'
+import { couldNotLoad } from '../../core/could-not-load'
 import { cn } from '../../core/cn'
 import { AppLink } from '../../core/link'
 import { OfflineLine } from '../../core/offline-line'

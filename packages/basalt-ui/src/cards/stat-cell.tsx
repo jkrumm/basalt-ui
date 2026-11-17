@@ -12,7 +12,7 @@ import type { Box, BoxSlot } from '../core/ports'
 import { DeltaBadge } from '../ui/badge'
 import { CardInfo, cardVariants } from '../ui/card'
 import { Meter } from '../ui/meter'
-import { couldNotLoad } from '../common/could-not-load'
+import { couldNotLoad } from '../core/could-not-load'
 import type { CardTarget, StatCellProps as ContractProps, StatRow } from './contract'
 import { StatusMark, formatValue, useStaleText } from './stat-card-parts'
 import {

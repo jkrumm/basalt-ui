@@ -1,4 +1,4 @@
-import { couldNotLoad } from '../../common/could-not-load'
+import { couldNotLoad } from '../could-not-load'
 import type { Format } from '../format'
 import type { BasaltMessages } from './index'
 
@@ -142,6 +142,6 @@ export const table = {
   'table.headerMenu': (_f, header) => `${header} column menu`,
   'table.columnActions': (_f, header) => `${header} column actions`,
   'table.viewRemove': (_f, name) => `Delete view ${name}`,
-  'table.errorNamed': (_f, name) => `${couldNotLoad(name)}.`,
+  'table.errorNamed': (_f, name) => `${couldNotLoad(String(name))}.`,
   'table.cellFilter': (_f, header, value) => `Filter ${header} by ${value}`,
 } satisfies Partial<BasaltMessages>
