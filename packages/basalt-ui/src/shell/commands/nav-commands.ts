@@ -20,14 +20,26 @@ export type NavCommand = {
 export function navCommands(nav: AnyNavConfig): NavCommand[] {
   let topLevel = 0
   const out: NavCommand[] = []
-  for (const { item, ancestors } of flattenNavEntries(nav)) {
+  const entries = flattenNavEntries(nav)
+  const trailOf = ({ item, ancestors }: (typeof entries)[number]): string =>
+    [...ancestors, item].map((entry) => entry.label).join(' / ')
+  const seen = new Map<string, number>()
+  for (const entry of entries) {
+    if (entry.item.disabled === true) continue
+    const trail = trailOf(entry)
+    seen.set(trail, (seen.get(trail) ?? 0) + 1)
+  }
+  for (const entry of entries) {
+    const { item, ancestors } = entry
     const isTop = ancestors.length === 0
     const position = isTop ? topLevel++ : -1
     if (item.disabled === true) continue
-    const trail = [...ancestors, item].map((entry) => entry.label).join(' / ')
+    const trail = trailOf(entry)
+    // Two destinations of one label are told apart by their section.
+    const named = (seen.get(trail) ?? 0) > 1 && entry.section !== undefined
     out.push({
       id: `nav.${item.id}`,
-      label: `Go to ${trail}`,
+      label: named ? `Go to ${trail} · ${entry.section}` : `Go to ${trail}`,
       chord: isTop && position < NAV_CHORD_COUNT ? `Mod+${position + 1}` : undefined,
       group: 'Navigate',
       item,
