@@ -170,3 +170,19 @@ const a = <Bars ariaLabel="Runs" data={q.data ?? new Array(3)} />
 
 // @valid
 const a = <Lines ariaLabel="Runs" data={isLoading ? [] : rows} />
+
+// @invalid
+// @ts
+const a = <Bars ariaLabel="Runs" data={(q.data ?? []) as Row[]} />
+
+// @invalid
+// @ts
+const a = <Bars ariaLabel="Runs" data={(q.data ?? []) satisfies Row[]} />
+
+// @invalid
+// @ts
+const a = <Bars ariaLabel="Runs" data={(q.data || [])!} />
+
+// @valid
+// @ts
+const a = <Bars ariaLabel="Runs" data={q.data as Row[]} />

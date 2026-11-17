@@ -11,7 +11,7 @@
  * Known limits: `reader-loop` reads a `for await` over a `.body` member or a `.body.pipeThrough(…)`
  * chain (a decoded body), inline or through a `const` or `let` bound to one (top level or block, by
  * spelling) or rooted in a stream parameter (one typed `ReadableStream`, or untyped and named `body`
- * or `stream`: a helper handed the body), a `.pipeTo(new WritableStream(…))`
+ * or `stream`: a helper handed the body; a `body` destructured from a parameter, `({ body }: Response)`, counts), a `.pipeTo(new WritableStream(…))`
  * on a chain rooted in `.body`, a `getReader()` read in a
  * loop and a `getReader()` whose reader is read inside a named function that refers to itself (a
  * `read().then(function pump() { … read().then(pump) })` or a recursive async function); a pump split
@@ -281,6 +281,17 @@ function streamParams(fn: Node): Set<string> {
   const names = new Set<string>()
   for (const param of nodesIn(fn, 'params')) {
     const id = param.type === 'AssignmentPattern' ? child(param, 'left') : param
+    if (id?.type === 'ObjectPattern') {
+      // `({ body }: Response)`, `({ body: stream = fallback })`: the body of a response handed in
+      for (const property of nodesIn(id, 'properties')) {
+        if (property.type !== 'Property' || keyName(property) !== 'body') continue
+        const value = child(property, 'value')
+        const target = value?.type === 'AssignmentPattern' ? child(value, 'left') : value
+        const bound = nameOf(target)
+        if (bound !== undefined) names.add(bound)
+      }
+      continue
+    }
     const name = nameOf(id)
     if (name === undefined || id === undefined) continue
     const annotation = child(id, 'typeAnnotation')
@@ -498,12 +509,13 @@ const isDataRead = (node: Node | undefined): boolean => {
 }
 
 const isFallbackExpression = (
-  node: Node | undefined,
+  expression: Node | undefined,
   emptyConsts: ReadonlySet<string>,
 ): boolean => {
+  const node = unwrapTypes(expression)
   const isEmpty = (at: Node | undefined): boolean => {
     if (isEmptyArray(at)) return true
-    const name = nameOf(at)
+    const name = nameOf(unwrapTypes(at))
     return name !== undefined && emptyConsts.has(name)
   }
   if (node?.type === 'ConditionalExpression') {
@@ -548,7 +560,8 @@ function memoReturn(call: Node): Node | undefined {
  * `shot === 'empty' ? [] : rows`, passes), hoisted (`const rows = q.data ?? []` then `data={rows}`), a destructure
  * default off a call (`const { data = [] } = useRuns()` then `data={data}`), a same-file `const`
  * empty array (`q.data ?? EMPTY`), or the same fallback returned by a `useMemo` (an expression
- * body or a single `return`). A name is matched by spelling, not scope. Known limit: a fallback
+ * body or a single `return`); each reads through `as`, `satisfies`, `!` and parentheses
+ * (`data={(q.data ?? []) as Row[]}`). A name is matched by spelling, not scope. Known limit: a fallback
  * that reaches the chart through a helper, a prop or another file is out of reach, and a
  * `useMemo` with more than one statement is not followed.
  */
@@ -583,7 +596,7 @@ export const chartDataFallback: AstForm = {
         const element = child(node['parent'] as Node, 'name')
         const tag = nameOf(element)
         if (tag === undefined || !isChartElement(tag)) return
-        const value = child(child(node, 'value'), 'expression')
+        const value = unwrapTypes(child(child(node, 'value'), 'expression'))
         if (value?.type === 'LogicalExpression' || value?.type === 'ConditionalExpression') {
           inline.push({ node, value })
         }
@@ -666,10 +679,18 @@ const storageName = (node: Node | undefined): string | undefined => {
   return name !== undefined && STORAGE_OBJECTS.has(name) ? name : undefined
 }
 
+/** A storage, or a conditional with a storage branch (`typeof window !== 'undefined' ? window.localStorage : null`). */
+const storageOrGuarded = (node: Node | undefined): string | undefined => {
+  const at = unwrapTypes(node)
+  if (at?.type !== 'ConditionalExpression') return storageName(at)
+  return storageOrGuarded(child(at, 'consequent')) ?? storageOrGuarded(child(at, 'alternate'))
+}
+
 /**
  * A write in a test file (`*.test.*`, `*.spec.*`) seeds storage for a read and passes. A `const`
  * alias of the storage global (`const store = window.localStorage`) is followed within the file,
- * by spelling; a storage reached through a parameter, a property or another file is out of reach.
+ * by spelling, also one bound to a conditional with a storage branch (`const guarded = typeof window !==
+ * 'undefined' ? window.localStorage : null`); a storage reached through a parameter, a property or another file is out of reach.
  * `clear()` wipes every key, which `persisted` has no call for: reset the owner's keys with
  * `persisted.clearOwner(owner)` or each field with its own `reset()`.
  */
@@ -691,7 +712,7 @@ export const rawStorageWrite: AstForm = {
       {
         VariableDeclarator(node) {
           const alias = nameOf(child(node, 'id'))
-          const storage = storageName(child(node, 'init'))
+          const storage = storageOrGuarded(child(node, 'init'))
           if (alias !== undefined && storage !== undefined && isConstDeclarator(node)) {
             aliases.set(alias, storage)
           }

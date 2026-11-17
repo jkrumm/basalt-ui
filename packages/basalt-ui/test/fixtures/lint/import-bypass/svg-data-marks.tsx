@@ -315,3 +315,27 @@ const a = (
     ))}
   </svg>
 )
+// @invalid
+const Radar = ({ rows }) => {
+  const points = rows.map((r, i) => `${i * 10},${r.v}`)
+  return (
+    <svg>
+      <polygon points={points.join(' ')} />
+    </svg>
+  )
+}
+// @valid
+const Radar = () => {
+  const points = ['0,0', '10,10']
+  return (
+    <svg>
+      <polygon points={points.join(' ')} />
+    </svg>
+  )
+}
+// @valid
+const Frame = () => (
+  <svg>
+    <rect x="0" y="0" width="10" height="10" />
+  </svg>
+)

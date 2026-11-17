@@ -62,3 +62,47 @@ const route = { loaderDeps: (opts) => ({ all: opts.search }) }
 
 // @valid
 const route = { loaderDeps: (opts) => ({ range: opts.search.range }) }
+
+// @invalid
+// @ts
+const route = createFileRoute('/runs')({ loaderDeps: ({ search }) => search as RunsSearch })
+
+// @invalid
+// @ts
+const route = createFileRoute('/runs')({ loaderDeps: ({ search }) => ({ ...(search as S) }) })
+
+// @invalid
+// @ts
+const route = createFileRoute('/runs')({ loaderDeps: ({ search }) => search satisfies S })
+
+// @invalid
+// @ts
+const route = createFileRoute('/runs')({
+  loaderDeps: ({ search }) => {
+    const { page, ...rest } = search as RunsSearch
+    return { page, ...rest }
+  },
+})
+
+// @invalid
+const route = createFileRoute('/runs')({
+  loaderDeps: ({ search }) => Object.assign({}, search),
+})
+
+// @valid
+// @ts
+const route = createFileRoute('/runs')({
+  loaderDeps: ({ search }) => ({
+    page: (search as RunsSearch).page,
+    q: (search as RunsSearch).q,
+  }),
+})
+
+// @valid
+// @ts
+const route = createFileRoute('/runs')({
+  loaderDeps: ({ search }) => {
+    const { page } = search as RunsSearch
+    return { page }
+  },
+})

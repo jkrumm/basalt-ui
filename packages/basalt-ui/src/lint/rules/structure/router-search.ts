@@ -11,8 +11,9 @@
  *   `window.history.`, `globalThis.history.`) whose URL argument holds a `?` are the same form: the query is
  *   written by hand. A URL built by concatenation or held in a variable is not read.
  * - `loader-deps-search`: `loaderDeps: ({ search }) => search`, `=> ({ search })`,
- *   `=> ({ ...search })` and `(opts) => ({ ...opts.search })`, and the rest of a destructured search returned or spread
- *   (`({ search: { page, ...rest } }) => ({ page, ...rest })`). Returning the whole search re-runs the loader on every param (argo
+ *   `=> ({ ...search })`, `=> Object.assign({}, search)` and `(opts) => ({ ...opts.search })`, each through `as`, `satisfies`, `!`
+ *   and parentheses (`search as S`, `({ ...(search as S) })`), and the rest of a destructured search returned or spread
+ *   (`({ search: { page, ...rest } }) => ({ page, ...rest })`, or `const { page, ...rest } = search as S` at the top of a block body). Returning the whole search re-runs the loader on every param (argo
  *   `strength-tracker.tsx:53`); the deps are the keys it reads.
  * - `validate-search-pure`: an inline `validateSearch` that reads `window`, `document`,
  *   `localStorage`, `sessionStorage`, `location`, `navigator`, `performance` (`performance.now()`), `history`
@@ -305,24 +306,78 @@ function restName(pattern: Node | undefined): string | undefined {
   return rest ? nameOf(child(rest, 'argument')) : undefined
 }
 
+/** A value under `as`, `satisfies`, `!` and parentheses: the cast hides the shape, not the value. */
+const WRAPPERS: ReadonlySet<string> = new Set([
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'TSNonNullExpression',
+  'TSTypeAssertion',
+  'ParenthesizedExpression',
+])
+
+const bare = (node: Node | undefined): Node | undefined => {
+  let at = node
+  while (at && WRAPPERS.has(at.type)) at = child(at, 'expression')
+  return at
+}
+
+/** `Object.assign(...)` with the search among its arguments, or a `{ ...search }` copy. */
+const isObjectAssign = (node: Node): boolean => {
+  if (node.type !== 'CallExpression') return false
+  const callee = child(node, 'callee')
+  return (
+    callee?.type === 'MemberExpression' &&
+    callee['computed'] !== true &&
+    nameOf(child(callee, 'object')) === 'Object' &&
+    nameOf(child(callee, 'property')) === 'assign'
+  )
+}
+
+/**
+ * The names the first statement level of a block body binds to the rest of the search:
+ * `const { page, ...rest } = search as S` holds every key but the ones named beside it.
+ */
+function restAliases(fn: Node, isSearch: (node: Node | undefined) => boolean): Set<string> {
+  const names = new Set<string>()
+  const body = child(fn, 'body')
+  if (body?.type !== 'BlockStatement') return names
+  for (const statement of children(body, 'body')) {
+    if (statement.type !== 'VariableDeclaration') continue
+    for (const declarator of children(statement, 'declarations')) {
+      if (!isSearch(child(declarator, 'init'))) continue
+      const rest = restName(child(declarator, 'id'))
+      if (rest !== undefined) names.add(rest)
+    }
+  }
+  return names
+}
+
 const isWholeSearch = (
   expression: Node,
   binding: { name: string } | { object: string },
+  aliases: ReadonlySet<string>,
 ): boolean => {
-  const isSearch = (node: Node | undefined): boolean =>
-    node !== undefined &&
-    ('name' in binding
-      ? nameOf(node) === binding.name
-      : node.type === 'MemberExpression' &&
-        node['computed'] !== true &&
-        nameOf(child(node, 'object')) === binding.object &&
-        nameOf(child(node, 'property')) === 'search')
-  if (isSearch(expression)) return true
+  const isSearch = (node: Node | undefined): boolean => {
+    const at = bare(node)
+    if (!at) return false
+    if (at.type === 'Identifier' && aliases.has(at['name'] as string)) return true
+    return 'name' in binding
+      ? nameOf(at) === binding.name
+      : at.type === 'MemberExpression' &&
+          at['computed'] !== true &&
+          nameOf(child(at, 'object')) === binding.object &&
+          nameOf(child(at, 'property')) === 'search'
+  }
+  const at = bare(expression)
+  if (!at) return false
+  if (isSearch(at)) return true
+  // `Object.assign({}, search)` copies it like a spread
+  if (isObjectAssign(at)) return children(at, 'arguments').some((a) => isSearch(a))
   // `({ search }) => ({ search })`: the whole search under a key is the same dependency
   // and `({ ...search })`, `({ ...opts.search })` copy it key for key
   return (
-    expression.type === 'ObjectExpression' &&
-    children(expression, 'properties').some((property) =>
+    at.type === 'ObjectExpression' &&
+    children(at, 'properties').some((property) =>
       property.type === 'SpreadElement'
         ? isSearch(child(property, 'argument'))
         : property.type === 'Property' && isSearch(child(property, 'value')),
@@ -341,7 +396,12 @@ const loaderDepsSearch: AstForm = {
       const fn = child(node, 'value')
       if (!isFunction(fn)) return
       const binding = searchBinding(fn)
-      if (binding && returned(fn).some((r) => isWholeSearch(r, binding))) {
+      if (!binding) return
+      const aliases = restAliases(
+        fn,
+        (init) => init !== undefined && isWholeSearch(init, binding, new Set()),
+      )
+      if (returned(fn).some((r) => isWholeSearch(r, binding, aliases))) {
         report(node, 'loaderDeps: the whole search')
       }
     },

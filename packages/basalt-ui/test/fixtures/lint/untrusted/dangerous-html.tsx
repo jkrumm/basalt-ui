@@ -111,3 +111,15 @@ const doc = new DOMParser().parseFromString(m.xml, 'text/xml')
 
 // @valid
 const doc = new DOMParser().parseFromString(m.svg, 'image/svg+xml')
+
+// @invalid
+host.setHTMLUnsafe(m.html)
+
+// @invalid
+const doc = Document.parseHTMLUnsafe(m.html)
+
+// @valid
+host.setHTMLUnsafe('<p>fixed</p>')
+
+// @valid
+const doc = Document.parseHTMLUnsafe(`<p>fixed</p>`)
