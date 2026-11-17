@@ -15,6 +15,7 @@ import {
   useSearch,
 } from '@tanstack/react-router'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { requestMainFocus } from '../common/focus'
 import { BasaltProvider } from '../core/provider'
 import { routerDefaults } from '../router/defaults'
 import { Page } from '../page/page'
@@ -188,6 +189,72 @@ describe('focus after navigating', () => {
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
     expect(document.activeElement).toBe(skip)
     fireEvent.blur(skip as Element)
+  })
+})
+
+describe('focus while the next page loads', () => {
+  const frames = (): Promise<void> =>
+    new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+
+  test('a palette or sheet jump holds main before the loader settles and after it', async () => {
+    const { router, release } = mount('/f')
+    await waitFor(() => expect(crumb()).toBe('Fleet overview'))
+    const leave = document.querySelector<HTMLElement>('[data-testid="leave"]')
+    leave?.focus()
+    // What the palette and the More sheet do before they navigate.
+    requestMainFocus()
+    act(() => {
+      void router.navigate({ to: '/f/services' })
+    })
+    await waitFor(() => expect(document.activeElement === main()).toBe(true))
+    // The loader is still gated: the old page is on screen and main is busy.
+    expect(crumb()).toBe('Fleet overview')
+    await waitFor(() => expect(main().getAttribute('aria-busy')).toBe('true'))
+    expect(document.activeElement === main()).toBe(true)
+    await act(async () => release())
+    await waitFor(() => expect(crumb()).toBe('Services'))
+    await frames()
+    expect(document.activeElement === main()).toBe(true)
+  })
+
+  test('waits for the overlay to leave before taking focus', async () => {
+    const { router, release } = mount('/f')
+    await waitFor(() => expect(crumb()).toBe('Fleet overview'))
+    const overlay = document.createElement('div')
+    overlay.setAttribute('data-slot', 'dialog-content')
+    const control = document.createElement('button')
+    overlay.append(control)
+    document.body.append(overlay)
+    control.focus()
+    requestMainFocus()
+    act(() => {
+      void router.navigate({ to: '/f/services' })
+    })
+    await frames()
+    await frames()
+    expect(document.activeElement === control).toBe(true)
+    overlay.remove()
+    await waitFor(() => expect(document.activeElement === main()).toBe(true))
+    await act(async () => release())
+  })
+
+  test('a rail link click keeps focus on the link while the page loads and after', async () => {
+    const { release } = mount('/f')
+    await waitFor(() => expect(crumb()).toBe('Fleet overview'))
+    const link = [...document.querySelectorAll<HTMLElement>('[data-slot="shell-rail"] a')].find(
+      (a) => a.textContent?.includes('Services'),
+    )
+    link?.focus()
+    await act(async () => {
+      fireEvent.click(link as Element, { button: 0 })
+    })
+    await waitFor(() => expect(main().getAttribute('aria-busy')).toBe('true'))
+    await frames()
+    expect(document.activeElement === link).toBe(true)
+    await act(async () => release())
+    await waitFor(() => expect(crumb()).toBe('Services'))
+    await frames()
+    expect(document.activeElement === link).toBe(true)
   })
 })
 
