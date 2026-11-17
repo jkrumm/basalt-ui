@@ -108,6 +108,7 @@ layout('a card-header segmented group', () => {
             const lineHeight = Number.parseFloat(getComputedStyle(items[0]!).lineHeight)
             return {
               trackBg: getComputedStyle(group).backgroundColor,
+              scrolls: group.scrollWidth > group.clientWidth + 1,
               groupBox: group.getBoundingClientRect().toJSON() as { left: number; right: number },
               items: items.map((el) => {
                 const r = el.getBoundingClientRect()
@@ -135,9 +136,15 @@ layout('a card-header segmented group', () => {
         }
         for (let i = 1; i < group.items.length; i += 1)
           expect(group.items[i]!.left).toBeGreaterThanOrEqual(group.items[i - 1]!.right - 0.5)
-        expect(group.items[0]!.left).toBeGreaterThanOrEqual(group.groupBox.left)
-        expect(group.items.at(-1)!.right).toBeLessThanOrEqual(group.groupBox.right + 0.5)
+        // A track wider than its box scrolls sideways; one that fits holds every option inside it.
+        if (!group.scrolls) {
+          expect(group.items[0]!.left).toBeGreaterThanOrEqual(group.groupBox.left)
+          expect(group.items.at(-1)!.right).toBeLessThanOrEqual(group.groupBox.right + 0.5)
+        }
       }
+      // At 1800 px nothing scrolls: the whole group is drawn.
+      if (viewport.width === WIDE_1800.width)
+        for (const group of probe.groups) expect(group.scrolls).toBe(false)
       expect(probe.groups[0]!.items.map((item) => item.text)).toContain('Not started')
     })
   }
