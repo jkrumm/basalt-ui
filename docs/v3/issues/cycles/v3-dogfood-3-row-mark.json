@@ -1,0 +1,19 @@
+{
+  "why": "Dogfood cycle 3 (docs/v3/cycles/dogfood-3.md) logged one P1. dogfood-3.2: no selected or open table row is visibly marked. `body.tsx:186` sets `data-selected` and `aria-current` on the row whose detail is open (and `data-selected` on a ticked row), and `table/table.css:57-62` paints it with `var(--vx-surface-row-selected)`, a 2.x name the v3 sheet never emits: `packages/basalt-ui/dist/styles.css` has no `row-selected` at all, and v3's token map (`tokens/table.ts:137`) names the role `selected` with `tw: ['--color-selected']`. In Chrome on the built playground the open row #642 reads `aria-current=true`, `data-selected=\"\"`, `--vx-surface-row-selected` empty and a transparent background, in light and dark, on a deep link and after a click (`.evidence/cycle-dogfood-3/probe3.log`; crops `.evidence/cycle-dogfood-3/crops/marked-row-{light,dark}.png`). The console tints the peeked row `bg-accent` (`components/flow/issue-table.tsx:58`). Cycles 1 and 2 checked the attribute, never the pixels. `tokens/row-surfaces.test.ts` still asserts `--vx-surface-row-selected:` in the 2.x emitter, and `vx-resolves.test.ts` holds only the `VX` refs to the v3 sheet, not the CSS files.",
+  "what": "A selected or open table row is tinted again, in both schemes.",
+  "owns": [
+    "packages/basalt-ui/src/table/table.css (the selected and focused row rules)",
+    "the v3 token the rule reads, if it is not emitted (packages/basalt-ui/src/tokens/*, the generated sheet)",
+    "a layout test beside the table's layout tests"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "Point the selected row rules in `table/table.css` at the variable the v3 sheet emits for the `selected` role (today `--color-selected`, after Issue 1703 whatever the `--basalt-*` rename names it), and make sure the sheet emits it even when no utility class uses it. Then sweep `src/**/*.css` for any other `var(--vx-...)` the v3 sheet does not define and fix those the same way, or name them in the PR. Add a guard so a CSS file can no longer read an undefined token: a unit test that every `var(--...)` in the shipped CSS resolves to a declared variable, or the existing token check extended to CSS files.",
+  "commits": "fix: commits in packages/basalt-ui.",
+  "proof": "make check-fast; a layout test that reads the computed background of an `aria-current` row and of a ticked row and finds it opaque and different from an unmarked row in light and dark; the guard test failing on the old `table.css`.",
+  "acceptance": [
+    "An open row and a ticked row have a non-transparent background different from their neighbours in light and dark (layout test)",
+    "A shipped CSS file that reads an undefined variable fails a test",
+    "make check passes"
+  ],
+  "out_of_scope": "Changing the selected tint's value; the row hover and focus colours."
+}
