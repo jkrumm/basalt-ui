@@ -1,8 +1,9 @@
 import { useRender } from '@base-ui/react/use-render'
 import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
-import { isValidElement, useId } from 'react'
+import { isValidElement, useContext, useId } from 'react'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
+import { HostTitleContext, couldNotLoad } from '../common/could-not-load'
 import { cn } from '../core/cn'
 import { AppLink } from '../core/link'
 import { resolvePhase } from '../core/phase'
@@ -262,13 +263,15 @@ function ErrorArm({
   arms?: Arms
 }): ReactElement {
   const detail = message !== undefined && kind === undefined ? message : undefined
+  const host = useContext(HostTitleContext)?.trim()
+  const text = kind === undefined && host ? `${couldNotLoad(host)}.` : ERROR_TEXT[kind ?? 'default']
   return (
     <div role="alert" data-phase={caught ? 'error' : undefined} className={ARM[arms]}>
       <p
         className={cn('text-sm text-foreground', arms === 'line' && 'm-0 min-w-0 truncate')}
         title={arms === 'line' ? detail : undefined}
       >
-        {ERROR_TEXT[kind ?? 'default']}
+        {text}
       </p>
       {detail !== undefined && arms === 'stack' && (
         <p className="text-xs text-muted-foreground">{detail}</p>

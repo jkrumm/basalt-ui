@@ -5,7 +5,9 @@
  * with Retry, and an empty table is one row with its cause.
  */
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
+import { useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { HostTitleContext } from '../../common/could-not-load'
 import { useMessages } from '../../core/messages/use-messages'
 import { OfflineLine } from '../../core/offline-line'
 import { table } from '../../core/messages/table'
@@ -114,12 +116,16 @@ export function ErrorRow<T>({
 }): ReactElement {
   const t = useMessages(table)
   const run = phase?.retry ?? retry
+  const host = useContext(HostTitleContext)
+  const name = host?.trim() || model.label.trim()
   const text =
     phase?.kind === 'forbidden'
       ? t('table.forbidden')
       : phase?.kind === 'not-found'
         ? t('table.notFound')
-        : t('table.error')
+        : name
+          ? t('table.errorNamed', name)
+          : t('table.error')
   return (
     <MessageRow model={model} slot="table-error">
       <span className="text-foreground">{text}</span>
