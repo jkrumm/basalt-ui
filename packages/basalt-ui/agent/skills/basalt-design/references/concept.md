@@ -26,7 +26,7 @@ Before any form is picked, write the surface as a few lines: the parts it needs,
 
 ## Layout
 
-- At desktop width, row by row: what pairs, what spans, what sits above the fold. The answer is in the first row.
+- At desktop width, row by row: what pairs, what spans, what sits above the fold. The answer is in the first row. The owner works at 1800x1200: a working screen is full width and answers its questions there without a scroll, and running prose alone caps its measure.
 - At 390: the single-column order, what collapses and what moves behind a disclosure. Keep the column that carries the answer and put the answer above the fold. [type:SizeClass]
 - Chrome follows [useSizeClass](node_modules/basalt-ui/docs/use-size-class.md); the page follows its container. [type:SizeClass]
 

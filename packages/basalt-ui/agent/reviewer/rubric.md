@@ -15,6 +15,7 @@ A shot out dir (the `out` named by `.basalt/last-shot.json`, else the `out` in `
 - `png/*.png` — the crops. Each anchor has a contact sheet (`sheet`: its crop for every state × scheme × viewport, each labelled, with the status text where a crop does not exist) and each route a full-page shot (`_page`).
 - `detect.json`, only if the out dir has one (`basalt-ui shot detect`): the deterministic findings for the `[measured]` items and `basalt/*` lint. Cite each at its own severity as `metrics.json <anchor>`, do not re-derive them, and map the rule to its item: `craft-N/*` → Craft N, `lint/*` → its item, Craft 4 by default.
 - A layout-suite result, only if the out dir has one.
+- Reference images, only if the caller supplied them (the owner's pictures of the target): rank each screen against them and against the previous round, in prose, before the table. A reference is a bar to measure the shots by, never a source of items; the rubric items below still decide pass or fail. You are given no target score, and you name none.
 
 A shot with status `not-declared`, `absent` (a state not reachable at that viewport, or an anchor that declares itself missing in that state with `data-shot-absent`) or `skipped` (mobile hover and tooltip: touch has no hover, by design) is not a defect. The exception is a shot with `ignored: true`: the state crop is byte-identical to the ready crop, so the page ignored `?shot-state=<state>` and the state was never rendered; `shot detect` reports it as `craft-7/states-ignored` (P1). A hidden `rest` anchor is an `error` shot, a defect, never `absent`. A missing hover, focus or tooltip crop for an anchor that has such a target is Craft 7.
 
@@ -59,7 +60,7 @@ Score per component, then add one line per page for the page items (Communicatio
 2. Every number carries its unit inline; a rate or total carries its period.
 3. A number whose definition, period or source is not stated on the surface has a tooltip or a one-line explanation; a count of visible items has none.
 4. Titles are precise nouns with their scope ("Ride distance, 7 days"), not categories ("Metrics").
-5. **[page]** A page is not three rows of KPI cards, and not a single table when its data has one of the shapes in the question-to-form table.
+5. **[page]** A page is not three rows of KPI cards, and not a single table when its data has one of the shapes in the question-to-form table. At 1800x1200 the page's questions are answered in the first screen without a scroll, nothing is told twice, and a working screen runs full width, not in a narrow column (only running prose caps its measure).
 6. Empty and error states say why and what to do, per `node_modules/basalt-ui/docs/empty-state.md`: an error is one "Could not load <thing>" title, the cause, one Retry, with the error dot and no empty-state glyph; a loading state is a skeleton in the loaded shape; one wording per repeated gap across cards.
 
 ### Banned filler
