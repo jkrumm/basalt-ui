@@ -74,6 +74,26 @@ function Card(props: {
   )
 }
 
+/** A period that wraps onto two or three lines at 390 and sits on one beside the figure at 1800 (expression cycle 8, n29 and n31). */
+const LONG_PERIOD = 'tagged, 12,400 of 30,100 spent at merchants with untagged bookings this year'
+
+/** One card per phase, each declaring its figure's period and a footer fact, as a page that wants a held height does. */
+function PeriodCard({ phase }: { phase: 'ready' | 'loading' | 'error' }) {
+  const ready = phase === 'ready'
+  return (
+    <div data-testid={`kf-period-${phase}`} className={BOX}>
+      <ChartCard
+        title="Spending tagged for tax"
+        phase={ready ? undefined : phase === 'error' ? { tag: 'error' } : 'loading'}
+        height="short"
+        figure={{ value: ready ? '61%' : null, period: LONG_PERIOD }}
+        footer={[{ label: 'Untagged bookings', value: ready ? 14 : 0 }]}
+        chart={() => <div className="h-full" />}
+      />
+    </div>
+  )
+}
+
 type Pt = { n: number; v: number }
 const points: Pt[] = Array.from({ length: 8 }, (_, n) => ({ n, v: n === 3 ? 0 : 1 + (n % 3) }))
 
@@ -125,6 +145,9 @@ function Fixture() {
         />
       </div>
       <Focus />
+      <PeriodCard phase="ready" />
+      <PeriodCard phase="loading" />
+      <PeriodCard phase="error" />
     </main>
   )
 }

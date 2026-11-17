@@ -167,6 +167,18 @@ layout('chart kit fixes', () => {
         }
       })
 
+      test('a loading or failed card that declares its period keeps the ready height, wrapped lines included', async () => {
+        const page = await open(viewport)
+        const height = async (phase: string): Promise<number> =>
+          (await page.box(phase, `[data-testid="kf-period-${phase}"] [data-slot="card"]`)).box
+            .height
+        const readyHeight = await height('ready')
+        expect(Math.abs((await height('loading')) - readyHeight), 'loading').toBeLessThanOrEqual(
+          0.5,
+        )
+        expect(Math.abs((await height('error')) - readyHeight), 'error').toBeLessThanOrEqual(0.5)
+      })
+
       test('a dot on the plot floor draws whole', async () => {
         const page = await open(viewport)
         const circle = await page.raw.evaluate(() => {
