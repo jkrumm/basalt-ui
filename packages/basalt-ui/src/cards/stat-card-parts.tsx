@@ -144,7 +144,7 @@ export function StatHead({
       {controls !== undefined && (
         <div
           data-slot="stat-controls"
-          className="relative z-20 order-1 flex w-full items-center gap-2 @regular:order-none @regular:w-auto"
+          className="relative z-20 order-1 flex w-full flex-wrap items-center gap-2 @regular:order-none @regular:w-auto @regular:shrink-0"
         >
           {controls.render()}
         </div>

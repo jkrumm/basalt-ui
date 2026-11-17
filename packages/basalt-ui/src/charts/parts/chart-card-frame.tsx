@@ -121,7 +121,7 @@ export function Head({
       {controls !== undefined && (
         <div
           data-slot="chart-controls"
-          className="relative z-10 order-1 flex w-full items-center gap-2 @regular:order-none @regular:w-auto"
+          className="relative z-10 order-1 flex w-full flex-wrap items-center gap-2 @regular:order-none @regular:w-auto @regular:shrink-0"
         >
           {controls.render()}
         </div>
