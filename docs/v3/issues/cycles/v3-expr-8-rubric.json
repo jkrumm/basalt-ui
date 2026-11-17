@@ -1,0 +1,24 @@
+{
+  "why": "Expression cycle 8 (docs/v3/cycles/expression-8.md) lost 6 round-0 points to reviewers who read the rubric two ways or scored what the evidence did not show. (1) F3: n32's reviewer ruled F3 `n/a` because the data holds no target, best or prior period; n29's reviewer, on one tax year with no target or prior year, scored F3 2 for 'no target, prior year or delta pill' (.26). Cycle 7's n24 was `n/a` on one 30-day window. (2) K3: n32's reviewer scored K3 1 from a keyboard frame that had focused a scroll region (`div[role=region]`), where the keys do nothing; the shipped `basalt-ui shot --states keys` on the same build walks the rows and announces each (.58, .62; the lead fixed its own tool after round 0). n29's reviewer took a point because the log showed one host and a second was 'not shown to be reachable' (.32). (3) X5: n29's reviewer asked for mono merchant names and a delta pill (.37); the shipped rule sets mono for times and ids only, and the data held no baseline for a pill.",
+  "what": "Three rubric sentences that leave one reading, and the shipped reviewer agreeing with them.",
+  "owns": [
+    "docs/v3/expression/rubric.md",
+    "the shipped reviewer's text in packages/basalt-ui/agent/** (the design reviewer subagent and its references), through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/cases.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) F3 is `n/a` where the data holds no reference: one period, no target, no prior period, no peer to compare with; a part-to-whole's whole is not a baseline. (2) K3 scores the hosts the keyboard log shows; a host the log does not reach is not marked down, and a keyboard frame on a scroll region (a tabbable box that only scrolls) is no evidence of a host's keys. (3) X5 asks for mono only where the shipped rule does (a time or an id), and a delta pill only where the data gives a baseline.",
+  "acceptance": [
+    "rubric.md says when F3 is n/a",
+    "rubric.md says K3 scores the logged hosts and that a scroll region is no keyboard evidence",
+    "rubric.md ties X5's mono and pill to the shipped rule and the data's baseline",
+    "The shipped reviewer's text agrees, or the PR names where none restates them",
+    "make check passes"
+  ],
+  "out_of_scope": "Changing an item's weight or adding an item; skill text (v3-expr-8-skill).",
+  "proof": "make check; the rubric diff quotes the round-0 shots that read two ways (n29 and n32 reviews, cycle 8).",
+  "commits": "docs: the rubric text; feat: the shipped reviewer text if it changes; package commits separate from non-package ones."
+}

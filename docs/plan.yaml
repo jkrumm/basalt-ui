@@ -1680,3 +1680,36 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-lint-10-lint]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-11.json' }
+  - key: v3-expr-8-kit-fixes
+    title: 'Heatmap keyboard ring, titled BarList error, loading height at 390, BarList scroll cue, focused list rows dim the rest, from expression cycle 8'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-8]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-8-kit-fixes.json' }
+  - key: v3-expr-8-contract
+    title: 'A Sparkline readout that names and announces its point, bar value labels and a clamped stack, nested table rows (Spec)'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-cycle-expression-8]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-8-contract.json' }
+  - key: v3-expr-8-skill
+    title: 'Expression skill: a fact count, one view, the answer on the mark, part-to-whole as a stacked BarList, heatmap tools, from expression cycle 8'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-expression-8]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-8-skill.json' }
+  - key: v3-expr-8-rubric
+    title: 'Expression rubric: when F3 is n/a, what K3 reads from the keyboard log, what X5 asks, from expression cycle 8'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-cycle-expression-8]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-8-rubric.json' }
+  - key: v3-cycle-expression-9
+    title: 'Improvement cycle 9: expression, six one-shot visualization trials'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-8-kit-fixes, v3-expr-8-contract, v3-expr-8-skill, v3-expr-8-rubric]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-9.json' }

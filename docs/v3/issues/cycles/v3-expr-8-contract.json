@@ -1,0 +1,29 @@
+{
+  "why": "Expression cycle 8 (docs/v3/cycles/expression-8.md) found three gaps the kit cannot close without a contract field, and they hold five of its P2s. (a) A `Sparkline` that steps by keys gives no week and no announcement, and nothing dims: n27's eight StatCard sparklines lost F7 (1) and K3 (1) in rounds 0 and 1 (expression-8.5, .6), and the builder marked the gap once on the call (`// cycle-expression-8:`) after looking in sparkline.md and the types. The readout puts `format(v)` in the label row's middle slot, so the point it names is unknown; `basalt-ui shot --states keys` finds no keys host on a StatCard sparkline (0 frames, rounds 0 and 1). One outlier also flattens the other eleven weeks, with no cap (.3), and the end dot takes no value (.4). (b) A bar has no value label, a zero bar draws no mark, and bars of two series stack and never clamp: n28 named its mover and its zeros by hand with `chartLabels` and a `text` mark, lost every other name at 390 (.14, F6 1, P2) and drew its extreme bar off the plot with no caret (.17, K1 1, P2), because it split one series into two to give one bar the accent (no per-datum colour). n31 placed its day totals by hand and had to draw the deploy rule's box as a label obstacle itself (.47). Cycle 7's n22 and n24 placed end and total labels by hand too (expression-7.18, .48). (c) A list cannot nest rows under a parent: n32 drew who waits on whom as a ranked BarList beside a 'Waits on' text column (.52, F1 1, P2), and in round 1 indented a `c.custom` column by hand to draw a tree (`// cycle-expression-8: no tree or nesting form`); c10's leaked-key graph (cycle 3) asked for the same structure.",
+  "what": "A Spec, then the fields it keeps: a Sparkline readout that names its point, is announced and dims the rest, with an optional cap; bar value labels with a zero-bar mark, a cap that clamps a stack, and reference rules as label obstacles; rows nested under a parent row, or the Spec's ruling against each.",
+  "owns": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/src/cards/contract.ts (the StatCard chart slot only, if the Spec needs it)",
+    "packages/basalt-ui/src/table/contract.ts (a nested-row field only, if the Spec keeps (c))",
+    "the components that read the changed fields, and their tests",
+    "packages/basalt-ui/agent/** text that teaches the changed fields, through its generator",
+    "the contract-frozen pins the amendment moves, with the amendment commit the repo's process names"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md (the Spec names any section it would amend; the owner rules)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "Write a Spec before any code. (a) Sparkline focus: the readout names the point it shows (a label per point, or the axis label of that index), the host announces each move in an aria-live region as the chart kinds do, the unfocused line dims, and a `basalt-ui shot --states keys` run finds the host (n27; any StatCard with a stepping sparkline). Say whether a y cap with the kit's off-scale caret and an end-dot value belong here (.3, .4) or stay app work. (b) Bars: a value label per bar that the kit places and drops by priority, the answer bar last to drop; a zero bar keeps a focusable mark; a domain cap clamps stacked bars and draws the caret; a per-datum colour so one bar takes the accent without a second series; reference rules and zones are obstacles `chartLabels.place` knows without a hand-drawn box (n28, n31; cycle 7 n22, n24). (c) Nested rows: a `DataTable` row field that nests rows under a parent with an indent the kit draws and keyboard steps that follow the tree, or a ruling that it stays a recipe, weighed against the Rule of Three (n32, c10: two cases). Each part the Spec keeps lands with its tests; each part it rules out is stated in the PR. If a part needs no field after all, move it to the kit row's scope and say so.",
+  "acceptance": [
+    "A Spec is submitted and its verdict is read before the build",
+    "A stepping Sparkline names its point, announces each move and dims the rest, with a test, and `basalt-ui shot --states keys` finds it, or the Spec rules it out",
+    "A bar draws a kit-placed value label, a zero bar keeps a focusable mark, a cap clamps a stack with its caret, and a refLine is a label obstacle, with tests, or the Spec rules each out",
+    "A table can nest rows under a parent with keyboard steps that follow the tree, with a test, or the Spec rules it a recipe",
+    "The basalt-charts or basalt-page reference names what shipped",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit behaviours that need no contract field (v3-expr-8-kit-fixes); skill text (v3-expr-8-skill); a new chart kind (a dependency graph is a kind candidate only at three cases); a signed money format (n28 only); a partial-day mark on a bar (n31 only); a direction toggle between two heatmaps (n30 only).",
+  "proof": "make check; a unit test per kept field; a layout test of bar value labels at 390 and 1800 with ten names; `basalt-ui shot --states keys` on a StatCard with a stepping Sparkline logs two announced moves.",
+  "commits": "feat: per change with its tests; chore: the contract amendment as the repo's process names it; docs: regenerated agent text; package commits separate from non-package ones."
+}
