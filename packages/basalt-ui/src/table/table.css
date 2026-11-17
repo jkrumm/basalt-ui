@@ -42,23 +42,23 @@
      selected) layered over it, so a cell that scrolls under a pin never shows through. The head
      cells keep their surface (a utility on `th`). */
   [data-slot='table-cell']:is([data-pin], [data-kind='tick']) {
-    background-color: var(--color-background);
+    background-color: var(--basalt-canvas);
     background-image: linear-gradient(var(--row-tint, transparent), var(--row-tint, transparent));
   }
   [data-slot='table-row']:hover > [data-slot='table-cell'] {
-    --row-tint: var(--color-accent);
+    --row-tint: var(--basalt-hover);
   }
   [data-slot='table-row'][data-focused] > [data-slot='table-cell'] {
-    --row-tint: var(--color-accent);
+    --row-tint: var(--basalt-hover);
   }
   [data-slot='table-row'][data-focused] {
-    background-color: var(--color-accent);
+    background-color: var(--basalt-hover);
   }
   [data-slot='table-row'][data-selected] > [data-slot='table-cell'] {
-    --row-tint: var(--basalt-surface-row-selected);
+    --row-tint: var(--basalt-selected);
   }
   [data-slot='table-row'][data-selected] {
-    background-color: var(--basalt-surface-row-selected);
+    background-color: var(--basalt-selected);
   }
 
   /* reduced: priority 3 leaves below data-full-at; a sum above 1800 has no data-full-at */

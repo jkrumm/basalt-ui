@@ -5,12 +5,11 @@
  * and every named spot reads identically regardless of which one a given surface uses.
  */
 
-/* Title over subtitle is the tightest pair the 4px vertical rhythm has a step for — `stack-xs`,
- * not the literal 4px it duplicated. */
+/* Title over subtitle is the tightest pair the 4px vertical rhythm has a step for. */
 .root {
   display: flex;
   flex-direction: column;
-  gap: var(--basalt-space-stack-xs);
+  gap: 0.25rem;
 }
 
 .titleRow {
@@ -22,7 +21,7 @@
 .title {
   margin: 0;
   font-family: var(--basalt-font-head);
-  font-size: var(--basalt-text-xl);
+  font-size: var(--basalt-text-lg);
   font-weight: 550;
   font-stretch: 88%;
   color: var(--basalt-ink);
@@ -31,5 +30,5 @@
 .subtitle {
   margin: 0;
   font-size: var(--basalt-text-sm);
-  color: var(--basalt-faint);
+  color: var(--basalt-ink-faint);
 }
