@@ -39,9 +39,9 @@ const scalesOf = (extra: object, width = 700): Scales =>
   }).chart({ width, height: 300, defaultTheme: {} as never }).scales as unknown as Scales
 
 describe('x tick labels keep their air', () => {
-  test('a time axis asks the engine for 12 px between two labels, at 390 as at 1800', () => {
+  test('a time axis asks the engine for 8 px between two labels, at 390 as at 1800', () => {
     for (const width of [390, 1800])
-      expect(scalesOf({}, width).x.axis.tickLabels.thin.minGap).toBe(12)
+      expect(scalesOf({}, width).x.axis.tickLabels.thin.minGap).toBe(8)
   })
 })
 
@@ -82,13 +82,21 @@ describe('a band label wider than its slot', () => {
     xGuide({ model, xTicks: undefined, cls: 'narrow', width }) as unknown as {
       axis: {
         ticks: { format: (v: string) => string }
-        tickLabels: { anchor: (c: { value: string }) => string | undefined }
+        tickLabels: {
+          anchor: (c: { value: string }) => string | undefined
+          dx: (c: { value: string }) => number | undefined
+        }
       }
     }
 
-  test('anchors to the plot edge, so it cannot hang over it and shrink the plot', () => {
-    const anchor = guide(390).axis.tickLabels.anchor
-    expect(anchor({ value: names[3] as string })).toBe('end')
+  test('is right-aligned to the plot edge, so it cannot hang over it and shrink the plot', () => {
+    const { anchor, dx } = guide(390).axis.tickLabels
+    const long = { value: names[3] as string }
+    expect(anchor(long)).toBe('end')
+    // Shifted from its band centre to the edge: half a slot of a 4-band, 346 px plot.
+    expect(dx(long)).toBeCloseTo(346 / 8, 0)
     expect(anchor({ value: 'Wed' })).toBeUndefined()
+    expect(dx({ value: 'Wed' })).toBeUndefined()
+    expect(guide(undefined).axis.tickLabels.anchor(long)).toBeUndefined()
   })
 })
