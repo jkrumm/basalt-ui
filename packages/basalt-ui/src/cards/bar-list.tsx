@@ -8,6 +8,8 @@ import type {
 } from 'react'
 import { AppLink } from '../core/link'
 import { cn } from '../core/cn'
+import { HostTitleContext } from '../core/could-not-load'
+import { resolvePhase } from '../core/phase'
 import type { FrameState } from '../core/phase'
 import type { ListFocus } from '../core/ports'
 import { useFormat } from '../core/format'
@@ -74,6 +76,9 @@ const ROW = 'flex h-10 w-full min-w-0 flex-col justify-center gap-1.5 rounded-ct
 const TARGET =
   'cursor-pointer border-0 bg-transparent text-left text-foreground no-underline hover:bg-accent focus-ring focus-visible:-outline-offset-2'
 
+/** What `useChartFocus` puts on an item beyond `ListFocusItem`: the kit dims a `data-dimmed` row. */
+type MarkedItem = { 'data-chart-mark'?: ''; 'data-dimmed'?: '' }
+
 /** The row's share of a chart's focus: only the keys a list row takes (never the chart's dimming). */
 function rowFocus(
   focus: ListFocus<unknown>,
@@ -87,6 +92,8 @@ function rowFocus(
     onPointerEnter: item.onPointerEnter,
     onPointerDown: item.onPointerDown,
     onFocus: () => focus.set(i),
+    ...((item as MarkedItem)['data-chart-mark'] !== undefined && { 'data-chart-mark': '' }),
+    ...((item as MarkedItem)['data-dimmed'] !== undefined && { 'data-dimmed': '' }),
     ...(item['data-focused'] !== undefined && { 'data-focused': '' }),
   } as LiHTMLAttributes<HTMLLIElement> & { ref: (element: Element | null) => void }
 }
@@ -172,6 +179,9 @@ export function BarList(props: BarListProps): ReactElement {
   const whole = isWhole(items, max)
   const show = format ?? ((n: number): string => f.number(n))
   const emptyState = empty ?? (items.length === 0 ? { cause: t('lists.noItems') } : null)
+  // The body holds `rows` rows of height: past that it scrolls, and the header says how many show.
+  // Only a body that is drawn says it, so the frame fills no slot before ready.
+  const scrolls = items.length > rows && resolvePhase({ phase, empty: emptyState }).body
   return (
     <div data-slot="bar-list" className="@container min-w-0">
       <Card flush>
@@ -180,56 +190,70 @@ export function BarList(props: BarListProps): ReactElement {
           {...(subtitle !== undefined && { subtitle })}
           {...(icon !== undefined && { icon })}
           {...(info !== undefined && { info })}
+          {...(scrolls && {
+            end: (
+              <span
+                data-slot="bar-list-scroll-cue"
+                className="text-xs whitespace-nowrap text-muted-foreground tabular-nums"
+              >
+                {t('lists.rowsShown', rows, items.length)}
+              </span>
+            ),
+          })}
         />
         {series !== undefined && series.length > 0 && <Legend entries={series} />}
         <Inset className={cn('flex flex-col', BAR_BODY_HEIGHT[rows])}>
-          <CardPhase
-            phase={phase}
-            empty={emptyState}
-            skeleton={<BarSkeleton rows={rows} />}
-            className="flex flex-1 flex-col"
-          >
-            {() => (
-              <ScrollRegion label={title}>
-                {/* The explicit role is deliberate: `list-style: none` makes Safari drop the implicit one. */}
-                <ul
-                  // oxlint-disable-next-line jsx-a11y/no-redundant-roles
-                  role="list"
-                  aria-label={title}
-                  data-whole={whole ? '' : undefined}
-                  className="m-0 list-none p-0"
-                  // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- with a shared focus the list is the one tab stop that steps it
-                  {...(focus !== undefined && listFocus(focus))}
-                >
-                  {items.map((item, i) => (
-                    <li
-                      key={item.key ?? `${item.label}-${i}`}
-                      data-slot="bar-list-row"
-                      {...(focus !== undefined && rowFocus(focus, i))}
-                      className={focus === undefined ? undefined : '[&[data-focused]>*]:bg-accent'}
-                    >
-                      <Row
-                        item={item}
-                        percent={percentOf(item.value, scale)}
-                        segments={
-                          series === undefined ? undefined : segmentsOf(item, series, scale, show)
+          <HostTitleContext.Provider value={title}>
+            <CardPhase
+              phase={phase}
+              empty={emptyState}
+              skeleton={<BarSkeleton rows={rows} />}
+              className="flex flex-1 flex-col"
+            >
+              {() => (
+                <ScrollRegion label={title}>
+                  {/* The explicit role is deliberate: `list-style: none` makes Safari drop the implicit one. */}
+                  <ul
+                    // oxlint-disable-next-line jsx-a11y/no-redundant-roles
+                    role="list"
+                    aria-label={title}
+                    data-whole={whole ? '' : undefined}
+                    className="m-0 list-none p-0"
+                    // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- with a shared focus the list is the one tab stop that steps it
+                    {...(focus !== undefined && listFocus(focus))}
+                  >
+                    {items.map((item, i) => (
+                      <li
+                        key={item.key ?? `${item.label}-${i}`}
+                        data-slot="bar-list-row"
+                        {...(focus !== undefined && rowFocus(focus, i))}
+                        className={
+                          focus === undefined ? undefined : '[&[data-focused]>*]:bg-accent'
                         }
-                        value={Number.isFinite(item.value) ? show(item.value) : '—'}
-                        secondary={
-                          item.secondary ??
-                          (whole && Number.isFinite(item.value)
-                            ? f.percent(item.value / scale, {
-                                maximumFractionDigits: 0,
-                              })
-                            : undefined)
-                        }
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </ScrollRegion>
-            )}
-          </CardPhase>
+                      >
+                        <Row
+                          item={item}
+                          percent={percentOf(item.value, scale)}
+                          segments={
+                            series === undefined ? undefined : segmentsOf(item, series, scale, show)
+                          }
+                          value={Number.isFinite(item.value) ? show(item.value) : '—'}
+                          secondary={
+                            item.secondary ??
+                            (whole && Number.isFinite(item.value)
+                              ? f.percent(item.value / scale, {
+                                  maximumFractionDigits: 0,
+                                })
+                              : undefined)
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </ScrollRegion>
+              )}
+            </CardPhase>
+          </HostTitleContext.Provider>
         </Inset>
       </Card>
     </div>
