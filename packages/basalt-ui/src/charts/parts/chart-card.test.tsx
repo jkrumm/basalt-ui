@@ -218,7 +218,7 @@ describe('anatomy', () => {
     }
   })
 
-  test('a failed card dashes its figure and footer at the ready row height', () => {
+  test('a failed card holds its figure row at the ready height with no dash, and dashes the footer', () => {
     const props = {
       title: 'R',
       chart: () => null,
@@ -228,7 +228,7 @@ describe('anatomy', () => {
     const ready = html(<ChartCard {...props} />)
     const failed = html(<ChartCard {...props} phase={{ tag: 'error' }} />)
     const row = failed.querySelector('[data-slot="chart-figure"]')
-    expect(row?.textContent).toBe('–')
+    expect(row?.textContent).toBe('')
     expect(row?.className).toBe(ready.querySelector('[data-slot="chart-figure"]')?.className)
     expect(failed.querySelector('[data-slot="delta-badge"]')).toBeNull()
     expect(failed.querySelector('[data-slot="chart-footer"] dd')?.textContent).toBe('–')
@@ -424,5 +424,52 @@ describe('closure', () => {
   test('ChartCard reaches no @base-ui/react', () => {
     const bare = [...bareImports(join(import.meta.dirname, 'chart-card.tsx'))]
     expect(bare.filter((s) => s.startsWith('@base-ui/') || s.startsWith('@visx/'))).toEqual([])
+  })
+})
+
+describe('the ready frame declares the slots a loading, empty or failed frame holds', () => {
+  const ready = {
+    title: 'R',
+    chart: () => null,
+    figure: {
+      value: 14,
+      period: 'vs prior',
+      status: { tone: 'good' as const, label: 'On target' },
+    },
+    footer: [{ label: 'Platform', value: '$9' }] as [{ label: string; value: string }],
+  }
+
+  test('an empty or failed card with a figure draws a blank row, not a dash', () => {
+    for (const phase of [{ tag: 'error' as const }, 'ready' as const]) {
+      const el = html(
+        <ChartCard {...ready} phase={phase} empty={phase === 'ready' ? { cause: 'None' } : null} />,
+      )
+      expect(el.querySelector('[data-slot="chart-figure"]')?.textContent ?? '').not.toContain('–')
+    }
+  })
+
+  test('a card that was ready keeps its footer row and figure row when it loads without them', async () => {
+    const root = document.createElement('div')
+    document.body.append(root)
+    const view = createRoot(root)
+    await act(async () => view.render(<ChartCard {...ready} />))
+    const readyHeight = root.querySelector('[data-slot="chart-footer"]')?.className
+    await act(async () => view.render(<ChartCard title="R" chart={() => null} phase="loading" />))
+    expect(root.querySelector('[data-slot="chart-footer"]')?.className).toBe(readyHeight)
+    expect(root.querySelector('[data-slot="chart-footer"]')?.textContent).toContain('Platform')
+    expect(root.querySelector('[data-slot="chart-figure"]')).not.toBeNull()
+    await act(async () =>
+      view.render(<ChartCard title="R" chart={() => null} phase={{ tag: 'error' }} />),
+    )
+    expect(root.querySelector('[data-slot="chart-footer"]')).not.toBeNull()
+    expect(root.querySelector('[data-slot="chart-figure"]')?.textContent).toBe('')
+    act(() => view.unmount())
+    root.remove()
+  })
+
+  test('a card that was never ready has nothing to hold', () => {
+    const el = html(<ChartCard title="R" chart={() => null} phase="loading" />)
+    expect(el.querySelector('[data-slot="chart-footer"]')).toBeNull()
+    expect(el.querySelector('[data-slot="chart-figure"]')).toBeNull()
   })
 })

@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../../core/cn'
 import { resolvePhase } from '../../core/phase'
-import type { ResolvedPhase } from '../../core/phase'
+import type { Fact, FootFacts, ResolvedPhase } from '../../core/phase'
 import type { Verdict } from '../../core/ports'
 import { DeltaBadge } from '../../ui/badge'
 import { ChartCardContext } from '../card-context'
@@ -44,13 +45,15 @@ function FigureRow({
   figure,
   loading,
   failed,
+  blank = failed,
 }: {
   figure: ChartFigure
   loading: boolean
   failed: boolean
+  /** An empty or failed card has no figure to stand behind: the row holds its ready height and says nothing. */
+  blank?: boolean
 }): ReactElement {
   const { value, unit, delta, period, periodMono, status } = figure
-  // A failed card has no figure to stand behind: the dash holds the row at its ready height.
   const text = failed ? null : formatValue(value)
   return (
     <div
@@ -64,7 +67,7 @@ function FigureRow({
             <div aria-hidden="true" className={cn(BAR, 'h-7 w-24')} />
             <div aria-hidden="true" className={cn(BAR, 'h-6 w-14 rounded-full')} />
           </>
-        ) : (
+        ) : blank ? null : (
           <>
             <span
               className={cn(
@@ -106,7 +109,7 @@ function FigureRow({
           <div aria-hidden="true" className={PERIOD_LINE}>
             <div className={cn(BAR, 'h-3 w-32')} />
           </div>
-        ) : failed ? (
+        ) : blank ? (
           <span aria-hidden="true" className={PERIOD_LINE} />
         ) : (
           <span
@@ -122,6 +125,37 @@ function FigureRow({
     </div>
   )
 }
+
+/** The slots a ready frame declared, without their values: what a loading, empty or failed frame holds. */
+type DeclaredSlots = { figure: ChartFigure | undefined; footer: FootFacts | undefined }
+
+const factsOf = (facts: FootFacts | undefined): Fact[] =>
+  (facts ?? []).flatMap((fact) => (fact ? [fact] : []))
+
+function declaredSlots({
+  figure,
+  footer,
+}: Pick<ChartCardProps, 'figure' | 'footer'>): DeclaredSlots {
+  const labels = factsOf(footer).map((fact): Fact => ({ label: fact.label, value: '' }))
+  return {
+    figure:
+      figure === undefined
+        ? undefined
+        : { value: null, ...(figure.period !== undefined && { period: '' }) },
+    footer: labels.length === 0 ? undefined : (labels as unknown as FootFacts),
+  }
+}
+
+const sameSlots = (a: DeclaredSlots | undefined, b: DeclaredSlots): boolean =>
+  a !== undefined &&
+  (a.figure === undefined) === (b.figure === undefined) &&
+  (a.figure?.period === undefined) === (b.figure?.period === undefined) &&
+  factsOf(a.footer)
+    .map((f) => f.label)
+    .join('\n') ===
+    factsOf(b.footer)
+      .map((f) => f.label)
+      .join('\n')
 
 /** A query result whose `data` is an empty array: the rows it carries beyond `QueryStateLike`. */
 const hasNoRows = (phase: object): boolean => {
@@ -175,6 +209,14 @@ export function ChartCard(props: ChartCardProps): ReactElement {
   const resolved = resolvePhase({ phase, empty })
   // A Suspense fallback has no chart to call, so it can only be loading.
   const effective: ResolvedPhase = chart === undefined ? { tag: 'loading', body: false } : resolved
+  // The slots the ready frame declared, held for the frames that follow it (a refetch that loads,
+  // an empty or failed result): a page fills none of them before ready, and the card keeps their height.
+  const declared = declaredSlots(props)
+  const [held, setHeld] = useState<DeclaredSlots | undefined>(undefined)
+  if (effective.body && !sameSlots(held, declared)) setHeld(declared)
+  const ready = effective.body
+  const shownFigure = figure ?? (ready ? undefined : held?.figure)
+  const shownFooter = footer ?? (ready ? undefined : held?.footer)
   return (
     <ChartCardContext value={true}>
       <div
@@ -204,17 +246,18 @@ export function ChartCard(props: ChartCardProps): ReactElement {
               height === 'fill' && 'flex-1',
             )}
           >
-            {figure !== undefined && (
+            {shownFigure !== undefined && (
               <FigureRow
-                figure={figure}
+                figure={shownFigure}
                 loading={effective.tag === 'loading'}
                 failed={effective.tag === 'error'}
+                blank={effective.tag === 'error' || effective.tag === 'empty'}
               />
             )}
             {legend !== undefined && legend.length > 0 && (
               <div
                 data-slot="chart-legend"
-                className={cn('shrink-0', figure !== undefined && 'mt-2')}
+                className={cn('shrink-0', shownFigure !== undefined && 'mt-2')}
               >
                 <Legend entries={legend} />
               </div>
@@ -224,13 +267,14 @@ export function ChartCard(props: ChartCardProps): ReactElement {
               resolved={effective}
               chart={chart}
               className={cn(
-                (figure !== undefined || (legend !== undefined && legend.length > 0)) && 'mt-2',
+                (shownFigure !== undefined || (legend !== undefined && legend.length > 0)) &&
+                  'mt-2',
                 BOX[height],
               )}
             />
           </div>
           <Footer
-            facts={footer}
+            facts={shownFooter}
             phase={
               effective.tag === 'loading'
                 ? 'loading'
