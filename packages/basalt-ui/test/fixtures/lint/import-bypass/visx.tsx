@@ -43,3 +43,5 @@ import * as Plot from '@observablehq/plot'
 import { Line } from '@ant-design/charts'
 // @invalid
 import { LineChartPro } from '@mui/x-charts-pro/LineChartPro'
+// @invalid
+import ApexCharts from 'apexcharts'

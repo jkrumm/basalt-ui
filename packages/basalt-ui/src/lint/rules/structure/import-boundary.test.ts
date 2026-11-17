@@ -12,7 +12,13 @@ import { Linter, RuleTester } from 'eslint'
 
 import { formMessage } from '../../factory'
 import { isEnabled } from '../../rule-table'
-import { IMPORT_BOUNDARY, ENGINE_FAMILIES, ENGINE_SUBPATHS } from './import-boundary'
+import {
+  IMPORT_BOUNDARY,
+  ENGINE_FAMILIES,
+  ENGINE_SUBPATHS,
+  SHIPPED_PRIMITIVES,
+} from './import-boundary'
+import { SLOTS } from '../../../ui/slots'
 import {
   enabledRule,
   fixtureSuites,
@@ -186,5 +192,11 @@ describe('contract rows', () => {
     expect(lint(code, [{ ejected: ['@/components/ui/card'] }]).map((m) => m.messageId)).toEqual([
       'ui-path',
     ])
+  })
+})
+
+describe('ui-path primitive names', () => {
+  it('reads a relative ui/<name> path for every shipped primitive, and only those', () => {
+    expect([...SHIPPED_PRIMITIVES].toSorted()).toEqual(Object.keys(SLOTS).toSorted())
   })
 })
