@@ -30,6 +30,7 @@ export const webSocketTransport = (url: (cursor?: string) => string): Transport 
         ...(m.id === undefined ? {} : { id: m.id }),
       })
     }
+    ws.onerror = () => {} // an abort while connecting errors the socket; onclose follows and reports it
     ws.onclose = ({ code }) =>
       push({ failure: code === 4401 ? { status: 401 } : new Error('closed') })
     signal.addEventListener('abort', () => ws.close(), { once: true }) // the channel's abort closes the socket
