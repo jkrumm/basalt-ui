@@ -232,6 +232,36 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     blurb: 'Which questions, reviews and chores wait, and which hold up the most work?',
   },
   {
+    id: 'expr-n39',
+    title: 'Expression n39: frost in the nights ahead',
+    blurb: 'Will any of the next five nights freeze, for how long, and do the models agree?',
+  },
+  {
+    id: 'expr-n40',
+    title: 'Expression n40: what the task list asks of today',
+    blurb: 'Which tasks are overdue, how much is due today, and which list keeps growing?',
+  },
+  {
+    id: 'expr-n41',
+    title: 'Expression n41: which model served each request',
+    blurb: 'Which model served each kind of request, and how often did a request fall back?',
+  },
+  {
+    id: 'expr-n42',
+    title: 'Expression n42: whether the router is healthy',
+    blurb: 'Is the router healthy now, and did its load rise before the last line drop?',
+  },
+  {
+    id: 'expr-n43',
+    title: 'Expression n43: which documents wait for a verdict',
+    blurb: 'Which Specs and Reports came in per project, and which still wait for a verdict?',
+  },
+  {
+    id: 'expr-n44',
+    title: 'Expression n44: when rain reaches my spot',
+    blurb: 'Is rain coming in the next two hours, when does it arrive, and how heavy will it be?',
+  },
+  {
     id: 'linked-windows',
     title: 'Linked windows: a table of runs beside an hourly chart',
     blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',

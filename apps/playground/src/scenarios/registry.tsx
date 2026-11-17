@@ -46,6 +46,12 @@ import { ExprN35Scenario } from './expr/n35/ExprN35'
 import { ExprN36Scenario } from './expr/n36/ExprN36'
 import { ExprN37Scenario } from './expr/n37/ExprN37'
 import { ExprN38Scenario } from './expr/n38/ExprN38'
+import { ExprN39Scenario } from './expr/n39/ExprN39'
+import { ExprN40Scenario } from './expr/n40/ExprN40'
+import { ExprN41Scenario } from './expr/n41/ExprN41'
+import { ExprN42Scenario } from './expr/n42/ExprN42'
+import { ExprN43Scenario } from './expr/n43/ExprN43'
+import { ExprN44Scenario } from './expr/n44/ExprN44'
 import { MdxScenario } from './mdx-scenario'
 import { LinkedWindowsScenario } from './linked-windows/LinkedWindows'
 import type { ScenarioProps } from './shot-state'
@@ -93,6 +99,12 @@ const RENDERERS = {
   'expr-n36': (p) => <ExprN36Scenario {...p} />,
   'expr-n37': (p) => <ExprN37Scenario {...p} />,
   'expr-n38': (p) => <ExprN38Scenario {...p} />,
+  'expr-n39': (p) => <ExprN39Scenario {...p} />,
+  'expr-n40': (p) => <ExprN40Scenario {...p} />,
+  'expr-n41': (p) => <ExprN41Scenario {...p} />,
+  'expr-n42': (p) => <ExprN42Scenario {...p} />,
+  'expr-n43': (p) => <ExprN43Scenario {...p} />,
+  'expr-n44': (p) => <ExprN44Scenario {...p} />,
   mdx: () => <MdxScenario />,
   'linked-windows': (p) => <LinkedWindowsScenario {...p} />,
 } satisfies Record<string, (props: ScenarioProps) => ReactElement>
