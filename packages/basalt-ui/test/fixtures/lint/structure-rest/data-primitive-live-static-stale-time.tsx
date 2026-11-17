@@ -61,3 +61,17 @@ const o = liveQuery(opts, 'live')
 // @valid
 const opts = { queryKey: ['flags'], queryFn, staleTime: 'static' }
 const other = liveQuery(base, 'live')
+
+// @invalid
+const o = liveQuery({ ...runsQuery, staleTime: 60 * 60 * 1000 }, 'standard')
+
+// @invalid
+const FOREVER = Infinity
+const o = liveQuery({ ...runsQuery, staleTime: FOREVER }, 'static')
+
+// @invalid
+const opts = queryOptions({ queryKey: ['runs'], queryFn, staleTime: 30_000 })
+const o = liveQuery(opts, 'standard')
+
+// @valid
+const q = useQuery({ queryKey: ['runs'], queryFn, staleTime: 30_000 })

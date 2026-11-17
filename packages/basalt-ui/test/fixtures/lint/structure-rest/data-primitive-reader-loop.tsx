@@ -124,3 +124,33 @@ async function first(res: Response) {
   const reader = res.body?.getReader()
   return reader?.read()
 }
+
+// @invalid
+async function follow(res) {
+  for await (const chunk of res.body.pipeThrough(new TextDecoderStream())) handle(chunk)
+}
+
+// @invalid
+// @ts
+async function follow(res: Response) {
+  const text = res.body!.pipeThrough(new TextDecoderStream()).pipeThrough(splitLines())
+  for await (const line of text) handle(line)
+}
+
+// @invalid
+const decoded = response.body.pipeThrough(new TextDecoderStream())
+async function follow() {
+  for await (const chunk of decoded) handle(chunk)
+}
+
+// @valid
+async function follow(res) {
+  const text = await res.text()
+  for await (const line of lines(text)) handle(line)
+}
+
+// @valid
+const pages = client.pages.pipeThrough(toRows())
+async function follow() {
+  for await (const page of pages) handle(page)
+}
