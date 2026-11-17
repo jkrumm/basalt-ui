@@ -12,12 +12,15 @@
  *   fixed table is an UPPER_CASE constant or an array literal. A `.map` nested in a row is the
  *   row's cells, never a second report.
  * - `svg-data-marks`: a `<path d>` from a d3-shape generator (`line()(data)`) or a helper that
- *   returns the string is not read; only a `d` built in the file with `.map`, `.flatMap` or
- *   `.reduce` is.
+ *   returns the string is not read; only a `d` or `points` built in the file with `.map`, `.flatMap` or
+ *   `.reduce` is, inline or through a const (`const points = rows.map(…)`, then
+ *   `points={points.join(' ')}`).
  * - `html-data-marks`: a custom-property mark is read only when the class names the property in a
  *   geometry or flex utility (`w-(--w)`, `h-[var(--h)]`, `grow-(--g)`, `basis-(--b)`, `scale-x-(--s)`,
  *   `translate-y-(--t)`, `[width:var(--w)]`); a property read by a stylesheet is out of reach. A `transform` reads
  *   only as `scale`, `scaleX` or `scaleY` of a datum; a `translate` transform is not.
+ *   A custom property set on the element's JSX parent is read as one set on the element itself (the
+ *   child's class sizes by it); one set on a grandparent or higher is not.
  * - `intl-format`: `toFixed` is read where it renders (a JSX child expression, directly or through
  *   a template literal, `+` or a ternary). One returned from a helper, a key or a CSS value is not
  *   display text by syntax and passes. A date-fns formatter is read through a named import from
@@ -63,6 +66,9 @@
  *   (`import * as P from 'basalt-ui/page'`, `<P.Section>`) as through a named one.
  * - `svg-data-marks`: a mark is `aria-hidden` by its own attribute or an ancestor's, read in the
  *   same file only; the seam spread may sit in another file's component and then it still reports.
+ * - `checkable-input`: basalt's `Input` reads when it is imported from `basalt-ui/ui/input` in the
+ *   file (renamed or not) with a literal `type="checkbox"` or `"radio"`; a `type` held in a
+ *   variable or a spread, and an `Input` from another path, are not read.
  * - `svg-data-marks`: a `<g>` that is not inside an `<svg>` in the file is a marks root too (a
  *   marks component split into its own file); a `.map` of marks under a root a helper component
  *   renders (`<Dots />` returning bare `<circle>`s with no `<g>`) is not read.
@@ -299,16 +305,37 @@ const rawControl = form(
     }),
 )
 
+/** The module whose `Input` is the basalt primitive. */
+const INPUT_PRIMITIVE_SOURCE = 'basalt-ui/ui/input'
+
 const checkableInput = form(
   'checkable-input',
   'Use ui/checkbox, ui/switch or ui/radio-group',
   'Bind a boolean field with FormField',
-  ({ report }) =>
-    opening((node) => {
-      if (tagOf(node) === 'input' && isCheckable(node)) {
-        report(node, `input[type="${attributeText(node, 'type')}"]`)
-      }
-    }),
+  ({ report }) => {
+    const primitives = new Set<string>()
+    return mergeVisitors([
+      {
+        ImportDeclaration(node) {
+          if (stringValue(child(node, 'source')) !== INPUT_PRIMITIVE_SOURCE) return
+          for (const spec of children(node, 'specifiers')) {
+            if (spec.type !== 'ImportSpecifier') continue
+            const imported = child(spec, 'imported')
+            if ((nameOf(imported) ?? stringValue(imported)) !== 'Input') continue
+            const local = nameOf(child(spec, 'local'))
+            if (local !== undefined) primitives.add(local)
+          }
+        },
+      },
+      opening((node) => {
+        const tag = tagOf(node)
+        if (tag === undefined || !isCheckable(node)) return
+        if (tag === 'input' || primitives.has(tag)) {
+          report(node, `${tag}[type="${attributeText(node, 'type')}"]`)
+        }
+      }),
+    ])
+  },
 )
 
 const GROUP_ELEMENTS: ReadonlySet<string> = new Set(['section', 'li'])
@@ -643,6 +670,19 @@ const isBuildCall = (node: Node): boolean => {
   )
 }
 
+/** The name a method chain starts from: `points` of `points.join(' ')`, `d` of `d.trim()`; the node itself otherwise. */
+const builtChainRoot = (node: Node): Node => {
+  let at = node
+  while (at.type === 'CallExpression') {
+    const callee = child(at, 'callee')
+    if (callee?.type !== 'MemberExpression') break
+    const object = child(callee, 'object')
+    if (!object) break
+    at = object
+  }
+  return at
+}
+
 /** `aria-hidden`, `aria-hidden="true"` or `aria-hidden={true}`: not `"false"` or `{false}`. */
 const isAriaHidden = (opening: Node): boolean => {
   const attr = attribute(opening, 'aria-hidden')
@@ -691,8 +731,8 @@ const svgDataMarks = form(
       const expression =
         value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
       if (!expression) return false
-      const bound = nameOf(expression)
-      return bound !== undefined ? builtPaths.has(bound) : someNode(expression, isBuildCall)
+      const bound = nameOf(builtChainRoot(expression))
+      return (bound !== undefined && builtPaths.has(bound)) || someNode(expression, isBuildCall)
     }
     return mergeVisitors([
       seam.visitor,
@@ -822,10 +862,12 @@ const isComputed = (value: Node | undefined): boolean => {
 /**
  * Outside a map: a custom property set inline from a computed value that a class on the same
  * element sizes it by (`className="w-(--w)" style={{ '--w': `${share * 100}%` }}`), a bar sized
- * from data through the route `shadcn/no-inline-styles` names (lint-10.4). Returns the property.
+ * from data through the route `shadcn/no-inline-styles` names (lint-10.4). The `holder` is the
+ * element that sets the property: the element itself, or its JSX parent (a property set on the
+ * parent and read by the child's class). Returns the property.
  */
-const computedSizeProperty = (opening: Node): string | undefined => {
-  const value = child(attribute(opening, 'style') ?? { type: '' }, 'value')
+const computedSizeProperty = (opening: Node, holder: Node = opening): string | undefined => {
+  const value = child(attribute(holder, 'style') ?? { type: '' }, 'value')
   const style = unwrapped(
     value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined,
   )
@@ -932,7 +974,13 @@ const htmlDataMarks = form(
           }
           // A mark of a seam-wired `.map` (`focus.item(i)`) is the seam's, however it is sized.
           if (seam.maps.some((map) => seam.wired(map))) return
-          const property = computedSizeProperty(node)
+          const parentOpening = child(
+            enclosingElement(parentOf(node) as Node) ?? { type: '' },
+            'openingElement',
+          )
+          const property =
+            computedSizeProperty(node) ??
+            (parentOpening ? computedSizeProperty(node, parentOpening) : undefined)
           if (property !== undefined) {
             report(node, `<${tag}> sized by ${property}, set from a computed value`)
           }

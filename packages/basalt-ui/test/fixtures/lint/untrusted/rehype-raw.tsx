@@ -37,3 +37,12 @@ const html = unified().use(remarkParse).use(remarkRehype, { allowDangerousHtml: 
 // @valid
 import remarkRehype from 'remark-rehype'
 const html = unified().use(remarkParse).use(remarkRehype)
+
+// @invalid
+export { default as rehypeRawPlugin } from 'rehype-raw'
+
+// @invalid
+export * from 'rehype-raw'
+
+// @valid
+export { default as rehypeSlugPlugin } from 'rehype-slug'

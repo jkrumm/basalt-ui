@@ -292,3 +292,26 @@ const a = (
     })}
   </div>
 )
+// @invalid
+// @ts
+const Row = ({ row }: { row: Run }) => (
+  <div style={{ '--w': `${row.share * 100}%` } as CSSProperties}>
+    <div className="h-2 w-(--w) bg-muted" />
+  </div>
+)
+// @valid
+// @ts
+const Row = ({ i }: { i: number }) => (
+  <li
+    className="animate-in [animation-delay:var(--d)]"
+    style={{ '--d': `${i * 40}ms` } as CSSProperties}
+  >
+    <span className="h-2 bg-muted" />
+  </li>
+)
+// @valid
+const Row = () => (
+  <div style={{ '--w': '40%' }}>
+    <div className="h-2 w-(--w) bg-muted" />
+  </div>
+)

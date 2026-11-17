@@ -84,3 +84,11 @@ store.setItem('view', v)
 // @valid
 const store = createStore()
 store.clear()
+
+// @invalid
+const guarded = typeof window !== 'undefined' ? window.localStorage : null
+guarded?.setItem('density', d)
+
+// @valid
+const guarded = typeof window !== 'undefined' ? window.localStorage : null
+const density = guarded?.getItem('density')

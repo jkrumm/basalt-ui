@@ -4,8 +4,8 @@
  * evaluation each bypass it. Four forms, none scoped to files that import `basalt-ui/ai`:
  *
  * - `dangerous-html`: `dangerouslySetInnerHTML` whose `__html` is not a string literal, and the DOM
- *   sinks `el.innerHTML = x`, `el.outerHTML = x` and `el.insertAdjacentHTML(pos, x)` with a
- *   non-literal value. `<iframe srcDoc={x} />` with a non-literal `srcDoc` (a string literal or a
+ *   sinks `el.innerHTML = x`, `el.outerHTML = x`, `el.insertAdjacentHTML(pos, x)`,
+ *   `el.setHTMLUnsafe(x)` and `Document.parseHTMLUnsafe(x)` with a non-literal value. `<iframe srcDoc={x} />` with a non-literal `srcDoc` (a string literal or a
  *   hole-free template is legal, and so is a frame whose `sandbox` leaves out
  *   `allow-same-origin`) and `x.createContextualFragment(html)` with a non-literal argument
  *   (`document.createRange().createContextualFragment(m.html)`) report too, as does
@@ -16,7 +16,8 @@
  *   `append`, `innerHTML`), because parsing alone runs nothing yet every use of the parsed
  *   nodes in the page is the sink (an `onerror` runs once adopted), so the parse of model text is the
  *   site that names it. A literal `x`, or a `text/xml` or `image/svg+xml` parse, passes.
- * - `rehype-raw`: an import or require of `rehype-raw`, and `allowDangerousHtml: true` in a
+ * - `rehype-raw`: an import, require or re-export (`export { default as x } from 'rehype-raw'`,
+ *   `export * from 'rehype-raw'`) of `rehype-raw`, and `allowDangerousHtml: true` in a
  *   `[remarkRehype, { … }]` tuple (`remarkRehype` the default import of `remark-rehype`).
  * - `mdx-evaluate`: `evaluate`/`run` (and their Sync twins) of `@mdx-js/mdx`, by name
  *   import, namespace member or require, and any import of `next-mdx-remote`,
@@ -229,6 +230,12 @@ const dangerousHtml: AstForm = {
           }
           return
         }
+        if (method === 'setHTMLUnsafe' || method === 'parseHTMLUnsafe') {
+          // `el.setHTMLUnsafe(x)` and `Document.parseHTMLUnsafe(x)` parse x as innerHTML does
+          const markup = children(node, 'arguments')[0]
+          if (markup && !isLiteralText(markup)) report(node, `.${method}()`)
+          return
+        }
         if (method === 'createContextualFragment') {
           const markup = children(node, 'arguments')[0]
           if (markup && !isLiteralText(markup)) report(node, '.createContextualFragment()')
@@ -292,6 +299,13 @@ const rehypeRaw: AstForm = {
           const local = nameOf(child(specifier, 'local'))
           if (specifier.type === 'ImportDefaultSpecifier' && local) remarkRehype.add(local)
         }
+      },
+      // `export { default as rehypeRawPlugin } from 'rehype-raw'`, `export * from 'rehype-raw'`
+      ExportNamedDeclaration(node) {
+        if (text(child(node, 'source')) === 'rehype-raw') report(node, 'rehype-raw')
+      },
+      ExportAllDeclaration(node) {
+        if (text(child(node, 'source')) === 'rehype-raw') report(node, 'rehype-raw')
       },
       ImportExpression(node) {
         if (loadedModule(node) === 'rehype-raw') report(node, 'rehype-raw')

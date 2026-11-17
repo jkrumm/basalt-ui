@@ -183,3 +183,15 @@ async function readLet(res, on) {
 async function* each(rows: AsyncIterable<string>, body: string) {
   for await (const row of rows) yield row + body
 }
+
+// @invalid
+// @ts
+async function lines({ body }: Response, onLine) {
+  for await (const chunk of body!.pipeThrough(new TextDecoderStream())) onLine(chunk)
+}
+
+// @valid
+// @ts
+async function names({ name }: Response, onName) {
+  for await (const chunk of name) onName(chunk)
+}
