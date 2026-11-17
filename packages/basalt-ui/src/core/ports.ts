@@ -78,6 +78,14 @@ export type ListFocus<T> = {
   readonly item: (index: number) => ListFocusItem
   /** The index a key moves the focus to (`null` clears, `undefined` is not ours). */
   readonly step: (key: string) => number | null | undefined
+  /**
+   * Focuses several items at once, as a pointer does: a list row that stands for a run or a set of
+   * them (a window of hours, a probe under its finding). The first in item order becomes `index`;
+   * one index is `set` of it, none clears.
+   */
+  readonly hold: (indexes: readonly number[]) => void
+  /** The focused items in item order: the one at `index`, every item `hold` set, or none. */
+  readonly span: readonly T[]
 }
 
 // ---- Icons and links ----------------------------------------------------------------------

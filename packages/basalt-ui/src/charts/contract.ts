@@ -137,6 +137,12 @@ export type ChartFocusOptions<D> = {
    * and focus entering a group announces its name first. Items of a group are contiguous.
    */
   group?: (d: D) => string
+  /**
+   * The polite announcement for several items held at once (`focus.hold`, a list row that stands
+   * for a window of them), in item order. Default: the first and the last item's announcements,
+   * joined by "to".
+   */
+  announceSpan?: (items: readonly D[]) => string
 }
 
 /**
@@ -148,9 +154,17 @@ export type ChartFocus<D> = {
   readonly index: number | null
   readonly datum: D | null
   readonly set: (index: number | null) => void
-  /** `rest` while nothing is focused (the total), else `read(datum)`. */
+  /**
+   * Focuses several items at once, as a pointer does (a list row that stands for a window of them):
+   * every one is marked, only the rest dim, and a cartesian host draws the run as one x band. The
+   * first in item order becomes `index` and `datum`; one index is `set` of it, none clears.
+   */
+  readonly hold: (indexes: readonly number[]) => void
+  /** The focused items in item order: `[datum]`, every item `hold` set, or none. */
+  readonly span: readonly D[]
+  /** `rest` while nothing is focused (the total), else `read(datum)`: the first of a held span. */
   readonly readout: <R>(rest: R, read: (d: D) => R) => R
-  /** True for every item but the focused one while one is focused. */
+  /** True for every item outside the focused ones while any is focused. */
   readonly dimmed: (d: D) => boolean
   readonly target: ChartFocusTarget
   readonly item: (index: number) => ChartFocusItem
