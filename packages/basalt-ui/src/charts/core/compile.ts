@@ -981,6 +981,8 @@ function underlayMarks<T, X extends ChartX>(
 /** A band's bar spans this share of its half step (`paddingInner` 0.2 leaves 0.8 of the step). */
 const BAR_BODY = 0.8
 const REF_LABEL_DX = 6
+/** The most rows a zone caption tries down the inside of its zone. */
+const MAX_ZONE_ROWS = 24
 /** The share of a bar slot kept between two grouped bars (`group({ padding })` in `bars-marks`). */
 const GROUP_PADDING = 0.1
 
@@ -994,6 +996,8 @@ type RefLabelContext<T, X extends ChartX> = {
   xBlocked: NonNullable<Parameters<typeof xRefLabelSpots>[0]['blocked']>
   /** The bar bodies and dots on the line's axis: a caption keeps off them. */
   marks: (side: 'left' | 'right' | undefined) => { bars: LabelBox[]; dots: DotMark[] }
+  /** Whether a line path crosses a caption box (px across, px below the plot top). */
+  lineHits: (box: { x0: number; x1: number; top: number; bottom: number }) => boolean
   /** The end labels placed on the left axis: a caption there keeps clear of them. */
   claimed: readonly LabelBox[]
   /** The vertical rules' captions, px below the plot top: a reference caption keeps clear of them. */
@@ -1089,30 +1093,60 @@ const xZoneLabelMarks = <T, X extends ChartX>(
     const f = z.label ? xZoneFractions(z, model) : null
     if (!z.label || f === null) return []
     const top = z.y ? clampTo(Math.max(z.y.from, z.y.to), domain) : hi
+    const bottom = z.y ? clampTo(Math.min(z.y.from, z.y.to), domain) : lo
     const width = captionWidth(z.label, fontSize)
     const [x0, x1] = [f[0] * plotWidth, f[1] * plotWidth]
+    // A line box from the zone's top: its first row sits in the corner, each next one a row lower.
+    const rowTop = fontSize / 2 - 2
+    const rowBottom = fontSize * 1.5 + 2
+    const stepPx = rowBottom - rowTop + 2
+    const zoneHeightPx = perPx > 0 ? (top - bottom) / perPx : 0
+    const rows =
+      perPx > 0
+        ? Math.min(MAX_ZONE_ROWS, Math.max(1, Math.floor((zoneHeightPx - rowTop) / stepPx)))
+        : 1
+    const inside = Array.from({ length: rows }, (_, row) => ({
+      at: f[0],
+      side: 1 as const,
+      left: x0 + REF_LABEL_DX,
+      inside: true,
+      row,
+    }))
+    // Inside the zone, top to bottom, then after it and before it on the top row.
     const spots = [
-      { at: f[0], side: 1, left: x0 + REF_LABEL_DX, inside: true },
-      { at: f[1], side: 1, left: x1 + REF_LABEL_DX, inside: false },
-      { at: f[0], side: -1, left: x0 - REF_LABEL_DX - width, inside: false },
-    ] as const
+      ...inside,
+      { at: f[1], side: 1 as const, left: x1 + REF_LABEL_DX, inside: false, row: 0 },
+      { at: f[0], side: -1 as const, left: x0 - REF_LABEL_DX - width, inside: false, row: 0 },
+    ]
+    type Spot = (typeof spots)[number]
+    const offset = (spot: Spot): number => spot.row * stepPx
     // The caption's line box from the zone's top, in values, for the collision pass.
-    const y1 = top - (fontSize / 2 - 2) * perPx
-    const y0 = top - (fontSize * 1.5 + 2) * perPx
-    const boxOf = (left: number): LabelBox => ({
-      fx0: left / plotWidth,
-      fx1: (left + width) / plotWidth,
-      y0,
-      y1,
+    const boxOf = (spot: Spot): LabelBox => ({
+      fx0: spot.left / plotWidth,
+      fx1: (spot.left + width) / plotWidth,
+      y0: top - (rowBottom + offset(spot)) * perPx,
+      y1: top - (rowTop + offset(spot)) * perPx,
     })
-    const fits = (s: (typeof spots)[number]): boolean =>
+    // The same box in px below the plot top, for the marks: no bar, dot or line path under it.
+    const pxOf = (spot: Spot): { x0: number; x1: number; top: number; bottom: number } => {
+      const edge = perPx > 0 ? (hi - top) / perPx : 0
+      return {
+        x0: spot.left,
+        x1: spot.left + width,
+        top: edge + rowTop + offset(spot),
+        bottom: edge + rowBottom + offset(spot),
+      }
+    }
+    const fits = (s: Spot): boolean =>
       s.left >= 0 &&
       s.left + width <= (s.inside ? x1 - REF_LABEL_DX : plotWidth) &&
-      !avoid().some((b) => boxesMeet(boxOf(s.left), b))
+      !avoid().some((b) => boxesMeet(boxOf(s), b)) &&
+      !ctx.xBlocked(pxOf(s)) &&
+      !ctx.lineHits(pxOf(s))
     // Before the plot is measured the caption keeps its first spot.
     const spot = plotWidth <= 0 ? spots[0] : spots.find(fits)
     if (spot === undefined) return []
-    if (plotWidth > 0) ctx.placed.left.push(boxOf(spot.left))
+    if (plotWidth > 0) ctx.placed.left.push(boxOf(spot))
     return [
       decorative(
         text([{ f: spot.at }], {
@@ -1126,7 +1160,7 @@ const xZoneLabelMarks = <T, X extends ChartX>(
           fontSize,
           anchor: spot.side === 1 ? 'start' : 'end',
           dx: spot.side * REF_LABEL_DX,
-          dy: fontSize,
+          dy: fontSize + offset(spot),
         }),
       ),
     ]
@@ -1651,6 +1685,7 @@ export function compileCartesian<T, X extends ChartX>(
           )
         }
       let captions: RefLabelContext<T, X> | undefined
+      let lineMemo: PxBox[] | undefined
       const captionContext = (): RefLabelContext<T, X> => {
         if (captions !== undefined) return captions
         access.read()
@@ -1669,6 +1704,16 @@ export function compileCartesian<T, X extends ChartX>(
           lines: linesOn,
           marks: marksOn,
           xBlocked: xBlocked(plotWidth, size?.height ?? height),
+          lineHits: (box) => {
+            lineMemo ??= lineBoxes({ width: plotWidth, height: size?.height ?? height })
+            return lineMemo.some(
+              (b) =>
+                b.left < box.x1 &&
+                b.left + b.width > box.x0 &&
+                b.top < box.bottom &&
+                b.top + b.height > box.top,
+            )
+          },
           claimed: claimedLabelBoxes(plot),
           xCaptions: xRefLabelBoxes(xSpots, { plotWidth, fontSize: BASALT.text.micro }),
           placed: { left: [], right: [] },
