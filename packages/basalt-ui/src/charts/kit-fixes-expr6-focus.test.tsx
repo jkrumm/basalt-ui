@@ -97,3 +97,56 @@ describe('a row focus survives the chart-to-row crossing', () => {
     expect(live(container)).toBe('')
   })
 })
+
+function Shared() {
+  const focus = useChartFocus(STAGES, { announce: (d) => d.stage })
+  return (
+    <div>
+      {[0, 1].map((n) => (
+        <CartesianChart
+          key={n}
+          ariaLabel={`Pace ${n}`}
+          data={STAGES}
+          x={{ value: (d) => d.stage }}
+          series={[{ key: 'at', label: 'At', color: COLOR, mark: 'bar', y: (d) => d.at }]}
+          cursor={`${GROUP}-shared-${n}`}
+          focus={focus}
+        />
+      ))}
+      <button type="button" onClick={() => focus.set(1)}>
+        go
+      </button>
+    </div>
+  )
+}
+
+function Swap({ first }: { first: boolean }) {
+  const focus = useChartFocus(STAGES, { announce: (d) => d.stage })
+  return (
+    <div>
+      {first && <span key="a">{focus.live}</span>}
+      <span key="b">{focus.live}</span>
+    </div>
+  )
+}
+
+describe('charts on one focus announce a move once', () => {
+  test('two charts draw one live region that says the focused datum', async () => {
+    const { container } = render(<Shared />)
+    await settle()
+    expect(container.querySelectorAll('[data-chart-focus-live]').length).toBe(1)
+    fireEvent.click(container.querySelector('button') as Element)
+    await settle()
+    const regions = [...container.querySelectorAll('[data-chart-focus-live]')]
+    expect(regions.map((r) => r.textContent)).toEqual(['Test'])
+  })
+
+  test('the speaking region passes to the next when it unmounts', async () => {
+    const { container, rerender } = render(<Swap first />)
+    await settle()
+    expect(container.querySelectorAll('[data-chart-focus-live]').length).toBe(1)
+    rerender(<Swap first={false} />)
+    await settle()
+    expect(container.querySelectorAll('[data-chart-focus-live]').length).toBe(1)
+  })
+})
