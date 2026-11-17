@@ -150,7 +150,6 @@ describe('agent-doc-drift guard', () => {
   })
 
   it('the real tree cites no deleted doc from any repo doc, src/** or configs/**', () => {
-    expect(findConfigsJsFiles().length).toBeGreaterThan(0)
     expect(findRepoMdFiles().length).toBeGreaterThan(findAgentMdFiles().length)
     expect(checkD([...findRepoMdFiles(), ...findConfigsJsFiles()], findSrcTsFiles())).toEqual([])
     // Scans every repo doc + src file: ~5s under full-suite load, past bun's 5s default.

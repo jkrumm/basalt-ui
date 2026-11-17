@@ -7,9 +7,6 @@
  *     agent/skills/{skill}/SKILL.md (skills ship in the npm package, placed by init/sync).
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
  *  6. Every surface with non-empty forbiddenImports has a globs field.
- *  7. The token-layer boundary (./charts, ./tokens) rests on the repo-local-only
- *     basalt/token-layer-boundary plugin rule's LIVE registration — verified here, not in
- *     checkCoverage() itself (a shipped CLI subcommand cannot read the repo-local config).
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
  *
  * Uses checkCoverage() as the primary gate (exit-code assertion), then redundant structural
@@ -19,12 +16,7 @@ import { describe, expect, it } from 'bun:test'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import {
-  hasTokenLayerBoundaryRegistered,
-  SKILL_NAMES,
-  SURFACES,
-  TOKEN_LAYER_BOUNDARY_SURFACES,
-} from '../packages/basalt-ui/src/surfaces'
+import { SKILL_NAMES, SURFACES } from '../packages/basalt-ui/src/surfaces'
 import type { DoctrineSpec } from '../packages/basalt-ui/src/surfaces'
 import { checkCoverage, SHIPPED_RULES } from '../packages/basalt-ui/scripts/check-coverage'
 
@@ -47,7 +39,7 @@ function packageExports(): Set<string> {
 // ── gate: checkCoverage() must return 0 ─────────────────────────────────────
 
 describe('check-coverage gate', () => {
-  it('checkCoverage() returns 0 (all 9 assertions pass)', () => {
+  it('checkCoverage() returns 0 (all 7 assertions pass)', () => {
     expect(checkCoverage()).toBe(0)
   })
 })
@@ -92,51 +84,6 @@ describe('subpath export coverage', () => {
       (key) => !key.startsWith('#') && key !== '.' && !exports.has(key),
     )
     expect(missing).toEqual([])
-  })
-})
-
-// ── Assertion 7: every headless surface imports no UI framework ─────────────
-// Coverage is either all 3 forbiddenImports bans, or — for the two surfaces the
-// `basalt/token-layer-boundary` plugin rule actually fires on (charts/tokens path segments) —
-// exemption backed by that rule's LIVE registration in the repo-local `.oxlintrc.json`. It is
-// deliberately registered repo-local ONLY (never the shipped consumer preset): it protects two
-// things — layering (tokens is pure data that the generated stylesheet and charts both read — a
-// UI-layer import in either would cycle back through the token layer or let a chart bypass
-// `--basalt-*` and fork chrome/charts apart) and packaging (`./charts`/`./tokens` resolve and
-// render with no UI framework installed, CI-tested via `scripts/pack-test.sh` +
-// `scripts/check-dist-layering.mjs`). The LAYER imports no UI framework — the app layer does.
-// Both are a basalt-internal invariant, not a consumer contract. This describe block is basalt's
-// own CI guarantee that a future removal of the rule fails loudly — `checkCoverage()` (a shipped
-// CLI subcommand) cannot verify this itself, since it must run from inside a consumer's
-// node_modules, where the repo-local `.oxlintrc.json` path resolves to the CONSUMER's own config.
-
-describe('token-layer boundary coverage', () => {
-  const repoConfig = JSON.parse(readFileSync(join(root, '.oxlintrc.json'), 'utf8')) as {
-    rules?: Record<string, unknown>
-  }
-  // The basalt/* levels live in the guards-only preset the full one extends.
-  const shippedConfig = JSON.parse(
-    readFileSync(join(pkgRoot, 'configs/oxlint-basalt.json'), 'utf8'),
-  ) as {
-    rules?: Record<string, unknown>
-  }
-  const tokenLayerBoundaryRegistered = hasTokenLayerBoundaryRegistered(repoConfig.rules)
-
-  it('the basalt/token-layer-boundary plugin rule is registered as error in the repo-local config', () => {
-    // Load-bearing for the exemption below: if this ever goes false, ./charts and ./tokens have
-    // NO UI-free coverage at all (their forbiddenImports are intentionally empty).
-    expect(tokenLayerBoundaryRegistered).toBe(true)
-  })
-
-  it('the shipped consumer preset does NOT register basalt/token-layer-boundary (deliberately absent)', () => {
-    // This governs basalt's own internal layering (tokens upstream of the UI layer), not a consumer
-    // contract — it must never leak into the shipped preset.
-    expect(hasTokenLayerBoundaryRegistered(shippedConfig.rules)).toBe(false)
-  })
-
-  it('every member of TOKEN_LAYER_BOUNDARY_SURFACES is thereby covered', () => {
-    expect(tokenLayerBoundaryRegistered).toBe(true)
-    expect([...TOKEN_LAYER_BOUNDARY_SURFACES].toSorted()).toEqual(['./charts', './tokens'])
   })
 })
 

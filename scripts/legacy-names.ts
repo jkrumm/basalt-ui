@@ -78,18 +78,6 @@ export const ALLOWED: readonly Allow[] = [
     kinds: ['mantine'] as const,
     reason: 'the v3 rationale names the library v3 replaced',
   })),
-  // The 2.x lint plugin behind `configs/oxlint.json`: its rules detect Mantine constructs, and it retires
-  // whole with the 2.x preset (the v3 presets load `basalt-ui/lint`), not rule by rule.
-  ...[
-    'packages/basalt-ui/configs/oxlint-plugin.js',
-    'packages/basalt-ui/configs/oxlint-plugin.test.ts',
-    'packages/basalt-ui/scripts/gen-oxlint.ts',
-  ].map((path) => ({
-    path,
-    kinds: ['mantine'] as const,
-    reason:
-      'the 2.x lint plugin and the generator of its `@mantine` bans, retired with the 2.x preset',
-  })),
   // The rename and its gate name what they rename and refuse.
   { path: 'scripts/legacy-names.ts', reason: 'this allowlist' },
   { path: 'scripts/rename-legacy.ts', reason: 'the codemod rewrites these spellings' },
@@ -108,13 +96,6 @@ export const ALLOWED: readonly Allow[] = [
     kinds: ['vx'],
     line: /^ {2}(VxThemeProvider|useVxTheme): /,
     reason: 'the removed-API denylist bans the 1.x names as they were spelled',
-  },
-  {
-    path: 'packages/basalt-ui/configs/oxlint-plugin.js',
-    kinds: ['vx'],
-    line: /^ {2}'unknown-vx-token',$/,
-    reason:
-      'a retired 2.x waiver kind, recognized as 2.x apps wrote it (tools/migrate-v3 waivers maps it)',
   },
   // Detectors: a ban list, or a check that reports what a 2.x app still carries, has to name what it refuses.
   // Each holds in the source and in its compiled twin in `dist/`, and only on the detecting line.
