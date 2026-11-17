@@ -14,12 +14,8 @@ Procedure only; the contract is `.claude/rules/basalt-charts.md`.
 
 ```tsx
 const focus = useChartFocus(stages, { announce: (d) => `${d.name}: ${fmt(d.behind)} behind best` })
-;<ChartCard title="Pace" figure={{
-  value: focus.readout(fmt(total), (d) => fmt(d.behind)),
-  delta: focus.readout(restDelta, (d) => ({ value: signed(d.behind - best), polarity: 'up-bad' })),
-  status: focus.readout(restStatus, (d) => statusOf(d)),
-  period: focus.readout('whole run', (d) => d.name),
-}}>
+;<ChartCard title="Pace" figure={{ value: focus.readout(fmt(total), (d) => fmt(d.behind)), delta: focus.readout(restDelta, deltaOf),
+  status: focus.readout(restStatus, statusOf), period: focus.readout('whole run', (d) => d.name) }}>
   <CartesianChart label="Pace" data={stages} x={(d) => d.at} series={series} y={{ title: 'Seconds behind' }} focus={focus}
     marks={(plot) => {
       const rows = plot.rows('behind')
