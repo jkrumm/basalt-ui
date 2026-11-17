@@ -1,0 +1,210 @@
+/* Cycle 5 phrasings for the stylelint preset, the token check and the class rules written as module CSS.
+   Seed numbers continue cycle 4's. A `pass` mark is valid module CSS beside a shape a cycle 4 fix widened. */
+
+/* seed stylelint/at-rule-disallowed-list 8: Tailwind v4's custom dark variant redefined in the app stylesheet */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* seed stylelint/at-rule-disallowed-list 9: a v3 JavaScript config loaded into v4, which can declare theme colours */
+@config '../tailwind.config.js';
+
+/* seed stylelint/media-feature-name-disallowed-list 8: a device width query from an older tutorial */
+@media screen and (max-device-width: 480px) {
+  .nav {
+    display: none;
+  }
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 9: an aspect-ratio query for a wide hero */
+@media (min-aspect-ratio: 16/9) {
+  .hero {
+    display: grid;
+  }
+}
+
+/* pass stylelint/media-feature-name-disallowed-list 2: a coarse pointer query for larger hit areas */
+@media (pointer: coarse) {
+  .row {
+    display: flex;
+  }
+}
+
+/* seed stylelint/selector-disallowed-list 9: the class-based dark ancestor through :global in a CSS module */
+:global(.dark) .badge {
+  display: block;
+}
+
+/* seed stylelint/selector-disallowed-list 10: a Mantine class an agent trained on 2.x reaches for */
+.toolbar :global(.mantine-Button-root) {
+  display: inline-flex;
+}
+
+/* seed stylelint/color-named 7: a named colour for an svg stroke */
+.ring {
+  stroke: gainsboro;
+}
+
+/* seed stylelint/color-named 8: a named colour inside color-mix */
+.veil {
+  background: color-mix(in oklab, black 40%, transparent);
+}
+
+/* seed stylelint/color-no-hex 6: a hex in a local custom property */
+.chip {
+  --chip-ink: #0077bd;
+}
+
+/* seed stylelint/color-no-hex 7: a hex in an svg fill */
+.icon {
+  fill: #fff;
+}
+
+/* seed stylelint/function-disallowed-list 7: an alpha black shadow colour in rgb */
+.lift {
+  outline-color: rgb(0 0 0 / 0.4);
+}
+
+/* seed stylelint/function-disallowed-list 8: a lab() accent from a design tool */
+.accent {
+  border-color: lab(52% 40 59);
+}
+
+/* seed stylelint/declaration-no-important 7: important with a space after the bang */
+.fix {
+  display: none ! important;
+}
+
+/* seed stylelint/declaration-no-important 8: important on a logical property */
+.flush {
+  padding-inline: 0 !important;
+}
+
+/* seed stylelint/property-disallowed-list 7: the brand token redeclared on :root */
+:root {
+  --basalt-brand: var(--basalt-good);
+}
+
+/* seed stylelint/property-disallowed-list 8: the card radius token overridden for one page */
+.page {
+  --basalt-radius-card: 0;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 7: a letter spacing in em */
+.caps {
+  letter-spacing: 0.04em;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 8: a hand-written shadow */
+.float {
+  box-shadow: 0 1px 2px var(--basalt-hairline);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 15: a logical padding in pixels */
+.cell {
+  padding-inline: 12px;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 16: a block margin in rem */
+.lede {
+  margin-block-start: 1.5rem;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 17: a gap from calc over a token */
+.grid {
+  gap: calc(var(--basalt-rhythm-2) * 3);
+}
+
+/* pass stylelint/declaration-property-value-disallowed-list 3: a padding token and a zero */
+.inset {
+  padding: var(--basalt-rhythm-3) 0;
+}
+
+/* seed raw-scroll/overflow-scroll 22: overflow-x auto on a table wrapper in a module */
+.wrap {
+  overflow-x: auto;
+}
+
+/* seed raw-scroll/overflow-scroll 23: overflow-block scroll on a log pane */
+.log {
+  overflow-block: scroll;
+}
+
+/* seed status-fill-as-text/text-on-fill 15: a sequential fill as text in a module */
+.legend {
+  color: var(--basalt-seq-3);
+}
+
+/* seed status-fill-as-text/text-on-fill 16: a chart fill as an svg text fill in a module */
+.label {
+  fill: var(--basalt-chart-2);
+}
+
+/* seed tw-off-law/fixed-width 13: a fixed min width on a dialog in a module */
+.dialog {
+  min-width: 480px;
+}
+
+/* seed tw-off-law/fixed-width 14: a fixed flex basis on a side column in a module */
+.side {
+  flex: 0 0 420px;
+}
+
+/* pass tw-off-law/fixed-width 1: a hairline divider one pixel wide */
+.divider {
+  width: 1px;
+}
+
+/* seed tw-off-law/track-length 11: a fixed header row track in a module */
+.frame {
+  display: grid;
+  grid-template-rows: 64px 1fr;
+}
+
+/* seed tw-off-law/track-length 12: an auto-fill track with a fixed minimum in a module */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+/* pass tw-off-law/track-length 2: tracks sized by auto and minmax(0, 1fr) */
+.split {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+/* seed tw-off-law/surface-recipe 14: a card recipe rebuilt in a module */
+.tile {
+  border: 1px solid var(--basalt-hairline);
+  border-radius: var(--basalt-radius-card);
+  background: var(--basalt-raised);
+}
+
+/* seed tw-off-law/surface-recipe 15: a raised surface background with a shadow token in a module */
+.panel {
+  background: var(--basalt-raised);
+  box-shadow: var(--basalt-shadow-raised);
+}
+
+/* seed app-spacing/margin 13: a margin token in a module, which the value list passes */
+.title {
+  margin-block-end: var(--basalt-rhythm-2);
+}
+
+/* seed app-spacing/margin 14: an owl selector spacing siblings in a module */
+.stack > * + * {
+  margin-top: var(--basalt-rhythm-3);
+}
+
+/* seed unknown-token 13: a Tailwind-style shade on the brand token */
+.brand {
+  border-color: var(--basalt-brand-500);
+}
+
+/* seed unknown-token 14: a ninth chart colour */
+.series {
+  stroke: var(--basalt-chart-9);
+}
+
+/* seed unknown-token 15: a spacing step that is not on the ladder */
+.pad {
+  padding: var(--basalt-space-13);
+}

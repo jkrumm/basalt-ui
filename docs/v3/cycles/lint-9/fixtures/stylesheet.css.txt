@@ -1,0 +1,136 @@
+/* Seeded offenders for the stylelint preset and the token check (`basalt/unknown-token`). */
+
+/* seed stylelint/color-no-hex 1: a hex in a module */
+.badge {
+  color: #0077bd;
+}
+
+/* seed stylelint/color-named 1: a named colour */
+.scrim {
+  background: black;
+}
+
+/* seed stylelint/function-disallowed-list 1: an rgba overlay */
+.overlay {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* seed stylelint/function-disallowed-list 2: oklch from a design tool */
+.accent {
+  border-color: oklch(0.62 0.15 240);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 1: a color-mix with a literal colour */
+.tint {
+  background: color-mix(in oklab, var(--basalt-brand) 20%, white);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 2: padding in px */
+.cell {
+  padding: 6px 12px;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 3: a gap from calc over a token */
+.stack {
+  gap: calc(var(--basalt-rhythm-1) * 1.5);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 4: a status token as a background */
+.row-failed {
+  background: var(--basalt-bad);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 5: margin in rem through the shorthand */
+.title {
+  margin: 0 0 1rem;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 1: a radius in px */
+.chip {
+  border-radius: 6px;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 2: a box-shadow by hand */
+.lift {
+  box-shadow: 0 1px 2px var(--basalt-hairline);
+}
+
+/* seed stylelint/property-disallowed-list 1: redefining a token locally */
+.panel {
+  --basalt-brand: var(--basalt-info);
+}
+
+/* seed stylelint/declaration-no-important 1: forcing a width */
+.wide {
+  width: 100% !important;
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 1: a viewport media query */
+@media (min-width: 768px) {
+  .grid {
+    display: grid;
+  }
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 2: the range syntax */
+@media (width >= 1024px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* seed stylelint/selector-disallowed-list 1: restyling a primitive through data-slot */
+[data-slot='button'] {
+  font-weight: 600;
+}
+
+/* seed stylelint/selector-disallowed-list 2: the Mantine class habit from 2.x */
+.mantine-Button-root {
+  font-weight: 600;
+}
+
+/* seed stylelint/at-rule-disallowed-list 1: an app @utility */
+@utility card-pad {
+  padding: var(--basalt-rhythm-2);
+}
+
+/* seed stylelint/color-no-hex 2: a short hex in a border shorthand */
+.frame {
+  border: 1px solid #ddd;
+}
+
+/* seed stylelint/color-named 2: a named colour on a focus outline */
+.focus:focus-visible {
+  outline: 2px solid orange;
+}
+
+/* seed stylelint/declaration-no-important 2: important on a token value */
+.flush {
+  padding: var(--basalt-rhythm-1) !important;
+}
+
+/* seed stylelint/property-disallowed-list 2: a token retuned on :root for a tenant */
+:root {
+  --basalt-radius-card: 2px;
+}
+
+/* seed stylelint/at-rule-disallowed-list 2: overriding a basalt utility by name */
+@utility focus-ring {
+  outline-width: 3px;
+}
+
+/* seed raw-scroll/overflow-scroll 5: a stylesheet scroll box, invisible to the class rule */
+.list {
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+/* seed unknown-token 1: a 2.x token name */
+.label {
+  color: var(--basalt-ink2);
+}
+
+/* seed unknown-token 2: a plausible but invented token */
+.muted {
+  color: var(--basalt-text-muted);
+}

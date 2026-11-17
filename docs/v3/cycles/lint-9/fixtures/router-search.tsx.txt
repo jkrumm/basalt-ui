@@ -1,0 +1,52 @@
+// Seeded offenders for basalt/router-search.
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+
+// seed router-search/literal-search 1: a Link with a literal search object
+export function OpenRuns() {
+  return (
+    <Link to="/runs" search={{ status: 'open', page: 1 }}>
+      Open runs
+    </Link>
+  )
+}
+
+// seed router-search/literal-search 2: navigate with a literal search
+export function useOpenFailed() {
+  const navigate = useNavigate()
+  return () => navigate({ to: '/runs', search: { status: 'failed' } })
+}
+
+// seed router-search/literal-search 3: a search updater that spreads prev and sets a key
+export function NextPage() {
+  return (
+    <Link to="." search={(prev) => ({ ...prev, page: (prev.page ?? 1) + 1 })}>
+      Next
+    </Link>
+  )
+}
+
+// seed router-search/loader-deps-search 1: loaderDeps returns the whole search
+export const Route = createFileRoute('/runs')({
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps }) => fetch(`/api/runs?status=${deps.status}`),
+})
+
+// seed router-search/loader-deps-search 2: loaderDeps spreads the search into an object
+export const Route2 = createFileRoute('/jobs')({
+  loaderDeps: ({ search }) => ({ ...search }),
+  loader: ({ deps }) => fetch(`/api/jobs?q=${deps.q}`),
+})
+
+// seed router-search/validate-search-pure 1: a default range from the clock
+export const Route3 = createFileRoute('/usage')({
+  validateSearch: (s: Record<string, unknown>) => ({
+    from: typeof s.from === 'string' ? s.from : new Date(Date.now() - 864e5).toISOString(),
+  }),
+})
+
+// seed router-search/validate-search-pure 2: a default view from localStorage
+export const Route4 = createFileRoute('/board')({
+  validateSearch: (s: Record<string, unknown>) => ({
+    view: (s.view as string) ?? localStorage.getItem('board:view') ?? 'list',
+  }),
+})

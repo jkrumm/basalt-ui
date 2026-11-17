@@ -1,0 +1,269 @@
+// Cycle 4 phrasings for the class family: viewport-keyed, dark-fork, fixed-colour,
+// status-fill-as-text, raw-scroll, tw-off-law, app-spacing. Seed numbers continue cycle 3's.
+// A `pass` mark is valid code beside a shape a cycle 3 fix widened a form to: its rule must stay silent.
+import { useEffect, useState } from 'react'
+import { cn } from 'basalt-ui'
+import { tv } from 'tailwind-variants'
+
+// seed viewport-keyed/breakpoint-prefix 7: a viewport class in a tailwind-variants slot
+const panel = tv({ slots: { root: 'grid gap-4 md:grid-cols-2', aside: 'hidden' } })
+export function Panel() {
+  const { root } = panel()
+  return <div className={root()}>p</div>
+}
+
+// seed viewport-keyed/breakpoint-prefix 8: a viewport class on a component's own className-like prop
+export function Wrap({ Shell }: { Shell: (p: { contentClassName: string }) => null }) {
+  return <Shell contentClassName="px-4 lg:px-8" />
+}
+
+// seed viewport-keyed/arbitrary-query 3: a media query as an arbitrary variant
+export function Cols() {
+  return <div className="grid [@media(min-width:900px)]:grid-cols-3">c</div>
+}
+
+// seed viewport-keyed/arbitrary-query 4: a min-width arbitrary breakpoint in a cn() array
+export function Toolbar({ dense }: { dense: boolean }) {
+  return <div className={cn(['flex', dense && 'min-[900px]:flex-row'])}>t</div>
+}
+
+// seed viewport-keyed/media-query 8: react-responsive's object query
+import { useMediaQuery } from 'react-responsive'
+export function useNarrow() {
+  return useMediaQuery({ maxWidth: 767 })
+}
+
+// seed viewport-keyed/media-query 9: the screen width read to pick a layout
+export function useCompact() {
+  return window.screen.width < 768
+}
+
+// seed viewport-keyed/media-query 10: @uidotdev/usehooks window size read through a null check
+import { useWindowSize as useSize } from '@uidotdev/usehooks'
+export function useTwoCol() {
+  const size = useSize()
+  return size.width !== null && size.width >= 1024
+}
+
+// seed viewport-keyed/media-query 11: a range-syntax media query string
+export function useSmall() {
+  return useMediaQuery({ query: '(width < 48rem)' })
+}
+
+// pass viewport-keyed/media-query 1: a chart's own plot width from a parent-size hook
+import { useElementSize } from './use-element-size'
+export function usePlotDense() {
+  const { width } = useElementSize()
+  return width < 320
+}
+
+// pass viewport-keyed/media-query 2: the window height to size a virtual list's overscan
+export function useOverscan() {
+  const [h, setH] = useState(0)
+  useEffect(() => setH(window.innerHeight), [])
+  return h > 900 ? 12 : 6
+}
+
+// seed dark-fork/dark-variant 10: a named group carrying the theme attribute
+export function NavItem() {
+  return <a className="group-data-[theme=dark]/shell:bg-inset">n</a>
+}
+
+// seed dark-fork/dark-variant 11: an arbitrary ancestor selector naming html and the attribute
+export function Badge() {
+  return <span className="bg-canvas [html[data-theme=dark]_&]:bg-inset">b</span>
+}
+
+// seed dark-fork/dark-variant 12: a dark fork stacked behind hover in a tailwind-variants variant
+const chip = tv({ base: 'rounded-chip', variants: { on: { true: 'bg-selected hover:dark:bg-inset' } } })
+export function Chip() {
+  return <span className={chip({ on: true })}>c</span>
+}
+
+// pass dark-fork/dark-variant 1: a data attribute variant on another state
+export function Tab() {
+  return <button className="aria-[pressed=true]:bg-selected data-[state=open]:bg-hover">t</button>
+}
+
+// seed fixed-colour/black-white 10: a white fill on a lucide icon over a brand badge
+import { Check } from 'lucide-react'
+export function Done() {
+  return <Check className="size-4 fill-white" />
+}
+
+// seed fixed-colour/black-white 11: a black scrim behind an image caption
+export function Caption() {
+  return <figcaption className="absolute inset-x-0 bottom-0 bg-black/50">c</figcaption>
+}
+
+// seed fixed-colour/black-white 12: white ink inside a tailwind-variants solid variant
+const pill = tv({ variants: { tone: { solid: 'bg-brand-fill text-white', soft: 'bg-hover' } } })
+export function Pill() {
+  return <span className={pill({ tone: 'solid' })}>p</span>
+}
+
+// seed status-fill-as-text/text-on-fill 9: a chart fill as text through the typed v4 bracket
+export function LegendLabel() {
+  return <span className="text-(color:--basalt-chart-1)">Revenue</span>
+}
+
+// seed status-fill-as-text/text-on-fill 10: a sequential fill as text in a tailwind-variants slot
+const legend = tv({ slots: { label: 'text-seq-3 text-sm' } })
+export function Legend() {
+  return <span className={legend().label()}>Q3</span>
+}
+
+// seed raw-scroll/overflow-scroll 15: a scroll box from a style map read by member access
+const styles = { list: 'max-h-80 overflow-y-auto', row: 'flex' } as const
+export function List() {
+  return <ul className={styles.list}>l</ul>
+}
+
+// seed raw-scroll/overflow-scroll 16: a horizontal snap carousel in a tailwind-variants slot
+const carousel = tv({ slots: { track: 'flex snap-x overflow-x-auto gap-4' } })
+export function Carousel() {
+  return <div className={carousel().track()}>c</div>
+}
+
+// seed raw-scroll/overflow-scroll 17: a scroll box on a container size variant with an important bang
+export function Feed() {
+  return <div className="@regular:overflow-y-auto!">f</div>
+}
+
+// seed tw-off-law/off-ladder-spacing 7: an icon sized off the ladder
+export function Dot() {
+  return <span className="size-4.5 rounded-chip">d</span>
+}
+
+// seed tw-off-law/off-ladder-spacing 8: an off-ladder column gap in a tailwind-variants base
+const form = tv({ base: 'grid gap-x-6.5' })
+export function Form() {
+  return <div className={form()}>f</div>
+}
+
+// seed tw-off-law/surface-recipe 10: a glass card with an opacity on the card surface
+export function Glass() {
+  return <div className="bg-card/80 backdrop-blur shadow-card rounded-card">g</div>
+}
+
+// seed tw-off-law/surface-recipe 11: the inset recipe rebuilt in a tailwind-variants base
+const well = tv({ base: 'bg-inset rounded-card p-4' })
+export function Well() {
+  return <div className={well()}>w</div>
+}
+
+// seed tw-off-law/app-colour 7: a status stroke on a lucide icon
+export function Ok() {
+  return <Check className="stroke-good" />
+}
+
+// seed tw-off-law/app-colour 8: a brand accent and caret on a native range and text field
+export function Slider() {
+  return <input type="range" className="accent-brand caret-brand" />
+}
+
+// seed tw-off-law/app-colour-arbitrary 4: a status colour through the typed v4 bracket
+export function Warn() {
+  return <span className="bg-(color:--basalt-warn-tint)">w</span>
+}
+
+// seed tw-off-law/app-colour-arbitrary 5: a brand colour as a typed arbitrary value
+export function Rule() {
+  return <hr className="border-[color:var(--basalt-brand)]" />
+}
+
+// seed tw-off-law/alpha-on-premixed 6: an alpha on the selected wash
+export function Picked() {
+  return <li className="bg-selected/50">p</li>
+}
+
+// seed tw-off-law/alpha-on-premixed 7: an alpha on the hairline behind a divide
+export function Rows() {
+  return <ul className="divide-y divide-hairline/60">r</ul>
+}
+
+// seed tw-off-law/alpha-on-premixed 8: an alpha on the hover wash under its theme class name, as the kit writes it
+export function Row2() {
+  return <li className="hover:bg-accent/50">r</li>
+}
+
+// seed tw-off-law/alpha-on-premixed 9: an alpha on the hairline under its theme class name
+export function Rule2() {
+  return <hr className="border-border/60" />
+}
+
+// seed tw-off-law/numeric-container 7: a named container with a Tailwind size
+export function Main() {
+  return <main className="@container/main"><div className="grid @md/main:grid-cols-2">m</div></main>
+}
+
+// seed tw-off-law/numeric-container 8: an arbitrary container width
+export function Strip() {
+  return <div className="flex flex-col @[30rem]:flex-row">s</div>
+}
+
+// seed tw-off-law/important-modifier 7: a leading bang behind an arbitrary child variant
+export function IconBtn() {
+  return <button className="[&>svg]:!size-4">i</button>
+}
+
+// seed tw-off-law/important-modifier 8: a bang behind hover on the hover wash
+export function Hover() {
+  return <div className="hover:!bg-hover">h</div>
+}
+
+// seed tw-off-law/template-interpolation 7: the utility prefix chosen by a ternary in front of the token
+export function Tone({ solid }: { solid: boolean }) {
+  return <span className={`${solid ? 'bg' : 'text'}-brand`}>t</span>
+}
+
+// seed tw-off-law/template-interpolation 8: a gap interpolated inside cn()
+export function Stack({ gap }: { gap: 2 | 4 }) {
+  return <div className={cn('flex flex-col', `gap-${gap}`)}>s</div>
+}
+
+// seed tw-off-law/fixed-width 8: a fixed flex basis on a side column
+export function Side() {
+  return <aside className="basis-[400px] shrink-0">s</aside>
+}
+
+// seed tw-off-law/fixed-width 9: a width clamped with min() in an arbitrary value
+export function Pop() {
+  return <div className="w-[min(420px,100%)]">p</div>
+}
+
+// seed tw-off-law/track-length 6: a kanban board of fixed-width auto columns
+export function Board() {
+  return <div className="grid grid-flow-col auto-cols-[280px] gap-4">b</div>
+}
+
+// seed tw-off-law/track-length 7: a fixed row track on auto rows
+export function Timeline() {
+  return <div className="grid auto-rows-[56px]">t</div>
+}
+
+// seed app-spacing/space-between 7: the owl selector as an arbitrary child variant
+export function Owl() {
+  return <div className="[&>*+*]:mt-4">o</div>
+}
+
+// seed app-spacing/space-between 8: space-y inside a tailwind-variants base
+const section = tv({ base: 'flex flex-col space-y-3' })
+export function Section() {
+  return <section className={section()}>s</section>
+}
+
+// seed app-spacing/margin 9: a hairline margin to nudge a label
+export function Nudge() {
+  return <span className="mt-px">n</span>
+}
+
+// seed app-spacing/margin 10: a margin block start in a cn() conditional object
+export function Note({ first }: { first: boolean }) {
+  return <p className={cn({ 'mbs-4': !first, 'ms-2': true })}>n</p>
+}
+
+// pass app-spacing/margin 1: a centred measure with auto inline margins
+export function Prose() {
+  return <article className="mx-auto max-w-prose">p</article>
+}

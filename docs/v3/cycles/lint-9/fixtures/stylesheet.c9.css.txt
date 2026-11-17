@@ -1,0 +1,175 @@
+/* Cycle 9 phrasings for the stylelint preset, the token check and the class rules written as module CSS.
+   Seed numbers continue cycle 8's. A `pass` mark is valid module CSS beside a shape a lint-8 fix widened
+   (lint-8.5's status tint read as text, lint-8.10's background clause naming the brand). */
+
+/* seed stylelint/at-rule-disallowed-list 16: @custom-media naming a viewport width */
+@custom-media --narrow (width < 40rem);
+
+/* seed stylelint/at-rule-disallowed-list 17: @apply of utilities in a module */
+.chip {
+  @apply rounded-chip px-2;
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 16: a max-width media query in pixels */
+@media (max-width: 768px) {
+  .aside {
+    display: none;
+  }
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 17: a screen and min-width media query */
+@media screen and (min-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 18: the dark colour-scheme media query */
+@media (prefers-color-scheme: dark) {
+  .well {
+    background: var(--basalt-inset);
+  }
+}
+
+/* pass stylelint/media-feature-name-disallowed-list 5: a reduced-motion query, a user setting */
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}
+
+/* seed stylelint/selector-disallowed-list 18: the .dark class as an ancestor */
+.dark .tile {
+  background: var(--basalt-inset);
+}
+
+/* seed stylelint/selector-disallowed-list 19: an unquoted data-slot value selector */
+.form [data-slot=input] {
+  border-width: 0;
+}
+
+/* seed stylelint/property-disallowed-list 15: the brand token re-pointed on a section class */
+.sales {
+  --basalt-brand: var(--basalt-good);
+}
+
+/* seed stylelint/property-disallowed-list 16: the theme's card colour re-pointed on a page class */
+.report {
+  --color-card: var(--basalt-surface);
+}
+
+/* seed stylelint/color-no-hex 14: an eight-digit hex with alpha on an overlay */
+.veil {
+  background: #00000080;
+}
+
+/* seed stylelint/color-no-hex 15: a hex svg fill */
+.mark {
+  fill: #333;
+}
+
+/* seed stylelint/color-named 15: a named colour in an outline shorthand */
+.focus {
+  outline: 2px solid red;
+}
+
+/* seed stylelint/color-named 16: white as text on the brand fill */
+.cta {
+  color: white;
+}
+
+/* seed stylelint/function-disallowed-list 15: shadcn v3's hsl() over a channel variable */
+.accent {
+  color: hsl(var(--primary));
+}
+
+/* seed stylelint/function-disallowed-list 16: an oklch() literal on a border */
+.edge {
+  border-color: oklch(0.8 0.02 250);
+}
+
+/* seed stylelint/declaration-no-important 15: important on a margin reset */
+.flush {
+  margin: 0 !important;
+}
+
+/* seed stylelint/declaration-no-important 16: important on an inherited colour */
+.inherit {
+  color: inherit !important;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 15: a pixel radius on a thumbnail */
+.thumb {
+  border-radius: 6px;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 16: a fractional rem font size */
+.small {
+  font-size: 0.8125rem;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 26: a pixel top margin */
+.gap {
+  margin-top: 12px;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 27: a pixel inset on an overlay */
+.badge {
+  inset: 16px auto auto 16px;
+}
+
+/* seed raw-scroll/overflow-scroll 40: overflow auto on a list */
+.list {
+  overflow: auto;
+}
+
+/* seed raw-scroll/overflow-scroll 41: overflow-y scroll on a feed */
+.feed {
+  overflow-y: scroll;
+}
+
+/* seed status-fill-as-text/text-on-fill 32: the bad tint as text (lint-8.5's widening) */
+.err {
+  color: var(--color-bad-tint);
+}
+
+/* seed status-fill-as-text/text-on-fill 33: the info tint as text */
+.note {
+  color: var(--color-info-tint);
+}
+
+/* seed status-fill-as-text/text-on-fill 34: the destructive tint, shadcn's name, as text */
+.danger {
+  color: var(--color-destructive-tint);
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 28: a status tint as a row background, which Status owns */
+.warned {
+  background: var(--color-warn-tint);
+  color: var(--color-warn);
+}
+
+/* pass stylelint/declaration-property-value-disallowed-list 7: the selected token as a tinted background (lint-8.10's offer) */
+.picked {
+  background: var(--basalt-selected);
+}
+
+/* seed tw-off-law/track-length 27: a fixed first column in grid-template-columns */
+.layout {
+  grid-template-columns: 240px 1fr;
+}
+
+/* seed tw-off-law/track-length 28: fixed implicit columns */
+.lanes {
+  grid-auto-columns: 200px;
+}
+
+/* seed unknown-token 31: an invented surface step */
+.deep {
+  background: var(--basalt-surface-2);
+}
+
+/* seed unknown-token 32: a radius scale step the theme does not declare */
+.round {
+  border-radius: var(--basalt-radius-lg);
+}
