@@ -245,7 +245,7 @@ layout('Selection', () => {
       test('is a tint its unticked neighbours do not carry', async () => {
         const page = await open(DESKTOP_1440)
         await page.raw.evaluate((s) => {
-          document.documentElement.dataset.theme = s
+          document.documentElement.setAttribute('data-theme', s)
         }, scheme)
         await page.raw.click(`${CARDS} tbody tr:nth-child(2) [role="checkbox"]`)
         await page.raw.mouse.move(0, 0)

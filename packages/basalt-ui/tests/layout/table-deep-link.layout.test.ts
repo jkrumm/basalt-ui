@@ -127,7 +127,7 @@ for (const scheme of ['light', 'dark'] as const)
     test('is a tint the neighbouring rows do not carry', async () => {
       const page = await open('unbound')
       await page.raw.evaluate((s) => {
-        document.documentElement.dataset.theme = s
+        document.documentElement.setAttribute('data-theme', s)
       }, scheme)
       await page.raw.mouse.move(0, 0)
       await page.settle()
