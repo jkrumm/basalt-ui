@@ -156,7 +156,7 @@ export type HeatmapProps<T, K extends string = string> = HeatmapBase<T, K> & Cha
 const ROW_PITCH = 26
 const CHROME = 64
 const CELL_INSET = 1
-
+const AT_CELL = { x: 'col', y: 'row', inset: CELL_INSET, key: 'id' } as const
 /** One grid position. `id` is its row-major index: the mark key, so no row/col pair can collide. */
 type Cell<T, K extends string> = {
   id: number
@@ -443,10 +443,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
       const at = (cells: Cell<T, K>[], markId: string, fillOpacity?: number) =>
         cell(cells, {
           id: markId,
-          x: 'col',
-          y: 'row',
-          inset: CELL_INSET,
-          key: 'id',
+          ...AT_CELL,
           ...paint,
           ...(fillOpacity !== undefined && { fillOpacity }),
         })
@@ -457,10 +454,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         dimByPaint && paint.fill !== undefined
           ? cell(rest, {
               id,
-              x: 'col',
-              y: 'row',
-              inset: CELL_INSET,
-              key: 'id',
+              ...AT_CELL,
               fill: dimmedPaint(paint.fill, base),
             })
           : at(rest, id, base * DIMMED),
@@ -480,10 +474,11 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         : darkFill(c)
           ? CV.surface
           : BASALT.ink
+    const drawn = [...present, ...absentWithDatum, ...[...stated.values()].flat()]
     const annotated =
       annotate === undefined
         ? []
-        : [...present, ...absentWithDatum, ...[...stated.values()].flat()].flatMap((c) => {
+        : drawn.flatMap((c) => {
             const note = c.datum === undefined ? null : annotate(c.datum)
             return note === null || note === '' ? [] : [{ ...c, text: note, fill: labelFill(c) }]
           })
@@ -548,6 +543,9 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
           const glyph = named && glyphOf({ ...named, color: fillOf(named) })
           return glyph ? group.map((c) => ({ ...c, text: glyph, fill: labelFill(c) })) : []
         })
+        // The focused cell's ring, drawn last of the fills so no neighbour paints over it. A pointer
+        // focus rings through the engine; keys focus through the host (the engine's keyboard is off).
+        const ringed = drawn.filter((c) => focused !== null && c.datum === focused)
         const marks = [
           // Inert, not decorative: it must still win the hit test, so a pointer over an empty
           // position lands on THIS cell (whose tooltip is empty) instead of snapping to a neighbour.
@@ -569,6 +567,15 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
             )
           }),
           ...cellMark('cells', present, { color: 'value' }),
+          decorative(
+            cell(ringed, {
+              id: 'focus-ring',
+              ...AT_CELL,
+              fill: 'none',
+              stroke: CV.brand,
+              strokeWidth: 2,
+            }),
+          ),
           ...centred(glyphs, 'state-glyphs', BASALT.text.md),
           ...centred(annotated, 'annotations', BASALT.text.md),
         ]
