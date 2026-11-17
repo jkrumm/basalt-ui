@@ -1556,3 +1556,22 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-lint-8-lint]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-9.json' }
+  - key: v3-shell-3-aside
+    title: 'The aside closes with its field and drops a record its table no longer holds, from shell cycle 3'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-shell-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-3-aside.json' }
+  - key: v3-shell-3-shell
+    title: 'The crumb parent is not the current page and hands focus to main; same-label palette entries name their section, from shell cycle 3'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-shell-3]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-shell-3-shell.json' }
+  - key: v3-cycle-shell-4
+    title: 'Improvement cycle 4: AppShell and page kit, built as a three-page app'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-shell-3-aside, v3-shell-3-shell]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-shell-4.json' }
