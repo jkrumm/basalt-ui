@@ -20,11 +20,13 @@ import type { BasaltProps } from '../../common/props'
 import { alpha, BASALT } from '../../tokens'
 import { resolveContainerClass } from '../../tokens/size-classes'
 import type { ContainerClass } from '../../tokens/size-classes'
+import { captionWidth } from '../axis-gaps'
 import { engineRow, strideTicks } from '../core/compile'
 import type { CartesianDefinition } from '../core/compile'
 import { GLYPH_MIN_PX, glyphOf, resolveNamedState } from './band-fold'
 import type { NamedChartState } from './band-fold'
 import { ABSENT_OPACITY, RAMP_LEVELS, RAMP_OPACITIES } from './heatmap-fill'
+import { dimmedPaint } from '../marks'
 import { engineTooltip } from '../core/cursor'
 import { cardPortal } from '../core/portal'
 import { ChartEngine, idPrefixOf } from '../host'
@@ -250,7 +252,26 @@ export function heatmapHeight(props: {
 const heightOfRows = (count: number): number =>
   Math.min(Math.max(count * ROW_PITCH + CHROME, HEIGHT_MIN), HEIGHT_MAX)
 
-const fillStyle: CSSProperties = { position: 'relative', height: '100%', minHeight: HEIGHT_MIN }
+// A column: the box (`fillFrame`) takes the height the legend row leaves, so the legend sits inside
+// the parent's height instead of past it.
+const fillStyle: CSSProperties = {
+  position: 'relative',
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
+  minHeight: HEIGHT_MIN,
+}
+
+/** The row-label gutter's air beyond the tick gap: keeps the focus ring (2px, inset) off the label. */
+const RING_CLEARANCE = 6
+const TICK_GAP = 4
+
+/**
+ * A stated cell's label while the cell is dimmed: the fill dims toward the card (`dimmedPaint`), so
+ * the light-on-saturated ink of the resting cell loses its ground. In light the dimmed fill is pale
+ * and the label takes ink; in dark the dimmed fill stays light and the card colour still reads.
+ */
+const DIMMED_LABEL = `light-dark(${BASALT.ink}, ${CV.surface})`
 
 /** The datum at each grid position, by `row\0col`; the last datum at a position wins. */
 const gridIndex = <T,>(
@@ -406,6 +427,8 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         else absentWithDatum.push(cellAt)
       }
     }
+    // A grid whose every drawn cell is stated has no ramp to legend; the state key says it all.
+    const drawsRamp = present.length > 0 || stated.size === 0
     const [lo, hi] = domain ?? [0, max]
     // A flat or inverted domain would map every value to one step; widen it to a unit.
     const scale = scaleQuantize<string>()
@@ -419,6 +442,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
       id: string,
       group: Cell<T, K>[],
       paint: { fill?: string; color?: 'value'; fillOpacity?: number },
+      dimByPaint = false,
     ) => {
       const at = (cells: Cell<T, K>[], markId: string, fillOpacity?: number) =>
         cell(cells, {
@@ -432,12 +456,18 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         })
       if (focused === null) return [at(group, id)]
       const base = paint.fillOpacity ?? 1
+      const rest = group.filter((c) => c.datum !== focused)
       return [
-        at(
-          group.filter((c) => c.datum !== focused),
-          id,
-          base * DIMMED,
-        ),
+        dimByPaint && paint.fill !== undefined
+          ? cell(rest, {
+              id,
+              x: 'col',
+              y: 'row',
+              inset: CELL_INSET,
+              key: 'id',
+              fill: dimmedPaint(paint.fill, base),
+            })
+          : at(rest, id, base * DIMMED),
         at(
           group.filter((c) => c.datum === focused),
           `${id}:focused`,
@@ -448,14 +478,18 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     const span = hi > lo ? hi - lo : 1
     const darkFill = (c: Cell<T, K>): boolean =>
       c.state !== undefined || (c.value !== null && (c.value - lo) / span >= 0.5)
+    const labelFill = (c: Cell<T, K>): string =>
+      c.state !== undefined && focused !== null && c.datum !== focused
+        ? DIMMED_LABEL
+        : darkFill(c)
+          ? CV.surface
+          : BASALT.ink
     const annotated =
       annotate === undefined
         ? []
         : [...present, ...absentWithDatum, ...[...stated.values()].flat()].flatMap((c) => {
             const note = c.datum === undefined ? null : annotate(c.datum)
-            return note === null || note === ''
-              ? []
-              : [{ ...c, text: note, fill: darkFill(c) ? CV.surface : BASALT.ink }]
+            return note === null || note === '' ? [] : [{ ...c, text: note, fill: labelFill(c) }]
           })
     const tooltipOptions = showTooltip
       ? {
@@ -491,7 +525,12 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         // A mark in the cell's centre (a stated cell's glyph, a per-cell note), skipped where the
         // cell is too narrow to hold it.
         const centred = (items: readonly Mark[], id: string, fontSize: number) =>
-          items.length > 0 && width / Math.max(cols.length, 1) >= GLYPH_MIN_PX
+          items.length > 0 &&
+          width / Math.max(cols.length, 1) >=
+            Math.max(
+              GLYPH_MIN_PX,
+              ...items.map((m) => Math.ceil(captionWidth(m.text, fontSize)) + CELL_INSET * 2),
+            )
             ? [
                 decorative(
                   text(items, {
@@ -511,7 +550,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         const glyphs = [...stated].flatMap(([key, group]) => {
           const named = stateByKey.get(key)
           const glyph = named && glyphOf({ ...named, color: fillOf(named) })
-          return glyph ? group.map((c) => ({ ...c, text: glyph, fill: CV.surface })) : []
+          return glyph ? group.map((c) => ({ ...c, text: glyph, fill: labelFill(c) })) : []
         })
         const marks = [
           // Inert, not decorative: it must still win the hit test, so a pointer over an empty
@@ -523,17 +562,32 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
           ...cellMark('absent', absentWithDatum, { fill: CV.neutral, fillOpacity: ABSENT_OPACITY }),
           ...[...stated].flatMap(([key, group]) => {
             const named = stateByKey.get(key)
-            return cellMark(`state:${key}`, group, {
-              fill: fillOf(named),
-              ...(named?.fillOpacity !== undefined && { fillOpacity: named.fillOpacity }),
-            })
+            return cellMark(
+              `state:${key}`,
+              group,
+              {
+                fill: fillOf(named),
+                ...(named?.fillOpacity !== undefined && { fillOpacity: named.fillOpacity }),
+              },
+              true,
+            )
           }),
           ...cellMark('cells', present, { color: 'value' }),
-          ...centred(glyphs, 'state-glyphs', BASALT.text.xs),
-          ...centred(annotated, 'annotations', BASALT.text.nano),
+          ...centred(glyphs, 'state-glyphs', BASALT.text.md),
+          ...centred(annotated, 'annotations', BASALT.text.md),
         ]
         return {
           marks,
+          // The row labels hug the svg edge, where the focus ring is drawn: lock a left gutter that
+          // holds the widest label with air to spare (the labels are right-aligned to the plot).
+          margin: {
+            left:
+              Math.ceil(
+                Math.max(0, ...rows.map((r) => captionWidth(formatRow(r), BASALT.text.micro))),
+              ) +
+              TICK_GAP +
+              RING_CLEARANCE,
+          },
           scales: {
             x: {
               scale: scaleBand<string>().domain(cols).paddingInner(0).paddingOuter(0),
@@ -558,14 +612,15 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
           },
           color: {
             scale,
-            ...(showLegend && {
-              legend: colorGradientLegend({
-                steps: RAMP_LEVELS,
-                format: formatLegend,
-                placement: 'bottom',
-                ...(legendLabel !== undefined && { label: legendLabel }),
+            ...(showLegend &&
+              drawsRamp && {
+                legend: colorGradientLegend({
+                  steps: RAMP_LEVELS,
+                  format: formatLegend,
+                  placement: 'bottom',
+                  ...(legendLabel !== undefined && { label: legendLabel }),
+                }),
               }),
-            }),
           },
           theme: CHART_THEME,
         }
