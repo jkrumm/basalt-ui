@@ -289,6 +289,28 @@ describe('PageAside focus and Escape', () => {
     expect(aside()).not.toBeNull()
   })
 
+  test('a second row opened while the aside is open becomes the one focus returns to', async () => {
+    setWidth(WIDE)
+    render(
+      <>
+        <RowAndAside />
+        <button type="button">Second row</button>
+      </>,
+    )
+    const first = screen.getByRole('button', { name: 'Open row' })
+    const second = screen.getByRole('button', { name: 'Second row' })
+    first.focus()
+    fireEvent.click(first)
+    // The aside stays open; the reader opens the next record from the second row.
+    second.focus()
+    const close = screen.getByRole('button', { name: 'Close panel' })
+    close.focus()
+    fireEvent.click(close)
+    await act(frames)
+    expect(aside()).toBeNull()
+    expect(document.activeElement).toBe(second)
+  })
+
   test('with no opener the focus goes to main', async () => {
     setWidth(WIDE)
     render(<RowAndAside />)
