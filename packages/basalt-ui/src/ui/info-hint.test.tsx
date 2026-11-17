@@ -40,15 +40,10 @@ describe('InfoHint', () => {
     expect(panel()).toBeNull()
   })
 
-  test('Enter on the focused glyph opens it', async () => {
+  test('focus alone does not open it: a row of hints would otherwise open one panel each', () => {
     render(<InfoHint label="Net revenue">After refunds.</InfoHint>)
-    const glyph = screen.getByRole('button', { name: 'What Net revenue means' })
-    glyph.focus()
+    screen.getByRole('button', { name: 'What Net revenue means' }).focus()
     expect(panel()).toBeNull()
-    await act(async () => {
-      glyph.click()
-    })
-    expect(panel()).not.toBeNull()
   })
 
   test('hover opens it after the delay', async () => {
@@ -93,13 +88,19 @@ describe('defineGlossary', () => {
     expect(panel()?.textContent).toContain('A signal waiting on a decision.')
   })
 
+  test('two terms that differ only in case throw, naming both as written', () => {
+    expect(() => defineGlossary({ Errand: 'a', errand: 'b' })).toThrow(
+      '"Errand" and "errand" are one term',
+    )
+  })
+
   test('an empty definition throws, naming the term', () => {
     expect(() => defineGlossary({ errand: ' ' })).toThrow('"errand" has an empty definition')
   })
 
   test('two terms that differ only in case throw, naming both', () => {
     expect(() => defineGlossary({ errand: 'a', Errand: 'b' })).toThrow(
-      '"Errand" and "errand" are one term',
+      '"errand" and "Errand" are one term',
     )
   })
 

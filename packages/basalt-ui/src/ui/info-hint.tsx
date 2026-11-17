@@ -112,27 +112,27 @@ export function InfoHint({ label, children, className }: InfoHintProps): ReactEl
  * Declares the app's glossary and returns the `InfoHint` bound to it, so a word is a typed key and
  * its definition is read from one source, never retyped. Throws here, at define time, on an empty
  * definition or on two terms that differ only in case, naming them. The entries are usually an
- * `as const` object generated from the app's docs (see the glossary recipe).
+ * `as const` object generated from the app's docs (the contract is on `InfoHint`).
  *
  * @example
  * export const { InfoHint } = defineGlossary({ errand: 'A step only a person can do.' })
  * // <InfoHint term="Errand" />   // <InfoHint term="Errnd" /> fails to compile
  */
 export function defineGlossary<const T extends GlossaryEntries>(entries: T): Glossary<T> {
-  const byTerm = new Map<string, string>()
+  const byTerm = new Map<string, { term: string; definition: string }>()
   for (const [term, definition] of Object.entries(entries)) {
     const key = term.toLowerCase()
     if (definition.trim() === '')
       throw new Error(`defineGlossary: "${term}" has an empty definition`)
-    const clash = [...byTerm.keys()].find((seen) => seen === key)
+    const clash = byTerm.get(key)
     if (clash !== undefined)
-      throw new Error(`defineGlossary: "${term}" and "${clash}" are one term`)
-    byTerm.set(key, definition)
+      throw new Error(`defineGlossary: "${clash.term}" and "${term}" are one term`)
+    byTerm.set(key, { term, definition })
   }
   function BoundInfoHint({ term, className }: GlossaryHintProps<T>): ReactElement {
     return (
       <Hint title={capitalise(term)} {...(className !== undefined && { className })}>
-        {byTerm.get(term.toLowerCase())}
+        {byTerm.get(term.toLowerCase())?.definition}
       </Hint>
     )
   }

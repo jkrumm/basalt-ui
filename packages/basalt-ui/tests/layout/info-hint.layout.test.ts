@@ -97,6 +97,18 @@ layout('InfoHint', () => {
         expect(hit.beyond, 'no further').toBe(false)
       })
 
+      for (const key of ['Enter', 'Space']) {
+        test(`${key} on the focused glyph opens the panel and Escape closes it`, async () => {
+          const page = await open(viewport)
+          await page.raw.focus('[data-testid="hint-text"] [data-slot="info-hint"]')
+          expect(await page.raw.locator('[role="dialog"]').count(), 'focus alone').toBe(0)
+          await page.raw.keyboard.press(key)
+          await page.raw.waitForSelector('[role="dialog"]')
+          await page.raw.keyboard.press('Escape')
+          await page.raw.waitForSelector('[role="dialog"]', { state: 'detached' })
+        })
+      }
+
       for (const edge of ['left', 'right']) {
         test(`the panel opened at the ${edge} edge stays inside the viewport`, async () => {
           const page = await open(viewport)
