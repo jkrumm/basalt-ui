@@ -892,6 +892,48 @@ describe('PageAside extra rows', () => {
     expect(screen.getByLabelText('A').textContent).toContain('own')
   })
 
+  test('a bound aside closes with its field: the field unsetting drops the shown detail', () => {
+    setWidth(WIDE)
+    const { bound } = recordHandle('deploy-7')
+    const seen: { host: DetailHost | null } = { host: null }
+    function Reader({ onRead }: { onRead: (host: DetailHost | null) => void }) {
+      onRead(useContext(DetailHostContext))
+      return null
+    }
+    render(
+      <Page>
+        <Reader onRead={(h) => (seen.host = h)} />
+        <PageAside title="A" state={bound}>
+          own
+        </PageAside>
+      </Page>,
+    )
+    act(() => seen.host!.show({ title: 'Run 7', body: () => <p>seven</p> }))
+    expect(aside()?.textContent).toContain('seven')
+    act(() => recordClear())
+    expect(aside()).toBeNull()
+  })
+
+  test('a detail the bound field never named stays when the field is already unset', () => {
+    setWidth(WIDE)
+    const { bound } = recordHandle('')
+    const seen: { host: DetailHost | null } = { host: null }
+    function Reader({ onRead }: { onRead: (host: DetailHost | null) => void }) {
+      onRead(useContext(DetailHostContext))
+      return null
+    }
+    render(
+      <Page>
+        <Reader onRead={(h) => (seen.host = h)} />
+        <PageAside title="A" state={bound}>
+          own
+        </PageAside>
+      </Page>,
+    )
+    act(() => seen.host!.show({ title: 'Run 7', body: () => <p>seven</p> }))
+    expect(aside()?.textContent).toContain('seven')
+  })
+
   test('an aside outside a Page has no close button and no sheet trigger', () => {
     render(<PageAside title="Loose">x</PageAside>)
     expect(screen.queryByRole('button')).toBeNull()

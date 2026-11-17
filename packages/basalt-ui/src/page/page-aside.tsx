@@ -196,6 +196,14 @@ function AsideView({
   }, [isOpen])
 
   const hideDetail = context?.hideDetail
+  // A bound aside follows its field: the field going from set to unset (a navigation that drops
+  // it, Back, `clear()`) takes the shown detail with it. A detail the field never named stays.
+  const wasSet = useRef(closable && open === true)
+  useIsomorphicLayoutEffect(() => {
+    const was = wasSet.current
+    wasSet.current = closable && open === true
+    if (was && closable && open === false && detail !== null) hideDetail?.()
+  })
   // Closing a shown detail returns to the aside's own content; it never closes the aside itself.
   const close = (): void => {
     if (detail !== null) hideDetail?.()
@@ -296,6 +304,8 @@ function BoundAside({
  * written, so a page places it after its content. `state` is the open state (a device or URL
  * boolean field, or a string field holding the open record's id: open while it holds a value, a
  * close clears it); without it the column is always open and the sheet is closed until the button opens it.
+ * A bound aside follows its field: when the field unsets (a navigation that drops it, Back,
+ * `clear()`), the detail shown in the aside goes with it.
  * `PageAside` also hosts the page's `DetailHost`: a table row or list item can show its detail in
  * the aside instead of a sheet of its own.
  *
