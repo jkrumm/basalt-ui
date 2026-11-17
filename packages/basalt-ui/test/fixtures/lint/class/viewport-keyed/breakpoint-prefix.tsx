@@ -5,9 +5,16 @@
 // expect: md:grid-cols-3
 // expect: landscape:flex-row
 // expect: portrait:flex-col
+// expect: max-lg:w-full
+// expect: max-lg:hidden
+// expect: md:hidden
 export const a = <div className="max-md:flex lg:grid hover:xl:p-2" />
 export const b = <div className="md:w-120" />
 const gridClass = 'grid gap-4 md:grid-cols-3'
 export const c = <div className={gridClass}>tiles</div>
 export const d = <div className="landscape:flex-row" />
 export const e = <div className={cn('flex', { 'portrait:flex-col': dense })} />
+export const f = ({ open }) => (
+  <nav className={`flex ${open ? 'max-lg:w-full' : 'max-lg:hidden'}`} />
+)
+export const g = ({ open }) => <nav className={`flex ${open && 'md:hidden'}`} />

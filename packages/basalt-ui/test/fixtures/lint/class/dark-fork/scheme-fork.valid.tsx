@@ -23,3 +23,21 @@ export function Banner() {
   const wide = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   return <div className={wide ? 'p-2' : 'p-4'} />
 }
+const tag = cva('px-2', { variants: { tone: { dark: 'bg-inset', muted: 'bg-card' } } })
+export const Tag = ({ tone }) => <i className={tag({ tone })} />
+export function Panel({ open }) {
+  const shown = useMemo(() => open === true, [open])
+  return <div className={shown ? 'opacity-90' : 'opacity-100'} />
+}
+export function Calm() {
+  const reduce = useMediaQuery('(prefers-reduced-motion: reduce)')
+  return <div className={reduce ? 'p-2' : 'p-4'} />
+}
+export function markState(state) {
+  document.documentElement.setAttribute('data-state', state)
+  document.documentElement.className = 'js'
+}
+export const previewTheme = (node, next) => node.setAttribute('data-theme', next)
+export function markTouch() {
+  if (navigator.maxTouchPoints > 0) document.documentElement.classList.add('is-touch')
+}

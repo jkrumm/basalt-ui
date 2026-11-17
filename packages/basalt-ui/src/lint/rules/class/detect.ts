@@ -78,7 +78,10 @@ function literalText(arg: Node | undefined): string | undefined {
  * variable first (`const ua = navigator.userAgent`) is not followed, and `isMobileOnly`, `isIOS`
  * and the other flags are not read. A test whose literal pattern names platforms only, a desktop
  * one among them (`/Mac|iPhone|iPad/`, `.includes('Win')`), picks a shortcut glyph, not a layout:
- * it is `platform-glyph`'s, below, and this form leaves it.
+ * it is `platform-glyph`'s, below, and this form leaves it. A touch probe (`navigator.maxTouchPoints`,
+ * `'ontouchstart' in window`) reports where it chooses a class string (`touchProbeVisitor`); a
+ * probe a touch-bound root flag or a handler reads passes, and one bound to a name first is not
+ * followed.
  */
 const HINT = 'navigator.userAgentData.mobile'
 
@@ -91,84 +94,132 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
   /** Names bound to the client-hints mobile flag, whole or destructured. */
   const hints = new Set<string>()
   const skip = new WeakSet<Node>()
-  return {
-    Program(node) {
-      consts = topLevelConsts(node)
-    },
-    ImportDeclaration(node) {
-      if (field(node, 'source')?.['value'] !== DEVICE_DETECT) return
-      for (const specifier of nodesOf(node, 'specifiers')) {
-        const importedNode = field(specifier, 'imported')
-        if (importedNode !== undefined) skip.add(importedNode)
-        const imported = nameOf(importedNode)
-        const local = field(specifier, 'local')
-        if (imported === undefined || !DEVICE_FLAGS.has(imported)) continue
-        const name = nameOf(local)
-        if (name !== undefined && local !== undefined) {
-          deviceFlags.set(name, imported)
-          skip.add(local)
+  return mergeVisitors([
+    touchProbeVisitor(report),
+    {
+      Program(node) {
+        consts = topLevelConsts(node)
+      },
+      ImportDeclaration(node) {
+        if (field(node, 'source')?.['value'] !== DEVICE_DETECT) return
+        for (const specifier of nodesOf(node, 'specifiers')) {
+          const importedNode = field(specifier, 'imported')
+          if (importedNode !== undefined) skip.add(importedNode)
+          const imported = nameOf(importedNode)
+          const local = field(specifier, 'local')
+          if (imported === undefined || !DEVICE_FLAGS.has(imported)) continue
+          const name = nameOf(local)
+          if (name !== undefined && local !== undefined) {
+            deviceFlags.set(name, imported)
+            skip.add(local)
+          }
         }
-      }
+      },
+      MemberExpression(node) {
+        const property = field(node, 'property')
+        if (property !== undefined && node['computed'] !== true) skip.add(property)
+        const sniff = userAgentTest(node, resolve)
+        if (sniff !== undefined && !sniff.platform) report(node, sniff.subject)
+        if (!isMobileHint(node)) return
+        const position = flagPosition(node)
+        if (position.kind === 'binding') hints.add(position.name)
+        else if (position.kind === 'choice') report(node, HINT)
+      },
+      Property(node) {
+        const key = field(node, 'key')
+        if (key !== undefined && node['computed'] !== true && key !== field(node, 'value')) {
+          skip.add(key)
+        }
+      },
+      Identifier(node) {
+        const name = node['name'] as string
+        if (skip.has(node)) return
+        const imported = deviceFlags.get(name)
+        if (imported !== undefined) report(node, imported)
+        const parent = node['parent'] as Node | undefined
+        const declares = parent?.type === 'VariableDeclarator' && field(parent, 'id') === node
+        if (hints.has(name) && !declares && flagPosition(node).kind === 'choice') report(node, HINT)
+      },
+      ImportSpecifier(node) {
+        if (WINDOW_SIZE_HOOKS.has(nameOf(field(node, 'imported')) ?? '')) {
+          const local = nameOf(field(node, 'local'))
+          if (local !== undefined) sizes.hooks.add(local)
+        }
+      },
+      VariableDeclarator(node) {
+        bindWindowSize(node, sizes)
+        const hint = destructuredHint(node)
+        if (hint === undefined) return
+        hints.add(hint)
+        // The pattern's own `mobile` declares the binding; it is no read of it.
+        for (const p of nodesOf(field(node, 'id') as Node, 'properties')) {
+          const value = field(p, 'value')
+          skip.add(
+            value?.type === 'AssignmentPattern' ? (field(value, 'left') as Node) : (value as Node),
+          )
+        }
+      },
+      CallExpression(node) {
+        const name = calleeName(node)
+        const args = Array.isArray(node['arguments']) ? node['arguments'].filter(isNode) : []
+        const sniff = userAgentTest(node, resolve)
+        if (sniff !== undefined && !sniff.platform) report(node, sniff.subject)
+        if (name === undefined || !QUERY_CALLEES.has(name)) return
+        const arg = resolve(args[0])
+        const text = literalText(arg) ?? objectQueryText(arg, resolve)
+        if (text !== undefined && VIEWPORT_FEATURE.test(text)) report(node, `${name}('${text}')`)
+      },
+      BinaryExpression(node) {
+        const subject = widthComparison(node, resolve, sizes)
+        if (subject !== undefined) report(node, subject)
+      },
     },
-    MemberExpression(node) {
-      const property = field(node, 'property')
-      if (property !== undefined && node['computed'] !== true) skip.add(property)
-      const sniff = userAgentTest(node, resolve)
-      if (sniff !== undefined && !sniff.platform) report(node, sniff.subject)
-      if (!isMobileHint(node)) return
-      const position = flagPosition(node)
-      if (position.kind === 'binding') hints.add(position.name)
-      else if (position.kind === 'choice') report(node, HINT)
-    },
-    Property(node) {
-      const key = field(node, 'key')
-      if (key !== undefined && node['computed'] !== true && key !== field(node, 'value')) {
-        skip.add(key)
-      }
-    },
-    Identifier(node) {
-      const name = node['name'] as string
-      if (skip.has(node)) return
-      const imported = deviceFlags.get(name)
-      if (imported !== undefined) report(node, imported)
-      const parent = node['parent'] as Node | undefined
-      const declares = parent?.type === 'VariableDeclarator' && field(parent, 'id') === node
-      if (hints.has(name) && !declares && flagPosition(node).kind === 'choice') report(node, HINT)
-    },
-    ImportSpecifier(node) {
-      if (WINDOW_SIZE_HOOKS.has(nameOf(field(node, 'imported')) ?? '')) {
-        const local = nameOf(field(node, 'local'))
-        if (local !== undefined) sizes.hooks.add(local)
-      }
-    },
-    VariableDeclarator(node) {
-      bindWindowSize(node, sizes)
-      const hint = destructuredHint(node)
-      if (hint === undefined) return
-      hints.add(hint)
-      // The pattern's own `mobile` declares the binding; it is no read of it.
-      for (const p of nodesOf(field(node, 'id') as Node, 'properties')) {
-        const value = field(p, 'value')
-        skip.add(
-          value?.type === 'AssignmentPattern' ? (field(value, 'left') as Node) : (value as Node),
-        )
-      }
-    },
-    CallExpression(node) {
-      const name = calleeName(node)
-      const args = Array.isArray(node['arguments']) ? node['arguments'].filter(isNode) : []
-      const sniff = userAgentTest(node, resolve)
-      if (sniff !== undefined && !sniff.platform) report(node, sniff.subject)
-      if (name === undefined || !QUERY_CALLEES.has(name)) return
-      const arg = resolve(args[0])
-      const text = literalText(arg) ?? objectQueryText(arg, resolve)
-      if (text !== undefined && VIEWPORT_FEATURE.test(text)) report(node, `${name}('${text}')`)
-    },
-    BinaryExpression(node) {
-      const subject = widthComparison(node, resolve, sizes)
-      if (subject !== undefined) report(node, subject)
-    },
+  ])
+}
+
+/**
+ * A touch probe, by its subject: `navigator.maxTouchPoints` (compared or bare, through `!`) and
+ * `'ontouchstart' in window` (or `document`, `document.documentElement`, `globalThis`).
+ */
+function touchProbe(node: Node | undefined): string | undefined {
+  const test = bare(node)
+  if (test?.type === 'UnaryExpression' && test['operator'] === '!') {
+    return touchProbe(field(test, 'argument'))
   }
+  if (isNavigatorField(test, 'maxTouchPoints')) return 'navigator.maxTouchPoints'
+  if (test?.type !== 'BinaryExpression') return undefined
+  const left = field(test, 'left')
+  if (test['operator'] === 'in') {
+    return left?.type === 'Literal' && left['value'] === 'ontouchstart'
+      ? "'ontouchstart' in window"
+      : undefined
+  }
+  if (
+    !WIDTH_COMPARISONS.has(test['operator'] as string) &&
+    !EQUALITY.has(test['operator'] as string)
+  ) {
+    return undefined
+  }
+  return touchProbe(left) ?? touchProbe(field(test, 'right'))
+}
+
+/**
+ * `media-query`'s touch probe: a class string chosen by a touch probe (`navigator.maxTouchPoints >
+ * 0 ? 'grid-cols-1' : 'grid-cols-3'`, `'ontouchstart' in window && 'flex-col'`) guesses a phone
+ * from the input. Reported at the choosing conditional or `&&`, once. A probe that chooses no
+ * class (a root flag, an event handler) passes.
+ */
+function touchProbeVisitor(report: FormContext['report']): Visitor {
+  const reported = new WeakSet<Node>()
+  return classStringVisitor((node) => {
+    for (const { up, test } of choiceChain(node)) {
+      const subject = touchProbe(test)
+      if (subject === undefined) continue
+      if (!reported.has(up)) report(up, subject)
+      reported.add(up)
+      return
+    }
+  })
 }
 
 /** The media features the class forms and the stylelint list ban: width, height, aspect ratio, orientation, the device forms. */
@@ -444,8 +495,21 @@ function schemeName(node: Node | undefined): string | undefined {
   return name !== undefined && SCHEME_NAMES.has(name) ? name : undefined
 }
 
-/** `matchMedia('(prefers-color-scheme: dark)').matches`, by its subject. */
+const COLOUR_SCHEME_QUERY = /prefers-color-scheme:\s*(?:dark|light)/i
+
+/**
+ * `matchMedia('(prefers-color-scheme: dark)').matches`, or a media-query hook's call on that query
+ * (`useMediaQuery('(prefers-color-scheme: dark)')` of usehooks-ts and the like, react-responsive's
+ * `useMediaQuery({ query: … })`), which returns the `.matches` itself; by its subject.
+ */
 function colourSchemeQuery(test: Node | undefined): string | undefined {
+  if (test?.type === 'CallExpression' && calleeName(test) === 'useMediaQuery') {
+    const [arg] = nodesOf(test, 'arguments')
+    const text = literalText(arg) ?? objectQueryText(arg, (node) => node)
+    return text !== undefined && COLOUR_SCHEME_QUERY.test(text)
+      ? `useMediaQuery('${text}')`
+      : undefined
+  }
   if (test?.type !== 'MemberExpression' || nameOf(field(test, 'property')) !== 'matches') {
     return undefined
   }
@@ -457,6 +521,87 @@ function colourSchemeQuery(test: Node | undefined): string | undefined {
     : undefined
 }
 
+type Choice = { up: Node; test: Node | undefined }
+
+/**
+ * The tests that choose a class string, innermost first: each enclosing conditional or `&&` whose
+ * branch it is, and a cn()/clsx object's value when the string is its key.
+ */
+function choiceChain(node: Node): Choice[] {
+  const chain: Choice[] = []
+  let at = node
+  for (let up = at['parent'] as Node | undefined; up; up = up['parent'] as Node | undefined) {
+    if (up.type === 'ConditionalExpression' && field(up, 'test') !== at) {
+      chain.push({ up, test: field(up, 'test') })
+    } else if (up.type === 'LogicalExpression' && up['operator'] === '&&') {
+      if (field(up, 'right') === at) chain.push({ up, test: field(up, 'left') })
+    } else if (up.type === 'Property' && field(up, 'key') === at) {
+      // A class key of a clsx-style object: its value is the condition.
+      chain.push({ up, test: field(up, 'value') })
+      break
+    } else if (up.type !== 'LogicalExpression') break
+    at = up
+  }
+  return chain
+}
+
+/** A property's key as written: `dark`, `'dark'`. */
+function propertyName(property: Node): string | undefined {
+  if (property.type !== 'Property' || property['computed'] === true) return undefined
+  const key = field(property, 'key')
+  if (key?.type === 'Literal') return typeof key['value'] === 'string' ? key['value'] : undefined
+  return nameOf(key)
+}
+
+/** The class-variance helpers whose config carries `variants`: cva and tailwind-variants' tv. */
+const VARIANT_CALLEES: ReadonlySet<string> = new Set(['cva', 'tv'])
+
+/** A group of `variants` in a cva()/tv() config: `cva(base, { variants: { <group>: {..} } })`. */
+function isVariantGroup(group: Node): boolean {
+  const variants = group['parent'] as Node | undefined
+  const holder = variants?.['parent'] as Node | undefined
+  if (holder?.type !== 'Property' || propertyName(holder) !== 'variants') return false
+  const config = holder['parent'] as Node | undefined
+  const call = config?.['parent'] as Node | undefined
+  if (call?.type !== 'CallExpression' || !nodesOf(call, 'arguments').includes(config as Node)) {
+    return false
+  }
+  const callee = calleeName(call)
+  return callee !== undefined && VARIANT_CALLEES.has(callee)
+}
+
+/** The React hooks whose callback's returned value a `const` holds: `useMemo`, `useCallback`. */
+const MEMO_HOOKS: ReadonlySet<string> = new Set(['useMemo', 'useCallback'])
+
+/** The expression a hook's arrow or function callback returns: its expression body or its one `return`. */
+function returnedBody(callback: Node | undefined): Node | undefined {
+  const fn = bare(callback)
+  if (fn?.type !== 'ArrowFunctionExpression' && fn?.type !== 'FunctionExpression') return undefined
+  const body = field(fn, 'body')
+  if (body?.type !== 'BlockStatement') return body
+  const returns = nodesOf(body, 'body').filter((s) => s.type === 'ReturnStatement')
+  return returns.length === 1 ? field(returns[0] as Node, 'argument') : undefined
+}
+
+/**
+ * What a `const` holds when it is bound to a scheme test: the test itself, or a `useMemo` whose
+ * callback returns one (`useMemo(() => resolvedTheme === 'dark', [..])`). A `useCallback` holds
+ * the callback, so its call is the test (`callable`).
+ */
+function boundSchemeTest(
+  init: Node | undefined,
+): { subject: string; callable: boolean } | undefined {
+  const direct = schemeTest(init)
+  if (direct !== undefined) return { subject: direct, callable: false }
+  const call = bare(init)
+  const hook = call?.type === 'CallExpression' ? calleeName(call) : undefined
+  if (call === undefined || hook === undefined || !MEMO_HOOKS.has(hook)) return undefined
+  const subject = schemeTest(returnedBody(nodesOf(call, 'arguments')[0]))
+  return subject === undefined
+    ? undefined
+    : { subject: `${hook}(() => ${subject})`, callable: hook === 'useCallback' }
+}
+
 /**
  * A scheme test: a scheme value compared with `'dark'` or `'light'` (either side), the
  * colour-scheme media query's `.matches`, a boolean named for the dark scheme, or a `const` bound
@@ -464,7 +609,7 @@ function colourSchemeQuery(test: Node | undefined): string | undefined {
  */
 function schemeTest(
   node: Node | undefined,
-  bound: ReadonlyMap<string, string> = new Map(),
+  bound: ReadonlyMap<string, { subject: string; callable: boolean }> = new Map(),
 ): string | undefined {
   const test = bare(node)
   if (test?.type === 'UnaryExpression' && test['operator'] === '!') {
@@ -474,9 +619,13 @@ function schemeTest(
   if (query !== undefined) return query
   const name = lastName(test)
   if (name !== undefined && DARK_FLAG.test(name)) return name
-  if (test?.type === 'Identifier' && name !== undefined && bound.has(name)) {
-    return `${name}, bound to ${bound.get(name)}`
+  const binding = name !== undefined ? bound.get(name) : undefined
+  if (test?.type === 'Identifier' && binding !== undefined && !binding.callable) {
+    return `${name}, bound to ${binding.subject}`
   }
+  const callee = test?.type === 'CallExpression' ? field(test, 'callee') : undefined
+  const called = callee?.type === 'Identifier' ? bound.get(callee['name'] as string) : undefined
+  if (called?.callable === true) return `${nameOf(callee)}(), bound to ${called.subject}`
   if (test?.type !== 'BinaryExpression') return undefined
   const operator = test['operator'] as string
   if (!EQUALITY.has(operator)) return undefined
@@ -536,54 +685,61 @@ function isSchemeType(annotation: Node | undefined): boolean {
  *
  * A fork: a class string (in a class attribute, `cn()`, `cva` or a class-shaped object or array)
  * whose enclosing conditional or `&&` tests a scheme (`resolvedTheme === 'dark' ? 'bg-inset' :
- * 'bg-card'`), or a class key of a cn()/clsx object whose value is one (`{ invert: resolvedTheme
- * === 'dark' }`), reports at the conditional or the key, once. A scheme test is a scheme value read
- * by name (`theme`, `resolvedTheme`, `systemTheme`, `colorScheme`, `scheme`, bare or as a member)
- * compared with `'dark'` or `'light'`, the colour-scheme media query's `.matches`, a boolean named
- * for the dark scheme (`isDark`, `isDarkMode`, `darkMode`) or a `const` bound to any of these
- * (`const dark = matchMedia('(prefers-color-scheme: dark)').matches`), read through `!`.
+ * 'bg-card'`, also inside a template literal's hole), or a class key of a cn()/clsx object whose
+ * value is one (`{ invert: resolvedTheme === 'dark' }`), reports at the conditional or the key,
+ * once. A scheme test is a scheme value read by name (`theme`, `resolvedTheme`, `systemTheme`,
+ * `colorScheme`, `scheme`, bare or as a member) compared with `'dark'` or `'light'`, the
+ * colour-scheme media query's `.matches` or a media-query hook's call on it
+ * (`useMediaQuery('(prefers-color-scheme: dark)')`, any package), a boolean named for the dark
+ * scheme (`isDark`, `isDarkMode`, `darkMode`) or a `const` bound to any of these, directly or as
+ * what a `useMemo` callback returns (`const dark = useMemo(() => resolvedTheme === 'dark', [])`;
+ * a `useCallback`'s, read where it is called), read through `!`. A cva/tv variant group whose
+ * keys include `dark` and `light` forks by itself (`variants: { scheme: { dark: 'invert', light:
+ * '' } }`) and reports at the group.
  *
  * A store: `classList.add`, `remove`, `toggle` or `replace` on `document.documentElement` or
  * `document.body` (directly or through a binding of either) with `'dark'` or `'light'`, a scheme
  * value by name, or a parameter typed as a union of those literals: shadcn's Vite theme provider.
- * basalt's tokens key on `[data-theme]`, so the class reaches no token.
+ * basalt's tokens key on `[data-theme]`, so the class reaches no token. So does an assignment of
+ * such a value to the root's `className` (a branch of a conditional included), and a hand-written
+ * `setAttribute('data-theme', …)` or `dataset.theme =` on the root, which skips the stored choice
+ * `setScheme` keeps.
  *
  * Known limits: a scheme bound to another name (`const mode = readScheme()`), a binding matched by
  * spelling within the file rather than by scope, a fork that returns a class outside a class
- * position (`return dark ? 'bg-inset' : 'bg-card'` from a hook), a fork inside a template literal's
- * hole and a scheme type named by an alias (`theme: Theme`, read by its name only) are not read.
+ * position (`return dark ? 'bg-inset' : 'bg-card'` from a hook), a media query passed by a name
+ * rather than its literal, and a scheme type named by an alias (`theme: Theme`, read by its name
+ * only) are not read.
  */
 export function schemeForkForm({ report }: FormContext): Visitor {
-  const forks: { up: Node; test: Node | undefined }[][] = []
-  const bound = new Map<string, string>()
+  const forks: Choice[][] = []
+  const bound = new Map<string, { subject: string; callable: boolean }>()
   const roots = new Set<string>()
   const typed = new Set<string>()
-  const writes: { node: Node; target: string; args: Node[] }[] = []
+  const writes: { node: Node; target: string; args: Node[]; judged?: boolean }[] = []
   const onString = (node: Node): void => {
-    const chain: { up: Node; test: Node | undefined }[] = []
-    let at = node
-    for (let up = at['parent'] as Node | undefined; up; up = up['parent'] as Node | undefined) {
-      if (up.type === 'ConditionalExpression' && field(up, 'test') !== at) {
-        chain.push({ up, test: field(up, 'test') })
-      } else if (up.type === 'LogicalExpression' && up['operator'] === '&&') {
-        if (field(up, 'right') === at) chain.push({ up, test: field(up, 'left') })
-      } else if (up.type === 'Property' && field(up, 'key') === at) {
-        // A class key of a clsx-style object: its value is the condition.
-        chain.push({ up, test: field(up, 'value') })
-        break
-      } else if (up.type !== 'LogicalExpression') break
-      at = up
-    }
+    const chain = choiceChain(node)
     if (chain.length > 0) forks.push(chain)
   }
   const isSchemeArg = (arg: Node): boolean => {
     const literal = arg.type === 'Literal' ? arg['value'] : undefined
     if (typeof literal === 'string') return SCHEME_VALUES.has(literal)
+    if (arg.type === 'ConditionalExpression') {
+      return [field(arg, 'consequent'), field(arg, 'alternate')].some(
+        (branch) => branch !== undefined && isSchemeArg(branch),
+      )
+    }
     const name = lastName(arg)
     return (
       name !== undefined &&
       (SCHEME_NAMES.has(name) || (arg.type === 'Identifier' && typed.has(name)))
     )
+  }
+  /** `document.documentElement` or `document.body`, or a binding of either, by its subject. */
+  const rootOf = (node: Node | undefined): string | undefined => {
+    const owner = bare(node)
+    const root = nameOf(owner)
+    return rootElement(owner) ?? (root !== undefined && roots.has(root) ? root : undefined)
   }
   return mergeVisitors([
     classStringVisitor(onString),
@@ -594,16 +750,61 @@ export function schemeForkForm({ report }: FormContext): Visitor {
         const init = field(node, 'init')
         if (rootElement(init) !== undefined) roots.add(name)
         const declaration = node['parent'] as Node | undefined
-        const subject = declaration?.['kind'] === 'const' ? schemeTest(init) : undefined
-        if (subject !== undefined) bound.set(name, subject)
+        const test = declaration?.['kind'] === 'const' ? boundSchemeTest(init) : undefined
+        if (test !== undefined) bound.set(name, test)
       },
       Identifier(node) {
         if (isSchemeType(field(node, 'typeAnnotation'))) typed.add(node['name'] as string)
+      },
+      Property(node) {
+        // A cva/tv variant group keyed by the scheme forks by itself: `variants: { scheme: { dark:
+        // 'invert', light: '' } }`, chosen by `logo({ scheme: resolvedTheme })`.
+        const group = field(node, 'value')
+        if (group?.type !== 'ObjectExpression' || !isVariantGroup(node)) return
+        const keys = new Set(nodesOf(group, 'properties').map((p) => propertyName(p)))
+        if (keys.has('dark') && keys.has('light')) {
+          report(node, `variants.${propertyName(node) ?? '…'}: { dark, light }`)
+        }
+      },
+      AssignmentExpression(node) {
+        // A root store written by hand: `root.className = …'dark'…`, `root.dataset.theme = next`.
+        const target = field(node, 'left')
+        if (target?.type !== 'MemberExpression' || target['computed'] === true) return
+        const property = nameOf(field(target, 'property'))
+        const object = bare(field(target, 'object'))
+        const right = field(node, 'right')
+        if (property === 'className' && right !== undefined && isSchemeArg(bare(right) as Node)) {
+          const root = rootOf(object)
+          if (root !== undefined)
+            writes.push({ node, target: `${root}.className`, args: [], judged: true })
+        }
+        if (
+          property === 'theme' &&
+          object?.type === 'MemberExpression' &&
+          nameOf(field(object, 'property')) === 'dataset'
+        ) {
+          const root = rootOf(field(object, 'object'))
+          if (root !== undefined)
+            writes.push({ node, target: `${root}.dataset.theme`, args: [], judged: true })
+        }
       },
       CallExpression(node) {
         const callee = field(node, 'callee')
         if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return
         const method = nameOf(field(callee, 'property'))
+        if (method === 'setAttribute') {
+          const [name] = nodesOf(node, 'arguments')
+          const root = rootOf(field(callee, 'object'))
+          if (root !== undefined && name?.type === 'Literal' && name['value'] === 'data-theme') {
+            writes.push({
+              node,
+              target: `${root}.setAttribute('data-theme')`,
+              args: [],
+              judged: true,
+            })
+          }
+          return
+        }
         if (method === undefined || !CLASS_LIST_WRITES.has(method)) return
         const list = bare(field(callee, 'object'))
         if (list?.type !== 'MemberExpression' || nameOf(field(list, 'property')) !== 'classList') {
@@ -632,8 +833,10 @@ export function schemeForkForm({ report }: FormContext): Visitor {
             break
           }
         }
-        for (const { node, target, args } of writes)
-          if (args.some(isSchemeArg)) report(node, target)
+        // A class-list write reports with a scheme value; a className or data-theme write was
+        // judged where it was found.
+        for (const { node, target, args, judged } of writes)
+          if (judged === true || args.some(isSchemeArg)) report(node, target)
       },
     },
   ])

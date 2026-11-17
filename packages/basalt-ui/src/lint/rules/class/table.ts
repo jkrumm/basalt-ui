@@ -173,7 +173,7 @@ export const CLASS_RULES = defineRules({
         // An ejected primitive is chrome: the sheet's one viewport read (its swipe axis) is the
         // primitive's, so the JS form is off there; its classes stay keyed on the container.
         zonesOff: ['ejected'],
-        fix: 'useSizeClass for chrome; page layout keys on the container with @narrow: @regular: @wide:',
+        fix: 'useSizeClass for chrome; page layout keys on the container with @narrow: @regular: @wide:, never on a touch probe; a hit target that grows for touch keys on pointer: coarse (the pointer-coarse: variant)',
         next: 'viewport-keyed is never file-waivable; fix it at source',
         fixture: 'class/viewport-keyed/media-query.tsx',
       },
@@ -181,7 +181,7 @@ export const CLASS_RULES = defineRules({
         id: 'platform-glyph',
         detect: platformGlyphForm,
         zonesOff: ['ejected'],
-        fix: 'A shortcut glyph is <Kbd>Mod</Kbd> from basalt-ui/ui/kbd (⌘ on Apple, Ctrl elsewhere); a registered command prints its own chord',
+        fix: "A shortcut glyph is <Kbd>Mod</Kbd> from basalt-ui/ui/kbd (⌘ on Apple, Ctrl elsewhere); a registered command prints its own chord; a handler that picks metaKey or ctrlKey by the platform is a command with chord: 'Mod+S' in defineCommands from basalt-ui/shell, which reads the right key on each platform",
         next: 'A platform test that picks no glyph (an installer, a platform build) is waived on its line, with the reason',
         fixture: 'class/viewport-keyed/platform-glyph.tsx',
       },
@@ -193,11 +193,12 @@ export const CLASS_RULES = defineRules({
     profiles: ALL,
     zonesOff: VENDORED,
     // A JS fork on the scheme is `scheme-fork`: a scheme test (a scheme value read by name compared
-    // with 'dark' or 'light', the colour-scheme query's `.matches`, a boolean named for the dark
-    // scheme, or a const bound to one) where it chooses a class string or a cn() class key, and a
-    // scheme store of the app's own writing `.dark` on the root's classList. Known limit: a scheme
-    // under another name or returned outside a class position is not read (no type-aware rule ties
-    // a value to a scheme read).
+    // with 'dark' or 'light', the colour-scheme query's `.matches` or media hook, a boolean named
+    // for the dark scheme, or a const bound to one, through useMemo or useCallback too) where it
+    // chooses a class string or a cn() class key, a cva/tv variant group keyed dark and light, and
+    // a scheme store of the app's own: `.dark` on the root's classList or className, or data-theme
+    // written by hand. Known limit: a scheme under another name or returned outside a class
+    // position is not read (no type-aware rule ties a value to a scheme read).
     defect:
       'epos 21 `dark:` forks in app code and 40 in vendored ui; `@custom-variant dark` keys to `data-theme`, so a fork compiles and diverges from the token switch',
     forms: [
@@ -211,7 +212,7 @@ export const CLASS_RULES = defineRules({
       {
         id: 'scheme-fork',
         detect: schemeForkForm,
-        fix: 'Tokens switch per scheme: use the one token class in both schemes instead of choosing a class by the scheme in JS; BasaltProvider owns the scheme: pass its scheme prop and switch it with setScheme from basalt-ui/core/scheme',
+        fix: 'BasaltProvider owns the scheme: switch it with setScheme from basalt-ui/core/scheme, which sets data-theme on the root and stores the choice, never a root class, className or data-theme written by hand; where the scheme picks a class, tokens switch per scheme, so the one token class serves both',
         next: 'A reasoned per-line waiver',
         fixture: 'class/dark-fork/scheme-fork.tsx',
       },
@@ -396,7 +397,7 @@ export const CLASS_RULES = defineRules({
     forms: [
       {
         id: 'space-between',
-        pattern: /(?:^|:)!?space-[xy]-/,
+        pattern: /(?:^|:)!?-?space-[xy]-/,
         fix: 'gap-* on the parent',
         next: 'A reasoned waiver for an optical offset',
         fixture: 'class/app-spacing/space-between.tsx',

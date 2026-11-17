@@ -34,6 +34,8 @@
 // expect: navigator.userAgentData.mobile
 // expect: navigator.userAgentData.mobile
 // expect: navigator.userAgentData.mobile
+// expect: navigator.maxTouchPoints
+// expect: 'ontouchstart' in window
 export const a = window.matchMedia('(min-width: 768px)')
 export const b = useMediaQuery('(max-width: 640px)')
 export const c = matchMedia(`(min-width: ${bp}px)`)
@@ -89,3 +91,7 @@ export const Stack = () => <div className={cn({ 'flex-col': navigator.userAgentD
 export const Pad = ({ ready }) => (
   <div className={cn('base', ready && { 'flex-col': navigator.userAgentData?.mobile })} />
 )
+export const Gallery = () => (
+  <div className={navigator.maxTouchPoints > 0 ? 'grid grid-cols-1' : 'grid grid-cols-3'}>g</div>
+)
+export const Toolbar = () => <div className={cn('flex', 'ontouchstart' in window && 'flex-col')} />

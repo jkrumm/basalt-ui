@@ -179,7 +179,7 @@ describe('forms', () => {
     'media-query': 'useSizeClass',
     'platform-glyph': '<Kbd>Mod</Kbd>',
     'dark-variant': 'Tokens switch per scheme',
-    'scheme-fork': 'Tokens switch per scheme',
+    'scheme-fork': 'BasaltProvider owns the scheme: switch it with setScheme',
     'black-white': 'on-brand',
     'text-on-fill': 'Status',
     'overflow-scroll': 'ui/scroll-area',

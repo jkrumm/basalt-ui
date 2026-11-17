@@ -152,6 +152,15 @@ export function topLevelConsts(program: Node): ReadonlyMap<string, Node> {
   return consts
 }
 
+/** The expressions inside a class template's hole that are read as class strings. */
+const HOLE_CLASS_SHAPES: ReadonlySet<string> = new Set([
+  'Identifier',
+  'Literal',
+  'TemplateLiteral',
+  'ConditionalExpression',
+  'LogicalExpression',
+])
+
 const isJoinWithSpace = (call: Node): boolean => {
   const callee = child(call, 'callee')
   if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return false
@@ -187,8 +196,10 @@ export function classStringVisitor(onString: (node: Node, text: string) => void)
       }
       case 'TemplateLiteral':
         scan(node, templateText(node))
+        // A hole is read as a class position of its own: a const, a string, and each branch of
+        // a conditional or `&&` (`` `flex ${open ? 'max-lg:hidden' : ''}` ``); a call stays opaque.
         for (const expression of children(node, 'expressions')) {
-          if (expression.type === 'Identifier') collect(expression)
+          if (HOLE_CLASS_SHAPES.has(expression.type)) collect(expression)
         }
         return
       case 'Identifier': {
