@@ -3,8 +3,7 @@ name: basalt-ui
 deploy:
   mode: none
 ship:
-  - paths: ['**']
-    via: pr
+  - via: pr
 # Not a throttle: the factory's memory fit, load rule and test slots, the `browser` lane and the `after` edges
 # decide how many leads really run.
 leads: 16
