@@ -131,6 +131,20 @@ const near = (a: number, b: number, label: string): void => {
   expect(Math.abs(a - b), `${label}: ${a} against ${b}`).toBeLessThanOrEqual(TOLERANCE)
 }
 
+layout('StatGroup strip on a phone', () => {
+  test('the strip lays out two stats per row at 390', async () => {
+    const page = await open(PHONE)
+    const cells = await rects(page, 'cg-strip-ready', CELL)
+    expect(cells.length).toBeGreaterThanOrEqual(4)
+    const rows = [...new Set(cells.map((c) => Math.round(c.top)))]
+    near(cells[0]!.top, cells[1]!.top, 'the first two stats share a row')
+    expect(cells[2]!.top, 'the third stat starts the next row').toBeGreaterThan(
+      cells[0]!.bottom - 1,
+    )
+    expect(rows.length).toBe(Math.ceil(cells.length / 2))
+  })
+})
+
 layout('StatGroup, StatCell and DataPanel', () => {
   for (const viewport of VIEWPORTS) {
     describe(`${viewport.name} ${viewport.width}`, () => {
