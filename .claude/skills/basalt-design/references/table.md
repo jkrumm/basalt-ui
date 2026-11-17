@@ -9,6 +9,7 @@ Requires TanStack Table's own `table-state` skill for anything under `t.table`: 
 - Fewer than about 200 rows and all in hand: `mode: { kind: 'client' }`. Above 500 client rows add `virtual` and a fixed `height`; above that the rows belong on a server.
 - The server pages and filters: `mode: { kind: 'server', rowCount }`. Pass `rowCount` as `undefined` until it is known; the table never prints "of 0". A cursor API passes `cursor` instead, never both.
 - Rows that never sort, filter or select are `ui/table`, not this.
+- Rows under a parent (who waits on whom, the jobs of a run) are a client table with `group: { by: '<parent column>' }`: one collapsible group row per parent, its toggle a button, with a `summary`. There is no tree field, so never indent a `c.custom` cell by hand to fake one (n32).
 
 ```tsx
 // @check
@@ -40,6 +41,11 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 - A column is a kind (`c.entity`, `c.money`, `c.status`, `c.date`, ...); the kind sets alignment, numerals, width, sort, filter and card slot. A raw column or a free `cell` does not exist. `c.custom` is the one counted escape and must declare `sortValue`, `card` and `priority`.
 - `priority` says what survives a narrow table: 1 always, 2 at reduced width, 3 at full width only. Give an identity column 1; at most two columns are 1, the rest demote in declaration order.
 - Absent values print a dash; a zero is a zero.
+
+## An age or a duration is a meter
+
+- A column of ages or durations (waiting for, open for, run time) is `c.meter(key, { max })` with `max` the oldest in view, so the eye reads the long ones before it reads a number; bare text ('3 weeks ago') draws nothing to compare (n33 .1 and n36 .29: both builders found `c.meter` only in round 1).
+- State the rule that makes an item late where the reader meets the column: the column `header` ('Waiting, late after 48 h') or the card's context line. A threshold that lives only in the code leaves every row unexplained (n36 .32: the stuck rule was on no row and no caption). The row that crosses it carries its verdict word in its own column ('Stuck', 'Overdue') and takes the one status hue ([charts](charts.md)).
 
 ## Where state lives
 
@@ -81,6 +87,13 @@ export function Orders({ rows, total }: { rows: readonly Order[]; total: number 
   return <DataTable table={t} />
 }
 ```
+
+## Anatomy of a table part
+
+- A table on a page is a [DataPanel](node_modules/basalt-ui/docs/data-panel.md) or a card with a title and a context line (`subtitle`: its scope and its rule, a fact), never a flush [Section](node_modules/basalt-ui/docs/section.md) with a small heading beside a card. n33 stood two tables in `Section`s with no context line, n36's table was a flush small title under an uninset figure, n37's at-risk table a flush section (.6, .35, .52); n33's round 1 moved the tables into `DataPanel`s and scored for it.
+- A card whose state answers shows its [Status](node_modules/basalt-ui/docs/status.md) at rest, and a coloured band on a chart has a key (n34 passed `undefined` for the status and drew bands with no key, .15).
+- Mono goes to ids and times only (a merge request id, a finding id, an opened timestamp), and nothing else: not a measurement phrase ('tide 2.1 m, swell 0.5 m, 6 s', n34 .20), not an absent value ('None open' set mono by `subMono`, n33 .12). A time or an id in the body face is the opposite defect (n36 .42 opened times, n38 .64 ids and hours; a `BarList` label takes no mono, so the id sits in a part that does, such as a footer fact).
+- A stat cell beside a long table sits in a strip sized to its content, not 750 px wide with its value and footer 700 px apart (n36 .39).
 
 not guarded:
 
