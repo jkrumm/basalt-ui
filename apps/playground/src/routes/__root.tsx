@@ -15,7 +15,9 @@ import { AppShell, CommandPalette } from 'basalt-ui/shell'
 import { useState } from 'react'
 import type { ComponentProps } from 'react'
 import { COMMANDS } from '../demo/commands'
+import { globals } from '../demo/globals'
 import { NAV } from '../demo/nav-model'
+import { PeekLayer } from '../demo/peek-layer'
 
 type ShellProps = ComponentProps<typeof AppShell>
 type Blocks = NonNullable<ShellProps['blocks']>
@@ -73,6 +75,7 @@ function RootLayout() {
       chrome={CHROME}
     >
       <Outlet />
+      <PeekLayer />
       <CommandPalette commands={COMMANDS} open={paletteOpen} onOpenChange={setPaletteOpen} />
     </AppShell>
   )
@@ -80,5 +83,7 @@ function RootLayout() {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { title: 'Home' },
+  validateSearch: globals.validateSearch,
+  search: { middlewares: globals.middlewares },
   component: RootLayout,
 })
