@@ -201,4 +201,34 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     title: 'Expression n32: plan waits',
     blurb: 'Which open Issues wait on others, and which one would unblock the most?',
   },
+  {
+    id: 'expr-n33',
+    title: 'Expression n33: project hygiene',
+    blurb: 'Which probes fail now, and which findings have been open longest?',
+  },
+  {
+    id: 'expr-n34',
+    title: 'Expression n34: leaving a tidal harbour',
+    blurb: 'When in the next 48 hours is there water over the bar, and is the swell low then?',
+  },
+  {
+    id: 'expr-n35',
+    title: 'Expression n35: the coming workweek',
+    blurb: 'How much of each workday is booked, and where is the longest free block?',
+  },
+  {
+    id: 'expr-n36',
+    title: 'Expression n36: merge requests',
+    blurb: 'Which merge requests wait on me, for how long, and which of mine are stuck?',
+  },
+  {
+    id: 'expr-n37',
+    title: 'Expression n37: sprint at risk',
+    blurb: 'How much of the sprint is done, and which tickets are at risk of not finishing?',
+  },
+  {
+    id: 'expr-n38',
+    title: 'Expression n38: what waits on the owner',
+    blurb: 'Which questions, reviews and chores wait, and which hold up the most work?',
+  },
 ]
