@@ -34,7 +34,7 @@ import { INITIAL_WIDTH, useChartSize } from '../sizing'
 import { ChartPlaceholder, resolveChartState } from '../state'
 import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext } from '../types'
-import type { CartesianChartProps, CustomMarks, Series } from '../contract'
+import type { CartesianChartProps, ChartZone, CustomMarks, Series } from '../contract'
 import { chartName } from '../chart-name'
 import { applySeams } from '../seams'
 import { asMarks, customPlot, toChartState, toEngineSpec } from './cartesian-adapt'
@@ -214,11 +214,28 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     setPlot((prev) => (samePlots(prev, next) ? prev : next))
   }, [])
 
-  const { data, x, y, series, zones, refLines, cursor, tooltip, selection, focus } = props
+  const { data, x, y, series, refLines, cursor, tooltip, selection, focus } = props
   const custom = props.marks
   const hostFocus = useCursorFocus(focus, { group: cursor, x: x.value, label: ariaLabel })
   const ownsKeys = hostFocus !== undefined
-  const focused = focus?.datum ?? null
+  // A held span (a list row that stands for a run of items) is drawn as one x band in the row
+  // tint; no single datum is focused then, so no point marker or tooltip names one of them.
+  const held = focus !== undefined && focus.span.length > 1 ? focus.span : undefined
+  const focused = held === undefined ? (focus?.datum ?? null) : null
+  const spanFirst = held?.[0]
+  const spanLast = held?.at(-1)
+  const ownZones = props.zones
+  const xValue = x.value
+  const zones = useMemo((): readonly ChartZone[] | undefined => {
+    if (spanFirst === undefined || spanLast === undefined) return ownZones
+    const band: ChartZone = {
+      axis: 'x',
+      from: xValue(spanFirst),
+      to: xValue(spanLast),
+      fill: BASALT.selected,
+    }
+    return [...(ownZones ?? []), band]
+  }, [ownZones, spanFirst, spanLast, xValue])
   // With a `focus` the emphasised series is the shared one: a list row of a series and the legend
   // set the same key, so either marks the other.
   const highlighted = focus === undefined ? ownHighlight : focus.series
@@ -330,6 +347,8 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
         if (rows.length === 0) continue
         const color = spec.series.find((e) => e.key === s.key)?.color ?? 'currentColor'
         const focused = ctx.focused
+        // A held span keeps its dots and dims the rest, as one focused datum does.
+        const lit = (d: D): boolean => (held === undefined ? d === focused : held.includes(d))
         const dotsOf = (group: typeof rows, id: string, fill: string) =>
           dot(group, {
             id,
@@ -340,16 +359,16 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
             ...(s.axis === 'right' && ctx.y2 !== undefined && { yScale: ctx.y2 }),
           })
         // A `focus` holding a datum dims every other dot; the focused one is its own mark, on top.
-        if (focused === null) out.push(dotsOf(rows, s.key, color))
+        if (focused === null && held === undefined) out.push(dotsOf(rows, s.key, color))
         else
           out.push(
             dotsOf(
-              rows.filter((row) => row.datum !== focused),
+              rows.filter((row) => !lit(row.datum)),
               s.key,
               dimmedPaint(color),
             ),
             dotsOf(
-              rows.filter((row) => row.datum === focused),
+              rows.filter((row) => lit(row.datum)),
               `${s.key}:focused`,
               focusedPaint(color),
             ),
@@ -379,7 +398,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       }
       return out
     },
-    [stable, spec, effective, controller, indexOf, opacityOf],
+    [stable, spec, effective, controller, indexOf, opacityOf, held],
   )
 
   // The largest radius each dot series draws: the plot keeps that much room at its edge.
