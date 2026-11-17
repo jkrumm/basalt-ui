@@ -78,7 +78,7 @@ export type TableModel<T> = {
   /** Server: the footer values the server computed for this request. */
   totals: Totals | undefined
   phase: ResolvedPhase
-  /** Skeleton rows of a loading table: the rows it last showed, else the default of `phases.tsx`. */
+  /** Skeleton rows of a loading table: the rows it last showed, its planned page or `bodyRows`, else the default of `phases.tsx`. */
   skeletonRows: number | undefined
   /** Rows matching the request, `undefined` while unknown. */
   count: number | undefined
@@ -180,16 +180,22 @@ function filterFnOf(spec: KindSpec<never>) {
 
 /**
  * The skeleton rows of a table that has shown none: the rows of the page it will show (its page
- * size, less what the known count leaves for the page), so loading is as tall as loaded. Unpaged
- * tables, whose size nothing states, keep the default.
+ * size, less what the known count leaves for the page), so loading is as tall as loaded. Unknown,
+ * the page's declared `bodyRows` (capped at a page) comes before the page size; an unpaged table
+ * without either keeps the default.
  */
 function plannedRows(
   paged: boolean,
   request: { page: number; pageSize: number },
   count: number | undefined,
+  declared?: number,
 ): number | undefined {
-  if (!paged) return undefined
-  if (count === undefined) return request.pageSize
+  const stated =
+    declared !== undefined && Number.isInteger(declared) && declared >= 1
+      ? Math.min(declared, paged ? request.pageSize : declared)
+      : undefined
+  if (!paged) return stated
+  if (count === undefined) return stated ?? request.pageSize
   return Math.max(1, Math.min(request.pageSize, count - (request.page - 1) * request.pageSize))
 }
 
@@ -485,7 +491,12 @@ export function useDataTable<
     phase,
     skeletonRows:
       lastRows ??
-      plannedRows(paged, request, server ? countOf(mode) : settled ? matching : undefined),
+      plannedRows(
+        paged,
+        request,
+        server ? countOf(mode) : settled ? matching : undefined,
+        options.bodyRows,
+      ),
     count: server ? countOf(mode) : matching,
     pager,
     phone: options.phone ?? 'cards',

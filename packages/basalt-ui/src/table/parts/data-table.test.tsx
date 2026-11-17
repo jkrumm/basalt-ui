@@ -46,11 +46,13 @@ function Subject({
   count = 5,
   phase,
   data,
+  bodyRows,
 }: {
   columns?: number
   count?: number
   phase?: Phase | QueryStateLike
   data?: Row[] | undefined
+  bodyRows?: number
 }): ReactElement {
   const t = useDataTable<Row>({
     id: `fixture-${columns}`,
@@ -60,6 +62,7 @@ function Subject({
     getRowId: (row) => row.id,
     mode: { kind: 'client' },
     ...(phase !== undefined && { phase }),
+    ...(bodyRows !== undefined && { bodyRows }),
   })
   return <DataTable table={t} />
 }
@@ -183,6 +186,22 @@ describe('geometry across phases', () => {
     rerender(<Subject count={17} />)
     rerender(<Subject phase="loading" />)
     expect(skeletons(container)).toBe(17)
+  })
+
+  test('a first load draws the declared bodyRows; the rows it showed then win', () => {
+    const skeletons = (el: HTMLElement): number =>
+      el.querySelectorAll('tbody [data-skeleton]').length
+    const { container, rerender } = render(<Subject phase="loading" bodyRows={18} />)
+    expect(skeletons(container)).toBe(18)
+    rerender(<Subject count={9} bodyRows={18} />)
+    rerender(<Subject phase="loading" bodyRows={18} />)
+    expect(skeletons(container)).toBe(9)
+    cleanup()
+    for (const invalid of [0, -3, 2.5]) {
+      const bad = render(<Subject phase="loading" bodyRows={invalid} />)
+      expect(skeletons(bad.container)).toBe(6)
+      cleanup()
+    }
   })
 
   test('error shows Retry and calls it; forbidden has none', () => {

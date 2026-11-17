@@ -182,6 +182,36 @@ layout('expression cycle 2 table and StatGroup fixes', () => {
       })
     }
 
+    // Expression cycle 9 rows .36 and .47: a table that mounts loading draws the `bodyRows` the page
+    // declares, so the frame does not jump by the rows the default six left out.
+    for (const count of [18, 9]) {
+      test(`${at}: a table mounting loading with bodyRows ${count} draws ${count} rows`, async () => {
+        const p = await open(viewport)
+        const id = `k2-table-first-load-${count}`
+        const root = `[data-testid="${id}"] [data-slot="table-root"]`
+        const height = (): Promise<number> =>
+          p.raw.evaluate(
+            (sel) => document.querySelector(sel)?.getBoundingClientRect().height ?? -1,
+            root,
+          )
+        expect(await p.count(`${root} tbody [data-skeleton]`)).toBe(count)
+        const loading = await height()
+        await p.raw.evaluate(
+          (probe) =>
+            (window as never as { k2Loading: (i: string, l: boolean) => void }).k2Loading(
+              probe,
+              false,
+            ),
+          id,
+        )
+        await p.settle()
+        expect(await p.count(`${root} tbody [data-skeleton]`)).toBe(0)
+        // The card tier projects a skeleton row differently from a loaded one; the row count holds at 390.
+        if (viewport === PHONE) return
+        expect(Math.abs((await height()) - loading)).toBeLessThanOrEqual(SLACK)
+      })
+    }
+
     test(`${at}: six cards cells show whole, without sideways scroll`, async () => {
       const p = await open(viewport)
       // The table probes sit in fixed-width wrappers: leave the StatGroup alone on the page.
