@@ -23,20 +23,28 @@ export type ActiveNav = {
   ancestorIds: ReadonlySet<string>
 }
 
-/** A nav item in definition order, with the chain of items above it. */
-export type FlatNavEntry = { item: AnyNavItem; ancestors: readonly AnyNavItem[] }
+/** A nav item in definition order, with the chain of items above it and its section's label (none for `pinned`). */
+export type FlatNavEntry = {
+  item: AnyNavItem
+  ancestors: readonly AnyNavItem[]
+  section: string | undefined
+}
 
 /** Depth-first, parent before children: sections' items, then pinned. */
 export function flattenNavEntries(nav: AnyNavConfig): FlatNavEntry[] {
   const out: FlatNavEntry[] = []
-  const walk = (items: ReadonlyArray<AnyNavItem>, ancestors: readonly AnyNavItem[]): void => {
+  const walk = (
+    items: ReadonlyArray<AnyNavItem>,
+    ancestors: readonly AnyNavItem[],
+    section: string | undefined,
+  ): void => {
     for (const item of items) {
-      out.push({ item, ancestors })
-      if (item.children) walk(item.children, [...ancestors, item])
+      out.push({ item, ancestors, section })
+      if (item.children) walk(item.children, [...ancestors, item], section)
     }
   }
-  for (const section of nav.sections) walk(section.items, [])
-  if (nav.pinned) walk(nav.pinned, [])
+  for (const section of nav.sections) walk(section.items, [], section.label)
+  if (nav.pinned) walk(nav.pinned, [], undefined)
   return out
 }
 

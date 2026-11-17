@@ -64,4 +64,19 @@ describe('navCommands', () => {
     }
     expect(navCommands(nav).map((cmd) => [cmd.id, cmd.chord])).toEqual([['nav.y', 'Mod+2']])
   })
+
+  test('two items of one label name their section; a unique label stays plain', () => {
+    const nav: AnyNavConfig = {
+      sections: [
+        { id: 'fleet', label: 'Fleet', items: [item('f-services', { label: 'Services' })] },
+        {
+          id: 'billing',
+          label: 'Billing',
+          items: [item('b-services', { label: 'Services' }), item('plans')],
+        },
+      ],
+    }
+    const labels = navCommands(nav).map((cmd) => cmd.label)
+    expect(labels).toEqual(['Go to Services · Fleet', 'Go to Services · Billing', 'Go to PLANS'])
+  })
 })
