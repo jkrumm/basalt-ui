@@ -17,3 +17,15 @@ lanes:
   browser:
     leads: 2
     memory: 3GiB
+# The unit suite may run on the factory's step host when the mini's test line would make it wait longer (Makefile
+# `test`, `$(call slot,unit)`). Measured 2026-11-17: 187 s on the host in parallel against 412 s on the mini.
+# `browser`: the shot harness's real-Chrome tests launch the `chrome` channel; the repo's image carries Chrome and Node
+# (tools/step-image/Dockerfile). `network`: tests/live/poller/query-5101 installs its own pinned Query core with
+# `bun install --frozen-lockfile` at test time. `carry`: the suite reads the built package (`make build`) from dist.
+steps:
+  unit:
+    make: test
+    needs: [browser, network]
+    remote: true
+    dockerfile: tools/step-image/Dockerfile
+    carry: [packages/basalt-ui/dist]

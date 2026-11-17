@@ -33,6 +33,13 @@ ts-program files alone, the rest in chunks of 40), peak ~2.2 GiB resident where 
 `make test` in a host test slot named `basalt-ui unit` (`factory slot run`, one name per project, never per worktree), like the layout suite; never run a bare whole-repo `bun test`
 from a lead session, scope it to the files you touched (`bun test <path>`) and leave the full suite to `pre`.
 
+The step may run off the mini (`project.yaml` `steps.unit`): the factory's step host builds `tools/step-image/Dockerfile`
+(Ubuntu 24.04, bun, the `.nvmrc` Node, Chrome) and runs `make test` in it with the build output carried in. There the
+host grants cores and memory (`FACTORY_STEP_CORES`, `FACTORY_STEP_MEM_MIB`) and `scripts/unit-test.ts` runs up to
+`min(cores, memory / 1 GiB, 8)` processes at once (`scripts/unit-parallelism.ts`); unset, as on the mini and in CI, it
+stays serial. Every process runs with `--timeout 30000`, because a host 1.7x slower under parallel load took 5 to 8 s
+for tests that take under 3 s on the mini. `FACTORY_SLOT_HOST=vps make test` pins one run there.
+
 ## Layout suite
 
 - **The layout suite needs the headless shell.** It runs in CI, `make check` and (in part) `make check-fast`, never in `pre`.
