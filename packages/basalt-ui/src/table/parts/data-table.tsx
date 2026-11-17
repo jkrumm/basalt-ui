@@ -109,14 +109,15 @@ function clippedRows<T>(
  * @example
  * <DataTable table={t} height="fill" />
  */
-export function DataTable<T>({
+export function DataTable<T, I = unknown>({
   table,
   detail,
   height = 'auto',
   virtual,
   focus,
   focusSeries,
-}: DataTableProps<T>): ReactElement {
+  focusItems,
+}: DataTableProps<T, I>): ReactElement {
   const model = modelOf(table)
   const scrolls = typeof height === 'object' || height === 'fill' || model.phone === 'scroll'
   const columns = visibleColumns(model.specs, model.plan.columns).length
@@ -127,7 +128,7 @@ export function DataTable<T>({
   const footerShown = hasFooter(model) && phase.tag === 'ready'
   const rowsShown = useRowsShown()
   const clipped = clippedRows(model, height)
-  const link = rowLinkOf(focus, focusSeries, model.getRowId)
+  const link = rowLinkOf({ focus, focusSeries, focusItems }, model.getRowId)
   const onBlur = clearOnBlur(link)
   const windowed = virtual !== undefined && (phase.tag === 'ready' || phase.tag === 'stale')
 
