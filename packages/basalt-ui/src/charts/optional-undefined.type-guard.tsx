@@ -10,6 +10,7 @@ import type { ChartFigure, LegendEntry } from './contract'
 import { ChartCard } from './parts/chart-card'
 
 declare const text: string | undefined
+declare const flag: boolean | undefined
 declare const delta: Delta | undefined
 declare const status: Verdict | undefined
 declare const phase: Phase | undefined
@@ -26,6 +27,7 @@ export const everyFigureField: ChartFigure = {
   unit: text,
   delta,
   period: text,
+  periodMono: flag,
   status,
 }
 
@@ -59,6 +61,13 @@ export const explicitUndefined: ReactElement = (
     chart={() => null}
   />
 )
+
+export const monoPeriod: ChartFigure = {
+  value: -56,
+  unit: 'dBm',
+  period: '14:05 UTC',
+  periodMono: true,
+}
 
 // @ts-expect-error `value` stays required: an absent figure value is `null`, never a missing key
 export const valueRequired: ChartFigure = { unit: 'ms' }

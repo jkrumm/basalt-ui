@@ -88,7 +88,7 @@ const rowsOf = (rows: StatCellProps['rows']): StatRow[] => {
  */
 export function StatCell(props: StatCellProps): ReactElement {
   const { label, qualifier, info, value, unit, delta, status, sub, srText, meter, chart } = props
-  const { href, onClick, phase, empty, swatch } = props
+  const { href, onClick, phase, empty, swatch, subMono } = props
   const variant = useContext(StatGroupContext)
   const about = useAboutLabel()
   const resolved = resolvePhase({ phase, empty })
@@ -179,7 +179,15 @@ export function StatCell(props: StatCellProps): ReactElement {
           {resolved.tag === 'loading' ? (
             <div className={cn(BAR, 'h-3 w-3/4')} />
           ) : (
-            <p className="truncate text-xs text-muted-foreground">{sub}</p>
+            <p
+              data-monospace={subMono === true ? '' : undefined}
+              className={cn(
+                'truncate text-xs text-muted-foreground',
+                subMono === true && 'font-mono tabular-nums',
+              )}
+            >
+              {sub}
+            </p>
           )}
         </div>
       )}

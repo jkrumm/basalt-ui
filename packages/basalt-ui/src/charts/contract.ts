@@ -305,6 +305,8 @@ export type ChartFigure = {
   unit?: string | undefined
   delta?: Delta | undefined
   period?: string | undefined
+  /** The period is a time or an id: drawn in the mono face with tabular numerals. */
+  periodMono?: boolean | undefined
   status?: Verdict | undefined
 }
 

@@ -55,6 +55,8 @@ export type StatCardProps = CardTarget &
     /** The verdict home: dot plus word. A card never takes a hue. */
     status?: Verdict | undefined
     sub?: string | undefined
+    /** The sub line is a time or an id: drawn in the mono face with tabular numerals. */
+    subMono?: boolean | undefined
     /** Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16). */
     chart?: BoxSlot | undefined
     /** The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alone. */
@@ -84,6 +86,8 @@ export type StatCellProps = CardTarget &
     delta?: Delta | undefined
     status?: Verdict | undefined
     sub?: string | undefined
+    /** The sub line is a time or an id: drawn in the mono face with tabular numerals. */
+    subMono?: boolean | undefined
     srText?: string | undefined
     meter?: MeterSpec | undefined
     /** Called in a 28 px box. */
