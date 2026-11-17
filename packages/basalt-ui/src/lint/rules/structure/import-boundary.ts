@@ -491,7 +491,13 @@ const PACKAGE_BANS: readonly PackageBan[] = [
     ],
     fix: 'Import the owned primitive from basalt-ui/ui/<name>: popover, menu, tooltip, sheet; Radix, Mantine, Chakra, MUI, Ant Design, HeroUI, React Aria, Ark and Floating UI are not in the stack',
     next: 'Eject the primitive with basalt-ui eject, then edit the copy',
-    except: ['@mantine/hooks', '@mui/x-*', '@ant-design/charts', '@ant-design/plots'],
+    except: [
+      '@mantine/hooks',
+      '@mui/x-charts',
+      '@mui/x-data-grid*',
+      '@ant-design/charts',
+      '@ant-design/plots',
+    ],
   },
   {
     id: 'cmdk',
@@ -658,7 +664,7 @@ const isStack = (source: string): boolean => STACK_PACKAGES.has(packageOf(source
 type RivalPart = {
   readonly kind: string
   readonly part: string
-  /** Words a package name starts a segment with (`react-hot-toast`, `@uiw/react-markdown-preview`). */
+  /** Words a package name starts a segment with (`react-hot-toast`, `react-markdown-view`). */
   readonly words: string
   /** Named imports of a part basalt owns the behaviour of: an overlay, a picker, a grid. */
   readonly names?: readonly string[]
@@ -730,7 +736,7 @@ const RIVAL_PARTS: readonly RivalPart[] = [
   },
 ]
 
-const wordOf = (part: RivalPart): RegExp => new RegExp(`(?:^|[-/@.])(?:${part.words})`)
+const wordOf = (part: RivalPart): RegExp => new RegExp(`(?:^|[-.])(?:${part.words})`)
 const BY_WORD: readonly (readonly [RegExp, RivalPart])[] = RIVAL_PARTS.map((p) => [wordOf(p), p])
 
 /** The part a package reads as, by its name first, then by what it is imported for. */
