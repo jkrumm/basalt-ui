@@ -284,14 +284,15 @@ function StackedTrack({ segments }: { segments: readonly Segment[] }): ReactElem
         data-slot="bar-list-track"
         data-stacked=""
         aria-hidden="true"
-        className="flex h-2 gap-px overflow-clip rounded-full bg-selected"
+        className="flex h-2 overflow-clip rounded-full bg-selected"
       >
         {segments.map((s) => (
           <span
             key={s.key}
             data-slot="bar-list-segment"
             data-series={s.key}
-            className="block h-full shrink-0 bg-(--swatch-light) dark:bg-(--swatch-dark)"
+            // The divider is a border inside the part's own width, so the parts sum to the scale.
+            className="block h-full shrink-0 border-card bg-(--swatch-light) not-first:border-l dark:bg-(--swatch-dark)"
             style={
               {
                 width: `${s.percent}%`,
