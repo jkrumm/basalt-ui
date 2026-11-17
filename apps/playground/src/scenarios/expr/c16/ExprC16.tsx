@@ -6,7 +6,7 @@ import { DataPanel } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
 import { PageBar, QueryState } from 'basalt-ui/page'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import type { ReactElement } from 'react'
 import { MODEL_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
@@ -216,7 +216,7 @@ export function ExprC16Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                 key: 'now',
                 label: 'Current model',
                 color: MODEL_SERIES.current,
-                r: () => VX.dotR + 2,
+                r: () => BASALT.dotR + 2,
                 y: (m) => (m.id === scenario.currentId ? chatCost(m, chat) : null),
                 format: (v) => usd(v),
               },
@@ -246,7 +246,7 @@ export function ExprC16Scenario({ shotState, fixture }: ScenarioProps): ReactEle
             }}
             // cycle-expression-6: the kit has no per-dot name label on a scatter, so each model is named by a placed text mark.
             marks={CartesianChart.custom<Row>((plot) => {
-              const r = VX.dotR + 1
+              const r = BASALT.dotR + 1
               const dots = plot.data.flatMap((m) => {
                 const px = plot.x(m.speed)
                 if (px === null) return []
@@ -281,7 +281,7 @@ export function ExprC16Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                   ]
                 }),
                 { width: plot.plotWidth, height: plot.plotHeight },
-                { obstacles: [...dots, ...rule], gap: VX.dotR + 3 },
+                { obstacles: [...dots, ...rule], gap: BASALT.dotR + 3 },
               )
               // cycle-expression-6: the kit draws no ring on the current dot or the list-focused dot, so a hollow dot mark is drawn at each.
               const ringed = [
@@ -294,9 +294,9 @@ export function ExprC16Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                 dot(ringed, {
                   x: (m) => m.speed,
                   y: (m) => Math.min(COST_CAP, chatCost(m, chat)),
-                  r: VX.dotR + 4,
+                  r: BASALT.dotR + 4,
                   fill: 'none',
-                  stroke: VX.ink,
+                  stroke: BASALT.ink,
                   strokeWidth: 1.5,
                 }),
                 text(placed, {
@@ -306,8 +306,8 @@ export function ExprC16Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                   dx: (l) => l.dx,
                   dy: (l) => l.dy,
                   anchor: (l) => l.textAnchor,
-                  fill: VX.ink,
-                  fontSize: VX.text.micro,
+                  fill: BASALT.ink,
+                  fontSize: BASALT.text.micro,
                 }),
               ]
             })}

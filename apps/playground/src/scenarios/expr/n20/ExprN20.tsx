@@ -2,7 +2,7 @@ import { text } from '@tanstack/charts/text'
 import type { Delta, Verdict } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { PageBar, PageSummary, QueryState } from 'basalt-ui/page'
-import { VX, alpha } from 'basalt-ui/tokens'
+import { BASALT, alpha } from 'basalt-ui/tokens'
 import type { ReactElement } from 'react'
 import { VOLUME_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
@@ -172,7 +172,7 @@ function LiftCard({ lift, loading }: { lift: Lift; loading: boolean }): ReactEle
               from: 'W1',
               to: `W${WEEKS}`,
               y: { from: lift.mev, to: lift.mrv },
-              fill: alpha(VX.inkMuted, 0.12),
+              fill: alpha(BASALT.inkMuted, 0.12),
               label: 'Productive range',
             },
           ]}
@@ -217,8 +217,8 @@ function LiftCard({ lift, loading }: { lift: Lift; loading: boolean }): ReactEle
                 y: () => 0,
                 text: () => '0',
                 dy: -8,
-                fill: VX.ink,
-                fontSize: VX.text.micro,
+                fill: BASALT.ink,
+                fontSize: BASALT.text.micro,
               }),
               text(out, {
                 x: (d) => d.week,
@@ -226,8 +226,8 @@ function LiftCard({ lift, loading }: { lift: Lift; loading: boolean }): ReactEle
                 text: (d) => d.label,
                 dy: -8,
                 anchor: 'end',
-                fill: VX.ink,
-                fontSize: VX.text.micro,
+                fill: BASALT.ink,
+                fontSize: BASALT.text.micro,
               }),
             ]
           })}

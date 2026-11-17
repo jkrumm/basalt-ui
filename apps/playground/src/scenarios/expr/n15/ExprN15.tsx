@@ -3,7 +3,7 @@ import { text } from '@tanstack/charts/text'
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
 import type { ChartFigure } from 'basalt-ui/charts'
 import { CardGrid, Page, PageBar } from 'basalt-ui/page'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { WALK_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
 import { TARGET_MINUTES, isFixtureName, mmss, paceOf, walks } from './fixture'
@@ -200,8 +200,8 @@ export function ExprN15Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                     dx: (l) => l.dx,
                     dy: (l) => l.dy,
                     anchor: (l) => l.textAnchor,
-                    fill: VX.ink,
-                    fontSize: VX.text.micro,
+                    fill: BASALT.ink,
+                    fontSize: BASALT.text.micro,
                   }),
                 ]
               })}

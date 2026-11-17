@@ -4,7 +4,7 @@ import { ChartCard, Heatmap, useChartFocus } from 'basalt-ui/charts'
 import type { ChartFigure, HeatmapState, LegendEntry } from 'basalt-ui/charts'
 import type { Phase } from 'basalt-ui/cards'
 import { createFormat } from 'basalt-ui'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { PageBar } from 'basalt-ui/page'
 import type { ScenarioProps } from '../../shot-state'
 import {
@@ -40,10 +40,10 @@ const format = createFormat()
 const count = (n: number): string => format.number(n)
 
 const FILL: Record<Verdict, string> = {
-  train: VX.good,
-  easy: VX.brand,
-  rest: VX.warn,
-  thin: VX.inkFaint,
+  train: BASALT.good,
+  easy: BASALT.brand,
+  rest: BASALT.warn,
+  thin: BASALT.inkFaint,
 }
 
 const STATES: readonly HeatmapState<Verdict>[] = VERDICTS.map((key) => ({
