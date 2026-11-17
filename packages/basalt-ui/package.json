@@ -207,6 +207,7 @@
     "publint": "0.3.24",
     "react-day-picker": "10.0.2",
     "react-markdown": "^10.1.0",
+    "react-resizable-panels": "4.22.1",
     "rehype-sanitize": "6.0.0",
     "remark-gfm": "^4.0.1",
     "remend": "1.4.0",
@@ -241,6 +242,7 @@
     "react-day-picker": "10.0.2",
     "react-dom": "^19.3.0",
     "react-markdown": "^10.1.0",
+    "react-resizable-panels": "4.22.1",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
     "remend": "1.4.0",
@@ -312,6 +314,9 @@
       "optional": true
     },
     "react-markdown": {
+      "optional": true
+    },
+    "react-resizable-panels": {
       "optional": true
     },
     "rehype-sanitize": {

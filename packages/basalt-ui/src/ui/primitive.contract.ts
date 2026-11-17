@@ -32,6 +32,7 @@ import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { AutocompleteContent, ComboboxContent } from './combobox'
 import { MenuContent, MenuRadioGroup } from './menu'
+import { ResizablePanelGroup } from './resizable'
 import { SelectContent } from './select'
 
 type PartComponent = ComponentType<Record<string, unknown>>
@@ -67,6 +68,7 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
   ...overlayAncestry(true),
   ...pickerAncestry(),
   ...toolbarAncestry(),
+  ...resizableAncestry(),
   ...tableAncestry({
     'table-header': ['table'],
     'table-body': ['table'],
@@ -184,6 +186,12 @@ export function popupAncestry(
 export function toolbarAncestry(): Record<string, ComponentType<{ children?: ReactNode }>> {
   const root = (p: { children?: ReactNode }): ReactElement => createElement(BaseToolbar.Root, p)
   return { 'toolbar-group': root, 'toolbar-button': root, 'toolbar-separator': root }
+}
+
+/** The library throws on a panel or a divider outside a group, so both render inside one. */
+export function resizableAncestry(): Record<string, ComponentType<{ children?: ReactNode }>> {
+  const group = (p: { children?: ReactNode }): ReactElement => createElement(ResizablePanelGroup, p)
+  return { 'resizable-panel': group, 'resizable-handle': group }
 }
 
 /** Roots that render no element of their own: they carry no slot and are not listed in `SLOTS`. */

@@ -10,6 +10,7 @@ import {
   disclosureAncestry,
   overlayAncestry,
   pickerAncestry,
+  resizableAncestry,
   toolbarAncestry,
 } from './primitive.contract'
 import { SLOTS } from './slots'
@@ -60,6 +61,7 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
   ...disclosureAncestry(),
   ...overlayAncestry(true),
   ...pickerAncestry(),
+  ...resizableAncestry(),
   ...toolbarAncestry(),
 }
 
