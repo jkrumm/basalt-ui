@@ -734,6 +734,8 @@ const RIVAL_PARTS: readonly RivalPart[] = [
     // `select` ends its segment: `react-select`, not `react-selecto` (a drag-selection area).
     words: 'combobox|select(?![a-z])',
     names: ['Combobox', 'Autocomplete'],
+    // A selector engine queries a tree (css-select, hast-util-select); it renders no control.
+    except: /^css-select$|-util-select$/,
   },
   {
     kind: 'date picker',
