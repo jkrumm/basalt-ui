@@ -7,7 +7,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-import type { RowDef } from '../lib'
+import type { Raises, RowDef } from '../lib'
 import { SRC, measureSource, reExportAll } from '../ui-bundle'
 
 const TEN = [
@@ -122,9 +122,21 @@ export const rows: readonly RowDef[] = [
     id: 'ui-value-exports',
     order: 350,
     label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
-    // 215 measured. Exact: a new value export is a row here and a consumer named for it; a lower
+    // 218 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
-    ceiling: 215,
+    ceiling: 218,
     measure: valueExports,
   },
 ]
+
+export const raises: Raises = {
+  'ui-value-exports': [
+    {
+      from: 215,
+      to: 218,
+      consumer:
+        '`InfoHint`, `defineGlossary` and `infoHintParts` from `basalt-ui/ui/info-hint`: the software-factory console (apps/console/src/components/kit/info-hint.tsx) replaces its own hint over a generated glossary (Issue 1820)',
+      repo: 'software-factory',
+    },
+  ],
+}

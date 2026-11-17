@@ -41,6 +41,7 @@ export const SLOTS = {
     'fieldset-legend',
     'form',
   ],
+  'info-hint': ['info-hint'],
   input: ['input'],
   kbd: ['kbd'],
   menu: [

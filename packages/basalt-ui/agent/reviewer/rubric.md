@@ -58,7 +58,7 @@ Score per component, then add one line per page for the page items (Communicatio
 
 1. No banned filler (below).
 2. Every number carries its unit inline; a rate or total carries its period.
-3. A number whose definition, period or source is not stated on the surface has a tooltip or a one-line explanation; a count of visible items has none.
+3. A number whose definition, period or source is not stated on the surface has a tooltip or a one-line explanation; a count of visible items has none. A domain word that is unfamiliar to a stranger carries an `InfoHint` whose definition is read from the app's glossary and retyped nowhere.
 4. Titles are precise nouns with their scope ("Ride distance, 7 days"), not categories ("Metrics").
 5. **[page]** A page is not three rows of KPI cards, and not a single table when its data has one of the shapes in the question-to-form table. At 1800x1200 the page's questions are answered in the first screen without a scroll, nothing is told twice, and a working screen runs full width, not in a narrow column (only running prose caps its measure).
 6. Empty and error states say why and what to do, per `node_modules/basalt-ui/docs/empty-state.md`: an error is one "Could not load <thing>" title, the cause, one Retry, with the error dot and no empty-state glyph; a loading state is a skeleton in the loaded shape; one wording per repeated gap across cards.
