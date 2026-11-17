@@ -24,7 +24,7 @@ import { ResponsiveFunnelChart } from 'some-chart-kit'
 // @invalid
 import useLocalStorageState from 'react-localstorage-hook'
 // @invalid
-import { cmdkLike } from 'cmdk-lite'
+import { Command } from 'cmdk-lite'
 // @valid
 import useLocalStorageState from 'react-localstorage-hook'
 export const adapter = { kind: StorageLike, getItem, setItem }
@@ -88,3 +88,19 @@ import { selectAll } from 'hast-util-select'
 import { selectOne } from 'css-select'
 // @valid
 import { Calendar } from 'react-big-calendar'
+// @invalid
+import { useCombobox } from 'downshift'
+// @invalid
+import { useSelect } from 'downshift'
+// @invalid
+import { useDatePicker } from 'picker-kit'
+// @invalid
+import { toast } from 'toastify-lite'
+// @invalid
+import 'react-datepicker-lite/dist/style.css'
+// @valid
+import markdownEscape from 'markdown-escape'
+// @valid
+import { google as calendarLink } from 'calendar-link'
+// @valid
+import removeMd from 'remove-markdown'

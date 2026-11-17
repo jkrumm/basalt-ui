@@ -3,7 +3,8 @@
  * the owned entries. 2.x had these as one hand-copied ban that an `extends` silently replaced; here
  * each route is a form with its own fix token and fixture.
  *
- * Fourteen forms: eight package bans, the engine allowlist, direct `useReactTable` (an import, or a
+ * Fifteen forms: nine package bans (`scheme-library` reads next-themes, whose `.dark` class no
+ * basalt token reads; BasaltProvider owns the scheme), the engine allowlist, direct `useReactTable` (an import, or a
  * re-export of it from a module; `export *` is not read, it names no hook) or a table engine
  * (`@tanstack/table-core`, AG Grid, react-data-grid, MUI X Data Grid, Material React Table), the
  * un-ejected `@/components/ui/*` path, `useChat()` without a `chat` option, persist libraries
@@ -584,6 +585,14 @@ const PACKAGE_BANS: readonly PackageBan[] = [
     fix: 'Fetch through the query client and liveQuery from basalt-ui/data, open a stream with createChannel, and keep routes and URL state in basalt-ui/router (a field; TanStack Router, never react-router)',
     next: 'createChannel takes the Transport seam, so a socket is one adapter',
   },
+  {
+    // A scheme store of its own: next-themes writes a `.dark` class (and its own storage key) by
+    // default, and basalt's tokens key on `[data-theme]`, so its fork reaches no token.
+    id: 'scheme-library',
+    packages: ['next-themes', 'remix-themes', 'use-dark-mode'],
+    fix: "BasaltProvider owns the scheme: pass its scheme prop and switch it with setScheme from basalt-ui/core/scheme; basalt's tokens key on [data-theme], and next-themes writes a .dark class no token reads",
+    next: 'Tokens switch per scheme, so a component reads no scheme to pick a class',
+  },
 ]
 
 /** The shadcn utils file (`@/lib/utils`, `~/lib/utils`, `../lib/utils`): its `cn` is clsx plus twMerge. */
@@ -670,8 +679,10 @@ type RivalPart = {
   readonly part: string
   /** Words a package name starts a segment with (`react-hot-toast`, `react-markdown-view`). */
   readonly words: string
-  /** Named imports of a part basalt owns the behaviour of: an overlay, a picker, a grid. */
+  /** Named imports of a part basalt owns the behaviour of, each also read as its `use<Name>` hook. */
   readonly names?: readonly string[]
+  /** Hooks of the part whose name is not one of `names` (downshift's `useSelect` is a combobox). */
+  readonly hooks?: readonly string[]
   readonly suffix?: RegExp
   /** A package the word reads but that is not this part (a serialiser that writes Markdown). */
   readonly except?: RegExp
@@ -695,8 +706,8 @@ const RIVAL_PARTS: readonly RivalPart[] = [
     kind: 'markdown',
     part: 'Markdown from basalt-ui/content',
     words: 'markdown|marked',
-    // A serialiser writes a Markdown string (a copy-as-Markdown action); it renders nothing.
-    except: /^markdown-table$|-to-markdown$/,
+    // A serialiser writes a Markdown string (mdast-util-to-markdown's `toMarkdown`); it renders nothing.
+    except: /-to-markdown$/,
   },
   {
     kind: 'toast',
@@ -734,7 +745,10 @@ const RIVAL_PARTS: readonly RivalPart[] = [
     // `select` ends its segment: `react-select`, not `react-selecto` (a drag-selection area).
     words: 'combobox|select(?![a-z])',
     names: ['Combobox', 'Autocomplete'],
-    // A selector engine queries a tree (css-select, hast-util-select); it renders no control.
+    // downshift's `useSelect` is its select; a bare `Select` is too generic a name to read.
+    hooks: ['useSelect'],
+    // A selector engine queries a tree (css-select's `CSSselect`, hast-util-select's `select`); it
+    // renders no control.
     except: /^css-select$|-util-select$/,
   },
   {
@@ -756,16 +770,49 @@ const RIVAL_PARTS: readonly RivalPart[] = [
 const wordOf = (part: RivalPart): RegExp => new RegExp(`(?:^|[-.])(?:${part.words})`)
 const BY_WORD: readonly (readonly [RegExp, RivalPart])[] = RIVAL_PARTS.map((p) => [wordOf(p), p])
 
-/** The part a package reads as, by its name first, then by what it is imported for. */
+/** A binding whose last word is the part's own word: `createChart`, `marked`, `toast`. */
+const endsWithWord = (part: RivalPart, name: string): boolean =>
+  new RegExp(`(?:${part.words})$`, 'i').test(name)
+
+/** A component (`ReactModal`, a namespace `Toast`) or a hook (`useCombobox`): the shapes that render a part. */
+const isRenderShape = (name: string): boolean => /^[A-Z]|^use[A-Z0-9]/.test(name)
+
+/**
+ * Every name an import or re-export binds, imported and local (`{ google as calendarLink }` gives
+ * both), or undefined for a node that binds nothing by name: a bare `import 'pkg/style.css'`,
+ * `export *`, `import()` and `require()`, which cannot be narrowed to a shape.
+ */
+const boundNames = (node: Node): string[] | undefined => {
+  const names = children(node, 'specifiers').flatMap((s) =>
+    [child(s, 'imported'), child(s, 'local')].flatMap((n) => nameOf(n) ?? []),
+  )
+  return names.length > 0 ? names : undefined
+}
+
+/** A part's named import, read whole or as its `use<Name>` hook, or one of its other hooks. */
+const namesPart = (part: RivalPart, name: string): boolean =>
+  part.names?.some((n) => name === n || name === `use${n}`) === true ||
+  part.hooks?.includes(name) === true ||
+  part.suffix?.test(name) === true
+
+/**
+ * The part a package reads as, by its name first, then by what it is imported for. A by-word
+ * match holds only when the import binds a render shape or a name ending in the part's word; a
+ * lower-case function import (`markdownEscape`, `google` from calendar-link) is a utility.
+ */
 const rivalOf = (node: Node, source: string): { part: RivalPart; by: string } | undefined => {
   const pkg = packageOf(source)
   const byWord = BY_WORD.find(([word]) => word.test(pkg))?.[1]
   if (byWord?.except?.test(pkg) === true) return undefined
-  if (byWord) return { part: byWord, by: 'its name' }
+  if (byWord) {
+    // A storage route renders nothing: its lower-case `store` is the route itself.
+    const bound = byWord.storage === true ? undefined : boundNames(node)
+    const renders =
+      bound === undefined || bound.some((n) => isRenderShape(n) || endsWithWord(byWord, n))
+    return renders ? { part: byWord, by: 'its name' } : undefined
+  }
   for (const name of importedNames(node)) {
-    const part = RIVAL_PARTS.find(
-      (p) => p.names?.includes(name) === true || p.suffix?.test(name) === true,
-    )
+    const part = RIVAL_PARTS.find((p) => namesPart(p, name))
     if (part) return { part, by: `its ${name}` }
   }
   return undefined
@@ -774,8 +821,19 @@ const rivalOf = (node: Node, source: string): { part: RivalPart; by: string } | 
 /**
  * `rival-signature`: an unscoped package on no ban row and outside the stack that reads as a part
  * basalt ships, by a word in its name (`react-modal`, `lightweight-charts`) or by the overlay,
- * picker or grid it is imported for (`{ Dialog } from 'tiny-kit/dialog'`). It catches the next ring of
+ * picker or grid it is imported for (`{ Dialog } from 'tiny-kit/dialog'`, downshift's `useCombobox`
+ * and `useSelect`: a part's name is also read as its `use<Name>` hook). It catches the next ring of
  * rivals before a cycle seeds them; a package that only shares a word is waived on its line.
+ *
+ * Shape test (lint-9.1): a by-word match reports only when the import binds a component
+ * (PascalCase, a namespace included) or a hook (`use*`), the shapes that render a rival part, or a
+ * name whose last word is the part's own (`createChart` from lightweight-charts, `marked`, `toast`).
+ * A lower-case function import is a utility and passes: `markdownEscape` from markdown-escape,
+ * `google` from calendar-link. An import that binds nothing by name (a stylesheet, `import()`,
+ * `require()`) and a storage package keep the word alone. The test made the `markdown-table`
+ * except entry redundant (its `markdownTable` is a utility) and it is gone; `-to-markdown`
+ * (`toMarkdown` ends in the word), `css-select` (its default `CSSselect`), `-util-select`
+ * (`select`) and `big-calendar` (`Calendar`) stay, as each binds a shape the test reads.
  */
 const rivalSignature: AstForm = {
   id: 'rival-signature',

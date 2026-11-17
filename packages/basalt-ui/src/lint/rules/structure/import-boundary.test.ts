@@ -72,7 +72,7 @@ describe('oxlint plugins-dev RuleTester', () => {
 })
 
 describe('import-boundary forms', () => {
-  it('has the fourteen forms the contract row names, all live', () => {
+  it('has the fifteen forms the contract row names, all live', () => {
     expect(IMPORT_BOUNDARY.forms.map((form) => form.id)).toEqual([
       'base-ui',
       'radix',
@@ -82,6 +82,7 @@ describe('import-boundary forms', () => {
       'tailwind-merge',
       'visx',
       'data-library',
+      'scheme-library',
       'engine-subpath',
       'react-table-hook',
       'ui-path',
