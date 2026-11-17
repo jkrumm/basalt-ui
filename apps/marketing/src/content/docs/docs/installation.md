@@ -26,6 +26,7 @@ pnpm add -D @tailwindcss/typography shadcn tw-animate-css
 ```
 
 **Why these dependencies?**
+
 - `@tailwindcss/typography` - Powers the `.prose` class for content styling
 - `shadcn` - Component CLI tool for adding UI components
 - `tw-animate-css` - Animation utilities
@@ -38,40 +39,44 @@ Add this to your main CSS file:
 
 ```css
 /* src/styles/globals.css or app/globals.css */
-@import "basalt-ui/css";
+@import 'basalt-ui/tailwind.css';
 ```
 
 ⚠️ **Critical:** This import **REPLACES** `@import "tailwindcss"` - do NOT use both!
 
 ```css
 /* ❌ WRONG - Don't import both */
-@import "tailwindcss";
-@import "basalt-ui/css";
+@import 'tailwindcss';
+@import 'basalt-ui/tailwind.css';
 
 /* ✅ CORRECT - Only basalt-ui */
-@import "basalt-ui/css";
+@import 'basalt-ui/tailwind.css';
 ```
 
 **Why?** BasaltUI includes the complete Tailwind v4 theme. Importing both causes conflicts and duplicate CSS.
 
 **Import path formats:**
-- ✅ `basalt-ui/css` (correct)
+
+- ✅ `basalt-ui/tailwind.css` (correct, the stylesheet `basalt-ui init` writes)
+- ❌ `basalt-ui/css` (not exported)
 - ❌ `basalt-ui` (wrong)
 - ❌ `basalt-ui/src/index.css` (wrong)
 
 **What this imports:**
+
 - Complete Tailwind v4 theme (`@theme inline` CSS)
-- Font-family CSS tokens (Instrument Sans Variable, JetBrains Mono Variable) — font files must be loaded by your app
+- Font-family CSS tokens (Hubot Sans Variable, Nunito Sans Variable, JetBrains Mono Variable)
 - CSS variables for light/dark modes
 - Typography plugin configuration
 - Animation utilities
 
 **What you DON'T need:**
+
 - No `tailwind.config.js` file required
 - No PostCSS configuration
 
 :::note[Font loading]
-basalt-ui defines font-family tokens but does **not** bundle font files. You need to load fonts in your app — see the [Fonts](#fonts) section below for per-framework setup.
+Fonts ship with basalt-ui. The import loads the three faces from the package's own `@fontsource-variable` dependencies, so you install and import no font packages. See [Fonts](#fonts) for the token names.
 :::
 
 **Tailwind version requirement:**
@@ -97,7 +102,7 @@ If you need project-specific design tokens or overrides, add them **AFTER** the 
 
 ```css
 /* src/styles/globals.css */
-@import "basalt-ui/css";  /* Must come first */
+@import 'basalt-ui/tailwind.css'; /* Must come first */
 
 /* Your custom overrides come after */
 :root {
@@ -107,12 +112,13 @@ If you need project-specific design tokens or overrides, add them **AFTER** the 
 
 /* Override BasaltUI tokens if needed (not recommended) */
 .dark {
-  --background: oklch(0.15 0.01 285);  /* Darker than default */
+  --background: oklch(0.15 0.01 285); /* Darker than default */
 }
 ```
 
 **Important ordering rules:**
-1. ✅ `@import "basalt-ui/css"` must be first
+
+1. ✅ `@import "basalt-ui/tailwind.css"` must be first
 2. ✅ Your custom CSS variables come after
 3. ❌ Don't define custom variables before the import (they'll be overridden)
 
@@ -121,49 +127,42 @@ If you need project-specific design tokens or overrides, add them **AFTER** the 
 ### Vite (React, Vue, Svelte)
 
 **1. Install Tailwind v4 Vite plugin:**
+
 ```bash
 bun add -D @tailwindcss/vite
 ```
 
 **2. Configure Vite:**
+
 ```typescript
 // vite.config.ts
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [
     tailwindcss(), // ⚠️ Must come before framework plugin
     react(),
   ],
-});
+})
 ```
 
-**3. Install fonts:**
-```bash
-bun add @fontsource-variable/instrument-sans @fontsource-variable/jetbrains-mono
-```
+**3. Import CSS in entry file:**
 
-**4. Import CSS in entry file:**
 ```typescript
 // src/main.tsx
-import './styles/globals.css';
+import './styles/globals.css'
 ```
 
-**5. Create globals.css:**
+**4. Create globals.css:**
+
 ```css
 /* src/styles/globals.css */
 
-/* Self-hosted variable fonts */
-@import "@fontsource-variable/instrument-sans";
-@import "@fontsource-variable/jetbrains-mono";
-
-/* basalt-ui design tokens (includes Tailwind v4) */
-@import "basalt-ui/css";
+/* basalt-ui design tokens and fonts (includes Tailwind v4) */
+@import 'basalt-ui/tailwind.css';
 ```
-
-Font imports must come **before** `basalt-ui/css` so the `@font-face` declarations are in scope when Tailwind processes the font-family tokens.
 
 :::tip[Zero FOUT with fontaine]
 Add `vite-plugin-fontaine` to generate metric-calibrated fallbacks and reach near-zero CLS. See [Font Performance](#font-performance) below.
@@ -172,12 +171,14 @@ Add `vite-plugin-fontaine` to generate metric-calibrated fallbacks and reach nea
 ### Next.js (App Router)
 
 **1. Create global CSS file:**
+
 ```css
 /* app/globals.css */
-@import "basalt-ui/css";
+@import 'basalt-ui/tailwind.css';
 ```
 
 **2. Import in root layout:**
+
 ```typescript
 // app/layout.tsx
 import './globals.css';
@@ -196,30 +197,34 @@ export default function RootLayout({ children }) {
 ### Astro
 
 **1. Install Tailwind CSS v4 Vite plugin:**
+
 ```bash
 bun add -D @tailwindcss/vite
 ```
 
 **2. Add plugin to Astro config:**
+
 ```typescript
 // astro.config.mjs
-import { defineConfig } from 'astro/config';
-import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from 'astro/config'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-});
+})
 ```
 
 **3. Create global CSS file:**
+
 ```css
 /* src/styles/global.css */
-@import "basalt-ui/css";
+@import 'basalt-ui/tailwind.css';
 ```
 
 **4. Import in layout:**
+
 ```astro
 ---
 // src/layouts/Layout.astro
@@ -234,11 +239,13 @@ import '../styles/global.css';
 
 #### Font Loading
 
-Use the **Astro 6 Fonts API** — it downloads fonts at build time, serves them
-from `/_astro/fonts/` with content-hashed filenames, injects preload hints
-automatically, and generates metric-calibrated fallbacks. No extra packages needed.
+The stylesheet already registers the three faces, so nothing is needed here.
+Optional: the **Astro 6 Fonts API** serves the same faces from `/_astro/fonts/`
+with content-hashed filenames and injects preload hints. It changes where the
+files come from, not the family names the tokens use.
 
 **`astro.config.mjs`:**
+
 ```js
 import { defineConfig, fontProviders } from 'astro/config'
 import tailwindcss from '@tailwindcss/vite'
@@ -247,8 +254,15 @@ export default defineConfig({
   fonts: [
     {
       provider: fontProviders.fontsource(),
-      name: 'Instrument Sans',
-      cssVariable: '--font-instrument-sans',
+      name: 'Hubot Sans',
+      cssVariable: '--font-hubot-sans',
+      weights: [400, 500, 600, 700],
+      styles: ['normal'],
+    },
+    {
+      provider: fontProviders.fontsource(),
+      name: 'Nunito Sans',
+      cssVariable: '--font-nunito-sans',
       weights: [400, 500, 600, 700],
       styles: ['normal'],
     },
@@ -265,6 +279,7 @@ export default defineConfig({
 ```
 
 **Layout.astro:**
+
 ```astro
 ---
 import { Font } from 'astro:assets'
@@ -272,7 +287,8 @@ import '../styles/global.css'
 ---
 <html>
   <head>
-    <Font cssVariable="--font-instrument-sans" preload />
+    <Font cssVariable="--font-hubot-sans" preload />
+    <Font cssVariable="--font-nunito-sans" preload />
     <Font cssVariable="--font-jetbrains-mono" preload />
   </head>
   <body><slot /></body>
@@ -306,6 +322,7 @@ npx shadcn@latest add dialog
 ```
 
 **How it works:**
+
 - ShadCN components use classes like `bg-primary`, `text-foreground`
 - Basalt UI provides these via CSS variables
 - Dark mode switches automatically with `.dark` class
@@ -316,17 +333,18 @@ npx shadcn@latest add dialog
 Tremor Raw chart components use Basalt colors automatically:
 
 ```tsx
-import { AreaChart } from '@tremor/react';
+import { AreaChart } from '@tremor/react'
 
-<AreaChart
+;<AreaChart
   data={chartData}
   index="date"
-  categories={["sales"]}
-  colors={["blue"]}  // Uses Basalt OKLCH blue
+  categories={['sales']}
+  colors={['blue']} // Uses Basalt OKLCH blue
 />
 ```
 
 **Available colors:**
+
 - `blue`, `red`, `emerald`, `amber`, `violet`, `cyan`, `indigo`
 - Sequential: `chart-blue-1` through `chart-blue-8`
 
@@ -336,40 +354,43 @@ For Astro Starlight, import the dedicated CSS file:
 
 ```typescript
 // astro.config.mjs
-import starlight from '@astrojs/starlight';
+import starlight from '@astrojs/starlight'
 
 export default defineConfig({
   integrations: [
     starlight({
       title: 'My Docs',
-      customCss: [
-        'basalt-ui/starlight',
-      ],
+      customCss: ['basalt-ui/starlight'],
     }),
   ],
-});
+})
 ```
 
 ## Fonts
 
-basalt-ui defines font-family tokens but does **not** bundle font files. This
-keeps the package framework-agnostic and lets each app pick the best loading
-strategy for its stack.
+basalt-ui defines the font-family tokens and bundles the three faces through its
+`@fontsource-variable` dependencies, so the stylesheet import loads them. Override
+a token to use another font.
 
-**Tokens defined by the package:**
+**Tokens defined by the package (`tokens.css`):**
 
 ```css
---font-heading: "Instrument Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
---font-body:    "Instrument Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
---font-mono:    "JetBrains Mono Variable", "Menlo", "Monaco", "Courier New", monospace;
+--basalt-font-sans:
+  'Nunito Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+  Arial, sans-serif;
+--basalt-font-head:
+  'Head Digits', 'Hubot Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+  Helvetica, Arial, sans-serif;
+--basalt-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 ```
 
 **Fonts used:**
 
-| Font | Role | Variable axes |
-|-|-|-|
-| Instrument Sans Variable | Headings + body | weight 400–700, width 75–100% |
-| JetBrains Mono Variable | Code + monospace | weight 100–800 |
+| Font                    | Role                                                    |
+| ----------------------- | ------------------------------------------------------- |
+| Hubot Sans Variable     | Headings (`--basalt-font-head`)                         |
+| Nunito Sans Variable    | Body text, and the digits in headings (via Head Digits) |
+| JetBrains Mono Variable | Code and monospace                                      |
 
 ## Font Performance
 
@@ -387,23 +408,12 @@ See the complete setup in the [Astro section above](#astro) and the
 
 ### Vite / React
 
-**1. Install fonts:**
-```bash
-bun add @fontsource-variable/instrument-sans @fontsource-variable/jetbrains-mono
-```
+The faces are self-hosted from basalt-ui's dependencies and load through the
+stylesheet import. To eliminate the visual jump on swap (CLS), add
+metric-calibrated fallbacks with fontaine:
 
-**2. Import in your global CSS (before `basalt-ui/css`):**
-```css
-@import "@fontsource-variable/instrument-sans";
-@import "@fontsource-variable/jetbrains-mono";
-@import "basalt-ui/css";
-```
+**1. Optional — zero CLS with fontaine:**
 
-This gives you self-hosted fonts with `font-display: swap` — text is visible
-immediately and the web font swaps in when loaded. To eliminate the visual
-jump on swap (CLS), add metric-calibrated fallbacks with fontaine:
-
-**3. Optional — zero CLS with fontaine:**
 ```bash
 bun add -D fontaine
 ```
@@ -417,7 +427,8 @@ export default defineConfig({
     tailwindcss(),
     FontaineTransform.vite({
       fallbacks: {
-        'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
+        'Hubot Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
+        'Nunito Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
         'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
       },
       resolvePath: (id) => new URL('node_modules/' + id, import.meta.url),
@@ -433,19 +444,10 @@ visually invisible and CLS reaches zero.
 
 ### Next.js
 
-**1. Install fonts:**
-```bash
-bun add @fontsource-variable/instrument-sans @fontsource-variable/jetbrains-mono
-```
+The faces load through the stylesheet import in `app/globals.css`; nothing to install.
 
-**2. Import in `app/globals.css`:**
-```css
-@import "@fontsource-variable/instrument-sans";
-@import "@fontsource-variable/jetbrains-mono";
-@import "basalt-ui/css";
-```
+**1. Optional — zero CLS with fontaine:**
 
-**3. Optional — zero CLS with fontaine:**
 ```ts
 // next.config.ts
 import { FontaineTransform } from 'fontaine'
@@ -455,11 +457,12 @@ const nextConfig = {
     config.plugins.push(
       FontaineTransform.webpack({
         fallbacks: {
-          'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
+          'Hubot Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
+          'Nunito Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
           'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
         },
         resolvePath: (id) => new URL('node_modules/' + id, import.meta.url),
-      })
+      }),
     )
     return config
   },
@@ -468,6 +471,7 @@ const nextConfig = {
 
 :::note[Monorepo resolvePath]
 When `node_modules` is hoisted to the monorepo root, adjust the path:
+
 ```js
 resolvePath: (id) => new URL('../../node_modules/' + id, import.meta.url)
 ```
@@ -476,6 +480,7 @@ resolvePath: (id) => new URL('../../node_modules/' + id, import.meta.url)
 ## Requirements
 
 ### Peer Dependencies
+
 - **Tailwind CSS v4+** - Core CSS framework
 - **@tailwindcss/typography** - Typography plugin for `.prose` class
 - **tw-animate-css** - Animation utilities
@@ -484,7 +489,9 @@ resolvePath: (id) => new URL('../../node_modules/' + id, import.meta.url)
 All must be installed in your project (listed above).
 
 ### Browser Support
+
 Modern browsers with OKLCH color support:
+
 - Chrome 111+
 - Edge 111+
 - Safari 16.4+
@@ -497,6 +504,7 @@ Modern browsers with OKLCH color support:
 **Cause:** Using Tailwind v4 Vite plugin with older basalt-ui version.
 
 **Fix:** Update basalt-ui to latest version:
+
 ```bash
 bun update basalt-ui
 # or
@@ -508,6 +516,7 @@ npm update basalt-ui
 **Cause:** Peer dependencies not installed.
 
 **Fix:** Install all required peer dependencies:
+
 ```bash
 bun add -D @tailwindcss/typography shadcn tw-animate-css
 ```
@@ -516,25 +525,28 @@ bun add -D @tailwindcss/typography shadcn tw-animate-css
 
 **Cause:** Using incorrect import path.
 
-**Fix:** Use `basalt-ui/css` (not `basalt-ui` or `basalt-ui/src/index.css`):
+**Fix:** Use `basalt-ui/tailwind.css` (not `basalt-ui` or `basalt-ui/src/index.css`):
+
 ```css
 /* ❌ Wrong */
-@import "basalt-ui";
-@import "basalt-ui/src/index.css";
+@import 'basalt-ui';
+@import 'basalt-ui/src/index.css';
 
 /* ✅ Correct */
-@import "basalt-ui/css";
+@import 'basalt-ui/tailwind.css';
 ```
 
 ### Styles not applying / Components look unstyled
 
 **Possible causes:**
+
 1. CSS import order incorrect
 2. Missing Tailwind plugin configuration
 3. Dark mode class not applied
 
 **Fixes:**
-1. Ensure `basalt-ui/css` is imported in your entry CSS file
+
+1. Ensure `basalt-ui/tailwind.css` is imported in your entry CSS file
 2. For Vite: Add `@tailwindcss/vite` plugin BEFORE framework plugin
 3. For Next.js: Ensure globals.css is imported in root layout
 4. Add `class="dark"` to your `<html>` element
@@ -547,14 +559,15 @@ bun add -D @tailwindcss/typography shadcn tw-animate-css
 **Cause:** Tailwind plugin must come before framework plugin
 
 **Fix:**
+
 ```typescript
 // vite.config.ts
 export default defineConfig({
   plugins: [
-    tailwindcss(),  // ✅ First
-    react(),        // ✅ Second
+    tailwindcss(), // ✅ First
+    react(), // ✅ Second
   ],
-});
+})
 
 // ❌ Wrong order:
 // plugins: [react(), tailwindcss()]
@@ -562,28 +575,31 @@ export default defineConfig({
 
 ### Fonts not loading
 
-**Symptom:** Using fallback system fonts instead of Instrument Sans
+**Symptom:** Using fallback system fonts instead of Hubot Sans / Nunito Sans
 
 **Check:**
-1. Verify fonts are loaded per your framework (see [Font Performance](#font-performance))
+
+1. Verify `basalt-ui/tailwind.css` is imported in your CSS entry
 2. Check browser DevTools Network tab for font requests
-3. Look for font files (e.g. `InstrumentSans-Variable.woff2`)
-4. Ensure font imports come **before** `basalt-ui/css` in your CSS
+3. Look for the faces (e.g. `nunito-sans-latin-wght-normal.woff2`)
+4. Ensure `node_modules/@fontsource-variable/` contains `hubot-sans`, `nunito-sans` and `jetbrains-mono`
 5. Ensure no Content Security Policy blocking fonts
 
-**Note:** basalt-ui provides font-family tokens only — you must load fonts in your app.
+**Note:** the faces come from basalt-ui's dependencies; a missing package means a broken install, not a missing step in your app.
 
 ### ShadCN components wrong colors
 
 **Symptom:** ShadCN components not using Basalt colors
 
 **Fix:**
-1. Import `basalt-ui/css` BEFORE running `shadcn init`
+
+1. Import `basalt-ui/tailwind.css` BEFORE running `shadcn init`
 2. Choose "Zinc" as base color during initialization
 3. Basalt provides CSS variables (`--background`, `--primary`, etc.)
 4. Components automatically use these
 
 **Verify:**
+
 ```tsx
 <Button variant="default">Primary Button</Button>
 // Should be blue (Basalt primary color)
@@ -596,12 +612,15 @@ export default defineConfig({
 **Cause:** Missing `.dark` class on `<html>` element
 
 **Fix:**
+
 ```html
 <!-- ✅ Correct -->
 <html class="dark">
-
-<!-- ❌ Wrong -->
-<body class="dark">  <!-- Must be on html! -->
+  <!-- ❌ Wrong -->
+  <body class="dark">
+    <!-- Must be on html! -->
+  </body>
+</html>
 ```
 
 ## Dark Mode Toggle Component
@@ -609,27 +628,27 @@ export default defineConfig({
 ### React Example
 
 ```tsx
-'use client'; // For Next.js App Router
+'use client' // For Next.js App Router
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark')
 
   // Load theme from localStorage on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    const initialTheme = savedTheme || 'dark';
-    setTheme(initialTheme);
-    document.documentElement.classList.toggle('dark', initialTheme === 'dark');
-  }, []);
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+    const initialTheme = savedTheme || 'dark'
+    setTheme(initialTheme)
+    document.documentElement.classList.toggle('dark', initialTheme === 'dark')
+  }, [])
 
   const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-    localStorage.setItem('theme', newTheme);
-  };
+    const newTheme = theme === 'dark' ? 'light' : 'dark'
+    setTheme(newTheme)
+    document.documentElement.classList.toggle('dark', newTheme === 'dark')
+    localStorage.setItem('theme', newTheme)
+  }
 
   return (
     <button
@@ -639,7 +658,7 @@ export function ThemeToggle() {
     >
       {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
     </button>
-  );
+  )
 }
 ```
 
@@ -647,23 +666,23 @@ export function ThemeToggle() {
 
 ```vue
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue'
 
-const theme = ref<'light' | 'dark'>('dark');
+const theme = ref<'light' | 'dark'>('dark')
 
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-  const initialTheme = savedTheme || 'dark';
-  theme.value = initialTheme;
-  document.documentElement.classList.toggle('dark', initialTheme === 'dark');
-});
+  const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+  const initialTheme = savedTheme || 'dark'
+  theme.value = initialTheme
+  document.documentElement.classList.toggle('dark', initialTheme === 'dark')
+})
 
 const toggleTheme = () => {
-  const newTheme = theme.value === 'dark' ? 'light' : 'dark';
-  theme.value = newTheme;
-  document.documentElement.classList.toggle('dark', newTheme === 'dark');
-  localStorage.setItem('theme', newTheme);
-};
+  const newTheme = theme.value === 'dark' ? 'light' : 'dark'
+  theme.value = newTheme
+  document.documentElement.classList.toggle('dark', newTheme === 'dark')
+  localStorage.setItem('theme', newTheme)
+}
 </script>
 
 <template>
@@ -682,23 +701,25 @@ const toggleTheme = () => {
 ```javascript
 // Toggle dark mode
 function toggleTheme() {
-  const isDark = document.documentElement.classList.toggle('dark');
-  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  const isDark = document.documentElement.classList.toggle('dark')
+  localStorage.setItem('theme', isDark ? 'dark' : 'light')
 }
 
 // Load saved theme on page load
-const savedTheme = localStorage.getItem('theme') || 'dark';
-document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+const savedTheme = localStorage.getItem('theme') || 'dark'
+document.documentElement.classList.toggle('dark', savedTheme === 'dark')
 ```
 
 ### TypeScript errors
 
 If you see TypeScript errors related to basalt-ui, ensure you have the latest version:
+
 ```bash
 bun update basalt-ui
 ```
 
 **If errors persist:**
+
 ```json
 // tsconfig.json
 {
@@ -710,23 +731,25 @@ bun update basalt-ui
 
 ### Monorepo resolution issues
 
-**Symptom:** Can't resolve `basalt-ui/css` in monorepo workspace
+**Symptom:** Can't resolve `basalt-ui/tailwind.css` in monorepo workspace
 
 **Fix (Option 1):** Use relative path:
+
 ```css
 /* apps/web/src/styles/global.css */
-@import "../../../../packages/basalt-ui/src/index.css";
+@import '../../../../packages/basalt-ui/src/index.css';
 ```
 
 **Fix (Option 2):** Use `@source` directive (Tailwind v4):
+
 ```css
-@import "tailwindcss";
-@import "basalt-ui/css";
+@import 'basalt-ui/tailwind.css';
 
 @source "../../../packages/basalt-ui/src";
 ```
 
 **Fix (Option 3):** Ensure workspace protocol:
+
 ```json
 {
   "dependencies": {
@@ -738,6 +761,7 @@ bun update basalt-ui
 ## Next Steps
 
 After installation:
+
 - Explore [Typography](/docs/typography) for content styling
 - Review [Color System](/docs/colors) for theming
 - Check [Spacing](/docs/spacing) for layout utilities
