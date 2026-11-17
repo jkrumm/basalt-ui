@@ -1608,3 +1608,17 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-expr-7-kit-fixes, v3-expr-7-contract, v3-expr-7-skill, v3-expr-7-rubric]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-8.json' }
+  - key: v3-lint-9-lint
+    title: 'The rival net reads utilities and misses downshift, a JS scheme fork, a decoded body loop, a status-tint message, from lint cycle 9'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-cycle-lint-9]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-lint-9-lint.json' }
+  - key: v3-cycle-lint-10
+    title: 'Improvement cycle 10: lint and guards, misses and false alarms per rule'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-lint-9-lint]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-lint-10.json' }

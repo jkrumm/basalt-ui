@@ -1,0 +1,53 @@
+// Cycle 6 phrasings for waiver-needs-reason, in a file of their own: a file-level waiver silences
+// the rest of the file. Seed numbers continue cycle 5's.
+
+// seed waiver-needs-reason/missing-reason 16: the reason marker with nothing after it
+export function A() {
+  // oxlint-disable-next-line basalt/raw-scroll --
+  return <div className="overflow-y-auto">a</div>
+}
+
+// seed waiver-needs-reason/missing-reason 17: the trailing eslint line form with no reason
+export function B() {
+  return <div className="overflow-y-auto">b</div> // eslint-disable-line basalt/raw-scroll
+}
+
+// seed waiver-needs-reason/missing-reason 18: a JSX comment waiver with no reason
+export function C() {
+  return (
+    <div>
+      {/* oxlint-disable-next-line basalt/raw-scroll */}
+      <div className="overflow-y-auto">c</div>
+    </div>
+  )
+}
+
+// seed waiver-needs-reason/missing-reason 19: a reason that is only a dash run and a TODO tag
+export function D() {
+  // oxlint-disable-next-line basalt/raw-scroll -- TODO
+  return <div className="overflow-y-auto">d</div>
+}
+
+// pass waiver-needs-reason/missing-reason 1: a reasoned waiver in a JSX comment
+export function E() {
+  return (
+    <div>
+      {/* oxlint-disable-next-line basalt/raw-scroll -- the log pane owns its scroll for the tail-follow */}
+      <div className="overflow-y-auto">e</div>
+    </div>
+  )
+}
+
+// seed waiver-needs-reason/file-level-scope 9: a reasoned range disable mid-file, re-enabled below
+/* oxlint-disable basalt/fixed-colour -- the brand mark keeps its own white */
+export function Logo() {
+  return <span className="bg-white">logo</span>
+}
+/* oxlint-enable basalt/fixed-colour */
+
+// seed waiver-needs-reason/file-level-scope 10: an unscoped eslint range disable, re-enabled below
+/* eslint-disable */
+export function Raw() {
+  return <span className="bg-black">raw</span>
+}
+/* eslint-enable */

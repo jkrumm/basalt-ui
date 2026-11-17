@@ -1,0 +1,328 @@
+// Cycle 9 phrasings for the class family: viewport-keyed (with lint-8.1's platform-glyph form),
+// dark-fork, fixed-colour, status-fill-as-text, raw-scroll, tw-off-law, app-spacing, the token check
+// on a class and the shadcn class rules. Seed numbers continue cycle 8's. A `pass` mark is valid code
+// beside a shape a lint-8 fix widened a form to (a platform-only user-agent test, a one-word trailing
+// bang, auto-rows and auto-cols brackets).
+import { useEffect, useState } from 'react'
+import { useWindowSize } from 'usehooks-ts'
+import { useTheme } from 'next-themes'
+import { cva } from 'class-variance-authority'
+import { cn } from 'basalt-ui'
+
+// seed viewport-keyed/media-query 24: usehooks-ts' window size against a breakpoint
+export function useCompact() {
+  const { width } = useWindowSize()
+  return width < 768
+}
+
+// seed viewport-keyed/media-query 25: the client-hints mobile flag choosing a layout
+export function useHandheld() {
+  return navigator.userAgentData?.mobile === true
+}
+
+// seed viewport-keyed/media-query 26: a resize listener storing innerWidth for a layout switch
+export function useColumns() {
+  const [cols, setCols] = useState(3)
+  useEffect(() => {
+    const on = () => setCols(window.innerWidth > 1100 ? 3 : 1)
+    window.addEventListener('resize', on)
+    return () => window.removeEventListener('resize', on)
+  }, [])
+  return cols
+}
+
+// seed viewport-keyed/platform-glyph 1: an includes() sniff choosing the shortcut glyph
+export function SaveHint() {
+  return <kbd>{navigator.userAgent.includes('Mac') ? '⌘S' : 'Ctrl+S'}</kbd>
+}
+
+// seed viewport-keyed/platform-glyph 2: a case-insensitive Windows test choosing the modifier name
+export function PaletteHint() {
+  const mod = /windows|win32/i.test(navigator.userAgent) ? 'Ctrl' : '⌘'
+  return <span>{mod} K</span>
+}
+
+// seed viewport-keyed/platform-glyph 3: navigator.platform choosing the glyph (the form's stated limit)
+export function FindHint() {
+  return <kbd>{navigator.platform.startsWith('Mac') ? '⌘F' : 'Ctrl F'}</kbd>
+}
+
+// pass viewport-keyed/platform-glyph 1: a platform test choosing which installer to download, no glyph and no layout
+export function Download() {
+  const href = /Mac|Win/.test(navigator.userAgent) ? '/dl/app.dmg' : '/dl/app.exe'
+  return <a href={href}>Download</a>
+}
+
+// seed viewport-keyed/breakpoint-prefix 17: v4's max-* viewport variant hiding a column
+export function Meta() {
+  return <td className="max-md:hidden">m</td>
+}
+
+// seed viewport-keyed/breakpoint-prefix 18: a viewport class as an object key in cn()
+export function Grid2({ two }: { two: boolean }) {
+  return <div className={cn('grid', { 'md:grid-cols-2': two })}>g</div>
+}
+
+// seed viewport-keyed/arbitrary-query 13: v4's arbitrary min breakpoint
+export function Toolbar2() {
+  return <div className="hidden min-[900px]:flex">t</div>
+}
+
+// seed viewport-keyed/arbitrary-query 14: a max-width media query in an arbitrary variant with underscores
+export function Rail2() {
+  return <nav className="[@media_(max-width:_40rem)]:hidden">r</nav>
+}
+
+// pass viewport-keyed/arbitrary-query 4: a print variant, which keys on the medium, not a width
+export function Receipt() {
+  return <footer className="print:hidden">f</footer>
+}
+
+// seed dark-fork/dark-variant 25: a dark class as an object key in cn()
+export function Note({ on }: { on: boolean }) {
+  return <p className={cn('bg-card', { 'dark:bg-inset': on })}>n</p>
+}
+
+// seed dark-fork/dark-variant 26: v4's not-dark variant, the light side of the fork
+export function Raised() {
+  return <div className="bg-card not-dark:shadow-sm">r</div>
+}
+
+// seed dark-fork/dark-variant 27: next-themes' resolved theme choosing a surface class in JS
+export function Well() {
+  const { resolvedTheme } = useTheme()
+  return <div className={resolvedTheme === 'dark' ? 'bg-inset' : 'bg-card'}>w</div>
+}
+
+// seed fixed-colour/black-white 24: a white svg fill on a brand avatar
+export function Initials() {
+  return <svg className="size-6 fill-white" aria-hidden />
+}
+
+// seed fixed-colour/black-white 25: a black gradient stop over a hero image
+export function Hero2() {
+  return <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">h</div>
+}
+
+// seed fixed-colour/black-white 26: a translucent white hairline on a dark panel
+export function Split() {
+  return <div className="border-t border-white/10">s</div>
+}
+
+// seed status-fill-as-text/text-on-fill 29: a chart series colour as a legend label's text
+export function LegendLabel() {
+  return <span className="text-chart-3">p95</span>
+}
+
+// seed status-fill-as-text/text-on-fill 30: a status tint as placeholder ink
+export function Warned() {
+  return <input aria-label="w" className="placeholder:text-warn-tint" />
+}
+
+// seed status-fill-as-text/text-on-fill 31: the info tint as text in a cva variant
+export const hint = cva('text-xs', { variants: { tone: { info: 'text-info-tint' } } })
+
+// seed tw-off-law/app-colour 19: a status tint as a fill under the status ink, which Status owns
+export function Pill() {
+  return <span className="bg-warn-tint text-warn">p</span>
+}
+
+// seed raw-scroll/overflow-scroll 37: a horizontal snap carousel
+export function Carousel() {
+  return <div className="flex snap-x snap-mandatory overflow-x-auto">c</div>
+}
+
+// seed raw-scroll/overflow-scroll 38: overscroll containment on a dialog body that scrolls itself
+export function Body() {
+  return <div className="max-h-[60vh] overflow-y-auto overscroll-contain">b</div>
+}
+
+// seed raw-scroll/overflow-scroll 39: a scroll box in an inline style
+export function Feed() {
+  return <div style={{ maxHeight: 400, overflowY: 'auto' }}>f</div>
+}
+
+// pass raw-scroll/overflow-scroll 4: a clip and an ellipsis, which never scroll
+export function Clip() {
+  return <span className="overflow-x-clip text-ellipsis">c</span>
+}
+
+// seed tw-off-law/off-ladder-spacing 17: an off-ladder half-step column gap
+export function Chips() {
+  return <div className="flex gap-x-4.5">c</div>
+}
+
+// seed tw-off-law/off-ladder-spacing 18: an arbitrary pixel inset on a floating badge
+export function Dot() {
+  return <span className="absolute inset-x-[18px] top-0">d</span>
+}
+
+// seed tw-off-law/surface-recipe 24: shadcn v4's card classes on a section
+export function Section() {
+  return <section className="rounded-lg border bg-background p-4 shadow">s</section>
+}
+
+// seed tw-off-law/surface-recipe 25: a card recipe from basalt's own tokens in cn()
+export function Tile({ active }: { active: boolean }) {
+  return <div className={cn('rounded-card border bg-card shadow-md', active && 'ring-2')}>t</div>
+}
+
+// seed tw-off-law/app-colour 17: an emerald success badge
+export function Ok() {
+  return <span className="bg-emerald-50 text-emerald-700">ok</span>
+}
+
+// seed tw-off-law/app-colour 18: a sky fill on an svg dot
+export function Live() {
+  return <svg className="size-2 fill-sky-500" aria-hidden />
+}
+
+// seed tw-off-law/app-colour-arbitrary 14: the brand hex as an arbitrary text colour
+export function BrandWord() {
+  return <b className="text-[#0077bd]">b</b>
+}
+
+// seed tw-off-law/app-colour-arbitrary 15: an arbitrary oklch fill
+export function Swatch() {
+  return <i className="bg-[oklch(0.6_0.1_250)]">s</i>
+}
+
+// seed tw-off-law/app-colour-arbitrary 16: an app variable with a type hint as a border colour
+export function Framed() {
+  return <div className="border-[color:var(--brand-edge)]">f</div>
+}
+
+// seed tw-off-law/alpha-on-premixed 19: an alpha on the bad tint
+export function Failed() {
+  return <tr className="bg-bad-tint/40">f</tr>
+}
+
+// seed tw-off-law/alpha-on-premixed 20: an alpha on the selected token behind an open state
+export function Opened() {
+  return <li className="data-[state=open]:bg-selected/50">o</li>
+}
+
+// seed tw-off-law/numeric-container 19: v4's arbitrary max container variant
+export function Narrow() {
+  return <div className="@max-[30rem]:hidden">n</div>
+}
+
+// seed tw-off-law/numeric-container 20: a Tailwind container size on an unnamed container
+export function Pair() {
+  return <div className="flex flex-col @lg:flex-row">p</div>
+}
+
+// seed tw-off-law/important-modifier 17: a one-word utility with v4's trailing bang (lint-8.4)
+export function Forced() {
+  return <div className="hidden!">f</div>
+}
+
+// seed tw-off-law/important-modifier 18: a trailing bang behind an arbitrary child variant
+export function IconSize() {
+  return <span className="[&>svg]:size-3!">i</span>
+}
+
+// pass tw-off-law/important-modifier 1: a bang inside an arbitrary content string
+export function Exclaim() {
+  return <span className="after:content-['!']">e</span>
+}
+
+// seed tw-off-law/template-interpolation 18: a gap size interpolated into the utility
+export function Stack({ size }: { size: number }) {
+  return <div className={`flex flex-col gap-${size}`}>s</div>
+}
+
+// seed tw-off-law/template-interpolation 19: a column count interpolated into grid-cols
+export function Cols({ n }: { n: number }) {
+  return <div className={`grid grid-cols-${n}`}>c</div>
+}
+
+// seed tw-off-law/fixed-width 25: a fixed pixel width on a dialog panel
+export function Panel() {
+  return <div className="w-[600px]">p</div>
+}
+
+// seed tw-off-law/fixed-width 26: a fixed rem flex basis on a filter column
+export function Filters() {
+  return <div className="basis-[18rem]">f</div>
+}
+
+// seed tw-off-law/track-length 25: a fixed max in an auto-cols minmax (lint-8.7's widening)
+export function Lanes() {
+  return <div className="grid auto-cols-[minmax(0,240px)] grid-flow-col">l</div>
+}
+
+// seed tw-off-law/track-length 26: a repeat of fixed pixel columns
+export function Thumbs() {
+  return <div className="grid grid-cols-[repeat(3,200px)]">t</div>
+}
+
+// pass tw-off-law/track-length 4: auto-rows and auto-cols with fractions and content keywords
+export function Flow() {
+  return <div className="grid auto-cols-[minmax(0,1fr)] auto-rows-[auto]">f</div>
+}
+
+// seed app-spacing/space-between 17: a horizontal space between toolbar buttons
+export function Tools() {
+  return <div className="flex space-x-1.5">t</div>
+}
+
+// seed app-spacing/space-between 18: a hairline vertical space in a list
+export function Lines2() {
+  return <ul className="space-y-px">l</ul>
+}
+
+// seed app-spacing/margin 21: a negative top margin pulling a header up
+export function Pull() {
+  return <header className="-mt-2">p</header>
+}
+
+// seed app-spacing/margin 22: a logical inline-start margin on an icon
+export function Lead() {
+  return <svg className="ms-3 size-4" aria-hidden />
+}
+
+// pass app-spacing/margin 5: an auto top margin pushing a footer to the end of a column
+export function Foot() {
+  return <footer className="mt-auto">f</footer>
+}
+
+// seed unknown-token 29: basalt's ink token name read as an invented muted step
+export function Faint() {
+  return <p className="text-(--basalt-ink-subtle)">f</p>
+}
+
+// seed unknown-token 30: an invented surface step in an arbitrary value
+export function Deep() {
+  return <div className="bg-[var(--basalt-surface-2)]">d</div>
+}
+
+// seed shadcn/no-arbitrary-values 3: an arbitrary pixel height on a toolbar
+export function Bar() {
+  return <div className="h-[52px]">b</div>
+}
+
+// seed shadcn/no-arbitrary-values 4: an arbitrary letter spacing on a label
+export function Caps() {
+  return <span className="tracking-[0.08em] uppercase">c</span>
+}
+
+// seed shadcn/no-unknown-classes 3: basalt's token name as a text class the theme does not declare
+export function Muted() {
+  return <span className="text-ink-muted">m</span>
+}
+
+// seed shadcn/no-unknown-classes 4: the hairline token as a border colour class
+export function Rule() {
+  return <div className="border-b border-hairline">r</div>
+}
+
+// seed shadcn/no-raw-colors 3: a zinc border on a card divider
+export function Divider() {
+  return <div className="border-t border-zinc-200">d</div>
+}
+
+// seed shadcn/no-raw-colors 4: a gray divide colour between rows
+export function Rows() {
+  return <div className="divide-y divide-gray-100">r</div>
+}

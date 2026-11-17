@@ -1,0 +1,175 @@
+/* Cycle 8 phrasings for the stylelint preset, the token check and the class rules written as module CSS.
+   Seed numbers continue cycle 7's. A `pass` mark is valid module CSS beside a shape a cycle 7 fix widened
+   (the theme's --color-* spelling read in a value, the grid-template shorthand, the @tailwind directive). */
+
+/* seed stylelint/at-rule-disallowed-list 14: Tailwind v4's @theme block redeclaring a colour in a module */
+@theme {
+  --color-brand: oklch(0.6 0.15 250);
+}
+
+/* seed stylelint/at-rule-disallowed-list 15: Tailwind v4's @utility defining an app utility */
+@utility card-pad {
+  padding: 1rem;
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 14: the media range syntax on width */
+@media (width < 40rem) {
+  .rail {
+    display: none;
+  }
+}
+
+/* seed stylelint/media-feature-name-disallowed-list 15: an orientation query on a list */
+@media (orientation: portrait) {
+  .list {
+    display: block;
+  }
+}
+
+/* seed stylelint/selector-disallowed-list 16: the theme attribute on html as an ancestor */
+html[data-theme='dark'] .chip {
+  opacity: 0.9;
+}
+
+/* seed stylelint/selector-disallowed-list 17: a data-slot value selector reaching into a primitive */
+.panel [data-slot='card-header'] {
+  gap: 0;
+}
+
+/* seed stylelint/property-disallowed-list 13: a basalt token redeclared on a page class */
+.page {
+  --basalt-ink: #111;
+}
+
+/* seed stylelint/property-disallowed-list 14: the theme's radius variable re-pointed on :root */
+:root {
+  --radius-lg: 12px;
+}
+
+/* pass stylelint/property-disallowed-list 1: an app-owned custom property */
+.timeline {
+  --timeline-gap: var(--basalt-rhythm-2);
+}
+
+/* seed stylelint/color-no-hex 12: a hex border colour */
+.divider {
+  border-top: 1px solid #e5e7eb;
+}
+
+/* seed stylelint/color-no-hex 13: a short hex in a gradient */
+.hero {
+  background: linear-gradient(#fff, #eee);
+}
+
+/* seed stylelint/color-named 13: a named colour as a border */
+.outline {
+  border: 1px solid gray;
+}
+
+/* seed stylelint/color-named 14: a named colour in a box shadow */
+.raised {
+  box-shadow: 0 1px 2px black;
+}
+
+/* seed stylelint/function-disallowed-list 13: an rgb() colour on a backdrop */
+.backdrop {
+  background: rgb(0 0 0 / 40%);
+}
+
+/* seed stylelint/function-disallowed-list 14: color-mix() over a token for a hover tint */
+.row:hover {
+  background: color-mix(in oklab, var(--basalt-brand) 10%, transparent);
+}
+
+/* seed stylelint/declaration-no-important 13: important on a display override */
+.hide {
+  display: none !important;
+}
+
+/* seed stylelint/declaration-no-important 14: important in a custom property */
+.force {
+  --x: 1 !important;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 13: a rem radius on a panel */
+.panel2 {
+  border-radius: 0.75rem;
+}
+
+/* seed stylelint/declaration-property-value-allowed-list 14: a pixel font size on a label */
+.label {
+  font-size: 13px;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 24: a pixel padding on a cell */
+.cell {
+  padding: 6px 10px;
+}
+
+/* seed stylelint/declaration-property-value-disallowed-list 25: a rem row gap on a grid */
+.grid {
+  row-gap: 1.25rem;
+}
+
+/* pass stylelint/declaration-property-value-disallowed-list 6: spacing and gaps from basalt tokens */
+.stack {
+  gap: var(--basalt-rhythm-3);
+  padding: var(--basalt-rhythm-1) var(--basalt-rhythm-2);
+}
+
+/* seed raw-scroll/overflow-scroll 35: overflow-x auto on a wide table wrapper */
+.wide {
+  overflow-x: auto;
+}
+
+/* seed raw-scroll/overflow-scroll 36: the logical overflow-block property */
+.feed {
+  overflow-block: scroll;
+}
+
+/* pass raw-scroll/overflow-scroll 3: overflow hidden and clip */
+.clip {
+  overflow: hidden;
+  overflow-x: clip;
+}
+
+/* seed status-fill-as-text/text-on-fill 27: a status tint read through the theme variable as text */
+.warn-text {
+  color: var(--color-warn-tint);
+}
+
+/* seed status-fill-as-text/text-on-fill 28: a basalt chart fill as text */
+.series-label {
+  color: var(--basalt-chart-2);
+}
+
+/* pass status-fill-as-text/text-on-fill 3: the theme's text tokens read through --color-* */
+.note {
+  color: var(--color-muted-foreground);
+  border-color: var(--color-border);
+}
+
+/* seed tw-off-law/track-length 23: fixed tracks in a grid-template-areas shorthand */
+.shell {
+  grid-template: 'nav main' 1fr / 220px 1fr;
+}
+
+/* seed tw-off-law/track-length 24: a fixed minmax floor in an auto-fill track list */
+.cards {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* pass tw-off-law/track-length 3: fraction, auto and min-content tracks */
+.split {
+  grid-template-columns: auto 1fr min-content;
+}
+
+/* seed unknown-token 27: an invented brand shade */
+.cta {
+  background: var(--basalt-brand-600);
+}
+
+/* seed unknown-token 28: an invented font-size token named like a CSS property */
+.caption {
+  font-size: var(--basalt-font-size-sm);
+}
