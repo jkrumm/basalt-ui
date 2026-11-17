@@ -160,8 +160,10 @@ export function Footer({
           <dt className="truncate text-muted-foreground">{fact.label}</dt>
           <dd
             data-state={phase === 'other' ? undefined : phase}
+            data-monospace={fact.mono === true ? '' : undefined}
             className={cn(
               'm-0 text-md font-semibold tabular-nums',
+              fact.mono === true && 'font-mono',
               phase === 'error' ? 'text-muted-foreground' : 'text-foreground',
             )}
           >

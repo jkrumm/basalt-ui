@@ -71,6 +71,8 @@ export type EntityOptions<T> = CommonOptions & {
   href?: (row: T) => string | NavTarget | undefined
   icon?: (row: T) => IconComponent | undefined
   sub?: (row: T) => string | null | undefined
+  /** The name is a time or an id: drawn in the mono face with tabular numerals. */
+  mono?: boolean | undefined
   /** The secondary text is a time or an id: drawn in the mono face with tabular numerals. */
   subMono?: boolean | undefined
   filter?: 'text'
@@ -156,7 +158,7 @@ const OPTION_KEYS: Readonly<
   Record<KindName, { allowed: readonly string[]; required: readonly string[] }>
 > = {
   entity: {
-    allowed: [...COMMON, 'href', 'icon', 'sub', 'subMono', 'filter', 'width'],
+    allowed: [...COMMON, 'href', 'icon', 'sub', 'mono', 'subMono', 'filter', 'width'],
     required: [],
   },
   text: { allowed: [...COMMON, 'filter', 'labels'], required: [] },
@@ -390,6 +392,7 @@ export function col<T>(): Col<T> {
             href={o?.href?.(row)}
             icon={o?.icon?.(row)}
             sub={o?.sub?.(row) ?? undefined}
+            mono={o?.mono === true}
             subMono={o?.subMono === true}
           />
         ),
