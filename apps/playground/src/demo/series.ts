@@ -142,3 +142,35 @@ export const MODEL_SERIES = defineSeries({
   blocked: { light: '#9a9a9a', dark: '#7d7d7d' },
   current: { light: '#4a4a4a', dark: '#c4c4c4' },
 })
+
+/** AI gateway spend (scenario expr-n24): the accent is production, the share the question asks about; eval, verify and other sit in ink steps, spend with no purpose in a pale one. */
+export const SPEND_SERIES = defineSeries({
+  production: { light: '#2871c7', dark: '#5190f7' },
+  eval: { light: '#262626', dark: '#ececec' },
+  verify: { light: '#6b6b6b', dark: '#b4b4b4' },
+  other: { light: '#a0a0a0', dark: '#7f7f7f' },
+  unset: { light: '#d6d6d6', dark: '#4a4a4a' },
+})
+
+/** Reading goal (scenario expr-n25): the accent is the books finished; the even pace the goal implies and the goal rule sit in an ink step. */
+export const READING_SERIES = defineSeries({
+  finished: { light: '#2871c7', dark: '#5190f7' },
+  pace: { light: '#4a4a4a', dark: '#c4c4c4' },
+  stalled: { light: '#af293e', dark: '#e46360' },
+  reading: { light: '#6b6b6b', dark: '#a8a8a8' },
+})
+
+/** Line path (scenario expr-n26): the accent is the hop the answer names; the others sit in ink steps. */
+export const PATH_SERIES = defineSeries({
+  culprit: { light: '#2871c7', dark: '#5190f7' },
+  strong: { light: '#4a4a4a', dark: '#d4d4d4' },
+  mid: { light: '#7a7a7a', dark: '#9c9c9c' },
+  soft: { light: '#b0b0b0', dark: '#666666' },
+})
+
+/** Fitness trend (scenario expr-n22): the accent is resting heart rate; HRV sits in an ink step, the change threshold in a mid step. */
+export const FITNESS_SERIES = defineSeries({
+  rhr: { light: '#2871c7', dark: '#5190f7' },
+  hrv: { light: '#262626', dark: '#e6e6e6' },
+  limit: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
