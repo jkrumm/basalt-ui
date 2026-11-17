@@ -1,0 +1,27 @@
+{
+  "why": "Shell cycle 4 (docs/v3/cycles/shell-4.md, P1 shell-4.1): a deep link to a record leaves an empty sheet in the document, stuck half closed. On `/cycle/shell-4/services?service=checkout&deploy=checkout-093` at 1800, Tab past the aside's Close panel moves into a `sheet-content` parked at x 1800. The sheet slides over the docked aside, and Tab, Shift+Tab and Escape keep focus on its Close button: a keyboard trap (`.evidence/cycle-shell-4/inspect.log` I1, `shots/i1-tab-past-aside-1800.png`). At 390 the same empty sheet sits below the viewport and outlives the record's Close. Tab after More lands on its invisible Close (`inspect2.log` I7). The element carries `data-closed` and `data-ending-style` from its first appearance and is never seen open (I10). A record opened by a click leaves none (I2), nor does Back reopening one (I8). Cycle 3's route has it too (I6). Cause: the page's aside mounts after the table's first render, so a deep link shows the entry in the table's own sheet first. When the aside takes over, `setHost` hides that sheet (`src/table/use-data-table.ts:508-520`, `previous.hide()`). The own sheet (`src/table/parts/detail-sheet.tsx:54`) closes before its popup ever painted open, and its exit never finishes, so the popup stays mounted and focusable.",
+  "what": "A deep-linked record shows in its page's aside only: no sheet of the table's own is left in the document, open or closing, at any width.",
+  "owns": [
+    "packages/basalt-ui/src/table/parts/detail-sheet.tsx and its tests",
+    "packages/basalt-ui/src/table/use-data-table.ts (setHost and the deep-link show) and its tests",
+    "packages/basalt-ui/src/page/page.tsx (the detail host context, only if the fix needs the page's host known at first render)",
+    "packages/basalt-ui/docs/use-data-table.md, packages/basalt-ui/docs/page-aside.md (only where the behaviour is described)",
+    "packages/basalt-ui/tests/layout/** (one deep-link sheet test)"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "apps/playground/src/cycle/**",
+    "packages/basalt-ui/src/shell/parts/a11y.tsx and packages/basalt-ui/src/shell/commands/** (v3-shell-4-shell)"
+  ],
+  "change": "Two parts, either of which may carry the fix; the test holds both:\n- The table's own sheet does not open while the enclosing `Page` will host the detail: a deep link waits for the page's aside, or the page's host is known on the table's first render (`detail-sheet.tsx`, `use-data-table.ts` `setHost`, `page.tsx`).\n- A sheet that closes before it painted open unmounts at once instead of waiting on an exit that never runs (`detail-sheet.tsx`).\nA table with no page host keeps its own sheet for a deep link, as now.",
+  "commits": "fix: commits in packages/basalt-ui, granular (the deep-link host, the stuck sheet, the layout test).",
+  "proof": "make check; a layout test that deep-links a record into a page with a `PageAside` at 1800 and at 390 and finds no `sheet-content` without `data-open`, then walks Tab past the aside's close (1800) or the record's close (390) to the document end.",
+  "acceptance": [
+    "A deep-linked record at 1800 leaves no `sheet-content` in the document beside the docked aside (layout test)",
+    "At 1800, Tab past Close panel on a deep-linked record reaches the document end; no focus is kept in a sheet (layout test)",
+    "At 390, after the deep-linked record's sheet closes, no `sheet-content` remains (layout test)",
+    "A table with no page host still opens a deep-linked record in its own sheet (test)",
+    "make check passes"
+  ],
+  "out_of_scope": "The palette's focus hand-off during a pending navigation (v3-shell-4-shell)."
+}
