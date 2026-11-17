@@ -40,6 +40,22 @@ A build said "last 30 days" in the title, the caption, the axis title and the fo
 
 n10 printed "19.4 kt" in the hero, the bracket, the footer and the table; n18 named its leader in the hero, the list and a note. Keep it where the reader looks first and where a mark can carry it (the bracket on the chart), and let the hero, period, pill, footer and list each state something the others do not (n10 .38, n18 .76, n03 .9, n07 .21, n14 .50, n17 .62).
 
+### Worked: the fact count
+
+Before the last look, write the page's facts as a list, each with where it is stated: `current model: hero, chart label, rule label, table row, footer`. Any fact on two lines of that list is cut to one, kept where the mark can carry it. c16 named its current model five times, n20 one overshoot four times, n19 its limit three times, n08 its verdict three times, n15 and n21 their baselines twice. Four cycles of prose on this did not move it; the count does, because a repeat is visible as a second entry.
+
+### Worked: a share and its threshold read as one line
+
+A share against a limit is one line beside the hero, with the threshold drawn where the marks allow: "27 % strong, under 40 %", the 40 % line a `refLines` rule on the chart. n08 printed "4 of 15" and left the 40 % line to the legend; n19 stated a "too weak" total against nothing.
+
+### Worked: numbers
+
+The hero, the tooltip and the announcement go through one `useFormat` call at one precision: n19's hero read "-56.083 dBm" with an ASCII hyphen beside a rounded tooltip. A negative uses a true minus (U+2212), and one currency style per page ("$" beside "US$" read as two currencies: c16).
+
+### Worked: an unfinished period is named
+
+A partial week is drawn lighter and named where the reader reads it: "W16 so far" in the card's period slot, never the lighter fill alone (n15, n20). A target for it is prorated, or its pill stays neutral: n15 printed a red shortfall on a week not over.
+
 ## Say each thing once
 
 - A figure appears once per page, in the summary line, the card or the table cell, whichever the reader reaches first.
