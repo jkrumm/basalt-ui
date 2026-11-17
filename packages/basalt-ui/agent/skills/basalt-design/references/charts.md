@@ -79,6 +79,14 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - The fixture shows its zero and its extreme at rest, so the card is judged with an empty hour and an over-limit value on screen. The extreme reads true: rounding or clamping it away hides it. A zero fixture shows a cue (a dash, a baseline) where the marks would be.
 - Binned bars carry a unit caption ("per 15 min"). A count axis and a share-of-limit axis carry a caption (`y.title`: "Requests", "% of limit"), and a `y.format` keeps a decimal for a domain under 2 units (ticks `0.5`, `1.0`, `1.5`, where `1`, `1`, `2` repeats a label) (c14, n04, n16).
 
+## A time window picks its resolution
+
+- Up to 7 days the bucket is the hour, unless the data itself is daily; beyond that the day. Work that arrives in bursts through the day reads wrong by the day: a daily bar over 7 days hid that most of the work landed in a few hours (software-factory Console, Flow and Improve: 24 h and 7 d by the hour, 30 d by the day).
+- The bucket is named on the chart: a unit caption ("per hour", "per day") and x labels for the window's start, now and end.
+- A bucket takes the busiest sample (max) for a load-like series (queue depth, CPU, concurrency), so a spike survives the binning (a mean averages it away), and the sum for a count.
+- One window control per page (24 h, 7 d, 30 d, opening on 7 d), and every chart on the page follows it. A chart with its own window beside another is two questions on one page.
+- A sliding window's query key is quantised onto the data's step with [windowKey](node_modules/basalt-ui/docs/window-key.md), where the step is the bucket.
+
 ## Finish of a form the page draws
 
 - A focused item gets its own mark beside the container's ring, and the ring is inset so it clears the text inside.
