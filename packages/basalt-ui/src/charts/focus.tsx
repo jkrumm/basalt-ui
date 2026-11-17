@@ -8,7 +8,15 @@
  * `focus.item(i)` on each mark, and renders `focus.live` once. A list of a coarser grain beside it
  * (versions beside samples) spreads `focus.groupItem(name)` on each row and shares the one focus.
  */
-import { useEffect, useEffectEvent, useRef, useState } from 'react'
+import {
+  useEffect,
+  useEffectEvent,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactElement } from 'react'
 import type {
   ChartFocus,
@@ -175,6 +183,46 @@ const HIDDEN: CSSProperties = {
   clip: 'rect(0 0 0 0)',
   whiteSpace: 'nowrap',
   border: 0,
+}
+
+/**
+ * The live regions mounted for one focus, first mounted first. Two charts on one `useChartFocus`
+ * each render `focus.live`, and one move must be said once: only the first mounted region speaks.
+ */
+type LiveClaims = { ids: string[]; listeners: Set<() => void> }
+
+function newClaims(): LiveClaims {
+  return { ids: [], listeners: new Set() }
+}
+
+function claim(claims: LiveClaims, id: string): () => void {
+  claims.ids = [...claims.ids, id]
+  for (const notify of claims.listeners) notify()
+  return () => {
+    claims.ids = claims.ids.filter((other) => other !== id)
+    for (const notify of claims.listeners) notify()
+  }
+}
+
+/** The polite live region of a focus; a second one on the same focus draws nothing. */
+function FocusLive(props: { claims: LiveClaims; text: string }): ReactElement | null {
+  const { claims, text } = props
+  const id = useId()
+  useLayoutEffect(() => claim(claims, id), [claims, id])
+  const speaker = useSyncExternalStore(
+    (notify) => {
+      claims.listeners.add(notify)
+      return () => claims.listeners.delete(notify)
+    },
+    () => claims.ids[0],
+    () => undefined,
+  )
+  if (speaker !== undefined && speaker !== id) return null
+  return (
+    <output aria-live="polite" aria-atomic="true" style={HIDDEN} data-chart-focus-live="">
+      {text}
+    </output>
+  )
 }
 
 /**
@@ -382,10 +430,9 @@ export function useChartFocus<D>(
       ? items.findIndex((d) => group(d) === groupAt(index))
       : -1
   const name = lead < 0 || lead === index ? undefined : announce(items[lead] as D)
+  const [claims] = useState(newClaims)
   const live: ReactElement = (
-    <output aria-live="polite" aria-atomic="true" style={HIDDEN} data-chart-focus-live="">
-      {name === undefined ? said : `${name}: ${said}`}
-    </output>
+    <FocusLive claims={claims} text={name === undefined ? said : `${name}: ${said}`} />
   )
   return {
     [CHART_SET]: fromChart,
