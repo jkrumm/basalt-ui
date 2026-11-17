@@ -4,7 +4,13 @@
  * `parts` upward (guardrails section 4, row 6: "(b, c, h) parts+; rest bridge+").
  */
 import type { FormContext, Node, Visitor } from '../../factory'
-import { classStringVisitor, classTokens, mergeVisitors, topLevelConsts } from '../../factory'
+import {
+  CLASS_CALLEES,
+  classStringVisitor,
+  classTokens,
+  mergeVisitors,
+  topLevelConsts,
+} from '../../factory'
 import type { AstForm, ClassForm } from '../../rule-table'
 
 /** Calls whose first argument is a media query string. */
@@ -218,7 +224,8 @@ const FLAG_WRAPPERS: ReadonlySet<string> = new Set([
 
 /**
  * Where a flag ends up once its wrappers are climbed: `data` when it is passed as data (an object
- * literal's value, a call's argument, an array element: `track('open', { mobile })`), `binding`
+ * literal's value but a cn()/clsx class key's, a call's argument, an array element:
+ * `track('open', { mobile })`), `binding`
  * with the name when a `const` or `let` takes it whole, `choice` anywhere else (a conditional, `&&`,
  * a JSX branch, a return).
  */
@@ -234,7 +241,11 @@ function flagPosition(node: Node): { kind: 'data' | 'choice' } | { kind: 'bindin
   }
   if (up?.type === 'Property' && field(up, 'value') === at) {
     const owner = up['parent'] as Node | undefined
-    return { kind: owner?.type === 'ObjectExpression' ? 'data' : 'choice' }
+    if (owner?.type !== 'ObjectExpression') return { kind: 'choice' }
+    // A class-key object of cn()/clsx/cva (`cn({ 'p-2': mobile })`): the value chooses the class.
+    const call = owner['parent'] as Node | undefined
+    const callee = call?.type === 'CallExpression' ? nameOf(field(call, 'callee')) : undefined
+    return { kind: callee !== undefined && CLASS_CALLEES.has(callee) ? 'choice' : 'data' }
   }
   if (
     (up?.type === 'CallExpression' || up?.type === 'NewExpression') &&
