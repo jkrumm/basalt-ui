@@ -54,9 +54,9 @@ Repair rounds barely moved the median: 79 to 81 on all items, and 83.5 to 82 on 
 | ------------------------------ | --------- | ---------- | ------------------------------------------------ | --------- | ----------------------- | ----------------------- | ------------------------- |
 | First-try score (round 0)      | 71        | 82         | 85                                               | 67        | 79                      | 79                      | median 79, minimum 67     |
 | First-try score, F and K only  | 77        | 90         | 88                                               | 71        | 86                      | 81                      | median 83.5, minimum 71   |
-| Round 1 score (F and K)        | 76 (79)   | passed     | passed                                           | 74 (76)   | 81 (81)                 | 79 (81)                 | median 80 (81)            |
-| Round 2 score (F and K)        | 74 (77)   | passed     | passed                                           | 74 (76)   | passed                  | 81 (83)                 | last-round median 81 (82) |
-| Rounds-to-pass (F and K)       | 3 (3)     | 0 (0)      | 0 (0)                                            | 3 (3)     | 1 (0)                   | 2 (0)                   | mean 1.5 (1.0)            |
+| Round 1, all items (F and K)   | 76 (79)   | passed     | passed                                           | 74 (76)   | 81 (81)                 | 79 (81)                 | median 80 (81)            |
+| Round 2, all items (F and K)   | 74 (77)   | passed     | passed                                           | 74 (76)   | passed                  | 81 (83)                 | last-round median 81 (82) |
+| Rounds-to-pass, all (F and K)  | 3 (3)     | 0 (0)      | 0 (0)                                            | 3 (3)     | 1 (0)                   | 2 (0)                   | mean 1.5 (1.0)            |
 | Verdict                        | n/a       | n/a        | n/a                                              | n/a       | n/a                     | n/a                     | none (no referenced case) |
 | Glue lines, round 0            | ~25       | ~45        | ~135                                             | ~40       | ~12                     | ~35                     | median 37.5               |
 | Glue lines, last round         | ~58       | ~45        | ~135                                             | ~50       | ~14                     | ~45                     | median 47.5               |
@@ -66,7 +66,7 @@ Repair rounds barely moved the median: 79 to 81 on all items, and 83.5 to 82 on 
 
 A case that passed carries its passing score into later rows. The pass mark is 80 on all items. Rounds-to-pass in brackets is the first round whose F and K score reached 80: n37 and n38 did in round 0 without passing on all items, n33 and n36 never did. n34 passed in round 0 at 82 with an X3 of 0 (its window table joins nothing), a P2.
 
-Glue is the builder's own count of geometry, ticks, label placement, measuring, and focus or readout lines; it excludes fixtures. n35's 135 lines are a hand-drawn week track from `div`s through `focus.target`, plus about 60 lines of interval arithmetic in its model: the `seam-track` recipe, written by hand. n33's last round adds a 30-line `useEffect` that joins two tables' focus, the gap contract (a) takes.
+Glue is the builder's own count of geometry, ticks, label placement, measuring, and focus or readout lines; it excludes fixtures. n35's 135 lines are a hand-drawn week track from `div`s through `focus.target`, plus about 60 lines of interval arithmetic in its model: the `seam-track` recipe, written by hand. n33's round 1 adds a hand `useEffect` of about 25 lines that joins two tables' focus (about 30 with its refs in round 2), the gap contract (a) takes.
 
 No build used `theme-allow`, a deep import or a hand-written `<svg>`. n35 is the one build with lint disables: `basalt/primitive-bypass` on its `Mark` div and `basalt/tw-off-law` on three classes (`border-line`, `border-brand`, `text-brand`), each with a reason. n37's `as Bucket['status']` narrows the string an axis `format` receives. Every other `as` is a const assertion. Markers (`// cycle-expression-9:`) name what the kit lacked:
 
