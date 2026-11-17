@@ -64,19 +64,26 @@ function literalText(arg: Node | undefined): string | undefined {
  * height, aspect ratio, orientation and the device forms. A user-agent test is a viewport guess:
  * `/Mobi/i.test(navigator.userAgent)` and `navigator.userAgent.includes(..)` (`match`, `indexOf`,
  * `search`, `startsWith`, `endsWith`) report, as does the client-hints flag
- * `navigator.userAgentData.mobile` (through `?.` too). `isMobile` and `isTablet` imported from
+ * `navigator.userAgentData.mobile` (through `?.`, a TS cast or `!` on `navigator`, bound to a
+ * `const` or destructured from `userAgentData`) where it chooses a value: a conditional, `&&`, a
+ * JSX branch, a return; passed as data (an object literal's value, a call's argument:
+ * `track('open', { mobile })`) it is analytics and passes. `isMobile` and `isTablet` imported from
  * `react-device-detect` report where they are read. Known limits: a user agent copied into a
  * variable first (`const ua = navigator.userAgent`) is not followed, and `isMobileOnly`, `isIOS`
  * and the other flags are not read. A test whose literal pattern names platforms only, a desktop
  * one among them (`/Mac|iPhone|iPad/`, `.includes('Win')`), picks a shortcut glyph, not a layout:
  * it is `platform-glyph`'s, below, and this form leaves it.
  */
+const HINT = 'navigator.userAgentData.mobile'
+
 export function mediaQueryForm({ report }: FormContext): Visitor {
   let consts: ReadonlyMap<string, Node> = new Map()
   const resolve = (node: Node | undefined): Node | undefined =>
     node?.type === 'Identifier' ? (consts.get(node['name'] as string) ?? node) : node
   const sizes: WindowSizes = { objects: new Set(), widths: new Set(), hooks: new Set() }
   const deviceFlags = new Map<string, string>()
+  /** Names bound to the client-hints mobile flag, whole or destructured. */
+  const hints = new Set<string>()
   const skip = new WeakSet<Node>()
   return {
     Program(node) {
@@ -102,7 +109,10 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
       if (property !== undefined && node['computed'] !== true) skip.add(property)
       const sniff = userAgentTest(node, resolve)
       if (sniff !== undefined && !sniff.platform) report(node, sniff.subject)
-      if (isMobileHint(node)) report(node, 'navigator.userAgentData.mobile')
+      if (!isMobileHint(node)) return
+      const position = flagPosition(node)
+      if (position.kind === 'binding') hints.add(position.name)
+      else if (position.kind === 'choice') report(node, HINT)
     },
     Property(node) {
       const key = field(node, 'key')
@@ -111,8 +121,13 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
       }
     },
     Identifier(node) {
-      const imported = deviceFlags.get(node['name'] as string)
-      if (imported !== undefined && !skip.has(node)) report(node, imported)
+      const name = node['name'] as string
+      if (skip.has(node)) return
+      const imported = deviceFlags.get(name)
+      if (imported !== undefined) report(node, imported)
+      const parent = node['parent'] as Node | undefined
+      const declares = parent?.type === 'VariableDeclarator' && field(parent, 'id') === node
+      if (hints.has(name) && !declares && flagPosition(node).kind === 'choice') report(node, HINT)
     },
     ImportSpecifier(node) {
       if (WINDOW_SIZE_HOOKS.has(nameOf(field(node, 'imported')) ?? '')) {
@@ -122,6 +137,16 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
     },
     VariableDeclarator(node) {
       bindWindowSize(node, sizes)
+      const hint = destructuredHint(node)
+      if (hint === undefined) return
+      hints.add(hint)
+      // The pattern's own `mobile` declares the binding; it is no read of it.
+      for (const p of nodesOf(field(node, 'id') as Node, 'properties')) {
+        const value = field(p, 'value')
+        skip.add(
+          value?.type === 'AssignmentPattern' ? (field(value, 'left') as Node) : (value as Node),
+        )
+      }
     },
     CallExpression(node) {
       const name = calleeName(node)
@@ -161,7 +186,8 @@ const AGENT_METHODS: ReadonlySet<string> = new Set([
 function isNavigatorField(node: Node | undefined, property: string): boolean {
   if (node?.type !== 'MemberExpression' || node['computed'] === true) return false
   if (nameOf(field(node, 'property')) !== property) return false
-  const object = field(node, 'object')
+  // `(navigator as Navigator & UAData).userAgentData`: the cast TS's DOM lib needs for the hint.
+  const object = bare(field(node, 'object'))
   if (nameOf(object) === 'navigator') return true
   if (object?.type !== 'MemberExpression' || object['computed'] === true) return false
   return (
@@ -177,7 +203,70 @@ const isUserAgent = (node: Node | undefined): boolean => isNavigatorField(node, 
 const isMobileHint = (node: Node): boolean =>
   node['computed'] !== true &&
   nameOf(field(node, 'property')) === 'mobile' &&
-  isNavigatorField(field(node, 'object'), 'userAgentData')
+  isNavigatorField(bare(field(node, 'object')), 'userAgentData')
+
+/** The wrappers a flag is read through before its position decides: TS, `?.`, `!`, `??`, a comparison. */
+const FLAG_WRAPPERS: ReadonlySet<string> = new Set([
+  'TSNonNullExpression',
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'ChainExpression',
+  'ParenthesizedExpression',
+  'UnaryExpression',
+  'BinaryExpression',
+])
+
+/**
+ * Where a flag ends up once its wrappers are climbed: `data` when it is passed as data (an object
+ * literal's value, a call's argument, an array element: `track('open', { mobile })`), `binding`
+ * with the name when a `const` or `let` takes it whole, `choice` anywhere else (a conditional, `&&`,
+ * a JSX branch, a return).
+ */
+function flagPosition(node: Node): { kind: 'data' | 'choice' } | { kind: 'binding'; name: string } {
+  let at = node
+  let up = at['parent'] as Node | undefined
+  while (
+    up &&
+    (FLAG_WRAPPERS.has(up.type) || (up.type === 'LogicalExpression' && up['operator'] === '??'))
+  ) {
+    at = up
+    up = at['parent'] as Node | undefined
+  }
+  if (up?.type === 'Property' && field(up, 'value') === at) {
+    const owner = up['parent'] as Node | undefined
+    return { kind: owner?.type === 'ObjectExpression' ? 'data' : 'choice' }
+  }
+  if (
+    (up?.type === 'CallExpression' || up?.type === 'NewExpression') &&
+    field(up, 'callee') !== at
+  ) {
+    return { kind: 'data' }
+  }
+  if (up?.type === 'ArrayExpression') return { kind: 'data' }
+  const name =
+    up?.type === 'VariableDeclarator' && field(up, 'init') === at
+      ? nameOf(field(up, 'id'))
+      : undefined
+  return name !== undefined ? { kind: 'binding', name } : { kind: 'choice' }
+}
+
+/**
+ * The name a destructure of the client hints binds `mobile` to: `const { mobile } =
+ * (navigator as Navigator & UAData).userAgentData ?? { mobile: false }`.
+ */
+function destructuredHint(declarator: Node): string | undefined {
+  const pattern = field(declarator, 'id')
+  if (pattern?.type !== 'ObjectPattern') return undefined
+  let init = bare(field(declarator, 'init'))
+  while (init?.type === 'LogicalExpression' && init['operator'] !== '&&')
+    init = bare(field(init, 'left'))
+  if (!isNavigatorField(init, 'userAgentData')) return undefined
+  const property = nodesOf(pattern, 'properties').find(
+    (p) => p.type === 'Property' && p['computed'] !== true && nameOf(field(p, 'key')) === 'mobile',
+  )
+  const value = property ? field(property, 'value') : undefined
+  return nameOf(value?.type === 'AssignmentPattern' ? field(value, 'left') : value)
+}
 
 /** A user-agent method test: `navigator.userAgent.includes(..)`, `.match`, `.indexOf`, `.search`, `.startsWith`, `.endsWith`. */
 function userAgentSniff(node: Node): string | undefined {
@@ -302,32 +391,71 @@ const SCHEME_NAMES: ReadonlySet<string> = new Set([
 ])
 const SCHEME_VALUES: ReadonlySet<string> = new Set(['dark', 'light'])
 const EQUALITY: ReadonlySet<string> = new Set(['===', '!==', '==', '!='])
+/**
+ * A boolean named for the dark scheme: `isDark`, `isDarkMode` (usehooks-ts' `useDarkMode`),
+ * `darkMode`, `isDarkTheme`. A bare `dark` is too common a name to read alone.
+ */
+const DARK_FLAG = /^(?:isDark(?:Mode|Theme|Scheme)?|dark(?:Mode|Theme|Scheme))$/
+/** The TS wrappers and `?.` a value is read through. */
+const WRAPPERS: ReadonlySet<string> = new Set([
+  'TSNonNullExpression',
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'ChainExpression',
+  'ParenthesizedExpression',
+])
+
+const bare = (node: Node | undefined): Node | undefined => {
+  let at = node
+  while (at && WRAPPERS.has(at.type)) at = field(at, 'expression')
+  return at
+}
 
 /** `resolvedTheme`, or `settings.colorScheme` by its last name, through `!` and `?.`. */
+function lastName(node: Node | undefined): string | undefined {
+  const at = bare(node)
+  return at?.type === 'MemberExpression' && at['computed'] !== true
+    ? nameOf(field(at, 'property'))
+    : nameOf(at)
+}
+
 function schemeName(node: Node | undefined): string | undefined {
-  let at = node
-  while (at?.type === 'TSNonNullExpression' || at?.type === 'ChainExpression') {
-    at = field(at, 'expression')
-  }
-  const name =
-    at?.type === 'MemberExpression' && at['computed'] !== true
-      ? nameOf(field(at, 'property'))
-      : nameOf(at)
+  const name = lastName(node)
   return name !== undefined && SCHEME_NAMES.has(name) ? name : undefined
 }
 
+/** `matchMedia('(prefers-color-scheme: dark)').matches`, by its subject. */
+function colourSchemeQuery(test: Node | undefined): string | undefined {
+  if (test?.type !== 'MemberExpression' || nameOf(field(test, 'property')) !== 'matches') {
+    return undefined
+  }
+  const call = bare(field(test, 'object'))
+  const [arg] = call?.type === 'CallExpression' ? nodesOf(call, 'arguments') : []
+  const text = call && calleeName(call) === 'matchMedia' ? literalText(arg) : undefined
+  return text !== undefined && /prefers-color-scheme/i.test(text)
+    ? `matchMedia('${text}').matches`
+    : undefined
+}
+
 /**
- * A scheme test: a scheme value compared with `'dark'` or `'light'` (either side), or the
- * colour-scheme media query's `.matches`. Returns the subject, or undefined.
+ * A scheme test: a scheme value compared with `'dark'` or `'light'` (either side), the
+ * colour-scheme media query's `.matches`, a boolean named for the dark scheme, or a `const` bound
+ * to one of those (`bound`, by name); through `!`. Returns the subject, or undefined.
  */
-function schemeTest(test: Node | undefined): string | undefined {
-  if (test?.type === 'MemberExpression' && nameOf(field(test, 'property')) === 'matches') {
-    const call = field(test, 'object')
-    const [arg] = call?.type === 'CallExpression' ? nodesOf(call, 'arguments') : []
-    const text = call && calleeName(call) === 'matchMedia' ? literalText(arg) : undefined
-    return text !== undefined && /prefers-color-scheme/i.test(text)
-      ? `matchMedia('${text}').matches`
-      : undefined
+function schemeTest(
+  node: Node | undefined,
+  bound: ReadonlyMap<string, string> = new Map(),
+): string | undefined {
+  const test = bare(node)
+  if (test?.type === 'UnaryExpression' && test['operator'] === '!') {
+    return schemeTest(field(test, 'argument'), bound)
+  }
+  const query = colourSchemeQuery(test)
+  if (query !== undefined) return query
+  const name = lastName(test)
+  if (name !== undefined && DARK_FLAG.test(name)) return name
+  if (test?.type === 'Identifier' && name !== undefined && bound.has(name)) {
+    return `${name}, bound to ${bound.get(name)}`
   }
   if (test?.type !== 'BinaryExpression') return undefined
   const operator = test['operator'] as string
@@ -340,43 +468,155 @@ function schemeTest(test: Node | undefined): string | undefined {
   ] as const) {
     const literal = value?.type === 'Literal' ? value['value'] : undefined
     if (typeof literal !== 'string' || !SCHEME_VALUES.has(literal)) continue
-    const name = schemeName(other)
-    if (name !== undefined) return `${name} ${operator} '${literal}'`
+    const scheme = schemeName(other)
+    if (scheme !== undefined) return `${scheme} ${operator} '${literal}'`
   }
   return undefined
 }
 
+/** The class-list writes a scheme store makes on the root. */
+const CLASS_LIST_WRITES: ReadonlySet<string> = new Set(['add', 'remove', 'toggle', 'replace'])
+/** The page's root elements: `document.documentElement` and `document.body`, `window.` or not. */
+const ROOT_ELEMENTS: ReadonlySet<string> = new Set(['documentElement', 'body'])
+
+/** `document.documentElement` or `document.body`, through `window.` and the TS wrappers. */
+function rootElement(node: Node | undefined): string | undefined {
+  const at = bare(node)
+  if (at?.type !== 'MemberExpression' || at['computed'] === true) return undefined
+  const property = nameOf(field(at, 'property'))
+  if (property === undefined || !ROOT_ELEMENTS.has(property)) return undefined
+  const object = bare(field(at, 'object'))
+  const isDocument =
+    nameOf(object) === 'document' ||
+    (object?.type === 'MemberExpression' &&
+      nameOf(field(object, 'property')) === 'document' &&
+      GLOBALS.has(nameOf(field(object, 'object')) ?? ''))
+  return isDocument ? `document.${property}` : undefined
+}
+
+/** A type annotation that is a union of `'dark'`, `'light'` and `'system'` literals only. */
+function isSchemeType(annotation: Node | undefined): boolean {
+  const type =
+    annotation?.type === 'TSTypeAnnotation' ? field(annotation, 'typeAnnotation') : annotation
+  const members = type?.type === 'TSUnionType' ? nodesOf(type, 'types') : type ? [type] : []
+  return (
+    members.length > 0 &&
+    members.every((member) => {
+      const literal = member.type === 'TSLiteralType' ? field(member, 'literal') : undefined
+      return (
+        typeof literal?.['value'] === 'string' && /^(?:dark|light|system)$/.test(literal['value'])
+      )
+    })
+  )
+}
+
 /**
- * `dark-fork`, `scheme-fork`: a JS fork on the scheme that chooses a class. A class string (in a
- * class attribute, `cn()`, `cva` or a class-shaped object or array) whose enclosing conditional or
- * `&&` tests a scheme value against `'dark'` or `'light'` (`resolvedTheme === 'dark' ? 'bg-inset' :
- * 'bg-card'`) reports at the conditional, once. The scheme value is read by name (`theme`,
- * `resolvedTheme`, `systemTheme`, `colorScheme`, `scheme`, bare or as a member), and the
- * colour-scheme media query's `.matches` is read too. Known limits: a scheme bound to another
- * name (`const mode = readScheme()`), a fork that returns a class outside a class position
- * (`return dark ? 'bg-inset' : 'bg-card'` from a hook) and a fork inside a template literal's
- * hole are not read.
+ * `dark-fork`, `scheme-fork`: a JS fork on the scheme that chooses a class, or a scheme store of
+ * the app's own.
+ *
+ * A fork: a class string (in a class attribute, `cn()`, `cva` or a class-shaped object or array)
+ * whose enclosing conditional or `&&` tests a scheme (`resolvedTheme === 'dark' ? 'bg-inset' :
+ * 'bg-card'`), or a class key of a cn()/clsx object whose value is one (`{ invert: resolvedTheme
+ * === 'dark' }`), reports at the conditional or the key, once. A scheme test is a scheme value read
+ * by name (`theme`, `resolvedTheme`, `systemTheme`, `colorScheme`, `scheme`, bare or as a member)
+ * compared with `'dark'` or `'light'`, the colour-scheme media query's `.matches`, a boolean named
+ * for the dark scheme (`isDark`, `isDarkMode`, `darkMode`) or a `const` bound to any of these
+ * (`const dark = matchMedia('(prefers-color-scheme: dark)').matches`), read through `!`.
+ *
+ * A store: `classList.add`, `remove`, `toggle` or `replace` on `document.documentElement` or
+ * `document.body` (directly or through a binding of either) with `'dark'` or `'light'`, a scheme
+ * value by name, or a parameter typed as a union of those literals: shadcn's Vite theme provider.
+ * basalt's tokens key on `[data-theme]`, so the class reaches no token.
+ *
+ * Known limits: a scheme bound to another name (`const mode = readScheme()`), a binding matched by
+ * spelling within the file rather than by scope, a fork that returns a class outside a class
+ * position (`return dark ? 'bg-inset' : 'bg-card'` from a hook), a fork inside a template literal's
+ * hole and a scheme type named by an alias (`theme: Theme`, read by its name only) are not read.
  */
 export function schemeForkForm({ report }: FormContext): Visitor {
-  const reported = new WeakSet<Node>()
+  const forks: { up: Node; test: Node | undefined }[][] = []
+  const bound = new Map<string, string>()
+  const roots = new Set<string>()
+  const typed = new Set<string>()
+  const writes: { node: Node; target: string; args: Node[] }[] = []
   const onString = (node: Node): void => {
+    const chain: { up: Node; test: Node | undefined }[] = []
     let at = node
     for (let up = at['parent'] as Node | undefined; up; up = up['parent'] as Node | undefined) {
-      let subject: string | undefined
       if (up.type === 'ConditionalExpression' && field(up, 'test') !== at) {
-        subject = schemeTest(field(up, 'test'))
+        chain.push({ up, test: field(up, 'test') })
       } else if (up.type === 'LogicalExpression' && up['operator'] === '&&') {
-        if (field(up, 'right') === at) subject = schemeTest(field(up, 'left'))
-      } else if (up.type !== 'LogicalExpression') return
-      if (subject !== undefined) {
-        if (!reported.has(up)) report(up, subject)
-        reported.add(up)
-        return
-      }
+        if (field(up, 'right') === at) chain.push({ up, test: field(up, 'left') })
+      } else if (up.type === 'Property' && field(up, 'key') === at) {
+        // A class key of a clsx-style object: its value is the condition.
+        chain.push({ up, test: field(up, 'value') })
+        break
+      } else if (up.type !== 'LogicalExpression') break
       at = up
     }
+    if (chain.length > 0) forks.push(chain)
   }
-  return classStringVisitor(onString)
+  const isSchemeArg = (arg: Node): boolean => {
+    const literal = arg.type === 'Literal' ? arg['value'] : undefined
+    if (typeof literal === 'string') return SCHEME_VALUES.has(literal)
+    const name = lastName(arg)
+    return (
+      name !== undefined &&
+      (SCHEME_NAMES.has(name) || (arg.type === 'Identifier' && typed.has(name)))
+    )
+  }
+  return mergeVisitors([
+    classStringVisitor(onString),
+    {
+      VariableDeclarator(node) {
+        const name = nameOf(field(node, 'id'))
+        if (name === undefined) return
+        const init = field(node, 'init')
+        if (rootElement(init) !== undefined) roots.add(name)
+        const declaration = node['parent'] as Node | undefined
+        const subject = declaration?.['kind'] === 'const' ? schemeTest(init) : undefined
+        if (subject !== undefined) bound.set(name, subject)
+      },
+      Identifier(node) {
+        if (isSchemeType(field(node, 'typeAnnotation'))) typed.add(node['name'] as string)
+      },
+      CallExpression(node) {
+        const callee = field(node, 'callee')
+        if (callee?.type !== 'MemberExpression' || callee['computed'] === true) return
+        const method = nameOf(field(callee, 'property'))
+        if (method === undefined || !CLASS_LIST_WRITES.has(method)) return
+        const list = bare(field(callee, 'object'))
+        if (list?.type !== 'MemberExpression' || nameOf(field(list, 'property')) !== 'classList') {
+          return
+        }
+        const owner = bare(field(list, 'object'))
+        const root = nameOf(owner)
+        const target =
+          rootElement(owner) ?? (root !== undefined && roots.has(root) ? root : undefined)
+        if (target !== undefined) {
+          writes.push({
+            node,
+            target: `${target}.classList.${method}`,
+            args: nodesOf(node, 'arguments'),
+          })
+        }
+      },
+      'Program:exit'() {
+        const reported = new WeakSet<Node>()
+        for (const chain of forks) {
+          for (const { up, test } of chain) {
+            const subject = schemeTest(test, bound)
+            if (subject === undefined) continue
+            if (!reported.has(up)) report(up, subject)
+            reported.add(up)
+            break
+          }
+        }
+        for (const { node, target, args } of writes)
+          if (args.some(isSchemeArg)) report(node, target)
+      },
+    },
+  ])
 }
 
 /** react-responsive's width keys: any of them makes the object query a viewport query. */

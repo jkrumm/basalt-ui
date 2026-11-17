@@ -35,3 +35,8 @@ import { isMobile } from './local-flags'
 export const own = isMobile || isIOS
 export const key = { isMobile: 1 }.isMobile + other.isMobile
 export const platform = navigator.userAgentData?.platform
+export const trackOpen = (track) => track('open', { mobile: navigator.userAgentData?.mobile })
+export function report(send) {
+  const handset = navigator.userAgentData?.mobile
+  send({ handset })
+}

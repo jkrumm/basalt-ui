@@ -192,10 +192,12 @@ export const CLASS_RULES = defineRules({
     family: 'class',
     profiles: ALL,
     zonesOff: VENDORED,
-    // A JS fork on the scheme is `scheme-fork`: a scheme value read by name (`theme`,
-    // `resolvedTheme`, `systemTheme`, `colorScheme`, `scheme`) compared with 'dark' or 'light'
-    // where it chooses a class string. Known limit: a scheme under another name or returned outside
-    // a class position is not read (no type-aware rule ties a value to a scheme read).
+    // A JS fork on the scheme is `scheme-fork`: a scheme test (a scheme value read by name compared
+    // with 'dark' or 'light', the colour-scheme query's `.matches`, a boolean named for the dark
+    // scheme, or a const bound to one) where it chooses a class string or a cn() class key, and a
+    // scheme store of the app's own writing `.dark` on the root's classList. Known limit: a scheme
+    // under another name or returned outside a class position is not read (no type-aware rule ties
+    // a value to a scheme read).
     defect:
       'epos 21 `dark:` forks in app code and 40 in vendored ui; `@custom-variant dark` keys to `data-theme`, so a fork compiles and diverges from the token switch',
     forms: [
@@ -209,7 +211,7 @@ export const CLASS_RULES = defineRules({
       {
         id: 'scheme-fork',
         detect: schemeForkForm,
-        fix: 'Tokens switch per scheme: use the one token class in both schemes instead of choosing a class by the scheme in JS; BasaltProvider owns the scheme',
+        fix: 'Tokens switch per scheme: use the one token class in both schemes instead of choosing a class by the scheme in JS; BasaltProvider owns the scheme: pass its scheme prop and switch it with setScheme from basalt-ui/core/scheme',
         next: 'A reasoned per-line waiver',
         fixture: 'class/dark-fork/scheme-fork.tsx',
       },
