@@ -31,7 +31,12 @@ export type FrameState = {
 }
 
 /** One labelled fact in a footer. `value` is data, never a node, so every card formats alike. */
-export type Fact = { label: string; value: string | number }
+export type Fact = {
+  label: string
+  value: string | number
+  /** The value is a time or an id: drawn in the mono face with tabular numerals. */
+  mono?: boolean | undefined
+}
 
 /**
  * Capped at 2; `null` or `undefined` drops one, so a conditional fact type-checks without a hole.

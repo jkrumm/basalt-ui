@@ -124,12 +124,15 @@ export function EntityCell({
   href,
   icon: Icon,
   sub,
+  mono = false,
   subMono = false,
 }: {
   value: string
   href: string | NavTarget | undefined
   icon: IconComponent | undefined
   sub: string | undefined
+  /** The name is a time or an id: the mono face with tabular numerals. */
+  mono?: boolean
   /** The sub line is a time or an id: the mono face with tabular numerals. */
   subMono?: boolean
 }): ReactNode {
@@ -137,7 +140,11 @@ export function EntityCell({
   return (
     <span data-slot="table-entity" className="flex min-w-0 items-center gap-2">
       {Icon !== undefined && <Icon aria-hidden="true" size={16} />}
-      <span data-slot="table-entity-name" className="max-w-full min-w-0 shrink-0 truncate">
+      <span
+        data-slot="table-entity-name"
+        data-monospace={mono ? '' : undefined}
+        className={cn('max-w-full min-w-0 shrink-0 truncate', mono && 'font-mono tabular-nums')}
+      >
         {name}
       </span>
       {sub !== undefined && (
