@@ -467,6 +467,41 @@ describe('the ready frame declares the slots a loading, empty or failed frame ho
     root.remove()
   })
 
+  test('a loading or failed frame holds the period text it will wrap, unread', async () => {
+    const root = document.createElement('div')
+    document.body.append(root)
+    const view = createRoot(root)
+    const hold = (): HTMLElement | null =>
+      root.querySelector<HTMLElement>('[data-slot="chart-period-hold"]')
+    await act(async () => view.render(<ChartCard {...ready} />))
+    expect(hold()).toBeNull()
+    await act(async () => view.render(<ChartCard title="R" chart={() => null} phase="loading" />))
+    expect(hold()?.getAttribute('data-hold')).toBe('vs prior')
+    expect(hold()?.className).toContain('animate-pulse')
+    expect(root.querySelector('[data-slot="chart-figure"]')?.textContent).toBe('')
+    await act(async () =>
+      view.render(<ChartCard title="R" chart={() => null} phase={{ tag: 'error' }} />),
+    )
+    expect(hold()?.getAttribute('data-hold')).toBe('vs prior')
+    expect(hold()?.className).toContain('invisible')
+    act(() => view.unmount())
+    root.remove()
+  })
+
+  test('a card that mounts in loading holds the period its page declares', () => {
+    const el = html(
+      <ChartCard
+        title="R"
+        chart={() => null}
+        phase="loading"
+        figure={{ value: null, period: 'tagged, $12,400 of $30,100 spent' }}
+      />,
+    )
+    expect(el.querySelector('[data-slot="chart-period-hold"]')?.getAttribute('data-hold')).toBe(
+      'tagged, $12,400 of $30,100 spent',
+    )
+  })
+
   test('a card that was never ready has nothing to hold', () => {
     const el = html(<ChartCard title="R" chart={() => null} phase="loading" />)
     expect(el.querySelector('[data-slot="chart-footer"]')).toBeNull()

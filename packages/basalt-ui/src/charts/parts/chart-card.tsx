@@ -41,6 +41,44 @@ const LONG_FIGURE = 10
 /** Below `regular` the period takes a line of its own, in every phase, so loading and failed hold the ready height. */
 const PERIOD_LINE = 'hidden h-4 basis-full items-center @max-regular:flex'
 
+/**
+ * The period's place while the card loads, is empty or failed. With the text declared (a static
+ * period, or the ready frame's last one) it takes the lines that text wraps to at this width, drawn
+ * through `content: attr()` so the text is neither read nor selectable; with none (`''`) it holds the
+ * one line the period takes below `regular`. A loading card draws it as a bar, the others blank.
+ */
+function PeriodHold({
+  period,
+  mono,
+  loading,
+}: {
+  period: string
+  mono: boolean
+  loading: boolean
+}): ReactElement {
+  if (period === '') {
+    return loading ? (
+      <div aria-hidden="true" className={PERIOD_LINE}>
+        <div className={cn(BAR, 'h-3 w-32')} />
+      </div>
+    ) : (
+      <span aria-hidden="true" className={PERIOD_LINE} />
+    )
+  }
+  return (
+    <span
+      aria-hidden="true"
+      data-slot="chart-period-hold"
+      data-hold={period}
+      className={cn(
+        'min-w-0 text-xs select-none after:content-[attr(data-hold)] @max-regular:basis-full',
+        mono && MONO,
+        loading ? cn(BAR, 'w-fit text-transparent') : 'invisible',
+      )}
+    />
+  )
+}
+
 function FigureRow({
   figure,
   loading,
@@ -105,12 +143,8 @@ function FigureRow({
         )}
       </div>
       {period !== undefined &&
-        (loading ? (
-          <div aria-hidden="true" className={PERIOD_LINE}>
-            <div className={cn(BAR, 'h-3 w-32')} />
-          </div>
-        ) : blank ? (
-          <span aria-hidden="true" className={PERIOD_LINE} />
+        (loading || blank ? (
+          <PeriodHold period={period} mono={periodMono === true} loading={loading} />
         ) : (
           <span
             data-monospace={periodMono === true ? '' : undefined}
@@ -141,7 +175,11 @@ function declaredSlots({
     figure:
       figure === undefined
         ? undefined
-        : { value: null, ...(figure.period !== undefined && { period: '' }) },
+        : {
+            value: null,
+            ...(figure.period !== undefined && { period: figure.period }),
+            ...(figure.periodMono === true && { periodMono: true }),
+          },
     footer: labels.length === 0 ? undefined : (labels as unknown as FootFacts),
   }
 }
@@ -149,7 +187,8 @@ function declaredSlots({
 const sameSlots = (a: DeclaredSlots | undefined, b: DeclaredSlots): boolean =>
   a !== undefined &&
   (a.figure === undefined) === (b.figure === undefined) &&
-  (a.figure?.period === undefined) === (b.figure?.period === undefined) &&
+  a.figure?.period === b.figure?.period &&
+  a.figure?.periodMono === b.figure?.periodMono &&
   factsOf(a.footer)
     .map((f) => f.label)
     .join('\n') ===
