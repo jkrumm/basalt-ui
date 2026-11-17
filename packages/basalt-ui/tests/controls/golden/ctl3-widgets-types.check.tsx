@@ -89,3 +89,49 @@ const keys: readonly string[] = overrides.keys
 const widgets: readonly string[] = overrides.widgets
 overrides.clearAll()
 void [keys, widgets]
+
+// A widget field can own its choice: a scalar spec with its own fallback and no inherited handle.
+const owned = defineControls({
+  id: 'ctl3-types-owned',
+  scope: 'page',
+  fields: {},
+  widgets: {
+    trend: {
+      count: field.enum(['working', 'waiting', 'queued'], 'working'),
+      top: field.number({ fallback: 5 }),
+    },
+  },
+})
+const ownedHandle: WidgetHandle<'working' | 'waiting' | 'queued', 'enum'> = owned.widget.trend.count
+owned.widget.trend.count.link('queued')
+// @ts-expect-error 'bogus' is not a member of the owned enum
+owned.widget.trend.count.link('bogus')
+type OwnedInput = (typeof owned.validateSearch)['~standard']['types']['input']
+const ownedInput: OwnedInput = { 'w.trend.count': 'queued', 'w.trend.top': 3 }
+// @ts-expect-error an owned override key takes the field's members
+const ownedBad: OwnedInput = { 'w.trend.count': 'bogus' }
+void [ownedHandle, ownedInput, ownedBad]
+
+// An owned field is scalar and on the URL: multi and device specs do not fit.
+defineControls({
+  id: 'ctl3-types-owned-multi',
+  scope: 'page',
+  fields: {},
+  // @ts-expect-error multi is not a scalar kind
+  widgets: { w: { regions: field.multi(['eu', 'us'], []) } },
+})
+defineControls({
+  id: 'ctl3-types-owned-device',
+  scope: 'page',
+  fields: {},
+  // @ts-expect-error a device field is not a URL field
+  widgets: { w: { c: field.enum(['a', 'b'], 'a', { url: false }) } },
+})
+// An owned and a bound field share the two-field cap.
+defineControls({
+  id: 'ctl3-types-owned-three',
+  scope: 'page',
+  fields: {},
+  // @ts-expect-error a widget with three fields
+  widgets: { w: { a: field.enum(['a', 'b'], 'a'), b: globals.field.n, c: field.boolean(false) } },
+})

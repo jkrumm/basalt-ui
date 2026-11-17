@@ -26,6 +26,29 @@ const { source, inherited } = overview.widget.latency.range.useSource()
 const { keys, widgets, clearAll } = overview.useOverrides()
 ```
 
+## A card that owns its choice
+
+A widget field may be a scalar `field.*` spec instead of a handle: the card's own choice, with its own fallback and nothing inherited. It declares on the page's one store, so no page field and no second store stand in for it. The key stays `w.<widget>.<field>`, and the two-field cap holds across owned and bound fields.
+
+```ts
+const flow = defineControls({
+  id: 'flow',
+  scope: 'page',
+  fields: { project: field.string('') },
+  widgets: {
+    trend: {
+      count: field.enum(['working', 'waiting', 'queued'], 'working'),
+      window: globals.field.range, // a bound field beside an owned one
+    },
+  },
+})
+
+const [count, setCount] = flow.widget.trend.count.use()
+// ChartCard controls: filterSlot([spec(flow.widget.trend.count, 'Count', { as: 'segmented' })])
+```
+
+`useSource()` reads `inherited` as the fallback, and `clear()` returns the card to it. The spec is a URL field: a `url: false` spec, a `multi` or a `range` is a type error.
+
 ## Where does state live
 
 | Scope    | Declared on                             | Lives in                 | History | Kept across routes        | Resolution                      |
@@ -43,7 +66,7 @@ const { keys, widgets, clearAll } = overview.useOverrides()
 - An override equal to the inherited value still pins: key presence is intent. The exits are `clear()` and `useOverrides().clearAll()`.
 - A deep link with an override and a global both set shows the override and rewrites nothing.
 - `useSource()` returns `'override'` or `'inherited'`, and `inherited` is the value the widget shows with no override. A widget handle's `isDefault` means "no override".
-- A widget field binds a scalar kind (`enum`, `string`, `number`, `boolean`); a `multi` or `range` handle is a type error. A widget has at most two fields; three is a type error.
+- A widget field binds or owns a scalar kind (`enum`, `string`, `number`, `boolean`); a `multi` or `range` field is a type error. A widget has at most two fields; three is a type error.
 - `w.` is a reserved param prefix, and widget ids are plain identifiers, app-unique.
 - A widget write is one `replace` navigate that sets its own key and nothing else: it never resets a page's `resets` params, and an equal override is a no-op.
 - `useOverrides()` reports `{ keys, widgets, clearAll }`; `clearAll()` unsets every `w.` key of the store in one navigate.

@@ -440,3 +440,85 @@ describe('definition guards', () => {
     ).toThrow('scalar URL handle')
   })
 })
+
+describe('a widget field that owns its choice', () => {
+  const COUNTS = ['working', 'waiting', 'queued'] as const
+
+  async function trendApp(url: string) {
+    const flow = defineControls({
+      id: 'flow',
+      scope: 'page',
+      fields: { project: field.string('') },
+      widgets: { trend: { count: field.enum(COUNTS, 'working').labels({ queued: 'Queued' }) } },
+    })
+    const handle = flow.widget.trend.count
+    const Card = () => {
+      const [value, set] = handle.use()
+      const { source, inherited } = handle.useSource()
+      lent.set = set as never
+      return createElement(
+        'div',
+        { 'data-testid': 'trend', 'data-source': source, 'data-inherited': inherited },
+        value,
+      )
+    }
+    const root = defineControls({ id: 'root', scope: 'global', fields: {} })
+    const app = await mount({
+      root,
+      tree: [{ path: '/flow', store: flow, component: Card as never }],
+      url,
+    })
+    return { flow, ...app }
+  }
+
+  test('shows its own fallback, with nothing inherited and no page field', async () => {
+    const { flow } = await trendApp('/flow')
+    expect(text('trend')).toBe('working')
+    const node = document.querySelector('[data-testid="trend"]')
+    expect(node?.getAttribute('data-source')).toBe('inherited')
+    expect(node?.getAttribute('data-inherited')).toBe('working')
+    expect(flow.keys).toEqual(['project'])
+    expect(flow.widget.trend.count.options.map((o) => o.label)).toEqual([
+      'working',
+      'waiting',
+      'Queued',
+    ])
+  })
+
+  test('a write sets only its w. key; clear() unsets it', async () => {
+    const { flow, router } = await trendApp('/flow?project=argo')
+    await act(async () => {
+      lent.set('queued' as never)
+      await router.load()
+    })
+    expect(router.state.location.search).toEqual({ project: 'argo', 'w.trend.count': 'queued' })
+    expect(text('trend')).toBe('queued')
+    expect(flow.widget.trend.count.link('waiting').search).toEqual({ 'w.trend.count': 'waiting' })
+    await act(async () => {
+      flow.widget.trend.count.clear()
+      await router.load()
+    })
+    expect(router.state.location.search).toEqual({ project: 'argo' })
+    expect(text('trend')).toBe('working')
+  })
+
+  test('a deep link is honoured and an invalid value falls to the fallback', async () => {
+    await trendApp('/flow?w.trend.count=waiting')
+    expect(text('trend')).toBe('waiting')
+    cleanup()
+    await trendApp('/flow?w.trend.count=bogus')
+    expect(text('trend')).toBe('working')
+  })
+
+  test('a device spec cannot be an owned widget field', () => {
+    expect(() =>
+      defineControls({
+        id: 'dev-own',
+        scope: 'page',
+        fields: {},
+        // @ts-expect-error a device field is not a URL field
+        widgets: { w: { c: field.enum(COUNTS, 'working', { url: false }) } },
+      }),
+    ).toThrow('scalar URL')
+  })
+})
