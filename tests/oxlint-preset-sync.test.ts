@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import {
   CHART_HOST_FILE,
   COMPILER_RULES,
@@ -97,6 +98,48 @@ describe('repo oxlint config sync contract', () => {
     const output = `${result.stdout}${result.stderr}`
     expect(output).not.toContain('Failed to parse')
     expect(output).not.toContain('unknown field')
+  })
+})
+
+describe('the import bans fire for real', () => {
+  const SOURCE = [
+    "import { scaleLinear } from '@visx/scale'",
+    "import { Chart } from '@tanstack/charts/react'",
+    'export const x = [scaleLinear, Chart]',
+    '',
+  ].join('\n')
+
+  function findings(file: string): string {
+    const dir = mkdtempSync(join(tmpdir(), 'basalt-bans-'))
+    try {
+      const config = JSON.parse(readFileSync(join(root, '.oxlintrc.json'), 'utf8')) as {
+        rules: Record<string, unknown>
+        overrides: unknown[]
+      }
+      // The two bans alone: the repo's other rules judge this throwaway source too.
+      writeFileSync(
+        join(dir, '.oxlintrc.json'),
+        JSON.stringify({ rules: {}, overrides: config.overrides }),
+      )
+      mkdirSync(dirname(join(dir, file)), { recursive: true })
+      writeFileSync(join(dir, file), SOURCE)
+      const result = Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', file], { cwd: dir })
+      return `${result.stdout}${result.stderr}`
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  }
+
+  it('src bans both @visx/* and the engine host', () => {
+    const out = findings('packages/basalt-ui/src/charts/other.ts')
+    expect(out).toContain("'@visx/scale' import is restricted")
+    expect(out).toContain("'@tanstack/charts/react' import is restricted")
+  })
+
+  it('the host file escapes the host ban only', () => {
+    const out = findings(CHART_HOST_FILE)
+    expect(out).toContain("'@visx/scale' import is restricted")
+    expect(out).not.toContain("'@tanstack/charts/react' import is restricted")
   })
 })
 
