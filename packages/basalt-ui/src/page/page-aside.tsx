@@ -107,15 +107,29 @@ const DETAIL_BOX = { height: 'fill', phase: 'ready' } as const
 
 const noSubscribe = (): (() => void) => () => {}
 
+/** Where the aside's own controls live: the docked panel and the sheet a phone raises. */
+const ASIDE_SURFACE = '[data-slot="page-aside"], [role="dialog"]'
+
 /**
- * Remembers what had focus when the aside opened and gives focus back to it when the aside closes,
- * else to the shell's main: closing removes the control that was focused (the close button), and
- * focus left on `<body>` makes the next Tab start at the skip link. Focus that already went
- * somewhere real (the reader moved on) stays there.
+ * Remembers the control that last had focus outside the aside while it is open (the row that opened
+ * it, then the row whose record replaced it) and gives focus back to it when the aside closes, else
+ * to the shell's main: closing removes the control that was focused (the close button), and focus
+ * left on `<body>` makes the next Tab start at the skip link. Focus that already went somewhere real
+ * (the reader moved on) stays there.
  */
 function useReturnFocus(isOpen: boolean): void {
   const opener = useRef<HTMLElement | null>(null)
   const wasOpen = useRef(isOpen)
+  useIsomorphicLayoutEffect(() => {
+    if (!isOpen) return undefined
+    const follow = (event: FocusEvent): void => {
+      const { target } = event
+      if (!(target instanceof HTMLElement) || target.closest(ASIDE_SURFACE) !== null) return
+      opener.current = target
+    }
+    document.addEventListener('focusin', follow)
+    return () => document.removeEventListener('focusin', follow)
+  }, [isOpen])
   useIsomorphicLayoutEffect(() => {
     const was = wasOpen.current
     wasOpen.current = isOpen
