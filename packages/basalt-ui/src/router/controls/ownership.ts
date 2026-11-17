@@ -4,7 +4,7 @@
  */
 import type { Scope } from './brand'
 import type { AnyFieldSpec } from './field'
-import { resetWidgetOwnersForTests } from './widgets'
+import { assertNoWidgetClash, resetWidgetOwnersForTests } from './widgets'
 
 /** Param to owning store, process-wide: a global's params are exclusive. */
 const owners = new Map<string, { id: string; scope: Scope }>()
@@ -54,10 +54,14 @@ export function claimParams(id: string, scope: Scope, params: readonly string[])
   for (const param of params) if (!taken.has(param)) owners.set(param, { id, scope })
 }
 
-/** Throws, from a page store's mount, when it declares a param a global store owns. */
-export function assertNoConflict(id: string): void {
+/**
+ * Throws, from a store's mount, when it declares a param a global store owns, or a widget id that a
+ * store matched with it (`runs(otherId)`) also declares.
+ */
+export function assertNoConflict(id: string, runs: (otherId: string) => boolean): void {
   const message = conflicts.get(id)
   if (message !== undefined) throw new Error(message)
+  assertNoWidgetClash(id, runs)
 }
 
 /**

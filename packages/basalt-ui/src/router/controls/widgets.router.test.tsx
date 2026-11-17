@@ -16,6 +16,7 @@ import {
 } from '@tanstack/react-router'
 import { defineControls, resetControlsOwnersForTests } from './define'
 import { field } from './field'
+import { assertNoWidgetClash } from './widgets'
 
 type Loose = {
   load(): Promise<void>
@@ -374,7 +375,7 @@ describe('definition guards', () => {
   const ranges = () =>
     defineControls({ id: 'g', scope: 'global', fields: { range: field.enum(RANGES, '24h') } })
 
-  test('widgets on a global, a reused widget id, a bad id and an unknown retain key throw', () => {
+  test('widgets on a global, a bad id and an unknown retain key throw', () => {
     const g = ranges()
     expect(() =>
       defineControls({
@@ -384,20 +385,6 @@ describe('definition guards', () => {
         widgets: { w: { range: g.field.range } },
       }),
     ).toThrow('widgets belong on a page store')
-    defineControls({
-      id: 'p1',
-      scope: 'page',
-      fields: {},
-      widgets: { w: { range: g.field.range } },
-    })
-    expect(() =>
-      defineControls({
-        id: 'p2',
-        scope: 'page',
-        fields: {},
-        widgets: { w: { range: g.field.range } },
-      }),
-    ).toThrow('app-unique')
     expect(() =>
       defineControls({
         id: 'p3',
@@ -520,5 +507,80 @@ describe('a widget field that owns its choice', () => {
         widgets: { w: { c: field.enum(COUNTS, 'working', { url: false }) } },
       }),
     ).toThrow('scalar URL')
+  })
+})
+
+describe('a widget id shared by two page stores', () => {
+  const siblings = () => {
+    const globals = defineControls({
+      id: 'globals',
+      scope: 'global',
+      fields: { range: field.enum(RANGES, '24h') },
+    })
+    const a = defineControls({
+      id: 'page-a',
+      scope: 'page',
+      fields: {},
+      widgets: { trend: { range: globals.field.range } },
+    })
+    const b = defineControls({
+      id: 'page-b',
+      scope: 'page',
+      fields: {},
+      widgets: { trend: { range: globals.field.range } },
+    })
+    return { globals, a, b }
+  }
+
+  test('sibling routes each declare it, render, and keep their own w. key', async () => {
+    const { globals, a, b } = siblings()
+    const card = (store: typeof a | typeof b, testid: string) => () => {
+      const [value] = store.widget.trend.range.use()
+      return createElement('div', { 'data-testid': testid }, value)
+    }
+    const { router } = await mount({
+      root: globals,
+      tree: [
+        { path: '/a', store: a, component: card(a, 'a') as never },
+        { path: '/b', store: b, component: card(b, 'b') as never },
+      ],
+      url: '/a?w.trend.range=7d',
+    })
+    expect(text('a')).toBe('7d')
+    await act(async () => {
+      await router.navigate({ to: '/b' })
+    })
+    expect(text('b')).toBe('24h')
+    expect(a.widget.trend.range.key).toBe('w.trend.range')
+    expect(b.widget.trend.range.key).toBe('w.trend.range')
+  })
+
+  test('two stores mounted at once fail in dev and name both', () => {
+    siblings()
+    expect(() => assertNoWidgetClash('page-a', (other) => other === 'page-b')).toThrow(
+      /"page-a".*"trend".*"page-b"/,
+    )
+    expect(() => assertNoWidgetClash('page-a', () => false)).not.toThrow()
+  })
+
+  test('a store mounted with a parent that declares the same id throws on its route only', async () => {
+    const { globals, a, b } = siblings()
+    const seen: string[] = []
+    const Card = () => {
+      try {
+        a.widget.trend.range.use()
+      } catch (error) {
+        seen.push((error as Error).message)
+      }
+      return null
+    }
+    await mount({
+      root: globals,
+      tree: [
+        { path: '/a', store: a, children: [{ path: 'b', store: b, component: Card as never }] },
+      ],
+      url: '/a/b',
+    })
+    expect(seen.some((m) => m.includes('"page-a"') && m.includes('"page-b"'))).toBe(true)
   })
 })

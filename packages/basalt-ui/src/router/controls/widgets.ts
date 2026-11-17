@@ -156,8 +156,31 @@ const SEGMENT_RE = /^[A-Za-z0-9_-]+$/
 const SCALARS: readonly string[] = ['enum', 'string', 'number', 'boolean']
 const MAX_FIELDS = 2
 
-/** Widget id to the store that owns it, process-wide: ids are app-unique (a redefinition replaces). */
-const widgetOwners = new Map<string, string>()
+/**
+ * Widget id to the stores that declare it. Two page stores on sibling routes may each declare `trend`:
+ * the `w.trend.<field>` key lives in each page's own URL. A clash is two stores mounted at once, and
+ * `assertNoWidgetClash` raises it from the store's mount (a throw at definition blanks every route).
+ */
+const widgetOwners = new Map<string, Set<string>>()
+
+/**
+ * Dev: throws when a widget id this store declares is also declared by a store whose route is
+ * matched with it (`runs(otherId)`): both would write one `w.` key.
+ */
+export function assertNoWidgetClash(id: string, runs: (otherId: string) => boolean): void {
+  if (process.env.NODE_ENV === 'production') return
+  for (const [widget, owners] of widgetOwners) {
+    if (!owners.has(id)) continue
+    for (const other of owners) {
+      if (other === id || !runs(other)) continue
+      throw new Error(
+        `basalt-ui: controls "${id}": widget id "${widget}" is also declared by "${other}", ` +
+          `and both stores are mounted at once, so both write "w.${widget}.<field>". ` +
+          'Rename the widget in one of them; ids may repeat only across stores on sibling routes.',
+      )
+    }
+  }
+}
 
 /** @internal Tests only; see `resetControlsOwnersForTests`. */
 export function resetWidgetOwnersForTests(): void {
@@ -191,10 +214,6 @@ function bindingsOf(ctx: WidgetContext): Binding[] {
   if (ctx.scope !== 'page') fail('widgets belong on a page store, not a global')
   for (const [widget, fields] of Object.entries(ctx.widgets)) {
     if (!SEGMENT_RE.test(widget)) fail(`widget id "${widget}" is not a plain identifier`)
-    const owner = widgetOwners.get(widget)
-    if (owner !== undefined && owner !== ctx.id) {
-      fail(`widget id "${widget}" is already used by "${owner}"; widget ids are app-unique`)
-    }
     const names = Object.keys(fields)
     if (names.length > MAX_FIELDS) fail(`widget "${widget}" has more than ${MAX_FIELDS} fields`)
     for (const field of names) {
@@ -211,8 +230,16 @@ function bindingsOf(ctx: WidgetContext): Binding[] {
       out.push({ widget, field, key, source: source as RuntimeSource })
     }
   }
-  for (const [widget, owner] of widgetOwners) if (owner === ctx.id) widgetOwners.delete(widget)
-  for (const widget of new Set(out.map((b) => b.widget))) widgetOwners.set(widget, ctx.id)
+  // A redefinition under the same id (HMR, a test) replaces its own claims.
+  for (const [widget, owners] of widgetOwners) {
+    owners.delete(ctx.id)
+    if (owners.size === 0) widgetOwners.delete(widget)
+  }
+  for (const widget of new Set(out.map((b) => b.widget))) {
+    const owners = widgetOwners.get(widget) ?? new Set<string>()
+    owners.add(ctx.id)
+    widgetOwners.set(widget, owners)
+  }
   return out
 }
 
