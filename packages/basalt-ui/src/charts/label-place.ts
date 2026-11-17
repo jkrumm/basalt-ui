@@ -29,6 +29,17 @@ const BASELINE_OFFSET = 0.35
 /** Default distance in px between the anchor and the label box. */
 const DEFAULT_GAP = 4
 
+/**
+ * A glyph's advance as a share of the font size: the chart face's tabular figures are 0.6 em, so a
+ * value label errs a hair wide. An estimate, not the measured table, which would put 8 KB into
+ * every chart that labels its bars.
+ */
+const VALUE_GLYPH_EM = 0.62
+
+/** A text's width in px by the per-glyph estimate, for the labels a kind draws itself. */
+export const estimateWidth = (text: string, size: number): number =>
+  [...text].length * size * VALUE_GLYPH_EM
+
 export const lineHeight = (size: number): number => size * LINE_HEIGHT_RATIO
 
 function boxFor(
@@ -59,6 +70,20 @@ function boxFor(
     case 'below-left':
       return { left: x - gap - width, top: y + gap, textAnchor: 'end' }
   }
+}
+
+/**
+ * A box held inside the frame along the edge it overflows, when sliding it keeps its anchor beside
+ * it: a centred spot (above, below) slides sideways, a side spot (right, left) up or down by at
+ * most half its height, so a label on a point at the plot's edge still lands on it.
+ */
+function slid(spot: LabelSpot, box: LabelBox, frame: { width: number; height: number }): LabelBox {
+  const centred = spot === 'above' || spot === 'below'
+  const beside = spot === 'right' || spot === 'left'
+  const left = centred ? Math.min(Math.max(box.left, 0), frame.width - box.width) : box.left
+  const top = beside ? Math.min(Math.max(box.top, 0), frame.height - box.height) : box.top
+  const reach = box.height / 2
+  return Math.abs(top - box.top) <= reach ? { ...box, left, top } : { ...box, left }
 }
 
 const overlaps = (a: LabelBox, b: LabelBox): boolean =>
@@ -111,7 +136,7 @@ export function placeWith<K extends string>(
     let landed: PlacedLabel<K> | undefined
     for (const spot of label.spots ?? SPOTS) {
       const at = boxFor(spot, label.x, label.y, width, height, gap)
-      const box = { left: at.left, top: at.top, width, height }
+      const box = slid(spot, { left: at.left, top: at.top, width, height }, frame)
       if (!inside(box, frame) || taken.some((other) => overlaps(box, other))) continue
       const textX =
         at.textAnchor === 'start'
@@ -121,6 +146,7 @@ export function placeWith<K extends string>(
             : box.left + width / 2
       landed = {
         ...label,
+        size,
         spot,
         ...box,
         textAnchor: at.textAnchor,

@@ -120,7 +120,8 @@ still writes its tooltip value.
 `y.domain` as `[min, max]`, `{ floor, ceil, pad }` (the domain always reaches `floor` down and
 `ceil` up) or `(extent) => extent`. A domain narrower than the data, a tuple or a capping function
 (`([lo, hi]) => [lo, Math.min(hi, 80)]`), draws each datum past it on the plot's edge with a caret in
-its series colour; the tooltip and the focus readout read the true value. A stack of two or more
+its series colour and the true value beside the caret (right of it, else left, dropped when neither
+has room); the tooltip and the focus readout read it too. A stack of two or more
 bar series with a page-set domain stops at the plot's edge under one caret per x, in the colour of
 its top segment, and its value label keeps the true total; a `normalized` stack never clamps. There
 is no log y.

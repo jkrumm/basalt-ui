@@ -1053,6 +1053,9 @@ function underlayMarks<T, X extends ChartX>(
 /** A band's bar spans this share of its half step (`paddingInner` 0.2 leaves 0.8 of the step). */
 const BAR_BODY = 0.8
 const REF_LABEL_DX = 6
+/** The hairline that ties a caption stepped off its rule back to it: its width at the plot's edge and its reach into the caption's box, px. */
+const REF_LABEL_LEADER_INSET = 1
+const REF_LABEL_LEADER_PAD = 4
 /** The most rows a zone caption tries down the inside of its zone. */
 const MAX_ZONE_ROWS = 24
 /** The share of a bar slot kept between two grouped bars (`group({ padding })` in `bars-marks`). */
@@ -1120,24 +1123,47 @@ const refLabelMark = <T, X extends ChartX>(
   })
   if (placed === null) return []
   ctx.placed[side].push(placed.box)
-  const { position } = placed
+  const { position, shift } = placed
   const atStart = position.startsWith('start')
+  const above = position.endsWith('above')
+  const dy = refLabelDy(position, BASALT.text.micro) + (above ? -shift : shift)
+  const label = decorative(
+    text([{ f: atStart ? 0 : 1 }], {
+      id: `ref-${i}-label`,
+      x: (d: { f: number }) => d.f,
+      y: () => r.value,
+      xScale: 'zx',
+      yScale: axes.scaleId(r.axis),
+      text: () => r.label ?? '',
+      fill: CV.inkMuted,
+      fontSize: BASALT.text.micro,
+      anchor: atStart ? 'start' : 'end',
+      dx: atStart ? REF_LABEL_DX : -REF_LABEL_DX,
+      dy,
+    }),
+  )
+  if (shift === 0) return [label]
+  // A caption stepped off its rule is tied back to it by a hairline at the plot's edge.
+  const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+  const perPx = ctx.plotHeight > 0 ? (hi - lo) / ctx.plotHeight : 0
+  const reach = (shift + REF_LABEL_LEADER_PAD) * perPx
+  const edge = (atStart ? 1 : -1) * (REF_LABEL_LEADER_INSET / Math.max(ctx.plotWidth, 1))
+  const f = atStart ? 0 : 1
   return [
     decorative(
-      text([{ f: atStart ? 0 : 1 }], {
-        id: `ref-${i}-label`,
-        x: (d: { f: number }) => d.f,
-        y: () => r.value,
+      rect([{ f0: f, f1: f + edge, y0: r.value, y1: r.value + (above ? reach : -reach) }], {
+        id: `ref-${i}-leader`,
+        x1: 'f0',
+        x2: 'f1',
+        y1: 'y0',
+        y2: 'y1',
         xScale: 'zx',
         yScale: axes.scaleId(r.axis),
-        text: () => r.label ?? '',
         fill: CV.inkMuted,
-        fontSize: BASALT.text.micro,
-        anchor: atStart ? 'start' : 'end',
-        dx: atStart ? REF_LABEL_DX : -REF_LABEL_DX,
-        dy: refLabelDy(position, BASALT.text.micro),
+        inset: 0,
       }),
     ),
+    label,
   ]
 }
 
@@ -1972,6 +1998,13 @@ export function compileCartesian<T, X extends ChartX>(
       // `isBounded` leaves a stack out (a stack's domain grows to its totals), so a page's own
       // domain is the cap here: a total past it is what the plot's edge clips.
       const stackCapped = input.y?.domain !== undefined && input.y.domain !== 'auto'
+      const capLabels = {
+        frame: () => {
+          const ctx = captionContext()
+          return { width: ctx.plotWidth, height: ctx.plotHeight }
+        },
+        obstacles: hostBoxes,
+      }
       const stackCaps =
         stackedBars.length === 0 || !stackCapped
           ? []
@@ -1982,8 +2015,15 @@ export function compileCartesian<T, X extends ChartX>(
               fraction: model.fraction,
               domain: capped.axisOf('left').domain,
               edge: axes.left.domain,
+              format: axes.axisOf('left').format,
+              labels: capLabels,
             })
       const offScale = offScaleMarks({
+        labels: capLabels,
+        formatOf: (s) => (v, d) =>
+          s.formatValue
+            ? s.formatValue(v, d)
+            : axes.axisOf(axes.onRight(s) ? 'right' : 'left').format(v),
         series: stacked ? visible.filter((s) => !stackedBars.includes(s)) : visible,
         data: input.data,
         x: input.x,

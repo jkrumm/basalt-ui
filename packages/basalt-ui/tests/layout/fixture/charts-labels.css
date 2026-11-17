@@ -1,0 +1,7 @@
+/*
+ * The `charts-labels` fixture's Tailwind v4 entry, compiled WITH preflight like `charts-kit-fixes.css`.
+ * `charts-labels.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './charts-labels-fixture.tsx';
+@source '../../../src/charts';

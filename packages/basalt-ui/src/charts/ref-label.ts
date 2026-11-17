@@ -20,6 +20,8 @@ const CLAIM_PAD = 2
 const DOT_AIR = 2
 /** Air a data line keeps from a caption box (its stroke and an end dot), px. */
 const LINE_AIR = 3
+/** How far a caption steps off its rule at a time when every spot beside the rule meets a data line, px. */
+const SHIFT_STEP = 3
 
 /**
  * A box another label has claimed in the same plot: a share of the plot width and a span of values
@@ -124,10 +126,14 @@ type RefLabelOpts = {
  * clear of every data line and caption wins, else the first clear of the captions, else the first
  * inside the plot. A bar body or a dot is never covered, whatever else gives way: a caption whose
  * four spots all meet one drops. Never `null` when nothing is claimed and no mark is in the way.
+ *
+ * When every spot beside the rule meets a data line, the caption steps away from the rule, along
+ * its end, to the nearest height clear of the lines, and `shift` is that distance in px (the caller
+ * draws a leader back to the rule); `shift` is 0 for a caption beside its rule.
  */
 export function placeRefLabel(
   opts: RefLabelOpts,
-): { position: RefLabelPosition; box: LabelBox } | null {
+): { position: RefLabelPosition; box: LabelBox; shift: number } | null {
   const { pinned, startFirst, value, plotWidth, plotHeight, label, fontSize, series } = opts
   const { claimed = [], bars = [], dots = [] } = opts
   const natural = startFirst ? ORDER_START : ORDER_END
@@ -137,40 +143,40 @@ export function placeRefLabel(
   const perPx = degenerate ? 0 : (hi - lo) / plotHeight
   const widthFx = plotWidth > 0 ? (label.length * fontSize * GLYPH_EM + EDGE_INSET) / plotWidth : 0
   const heightPx = fontSize + 2
-  const bandOf = (position: RefLabelPosition): [number, number] =>
+  const bandOf = (position: RefLabelPosition, shift = 0): [number, number] =>
     position.endsWith('above')
-      ? [value + LINE_GAP * perPx, value + (LINE_GAP + heightPx) * perPx]
-      : [value - (LINE_GAP + heightPx) * perPx, value - LINE_GAP * perPx]
+      ? [value + (LINE_GAP + shift) * perPx, value + (LINE_GAP + shift + heightPx) * perPx]
+      : [value - (LINE_GAP + shift + heightPx) * perPx, value - (LINE_GAP + shift) * perPx]
   const spanOf = (position: RefLabelPosition): [number, number] =>
     position.startsWith('end')
       ? [1 - widthFx, 1 - EDGE_INSET / plotWidth]
       : [EDGE_INSET / plotWidth, widthFx]
-  const boxOf = (position: RefLabelPosition): LabelBox => {
-    const [y0, y1] = bandOf(position)
+  const boxOf = (position: RefLabelPosition, shift = 0): LabelBox => {
+    const [y0, y1] = bandOf(position, shift)
     const [fx0, fx1] = spanOf(position)
     // The claim is the drawn line box, taller than the glyph band the room checks use.
     return { fx0, fx1, y0: y0 - CLAIM_PAD * perPx, y1: y1 + CLAIM_PAD * perPx }
   }
   const first = order[0] as RefLabelPosition
-  if (degenerate) return { position: first, box: boxOf(first) }
-  const inPlot = (position: RefLabelPosition): boolean => {
-    const [from, to] = bandOf(position)
+  if (degenerate) return { position: first, box: boxOf(first), shift: 0 }
+  const inPlot = (position: RefLabelPosition, shift = 0): boolean => {
+    const [from, to] = bandOf(position, shift)
     return from >= lo && to <= hi
   }
   const meets = boxesMeet
   const solids = [...bars, ...dots.map((d) => dotBox(d, plotWidth, perPx))]
-  const capsClear = (position: RefLabelPosition): boolean => {
-    const box = boxOf(position)
+  const capsClear = (position: RefLabelPosition, shift = 0): boolean => {
+    const box = boxOf(position, shift)
     return claimed.every((b) => !meets(box, b))
   }
   // The drawn glyph band, not the claim: the caption sits close to its line and bars end at it.
-  const marksClear = (position: RefLabelPosition): boolean => {
-    const [y0, y1] = bandOf(position)
+  const marksClear = (position: RefLabelPosition, shift = 0): boolean => {
+    const [y0, y1] = bandOf(position, shift)
     const [fx0, fx1] = spanOf(position)
     return solids.every((b) => !meets({ fx0, fx1, y0, y1 }, b))
   }
-  const linesClear = (position: RefLabelPosition): boolean => {
-    const [from, to] = bandOf(position)
+  const linesClear = (position: RefLabelPosition, shift = 0): boolean => {
+    const [from, to] = bandOf(position, shift)
     const [fx0, fx1] = spanOf(position)
     return series.every((points) => {
       const range = yRangeWithin(points, fx0, fx1)
@@ -179,12 +185,19 @@ export function placeRefLabel(
       return range === null || range[1] + air < from || range[0] - air > to
     })
   }
-  const spot =
-    order.find((p) => inPlot(p) && capsClear(p) && marksClear(p) && linesClear(p)) ??
-    order.find((p) => inPlot(p) && capsClear(p) && marksClear(p))
-  if (spot !== undefined) return { position: spot, box: boxOf(spot) }
+  const clear = (p: RefLabelPosition, shift = 0): boolean =>
+    inPlot(p, shift) && capsClear(p, shift) && marksClear(p, shift) && linesClear(p, shift)
+  const beside = order.find((p) => clear(p))
+  if (beside !== undefined) return { position: beside, box: boxOf(beside), shift: 0 }
+  // Every spot beside the rule meets a line: the nearest height off the rule that is clear of them.
+  for (let shift = SHIFT_STEP; shift <= plotHeight; shift += SHIFT_STEP) {
+    const away = order.find((p) => clear(p, shift))
+    if (away !== undefined) return { position: away, box: boxOf(away, shift), shift }
+  }
+  const spot = order.find((p) => inPlot(p) && capsClear(p) && marksClear(p))
+  if (spot !== undefined) return { position: spot, box: boxOf(spot), shift: 0 }
   // Nothing clear of the captions and the marks: drop. A plot too small for any spot keeps the first one.
-  return order.some(inPlot) ? null : { position: first, box: boxOf(first) }
+  return order.some((p) => inPlot(p)) ? null : { position: first, box: boxOf(first), shift: 0 }
 }
 
 export function refLabelPosition(opts: RefLabelOpts): RefLabelPosition {
