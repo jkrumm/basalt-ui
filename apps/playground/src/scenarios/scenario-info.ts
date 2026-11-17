@@ -141,4 +141,34 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     title: 'Expression n21: line interventions',
     blurb: 'Does a router reboot fix a drop, or would the line have come back on its own?',
   },
+  {
+    id: 'expr-n11',
+    title: 'Expression n11: course catalogue',
+    blurb: 'How hard is each course, and how far along am I in the ones I started?',
+  },
+  {
+    id: 'expr-n22',
+    title: 'Expression n22: fitness direction',
+    blurb: 'Is my fitness improving, stable or declining, and which body signal says so?',
+  },
+  {
+    id: 'expr-n23',
+    title: 'Expression n23: homelab monitors',
+    blurb: 'What is down or slow right now, and which services were flaky in the last day?',
+  },
+  {
+    id: 'expr-n24',
+    title: 'Expression n24: gateway spend',
+    blurb: 'Which workflows draw the AI gateway spend, and how much of it is production?',
+  },
+  {
+    id: 'expr-n25',
+    title: 'Expression n25: reading shelf',
+    blurb: 'Am I on pace for the reading goal, and which started books have stalled?',
+  },
+  {
+    id: 'expr-n26',
+    title: 'Expression n26: line path probes',
+    blurb: 'Is the delay and loss in the home network, at the provider, or at the far end?',
+  },
 ]
