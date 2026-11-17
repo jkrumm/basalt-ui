@@ -54,7 +54,9 @@ export const rows: readonly RowDef[] = [
     // the skeleton rows of a paged table, the kit fixes of expression cycle 4.
     // 124600 -> 124800 (Issue 1872): 124705 B measured, +110 B gz over master (124595) for the error row that names
     // its panel or table, the kit fixes of expression cycle 7.
-    ceiling: 124800,
+    // 124800 -> 125000 (Issue 1873): 124816 B measured, +111 B gz over master (124705) for `focusSeries` (a row
+    // that stands for a chart series) and the mono entity name, the contract fields of expression cycle 7.
+    ceiling: 125000,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -108,6 +110,13 @@ export const raises: Raises = {
       to: 124800,
       consumer:
         "the table kit fixes of expression cycle 7: n11's and n26's tables in error said 'Could not load this.' where a chart card names its title, so the error row now reads 'Could not load <panel title or table label>.' (Issue 1872)",
+      repo: 'basalt-ui',
+    },
+    {
+      from: 124800,
+      to: 125000,
+      consumer:
+        "`DataTable focusSeries` and `c.entity` `mono`: expression cycle 7's n26 (apps/playground/src/scenarios/expr/n26) lists the four hops its chart draws as lines and could not link them (X3 0 in every round), and n24's workflow ids and n23's monitor names had no mono face (Issue 1873)",
       repo: 'basalt-ui',
     },
   ],
