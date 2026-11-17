@@ -11,7 +11,7 @@ import { BASALT } from '../../tokens'
 import { chartCurve } from '../core/curves'
 import { claimLabelBoxes, endLabelMarks, endLabelPlan } from '../labels'
 import type { LinesNaming } from '../labels'
-import { drawnRows, lineMark, loneDots, markersOf, yScaleOf } from '../marks'
+import { drawnRows, lineMark, linePaint, loneDots, markersOf, yScaleOf } from '../marks'
 import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from '../types'
 
@@ -100,7 +100,7 @@ export function lineMarks<D>(plot: PlotContext<D, ChartX>, input: LineMarksInput
     plot,
     plan.map((p) => p.box),
   )
-  out.push(...endLabelMarks(plan))
+  out.push(...endLabelMarks(plan, (color) => linePaint(plot, color)))
   return out
 }
 

@@ -53,6 +53,34 @@ export function dimmedPaint(color: string, strength = 1): string {
   return `light-dark(${light}, ${dark})`
 }
 
+/** What a dimmed line in its own hue keeps of its colour: the rest is the card's muted ink, a floor against the card. */
+const HUE_STRENGTH = 0.8
+const HUE_LIGHT_INK = 0.12
+const HUE_DARK_INK = 0.08
+/** The stroke a dimmed line keeps of its width when it stays in its own hue. */
+const HUE_WEIGHT = 0.75
+
+/**
+ * The paint of a line that stays in its own hue while another datum holds the focus: its colour at
+ * reduced strength with a light touch of the card's muted ink for the floor, so two or more lines
+ * stay told apart where `dimmedPaint` would turn them all the same slate.
+ */
+export function dimmedHuePaint(color: string): string {
+  const light = withFloor(mixed(color, HUE_STRENGTH), HUE_LIGHT_INK)
+  const dark = withFloor(mixed(color, HUE_STRENGTH), HUE_DARK_INK)
+  return `light-dark(${light}, ${dark})`
+}
+
+/** Whether a chart's lines keep their own hue under a focus: two or more are visible, one is nothing to tell apart. */
+const keepsHue = <T, X extends ChartX>(plot: PlotContext<T, X>): boolean =>
+  plot.visible.filter((s) => s.mark === 'line').length >= 2
+
+/** The paint of a line, or of the direct label that names it, while `plot.focused` holds a datum or not. */
+export function linePaint<T, X extends ChartX>(plot: PlotContext<T, X>, color: string): string {
+  if (plot.focused === null) return color
+  return keepsHue(plot) ? dimmedHuePaint(color) : dimmedPaint(color)
+}
+
 /** The rows a series' line and area are drawn through: all of them, or only the non-null ones. */
 export function drawnRows<T, X extends ChartX>(
   plot: PlotContext<T, X>,
@@ -72,9 +100,11 @@ export function lineMark<T, X extends ChartX>(
     x: rowX,
     y: 'y',
     z: 'series',
-    // A `focus` holding a datum dims every line to the level a bar's rest dims to.
-    stroke: plot.focused === null ? s.color : dimmedPaint(s.color),
-    strokeWidth: s.strokeWidth ?? LINE_STROKE_WIDTH,
+    // A `focus` holding a datum dims every line: to the level a bar's rest dims to, or, with two or more lines, in its own hue at reduced weight.
+    stroke: linePaint(plot, s.color),
+    strokeWidth:
+      (s.strokeWidth ?? LINE_STROKE_WIDTH) *
+      (plot.focused !== null && keepsHue(plot) ? HUE_WEIGHT : 1),
     strokeOpacity: (s.strokeOpacity ?? 1) * emphasis(plot.highlighted, s),
     curve: chartCurve(s.curve ?? 'linear'),
     ...(s.dash === 'dashed' && { strokeDasharray: DASH }),

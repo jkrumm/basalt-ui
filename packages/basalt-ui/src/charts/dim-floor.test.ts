@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { contrastRatio } from '../tokens/hct'
-import { dimmedPaint } from './marks'
+import { dimmedHuePaint, dimmedPaint } from './marks'
 
 type Rgb = [number, number, number]
 type Rgba = { rgb: Rgb; a: number }
@@ -79,5 +79,22 @@ describe('dimmedPaint floor', () => {
   test('a faded bar (strength below 1) keeps the floor too', () => {
     const card = token('card', 0)
     expect(contrastRatio(onCard(dimmedPaint('#d4a13a', 0.85), 0), card)).toBeGreaterThanOrEqual(3)
+  })
+})
+
+describe('dimmedHuePaint', () => {
+  for (const color of ['#1f6fb0', '#a06a00', '#2d7d3a']) {
+    test(`a dimmed ${color} line keeps 3:1 on the light card and its own hue`, () => {
+      const card = token('card', 0)
+      const shown = onCard(dimmedHuePaint(color), 0)
+      expect(contrastRatio(shown, card)).toBeGreaterThanOrEqual(3)
+      // Told apart from the shared slate a plain dim gives every line.
+      expect(shown).not.toBe(onCard(dimmedPaint(color), 0))
+    })
+  }
+
+  test('two lines stay different colours dimmed, as one slate they would not', () => {
+    const [a, b] = ['#1f6fb0', '#a06a00'].map((c) => onCard(dimmedHuePaint(c), 0))
+    expect(a).not.toBe(b)
   })
 })
