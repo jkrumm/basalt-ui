@@ -15,6 +15,7 @@ import type { MouseEvent, ReactElement, ReactNode } from 'react'
 import { cn } from '../../../core/cn'
 import { CountBadge } from '../../../ui/badge'
 import { Sheet, SheetContent } from '../../../ui/sheet'
+import { requestMainFocus } from '../../../common/focus'
 import { navAnchor } from '../../../router/nav/anchor'
 import type { AnyNavItem } from '../../../router/nav/types'
 import type { Account, SidebarBlock } from '../../contract'
@@ -131,7 +132,9 @@ function DestinationRow({ row, depth, close }: DestinationProps): ReactElement {
   }
   const Anchor = navAnchor(row.item as unknown as AnyNavItem)
   const onClick = (event: MouseEvent<HTMLElement>): void => {
-    if (retap(row, event, router.state.location.href)) close()
+    if (!retap(row, event, router.state.location.href)) return
+    if (!row.active) requestMainFocus()
+    close()
   }
   return (
     // oxlint-disable-next-line react/static-components -- `navAnchor` is cached per item object: one stable component type

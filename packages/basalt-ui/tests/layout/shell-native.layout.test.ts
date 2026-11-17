@@ -191,6 +191,21 @@ layout('command palette', () => {
     await p.raw.waitForSelector(PALETTE, { state: 'detached' })
   })
 
+  test('a jump from the palette hands focus to main', async () => {
+    const p = await open(specOf({ chrome: 'web' }), DESKTOP_1800)
+    // Focus on a control that outlives the jump (a rail link): the dialog hands focus back to it on close.
+    await p.raw.getByRole('link', { name: 'Overview' }).first().focus()
+    await p.raw.keyboard.press('ControlOrMeta+k')
+    await p.raw.waitForSelector(ITEMS)
+    await p.raw.keyboard.type('jobs')
+    await p.raw.keyboard.press('Enter')
+    await p.raw.waitForSelector(PALETTE, { state: 'detached' })
+    await p.raw.waitForFunction(() =>
+      document.querySelector('[aria-current="page"]')?.textContent?.includes('Jobs'),
+    )
+    await p.raw.waitForFunction(() => document.activeElement?.id === 'shell-main')
+  })
+
   test('Escape closes the palette and the dialog under it stays', async () => {
     const p = await open(specOf({ chrome: 'web', dialogUnder: true }), DESKTOP_1800)
     await p.raw.waitForSelector('text=Underneath')

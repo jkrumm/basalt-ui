@@ -9,7 +9,7 @@
 import { useRouterState } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent, ReactElement } from 'react'
-import { SHELL_MAIN_ID, focusLost, focusMain } from '../../common/focus'
+import { SHELL_MAIN_ID, focusLost, focusMain, takeMainFocusRequest } from '../../common/focus'
 import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
 
 export { SHELL_MAIN_ID }
@@ -101,17 +101,29 @@ export function useDocumentTitle(title: string): void {
  * Hands focus to `Main` after a pathname change that left it on `<body>`: the control that was
  * focused (a page action, a row) went away with the old page, and without this the next Tab starts
  * at the skip link. Focus that is somewhere real (the rail link just activated) stays where it is.
+ *
+ * A navigation that started from the palette or the More sheet asked for the hand-off
+ * (`requestMainFocus`): focus is then on a control the overlay returned it to, not on the new page,
+ * so main takes it wherever it is, two frames in, after the overlay's own return has finished.
  */
 export function useRouteFocus(pathname: string): void {
   const seen = useRef(pathname)
   useEffect(() => {
     if (seen.current === pathname) return undefined
     seen.current = pathname
-    const frame = requestAnimationFrame(() => {
-      if (!focusLost()) return
-      focusMain()
+    const requested = takeMainFocusRequest()
+    let second = 0
+    const first = requestAnimationFrame(() => {
+      if (!requested) {
+        if (focusLost()) focusMain()
+        return
+      }
+      second = requestAnimationFrame(focusMain)
     })
-    return () => cancelAnimationFrame(frame)
+    return () => {
+      cancelAnimationFrame(first)
+      cancelAnimationFrame(second)
+    }
   }, [pathname])
 }
 
