@@ -130,7 +130,7 @@ type CartesianChartProps<D> = { data: readonly D[]; x: XConfig<D>; y?: YConfig; 
 
 type SparkPoint = number | null | { at: Date | number; value: number | null }
 type SparklineProps = { series: readonly SparkPoint[]; ariaLabel: string; height: number | 'fill'; width?: number; form?: 'line' | 'area'
-  reference?: number | 'mean'; axisLabels?: readonly [string, string, string]; format?: (v: number) => string; summary?: string }
+  reference?: number | 'mean' | { min: number; max: number }; axisLabels?: readonly [string, string, string]; format?: (v: number) => string; summary?: string }
 type MiniBarsProps = Omit<SparklineProps, 'form' | 'reference'> & { highlight?: number | 'last' }
 
 type ChartFigure = { value: number | string | null; unit?: string; delta?: Delta; period?: string; status?: Status }
