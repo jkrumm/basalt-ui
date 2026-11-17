@@ -1641,3 +1641,28 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-shell-4-sheet, v3-shell-4-shell]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-shell-5.json' }
+  - key: v3-dogfood-4-api
+    title: 'A second page may reuse a widget id another page holds, from dogfood cycle 4'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-dogfood-4]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-4-api.json' }
+  - key: v3-dogfood-4-visual
+    title: 'A card-header segmented group fits its labels on a track, a status column fits its widest label, from dogfood cycle 4'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-dogfood-4]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-4-visual.json' }
+  - key: v3-dogfood-4-state
+    title: 'A page summary in an error phase is not busy, from dogfood cycle 4'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-dogfood-4]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-dogfood-4-state.json' }
+  - key: v3-cycle-dogfood-5
+    title: 'Improvement cycle 5: rebuild the factory console overview slice on v3'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-dogfood-4-api, v3-dogfood-4-visual, v3-dogfood-4-state]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-dogfood-5.json' }

@@ -1,0 +1,20 @@
+{
+  "why": "Dogfood cycle 4 (docs/v3/cycles/dogfood-4.md) logged one P2 `state` finding and one P3. dogfood-4.5: a `PageSummary` whose data failed draws the loading skeleton with `aria-busy=\"true\"` for as long as the page stays in error: with `phase` an error and no `sentence` (the counts never arrived), `page/page-summary.tsx:70` takes the loading branch, so a screen reader hears the page busy while six frames below say `Could not load this.` (`.evidence/cycle-dogfood-4/probe-phases.log`, `?screen=error`: `busy: true`, `retry: 6`; `cycle-dogfood-4-screen-error--light--1800x1200.png`). The doc says the page's `QueryState` owns the error, but a page whose frames each take their own phase has no `QueryState` to own it. P3 dogfood-4.6 (was 3.7, 2.8, 1.14): in error the page shows six Retry buttons in two wordings (`Could not load this.`, `Could not load issues over time.`); in stale `Updating` marks four cards and the chart, five times, and the table says nothing (`probe-phases.log`, `?screen=stale`: `updating: 5`).",
+  "what": "A page summary in an error phase is not busy; the P3 if it fits.",
+  "owns": [
+    "packages/basalt-ui/src/page/page-summary.tsx",
+    "packages/basalt-ui/docs/page-summary.md",
+    "the error and stale arms of src/cards/*, src/charts/parts/chart-card*.tsx and src/table/parts/phases.tsx, if the P3 fits",
+    "unit tests beside them"
+  ],
+  "must_not_touch": ["docs/v3/ARCHITECTURE.md", "apps/playground/src/cycle/**"],
+  "change": "(1) `PageSummary` with an error `phase` draws no skeleton and sets no `aria-busy`: it keeps its line's height empty or draws the error's dash, and `aria-busy` is set only while loading (dogfood-4.5). (2) If it fits: one error wording across the frames of a page and a stale mark on a table as on a card (4.6). Left out, the PR says so.",
+  "commits": "fix: commits in packages/basalt-ui.",
+  "proof": "make check-fast; a unit test of PageSummary in each phase; shots of /cycle/dogfood-4?screen=error.",
+  "acceptance": [
+    "PageSummary with an error phase and no sentence has no aria-busy and no skeleton, and keeps its loading height (unit test)",
+    "The PR states whether it fixed the P3",
+    "make check passes"
+  ],
+  "out_of_scope": "A page-level error banner that replaces the frames' own error arms."
+}
