@@ -70,6 +70,18 @@ function boundary(
   return { anchor, bounds }
 }
 
+/**
+ * A tooltip placed beside a column clears the column's own half width: the anchor is its centre, the
+ * engine's gap measures from there. Client px; 0 above or below, and where the x scale has no band.
+ */
+function besideColumn(ctx: ChartTooltipPortalPositionContext, placement: string): number {
+  if (placement !== 'left' && placement !== 'right') return 0
+  const half = (ctx.scene.scales?.['x']?.bandwidth ?? 0) / 2
+  const element = ctx.surface.element as HTMLElement
+  const scale = ctx.scene.width > 0 ? element.getBoundingClientRect().width / ctx.scene.width : 1
+  return (placement === 'right' ? half : -half) * scale
+}
+
 /** Writes a px value only when it moved: a write that changes nothing is still a style mutation. */
 function write(element: HTMLElement, side: 'left' | 'top', value: number): void {
   const current = Number.parseFloat(element.style[side])
@@ -116,7 +128,7 @@ function create(mode: TipMode): ChartTooltipPortalExtension['create'] {
           ctx.placement ?? VERTICAL,
           ctx.offset,
         )
-        write(element, 'left', placed.left)
+        write(element, 'left', placed.left + besideColumn(ctx, placed.placement))
         write(
           element,
           'top',

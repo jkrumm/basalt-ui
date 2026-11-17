@@ -38,6 +38,9 @@ import {
   edgeFraction,
   matchBandKeys,
   offScaleMarks,
+  CARET_SIZE,
+  offScaleSide,
+  xRoomForDots,
   strideKeepEnds,
 } from './axis-ext'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
@@ -714,19 +717,22 @@ const DOT_RING = 1
  */
 function roomForDots(
   axis: YAxis,
-  dots: readonly { y: number; r: number }[],
+  dots: readonly { y: number; r: number; caret?: boolean }[],
   plotHeight: number,
 ): YAxis {
   const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
   if (dots.length === 0 || plotHeight <= 0 || hi === lo) return axis
   const r = Math.max(...dots.map((d) => d.r)) + DOT_RING
   const [low, high] = [Math.min(...dots.map((d) => d.y)), Math.max(...dots.map((d) => d.y))]
+  // A dot capped at an end also keeps the off-scale caret clear of itself, on the plot's side of the edge.
+  const caret = (end: number): number =>
+    dots.some((d) => d.caret === true && d.y === end) ? CARET_SIZE : 0
   let [from, to] = [lo, hi]
   // The room is a share of the grown span, so it is found by settling: a few passes converge.
   for (let i = 0; i < 4; i++) {
-    const room = (r * (to - from)) / plotHeight
-    from = Math.min(lo, low - room)
-    to = Math.max(hi, high + room)
+    const per = (to - from) / plotHeight
+    from = Math.min(lo, low - (r + caret(lo)) * per)
+    to = Math.max(hi, high + (r + caret(hi)) * per)
   }
   if (from === lo && to === hi) return axis
   return { ...axis, domain: axis.domain[0] <= axis.domain[1] ? [from, to] : [to, from] }
@@ -1352,6 +1358,19 @@ const slotAnchor = (
 }
 const SLOT_TOOLTIP_PLACEMENT = ['top'] as const
 
+/**
+ * A column's or a point's tooltip opens off the mark, never on it: anchored at the topmost mark of the
+ * group (a bar's top, a dot's centre), over it first, then beside it (`portal.ts` clears the column's
+ * own half width), and below only for a dot, which has no body under it.
+ */
+const markAnchor = (points: readonly ChartPoint[]): { x: number; y: number } => {
+  const xs = points.map((p) => p.x)
+  return { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: Math.min(...points.map((p) => p.y)) }
+}
+const MARK_TOOLTIP_OFFSET = 12
+const BAR_TOOLTIP_PLACEMENT = ['top', 'right', 'left'] as const
+const DOT_TOOLTIP_PLACEMENT = ['top', 'bottom'] as const
+
 function tooltipSpec<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
   axes: Axes<T>
@@ -1365,6 +1384,8 @@ function tooltipSpec<T, X extends ChartX>(opts: {
   const { input, axes, visible, keys, visibleKeys, formatX, dayOnly } = opts
   const hidden = input.series.filter((s) => !visibleKeys.has(s.key))
   const slot = input.tooltipBelow === true && input.bare === true
+  // Columns and points have a body to keep off; a line is crossed by its own tooltip's anchor line.
+  const onMarks = visible.length > 0 && visible.every((s) => isBar(s) || s.mark === 'dot')
   const rowSeries = (input.reverseRows ? visible.toReversed() : visible).filter(
     (s) => s.tooltip !== false,
   )
@@ -1372,11 +1393,22 @@ function tooltipSpec<T, X extends ChartX>(opts: {
     use: quietWhileFollowing,
     ...followerOptions(input.tooltip, input.cursorGroup, input.chartId),
     portal: cardPortal(slot ? 'slot' : input.tooltipBelow === true ? 'strip' : 'card'),
-    anchor: input.tooltipBelow ? (slot ? slotAnchor : stripAnchor) : 'group-center',
+    anchor: input.tooltipBelow
+      ? slot
+        ? slotAnchor
+        : stripAnchor
+      : onMarks
+        ? markAnchor
+        : 'group-center',
     ...(input.tooltipBelow &&
       (slot
         ? { placement: SLOT_TOOLTIP_PLACEMENT, offset: 0 }
         : { placement: STRIP_TOOLTIP_PLACEMENT, offset: STRIP_TOOLTIP_OFFSET })),
+    ...(!input.tooltipBelow &&
+      onMarks && {
+        placement: visible.some(isBar) ? BAR_TOOLTIP_PLACEMENT : DOT_TOOLTIP_PLACEMENT,
+        offset: MARK_TOOLTIP_OFFSET,
+      }),
     content: (points: readonly ChartPoint[]) => {
       const first = points[0]
       if (!first) return { rows: [] }
@@ -1439,12 +1471,14 @@ export function compileCartesian<T, X extends ChartX>(
   const visible = visibleSeries(input.series, input.hidden ?? new Set<string>())
   const visibleKeys = new Set(visible.map((s) => s.key))
   const keys = new Set(input.series.map((s) => s.key))
-  const model = xScaleFor(
+  const baseModel = xScaleFor(
     input.data.map(input.x),
     input.band === true,
     input.xDomain,
     input.xScale === 'log',
   )
+  // The x scale of the build in hand: `baseModel`, or one grown so an edge dot draws whole (`dotRoomX`).
+  let model = baseModel
   // The y domain depends on the tick count, so on the class; everything else about the axes
   // (formats, sides) does not, and `shared` stands for it.
   const byClass = new Map<ContainerClass, Axes<T>>()
@@ -1486,16 +1520,38 @@ export function compileCartesian<T, X extends ChartX>(
       )
 
   // The dots of one axis side: their value and radius. A side with a bar keeps its floor, so none.
-  const dotsOn = (side: 'left' | 'right'): { y: number; r: number }[] => {
+  const dotsOn = (side: 'left' | 'right'): { y: number; r: number; caret: boolean }[] => {
     const onSide = visible.filter((s) => shared.onRight(s) === (side === 'right'))
     if (onSide.some(isBar)) return []
+    const axis = shared.axisOf(side)
     return onSide
       .filter((s) => s.mark === 'dot')
       .flatMap((s) =>
-        rows(s.key).flatMap((row) =>
-          row.y === null ? [] : [{ y: row.y, r: input.dotRadius?.get(s.key) ?? BASALT.dotR }],
-        ),
+        rows(s.key).flatMap((row) => {
+          if (row.y === null) return []
+          const v = s.getValue(row.datum)
+          const caret = axis.bounded === true && v !== null && offScaleSide(v, axis.domain) !== null
+          return [{ y: row.y, r: input.dotRadius?.get(s.key) ?? BASALT.dotR, caret }]
+        }),
       )
+  }
+  // A point chart's x domain grown so the dot at either end sits whole inside the clipped plot.
+  const dotRoomX = (access: PlotAccess, frameWidth: number): XScaleModel<X> => {
+    const { extent } = baseModel
+    if (extent === undefined || baseModel.log === true || visible.length === 0) return baseModel
+    if (!visible.every((s) => s.mark === 'dot')) return baseModel
+    access.read()
+    const drawn = input.data.filter((d) => visible.some((s) => s.getValue(d) !== null))
+    const r = Math.max(...visible.map((s) => input.dotRadius?.get(s.key) ?? BASALT.dotR)) + DOT_RING
+    const grown = xRoomForDots(
+      extent,
+      drawn.map((d) => Number(input.x(d))),
+      r,
+      access.size()?.width ?? frameWidth,
+    )
+    if (grown === null) return baseModel
+    const domain = baseModel.kind === 'date' ? grown.map((t) => new Date(t)) : grown
+    return xScaleFor(input.data.map(input.x), false, domain as unknown as readonly [X, X])
   }
   const dotRoomAxes = (base: Axes<T>, access: PlotAccess, frameHeight: number): Axes<T> => {
     const onLeft = dotsOn('left')
@@ -1550,6 +1606,7 @@ export function compileCartesian<T, X extends ChartX>(
       const access = plotAccess(definition, input.plot, MAIN_PANE)
       // `capped` holds the page's domain; `axes` may grow it so an edge dot draws whole. A datum
       // past the cap is clamped to the cap, so the growth keeps it whole too.
+      model = dotRoomX(access, width)
       const capped = axesAt(cls)
       const axes = dotRoomAxes(capped, access, height)
       const plot = plotContext(

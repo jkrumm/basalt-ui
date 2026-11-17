@@ -74,7 +74,8 @@ export const clampToDomain = (v: number, domain: readonly [number, number]): num
   return Math.min(hi, Math.max(lo, v))
 }
 
-const CARET_SIZE = 8
+/** The caret's size, px: a dot capped at the plot's edge keeps this much clear above it for the caret. */
+export const CARET_SIZE = 8
 const CARETS = { top: '▲', bottom: '▼' } as const
 
 /**
@@ -123,4 +124,29 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
           ],
     )
   }) as unknown as ChartMarks
+}
+
+/**
+ * The x domain of a point chart grown so every dot (`xs`: the dots' x as numbers, `r` the radius and
+ * ring in px) sits whole inside the plot, which clips its marks at the edge: a dot centred on the
+ * domain's end draws half. Grown only at an end a dot reaches, found by settling (the room is a
+ * share of the grown span). `null` when no dot reaches an end.
+ */
+export function xRoomForDots(
+  extent: readonly [number, number],
+  xs: readonly number[],
+  r: number,
+  plotWidth: number,
+): [number, number] | null {
+  const [lo, hi] = extent
+  const finite = xs.filter(Number.isFinite)
+  if (finite.length === 0 || plotWidth <= 0 || !(hi > lo)) return null
+  const [low, high] = [Math.min(...finite), Math.max(...finite)]
+  let [from, to] = [lo, hi]
+  for (let i = 0; i < 4; i++) {
+    const room = (r * (to - from)) / plotWidth
+    from = Math.min(lo, low - room)
+    to = Math.max(hi, high + room)
+  }
+  return from === lo && to === hi ? null : [from, to]
 }
