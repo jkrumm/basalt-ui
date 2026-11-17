@@ -1,6 +1,7 @@
 import { useRouter } from '@tanstack/react-router'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
+import { requestMainFocus } from '../../common/focus'
 import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
 import { navFor } from '../../router/nav/registry'
 import {
@@ -105,6 +106,7 @@ export function CommandPalette({
         ...(cmd.chord !== undefined && { chord: cmd.chord }),
         parsed: cmd.chord === undefined ? undefined : parseChord(cmd.chord),
         run: () => {
+          requestMainFocus()
           void router.navigate({ ...cmd.item.link } as never)
         },
       })),

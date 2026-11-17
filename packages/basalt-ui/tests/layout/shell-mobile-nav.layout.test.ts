@@ -94,6 +94,15 @@ describeShell(
   (test) => {
     afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
+    /** A tap on a destination closes the sheet and the tab it came from takes no focus back: main does. */
+    test('a jump from a surface hands focus to main, not back to its tab', async () => {
+      const p = await openFixture(sheetSpec(4), PHONE)
+      await p.tap(tab('Library'))
+      await p.waitFor(S('shell-sheet-rows'))
+      await p.tap(S('shell-sheet-rows'))
+      await p.raw.waitForFunction(() => document.activeElement?.id === 'shell-main')
+    })
+
     /**
      * INVARIANT 1 — a short sheet hugs its content.
      *
