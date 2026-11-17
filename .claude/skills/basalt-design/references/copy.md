@@ -14,6 +14,7 @@ The words on a page state facts: a precise noun, its scope, a live number. Slots
 - A caption names a period when the figure has one ("First reply, 7 days"); a rate or total carries its period.
 - A delta names what it compares to ("vs last week"); a unit sits beside the figure, spelled short.
 - The footer states two facts at most. [type:FootFacts]
+- A domain word that is unfamiliar to a stranger carries an [InfoHint](node_modules/basalt-ui/docs/info-hint.md) whose definition is read from the app's glossary (`defineGlossary`) and retyped nowhere.
 
 ## Word economy
 
