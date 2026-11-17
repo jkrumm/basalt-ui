@@ -19,6 +19,7 @@ import { Drawer as BaseDrawer } from '@base-ui/react/drawer'
 import { Toast as BaseToast } from '@base-ui/react/toast'
 import { Menu as BaseMenu } from '@base-ui/react/menu'
 import { Popover as BasePopover } from '@base-ui/react/popover'
+import { PreviewCard as BasePreviewCard } from '@base-ui/react/preview-card'
 import { Autocomplete as BaseAutocomplete } from '@base-ui/react/autocomplete'
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { Select as BaseSelect } from '@base-ui/react/select'
@@ -154,11 +155,14 @@ export function popupAncestry(
 ): Record<string, ComponentType<{ children?: ReactNode }>> {
   type Wrap = ComponentType<{ children?: ReactNode }>
   const popover: Wrap = (p) => createElement(BasePopover.Root, { defaultOpen: open }, p.children)
+  const card: Wrap = (p) => createElement(BasePreviewCard.Root, { defaultOpen: open }, p.children)
   const menu: Wrap = (p) => createElement(BaseMenu.Root, { defaultOpen: open }, p.children)
   const inMenu: Wrap = (p) => menu({ children: createElement(MenuContent, null, p.children) })
   return {
     'popover-trigger': popover,
     'popover-content': popover,
+    'preview-card-trigger': card,
+    'preview-card-content': card,
     tooltip: (p) =>
       cloneElement(p.children as ReactElement<Record<string, unknown>>, {
         defaultOpen: open,
@@ -183,7 +187,14 @@ export function toolbarAncestry(): Record<string, ComponentType<{ children?: Rea
 }
 
 /** Roots that render no element of their own: they carry no slot and are not listed in `SLOTS`. */
-export const ROOTLESS = new Set(['dialog', 'alert-dialog', 'sheet', 'popover', 'menu'])
+export const ROOTLESS = new Set([
+  'dialog',
+  'alert-dialog',
+  'sheet',
+  'popover',
+  'preview-card',
+  'menu',
+])
 
 /**
  * The Base UI roots a picker part needs. A popup part renders inside an open root (the popup is

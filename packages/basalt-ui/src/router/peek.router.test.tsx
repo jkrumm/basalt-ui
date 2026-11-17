@@ -16,7 +16,7 @@ import {
 import { createElement, useEffect } from 'react'
 import { defineControls, resetControlsOwnersForTests } from './controls/define'
 import { field } from './controls/field'
-import { usePeek } from './peek'
+import { recordAt, usePeek } from './peek'
 import type { PeekState } from './peek'
 
 type Loose = {
@@ -59,6 +59,9 @@ const LINKS = (
       <a href="/issues/12">off</a>
     </span>
     <a href="https://elsewhere.example/issues/12">external</a>
+    <a href="/issues/12" data-preview-first-tap="">
+      first tap
+    </a>
     <input aria-label="field" />
   </nav>
 )
@@ -277,5 +280,32 @@ describe('usePeek: Escape', () => {
     await key('Escape', input as HTMLInputElement)
     expect(document.activeElement).not.toBe(input)
     expect(peekParam(router)).toBe('issue/12')
+  })
+})
+
+describe('usePeek: a card trigger', () => {
+  test('a link marked as a first touch tap is left to its card, the next click opens the peek', async () => {
+    await mount('/')
+    expect(await click('first tap')).toBe(true)
+    expect(peek?.open).toBeNull()
+    expect(await click('issue 12')).toBe(false)
+    expect(peek?.open).toEqual({ kind: 'issue', id: '12' })
+  })
+})
+
+describe('recordAt', () => {
+  test('names the record a link points at from the same kinds as the peek', () => {
+    expect(recordAt(KINDS, '/issues/12')).toEqual({ kind: 'issue', id: '12' })
+    expect(recordAt(KINDS, '/issues/12?tab=notes#top')).toEqual({ kind: 'issue', id: '12' })
+    expect(recordAt(KINDS, 'http://localhost/artifacts/a%2D1/')).toEqual({
+      kind: 'artifact',
+      id: 'a-1',
+    })
+  })
+
+  test('another origin, another page and a nested path are not a record', () => {
+    expect(recordAt(KINDS, 'https://elsewhere.example/issues/12')).toBeNull()
+    expect(recordAt(KINDS, '/other')).toBeNull()
+    expect(recordAt(KINDS, '/issues/12/notes')).toBeNull()
   })
 })
