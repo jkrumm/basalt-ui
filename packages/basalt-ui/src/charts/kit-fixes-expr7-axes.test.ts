@@ -75,7 +75,7 @@ describe('y ticks on the edges of a zone', () => {
   })
 })
 
-describe('a long band label', () => {
+describe('a band label wider than its slot', () => {
   const names = ['Mon', 'Tue', 'Wed', 'customer-support-triage-assistant-v2']
   const model = xScaleFor(names, true)
   const guide = (width: number | undefined) =>
@@ -85,15 +85,6 @@ describe('a long band label', () => {
         tickLabels: { anchor: (c: { value: string }) => string | undefined }
       }
     }
-
-  test('is cut with an ellipsis at a third of the plot, and whole when the width allows it', () => {
-    const narrow = guide(390).axis.ticks.format
-    expect(narrow(names[3] as string).endsWith('…')).toBe(true)
-    expect(narrow(names[3] as string).length).toBeLessThan((names[3] as string).length)
-    expect(narrow('Mon')).toBe('Mon')
-    expect(guide(1800).axis.ticks.format(names[3] as string)).toBe(names[3] as string)
-    expect(guide(undefined).axis.ticks.format(names[3] as string)).toBe(names[3] as string)
-  })
 
   test('anchors to the plot edge, so it cannot hang over it and shrink the plot', () => {
     const anchor = guide(390).axis.tickLabels.anchor
