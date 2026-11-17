@@ -71,8 +71,8 @@ autonomously execute large roadmap phases.
 ## Charts
 
 Every cartesian chart composes **`CartesianChart`** (the kinds are `CartesianChart` with fixed marks).
-Engine `@tanstack/charts` behind one host; `basalt/chart-engine-boundary` bans the rest of the engine
-surface and `@visx/*`. Ground truth: `docs/v3/ARCHITECTURE.md`.
+Engine `@tanstack/charts` behind one host; `no-restricted-imports` overrides (`gen-oxlint.ts`) ban `@visx/*` and
+the engine's react entry outside `src/charts/host.tsx`. Ground truth: `docs/v3/ARCHITECTURE.md`.
 
 ## Layer Boundary
 
