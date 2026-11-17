@@ -143,3 +143,6 @@ export const saved = () => toast.success('Saved')
 // @valid
 import tablemark from 'tablemark'
 export const asTable = (rows) => tablemark(rows)
+// @invalid
+import { TabulatorFull as Tabulator } from 'tabulator-tables'
+export const grid = (el) => new Tabulator(el, {})
