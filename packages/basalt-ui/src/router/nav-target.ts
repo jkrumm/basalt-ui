@@ -91,7 +91,12 @@ function InAppLink({ href, onClick, ...rest }: LinkProps & { href: string }): Re
  */
 export function RouterLinkAdapter({ href, ...rest }: LinkProps): ReactNode {
   if (isNavTarget(href)) {
-    return createElement(Link as ElementType, { ...opened.get(href), ...rest })
+    // Current means this exact page: a parent's path and search are always inside the current URL's.
+    return createElement(Link as ElementType, {
+      activeOptions: { exact: true, includeSearch: true },
+      ...opened.get(href),
+      ...rest,
+    })
   }
   if (isInApp(href)) return createElement(InAppLink, { href, ...rest })
   return createElement('a', { href, ...rest })
