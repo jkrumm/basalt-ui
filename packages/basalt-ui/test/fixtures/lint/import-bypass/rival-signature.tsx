@@ -83,4 +83,8 @@ import { convert } from 'html-to-markdown'
 // @valid
 import Selecto from 'react-selecto'
 // @valid
+import { selectAll } from 'hast-util-select'
+// @valid
+import { selectOne } from 'css-select'
+// @valid
 import { Calendar } from 'react-big-calendar'
