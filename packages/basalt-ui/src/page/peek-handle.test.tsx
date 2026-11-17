@@ -139,6 +139,28 @@ describe('PeekHandle', () => {
     done()
   })
 
+  test('a click that never moves the edge saves nothing', () => {
+    const onWidthChange = mock((_px: number | null) => {})
+    const { handle, done } = mountShelled({ onWidthChange })
+    handle.setPointerCapture = () => {}
+    handle.releasePointerCapture = () => {}
+    handle.hasPointerCapture = () => true
+    fireEvent.pointerDown(handle, { button: 0, clientX: 800, pointerId: 1 })
+    fireEvent.pointerUp(handle, { clientX: 800, pointerId: 1 })
+    expect(onWidthChange).toHaveBeenCalledTimes(0)
+    done()
+  })
+
+  test('a saved width that is not a number is no choice, and one under the narrowest is raised to it', () => {
+    const bad = mountShelled({ defaultWidth: Number.NaN })
+    expect(bad.el.style.getPropertyValue('--peek-w')).toContain('min(')
+    cleanup()
+    bad.done()
+    const small = mountShelled({ defaultWidth: 0 })
+    expect(small.el.style.getPropertyValue('--peek-w')).toBe(`${PEEK_MIN}px`)
+    small.done()
+  })
+
   test('draws no handle outside a shell, and none on a compact screen', () => {
     render(<Peek title="Issue 12" onClose={() => {}} />)
     expect(screen.queryByRole('separator')).toBeNull()
