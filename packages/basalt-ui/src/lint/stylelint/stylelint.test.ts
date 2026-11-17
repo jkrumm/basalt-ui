@@ -102,6 +102,7 @@ const OFFENDERS: [file: string, rule: string][] = [
   ['orientation-media.css', 'media-feature-name-disallowed-list'],
   ['dark-media.css', 'media-feature-name-disallowed-list'],
   ['color-chart-fill.css', 'declaration-property-value-disallowed-list'],
+  ['color-status-tint.css', 'declaration-property-value-disallowed-list'],
   ['fixed-width.css', 'declaration-property-value-disallowed-list'],
   ['fixed-min-width.css', 'declaration-property-value-disallowed-list'],
   ['flex-basis.css', 'declaration-property-value-disallowed-list'],
@@ -242,6 +243,7 @@ describe('messages', () => {
   it('a fill-only colour, a fixed width and a fixed track each fire once, a legal twin none', async () => {
     for (const file of [
       'color-chart-fill.css',
+      'color-status-tint.css',
       'fixed-width.css',
       'fixed-min-width.css',
       'flex-basis.css',

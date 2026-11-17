@@ -41,7 +41,7 @@
         "light-dark"
       ],
       {
-        "message": "`%s()` writes a colour by hand. Use a `--basalt-*` colour token, or `color-mix(in oklab, var(--basalt-token) 40%, transparent)` for an alpha; a token already switches per scheme."
+        "message": "`%s()` writes a colour by hand. Use the `--basalt-*` colour token of the property's role (a surface for a background, an ink for text), or `color-mix(in oklab, var(--basalt-token) 40%, transparent)` over that token for an alpha; a token already switches per scheme."
       }
     ],
     "declaration-property-value-disallowed-list": [
@@ -57,7 +57,7 @@
           "/color-mix\\((?!\\s*in\\s+[a-z0-9-]+(?:\\s+(?:shorter|longer|increasing|decreasing)\\s+hue)?\\s*,\\s*(?:var\\(--basalt-[a-z0-9-]+\\)|transparent)(?:\\s+[\\d.]+%)?\\s*,\\s*(?:var\\(--basalt-[a-z0-9-]+\\)|transparent)(?:\\s+[\\d.]+%)?\\s*\\))/i"
         ],
         "/^color$/": [
-          "/var\\(\\s*--(?:basalt|color)-(?:brand-fill|dim-bar|chart-1|chart-2|chart-3|chart-4|chart-5|seq-1|seq-2|seq-3|seq-4|seq-5)\\s*[,)]/i"
+          "/var\\(\\s*--(?:basalt|color)-(?:brand-fill|dim-bar|chart-1|chart-2|chart-3|chart-4|chart-5|seq-1|seq-2|seq-3|seq-4|seq-5|[a-z0-9-]*-tint)\\s*[,)]/i"
         ],
         "/^grid-(?:template(?:-columns|-rows)?|auto-(?:columns|rows))$/": [
           "/(?<![\\w])[+-]?(?:\\d*\\.)?\\d+(?:px|rem|em|ex|ch|lh|rlh|cap|ic|vw|vh|vmin|vmax|vi|vb|[sld]v[whib]|[sld]vmin|[sld]vmax|cq[whib]|cqmin|cqmax|pt|pc|cm|mm|q|in)\\b/i"
@@ -70,7 +70,7 @@
         ]
       },
       {
-        "message": "Disallowed `%s: %s`. By property: padding, margin, gap and inset (top, right, bottom, left) take a --basalt-rhythm-* token (--basalt-rhythm-1 to -3), 0, auto or %, and font size a --basalt-text-* token, never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status or chart colour; color-mix runs over --basalt tokens or transparent only; color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill); grid-template, grid-template-columns and -rows, grid-auto-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length; width, min-width and a flex basis above 384px are parent-owned (size the container, not the child); overflow auto|scroll is ui/scroll-area, or let Page own the scroll."
+        "message": "Disallowed `%s: %s`. By property: padding, margin, gap and inset (top, right, bottom, left) take a --basalt-rhythm-* token (--basalt-rhythm-1 to -3), 0, auto or %, and font size a --basalt-text-* token, never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status, chart or brand colour (a tinted background is var(--basalt-selected) or a surface token); color-mix runs over --basalt tokens or transparent only; color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill, a status tint); grid-template, grid-template-columns and -rows, grid-auto-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length; width, min-width and a flex basis above 384px are parent-owned (size the container, not the child); overflow auto|scroll is ui/scroll-area, or let Page own the scroll."
       }
     ],
     "declaration-property-value-allowed-list": [
