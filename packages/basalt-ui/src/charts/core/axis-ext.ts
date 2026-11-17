@@ -4,6 +4,10 @@
  */
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { text } from '@tanstack/charts/text'
+import { BASALT } from '../../tokens'
+import type { LabelBox } from '../chart-labels'
+import { estimateWidth, lineHeight, placeWith } from '../label-place'
+import type { PlotPx } from '../label-obstacles'
 import type { ChartMarks, ChartSeries, ChartX, XRefAt } from '../types'
 import type { XScaleModel } from './scales'
 import { CV } from './theme'
@@ -79,6 +83,76 @@ export const clampToDomain = (v: number, domain: readonly [number, number]): num
 export const CARET_SIZE = 8
 const CARETS = { top: '▲', bottom: '▼' } as const
 
+/** Air between a caret and the value label beside it, px: the caret's half width and the dot's reach. */
+const CAP_LABEL_GAP = 8
+
+/** Where a clamped mark's true value is written: the plot's size and what to keep clear of. */
+export type CapLabelsOptions = {
+  frame: () => PlotPx
+  obstacles: () => readonly LabelBox[]
+}
+
+type CapMark = { f: number; text: string; color: string; magnitude: number }
+
+/**
+ * The true values of the marks held on the plot's edge, one text mark per series and side: each is
+ * placed beside its caret by the kit's placer (right of it, else left), clear of the host's marks
+ * and of the other values, and dropped when neither side has room. The caret says "past the edge";
+ * this is how far past.
+ */
+function capValueMarks(
+  found: { top: CapMark[]; bottom: CapMark[] },
+  opts: { id: string; edge: readonly [number, number]; scale: 'y' | 'y2' } & CapLabelsOptions,
+): ChartMarks {
+  if (found.top.length === 0 && found.bottom.length === 0) return []
+  const frame = opts.frame()
+  if (frame.width <= 0 || frame.height <= 0) return []
+  const size = BASALT.text.micro
+  const half = lineHeight(size) / 2
+  const sides = (['top', 'bottom'] as const).flatMap((side) =>
+    found[side].map((m, i) => ({ side, m, key: `${side}:${i}` })),
+  )
+  const { placed } = placeWith(
+    estimateWidth,
+    sides.map(({ side, m, key }) => ({
+      key,
+      text: m.text,
+      x: m.f * frame.width,
+      y: side === 'top' ? half : frame.height - half,
+      size,
+      priority: m.magnitude,
+      spots: ['right', 'left'] as const,
+    })),
+    frame,
+    { gap: CAP_LABEL_GAP, obstacles: opts.obstacles(), size },
+  )
+  const byKey = new Map(sides.map((s) => [s.key, s]))
+  const marks = placed.map((p) => {
+    const { side, m } = byKey.get(p.key)!
+    // The text mark centres on its datum, which is the edge: carry it to the box's middle.
+    return { ...m, side, dx: p.dx, dy: p.top + p.height / 2 - (side === 'top' ? 0 : frame.height) }
+  })
+  if (marks.length === 0) return []
+  type Mark = (typeof marks)[number]
+  return [
+    decorative(
+      text(marks, {
+        id: opts.id,
+        x: (m: Mark) => m.f,
+        y: (m: Mark) => ordered(opts.edge)[m.side === 'top' ? 1 : 0],
+        xScale: 'zx',
+        yScale: opts.scale,
+        text: (m: Mark) => m.text,
+        fill: (m: Mark) => m.color,
+        fontSize: size,
+        anchor: (m: Mark) => (m.dx < 0 ? 'end' : 'start'),
+        dx: (m: Mark) => m.dx,
+        dy: (m: Mark) => m.dy,
+      }),
+    ),
+  ] as unknown as ChartMarks
+}
+
 /**
  * One caret per datum past a bounded axis, in the series colour, at the datum's x on the plot's top
  * or bottom edge. Drawn on the hidden `[0, 1]` x scale `zx`, so any x scale places it.
@@ -93,18 +167,27 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
   /** The plotted domain, where the caret sits; the cap's own when absent. */
   edgeOf?: (s: ChartSeries<T>) => readonly [number, number]
   yScaleOf: (s: ChartSeries<T>) => 'y' | 'y2'
+  /** The text of a value past the cap: the series' `formatValue`, else the axis' format. */
+  formatOf: (s: ChartSeries<T>) => (v: number, d: T) => string
+  /** Where each caret's true value is written; a series that labels its own values is left to it. */
+  labels: CapLabelsOptions
 }): ChartMarks {
   return opts.series.flatMap((s) => {
     const domain = opts.domainOf(s)
     if (domain === null) return []
     const found = { top: [] as number[], bottom: [] as number[] }
+    const values = { top: [] as CapMark[], bottom: [] as CapMark[] }
     for (const d of opts.data) {
       const v = s.getValue(d)
       const side = v === null ? null : offScaleSide(v, domain)
       const f = side === null ? null : opts.fraction(opts.x(d))
-      if (side !== null && f !== null) found[side].push(f)
+      if (side === null || f === null || v === null) continue
+      found[side].push(f)
+      values[side].push({ f, text: opts.formatOf(s)(v, d), color: s.color, magnitude: Math.abs(v) })
     }
-    return (['top', 'bottom'] as const).flatMap((side) =>
+    const own = s.values !== undefined && s.values !== false
+    const edge = opts.edgeOf?.(s) ?? domain
+    const carets = (['top', 'bottom'] as const).flatMap((side) =>
       found[side].length === 0
         ? []
         : [
@@ -124,6 +207,15 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
             ),
           ],
     )
+    const named = own
+      ? []
+      : capValueMarks(values, {
+          id: `off-scale-${s.key}-value`,
+          edge,
+          scale: opts.yScaleOf(s),
+          ...opts.labels,
+        })
+    return [...carets, ...named]
   }) as unknown as ChartMarks
 }
 
@@ -140,10 +232,14 @@ export function stackCapMarks<T, X extends ChartX>(opts: {
   fraction: (x: X) => number | null
   domain: readonly [number, number]
   edge: readonly [number, number]
+  /** The text of a total past the cap: the left axis' format. */
+  format: (v: number) => string
+  /** Where each caret's true total is written; a stack whose bars label their own totals is left to them. */
+  labels: CapLabelsOptions
 }): ChartMarks {
   const found = {
-    top: [] as { f: number; color: string }[],
-    bottom: [] as { f: number; color: string }[],
+    top: [] as { f: number; color: string; total: number }[],
+    bottom: [] as { f: number; color: string; total: number }[],
   }
   for (const d of opts.data) {
     const f = opts.fraction(opts.x(d))
@@ -160,10 +256,10 @@ export function stackCapMarks<T, X extends ChartX>(opts: {
     for (const side of ['top', 'bottom'] as const) {
       const s = last[side]
       if (s === undefined || offScaleSide(sums[side], opts.domain) !== side) continue
-      found[side].push({ f, color: s.highlight?.(d) ? CV.brand : s.color })
+      found[side].push({ f, color: s.highlight?.(d) ? CV.brand : s.color, total: sums[side] })
     }
   }
-  return (['top', 'bottom'] as const).flatMap((side) =>
+  const carets = (['top', 'bottom'] as const).flatMap((side) =>
     found[side].length === 0
       ? []
       : [
@@ -182,7 +278,26 @@ export function stackCapMarks<T, X extends ChartX>(opts: {
             }),
           ),
         ],
-  ) as unknown as ChartMarks
+  )
+  const own = opts.series.some((s) => s.values !== undefined && s.values !== false)
+  const named = own
+    ? []
+    : capValueMarks(
+        {
+          top: found.top.map((c) => ({
+            ...c,
+            text: opts.format(c.total),
+            magnitude: Math.abs(c.total),
+          })),
+          bottom: found.bottom.map((c) => ({
+            ...c,
+            text: opts.format(c.total),
+            magnitude: Math.abs(c.total),
+          })),
+        },
+        { id: 'stack-cap-value', edge: opts.edge, scale: 'y', ...opts.labels },
+      )
+  return [...carets, ...named] as unknown as ChartMarks
 }
 
 /**

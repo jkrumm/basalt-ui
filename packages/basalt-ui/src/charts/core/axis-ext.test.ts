@@ -169,6 +169,8 @@ describe('off-scale', () => {
         fraction: (x) => x / 40,
         domainOf: () => (bounded ? [0, 120] : null),
         yScaleOf: () => 'y',
+        formatOf: () => (v) => String(v),
+        labels: { frame: () => ({ width: 0, height: 0 }), obstacles: () => [] },
       })
     expect(marks(true)).toHaveLength(1)
     expect(marks(false)).toHaveLength(0)
@@ -224,10 +226,10 @@ describe('off-scale', () => {
     }
   })
 
-  test('the compiled chart carries the caret and the zx scale it draws on', () => {
+  test('the compiled chart carries the caret, its value label and the zx scale they draw on', () => {
     const spec = build(compile({ domain: [0, 120] }))
     expect(JSON.stringify(Object.keys(spec.scales))).toContain('zx')
-    expect(spec.marks.length - build(compile()).marks.length).toBe(1)
+    expect(spec.marks.length - build(compile()).marks.length).toBe(2)
   })
 })
 

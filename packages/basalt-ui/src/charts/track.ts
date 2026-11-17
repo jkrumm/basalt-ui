@@ -8,8 +8,11 @@
  * depends on width is resolved against the container size classes instead of a measured width:
  * - an axis keeps the tick labels that fit at each class's floor, nested, and shows each from the
  *   class where it first fits (`@narrow:`, `@regular:`, `@wide:`);
- * - a row places its labels once, at the narrowest width the track is drawn at. A label anchored at
- *   a mark's edge that fits there fits at every wider width.
+ * - a row places its labels at each container class (`@narrow`, `@regular`, `@wide`), each by the
+ *   room it has there, and shows a label from the first class where it and every wider one hold it,
+ *   so a long title a narrow track cannot carry still shows on a wide one. A page that passes
+ *   `width` places once there instead. A label anchored at a mark's edge that fits at a width fits
+ *   at every wider one.
  */
 import type { CSSProperties } from 'react'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
@@ -77,7 +80,7 @@ export type PlacedRowLabel<K extends string = string> = RowLabel<K> & {
 }
 
 export type TrackRowOptions<V extends TrackValue> = {
-  /** The narrowest px width the track is drawn at. Default: the `@narrow` floor times `share`. */
+  /** Place once at this px width, the narrowest the track is drawn at. Default: per container class, from the `@narrow` floor times `share`. */
   width?: number
   /** The track's share of the width of its `@container`, for the default `width`. Default 1. */
   share?: number
@@ -94,7 +97,7 @@ export type TrackRowOptions<V extends TrackValue> = {
 export type TrackRow<K extends string, V extends TrackValue> = {
   placed: PlacedRowLabel<K>[]
   dropped: RowLabel<K>[]
-  /** The gridlines to draw on this row: `grid` without the ones a label sits on. */
+  /** The gridlines to draw on this row: `grid` without the ones a label sits on at the narrowest class. */
   lines: TrackTick<V>[]
 }
 
@@ -246,20 +249,33 @@ const cls = (...parts: (string | false)[]): string => parts.filter(Boolean).join
 
 const overlaps = (a: Span, b: Span): boolean => a.left < b.right && b.left < a.right
 
-export function trackRow<K extends string, V extends TrackValue>(
+/** The widths a default row places at, narrowest first: the `@narrow` floor shows always, the wider classes show what they add. */
+const ROW_TIERS = [
+  { floor: NARROW_FLOOR, show: '' },
+  { floor: 480, show: 'hidden @regular:block' },
+  { floor: 800, show: 'hidden @wide:block' },
+] as const
+
+type Landing<K extends string> = { label: RowLabel<K>; spot: RowSpot; hull: Span }
+
+/** One placement pass of `labels` on a track `width` px wide: where each lands, and which none could. */
+function layRow<K extends string>(
   labels: readonly RowLabel<K>[],
-  options: TrackRowOptions<V>,
+  options: {
+    width: number
+    size: number
+    gap: number
+    obstacles?: TrackRowOptions<TrackValue>['obstacles']
+  },
   measure: Measure,
-): TrackRow<K, V> {
-  const width = options.width ?? NARROW_FLOOR * (options.share ?? 1)
-  const size = options.size ?? DEFAULT_SIZE
-  const gap = options.gap ?? DEFAULT_GAP
+): { landed: Map<K, Landing<K>>; dropped: RowLabel<K>[]; boxes: Span[] } {
+  const { width, size, gap } = options
   const taken: Span[] = (options.obstacles ?? []).map((o) => ({
     left: o.from * width,
     right: o.to * width,
   }))
   const marks: Span[] = labels.map((l) => ({ left: l.from * width, right: l.to * width }))
-  const placed: PlacedRowLabel<K>[] = []
+  const landed = new Map<K, Landing<K>>()
   const dropped: RowLabel<K>[] = []
   const boxes: Span[] = []
   const ranked = labels
@@ -289,8 +305,45 @@ export function trackRow<K extends string, V extends TrackValue>(
       dropped.push(label)
       continue
     }
-    const [spot, hull] = hit
-    boxes.push(hull)
+    boxes.push(hit[1])
+    landed.set(label.key, { label, spot: hit[0], hull: hit[1] })
+  }
+  return { landed, dropped, boxes }
+}
+
+export function trackRow<K extends string, V extends TrackValue>(
+  labels: readonly RowLabel<K>[],
+  options: TrackRowOptions<V>,
+  measure: Measure,
+): TrackRow<K, V> {
+  const size = options.size ?? DEFAULT_SIZE
+  const gap = options.gap ?? DEFAULT_GAP
+  const share = options.share ?? 1
+  // A page that states its narrowest width places once there; otherwise each label is placed at each
+  // container class and shown from the first class where it (and every wider one) holds it.
+  const tiers =
+    options.width === undefined
+      ? ROW_TIERS.map((t) => ({ width: t.floor * share, show: t.show }))
+      : [{ width: options.width, show: '' }]
+  const passes = tiers.map((t) =>
+    layRow(labels, { width: t.width, size, gap, obstacles: options.obstacles }, measure),
+  )
+  const base = passes[0] as (typeof passes)[number]
+  const placed: PlacedRowLabel<K>[] = []
+  const dropped: RowLabel<K>[] = []
+  const ranked = labels
+    .map((label, index) => ({ label, index }))
+    .toSorted((a, b) => (b.label.priority ?? 0) - (a.label.priority ?? 0) || a.index - b.index)
+  for (const { label } of ranked) {
+    // The first class from which the label is placed at every class up to the widest.
+    let from = tiers.length
+    while (from > 0 && passes[from - 1]?.landed.has(label.key)) from--
+    const at = passes[from]?.landed.get(label.key)
+    if (at === undefined) {
+      dropped.push(label)
+      continue
+    }
+    const { spot } = at
     const style: CSSProperties =
       spot === 'after'
         ? { left: pct(label.to), marginLeft: gap }
@@ -299,7 +352,10 @@ export function trackRow<K extends string, V extends TrackValue>(
       ...label,
       spot,
       props: {
-        className: 'absolute top-1/2 -translate-y-1/2 whitespace-nowrap tabular-nums',
+        className: cls(
+          'absolute top-1/2 -translate-y-1/2 whitespace-nowrap tabular-nums',
+          tiers[from]?.show ?? '',
+        ),
         style: { ...style, fontSize: size },
         'data-spot': spot,
       },
@@ -307,8 +363,8 @@ export function trackRow<K extends string, V extends TrackValue>(
   }
 
   const lines = (options.grid ?? []).filter((t) => {
-    const x = t.at * width
-    return !boxes.some((b) => x >= b.left && x <= b.right)
+    const x = t.at * (tiers[0] as (typeof tiers)[number]).width
+    return !base.boxes.some((b) => x >= b.left && x <= b.right)
   })
   return { placed, dropped, lines }
 }

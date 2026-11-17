@@ -52,6 +52,8 @@ export type ChartLabel<K extends string = string> = {
 
 /** A label with the spot and box it landed on, plus what a `<text>` element needs. */
 export type PlacedLabel<K extends string = string> = ChartLabel<K> & {
+  /** The font size the label was measured at, px: draw the text at it (`fontSize`) so it fills the box. */
+  size: number
   spot: LabelSpot
   left: number
   top: number
@@ -138,7 +140,9 @@ export const chartLabels = {
   /**
    * Place each label on the first free spot, highest `priority` first (ties keep input order). A
    * spot is free when its box lies fully inside `frame` and overlaps no placed label and no
-   * obstacle; a label with no free spot is returned in `dropped`.
+   * obstacle; a label with no free spot is returned in `dropped`. A box that overflows the frame
+   * slides along that edge to stay in (a centred spot sideways, a side spot up or down by at most
+   * half its height), so a short label on a point at the plot's edge still lands beside it, whole.
    *
    * Called from `CartesianChart.custom`'s `build`, it also keeps clear of what the host drew under
    * the marks, with no option to pass: the zone and rule captions, the end labels, the line paths
@@ -170,8 +174,10 @@ export const chartLabels = {
    * The label pass for one HTML row: each label goes after its mark's end, inside its end, or before
    * its start, the first that stays on the track and clears the other marks, the placed labels and
    * `obstacles`, highest `priority` first; one with no room is `dropped` (the readout still says
-   * it). It places once at `width`, the narrowest the track is drawn at, so it holds at any wider
-   * width. `lines` is `grid` without the gridlines under a placed label.
+   * it). Each label is placed by the room it has at each container class (`@narrow`, `@regular`,
+   * `@wide`) and its `props.className` shows it from the first class where it fits, so a title too
+   * long for a narrow track still shows on a wide one; `width` places once at that px width instead.
+   * `lines` is `grid` without the gridlines under a placed label at the narrowest class.
    *
    * @example
    * const row = chartLabels.row([{ key: s.id, text: ms(s.duration), from: axis.at(s.start), to: axis.at(s.end) }], { grid: axis.ticks, share: 0.8 })

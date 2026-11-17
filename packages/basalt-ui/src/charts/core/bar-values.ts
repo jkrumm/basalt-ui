@@ -9,7 +9,7 @@ import { decorative } from '@tanstack/charts/mark/decorative'
 import { text } from '@tanstack/charts/text'
 import { BASALT } from '../../tokens'
 import type { ChartLabel, LabelBox, LabelSpot } from '../chart-labels'
-import { fitsWith, placeWith } from '../label-place'
+import { estimateWidth as measure, fitsWith, placeWith } from '../label-place'
 import { dimmedPaint } from '../marks'
 import type { PlotPx } from '../label-obstacles'
 import type { ChartMarks, ChartSeries, ChartX } from '../types'
@@ -23,14 +23,6 @@ const GAP = 3
 /** Air a label keeps inside the bar it stands in, px. */
 const INSIDE_PAD = 2
 const SIZE = BASALT.text.micro
-/**
- * A glyph's advance as a share of the font size: the chart face's tabular figures are 0.6 em, so a
- * value label errs a hair wide. An estimate, not the measured table, which would put 8 KB into
- * every chart that labels its bars.
- */
-const VALUE_GLYPH_EM = 0.62
-const measure = (text: string, size: number): number => [...text].length * size * VALUE_GLYPH_EM
-
 type Side = 'left' | 'right'
 
 /** One bar (or one stack end) to label. */
