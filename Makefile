@@ -72,7 +72,7 @@ pre: ## fmt:check + lint + typecheck + budgets + literals + the unit suite in a 
 	@bun run pre
 
 # One `bun test` over the whole suite peaked at 6.1 GiB; scripts/unit-test.ts runs it as consecutive processes.
-test: ## Run the unit suite in a host test slot (scripts/unit-test.ts: consecutive `bun test` processes, peak under 2 GiB)
+test: ## Run the unit suite in a host test slot (scripts/unit-test.ts: `bun test` processes, one after another by default, peak under 2 GiB)
 	@$(call slot,unit) bun scripts/unit-test.ts
 
 # The browser of the layout and quality-matrix suites is BASALT_TEST_BROWSER=shell|chrome (tests/support/test-browser.ts).

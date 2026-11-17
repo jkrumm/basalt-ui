@@ -3,8 +3,11 @@
 /** One unit process's budget: the ts-morph files alone peak at 0.8 to 2.3 GiB, a 40-file chunk well under 1 GiB. */
 export const PER_PROCESS_MIB = 1024
 
-/** Beyond this the suite's longest process, not the cores, sets the wall time (measured 2026-11-17: 187 s at 6). */
-export const MAX_PARALLEL = 8
+/**
+ * The width measured on the step host (2026-11-17: 187 s at 6, peak 3.9 GiB). The cap also bounds the worst case: the
+ * eight HEAVY files start first, so a wider grant would run more of them at once than a 6 GiB grant is sized for.
+ */
+export const MAX_PARALLEL = 6
 
 /**
  * The factory's step host grants a step its cores and memory (`FACTORY_STEP_CORES`, `FACTORY_STEP_MEM_MIB`); the
