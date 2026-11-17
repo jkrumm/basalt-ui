@@ -18,7 +18,11 @@ describe('StatGroup shared failure', () => {
       const { container, getAllByRole } = render(
         <StatGroup variant={variant} label="Link health">
           {LABELS.map((label, i) => (
-            <StatCell key={label} label={label} phase={{ tag: 'error', retry: retries[i] }} />
+            <StatCell
+              key={label}
+              label={label}
+              phase={{ tag: 'error', retry: retries[i] as () => void }}
+            />
           ))}
         </StatGroup>,
       )

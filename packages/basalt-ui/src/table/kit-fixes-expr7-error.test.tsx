@@ -46,7 +46,7 @@ describe('table error title', () => {
     const { container } = render(
       <DataPanel
         title="Pipeline"
-        phase={{ tag: 'ready' }}
+        phase="ready"
         bodySize={{ rows: 3 }}
         body={() => <Table label="Open pull requests" />}
       />,
