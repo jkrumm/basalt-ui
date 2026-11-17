@@ -12,7 +12,7 @@ import { ChartCard, Lines, Sparkline } from 'basalt-ui/charts'
 import { filterSlot, spec } from 'basalt-ui/controls'
 import { CardGrid, EmptyState, Facts, Page, PageAside, PageBar, Section } from 'basalt-ui/page'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import type { ReactElement } from 'react'
 import {
   FLOW_ISSUES,
@@ -86,8 +86,8 @@ function StatRow({ phase }: { phase: Phase }): ReactElement {
 // ---- Chart card --------------------------------------------------------------------------------
 
 /** The console's pair: the peak in the accent, the average as a neutral line over its fill. */
-const PEAK = { light: VX.brand, dark: VX.brand }
-const AVERAGE = { light: VX.inkFaint, dark: VX.inkFaint }
+const PEAK = { light: BASALT.brand, dark: BASALT.brand }
+const AVERAGE = { light: BASALT.inkFaint, dark: BASALT.inkFaint }
 
 function TrendCard({ phase }: { phase: Phase }): ReactElement {
   const [count] = cards.widget.trend.count.use()
