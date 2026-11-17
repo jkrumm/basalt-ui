@@ -49,7 +49,7 @@ export type PlanInput = Pick<
   /** The caller named a card slot (`card` option): placed before the columns left to a default. */
   cardFirst?: boolean
   /** Sized to its widest loaded value; the ch comes from `PlanOptions.contentCh`. */
-  content?: unknown
+  content?: { short?: { minCh: number; maxCh: number } }
 }
 
 export type PlannedColumn = {
@@ -62,6 +62,8 @@ export type PlannedColumn = {
   identity: boolean
   visible: boolean
   widthPx: number
+  /** Shares the width the fixed columns leave: a flexible kind not sized to its content. */
+  flex: boolean
 }
 
 export type TablePlan = {
@@ -88,6 +90,21 @@ export const CONTENT_MAX_CH = 40
 
 export function widthPx(width: Width): number {
   return width === 'icon' ? ICON_COL_PX : width.ch * CH_PX + CELL_PAD_PX
+}
+
+/**
+ * The px of a column sized to its loaded content, or `null` when it takes its kind width: no
+ * `content`, or a `short` one (text) whose values are unloaded or too long to size a column to.
+ */
+function contentWidth(input: PlanInput, loaded: number | undefined): number | null {
+  const content = input.content
+  if (content === undefined) return null
+  const ch = Math.ceil(loaded ?? 0)
+  if (content.short !== undefined) {
+    if (loaded === undefined || ch > content.short.maxCh) return null
+    return widthPx({ ch: Math.max(content.short.minCh, ch), flex: false })
+  }
+  return widthPx({ ch: Math.min(CONTENT_MAX_CH, Math.max(CONTENT_MIN_CH, ch)), flex: false })
 }
 
 function defaultWarn(message: string): void {
@@ -184,17 +201,8 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
       `basalt-ui/table: more than two priority-1 columns; ${demoted.join(', ')} demoted to 2 by declaration order`,
     )
   }
-  const widths = inputs.map((c) =>
-    c.content === undefined
-      ? widthPx(c.width)
-      : widthPx({
-          ch: Math.min(
-            CONTENT_MAX_CH,
-            Math.max(CONTENT_MIN_CH, Math.ceil(options.contentCh?.[c.id] ?? 0)),
-          ),
-          flex: false,
-        }),
-  )
+  const sized = inputs.map((c) => contentWidth(c, options.contentCh?.[c.id]))
+  const widths = inputs.map((c, index) => sized[index] ?? widthPx(c.width))
 
   const sum = (pick: (index: number) => boolean) =>
     widths.reduce(
@@ -231,6 +239,7 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
     identity: index === identity,
     visible: visible[index]!,
     widthPx: widths[index]!,
+    flex: sized[index] === null && c.width !== 'icon' && c.width.flex,
   }))
   return { columns, fullAt, reducedFrom, demoted }
 }
