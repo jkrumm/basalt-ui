@@ -46,7 +46,7 @@ What is left is mostly `skill`, 63 of 91 points. The kit cost 28. None of it nee
 
 ### After the rounds
 
-`make check-fast` ran on the final tree, rebased onto master after every builder was done, and passed (rc 0): the static gate, the unit suite in a host slot, the coverage, doc-drift and contract-frozen gates (20 pins), and the pack-test. The layout step picked no file, because none of the 23 changed files reaches a layout test, so CI runs the full suite. A first run before the rebase failed `check-contract-frozen` on `page/contract.ts`, a pin master had moved after the pin (`38e21b1f`), which this tree never touched; the rebase cleared it. Master had moved 19 commits past the pin; the builds, written against the pin, pass lint and typecheck on it.
+`make check-fast` ran on the final tree, rebased onto master after every builder was done, and passed (rc 0): the static gate, the unit suite in a host slot, the coverage, doc-drift and contract-frozen gates (20 pins), and the pack-test. The layout step picked no file, because none of the 23 changed files reaches a layout test, so CI runs the full suite. A first run before the rebase failed `check-contract-frozen` on `page/contract.ts`, a pin master had moved after the pin (`38e21b1f`), which this tree never touched; the rebase cleared it. Master had moved 19 commits past the pin. By the merge it had also renamed `VX` to `BASALT` (`81bb7577`, the end of the vx names), which broke the PR's typecheck and unit jobs on all six imports. The six builds took the same mechanical rename master gave the trial builds of cycles 1 to 5, in its own `refactor:` commit; nothing else in them changed.
 
 ## Numbers
 
