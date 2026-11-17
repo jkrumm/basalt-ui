@@ -30,20 +30,7 @@ The full S0→S5 argo extraction is **implemented and on `master`** — `package
 real code, not stubs (see `packages/basalt-ui/MAINTAINING.md`'s Status section). Do what is explicitly requested — don't
 autonomously execute large roadmap phases.
 
-## Consolidation doctrine (2026-09)
-
-- **Adopt-or-delete.** A public export needs a consumer outside `apps/playground` by the next
-  minor after it ships, or it's on-notice in `MIGRATING.md`.
-- **Net-negative waves.** A consolidation PR deletes more lines than it adds; a new export needs a
-  named consumer in the brief.
-- **One doctrine, one home.** Home = the most-enforced surface stating it (shipped rule > package
-  MAINTAINING.md > guard JSDoc). Everything else is a one-line link. `check-agent-doc-drift.ts` covers
-  `docs/**`, the package MAINTAINING.md and this file too.
-- **Budgets are numbers**, checked by `scripts/check-budgets.ts` in `pre`: public symbols, published
-  subpaths, shipped rule lines, spec prose, playground routes, `cli/index.ts` size.
-- **Dogfood.** The repo loads its own shipped rules/skills; `apps/playground` lints on the shipped v3 app preset
-  (`configs/oxlint-app.json`) and `/.oxlintrc.json` lints the package source on plain oxlint rules plus the import bans
-  `scripts/gen-oxlint.ts` projects from `SURFACES`. The 2.x `basalt` lint plugin and its presets are retired.
+Before a consolidation PR (deleting or adopting exports) or touching the stack and structure, Read `docs/repo-reference.md`: adopt-or-delete, net-negative waves, one doctrine one home.
 
 ## Critical Rules (READ FIRST)
 
@@ -62,11 +49,7 @@ autonomously execute large roadmap phases.
 - **Exports**: named only, **no default exports**
 - **Files**: `kebab-case.ts`; components `PascalCase.tsx`
 - **basalt-ui is ALWAYS a separate commit** (NPM published — lefthook `isolated-basalt-ui` guard)
-- **Published subpaths, 1.29.0 (C1):** `./query`, `./connectivity` and `./data` are dropped —
-  `./query`'s exports move to `.`/`./state`, `./connectivity` folds into `./provider`, `./data`
-  folds into `./data` (table + virtual-list) staying but the barrel narrows. `./controls-dates`
-  was deleted with the 2.x view layer (`removed-2x` rows). Full symbol-level
-  mapping: `packages/basalt-ui/MIGRATING.md` § 2.x to 3.0.
+- **Published subpaths**: `./query`, `./connectivity` and `./data` were dropped or folded in 1.29.0; symbol-level mapping in `packages/basalt-ui/MIGRATING.md` § 2.x to 3.0, history in `docs/repo-reference.md`.
 
 ## Charts
 
@@ -80,34 +63,6 @@ the engine's react entry outside `src/charts/host.tsx`. Ground truth: `docs/v3/A
 `@tanstack/charts/react` is imported by `src/charts/host.tsx` alone (a `no-restricted-imports` override
 `gen-oxlint.ts` projects). Full layering + packaging rationale
 (repo-internal, not a consumer contract): `packages/basalt-ui/MAINTAINING.md` § Layering.
-
-## Tech Stack
-
-- **Runtime**: Bun
-- **Monorepo**: Bun workspaces (`packages/*`, `apps/*`)
-- **UI**: Base UI (`@base-ui/react`, optional peer) on Tailwind 4
-- **React**: 19 (peer)
-- **Charts**: `@tanstack/charts` 1.5.0 + `d3-scale` 4.0.2 (exact optional peers of `./charts`)
-- **Lint/format**: oxlint + oxfmt
-- **Type-check**: tsc (strict)
-- **Git**: conventional commits enforced via commitlint; lefthook pre-commit hooks
-- **Release**: semantic-release via `make release` + npm provenance
-
-## Structure
-
-```
-basalt-ui/
-├── packages/basalt-ui/    # the ONLY published package (npm: basalt-ui)
-├── apps/playground/        # @basalt-ui/playground — workspace:* consumer, everyday iteration surface
-├── apps/marketing/         # basalt-ui.com — CONTENT-FROZEN until rebuilt on v3 post-migration
-└── AGENTS.md               # you are here — the only agent file (no CLAUDE.md anywhere: it would suppress this one)
-```
-
-- `packages/basalt-ui` — the published framework. Maintainer invariants: `packages/basalt-ui/MAINTAINING.md` (repo only, not shipped).
-- `apps/playground` — the everyday iteration surface; grows as the package gains surface. Instant
-  HMR, exact types, zero linking via `workspace:*`.
-- `apps/marketing` — basalt-ui.com. Content-frozen until rebuilt on v3 post-migration; will
-  vendor its own legacy CSS and stop depending on the package. Don't iterate on it for now.
 
 ## Commands
 
@@ -128,44 +83,15 @@ make layout-fast           # just that layout step (BASE=<ref>, default origin/m
 make verify                # probe production (curl basalt-ui.com) — not the local gate
 ```
 
-`pre` runs the unit suite; the **layout** suite (real CSS geometry in Playwright's headless shell, 127 files and
-~2300 tests, about half a second each, nearly all of it opening a page: 18 min measured on a loaded host) stays out of it and is reached by `make layout`, by `make check`, or
-in part by `make layout-fast` (`scripts/layout-select.ts` picks the files by name: a changed layout test and fixture,
-the tests named for a changed `src/` file, its folder or the fixture that imports it; a change no name places runs a
-6-file smoke set; a change no page can see, such as docs, scripts or unit tests, runs none). The pick is a heuristic, so CI
-holds the full suite. `make check` builds FIRST on
-purpose — `pre`'s lint (it loads `basalt-ui/lint`) and the playground's typecheck both resolve through `dist`, so a
-check that built last would grade the previous build.
-
 **Package (`packages/basalt-ui`):**
 
 ```bash
 cd packages/basalt-ui && bun run build   # dist-first tsup + styles.css copy + tsc declarations
 ```
 
-**The dist-reads-not-src footgun spans two builds you have to trust in order:** the playground's
-typecheck resolves `basalt-ui/*` through `node_modules` → `dist/**/*.d.ts` even though Vite aliases
-it to `src/` for the running app, so a new/widened export is invisible to `bun run typecheck` until
-`bun run build` runs. `packages/basalt-ui/MAINTAINING.md` names the third footgun (a CLI verb reading `dist`) in the
-same family — build before trusting a typecheck or a lint run that spans both packages.
-
-**Pack-test (the dist gate, runs in CI):** `bun pm pack` + scratch-install of the tarball. The
-playground only exercises `src/`, never `dist/` — the pack-test is what proves the published
-artifact resolves.
-
 ## Validate
 
-`make check` is the local equivalent of CI (`.github/workflows/ci.yml`): it runs the generation sync
-checks, builds first, then `pre` (fmt:check + lint + typecheck + check-budgets + unit
-tests), the layout suite, the coverage and agent-doc-drift gates, and the pack-test. CI runs the same gates as parallel jobs (checks, unit, the layout suite sharded four ways with
-`bun test --shard`) behind one final `ci` job, so the run-level result `make merge-guard` reads still means
-everything passed. `make check` runs them in sequence and is unchanged; `make check-fast` is the same but for the layout
-step, which runs only the files the branch's changes reach (a lead's check, `project.yaml` `checks`; CI runs the full suite on the head). It exits
-non-zero on the first failure and writes only gitignored output (`dist/`, `*.tgz`). `pre` alone is
-the fast inner loop. Its last step, the unit suite, is `scripts/unit-test.ts`: consecutive `bun test` processes (the five
-ts-program files alone, the rest in chunks of 40), peak ~2.2 GiB resident where one process held 6.1 GiB. It runs through
-`make test` in a host test slot named `basalt-ui unit` (`factory slot run`, one name per project, never per worktree), like the layout suite; never run a bare whole-repo `bun test`
-from a lead session, scope it to the files you touched (`bun test <path>`) and leave the full suite to `pre`.
+Before running the layout suite or changing the Makefile or CI, Read `docs/validation.md`: what `make check` and `make check-fast` run, the test slots, the browser switches and the memory budget.
 
 1. Make changes.
 2. Run `bun run pre` to validate quickly; `make check` adds the build, the layout suite and the
@@ -199,17 +125,7 @@ publishing is NOT a deploy — it is the release process (`make release`, below)
   staging set that mixes `packages/basalt-ui/` and non-package files.
 - **`make verify` probes production; `make check` is the local gate.** They are not interchangeable:
   `verify` makes a network call and does not run the tests.
-- **The layout suite needs the headless shell.** It runs in CI, `make check` and (in part) `make check-fast`, never in `pre`.
-  The layout suite, the quality matrix and the print controls run on Playwright's chromium-headless-shell
-  (`make browser-shell` installs it, a no-op when cached; CI caches it); `BASALT_TEST_BROWSER=chrome` runs them on
-  installed Chrome instead (`tests/support/test-browser.ts`). Screenshots a person judges (`scripts/evidence`,
-  `src/cli/shot`, the playground shots) stay on installed Chrome.
-- **The layout suite is a memory budget.** The harness closes each test's browser context in `afterEach`
-  (a page from `beforeAll` lives until the file's browser closes); before that, one run held 13 GB of
-  Chrome. Measured on the mini (2026-11-16, peak `footprint` phys_footprint of the browser tree, 2 s samples):
-  layout suite 244 MiB on the shell (5 processes, 642 s) against 614 MiB on Chrome (11 processes, 768 s); quality
-  matrix 447 MiB (5, 185 s) against 981 MiB (8, 505 s); pass sets identical. `make check` and `make layout` run it through `factory slot run` when `factory` is installed, so two
-  leads' browser steps never overlap, and `project.yaml` declares a `browser` lane for rows that add browser work.
+- **The layout suite never runs in `pre`.** It runs in `make check`, and in part in `make check-fast`, on a headless shell in a host slot; details in `docs/validation.md`.
 - **`apps/marketing/AGENTS.md` describes the 1.x (Tailwind/Biome) era** and is stale; the
   root + package conventions here are authoritative.
 - **Major lines** (what may ship as a major, and the commit footers that follow): see
@@ -238,74 +154,17 @@ fails a mixed staging set.
 
 **Pre-commit hooks** (lefthook): oxlint + oxfmt on staged files; commitlint on the message.
 
-**Commit type discipline (affects npm versioning):**
-
-- `feat:` / `fix:` — minor/patch release when published.
-- `ci:` — CI/CD, lefthook, workflow changes; never triggers a release.
-- `chore:` / `docs:` / `refactor:` — no release.
-
-Which commit footers (`feat!:`, `BREAKING CHANGE:`) are allowed, and when a breaking change may
-bump a major: `packages/basalt-ui/MAINTAINING.md` § Major lines; constants in `scripts/release.sh`.
+**Commit type discipline** (which types release, and when `feat!:` / `BREAKING CHANGE:` may appear): Read `docs/release.md` before committing a `feat`, `fix` or breaking change.
 
 ## Release Process
 
+One channel: `master` publishes to npm `latest`. Release only through `make release`, never by dispatching the release workflow by hand, and never queue a release unasked. Before a release, Read `docs/release.md`: the dry run, the version gate and the registry poll.
+
 ```bash
-make release-dry   # preview only — prints last-tag → next-version and the bump type
+make release-dry   # preview only
 make release       # dry run, show the bump, confirm, publish, wait for npm
 ```
 
-One channel: `master` publishes to npm `latest`. The `v2` branch is a read-only reference with no
-release config.
-
-`scripts/release.sh` is the front door to two workflows, and replaces neither. **Make Release**
-(`workflow_dispatch`) runs semantic-release — it computes the version from the commits, tags, and
-creates the GitHub release, using a PAT that bypasses branch protection. **Publish to npm** fires on `release: published` and is the one holding
-the OIDC identity that pushes to the registry **with provenance**.
-
-The wrapper adds what a bare dispatch can't: a preflight (on `master`, clean tree, in sync, and
-`release-migrating.ts --check`), a dry run **always** first with the computed version read back
-before the real one is offered, one confirmation on the number itself, a follow-through to the
-_publish_ run, and then a POLL of the registry until it actually serves that version — so a green
-exit means "on npm", not "the release job finished". That last step is load-bearing and was added
-after it wasn't: v1.30.1 printed `✔ … published — registry reports 1.30.0` and exited 0, because
-the read was a single unretried `npm view` interpolated into the success message and never compared
-to anything. It now retries (`--prefer-online`, so a cached metadata document can't answer) for up
-to 3600 s, `die`s on an unexpected version, and exits 3 ("still propagating", not a failure) when the
-registry still serves the previous version at the deadline: 2.24.0 took ~25 min to be served.
-
-`YES=1 make release` skips only the prompt. The wrapper's version gate is described in
-`packages/basalt-ui/MAINTAINING.md` § Major lines; its constants live in `scripts/release.sh`.
-
-**Releasing is allowed — through `make release`, and only there.** No per-release permission is
-needed; the wrapper is itself the gate. Never dispatch the workflow by hand. Releasing is a
-decision, not a step that follows merging — `release.yml` is `workflow_dispatch`-only precisely so
-merged never means published: don't queue a release unasked. Release when there is a reason to —
-a consumer is blocked, a fix is wanted downstream — and say which version went out and why.
-
 ## Factory leads (v3)
 
-- PR-only, rebase-merge only (never squash). Merge only when `make merge-guard` is clear: PR CI is green for that
-  exact head, and a branch behind `origin/master` shares no changed file with master's new commits while master is
-  green; otherwise rebase, push and wait for PR CI (`MERGE_GUARD_ARGS=--wait make merge-guard` polls the head's CI
-  first, 45 min by default, `--wait-minutes <n>`). Local `make check` does not replace PR CI.
-- `packages/basalt-ui/**` and non-package changes are separate commits in one PR; `make sync-self` is its own
-  non-package commit. Never edit `CHANGELOG.md`.
-- `make check` builds first; `bun run pre` is the inner loop (its unit step runs in a slot). A fresh worktree needs `bun install` and a package build.
-- The wave process is retired: work comes from Issues and `docs/plan.yaml` only. Leads rest on
-  `docs/v3/ARCHITECTURE.md` and `docs/v3/DIRECTION.md`; superseded specs live in git history and on `v2`.
-- Paths in a facts file's `shared_append_only` are shared aggregators: edit only your own lines; on a rebase
-  conflict keep both sides or re-run the named generator (`export-surface --update`, `gen-ui`, `bun install`);
-  an Issue without the path never edits it.
-- v3 is rewritten in place on master and verified with `apps/playground` and `examples/*`, never against pinned
-  consumers.
-- A plan row whose facts are only `brief: <path>` (and an optional `note`): that file on master is your complete
-  brief. Read it first, ship by stating each of its `acceptance` lines met or not met, and where it conflicts with
-  `docs/v3/ARCHITECTURE.md`, the architecture wins and the PR says so.
-
-## Key Principles
-
-- **Concise over verbose** — less code is better.
-- **Examples over description** — show, don't tell.
-- **TypeScript strict** — no shortcuts.
-- **Iterate in the playground** — see changes immediately.
-- **Document decisions** — update this file as conventions evolve.
+- PR-only, rebase-merge only (never squash). Never merge around `make merge-guard`, and never edit `CHANGELOG.md`. Before merging, Read `docs/factory-leads.md`: the merge-window procedure and the rest of the lead rules.
