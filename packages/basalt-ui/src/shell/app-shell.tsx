@@ -2,6 +2,7 @@ import { useRouter, useRouterState } from '@tanstack/react-router'
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
+import { ShellOverlayContext } from '../page/page'
 import { useSizeClass } from '../page/use-size-class'
 import { registerNav } from '../router/nav/registry'
 import { flattenNavEntries, resolveActive } from '../router/nav/resolve-active'
@@ -158,6 +159,7 @@ export function AppShell<Id extends string = string>({
   const active = useSyncExternalStore(runtime.subscribe, runtime.getState, runtime.getState)
 
   const [shellHost] = useState(createShellHost)
+  const [overlaySlot, setOverlaySlot] = useState<HTMLElement | null>(null)
   const attachRoot = useChromeRoot(shellHost.attachRoot, chrome)
   const breadcrumb = useClaim(shellHost.regions.breadcrumb)
   const actions = useClaim(shellHost.regions.actions)
@@ -207,48 +209,50 @@ export function AppShell<Id extends string = string>({
   return (
     <ChromeHost chrome={chrome} host={shellHost.host}>
       <RailControlProvider value={rail}>
-        <ShellGrid
-          rootRef={attachRoot}
-          rail={rail.state}
-          compactHeader={compactHeader}
-          asideWidth={model.width}
-        >
-          <SkipLink />
-          <RouteAnnouncer message={announcement} />
-          <Header
-            brand={brand}
-            breadcrumb={trail}
-            globalControls={globalControls}
-            actions={actions}
-            globalActions={globalActions}
-            asideTrigger={
-              claim !== undefined && sizeClass === 'compact' && !emptyRecord(claim) ? (
-                <AsideSheet claim={claim} />
-              ) : null
-            }
-            sizeClass={sizeClass}
-            chrome={chrome}
-          />
-          <RailMount
-            runtime={runtime}
-            brand={brand}
-            badges={badges as AppShellProps['badges']}
-            blocks={blocks}
-            settings={settings}
-            account={account}
-            search={search}
-          />
-          <ShellMain pending={pending}>{children}</ShellMain>
-          <AsideRegion claim={regionClaim} model={model} />
-          <TabBarMount
-            runtime={runtime}
-            badges={badges as AppShellProps['badges']}
-            blocks={blocks}
-            globalActions={globalActions}
-            settings={settings}
-            account={account}
-          />
-        </ShellGrid>
+        <ShellOverlayContext value={overlaySlot}>
+          <ShellGrid
+            rootRef={attachRoot}
+            rail={rail.state}
+            compactHeader={compactHeader}
+            asideWidth={model.width}
+          >
+            <SkipLink />
+            <RouteAnnouncer message={announcement} />
+            <Header
+              brand={brand}
+              breadcrumb={trail}
+              globalControls={globalControls}
+              actions={actions}
+              globalActions={globalActions}
+              asideTrigger={
+                claim !== undefined && sizeClass === 'compact' && !emptyRecord(claim) ? (
+                  <AsideSheet claim={claim} />
+                ) : null
+              }
+              sizeClass={sizeClass}
+              chrome={chrome}
+            />
+            <RailMount
+              runtime={runtime}
+              brand={brand}
+              badges={badges as AppShellProps['badges']}
+              blocks={blocks}
+              settings={settings}
+              account={account}
+              search={search}
+            />
+            <ShellMain pending={pending}>{children}</ShellMain>
+            <AsideRegion claim={regionClaim} model={model} regionRef={setOverlaySlot} />
+            <TabBarMount
+              runtime={runtime}
+              badges={badges as AppShellProps['badges']}
+              blocks={blocks}
+              globalActions={globalActions}
+              settings={settings}
+              account={account}
+            />
+          </ShellGrid>
+        </ShellOverlayContext>
       </RailControlProvider>
     </ChromeHost>
   )

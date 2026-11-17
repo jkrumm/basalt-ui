@@ -18,6 +18,7 @@ import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import { Page } from '../../../../../src/page/page'
 import { PageAside } from '../../../../../src/page/page-aside'
+import { Peek } from '../../../../../src/page/peek'
 import { PageBar } from '../../../../../src/page/page-bar'
 import { Section } from '../../../../../src/page/section'
 import type { ControlHandle, ControlsSlot } from '../../../../../src/core/ports'
@@ -206,6 +207,22 @@ function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> 
           </table>
         )}
       </Section>
+      {options.peek === true && (
+        <Peek
+          title="Issue 12"
+          tag="#12"
+          fullPage="/runs"
+          onClose={() => {
+            document.documentElement.dataset['peekClosed'] = ''
+          }}
+        >
+          {Array.from({ length: 60 }, (_, i) => (
+            <p key={i} data-testid="peek-line">
+              Line {i}
+            </p>
+          ))}
+        </Peek>
+      )}
       {aside !== false && (
         <PageAside
           title="Run details"

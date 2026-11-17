@@ -9,7 +9,7 @@ export const REPO = resolve(import.meta.dirname, '../../../../..')
 export const PLAYGROUND = join(REPO, 'apps/playground')
 const ROUTES_DIR = join(PLAYGROUND, 'src/routes')
 
-/** The first registered scenario id: the one dynamic route (`scenarios.$name`) needs a concrete name. */
+/** The first registered scenario id: the dynamic route (`scenarios.$name`) needs a concrete name. */
 function firstScenario(): string {
   const source = readFileSync(join(PLAYGROUND, 'src/scenarios/scenario-info.ts'), 'utf8')
   const id = /\bid:\s*'([\w-]+)'/.exec(source)?.[1]
@@ -29,14 +29,14 @@ function routeFiles(dir: string, prefix = ''): string[] {
 
 /**
  * `index` -> `/`, `table` -> `/table`, `cycle/state` -> `/cycle/state`,
- * `scenarios.$name` -> `/scenarios/<first scenario>`. A `<dir>/index` is the directory's own path.
+ * `scenarios.$name` -> `/scenarios/<first scenario>`, `peek.$id` -> `/peek/12`. A `<dir>/index` is the directory's own path.
  */
 export function routePaths(): string[] {
   const names = routeFiles(ROUTES_DIR).toSorted()
   return names.map((name) => {
     const segments = name
       .split(/[./]/)
-      .map((part) => (part === '$name' ? firstScenario() : part))
+      .map((part) => (part === '$name' ? firstScenario() : part === '$id' ? '12' : part))
       .filter((part, i, all) => !(part === 'index' && i === all.length - 1))
     return `/${segments.join('/')}`
   })
