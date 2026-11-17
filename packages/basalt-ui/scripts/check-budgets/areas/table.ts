@@ -58,9 +58,10 @@ export const rows: readonly RowDef[] = [
     // that stands for a chart series) and the mono entity name, the contract fields of expression cycle 7.
     // 125000 -> 125800 (Issue 2039): 125524 B measured, +524 B gz over master (125000) for the phone card's labels,
     // the 'n of m shown' cue and the full-width root, the kit fixes of expression cycle 9.
-    // 125800 -> 126100 (Issue 2038): for `focusItems` (a row that holds chart items of another grain) and
-    // `bodyRows` (a first load's skeleton rows), the contract fields of expression cycle 9.
-    ceiling: 126100,
+    // 125800 -> 126000 (Issue 2038): 125780 B measured, +256 B gz over master (125524) for `focusItems` (a
+    // row that holds chart items of another grain) and `bodyRows` (a first load's skeleton rows), the
+    // contract fields of expression cycle 9.
+    ceiling: 126000,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -132,7 +133,7 @@ export const raises: Raises = {
     },
     {
       from: 125800,
-      to: 126100,
+      to: 126000,
       consumer:
         "`DataTable focusItems` and `useDataTable bodyRows`: expression cycle 9's n34 (apps/playground/src/scenarios/expr/n34) lists go windows of its hourly tide chart and could not link them (X3 0), n33 joined findings to probes by a 25-line effect, and n36 drew six loading rows against eighteen (Issue 2038)",
       repo: 'basalt-ui',
