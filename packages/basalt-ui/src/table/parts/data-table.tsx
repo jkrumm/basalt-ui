@@ -11,6 +11,8 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
 import type { CSSProperties, ReactElement } from 'react'
 import { cn } from '../../core/cn'
+import { lists } from '../../core/messages/lists'
+import { useMessages } from '../../core/messages/use-messages'
 import type { DataTableProps } from '../contract'
 import { TableCaption, Table } from '../../ui/table'
 import { DataTableBody } from './body'
@@ -73,6 +75,17 @@ function scrollportStyle(height: DataTableProps<unknown>['height']): CSSProperti
   return undefined
 }
 
+/** A `maxRows` height that fewer rows than the table holds clips: the card tier names how many show. */
+function clippedRows<T>(
+  model: TableModel<T>,
+  height: DataTableProps<T>['height'],
+): { shown: number; total: number } | undefined {
+  if (typeof height !== 'object' || (model.phase.tag !== 'ready' && model.phase.tag !== 'stale'))
+    return undefined
+  const total = model.rows.length
+  return total > height.maxRows ? { shown: height.maxRows, total } : undefined
+}
+
 /**
  * The data table: head, body and the phase arms of one `useDataTable` instance.
  *
@@ -82,6 +95,14 @@ function scrollportStyle(height: DataTableProps<unknown>['height']): CSSProperti
  * The table tiers (cards on a phone) are `basalt-ui/table.css`. `basalt()` imports it for any module
  * that imports `basalt-ui/table`, so the app adds nothing; without the plugin, import it once beside
  * `basalt-ui/tailwind.css`, or a phone table stays a table.
+ *
+ * A column's `priority` is decided against the table's container, not the viewport. A column is
+ * `ch` x 8 px + 24 px wide (an icon column 44 px). Priority 3 shows only from `data-full-at`, the
+ * smallest of 800, 1000, 1200, 1440 or 1800 px that holds every visible column; above 1800 px of
+ * columns the table stays reduced. Priority 1 and 2 show from 480 px, or from 800 px once they sum
+ * above 480 px. While they sum above 800 px the last priority 2 columns drop to 3 whatever the
+ * container, so a table in a half-width cell (about 900 px at 1800) shows a priority 3 column only
+ * when every column sums to 800 px or less.
  *
  * @useWhen a page lists records that sort, filter, page, select or open in a detail
  * @neverWhen the rows are static with no behaviour (use `ui/table`) or a chart says it better
@@ -105,6 +126,8 @@ export function DataTable<T>({
   // A row is a tab stop (roving) once there are rows to activate; before that the scroller is.
   const focusable = model.rows.length > 0 && (phase.tag === 'ready' || phase.tag === 'stale')
   const footerShown = hasFooter(model) && phase.tag === 'ready'
+  const t = useMessages(lists)
+  const clipped = clippedRows(model, height)
   const link = rowLinkOf(focus, focusSeries, model.getRowId)
   const onBlur = clearOnBlur(link)
   const windowed = virtual !== undefined && (phase.tag === 'ready' || phase.tag === 'stale')
@@ -171,7 +194,7 @@ export function DataTable<T>({
         onFocus={revealFocus}
         onBlur={onBlur}
         data-refresh-failed={phase.tag === 'stale' && phase.refreshFailed ? '' : undefined}
-        className="flex max-w-full min-w-0 flex-col"
+        className="flex w-full max-w-full min-w-0 flex-col"
       >
         <BulkBar table={table} />
         <div
@@ -200,6 +223,11 @@ export function DataTable<T>({
             <DataTableBody table={table} {...(detail !== undefined && { detail })} />
             <DataTableFooter table={table} />
           </Table>
+          {clipped !== undefined && (
+            <div data-slot="table-rows-shown" aria-live="polite">
+              {t('lists.rowsShown', clipped.shown, clipped.total)}
+            </div>
+          )}
         </div>
         <TablePager table={table} />
       </div>

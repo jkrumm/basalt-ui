@@ -17,6 +17,7 @@ import { TableBody, TableCell, TableRow } from '../../ui/table'
 import type { DataTableInstance, RowAction } from '../contract'
 import { cellAttributes } from '../core/kinds-cells'
 import type { CellEnv, KindSpec } from '../core/kinds-spec'
+import type { PlannedColumn } from '../core/plan'
 import { modelOf } from '../use-data-table'
 import type { ModelRow, TableModel } from '../use-data-table'
 import { alignProps, tierAttributes, useActionsLabel, visibleColumns } from './head'
@@ -139,11 +140,13 @@ function content<T>(spec: KindSpec<T>, row: T, env: CellEnv, tabbable: boolean):
 }
 
 /**
- * The column name a phone card prints before a value: meta and value places are labelled, the title,
- * subtitle and badge are not. The unit rides on the cell (`data-unit`), so the header's `(EUR)` is dropped.
+ * The column name a phone card prints before a value: every value but the title (the identity
+ * column) and the row actions is labelled by its header, a headerless column by its id. The unit
+ * rides on the cell (`data-unit`), so the header's `(EUR)` is dropped.
  */
-function labelOf<T>(place: string, spec: KindSpec<T>): string {
-  if ((place !== 'meta' && place !== 'value') || spec.header === '') return ''
+function labelOf<T>(planned: PlannedColumn, spec: KindSpec<T>): string {
+  if (planned.identity || spec.kind === 'actions') return ''
+  if (spec.header === '') return spec.id
   return spec.unit === undefined ? spec.header : spec.header.replace(` (${spec.unit})`, '')
 }
 
@@ -191,6 +194,7 @@ export function DataRow<T>({
       {selection !== undefined && <TickCell selection={selection} id={row.id} ticked={ticked} />}
       {columns.map(({ spec, planned }, index) => {
         const { numeric, className } = alignProps(spec)
+        const label = labelOf(planned, spec)
         return (
           <TableCell
             key={spec.id}
@@ -199,9 +203,7 @@ export function DataRow<T>({
             {...cellAttributes(spec)}
             {...tierAttributes(planned)}
             data-unit={spec.unit}
-            {...(labelOf(planned.place, spec) !== '' && {
-              'data-label': labelOf(planned.place, spec),
-            })}
+            {...(label !== '' && { 'data-label': label })}
             numeric={numeric}
             className={spec.wrap ? `${className ?? ''} whitespace-normal` : className}
           >
