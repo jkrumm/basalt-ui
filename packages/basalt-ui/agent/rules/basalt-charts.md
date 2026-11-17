@@ -35,7 +35,6 @@ not guarded:
 
 - Draw `plot.rows(key)` and `plot.visible`, never the `series` prop, so a legend toggle hides the mark; a size in a mark reads `plot.plotHeight`.
 - Date text on a time axis comes from `useFormat` or `createFormat`, never a raw `Intl` call.
-- Every list of the page's items (`DataTable`, `BarList`) takes `focus` from the one `useChartFocus`, chart or none, and the tooltip is off where the figure follows focus.
+- Every list of the page's items (`DataTable`, `BarList`) takes `focus` from the one `useChartFocus`, chart or none, and the tooltip is off where the figure follows focus; long names ranked by a total stacked by kind are a `BarList` with `series` and per-row `parts`, since a band axis drops names.
 - The hero, the marks and the baseline measure one quantity; the figure's delta and status follow focus through `focus.readout`, which takes any value.
 - Charts share one cursor by default; a chart that must not share isolates itself with a cursor group.
-- Long names ranked by a total stacked by kind are a `BarList` with `series` and per-row `parts`: a band axis drops names.
