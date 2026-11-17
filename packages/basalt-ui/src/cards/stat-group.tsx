@@ -25,9 +25,12 @@ export type StatGroupProps = {
  * Every cell's tracks are one set of rows: nine, in the order caption, figure, meter, chart, four
  * rows and a foot line. A cell is `row-span-9` on a subgrid, so a track one cell fills is as tall
  * in all of them and a track nobody fills is 0 px. Rows have no gap; the space between wrapped
- * lines is the cells' bottom margin, which the last line gives back.
+ * lines is the cells' bottom margin, which the last line gives back. In a narrow container (under
+ * `@regular`, 30 rem) the tracks are 8 rem, so a phone lays out two stats per line; from `@regular`
+ * they are 12 rem.
  */
-const STRIP = 'grid -mb-3 grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-x-6'
+const STRIP =
+  'grid -mb-3 grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-x-6 @regular:grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))]'
 
 /**
  * One card per cell on auto-fit tracks: two to a line (9 rem and up) in a narrow container, 14 rem
