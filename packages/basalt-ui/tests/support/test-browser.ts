@@ -26,6 +26,10 @@ export const readTestBrowser = (): TestBrowser => {
 
 /** Launch options for one browser; `chromiumSandbox` is off on CI (see the harnesses). */
 export const testBrowserOptions = (browser: TestBrowser): LaunchOptions => ({
-  ...(browser === 'chrome' ? { channel: 'chrome' } : {}),
+  ...(browser === 'chrome'
+    ? {
+        channel: 'chrome', // chrome: opt-in via BASALT_TEST_BROWSER=chrome, to cross-check the shell's results
+      }
+    : {}),
   chromiumSandbox: !process.env['CI'],
 })
