@@ -37,7 +37,7 @@ instead of following the link; a tap while the card is open follows it, as does 
 a press with a mouse, which also closes the card.
 
 ```ts
-PreviewCardTrigger({ className, onPointerDown, onClick, ...props }: PreviewCardTriggerProps): ReactElement
+PreviewCardTrigger({ className, onPointerDown, onPointerCancel, onClick, ...props }: PreviewCardTriggerProps): ReactElement
   className?: string  // Layout only (`w-80`, `mt-2`)
 ```
 
