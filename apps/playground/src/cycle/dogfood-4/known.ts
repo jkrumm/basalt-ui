@@ -11,19 +11,4 @@ interface KnownFinding {
   owner: string
 }
 
-export const known: readonly KnownFinding[] = [
-  {
-    route: '/cycle/dogfood-4',
-    assertion: 'fit',
-    item: /^button\[segmented-item\] "(Running|Paused|Not started|Checking)" content \d+px in \d+px$/,
-    owner:
-      'v3-dogfood-4-visual: card-header segmented options share equal cells too narrow for their labels (dogfood-4.2)',
-  },
-  {
-    route: '/cycle/dogfood-4',
-    assertion: 'hitFloor',
-    item: /^button\[segmented-item\] "(Running|Paused|Not started|Checking)" \d+x44 < 44x44$/,
-    owner:
-      'v3-dogfood-4-visual: on a phone the same cells fall under the 44 px hit floor (dogfood-4.2)',
-  },
-]
+export const known: readonly KnownFinding[] = []
