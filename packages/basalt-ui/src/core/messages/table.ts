@@ -1,3 +1,4 @@
+import { couldNotLoad } from '../../common/could-not-load'
 import type { Format } from '../format'
 import type { BasaltMessages } from './index'
 
@@ -68,7 +69,11 @@ export type TableMessages = Record<
   Record<'table.rowRange', (f: Format, from: number, to: number, total: number) => string> &
   Record<'table.filters', (f: Format, count: number) => string> &
   Record<
-    'table.chipRemove' | 'table.headerMenu' | 'table.columnActions' | 'table.viewRemove',
+    | 'table.chipRemove'
+    | 'table.headerMenu'
+    | 'table.columnActions'
+    | 'table.viewRemove'
+    | 'table.errorNamed',
     (f: Format, name: string) => string
   > &
   Record<'table.cellFilter', (f: Format, header: string, value: string) => string>
@@ -137,5 +142,6 @@ export const table = {
   'table.headerMenu': (_f, header) => `${header} column menu`,
   'table.columnActions': (_f, header) => `${header} column actions`,
   'table.viewRemove': (_f, name) => `Delete view ${name}`,
+  'table.errorNamed': (_f, name) => `${couldNotLoad(name)}.`,
   'table.cellFilter': (_f, header, value) => `Filter ${header} by ${value}`,
 } satisfies Partial<BasaltMessages>

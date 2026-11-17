@@ -1,5 +1,6 @@
 import { useContext } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
+import { HostTitleContext } from '../common/could-not-load'
 import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
 import { cards } from '../core/messages/cards'
@@ -190,16 +191,18 @@ export function DataPanel(props: DataPanelProps): ReactElement {
         )}
         {legend !== undefined && legend.length > 0 && <Legend entries={legend} />}
         <Inset className="flex flex-col">
-          <FrameDepthContext.Provider value={depth + 1}>
-            <CardPhase
-              phase={phase}
-              empty={empty}
-              height={height}
-              skeleton={<PanelSkeleton size={bodySize} />}
-            >
-              {body}
-            </CardPhase>
-          </FrameDepthContext.Provider>
+          <HostTitleContext.Provider value={title}>
+            <FrameDepthContext.Provider value={depth + 1}>
+              <CardPhase
+                phase={phase}
+                empty={empty}
+                height={height}
+                skeleton={<PanelSkeleton size={bodySize} />}
+              >
+                {body}
+              </CardPhase>
+            </FrameDepthContext.Provider>
+          </HostTitleContext.Provider>
         </Inset>
       </Card>
     </div>
