@@ -13,7 +13,10 @@ import { PEEK_MIN } from './peek-handle'
 
 const original = window.matchMedia
 const proto = HTMLElement.prototype
-const rect = proto.getBoundingClientRect
+// The prototype's OWN descriptor, or none: happy-dom keeps `getBoundingClientRect` on `Element`, and
+// assigning the inherited function back would leave an own property on `HTMLElement` that shadows
+// every later `Element.prototype` spy in the same process (page-bar.test.tsx).
+const rect = Object.getOwnPropertyDescriptor(proto, 'getBoundingClientRect')
 let width = 600
 
 beforeEach(() => {
@@ -42,7 +45,8 @@ afterEach(() => {
   window.getComputedStyle = realStyle
   for (const stray of document.body.querySelectorAll(':scope > div:empty')) stray.remove()
   window.matchMedia = original
-  proto.getBoundingClientRect = rect
+  if (rect !== undefined) Object.defineProperty(proto, 'getBoundingClientRect', rect)
+  else Reflect.deleteProperty(proto, 'getBoundingClientRect')
 })
 
 function mountShelled(props: {
