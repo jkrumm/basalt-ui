@@ -1,0 +1,30 @@
+{
+  "why": "Expression cycle 10 (docs/v3/cycles/expression-10.md) holds one P2, and it needs a contract field; three P3s need one too. (a) n41's `BarList` lists request kinds (chat, code, embedding, summary) beside an hourly chart stacked by model. The list's rows are not the chart's items or series, and `BarList` takes only a same-grain `focus`, so the list dims its own rows and none of the 180 bars: X3 1 (expression-10.36, P2). Its round-1 builder wrote a `ListFocus` adapter of about 25 lines that maps each row to a series through `setSeries` and `seriesItem` (marked). `DataTable` gained `focusItems` and `focusSeries` arms in v3-expr-9-contract; `BarList` did not. (b) n44's rain map follows the chart's focus (the chart picks the time step the map shows), but the map focuses nothing back, because `Heatmap` takes no `focus`: X3 2 (.61). (c) A `BarList` label has no `mono`, so project names and ids read in the body face beside a table that sets them mono: n43 X5 (.54) and cycle 9's n38 (expression-9.64). (d) `ChartCard` heights are `fill`, `auto` and `short`, half the card width with a 192 px floor, so a 120-hour chart at 390 gets a plot of about 130 px, which the shipped skill tells the builder to grow and the kit gives no way to: n39 K5 (.7) and cycle 9's n38 (.58).",
+  "what": "A Spec, then the fields it keeps: a BarList row that joins a chart's focus across grains, a Heatmap that takes the page's focus, mono on a BarList label, and a ChartCard plot height at phone width, or the Spec's ruling against each.",
+  "owns": [
+    "packages/basalt-ui/src/cards/contract.ts (the BarList focus arms and label mono)",
+    "packages/basalt-ui/src/charts/contract.ts (Heatmap focus and the ChartCard height, only as the Spec keeps them)",
+    "packages/basalt-ui/src/core/ports.ts (ListFocus, only if the Spec needs it)",
+    "the components that read the changed fields, and their tests",
+    "packages/basalt-ui/agent/** text that teaches the changed fields, through its generator",
+    "the contract-frozen pins the amendment moves, with the amendment commit the repo's process names"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md (the Spec names any section it would amend; the owner rules)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "Write a Spec before any code. (a) A `BarList` row names the chart items or the series it stands for, with the arms `DataTable` already has (`focusItems` with `holds`, `focusSeries`), so pointing at a row focuses them and dims the rest, and a focused chart item marks every row that holds it; cover n41's case (a row per request kind beside hourly bars stacked by model) and say how the keyboard frame announces it. (b) `Heatmap` takes the page's `useChartFocus`: say what a cell stands for when the chart's items are time steps and the grid is places (n44), and whether the join is one way by design; rule it out if the cheapest recipe (a step scrub in the same card) beats it. (c) `mono` on a `BarList` label, named as `c.entity` and a footer fact name it. (d) A `ChartCard` plot height that keeps the axis readable at 390 (a phone height, a minimum plot height, or a ruling that `fill` is the answer and the skill text changes). For each, say what the cheapest recipe would be instead, and why the field beats it.",
+  "acceptance": [
+    "A Spec is submitted and its verdict is read before the build",
+    "A BarList row that stands for a chart's series or items of another grain joins its focus both ways with a test, or the Spec rules it out",
+    "Heatmap takes the page's focus with a test, or the Spec rules it out and the skill names the recipe",
+    "A BarList label takes mono with a test, or the Spec rules it out",
+    "A ChartCard keeps a readable plot height at 390 with a layout test, or the Spec rules it out and the skill text agrees",
+    "The basalt-charts or basalt-design reference names what shipped",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit behaviours that need no contract field (v3-expr-10-kit-fixes); skill text (v3-expr-10-skill); stacked dots for items on one day (n40 only); a mark for a step that never arrived (n44 only); a delta without an arrow, a true minus in useFormat, a duration in days and hours, one page-level Retry (wishes, not round-0 findings); a new chart kind.",
+  "proof": "make check; a unit test per kept field; a layout test of a ChartCard plot at 390; `basalt-ui shot --states keys` on a page whose BarList rows are request kinds beside a chart stacked by model logs the row announced.",
+  "commits": "feat: per change with its tests; chore: the contract amendment as the repo's process names it; docs: regenerated agent text; package commits separate from non-package ones."
+}
