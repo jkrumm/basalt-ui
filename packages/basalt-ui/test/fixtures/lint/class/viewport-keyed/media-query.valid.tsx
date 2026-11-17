@@ -34,3 +34,4 @@ import { isIOS } from 'react-device-detect'
 import { isMobile } from './local-flags'
 export const own = isMobile || isIOS
 export const key = { isMobile: 1 }.isMobile + other.isMobile
+export const platform = navigator.userAgentData?.platform

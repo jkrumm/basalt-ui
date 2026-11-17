@@ -18,6 +18,7 @@ import {
   partsOnly,
   partsOnlyExceptSeamMark,
   partsOnlyExceptStyleVar,
+  schemeForkForm,
 } from './detect'
 
 const ALL: readonly Profile[] = ['bridge', 'parts', 'app', 'repo']
@@ -181,7 +182,7 @@ export const CLASS_RULES = defineRules({
         detect: platformGlyphForm,
         zonesOff: ['ejected'],
         fix: 'A shortcut glyph is <Kbd>Mod</Kbd> from basalt-ui/ui/kbd (⌘ on Apple, Ctrl elsewhere); a registered command prints its own chord',
-        next: 'viewport-keyed is never file-waivable; fix it at source',
+        next: 'A platform test that picks no glyph (an installer, a platform build) is waived on its line, with the reason',
         fixture: 'class/viewport-keyed/platform-glyph.tsx',
       },
     ],
@@ -191,10 +192,10 @@ export const CLASS_RULES = defineRules({
     family: 'class',
     profiles: ALL,
     zonesOff: VENDORED,
-    // Known limit: a JS fork on the resolved scheme (`readScheme() === 'dark' ? 'bg-inset' : 'bg-card'`)
-    // is not read. The scheme comes from any hook or helper, so a comparison against 'dark' cannot be
-    // tied to a scheme read without a type-aware rule, and a bare `=== 'dark'` also names a theme
-    // setting or a chart option; the class strings inside it are still read by the other forms.
+    // A JS fork on the scheme is `scheme-fork`: a scheme value read by name (`theme`,
+    // `resolvedTheme`, `systemTheme`, `colorScheme`, `scheme`) compared with 'dark' or 'light'
+    // where it chooses a class string. Known limit: a scheme under another name or returned outside
+    // a class position is not read (no type-aware rule ties a value to a scheme read).
     defect:
       'epos 21 `dark:` forks in app code and 40 in vendored ui; `@custom-variant dark` keys to `data-theme`, so a fork compiles and diverges from the token switch',
     forms: [
@@ -204,6 +205,13 @@ export const CLASS_RULES = defineRules({
         fix: 'Tokens switch per scheme: add the token instead of forking with dark:',
         next: 'A reasoned per-line waiver',
         fixture: 'class/dark-fork/dark-variant.tsx',
+      },
+      {
+        id: 'scheme-fork',
+        detect: schemeForkForm,
+        fix: 'Tokens switch per scheme: use the one token class in both schemes instead of choosing a class by the scheme in JS; BasaltProvider owns the scheme',
+        next: 'A reasoned per-line waiver',
+        fixture: 'class/dark-fork/scheme-fork.tsx',
       },
     ],
   },

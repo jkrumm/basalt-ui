@@ -63,7 +63,8 @@ function literalText(arg: Node | undefined): string | undefined {
  * A media query string is read for the features the class forms and the stylelint list ban: width,
  * height, aspect ratio, orientation and the device forms. A user-agent test is a viewport guess:
  * `/Mobi/i.test(navigator.userAgent)` and `navigator.userAgent.includes(..)` (`match`, `indexOf`,
- * `search`, `startsWith`, `endsWith`) report. `isMobile` and `isTablet` imported from
+ * `search`, `startsWith`, `endsWith`) report, as does the client-hints flag
+ * `navigator.userAgentData.mobile` (through `?.` too). `isMobile` and `isTablet` imported from
  * `react-device-detect` report where they are read. Known limits: a user agent copied into a
  * variable first (`const ua = navigator.userAgent`) is not followed, and `isMobileOnly`, `isIOS`
  * and the other flags are not read. A test whose literal pattern names platforms only, a desktop
@@ -101,6 +102,7 @@ export function mediaQueryForm({ report }: FormContext): Visitor {
       if (property !== undefined && node['computed'] !== true) skip.add(property)
       const sniff = userAgentTest(node, resolve)
       if (sniff !== undefined && !sniff.platform) report(node, sniff.subject)
+      if (isMobileHint(node)) report(node, 'navigator.userAgentData.mobile')
     },
     Property(node) {
       const key = field(node, 'key')
@@ -155,10 +157,10 @@ const AGENT_METHODS: ReadonlySet<string> = new Set([
   'test',
 ])
 
-/** `navigator.userAgent` or `window.navigator.userAgent`, bare. */
-function isUserAgent(node: Node | undefined): boolean {
+/** `navigator.<property>` or `window.navigator.<property>`, bare or through `?.`. */
+function isNavigatorField(node: Node | undefined, property: string): boolean {
   if (node?.type !== 'MemberExpression' || node['computed'] === true) return false
-  if (nameOf(field(node, 'property')) !== 'userAgent') return false
+  if (nameOf(field(node, 'property')) !== property) return false
   const object = field(node, 'object')
   if (nameOf(object) === 'navigator') return true
   if (object?.type !== 'MemberExpression' || object['computed'] === true) return false
@@ -167,6 +169,15 @@ function isUserAgent(node: Node | undefined): boolean {
     GLOBALS.has(nameOf(field(object, 'object')) ?? '')
   )
 }
+
+/** `navigator.userAgent` or `window.navigator.userAgent`, bare. */
+const isUserAgent = (node: Node | undefined): boolean => isNavigatorField(node, 'userAgent')
+
+/** The client-hints mobile flag, `navigator.userAgentData?.mobile`: a device verdict, a layout guess. */
+const isMobileHint = (node: Node): boolean =>
+  node['computed'] !== true &&
+  nameOf(field(node, 'property')) === 'mobile' &&
+  isNavigatorField(field(node, 'object'), 'userAgentData')
 
 /** A user-agent method test: `navigator.userAgent.includes(..)`, `.match`, `.indexOf`, `.search`, `.startsWith`, `.endsWith`. */
 function userAgentSniff(node: Node): string | undefined {
@@ -237,7 +248,10 @@ function userAgentTest(
  * `viewport-keyed`, `platform-glyph`: a user-agent test whose literal pattern names platforms
  * only, a desktop one among them (`/Mac|iPhone|iPad/.test(navigator.userAgent)` choosing `⌘K` or
  * `Ctrl K`). The report is right, the fix is not a size class: `<Kbd>Mod</Kbd>` renders the
- * platform's glyph. Known limit: `navigator.platform` and `userAgentData.platform` are not read.
+ * platform's glyph. A test that picks an installer (`/Mac|Win/.test(navigator.userAgent) ?
+ * '/dl/app.dmg' : '/dl/app.exe'`, both branches a file of a platform build) is neither a glyph nor
+ * a layout and passes; any other platform test that picks no glyph is waived on its line, with the
+ * reason. Known limit: `navigator.platform` and `userAgentData.platform` are not read.
  */
 export function platformGlyphForm({ report }: FormContext): Visitor {
   let consts: ReadonlyMap<string, Node> = new Map()
@@ -245,7 +259,7 @@ export function platformGlyphForm({ report }: FormContext): Visitor {
     node?.type === 'Identifier' ? (consts.get(node['name'] as string) ?? node) : node
   const onSniff = (node: Node): void => {
     const sniff = userAgentTest(node, resolve)
-    if (sniff?.platform === true) report(node, sniff.subject)
+    if (sniff?.platform === true && !picksInstaller(node)) report(node, sniff.subject)
   }
   return {
     Program(node) {
@@ -254,6 +268,115 @@ export function platformGlyphForm({ report }: FormContext): Visitor {
     MemberExpression: onSniff,
     CallExpression: onSniff,
   }
+}
+
+/** A file of a platform build: a disk image, an installer or a package. */
+const INSTALLER = /\.(?:dmg|pkg|exe|msi|msix|appx|deb|rpm|appimage|apk|ipa)$/i
+
+/**
+ * Whether the sniff is the test of a conditional whose two branches are installer files: the
+ * sniff, a method sniff's call, or either through `?.`, as the conditional's `test`.
+ */
+function picksInstaller(sniff: Node): boolean {
+  let at = sniff
+  let up = at['parent'] as Node | undefined
+  while (up?.type === 'CallExpression' || up?.type === 'ChainExpression') {
+    if (up.type === 'CallExpression' && field(up, 'callee') !== at) return false
+    at = up
+    up = at['parent'] as Node | undefined
+  }
+  if (up?.type !== 'ConditionalExpression' || field(up, 'test') !== at) return false
+  return [field(up, 'consequent'), field(up, 'alternate')].every((branch) => {
+    const text = literalText(branch)
+    return text !== undefined && INSTALLER.test(text)
+  })
+}
+
+/** The names a scheme value goes by: next-themes' `theme`, `resolvedTheme` and `systemTheme`, a `colorScheme`, a `scheme`. */
+const SCHEME_NAMES: ReadonlySet<string> = new Set([
+  'theme',
+  'resolvedTheme',
+  'systemTheme',
+  'colorScheme',
+  'scheme',
+])
+const SCHEME_VALUES: ReadonlySet<string> = new Set(['dark', 'light'])
+const EQUALITY: ReadonlySet<string> = new Set(['===', '!==', '==', '!='])
+
+/** `resolvedTheme`, or `settings.colorScheme` by its last name, through `!` and `?.`. */
+function schemeName(node: Node | undefined): string | undefined {
+  let at = node
+  while (at?.type === 'TSNonNullExpression' || at?.type === 'ChainExpression') {
+    at = field(at, 'expression')
+  }
+  const name =
+    at?.type === 'MemberExpression' && at['computed'] !== true
+      ? nameOf(field(at, 'property'))
+      : nameOf(at)
+  return name !== undefined && SCHEME_NAMES.has(name) ? name : undefined
+}
+
+/**
+ * A scheme test: a scheme value compared with `'dark'` or `'light'` (either side), or the
+ * colour-scheme media query's `.matches`. Returns the subject, or undefined.
+ */
+function schemeTest(test: Node | undefined): string | undefined {
+  if (test?.type === 'MemberExpression' && nameOf(field(test, 'property')) === 'matches') {
+    const call = field(test, 'object')
+    const [arg] = call?.type === 'CallExpression' ? nodesOf(call, 'arguments') : []
+    const text = call && calleeName(call) === 'matchMedia' ? literalText(arg) : undefined
+    return text !== undefined && /prefers-color-scheme/i.test(text)
+      ? `matchMedia('${text}').matches`
+      : undefined
+  }
+  if (test?.type !== 'BinaryExpression') return undefined
+  const operator = test['operator'] as string
+  if (!EQUALITY.has(operator)) return undefined
+  const left = field(test, 'left')
+  const right = field(test, 'right')
+  for (const [value, other] of [
+    [left, right],
+    [right, left],
+  ] as const) {
+    const literal = value?.type === 'Literal' ? value['value'] : undefined
+    if (typeof literal !== 'string' || !SCHEME_VALUES.has(literal)) continue
+    const name = schemeName(other)
+    if (name !== undefined) return `${name} ${operator} '${literal}'`
+  }
+  return undefined
+}
+
+/**
+ * `dark-fork`, `scheme-fork`: a JS fork on the scheme that chooses a class. A class string (in a
+ * class attribute, `cn()`, `cva` or a class-shaped object or array) whose enclosing conditional or
+ * `&&` tests a scheme value against `'dark'` or `'light'` (`resolvedTheme === 'dark' ? 'bg-inset' :
+ * 'bg-card'`) reports at the conditional, once. The scheme value is read by name (`theme`,
+ * `resolvedTheme`, `systemTheme`, `colorScheme`, `scheme`, bare or as a member), and the
+ * colour-scheme media query's `.matches` is read too. Known limits: a scheme bound to another
+ * name (`const mode = readScheme()`), a fork that returns a class outside a class position
+ * (`return dark ? 'bg-inset' : 'bg-card'` from a hook) and a fork inside a template literal's
+ * hole are not read.
+ */
+export function schemeForkForm({ report }: FormContext): Visitor {
+  const reported = new WeakSet<Node>()
+  const onString = (node: Node): void => {
+    let at = node
+    for (let up = at['parent'] as Node | undefined; up; up = up['parent'] as Node | undefined) {
+      let subject: string | undefined
+      if (up.type === 'ConditionalExpression' && field(up, 'test') !== at) {
+        subject = schemeTest(field(up, 'test'))
+      } else if (up.type === 'LogicalExpression' && up['operator'] === '&&') {
+        if (field(up, 'right') === at) subject = schemeTest(field(up, 'left'))
+      } else if (up.type !== 'LogicalExpression') return
+      if (subject !== undefined) {
+        if (!reported.has(up)) report(up, subject)
+        reported.add(up)
+        return
+      }
+      at = up
+    }
+  }
+  return classStringVisitor(onString)
 }
 
 /** react-responsive's width keys: any of them makes the object query a viewport query. */
