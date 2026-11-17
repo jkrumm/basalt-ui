@@ -11,7 +11,7 @@ export const HostTitleContext = createContext<string | undefined>(undefined)
  * The error title a component names itself in: "Revenue" → "Could not load revenue". Only a first
  * word that is a plain capitalised word ("Revenue", "Weekly") lowercases; "KPI", "MRR", "2024
  * sales", "Wi-Fi", "iPhone" and "eBay" keep their case. A missing or blank label stays the bare
- * "Could not load". `charts/**` and `cards/**` import it.
+ * "Could not load". `charts/**`, `cards/**`, `ui/card`, `table/parts/phases` and `core/messages/table` import it.
  */
 export function couldNotLoad(label?: string): string {
   const noun = label?.trim()
