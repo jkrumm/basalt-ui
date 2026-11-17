@@ -204,6 +204,34 @@ export const NAV = defineNav({
         },
       ],
     },
+    // Shell cycle 4 (docs/v3/cycles/shell-4.md): the fleet app's three pages, rebuilt.
+    {
+      id: 'fleet-4',
+      label: 'Fleet (shell cycle 4)',
+      items: [
+        {
+          id: 'fleet-4-overview',
+          label: 'Fleet overview',
+          icon: Dashboard,
+          mobile: 'more',
+          link: linkOptions({ to: '/cycle/shell-4' }),
+        },
+        {
+          id: 'fleet-4-services',
+          label: 'Services',
+          icon: Table,
+          mobile: 'more',
+          link: linkOptions({ to: '/cycle/shell-4/services' }),
+        },
+        {
+          id: 'fleet-4-settings',
+          label: 'Fleet settings',
+          icon: Layout,
+          mobile: 'more',
+          link: linkOptions({ to: '/cycle/shell-4/settings' }),
+        },
+      ],
+    },
     // One entry per scenario in the registry.
     {
       id: 'scenarios',
