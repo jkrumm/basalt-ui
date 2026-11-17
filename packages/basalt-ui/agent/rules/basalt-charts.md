@@ -22,7 +22,8 @@ Every chart is a shipped kind or `CartesianChart`; props live in the shipped typ
 - Extra tooltip rows are data, never markup. [type:ChartTooltipConfig]
 - A card footer holds at most two facts. [type:FootFacts]
 - An optional figure, card or footer field takes a maybe-value straight; `undefined` is an absent key, so never a conditional spread or a placeholder. [type:ChartFigure] [type:StatCellProps]
-- A time or an id in a figure `period`, a stat card's `sub` or an entity column's `sub` sets `periodMono` or `subMono`; never a class. [type:ChartFigure] [type:StatCellProps]
+- A time or an id in a figure `period`, a stat card's `sub`, an entity column's name or `sub` or a footer fact's value sets `periodMono`, `subMono` or `mono`; never a class. [type:ChartFigure] [type:StatCellProps] [type:FootFacts]
+- A list whose rows are the chart's series (one row per line) spreads `focus.seriesItem(key)`, and a table passes `focusSeries`; never `focus.item` by position. [type:ChartFocus] [type:DataTableProps]
 
 ## Boundaries
 
@@ -38,3 +39,4 @@ not guarded:
 - Every list of the page's items (`DataTable`, `BarList`) takes `focus` from the one `useChartFocus`, chart or none, and the tooltip is off where the figure follows focus.
 - The hero, the marks and the baseline measure one quantity; the figure's delta and status follow focus through `focus.readout`, which takes any value.
 - Charts share one cursor by default; a chart that must not share isolates itself with a cursor group.
+- Long names ranked by a total stacked by kind are a `BarList` with `series` and per-row `parts`: a band axis drops names.
