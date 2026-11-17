@@ -23,10 +23,16 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 
 - A card that holds a list ([DataPanel](node_modules/basalt-ui/docs/data-panel.md)) or a strip states its figure with its pill in the inset and at most two footer pairs, or the page puts the figure in a [ChartCard](node_modules/basalt-ui/docs/chart-card.md) `figure` beside it. The figure and the status live in the inset, where a pill, a delta and a polarity can attach; a subtitle carries a fact, and a figure there reads as prose (c10 F8: status facts outside the card; c13 F8 and X5: subtitles in place of the figure; c12 F8: the wrong number in the figure).
 
+## A page of rows still leads with a card
+
+- A page whose body is rows (courses, monitors, books) leads with a card: the figure that answers, its context line and a footer of two pairs, then the rows. A strip of counts beside a flush table, or one sentence over a table, falls short of the anatomy (n11 .8 and .15: a sentence over a flush table; n23 .36 and .44: a flush band of label, figure and free text). Round 1 of n11 led with a [StatCard](node_modules/basalt-ui/docs/stat-card.md) and scored.
+
 ## Every figure has a baseline
 
 - Give the figure a baseline in the card itself: the delta, a target tick, the limit with the distance to it, or a history line.
+- Every headline stands against the reference the data offers (yesterday, a usual day, the rest of the day, the goal's pace) as a signed delta; name the base in words where it is unclear ("+151 min vs usual day"). A threshold in words ("over 500 ms") stands against nothing, and a 30-day figure beside a 1-day one compares nothing (n23 .32, n26 .73).
 - A count over a total is a figure with its share or delta ("13", pill "68% of 19"), where a sentence in prose gives nothing to compare (c10 F3, c11 F3).
+- A share shows its whole beside it ("9 / 18" next to the percent bar), so a small and a large item draw differently: 12 and 48 lessons drew the same bar (n11 .3).
 - A card with none of these is allowed when the number lacks a history, a target and parts.
 
 ## Compose, in this order

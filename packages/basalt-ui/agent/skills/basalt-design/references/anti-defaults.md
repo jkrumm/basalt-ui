@@ -16,7 +16,9 @@ Run it against the rendered page at 1800 and 390, light and dark, and one keyboa
 
 - **Answer on the mark.** The hero states the answer with its verb and at most one phrase of baseline, and the marked item is annotated at rest; a list keeps the answer above its cut ([charts](charts.md)).
 - **One measure.** The hero, the marks and the baseline measure one quantity; a comparison of a group against its control draws both on one axis and leads with the signed difference ([charts](charts.md)).
-- **Baseline.** Every headline figure shows its target, prior period or limit as a signed delta or as geometry, a colour rule alone included ([charts](charts.md)).
+- **Baseline.** Every headline figure shows its target, prior period or limit as a signed delta or as geometry, a colour rule alone included; a share shows its whole beside it ("9 / 18") ([charts](charts.md), [cards](cards.md)).
+- **Extremes and zeros.** One outlier is capped with `y.domain` and the off-scale caret; a saturated ranking says how many are hidden; a zero series draws a mark ([charts](charts.md)).
+- **One readout.** When the figure follows focus the tooltip is off, and the announcement names the focused item's values ([charts](charts.md)).
 - **Colour budget.** A status hue marks only a state that needs action; the failed mark takes the status fill ([charts](charts.md)).
 - **Seam-drawn finish.** A focus mark beside the ring, the ring inset clear of text, tabular numerals, motion-safe transitions, on-ladder values, status tokens as fills only ([charts](charts.md)).
 - **Phases.** No pill, dash or delta outside the ready phase; every part declares the same slots in every phase, and the loaded summary is no taller than its skeleton at 390 ([states](states.md)).
@@ -24,10 +26,10 @@ Run it against the rendered page at 1800 and 390, light and dark, and one keyboa
 - **Label collisions and light-mode contrast.** Direct labels clear each other and the marks; every text and mark reads in both schemes.
 - **At 390.** The answer and the first rows sit above the fold; a header that pushes rows below it is the defect ([concept](concept.md)).
 - **At 1800x1200.** A working screen answers its questions in the first screen without a scroll (a project page: is it healthy, what moves now, what is next, what shipped) and states each fact once. It runs full width; a narrow centred column wastes half the frame, and only running prose caps near 76 ch, with side panels using the rest. 1280x800 keeps its layout and a phone scrolls vertically only ([concept](concept.md)).
-- **Anatomy.** Cards in one row align their heights; a subtitle carries a fact ([cards](cards.md)).
+- **Anatomy.** Cards in one row align their heights; a subtitle carries a fact; a page of rows leads with a card of figure, context line and footer ([cards](cards.md)).
 - **Fact count.** List each fact the page states and where; a fact in two places is cut to one, and a sentence appears only where no mark can say it. Read each line aloud against the mark beside it ([copy](copy.md)).
 - **One view.** The parts read as one working surface at 1800 and at 390: charts on one x share a card or sit side by side inside the 1800x1200 fold, a chart is as tall as its marks need, a long list scrolls in its own region beside its chart, nothing is large for its own sake ([charts](charts.md)).
-- **Linked parts.** Point at an item in the chart, then in the list, then step with the arrow keys: the other part focuses it every time, both ways ([charts](charts.md)).
+- **Linked parts.** Point at an item in the chart, then in the list, then step with the arrow keys: the other part focuses it every time, both ways. A `DataTable` or `BarList` of the page's items joins the one focus with or without a chart ([charts](charts.md)).
 - **Numbers.** Hero, tooltip and announcement go through one `useFormat` call at one precision, with a true minus (U+2212) and one currency style per page ([copy](copy.md)).
 - **Console anatomy.** Header with title and context line, figure and delta pill inside the inset, label and value pairs in the footer, monospace for ids, repo names and timestamps; a flush card with a small title over free text is the defect ([cards](cards.md)).
 - **Calm interaction.** The dimmed rest stays readable, and moving the pointer across the gap between two marks or rows never flashes the unfocused state ([charts](charts.md)).
