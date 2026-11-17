@@ -12,8 +12,11 @@ import {
   createRoute,
   createRouter,
   notFound,
+  useSearch,
 } from '@tanstack/react-router'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { BasaltProvider } from '../core/provider'
+import { routerDefaults } from '../router/defaults'
 import { Page } from '../page/page'
 import { PageBar } from '../page/page-bar'
 import { AppShell } from './app-shell'
@@ -80,12 +83,33 @@ function mount(entry: string) {
       throw notFound()
     },
   })
+  // A selection: the crumb parent goes up to the same path without it, and its link goes with the leaf.
+  const queue = createRoute({
+    getParentRoute: () => root,
+    path: '/queue',
+    component: function Queue() {
+      const selected = (useSearch({ strict: false }) as { sel?: string }).sel !== undefined
+      return (
+        <Page>
+          <PageBar
+            title={selected ? 'Job 7' : 'Queue'}
+            {...(selected && { parent: { label: 'Queue', href: '/f/queue' } })}
+          />
+          <input aria-label="Filter" data-testid="filter" />
+        </Page>
+      )
+    },
+  })
   const router = createRouter({
-    routeTree: rootRoute.addChildren([root.addChildren([home, services, record])]),
+    routeTree: rootRoute.addChildren([root.addChildren([home, services, record, queue])]),
     history: createMemoryHistory({ initialEntries: [entry] }),
     defaultPendingMs: 20,
   })
-  render(<RouterProvider router={router} />)
+  render(
+    <BasaltProvider link={routerDefaults().link}>
+      <RouterProvider router={router} />
+    </BasaltProvider>,
+  )
   return { router, release }
 }
 
@@ -164,6 +188,28 @@ describe('focus after navigating', () => {
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
     expect(document.activeElement).toBe(skip)
     fireEvent.blur(skip as Element)
+  })
+})
+
+describe('the crumb parent', () => {
+  test('hands focus to main when the click only drops the selection from the search', async () => {
+    const { release } = mount('/f/queue?sel=7')
+    release()
+    await waitFor(() => expect(crumb()).toBe('Job 7'))
+    const parent = document.querySelector<HTMLElement>('a[data-slot="page-breadcrumb-parent"]')
+    parent?.focus()
+    await act(async () => {
+      fireEvent.click(parent as Element, { button: 0 })
+    })
+    await waitFor(() => expect(crumb()).toBe('Queue'))
+    await waitFor(() => expect(document.activeElement).toBe(main()))
+  })
+
+  test('is not the current page', async () => {
+    mount('/f/queue?sel=7')
+    await waitFor(() => expect(crumb()).toBe('Job 7'))
+    const parent = document.querySelector('a[data-slot="page-breadcrumb-parent"]')
+    expect(parent?.hasAttribute('aria-current')).toBe(false)
   })
 })
 

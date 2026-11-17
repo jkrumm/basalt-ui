@@ -6,7 +6,8 @@
  * announcer says the new page's title. It reacts to a pathname change only: a search-only change
  * (a filter, a tab) keeps the same page and says nothing.
  */
-import { useRouterState } from '@tanstack/react-router'
+import { useRouter, useRouterState } from '@tanstack/react-router'
+import type { AnyRouter } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent, ReactElement } from 'react'
 import { SHELL_MAIN_ID, focusLost, focusMain, takeMainFocusRequest } from '../../common/focus'
@@ -105,8 +106,14 @@ export function useDocumentTitle(title: string): void {
  * A navigation that started from the palette or the More sheet asked for the hand-off
  * (`requestMainFocus`): focus is then on a control the overlay returned it to, not on the new page,
  * so main takes it wherever it is, two frames in, after the overlay's own return has finished.
+ *
+ * A search-only change (the crumb parent going up from a selection) answers a pending request the
+ * same way and is otherwise left alone: the filter that was just typed in keeps its focus. It is
+ * read from the router's `onResolved` event, never from the render, so a filter write costs the
+ * shell no render.
  */
 export function useRouteFocus(pathname: string): void {
+  const router = useRouter({ warn: false })
   const seen = useRef(pathname)
   useEffect(() => {
     if (seen.current === pathname) return undefined
@@ -125,6 +132,23 @@ export function useRouteFocus(pathname: string): void {
       cancelAnimationFrame(second)
     }
   }, [pathname])
+
+  useEffect(() => {
+    let second = 0
+    const first = { id: 0 }
+    const stop = (router as AnyRouter | undefined)?.subscribe('onResolved', (event) => {
+      if (event.fromLocation?.pathname !== event.toLocation.pathname) return
+      if (event.fromLocation.href === event.toLocation.href || !takeMainFocusRequest()) return
+      first.id = requestAnimationFrame(() => {
+        second = requestAnimationFrame(focusMain)
+      })
+    })
+    return () => {
+      stop?.()
+      cancelAnimationFrame(first.id)
+      cancelAnimationFrame(second)
+    }
+  }, [router])
 }
 
 /**

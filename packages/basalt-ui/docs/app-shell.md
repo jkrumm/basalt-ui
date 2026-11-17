@@ -18,8 +18,9 @@ section, then the page's `PageBar` `parent`, then its `title`; a selection such 
 The parent is a link through the provider's `link`, a path string or a `NavTarget` alike, so a
 click keeps the document; the `NavTarget` form shown clears the selection and keeps the params the
 page's store `retain`s (`services` is that store). A phone drops the nav section and keeps the
-page's parent and title, so the way up stays one tap away. A page with no bar shows its nav label,
-and a path no route matches shows `Not found`, in the crumb and in the document title.
+page's parent and title, so the way up stays one tap away. The parent is the way up, never the
+current page: it carries no `aria-current`, and a click hands focus to main. A page with no bar
+shows its nav label, and a path no route matches shows `Not found`, in the crumb and in the document title.
 
 ## Signature
 

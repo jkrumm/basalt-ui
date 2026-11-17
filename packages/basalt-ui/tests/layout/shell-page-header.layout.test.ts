@@ -146,5 +146,28 @@ layout('a crumb parent is an in-app link', () => {
       )
       expect(kept, 'the click did not reload the document').toBe(true)
     })
+
+    test(`${viewport.name}: after a click focus is in main`, async () => {
+      const spec = {
+        ...specOf({ title: 'Run 7', parent: { label: 'Runs', href: '/fleet?q=open' } }),
+        entry: '/fleet?q=open&sel=7',
+      }
+      const page = await openFixture(spec, viewport)
+      const parent = 'a[data-slot="page-breadcrumb-parent"]'
+      await page.raw.waitForSelector(parent)
+      expect(
+        await page.raw.evaluate(
+          (sel) => document.querySelector(sel)?.hasAttribute('aria-current'),
+          parent,
+        ),
+      ).toBe(false)
+      await page.raw.click(parent)
+      await page.raw.waitForFunction(
+        () => document.querySelector('[data-testid="location"]')?.textContent === '/fleet?q=open',
+      )
+      await page.raw.waitForFunction(
+        () => document.activeElement?.closest('[data-slot="shell-main"]') !== null,
+      )
+    })
   }
 })
