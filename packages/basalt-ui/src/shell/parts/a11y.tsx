@@ -15,6 +15,7 @@ import {
   focusLost,
   focusMain,
   focusMainWhenClear,
+  overlayOpen,
   takeMainFocusRequest,
 } from '../../common/focus'
 import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
@@ -114,7 +115,8 @@ export function useDocumentTitle(title: string): void {
  * so main takes it wherever it is, as soon as the navigation starts and the overlay has left (two
  * frames after, its own return having finished), not when the page arrives: a pending loader keeps
  * main focused and the arrival moves nothing. The pathname and `onResolved` paths below answer a
- * request the start did not see.
+ * request the start did not see. Until that navigation resolves, a Tab stays on main: the outgoing
+ * page is not tabbable and main has nothing after it, so the key would otherwise fall to `<body>`.
  *
  * A search-only change (the crumb parent going up from a selection) answers a pending request the
  * same way and is otherwise left alone: the filter that was just typed in keeps its focus. It is
@@ -146,6 +148,8 @@ export function useRouteFocus(pathname: string): void {
     let second = 0
     const first = { id: 0 }
     let early = (): void => {}
+    // True from a hand-off navigation's start to the router's next resolution.
+    let jumping = false
     const r = router as AnyRouter | undefined
     // A navigation to another page that asked for the hand-off: main takes focus as the overlay
     // leaves, not when the page arrives, so a pending loader never leaves focus on `<body>`.
@@ -153,6 +157,19 @@ export function useRouteFocus(pathname: string): void {
       if (!event.pathChanged || !takeMainFocusRequest()) return
       early()
       early = focusMainWhenClear()
+      jumping = true
+    })
+    // While such a jump loads, the outgoing page is not a place to Tab into and main has nowhere
+    // after it to send focus: a Tab would land in the page about to leave, or fall to `<body>`.
+    // Main keeps focus until the page arrives; an overlay still on screen keeps its own Tab.
+    const holdTab = (event: KeyboardEvent): void => {
+      if (!jumping || event.key !== 'Tab' || overlayOpen()) return
+      event.preventDefault()
+      focusMain()
+    }
+    document.addEventListener('keydown', holdTab, true)
+    const stopDone = r?.subscribe('onResolved', () => {
+      jumping = false
     })
     const stop = r?.subscribe('onResolved', (event) => {
       if (event.fromLocation?.pathname !== event.toLocation.pathname) return
@@ -163,7 +180,9 @@ export function useRouteFocus(pathname: string): void {
     })
     return () => {
       stopStart?.()
+      stopDone?.()
       stop?.()
+      document.removeEventListener('keydown', holdTab, true)
       early()
       cancelAnimationFrame(first.id)
       cancelAnimationFrame(second)
