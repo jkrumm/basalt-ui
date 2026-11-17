@@ -35,8 +35,8 @@ describe('charts-api', () => {
 })
 
 describe('charts-g4', () => {
-  test('both marginals hold their cap; the heat grid has one raise row, 4000 to 4150 B (Issue 1627)', () => {
-    for (const row of g4.rows) expect(row.ceiling).toBeLessThanOrEqual(4150)
+  test('both marginals hold their cap; the heat grid has one raise row, 4000 to 4250 B (Issues 1627 and 1872)', () => {
+    for (const row of g4.rows) expect(row.ceiling).toBeLessThanOrEqual(4250)
     expect(g4.rows.map((r) => r.id)).toEqual([
       'charts-heatmap-marginal',
       'charts-band-strip-marginal',
