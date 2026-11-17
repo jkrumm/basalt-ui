@@ -5,7 +5,8 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 ## Read a card top to bottom
 
 - Caption: a sentence-case sans noun phrase that names the subject; a category word names nothing. [type:StatCardProps]
-- Figure: the answer, as one hero value in proportional sans, with its unit beside it and a rate or total carrying its period. A missing reading prints a dash ([Num](node_modules/basalt-ui/docs/num.md)).
+- Figure: the answer, as one hero value in proportional sans, with its unit beside it and a rate or total carrying its period. A missing reading prints a dash ([Num](node_modules/basalt-ui/docs/num.md)) and its caption names the reason, "Not measured, <why>" ([copy](copy.md)).
+- Meaning: one plain sentence in `info` of what the figure means and which way is good ("Merged pull requests. Higher is better."). [type:StatCardProps]
 - Delta: a tinted badge, signed, naming its period ("vs last week"), with its polarity set from the data: `up-bad` where a rise is bad (latency, errors). Zero is neutral with no glyph. [type:Delta]
 - Verdict: a status dot and its word ([Status](node_modules/basalt-ui/docs/status.md)) when the figure crossed a threshold.
 - Micro-visual: a sparkline or a meter that encodes the history, a target or the parts. A visual that restates the headline is decoration.
