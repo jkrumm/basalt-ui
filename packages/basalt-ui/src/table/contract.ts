@@ -145,7 +145,7 @@ export type RowAction<T> = {
 
 export type Scrollport = 'fill' | { maxRows: number }
 
-export type DataTableProps<T> = {
+export type DataTableProps<T, I = unknown> = {
   table: DataTableInstance<T>
   detail?: DetailHost
 } & (
@@ -158,9 +158,29 @@ export type DataTableProps<T> = {
        */
       focus?: ListFocus<T>
       focusSeries?: never
+      focusItems?: never
     }
   | {
       focus?: never
+      focusSeries?: never
+      /**
+       * A chart's focus over items of another grain: `holds(row, item)` is true for every item the
+       * row stands for (the hours of a window, the probe a finding sits under), never by position.
+       * Pointing at a row or moving the table's own row focus onto it focuses every item it holds
+       * (`focus.hold`; a cartesian chart draws a run as one x band); a focused item marks every row
+       * that holds it, and the rest dim. A row that holds nothing clears the focus.
+       *
+       * @example
+       * <DataTable table={windows} focusItems={{ focus, holds: (w, h) => h.at >= w.from && h.at <= w.to }} />
+       */
+      focusItems: {
+        focus: ListFocus<I>
+        holds: (row: T, item: I) => boolean
+      }
+    }
+  | {
+      focus?: never
+      focusItems?: never
       /**
        * A chart's focus whose series the rows stand for (one row per line): `key` maps a row to its
        * series key. Pointing at a row or moving the table's own row focus onto it emphasises that
@@ -233,6 +253,15 @@ export type UseDataTable<
   mode: Mode
   state?: StateHandle<TableState>
   phase?: Phase | QueryStateLike
+  /**
+   * The rows the page expects: a table that mounts loading draws this many skeleton rows, so the
+   * frame does not jump when they arrive. A paged table caps it at the page size; once rows have
+   * shown, loading keeps their last height instead, and a server table with a `rowCount` plans its
+   * own page. A whole number of at least one.
+   *
+   * @default 6
+   */
+  bodyRows?: number
   /**
    * A fixed clock in epoch ms for the relative-time cells (a fixture, a test). Without it they read
    * the clock and tick once a minute.
