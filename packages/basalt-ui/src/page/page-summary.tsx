@@ -49,8 +49,9 @@ const FACT =
  * `null`, `false`, `undefined` and `''` facts drop, so conditional facts pass inline. `phase="loading"`
  * renders a skeleton of the same shape, with a facts bar when `facts` is passed, so the page does
  * not jump when the numbers arrive. `phase` takes a `Phase` or the query itself, as on every data
- * part: a pending query is the skeleton, and a settled one with no `sentence` yet stays one (the
- * page's `QueryState` owns the error).
+ * part: a pending query is the skeleton. An `error` phase with no `sentence` draws no skeleton and
+ * is not busy: it holds the headline's line height empty, so the page does not jump, and the frames'
+ * own error arms say what failed. A settled phase with no `sentence` yet stays the skeleton.
  *
  * @useWhen a page opens with a headline that carries its live number and a line of supporting facts
  * @neverWhen the headline would restate the page title (leave it out) or the figure is a KPI card (use `StatCard`)
@@ -67,6 +68,14 @@ const FACT =
  */
 export function PageSummary(props: PageSummaryProps): ReactElement {
   const tag = resolvePhase({ phase: props.phase }).tag
+  if (tag === 'error' && props.sentence === undefined) {
+    return (
+      <div data-slot="page-summary" className="flex min-w-0 flex-col gap-1">
+        <div aria-hidden="true" className="h-lh text-lg" />
+        {props.facts !== undefined && <div aria-hidden="true" className="h-lh text-xs" />}
+      </div>
+    )
+  }
   if (tag === 'loading' || tag === 'offline' || props.sentence === undefined) {
     return (
       <div data-slot="page-summary" aria-busy="true" className="flex min-w-0 flex-col gap-1">

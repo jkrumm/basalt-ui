@@ -70,6 +70,30 @@ describe('PageSummary', () => {
     expect(screen.getByRole('heading', { level: 2, name: '3 open' })).toBeDefined()
   })
 
+  test('an error phase with no sentence is not busy, draws no skeleton and keeps the line height', () => {
+    const failed = { isPending: false, isError: true, error: new Error('x') }
+    for (const phase of [failed, { tag: 'error' as const }]) {
+      const { unmount } = render(<PageSummary phase={phase} facts={[]} />)
+      const root = document.querySelector('[data-slot="page-summary"]')
+      expect(root?.hasAttribute('aria-busy')).toBe(false)
+      expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0)
+      expect(screen.queryByRole('heading')).toBeNull()
+      const lines = [...(root?.children ?? [])].map((el) => el.getAttribute('class') ?? '')
+      expect(lines[0]).toContain('h-lh')
+      expect(lines[0]).toContain('text-lg')
+      expect(lines).toHaveLength(2)
+      unmount()
+    }
+  })
+
+  test('an error phase keeps a sentence it was given and is not busy', () => {
+    render(<PageSummary phase={{ tag: 'error' }} sentence="3 open" />)
+    expect(screen.getByRole('heading', { level: 2, name: '3 open' })).toBeDefined()
+    expect(document.querySelector('[data-slot="page-summary"]')?.hasAttribute('aria-busy')).toBe(
+      false,
+    )
+  })
+
   test('server markup carries the slots', () => {
     const html = renderToString(<PageSummary sentence="1 open" facts={['a', 'b']} />)
     expect(html).toContain('data-slot="page-summary-facts"')
