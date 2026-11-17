@@ -50,7 +50,16 @@ n10 printed "19.4 kt" in the hero, the bracket, the footer and the table; n18 na
 
 ### Worked: the fact count
 
-Before the last look, write the page's facts as a list, each with where it is stated: `current model: hero, chart label, rule label, table row, footer`. Any fact on two lines of that list is cut to one, kept where the mark can carry it. c16 named its current model five times, n20 one overshoot four times, n19 its limit three times, n08 its verdict three times, n15 and n21 their baselines twice. Four cycles of prose on this did not move it; the count does, because a repeat is visible as a second entry.
+Before the last look, write the page's facts as a list with one line per fact: the fact, then every place it stands, as `current model: hero, chart label, rule label, table row, footer`. A fact with two or more places is cut to one, kept where a mark can carry it; the cut is made in the code, not noted. A fact is a noun with its value or its scope: a direction ("better when lower"), a period ("so far this week", "7 days"), a name (the top Issue, the contract), a verdict word and a total each count. c16 named its current model five times, n20 one overshoot four times, n19 its limit three times, n08 its verdict three times, n15 and n21 their baselines twice. Four cycles of prose on this did not move it; the count does, because a repeat is visible as a second entry.
+
+Cycle 8 lost a P2 or a P3 to it in every case, and the count would have caught each:
+
+- n27 (.8): `better when: all eight cards`, `period: summary, every axis`, `verdict word: beside its pill`, `vs last week: pill, footer`. The direction is one sentence in the card's `info`, the period one phrase in the period slot, the verdict the pill alone.
+- n32 (.60): `the top Issue: hero, bar list, table`, plus near-twin card titles and the empty line three times. The top Issue stands in the hero and on its bar-list row; the table says only who waits.
+- n30 (.43): `the contract: pill, legend caption, footer`. One of the three stays, in the pill.
+- n29 (.33): `the year: three places`; the legend repeated its card's title and the hero's 38 %. A legend that names what the card title names is cut.
+- n28 (.21): `change vs September: subtitle, footer`; the subtitle repeated the title.
+- n31 (.49): `7 days: three places`, `each day's count: on the bar, in the list header`.
 
 ### Worked: a share and its threshold read as one line
 
