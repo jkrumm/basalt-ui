@@ -56,10 +56,7 @@ StatCard(props: StatCardProps): ReactElement
   delta={{ value: '+12%', polarity: 'up-good' }}
   phase={query}
   chart={(box) => <Sparkline series={perDay} height={box.height} label="Shipped per day" />}
-  xLabels={['Mon', 'Thu', 'Sun']}
-  footer={[
-    { label: 'Open', value: 12 },
-    { label: 'Merged', value: 4 },
-  ]}
+  xLabels={["Mon", "Thu", "Sun"]}
+  footer={[{ label: 'Open', value: 12 }, { label: 'Merged', value: 4 }]}
 />
 ```
