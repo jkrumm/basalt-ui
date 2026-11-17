@@ -89,8 +89,13 @@ describe('Sparkline reference', () => {
       const wide = spark({ reference: { min: 0, max: 100 } })
       expect(ys(wide)[0]).toBeCloseTo(yOf(0, [0, 100]), 1)
       expect(ys(wide)[1]).toBeCloseTo(yOf(100, [0, 100]), 1)
-      expect(ys(spark({ reference: { min: 40, max: 20 } }))).toEqual(
-        ys(spark({ reference: { min: 20, max: 40 } })),
+      const rect = (min: number, max: number): (string | null | undefined)[] => {
+        const el = band(spark({ reference: { min, max } }))
+        return [el?.getAttribute('y'), el?.getAttribute('height')]
+      }
+      expect(rect(40, 20)).toEqual(rect(20, 40))
+      expect(ys(spark({ reference: { min: 40, max: 20 } })).toSorted()).toEqual(
+        ys(spark({ reference: { min: 20, max: 40 } })).toSorted(),
       )
     })
 
