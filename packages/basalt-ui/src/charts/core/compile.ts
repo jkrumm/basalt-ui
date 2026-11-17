@@ -173,6 +173,11 @@ const LADDER = {
  */
 const LEFT_EDGE_SHARE = 0.05
 
+/** Air the engine keeps between two x tick labels, px: at 4 a date pair reads as one string (`27 Sep 4 Oct`). */
+const TICK_MIN_GAP = 12
+/** The width a y axis takes from the chart's width: what the x tick anchors count against, px. */
+const Y_GUTTER = 44
+
 export function defaultNumberFormat(v: number, locale?: string): string {
   return compact(v, { digits: Math.abs(v) >= 1000 ? 1 : 2, locale })
 }
@@ -441,6 +446,29 @@ function wholeTicks<T>(
   return whole.length >= 2 ? { values: whole } : planned
 }
 
+/**
+ * A zone or band drawn on a y axis puts a tick on each of its edges, so the rules land on labels: the
+ * round ticks that sit within half a step of an edge give way to it. An edge on or past the domain's
+ * end, a non-finite one, and (on a count axis) a fraction stay off. A tick list the caller wrote is
+ * never changed (the caller checks `cfg.ticks`).
+ */
+function withEdgeTicks(
+  axis: YAxis,
+  planned: { values: readonly number[] } | { count: number },
+  edges: readonly number[],
+): { values: readonly number[] } | { count: number } {
+  const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
+  const inside = [...new Set(edges)].filter(
+    (e) => Number.isFinite(e) && e > lo && e < hi && (axis.whole !== true || Number.isInteger(e)),
+  )
+  if (inside.length === 0) return planned
+  const base =
+    'values' in planned ? planned.values : scaleLinear().domain([lo, hi]).ticks(planned.count)
+  const step = base.length > 1 ? Math.abs((base[1] as number) - (base[0] as number)) : hi - lo
+  const kept = base.filter((t) => inside.every((e) => Math.abs(t - e) >= step / 2))
+  return { values: [...kept, ...inside].toSorted((a, b) => a - b) }
+}
+
 export function yGuide<T>(opts: {
   cfg: AxisConfig<T> | undefined
   axis: YAxis
@@ -449,8 +477,10 @@ export function yGuide<T>(opts: {
   grid: boolean
   /** The locale the default tick numbers read; absent, the format defaults'. */
   locale?: string | undefined
+  /** The edges of the zones drawn on this axis: a tick sits on each when the domain allows. */
+  edges?: readonly number[] | undefined
 }): Omit<ChartPositionScaleOptions<number>, 'scale'> {
-  const { cfg, axis, cls, side, grid, locale } = opts
+  const { cfg, axis, cls, side, grid, locale, edges = [] } = opts
   const ladder = LADDER[cls]
   const planned =
     typeof cfg?.ticks === 'object'
@@ -463,7 +493,9 @@ export function yGuide<T>(opts: {
       ? { values: [0] }
       : axis.whole === true
         ? wholeTicks(axis, cfg, planned)
-        : planned
+        : cfg?.ticks === undefined && cfg?.scale !== 'log'
+          ? withEdgeTicks(axis, planned, edges)
+          : planned
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
   const tickFormat = wholeStepFormat(axis, cfg, ticks, locale)
@@ -477,6 +509,46 @@ export function yGuide<T>(opts: {
       tickLabels: { fontSize: TICK_FONT, opacity: 1 },
     },
   }
+}
+
+/** The most of the plot's width one band label takes before it is cut. */
+const BAND_LABEL_SHARE = 0.35
+
+/** `format` that cuts a label wider than { BAND_LABEL_SHARE} of the plot with an ellipsis; as it was when the width is unknown. */
+function cutBandLabels(
+  format: (v: ChartValue) => string,
+  width: number | undefined,
+): (v: ChartValue) => string {
+  if (width === undefined || !Number.isFinite(width)) return format
+  const chars = Math.max(
+    4,
+    Math.floor(((width - Y_GUTTER) * BAND_LABEL_SHARE) / captionWidth('n', TICK_FONT)),
+  )
+  return (v) => {
+    const text = format(v)
+    return text.length > chars ? `${text.slice(0, chars - 1)}…` : text
+  }
+}
+
+/**
+ * The anchor of a band axis label that is wider than its slot and would hang past the plot's edge:
+ * `end` at the last bands, `start` at the first, so the plot keeps its width. `undefined` (centred)
+ * when it fits or the width is not known.
+ */
+function bandAnchor<X extends ChartX>(
+  model: XScaleModel<X>,
+  value: ChartValue,
+  text: string,
+  width: number | undefined,
+): 'start' | 'end' | undefined {
+  if (width === undefined || !Number.isFinite(width)) return undefined
+  const plotWidth = Math.max(0, width - Y_GUTTER)
+  const centre = model.fraction(value as X)
+  if (centre === null || plotWidth <= 0) return undefined
+  const half = captionWidth(text, TICK_FONT) / 2
+  if (centre * plotWidth < half) return 'start'
+  if ((1 - centre) * plotWidth < half) return 'end'
+  return undefined
 }
 
 /** The buckets of a band Date axis, or `null` for any other axis. */
@@ -546,13 +618,18 @@ export function xGuide<X extends ChartX>(opts: {
   cls: ContainerClass
   /** The locale the default tick text reads; absent, the format defaults'. */
   locale?: string | undefined
+  /** The chart's width in px: a band axis anchors a label wider than its slot to the plot edge. */
+  width?: number | undefined
 }): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
   const { model, xTicks, cls } = opts
   const ladder = LADDER[cls]
   const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks, xTicks !== undefined)
   // A Date axis always resolves to `values` (the time scale has an extent; a band axis lists its
   // buckets), so `{ count }` is only ever a number axis and never needs the date formatter.
-  const format = xTickFormat(opts.format, 'values' in ticks ? ticks.values : [], opts.locale)
+  const plain = xTickFormat(opts.format, 'values' in ticks ? ticks.values : [], opts.locale)
+  // A band label longer than a third of the plot is cut with an ellipsis: a name the width cannot
+  // hold would take its neighbours' room, or hang over the edge and shrink the plot.
+  const format = model.band ? cutBandLabels(plain, opts.width) : plain
   // A continuous scale's domain start and span; a band scale pads its first slot, so none applies.
   const [leftEdgeX, spanX] =
     !model.band && model.extent
@@ -566,10 +643,13 @@ export function xGuide<X extends ChartX>(opts: {
       tickLabels: {
         fontSize: TICK_FONT,
         opacity: 1,
-        thin: true,
+        thin: { minGap: TICK_MIN_GAP },
         // A label centred on a tick near the plot's left edge hangs left of it, under the gutter's
         // lowest y label: start-anchor it. `+value` is a Date's timestamp, or the number itself.
+        // On a band axis a label wider than its slot hangs over the plot's edge and the engine would
+        // shrink the plot for it: it anchors inward instead, and the thinning drops what it covers.
         anchor: ({ value }: { value: ChartValue }) => {
+          if (model.band) return bandAnchor(model, value, format(value), opts.width)
           const share = model.log
             ? (model.fraction(value as X) ?? Number.NaN)
             : (+value - leftEdgeX) / spanX
@@ -1197,8 +1277,15 @@ function buildScales<T, X extends ChartX>(opts: {
   formatX: (v: ChartValue) => string
   cls: ContainerClass
   zoneScale: boolean
+  /** The chart's width in px. */
+  width?: number
 }): StoredChartSpec['scales'] {
-  const { input, model, axes, formatX, cls, zoneScale } = opts
+  const { input, model, axes, formatX, cls, zoneScale, width } = opts
+  // The edges of the zones drawn against one axis: a tick sits on each.
+  const edgesOn = (side: 'left' | 'right'): number[] =>
+    (input.zones ?? [])
+      .filter((z) => axes.scaleId(z.axisSide) === axes.scaleId(side))
+      .flatMap((z) => [z.from, z.to])
   const { left, right } = axes
   if (input.bare === true) {
     return {
@@ -1227,6 +1314,7 @@ function buildScales<T, X extends ChartX>(opts: {
         title: cls === 'micro' ? undefined : input.xTitle,
         cls,
         locale: input.locale,
+        width,
       }),
     },
     y: {
@@ -1238,6 +1326,7 @@ function buildScales<T, X extends ChartX>(opts: {
         side: 'left',
         grid: input.y?.grid ?? true,
         locale: input.locale,
+        edges: edgesOn('left'),
       }),
     },
     ...(right && {
@@ -1251,6 +1340,7 @@ function buildScales<T, X extends ChartX>(opts: {
           side: 'right',
           grid: input.y2?.grid ?? false,
           locale: input.locale,
+          edges: edgesOn('right'),
         }),
       },
     }),
@@ -1877,6 +1967,7 @@ export function compileCartesian<T, X extends ChartX>(
           axes,
           formatX,
           cls,
+          width,
           zoneScale:
             under.length > 0 || names || (input.xRefLines?.length ?? 0) > 0 || offScale.length > 0,
         }),
