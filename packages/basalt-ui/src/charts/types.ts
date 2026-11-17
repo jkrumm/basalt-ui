@@ -66,6 +66,10 @@ export type ChartSeries<T> = {
   note?: string | undefined
   /** Per-series tooltip value format; receives the datum so a row can read more than the value. */
   formatValue?: ((v: number, d: T) => string) | undefined
+  /** Bars: a value label per bar (`true` writes `formatValue`, else the y axis format), see `Series.values`. */
+  values?: boolean | ((v: number, d: T) => string) | undefined
+  /** Bars: the datum draws in the brand accent, see `Series.highlight`. */
+  highlight?: ((d: T) => boolean) | undefined
   /**
    * A cursor dot for a series whose mark the consumer draws itself (`marks`, so `getValue` stays
    * `null`): the y of the dot at each datum, `null` for none. The dot shows while the cursor is on

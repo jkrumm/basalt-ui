@@ -56,7 +56,25 @@ export type Series<D> = SeriesBase<D> &
         gaps?: 'connect'
         parent?: string
       }
-    | { mark: 'bar'; stack?: string; opacity?: (d: D) => number }
+    | {
+        mark: 'bar'
+        stack?: string
+        opacity?: (d: D) => number
+        /**
+         * A value label per bar, placed by the kit at the bar's end (a stack: one total above it)
+         * clear of the other labels, the rules and the bars, and dropped by priority where room runs
+         * out: highlighted bars last, then the larger values. `true` writes the series `format` (else
+         * the y axis `format`); a function writes the text of the value (a stack: the total) and the
+         * datum. A zero bar is labelled at the baseline.
+         */
+        values?: boolean | ((v: number, d: D) => string)
+        /**
+         * The bars that answer the chart's question: drawn in the brand accent instead of the series
+         * colour, in the plot and the tooltip, and their value labels drop last. One series stays one
+         * legend entry.
+         */
+        highlight?: (d: D) => boolean
+      }
     | { mark: 'dot'; r?: (d: D) => number }
   )
 

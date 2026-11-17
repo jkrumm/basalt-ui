@@ -6,6 +6,7 @@ import { decorative } from '@tanstack/charts/mark/decorative'
 import { text } from '@tanstack/charts/text'
 import type { ChartMarks, ChartSeries, ChartX, XRefAt } from '../types'
 import type { XScaleModel } from './scales'
+import { CV } from './theme'
 
 const keyOf = (v: ChartX): number | string => (v instanceof Date ? v.getTime() : v)
 
@@ -124,6 +125,64 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
           ],
     )
   }) as unknown as ChartMarks
+}
+
+/**
+ * One caret per x for a stack whose TOTAL passes a bounded axis (`offScaleMarks` sees one series at a
+ * time, so it misses a stack of values that are each inside the cap). The caret sits on the plot's
+ * edge in the colour of the segment on top, the brand accent where that datum is highlighted.
+ * `series` are the stacked bars, `domain` the cap and `edge` the plotted domain.
+ */
+export function stackCapMarks<T, X extends ChartX>(opts: {
+  series: readonly ChartSeries<T>[]
+  data: readonly T[]
+  x: (d: T) => X
+  fraction: (x: X) => number | null
+  domain: readonly [number, number]
+  edge: readonly [number, number]
+}): ChartMarks {
+  const found = {
+    top: [] as { f: number; color: string }[],
+    bottom: [] as { f: number; color: string }[],
+  }
+  for (const d of opts.data) {
+    const f = opts.fraction(opts.x(d))
+    if (f === null) continue
+    const sums = { top: 0, bottom: 0 }
+    const last: Partial<Record<'top' | 'bottom', ChartSeries<T>>> = {}
+    for (const s of opts.series) {
+      const v = s.getValue(d)
+      if (v === null || !Number.isFinite(v) || v === 0) continue
+      const side = v > 0 ? 'top' : 'bottom'
+      sums[side] += v
+      last[side] = s
+    }
+    for (const side of ['top', 'bottom'] as const) {
+      const s = last[side]
+      if (s === undefined || offScaleSide(sums[side], opts.domain) !== side) continue
+      found[side].push({ f, color: s.highlight?.(d) ? CV.brand : s.color })
+    }
+  }
+  return (['top', 'bottom'] as const).flatMap((side) =>
+    found[side].length === 0
+      ? []
+      : [
+          decorative(
+            text(found[side], {
+              id: `stack-cap-${side}`,
+              x: (c: { f: number }) => c.f,
+              y: () => ordered(opts.edge)[side === 'top' ? 1 : 0],
+              xScale: 'zx',
+              yScale: 'y',
+              text: () => CARETS[side],
+              fill: (c: { color: string }) => c.color,
+              fontSize: CARET_SIZE,
+              anchor: 'middle',
+              dy: side === 'top' ? CARET_SIZE : -1,
+            }),
+          ),
+        ],
+  ) as unknown as ChartMarks
 }
 
 /**

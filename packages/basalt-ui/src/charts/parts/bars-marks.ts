@@ -74,6 +74,93 @@ function emptyBinTicks<D, X extends ChartX>(rows: readonly PlotRow<D, X>[]): Cha
   ]
 }
 
+/** A zero bar's tick is this tall, px. */
+const ZERO_TICK_PX = 2
+
+const rowKey = (row: PlotRow<unknown, ChartX>): string =>
+  String(row.x instanceof Date ? row.x.getTime() : row.x)
+
+/** The rows by x, in first-seen order. */
+function stacksOf<D>(rows: readonly PlotRow<D, ChartX>[]): PlotRow<D, ChartX>[][] {
+  const byX = new Map<string, PlotRow<D, ChartX>[]>()
+  for (const row of rows) byX.set(rowKey(row), [...(byX.get(rowKey(row)) ?? []), row])
+  return [...byX.values()]
+}
+
+/**
+ * A stack never draws past the plot's edge: each x walks its segments bottom up and cuts a segment
+ * at the domain's end (the positive and the negative parts apart), so a stack whose total passes a
+ * bounded domain stops at the edge. Rows it leaves alone keep their identity.
+ */
+export function clampStacks<D>(
+  rows: readonly PlotRow<D, ChartX>[],
+  order: readonly string[],
+  domain: readonly [number, number],
+): PlotRow<D, ChartX>[] {
+  const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+  const cut = new Map<PlotRow<D, ChartX>, PlotRow<D, ChartX>>()
+  for (const stack of stacksOf(rows)) {
+    let up = 0
+    let down = 0
+    for (const row of stack.toSorted((a, b) => order.indexOf(a.series) - order.indexOf(b.series))) {
+      if (row.y === null || !Number.isFinite(row.y)) continue
+      const y =
+        row.y >= 0 ? Math.min(row.y, Math.max(0, hi - up)) : Math.max(row.y, Math.min(0, lo - down))
+      if (row.y >= 0) up += y
+      else down += y
+      if (y !== row.y) cut.set(row, { ...row, y })
+    }
+  }
+  return rows.map((row) => cut.get(row) ?? row)
+}
+
+/**
+ * The bars whose value is exactly 0 (a stack: whose whole stack sums to 0) as one bar mark of
+ * {@link ZERO_TICK_PX} height on the baseline, laid out like the bars so a tick is as wide as its
+ * bar. A gap (`y: null`) stays absent. Grouped keeps every row (a null `y` draws nothing but still
+ * holds its slot), a stack gets one row per empty x. A normalized stack has no tick: a share of 0.
+ */
+function zeroTicks<D>(
+  plot: PlotContext<D, ChartX>,
+  rows: readonly PlotRow<D, ChartX>[],
+  paint: BarPaint<D>,
+  layout: BarLayout,
+  order: readonly string[],
+): ChartMarks {
+  if (layout === 'normalized' || !floorIsZero(plot.yDomain)) return []
+  const valued = rows.filter((row) => row.y !== null && Number.isFinite(row.y))
+  const ticks =
+    layout === 'grouped'
+      ? valued.filter((row) => row.y === 0)
+      : stacksOf(valued)
+          .filter((stack) => stack.every((row) => row.y === 0))
+          .map((stack) => stack[0] as PlotRow<D, ChartX>)
+  if (ticks.length === 0) return []
+  const [lo, hi] = [Math.min(...plot.yDomain), Math.max(...plot.yDomain)]
+  const height = plot.plotHeight > 0 ? (ZERO_TICK_PX * (hi - lo)) / plot.plotHeight : 0
+  const drawn =
+    layout === 'grouped'
+      ? rows.map((row) => ({ ...row, y: ticks.includes(row) ? height : null }))
+      : ticks.map((row) => ({ ...row, y: height }))
+  return [
+    barY(drawn, {
+      id: 'zero-ticks',
+      x: rowX,
+      y: 'y',
+      z: 'series',
+      fill: paint.fill,
+      states: [{ when: { focus: 'x' }, style: { fill: paint.solid } }],
+      layout: layout === 'grouped' ? group({ padding: 0.1 }) : stack({ order }),
+    }),
+  ]
+}
+
+/** How a bar row paints: at rest and dimmed (`fill`), at full strength on hover (`solid`). */
+type BarPaint<D> = {
+  fill: (row: PlotRow<D, ChartX>) => string
+  solid: (point: { datum: PlotRow<D, ChartX> }) => string
+}
+
 export type BarMarksInput<D> = {
   /** The bar series (already through {@link shadeBars}). */
   bars: readonly ChartSeries<D>[]
@@ -92,20 +179,28 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
   const rows = visibleBars.flatMap((s) => plot.rows(s.key))
   if (rows.length === 0) return []
   const h = plot.highlighted
+  /** The series colour, the brand accent for a highlighted datum. */
+  const colorOf = (row: PlotRow<D, ChartX>): string | undefined => {
+    const bar = byKey.get(row.series)
+    return bar?.highlight?.(row.datum) ? CV.brand : bar?.color
+  }
   const solid = ({ datum }: { datum: PlotRow<D, ChartX> }): string =>
-    byKey.get(datum.series)?.color ?? 'transparent'
+    colorOf(datum) ?? 'transparent'
   const fill = (row: PlotRow<D, ChartX>): string => {
     const bar = byKey.get(row.series)
-    if (!bar) return 'transparent'
+    const color = colorOf(row)
+    if (!bar || color === undefined) return 'transparent'
     const base = opacityOf?.(row.datum, row.series) ?? bar.fillOpacity ?? DEFAULT_BAR_OPACITY
     const strength = base * emphasis(h, { key: row.series })
     // A `focus` holding a datum dims every other bar (`dimmedPaint`: the dark card's floor included).
-    if (plot.focused === null || row.datum === plot.focused) return paint(bar.color, strength)
-    return dimmedPaint(bar.color, strength)
+    if (plot.focused === null || row.datum === plot.focused) return paint(color, strength)
+    return dimmedPaint(color, strength)
   }
   const order = visibleBars.map((s) => s.key)
+  // A stack stops at the plot's edge: a total past a bounded domain would overrun it.
+  const drawn = layout === 'stacked' ? clampStacks(rows, order, plot.yDomain) : rows
   return [
-    barY(rows, {
+    barY(drawn, {
       id: 'bars',
       x: rowX,
       y: 'y',
@@ -120,7 +215,7 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
           ? group({ padding: 0.1 })
           : stack({ order, ...(layout === 'normalized' && { offset: 'normalize' }) }),
     }),
-    ...(emptyTicks ? emptyBinTicks(rows) : []),
+    ...(emptyTicks ? emptyBinTicks(rows) : zeroTicks(plot, rows, { fill, solid }, layout, order)),
   ]
 }
 

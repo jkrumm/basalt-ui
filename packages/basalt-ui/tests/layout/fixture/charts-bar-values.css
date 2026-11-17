@@ -1,0 +1,7 @@
+/*
+ * The `charts-bar-values` fixture's Tailwind v4 entry, compiled WITH preflight like `charts-expr7-contract.css`.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './charts-bar-values-fixture.tsx';
+@source '../../../src/charts';
+@source '../../../src/ui';

@@ -9,6 +9,7 @@ Requires TanStack Table's own `table-state` skill for anything under `t.table`: 
 - Fewer than about 200 rows and all in hand: `mode: { kind: 'client' }`. Above 500 client rows add `virtual` and a fixed `height`; above that the rows belong on a server.
 - The server pages and filters: `mode: { kind: 'server', rowCount }`. Pass `rowCount` as `undefined` until it is known; the table never prints "of 0". A cursor API passes `cursor` instead, never both.
 - Rows that never sort, filter or select are `ui/table`, not this.
+- Rows under a parent (who waits on whom, the jobs of a run) are a client table with `group: { by: '<parent column>' }`: one collapsible group row per parent, its toggle a button, with a `summary`. There is no tree field, so never indent a `c.custom` cell by hand to fake one (n32).
 
 ```tsx
 // @check
