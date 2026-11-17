@@ -12,6 +12,7 @@ import type { Box, BoxSlot } from '../core/ports'
 import { DeltaBadge } from '../ui/badge'
 import { CardInfo, cardVariants } from '../ui/card'
 import { Meter } from '../ui/meter'
+import { couldNotLoad } from '../common/could-not-load'
 import type { CardTarget, StatCellProps as ContractProps, StatRow } from './contract'
 import { StatusMark, formatValue, useStaleText } from './stat-card-parts'
 import { MAX_ROWS, StatGroupContext, useAboutLabel, warnOnce } from './stat-group-shared'
@@ -139,6 +140,7 @@ export function StatCell(props: StatCellProps): ReactElement {
         status={status}
         hidden={hidden}
         solo={!spans}
+        label={label}
         empty={resolved.tag === 'empty' ? resolved.empty : undefined}
       />
       {meter !== undefined && (
@@ -219,6 +221,8 @@ type FigureProps = {
   hidden: true | undefined
   /** No other track is declared, so a cause or an error is read in the figure's own track. */
   solo: boolean
+  /** The cell's label: the default error text names it, as a card's title does. */
+  label: string
   empty: Empty | undefined
 }
 
@@ -230,6 +234,7 @@ function Figure({
   status,
   hidden,
   solo,
+  label,
   empty,
 }: FigureProps): ReactElement {
   if (resolved.tag === 'loading') {
@@ -250,7 +255,12 @@ function Figure({
   if (resolved.tag === 'error') {
     return (
       <div data-slot="stat-figure" className={T_FIGURE}>
-        <ErrorLine kind={resolved.kind} message={resolved.message} retry={resolved.retry} />
+        <ErrorLine
+          kind={resolved.kind}
+          message={resolved.message}
+          retry={resolved.retry}
+          label={label}
+        />
       </div>
     )
   }
@@ -344,10 +354,12 @@ function ErrorLine({
   kind,
   message,
   retry,
+  label,
   compact = false,
 }: {
   kind: ErrorKind | undefined
   message?: string | undefined
+  label?: string | undefined
   retry: (() => void) | undefined
   compact?: boolean
 }): ReactElement {
@@ -357,7 +369,9 @@ function ErrorLine({
       ? t('cards.errorForbidden')
       : kind === 'not-found'
         ? t('cards.errorNotFound')
-        : t('cards.errorDefault')
+        : label?.trim()
+          ? `${couldNotLoad(label)}.`
+          : t('cards.errorDefault')
   return (
     <div
       role="alert"
