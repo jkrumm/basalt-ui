@@ -13,6 +13,7 @@ import {
   useEffectEvent,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -314,7 +315,10 @@ function scrollNodeIntoView(node: Element | undefined): void {
  * by group, and a list of groups beside the marks spreads `focus.groupItem(name)` on each row to
  * share the focus both ways. A list of the same grain spreads `focus.item(i)` instead. A list whose
  * rows are the chart's series (one row per line) spreads `focus.seriesItem(key)`: pointing at a row
- * emphasises its series across every x as the legend does, and the legend marks the row. Leaving a row
+ * emphasises its series across every x as the legend does, and the legend marks the row. A list whose
+ * rows stand for several items each (a window of hours, the probe of a finding) calls
+ * `focus.hold(indexes)`, as `DataTable focusItems` does: every held item is focused, a cartesian
+ * host draws the run as one x band, and `focus.span` reads them. Leaving a row
  * keeps its group focused, so crossing the gap to the next row or to the chart never flickers; leaving
  * the chart's container or a blur clears it.
  *
@@ -325,14 +329,25 @@ export function useChartFocus<D>(
   items: readonly D[],
   options: ChartFocusOptions<D>,
 ): ChartFocus<D> {
-  const { announce, columns, group } = options
+  const { announce, announceSpan, columns, group } = options
   // `entered`: the focus came into its group from outside it, so the announcement names the group.
-  const [held, setHeld] = useState<{ index: number; entered: boolean } | null>(null)
+  // `span`: every index `hold` set, in item order, when it held more than one.
+  const [held, setHeld] = useState<{
+    index: number
+    entered: boolean
+    span?: readonly number[]
+  } | null>(null)
   // The series a list row or the chart's legend emphasises across every x.
   const [series, setSeries] = useState<string | null>(null)
   // An index past the end (the items shrank) is no focus, without an effect to clear it.
   const index = held !== null && held.index < items.length ? held.index : null
   const datum = index === null ? null : (items[index] as D)
+  // One identity while the hold and the items stand, so a host can key its drawing on it.
+  const { inSpan, span } = useMemo(() => {
+    const at = held === null || held.index >= items.length ? null : held.index
+    const indexes = at === null ? [] : (held?.span?.filter((i) => i < items.length) ?? [at])
+    return { inSpan: new Set(indexes), span: indexes.map((i) => items[i] as D) }
+  }, [held, items])
   const groupAt = (i: number | null): string | undefined => {
     const d = i === null ? undefined : items[i]
     return group === undefined || d === undefined ? undefined : group(d)
@@ -346,7 +361,7 @@ export function useChartFocus<D>(
     setHeld((was) => {
       const from = was === null || was.index >= items.length ? null : was.index
       // The same index keeps the same state: an engine host reports its focus on every render.
-      if (from === next) return was
+      if (from === next && was?.span === undefined) return was
       return { index: next, entered: from === null || groupAt(from) !== groupAt(next) }
     })
   }
@@ -375,8 +390,34 @@ export function useChartFocus<D>(
     pointed.current = next >= 0 ? next : null
     apply(next, false)
   }
+  // Several items at once, as a pointer holds them: the first leads, and a chart's clear keeps them.
+  const hold = (indexes: readonly number[]): void => {
+    const valid = [...new Set(indexes)]
+      .filter((i) => Number.isInteger(i) && i >= 0 && i < items.length)
+      .toSorted((a, b) => a - b)
+    const first = valid[0]
+    if (first === undefined) return set(null)
+    if (valid.length === 1) return point(first)
+    pointed.current = first
+    setHeld((was) => {
+      const same =
+        was !== null &&
+        was.span !== undefined &&
+        was.span.length === valid.length &&
+        was.span.every((i, k) => i === valid[k])
+      if (same) return was
+      const from = was === null || was.index >= items.length ? null : was.index
+      return {
+        index: first,
+        entered: from === null || groupAt(from) !== groupAt(first),
+        span: valid,
+      }
+    })
+  }
   const fromChart = (next: number | null): void => {
     if (next === null && pointed.current !== null) return
+    // An engine echoes its focused datum back on render: the span's own first item keeps the span.
+    if (next !== null && next === index && held?.span !== undefined) return
     set(next)
   }
 
@@ -412,8 +453,8 @@ export function useChartFocus<D>(
   }
   const item = (i: number): ChartFocusItem => ({
     'data-chart-mark': '',
-    ...(index === i && { 'data-focused': '' as const }),
-    ...(index !== null && index !== i && { 'data-dimmed': '' as const }),
+    ...(inSpan.has(i) && { 'data-focused': '' as const }),
+    ...(index !== null && !inSpan.has(i) && { 'data-dimmed': '' as const }),
     ref: (element) => {
       if (element === null) marks.current.delete(i)
       else marks.current.set(i, element)
@@ -441,7 +482,12 @@ export function useChartFocus<D>(
     onPointerEnter: () => setSeries(key),
     onPointerDown: () => setSeries(key),
   })
-  const said = datum === null ? '' : announce(datum)
+  const said =
+    datum === null
+      ? ''
+      : span.length > 1
+        ? (announceSpan?.(span) ?? `${announce(datum)} to ${announce(span.at(-1) as D)}`)
+        : announce(datum)
   // Entering a group at a later item names the group by its first item's announcement, never by its
   // key (a key is an id as often as a name); entering at the first item says only that datum.
   const lead =
@@ -459,8 +505,10 @@ export function useChartFocus<D>(
     index,
     datum,
     set,
+    hold,
+    span,
     readout: (rest, read) => (datum === null ? rest : read(datum)),
-    dimmed: (d) => datum !== null && d !== datum,
+    dimmed: (d) => datum !== null && !span.includes(d),
     target,
     item,
     groupItem,
