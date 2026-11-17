@@ -327,7 +327,7 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
 
   test('d20 autofill: paints an inset 100vmax shadow in the field surface plus a 600000s transition', () => {
     const block = stylesCss.match(/input:-webkit-autofill,[\s\S]*?\{([^}]*)\}/)?.[1] ?? ''
-    expect(block).toContain('box-shadow: 0 0 0 100vmax var(--basalt-surface-field) inset')
+    expect(block).toContain('box-shadow: 0 0 0 100vmax var(--basalt-card) inset')
     expect(block).toContain('transition: background-color 600000s 0s')
   })
 
