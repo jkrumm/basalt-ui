@@ -1,6 +1,5 @@
 /**
- * `useMediaQuery` — the one sanctioned raw `window.matchMedia` read
- * (`basalt/raw-breakpoint`'s `RAW_BREAKPOINT_EXEMPT_FILE`). Every other breakpoint/pointer-tier
+ * `useMediaQuery` — the one sanctioned raw `window.matchMedia` read. Every other breakpoint/pointer-tier
  * hook (`useSizeClass`, `useCoarsePointer`, the shell's own min-width dock check) is built on this
  * one primitive instead of allocating its own `MediaQueryList`.
  *

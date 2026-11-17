@@ -28,8 +28,7 @@ export const CONTAINER_KEYS = {
 /**
  * `CONTAINER_CLASSES` as the five-key map a container grid takes (`xs`..`xl`), so its columns
  * resolve onto the grid's own width:
- * `xs` opens narrow, `sm` regular, `md`/`lg`/`xl` wide. `basalt/raw-breakpoint` trusts this import
- * by name (from `basalt-ui/tokens`) — any other imported map is unreadable to it and flagged.
+ * `xs` opens narrow, `sm` regular, `md`/`lg`/`xl` wide.
  */
 export const CONTAINER_GRID_BREAKPOINTS = {
   xs: CONTAINER_KEYS.narrow,
