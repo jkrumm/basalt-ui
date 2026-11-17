@@ -79,9 +79,12 @@ function AsideSheet({ claim }: { claim: AsideClaim }): ReactElement {
  * `@layer basalt`), so there is nothing to override and nothing to fight. The crumb trail is the nav
  * section, then the page's `PageBar` `parent`, then its `title`; a selection such as
  * `/services?service=checkout` is `Fleet / Services / checkout` from
- * `<PageBar title={service.name} parent={{ label: 'Services', href: '/services' }} />`. A phone
- * shows no ancestors, a page with no bar shows its nav label, and a path no route matches shows
- * `Not found`, in the crumb and in the document title.
+ * `<PageBar title={service.name} parent={{ label: 'Services', href: navTarget({ to: '/services', ...services.field.service.link('') }) }} />`.
+ * The parent is a link through the provider's `link`, a path string or a `NavTarget` alike, so a
+ * click keeps the document; the `NavTarget` form shown clears the selection and keeps the params the
+ * page's store `retain`s (`services` is that store). A phone drops the nav section and keeps the
+ * page's parent and title, so the way up stays one tap away. A page with no bar shows its nav label,
+ * and a path no route matches shows `Not found`, in the crumb and in the document title.
  *
  * The document never scrolls: `Main` is the scrollport and the `<main>` landmark. The shell also
  * renders what a repeated block needs and a consumer cannot be trusted to remember: a skip link, a
@@ -187,8 +190,8 @@ export function AppShell<Id extends string = string>({
     (fallbackLabel === undefined ? null : (
       <span data-slot="page-breadcrumb-leaf">{fallbackLabel}</span>
     ))
-  // Section, then the page's own trail (its `parent`, then its title). The section is context a
-  // phone has no room for: the rail is a tab away there.
+  // Section, then the page's own trail (its `parent`, then its title). The section is the one
+  // ancestor a phone drops (the rail is a tab away there); the page's parent stays, the way up.
   const trail: ReactNode =
     section === undefined || sizeClass === 'compact' ? (
       leaf
