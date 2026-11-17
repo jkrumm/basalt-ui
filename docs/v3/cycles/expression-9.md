@@ -46,7 +46,7 @@ Repair rounds barely moved the median: 79 to 81 on all items, and 83.5 to 82 on 
 
 ### After the rounds
 
-`make check-fast` ran again on the final tree after every builder was done. Its result is in the PR.
+`make check-fast` ran again on the final tree after every builder was done, on the pinned base. Every step passed except `check-contract-frozen`, which named three pins master had moved since the pin (`scripts/export-surface/page.json`, `src/router/index.ts`, `src/ui/slots.ts`, under its two contract-amendment commits). That covers the static gate, the unit suite and the quality matrix in host slots (0 fail), the playground build, coverage and agent-doc drift. After a rebase onto master, `check-contract-frozen` passes (20 pinned files frozen). The layout step picked no file, because none of the 24 changed files reaches a layout test, so CI runs the full suite.
 
 ## Numbers
 
