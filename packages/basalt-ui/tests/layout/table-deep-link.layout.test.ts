@@ -13,12 +13,13 @@ import type { FixtureSpec } from './fixture/spec'
 import {
   CLOSE_BUDGET_MS,
   DESKTOP_1440,
+  PHONE,
   closeLayoutSuite,
   initLayoutSuite,
   openFixture,
   serveDocument,
 } from './harness'
-import type { LayoutPage } from './harness'
+import type { LayoutPage, Viewport } from './harness'
 
 const ready = await initLayoutSuite()
 const layout = ready ? describe : describe.skip
@@ -71,8 +72,13 @@ afterAll(() => {
   if (scratch) rmSync(scratch, { recursive: true, force: true })
 })
 
-async function open(mode: (typeof MODES)[number]): Promise<LayoutPage> {
-  const page = await openFixture(EMPTY_SPEC, DESKTOP_1440, documents[mode], 'reduce', 'fine')
+const DESKTOP_1800: Viewport = { name: 'wide 1800', width: 1800, height: 900 }
+
+async function open(
+  mode: (typeof MODES)[number],
+  viewport: Viewport = DESKTOP_1440,
+): Promise<LayoutPage> {
+  const page = await openFixture(EMPTY_SPEC, viewport, documents[mode], 'reduce', 'fine')
   await page.raw.waitForSelector('tbody tr')
   await page.settle()
   // The 500 ms of the cycle's probe, and then some: a late clear would have landed.
@@ -143,5 +149,51 @@ for (const scheme of ['light', 'dark'] as const)
       expect(rest.length).toBeGreaterThan(0)
       expect(alphaOf(marked[0]!.color)).toBeGreaterThan(0)
       for (const row of rest) expect(row.color).not.toBe(marked[0]!.color)
+    })
+  })
+
+// Cycle shell-4.1 (docs/v3/issues/cycles/v3-shell-4-sheet.json): the aside mounts after the table's
+// first render, so a deep link showed in the table's own sheet first; that sheet closed before it
+// painted open, never finished its exit and stayed mounted, closed and focusable, a keyboard trap.
+const sheets = (page: LayoutPage): Promise<{ open: boolean }[]> =>
+  page.raw.evaluate(() =>
+    [...document.querySelectorAll('[data-slot="sheet-content"]')].map((el) => ({
+      open: el.hasAttribute('data-open'),
+    })),
+  )
+
+/** Tabs from the focused element to the document end; the tabbable elements inside a sheet on the way. */
+async function tabToEnd(page: LayoutPage): Promise<number> {
+  let inSheet = 0
+  for (let step = 0; step < 60; step++) {
+    await page.raw.keyboard.press('Tab')
+    const now = await page.raw.evaluate(() => ({
+      end: document.activeElement === document.body || document.activeElement === null,
+      sheet: document.activeElement?.closest('[data-slot="sheet-content"]') !== null,
+    }))
+    if (now.sheet) inSheet++
+    if (now.end) return inSheet
+  }
+  throw new Error('Tab never reached the document end')
+}
+
+for (const mode of MODES)
+  layout(`A deep-linked row detail leaves no table sheet, aside state ${mode}`, () => {
+    test('at 1800 no sheet stands beside the docked aside and Tab leaves it', async () => {
+      const page = await open(mode, DESKTOP_1800)
+      expect(await sheets(page)).toEqual([])
+      await page.raw.focus('[data-aside-close]')
+      expect(await tabToEnd(page)).toBe(0)
+    })
+
+    test('at 390 no sheet outlives the record it closed', async () => {
+      const page = await open(mode, PHONE)
+      expect((await sheets(page)).every((sheet) => sheet.open)).toBe(true)
+      await page.raw.click('[data-aside-close], [data-slot="sheet-close"]')
+      await page.settle()
+      await page.raw.waitForTimeout(600)
+      expect(await sheets(page)).toEqual([])
+      await page.raw.keyboard.press('Tab')
+      expect(await tabToEnd(page)).toBe(0)
     })
   })
