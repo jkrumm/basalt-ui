@@ -136,14 +136,15 @@ describe('P9: the websocket-transport recipe', () => {
   })
 
   test('an abort closes the socket', async () => {
-    const s = serve(() => {})
+    // The server's open is not the client's: closing a socket still CONNECTING raises an ErrorEvent
+    // nobody can handle (happy-dom's WebSocket over `ws`). A first beat proves the client is OPEN.
+    const s = serve((ws) => ws.send({ ping: true }))
     const abort = new AbortController()
     const run = webSocketTransport(s.url)({ signal: abort.signal })[Symbol.asyncIterator]()
-    const pending = run.next().catch(() => {})
-    await until(() => s.opened.length === 1)
+    expect((await run.next()).value).toEqual({ kind: 'beat' })
     abort.abort()
     await until(() => s.closed() === 1)
-    await pending
+    await run.next().catch(() => {})
   })
 
   test('code that takes a Channel runs on the socket and on fakeChannel', async () => {
