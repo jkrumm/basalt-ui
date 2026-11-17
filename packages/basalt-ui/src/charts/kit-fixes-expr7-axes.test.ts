@@ -4,7 +4,7 @@
  * the zone's edges.
  */
 import { describe, expect, test } from 'bun:test'
-import type { ChartSeries } from '../types'
+import type { ChartSeries } from './types'
 import { compileCartesian, xGuide } from './core/compile'
 import { xScaleFor } from './core/scales'
 
