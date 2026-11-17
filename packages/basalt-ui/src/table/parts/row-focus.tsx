@@ -30,6 +30,8 @@ export type FocusedRowProps = RowProps & {
   onPointerDown?: () => void
 }
 
+const noRef = (): void => undefined
+
 type SeriesLink<T> = NonNullable<DataTableProps<T>['focusSeries']>
 type ItemsLink<T, I> = NonNullable<DataTableProps<T, I>['focusItems']>
 
@@ -44,7 +46,15 @@ function itemsLink<T, I>({ focus, holds }: ItemsLink<T, I>): RowLink {
     item: (_, row) => {
       const indexes = heldBy(row as T)
       const first = indexes[0]
-      if (first === undefined) return undefined
+      // A row that holds nothing stands for no item: pointing at it clears the focus, and it dims
+      // while another row's items are focused.
+      if (first === undefined)
+        return {
+          ...(focus.index !== null && { 'data-dimmed': '' as const }),
+          ref: noRef,
+          onPointerEnter: () => focus.set(null),
+          onPointerDown: () => focus.set(null),
+        } satisfies ListFocusItem & MarkedItem
       const marked = focus.span.some((item) => holds(row as T, item))
       const props: ListFocusItem & MarkedItem = {
         'data-chart-mark': '',
@@ -57,10 +67,8 @@ function itemsLink<T, I>({ focus, holds }: ItemsLink<T, I>): RowLink {
       }
       return props
     },
-    enter: (_, row) => {
-      const indexes = heldBy(row as T)
-      if (indexes.length > 0) focus.hold(indexes)
-    },
+    // `hold` of no index clears, so stepping onto a row that holds nothing clears the focus too.
+    enter: (_, row) => focus.hold(heldBy(row as T)),
     clear: () => focus.set(null),
   }
 }

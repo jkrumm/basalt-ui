@@ -24,6 +24,8 @@ const WINDOWS: readonly Window[] = [
   { id: 'w-2', from: 2, to: 5 },
   { id: 'w-8', from: 8, to: 9 },
   { id: 'w-11', from: 11, to: 11 },
+  // Past the last hour: a row that holds nothing.
+  { id: 'w-30', from: 30, to: 33 },
 ]
 const inWindow = (w: Window, d: Hour): boolean => d.h >= w.from && d.h <= w.to
 const COLOR = { light: '#0077bd', dark: '#5fb4f0' }
@@ -100,7 +102,7 @@ describe('DataTable focusItems: a row that stands for a run of items', () => {
     await enter(bodyRows(el)[0] as Element)
     expect(held(el)).toBe('2,3,4,5')
     expect(handle?.index).toBe(2)
-    expect(state(bodyRows(el))).toEqual(['focused', 'dimmed', 'dimmed'])
+    expect(state(bodyRows(el))).toEqual(['focused', 'dimmed', 'dimmed', 'dimmed'])
     expect(el.querySelector('[data-ts-key="xzone-0"]')).not.toBeNull()
     expect(live(el)).toBe('hour 2 to hour 5')
   })
@@ -127,9 +129,9 @@ describe('DataTable focusItems: a row that stands for a run of items', () => {
   test('an hour focused elsewhere marks the window row that holds it', async () => {
     const el = await mount(<Harbour />)
     await act(async () => handle?.set(9))
-    expect(state(bodyRows(el))).toEqual(['dimmed', 'focused', 'dimmed'])
+    expect(state(bodyRows(el))).toEqual(['dimmed', 'focused', 'dimmed', 'dimmed'])
     await act(async () => handle?.set(0))
-    expect(state(bodyRows(el))).toEqual(['dimmed', 'dimmed', 'dimmed'])
+    expect(state(bodyRows(el))).toEqual(['dimmed', 'dimmed', 'dimmed', 'dimmed'])
   })
 
   test("the table's own row focus holds the run, and the page's announceSpan says it", async () => {
@@ -147,6 +149,18 @@ describe('DataTable focusItems: a row that stands for a run of items', () => {
     await leave(el.querySelector('tbody') as Element)
     expect(held(el)).toBe('')
     expect(el.querySelector('[data-ts-key="xzone-0"]')).toBeNull()
+  })
+
+  test('pointing at or stepping onto a row that holds nothing clears the run', async () => {
+    const el = await mount(<Harbour />)
+    await enter(bodyRows(el)[0] as Element)
+    await enter(bodyRows(el)[3] as Element)
+    expect(held(el)).toBe('')
+    await act(async () => bodyRows(el)[0]?.focus())
+    expect(held(el)).toBe('2,3,4,5')
+    await act(async () => bodyRows(el)[3]?.focus())
+    expect(held(el)).toBe('')
+    expect(live(el)).toBe('')
   })
 })
 
