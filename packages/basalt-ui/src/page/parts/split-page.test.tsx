@@ -3,7 +3,7 @@
  * and the pane once it is true. The viewport behaviour is `tests/layout/inner-nav.layout.test.ts`'s.
  */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { SplitPage } from './split-page'
 
 afterEach(cleanup)
@@ -85,5 +85,65 @@ describe('SplitPage', () => {
     expect(screen.queryByRole('button')).toBeNull()
     rerender(<SplitPage selected list={() => <p>l</p>} detail={() => <p>p</p>} />)
     expect(screen.queryByRole('button')).toBeNull()
+  })
+})
+
+/** happy-dom has no Tailwind: the one rule the focus hand-off reads, `hidden` below the wide tier. */
+function hideBelowWide(): void {
+  const style = document.createElement('style')
+  style.textContent = '.hidden { display: none }'
+  document.head.append(style)
+}
+
+describe('SplitPage focus follows the swap', () => {
+  beforeEach(() => {
+    hideBelowWide()
+  })
+  afterEach(() => {
+    document.head.querySelectorAll('style').forEach((el) => el.remove())
+  })
+
+  const Pair = ({ selected }: { selected: boolean }) => (
+    <SplitPage
+      selected={selected}
+      onBack={() => {}}
+      list={() => (
+        <nav>
+          <a href="#a">A</a>
+          <a href="#b" aria-current="page">
+            B
+          </a>
+        </nav>
+      )}
+      detail={() => <h2>Pane B</h2>}
+    />
+  )
+
+  test('select: focus moves from the list link to the detail heading', () => {
+    const { rerender } = render(<Pair selected={false} />)
+    screen.getByRole('link', { name: 'B' }).focus()
+    rerender(<Pair selected />)
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Pane B' }))
+  })
+
+  test("back: focus moves from the back link to the list's current item", () => {
+    const { rerender } = render(<Pair selected />)
+    screen.getByRole('button', { name: 'Back' }).focus()
+    rerender(<Pair selected={false} />)
+    expect(document.activeElement).toBe(screen.getByRole('link', { name: 'B' }))
+  })
+
+  test('a first render with a selection does not take focus', () => {
+    render(<Pair selected />)
+    expect(document.activeElement).toBe(document.body)
+  })
+
+  test('at the wide tier both panes show and focus stays where it is', () => {
+    document.head.querySelectorAll('style').forEach((el) => el.remove())
+    const { rerender } = render(<Pair selected={false} />)
+    const link = screen.getByRole('link', { name: 'B' })
+    link.focus()
+    rerender(<Pair selected />)
+    expect(document.activeElement).toBe(link)
   })
 })

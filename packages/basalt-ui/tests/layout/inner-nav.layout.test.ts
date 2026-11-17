@@ -364,3 +364,36 @@ layout('SplitPage at 1440', () => {
     expect(after.after).toBe(0)
   })
 })
+
+layout('SplitPage focus at 390', () => {
+  const BACK = '[data-split-back]'
+  const LIST = slot('split-page-list')
+  const DETAIL = slot('split-page-detail')
+  const nextFrame = (page: Awaited<ReturnType<typeof openFixture>>) =>
+    page.raw.evaluate(() => new Promise((r) => requestAnimationFrame(() => r(0))))
+  const where = (page: Awaited<ReturnType<typeof openFixture>>) =>
+    page.raw.evaluate(
+      ({ list, detail }) => {
+        const active = document.activeElement
+        return {
+          inList: document.querySelector(list)?.contains(active) === true,
+          inDetail: document.querySelector(detail)?.contains(active) === true,
+          body: active === document.body,
+        }
+      },
+      { list: LIST, detail: DETAIL },
+    )
+
+  test('choosing a section moves focus into the detail, and the back link into the list', async () => {
+    const page = await openFixture(specOf('split'), PHONE)
+    await page.raw.locator(`${NAV} a[href]`).nth(1).click()
+    await page.raw.waitForSelector(BACK)
+    await nextFrame(page)
+    expect(await where(page)).toEqual({ inList: false, inDetail: true, body: false })
+
+    await page.raw.click(BACK)
+    await page.raw.waitForFunction((back) => document.querySelector(back) === null, BACK)
+    await nextFrame(page)
+    expect(await where(page)).toEqual({ inList: true, inDetail: false, body: false })
+  })
+})
