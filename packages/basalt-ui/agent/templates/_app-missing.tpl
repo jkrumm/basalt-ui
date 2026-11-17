@@ -7,7 +7,7 @@
  *
  * Scaffold written by `basalt-ui init` to `src/components/route-missing.tsx`. This file is yours — `basalt-ui sync` will not overwrite it.
  */
-import { EmptyState } from 'basalt-ui/page'
+import { EmptyState, Page, PageBar } from 'basalt-ui/page'
 
 type NotFoundData = { message?: string; link?: { to: string; label: string } }
 
@@ -17,10 +17,13 @@ export function RouteMissing({ data }: { data?: unknown }) {
   const { message, link }: NotFoundData = typeof data === 'object' && data !== null ? data : {}
   const back = typeof link?.to === 'string' && typeof link.label === 'string' ? link : HOME
   return (
-    <EmptyState
-      title="Page not found"
-      cause={typeof message === 'string' ? message : 'This address does not match any page.'}
-      action={{ label: back.label, href: back.to }}
-    />
+    <Page>
+      <PageBar title="Not found" />
+      <EmptyState
+        title="Page not found"
+        cause={typeof message === 'string' ? message : 'This address does not match any page.'}
+        action={{ label: back.label, href: back.to }}
+      />
+    </Page>
   )
 }
