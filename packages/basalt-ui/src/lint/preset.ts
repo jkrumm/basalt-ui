@@ -169,7 +169,7 @@ export const SHADCN_MESSAGES: Readonly<
     // One string for every kind of value (the option takes no per-kind form), so it names the fix by kind;
     // only a spacing value takes a ladder step, which is what app-spacing would reject on a margin.
     'no-arbitrary-values':
-      '"{{className}}" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container.',
+      '"{{className}}" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container, and one computed from data is BarList, ui/progress or ui/meter.',
     'no-raw-colors': `"{{className}}" is no colour the theme declares. ${TOKEN_CLASSES} Otherwise app colour comes from Status, Lozenge, DeltaBadge or a Num tone; the palette is derived, so no colour is declared per app. A shadow or a type step is not a colour: check its spelling.`,
     // One string for the four reports (a property, a dynamic object, a raw colour in a custom
     // property, a `<style>` element). shadcn's own text sends a dynamic value to a custom property,

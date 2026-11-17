@@ -267,6 +267,26 @@ describe('shipped messages', () => {
     expect(fix).toContain('bg-card or bg-background for a surface at bridge')
   })
 
+  it('names the fix each lint-11.8 finding gives', () => {
+    const text = (source: string): string | undefined =>
+      messages.find((m) => m.source === source)?.text
+    // A scheme store makes no class choice: the setScheme fix leads.
+    expect(text('basalt/dark-fork scheme-fork fix')).toStartWith(
+      'BasaltProvider owns the scheme: switch it with setScheme',
+    )
+    // A platform test that picks a modifier key is a Mod chord, not a waiver.
+    expect(text('basalt/viewport-keyed platform-glyph fix')).toContain("chord: 'Mod+S'")
+    expect(text('basalt/viewport-keyed platform-glyph fix')).toContain('defineCommands')
+    // A touch probe that picks a layout: the container, or pointer: coarse for a hit target.
+    expect(text('basalt/viewport-keyed media-query fix')).toContain('pointer: coarse')
+    // A width computed from data has the bar route no-inline-styles names.
+    for (const profile of ['parts', 'app'] as const) {
+      expect(text(`${profile} shadcn/no-arbitrary-values message`)).toContain(
+        'one computed from data is BarList, ui/progress or ui/meter',
+      )
+    }
+  })
+
   it('never says use margin, declares a --color-<name>, or proposes a fixed width', () => {
     for (const { source, text } of messages) {
       expect(text, source).not.toMatch(/use margin/i)

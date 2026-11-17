@@ -171,7 +171,7 @@
       "error",
       {
         "allow": ["grid-cols-[*]", "grid-rows-[*]", "*:grid-cols-[*]", "*:grid-rows-[*]"],
-        "message": "\"{{className}}\" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container."
+        "message": "\"{{className}}\" hardcodes an off-token value. By kind: a colour comes from Status, Lozenge, DeltaBadge or a Num tone; overflow is ui/scroll-area, or the page owns the scroll; space around an element is gap on the parent; a spacing value is a step of the spacing ladder (integers, halves below 4); a width belongs to the parent container, and one computed from data is BarList, ui/progress or ui/meter."
       }
     ],
     "shadcn/no-unknown-classes": [
