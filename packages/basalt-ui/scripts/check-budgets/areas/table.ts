@@ -56,13 +56,22 @@ export const rows: readonly RowDef[] = [
     // its panel or table, the kit fixes of expression cycle 7.
     // 124800 -> 125000 (Issue 1873): 124816 B measured, +111 B gz over master (124705) for `focusSeries` (a row
     // that stands for a chart series) and the mono entity name, the contract fields of expression cycle 7.
-    ceiling: 125000,
+    // 125000 -> 125800 (Issue 2039): 125524 B measured, +524 B gz over master (125000) for the phone card's labels,
+    // the 'n of m shown' cue and the full-width root, the kit fixes of expression cycle 9.
+    ceiling: 125800,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 125000,
+      to: 125800,
+      consumer:
+        "the table kit fixes of expression cycle 9: n36's phone card printed 'You' and 'Passed' with no label and n33's clipped card list gave no 'n of m shown' cue and its empty table's header row stopped short (apps/playground/src/scenarios/expr/n33, n36; Issue 2039)",
+      repo: 'basalt-ui',
+    },
     {
       from: 123100,
       to: 123500,
