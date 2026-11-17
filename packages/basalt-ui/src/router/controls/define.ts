@@ -165,8 +165,8 @@ export type DefineControlsConfig<Id extends string, Scp extends Scope, F, W = {}
    */
   readonly retain?: readonly string[]
   /**
-   * Page stores only: cards bound to a scalar handle (a global or a page field). A widget inherits
-   * the handle's value and writes only its own `w.<widget>.<field>` key; at most two fields each.
+   * Page stores only: cards bound to a scalar handle, or owning a scalar `field.*` spec. A widget
+   * inherits the handle's value, writes only its own `w.<widget>.<field>` key; two fields each.
    */
   readonly widgets?: W & ValidWidgets<W>
 }

@@ -46,7 +46,7 @@ defineControls<const Id extends string, const Scp extends Scope, const F extends
   fields: F  // The fields; each key is the field's URL param (a range's preset param)
   resets?: readonly string[]  // Params unset in the same navigate as any URL write of this store: `['page']` on a list, so a narrowed filter lands on the first page and Back restores both together
   retain?: readonly string[]  // Page stores only: URL params kept across navigations inside the subtree of the layout route that mounts the store, and dropped on leaving it
-  widgets?: W & ValidWidgets<W>  // Page stores only: cards bound to a scalar handle (a global or a page field)
+  widgets?: W & ValidWidgets<W>  // Page stores only: cards bound to a scalar handle, or owning a scalar `field.*` spec
 ```
 
 ## Example

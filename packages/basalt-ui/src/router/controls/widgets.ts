@@ -1,6 +1,7 @@
 /**
  * Widget scope: a card's own state on a page store. A widget field is BOUND to a scalar handle (a
- * global, or a page field) and inherits its value; setting it writes only the page's own
+ * global, or a page field) and inherits its value, or OWNS its choice: a scalar `field.*` spec with
+ * its own fallback and nothing inherited. Setting it writes only the page's own
  * `w.<widget>.<field>` URL key, so a widget can never change a global. The effective value follows
  * `override > inherited > fallback` (`./precedence`), an override equal to the inherited value still
  * pins, and `clear()` unsets the key (explicit `undefined`, never a delete). Widget keys are
@@ -11,7 +12,8 @@ import type { ControlHandle } from '../../core/ports'
 import { BRAND, brandedValidator, extendValidator } from './brand'
 import type { ControlsValidator, Scope } from './brand'
 import type { Codec, Raw } from './codec'
-import type { FieldOption } from './field'
+import { optionsOf } from './field'
+import type { FieldOption, FieldSpec } from './field'
 import type { LinkWrite, LooseRouter, UnionToIntersection } from './define'
 import { resolveWidget } from './precedence'
 
@@ -24,9 +26,19 @@ export type WidgetSource = {
   readonly use: () => readonly [unknown, (value: never) => void]
 }
 
-export type WidgetsInput = Readonly<Record<string, Readonly<Record<string, WidgetSource>>>>
+/** A widget field that owns its choice: a scalar URL field spec, its fallback the only default. */
+export type OwnWidgetField = FieldSpec<unknown, ScalarKind, true>
 
-type ValueOf<H extends WidgetSource> = ReturnType<H['use']>[0]
+/** What `widgets` takes per field: a handle to inherit from, or a spec the card owns. */
+export type WidgetField = WidgetSource | OwnWidgetField
+
+export type WidgetsInput = Readonly<Record<string, Readonly<Record<string, WidgetField>>>>
+
+type ValueOf<H extends WidgetField> = H extends WidgetSource
+  ? ReturnType<H['use']>[0]
+  : H extends FieldSpec<infer V, ScalarKind, true>
+    ? V
+    : never
 
 type LastOf<U> =
   UnionToIntersection<U extends unknown ? (arg: U) => void : never> extends (arg: infer L) => void
@@ -60,7 +72,7 @@ export type WidgetHandle<V, K extends ScalarKind = ScalarKind, S = Raw> = Omit<
   readonly widget: string
   readonly field: string
   readonly codec: Codec<V>
-  /** The inherited handle's fallback. */
+  /** The bound handle's fallback, or the owned field's own. */
   readonly fallback: V
   readonly history: 'replace'
   readonly url: true
@@ -70,7 +82,7 @@ export type WidgetHandle<V, K extends ScalarKind = ScalarKind, S = Raw> = Omit<
 
 export type WidgetHandles<W> = {
   readonly [I in keyof W & string]: {
-    readonly [F in keyof W[I] & string]: W[I][F] extends WidgetSource
+    readonly [F in keyof W[I] & string]: W[I][F] extends WidgetField
       ? WidgetHandle<ValueOf<W[I][F]>, W[I][F]['kind'], WidgetLink<I, F, ValueOf<W[I][F]>>>
       : never
   }
@@ -80,7 +92,7 @@ export type WidgetHandles<W> = {
 export type WidgetSearch<W> = UnionToIntersection<
   {
     [I in keyof W & string]: {
-      [F in keyof W[I] & string]: W[I][F] extends WidgetSource
+      [F in keyof W[I] & string]: W[I][F] extends WidgetField
         ? { [k in `w.${I}.${F}`]?: ValueOf<W[I][F]> }
         : never
     }[keyof W[I] & string]
@@ -152,6 +164,24 @@ export function resetWidgetOwnersForTests(): void {
   widgetOwners.clear()
 }
 
+const noInherited = (): readonly [unknown, () => void] => [undefined, () => {}]
+
+/** A bound handle as it is; an owned spec as a source with its own key, no inherited value and its own options. */
+function runtimeSource(declared: WidgetField, key: string): RuntimeSource | undefined {
+  if ('use' in declared) return declared as RuntimeSource
+  const own = declared as OwnWidgetField
+  if (own.lane?.url !== true || typeof own.fallback === 'function') return undefined
+  return {
+    kind: own.kind,
+    key,
+    use: noInherited,
+    url: true,
+    codec: own.codec,
+    options: optionsOf(own),
+    fallback: own.fallback,
+  }
+}
+
 function bindingsOf(ctx: WidgetContext): Binding[] {
   const out: Binding[] = []
   const fail = (message: string): never => {
@@ -168,13 +198,17 @@ function bindingsOf(ctx: WidgetContext): Binding[] {
     const names = Object.keys(fields)
     if (names.length > MAX_FIELDS) fail(`widget "${widget}" has more than ${MAX_FIELDS} fields`)
     for (const field of names) {
-      const source = fields[field] as RuntimeSource | undefined
+      const declared = fields[field] as WidgetField | undefined
       if (!SEGMENT_RE.test(field))
         fail(`widget field "${widget}.${field}" is not a plain identifier`)
+      const key = `w.${widget}.${field}`
+      const source = declared === undefined ? undefined : runtimeSource(declared, key)
       if (source === undefined || !SCALARS.includes(source.kind) || source.url === false) {
-        fail(`widget field "${widget}.${field}" must bind a scalar URL handle`)
+        fail(
+          `widget field "${widget}.${field}" must bind a scalar URL handle or own a scalar URL field`,
+        )
       }
-      out.push({ widget, field, key: `w.${widget}.${field}`, source: source as RuntimeSource })
+      out.push({ widget, field, key, source: source as RuntimeSource })
     }
   }
   for (const [widget, owner] of widgetOwners) if (owner === ctx.id) widgetOwners.delete(widget)
