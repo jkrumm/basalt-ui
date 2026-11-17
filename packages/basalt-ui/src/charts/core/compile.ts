@@ -43,7 +43,7 @@ import {
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
 import { claimedLabelBoxes } from '../labels'
 import type { LabelBox as PxBox } from '../chart-labels'
-import { captionPx, pathBoxes, pxBox, withHostObstacles } from '../label-obstacles'
+import { captionPx, pathBoxes, pxBox, ruleBoxes, withHostObstacles } from '../label-obstacles'
 import type { PlotPx } from '../label-obstacles'
 import { boxesMeet, dotBox, placeRefLabel, refLabelDy } from '../ref-label'
 import type { DotMark, LabelBox, RefLabelPoint } from '../ref-label'
@@ -1727,6 +1727,14 @@ export function compileCartesian<T, X extends ChartX>(
           ...ctx.claimed.map((b) => pxBox(b, axes.left.domain, frame)),
           ...lineBoxes(frame),
           ...barBoxes(frame),
+          ...ruleBoxes(
+            (input.refLines ?? []).flatMap((r, i) =>
+              input.hidden?.has(refLegendKey(i))
+                ? []
+                : [{ value: r.value, domain: axes.axisOf(r.axis).domain }],
+            ),
+            frame,
+          ),
         ]
       }
       const kindMarks = withHostObstacles(hostBoxes, () => input.marks(plot))
