@@ -29,8 +29,8 @@ export type TocProps = {
 const DEFAULT_LEVELS: readonly [number, number] = [2, 3]
 
 function prefersReducedMotion(): boolean {
-  // theme-allow raw-breakpoint — a motion preference, not a width
-  // theme-allow raw-breakpoint — a motion preference, not a width
+  // a motion preference, not a width
+  // a motion preference, not a width
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 

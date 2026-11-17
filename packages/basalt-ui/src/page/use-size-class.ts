@@ -7,7 +7,7 @@ export type SizeClass = keyof typeof SIZE_CLASSES
 const MEDIUM = `(min-width: ${toEm(SIZE_CLASSES.medium)})`
 const EXPANDED = `(min-width: ${toEm(SIZE_CLASSES.expanded)})`
 
-// theme-allow raw-breakpoint — the page kit's one viewport read; every query goes through here
+// the page kit's one viewport read; every query goes through here
 const list = (q: string): MediaQueryList | null => globalThis.window?.matchMedia?.(q) ?? null
 
 function subscribe(notify: () => void): () => void {

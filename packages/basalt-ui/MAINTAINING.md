@@ -82,12 +82,11 @@ props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
 - `src/charts/**` and `src/tokens/**` import no UI framework. The chart engine is
   `@tanstack/charts` `1.5.0` (+ `d3-scale` `4.0.2`, exact optional peers, subpath-required for
   `./charts`); `@visx/*` is banned everywhere. `src/charts/**` imports only `@tanstack/charts/*`,
-  `d3-scale`, `react`, `../tokens`, `../format/{shared,number}` and `../common`. Three independent oxlint plugin
-  rules enforce it: `basalt/chart-engine-boundary` ships in the consumer preset too (`@visx/*`
-  banned; outside basalt `@tanstack/charts` is an allowlist of mark subpaths, the bare root is an
-  error); `basalt/token-layer-boundary` and `basalt/chart-host-single` are **repo-local only** — the
-  latter keeps `@tanstack/charts/react` inside `src/charts/host.tsx`, the single importer of the
-  engine's DOM host.
+  `d3-scale`, `react`, `../tokens`, `../format/{shared,number}` and `../common`. `@visx/*` is banned
+  in basalt's own source and `@tanstack/charts/react` stays inside `src/charts/host.tsx`, the single
+  importer of the engine's DOM host: both are `no-restricted-imports` overrides `scripts/gen-oxlint.ts`
+  projects from `SURFACES` into `/.oxlintrc.json` (the host file's own block comes last). Consumers get
+  the same boundary from `basalt/import-boundary` in the v3 presets.
 - It protects two things. **Layering**: `tokens` is pure data that the generated stylesheet and the
   chart layer both read, so an import the other way cycles through the token layer or lets a chart
   fork chrome and charts apart.
@@ -241,17 +240,14 @@ promotes to `error`.** The justification is specific: between majors (see [Major
 consumer has no semver channel telling them enforcement tightened, and lint is the one part of
 basalt that can hard-fail their build.
 
-- Mechanically: a `{ since, promote, why }` entry in `PLUGIN_RULE_GRACE` (oxlint rules, exported
-  beside the plugin in `configs/oxlint-plugin.js` — it cannot live in `oxlint.json`, whose top-level keys are fixed by
-  oxlint's parser). **Deleting the entry IS the promotion**, and it belongs in its own commit.
-- **The promise is machine-checked** (law C16): `oxlint-plugin.test.ts` fails the
-  build once `package.json`'s version reaches an entry's `promote` while it is still there, assert
-  `since` precedes `promote`, and assert the ledger against the shipped preset in BOTH directions.
-  Before that gate existed, five kinds sat at `warn` for five minors. **Those tests read the version
-  already PUBLISHED**, so `scripts/release.sh` runs `scripts/check-grace.ts` against the version the
-  dry run COMPUTED and refuses to cut it while an entry is due — without that half the gate can only
-  go red on the first push AFTER the release that shipped the due entry (`release.yml` runs no tests
-  and the `chore: release … [skip ci]` commit skips CI).
+- Mechanically: the level of a shipped rule is the preset's, generated from the rule table
+  (`src/lint/rule-table.ts`, `src/lint/preset.ts`, `scripts/gen-oxlint.ts`), so a stricter rule ships
+  `warn` in the preset first and promotes in its own commit. No rule is in a grace minor today: the
+  2.x plugin's `PLUGIN_RULE_GRACE` ledger retired with it, and `scripts/check-grace.ts` still takes any
+  ledger (`scripts/release.sh` runs it against the version the dry run COMPUTED). The release gate
+  exists because the test-time half reads the version already PUBLISHED, so it can only go red on the
+  first push AFTER the release that shipped a due entry (`release.yml` runs no tests and the
+  `chore: release … [skip ci]` commit skips CI). Restore a ledger from git when the first entry needs one.
 - **A rule the current minor WIDENS does not promote in that minor** — widening restarts the grace.
   Narrowing restarts nothing.
 - **Catching a new FORM means a new rule id.** A level is per-id, so widening an existing `error`
@@ -259,18 +255,6 @@ basalt that can hard-fail their build.
 - **A `SCANNABLE_EXT` widening is outside the mechanism, by design** — the ledger is keyed per KIND
   and a file-set widening widens all of them at once. Measure the incumbent violations across every
   consumer and widen at `error`; if the count is nonzero, fix them.
-- **A rule whose OWN doc comment states its level states it in one place, in one form.** Each rule
-  carries a single `// Ships: error` / `// Ships: warn (grace → 1.30.0)` / `// Ships: warn
-  (advisory)` / `// Ships: repo-local only` line directly above its `const`, and
-  `oxlint-plugin.test.ts` asserts every one against `oxlint-basalt.json` (the guards-only preset
-  `oxlint.json` extends — the one home of every `basalt/*` level) and the two ledgers. The C16 gate
-  could not catch the drift it replaces — the ledger is asserted against the preset, and a prose
-  comment is outside the ledger, so `raw-size-literal` spent several minors telling readers it
-  shipped `warn` while the preset said `error`.
-- **A relaxation needs no entry.** `inline-display`/`raw-html-layout` no longer fire inside
-  `src/charts/**` because both remedies name a UI-library primitive the boundary already forbids there,
-  so the finding was unactionable and the only fix was a waiver written inside the directory the
-  boundary protects.
 
 ## Frame value types
 
@@ -285,46 +269,6 @@ types its contract names; the root keeps `Phase`, `QueryStateLike`, `Empty` and 
 ## Deprecation lifecycle
 
 Returns with the first 2.x deprecation (the `DEPRECATED_EXPORTS` ledger, `basalt/deprecated-export` and `check-grace.ts`'s removal gate); 2.0.0 ships none.
-
-The plugin itself (`configs/oxlint-plugin.js`, alpha `jsPlugins`) ships inside `configs/` and is
-wired by the shipped preset, so a consumer inherits it by extending. **Read the rule list and the
-promotion state there, never from prose here.** Five things about it that are not obvious:
-
-- **The control guards share ONE ancestry walk** (`createSlotContext`) that stops at a slot
-  ATTRIBUTE, never at the element — so a control in a TIERED home's CHILDREN (the body form) never
-  fires, while a hoisted `const pills = <Select/>` handed to `filters={pills}` does. The SUBTREE
-  homes are the mirror image and take the same hoisted hop: a `const rows = <ViewTabs state={tab} />`
-  rendered as `<PageAside>{rows}</PageAside>` is inside that aside. That is why the ancestry facts
-  are captured during the visit and resolved at `Program:exit`.
-- **The owner exemption needs a second half**: a file DEFINING `PanelRow`/`EnumFilter`/
-  `SliderControl` is exempt only when it imports nothing from `basalt-ui*`. basalt's own control
-  sources import each other relatively; a consumer of basalt always names the package, so one local
-  `function PanelRow` can no longer switch three rules off for a whole consumer file.
-- **A BOUND control's homelessness is a different rule from a raw one's**, and deliberately a
-  different ID: `control-outside-home` matches third-party tags, `bound-control-outside-home`
-  matches `basalt-ui`-imported ones. Both read the same three SUBTREE homes — `FilterSet`,
-  `PageAside`, `PanelRow`, where the children ARE the home, provenance-gated because `PanelRow` is
-  an ordinary name for a consumer's own helper — and the bound one never had a text-lane twin,
-  because a bound control's name carries no provenance a 12-line regex window could read. Splitting
-  rather than widening is C16 mechanics: a
-  level is per-id, so widening would have shipped the new form at the old rule's level with no
-  grace, and widened it mid-grace besides.
-- **The raw-filter rules gate on the tag's third-party IMPORT, not its name** — a consumer's own
-  `Select` is not the library's, and an ALIAS (`Select as LibSelect`) or a namespace (`M.Select`)
-  resolves through the local→imported map, because the wrapper case is exactly the one the
-  provenance test exists for. **The HOME tag is gated the same way**, against `basalt-ui`/
-  `basalt-ui/*` (plus a relative import inside basalt's own `src/`, or the dogfood surface goes
-  silent): a consumer's own `Section`/`PageBar` is not a tiered home. The chart tag rules are
-  provenance-gated the other way: a tag is skipped only when the file DEFINES a component of that
-  name and does not also import it from basalt, which keeps a barrel-wrapping consumer covered.
-- **`in-body-page-title` is the one id in BOTH registries** (a guard kind and a plugin rule), so one
-  `theme-allow in-body-page-title` waives both lanes. `oxlint-plugin.test.ts` pins that.
-- The three boundary rules honour **no** escape hatch, and the agent-chat rules honour
-  `basalt-agent-allow` rather than `theme-allow`. The two annotation parsers must agree on what an
-  annotation IS and may differ only on which rules each can judge — the grid is GENERATED from the
-  four axes that vary and pinned row for row in both test files (37 + 8 supported/unsupported in the
-  guard, 32 + 8 in the plugin; five rows are dialects only the guard scans). Asserting the
-  unsupported cells is the point: it stops "unsupported" and "silently broken" reading the same.
 
 ## Shipping a rendering change — what a minor may move
 

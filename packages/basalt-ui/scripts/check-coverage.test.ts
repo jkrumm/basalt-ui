@@ -1,5 +1,5 @@
 /**
- * `check-coverage` — the 9 assertions (SURFACES consistency + the agent-layer shape and line
+ * `check-coverage` — the 7 assertions (SURFACES consistency + the agent-layer shape and line
  * budgets).
  *
  * The fs half runs against a TEMP package root, never the real `agent/**`: a test that wrote into
@@ -12,7 +12,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
-import { SKILL_NAMES, SURFACES } from '../src/surfaces'
+import { SKILL_NAMES } from '../src/surfaces'
 import {
   AGENT_LAYER_TOTAL_BUDGET,
   AGENT_LINE_BUDGETS,
@@ -36,7 +36,7 @@ const pkgRoot = resolve(import.meta.dir, '..')
 const lines = (rel: string, root = pkgRoot) =>
   readFileSync(resolve(root, rel), 'utf8').split('\n').length - 1
 
-// ── the 9 assertions ────────────────────────────────────────────────────────
+// ── the 7 assertions ────────────────────────────────────────────────────────
 
 describe('checkCoverage', () => {
   it('passes against the live registry', () => {
@@ -87,16 +87,5 @@ describe('checkCoverage', () => {
       `${'line\n'.repeat(RULES_TOTAL_BUDGET + 1)}`,
     )
     expect(checkCoverage([], dir)).toBe(1)
-  })
-})
-
-// ── the registry itself ─────────────────────────────────────────────────────
-
-describe('SURFACES.pluginRules', () => {
-  it('is required on every doctrine surface — [] is legal, absent is not', () => {
-    for (const [key, spec] of Object.entries(SURFACES)) {
-      if (spec.kind !== 'doctrine') continue
-      expect([key, Array.isArray(spec.pluginRules)]).toEqual([key, true])
-    }
   })
 })

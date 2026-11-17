@@ -21,52 +21,6 @@
  */
 export type RuleName = 'tokens' | 'charts' | 'ui' | 'state' | 'controls' | 'batteries'
 
-/**
- * Every rule the shipped oxlint JS plugin registers (`configs/oxlint-plugin.js` → `rules`), as one
- * literal union AND one runtime list — the type and the list are the same declaration, so they
- * cannot drift from each other. What they CAN drift from is the plugin itself, which this module
- * must not import (it is a standalone `.js` loaded through `jsPlugins` out of a consumer's
- * node_modules, and `surfaces.ts` is dependency-free by contract). `oxlint-plugin.test.ts` closes
- * that gap: it asserts this list is EXACTLY the plugin's own rule keys, and `check-coverage`
- * asserts every id here maps to exactly one surface.
- *
- * @example
- * const id: PluginRuleId = 'hand-rolled-filter' // ok
- * // const bad: PluginRuleId = 'hand-rolled-filters' // tsc error
- */
-export const PLUGIN_RULE_ID_LIST = [
-  'no-raw-font-size',
-  'raw-size-literal',
-  'card-inset',
-  'chart-in-raw-surface',
-  'shadow-basalt-export',
-  'hand-rolled-shell',
-  'raw-scroll-container',
-  'hand-rolled-filter',
-  'control-outside-home',
-  'bound-control-outside-home',
-  'control-size-literal',
-  'in-body-page-title',
-  'responsive-twin',
-  'search-literal-link',
-  'use-search-from-literal',
-  'query-fn-unwrap',
-  'forms-field-key',
-  'chart-engine-boundary',
-  'chart-host-single',
-  'token-layer-boundary',
-  'agent-no-raw-usechat',
-  'ai-sdk-major',
-  'no-import-meta-env',
-  'raw-breakpoint',
-  'no-dev-helper',
-  'route-view-transition',
-  'status-fill-as-text',
-] as const
-
-/** One registered oxlint plugin rule id — the literal union of {@link PLUGIN_RULE_ID_LIST}. */
-export type PluginRuleId = (typeof PLUGIN_RULE_ID_LIST)[number]
-
 /** The 3 shipped skill names (agent/skills/basalt-{name}/SKILL.md, placed into a consumer's
  * .claude/skills/ by `basalt-ui init`/`sync` — the same managed path the rules take).
  *
@@ -83,8 +37,7 @@ export type SkillName = 'basalt-app' | 'basalt-design' | 'basalt-charts'
 export type Layer = 'ui' | 'headless' | 'app-global' | 'non-js-asset' | 'build-tooling'
 
 /**
- * A single import ban. `{ctx}` in the message is filled per target so shipped/repo wording
- * is one source.
+ * A single import ban.
  *
  * @example
  * const ban: ForbiddenImport = { spec: 'antd', match: 'path', message: 'Compose the shipped parts.', shippedOnly: true }
@@ -94,7 +47,7 @@ export type ForbiddenImport = {
   readonly spec: string
   /** 'path' → exact-name ban; 'group' → pattern ban. Mirrors oxlint paths vs patterns. */
   readonly match: 'path' | 'group'
-  /** Message; may contain a `{ctx}` placeholder (the boundary name for this glob). */
+  /** The finding's message. */
   readonly message: string
   /** Ban holds ONLY in the shipped consumer preset (e.g. antd) — never repo-local. */
   readonly shippedOnly?: true
@@ -144,12 +97,12 @@ type BaseSurface = {
 }
 
 /**
- * A doctrine surface owes the triad (rule + skill[] + pluginRules[]).
+ * A doctrine surface owes the triad (rule + skill[]).
  * A bad rule/skill/kind name is a tsc error (literal-union).
  *
  * @example
  * const s: DoctrineSpec = { kind: 'doctrine', layer: 'headless', rule: 'tokens',
- *   skill: ['basalt-design'], pluginRules: ['no-raw-font-size'],
+ *   skill: ['basalt-design'],
  *   forbiddenImports: [] }
  */
 export type DoctrineSpec = BaseSurface & {
@@ -157,17 +110,6 @@ export type DoctrineSpec = BaseSurface & {
   readonly rule: RuleName
   /** A LIST (skill↔surface is many-to-one — basalt-design covers tokens AND ui AND state). */
   readonly skill: readonly SkillName[]
-  /**
-   * The oxlint plugin rules this surface's doctrine is enforced by. Required (`[]` is legal, and
-   * says "no AST rule guards this"), because the ABSENCE of the field is what let the generated
-   * coverage headers claim a rule was "backed by" a guard while the plugin rule doing the real work
-   * went unnamed (D8).
-   *
-   * Every id in {@link PLUGIN_RULE_ID_LIST} maps to EXACTLY ONE surface — asserted by
-   * `check-coverage` and by `oxlint-plugin.test.ts`, so a new plugin rule cannot ship without a
-   * home, and one rule cannot be counted as coverage for two surfaces.
-   */
-  readonly pluginRules: readonly PluginRuleId[]
   /**
    * Laws this surface states but nothing enforces — printed under `not guarded:` in the generated
    * `<!-- basalt:coverage -->` header. The honest half of the block: claiming coverage that does
@@ -188,7 +130,6 @@ export type ToolingSpec = BaseSurface & {
   readonly kind: 'tooling'
   readonly rule?: never
   readonly skill?: never
-  readonly pluginRules?: never
   readonly advisoryLaws?: never
 }
 
@@ -222,37 +163,6 @@ export const SURFACES = {
     layer: 'ui',
     rule: 'ui',
     skill: ['basalt-app', 'basalt-design'],
-    // The chrome half of the plugin: the shell, the card idiom, the page title and the scroll
-    // doctrine. `hand-rolled-shell` sits here rather than on a shell-shaped surface because
-    // the shell (`AppShell`, from `./shell`) IS the framework's promise (docs/CONTROLS-SPEC.md §6 wave 6).
-    pluginRules: [
-      'hand-rolled-shell',
-      // The size-class axis's one JSX escape hatch (docs/CONTROLS-SPEC.md §6) is reserved
-      // for BasaltShell/AppSidebar/MobileNav/AppBrand (`SHELL_HOME_NAMES`, configs/oxlint-plugin.js)
-      // — the same shell promise `hand-rolled-shell` polices, one axis over.
-      'raw-breakpoint',
-      'card-inset',
-      'in-body-page-title',
-      'raw-scroll-container',
-      'shadow-basalt-export',
-      // Route transitions are `createBasaltRouter`'s `defaultViewTransition`; a React
-      // `<ViewTransition>` around `<Outlet>` is inert and fights it.
-      'route-view-transition',
-      // Dev-only `import()`s need a literal NODE_ENV gate to fold out of production (repo-local).
-      'no-dev-helper',
-      // `import.meta.env` is a Vite-ism that fails outside a Vite build (SSR/server code, Node
-      // scripts, tests) — process.env.NODE_ENV works everywhere basalt code runs. Repo-local,
-      // scoped to all of src/**, one surface required by coverage (C2 consolidation).
-      'no-import-meta-env',
-      // Rows of the deleted 2.x runtime's surfaces, kept on the one remaining doctrine surface until
-      // the plugin retires them (`search-literal-link`, `use-search-from-literal`, `forms-field-key`,
-      // `agent-no-raw-usechat`, `ai-sdk-major`).
-      'search-literal-link',
-      'use-search-from-literal',
-      'forms-field-key',
-      'agent-no-raw-usechat',
-      'ai-sdk-major',
-    ],
     // agent/rules/basalt-ui.md — stated, not guarded. This law has no AST form to catch, because
     // `cssVariablesResolver` is now `Omit`ted from the accepted prop type and a hand-built
     // `createTheme` is a consumer's own call to make. (`duplicate-notifications-mount`, the
@@ -277,7 +187,6 @@ export const SURFACES = {
     layer: 'headless',
     rule: 'charts',
     skill: ['basalt-charts'],
-    pluginRules: ['chart-in-raw-surface', 'chart-engine-boundary', 'chart-host-single'],
     description:
       'CartesianChart (the TanStack Charts rung), the Lines, Bars, Sparkline, Heatmap and BandStrip kinds, ChartCard, the shared chartCursor and the geometry seam: useChartFocus (focus, dim the rest, one bound readout) and chartLabels (server-equal label width and placement) (no React UI library; @tanstack/charts + d3-scale peers)',
     optionalPeers: ['@tanstack/charts', 'd3-scale'],
@@ -285,11 +194,6 @@ export const SURFACES = {
       shipped: ['**/charts/**'],
       repo: ['packages/basalt-ui/src/charts/**'],
     },
-    // The engine boundary (@visx/* banned, @tanstack/charts allowlisted) is enforced by the
-    // `basalt/chart-engine-boundary` oxlint plugin rule, `@tanstack/charts/react` by the
-    // repo-local `basalt/chart-host-single`, and the token-layer boundary by `basalt/token-layer-boundary` (repo-local only — see
-    // that rule's file-header comment for why) — both configs/oxlint-plugin.js, not
-    // no-restricted-imports.
     forbiddenImports: [],
     ruleOverrides: [{ rule: 'no-underscore-dangle', level: 'off', target: 'repo' }],
   },
@@ -298,15 +202,6 @@ export const SURFACES = {
     layer: 'headless',
     rule: 'tokens',
     skill: ['basalt-design', 'basalt-charts'],
-    // The type-scale rules live with the tokens, not with `.`: both police a value that left the
-    // `--basalt-*` system, which is this surface's whole subject. `token-layer-boundary` is the
-    // repo-local-only rule that keeps the layer free of UI imports (see below).
-    pluginRules: [
-      'no-raw-font-size',
-      'raw-size-literal',
-      'status-fill-as-text',
-      'token-layer-boundary',
-    ],
     description:
       'BASALT token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha',
     globs: {
@@ -330,7 +225,6 @@ export const SURFACES = {
     layer: 'ui',
     rule: 'batteries',
     skill: ['basalt-design'],
-    pluginRules: [],
     description:
       '`DataTable` over `useDataTable`, the `col` kind columns, the parts `DataTable` composes (`TableToolbar`, `DataTableBody`, `TablePager`, `BulkBar`) and `tableCodec`, on TanStack Table v9 and `ui/*` primitives',
     optionalPeers: ['@tanstack/react-table', '@base-ui/react'],
@@ -341,7 +235,6 @@ export const SURFACES = {
     layer: 'ui',
     rule: 'batteries',
     skill: ['basalt-design'],
-    pluginRules: [],
     description:
       'Markdown (react-markdown + remark-gfm + rehype-sanitize + remend, all required peers, every import static so server, client and hydrate render the same tree; `contentTrust` is REQUIRED and independent of `streaming`, which is a rendering mode only — render agent or model output with `contentTrust="untrusted"`: no `<img>` (alt text; `images="same-origin"` admits relative srcs), links limited to same-origin, https:, mailto: and tel:, and no `sanitize` or `rehypePlugins`; `contentTrust="trusted"` takes `sanitize` ({ allowTags, allowAttrs } additions over a fixed policy that runs last) and `rehypePlugins`; a missing or unknown `contentTrust` renders as untrusted) — the content surface',
     optionalPeers: [
@@ -361,17 +254,6 @@ export const SURFACES = {
     layer: 'ui',
     rule: 'controls',
     skill: ['basalt-design'],
-    // The text lane of law C1 — the plugin's `control-outside-home` seen through a host-tag nesting
-    // count, since a regex scan has no AST. Same law, same wave, same promotion.
-    // The control tier itself (laws C1/C3/C5/C9), every rule at `error`. The action budgets are
-    // types (`PageBarActions` / `SectionActions`, `controls/actions.tsx`).
-    pluginRules: [
-      'hand-rolled-filter',
-      'control-outside-home',
-      'bound-control-outside-home',
-      'control-size-literal',
-      'responsive-twin',
-    ],
     // docs/CONTROLS-SPEC.md §6 "Honest coverage" — verbatim, because a generated header claiming
     // otherwise is D8 again.
     advisoryLaws: [
@@ -526,7 +408,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'non-js-asset',
     description:
-      'Raw toolchain presets for consumer extends: oxlint.json (or the guards-only oxlint-basalt.json), oxfmt.json, tsconfig.*.json, lefthook.yml, check.yml',
+      'Raw toolchain presets for consumer extends: oxlint-{app,parts,bridge}.json, oxfmt.json, tsconfig.*.json, lefthook.yml, check.yml',
     forbiddenImports: [],
   },
 
@@ -537,28 +419,10 @@ export const SURFACES = {
     layer: 'app-global',
     rule: 'batteries',
     skill: ['basalt-app'],
-    // query-fn-unwrap: reassigned here from the now-dropped `./query` surface (C1 consolidation —
-    // createBasaltQueryClient/unwrap/BasaltQueryDevtools are root barrel exports now, but their
-    // doctrine stays `batteries` — "use the shipped thing" — not `ui`). `query-dual-import`
-    // was retired alongside it — its premise (a raw `@tanstack/react-query` import beside
-    // `basalt-ui/query`) is unreachable now that the `./query` subpath is gone.
-    pluginRules: ['query-fn-unwrap'],
     globs: {
-      // Shipped is a catch-all (not just src/**+app/**) so consumer code under components/, lib/,
-      // features/, etc. is also covered. The chart-engine and token-layer
-      // boundaries used to live here too and need last-writer-wins EMIT_ORDER games against the
-      // narrower ./tokens/./charts overrides — they're now enforced by `basalt/chart-engine-boundary` and
-      // `basalt/token-layer-boundary` (plugin rules, immune to that class of clobbering) instead,
-      // so the bans left below (antd, framer-motion) are plain global bans with no narrower
-      // override to out-order.
       shipped: ['**/*.{ts,tsx}'],
-      // Repo is packages/basalt-ui/src/** ONLY. apps/playground is deliberately absent: it
-      // dogfoods the shipped consumer preset through its own apps/playground/.oxlintrc.json
-      // (`extends: ["./node_modules/basalt-ui/configs/oxlint.json"]`, resolved via the workspace
-      // symlink), which oxlint honours as a nested config — the nearest config REPLACES this one
-      // for that subtree, so listing playground here would be dead glob. That indirection is the
-      // point: the playground sees exactly what a real consumer sees, including NOT receiving
-      // `basalt/token-layer-boundary` (repo-local by design — see TOKEN_LAYER_BOUNDARY_SURFACES).
+      // Repo is packages/basalt-ui/src/** ONLY: apps/playground lints through its own nested
+      // `.oxlintrc.json` (the v3 app preset), which oxlint resolves instead of this config.
       repo: ['packages/basalt-ui/src/**'],
     },
     ruleOverrides: [{ rule: 'no-console', level: 'off', target: 'repo' }], // cli/bin/scripts, repo-local only
@@ -567,6 +431,25 @@ export const SURFACES = {
         shippedOnly: true,
       }),
       v('framer-motion', "Import from 'motion/react', not the raw framer-motion package."),
+      // The chart engine boundary inside basalt's own source: charts draw through the engine's
+      // subpaths, and its DOM host (`@tanstack/charts/react`) is imported by `charts/host.tsx` alone
+      // (the generator lifts the second ban for that one file: `CHART_HOST_FILE`).
+      {
+        spec: '@visx/*',
+        match: 'group',
+        message: '@visx/* is not part of basalt-ui; draw charts through the engine subpaths.',
+      },
+      v(
+        '@tanstack/charts/react',
+        'Only src/charts/host.tsx imports the engine host; render charts through it.',
+        { repoOnly: true },
+      ),
+      {
+        spec: '@tanstack/charts/react/*',
+        match: 'group',
+        message: 'Only src/charts/host.tsx imports the engine host; render charts through it.',
+        repoOnly: true,
+      },
     ],
   },
 } as const satisfies Record<string, SurfaceSpec>
@@ -610,38 +493,3 @@ export const SKILL_NAMES = [
 
 /** The shipped subagents (`agent/reviewer/<name>.md`), installed at `.claude/agents/`. */
 export const AGENT_NAMES = ['basalt-design-reviewer'] as const
-
-// ── Token-layer-boundary-via-plugin membership ────────────────────────────────────────────────────
-
-/**
- * Headless SURFACES keys whose framework-free guarantee is enforced by the `basalt/token-layer-
- * boundary` oxlint plugin rule (`configs/oxlint-plugin.js`): the rule fires on `charts`/`tokens`
- * path segments only, so ONLY these two surfaces qualify.
- *
- * `basalt/token-layer-boundary` is registered ONLY in the repo-local `.oxlintrc.json`, never the
- * shipped consumer preset: it is a basalt-internal invariant (`./charts` and `./tokens` resolve and
- * render with no UI framework installed, real and CI-tested by `scripts/pack-test.sh` and
- * `scripts/check-dist-layering.mjs`), not a consumer contract. The "fails loudly if enforcement is
- * removed" guarantee lives in basalt's own CI (`tests/surfaces-coverage.test.ts`, via
- * `hasTokenLayerBoundaryRegistered` against `.oxlintrc.json`).
- */
-export const TOKEN_LAYER_BOUNDARY_SURFACES: ReadonlySet<string> = new Set(['./charts', './tokens'])
-
-/**
- * True when a parsed oxlint config's `rules` object registers `basalt/token-layer-boundary` as
- * `'error'` — the live signal (not just a hardcoded assumption) that `TOKEN_LAYER_BOUNDARY_SURFACES`
- * are actually enforced. Pure — callers read + JSON.parse the config file themselves (surfaces.ts
- * stays dependency-free, no fs access here). Consumed only by basalt's own CI
- * (`tests/surfaces-coverage.test.ts`) against the repo-local `.oxlintrc.json` — NOT by
- * `checkCoverage()`, which cannot read that repo-local file from an installed package (see
- * `TOKEN_LAYER_BOUNDARY_SURFACES`'s doc comment).
- *
- * @example
- * hasTokenLayerBoundaryRegistered({ 'basalt/token-layer-boundary': 'error' }) // true
- * hasTokenLayerBoundaryRegistered({}) // false
- */
-export function hasTokenLayerBoundaryRegistered(
-  rules: Record<string, unknown> | undefined,
-): boolean {
-  return rules?.['basalt/token-layer-boundary'] === 'error'
-}

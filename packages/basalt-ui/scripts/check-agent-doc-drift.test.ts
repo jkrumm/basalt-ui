@@ -10,16 +10,13 @@ import {
   checkG,
   checkI,
   checkLlmsNames,
-  checkRuleSets,
   collectExportKeys,
   collectPublishedBySubpath,
   collectPublishedNames,
   findAgentFiles,
   findDeadSpecifiers,
   leadingDocComment,
-  pluginRuleIds,
 } from './check-agent-doc-drift'
-import * as pluginModule from '../configs/oxlint-plugin.js'
 import { checkAllRuleFiles } from './check-rule-tags'
 import { generateLlmsTxt } from './gen-llms'
 
@@ -82,30 +79,6 @@ describe('checkG', () => {
 
   test('does not match a longer id that contains one', () => {
     expect(scan('basalt/agent-resume-guard-extra')).toEqual([])
-  })
-})
-
-describe('checkRuleSets', () => {
-  test('flags a repo-local id the plugin lost and a removed id it never retired', () => {
-    const messages = checkRuleSets([], new Set())
-    expect(messages).toContain(
-      "REPO_LOCAL_RULES['chart-host-single'] is not registered in configs/oxlint-plugin.js",
-    )
-    expect(messages).toContain(
-      "REMOVED_RULES['page-bar-budget'] is not in RETIRED_RULE_IDS (configs/oxlint-plugin.js)",
-    )
-  })
-})
-
-describe('the real plugin', () => {
-  test('REPO_LOCAL and REMOVED rule sets match the registry and RETIRED_RULE_IDS', () => {
-    expect(checkRuleSets(pluginRuleIds(pluginModule), pluginModule.RETIRED_RULE_IDS)).toEqual([])
-  })
-})
-
-describe('pluginRuleIds', () => {
-  test('names the problem when the default export is not a plugin', () => {
-    expect(() => pluginRuleIds({})).toThrow("has no 'rules' object")
   })
 })
 

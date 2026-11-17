@@ -199,8 +199,8 @@ declare global {
    * ReferenceError at runtime — TypeScript is trusting the preset, not proving it.
    */
   // The dangle IS the API: this declares the build-time constant basalt's own Vite preset defines,
-  // so the name is not ours to change. The SHIPPED preset allows it (configs/oxlint.json); this
-  // repo's own root .oxlintrc.json does not, hence the local suppression.
+  // so the name is not ours to change. This repo's own root .oxlintrc.json flags it, hence the
+  // local suppression.
   // oxlint-disable-next-line no-underscore-dangle
   const __APP_VERSION__: string
 }

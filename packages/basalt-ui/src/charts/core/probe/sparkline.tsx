@@ -1,4 +1,4 @@
-// oxlint-disable basalt/chart-host-single -- byte probe: measures the bare engine mount, never shipped
+// oxlint-disable no-restricted-imports -- byte probe: measures the bare engine mount, never shipped
 /** Sparkline-shaped: the shipped Sparkline's mark set (line, last-point dot, reference rule and
  * label, band rect) on the bare engine host, no basalt chrome. */
 import { Chart } from '@tanstack/charts/react'

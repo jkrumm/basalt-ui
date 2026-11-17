@@ -1,4 +1,4 @@
-// oxlint-disable basalt/chart-host-single -- byte probe: measures the bare engine mount, never shipped
+// oxlint-disable no-restricted-imports -- byte probe: measures the bare engine mount, never shipped
 import { Chart } from '@tanstack/charts/react'
 import { barY } from '@tanstack/charts/bar'
 import { scaleBand } from '@tanstack/charts/scales/band'

@@ -1,5 +1,5 @@
 /**
- * Every import MIGRATING.md and the oxlint plugin's messages TELL a consumer to write must
+ * Every import MIGRATING.md TELLS a consumer to write must
  * resolve against the published subpath it names.
  *
  * 1.31.0 and 1.32.0 documented `CONTAINER_CLASSES` / `SIZE_CLASSES` as `basalt-ui/tokens` exports
@@ -9,8 +9,7 @@
  *
  * - every `import { … } from 'basalt-ui[/sub]'` in a fenced ts/tsx block (including one written in
  *   a code comment);
- * - every prose claim of the form `` `Symbol[.member]` (`basalt-ui/sub` `` and every
- *   `SYMBOL, basalt-ui/sub` recipe in `configs/oxlint-plugin.js`.
+ * - every prose claim of the form `` `Symbol[.member]` (`basalt-ui/sub` ``.
  *
  * Resolution goes through the TypeScript checker over the src barrels each `package.json#exports`
  * `types` path mirrors (dist/X.d.ts ⇄ src/X.ts[x]) — no build needed, and type-only exports count.
@@ -83,7 +82,6 @@ function exportedNames(entries: Map<string, string>): Map<string, Set<string>> {
 
 const IMPORT = /import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"](basalt-ui(?:\/[a-z/-]+)?)['"]/g
 const PROSE_CLAIM = /`([A-Za-z_$][\w$]*)(?:\.[\w$.]+)?(?:<[^`]*>)?` \(`(basalt-ui(?:\/[a-z/-]+)?)`/g
-const RECIPE_CLAIM = /(?<![\w/-])([A-Za-z_$][\w$]*)`?, `?(basalt-ui\/[a-z/-]+)/g
 
 function lineOf(text: string, index: number): number {
   return text.slice(0, index).split('\n').length
@@ -126,26 +124,14 @@ function migratingClaims(): Claim[] {
   return claims
 }
 
-function guardMessageClaims(): Claim[] {
-  return ['configs/oxlint-plugin.js'].flatMap((rel) => {
-    const text = readFileSync(join(PKG, rel), 'utf8')
-    return [...text.matchAll(RECIPE_CLAIM)].map((m) => ({
-      symbol: m[1],
-      subpath: m[2],
-      where: `${rel}:${lineOf(text, m.index ?? 0)}`,
-    }))
-  })
-}
-
 describe('documented imports resolve', () => {
   const names = exportedNames(subpathEntries())
-  const claims = [...migratingClaims(), ...guardMessageClaims()]
+  const claims = migratingClaims()
 
-  test('the extractors find the claims they exist for', () => {
-    expect(claims).toContainEqual(
-      expect.objectContaining({ symbol: 'CONTAINER_CLASSES', subpath: 'basalt-ui/tokens' }),
-    )
-    expect(claims.filter((c) => c.where.startsWith('configs/')).length).toBeGreaterThan(0)
+  test('the prose extractor finds the claim it exists for', () => {
+    const sample = 'export `CONTAINER_CLASSES` (`basalt-ui/tokens`) from the root'
+    const [match] = [...sample.matchAll(PROSE_CLAIM)]
+    expect([match?.[1], match?.[2]]).toEqual(['CONTAINER_CLASSES', 'basalt-ui/tokens'])
   })
 
   test('every claimed symbol is exported by the subpath it names', () => {

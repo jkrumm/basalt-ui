@@ -240,11 +240,4 @@ describe('oxlint beside an agent worktree', () => {
   it.skipIf(!existsSync(oxlint))('the --ignore-pattern flag init writes lints clean', () => {
     expect(run(FLAG)).not.toContain('already registered')
   })
-
-  it('the shipped preset ignores the worktree directory', () => {
-    const preset = JSON.parse(
-      readFileSync(resolve(import.meta.dir, '../../configs/oxlint.json'), 'utf8'),
-    )
-    expect(preset.ignorePatterns).toContain('.claude/worktrees/**')
-  })
 })

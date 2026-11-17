@@ -1,5 +1,5 @@
 /**
- * `check-coverage` — the 9 assertions (SURFACES consistency + the agent-layer shape and line
+ * `check-coverage` — the 7 assertions (SURFACES consistency + the agent-layer shape and line
  * budgets).
  *
  * A repo-internal script, not a shipped CLI subcommand — nothing outside this repo's own tooling
@@ -18,7 +18,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import { PLUGIN_RULE_ID_LIST, AGENT_NAMES, SKILL_NAMES, SURFACES } from '../src/surfaces'
+import { AGENT_NAMES, SKILL_NAMES, SURFACES } from '../src/surfaces'
 import type { DoctrineSpec, SurfaceSpec } from '../src/surfaces'
 
 const PKG_ROOT = join(import.meta.dir, '..')
@@ -38,20 +38,8 @@ export const SHIPPED_RULES: readonly string[] = [
 /** The five rule files together, never more (every session loads them: concept section 6). */
 export const RULES_TOTAL_BUDGET = 230
 
-/**
- * Plugin rules that exist for this repo's own source and never reach a consumer's `configs/`.
- * Check G of the drift gate bans naming them in a shipped agent file; the surface assertions still
- * count them, so none ships homeless.
- */
-export const REPO_LOCAL_RULES: ReadonlySet<string> = new Set([
-  'chart-host-single',
-  'token-layer-boundary',
-  'no-dev-helper',
-  'no-import-meta-env',
-])
-
 // ──────────────────────────────────────────────────────────────────────────────
-// check-coverage — 9-assertion coverage gate
+// check-coverage — 7-assertion coverage gate
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -88,7 +76,8 @@ export const AGENT_LAYER_TOTAL_BUDGET = 625 // v3 rules: five files at 215 lines
  * Returns 0 when all pass; 1 when any fail (console.error each failure). `--check` is accepted for
  * the Makefile's call; every assertion always runs. `--write` is retired and fails.
  *
- * Nine assertions (the numbers 2–10 stay stable; 1 and 11 covered the retired text-lane guard):
+ * Seven assertions (the numbers 2–10 stay stable; 1, 9 and 11 covered the retired text-lane guard and
+ * the retired 2.x lint plugin):
  *  2. `agent/rules/` lists exactly the five {@link SHIPPED_RULES} files, totalling at most
  *     {@link RULES_TOTAL_BUDGET} lines.
  *  3. Every doctrine skill (deduped) maps to agent/skills/{skill}/SKILL.md on disk.
@@ -96,10 +85,6 @@ export const AGENT_LAYER_TOTAL_BUDGET = 625 // v3 rules: five files at 215 lines
  *  5. Every real package.json exports key has a SURFACES entry.
  *  6. Every surface with non-empty forbiddenImports has a globs field.
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
- *  9. Every registered oxlint plugin rule (PLUGIN_RULE_ID_LIST) maps to EXACTLY ONE surface's
- *     `pluginRules` — so a new rule cannot ship homeless, and one rule cannot be counted twice as
- *     coverage. This reads SURFACES only: whether the plugin really registers
- *     those ids is asserted against the plugin itself in `configs/oxlint-plugin.test.ts`.
  * 10. Every shipped agent-layer file is inside its line budget, and rules + skills + the AGENTS block are inside the
  *     whole-layer total (`AGENT_LINE_BUDGETS` / `AGENT_LAYER_TOTAL_BUDGET`). *
  * Tooling surfaces are exempt from assertions 2–3 by the discriminant.
@@ -219,24 +204,6 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
     }
   }
 
-  // ── Assertion 9: every plugin rule maps to exactly one surface ───────────────
-  const surfacesPerPluginRule = new Map<string, string[]>()
-  for (const [key, spec] of allSpecs) {
-    if (spec.kind !== 'doctrine') continue
-    for (const id of spec.pluginRules) {
-      surfacesPerPluginRule.set(id, [...(surfacesPerPluginRule.get(id) ?? []), key])
-    }
-  }
-  for (const id of PLUGIN_RULE_ID_LIST) {
-    const owners = surfacesPerPluginRule.get(id) ?? []
-    if (owners.length === 1) continue
-    failures.push(
-      owners.length === 0
-        ? `Plugin rule 'basalt/${id}' maps to no surface — add it to one surface's pluginRules`
-        : `Plugin rule 'basalt/${id}' maps to ${owners.length} surfaces (${owners.join(', ')}) — exactly one`,
-    )
-  }
-
   // ── Assertion 10: the agent layer stays inside its line budgets ─────────────
   for (const [rel, budget] of Object.entries(AGENT_LINE_BUDGETS)) {
     const abs = resolve(pkgRoot, rel)
@@ -290,7 +257,7 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
   // ── Report ──────────────────────────────────────────────────────────────────
 
   if (failures.length === 0) {
-    console.log('✓ check-coverage: all 9 assertions pass.')
+    console.log('✓ check-coverage: all 7 assertions pass.')
     return 0
   }
 
