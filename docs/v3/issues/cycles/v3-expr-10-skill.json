@@ -1,0 +1,23 @@
+{
+  "why": "Expression cycle 10 (docs/v3/cycles/expression-10.md) lost 30 of its 63 round-0 points to `skill`: the kit could, and the builder did not know or did not check. Two lessons the skill already teaches failed on every page. X1 (word economy) lost a point in 6 of 6: a fact said in a hero and a zone label, an empty sentence in three to five cards, a sort said twice (.8, .23, .34, .43, .52, .59). X2 (one view) lost a point in 6 of 6: stacked full-width cards, half of a 1800x1200 screen left empty, a detail card that joins nothing (.9, .24, .35, .44, .53, .60). The skill's checklist names both, so the text is not missing; the step that should catch them does not hold. The rest repeat earlier lessons on new pages: the answer and the agreement at rest (.1, .3, .12), a baseline for every figure and a delta that names its base, never a duration drawn as a delta (.2, .13, .27, .38), one meaning per colour (.14, .26), a context line, a unit caption and mono for times (.18, .25, .48), a scale the builder clips itself (.15, .19), one cursor per readout and a join by window rather than by exact minute (.17, .45), and at 390 a strip cell on one line and the answering column kept (.40, .42).",
+  "what": "The shipped skills make the fact count and the one-view check bite, and teach seven more lessons with this cycle's worked failures, within the skills' budgets.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/**",
+    "packages/basalt-ui/agent/rules/** (through their generator)",
+    "the dogfooded copies the repo syncs from them"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) The fact count as a step that produces something the builder must look at, not a line in a list: name each fact once with where it sits, and cut the repeats in the code before the last look (the empty sentence once per page, the hero or the zone label, not both) (.8, .23, .34, .43, .52, .59). (2) One view as a check at 1800x1200 against the rendered page: the parts that answer one question sit side by side within the fold, no full-width card for four rows, no half-empty screen, and a part that joins nothing earns its place or goes (.9, .24, .35, .44, .53, .60). Say in the PR why these two did not hold in cycle 10 and what changed. (3) The answer on the mark at rest, including agreement between sources and the extreme items (.1, .3, .12). (4) Every figure stands against a reference the data holds, a delta names its base, and a duration is a fact, never a delta pill (.2, .13, .27, .38). (5) One meaning per colour across cards (.14, .26). (6) Every card has a context line, count bars a unit caption, times and ids mono (.18, .25, .48). (7) Never clip your own scale under the data; a cap is the kit's clamp with its true value (.15, .19). (8) One cursor group per readout that differs, and a `focusItems.holds` by window, not by exact minute (.17, .45). (9) At 390 a strip cell fits one line and the column that carries the answer stays in view (.40, .42). Keep step 6 within the skills' budgets; move worked cases to the references where a step would grow.",
+  "acceptance": [
+    "The fact-count and one-view steps change form, with the cycle 10 failures as worked cases and the PR saying why the old text did not hold",
+    "The answer-at-rest, baseline, colour, anatomy, scale, focus and 390 lines land with a worked case each",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit behaviour (v3-expr-10-kit-fixes); contract fields (v3-expr-10-contract); the rubric (v3-expr-10-rubric).",
+  "proof": "make check, including the skill-reference, budget and drift tests.",
+  "commits": "feat: the skill text; docs: the synced copies."
+}

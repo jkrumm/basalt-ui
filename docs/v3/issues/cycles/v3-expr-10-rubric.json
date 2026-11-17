@@ -1,0 +1,22 @@
+{
+  "why": "Expression cycle 10 (docs/v3/cycles/expression-10.md) lost 2 round-0 points to one behaviour read two ways. n39 and n42 both draw line charts that focus an x position: a guide and one marker per series, nothing dimmed. n42's reviewer scored F7 3 ('lines go paler, other table rows grey'); n39's scored F7 2 ('the rest does not visibly dim') and X4 2 ('the dimmed rest is not readable in any frame') (.5, .11). F7 reads 'Pointing at a mark dims the rest', and on a line chart focused at an x every series is at that x, so 'the rest' has no single reading.",
+  "what": "One rubric sentence that says what F7 and X4 score for an x focus on a line chart, and the shipped reviewer agreeing with it.",
+  "owns": [
+    "docs/v3/expression/rubric.md",
+    "the shipped reviewer's text in packages/basalt-ui/agent/** (the design reviewer subagent and its references), through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/cases.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "F7 and X4 say what a line chart focused at an x must show: a guide and a marker per series with the readout following, and whether anything must dim (the other series when one is focused, nothing at an x focus); one reading, with n39 and n42 quoted.",
+  "acceptance": [
+    "rubric.md gives F7 and X4 one reading for an x focus on a line chart, quoting n39 and n42",
+    "The shipped reviewer's text agrees, or the PR names where none restates it",
+    "make check passes"
+  ],
+  "out_of_scope": "Changing an item's weight or adding an item; the convergence clause on referenced cases (EXPRESSION.md, the owner's); skill text (v3-expr-10-skill).",
+  "proof": "make check; the rubric diff quotes the cycle 10 round-0 reviews of n39 and n42.",
+  "commits": "docs: the rubric text; feat: the shipped reviewer text if it changes; package commits separate from non-package ones."
+}

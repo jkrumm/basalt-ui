@@ -1,0 +1,36 @@
+{
+  "why": "Expression cycle 10 (docs/v3/cycles/expression-10.md) lost 31 of its 63 round-0 points to `primitive`, the most of any class for the first time. Most need no contract field, and each below serves two cases or more from this cycle or the bank. (1) A label that names the answer drops at 390: n39's frost-run labels '5 h' and '10 h' (.4), n40's 'Today' rule label (.22), n41's '51%' peak where a rule crosses the bar (.30), n42's zone label (.39), n44's '9.0' peak (.58). (2) `Lines` end labels sit on neighbouring lines: n40's 'Errands', 'Home' and 'Reading' (.16, its round 1 widened the x axis 12 days to clear them), n42's 'CPU' (.39). (3) States: a frame in the empty phase prints its footer labels with nothing beside them where error prints a dash (n39 .6, n42 .41, n44 .57), and a `StatCell` or `StatCard` error says 'Could not load this.' with the page's cause only as a tooltip (`stat-cell.tsx:395-401`; n40 .20, n43 .50). (4) The kit's `dark` variant is `[data-theme='dark']` only (`css/tailwind.css:7`) while the tokens also follow a dark system scheme, so under `auto` a `BarList` swatch (`dark:bg-(--swatch-dark)`, `bar-list.tsx:321`) paints its light half: n41 (.28, .32), and n43's builder worked round it with token pairs (marked). (5) The pinned entity column paints a grey band in light that the other columns lack (n42 .47; n39's and n41's tables show it). (6) `DataPanel` sizing and phone cards: `bodySize` rows cut the last row through its text (n43 .49), a panel cannot follow its sibling's height (n40 .21, a hand 437 px), and since every phone-card value got a label a card runs seven to nine lines (n43 .51, n39 .7; `card: 'detail'` did not shorten it for n39's builder). (7) A zone on a band axis ends at the centres of its end bands, and a Date or number key draws nothing (n41 .29; n44's builder moved its axis to string keys, marked). (8) A focused stack of zeros shows no position: no baseline tick, nothing lit, and the whole plot slates at 390 (n41 .31, .33, .37); cycle 8's zero-bar tick holds for a single bar only. (9) A bar clamped by a bounded `y.domain` draws a caret and no value, where v3-expr-9-kit-fixes gave dots and stack totals their true value (n44 .56, cycle 9's n38). (10) Pointing between two phone cards clears the focus for a frame (n42 .46; n43's 390 sweep found nothing to hold). (11) A held span of a `focusItems` row draws its band to the last item's start, an hour short of the night it stands for, and `focus.readout` reads only the first item of a held span (n39 .10 and its builder's report; cycle 9's n34 windows are the same shape). (12) `basalt-ui shot --states focus` fails at 1800 with 'never reached the anchor in 80 Tab presses' on a page under a long shell nav; five of six builders hit it.",
+  "what": "Twelve kit behaviours, each with a test, no export and no contract change.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/cards/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/table/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/css/** (the dark variant)",
+    "packages/basalt-ui/src/cli/shot/** (the focus state's tab budget)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/src/cards/contract.ts",
+    "packages/basalt-ui/src/table/contract.ts",
+    "packages/basalt-ui/src/core/ports.ts",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) At 390 a label that names the answer (a zone or rule label, a value label on the extreme bar, a run label) is kept: shortened, moved to the plot edge with a leader, or traded for a lower-priority label, never silently dropped. (2) `Lines` end labels find a spot clear of every line, or fall back to the legend. (3) In the empty phase a frame prints a dash or hides a footer value the page left empty, as error does; a `StatCell` or `StatCard` error prints the page's `message` when one is passed. (4) Every `dark:` utility the kit ships matches a dark system scheme under `auto` as the tokens do, in one rule, tested under `data-theme` absent with `prefers-color-scheme: dark`. (5) The pinned entity column takes the row's surface in light. (6) A `DataPanel` body sized by rows shows whole rows, and a phone card with many columns stays short (one line per value the row's priority keeps, or a working `card: 'detail'`); say in the PR how a panel follows a sibling's height, or split it behind a Spec. (7) A zone on a band axis covers whole bands from its first to its last key, for Date, number and string keys. (8) A focused stack whose total is zero keeps a visible position mark. (9) A clamped bar shows its true value beside the caret. (10) A phone card list holds its focus while the pointer crosses the gap between cards. (11) A held span on a time axis draws its band to the end of its last item, and `focus.readout` can read the held span. (12) The shot tool's focus state reaches the page's first data element on a page under a long shell nav. If any of these needs a field, split it into its own row behind a Spec and say so in the PR.",
+  "acceptance": [
+    "A zone label, a run label and an extreme bar's value label survive at 390 (layout test)",
+    "Lines end labels sit clear of the lines (layout or unit test)",
+    "An empty frame shows no bare footer label, and a StatCell error prints its message (tests)",
+    "A BarList swatch paints its dark half under auto on a dark system scheme (test)",
+    "The pinned entity column matches the row surface in light (test)",
+    "A DataPanel sized by rows shows whole rows, and phone cards stay short (layout test)",
+    "A band-axis zone covers whole bands for Date, number and string keys (unit test)",
+    "A focused zero stack keeps a mark, a clamped bar shows its value, a phone card list holds focus across gaps, a held span reaches its last item's end (tests)",
+    "basalt-ui shot --states focus passes on a page under a long nav (test)",
+    "No export added and no contract file changed; make check passes"
+  ],
+  "out_of_scope": "BarList and Heatmap focus, BarList mono and a ChartCard phone height (v3-expr-10-contract); skill text (v3-expr-10-skill); a value label inside a dimmed bar and Heatmap rows at 390 (n44 only); stacked dots (n40 only).",
+  "proof": "make check; the tests named in acceptance; shots of n39, n40, n41, n42 and n44 at 390 and of n41 in dark under auto.",
+  "commits": "fix: per behaviour with its test."
+}
