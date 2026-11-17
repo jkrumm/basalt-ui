@@ -1,12 +1,12 @@
 /**
  * Deterministic label measuring and a direct-label collision pass. `width` sums advances from a
  * checked-in table (`chart-labels-widths.gen.ts`, generated from the real chart face in Chrome), so
- * it needs no canvas and no DOM and a server render equals a client render. `place` is pure
- * geometry over those widths.
+ * it needs no canvas and no DOM and a server render equals a client render. `place` is the pure
+ * geometry of `label-place.ts` over those widths.
  */
 import { BASALT } from '../tokens'
 import { GLYPHS, WIDTHS } from './chart-labels-widths.gen'
-import { hostObstacles } from './label-obstacles'
+import { fitsWith, placeWith } from './label-place'
 import { trackAxis, trackRow } from './track'
 import type {
   RowLabel,
@@ -77,26 +77,6 @@ type TrackAxisOf = {
   (options: TrackAxisOptions<Date>): TrackAxis<Date>
 }
 
-const SPOTS: readonly LabelSpot[] = [
-  'right',
-  'left',
-  'above',
-  'below',
-  'above-right',
-  'above-left',
-  'below-right',
-  'below-left',
-]
-
-/** A label box is this many times its font size tall. */
-const LINE_HEIGHT_RATIO = 1.2
-
-/** The alphabetic baseline sits this share of the font size below the box's vertical centre. */
-const BASELINE_OFFSET = 0.35
-
-/** Default distance in px between the anchor and the label box. */
-const DEFAULT_GAP = 4
-
 const DEFAULT_SIZE: number = BASALT.text.micro
 
 const INDEX = new Map<string, number>([...GLYPHS].map((ch, i) => [ch, i]))
@@ -110,50 +90,6 @@ function measure(text: string, size: number, weight: LabelWeight): number {
   }
   return em * size
 }
-
-const lineHeight = (size: number): number => size * LINE_HEIGHT_RATIO
-
-function boxFor(
-  spot: LabelSpot,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  gap: number,
-): Pick<PlacedLabel, 'left' | 'top' | 'textAnchor'> {
-  const centredTop = y - height / 2
-  const centredLeft = x - width / 2
-  switch (spot) {
-    case 'right':
-      return { left: x + gap, top: centredTop, textAnchor: 'start' }
-    case 'left':
-      return { left: x - gap - width, top: centredTop, textAnchor: 'end' }
-    case 'above':
-      return { left: centredLeft, top: y - gap - height, textAnchor: 'middle' }
-    case 'below':
-      return { left: centredLeft, top: y + gap, textAnchor: 'middle' }
-    case 'above-right':
-      return { left: x + gap, top: y - gap - height, textAnchor: 'start' }
-    case 'above-left':
-      return { left: x - gap - width, top: y - gap - height, textAnchor: 'end' }
-    case 'below-right':
-      return { left: x + gap, top: y + gap, textAnchor: 'start' }
-    case 'below-left':
-      return { left: x - gap - width, top: y + gap, textAnchor: 'end' }
-  }
-}
-
-const overlaps = (a: LabelBox, b: LabelBox): boolean =>
-  a.left < b.left + b.width &&
-  b.left < a.left + a.width &&
-  a.top < b.top + b.height &&
-  b.top < a.top + a.height
-
-const inside = (box: LabelBox, frame: { width: number; height: number }): boolean =>
-  box.left >= 0 &&
-  box.top >= 0 &&
-  box.left + box.width <= frame.width &&
-  box.top + box.height <= frame.height
 
 /**
  * Label measuring and direct-label placement for marks a page draws itself (custom
@@ -196,10 +132,7 @@ export const chartLabels = {
     box: { width: number; height?: number },
     options: { size?: number; weight?: LabelWeight; pad?: number } = {},
   ): boolean {
-    const size = options.size ?? DEFAULT_SIZE
-    const pad = options.pad ?? 0
-    if (measure(text, size, options.weight ?? 400) > box.width - 2 * pad) return false
-    return box.height === undefined || lineHeight(size) <= box.height - 2 * pad
+    return fitsWith(measure, text, box, { ...options, size: options.size ?? DEFAULT_SIZE })
   },
 
   /**
@@ -216,49 +149,7 @@ export const chartLabels = {
     frame: { width: number; height: number },
     options: { gap?: number; obstacles?: readonly LabelBox[] } = {},
   ): { placed: PlacedLabel<K>[]; dropped: ChartLabel<K>[] } {
-    const gap = options.gap ?? DEFAULT_GAP
-    const taken: LabelBox[] = [...(options.obstacles ?? []), ...hostObstacles()]
-    const placed: PlacedLabel<K>[] = []
-    const dropped: ChartLabel<K>[] = []
-    const ranked = labels
-      .map((label, index) => ({ label, index }))
-      .toSorted((a, b) => (b.label.priority ?? 0) - (a.label.priority ?? 0) || a.index - b.index)
-
-    for (const { label } of ranked) {
-      const size = label.size ?? DEFAULT_SIZE
-      const width = measure(label.text, size, label.weight ?? 400)
-      const height = lineHeight(size)
-      let landed: PlacedLabel<K> | undefined
-      for (const spot of label.spots ?? SPOTS) {
-        const at = boxFor(spot, label.x, label.y, width, height, gap)
-        const box = { left: at.left, top: at.top, width, height }
-        if (!inside(box, frame) || taken.some((other) => overlaps(box, other))) continue
-        const textX =
-          at.textAnchor === 'start'
-            ? box.left
-            : at.textAnchor === 'end'
-              ? box.left + width
-              : box.left + width / 2
-        landed = {
-          ...label,
-          spot,
-          ...box,
-          textAnchor: at.textAnchor,
-          baselineY: box.top + height / 2 + size * BASELINE_OFFSET,
-          textX,
-          dx: textX - label.x,
-          dy: box.top + height / 2 - label.y,
-        }
-        break
-      }
-      if (landed === undefined) {
-        dropped.push(label)
-        continue
-      }
-      taken.push(landed)
-      placed.push(landed)
-    }
-    return { placed, dropped }
+    return placeWith(measure, labels, frame, { ...options, size: DEFAULT_SIZE })
   },
 
   /**

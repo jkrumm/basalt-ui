@@ -8,8 +8,8 @@
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { text } from '@tanstack/charts/text'
 import { BASALT } from '../../tokens'
-import { chartLabels } from '../chart-labels'
 import type { ChartLabel, LabelBox, LabelSpot } from '../chart-labels'
+import { fitsWith, placeWith } from '../label-place'
 import { dimmedPaint } from '../marks'
 import type { PlotPx } from '../label-obstacles'
 import type { ChartMarks, ChartSeries, ChartX } from '../types'
@@ -23,6 +23,13 @@ const GAP = 3
 /** Air a label keeps inside the bar it stands in, px. */
 const INSIDE_PAD = 2
 const SIZE = BASALT.text.micro
+/**
+ * A glyph's advance as a share of the font size: the chart face's tabular figures are 0.6 em, so a
+ * value label errs a hair wide. An estimate, not the measured table, which would put 8 KB into
+ * every chart that labels its bars.
+ */
+const VALUE_GLYPH_EM = 0.62
+const measure = (text: string, size: number): number => [...text].length * size * VALUE_GLYPH_EM
 
 type Side = 'left' | 'right'
 
@@ -229,20 +236,22 @@ export function barValueLabels<T, X extends ChartX>(
     priority: priority.get(i) ?? 0,
     spots: [spot],
   })
-  const outside = chartLabels.place(
+  const outside = placeWith(
+    measure,
     found.map((c, i) => label(c, i, c.up ? 'above' : 'below')),
     input.frame,
-    { gap: GAP, obstacles: input.obstacles },
+    { gap: GAP, obstacles: input.obstacles, size: SIZE },
   )
   const taken = new Set(outside.placed.map((p) => p.key))
   const fitting = found.flatMap((c, i) =>
-    !taken.has(String(i)) && chartLabels.fits(c.text, c.body, { size: SIZE, pad: INSIDE_PAD })
+    !taken.has(String(i)) && fitsWith(measure, c.text, c.body, { size: SIZE, pad: INSIDE_PAD })
       ? [label(c, i, c.up ? 'below' : 'above')]
       : [],
   )
-  const inside = chartLabels.place(fitting, input.frame, {
+  const inside = placeWith(measure, fitting, input.frame, {
     gap: INSIDE_PAD,
     obstacles: [...input.clear, ...outside.placed],
+    size: SIZE,
   })
   const marks = [
     ...outside.placed.map((p) => ({ p, ink: CV.inkMuted })),

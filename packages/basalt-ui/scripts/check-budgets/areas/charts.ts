@@ -37,8 +37,8 @@ export const rows: readonly RowDef[] = [
     id: 'charts-three-kind',
     order: 22,
     label: 'charts Sparkline + Lines + Bars (gzip B minus base0, src/charts, peers bundled)',
-    // 111790 B measured. Informative target 46.5 KB, and + 4 KB per further kind: not pins.
-    ceiling: 117500,
+    // 120524 B measured. Informative target 46.5 KB, and + 4 KB per further kind: not pins.
+    ceiling: 121500,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -51,6 +51,15 @@ export const raises: Raises = {
       consumer:
         '`useChartFocus` and `chartLabels`, the geometry seam (Issue 1019): weatherorb meteogram.tsx dims the rest around a focused hour and drives its readout; weatherorb timeline-bar.tsx measures tick labels by hand to pick a stride',
       repo: 'weatherorb',
+    },
+  ],
+  'charts-three-kind': [
+    {
+      from: 117500,
+      to: 121500,
+      consumer:
+        "the bar value labels, accent highlight, zero-bar tick and clamped stack of expression cycle 8 (Issue 1980): n28 placed its mover's and zeros' labels by hand with chartLabels and split one series in two for the accent, n31 placed its day totals by hand, cycle 7's n22 and n24 their end and total labels; the labels place with a glyph estimate, not the 8 KB width table",
+      repo: 'basalt-ui',
     },
   ],
 }
