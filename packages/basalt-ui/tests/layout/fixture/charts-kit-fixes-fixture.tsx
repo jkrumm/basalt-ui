@@ -94,6 +94,23 @@ function PeriodCard({ phase }: { phase: 'ready' | 'loading' | 'error' }) {
   )
 }
 
+/** A page that fills its figure only when ready: loading and error declare a null value and no period (expression cycle 9, n34, n35, n38). */
+function LazyCard({ phase }: { phase: 'ready' | 'loading' | 'error' }) {
+  const ready = phase === 'ready'
+  return (
+    <div data-testid={`kf-lazy-${phase}`} className={BOX}>
+      <ChartCard
+        title="Water over the bar"
+        phase={ready ? undefined : phase === 'error' ? { tag: 'error' } : 'loading'}
+        height="short"
+        figure={ready ? { value: 'Go Fri 03:00', period: '2 windows, 7 h' } : { value: null }}
+        footer={[{ label: 'Calm hours', value: ready ? 14 : 0 }]}
+        chart={() => <div className="h-full" />}
+      />
+    </div>
+  )
+}
+
 type Pt = { n: number; v: number }
 const points: Pt[] = Array.from({ length: 8 }, (_, n) => ({ n, v: n === 3 ? 0 : 1 + (n % 3) }))
 
@@ -148,6 +165,9 @@ function Fixture() {
       <PeriodCard phase="ready" />
       <PeriodCard phase="loading" />
       <PeriodCard phase="error" />
+      <LazyCard phase="ready" />
+      <LazyCard phase="loading" />
+      <LazyCard phase="error" />
     </main>
   )
 }

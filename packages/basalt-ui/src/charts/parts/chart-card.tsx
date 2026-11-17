@@ -196,6 +196,27 @@ const sameSlots = (a: DeclaredSlots | undefined, b: DeclaredSlots): boolean =>
       .map((f) => f.label)
       .join('\n')
 
+/**
+ * The figure a loading, empty or failed frame draws. A page that fills its `figure` only when ready
+ * declares no `period` in these frames, yet the ready frame's period takes a line of its own below
+ * `regular`: a card that was ready holds the period it had, a card that mounts in these frames holds
+ * the one line a period takes, so the frame ends at the height the ready frame will have. A period
+ * that wraps to more lines is held only when the page declares its text (`PeriodHold`).
+ */
+function withPeriodHold(
+  figure: ChartFigure | undefined,
+  held: DeclaredSlots | undefined,
+): ChartFigure | undefined {
+  if (figure === undefined || figure.period !== undefined) return figure
+  const kept = held === undefined ? '' : held.figure?.period
+  if (kept === undefined) return figure
+  return {
+    ...figure,
+    period: kept,
+    ...(held?.figure?.periodMono === true && { periodMono: true }),
+  }
+}
+
 /** A query result whose `data` is an empty array: the rows it carries beyond `QueryStateLike`. */
 const hasNoRows = (phase: object): boolean => {
   const { data } = phase as { data?: unknown }
@@ -254,7 +275,7 @@ export function ChartCard(props: ChartCardProps): ReactElement {
   const [held, setHeld] = useState<DeclaredSlots | undefined>(undefined)
   if (effective.body && !sameSlots(held, declared)) setHeld(declared)
   const ready = effective.body
-  const shownFigure = figure ?? (ready ? undefined : held?.figure)
+  const shownFigure = ready ? figure : withPeriodHold(figure ?? held?.figure, held)
   const shownFooter = footer ?? (ready ? undefined : held?.footer)
   return (
     <ChartCardContext value={true}>
