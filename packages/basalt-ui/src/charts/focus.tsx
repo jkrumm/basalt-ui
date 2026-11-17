@@ -91,6 +91,20 @@ export function FocusWrap(props: {
   )
 }
 
+/**
+ * The setter a chart host uses for what its own pointer reports. A row that set the focus on pointer
+ * entry holds it against a chart's clear: the engine reports its pointer leave (or an empty cursor)
+ * after the row's enter whenever the pointer crosses the chart on its way, and that clear must not
+ * undo the row. A chart's focus of an item, the row's own leave and a key all still replace it.
+ */
+const CHART_SET = Symbol('basalt.chartSet')
+
+type ChartSide = { [CHART_SET]?: (next: number | null) => void }
+
+function chartSet<D>(focus: ChartFocus<D>): (next: number | null) => void {
+  return (focus as ChartFocus<D> & ChartSide)[CHART_SET] ?? focus.set
+}
+
 const timeOf = (v: unknown): unknown => (v instanceof Date ? v.getTime() : v)
 
 /**
@@ -106,12 +120,13 @@ export function useCursorFocus<D>(
   const { group, x, label } = options
   const follow = useEffectEvent(() => {
     if (focus === undefined) return
+    const set = chartSet(focus)
     const state = chartCursor(group).getState()
-    if (state === null) return focus.set(null)
+    if (state === null) return set(null)
     if (state.anchor !== 'value' || state.value.x === undefined) return
     const at = timeOf(state.value.x)
     const index = focus.items.findIndex((d) => timeOf(x(d)) === at)
-    focus.set(index >= 0 ? index : null)
+    set(index >= 0 ? index : null)
   })
   const active = focus !== undefined
   useEffect(() => (active ? chartCursor(group).subscribe(follow) : undefined), [active, group])
@@ -173,15 +188,16 @@ export function engineFocusHandler<D>(
 ): ((datum: unknown) => void) | undefined {
   if (focus === undefined) return undefined
   return (datum) => {
-    if (datum === null || datum === undefined) return focus.set(null)
+    const set = chartSet(focus)
+    if (datum === null || datum === undefined) return set(null)
     const direct = focus.items.indexOf(datum as D)
-    if (direct >= 0) return focus.set(direct)
+    if (direct >= 0) return set(direct)
     const inner =
       typeof datum === 'object' && 'datum' in datum
         ? (datum as { datum: unknown }).datum
         : undefined
     const index = inner === undefined ? -1 : focus.items.indexOf(inner as D)
-    focus.set(index >= 0 ? index : null)
+    set(index >= 0 ? index : null)
   }
 }
 
@@ -295,7 +311,20 @@ export function useChartFocus<D>(
     const nodes = [marks.current.get(next), name === undefined ? undefined : rows.current.get(name)]
     for (const node of nodes) if (inScrollRegion(node)) scrollNodeIntoView(node)
   }
-  const set = (next: number | null): void => apply(next, true)
+  // `pointed`: the index a mark or row set by pointer entry, held against a chart's own clear.
+  const pointed = useRef<number | null>(null)
+  const set = (next: number | null): void => {
+    pointed.current = null
+    apply(next, true)
+  }
+  const point = (next: number): void => {
+    pointed.current = next >= 0 ? next : null
+    apply(next, false)
+  }
+  const fromChart = (next: number | null): void => {
+    if (next === null && pointed.current !== null) return
+    set(next)
+  }
 
   const step = (key: string): number | null | undefined => {
     const next =
@@ -330,8 +359,8 @@ export function useChartFocus<D>(
       if (element === null) marks.current.delete(i)
       else marks.current.set(i, element)
     },
-    onPointerEnter: () => apply(i, false),
-    onPointerDown: () => apply(i, false),
+    onPointerEnter: () => point(i),
+    onPointerDown: () => point(i),
   })
   const groupItem = (name: string): ChartFocusGroupItem => {
     const first = group === undefined ? -1 : items.findIndex((d) => group(d) === name)
@@ -341,8 +370,8 @@ export function useChartFocus<D>(
         if (element === null) rows.current.delete(name)
         else rows.current.set(name, element)
       },
-      onPointerEnter: () => apply(first, false),
-      onPointerDown: () => apply(first, false),
+      onPointerEnter: () => point(first),
+      onPointerDown: () => point(first),
     }
   }
   const said = datum === null ? '' : announce(datum)
@@ -359,6 +388,7 @@ export function useChartFocus<D>(
     </output>
   )
   return {
+    [CHART_SET]: fromChart,
     items,
     index,
     datum,
