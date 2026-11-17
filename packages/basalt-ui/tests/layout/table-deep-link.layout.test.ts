@@ -110,3 +110,38 @@ for (const mode of MODES)
       expect(now.marked).toEqual([])
     })
   })
+
+/** The alpha of a computed colour: `rgba()`, `color(srgb r g b / a)` or `rgb(r g b / a%)`; 1 when none. */
+const alphaOf = (color: string): number => {
+  if (color === 'transparent') return 0
+  const slash = /\/\s*([\d.]+)(%?)/.exec(color)
+  if (slash) return Number(slash[1]) / (slash[2] === '%' ? 100 : 1)
+  const rgba = /^rgba\(([^)]*)\)$/.exec(color)
+  return rgba ? Number(rgba[1]!.split(',')[3] ?? 1) : 1
+}
+
+// Cycle dogfood-3.2: the rule read `--basalt-surface-row-selected`, a 2.x name the v3 sheet never
+// emits, so the open row's attribute was right and its pixels were not. Read the paint.
+for (const scheme of ['light', 'dark'] as const)
+  layout(`The open row's paint, ${scheme} scheme`, () => {
+    test('is a tint the neighbouring rows do not carry', async () => {
+      const page = await open('unbound')
+      await page.raw.evaluate((s) => {
+        document.documentElement.dataset.theme = s
+      }, scheme)
+      await page.raw.mouse.move(0, 0)
+      await page.settle()
+      const paint = await page.raw.evaluate(() =>
+        [...document.querySelectorAll('tbody tr')].map((tr) => ({
+          open: tr.getAttribute('aria-current') === 'true',
+          color: getComputedStyle(tr).backgroundColor,
+        })),
+      )
+      const marked = paint.filter((row) => row.open)
+      const rest = paint.filter((row) => !row.open)
+      expect(marked).toHaveLength(1)
+      expect(rest.length).toBeGreaterThan(0)
+      expect(alphaOf(marked[0]!.color)).toBeGreaterThan(0)
+      for (const row of rest) expect(row.color).not.toBe(marked[0]!.color)
+    })
+  })

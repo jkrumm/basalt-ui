@@ -17,10 +17,10 @@
   padding-inline: var(--basalt-space-stack-md, 0.75rem);
   /* A visible edge: the panel fill and `shadow-raised` alone read as a pale chip on the page or a card,
    so the border is ink mixed into the panel (>= 3:1 against it in both schemes), not the hairline. */
-  border: 0.0625rem solid var(--basalt-muted);
-  border-color: color-mix(in srgb, var(--basalt-ink) 55%, var(--basalt-surface-panel));
+  border: 0.0625rem solid var(--basalt-ink-muted);
+  border-color: color-mix(in srgb, var(--basalt-ink) 55%, var(--basalt-card));
   border-radius: var(--basalt-radius-ctrl);
-  background: var(--basalt-surface-panel);
+  background: var(--basalt-card);
   box-shadow: var(--basalt-shadow-raised);
   color: var(--basalt-ink);
   font: inherit;
@@ -34,22 +34,22 @@
 }
 
 .retry:focus-visible {
-  outline: 0.125rem solid var(--basalt-accent-fill);
+  outline: 0.125rem solid var(--basalt-brand-fill);
   outline-offset: 0.125rem;
 }
 
 /* Hover is a pointer affordance: a touch tap would leave it stuck on. */
 @media (hover: hover) {
   .retry:hover:not(:disabled) {
-    background: var(--basalt-surface-elevated);
+    background: var(--basalt-raised);
   }
 }
 
 /* Busy is the disabled paint: the muted colour and subtle background, flat, no border. */
 .retry:disabled {
-  background: var(--basalt-surface-subtle);
+  background: var(--basalt-canvas);
   border-color: transparent;
-  color: var(--basalt-muted);
+  color: var(--basalt-ink-muted);
   box-shadow: none;
   cursor: not-allowed;
 }

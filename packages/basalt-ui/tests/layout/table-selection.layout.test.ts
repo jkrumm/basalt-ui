@@ -237,4 +237,32 @@ layout('Selection', () => {
       expect(Math.abs(actions!.right - scroller!.right)).toBeLessThanOrEqual(1)
     })
   })
+
+  // Cycle dogfood-3.2: a ticked row's rule read a 2.x variable the v3 sheet never emits, so the
+  // attribute was set and the row stayed transparent. Read the paint, in both schemes.
+  for (const scheme of ['light', 'dark'] as const)
+    describe(`a ticked row's paint, ${scheme} scheme`, () => {
+      test('is a tint its unticked neighbours do not carry', async () => {
+        const page = await open(DESKTOP_1440)
+        await page.raw.evaluate((s) => {
+          document.documentElement.dataset.theme = s
+        }, scheme)
+        await page.raw.click(`${CARDS} tbody tr:nth-child(2) [role="checkbox"]`)
+        await page.raw.mouse.move(0, 0)
+        await page.settle()
+        const paint = await page.raw.evaluate(
+          (table) =>
+            [...document.querySelectorAll(`${table} tbody tr`)].map((tr) => ({
+              ticked: tr.hasAttribute('data-selected'),
+              color: getComputedStyle(tr).backgroundColor,
+            })),
+          CARDS,
+        )
+        const ticked = paint.filter((row) => row.ticked)
+        const rest = paint.filter((row) => !row.ticked)
+        expect(ticked).toHaveLength(1)
+        expect(alphaOf(ticked[0]!.color)).toBeGreaterThan(0)
+        for (const row of rest) expect(row.color).not.toBe(ticked[0]!.color)
+      })
+    })
 })

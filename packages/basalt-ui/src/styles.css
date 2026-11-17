@@ -128,7 +128,7 @@
   input:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--basalt-ink);
     caret-color: var(--basalt-ink);
-    box-shadow: 0 0 0 100vmax var(--basalt-surface-field) inset;
+    box-shadow: 0 0 0 100vmax var(--basalt-card) inset;
     transition: background-color 600000s 0s;
   }
 
@@ -312,8 +312,8 @@
  * a scale step. */
 :root:root .maplibregl-ctrl.maplibregl-ctrl-attrib {
   border-radius: var(--basalt-radius-ctrl);
-  background-color: var(--basalt-surface-panel);
-  color: var(--basalt-muted);
+  background-color: var(--basalt-card);
+  color: var(--basalt-ink-muted);
   font-size: var(--basalt-text-micro);
 }
 
@@ -337,7 +337,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-color: var(--basalt-muted);
+  background-color: var(--basalt-ink-muted);
   mask: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0v-3'/%3E%3C/svg%3E")
     center / 24px 24px no-repeat;
 }
