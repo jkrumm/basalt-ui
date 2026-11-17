@@ -2,7 +2,7 @@ import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui
 import type { ChartFigure } from 'basalt-ui/charts'
 import { useFormat } from 'basalt-ui'
 import type { Phase } from 'basalt-ui/cards'
-import { VX } from 'basalt-ui/tokens'
+import { BASALT } from 'basalt-ui/tokens'
 import { text } from '@tanstack/charts/text'
 import { Page, PageBar } from 'basalt-ui/page'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
@@ -147,7 +147,7 @@ export function ExprN21Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                 }
                 tooltip={false}
                 marks={CartesianChart.custom<Outage>((plot) => {
-                  const r = VX.dotR + 1
+                  const r = BASALT.dotR + 1
                   const dots = plot.rows('rebooted').concat(plot.rows('other'), plot.rows('alone'))
                   const obstacles = dots.map((o) => {
                     const px = plot.x(o.start) ?? 0
@@ -179,7 +179,7 @@ export function ExprN21Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                       y: plot.y(w.value),
                     })),
                     { width: plot.plotWidth, height: plot.plotHeight },
-                    { obstacles, gap: VX.dotR + 3 },
+                    { obstacles, gap: BASALT.dotR + 3 },
                   )
                   const byKey = new Map(wanted.map((w) => [w.key, w]))
                   return [
@@ -190,8 +190,8 @@ export function ExprN21Scenario({ shotState, fixture }: ScenarioProps): ReactEle
                       dx: (l) => l.dx,
                       dy: (l) => l.dy,
                       anchor: (l) => l.textAnchor,
-                      fill: VX.ink,
-                      fontSize: VX.text.micro,
+                      fill: BASALT.ink,
+                      fontSize: BASALT.text.micro,
                     }),
                   ]
                 })}

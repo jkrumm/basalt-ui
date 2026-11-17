@@ -4,7 +4,7 @@ import type { Delta, Phase } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { useFormat } from 'basalt-ui'
 import { CardGrid, PageBar } from 'basalt-ui/page'
-import { VX, alpha } from 'basalt-ui/tokens'
+import { BASALT, alpha } from 'basalt-ui/tokens'
 import { RADIO_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
 import {
@@ -86,7 +86,7 @@ export function ExprN19Scenario({ shotState, fixture }: ScenarioProps): ReactEle
     axis: 'x' as const,
     from: new Date(s.from),
     to: new Date(s.to),
-    fill: alpha(VX.bad, 0.14),
+    fill: alpha(BASALT.bad, 0.14),
     label: `${when(s.from)}, ${s.offline ? 'offline ' : ''}${s.minutes >= 60 ? `${hoursOf(s.minutes)} h` : `${s.minutes} min`}`,
   }))
 
