@@ -47,6 +47,7 @@ import { ExprN36Scenario } from './expr/n36/ExprN36'
 import { ExprN37Scenario } from './expr/n37/ExprN37'
 import { ExprN38Scenario } from './expr/n38/ExprN38'
 import { MdxScenario } from './mdx-scenario'
+import { LinkedWindowsScenario } from './linked-windows/LinkedWindows'
 import type { ScenarioProps } from './shot-state'
 
 const RENDERERS = {
@@ -93,6 +94,7 @@ const RENDERERS = {
   'expr-n37': (p) => <ExprN37Scenario {...p} />,
   'expr-n38': (p) => <ExprN38Scenario {...p} />,
   mdx: () => <MdxScenario />,
+  'linked-windows': (p) => <LinkedWindowsScenario {...p} />,
 } satisfies Record<string, (props: ScenarioProps) => ReactElement>
 
 /** Every registered id; `scenario-info.ts` types its entries against this. */
