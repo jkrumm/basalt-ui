@@ -21,6 +21,8 @@ Every chart is a shipped kind or `CartesianChart`; props live in the shipped typ
 - The threshold that defines the answer is drawn as a zone or reference line, never only stated in a footer. [type:ChartZone] [type:ChartRefLine]
 - Extra tooltip rows are data, never markup. [type:ChartTooltipConfig]
 - A card footer holds at most two facts. [type:FootFacts]
+- An optional figure, card or footer field takes a maybe-value straight; `undefined` is an absent key, so never a conditional spread or a placeholder. [type:ChartFigure] [type:StatCellProps]
+- A time or an id in a figure `period`, a stat card's `sub` or an entity column's `sub` sets `periodMono` or `subMono`; never a class. [type:ChartFigure] [type:StatCellProps]
 
 ## Boundaries
 

@@ -34,6 +34,7 @@ StatCard(props: StatCardProps): ReactElement
   delta?: Delta  // A change against a period; `value` prints as given, so pass `'+12%'`, never the fraction 0.12
   status?: Verdict  // The verdict home: dot plus word
   sub?: string
+  subMono?: boolean  // The sub line is a time or an id: drawn in the mono face with tabular numerals
   chart?: BoxSlot  // Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16)
   xLabels?: readonly [string, string, string]  // The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alone
   footer?: FootFacts
@@ -55,7 +56,10 @@ StatCard(props: StatCardProps): ReactElement
   delta={{ value: '+12%', polarity: 'up-good' }}
   phase={query}
   chart={(box) => <Sparkline series={perDay} height={box.height} label="Shipped per day" />}
-  xLabels={["Mon", "Thu", "Sun"]}
-  footer={[{ label: 'Open', value: 12 }, { label: 'Merged', value: 4 }]}
+  xLabels={['Mon', 'Thu', 'Sun']}
+  footer={[
+    { label: 'Open', value: 12 },
+    { label: 'Merged', value: 4 },
+  ]}
 />
 ```
