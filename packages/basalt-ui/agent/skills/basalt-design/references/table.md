@@ -8,6 +8,7 @@ Requires TanStack Table's own `table-state` skill for anything under `t.table`: 
 
 - Fewer than about 200 rows and all in hand: `mode: { kind: 'client' }`. Above 500 client rows add `virtual` and a fixed `height`; above that the rows belong on a server.
 - The server pages and filters: `mode: { kind: 'server', rowCount }`. Pass `rowCount` as `undefined` until it is known; the table never prints "of 0". A cursor API passes `cursor` instead, never both.
+- A table that mounts loading draws six skeleton rows unless the page says how many it expects: `bodyRows: 18` on `useDataTable` draws eighteen, so the frame does not jump when they arrive (n36 jumped 370 px from six to eighteen; a `min-h-*` wrapper missed by the row height). A paged table caps it at the page; once rows have shown, loading keeps their height.
 - Rows that never sort, filter or select are `ui/table`, not this.
 - Rows under a parent (who waits on whom, the jobs of a run) are a client table with `group: { by: '<parent column>' }`: one collapsible group row per parent, its toggle a button, with a `summary`. There is no tree field, so never indent a `c.custom` cell by hand to fake one (n32).
 
