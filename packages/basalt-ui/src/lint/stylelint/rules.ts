@@ -40,7 +40,8 @@ const TOKEN_PREFIX = '--(?:basalt|color)-'
 const DECORATIVE_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:(?:good|warn|bad|info|brand|chart|seq|destructive)(?:-[a-z0-9-]+)?|[a-z0-9-]*-tint)\\s*[,)]`
 
 // The fill-only roles (`zoneAFillOnly`): a fill clears 3.0 and text needs 4.5, so never as `color`.
-const FILL_ONLY_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:${zoneAFillOnly.join('|')})\\s*[,)]`
+// A status tint (`--color-warn-tint`, a 12-16% wash of the ink) is a background and never text either.
+const FILL_ONLY_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:${zoneAFillOnly.join('|')}|[a-z0-9-]*-tint)\\s*[,)]`
 // The class rule `fixed-width`: above 384px or from 25rem (`w-[385px]`, `w-[25rem]`).
 export const FIXED_WIDTH = `(?<![\\w.])(?:(?:38[5-9]|39\\d|[4-9]\\d{2}|\\d{4,})(?:\\.\\d+)?px|(?:2[5-9]|[3-9]\\d|\\d{3,})(?:\\.\\d+)?rem)(?![\\w%])`
 
@@ -91,7 +92,7 @@ const VALUE_GROUPS: readonly ValueGroup[] = [
     properties: DECORATION_PROPERTIES,
     values: [`/${DECORATIVE_ROLE}/i`],
     clause:
-      'background, border, outline and shadow take the colour role of their surface, never a status or chart colour',
+      'background, border, outline and shadow take the colour role of their surface, never a status, chart or brand colour (a tinted background is var(--basalt-selected) or a surface token)',
   },
   {
     // colour mixing is only legal over tokens or transparent
@@ -104,7 +105,7 @@ const VALUE_GROUPS: readonly ValueGroup[] = [
     properties: TEXT_COLOUR_PROPERTIES,
     values: [`/${FILL_ONLY_ROLE}/i`],
     clause:
-      'color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill)',
+      'color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill, a status tint)',
   },
   {
     properties: TRACK_PROPERTIES,
@@ -202,7 +203,7 @@ export const STYLELINT_RULES = {
     ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color', 'light-dark'],
     {
       message:
-        '`%s()` writes a colour by hand. Use a `--basalt-*` colour token, or `color-mix(in oklab, var(--basalt-token) 40%, transparent)` for an alpha; a token already switches per scheme.',
+        "`%s()` writes a colour by hand. Use the `--basalt-*` colour token of the property's role (a surface for a background, an ink for text), or `color-mix(in oklab, var(--basalt-token) 40%, transparent)` over that token for an alpha; a token already switches per scheme.",
     },
   ],
   'declaration-property-value-disallowed-list': disallowedValueList(true),
