@@ -41,3 +41,9 @@ import { Badge } from '#/components/ui/badge'
 import { Page } from '#/components/page'
 // @valid
 import { Page } from 'src/components/page'
+// @invalid
+import { Dialog } from 'components/ui/dialog'
+// @valid {"ejected":["src/components/ui/dialog.tsx"]}
+import { Dialog } from 'components/ui/dialog'
+// @valid
+import { Page } from 'components/page'

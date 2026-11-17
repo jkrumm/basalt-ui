@@ -11,7 +11,7 @@
  * `host.tsx` importer) are not here: a form carries no profile of its own and this rule ships at
  * `parts` and `app`.
  *
- * The `ui-path` form reads `@/`, `~/`, `#/`, `src/` and relative `components/ui/<name>` paths; an ejected name
+ * The `ui-path` form reads `@/`, `~/`, `#/`, `src/`, `baseUrl`-rooted and relative `components/ui/<name>` paths; an ejected name
  * stays legal however it is spelled. No form reports an icon set (`@radix-ui/react-icons`,
  * `@mui/icons-material`): an icon prop takes the icon library's own component. The `radix` form
  * bans a kit's whole npm scope (`@mui/*`, `@heroui/*`, every package of the 2.x UI stack) but the
@@ -144,12 +144,13 @@ const ICON_SETS: ReadonlySet<string> = new Set([
 ])
 
 /**
- * An icon set (`@radix-ui/react-icons`, `@mui/icons-material`, `react-icons`, lucide): an icon prop
- * takes the icon library's own component, so no form reports one, even inside a banned kit's scope.
+ * An icon set (`@radix-ui/react-icons`, `@mui/icons-material`, `react-icons`, lucide, a name that
+ * starts with `icon`: `iconsax-react`, `iconoir-react`, `iconify-icon`): an icon prop takes the icon
+ * library's own component, so no form reports one, even inside a banned kit's scope.
  */
 const isIconSet = (source: string): boolean => {
   const pkg = packageOf(source)
-  return ICON_SETS.has(pkg) || /icons?(?:[-/]|$)/.test(pkg)
+  return ICON_SETS.has(pkg) || /icons?(?:[-/]|$)/.test(pkg) || pkg.startsWith('icon')
 }
 
 /**
@@ -313,9 +314,12 @@ const uiName = (path: string): string => {
   return rest.replace(/\.[cm]?[jt]sx?$/, '').replace(/\/index$/, '')
 }
 
-/** The shadcn alias (`@/`, `~/`, `#/`), a `src/` rooted path or a relative path into `components/ui`, not a package's own. */
+/**
+ * The shadcn alias (`@/`, `~/`, `#/`), a `src/` or `baseUrl` rooted path (`components/ui/dialog`)
+ * or a relative path into `components/ui`, not a package's own (`some-kit/components/ui/button`).
+ */
 const isUiPath = (source: string): boolean =>
-  /^(?:[@~#]\/|src\/|(?:\.{1,2}\/)+(?:[^/]+\/)*?)components\/ui(?:\/|$)/.test(source)
+  /^(?:[@~#]\/|src\/|(?:\.{1,2}\/)+(?:[^/]+\/)*?)?components\/ui(?:\/|$)/.test(source)
 
 const ejectedNames = (options: readonly unknown[]): Set<string> => {
   const [first] = options
@@ -669,6 +673,8 @@ type RivalPart = {
   /** Named imports of a part basalt owns the behaviour of: an overlay, a picker, a grid. */
   readonly names?: readonly string[]
   readonly suffix?: RegExp
+  /** A package the word reads but that is not this part (a serialiser that writes Markdown). */
+  readonly except?: RegExp
   /** A storage route: an adapter file (one that names `StorageLike`) may import it. */
   readonly storage?: true
 }
@@ -685,7 +691,13 @@ const RIVAL_PARTS: readonly RivalPart[] = [
     words: 'charts?|plotly',
     suffix: /Chart$/,
   },
-  { kind: 'markdown', part: 'Markdown from basalt-ui/content', words: 'markdown|marked' },
+  {
+    kind: 'markdown',
+    part: 'Markdown from basalt-ui/content',
+    words: 'markdown|marked',
+    // A serialiser writes a Markdown string (a copy-as-Markdown action); it renders nothing.
+    except: /^markdown-table$|-to-markdown$/,
+  },
   {
     kind: 'toast',
     part: 'notify() from basalt-ui',
@@ -713,20 +725,23 @@ const RIVAL_PARTS: readonly RivalPart[] = [
   {
     kind: 'popover',
     part: 'basalt-ui/ui/popover or ui/tooltip',
-    words: 'popover|tooltip',
+    words: 'popover|tooltip|popup',
     names: ['Popover'],
   },
   {
     kind: 'combobox',
-    part: 'basalt-ui/ui/combobox',
-    words: 'combobox',
+    part: 'basalt-ui/ui/select or ui/combobox',
+    // `select` ends its segment: `react-select`, not `react-selecto` (a drag-selection area).
+    words: 'combobox|select(?![a-z])',
     names: ['Combobox', 'Autocomplete'],
   },
   {
     kind: 'date picker',
     part: 'basalt-ui/ui/date-picker',
-    words: 'date-?picker|day-?picker',
+    words: 'date-?picker|day-?picker|date-?range|calendar',
     names: ['DatePicker', 'DateRangePicker', 'DayPicker'],
+    // A scheduler's calendar (react-big-calendar) lays out events; it picks no date.
+    except: /big-calendar/,
   },
   {
     kind: 'storage',
@@ -743,6 +758,7 @@ const BY_WORD: readonly (readonly [RegExp, RivalPart])[] = RIVAL_PARTS.map((p) =
 const rivalOf = (node: Node, source: string): { part: RivalPart; by: string } | undefined => {
   const pkg = packageOf(source)
   const byWord = BY_WORD.find(([word]) => word.test(pkg))?.[1]
+  if (byWord?.except?.test(pkg) === true) return undefined
   if (byWord) return { part: byWord, by: 'its name' }
   for (const name of importedNames(node)) {
     const part = RIVAL_PARTS.find(
