@@ -3,7 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { contrastRatio } from '../tokens/hct'
-import { dimmedHuePaint, dimmedPaint } from './marks'
+import { dimmedHuePaint, dimmedPaint, focusedPaint } from './marks'
+import { paint } from './parts/bars-marks'
 
 type Rgb = [number, number, number]
 type Rgba = { rgb: Rgb; a: number }
@@ -41,6 +42,7 @@ function evaluate(expr: string, scheme: Scheme): Rgba {
     return evaluate(args(expr.slice(11, -1))[scheme] as string, scheme)
   if (expr === 'transparent') return { rgb: [0, 0, 0], a: 0 }
   if (expr === 'var(--basalt-ink-muted)') return { rgb: hexToRgb(token('ink-muted', scheme)), a: 1 }
+  if (expr === 'var(--basalt-ink)') return { rgb: hexToRgb(token('ink', scheme)), a: 1 }
   if (expr.startsWith('#')) return { rgb: hexToRgb(expr), a: 1 }
   const [first, second] = args(expr.slice('color-mix('.length, -1))
     .slice(1)
@@ -97,4 +99,43 @@ describe('dimmedHuePaint', () => {
     const [a, b] = ['#1f6fb0', '#a06a00'].map((c) => onCard(dimmedHuePaint(c), 0))
     expect(a).not.toBe(b)
   })
+})
+
+describe('the focused mark rises as the rest fall', () => {
+  const schemes: [string, Scheme][] = [
+    ['light', 0],
+    ['dark', 1],
+  ]
+  // The sprint bar of expression cycle 9 (n37): one grey, resting at full strength or faded to 0.55.
+  const greys = ['#6b6b6b', '#a8a8a8']
+  for (const [name, scheme] of schemes) {
+    for (const strength of [1, 0.55]) {
+      test(`${name}: a focused grey bar (resting at ${strength}) differs from the dimmed ones by 1.4:1`, () => {
+        const grey = greys[scheme] as string
+        const focused = onCard(focusedPaint(grey), scheme)
+        const dimmed = onCard(dimmedPaint(grey, strength), scheme)
+        expect(contrastRatio(focused, dimmed)).toBeGreaterThanOrEqual(1.4)
+        // The old rule: the focused bar kept its resting paint, one grey step (under 1.3:1) off the dimmed ones.
+        if (strength === 1)
+          expect(contrastRatio(onCard(paint(grey, strength), scheme), dimmed)).toBeLessThan(1.3)
+      })
+    }
+
+    test(`${name}: a focused accent mark stays above the card more than its resting colour and its dimmed neighbours`, () => {
+      const accent = '#4374a6'
+      const card = token('card', scheme)
+      const focused = contrastRatio(onCard(focusedPaint(accent), scheme), card)
+      expect(focused).toBeGreaterThan(contrastRatio(onCard(accent, scheme), card))
+      expect(focused).toBeGreaterThan(contrastRatio(onCard(dimmedPaint(accent), scheme), card))
+    })
+  }
+
+  for (const accent of ['#4374a6', '#9a6632', '#3a7c74']) {
+    test(`a dimmed ${accent} dot keeps 3:1 on the dark card (a bare 50% fade left it under 2:1)`, () => {
+      const card = token('card', 1)
+      expect(contrastRatio(onCard(dimmedPaint(accent), 1), card)).toBeGreaterThanOrEqual(3)
+      const faded = onCard(`color-mix(in srgb, ${accent} 50%, transparent)`, 1)
+      expect(contrastRatio(faded, card)).toBeLessThan(2)
+    })
+  }
 })

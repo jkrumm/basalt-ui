@@ -8,7 +8,7 @@ import { dot } from '@tanstack/charts/dot'
 import { group } from '@tanstack/charts/group'
 import { stack } from '@tanstack/charts/stack'
 import { CV } from '../core/theme'
-import { dimmedPaint, emphasis } from '../marks'
+import { dimmedPaint, emphasis, focusedPaint } from '../marks'
 import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from '../types'
 
@@ -192,8 +192,10 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
     if (!bar || color === undefined) return 'transparent'
     const base = opacityOf?.(row.datum, row.series) ?? bar.fillOpacity ?? DEFAULT_BAR_OPACITY
     const strength = base * emphasis(h, { key: row.series })
-    // A `focus` holding a datum dims every other bar (`dimmedPaint`: the dark card's floor included).
-    if (plot.focused === null || row.datum === plot.focused) return paint(color, strength)
+    if (plot.focused === null) return paint(color, strength)
+    // A `focus` holding a datum dims every other bar (`dimmedPaint`: the dark card's floor included)
+    // and lifts the focused one past its resting colour (`focusedPaint`).
+    if (row.datum === plot.focused) return focusedPaint(color)
     return dimmedPaint(color, strength)
   }
   const order = visibleBars.map((s) => s.key)

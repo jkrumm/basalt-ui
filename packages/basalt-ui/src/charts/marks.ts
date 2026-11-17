@@ -41,6 +41,18 @@ const mixed = (color: string, opacity: number): string =>
 const withFloor = (paint: string, ink: number): string =>
   `color-mix(in srgb, ${paint}, ${CV.inkMuted} ${Math.round(ink * 100)}%)`
 
+/** The share of the card's ink the focused mark takes, so it rises past its resting colour as the rest falls. */
+const FOCUS_INK = 0.4
+
+/**
+ * The paint of the mark that holds the focus while the rest dim: its colour at full strength with
+ * two fifths of the card's ink, so a neutral mark among neutral marks reads at 1.5 to 2 times the
+ * contrast of its dimmed neighbours (a 0.55 faded bar included) and an accent in dark lifts off the card.
+ */
+export function focusedPaint(color: string): string {
+  return `color-mix(in srgb, ${color}, ${CV.ink} ${Math.round(FOCUS_INK * 100)}%)`
+}
+
 /**
  * The paint of a mark while ANOTHER datum holds the focus, `strength` being what it draws at
  * otherwise: `DIMMED` of it with the card's muted ink mixed in on the light card, `DIMMED_TEXT` of

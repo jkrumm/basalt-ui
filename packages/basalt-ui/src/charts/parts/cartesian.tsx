@@ -39,8 +39,9 @@ import { chartName } from '../chart-name'
 import { applySeams } from '../seams'
 import { asMarks, customPlot, toChartState, toEngineSpec } from './cartesian-adapt'
 import { chartSelection, indexMap } from './cartesian-selection'
-import { barMarks, floorIsZero, paint, shadeBars } from './bars-marks'
-import { CV, DIMMED } from '../core/theme'
+import { barMarks, floorIsZero, shadeBars } from './bars-marks'
+import { dimmedPaint, focusedPaint } from '../marks'
+import { CV } from '../core/theme'
 import { FocusWrap, useCursorFocus } from '../focus'
 import type { BarLayout } from './bars-marks'
 import { AUTO_END_LABELS, lastIsPlaceable, lineMarks } from './lines-marks'
@@ -345,12 +346,12 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
             dotsOf(
               rows.filter((row) => row.datum !== focused),
               s.key,
-              paint(color, DIMMED),
+              dimmedPaint(color),
             ),
             dotsOf(
               rows.filter((row) => row.datum === focused),
               `${s.key}:focused`,
-              color,
+              focusedPaint(color),
             ),
           )
       }
