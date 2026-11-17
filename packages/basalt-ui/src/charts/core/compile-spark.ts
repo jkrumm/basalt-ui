@@ -13,8 +13,8 @@ export type SparkInput = {
   height: number
   /** Vertical inset, px, so a stroke or the now dot at the extremes is not clipped. */
   padY?: number
-  /** A reference value (a target, the mean): it joins the y domain and maps through the same scale. */
-  reference?: number
+  /** Reference values (a target, the mean, a band's two ends): they join the y domain and map through the same scale. */
+  reference?: number | readonly number[]
 }
 
 export type SparkGeometry = {
@@ -62,9 +62,8 @@ function runs(input: SparkInput, g: Pick<SparkGeometry, 'x' | 'y'>) {
 export function sparkGeometry(input: SparkInput): SparkGeometry {
   const { values, width, height, padY = 0, reference } = input
   const known = values.filter(finite)
-  const domain = extent(finite(reference ?? null) ? [...known, reference as number] : known) ?? [
-    0, 1,
-  ]
+  const refs = [reference ?? []].flat().filter(finite)
+  const domain = extent([...known, ...refs]) ?? [0, 1]
   const [lo, hi] = domain
   const n = values.length
   const x = (i: number): number => (n <= 1 ? width / 2 : (i / (n - 1)) * width)

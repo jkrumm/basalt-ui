@@ -4,7 +4,7 @@ use when: 'a card, a table row or a strip shows the trend of one metric in a sma
 never when: 'the reader needs axes, a legend or several series (use a line chart)'
 subpath: basalt-ui/charts
 peers: ['@tanstack/charts', d3-scale]
-slots: [spark-line, spark-now, spark-reference]
+slots: [spark-band, spark-line, spark-now, spark-reference]
 ---
 
 # Sparkline
@@ -23,7 +23,7 @@ Sparkline(props: SparklineProps): ReactElement
   height: number | "fill"
   width?: number
   form?: "line" | "area"
-  reference?: number | "mean"
+  reference?: number | "mean" | { min: number; max: number; }  // A value, the `'mean'`, or a target range: two dashed lines with a faint band between
   axisLabels?: readonly [string, string, string]
   format?: (v: number) => string
   summary?: string

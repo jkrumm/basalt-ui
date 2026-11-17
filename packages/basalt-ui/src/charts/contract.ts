@@ -284,7 +284,8 @@ export type SparklineBase = {
   height: number | 'fill'
   width?: number
   form?: 'line' | 'area'
-  reference?: number | 'mean'
+  /** A value, the `'mean'`, or a target range: two dashed lines with a faint band between. */
+  reference?: number | 'mean' | { min: number; max: number }
   axisLabels?: readonly [string, string, string]
   format?: (v: number) => string
   summary?: string

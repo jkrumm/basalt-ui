@@ -61,6 +61,57 @@ describe('Sparkline reference', () => {
     expect(refs(spark({ series: [null, null], reference: 'mean' }))).toHaveLength(0)
   })
 
+  describe('a { min, max } band', () => {
+    const band = (node: ReactElement): Element | null =>
+      dom(node).querySelector('[data-slot="spark-band"]')
+    const ys = (node: ReactElement): number[] =>
+      refs(node).map((el) => Number(el.getAttribute('y1')))
+
+    test('draws two dashed lines on the line token and a faint band between them', () => {
+      const node = spark({ reference: { min: 20, max: 40 } })
+      expect(ys(node)).toHaveLength(2)
+      expect(ys(node)[0]).toBeCloseTo(yOf(20, [10, 50]), 1)
+      expect(ys(node)[1]).toBeCloseTo(yOf(40, [10, 50]), 1)
+      for (const el of refs(node)) {
+        expect(el.getAttribute('stroke-dasharray')).toBeTruthy()
+        expect(el.getAttribute('class')).toContain('stroke-line')
+      }
+      const rect = band(node)
+      expect(rect).not.toBeNull()
+      expect(Number(rect?.getAttribute('y'))).toBeCloseTo(yOf(40, [10, 50]), 1)
+      expect(Number(rect?.getAttribute('height'))).toBeCloseTo(
+        yOf(20, [10, 50]) - yOf(40, [10, 50]),
+        1,
+      )
+    })
+
+    test('both ends widen the y domain, and a reversed pair reads the same', () => {
+      const wide = spark({ reference: { min: 0, max: 100 } })
+      expect(ys(wide)[0]).toBeCloseTo(yOf(0, [0, 100]), 1)
+      expect(ys(wide)[1]).toBeCloseTo(yOf(100, [0, 100]), 1)
+      expect(ys(spark({ reference: { min: 40, max: 20 } }))).toEqual(
+        ys(spark({ reference: { min: 20, max: 40 } })),
+      )
+    })
+
+    test('a non-finite end draws neither the band nor a line', () => {
+      const node = spark({ reference: { min: 20, max: Number.NaN } })
+      expect(refs(node)).toHaveLength(0)
+      expect(band(node)).toBeNull()
+    })
+
+    test('a number reference has no band', () => {
+      expect(band(spark({ reference: 30 }))).toBeNull()
+    })
+
+    test('a null in the series stays a gap with the band drawn', () => {
+      const node = spark({ series: [10, 20, null, 40, 50], reference: { min: 20, max: 40 } })
+      const d = dom(node).querySelector('[data-slot="spark-line"]')?.getAttribute('d') ?? ''
+      expect(d.split('M').length - 1).toBe(2)
+      expect(band(node)).not.toBeNull()
+    })
+  })
+
   test('no reference prop: no reference mark', () => {
     expect(refs(spark())).toHaveLength(0)
   })
