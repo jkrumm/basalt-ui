@@ -19,14 +19,19 @@ Every series carries `key`, `label`, `color: { light, dark }` and `y: (d) => num
 an absence: a gap, no tooltip row). Shared: `format`, `axis`, `note`, `role`, `legend: false`,
 `tooltip: false`, `failed`, `getMarker`.
 
-| mark   | extra fields                                                                                |
-| ------ | ------------------------------------------------------------------------------------------- |
-| `line` | `curve`, `dash`, `area: 'fade'`, `weight: 'quiet' or 'strong'`, `gaps: 'connect'`, `parent` |
-| `bar`  | `stack`, `opacity: (d) => number`                                                           |
-| `dot`  | `r: (d) => number`                                                                          |
+| mark   | extra fields                                                                                     |
+| ------ | ------------------------------------------------------------------------------------------------ |
+| `line` | `curve`, `dash`, `area: 'fade'`, `weight: 'quiet' or 'strong'`, `gaps: 'connect'`, `parent`      |
+| `bar`  | `stack`, `opacity: (d) => number`, `values: true or (v, d) => text`, `highlight: (d) => boolean` |
+| `dot`  | `r: (d) => number`                                                                               |
 
 There is no `tone`, no free colour and no numeric stroke width: each is a type error. `weight` is the
 closed stroke scale.
+
+`values` labels each bar at its end (a stack once, by its total) clear of the rules, the captions and
+the other labels, and drops what has no room, highlighted bars last; `true` writes the series `format`.
+`highlight` paints the bars that answer in the brand accent, in the tooltip too, without a second
+series. A bar of 0 keeps a tick on the baseline that takes focus.
 
 ## Accessibility
 
@@ -116,7 +121,8 @@ still writes its tooltip value.
 `ceil` up) or `(extent) => extent`. A domain narrower than the data, a tuple or a capping function
 (`([lo, hi]) => [lo, Math.min(hi, 80)]`), draws each datum past it on the plot's edge with a caret in
 its series colour; the tooltip and the focus readout read the true value. A stack of two or more
-bar series, and a `normalized` one, never clamps: a part's value is not the height it reaches. There
+bar series with a page-set domain stops at the plot's edge under one caret per x, in the colour of
+its top segment, and its value label keeps the true total; a `normalized` stack never clamps. There
 is no log y.
 
 ## Not yet applied

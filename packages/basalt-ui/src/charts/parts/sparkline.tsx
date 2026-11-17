@@ -75,10 +75,15 @@ export function Sparkline(props: SparklineProps): ReactElement {
       : refValue === undefined
         ? []
         : [refValue]
-  // A reference above the cap would stretch the plot past it again: it is not drawn.
-  const refs = refEnds.every(Number.isFinite)
-    ? refEnds.filter((v) => cap === undefined || v <= cap)
-    : []
+  // A reference above the cap would stretch the plot past it again: a lone line there is not drawn,
+  // and a range's end is held at the cap so its band still reaches the top edge.
+  const held =
+    cap === undefined
+      ? refEnds
+      : refEnds.length === 2
+        ? refEnds.map((v) => Math.min(v, cap))
+        : refEnds.filter((v) => v <= cap)
+  const refs = held.every(Number.isFinite) ? held : []
   const g = sparkGeometry({
     values,
     width: plotW,
