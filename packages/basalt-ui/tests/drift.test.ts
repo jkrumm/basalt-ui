@@ -17,17 +17,18 @@ import type { SurfaceSpec } from '../src/surfaces'
 
 const PKG_ROOT = join(import.meta.dir, '..')
 
-// ── agents-sync — AGENTS.md "Subpath ownership" table must match the SURFACES SSOT ───────────────
+// ── agents-sync — docs/agents/subpaths.md "Subpath ownership" table must match the SURFACES SSOT ───────────────
 
 describe('agents-sync', () => {
-  const AGENTS_PATH = join(PKG_ROOT, 'AGENTS.md')
+  const AGENTS_PATH = join(PKG_ROOT, '../../docs/agents/subpaths.md')
 
   type Row = { subpath: string; layer: string; purpose: string }
 
   function parseSubpathTable(md: string): Row[] {
     const lines = md.split('\n')
     const start = lines.findIndex((l) => l.startsWith('## Subpath ownership'))
-    if (start === -1) throw new Error('AGENTS.md: missing "## Subpath ownership" section')
+    if (start === -1)
+      throw new Error('docs/agents/subpaths.md: missing "## Subpath ownership" section')
 
     const rows: Row[] = []
     for (let i = start + 1; i < lines.length; i++) {
