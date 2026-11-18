@@ -141,19 +141,44 @@ jobs:
         if: matrix.shard == 1
         run: bun run test:layout:harness
 
+  # The full local gate, verbatim: project.yaml declares `checks.full: make check` and CI runs it here. There is no
+  # `factory` on a hosted runner, so the slot wrapper is bare and the layout suite runs whole, serially: the sharded
+  # layout jobs above and this job both run it, and the steps the other jobs do not reach (generated-file gates, the
+  # quality matrix, the test ledger) run only here.
+  gate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # check-contract-frozen diffs against origin/master
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-shell-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      - name: Full gate (make check)
+        run: make check
+
   # The one result: needs every job above and fails unless each succeeded (a skipped or cancelled need is a
   # failure too), so a green ci.yml run still means everything passed.
   ci:
     if: always()
-    needs: [checks, unit, layout]
+    needs: [checks, unit, layout, gate]
     runs-on: ubuntu-latest
 
     steps:
       - name: Fail unless every job succeeded
-        if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.layout.result != 'success'
+        if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success'
         run: |
-          echo "checks=${{ needs.checks.result }} unit=${{ needs.unit.result }} layout=${{ needs.layout.result }}"
+          echo "checks=${{ needs.checks.result }} unit=${{ needs.unit.result }} layout=${{ needs.layout.result }} gate=${{ needs.gate.result }}"
           exit 1
 
       - name: Every job succeeded
-        run: echo "checks, unit and all layout shards passed"
+        run: echo "checks, unit, all layout shards and the full gate passed"
