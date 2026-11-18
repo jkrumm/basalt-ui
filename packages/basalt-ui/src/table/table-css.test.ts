@@ -25,6 +25,14 @@ describe('table.css', () => {
     expect(outside).toBe('')
   })
 
+  test('a pinned or tick cell takes the surface the table sits on, never the bare canvas', () => {
+    const rule = withoutComments.match(
+      /\[data-slot='table-cell'\]:is\(\[data-pin\], \[data-kind='tick'\]\) \{([^}]*)\}/,
+    )
+    expect(rule).not.toBeNull()
+    expect(rule?.[1]).toContain('background-color: var(--basalt-surface, var(--basalt-canvas))')
+  })
+
   test('stays small: under 3 KB gzipped', () => {
     expect(gzipSync(SHEET).length).toBeLessThan(3072)
   })
