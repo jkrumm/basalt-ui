@@ -266,4 +266,9 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     title: 'Linked windows: a table of runs beside an hourly chart',
     blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',
   },
+  {
+    id: 'row-list',
+    title: 'Row list: quiet rows beside a chart',
+    blurb: 'Four row shapes, quiet by default: spacing and a surface, a hairline only on request.',
+  },
 ]
