@@ -44,9 +44,13 @@ describe('Page markup', () => {
     expect(root(container).classList.contains('@container')).toBe(true)
   })
 
-  test('it declares --page-sticky-top as the published band height, zero without a bar', () => {
+  test('--page-sticky-top is zero, and the published band height only while a band sticks', () => {
     const { container } = render(<Page />)
-    expect(root(container).className).toContain('[--page-sticky-top:var(--page-bar-h,0px)]')
+    const classes = root(container).className.split(/\s+/)
+    expect(classes).toContain('[--page-sticky-top:0px]')
+    expect(classes).toContain(
+      'has-[[data-slot=page-bar][data-sticky]]:[--page-sticky-top:var(--page-bar-h,0px)]',
+    )
   })
 
   test('the aside slot is an empty hidden column while no aside is mounted', () => {

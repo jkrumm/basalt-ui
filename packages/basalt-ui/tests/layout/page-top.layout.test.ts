@@ -66,12 +66,23 @@ type Top = {
   railWidth: number
   headerWidth: number
   bandRule: number
+  /** The header's rule over the aside and dock columns, and those columns' width. */
+  sideRule: number
+  sideColumns: number
 }
 
-async function measure(viewport: Viewport, route: string): Promise<Top> {
+async function measure(viewport: Viewport, route: string, asideWidth?: number): Promise<Top> {
   const page: LayoutPage = await openDocument('<!doctype html><html><body></body></html>', viewport)
   await page.raw.goto(new URL(route, server!.url).href)
   await page.raw.waitForSelector('[data-slot="page-main"] > :not([data-slot="page-bar"]):not(h1)')
+  if (asideWidth !== undefined) {
+    // The aside column's width is the grid's variable: widening it stands in for a docked aside.
+    await page.raw.evaluate((w) => {
+      document
+        .querySelector<HTMLElement>('[data-slot="shell"]')
+        ?.style.setProperty('--shell-aside-w', `${w}px`)
+    }, asideWidth)
+  }
   await page.raw.evaluate(() => document.fonts.ready.then(() => undefined))
   await page.settle()
   return page.raw.evaluate(() => {
@@ -98,6 +109,13 @@ async function measure(viewport: Viewport, route: string): Promise<Top> {
       railWidth: shellMain === null ? 0 : shellMain.getBoundingClientRect().left,
       headerWidth: header.getBoundingClientRect().width,
       bandRule: band === null ? 0 : parseFloat(getComputedStyle(band).borderBottomWidth),
+      sideRule: (() => {
+        const side = getComputedStyle(header, '::before')
+        return side.display === 'none' ? 0 : parseFloat(side.width) || 0
+      })(),
+      sideColumns: ['shell-aside', 'shell-dock']
+        .map((s) => document.querySelector<HTMLElement>(`[data-slot="${s}"]`))
+        .reduce((sum, el) => sum + (el?.getBoundingClientRect().width ?? 0), 0),
     }
   })
 }
@@ -124,6 +142,13 @@ layout('the page top on the playground', () => {
           expect(m.firstContentTop - m.chromeBottom).toBeCloseTo(m.gutter, 0)
         })
       }
+
+      test('with a band, the header keeps its rule over an aside column', async () => {
+        const m = await measure(viewport, BANDED[0], 320)
+        expect(m.banded).toBe(true)
+        expect(m.sideColumns, 'the aside column took its width').toBeCloseTo(320, 0)
+        expect(m.sideRule).toBeCloseTo(m.sideColumns, 0)
+      })
 
       test('the distance from the chrome to the first content is one value on all five pages', async () => {
         const gaps: number[] = []

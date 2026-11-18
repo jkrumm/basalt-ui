@@ -217,6 +217,9 @@ export function Header({
         // header and band read as one surface with one rule under it; the rail keeps its rule.
         "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border after:content-['']",
         'group-data-page-band/shell:after:end-auto group-data-page-band/shell:after:w-(--shell-rail-w)',
+        // The aside and dock columns have no band under them, so they keep their part of the rule.
+        "before:pointer-events-none before:absolute before:end-0 before:bottom-0 before:hidden before:h-px before:w-[calc(var(--shell-aside-w,0px)+var(--shell-dock-w,0px))] before:bg-border before:content-['']",
+        'group-data-page-band/shell:before:block',
         'group-data-[compact-header=hidden]/shell:max-md:hidden',
         PRINT_OFF,
       )}
