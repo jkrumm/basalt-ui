@@ -13,6 +13,7 @@ A page is composed from the shipped frame; each bullet names what holds it.
 
 - Declare the whole navigation once with `defineNav` and pass it to `AppShell`; a link to an unregistered route, an unknown badge key or a second badge on a row does not compile. [type:NavConfig] [type:NavBadges]
 - Shell extensions are typed data (`GlobalAction`, `SidebarBlock`), never a node. [type:GlobalAction] [type:SidebarBlock]
+- A route's page returns `Page` as its root, or `SplitPage` with `list` and `detail` as render functions; never a `div`, a fragment or a wrapper: `Page` owns the gutter and the top inset, so a page sets no padding or gap of its own. [lint:page-root] [type:SplitPageProps]
 - A page is named once: by its nav label, or by `PageBar` `title` where there is no shell; never a raw heading, an in-body `h1` included. [lint:primitive-bypass] [type:PageBarProps]
 - A nav or link `search` keeps the keys its route owns; never a literal search object or a store's link search. [lint:router-search]
 
@@ -22,7 +23,6 @@ A page is composed from the shipped frame; each bullet names what holds it.
 - A filter or tab binds a `ControlHandle`, never `value` or `onChange`; filters sit in one `FilterSet`, page and section switches are `ViewTabs`. [type:ControlHandle] [type:FilterSetProps] [type:ViewTabsProps]
 - `PageBar` `actions` holds at most five entries and at most one `primary`. [type:PageBarProps]
 - `PageAside` takes a required `title`; a detail host shows its entry in a sheet or in the aside. [type:PageAsideProps] [type:DetailHost]
-- A split page passes `list` and `detail` as render functions. [type:SplitPageProps]
 
 ## Frames and cards
 
