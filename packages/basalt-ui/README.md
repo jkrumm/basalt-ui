@@ -50,9 +50,6 @@ at all:
 bunx basalt-ui tokens:css --out src/tokens.css
 ```
 
-See [`docs/FRAMEWORK-FREE.md`](https://github.com/jkrumm/basalt-ui/blob/master/docs/FRAMEWORK-FREE.md)
-for the selector-specificity trap, the `color-mix` opacity law, and the surface-token roles.
-
 ### 2. Scaffold the app and the repo doctrine (`basalt-ui init`)
 
 ```bash
@@ -70,9 +67,19 @@ plugin, no marketplace and no second version to track. `init` writes at the git 
 - the profile's peers at exact pins (stylelint and postcss-html; `bridge` and above add oxlint and `@shadcn/lint`), installed with the lockfile's package manager (`--no-install` prints the command instead)
 - above `tokens`: `.claude/rules/basalt-*.md`, `.claude/skills/basalt-*`, the managed `<!-- basalt:begin/end -->` block in `AGENTS.md`, and a thin `DESIGN.md` seed when no declared root has one
 - `.basalt/budget.json` (the seeded ceilings) and the formatter ignore for the managed paths
-- with `app`, the router scaffold, each file written once and never touched by `sync`: `src/main.tsx` (the entry), `src/routes/__root.tsx`, `src/routes/_app.tsx` (the `AppShell` layout), `src/lib/nav.tsx` (the one `defineNav`) and `src/components/route-{pending,error,missing}.tsx`; a `main.tsx` that is create-vite's stock entry is replaced, any other entry gets the template's lines printed
+- with `app`, the router scaffold (the files in the tree below), each written once and never touched by `sync`; a `main.tsx` that is create-vite's stock entry is replaced, any other entry gets the template's lines printed
 - `.basalt/sources.css` in the `.gitignore` beside the Vite config (once; `basalt()` regenerates the file on every run, and `doctor` reports it when git tracks it)
-- in a stock Vite config, `tanstackRouter(...)` and `basalt()` in `plugins`; in a stock stylesheet entry (`src/index.css`), the `tailwindcss` import becomes `basalt-ui/tailwind.css`, the app's `tokens.css` when the `tokens:css` output exists, and `.basalt/sources.css`; any other shape gets the exact lines printed
+- in a stock Vite config, `tanstackRouter(...)` and `basalt()` in `plugins`; in a stock stylesheet entry (`index.css`), the `tailwindcss` import becomes `@import 'basalt-ui/tailwind.css'`, the app's `tokens.css` when the `tokens:css` output exists, and `.basalt/sources.css`; any other shape gets the exact lines printed
+
+```text
+src/
+  main.tsx                  the entry
+  index.css                 stylesheet entry
+  routes/__root.tsx
+  routes/_app.tsx           the AppShell layout
+  lib/nav.tsx               the one defineNav
+  components/route-pending.tsx, route-error.tsx, route-missing.tsx
+```
 
 It ends in `basalt-ui doctor`, which reports. Running `init` twice changes nothing; `sync` refreshes
 what `init` placed and never creates an install.
@@ -458,8 +465,7 @@ the app actually has, with the manifest's own field names (`src`, `sizes`, `type
 an optional `rel` — every entry becomes a manifest icon, and only an entry naming a `rel` reaches
 the head. `icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' }]` is a complete,
 installable icon set for a single-page app. An empty array reads as `false`; `{ dir }` and the
-default are byte-identical to what they always emitted. Full doctrine, plugin ordering, and the six
-default icon filenames: `agent/rules/basalt-app.md`.
+default are byte-identical to what they always emitted. Full doctrine and plugin ordering: `agent/skills/basalt-app/SKILL.md`; the `icons` option: `docs/vite.md`.
 
 ---
 
