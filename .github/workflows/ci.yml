@@ -8,6 +8,12 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request cancels the run in flight for the superseded head, so a hosted run is not billed for a
+# head no longer on the pull request. A master run in flight is never cancelled, and the final head still runs the full gate.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 # The workflow stays ci.yml and its run-level conclusion stays the single result `make merge-guard` reads
 # (`gh run list --workflow ci.yml`): the parallel jobs below only cut wall time, and the final `ci` job
 # fails unless every one of them passed.
