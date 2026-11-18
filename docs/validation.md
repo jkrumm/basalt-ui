@@ -30,7 +30,7 @@ ledger) behind one final `ci` job, so the run-level result `make merge-guard` re
 everything passed. Every step of `make check` runs once per head. The `ci` job also asserts that the four layout shards
 ran, together, every `*.layout.test.ts` file (`scripts/check-layout-shards.ts` over the shard logs); a step added to `check`
 belongs to `ci-gate` unless the `checks` or `unit` job already runs it. `make check` runs them in sequence and is unchanged; `make check-fast` is the same but for the layout
-step, which runs only the files the branch's changes reach, and the quality matrix, which runs only when the branch touched
+and the unit step, which run only the files the branch's changes reach (`make test-fast`, below), and the quality matrix, which runs only when the branch touched
 `packages/basalt-ui/src`, the matrix's own tests and test support, `apps/playground`, or a package manifest or lockfile
 (`make quality-matrix-fast`; `make quality-matrix` always runs it) (a lead's check, `project.yaml` `checks`; CI runs the full suite on the head). It exits
 non-zero on the first failure and writes only gitignored output (`dist/`, `*.tgz`). `pre` alone is
@@ -53,6 +53,22 @@ host grants cores and memory (`FACTORY_STEP_CORES`, `FACTORY_STEP_MEM_MIB`) and 
 `min(cores, memory / 1 GiB, 6)` processes at once (`scripts/unit-parallelism.ts`); unset, as on the mini and in CI, it
 stays serial. Every process runs with `--timeout 30000`, because a host 1.7x slower under parallel load took 5 to 8 s
 for tests that take under 3 s on the mini. `FACTORY_SLOT_HOST=vps make test` pins one run there.
+
+## Unit tests the branch reaches (`make test-fast`)
+
+`make check-fast` runs `pre:static` and then `make test-fast` instead of the whole unit suite: `scripts/unit-test.ts --changed`
+(the same processes and the same bunfig). `scripts/unit-select.ts` picks the files in two parts: every file outside the
+`always-on` set runs through `bun test --changed=<merge base>` (bun's own module graph: the tests that import, through any
+chain, a changed file), and the always-on set runs whole. That set is the tests an import graph cannot see because they
+read files or spawn tools: every test outside `apps/` and the `packages/basalt-ui/src/<folder>/` folders (the root `tests/`,
+`scripts/`, `packages/basalt-ui/{scripts,tests}`, `tools/`, the files directly in `src/`), minus the `SLOW` list (8 to 90 s
+each, covered by a script gate of `check-fast` or reached by the graph), plus any test whose text names a changed file by
+its file name or its last two folders (`fixtures/hook`, `src/cli`), `SLOW` ones included: they read fixtures and spawn bins, which are not imports. A change to a `package.json`, `bun.lock`, `bunfig.toml`, a `tsconfig`, `tests/setup/` or the unit scripts
+runs the whole suite. The price is stated in the script: a test that covers code the branch did not touch fails in CI,
+not here; CI and `make check` run the whole suite (`bun test`, `make test`), so what ships is covered the same. Measured
+2026-11-18 on the mini under load: the always-on set is 97 files, about 104 s of the ~330 s the 200 files outside `src/`
+and `apps/` cost, against a whole suite of 412 s. `test-fast` takes the slot `unit-fast`, never `unit`: `project.yaml` may place
+`unit` on the step host, whose copy of the tree has no working-tree diff, and `--changed` would see no change there.
 
 ## Layout suite
 
