@@ -25,7 +25,9 @@ describe('ESLint RuleTester', () => {
     languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
   })
   tester.run('page-root/not-page', RULE as unknown as Rule.RuleModule, {
-    valid: blocks.filter((b) => b.kind === 'valid').map((b) => ({ code: b.code })),
+    valid: blocks
+      .filter((b) => b.kind === 'valid')
+      .map((b) => ({ code: b.code, ...(b.filename ? { filename: b.filename } : {}) })),
     invalid: blocks
       .filter((b) => b.kind === 'invalid')
       .map((b) => ({
