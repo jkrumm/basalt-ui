@@ -65,14 +65,25 @@ describe('PageBar without a shell', () => {
     expect(h1.classList.contains('sr-only')).toBe(false)
   })
 
-  test('the band is sticky at the top of its scrollport', () => {
+  test('a band that holds a control is sticky at the top of its scrollport', () => {
+    render(
+      <Page>
+        <PageBar title="Runs" controls={slotOf('Range')} />
+      </Page>,
+    )
+    expect(band()?.classList.contains('sticky')).toBe(true)
+    expect(band()?.classList.contains('top-0')).toBe(true)
+    expect(band()?.hasAttribute('data-sticky')).toBe(true)
+  })
+
+  test('a band of a title alone scrolls away with the page', () => {
     render(
       <Page>
         <PageBar title="Runs" />
       </Page>,
     )
-    expect(band()?.classList.contains('sticky')).toBe(true)
-    expect(band()?.classList.contains('top-0')).toBe(true)
+    expect(band()?.classList.contains('sticky')).toBe(false)
+    expect(band()?.hasAttribute('data-sticky')).toBe(false)
   })
 
   test('renders exactly one h1', () => {
