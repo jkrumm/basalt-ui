@@ -288,3 +288,90 @@ layout('ChartCard', () => {
     }
   })
 })
+
+/** The owner's two review widths: the hover readout and the card legend are judged at these. */
+const REVIEW: Viewport[] = [{ name: 'desktop', width: 1800, height: 1200 }, PHONE]
+
+layout('ChartCard hover readout and card legend', () => {
+  for (const viewport of REVIEW) {
+    for (const scheme of [undefined, 'dark'] as const) {
+      describe(`${viewport.width} ${scheme ?? 'light'}`, () => {
+        test('a hover pins the x value on the x axis and the y value on the y axis, tied to the rules', async () => {
+          const page = await open(viewport, scheme)
+          const at = await page.raw.evaluate(() => {
+            const svg = document.querySelector('[data-testid="cc-tip"] svg')!
+            svg.scrollIntoView({ block: 'center' })
+            const r = svg.getBoundingClientRect()
+            return { x: r.left + r.width * 0.5, y: r.top + r.height * 0.4 }
+          })
+          await page.raw.mouse.move(at.x - 8, at.y)
+          await page.raw.mouse.move(at.x, at.y)
+          await page.settle()
+          const seen = await page.raw.evaluate(() => {
+            const root = document.querySelector('[data-testid="cc-tip"]')!
+            const box = (sel: string) => {
+              const el = root.querySelector(sel)
+              if (el === null) return null
+              const r = el.getBoundingClientRect()
+              return { l: r.left, t: r.top, r: r.right, b: r.bottom, text: el.textContent ?? '' }
+            }
+            return {
+              xRule: box('.ts-chart__crosshair-rule--x'),
+              yRule: box('.ts-chart__crosshair-rule--y'),
+              xLabel: box('.ts-chart__crosshair-label--x.ts-chart__crosshair-label-text'),
+              yLabel: box('.ts-chart__crosshair-label--y.ts-chart__crosshair-label-text'),
+              fill: (() => {
+                const el = root.querySelector('.ts-chart__crosshair-label-text')
+                return el === null ? '' : getComputedStyle(el).fill
+              })(),
+              ink: getComputedStyle(document.body).color,
+            }
+          })
+          expect(seen.xRule).not.toBeNull()
+          expect(seen.yRule).not.toBeNull()
+          expect(seen.xLabel?.text).toMatch(/\d/)
+          expect(seen.yLabel?.text).toMatch(/\d/)
+          const { xRule, yRule, xLabel, yLabel } = seen as Record<
+            'xRule' | 'yRule' | 'xLabel' | 'yLabel',
+            NonNullable<typeof seen.xRule>
+          >
+          // The x value sits under the plot, centred on the x rule (a clamp at the edge aside).
+          expect(xLabel.t).toBeGreaterThanOrEqual(xRule.b - 0.5)
+          expect(Math.abs((xLabel.l + xLabel.r) / 2 - xRule.l)).toBeLessThan(1.5)
+          // The y value sits left of the plot, centred on the y rule.
+          expect(yLabel.r).toBeLessThanOrEqual(yRule.l + 0.5)
+          expect(Math.abs((yLabel.t + yLabel.b) / 2 - yRule.t)).toBeLessThan(2)
+          // Both read in an ink the scheme sets, never transparent.
+          expect(seen.fill).not.toBe('none')
+          expect(seen.fill).not.toBe('rgba(0, 0, 0, 0)')
+        })
+
+        test('the card legend toggles by Enter and isolates by Shift+Enter', async () => {
+          const page = await open(viewport, scheme)
+          const sel = (key: string) =>
+            `[data-testid="cc-legend"] [data-slot="chart-legend"] [data-legend-key="${key}"]`
+          const pressed = () =>
+            page.raw.evaluate(
+              (s) => s.map((q) => document.querySelector(q)?.getAttribute('aria-pressed') ?? null),
+              [sel('a'), sel('b')],
+            )
+          expect(await pressed()).toEqual(['true', 'true'])
+          await page.raw.focus(sel('b'))
+          await page.raw.keyboard.press('Enter')
+          expect(await pressed()).toEqual(['true', 'false'])
+          await page.raw.keyboard.press('Space')
+          expect(await pressed()).toEqual(['true', 'true'])
+          await page.raw.focus(sel('a'))
+          await page.raw.keyboard.press('Shift+Enter')
+          expect(await pressed()).toEqual(['true', 'false'])
+          await page.raw.keyboard.press('Shift+Enter')
+          expect(await pressed()).toEqual(['true', 'true'])
+          await page.raw.click(sel('b'), { modifiers: ['Alt'] })
+          expect(await pressed()).toEqual(['false', 'true'])
+          await page.raw.dblclick(sel('b'))
+          expect(await pressed()).toEqual(['true', 'true'])
+        })
+      })
+    }
+  }
+})
