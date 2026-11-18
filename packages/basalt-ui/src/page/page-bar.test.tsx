@@ -198,6 +198,29 @@ describe('PageBar without a shell', () => {
     expect(view.writes).toEqual(['b'])
   })
 
+  test('the tab strip is the segment look; under the regular tier its home takes the line and each tab an equal share', () => {
+    const view = memoryHandle<string>('view', 'a', {
+      kind: 'enum',
+      options: [
+        { value: 'a', label: 'Alpha' },
+        { value: 'b', label: 'Beta' },
+      ],
+    })
+    render(
+      <Page>
+        <PageBar tabs={{ state: view, label: 'Orders view' }} />
+      </Page>,
+    )
+    const home = band()?.querySelector('[data-slot="page-bar-tabs"]')
+    expect(home?.className).toContain('max-@regular:basis-full')
+    expect(home?.querySelector('[data-slot="tabs"]')?.getAttribute('data-variant')).toBe('segment')
+    for (const name of ['Alpha', 'Beta']) {
+      const cls = screen.getByRole('tab', { name }).className
+      expect(cls).toContain('max-@regular:flex-1')
+      expect(cls).toContain('max-@regular:basis-0')
+    }
+  })
+
   test('a handle in tabs makes the band non-empty on its own', () => {
     const view = memoryHandle<string>('view', 'a', {
       kind: 'enum',

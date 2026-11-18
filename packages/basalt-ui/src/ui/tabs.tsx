@@ -1,6 +1,7 @@
 import { Tabs as BaseTabs } from '@base-ui/react/tabs'
 import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
+import { createContext, use } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
 
@@ -25,6 +26,10 @@ export const tabsVariants = cva(
   },
 )
 
+/** The look the triggers and the list read from their `Tabs`. */
+type Look = 'line' | 'segment'
+const LookContext = createContext<Look>('line')
+
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
 export const tabsParts = ['tabs', 'tabs-list', 'tabs-trigger', 'tabs-content'] as const
 
@@ -35,7 +40,14 @@ type LayoutClass = {
 
 export type TabsProps = Omit<BaseTabs.Root.Props, 'className'> &
   VariantProps<typeof tabsVariants> &
-  LayoutClass
+  LayoutClass & {
+    /**
+     * `line` (default) is triggers on a hairline with a brand underline: tabs that sit over their
+     * panels. `segment` is a tinted track with one raised option, the look of `Segmented`: a view
+     * switch that sits beside controls in a band or a header. Horizontal only.
+     */
+    variant?: Look
+  }
 
 /**
  * Tabs on Base UI: roving focus (ArrowLeft and ArrowRight in DOM order, Home and End), Enter or
@@ -54,28 +66,39 @@ export type TabsProps = Omit<BaseTabs.Root.Props, 'className'> &
  *   <TabsContent value="activity">...</TabsContent>
  * </Tabs>
  */
-export function Tabs({ size, className, ...props }: TabsProps): ReactElement {
+export function Tabs({ size, variant = 'line', className, ...props }: TabsProps): ReactElement {
   return (
-    <BaseTabs.Root {...props} data-slot="tabs" className={cn(tabsVariants({ size }), className)} />
+    <LookContext value={variant}>
+      <BaseTabs.Root
+        {...props}
+        data-slot="tabs"
+        data-variant={variant}
+        className={cn(tabsVariants({ size }), className)}
+      />
+    </LookContext>
   )
 }
 
 export type TabsListProps = Omit<BaseTabs.List.Props, 'className'> & LayoutClass
 
 /**
- * The row of triggers on a hairline. It scrolls sideways when the triggers outgrow the page, so a
- * narrow phone never widens the document.
+ * The row of triggers, on a hairline or (`variant="segment"`) in a tinted track. It scrolls sideways
+ * when the triggers outgrow the page, so a narrow phone never widens the document.
  *
  * @example
  * <TabsList aria-label="Report sections"><TabsTrigger value="a">A</TabsTrigger></TabsList>
  */
 export function TabsList({ className, ...props }: TabsListProps): ReactElement {
+  const look = use(LookContext)
   return (
     <BaseTabs.List
       {...props}
       data-slot="tabs-list"
       className={cn(
-        'flex shrink-0 items-center gap-1 overflow-x-auto border-b border-border data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch data-[orientation=vertical]:overflow-x-visible data-[orientation=vertical]:border-r data-[orientation=vertical]:border-b-0',
+        'flex shrink-0 items-center overflow-x-auto',
+        look === 'segment'
+          ? 'gap-0.5 rounded-ctrl bg-accent p-0.5 [scrollbar-width:none]'
+          : 'gap-1 border-b border-border data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch data-[orientation=vertical]:overflow-x-visible data-[orientation=vertical]:border-r data-[orientation=vertical]:border-b-0',
         className,
       )}
     />
@@ -85,19 +108,23 @@ export function TabsList({ className, ...props }: TabsListProps): ReactElement {
 export type TabsTriggerProps = Omit<BaseTabs.Tab.Props, 'className'> & LayoutClass
 
 /**
- * One tab. The active tab takes the ink colour and a brand underline; a disabled tab stays
- * reachable by the arrow keys (it cannot be activated), as the WAI-ARIA tabs pattern asks.
+ * One tab. The active tab takes the ink colour and a brand underline (`segment`: a raised face); a
+ * disabled tab stays reachable by the arrow keys (it cannot be activated), as the WAI-ARIA tabs pattern asks.
  *
  * @example
  * <TabsTrigger value="activity">Activity</TabsTrigger>
  */
 export function TabsTrigger({ className, ...props }: TabsTriggerProps): ReactElement {
+  const look = use(LookContext)
   return (
     <BaseTabs.Tab
       {...props}
       data-slot="tabs-trigger"
       className={cn(
-        'relative -mb-px inline-flex h-(--tabs-h) shrink-0 cursor-pointer items-center gap-1.5 border-b-2 border-transparent px-3 font-medium whitespace-nowrap text-muted-foreground select-none focus-ring focus-visible:-outline-offset-2 transition-colors hover:text-foreground data-active:border-brand data-active:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-[orientation=vertical]:mr-[-1px] data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:border-r-2 data-[orientation=vertical]:border-b-0 pointer-coarse:min-h-11 motion-reduce:transition-none',
+        'relative inline-flex shrink-0 cursor-pointer items-center gap-1.5 px-3 font-medium whitespace-nowrap text-muted-foreground select-none focus-ring focus-visible:-outline-offset-2 transition-colors hover:text-foreground data-active:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 motion-reduce:transition-none',
+        look === 'segment'
+          ? 'h-[calc(var(--tabs-h)-0.25rem)] justify-center rounded-[calc(var(--radius-ctrl)-2px)] data-active:bg-secondary data-active:shadow-raised forced-colors:border forced-colors:border-current forced-colors:data-active:border-2'
+          : 'h-(--tabs-h) -mb-px border-b-2 border-transparent data-active:border-brand data-[orientation=vertical]:mr-[-1px] data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:border-r-2 data-[orientation=vertical]:border-b-0',
         className,
       )}
     />

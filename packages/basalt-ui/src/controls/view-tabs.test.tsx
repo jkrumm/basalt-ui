@@ -51,6 +51,16 @@ describe('the two forms', () => {
     expect(track[0]?.parentElement?.className).toContain('md:hidden')
   })
 
+  test('the strip is the segment look and the track gives every option an equal share', () => {
+    const { container } = show(<ViewTabs state={handleOf()} />)
+    expect(container.querySelector('[data-slot="tabs"]')?.getAttribute('data-variant')).toBe(
+      'segment',
+    )
+    const track = container.querySelector('[data-slot="segmented"]')
+    expect(track?.getAttribute('data-fill')).toBe('true')
+    expect(track?.className).toContain('w-full')
+  })
+
   test('both forms carry the accessible name', () => {
     const { container, getByRole } = show(<ViewTabs handle={handleOf()} label="Overview view" />)
     expect(getByRole('tablist', { name: 'Overview view' })).not.toBeNull()

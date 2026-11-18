@@ -22,15 +22,16 @@ Space activates, and the panel is linked by `aria-controls`. Works with no provi
 no indicator script, so it is safe on a static page.
 
 ```ts
-Tabs({ size, className, ...props }: TabsProps): ReactElement
+Tabs({ size, variant, className, ...props }: TabsProps): ReactElement
   size?: "md" | "sm" | null
   className?: string  // Layout only (`w-full`, `mt-2`, `max-w-md`)
+  variant?: Look  // `line` (default) is triggers on a hairline with a brand underline: tabs that sit over their panels
 ```
 
 ### `TabsList`
 
-The row of triggers on a hairline. It scrolls sideways when the triggers outgrow the page, so a
-narrow phone never widens the document.
+The row of triggers, on a hairline or (`variant="segment"`) in a tinted track. It scrolls sideways
+when the triggers outgrow the page, so a narrow phone never widens the document.
 
 ```ts
 TabsList({ className, ...props }: TabsListProps): ReactElement
@@ -39,8 +40,8 @@ TabsList({ className, ...props }: TabsListProps): ReactElement
 
 ### `TabsTrigger`
 
-One tab. The active tab takes the ink colour and a brand underline; a disabled tab stays
-reachable by the arrow keys (it cannot be activated), as the WAI-ARIA tabs pattern asks.
+One tab. The active tab takes the ink colour and a brand underline (`segment`: a raised face); a
+disabled tab stays reachable by the arrow keys (it cannot be activated), as the WAI-ARIA tabs pattern asks.
 
 ```ts
 TabsTrigger({ className, ...props }: TabsTriggerProps): ReactElement

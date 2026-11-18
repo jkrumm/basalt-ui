@@ -24,8 +24,12 @@ export const segmentedVariants = cva(
         md: 'min-h-ctl',
         sm: 'min-h-6',
       },
+      fill: {
+        true: 'flex w-full',
+        false: '',
+      },
     },
-    defaultVariants: { size: 'md' },
+    defaultVariants: { size: 'md', fill: false },
   },
 )
 
@@ -42,7 +46,7 @@ const OWN_FACE =
  * segmentedItemVariants({ size: 'md' })
  */
 export const segmentedItemVariants = cva(
-  `relative z-10 flex flex-auto shrink-0 cursor-pointer whitespace-nowrap pointer-coarse:min-w-11 items-center justify-center gap-1.5 rounded-[calc(var(--radius-ctrl)-2px)] text-center font-medium text-muted-foreground transition-colors select-none motion-reduce:transition-none focus-ring focus-visible:-outline-offset-2 after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-6 after:-translate-y-1/2 pointer-coarse:after:min-h-11 hover:text-foreground data-pressed:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 ${OWN_FACE}`,
+  `relative z-10 flex flex-auto shrink-0 cursor-pointer whitespace-nowrap pointer-coarse:min-w-11 items-center justify-center gap-1.5 rounded-[calc(var(--radius-ctrl)-2px)] text-center font-medium text-muted-foreground transition-colors select-none motion-reduce:transition-none group-data-[fill=true]/segmented:flex-1 group-data-[fill=true]/segmented:basis-0 focus-ring focus-visible:-outline-offset-2 after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-6 after:-translate-y-1/2 pointer-coarse:after:min-h-11 hover:text-foreground data-pressed:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 ${OWN_FACE}`,
   {
     variants: {
       size: {
@@ -79,7 +83,9 @@ export type SegmentedOption = {
   'aria-label'?: string
 }
 
-type Shared = VariantProps<typeof segmentedVariants> & {
+type Shared = Omit<VariantProps<typeof segmentedVariants>, 'fill'> & {
+  /** The track takes its box's width and every option an equal share of it (a phone's full-width switch). */
+  fill?: boolean
   disabled?: boolean
   /** Layout only (`w-full`, `mt-2`). Height belongs to `size`. */
   className?: string
@@ -133,7 +139,7 @@ type Box = { x: number; w: number } | null
  * </Segmented>
  */
 export function Segmented(props: SegmentedProps): ReactElement {
-  const { size, className, options, children, ...rest } = props
+  const { size, fill = false, className, options, children, ...rest } = props
   const multiple = rest.multiple === true
   const [inner, setInner] = useState<string | undefined>(
     rest.multiple === true ? undefined : rest.defaultValue,
@@ -188,7 +194,8 @@ export function Segmented(props: SegmentedProps): ReactElement {
         ref={track}
         data-slot="segmented"
         data-indicator={!multiple && box !== null}
-        className={cn(segmentedVariants({ size }), className)}
+        data-fill={fill}
+        className={cn(segmentedVariants({ size, fill }), className)}
         onKeyDownCapture={(event: KeyboardEvent) => {
           viaArrow.current = ARROWS.has(event.key)
         }}
