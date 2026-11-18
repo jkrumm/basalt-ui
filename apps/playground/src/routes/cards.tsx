@@ -24,7 +24,11 @@ function MergeGlyph({ className }: { className?: string }): ReactElement {
   )
 }
 
-const PER_DAY = [4, 9, 6, 12, 8, 15, 11, 18, 14, 21, 17, 13, 19, 24]
+/** Merges per day over the 14 days to today, each dated so a hover reads its day beside its count. */
+const PER_DAY = [4, 9, 6, 12, 8, 15, 11, 18, 14, 21, 17, 13, 19, 24].map((value, i) => ({
+  value,
+  at: new Date(2026, 9, 29 + i),
+}))
 
 /** The label row under the plot: start, middle, now. */
 const X_LABELS = ['Oct 29', 'Nov 4', 'Today'] as const
