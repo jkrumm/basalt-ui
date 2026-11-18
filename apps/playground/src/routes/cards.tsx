@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { CardGrid, Section } from 'basalt-ui/page'
+import { CardGrid, Page, Section } from 'basalt-ui/page'
 import { StatCard } from 'basalt-ui/cards'
 import { Sparkline } from 'basalt-ui/charts'
 import type { ReactElement } from 'react'
@@ -80,42 +80,49 @@ const shipped = (
 
 function CardsRoute(): ReactElement {
   return (
-    <Section title="Cards">
-      <CardGrid narrow="stack">
-        {shipped}
-        <StatCard
-          {...SHIPPED}
-          subtitle="loading"
-          phase="loading"
-          footer={[{ label: 'Open', value: 12 }]}
-        />
-        <StatCard
-          {...SHIPPED}
-          subtitle="stale"
-          phase="stale"
-          delta={{ value: '-3%', polarity: 'up-good' }}
-          status={{ tone: 'warn', label: 'Behind' }}
-          footer={[{ label: 'Open', value: 12 }]}
-        />
-        <StatCard
-          {...SHIPPED}
-          subtitle="empty"
-          value={null}
-          empty={{
-            cause: 'No merges in this range',
-            action: { label: 'Widen range', href: '#range' },
-          }}
-          footer={[{ label: 'Open', value: 12 }]}
-        />
-        <StatCard
-          {...SHIPPED}
-          subtitle="error"
-          phase={{ tag: 'error', retry: () => undefined }}
-          footer={[{ label: 'Open', value: 12 }]}
-        />
-        <StatCard title="Open" value={12} unit="PRs" status={{ tone: 'good', label: 'On track' }} />
-      </CardGrid>
-    </Section>
+    <Page area="cards">
+      <Section title="Cards">
+        <CardGrid narrow="stack">
+          {shipped}
+          <StatCard
+            {...SHIPPED}
+            subtitle="loading"
+            phase="loading"
+            footer={[{ label: 'Open', value: 12 }]}
+          />
+          <StatCard
+            {...SHIPPED}
+            subtitle="stale"
+            phase="stale"
+            delta={{ value: '-3%', polarity: 'up-good' }}
+            status={{ tone: 'warn', label: 'Behind' }}
+            footer={[{ label: 'Open', value: 12 }]}
+          />
+          <StatCard
+            {...SHIPPED}
+            subtitle="empty"
+            value={null}
+            empty={{
+              cause: 'No merges in this range',
+              action: { label: 'Widen range', href: '#range' },
+            }}
+            footer={[{ label: 'Open', value: 12 }]}
+          />
+          <StatCard
+            {...SHIPPED}
+            subtitle="error"
+            phase={{ tag: 'error', retry: () => undefined }}
+            footer={[{ label: 'Open', value: 12 }]}
+          />
+          <StatCard
+            title="Open"
+            value={12}
+            unit="PRs"
+            status={{ tone: 'good', label: 'On track' }}
+          />
+        </CardGrid>
+      </Section>
+    </Page>
   )
 }
 

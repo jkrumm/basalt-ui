@@ -1,6 +1,6 @@
 import { rect } from '@tanstack/charts/rect'
 import { createFileRoute } from '@tanstack/react-router'
-import { CardGrid, Section } from 'basalt-ui/page'
+import { CardGrid, Page, Section } from 'basalt-ui/page'
 import { Card } from 'basalt-ui/ui/card'
 import type { ReactElement, ReactNode } from 'react'
 import { CartesianChart } from '../../../../packages/basalt-ui/dist/charts/parts/cartesian'
@@ -224,49 +224,51 @@ const lone = (
 
 function ChartsRoute(): ReactElement {
   return (
-    <Section title="Chart seams">
-      <CardGrid min="regular">
-        <Panel
-          seam="format, weight, dash, parent, legend and tooltip false, gaps, note, role, y.domain"
-          consumer="argo body-composition/charts/weight-chart.tsx:60-72"
-        >
-          {weightChart}
-        </Panel>
-        <Panel
-          seam="y.domain function, y.gutter, axis, getMarker"
-          consumer="linewatch charts/latency-band-chart.tsx:328-337, 254"
-        >
-          {loadChart}
-        </Panel>
-        <Panel
-          seam="x.domain: one instant, one pixel column"
-          consumer="linewatch charts/bufferbloat-chart.tsx:90,118"
-        >
-          <div className="flex flex-col gap-2">
-            {sharedX(shortWindow)}
-            {sharedX(longWindow)}
-          </div>
-        </Panel>
-        <Panel
-          seam="per-datum opacity"
-          consumer="argo bars that fade with the datum they stand for (5 sites)"
-        >
-          {bars}
-        </Panel>
-        <Panel
-          seam="plot.data, pixel-extent rule, plot.pxToY"
-          consumer="linewatch charts/latency-band-chart.tsx:407-435"
-        >
-          {railed}
-        </Panel>
-        <Panel
-          seam="lone point drawn"
-          consumer="argo strength-tracker/charts/one-rm-trend-chart.tsx:49"
-        >
-          {lone}
-        </Panel>
-      </CardGrid>
-    </Section>
+    <Page area="charts">
+      <Section title="Chart seams">
+        <CardGrid min="regular">
+          <Panel
+            seam="format, weight, dash, parent, legend and tooltip false, gaps, note, role, y.domain"
+            consumer="argo body-composition/charts/weight-chart.tsx:60-72"
+          >
+            {weightChart}
+          </Panel>
+          <Panel
+            seam="y.domain function, y.gutter, axis, getMarker"
+            consumer="linewatch charts/latency-band-chart.tsx:328-337, 254"
+          >
+            {loadChart}
+          </Panel>
+          <Panel
+            seam="x.domain: one instant, one pixel column"
+            consumer="linewatch charts/bufferbloat-chart.tsx:90,118"
+          >
+            <div className="flex flex-col gap-2">
+              {sharedX(shortWindow)}
+              {sharedX(longWindow)}
+            </div>
+          </Panel>
+          <Panel
+            seam="per-datum opacity"
+            consumer="argo bars that fade with the datum they stand for (5 sites)"
+          >
+            {bars}
+          </Panel>
+          <Panel
+            seam="plot.data, pixel-extent rule, plot.pxToY"
+            consumer="linewatch charts/latency-band-chart.tsx:407-435"
+          >
+            {railed}
+          </Panel>
+          <Panel
+            seam="lone point drawn"
+            consumer="argo strength-tracker/charts/one-rm-trend-chart.tsx:49"
+          >
+            {lone}
+          </Panel>
+        </CardGrid>
+      </Section>
+    </Page>
   )
 }
 
