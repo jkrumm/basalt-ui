@@ -42,7 +42,10 @@ export const rows: readonly RowDef[] = [
     // caption's step and leader and the clamped value label, the kit fixes of expression cycle 9.
     // 121800 -> 122300 (Issue 2281): 122159 B measured, +~360 B gz for the hover's axis-pinned x and y
     // labels, the card legend that toggles and isolates, and the list reveal that never scrolls the page.
-    ceiling: 122300,
+    // 122300 -> 123600 (Issue 2336): 123517 B measured, +~1.2 KB gz for the answer labels kept at 390, the
+    // end labels cleared off the lines, whole-band zones, the zero stack's tick, the clamped bar's value
+    // and the held span's end, the kit fixes of expression cycle 10.
+    ceiling: 123600,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -65,6 +68,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 122300,
+      to: 123600,
+      consumer:
+        "the kit fixes of expression cycle 10 (Issue 2336): n41's and n44's extreme-bar labels, n40's 'Today' rule and n39's run labels dropped at 390, n40's and n42's end labels sat on lines, n41's and n44's band zones drew short or nothing, n41's zero stack showed no position, n44's clamped bar no value and n39's held span ended an hour short",
+      repo: 'basalt-ui',
+    },
     {
       from: 121800,
       to: 122300,
