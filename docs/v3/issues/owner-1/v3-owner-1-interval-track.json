@@ -1,0 +1,28 @@
+{
+  "why": "The owner on /scenarios/expr-n35: 'kind of nice idea but horrible rendering, looks poorly designed, but good component maybe.' n35 is a per-day track of intervals and events, built from hand-drawn divs because its builder found no kit form for it (apps/playground/src/scenarios/expr/n35/ExprN35.tsx: DayRow :221, Mark :72, EventMark :283; its comments say the kit has no interval track). The hand build shows why it looks poor: fixed column widths (`w-12` :176 and :245, `w-10` :184 and :278), titles hidden below a hand breakpoint (WIDE_LABELS = 900, :59), raw colour utilities per kind (:14-17), an accent outline (:259) and lint waivers (:20 and others). `primitive-bypass` exists to stop this and was waived. The kit does ship seam tracks (packages/basalt-ui/src/charts/track.ts, seams/, apps/playground/src/recipes/seam-track.tsx), so first establish whether a track of intervals is a gap or a discoverability failure.",
+  "what": "packages/basalt-ui/src/charts (a kind over the existing host, or the seam track made reachable), its contract lines, docs, skill routing and one playground demo.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (the new kind and its contract lines)",
+    "packages/basalt-ui/agent/skills/basalt-charts/**",
+    "apps/playground/src/routes/** (one demo route) and apps/playground/src/demo/**",
+    "generated docs"
+  ],
+  "must_not_touch": [
+    "docs/v3/expression/**",
+    "CHANGELOG.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "Spec first. State what n35 needed (rows by day or by entity, intervals with start and end, point events, a shared time axis, a focus that links to a list) and whether seam tracks already cover it. If they do, the work is the missing props, a kind name a builder finds, and skill routing. If not, ship one kind that composes CartesianChart like every other kind: band rows, interval marks and point marks on a time x axis, labels placed by the kit's label engine (fit, truncate, drop by priority, never a hand breakpoint), colours from registered series only, the shared focus contract, phone form at 390, loading, empty and error states. Check the idea against two more cases from docs/v3/expression/cases.md before fixing the API, so the kind is not shaped by one page. The Spec carries shots of the kind drawing n35's data beside n35 as built.",
+  "acceptance": [
+    "A Spec that states gap or discoverability, with shots, has a verdict before code merges",
+    "n35's data renders through the shipped kind with no hand-drawn mark, no fixed width class and no waiver (a playground demo route, not an edit to the scenario)",
+    "Labels fit or drop by the label engine at 390 and 1800 (layout test)",
+    "Focus links the track to a list through the existing focus contract (test)",
+    "The kind is in the generated docs and the basalt-charts skill's kind table",
+    "Budget and contract changes are recorded; make check passes"
+  ],
+  "out_of_scope": "A Gantt with dependencies; drag to edit; the dependency graph (v3-owner-1-chain-view).",
+  "proof": "make check; shots at 1800 and 390, light and dark.",
+  "commits": "feat: the kind with tests (package); feat: the playground demo.",
+  "note": "Source: the owner's first hands-on review of the v3 playground on 2026-11-18. He asked for the root cause to be fixed, not the page he named. File citations come from a code read on that date at master 7c454b3a0 and were not run in a browser: confirm each before building on it."
+}

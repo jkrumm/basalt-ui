@@ -1,0 +1,27 @@
+{
+  "why": "The owner dislikes the bar at the top of most trial pages ('I don't like this topbar you often used', named on Tickets at /cycle/state-2 and on Fleet overview at /cycle/shell-5) and found the space above the content inconsistent ('too much spacing at the top' on scenario pages, less on /scenarios/expr-c12). Both come from the shipped page chrome, not from the pages. (1) Under AppShell, PageBar moves title and actions to the shell header and keeps tabs, controls, connection and refresh in a second sticky band (packages/basalt-ui/src/page/page-bar.tsx:279-296, 370, 378-405: `sticky top-0 z-10 border-b border-border bg-background py-2`). The shell header draws its own rule (src/shell/parts/header.tsx:215), so a page shows two stacked bordered rows. 13 playground files render such a band. (2) Page adds a top inset when no band exists (src/page/page.tsx:163-168, `pt-[calc(var(--basalt-ctl-h)+--spacing(8)+1px)]`) so content starts at one height; expression cycle 4 (docs/v3/cycles/expression-4.md:44) and shell-1.19 already flagged it as dead space, and the owner now reads it as too much. (3) Nothing makes a page render through Page: of the 44 expression scenarios with a PageBar, 20 use Page and 24 use a bare div root with their own gap or padding (c12 `flex flex-col gap-4`, n23 `p-4`, n33 `gap-6`), so gutter and top inset differ page by page. One-shot builders produced both forms from the same skill, so a consumer's agent will too.",
+  "what": "The page chrome in packages/basalt-ui/src/page (page.tsx, page-bar.tsx) and its meeting with the shell header (src/shell/parts/header.tsx, grid.tsx), a lint rule for the page root, the skill text that teaches it, and the playground pages that bypass Page.",
+  "owns": [
+    "packages/basalt-ui/src/page/**",
+    "packages/basalt-ui/src/shell/parts/header.tsx and grid.tsx (the header and band meeting only)",
+    "packages/basalt-ui/src/lint/** (one new structure rule and its preset rows)",
+    "packages/basalt-ui/agent/skills/basalt-design/** (the page-root and page-bar lines)",
+    "apps/playground/src/scenarios/expr/*/Expr*.tsx (the root element only)",
+    "apps/playground/src/cycle/** and apps/playground/src/routes/** (roots and PageBar call sites only)",
+    "docs/v3/concepts/shell-nav-router.md and the generated docs"
+  ],
+  "change": "Hand over a Spec first: it shows the owner the new page top as shots (light and dark, 1800 and 390) on Tickets, Fleet overview and one scenario, beside the current look. Open choices, at most three, each with a default: (a) where tabs and page controls live under a shell: default, one visual bar, so the controls row reads as part of the header surface with a single rule below it and no second bordered band; (b) the top inset of a page with no controls: default, the page gutter and nothing more, with the 'one start height' rule dropped; (c) sticky or not: default, sticky only when the row holds controls. Then build: one owner for page top spacing (a token or Page alone, never per page); a `basalt/page-root` lint rule at error in the app preset that flags a routed page whose root is not Page (or SplitPage), with a waiver path; every playground page moved to it with no page-local top padding or gutter left. The rule must hold for the shapes builders wrote: a bare div root, a fragment, a `@container` wrapper.",
+  "acceptance": [
+    "A Spec with the before and after shots has a verdict before any code merges",
+    "Under AppShell a page with tabs or controls shows one rule between chrome and content, not two (layout test)",
+    "The distance from the header to the first content is the same on a page with and without a title-only PageBar, and is one token (layout test over at least Tickets, Fleet overview, expr-c12, expr-n02, expr-n27)",
+    "`basalt/page-root` flags a bare div root and passes Page and SplitPage (rule tests), and `bun run lint` is at 0 findings on the playground with no new file-level waiver",
+    "No expression scenario sets its own page gutter or top padding (grep in the PR body)",
+    "make check passes"
+  ],
+  "out_of_scope": "New page controls (v3-owner-1-showcase reports gaps); the aside; a resizable inspector.",
+  "proof": "make check; shots of the five pages named above at 1800 and 390, light and dark, in the PR.",
+  "commits": "feat: the page top (package) and feat: the lint rule (package), separate from chore: playground roots.",
+  "note": "Source: the owner's first hands-on review of the v3 playground on 2026-11-18. He asked for the root cause to be fixed, not the page he named. File citations come from a code read on that date at master 7c454b3a0 and were not run in a browser: confirm each before building on it.",
+  "must_not_touch": ["docs/v3/expression/**", "CHANGELOG.md"]
+}

@@ -1,0 +1,29 @@
+{
+  "why": "After a full pass through the playground the owner said: 'I didn't see much regarding page controls at the top or sidebar, which shutterflow will heavily need; also this whole side peek and panel, I saw nothing.' A code read says v3 ships nearly all of it and the playground hides it. PageBar controls, FilterSet (src/controls/filter-set.tsx), ViewTabs (src/controls/view-tabs.tsx), Segmented and DateRangePicker (src/ui), PageAside (src/page/page-aside.tsx) with the AppShell aside region (src/shell/app-shell.tsx:171-262), Peek and usePeek (src/page/peek.tsx, src/router/peek.ts), SplitPage and ResizablePanelGroup (src/ui/resizable.tsx) all exist. But /overview (FilterSet, ViewTabs, PageBar controls) is in no nav destination; recipes/view-switch.tsx, saved-views.tsx and two-pane.tsx are rendered by no route; Segmented, DateRangePicker and ResizablePanelGroup have no demo at all; the aside demos sit under 'Fleet (shell cycle N)' and 'dogfood' labels, and /shell's aside body is one sentence (apps/playground/src/routes/shell.tsx:9-10); Peek opens only from a record link on Home. apps/playground/src/demo/nav-model.tsx is the single place destinations are stated. The owner judges the kit by this app, and so will an agent that reads it as the reference.",
+  "what": "apps/playground only: the nav model, new routes, and demo data. No package change.",
+  "owns": [
+    "apps/playground/src/demo/nav-model.tsx",
+    "apps/playground/src/routes/** (new gallery routes; existing routes only to link them)",
+    "apps/playground/src/recipes/** (routing existing recipes, no rewrite)",
+    "apps/playground/src/demo/**",
+    "docs/v3/verdicts/showcase-gaps.md (new)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/**",
+    "apps/playground/src/scenarios/expr/**",
+    "apps/playground/src/cycle/** (trial evidence stays as built)"
+  ],
+  "change": "Give the nav a 'Kit' group ahead of the cycle and scenario groups, one destination per capability, each a realistic page and not a one-line stub: (1) page controls: a records page with PageBar tabs, FilterSet with text, enum, Segmented and DateRangePicker controls, ViewTabs switching table and cards, and saved views; (2) the aside as an inspector beside a list, with real content (fields, a chart, actions), opened by selecting a row, at every aside width the shell ships; (3) Peek over a list and over a chart mark, with keyboard next and previous; (4) SplitPage list and detail; (5) ResizablePanelGroup; (6) one composed reference page in the shape a media or records app needs: controls on top, a filter panel at the side, a result grid, peek on a result and the aside for its details. Route the three unrouted recipes. Move the cycle and scenario groups below and label them as trial evidence. While building, write docs/v3/verdicts/showcase-gaps.md: every place the shipped surface could not do what the page needed (for example controls living in a side panel, a resizable aside: the shell fixes it at 320/360/480/640 by decision DPO 17 in docs/v3/concepts/shell-nav-router.md:37, an image grid), each with the file it would land in. Do not build around a gap with page-local markup or a waiver: leave it visibly missing and list it. File nothing yourself; the list is for the owner.",
+  "acceptance": [
+    "Every capability in the list above is reachable in one click from the nav and renders a page with real content (a route test per destination)",
+    "No route under the Kit group has an oxlint waiver and `bun run lint` is at 0 findings",
+    "recipes/view-switch.tsx, saved-views.tsx and two-pane.tsx are each rendered by a route",
+    "docs/v3/verdicts/showcase-gaps.md lists each gap with the capability, what was tried and the package file it belongs to, or says none",
+    "The quality matrix and layout suite pass on the new routes at 390 and 1800",
+    "make check passes"
+  ],
+  "out_of_scope": "Any package change; the page top look (v3-owner-1-page-top restyles PageBar underneath these pages); filing follow-up Issues.",
+  "proof": "make check; shots of each Kit destination at 1800 and 390, light and dark, in the PR.",
+  "commits": "feat: per gallery page; docs: the gaps page.",
+  "note": "Source: the owner's first hands-on review of the v3 playground on 2026-11-18. He asked for the root cause to be fixed, not the page he named. File citations come from a code read on that date at master 7c454b3a0 and were not run in a browser: confirm each before building on it."
+}

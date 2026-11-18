@@ -1,0 +1,27 @@
+{
+  "why": "The owner on /table: 'generally not bad, but filters on the column header for that column might be nice: date ranges, value min max, by enum, all I am missing. Also sorting in e.g. State maybe should be a reorderable rich popup where we can reorder the categories.' The concept deferred exactly this until a consumer asked (docs/v3/concepts/data-table.md:49-50 'Later, additive: number, date, boolean operators'; docs/v3/verdicts/table.md 'Not built'); the owner is that consumer now. State today: the filter model has two operators, `contains` for text and entity and `anyOf` for status (packages/basalt-ui/src/table/core/kinds.tsx:218-222); number, money, date and delta columns have `filter: null` (kinds.tsx:329). Filter UI lives only in the toolbar popover and sheet, which the caller renders. A header filter part exists and is not mounted: parts/header-menu.tsx:29-62 (HeaderFilterMenu) has no caller outside tests, and parts/head.tsx:156 mounts only ColumnActionsMenu (sort, hide, reset). Sort is single column (use-data-table.ts:555-560) and a status column sorts by its declared option order (kinds.tsx:306-307, 341-347) with no way for the user to change it.",
+  "what": "packages/basalt-ui/src/table (filter model, kinds, header parts, toolbar editors, views persistence), its contract additions, docs and the playground table route.",
+  "owns": [
+    "packages/basalt-ui/src/table/**",
+    "packages/basalt-ui/scripts/check-budgets/areas/table.ts (a raise row with the measured value)",
+    "docs/v3/concepts/data-table.md and docs/v3/verdicts/table.md",
+    "packages/basalt-ui/agent/skills/basalt-design/references/table.md",
+    "apps/playground/src/routes/table.tsx"
+  ],
+  "must_not_touch": ["docs/v3/expression/**", "CHANGELOG.md"],
+  "change": "Spec first (new public filter operators and a new header look). (1) The column header is a filter door for every filterable column: the header menu opens that column's editor in place, and a filtered column shows it in the header. (2) New operators with editors built from shipped primitives: number, money and delta get a min and max range (NumberField pair, or the two-thumb Slider when the column declares bounds); date gets a range with presets (DateRangePicker); status and other enum kinds keep `anyOf` as a checklist with counts and search past a threshold; boolean gets is and is not. Header, toolbar and sheet edit the same FilterModel, and URL and saved views round-trip the new operators. (3) Category order: a status or enum column's sort uses a rank the user can rearrange in a popup from the header (drag and keyboard), stored with the view; the declared option order stays the default. Open choices with defaults: multi-column sort stays out (default); server mode gets the operators as data only, the page maps them (default); the Slider form only with declared bounds (default). Keep the 126000 B own budget honest: measure, then raise with a `raises` row naming this Issue, and lazy-load the date editor if it keeps the base under the current ceiling.",
+  "acceptance": [
+    "A Spec with shots of a header filter for a number, a date and a status column and of the reorder popup has a verdict before code merges",
+    "Every filterable column kind opens its editor from the header, by pointer and keyboard (tests)",
+    "Range, date-range, anyOf and boolean filters filter rows, serialise to the URL and a saved view and restore (tests)",
+    "Reordering a status column's categories changes the sort order and persists in the view (test)",
+    "The toolbar chip, the sheet and the header show the same filter state (test)",
+    "/table shows all four editors and the reorder popup on its demo columns, at 390 through the sheet",
+    "The table budget row states the measured size and the raise; contract additions are additive through the amendment path",
+    "make check passes"
+  ],
+  "out_of_scope": "Multi-sort; an AND/OR builder; nested or tree rows (v3-owner-1-chain-view).",
+  "proof": "make check; shots named in acceptance at 1800 and 390, light and dark.",
+  "commits": "feat: per operator and for the header door, each with tests (package); chore: the playground route.",
+  "note": "Source: the owner's first hands-on review of the v3 playground on 2026-11-18. He asked for the root cause to be fixed, not the page he named. File citations come from a code read on that date at master 7c454b3a0 and were not run in a browser: confirm each before building on it."
+}

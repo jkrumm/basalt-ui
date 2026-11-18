@@ -1,0 +1,29 @@
+{
+  "why": "The owner on /scenarios/expr-n32: 'looks weird, may be optimized, and here we maybe also dogfood what we have in factory console chain as another view option.' n32 shows a dependency structure as a DataTable with a hand-indented tree column, and its own comment says the kit has no tree or nested-rows form (apps/playground/src/scenarios/expr/n32/ExprN32.tsx:20-45, :23). The kit has no graph, DAG, chain or flow form either; the only flowchart is the static MermaidDiagram in src/content/mermaid.tsx:36, with no focus link. The owner's own factory console already draws such a chain for real data: the software-factory repo, apps/console/src/components/chain/graph.tsx, used by apps/console/src/routes/chain.tsx (a sibling checkout on the dev host; read it there, copy nothing that names its hosts or data).",
+  "what": "packages/basalt-ui/src/table (nested rows), one new chain view part with its contract lines, docs, skill routing and a playground demo that offers both as views of one dataset.",
+  "owns": [
+    "packages/basalt-ui/src/table/** (nested rows only)",
+    "the new chain part's directory and contract lines (name it in the Spec)",
+    "packages/basalt-ui/agent/skills/basalt-design/**",
+    "apps/playground/src/routes/** (one demo route) and apps/playground/src/demo/**",
+    "generated docs"
+  ],
+  "must_not_touch": [
+    "docs/v3/expression/**",
+    "CHANGELOG.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "Spec first, two parts that share one data shape (nodes with a parent or with edges). (1) Nested rows: DataTable takes a row's children, draws the indent and the expander itself, keeps sort and filter meaningful inside a level, keeps keyboard and aria tree-grid semantics, and collapses to phone cards. (2) A chain view: read the console's graph component, state what it does well (layout, edge routing, states, what blocks what) and what is console-specific, and ship the general part in the kit's terms: tokens only, the kit's focus contract so a node links to a row, the scroll primitive, a legible fallback at 390 (default: the nested list). Say in the Spec whether layout needs a dependency; default is none of weight. (3) The demo route shows one dependency dataset with a ViewTabs switch between table, nested table and chain. Open choices with defaults: the part's home (default, beside the other record views, not under charts); layout as layered left to right (default); pan and zoom out for 3.0 (default).",
+  "acceptance": [
+    "A Spec with shots of nested rows and the chain view on one dataset, and a note on what was taken from the console graph, has a verdict before code merges",
+    "DataTable renders three levels of nested rows with expander, keyboard and tree-grid roles and no page-local indent (tests)",
+    "The chain view draws a graph with a fan-out, a fan-in and a blocked node, links focus to the table, and falls back at 390 (layout tests)",
+    "The playground demo switches the three views over one dataset",
+    "No software-factory host, token or data appears in the repo",
+    "Budget and contract changes are recorded; make check passes"
+  ],
+  "out_of_scope": "Editing edges; pan and zoom; moving the factory console onto the part (a software-factory Issue after this ships).",
+  "proof": "make check; shots at 1800 and 390, light and dark.",
+  "commits": "feat: nested rows and feat: the chain view, each with tests (package); feat: the playground demo.",
+  "note": "Source: the owner's first hands-on review of the v3 playground on 2026-11-18. He asked for the root cause to be fixed, not the page he named. File citations come from a code read on that date at master 7c454b3a0 and were not run in a browser: confirm each before building on it."
+}

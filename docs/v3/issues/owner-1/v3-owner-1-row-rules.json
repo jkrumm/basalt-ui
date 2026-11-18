@@ -1,0 +1,28 @@
+{
+  "why": "The owner on /scenarios/expr-n02 ('open issues: too hard borders between entries') and on n04 ('on the right the hard borders again'), while n07's right side 'does better'. n02 and n04 draw their lists as hand-written divs with a bare `border-b` (apps/playground/src/scenarios/expr/n02/ExprN02.tsx:80, n04/ExprN04.tsx:157); n07's rows have no rule at all; c10 wrote `border-b border-grid`. Two causes sit under that. (1) Tailwind 4 defaults a border with no colour utility to currentColor, and the kit's CSS sets no default border colour (no such rule under packages/basalt-ui/src/css), so every bare `border`, `border-b` or `divide-y` an agent writes paints in full ink. The kit's own parts always name `border-border`; a builder's page does not. (2) Three one-shot builders needed a list of rows beside a chart (label, value, a small mark, focus-linked) and each wrote it by hand in a different way, so the kit either lacks that part or the skill does not lead to the one it has: src/cards ships EventList and BarList, and neither was used.",
+  "what": "The base layer in packages/basalt-ui/src/css, the list part in src/cards (existing or new), one lint rule, and the skill lines that route a builder to it.",
+  "owns": [
+    "packages/basalt-ui/src/css/** (the default border colour)",
+    "packages/basalt-ui/src/cards/event-list*.tsx, bar-list*.tsx or one new list part with its contract lines",
+    "packages/basalt-ui/src/lint/** (one rule and its preset rows)",
+    "packages/basalt-ui/agent/skills/basalt-design/**",
+    "docs generated from them"
+  ],
+  "must_not_touch": [
+    "docs/v3/expression/**",
+    "CHANGELOG.md",
+    "apps/playground/src/scenarios/expr/** (v3-owner-1-rerun rebuilds the named cases)"
+  ],
+  "change": "(1) Base layer: a border with no colour utility resolves to the border token everywhere the kit's stylesheet applies, the way the kit's own parts already look; check `divide-*`, `outline` and `ring` defaults in the same pass and state what each resolves to. (2) Decide from the three pages what the missing part is. Read n02, n04, n07 and c10 and write down the row each needed. If EventList or BarList already serves it, the fix is skill routing plus whatever small prop was missing; if not, ship one row-list part: quiet by default (spacing or a hairline in the grid token, never ink), a density that follows the tokens, focus-linked to a chart through the existing focus contract, scroll owned by the shipped scroll primitive. The Spec shows it beside n07's look, which the owner preferred, and names the default separator (default: none, rows separated by spacing and a hover surface; a hairline is opt-in). (3) Lint: extend `basalt/primitive-bypass` or add a rule so a hand-built repeating row list in a page (a mapped div with a border or divide utility) is flagged toward the part, with the usual waiver. (4) Skill: one line where the builder chooses a form.",
+  "acceptance": [
+    "A Spec with shots of the row list in light and dark beside the n07 reference has a verdict before code merges",
+    "A bare `border-b` on a page under the kit stylesheet computes to the border token in light and dark (test), and the quality matrix shows no regression on the kit's own parts",
+    "n02's and n04's lists can be written with the shipped part and no page-local border class (a fixture test, not an edit to the scenarios)",
+    "The lint rule flags the n02 form and passes the shipped part (rule tests)",
+    "make check passes"
+  ],
+  "out_of_scope": "Table row rules; rebuilding the scenarios (v3-owner-1-rerun).",
+  "proof": "make check; shots named in acceptance.",
+  "commits": "fix: the default border colour; feat: the list part and the lint rule, each with tests.",
+  "note": "Source: the owner's first hands-on review of the v3 playground on 2026-11-18. He asked for the root cause to be fixed, not the page he named. File citations come from a code read on that date at master 7c454b3a0 and were not run in a browser: confirm each before building on it."
+}
