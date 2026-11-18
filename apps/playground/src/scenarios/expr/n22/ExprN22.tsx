@@ -5,7 +5,7 @@ import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui
 import type { ChartFigure } from 'basalt-ui/charts'
 import { useFormat } from 'basalt-ui'
 import type { Format } from 'basalt-ui'
-import { CardGrid, PageBar } from 'basalt-ui/page'
+import { CardGrid, Page, PageBar } from 'basalt-ui/page'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 import type { ReactElement } from 'react'
 
@@ -183,7 +183,7 @@ export function ExprN22Scenario({ shotState, fixture }: ScenarioProps): ReactEle
     }) as const
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n22">
       <PageBar title="Fitness direction, last 90 mornings" />
       <ChartCard
         title="Fitness trend"
@@ -289,6 +289,6 @@ export function ExprN22Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           empty={cardEmpty}
         />
       </CardGrid>
-    </div>
+    </Page>
   )
 }

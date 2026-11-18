@@ -2,7 +2,7 @@ import { text } from '@tanstack/charts/text'
 import { useFormat } from 'basalt-ui'
 import { DataPanel } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
-import { PageBar } from 'basalt-ui/page'
+import { Page, PageBar } from 'basalt-ui/page'
 import { BASALT } from 'basalt-ui/tokens'
 import { Lozenge } from 'basalt-ui/ui/badge'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
@@ -82,7 +82,7 @@ export function ExprN31Scenario({ shotState, fixture }: ScenarioProps) {
   const maxShipped = Math.max(...days.map((d) => d.done))
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n31">
       <PageBar title="ledger-sync, shipped in the last 7 days" />
       <div className="@container">
         <div className="grid items-stretch gap-4 @wide:grid-cols-2">
@@ -232,6 +232,6 @@ export function ExprN31Scenario({ shotState, fixture }: ScenarioProps) {
           />
         </div>
       </div>
-    </div>
+    </Page>
   )
 }

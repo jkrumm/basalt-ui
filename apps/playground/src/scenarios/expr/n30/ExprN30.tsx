@@ -4,7 +4,7 @@ import type { Format } from 'basalt-ui'
 import { ChartCard, Heatmap, useChartFocus } from 'basalt-ui/charts'
 import type { ChartFocus } from 'basalt-ui/charts'
 import type { Delta, Empty, Phase } from 'basalt-ui/cards'
-import { CardGrid, PageBar } from 'basalt-ui/page'
+import { CardGrid, Page, PageBar } from 'basalt-ui/page'
 import { BASALT } from 'basalt-ui/tokens'
 import type { ScenarioProps } from '../../shot-state'
 import {
@@ -157,12 +157,12 @@ export function ExprN30Scenario({ shotState, fixture }: ScenarioProps) {
       : null
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n30">
       <PageBar title="Line load across the week" />
       <CardGrid min="regular">
         <DirectionCard dir="down" cells={load.cells} focus={focus} phase={phase} empty={empty} />
         <DirectionCard dir="up" cells={load.cells} focus={focus} phase={phase} empty={empty} />
       </CardGrid>
-    </div>
+    </Page>
   )
 }

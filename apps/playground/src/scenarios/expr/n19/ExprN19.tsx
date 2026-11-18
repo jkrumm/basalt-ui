@@ -3,7 +3,7 @@ import { StatCell, StatGroup } from 'basalt-ui/cards'
 import type { Delta, Phase } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { useFormat } from 'basalt-ui'
-import { CardGrid, PageBar } from 'basalt-ui/page'
+import { CardGrid, Page, PageBar } from 'basalt-ui/page'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 import { RADIO_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
@@ -237,7 +237,7 @@ export function ExprN19Scenario({ shotState, fixture }: ScenarioProps): ReactEle
   )
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n19">
       <PageBar title="Backup radio path, last 7 days" />
       <StatGroup variant="strip" label="Wi-Fi failover">
         <StatCell
@@ -285,6 +285,6 @@ export function ExprN19Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         {signalCard}
         {rttCard}
       </CardGrid>
-    </div>
+    </Page>
   )
 }

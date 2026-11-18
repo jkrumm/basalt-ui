@@ -9,7 +9,7 @@ import {
   type ChartRefLine,
   type ChartZone,
 } from 'basalt-ui/charts'
-import { PageBar } from 'basalt-ui/page'
+import { Page, PageBar } from 'basalt-ui/page'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 import type { ScenarioProps } from '../../shot-state'
 import { GRID_KM, gradeOf, gridStats, nearestRain, outlookOf, type Grade } from './answer'
@@ -199,7 +199,7 @@ export function ExprN44Scenario({ shotState, fixture }: ScenarioProps) {
         ]
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n44">
       <PageBar title="Rain at your spot, next 2 hours" />
       <div className="@container">
         <div className="grid gap-4 @wide:grid-cols-3">
@@ -290,6 +290,6 @@ export function ExprN44Scenario({ shotState, fixture }: ScenarioProps) {
           </div>
         </div>
       </div>
-    </div>
+    </Page>
   )
 }

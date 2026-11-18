@@ -1,7 +1,7 @@
 import { BarList, StatCell, StatGroup } from 'basalt-ui/cards'
 import { Bars, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { useFormat } from 'basalt-ui'
-import { CardGrid, PageBar } from 'basalt-ui/page'
+import { CardGrid, Page, PageBar } from 'basalt-ui/page'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 import type { ComponentProps } from 'react'
 import type { ScenarioProps } from '../../shot-state'
@@ -105,7 +105,7 @@ export function ExprC12Scenario({ shotState, fixture }: ScenarioProps) {
   const hasDriver = settled && driver !== undefined && driver.value > 0
 
   return (
-    <div className="@container flex min-w-0 flex-col gap-4">
+    <Page area="expr-c12">
       <PageBar title="AI spend" />
       <StatGroup variant="strip" label="This week's AI spend against budget">
         <StatCell
@@ -217,6 +217,6 @@ export function ExprC12Scenario({ shotState, fixture }: ScenarioProps) {
           rows={4}
         />
       </CardGrid>
-    </div>
+    </Page>
   )
 }

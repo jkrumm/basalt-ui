@@ -8,7 +8,7 @@ import { useFormat } from 'basalt-ui'
 import type { Empty, Phase } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import type { ChartZone, Series } from 'basalt-ui/charts'
-import { PageBar } from 'basalt-ui/page'
+import { Page, PageBar } from 'basalt-ui/page'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 import { Card, CardBand, Inset } from 'basalt-ui/ui/card'
@@ -154,7 +154,7 @@ export function ExprN39Scenario({ shotState, fixture }: ScenarioProps) {
   const nightAt = new Map(nights.map((n) => [middle(n), n.name]))
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n39">
       <PageBar title="Night frost, next five nights" />
       <ChartCard
         title="Air temperature by model"
@@ -196,6 +196,6 @@ export function ExprN39Scenario({ shotState, fixture }: ScenarioProps) {
           />
         </Inset>
       </Card>
-    </div>
+    </Page>
   )
 }

@@ -5,7 +5,7 @@
  */
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
-import { PageBar, Section } from 'basalt-ui/page'
+import { Page, PageBar, Section } from 'basalt-ui/page'
 import { BAR_SERIES } from '../../demo/series'
 import type { ScenarioProps } from '../shot-state'
 
@@ -65,7 +65,7 @@ export function LinkedWindowsScenario({ shotState }: ScenarioProps) {
     bodyRows: windows.length,
   })
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="linked-windows">
       <PageBar title="Water over the bar, next 24 hours" />
       <ChartCard
         title="Tide by hour"
@@ -103,6 +103,6 @@ export function LinkedWindowsScenario({ shotState }: ScenarioProps) {
           />
         </div>
       </Section>
-    </div>
+    </Page>
   )
 }

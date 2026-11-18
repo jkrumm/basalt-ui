@@ -5,7 +5,7 @@ import type { ChartFigure, HeatmapState, LegendEntry } from 'basalt-ui/charts'
 import type { Phase } from 'basalt-ui/cards'
 import { createFormat } from 'basalt-ui'
 import { BASALT } from 'basalt-ui/tokens'
-import { PageBar } from 'basalt-ui/page'
+import { Page, PageBar } from 'basalt-ui/page'
 import type { ScenarioProps } from '../../shot-state'
 import {
   EASY_SHARE,
@@ -130,7 +130,7 @@ export function ExprN08Scenario({ shotState, fixture }: ScenarioProps): ReactEle
       : undefined
 
   return (
-    <>
+    <Page area="expr-n08">
       <PageBar title="Should I train today?" />
       <ChartCard
         title="Verdict by recovery and planned load"
@@ -174,6 +174,6 @@ export function ExprN08Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           />
         )}
       />
-    </>
+    </Page>
   )
 }

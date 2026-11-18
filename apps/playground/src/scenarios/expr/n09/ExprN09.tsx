@@ -143,7 +143,7 @@ export function ExprN09Scenario({ shotState, fixture }: ScenarioProps) {
   return (
     <Page area="schedule">
       <PageBar title="Job schedule" />
-      <div className="flex flex-col gap-4 p-4">
+      <div className="flex flex-col gap-4">
         <ChartCard
           title="Next run of every job"
           subtitle="All repos, by time from now"

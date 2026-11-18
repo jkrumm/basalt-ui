@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { Page } from 'basalt-ui/page'
 import { SCENARIO_NAMES, findScenario } from './registry'
 import type { ShotState } from './shot-state'
 
@@ -15,9 +16,9 @@ export function ScenarioView({
   const render = findScenario(name)
   if (render === undefined) {
     return (
-      <div className="flex flex-col gap-2 p-6 text-sm">
-        <p className="font-medium">No scenario named "{name}"</p>
-        <ul className="m-0 flex list-none flex-col gap-1 p-0">
+      <Page area="scenarios">
+        <p className="m-0 text-sm font-medium">No scenario named "{name}"</p>
+        <ul className="m-0 flex list-none flex-col gap-1 p-0 text-sm">
           {SCENARIO_NAMES.map((known) => (
             <li key={known}>
               <Link
@@ -30,7 +31,7 @@ export function ScenarioView({
             </li>
           ))}
         </ul>
-      </div>
+      </Page>
     )
   }
   return render({ shotState, fixture })

@@ -168,7 +168,7 @@ export function ExprN04Scenario({ shotState, fixture }: ScenarioProps) {
   return (
     <Page area="ride-windows">
       <PageBar title="Cycling, next 48 hours" />
-      <div className="grid items-start gap-3 p-3 @wide:grid-cols-2">
+      <div className="grid items-start gap-3 @wide:grid-cols-2">
         <ChartCard
           title="Dry and calm hours"
           subtitle={

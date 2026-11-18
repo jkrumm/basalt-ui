@@ -2,7 +2,7 @@ import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import type { ChartRefLine, ChartZone } from 'basalt-ui/charts'
 import { createFormat } from 'basalt-ui'
-import { PageBar, Section } from 'basalt-ui/page'
+import { Page, PageBar, Section } from 'basalt-ui/page'
 import { alpha, BASALT } from 'basalt-ui/tokens'
 import type { Phase } from 'basalt-ui/cards'
 import { BAR_SERIES } from '../../../demo/series'
@@ -124,7 +124,7 @@ export function ExprN34Scenario({ shotState, fixture }: ScenarioProps) {
   ]
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n34">
       <PageBar title="Leaving the harbour, next 48 hours" />
       <ChartCard
         title="Water over the bar and swell"
@@ -191,6 +191,6 @@ export function ExprN34Scenario({ shotState, fixture }: ScenarioProps) {
       <Section title="Go windows">
         <DataTable table={windowTable} />
       </Section>
-    </div>
+    </Page>
   )
 }

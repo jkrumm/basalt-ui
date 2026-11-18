@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useFormat } from 'basalt-ui'
 import { filterSlot, spec } from 'basalt-ui/controls'
-import { Facts, Section } from 'basalt-ui/page'
+import { Facts, Page, Section } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
 import { col, DataTable, TableToolbar, tableCodec, useDataTable } from 'basalt-ui/table'
 import type { DetailEntry, DetailHost } from 'basalt-ui/core/ports'
@@ -381,7 +381,7 @@ function Grouped(): ReactElement {
 
 function TableRoute(): ReactElement {
   return (
-    <div className="flex min-w-0 flex-col gap-8 p-4">
+    <Page area="table">
       <Section title="Bookings" controls={filterSlot([spec(exemplar.field.month, 'Month')])}>
         <Finances />
       </Section>
@@ -391,7 +391,7 @@ function TableRoute(): ReactElement {
       <Section title="Rooms">
         <Grouped />
       </Section>
-    </div>
+    </Page>
   )
 }
 

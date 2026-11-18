@@ -5,7 +5,7 @@ import { BASALT } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 import { text } from '@tanstack/charts/text'
 import { useEffect, type ComponentProps } from 'react'
-import { useSizeClass } from 'basalt-ui/page'
+import { Page, useSizeClass } from 'basalt-ui/page'
 import type { ScenarioProps } from '../../shot-state'
 import {
   PRIOR_SHARE,
@@ -133,7 +133,7 @@ export function ExprC13Scenario({ shotState, fixture }: ScenarioProps) {
         }
 
   return (
-    <div className="@container">
+    <Page area="expr-c13">
       <div className="grid gap-4 @wide:grid-cols-3">
         <div className="grid @wide:col-span-2">
           <ChartCard
@@ -266,6 +266,6 @@ export function ExprC13Scenario({ shotState, fixture }: ScenarioProps) {
           />
         </div>
       </div>
-    </div>
+    </Page>
   )
 }

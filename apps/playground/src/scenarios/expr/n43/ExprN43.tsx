@@ -7,7 +7,7 @@ import { useFormat } from 'basalt-ui'
 import { BarList, DataPanel, StatCard } from 'basalt-ui/cards'
 import type { Delta, FootFacts, Phase, Verdict } from 'basalt-ui/cards'
 import { Sparkline, useChartFocus } from 'basalt-ui/charts'
-import { PageBar } from 'basalt-ui/page'
+import { Page, PageBar } from 'basalt-ui/page'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 import type { ScenarioProps } from '../../shot-state'
@@ -124,7 +124,7 @@ export function ExprN43Scenario({ shotState, fixture }: ScenarioProps) {
   })
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n43">
       <PageBar title="Specs and Reports this week" />
       <div className="@container">
         <div className="flex flex-col gap-4">
@@ -184,6 +184,6 @@ export function ExprN43Scenario({ shotState, fixture }: ScenarioProps) {
         </div>
       </div>
       {focus.live}
-    </div>
+    </Page>
   )
 }

@@ -1,7 +1,7 @@
 import { DataPanel, StatCell, StatGroup } from 'basalt-ui/cards'
 import type { Empty, Phase } from 'basalt-ui/cards'
 import { useChartFocus } from 'basalt-ui/charts'
-import { CardGrid, PageBar } from 'basalt-ui/page'
+import { CardGrid, Page, PageBar } from 'basalt-ui/page'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { useEffect, useRef } from 'react'
 import type { ScenarioProps } from '../../shot-state'
@@ -150,7 +150,7 @@ export function ExprN33Scenario({ shotState, fixture }: ScenarioProps) {
   })
 
   return (
-    <div className="flex flex-col gap-6">
+    <Page area="expr-n33">
       <PageBar title="Project hygiene" />
       <StatGroup variant="strip" label="Hygiene">
         <StatCell
@@ -208,6 +208,6 @@ export function ExprN33Scenario({ shotState, fixture }: ScenarioProps) {
       </CardGrid>
       {probeFocus.live}
       {findingFocus.live}
-    </div>
+    </Page>
   )
 }

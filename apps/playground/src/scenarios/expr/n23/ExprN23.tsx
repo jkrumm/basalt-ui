@@ -1,7 +1,7 @@
 import { useFormat } from 'basalt-ui'
 import { BarList, StatCell, StatGroup } from 'basalt-ui/cards'
 import type { Empty, Phase } from 'basalt-ui/cards'
-import { PageBar, Section } from 'basalt-ui/page'
+import { Page, PageBar, Section } from 'basalt-ui/page'
 import { useChartFocus } from 'basalt-ui/charts'
 import { col, DataTable, TableToolbar, useDataTable } from 'basalt-ui/table'
 import type { ReactElement } from 'react'
@@ -141,7 +141,7 @@ export function ExprN23Scenario({ shotState, fixture }: ScenarioProps): ReactEle
   }))
 
   return (
-    <div className="@container flex min-w-0 flex-col gap-4 p-4">
+    <Page area="expr-n23">
       <PageBar title="Homelab monitors" />
       <StatGroup variant="strip" label="Monitor health">
         <StatCell
@@ -227,6 +227,6 @@ export function ExprN23Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         </Section>
       </div>
       {focus.live}
-    </div>
+    </Page>
   )
 }

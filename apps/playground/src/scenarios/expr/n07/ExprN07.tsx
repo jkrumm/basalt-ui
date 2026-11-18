@@ -4,6 +4,7 @@ import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui
 import type { ChartFocus } from 'basalt-ui/charts'
 import { DataPanel } from 'basalt-ui/cards'
 import type { Empty, Phase } from 'basalt-ui/cards'
+import { Page } from 'basalt-ui/page'
 import { BASALT } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 import { Status } from 'basalt-ui/ui/status'
@@ -122,7 +123,7 @@ export function ExprN07Scenario({ shotState, fixture }: ScenarioProps): ReactEle
       : null
 
   return (
-    <div className="@container flex flex-col gap-3 p-4">
+    <Page area="expr-n07">
       <div className="grid items-stretch gap-3 @wide:grid-cols-2">
         <ChartCard
           title="Best observing night"
@@ -233,6 +234,6 @@ export function ExprN07Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           body={() => <NightList nights={nights} focus={focus} kindOf={kindOf} />}
         />
       </div>
-    </div>
+    </Page>
   )
 }

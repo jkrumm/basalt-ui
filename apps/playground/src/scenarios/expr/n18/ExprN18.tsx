@@ -2,7 +2,7 @@ import type { ReactElement } from 'react'
 import { useFormat } from 'basalt-ui'
 import { DataPanel } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
-import { PageBar } from 'basalt-ui/page'
+import { Page, PageBar } from 'basalt-ui/page'
 import { BASALT } from 'basalt-ui/tokens'
 import { ScrollArea } from 'basalt-ui/ui/scroll-area'
 import { text } from '@tanstack/charts/text'
@@ -65,7 +65,7 @@ export function ExprN18Scenario({ shotState, fixture }: ScenarioProps): ReactEle
       : null
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n18">
       <PageBar title="Queue waits, last 7 days" />
       <div className="@container">
         <div className="grid gap-4 @regular:grid-cols-2">
@@ -161,6 +161,6 @@ export function ExprN18Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           />
         </div>
       </div>
-    </div>
+    </Page>
   )
 }
