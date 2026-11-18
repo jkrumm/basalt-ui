@@ -146,7 +146,7 @@ quality-matrix: browser-shell ## Quality matrix in a real browser: make quality-
 # playground, a dependency bump. `check-fast` runs it when the branch (merge base with BASE, default origin/master,
 # through the working tree, untracked files included) touched one of QUALITY_INPUTS; CI runs it on every head.
 # No merge base to diff against: it runs. `make quality-matrix` and `make check` always run it.
-QUALITY_INPUTS = packages/basalt-ui/src packages/basalt-ui/tests/quality packages/basalt-ui/package.json apps/playground package.json bun.lock
+QUALITY_INPUTS = packages/basalt-ui/src packages/basalt-ui/tests/quality packages/basalt-ui/tests/support packages/basalt-ui/package.json apps/playground package.json bun.lock
 quality-matrix-fast: ## Quality matrix only when the branch touched a UI input (BASE=<ref>, default origin/master)
 	@base="$$(git merge-base $(or $(BASE),origin/master) HEAD 2>/dev/null)"; \
 	if [ -n "$$base" ] && [ -z "$$(git diff --name-only "$$base" -- $(QUALITY_INPUTS); git ls-files --others --exclude-standard -- $(QUALITY_INPUTS))" ]; then \

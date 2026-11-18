@@ -31,7 +31,7 @@ everything passed. Every step of `make check` runs once per head. The `ci` job a
 ran, together, every `*.layout.test.ts` file (`scripts/check-layout-shards.ts` over the shard logs); a step added to `check`
 belongs to `ci-gate` unless the `checks` or `unit` job already runs it. `make check` runs them in sequence and is unchanged; `make check-fast` is the same but for the layout
 step, which runs only the files the branch's changes reach, and the quality matrix, which runs only when the branch touched
-`packages/basalt-ui/src`, the matrix's own tests, `apps/playground`, or a package manifest or lockfile
+`packages/basalt-ui/src`, the matrix's own tests and test support, `apps/playground`, or a package manifest or lockfile
 (`make quality-matrix-fast`; `make quality-matrix` always runs it) (a lead's check, `project.yaml` `checks`; CI runs the full suite on the head). It exits
 non-zero on the first failure and writes only gitignored output (`dist/`, `*.tgz`). `pre` alone is
 the fast inner loop. Its last step, the unit suite, is `scripts/unit-test.ts`: consecutive `bun test` processes (the five
