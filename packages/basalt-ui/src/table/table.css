@@ -50,11 +50,12 @@
     text-overflow: ellipsis;
   }
 
-  /* pinned and tick cells are opaque in every row state: the canvas, with the row's own tint (hover,
-     selected) layered over it, so a cell that scrolls under a pin never shows through. The head
-     cells keep their surface (a utility on `th`). */
+  /* pinned and tick cells are opaque in every row state: the surface the table sits on (the same one
+     the head cells take, the canvas where no surface is declared), with the row's own tint (hover,
+     selected) layered over it, so a cell that scrolls under a pin never shows through and never
+     paints a band against the row. */
   [data-slot='table-cell']:is([data-pin], [data-kind='tick']) {
-    background-color: var(--basalt-canvas);
+    background-color: var(--basalt-surface, var(--basalt-canvas));
     background-image: linear-gradient(var(--row-tint, transparent), var(--row-tint, transparent));
   }
   [data-slot='table-row']:hover > [data-slot='table-cell'] {
