@@ -25,6 +25,7 @@ options in DOM order. `multiple` lets several be on and draws no indicator. Work
 Segmented(props: SegmentedProps): ReactElement
   // either options, options + multiple, children or children + multiple
   size?: "md" | "sm" | null
+  fill?: boolean  // The track takes its box's width and every option an equal share of it (a phone's full-width switch)
   disabled?: boolean
   className?: string  // Layout only (`w-full`, `mt-2`)
   aria-label?: string
@@ -53,6 +54,7 @@ SegmentedItem({ className, onFocus, ...props }: SegmentedItemProps): ReactElemen
 Part `segmented`.
 
 - `size`: `md`, `sm` (default `md`)
+- `fill`: `true`, `false` (default `false`)
 
 ## `segmentedItemVariants`
 

@@ -5,7 +5,7 @@
  *
  * The swap between the two forms is CSS, one mount each, never a JS media query (which would paint
  * differently on the server and on the first client frame). From `md` up (840 px) the switch is a tab strip
- * (`ui/tabs`); below it a full-width track (`ui/segmented`) for three options or fewer, a `Select`
+ * (`ui/tabs`, the `segment` look); below it a full-width track (`ui/segmented`, every option an equal share) for three options or fewer, a `Select`
  * past that. Inside a `row` home (`<ControlHome home="aside">`) it is a panel row: the label above
  * one full-width track or `Select`, and every declared option is offered.
  *
@@ -81,7 +81,7 @@ function NarrowForm<T extends string>({
         {...name}
         size={size}
         disabled={disabled}
-        className="w-full"
+        fill
         options={options}
         value={value}
         onValueChange={(next) => {
@@ -154,6 +154,7 @@ function HandleViewTabs<T extends string>({
     >
       <Tabs
         size={size}
+        variant="segment"
         value={value}
         className="max-md:hidden"
         onValueChange={(next) => {

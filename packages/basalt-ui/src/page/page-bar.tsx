@@ -386,7 +386,7 @@ export function PageBar<K extends string = string>({
           </div>
         )}
         {!isEmptyTabs(tabs) && (
-          <div data-slot="page-bar-tabs" className="min-w-0">
+          <div data-slot="page-bar-tabs" className="min-w-0 max-@regular:basis-full">
             {renderTabs(tabs)}
           </div>
         )}

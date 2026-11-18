@@ -108,7 +108,7 @@ function SectionFrame<K extends string>({
         )}
       </div>
       {!isEmptyTabs(tabs) && (
-        <div data-slot="section-tabs" className="flex min-w-0 items-center">
+        <div data-slot="section-tabs" className="flex min-w-0 items-center max-@regular:basis-full">
           {renderTabs(tabs)}
         </div>
       )}

@@ -132,6 +132,30 @@ describe('segmented module', () => {
     )
   })
 
+  test('fill takes the box width and gives every option an equal share', () => {
+    const { container } = render(
+      <Segmented
+        fill
+        aria-label="View"
+        options={[
+          { value: 'a', label: 'Overview' },
+          { value: 'b', label: 'B' },
+        ]}
+      />,
+    )
+    const track = container.querySelector('[data-slot="segmented"]')
+    expect(track?.getAttribute('data-fill')).toBe('true')
+    expect(track?.className).toContain('w-full')
+    const item = container.querySelector('[data-slot="segmented-item"]')?.className
+    expect(item).toContain('group-data-[fill=true]/segmented:flex-1')
+    expect(item).toContain('group-data-[fill=true]/segmented:basis-0')
+    cleanup()
+    const plain = render(<Segmented aria-label="View" options={[{ value: 'a', label: 'A' }]} />)
+    expect(
+      plain.container.querySelector('[data-slot="segmented"]')?.getAttribute('data-fill'),
+    ).toBe('false')
+  })
+
   test('size drives the track height', () => {
     const { container } = render(<Segmented aria-label="R" options={OPTIONS} size="sm" />)
     expect(container.querySelector('[data-slot="segmented"]')?.className).toContain('h-6')

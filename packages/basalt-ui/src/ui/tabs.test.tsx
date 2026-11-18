@@ -98,6 +98,33 @@ describe('tabs module', () => {
     expect(delta.getAttribute('aria-selected')).toBe('true')
   })
 
+  test('segment is a tinted track with a raised active face and no underline; line is the default', () => {
+    const line = render(<Sample />)
+    expect(line.container.querySelector('[data-slot="tabs"]')?.getAttribute('data-variant')).toBe(
+      'line',
+    )
+    expect(tab(line.container, 'Alpha').className).toContain('data-active:border-brand')
+    cleanup()
+    const { container } = render(
+      <Tabs variant="segment" defaultValue="a">
+        <TabsList aria-label="View">
+          <TabsTrigger value="a">Alpha</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    )
+    expect(container.querySelector('[data-slot="tabs"]')?.getAttribute('data-variant')).toBe(
+      'segment',
+    )
+    const list = container.querySelector('[data-slot="tabs-list"]')?.className
+    expect(list).toContain('bg-accent')
+    expect(list).not.toContain('border-b')
+    const trigger = tab(container, 'Alpha').className
+    expect(trigger).toContain('data-active:bg-secondary')
+    expect(trigger).not.toContain('border-brand')
+    expect(trigger).toContain('pointer-coarse:min-h-11')
+    expect(trigger).toContain('forced-colors:border')
+  })
+
   test('keepMounted keeps a hidden panel in the DOM', () => {
     const { container, queryByText } = render(<Sample keepMounted />)
     expect(queryByText('Beta panel')).toBeTruthy()
