@@ -36,8 +36,8 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 - A count over a total is a figure with its share or delta ("13", pill "68% of 19"), where a sentence in prose gives nothing to compare (c10 F3, c11 F3).
 - A share shows its whole beside it ("9 / 18" next to the percent bar), so a small and a large item draw differently: 12 and 48 lessons drew the same bar (n11 .3).
 - A card with none of these is allowed when the number lacks a history, a target and parts.
-- Name the base in the pill and keep it at 390: n39's hero count had no margin to 0 °C and its pill named no base, and its builder cut `delta.label` to 'GFS' for the phone (.2); shorten the words around the base, never the base. n41's medians and Rate column carried no baseline (.27); n42's CPU and Memory strip had none, and on `pegged` its pill signed noise as '+1 pts CPU' (.38): a change inside the noise is a neutral pill or none, and a saturated figure stands against its limit.
-- A duration or an age is a fact, never a delta: n40's Overdue pill was an unsigned duration drawn with the delta arrow (.13); round 1 moved it to the footer. A delta is a signed change against a named base; 'Overdue 31 days' is a footer pair or a meter.
+- Name the base in the pill and keep it at 390: n39's hero count lacked a margin to 0 °C and its pill named its base only as 'GFS' after its builder cut `delta.label` for the phone (.2); shorten the words around the base and keep the base. n41's medians and Rate column carried a figure with nothing beside it (.27); n42's CPU and Memory strip lacked one, and on `pegged` its pill signed noise as '+1 pts CPU' (.38): a change inside the noise takes a neutral pill or an absent one, and a saturated figure stands against its limit.
+- A duration or an age is a fact for the footer or a meter, and a delta is a signed change against a named base: n40's Overdue pill was an unsigned duration drawn with the delta arrow (.13); round 1 moved it to the footer as a pair, 'Overdue 31 days'.
 
 ## Compose, in this order
 
