@@ -12,6 +12,10 @@ help: ## List targets
 # name is a step with no learned peak on its first run. `$(call slot,<step>)` is the prefix.
 SLOT_PROJECT = basalt-ui
 slot = $(if $(shell command -v factory 2>/dev/null),factory slot run --name "$(SLOT_PROJECT) $(1)" --,)
+# A browser step that has failed once is a slot minute spent for nothing: where the steps run in a slot (`factory`
+# installed) they stop at the first failing test, as the unit suite stops at its first failing process
+# (scripts/unit-test.ts). CI has no `factory`, runs the same files through its own steps and reports every failure.
+bail = $(if $(shell command -v factory 2>/dev/null),--bail,)
 
 # The local gate: the validation CI runs (.github/workflows/ci.yml), all in one target. Builds FIRST
 # on purpose — the playground's typecheck and `bun run pre`'s lint resolve
@@ -22,7 +26,7 @@ slot = $(if $(shell command -v factory 2>/dev/null),factory slot run --name "$(S
 # branch's changes reach (scripts/layout-select.ts). CI runs the full suite on every pull request head.
 check: ## Local CI gate: gen sync checks + build + pre + playground build + layout + coverage/doc-drift + pack-test
 	@$(MAKE) --no-print-directory check-pre browser-shell
-	@$(call slot,layout) sh -c 'bun run test:layout && bun run test:layout:harness'
+	@$(call slot,layout) sh -c 'bun run test:layout $(bail) && bun run test:layout:harness $(bail)'
 	@$(MAKE) --no-print-directory check-post
 
 # The lead's local check (project.yaml `checks.fast`): everything of `check` but the layout suite is the same; the
@@ -83,11 +87,11 @@ browser-shell: ## Install Playwright's chromium-headless-shell (BASALT_TEST_BROW
 	@bun x playwright-core install --only-shell chromium
 
 layout: browser-shell ## Run the layout regression suite (real CSS geometry, headless shell)
-	@$(call slot,layout) sh -c 'bun run test:layout && bun run test:layout:harness'
+	@$(call slot,layout) sh -c 'bun run test:layout $(bail) && bun run test:layout:harness $(bail)'
 
 # The layout files the branch's changes reach (scripts/layout-select.ts prints them and why, on stderr), plus the
 # harness self-test when any of them runs. No layout input changed: no slot is taken, nothing runs.
-LAYOUT_BUN = bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000
+LAYOUT_BUN = bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 $(bail)
 layout-fast: browser-shell ## Run only the layout files the branch's changes reach (BASE=<ref>, default origin/master)
 	@files="$$(bun scripts/layout-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
 	if [ -z "$$files" ]; then exit 0; fi; \
