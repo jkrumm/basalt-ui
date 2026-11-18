@@ -41,6 +41,7 @@ describe('selectUnit', () => {
     const { mode, always } = pick([S + '/ui/button.tsx'])
     expect(mode).toBe('changed')
     expect(always).toEqual([
+      'apps/playground/src/budget.test.ts',
       'packages/basalt-ui/scripts/check-coverage.test.ts',
       S + '/styles.floor.test.ts',
       'packages/basalt-ui/tests/drift.test.ts',
@@ -67,6 +68,14 @@ describe('selectUnit', () => {
     expect(pickAll([S + '/cli/doctor.ts']).always).toContain(hook)
     expect(pickAll([S + '/ui/button.tsx']).always).not.toContain(hook)
     texts.delete(hook)
+  })
+
+  test('a package change runs the apps tests, which import the package through dist; a docs change does not', () => {
+    const apps = 'apps/playground/src/budget.test.ts'
+    expect(pick([S + '/ui/button.tsx']).always).toContain(apps)
+    expect(pick(['packages/basalt-ui/agent/rules/x.md']).always).toContain(apps)
+    expect(pick(['docs/v3/x.md']).always).not.toContain(apps)
+    expect(pick([S + '/ui/button.test.tsx']).always).not.toContain(apps)
   })
 
   test('a short or index file name names nothing', () => {
