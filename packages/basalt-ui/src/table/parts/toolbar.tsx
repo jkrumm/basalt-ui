@@ -25,7 +25,8 @@ import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { ChipList } from './chips'
 import { FilterEditor } from './toolbar-editor'
-import { activeFilters, filterableSpecs } from './toolbar-filters'
+import { CategoryOrder } from './category-order'
+import { activeFilters, filterableSpecs, rankableSpecs } from './toolbar-filters'
 import { ViewsMenu } from './views'
 import type { ViewParam } from './views'
 
@@ -68,7 +69,11 @@ function AddFilter<T>({ model }: { model: TableModel<T> }): ReactElement | null 
   return (
     <Popover onOpenChange={(open) => open && setPicked(null)}>
       <PopoverTrigger render={<Button />}>{t('table.filterAdd')}</PopoverTrigger>
-      <PopoverContent aria-label={t('table.filterColumn')} align="start">
+      <PopoverContent
+        aria-label={t('table.filterColumn')}
+        align="start"
+        {...(spec !== undefined && spec.filter === 'range' && { className: 'w-80' })}
+      >
         {spec === undefined ? (
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
             {specs.map((s) => (
@@ -126,12 +131,17 @@ function Display<T>({ model }: { model: TableModel<T> }): ReactElement {
   )
 }
 
-/** `Filters (n)`: every filter editor in one sheet, for a toolbar too narrow to fan them out. */
+/**
+ * `Filters (n)`: every filter editor in one sheet, for a toolbar too narrow to fan them out (a phone
+ * shows cards, which have no header to open a column's door), and the order list of each ranked
+ * status column below them.
+ */
 function FiltersSheet<T>({ model }: { model: TableModel<T> }): ReactElement | null {
   const t = useMessages(table)
   const specs = filterableSpecs(model.specs)
+  const ranked = rankableSpecs(model.specs)
   const count = activeFilters(model.state.request.filters, new Set(specs.map((s) => s.id))).length
-  if (specs.length === 0) return null
+  if (specs.length === 0 && ranked.length === 0) return null
   return (
     <span data-slot="table-filters-sheet" className="hidden @max-[479.9px]/toolbar:inline-flex">
       <Sheet>
@@ -143,6 +153,9 @@ function FiltersSheet<T>({ model }: { model: TableModel<T> }): ReactElement | nu
                 <span className="font-medium">{spec.header}</span>
                 <FilterEditor model={model} spec={spec} />
               </div>
+            ))}
+            {ranked.map((spec) => (
+              <CategoryOrder key={`order-${spec.id}`} model={model} spec={spec} />
             ))}
             {count > 0 && (
               <Button
