@@ -95,7 +95,7 @@ LAYOUT_BUN = bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --t
 layout-fast: browser-shell ## Run only the layout files the branch's changes reach (BASE=<ref>, default origin/master)
 	@files="$$(bun scripts/layout-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
 	if [ -z "$$files" ]; then exit 0; fi; \
-	$(call slot,layout-fast) sh -c '$(LAYOUT_BUN) '"$$(echo $$files)"' && bun run test:layout:harness'
+	$(call slot,layout-fast) sh -c '$(LAYOUT_BUN) '"$$(echo $$files)"' && bun run test:layout:harness $(bail)'
 
 build: ## Build the published package (dist-first tsup + declarations)
 	@cd packages/basalt-ui && bun run build
@@ -121,7 +121,7 @@ evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> 
 # schemes) unless LANES excludes `quality`. Needs the built package and playground deps, like `check`.
 QUALITY_MATRIX ?= sampled
 quality-matrix: browser-shell ## Quality matrix in a real browser: make quality-matrix [QUALITY_MATRIX=sampled|full]
-	@$(call slot,quality-matrix) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 packages/basalt-ui/tests/quality/matrix'
+	@$(call slot,quality-matrix) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 $(bail) packages/basalt-ui/tests/quality/matrix'
 
 # Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the local
 # Keel reference (.design-parity/keel/) into .design-parity/<LABEL>/ unless OUT is given. Images and board.html
