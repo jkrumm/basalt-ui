@@ -3,10 +3,10 @@
  * (`fixture/v3/scenarios/shell-chrome-mount.tsx`):
  * - at 390 a page with a long title and two actions leaves the title unclipped, because only the
  *   primary action stays in the header and the other folds into the one overflow menu;
- * - at 1800 the first content row of a page with no band and of a page with a band start within
- *   4 px of each other, so content starts at one height on every page.
+ * - at 1800 the first content row starts one page gutter under the chrome's last rule, the band's
+ *   when the page has one and the header's when it has none (owner review 1: the page top).
  *
- * v3 only: the 2.x oracle has neither the `mobile` fold nor the band-less inset.
+ * v3 only: the 2.x oracle has neither the `mobile` fold nor the page inset.
  */
 import { acquireShellTarget } from './shell-target'
 import { afterAll, describe, expect, test } from 'bun:test'
@@ -105,22 +105,31 @@ layout('a title-only PageBar in a shell draws no band', () => {
   })
 })
 
-layout('content starts at one height on every page', () => {
-  const firstRow = async (bar?: NonNullable<FixtureSpec['bar']>): Promise<number> => {
+layout('content starts one gutter under the chrome', () => {
+  const firstRow = async (
+    bar?: NonNullable<FixtureSpec['bar']>,
+  ): Promise<{ gap: number; gutter: number }> => {
     const page = await openFixture(specOf(bar), DESKTOP_1800)
     await page.raw.waitForSelector(slot('section'))
     await page.settle()
     return page.raw.evaluate((sectionSel) => {
       const section = document.querySelector<HTMLElement>(sectionSel)
-      if (section === null) throw new Error('LAYOUT: no section')
-      return section.getBoundingClientRect().top
+      const header = document.querySelector<HTMLElement>('[data-slot="shell-header"]')
+      const main = document.querySelector<HTMLElement>('[data-slot="page-main"]')
+      if (section === null || header === null || main === null) throw new Error('LAYOUT: no page')
+      const band = document.querySelector<HTMLElement>('[data-slot="page-bar"]')
+      return {
+        gap: section.getBoundingClientRect().top - (band ?? header).getBoundingClientRect().bottom,
+        gutter: parseFloat(getComputedStyle(main).paddingLeft),
+      }
     }, slot('section'))
   }
 
-  test('1800: the first row of a band-less page and of a page with a band are within 4 px', async () => {
+  test('1800: a band-less page and a page with a band both start one gutter under the last rule', async () => {
     const bare = await firstRow()
     const banded = await firstRow({ pills: 2 })
-    expect(Math.abs(bare - banded)).toBeLessThanOrEqual(4)
+    expect(bare.gap).toBeCloseTo(bare.gutter, 0)
+    expect(banded.gap).toBeCloseTo(banded.gutter, 0)
   })
 })
 

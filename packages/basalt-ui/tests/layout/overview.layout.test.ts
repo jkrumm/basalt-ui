@@ -82,7 +82,7 @@ async function open(viewport: Viewport, scheme?: 'dark'): Promise<LayoutPage> {
     'reduce',
     viewport.width <= 390 ? 'coarse' : 'fine',
   )
-  await page.raw.waitForSelector('[data-testid="ov-root"] [data-slot="stat-card"]')
+  await page.raw.waitForSelector('[data-slot="page"][data-area="overview"] [data-slot="stat-card"]')
   if (scheme === 'dark') {
     await page.raw.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'))
     await page.raw.waitForTimeout(300)

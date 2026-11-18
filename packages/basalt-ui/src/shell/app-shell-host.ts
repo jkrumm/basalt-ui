@@ -18,6 +18,9 @@ import type { ClaimStore } from '../page/core/claims'
 
 export const BAR_HEIGHT_VAR = '--page-bar-h'
 
+/** Set on the shell root while a `PageBar` band is mounted. */
+export const BAND_ATTR = 'data-page-band'
+
 export type ShellRegions = {
   readonly actions: ClaimStore<ReactNode>
   readonly breadcrumb: ClaimStore<ReactNode>
@@ -51,6 +54,8 @@ export function createShellHost(): ShellHost {
     if (root === null) return
     if (height > 0) root.style.setProperty(BAR_HEIGHT_VAR, `${height}px`)
     else root.style.removeProperty(BAR_HEIGHT_VAR)
+    // The header reads it: over main its rule gives way to the band's, so the two rows read as one bar.
+    root.toggleAttribute(BAND_ATTR, height > 0)
   }
 
   const host: PageHost = {
