@@ -152,6 +152,7 @@ jobs:
           name: layout-shard-${{ matrix.shard }}
           path: layout-shard-${{ matrix.shard }}.log
           if-no-files-found: ignore
+          overwrite: true # a re-run of one failed shard uploads its log again
 
       - name: Layout harness self-test
         # One small file, not shardable: run it on the first shard only.
