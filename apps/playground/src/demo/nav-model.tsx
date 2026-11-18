@@ -7,8 +7,9 @@
  * generated route tree. It is PURE (no registration, no global), so this file imports nothing from
  * `routes/` and either side can read it without a cycle.
  *
- * Destinations: home, cards, table, shell, the scenarios section built from
- * `SCENARIO_INFO`. Settings is the shell's `settings` menu, not a nav item.
+ * Destinations: the overview pages, then the Kit (one page per capability) and the routed recipes, then the
+ * trial evidence (the cycle apps and the scenarios built from `SCENARIO_INFO`), labelled as such.
+ * Settings is the shell's `settings` menu, not a nav item.
  */
 import { linkOptions } from '@tanstack/react-router'
 import { defineNav } from 'basalt-ui/router'
@@ -70,6 +71,29 @@ const Flask = glyph(
     <path d="M11 4v5l-5 9a1 1 0 0 0 1 2h10a1 1 0 0 0 1-2l-5-9V4" />
   </>,
 )
+const Sliders = glyph(
+  <>
+    <path d="M4 7h10" />
+    <path d="M18 7h2" />
+    <path d="M4 17h4" />
+    <path d="M12 17h8" />
+    <circle cx="16" cy="7" r="2" />
+    <circle cx="10" cy="17" r="2" />
+  </>,
+)
+const Panel = glyph(
+  <>
+    <path d="M4 5h16v14H4z" />
+    <path d="M14 5v14" />
+  </>,
+)
+const Image = glyph(
+  <>
+    <path d="M4 5h16v14H4z" />
+    <circle cx="9" cy="10" r="1.5" />
+    <path d="M20 16l-5-5-8 8" />
+  </>,
+)
 export const NAV = defineNav({
   sections: [
     {
@@ -104,6 +128,92 @@ export const NAV = defineNav({
           mobile: 'tab',
           link: linkOptions({ to: '/shell' }),
         },
+        {
+          id: 'widgets',
+          label: 'Widgets',
+          icon: Dashboard,
+          mobile: 'more',
+          link: linkOptions({ to: '/overview' }),
+        },
+      ],
+    },
+    // The kit, one destination per capability: what the owner and an agent read as the reference.
+    {
+      id: 'kit',
+      label: 'Kit',
+      items: [
+        {
+          id: 'kit-controls',
+          label: 'Page controls',
+          icon: Sliders,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/controls' }),
+        },
+        {
+          id: 'kit-aside',
+          label: 'Inspector aside',
+          icon: Panel,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/aside' }),
+        },
+        {
+          id: 'kit-peek',
+          label: 'Peek',
+          icon: Panel,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/peek' }),
+        },
+        {
+          id: 'kit-split',
+          label: 'Split page',
+          icon: Layout,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/split' }),
+        },
+        {
+          id: 'kit-library',
+          label: 'Library (reference)',
+          icon: Image,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/library' }),
+        },
+      ],
+    },
+    // The recipes a doc page copies, each rendered as a page.
+    {
+      id: 'recipes',
+      label: 'Recipes',
+      items: [
+        {
+          id: 'recipe-view-switch',
+          label: 'View switch',
+          icon: Table,
+          mobile: 'more',
+          link: linkOptions({ to: '/recipes/view-switch' }),
+        },
+        {
+          id: 'recipe-saved-views',
+          label: 'Saved views',
+          icon: Table,
+          mobile: 'more',
+          link: linkOptions({ to: '/recipes/saved-views' }),
+        },
+        {
+          id: 'recipe-two-pane',
+          label: 'Two panes',
+          icon: Chart,
+          mobile: 'more',
+          link: linkOptions({ to: '/recipes/two-pane' }),
+        },
+      ],
+    },
+    // Trial evidence: the pages the state and dogfood cycles built, kept as they were judged.
+    {
+      id: 'trial-cycles',
+      label: 'Trial evidence: state and dogfood cycles',
+      collapsible: true,
+      defaultCollapsed: true,
+      items: [
         {
           id: 'cycle-state-2',
           label: 'Tickets (state cycle 2)',
@@ -165,7 +275,9 @@ export const NAV = defineNav({
     // Shell cycle 2 (docs/v3/cycles/shell-2.md): the fleet app's three pages.
     {
       id: 'fleet',
-      label: 'Fleet (shell cycle 2)',
+      label: 'Trial evidence: fleet, shell cycle 2',
+      collapsible: true,
+      defaultCollapsed: true,
       items: [
         {
           id: 'fleet-overview',
@@ -193,7 +305,9 @@ export const NAV = defineNav({
     // Shell cycle 3 (docs/v3/cycles/shell-3.md): the fleet app's three pages, rebuilt.
     {
       id: 'fleet-3',
-      label: 'Fleet (shell cycle 3)',
+      label: 'Trial evidence: fleet, shell cycle 3',
+      collapsible: true,
+      defaultCollapsed: true,
       items: [
         {
           id: 'fleet-3-overview',
@@ -221,7 +335,9 @@ export const NAV = defineNav({
     // Shell cycle 4 (docs/v3/cycles/shell-4.md): the fleet app's three pages, rebuilt.
     {
       id: 'fleet-4',
-      label: 'Fleet (shell cycle 4)',
+      label: 'Trial evidence: fleet, shell cycle 4',
+      collapsible: true,
+      defaultCollapsed: true,
       items: [
         {
           id: 'fleet-4-overview',
@@ -249,7 +365,9 @@ export const NAV = defineNav({
     // Shell cycle 5 (docs/v3/cycles/shell-5.md): the fleet app's three pages, rebuilt.
     {
       id: 'fleet-5',
-      label: 'Fleet (shell cycle 5)',
+      label: 'Trial evidence: fleet, shell cycle 5',
+      collapsible: true,
+      defaultCollapsed: true,
       items: [
         {
           id: 'fleet-5-overview',
@@ -277,8 +395,9 @@ export const NAV = defineNav({
     // One entry per scenario in the registry.
     {
       id: 'scenarios',
-      label: 'Scenarios',
+      label: 'Trial evidence: scenarios',
       collapsible: true,
+      defaultCollapsed: true,
       items: SCENARIO_INFO.map(({ id, title }) => ({
         id: `scenario-${id}`,
         label: title,
