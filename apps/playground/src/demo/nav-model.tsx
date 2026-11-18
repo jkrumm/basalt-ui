@@ -171,6 +171,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/kit/split' }),
         },
         {
+          id: 'kit-interval-track',
+          label: 'Interval track',
+          icon: Layout,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/interval-track' }),
+        },
+        {
           id: 'kit-library',
           label: 'Library (reference)',
           icon: Image,
