@@ -1,7 +1,7 @@
 import { StatCard } from 'basalt-ui/cards'
 import type { Empty, Phase, Verdict } from 'basalt-ui/cards'
 import { useChartFocus } from 'basalt-ui/charts'
-import { PageBar, Section } from 'basalt-ui/page'
+import { Page, PageBar, Section } from 'basalt-ui/page'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import type { ScenarioProps } from '../../shot-state'
 import { isPlanFixture, planIssues, STATE_LABELS } from './fixture'
@@ -101,7 +101,7 @@ export function ExprN32Scenario({ shotState, fixture }: ScenarioProps) {
   })
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n32">
       <PageBar title="Plan waits" />
       <StatCard
         title="Unblocks the most"
@@ -130,6 +130,6 @@ export function ExprN32Scenario({ shotState, fixture }: ScenarioProps) {
         <DataTable table={table} focus={focus} />
       </Section>
       {focus.live}
-    </div>
+    </Page>
   )
 }

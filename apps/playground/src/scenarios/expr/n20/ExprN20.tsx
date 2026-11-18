@@ -1,7 +1,7 @@
 import { text } from '@tanstack/charts/text'
 import type { Delta, Verdict } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
-import { PageBar, PageSummary, QueryState } from 'basalt-ui/page'
+import { Page, PageBar, PageSummary, QueryState } from 'basalt-ui/page'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 import type { ReactElement } from 'react'
 import { VOLUME_SERIES } from '../../../demo/series'
@@ -267,7 +267,7 @@ export function ExprN20Scenario({ shotState, fixture }: ScenarioProps): ReactEle
   const summary = shotState === undefined ? summaryOf(lifts) : null
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n20">
       <PageBar title="Weekly volume by lift, 16 weeks" />
       {loading ? <PageSummary phase="loading" facts={[]} /> : null}
       {summary === null ? null : <PageSummary sentence={summary.sentence} facts={summary.facts} />}
@@ -299,6 +299,6 @@ export function ExprN20Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           </div>
         </div>
       </QueryState>
-    </div>
+    </Page>
   )
 }

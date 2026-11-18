@@ -129,7 +129,7 @@ export function ExprN13Scenario({ shotState, fixture }: ScenarioProps) {
   return (
     <Page area="recurring-charges">
       <PageBar title="Recurring charges" />
-      <div className="@container flex flex-col gap-4 p-4">
+      <div className="@container flex flex-col gap-4">
         <PageSummary phase={summaryPhase} sentence={summary} />
         <div className="grid items-start gap-4 @wide:grid-cols-3">
           <div className="flex flex-col gap-4">

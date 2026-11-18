@@ -2,7 +2,7 @@
 // #region recipe:view-switch
 import type { ComponentProps } from 'react'
 import { ViewTabs } from 'basalt-ui/controls'
-import { PageBar } from 'basalt-ui/page'
+import { Page, PageBar } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 
@@ -36,10 +36,10 @@ export function Runs({ data }: { data: readonly Run[] }) {
     cardsBelow: as === 'cards' ? 'always' : 'regular',
   })
   return (
-    <>
+    <Page area="runs">
       <PageBar tabs={tabs} />
       <DataTable table={t} />
-    </>
+    </Page>
   )
 }
 // #endregion

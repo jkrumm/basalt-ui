@@ -100,7 +100,7 @@ export function ExprC14Scenario({ shotState, fixture }: ScenarioProps) {
   return (
     <Page>
       <PageBar title="Live eval, 400-case suite" />
-      <div className="max-w-2xl p-3">
+      <div className="max-w-2xl">
         <ChartCard
           title="Pass rate by model"
           subtitle="Live, ranked by pass rate. Bars show cases done."

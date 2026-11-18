@@ -4,7 +4,7 @@ import { createFormat } from 'basalt-ui'
 import type { Empty, Phase } from 'basalt-ui/cards'
 import { DataPanel } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
-import { PageBar, QueryState } from 'basalt-ui/page'
+import { Page, PageBar, QueryState } from 'basalt-ui/page'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import { BASALT } from 'basalt-ui/tokens'
 import type { ReactElement } from 'react'
@@ -140,15 +140,15 @@ export function ExprC16Scenario({ shotState, fixture }: ScenarioProps): ReactEle
   // The failure and the empty catalogue are said once, for the whole page, not in each card.
   if (shotState === 'error' || isEmpty) {
     return (
-      <div className="flex min-w-0 flex-col gap-4">
+      <Page area="expr-c16">
         <PageBar title="Switch model" />
         <QueryState phase={phase} empty={empty} />
-      </div>
+      </Page>
     )
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-c16">
       <PageBar title="Switch model" />
       <ChartCard
         title="Recommended for this chat"
@@ -321,6 +321,6 @@ export function ExprC16Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         bodySize={{ rows: 9 }}
         body={() => <DataTable table={table} focus={focus} />}
       />
-    </div>
+    </Page>
   )
 }

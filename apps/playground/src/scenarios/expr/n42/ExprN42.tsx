@@ -3,7 +3,7 @@ import { DataPanel, StatCell, StatGroup } from 'basalt-ui/cards'
 import type { Delta, Empty, FootFacts, Phase } from 'basalt-ui/cards'
 import { ChartCard, Lines, useChartFocus } from 'basalt-ui/charts'
 import type { ChartRefLine } from 'basalt-ui/charts'
-import { CardGrid, PageBar } from 'basalt-ui/page'
+import { CardGrid, Page, PageBar } from 'basalt-ui/page'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 import { ROUTER_SERIES } from '../../../demo/series'
@@ -130,7 +130,7 @@ export function ExprN42Scenario({ shotState, fixture }: ScenarioProps) {
   ]
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n42">
       <PageBar title="Router health, last 24 hours" />
       <StatGroup variant="strip" label="Router status">
         <StatCell
@@ -264,6 +264,6 @@ export function ExprN42Scenario({ shotState, fixture }: ScenarioProps) {
           )}
         />
       </CardGrid>
-    </div>
+    </Page>
   )
 }

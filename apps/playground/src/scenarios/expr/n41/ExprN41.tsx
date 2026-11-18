@@ -10,7 +10,7 @@ import { BarList, DataPanel } from 'basalt-ui/cards'
 import type { BarListProps, Delta, Empty, Phase } from 'basalt-ui/cards'
 import { Bars, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import type { BarsSeries, ChartRefLine } from 'basalt-ui/charts'
-import { CardGrid, PageBar } from 'basalt-ui/page'
+import { CardGrid, Page, PageBar } from 'basalt-ui/page'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import { BASALT } from 'basalt-ui/tokens'
 import { SERVED_SERIES } from '../../../demo/series'
@@ -198,7 +198,7 @@ export function ExprN41Scenario({ shotState, fixture }: ScenarioProps) {
   }))
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n41">
       <PageBar title="Model router, last 7 days" />
       <ChartCard
         title="Fallbacks per hour"
@@ -298,6 +298,6 @@ export function ExprN41Scenario({ shotState, fixture }: ScenarioProps) {
       </CardGrid>
       {/* cycle-expression-10: the chart's live region announces hours only, so a row focused in the list is announced here. */}
       <output className="sr-only">{kindFocused === undefined ? '' : kindText(kindFocused)}</output>
-    </div>
+    </Page>
   )
 }

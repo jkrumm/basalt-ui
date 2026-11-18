@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { CardGrid, PageBar } from 'basalt-ui/page'
+import { CardGrid, Page, PageBar } from 'basalt-ui/page'
 import { BarList, DataPanel, EventList, StatCard, StatCell, StatGroup } from 'basalt-ui/cards'
 import { ChartCard, Lines } from 'basalt-ui/charts'
 import { FilterSet, ViewTabs, filterSlot, spec } from 'basalt-ui/controls'
@@ -151,7 +151,7 @@ const tabs: NonNullable<ComponentProps<typeof PageBar>['tabs']> = {
 function OverviewRoute(): ReactElement {
   const [tab] = overview.field.tab.use()
   return (
-    <div className="flex min-w-0 flex-col gap-4" data-testid="ov-root">
+    <Page area="overview">
       <PageBar tabs={tabs} controls={filterSlot([spec(globals.field.range, 'Range')])} />
       <div data-testid="ov-filters">{filters}</div>
       {tab === 'overview' ? (
@@ -165,7 +165,7 @@ function OverviewRoute(): ReactElement {
         </>
       ) : null}
       <CardGrid min="regular">{breakdown}</CardGrid>
-    </div>
+    </Page>
   )
 }
 

@@ -5,7 +5,7 @@ import { BarList } from 'basalt-ui/cards'
 import type { Delta, Phase } from 'basalt-ui/cards'
 import { Bars, ChartCard, Lines, useChartFocus } from 'basalt-ui/charts'
 import type { ChartFigure, ChartZone } from 'basalt-ui/charts'
-import { PageBar } from 'basalt-ui/page'
+import { Page, PageBar } from 'basalt-ui/page'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 import { WEALTH_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
@@ -125,7 +125,7 @@ export function ExprN14Scenario({ shotState, fixture }: ScenarioProps): ReactEle
   const pending = shotState === 'loading'
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n14">
       <PageBar title="Household net worth" />
       <ChartCard
         title="Net worth"
@@ -267,6 +267,6 @@ export function ExprN14Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           />
         </div>
       </div>
-    </div>
+    </Page>
   )
 }

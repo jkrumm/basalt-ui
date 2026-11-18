@@ -2,7 +2,7 @@ import { text } from '@tanstack/charts/text'
 import { BarList } from 'basalt-ui/cards'
 import type { ComponentProps } from 'react'
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
-import { CardGrid, PageBar } from 'basalt-ui/page'
+import { CardGrid, Page, PageBar } from 'basalt-ui/page'
 import { BASALT } from 'basalt-ui/tokens'
 import { OWNER_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
@@ -100,7 +100,7 @@ export function ExprN38Scenario({ shotState, fixture }: ScenarioProps) {
   ] as const
 
   return (
-    <>
+    <Page area="expr-n38">
       <PageBar title="Waiting on you" />
       <CardGrid min="regular">
         <ChartCard
@@ -203,6 +203,6 @@ export function ExprN38Scenario({ shotState, fixture }: ScenarioProps) {
         />
       </CardGrid>
       {focus.live}
-    </>
+    </Page>
   )
 }

@@ -1,7 +1,7 @@
 import type { Empty, Phase } from 'basalt-ui/cards'
 import type { ChartFigure } from 'basalt-ui/charts'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
-import { PageBar, Section } from 'basalt-ui/page'
+import { Page, PageBar, Section } from 'basalt-ui/page'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { alpha, BASALT } from 'basalt-ui/tokens'
 import { SPRINT_SERIES } from '../../../demo/series'
@@ -85,7 +85,7 @@ export function ExprN37Scenario({ shotState, fixture }: ScenarioProps) {
   })
 
   return (
-    <>
+    <Page area="expr-n37">
       <PageBar title={`${SPRINT.name}, Nov 9 to 20`} />
       <div className="@container">
         <div className="grid gap-4 @wide:grid-cols-5">
@@ -172,6 +172,6 @@ export function ExprN37Scenario({ shotState, fixture }: ScenarioProps) {
         </div>
       </div>
       {focus.live}
-    </>
+    </Page>
   )
 }

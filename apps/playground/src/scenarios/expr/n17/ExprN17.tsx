@@ -3,7 +3,7 @@ import type { ReactElement } from 'react'
 import { text } from '@tanstack/charts/text'
 import { useFormat } from 'basalt-ui'
 import { BarList } from 'basalt-ui/cards'
-import { CardGrid } from 'basalt-ui/page'
+import { CardGrid, Page } from 'basalt-ui/page'
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
 import { BASALT } from 'basalt-ui/tokens'
 import { MEM_SERIES } from '../../../demo/series'
@@ -59,7 +59,7 @@ export function ExprN17Scenario({ shotState, fixture }: ScenarioProps): ReactEle
     : { value: null }
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n17">
       <CardGrid min="regular">
         <ChartCard
           title="Memory pressure"
@@ -161,6 +161,6 @@ export function ExprN17Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           format={gb}
         />
       </CardGrid>
-    </div>
+    </Page>
   )
 }

@@ -100,7 +100,7 @@ export function ExprN11Scenario({ shotState, fixture }: ScenarioProps): ReactEle
   return (
     <Page area="courses" landmark>
       <PageBar title="Courses" />
-      <div className="flex min-w-0 flex-col gap-4 p-4">
+      <div className="flex min-w-0 flex-col gap-4">
         <StatCard
           title="Courses started"
           subtitle={focus.readout('whole catalogue', (r) => r.title)}

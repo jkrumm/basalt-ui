@@ -4,7 +4,7 @@ import { DataPanel } from 'basalt-ui/cards'
 import type { Verdict } from 'basalt-ui/cards'
 import { CartesianChart, ChartCard, useChartFocus } from 'basalt-ui/charts'
 import { useFormat } from 'basalt-ui'
-import { PageBar } from 'basalt-ui/page'
+import { Page, PageBar } from 'basalt-ui/page'
 import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 
@@ -202,7 +202,7 @@ export function ExprN26Scenario({ shotState, fixture }: ScenarioProps): ReactEle
   })
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n26">
       <PageBar title="Line path, last 24 hours" />
 
       <ChartCard
@@ -247,6 +247,6 @@ export function ExprN26Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         bodySize={{ rows: 5 }}
         body={() => <DataTable table={table} />}
       />
-    </div>
+    </Page>
   )
 }

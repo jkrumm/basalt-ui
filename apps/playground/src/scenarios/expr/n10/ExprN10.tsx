@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from 'basalt-ui/ui/table'
-import { useSizeClass } from 'basalt-ui/page'
+import { Page, useSizeClass } from 'basalt-ui/page'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { WIND_SERIES } from '../../../demo/series'
@@ -259,7 +259,7 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
 
   const cell = (v: string): string => (ready ? v : '-')
   return (
-    <div className="@container p-4">
+    <Page area="expr-n10">
       <div className="grid gap-3 @wide:grid-cols-3">
         <div className="min-w-0 @wide:col-span-2">{chartCard}</div>
         <Card className="min-w-0 self-start" onPointerLeave={() => setModel(null)}>
@@ -300,6 +300,6 @@ export function ExprN10Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           </Table>
         </Card>
       </div>
-    </div>
+    </Page>
   )
 }

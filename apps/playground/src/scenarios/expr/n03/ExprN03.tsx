@@ -2,7 +2,7 @@ import { text } from '@tanstack/charts/text'
 import { createFormat } from 'basalt-ui'
 import { CartesianChart, ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
 import type { ChartPlot, Series } from 'basalt-ui/charts'
-import { CardGrid, PageBar } from 'basalt-ui/page'
+import { CardGrid, Page, PageBar } from 'basalt-ui/page'
 import { BASALT, alpha } from 'basalt-ui/tokens'
 import type { ReactElement } from 'react'
 import { LOAD_SERIES } from '../../../demo/series'
@@ -194,7 +194,7 @@ export function ExprN03Scenario({ shotState, fixture }: ScenarioProps): ReactEle
         }))
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n03">
       <PageBar title="Training load, last 9 weeks" />
       <CardGrid min="regular">
         <ChartCard
@@ -317,6 +317,6 @@ export function ExprN03Scenario({ shotState, fixture }: ScenarioProps): ReactEle
           )}
         />
       </CardGrid>
-    </div>
+    </Page>
   )
 }

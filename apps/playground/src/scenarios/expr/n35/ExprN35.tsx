@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import type { Phase } from 'basalt-ui/cards'
 import { ChartCard, chartLabels, useChartFocus } from 'basalt-ui/charts'
 import type { ChartFocusItem, LegendEntry, TrackAxis } from 'basalt-ui/charts'
-import { PageBar } from 'basalt-ui/page'
+import { Page, PageBar } from 'basalt-ui/page'
 import { BASALT } from 'basalt-ui/tokens'
 import { useFormat } from 'basalt-ui'
 import type { ScenarioProps } from '../../shot-state'
@@ -156,7 +156,7 @@ export function ExprN35Scenario({ shotState, fixture }: ScenarioProps) {
   ] as const
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <Page area="expr-n35">
       <PageBar title="Workweek, Nov 23 to 27" />
       <ChartCard
         title="Booked time by workday"
@@ -204,7 +204,7 @@ export function ExprN35Scenario({ shotState, fixture }: ScenarioProps) {
           </div>
         )}
       />
-    </div>
+    </Page>
   )
 }
 
