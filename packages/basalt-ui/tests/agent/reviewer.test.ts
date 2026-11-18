@@ -36,8 +36,8 @@ const KNOWN: Record<string, number[]> = {
 
 describe('reviewer rubric', () => {
   it('lists every rubric item in order', () => {
-    expect(KNOWN['Craft']).toEqual([1, 2, 3, 4, 5, 6, 7])
-    expect(KNOWN['Expression']).toEqual([1, 2, 3, 4, 5])
+    expect(KNOWN['Craft']).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    expect(KNOWN['Expression']).toEqual([1, 2, 3, 4, 5, 6])
     expect(KNOWN['Communication']).toEqual([1, 2, 3, 4, 5, 6, 7])
   })
 
