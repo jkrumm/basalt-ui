@@ -5,7 +5,8 @@ import { resolvePhase } from '../../core/phase'
 import type { Fact, FootFacts, ResolvedPhase } from '../../core/phase'
 import type { Verdict } from '../../core/ports'
 import { DeltaBadge } from '../../ui/badge'
-import { ChartCardContext } from '../card-context'
+import { CardHiddenContext, ChartCardContext } from '../card-context'
+import { isolatedKeys, toggledKeys } from '../legend'
 import type { ChartCardProps, ChartFigure } from '../contract'
 import { Footer, formatValue, Head, PhaseBox, SURFACE } from './chart-card-frame'
 import { Legend } from './legend'
@@ -244,6 +245,9 @@ const hasNoRows = (phase: object): boolean => {
  * Clear filters when `filtered`. `empty` wins over `ready` and `stale` once the query settled, and
  * `loading` wins over everything. The phase prints on the card and the box as `data-phase`.
  *
+ * A `legend` of two or more entries toggles the series of the chart in the box with the same `key`
+ * (from the plot, the tooltip and the scale); a double click or a modifier click isolates one.
+ *
  * A series with `failed: true` keeps its legend entry, which reads `unavailable`, draws nothing in the
  * plot and leaves the phase on `ready`; the word is the message `charts.unavailable`, which an app
  * overrides through the provider's `messages`. The tooltip is the engine's, placed inside the card.
@@ -277,74 +281,89 @@ export function ChartCard(props: ChartCardProps): ReactElement {
   const ready = effective.body
   const shownFigure = ready ? figure : withPeriodHold(figure ?? held?.figure, held)
   const shownFooter = footer ?? (ready ? undefined : held?.footer)
+  // Two or more entries toggle the series of the chart in the box, as a chart's own legend does.
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
+  const entries = legend ?? []
+  const interactive = entries.length >= 2
+  const legendKeys = entries.map((e) => e.key)
   return (
     <ChartCardContext value={true}>
-      <div
-        data-slot="chart-card"
-        data-height={height}
-        className={cn('@container min-w-0', height === 'fill' && 'h-full')}
-      >
+      <CardHiddenContext value={hidden}>
         <div
-          data-slot="card"
-          data-surface="card"
-          data-phase={effective.tag}
-          className={cn(SURFACE, 'relative', height === 'fill' && 'h-full')}
+          data-slot="chart-card"
+          data-height={height}
+          className={cn('@container min-w-0', height === 'fill' && 'h-full')}
         >
-          <Head
-            title={props.title}
-            subtitle={props.subtitle}
-            icon={props.icon}
-            info={props.info}
-            controls={controls}
-            menu={menu}
-          />
           <div
-            data-slot="inset"
-            data-surface="inset"
-            className={cn(
-              'mx-(--card-gutter) flex min-h-0 flex-col rounded-inset bg-inset px-[calc(var(--card-edge)_-_var(--card-gutter))] py-3 first:mt-(--card-gutter) last:mb-(--card-gutter)',
-              height === 'fill' && 'flex-1',
-            )}
+            data-slot="card"
+            data-surface="card"
+            data-phase={effective.tag}
+            className={cn(SURFACE, 'relative', height === 'fill' && 'h-full')}
           >
-            {shownFigure !== undefined && (
-              <FigureRow
-                figure={shownFigure}
-                loading={effective.tag === 'loading'}
-                failed={effective.tag === 'error'}
-                blank={effective.tag === 'error' || effective.tag === 'empty'}
-              />
-            )}
-            {legend !== undefined && legend.length > 0 && (
-              <div
-                data-slot="chart-legend"
-                className={cn('shrink-0', shownFigure !== undefined && 'mt-2')}
-              >
-                <Legend entries={legend} />
-              </div>
-            )}
-            <PhaseBox
+            <Head
               title={props.title}
-              resolved={effective}
-              chart={chart}
+              subtitle={props.subtitle}
+              icon={props.icon}
+              info={props.info}
+              controls={controls}
+              menu={menu}
+            />
+            <div
+              data-slot="inset"
+              data-surface="inset"
               className={cn(
-                (shownFigure !== undefined || (legend !== undefined && legend.length > 0)) &&
-                  'mt-2',
-                BOX[height],
+                'mx-(--card-gutter) flex min-h-0 flex-col rounded-inset bg-inset px-[calc(var(--card-edge)_-_var(--card-gutter))] py-3 first:mt-(--card-gutter) last:mb-(--card-gutter)',
+                height === 'fill' && 'flex-1',
               )}
+            >
+              {shownFigure !== undefined && (
+                <FigureRow
+                  figure={shownFigure}
+                  loading={effective.tag === 'loading'}
+                  failed={effective.tag === 'error'}
+                  blank={effective.tag === 'error' || effective.tag === 'empty'}
+                />
+              )}
+              {legend !== undefined && legend.length > 0 && (
+                <div
+                  data-slot="chart-legend"
+                  className={cn('shrink-0', shownFigure !== undefined && 'mt-2')}
+                >
+                  <Legend
+                    entries={legend}
+                    hidden={hidden}
+                    {...(interactive && {
+                      onToggle: (key: string) => setHidden((prev) => toggledKeys(prev, key)),
+                      onIsolate: (key: string) =>
+                        setHidden((prev) => isolatedKeys(prev, key, legendKeys)),
+                    })}
+                  />
+                </div>
+              )}
+              <PhaseBox
+                title={props.title}
+                resolved={effective}
+                chart={chart}
+                className={cn(
+                  (shownFigure !== undefined || (legend !== undefined && legend.length > 0)) &&
+                    'mt-2',
+                  BOX[height],
+                )}
+              />
+            </div>
+            <Footer
+              facts={shownFooter}
+              phase={
+                effective.tag === 'loading'
+                  ? 'loading'
+                  : effective.tag === 'error'
+                    ? 'error'
+                    : 'other'
+              }
             />
           </div>
-          <Footer
-            facts={shownFooter}
-            phase={
-              effective.tag === 'loading'
-                ? 'loading'
-                : effective.tag === 'error'
-                  ? 'error'
-                  : 'other'
-            }
-          />
         </div>
-      </div>
+      </CardHiddenContext>
     </ChartCardContext>
   )
 }

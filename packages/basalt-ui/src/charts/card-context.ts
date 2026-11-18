@@ -9,3 +9,13 @@ import { createContext, useContext } from 'react'
 export const ChartCardContext = createContext(false)
 
 export const useInChartCard = (): boolean => useContext(ChartCardContext)
+
+const NONE: ReadonlySet<string> = new Set()
+
+/**
+ * The series keys a `ChartCard` legend has toggled off: a chart in the card's box hides them from
+ * the plot, the tooltip and the scale, as its own legend toggle does.
+ */
+export const CardHiddenContext = createContext<ReadonlySet<string>>(NONE)
+
+export const useCardHidden = (): ReadonlySet<string> => useContext(CardHiddenContext)
