@@ -5,6 +5,7 @@ import { Facts, Section } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
 import { col, DataTable, TableToolbar, tableCodec, useDataTable } from 'basalt-ui/table'
 import type { DetailEntry, DetailHost } from 'basalt-ui/core/ports'
+import { DateRangePicker } from 'basalt-ui/ui/date-picker'
 import { Progress } from 'basalt-ui/ui/progress'
 import { Sheet, SheetContent } from 'basalt-ui/ui/sheet'
 import { VirtualList } from 'basalt-ui/ui/virtual-list'
@@ -19,6 +20,7 @@ type Booking = {
   category: string
   state: string
   amount: number
+  reconciled: boolean
   at: string
 }
 
@@ -46,6 +48,7 @@ const BOOKINGS: readonly Booking[] = Array.from({ length: 240 }, (_, i) => ({
   category: CATEGORIES[(i * 3) % CATEGORIES.length] ?? CATEGORIES[0],
   state: STATES[(i * 5) % STATES.length] ?? STATES[0],
   amount: -Math.round((20 + ((i * 137) % 1900)) * 100) / 100,
+  reconciled: i % 3 !== 0,
   at: day(i),
 }))
 
@@ -53,7 +56,14 @@ const book = col<Booking>()
 
 /** Ids and kinds only: it sits at module scope while the columns close over render values. */
 const bookingsSchema = book.codec(
-  { payee: 'entity', amount: 'money', state: 'status', category: 'text', at: 'date' },
+  {
+    payee: 'entity',
+    amount: 'money',
+    state: 'status',
+    category: 'text',
+    reconciled: 'boolean',
+    at: 'date',
+  },
   { defaults: { sort: [{ id: 'at', desc: true }], pageSize: 10 } },
 )
 
@@ -122,22 +132,51 @@ const exemplar = defineControls({
 
 type Value = ReturnType<typeof exemplar.field.table.use>[0]
 
-/** The stand-in for the endpoint: sort, filter and page by the request, the total and the facets of the match. */
+/** A `range` filter's ends as the endpoint reads them: `''` is an open end. */
+const ends = (request: Value['request'], id: string): [string, string] => {
+  const values = request.filters.find((f) => f.id === id)?.values ?? []
+  return [values[0] ?? '', values[1] ?? '']
+}
+
+/**
+ * The stand-in for the endpoint: it maps every filter of the request to its own query (a server
+ * table filters nothing itself), sorts by the user's category order, pages, and returns the total
+ * and the state facets, counted under every filter but the state one.
+ */
 function serve(request: Value['request'], month: string) {
   const q = request.q.trim().toLowerCase()
-  const states = request.filters.find((f) => f.id === 'state')?.values ?? []
-  const payees = request.filters.find((f) => f.id === 'payee')?.values ?? []
+  const values = (id: string): readonly string[] =>
+    request.filters.find((f) => f.id === id)?.values ?? []
+  const states = values('state')
+  const payees = values('payee')
+  const reconciled = values('reconciled')
+  const [min, max] = ends(request, 'amount')
+  const [from, to] = ends(request, 'at')
   const inMonth = BOOKINGS.filter((b) => month === 'all' || b.at.startsWith(month))
   const searched = inMonth.filter(
     (b) => q === '' || `${b.payee} ${b.category}`.toLowerCase().includes(q),
   )
-  const matched = searched
+  const narrowed = searched
     .filter((b) => payees.every((p) => b.payee.toLowerCase().includes(p.toLowerCase())))
-    .filter((b) => states.length === 0 || states.includes(b.state))
+    .filter((b) => reconciled.length === 0 || reconciled.includes(String(b.reconciled)))
+    .filter(
+      (b) => (min === '' || b.amount >= Number(min)) && (max === '' || b.amount <= Number(max)),
+    )
+    .filter(
+      (b) => (from === '' || b.at.slice(0, 10) >= from) && (to === '' || b.at.slice(0, 10) <= to),
+    )
+  const matched = narrowed.filter((b) => states.length === 0 || states.includes(b.state))
   const sort = request.sort[0] ?? { id: 'at', desc: true }
   const sign = sort.desc ? -1 : 1
+  const rank = request.ranks?.['state'] ?? STATES
   const key = (b: Booking): string | number =>
-    sort.id === 'amount' ? b.amount : ((b as Record<string, string | number>)[sort.id] ?? '')
+    sort.id === 'amount'
+      ? b.amount
+      : sort.id === 'state'
+        ? rank.indexOf(b.state)
+        : sort.id === 'reconciled'
+          ? Number(b.reconciled)
+          : ((b as Record<string, string | number | boolean>)[sort.id]?.toString() ?? '')
   const sorted = matched.toSorted((a, b) => {
     const [x, y] = [key(a), key(b)]
     return (
@@ -152,7 +191,7 @@ function serve(request: Value['request'], month: string) {
     facets: {
       state: STATES.map((value) => ({
         value,
-        count: searched.filter((b) => b.state === value).length,
+        count: narrowed.filter((b) => b.state === value).length,
       })),
     },
     sum: Math.round(matched.reduce((total, b) => total + b.amount, 0) * 100) / 100,
@@ -168,6 +207,7 @@ function BookingDetail({ row }: { row: Booking }): ReactElement {
         { label: 'Category', value: row.category },
         { label: 'State', value: row.state },
         { label: 'Amount', value: <span data-numeric>{f.money(row.amount, 'EUR')}</span> },
+        { label: 'Reconciled', value: row.reconciled ? 'Yes' : 'No' },
         { label: 'Booked', value: row.at.slice(0, 10) },
       ]}
     />
@@ -213,8 +253,15 @@ function Finances(): ReactElement {
         tone: (value) => TONES[value as keyof typeof TONES] ?? 'neutral',
         filter: 'multi',
       }),
-      book.money('amount', { currency: 'EUR', header: 'Amount', footer: 'sum' }),
-      book.date('at', { header: 'Booked', priority: 3 }),
+      book.money('amount', {
+        currency: 'EUR',
+        header: 'Amount',
+        footer: 'sum',
+        filter: 'range',
+        bounds: [-2000, 0],
+      }),
+      book.boolean('reconciled', { header: 'Reconciled', filter: 'multi', priority: 3 }),
+      book.date('at', { header: 'Booked', priority: 3, filter: 'range', picker: DateRangePicker }),
       book.actions([{ id: 'rule', label: 'Make rule', onClick: () => setDone('Rule created') }]),
     ],
     data: page.rows,
@@ -277,8 +324,8 @@ function Large(): ReactElement {
           setPicked((prev) => ({ ...prev, [row.id]: next }))
         },
       }),
-      entry.money('amount', { currency: 'EUR', header: 'Amount' }),
-      entry.date('at', { header: 'Booked', priority: 3 }),
+      entry.money('amount', { currency: 'EUR', header: 'Amount', filter: 'range' }),
+      entry.date('at', { header: 'Booked', priority: 3, filter: 'range', picker: DateRangePicker }),
     ],
     data: rows,
     getRowId: (row) => row.id,
