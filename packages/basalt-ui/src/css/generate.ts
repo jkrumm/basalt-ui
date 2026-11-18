@@ -76,6 +76,17 @@ const chartMarkRules =
 const articleProgressRules =
   '  @keyframes basalt-article-progress {\n    to {\n      transform: scaleX(1);\n    }\n  }\n'
 
+/**
+ * Tailwind 4 draws a border with no colour utility in currentColor, so a page's bare `border-b`,
+ * `divide-y` or `border` painted full ink while every kit part (which names `border-border`) drew
+ * the hairline. The default is the hairline token, in the `basalt` layer: after preflight, before
+ * every utility, so a named colour and a kit part still win. `outline` and `ring` stay currentColor
+ * on purpose: they mark focus, where ink is the safe default (`focus-ring` names brand itself).
+ */
+const borderRules =
+  '  /* A border with no colour utility is the hairline, not ink (Tailwind 4 defaults to currentColor). */\n' +
+  '  *,\n  ::after,\n  ::before,\n  ::backdrop,\n  ::file-selector-button {\n    border-color: var(--basalt-hairline);\n  }\n'
+
 function tailwindCss(): string {
   const entries = bridgeEntries()
   const colours = entries.filter((e) => e.tw.startsWith('--color-'))
@@ -101,6 +112,7 @@ function tailwindCss(): string {
 
   const base =
     '@layer basalt {\n' +
+    borderRules +
     surfaceRules +
     '  @media (forced-colors: active) {\n    [data-surface] {\n      border: 1px solid CanvasText;\n    }\n  }\n' +
     '  input:-webkit-autofill,\n  textarea:-webkit-autofill,\n  select:-webkit-autofill {\n' +

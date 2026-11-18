@@ -1,0 +1,7 @@
+/*
+ * The `base-border` fixture's Tailwind v4 entry: the kit stylesheet WITH preflight, so a bare
+ * `border-b` is measured the way a consumer's page renders it. Compiled into a temp directory by
+ * `base-border.layout.test.ts`; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source inline("border border-b divide-y border-border border-grid ring-1 outline");
