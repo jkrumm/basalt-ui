@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-fast ci-gate check-pre check-post gen-check verify deploy logs pre test layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
+.PHONY: help check check-fast ci-gate check-pre check-post gen-check quality-matrix-fast verify deploy logs pre test layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -34,7 +34,7 @@ check: ## Local CI gate: gen sync checks + build + pre + playground build + layo
 check-fast: ## Local check for a lead: `check` with only the layout files the branch touched (CI runs the full suite)
 	@$(MAKE) --no-print-directory check-pre
 	@$(MAKE) --no-print-directory layout-fast
-	@$(MAKE) --no-print-directory check-post
+	@$(MAKE) --no-print-directory check-post QUALITY_STEP=quality-matrix-fast
 
 # What CI's `gate` job runs (.github/workflows/ci.yml): the steps of `check` that no other CI job runs. The `checks`
 # job runs the formatters, lint, typecheck, budgets, coverage, drift, contract-frozen and pack-test gates, the `unit` job
@@ -61,8 +61,10 @@ check-pre:
 	@bun run pre
 	@bun --filter @basalt-ui/playground build
 
+# `check` runs the quality matrix always; `check-fast` only when the branch touched a UI input (quality-matrix-fast).
+QUALITY_STEP ?= quality-matrix
 check-post:
-	@$(MAKE) --no-print-directory quality-matrix
+	@$(MAKE) --no-print-directory $(QUALITY_STEP)
 	@bun packages/basalt-ui/scripts/check-coverage.ts --check
 	@bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
 	@bun packages/basalt-ui/scripts/check-contract-frozen.ts
@@ -139,6 +141,18 @@ evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> 
 QUALITY_MATRIX ?= sampled
 quality-matrix: browser-shell ## Quality matrix in a real browser: make quality-matrix [QUALITY_MATRIX=sampled|full]
 	@$(call slot,quality-matrix) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 $(bail) packages/basalt-ui/tests/quality/matrix'
+
+# The matrix is 400 runs (~200 s) and only a UI input reaches a route: the package source, the matrix itself, the
+# playground, a dependency bump. `check-fast` runs it when the branch (merge base with BASE, default origin/master,
+# through the working tree, untracked files included) touched one of QUALITY_INPUTS; CI runs it on every head.
+# No merge base to diff against: it runs. `make quality-matrix` and `make check` always run it.
+QUALITY_INPUTS = packages/basalt-ui/src packages/basalt-ui/tests/quality packages/basalt-ui/package.json apps/playground package.json bun.lock
+quality-matrix-fast: ## Quality matrix only when the branch touched a UI input (BASE=<ref>, default origin/master)
+	@base="$$(git merge-base $(or $(BASE),origin/master) HEAD 2>/dev/null)"; \
+	if [ -n "$$base" ] && [ -z "$$(git diff --name-only "$$base" -- $(QUALITY_INPUTS); git ls-files --others --exclude-standard -- $(QUALITY_INPUTS))" ]; then \
+		echo "quality-matrix: no UI input changed since $(or $(BASE),origin/master); CI runs it on the head"; exit 0; \
+	fi; \
+	$(MAKE) --no-print-directory quality-matrix
 
 # Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the local
 # Keel reference (.design-parity/keel/) into .design-parity/<LABEL>/ unless OUT is given. Images and board.html
