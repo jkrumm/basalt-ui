@@ -6,8 +6,8 @@
  */
 import type { ReactNode } from 'react'
 import type { Format } from '../../core/format'
-import type { Box } from '../../core/ports'
-import type { CardSlot, KindColumn, Priority, RowAction } from '../contract'
+import type { Box, Tone } from '../../core/ports'
+import type { CardSlot, DateRangeLike, KindColumn, Priority, RowAction } from '../contract'
 import type { SortFnName } from './features'
 
 export type KindName =
@@ -83,7 +83,7 @@ export type KindSpec<T> = {
   wrap: boolean
   width: Width
   sort: SortRule
-  filter: 'contains' | 'anyOf' | null
+  filter: 'contains' | 'anyOf' | 'range' | null
   /** Card slots in order of preference; `plan.ts` takes the first with room, then `detail`. */
   card: readonly CardPlace[]
   /** The caller named a card slot: the plan places this column before the ones left to a default. */
@@ -103,6 +103,8 @@ export type KindSpec<T> = {
   options?: readonly string[]
   /** `status`: the text drawn for an option value (cell, card, filter); absent, the value itself. */
   labels?: Readonly<Record<string, string>>
+  /** `status`: the tone of an option's dot, drawn in its filter list and its order list too. */
+  tone?: (value: string) => Tone
   /** `actions`: the typed row actions. */
   actions?: readonly RowAction<T>[]
   /** `select`: the in-place edit. */
@@ -111,6 +113,10 @@ export type KindSpec<T> = {
   unit?: string
   /** `number`, `money`: the footer reduce. */
   footer?: FooterSpec
+  /** A numeric range filter's scale: the editor adds a two-thumb slider over it. */
+  bounds?: readonly [number, number]
+  /** `date`, `relativeTime` with a range filter: the from-to day picker its editor draws. */
+  picker?: DateRangeLike
 }
 
 /** Per-kind defaults, the section 5 table. Options may override `priority` and the first `card`. */

@@ -217,7 +217,14 @@ describe('table codec: golden URLs', () => {
       },
     })
     expect(line(raw)).toBe('b.q=x&b.page=2&b.f.state=a')
-    expect(second.params('table')).toEqual(['b.q', 'b.sort', 'b.page', 'b.size', 'b.f.state'])
+    expect(second.params('table')).toEqual([
+      'b.q',
+      'b.sort',
+      'b.page',
+      'b.size',
+      'b.f.state',
+      'b.rank.state',
+    ])
     expect(second.decode('table', { 'b.page': '2', page: '9' })?.request.page).toBe(2)
   })
 
@@ -230,6 +237,9 @@ describe('table codec: golden URLs', () => {
       'f.payee',
       'f.note',
       'f.state',
+      'f.amount',
+      'f.at',
+      'rank.state',
     ])
   })
 })
@@ -254,11 +264,11 @@ describe('table codec: normalise, never reject', () => {
 
   test('unknown and unfilterable columns are pruned and warned, the rest is kept', () => {
     warnings.length = 0
-    const s = decode({ 'f.ghost': 'x', 'f.amount': '1', 'f.state': 'todo', sort: 'ghost.desc' })
+    const s = decode({ 'f.ghost': 'x', 'f.trend': '1', 'f.state': 'todo', sort: 'ghost.desc' })
     expect(s?.request.filters).toEqual([{ id: 'state', op: 'anyOf', values: ['todo'] }])
     expect(s?.request.sort).toEqual([{ id: 'at', desc: true }])
     expect(warnings.join('\n')).toContain('f.ghost')
-    expect(warnings.join('\n')).toContain('f.amount')
+    expect(warnings.join('\n')).toContain('f.trend')
     expect(warnings.join('\n')).toContain('"ghost"')
   })
 
@@ -385,5 +395,73 @@ describe('table codec: named fixtures', () => {
     const back = decode(throughRouter(encode(s)))
     expect(back?.request.q).toBe('1e3')
     expect(back?.request.filters[0]?.values).toEqual(values)
+  })
+})
+
+describe('table codec: range filters and category ranks', () => {
+  const at = (raw: Raw) => url.decode('table', raw)?.request
+
+  test('a money range round-trips as from..to, and an open end stays open', () => {
+    for (const [raw, values] of [
+      ['10..500', ['10', '500']],
+      ['10..', ['10', '']],
+      ['..500', ['', '500']],
+      ['-5.5..2', ['-5.5', '2']],
+    ] as const) {
+      const request = at({ 'f.amount': raw })
+      expect(request?.filters).toEqual([{ id: 'amount', op: 'range', values: [...values] }])
+      const back = url.encode('table', { ...url.fallback, request: request! })
+      expect(back['f.amount']).toBe(raw)
+    }
+  })
+
+  test('a range reads one value as a one-value range and swaps ends in the wrong order', () => {
+    expect(at({ 'f.amount': '7' })?.filters[0]?.values).toEqual(['7', '7'])
+    expect(at({ 'f.amount': 7 })?.filters[0]?.values).toEqual(['7', '7'])
+    expect(at({ 'f.amount': '500..10' })?.filters[0]?.values).toEqual(['10', '500'])
+  })
+
+  test('a range drops an end it cannot read, and drops the filter when both go', () => {
+    expect(at({ 'f.amount': 'abc..5' })?.filters[0]?.values).toEqual(['', '5'])
+    expect(at({ 'f.amount': 'x..y', q: 'k' })?.filters).toEqual([])
+    expect(at({ 'f.amount': '..', q: 'k' })?.filters).toEqual([])
+  })
+
+  test('a date range keeps real days only, ordered', () => {
+    expect(at({ 'f.at': '2026-10-01..2026-10-31' })?.filters).toEqual([
+      { id: 'at', op: 'range', values: ['2026-10-01', '2026-10-31'] },
+    ])
+    expect(at({ 'f.at': '2026-10-31..2026-10-01' })?.filters[0]?.values).toEqual([
+      '2026-10-01',
+      '2026-10-31',
+    ])
+    expect(at({ 'f.at': '2026-02-31..2026-03-02' })?.filters[0]?.values).toEqual(['', '2026-03-02'])
+    expect(at({ 'f.at': '..2026-01-05' })?.filters[0]?.values).toEqual(['', '2026-01-05'])
+  })
+
+  test('rank.<col> carries a status order, and only a status column has one', () => {
+    const request = at({ 'rank.state': 'done,todo', sort: 'state.asc' })
+    expect(request?.ranks).toEqual({ state: ['done', 'todo'] })
+    expect(url.encode('table', { ...url.fallback, request: request! })['rank.state']).toBe(
+      'done,todo',
+    )
+    const plain = normalizeState(schema, {
+      ...url.fallback,
+      request: { ...url.fallback.request, ranks: { amount: ['1'], state: [] } },
+    })
+    expect(plain.request.ranks).toBeUndefined()
+  })
+
+  test('a rank is part of the query: two orders are two requests', () => {
+    const a = {
+      ...url.fallback,
+      request: { ...url.fallback.request, ranks: { state: ['a', 'b'] } },
+    }
+    const b = {
+      ...url.fallback,
+      request: { ...url.fallback.request, ranks: { state: ['b', 'a'] } },
+    }
+    expect(url.equals(a, b)).toBe(false)
+    expect(url.equals(a, a)).toBe(true)
   })
 })

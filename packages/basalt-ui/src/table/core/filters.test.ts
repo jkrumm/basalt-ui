@@ -94,3 +94,46 @@ describe('rowMatches', () => {
     expect(rowMatches([], row({}), known)).toBe(true)
   })
 })
+
+describe('range', () => {
+  test('numbers: both ends inclusive, an open end, an absent or non-numeric cell never passes', () => {
+    expect(matchesFilter('range', 10, ['10', '20'])).toBe(true)
+    expect(matchesFilter('range', 20, ['10', '20'])).toBe(true)
+    expect(matchesFilter('range', 21, ['10', '20'])).toBe(false)
+    expect(matchesFilter('range', -5, ['', '0'])).toBe(true)
+    expect(matchesFilter('range', 5, ['', '0'])).toBe(false)
+    expect(matchesFilter('range', null, ['1', ''])).toBe(false)
+    expect(matchesFilter('range', '7', ['1', ''])).toBe(false)
+    expect(matchesFilter('range', null, ['', ''])).toBe(true)
+  })
+
+  test('days: an instant is the day it falls on in the zone, a zone-less day stays itself', () => {
+    const utc = { kind: 'day', zone: 'UTC' } as const
+    const ny = { kind: 'day', zone: 'America/New_York' } as const
+    const late = '2026-10-31T23:30:00Z'
+    expect(matchesFilter('range', late, ['2026-10-01', '2026-10-31'], utc)).toBe(true)
+    expect(matchesFilter('range', late, ['2026-10-31', '2026-10-31'], ny)).toBe(true)
+    expect(matchesFilter('range', '2026-11-01T02:00:00Z', ['', '2026-10-31'], ny)).toBe(true)
+    expect(matchesFilter('range', '2026-11-01T02:00:00Z', ['', '2026-10-31'], utc)).toBe(false)
+    expect(matchesFilter('range', '2026-10-15', ['2026-10-15', ''], ny)).toBe(true)
+    expect(matchesFilter('range', Date.UTC(2026, 9, 2), ['2026-10-02', '2026-10-02'], utc)).toBe(
+      true,
+    )
+    expect(matchesFilter('range', 'not a date', ['2026-01-01', ''], utc)).toBe(false)
+  })
+
+  test('the engine path: a range with both ends open is removed, one per domain and zone', () => {
+    const fn = constructFilterFn('range')
+    expect(fn.autoRemove(['', ''])).toBe(true)
+    expect(fn.autoRemove(['1', ''])).toBe(false)
+    expect(constructFilterFn('range', { kind: 'day', zone: 'UTC' })).toBe(
+      constructFilterFn('range', { kind: 'day', zone: 'UTC' }),
+    )
+    expect(constructFilterFn('range', { kind: 'day', zone: 'UTC' })).not.toBe(fn)
+    const known = new Set(['amount'])
+    expect(toColumnFilters([{ id: 'amount', op: 'range', values: ['', '5'] }], known)).toEqual([
+      { id: 'amount', value: ['', '5'] },
+    ])
+    expect(toColumnFilters([{ id: 'amount', op: 'range', values: ['', ''] }], known)).toEqual([])
+  })
+})

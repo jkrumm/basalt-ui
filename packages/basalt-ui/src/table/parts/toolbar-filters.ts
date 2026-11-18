@@ -5,6 +5,7 @@
  * Pure; the parts hold no filter state of their own.
  */
 import type { FilterModel } from '../contract'
+import { isUsable } from '../core/filters'
 import type { KindSpec } from '../core/kinds-spec'
 
 /** The part of a kind spec the filter surface reads. */
@@ -12,7 +13,10 @@ export type FilterableSpec = Pick<KindSpec<never>, 'id' | 'filter'> & {
   filter: NonNullable<KindSpec<never>['filter']>
 }
 
-/** The columns that have an `f.<col>` field: `text`, `entity` (contains) and `status` (anyOf). */
+/**
+ * The columns that have an `f.<col>` field: `text`, `entity` (contains), `status`, `select`,
+ * `boolean` (anyOf) and the numeric and date kinds (range), each where the column opts in.
+ */
 export function filterableSpecs<S extends Pick<KindSpec<never>, 'filter'>>(
   specs: readonly S[],
 ): (S & { filter: NonNullable<S['filter']> })[] {
@@ -27,8 +31,21 @@ export function filterValues(filters: readonly FilterModel[], id: string): reado
 }
 
 /**
- * `filters` with one column's values replaced, keeping the order of the others. An empty list
- * removes the column's filter; a new one is appended.
+ * The columns whose categories the user can rank from the header: a sortable `status` column with
+ * at least two options.
+ */
+export function rankableSpecs<S extends Pick<KindSpec<never>, 'kind' | 'sort' | 'options'>>(
+  specs: readonly S[],
+): S[] {
+  return specs.filter(
+    (spec) => spec.kind === 'status' && spec.sort !== null && (spec.options?.length ?? 0) > 1,
+  )
+}
+
+/**
+ * `filters` with one column's values replaced, keeping the order of the others. A list that
+ * filters nothing (no value, or a range with both ends open) removes the column's filter; a new
+ * one is appended.
  */
 export function withFilter(
   filters: readonly FilterModel[],
@@ -36,7 +53,7 @@ export function withFilter(
   values: readonly string[],
 ): FilterModel[] {
   const kept = filters.filter((f) => f.id !== spec.id)
-  if (values.length === 0) return kept
+  if (!isUsable(spec.filter, values)) return kept
   const next: FilterModel = { id: spec.id, op: spec.filter, values: [...values] }
   const index = filters.findIndex((f) => f.id === spec.id)
   return index === -1 ? [...kept, next] : kept.toSpliced(index, 0, next)
@@ -47,5 +64,5 @@ export function activeFilters(
   filters: readonly FilterModel[],
   known: ReadonlySet<string>,
 ): FilterModel[] {
-  return filters.filter((f) => known.has(f.id) && f.values.length > 0)
+  return filters.filter((f) => known.has(f.id) && isUsable(f.op, f.values))
 }

@@ -11,7 +11,7 @@
 import type { ReactNode } from 'react'
 import type { DateStyle } from '../../core/format'
 import type { Box, Delta, IconComponent, NavTarget, Tone } from '../../core/ports'
-import type { CardSlot, KindColumn, Priority, RowAction } from '../contract'
+import type { CardSlot, DateRangeLike, KindColumn, Priority, RowAction } from '../contract'
 import { codec } from './kinds-codec'
 import type { CodecKind, CodecOptions, TableSchema } from './kinds-codec'
 import {
@@ -89,30 +89,52 @@ export type TextOptions = CommonOptions & {
 }
 /** A numeric kind's footer: client mode reduces the filtered rows, server mode reads `totals`. */
 export type FooterOption = { footer?: Aggregate }
-export type NumberOptions = CommonOptions & FooterOption & { unit?: string; digits?: number }
-export type MoneyOptions = CommonOptions & FooterOption & { currency: string }
-export type DateOptions = CommonOptions & { style?: DateStyle }
+/**
+ * A numeric column's range filter: `filter: 'range'` filters by a min and a max, and `bounds`
+ * (the lowest and highest value the column can hold) adds a two-thumb slider over that scale.
+ */
+export type RangeFilterOptions = { filter?: 'range'; bounds?: readonly [number, number] }
+/**
+ * A date column's range filter: `filter: 'range'` with the day picker it draws, passed by value so
+ * `./table` adds no peer (`DateRangePicker` from `basalt-ui/ui/date-picker`).
+ */
+export type DateFilterOptions =
+  | { filter?: undefined; picker?: undefined }
+  | { filter: 'range'; picker: DateRangeLike }
+export type NumberOptions = CommonOptions &
+  FooterOption &
+  RangeFilterOptions & { unit?: string; digits?: number }
+export type MoneyOptions = CommonOptions & FooterOption & RangeFilterOptions & { currency: string }
+export type DateOptions = CommonOptions & DateFilterOptions & { style?: DateStyle }
+export type RelativeTimeOptions = CommonOptions & DateFilterOptions
 export type StatusOptions<O extends string = string> = CommonOptions & {
   options: readonly O[]
   /** The text of each option in the cell, the phone card and the column filter; the stored value without it. */
   labels?: Readonly<Record<O, string>>
   /** Receives the closed option union `options` declares, so a `Record<Option, Tone>` indexes without a cast. */
   tone?: (value: O) => Tone
+  /** `'multi'` filters by a checklist of the options; the user can also rank them from the header. */
   filter?: 'multi'
 }
-export type DeltaOptions = CommonOptions & {
-  polarity: Delta['polarity']
-  unit?: string
-  /** A money change: `+€50.00` in the currency's own digits, like `c.money`; wins over `unit`. */
-  currency?: string
+export type DeltaOptions = CommonOptions &
+  RangeFilterOptions & {
+    polarity: Delta['polarity']
+    unit?: string
+    /** A money change: `+€50.00` in the currency's own digits, like `c.money`; wins over `unit`. */
+    currency?: string
+  }
+/** `filter: 'range'` filters by a min and a max over the meter's own scale, 0 to `max`. */
+export type MeterOptions = CommonOptions & { max?: number; filter?: 'range' }
+/** `filter: 'multi'` filters by Yes or No (the two `labels`). */
+export type BooleanOptions = CommonOptions & {
+  labels?: readonly [string, string]
+  filter?: 'multi'
 }
-export type MeterOptions = CommonOptions & { max?: number }
-export type BooleanOptions = CommonOptions & { labels?: readonly [string, string] }
 export type SparkOptions<T> = Omit<CommonOptions, 'id' | 'sortable'> & {
   label: string
   render: (row: T, box: Box) => ReactNode
 }
-export type SelectOptions<T> = CommonOptions & SelectEdit<T>
+export type SelectOptions<T> = CommonOptions & SelectEdit<T> & { filter?: 'multi' }
 export type CustomOptions<T> = {
   header?: string
   render: (row: T, env: CellEnv) => ReactNode
@@ -133,7 +155,7 @@ export type Col<T> = {
   number(key: KeysOf<T, number>, o?: NumberOptions): KindColumn<T>
   money(key: KeysOf<T, number>, o: MoneyOptions): KindColumn<T>
   date(key: KeysOf<T, string | number | Date>, o?: DateOptions): KindColumn<T>
-  relativeTime(key: KeysOf<T, string | number | Date>, o?: CommonOptions): KindColumn<T>
+  relativeTime(key: KeysOf<T, string | number | Date>, o?: RelativeTimeOptions): KindColumn<T>
   status<const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O>): KindColumn<T>
   delta(key: KeysOf<T, number>, o: DeltaOptions): KindColumn<T>
   meter(key: KeysOf<T, number>, o?: MeterOptions): KindColumn<T>
@@ -162,20 +184,26 @@ const OPTION_KEYS: Readonly<
     required: [],
   },
   text: { allowed: [...COMMON, 'filter', 'labels'], required: [] },
-  number: { allowed: [...COMMON, 'unit', 'digits', 'footer'], required: [] },
-  money: { allowed: [...COMMON, 'currency', 'footer'], required: ['currency'] },
-  date: { allowed: [...COMMON, 'style'], required: [] },
-  relativeTime: { allowed: COMMON, required: [] },
+  number: { allowed: [...COMMON, 'unit', 'digits', 'footer', 'filter', 'bounds'], required: [] },
+  money: {
+    allowed: [...COMMON, 'currency', 'footer', 'filter', 'bounds'],
+    required: ['currency'],
+  },
+  date: { allowed: [...COMMON, 'style', 'filter', 'picker'], required: [] },
+  relativeTime: { allowed: [...COMMON, 'filter', 'picker'], required: [] },
   status: { allowed: [...COMMON, 'options', 'labels', 'tone', 'filter'], required: ['options'] },
-  delta: { allowed: [...COMMON, 'polarity', 'unit', 'currency'], required: ['polarity'] },
-  meter: { allowed: [...COMMON, 'max'], required: [] },
-  boolean: { allowed: [...COMMON, 'labels'], required: [] },
+  delta: {
+    allowed: [...COMMON, 'polarity', 'unit', 'currency', 'filter', 'bounds'],
+    required: ['polarity'],
+  },
+  meter: { allowed: [...COMMON, 'max', 'filter'], required: [] },
+  boolean: { allowed: [...COMMON, 'labels', 'filter'], required: [] },
   spark: {
     allowed: ['header', 'priority', 'card', 'label', 'render'],
     required: ['label', 'render'],
   },
   select: {
-    allowed: [...COMMON, 'label', 'options', 'commit'],
+    allowed: [...COMMON, 'label', 'options', 'commit', 'filter'],
     required: ['label', 'options', 'commit'],
   },
   actions: { allowed: ['header'], required: [] },
@@ -219,6 +247,14 @@ const FILTER_VALUES: Partial<Record<KindName, readonly string[]>> = {
   entity: ['text'],
   text: ['text'],
   status: ['multi'],
+  select: ['multi'],
+  boolean: ['multi'],
+  number: ['range'],
+  money: ['range'],
+  delta: ['range'],
+  meter: ['range'],
+  date: ['range'],
+  relativeTime: ['range'],
 }
 
 function fail(kind: KindName, id: string, message: string): never {
@@ -247,6 +283,40 @@ function validate(kind: KindName, id: string, options: object | undefined): void
   for (const key of required) {
     if (given[key] === undefined) fail(kind, id, `needs the option "${key}"`)
   }
+  if ((kind === 'date' || kind === 'relativeTime') && given['filter'] === 'range') {
+    if (typeof given['picker'] !== 'function') {
+      fail(
+        kind,
+        id,
+        'has filter: "range" and needs the option "picker" (DateRangePicker from basalt-ui/ui/date-picker)',
+      )
+    }
+  }
+  const bounds = given['bounds']
+  if (bounds !== undefined) {
+    const ok =
+      Array.isArray(bounds) &&
+      bounds.length === 2 &&
+      bounds.every((b) => typeof b === 'number' && Number.isFinite(b)) &&
+      (bounds[0] as number) < (bounds[1] as number)
+    if (!ok)
+      fail(
+        kind,
+        id,
+        `got bounds=${JSON.stringify(bounds)}; expected [lowest, highest] with lowest below highest`,
+      )
+  }
+}
+
+/** The spec fields of a numeric range filter (`bounds` only with `filter: 'range'`). */
+function rangeFilter<T>(o: RangeFilterOptions | undefined): Partial<KindSpec<T>> {
+  if (o?.filter !== 'range') return {}
+  return { filter: 'range', ...(o.bounds !== undefined && { bounds: o.bounds }) }
+}
+
+/** The spec fields of a date range filter: the operator and the picker its editor draws. */
+function dateFilter<T>(o: DateFilterOptions | undefined): Partial<KindSpec<T>> {
+  return o?.filter === 'range' ? { filter: 'range', picker: o.picker } : {}
 }
 
 // ---- Building -----------------------------------------------------------------------------
@@ -283,6 +353,8 @@ type Base<T> = {
 const HEADER_CHROME_CH = 5
 /** A header asks for floor room up to this many `ch`; a longer one truncates (its title shows it whole). */
 const HEADER_MAX_CH = 24
+/** A filterable header's extra room in `ch`: the filter mark (a 24 px button) its column shows while filtered. */
+const FILTER_MARK_CH = 3
 
 /** A `text` column whose widest loaded value is at most this many `ch` sizes to it; a longer one stays flexible. */
 const SHORT_TEXT_MAX_CH = 24
@@ -291,9 +363,9 @@ const SHORT_TEXT_MAX_CH = 24
 const STATUS_DOT_CH = 2
 
 /** A column's floor counts its own header, unit suffix included, so a roomy row shows it whole. */
-function floorOf(width: Width, header: string): Width {
+function floorOf(width: Width, header: string, chrome: number = HEADER_CHROME_CH): Width {
   if (width === 'icon') return width
-  const want = Math.min(HEADER_MAX_CH, header.length + HEADER_CHROME_CH)
+  const want = Math.min(HEADER_MAX_CH + chrome - HEADER_CHROME_CH, header.length + chrome)
   return want > width.ch ? { ...width, ch: want } : width
 }
 
@@ -334,6 +406,9 @@ function build<T>(b: Base<T>): KindColumn<T> {
     render,
     ...b.extra,
   }
+  // A filterable header keeps room for its filter mark, so filtering a column never cuts its label.
+  if (spec.filter !== null)
+    spec.width = floorOf(spec.width, b.header, HEADER_CHROME_CH + FILTER_MARK_CH)
   const column: BuiltColumn<T> = { __brand: 'KindColumn', id: b.id, [KIND_SPEC]: spec }
   return column
 }
@@ -442,7 +517,10 @@ export function col<T>(): Col<T> {
           typeof v === 'number' ? formatNumber(env.format, v, o?.digits) : String(v),
         {
           header: (h) => withUnit(h, o?.unit),
-          ...footerOf<T>(o?.footer, (v, env) => formatNumber(env.format, v, o?.digits)),
+          spec: {
+            ...footerOf<T>(o?.footer, (v, env) => formatNumber(env.format, v, o?.digits)).spec,
+            ...rangeFilter<T>(o),
+          },
         },
       ),
     money: (key, o) =>
@@ -457,17 +535,26 @@ export function col<T>(): Col<T> {
           spec: {
             unit: o.currency,
             ...footerOf<T>(o?.footer, (v, env) => formatMoney(env.format, v, o.currency)).spec,
+            ...rangeFilter<T>(o),
           },
         },
       ),
     date: (key, o) =>
-      keyed<T>('date', key, o, (v, _row, env) => (
-        <DateCell value={v} format={env.format} style={o?.style ?? 'short'} />
-      )),
+      keyed<T>(
+        'date',
+        key,
+        o,
+        (v, _row, env) => <DateCell value={v} format={env.format} style={o?.style ?? 'short'} />,
+        { spec: dateFilter<T>(o) },
+      ),
     relativeTime: (key, o) =>
-      keyed<T>('relativeTime', key, o, (v, _row, env) => (
-        <RelativeTimeCell value={v} format={env.format} now={env.now} />
-      )),
+      keyed<T>(
+        'relativeTime',
+        key,
+        o,
+        (v, _row, env) => <RelativeTimeCell value={v} format={env.format} now={env.now} />,
+        { spec: dateFilter<T>(o) },
+      ),
     status: <const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O>) =>
       keyed<T>(
         'status',
@@ -497,38 +584,65 @@ export function col<T>(): Col<T> {
             ),
             options: o?.options ?? [],
             ...(o?.labels !== undefined && { labels: o.labels }),
+            ...(o?.tone !== undefined && { tone: o.tone as (value: string) => Tone }),
             filter: o?.filter === 'multi' ? 'anyOf' : null,
           },
         },
       ),
     delta: (key, o) =>
-      keyed<T>('delta', key, o, (v, _row, env) =>
-        typeof v === 'number' ? (
-          <DeltaCell
-            value={v}
-            polarity={o.polarity}
-            format={env.format}
-            unit={o.unit}
-            currency={o.currency}
-          />
-        ) : (
-          String(v)
-        ),
+      keyed<T>(
+        'delta',
+        key,
+        o,
+        (v, _row, env) =>
+          typeof v === 'number' ? (
+            <DeltaCell
+              value={v}
+              polarity={o.polarity}
+              format={env.format}
+              unit={o.unit}
+              currency={o.currency}
+            />
+          ) : (
+            String(v)
+          ),
+        { spec: rangeFilter<T>(o) },
       ),
     meter: (key, o) => {
       const id = o?.id ?? key
-      return keyed<T>('meter', key, o, (v) =>
-        typeof v === 'number' ? (
-          <MeterCell label={o?.header ?? humanize(id)} value={v} max={o?.max ?? 1} />
-        ) : (
-          String(v)
-        ),
+      return keyed<T>(
+        'meter',
+        key,
+        o,
+        (v) =>
+          typeof v === 'number' ? (
+            <MeterCell label={o?.header ?? humanize(id)} value={v} max={o?.max ?? 1} />
+          ) : (
+            String(v)
+          ),
+        {
+          spec:
+            o?.filter === 'range'
+              ? rangeFilter<T>({ filter: 'range', bounds: [0, o.max ?? 1] })
+              : {},
+        },
       )
     },
-    boolean: (key, o) =>
-      keyed<T>('boolean', key, o, (v) => (
-        <BooleanCell value={v === true} labels={o?.labels ?? ['Yes', 'No']} />
-      )),
+    boolean: (key, o) => {
+      const [yes, no] = o?.labels ?? ['Yes', 'No']
+      return keyed<T>(
+        'boolean',
+        key,
+        o,
+        (v) => <BooleanCell value={v === true} labels={[yes, no]} />,
+        {
+          spec:
+            o?.filter === 'multi'
+              ? { filter: 'anyOf', options: ['true', 'false'], labels: { true: yes, false: no } }
+              : {},
+        },
+      )
+    },
     spark: (id, o) => {
       validate('spark', id, o)
       return build<T>({
@@ -543,7 +657,10 @@ export function col<T>(): Col<T> {
     },
     select: (key, o) =>
       keyed<T>('select', key, o, (v) => String(v), {
-        spec: { edit: { label: o?.label, options: o?.options ?? [], commit: o?.commit } },
+        spec: {
+          edit: { label: o?.label, options: o?.options ?? [], commit: o?.commit },
+          ...(o?.filter === 'multi' && { filter: 'anyOf', options: o.options }),
+        },
       }),
     actions: (actions, o) => {
       validate('actions', 'actions', o)
