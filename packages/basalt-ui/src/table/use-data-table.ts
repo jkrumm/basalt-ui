@@ -122,6 +122,11 @@ export type TableModel<T> = {
    * hide a column (priority 3, or a card `detail`), so the derived sheet needs its own way in.
    */
   expandable: boolean
+  /**
+   * Whether a column placed in the card's `detail` stays reachable off the phone card: the derived
+   * sheet lists it (`auto`, or `expandable` rows), where a custom `detail` render lists only what it writes.
+   */
+  detailListed: boolean
   format: Format
   /** One clock value per render so server and client agree on a relative time. */
   now: number
@@ -614,6 +619,7 @@ export function useDataTable<
       plan.columns.some(
         (column) => column.visible && (column.priority === 3 || column.place === 'detail'),
       ),
+    detailListed: activation.kind !== 'detail',
     format,
     now,
     sortOf(id) {

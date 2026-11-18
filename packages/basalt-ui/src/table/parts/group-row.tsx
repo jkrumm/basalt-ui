@@ -95,7 +95,7 @@ export function GroupRow<T>({
             role="cell"
             aria-colindex={index + offset}
             {...cellAttributes(spec)}
-            {...tierAttributes(planned)}
+            {...tierAttributes(planned, model.detailListed)}
             numeric={numeric}
             className={cn(className, 'font-medium')}
           >

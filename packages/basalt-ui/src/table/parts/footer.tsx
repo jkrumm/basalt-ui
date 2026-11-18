@@ -109,7 +109,7 @@ export function DataTableFooter<T>({
               role="cell"
               aria-colindex={index + offset}
               {...cellAttributes(spec)}
-              {...tierAttributes(planned)}
+              {...tierAttributes(planned, model.detailListed)}
               numeric={numeric}
               className={className}
             >
