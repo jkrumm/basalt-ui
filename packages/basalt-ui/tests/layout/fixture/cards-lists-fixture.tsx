@@ -13,8 +13,10 @@ import { createRoot } from 'react-dom/client'
 import type { ReactElement } from 'react'
 import { BarList } from '../../../src/cards/bar-list'
 import { EventList } from '../../../src/cards/event-list'
+import { RowList } from '../../../src/cards/row-list'
 import type { BarListProps } from '../../../src/cards/bar-list'
 import type { EventListProps } from '../../../src/cards/event-list'
+import type { RowListProps } from '../../../src/cards/row-list'
 
 const PHASES = ['ready', 'loading', 'stale', 'empty', 'error'] as const
 type Probe = (typeof PHASES)[number]
@@ -37,6 +39,28 @@ const EVENTS = Array.from({ length: 40 }, (_, i) => ({
   ...(i % 4 === 0 && { body: 'A note on the change' }),
   ...(i % 5 === 0 && { chips: ['main', 'ci'] }),
 }))
+
+const ROWS = Array.from({ length: 12 }, (_, i) => ({
+  key: `row-${i}`,
+  label: i === 2 ? 'a-very-long-row-name-that-must-truncate-at-every-width' : `issue_${2200 + i}`,
+  meta: 'building',
+  detail:
+    i === 3 ? 'a second line long enough to need truncating at every card width' : 'Second line',
+  value: `${i + 1} d`,
+  valueDetail: '1.2× typical',
+  ...(i % 4 === 0 && { status: { tone: 'warn' as const, label: 'Slow' } }),
+}))
+
+const rowProps = (phase: Probe): RowListProps => ({
+  title: 'Open Issues',
+  subtitle: 'longest first',
+  items: ROWS,
+  lines: 2,
+  mono: true,
+  ...(phase === 'loading' || phase === 'stale' ? { phase } : {}),
+  ...(phase === 'error' ? { phase: { tag: 'error', retry: () => undefined } } : {}),
+  ...(phase === 'empty' ? { empty: { cause: 'No open Issues' } } : {}),
+})
 
 const barProps = (phase: Probe): BarListProps => ({
   title: 'Top projects',
@@ -79,6 +103,16 @@ function Fixture(): ReactElement {
         ))}
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] items-start gap-4">
+        {PHASES.map((phase) => (
+          <div key={phase} data-testid={`cl-row-${phase}`}>
+            <RowList {...rowProps(phase)} />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] items-start gap-4">
+        <div data-testid="cl-row-short">
+          <RowList title="Latest three" items={ROWS.slice(0, 3)} lines={2} />
+        </div>
         <div data-testid="cl-bar-short">
           <BarList title="Top three" items={BARS.slice(0, 3)} />
         </div>

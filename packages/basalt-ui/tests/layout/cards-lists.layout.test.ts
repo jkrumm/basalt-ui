@@ -37,7 +37,7 @@ const FIXTURE_DIR = join(import.meta.dirname, 'fixture')
 const REPO_ROOT = join(import.meta.dirname, '..', '..', '..', '..')
 const VIEWPORTS: Viewport[] = [DESKTOP_1440, TABLET_768, PHONE, PHONE_SMALL]
 const PHASES = ['ready', 'loading', 'stale', 'empty', 'error'] as const
-const KINDS = ['bar', 'event'] as const
+const KINDS = ['bar', 'event', 'row'] as const
 const EMPTY_SPEC = { sections: [] } as FixtureSpec
 const TOLERANCE = 0.5
 
@@ -146,6 +146,27 @@ layout('BarList and EventList', () => {
           expect(await page.raw.getAttribute(short, 'role')).toBeNull()
         })
       }
+
+      test('a RowList draws no rule between its rows and its labels truncate inside the card', async () => {
+        const page = await open(viewport)
+        const widths = await page.raw.evaluate(
+          (selector) =>
+            [...document.querySelectorAll<HTMLElement>(selector)].map(
+              (row) => getComputedStyle(row).borderBottomWidth,
+            ),
+          within('cl-row-ready', '[data-slot="row-list-row"]'),
+        )
+        expect(widths.length).toBeGreaterThan(0)
+        expect(new Set(widths)).toEqual(new Set(['0px']))
+        const card = await page.box('card', within('cl-row-ready', '[data-slot="card"]'))
+        const label = await page.box(
+          'long label',
+          within('cl-row-ready', '[data-slot="row-list-label"][title^="a-very-long"]'),
+        )
+        expect(label.box.right, 'the long label stays inside the card').toBeLessThanOrEqual(
+          card.box.right + TOLERANCE,
+        )
+      })
 
       test('a BarList that hides rows says how many show, on one line inside its header', async () => {
         const page = await open(viewport)
