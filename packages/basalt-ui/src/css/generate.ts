@@ -131,7 +131,11 @@ function tailwindCss(): string {
     "@import 'tailwindcss';\n" +
     "@import './tokens.css' layer(theme);\n" +
     "@import './fonts.css';\n" +
-    "@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));\n" +
+    '@custom-variant dark {\n' +
+    "  &:where([data-theme='dark'], [data-theme='dark'] *) {\n    @slot;\n  }\n" +
+    '  @media (prefers-color-scheme: dark) {\n' +
+    '    &:where(:root:not([data-theme]), :root:not([data-theme]) *) {\n      @slot;\n    }\n  }\n' +
+    '}\n' +
     block(
       '@theme',
       RESETS.map((r) => `--${r}-*: initial`),

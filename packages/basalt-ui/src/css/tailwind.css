@@ -4,7 +4,16 @@
 @import 'tailwindcss';
 @import './tokens.css' layer(theme);
 @import './fonts.css';
-@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme]), :root:not([data-theme]) *) {
+      @slot;
+    }
+  }
+}
 @theme {
   --color-*: initial;
   --shadow-*: initial;

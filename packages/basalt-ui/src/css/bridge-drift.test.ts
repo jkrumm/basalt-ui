@@ -80,6 +80,16 @@ describe('tailwind bridge drift', () => {
     expect(css).toContain('.size-icon')
   })
 
+  test('compiled: the dark variant matches an explicit dark scheme and a dark system scheme under auto', async () => {
+    const css = await build(['dark:bg-card'])
+    expect(css).toContain(":where([data-theme='dark'], [data-theme='dark'] *)")
+    const media = css.indexOf('@media (prefers-color-scheme: dark)')
+    expect(media).toBeGreaterThan(-1)
+    const auto = css.indexOf(':where(:root:not([data-theme]), :root:not([data-theme]) *)')
+    expect(auto).toBeGreaterThan(media)
+    expect(css.slice(media)).toContain('background-color: var(--basalt-card)')
+  })
+
   test('compiled: the coarse input floor sits inside its media query', async () => {
     const css = await build([])
     const start = css.indexOf('@media (pointer: coarse)')
