@@ -149,6 +149,7 @@
     "basalt/router-search": "error",
     "basalt/control-home": "error",
     "basalt/untrusted-markdown": "error",
+    "basalt/page-root": "off",
     "shadcn/no-raw-colors": [
       "error",
       {

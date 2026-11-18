@@ -13,6 +13,7 @@ A page is composed from the shipped frame; each bullet names what holds it.
 
 - Declare the whole navigation once with `defineNav` and pass it to `AppShell`; a link to an unregistered route, an unknown badge key or a second badge on a row does not compile. [type:NavConfig] [type:NavBadges]
 - Shell extensions are typed data (`GlobalAction`, `SidebarBlock`), never a node. [type:GlobalAction] [type:SidebarBlock]
+- A route's page returns `Page` (or `SplitPage`) as its root, never a `div`, a fragment or a wrapper; `Page` owns the gutter and the top inset, so a page sets no padding or gap of its own. [lint:page-root]
 - A page is named once: by its nav label, or by `PageBar` `title` where there is no shell; never a raw heading, an in-body `h1` included. [lint:primitive-bypass] [type:PageBarProps]
 - A nav or link `search` keeps the keys its route owns; never a literal search object or a store's link search. [lint:router-search]
 
