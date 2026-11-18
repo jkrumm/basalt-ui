@@ -7,7 +7,7 @@ Which form carries which shape of data, and what the marks may say. The question
 - One current value is a [StatCard](node_modules/basalt-ui/docs/stat-card.md); a handful of headline values is a [StatGroup](node_modules/basalt-ui/docs/stat-group.md) strip.
 - One ratio against a limit is a [Meter](node_modules/basalt-ui/docs/meter.md) with its zones; the verdict is a word under the marker.
 - A top-N or a share of a total is a [BarList](node_modules/basalt-ui/docs/bar-list.md). Many rows with several attributes is a [DataTable](node_modules/basalt-ui/docs/data-table.md), unless the question is which items changed state or passed: that is one mark per item (a square per case) with the table holding the detail.
-- Rows of one kind beside a chart (a name, a second line, a verdict, a figure) are a [RowList](node_modules/basalt-ui/docs/row-list.md) with the chart's `focus`, quiet by default; never a mapped `div` with a `border-b` or `divide-y` (`primitive-bypass` flags it).
+- Rows of one kind beside a chart (a name, a second line, a verdict, a figure) are a [RowList](node_modules/basalt-ui/docs/row-list.md) with the chart's `focus`, quiet by default; never a mapped `div` with a `border-b` or `divide-y`. [lint:primitive-bypass]
 - A value over time is a chart in a [ChartCard](node_modules/basalt-ui/docs/chart-card.md); compare categories with bars, follow a shape with a line.
 - A question of when (when does it run out, when did it change) is a time axis with the boundary drawn (a ref line at the limit, the next run marked) (n09 drew a table, which answers what and leaves when to the reader).
 - A ranking is one order that is also the mark order (c14 showed two orders in one list); a commitment is split by what makes it up (n13 drew one total).
