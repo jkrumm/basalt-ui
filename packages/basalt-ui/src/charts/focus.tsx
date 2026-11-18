@@ -285,14 +285,34 @@ export function stepFocus(
 }
 
 /** Whether `node` has an ancestor that scrolls (the list's own region, not only the page). */
-function inScrollRegion(node: Element | undefined): node is Element {
-  if (node === undefined || typeof getComputedStyle === 'undefined') return false
+/** The nearest ancestor that scrolls its overflow on either axis, or `null`. */
+function scrollRegionOf(node: Element): HTMLElement | null {
+  if (typeof getComputedStyle === 'undefined') return null
   for (let at = node.parentElement; at !== null; at = at.parentElement) {
-    const { overflowY } = getComputedStyle(at)
-    if ((overflowY === 'auto' || overflowY === 'scroll') && at.scrollHeight > at.clientHeight)
-      return true
+    const { overflowX, overflowY } = getComputedStyle(at)
+    const y = (overflowY === 'auto' || overflowY === 'scroll') && at.scrollHeight > at.clientHeight
+    const x = (overflowX === 'auto' || overflowX === 'scroll') && at.scrollWidth > at.clientWidth
+    if (x || y) return at
   }
-  return false
+  return null
+}
+
+/**
+ * Scrolls `node` into its own list's region by the least distance, and nothing else. Only a region
+ * nested inside another scroller moves: the outermost one is the page (the shell's scrollport), and
+ * scrolling it would carry the chart away from the pointer that set the focus. `scrollIntoView`
+ * cannot be told to stop at one ancestor, so the region's offsets are set directly.
+ */
+function revealInOwnRegion(node: Element | undefined): void {
+  if (node === undefined) return
+  const region = scrollRegionOf(node)
+  if (region === null || scrollRegionOf(region) === null) return
+  const r = region.getBoundingClientRect()
+  const n = node.getBoundingClientRect()
+  const dy = n.top < r.top ? n.top - r.top : n.bottom > r.bottom ? n.bottom - r.bottom : 0
+  const dx = n.left < r.left ? n.left - r.left : n.right > r.right ? n.right - r.right : 0
+  if (dy !== 0) region.scrollTop += dy
+  if (dx !== 0) region.scrollLeft += dx
 }
 
 /** Brings `node` into view by the least scroll, at once: a list that glides under a pointer, or under reduced motion, is motion nobody asked for. */
@@ -378,7 +398,7 @@ export function useChartFocus<D>(
   const revealInRegion = (next: number): void => {
     const name = groupAt(next)
     const nodes = [marks.current.get(next), name === undefined ? undefined : rows.current.get(name)]
-    for (const node of nodes) if (inScrollRegion(node)) scrollNodeIntoView(node)
+    for (const node of nodes) revealInOwnRegion(node)
   }
   // `pointed`: the index a mark or row set by pointer entry, held against a chart's own clear.
   const pointed = useRef<number | null>(null)

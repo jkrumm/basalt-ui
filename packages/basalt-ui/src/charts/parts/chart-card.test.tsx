@@ -550,3 +550,38 @@ describe('the ready frame declares the slots a loading, empty or failed frame ho
     expect(el.querySelector('[data-slot="chart-figure"]')).toBeNull()
   })
 })
+
+describe('ChartCard figure row holds its height while focus moves', () => {
+  const periodBox = (el: HTMLElement): HTMLElement | null =>
+    el.querySelector<HTMLElement>('[data-slot="chart-figure"] > span:last-child')
+
+  test('an empty period keeps its one line below regular, and the row never wraps from regular up', async () => {
+    const el = await mount(
+      <ChartCard title="T" figure={{ value: 3, period: '' }} chart={() => <svg />} />,
+    )
+    const row = el.querySelector('[data-slot="chart-figure"]')!
+    expect(row.className).toContain('@regular:flex-nowrap')
+    const box = periodBox(el)!
+    expect(box.textContent).toBe('')
+    expect(box.className).toContain('@max-regular:h-4')
+    expect(box.className).toContain('truncate')
+  })
+
+  test('a period that only a hover fills has its line before the hover', async () => {
+    const el = document.createElement('div')
+    document.body.append(el)
+    root = createRoot(el)
+    const at = (period: string | undefined) =>
+      act(async () => {
+        root?.render(<ChartCard title="T" figure={{ value: 3, period }} chart={() => <svg />} />)
+      })
+    await at(undefined)
+    expect(periodBox(el)?.textContent).toBe('')
+    expect(periodBox(el)?.className).toContain('@max-regular:h-4')
+    await at('Wed 17:00')
+    expect(periodBox(el)?.textContent).toBe('Wed 17:00')
+    await at(undefined)
+    expect(periodBox(el)?.textContent).toBe('')
+    expect(periodBox(el)?.className).toContain('@max-regular:h-4')
+  })
+})
