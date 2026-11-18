@@ -29,6 +29,7 @@ export type {
   BulkAction,
   DataTableInstance,
   DataTableProps,
+  DateRangeLike,
   Facets,
   FilterModel,
   KindColumn,
