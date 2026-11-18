@@ -18,6 +18,7 @@ import type {
   QueryStateLike,
   VirtualLike,
 } from '../core/ports'
+import type { CalendarDate } from '../core/format'
 import type { Empty } from '../core/phase'
 
 // ---- State (what the URL and saved views carry) -------------------------------------------
@@ -33,7 +34,16 @@ export type CardSlot =
   | 'detail'
   | 'hidden'
 
-export type FilterModel = { id: string; op: 'contains' | 'anyOf'; values: readonly string[] }
+/**
+ * One column's filter. `contains` and `anyOf` hold the values the cell may contain or equal;
+ * `range` holds `[from, to]`, both inclusive, `''` for an open end: decimal text on a numeric
+ * column, `YYYY-MM-DD` days on a date column. A server table maps each model to its query.
+ */
+export type FilterModel = {
+  id: string
+  op: 'contains' | 'anyOf' | 'range'
+  values: readonly string[]
+}
 
 /** Everything that changes the rows a server returns; display toggles never touch it. */
 export type TableRequest = {
@@ -42,6 +52,11 @@ export type TableRequest = {
   sort: { id: string; desc: boolean }[]
   page: number
   pageSize: number
+  /**
+   * The order the user gave a status column's categories, by column id: the column sorts by it and
+   * its filter lists the options in it. Absent, the declared `options` order holds.
+   */
+  ranks?: Readonly<Record<string, readonly string[]>>
 }
 
 export type TableDisplay = { visibility: Record<string, boolean>; collapsed?: readonly string[] }
@@ -49,6 +64,17 @@ export type TableDisplay = { visibility: Record<string, boolean>; collapsed?: re
 export type TableState = { v: 1; request: TableRequest; display: TableDisplay }
 
 // ---- Pieces the sketch names but does not spell out ---------------------------------------
+
+/**
+ * A from-to day picker a date column's range filter draws, passed by value so `./table` adds no
+ * peer: `DateRangePicker` from `basalt-ui/ui/date-picker` fits. Days are `YYYY-MM-DD`.
+ */
+export type DateRangeLike = (props: {
+  'aria-label': string
+  value: { from?: CalendarDate | null; to?: CalendarDate | null } | null
+  onChange: (value: { from: CalendarDate; to: CalendarDate }) => void
+  className?: string
+}) => ReactNode
 
 /** Facet counts a server returns for the current request, by column id then value. */
 export type Facets = Record<string, readonly { value: string; count: number }[]>
