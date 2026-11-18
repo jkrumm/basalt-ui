@@ -1,1 +1,11 @@
-["BarList", "DataPanel", "EventList", "KanbanCard", "StatCard", "StatCell", "StatGroup", "StepRail"]
+[
+  "BarList",
+  "DataPanel",
+  "EventList",
+  "KanbanCard",
+  "RowList",
+  "StatCard",
+  "StatCell",
+  "StatGroup",
+  "StepRail"
+]

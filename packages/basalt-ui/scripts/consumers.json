@@ -77,6 +77,7 @@
   "recordAt": "software-factory:apps/console/src/components/peek/host.tsx",
   "QueryState": "argo:apps/dashboard/src/features/m365-explorer/explorer-page.tsx",
   "RefreshButton": "argo:apps/dashboard/src/routes/__root.tsx",
+  "RowList": "basalt-ui:apps/playground/src/scenarios/expr/n02/ExprN02.tsx",
   "routerDefaults": "linewatch:web/src/lib/router.ts",
   "Section": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "seriesTokens": "argo:apps/dashboard/src/lib/series.ts",
