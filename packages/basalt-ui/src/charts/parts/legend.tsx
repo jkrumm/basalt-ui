@@ -23,6 +23,8 @@ export type LegendProps = {
   hidden?: ReadonlySet<string>
   /** Entries become buttons that call this with their key. Omitted, they are inert labels. */
   onToggle?: (key: string) => void
+  /** A modifier click or a double click: this entry alone, again all of them. */
+  onIsolate?: (key: string) => void
   onHighlight?: (key: string | null) => void
   /** Keeps the box and shows nothing: a chart with no marks names no series. */
   concealed?: boolean
@@ -64,6 +66,7 @@ export function Legend({
   entries,
   hidden = empty,
   onToggle,
+  onIsolate,
   onHighlight = none,
   concealed = false,
 }: LegendProps): ReactElement | null {
@@ -77,6 +80,7 @@ export function Legend({
       groups={false}
       toggle={onToggle !== undefined}
       onToggle={onToggle ?? none}
+      {...(onIsolate !== undefined && { onIsolate })}
       onHighlight={onHighlight}
       concealed={concealed}
     />

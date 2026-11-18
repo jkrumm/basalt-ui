@@ -5,7 +5,7 @@
  * domain together; hovering one emphasizes it (the definition is rebuilt with `highlighted`).
  */
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import type { CSSProperties, ReactElement } from 'react'
+import type { CSSProperties, MouseEvent, ReactElement } from 'react'
 import { BASALT } from '../tokens'
 import { CV } from './core/theme'
 import classes from './chart-legend.module.css'
@@ -218,6 +218,39 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
   )
 }
 
+/** A toggle: the key flips between shown and hidden. */
+export function toggledKeys(prev: ReadonlySet<string>, key: string): ReadonlySet<string> {
+  const next = new Set(prev)
+  if (!next.delete(key)) next.add(key)
+  return next
+}
+
+/**
+ * An isolate: every other key of `keys` hidden and this one shown; isolating the entry already shown
+ * alone shows them all again. A key outside `keys` (a reference line) keeps its state.
+ */
+export function isolatedKeys(
+  prev: ReadonlySet<string>,
+  key: string,
+  keys: readonly string[],
+): ReadonlySet<string> {
+  const others = keys.filter((k) => k !== key)
+  const alone = !prev.has(key) && others.length > 0 && others.every((k) => prev.has(k))
+  const next = new Set([...prev].filter((k) => !keys.includes(k)))
+  if (!alone) for (const k of others) next.add(k)
+  return next
+}
+
+/** The keys an isolate acts on: the entries that are series, never a reference line or a zone. */
+export const isolatableKeys = <T,>(series: readonly ChartSeries<T>[]): string[] =>
+  legendEntries(series, false)
+    .flat()
+    .filter((s) => s.role !== 'reference')
+    .map((s) => s.key)
+
+/** A click with a modifier isolates, as a double click does. */
+const isolating = (e: MouseEvent): boolean => e.altKey || e.metaKey || e.ctrlKey || e.shiftKey
+
 export type ChartLegendProps<T> = {
   series: readonly SignedSeries<T>[]
   hidden: ReadonlySet<string>
@@ -225,6 +258,8 @@ export type ChartLegendProps<T> = {
   groups: boolean
   toggle: boolean
   onToggle: (key: string) => void
+  /** A modifier click (Alt, Shift, Ctrl or Cmd) or a double click: this entry alone, again all of them. */
+  onIsolate?: (key: string) => void
   onHighlight: (key: string | null) => void
   /** Keeps the legend's box but shows and offers nothing: a chart with no marks names no series. */
   concealed?: boolean
@@ -318,7 +353,12 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
               className={classes.toggle}
               aria-pressed={!off}
               style={itemStyle}
-              onClick={() => props.onToggle(s.key)}
+              onClick={(e) => {
+                // The two clicks of a double click toggle twice and cancel; the dblclick isolates.
+                if (props.onIsolate !== undefined && isolating(e)) props.onIsolate(s.key)
+                else props.onToggle(s.key)
+              }}
+              onDoubleClick={() => props.onIsolate?.(s.key)}
               onMouseEnter={() => props.onHighlight(s.key)}
               onMouseLeave={() => props.onHighlight(null)}
               onFocus={() => props.onHighlight(s.key)}

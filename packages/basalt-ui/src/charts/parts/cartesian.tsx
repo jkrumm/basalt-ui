@@ -19,7 +19,7 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { VisualSlotContext } from '../visual-slot'
 import { useProviderContext } from '../../core/provider'
 import { BASALT } from '../../tokens'
-import { useInChartCard } from '../card-context'
+import { useCardHidden, useInChartCard } from '../card-context'
 import {
   compileCartesian,
   defaultNumberFormat,
@@ -29,7 +29,7 @@ import {
 import { samePlots } from '../core/plot-context'
 import type { PlotSizes } from '../core/plot-context'
 import { ChartEngine, idPrefixOf } from '../host'
-import { ChartLegend, legendEntries } from '../legend'
+import { ChartLegend, isolatableKeys, isolatedKeys, legendEntries, toggledKeys } from '../legend'
 import { INITIAL_WIDTH, useChartSize } from '../sizing'
 import { ChartPlaceholder, resolveChartState } from '../state'
 import { rowX } from '../types'
@@ -69,6 +69,9 @@ const rootStyle: CSSProperties = {
   minWidth: 0,
   containerType: 'inline-size',
 }
+
+// In a card the plot sits on the inset: the hover's axis labels wear its colour as their halo.
+const cardRootStyle = { ...rootStyle, '--bc-guide-halo': CV.inset } as CSSProperties
 
 // Visually hidden, still in the accessibility tree: the summary and the data table.
 const srOnly: CSSProperties = {
@@ -207,7 +210,13 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
   const height = props.height ?? (inCard ? 'fill' : undefined)
   const bare = useContext(VisualSlotContext) !== null
   const { ref, width: measured, coarse } = useChartSize()
-  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
+  const [ownHidden, setOwnHidden] = useState<ReadonlySet<string>>(() => new Set())
+  // A card's legend hides series too: the chart reads one set, its own toggles and the card's.
+  const cardHidden = useCardHidden()
+  const hidden = useMemo(
+    () => (cardHidden.size === 0 ? ownHidden : new Set([...ownHidden, ...cardHidden])),
+    [ownHidden, cardHidden],
+  )
   const [ownHighlight, setOwnHighlight] = useState<string | null>(null)
   const [plot, setPlot] = useState<PlotSizes | null>(null)
   const onPlot = useCallback((next: PlotSizes) => {
@@ -473,13 +482,12 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
   const resolved = resolveChartState(state)
   const shown = !bare && !labelsOnly && entryCount > 1
   const toggle = entryCount >= 2
-  const onToggle = useCallback((key: string) => {
-    setHidden((prev) => {
-      const next = new Set(prev)
-      if (!next.delete(key)) next.add(key)
-      return next
-    })
-  }, [])
+  const onToggle = useCallback((key: string) => setOwnHidden((prev) => toggledKeys(prev, key)), [])
+  const isolatable = useMemo(() => isolatableKeys(legendSeries), [legendSeries])
+  const onIsolate = useCallback(
+    (key: string) => setOwnHidden((prev) => isolatedKeys(prev, key, isolatable)),
+    [isolatable],
+  )
   const legendNode: ReactNode = shown ? (
     <ChartLegend
       series={legendSeries as readonly ChartSeries<D>[]}
@@ -488,6 +496,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       groups={false}
       toggle={toggle}
       onToggle={onToggle}
+      onIsolate={onIsolate}
       onHighlight={setHighlighted}
       concealed={resolved !== null}
       hideAtWide={hideAtWide}
@@ -497,7 +506,12 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
   const text = summary ?? autoSummary(stable, locale)
   return (
     <>
-      <div ref={ref} data-basalt-chart="" data-in-card={inCard ? '' : undefined} style={rootStyle}>
+      <div
+        ref={ref}
+        data-basalt-chart=""
+        data-in-card={inCard ? '' : undefined}
+        style={inCard ? cardRootStyle : rootStyle}
+      >
         {resolved === null ? (
           <FocusWrap props={hostFocus} live={focus?.live}>
             <ChartEngine
