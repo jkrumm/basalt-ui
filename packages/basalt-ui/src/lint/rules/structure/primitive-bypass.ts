@@ -26,6 +26,11 @@
  *   display text by syntax and passes. A date-fns formatter is read through a named import from
  *   `date-fns` or `date-fns/format`; a namespace import is out of reach. Test files
  *   (`*.test.*`, `*.spec.*`) are skipped: they compute expected text.
+ * - `list-rows`: a row element reads when a data `.map` returns it directly (an arrow body or a
+ *   `return`) and it is a lowercase `div`, `li`, `a`, `button`, `article` or `section` with a
+ *   `border-t|b|y` utility, or when a `divide-y` element has the `.map` as a direct child; a row
+ *   inside a component the map calls, a class built in a variable and a fixed list (an array
+ *   literal or an UPPER_CASE constant) are not read. A full `border` (a tile) passes.
  * - `chart-body-root`: a wrapper that is a component (`<Stack>`) passes; only a lowercase element
  *   or a fragment is looked through.
  * - `raw-heading`: a tag held in a variable is read where the variable is declared in the file
@@ -346,21 +351,26 @@ const enclosingElement = (element: Node): Node | undefined => {
   return undefined
 }
 
-/** True when `element` is what a `.map` callback returns: an arrow body or a `return`. */
-function returnedFromMap(element: Node): boolean {
+/** The `.map` call whose callback returns `element`: an arrow body or a `return`. */
+function mapReturning(element: Node): Node | undefined {
   let at: Node = element
   let up = parentOf(at)
   while (up?.type === 'ParenthesizedExpression') {
     at = up
     up = parentOf(at)
   }
+  let fn: Node | undefined
   if (up?.type === 'ReturnStatement') {
     const block = parentOf(up)
-    const fn = block?.type === 'BlockStatement' ? parentOf(block) : undefined
-    return fn !== undefined && isMapCallback(fn)
+    fn = block?.type === 'BlockStatement' ? parentOf(block) : undefined
+  } else if (up?.type === 'ArrowFunctionExpression' && up['body'] === at) {
+    fn = up
   }
-  return up?.type === 'ArrowFunctionExpression' && up['body'] === at && isMapCallback(up)
+  return fn !== undefined && isMapCallback(fn) ? parentOf(fn) : undefined
 }
+
+/** True when `element` is what a `.map` callback returns: an arrow body or a `return`. */
+const returnedFromMap = (element: Node): boolean => mapReturning(element) !== undefined
 
 function isMapCallback(fn: Node): boolean {
   if (fn.type !== 'ArrowFunctionExpression' && fn.type !== 'FunctionExpression') return false
@@ -1163,6 +1173,72 @@ const tableRows = form(
   },
 )
 
+/** `border-t`, `border-b`, `border-y` and `divide-y` at any width above zero, under any variants. */
+const ROW_RULE = /^(?:border-[tby]|divide-y)(?:-(?!0$|reverse$)\d+)?$/
+
+/** Intrinsic elements a row list is built of; table rows are `raw-table`'s. */
+const ROW_TAGS: ReadonlySet<string> = new Set([
+  'div',
+  'ul',
+  'ol',
+  'li',
+  'a',
+  'button',
+  'article',
+  'section',
+])
+
+const rowRuleToken = (opening: Node): string | undefined =>
+  classTokens(opening).find((token) => ROW_RULE.test(token.slice(token.lastIndexOf(':') + 1)))
+
+/**
+ * A repeating row list built by hand: a row element a data `.map` returns that carries a
+ * `border-t`, `border-b` or `border-y` utility, or an element with `divide-y` whose children are
+ * a data `.map`. Rows from an array literal or an UPPER_CASE constant are fixed content (a nav) and
+ * pass, and so does a full `border` (a tile). With the default border colour a bare rule is the
+ * hairline now, but the list is still a part: RowList owns the row, its focus link, its scroll and
+ * its density.
+ */
+const listRows = form(
+  'list-rows',
+  'Use RowList from basalt-ui/cards: rows are separated by spacing, with a hairline opt-in',
+  'Several columns are DataTable; bars against one scale are BarList; a stream of events is EventList',
+  ({ report }) => {
+    const fixed = new Set<string>()
+    return {
+      VariableDeclarator(node) {
+        const name = nameOf(child(node, 'id'))
+        const init = child(node, 'init')
+        if (name !== undefined && isFixedRows(init, fixed) && init?.type !== 'Identifier') {
+          fixed.add(name)
+        }
+      },
+      JSXElement(node) {
+        const open = child(node, 'openingElement')
+        const tag = open === undefined ? undefined : tagOf(open)
+        if (open === undefined || tag === undefined || !ROW_TAGS.has(tag)) return
+        const token = rowRuleToken(open)
+        if (token === undefined) return
+        const base = token.slice(token.lastIndexOf(':') + 1)
+        if (base.startsWith('divide-')) {
+          const mapped = children(node, 'children').find((kid) => {
+            const expression =
+              kid.type === 'JSXExpressionContainer' ? child(kid, 'expression') : kid
+            return expression?.type === 'CallExpression' && mappedRows(expression) !== undefined
+          })
+          const call = mapped && child(mapped, 'expression')
+          const rows = call && mappedRows(call)
+          if (rows && !isFixedRows(rows.receiver, fixed)) report(node, `<${tag} class="${token}">`)
+          return
+        }
+        const call = mapReturning(node)
+        const rows = call && mappedRows(call)
+        if (rows && !isFixedRows(rows.receiver, fixed)) report(node, `<${tag} class="${token}">`)
+      },
+    }
+  },
+)
+
 /** The root element a `body` expression renders, through arrows, ternaries and `&&`. */
 function bodyRoots(expression: Node | undefined): Node[] {
   if (!expression) return []
@@ -1437,6 +1513,15 @@ const intlFormat: AstForm = {
   ),
 }
 
+/** `formsOff`: form ids a config block switches off for its files (an override, a zone). */
+const OPTIONS_SCHEMA = [
+  {
+    type: 'object',
+    properties: { formsOff: { type: 'array', items: { type: 'string' } } },
+    additionalProperties: false,
+  },
+] as const
+
 export const PRIMITIVE_BYPASS: RuleEntry = {
   family: 'structure',
   profiles: ['parts', 'app'],
@@ -1452,9 +1537,11 @@ export const PRIMITIVE_BYPASS: RuleEntry = {
     htmlDataMarks,
     roleTableOrGrid,
     tableRows,
+    listRows,
     chartBodyRoot,
     intlFormat,
   ],
+  schema: OPTIONS_SCHEMA,
 }
 
 export const primitiveBypassRules = defineRules({ 'primitive-bypass': PRIMITIVE_BYPASS })
