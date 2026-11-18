@@ -88,11 +88,11 @@ type FillStyle = CSSProperties & { '--page-fill-min'?: string }
 /**
  * The root of a screen, in a shell or not. It is the page's one container (`@container`), publishes
  * `--page-bar-h` (the measured `PageBar` band, written by the bar) and `--page-sticky-top` (the
- * offset anything sticky inside the page clears: the band, zero without one), and owns the claims
+ * offset anything sticky inside the page clears: the band while it sticks, else zero), and owns the claims
  * that keep it to one `PageBar` and one `PageAside`.
  *
  * Under an `AppShell` the shell renders `<main>`, the header and the aside region; without one
- * `Page` is self-contained: the band is sticky at the nearest scrollport and the aside is a second
+ * `Page` is self-contained: a band that holds a control is sticky at the nearest scrollport and the aside is a second
  * column from the `wide` container tier, a `Sheet` below it. `Page` owns the page's inset: the gutter on
  * every side, the top included, so content starts one gutter under the chrome's last rule on every
  * page; a page sets no padding or gap of its own (`basalt/page-root`). `fill` gives the page a definite
