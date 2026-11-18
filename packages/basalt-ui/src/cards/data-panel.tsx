@@ -181,8 +181,10 @@ function PanelHead(
 /**
  * The frame for a body that is not a chart: the same header and phase handling as the other cards,
  * around a table, a list or a board. The body is one box slot at a fixed height, declared by the
- * required `bodySize`, so a loading, empty or error panel is exactly as tall as a ready one and
- * the body is called only in `ready` and `stale`. The box clips with `overflow: clip`, never
+ * required `bodySize`, so a loading, empty or error panel is as tall as a ready one and
+ * the body is called only in `ready` and `stale`. A `{ rows }` body whose table rows run past
+ * the declared height shows whole rows: the box is cut after the last row that fits, and the
+ * panel keeps that height through the other phases. The box clips with `overflow: clip`, never
  * `hidden`, so a table head that sticks to the page keeps sticking.
  *
  * @useWhen a page needs the card frame around a table, a row list or a board, with a header, controls and a legend

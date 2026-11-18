@@ -69,7 +69,8 @@ export function tierAttributes(
     'data-identity': planned.identity ? '' : undefined,
     // A column left off the phone card: hidden by the display state, or placed in the detail (a meter,
     // a spark, or the overflow of the card's six meta values), which the row's derived detail sheet
-    // lists; a custom `detail` render lists only what it writes, so there the column stays on the card.
+    // lists; a custom `detail` render lists only what it writes, so there the column (the overflow
+    // past six meta values included) stays on the card rather than become unreachable.
     'data-card':
       planned.place === 'hidden' || (planned.place === 'detail' && detailListed)
         ? 'hidden'
