@@ -41,6 +41,12 @@ const MONO = 'font-mono tabular-nums'
 const LONG_FIGURE = 10
 /** Below `regular` the period takes a line of its own, in every phase, so loading and failed hold the ready height. */
 const PERIOD_LINE = 'hidden h-4 basis-full items-center @max-regular:flex'
+/**
+ * The period's own box: one line that truncates, beside the figure from `regular` up and on a line
+ * of its own, one line tall even while empty, below it. A period that follows focus changes its text
+ * and never the row's height, so a hover cannot push the plot away from the pointer.
+ */
+const PERIOD_BOX = 'min-w-0 truncate text-xs leading-4 @max-regular:h-4 @max-regular:basis-full'
 
 /**
  * The period's place while the card loads, is empty or failed. With the text declared (a static
@@ -72,7 +78,8 @@ function PeriodHold({
       data-slot="chart-period-hold"
       data-hold={period}
       className={cn(
-        'min-w-0 text-xs select-none after:content-[attr(data-hold)] @max-regular:basis-full',
+        PERIOD_BOX,
+        'select-none after:content-[attr(data-hold)]',
         mono && MONO,
         loading ? cn(BAR, 'w-fit text-transparent') : 'invisible',
       )}
@@ -97,7 +104,7 @@ function FigureRow({
   return (
     <div
       data-slot="chart-figure"
-      className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5"
+      className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 @regular:flex-nowrap"
     >
       {/* The figure line has one height in every phase; the period joins it from `regular` up and takes the line under it below. */}
       <div className="flex h-9 max-w-full min-w-0 items-center gap-2">
@@ -149,10 +156,7 @@ function FigureRow({
         ) : (
           <span
             data-monospace={periodMono === true ? '' : undefined}
-            className={cn(
-              'min-w-0 text-xs text-muted-foreground @max-regular:basis-full',
-              periodMono === true && MONO,
-            )}
+            className={cn(PERIOD_BOX, 'text-muted-foreground', periodMono === true && MONO)}
           >
             {period}
           </span>
@@ -246,7 +250,9 @@ const hasNoRows = (phase: object): boolean => {
  * `loading` wins over everything. The phase prints on the card and the box as `data-phase`.
  *
  * A `legend` of two or more entries toggles the series of the chart in the box with the same `key`
- * (from the plot, the tooltip and the scale); a double click or a modifier click isolates one.
+ * (from the plot, the tooltip and the scale); a double click or a modifier click isolates one. The
+ * figure's period is one line that never wraps, held below `regular` even while empty, so a period
+ * that follows focus changes text, never the height under the pointer.
  *
  * A series with `failed: true` keeps its legend entry, which reads `unavailable`, draws nothing in the
  * plot and leaves the phase on `ready`; the word is the message `charts.unavailable`, which an app
@@ -279,7 +285,15 @@ export function ChartCard(props: ChartCardProps): ReactElement {
   const [held, setHeld] = useState<DeclaredSlots | undefined>(undefined)
   if (effective.body && !sameSlots(held, declared)) setHeld(declared)
   const ready = effective.body
-  const shownFigure = ready ? figure : withPeriodHold(figure ?? held?.figure, held)
+  // A ready figure holds the period's line even without a period, as a loading one does: a period
+  // that only a hover fills (a focus readout) would otherwise open the line under the pointer, push
+  // the plot away from it, clear the focus and close again. From `regular` up the empty box is inline
+  // and takes no height; below it, one line.
+  const shownFigure = ready
+    ? figure !== undefined && figure.period === undefined
+      ? { ...figure, period: '' }
+      : figure
+    : withPeriodHold(figure ?? held?.figure, held)
   const shownFooter = footer ?? (ready ? undefined : held?.footer)
   // Two or more entries toggle the series of the chart in the box, as a chart's own legend does.
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
