@@ -8,13 +8,23 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { createQueryClient } from 'basalt-ui/data'
 import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import type { ReactNode } from 'react'
-import { routeTree } from '../routeTree.gen'
 import { PHOTOS } from './kit-photos'
 import { NAV } from './nav-model'
 import { RUNS } from './runs'
 
 afterEach(cleanup)
+
+// The route tree is generated (gitignored): the playground's typecheck and build write it, a bare unit run has none.
+const PLAYGROUND = join(import.meta.dir, '..', '..')
+if (!existsSync(join(PLAYGROUND, 'src', 'routeTree.gen.ts'))) {
+  const generated = Bun.spawnSync(['bunx', 'tsr', 'generate'], { cwd: PLAYGROUND })
+  if (generated.exitCode !== 0)
+    throw new Error(`tsr generate failed: ${generated.stderr.toString()}`)
+}
+const { routeTree } = await import('../routeTree.gen')
 
 const first = PHOTOS[0]
 const second = PHOTOS[1]
