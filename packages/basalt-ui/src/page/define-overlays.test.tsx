@@ -3,7 +3,7 @@
  * and no base-ui import in the two modules (they sit on `ui/dialog` and `ui/sheet`).
  */
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, spyOn, test } from 'bun:test'
+import { afterAll, afterEach, beforeAll, describe, expect, spyOn, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { renderToString } from 'react-dom/server'
@@ -11,6 +11,17 @@ import { defineOverlays } from './define-overlays'
 import { OverlayHost } from './overlay-host'
 
 afterEach(cleanup)
+
+// Base UI waits for `getAnimations()` to settle before it unmounts a closing popup, and happy-dom
+// has no animation clock: each close took 3 to 22 s. Its own switch unmounts at once, so a closed
+// overlay is gone on the next commit with no timer to fake. Scoped to this file: other suites
+// (a menu clicked item after item) rely on the exit staying mounted.
+beforeAll(() => {
+  Object.assign(globalThis, { BASE_UI_ANIMATIONS_DISABLED: true })
+})
+afterAll(() => {
+  Reflect.deleteProperty(globalThis, 'BASE_UI_ANIMATIONS_DISABLED')
+})
 
 function make() {
   return defineOverlays({
@@ -87,9 +98,9 @@ describe('defineOverlays + OverlayHost', () => {
       overlays.open('logs:filter')
     })
     act(() => overlays.close())
-    await waitFor(() => expect(screen.queryByTestId('logs')).toBeNull(), { timeout: 8000 })
+    await waitFor(() => expect(screen.queryByTestId('logs')).toBeNull())
     expect(screen.getByTestId('edit')).toBeDefined()
-  }, 20_000)
+  })
 
   test('close({ all: true }) closes the whole stack', async () => {
     const overlays = make()
@@ -99,25 +110,25 @@ describe('defineOverlays + OverlayHost', () => {
       overlays.open('logs:filter')
     })
     act(() => overlays.close({ all: true }))
-    await waitFor(() => expect(screen.queryByTestId('logs')).toBeNull(), { timeout: 8000 })
-    await waitFor(() => expect(screen.queryByTestId('edit')).toBeNull(), { timeout: 8000 })
-  }, 20_000)
+    await waitFor(() => expect(screen.queryByTestId('logs')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('edit')).toBeNull())
+  })
 
   test('the body closes itself through the api', async () => {
     const overlays = make()
     render(<OverlayHost overlays={overlays} />)
     act(() => overlays.open('confirm:wide', { n: 1 }))
     act(() => screen.getByTestId('close-me').click())
-    await waitFor(() => expect(screen.queryByTestId('close-me')).toBeNull(), { timeout: 8000 })
-  }, 20_000)
+    await waitFor(() => expect(screen.queryByTestId('close-me')).toBeNull())
+  })
 
   test('the corner close button dismisses', async () => {
     const overlays = make()
     render(<OverlayHost overlays={overlays} />)
     act(() => overlays.open('user:edit', { id: '1' }))
     act(() => document.querySelector<HTMLElement>('[data-slot="dialog-close"]')?.click())
-    await waitFor(() => expect(screen.queryByTestId('edit')).toBeNull(), { timeout: 8000 })
-  }, 20_000)
+    await waitFor(() => expect(screen.queryByTestId('edit')).toBeNull())
+  })
 
   test('defaultOpen opens an overlay from the first client render', () => {
     const overlays = make()
