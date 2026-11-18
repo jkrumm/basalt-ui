@@ -25,7 +25,7 @@ describe('ESLint RuleTester', () => {
 })
 
 describe('primitive-bypass forms', () => {
-  it('has the ten forms of the contract row', () => {
+  it('has the eleven forms of the contract row', () => {
     expect(PRIMITIVE_BYPASS.forms.map((form) => form.id)).toEqual([
       'raw-control',
       'checkable-input',
@@ -35,6 +35,7 @@ describe('primitive-bypass forms', () => {
       'html-data-marks',
       'role-table',
       'table-rows',
+      'list-rows',
       'chart-body-root',
       'intl-format',
     ])

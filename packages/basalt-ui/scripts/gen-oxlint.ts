@@ -111,12 +111,35 @@ export const REPO_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = [
 /** Paths are relative to `apps/playground` (oxlint resolves a nested config's globs from its dir). */
 export const PLAYGROUND_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption[] = []
 
+/**
+ * A form of a rule switched off for named playground files, the rest of the rule staying on. The
+ * three expression scenarios below were built by hand before `primitive-bypass/list-rows` existed;
+ * `v3-owner-1-rerun` rebuilds n02 and n04 with `RowList` and deletes their entries, c10 follows
+ * with its next cycle. Never a blanket off, never a new file.
+ */
+type FormWaiver = { rule: string; forms: readonly string[]; reason: string; files: string[] }
+
+export const PLAYGROUND_FORM_WAIVERS: readonly FormWaiver[] = [
+  {
+    rule: 'basalt/primitive-bypass',
+    forms: ['list-rows'],
+    reason: 'hand-built row lists from before RowList; rebuilt by v3-owner-1-rerun',
+    files: ['src/scenarios/expr/n02/**', 'src/scenarios/expr/n04/**', 'src/scenarios/expr/c10/**'],
+  },
+]
+
 /** The playground's `overrides`, pinned against `apps/playground/.oxlintrc.json` by the sync test. */
 export function projectPlaygroundOverrides(): OverrideBlock[] {
-  return PLAYGROUND_COMPILER_RULE_EXEMPTIONS.map(({ rule, files }) => ({
-    files,
-    rules: { [rule]: 'off' },
-  }))
+  return [
+    ...PLAYGROUND_COMPILER_RULE_EXEMPTIONS.map(({ rule, files }) => ({
+      files,
+      rules: { [rule]: 'off' },
+    })),
+    ...PLAYGROUND_FORM_WAIVERS.map(({ rule, forms, files }) => ({
+      files,
+      rules: { [rule]: ['error', { formsOff: [...forms] }] },
+    })),
+  ]
 }
 
 /** The one file allowed to import the chart engine's DOM host (`@tanstack/charts/react`). */
