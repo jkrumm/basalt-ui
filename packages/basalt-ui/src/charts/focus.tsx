@@ -284,7 +284,6 @@ export function stepFocus(
   }
 }
 
-/** Whether `node` has an ancestor that scrolls (the list's own region, not only the page). */
 /** The nearest ancestor that scrolls its overflow on either axis, or `null`. */
 function scrollRegionOf(node: Element): HTMLElement | null {
   if (typeof getComputedStyle === 'undefined') return null
