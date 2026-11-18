@@ -297,15 +297,15 @@ function scrollRegionOf(node: Element): HTMLElement | null {
 }
 
 /**
- * Scrolls `node` into its own list's region by the least distance, and nothing else. Only a region
- * nested inside another scroller moves: the outermost one is the page (the shell's scrollport), and
- * scrolling it would carry the chart away from the pointer that set the focus. `scrollIntoView`
- * cannot be told to stop at one ancestor, so the region's offsets are set directly.
+ * Scrolls `node` into its own list's region by the least distance, and nothing else. A region the
+ * pointer is in never moves: that is the page (the shell's scrollport) or the list itself, and
+ * scrolling it would carry the chart or the row away from the pointer that set the focus.
+ * `scrollIntoView` cannot be told to stop at one ancestor, so the region's offsets are set directly.
  */
 function revealInOwnRegion(node: Element | undefined): void {
   if (node === undefined) return
   const region = scrollRegionOf(node)
-  if (region === null || scrollRegionOf(region) === null) return
+  if (region === null || region.matches(':hover')) return
   const r = region.getBoundingClientRect()
   const n = node.getBoundingClientRect()
   const dy = n.top < r.top ? n.top - r.top : n.bottom > r.bottom ? n.bottom - r.bottom : 0
