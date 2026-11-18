@@ -36,8 +36,9 @@ const DIMMED = 0.5
  * A quiet inline trend: a neutral line, or an area that fades to nothing, with the now dot on the
  * last point. Hand SVG, no engine and no tooltip. Without `axisLabels` it is an image with a name and
  * no tab stop; with them it is a chart host: the arrow keys, Home and End (or a pointer) move a readout
- * naming the point (its `label`, else its day) into the label row's middle slot, a polite live region
- * reads each step, and the line dims round the point. `cap` holds an outlier on the top edge under an
+ * of the point's x and y (`18 · W41`: its `label`, else its day, else its place, `#8`) into the label
+ * row's middle slot, a polite live region reads each step, the line dims round the point and a guide
+ * crosses it to both edges. `cap` holds an outlier on the top edge under an
  * off-scale caret. No `tone`, no `color`: the dot reads `--spark-now`, which the frame sets from its
  * delta or status and is neutral outside a frame.
  *
@@ -119,6 +120,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
         // A stepped point is the mark in focus: the line dims round it, as a chart kind dims the rest.
         const dim = active === null ? 1 : DIMMED
         const guideX = active === null ? null : g.x(active)
+        const guideY = now === null || active === null ? null : now.y
         return (
           <>
             <svg
@@ -146,6 +148,19 @@ export function Sparkline(props: SparklineProps): ReactElement {
                   x2={guideX}
                   y1={0}
                   y2={plotH}
+                  stroke="currentColor"
+                  strokeOpacity={DIMMED}
+                  strokeWidth={1}
+                  vectorEffect="non-scaling-stroke"
+                />
+              )}
+              {guideY === null ? null : (
+                <line
+                  data-slot="spark-guide-y"
+                  x1={0}
+                  x2={plotW}
+                  y1={guideY}
+                  y2={guideY}
                   stroke="currentColor"
                   strokeOpacity={DIMMED}
                   strokeWidth={1}

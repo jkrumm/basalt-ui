@@ -1607,6 +1607,45 @@ function guardReservedKeys<T>(series: readonly ChartSeries<T>[]): void {
     )
 }
 
+/**
+ * The value labels a hover pins to the axes: the tick size in the ink, on a wide halo of the surface the
+ * plot sits on (`--bc-guide-halo`, the inset inside a card), so it covers the tick label under it.
+ */
+const GUIDE_LABEL = {
+  fontSize: TICK_FONT,
+  fontWeight: 500,
+  fill: CV.ink,
+  stroke: 'var(--bc-guide-halo, var(--basalt-card))',
+  strokeWidth: 6,
+  offset: 5,
+} as const
+
+/**
+ * The hover's guide: the x rule (a bar kind has none, its hover is the bar) and the y rule through the
+ * focused point, each with its value pinned on its axis, so a hover reads x and y where the ticks do.
+ * Unpinned (a micro plot without axes, a bare slot) the line keeps its x rule alone. The y label is the
+ * left axis' and only drawn without a right axis, where one y value cannot name both scales.
+ */
+function crosshairMarks<T, X extends ChartX>(opts: {
+  input: CartesianInput<T, X>
+  pinned: boolean
+  formatX: (v: ChartValue) => string
+  formatY: ((v: number) => string) | null
+}): ChartMarks {
+  const { input, pinned, formatX, formatY } = opts
+  const rule = input.crosshair !== false
+  if (!pinned) return rule ? [crosshair({ x: CROSSHAIR, y: false })] : []
+  const x = {
+    ...(rule ? CROSSHAIR : { strokeOpacity: 0 }),
+    label: { ...GUIDE_LABEL, format: (v: ChartValue) => formatX(v) },
+  }
+  const y =
+    formatY === null
+      ? false
+      : { ...CROSSHAIR, label: { ...GUIDE_LABEL, format: (v: ChartValue) => formatY(Number(v)) } }
+  return [crosshair({ x, y })]
+}
+
 export function compileCartesian<T, X extends ChartX>(
   given: CartesianInput<T, X>,
 ): CartesianDefinition {
@@ -2053,7 +2092,12 @@ export function compileCartesian<T, X extends ChartX>(
             plotWidth: xPlotWidth,
             blocked: hasXCaption ? captionContext().xBlocked : undefined,
           }),
-          ...(input.crosshair === false ? [] : [crosshair({ x: CROSSHAIR, y: false })]),
+          ...crosshairMarks({
+            input,
+            pinned: cls !== 'micro' && input.bare !== true,
+            formatX,
+            formatY: axes.right === null ? axes.axisOf('left').format : null,
+          }),
         ],
         scales: buildScales({
           input,

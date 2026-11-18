@@ -39,8 +39,8 @@ describe('Sparkline frame', () => {
     expect(middle()).toBe('Today')
     fireEvent.keyDown(host, { key: 'Home' })
     expect(host.getAttribute('data-active-index')).toBe('0')
-    expect(live()).toBe('10')
-    expect(middle()).toBe('10')
+    expect(live()).toBe('#1: 10')
+    expect(middle()).toBe('10 · #1')
     fireEvent.keyDown(host, { key: 'ArrowRight' })
     expect(host.getAttribute('data-active-index')).toBe('1')
     fireEvent.keyDown(host, { key: 'ArrowLeft' })
@@ -48,10 +48,23 @@ describe('Sparkline frame', () => {
     expect(host.getAttribute('data-active-index')).toBe('0')
     fireEvent.keyDown(host, { key: 'End' })
     expect(host.getAttribute('data-active-index')).toBe('3')
-    expect(middle()).toBe('40')
+    expect(middle()).toBe('40 · #4')
     fireEvent.blur(host)
     expect(middle()).toBe('Today')
     expect(live()).toBe('')
+  })
+
+  test('a hover over bare numbers reads an x and a y, and draws a guide to each edge', () => {
+    render(<Sparkline series={[4, 9, 6, 12]} ariaLabel="S" height={72} axisLabels={LABELS} />)
+    const plot = document.querySelector<HTMLElement>('[data-slot="spark-plot"]')!
+    // happy-dom has no layout: a zero-width plot puts every pointer on the last point.
+    fireEvent.pointerMove(plot, { clientX: 0 })
+    expect(middle()).toBe('12 · #4')
+    expect(document.querySelector('[data-slot="spark-guide"]')).not.toBeNull()
+    expect(document.querySelector('[data-slot="spark-guide-y"]')).not.toBeNull()
+    fireEvent.pointerLeave(plot)
+    expect(middle()).toBe('Today')
+    expect(document.querySelector('[data-slot="spark-guide-y"]')).toBeNull()
   })
 
   test('a plain key does nothing', () => {
@@ -162,7 +175,7 @@ describe('Sparkline cap', () => {
   test('the readout of a held point reads its true value', () => {
     render(<Sparkline series={[2, 38]} ariaLabel="S" height={72} axisLabels={LABELS} cap={6} />)
     fireEvent.keyDown(screen.getByRole('group'), { key: 'End' })
-    expect(middle()).toBe('38')
+    expect(middle()).toBe('38 · #2')
   })
 
   test('no point above the cap draws no caret and keeps the data extent', () => {
