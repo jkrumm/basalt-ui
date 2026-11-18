@@ -214,6 +214,36 @@ describe('Views menu', () => {
     expect(search().get('view')).toBeNull()
   })
 
+  test('a view keeps its filters and category rank, and applying it restores both', async () => {
+    render(<Subject />)
+    act(() => {
+      model().state.setRequest({ filters: [{ id: 'state', op: 'anyOf', values: ['Done'] }] })
+      model().setRank('state', ['Done', 'Open'])
+    })
+    await saveAs('Ranked')
+    act(() => model().setRank('state', ['Open', 'Done']))
+    expect(model().state.request.ranks).toEqual({})
+    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    await settled()
+    fireEvent.click(screen.getByRole('button', { name: 'Ranked' }))
+    await settled()
+    expect(model().state.request.ranks).toEqual({ state: ['Done', 'Open'] })
+    expect(model().state.request.sort).toEqual([{ id: 'state', desc: false }])
+    expect(search().get('view')).toBe('ranked')
+  })
+
+  test('applying a view without a rank drops the rank the table has', async () => {
+    viewsStore('v').set(saveView([], 'Plain', state({ q: 'p' })).views)
+    render(<Subject />)
+    act(() => model().setRank('state', ['Done', 'Open']))
+    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    await settled()
+    fireEvent.click(screen.getByRole('button', { name: 'Plain' }))
+    await settled()
+    expect(model().state.request.ranks).toEqual({})
+    expect(search().get('view')).toBe('plain')
+  })
+
   test('an unknown ?view id normalises away', async () => {
     window.history.replaceState(null, '', '/?view=missing')
     render(<Subject />)

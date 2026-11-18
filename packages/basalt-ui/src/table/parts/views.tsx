@@ -65,6 +65,8 @@ function applyView<T>(model: TableModel<T>, view: View): void {
     filters: request.filters,
     sort: request.sort,
     pageSize: request.pageSize,
+    // A view without ranks restores the declared order, so the table equals the view it applied.
+    ranks: request.ranks ?? {},
   })
   model.state.setDisplay({ visibility: display.visibility })
 }
