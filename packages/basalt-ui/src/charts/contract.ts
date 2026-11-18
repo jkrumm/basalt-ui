@@ -384,7 +384,11 @@ export type ChartCardProps = Omit<FrameState, 'phase'> & {
   phase?: Phase | QueryStateLike | undefined
 
   figure?: ChartFigure | undefined
-  /** The legend row for marks the page draws through the seam, drawn in every phase. */
+  /**
+   * The legend row for marks the page draws through the seam, drawn in every phase. With two or
+   * more entries each entry toggles the series of the chart in the box that has its `key`, and a
+   * double click or a modifier click isolates it, as a chart's own legend does.
+   */
   legend?: readonly LegendEntry[] | undefined
   footer?: FootFacts | undefined
   controls?: ControlsSlot<'widget'> | undefined
