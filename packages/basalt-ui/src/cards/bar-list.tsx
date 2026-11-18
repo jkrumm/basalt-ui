@@ -1,11 +1,4 @@
-import type {
-  CSSProperties,
-  FocusEvent,
-  KeyboardEvent,
-  LiHTMLAttributes,
-  PointerEvent,
-  ReactElement,
-} from 'react'
+import type { CSSProperties, ReactElement } from 'react'
 import { AppLink } from '../core/link'
 import { cn } from '../core/cn'
 import { HostTitleContext } from '../core/could-not-load'
@@ -21,6 +14,7 @@ import { BAR_BODY_HEIGHT, DEFAULT_ROWS, ScrollRegion } from './bar-list-scroll'
 import type { ListRows } from './bar-list-scroll'
 import type { CardTarget, FrameHead, LegendEntry } from './contract'
 import { Legend } from './data-panel'
+import { listFocus, rowFocus } from './list-focus'
 
 /**
  * One ranked row. A row is a link, a button or inert; never a link and a button at once. The type
@@ -76,55 +70,6 @@ const ROW = 'flex h-10 w-full min-w-0 flex-col justify-center gap-1.5 rounded-ct
 
 const TARGET =
   'cursor-pointer border-0 bg-transparent text-left text-foreground no-underline hover:bg-accent focus-ring focus-visible:-outline-offset-2'
-
-/** What `useChartFocus` puts on an item beyond `ListFocusItem`: the kit dims a `data-dimmed` row. */
-type MarkedItem = { 'data-chart-mark'?: ''; 'data-dimmed'?: '' }
-
-/** The row's share of a chart's focus: only the keys a list row takes (never the chart's dimming). */
-function rowFocus(
-  focus: ListFocus<unknown>,
-  i: number,
-): LiHTMLAttributes<HTMLLIElement> & {
-  ref: (element: Element | null) => void
-} {
-  const item = focus.item(i)
-  return {
-    ref: item.ref,
-    onPointerEnter: item.onPointerEnter,
-    onPointerDown: item.onPointerDown,
-    onFocus: () => focus.set(i),
-    ...((item as MarkedItem)['data-chart-mark'] !== undefined && { 'data-chart-mark': '' }),
-    ...((item as MarkedItem)['data-dimmed'] !== undefined && { 'data-dimmed': '' }),
-    ...(item['data-focused'] !== undefined && { 'data-focused': '' }),
-  } as LiHTMLAttributes<HTMLLIElement> & { ref: (element: Element | null) => void }
-}
-
-/** The list's own keys, when it is one tab stop for the shared focus. */
-function listFocus(focus: ListFocus<unknown>): {
-  tabIndex: 0
-  onKeyDown: (event: KeyboardEvent<HTMLUListElement>) => void
-  onBlur: (event: FocusEvent<HTMLUListElement>) => void
-  onPointerLeave: (event: PointerEvent<HTMLUListElement>) => void
-} {
-  return {
-    tabIndex: 0,
-    onKeyDown: (event) => {
-      if (event.target !== event.currentTarget) return
-      const next = focus.step(event.key)
-      if (next === undefined) return
-      event.preventDefault()
-      focus.set(next)
-    },
-    onBlur: (event) => {
-      const to = event.relatedTarget
-      if (to instanceof Node && event.currentTarget.contains(to)) return
-      focus.set(null)
-    },
-    onPointerLeave: (event) => {
-      if (event.pointerType !== 'touch') focus.set(null)
-    },
-  }
-}
 
 const isWhole = (items: readonly BarListItem[], max: number | undefined): boolean => {
   if (max === undefined || max <= 0) return false

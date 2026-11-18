@@ -2,11 +2,12 @@ import type { Format } from '../format'
 import type { BasaltMessages } from './index'
 
 /**
- * The strings of `BarList`, `EventList` and `StepRail`. Keys carry the area prefix (`lists.`),
+ * The strings of `BarList`, `EventList`, `RowList` and `StepRail`. Keys carry the area prefix (`lists.`),
  * which the coverage test holds; the brief's `card.*` prefix would fail it.
  */
 export type ListsMessages = Record<
   | 'lists.noItems'
+  | 'lists.noRows'
   | 'lists.noEvents'
   | 'lists.today'
   | 'lists.yesterday'
@@ -41,6 +42,7 @@ function stepDuration(f: Format, ms: number): string {
 
 export const lists = {
   'lists.noItems': 'No items to compare yet',
+  'lists.noRows': 'Nothing to list yet',
   'lists.noEvents': 'Nothing has happened yet',
   'lists.today': 'Today',
   'lists.yesterday': 'Yesterday',
