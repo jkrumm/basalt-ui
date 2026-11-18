@@ -19,7 +19,7 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 ## Colour budget
 
-- Neutral by default, one accent, one status hue. The accent marks the series the question is about; the rest sit in ink steps.
+- Neutral by default, one accent, one status hue. The accent marks the one series or mark class the question is about, counted: a second series in the accent needs a second meaning the page names in a word, and otherwise goes to an ink step (n15 drew both its series in one blue; the owner: "choose colour only where expression needs it").
 - A part of a whole or a category split is read from position, order and a direct label. A hue per part is a rainbow.
 - A ramp starts neutral below its threshold and turns hue only past it; zero stays neutral.
 - A state has one colour in every linked view: the legend swatches and a table's status dots match the marks (c16, n08); a rise is one hue in the chart and in the table pill, and a fall the other; the accent marks the answer (the next run, the leader) and nothing else, so one word keeps one colour across parts (n13 drew a rise in the chart and a fall in the table).

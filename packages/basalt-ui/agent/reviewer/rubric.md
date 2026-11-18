@@ -41,10 +41,13 @@ Score per component, then add one line per page for the page items (Communicatio
 1. **[measured]** Every inset, gap and radius is a step in `metrics.json` `scale`; nested surfaces step by at least 3 px of radius. No `scale` → `unverified`. Never invent steps.
 2. **[measured]** No more than three font sizes inside one component: `fontSizes` with more than 3 distinct values fails.
 3. No empty region of 40 % or more of the component's height — **[measured]**: `emptyRatio` ≥ 0.4 fails. **[mobile]** No dense-list row wraps at 390, judged from the 390 crop. **D37, not scored:** an errored or empty chart body that keeps its loaded height with its anatomy top-aligned is the SSR-first contract, not a void defect (list it as `D37, not scored`); any other void still fails, and so does a loading skeleton much shorter than the loaded body. D37 covers chart bodies only; a list that keeps a void is scored.
-4. One ring per surface, no bare hairline borders on cards, no accent on chrome: look at every crop for an accent hue on a tab underline, a selected row, a secondary button, a primary button, a card ring or a solid-filled badge. The accent sites are the primary data series, active-nav icons and active child labels, links, focus rings and the leader bar in meters; the primary action is ink-inverted and chrome (borders, inactive states, backgrounds, general icons) stays neutral. Selection state (active nav row, selected tab) never takes the accent. A status is a dot plus a word, or the value's own ink; a coloured edge stripe or rail down a card, row or callout for status fails here, and a card's `tone` dot-and-word verdict passes.
+4. One ring per surface, no bare hairline borders on cards, no accent on chrome: look at every crop for an accent hue on a tab underline, a selected row, a secondary button, a primary button, a card ring or a solid-filled badge. The accent sites are one data series or one mark class per view, active-nav icons and active child labels, links, focus rings and the leader bar in meters. Count the data series and mark classes in the accent in the ready crop: a second one fails unless the accent itself means something else there that the surface says in a word (a title naming each measure is no second meaning: two series in one blue point at nothing); the primary action is ink-inverted and chrome (borders, inactive states, backgrounds, general icons) stays neutral. Selection state (active nav row, selected tab) never takes the accent. A status is a dot plus a word, or the value's own ink; a coloured edge stripe or rail down a card, row or callout for status fails here, and a card's `tone` dot-and-word verdict passes.
 5. Nothing is told apart only by colour, judged from the crops in both schemes. Contrast ratios are not measured here: axe owns them.
 6. Nothing overflows, clips or truncates a value at 1440. **[measured]** `overlaps`, `small` and a page `overflowX` above 0 fail (`craft-6/overlap`, `craft-6/hit-floor`, `craft-6/document-overflow`). **[mobile]** The same at 390.
 7. Hover, focus and tooltip states are present in the shots; focus is the 2 px outline. **[measured]** An `ignored` state shot fails (`craft-7/states-ignored`).
+8. A rule between rows, list entries or cards is at most the hairline or grid token, as faint as a chart's grid lines in both schemes. A rule that reads as ink fails: a bare `border`, `border-b` or `divide-y` paints in the text colour.
+9. Hover and focus change colour and the readout only: in the hover, focus and tooltip crops the plot, its axes and the parts beside it sit where the ready crop has them. A shift, a tooltip or readout that grows the card, or a label that wraps on focus fails.
+10. A hand-composed mark is drawn with craft, judged apart from whether its form fits (Expression 1): rows, tracks and labels start on one shared x, every label and title fits its box at every viewport (none clipped, hidden under a mark or cut at the edge), and marks of one class have one size. A good idea drawn badly fails here.
 
 ### Expression
 
@@ -53,6 +56,7 @@ Score per component, then add one line per page for the page items (Communicatio
 3. A hue appears only for a trend, a status or a category; a single metric is neutral. A delta is the tinted delta badge with its polarity and its period: a delta in untinted ink, or a delta whose tint contradicts its polarity (a rise that is bad drawn good), fails here. A status drawn as a coloured leading-edge stripe fails too: it is decoration, where the dot and the word carry the verdict in shape and text.
 4. A number with a target shows the target; a number with a history shows it; a whole with parts shows the parts.
 5. No axis repeats a label; ticks fit the span.
+6. A grid of five or more cards that each show one record of one shape offers a table view of the same records (a toggle, or a table beside the grid), or is a table.
 
 ### Communication
 
@@ -103,8 +107,8 @@ The counts and the score cover the `new` and `carried` findings. The verdict is 
 Strict. Nothing before the table (but the `DEGRADED` line when it applies), no praise, no summary, no code rewrites. Name the defect, not the fix. Order every list **content** → **layout** → **style** (what the surface says, where it sits, how it looks):
 
 - **content**: Communication 1–4, 6 and 7, Expression 1, 2 and 4, Craft 5 (colour-only distinction).
-- **layout**: Craft 1, 3, 6 and 7, Communication 5, Expression 5.
-- **style**: Craft 2 and 4, Expression 3.
+- **layout**: Craft 1, 3, 6, 7, 9 and 10, Communication 5, Expression 5 and 6.
+- **style**: Craft 2, 4 and 8, Expression 3.
 
 1. A table, one row per component: `| component | verdict | failed items |` — `pass` or `fail`; failed items like `Craft 3, Communication 1`, or `—`; an `n/a` clause is listed as `n/a` after the verdict. Add one `page` line per route for the page items. Under it, one line per component: `Read: <sheet file>, <page shot files>, <any single crops opened>`.
 2. Then, for EVERY failure, one line, content first: `[<new|carried|fixed>] <P0-P3> <axis> <n> — <png file> (<scheme>, <viewport>, <state>) — <defect in one sentence>`. The bracketed status appears only in diff mode. A `[measured]` item cites `metrics.json <anchor>` instead of a PNG; an `unverified` item names the missing input.

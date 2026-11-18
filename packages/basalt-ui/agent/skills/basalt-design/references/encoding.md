@@ -16,7 +16,7 @@ Which form carries which shape of data, and what the marks may say. The question
 ## Colour follows the entity
 
 - An entity that earns a hue keeps it on every chart and card where it appears, whatever its rank; most entities earn none and stay neutral.
-- Colour is a budget: neutral by default, one accent, one status hue. Seven family hues on one chart is a failed budget; fold the tail into "Other" and keep the rest neutral.
+- Colour is a budget: neutral by default, one accent on one series or mark class per view, one status hue. Two series in the accent is a failed budget, and so are seven family hues on one chart; fold the tail into "Other" and keep the rest neutral.
 - A status is a word or a dot with its tone, so a reader without colour still has the verdict. [lint:status-fill-as-text]
 - Text takes a text token; a series colour is a fill. [lint:colour-literal]
 
