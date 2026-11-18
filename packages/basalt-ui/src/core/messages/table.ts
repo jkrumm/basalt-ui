@@ -33,13 +33,26 @@ export type TableMessages = Record<
   | 'table.filtersTitle'
   | 'table.filtersClear'
   | 'table.filterValue'
-  | 'table.filterOptions'
   | 'table.filterNoOptions'
   | 'table.display'
   | 'table.chips'
   | 'table.opContains'
   | 'table.opAnyOf'
   | 'table.headerFilter'
+  | 'table.rangeMin'
+  | 'table.rangeMax'
+  | 'table.filterClear'
+  | 'table.boolAny'
+  | 'table.optionSearch'
+  | 'table.presets'
+  | 'table.presetToday'
+  | 'table.presetWeek'
+  | 'table.presetMonth30'
+  | 'table.presetThisMonth'
+  | 'table.presetThisYear'
+  | 'table.orderCategories'
+  | 'table.orderReset'
+  | 'table.orderHint'
   | 'table.bulk'
   | 'table.bulkClear'
   | 'table.sortAsc'
@@ -69,14 +82,24 @@ export type TableMessages = Record<
   Record<'table.rowRange', (f: Format, from: number, to: number, total: number) => string> &
   Record<'table.filters', (f: Format, count: number) => string> &
   Record<
-    | 'table.chipRemove'
-    | 'table.headerMenu'
-    | 'table.columnActions'
-    | 'table.viewRemove'
-    | 'table.errorNamed',
+    'table.chipRemove' | 'table.columnActions' | 'table.viewRemove' | 'table.errorNamed',
     (f: Format, name: string) => string
   > &
-  Record<'table.cellFilter', (f: Format, header: string, value: string) => string>
+  Record<'table.cellFilter', (f: Format, header: string, value: string) => string> &
+  Record<'table.rangeBetween' | 'table.filterMark', (f: Format, a: string, b: string) => string> &
+  Record<
+    | 'table.rangeFrom'
+    | 'table.rangeTo'
+    | 'table.dayFrom'
+    | 'table.dayTo'
+    | 'table.filterOf'
+    | 'table.orderOf'
+    | 'table.dateRange'
+    | 'table.optionsOf',
+    (f: Format, value: string) => string
+  > &
+  Record<'table.orderMoved', (f: Format, label: string, at: number, of: number) => string> &
+  Record<'table.orderHandle', (f: Format, label: string, at: number, of: number) => string>
 
 export const table = {
   'table.selectRow': 'Select row',
@@ -106,13 +129,26 @@ export const table = {
   'table.filtersTitle': 'Filters',
   'table.filtersClear': 'Clear all filters',
   'table.filterValue': 'Contains',
-  'table.filterOptions': 'Is any of',
   'table.filterNoOptions': 'No matching value',
   'table.display': 'Display',
   'table.chips': 'Active filters',
   'table.opContains': 'contains',
   'table.opAnyOf': 'is',
   'table.headerFilter': 'Filter...',
+  'table.rangeMin': 'Min',
+  'table.rangeMax': 'Max',
+  'table.filterClear': 'Clear',
+  'table.boolAny': 'Any',
+  'table.optionSearch': 'Search values',
+  'table.presets': 'Quick ranges',
+  'table.presetToday': 'Today',
+  'table.presetWeek': 'Last 7 days',
+  'table.presetMonth30': 'Last 30 days',
+  'table.presetThisMonth': 'This month',
+  'table.presetThisYear': 'This year',
+  'table.orderCategories': 'Order categories...',
+  'table.orderReset': 'Reset to default',
+  'table.orderHint': 'Drag a row, or press Alt with an arrow key',
   'table.bulk': 'Bulk actions',
   'table.bulkClear': 'Clear selection',
   'table.sortAsc': 'Sort ascending',
@@ -139,9 +175,22 @@ export const table = {
   'table.selectAllMatching': (f, count) => `Select all ${f.number(count)} rows`,
   'table.filters': (f, count) => (count > 0 ? `Filters (${f.number(count)})` : 'Filters'),
   'table.chipRemove': (_f, subject) => `Remove filter ${subject}`,
-  'table.headerMenu': (_f, header) => `${header} column menu`,
   'table.columnActions': (_f, header) => `${header} column actions`,
   'table.viewRemove': (_f, name) => `Delete view ${name}`,
   'table.errorNamed': (_f, name) => `${couldNotLoad(String(name))}.`,
   'table.cellFilter': (_f, header, value) => `Filter ${header} by ${value}`,
+  'table.rangeBetween': (_f, from, to) => `${from} – ${to}`,
+  'table.filterMark': (_f, header, value) => `${header} filtered: ${value}. Edit filter`,
+  'table.rangeFrom': (_f, value) => `≥ ${value}`,
+  'table.rangeTo': (_f, value) => `≤ ${value}`,
+  'table.dayFrom': (_f, value) => `from ${value}`,
+  'table.dayTo': (_f, value) => `until ${value}`,
+  'table.filterOf': (_f, header) => `Filter ${header}`,
+  'table.orderOf': (_f, header) => `Order of ${header}`,
+  'table.dateRange': (_f, header) => `${header} range`,
+  'table.optionsOf': (_f, header) => `${header} values`,
+  'table.orderMoved': (f, label, at, of) =>
+    `${label} moved to position ${f.number(at)} of ${f.number(of)}`,
+  'table.orderHandle': (f, label, at, of) =>
+    `Move ${label}, position ${f.number(at)} of ${f.number(of)}`,
 } satisfies Partial<BasaltMessages>
