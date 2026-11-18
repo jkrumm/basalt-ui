@@ -28,11 +28,20 @@ const BANDLESS = ['/scenarios/expr-c12', '/scenarios/expr-n02', '/scenarios/expr
 
 let server: ReturnType<typeof Bun.serve> | null = null
 
+/** A playground build takes about 20 s on a runner; the hook declares its own budget (Bun's default is 5 s). */
+const BUILD_BUDGET_MS = 180_000
+
 beforeAll(() => {
+  // `make check` builds the playground before the layout suite; a CI layout shard builds only the package.
   if (!existsSync(join(DIST, 'index.html'))) {
-    throw new Error(
-      `page-top: no playground build at ${DIST}; run \`bun --filter @basalt-ui/playground build\``,
-    )
+    const build = Bun.spawnSync(['bun', '--filter', '@basalt-ui/playground', 'build'], {
+      cwd: resolve(DIST, '../../..'),
+      stdout: 'pipe',
+      stderr: 'pipe',
+    })
+    if (build.exitCode !== 0 || !existsSync(join(DIST, 'index.html'))) {
+      throw new Error(`page-top: the playground did not build:\n${build.stderr.toString()}`)
+    }
   }
   server = Bun.serve({
     port: 0,
@@ -49,7 +58,7 @@ beforeAll(() => {
       })
     },
   })
-})
+}, BUILD_BUDGET_MS)
 
 afterAll(() => {
   server?.stop(true)
