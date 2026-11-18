@@ -33,6 +33,14 @@ ts-program files alone, the rest in chunks of 40), peak ~2.2 GiB resident where 
 `make test` in a host test slot named `basalt-ui unit` (`factory slot run`, one name per project, never per worktree), like the layout suite; never run a bare whole-repo `bun test`
 from a lead session, scope it to the files you touched (`bun test <path>`) and leave the full suite to `pre`.
 
+**A failed run stops early.** A slot minute spent after the first failure is lost, so the steps that run in a slot stop at it:
+`scripts/unit-test.ts` starts no further process and kills the running ones, and keeps the files of the failed process in
+`node_modules/.cache/unit-test-failed.json`; the next run puts the processes holding them first (`scripts/unit-order.ts`), so a
+fix is proven in one process before the rest runs, and a green run deletes the file. The layout, layout-fast and
+quality-matrix steps pass `--bail` when `factory` is installed (the Makefile's `bail`), so they end at the first failing
+test. A failed run therefore shows the first failure, not all of them: fix it and run again. CI runs its own steps, never
+passes `--bail` and reports every failure. A passing run runs the same files either way.
+
 The step may run off the mini (`project.yaml` `steps.unit`): the factory's step host builds `tools/step-image/Dockerfile`
 (Ubuntu 24.04, bun, the `.nvmrc` Node, Chrome) and runs `make test` in it with the build output carried in. There the
 host grants cores and memory (`FACTORY_STEP_CORES`, `FACTORY_STEP_MEM_MIB`) and `scripts/unit-test.ts` runs up to
