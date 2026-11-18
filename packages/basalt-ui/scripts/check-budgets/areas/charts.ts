@@ -40,7 +40,9 @@ export const rows: readonly RowDef[] = [
     // 120524 B measured. Informative target 46.5 KB, and + 4 KB per further kind: not pins.
     // 121500 -> 121800 (Issue 2039): 121562 B measured, +~60 B gz over the cap for the edge slide, the rule
     // caption's step and leader and the clamped value label, the kit fixes of expression cycle 9.
-    ceiling: 121800,
+    // 121800 -> 122300 (Issue 2281): 122159 B measured, +~360 B gz for the hover's axis-pinned x and y
+    // labels, the card legend that toggles and isolates, and the list reveal that never scrolls the page.
+    ceiling: 122300,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -56,6 +58,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 121800,
+      to: 122300,
+      consumer:
+        "owner review 1 (Issue 2281): /cards' sparkline read only y, c12's card legend could not toggle a model, and n04's plot jumped under the pointer; every cartesian hover now pins x and y on the axes and a ChartCard legend toggles and isolates",
+      repo: 'basalt-ui',
+    },
     {
       from: 121500,
       to: 121800,
