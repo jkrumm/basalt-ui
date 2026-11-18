@@ -7,7 +7,8 @@
  *
  * Probes, each in a `data-testid` box: `cc-ready`, `cc-loading`, `cc-stale`, `cc-error`, `cc-empty`
  * (same props, one phase each), `cc-slot-small` and `cc-slot-tall` (a plain div at 40 and 2x the
- * box), `cc-fill` (a 420 px parent), `cc-failed`, `cc-tip` (30 points, a legend, hover target).
+ * box), `cc-fill` (a 420 px parent), `cc-failed`, `cc-tip` (30 points, a legend, hover target),
+ * `cc-legend` (the card's own legend driving a chart whose series name no entry).
  */
 import { createRoot } from 'react-dom/client'
 import { ChartCard } from '../../../src/charts/parts/chart-card'
@@ -132,6 +133,24 @@ function Fixture() {
               x={x}
               series={[lineA, lineB]}
               naming="legend"
+              height={box.height}
+            />
+          )}
+        />
+      </div>
+      <div data-testid="cc-legend" className={BOX}>
+        <ChartCard
+          title="Card legend"
+          legend={[lineA, lineB].map(({ key, label, color }) => ({ key, label, color }))}
+          chart={(box) => (
+            <Lines
+              ariaLabel="Requests and errors, named by the card"
+              data={rows}
+              x={x}
+              series={[
+                { ...lineA, legend: false },
+                { ...lineB, legend: false },
+              ]}
               height={box.height}
             />
           )}
