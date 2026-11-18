@@ -117,7 +117,8 @@ partition(
   true,
 )
 
-const MEMORY = 'node_modules/.cache/unit-test-failed.json'
+// a --changed run has its own memory: its green run must not clear what a whole-suite run remembers
+const MEMORY = `node_modules/.cache/unit-test-failed${mergeBase ? '-changed' : ''}.json`
 const groups = failedFirst(
   ordered,
   parseFailedFiles(existsSync(MEMORY) ? readFileSync(MEMORY, 'utf8') : ''),

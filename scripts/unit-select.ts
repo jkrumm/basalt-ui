@@ -11,7 +11,8 @@
  *   - the always-on set, for what an import graph cannot see: a test that READS files (docs, templates, the whole
  *     package parsed with ts-morph) or spawns a tool imports none of them. Every test outside 'apps/' and outside a
  *     'packages/basalt-ui/src/<folder>/' (the root 'tests/', 'scripts/', 'packages/basalt-ui/scripts' and
- *     'packages/basalt-ui/tests', 'tools/', the files directly in 'src/') is always on, and so is any test whose
+ *     'packages/basalt-ui/tests', 'tools/', the files directly in 'src/') is always on, so is every test of 'apps/' once the
+ *     package changed (they import it by name, which resolves to dist, never to the changed src), and so is any test whose
  *     text names a changed file by its file name ('styles.css', 'dim-floor.tsx') or the folder it sits in.
  *
  * The always-on set leaves out ONE kind of test: the slow ones (SLOW below, 8 s to 90 s each, ~240 s of the ~330 s the set
@@ -30,7 +31,8 @@
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
-const SRC = 'packages/basalt-ui/src/'
+const PACKAGE = 'packages/basalt-ui/'
+const SRC = PACKAGE + 'src/'
 
 /** A change to any of these reaches every test: the whole suite runs. */
 const EVERYTHING: readonly RegExp[] = [
@@ -113,6 +115,15 @@ export function selectUnit({ changed, tests, read }: SelectInput): UnitSelection
         why.set(test, 'names ' + file)
         break
       }
+    }
+  }
+  // 'apps/' tests import the package by name ('basalt-ui/charts'), which resolves to the gitignored dist, not to the src
+  // files a branch changed: the graph never reaches them, so a package change runs them all (13 small files)
+  const packageChanged = changed.some((file) => file.startsWith(PACKAGE) && !isTest(file))
+  if (packageChanged) {
+    for (const test of tests) {
+      if (test.startsWith('apps/') && !why.has(test))
+        why.set(test, 'imports the package through dist')
     }
   }
   const files = [...why.keys()].toSorted()

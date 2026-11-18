@@ -60,7 +60,7 @@ for tests that take under 3 s on the mini. `FACTORY_SLOT_HOST=vps make test` pin
 (the same processes and the same bunfig). `scripts/unit-select.ts` picks the files in two parts: every file outside the
 `always-on` set runs through `bun test --changed=<merge base>` (bun's own module graph: the tests that import, through any
 chain, a changed file), and the always-on set runs whole. That set is the tests an import graph cannot see because they
-read files or spawn tools: every test outside `apps/` and the `packages/basalt-ui/src/<folder>/` folders (the root `tests/`,
+read files or spawn tools: every test outside `apps/` and the `packages/basalt-ui/src/<folder>/` folders (`apps/` runs whole once a file of the package changed: it imports the package by name, which resolves to `dist`, never to the changed `src`) (the root `tests/`,
 `scripts/`, `packages/basalt-ui/{scripts,tests}`, `tools/`, the files directly in `src/`), minus the `SLOW` list (8 to 90 s
 each, covered by a script gate of `check-fast` or reached by the graph), plus any test whose text names a changed file by
 its file name or its last two folders (`fixtures/hook`, `src/cli`), `SLOW` ones included: they read fixtures and spawn bins, which are not imports. A change to a `package.json`, `bun.lock`, `bunfig.toml`, a `tsconfig`, `tests/setup/` or the unit scripts
