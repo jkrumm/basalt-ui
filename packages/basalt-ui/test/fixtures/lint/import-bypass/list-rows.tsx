@@ -76,4 +76,10 @@ const a = (
   </div>
 )
 // @valid
+const a = groups.map((g) => (
+  <ul key={g.id} className="border-t pt-2">
+    {g.name}
+  </ul>
+))
+// @valid
 const a = <div className="border-b">{rows.length}</div>
