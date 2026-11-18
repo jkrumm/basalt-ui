@@ -25,6 +25,13 @@ describe('generateCss', () => {
     }
   })
 
+  test('a border with no colour utility is the hairline, in the basalt layer, ahead of every utility', () => {
+    const css = generated['tailwind.css']
+    const layer = css.slice(css.indexOf('@layer basalt {'))
+    expect(layer).toContain('::file-selector-button {\n    border-color: var(--basalt-hairline);')
+    expect(css).not.toMatch(/outline-color|--tw-ring-color/)
+  })
+
   test('is deterministic', () => {
     expect(generateCss()).toEqual(generated)
   })
