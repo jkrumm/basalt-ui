@@ -591,6 +591,43 @@ describe('focus state', () => {
   test('an anchor with a focus target is still captured', async () => {
     expect(focus(await run(true)).every((s) => s.status === 'ok')).toBe(true)
   })
+  test('the Tab budget follows the page: an anchor behind a long nav is reached past 80 presses', async () => {
+    const NAV = 200
+    let presses = 0
+    const anchor = visibleAnchor({
+      count: () => Promise.resolve(1),
+      evaluate: () => Promise.resolve(true),
+    })
+    const page = pageOf({
+      locator: byTooltip(anchor),
+      evaluate: evaluating(
+        () => facts({ anchors: ['card'] }),
+        () => NO_SCALE,
+        (e) => {
+          if (String(e).includes('querySelectorAll')) return NAV
+          if (String(e).includes('activeElement') && String(e).includes('matches'))
+            return presses > NAV
+          return undefined
+        },
+      ),
+    })
+    const out = await capture(
+      input(
+        scriptedBrowser({
+          ...page,
+          keyboard: {
+            press: () => {
+              presses += 1
+              return Promise.resolve()
+            },
+          },
+        }),
+        { states: ['focus'], measure: () => Promise.resolve(measurement) },
+      ),
+    )
+    expect(focus(out).every((s) => s.status === 'ok')).toBe(true)
+    expect(presses).toBeGreaterThan(80)
+  })
   test('a locator failure records error for that anchor and never aborts the run', async () => {
     const shots = focus(await run(true, true))
     expect(shots).toHaveLength(4)

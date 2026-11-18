@@ -494,7 +494,12 @@ async function pointerCrop(c: Ctx, name: string, state: ShotState, path: string)
   else await snap(anchor, path)
 }
 
-/** Tab from the document top until `:focus-visible` lands inside the anchor, then crop it with any tooltip it opened. */
+/** The Tab presses a walk allows beyond one per focusable element: tab order is not document order (positive tabindex, radio groups). */
+const TAB_SLACK = 8
+/** The floor of the Tab budget, for a page whose focusables cannot be counted. */
+const TAB_FLOOR = 80
+
+/** Tab from the document top until `:focus-visible` lands inside the anchor, then crop it with any tooltip it opened. The budget is one press per focusable on the page, so a long shell nav ahead of the anchor never exhausts it. */
 async function focusCrop(c: Ctx, name: string, path: string): Promise<void> {
   const anchor = anchorOf(c, name)
   const reachable =
@@ -505,9 +510,14 @@ async function focusCrop(c: Ctx, name: string, path: string): Promise<void> {
     )
   if (!(await anchor.evaluate(target))) throw new NotDeclared('no focus target in the anchor')
   await c.page.evaluate('document.activeElement?.blur(); window.scrollTo(0, 0)')
+  const focusables = await c.page.evaluate<number>(
+    `document.querySelectorAll(${JSON.stringify(reachable)}).length`,
+  )
+  const budget = Math.max(TAB_FLOOR, (typeof focusables === 'number' ? focusables : 0) + TAB_SLACK)
   const landed = `(() => { const a = document.activeElement; return a != null && a.matches(':focus-visible') && a.closest(${JSON.stringify(sel(name))}) != null })()`
   for (let i = 0; !(await c.page.evaluate<boolean>(landed)); i++) {
-    if (i === 80) throw new Error(':focus-visible never reached the anchor in 80 Tab presses')
+    if (i === budget)
+      throw new Error(`:focus-visible never reached the anchor in ${budget} Tab presses`)
     await c.page.keyboard.press('Tab')
   }
   // Focus scrolls the nearest scrollport on its own terms: put the anchor back where the clip is taken.
