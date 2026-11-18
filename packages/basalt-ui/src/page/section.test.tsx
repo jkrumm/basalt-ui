@@ -71,6 +71,11 @@ describe('Section', () => {
     const home = section().querySelector('header [data-slot="section-tabs"]')
     expect(home?.querySelector('[data-slot="tabs"]')).not.toBeNull()
     expect(screen.getByRole('tablist', { name: 'Latency view' })).toBeDefined()
+    // Under the regular tier the home is a block line, so the strip fills it and each tab takes an equal share.
+    expect(home?.className).toContain('max-@regular:block')
+    expect(home?.className).toContain('max-@regular:basis-full')
+    expect(home?.querySelector('[data-slot="tabs"]')?.getAttribute('data-variant')).toBe('segment')
+    expect(screen.getByRole('tab', { name: 'Alpha' }).className).toContain('max-@regular:flex-1')
   })
 
   test('a tabs slot renders as is; an empty one draws no tabs home', () => {
