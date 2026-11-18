@@ -25,6 +25,14 @@ export const DEMO_SERIES = defineSeries({
   churn: { light: '#af293e', dark: '#e46360' },
 })
 
+/** A calendar week (route /kit/interval-track): meetings take the hue, focus and personal time ink steps, a declined event a hollow grey. */
+export const CALENDAR_SERIES = defineSeries({
+  meeting: { light: '#2871c7', dark: '#5190f7' },
+  focus: { light: '#4a4a4a', dark: '#c4c4c4' },
+  personal: { light: '#9a9a9a', dark: '#7d7d7d' },
+  declined: { light: '#9a9a9a', dark: '#7d7d7d' },
+})
+
 /** Factory health (scenario expr-n27): one ink step for every measure's weekly line; the delta pill carries the only hue. */
 export const HEALTH_SERIES = defineSeries({
   weekly: { light: '#4a4a4a', dark: '#c4c4c4' },
