@@ -25,11 +25,11 @@ function Subject({ activation }: { activation: 'custom' | 'row' | 'auto' }): Rea
     label: 'Rooms',
     columns: [c.entity('room'), c.text('floor', { card: 'detail' })],
     data: ROOMS,
-    getRowId: (r) => r.id,
+    getRowId: (r: Room) => r.id,
     mode: { kind: 'client' },
     ...(activation === 'custom' && { detail: (row: Room) => <p>{row.room}</p> }),
     ...(activation === 'row' && { onRowActivate: () => undefined }),
-  } as UseDataTable<Room>)
+  } as unknown as UseDataTable<Room>)
   return <DataTable table={t} />
 }
 
