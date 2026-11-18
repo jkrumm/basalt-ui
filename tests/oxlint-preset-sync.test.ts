@@ -7,10 +7,12 @@ import {
   COMPILER_RULES,
   PKG_ROOT,
   PLAYGROUND_COMPILER_RULE_EXEMPTIONS,
+  PLAYGROUND_FORM_WAIVERS,
   REPO_COMPILER_RULE_EXEMPTIONS,
   projectBanList,
   projectPlaygroundOverrides,
 } from '../packages/basalt-ui/scripts/gen-oxlint'
+import { PRIMITIVE_BYPASS } from '../packages/basalt-ui/src/lint/rules/structure/primitive-bypass'
 
 const root = join(import.meta.dir, '..')
 const OXLINT_BIN = join(root, 'node_modules', '.bin', 'oxlint')
@@ -183,4 +185,20 @@ describe('React-compiler rules stay on', () => {
       expect(new Set(keys).size).toBe(keys.length)
     },
   )
+
+  it('playground form waivers: a reason, a form of the rule, a directory that still exists', () => {
+    const formsOf: Record<string, readonly string[]> = {
+      'basalt/primitive-bypass': PRIMITIVE_BYPASS.forms.map((form) => form.id),
+    }
+    expect(PLAYGROUND_FORM_WAIVERS.length).toBeGreaterThan(0)
+    for (const { rule, forms, reason, files } of PLAYGROUND_FORM_WAIVERS) {
+      expect(reason.trim().length).toBeGreaterThan(0)
+      expect(forms.length).toBeGreaterThan(0)
+      for (const form of forms) expect(formsOf[rule] ?? []).toContain(form)
+      for (const glob of files) {
+        expect(glob.endsWith('/**')).toBe(true)
+        expect(existsSync(join(root, 'apps/playground', glob.slice(0, -3)))).toBe(true)
+      }
+    }
+  })
 })
