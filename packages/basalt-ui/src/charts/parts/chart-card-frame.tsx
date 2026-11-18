@@ -145,11 +145,12 @@ export function Footer({
   phase = 'other',
 }: {
   facts: FootFacts | undefined
-  phase?: 'loading' | 'error' | 'other'
+  phase?: 'loading' | 'error' | 'empty' | 'other'
 }): ReactElement | null {
   const shown: Fact[] = []
   for (const fact of facts ?? []) if (fact) shown.push(fact)
   if (shown.length === 0) return null
+  const dashed = phase === 'error' || phase === 'empty'
   return (
     <dl
       data-slot="chart-footer"
@@ -164,12 +165,12 @@ export function Footer({
             className={cn(
               'm-0 text-md font-semibold tabular-nums',
               fact.mono === true && 'font-mono',
-              phase === 'error' ? 'text-muted-foreground' : 'text-foreground',
+              dashed ? 'text-muted-foreground' : 'text-foreground',
             )}
           >
             {phase === 'loading' ? (
               <span aria-hidden="true" className={cn(BAR, 'block h-3 w-10')} />
-            ) : phase === 'error' ? (
+            ) : dashed ? (
               '–'
             ) : typeof fact.value === 'number' ? (
               NUMBER.format(fact.value)

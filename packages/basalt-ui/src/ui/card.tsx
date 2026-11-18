@@ -271,7 +271,7 @@ function ErrorArm({
         className={cn('text-sm text-foreground', arms === 'line' && 'm-0 min-w-0 truncate')}
         title={arms === 'line' ? detail : undefined}
       >
-        {text}
+        {arms === 'line' && detail?.trim() ? detail : text}
       </p>
       {detail !== undefined && arms === 'stack' && (
         <p className="text-xs text-muted-foreground">{detail}</p>

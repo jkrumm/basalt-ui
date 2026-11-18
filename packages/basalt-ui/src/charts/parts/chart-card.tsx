@@ -370,8 +370,8 @@ export function ChartCard(props: ChartCardProps): ReactElement {
               phase={
                 effective.tag === 'loading'
                   ? 'loading'
-                  : effective.tag === 'error'
-                    ? 'error'
+                  : effective.tag === 'error' || effective.tag === 'empty'
+                    ? effective.tag
                     : 'other'
               }
             />
