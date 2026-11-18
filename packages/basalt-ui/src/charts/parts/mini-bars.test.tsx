@@ -76,7 +76,7 @@ describe('MiniBars', () => {
     expect(lit(view.container)).toEqual([2])
     fireEvent.keyDown(host, { key: 'Home' })
     expect(lit(view.container)).toEqual([0])
-    expect(view.container.querySelector('[data-slot="spark-live"]')?.textContent).toBe('1')
+    expect(view.container.querySelector('[data-slot="spark-live"]')?.textContent).toBe('#1: 1')
     fireEvent.keyDown(host, { key: 'End' })
     expect(lit(view.container)).toEqual([2])
   })

@@ -21,7 +21,8 @@ export const BAR_CAP = 120
 /** The glyph `offScaleMarks` draws past a bounded axis; a capped spark point takes the same. */
 export const OFF_SCALE_CARET = '▲'
 
-export type Row = { v: number | null; at: Date | null; label: string | null }
+/** A point: its value, date and name, and `n`, its 1-based place in the series the page gave. */
+export type Row = { v: number | null; at: Date | null; label: string | null; n: number }
 
 const finite = (v: number | null): v is number => v !== null && Number.isFinite(v)
 
@@ -32,19 +33,25 @@ const toDate = (at: Date | number): Date | null => {
 
 /** A non-finite value is a gap (`null`), never a zero. */
 export function toRows(series: readonly SparkPoint[]): Row[] {
-  return series.map((p) => {
+  return series.map((p, i) => {
     if (typeof p === 'object' && p !== null) {
       return {
         v: finite(p.value) ? p.value : null,
         at: p.at === undefined ? null : toDate(p.at),
         label: p.label === undefined || p.label === '' ? null : p.label,
+        n: i + 1,
       }
     }
-    return { v: finite(p) ? p : null, at: null, label: null }
+    return { v: finite(p) ? p : null, at: null, label: null, n: i + 1 }
   })
 }
 
-const GAP = (at: Date | null): Row => ({ v: null, at, label: null })
+const GAP = (from: Row | undefined): Row => ({
+  v: null,
+  at: from?.at ?? null,
+  label: null,
+  n: from?.n ?? 0,
+})
 
 /** The rows of a run of finite values that hold its peak and its dip, in order. */
 function peaks(run: readonly Row[]): Row[] {
@@ -78,7 +85,7 @@ export function pool(rows: readonly Row[], cap: number, kind: 'line' | 'bar'): r
       let best: Row | undefined
       for (const r of slice)
         if (finite(r.v) && (!best || Math.abs(r.v) > Math.abs(best.v!))) best = r
-      push(best ?? GAP(slice[0]?.at ?? null))
+      push(best ?? GAP(slice[0]))
       continue
     }
     let run: Row[] = []
@@ -89,7 +96,7 @@ export function pool(rows: readonly Row[], cap: number, kind: 'line' | 'bar'): r
       }
       for (const p of peaks(run)) push(p)
       run = []
-      push(GAP(r.at))
+      push(GAP(r))
     }
     for (const p of peaks(run)) push(p)
   }
@@ -111,14 +118,18 @@ export const meanOf = (rows: readonly Row[]): number | undefined => {
 export const compactNumber = (f: Format) => (v: number) =>
   f.number(v, { notation: 'compact', maximumFractionDigits: 1 })
 
-/** A point's name: its `label`, else its day, else `null`. */
+/**
+ * A point's x: its `label`, else its day, else its place (`#8`), so a series of bare numbers still
+ * reads an x beside its y.
+ */
 export function pointName(row: Row | undefined, f: Format): string | null {
   if (row === undefined) return null
   if (row.label !== null) return row.label
-  return row.at === null ? null : f.date(row.at, 'short', { year: undefined })
+  if (row.at !== null) return f.date(row.at, 'short', { year: undefined })
+  return row.n > 0 ? `#${f.number(row.n)}` : null
 }
 
-/** `42 · W41` for a named point, `42 · 12 Oct` for a dated one, `42` for a plain one, an em dash for a gap. */
+/** `42 · W41` for a named point, `42 · 12 Oct` for a dated one, `42 · #8` for a plain one, an em dash for a gap. */
 export function readoutOf(row: Row | undefined, format: (v: number) => string, f: Format): string {
   if (row === undefined || !finite(row.v)) return NON_FINITE
   const name = pointName(row, f)
@@ -126,8 +137,8 @@ export function readoutOf(row: Row | undefined, format: (v: number) => string, f
 }
 
 /**
- * The polite announcement of a step: `W41: 42` (the name first, as a sentence reads), `42` for a
- * plain point, `W41: no data` for a gap.
+ * The polite announcement of a step: `W41: 42` (the name first, as a sentence reads), `#8: 42` for
+ * a plain point, `W41: no data` for a gap.
  */
 export function announceOf(row: Row | undefined, format: (v: number) => string, f: Format): string {
   const name = pointName(row, f)

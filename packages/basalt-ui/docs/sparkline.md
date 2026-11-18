@@ -4,7 +4,7 @@ use when: 'a card, a table row or a strip shows the trend of one metric in a sma
 never when: 'the reader needs axes, a legend or several series (use a line chart)'
 subpath: basalt-ui/charts
 peers: ['@tanstack/charts', d3-scale]
-slots: [spark-band, spark-caret, spark-guide, spark-line, spark-now, spark-reference]
+slots: [spark-band, spark-caret, spark-guide, spark-guide-y, spark-line, spark-now, spark-reference]
 ---
 
 # Sparkline
@@ -12,8 +12,9 @@ slots: [spark-band, spark-caret, spark-guide, spark-line, spark-now, spark-refer
 A quiet inline trend: a neutral line, or an area that fades to nothing, with the now dot on the
 last point. Hand SVG, no engine and no tooltip. Without `axisLabels` it is an image with a name and
 no tab stop; with them it is a chart host: the arrow keys, Home and End (or a pointer) move a readout
-naming the point (its `label`, else its day) into the label row's middle slot, a polite live region
-reads each step, and the line dims round the point. `cap` holds an outlier on the top edge under an
+of the point's x and y (`18 · W41`: its `label`, else its day, else its place, `#8`) into the label
+row's middle slot, a polite live region reads each step, the line dims round the point and a guide
+crosses it to both edges. `cap` holds an outlier on the top edge under an
 off-scale caret. No `tone`, no `color`: the dot reads `--spark-now`, which the frame sets from its
 delta or status and is neutral outside a frame.
 
