@@ -9,6 +9,7 @@
 import { createElement, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useFormat } from '../core/format'
+import { useIntl } from '../core/provider-props'
 import type { Format } from '../core/format'
 import { useMessages } from '../core/messages/use-messages'
 import { table } from '../core/messages/table'
@@ -24,6 +25,7 @@ import type {
   KindColumn,
   PageFilter,
   TableEscape,
+  TableRequest,
   Totals,
   UseDataTable,
   ViewStore,
@@ -33,6 +35,7 @@ import { bodyItems, toggled } from './parts/group-row-model'
 import type { BodyItem } from './parts/group-row-model'
 import { tableEngine } from './core/features'
 import { constructFilterFn, toColumnFilters } from './core/filters'
+import type { RangeDomain } from './core/filters'
 import { useRowKeyboard } from './core/keyboard'
 import type { RowKeyboard } from './core/keyboard'
 import { engineColumn } from './core/kinds-engine'
@@ -124,6 +127,20 @@ export type TableModel<T> = {
   now: number
   sortOf(id: string): SortDirection
   toggleSort(id: string): void
+  /** What a `range` filter on this column compares (days in the table's zone, or numbers). */
+  domainOf(id: string): RangeDomain
+  /**
+   * How many rows hold each value of a column, given the search and every other filter: the
+   * engine's facets on a client table, `mode.facets` on a server one, `undefined` when unknown.
+   */
+  facetsOf(id: string): ReadonlyMap<string, number> | undefined
+  /** A ranked column's categories in the order the user gave them, else as declared. */
+  rankOf(id: string): readonly string[]
+  /**
+   * Ranks a column's categories and sorts by them, ascending. The declared order drops the rank,
+   * so the URL and a saved view carry one only while it differs.
+   */
+  setRank(id: string, order: readonly string[]): void
 }
 
 type Built<T> = DataTableInstance<T> & { readonly [MODEL]: TableModel<T> }
@@ -172,10 +189,59 @@ function usePageFilters<T>(filters: readonly PageFilter<T, any>[] = []) {
   }
 }
 
-function filterFnOf(spec: KindSpec<never>) {
+/** What a column's `range` compares: calendar days in the table's zone on a date kind, else numbers. */
+function domainOf(spec: Pick<KindSpec<never>, 'kind'>, zone: string | undefined): RangeDomain {
+  return spec.kind === 'date' || spec.kind === 'relativeTime'
+    ? { kind: 'day', zone }
+    : { kind: 'number' }
+}
+
+function filterFnOf(spec: KindSpec<never>, zone: string | undefined) {
   return spec.filter === null
     ? {}
-    : { filterFn: constructFilterFn(spec.filter === 'anyOf' ? 'anyOf' : 'contains') }
+    : { filterFn: constructFilterFn(spec.filter, domainOf(spec, zone)) }
+}
+
+/**
+ * A ranked column's categories in order: the user's rank first (values the column still declares),
+ * then the declared options it does not name, in their declared order.
+ */
+export function rankedOptions(
+  options: readonly string[],
+  rank: readonly string[] | undefined,
+): readonly string[] {
+  if (rank === undefined || rank.length === 0) return options
+  const declared = new Set(options)
+  const named = rank.filter((value) => declared.has(value))
+  const seen = new Set(named)
+  return [...named, ...options.filter((value) => !seen.has(value))]
+}
+
+const rankSorts = new Map<string, (a: Row, b: Row, id: string) => number>()
+type Row = { getValue(id: string): unknown }
+type TableRequestRanks = TableRequest['ranks']
+
+/** The engine sort of a column the user ranked; one function per order, so its identity holds. */
+function rankSortOf(spec: KindSpec<never>, ranks: TableRequestRanks) {
+  const rank = ranks?.[spec.id]
+  if (spec.sort === null || spec.options === undefined || rank === undefined || rank.length === 0) {
+    return {}
+  }
+  const order = rankedOptions(spec.options, rank)
+  const key = JSON.stringify(order)
+  let sortFn = rankSorts.get(key)
+  if (sortFn === undefined) {
+    const at = new Map(order.map((value, index) => [value, index]))
+    const place = (value: unknown): number => at.get(String(value)) ?? order.length
+    sortFn = (a, b, id) => place(a.getValue(id)) - place(b.getValue(id))
+    rankSorts.set(key, sortFn)
+  }
+  return { sortFn }
+}
+
+/** The zone a date range compares days in: the provider's, `'host'` the runtime's, else UTC. */
+function zoneOf(timeZone: string | undefined): string | undefined {
+  return timeZone === 'host' ? undefined : (timeZone ?? 'UTC')
 }
 
 /**
@@ -230,6 +296,7 @@ export function useDataTable<
   const { mode, getRowId, columns } = options
   const t = useMessages(table)
   const format = useFormat()
+  const zone = zoneOf(useIntl().timeZone)
   const server = mode.kind === 'server'
   const pager = options.pager ?? (!server ? 'none' : 'cursor' in mode ? 'more' : 'pages')
   const paged = pager !== 'none' && !(server && 'cursor' in mode)
@@ -286,7 +353,8 @@ export function useDataTable<
   const engine = tableEngine.useAppTable({
     columns: specs.map((spec) => ({
       ...engineColumn(spec as KindSpec<unknown>),
-      ...filterFnOf(spec as KindSpec<never>),
+      ...filterFnOf(spec as KindSpec<never>, zone),
+      ...rankSortOf(spec as KindSpec<never>, request.ranks),
     })) as never,
     data,
     getRowId,
@@ -557,6 +625,41 @@ export function useDataTable<
       state.setRequest({
         sort:
           current === undefined ? [{ id, desc: false }] : current.desc ? [] : [{ id, desc: true }],
+      })
+    },
+    domainOf(id) {
+      return domainOf(specs.find((s) => s.id === id) ?? { kind: 'number' }, zone)
+    },
+    facetsOf(id) {
+      if (server) {
+        const listed = 'facets' in mode ? mode.facets?.[id] : undefined
+        return listed === undefined ? undefined : new Map(listed.map((f) => [f.value, f.count]))
+      }
+      const column = (
+        engine as unknown as {
+          getColumn(id: string): { getFacetedUniqueValues(): Map<unknown, number> } | undefined
+        }
+      ).getColumn(id)
+      if (column === undefined) return undefined
+      const counts = new Map<string, number>()
+      for (const [value, count] of column.getFacetedUniqueValues()) {
+        if (value === undefined || value === null) continue
+        const key = String(value)
+        counts.set(key, (counts.get(key) ?? 0) + count)
+      }
+      return counts
+    },
+    rankOf(id) {
+      const spec = specs.find((s) => s.id === id)
+      return rankedOptions(spec?.options ?? [], request.ranks?.[id])
+    },
+    setRank(id, order) {
+      const declared = specs.find((s) => s.id === id)?.options ?? []
+      const { [id]: _previous, ...others } = request.ranks ?? {}
+      const same = order.length === declared.length && order.every((v, i) => v === declared[i])
+      state.setRequest({
+        ranks: same ? others : { ...others, [id]: [...order] },
+        sort: [{ id, desc: false }],
       })
     },
   }

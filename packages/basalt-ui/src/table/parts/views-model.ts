@@ -82,6 +82,11 @@ export function pruneView(
       if (!ok) dropped.push(id(entry))
       return ok
     })
+  const ranks: Record<string, readonly string[]> = {}
+  for (const [id, order] of Object.entries(request.ranks ?? {})) {
+    if (known.has(id)) ranks[id] = order
+    else dropped.push(id)
+  }
   const visibility: Record<string, boolean> = {}
   for (const [id, shown] of Object.entries(display.visibility)) {
     if (known.has(id)) visibility[id] = shown
@@ -97,6 +102,7 @@ export function pruneView(
           ...request,
           filters: keep(request.filters, (f) => f.id),
           sort: keep(request.sort, (s) => s.id),
+          ...(request.ranks !== undefined && { ranks }),
         },
         display: { ...display, visibility },
       },

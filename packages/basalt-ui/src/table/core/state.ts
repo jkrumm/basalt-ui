@@ -41,6 +41,13 @@ export function createState(defaults?: Partial<TableRequest>): TableState {
   }
 }
 
+/** The ranks of a request as sorted entries, empty lists dropped: the same order map has one key. */
+function rankEntries(ranks: TableRequest['ranks']): [string, readonly string[]][] {
+  return Object.entries(ranks ?? {})
+    .filter(([, order]) => order.length > 0)
+    .toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+}
+
 /** The part of a request that decides WHICH rows match: everything but the page. */
 function scopeKey(r: TableRequest): string {
   return JSON.stringify([
@@ -48,6 +55,7 @@ function scopeKey(r: TableRequest): string {
     r.filters.map((f) => [f.id, f.op, [...f.values]]),
     r.sort.map((s) => [s.id, s.desc]),
     r.pageSize,
+    rankEntries(r.ranks),
   ])
 }
 

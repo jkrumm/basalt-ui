@@ -21,7 +21,7 @@ col<T>(): Col<T>
     number(key: KeysOf<T, number>, o?: NumberOptions): KindColumn<T>
     money(key: KeysOf<T, number>, o: MoneyOptions): KindColumn<T>
     date(key: KeysOf<T, string | number | Date>, o?: DateOptions): KindColumn<T>
-    relativeTime(key: KeysOf<T, string | number | Date>, o?: CommonOptions): KindColumn<T>
+    relativeTime(key: KeysOf<T, string | number | Date>, o?: RelativeTimeOptions): KindColumn<T>
     status<const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O>): KindColumn<T>
     delta(key: KeysOf<T, number>, o: DeltaOptions): KindColumn<T>
     meter(key: KeysOf<T, number>, o?: MeterOptions): KindColumn<T>
@@ -62,6 +62,8 @@ col<T>(): Col<T>
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
     footer?: Aggregate
+    filter?: "range"
+    bounds?: readonly [number, number]
     unit?: string
     digits?: number
 
@@ -72,22 +74,30 @@ col<T>(): Col<T>
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
     footer?: Aggregate
+    filter?: "range"
+    bounds?: readonly [number, number]
     currency: string
 
   DateOptions:
+    // either filter + picker or neither
     header?: string  // Header text
     id?: string  // Column id when it differs from the key (two columns over one field)
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
+    filter?: "range"
+    picker?: DateRangeLike
     style?: DateStyle
 
-  CommonOptions:
+  RelativeTimeOptions:
+    // either filter + picker or neither
     header?: string  // Header text
     id?: string  // Column id when it differs from the key (two columns over one field)
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
+    filter?: "range"
+    picker?: DateRangeLike
 
   StatusOptions<O>:
     header?: string  // Header text
@@ -98,7 +108,7 @@ col<T>(): Col<T>
     options: readonly O[]
     labels?: Readonly<Record<O, string>>  // The text of each option in the cell, the phone card and the column filter; the stored value without it
     tone?: (value: O) => Tone  // Receives the closed option union `options` declares, so a `Record<Option, Tone>` indexes without a cast
-    filter?: "multi"
+    filter?: "multi"  // `'multi'` filters by a checklist of the options; the user can also rank them from the header
 
   DeltaOptions:
     header?: string  // Header text
@@ -106,6 +116,8 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
+    filter?: "range"
+    bounds?: readonly [number, number]
     polarity: "neutral" | "up-good" | "up-bad"
     unit?: string
     currency?: string  // A money change: `+€50.00` in the currency's own digits, like `c.money`; wins over `unit`
@@ -117,6 +129,7 @@ col<T>(): Col<T>
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
     max?: number
+    filter?: "range"
 
   BooleanOptions:
     header?: string  // Header text
@@ -125,6 +138,7 @@ col<T>(): Col<T>
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
     labels?: readonly [string, string]
+    filter?: "multi"
 
   SparkOptions<T>:
     header?: string  // Header text
@@ -142,6 +156,7 @@ col<T>(): Col<T>
     label: (row: T) => string
     options: readonly string[]
     commit: (row: T, value: string) => unknown
+    filter?: "multi"
 
   CustomOptions<T>:
     header?: string
