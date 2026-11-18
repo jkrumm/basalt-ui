@@ -123,7 +123,7 @@ jobs:
       # lockfile, which pins playwright-core and so the browser revision; `make browser-shell` is the one install
       # step (a no-op on a hit) and fails here, readably, rather than as an opaque launch error 40 lines down.
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-shell-${{ runner.os }}-${{ hashFiles('bun.lock') }}
