@@ -1,0 +1,138 @@
+/**
+ * The page top (owner review 1, docs/v3/issues/owner-1/v3-owner-1-page-top.json), measured on the
+ * built playground in a real browser at 1800 and 390:
+ *
+ * - under `AppShell` a page with tabs or controls shows one rule between chrome and content: the
+ *   header's rule gives way over main and the band's closes the bar;
+ * - content starts one page gutter under the chrome's last rule, with a band (Tickets, Fleet
+ *   overview) and without one (the title-only expression scenarios c12, n02, n27), so the distance
+ *   is the same token on every page.
+ *
+ * It serves `apps/playground/dist`, which `make check` and CI build before the layout suite.
+ */
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { existsSync } from 'node:fs'
+import { join, resolve, sep } from 'node:path'
+import { CLOSE_BUDGET_MS, PHONE, closeLayoutSuite, initLayoutSuite, openDocument } from './harness'
+import type { LayoutPage, Viewport } from './harness'
+
+const ready = await initLayoutSuite()
+const layout = ready ? describe : describe.skip
+afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
+
+const DIST = resolve(import.meta.dir, '../../../../apps/playground/dist')
+const DESKTOP_1800: Viewport = { name: 'wide desktop', width: 1800, height: 1200 }
+
+const BANDED = ['/cycle/state-2', '/cycle/shell-5'] as const
+const BANDLESS = ['/scenarios/expr-c12', '/scenarios/expr-n02', '/scenarios/expr-n27'] as const
+
+let server: ReturnType<typeof Bun.serve> | null = null
+
+beforeAll(() => {
+  if (!existsSync(join(DIST, 'index.html'))) {
+    throw new Error(
+      `page-top: no playground build at ${DIST}; run \`bun --filter @basalt-ui/playground build\``,
+    )
+  }
+  server = Bun.serve({
+    port: 0,
+    async fetch(request) {
+      const path = decodeURIComponent(new URL(request.url).pathname)
+      const target = resolve(DIST, `.${path}`)
+      if (target !== DIST && !target.startsWith(DIST + sep))
+        return new Response('', { status: 404 })
+      const asset = Bun.file(target)
+      if (path !== '/' && (await asset.exists())) return new Response(asset)
+      if (/\.[a-z0-9]+$/i.test(path)) return new Response('', { status: 404 })
+      return new Response(Bun.file(join(DIST, 'index.html')), {
+        headers: { 'content-type': 'text/html' },
+      })
+    },
+  })
+})
+
+afterAll(() => {
+  server?.stop(true)
+})
+
+type Top = {
+  /** The bottom edge of the chrome's last rule: the band's when there is one, else the header's. */
+  chromeBottom: number
+  firstContentTop: number
+  gutter: number
+  banded: boolean
+  /** The width of the header's rule, and the rail's width it shrinks to under a band. */
+  headerRule: number
+  railWidth: number
+  headerWidth: number
+  bandRule: number
+}
+
+async function measure(viewport: Viewport, route: string): Promise<Top> {
+  const page: LayoutPage = await openDocument('<!doctype html><html><body></body></html>', viewport)
+  await page.raw.goto(new URL(route, server!.url).href)
+  await page.raw.waitForSelector('[data-slot="page-main"] > :not([data-slot="page-bar"]):not(h1)')
+  await page.raw.evaluate(() => document.fonts.ready.then(() => undefined))
+  await page.settle()
+  return page.raw.evaluate(() => {
+    const header = document.querySelector<HTMLElement>('[data-slot="shell-header"]')
+    const main = document.querySelector<HTMLElement>('[data-slot="page-main"]')
+    if (header === null || main === null) throw new Error('LAYOUT: no shell header or page main')
+    const band = main.querySelector<HTMLElement>(':scope > [data-slot="page-bar"]')
+    const first = [...main.children].find(
+      (el) =>
+        el.getAttribute('data-slot') !== 'page-bar' &&
+        el.tagName !== 'H1' &&
+        el.getBoundingClientRect().height > 2,
+    )
+    if (first === undefined) throw new Error('LAYOUT: no content in the page')
+    const rule = getComputedStyle(header, '::after')
+    const shellMain = document.querySelector<HTMLElement>('[data-slot="shell-main"]')
+    return {
+      chromeBottom: (band ?? header).getBoundingClientRect().bottom,
+      firstContentTop: first.getBoundingClientRect().top,
+      gutter: parseFloat(getComputedStyle(main).paddingLeft),
+      banded: band !== null,
+      headerRule: parseFloat(rule.height) > 0 ? parseFloat(rule.width) : 0,
+      // Main starts where the rail ends: its left edge is the rail's width.
+      railWidth: shellMain === null ? 0 : shellMain.getBoundingClientRect().left,
+      headerWidth: header.getBoundingClientRect().width,
+      bandRule: band === null ? 0 : parseFloat(getComputedStyle(band).borderBottomWidth),
+    }
+  })
+}
+
+layout('the page top on the playground', () => {
+  for (const viewport of [DESKTOP_1800, PHONE]) {
+    describe(`${viewport.name} ${viewport.width}`, () => {
+      for (const route of BANDED) {
+        test(`${route}: one rule between chrome and content, content one gutter under it`, async () => {
+          const m = await measure(viewport, route)
+          expect(m.banded, 'the page has a band').toBe(true)
+          expect(m.bandRule, 'the band draws the one rule').toBe(1)
+          expect(m.headerRule, "the header's rule covers the rail only").toBeLessThanOrEqual(
+            m.railWidth + 0.5,
+          )
+          expect(m.firstContentTop - m.chromeBottom).toBeCloseTo(m.gutter, 0)
+        })
+      }
+      for (const route of BANDLESS) {
+        test(`${route}: the header's rule, content one gutter under it`, async () => {
+          const m = await measure(viewport, route)
+          expect(m.banded, 'a title-only PageBar draws no band').toBe(false)
+          expect(m.headerRule, "the header's rule spans the header").toBeCloseTo(m.headerWidth, 0)
+          expect(m.firstContentTop - m.chromeBottom).toBeCloseTo(m.gutter, 0)
+        })
+      }
+
+      test('the distance from the chrome to the first content is one value on all five pages', async () => {
+        const gaps: number[] = []
+        for (const route of [...BANDED, ...BANDLESS]) {
+          const m = await measure(viewport, route)
+          gaps.push(Math.round(m.firstContentTop - m.chromeBottom))
+        }
+        expect(new Set(gaps).size, `gaps ${gaps.join(', ')}`).toBe(1)
+      })
+    })
+  }
+})

@@ -322,13 +322,13 @@ export function PageBar<K extends string = string>({
   if (!owns) return null
 
   const visibleActions = !inShell && list.length > 0
-  const bandHasContent =
+  const hasControls =
     !isEmptySlot(controls) ||
     !isEmptyTabs(tabs) ||
     connection !== undefined ||
     refresh !== undefined ||
-    visibleActions ||
-    (!inShell && title !== undefined)
+    visibleActions
+  const bandHasContent = hasControls || (!inShell && title !== undefined)
 
   const heading: ReactNode =
     title === undefined ? null : (
@@ -345,6 +345,8 @@ export function PageBar<K extends string = string>({
 
   if (!bandHasContent) return <>{heading}</>
 
+  // A band of title and actions alone scrolls away with the page; a band that holds a control stays.
+  const sticky = hasControls
   const trail =
     inShell || parent === undefined ? null : (
       <>
@@ -367,7 +369,14 @@ export function PageBar<K extends string = string>({
       <div
         ref={attach}
         data-slot="page-bar"
-        className="sticky top-0 z-10 flex flex-wrap items-center gap-x-3 gap-y-2 -mx-(--page-gutter) border-b border-border bg-background px-[max(var(--page-gutter,0px),--spacing(1))] py-2"
+        data-sticky={sticky ? '' : undefined}
+        className={cn(
+          'flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-background py-2',
+          // Flush with the chrome above (the page's top gutter is pulled back) and full bleed; the
+          // gutter below the rule is kept, so content starts one gutter under it as on a bandless page.
+          '-mx-(--page-gutter) -mt-(--page-gutter) mb-[calc(var(--page-gutter,--spacing(4))_-_--spacing(4))] px-[max(var(--page-gutter,0px),--spacing(1))]',
+          sticky && 'sticky top-0 z-10',
+        )}
       >
         {!inShell && (trail !== null || heading !== null) && (
           <div className="flex min-w-0 items-baseline gap-2">

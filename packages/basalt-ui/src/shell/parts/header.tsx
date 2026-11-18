@@ -212,7 +212,11 @@ export function Header({
       data-tauri-drag-region={native ? 'deep' : undefined}
       className={cn(
         native && NATIVE_HEADER,
-        'flex min-w-0 items-center border-b border-border bg-background [grid-area:header]',
+        'relative flex min-w-0 items-center bg-background [grid-area:header]',
+        // The header's rule. Over main it gives way to a page's band, whose own rule closes the bar:
+        // header and band read as one surface with one rule under it; the rail keeps its rule.
+        "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border after:content-['']",
+        'group-data-page-band/shell:after:end-auto group-data-page-band/shell:after:w-(--shell-rail-w)',
         'group-data-[compact-header=hidden]/shell:max-md:hidden',
         PRINT_OFF,
       )}
