@@ -18,6 +18,7 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 - Every card of a page carries its figure's delta pill and footer pairs, including the second and third: a card without them reads as a lesser one (n13, n16, n04, n09, c14).
 - The secondary card is a card too: the per-month chart under n28's headline was a flush chart without inset, figure or footer, and its subtitle repeated its title (.16, .24); n32's bar list lacked the inset and the footer (.64). Give each its figure with its pill and its two footer pairs, with a subtitle that states a fact.
 - Ids, repo names, hashes and timestamps are monospace (a `font-mono` text whose date comes from the kit's `useFormat`), in the header, the figure's sub line and the footer pairs; the time zone is named once, in the context line (n03, n07, n10, n17, n18).
+- Every card has a context line, the secondary ones included: n40's Due dates card had none, and its dates stood in the sub line in the body face (.18, .25). A date, a time and an id are mono; count bars carry a unit caption ("per day", "of 64 GB"; n43's bars carried none, .48).
 - The title is a noun phrase in the header and the figure is the largest thing in the inset; a small title over free text on a flush surface is the defect, and the part is reported when it cannot draw the content ([anti-defaults](anti-defaults.md)).
 
 ## A list or a strip is still a card
@@ -35,6 +36,8 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 - A count over a total is a figure with its share or delta ("13", pill "68% of 19"), where a sentence in prose gives nothing to compare (c10 F3, c11 F3).
 - A share shows its whole beside it ("9 / 18" next to the percent bar), so a small and a large item draw differently: 12 and 48 lessons drew the same bar (n11 .3).
 - A card with none of these is allowed when the number lacks a history, a target and parts.
+- Name the base in the pill and keep it at 390: n39's hero count had no margin to 0 °C and its pill named no base, and its builder cut `delta.label` to 'GFS' for the phone (.2); shorten the words around the base, never the base. n41's medians and Rate column carried no baseline (.27); n42's CPU and Memory strip had none, and on `pegged` its pill signed noise as '+1 pts CPU' (.38): a change inside the noise is a neutral pill or none, and a saturated figure stands against its limit.
+- A duration or an age is a fact, never a delta: n40's Overdue pill was an unsigned duration drawn with the delta arrow (.13); round 1 moved it to the footer. A delta is a signed change against a named base; 'Overdue 31 days' is a footer pair or a meter.
 
 ## Compose, in this order
 
