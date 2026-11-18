@@ -3,7 +3,7 @@
  *
  * A shell layout test names an element by SLOT (`S('shell-header')`), never by a library class or a
  * `data-basalt-*` handle. Each slot carries two selectors: `v3` is always `[data-slot="<name>"]`,
- * `v2` is the exact selector the 2.x oracle (the `origin/v2` checkout) answers to, or `null` where
+ * `v2` is the exact selector the 2.x oracle (the `oracle/v2` checkout) answers to, or `null` where
  * 2.x has no equivalent. `LAYOUT_TARGET=v2` grades the oracle with those; the default `v3` grades the
  * rewrite.
  *

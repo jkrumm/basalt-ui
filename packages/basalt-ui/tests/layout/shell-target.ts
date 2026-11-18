@@ -3,7 +3,7 @@
  *
  * - `v3` (default): the empty v3 fixture (`fixture/v3`). Every case whose slots no registered
  *   scenario provides is SKIPPED, with one `skipped: <n> (<missing slots>)` line per describe.
- * - `v2`: the 2.x oracle. At module evaluation this adds a detached git worktree of `origin/v2` in a
+ * - `v2`: the 2.x oracle. At module evaluation this adds a detached git worktree of `oracle/v2` in a
  *   temp dir, installs its dependencies, and points the harness at ITS fixture. Each file calls
  *   `acquireShellTarget()`, which re-creates the worktree if needed and removes it in that file's
  *   `afterAll`, so nothing leaks.
@@ -63,7 +63,7 @@ function setupV2(): void {
   if (worktree !== null) return
   repoRoot = run(['git', 'rev-parse', '--show-toplevel'], import.meta.dir)
   const dir = worktreePath
-  run(['git', 'worktree', 'add', '--detach', dir, 'origin/v2'], repoRoot)
+  run(['git', 'worktree', 'add', '--detach', dir, 'oracle/v2'], repoRoot)
   worktree = dir
   run(['bun', 'install', '--frozen-lockfile'], dir)
   const fixture = join(dir, 'packages/basalt-ui/tests/layout/fixture')

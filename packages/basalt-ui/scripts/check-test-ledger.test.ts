@@ -34,7 +34,7 @@ function input(
   const files = over.files ?? rows.map((r) => r.file)
   return {
     ledgers: [ledger],
-    manifest: { ref: 'origin/v2', command: 'git ls-tree', count: files.length, files },
+    manifest: { ref: 'oracle/v2', command: 'git ls-tree', count: files.length, files },
     lawLabels: new Set(['Tokens', 'Markdown']),
     killList: 'Grace ladder, `check-grace` on master.',
     exists: () => true,
