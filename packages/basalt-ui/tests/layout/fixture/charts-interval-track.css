@@ -1,0 +1,7 @@
+/*
+ * The `charts-interval-track` fixture's Tailwind v4 entry, compiled WITH preflight like `charts-card.css`.
+ * `charts-interval-track.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './charts-interval-track-fixture.tsx';
+@source '../../../src/charts/parts';

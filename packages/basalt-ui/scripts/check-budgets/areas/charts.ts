@@ -21,7 +21,7 @@ export const rows: readonly RowDef[] = [
     order: 20,
     label: 'public value symbols, ./charts (export-surface shards)',
     // 2.0 target 48.
-    ceiling: 10, // v3 teardown-views: the rung, five kinds, `ChartCard`, `chartCursor`, `useChartFocus`, `chartLabels`
+    ceiling: 11, // v3 teardown-views: the rung, five kinds, `ChartCard`, `chartCursor`, `useChartFocus`, `chartLabels`; Issue 2306: `IntervalTrack`
     measure: () => readSurface()[CHART_SUBPATH]?.length ?? 0,
   },
   {
@@ -49,6 +49,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'chart-symbols': [
+    {
+      from: 10,
+      to: 11,
+      consumer:
+        "`IntervalTrack` (Issue 2306, owner review 1): n35 drew a calendar week's spans by hand on the seam track with fixed widths, raw colours and four waivers; the playground's /kit/interval-track draws the same week through the kind",
+      repo: 'basalt-ui',
+    },
     {
       from: 14,
       to: 16,

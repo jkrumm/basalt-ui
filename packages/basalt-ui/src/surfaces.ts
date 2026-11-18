@@ -188,7 +188,7 @@ export const SURFACES = {
     rule: 'charts',
     skill: ['basalt-charts'],
     description:
-      'CartesianChart (the TanStack Charts rung), the Lines, Bars, Sparkline, Heatmap and BandStrip kinds, ChartCard, the shared chartCursor and the geometry seam: useChartFocus (focus, dim the rest, one bound readout) and chartLabels (server-equal label width and placement) (no React UI library; @tanstack/charts + d3-scale peers)',
+      'CartesianChart (the TanStack Charts rung), the Lines, Bars, Sparkline, Heatmap, BandStrip and IntervalTrack kinds, ChartCard, the shared chartCursor and the geometry seam: useChartFocus (focus, dim the rest, one bound readout) and chartLabels (server-equal label width and placement) (no React UI library; @tanstack/charts + d3-scale peers)',
     optionalPeers: ['@tanstack/charts', 'd3-scale'],
     globs: {
       shipped: ['**/charts/**'],

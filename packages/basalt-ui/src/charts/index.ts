@@ -18,6 +18,12 @@ export {
   type BandFold,
 } from './parts/band-strip'
 export { Heatmap, type HeatmapProps, type HeatmapState } from './parts/heatmap'
+export {
+  IntervalTrack,
+  type IntervalSeries,
+  type IntervalTrackProps,
+  type IntervalX,
+} from './parts/interval-track'
 export { ChartCard } from './parts/chart-card'
 export { chartCursor } from './core/cursor'
 export {
