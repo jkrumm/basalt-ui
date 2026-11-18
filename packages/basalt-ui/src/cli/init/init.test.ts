@@ -242,14 +242,14 @@ describe('init: presets by profile', () => {
     expect(existsSync(join(dir, '.stylelintrc.basalt.json'))).toBe(true)
   })
 
-  it('bridge gets its own shipped preset; parts and app share one', async () => {
+  it('each oxlint profile gets its own shipped preset (page-root runs at app only)', async () => {
     const presets = new Set<string>()
     for (const profile of PROFILES.filter((p) => p !== 'tokens')) {
       const dir = repo()
       await runInit(['--profile', profile, '--root', 'src'], dir)
       presets.add(read(dir, '.oxlintrc.basalt.json'))
     }
-    expect(presets.size).toBe(2)
+    expect(presets.size).toBe(3)
   })
 
   it("drops create-vite's stock only-export-components rule and keeps the rest", async () => {
