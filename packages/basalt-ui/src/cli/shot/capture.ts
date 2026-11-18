@@ -34,6 +34,12 @@ const NAV_TIMEOUT_MS = 30_000
 const STEP_MS = 5_000
 const SHOT_TIMEOUT_MS = 15_000
 const SETTLE_MS = 60
+
+/**
+ * Where the pointer rests between crops: outside the viewport, so no anchor is hovered. (0, 0) is inside any anchor at the
+ * page's top-left, and a headless shell that starts there reads a `(hover: hover)` rule into the `rest` crop.
+ */
+const PARK = { x: -1, y: -1 } as const
 /** After a focus or an arrow press: a live region and a focus mark settle within this. */
 const KEYS_MS = 250
 /** Chromium refuses screenshots past ~16k px. */
@@ -258,6 +264,7 @@ const collect = (c: Ctx): void => c.input.apiProblems?.().forEach((p) => addProb
 async function visit(c: Ctx, url: string): Promise<PageFacts> {
   const { input, page } = c
   await load(page, url, input.wait)
+  await page.mouse.move(PARK.x, PARK.y)
   const read = (): Promise<PageFacts> => page.evaluate(readFactsInPage, ANCHOR_SLOTS as string[])
   let facts = await read()
   if (input.autoAnchors && facts.anchors.length === 0) {
@@ -471,7 +478,7 @@ async function pointerCrop(c: Ctx, name: string, state: ShotState, path: string)
   if (state === 'tooltip' && (await marked.count()) === 0)
     throw new NotDeclared('no [data-shot-tooltip] in the anchor')
   // Off the previous anchor first, so a crop never holds a tooltip left over from it.
-  await c.page.mouse.move(0, 0)
+  await c.page.mouse.move(PARK.x, PARK.y)
   for (let i = 0; i < 16 && (await c.page.locator(TOOLTIPS).count()) > 0; i++)
     await sleep(SETTLE_MS)
   await (state === 'tooltip' ? marked : anchor).hover({ timeout: STEP_MS })
@@ -615,7 +622,7 @@ async function captureAnchor(c: Ctx, name: string, state: ShotState): Promise<vo
   // A page that threw is an error screen now: the next anchor and state need the page back.
   if (state === 'keys' && shot?.status === 'error' && shot.note?.startsWith('page error'))
     await visit(c, c.input.base + c.route).catch(() => undefined)
-  await c.page.mouse.move(0, 0)
+  await c.page.mouse.move(PARK.x, PARK.y)
 }
 
 const digest = (dir: string, file: string): string | null => {
