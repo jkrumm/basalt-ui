@@ -44,6 +44,7 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 - The card's action sits in the card menu; the page's one primary action sits in [PageBar](node_modules/basalt-ui/docs/page-bar.md), drawn ink-inverted. [type:PageBarProps]
 - Cards in one row align their heights; a card's subtitle carries a fact, with filler left out.
 - Spend colour once: neutral cards, one accent where a decision turns on it, one status hue for a verdict.
+- A grid of five or more cards that each show one record of one shape (a measure, an Issue, a host) offers a table view of the same records, a toggle in the header or a table beside the grid: a reader compares records across a row, which cards cannot line up (n27, from the owner's review).
 
 ## Neighbours
 
