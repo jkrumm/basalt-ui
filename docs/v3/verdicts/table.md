@@ -22,7 +22,9 @@ The matrix for one route is four files (two schemes, two viewports); the brief's
 
 ## Not built
 
-Resize, reorder, shared views, tree, export, number and date operators. Each is additive and waits for a consumer ([data-table section 1](../concepts/data-table.md#1-decision-summary)).
+Resize, reorder, shared views, tree, export. Each is additive and waits for a consumer ([data-table section 1](../concepts/data-table.md#1-decision-summary)).
+
+Built after owner review 1 (2026-11-18, Issue 2282): filters from the column header for every filterable kind, the `range` operator (numeric min and max with an optional slider, date ranges with quick ranges and an injected day picker), a checklist with counts for enum kinds, Any/Yes/No for booleans, and a status column's category order the user rearranges from the header (`rank.<col>`). The demo columns on `/table` carry all of them.
 
 S1 (VoiceOver on explicit roles under CSS projection): no owner result recorded yet. Not run by the lead; it needs a physical iPhone.
 
