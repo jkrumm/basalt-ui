@@ -1,6 +1,6 @@
 /**
  * `projectMobileNav`: the slot-selection law, one test per numbered rule. Ported from 2.x
- * `src/shell/mobile-nav-model.test.ts` (29 executed tests on origin/v2): its 18 projection and 6
+ * `src/shell/mobile-nav-model.test.ts` (29 executed tests on oracle/v2): its 18 projection and 6
  * row-count cases live here, its 5 block-default cases in `block-model.test.ts`.
  *
  * What changed in the port, and only this: items carry `id` (2.x `key`), sections carry `id`, the
