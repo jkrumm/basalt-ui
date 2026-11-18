@@ -64,7 +64,9 @@ export function tierAttributes(planned: PlannedColumn): Record<string, string | 
     'data-priority': planned.priority === null ? undefined : String(planned.priority),
     'data-pin': planned.pin ?? undefined,
     'data-identity': planned.identity ? '' : undefined,
-    'data-card': planned.place === 'hidden' ? 'hidden' : undefined,
+    // A column left off the phone card: hidden by the display state, or placed in the detail (a meter,
+    // a spark, or the overflow of the card's six meta values), which the row's detail sheet lists.
+    'data-card': planned.place === 'hidden' || planned.place === 'detail' ? 'hidden' : undefined,
   }
 }
 
