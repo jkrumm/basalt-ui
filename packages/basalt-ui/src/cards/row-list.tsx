@@ -192,7 +192,15 @@ function Row({ item, mono, lines }: RowProps): ReactElement {
  * @example
  * <RowList
  *   title="Open Issues"
- *   items={[{ label: 'issue_2283', meta: 'building', detail: 'Lists: a bare border', value: '3.1 d', valueDetail: '2.4× typical' }]}
+ *   items={[
+ *     {
+ *       label: 'issue_2283',
+ *       meta: 'building',
+ *       detail: 'Lists: a bare border',
+ *       value: '3.1 d',
+ *       valueDetail: '2.4× typical',
+ *     },
+ *   ]}
  *   lines={2}
  *   mono
  *   focus={focus}
