@@ -77,6 +77,36 @@ export function Spend({ empty }) {
   )
 }
 
+// @invalid
+import { memo } from 'react'
+import { PageBar } from 'basalt-ui/page'
+export const Spend = memo(() => (
+  <div className="p-4">
+    <PageBar title="AI spend" />
+  </div>
+))
+
+// @invalid
+import { PageBar } from 'basalt-ui/page'
+export default function () {
+  return (
+    <section>
+      <PageBar title="AI spend" />
+    </section>
+  )
+}
+
+// @valid
+// @filename src/spend.test.tsx
+import { PageBar } from 'basalt-ui/page'
+export function Harness() {
+  return (
+    <div>
+      <PageBar title="AI spend" />
+    </div>
+  )
+}
+
 // @valid
 import { Page, PageBar } from 'basalt-ui/page'
 export function Spend() {

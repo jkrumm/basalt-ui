@@ -17,6 +17,7 @@
  * The escape is a line waiver with a reason on the reported root; file-level waivers are refused by
  * `waiver-needs-reason`.
  */
+import { isTestFile } from '../../factory'
 import type { Node, Visitor } from '../../factory'
 import type { AstForm } from '../../rule-table'
 import { defineRules } from '../../rule-table'
@@ -49,6 +50,36 @@ const nameOf = (node: Node | undefined): string | undefined =>
 
 const isPascal = (name: string | undefined): name is string =>
   name !== undefined && /^[A-Z]/.test(name)
+
+/** The wrappers a component is declared through: `memo(() => ...)`, `React.forwardRef(...)`. */
+const WRAPPERS: ReadonlySet<string> = new Set(['memo', 'forwardRef'])
+
+const isWrapperCall = (node: Node | undefined): boolean => {
+  if (node?.type !== 'CallExpression') return false
+  const callee = child(node, 'callee')
+  const name =
+    callee?.type === 'MemberExpression' ? nameOf(child(callee, 'property')) : nameOf(callee)
+  return WRAPPERS.has(name ?? '')
+}
+
+/**
+ * The name a function is declared under: its own id, the variable it is assigned to (through a
+ * `memo` or `forwardRef` call), or `default` for an anonymous default export.
+ */
+function declaredName(node: Node): string | undefined {
+  if (node.type === 'FunctionDeclaration') {
+    const own = nameOf(child(node, 'id'))
+    if (own !== undefined) return own
+  }
+  let holder = node['parent'] as Node | undefined
+  if (isWrapperCall(holder)) holder = holder?.['parent'] as Node | undefined
+  if (holder?.type === 'VariableDeclarator') return nameOf(child(holder, 'id'))
+  if (holder?.type === 'ExportDefaultDeclaration') return 'default'
+  return undefined
+}
+
+const isComponentName = (name: string | undefined): name is string =>
+  name === 'default' || isPascal(name)
 
 const isFunction = (node: Node | undefined): node is Node =>
   node?.type === 'ArrowFunctionExpression' ||
@@ -120,7 +151,9 @@ const notPage: AstForm = {
   fix: 'Return <Page> (or <SplitPage>) as the root of the page and drop the wrapper: Page owns the gutter, the top inset and the PageBar claim, so no page sets its own padding or gap',
   next: 'A wrapper the page needs (a provider, a form) goes inside Page; a screen that is not a page renders no PageBar and is no route component',
   fixture: 'page-root/not-page.tsx',
-  detect: ({ report }): Visitor => {
+  detect: ({ context, report }): Visitor => {
+    // Test scaffolding (a router harness, a fixture page) is not a page, as in the sibling rules.
+    if (isTestFile(context)) return {}
     const components = new Map<Node, Component>()
     const stack: Node[] = []
     const routeNames = new Set<string>()
@@ -129,12 +162,10 @@ const notPage: AstForm = {
     const enter = (node: Node): void => {
       stack.push(node)
       const parent = node['parent'] as Node | undefined
-      let name: string | undefined
-      if (node.type === 'FunctionDeclaration') name = nameOf(child(node, 'id'))
-      else if (parent?.type === 'VariableDeclarator') name = nameOf(child(parent, 'id'))
+      const name = declaredName(node)
       const inlineRoute =
         parent?.type === 'Property' && nameOf(child(parent, 'key')) === 'component'
-      if (!isPascal(name) && !inlineRoute) return
+      if (!isComponentName(name) && !inlineRoute) return
       const body = child(node, 'body')
       const returns = body !== undefined && body.type !== 'BlockStatement' ? [body] : []
       components.set(node, { node, name, returns })
