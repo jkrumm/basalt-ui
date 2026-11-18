@@ -24,8 +24,12 @@ artifact resolves.
 `make check` is the local equivalent of CI (`.github/workflows/ci.yml`): it runs the generation sync
 checks, builds first, then `pre` (fmt:check + lint + typecheck + check-budgets + unit
 tests), the layout suite, the coverage and agent-doc-drift gates, and the pack-test. CI runs the same gates as parallel jobs (checks, unit, the layout suite sharded four ways with
-`bun test --shard`, and `gate`, which runs `make check` whole, so the layout suite runs twice) behind one final `ci` job, so the run-level result `make merge-guard` reads still means
-everything passed. `make check` runs them in sequence and is unchanged; `make check-fast` is the same but for the layout
+`bun test --shard`, and `gate`, which runs `make ci-gate`: only the steps of `make check` no other job runs, namely the
+generated-file gates, the literal, recipe, README and playground-lint checks, the quality matrix, guard-completeness and the test
+ledger) behind one final `ci` job, so the run-level result `make merge-guard` reads still means
+everything passed. Every step of `make check` runs once per head. The `ci` job also asserts that the four layout shards
+ran, together, every `*.layout.test.ts` file (`scripts/check-layout-shards.ts` over the shard logs); a step added to `check`
+belongs to `ci-gate` unless the `checks` or `unit` job already runs it. `make check` runs them in sequence and is unchanged; `make check-fast` is the same but for the layout
 step, which runs only the files the branch's changes reach (a lead's check, `project.yaml` `checks`; CI runs the full suite on the head). It exits
 non-zero on the first failure and writes only gitignored output (`dist/`, `*.tgz`). `pre` alone is
 the fast inner loop. Its last step, the unit suite, is `scripts/unit-test.ts`: consecutive `bun test` processes (the five

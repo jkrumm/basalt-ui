@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-fast check-pre check-post gen-check verify deploy logs pre test layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
+.PHONY: help check check-fast ci-gate check-pre check-post gen-check verify deploy logs pre test layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -35,6 +35,23 @@ check-fast: ## Local check for a lead: `check` with only the layout files the br
 	@$(MAKE) --no-print-directory check-pre
 	@$(MAKE) --no-print-directory layout-fast
 	@$(MAKE) --no-print-directory check-post
+
+# What CI's `gate` job runs (.github/workflows/ci.yml): the steps of `check` that no other CI job runs. The `checks`
+# job runs the formatters, lint, typecheck, budgets, coverage, drift, contract-frozen and pack-test gates, the `unit` job
+# the unit suite (which includes the contract tests), the `layout` shards the layout suite, so `check` whole would run
+# each of those twice. Together the jobs cover every step of `check`. It builds first, as `check` does: the lint-style
+# gates and the quality matrix read dist and the playground build.
+ci-gate:
+	@cd packages/basalt-ui && bun run build
+	@bun --filter @basalt-ui/playground build
+	@$(MAKE) --no-print-directory gen-check
+	@bun run check-literals
+	@bun run check-recipes-lint
+	@bun run check-readme-types
+	@bun run check-playground-lint
+	@$(MAKE) --no-print-directory quality-matrix
+	@bun packages/basalt-ui/src/ui/guard-completeness.ts
+	@bun packages/basalt-ui/scripts/check-test-ledger.ts
 
 check-pre:
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts --check

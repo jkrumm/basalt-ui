@@ -105,7 +105,7 @@ jobs:
 
   # The layout suite (real browser geometry), split by file across four jobs. `bun test --shard=i/N`
   # partitions the test files, so the shards together run exactly the files one run would; each prints
-  # "Ran X tests across Y files", and X must sum to the unsharded count.
+  # "Ran X tests across Y files", and Y must sum to the suite's file count (the `ci` job asserts it from the shard logs).
   layout:
     name: layout (${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
@@ -140,17 +140,28 @@ jobs:
       - name: Layout tests (headless shell geometry)
         env:
           SHARD: ${{ matrix.shard }}/4
-        run: bun run test:layout --shard="$SHARD"
+        # pipefail: the tee must not hide a failing run
+        shell: bash
+        run: bun run test:layout --shard="$SHARD" 2>&1 | tee "layout-shard-${{ matrix.shard }}.log"
+
+      # Run even when the tests failed or this is not needed: the `ci` job reads the logs only when every shard passed.
+      - name: Keep the shard log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: layout-shard-${{ matrix.shard }}
+          path: layout-shard-${{ matrix.shard }}.log
+          if-no-files-found: ignore
 
       - name: Layout harness self-test
         # One small file, not shardable: run it on the first shard only.
         if: matrix.shard == 1
         run: bun run test:layout:harness
 
-  # The full local gate, verbatim: project.yaml declares `checks.full: make check` and CI runs it here. There is no
-  # `factory` on a hosted runner, so the slot wrapper is bare and the layout suite runs whole, serially: the sharded
-  # layout jobs above and this job both run it, and the steps the other jobs do not reach (generated-file gates, the
-  # quality matrix, the test ledger) run only here.
+  # What no other job runs: `make ci-gate` (generated-file gates, the literal, recipe, README and playground-lint
+  # checks, the quality matrix, the guard-completeness gate and the test ledger). Every other step of `make check`
+  # runs in `checks`, `unit` or a `layout` shard, so the whole of `check` runs once per head. There is no `factory`
+  # on a hosted runner, so the slot wrapper is bare.
   gate:
     runs-on: ubuntu-latest
 
@@ -169,8 +180,8 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-shell-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
-      - name: Full gate (make check)
-        run: make check
+      - name: Gate steps no other job runs (make ci-gate)
+        run: make ci-gate
 
   # The one result: needs every job above and fails unless each succeeded (a skipped or cancelled need is a
   # failure too), so a green ci.yml run still means everything passed.
@@ -180,6 +191,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # The shards must sum to the whole suite: a shard that ran less than its share is a green run that skipped files.
+      - name: Checkout
+        if: needs.layout.result == 'success'
+        uses: actions/checkout@v7
+
+      - name: Setup Bun (the script has no dependencies)
+        if: needs.layout.result == 'success'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Download the shard logs
+        if: needs.layout.result == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: layout-shard-*
+          path: layout-logs
+          merge-multiple: true
+
+      - name: Layout shards sum to the suite
+        if: needs.layout.result == 'success'
+        run: bun scripts/check-layout-shards.ts layout-logs --shards 4
+
       - name: Fail unless every job succeeded
         if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success'
         run: |
@@ -187,4 +219,4 @@ jobs:
           exit 1
 
       - name: Every job succeeded
-        run: echo "checks, unit, all layout shards and the full gate passed"
+        run: echo "checks, unit, all layout shards and the gate passed"
