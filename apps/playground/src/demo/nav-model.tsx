@@ -212,7 +212,6 @@ export const NAV = defineNav({
       id: 'trial-cycles',
       label: 'Trial evidence: state and dogfood cycles',
       collapsible: true,
-      defaultCollapsed: true,
       items: [
         {
           id: 'cycle-state-2',
@@ -277,7 +276,6 @@ export const NAV = defineNav({
       id: 'fleet',
       label: 'Trial evidence: fleet, shell cycle 2',
       collapsible: true,
-      defaultCollapsed: true,
       items: [
         {
           id: 'fleet-overview',
@@ -307,7 +305,6 @@ export const NAV = defineNav({
       id: 'fleet-3',
       label: 'Trial evidence: fleet, shell cycle 3',
       collapsible: true,
-      defaultCollapsed: true,
       items: [
         {
           id: 'fleet-3-overview',
@@ -337,7 +334,6 @@ export const NAV = defineNav({
       id: 'fleet-4',
       label: 'Trial evidence: fleet, shell cycle 4',
       collapsible: true,
-      defaultCollapsed: true,
       items: [
         {
           id: 'fleet-4-overview',
@@ -367,7 +363,6 @@ export const NAV = defineNav({
       id: 'fleet-5',
       label: 'Trial evidence: fleet, shell cycle 5',
       collapsible: true,
-      defaultCollapsed: true,
       items: [
         {
           id: 'fleet-5-overview',
@@ -397,7 +392,6 @@ export const NAV = defineNav({
       id: 'scenarios',
       label: 'Trial evidence: scenarios',
       collapsible: true,
-      defaultCollapsed: true,
       items: SCENARIO_INFO.map(({ id, title }) => ({
         id: `scenario-${id}`,
         label: title,
