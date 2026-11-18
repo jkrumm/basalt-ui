@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { routePaths } from './routes'
+import { routePaths, scenarioPaths } from './routes'
 
 describe('routePaths', () => {
   test('reads the playground routes', () => {
@@ -7,6 +7,12 @@ describe('routePaths', () => {
     expect(paths).toContain('/overview')
     expect(paths).toContain('/')
     expect(paths).toContain('/table')
+  })
+
+  test('names every scenario once', () => {
+    const paths = scenarioPaths()
+    expect(paths).toContain('/scenarios/expr-n04')
+    expect(new Set(paths).size).toBe(paths.length)
   })
 
   test('skips the root route and maps the dynamic one to a concrete scenario', () => {

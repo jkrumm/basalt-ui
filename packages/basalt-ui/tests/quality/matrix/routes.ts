@@ -17,6 +17,12 @@ function firstScenario(): string {
   return id
 }
 
+/** Every registered scenario as a route: `/scenarios/<id>`, one per `id` in `scenarios/scenario-info.ts`. */
+export function scenarioPaths(): string[] {
+  const source = readFileSync(join(PLAYGROUND, 'src/scenarios/scenario-info.ts'), 'utf8')
+  return [...source.matchAll(/\bid:\s*'([\w-]+)'/g)].map((m) => `/scenarios/${m[1]}`)
+}
+
 /** Route files under `dir`, relative to it, skipping the `__`/`-` prefixed entries TanStack's generator ignores. */
 function routeFiles(dir: string, prefix = ''): string[] {
   return readdirSync(join(dir, prefix), { withFileTypes: true }).flatMap((entry) => {
