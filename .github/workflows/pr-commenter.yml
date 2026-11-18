@@ -9,8 +9,8 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: exercism/pr-commenter-action@v1.5.1
         with:
-          github-token: "${{ github.token }}"
-          config-file: ".github/pr-commenter.yml"
+          github-token: '${{ github.token }}'
+          config-file: '.github/pr-commenter.yml'
