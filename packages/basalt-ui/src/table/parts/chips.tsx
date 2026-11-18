@@ -10,6 +10,7 @@ import { Button } from '../../ui/button'
 import type { DataTableInstance } from '../contract'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
+import { useFilterText } from './filter-text'
 import { activeFilters } from './toolbar-filters'
 
 function CloseGlyph(): ReactElement {
@@ -29,6 +30,7 @@ function CloseGlyph(): ReactElement {
 /** The chips of a model; shared by the public `FilterChips` and the toolbar. */
 export function ChipList<T>({ model }: { model: TableModel<T> }): ReactElement | null {
   const t = useMessages(table)
+  const textOf = useFilterText()
   const known = new Set(model.specs.map((spec) => spec.id))
   const chips = activeFilters(model.state.request.filters, known)
   if (chips.length === 0) return null
@@ -41,6 +43,7 @@ export function ChipList<T>({ model }: { model: TableModel<T> }): ReactElement |
       {chips.map((filter) => {
         const spec = model.specs.find((s) => s.id === filter.id)
         const subject = spec?.header ?? filter.id
+        const text = textOf(spec, filter)
         return (
           <li
             key={filter.id}
@@ -49,12 +52,12 @@ export function ChipList<T>({ model }: { model: TableModel<T> }): ReactElement |
           >
             <span className="min-w-0 truncate">
               <span className="text-muted-foreground">{subject}</span>{' '}
-              <span className="text-muted-foreground">
-                {filter.op === 'anyOf' ? t('table.opAnyOf') : t('table.opContains')}
-              </span>{' '}
-              <span className="font-medium">
-                {filter.values.map((v) => spec?.labels?.[v] ?? v).join(', ')}
-              </span>
+              {text.op !== null && (
+                <>
+                  <span className="text-muted-foreground">{text.op}</span>{' '}
+                </>
+              )}
+              <span className="font-medium tabular-nums">{text.value}</span>
             </span>
             <Button
               size="sm"
