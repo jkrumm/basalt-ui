@@ -14,6 +14,10 @@
  * run starts with them, a fix is proven in seconds before the rest runs, and a green run clears the memory. The
  * passing run is unchanged: every file runs in the same processes.
  *
+ * 'bun scripts/unit-test.ts --changed [--base <ref>]' (`make test-fast`, the unit step of `make check-fast`) runs the
+ * files the branch's changes reach instead of the suite: the always-on files of scripts/unit-select.ts whole, every
+ * other file through `bun test --changed=<merge base>`, bun's module graph. CI and `make check` run the whole suite.
+ *
  * The file list is bun's own rule (`*.test.*`, `*_test.*`, `*.spec.*`, `*_spec.*`, no dot directories, no
  * node_modules) minus the bunfig's `pathIgnorePatterns`, so a new test file is picked up without a list to edit.
  */
@@ -21,6 +25,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 
 import { failedFirst, parseFailedFiles } from './unit-order'
 import { parallelism } from './unit-parallelism'
+import { changedSince, selectUnit } from './unit-select'
 
 /**
  * Files whose own process peaked above 800 MiB (measured alone, 2026-11-17); two of them in one chunk stacked to
@@ -69,11 +74,48 @@ for (const file of HEAVY) {
     throw new Error(`unit-test.ts: HEAVY lists ${file}, which is not a unit test file`)
 }
 
-const rest = all.filter((file) => !HEAVY.includes(file))
-const ordered: string[][] = HEAVY.map((file) => [file])
-const chunks = Math.ceil(rest.length / CHUNK)
-const size = Math.ceil(rest.length / chunks)
-for (let i = 0; i < rest.length; i += size) ordered.push(rest.slice(i, i + size))
+/** --changed: the always-on files run whole, the others through `bun test --changed`; otherwise every file runs whole. */
+const changedFlag = process.argv.indexOf('--changed')
+const baseFlag = process.argv.indexOf('--base')
+const base = baseFlag > -1 ? (process.argv[baseFlag + 1] ?? 'origin/master') : 'origin/master'
+let mergeBase: string | null = null
+let always: ReadonlySet<string> = new Set(all)
+if (changedFlag > -1) {
+  const since = changedSince(base)
+  const selection = since
+    ? selectUnit({ changed: since.changed, tests: all, read: (test) => readFileSync(test, 'utf8') })
+    : { mode: 'all' as const, always: [], reasons: [`no merge base with ${base}: the whole suite`] }
+  console.log(selection.reasons.map((reason) => `unit-select: ${reason}`).join('\n'))
+  if (since && selection.mode === 'changed') {
+    mergeBase = since.mergeBase
+    always = new Set(selection.always)
+    console.log(
+      `unit-select: ${always.size} of ${all.length} files run whole, the rest through bun test --changed (CI runs the full suite)`,
+    )
+  }
+}
+
+/** The groups that run through `--changed`; every other group runs its files whole. */
+const viaChanged = new Set<string[]>()
+const ordered: string[][] = []
+function partition(files: string[], changed: boolean): void {
+  const heavy = HEAVY.filter((file) => files.includes(file))
+  const rest = files.filter((file) => !HEAVY.includes(file))
+  const groups: string[][] = heavy.map((file) => [file])
+  const chunks = Math.ceil(rest.length / CHUNK)
+  const size = Math.ceil(rest.length / Math.max(chunks, 1))
+  for (let i = 0; i < rest.length; i += size) groups.push(rest.slice(i, i + size))
+  if (changed) for (const group of groups) viaChanged.add(group)
+  ordered.push(...groups)
+}
+partition(
+  all.filter((file) => always.has(file)),
+  false,
+)
+partition(
+  all.filter((file) => !always.has(file)),
+  true,
+)
 
 const MEMORY = 'node_modules/.cache/unit-test-failed.json'
 const groups = failedFirst(
@@ -112,6 +154,7 @@ async function run(index: number, group: string[]): Promise<boolean> {
       'test',
       '--timeout',
       String(TEST_TIMEOUT_MS),
+      ...(mergeBase && viaChanged.has(group) ? [`--changed=${mergeBase}`] : []),
       ...group.map((file) => `./${file}`),
     ],
     serial ? { stdio: ['inherit', 'inherit', 'inherit'] } : { stdio: ['ignore', 'pipe', 'pipe'] },

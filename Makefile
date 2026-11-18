@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-fast ci-gate check-pre check-post gen-check quality-matrix-fast verify deploy logs pre test layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
+.PHONY: help check check-fast ci-gate check-pre check-pre-fast check-post gen-check quality-matrix-fast verify deploy logs pre test test-fast layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -22,17 +22,18 @@ bail = $(if $(shell command -v factory 2>/dev/null),--bail,)
 # `basalt-ui/*` through the package's `exports` — both read `dist`, not the working tree, so a gate
 # that built last would grade the previous build (packages/basalt-ui/MAINTAINING.md, "a gate reading
 # dist"). `pack-test` rebuilds anyway; the point of the first build is what `pre` reads.
-# `check` and `check-fast` differ in ONE step, the layout suite: `check` runs all of it, `check-fast` the files the
-# branch's changes reach (scripts/layout-select.ts). CI runs the full suite on every pull request head.
+# `check` and `check-fast` differ in TWO steps: the layout suite (`check` runs all of it, `check-fast` the files the
+# branch's changes reach, scripts/layout-select.ts) and the unit suite (the tests the changes reach, scripts/unit-select.ts).
+# CI runs both in full on every pull request head.
 check: ## Local CI gate: gen sync checks + build + pre + playground build + layout + coverage/doc-drift + pack-test
 	@$(MAKE) --no-print-directory check-pre browser-shell
 	@$(call slot,layout) sh -c 'bun run test:layout $(bail) && bun run test:layout:harness $(bail)'
 	@$(MAKE) --no-print-directory check-post
 
-# The lead's local check (project.yaml `checks.fast`): everything of `check` but the layout suite is the same; the
-# layout step runs only the files the branch's changes reach, and CI (checks.ci) runs the rest.
-check-fast: ## Local check for a lead: `check` with only the layout files the branch touched (CI runs the full suite)
-	@$(MAKE) --no-print-directory check-pre
+# The lead's local check (project.yaml `checks.fast`): everything of `check` but the layout and unit suites is the same;
+# those run only the files the branch's changes reach, and CI (checks.ci) runs the rest.
+check-fast: ## Local check for a lead: `check` with only the layout and unit files the branch's changes reach (CI runs both in full)
+	@$(MAKE) --no-print-directory check-pre-fast
 	@$(MAKE) --no-print-directory layout-fast
 	@$(MAKE) --no-print-directory check-post QUALITY_STEP=quality-matrix-fast
 
@@ -54,12 +55,22 @@ ci-gate:
 	@bun packages/basalt-ui/scripts/check-test-ledger.ts
 
 check-pre:
+	@$(MAKE) --no-print-directory check-build
+	@bun run pre
+	@bun --filter @basalt-ui/playground build
+
+# `check-pre` with the unit step of `pre` narrowed to the tests the branch reaches (`pre:static` is `pre` without it).
+check-pre-fast:
+	@$(MAKE) --no-print-directory check-build
+	@bun run pre:static
+	@$(MAKE) --no-print-directory test-fast
+	@bun --filter @basalt-ui/playground build
+
+check-build:
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts --check
 	@$(MAKE) --no-print-directory gen-check
 	@bun scripts/check-legacy-names.ts
 	@cd packages/basalt-ui && bun run build
-	@bun run pre
-	@bun --filter @basalt-ui/playground build
 
 # `check` runs the quality matrix always; `check-fast` only when the branch touched a UI input (quality-matrix-fast).
 QUALITY_STEP ?= quality-matrix
@@ -115,6 +126,13 @@ layout-fast: browser-shell ## Run only the layout files the branch's changes rea
 	@files="$$(bun scripts/layout-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
 	if [ -z "$$files" ]; then exit 0; fi; \
 	$(call slot,layout-fast) sh -c '$(LAYOUT_BUN) '"$$(echo $$files)"' && bun run test:layout:harness $(bail)'
+
+# The unit tests the branch's changes reach (scripts/unit-select.ts): bun's module graph through `bun test --changed`
+# plus the always-on set of tests that read files. CI and `make check` run the whole suite. Its slot is `unit-fast`, not
+# `unit`: project.yaml lets the `unit` step run on the step host, whose copy of the tree has no git diff of the working
+# tree, so `--changed` would see no change there and skip tests; `unit-fast` is declared nowhere and runs on the mini.
+test-fast: ## Run only the unit tests the branch's changes reach (BASE=<ref>, default origin/master)
+	@$(call slot,unit-fast) bun scripts/unit-test.ts --changed --base $(or $(BASE),origin/master)
 
 build: ## Build the published package (dist-first tsup + declarations)
 	@cd packages/basalt-ui && bun run build

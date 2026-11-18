@@ -80,7 +80,8 @@ bun run fmt:check          # oxfmt (check only)
 bun run typecheck          # tsc across package + playground (see the dist footgun below)
 bun run pre                # fmt:check && lint && typecheck && budgets && literals, then `make test`: the unit suite in a host test slot
 make check                 # build + pre + the layout suite + pack-test — the full local gate
-make check-fast            # `check` with only the layout files the branch's changes reach — the lead's check; CI runs the rest
+make check-fast            # `check` with only the layout files and unit tests the branch's changes reach — the lead's check; CI runs the rest
+make test-fast             # just that unit step (BASE=<ref>, default origin/master): bun's module graph plus an always-on set, scripts/unit-select.ts
 make layout-fast           # just that layout step (BASE=<ref>, default origin/master)
 make verify                # probe production (curl basalt-ui.com) — not the local gate
 ```
