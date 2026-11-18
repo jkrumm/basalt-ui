@@ -154,6 +154,7 @@
     "basalt/router-search": "off",
     "basalt/control-home": "off",
     "basalt/untrusted-markdown": "off",
+    "basalt/page-root": "off",
     "shadcn/no-raw-colors": [
       "error",
       {

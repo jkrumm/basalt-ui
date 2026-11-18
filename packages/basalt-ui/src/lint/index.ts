@@ -14,6 +14,7 @@ import { colourLiteralRules } from './rules/structure/colour-literal'
 import { controlHomeRules } from './rules/structure/control-home'
 import { dataPrimitiveRules } from './rules/structure/data-primitive'
 import { importBoundaryRules } from './rules/structure/import-boundary'
+import { pageRootRules } from './rules/structure/page-root'
 import { primitiveBypassRules } from './rules/structure/primitive-bypass'
 import { routerSearchRules } from './rules/structure/router-search'
 import { untrustedMarkdownRules } from './rules/structure/untrusted-markdown'
@@ -30,6 +31,7 @@ const FAMILIES: readonly RuleTable[] = [
   routerSearchRules,
   controlHomeRules,
   untrustedMarkdownRules,
+  pageRootRules,
 ]
 
 /** The plugin oxlint loads through `jsPlugins: ["basalt-ui/lint"]`; rules report as `basalt/<id>`. */
