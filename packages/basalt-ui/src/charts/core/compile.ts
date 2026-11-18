@@ -61,7 +61,14 @@ import { boxesMeet, dotBox, placeRefLabel, refLabelDy } from '../ref-label'
 import type { DotMark, LabelBox, RefLabelPoint } from '../ref-label'
 import type { PlotAccess, PlotSizes } from './plot-context'
 import { resolveContainerClass } from '../../tokens/size-classes'
-import { resolveYDomain, xScaleFor, xZoneFractions, yScaleFor } from './scales'
+import {
+  resolveYDomain,
+  xScaleFor,
+  xZoneBound,
+  xZoneFractions,
+  xZoneWiden,
+  yScaleFor,
+} from './scales'
 import type { XScaleModel } from './scales'
 import {
   captionWidth,
@@ -1013,9 +1020,10 @@ function underlayMarks<T, X extends ChartX>(
     if (!f) return []
     const sides = edgeSides(z.edge, 'start', 'end')
     // The bound's own plot fraction (widened like the band), unclamped: `f` is clamped to the plot.
-    const widen = z.align === 'edge' ? model.halfStep : 0
+    const widen = xZoneWiden(z, model)
     const bound = (value: X | undefined, sign: 1 | -1): number | null => {
-      const fraction = value === undefined ? null : model.fraction(value)
+      const fraction =
+        value === undefined ? null : xZoneBound(value, sign === 1 ? 'to' : 'from', model)
       return fraction === null ? null : fraction + sign * widen
     }
     const rule = (value: X | undefined, sign: 1 | -1, name: string) =>
@@ -1058,6 +1066,8 @@ const REF_LABEL_LEADER_INSET = 1
 const REF_LABEL_LEADER_PAD = 4
 /** The most rows a zone caption tries down the inside of its zone. */
 const MAX_ZONE_ROWS = 24
+/** The most rows a zone caption tries down the side of its zone, after and before it. */
+const MAX_ZONE_SIDE_ROWS = 6
 /** The share of a bar slot kept between two grouped bars (`group({ padding })` in `bars-marks`). */
 const GROUP_PADDING = 0.1
 
@@ -1210,11 +1220,14 @@ const xZoneLabelMarks = <T, X extends ChartX>(
       inside: true,
       row,
     }))
-    // Inside the zone, top to bottom, then after it and before it on the top row.
+    // Inside the zone, top to bottom, then after it and before it on the top row, then lower down
+    // beside it: a zone that lines cross keeps its caption beside it rather than lose it.
     const spots = [
       ...inside,
-      { at: f[1], side: 1 as const, left: x1 + REF_LABEL_DX, inside: false, row: 0 },
-      { at: f[0], side: -1 as const, left: x0 - REF_LABEL_DX - width, inside: false, row: 0 },
+      ...Array.from({ length: MAX_ZONE_SIDE_ROWS }, (_, row) => [
+        { at: f[1], side: 1 as const, left: x1 + REF_LABEL_DX, inside: false, row },
+        { at: f[0], side: -1 as const, left: x0 - REF_LABEL_DX - width, inside: false, row },
+      ]).flat(),
     ]
     type Spot = (typeof spots)[number]
     const offset = (spot: Spot): number => spot.row * stepPx
@@ -1235,14 +1248,22 @@ const xZoneLabelMarks = <T, X extends ChartX>(
         bottom: edge + rowBottom + offset(spot),
       }
     }
-    const fits = (s: Spot): boolean =>
+    // `relaxed` 1 lets a line run under the caption, 2 lets a bar or dot too: a zone that names the
+    // answer keeps its caption over a mark, never loses it to one.
+    const fits = (s: Spot, relaxed: 0 | 1 | 2): boolean =>
       s.left >= 0 &&
       s.left + width <= (s.inside ? x1 - REF_LABEL_DX : plotWidth) &&
+      (s.inside || pxOf(s).bottom <= plotHeight) &&
       !avoid().some((b) => boxesMeet(boxOf(s), b)) &&
-      !ctx.xBlocked(pxOf(s)) &&
-      !ctx.lineHits(pxOf(s))
+      (relaxed === 2 || !ctx.xBlocked(pxOf(s))) &&
+      (relaxed >= 1 || !ctx.lineHits(pxOf(s)))
     // Before the plot is measured the caption keeps its first spot.
-    const spot = plotWidth <= 0 ? spots[0] : spots.find(fits)
+    const spot =
+      plotWidth <= 0
+        ? spots[0]
+        : (spots.find((s) => fits(s, 0)) ??
+          spots.find((s) => fits(s, 1)) ??
+          spots.find((s) => fits(s, 2)))
     if (spot === undefined) return []
     if (plotWidth > 0) ctx.placed.left.push(boxOf(spot))
     return [
@@ -1846,6 +1867,7 @@ export function compileCartesian<T, X extends ChartX>(
           plotWidth,
           fontSize: BASALT.text.micro,
           blocked: xBlocked(plotWidth, size?.height ?? height),
+          plotHeight: size?.height ?? height,
         })
         captions = {
           plotWidth,
@@ -2003,7 +2025,11 @@ export function compileCartesian<T, X extends ChartX>(
       // keep clear of the labels too. Reading the plot size recompiles once on the measured area.
       const valueLabels = (() => {
         const bars = visible.filter(isBar)
-        const none = { marks: [] as ChartMarks, boxes: [] as PxBox[] }
+        const none = {
+          marks: [] as ChartMarks,
+          boxes: [] as PxBox[],
+          written: new Set<string>(),
+        }
         if (!model.band || !bars.some((s) => s.values !== undefined && s.values !== false))
           return none
         const ctx = captionContext()
@@ -2042,7 +2068,8 @@ export function compileCartesian<T, X extends ChartX>(
           const ctx = captionContext()
           return { width: ctx.plotWidth, height: ctx.plotHeight }
         },
-        obstacles: hostBoxes,
+        obstacles: () => [...hostBoxes(), ...valueLabels.boxes],
+        clear: () => [...hostBoxesBesidesBars(), ...valueLabels.boxes],
       }
       const stackCaps =
         stackedBars.length === 0 || !stackCapped
@@ -2073,6 +2100,15 @@ export function compileCartesian<T, X extends ChartX>(
           return axis.bounded ? axis.domain : null
         },
         edgeOf: (s) => axes.axisOf(axes.onRight(s) ? 'right' : 'left').domain,
+        // A grouped bar's room: its slot of the group (as `barBoxes` and the value labels cut it).
+        written: valueLabels.written,
+        slotOf: (s) => {
+          if (!model.band || input.stack !== undefined || !isBar(s)) return undefined
+          const bars = visible.filter(isBar)
+          const step = (2 * barHalf) / (bars.length - GROUP_PADDING)
+          const width = step * (1 - GROUP_PADDING)
+          return { shift: -barHalf + bars.indexOf(s) * step + width / 2, width }
+        },
         yScaleOf: (s) => axes.scaleId(axes.onRight(s) ? 'right' : 'left'),
       })
       return {
@@ -2091,6 +2127,7 @@ export function compileCartesian<T, X extends ChartX>(
             top: Math.max(...axes.left.domain),
             plotWidth: xPlotWidth,
             blocked: hasXCaption ? captionContext().xBlocked : undefined,
+            plotHeight: hasXCaption ? captionContext().plotHeight : undefined,
           }),
           ...crosshairMarks({
             input,

@@ -6,7 +6,7 @@ import { decorative } from '@tanstack/charts/mark/decorative'
 import { text } from '@tanstack/charts/text'
 import { BASALT } from '../../tokens'
 import type { LabelBox } from '../chart-labels'
-import { estimateWidth, lineHeight, placeWith } from '../label-place'
+import { estimateWidth, fitsWith, lineHeight, placeWith } from '../label-place'
 import type { PlotPx } from '../label-obstacles'
 import type { ChartMarks, ChartSeries, ChartX, XRefAt } from '../types'
 import type { XScaleModel } from './scales'
@@ -90,15 +90,28 @@ const CAP_LABEL_GAP = 8
 export type CapLabelsOptions = {
   frame: () => PlotPx
   obstacles: () => readonly LabelBox[]
+  /** The same without the bar bodies: where a value may stand inside the bar it names. */
+  clear?: () => readonly LabelBox[]
 }
 
-type CapMark = { f: number; text: string; color: string; magnitude: number }
+/** The room inside a clamped bar: its centre as a plot-width shift from `f`, and its width. */
+export type CapSlot = { shift: number; width: number }
+
+type CapMark = { f: number; text: string; color: string; magnitude: number; slot?: CapSlot }
+
+/** Air between a clamped bar's caret and the value written inside the bar's end, px. */
+const INSIDE_GAP = 1
+/** Air a value keeps inside the bar it stands in, px. */
+const INSIDE_PAD = 2
+/** Air between a clamped bar's end and the value written beside it, px. */
+const BESIDE_GAP = 2
 
 /**
  * The true values of the marks held on the plot's edge, one text mark per series and side: each is
  * placed beside its caret by the kit's placer (right of it, else left), clear of the host's marks
- * and of the other values, and dropped when neither side has room. The caret says "past the edge";
- * this is how far past.
+ * and of the other values, and dropped when neither side has room. A clamped bar has no room beside
+ * its caret (its own body fills the edge): its value stands inside the bar's end under the caret, in
+ * the card's colour, when it fits the bar. The caret says "past the edge"; this is how far past.
  */
 function capValueMarks(
   found: { top: CapMark[]; bottom: CapMark[] },
@@ -112,26 +125,86 @@ function capValueMarks(
   const sides = (['top', 'bottom'] as const).flatMap((side) =>
     found[side].map((m, i) => ({ side, m, key: `${side}:${i}` })),
   )
-  const { placed } = placeWith(
-    estimateWidth,
-    sides.map(({ side, m, key }) => ({
-      key,
-      text: m.text,
-      x: m.f * frame.width,
-      y: side === 'top' ? half : frame.height - half,
-      size,
-      priority: m.magnitude,
-      spots: ['right', 'left'] as const,
-    })),
-    frame,
-    { gap: CAP_LABEL_GAP, obstacles: opts.obstacles(), size },
-  )
   const byKey = new Map(sides.map((s) => [s.key, s]))
-  const marks = placed.map((p) => {
-    const { side, m } = byKey.get(p.key)!
-    // The text mark centres on its datum, which is the edge: carry it to the box's middle.
-    return { ...m, side, dx: p.dx, dy: p.top + p.height / 2 - (side === 'top' ? 0 : frame.height) }
-  })
+  const edgeY = (side: 'top' | 'bottom'): number => (side === 'top' ? 0 : frame.height)
+  const pending = new Set(byKey.keys())
+  const taken: LabelBox[] = []
+  type Spot = 'right' | 'left' | 'below' | 'above'
+  const marks: (CapMark & {
+    side: 'top' | 'bottom'
+    dx: number
+    dy: number
+    anchor: 'start' | 'middle' | 'end'
+  })[] = []
+  /** Places the pending marks `at` gives a spot for; each that lands is written there and leaves the queue. */
+  const land = (
+    at: (side: 'top' | 'bottom', m: CapMark) => { x: number; y: number; spots: Spot[] } | undefined,
+    options: { gap: number; obstacles: readonly LabelBox[]; color?: string },
+  ): void => {
+    const wanted = [...pending].flatMap((key) => {
+      const { side, m } = byKey.get(key)!
+      const anchor = at(side, m)
+      return anchor === undefined
+        ? []
+        : [{ key, text: m.text, ...anchor, size, priority: m.magnitude }]
+    })
+    const { placed } = placeWith(estimateWidth, wanted, frame, {
+      gap: options.gap,
+      obstacles: [...options.obstacles, ...taken],
+      size,
+    })
+    for (const p of placed) {
+      const { side, m } = byKey.get(p.key)!
+      pending.delete(p.key)
+      taken.push(p)
+      // The text mark centres on its datum, which is the edge: carry it to the box's middle.
+      marks.push({
+        ...m,
+        ...(options.color !== undefined && { color: options.color }),
+        side,
+        dx: p.dx + (p.x - m.f * frame.width),
+        dy: p.top + p.height / 2 - edgeY(side),
+        anchor: p.textAnchor,
+      })
+    }
+  }
+  const rim = (side: 'top' | 'bottom'): number => (side === 'top' ? half : frame.height - half)
+  const room = (m: CapMark): number => (m.slot?.width ?? 0) * frame.width
+  const centre = (m: CapMark): number => (m.f + (m.slot?.shift ?? 0)) * frame.width
+  // A bar's body fills the edge beside its caret: its value stands under the caret, inside the bar.
+  land(
+    (side, m) =>
+      m.slot !== undefined &&
+      fitsWith(estimateWidth, m.text, { width: room(m) }, { size, pad: INSIDE_PAD })
+        ? {
+            x: centre(m),
+            y: edgeY(side) + (side === 'top' ? CARET_SIZE : -CARET_SIZE),
+            spots: [side === 'top' ? 'below' : 'above'],
+          }
+        : undefined,
+    { gap: INSIDE_GAP, obstacles: (opts.clear ?? opts.obstacles)(), color: CV.surface },
+  )
+  const all = opts.obstacles()
+  // A bar too narrow for it: beside the bar's end, right of the bar else left.
+  for (const [sign, spot] of [
+    [1, 'right'],
+    [-1, 'left'],
+  ] as const)
+    land(
+      (side, m) =>
+        m.slot === undefined
+          ? undefined
+          : { x: centre(m) + (sign * room(m)) / 2, y: rim(side), spots: [spot] },
+      { gap: BESIDE_GAP, obstacles: all },
+    )
+  // A mark with no bar under it: beside its caret, right of it else left.
+  land(
+    (side, m) =>
+      m.slot === undefined
+        ? { x: m.f * frame.width, y: rim(side), spots: ['right', 'left'] }
+        : undefined,
+    { gap: CAP_LABEL_GAP, obstacles: all },
+  )
   if (marks.length === 0) return []
   type Mark = (typeof marks)[number]
   return [
@@ -145,7 +218,7 @@ function capValueMarks(
         text: (m: Mark) => m.text,
         fill: (m: Mark) => m.color,
         fontSize: size,
-        anchor: (m: Mark) => (m.dx < 0 ? 'end' : 'start'),
+        anchor: (m: Mark) => m.anchor,
         dx: (m: Mark) => m.dx,
         dy: (m: Mark) => m.dy,
       }),
@@ -171,8 +244,15 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
   formatOf: (s: ChartSeries<T>) => (v: number, d: T) => string
   /** Where each caret's true value is written; a series that labels its own values is left to it. */
   labels: CapLabelsOptions
+  /** A bar series' room inside its bar, where a value past the cap is written; none for any other. */
+  slotOf?: (s: ChartSeries<T>) => CapSlot | undefined
+  /** Bars whose own `values` label was placed, `<series key>:<x fraction>`: their value is not written twice. */
+  written?: ReadonlySet<string>
 }): ChartMarks {
   return opts.series.flatMap((s) => {
+    const slot = opts.slotOf?.(s)
+    // A series that labels its own values is left to its labels, where they landed.
+    const own = s.values !== undefined && s.values !== false
     const domain = opts.domainOf(s)
     if (domain === null) return []
     const found = { top: [] as number[], bottom: [] as number[] }
@@ -183,9 +263,15 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
       const f = side === null ? null : opts.fraction(opts.x(d))
       if (side === null || f === null || v === null) continue
       found[side].push(f)
-      values[side].push({ f, text: opts.formatOf(s)(v, d), color: s.color, magnitude: Math.abs(v) })
+      if (own && (opts.written === undefined || opts.written.has(`${s.key}:${f}`))) continue
+      values[side].push({
+        f,
+        text: opts.formatOf(s)(v, d),
+        color: s.color,
+        magnitude: Math.abs(v),
+        ...(slot !== undefined && { slot }),
+      })
     }
-    const own = s.values !== undefined && s.values !== false
     const edge = opts.edgeOf?.(s) ?? domain
     const carets = (['top', 'bottom'] as const).flatMap((side) =>
       found[side].length === 0
@@ -207,14 +293,12 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
             ),
           ],
     )
-    const named = own
-      ? []
-      : capValueMarks(values, {
-          id: `off-scale-${s.key}-value`,
-          edge,
-          scale: opts.yScaleOf(s),
-          ...opts.labels,
-        })
+    const named = capValueMarks(values, {
+      id: `off-scale-${s.key}-value`,
+      edge,
+      scale: opts.yScaleOf(s),
+      ...opts.labels,
+    })
     return [...carets, ...named]
   }) as unknown as ChartMarks
 }

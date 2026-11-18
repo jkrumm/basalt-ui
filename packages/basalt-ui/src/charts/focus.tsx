@@ -526,7 +526,9 @@ export function useChartFocus<D>(
     set,
     hold,
     span,
-    readout: (rest, read) => (datum === null ? rest : read(datum)),
+    // `read` also takes the held span (`[datum]` for one item) as a second argument.
+    readout: (rest, read) =>
+      datum === null ? rest : (read as (d: D, span: readonly D[]) => typeof rest)(datum, span),
     dimmed: (d) => datum !== null && !span.includes(d),
     target,
     item,

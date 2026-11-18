@@ -354,14 +354,50 @@ export function xScaleFor<X extends ChartX>(
   }
 }
 
+/**
+ * How far an x-zone's bounds reach past the centres of their bands: half a step on a band axis,
+ * where a zone covers whole bands whatever the key type, else only when the zone asks for `'edge'`.
+ */
+export function xZoneWiden<X extends ChartX>(zone: XZoneSpec<X>, model: XScaleModel<X>): number {
+  return zone.align === 'edge' || model.band ? model.halfStep : 0
+}
+
+/**
+ * The plot fraction a zone bound sits at (a band's centre on a band axis). A Date or number bound
+ * between two bands snaps inward to the nearest band inside the zone: `from` to the first key at
+ * or after it, `to` to the last key at or before it. `null` when no band is there.
+ */
+export function xZoneBound<X extends ChartX>(
+  value: X,
+  side: 'from' | 'to',
+  model: XScaleModel<X>,
+): number | null {
+  const hit = model.fraction(value)
+  if (hit !== null || !model.band || model.kind === 'string') return hit
+  const at = toNumber(value)
+  const inside = model.values
+    .map(toNumber)
+    .filter((n) => Number.isFinite(n) && (side === 'from' ? n >= at : n <= at))
+  if (inside.length === 0) return null
+  const key = side === 'from' ? Math.min(...inside) : Math.max(...inside)
+  const snapped = model.values.find((k) => toNumber(k) === key)
+  return snapped === undefined ? null : model.fraction(snapped)
+}
+
 /** An x-zone's [left, right] as plot fractions, clamped to the plot; `null` when it is empty. */
 export function xZoneFractions<X extends ChartX>(
   zone: XZoneSpec<X>,
   model: XScaleModel<X>,
 ): readonly [number, number] | null {
-  const widen = zone.align === 'edge' ? model.halfStep : 0
-  const from = zone.from === undefined ? 0 : (model.fraction(zone.from) ?? 0) - widen
-  const to = zone.to === undefined ? 1 : (model.fraction(zone.to) ?? 1) + widen
+  const widen = xZoneWiden(zone, model)
+  const first = zone.from === undefined ? 0 : (xZoneBound(zone.from, 'from', model) ?? 0)
+  const last = zone.to === undefined ? 1 : (xZoneBound(zone.to, 'to', model) ?? 1)
+  // A window between two bands holds none: its snapped bounds cross.
+  const ordered =
+    zone.from === undefined || zone.to === undefined || toNumber(zone.from) <= toNumber(zone.to)
+  if (model.band && model.kind !== 'string' && ordered && first > last) return null
+  const from = first - widen
+  const to = last + widen
   const left = Math.max(0, Math.min(from, to))
   const right = Math.min(1, Math.max(from, to))
   return right > left ? [left, right] : null
