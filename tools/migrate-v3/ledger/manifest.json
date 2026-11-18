@@ -1,7 +1,7 @@
 {
-  "ref": "origin/v2",
+  "ref": "oracle/v2",
   "sha": "e2205147c33d470a392fcac8d1b88683d129e21c",
-  "command": "git ls-tree -r --name-only origin/v2 -- packages/basalt-ui | grep -E '\\.(test|spec)\\.(ts|tsx)$'",
+  "command": "git ls-tree -r --name-only oracle/v2 -- packages/basalt-ui | grep -E '\\.(test|spec)\\.(ts|tsx)$'",
   "count": 429,
   "files": [
     "packages/basalt-ui/configs/card-inset.test.ts",
