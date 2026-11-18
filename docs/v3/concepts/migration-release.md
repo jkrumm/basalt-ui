@@ -168,7 +168,7 @@ Nothing publishes before GA: the gate refuses every computed version until `3.0.
 
 ### 4.6 2.x status
 
-No fix window, no `dist_tag_for`, no `latest-2`. 2.x stays on npm as published; the 2.x tip lives on branch `v2` for reference and for port-counts (`oracle/v2` is what `git show`, the layout suite's v2 target and the test ledger read). Published 2.x keeps the `//host` URL bypass (`createUrlTransform`, `src/content/url-hardening.ts`); its v3 replacement is `v3-ai-i1-markdown`, and consumers get it by migrating.
+No fix window, no `dist_tag_for`, no `latest-2`. 2.x stays on npm as published; the 2.x tip lives on tag `oracle/v2` for reference and for port-counts (`oracle/v2` is what `git show`, the layout suite's v2 target and the test ledger read). Published 2.x keeps the `//host` URL bypass (`createUrlTransform`, `src/content/url-hardening.ts`); its v3 replacement is `v3-ai-i1-markdown`, and consumers get it by migrating.
 
 ## 5. Layers (decided 2026-11-09: no consumer gates)
 
