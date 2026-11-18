@@ -13,7 +13,8 @@ import { runCell } from './assertions'
 import { classify, KNOWN } from './known'
 import type { KnownFinding } from './known'
 import { bootMatrix } from './harness'
-import { routePaths } from './routes'
+import { hoverShift, KNOWN_SHIFTS } from './hover-shift'
+import { routePaths, scenarioPaths } from './routes'
 
 const mode = process.env['BASALT_MATRIX']
 const enabled = mode === 'sampled' || mode === 'full'
@@ -73,6 +74,36 @@ describe.skipIf(harness === null)(`quality matrix (${mode})`, () => {
         const { unexpected, matched } = classify(cell.route, failures)
         for (const entry of matched) used.add(entry)
         expect(unexpected.join('\n')).toBe('')
+      } finally {
+        await page.context().close()
+      }
+    },
+    90_000,
+  )
+})
+
+// The hover-shift guard: every route and every scenario at the owner's two review widths, a fine
+// pointer swept across each chart plot. A plot that moves under the pointer fails its page.
+describe.skipIf(harness === null)('hover never moves a chart plot', () => {
+  const pages = [...new Set([...routePaths(), ...scenarioPaths()])]
+  const sizes = [DESKTOP, PHONE] as const
+  test.each(enabled ? pages.flatMap((route) => sizes.map((size) => ({ route, ...size }))) : [])(
+    '$route $width x $height',
+    async (cell) => {
+      if (harness === null) return
+      const page = await harness.open({ width: cell.width, height: cell.height, pointer: 'fine' })
+      try {
+        await page.goto(harness.origin + cell.route)
+        await page.waitForSelector('[data-slot], main', { timeout: 15_000 })
+        const moved = (await hoverShift(page)).join('\n')
+        const known = KNOWN_SHIFTS[`${cell.route} ${cell.width}`]
+        if (known === undefined) expect(moved).toBe('')
+        // A known shift that no longer moves is fixed: its entry goes.
+        else
+          expect(
+            moved,
+            `fixed? remove KNOWN_SHIFTS "${cell.route} ${cell.width}": ${known}`,
+          ).not.toBe('')
       } finally {
         await page.context().close()
       }
