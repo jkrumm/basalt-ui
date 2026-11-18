@@ -93,6 +93,7 @@ export const CHART_KINDS: ReadonlySet<string> = new Set([
   'BandStrip',
   'Donut',
   'Heatmap',
+  'IntervalTrack',
   'DualPanel',
   'MirroredBars',
 ])

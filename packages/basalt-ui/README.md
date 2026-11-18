@@ -373,7 +373,7 @@ export const Sessions = () => (
 
 Shipped kinds are that same composition, pre-wired: `Lines` (n series, `area`, `thresholds`, zones,
 reference lines, `y2`) and `Bars` (stacked, grouped or normalised, ± bars, overlay lines), plus `BandStrip`,
-`Heatmap` and `Sparkline`. The
+`Heatmap`, `IntervalTrack` (rows of spans over time) and `Sparkline`. The
 [`MIGRATING.md`](./MIGRATING.md) § 2.x to 3.0 lists every removed or renamed chart export.
 
 Charts share a cursor with no provider (`cursorGroup="…"` isolates one; `chartCursor(group?)` reads

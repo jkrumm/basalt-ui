@@ -458,6 +458,7 @@ const CHART_ELEMENTS: ReadonlySet<string> = new Set([
   'MiniBars',
   'Donut',
   'Heatmap',
+  'IntervalTrack',
   'DualPanel',
   'MirroredBars',
 ])

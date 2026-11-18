@@ -19,6 +19,7 @@ const THREE_KIND = [
 
 const HEATMAP = reExportNamed('charts/parts/heatmap', ['Heatmap'])
 const BAND_STRIP = reExportNamed('charts/parts/band-strip', ['BandStrip'])
+const INTERVAL_TRACK = reExportNamed('charts/parts/interval-track', ['IntervalTrack'])
 
 /** Gzip bytes the kind adds to the three-kind fixture. */
 export async function marginal(kind: string): Promise<number> {
@@ -50,6 +51,16 @@ export const rows: readonly RowDef[] = [
     // 2438 B measured on the v3 three-kind fixture (+5%, rounded up to 0.5 KB).
     ceiling: 3000,
     measure: () => marginal(BAND_STRIP),
+  },
+  {
+    id: 'charts-interval-track-marginal',
+    order: 26,
+    label: 'charts IntervalTrack marginal (gzip B over Sparkline + Lines + Bars)',
+    // Seeded by Issue 2306 (the Spec's open choice 2, verdict looks good): 8249 B measured (+5%, rounded up to
+    // 0.5 KB). About 4.1 KB of it is the label width table `chartLabels` measures with, which an app already
+    // drawing `chartLabels` pays once; the kind alone is about 4 KB. Above the 4.0 KB kind cap by amendment.
+    ceiling: 9000,
+    measure: () => marginal(INTERVAL_TRACK),
   },
 ]
 

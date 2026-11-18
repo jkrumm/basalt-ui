@@ -53,6 +53,7 @@
   "FormRow": "shutterflow:apps/desktop/src/features/settings/CamerasSection.tsx",
   "groupTokens": "argo:apps/dashboard/src/lib/series.ts",
   "Heatmap": "argo:apps/dashboard/src/features/walking-pad/charts/time-of-day-chart.tsx",
+  "IntervalTrack": "basalt-ui:apps/playground/src/routes/kit/interval-track.tsx",
   "InnerNav": "argo:apps/dashboard/src/features/m365-explorer/explorer-page.tsx",
   "installDomShims": "shutterflow:apps/desktop/src/features/photos/grid/ContactSheet.tsx",
   "KanbanCard": "software-factory:apps/console/src/components/flow/card.tsx",

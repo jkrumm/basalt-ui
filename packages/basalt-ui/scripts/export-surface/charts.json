@@ -4,6 +4,7 @@
   "CartesianChart",
   "ChartCard",
   "Heatmap",
+  "IntervalTrack",
   "Lines",
   "Sparkline",
   "chartCursor",

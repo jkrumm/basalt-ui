@@ -1,6 +1,7 @@
 /**
- * The G4 freeze (v3-freeze-g4): the `./charts` value-export list is frozen at 12, and the Heatmap
- * and BandStrip marginals hold a ceiling no higher than 4.0 KB that only a raise row can lift.
+ * The G4 freeze (v3-freeze-g4): the `./charts` value-export list is frozen at 13 (12, amended by
+ * Issue 2306 for `IntervalTrack`), and the Heatmap and BandStrip marginals hold a ceiling no higher
+ * than 4.0 KB that only a raise row can lift; the IntervalTrack marginal is seeded at its own.
  */
 import { describe, expect, test } from 'bun:test'
 import { dirname, join, resolve } from 'node:path'
@@ -16,8 +17,8 @@ const G4_AREA = join(import.meta.dir, 'areas/charts-g4.ts')
 const g4 = (await import('./areas/charts-g4')) as AreaModule
 
 describe('charts-api', () => {
-  test('the frozen set is twelve names', () => {
-    expect(new Set(ALLOWED).size).toBe(12)
+  test('the frozen set is thirteen names', () => {
+    expect(new Set(ALLOWED).size).toBe(13)
     expect(ALLOWED.filter((name) => LEGACY.includes(name))).toEqual([])
   })
 
@@ -29,17 +30,19 @@ describe('charts-api', () => {
     expect(chartsApiViolations(['useChartFocus', 'chartLabels'])).toEqual([])
   })
 
-  test('a thirteenth value export is red', () => {
-    expect(chartsApiViolations([...ALLOWED, 'ThirteenthKind'])).toHaveLength(1)
+  test('a fourteenth value export is red', () => {
+    expect(chartsApiViolations([...ALLOWED, 'FourteenthKind'])).toHaveLength(1)
   })
 })
 
 describe('charts-g4', () => {
   test('both marginals hold their cap; the heat grid has one raise row, 4000 to 4250 B (Issues 1627 and 1872)', () => {
-    for (const row of g4.rows) expect(row.ceiling).toBeLessThanOrEqual(4250)
+    const frozen = g4.rows.filter((r) => r.id !== 'charts-interval-track-marginal')
+    for (const row of frozen) expect(row.ceiling).toBeLessThanOrEqual(4250)
     expect(g4.rows.map((r) => r.id)).toEqual([
       'charts-heatmap-marginal',
       'charts-band-strip-marginal',
+      'charts-interval-track-marginal',
     ])
     expect(Object.keys(g4.raises)).toEqual(['charts-heatmap-marginal'])
   })
