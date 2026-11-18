@@ -60,7 +60,7 @@ export function LoadingRows<T>({ model }: { model: TableModel<T> }): ReactElemen
                 aria-colindex={index + offset}
                 data-kind={spec.kind}
                 data-align={spec.align}
-                {...tierAttributes(planned)}
+                {...tierAttributes(planned, model.detailListed)}
                 numeric={numeric}
                 className={className}
               >

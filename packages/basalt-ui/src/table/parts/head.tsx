@@ -59,14 +59,21 @@ export function alignProps(spec: Pick<KindSpec<never>, 'align' | 'numerals'>): {
 }
 
 /** The `data-*` the tier CSS reads off a header or body cell. */
-export function tierAttributes(planned: PlannedColumn): Record<string, string | undefined> {
+export function tierAttributes(
+  planned: PlannedColumn,
+  detailListed: boolean,
+): Record<string, string | undefined> {
   return {
     'data-priority': planned.priority === null ? undefined : String(planned.priority),
     'data-pin': planned.pin ?? undefined,
     'data-identity': planned.identity ? '' : undefined,
     // A column left off the phone card: hidden by the display state, or placed in the detail (a meter,
-    // a spark, or the overflow of the card's six meta values), which the row's detail sheet lists.
-    'data-card': planned.place === 'hidden' || planned.place === 'detail' ? 'hidden' : undefined,
+    // a spark, or the overflow of the card's six meta values), which the row's derived detail sheet
+    // lists; a custom `detail` render lists only what it writes, so there the column stays on the card.
+    'data-card':
+      planned.place === 'hidden' || (planned.place === 'detail' && detailListed)
+        ? 'hidden'
+        : undefined,
   }
 }
 
@@ -254,7 +261,7 @@ export function DataTableHead<T>({
               aria-colindex={index + offset}
               {...(sortable && { 'aria-sort': ARIA_SORT[direction], 'aria-label': spec.header })}
               {...cellAttributes(spec)}
-              {...tierAttributes(planned)}
+              {...tierAttributes(planned, model.detailListed)}
               numeric={numeric}
               className={cn('group/head', className)}
             >

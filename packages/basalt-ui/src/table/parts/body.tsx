@@ -201,7 +201,7 @@ export function DataRow<T>({
             role="cell"
             aria-colindex={index + offset}
             {...cellAttributes(spec)}
-            {...tierAttributes(planned)}
+            {...tierAttributes(planned, model.detailListed)}
             data-unit={spec.unit}
             {...(label !== '' && { 'data-label': label })}
             numeric={numeric}
