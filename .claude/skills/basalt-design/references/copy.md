@@ -50,7 +50,7 @@ n10 printed "19.4 kt" in the hero, the bracket, the footer and the table; n18 na
 
 ### Worked: the fact count
 
-Before the last look, write the page's facts as a list with one line per fact: the fact, then every place it stands, as `current model: hero, chart label, rule label, table row, footer`. A fact with two or more places is cut to one, kept where a mark can carry it; the cut is made in the code, not noted. A fact is a noun with its value or its scope: a direction ("better when lower"), a period ("so far this week", "7 days"), a name (the top Issue, the contract), a verdict word and a total each count. c16 named its current model five times, n20 one overshoot four times, n19 its limit three times, n08 its verdict three times, n15 and n21 their baselines twice. Four cycles of prose on this did not move it; the count does, because a repeat is visible as a second entry.
+Before the last look, write the page's facts as a table in `docs/design/<screen>.md`: `fact | words | places before | places after`, one row per fact. A fact is a noun with its value or its scope: a direction ("better when lower"), a period ("so far this week", "7 days"), a name (the top Issue, the contract), a verdict word, a total, a sort, a window, a unit and the empty sentence each count. Count the places twice, by eye on the 1800 frame and with `rg -c '<its words>'` over the page source, because a label prop, a shared constant and a map over cells hide a repeat from a read. A row with two or more places is cut to one, kept where a mark can carry it; the cut is made in the code, never noted. Then count again and write the second number: the page is done when every row of `places after` reads 1. c16 named its current model five times, n20 one overshoot four times, n19 its limit three times, n08 its verdict three times, n15 and n21 their baselines twice. A list that is written and not cut did not move it for four cycles of prose, and cycle 10 lost X1 on all six pages the same way (below); the second count is what a builder has to look at.
 
 Cycle 8 lost a P2 or a P3 to it in every case, and the count would have caught each:
 
@@ -103,3 +103,12 @@ Cycle 9 repeated it on pages of tables, again in every case:
 - n38 (.61): `issues held up: hero unit, axis title, label`, `ahead in N h: rows, footer, rule`, the empty sentence twice.
 
 The repeat that a builder cannot see by reading is the one a unit or a window makes: list where each unit and each window is stated, then keep the one a mark carries.
+
+Cycle 10 repeated it in all six cases, each a row the second count would have kept above 1:
+
+- n39 (.8): `frost hours: zone label, table meter and number, status 'Longest Thu, 10 h'`. The zone label keeps the hours where the mark carries them; the meter draws them and the status names only the night.
+- n40 (.23): `Overdue: title, zone, legend, 16 cells, chip, focus chip` and `the empty sentence: four cards`. One word is the title; the empty sentence is one row per page, stated by the card that is empty and nowhere else.
+- n41 (.34): `the empty sentence: three places`, two legends for one set of series. One legend, one empty sentence.
+- n42 (.43): `line drop: hero sentence and zone label`, with 'Line drop' beside the chart's 'Drop' (one item, one name). The hero is the answer and the zone label is the mark; they do not both say it.
+- n43 (.52): `nothing waits: five rows`, 'Nothing submitted' beside a 0, `the sort: said twice`. A zero beside its own empty sentence is two places; a sort named in the header and a caption is two.
+- n44 (.59): `next 2 h: three`, `the 9.0 peak: twice`, `now / at arrival: per card`. A window is a fact: state it once for the page, never per card.
