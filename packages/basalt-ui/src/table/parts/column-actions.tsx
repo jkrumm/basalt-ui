@@ -2,10 +2,11 @@
  * The header's column menu, state half (docs/v3/concepts/data-table.md section 3): sort, hide and
  * reset for one column, all written through the table's one state (`setRequest` for the sort and
  * filters, `setDisplay` for visibility), so the chips, the Display popover and the URL stay in
- * step. The identity column never offers Hide, and `actions` has no menu. The filter item lives in
- * `HeaderFilterMenu` (`header-menu.tsx`), which a bespoke head composes beside this one.
+ * step. The identity column never offers Hide, and `actions` has no menu. A filterable column adds
+ * `Filter...` and a ranked status column `Order categories...`; each opens its panel where the
+ * caller anchors it (`DataTableHead` anchors both to the header cell).
  */
-import type { ReactElement } from 'react'
+import type { ReactElement, Ref } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
 import { Button } from '../../ui/button'
@@ -37,9 +38,11 @@ function hide<T>(model: TableModel<T>, column: string): void {
 function reset<T>(model: TableModel<T>, column: string): void {
   const { request, display } = model.state
   const { [column]: _dropped, ...visibility } = display.visibility
+  const { [column]: _rank, ...ranks } = request.ranks ?? {}
   model.state.setRequest({
     sort: request.sort.filter((entry) => entry.id !== column),
     filters: request.filters.filter((filter) => filter.id !== column),
+    ranks,
   })
   model.state.setDisplay({ visibility })
 }
@@ -57,12 +60,21 @@ export function ColumnActionsMenu<T>({
   table: instance,
   column,
   className,
+  onFilter,
+  onOrder,
+  triggerRef,
 }: {
   table: DataTableInstance<T>
   /** The column id, as given to the kind constructor. */
   column: string
   /** Layout of the trigger (where it sits in its header). */
   className?: string
+  /** Adds `Filter...`, which calls it: the caller opens the column's filter editor. */
+  onFilter?: () => void
+  /** Adds `Order categories...`, which calls it: the caller opens the column's order list. */
+  onOrder?: () => void
+  /** The menu's trigger, where focus returns when a panel it opened closes. */
+  triggerRef?: Ref<HTMLButtonElement>
 }): ReactElement | null {
   const model = modelOf(instance)
   const t = useMessages(table)
@@ -75,12 +87,14 @@ export function ColumnActionsMenu<T>({
   const touched =
     direction !== 'none' ||
     request.filters.some((f) => f.id === column) ||
+    request.ranks?.[column] !== undefined ||
     model.state.display.visibility[column] !== undefined
   return (
     <Menu>
       <MenuTrigger
         render={
           <Button
+            {...(triggerRef !== undefined && { ref: triggerRef })}
             size="sm"
             shape="icon"
             variant="ghost"
@@ -114,6 +128,17 @@ export function ColumnActionsMenu<T>({
             >
               {t('table.sortClear')}
             </MenuItem>
+            <MenuSeparator />
+          </>
+        )}
+        {(onFilter !== undefined || onOrder !== undefined) && (
+          <>
+            {onFilter !== undefined && (
+              <MenuItem onClick={onFilter}>{t('table.headerFilter')}</MenuItem>
+            )}
+            {onOrder !== undefined && (
+              <MenuItem onClick={onOrder}>{t('table.orderCategories')}</MenuItem>
+            )}
             <MenuSeparator />
           </>
         )}

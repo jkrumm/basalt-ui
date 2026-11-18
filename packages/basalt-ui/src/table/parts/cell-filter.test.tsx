@@ -1,19 +1,16 @@
 /**
- * `CellFilter` and `HeaderFilterMenu`: the two other doors to the one `f.<col>` field. A cell
- * filter is a control that writes the filter and never activates the row; a header `Filter...`
- * opens the same editor the toolbar does.
+ * `CellFilter`: a door to the one `f.<col>` field from a cell. It writes the filter and never
+ * activates the row. The header's door is `header-door.test.tsx`.
  */
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { useEffect } from 'react'
 import type { ReactElement } from 'react'
-import { settled } from '../../testing/settled'
 import type { UseDataTable } from '../contract'
 import { col } from '../core/kinds'
 import { useDataTable, modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { CellFilter } from './cell-filter'
-import { HeaderFilterMenu } from './header-menu'
 
 afterEach(cleanup)
 
@@ -104,26 +101,5 @@ describe('CellFilter', () => {
     expect(button.className).toContain("[data-below='480'][data-phone='cards']")
     expect(button.className).toContain('@max-[479.9px]/table:hidden')
     expect(button.className).toContain('pointer-coarse:after:min-h-11')
-  })
-})
-
-describe('HeaderFilterMenu', () => {
-  test('Filter... opens the same editor the toolbar uses and writes the same field', async () => {
-    render(<Subject>{(t) => <HeaderFilterMenu table={t} column="payee" />}</Subject>)
-    fireEvent.click(screen.getByRole('button', { name: 'Payee column menu' }))
-    await settled()
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Filter...' }))
-    await settled()
-    const input = screen.getByRole('textbox', { name: 'Contains' })
-    fireEvent.change(input, { target: { value: 'Ac' } })
-    await act(async () => void (await new Promise((r) => setTimeout(r, 320))))
-    expect(model().state.request.filters).toEqual([{ id: 'payee', op: 'contains', values: ['Ac'] }])
-  })
-
-  test('renders nothing for a column with no filter', () => {
-    const { container } = render(
-      <Subject>{(t) => <HeaderFilterMenu table={t} column="amount" />}</Subject>,
-    )
-    expect(container.querySelector('button')).toBeNull()
   })
 })
