@@ -45,9 +45,14 @@ export const paint = (color: string, opacity: number): string =>
 /**
  * A slotted chart has no axes to name the hovered bin, and an empty bin has no bar to light. Each bin
  * whose stack sums to zero gets a baseline mark (a half-dot on the plot's floor), hidden until that x
- * is hovered (the same `focus: 'x'` state that takes a drawn bar to full strength).
+ * is hovered (the same `focus: 'x'` state that takes a drawn bar to full strength). A bin a `focus`
+ * holds (keys, a list row) is lit the same way: the rest of the plot dims, so an empty bin must
+ * not be the one place with no mark.
  */
-function emptyBinTicks<D, X extends ChartX>(rows: readonly PlotRow<D, X>[]): ChartMarks {
+function emptyBinTicks<D, X extends ChartX>(
+  rows: readonly PlotRow<D, X>[],
+  focused: D | null,
+): ChartMarks {
   // A gap (`y: null` on every series) is an absence, not a zero: only a bin with a value counts.
   const sums = new Map<string, { row: PlotRow<D, X>; sum: number; values: number }>()
   for (const row of rows) {
@@ -61,16 +66,22 @@ function emptyBinTicks<D, X extends ChartX>(rows: readonly PlotRow<D, X>[]): Cha
   }
   const empty = [...sums.values()].filter((e) => e.values > 0 && e.sum === 0).map((e) => e.row)
   if (empty.length === 0) return []
-  return [
-    dot(empty, {
-      id: 'empty-bins',
+  const lit = (row: PlotRow<D, X>): boolean => focused !== null && row.datum === focused
+  const tick = (group: PlotRow<D, X>[], id: string, fillOpacity: number) =>
+    dot(group, {
+      id,
       x: rowX,
       y: () => 0,
       r: EMPTY_BIN_R,
       fill: CV.inkMuted,
-      fillOpacity: 0,
+      fillOpacity,
       states: [{ when: { focus: 'x' }, style: { fillOpacity: 1 } }],
-    }),
+    })
+  const held = empty.filter(lit)
+  const rest = empty.filter((row) => !lit(row))
+  return [
+    ...(rest.length > 0 ? [tick(rest, 'empty-bins', 0)] : []),
+    ...(held.length > 0 ? [tick(held, 'empty-bins:focused', 1)] : []),
   ]
 }
 
@@ -217,7 +228,9 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
           ? group({ padding: 0.1 })
           : stack({ order, ...(layout === 'normalized' && { offset: 'normalize' }) }),
     }),
-    ...(emptyTicks ? emptyBinTicks(rows) : zeroTicks(plot, rows, { fill, solid }, layout, order)),
+    ...(emptyTicks
+      ? emptyBinTicks(rows, plot.focused)
+      : zeroTicks(plot, rows, { fill, solid }, layout, order)),
   ]
 }
 

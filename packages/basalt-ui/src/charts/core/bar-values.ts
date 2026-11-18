@@ -43,6 +43,8 @@ type Candidate<X extends ChartX> = {
   highlighted: boolean
   dimmed: boolean
   magnitude: number
+  /** A grouped bar's name: `<series key>:<x fraction>`; none for a stack end. */
+  id?: string
 }
 
 export type BarValuesInput<T, X extends ChartX> = {
@@ -90,6 +92,7 @@ function candidates<T, X extends ChartX>(input: BarValuesInput<T, X>): Candidate
     width: number
     group: readonly T[]
     s: readonly ChartSeries<T>[]
+    id?: string
   }): Candidate<X> => {
     const { side, value } = opts
     const bandX = (input.fraction(opts.x) ?? 0) * frame.width
@@ -106,6 +109,7 @@ function candidates<T, X extends ChartX>(input: BarValuesInput<T, X>): Candidate
       highlighted: opts.s.some((s) => opts.group.some((d) => s.highlight?.(d))),
       dimmed: input.focused !== null && !opts.group.includes(input.focused),
       magnitude: Math.abs(value),
+      ...(opts.id !== undefined && { id: opts.id }),
     }
   }
   const out: Candidate<X>[] = []
@@ -133,6 +137,7 @@ function candidates<T, X extends ChartX>(input: BarValuesInput<T, X>): Candidate
             width: slot,
             group: [d],
             s: [s],
+            id: `${s.key}:${fx}`,
           }),
         )
       }
@@ -205,10 +210,10 @@ function candidates<T, X extends ChartX>(input: BarValuesInput<T, X>): Candidate
  */
 export function barValueLabels<T, X extends ChartX>(
   input: BarValuesInput<T, X>,
-): { marks: ChartMarks; boxes: LabelBox[] } {
+): { marks: ChartMarks; boxes: LabelBox[]; written: ReadonlySet<string> } {
   const found = candidates(input)
   if (found.length === 0 || input.frame.width <= 0 || input.frame.height <= 0)
-    return { marks: [], boxes: [] }
+    return { marks: [], boxes: [], written: new Set() }
   // Highlighted first, then the larger value, then the earlier x.
   const rank = found
     .map((c, i) => ({ c, i }))
@@ -219,25 +224,38 @@ export function barValueLabels<T, X extends ChartX>(
         a.i - b.i,
     )
   const priority = new Map(rank.map(({ i }, r) => [i, found.length - r]))
-  const label = (c: Candidate<X>, i: number, spot: LabelSpot): ChartLabel<string> => ({
+  // The bars that name the answer: the highlighted ones, else the largest. Their label survives:
+  // it tries the sides of the bar's end, and last any free spot, rather than drop.
+  const named = new Set(
+    (rank.some(({ c }) => c.highlighted)
+      ? rank.filter(({ c }) => c.highlighted)
+      : rank.slice(0, 1)
+    ).map(({ i }) => String(i)),
+  )
+  const label = (c: Candidate<X>, i: number, spots: readonly LabelSpot[]): ChartLabel<string> => ({
     key: String(i),
     text: c.text,
     x: c.anchor.x,
     y: c.anchor.y,
     size: SIZE,
     priority: priority.get(i) ?? 0,
-    spots: [spot],
+    spots,
   })
+  const outsideSpots = (c: Candidate<X>, i: number): readonly LabelSpot[] => {
+    const end: LabelSpot = c.up ? 'above' : 'below'
+    if (!named.has(String(i))) return [end]
+    return [end, `${end}-right`, `${end}-left`, 'right', 'left']
+  }
   const outside = placeWith(
     measure,
-    found.map((c, i) => label(c, i, c.up ? 'above' : 'below')),
+    found.map((c, i) => label(c, i, outsideSpots(c, i))),
     input.frame,
     { gap: GAP, obstacles: input.obstacles, size: SIZE },
   )
   const taken = new Set(outside.placed.map((p) => p.key))
   const fitting = found.flatMap((c, i) =>
     !taken.has(String(i)) && fitsWith(measure, c.text, c.body, { size: SIZE, pad: INSIDE_PAD })
-      ? [label(c, i, c.up ? 'below' : 'above')]
+      ? [label(c, i, [c.up ? 'below' : 'above'])]
       : [],
   )
   const inside = placeWith(measure, fitting, input.frame, {
@@ -245,8 +263,19 @@ export function barValueLabels<T, X extends ChartX>(
     obstacles: [...input.clear, ...outside.placed],
     size: SIZE,
   })
+  // A named bar still without a label takes any spot clear of the other labels, over a rule or a
+  // line if it must: a label that names the answer is never dropped for what the host drew.
+  const standing = new Set([...taken, ...inside.placed.map((p) => p.key)])
+  const rescued = placeWith(
+    measure,
+    found.flatMap((c, i) =>
+      named.has(String(i)) && !standing.has(String(i)) ? [label(c, i, outsideSpots(c, i))] : [],
+    ),
+    input.frame,
+    { gap: GAP, obstacles: [...outside.placed, ...inside.placed], size: SIZE },
+  )
   const marks = [
-    ...outside.placed.map((p) => ({ p, ink: CV.inkMuted })),
+    ...[...outside.placed, ...rescued.placed].map((p) => ({ p, ink: CV.inkMuted })),
     ...inside.placed.map((p) => ({ p, ink: CV.surface })),
   ].map(({ p, ink }) => {
     const c = found[Number(p.key)] as Candidate<X>
@@ -261,7 +290,13 @@ export function barValueLabels<T, X extends ChartX>(
     }
   })
   const scales = [...new Set(marks.map((m) => m.scale))]
+  const written = new Set(
+    [...outside.placed, ...rescued.placed, ...inside.placed].flatMap(
+      (p) => found[Number(p.key)]?.id ?? [],
+    ),
+  )
   return {
+    written,
     marks: scales.map((scale) =>
       decorative(
         text(
@@ -281,11 +316,13 @@ export function barValueLabels<T, X extends ChartX>(
         ),
       ),
     ) as unknown as ChartMarks,
-    boxes: [...outside.placed, ...inside.placed].map(({ left, top, width, height }) => ({
-      left,
-      top,
-      width,
-      height,
-    })),
+    boxes: [...outside.placed, ...rescued.placed, ...inside.placed].map(
+      ({ left, top, width, height }) => ({
+        left,
+        top,
+        width,
+        height,
+      }),
+    ),
   }
 }

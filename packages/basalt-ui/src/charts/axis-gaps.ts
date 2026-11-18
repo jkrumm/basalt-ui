@@ -149,8 +149,10 @@ export const captionWidth = (label: string, fontSize: number): number =>
   label.length * fontSize * X_LABEL_GLYPH_EM
 /** Air kept between two captions on one row, px. */
 const X_LABEL_AIR = 4
-/** A second row of captions hangs under the first before one drops. */
+/** A second row of captions hangs under the first before the caption looks lower. */
 const X_LABEL_ROWS = 2
+/** The most rows a caption tries down the plot before it settles over a mark. */
+const X_LABEL_MAX_ROWS = 6
 
 /** The centre of a caption row below the plot top, px (the engine centres text on its y). */
 const xLabelDy = (row: number, fontSize: number): number => fontSize + row * (fontSize + 6)
@@ -185,8 +187,10 @@ export function xRefLabelSpots<X extends ChartX>(opts: {
   fontSize: number
   /** Whether a mark (a bar, a dot) fills the box (px across the plot, px below its top): a caption never sits on one. */
   blocked?: ((box: { x0: number; x1: number; top: number; bottom: number }) => boolean) | undefined
+  /** The plot's height in px: a row never hangs below it. Absent, every row counts. */
+  plotHeight?: number | undefined
 }): XRefLabelSpot[] {
-  const { fraction, plotWidth, fontSize, blocked } = opts
+  const { fraction, plotWidth, fontSize, blocked, plotHeight } = opts
   const named = (opts.lines ?? []).flatMap((r, index) => {
     const f = r.label ? fraction(r.x, r.at) : null
     return r.label && f !== null && f >= 0 && f <= 1 ? [{ index, f, text: r.label }] : []
@@ -197,7 +201,13 @@ export function xRefLabelSpots<X extends ChartX>(opts: {
     const at = f * plotWidth
     const preferRight = f <= 0.5
     const spots: XRefLabelSpot[] = []
-    for (let row = 0; row < X_LABEL_ROWS; row++)
+    for (let row = 0; row < X_LABEL_MAX_ROWS; row++) {
+      // Past the second row a caption hangs lower only while the row stays inside the plot.
+      if (
+        row >= X_LABEL_ROWS &&
+        (plotHeight === undefined || captionRows(row, fontSize).bottom > plotHeight)
+      )
+        break
       for (const toRight of [preferRight, !preferRight])
         spots.push({
           index,
@@ -206,15 +216,22 @@ export function xRefLabelSpots<X extends ChartX>(opts: {
           x0: toRight ? at + X_REF_LABEL_DX : at - width,
           x1: toRight ? at + width : at - X_REF_LABEL_DX,
         })
-    const clear = (c: XRefLabelSpot): boolean =>
+    }
+    const placed = (c: XRefLabelSpot): boolean =>
       (plotWidth <= 0 || (c.x0 >= 0 && c.x1 <= plotWidth)) &&
-      (blocked === undefined ||
-        !blocked({ x0: c.x0, x1: c.x1, ...captionRows(c.row, fontSize) })) &&
       taken.every(
         (t) => t.row !== c.row || t.x1 + X_LABEL_AIR <= c.x0 || t.x0 >= c.x1 + X_LABEL_AIR,
       )
-    // Before the plot is measured every caption keeps its natural spot.
-    const spot = plotWidth <= 0 ? spots[0] : spots.find(clear)
+    const clear = (c: XRefLabelSpot): boolean =>
+      placed(c) &&
+      (blocked === undefined || !blocked({ x0: c.x0, x1: c.x1, ...captionRows(c.row, fontSize) }))
+    // Before the plot is measured every caption keeps its natural spot. A rule that names the
+    // answer is never dropped for the marks: with no spot clear of them it takes the first one
+    // that stays inside the plot clear of the other captions, over a mark.
+    const spot =
+      plotWidth <= 0
+        ? spots[0]
+        : (spots.find(clear) ?? spots.slice(0, 2 * X_LABEL_ROWS).find(placed))
     if (spot !== undefined) taken.push(spot)
   }
   return taken
@@ -255,6 +272,8 @@ export function xRefLineMarks<X extends ChartX>(opts: {
   plotWidth?: number | undefined
   /** See {@link xRefLabelSpots}. */
   blocked?: Parameters<typeof xRefLabelSpots>[0]['blocked']
+  /** See {@link xRefLabelSpots}. */
+  plotHeight?: number | undefined
 }): ChartMarks {
   const fontSize = BASALT.text.micro
   const spots = xRefLabelSpots({
@@ -263,6 +282,7 @@ export function xRefLineMarks<X extends ChartX>(opts: {
     plotWidth: opts.plotWidth ?? 0,
     fontSize,
     blocked: opts.blocked,
+    plotHeight: opts.plotHeight,
   })
   const spotOf = new Map(spots.map((s) => [s.index, s]))
   return (opts.lines ?? []).flatMap((r, i) => {

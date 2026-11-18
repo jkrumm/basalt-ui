@@ -198,6 +198,23 @@ export function CartesianChart<D>(props: CartesianChartProps<D>): ReactElement {
 }
 CartesianChart.custom = custom
 
+/**
+ * Where the item at `last` ends on a time axis: one typical step (the median gap between the
+ * items) after it. Any other x, or items with no gap to read, end where they start.
+ */
+function itemEnd(last: ChartX, xs: readonly ChartX[]): ChartX {
+  if (!(last instanceof Date)) return last
+  const times = xs
+    .flatMap((v) => (v instanceof Date ? [v.getTime()] : []))
+    .toSorted((a, b) => a - b)
+  const gaps = times.flatMap((t, i) =>
+    i > 0 && t > (times[i - 1] as number) ? [t - (times[i - 1] as number)] : [],
+  )
+  if (gaps.length === 0) return last
+  const step = gaps.toSorted((a, b) => a - b)[gaps.length >> 1] as number
+  return new Date(last.getTime() + step)
+}
+
 /** The rung `Lines` and `Bars` render through: the public props plus the kind-only options. */
 export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): ReactElement {
   const { summary, table, phase, layout = 'stacked', naming = 'auto' } = props
@@ -235,16 +252,20 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
   const spanLast = held?.at(-1)
   const ownZones = props.zones
   const xValue = x.value
+  const focusItems = focus?.items
+  const onBands = series.some((s) => s.mark === 'bar')
   const zones = useMemo((): readonly ChartZone[] | undefined => {
     if (spanFirst === undefined || spanLast === undefined) return ownZones
+    const last = xValue(spanLast)
     const band: ChartZone = {
       axis: 'x',
       from: xValue(spanFirst),
-      to: xValue(spanLast),
+      // On a time axis an item stands for the interval after its x: the band runs to its end.
+      to: onBands || focusItems === undefined ? last : itemEnd(last, focusItems.map(xValue)),
       fill: BASALT.selected,
     }
     return [...(ownZones ?? []), band]
-  }, [ownZones, spanFirst, spanLast, xValue])
+  }, [ownZones, spanFirst, spanLast, xValue, focusItems, onBands])
   // With a `focus` the emphasised series is the shared one: a list row of a series and the legend
   // set the same key, so either marks the other.
   const highlighted = focus === undefined ? ownHighlight : focus.series

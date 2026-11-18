@@ -65,8 +65,11 @@ describe('a rule caption keeps off a mark', () => {
     expect(moved[0]?.toRight === first.toRight && moved[0]?.row === first.row).toBe(false)
   })
 
-  test('it drops when every spot is blocked', () => {
-    expect(spots(() => true)).toHaveLength(0)
+  test('it stays over the marks when every spot is blocked, on the top row', () => {
+    // Expression cycle 10: a rule that names the answer is not dropped for a mark.
+    const stayed = spots(() => true)
+    expect(stayed).toHaveLength(1)
+    expect(stayed[0]?.row).toBe(0)
   })
 })
 

@@ -34,6 +34,8 @@ const BOX_INK = 0.75
 const LINE_AIR = 4.5
 /** What a label across a reference rule from its own line costs in {@link place}'s air score, px. */
 const CROSSED_PENALTY = 100
+/** The least air a label keeps from a line once it has to move off one, px: a touch is a collision. */
+const MIN_AIR = 1
 /** The most flipped labels whose two sides are all tried (2 ** n assignments). */
 const MAX_SIDE_SEARCH = 5
 /** How far a dot mark reaches from its centre, px: its radius and ring. */
@@ -247,12 +249,54 @@ export function endLabelPlan<T, X extends ChartX>(
       Number.POSITIVE_INFINITY,
       ...ranges(i).map(([a, b]) => Math.max(a - (c + half), c - half - b)),
     )
+  const stackRoom = Math.max(plot.plotHeight - 2 * END_LABEL_EDGE, 0)
+  const gap =
+    last.length > 1 ? Math.min(END_LABEL_MIN_GAP, stackRoom / (last.length - 1)) : END_LABEL_MIN_GAP
+  const shareX = (i: number, j: number): boolean => {
+    const [a0, a1] = spans[i] as readonly [number, number]
+    const [b0, b1] = spans[j] as readonly [number, number]
+    return a0 < b1 && b0 < a1
+  }
+  /**
+   * A label the spread left on a line (it pushed it there, or the line sits at the plot's edge)
+   * moves to the nearest height clear of every line that keeps its gap from the labels already
+   * fixed: the clear ones keep theirs, the rest take the nearest of what is free. One that finds
+   * none stays where the spread left it.
+   */
+  const unstruck = (centres: readonly number[]): number[] => {
+    const out = [...centres]
+    const struck = (i: number): boolean => airOf(i, out[i] as number) < MIN_AIR
+    const fixed = out.flatMap((_, i) => (struck(i) ? [] : [i]))
+    const highest = plot.plotHeight - END_LABEL_EDGE
+    for (const i of out.flatMap((_, k) => (struck(k) ? [k] : []))) {
+      const free = (c: number, air: number): boolean =>
+        airOf(i, c) >= air &&
+        fixed.every((j) => !shareX(i, j) || Math.abs(c - (out[j] as number)) >= gap)
+      const from = out[i] as number
+      let found: number | undefined
+      for (const air of [LINE_AIR, MIN_AIR]) {
+        let nearest = Number.POSITIVE_INFINITY
+        for (let c = END_LABEL_EDGE; c <= highest; c++) {
+          if (Math.abs(c - from) < nearest && free(c, air)) {
+            nearest = Math.abs(c - from)
+            found = c
+          }
+        }
+        if (found !== undefined) break
+      }
+      if (found !== undefined) {
+        out[i] = found
+        fixed.push(i)
+      }
+    }
+    return out
+  }
   const place = (sides: readonly EndLabelSide[]) => {
     const start = last.map((_, i) =>
       cleared(i, sides[i] as EndLabelSide, nominal(i, sides[i] as EndLabelSide)),
     )
     const shifts = spreadLabels(start, plot.plotHeight)
-    const centres = start.map((c, i) => c + (shifts[i] as number))
+    const centres = unstruck(start.map((c, i) => c + (shifts[i] as number)))
     // A label across a reference rule from its own line's end reads as the rule's label: worse
     // than any amount of lost air.
     const crossed = centres.filter((c, i) => {
