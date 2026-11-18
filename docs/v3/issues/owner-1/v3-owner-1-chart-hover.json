@@ -1,0 +1,30 @@
+{
+  "why": "Three chart complaints from the owner, each a shared-kit cause. (1) /cards: 'hover in the charts is very cheap; render the x and y axis of the relevant value, it only shows the y value.' Sparkline is hand SVG with no engine and no tooltip (packages/basalt-ui/src/charts/parts/sparkline.tsx:36-37); its readout is `value · name` and the name exists only when a point carries `at` or `label` (parts/sparkline-shared.tsx:115-125, contract.ts:330-333), so a series of bare numbers reads y only, with no guide to either axis. apps/playground/src/routes/cards.tsx:27,36 passes bare numbers, and so will consumers. (2) /scenarios/expr-c12 'Daily cost by model': 'I can't filter the chart by labels or disable or enable them; should be shared chart functionality.' CartesianChart's own legend toggles (parts/cartesian.tsx:210, 474-495; core/compile.ts:1527), but a page that hands ChartCard a `legend` gets a static one: ChartCardProps.legend is `readonly LegendEntry[]` with no hidden or toggle (contract.ts:388, parts/chart-card.tsx:317-322), and c12 set `legend: false` on its series to use it. There is no isolate. So whether a legend is interactive depends on which of two legend paths the builder happened to pick. (3) /scenarios/expr-n04: 'hovering the chart causes crazy jumps and flickering.' The page shows `period` only while hovered; ChartCard's figure row reserves the period line only in loading and blank phases (parts/chart-card.tsx:59-67, 145-158), so below `regular` the line appears on hover, pushes the plot down, the pointer leaves the plot, focus clears (focus.tsx:447), the line collapses, and it loops. Any chart with a hover-driven period, status or delta can do this.",
+  "what": "packages/basalt-ui/src/charts (Sparkline readout, ChartCard legend and figure row, the contract additions), src/cards where a stat card hosts a sparkline, the generated docs, the basalt-charts skill lines, and a suite-level guard.",
+  "owns": [
+    "packages/basalt-ui/src/charts/**",
+    "packages/basalt-ui/src/cards/stat-card*.tsx and stat-cell.tsx (the sparkline hover only)",
+    "packages/basalt-ui/agent/skills/basalt-charts/**",
+    "the layout suite or quality matrix file that gains the hover-shift check",
+    "apps/playground/src/routes/cards.tsx"
+  ],
+  "must_not_touch": [
+    "docs/v3/expression/**",
+    "CHANGELOG.md",
+    "apps/playground/src/scenarios/expr/** (v3-owner-1-rerun rebuilds the named cases)"
+  ],
+  "change": "Spec first, with shots, since two parts are new look and one is contract. (1) Hover readout: every chart the kit ships, Sparkline included, answers a hover with both coordinates: the x value (date, label, or the index when the page gave neither) and the y value, with a guide that ties the point to both axes; on CartesianChart that is a crosshair with the x and y values pinned at the axes, on Sparkline the smallest form that still names x. A point without `at` or `label` still reads an x. Open choice: axis-pinned labels on by default (default yes for Lines, Area, Bars; off for Sparkline, which gets the inline readout). (2) Legend: one legend behaviour. A legend with two or more entries toggles its series wherever it is drawn, ChartCard's `legend` included; a modifier click or a double click isolates one series; hidden series leave plot, tooltip and scale as the existing toggle does; keyboard and aria-pressed as the existing toggle. A page should not be able to reach a static legend by accident: either ChartCard's legend drives the chart's hidden state, or the contract tells the builder which to use and lint flags `legend: false` beside a card legend. (3) Layout stability: the figure row reserves every line a ready-phase chart can show on hover (period, status, delta), so focus changes text and never height. Add a guard that runs over every playground chart page: sweep the pointer across each plot and fail when the plot box moves. That guard is the root fix; the n04 line is one instance.",
+  "acceptance": [
+    "A Spec with shots of the new hover on a card sparkline and on a cartesian chart, and of a toggled and an isolated legend, has a verdict before code merges",
+    "Hovering a Sparkline built from bare numbers reads an x and a y (unit test), and /cards passes dated points",
+    "A CartesianChart hover shows the x and the y value tied to their axes (layout test, light and dark, 390 and 1800)",
+    "A ChartCard `legend` with two entries toggles and isolates series, by pointer and keyboard (tests)",
+    "The hover-shift guard runs in make check over every chart page and fails on a reverted figure-row fix (shown once in the PR)",
+    "Contract additions are additive, pinned through the contract-amendment path, and the charts budget change is recorded",
+    "make check passes"
+  ],
+  "out_of_scope": "BarList and Heatmap focus (v3-expr-10-contract); brushing and zoom; rewriting c12 or n04 (v3-owner-1-rerun).",
+  "proof": "make check; the shots named in acceptance; the guard's failing run on the reverted fix.",
+  "commits": "feat: per part with its test (package); chore: the playground cards data; chore: the guard.",
+  "note": "Source: the owner's first hands-on review of the v3 playground on 2026-11-18. He asked for the root cause to be fixed, not the page he named. File citations come from a code read on that date at master 7c454b3a0 and were not run in a browser: confirm each before building on it."
+}

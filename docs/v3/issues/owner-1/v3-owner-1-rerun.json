@@ -1,0 +1,22 @@
+{
+  "why": "The owner named seven expression pages and /cards in his review of 2026-11-18 and asked for root causes, not page patches. The rows before this one changed the kit, the lint and the skill. A fix to the cause shows only if a fresh builder, who never saw the complaint, now produces a page without it. Hand-editing the old builds would prove nothing and is against the expression protocol (never hand-finish a trial build).",
+  "what": "apps/playground/src/scenarios/expr for c12, n02, n04, n15, n27, n32 and n35, a results page, and shots.",
+  "owns": [
+    "apps/playground/src/scenarios/expr/{c12,n02,n04,n15,n27,n32,n35}/**",
+    "apps/playground/src/demo/series.ts (append only)",
+    "docs/v3/cycles/owner-review-1.md (new)"
+  ],
+  "must_not_touch": ["packages/basalt-ui/**", "docs/v3/expression/cases.md", "CHANGELOG.md"],
+  "change": "Run the seven cases as one extra trial under docs/v3/EXPRESSION.md's protocol on current master: one fresh builder per case, the shipped surface and skill only, the case text unchanged, never the owner's remarks, the old build or the rubric. Keep the old build's last-round shots as the before. Score with fresh reviewers on the recalibrated rubric. Then check each remark against the new build by looking, and say met or not met: c12 legend toggles and isolates; n02 and n04 rows without ink rules; n04 plot still under a hover sweep; n15 accent on one series; n27 offers a table view; n32 uses nested rows or the chain view; n35 uses the interval kind with no hand marks. A remark still not met is a finding with a class (skill, primitive, rubric) and a proposed row, not a hand fix. Write docs/v3/cycles/owner-review-1.md with a before and after shot pair per case and hand it to the owner as a Report.",
+  "acceptance": [
+    "Seven fresh one-shot builds are on master, each passing lint with no new waiver",
+    "docs/v3/cycles/owner-review-1.md states each of the owner's remarks met or not met, with a before and after shot pair",
+    "Every not-met remark has a class and a proposed plan row",
+    "The page is submitted as a Report artifact for the owner",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit changes; a full cycle with new cases (v3-cycle-expression-11).",
+  "proof": "make check; the Report.",
+  "commits": "feat: the rebuilt scenarios; docs: the results page.",
+  "note": "Source: the owner's first hands-on review of the v3 playground on 2026-11-18. He asked for the root cause to be fixed, not the page he named. File citations come from a code read on that date at master 7c454b3a0 and were not run in a browser: confirm each before building on it."
+}

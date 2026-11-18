@@ -1,0 +1,42 @@
+{
+  "why": "The owner's first hands-on review disagrees with the reviewers on the cases he named, which means the loop optimises a rubric that misses what he judges. n35 scored 85, the highest of cycle 9 (docs/v3/cycles/expression-9.md:55-58): he says 'kind of nice idea but horrible rendering, looks poorly designed'. n15 scored 80 and passed first try (expression-6.md): 'too much screaming blue, choose colour only where expression needs it'; both of its series are accent blues (apps/playground/src/demo/series.ts:139-141) and the reviewer rubric allows 'the primary data series' as an accent site with no count (packages/basalt-ui/agent/reviewer/rubric.md:44), while the skill's 'one accent' is prose only (agent/skills/basalt-design/references/charts.md:22, encoding.md:19, SKILL.md:14). n32 passed at 81: 'looks weird'. n04 was never marked for a hover that makes the plot jump. n02 and n04 were never marked for ink-weight row rules. n27 never passed (70 to 76) and his note is about form: a grid of chart cards that should offer a table view. His overall verdict is still 'we are on the right path'. An earlier owner review produced X1 to X5 (expression cycle 2); this is the second calibration and it should land the same way.",
+  "what": "docs/v3/expression/rubric.md, packages/basalt-ui/agent/reviewer/rubric.md, the basalt-design and basalt-charts skill references, docs/v3/EXPRESSION.md where it names the calibration set, and a calibration record.",
+  "owns": [
+    "docs/v3/expression/rubric.md",
+    "docs/v3/expression/calibration-owner-2.md (new)",
+    "docs/v3/EXPRESSION.md (the calibration paragraph only)",
+    "packages/basalt-ui/agent/reviewer/**",
+    "packages/basalt-ui/agent/skills/basalt-design/** and basalt-charts/** (text only)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "apps/playground/src/scenarios/expr/**",
+    "docs/v3/cycles/** (past cycle pages stay as scored)",
+    "CHANGELOG.md"
+  ],
+  "change": "(1) Record the review verbatim in docs/v3/expression/calibration-owner-2.md with the owner's words per case (in this brief's `owner_words`), the round scores those cases got, and the gap. (2) Add or sharpen rubric items so each remark has a line a reviewer must score from the shots: a colour budget (accent on at most one series or one mark class per view, counted, with the rest in ink steps; a second accent needs a stated second meaning); separator weight (a rule between rows is at most the grid token, never ink); craft of hand-composed marks (alignment to a shared grid, label fit, no clipped or hidden titles, consistent mark sizes) scored separately from the idea, so a good idea drawn badly cannot pass; layout stability under hover (the lead tool's sweep frames must show the plot at one position); form choice for many small cards (a card grid of records offers a table view). Weight them so n35, n15 and n32 as shipped would fail: rescore those three and n04 from their existing last-round shots with fresh reviewers and put the scores in the calibration page. If the rescored cases still pass, the items are too weak. (3) Skill: turn the same lines into instructions with a self-check the builder runs before shooting (count accent series; no bare border; hover sweep), and say where the owner's preference came from. (4) Where a rule can be a lint rule rather than prose, name it in the PR for the lead of v3-owner-1-row-rules or as a follow-up; do not write package code here.",
+  "owner_words": {
+    "cards": "Hover in the charts there very cheap, we can be better and render x and y axis of the relevant value, it only shows y value",
+    "c12": "I can't filter the chart by labels or disable or enable them, should be shared chart functionality, but there in c12 the top bar is maybe a little better",
+    "n02": "open issues: too hard borders between entries",
+    "n04": "Hovering the chart causes crazy jumps and flickering often, and on the right the hard borders again",
+    "n07": "does the right side better",
+    "n15": "too much screaming blue, choose color only where expression needs it",
+    "n27": "one example where maybe this card view could be switched optionally to a rich table instead of cards",
+    "n32": "looks weird, may be optimized, and here we maybe also dogfood what we have in factory console chain as another view option",
+    "n35": "kind of nice idea but horrible rendering, looks poorly designed, but good component maybe",
+    "overall": "generally we are on the right path and we are going good; some inconsistencies in spacing; I don't like this topbar you often used"
+  },
+  "acceptance": [
+    "docs/v3/expression/calibration-owner-2.md holds the owner's words, the old scores and the rescored ones for n04, n15, n32 and n35",
+    "Each of the five themes (colour budget, separator weight, craft, hover stability, card grid versus table) is a numbered rubric item with what a reviewer looks at in a shot",
+    "Rescored with the new rubric by fresh reviewers, n15, n32 and n35 score under the pass line, or the page says why one still passes",
+    "The skill carries a matching builder self-check for each item",
+    "The reviewer agent file and the rubric agree (agent-doc-drift passes)",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit changes; rebuilding cases; the convergence clauses of EXPRESSION.md (the owner's open Decision on Issue 2134).",
+  "proof": "make check; the calibration page.",
+  "commits": "docs: the calibration page and rubric; feat: the skill text (package, own commit).",
+  "note": "Source: the owner's first hands-on review of the v3 playground on 2026-11-18. He asked for the root cause to be fixed, not the page he named. File citations come from a code read on that date at master 7c454b3a0 and were not run in a browser: confirm each before building on it."
+}

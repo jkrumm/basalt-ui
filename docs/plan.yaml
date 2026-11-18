@@ -877,5 +877,83 @@ rows:
     repo: basalt-ui
     kind: chore
     seat: { tier: opus, effort: high }
-    after: [v3-expr-10-kit-fixes, v3-expr-10-contract, v3-expr-10-skill, v3-expr-10-rubric]
+    after:
+      [
+        v3-expr-10-kit-fixes,
+        v3-expr-10-contract,
+        v3-expr-10-skill,
+        v3-expr-10-rubric,
+        v3-owner-1-rubric,
+      ]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-11.json' }
+  - key: v3-owner-1-page-top
+    title: 'Page top: one bar instead of a header plus a sticky band, one owner for the top inset, and a page root guard (Spec), from owner review 1'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-page-top.json' }
+  - key: v3-owner-1-showcase
+    title: 'Playground: a gallery that shows page controls, the aside, peek, split and resizable panes from the nav, and a list of real kit gaps, from owner review 1'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-showcase.json' }
+  - key: v3-owner-1-chart-hover
+    title: 'Charts: a hover that reads x and y everywhere, a legend that toggles series in every chart, and a hover that never moves the plot (Spec), from owner review 1'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-chart-hover.json' }
+  - key: v3-owner-1-table-filters
+    title: 'DataTable: filter from the column header with range, date and enum editors, and a category order the user can rearrange (Spec), from owner review 1'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-table-filters.json' }
+  - key: v3-owner-1-row-rules
+    title: 'Lists: a bare border paints the border token, a shipped row list covers what builders hand-wrote, and lint flags the rest (Spec), from owner review 1'
+    repo: basalt-ui
+    kind: feature
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-row-rules.json' }
+  - key: v3-owner-1-rubric
+    title: 'Expression rubric and skill: score what the owner marked down (colour budget, separator weight, craft, layout stability) and recalibrate on his review, from owner review 1'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-rubric.json' }
+  - key: v3-owner-1-interval-track
+    title: 'An interval track chart kind for spans over time, from what n35 drew by hand (Spec), from owner review 1'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-owner-1-chart-hover]
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-interval-track.json' }
+  - key: v3-owner-1-chain-view
+    title: 'Nested rows for DataTable and a dependency chain view, dogfooding the factory console graph (Spec), from owner review 1'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-owner-1-table-filters]
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-chain-view.json' }
+  - key: v3-owner-1-rerun
+    title: 'Rebuild the cases the owner marked down, one shot each on the fixed kit, and show him before and after, from owner review 1'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-owner-1-page-top,
+        v3-owner-1-chart-hover,
+        v3-owner-1-table-filters,
+        v3-owner-1-row-rules,
+        v3-owner-1-rubric,
+        v3-owner-1-interval-track,
+        v3-owner-1-chain-view,
+      ]
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-rerun.json' }
