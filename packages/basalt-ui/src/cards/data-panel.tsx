@@ -1,5 +1,5 @@
-import { useContext } from 'react'
-import type { CSSProperties, ReactElement } from 'react'
+import { useContext, useLayoutEffect, useRef, useState } from 'react'
+import type { CSSProperties, ReactElement, RefObject } from 'react'
 import { HostTitleContext } from '../core/could-not-load'
 import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
@@ -32,6 +32,43 @@ const bodyHeightOf = (size: DataPanelProps['bodySize']): number => {
       ? Math.max(0, Math.round(size.rows)) * (ROW + GAP) - GAP
       : Math.round(size.height)
   return Math.max(MIN_BODY, px)
+}
+
+/**
+ * A `{ rows }` body shows whole rows: when its table's rows run past the declared height, the box
+ * is cut after the last row that fits, so no row is clipped through its text. The measure reads the
+ * rows against the declared height, never the snapped one, so it holds under a resize and a refetch;
+ * the snapped height is kept through the loading, empty and error arms, so a panel that has shown
+ * its rows keeps their height. Bodies that draw no table rows keep the declared height.
+ */
+function useWholeRows(
+  enabled: boolean,
+  declared: number,
+): { ref: RefObject<HTMLDivElement | null>; height: number } {
+  const ref = useRef<HTMLDivElement | null>(null)
+  const [snapped, setSnapped] = useState<number | undefined>(undefined)
+  useLayoutEffect(() => {
+    const box = ref.current?.querySelector('[data-slot="card-phase"]')
+    if (!enabled || !(box instanceof HTMLElement)) return undefined
+    const measure = (): void => {
+      const rows = box.querySelectorAll('tbody [data-slot="table-row"]')
+      if (rows.length === 0) return
+      const top = box.getBoundingClientRect().top
+      let fit: number | undefined
+      let last = 0
+      for (const row of rows) {
+        last = row.getBoundingClientRect().bottom - top
+        if (last <= declared + 0.5) fit = last
+      }
+      setSnapped(last <= declared + 0.5 || fit === undefined ? undefined : Math.ceil(fit))
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(measure)
+    for (const child of box.children) observer.observe(child)
+    return () => observer.disconnect()
+  })
+  return { ref, height: snapped === undefined ? declared : Math.max(MIN_BODY, snapped) }
 }
 
 const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
@@ -177,7 +214,8 @@ export function DataPanel(props: DataPanelProps): ReactElement {
       `DataPanel "${title}" sits ${depth} frames deep (over ${MAX_DEPTH}). Lay the frames out side by side instead of nesting them.`,
     )
   }
-  const height = bodyHeightOf(bodySize)
+  const declared = bodyHeightOf(bodySize)
+  const { ref: insetRef, height } = useWholeRows('rows' in bodySize, declared)
   return (
     <div data-slot="data-panel" className="@container min-w-0">
       <Card flush>
@@ -191,7 +229,7 @@ export function DataPanel(props: DataPanelProps): ReactElement {
           </div>
         )}
         {legend !== undefined && legend.length > 0 && <Legend entries={legend} />}
-        <Inset className="flex flex-col">
+        <Inset ref={insetRef} className="flex flex-col">
           <HostTitleContext.Provider value={title}>
             <FrameDepthContext.Provider value={depth + 1}>
               <CardPhase

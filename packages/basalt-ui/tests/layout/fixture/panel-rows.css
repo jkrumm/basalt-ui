@@ -1,0 +1,8 @@
+/*
+ * The `panel-rows` fixture's Tailwind v4 entry, compiled like a Tailwind consumer.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './panel-rows-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/table';
+@source '../../../src/cards';
