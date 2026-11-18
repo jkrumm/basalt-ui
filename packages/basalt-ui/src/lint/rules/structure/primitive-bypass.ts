@@ -30,7 +30,7 @@
  *   `return`) and it is a lowercase `div`, `li`, `a`, `button`, `article` or `section` with a
  *   `border-t|b|y` utility, or when a `divide-y` element has the `.map` as a direct child; a row
  *   inside a component the map calls, a class built in a variable and a fixed list (an array
- *   literal or an UPPER_CASE constant) are not read. A full `border` (a tile) passes.
+ *   literal or an UPPER_CASE constant) are not read. A `ul` or `ol` reads only as the `divide-y` parent. A full `border` (a tile) passes.
  * - `chart-body-root`: a wrapper that is a component (`<Stack>`) passes; only a lowercase element
  *   or a fragment is looked through.
  * - `raw-heading`: a tag held in a variable is read where the variable is declared in the file
@@ -1176,17 +1176,10 @@ const tableRows = form(
 /** `border-t`, `border-b`, `border-y` and `divide-y` at any width above zero, under any variants. */
 const ROW_RULE = /^(?:border-[tby]|divide-y)(?:-(?!0$|reverse$)\d+)?$/
 
-/** Intrinsic elements a row list is built of; table rows are `raw-table`'s. */
-const ROW_TAGS: ReadonlySet<string> = new Set([
-  'div',
-  'ul',
-  'ol',
-  'li',
-  'a',
-  'button',
-  'article',
-  'section',
-])
+/** Intrinsic elements a row is; table rows are `raw-table`'s. */
+const ROW_TAGS: ReadonlySet<string> = new Set(['div', 'li', 'a', 'button', 'article', 'section'])
+/** The element a `divide-y` sits on is a row container, so a list too. */
+const DIVIDE_TAGS: ReadonlySet<string> = new Set([...ROW_TAGS, 'ul', 'ol'])
 
 const rowRuleToken = (opening: Node): string | undefined =>
   classTokens(opening).find((token) => ROW_RULE.test(token.slice(token.lastIndexOf(':') + 1)))
@@ -1216,10 +1209,11 @@ const listRows = form(
       JSXElement(node) {
         const open = child(node, 'openingElement')
         const tag = open === undefined ? undefined : tagOf(open)
-        if (open === undefined || tag === undefined || !ROW_TAGS.has(tag)) return
+        if (open === undefined || tag === undefined || !DIVIDE_TAGS.has(tag)) return
         const token = rowRuleToken(open)
         if (token === undefined) return
         const base = token.slice(token.lastIndexOf(':') + 1)
+        if (!base.startsWith('divide-') && !ROW_TAGS.has(tag)) return
         if (base.startsWith('divide-')) {
           const mapped = children(node, 'children').find((kid) => {
             const expression =
