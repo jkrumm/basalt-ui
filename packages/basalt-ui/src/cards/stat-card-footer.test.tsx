@@ -41,6 +41,19 @@ describe('StatCard footer by phase', () => {
     expect(facts()[0]?.className).toContain('text-muted-foreground')
   })
 
+  test('empty prints the muted dash for each value, as error does', () => {
+    card({ phase: 'ready', empty: { cause: 'Nothing yet' } })
+    expect(labels()).toEqual(['Peak', 'Open'])
+    expect(facts().map((dd) => dd.textContent)).toEqual(['–', '–'])
+    expect(facts()[0]?.className).toContain('text-muted-foreground')
+  })
+
+  test("a StatCard error prints the page's message in place of the default", () => {
+    card({ phase: { tag: 'error', message: 'The CRM is down.', retry: () => undefined } })
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain('The CRM is down.')
+    expect(document.querySelector('[role="alert"]')?.textContent).not.toContain('Could not load')
+  })
+
   test('the footer row keeps its height at every phase', () => {
     for (const phase of ['ready', 'loading', { tag: 'error', retry: () => undefined }] as const) {
       card({ phase })

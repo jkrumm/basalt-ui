@@ -396,9 +396,11 @@ export function ErrorLine({
       ? t('cards.errorForbidden')
       : kind === 'not-found'
         ? t('cards.errorNotFound')
-        : label?.trim()
-          ? `${couldNotLoad(label)}.`
-          : t('cards.errorDefault')
+        : message?.trim()
+          ? message
+          : label?.trim()
+            ? `${couldNotLoad(label)}.`
+            : t('cards.errorDefault')
   return (
     <div
       role="alert"
@@ -407,7 +409,7 @@ export function ErrorLine({
     >
       <p
         className="min-w-0 truncate text-xs text-foreground"
-        title={kind === undefined && message !== undefined ? message : undefined}
+        title={kind === undefined && message?.trim() ? message : undefined}
       >
         {text}
       </p>

@@ -15,6 +15,26 @@ describe('StatCell error title', () => {
     expect(text(container)).toBe('Could not load Wi-Fi signal.')
   })
 
+  test("the page's message is the text, not only a tooltip", () => {
+    const { container } = render(
+      <StatCell
+        label="Wi-Fi signal"
+        phase={{ tag: 'error', message: 'The router did not answer.', retry: () => undefined }}
+      />,
+    )
+    expect(text(container)).toBe('The router did not answer.')
+  })
+
+  test('a blank message and a kind keep their own text', () => {
+    const blank = render(<StatCell label="Recovery" phase={{ tag: 'error', message: '  ' }} />)
+    expect(text(blank.container)).toBe('Could not load recovery.')
+    cleanup()
+    const forbidden = render(
+      <StatCell label="Recovery" phase={{ tag: 'error', kind: 'forbidden', message: 'No.' }} />,
+    )
+    expect(text(forbidden.container)).toBe('You do not have access to this.')
+  })
+
   test('a lowercased plain label and a kind keep their text', () => {
     const named = render(
       <StatCell label="Recovery" phase={{ tag: 'error', retry: () => undefined }} />,

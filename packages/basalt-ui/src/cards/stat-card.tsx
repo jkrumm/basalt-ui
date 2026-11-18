@@ -170,7 +170,11 @@ export function StatCard(props: StatCardProps): ReactElement {
         </Inset>
         <StatFooter
           facts={footer}
-          phase={resolved.tag === 'loading' || resolved.tag === 'error' ? resolved.tag : 'other'}
+          phase={
+            resolved.tag === 'loading' || resolved.tag === 'error' || resolved.tag === 'empty'
+              ? resolved.tag
+              : 'other'
+          }
         />
       </Card>
     </div>
