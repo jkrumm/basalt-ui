@@ -61,13 +61,25 @@ export const rows: readonly RowDef[] = [
     // 125800 -> 126000 (Issue 2038): 125780 B measured, +256 B gz over master (125524) for `focusItems` (a
     // row that holds chart items of another grain) and `bodyRows` (a first load's skeleton rows), the
     // contract fields of expression cycle 9.
-    ceiling: 126000,
+    // 126000 -> 155000 (Issue 2282): 154504 B measured, +28.5 KB gz over master (126000 ceiling) for the header's
+    // filter door and its editors (owner review 1): the column menu opens a popover with the kind's editor, so
+    // Base UI Popover, Slider, NumberField and the toggle group (Segmented), the checklist and the category
+    // order list join DataTable's closure. Not lazy-loaded: this row sums every emitted chunk, so a split
+    // would move the bytes, not drop them, and the first open would wait on a fetch.
+    ceiling: 155000,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 126000,
+      to: 155000,
+      consumer:
+        "the owner's first review of the v3 playground /table (2026-11-18): filters from the column header with range, date and enum editors, and a status column's categories the user rearranges (apps/playground/src/routes/table.tsx; Issue 2282)",
+      repo: 'basalt-ui',
+    },
     {
       from: 125000,
       to: 125800,
