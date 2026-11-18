@@ -38,3 +38,6 @@ export function Runs({ data }: { data: readonly Run[] }) {
   )
 }
 // #endregion
+
+/** The recipe's store, for the route that renders it (`routes/recipes/saved-views.tsx`) to mount. */
+export { runs }
