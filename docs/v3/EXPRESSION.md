@@ -107,6 +107,10 @@ Until then each cycle adds `v3-cycle-expression-<n+1>` after its fix rows. Each 
 - **No softening.** A rubric change needs a `rubric` finding with a shot that shows the reviewer was wrong.
 - **No grade inflation by the author.** The agent that built a case never scores it, and the lead scores nothing.
 
+## Owner calibration
+
+The reviewers score against the rubric, and the rubric is calibrated against the owner's own verdicts on running builds. The calibration set is every case he has judged: n06, c08, c09 and c07 (`docs/v3/cycles/expression-2.md` § Owner calibration, which added the X items) and n02, n04, n07, n15, n27, n32 and n35 (`docs/v3/expression/calibration-owner-2.md`, which added the R items and the rendering cap). A case he marked down that the rubric passed is a `rubric` finding; the fix is rescored on that case's last-round shots by fresh reviewers before it lands, and it holds only when the case then fails. Each new owner review adds its cases to the set and a calibration page of its own.
+
 ## Gate
 
 3.0 is the last chance to change the charts contract: consumers are held until it is published, and no major may follow it. So the structural part of this track gates 3.0, and the rest does not.
