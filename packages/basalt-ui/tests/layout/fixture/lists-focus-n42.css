@@ -1,0 +1,8 @@
+/*
+ * The `lists-focus-n42` fixture's Tailwind v4 entry, compiled like a Tailwind consumer.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './lists-focus-n42-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/table';
+@source '../../../src/cards';

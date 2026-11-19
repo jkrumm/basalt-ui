@@ -175,6 +175,21 @@ function stepInX<D>(
 
 const noRef = (): void => undefined
 
+/**
+ * A mark's ref: the element joins its index's set while mounted. A chart mark and a list row can stand
+ * on one index, so the set keeps both, and one unmount removes only its own element. The closure
+ * holds its element, because React detaches a ref by calling the function it attached.
+ */
+function markRef(marks: Map<number, Set<Element>>, i: number): (element: Element | null) => void {
+  let node: Element | null = null
+  return (element) => {
+    if (node !== null) marks.get(i)?.delete(node)
+    node = element
+    if (element === null) return
+    marks.set(i, (marks.get(i) ?? new Set<Element>()).add(element))
+  }
+}
+
 /** Visually hidden, still read: the live region speaks without taking room. */
 const HIDDEN: CSSProperties = {
   position: 'absolute',
@@ -386,17 +401,23 @@ export function useChartFocus<D>(
   }
 
   // Marks and group rows by key, so a keyboard step can scroll the focused one into view.
-  const marks = useRef(new Map<number, Element>())
+  const marks = useRef(new Map<number, Set<Element>>())
   const rows = useRef(new Map<string, Element>())
   // Every mark is drawn already, and focus changes no layout, so the step scrolls before it sets.
   const reveal = (next: number): void => {
     const name = groupAt(next)
-    const nodes = [marks.current.get(next), name === undefined ? undefined : rows.current.get(name)]
+    const nodes = [
+      ...(marks.current.get(next) ?? []),
+      name === undefined ? undefined : rows.current.get(name),
+    ]
     for (const node of nodes) scrollNodeIntoView(node)
   }
   const revealInRegion = (next: number): void => {
     const name = groupAt(next)
-    const nodes = [marks.current.get(next), name === undefined ? undefined : rows.current.get(name)]
+    const nodes = [
+      ...(marks.current.get(next) ?? []),
+      name === undefined ? undefined : rows.current.get(name),
+    ]
     for (const node of nodes) revealInOwnRegion(node)
   }
   // `pointed`: the index a mark or row set by pointer entry, held against a chart's own clear.
@@ -474,10 +495,7 @@ export function useChartFocus<D>(
     'data-chart-mark': '',
     ...(inSpan.has(i) && { 'data-focused': '' as const }),
     ...(index !== null && !inSpan.has(i) && { 'data-dimmed': '' as const }),
-    ref: (element) => {
-      if (element === null) marks.current.delete(i)
-      else marks.current.set(i, element)
-    },
+    ref: markRef(marks.current, i),
     onPointerEnter: () => point(i),
     onPointerDown: () => point(i),
   })
