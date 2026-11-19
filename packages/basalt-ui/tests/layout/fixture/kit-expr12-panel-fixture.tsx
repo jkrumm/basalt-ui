@@ -10,6 +10,7 @@ import { DataPanel } from '../../../src/cards/data-panel'
 import { useChartFocus } from '../../../src/charts/focus'
 import { col } from '../../../src/table/core/kinds'
 import { DataTable } from '../../../src/table/parts/data-table'
+import { VirtualList } from '../../../src/ui/virtual-list'
 import { useDataTable } from '../../../src/table/use-data-table'
 
 type Row = {
@@ -148,6 +149,36 @@ function Reveal(): ReactElement {
   )
 }
 
+function VirtualTable({ state }: { state: State }): ReactElement {
+  const table = useDataTable<Row>({
+    id: `x12-virtual-${state}`,
+    label: 'Sessions',
+    columns: [
+      c.entity('name', { header: 'Day', priority: 1 }),
+      c.number('amount', { header: 'Minutes', priority: 1 }),
+      c.number('due', { header: 'Distance', priority: 1 }),
+    ],
+    data: state === 'ready' ? ROWS : [],
+    getRowId: (r) => r.id,
+    mode: { kind: 'client' },
+  })
+  return <DataTable table={table} height="fill" virtual={VirtualList} />
+}
+
+function Virtual({ state }: { state: State }): ReactElement {
+  return (
+    <div data-testid={`x12-virtual-${state}`} className="min-w-0" style={{ width: 496 }}>
+      <DataPanel
+        title="Sessions"
+        phase={state === 'error' ? { tag: 'error', retry } : 'ready'}
+        empty={state === 'empty' ? { cause: 'No sessions to list yet' } : null}
+        bodySize={{ rows: 5 }}
+        body={() => <VirtualTable state={state} />}
+      />
+    </div>
+  )
+}
+
 function Fixture(): ReactElement {
   return (
     <main lang="en" className="flex flex-col gap-8 p-4 text-foreground">
@@ -168,6 +199,9 @@ function Fixture(): ReactElement {
         />
       </div>
       <Switch />
+      <Virtual state="ready" />
+      <Virtual state="empty" />
+      <Virtual state="error" />
       <Reveal />
       <Bills state="ready" />
       <Bills state="loading" />

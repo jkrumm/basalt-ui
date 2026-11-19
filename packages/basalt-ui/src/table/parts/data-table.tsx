@@ -148,9 +148,12 @@ function clippedRows<T>(
 function FramedArm<T>({
   table,
   frame,
+  windowed,
 }: {
   table: DataTableProps<T>['table']
   frame: FrameArm
+  /** The ready table is windowed: it never projects to cards, so neither does its arm. */
+  windowed: boolean
 }): ReactElement {
   const model = modelOf(table)
   const { claim } = frame
@@ -166,6 +169,8 @@ function FramedArm<T>({
       data-look={model.look === 'grid' ? 'grid' : undefined}
       data-full-at={model.look === 'grid' ? undefined : (model.plan.fullAt ?? undefined)}
       {...tierAttributesOf(model)}
+      // A windowed ready table keeps one row size and scrolls sideways when narrow, so its head stays.
+      {...(windowed && { 'data-phone': 'scroll' as const })}
       className="flex w-full max-w-full min-w-0 flex-col"
     >
       <div
@@ -234,7 +239,8 @@ export function DataTable<T, I = unknown>({
   const onBlur = clearOnBlur(link)
   const windowed = virtual !== undefined && (phase.tag === 'ready' || phase.tag === 'stale')
 
-  if (frame !== undefined) return <FramedArm table={table} frame={frame} />
+  if (frame !== undefined)
+    return <FramedArm table={table} frame={frame} windowed={virtual !== undefined} />
 
   if (windowed) {
     return (

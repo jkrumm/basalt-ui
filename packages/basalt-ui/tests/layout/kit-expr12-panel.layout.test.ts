@@ -166,3 +166,26 @@ layout('a chart focus scrolls the joined row into a DataPanel body', () => {
     })
   }
 })
+
+layout('a windowed table in a narrow DataPanel keeps its column header in empty and error', () => {
+  test('the head is a row of the same columns as the ready table at 496 px', async () => {
+    const page = await open(WIDE)
+    const head = (state: string): Promise<{ n: number; height: number }> =>
+      page.raw.evaluate((s) => {
+        const root = document.querySelector(`[data-testid="x12-virtual-${s}"]`)!
+        return {
+          n: root.querySelectorAll('thead th').length,
+          height: root.querySelector('thead')!.getBoundingClientRect().height,
+        }
+      }, state)
+    const ready = await head('ready')
+    expect(ready.n).toBe(3)
+    expect(ready.height).toBeGreaterThan(8)
+    for (const state of ['empty', 'error']) {
+      const h = await head(state)
+      expect(h.n, state).toBe(3)
+      // A card-tier head is one visually hidden pixel.
+      expect(h.height, state).toBeGreaterThan(8)
+    }
+  })
+})
