@@ -11,7 +11,7 @@ import { useRowsShown } from '../core/rows-shown'
 import { useMessages } from '../core/messages/use-messages'
 import { lists } from '../core/messages/lists'
 import { Card, CardBand, CardPhase, Inset } from '../ui/card'
-import { BAR_BODY_HEIGHT, DEFAULT_ROWS, ScrollRegion } from './bar-list-scroll'
+import { bodyHeight, listRows, ScrollRegion } from './bar-list-scroll'
 import type { ListRows } from './bar-list-scroll'
 import type { CardTarget, FrameHead, LegendEntry } from './contract'
 import { Legend } from './data-panel'
@@ -106,7 +106,10 @@ export type BarListProps<I = unknown> = FrameHead &
      * track.
      */
     max?: number
-    /** The body holds this many rows of height at every phase; more rows scroll. Default 5. */
+    /**
+     * The body holds this many rows of height at every phase; more rows scroll. Any whole number from
+     * 3: a list the page should read whole at rest (twelve months) passes its length. Default 5.
+     */
     bodyRows?: ListRows
     /** @deprecated Use `bodyRows`; removed in the next minor. */
     rows?: ListRows
@@ -175,7 +178,7 @@ function BarSkeleton({ rows }: { rows: number }): ReactElement {
 export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
   const { items, max, format, phase, empty, focus, series } = props
   const mono = props.mono ?? false
-  const rows = props.bodyRows ?? props.rows ?? DEFAULT_ROWS
+  const rows = listRows(props.bodyRows ?? props.rows)
   const { title, subtitle, icon, info } = props
   const f = useFormat()
   const t = useMessages(lists)
@@ -234,7 +237,7 @@ export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
           })}
         />
         {series !== undefined && series.length > 0 && <Legend entries={series} />}
-        <Inset className={cn('flex flex-col', BAR_BODY_HEIGHT[rows])}>
+        <Inset className="flex flex-col" style={bodyHeight(rows, 10)}>
           <HostTitleContext.Provider value={title}>
             <CardPhase
               phase={phase}

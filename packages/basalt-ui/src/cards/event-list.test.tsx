@@ -128,21 +128,22 @@ describe('EventList', () => {
   test('every phase keeps the one body height', () => {
     const heights = (['ready', 'loading', 'stale'] as const).map((phase) => {
       const { container } = draw({ phase, bodyRows: 4 })
-      const cls = container.querySelector('[data-slot="inset"]')?.className ?? ''
+      const height = container.querySelector<HTMLElement>('[data-slot="inset"]')?.style.height
       cleanup()
-      return cls
+      return height
     })
     expect(new Set(heights).size).toBe(1)
-    expect(heights[0]).toContain('h-62')
+    expect(heights[0]).toBe('calc(var(--spacing) * 62)')
   })
 
   test('rows is the deprecated name of bodyRows', () => {
-    const heightOf = (props: { rows?: 4; bodyRows?: 4 }): string => {
+    const heightOf = (props: { rows?: 4; bodyRows?: 4 }): string | undefined => {
       const { container } = draw(props)
-      const cls = container.querySelector('[data-slot="inset"]')?.className ?? ''
+      const height = container.querySelector<HTMLElement>('[data-slot="inset"]')?.style.height
       cleanup()
-      return cls
+      return height
     }
+    expect(heightOf({ rows: 4 })).toBe('calc(var(--spacing) * 62)')
     expect(heightOf({ rows: 4 })).toBe(heightOf({ bodyRows: 4 }))
   })
 })

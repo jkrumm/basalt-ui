@@ -7,7 +7,7 @@ import { useMessages } from '../core/messages/use-messages'
 import type { FrameState } from '../core/phase'
 import type { IconComponent } from '../core/ports'
 import { Card, CardBand, CardPhase, Inset } from '../ui/card'
-import { DEFAULT_ROWS, EVENT_BODY_HEIGHT, ScrollRegion } from './bar-list-scroll'
+import { bodyHeight, listRows, ScrollRegion } from './bar-list-scroll'
 import type { ListRows } from './bar-list-scroll'
 import type { FrameHead } from './contract'
 import { groupByDay, isInstant, toInstant, warnLargeFeed } from './event-list-model'
@@ -95,7 +95,7 @@ function EventSkeleton({ rows }: { rows: number }): ReactElement {
  */
 export function EventList(props: EventListProps): ReactElement {
   const { items, pageSize = DEFAULT_PAGE, now, phase, empty } = props
-  const rows = props.bodyRows ?? props.rows ?? DEFAULT_ROWS
+  const rows = listRows(props.bodyRows ?? props.rows)
   const { title, subtitle, icon, info } = props
   const f = useFormat()
   const t = useMessages(lists)
@@ -128,7 +128,7 @@ export function EventList(props: EventListProps): ReactElement {
           {...(icon !== undefined && { icon })}
           {...(info !== undefined && { info })}
         />
-        <Inset className={cn('flex flex-col', EVENT_BODY_HEIGHT[rows])}>
+        <Inset className="flex flex-col" style={bodyHeight(rows, 14)}>
           <CardPhase
             phase={phase}
             empty={emptyState}

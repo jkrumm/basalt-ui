@@ -10,7 +10,7 @@ import { useMessages } from '../core/messages/use-messages'
 import { lists } from '../core/messages/lists'
 import { Card, CardBand, CardPhase, Inset } from '../ui/card'
 import { Status } from '../ui/status'
-import { BAR_BODY_HEIGHT, DEFAULT_ROWS, ScrollRegion } from './bar-list-scroll'
+import { bodyHeight, listRows, ScrollRegion } from './bar-list-scroll'
 import type { ListRows } from './bar-list-scroll'
 import type { CardTarget, FrameHead } from './contract'
 import { listFocus, rowFocus } from './list-focus'
@@ -65,20 +65,8 @@ export type RowListProps = FrameHead &
 const ROW_BASE = 'flex w-full min-w-0 items-center justify-between gap-3 rounded-ctrl px-2 -mx-2'
 const ROW_HEIGHT = { 1: 'min-h-10', 2: 'min-h-12' } as const
 
-/** The body height per row count: 40 px rows (`lines` 1) and 48 px rows (`lines` 2), plus the inset's 24 px. */
-const BODY_HEIGHT: Readonly<Record<1 | 2, Readonly<Record<ListRows, string>>>> = {
-  1: BAR_BODY_HEIGHT,
-  2: {
-    3: 'h-42',
-    4: 'h-54',
-    5: 'h-66',
-    6: 'h-78',
-    7: 'h-90',
-    8: 'h-102',
-    9: 'h-114',
-    10: 'h-126',
-  },
-}
+/** The spacing steps of a row: 40 px (`lines` 1) and 48 px (`lines` 2). */
+const ROW_STEPS = { 1: 10, 2: 12 } as const
 const TARGET =
   'cursor-pointer border-0 bg-transparent text-left text-foreground no-underline hover:bg-accent focus-ring focus-visible:-outline-offset-2'
 
@@ -209,7 +197,7 @@ function Row({ item, mono, lines }: RowProps): ReactElement {
  */
 export function RowList(props: RowListProps): ReactElement {
   const { items, phase, empty, focus, title, subtitle, icon, info } = props
-  const rows = props.bodyRows ?? DEFAULT_ROWS
+  const rows = listRows(props.bodyRows)
   const lines = props.lines ?? 1
   const mono = props.mono ?? false
   const hairline = props.separator === 'hairline'
@@ -236,7 +224,7 @@ export function RowList(props: RowListProps): ReactElement {
             ),
           })}
         />
-        <Inset className={cn('flex flex-col', BODY_HEIGHT[lines][rows])}>
+        <Inset className="flex flex-col" style={bodyHeight(rows, ROW_STEPS[lines])}>
           <HostTitleContext.Provider value={title}>
             <CardPhase
               phase={phase}

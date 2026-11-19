@@ -127,12 +127,13 @@ describe('RowList', () => {
   })
 
   test('the body holds the same height at every phase', () => {
+    const heightOf = (root: ParentNode): string | undefined =>
+      root.querySelector<HTMLElement>('[data-slot="inset"]')?.style.height
     const ready = draw({ bodyRows: 6, lines: 2 })
-    const readyBody = ready.container.querySelector('[class*="h-78"]')
-    expect(readyBody).toBeTruthy()
+    expect(heightOf(ready.container)).toBe('calc(var(--spacing) * 78)')
     ready.unmount()
     const loading = draw({ bodyRows: 6, lines: 2, phase: 'loading' })
-    expect(loading.container.querySelector('[class*="h-78"]')).toBeTruthy()
+    expect(heightOf(loading.container)).toBe('calc(var(--spacing) * 78)')
   })
 
   test('a long list says how many rows show', () => {
