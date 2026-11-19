@@ -41,6 +41,8 @@ export function heldItem<T, I>(link: ItemsLink<T, I>, row: T): MarkedItem {
   const first = indexes[0]
   if (first === undefined)
     return {
+      // A row that holds nothing dims with the rest: the dim rule needs the mark too.
+      'data-chart-mark': '',
       ...(focus.index !== null && { 'data-dimmed': '' as const }),
       ref: noRef,
       onPointerEnter: () => focus.set(null),

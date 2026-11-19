@@ -483,7 +483,8 @@ describe('BarList across grains', () => {
     expect(liveOf(container)).toBe('late, 2')
     fireEvent.keyDown(list, { key: 'ArrowDown' })
     expect(hours?.index).toBeNull()
-    expect(liveOf(container)).toBe('')
+    // a row that holds nothing clears the focus and still names itself
+    expect(liveOf(container)).toBe('never, 0')
   })
 
   test('a list with neither arm draws no live region of its own', () => {

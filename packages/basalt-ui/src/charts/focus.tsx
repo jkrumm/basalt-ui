@@ -468,6 +468,12 @@ export function useChartFocus<D>(
     const first = valid[0]
     if (first === undefined) return set(null)
     if (valid.length === 1) return point(first)
+    // A run reveals its first row as a single `set` does, before the hold; a run already held does not move.
+    const sameRun =
+      held?.span !== undefined &&
+      held.span.length === valid.length &&
+      held.span.every((i, k) => i === valid[k])
+    if (!sameRun) revealInRegion(first)
     pointed.current = first
     setHeld((was) => {
       const same =
