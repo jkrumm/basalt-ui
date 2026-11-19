@@ -185,7 +185,8 @@ function readChips(air: { x: number; y: number; stackGap: number }): string[] {
     for (const chip of chips) {
       const a = chip.getBoundingClientRect()
       const axis = chip.classList.contains('ts-chart__crosshair-label--x') ? 'x' : 'y'
-      if (axis === 'x') xChips.push({ chart, text: chip.textContent ?? '' })
+      const chipText = (chip.textContent ?? '').trim()
+      if (axis === 'x') xChips.push({ chart, text: chipText })
       for (const tick of ticks) {
         const b = tick.getBoundingClientRect()
         // Each text gives up its own leading and its own side bearing.
@@ -196,7 +197,7 @@ function readChips(air: { x: number; y: number; stackGap: number }): string[] {
           b.bottom - glyphAirY <= a.top + glyphAirY
         if (!apart)
           found.push(
-            `${labelOf(chart, i)}: the ${axis} chip "${chip.textContent}" covers the tick label "${(tick.textContent ?? '').trim()}"`,
+            `${labelOf(chart, i)}: the ${axis} chip "${chipText}" covers the tick label "${(tick.textContent ?? '').trim()}"`,
           )
       }
     }
