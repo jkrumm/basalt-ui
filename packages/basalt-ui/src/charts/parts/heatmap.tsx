@@ -140,7 +140,9 @@ type HeatmapBase<T, K extends string> = BasaltProps & {
   state?: ChartState | undefined
   /**
    * `useChartFocus(data, …)`: pointing at a cell or stepping with the arrow keys focuses its datum,
-   * every other cell dims, and `focus.readout` drives a card fact. The grid stays one tab stop.
+   * every other cell dims, and `focus.readout` drives a card fact. The grid stays one tab stop. A
+   * list row that holds a run of cells (`focus.hold`, a `BarList` row on `focusItems`) focuses every
+   * cell of the run.
    */
   focus?: ChartFocus<T> | undefined
   /**
@@ -369,6 +371,8 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
   const state = toChartState(phase, empty, legacyState)
   const chartId = useId()
   const focused = focus?.datum ?? null
+  // A list row that holds a run of cells (`focus.hold`) focuses every one of them, not the first alone.
+  const held = focus?.span
   const ownsKeys = focus !== undefined
   // Primitives, so the definition does not rebuild for a fresh `{ label }` / `{ rows }` literal.
   const showLegend = legend !== false
@@ -431,6 +435,11 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
       .domain([lo, hi > lo ? hi : lo + 1])
       .range(ramp(color))
     const header = (c: Cell<T, K>): string => cellHeader(c.row, c.col, formatRow, formatCol)
+    const heldSet =
+      focused === null
+        ? null
+        : new Set<unknown>(held !== undefined && held.length > 0 ? held : [focused])
+    const isHeld = (c: Cell<T, K>): boolean => heldSet !== null && heldSet.has(c.datum)
     // One builder for every cell mark; `paint` is the fill (flat, or the ramp's `color` channel).
     // With a focused datum every other cell keeps its fill at `DIMMED` of its own opacity.
     // (The cell mark takes one opacity per mark, so the focused cell is its own mark.)
@@ -449,7 +458,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         })
       if (focused === null) return [at(group, id)]
       const base = paint.fillOpacity ?? 1
-      const rest = group.filter((c) => c.datum !== focused)
+      const rest = group.filter((c) => !isHeld(c))
       return [
         dimByPaint && paint.fill !== undefined
           ? cell(rest, {
@@ -458,10 +467,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
               fill: dimmedPaint(paint.fill, base),
             })
           : at(rest, id, base * DIMMED),
-        at(
-          group.filter((c) => c.datum === focused),
-          `${id}:focused`,
-        ),
+        at(group.filter(isHeld), `${id}:focused`),
       ]
     }
     // An annotation sits on a dark fill (a stated cell, the ramp's upper half) in panel ink, else in ink.
@@ -469,7 +475,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     const darkFill = (c: Cell<T, K>): boolean =>
       c.state !== undefined || (c.value !== null && (c.value - lo) / span >= 0.5)
     const labelFill = (c: Cell<T, K>): string =>
-      c.state !== undefined && focused !== null && c.datum !== focused
+      c.state !== undefined && focused !== null && !isHeld(c)
         ? DIMMED_LABEL
         : darkFill(c)
           ? CV.surface
@@ -545,7 +551,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         })
         // The focused cell's ring, drawn last of the fills so no neighbour paints over it. A pointer
         // focus rings through the engine; keys focus through the host (the engine's keyboard is off).
-        const ringed = drawn.filter((c) => focused !== null && c.datum === focused)
+        const ringed = drawn.filter(isHeld)
         const marks = [
           // Inert, not decorative: it must still win the hit test, so a pointer over an empty
           // position lands on THIS cell (whose tooltip is empty) instead of snapping to a neighbour.
@@ -645,6 +651,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     showTooltip,
     tooltipRows,
     focused,
+    held,
     annotate,
     ownsKeys,
   ])
