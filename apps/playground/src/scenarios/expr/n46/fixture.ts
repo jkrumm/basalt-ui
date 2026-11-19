@@ -83,7 +83,7 @@ function seeded(seed: number): () => number {
   }
 }
 
-export function median(values: readonly number[]): number | null {
+function median(values: readonly number[]): number | null {
   if (values.length === 0) return null
   const sorted = [...values].sort((a, b) => a - b)
   const mid = Math.floor(sorted.length / 2)
