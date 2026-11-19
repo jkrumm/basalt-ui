@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { RELEASE_MS } from '../../src/core/focus-release'
 import type { FixtureSpec } from './fixture/spec'
 import {
   CLOSE_BUDGET_MS,
@@ -84,12 +85,12 @@ type Arm = 'n42-cards' | 'n42-scroll'
 
 /**
  * Per arm: the row selector, the item index the first and second rows hold, the row whose bottom
- * the gap lies under (the cards' rows past the body's fixed height are clipped, so their gap is under
- * row 1; the scroll arm's rows are all visible, so its gap is under row 3), and the index the pointer
- * holds once it crosses down to the point under that row.
+ * the gap lies under (every card shows since cycle 12's rows body fits its phone cards, so the rows of
+ * both arms are all visible), and the index the pointer holds once it crosses down to the point under
+ * that row.
  */
 const ARMS = {
-  'n42-cards': { rows: 'tbody tr', first: '4', second: '9', from: 1, gap: '9' },
+  'n42-cards': { rows: 'tbody tr', first: '4', second: '9', from: 1, gap: '20' },
   'n42-scroll': { rows: 'tbody tr', first: '4', second: '9', from: 1, gap: '20' },
 } as const satisfies Record<
   Arm,
@@ -172,6 +173,7 @@ layout('a phone card list holds its shared focus across the gap below a row', ()
       expect(at400).toEqual({ index: spec.gap, dimmed: 3 })
 
       await page.raw.mouse.move(4, g.card.top + 40, { steps: 6 })
+      await page.raw.waitForTimeout(RELEASE_MS + 100)
       await page.settle()
       expect(await state(page, arm)).toEqual({ index: '', dimmed: 0 })
     })

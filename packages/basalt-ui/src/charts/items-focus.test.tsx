@@ -13,9 +13,15 @@ import { createRoot } from 'react-dom/client'
 import { col } from '../table/core/kinds'
 import { DataTable } from '../table/parts/data-table'
 import { useDataTable } from '../table/use-data-table'
+import { RELEASE_MS } from '../core/focus-release'
 import { useChartFocus } from './focus'
 import type { ChartFocus } from './focus'
 import { CartesianChart } from './parts/cartesian'
+
+const released = (): Promise<void> =>
+  act(async () => {
+    await new Promise((done) => setTimeout(done, RELEASE_MS + 40))
+  })
 
 type Hour = { h: number; tide: number }
 const HOURS: readonly Hour[] = Array.from({ length: 12 }, (_, h) => ({ h, tide: 1 + (h % 5) / 2 }))
@@ -147,6 +153,7 @@ describe('DataTable focusItems: a row that stands for a run of items', () => {
     const el = await mount(<Harbour />)
     await enter(bodyRows(el)[0] as Element)
     await leave(el.querySelector('tbody') as Element)
+    await released()
     expect(held(el)).toBe('')
     expect(el.querySelector('[data-ts-key="xzone-0"]')).toBeNull()
   })

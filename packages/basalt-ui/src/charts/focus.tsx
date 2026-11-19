@@ -26,6 +26,8 @@ import type {
   ChartFocusOptions,
   ChartFocusTarget,
 } from './contract'
+import { FOCUS_RELEASE, RELEASE_MS } from '../core/focus-release'
+import type { ReleaseSide } from '../core/focus-release'
 import { chartCursor } from './core/cursor'
 
 export type {
@@ -373,6 +375,31 @@ export function useChartFocus<D>(
   } | null>(null)
   // The series a list row or the chart's legend emphasises across every x.
   const [series, setSeries] = useState<string | null>(null)
+  // A list's pointer leave asks for a release (`core/focus-release`): the clear waits for a grace
+  // window, and any focus set in it (a row, the chart, a key) takes the wait over.
+  const pending = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cancel = (): void => {
+    if (pending.current === null) return
+    clearTimeout(pending.current)
+    pending.current = null
+  }
+  useEffect(
+    () => () => {
+      if (pending.current !== null) clearTimeout(pending.current)
+    },
+    [],
+  )
+  const release = (clear: () => void): void => {
+    cancel()
+    pending.current = setTimeout(() => {
+      pending.current = null
+      clear()
+    }, RELEASE_MS)
+  }
+  const emphasise = (key: string | null): void => {
+    cancel()
+    setSeries(key)
+  }
   // An index past the end (the items shrank) is no focus, without an effect to clear it.
   const index = held !== null && held.index < items.length ? held.index : null
   const datum = index === null ? null : (items[index] as D)
@@ -423,15 +450,18 @@ export function useChartFocus<D>(
   // `pointed`: the index a mark or row set by pointer entry, held against a chart's own clear.
   const pointed = useRef<number | null>(null)
   const set = (next: number | null): void => {
+    cancel()
     pointed.current = null
     apply(next, true)
   }
   const point = (next: number): void => {
+    cancel()
     pointed.current = next >= 0 ? next : null
     apply(next, false)
   }
   // Several items at once, as a pointer holds them: the first leads, and a chart's clear keeps them.
   const hold = (indexes: readonly number[]): void => {
+    cancel()
     const valid = [...new Set(indexes)]
       .filter((i) => Number.isInteger(i) && i >= 0 && i < items.length)
       .toSorted((a, b) => a - b)
@@ -481,14 +511,14 @@ export function useChartFocus<D>(
     },
     onBlur: () => {
       set(null)
-      setSeries(null)
+      emphasise(null)
     },
     // The container clears, never a mark: crossing the gap between two marks keeps the last one.
     onPointerLeave: (event: PointerEvent<Element>) => {
       // A tap ends in a leave: the tapped mark stays focused until the next tap or blur.
       if (event.pointerType === 'touch') return
       set(null)
-      setSeries(null)
+      emphasise(null)
     },
   }
   const item = (i: number): ChartFocusItem => ({
@@ -516,8 +546,8 @@ export function useChartFocus<D>(
   const seriesItem = (key: string): ChartFocusGroupItem => ({
     ...(series === key && { 'data-focused': '' as const }),
     ref: noRef,
-    onPointerEnter: () => setSeries(key),
-    onPointerDown: () => setSeries(key),
+    onPointerEnter: () => emphasise(key),
+    onPointerDown: () => emphasise(key),
   })
   const said =
     datum === null
@@ -536,8 +566,9 @@ export function useChartFocus<D>(
   const live: ReactElement = (
     <FocusLive claims={claims} text={name === undefined ? said : `${name}: ${said}`} />
   )
-  const handle: ChartFocus<D> & ChartSide = {
+  const handle: ChartFocus<D> & ChartSide & ReleaseSide = {
     [CHART_SET]: fromChart,
+    [FOCUS_RELEASE]: release,
     items,
     index,
     datum,
@@ -552,7 +583,7 @@ export function useChartFocus<D>(
     item,
     groupItem,
     series,
-    setSeries,
+    setSeries: emphasise,
     seriesItem,
     step,
     live,

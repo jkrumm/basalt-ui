@@ -12,6 +12,7 @@ import { createRoot } from 'react-dom/client'
 import { col } from '../table/core/kinds'
 import { DataTable } from '../table/parts/data-table'
 import { useDataTable } from '../table/use-data-table'
+import { RELEASE_MS } from '../core/focus-release'
 import { useChartFocus } from './focus'
 import { CartesianChart } from './parts/cartesian'
 
@@ -31,6 +32,11 @@ const HOPS: readonly Hop[] = [
 const KEYS = ['home', 'isp', 'provider'] as const
 const COLOR = { light: '#0077bd', dark: '#5fb4f0' }
 const hopKey = (h: Hop): string => h.id.slice('hop-'.length)
+
+const released = (): Promise<void> =>
+  act(async () => {
+    await new Promise((done) => setTimeout(done, RELEASE_MS + 40))
+  })
 
 let root: ReturnType<typeof createRoot> | undefined
 afterEach(() => {
@@ -175,6 +181,7 @@ describe('DataTable focusSeries', () => {
     expect(lineOpacity(el)['provider']).toBe(1)
     await leave(rows[2] as Element)
     await leave(el.querySelector('tbody') as Element)
+    await released()
     expect(series(el)).toBe('')
   })
 

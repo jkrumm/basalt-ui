@@ -7,6 +7,7 @@
  */
 import { createContext, useContext } from 'react'
 import type { FocusEvent, PointerEvent, ReactElement, ReactNode } from 'react'
+import { releaseOf } from '../../core/focus-release'
 import { heldBy, heldItem } from '../../core/list-link'
 import type { MarkedItem } from '../../core/list-link'
 import type { ListFocus, ListFocusItem } from '../../core/ports'
@@ -20,6 +21,8 @@ type RowLink = {
   /** The table's own row focus moved onto the row. */
   enter: (id: string, row: unknown) => void
   clear: () => void
+  /** The clear after the focus's grace, for a pointer leave: the pointer crossing to the next list keeps it. */
+  release: (clear: () => void) => void
 }
 
 export type FocusedRowProps = RowProps & {
@@ -44,6 +47,7 @@ function itemsLink<T, I>(link: ItemsLink<T, I>): RowLink {
     // `hold` of no index clears, so stepping onto a row that holds nothing clears the focus too.
     enter: (_, row) => link.focus.hold(heldBy(link, row as T)),
     clear: () => link.focus.set(null),
+    release: releaseOf(link.focus),
   }
 }
 
@@ -64,6 +68,7 @@ export function rowLinkOf<T, I>(
       item: (_, row) => series.seriesItem(key(row as T)),
       enter: (_, row) => series.setSeries(key(row as T)),
       clear: () => series.setSeries(null),
+      release: releaseOf(series),
     }
   }
   if (focus === undefined) return undefined
@@ -89,6 +94,7 @@ export function rowLinkOf<T, I>(
       focus.set(index ?? null)
     },
     clear,
+    release: releaseOf(focus),
   }
 }
 
@@ -138,7 +144,8 @@ export function useRowFocusProps(id: string, row: unknown, base: RowProps): Focu
 }
 
 /**
- * The body's pointer leave: a mouse leaving the rows clears the focus, a tap's leave keeps it. A mouse
+ * The body's pointer leave: a mouse leaving the rows releases the focus (it clears after a short
+ * grace, so the pointer crossing to the next list keeps it), a tap's leave keeps it. A mouse
  * that moves from the rows into their card (the body's padding, or a row the fixed body clips) keeps it
  * too, and the card's own leave clears it, so the focus never outlives the card.
  */
@@ -150,10 +157,10 @@ export function useRowFocusLeave(): ((event: PointerEvent<Element>) => void) | u
     const card = event.currentTarget.closest('[data-slot="card"]')
     const to = event.relatedTarget
     if (card === null || !(to instanceof Node) || !card.contains(to)) {
-      link.clear()
+      link.release(link.clear)
       return
     }
-    card.addEventListener('pointerleave', () => link.clear(), { once: true })
+    card.addEventListener('pointerleave', () => link.release(link.clear), { once: true })
   }
 }
 

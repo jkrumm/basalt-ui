@@ -2,11 +2,17 @@ import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { useChartFocus } from '../charts/focus'
+import { RELEASE_MS } from '../core/focus-release'
 import { renderToString } from 'react-dom/server'
 import { BarList } from './bar-list'
 import type { BarListProps } from './bar-list'
 
 afterEach(cleanup)
+
+const released = (): Promise<void> =>
+  act(async () => {
+    await new Promise((done) => setTimeout(done, RELEASE_MS + 40))
+  })
 
 const ITEMS = [
   { label: 'argo', value: 1840 },
@@ -331,7 +337,7 @@ describe('BarList focus', () => {
     expect(fireEvent.keyDown(list, { key: 'a' })).toBe(true)
   })
 
-  test('a mouse leaving or a blur out of the list clears; a link row focuses its item', () => {
+  test('a mouse leaving or a blur out of the list clears; a link row focuses its item', async () => {
     const onClick = mock(() => undefined)
     function Buttons() {
       const focus = useChartFocus(ITEMS, { announce: (d) => d.label })
@@ -347,6 +353,7 @@ describe('BarList focus', () => {
     expect(handle?.index).toBeNull()
     act(() => handle?.set(1))
     fireEvent.pointerLeave(getByRole('list'), { pointerType: 'mouse' })
+    await released()
     expect(handle?.index).toBeNull()
   })
 
@@ -416,7 +423,7 @@ describe('BarList across grains', () => {
     expect(marks(container, 'data-focused')).toEqual([false, true, false])
   })
 
-  test('a row that stands for a series emphasises it; the legend marks the row and dims the rest', () => {
+  test('a row that stands for a series emphasises it; the legend marks the row and dims the rest', async () => {
     const { container } = render(<BySeries />)
     fireEvent.pointerEnter(rowAt(container, 1))
     expect(hours?.series).toBe('sonnet')
@@ -427,6 +434,7 @@ describe('BarList across grains', () => {
     act(() => hours?.setSeries('other'))
     expect(marks(container, 'data-dimmed')).toEqual([false, false, false])
     fireEvent.pointerLeave(container.querySelector('ul') as Element, { pointerType: 'mouse' })
+    await released()
     expect(hours?.series).toBeNull()
   })
 

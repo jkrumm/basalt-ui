@@ -1,4 +1,5 @@
 import type { FocusEvent, KeyboardEvent, LiHTMLAttributes, PointerEvent } from 'react'
+import { releaseOf } from '../core/focus-release'
 import { heldBy, heldItem } from '../core/list-link'
 import type { ItemsLink, MarkedItem, SeriesLink } from '../core/list-link'
 import type { ListFocus } from '../core/ports'
@@ -44,8 +45,9 @@ export function listFocus(focus: ListFocus<unknown>): {
       if (to instanceof Node && event.currentTarget.contains(to)) return
       focus.set(null)
     },
+    // The shared focus releases after a grace: the pointer crossing to the next list keeps it.
     onPointerLeave: (event) => {
-      if (event.pointerType !== 'touch') focus.set(null)
+      if (event.pointerType !== 'touch') releaseOf(focus)(() => focus.set(null))
     },
   }
 }
@@ -59,6 +61,8 @@ export type RowsLink = {
   items: readonly MarkedItem[]
   enter: (row: number) => void
   clear: () => void
+  /** Clears after the focus's grace, for a pointer leave: the pointer crossing to the next list keeps it. */
+  release?: (clear: () => void) => void
 }
 
 /** The link of a list's `focusItems`: a row holds every item `holds` accepts. */
@@ -71,6 +75,7 @@ export function itemsRows<T, I>(link: ItemsLink<T, I>, rows: readonly T[]): Rows
       link.focus.hold(row === undefined ? [] : heldBy(link, row))
     },
     clear: () => link.focus.set(null),
+    release: releaseOf(link.focus),
   }
 }
 
@@ -92,6 +97,7 @@ export function seriesRows<T>(link: SeriesLink<T>, rows: readonly T[]): RowsLink
       link.focus.setSeries(row === undefined ? null : link.key(row))
     },
     clear: () => link.focus.setSeries(null),
+    release: releaseOf(link.focus),
   }
 }
 
@@ -179,7 +185,10 @@ export function linkedList(
       clear()
     },
     onPointerLeave: (event) => {
-      if (event.pointerType !== 'touch') clear()
+      if (event.pointerType === 'touch') return
+      setAt(null)
+      if (link.release === undefined) link.clear()
+      else link.release(link.clear)
     },
   }
 }
