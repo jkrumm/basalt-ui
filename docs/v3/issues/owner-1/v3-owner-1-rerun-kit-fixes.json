@@ -1,12 +1,11 @@
 {
-  "why": "The rerun of owner review 1 (docs/v3/cycles/owner-review-1.md § Findings 3 and 5) rebuilt seven pages on the fixed kit. Two defects remain in shipped parts that fresh builders used as documented and that no cycle 11 row owns. Findings 1 and 4 (IntervalTrack titles, hover readouts over ticks) went to v3-expr-11-kit-fixes as notes.",
-  "what": "Two kit fixes, each shown on the rerun's shots in .evidence/v3-shots/owner-review-1/r0 on the dev host.",
-  "change": "(1) ChainView in a panel narrower than its columns: scroll with a visible cue, or lay out to the width, and allow a node title two lines (n32: the third column cut at the panel edge at 1800, titles one ellipsised line). (2) Diagnose c12's BarList focusSeries link that holds only on a direct arrival at 1800: the stepped path that crossed the chart left no focus (the LIST line of the rerun's shoot log). Cycle 6 fixed that crossing loss for tables, so check the BarList arm.",
+  "why": "The rerun of owner review 1 (docs/v3/cycles/owner-review-1.md § Finding 5) found c12's BarList on focusSeries linking to the chart only when the pointer arrives on a row directly: the stepped path that crossed the chart above left no focus. Cycle 6 fixed that crossing loss for tables, so the BarList focus arm may have regressed. Findings 1, 3 and 4 went to v3-expr-11-kit-fixes and v3-owner-2-chain-polish as notes.",
+  "what": "One diagnosis and its fix, shown on the rerun's shots and shoot log in .evidence/v3-shots/owner-review-1/r0 on the dev host.",
+  "change": "Reproduce c12's LIST line ('direct arrival only; the stepped path that crossed the chart left no focus') in a browser at 1800, find whether the BarList focusSeries arm drops a focus the chart's pointer leave clears, and fix it in the kit so a stepped path links as a direct arrival does. If the cause is the lead tool's sweep, not the kit, close the row with that named.",
   "acceptance": [
-    "n32's rerun scenario at 1800 shows the chain's last column whole, or a visible scroll cue",
-    "c12's list frame links on the stepped path, or the finding is closed with the cause named",
+    "c12's list frame links on the stepped path, or the row closes with the cause named",
     "make check passes"
   ],
-  "out_of_scope": "Rebuilding the scenarios; IntervalTrack labels and hover readouts (v3-expr-11-kit-fixes).",
+  "out_of_scope": "Rebuilding the scenarios; IntervalTrack labels and hover readouts (v3-expr-11-kit-fixes); ChainView width (v3-owner-2-chain-polish).",
   "note": "Filed by the owner-review-1 rerun (Issue 2404)."
 }

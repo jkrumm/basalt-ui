@@ -25,5 +25,5 @@
   "out_of_scope": "Editing a chain (drag to connect), a general graph component.",
   "proof": "make check; the Spec shots.",
   "commits": "fix: the side stripes and the lint rule; feat: routing and pan and zoom with tests (package); docs: the recipe.",
-  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it."
+  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it. Planned finding from the owner review 1 rerun (docs/v3/cycles/owner-review-1.md § Finding 3), appended here instead of a row of its own: a fresh n32 build put ChainView in a half-width panel, and its third column is cut at the panel edge at 1800 with no scroll cue, node titles one ellipsised line; item (3)'s fit-to-width and pan answer it. Shots in .evidence/v3-shots/owner-review-1/r0 on the dev host."
 }
