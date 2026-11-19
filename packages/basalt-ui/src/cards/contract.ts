@@ -75,6 +75,8 @@ export type StatRow = {
 export type StatCellProps = CardTarget &
   FrameState & {
     label: string
+    /** A glyph before the label, drawn in the caption's muted ink. */
+    icon?: IconComponent | undefined
     /** The series colour of the mark this figure reads, drawn as a dot before the label. */
     swatch?: { light: string; dark: string } | undefined
     qualifier?: string | undefined
