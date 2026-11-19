@@ -36,21 +36,32 @@ export type StatCellProps = ContractProps & {
 const CHART_HEIGHT = 28
 
 // One class string per track, written out so the scanner sees each. A track holds one fixed height
-// whatever the phase, so a loading, empty or error cell is exactly as tall as a ready one.
+// whatever the phase, so a loading, empty or error cell is exactly as tall as a ready one. The figure
+// is the card hero's size from `@regular` and a step down in a narrow container, where two cells
+// share a line.
 const T_CAPTION = 'row-start-1 flex h-4 min-w-0 items-center gap-1'
-const T_FIGURE = 'row-start-2 flex h-8 min-w-0 items-center gap-2'
-const T_METER = 'row-start-3 h-8.5 min-w-0 overflow-clip'
-const T_CHART = 'row-start-4 h-7 min-w-0 overflow-clip'
+const T_FIGURE = 'row-start-2 flex h-8 min-w-0 items-center gap-2 @regular:h-9'
+const T_BASE = 'row-start-3 flex h-4 min-w-0 items-center'
+const T_METER = 'row-start-4 mt-1 h-8.5 min-w-0 overflow-clip'
+const T_CHART = 'row-start-5 mt-1 h-7 min-w-0 overflow-clip'
 const T_ROWS = [
-  'row-start-5 h-5 min-w-0',
   'row-start-6 h-5 min-w-0',
   'row-start-7 h-5 min-w-0',
   'row-start-8 h-5 min-w-0',
+  'row-start-9 h-5 min-w-0',
 ] as const
-const T_FOOT = 'row-start-9 flex h-4 min-w-0 items-center'
+const T_FOOT = 'row-start-10 flex h-4 min-w-0 items-center'
 
-/** Spans the meter, chart and row tracks (3 to 8): where `empty.cause` is read. */
-const SPAN_BODY = 'col-start-1 row-start-3 row-end-9 flex min-w-0 items-center gap-2'
+/** Spans the meter, chart and row tracks (4 to 9): where `empty.cause` is read. */
+const SPAN_BODY = 'col-start-1 row-start-4 row-end-10 flex min-w-0 items-center gap-2'
+
+/**
+ * A strip cell is ruled on its left and top. The strip's grid sits 1 px up and left of its card,
+ * which clips the first column's left rule and the first line's top rule, so a rule only ever
+ * divides two cells, whatever the line breaks.
+ */
+const STRIP_CELL =
+  'row-span-10 grid-rows-subgrid border-t border-l border-border px-(--card-edge) py-3'
 
 const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
 
@@ -70,9 +81,10 @@ const rowsOf = (rows: StatCellProps['rows']): StatRow[] => {
 }
 
 /**
- * One cell of a `StatGroup`, or a lone cell on its own tracks: a caption (label, qualifier,
- * definition glyph), the figure with its delta and verdict, then the meter, chart, rows and foot
- * line it declares. Inside a group its tracks are shared with its neighbours; a track a cell does
+ * One cell of a `StatGroup`, or a lone cell on its own tracks: a caption (icon, label, qualifier,
+ * definition glyph), the figure with its delta pill and verdict, the delta's base on the line under
+ * the pill ("vs prior 7 days", from `delta.label`), then the meter, chart, rows and foot line it
+ * declares. Inside a group its tracks are shared with its neighbours; a track a cell does
  * not declare is left empty, and one nobody declares collapses. It owns its height at every phase
  * and its loading skeleton draws the declared shape; `chart` is called only in `ready` and `stale`,
  * in a 28 px box.
@@ -93,7 +105,20 @@ const rowsOf = (rows: StatCellProps['rows']): StatRow[] => {
  * />
  */
 export function StatCell(props: StatCellProps): ReactElement {
-  const { label, qualifier, info, value, unit, delta, status, sub, srText, meter, chart } = props
+  const {
+    label,
+    icon: Icon,
+    qualifier,
+    info,
+    value,
+    unit,
+    delta,
+    status,
+    sub,
+    srText,
+    meter,
+  } = props
+  const { chart } = props
   const { href, onClick, phase, empty, swatch, subMono } = props
   const variant = useContext(StatGroupContext)
   const collapsed = useContext(StatGroupCollapsedContext)
@@ -107,7 +132,9 @@ export function StatCell(props: StatCellProps): ReactElement {
   const body = resolved.body
   const root = cn(
     'relative grid min-w-0 grid-cols-1',
-    variant === null ? 'grid-rows-[repeat(9,auto)]' : 'row-span-9 mb-3 grid-rows-subgrid',
+    variant === null && 'grid-rows-[repeat(10,auto)]',
+    variant === 'strip' && STRIP_CELL,
+    variant === 'cards' && 'row-span-10 mb-3 grid-rows-subgrid',
     // The group draws one message over the cells: a strip keeps each caption, cards hold only their size.
     collapsed && variant === 'cards' && 'invisible',
     collapsed &&
@@ -127,9 +154,12 @@ export function StatCell(props: StatCellProps): ReactElement {
             style={{ background: `light-dark(${swatch.light}, ${swatch.dark})` }}
           />
         )}
+        {Icon !== undefined && (
+          <Icon className="mr-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+        )}
         <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
         {qualifier !== undefined && (
-          <p className="shrink-[2] truncate text-xs text-muted-foreground/70">{qualifier}</p>
+          <p className="shrink-[2] truncate text-xs text-muted-foreground">{qualifier}</p>
         )}
         {info !== undefined && (
           <CardInfo label={about(label)} className="-my-1">
@@ -156,6 +186,15 @@ export function StatCell(props: StatCellProps): ReactElement {
         empty={resolved.tag === 'empty' ? resolved.empty : undefined}
         collapsed={collapsed}
       />
+      {delta?.label !== undefined && (
+        <div data-slot="stat-base" aria-hidden={hidden} className={T_BASE}>
+          {resolved.tag === 'loading' ? (
+            <div className={cn(BAR, 'h-3 w-1/2')} />
+          ) : (
+            body && <p className="truncate text-xs text-muted-foreground">{delta.label}</p>
+          )}
+        </div>
+      )}
       {meter !== undefined && (
         <div data-slot="stat-meter" aria-hidden={hidden} className={T_METER}>
           {resolved.tag === 'loading' ? <MeterSkeleton /> : body && <Meter {...meter} />}
@@ -303,7 +342,7 @@ function Figure({
     <div data-slot="stat-figure" aria-hidden={hidden} className={T_FIGURE}>
       <span
         className={cn(
-          'truncate text-lg font-semibold tabular-nums',
+          'truncate text-lg font-semibold tabular-nums @regular:text-display',
           dash && 'text-muted-foreground',
         )}
       >
@@ -313,11 +352,7 @@ function Figure({
         )}
       </span>
       {resolved.tag !== 'empty' && delta !== undefined && (
-        <DeltaBadge
-          value={delta.value}
-          polarity={delta.polarity}
-          {...(delta.label !== undefined && { label: delta.label })}
-        />
+        <DeltaBadge value={delta.value} polarity={delta.polarity} />
       )}
       {resolved.tag !== 'empty' && status !== undefined && <StatusMark status={status} />}
     </div>
