@@ -146,7 +146,7 @@ const BAND_SHARE = 0.08
 /**
  * The most of a colour mixed into the card that still holds `ink` at 4.5:1 for any colour at all
  * (black on the light card, white on the dark one): 43 % and 25 % with the shipped tokens, held here
- * with a margin for a derived palette. The focused span lifts to it; `interval-ink.test.ts` holds it.
+ * with a margin for a derived palette. The focused span lifts to it; `interval-ink.test.tsx` holds it.
  */
 export const TINT_CAP = { light: 0.4, dark: 0.22 } as const
 /** A span's share of its colour at rest, under the cap, so an inside label is always `ink`. */
@@ -357,7 +357,7 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
             const head: ChartTooltipRow = {
               label: s?.label ?? it.series,
               value: when,
-              ...(s && { color: cssColor(s.color) }),
+              ...(s && { color: paintOf(s, isOneSeries(series)) }),
             }
             return {
               title: header(it),
@@ -488,7 +488,8 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
                 id: 'lift',
                 ...AT_BOX,
                 radius: RADIUS,
-                fill: s.fill === 'outline' ? 'none' : tint(ring, TINT_CAP),
+                // A back span is a ring only: a tint over its full row would cover the lanes on it.
+                fill: s.fill === 'outline' || s.layer === 'back' ? 'none' : tint(ring, TINT_CAP),
                 stroke: ring,
                 strokeWidth: LIFT_PX,
               }),
@@ -581,7 +582,7 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
           const s = seriesByKey.get(it.series)
           // Ink by what the label sits on: a tinted span is under the cap, so `ink` holds on it; the
           // card and the row band take the muted ink, which holds on both.
-          const onBar = p.spot === 'inside' && s?.fill !== 'outline' && it.lane >= 0
+          const onBar = p.spot === 'inside' && s?.fill !== 'outline'
           const base = { id: it.i, y, text: p.text, fill: onBar ? CV.ink : CV.inkMuted }
           if (p.spot === 'after') return { ...base, x: b.x2, anchor: 'start', dx: LABEL_GAP }
           if (p.spot === 'inside') return { ...base, x: b.x2, anchor: 'end', dx: -LABEL_GAP }
