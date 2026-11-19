@@ -47,12 +47,18 @@ export function heldItem<T, I>(link: ItemsLink<T, I>, row: T): MarkedItem {
       onPointerDown: () => focus.set(null),
     }
   const marked = focus.span.some((item) => holds(row, item))
+  // Per call, so the ref React detaches (the one it attached) holds the refs it attached.
+  let refs: readonly ((element: Element | null) => void)[] = []
   return {
     'data-chart-mark': '',
     ...(marked && { 'data-focused': '' as const }),
     ...(focus.index !== null && !marked && { 'data-dimmed': '' as const }),
-    // The row stands in for its first item, so a chart's keyboard step onto it scrolls the row.
-    ref: focus.item(first).ref,
+    // The row stands in for every item it holds: a detach reaches the same item refs it attached.
+    ref: (element) => {
+      for (const r of refs) r(null)
+      refs = element === null ? [] : indexes.map((i) => focus.item(i).ref)
+      for (const r of refs) r(element)
+    },
     onPointerEnter: () => focus.hold(indexes),
     onPointerDown: () => focus.hold(indexes),
   }

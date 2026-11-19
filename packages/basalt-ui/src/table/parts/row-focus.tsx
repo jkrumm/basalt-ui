@@ -129,12 +129,23 @@ export function useRowFocusProps(id: string, row: unknown, base: RowProps): Focu
   }
 }
 
-/** The body's pointer leave: a mouse leaving the rows clears the focus; a tap's leave keeps it. */
+/**
+ * The body's pointer leave: a mouse leaving the rows clears the focus, a tap's leave keeps it. A mouse
+ * that moves from the rows into their card (the body's padding, or a row the fixed body clips) keeps it
+ * too, and the card's own leave clears it, so the focus never outlives the card.
+ */
 export function useRowFocusLeave(): ((event: PointerEvent<Element>) => void) | undefined {
   const link = useContext(RowFocusContext)
   if (link === undefined) return undefined
   return (event) => {
-    if (event.pointerType !== 'touch') link.clear()
+    if (event.pointerType === 'touch') return
+    const card = event.currentTarget.closest('[data-slot="card"]')
+    const to = event.relatedTarget
+    if (card === null || !(to instanceof Node) || !card.contains(to)) {
+      link.clear()
+      return
+    }
+    card.addEventListener('pointerleave', () => link.clear(), { once: true })
   }
 }
 
