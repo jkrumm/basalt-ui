@@ -1,12 +1,8 @@
 /**
- * The matrix harness (quality-contract section 4): bundles the playground with `Bun.build`, serves
- * the output plus the seeded offenders from one ephemeral port, drives real Chrome. No dev server is
- * started and no Vite process runs.
- *
- * `Bun.build` cannot run Tailwind or read `?inline`, so a build plugin does both for this one app:
- * `src/index.css` goes through the Tailwind CLI (the same compile the playground's Vite plugin does)
- * and `<css>?inline` becomes a string module. The package resolves through its built `dist`
- * (`make check` builds first), which is the surface a consumer imports.
+ * The matrix harness (quality-contract section 4): bundles the playground (`build-playground.ts`, in a
+ * child process), serves the output plus the seeded offenders from one ephemeral port, drives real
+ * Chrome. No dev server is started and no Vite process runs. The package resolves through its built
+ * `dist` (`make check` builds first), which is the surface a consumer imports.
  */
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -15,10 +11,8 @@ import { chromium } from 'playwright-core'
 import type { Browser, BrowserContext, BrowserServer, Page } from 'playwright-core'
 import { themeScript } from '../../../src/css/theme-script'
 import { readTestBrowser, testBrowserOptions } from '../../support/test-browser'
-import { PLAYGROUND, REPO } from './routes'
 
 const OFFENDERS = resolve(import.meta.dirname, 'offenders')
-const TAILWIND = join(REPO, 'node_modules/.bin/tailwindcss')
 
 /** The pre-paint script is in the head as `basaltAppPlugin` puts it in a consumer's document. */
 const INDEX_HTML = `<!doctype html>
@@ -46,80 +40,16 @@ const MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
 }
 
-function compileTailwind(entry: string): string {
-  const result = Bun.spawnSync([TAILWIND, '--input', entry, '--output', '-'], {
-    cwd: PLAYGROUND,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  })
-  if (result.exitCode !== 0) {
-    throw new Error(`matrix: Tailwind failed on ${entry}:\n${result.stderr.toString()}`)
-  }
-  return result.stdout.toString()
-}
+const BUILD = join(import.meta.dirname, 'build-playground.ts')
 
-const PSEUDO_FORMAT = join(import.meta.dirname, 'pseudo-format.ts')
-
-/** `pseudo` swaps the playground's `demo/page-format` for one that also carries the pseudo catalog. */
-const playgroundPlugin = (pseudo: boolean): Bun.BunPlugin => ({
-  name: 'playground-css',
-  setup(build) {
-    if (pseudo) {
-      build.onResolve({ filter: /\/demo\/page-format$/ }, () => ({ path: PSEUDO_FORMAT }))
-    }
-    build.onResolve({ filter: /\?inline$/ }, (args) => {
-      const bare = args.path.slice(0, -'?inline'.length)
-      return {
-        path: Bun.resolveSync(bare, args.importer ? resolve(args.importer, '..') : PLAYGROUND),
-        namespace: 'inline-css',
-      }
-    })
-    build.onLoad({ filter: /.*/, namespace: 'inline-css' }, async (args) => ({
-      contents: `export default ${JSON.stringify(await Bun.file(args.path).text())}`,
-      loader: 'js',
-    }))
-    // Authored `.mdx` is compiled at build time, as the playground's Vite plugin does.
-    build.onLoad({ filter: /\.mdx$/ }, async (args) => {
-      const { compile } = (await import(Bun.resolveSync('@mdx-js/mdx', PLAYGROUND))) as {
-        compile: (source: string, options: { remarkPlugins: unknown[] }) => Promise<unknown>
-      }
-      const gfm = (await import(Bun.resolveSync('remark-gfm', PLAYGROUND))) as { default: unknown }
-      const file = await compile(await Bun.file(args.path).text(), { remarkPlugins: [gfm.default] })
-      return { contents: String(file), loader: 'js' }
-    })
-    build.onLoad({ filter: /apps\/playground\/src\/index\.css$/ }, (args) => ({
-      contents: compileTailwind(args.path),
-      loader: 'css',
-    }))
-  },
-})
-
-/** Generates the (gitignored) route tree the playground imports, then bundles the app. */
+/** Bundles the playground in a child process, so the bundler's memory is back with the host before Chrome starts. */
 async function buildPlayground(outdir: string, pseudo: boolean): Promise<void> {
-  const generate = Bun.spawnSync([join(PLAYGROUND, 'node_modules/.bin/tsr'), 'generate'], {
-    cwd: PLAYGROUND,
-    stdout: 'pipe',
+  const child = Bun.spawn([process.execPath, BUILD, outdir, ...(pseudo ? ['pseudo'] : [])], {
+    stdout: 'ignore',
     stderr: 'pipe',
   })
-  if (generate.exitCode !== 0) {
-    throw new Error(`matrix: tsr generate failed:\n${generate.stderr.toString()}`)
-  }
-  const build = await Bun.build({
-    entrypoints: [join(PLAYGROUND, 'src/main.tsx')],
-    outdir,
-    naming: '[name].[ext]',
-    target: 'browser',
-    plugins: [playgroundPlugin(pseudo)],
-    // basalt source reads `process.env["NODE_ENV"]` in bracket form, which only a whole-object
-    // define matches (tests/layout/harness/engine.ts).
-    define: {
-      'process.env': JSON.stringify({ NODE_ENV: 'production' }),
-      'import.meta.env': JSON.stringify({ MODE: 'production', DEV: false, PROD: true }),
-    },
-  })
-  if (!build.success) {
-    throw new Error(`matrix: the playground did not bundle:\n${build.logs.map(String).join('\n')}`)
-  }
+  const [stderr, code] = await Promise.all([new Response(child.stderr).text(), child.exited])
+  if (code !== 0) throw new Error(`matrix: the playground build failed (exit ${code}):\n${stderr}`)
 }
 
 export type MatrixHarness = {
@@ -144,8 +74,31 @@ export type PageOptions = {
   locale?: string
 }
 
-/** Builds, serves and launches Chrome. Returns `null` (with a warning) when Chrome is missing locally; throws under CI. */
+let shared: Promise<MatrixHarness | null> | undefined
+let holders = 0
+
+/**
+ * Builds, serves and launches Chrome. Returns `null` (with a warning) when Chrome is missing locally; throws under CI.
+ * The test files of one `bun test` process share one harness (one bundle pair, one Chrome, not one each); the last
+ * `close()` of the holders shuts it down.
+ */
 export async function bootMatrix(): Promise<MatrixHarness | null> {
+  shared ??= launchMatrix()
+  holders += 1
+  const harness = await shared
+  if (harness === null) return null
+  return {
+    ...harness,
+    async close() {
+      holders -= 1
+      if (holders > 0) return
+      shared = undefined
+      await harness.close()
+    },
+  }
+}
+
+async function launchMatrix(): Promise<MatrixHarness | null> {
   // Read first, outside any try: an invalid BASALT_TEST_BROWSER must fail the run (before anything is
   // created), not read as 'no browser installed'.
   const launchOptions = testBrowserOptions(readTestBrowser())
@@ -200,7 +153,8 @@ export async function bootMatrix(): Promise<MatrixHarness | null> {
   // Under `bun test` the event loop was observed to wake for the Chrome socket only on its next timer
   // tick (every Playwright call took 1.0 s); a short interval keeps it awake.
   const keepAwake = setInterval(() => {}, 10)
-  const contexts: BrowserContext[] = []
+  // A closed context leaves this set: holding all of them kept every page's Playwright objects alive for the run.
+  const contexts = new Set<BrowserContext>()
   return {
     origin: `http://127.0.0.1:${server.port}`,
     pseudoOrigin: `http://localhost:${server.port}`,
@@ -215,11 +169,12 @@ export async function bootMatrix(): Promise<MatrixHarness | null> {
         locale: options.locale ?? 'en-US',
         colorScheme: 'light',
       })
-      contexts.push(context)
+      contexts.add(context)
+      context.once('close', () => contexts.delete(context))
       return context.newPage()
     },
     async close() {
-      await Promise.all(contexts.map((context) => context.close().catch(() => {})))
+      await Promise.all([...contexts].map((context) => context.close().catch(() => {})))
       await browser.close().catch(() => {})
       clearInterval(keepAwake)
       await chromeProcess.kill()
