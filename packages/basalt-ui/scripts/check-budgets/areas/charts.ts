@@ -50,7 +50,9 @@ export const rows: readonly RowDef[] = [
     // 124500 -> 125600 (Issue 2409): 124666 B measured, +~1.1 KB gz for the readout that clears the ticks, the
     // clamped value's side placement and fill-matched ink, the rule claims for captions, and the interval
     // track's whole-or-dropped labels and minimum width, the kit fixes of expression cycle 11.
-    ceiling: 125600,
+    // 125600 -> 126000 (Issue 2445): 125652 B measured, +~50 B gz over the cap for the dense-cloud label
+    // placement, the held-focus release and the rule-aware zone caption, the kit fixes of expression cycle 12.
+    ceiling: 126000,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -73,6 +75,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 125600,
+      to: 126000,
+      consumer:
+        "the kit fixes of expression cycle 12 (Issue 2445): n55's labels in a dense dot cloud were dropped or hung far from their dot, the shared focus dropped in the gap between two cards, and n46's zone caption was struck by a rule",
+      repo: 'basalt-ui',
+    },
     {
       from: 124500,
       to: 125600,
