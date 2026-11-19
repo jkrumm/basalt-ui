@@ -47,7 +47,7 @@ Score per component, then add one line per page for the page items (Communicatio
 7. Hover, focus and tooltip states are present in the shots; focus is the 2 px outline. **[measured]** An `ignored` state shot fails (`craft-7/states-ignored`).
 8. A rule between rows, list entries or cards is at most the hairline or grid token, as faint as a chart's grid lines in both schemes. A rule that reads as ink fails: a bare `border`, `border-b` or `divide-y` paints in the text colour.
 9. Hover and focus change colour and the readout only: in the hover, focus and tooltip crops the plot, its axes and the parts beside it sit where the ready crop has them. A shift, a tooltip or readout that grows the card, or a label that wraps on focus fails.
-10. A hand-composed mark is drawn with craft, judged apart from whether its form fits (Expression 1): rows, tracks and labels start on one shared x, every label and title fits its box at every viewport (none clipped, hidden under a mark or cut at the edge), and marks of one class have one size. A good idea drawn badly fails here.
+10. A hand-composed mark is drawn with craft, judged apart from whether its form fits (Expression 1): rows, tracks and labels start on one shared x, every label and title fits its box at every viewport (none clipped, hidden under a mark or cut at the edge), and marks of one class have one size. A clipped, cut or ellipsised label or title fails the same whether the app or a shipped part drew it; a page of shipped parts is no default pass. A good idea drawn badly fails here.
 
 ### Expression
 
