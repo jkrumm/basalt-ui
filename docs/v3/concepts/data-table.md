@@ -78,7 +78,12 @@ type TableRequest = {
   page: number
   pageSize: number
 }
-type TableDisplay = { visibility: Record<string, boolean>; collapsed?: readonly string[] }
+type TableDisplay = {
+  visibility: Record<string, boolean>
+  collapsed?: readonly string[]
+  order?: readonly string[] // column ids as the reader moved them
+  pinned?: readonly string[] // column ids the reader pinned (grid look)
+}
 type TableState = { v: 1; request: TableRequest; display: TableDisplay }
 
 type Mode =
@@ -118,6 +123,7 @@ type UseDataTable<T> = {
   state?: StateHandle<TableState>
   phase?: Phase | QueryStateLike
   resetOn?: readonly unknown[]
+  look?: 'reading' | 'grid'
   phone?: 'cards' | 'scroll'
   cardsBelow?: 'regular' | 'wide' | 'always'
   pager?: 'pages' | 'more' | 'none'
@@ -206,12 +212,12 @@ Absent values render a muted dash, `absent != 0` (I15, consumer-linewatch). No t
 
 **Where each slice lives**
 
-| Slice                      | Default lane               | In a view                 | In URL                          | Note                                       |
-| -------------------------- | -------------------------- | ------------------------- | ------------------------------- | ------------------------------------------ |
-| `request.q, filters, sort` | URL, replace               | yes                       | explicit, or `view` while clean | Same write resets page                     |
-| `request.page, pageSize`   | URL, replace               | `pageSize` yes, `page` no | explicit                        | Omitted for cursor mode                    |
-| `display.visibility`       | device `basalt:table:<id>` | yes                       | never                           | A shared link does not force columns       |
-| rowSelection               | memory                     | no                        | never                           | Internal or caller-owned, not `TableState` |
+| Slice                               | Default lane               | In a view                 | In URL                          | Note                                       |
+| ----------------------------------- | -------------------------- | ------------------------- | ------------------------------- | ------------------------------------------ |
+| `request.q, filters, sort`          | URL, replace               | yes                       | explicit, or `view` while clean | Same write resets page                     |
+| `request.page, pageSize`            | URL, replace               | `pageSize` yes, `page` no | explicit                        | Omitted for cursor mode                    |
+| `display.visibility, order, pinned` | device `basalt:table:<id>` | yes                       | never                           | A shared link does not force columns       |
+| rowSelection                        | memory                     | no                        | never                           | Internal or caller-owned, not `TableState` |
 
 Without `state`, the table holds its own memory handle and needs no router (linewatch). Views default to `basalt:table-views:<id>` in the frozen `{v,value}` envelope; a server `ViewStore` over `createSyncedState` is the documented path, unused in 3.0. v9 traps pinned in tests: one owner per slice (external atom wins over `state`, so `state` + `on*Change` only); `table.reset()` does not reset an external owner, so reset goes through the handle; features object identity stable; methods on the instance, never destructured (F, `table-core/skills/table-state`).
 
