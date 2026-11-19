@@ -18,9 +18,8 @@ import {
   warnOnce,
 } from './stat-group-shared'
 
-/** One skeleton or body row of a `{ rows }` panel: 32 px and an 8 px gap. */
-const ROW = 32
-const GAP = 8
+/** The row height a `{ rows }` body is declared in until the table's row token is read: the normal density. */
+const DEFAULT_ROW = 40
 
 /**
  * The phase arms (error, empty) are laid out for 96 px, so a panel never draws a body shorter than
@@ -28,17 +27,26 @@ const GAP = 8
  */
 const MIN_BODY = 96
 
-/** The body box height `bodySize` declares. The loading, error, empty and ready body all hold it. */
-const bodyHeightOf = (size: DataPanelProps['bodySize']): number => {
-  const px =
-    'rows' in size
-      ? Math.max(0, Math.round(size.rows)) * (ROW + GAP) - GAP
-      : Math.round(size.height)
+/**
+ * The body box height `bodySize` declares. A `rows` count is table rows at the table's row height
+ * (`--basalt-row-h`, the head row included), so it is `rows` times that height. The loading, error,
+ * empty and ready body all hold it.
+ */
+const bodyHeightOf = (size: DataPanelProps['bodySize'], rowPx: number): number => {
+  const px = 'rows' in size ? Math.max(0, Math.round(size.rows)) * rowPx : Math.round(size.height)
   return Math.max(MIN_BODY, px)
 }
 
-/** The height a loading skeleton gives one phone card: a title, a sub line and two values. A loaded list replaces it with its own measure. */
-const PHONE_CARD = 92
+/**
+ * The tallest phone card the kit draws: a title, a sub line, a value and a meter, 108 px at 390 px
+ * (measured in cycle 13; a card with no meter is 92 px). Until a list is measured, a loading frame of a
+ * `rows` body gives each data row one card this tall, so it never ends shorter than the loaded list.
+ */
+const CARD_TALL = 108
+
+/** The data rows a `rows` body names: its rows less the head row, at least one. */
+const dataRowsOf = (size: DataPanelProps['bodySize']): number =>
+  'rows' in size ? Math.max(1, Math.round(size.rows) - 1) : 1
 
 /** Whether the panel is as narrow as a phone, the width under which its table is cards. */
 function useNarrow(ref: RefObject<HTMLDivElement | null>): boolean {
@@ -63,10 +71,26 @@ function useNarrow(ref: RefObject<HTMLDivElement | null>): boolean {
 function rowHeightOf(el: HTMLElement): number {
   const raw = getComputedStyle(el).getPropertyValue('--basalt-row-h').trim()
   const n = Number.parseFloat(raw)
-  if (!Number.isFinite(n)) return 32
+  if (!Number.isFinite(n)) return DEFAULT_ROW
   return raw.endsWith('rem')
     ? n * Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
     : n
+}
+
+/** The table row height in px, read once the panel is mounted and before paint: a `rows` body is that many rows tall. */
+function useRowPx(ref: RefObject<HTMLElement | null>, enabled: boolean): number {
+  const [px, setPx] = useState(DEFAULT_ROW)
+  useLayoutEffect(() => {
+    const measure = (): void => {
+      const el = ref.current
+      if (!enabled || el === null) return
+      const next = rowHeightOf(el)
+      setPx((was) => (was === next ? was : next))
+    }
+    measure()
+    return undefined
+  })
+  return px
 }
 
 /**
@@ -74,22 +98,32 @@ function rowHeightOf(el: HTMLElement): number {
  * are cut after the last one that fits, so no row is clipped through its text; the box keeps the
  * declared height in every phase (a loading skeleton draws it), so the cut leaves at most one row of
  * space at the bottom of the box. As phone cards (the table's rows are grids) the cards are taller
- * than a table row, so the box takes the height of as many cards as the desktop box holds data
- * rows (its height in table rows, less the head row, at least one): every one of them is whole,
- * none is left behind the box, and a shorter list ends at its last card. The measure reads the rows against
- * the declared height, so it holds under a resize and a refetch. Bodies that draw no table rows get
- * no cut.
+ * than a table row, so the box takes the height of the data cards its rows name (`dataRowsOf`: the
+ * rows less the head row): every one of them is whole, none is left behind the box, and a shorter
+ * list ends at its last card. The measure reads the rows against the declared height, so it holds
+ * under a resize and a refetch. Bodies that draw no table rows get no cut.
  */
 function useWholeRows(
   size: DataPanelProps['bodySize'],
   declared: number,
-): { ref: RefObject<HTMLDivElement | null>; fit: number | undefined; cards: boolean } {
+): {
+  ref: RefObject<HTMLDivElement | null>
+  fit: number | undefined
+  cards: boolean
+  measured: boolean
+} {
   const ref = useRef<HTMLDivElement | null>(null)
-  const [snapped, setSnapped] = useState<{ fit: number | undefined; cards: boolean }>({
+  const [snapped, setSnapped] = useState<{
+    fit: number | undefined
+    cards: boolean
+    measured: boolean
+  }>({
     fit: undefined,
     cards: false,
+    measured: false,
   })
   const enabled = 'rows' in size
+  const dataRows = dataRowsOf(size)
   useLayoutEffect(() => {
     const box = ref.current?.querySelector('[data-slot="data-panel-rows"]')
     if (!enabled || !(box instanceof HTMLElement)) return undefined
@@ -99,10 +133,13 @@ function useWholeRows(
       if (first === undefined) return
       const top = box.getBoundingClientRect().top
       if (getComputedStyle(first).display === 'grid') {
-        const named = Math.max(1, Math.floor(declared / rowHeightOf(box)) - 1)
-        const last = rows[Math.min(named, rows.length) - 1]!
+        const last = rows[Math.min(dataRows, rows.length) - 1]!
         const bottom = Math.ceil(last.getBoundingClientRect().bottom - top)
-        setSnapped((was) => (was.cards && was.fit === bottom ? was : { fit: bottom, cards: true }))
+        setSnapped((was) =>
+          was.cards && was.fit === bottom && was.measured
+            ? was
+            : { fit: bottom, cards: true, measured: true },
+        )
         return
       }
       let fit: number | undefined
@@ -112,7 +149,11 @@ function useWholeRows(
         if (last <= declared + 0.5) fit = last
       }
       const next = last <= declared + 0.5 || fit === undefined ? undefined : Math.ceil(fit)
-      setSnapped((was) => (!was.cards && was.fit === next ? was : { fit: next, cards: false }))
+      setSnapped((was) =>
+        !was.cards && was.fit === next && was.measured
+          ? was
+          : { fit: next, cards: false, measured: true },
+      )
     }
     measure()
     if (typeof ResizeObserver === 'undefined') return undefined
@@ -124,6 +165,7 @@ function useWholeRows(
     ref,
     fit: snapped.fit === undefined ? undefined : Math.max(MIN_BODY, snapped.fit),
     cards: snapped.cards,
+    measured: snapped.measured,
   }
 }
 
@@ -274,16 +316,16 @@ function PanelHead(
  * required `bodySize`, so a loading, empty or error panel is as tall as a ready one and
  * the body is called in `ready` and `stale`; in `empty` and `error` it is called too, so a table in it
  * keeps its column header row and draws the arm under it (a body that draws no table stays hidden
- * there and the panel draws its own arm). A `{ rows }` body whose table rows run past
- * the declared height shows whole rows: the rows are cut after the last one that fits, while the
- * box keeps the declared height in every phase. A `rows` count is table rows at the desktop height
- * (the head row included): where the table folds to phone cards, the box is as tall as that many data
- * rows of cards (so declare the rows the desktop table needs, not the cards' height) and a shorter
- * list ends at its last card. A loading frame has no cards to measure: it is that many card-high
- * blocks (one 92 px card each) until a list has been measured, then the height it had; the panel
- * never runs the body in loading. A table body with `height="fill"` takes the box's height and scrolls
- * inside it, so a chart focus brings its joined row into view. The box clips with `overflow: clip`, never
- * `hidden`, so a table head that sticks to the page keeps sticking.
+ * there and the panel draws its own arm). A `rows` count is table rows at the table's row height
+ * (`--basalt-row-h`, the head row included), so the box is `rows` x that height: declare N data rows
+ * as `rows: N + 1`, and the desktop box holds the head row and all N with no blank row; a table with
+ * more rows than the box shows whole rows, cut after the last that fits. Where the table folds to phone
+ * cards the cards are taller than a row (108 px with a meter, 92 px without), so the box is as tall as
+ * the N data cards and a shorter list ends at its last card: every card is whole at 390 px. A loading
+ * frame has no cards to measure: until a list has been measured it gives each data row one 108 px card,
+ * then the height it had; the panel never runs the body in loading. A table body with `height="fill"`
+ * takes the box's height and scrolls inside it, so a chart focus brings its joined row into view. The
+ * box clips with `overflow: clip`, never `hidden`, so a table head that sticks to the page keeps sticking.
  *
  * @useWhen a page needs the card frame around a table, a row list or a board, with a header, controls and a legend
  * @neverWhen the body is a chart (use a chart card) or a single figure (use a stat card or a stat cell)
@@ -314,16 +356,18 @@ export function DataPanel(props: DataPanelProps): ReactElement {
       `DataPanel "${title}" sits ${depth} frames deep (over ${MAX_DEPTH}). Lay the frames out side by side instead of nesting them.`,
     )
   }
-  const declared = bodyHeightOf(bodySize)
   const rootRef = useRef<HTMLDivElement | null>(null)
+  const rowPx = useRowPx(rootRef, 'rows' in bodySize)
+  const declared = bodyHeightOf(bodySize, rowPx)
   const narrow = useNarrow(rootRef)
-  const { ref: insetRef, fit, cards } = useWholeRows(bodySize, declared)
-  // Phone cards are taller than the rows the declared height counts: the box takes their height.
+  const { ref: insetRef, fit, cards, measured } = useWholeRows(bodySize, declared)
+  // Phone cards are taller than the rows the declared height counts: the box takes their height, and
+  // a first loading frame (no list measured yet) takes the tallest card per data row.
   const boxHeight =
     cards && fit !== undefined
       ? fit
-      : narrow && 'rows' in bodySize
-        ? Math.max(declared, Math.round(bodySize.rows) * PHONE_CARD)
+      : narrow && 'rows' in bodySize && !measured
+        ? Math.max(declared, dataRowsOf(bodySize) * CARD_TALL)
         : declared
   const [claims, setClaims] = useState(0)
   // oxlint-disable-next-line react/hook-use-state -- the lazy initialiser holds one stable function for the context; there is no setter to name

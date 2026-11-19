@@ -110,6 +110,9 @@ layout('loading frames hold the height of their ready frame', () => {
         const diff = h[`${name}-loading`]! - h[`${name}-ready`]!
         // states.md: at 390 a loaded summary may be shorter than its skeleton, never taller.
         if (name === 'summary' && viewport === PHONE) return diff < -0.5
+        // A first loading frame of a card list has no card to measure: it is the tallest card (108 px) per
+        // data row, so it may run one card taller than the 92 px no-meter list it shows, never shorter.
+        if (name === 'panel' && viewport === PHONE) return diff < -0.5 || diff > 108
         return Math.abs(diff) >= 0.5
       })
       expect(
