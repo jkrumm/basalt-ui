@@ -58,6 +58,12 @@ import { ExprN47Scenario } from './expr/n47/ExprN47'
 import { ExprN48Scenario } from './expr/n48/ExprN48'
 import { ExprN49Scenario } from './expr/n49/ExprN49'
 import { ExprN50Scenario } from './expr/n50/ExprN50'
+import { ExprN51Scenario } from './expr/n51/ExprN51'
+import { ExprN52Scenario } from './expr/n52/ExprN52'
+import { ExprN53Scenario } from './expr/n53/ExprN53'
+import { ExprN54Scenario } from './expr/n54/ExprN54'
+import { ExprN55Scenario } from './expr/n55/ExprN55'
+import { ExprN56Scenario } from './expr/n56/ExprN56'
 import { MdxScenario } from './mdx-scenario'
 import { LinkedWindowsScenario } from './linked-windows/LinkedWindows'
 import { RowListScenario } from './row-list/RowListScenario'
@@ -118,6 +124,12 @@ const RENDERERS = {
   'expr-n48': (p) => <ExprN48Scenario {...p} />,
   'expr-n49': (p) => <ExprN49Scenario {...p} />,
   'expr-n50': (p) => <ExprN50Scenario {...p} />,
+  'expr-n51': (p) => <ExprN51Scenario {...p} />,
+  'expr-n52': (p) => <ExprN52Scenario {...p} />,
+  'expr-n53': (p) => <ExprN53Scenario {...p} />,
+  'expr-n54': (p) => <ExprN54Scenario {...p} />,
+  'expr-n55': (p) => <ExprN55Scenario {...p} />,
+  'expr-n56': (p) => <ExprN56Scenario {...p} />,
   mdx: () => <MdxScenario />,
   'linked-windows': (p) => <LinkedWindowsScenario {...p} />,
   'row-list': (p) => <RowListScenario {...p} />,
