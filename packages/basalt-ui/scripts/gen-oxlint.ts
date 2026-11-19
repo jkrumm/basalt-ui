@@ -137,6 +137,15 @@ export const PLAYGROUND_FORM_WAIVERS: readonly FormWaiver[] = [
   },
 ]
 
+/**
+ * Trial builds rebuilt on the figure contract (`v3-owner-2-rerun`): an override after the trial-build
+ * waiver turns every `primitive-bypass` form back on for them. Not a waiver: it lints in full.
+ */
+export const PLAYGROUND_REBUILT_TRIALS: readonly string[] = [
+  'src/scenarios/expr/n04/**',
+  'src/cycle/shell-6/**',
+]
+
 /** The playground's `overrides`, pinned against `apps/playground/.oxlintrc.json` by the sync test. */
 export function projectPlaygroundOverrides(): OverrideBlock[] {
   return [
@@ -148,6 +157,10 @@ export function projectPlaygroundOverrides(): OverrideBlock[] {
       files,
       rules: { [rule]: ['error', { formsOff: [...forms] }] },
     })),
+    {
+      files: [...PLAYGROUND_REBUILT_TRIALS],
+      rules: { 'basalt/primitive-bypass': ['error', { formsOff: [] }] },
+    },
   ]
 }
 

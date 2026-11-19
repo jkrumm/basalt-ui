@@ -13,7 +13,7 @@ import { runCell } from './assertions'
 import { classify, KNOWN } from './known'
 import type { KnownFinding } from './known'
 import { bootMatrix } from './harness'
-import { hoverFindings, KNOWN_SHIFTS, TRIAL_PAGES } from './hover-shift'
+import { hoverFindings, KNOWN_SHIFTS, REBUILT_PAGES, TRIAL_PAGES } from './hover-shift'
 import { routePaths, scenarioPaths } from './routes'
 
 const mode = process.env['BASALT_MATRIX']
@@ -104,8 +104,9 @@ describe.skipIf(harness === null)('hover changes the readout, never the chart or
             .join('\n')
         expect(of('tooltip')).toBe('')
         // A trial build's card follows the focus until its rerun (`TRIAL_PAGES`): only its card check is skipped.
-        if (!TRIAL_PAGES.some((prefix) => cell.route.startsWith(prefix)))
-          expect(of('card')).toBe('')
+        const trial = TRIAL_PAGES.some((prefix) => cell.route.startsWith(prefix))
+        const rebuilt = REBUILT_PAGES.some((prefix) => cell.route.startsWith(prefix))
+        if (!trial || rebuilt) expect(of('card')).toBe('')
         const moved = of('moved')
         const known = KNOWN_SHIFTS[`${cell.route} ${cell.width}`]
         if (known === undefined) expect(moved).toBe('')
