@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-fast ci-gate check-pre check-pre-fast check-post gen-check quality-matrix-fast verify deploy logs pre test test-fast layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
+.PHONY: help check check-fast ci-gate check-pre check-pre-fast check-post gen-check quality-matrix-fast verify deploy logs marketing-image pre test test-fast layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -108,6 +108,13 @@ deploy: ## No-op — the site is deployed by CI on push (npm publishing is `make
 # service name matches the deploy image (basalt-ui-marketing, .github/workflows/deploy.yml).
 logs: ## Print the last 200 lines of the production container's logs, then exit
 	@ssh vps 'docker logs --tail 200 $$(docker ps -q --filter "label=com.docker.compose.service=basalt-ui-marketing" | head -n1)'
+
+# The production image build without the push: CI deploys on every apps/marketing/** change, and a root
+# bun.lock change reaches the image too, so a lockfile refresh is checked here before it lands.
+# arm64 by default: the colima VM cannot hold amd64 emulation plus astro build; CI builds linux/amd64.
+PLATFORM ?= linux/arm64
+marketing-image: ## Build the marketing image locally to reproduce a deploy failure (PLATFORM=linux/amd64 is CI's)
+	@docker build --platform $(PLATFORM) -f apps/marketing/Dockerfile -t basalt-ui-marketing:local .
 
 pre: ## fmt:check + lint + typecheck + budgets + literals + the unit suite in a slot (run before committing)
 	@bun run pre
