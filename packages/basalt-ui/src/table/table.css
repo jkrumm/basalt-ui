@@ -773,6 +773,11 @@
   [data-slot='table-root'][data-look='grid'][data-fill] [data-slot='table-row']::after {
     border-bottom-width: 0;
   }
+  /* the head keeps the density row: its sort, filter and menu rings need the room a compact row lacks
+     at the scroller's top edge, where the sideways scroll clips them */
+  [data-slot='table-root'][data-look='grid'] [data-slot='table-header'] {
+    --table-row-h: var(--basalt-row-h);
+  }
   /* the focused cell of the grid: the kit's ring, inset so the pinned columns never clip it */
   [data-slot='table-root'][data-look='grid'] [data-slot='table-cell']:focus-visible {
     outline: 2px solid var(--basalt-brand);
