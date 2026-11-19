@@ -1,0 +1,7 @@
+/*
+ * The `charts-expr11-labels` fixture's Tailwind v4 entry, compiled WITH preflight like `charts-bar-values.css`.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './charts-expr11-labels-fixture.tsx';
+@source '../../../src/charts';
+@source '../../../src/ui';

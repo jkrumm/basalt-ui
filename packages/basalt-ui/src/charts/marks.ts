@@ -41,6 +41,44 @@ const mixed = (color: string, opacity: number): string =>
 const withFloor = (paint: string, ink: number): string =>
   `color-mix(in srgb, ${paint}, ${CV.inkMuted} ${Math.round(ink * 100)}%)`
 
+/** The state of a bar for the paint a label standing on it is read against: the focused datum, another's, or neither. */
+export type BarState = 'rest' | 'focused' | 'dimmed'
+
+const share = (v: number): number => Math.round(v * 1000) / 10
+
+/**
+ * The opaque colour a bar of `color` shows on the card, per state: the exact composite of what
+ * `barMarks` paints (`strength` at rest, `focusedPaint` on the focused datum, `dimmedPaint` on the
+ * others), flattened over the card so a colour function can read its lightness. A dimmed bar is
+ * `color`, the card's muted ink and the card in the weights `dimmedPaint` mixes them.
+ */
+export function barOnCard(color: string, strength: number, state: BarState): string {
+  if (state === 'focused') return focusedPaint(color)
+  if (state === 'rest')
+    return strength >= 1 ? color : `color-mix(in srgb, ${color} ${share(strength)}%, ${CV.surface})`
+  const flat = (opacity: number, floor: number): string => {
+    const own = (1 - floor) * strength * opacity
+    const inner = `color-mix(in srgb, ${CV.inkMuted} ${share(floor / (1 - own))}%, ${CV.surface})`
+    return `color-mix(in srgb, ${color} ${share(own)}%, ${inner})`
+  }
+  return `light-dark(${flat(DIMMED, LIGHT_DIM_INK)}, ${flat(DIMMED_TEXT, DARK_DIM_INK)})`
+}
+
+/**
+ * OKLab lightness where black and white read alike on a grey (a relative luminance of 0.18, the cube
+ * root of it): a fill lighter than this takes black, a darker one white, and both clear 4.5:1 there.
+ */
+const INK_FLIP = 0.565
+
+/**
+ * The ink for text standing on `surface` (an opaque colour): black on a light fill, white on a dark
+ * one, whichever reads better, through a relative colour so it follows both schemes and every state
+ * of the fill without a measured value.
+ */
+export function inkOn(surface: string): string {
+  return `oklch(from ${surface} clamp(0, calc((${INK_FLIP} - l) * 1000), 1) 0 0)`
+}
+
 /** The share of the card's ink the focused mark takes, so it rises past its resting colour as the rest falls. */
 const FOCUS_INK = 0.4
 

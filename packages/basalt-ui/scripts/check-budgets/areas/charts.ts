@@ -47,7 +47,10 @@ export const rows: readonly RowDef[] = [
     // and the held span's end, the kit fixes of expression cycle 10.
     // 123600 -> 124500 (Issue 2410): 124405 B measured, +~890 B gz for `Series.spread`, the dot series'
     // least-move layout of coincident dots that `core/compile` carries for every cartesian kind.
-    ceiling: 124500,
+    // 124500 -> 125600 (Issue 2409): 124666 B measured, +~1.1 KB gz for the readout that clears the ticks, the
+    // clamped value's side placement and fill-matched ink, the rule claims for captions, and the interval
+    // track's whole-or-dropped labels and minimum width, the kit fixes of expression cycle 11.
+    ceiling: 125600,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -70,6 +73,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 124500,
+      to: 125600,
+      consumer:
+        "the kit fixes of expression cycle 11 (Issue 2409): n49's and n50's hover readout sat on a tick label, n50's and n46's clamped values sat on the caret, a gridline or a zone caption and vanished on a dimmed bar, n45's rule and zone captions stacked and crossed rules, and n47's span labels ended in an ellipsis",
+      repo: 'basalt-ui',
+    },
     {
       from: 123600,
       to: 124500,

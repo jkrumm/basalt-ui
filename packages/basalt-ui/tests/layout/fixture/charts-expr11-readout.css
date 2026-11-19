@@ -1,0 +1,6 @@
+/*
+ * The `charts-expr11-readout` fixture's Tailwind v4 entry, compiled with preflight like `charts-axes.css`.
+ * `charts-expr11-readout.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './charts-expr11-readout-fixture.tsx';
