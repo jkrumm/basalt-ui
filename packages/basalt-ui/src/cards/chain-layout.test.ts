@@ -1,5 +1,5 @@
 /**
- * The chain layout: blockers left of what waits on them, a fan-out and a fan-in routed into ports,
+ * The chain layout: blockers left of what waits on them, a fan-out and a fan-in on fixed ports,
  * an edge that spans columns kept clear of the nodes it passes, and a cycle dropped once.
  */
 import { describe, expect, test } from 'bun:test'
@@ -27,15 +27,16 @@ describe('chainLayout', () => {
     }
   })
 
-  test('a fan-out leaves one side and a fan-in enters at distinct ports on the left side', () => {
-    expect(g.edges.filter((e) => e.from === 'a').length).toBe(4)
+  test('a fan-out leaves the right-middle port and a fan-in meets at the left-middle port', () => {
+    const out = g.edges.filter((e) => e.from === 'a')
+    expect(out.length).toBe(4)
+    const start = `M ${at('a').x + CHAIN_SIZE.width} ${at('a').y + CHAIN_SIZE.height / 2} `
+    for (const e of out) expect(e.path.startsWith(start)).toBe(true)
     const into = g.edges.filter((e) => e.to === 'e')
     expect(into.length).toBe(2)
-    for (const e of into) expect(e.end.x).toBe(at('e').x)
-    expect(new Set(into.map((e) => e.end.y)).size).toBe(2)
     for (const e of into) {
-      expect(e.end.y).toBeGreaterThan(at('e').y)
-      expect(e.end.y).toBeLessThan(at('e').y + CHAIN_SIZE.height)
+      expect(e.end).toEqual({ x: at('e').x, y: at('e').y + CHAIN_SIZE.height / 2 })
+      expect(e.path.endsWith(` ${e.end.x} ${e.end.y}`)).toBe(true)
     }
   })
 
@@ -63,7 +64,7 @@ describe('chainLayout', () => {
     const line = chainLayout([n('p'), n('q', 'p'), n('r', 'q')])
     const ys = ['p', 'q', 'r'].map((id) => line.nodes.get(id)!.y)
     expect(new Set(ys).size).toBe(1)
-    for (const e of line.edges) expect(e.path).not.toContain('Q')
+    for (const e of line.edges) expect(e.path).not.toContain('C')
   })
 
   test('a cycle drops its closing edge and draws every node once', () => {
