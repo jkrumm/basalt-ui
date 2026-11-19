@@ -20,7 +20,8 @@ Stale where it names Biome or Prettier: the root `AGENTS.md` (oxlint, oxfmt) win
 
 ```bash
 # Build & Verify
-bun run build            # Production build (astro build; `bun run typecheck` runs astro check, currently crashing on an @emnapi/runtime peer mismatch in bun.lock)
+bun run build            # Production build (astro build)
+bun run typecheck        # astro check; also part of the root `bun run typecheck` and so of `bun run pre` and CI. Needs the root `overrides` pin of @emnapi/runtime (bun otherwise pairs @astrojs/astro2tsx with @emnapi/runtime 2.0.0-beta.2 and astro check crashes)
 bun run preview          # Preview production build (optional)
 
 # Add ShadCN Component
