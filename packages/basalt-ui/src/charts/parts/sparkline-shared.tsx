@@ -267,10 +267,14 @@ export function SparkFrame(props: SparkFrameProps): ReactElement {
         <div
           data-slot="spark-labels"
           aria-hidden="true"
-          className="grid h-4 shrink-0 grid-cols-[1fr_auto_1fr] items-end text-xs leading-4 text-muted-foreground tabular-nums"
+          className="grid h-4 shrink-0 grid-cols-[1fr_2fr_1fr] items-end text-xs leading-4 text-muted-foreground tabular-nums"
         >
           <span className="truncate">{axisLabels[0]}</span>
-          <span className={cn('truncate px-1', active !== null && 'text-foreground')}>
+          {/* The readout's column is fixed, half the row: a reading changes its text, never the labels beside it. */}
+          <span
+            data-slot="chart-readout"
+            className={cn('truncate px-1 text-center', active !== null && 'text-foreground')}
+          >
             {active === null ? axisLabels[1] : readout(rows[active])}
           </span>
           <span className="truncate justify-self-end">{axisLabels[2]}</span>

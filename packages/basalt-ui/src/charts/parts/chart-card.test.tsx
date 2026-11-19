@@ -506,8 +506,9 @@ describe('the ready frame declares the slots a loading, empty or failed frame ho
     const el = html(
       <ChartCard title="R" chart={() => null} phase="loading" figure={{ value: null }} />,
     )
-    const line = el.querySelector('[data-slot="chart-figure"] > div[aria-hidden="true"]')
-    expect(line?.className).toContain('@max-regular:flex')
+    const line = el.querySelector('[data-slot="chart-readout"][aria-hidden="true"]')
+    expect(line?.className).toContain('@max-regular:h-4')
+    expect(line?.firstElementChild?.className).toContain('@max-regular:block')
     expect(el.querySelector('[data-slot="chart-period-hold"]')).toBeNull()
   })
 
@@ -553,7 +554,7 @@ describe('the ready frame declares the slots a loading, empty or failed frame ho
 
 describe('ChartCard figure row holds its height while focus moves', () => {
   const periodBox = (el: HTMLElement): HTMLElement | null =>
-    el.querySelector<HTMLElement>('[data-slot="chart-figure"] > span:last-child')
+    el.querySelector<HTMLElement>('[data-slot="chart-figure"] > [data-slot="chart-readout"]')
 
   test('an empty period keeps its one line below regular, and the row never wraps from regular up', async () => {
     const el = await mount(
@@ -564,7 +565,24 @@ describe('ChartCard figure row holds its height while focus moves', () => {
     const box = periodBox(el)!
     expect(box.textContent).toBe('')
     expect(box.className).toContain('@max-regular:h-4')
-    expect(box.className).toContain('truncate')
+    expect(box.lastElementChild?.className).toContain('truncate')
+  })
+
+  test('the status shares the readout line with the period, whose box takes the rest of the row', async () => {
+    const el = await mount(
+      <ChartCard
+        title="T"
+        figure={{ value: 3, period: 'Tue 21:00', status: { tone: 'neutral', label: 'Skip' } }}
+        chart={() => <svg />}
+      />,
+    )
+    const box = periodBox(el)!
+    expect(box.querySelector('[data-slot="chart-status"]')?.textContent).toBe('Skip')
+    expect(box.className).toContain('flex-1')
+    expect(box.className).toContain('tabular-nums')
+    expect(
+      el.querySelector('[data-slot="chart-figure"] > div:first-child [data-slot="chart-status"]'),
+    ).toBeNull()
   })
 
   test('a period that only a hover fills has its line before the hover', async () => {

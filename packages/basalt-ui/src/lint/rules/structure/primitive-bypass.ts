@@ -1,7 +1,8 @@
 /**
  * `primitive-bypass` (guardrails section 4, row 9): hand-rolled markup where a primitive exists.
  * Six of ten repos hand-roll tables, the console ships 10 raw controls and 20 headings, and five
- * of seven apps pin a locale. Ten forms, all on; the `Intl` form points at `useFormat`, which
+ * of seven apps pin a locale. Twelve forms, all on; `figure-readout` keeps a card's headline the
+ * answer while a hover moves (owner review 2). The `Intl` form points at `useFormat`, which
  * now carries `time` and an options bag. A mark drawn through the geometry seam (`useChartFocus`)
  * is legal in both the SVG and the HTML data-mark form.
  *
@@ -74,6 +75,9 @@
  * - `checkable-input`: basalt's `Input` reads when it is imported from `basalt-ui/ui/input` in the
  *   file (renamed or not) with a literal `type="checkbox"` or `"radio"`; a `type` held in a
  *   variable or a spread, and an `Input` from another path, are not read.
+ * - `figure-readout`: a `figure` attribute's `value` or `delta` that calls `.readout(` reads, in an
+ *   object written in the attribute (through a ternary or a logical operand); a figure built in a
+ *   variable or a helper, and a value derived from `focus.datum` by hand, are not read.
  * - `svg-data-marks`: a `<g>` that is not inside an `<svg>` in the file is a marks root too (a
  *   marks component split into its own file); a `.map` of marks under a root a helper component
  *   renders (`<Dots />` returning bare `<circle>`s with no `<g>`) is not read.
@@ -1517,6 +1521,52 @@ const OPTIONS_SCHEMA = [
   },
 ] as const
 
+/** The figure fields that are the card's answer: they stay while a hover moves. */
+const HEADLINE_FIELDS: ReadonlySet<string> = new Set(['value', 'delta'])
+
+/** A call of a focus handle's `readout` (`focus.readout(rest, read)`, any receiver). */
+const isReadoutCall = (node: Node): boolean => {
+  if (node.type !== 'CallExpression') return false
+  const callee = child(node, 'callee')
+  return callee?.type === 'MemberExpression' && nameOf(child(callee, 'property')) === 'readout'
+}
+
+/**
+ * The headline fields of every figure object a `figure` expression can take, through a ternary
+ * (`ready ? { … } : { value: null }`) or a logical operand; an object nested inside a field (a
+ * `delta` object) is part of that field.
+ */
+function headlineFields(node: Node | undefined): Node[] {
+  if (node === undefined) return []
+  if (node.type === 'ObjectExpression')
+    return children(node, 'properties').filter(
+      (p) => p.type === 'Property' && HEADLINE_FIELDS.has(nameOf(child(p, 'key')) ?? ''),
+    )
+  if (node.type === 'ConditionalExpression')
+    return [
+      ...headlineFields(child(node, 'consequent')),
+      ...headlineFields(child(node, 'alternate')),
+    ]
+  if (node.type === 'LogicalExpression')
+    return [...headlineFields(child(node, 'left')), ...headlineFields(child(node, 'right'))]
+  return []
+}
+
+const figureReadout = form(
+  'figure-readout',
+  "Keep the figure's value and delta the answer; the focused datum's reading goes in the figure's period or status, or the tooltip",
+  'A reading that needs a figure of its own is a tooltip row (tooltip.rows)',
+  ({ report }) =>
+    opening((node) => {
+      const value = child(attribute(node, 'figure') ?? { type: '' }, 'value')
+      if (value?.type !== 'JSXExpressionContainer') return
+      for (const field of headlineFields(child(value, 'expression'))) {
+        if (someNode(child(field, 'value'), isReadoutCall))
+          report(field, `figure ${nameOf(child(field, 'key')) ?? 'field'} from focus.readout`)
+      }
+    }),
+)
+
 export const PRIMITIVE_BYPASS: RuleEntry = {
   family: 'structure',
   profiles: ['parts', 'app'],
@@ -1535,6 +1585,7 @@ export const PRIMITIVE_BYPASS: RuleEntry = {
     listRows,
     chartBodyRoot,
     intlFormat,
+    figureReadout,
   ],
   schema: OPTIONS_SCHEMA,
 }
