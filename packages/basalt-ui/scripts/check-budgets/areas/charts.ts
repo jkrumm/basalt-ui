@@ -45,7 +45,9 @@ export const rows: readonly RowDef[] = [
     // 122300 -> 123600 (Issue 2336): 123517 B measured, +~1.2 KB gz for the answer labels kept at 390, the
     // end labels cleared off the lines, whole-band zones, the zero stack's tick, the clamped bar's value
     // and the held span's end, the kit fixes of expression cycle 10.
-    ceiling: 123600,
+    // 123600 -> 124500 (Issue 2410): 124405 B measured, +~890 B gz for `Series.spread`, the dot series'
+    // least-move layout of coincident dots that `core/compile` carries for every cartesian kind.
+    ceiling: 124500,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -68,6 +70,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 123600,
+      to: 124500,
+      consumer:
+        "coincident dots of expression cycle 11 (Issue 2410): n45's containers at equal memory peaks merged into one dot and n49's hundred fresh pages heaped on the baseline; a dot series now takes `spread: 'x' | 'y'`",
+      repo: 'basalt-ui',
+    },
     {
       from: 122300,
       to: 123600,
