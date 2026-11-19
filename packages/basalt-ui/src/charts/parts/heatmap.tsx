@@ -546,7 +546,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
           return glyph ? group.map((c) => ({ ...c, text: glyph, fill: labelFill(c) })) : []
         })
         // The focused cell's ring, drawn last of the fills so no neighbour paints over it. A pointer
-        // focus rings through the engine; keys focus through the host (the engine's keyboard is off).
+        // focus rings through the engine without `focus`; with it the host rings (the engine's dot and keyboard are off).
         const ringed = drawn.filter(isHeld)
         const marks = [
           // Inert, not decorative: it must still win the hit test, so a pointer over an empty
@@ -621,8 +621,8 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         }
       },
       tooltip: tooltipOptions,
-      // The focused cell's ring marks it; the engine's dot would sit on the cell's centred text.
-      focusRing: false,
+      // With `focus` the focused cell's ring marks it, and the engine's dot would sit on the cell's centred text.
+      ...(ownsKeys && { focusRing: false as const }),
       // With `focus` the wrapper is the one tab stop and steps the grid itself.
       ...(ownsKeys && { keyboard: false as const }),
     }
