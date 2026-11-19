@@ -1,0 +1,11 @@
+/*
+ * The Tailwind v4 entry of the expression cycle 13 kit-fix fixtures (`kit-expr13-*-fixture.tsx`),
+ * compiled like a Tailwind consumer by `expr12-support.ts`.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './kit-expr13-*-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/table';
+@source '../../../src/cards';
+@source '../../../src/core';
+@source '../../../src/charts';

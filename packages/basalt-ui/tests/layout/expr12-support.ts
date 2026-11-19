@@ -15,12 +15,12 @@ const inlineScript = (code: string): string => code.replaceAll('</script', '<\\/
 
 export type Expr12Document = { path: string; cleanup: () => void }
 
-export async function buildExpr12Document(name: string): Promise<Expr12Document> {
-  const scratch = mkdtempSync(join(tmpdir(), `kit-expr12-${name}-`))
-  const cssOut = join(scratch, 'kit-expr12.generated.css')
+export async function buildExpr12Document(name: string, kit = 'expr12'): Promise<Expr12Document> {
+  const scratch = mkdtempSync(join(tmpdir(), `kit-${kit}-${name}-`))
+  const cssOut = join(scratch, `kit-${kit}.generated.css`)
   const cli = join(REPO_ROOT, 'node_modules', '.bin', 'tailwindcss')
   const css = Bun.spawnSync(
-    [cli, '--input', join(FIXTURE_DIR, 'kit-expr12.css'), '--output', cssOut],
+    [cli, '--input', join(FIXTURE_DIR, `kit-${kit}.css`), '--output', cssOut],
     {
       cwd: REPO_ROOT,
       stdout: 'pipe',
@@ -28,14 +28,14 @@ export async function buildExpr12Document(name: string): Promise<Expr12Document>
     },
   )
   if (css.exitCode !== 0)
-    throw new Error(`kit-expr12 ${name}: tailwind failed:\n${css.stderr.toString()}`)
+    throw new Error(`kit-${kit} ${name}: tailwind failed:\n${css.stderr.toString()}`)
   const build = await Bun.build({
-    entrypoints: [join(FIXTURE_DIR, `kit-expr12-${name}-fixture.tsx`)],
+    entrypoints: [join(FIXTURE_DIR, `kit-${kit}-${name}-fixture.tsx`)],
     target: 'browser',
     define: { 'process.env': JSON.stringify({ NODE_ENV: 'production' }) },
   })
   if (!build.success)
-    throw new Error(`kit-expr12 ${name}: the fixture did not build:\n${build.logs.join('\n')}`)
+    throw new Error(`kit-${kit} ${name}: the fixture did not build:\n${build.logs.join('\n')}`)
   const js = await build.outputs.find((o) => o.kind === 'entry-point')!.text()
   const moduleCss = (
     await Promise.all(build.outputs.filter((o) => o.path.endsWith('.css')).map((o) => o.text()))
@@ -47,7 +47,7 @@ export async function buildExpr12Document(name: string): Promise<Expr12Document>
   const path = serveDocument(
     `<!doctype html><html lang="en"><head><meta charset="utf-8" />` +
       `<meta name="viewport" content="width=device-width, initial-scale=1" />` +
-      `<title>kit-expr12 ${name}</title><style>${readFileSync(cssOut, 'utf8')}</style>` +
+      `<title>kit-${kit} ${name}</title><style>${readFileSync(cssOut, 'utf8')}</style>` +
       `<style>${tiers}</style><style>${moduleCss}</style></head>` +
       `<body><div id="root"></div><script type="module">${inlineScript(js)}</script></body></html>`,
   )
