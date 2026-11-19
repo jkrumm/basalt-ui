@@ -139,6 +139,15 @@ describe('header controls at rest', () => {
     const width = (s: typeof plain): number => (s.width === 'icon' ? 0 : s.width.ch)
     expect(width(filtered)).toBeGreaterThan(width(plain))
     expect(width(iconed)).toBeGreaterThan(width(plain))
+    // a short text column sizes to its values, never below its header with icon and filter
+    const text = (o: Parameters<typeof c.text>[1]): number =>
+      specOf(c.text('name', o)).content?.short?.minCh ?? 0
+    expect(text({ header: 'Category', headerIcon: Glyph('x') })).toBeGreaterThan(
+      text({ header: 'Category' }),
+    )
+    expect(text({ header: 'Category', filter: 'text' })).toBeGreaterThan(
+      text({ header: 'Category' }),
+    )
   })
 })
 
