@@ -2029,10 +2029,8 @@ export function compileCartesian<T, X extends ChartX>(
           xBlocked: xBlocked(plotWidth, size?.height ?? height),
           lineHits: (box) => {
             // A reference rule is a line a caption keeps off too, level with the series lines.
-            lineMemo ??= (() => {
-              const frame = { width: plotWidth, height: size?.height ?? height }
-              return [...lineBoxes(frame), ...refRuleBoxes(frame)]
-            })()
+            const frame = { width: plotWidth, height: size?.height ?? height }
+            lineMemo ??= [...lineBoxes(frame), ...refRuleBoxes(frame)]
             return lineMemo.some(
               (b) =>
                 b.left < box.x1 &&
@@ -2144,7 +2142,6 @@ export function compileCartesian<T, X extends ChartX>(
         }
         return out.filter((b) => b.width > 0 && b.height > 0)
       }
-      /** Everything a label keeps clear of but the bar bodies, in plot px. */
       /** The drawn horizontal reference rules, as boxes in plot px. */
       const refRuleBoxes = (frame: PlotPx): PxBox[] =>
         ruleBoxes(
@@ -2155,6 +2152,7 @@ export function compileCartesian<T, X extends ChartX>(
           ),
           frame,
         )
+      /** Everything a label keeps clear of but the bar bodies, in plot px. */
       const hostBoxesBesidesBars = (): PxBox[] => {
         const ctx = captionContext()
         const frame = { width: ctx.plotWidth, height: ctx.plotHeight }

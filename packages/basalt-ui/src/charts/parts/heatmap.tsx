@@ -435,11 +435,8 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
       .domain([lo, hi > lo ? hi : lo + 1])
       .range(ramp(color))
     const header = (c: Cell<T, K>): string => cellHeader(c.row, c.col, formatRow, formatCol)
-    const heldSet =
-      focused === null
-        ? null
-        : new Set<unknown>(held !== undefined && held.length > 0 ? held : [focused])
-    const isHeld = (c: Cell<T, K>): boolean => heldSet !== null && heldSet.has(c.datum)
+    const heldSet = new Set<unknown>(held?.length ? held : [focused])
+    const isHeld = (c: Cell<T, K>): boolean => focused !== null && heldSet.has(c.datum)
     // One builder for every cell mark; `paint` is the fill (flat, or the ramp's `color` channel).
     // With a focused datum every other cell keeps its fill at `DIMMED` of its own opacity.
     // (The cell mark takes one opacity per mark, so the focused cell is its own mark.)
