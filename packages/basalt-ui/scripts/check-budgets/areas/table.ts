@@ -77,7 +77,7 @@ export const rows: readonly RowDef[] = [
     // 158500 -> 160500 (Issue 2439): 160334 B measured, +~2300 B gz over master (158030) for the grid look
     // (owner review 2): `look: 'grid'` with its cell keyboard, movable columns (the Display list's drag and
     // keys, the menu's Move left and Move right) and a reader's pins, all in the display state and saved views.
-    // 160500 -> 163500 (Issue 2428): +~2.7 KB gz from the ui parts the header's filter editors
+    // 160500 -> 163500 (Issue 2428): 163022 B measured, +~2.7 KB gz over master (160334) from the ui parts the header's filter editors
     // share (owner review 2 forms): Combobox's create row, Select options with an icon and a description,
     // Input's start and end, the Button spinner, the read-only looks.
     ceiling: 163500,
