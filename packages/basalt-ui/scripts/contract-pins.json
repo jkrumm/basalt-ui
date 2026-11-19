@@ -17,6 +17,6 @@
   "packages/basalt-ui/src/router/index.ts": "ac323841296b0fa0fe599b7acf457f47f576cd7f16236b2f822069da9f3f77e3",
   "packages/basalt-ui/src/shell/contract.ts": "907e45e1c597a5f104a5cd01b04100ec448236aded0ae468422555c41e427bb0",
   "packages/basalt-ui/src/shell/index.ts": "9ffa5036e71bb8396edeeecf7a7f2266bd993628265f8b78ce30e854ec0a5f30",
-  "packages/basalt-ui/src/table/contract.ts": "64ceb691bee87e1713f51e9eea5e2762d4b03194f1aaa5fec896588e161e67c8",
+  "packages/basalt-ui/src/table/contract.ts": "3999e8c0d8e188a9e9042e820d45787e31e490460a46138020a7d1dbc675f390",
   "packages/basalt-ui/src/ui/slots.ts": "99fc7a71bb75a554078b6e84751ceb6aed8778a30cd50321b1049c2dc196d584"
 }
