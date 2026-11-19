@@ -16,7 +16,12 @@ the body is called in `ready` and `stale`; in `empty` and `error` it is called t
 keeps its column header row and draws the arm under it (a body that draws no table stays hidden
 there and the panel draws its own arm). A `{ rows }` body whose table rows run past
 the declared height shows whole rows: the rows are cut after the last one that fits, while the
-box keeps the declared height in every phase. The box clips with `overflow: clip`, never
+box keeps the declared height in every phase. A `rows` count is table rows at the desktop height
+(the head row included): where the table folds to phone cards, the box is as tall as that many data
+rows of cards (so declare the rows the desktop table needs, not the cards' height) and a shorter
+list ends at its last card. A loading frame has no cards to measure: it is that many card-high
+blocks (one 92 px card each) until a list has been measured, then the height it had; the panel
+never runs the body in loading. The box clips with `overflow: clip`, never
 `hidden`, so a table head that sticks to the page keeps sticking.
 
 ## Signature
