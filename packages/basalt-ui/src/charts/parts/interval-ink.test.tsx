@@ -189,11 +189,13 @@ describe('every label against its own ground', () => {
         const x = Number(t.getAttribute('x'))
         const left = Number(box?.getAttribute('x'))
         const right = left + Number(box?.getAttribute('width'))
-        const onSpan = t.getAttribute('text-anchor') === 'end' && x > left && x <= right && true
+        const onSpan = t.getAttribute('text-anchor') === 'end' && x > left && x <= right
         const fill = SERIES.find((s) => s.key === SPANS[id]?.kind)?.fill
         const grounds: string[] = []
         if (onSpan && fill !== 'outline') {
           inside++
+          // Inside a tinted span, lane or back, the label is the ink: the cap is set for it.
+          expect(t.getAttribute('fill')).toBe('var(--basalt-ink)')
           grounds.push(box?.getAttribute('fill') ?? '')
           const liftFill = lift?.getAttribute('fill') ?? 'none'
           if (id === focusId && liftFill !== 'none') grounds.push(liftFill)

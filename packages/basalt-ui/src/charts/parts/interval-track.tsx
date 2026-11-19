@@ -101,8 +101,8 @@ export type IntervalTrackProps<
     /** Rows after the span row (a status, an owner). `false` turns the tooltip off. */
     tooltip?: false | { rows?: ((d: T) => readonly ChartTooltipRow[]) | undefined } | undefined
     /**
-     * `useChartFocus(data, …)`: pointing at a span or stepping with the arrow keys focuses it, it lifts
-     * one tone with a ring while every other span keeps its paint, and `focus.readout` drives a card
+     * `useChartFocus(data, …)`: pointing at a span or stepping with the arrow keys focuses it, it takes a
+     * ring (a lane span also lifts one tone) while every other span keeps its paint, and `focus.readout` drives a card
      * fact. The track stays one tab stop.
      */
     focus?: ChartFocus<T> | undefined
@@ -146,7 +146,7 @@ const BAND_SHARE = 0.08
 /**
  * The most of a colour mixed into the card that still holds `ink` at 4.5:1 for any colour at all
  * (black on the light card, white on the dark one): 43 % and 25 % with the shipped tokens, held here
- * with a margin for a derived palette. The focused span lifts to it; `interval-ink.test.tsx` holds it.
+ * with a margin for a derived palette. A focused lane span lifts to it (a back span takes a ring only); `interval-ink.test.tsx` holds it.
  */
 export const TINT_CAP = { light: 0.4, dark: 0.22 } as const
 /** A span's share of its colour at rest, under the cap, so an inside label is always `ink`. */
@@ -476,8 +476,8 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
             }),
           )
         }
-        // The focused span lifts one tone, to the cap, with a ring in its own colour (the accent on a
-        // one-series track); every other span keeps its paint. Decorative, so it takes no pointer.
+        // The focused span takes a ring in its own colour (the accent on a one-series track) and a lane
+        // span lifts one tone, to the cap; every other span keeps its paint. Decorative: no pointer.
         for (const it of items.filter(isFocused)) {
           const s = seriesByKey.get(it.series)
           if (s === undefined) continue
