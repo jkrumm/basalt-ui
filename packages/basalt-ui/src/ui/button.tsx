@@ -75,7 +75,7 @@ function Spinner(): ReactElement {
   return (
     <svg
       viewBox="0 0 16 16"
-      data-slot="button-spinner"
+      data-button-spinner=""
       className="absolute inset-0 m-auto size-icon animate-spin motion-reduce:animate-none"
       fill="none"
       aria-hidden="true"

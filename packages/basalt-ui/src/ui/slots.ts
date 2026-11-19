@@ -41,16 +41,9 @@ export const SLOTS = {
     'fieldset-legend',
     'form',
   ],
-  'file-upload': [
-    'file-upload',
-    'file-upload-zone',
-    'file-upload-hint',
-    'file-upload-errors',
-    'file-upload-list',
-    'file-upload-item',
-  ],
+  'file-upload': ['file-upload'],
   'info-hint': ['info-hint'],
-  input: ['input-group', 'input'],
+  input: ['input'],
   kbd: ['kbd'],
   menu: [
     'menu-trigger',

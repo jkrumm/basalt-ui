@@ -4,7 +4,7 @@ use when: 'the user attaches files from disk (a document, an image, an import)'
 never when: 'a file path or a URL typed as text (use Input), or uploading itself (the part holds no network state; show progress with Progress)'
 subpath: basalt-ui/ui/file-upload
 peers: ['@base-ui/react']
-slots: [file-upload, file-upload-zone, file-upload-hint, file-upload-errors, file-upload-list, file-upload-item]
+slots: [file-upload]
 ---
 
 # FileUpload
@@ -60,8 +60,3 @@ Part `file-upload`.
 ## Slots
 
 - `file-upload`
-- `file-upload-zone`
-- `file-upload-hint`
-- `file-upload-errors`
-- `file-upload-list`
-- `file-upload-item`
