@@ -56,7 +56,8 @@ function ResetIcon(): ReactElement {
 }
 
 /**
- * One bound control, drawn from its `spec`: the label, the input of the handle's kind and, when a
+ * One bound control, drawn from its `spec`: the label (visible in every presentation, so a select at
+ * a generic default such as `All` still says what it filters), the input of the handle's kind and, when a
  * widget overrides its global, the cue and the reset. The cue is a neutral `Local` chip (text, never
  * colour alone) titled `Overrides global: <value>`, with `Use global` on a row and `Reset <label> to
  * global` elsewhere. The presentation comes from the home; there is no `variant` prop.
@@ -146,9 +147,7 @@ export function ControlView({ spec, className }: ControlViewProps): ReactElement
       data-presentation={presentation}
       className={cn('flex min-w-0 max-w-full flex-wrap items-center gap-1.5', className)}
     >
-      {presentation === 'pill' && (
-        <span className="shrink-0 text-xs text-muted-foreground">{spec.label}</span>
-      )}
+      <span className="shrink-0 text-xs text-muted-foreground">{spec.label}</span>
       {input}
       {badge}
       {overrides && reset(t('controls.resetToGlobal', spec.label), false)}

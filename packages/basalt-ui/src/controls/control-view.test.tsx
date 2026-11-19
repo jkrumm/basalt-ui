@@ -105,6 +105,38 @@ describe('the override cue', () => {
   })
 })
 
+describe('the field name is visible text', () => {
+  const OPTIONS = [
+    { value: 'all', label: 'All' },
+    { value: 'picked', label: 'Picked' },
+  ]
+  for (const presentation of ['pill', 'row', 'inline'] as const) {
+    for (const as of ['select', 'segmented'] as const) {
+      test(`${presentation} ${as}: the name shows at the default and at a chosen value`, () => {
+        const handle = memoryHandle(`verdict.${presentation}.${as}`, 'all', {
+          kind: 'enum',
+          options: OPTIONS,
+        })
+        const { container } = show(
+          <ControlView spec={spec(handle, 'Verdict', { as })} />,
+          presentation,
+        )
+        const view = container.querySelector<HTMLElement>('[data-slot="control-view"]')!
+        const named = () =>
+          [...view.querySelectorAll('span')].some(
+            (s) => s.children.length === 0 && s.textContent === 'Verdict',
+          )
+        expect(named()).toBe(true)
+        act(() => {
+          handle.put('picked')
+        })
+        expect(view.textContent).toContain('Picked')
+        expect(named()).toBe(true)
+      })
+    }
+  }
+})
+
 describe('one renderer per kind', () => {
   test('enum: a select by default, a segmented control with as', () => {
     const handle = memoryHandle('range', '24h', { kind: 'enum', options: RANGES })
