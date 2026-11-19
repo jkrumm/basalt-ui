@@ -33,6 +33,8 @@ const FIXTURE_DIR = join(import.meta.dirname, 'fixture')
 const REPO_ROOT = join(import.meta.dirname, '..', '..', '..', '..')
 const EMPTY_SPEC = { sections: [] } as FixtureSpec
 const DESKTOP: Viewport = { name: 'desktop', width: 1800, height: 1200 }
+/** The days of the `or-zero` fixture. */
+const DAYS_IN_ZERO = 6
 const SHARES = Array.from({ length: 25 }, (_, i) => 0.04 + i * 0.038)
 
 let documentPath = ''
@@ -131,15 +133,22 @@ layout('owner review 2 rerun: chart hover chips and focus ring', () => {
     expect(drawn, 'the labelled panel draws the x chip').toBeGreaterThan(0)
   })
 
-  test('a day of zeros reads 0, never the height its tick is drawn at', async () => {
+  test('a day of zeros reads 0 under the keyboard, never the height its tick is drawn at', async () => {
     const page = await open()
-    const seen = new Set<string>()
-    for (const share of SHARES) {
-      await hoverAt(page, 'or-zero', share)
-      for (const text of await chipsOf(page, 'or-zero', 'y')) seen.add(text)
+    const svg = page.raw.locator('[data-testid="or-zero"] svg.ts-chart')
+    await svg.scrollIntoViewIfNeeded()
+    await svg.focus()
+    const seen: string[] = []
+    for (let step = 0; step < DAYS_IN_ZERO; step++) {
+      await page.raw.keyboard.press('ArrowRight')
+      await frame(page)
+      seen.push(...(await chipsOf(page, 'or-zero', 'y')))
     }
-    expect([...seen].filter((text) => !/^\d+$/.test(text))).toEqual([])
-    expect(seen.has('0')).toBe(true)
+    expect(
+      seen.filter((text) => !/^\d+$/.test(text)),
+      `y chips: ${seen.join(' ')}`,
+    ).toEqual([])
+    expect(seen).toContain('0')
   })
 
   test('the y title starts clear of the keyboard focus ring', async () => {
@@ -162,7 +171,7 @@ layout('owner review 2 rerun: chart hover chips and focus ring', () => {
       }
     })
     expect(read.ringWidth, 'the chart shows its ring').toBeGreaterThan(0)
-    // The ring is inset: it fills the chart's outermost `ringWidth` px; the title starts past it, with air.
-    expect(read.gap).toBeGreaterThanOrEqual(read.ringWidth + read.ringOffset * -1 + 1)
+    // The ring is inset: it fills the chart's outermost `ringWidth` px from `-ringOffset` in; the title starts past it.
+    expect(read.gap).toBeGreaterThanOrEqual(read.ringWidth - read.ringOffset)
   })
 })

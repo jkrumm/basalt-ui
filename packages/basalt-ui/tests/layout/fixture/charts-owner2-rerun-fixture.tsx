@@ -40,7 +40,7 @@ const PANEL = 'min-h-0 [&>[data-basalt-chart]]:h-full'
 
 function Fixture() {
   return (
-    <main className="flex max-w-3xl min-w-0 flex-col gap-6 p-4 text-foreground">
+    <main className="flex max-w-3xl min-w-0 flex-col gap-12 p-4 text-foreground">
       <section data-testid="or-stack" className="grid h-96 grid-rows-3">
         <div className={PANEL}>
           <CartesianChart
@@ -48,7 +48,7 @@ function Fixture() {
             height="fill"
             data={HOURS}
             x={x([])}
-            y={{ title: 'Rain chance, %', domain: [0, 100], gutter: 40 }}
+            y={{ title: 'Rain chance, %', domain: [0, 100], gutter: 36 }}
             series={[
               { mark: 'bar', key: 'rain', label: 'Rain', color: blue, y: (d: Hour) => d.rain },
             ]}
@@ -60,7 +60,7 @@ function Fixture() {
             height="fill"
             data={HOURS}
             x={x([])}
-            y={{ title: 'Wind, km/h', gutter: 40 }}
+            y={{ title: 'Wind, km/h', gutter: 36 }}
             series={[
               { mark: 'line', key: 'wind', label: 'Wind', color: blue, y: (d: Hour) => d.wind },
             ]}
@@ -72,14 +72,14 @@ function Fixture() {
             height="fill"
             data={HOURS}
             x={x(SIX_HOURLY)}
-            y={{ title: 'Temperature, °C', gutter: 40 }}
+            y={{ title: 'Temperature, °C', gutter: 36 }}
             series={[
               { mark: 'line', key: 'temp', label: 'Temp', color: blue, y: (d: Hour) => d.temp },
             ]}
           />
         </div>
       </section>
-      <section data-testid="or-zero" className="h-72">
+      <section data-testid="or-zero" className={`h-72 ${PANEL}`}>
         <Bars<Day>
           label="Deploys per day"
           height="fill"
@@ -92,13 +92,13 @@ function Fixture() {
           ]}
         />
       </section>
-      <section data-testid="or-title" className="h-56">
+      <section data-testid="or-title" className={`h-56 ${PANEL}`}>
         <CartesianChart
           label="Rain chance, %"
           height="fill"
           data={HOURS}
           x={x(SIX_HOURLY)}
-          y={{ title: 'Rain chance, %', domain: [0, 100], gutter: 40 }}
+          y={{ title: 'Rain chance, %', domain: [0, 100], gutter: 36 }}
           series={[
             { mark: 'bar', key: 'rain', label: 'Rain', color: blue, y: (d: Hour) => d.rain },
           ]}
