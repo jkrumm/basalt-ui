@@ -327,6 +327,41 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
       'What wave height and period reach the harbour in the next 12 hours, and when is the calmest window to go?',
   },
   {
+    id: 'expr-n57',
+    title: 'Expression n57: which night is worth the drive to a dark site',
+    blurb:
+      'Which of the next ten nights is worth the drive to a dark site, and when is the sky dark and clear?',
+  },
+  {
+    id: 'expr-n58',
+    title: 'Expression n58: will each credit pool be spent before it expires',
+    blurb:
+      'Will each credit pool be spent before it expires, and which source spends the most this week?',
+  },
+  {
+    id: 'expr-n59',
+    title: 'Expression n59: which machine is busy or nearly full',
+    blurb:
+      'Which machine is busy or nearly full right now, and what was it doing in the last 24 hours?',
+  },
+  {
+    id: 'expr-n60',
+    title: 'Expression n60: how much of the week was the line down',
+    blurb:
+      'How much of the week was the line down, how often, and how much of the week was measured at all?',
+  },
+  {
+    id: 'expr-n61',
+    title: 'Expression n61: what is still open in one project',
+    blurb: 'What is still open, in which state, and which Issue has waited the longest?',
+  },
+  {
+    id: 'expr-n62',
+    title: 'Expression n62: when is the wind steady and usable at the spot',
+    blurb:
+      'When in the next two days is the wind steady between 12 and 25 knots, from a usable direction, and how gusty?',
+  },
+  {
     id: 'linked-windows',
     title: 'Linked windows: a table of runs beside an hourly chart',
     blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',
