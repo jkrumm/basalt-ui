@@ -363,3 +363,52 @@ export const CHARGE_SERIES = defineSeries({
   uncategorised: { light: '#262626', dark: '#e6e6e6' },
   rule: { light: '#4a4a4a', dark: '#c4c4c4' },
 })
+
+/** API credit (scenario expr-n58): the accent is the Team pool alone, its line and its dashed carry-on; Research and Batch pools, Review bot and the other sources sit in ink steps, the pool-size rule in a mid step. */
+export const CREDIT_SERIES = defineSeries({
+  team: { light: '#2871c7', dark: '#5190f7' },
+  research: { light: '#262626', dark: '#e6e6e6' },
+  limit: { light: '#4a4a4a', dark: '#c4c4c4' },
+  review: { light: '#262626', dark: '#ececec' },
+  others: { light: '#adadad', dark: '#737373' },
+})
+
+/** Home line (scenario expr-n60): the accent is an internet outage; a gateway outage sits in the dark ink step, the outage still running in the status red, the hole with no measurements in a pale step. */
+export const OUTAGE_SERIES = defineSeries({
+  internet: { light: '#2871c7', dark: '#5190f7' },
+  gateway: { light: '#262626', dark: '#e6e6e6' },
+  ongoing: { light: '#af293e', dark: '#e46360' },
+  hole: { light: '#9a9a9a', dark: '#7d7d7d' },
+})
+
+/** Homelab machines (scenario expr-n59): the six machines sit in ink steps from dark to pale, one step per machine on every card; the status red is the machine past its limit on that card. */
+export const HOMELAB_SERIES = defineSeries({
+  forge: { light: '#262626', dark: '#ececec' },
+  vault: { light: '#4a4a4a', dark: '#d4d4d4' },
+  stream: { light: '#6b6b6b', dark: '#b4b4b4' },
+  edge: { light: '#858585', dark: '#9a9a9a' },
+  pihole: { light: '#9a9a9a', dark: '#7d7d7d' },
+  lab: { light: '#b8b8b8', dark: '#666666' },
+  over: { light: '#af293e', dark: '#e46360' },
+  rule: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Spot wind (scenario expr-n62): the accent is rideable wind (a zone tint, not a series); the wind line sits in the darkest ink step and the gusts in three paler ones, the range rules in a mid one; the status red is the offshore direction. */
+export const SPOT_WIND_SERIES = defineSeries({
+  wind: { light: '#262626', dark: '#e6e6e6' },
+  gust1: { light: '#5a5a5a', dark: '#b8b8b8' },
+  gust3: { light: '#858585', dark: '#9a9a9a' },
+  gust6: { light: '#aaaaaa', dark: '#707070' },
+  range: { light: '#4a4a4a', dark: '#c4c4c4' },
+  usable: { light: '#262626', dark: '#e6e6e6' },
+  offshore: { light: '#af293e', dark: '#e46360' },
+})
+
+/** Dark-sky nights (scenario expr-n57): the usable window is the brand tint of a zone; the total cloud line sits in the dark ink step, the layers in mid and pale steps, the clear limit in a rule step. */
+export const DARKSITE_SERIES = defineSeries({
+  total: { light: '#262626', dark: '#e6e6e6' },
+  low: { light: '#5c5c5c', dark: '#b4b4b4' },
+  mid: { light: '#858585', dark: '#9a9a9a' },
+  high: { light: '#adadad', dark: '#737373' },
+  limit: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
