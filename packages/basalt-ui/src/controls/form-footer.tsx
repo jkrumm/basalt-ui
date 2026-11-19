@@ -42,12 +42,7 @@ export const formFooterParts = [
   'form-footer-status',
 ] as const
 
-/**
- * After a submit the engine rejected on the client, focus the first invalid control of the form:
- * two frames let the fields render `aria-invalid` first. A server error has `toSubmitErrors` do it.
- * An invalid element that is not rendered (a file upload's hidden input) hands focus to the first
- * visible control of its field instead.
- */
+/** True when the element has a box; a `hidden` or `display: none` element has none. */
 function visible(el: Element): el is HTMLElement {
   return el instanceof HTMLElement && el.getClientRects().length > 0
 }
@@ -61,6 +56,12 @@ function target(el: Element): HTMLElement | null {
   return [...controls].find((c): c is HTMLElement => visible(c) && !c.matches(':disabled')) ?? null
 }
 
+/**
+ * After a submit the engine rejected on the client, focus the first invalid control of the form:
+ * two frames let the fields render `aria-invalid` first. A server error has `toSubmitErrors` do it.
+ * An invalid element that is not rendered (a file upload's hidden input) hands focus to the first
+ * visible control of its field instead.
+ */
 function focusFirstInvalid(from: HTMLElement): void {
   const form = from.closest('form')
   if (form === null) return
