@@ -13,7 +13,7 @@ import { runCell } from './assertions'
 import { classify, KNOWN } from './known'
 import type { KnownFinding } from './known'
 import { bootMatrix } from './harness'
-import { hoverShift, KNOWN_SHIFTS } from './hover-shift'
+import { hoverFindings, KNOWN_SHIFTS, TRIAL_PAGES } from './hover-shift'
 import { routePaths, scenarioPaths } from './routes'
 
 const mode = process.env['BASALT_MATRIX']
@@ -82,9 +82,10 @@ describe.skipIf(harness === null)(`quality matrix (${mode})`, () => {
   )
 })
 
-// The hover-shift guard: every route and every scenario at the owner's two review widths, a fine
-// pointer swept across each chart plot. A plot that moves under the pointer fails its page.
-describe.skipIf(harness === null)('hover never moves a chart plot', () => {
+// The hover guard: every route and every scenario at the owner's two review widths, a fine pointer
+// swept across each chart plot. A plot that moves under the pointer, a tooltip that changes side more
+// than once, or a card whose text or widths change outside its readout line fails its page.
+describe.skipIf(harness === null)('hover changes the readout, never the chart or its card', () => {
   const pages = [...new Set([...routePaths(), ...scenarioPaths()])]
   const sizes = [DESKTOP, PHONE] as const
   test.each(enabled ? pages.flatMap((route) => sizes.map((size) => ({ route, ...size }))) : [])(
@@ -95,7 +96,17 @@ describe.skipIf(harness === null)('hover never moves a chart plot', () => {
       try {
         await page.goto(harness.origin + cell.route)
         await page.waitForSelector('[data-slot], main', { timeout: 15_000 })
-        const moved = (await hoverShift(page)).join('\n')
+        const found = await hoverFindings(page)
+        const of = (kind: string): string =>
+          found
+            .filter((f) => f.kind === kind)
+            .map((f) => f.text)
+            .join('\n')
+        expect(of('tooltip')).toBe('')
+        // A trial build's card follows the focus until its rerun (`TRIAL_PAGES`): only its card check is skipped.
+        if (!TRIAL_PAGES.some((prefix) => cell.route.startsWith(prefix)))
+          expect(of('card')).toBe('')
+        const moved = of('moved')
         const known = KNOWN_SHIFTS[`${cell.route} ${cell.width}`]
         if (known === undefined) expect(moved).toBe('')
         // A known shift that no longer moves is fixed: its entry goes.
