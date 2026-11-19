@@ -1,7 +1,7 @@
 // A recipe file the playground typecheck compiles; gen-recipes copies the region into the doc.
 /** Synthetic rows shaped like argo's momentum chart: a price series and a signed momentum series. */
 export const seedBars = (): Bar[] =>
-  Array.from({ length: 60 }, (_, i) => ({
+  Array.from({ length: 61 }, (_, i) => ({
     day: new Date(Date.UTC(2026, 8, 1 + i)),
     close: 41000 + Math.round(Math.sin(i / 6) * 4000) + i * 90,
     momentum: Math.round(Math.sin(i / 4) * 30) / 10,
@@ -17,7 +17,7 @@ const amber = { light: 'var(--basalt-warn)', dark: 'var(--basalt-warn)' }
 const x = { value: (d: Bar) => d.day }
 export function TwoPane({ bars }: { bars: Bar[] }) {
   // The last tick is dropped: its label widens the reserve and moves this plot's right edge off the upper pane's.
-  const ticks = bars.filter((_, i) => i % 14 === 0 && i < bars.length - 1).map((b) => b.day)
+  const ticks = bars.filter((_, i) => i % 15 === 0 && i < bars.length - 1).map((b) => b.day)
   return (
     <div className="flex flex-col gap-1">
       <Lines
