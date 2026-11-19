@@ -1,0 +1,14 @@
+{
+  "why": "The rerun of owner review 1 (docs/v3/cycles/owner-review-1.md § Findings 1, 3, 4 and 5) rebuilt seven pages on the fixed kit. The owner's n35 remark ('horrible rendering') is only partly met because the shipped IntervalTrack cuts titles; and three defects on his themes remain in shipped parts that fresh builders used as documented.",
+  "what": "Four kit fixes, each shown on the rerun's shots in .evidence/v3-shots/owner-review-1/r0 on the dev host.",
+  "change": "(1) IntervalTrack span labels: a title that does not fit takes a short form or drops by priority with the span still named in the readout and the live region, instead of an ellipsis on every span; a label never sits inside another span's outline (n35: nine ellipsised titles at 1800, three named at 390, 'Lunch' inside the longest free block). (2) ChainView in a panel narrower than its columns: scroll with a cue, or lay out to the width, and allow a node title two lines (n32: the third column cut at the panel edge at 1800). (3) The axis hover readout: an x readout hides the tick labels it covers, and a y readout formats through y.format (c12 'Sat 7' over 'Fri 6' at 390, n04 'Sa Sat 07:00', n15 '29 Sep' against the crosshair, n02 '0.13333333333333×'). (4) Diagnose c12's BarList focusSeries link that holds only on a direct arrival at 1800 (the LIST line of the rerun's shoot log); cycle 6 fixed that crossing loss for tables, so check the BarList arm.",
+  "acceptance": [
+    "n35's rerun scenario at 1800 shows no ellipsised span title, and at 390 every span is named in the readout or by label",
+    "n32's rerun scenario at 1800 shows the chain's last column whole, or a visible scroll cue",
+    "The x hover readout on c12, n04 and n15 overprints no tick label at 1800 or 390; n02's y readout prints its formatted value",
+    "c12's list frame links on the stepped path, or the finding is closed with the cause named",
+    "make check passes"
+  ],
+  "out_of_scope": "Rebuilding the scenarios; anything cycle 11's fix rows already own (drop it and say which row).",
+  "note": "Filed by the owner-review-1 rerun (Issue 2404). Cycle 11 ran beside it on the same kit; read its fix rows first."
+}

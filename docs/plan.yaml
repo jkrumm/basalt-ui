@@ -1061,3 +1061,21 @@ rows:
         v3-owner-1-rerun,
       ]
     facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-rerun.json' }
+  - key: v3-owner-1-rerun-kit-fixes
+    title: 'Interval track titles, a chain wider than its panel, hover readouts over ticks, a list link lost on the crossing, from the owner review 1 rerun'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-owner-1-rerun, v3-cycle-expression-11]
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-rerun-kit-fixes.json' }
+  - key: v3-owner-1-rerun-skill
+    title: 'Expression skill: a track or a chain takes the full width with its list below, from the owner review 1 rerun'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-owner-1-rerun, v3-cycle-expression-11]
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-rerun-skill.json' }
+  - key: v3-owner-1-rerun-rubric
+    title: 'Expression rubric: R2 counts a clipped title a kit part drew, from the owner review 1 rerun'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-owner-1-rerun, v3-cycle-expression-11]
+    facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-rerun-rubric.json' }
