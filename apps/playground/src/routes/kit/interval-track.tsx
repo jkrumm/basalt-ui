@@ -8,7 +8,7 @@ import { DataTable, col, useDataTable } from 'basalt-ui/table'
 import { BASALT } from 'basalt-ui/tokens'
 import type { ReactElement } from 'react'
 import { CALENDAR_SERIES } from '../../demo/series'
-import { AXIS, WORKDAYS, buildWeek, eventsFor } from '../../scenarios/expr/n35/model'
+import { AXIS, WORKDAYS, buildWeek, eventsFor } from '../../demo/calendar-week'
 import { validateShotSearch } from '../../scenarios/shot-state'
 
 /** One span of the week: an event, or a day's longest free block, as times on one shared day. */

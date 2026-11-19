@@ -1,139 +1,300 @@
-/** Open Issues of four projects and the Issues each waits on (scenario expr-n32). Authored, no clock, no random. */
+/**
+ * The plan the page reads: open Issues across four projects, each queued, building or waiting on
+ * other open Issues. The default fixture has one Issue that six others wait on, directly or
+ * through others. Ids come from a seeded generator, so every run draws the same plan.
+ */
 
-export type IssueState = 'building' | 'queued' | 'waiting'
+export type IssueState = 'queued' | 'building' | 'waiting'
 
 export type Issue = {
-  id: number
+  id: string
   title: string
   project: string
   state: IssueState
-  /** Ids of the open Issues this one waits on. */
-  waitsOn: readonly number[]
-}
-
-/** An Issue with what the plan question reads off it. */
-export type PlanIssue = Issue & {
-  /** Issues that wait on it, directly or through others. */
+  /** The ids of the open Issues this one waits on. */
+  waitsOn: readonly string[]
+  /** The first blocker's title and a count of the rest, for the table ("Move the series file +1"); a dash when nothing blocks it. */
+  blockers: string
+  /** Open Issues that wait on this one, directly or through others. */
   unblocks: number
-  /** Issues that wait on it directly. */
-  direct: number
-  /** Ids it waits on besides the one it is listed under, as text; empty when none. */
-  alsoWaitsOn: string
-  /** Steps below its root blocker in the plan tree. */
-  depth: number
-  /** Position in the tree reading order. */
-  order: number
 }
 
-export const STATE_LABELS: Readonly<Record<IssueState, string>> = {
-  building: 'Building',
-  queued: 'Queued',
-  waiting: 'Waiting',
+type Draft = {
+  key: string
+  title: string
+  project: string
+  state: IssueState
+  after: readonly string[]
 }
 
-/** Fixture names this scenario knows. `idle`: nothing waits on anything. `pileup`: one Issue under all the others. */
-export type PlanFixture = 'idle' | 'pileup'
-
-export const isPlanFixture = (value: string | undefined): value is PlanFixture =>
-  value === 'idle' || value === 'pileup'
-
-const issue = (
-  id: number,
-  project: string,
-  state: IssueState,
-  title: string,
-  waitsOn: readonly number[] = [],
-): Issue => ({ id, title, project, state, waitsOn })
-
-/** 25 open Issues. #1950 has six waiting on it: four directly, two through #1953 and #1955. */
-const BASE: readonly Issue[] = [
-  issue(1950, 'factory', 'building', 'Merge lock handoff'),
-  issue(1953, 'factory', 'waiting', 'Queue edge validator', [1950]),
-  issue(1955, 'factory', 'waiting', 'Plan row schema v2', [1950]),
-  issue(1957, 'factory', 'waiting', 'Lead resume after reap', [1950]),
-  issue(1959, 'factory', 'waiting', 'Signal dedupe window', [1950]),
-  issue(1961, 'factory', 'waiting', 'Plan graph export', [1953]),
-  issue(1963, 'factory', 'waiting', 'Edge diff in plan view', [1953, 1955]),
-  issue(1966, 'factory', 'queued', 'Queue depth signal'),
-  issue(1968, 'factory', 'queued', 'Deploy lock timeout'),
-  issue(1944, 'basalt-ui', 'building', 'Shot gate for the keys frame'),
-  issue(1946, 'basalt-ui', 'waiting', 'Series file guard', [1944]),
-  issue(1948, 'basalt-ui', 'waiting', 'Chart state recipe', [1944, 1946]),
-  issue(1951, 'basalt-ui', 'waiting', 'Table row focus map', [1946]),
-  issue(1954, 'basalt-ui', 'queued', 'Label placement seam'),
-  issue(1956, 'basalt-ui', 'waiting', 'Stacked BarList focus', [1954]),
-  issue(1958, 'basalt-ui', 'waiting', 'Docs regen for focus', [1956, 1951]),
-  issue(1941, 'argo', 'building', 'Move to the 3.x shell'),
-  issue(1945, 'argo', 'waiting', 'Nav badges from the queue', [1941]),
-  issue(1947, 'argo', 'waiting', 'Settings page forms', [1941]),
-  issue(1949, 'argo', 'queued', 'Fleet board refresh'),
-  issue(1960, 'argo', 'waiting', 'Weekly digest card', [1945, 1949, 1942]),
-  issue(1942, 'rollhook', 'queued', 'Deploy webhook retry'),
-  issue(1952, 'rollhook', 'waiting', 'Rollback marker', [1942]),
-  issue(1964, 'rollhook', 'waiting', 'Health probe cut', [1952]),
-  issue(1965, 'rollhook', 'building', 'Image prune job'),
-]
-
-function variant(fixture: PlanFixture | undefined): readonly Issue[] {
-  if (fixture === 'idle') {
-    return BASE.map((i) => ({
-      ...i,
-      state: i.state === 'waiting' ? 'queued' : i.state,
-      waitsOn: [],
-    }))
+function seeded(seed: number): () => number {
+  let a = seed
+  return () => {
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
-  if (fixture === 'pileup') {
-    // One chain: each Issue waits on the one before it, so the first has every other under it.
-    const sorted = [...BASE].sort((a, b) => a.id - b.id)
-    const root = sorted.find((i) => i.id === 1950)
-    if (root === undefined) return BASE
-    const chain = [root, ...sorted.filter((i) => i.id !== 1950)]
-    return chain.map((i, n) => ({
-      ...i,
-      state: n === 0 ? 'building' : 'waiting',
-      waitsOn: n === 0 ? [] : [chain[n - 1]?.id ?? 1950],
-    }))
-  }
-  return BASE
 }
 
-/**
- * The plan as a tree in reading order: Issues that wait on nothing are the roots, ranked by how many
- * wait on them; each other Issue is listed once, under the first Issue it waits on.
- */
-export function planIssues(fixture: PlanFixture | undefined): readonly PlanIssue[] {
-  const issues = variant(fixture)
-  const dependents = new Map<number, number[]>()
-  for (const i of issues) {
-    for (const on of i.waitsOn) dependents.set(on, [...(dependents.get(on) ?? []), i.id])
+const STATE_ORDER: Record<IssueState, number> = { building: 0, queued: 1, waiting: 2 }
+
+/** Numbers the drafts from the seed, derives each Issue's reach and sorts the most-unblocking first. */
+function build(drafts: readonly Draft[], seed: number): Issue[] {
+  const next = seeded(seed)
+  let n = 1800
+  const idOf = new Map<string, string>()
+  for (const d of drafts) {
+    n += 3 + Math.floor(next() * 40)
+    idOf.set(d.key, String(n))
   }
-  const reach = (id: number, seen: Set<number>): Set<number> => {
-    for (const next of dependents.get(id) ?? []) {
-      if (seen.has(next)) continue
-      seen.add(next)
-      reach(next, seen)
+  const dependents = new Map<string, string[]>()
+  for (const d of drafts) {
+    for (const k of d.after) dependents.set(k, [...(dependents.get(k) ?? []), d.key])
+  }
+  const reach = (key: string): Set<string> => {
+    const seen = new Set<string>()
+    const stack = [...(dependents.get(key) ?? [])]
+    for (let k = stack.pop(); k !== undefined; k = stack.pop()) {
+      if (seen.has(k)) continue
+      seen.add(k)
+      stack.push(...(dependents.get(k) ?? []))
     }
     return seen
   }
-  const unblocks = new Map(issues.map((i) => [i.id, reach(i.id, new Set()).size]))
-  const rank = (a: Issue, b: Issue) =>
-    (unblocks.get(b.id) ?? 0) - (unblocks.get(a.id) ?? 0) || a.id - b.id
-  const childrenOf = (id: number) => issues.filter((i) => i.waitsOn[0] === id).sort(rank)
-  const out: PlanIssue[] = []
-  const walk = (i: Issue, depth: number) => {
-    out.push({
-      ...i,
-      unblocks: unblocks.get(i.id) ?? 0,
-      direct: dependents.get(i.id)?.length ?? 0,
-      alsoWaitsOn: i.waitsOn
-        .slice(1)
-        .map((on) => `#${on}`)
-        .join(', '),
-      depth,
-      order: out.length,
-    })
-    for (const child of childrenOf(i.id)) walk(child, depth + 1)
-  }
-  for (const root of issues.filter((i) => i.waitsOn.length === 0).sort(rank)) walk(root, 0)
-  return out
+  const titleOf = new Map(drafts.map((d) => [d.key, d.title]))
+  const issues = drafts.map((d): Issue => {
+    const waitsOn = d.after.flatMap((k) => idOf.get(k) ?? [])
+    const first = titleOf.get(d.after[0] ?? '')
+    return {
+      id: idOf.get(d.key) ?? d.key,
+      title: d.title,
+      project: d.project,
+      state: d.state,
+      waitsOn,
+      blockers:
+        first === undefined
+          ? '\u2014'
+          : first + (waitsOn.length > 1 ? ` +${waitsOn.length - 1}` : ''),
+      unblocks: reach(d.key).size,
+    }
+  })
+  return issues.sort(
+    (a, b) =>
+      b.unblocks - a.unblocks ||
+      STATE_ORDER[a.state] - STATE_ORDER[b.state] ||
+      a.id.localeCompare(b.id),
+  )
+}
+
+const BASALT = 'basalt-ui'
+const ARGO = 'argo'
+const FACTORY = 'factory'
+const ROLLHOOK = 'rollhook'
+
+const DEFAULT: readonly Draft[] = [
+  {
+    key: 'r',
+    title: 'Move the series colours into the token layer',
+    project: BASALT,
+    state: 'queued',
+    after: [],
+  },
+  {
+    key: 'a',
+    title: 'Re-derive the chart ramps from the token layer',
+    project: BASALT,
+    state: 'waiting',
+    after: ['r'],
+  },
+  {
+    key: 'b',
+    title: 'Port the argo charts to the token series',
+    project: ARGO,
+    state: 'waiting',
+    after: ['r'],
+  },
+  {
+    key: 'c',
+    title: 'Drop the legacy bridge from the shell',
+    project: BASALT,
+    state: 'waiting',
+    after: ['r'],
+  },
+  {
+    key: 'd',
+    title: 'Ship the argo dashboard on the new ramps',
+    project: ARGO,
+    state: 'waiting',
+    after: ['a'],
+  },
+  {
+    key: 'e',
+    title: "Retire argo's local series file",
+    project: ARGO,
+    state: 'waiting',
+    after: ['b'],
+  },
+  {
+    key: 'f',
+    title: 'Publish the release notes for the token layer',
+    project: BASALT,
+    state: 'waiting',
+    after: ['a', 'c'],
+  },
+  {
+    key: 's',
+    title: 'Cache the plan query in the factory lead',
+    project: FACTORY,
+    state: 'building',
+    after: [],
+  },
+  {
+    key: 'g',
+    title: 'Show queue age on the factory board',
+    project: FACTORY,
+    state: 'waiting',
+    after: ['s'],
+  },
+  {
+    key: 'h',
+    title: 'Alert when a queued Issue is older than a day',
+    project: FACTORY,
+    state: 'waiting',
+    after: ['g'],
+  },
+  {
+    key: 'i',
+    title: 'Stop the lead re-reading the plan on every signal',
+    project: FACTORY,
+    state: 'waiting',
+    after: ['s'],
+  },
+  {
+    key: 't',
+    title: 'Split the deploy lock by repo',
+    project: ROLLHOOK,
+    state: 'building',
+    after: [],
+  },
+  {
+    key: 'k',
+    title: 'Deploy two repos at once',
+    project: ROLLHOOK,
+    state: 'waiting',
+    after: ['t'],
+  },
+  {
+    key: 'l',
+    title: 'Report lock wait time per deploy',
+    project: ROLLHOOK,
+    state: 'waiting',
+    after: ['k'],
+  },
+  {
+    key: 'u',
+    title: 'Fix the nightly backup pruning',
+    project: ROLLHOOK,
+    state: 'queued',
+    after: [],
+  },
+  {
+    key: 'm',
+    title: 'Verify a restore from the pruned backup',
+    project: ROLLHOOK,
+    state: 'waiting',
+    after: ['u'],
+  },
+  {
+    key: 'v',
+    title: 'Page the owner when pruning removes a day',
+    project: ROLLHOOK,
+    state: 'waiting',
+    after: ['u'],
+  },
+  { key: 'x', title: 'Bump the test runner in argo', project: ARGO, state: 'queued', after: [] },
+  {
+    key: 'tb',
+    title: 'Run the argo suite in two shards',
+    project: ARGO,
+    state: 'waiting',
+    after: ['x'],
+  },
+  { key: 'y', title: 'Audit the cron schedule', project: FACTORY, state: 'queued', after: [] },
+  {
+    key: 'sb',
+    title: 'Move the stale-signal sweep to the audited schedule',
+    project: FACTORY,
+    state: 'waiting',
+    after: ['y'],
+  },
+  {
+    key: 'z',
+    title: 'Fix the focus ring on the table header',
+    project: BASALT,
+    state: 'building',
+    after: [],
+  },
+  { key: 'p', title: 'Trim the shot cache', project: FACTORY, state: 'building', after: [] },
+  { key: 'q', title: 'Document the lock order', project: FACTORY, state: 'queued', after: [] },
+  {
+    key: 'w',
+    title: 'Add a retry to the webhook receiver',
+    project: ROLLHOOK,
+    state: 'queued',
+    after: [],
+  },
+]
+
+/** Nothing waits: every open Issue can start, so the reach of each is zero. */
+const CLEAR: readonly Draft[] = DEFAULT.map((d) => ({
+  ...d,
+  state: d.state === 'waiting' ? 'queued' : d.state,
+  after: [],
+}))
+
+const TOPICS = [
+  'Rename the lead worktrees',
+  'Cut the board query to one round trip',
+  'Show blockers on the Issue page',
+  'Sort the queue by what it unblocks',
+  'Move the lock table to its own store',
+  'Retry a failed deploy hook once',
+  'Print the plan edges in the CLI',
+  'Fold the two signal feeds into one',
+  'Skip the build when only docs changed',
+  'Name the owner on a waiting Issue',
+  'Stop re-running green checks after a rebase',
+  'Group the board by project',
+]
+
+/** One Issue that nearly everything waits on: 24 of 25 wait on it, on every path. */
+function pileup(): Draft[] {
+  const next = seeded(7)
+  const projects = [BASALT, ARGO, FACTORY, ROLLHOOK]
+  const waiting: Draft[] = Array.from({ length: 24 }, (_, i) => ({
+    key: 'w' + i,
+    title: (TOPICS[i % TOPICS.length] ?? 'Follow-up') + (i >= TOPICS.length ? ', part two' : ''),
+    project: projects[Math.floor(next() * projects.length)] ?? BASALT,
+    state: 'waiting',
+    after: i < 10 ? ['root'] : ['w' + Math.floor(next() * i)],
+  }))
+  return [
+    {
+      key: 'root',
+      title:
+        "Replace the gateway's per-tenant rate limiter with the shared token bucket before any consumer upgrades",
+      project: FACTORY,
+      state: 'queued',
+      after: [],
+    },
+    ...waiting,
+  ]
+}
+
+/** The plan for a `?fixture=` name: `clear` (nothing waits), `pileup` (24 Issues behind one), else the default. */
+export function planOf(fixture: string | undefined): Issue[] {
+  if (fixture === 'clear') return build(CLEAR, 11)
+  if (fixture === 'pileup') return build(pileup(), 23)
+  return build(DEFAULT, 11)
 }

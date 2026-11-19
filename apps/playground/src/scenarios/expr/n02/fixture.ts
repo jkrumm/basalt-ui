@@ -1,75 +1,76 @@
-/** Seeded open-Issue fixture for the stuck-Issues page: stage, time in stage, typical time per stage. */
+/** Open Issues of the factory pipeline (scenario expr-n02): a seeded, deterministic fixture. */
 
-export const STAGES = ['queued', 'building', 'review', 'deploy', 'verify'] as const
-export type Stage = (typeof STAGES)[number]
+export const STAGES = [
+  { key: 'queued', label: 'Queued', typical: 4 },
+  { key: 'building', label: 'Building', typical: 1.5 },
+  { key: 'review', label: 'Review', typical: 6 },
+  { key: 'deploy', label: 'Deploy', typical: 0.5 },
+  { key: 'verify', label: 'Verify', typical: 2 },
+] as const
 
-export const STAGE_LABEL: Record<Stage, string> = {
-  queued: 'Queued',
-  building: 'Building',
-  review: 'Review',
-  deploy: 'Deploy',
-  verify: 'Verify',
-}
+export type StageKey = (typeof STAGES)[number]['key']
 
-/** Typical time per stage, in hours. */
-const TYPICAL_HOURS: Record<Stage, number> = {
-  queued: 2,
-  building: 1.5,
-  review: 10,
-  deploy: 0.5,
-  verify: 2,
-}
-
-/** An Issue is stuck once it sits past this multiple of its stage's typical time. */
-export const STUCK_AT = 2
+/** An Issue is stuck once it has sat in its stage longer than this many times the stage's typical time. */
+export const STUCK_AFTER = 2
 
 export type Issue = {
   id: string
   title: string
-  stage: Stage
-  /** 1-based position of the stage in the pipeline, the chart's x. */
-  at: number
+  stage: StageKey
+  stageLabel: string
+  /** Hours the Issue has sat in its stage. */
   hours: number
+  /** The typical hours of its stage. */
   typical: number
-  /** `hours / typical`: how many typical stage times the Issue has sat. */
+  /** `hours / typical`. */
   ratio: number
+  stuck: boolean
+  verdict: 'Stuck' | 'On pace'
 }
 
-export type Band = 'within' | 'over' | 'stuck'
-
-export const bandOf = (issue: Issue): Band => {
-  if (issue.ratio >= STUCK_AT) return 'stuck'
-  return issue.ratio > 1 ? 'over' : 'within'
+/** How many Issues sit in each stage, and the multiples of typical the late ones among them stand at. */
+const PLAN: Record<StageKey, { count: number; late: readonly number[] }> = {
+  queued: { count: 8, late: [2.4, 3.6] },
+  building: { count: 6, late: [2.7] },
+  review: { count: 9, late: [2.2, 3.1, 4.6, 5.4] },
+  deploy: { count: 3, late: [] },
+  verify: { count: 4, late: [2.1] },
 }
-
-export type FixtureName = 'default' | 'extreme' | 'quiet'
-
-/** Parses the raw `?fixture=` value; anything unknown is the default. */
-export const fixtureName = (raw: string | undefined): FixtureName =>
-  raw === 'extreme' || raw === 'quiet' ? raw : 'default'
 
 const TITLES = [
-  'Retry the webhook on a 502',
-  'Paginate the run list',
-  'Drop the stale lockfile check',
-  'Pin the node image digest',
-  'Cache the plan parse',
-  'Fix the empty-diff comment',
-  'Split the slow layout shard',
-  'Rename the queue lane',
-  'Guard the double merge',
-  'Surface the deploy log tail',
-  'Time out a hung verify probe',
-  'Teach doctor the new peer',
-  'Trim the status payload',
-  'Stop re-running green rows',
-  'Label the slot owner',
+  'Retry the flaky deploy hook',
+  'Split the billing export job',
+  'Cache the plan lookup',
+  'Drop the legacy webhook route',
+  'Pin the runner image',
+  'Add a timeout to the sync call',
+  'Move session storage to Redis',
+  'Fix the nightly report totals',
+  'Rename the audit log columns',
+  'Throttle the import queue',
+  'Verify the backup restore',
+  'Trim the build log output',
+  'Handle empty review requests',
+  'Upgrade the queue client',
+  'Stop double-posting digests',
+  'Add retries to the mailer',
+  'Clear stale preview builds',
+  'Show the owner on each Issue',
+  'Fix the date shift in exports',
+  'Batch the cache warm-up',
+  'Guard the cron against overlap',
+  'Move the feature flags to config',
+  'Log the slow query sample',
+  'Fix the broken tag filter',
+  'Reduce the image build layers',
+  'Rotate the deploy token',
+  'Add health checks to workers',
+  'Unblock the migration lock',
+  'Speed up the lint step',
+  'Collapse duplicate alerts',
 ]
 
-/** Open Issues per stage in the default fixture. */
-const COUNTS: Record<Stage, number> = { queued: 6, building: 5, review: 12, deploy: 1, verify: 7 }
-
-/** Mulberry32: a small deterministic generator, so every shot sees the same Issues. */
+/** mulberry32: the same seed gives the same Issues on every render. */
 function seeded(seed: number): () => number {
   let a = seed
   return () => {
@@ -80,59 +81,52 @@ function seeded(seed: number): () => number {
   }
 }
 
-const round1 = (n: number) => Math.round(n * 10) / 10
-
-/** The ratio of one Issue: mostly under the typical time, a long tail past it. */
-function ratioFor(name: FixtureName, stage: Stage, next: () => number): number {
-  const base = 0.12 + next() ** 2 * 1.6
-  if (name === 'quiet') return Math.min(base, 0.9)
-  // the tail: review and verify collect the stuck ones
-  const tail = stage === 'review' || stage === 'verify' ? 1.9 : 0.5
-  return base + (next() > 0.6 ? next() * tail * 2 : 0)
-}
-
-export function buildIssues(name: FixtureName): Issue[] {
-  const next = seeded(name === 'quiet' ? 7 : 31)
-  let n = 1480
+/** `late` replaces the plan's late multiples; a zero Issue just entered its stage. */
+function build({
+  late,
+  zero,
+}: {
+  late: Partial<Record<StageKey, readonly number[]>>
+  zero: boolean
+}): Issue[] {
+  const rand = seeded(2402)
+  let n = 0
   const issues: Issue[] = []
-  STAGES.forEach((stage, i) => {
-    const count = name === 'quiet' ? Math.min(COUNTS[stage], 4) : COUNTS[stage]
-    for (let k = 0; k < count; k += 1) {
-      const typical = TYPICAL_HOURS[stage]
-      const ratio = ratioFor(name, stage, next)
+  for (const stage of STAGES) {
+    const plan = PLAN[stage.key]
+    const lateOnes = late[stage.key] ?? plan.late
+    for (let i = 0; i < plan.count; i++) {
+      const isLate = i < lateOnes.length
+      const multiple = isLate ? (lateOnes[i] ?? 0) : 0.1 + rand() * 1.3
+      const justEntered = zero && stage.key === 'deploy' && i === 0
+      const hours = justEntered ? 0 : Math.round(stage.typical * multiple * 10) / 10
+      const ratio = hours / stage.typical
+      const stuck = ratio > STUCK_AFTER
       issues.push({
-        id: `ISS-${(n += 1 + Math.floor(next() * 5))}`,
-        title: TITLES[Math.floor(next() * TITLES.length)] ?? TITLES[0] ?? '',
-        stage,
-        at: i + 1,
-        hours: round1(ratio * typical),
-        typical,
-        ratio: round1(ratio * 10) / 10,
+        id: `#${2380 + n * 3 + Math.floor(rand() * 3)}`,
+        title: TITLES[n] ?? 'Untitled',
+        stage: stage.key,
+        stageLabel: stage.label,
+        hours,
+        typical: stage.typical,
+        ratio,
+        stuck,
+        verdict: stuck ? 'Stuck' : 'On pace',
       })
+      n += 1
     }
-  })
-  if (name === 'extreme') {
-    // a verify probe nobody noticed: 3 days 8 hours against a 2 hour norm
-    const hours = 80
-    issues.push({
-      id: 'ISS-1403',
-      title: 'Verify probe waits on a retired URL',
-      stage: 'verify',
-      at: 5,
-      hours,
-      typical: TYPICAL_HOURS.verify,
-      ratio: hours / TYPICAL_HOURS.verify,
-    })
   }
-  return issues.toSorted((a, b) => b.ratio - a.ratio)
+  return issues
 }
 
-/** `45m`, `6.5h`, `31h`, `3d 8h`: the clock form of `useFormat().duration` reads as a time of day. */
-export function formatAge(hours: number): string {
-  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))}m`
-  if (hours < 10) return `${round1(hours)}h`
-  if (hours < 48) return `${Math.round(hours)}h`
-  const days = Math.floor(hours / 24)
-  const rest = Math.round(hours - days * 24)
-  return rest === 0 ? `${days}d` : `${days}d ${rest}h`
+/**
+ * The fixture a `?fixture=` name picks. The rest state has a few Issues stuck and one that just
+ * entered Deploy (0 h); `extreme` puts one Review Issue at 24 times typical; `calm` has none stuck.
+ */
+export function issuesFor(fixture: string | undefined): readonly Issue[] {
+  if (fixture === 'extreme') return build({ late: { review: [23.8, 3.1, 4.6, 5.4] }, zero: true })
+  if (fixture === 'calm') {
+    return build({ late: { queued: [], building: [], review: [], verify: [] }, zero: true })
+  }
+  return build({ late: {}, zero: true })
 }

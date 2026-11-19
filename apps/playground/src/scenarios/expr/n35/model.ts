@@ -1,203 +1,141 @@
-/** The coming workweek: a fixed calendar fixture and the booked-time and free-block arithmetic over it. All times are minutes since midnight. */
+import type { Kind, Week } from './fixture'
 
-export type Kind = 'meeting' | 'focus' | 'personal'
+export type SpanKey = Kind | 'declined' | 'longest'
 
-export type CalEvent = {
+/** One mark on the week track: a calendar event, or a free block between events. */
+export type Span = {
   id: string
-  day: number
+  day: string
   start: number
   end: number
   title: string
-  kind: Kind
+  /** What lists and announcements call it: the title, plus ", declined". */
+  name: string
+  /** The track series this span is drawn in. */
+  key: SpanKey
+  free: boolean
   declined: boolean
+  /** "Tue 10:00 to 11:00" */
+  when: string
+  kindLabel: string
+  length: string
 }
 
-export type Workday = { name: string; date: number; open: number; close: number }
+export type DayStat = { key: string; label: string; work: number; booked: number }
 
-export type Block = { from: number; to: number }
-
-export type DayStat = {
-  index: number
-  day: Workday
-  events: readonly CalEvent[]
-  /** Events in display lanes: an overlapping event takes the next lane. */
-  lanes: readonly (readonly CalEvent[])[]
-  /** Minutes of working hours covered by an accepted event; an overlap counts once. */
-  booked: number
-  share: number
-  longest: Block | null
-}
-
-export type Overlap = { day: number } & Block
-
-export type Week = {
+export type Analysis = {
   days: readonly DayStat[]
-  bookedTotal: number
-  openTotal: number
-  /** The day whose free block is the week's longest, or null when no day has one. */
-  longestDay: DayStat | null
-  overlaps: readonly Overlap[]
+  /** Events and free blocks in week order: the one array the focus, the track and the list share. */
+  spans: readonly Span[]
+  events: readonly Span[]
+  longest: Span | null
+  booked: number
+  work: number
+  declined: number
 }
 
-export const AXIS: readonly [number, number] = [9 * 60, 18 * 60]
+export const clock = (min: number): string =>
+  `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`
 
-export const WORKDAYS: readonly Workday[] = [
-  { name: 'Mon', date: 23, open: 9 * 60, close: 17 * 60 + 30 },
-  { name: 'Tue', date: 24, open: 9 * 60, close: 17 * 60 + 30 },
-  { name: 'Wed', date: 25, open: 9 * 60, close: 17 * 60 + 30 },
-  { name: 'Thu', date: 26, open: 9 * 60, close: 17 * 60 + 30 },
-  { name: 'Fri', date: 27, open: 9 * 60, close: 13 * 60 },
-]
-
-const at = (clock: string): number => {
-  const [h = '0', m = '0'] = clock.split(':')
-  return Number(h) * 60 + Number(m)
+/** "4 h 30 min", "8 h", "45 min": the one duration style of the page. */
+export function hm(min: number): string {
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  if (h === 0) return `${m} min`
+  return m === 0 ? `${h} h` : `${h} h ${m} min`
 }
 
-const ev = (
-  id: string,
-  day: number,
-  start: string,
-  end: string,
-  title: string,
-  kind: Kind,
-  declined = false,
-): CalEvent => ({ id, day, start: at(start), end: at(end), title, kind, declined })
-
-/** 36 events over four days: Tuesday afternoon is open, Wednesday is booked end to end with one overlap, Friday has none. */
-const BASE: readonly CalEvent[] = [
-  ev('m1', 0, '09:00', '09:15', 'Standup', 'meeting'),
-  ev('m2', 0, '09:15', '10:30', 'Plan the release', 'focus'),
-  ev('m3', 0, '10:30', '11:30', 'Design review', 'meeting'),
-  ev('m4', 0, '11:30', '12:00', 'Vendor demo', 'meeting', true),
-  ev('m5', 0, '12:00', '12:45', 'Lunch', 'personal'),
-  ev('m6', 0, '13:00', '14:00', '1:1 with Anna', 'meeting'),
-  ev('m7', 0, '14:00', '15:00', 'Customer call', 'meeting'),
-  ev('m8', 0, '15:30', '17:00', 'API cleanup', 'focus'),
-  ev('m9', 0, '17:00', '17:30', 'Dentist', 'personal'),
-
-  ev('t1', 1, '09:00', '09:15', 'Standup', 'meeting'),
-  ev('t2', 1, '09:15', '10:00', 'Inbox and reviews', 'focus'),
-  ev('t3', 1, '10:00', '11:00', 'Sprint planning', 'meeting'),
-  ev('t4', 1, '11:00', '11:30', 'Hiring sync', 'meeting'),
-  ev('t5', 1, '11:30', '12:00', 'Retro prep', 'meeting'),
-  ev('t6', 1, '12:00', '12:30', 'Lunch', 'personal'),
-  ev('t7', 1, '14:00', '15:00', 'All-hands', 'meeting', true),
-
-  ev('w1', 2, '09:00', '09:15', 'Standup', 'meeting'),
-  ev('w2', 2, '09:15', '10:30', 'Architecture review', 'meeting'),
-  ev('w3', 2, '10:00', '10:45', 'Bank appointment', 'personal'),
-  ev('w4', 2, '10:45', '11:30', 'Candidate interview', 'meeting'),
-  ev('w5', 2, '11:30', '12:30', 'Interview debrief', 'meeting'),
-  ev('w6', 2, '12:30', '13:15', 'Lunch and learn', 'meeting'),
-  ev('w7', 2, '13:15', '14:30', 'Roadmap workshop', 'meeting'),
-  ev('w8', 2, '14:30', '15:30', 'Vendor sync', 'meeting'),
-  ev('w9', 2, '15:30', '16:30', 'Pairing session', 'focus'),
-  ev('w10', 2, '16:30', '17:15', 'Board prep', 'meeting'),
-  ev('w11', 2, '17:15', '17:30', 'Wrap-up', 'meeting'),
-
-  ev('h1', 3, '09:00', '09:15', 'Standup', 'meeting'),
-  ev('h2', 3, '09:15', '11:15', 'Migration deep work', 'focus'),
-  ev('h3', 3, '11:15', '12:00', 'Team sync', 'meeting'),
-  ev('h4', 3, '12:00', '12:45', 'Lunch', 'personal'),
-  ev('h5', 3, '13:00', '13:30', 'Vendor demo', 'meeting'),
-  ev('h6', 3, '13:30', '14:30', 'Code review', 'focus'),
-  ev('h7', 3, '15:00', '16:00', 'Quarterly review', 'meeting', true),
-  ev('h8', 3, '16:00', '16:30', 'Metrics review', 'meeting'),
-  ev('h9', 3, '16:45', '17:30', 'Physio', 'personal'),
-]
-
-/** Fills the open afternoons and the empty Friday, so the longest free block shrinks to half an hour. */
-const FILLERS: readonly CalEvent[] = [
-  ev('p1', 1, '12:45', '15:00', 'Customer workshop', 'meeting'),
-  ev('p2', 1, '15:00', '17:15', 'Incident review', 'meeting'),
-  ev('p3', 3, '14:30', '16:00', 'Planning offsite', 'meeting'),
-  ev('p4', 4, '09:00', '12:45', 'Quarter close', 'meeting'),
-]
-
-/** `?fixture=`: `packed` fills every gap (the answer is small), `clear` declines every event (nothing booked). */
-export function eventsFor(fixture: string | undefined): readonly CalEvent[] {
-  if (fixture === 'packed') return [...BASE, ...FILLERS]
-  if (fixture === 'clear') return BASE.map((e) => ({ ...e, declined: true }))
-  return BASE
+const KIND_LABEL: Record<Kind, string> = {
+  meeting: 'Meeting',
+  focus: 'Focus',
+  personal: 'Personal',
 }
 
-const byStart = (a: CalEvent, b: CalEvent): number => a.start - b.start || a.end - b.end
+/** Booked minutes are the accepted events inside working hours, each minute once however many events cover it; free blocks are the unbooked runs. */
+export function analyse(week: Week): Analysis {
+  const days: DayStat[] = []
+  const eventSpans: Span[] = []
+  const blocks: Span[] = []
+  let declined = 0
 
-function toLanes(events: readonly CalEvent[]): CalEvent[][] {
-  const lanes: CalEvent[][] = []
-  for (const e of [...events].sort(byStart)) {
-    const lane = lanes.find((l) => (l.at(-1)?.end ?? 0) <= e.start)
-    if (lane) lane.push(e)
-    else lanes.push([e])
-  }
-  return lanes
-}
-
-/** The accepted events' spans inside working hours, merged. */
-function busy(events: readonly CalEvent[], day: Workday): Block[] {
-  const merged: Block[] = []
-  const spans = events
-    .filter((e) => !e.declined)
-    .map((e) => ({ from: Math.max(e.start, day.open), to: Math.min(e.end, day.close) }))
-    .filter((b) => b.to > b.from)
-    .sort((a, b) => a.from - b.from)
-  for (const span of spans) {
-    const last = merged.at(-1)
-    if (last && span.from <= last.to) last.to = Math.max(last.to, span.to)
-    else merged.push({ ...span })
-  }
-  return merged
-}
-
-/** The longest gap between busy spans inside working hours; the earliest wins a tie. */
-function longestFree(spans: readonly Block[], day: Workday): Block | null {
-  let cursor = day.open
-  let best: Block | null = null
-  for (const next of [...spans, { from: day.close, to: day.close }]) {
-    if (next.from - cursor > (best ? best.to - best.from : 0))
-      best = { from: cursor, to: next.from }
-    cursor = Math.max(cursor, next.to)
-  }
-  return best
-}
-
-function overlapsOf(events: readonly CalEvent[], day: number): Overlap[] {
-  const accepted = events.filter((e) => !e.declined).sort(byStart)
-  return accepted.flatMap((a, i) =>
-    accepted.slice(i + 1).flatMap((b) => {
-      const from = Math.max(a.start, b.start)
-      const to = Math.min(a.end, b.end)
-      return to > from ? [{ day, from, to }] : []
-    }),
-  )
-}
-
-export function buildWeek(events: readonly CalEvent[]): Week {
-  const days = WORKDAYS.map((day, index): DayStat => {
-    const own = events.filter((e) => e.day === index)
-    const spans = busy(own, day)
-    const booked = spans.reduce((sum, b) => sum + b.to - b.from, 0)
-    return {
-      index,
-      day,
-      events: own,
-      lanes: toLanes(own),
-      booked,
-      share: booked / (day.close - day.open),
-      longest: longestFree(spans, day),
+  for (const day of week.days) {
+    const label = day.label
+    const name = label.slice(0, 3)
+    const events = week.events.filter((e) => e.day === day.key).sort((a, b) => a.start - b.start)
+    const busy = new Set<number>()
+    for (const e of events) {
+      if (e.declined) continue
+      for (let m = Math.max(e.start, day.open); m < Math.min(e.end, day.close); m++) busy.add(m)
     }
-  })
-  const length = (d: DayStat): number => (d.longest ? d.longest.to - d.longest.from : 0)
-  const longestDay = days.reduce<DayStat | null>(
-    (best, d) => (length(d) > (best ? length(best) : 0) ? d : best),
+    days.push({ key: day.key, label, work: day.close - day.open, booked: busy.size })
+
+    const free: Span[] = []
+    for (let m = day.open; m < day.close; m++) {
+      if (busy.has(m)) continue
+      const last = free.at(-1)
+      if (last !== undefined && last.end === m) {
+        last.end = m + 1
+        continue
+      }
+      free.push({
+        id: `free-${day.key}-${m}`,
+        day: day.key,
+        start: m,
+        end: m + 1,
+        title: 'Free block',
+        name: 'Free block',
+        key: 'longest',
+        free: true,
+        declined: false,
+        when: '',
+        kindLabel: 'Free block',
+        length: '',
+      })
+    }
+    for (const block of free) {
+      block.when = `${name} ${clock(block.start)} to ${clock(block.end)}`
+      block.length = hm(block.end - block.start)
+    }
+    blocks.push(...free)
+
+    for (const e of events) {
+      if (e.declined) declined++
+      eventSpans.push({
+        id: e.id,
+        day: e.day,
+        start: e.start,
+        end: e.end,
+        title: e.title,
+        name: e.declined ? `${e.title}, declined` : e.title,
+        key: e.declined ? 'declined' : e.kind,
+        free: false,
+        declined: e.declined,
+        when: `${name} ${clock(e.start)} to ${clock(e.end)}`,
+        kindLabel: KIND_LABEL[e.kind],
+        length: hm(e.end - e.start),
+      })
+    }
+  }
+
+  const longest = blocks.reduce<Span | null>(
+    (best, b) => (best === null || b.end - b.start > best.end - best.start ? b : best),
     null,
+  )
+  if (longest !== null) {
+    longest.key = 'longest'
+    longest.title = 'Longest free block'
+    longest.name = 'Longest free block'
+  }
+  const ordered = [...eventSpans, ...(longest === null ? [] : [longest])].sort(
+    (a, b) => a.day.localeCompare(b.day) || a.start - b.start,
   )
   return {
     days,
-    bookedTotal: days.reduce((sum, d) => sum + d.booked, 0),
-    openTotal: WORKDAYS.reduce((sum, d) => sum + d.close - d.open, 0),
-    longestDay,
-    overlaps: days.flatMap((d) => overlapsOf(d.events, d.index)),
+    spans: ordered,
+    events: ordered.filter((s) => !s.free),
+    longest,
+    booked: days.reduce((sum, d) => sum + d.booked, 0),
+    work: days.reduce((sum, d) => sum + d.work, 0),
+    declined,
   }
 }

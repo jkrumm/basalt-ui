@@ -33,12 +33,6 @@ export const CALENDAR_SERIES = defineSeries({
   declined: { light: '#9a9a9a', dark: '#7d7d7d' },
 })
 
-/** Factory health (scenario expr-n27): one ink step for every measure's weekly line; the delta pill carries the only hue. */
-export const HEALTH_SERIES = defineSeries({
-  weekly: { light: '#4a4a4a', dark: '#c4c4c4' },
-  median: { light: '#9a9a9a', dark: '#7d7d7d' },
-})
-
 /** Sleep stages (scenario expr-n12): one hue per stage, deep darkest, REM the violet. */
 export const SLEEP_SERIES = defineSeries({
   deep: { light: '#2b4a9b', dark: '#6c8cf0' },
@@ -53,13 +47,6 @@ export const CUT_SERIES = defineSeries({
   daily: { light: '#7a7a7a', dark: '#9c9c9c' },
   plan: { light: '#4a4a4a', dark: '#c4c4c4' },
   lean: { light: '#6b6b6b', dark: '#a8a8a8' },
-})
-
-/** Ride windows (scenario expr-n04): rain and wind as a share of the rider's own limits; the limit rule sits in an ink step. */
-export const RIDE_SERIES = defineSeries({
-  rain: { light: '#7a7a7a', dark: '#9c9c9c' },
-  wind: { light: '#1f1f1f', dark: '#ededed' },
-  limit: { light: '#4a4a4a', dark: '#c4c4c4' },
 })
 
 /** Job schedule (scenario expr-n09): the accent is the next run; the rest of the 24 h and the later jobs sit in ink steps. */
@@ -140,13 +127,6 @@ export const RADIO_SERIES = defineSeries({
   noise: { light: '#8a8a8a', dark: '#8f8f8f' },
   limit: { light: '#4a4a4a', dark: '#c4c4c4' },
   other: { light: '#7a7a7a', dark: '#9c9c9c' },
-})
-
-/** Walking pad (scenario expr-n15): the accent is the week's minutes and the pace the question asks about; the weekly target and the prior-pace rule sit in an ink step. */
-export const WALK_SERIES = defineSeries({
-  minutes: { light: '#2871c7', dark: '#5190f7' },
-  pace: { light: '#2871c7', dark: '#5190f7' },
-  target: { light: '#4a4a4a', dark: '#c4c4c4' },
 })
 
 /** Model choice (scenario expr-c16): the accent is the recommended model; models that can take the chat sit in an ink step, models that cannot in a pale one, the current model's cost rule in a mid step. */
@@ -309,4 +289,46 @@ export const CONTAINER_SERIES = defineSeries({
   flagged: { light: '#af293e', dark: '#e46360' },
   quiet: { light: '#6b6b6b', dark: '#a8a8a8' },
   rule: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Desk walks (scenario expr-n15): the accent is this week, on the bars and on the dots; earlier weeks, the weekly median pace line and the target rule sit in ink steps. */
+export const WALK_SERIES = defineSeries({
+  minutes: { light: '#6b6b6b', dark: '#a8a8a8' },
+  earlier: { light: '#9a9a9a', dark: '#7d7d7d' },
+  now: { light: '#2871c7', dark: '#5190f7' },
+  median: { light: '#262626', dark: '#e6e6e6' },
+  target: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Ride windows (scenario expr-n04): the accent is the window itself, a tint from the brand token; rain chance sits in a mid ink step, wind in the dark one, and each limit rule takes its series' colour. */
+export const RIDE_SERIES = defineSeries({
+  rain: { light: '#8a8a8a', dark: '#8f8f8f' },
+  wind: { light: '#262626', dark: '#e6e6e6' },
+})
+
+/** Stuck Issues (scenario expr-n02): the accent is the Issue stuck past 2x its stage's typical time; Issues within typical sit in an ink step, the typical and stuck rules in darker ones. */
+export const STUCK_SERIES = defineSeries({
+  stuck: { light: '#2871c7', dark: '#5190f7' },
+  ok: { light: '#9a9a9a', dark: '#7d7d7d' },
+  typical: { light: '#6b6b6b', dark: '#a8a8a8' },
+  rule: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Weekly AI spend (scenario expr-c12): the accent is the model that drives the cost; the other models sit in ink steps by rank, the budget pace rule in a dark one and the week boundary in a pale one. */
+export const BUDGET_SERIES = defineSeries({
+  lead: { light: '#2871c7', dark: '#5190f7' },
+  second: { light: '#4a4a4a', dark: '#c4c4c4' },
+  third: { light: '#858585', dark: '#9a9a9a' },
+  fourth: { light: '#b8b8b8', dark: '#5c5c5c' },
+  pace: { light: '#262626', dark: '#e6e6e6' },
+  week: { light: '#9a9a9a', dark: '#7d7d7d' },
+})
+
+/** Workweek calendar (scenario expr-n35): the accent is the longest free block; meetings take the dark ink step, focus a mid one, personal a pale one; declined and other free blocks share one hollow pale step, time that blocks nothing. */
+export const WEEK_SERIES = defineSeries({
+  longest: { light: '#2871c7', dark: '#5190f7' },
+  meeting: { light: '#262626', dark: '#e6e6e6' },
+  focus: { light: '#6b6b6b', dark: '#a8a8a8' },
+  personal: { light: '#b0b0b0', dark: '#666666' },
+  open: { light: '#9a9a9a', dark: '#7d7d7d' },
 })
