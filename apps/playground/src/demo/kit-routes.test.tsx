@@ -143,7 +143,7 @@ describe('the Kit pages', () => {
     expect((await screen.findAllByText('Provision the new cluster')).length).toBeGreaterThan(0)
     const chain = document.querySelector('[data-slot="chain-graph"]')
     expect(chain?.querySelectorAll('[data-slot="chain-node"]').length).toBe(14)
-    expect(screen.getByRole('table').querySelectorAll('tbody tr').length).toBe(14)
+    expect(screen.queryByRole('table')).toBeNull()
     cleanup()
     mount('/kit/chain?as=nested')
     const tree = await screen.findByRole('treegrid')
@@ -219,7 +219,7 @@ describe('the routed recipes', () => {
 
   test('view switch', async () => {
     mount('/recipes/view-switch')
-    expect(await screen.findByText(run)).toBeDefined()
+    expect((await screen.findAllByText('Provision the new cluster')).length).toBeGreaterThan(0)
   })
 
   test('saved views', async () => {
