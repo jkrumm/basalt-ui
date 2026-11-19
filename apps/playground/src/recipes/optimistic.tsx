@@ -11,7 +11,7 @@ export type RunValues = {
 export type Run = RunValues & { id: string }
 
 /** What a failed save throws: the shape `toSubmitErrors` maps onto the form and its fields. */
-export class ApiError extends Error {
+class ApiError extends Error {
   constructor(
     message: string,
     readonly fieldErrors: Record<string, string> = {},

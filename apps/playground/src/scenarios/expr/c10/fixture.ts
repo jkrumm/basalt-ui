@@ -77,8 +77,6 @@ const SPRAWL_EDGES: readonly Edge[] = [
 /** The zero: the key is valid but nothing grants it a path onward. */
 const CONTAINED_EDGES: readonly Edge[] = EDGES.filter(([from]) => from !== ORIGIN)
 
-export const FIXTURE_NAMES = ['contained', 'sprawl'] as const
-
 export function graphFor(fixture: string | undefined): Graph {
   if (fixture === 'contained') {
     const resources = RESOURCES.map((r) => ({ ...r, affected: r.id === ORIGIN }))

@@ -6,7 +6,7 @@ import { transformSource } from '../layout/transform.ts'
 export type Signature = { tag: string; jsx: string }
 
 /** Quota per tag; the sum is the oracle's size. */
-export const QUOTA: Record<string, number> = {
+const QUOTA: Record<string, number> = {
   Stack: 60,
   Group: 75,
   Flex: 60,
@@ -127,7 +127,7 @@ export function moduleSource(jsx: string, tag: string): string {
 }
 
 /** True when the codemod converts the signature completely: nothing left in place, nothing on its worklist. */
-export function fullyConverted(jsx: string, tag: string): boolean {
+function fullyConverted(jsx: string, tag: string): boolean {
   const r = transformSource(moduleSource(jsx, tag), { file: 'sig.tsx', cnImport: './cn.ts' })
   return r.targets > 0 && r.converted === r.targets && r.worklist.length === 0
 }

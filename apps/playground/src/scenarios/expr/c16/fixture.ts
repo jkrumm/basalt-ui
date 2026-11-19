@@ -28,7 +28,7 @@ export type Scenario = {
   recommendedId: string
 }
 
-export const CHAT: Chat = { inputTokens: 212_000, outputTokens: 18_400, images: 14 }
+const CHAT: Chat = { inputTokens: 212_000, outputTokens: 18_400, images: 14 }
 
 const BASE: readonly Model[] = [
   m('alder-pro', 'Alder Pro', 'Alder', 62, 3, 15, 1000, true, true, true),

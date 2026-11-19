@@ -30,7 +30,7 @@ export type TrendRow = {
 }
 
 /** Least-squares slope over the 28 mornings ending at `end`, gaps skipped. */
-export function windowChange(
+function windowChange(
   values: readonly (number | null)[],
   end: number,
   signal: Signal,

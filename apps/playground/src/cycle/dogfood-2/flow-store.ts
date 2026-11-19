@@ -7,7 +7,7 @@
 import { defineControls, field } from 'basalt-ui/router'
 import { FLOW_STATES, ORIGINS, ORIGIN_LABELS, STATE_LABELS } from '../dogfood-1/flow-fixtures'
 
-export const SCREENS = ['ready', 'loading', 'empty', 'error', 'stale'] as const
+const SCREENS = ['ready', 'loading', 'empty', 'error', 'stale'] as const
 export type Screen = (typeof SCREENS)[number]
 
 export const flow = defineControls({

@@ -181,5 +181,3 @@ export function MobileMenuPanel() {
     </div>
   )
 }
-
-export default MobileMenuButton

@@ -25,7 +25,7 @@ export type Allow = {
 }
 
 /** Each finder matches one spelling; the gate reports a line when any of them hits. */
-export const FINDERS: Readonly<Record<Kind, readonly RegExp[]>> = {
+const FINDERS: Readonly<Record<Kind, readonly RegExp[]>> = {
   // `vx` opening a word in any case (`--vx-ink`, `.vx-prose`, `VX.ink`, `VxVar`, `REMOVED_VX_NAMES`), and `Vx`
   // inside a camel-case identifier (`collectVxNames`). Base64 runs such as `1YVxB` match neither.
   vx: [/(?:(?<![A-Za-z0-9])|(?<=\\[bBdDsSwW]))vx/i, /(?<=[a-z0-9])Vx(?![a-z])/],
@@ -34,7 +34,7 @@ export const FINDERS: Readonly<Record<Kind, readonly RegExp[]>> = {
 
 const HISTORY = 'history: a record of what was, kept in its own words'
 
-export const ALLOWED: readonly Allow[] = [
+const ALLOWED: readonly Allow[] = [
   // The issue's own allowlist.
   { path: 'tools/migrate-v3/', reason: 'the 2.x -> 3.x consumer codemod reads the old names' },
   {
@@ -175,7 +175,7 @@ function detector(module: string, line: RegExp, reason: string): Allow[] {
 const toPosix = (path: string): string => path.split('\\').join('/')
 
 /** The entries that let `path` keep `kind`; empty when none do. */
-export function allowsFor(path: string, kind: Kind): Allow[] {
+function allowsFor(path: string, kind: Kind): Allow[] {
   const p = toPosix(path)
   return ALLOWED.filter(
     (a) =>

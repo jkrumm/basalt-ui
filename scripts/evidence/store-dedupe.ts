@@ -18,7 +18,7 @@ import { gzipSync } from 'node:zlib'
  * atom and router-core store links against. `storeClass` is the `Store` constructor's bind line
  * (`store.js`) and `shim` the initial ref of `useSyncExternalStoreWithSelector` (production build).
  */
-export const MARKERS = {
+const MARKERS = {
   engine:
     /return\s*\{\s*link\s*:\s*[\w$]+\s*,\s*unlink\s*:\s*[\w$]+\s*,\s*propagate\s*:\s*[\w$]+\s*,\s*checkDirty\s*:\s*[\w$]+\s*,\s*shallowPropagate\s*:\s*[\w$]+\s*,?\s*\}/g,
   storeClass: /this\.setState\s*=\s*this\.setState\.bind\(this\)/g,

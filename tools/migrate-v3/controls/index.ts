@@ -14,7 +14,7 @@ export type ControlsSummary = {
   worklist: WorklistItem[]
 }
 
-export function sourceFiles(dir: string): string[] {
+function sourceFiles(dir: string): string[] {
   const glob = new Bun.Glob('**/*.{ts,tsx}')
   return [...glob.scanSync({ cwd: dir, onlyFiles: true })]
     .filter((f) => !/(^|\/)(node_modules|dist|build|\.git)\//.test(f) && !f.endsWith('.d.ts'))

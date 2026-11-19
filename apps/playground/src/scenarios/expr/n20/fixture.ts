@@ -103,9 +103,6 @@ const OVERRIDES: Readonly<
   extreme: { deadlift: { 13: 24.6, 14: 12.4 } },
 }
 
-/** The `?fixture=` names this scenario knows; anything else is the default. */
-export const FIXTURES = ['zero', 'extreme'] as const
-
 export function buildLifts(fixture: string | undefined): readonly Lift[] {
   const overrides = fixture === undefined ? undefined : OVERRIDES[fixture]
   return BASES.map((base, lift) => {

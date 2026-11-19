@@ -79,7 +79,7 @@ const BASE_JITTER: Record<HopKey, number> = { router: 0.3, gateway: 1.4, resolve
 /** Chance a minute drops one ping with no outage. */
 const STRAY_LOSS: Record<HopKey, number> = { router: 0, gateway: 0.004, resolver: 0.008, far: 0.02 }
 
-export const DAY_START = Date.UTC(2026, 10, 16)
+const DAY_START = Date.UTC(2026, 10, 16)
 const MINUTES = 24 * 60
 
 /** Mulberry32: a small seeded generator, so every load draws the same day. */
@@ -94,8 +94,6 @@ function seeded(seed: number): () => number {
 }
 
 const round = (n: number): number => Math.round(n * 10) / 10
-
-export const FIXTURE_NAMES = Object.keys(FIXTURES)
 
 export function buildDay(fixture: string | undefined): readonly Minute[] {
   const config = (fixture === undefined ? undefined : FIXTURES[fixture]) ?? FIXTURES['default']
@@ -281,31 +279,6 @@ export const ANSWER: Record<Segment | 'none', string> = {
 const PREVIOUS_LOST: Record<string, number> = { default: 2, clean: 0, home: 4 }
 export const previousLost = (fixture: string | undefined): number =>
   (fixture === undefined ? undefined : PREVIOUS_LOST[fixture]) ?? PREVIOUS_LOST['default'] ?? 0
-
-/** Runs of minutes in which one hop answered nothing. */
-export function hopGaps(rows: readonly Minute[], hop: HopKey): readonly Gap[] {
-  const gaps: Gap[] = []
-  let from: number | null = null
-  const close = (to: number): void => {
-    const start = from === null ? undefined : rows[from]
-    const last = rows[to - 1]
-    if (from !== null && start !== undefined && last !== undefined) {
-      gaps.push({
-        start: start.at,
-        end: new Date(last.at.getTime() + 60_000),
-        minutes: to - from,
-        firstHop: hop,
-      })
-    }
-    from = null
-  }
-  rows.forEach((m, i) => {
-    if (!lostAll(m[hop])) return close(i)
-    if (from === null) from = i
-  })
-  close(rows.length)
-  return gaps
-}
 
 export type EveningRise = { hop: HopKey; ms: number }
 

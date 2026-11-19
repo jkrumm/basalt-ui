@@ -16,7 +16,7 @@ export async function lintClean(
   return { ok: code === 0, ran: code === 0 || code === 1, output: output.trim() }
 }
 
-export function installedLint(bin?: string): LintRunner {
+function installedLint(bin?: string): LintRunner {
   return (dir) => {
     const cli = bin ?? join(dir, 'node_modules/.bin/basalt-ui')
     if (!existsSync(cli))

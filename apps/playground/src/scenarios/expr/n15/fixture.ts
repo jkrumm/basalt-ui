@@ -55,7 +55,7 @@ function mulberry32(seed: number): () => number {
 }
 
 /** The fixture variants `?fixture=` names. */
-export const FIXTURES = ['monday', 'marathon'] as const
+const FIXTURES = ['monday', 'marathon'] as const
 export type FixtureName = (typeof FIXTURES)[number]
 
 export const isFixtureName = (value: string | undefined): value is FixtureName =>

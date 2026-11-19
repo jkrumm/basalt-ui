@@ -32,7 +32,7 @@ const PROTECTED = ['VxThemeProvider', 'useVxTheme']
 export type Rule = { from: RegExp; to: string }
 
 /** The rewrite, in order: the specific shapes before the general ones. */
-export function rules(prefix: string): Rule[] {
+function rules(prefix: string): Rule[] {
   const upper = prefix.toUpperCase()
   const title = prefix.charAt(0).toUpperCase() + prefix.slice(1)
   return [

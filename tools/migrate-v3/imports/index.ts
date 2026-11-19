@@ -4,10 +4,7 @@ import { parseArgs } from 'node:util'
 import { parseRef, transformImports } from './transform.ts'
 import type { ImportChange, RenameRow } from './transform.ts'
 
-export const DEFAULT_ROWS_DIR = resolve(
-  import.meta.dir,
-  '../../../packages/basalt-ui/migrations/areas',
-)
+const DEFAULT_ROWS_DIR = resolve(import.meta.dir, '../../../packages/basalt-ui/migrations/areas')
 
 type RawRow = {
   id?: string

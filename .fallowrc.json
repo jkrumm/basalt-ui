@@ -16,5 +16,31 @@
     "apps/playground/src/recipes/**",
     "apps/playground/src/**/*.type-guard.ts"
   ],
-  "ignorePatterns": ["examples/**", "**/test/fixtures/**", "**/tests/fixtures/**"]
+  "ignorePatterns": ["examples/**", "**/test/fixtures/**", "**/tests/fixtures/**"],
+  "ignoreExports": [
+    {
+      "file": "tools/spikes/f2-route/stubs/*.ts",
+      "exports": ["*"]
+    },
+    {
+      "file": "packages/basalt-ui/tests/quality/ssr/fixtures/*.tsx",
+      "exports": ["Page"]
+    },
+    {
+      "file": "apps/playground/src/routes/settings.tsx",
+      "exports": ["SettingsPage"]
+    },
+    {
+      "file": "apps/playground/src/recipes/remembered-values.ts",
+      "exports": ["DEFAULT_WINDOW", "useRememberWindow"]
+    },
+    {
+      "file": "apps/playground/src/recipes/websocket-transport.ts",
+      "exports": ["changes"]
+    },
+    {
+      "file": "scripts/evidence/*.ts",
+      "exports": ["bundle", "keyboard", "screens"]
+    }
+  ]
 }

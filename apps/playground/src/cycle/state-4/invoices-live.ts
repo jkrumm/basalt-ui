@@ -50,7 +50,7 @@ const memoryTransport: Transport = async function* ({ signal }) {
   }
 }
 
-export const invoicesChannel = createChannel({
+const invoicesChannel = createChannel({
   transport: memoryTransport,
   greeting: 'hello',
   heartbeatMs: BEAT_MS,
@@ -80,7 +80,7 @@ export const invoiceQuery = (id: string) =>
   )
 
 /** The receivables figure: nothing pushes it, so it ticks every 5 s. */
-export const RECEIVABLES_MS = 5_000
+const RECEIVABLES_MS = 5_000
 export const receivablesQuery = () =>
   liveQuery(
     queryOptions({ queryKey: ['invoices', 'receivables'], queryFn: () => invoicesApi.stats() }),

@@ -30,7 +30,7 @@ export type Week = {
   priorShipped: number
 }
 
-export const NOW = Date.UTC(2026, 10, 17, 12, 0)
+const NOW = Date.UTC(2026, 10, 17, 12, 0)
 
 const FIRST_DAY = Date.UTC(2026, 10, 11)
 const DAY_MS = 86_400_000

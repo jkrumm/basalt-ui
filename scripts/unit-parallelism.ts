@@ -1,7 +1,7 @@
 /** How many `bun test` processes scripts/unit-test.ts runs at once. */
 
 /** One unit process's budget: the ts-morph files alone peak at 0.8 to 2.3 GiB, a 40-file chunk well under 1 GiB. */
-export const PER_PROCESS_MIB = 1024
+const PER_PROCESS_MIB = 1024
 
 /**
  * The width measured on the step host (2026-11-17: 187 s at 6, peak 3.9 GiB). The cap also bounds the worst case: the

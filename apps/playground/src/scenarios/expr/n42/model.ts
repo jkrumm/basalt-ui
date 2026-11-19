@@ -36,7 +36,7 @@ export const sampleAt = (samples: readonly Sample[], event: LineEvent): Sample |
   samples.find((s) => s.at.getTime() === event.at.getTime())
 
 /** Memory and CPU change over the hour up to `event`; null when the window holds no full hour before it. */
-export function leadOf(samples: readonly Sample[], event: LineEvent): DropLead | null {
+function leadOf(samples: readonly Sample[], event: LineEvent): DropLead | null {
   const stop = samples.findIndex((s) => s.at.getTime() === event.at.getTime())
   const stopSample = samples[stop]
   const startSample = samples[stop - HOUR_MINUTES]

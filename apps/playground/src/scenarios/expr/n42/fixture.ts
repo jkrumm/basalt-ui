@@ -19,7 +19,7 @@ export type RouterFixture = {
 }
 
 export const NOW = Date.UTC(2026, 10, 17, 20, 0)
-export const SAMPLES = 1440
+const SAMPLES = 1440
 const MINUTE = 60_000
 const START = NOW - (SAMPLES - 1) * MINUTE
 

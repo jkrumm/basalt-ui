@@ -35,7 +35,7 @@ export interface GuardPorts {
 }
 
 /** The generation sync checks `make check` runs first. */
-export const GENERATION_CHECKS: readonly (readonly string[])[] = [
+const GENERATION_CHECKS: readonly (readonly string[])[] = [
   ['packages/basalt-ui/scripts/gen-oxlint.ts', '--check'],
 ]
 
@@ -91,7 +91,7 @@ const changed = (ports: GuardPorts, from: string, to: string): string[] | null =
   ports.git(['diff', '--name-only', '--no-renames', from, to])?.split('\n').filter(Boolean) ?? null
 
 /** Why a branch behind origin/master may not merge as it is, or null when it may (or is not behind). */
-export function behindMaster(ports: GuardPorts): string | null {
+function behindMaster(ports: GuardPorts): string | null {
   if (ports.git(['rev-parse', '--verify', '-q', 'origin/master']) === null)
     return 'origin/master is unknown: git fetch origin master'
   if (ports.git(['merge-base', '--is-ancestor', 'origin/master', 'HEAD']) !== null) return null

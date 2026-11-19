@@ -70,8 +70,8 @@ export type RouterWeek = {
 export const HOUR_MS = 3_600_000
 export const WEEK_HOURS = 168
 /** Monday 9 November 2026, 00:00 UTC. */
-export const WEEK_START = Date.UTC(2026, 10, 9)
-export const WEEK_END = WEEK_START + WEEK_HOURS * HOUR_MS
+const WEEK_START = Date.UTC(2026, 10, 9)
+const WEEK_END = WEEK_START + WEEK_HOURS * HOUR_MS
 
 const TOTAL = 4_000
 const KIND_SHARE: Readonly<Record<Kind, number>> = {

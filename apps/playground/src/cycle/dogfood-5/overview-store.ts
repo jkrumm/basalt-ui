@@ -17,7 +17,7 @@ import {
   WORK_STATES,
 } from '../dogfood-4/overview-fixtures'
 
-export const SCREENS = ['ready', 'loading', 'empty', 'error', 'stale'] as const
+const SCREENS = ['ready', 'loading', 'empty', 'error', 'stale'] as const
 export type Screen = (typeof SCREENS)[number]
 
 export const overview = defineControls({

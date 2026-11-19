@@ -1,6 +1,6 @@
 /** Monitors fixture (scenario expr-n23): a seeded, hand-written homelab list, the same on every load. */
 
-export const STATUSES = ['up', 'down', 'pending', 'maintenance', 'paused'] as const
+const STATUSES = ['up', 'down', 'pending', 'maintenance', 'paused'] as const
 export type MonitorStatus = (typeof STATUSES)[number]
 
 export type MonitorType = 'http' | 'tcp' | 'ping' | 'dns' | 'container' | 'push' | 'group'

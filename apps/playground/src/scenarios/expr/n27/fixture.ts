@@ -17,7 +17,7 @@ export type Measure = {
 
 /** The ISO week number of the partial week. */
 export const THIS_WEEK = 47
-export const WEEK_COUNT = 12
+const WEEK_COUNT = 12
 export const FIRST_WEEK = THIS_WEEK - WEEK_COUNT + 1
 
 /** mulberry32: a small seeded generator, so a fixture never changes between runs. */

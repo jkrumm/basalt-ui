@@ -25,7 +25,7 @@ function resolveModule(from: string, specifier: string): string | null {
 }
 
 /** Entry file plus its transitive static relative imports; bare (external) imports are not counted. */
-export function moduleClosure(entry: string): string[] {
+function moduleClosure(entry: string): string[] {
   const seen = new Set<string>([entry])
   const queue = [entry]
   for (let file = queue.pop(); file; file = queue.pop()) {

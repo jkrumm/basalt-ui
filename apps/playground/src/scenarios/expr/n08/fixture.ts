@@ -28,7 +28,7 @@ export const TRAIN_SHARE = 0.7
 export const EASY_SHARE = 0.4
 
 /** The fixture names the scenario knows; anything else renders the default log. */
-export const FIXTURES = ['zero', 'extreme'] as const
+const FIXTURES = ['zero', 'extreme'] as const
 export type FixtureName = (typeof FIXTURES)[number]
 
 const isFixture = (name: string | undefined): name is FixtureName =>
@@ -52,7 +52,7 @@ function strongChance(recovery: Recovery, load: Load): number {
   return Math.min(0.97, Math.max(0.05, base - cost * (recovery === 'high' ? 0.4 : 1)))
 }
 
-export function verdictOf(days: number, strong: number): Verdict {
+function verdictOf(days: number, strong: number): Verdict {
   if (days < MIN_DAYS) return 'thin'
   const share = strong / days
   if (share >= TRAIN_SHARE) return 'train'

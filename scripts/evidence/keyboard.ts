@@ -18,7 +18,7 @@ import type { Locator, Page } from 'playwright-core'
 import { TOOLTIP_SELECTOR, VIEWPORT, sortKeys } from './perf-util'
 import type { Lane, LaneResult } from './types'
 
-export const KEY_WALK = [
+const KEY_WALK = [
   'ArrowRight',
   'ArrowRight',
   'ArrowRight',
@@ -29,7 +29,7 @@ export const KEY_WALK = [
 ] as const
 export type Key = (typeof KEY_WALK)[number]
 
-export const KEYBOARD_ROUTE = '/charts'
+const KEYBOARD_ROUTE = '/charts'
 /** The route's view switch has at least the linked / kinds / cursor views; fewer means the
  * discovery selector broke, not that the route shrank. */
 const MIN_VIEWS = 3

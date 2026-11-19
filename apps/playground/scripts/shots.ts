@@ -26,7 +26,7 @@ export type ShotArgs = {
 }
 
 /** The localStorage key `basalt-ui`'s boot script and `setScheme` read (`core/scheme.ts`). */
-export const SCHEME_KEY = 'basalt:scheme'
+const SCHEME_KEY = 'basalt:scheme'
 
 const DESKTOP: ShotViewport = { width: 1800, height: 1200 }
 const PHONE: ShotViewport = { width: 390, height: 844 }

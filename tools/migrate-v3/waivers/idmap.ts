@@ -6,7 +6,7 @@
 export type IdTarget = { readonly ts?: string; readonly css?: string; readonly retired?: true }
 
 /** The 2.x text-guard kinds (`check-theme`, deleted): the one list of them, now that the 2.x plugin that also recognized them is retired. */
-export const GUARD_KINDS = {
+const GUARD_KINDS = {
   'raw-hex': { ts: 'colour-literal', css: 'color-no-hex' },
   'raw-color-fn': { ts: 'colour-literal', css: 'function-disallowed-list' },
   'localstorage-theme': {},
@@ -82,7 +82,7 @@ const PLUGIN_IDS = {
   'deprecated-export': { retired: true },
 } as const satisfies Record<string, IdTarget>
 
-export const ID_MAP: Readonly<Record<string, IdTarget>> = { ...GUARD_KINDS, ...PLUGIN_IDS }
+const ID_MAP: Readonly<Record<string, IdTarget>> = { ...GUARD_KINDS, ...PLUGIN_IDS }
 
 /** The v3 ids a file-level directive may name, and only on a `manifest.deepRender` path (guardrails 6). */
 export const FILE_WAIVABLE: ReadonlySet<string> = new Set([

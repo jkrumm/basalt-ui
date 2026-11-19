@@ -19,7 +19,7 @@ export function codemodHtml(jsx: string, tag: string): string {
 }
 
 /** Tailwind v4 over `html` with the v3 sheet, so a class the theme lacks produces no rule. */
-export function compileV3Css(html: string): string {
+function compileV3Css(html: string): string {
   const dir = mkdtempSync(join(tmpdir(), 'basalt-bench-'))
   try {
     writeFileSync(join(dir, 'page.html'), html)
