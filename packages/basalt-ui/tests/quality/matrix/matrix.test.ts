@@ -15,10 +15,15 @@ import type { KnownFinding } from './known'
 import { bootMatrix } from './harness'
 import { hoverFindings, KNOWN_SHIFTS, REBUILT_PAGES, TRIAL_PAGES } from './hover-shift'
 import { routePaths, scenarioPaths } from './routes'
+import { inShard, parseShard, shardLine } from './shard'
 
 const mode = process.env['BASALT_MATRIX']
 const enabled = mode === 'sampled' || mode === 'full'
 const harness = enabled ? await bootMatrix() : null
+// `BASALT_MATRIX_SHARD=<i>/<n>` runs a share of the cells (CI: one job per share); shard.ts has the rule.
+const shard = parseShard(process.env['BASALT_MATRIX_SHARD'])
+let ran = 0
+let total = 0
 
 type Cell = {
   route: string
@@ -53,13 +58,18 @@ const used = new Set<KnownFinding>()
 
 afterAll(async () => {
   await harness?.close()
+  // `scripts/check-matrix-shards.ts` sums these lines over the shard logs: the shards ran every cell.
+  if (harness !== null) process.stdout.write(`${shardLine(shard, ran, total)}\n`)
 }, 30_000)
 
 describe.skipIf(harness === null)(`quality matrix (${mode})`, () => {
-  test.each(enabled ? cells() : [])(
+  const all = enabled ? cells() : []
+  total += all.length
+  test.each(inShard(all, shard))(
     '$route $width x $height $scheme pseudo=$pseudo',
     async (cell) => {
       if (harness === null) return
+      ran += 1
       const page = await harness.open({
         width: cell.width,
         height: cell.height,
@@ -88,10 +98,13 @@ describe.skipIf(harness === null)(`quality matrix (${mode})`, () => {
 describe.skipIf(harness === null)('hover changes the readout, never the chart or its card', () => {
   const pages = [...new Set([...routePaths(), ...scenarioPaths()])]
   const sizes = [DESKTOP, PHONE] as const
-  test.each(enabled ? pages.flatMap((route) => sizes.map((size) => ({ route, ...size }))) : [])(
+  const all = enabled ? pages.flatMap((route) => sizes.map((size) => ({ route, ...size }))) : []
+  total += all.length
+  test.each(inShard(all, shard))(
     '$route $width x $height',
     async (cell) => {
       if (harness === null) return
+      ran += 1
       const page = await harness.open({ width: cell.width, height: cell.height, pointer: 'fine' })
       try {
         await page.goto(harness.origin + cell.route)
@@ -125,7 +138,8 @@ describe.skipIf(harness === null)('hover changes the readout, never the chart or
 })
 
 // Only the full run visits every cell, so only it can say an entry no longer matches anything.
-describe.skipIf(harness === null || mode !== 'full')('known findings', () => {
+// A shard sees a part of the cells, so the stale check belongs to the whole run.
+describe.skipIf(harness === null || mode !== 'full' || shard !== null)('known findings', () => {
   test('every entry still matches a failing item', () => {
     const stale = KNOWN.filter((entry) => !used.has(entry)).map(
       (e) => `${e.route} ${e.assertion} ${String(e.item)}`,
