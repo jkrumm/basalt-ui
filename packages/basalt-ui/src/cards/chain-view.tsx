@@ -3,7 +3,7 @@ import type { CSSProperties, FocusEvent, KeyboardEvent, PointerEvent, ReactEleme
 import { useEffect, useId, useRef, useState } from 'react'
 import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
-import { lists } from '../core/messages/lists'
+import { chain } from '../core/messages/chain'
 import type { ListFocus, Verdict } from '../core/ports'
 import { parentsOf } from '../common/nest'
 import { Button } from '../ui/button'
@@ -89,7 +89,7 @@ function Face({
 }
 
 function Legend(): ReactElement {
-  const t = useMessages(lists)
+  const t = useMessages(chain)
   return (
     <ul
       data-slot="chain-legend"
@@ -100,7 +100,7 @@ function Legend(): ReactElement {
         <svg viewBox="0 0 24 8" className="h-2 w-6">
           <line x1="0" y1="4" x2="24" y2="4" stroke="var(--basalt-warn)" strokeWidth="1.5" />
         </svg>
-        {t('lists.chainBlocks')}
+        {t('chain.blocks')}
       </li>
       <li className="flex items-center gap-2">
         <svg viewBox="0 0 24 8" className="h-2 w-6">
@@ -114,7 +114,7 @@ function Legend(): ReactElement {
             strokeDasharray="4 3"
           />
         </svg>
-        {t('lists.chainDone')}
+        {t('chain.done')}
       </li>
     </ul>
   )
@@ -187,7 +187,7 @@ export function ChainView<T>({
   onActivate,
   focus,
 }: ChainViewProps<T>): ReactElement {
-  const t = useMessages(lists)
+  const t = useMessages(chain)
   const marker = useId().replace(/[^\w-]/g, '')
   const ids = new Set(nodes.map(getId))
   const inputs = nodes.map((node) => ({
@@ -323,9 +323,7 @@ export function ChainView<T>({
         }
   const waitsOnLine = (id: string): string | undefined => {
     const blockers = blockersOf.get(id) ?? []
-    return blockers.length === 0
-      ? undefined
-      : t('lists.chainWaitsOn', blockers.map(titleOf).join(', '))
+    return blockers.length === 0 ? undefined : t('chain.waitsOn', blockers.map(titleOf).join(', '))
   }
 
   /** `roving`: a node of the graph, whose tab stop is the list when a focus is shared. */
@@ -375,7 +373,7 @@ export function ChainView<T>({
   const edges = geometry.edges.toSorted(
     (a, b) => Number(faces.get(b.from)?.done === true) - Number(faces.get(a.from)?.done === true),
   )
-  const percent = t('lists.chainZoomLevel', view.scale)
+  const percent = t('chain.zoomLevel', view.scale)
 
   return (
     <div
@@ -518,7 +516,7 @@ export function ChainView<T>({
               <div className="h-16">{body(node, id, false)}</div>
               {more.length > 0 && (
                 <span className="truncate pl-3 text-xs text-muted-foreground">
-                  {t('lists.chainAlsoWaitsOn', more.map(titleOf).join(', '))}
+                  {t('chain.alsoWaitsOn', more.map(titleOf).join(', '))}
                 </span>
               )}
             </li>
@@ -530,7 +528,7 @@ export function ChainView<T>({
         <div
           data-slot="chain-controls"
           role="toolbar"
-          aria-label={t('lists.chainControls')}
+          aria-label={t('chain.controls')}
           className="flex items-center gap-1"
         >
           {pinned === undefined ? (
@@ -543,19 +541,19 @@ export function ChainView<T>({
               }}
             >
               {candidate === undefined
-                ? t('lists.chainFocusNone')
-                : t('lists.chainFocus', titleOf(candidate))}
+                ? t('chain.focusNone')
+                : t('chain.focus', titleOf(candidate))}
             </Button>
           ) : (
             <Button size="sm" variant="ghost" onClick={release}>
-              {t('lists.chainShowAll')}
+              {t('chain.showAll')}
             </Button>
           )}
           <Button
             size="sm"
             variant="ghost"
             shape="icon"
-            aria-label={t('lists.chainZoomOut')}
+            aria-label={t('chain.zoomOut')}
             onClick={() => view.zoomBy(1 / ZOOM_STEP)}
           >
             <StepIcon d={STEP_ICON.out} />
@@ -563,7 +561,7 @@ export function ChainView<T>({
           <Button
             size="sm"
             variant="ghost"
-            aria-label={`${t('lists.chainFit')}, ${percent}`}
+            aria-label={`${t('chain.fit')}, ${percent}`}
             className="min-w-12 tabular-nums"
             onClick={view.fit}
           >
@@ -573,7 +571,7 @@ export function ChainView<T>({
             size="sm"
             variant="ghost"
             shape="icon"
-            aria-label={t('lists.chainZoomIn')}
+            aria-label={t('chain.zoomIn')}
             onClick={() => view.zoomBy(ZOOM_STEP)}
           >
             <StepIcon d={STEP_ICON.in} />

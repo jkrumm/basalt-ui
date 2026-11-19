@@ -16,6 +16,8 @@ import { base } from './base'
 import type { BaseMessages } from './base'
 import { cards } from './cards'
 import type { CardsMessages } from './cards'
+import { chain } from './chain'
+import type { ChainMessages } from './chain'
 import { charts } from './charts'
 import type { ChartsMessages } from './charts'
 import { controls } from './controls'
@@ -47,6 +49,7 @@ export type BasaltMessages = SelectMessages &
   DateMessages &
   CardsMessages &
   ListsMessages &
+  ChainMessages &
   KanbanMessages &
   ControlsMessages &
   HomeMessages &
@@ -65,6 +68,7 @@ export const en: BasaltMessages = {
   ...date,
   ...cards,
   ...lists,
+  ...chain,
   ...kanban,
   ...controls,
   ...home,
