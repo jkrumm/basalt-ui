@@ -1,8 +1,16 @@
 /**
- * The hover-shift guard: a hover changes what a chart says, never where it sits. Sweeps the pointer
- * across each chart plot on a page and names every plot whose box moved while the pointer was over
- * it. A move there is the loop owner review 1 saw on n04: a line that opens on hover pushes the plot
- * from under the pointer, focus clears, the line closes, and it starts again.
+ * The hover guard: a hover changes what a chart's readout says, never where the chart sits or what the
+ * rest of its card says. Sweeps the pointer across each chart plot on a page and names every plot that,
+ * while the pointer was over it:
+ *
+ * - moved (owner review 1, n04: a line that opens on hover pushes the plot from under the pointer,
+ *   focus clears, the line closes, and it starts again);
+ * - had its tooltip change side more than once (owner review 2: a tooltip that flips above and below
+ *   the next datum jumps the height of itself for a 10 px pointer move);
+ * - changed any text, or any element's width, in its card outside the tooltip, the plot's svg and the
+ *   reserved readout line (`[data-slot="chart-readout"]`, whose own box keeps its width): owner review
+ *   2 saw the headline figure swap for the hovered hour, a delta badge swap for a status pill and a side
+ *   value change width, so the whole card changed on every hour.
  */
 import type { Page } from 'playwright-core'
 
@@ -15,12 +23,22 @@ export const KNOWN_SHIFTS: Readonly<Record<string, string>> = {
     'the page hand-scrolls its table row with scrollIntoView on focus, which scrolls the shell (Issue 2134)',
 }
 
+/**
+ * Trial builds whose card text follows the focus (a figure fed from `focus.readout`), by route
+ * prefix. They are never hand-finished: `v3-owner-2-rerun` rebuilds them on the contract that keeps
+ * the headline, and their card findings (text, width) are reported but do not fail the page. A plot
+ * that moves or a tooltip that flips still fails them: those are the kit's.
+ */
+export const TRIAL_PAGES: readonly string[] = ['/scenarios/expr-', '/cycle/']
+
 /** The boxes a pointer sweeps: a cartesian chart's root and an answering sparkline's plot. */
 const PLOTS = '[data-basalt-chart], [data-slot="spark-plot"]'
-/** Where across the plot the pointer stops, as a share of its width, at half its height. */
-const STOPS = [0.1, 0.3, 0.5, 0.7, 0.9] as const
+/** Where across the plot the pointer stops, as a share of its width, at half its height: 16 stops, a sweep fine enough to cross every band of a 48-hour chart's six-hour ticks. */
+const STOPS = Array.from({ length: 16 }, (_, i) => 0.03 + (0.94 * i) / 15)
 /** Sub-pixel layout noise stays below this. */
 const TOLERANCE_PX = 0.5
+/** The tooltip's show delay (`TOOLTIP_DELAY.show`, 150 ms) and a frame of air: waited once, at the first stop. */
+const SHOW_WAIT_MS = 250
 /** A page of many small charts is judged on its first ones: the cause is shared, the sweep is not free. */
 const MAX_PLOTS = 8
 
@@ -30,11 +48,74 @@ const frames = (page: Page): Promise<void> =>
       new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done()))),
   )
 
-/** Every plot that moved under the pointer, as `<label>: moved <dx>,<dy> px at <stop>`; empty when none. */
-export async function hoverShift(page: Page): Promise<string[]> {
+/** One element of a card: its tag, its own text and its width. */
+type Item = readonly [tag: string, text: string, width: number]
+/** What a stop sees: the visible tooltip's side (`null` when none shows) and the card's items. */
+type Frame = { side: string | null; items: readonly Item[] }
+
+/** Runs in the page: the plot's card, read as its items in document order, and the tooltip's side. */
+function readFrame(plot: Element): Frame {
+  const card =
+    plot.closest('[data-slot="chart-card"], [data-slot="stat-card"]') ??
+    plot.closest('[data-slot="card"]') ??
+    plot.parentElement ??
+    plot
+  const items: [string, string, number][] = []
+  for (const el of [card, ...card.querySelectorAll('*')]) {
+    if (el.closest('svg, .ts-chart-tooltip') !== null) continue
+    if (el.parentElement?.closest('[data-slot="chart-readout"]')) continue
+    const box = el.getBoundingClientRect()
+    // A visually hidden live region (1 px, clipped) speaks the readout; it is not on screen.
+    if (box.width <= 1 && box.height <= 1 && getComputedStyle(el).position === 'absolute') continue
+    // The readout line's own box is held to its width; its text is the readout's to change.
+    let text = ''
+    if (!el.matches('[data-slot="chart-readout"]'))
+      for (const node of el.childNodes) if (node.nodeType === 3) text += node.textContent ?? ''
+    items.push([el.tagName.toLowerCase(), text.trim(), Math.round(box.width * 10) / 10])
+  }
+  let side: string | null = null
+  for (const tip of document.querySelectorAll<HTMLElement>('.ts-chart-tooltip')) {
+    if (tip.hidden || getComputedStyle(tip).display === 'none') continue
+    if (tip.getBoundingClientRect().width === 0) continue
+    side = tip.dataset['placement'] ?? 'auto'
+  }
+  return { side, items }
+}
+
+const say = (item: Item | undefined): string =>
+  item === undefined ? 'nothing' : `${item[0]}${item[1] === '' ? '' : ` "${item[1].slice(0, 40)}"`}`
+
+/** The first way `now` differs from `rest` outside the readout line, or `null`. */
+function cardChange(rest: readonly Item[], now: readonly Item[]): string | null {
+  if (rest.length !== now.length) {
+    const at = rest.findIndex((item, i) => item[0] !== now[i]?.[0] || item[1] !== now[i]?.[1])
+    const i = at < 0 ? Math.min(rest.length, now.length) : at
+    return `elements changed: ${say(rest[i])} became ${say(now[i])}`
+  }
+  // A text change names the cause; the widths it moves are its effect, so text is read first.
+  for (const [i, was] of rest.entries()) {
+    const is = now[i] as Item
+    if (was[1] !== is[1]) return `text changed: ${say(was)} became "${is[1].slice(0, 40)}"`
+  }
+  for (const [i, was] of rest.entries()) {
+    const is = now[i] as Item
+    if (Math.abs(was[2] - is[2]) > TOLERANCE_PX)
+      return `width changed: ${say(was)} ${was[2]} to ${is[2]} px`
+  }
+  return null
+}
+
+export type HoverFinding = {
+  /** `moved` and `tooltip` are the kit's; `card` is the page's or the card's. */
+  kind: 'moved' | 'tooltip' | 'card'
+  text: string
+}
+
+/** Every finding of a sweep across each plot on the page, as `<label>: <what>`; empty when calm. */
+export async function hoverFindings(page: Page): Promise<HoverFinding[]> {
   const plots = page.locator(PLOTS)
   const count = Math.min(await plots.count(), MAX_PLOTS)
-  const moved: string[] = []
+  const found: HoverFinding[] = []
   for (let i = 0; i < count; i++) {
     const plot = plots.nth(i)
     if (!(await plot.isVisible())) continue
@@ -43,25 +124,48 @@ export async function hoverShift(page: Page): Promise<string[]> {
     await frames(page)
     const rest = await plot.boundingBox()
     if (rest === null || rest.width < 8 || rest.height < 8) continue
-    const label =
+    const label = (
       (await plot.evaluate(
         (el) =>
-          el.closest('[data-slot="chart-card"], [data-slot="stat-card"]')?.querySelector('h2, h3')
-            ?.textContent ?? el.getAttribute('aria-label'),
+          el
+            .closest('[data-slot="chart-card"], [data-slot="stat-card"]')
+            ?.querySelector('h2, h3, p')?.textContent ??
+          el.getAttribute('aria-label') ??
+          el.querySelector('[aria-label]')?.getAttribute('aria-label'),
       )) ?? `plot ${i + 1}`
-    for (const stop of STOPS) {
+    ).trim()
+    const atRest = await plot.evaluate(readFrame)
+    const sides: string[] = []
+    let moved: string | null = null
+    let card: string | null = null
+    for (const [n, stop] of STOPS.entries()) {
       await page.mouse.move(rest.x + rest.width * stop, rest.y + rest.height / 2)
       await frames(page)
+      if (n === 0) await page.waitForTimeout(SHOW_WAIT_MS)
       const now = await plot.boundingBox()
       if (now === null) break
       const dx = now.x - rest.x
       const dy = now.y - rest.y
-      if (Math.abs(dx) > TOLERANCE_PX || Math.abs(dy) > TOLERANCE_PX) {
-        moved.push(`${label.trim()}: moved ${dx.toFixed(1)},${dy.toFixed(1)} px at ${stop}`)
-        break
-      }
+      if (moved === null && (Math.abs(dx) > TOLERANCE_PX || Math.abs(dy) > TOLERANCE_PX))
+        moved = `moved ${dx.toFixed(1)},${dy.toFixed(1)} px at ${stop.toFixed(2)}`
+      const frame = await plot.evaluate(readFrame)
+      if (frame.side !== null && frame.side !== sides.at(-1)) sides.push(frame.side)
+      card ??= cardChange(atRest.items, frame.items)
+      if (card !== null && !card.includes(' at ')) card += ` at ${stop.toFixed(2)}`
     }
+    if (moved !== null) found.push({ kind: 'moved', text: `${label}: ${moved}` })
+    if (sides.length > 2)
+      found.push({
+        kind: 'tooltip',
+        text: `${label}: tooltip changed side ${sides.length - 1} times (${sides.join(' > ')})`,
+      })
+    if (card !== null) found.push({ kind: 'card', text: `${label}: ${card}` })
   }
   await page.mouse.move(0, 0)
-  return moved
+  return found
+}
+
+/** Every plot that moved under the pointer, as `<label>: moved <dx>,<dy> px at <stop>`; empty when none. */
+export async function hoverShift(page: Page): Promise<string[]> {
+  return (await hoverFindings(page)).filter((f) => f.kind === 'moved').map((f) => f.text)
 }
