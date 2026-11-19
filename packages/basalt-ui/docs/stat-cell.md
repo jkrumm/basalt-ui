@@ -10,8 +10,8 @@ slots: [stat-base, stat-caption, stat-cell, stat-chart, stat-empty, stat-foot, s
 # StatCell
 
 One cell of a `StatGroup`, or a lone cell on its own tracks: a caption (icon, label, qualifier,
-definition glyph), the figure with its delta pill and verdict, the delta's base on the line under
-the pill ("vs prior 7 days", from `delta.label`), then the meter, chart, rows and foot line it
+definition glyph), the figure with its verdict, the delta pill on the line under it beside the base
+it names ("vs prior 7 days", from `delta.label`), then the meter, chart, rows and foot line it
 declares. Inside a group its tracks are shared with its neighbours; a track a cell does
 not declare is left empty, and one nobody declares collapses. It owns its height at every phase
 and its loading skeleton draws the declared shape; `chart` is called only in `ready` and `stale`,

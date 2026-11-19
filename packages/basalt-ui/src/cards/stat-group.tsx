@@ -32,7 +32,7 @@ export type StatGroupProps = {
 }
 
 /**
- * Every cell's tracks are one set of rows: ten, in the order caption, figure, the delta's base,
+ * Every cell's tracks are one set of rows: ten, in the order caption, figure, the delta with its base,
  * meter, chart, four rows and a foot line. A cell is `row-span-10` on a subgrid, so a track one cell
  * fills is as tall in all of them and a track nobody fills is 0 px. Each cell is ruled on its left
  * and top and carries its own padding; the grid sits 1 px up and left of the card, which clips the
