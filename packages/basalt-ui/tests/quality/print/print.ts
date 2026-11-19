@@ -18,13 +18,12 @@ import type { PageLike } from '../../../src/testing/quality'
 import { pdfPageCount } from './pdf'
 
 /** A4 with a 10 mm margin, in CSS px (96 dpi): the box the print layout flows into. */
-export const A4_CONTENT = { width: 718, height: 1047 } as const
-export const MAX_PAGES = 60
-export const MIN_INK_CONTRAST = 4.5
+const A4_CONTENT = { width: 718, height: 1047 } as const
+const MAX_PAGES = 60
+const MIN_INK_CONTRAST = 4.5
 
 /** Blocks a page break must not cut: cards, stat cells, chart frames, table rows. */
-export const UNSPLITTABLE =
-  '[data-slot="card"], [data-slot="stat-card"], [data-slot="chart-card"], tr'
+const UNSPLITTABLE = '[data-slot="card"], [data-slot="stat-card"], [data-slot="chart-card"], tr'
 
 export type PrintReport = { pages: number; failures: string[] }
 
@@ -145,7 +144,7 @@ function probe(args: { selector: string; pageHeight: number; minInk: number }): 
 }
 
 /** Prepares `page` (loaded) as the user's print would see it and measures it. */
-export async function measurePrint(page: Page): Promise<PrintReport> {
+async function measurePrint(page: Page): Promise<PrintReport> {
   await page.setViewportSize({ ...A4_CONTENT })
   await page.emulateMedia({ media: 'print' })
   await page.evaluate(() => {
@@ -185,7 +184,7 @@ export async function printRoute(page: Page, origin: string, route: string): Pro
 }
 
 /** Seeded offenders: each must fail its own assertion, and `clean` must pass every one. */
-export const OFFENDERS = [
+const OFFENDERS = [
   { name: 'split-card', fails: /card split: .*straddles/ },
   { name: 'clipped-scrollport', fails: /scrollport clips its content/ },
   { name: 'dark-ink', fails: /ink under 4\.5:1/ },

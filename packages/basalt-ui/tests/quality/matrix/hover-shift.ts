@@ -16,7 +16,7 @@ export const KNOWN_SHIFTS: Readonly<Record<string, string>> = {
 }
 
 /** The boxes a pointer sweeps: a cartesian chart's root and an answering sparkline's plot. */
-export const PLOTS = '[data-basalt-chart], [data-slot="spark-plot"]'
+const PLOTS = '[data-basalt-chart], [data-slot="spark-plot"]'
 /** Where across the plot the pointer stops, as a share of its width, at half its height. */
 const STOPS = [0.1, 0.3, 0.5, 0.7, 0.9] as const
 /** Sub-pixel layout noise stays below this. */

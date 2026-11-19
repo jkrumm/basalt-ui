@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url'
 import { eject } from '../../../src/cli/eject'
 import { seedNames } from '../../../src/cli/merge/seed'
 
-export const FIXTURES = dirname(fileURLToPath(import.meta.url))
+const FIXTURES = dirname(fileURLToPath(import.meta.url))
 export const PKG_ROOT = join(FIXTURES, '../../..')
 const PEERS = [
   'react',
@@ -91,7 +91,7 @@ export function makeConsumer(
   return { dir, pkg }
 }
 
-export function git(dir: string, ...args: string[]): string {
+function git(dir: string, ...args: string[]): string {
   const run = spawnSync(
     'git',
     ['-c', 'user.name=fixture', '-c', 'user.email=fixture@example.com', ...args],

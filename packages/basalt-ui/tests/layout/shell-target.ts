@@ -46,7 +46,7 @@ let repoRoot = ''
 const worktreePath = join(tmpdir(), `basalt-layout-v2-${process.pid}`)
 
 /** Removes the 2.x worktree. Synchronous, idempotent, and safe to call when none exists. */
-export function releaseShellTarget(): void {
+function releaseShellTarget(): void {
   if (worktree === null) return
   const dir = worktree
   worktree = null

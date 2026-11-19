@@ -147,7 +147,7 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
  * (only `import()` reaches it, or the public type that would name it is not typed that way yet).
  * `tolerated`: reached from a subpath that § 1 does not allow it on.
  */
-export const DEFERRED_PEER_GAPS: {
+const DEFERRED_PEER_GAPS: {
   readonly unreached: Readonly<Record<string, readonly string[]>>
   readonly tolerated: Readonly<Record<string, readonly string[]>>
 } = {
@@ -189,7 +189,7 @@ function resolveRelative(from: string, spec: string, exts: readonly string[]): s
  * deliberately NOT followed — that is what makes a peer optional) and named by the `.d.ts` graph
  * rooted at `entryDts` (static and `import('…')` type references both count: a public type names it).
  */
-export function reachFromEntry(entryJs: string, entryDts: string): Reach {
+function reachFromEntry(entryJs: string, entryDts: string): Reach {
   const walk = (entry: string, dynamic: boolean, exts: readonly string[], into: Set<string>) => {
     const seen = new Set<string>()
     const stack = existsSync(entry) ? [entry] : []

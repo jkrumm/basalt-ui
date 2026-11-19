@@ -11,7 +11,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ProfilerOnRenderCallback } from 'react'
 
-export const BUDGET_FILE = join(import.meta.dirname, 'budget.json')
+const BUDGET_FILE = join(import.meta.dirname, 'budget.json')
 
 export type Budget = Record<string, { measured: number; ceiling: number }>
 

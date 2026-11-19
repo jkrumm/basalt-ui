@@ -17,7 +17,7 @@ export const DESCRIPTORS = ['iPhone 15', 'Desktop Safari'] as const
 export type Descriptor = (typeof DESCRIPTORS)[number]
 
 /** iOS Safari zooms the page when a focused field computes under 16px. */
-export const INPUT_FLOOR_PX = 16
+const INPUT_FLOOR_PX = 16
 
 export type Check = {
   name: string
@@ -55,7 +55,7 @@ async function inputFloor(page: Page, descriptor: Descriptor): Promise<void> {
 }
 
 /** The layout subset plus axe: the same functions the Chromium matrix runs, on the other engine. */
-export const CHECKS: readonly Check[] = [
+const CHECKS: readonly Check[] = [
   { name: 'axe', run: async (page) => void (await quality.axe(page as PageLike)) },
   { name: 'overflow', run: (page) => quality.overflow(page as PageLike) },
   { name: 'textSpacing', run: (page) => quality.textSpacing(page as PageLike) },
@@ -113,7 +113,7 @@ export async function webkitCell(
 }
 
 /** Seeded offenders: each must fail its own check on the phone, and `clean` must pass them all. */
-export const OFFENDERS = [
+const OFFENDERS = [
   { name: 'overflow', check: 'overflow', fails: /document scrollWidth 20\d\d/ },
   { name: 'axe-image-alt', check: 'axe', fails: /image-alt \(critical\)/ },
   { name: 'input-floor', check: 'inputFloor', fails: /font-size 12px/ },

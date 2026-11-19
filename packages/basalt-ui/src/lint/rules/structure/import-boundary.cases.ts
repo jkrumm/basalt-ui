@@ -66,7 +66,7 @@ export type FixtureCase = {
 type Pending = { head: RegExpMatchArray; lines: string[]; filename?: string; ts?: true }
 
 /** Split one fixture file into its cases; text before the first marker is a header. */
-export function parseFixture(text: string): FixtureCase[] {
+function parseFixture(text: string): FixtureCase[] {
   const cases: FixtureCase[] = []
   let current: Pending | undefined
   const flush = (): void => {

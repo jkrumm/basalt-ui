@@ -20,7 +20,7 @@ import { parseShards, readShards } from './export-surface-shards.mjs'
 const defaultRoot = join(import.meta.dirname, '..', '..', '..')
 const root = process.env.RELEASE_MIGRATING_ROOT ?? defaultRoot
 
-export const migratingPath = join(root, 'packages/basalt-ui/MIGRATING.md')
+const migratingPath = join(root, 'packages/basalt-ui/MIGRATING.md')
 
 const VERSION_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/
 
@@ -45,10 +45,10 @@ export const AREAS = [
   'removed-2x',
 ] as const
 
-export const PROFILES = ['tokens', 'bridge', 'parts', 'app'] as const
-export const FROM_RANGE = '>=1.40 <3'
+const PROFILES = ['tokens', 'bridge', 'parts', 'app'] as const
+const FROM_RANGE = '>=1.40 <3'
 /** The row kinds. A kind outside this list is a typo, not a new class: add it here with its meaning. */
-export const KINDS = [
+const KINDS = [
   'codemod',
   'flag',
   'kept',
@@ -357,14 +357,14 @@ export function renderMigrating(merged: Content, digest: string): string {
 const specifierOf = (key: string): string =>
   key === '.' ? 'basalt-ui' : `basalt-ui/${key.slice(2)}`
 
-export function surfaceIds(surface: Surface): string[] {
+function surfaceIds(surface: Surface): string[] {
   return Object.entries(surface).flatMap(([key, names]) =>
     names.map((name) => `${specifierOf(key)}#${name}`),
   )
 }
 
 /** Every quoted custom-property name of a name list, under whichever prefix the tag shipped. */
-export function parseBasaltNames(source: string): string[] {
+function parseBasaltNames(source: string): string[] {
   return [...source.matchAll(/'(--[a-z]+-[A-Za-z0-9-]+)'/g)].map((m) => m[1] as string)
 }
 
@@ -418,7 +418,7 @@ function git(rootDir: string, args: string[]): string {
 }
 
 /** Highest stable `v*` tag other than `v<version>`, or undefined when none resolves. */
-export function previousTag(rootDir: string, version: string): string | undefined {
+function previousTag(rootDir: string, version: string): string | undefined {
   let listing: string
   try {
     listing = git(rootDir, ['tag', '--list', 'v*', '--sort=-v:refname'])

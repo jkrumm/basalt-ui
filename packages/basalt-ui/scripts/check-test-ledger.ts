@@ -25,11 +25,11 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-export const DISPOSITIONS = ['port', 'audit', 'retire', 'swap', 'retarget', 'rewrite'] as const
+const DISPOSITIONS = ['port', 'audit', 'retire', 'swap', 'retarget', 'rewrite'] as const
 export type Disposition = (typeof DISPOSITIONS)[number]
 
 /** Section 8 classes: `ab` portable, `c` provider swap, `def` rewrite, `layout` the layout suite. */
-export const CLASSES = ['ab', 'c', 'def', 'layout'] as const
+const CLASSES = ['ab', 'c', 'def', 'layout'] as const
 export type TestClass = (typeof CLASSES)[number]
 
 export type LedgerRow = {

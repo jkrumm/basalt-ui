@@ -21,7 +21,7 @@ export type Suite = {
 }
 
 /** One suite per rule: every form's fixture blocks against the whole rule. */
-export function suiteFor(table: RuleTable, id: string): Suite {
+function suiteFor(table: RuleTable, id: string): Suite {
   const entry = table[id]
   if (!entry) throw new Error(`${id}: not in the table`)
   const suite: Suite = { name: id, rule: buildRule(id, entry), cases: { valid: [], invalid: [] } }
