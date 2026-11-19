@@ -75,6 +75,7 @@ export const validSeriesBars: ReactElement = (
     title="Requests"
     items={items}
     focusSeries={{ focus: series, key: (row) => row.label }}
+    mono
   />
 )
 
