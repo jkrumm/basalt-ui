@@ -32,7 +32,7 @@ function Stack({ children }: { children: ReactNode }): ReactElement {
   return <div className="flex flex-col gap-6">{children}</div>
 }
 
-/** A save that takes a second: the button holds focus and reads busy while it runs. */
+/** A save that takes 1.5 seconds: the button reads busy while it runs. */
 function LiveLoading(): ReactElement {
   const [saving, setSaving] = useState(false)
   return (
@@ -53,8 +53,7 @@ function LiveLoading(): ReactElement {
 
 /**
  * Buttons: four variants in two sizes, an icon before or after the label or alone, disabled and
- * loading, and the menu button the kit composes from `Menu` and `Button`. No split button ships
- * (docs/v3/verdicts/showcase-gaps.md, Forms).
+ * loading, and the menu button the kit composes from `Menu` and `Button`. The kit ships no split button.
  */
 function ButtonsRoute(): ReactElement {
   return (
@@ -109,7 +108,7 @@ function ButtonsRoute(): ReactElement {
               <Arrow />
             </Button>
           </Row>
-          <Row caption="Icon alone, named by aria-label">
+          <Row caption="Icon alone, named by aria-label: medium, then small">
             {VARIANTS.map((variant) => (
               <Button
                 key={variant}
@@ -120,12 +119,23 @@ function ButtonsRoute(): ReactElement {
                 {variant === 'danger' ? <Trash /> : <Plus />}
               </Button>
             ))}
+            {VARIANTS.map((variant) => (
+              <Button
+                key={`${variant}-sm`}
+                variant={variant}
+                size="sm"
+                shape="icon"
+                aria-label={`${LABEL[variant]} (small icon)`}
+              >
+                {variant === 'danger' ? <Trash /> : <Plus />}
+              </Button>
+            ))}
           </Row>
         </Stack>
       </Section>
       <Section
         title="Disabled and loading"
-        summary="Loading keeps focus on the button and reads busy."
+        summary="Loading disables the button, sets aria-busy and draws a spinner before the label."
       >
         <Stack>
           <Row caption="Disabled">
@@ -142,7 +152,7 @@ function ButtonsRoute(): ReactElement {
               </Button>
             ))}
           </Row>
-          <Row caption="Live: click to run a one-second save">
+          <Row caption="Live: click to start a 1.5-second save">
             <LiveLoading />
           </Row>
         </Stack>

@@ -1,5 +1,5 @@
 import { revalidateLogic, useForm } from '@tanstack/react-form'
-import { FormField, FormFooter } from 'basalt-ui/controls'
+import { FormField, FormFooter, Stepper } from 'basalt-ui/controls'
 import { Facts, Section } from 'basalt-ui/page'
 import { Button } from 'basalt-ui/ui/button'
 import { Checkbox } from 'basalt-ui/ui/checkbox'
@@ -7,16 +7,19 @@ import { DateRangePicker } from 'basalt-ui/ui/date-picker'
 import type { CalendarRange } from 'basalt-ui/ui/date-picker'
 import { Fieldset } from 'basalt-ui/ui/field'
 import { Input } from 'basalt-ui/ui/input'
-import { Progress } from 'basalt-ui/ui/progress'
-import { Radio, RadioGroup } from 'basalt-ui/ui/radio-group'
+import { RadioGroup } from 'basalt-ui/ui/radio-group'
 import { Select } from 'basalt-ui/ui/select'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { z } from 'zod'
-import { ENVIRONMENTS, STRATEGIES, STRATEGY_HINT, TEAMS, later } from './-specimen'
+import { ENVIRONMENTS, STRATEGIES, TEAMS, later } from './-specimen'
 import type { Strategy } from './-specimen'
 
-const STEPS = ['Basics', 'Schedule', 'Review'] as const
+const STEPS = [
+  { label: 'Basics', description: 'Name and owner' },
+  { label: 'Schedule', description: 'Window and rollout' },
+  { label: 'Review', description: 'Check and create' },
+] as const
 const LAST = STEPS.length - 1
 
 type Values = {
@@ -48,8 +51,8 @@ const labelOf = (list: readonly { value: string; label: string }[], value: strin
   list.find((o) => o.value === value)?.label ?? 'None'
 
 /**
- * A multi-step flow from what ships: one TanStack form, one step mounted at a time, a `Progress` bar
- * and the step's name in the section title as the stepper, and `FormFooter` as Back and Continue.
+ * A multi-step flow: one TanStack form, one step mounted at a time, a `Stepper` over it (a done step
+ * is a button back to it) and `FormFooter` as Back and Continue.
  * Continue submits the form: the mounted step's fields validate, and the submit meta says whether
  * this is the last step.
  */
@@ -92,9 +95,11 @@ export function StepsForm(): ReactElement {
       </Section>
     )
   }
-  const title = `Step ${String(step + 1)} of ${String(STEPS.length)}: ${STEPS[step] ?? ''}`
   return (
-    <Section title={title} summary="One TanStack form across the steps, bound through FormField.">
+    <Section
+      title="New environment"
+      summary="One TanStack form across the steps, bound through FormField."
+    >
       <form
         noValidate
         className="flex max-w-xl flex-col gap-4"
@@ -103,7 +108,7 @@ export function StepsForm(): ReactElement {
           void form.handleSubmit({ step })
         }}
       >
-        <Progress aria-label={title} value={((step + 1) / STEPS.length) * 100} tone="accent" />
+        <Stepper steps={STEPS} current={step} onStepChange={setStep} />
         <Fieldset>
           {step === 0 && (
             <>
@@ -140,21 +145,14 @@ export function StepsForm(): ReactElement {
               <form.Field name="window" validators={{ onDynamic: PICKED }}>
                 {(f) => (
                   <FormField label="First deploy window" required field={f}>
-                    <DateRangePicker aria-label="First deploy window" onChange={f.handleChange} />
+                    <DateRangePicker aria-label="First deploy window" />
                   </FormField>
                 )}
               </form.Field>
               <form.Field name="strategy">
                 {(f) => (
-                  <FormField label="Rollout" description={STRATEGY_HINT} field={f}>
-                    <RadioGroup>
-                      {STRATEGIES.map((s) => (
-                        <label key={s.value} className="flex items-center gap-2 text-sm">
-                          <Radio value={s.value} />
-                          {s.label}
-                        </label>
-                      ))}
-                    </RadioGroup>
+                  <FormField label="Rollout" field={f}>
+                    <RadioGroup options={STRATEGIES} />
                   </FormField>
                 )}
               </form.Field>
