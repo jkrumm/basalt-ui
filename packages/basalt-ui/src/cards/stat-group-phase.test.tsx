@@ -241,11 +241,12 @@ describe('DataPanel phase matrix', () => {
     }
   })
 
-  test('the body slot is called only in ready and stale', () => {
+  test('the body slot is called in ready, stale, empty and error, never in loading or offline', () => {
     for (const probe of PHASES) {
       const body = mock(() => <p>rows</p>)
       render(panel(probe, body))
-      expect(body.mock.calls.length, probe).toBe(probe === 'ready' || probe === 'stale' ? 1 : 0)
+      const called = ['ready', 'stale', 'empty', 'error'].includes(probe) ? 1 : 0
+      expect(body.mock.calls.length, probe).toBe(called)
       cleanup()
     }
   })

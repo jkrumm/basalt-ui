@@ -3,15 +3,15 @@
  * CSS container queries in `../table.css`; this file only turns the plan and two props into the
  * attributes that CSS reads, from props alone, so the server HTML already carries the right tier.
  *
- * `data-below` is the inline size under which the table stops being a table: `480` or `800` (the
- * plan's `reducedFrom`, raised by `cardsBelow: 'wide'`) or `always`.
+ * `data-below` is the inline size under which the table stops being a table: `480`, `720` or `800` (the
+ * plan's `reducedFrom`, `800` raised by `cardsBelow: 'wide'`) or `always`.
  */
 import type { CSSProperties, FocusEvent } from 'react'
 import type { TableModel } from '../use-data-table'
 
 export type TierAttributes = {
   'data-phone': 'cards' | 'scroll'
-  'data-below': '480' | '800' | 'always'
+  'data-below': '480' | '720' | '800' | 'always'
 }
 
 export function tierAttributesOf<T>(model: TableModel<T>): TierAttributes {

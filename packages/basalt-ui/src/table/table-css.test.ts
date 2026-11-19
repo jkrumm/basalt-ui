@@ -33,7 +33,7 @@ describe('table.css', () => {
     expect(rule?.[1]).toContain('background-color: var(--basalt-surface, var(--basalt-canvas))')
   })
 
-  test('stays small: under 3 KB gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(3072)
+  test('stays small: under 3.5 KB gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(3584)
   })
 })

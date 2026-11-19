@@ -63,11 +63,16 @@ beforeAll(async () => {
     await Promise.all(build.outputs.filter((o) => o.path.endsWith('.css')).map((o) => o.text()))
   ).join('\n')
 
+  const tiers = readFileSync(
+    join(import.meta.dirname, '..', '..', 'src', 'table', 'table.css'),
+    'utf8',
+  )
+
   documentPath = serveDocument(
     `<!doctype html><html lang="en"><head><meta charset="utf-8" />` +
       `<meta name="viewport" content="width=device-width, initial-scale=1" />` +
       `<title>charts-expr6-contract</title><style>${readFileSync(cssOut, 'utf8')}</style>` +
-      `<style>${moduleCss}</style></head>` +
+      `<style>${tiers}</style><style>${moduleCss}</style></head>` +
       `<body><div id="root"></div><script type="module">${inlineScript(js)}</script></body></html>`,
   )
 })

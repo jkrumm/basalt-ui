@@ -4,7 +4,7 @@ use when: 'a page needs the card frame around a table, a row list or a board, wi
 never when: 'the body is a chart (use a chart card) or a single figure (use a stat card or a stat cell)'
 subpath: basalt-ui/cards
 peers: ['@base-ui/react']
-slots: [data-panel, data-panel-toolbar]
+slots: [data-panel, data-panel-rows, data-panel-toolbar]
 ---
 
 # DataPanel
@@ -12,7 +12,9 @@ slots: [data-panel, data-panel-toolbar]
 The frame for a body that is not a chart: the same header and phase handling as the other cards,
 around a table, a list or a board. The body is one box slot at a fixed height, declared by the
 required `bodySize`, so a loading, empty or error panel is as tall as a ready one and
-the body is called only in `ready` and `stale`. A `{ rows }` body whose table rows run past
+the body is called in `ready` and `stale`; in `empty` and `error` it is called too, so a table in it
+keeps its column header row and draws the arm under it (a body that draws no table stays hidden
+there and the panel draws its own arm). A `{ rows }` body whose table rows run past
 the declared height shows whole rows: the box is cut after the last row that fits, and the
 panel keeps that height through the other phases. The box clips with `overflow: clip`, never
 `hidden`, so a table head that sticks to the page keeps sticking.

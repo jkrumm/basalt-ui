@@ -90,16 +90,23 @@ async function open(viewport: Viewport, testid: string): Promise<LayoutPage> {
 
 layout('table states and phone cards', () => {
   for (const kind of ['empty', 'error'] as const) {
-    test(`${kind}: the header row spans the table and no header is cut at 1800`, async () => {
+    test(`${kind}: the head row spans the table, past the last column into the filler, and no header is cut at 1800`, async () => {
       const page = await open(DESKTOP_1800, `ts-${kind}`)
       const probe = await page.raw.evaluate((testid) => {
         const root = document.querySelector<HTMLElement>(`[data-testid="${testid}"]`)!
         const table = root.querySelector<HTMLElement>('[data-slot="table"]')!
+        const row = root.querySelector<HTMLElement>('thead tr')!
         const heads = [...root.querySelectorAll<HTMLElement>('thead th')]
         const last = heads[heads.length - 1]!.getBoundingClientRect()
+        const tableBox = table.getBoundingClientRect()
+        const filler = getComputedStyle(row, '::after')
         return {
-          width: table.getBoundingClientRect().width,
-          right: last.right - table.getBoundingClientRect().left,
+          width: tableBox.width,
+          rowWidth: row.getBoundingClientRect().width,
+          lastRight: last.right - tableBox.left,
+          filled: root.querySelector('[data-slot="table-root"]')!.hasAttribute('data-fill'),
+          fillerDisplay: filler.display,
+          fillerSurface: filler.backgroundColor,
           cut: heads.map((th) => {
             const label = th.querySelector<HTMLElement>('.truncate, span')!
             return label.scrollWidth - label.clientWidth
@@ -107,7 +114,16 @@ layout('table states and phone cards', () => {
         }
       }, `ts-${kind}`)
       expect(probe.width).toBeGreaterThan(1000)
-      expect(Math.abs(probe.right - probe.width)).toBeLessThanOrEqual(2)
+      // The head row is painted over the whole table: the last header ends at the table edge, or the
+      // filler cell that closes the row (head surface and hairline) takes what the title column left.
+      expect(Math.abs(probe.rowWidth - probe.width)).toBeLessThanOrEqual(2)
+      if (probe.filled) {
+        expect(probe.fillerDisplay).toBe('table-cell')
+        expect(probe.fillerSurface).not.toBe('rgba(0, 0, 0, 0)')
+        expect(probe.lastRight).toBeLessThanOrEqual(probe.width + 2)
+      } else {
+        expect(Math.abs(probe.lastRight - probe.width)).toBeLessThanOrEqual(2)
+      }
       for (const cut of probe.cut) expect(cut).toBeLessThanOrEqual(0)
     })
   }

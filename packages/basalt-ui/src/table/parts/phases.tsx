@@ -8,6 +8,7 @@
 import { useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { HostTitleContext } from '../../core/could-not-load'
+import type { FrameArm } from '../../core/frame-arm'
 import { useMessages } from '../../core/messages/use-messages'
 import { OfflineLine } from '../../core/offline-line'
 import { table } from '../../core/messages/table'
@@ -36,11 +37,17 @@ export function barClass(kind: string): string {
   return BAR[kind] ?? 'w-12'
 }
 
-/** Columns the phase rows span: every drawn column plus the tick column. */
+/**
+ * Columns the phase rows span: every column the narrowest table tier draws, plus the tick column. A
+ * priority 3 column is `display: none` below its tier and so is no column of the grid there; a cell
+ * spanning past the real columns opens phantom auto columns that take width from the flexible one
+ * and move the head. A wider tier leaves the priority 3 columns past the row's end, empty.
+ */
 function span<T>(model: TableModel<T>): number {
-  return (
-    visibleColumns(model.specs, model.plan.columns).length + (model.selection === undefined ? 0 : 1)
+  const narrow = visibleColumns(model.specs, model.plan.columns).filter(
+    ({ planned }) => planned.priority !== 3,
   )
+  return narrow.length + (model.selection === undefined ? 0 : 1)
 }
 
 export function LoadingRows<T>({ model }: { model: TableModel<T> }): ReactElement {
@@ -78,10 +85,13 @@ export function LoadingRows<T>({ model }: { model: TableModel<T> }): ReactElemen
 function MessageRow<T>({
   model,
   slot,
+  fit,
   children,
 }: {
   model: TableModel<T>
   slot: 'table-error' | 'table-empty' | 'table-offline'
+  /** A frame's body height: the row fills what the head leaves of it, instead of its own 96 px. */
+  fit?: number | undefined
   children: ReactNode
 }): ReactElement {
   return (
@@ -90,6 +100,11 @@ function MessageRow<T>({
         role="cell"
         aria-colindex={1}
         colSpan={span(model)}
+        style={
+          fit === undefined
+            ? undefined
+            : { height: `calc(${fit}px - var(--table-row-h, var(--basalt-row-h)))` }
+        }
         className="h-24 text-center whitespace-normal text-muted-foreground"
       >
         <div
@@ -108,11 +123,13 @@ export function ErrorRow<T>({
   model,
   phase,
   retry,
+  fit,
 }: {
   model: TableModel<T>
   phase?: Extract<ResolvedPhase, { tag: 'error' }>
   /** A caught render error resets through here when the phase has no retry of its own. */
   retry?: () => void
+  fit?: number
 }): ReactElement {
   const t = useMessages(table)
   const run = phase?.retry ?? retry
@@ -127,7 +144,7 @@ export function ErrorRow<T>({
           ? t('table.errorNamed', name)
           : t('table.error')
   return (
-    <MessageRow model={model} slot="table-error">
+    <MessageRow model={model} slot="table-error" fit={fit}>
       <span className="text-foreground">{text}</span>
       {phase?.message !== undefined && phase.kind === undefined && <span>{phase.message}</span>}
       {run !== undefined && (
@@ -153,15 +170,17 @@ export function EmptyRow<T>({
   cause,
   action,
   reset,
+  fit,
 }: {
   model: TableModel<T>
   cause: string
   action?: CardAction
   reset?: () => void
+  fit?: number
 }): ReactElement {
   const t = useMessages(table)
   return (
-    <MessageRow model={model} slot="table-empty">
+    <MessageRow model={model} slot="table-empty" fit={fit}>
       <span>{cause}</span>
       {reset !== undefined && (
         <Button size="sm" onClick={reset}>
@@ -183,5 +202,26 @@ export function EmptyRow<T>({
           </Button>
         ))}
     </MessageRow>
+  )
+}
+
+/** The arm a frame hands its table (`core/frame-arm`): the same error or empty row the table draws for itself. */
+export function FrameArmRow<T>({
+  model,
+  frame,
+}: {
+  model: TableModel<T>
+  frame: FrameArm
+}): ReactElement {
+  const { arm, height } = frame
+  if (arm.tag === 'error') return <ErrorRow model={model} phase={arm} fit={height} />
+  return (
+    <EmptyRow
+      model={model}
+      cause={arm.empty.cause}
+      fit={height}
+      {...(arm.empty.action !== undefined && { action: arm.empty.action })}
+      {...(arm.empty.filtered !== undefined && { reset: arm.empty.filtered.reset })}
+    />
   )
 }

@@ -77,7 +77,7 @@ export function CellFilter<T>({
         data-cell-filter=""
         aria-label={t('table.cellFilter', spec.header, value)}
         aria-pressed={on}
-        className="max-w-full min-w-0 truncate rounded-chip text-start hover:underline aria-pressed:font-medium [[data-slot='table-root'][data-below='480'][data-phone='cards']_&]:@max-[479.9px]/table:hidden [[data-slot='table-root'][data-below='800'][data-phone='cards']_&]:@max-[799.9px]/table:hidden [[data-slot='table-root'][data-below='always'][data-phone='cards']_&]:hidden"
+        className="max-w-full min-w-0 truncate rounded-chip text-start hover:underline aria-pressed:font-medium [[data-slot='table-root'][data-below='480'][data-phone='cards']_&]:@max-[479.9px]/table:hidden [[data-slot='table-root'][data-below='720'][data-phone='cards']_&]:@max-[719.9px]/table:hidden [[data-slot='table-root'][data-below='800'][data-phone='cards']_&]:@max-[799.9px]/table:hidden [[data-slot='table-root'][data-below='always'][data-phone='cards']_&]:hidden"
         onClick={(event) => {
           event.stopPropagation()
           toggle()
@@ -87,7 +87,7 @@ export function CellFilter<T>({
       </Pressable>
       <span
         data-slot="table-cell-plain"
-        className="hidden [[data-slot='table-root'][data-below='480'][data-phone='cards']_&]:@max-[479.9px]/table:inline [[data-slot='table-root'][data-below='800'][data-phone='cards']_&]:@max-[799.9px]/table:inline [[data-slot='table-root'][data-below='always'][data-phone='cards']_&]:inline"
+        className="hidden [[data-slot='table-root'][data-below='480'][data-phone='cards']_&]:@max-[479.9px]/table:inline [[data-slot='table-root'][data-below='720'][data-phone='cards']_&]:@max-[719.9px]/table:inline [[data-slot='table-root'][data-below='800'][data-phone='cards']_&]:@max-[799.9px]/table:inline [[data-slot='table-root'][data-below='always'][data-phone='cards']_&]:inline"
       >
         {content}
       </span>
