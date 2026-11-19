@@ -73,11 +73,9 @@
   [data-slot='table-row'][data-selected] {
     background-color: var(--basalt-selected);
   }
-  /* a nested row's lead steps in by its level (`--table-level`, 1 for a root) */
   [data-slot='table-tree-lead'] {
     padding-inline-start: calc(var(--spacing) * 5 * (var(--table-level, 1) - 1));
   }
-  /* a nested row drawn only because a row below it matched the filters reads as the path, not a match */
   [data-slot='table-row'][data-context] > [data-slot='table-cell'] {
     color: var(--basalt-ink-muted);
   }
@@ -183,7 +181,6 @@
     [data-slot='table-root'][data-below='480'][data-phone='cards'] colgroup {
       display: none;
     }
-    /* a nested card steps in by its level; its title keeps the chevron, not the table's indent */
     [data-slot='table-root'][data-below='480'][data-phone='cards']
       [data-slot='table-row'][data-level] {
       padding-inline-start: calc(var(--spacing) * (4 + 4 * (var(--table-level, 1) - 1)));
