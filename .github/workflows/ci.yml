@@ -160,7 +160,7 @@ jobs:
         run: bun run test:layout:harness
 
   # What no other job runs: `make check CI_SPLIT=1`, which is `make ci-gate` (generated-file gates, the literal, recipe, README and playground-lint
-  # checks, the quality matrix, the guard-completeness gate and the test ledger). Every other step of `make check`
+  # checks, the guard-completeness gate and the test ledger). Every other step of `make check`
   # runs in `checks`, `unit` or a `layout` shard, so the whole of `check` runs once per head. There is no `factory`
   # on a hosted runner, so the slot wrapper is bare.
   gate:
@@ -184,11 +184,39 @@ jobs:
       - name: Gate steps no other job runs (make check CI_SPLIT=1)
         run: make check CI_SPLIT=1
 
+  # The quality matrix (sampled, every playground route in real browser geometry): the longest step of the old single gate,
+  # so it runs beside it. It reads dist and the playground build, as `make check` does, and `make quality-matrix` installs
+  # the headless shell itself (a no-op on a cache hit). There is no `factory` on a hosted runner, so the slot wrapper is bare.
+  quality-matrix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build package
+        run: bun --filter basalt-ui build
+
+      - name: Build playground (the matrix serves this build)
+        run: bun --filter @basalt-ui/playground build
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-shell-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      - name: Quality matrix (make quality-matrix, sampled)
+        run: make quality-matrix
+
   # The one result: needs every job above and fails unless each succeeded (a skipped or cancelled need is a
   # failure too), so a green ci.yml run still means everything passed.
   ci:
     if: always()
-    needs: [checks, unit, layout, gate]
+    needs: [checks, unit, layout, gate, quality-matrix]
     runs-on: ubuntu-latest
 
     steps:
@@ -214,10 +242,10 @@ jobs:
         run: bun scripts/check-layout-shards.ts layout-logs --shards 4
 
       - name: Fail unless every job succeeded
-        if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success'
+        if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success' || needs.quality-matrix.result != 'success'
         run: |
-          echo "checks=${{ needs.checks.result }} unit=${{ needs.unit.result }} layout=${{ needs.layout.result }} gate=${{ needs.gate.result }}"
+          echo "checks=${{ needs.checks.result }} unit=${{ needs.unit.result }} layout=${{ needs.layout.result }} gate=${{ needs.gate.result }} quality-matrix=${{ needs.quality-matrix.result }}"
           exit 1
 
       - name: Every job succeeded
-        run: echo "checks, unit, all layout shards and the gate passed"
+        run: echo "checks, unit, all layout shards, the gate and the quality matrix passed"
