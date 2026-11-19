@@ -93,6 +93,24 @@ function measure(text: string, size: number, weight: LabelWeight): number {
   return em * size
 }
 
+const warnedDrops = new Set<string>()
+
+/** Dev only: a label `place` dropped is named once, with the frame that had no room for it. */
+function warnDropped(
+  dropped: readonly ChartLabel[],
+  frame: { width: number; height: number },
+): void {
+  if (process.env.NODE_ENV === 'production' || dropped.length === 0) return
+  const keys = dropped.map((label) => label.key).join(', ')
+  const note = `${keys}@${Math.round(frame.width)}x${Math.round(frame.height)}`
+  if (warnedDrops.has(note)) return
+  warnedDrops.add(note)
+  // oxlint-disable-next-line no-console -- the dev-only warning is the whole point of this function
+  console.warn(
+    `basalt-ui/charts: chartLabels.place dropped ${dropped.length} label(s) (${keys}): none of the eight spots clears the frame (${Math.round(frame.width)} x ${Math.round(frame.height)} px), the placed labels and the larger obstacles. Give them more room, or drop them on purpose.`,
+  )
+}
+
 /**
  * Label measuring and direct-label placement for marks a page draws itself (custom
  * `CartesianChart` marks, a hand-built SVG).
@@ -144,6 +162,10 @@ export const chartLabels = {
    * slides along that edge to stay in (a centred spot sideways, a side spot up or down by at most
    * half its height), so a short label on a point at the plot's edge still lands beside it, whole.
    *
+   * An obstacle no taller or wider than a label line is a point mark (a dot): in a crowded cloud a
+   * label lands on the spot that meets the fewest of them, beside its anchor, instead of dropping;
+   * a label no spot can hold is `dropped`, and a dev build warns once, naming its key and the frame.
+   *
    * Called from `CartesianChart.custom`'s `build`, it also keeps clear of what the host drew under
    * the marks, with no option to pass: the zone and rule captions, the end labels, the line paths
    * and the bodies of the bars (`frame` is the plot, as `ChartPlot.plotWidth` and `plotHeight`).
@@ -153,7 +175,13 @@ export const chartLabels = {
     frame: { width: number; height: number },
     options: { gap?: number; obstacles?: readonly LabelBox[] } = {},
   ): { placed: PlacedLabel<K>[]; dropped: ChartLabel<K>[] } {
-    return placeWith(measure, labels, frame, { ...options, size: DEFAULT_SIZE })
+    const result = placeWith(measure, labels, frame, {
+      ...options,
+      size: DEFAULT_SIZE,
+      pointMarks: true,
+    })
+    warnDropped(result.dropped, frame)
+    return result
   },
 
   /**
