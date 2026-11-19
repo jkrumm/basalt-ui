@@ -170,6 +170,15 @@ describe('RowList focus', () => {
     expect(getByTestId('index').textContent).toBe('null')
   })
 
+  test("a row's pointerover alone focuses it, as a pointer arriving from a removed chart node", () => {
+    const { container, getByTestId } = render(<Linked items={N04} />)
+    const rows = container.querySelectorAll('[data-slot="row-list-row"]')
+    act(() => {
+      fireEvent.pointerOver(rows[1]!, { relatedTarget: container.querySelector('ul')! })
+    })
+    expect(getByTestId('index').textContent).toBe('1')
+  })
+
   test('the list is one tab stop that steps the shared focus with the arrow keys', () => {
     const { container, getByTestId } = render(<Linked items={N04} />)
     const list = container.querySelector('ul')!
