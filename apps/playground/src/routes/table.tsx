@@ -4,13 +4,101 @@ import { filterSlot, spec } from 'basalt-ui/controls'
 import { Facts, Page, Section } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
 import { col, DataTable, TableToolbar, tableCodec, useDataTable } from 'basalt-ui/table'
-import type { DetailEntry, DetailHost } from 'basalt-ui/core/ports'
+import type { DetailEntry, DetailHost, IconComponent } from 'basalt-ui/core/ports'
 import { DateRangePicker } from 'basalt-ui/ui/date-picker'
 import { Progress } from 'basalt-ui/ui/progress'
 import { Sheet, SheetContent } from 'basalt-ui/ui/sheet'
 import { VirtualList } from 'basalt-ui/ui/virtual-list'
 import { useState } from 'react'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
+
+// ---- Column glyphs: any component with the IconComponent shape; an app passes its icon library's own
+
+/** A 24-unit outline glyph at the size the table asks for. */
+function glyph(paths: ReactNode): IconComponent {
+  return function TableGlyph({ className, size = 16 }) {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        {paths}
+      </svg>
+    )
+  }
+}
+
+const Building = glyph(
+  <>
+    <path d="M5 21V4h10v17" />
+    <path d="M15 9h4v12" />
+    <path d="M3 21h18" />
+    <path d="M9 8h2M9 12h2M9 16h2" />
+  </>,
+)
+const Tag = glyph(
+  <>
+    <path d="M3 12V4h8l10 10-8 8z" />
+    <path d="M7.5 7.5h.01" />
+  </>,
+)
+const Signal = glyph(
+  <>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" />
+  </>,
+)
+const Coins = glyph(
+  <>
+    <circle cx="9" cy="9" r="6" />
+    <path d="M15.5 9.5a6 6 0 1 1-6 6" />
+  </>,
+)
+const Calendar = glyph(
+  <>
+    <path d="M4 6h16v14H4z" />
+    <path d="M4 10h16M8 3v4M16 3v4" />
+  </>,
+)
+const Home = glyph(
+  <>
+    <path d="M3 11 12 4l9 7" />
+    <path d="M5 10v10h14V10" />
+  </>,
+)
+const Clock = glyph(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </>,
+)
+const CheckCircle = glyph(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="m8 12 3 3 5-6" />
+  </>,
+)
+const Alert = glyph(
+  <>
+    <path d="M12 3 2 20h20z" />
+    <path d="M12 10v4M12 17h.01" />
+  </>,
+)
+
+/** One glyph per booking state, drawn in its tone where the dot was. */
+const STATE_ICONS: Record<string, IconComponent> = {
+  Awaiting: Clock,
+  Settled: CheckCircle,
+  Disputed: Alert,
+}
 
 // ---- Section 1: finances shape, server mode ------------------------------------------------
 
@@ -154,7 +242,11 @@ function serve(request: Value['request'], month: string) {
   const [from, to] = ends(request, 'at')
   const inMonth = BOOKINGS.filter((b) => month === 'all' || b.at.startsWith(month))
   const searched = inMonth.filter(
-    (b) => q === '' || `${b.payee} ${b.category}`.toLowerCase().includes(q),
+    (b) =>
+      q === '' ||
+      `${b.payee} ${b.category} ${b.state} ${b.amount} ${b.at.slice(0, 10)}`
+        .toLowerCase()
+        .includes(q),
   )
   const narrowed = searched
     .filter((b) => payees.every((p) => b.payee.toLowerCase().includes(p.toLowerCase())))
@@ -245,23 +337,32 @@ function Finances(): ReactElement {
     id: 'bookings',
     label: 'Bookings',
     columns: [
-      book.entity('payee', { header: 'Payee', filter: 'text' }),
-      book.text('category', { header: 'Category' }),
+      book.entity('payee', { header: 'Payee', headerIcon: Building, filter: 'text' }),
+      book.text('category', { header: 'Category', headerIcon: Tag }),
       book.status('state', {
         header: 'State',
+        headerIcon: Signal,
         options: [...STATES],
         tone: (value) => TONES[value as keyof typeof TONES] ?? 'neutral',
+        icon: (row) => STATE_ICONS[row.state],
         filter: 'multi',
       }),
       book.money('amount', {
         currency: 'EUR',
         header: 'Amount',
+        headerIcon: Coins,
         footer: 'sum',
         filter: 'range',
         bounds: [-2000, 0],
       }),
       book.boolean('reconciled', { header: 'Reconciled', filter: 'multi', priority: 3 }),
-      book.date('at', { header: 'Booked', priority: 3, filter: 'range', picker: DateRangePicker }),
+      book.date('at', {
+        header: 'Booked',
+        headerIcon: Calendar,
+        priority: 3,
+        filter: 'range',
+        picker: DateRangePicker,
+      }),
       book.actions([{ id: 'rule', label: 'Make rule', onClick: () => setDone('Rule created') }]),
     ],
     data: page.rows,
@@ -353,8 +454,14 @@ function Grouped(): ReactElement {
     id: 'rooms',
     label: 'Rooms',
     columns: [
-      rooms.entity('room', { header: 'Room' }),
-      rooms.status('state', { header: 'State', options: ['Done', 'Open'] }),
+      rooms.entity('room', { header: 'Room', headerIcon: Home }),
+      rooms.status('state', {
+        header: 'State',
+        options: ['Done', 'Open'],
+        tone: (value) => (value === 'Done' ? 'good' : 'neutral'),
+        icon: (row) => (row.state === 'Done' ? CheckCircle : Clock),
+        filter: 'multi',
+      }),
       rooms.number('tasks', { header: 'Open tasks', footer: 'sum' }),
       rooms.text('floor', { header: 'Floor', priority: 3 }),
     ],
@@ -376,7 +483,12 @@ function Grouped(): ReactElement {
       },
     },
   })
-  return <DataTable table={t} />
+  return (
+    <>
+      <TableToolbar table={t} />
+      <DataTable table={t} />
+    </>
+  )
 }
 
 function TableRoute(): ReactElement {
