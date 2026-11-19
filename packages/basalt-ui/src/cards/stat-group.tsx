@@ -169,7 +169,8 @@ function sharedFailure(children: ReactNode): SharedFailure | null {
 
 /**
  * The group's one message. A strip draws it across the figure track under the captions; cards
- * draw it on one card laid over the held row of cards, so the group keeps its height.
+ * draw it on one card laid exactly over the held row of cards, so the group keeps its height and
+ * the banner is as tall as the cards it stands for.
  */
 function GroupMessage({
   failure,
@@ -205,7 +206,8 @@ function GroupMessage({
       data-slot="stat-group-message"
       className={cn(
         cardVariants({ flush: true }),
-        'absolute inset-1 justify-center px-(--card-edge)',
+        // The cells are `mb-3` above the group's own bottom: the banner stops where their cards do.
+        'absolute inset-x-1 top-1 bottom-4 justify-center px-(--card-edge)',
       )}
     >
       {line}
