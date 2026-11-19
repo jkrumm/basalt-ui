@@ -197,7 +197,7 @@ describe('nested rows', () => {
       network.focus()
       fireEvent.keyDown(network, { key: 'ArrowLeft' })
     })
-    expect(document.activeElement).toBe(rows(container)[0])
+    expect(document.activeElement).toBe(rows(container)[0]!)
     expect(network.getAttribute('aria-expanded')).toBe('true')
     expect(written.length).toBe(before)
   })
