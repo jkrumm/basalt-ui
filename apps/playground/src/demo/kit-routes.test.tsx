@@ -78,6 +78,7 @@ describe('the Kit nav', () => {
       '/kit/peek',
       '/kit/split',
       '/kit/interval-track',
+      '/kit/bar-list-series',
       '/kit/library',
     ])
     expect(navPaths('recipes')).toEqual([
