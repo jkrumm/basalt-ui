@@ -1,5 +1,5 @@
 /* oxlint-disable jsx-a11y/no-noninteractive-element-interactions -- the list is the one tab stop of a shared chart focus (listFocus), as RowList's is */
-import type { CSSProperties, KeyboardEvent, ReactElement } from 'react'
+import type { CSSProperties, FocusEvent, KeyboardEvent, PointerEvent, ReactElement } from 'react'
 import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
 import { lists } from '../core/messages/lists'
@@ -180,20 +180,27 @@ export function ChainView<T>({
   // With a shared focus the graph is one tab stop whose arrows step the focus; Enter activates the
   // focused node, as a click on it does.
   const shared = focus === undefined ? undefined : listFocus(focus as ListFocus<unknown>)
+  // The stop is the graph's frame, outside the scrollport, so its ring is never cut by the scroll.
   const keys =
     shared === undefined || focus === undefined
       ? {}
       : {
-          ...shared,
-          onKeyDown: (event: KeyboardEvent<HTMLUListElement>) => {
+          role: 'group',
+          'aria-label': label,
+          tabIndex: 0,
+          onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
             const at = focus.index === null ? undefined : focus.items[focus.index]
             if (event.key === 'Enter' && onActivate !== undefined && at !== undefined) {
               event.preventDefault()
               onActivate(at)
               return
             }
-            shared.onKeyDown(event)
+            shared.onKeyDown(event as unknown as KeyboardEvent<HTMLUListElement>)
           },
+          onBlur: (event: FocusEvent<HTMLDivElement>) =>
+            shared.onBlur(event as unknown as FocusEvent<HTMLUListElement>),
+          onPointerLeave: (event: PointerEvent<HTMLDivElement>) =>
+            shared.onPointerLeave(event as unknown as PointerEvent<HTMLUListElement>),
         }
   const waitsOnLine = (id: string): string | undefined => {
     const blockers = blockersOf.get(id) ?? []
@@ -248,12 +255,15 @@ export function ChainView<T>({
 
   return (
     <div data-slot="chain-view" className="@container flex min-w-0 flex-col gap-3">
-      <div data-slot="chain-graph" className="hidden @regular:block">
+      <div
+        data-slot="chain-graph"
+        {...keys}
+        className="hidden rounded-card focus-ring @regular:block"
+      >
         <ScrollArea orientation="horizontal" aria-label={label}>
           <ul
             aria-label={label}
-            {...keys}
-            className="relative m-0 list-none p-0 focus-ring focus-visible:-outline-offset-2"
+            className="relative m-0 list-none p-0"
             style={{ width: geometry.width, height: geometry.height }}
           >
             <svg
