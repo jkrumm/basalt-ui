@@ -61,8 +61,9 @@ const length = (minutes: number): string => {
 }
 
 /**
- * n35's calendar week (scenarios/expr/n35) drawn by the shipped `IntervalTrack`: the same model, no
- * hand-drawn mark, no fixed width, no waiver. The track and the table share one focus.
+ * The calendar week of n35's first build (its model kept in `demo/calendar-week.ts`, apart from the
+ * rebuilt n35) drawn by the shipped `IntervalTrack`: no hand-drawn mark, no fixed width, no waiver.
+ * The track and the table share one focus.
  */
 function IntervalTrackRoute(): ReactElement {
   const search = Route.useSearch()
