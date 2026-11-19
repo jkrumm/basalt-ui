@@ -236,7 +236,7 @@ export const FROST_SERIES = defineSeries({
   limit: { light: '#4a4a4a', dark: '#c4c4c4' },
 })
 
-/** Model router (scenario expr-n41): one ink step per model in the chart and the list; the accent is not a model colour. Each pair is `light-dark()` in both halves (cycle-expression-10: BarList paints only the light half while the scheme is auto-dark), which the browser resolves per scheme. */
+/** Model router (scenario expr-n41): one ink step per model in the chart and the list; the accent is not a model colour. Each pair is `light-dark()` in both halves, which the browser resolves per scheme; a plain `{ light, dark }` pair works too, since `BarList` paints both halves. */
 export const SERVED_SERIES = defineSeries({
   atlasLarge: { light: 'light-dark(#262626, #ececec)', dark: 'light-dark(#262626, #ececec)' },
   atlasFast: { light: 'light-dark(#5c5c5c, #c4c4c4)', dark: 'light-dark(#5c5c5c, #c4c4c4)' },
@@ -252,7 +252,7 @@ export const TRAINING_SERIES = defineSeries({
   pause: { light: '#6b6b6b', dark: '#a8a8a8' },
 })
 
-/** Team wiki (scenario expr-n49): the accent is a stale page still read; stale pages with few reads sit in a dark ink step, fresh pages in a pale one, the read-threshold rule in a mid step. Each pair is `light-dark()` in both halves (BarList paints only the light half while the scheme is auto-dark). */
+/** Team wiki (scenario expr-n49): the accent is a stale page still read; stale pages with few reads sit in a dark ink step, fresh pages in a pale one, the read-threshold rule in a mid step. Each pair is `light-dark()` in both halves; a plain `{ light, dark }` pair works too. */
 export const WIKI_SERIES = defineSeries({
   read: { light: 'light-dark(#2871c7, #5190f7)', dark: 'light-dark(#2871c7, #5190f7)' },
   quiet: { light: 'light-dark(#4a4a4a, #c4c4c4)', dark: 'light-dark(#4a4a4a, #c4c4c4)' },
@@ -274,7 +274,7 @@ export const SPEED_SERIES = defineSeries({
   maximum: { light: '#a3a3a3', dark: '#757575' },
 })
 
-/** Issue timeline (scenario expr-n47): the status red is the blocked wait, the one state that needs a hand; sessions sit in the dark ink step, owner and CI waits in mid steps, queue and merge-window holds in the palest, events in the darkest. Each pair is `light-dark()` in both halves (cycle-expression-11: BarList paints only the light half while the scheme is auto-dark). */
+/** Issue timeline (scenario expr-n47): the status red is the blocked wait, the one state that needs a hand; sessions sit in the dark ink step, owner and CI waits in mid steps, queue and merge-window holds in the palest, events in the darkest. Each pair is `light-dark()` in both halves; a plain `{ light, dark }` pair works too. */
 export const ISSUE_SERIES = defineSeries({
   work: { light: 'light-dark(#4a4a4a, #c4c4c4)', dark: 'light-dark(#4a4a4a, #c4c4c4)' },
   owner: { light: 'light-dark(#858585, #9a9a9a)', dark: 'light-dark(#858585, #9a9a9a)' },
