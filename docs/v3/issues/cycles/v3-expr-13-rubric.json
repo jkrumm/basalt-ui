@@ -1,0 +1,23 @@
+{
+  "why": "Expression cycle 13 (docs/v3/cycles/expression-13.md) has six `rubric` findings, all P3. Two reviewers capped X4 at 2 on a page of line charts because the lead's sweep finds no two adjacent marks there (n58 .22, n59 .31), so no line-chart page can score 3 on X4 whatever it does. One reviewer marked a two-clause answer down because two of its numbers sit in footer facts (n60 .34), which the shipped design skill names as one of three places a clause's number goes. Three n60 points read an IntervalTrack against rules written before v3-owner-2-interval-look shipped a ring and no veil: F7 asks the rest to dim (.36), X4 pairs two spans on different rows across 366 px of empty track (.41), and K3 read a second ArrowRight that stays on the row's one span as a missing step (.38; the lead tool pressed ArrowRight only). Two reviewers also disagreed whether a good-direction delta pill is a second status hue for F4 (n57 allowed it, n58 counted it).",
+  "what": "Rubric text for X4 on line charts, F2 on footer facts, an IntervalTrack's focus, keys and sweep, and a delta pill under F4, with the shipped reviewer agreeing.",
+  "owns": [
+    "docs/v3/expression/rubric.md",
+    "the shipped reviewer's text in packages/basalt-ui/agent/** (the design reviewer subagent and its references), through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/cases.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) X4 where the page's charts are lines and no sweep between adjacent marks exists: score the dim state the list and keyboard frames show, with 3 reachable, or name the frame a reviewer reads instead. (2) F2: a question with several clauses is answered at rest when each clause has a number in the figure, a status or a footer fact, as the design skill teaches; say whether a footer fact counts in full. (3) IntervalTrack: under F7 the focused span's ring with the rest unveiled is the kit's dim; under K3 Left and Right step along a row and Up and Down between rows; under X4 a sweep between spans on different rows across empty track is no gap between adjacent marks. (4) F4: say whether a delta pill in the good direction is a second status hue. Rescore n58 and n59 X4, n60 F2, F7, K3 and X4 and n57 and n58 F4 from round-0 shots and source (.evidence/v3-shots/expression-13/r0 and src-r0 in the main checkout, with the cycle-13 reviewer prompt) by a fresh reviewer, and report the changed scores.",
+  "acceptance": [
+    "rubric.md states (1) to (4), quoting the cycle-13 cases",
+    "A fresh reviewer's rescore of the named items is in the PR",
+    "The shipped reviewer's text agrees, or the PR names where none restates it",
+    "make check passes"
+  ],
+  "out_of_scope": "Skill text; kit behaviour; the trial scenarios; the lead tool (its K3 key for a track is a lead note of v3-cycle-expression-14).",
+  "proof": "make check; the rubric diff; the rescore file.",
+  "commits": "docs: the rubric text; feat: the shipped reviewer text if it changes; package commits separate from non-package ones."
+}
