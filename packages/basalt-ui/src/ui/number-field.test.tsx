@@ -51,6 +51,15 @@ describe('number-field module', () => {
     expect(container.querySelector('[data-slot="number-field"]')?.className).toContain('h-6')
   })
 
+  test('the text input reaches the 44 px floor under a coarse pointer, steppers span the row', () => {
+    const { getByLabelText, container } = render(<NumberField aria-label="Qty" />)
+    expect(getByLabelText('Qty').className).toContain('pointer-coarse:-my-px')
+    expect(container.querySelector('[data-slot="number-field"]')?.className).toContain(
+      'pointer-coarse:min-h-11',
+    )
+    expect(getByLabelText('Increase').className).toContain('after:-inset-y-px')
+  })
+
   test('typing reports the parsed number in the locale', () => {
     const seen: (number | null)[] = []
     const { getByLabelText } = render(

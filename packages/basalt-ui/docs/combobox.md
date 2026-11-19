@@ -20,9 +20,10 @@ A searchable select on Base UI. Which job, which part: fewer than 10 known value
 search, async, multi or 50+ options, `Combobox`; free text with suggestions, `Autocomplete`.
 
 ```ts
-Combobox<Value = string, Multiple extends boolean | undefined = false>({ className, children, ...props }: ComboboxProps<Value, Multiple>): ReactElement
+Combobox<Value = string, Multiple extends boolean | undefined = false>({ className, children, onCreate, ...props }: ComboboxProps<Value, Multiple>): ReactElement
   className?: string  // Layout only (`w-full`, `w-64`, `flex-1`)
   children?: ReactNode
+  onCreate?: (text: string) => Value  // Makes the combobox creatable
 ```
 
 ### `ComboboxInput`

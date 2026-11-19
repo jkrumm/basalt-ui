@@ -76,6 +76,12 @@ const CASES: Case[] = [
     fails: /no focus outline/,
   },
   {
+    assertion: 'ringWalk (group ring thin)',
+    offender: 'ring-group-thin',
+    run: (p) => quality.ringWalk(like(p)),
+    fails: /outline 1px is thinner than 2px/,
+  },
+  {
     assertion: 'focusNotObscured',
     offender: 'focus-obscured',
     run: (p) => quality.focusNotObscured(like(p)),
