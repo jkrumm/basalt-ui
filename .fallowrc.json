@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "packages/basalt-ui/test/**",
+    "packages/basalt-ui/tests/**",
+    "packages/basalt-ui/scripts/**",
+    "packages/basalt-ui/src/**/*.type-guard.{ts,tsx}",
+    "packages/basalt-ui/src/**/*.type-test.ts",
+    "packages/basalt-ui/src/css/templates/**",
+    "packages/basalt-ui/src/tokens/golden/**",
+    "packages/basalt-ui/src/lint/factory.oxlint.mjs",
+    "scripts/**",
+    "tests/setup/**",
+    "tools/**",
+    "apps/playground/src/cycle/*/known.ts",
+    "apps/playground/src/recipes/**",
+    "apps/playground/src/**/*.type-guard.ts"
+  ],
+  "ignorePatterns": ["examples/**", "**/test/fixtures/**", "**/tests/fixtures/**"]
+}
