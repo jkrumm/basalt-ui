@@ -35,6 +35,7 @@ useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: Us
   filters?: PageFilters<T, F>  // Page fields that narrow a client table's rows (a Section's filters over it): each is a field handle with a row predicate, `match(row, value)` typed by that field's value
   resetOn?: readonly unknown[]
   phone?: "cards" | "scroll"  // What a narrow table becomes: cards, or the table scrolling sideways with its first column pinned; default 'cards'
+  look?: "reading" | "grid"  // How the table draws its rules; default 'reading'
   cardsBelow?: "regular" | "wide" | "always"  // The width below which the table becomes cards (`regular` is 480 px, `wide` 800 px, `always` never a table); default 'regular'
   pager?: "none" | "pages" | "more"  // The pager: `pages` steps through numbered pages, `more` is a Load more button, `none` shows every row; default 'none' on a client table, 'more' on a cursor table, 'pages' on any other server table
   group?: { by: string; summary?: (rows: readonly T[], box: Box) => ReactNode; }  // A type error unless `mode.kind` is `'client'` (enforced in `useDataTable` at the call site)

@@ -128,7 +128,11 @@ export function useRowFocusProps(id: string, row: unknown, base: RowProps): Focu
     onPointerDown: item.onPointerDown,
     onFocus: (event: FocusEvent<HTMLElement>) => {
       base.onFocus?.(event)
-      if (event.target === event.currentTarget) link.enter(id, row)
+      // The row itself, or one of its cells in a grid (a cell is the stop there), focuses its item.
+      const cell =
+        event.target.parentElement === event.currentTarget &&
+        event.target.getAttribute('data-slot') === 'table-cell'
+      if (event.target === event.currentTarget || cell) link.enter(id, row)
     },
   }
 }

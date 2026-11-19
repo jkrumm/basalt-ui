@@ -19,7 +19,7 @@ import type { TableModel } from '../use-data-table'
 import { drawAggregate } from './footer'
 import { footerValue } from './footer-model'
 import type { BodyItem } from './group-row-model'
-import { alignProps, tierAttributes, visibleColumns } from './head'
+import { alignProps, pinStyle, tierAttributes, visibleColumns } from './head'
 
 export type GroupItem<T> = Extract<BodyItem<T>, { type: 'group' }>
 
@@ -96,6 +96,7 @@ export function GroupRow<T>({
             aria-colindex={index + offset}
             {...cellAttributes(spec)}
             {...tierAttributes(planned, model.detailListed)}
+            style={pinStyle(planned)}
             numeric={numeric}
             className={cn(className, 'font-medium')}
           >

@@ -38,6 +38,8 @@ import type { BodyItem } from './parts/group-row-model'
 import { tableEngine } from './core/features'
 import { constructFilterFn, toColumnFilters } from './core/filters'
 import type { RangeDomain } from './core/filters'
+import { arrangeColumns, moveColumn } from './core/arrange'
+import type { ArrangedColumn } from './core/arrange'
 import { useRowKeyboard } from './core/keyboard'
 import type { RowKeyboard } from './core/keyboard'
 import { engineColumn } from './core/kinds-engine'
@@ -69,8 +71,18 @@ export type SortDirection = 'asc' | 'desc' | 'none'
 export type TableModel<T> = {
   id: string
   label: string
+  /** The columns in drawn order: the identity column, the reader's order (pins first), `actions`. */
   specs: readonly KindSpec<T>[]
-  plan: TablePlan
+  /** The plan in the same drawn order; a start-pinned column carries its offset as `pinAt`. */
+  plan: Omit<TablePlan, 'columns'> & { columns: readonly ArrangedColumn[] }
+  /** The ids a reader can move, in drawn order: every column but the identity column and `actions`. */
+  movable: readonly string[]
+  /** Moves a column to index `to` of `movable`; written to `display.order`. */
+  moveColumn(id: string, to: number): void
+  /** Whether the reader pinned the column (a grid look draws it pinned). */
+  pinnedOf(id: string): boolean
+  /** Pins or unpins a column, written to `display.pinned`. */
+  setPinned(id: string, pinned: boolean): void
   rows: readonly ModelRow<T>[]
   /** What the body draws in order: the rows, or group rows with the rows of open groups. */
   items: readonly BodyItem<T>[]
@@ -92,7 +104,9 @@ export type TableModel<T> = {
   /** Rows matching the request, `undefined` while unknown. */
   count: number | undefined
   pager: 'pages' | 'more' | 'none'
-  /** What a narrow table becomes (default `cards`) and the width it does so below. */
+  /** How the table draws its rules; `grid` keeps every column and scrolls sideways. */
+  look: 'reading' | 'grid'
+  /** What a narrow table becomes (default `cards`, `scroll` for a grid) and the width it does so below. */
   phone: 'cards' | 'scroll'
   cardsBelow: 'regular' | 'wide' | 'always'
   /** Present on a cursor table: the pager's `Load more` reads it. */
@@ -166,6 +180,8 @@ export function modelOf<T>(instance: DataTableInstance<T>): TableModel<T> {
 }
 
 const MINUTE = 60_000
+/** The tick column's width, the start offset of the first pinned column on a selectable table. */
+const TICK_COL_PX = 40
 
 /**
  * Stands in for an absent `detailState`, so `use()` is called on every render either way; the table
@@ -376,6 +392,14 @@ export function useDataTable<
     display.visibility,
     contentCh,
   )
+  const look = options.look ?? 'reading'
+  const arranged = arrangeColumns(
+    specs,
+    plan,
+    { order: display.order, pinned: look === 'grid' ? display.pinned : undefined },
+    options.selection === undefined ? 0 : TICK_COL_PX,
+  )
+  const pinnedIds = display.pinned ?? []
 
   const pageFilters = usePageFilters<T>(server ? undefined : options.filters)
   const data = pageFilters.keep((options.data ?? NO_ROWS) as T[])
@@ -597,13 +621,32 @@ export function useDataTable<
     onActivate: activate,
     onToggle: options.selection === undefined ? undefined : selection.toggle,
     onClear: options.selection === undefined ? undefined : selection.clear,
+    // The grid look roves cells: the tick (on a selectable table) and every drawn column.
+    cells:
+      look === 'grid'
+        ? (options.selection === undefined ? 0 : 1) +
+          arranged.plan.columns.filter((column) => column.visible).length
+        : undefined,
+    treeCell: options.selection === undefined ? 0 : 1,
   })
 
   const model: TableModel<T> = {
     id: options.id,
     label: options.label,
-    specs,
-    plan,
+    specs: arranged.specs,
+    plan: arranged.plan,
+    movable: arranged.movable,
+    moveColumn(id, to) {
+      const next = moveColumn(arranged.movable, id, to)
+      const declared = specs.flatMap((spec) => (next.includes(spec.id) ? [spec.id] : []))
+      const same = next.every((value, index) => value === declared[index])
+      state.setDisplay({ order: same ? [] : next })
+    },
+    pinnedOf: (id) => pinnedIds.includes(id),
+    setPinned(id, pinned) {
+      const others = pinnedIds.filter((value) => value !== id)
+      state.setDisplay({ pinned: pinned ? [...others, id] : others })
+    },
     rows,
     items,
     group,
@@ -630,7 +673,8 @@ export function useDataTable<
       ),
     count: server ? countOf(mode) : matching,
     pager,
-    phone: options.phone ?? 'cards',
+    look,
+    phone: options.phone ?? (look === 'grid' ? 'scroll' : 'cards'),
     cardsBelow: options.cardsBelow ?? 'regular',
     cursor: server && 'cursor' in mode ? mode.cursor : undefined,
     state,
@@ -730,8 +774,8 @@ export function useDataTable<
   const escape: TableEscape<T> = {
     rows,
     matched,
-    columns: plan.columns.flatMap((planned, index) => {
-      const spec = specs[index]
+    columns: arranged.plan.columns.flatMap((planned, index) => {
+      const spec = arranged.specs[index]
       return planned.visible && spec !== undefined && spec.kind !== 'actions'
         ? [{ id: spec.id, header: spec.header, value: spec.value }]
         : []
