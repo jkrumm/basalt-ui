@@ -16,7 +16,7 @@ import { FrameArmContext } from '../../core/frame-arm'
 import type { FrameArm } from '../../core/frame-arm'
 import { useRowsShown } from '../../core/rows-shown'
 import type { DataTableProps } from '../contract'
-import { CONTENT_MAX_CH, widthPx } from '../core/plan'
+import { CONTENT_MAX_CH, TICK_COL_PX, widthPx } from '../core/plan'
 import { TableBody, TableCaption, Table } from '../../ui/table'
 import { DataTableBody } from './body'
 import { BulkBar } from './bulk-bar'
@@ -32,7 +32,6 @@ import type { TableModel } from '../use-data-table'
 
 /** A flexible `entity` column takes this many shares of the free width, a flexible text one takes 1. */
 const ENTITY_SHARES = 2
-const SELECTION_COL_PX = 40
 
 /**
  * The widest a lone flexible title column grows, in `ch`: the kit's own bound for a title sized to
@@ -70,11 +69,11 @@ function Columns<T>({
   // A grid draws every column at its planned width and leaves the rest to the filler, so the offsets
   // of its pinned columns are sums of known widths.
   const grid = model.look === 'grid'
-  const tickPx = model.selection === undefined ? 0 : SELECTION_COL_PX
+  const tickPx = model.selection === undefined ? 0 : TICK_COL_PX
   const gridPx = visible.reduce((sum, { planned }) => sum + planned.widthPx, tickPx)
   const fixedPx = visible.reduce(
     (sum, { planned }) => (planned.flex ? sum : sum + planned.widthPx),
-    model.selection === undefined ? 0 : SELECTION_COL_PX,
+    model.selection === undefined ? 0 : TICK_COL_PX,
   )
   const shares = visible.reduce(
     (sum, { spec, planned }) =>
@@ -88,7 +87,7 @@ function Columns<T>({
       planned.flex || (planned.priority === 3 && model.plan.fullAt === null)
         ? sum
         : sum + planned.widthPx,
-    model.selection === undefined ? 0 : SELECTION_COL_PX,
+    model.selection === undefined ? 0 : TICK_COL_PX,
   )
   const cap = fill ? titleCapPx(model) : undefined
   return (

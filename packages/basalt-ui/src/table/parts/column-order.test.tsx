@@ -171,6 +171,19 @@ describe('moving a column', () => {
     expect(headers(container)).toEqual(['Payee', 'State', 'Amount (EUR)', 'Note'])
   })
 
+  test('a menu move steps over a hidden column, so every click changes what the reader sees', async () => {
+    const { container } = render(<Subject />)
+    act(() => model().state.setDisplay({ visibility: { state: false } }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Amount (EUR) column actions' }))
+    })
+    await act(async () => {
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Move right' }))
+    })
+    expect(headers(container)).toEqual(['Payee', 'Note', 'Amount (EUR)'])
+    expect(model().state.display.order).toEqual(['state', 'note', 'amount'])
+  })
+
   test('the identity column is listed first, shown and fixed; the trigger names the hidden count', async () => {
     render(<Subject />)
     const panel = await openDisplay()

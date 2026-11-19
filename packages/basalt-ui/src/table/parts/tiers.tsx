@@ -7,6 +7,7 @@
  * plan's `reducedFrom`, `800` raised by `cardsBelow: 'wide'`) or `always`.
  */
 import type { CSSProperties, FocusEvent } from 'react'
+import { TICK_COL_PX } from '../core/plan'
 import type { TableModel } from '../use-data-table'
 
 export type TierAttributes = {
@@ -66,7 +67,7 @@ function pinnedPx<T>(model: TableModel<T>, edge: 'start' | 'end'): number {
 
 /** The sideways scroll's table width: the scrolled columns at their planned size. */
 export function scrollMinWidth<T>(model: TableModel<T>): CSSProperties {
-  const selectPx = model.selection === undefined ? 0 : 40
+  const selectPx = model.selection === undefined ? 0 : TICK_COL_PX
   const px = model.plan.columns.reduce(
     (sum, column) => (scrolled(model, column) ? sum + column.widthPx : sum),
     selectPx,
