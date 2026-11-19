@@ -41,6 +41,14 @@
     {
       "file": "scripts/evidence/*.ts",
       "exports": ["bundle", "keyboard", "screens"]
+    },
+    {
+      "file": "apps/marketing/src/lib/{utils,chartUtils}.ts",
+      "exports": ["*"]
+    },
+    {
+      "file": "apps/marketing/src/components/ui/card.tsx",
+      "exports": ["*"]
     }
   ]
 }

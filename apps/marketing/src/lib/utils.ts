@@ -12,7 +12,7 @@ export function cx(...args: ClassValue[]) {
 }
 
 // Tremor focusInput [v0.0.2]
-const focusInput = [
+export const focusInput = [
   // base
   'focus:ring-2',
   // ring color
@@ -22,7 +22,7 @@ const focusInput = [
 ]
 
 // Tremor Raw focusRing [v0.0.1]
-const focusRing = [
+export const focusRing = [
   // base
   'outline outline-offset-2 outline-0 focus-visible:outline-2',
   // outline color
@@ -30,7 +30,7 @@ const focusRing = [
 ]
 
 // Tremor Raw hasErrorInput [v0.0.1]
-const hasErrorInput = [
+export const hasErrorInput = [
   // base
   'ring-2',
   // border color
