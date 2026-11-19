@@ -502,7 +502,7 @@ function inspectRing(el: Element): string[] {
 
 /**
  * Tabs through every stop: the computed outline is solid (or the browser's own `auto` ring), at least 2px, opaque, at least 3:1 against
- * the element's own fill and the surface under it, and no clipping ancestor cuts it off.
+ * the element's own fill and the surface under it, and no clipping ancestor cuts it off (a scroller is judged at its scrollable content edges, a hidden or clipped box at its own).
  */
 async function ringWalk(page: PageLike, options: WalkOptions = {}): Promise<{ stops: number }> {
   await expectScheme(page)
