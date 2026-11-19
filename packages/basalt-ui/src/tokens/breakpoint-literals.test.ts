@@ -45,9 +45,21 @@ const OWN_CONTAINER_LITERALS = new Set([
   '599.9px',
   '1199.9px',
   '1200px',
-  // table.css: the `data-full-at` steps (1000, 1440, 1800; 800 and 1200 are above)
+  // table.css: the `data-full-at` steps (plan.ts `FULL_AT_STEPS`; 800 and 1200 are above)
+  '479.9px',
+  '519.9px',
+  '559.9px',
+  '599.9px',
+  '639.9px',
+  '679.9px',
+  '719.9px',
+  '759.9px',
+  '899.9px',
   '999.9px',
+  '1099.9px',
+  '1299.9px',
   '1439.9px',
+  '1599.9px',
   '1799.9px',
   // table.css: the 720 card step, between 480 and 800 (plan.ts `reducedFromOf`)
   '719.9px',

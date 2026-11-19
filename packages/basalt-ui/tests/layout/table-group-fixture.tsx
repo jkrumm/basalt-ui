@@ -14,7 +14,8 @@ import { Progress } from '../../src/ui/progress'
 type Row = { id: string; room: string; floor: string; state: string; tasks: number }
 
 const STATES = ['Done', 'Open'] as const
-const FLOORS = ['Floor 2 (bedrooms and the long landing)', 'Floor 1', 'Basement'] as const
+// Short enough for the Floor column at 768 px, where a table that fits shows its priority 3 column.
+const FLOORS = ['Floor 2, bedrooms', 'Floor 1', 'Basement'] as const
 
 const ROWS: Row[] = Array.from({ length: 12 }, (_, i) => ({
   id: `r${i}`,
