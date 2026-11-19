@@ -47,6 +47,19 @@ Fresh reviewers (Sonnet, the cycles' reviewer tier, one per case, none of which 
 
 **n04's jump is not in its frames.** The reviewer found the plot at one position in every `--focus--` and `--sweep-gap--` frame, so R3 scored 3, and n04 fails on R1 alone. The jump the owner saw loops: a period line shown only on hover pushes the plot down below the `regular` container size, the pointer leaves the plot, focus clears and the line collapses (`docs/v3/issues/owner-1/v3-owner-1-chart-hover.json`). A still frame 60 ms after the pointer arrives can catch either half, and the cycle 4 shots ran on an older kit than the one he saw. R3 now counts a move in a logged plot box along the sweep as a shift, and the hover-shift guard of `v3-owner-1-chart-hover` is the check that sees it: the next cycle's lead tool should log the plot box at each sweep step (a signal filed from Issue 2284, folded into Issue 2134).
 
+## Rerun rescore: kit-drawn titles (2026-11-19)
+
+The owner-review-1 rerun (`docs/v3/cycles/owner-review-1.md` § Finding 6) showed R2 read as an excuse for kit-drawn defects: n35's reviewer scored R2 3 on a track with nine ellipsised titles because `IntervalTrack` drew them and charged them to F6, while n32's scored R2 1 for a `ChainView` cut at its panel edge. The owner judges the surface, not who drew it. R2 now counts a clipped, cut or ellipsised label or title the same whether the app or a kit part drew it, and the default 3 for a page of shipped parts is gone; F6 keeps the clipped values, and Craft 10 of the shipped rubric says the same.
+
+Two fresh reviewers (Sonnet, none of which had seen either case) scored the rerun's round-0 shots and source snapshots (`owner-review-1/r0`, `src-r0`) on the new text (`.evidence/v3-shots/owner-1-rerun-rubric/`, gitignored):
+
+| Case | Shots               | Old R2 | New R2                                                                   | Score           | Cap  |
+| ---- | ------------------- | ------ | ------------------------------------------------------------------------ | --------------- | ---- |
+| n35  | `owner-review-1/r0` | 3      | 1 ("nine ellipsised or cut titles on one page at 1800", more at 390)     | 79, uncapped 88 | R2 1 |
+| n32  | `owner-review-1/r0` | 1      | 1 (15 of 21 chain titles ellipsised, third column cut at the panel edge) | 79, uncapped 80 | R2 1 |
+
+The n35 reviewer charged the ellipses to R2 and not to F6, as the new text asks. n32 holds at R2 1, so the two cases now read alike.
+
 ## Builder side
 
 The skill carries the same five lines as a self-check the builder runs on its own frames before it shoots for review (`packages/basalt-ui/agent/skills/basalt-design/references/anti-defaults.md` § Owner self-check, linked from step 6 of both skills): count the accent series, find every bare border, sweep the hover against the rest frame, the redraw test on marks it drew, and a table view for a grid of record cards. The shipped reviewer rubric scores them as Craft 4 (counted accent), Craft 8 (row rules), Craft 9 (still under hover), Craft 10 (drawn craft) and Expression 6 (records view).
