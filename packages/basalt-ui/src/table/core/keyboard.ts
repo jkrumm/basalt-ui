@@ -12,6 +12,21 @@
  * | Escape                        | `onClear` (the selection), unless the key came from a text field |
  * | Right, Left                   | nested rows only: open or step in, close or step to the parent |
  *
+ * The grid look passes `cells`: the stop is then one cell, never a row (the WAI-ARIA grid pattern).
+ *
+ * | Key (grid)                    | On the focused cell                                         |
+ * |-|-|
+ * | Up, Down, PgUp, PgDn          | the same column, another row                                |
+ * | Left, Right                   | the next cell in the row, stopping at its ends; on the identity cell of a nested row, open or close first |
+ * | Home, End                     | the row's first or last cell                                |
+ * | Ctrl or Cmd with Home, End    | the first cell of the first row, the last cell of the last row |
+ * | Enter                         | into the cell's control (tick, editor, row menu); elsewhere activates the row |
+ * | F2                            | into the cell's control, whatever the cell                  |
+ * | Escape, from a control        | back to its cell                                            |
+ * | Space                         | toggles the tick, as on a row                               |
+ *
+ * A click in the grid focuses the cell it lands on; only a click on the identity cell activates the row.
+ *
  * Law: a row handles only its OWN keys. A key from a button, link or input inside the row has
  * `target !== currentTarget` and is left alone, so Enter on a nested control never also activates
  * the row, and an arrow in a cell editor never moves rows. A row is never `role="button"`: it is a
@@ -35,6 +50,13 @@ export type RowKeyboardOptions = {
   /** @default 10 */
   pageStep?: number | undefined
   /**
+   * The grid look: the cells a row has (the tick and every drawn column). The stop is a cell, the
+   * rows take no tab stop, and `cellProps` wires each cell.
+   */
+  cells?: number | undefined
+  /** In a grid of nested rows, the cell whose Right and Left open and close the row. */
+  treeCell?: number | undefined
+  /**
    * Nested rows: Right opens a closed row or steps to its first row below, Left closes an open row
    * or steps to its parent. `open` and `close` return whether they changed the row.
    */
@@ -57,6 +79,14 @@ export type RowProps = {
   onClick?: (event: MouseEvent<HTMLElement>) => void
 }
 
+export type CellProps = {
+  tabIndex?: 0 | -1
+  'data-cell-active'?: ''
+  ref?: (el: HTMLElement | null) => void
+  onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void
+  onFocus?: (event: FocusEvent<HTMLElement>) => void
+}
+
 export type RowKeyboard = {
   /** `undefined` for an empty set. */
   activeId: string | undefined
@@ -65,6 +95,8 @@ export type RowKeyboard = {
   /** Spread on the table root: `/` and Escape. */
   rootProps: { onKeyDown(event: KeyboardEvent<HTMLElement>): void }
   rowProps(id: string): RowProps
+  /** The props of a row's cell `col` in the grid look (`cells`); empty otherwise. */
+  cellProps(id: string, col: number): CellProps
 }
 
 const EDITABLE = 'input, textarea, select, [contenteditable=""], [contenteditable="true"]'
@@ -81,6 +113,16 @@ const NON_TEXT_INPUTS = new Set([
   'file',
   'image',
 ])
+
+/** The kinds whose cell holds one control: Enter goes into it rather than activating the row. */
+const CONTROL_KINDS = new Set(['tick', 'select', 'actions'])
+
+/** The first control in a cell, or `null`. */
+function controlOf(cell: HTMLElement): HTMLElement | null {
+  return cell.querySelector<HTMLElement>(
+    'button:not(:disabled), a[href], input:not(:disabled), select, textarea, [role="checkbox"], [role="combobox"]',
+  )
+}
 
 /** Whether typing goes into the target: a text field, `textarea`, `select` or contenteditable. */
 function isEditable(target: EventTarget | null): boolean {
@@ -118,12 +160,21 @@ export function nextIndex(
 }
 
 export function useRowKeyboard(options: RowKeyboardOptions): RowKeyboard {
-  const { rowIds, onActivate, onToggle, onClear, searchRef, pageStep, tree } = options
-  const enabled = onActivate !== undefined || onToggle !== undefined || tree !== undefined
+  const { rowIds, onActivate, onToggle, onClear, searchRef, pageStep, tree, cells, treeCell } =
+    options
+  const grid = cells !== undefined && cells > 0
+  const enabled = grid || onActivate !== undefined || onToggle !== undefined || tree !== undefined
   const [stop, setStop] = useState<string | undefined>(undefined)
   const elements = useRef(new Map<string, HTMLElement>())
   const pending = useRef<string | undefined>(undefined)
   const refs = useRef(new Map<string, (el: HTMLElement | null) => void>())
+  const [stopCol, setStopCol] = useState(0)
+  const cellEls = useRef(new Map<string, HTMLElement>())
+  const pendingCell = useRef<string | undefined>(undefined)
+  const cellRefs = useRef(new Map<string, (el: HTMLElement | null) => void>())
+  const lastCell = Math.max(0, (cells ?? 1) - 1)
+  const activeCol = Math.min(stopCol, lastCell)
+  const cellKey = (id: string, col: number): string => `${id}\u0000${col}`
 
   // The stop is a remembered id, resolved against the current rows: a row that left the set (a
   // refetch, a sort) hands the stop to the first row instead of leaving the table with none.
@@ -156,11 +207,116 @@ export function useRowKeyboard(options: RowKeyboardOptions): RowKeyboard {
     return ref
   }, [])
 
+  const focusCell = useCallback((id: string, col: number): void => {
+    setStop(id)
+    setStopCol(col)
+    const el = cellEls.current.get(cellKey(id, col))
+    if (el) el.focus()
+    else pendingCell.current = cellKey(id, col)
+  }, [])
+
+  const cellRefFor = (id: string, col: number): ((el: HTMLElement | null) => void) => {
+    const key = cellKey(id, col)
+    let ref = cellRefs.current.get(key)
+    if (ref) return ref
+    ref = (el: HTMLElement | null): void => {
+      if (el === null) {
+        cellEls.current.delete(key)
+        return
+      }
+      cellEls.current.set(key, el)
+      if (pendingCell.current === key) {
+        pendingCell.current = undefined
+        el.focus()
+      }
+    }
+    cellRefs.current.set(key, ref)
+    return ref
+  }
+
   // Cached callbacks of rows that left the set would otherwise accumulate.
   useEffect(() => {
     const live = new Set(rowIds)
     for (const id of refs.current.keys()) if (!live.has(id)) refs.current.delete(id)
+    for (const key of cellRefs.current.keys())
+      if (!live.has(key.slice(0, key.indexOf('\u0000')))) cellRefs.current.delete(key)
   }, [rowIds])
+
+  const onCellKey = (event: KeyboardEvent<HTMLElement>, id: string, col: number): void => {
+    const cell = event.currentTarget
+    if (event.target !== cell) {
+      // A control inside the cell owns its keys; Escape brings focus back to the cell. A key from a
+      // portaled popup (a select's list) is not inside the cell's DOM and is left to the popup.
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      if (!(event.target instanceof Node) || !cell.contains(event.target)) return
+      event.preventDefault()
+      event.stopPropagation()
+      cell.focus()
+      return
+    }
+    const index = rowIds.indexOf(id)
+    const lastRow = rowIds.length - 1
+    const mod = event.ctrlKey || event.metaKey
+    if (event.altKey) return
+    if (mod) {
+      if (event.key !== 'Home' && event.key !== 'End') return
+      event.preventDefault()
+      const target = event.key === 'Home' ? rowIds[0] : rowIds[lastRow]
+      if (target !== undefined) focusCell(target, event.key === 'Home' ? 0 : lastCell)
+      return
+    }
+    const into = (): boolean => {
+      const control = controlOf(cell)
+      if (control === null) return false
+      control.focus()
+      return true
+    }
+    switch (event.key) {
+      case 'Enter': {
+        event.preventDefault()
+        const kind = cell.getAttribute('data-kind')
+        if (kind !== null && CONTROL_KINDS.has(kind) && into()) return
+        onActivate?.(id)
+        return
+      }
+      case 'F2':
+        event.preventDefault()
+        into()
+        return
+      case ' ':
+        if (!onToggle) return
+        event.preventDefault()
+        onToggle(id)
+        return
+      case 'ArrowLeft':
+      case 'ArrowRight': {
+        event.preventDefault()
+        const right = event.key === 'ArrowRight'
+        if (tree !== undefined && col === treeCell) {
+          if (right ? tree.open(id) : tree.close(id)) return
+          const parent = right ? undefined : tree.parentOf(id)
+          if (parent !== undefined) {
+            focusCell(parent, col)
+            return
+          }
+        }
+        focusCell(id, Math.max(0, Math.min(lastCell, col + (right ? 1 : -1))))
+        return
+      }
+      case 'Home':
+      case 'End':
+        event.preventDefault()
+        focusCell(id, event.key === 'Home' ? 0 : lastCell)
+        return
+      default: {
+        const next = nextIndex(event.key, index, rowIds.length, pageStep)
+        const nextId = next === undefined ? undefined : rowIds[next]
+        if (nextId === undefined) return
+        event.preventDefault()
+        focusCell(nextId, col)
+      }
+    }
+  }
 
   return {
     activeId,
@@ -176,8 +332,39 @@ export function useRowKeyboard(options: RowKeyboardOptions): RowKeyboard {
         }
       },
     },
+    cellProps(id, col) {
+      if (!grid) return {}
+      const active = id === activeId && col === activeCol
+      return {
+        tabIndex: active ? 0 : -1,
+        ...(active ? { 'data-cell-active': '' as const } : {}),
+        ref: cellRefFor(id, col),
+        // A click on a control inside the cell moves the stop to that cell too.
+        onFocus() {
+          setStop(id)
+          setStopCol(col)
+        },
+        onKeyDown: (event) => onCellKey(event, id, col),
+      }
+    },
     rowProps(id) {
       if (!enabled) return {}
+      if (grid) {
+        return {
+          ...(onActivate ? { 'data-activatable': '' as const } : {}),
+          ...(id === activeId ? { 'data-active': '' as const } : {}),
+          // A click on a working cell focuses it; the row opens from its name (the identity cell).
+          onClick(event) {
+            if (!onActivate) return
+            const target = event.target as Element
+            if (target.closest('[data-identity]') === null) return
+            const hit = target.closest(INTERACTIVE)
+            if (hit !== null && hit !== event.currentTarget && event.currentTarget.contains(hit))
+              return
+            onActivate(id)
+          },
+        }
+      }
       return {
         tabIndex: id === activeId ? 0 : -1,
         ...(onActivate ? { 'data-activatable': '' as const } : {}),

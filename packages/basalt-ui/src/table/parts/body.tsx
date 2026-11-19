@@ -20,7 +20,7 @@ import type { CellEnv, KindSpec } from '../core/kinds-spec'
 import type { PlannedColumn } from '../core/plan'
 import { modelOf } from '../use-data-table'
 import type { ModelRow, TableModel } from '../use-data-table'
-import { alignProps, tierAttributes, useActionsLabel, visibleColumns } from './head'
+import { alignProps, pinStyle, tierAttributes, useActionsLabel, visibleColumns } from './head'
 import { GroupRow } from './group-row'
 import type { BodyItem } from './group-row-model'
 import { useDetailHost } from './detail-sheet'
@@ -36,9 +36,11 @@ const BOX_HEIGHT = 24
 function RowActions<T>({
   row,
   actions,
+  tabbable,
 }: {
   row: T
   actions: readonly RowAction<T>[]
+  tabbable: boolean
 }): ReactElement {
   const label = useActionsLabel()
   return (
@@ -54,6 +56,7 @@ function RowActions<T>({
               shape="icon"
               variant="ghost"
               aria-label={label}
+              tabIndex={tabbable ? undefined : -1}
               className="pointer-coarse:after:-inset-x-2.5"
             />
           }
@@ -166,7 +169,8 @@ function TreeLead({ tree, onToggle }: { tree: TreeInfo; onToggle: () => void }):
 }
 
 function content<T>(spec: KindSpec<T>, row: T, env: CellEnv, tabbable: boolean): ReactNode {
-  if (spec.kind === 'actions') return <RowActions row={row} actions={spec.actions ?? []} />
+  if (spec.kind === 'actions')
+    return <RowActions row={row} actions={spec.actions ?? []} tabbable={tabbable} />
   if (spec.kind === 'select' && spec.edit !== undefined) {
     const value = spec.value(row)
     return (
@@ -226,8 +230,11 @@ export function DataRow<T>({
   const ticked = selection?.isSelected(row.id) === true
   const active = model.activeId === row.id
   const rowProps = useRowFocusProps(row.id, row.original, keyboard.rowProps(row.id))
-  // Controls in a row are tab stops only in the roving stop; a table without one leaves them all.
-  const tabbable = rowProps.tabIndex !== -1
+  // Controls in a row are tab stops only in the roving stop; a table without one leaves them all. A
+  // grid roves its cells, so a control is reached through its cell (Enter or F2), never by Tab.
+  const grid = model.look === 'grid'
+  const tabbable = !grid && rowProps.tabIndex !== -1
+  const tick = selection === undefined ? 0 : 1
   return (
     <TableRow
       role="row"
@@ -245,17 +252,27 @@ export function DataRow<T>({
       })}
       {...rowProps}
     >
-      {selection !== undefined && <TickCell selection={selection} id={row.id} ticked={ticked} />}
+      {selection !== undefined && (
+        <TickCell
+          selection={selection}
+          id={row.id}
+          ticked={ticked}
+          tabbable={!grid}
+          {...(grid && { cellProps: keyboard.cellProps(row.id, 0) })}
+        />
+      )}
       {columns.map(({ spec, planned }, index) => {
         const { numeric, className } = alignProps(spec)
         const label = labelOf(planned, spec)
         return (
           <TableCell
             key={spec.id}
-            role="cell"
+            role={grid ? 'gridcell' : 'cell'}
             aria-colindex={index + offset}
+            {...keyboard.cellProps(row.id, index + tick)}
             {...cellAttributes(spec)}
             {...tierAttributes(planned, model.detailListed)}
+            style={pinStyle(planned)}
             data-unit={spec.unit}
             {...(label !== '' && { 'data-label': label })}
             numeric={numeric}

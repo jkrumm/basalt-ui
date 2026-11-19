@@ -19,7 +19,7 @@ import { Skeleton } from '../../ui/skeleton'
 import { TableCell, TableRow } from '../../ui/table'
 import type { TableModel } from '../use-data-table'
 import { TickSkeleton } from './tick-column'
-import { alignProps, tierAttributes, visibleColumns } from './head'
+import { alignProps, pinStyle, tierAttributes, visibleColumns } from './head'
 
 /** Skeleton rows of a table that has shown none yet; once it has, the loading arm keeps the last height. */
 export const SKELETON_ROWS = 6
@@ -68,6 +68,7 @@ export function LoadingRows<T>({ model }: { model: TableModel<T> }): ReactElemen
                 data-kind={spec.kind}
                 data-align={spec.align}
                 {...tierAttributes(planned, model.detailListed)}
+                style={pinStyle(planned)}
                 numeric={numeric}
                 className={className}
               >

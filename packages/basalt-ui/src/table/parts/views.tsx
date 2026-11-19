@@ -68,7 +68,12 @@ function applyView<T>(model: TableModel<T>, view: View): void {
     // A view without ranks restores the declared order, so the table equals the view it applied.
     ranks: request.ranks ?? {},
   })
-  model.state.setDisplay({ visibility: display.visibility })
+  // A view saved before columns moved carries no order or pins: it restores the declared ones.
+  model.state.setDisplay({
+    visibility: display.visibility,
+    order: display.order ?? [],
+    pinned: display.pinned ?? [],
+  })
 }
 
 /** The views of a table and the two writes on them; the same shape on the device and on a store. */

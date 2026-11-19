@@ -99,19 +99,21 @@
   }
 
   /* reduced: priority 3 leaves below data-full-at; a sum above 1800 has no data-full-at */
-  [data-slot='table-root']:not([data-full-at]) :is([data-priority='3']) {
+  [data-slot='table-root']:not([data-full-at], [data-look='grid']) :is([data-priority='3']) {
     display: none;
   }
   /* the Details door shows exactly while a tier hides a column (the card tier is below every step) */
   [data-slot='table-expand'] {
     display: none;
   }
-  [data-slot='table-root']:not([data-full-at]) [data-slot='table-expand'] {
+  [data-slot='table-root']:not([data-full-at], [data-look='grid']) [data-slot='table-expand'] {
     display: inline-flex;
   }
   /* a virtual table's spacer rows span every column, so a hidden `<col>` would leave that column auto and
      take half of the flexible one: the virtual list keeps it as a zero-width column instead */
-  [data-slot='table-root']:not([data-full-at]) [data-slot='virtual-list'] col[data-priority='3'] {
+  [data-slot='table-root']:not([data-full-at], [data-look='grid'])
+    [data-slot='virtual-list']
+    col[data-priority='3'] {
     display: table-column;
     width: 0 !important;
   }
@@ -311,6 +313,12 @@
       [data-slot='table-head']:is([data-pin], [data-kind='tick']) {
       z-index: 20 !important;
     }
+    /* a phone keeps only the identity column pinned: a reader's pins scroll with the rest */
+    [data-slot='table-root'][data-below='480'][data-look='grid']
+      [data-slot='table']
+      [data-pin='start']:not([data-identity]) {
+      position: static;
+    }
   }
   @container table (max-width: 799.9px) {
     [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-header'] {
@@ -445,6 +453,12 @@
     [data-slot='table-root'][data-below='800'][data-phone='scroll']
       [data-slot='table-head']:is([data-pin], [data-kind='tick']) {
       z-index: 20 !important;
+    }
+    /* a phone keeps only the identity column pinned: a reader's pins scroll with the rest */
+    [data-slot='table-root'][data-below='800'][data-look='grid']
+      [data-slot='table']
+      [data-pin='start']:not([data-identity]) {
+      position: static;
     }
   }
   /* a 720 step: priority 1+2 need more than 480 px and fit 720 (plan.ts reducedFromOf) */
@@ -582,6 +596,12 @@
       [data-slot='table-head']:is([data-pin], [data-kind='tick']) {
       z-index: 20 !important;
     }
+    /* a phone keeps only the identity column pinned: a reader's pins scroll with the rest */
+    [data-slot='table-root'][data-below='720'][data-look='grid']
+      [data-slot='table']
+      [data-pin='start']:not([data-identity]) {
+      position: static;
+    }
   }
   @container table (width >= 0px) {
     [data-slot='table-root'][data-below='always'][data-phone='cards'] [data-slot='table-header'] {
@@ -715,6 +735,48 @@
     [data-below='always'][data-phone='cards'] [data-slot='table-pager-range'] {
       display: none;
     }
+  }
+
+  /* the grid look (data-look='grid', working data): no tier drops a column, so the scroller scrolls
+     sideways at every width with the identity column (and the tick) pinned and opaque; with a filler
+     column the last real cell keeps its rule, so the grid closes before the filler */
+  [data-slot='table-root'][data-look='grid']
+    :is([data-slot='table-scroller'], [data-slot='virtual-list']) {
+    overflow-x: auto;
+    scroll-padding-inline: var(--table-scroll-pad-start, 0px) var(--table-scroll-pad-end, 0px);
+  }
+  [data-slot='table-root'][data-look='grid'] [data-slot='table'] {
+    min-width: var(--table-min-scroll);
+  }
+  [data-slot='table-root'][data-look='grid']
+    [data-slot='table']
+    :is([data-pin], [data-kind='tick']) {
+    position: sticky;
+    z-index: 1;
+  }
+  [data-slot='table-root'][data-look='grid'] [data-slot='table'] [data-kind='tick'] {
+    inset-inline-start: 0;
+  }
+  [data-slot='table-root'][data-look='grid'] [data-slot='table'] [data-pin='start'] {
+    inset-inline-start: var(--table-pin-at, var(--table-pin-start, 0));
+  }
+  [data-slot='table-root'][data-look='grid'] [data-slot='table'] [data-pin='end'] {
+    inset-inline-end: 0;
+  }
+  [data-slot='table-root'][data-look='grid']
+    [data-slot='table-head']:is([data-pin], [data-kind='tick']) {
+    z-index: 20 !important;
+  }
+  [data-slot='table-root'][data-look='grid'][data-fill] [data-slot='table-row'] > :last-child {
+    border-inline-end-width: 1px !important;
+  }
+  [data-slot='table-root'][data-look='grid'][data-fill] [data-slot='table-row']::after {
+    border-bottom-width: 0;
+  }
+  /* the focused cell of the grid: the kit's ring, inset so the pinned columns never clip it */
+  [data-slot='table-root'][data-look='grid'] [data-slot='table-cell']:focus-visible {
+    outline: 2px solid var(--basalt-brand);
+    outline-offset: -2px;
   }
 
   @media print {

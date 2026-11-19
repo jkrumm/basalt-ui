@@ -1,6 +1,6 @@
 /**
  * Saved views, as pure values (docs/v3/concepts/data-table.md sections 3 and 6). A view stores
- * explicit values: `q`, filters, sort, page size and column visibility, never the page. It lives
+ * explicit values: `q`, filters, sort, page size and the columns (visibility, order, pins), never the page. It lives
  * on the device at `basalt:table-views:<id>` in the frozen `{v,value}` envelope, so a bumped
  * version discards what an older shape wrote instead of reading it wrong.
  *
@@ -61,11 +61,18 @@ const hidden = (visibility: Record<string, boolean>): string =>
     .toSorted()
     .join('\u0000')
 
+/** A stored id list as one comparable string; absent and empty are the same. */
+const listKey = (ids: readonly string[] | undefined): string => (ids ?? []).join('\u0000')
+
 /** Whether the table state differs from the view in anything the view carries. The page never counts. */
 export function isViewDirty(view: View, state: TableState): boolean {
+  const saved = view.state.display
+  const now = state.display
   return (
     !sameScope(view.state.request, state.request) ||
-    hidden(view.state.display.visibility) !== hidden(state.display.visibility)
+    hidden(saved.visibility) !== hidden(now.visibility) ||
+    listKey(saved.order) !== listKey(now.order) ||
+    listKey([...(saved.pinned ?? [])].toSorted()) !== listKey([...(now.pinned ?? [])].toSorted())
   )
 }
 
@@ -92,6 +99,15 @@ export function pruneView(
     if (known.has(id)) visibility[id] = shown
     else dropped.push(id)
   }
+  const ids = (list: readonly string[] | undefined): string[] | undefined =>
+    list === undefined
+      ? undefined
+      : list.filter((id) => {
+          if (!known.has(id) && !dropped.includes(id)) dropped.push(id)
+          return known.has(id)
+        })
+  const order = ids(display.order)
+  const pinned = ids(display.pinned)
   return {
     dropped,
     view: {
@@ -104,7 +120,12 @@ export function pruneView(
           sort: keep(request.sort, (s) => s.id),
           ...(request.ranks !== undefined && { ranks }),
         },
-        display: { ...display, visibility },
+        display: {
+          ...display,
+          visibility,
+          ...(order !== undefined && { order }),
+          ...(pinned !== undefined && { pinned }),
+        },
       },
     },
   }
@@ -129,7 +150,13 @@ export function saveView(
   const stored = {
     v: 1 as const,
     request: { ...state.request, page: 1 },
-    display: { visibility: { ...state.display.visibility } },
+    display: {
+      visibility: { ...state.display.visibility },
+      ...((state.display.order?.length ?? 0) > 0 && { order: [...(state.display.order ?? [])] }),
+      ...((state.display.pinned?.length ?? 0) > 0 && {
+        pinned: [...(state.display.pinned ?? [])],
+      }),
+    },
   }
   const existing = views.find((view) => view.name === clean)
   if (existing !== undefined) {

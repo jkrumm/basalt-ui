@@ -83,6 +83,8 @@ export function ColumnActionsMenu<T>({
   if (offered === null || spec === undefined) return null
   const direction = model.sortOf(column)
   const { sortable, hideable } = offered
+  // Where the column stands among those a reader can move; -1 for the identity column.
+  const movable = model.movable.indexOf(column)
   const { request } = model.state
   const touched =
     direction !== 'none' ||
@@ -138,6 +140,28 @@ export function ColumnActionsMenu<T>({
             )}
             {onOrder !== undefined && (
               <MenuItem onClick={onOrder}>{t('table.orderCategories')}</MenuItem>
+            )}
+            <MenuSeparator />
+          </>
+        )}
+        {movable >= 0 && (
+          <>
+            <MenuItem
+              disabled={movable === 0}
+              onClick={() => model.moveColumn(column, movable - 1)}
+            >
+              {t('table.moveLeft')}
+            </MenuItem>
+            <MenuItem
+              disabled={movable === model.movable.length - 1}
+              onClick={() => model.moveColumn(column, movable + 1)}
+            >
+              {t('table.moveRight')}
+            </MenuItem>
+            {model.look === 'grid' && (
+              <MenuItem onClick={() => model.setPinned(column, !model.pinnedOf(column))}>
+                {model.pinnedOf(column) ? t('table.unpinColumn') : t('table.pinColumn')}
+              </MenuItem>
             )}
             <MenuSeparator />
           </>

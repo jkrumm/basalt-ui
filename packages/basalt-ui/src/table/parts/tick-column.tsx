@@ -10,6 +10,7 @@ import { table } from '../../core/messages/table'
 import { Checkbox } from '../../ui/checkbox'
 import { Skeleton } from '../../ui/skeleton'
 import { TableCell } from '../../ui/table'
+import type { CellProps } from '../core/keyboard'
 import type { SelectionApi } from '../core/selection'
 
 /**
@@ -25,16 +26,28 @@ export function TickCell<T>({
   selection,
   id,
   ticked,
+  tabbable = true,
+  cellProps,
 }: {
   selection: SelectionApi<T>
   id: string
   ticked: boolean
+  /** `false` keeps the checkbox out of the tab order (a row that is not the stop, a grid cell). */
+  tabbable?: boolean
+  /** The grid look's cell wiring (`keyboard.cellProps`): the cell is then a grid cell. */
+  cellProps?: CellProps
 }): ReactElement {
   const t = useMessages(table)
   return (
-    <TableCell role="cell" aria-colindex={1} data-kind="tick">
+    <TableCell
+      role={cellProps === undefined ? 'cell' : 'gridcell'}
+      aria-colindex={1}
+      data-kind="tick"
+      {...cellProps}
+    >
       <span data-slot="table-select">
         <Checkbox
+          {...(!tabbable && { tabIndex: -1 })}
           aria-label={t('table.selectRow')}
           checked={ticked}
           onCheckedChange={() => selection.toggle(id)}

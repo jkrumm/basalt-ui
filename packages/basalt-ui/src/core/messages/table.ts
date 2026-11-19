@@ -60,6 +60,11 @@ export type TableMessages = Record<
   | 'table.sortClear'
   | 'table.hideColumn'
   | 'table.resetColumn'
+  | 'table.moveLeft'
+  | 'table.moveRight'
+  | 'table.pinColumn'
+  | 'table.unpinColumn'
+  | 'table.columns'
   | 'table.views'
   | 'table.viewSave'
   | 'table.viewName'
@@ -98,9 +103,11 @@ export type TableMessages = Record<
     | 'table.filterOf'
     | 'table.orderOf'
     | 'table.dateRange'
-    | 'table.optionsOf',
+    | 'table.optionsOf'
+    | 'table.searchIn',
     (f: Format, value: string) => string
   > &
+  Record<'table.displayHidden', (f: Format, hidden: number) => string> &
   Record<'table.orderMoved', (f: Format, label: string, at: number, of: number) => string> &
   Record<'table.orderHandle', (f: Format, label: string, at: number, of: number) => string>
 
@@ -159,6 +166,11 @@ export const table = {
   'table.sortClear': 'Clear sort',
   'table.hideColumn': 'Hide column',
   'table.resetColumn': 'Reset column',
+  'table.moveLeft': 'Move left',
+  'table.moveRight': 'Move right',
+  'table.pinColumn': 'Pin column',
+  'table.unpinColumn': 'Unpin column',
+  'table.columns': 'Columns',
   'table.views': 'Views',
   'table.viewSave': 'Save view',
   'table.viewName': 'View name',
@@ -195,6 +207,8 @@ export const table = {
   'table.orderOf': (_f, header) => `Order of ${header}`,
   'table.dateRange': (_f, header) => `${header} range`,
   'table.optionsOf': (_f, header) => `${header} values`,
+  'table.searchIn': (_f, label) => `Search ${label}`,
+  'table.displayHidden': (f, hidden) => `Display, ${f.number(hidden)} hidden`,
   'table.orderMoved': (f, label, at, of) =>
     `${label} moved to position ${f.number(at)} of ${f.number(of)}`,
   'table.orderHandle': (f, label, at, of) =>

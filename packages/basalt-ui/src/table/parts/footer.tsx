@@ -18,7 +18,7 @@ import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { footerValue } from './footer-model'
 import type { FooterValue } from './footer-model'
-import { alignProps, tierAttributes, visibleColumns } from './head'
+import { alignProps, pinStyle, tierAttributes, visibleColumns } from './head'
 
 const AGGREGATE_KEY: Record<Aggregate, keyof TableMessages> = {
   sum: 'table.aggSum',
@@ -110,6 +110,7 @@ export function DataTableFooter<T>({
               aria-colindex={index + offset}
               {...cellAttributes(spec)}
               {...tierAttributes(planned, model.detailListed)}
+              style={pinStyle(planned)}
               numeric={numeric}
               className={className}
             >

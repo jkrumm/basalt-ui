@@ -151,11 +151,12 @@ export function VirtualTable<T>({
         columns={colcount}
         tableProps={{
           'data-slot': 'table',
-          role: model.nested ? 'treegrid' : 'table',
+          role: model.nested ? 'treegrid' : model.look === 'grid' ? 'grid' : 'table',
           'aria-rowcount': rowcount,
           'aria-colcount': colcount,
           'aria-busy': busy || undefined,
-          className: cn(tableVariants(), 'table-fixed'),
+          'data-look': model.look === 'grid' ? 'grid' : undefined,
+          className: cn(tableVariants({ look: model.look }), 'table-fixed'),
         }}
         bodyProps={{
           'data-slot': 'table-body',

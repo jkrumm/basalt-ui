@@ -45,7 +45,7 @@ const ENTITY_SUB_MAX_CH = 2 * CONTENT_MAX_CH
 
 /** The table draws a filler column when its one flexible column is the title; `table.css` paints the filler cells. */
 function fillsTail<T>(model: TableModel<T>): boolean {
-  return titleCapPx(model) !== undefined
+  return model.look === 'grid' || titleCapPx(model) !== undefined
 }
 
 /** The title column's cap in px when it is the table's one flexible column, else `undefined`. */
@@ -67,6 +67,11 @@ function Columns<T>({
   fill?: boolean
 }): ReactElement {
   const visible = visibleColumns(model.specs, model.plan.columns)
+  // A grid draws every column at its planned width and leaves the rest to the filler, so the offsets
+  // of its pinned columns are sums of known widths.
+  const grid = model.look === 'grid'
+  const tickPx = model.selection === undefined ? 0 : SELECTION_COL_PX
+  const gridPx = visible.reduce((sum, { planned }) => sum + planned.widthPx, tickPx)
   const fixedPx = visible.reduce(
     (sum, { planned }) => (planned.flex ? sum : sum + planned.widthPx),
     model.selection === undefined ? 0 : SELECTION_COL_PX,
@@ -90,7 +95,7 @@ function Columns<T>({
     <colgroup>
       {model.selection !== undefined && <col style={{ width: '2.5rem' }} />}
       {visible.map(({ spec, planned }) => {
-        const flexible = planned.flex
+        const flexible = planned.flex && !grid
         // The title is the row's name: it gets a larger share of the free width, never less than its floor.
         const weighted = flexible && spec.kind === 'entity' && shares > ENTITY_SHARES
         return (
@@ -107,8 +112,12 @@ function Columns<T>({
           />
         )
       })}
-      {cap !== undefined && (
-        <col data-fill="" style={{ width: `max(0px, calc(100cqw - ${fillPx + cap}px))` }} />
+      {grid ? (
+        <col data-fill="" style={{ width: `max(0px, calc(100cqw - ${gridPx}px))` }} />
+      ) : (
+        cap !== undefined && (
+          <col data-fill="" style={{ width: `max(0px, calc(100cqw - ${fillPx + cap}px))` }} />
+        )
       )}
     </colgroup>
   )
@@ -155,7 +164,8 @@ function FramedArm<T>({
       data-phase={frame.arm.tag}
       data-contained=""
       data-fill={fillsTail(model) ? '' : undefined}
-      data-full-at={model.plan.fullAt ?? undefined}
+      data-look={model.look === 'grid' ? 'grid' : undefined}
+      data-full-at={model.look === 'grid' ? undefined : (model.plan.fullAt ?? undefined)}
       {...tierAttributesOf(model)}
       className="flex w-full max-w-full min-w-0 flex-col"
     >
@@ -166,7 +176,7 @@ function FramedArm<T>({
         aria-label={model.label}
         style={scrollMinWidth(model)}
       >
-        <Table role="table" aria-colcount={colcount} className="table-fixed">
+        <Table role="table" aria-colcount={colcount} look={model.look} className="table-fixed">
           <TableCaption className="sr-only">{model.label}</TableCaption>
           <Columns model={model} fill />
           <DataTableHead table={table} />
@@ -240,7 +250,9 @@ export function DataTable<T, I = unknown>({
           data-phase={phase.tag}
           data-contained=""
           data-virtual=""
-          data-full-at={model.plan.fullAt ?? undefined}
+          data-fill={model.look === 'grid' ? '' : undefined}
+          data-look={model.look === 'grid' ? 'grid' : undefined}
+          data-full-at={model.look === 'grid' ? undefined : (model.plan.fullAt ?? undefined)}
           {...tierAttributesOf(model)}
           onFocus={revealFocus}
           onBlur={onBlur}
@@ -267,7 +279,7 @@ export function DataTable<T, I = unknown>({
               detail={detail}
               head={
                 <>
-                  <Columns model={model} />
+                  <Columns model={model} fill={model.look === 'grid'} />
                   <DataTableHead table={table} rowIndex={1} />
                 </>
               }
@@ -290,7 +302,8 @@ export function DataTable<T, I = unknown>({
         data-phase={phase.tag}
         data-contained=""
         data-fill={fillsTail(model) ? '' : undefined}
-        data-full-at={model.plan.fullAt ?? undefined}
+        data-look={model.look === 'grid' ? 'grid' : undefined}
+        data-full-at={model.look === 'grid' ? undefined : (model.plan.fullAt ?? undefined)}
         {...tierAttributesOf(model)}
         onFocus={revealFocus}
         onBlur={onBlur}
@@ -318,9 +331,10 @@ export function DataTable<T, I = unknown>({
         >
           <Table
             // Nested rows make the table a tree grid: its rows carry a level and open or close.
-            role={model.nested ? 'treegrid' : 'table'}
+            role={model.nested ? 'treegrid' : model.look === 'grid' ? 'grid' : 'table'}
             aria-colcount={colcount}
             aria-busy={phase.tag === 'loading' || undefined}
+            look={model.look}
             className="table-fixed"
           >
             <TableCaption className="sr-only">{model.label}</TableCaption>

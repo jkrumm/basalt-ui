@@ -48,20 +48,27 @@ export function warnWithoutTierSheet(scroller: HTMLElement | null): void {
   })
 }
 
-/** The width of the visible priority 1 and 2 columns pinned to one edge. */
+/** Whether a planned column takes width in the sideways scroll: every visible one in a grid, priority 1 and 2 otherwise. */
+function scrolled<T>(
+  model: TableModel<T>,
+  column: TableModel<T>['plan']['columns'][number],
+): boolean {
+  return column.visible && (model.look === 'grid' || column.priority !== 3)
+}
+
+/** The width of the scrolled columns pinned to one edge. */
 function pinnedPx<T>(model: TableModel<T>, edge: 'start' | 'end'): number {
   return model.plan.columns.reduce(
-    (sum, column) =>
-      column.visible && column.priority !== 3 && column.pin === edge ? sum + column.widthPx : sum,
+    (sum, column) => (scrolled(model, column) && column.pin === edge ? sum + column.widthPx : sum),
     0,
   )
 }
 
-/** The scroll tier's table width: priority 1 and 2 columns at their planned size. */
+/** The sideways scroll's table width: the scrolled columns at their planned size. */
 export function scrollMinWidth<T>(model: TableModel<T>): CSSProperties {
   const selectPx = model.selection === undefined ? 0 : 40
   const px = model.plan.columns.reduce(
-    (sum, column) => (column.visible && column.priority !== 3 ? sum + column.widthPx : sum),
+    (sum, column) => (scrolled(model, column) ? sum + column.widthPx : sum),
     selectPx,
   )
   return {

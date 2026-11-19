@@ -6,7 +6,7 @@
  */
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
 import { useId, useRef, useState } from 'react'
-import type { ReactElement } from 'react'
+import type { CSSProperties, ReactElement } from 'react'
 import { cn } from '../../core/cn'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
@@ -34,10 +34,10 @@ export function useActionsLabel(): string {
 }
 
 /** The columns the table draws, in order: the plan's visible ones with their spec. */
-export function visibleColumns<T>(
+export function visibleColumns<T, C extends PlannedColumn>(
   specs: readonly KindSpec<T>[],
-  planned: readonly PlannedColumn[],
-): { spec: KindSpec<T>; planned: PlannedColumn }[] {
+  planned: readonly C[],
+): { spec: KindSpec<T>; planned: C }[] {
   return planned.flatMap((p, index) => {
     const spec = specs[index]
     return p.visible && spec !== undefined ? [{ spec, planned: p }] : []
@@ -76,6 +76,15 @@ export function tierAttributes(
         ? 'hidden'
         : undefined,
   }
+}
+
+/**
+ * The inline offset of a start-pinned cell (`--table-pin-at`): the tick column and the pinned columns
+ * before it. The grid look reads it, so several pinned columns stack instead of overlapping.
+ */
+export function pinStyle(planned: PlannedColumn & { pinAt?: number }): CSSProperties | undefined {
+  if (planned.pin !== 'start' || planned.pinAt === undefined) return undefined
+  return { ['--table-pin-at' as string]: `${planned.pinAt}px` }
 }
 
 const ARIA_SORT: Record<SortDirection, 'ascending' | 'descending' | 'none'> = {
@@ -305,6 +314,7 @@ export function DataTableHead<T>({
               {...(sortable && { 'aria-sort': ARIA_SORT[direction], 'aria-label': spec.header })}
               {...cellAttributes(spec)}
               {...tierAttributes(planned, model.detailListed)}
+              style={pinStyle(planned)}
               numeric={numeric}
               className={cn('group/head', className)}
             >
