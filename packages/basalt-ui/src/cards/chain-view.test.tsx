@@ -83,7 +83,7 @@ describe('ChainView', () => {
       return <ChainView {...props({ focus, onActivate })} />
     }
     const { container } = render(<Shared />)
-    const list = graph(container).querySelector<HTMLElement>('ul')!
+    const list = graph(container)
     expect(list.tabIndex).toBe(0)
     expect(node(container, 'b').querySelector('button')?.tabIndex).toBe(-1)
     act(() => {
