@@ -471,18 +471,27 @@ function inspectRing(el: Element): string[] {
   const worst =
     offset >= 1 ? ratio(ring, surface) : Math.min(ratio(ring, own), ratio(ring, surface))
   if (worst < 3) problems.push(`outline contrast ${worst.toFixed(2)}:1 is under 3:1`)
-  // Clipped: an ancestor that clips overflow cuts the ring (outline + offset) off.
+  // Clipped: an ancestor that clips overflow cuts the ring (outline + offset) off. A scroller (auto, scroll) only
+  // clips where scrolling cannot reveal the ring: at its content edges, not at the edge of the window it shows now,
+  // which depends on where focus last scrolled it (an element taller than the window always overhangs it).
   const reach = width + (parseFloat(s.outlineOffset) || 0)
   const rect = el.getBoundingClientRect()
+  const scrolls = (o: string): boolean => o === 'auto' || o === 'scroll'
   for (let p = el.parentElement; p !== null; p = p.parentElement) {
     const ps = getComputedStyle(p)
     if (ps.overflowX === 'visible' && ps.overflowY === 'visible') continue
     const pr = p.getBoundingClientRect()
+    const x = scrolls(ps.overflowX)
+    const y = scrolls(ps.overflowY)
+    const left = x ? pr.left + p.clientLeft - p.scrollLeft : pr.left
+    const right = x ? left + p.scrollWidth : pr.right
+    const top = y ? pr.top + p.clientTop - p.scrollTop : pr.top
+    const bottom = y ? top + p.scrollHeight : pr.bottom
     if (
-      rect.left - reach < pr.left - 0.5 ||
-      rect.right + reach > pr.right + 0.5 ||
-      rect.top - reach < pr.top - 0.5 ||
-      rect.bottom + reach > pr.bottom + 0.5
+      rect.left - reach < left - 0.5 ||
+      rect.right + reach > right + 0.5 ||
+      rect.top - reach < top - 0.5 ||
+      rect.bottom + reach > bottom + 0.5
     ) {
       problems.push(`outline is clipped by ${p.tagName.toLowerCase()}`)
       break
