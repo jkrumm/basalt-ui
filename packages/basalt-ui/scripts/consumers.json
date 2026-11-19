@@ -14,6 +14,7 @@
   "Callout": "argo:apps/dashboard/src/features/models/slots-list.tsx",
   "CardGrid": "argo:apps/dashboard/src/routes/garmin-health.tsx",
   "CartesianChart": "argo:apps/dashboard/src/features/garmin-health/charts/fitness-trends-chart.tsx",
+  "ChainView": "basalt-ui:apps/playground/src/routes/kit/chain.tsx",
   "ChartCard": "argo:apps/dashboard/src/features/usage-tracking/charts/cache-hit-ratio.tsx",
   "chartCursor": "weatherorb:apps/web/src/map/point/meteogram.tsx",
   "chartLabels": "weatherorb:apps/web/src/map/chrome/timeline-bar.tsx",

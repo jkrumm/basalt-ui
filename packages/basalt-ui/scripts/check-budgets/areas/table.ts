@@ -66,13 +66,22 @@ export const rows: readonly RowDef[] = [
     // Base UI Popover, Slider, NumberField and the toggle group (Segmented), the checklist and the category
     // order list join DataTable's closure. Not lazy-loaded: this row sums every emitted chunk, so a split
     // would move the bytes, not drop them, and the first open would wait on a fetch.
-    ceiling: 155000,
+    // 155000 -> 156500 (Issue 2314): 155942 B measured for nested rows (owner review 1): `nested.parentOf`,
+    // the tree item model, the indent and chevron lead, the treegrid row attributes and Right/Left keys.
+    ceiling: 156500,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 155000,
+      to: 156500,
+      consumer:
+        "the owner's first review of the v3 playground /scenarios/expr-n32 (2026-11-18): a dependency tree hand-indented in a custom column; nested rows draw it, the playground's /kit/chain over one dataset (Issue 2314)",
+      repo: 'basalt-ui',
+    },
     {
       from: 126000,
       to: 155000,
