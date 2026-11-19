@@ -4,7 +4,7 @@ use when: 'a card ranks a handful of named things by one number, or splits a tot
 never when: 'the rows have several columns to compare (use a table) or the list is a stream of things that happened (use an event list)'
 subpath: basalt-ui/cards
 peers: ['@base-ui/react']
-slots: [bar-list, bar-list-row, bar-list-scroll-cue]
+slots: [bar-list, bar-list-live, bar-list-row, bar-list-scroll-cue]
 ---
 
 # BarList
@@ -18,19 +18,23 @@ them in the colours of `series`, and the name stays on its own line above the ba
 ## Signature
 
 ```ts
-BarList(props: BarListProps): ReactElement
+BarList<I = unknown>(props: BarListProps<I>): ReactElement
+  // either focus, focusSeries or focusItems
   title: string
   subtitle?: string
   icon?: IconComponent
   info?: string
   phase?: Phase | QueryStateLike
   empty?: Empty | null
+  focus?: ListFocus<unknown>  // A chart's focus (`useChartFocus(items, …)`): row i is `focus.items[i]`, so pass the list in the same order as the chart's items
+  focusSeries?: { focus: { readonly setSeries: (key: string | null) => void; readonly seriesItem: (key: string) => ListFocusItem; }; key: (row: BarListItem) => string; }  // A chart's focus whose series the rows stand for (a row per request kind beside bars stacked by the model that served it): `key` maps a row to its series key
+  focusItems?: { focus: ListFocus<I>; holds: (row: BarListItem, item: I) => boolean; }  // A chart's focus over items of another grain: `holds(row, item)` is true for every item the row stands for (the hours of a window, the probes under a service), never by position
   items: readonly BarListItem[]  // Rows in display order: sort them yourself, the list does not reorder
   max?: number  // The scale end every bar fills against
   bodyRows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
   format?: (value: number) => string  // Formats each value
-  focus?: ListFocus<unknown>  // A chart's focus (`useChartFocus(items, …)`): row i is `focus.items[i]`, so pass the list in the same order as the chart's items
   series?: readonly LegendEntry[]  // The series a row's `parts` stack by: their order (first at the bar's start), their colour and a legend row under the header
+  mono?: boolean  // Draw every label in the mono face with tabular figures: ids, hashes, paths
 ```
 
 `Phase`, `QueryStateLike`, `Empty` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty } from 'basalt-ui/cards'`.
