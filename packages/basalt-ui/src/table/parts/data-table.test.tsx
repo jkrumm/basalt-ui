@@ -11,6 +11,7 @@ import { renderToString } from 'react-dom/server'
 import type { ReactElement } from 'react'
 import type { Phase, QueryStateLike } from '../../core/ports'
 import { settled } from '../../testing/settled'
+import { Card, CardPhase } from '../../ui/card'
 import { col } from '../core/kinds'
 import { DataTable } from './data-table'
 import { useDataTable } from '../use-data-table'
@@ -213,6 +214,25 @@ describe('geometry across phases', () => {
     expect(retried).toBe(1)
     rerender(<Subject phase={{ tag: 'error', kind: 'forbidden', retry: () => undefined }} />)
     expect(container.querySelector('[data-slot="table-error"] button')).toBeNull()
+  })
+
+  test('a table and a card on one retry draw one Retry between them', () => {
+    let retried = 0
+    const phase: Phase = { tag: 'error', retry: () => void (retried += 1) }
+    const { getAllByRole } = render(
+      <>
+        <Card>
+          <CardPhase phase={phase} height={72}>
+            {() => null}
+          </CardPhase>
+        </Card>
+        <Subject phase={phase} />
+      </>,
+    )
+    const buttons = getAllByRole('button', { name: 'Retry' })
+    expect(buttons.length).toBe(1)
+    fireEvent.click(buttons[0] as HTMLElement)
+    expect(retried).toBe(1)
   })
 
   test('a failed refetch keeps the rows and marks the root (I20)', () => {

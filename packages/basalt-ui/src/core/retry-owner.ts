@@ -20,7 +20,8 @@ function sync(members: readonly Member[]): void {
 
 /**
  * True when this frame draws the Retry. A frame with no retry, or none beside it, is its own
- * owner. The registration is a layout effect, so the first paint already shows one button.
+ * owner. The registration is a layout effect, so the first client paint already shows one button;
+ * a server render has no layout effects, so its HTML carries every frame's button until hydration.
  *
  * @example
  * const showRetry = useRetryOwner(resolved.retry)
