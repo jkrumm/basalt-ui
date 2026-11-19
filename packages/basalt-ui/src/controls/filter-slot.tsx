@@ -146,13 +146,11 @@ function CustomView<T>({
       data-escape={FILTER_SLOT_CUSTOM}
       className={cn('flex min-w-0 max-w-full gap-1.5', row ? 'flex-col' : 'flex-wrap items-center')}
     >
-      {presentation !== 'inline' && (
-        <span
-          className={row ? 'text-sm font-medium text-foreground' : 'text-xs text-muted-foreground'}
-        >
-          {label}
-        </span>
-      )}
+      <span
+        className={row ? 'text-sm font-medium text-foreground' : 'text-xs text-muted-foreground'}
+      >
+        {label}
+      </span>
       {badge}
       {input}
       {overrides && reset}
