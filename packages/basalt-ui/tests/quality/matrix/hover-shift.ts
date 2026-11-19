@@ -31,6 +31,9 @@ export const KNOWN_SHIFTS: Readonly<Record<string, string>> = {
  */
 export const TRIAL_PAGES: readonly string[] = ['/scenarios/expr-', '/cycle/']
 
+/** Trial builds `v3-owner-2-rerun` rebuilt on that contract: their card is checked like any page's. */
+export const REBUILT_PAGES: readonly string[] = ['/scenarios/expr-n04', '/cycle/shell-6']
+
 /** The boxes a pointer sweeps: a cartesian chart's root and an answering sparkline's plot. */
 const PLOTS = '[data-basalt-chart], [data-slot="spark-plot"]'
 /** Where across the plot the pointer stops, as a share of its width, at half its height: 16 stops, a sweep fine enough to cross every band of a 48-hour chart's six-hour ticks. */
