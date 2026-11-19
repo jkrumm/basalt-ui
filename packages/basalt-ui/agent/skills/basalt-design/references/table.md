@@ -10,7 +10,7 @@ Requires TanStack Table's own `table-state` skill for anything under `t.table`: 
 - The server pages and filters: `mode: { kind: 'server', rowCount }`. Pass `rowCount` as `undefined` until it is known; the table never prints "of 0". A cursor API passes `cursor` instead, never both.
 - A table that mounts loading draws six skeleton rows unless the page says how many it expects: `bodyRows: 18` on `useDataTable` draws eighteen, so the frame does not jump when they arrive (n36 jumped 370 px from six to eighteen; a `min-h-*` wrapper missed by the row height). A paged table caps it at the page; once rows have shown, loading keeps their height.
 - Rows that never sort, filter or select are `ui/table`, not this.
-- Rows under a parent (who waits on whom, the jobs of a run) are a client table with `group: { by: '<parent column>' }`: one collapsible group row per parent, its toggle a button, with a `summary`. There is no tree field, so never indent a `c.custom` cell by hand to fake one (n32).
+- Rows under a parent row (who waits on whom, the jobs of a run) are a client table with `nested: { parentOf }`: the table draws the indent and the chevron, sorts within a level and keeps a match's path while filtering, so never indent a `c.custom` cell by hand (n32). Rows that share a value (a floor, a state) are `group: { by }` instead. When the question is what blocks what across branches, put a [ChainView](node_modules/basalt-ui/docs/chain-view.md) over the same rows on one `useChartFocus` beside it (`/kit/chain`).
 
 ```tsx
 // @check

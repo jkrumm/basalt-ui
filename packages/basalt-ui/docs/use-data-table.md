@@ -38,6 +38,7 @@ useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: Us
   cardsBelow?: "regular" | "wide" | "always"  // The width below which the table becomes cards (`regular` is 480 px, `wide` 800 px, `always` never a table); default 'regular'
   pager?: "none" | "pages" | "more"  // The pager: `pages` steps through numbered pages, `more` is a Load more button, `none` shows every row; default 'none' on a client table, 'more' on a cursor table, 'pages' on any other server table
   group?: { by: string; summary?: (rows: readonly T[], box: Box) => ReactNode; }  // A type error unless `mode.kind` is `'client'` (enforced in `useDataTable` at the call site)
+  nested?: { parentOf: (row: T) => string | null | undefined; }  // Nested rows (client mode only, never with `group`): each row is drawn under the row `parentOf` names, one level deeper, with the indent and the expander the table draws in its first column; a row whose parent is absent, itself or below it is a root
   selection?: { bulk: BulkAction<T>[]; selectAll?: boolean; }
   views?: { store?: ViewStore; }
   detailTitle?: (row: T) => string  [with detail]  // The title of a row's detail entry (the aside or sheet header); the table label when absent

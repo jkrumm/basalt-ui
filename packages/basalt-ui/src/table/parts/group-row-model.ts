@@ -7,9 +7,10 @@
  */
 import type { KindSpec } from '../core/kinds-spec'
 import type { ModelRow as BodyRow } from '../use-data-table'
+import type { TreeInfo } from './tree-row-model'
 
 export type BodyItem<T> =
-  | { type: 'row'; key: string; row: BodyRow<T> }
+  | { type: 'row'; key: string; row: BodyRow<T>; tree?: TreeInfo }
   | {
       type: 'group'
       key: string

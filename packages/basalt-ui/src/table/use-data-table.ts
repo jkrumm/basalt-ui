@@ -32,6 +32,8 @@ import type {
 } from './contract'
 import { AutoDetail, detailTitle } from './parts/auto-detail'
 import { bodyItems, toggled } from './parts/group-row-model'
+import { treeItems } from './parts/tree-row-model'
+import type { TreeInfo } from './parts/tree-row-model'
 import type { BodyItem } from './parts/group-row-model'
 import { tableEngine } from './core/features'
 import { constructFilterFn, toColumnFilters } from './core/filters'
@@ -75,6 +77,10 @@ export type TableModel<T> = {
   /** The declared grouping (client mode only); `summary` is the group row's box slot. */
   group: { spec: KindSpec<T>; summary?: (rows: readonly T[], box: Box) => ReactNode } | undefined
   toggleGroup(value: string): void
+  /** Nested rows (`nested`, client mode): the items carry their `tree` place and the table is a tree grid. */
+  nested: boolean
+  /** Opens or closes a nested row. */
+  toggleRow(id: string): void
   server: boolean
   /** Client: every row matching the request (all pages), what the footer reduces. */
   matched: readonly T[]
@@ -303,7 +309,11 @@ export function useDataTable<
   const format = useFormat()
   const zone = zoneOf(useIntl().timeZone)
   const server = mode.kind === 'server'
-  const pager = options.pager ?? (!server ? 'none' : 'cursor' in mode ? 'more' : 'pages')
+  const nestedRows = options.nested !== undefined && !server
+  // A nested table shows every row: a page boundary would cut a row from the rows above it.
+  const pager = nestedRows
+    ? 'none'
+    : (options.pager ?? (!server ? 'none' : 'cursor' in mode ? 'more' : 'pages'))
   const paged = pager !== 'none' && !(server && 'cursor' in mode)
 
   // A fixed clock wins; otherwise the minute, floored so server and client agree, ticking once a minute.
@@ -396,8 +406,28 @@ export function useDataTable<
     setLastRows(rows.length)
   }
 
-  const group = groupOf(options.group, specs, server)
-  const items = bodyItems(rows, group?.spec, display.collapsed, matched)
+  const group = nestedRows ? undefined : groupOf(options.group, specs, server)
+  const items =
+    options.nested !== undefined && nestedRows
+      ? treeItems({
+          matched: rows,
+          all: options.data ?? NO_ROWS,
+          getRowId,
+          parentOf: options.nested.parentOf,
+          collapsed: display.collapsed,
+          narrowed: request.q !== '' || request.filters.length > 0 || pageFilters.active,
+        })
+      : bodyItems(rows, group?.spec, display.collapsed, matched)
+  const treeOf = (id: string): TreeInfo | undefined => {
+    const item = items.find((entry) => entry.type === 'row' && entry.row.id === id)
+    return item?.type === 'row' ? item.tree : undefined
+  }
+  const setOpen = (id: string, open: boolean): boolean => {
+    const tree = treeOf(id)
+    if (tree === undefined || !tree.parent || tree.open === open) return false
+    state.setDisplay({ collapsed: toggled(display.collapsed, id) })
+    return true
+  }
 
   const filtering = request.q !== '' || request.filters.length > 0 || pageFilters.active
   const settled = options.data !== undefined
@@ -542,6 +572,13 @@ export function useDataTable<
   })
   const keyboard = useRowKeyboard({
     rowIds: items.flatMap((item) => (item.type === 'row' ? [item.row.id] : [])),
+    tree: nestedRows
+      ? {
+          open: (id) => setOpen(id, true),
+          close: (id) => setOpen(id, false),
+          parentOf: (id) => treeOf(id)?.parentId,
+        }
+      : undefined,
     onActivate: activate,
     onToggle: options.selection === undefined ? undefined : selection.toggle,
     onClear: options.selection === undefined ? undefined : selection.clear,
@@ -557,6 +594,10 @@ export function useDataTable<
     group,
     toggleGroup(value) {
       state.setDisplay({ collapsed: toggled(display.collapsed, value) })
+    },
+    nested: nestedRows,
+    toggleRow(id) {
+      state.setDisplay({ collapsed: toggled(display.collapsed, id) })
     },
     server,
     matched,
