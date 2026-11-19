@@ -11,4 +11,12 @@ interface KnownFinding {
   owner: string
 }
 
-export const known: readonly KnownFinding[] = []
+export const known: readonly KnownFinding[] = [
+  {
+    route: '/cycle/shell-6/settings',
+    assertion: 'forcedColors',
+    item: /\[form-section\] div \d+x\d+/,
+    owner:
+      'v3-owner-2-rerun-kit-fixes: a FormSection frame is a shadow with no border, so it vanishes under forced-colors',
+  },
+]
