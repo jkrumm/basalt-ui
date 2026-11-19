@@ -10,6 +10,9 @@ import { date as dateMessages } from '../core/messages/date'
 import { useMessages } from '../core/messages/use-messages'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
+/** A picked day as `YYYY-MM-DD`, the type `value` and `onChange` take. Re-exported so a form types its field without `core/format`. */
+export type { CalendarDate } from '../core/format'
+
 /**
  * The trigger's cva table: a field-shaped button on the input surface that shows the picked day
  * (or the placeholder) and opens the calendar. It is the root element of `DatePicker` and
@@ -94,6 +97,10 @@ export type DatePickerProps = Layout &
     defaultValue?: CalendarDate | null
     /** Called with the clicked day, as `YYYY-MM-DD`. */
     onChange?: (value: CalendarDate) => void
+    /** Same as `onChange`; a `FormField` hands this one. Both are called when both are given. */
+    onValueChange?: (value: CalendarDate) => void
+    /** Called when the calendar closes, so a validator runs after the pick. */
+    onBlur?: () => void
   }
 
 /** A range of days. Both ends are `YYYY-MM-DD`; a half range is only ever a value you pass in. */
@@ -107,6 +114,10 @@ export type DateRangePickerProps = Layout &
     defaultValue?: { from?: CalendarDate | null; to?: CalendarDate | null } | null
     /** Called once both ends are picked, never with a half range. */
     onChange?: (value: CalendarRange) => void
+    /** Same as `onChange`; a `FormField` hands this one. Both are called when both are given. */
+    onValueChange?: (value: CalendarRange) => void
+    /** Called when the calendar closes, so a validator runs after the pick. */
+    onBlur?: () => void
   }
 
 const ISO_DAY = /^(\d{4})-(\d{2})-(\d{2})$/
@@ -263,6 +274,8 @@ export function DatePicker({
   value,
   defaultValue,
   onChange,
+  onValueChange,
+  onBlur,
   placeholder,
   className,
   id,
@@ -278,7 +291,14 @@ export function DatePicker({
   const [inner, setInner] = useState<CalendarDate | null>(defaultValue ?? null)
   const selected = toLocalDate(value === undefined ? inner : value)
   const picked = selected === undefined ? null : toCalendarDate(selected)
-  const state = useOpenState({ open, defaultOpen, onOpenChange })
+  const state = useOpenState({
+    open,
+    defaultOpen,
+    onOpenChange: (next) => {
+      if (!next) onBlur?.()
+      onOpenChange?.(next)
+    },
+  })
   return (
     <PickerShell
       slot="date-picker"
@@ -306,6 +326,7 @@ export function DatePicker({
           const next = toCalendarDate(day)
           setInner(next)
           onChange?.(next)
+          onValueChange?.(next)
           state.setOpen(false)
         }}
       />
@@ -330,6 +351,8 @@ export function DateRangePicker({
   value,
   defaultValue,
   onChange,
+  onValueChange,
+  onBlur,
   placeholder,
   className,
   id,
@@ -352,6 +375,7 @@ export function DateRangePicker({
     defaultOpen,
     onOpenChange: (next) => {
       setDraft(undefined)
+      if (!next) onBlur?.()
       onOpenChange?.(next)
     },
   })
@@ -398,6 +422,7 @@ export function DateRangePicker({
           }
           setInner(next)
           onChange?.(next)
+          onValueChange?.(next)
           state.setOpen(false)
         }}
       />

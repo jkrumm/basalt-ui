@@ -1,7 +1,8 @@
 import { Radio as BaseRadio } from '@base-ui/react/radio'
 import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group'
 import { cva } from 'class-variance-authority'
-import type { ReactElement } from 'react'
+import { useId } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 
 /**
@@ -33,17 +34,30 @@ type Layout<P> = Omit<P, 'className'> & {
   className?: string
 }
 
-export type RadioGroupProps<Value = string> = Layout<BaseRadioGroup.Props<Value>>
+/** One choice of a `RadioGroup` or `CheckboxGroup` given as `options`: a label and an optional description. */
+export type ChoiceOption<Value = string> = {
+  value: Value
+  label: ReactNode
+  description?: ReactNode
+  disabled?: boolean
+}
+
+export type RadioGroupProps<Value = string> = Layout<BaseRadioGroup.Props<Value>> & {
+  /** The choices, each a row with its label and description. When given, it replaces `children`. */
+  options?: readonly ChoiceOption<Value>[]
+}
 export type RadioProps<Value = string> = Layout<Omit<BaseRadio.Root.Props<Value>, 'children'>>
 
 /**
  * A group of radios on Base UI: one selected value, arrow keys move it in DOM order. Works with no
  * provider and joins a Base UI `Field` when wrapped in one. Name each radio with a wrapping
- * `<label>`.
+ * `<label>`, or give `options` and each row is labelled and described for you.
  *
  * @useWhen one value of a few (up to about five) that the user should see all at once
  * @neverWhen more than about five options (use Select), several values at once (use Checkbox), or a view switch (use Segmented)
  * @example
+ * <RadioGroup value={plan} onValueChange={setPlan} aria-label="Plan"
+ *   options={[{ value: 'pro', label: 'Pro', description: 'Team seats and audit log' }]} />
  * <RadioGroup value={plan} onValueChange={setPlan} aria-label="Plan">
  *   <label className="flex items-center gap-2 text-sm"><Radio value="free" />Free</label>
  *   <label className="flex items-center gap-2 text-sm"><Radio value="pro" />Pro</label>
@@ -51,6 +65,8 @@ export type RadioProps<Value = string> = Layout<Omit<BaseRadio.Root.Props<Value>
  */
 export function RadioGroup<Value = string>({
   className,
+  options,
+  children,
   ...props
 }: RadioGroupProps<Value>): ReactElement {
   return (
@@ -58,7 +74,11 @@ export function RadioGroup<Value = string>({
       {...props}
       data-slot="radio-group"
       className={cn(radioGroupVariants(), className)}
-    />
+    >
+      {options === undefined
+        ? children
+        : options.map((option) => <RadioOption key={String(option.value)} option={option} />)}
+    </BaseRadioGroup>
   )
 }
 
@@ -73,5 +93,37 @@ export function Radio<Value = string>({ className, ...props }: RadioProps<Value>
     <BaseRadio.Root {...props} data-slot="radio" className={cn(radioVariants(), className)}>
       <BaseRadio.Indicator className="size-1.5 rounded-full bg-on-brand" />
     </BaseRadio.Root>
+  )
+}
+
+/**
+ * One `options` row: the control on the first text line, then the label and the description. The
+ * label names the control; the description describes it. The row is a `<label>`, so a click on
+ * either text selects the option.
+ */
+function RadioOption<Value>({ option }: { option: ChoiceOption<Value> }): ReactElement {
+  const labelId = useId()
+  const descriptionId = useId()
+  const hasDescription = option.description !== undefined
+  return (
+    <label className="flex items-start gap-2">
+      <Radio
+        value={option.value}
+        disabled={option.disabled ?? false}
+        className="mt-0.5"
+        aria-labelledby={labelId}
+        aria-describedby={hasDescription ? descriptionId : undefined}
+      />
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span id={labelId} className="text-sm text-foreground">
+          {option.label}
+        </span>
+        {hasDescription && (
+          <span id={descriptionId} className="text-xs text-muted-foreground">
+            {option.description}
+          </span>
+        )}
+      </span>
+    </label>
   )
 }

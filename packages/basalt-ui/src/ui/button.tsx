@@ -70,6 +70,22 @@ export const pressableVariants = cva(
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
 export const buttonParts = ['button', 'pressable'] as const
 
+/** The `loading` spinner: a 16 px arc that turns, still for reduced motion, centred over the label. */
+function Spinner(): ReactElement {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      data-slot="button-spinner"
+      className="absolute inset-0 m-auto size-icon animate-spin motion-reduce:animate-none"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" />
+      <path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 type BaseProps = Omit<BaseButton.Props, 'className'> & {
   /** Layout only (`w-full`, `flex-1`, `mt-2`). Height and display belong to `size` and `shape`. */
   className?: string
@@ -78,7 +94,10 @@ type ButtonAxes = VariantProps<typeof buttonVariants>
 
 export type ButtonProps = BaseProps &
   Omit<ButtonAxes, 'shape'> & {
-    /** Disables interaction and sets `aria-busy`, keeping focus on the button. */
+    /**
+     * Disables interaction, sets `aria-busy` and draws a spinner over the label; the label keeps its
+     * place (transparent, still the accessible name), so the button never changes width.
+     */
     loading?: boolean
   } & (
     | { shape?: 'default' }
@@ -103,6 +122,7 @@ export function Button({
   disabled,
   focusableWhenDisabled,
   className,
+  children,
   ...props
 }: ButtonProps): ReactElement {
   return (
@@ -114,7 +134,16 @@ export function Button({
       data-loading={loading ? '' : undefined}
       data-slot="button"
       className={cn(buttonVariants({ variant, size, shape }), className)}
-    />
+    >
+      {loading === true ? (
+        <>
+          <Spinner />
+          <span className="inline-flex items-center gap-1.5 opacity-0">{children}</span>
+        </>
+      ) : (
+        children
+      )}
+    </BaseButton>
   )
 }
 

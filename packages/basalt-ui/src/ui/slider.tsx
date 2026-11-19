@@ -46,6 +46,8 @@ export type SliderProps<Value extends SliderValue = number> = Omit<
   'aria-labelledby'?: string
   /** One name per thumb of a range (`['Minimum price', 'Maximum price']`). */
   thumbLabels?: readonly string[]
+  /** Prints the current value at the end of the track, formatted with `format`; a range reads `a – b`. */
+  showValue?: boolean
 }
 
 const thumbCount = (value: SliderValue | undefined): number =>
@@ -67,6 +69,7 @@ export function Slider<Value extends SliderValue = number>({
   className,
   format: formatOptions,
   thumbLabels,
+  showValue,
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
   ...props
@@ -82,7 +85,7 @@ export function Slider<Value extends SliderValue = number>({
       data-slot="slider"
       className={cn(sliderVariants(), className)}
     >
-      <BaseSlider.Control className="flex h-full w-full items-center">
+      <BaseSlider.Control className="flex h-full w-full min-w-0 items-center">
         <BaseSlider.Track className="h-1 w-full rounded-full bg-input">
           <BaseSlider.Indicator className="rounded-full bg-brand-fill" />
           {Array.from({ length: count }, (_, index) => (
@@ -97,6 +100,13 @@ export function Slider<Value extends SliderValue = number>({
           ))}
         </BaseSlider.Track>
       </BaseSlider.Control>
+      {showValue === true && (
+        <BaseSlider.Value className="shrink-0 pl-3 text-sm text-muted-foreground tabular-nums">
+          {(_formatted, values) =>
+            values.map((value) => format.number(value, formatOptions)).join(' – ')
+          }
+        </BaseSlider.Value>
+      )}
     </BaseSlider.Root>
   )
 }

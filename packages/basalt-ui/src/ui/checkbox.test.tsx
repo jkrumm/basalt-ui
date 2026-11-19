@@ -5,6 +5,11 @@ import type { ReactElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { Checkbox, CheckboxGroup, checkboxParts } from './checkbox'
 
+const describedBy = (el: HTMLElement): string | null => {
+  const id = el.getAttribute('aria-describedby')
+  return id === null ? null : (document.getElementById(id)?.textContent ?? null)
+}
+
 afterEach(cleanup)
 
 const slots = (root: ParentNode): string[] =>
@@ -79,5 +84,50 @@ describe('checkbox module', () => {
     )
     fireEvent.click(getByRole('checkbox'))
     expect(seen).toEqual([])
+  })
+})
+
+describe('checkbox options', () => {
+  test('each checkbox is named by its label and described by its description', () => {
+    const { getByRole } = render(
+      <CheckboxGroup
+        aria-label="Tags"
+        options={[
+          { value: 'ops', label: 'Ops', description: 'Pages the on-call' },
+          { value: 'dev', label: 'Dev' },
+        ]}
+      />,
+    )
+    expect(describedBy(getByRole('checkbox', { name: 'Ops' }))).toBe('Pages the on-call')
+    expect(getByRole('checkbox', { name: 'Dev' }).getAttribute('aria-describedby')).toBeNull()
+  })
+
+  test('a click on the label text toggles the option into the group value', () => {
+    const seen: string[][] = []
+    const { getByRole, getByText } = render(
+      <CheckboxGroup
+        aria-label="Tags"
+        defaultValue={['ops']}
+        onValueChange={(next) => seen.push(next)}
+        options={[
+          { value: 'ops', label: 'Ops', description: 'Pages the on-call' },
+          { value: 'dev', label: 'Dev', description: 'Writes code' },
+        ]}
+      />,
+    )
+    fireEvent.click(getByText('Dev'))
+    expect(getByRole('checkbox', { name: 'Dev' }).getAttribute('aria-checked')).toBe('true')
+    expect(seen).toEqual([['ops', 'dev']])
+  })
+})
+
+describe('checkbox read-only look', () => {
+  test('a read-only checkbox carries the read-only look and the data-readonly attribute', () => {
+    const { getByRole } = render(<Checkbox aria-label="Agree" readOnly defaultChecked />)
+    const box = getByRole('checkbox', { name: 'Agree' })
+    expect(box.getAttribute('data-readonly')).not.toBeNull()
+    expect(box.className).toContain('data-readonly:bg-inset')
+    expect(box.className).toContain('data-readonly:text-muted-foreground')
+    expect(box.className).toContain('data-readonly:data-checked:bg-inset')
   })
 })

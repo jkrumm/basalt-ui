@@ -97,3 +97,42 @@ describe('slider module', () => {
     expect(committed.at(-1)).toBe(6)
   })
 })
+
+const valueText = (root: ParentNode): string | null | undefined =>
+  root.querySelector('output')?.textContent
+
+describe('slider value', () => {
+  test('showValue prints the value and follows a controlled change', () => {
+    const { container, rerender } = render(<Slider aria-label="V" value={30} showValue />)
+    expect(valueText(container)).toBe('30')
+    rerender(<Slider aria-label="V" value={45} showValue />)
+    expect(valueText(container)).toBe('45')
+  })
+
+  test('showValue follows the keyboard on an uncontrolled slider', () => {
+    const { container } = render(<Slider aria-label="V" defaultValue={5} showValue />)
+    fireEvent.keyDown(inputs(container)[0]!, { key: 'ArrowRight' })
+    expect(valueText(container)).toBe('6')
+  })
+
+  test('a range reads "a – b"', () => {
+    const { container } = render(
+      <Slider defaultValue={[20, 80]} thumbLabels={['From', 'To']} showValue />,
+    )
+    expect(valueText(container)).toBe('20 – 80')
+  })
+
+  test('the value uses the slider format and locale', () => {
+    const { container } = render(
+      <IntlScope locale="de-DE">
+        <Slider aria-label="V" defaultValue={1.5} step={0.5} max={5} showValue />
+      </IntlScope>,
+    )
+    expect(valueText(container)).toBe('1,5')
+  })
+
+  test('no value text unless asked', () => {
+    const { container } = render(<Slider aria-label="V" defaultValue={30} />)
+    expect(container.querySelector('output')).toBeNull()
+  })
+})

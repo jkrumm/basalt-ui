@@ -24,12 +24,13 @@ value read out to assistive tech is formatted in the page locale (`useFormat`): 
 for a write that is expensive. Arrow keys step by `step`, Shift or Page keys by `largeStep`.
 
 ```ts
-Slider<Value extends SliderValue = number>({ className, format: formatOptions, thumbLabels, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, ...props }: SliderProps<Value>): ReactElement
+Slider<Value extends SliderValue = number>({ className, format: formatOptions, thumbLabels, showValue, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, ...props }: SliderProps<Value>): ReactElement
   className?: string  // Layout only (`max-w-xs`, `mt-2`)
   format?: Intl.NumberFormatOptions  // Intl options for the value read out to assistive tech (`{ style: 'percent' }`)
   aria-label?: string
   aria-labelledby?: string
   thumbLabels?: readonly string[]  // One name per thumb of a range (`['Minimum price', 'Maximum price']`)
+  showValue?: boolean  // Prints the current value at the end of the track, formatted with `format`; a range reads `a – b`
 ```
 
 ## `sliderVariants`

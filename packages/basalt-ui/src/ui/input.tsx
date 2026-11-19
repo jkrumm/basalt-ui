@@ -1,18 +1,20 @@
 import { Input as BaseInput } from '@base-ui/react/input'
 import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import type { IconComponent } from '../core/ports'
 
 /**
  * The `Input` cva table. Coarse pointers get the 44 px floor and 16 px text (below that iOS Safari
- * zooms the page on focus).
+ * zooms the page on focus). A read-only field keeps its value readable: the inset surface, no border,
+ * no editable affordance; it never takes the disabled opacity.
  *
  * @example
  * inputVariants({ size: 'sm' })
  */
 export const inputVariants = cva(
-  'w-full min-w-0 rounded-ctrl border border-input bg-background text-foreground placeholder:text-faint focus-ring transition-colors aria-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'w-full min-w-0 rounded-ctrl border border-input bg-background text-foreground placeholder:text-faint focus-ring transition-colors [&[readonly]]:cursor-default [&[readonly]]:border-transparent [&[readonly]]:bg-inset aria-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
   {
     variants: {
       size: {
@@ -25,25 +27,55 @@ export const inputVariants = cva(
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
-export const inputParts = ['input'] as const
+export const inputParts = ['input-group', 'input'] as const
 
 export type InputProps = Omit<BaseInput.Props, 'className' | 'size'> &
   VariantProps<typeof inputVariants> & {
-    /** Layout only (`w-full`, `max-w-xs`, `flex-1`). Height belongs to `size`. */
+    /** Layout only (`w-full`, `max-w-xs`, `flex-1`). Height belongs to `size`. With `start` or `end` it sits on the wrapper. */
     className?: string
+    /** A non-interactive leading icon, drawn inside the field. */
+    start?: IconComponent
+    /** A trailing unit (`ms`) or one small button, drawn inside the field. */
+    end?: ReactNode
   }
 
 /**
  * A text input on Base UI. Works with no provider and joins a Base UI `Field` when wrapped in one.
+ * `start` and `end` put an icon or a unit inside the field; without them the DOM is the bare input.
  *
  * @useWhen one line of free text, a number as text, a search or an email
  * @neverWhen several lines (use Textarea), a number with steppers (use NumberField), or a choice from known values (use Select or Combobox)
  * @example
- * <Input value={q} onValueChange={setQ} placeholder="Search" />
- * <Input size="sm" aria-label="Quantity" inputMode="numeric" />
+ * <Input value={q} onValueChange={setQ} placeholder="Search" start={SearchIcon} />
+ * <Input size="sm" aria-label="Quantity" inputMode="numeric" end="pcs" />
  */
-export function Input({ size, className, ...props }: InputProps): ReactElement {
+export function Input({ size, className, start: Start, end, ...props }: InputProps): ReactElement {
+  if (Start === undefined && end === undefined) {
+    return (
+      <BaseInput {...props} data-slot="input" className={cn(inputVariants({ size }), className)} />
+    )
+  }
   return (
-    <BaseInput {...props} data-slot="input" className={cn(inputVariants({ size }), className)} />
+    <div data-slot="input-group" className={cn('relative w-full min-w-0', className)}>
+      <BaseInput
+        {...props}
+        data-slot="input"
+        className={cn(
+          inputVariants({ size }),
+          Start !== undefined && 'ps-8',
+          end !== undefined && 'pe-8',
+        )}
+      />
+      {Start !== undefined && (
+        <span className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-2.5 text-muted-foreground">
+          <Start className="size-icon" aria-hidden="true" />
+        </span>
+      )}
+      {end !== undefined && (
+        <span className="absolute inset-y-0 end-0 flex items-center gap-1 pe-2.5 text-muted-foreground">
+          {end}
+        </span>
+      )}
+    </div>
   )
 }

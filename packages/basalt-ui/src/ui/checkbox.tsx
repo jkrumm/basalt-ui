@@ -1,8 +1,10 @@
 import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox'
 import { CheckboxGroup as BaseCheckboxGroup } from '@base-ui/react/checkbox-group'
 import { cva } from 'class-variance-authority'
+import { useId } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
+import type { ChoiceOption } from './radio-group'
 
 /**
  * The `CheckboxGroup` cva table: the options stacked with one gap, wide enough on a coarse pointer
@@ -17,13 +19,15 @@ export const checkboxGroupVariants = cva('flex flex-col gap-2 pointer-coarse:gap
 /**
  * The `Checkbox` cva table: a 16 px box with a check (or a dash when indeterminate). The root is a
  * `<span>`, not a button. It stays 16 px on every pointer and grows only its invisible `::after`
- * hit area, to 24 px for a fine pointer and 44 px for a coarse one. No axes.
+ * hit area, to 24 px for a fine pointer and 44 px for a coarse one. A read-only box keeps its state
+ * on the inset surface with a muted check, no border and no hover; it never takes the disabled
+ * opacity. No axes.
  *
  * @example
  * checkboxVariants() // class string for a hand-built checkbox
  */
 export const checkboxVariants = cva(
-  'group relative inline-flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-ctrl border border-input bg-background text-on-brand focus-ring transition-colors after:absolute after:top-1/2 after:left-1/2 after:size-6 after:-translate-1/2 pointer-coarse:after:size-11 data-checked:border-brand-fill data-checked:bg-brand-fill data-indeterminate:border-brand-fill data-indeterminate:bg-brand-fill data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50',
+  'group relative inline-flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-ctrl border border-input bg-background text-on-brand focus-ring transition-colors after:absolute after:top-1/2 after:left-1/2 after:size-6 after:-translate-1/2 pointer-coarse:after:size-11 data-checked:border-brand-fill data-checked:bg-brand-fill data-indeterminate:border-brand-fill data-indeterminate:bg-brand-fill data-invalid:border-bad data-readonly:cursor-default data-readonly:border-transparent data-readonly:bg-inset data-readonly:text-muted-foreground data-readonly:data-checked:border-transparent data-readonly:data-checked:bg-inset data-readonly:data-checked:text-muted-foreground data-readonly:data-indeterminate:border-transparent data-readonly:data-indeterminate:bg-inset data-readonly:data-indeterminate:text-muted-foreground data-disabled:cursor-not-allowed data-disabled:opacity-50',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -34,27 +38,41 @@ type Layout<P> = Omit<P, 'className'> & {
   className?: string
 }
 
-export type CheckboxGroupProps = Layout<BaseCheckboxGroup.Props>
+export type CheckboxGroupProps = Layout<BaseCheckboxGroup.Props> & {
+  /** The choices, each a row with its label and description. When given, it replaces `children`. */
+  options?: readonly ChoiceOption[]
+}
 export type CheckboxProps = Layout<Omit<BaseCheckbox.Root.Props, 'children'>>
 
 /**
  * A group of checkboxes on Base UI: the value is the list of checked options' `value`s. Works with
  * no provider and joins a Base UI `Field` when wrapped in one. Name each checkbox with a wrapping
- * `<label>`.
+ * `<label>`, or give `options` and each row is labelled and described for you.
  *
  * @example
+ * <CheckboxGroup value={tags} onValueChange={setTags} aria-label="Tags"
+ *   options={[{ value: 'ops', label: 'Ops', description: 'Pages the on-call' }]} />
  * <CheckboxGroup value={tags} onValueChange={setTags} aria-label="Tags">
  *   <label className="flex items-center gap-2 text-sm"><Checkbox value="ops" />Ops</label>
  *   <label className="flex items-center gap-2 text-sm"><Checkbox value="dev" />Dev</label>
  * </CheckboxGroup>
  */
-export function CheckboxGroup({ className, ...props }: CheckboxGroupProps): ReactElement {
+export function CheckboxGroup({
+  className,
+  options,
+  children,
+  ...props
+}: CheckboxGroupProps): ReactElement {
   return (
     <BaseCheckboxGroup
       {...props}
       data-slot="checkbox-group"
       className={cn(checkboxGroupVariants(), className)}
-    />
+    >
+      {options === undefined
+        ? children
+        : options.map((option) => <CheckboxOption key={String(option.value)} option={option} />)}
+    </BaseCheckboxGroup>
   )
 }
 
@@ -93,5 +111,36 @@ export function Checkbox({ className, ...props }: CheckboxProps): ReactElement {
         </svg>
       </BaseCheckbox.Indicator>
     </BaseCheckbox.Root>
+  )
+}
+
+/**
+ * One `options` row: the checkbox on the first text line, then the label and the description. The
+ * label names the checkbox; the description describes it. The row is a `<label>`.
+ */
+function CheckboxOption({ option }: { option: ChoiceOption }): ReactElement {
+  const labelId = useId()
+  const descriptionId = useId()
+  const hasDescription = option.description !== undefined
+  return (
+    <label className="flex items-start gap-2">
+      <Checkbox
+        value={option.value}
+        disabled={option.disabled ?? false}
+        className="mt-0.5"
+        aria-labelledby={labelId}
+        aria-describedby={hasDescription ? descriptionId : undefined}
+      />
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span id={labelId} className="text-sm text-foreground">
+          {option.label}
+        </span>
+        {hasDescription && (
+          <span id={descriptionId} className="text-xs text-muted-foreground">
+            {option.description}
+          </span>
+        )}
+      </span>
+    </label>
   )
 }
