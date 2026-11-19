@@ -6,6 +6,8 @@
  */
 import { createContext, useContext } from 'react'
 import type { FocusEvent, PointerEvent, ReactElement, ReactNode } from 'react'
+import { heldBy, heldItem } from '../../core/list-link'
+import type { MarkedItem } from '../../core/list-link'
 import type { ListFocus, ListFocusItem } from '../../core/ports'
 import type { DataTableProps } from '../contract'
 import type { RowProps } from '../core/keyboard'
@@ -19,9 +21,6 @@ type RowLink = {
   clear: () => void
 }
 
-/** What `useChartFocus` puts on an item beyond `ListFocusItem`: the kit dims a `data-dimmed` row. */
-type MarkedItem = { 'data-chart-mark'?: ''; 'data-dimmed'?: '' }
-
 export type FocusedRowProps = RowProps & {
   'data-chart-mark'?: ''
   'data-dimmed'?: ''
@@ -30,8 +29,6 @@ export type FocusedRowProps = RowProps & {
   onPointerDown?: () => void
 }
 
-const noRef = (): void => undefined
-
 type SeriesLink<T> = NonNullable<DataTableProps<T>['focusSeries']>
 type ItemsLink<T, I> = NonNullable<DataTableProps<T, I>['focusItems']>
 
@@ -39,37 +36,12 @@ type ItemsLink<T, I> = NonNullable<DataTableProps<T, I>['focusItems']>
  * A row that stands for items of another grain: it holds every item `holds` accepts, pointing at it
  * holds them all, and it is marked while any item it holds is focused.
  */
-function itemsLink<T, I>({ focus, holds }: ItemsLink<T, I>): RowLink {
-  const heldBy = (row: T): number[] =>
-    focus.items.flatMap((item, i) => (holds(row, item) ? [i] : []))
+function itemsLink<T, I>(link: ItemsLink<T, I>): RowLink {
   return {
-    item: (_, row) => {
-      const indexes = heldBy(row as T)
-      const first = indexes[0]
-      // A row that holds nothing stands for no item: pointing at it clears the focus, and it dims
-      // while another row's items are focused.
-      if (first === undefined)
-        return {
-          ...(focus.index !== null && { 'data-dimmed': '' as const }),
-          ref: noRef,
-          onPointerEnter: () => focus.set(null),
-          onPointerDown: () => focus.set(null),
-        } satisfies ListFocusItem & MarkedItem
-      const marked = focus.span.some((item) => holds(row as T, item))
-      const props: ListFocusItem & MarkedItem = {
-        'data-chart-mark': '',
-        ...(marked && { 'data-focused': '' as const }),
-        ...(focus.index !== null && !marked && { 'data-dimmed': '' as const }),
-        // The row stands in for its first item, so a chart's keyboard step onto it scrolls the row.
-        ref: focus.item(first).ref,
-        onPointerEnter: () => focus.hold(indexes),
-        onPointerDown: () => focus.hold(indexes),
-      }
-      return props
-    },
+    item: (_, row) => heldItem(link, row as T),
     // `hold` of no index clears, so stepping onto a row that holds nothing clears the focus too.
-    enter: (_, row) => focus.hold(heldBy(row as T)),
-    clear: () => focus.set(null),
+    enter: (_, row) => link.focus.hold(heldBy(link, row as T)),
+    clear: () => link.focus.set(null),
   }
 }
 

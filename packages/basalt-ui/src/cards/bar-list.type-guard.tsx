@@ -4,6 +4,7 @@
  * the top prove the guards fail for the stated reason and not because the props are wrong everywhere.
  */
 import type { ReactElement } from 'react'
+import type { ListFocus, ListFocusItem } from '../core/ports'
 import { BarList } from './bar-list'
 import { EventList } from './event-list'
 
@@ -61,6 +62,31 @@ export const barRowLinkAndButton: ReactElement = (
 export const barRowsOutOfRange: ReactElement = (
   // @ts-expect-error the body holds 3 to 10 rows
   <BarList title="Top projects" items={items} bodyRows={2} />
+)
+
+declare const focus: ListFocus<unknown>
+declare const series: {
+  readonly setSeries: (key: string | null) => void
+  readonly seriesItem: (key: string) => ListFocusItem
+}
+
+export const validSeriesBars: ReactElement = (
+  <BarList
+    title="Requests"
+    items={items}
+    focusSeries={{ focus: series, key: (row) => row.label }}
+  />
+)
+
+export const validItemBars: ReactElement = (
+  <BarList title="Windows" items={items} focusItems={{ focus, holds: (row) => row.value > 0 }} />
+)
+
+const byLabel = { focus: series, key: (row: { label: string }): string => row.label }
+
+export const barTwoFocusArms: ReactElement = (
+  // @ts-expect-error a list joins a chart's focus by one arm at most
+  <BarList title="R" items={items} focus={focus} focusSeries={byLabel} />
 )
 
 export const eventNoClassName: ReactElement = (
