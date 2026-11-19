@@ -227,16 +227,17 @@ export type ComboboxProps<Value = string, Multiple extends boolean | undefined =
     onCreate?: (text: string) => Value
   }
 
-/** True when `items` is a flat list; Base UI groups (`{ value, items }`) are not. */
+/**
+ * True when `items` is a flat list. Base UI reads a list as groups when its first item has an
+ * `items` array (`isGroupedItems`), so this asks the same question.
+ */
 function isFlat(items: unknown): items is readonly unknown[] {
-  return (
-    Array.isArray(items) &&
-    !items.some(
-      (item) =>
-        typeof item === 'object' &&
-        item !== null &&
-        Array.isArray((item as { items?: unknown }).items),
-    )
+  if (!Array.isArray(items)) return false
+  const first: unknown = items[0]
+  return !(
+    typeof first === 'object' &&
+    first !== null &&
+    Array.isArray((first as { items?: unknown }).items)
   )
 }
 
