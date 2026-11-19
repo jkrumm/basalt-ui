@@ -250,14 +250,24 @@ const SKELETON_FIXTURE = `<!doctype html><style>
 <div data-shot=blank class=card></div>
 <div data-shot=dot class=card style="position:relative"><style>[data-shot=dot]::after{content:'';position:absolute;top:0;left:0;width:8px;height:8px;background:#f00}</style></div>`
 
-/** A chart host that announces, one that throws on the second press (a closure reading a later const), a row host and an anchor with no host. */
+/** A chart host that announces, one that throws on the second press (a closure reading a later const), a row host, an anchor with no host and a one-tab-stop list (a linked `BarList`). */
 const KEYS_FIXTURE = `<!doctype html><body style="margin:0">
 <div data-shot=good class=card><div tabindex=0 aria-roledescription=chart aria-label="Good chart" style="width:200px;height:100px;background:#00f"><i id=g-live aria-live=polite></i></div></div>
 <div data-shot=boom class=card><div id=boom tabindex=0 aria-roledescription=chart aria-label="Boom chart" style="width:200px;height:100px;background:#00f"></div></div>
 <div data-shot=rows class=card><table><tbody><tr tabindex=0 id=r0><td>one</td></tr><tr tabindex=-1 id=r1><td>two</td></tr><tr tabindex=-1 id=r2><td>three</td></tr></tbody></table><i id=r-live aria-live=polite></i></div>
 <div data-shot=plain class=card><button>Go</button></div>
 <div data-shot=spark class=card><div data-slot=sparkline role=group tabindex=0 aria-roledescription=chart aria-label="Queue per week" style="width:200px;height:56px;background:#00f"><i id=s-live aria-live=polite></i></div></div>
+<div data-shot=list class=card><ul role=list tabindex=0 aria-label="Kinds"><li>chat</li><li>code</li></ul><i id=l-live aria-live=polite></i></div>
 <script>
+{
+  const kinds = ['chat', 'code']
+  let at = -1
+  document.querySelector('[aria-label="Kinds"]').addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowDown') return
+    at = Math.min(kinds.length - 1, at + 1)
+    document.getElementById('l-live').textContent = kinds[at]
+  })
+}
 {
   const spark = document.querySelector('[aria-label="Queue per week"]')
   let at = 11
@@ -681,6 +691,14 @@ describe('keys state', () => {
         expect(spark[0]?.keys?.presses.map((p) => p.live.split(' | ').at(-1))).toEqual([
           'W51',
           'W50',
+        ])
+        // A one-tab-stop list (a linked BarList) is a row host: it steps down and its region names the row.
+        const list = of('list')
+        expect(list.every((s) => s.status === 'ok' && s.keys?.key === 'ArrowDown')).toBe(true)
+        expect(list[0]?.keys?.host).toBe('ul[list] "Kinds"')
+        expect(list[0]?.keys?.presses.map((p) => p.live.split(' | ').at(-1))).toEqual([
+          'chat',
+          'code',
         ])
         // The throwing chart is a named defect with no frame; the log keeps what was read before it.
         const boom = of('boom')

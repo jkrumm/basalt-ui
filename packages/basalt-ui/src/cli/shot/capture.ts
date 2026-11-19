@@ -533,7 +533,7 @@ export function focusKeysHost(el: Element): { host: string; key: KeyLog['key'] }
   // Inline: the function is serialised into the page, so it reaches no module constant.
   const chartHost = '[aria-roledescription="chart"]'
   const rowHost =
-    'tr[tabindex="0"], [role="row"][tabindex="0"], [role="grid"][tabindex="0"], [role="treegrid"][tabindex="0"], [role="listbox"][tabindex="0"]'
+    'tr[tabindex="0"], [role="row"][tabindex="0"], [role="grid"][tabindex="0"], [role="treegrid"][tabindex="0"], [role="listbox"][tabindex="0"], [role="list"][tabindex="0"]'
   const visible = (e: Element): boolean => e.checkVisibility()
   const within = (css: string): Element | undefined =>
     [el, ...Array.from(el.querySelectorAll(css))].filter((e) => e.matches(css)).find(visible)
