@@ -17,7 +17,7 @@ export function gapText(f: Format, v: number): string {
   return `${tenths(v) > 0 ? '+' : ''}${degrees(f, v)} °C`
 }
 
-export const clock = (f: Format, at: Date): string =>
+const clock = (f: Format, at: Date): string =>
   f.time(at, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
 
 /** 'Thu 05:00'. */

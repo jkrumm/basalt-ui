@@ -18,7 +18,7 @@ export const MONTHS = [
 /** The last complete month is October (index 10); November (index 11) is 17 of 30 days. */
 export const LAST_COMPLETE = 10
 export const PARTIAL = 11
-export const PARTIAL_SHARE = 17 / 30
+const PARTIAL_SHARE = 17 / 30
 
 export type Merchant = { name: string; total: number }
 

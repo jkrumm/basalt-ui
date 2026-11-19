@@ -5,7 +5,7 @@ import { decode } from './measure.ts'
 import type { Measured } from './measure.ts'
 
 /** Sub-pixel noise between two Chrome builds drawing the same face; a real shift is a whole pixel or more. */
-export const EPSILON = 0.25
+const EPSILON = 0.25
 
 export type Mismatch = { sig: number; width: number; reason: string }
 export type Shift = {

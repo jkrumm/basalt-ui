@@ -19,9 +19,6 @@ export type Night = {
   last: boolean
 }
 
-/** The fixture names the scenario knows; anything else is the default. */
-export const FIXTURES = ['missing-rem', 'zero-deep', 'restless'] as const
-
 /** Minutes asleep that count as enough. */
 export const NEED_MIN = 420
 /** A stage this far under its usual counts as short. */

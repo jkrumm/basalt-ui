@@ -1,10 +1,10 @@
 /** Queue waits (scenario expr-n18): a seeded week of about 120 waits, a few still open at `NOW`. */
 
-export const NOW = Date.UTC(2026, 10, 16, 12, 0)
+const NOW = Date.UTC(2026, 10, 16, 12, 0)
 const HOUR = 3_600_000
 const WEEK = 7 * 24 * HOUR
 
-export const REASONS = [
+const REASONS = [
   { key: 'host-slot', label: 'Host slot' },
   { key: 'account-quota', label: 'Account quota' },
   { key: 'owner-answer', label: 'Owner answer' },

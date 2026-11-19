@@ -12,7 +12,7 @@ const columnOf = (cards: Cards, id: string): Col | undefined =>
   COLUMNS.find((c) => cards[c].some((item) => item.id === id))
 
 /** The next board after `m`: the card leaves `from` and lands at `index` of `to`. */
-export function applyMove(cards: Cards, m: Move<Col>): Cards {
+function applyMove(cards: Cards, m: Move<Col>): Cards {
   const item = cards[m.from].find((i) => i.id === m.id)
   if (item === undefined) return cards
   const without = Object.fromEntries(

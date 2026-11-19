@@ -5,13 +5,13 @@
  */
 
 export const STEP_MIN = 5
-export const STEPS = 25
+const STEPS = 25
 export const CELL_KM = 2
 export const SIZE = 20
 /** The viewer's cell; its centre is the grid's middle, give or take half a cell. */
-export const VIEWER = { col: 10, row: 10 } as const
+const VIEWER = { col: 10, row: 10 } as const
 /** The nowcast's first step, a fixed instant so every render prints the same clock. */
-export const NOW = new Date(Date.UTC(2026, 10, 17, 14, 0))
+const NOW = new Date(Date.UTC(2026, 10, 17, 14, 0))
 
 /** Rain rates in mm/h: a cell under RAIN_MIN is dry, the classes follow the usual radar bands. */
 export const RAIN_MIN = 0.1

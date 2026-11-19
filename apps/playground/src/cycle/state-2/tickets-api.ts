@@ -37,7 +37,7 @@ export type TicketQuery = {
 export type QueueStats = { open: number; breaching: number; at: number }
 
 /** What a refused save throws: the shape `toSubmitErrors` maps onto the form and its fields. */
-export class ApiError extends Error {
+class ApiError extends Error {
   constructor(
     message: string,
     readonly fieldErrors: Record<string, string> = {},
@@ -129,7 +129,7 @@ function emit(ticket: Ticket): void {
 }
 
 /** Every call and its kind, so the action driver can tell a poll from a push refetch. */
-export const calls: { kind: 'list' | 'get' | 'save' | 'stats'; at: number }[] = []
+const calls: { kind: 'list' | 'get' | 'save' | 'stats'; at: number }[] = []
 declare global {
   interface Window {
     basaltTicketCalls?: typeof calls

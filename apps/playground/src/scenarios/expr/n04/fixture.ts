@@ -17,7 +17,7 @@ const START_HOUR = 23
 const PATTERN_OFFSET = 9
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu'] as const
 
-export const LIMITS: Limits = { rain: 30, wind: 20 }
+const LIMITS: Limits = { rain: 30, wind: 20 }
 
 function seeded(seed: number): () => number {
   let a = seed
@@ -46,7 +46,7 @@ export const hourLabel = (i: number): string => {
 }
 
 /** `Tue 07:00–13:00`, or `Mon 22:00–Tue 06:00` across midnight. */
-export function spanLabel(from: number, toExclusive: number): string {
+function spanLabel(from: number, toExclusive: number): string {
   const a = clock(from)
   const b = clock(toExclusive)
   return a.day === b.day ? `${a.day} ${a.time}–${b.time}` : `${a.day} ${a.time}–${b.day} ${b.time}`

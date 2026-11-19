@@ -9,7 +9,7 @@ import type { ErrorComponentProps } from '@tanstack/react-router'
 import { EmptyState } from 'basalt-ui/page'
 import type { ReactElement } from 'react'
 
-export function RoutePending(): ReactElement {
+function RoutePending(): ReactElement {
   return (
     <output>
       <EmptyState cause="Loading this page." />
@@ -17,7 +17,7 @@ export function RoutePending(): ReactElement {
   )
 }
 
-export function RouteError({ reset }: ErrorComponentProps): ReactElement {
+function RouteError({ reset }: ErrorComponentProps): ReactElement {
   const router = useRouter()
   const retry = async () => {
     await router.invalidate()
@@ -35,7 +35,7 @@ type NotFoundData = { message?: string; link?: { to: string; label: string } }
 
 const HOME = { to: '/', label: 'Go to the start page' }
 
-export function RouteMissing({ data }: { data?: unknown }): ReactElement {
+function RouteMissing({ data }: { data?: unknown }): ReactElement {
   const { message, link }: NotFoundData = typeof data === 'object' && data !== null ? data : {}
   const back = typeof link?.to === 'string' && typeof link.label === 'string' ? link : HOME
   return (

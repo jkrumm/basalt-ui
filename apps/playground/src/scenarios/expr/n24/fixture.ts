@@ -80,7 +80,7 @@ function build(seeds: readonly Seed[], scale: (i: number) => number): readonly W
 }
 
 /** Default: a mixed month; one workflow bills nothing, two have no purpose set. */
-export const SPEND_30D = build(SEEDS, () => 1)
+const SPEND_30D = build(SEEDS, () => 1)
 
 /** `zero`: every workflow bills evals and verification only, production is $0. */
 const ZERO_SEEDS = SEEDS.map((s) => ({
@@ -93,10 +93,10 @@ const ZERO_SEEDS = SEEDS.map((s) => ({
     s.weights[4],
   ] as Seed['weights'],
 }))
-export const SPEND_NO_PRODUCTION = build(ZERO_SEEDS, () => 1)
+const SPEND_NO_PRODUCTION = build(ZERO_SEEDS, () => 1)
 
 /** `extreme`: one production workflow spends about forty times the median. */
-export const SPEND_EXTREME = build(SEEDS, (i) => (i === 0 ? 40 : 1))
+const SPEND_EXTREME = build(SEEDS, (i) => (i === 0 ? 40 : 1))
 
 export function fixtureRows(name: string | undefined): readonly Workflow[] {
   if (name === 'zero') return SPEND_NO_PRODUCTION

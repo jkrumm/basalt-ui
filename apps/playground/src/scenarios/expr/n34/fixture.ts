@@ -31,9 +31,9 @@ export type Harbour = {
   calmHours: number
 }
 
-export const FIXTURES = ['calm', 'rough'] as const
+const FIXTURES = ['calm', 'rough'] as const
 export type FixtureName = (typeof FIXTURES)[number]
-export const isFixtureName = (value: string | undefined): value is FixtureName =>
+const isFixtureName = (value: string | undefined): value is FixtureName =>
   FIXTURES.some((name) => name === value)
 
 const START = Date.UTC(2026, 10, 20, 0)

@@ -12,7 +12,7 @@ export const STAGE_LABEL: Record<Stage, string> = {
 }
 
 /** Typical time per stage, in hours. */
-export const TYPICAL_HOURS: Record<Stage, number> = {
+const TYPICAL_HOURS: Record<Stage, number> = {
   queued: 2,
   building: 1.5,
   review: 10,

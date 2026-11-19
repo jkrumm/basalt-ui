@@ -73,7 +73,7 @@ const EXTREMES = byRelevance(
   }),
 )
 
-export const FIXTURES = {
+const FIXTURES = {
   'none-started': NONE_STARTED,
   extremes: EXTREMES,
 } as const satisfies Record<string, readonly Course[]>

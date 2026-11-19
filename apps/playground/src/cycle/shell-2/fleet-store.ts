@@ -6,7 +6,7 @@
 import { defineControls, field } from 'basalt-ui/router'
 import { TEAMS, TEAM_LABELS } from './fleet-api'
 
-export const RANGES = ['7d', '30d', '90d'] as const
+const RANGES = ['7d', '30d', '90d'] as const
 export type Range = (typeof RANGES)[number]
 export const RANGE_DAYS: Record<Range, number> = { '7d': 7, '30d': 30, '90d': 90 }
 
@@ -30,7 +30,7 @@ export const services = defineControls({
   },
 })
 
-export const SETTINGS_SECTIONS = ['general', 'notifications', 'members', 'danger'] as const
+const SETTINGS_SECTIONS = ['general', 'notifications', 'members', 'danger'] as const
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]
 
 export const settings = defineControls({

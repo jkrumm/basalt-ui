@@ -21,7 +21,7 @@ export type FixtureName = 'rest' | 'clear' | 'hard'
 
 const HOUR = 3_600_000
 /** Tue 17 Nov 2026, 12:00 UTC: the first hour of the forecast. */
-export const START = Date.UTC(2026, 10, 17, 12)
+const START = Date.UTC(2026, 10, 17, 12)
 const HOURS = 120
 /** Hours after START of each daily maximum (15:00) and of each night's minimum (05:00). */
 const MAX_AT = (day: number): number => 3 + 24 * day

@@ -20,7 +20,7 @@ export type Day = {
 /** `default` has an outage (zero) and three spikes; `quiet` has no escalation; `surge` one extreme day. */
 export type FixtureName = 'default' | 'quiet' | 'surge'
 
-export const FIXTURE_NAMES: readonly FixtureName[] = ['default', 'quiet', 'surge']
+const FIXTURE_NAMES: readonly FixtureName[] = ['default', 'quiet', 'surge']
 
 export const resolveFixture = (raw: string | undefined): FixtureName =>
   FIXTURE_NAMES.find((n) => n === raw) ?? 'default'

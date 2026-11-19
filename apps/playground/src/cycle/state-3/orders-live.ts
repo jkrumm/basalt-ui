@@ -51,7 +51,7 @@ const memoryTransport: Transport = async function* ({ signal }) {
   }
 }
 
-export const ordersChannel = createChannel({
+const ordersChannel = createChannel({
   transport: memoryTransport,
   greeting: 'hello',
   heartbeatMs: BEAT_MS,
@@ -82,7 +82,7 @@ export const orderQuery = (id: string) =>
   })
 
 /** The fulfilment figure: nothing pushes it, so it ticks every 5 s. */
-export const FULFILMENT_MS = 5_000
+const FULFILMENT_MS = 5_000
 export const fulfilmentQuery = () =>
   liveQuery(
     queryOptions({ queryKey: ['orders', 'fulfilment'], queryFn: () => ordersApi.stats() }),

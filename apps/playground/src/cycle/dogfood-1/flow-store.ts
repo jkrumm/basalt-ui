@@ -6,7 +6,7 @@
 import { defineControls, field } from 'basalt-ui/router'
 import { FLOW_STATES, ORIGINS, ORIGIN_LABELS, PROJECTS, STATE_LABELS } from './flow-fixtures'
 
-export const SCREENS = ['ready', 'loading', 'empty', 'error', 'stale'] as const
+const SCREENS = ['ready', 'loading', 'empty', 'error', 'stale'] as const
 export type Screen = (typeof SCREENS)[number]
 
 const projectLabels = Object.fromEntries(PROJECTS.map((p) => [p, p])) as Record<

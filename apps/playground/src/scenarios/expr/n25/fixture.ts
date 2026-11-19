@@ -19,7 +19,7 @@ export type Book = {
 export type ReadingLog = { goal: number; today: Date; books: readonly Book[] }
 
 /** The fixed "today" of every fixture, so a shot is the same shot. */
-export const TODAY = new Date(Date.UTC(2026, 10, 17))
+const TODAY = new Date(Date.UTC(2026, 10, 17))
 
 /** A started book with no page in this many days has stalled. */
 export const STALL_DAYS = 21

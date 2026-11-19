@@ -171,7 +171,7 @@ function year(): readonly Booking[] {
 const YEAR = year()
 
 /** The `?fixture=` names this scenario knows. */
-export const FIXTURES = ['no-donations', 'all-tagged', 'one-merchant'] as const
+const FIXTURES = ['no-donations', 'all-tagged', 'one-merchant'] as const
 export type FixtureName = (typeof FIXTURES)[number]
 
 const isFixture = (name: string | undefined): name is FixtureName =>

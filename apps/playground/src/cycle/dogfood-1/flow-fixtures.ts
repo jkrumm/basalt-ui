@@ -44,7 +44,7 @@ export const ORIGIN_LABELS: Record<Origin, string> = {
   feedback: 'Feedback',
 }
 
-export const KINDS = ['feature', 'bug', 'chore', 'docs', 'incident'] as const
+const KINDS = ['feature', 'bug', 'chore', 'docs', 'incident'] as const
 export type Kind = (typeof KINDS)[number]
 
 export type FlowIssue = {

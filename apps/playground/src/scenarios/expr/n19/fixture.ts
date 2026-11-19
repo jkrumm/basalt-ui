@@ -29,7 +29,7 @@ export const WEAK_BELOW = -72
 const STEP_MS = 5 * 60_000
 const HOUR_MS = 60 * 60_000
 const SAMPLES = 7 * 24 * 12
-export const END = Date.UTC(2026, 10, 16, 9, 0)
+const END = Date.UTC(2026, 10, 16, 9, 0)
 
 function seeded(seed: number): () => number {
   let a = seed
@@ -85,7 +85,7 @@ export function buildSamples(name: FixtureName): readonly Sample[] {
   return out
 }
 
-export const isWeak = (s: Sample): boolean => !s.connected || (s.signal ?? 0) < WEAK_BELOW
+const isWeak = (s: Sample): boolean => !s.connected || (s.signal ?? 0) < WEAK_BELOW
 
 const mean = (values: readonly number[]): number | null =>
   values.length === 0 ? null : values.reduce((a, b) => a + b, 0) / values.length

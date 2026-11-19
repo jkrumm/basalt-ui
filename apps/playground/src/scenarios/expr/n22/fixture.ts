@@ -13,7 +13,7 @@ type Shape = {
   sick: boolean
 }
 
-export const FIXTURE_NAMES = ['improving', 'declining', 'stable', 'flat', 'sparse'] as const
+const FIXTURE_NAMES = ['improving', 'declining', 'stable', 'flat', 'sparse'] as const
 export type FixtureName = (typeof FIXTURE_NAMES)[number]
 
 const SHAPES: Record<FixtureName, Shape> = {

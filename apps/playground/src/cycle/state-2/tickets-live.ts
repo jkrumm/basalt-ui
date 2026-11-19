@@ -70,7 +70,7 @@ export const ticketQuery = (id: string) =>
   })
 
 /** The queue figure: nothing pushes it, so it ticks every 5 s. */
-export const QUEUE_MS = 5_000
+const QUEUE_MS = 5_000
 export const queueQuery = () =>
   liveQuery(queryOptions({ queryKey: ['tickets', 'queue'], queryFn: () => ticketsApi.stats() }), {
     class: 'ticker',

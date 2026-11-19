@@ -189,7 +189,7 @@ const CHARGES: readonly Charge[] = [
 ]
 
 /** The names `?fixture=` takes. */
-export const FIXTURE_NAMES = ['extreme', 'flat', 'single'] as const
+const FIXTURE_NAMES = ['extreme', 'flat', 'single'] as const
 export type FixtureName = (typeof FIXTURE_NAMES)[number]
 
 export const isFixtureName = (value: string | undefined): value is FixtureName =>
@@ -209,7 +209,7 @@ function variant(name: FixtureName | undefined): readonly Charge[] {
   return CHARGES
 }
 
-export function toRow(c: Charge): Row {
+function toRow(c: Charge): Row {
   const per = MONTHS_PER[c.interval]
   const monthly = c.history.map((h) => round2(h / per))
   const first = monthly[0] ?? 0

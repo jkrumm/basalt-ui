@@ -29,8 +29,6 @@ export type LineLoad = {
   cells: readonly HourCell[]
 }
 
-export const FIXTURE_NAMES = ['over', 'quiet'] as const
-
 function rng(seed: number): () => number {
   let a = seed
   return () => {

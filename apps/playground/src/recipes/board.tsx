@@ -8,10 +8,10 @@ export type Cards = Record<Col, Item[]>
 /** The app's drag library attaches here: it wraps one card, whose props name its column and index. */
 export type Wrap = (card: ReactElement<KanbanCardProps<Col>>) => ReactElement
 export type BoardProps = { cards: Cards; active: Col; onMove: (m: Move<Col>) => void; wrap?: Wrap }
-export const LABELS: Record<Col, string> = { todo: 'To do', doing: 'Doing', done: 'Done' }
+const LABELS: Record<Col, string> = { todo: 'To do', doing: 'Doing', done: 'Done' }
 
 /** The columns with their counts: what every card's `move.columns` and `move.column` read. */
-export const columnsOf = (cards: Cards): ColumnRef<Col>[] =>
+const columnsOf = (cards: Cards): ColumnRef<Col>[] =>
   (Object.keys(LABELS) as Col[]).map((id) => ({ id, label: LABELS[id], count: cards[id].length }))
 
 // #region recipe:board

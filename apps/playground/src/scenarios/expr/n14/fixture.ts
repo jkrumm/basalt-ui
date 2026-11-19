@@ -15,7 +15,7 @@ export type Month = {
 }
 
 /** `default` has a cash dip and a depot drawdown; `drop` ends the year poorer; `fresh` opened its depot late and holds nothing in other accounts. */
-export const FIXTURES = ['default', 'drop', 'fresh'] as const
+const FIXTURES = ['default', 'drop', 'fresh'] as const
 export type FixtureName = (typeof FIXTURES)[number]
 
 const COUNT = 24

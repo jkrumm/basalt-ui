@@ -91,7 +91,7 @@ const ALL_CLEAR: readonly Ticket[] = BASE.map((t) => ({
   daysInStatus: Math.min(t.daysInStatus, 3),
 }))
 
-export const FIXTURES: Readonly<Record<string, readonly Ticket[]>> = {
+const FIXTURES: Readonly<Record<string, readonly Ticket[]>> = {
   'zero-done': ZERO_DONE,
   'all-clear': ALL_CLEAR,
 }
@@ -103,7 +103,7 @@ export const ticketsFor = (fixture: string | undefined): readonly Ticket[] =>
 export type Item = Ticket & { reason: string }
 
 /** An open ticket is at risk when it cannot finish in the days left at its pace so far. */
-export function riskReason(t: Ticket): string {
+function riskReason(t: Ticket): string {
   if (t.status === 'done') return ''
   if (t.points === null) return 'No estimate'
   if (t.status === 'todo' && t.points >= 3) return 'Large, not started'

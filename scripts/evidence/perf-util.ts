@@ -8,7 +8,7 @@ import type { BrowserContext, Page } from 'playwright-core'
 
 /** Fixed so a diff between two runs is never a viewport change. */
 export const VIEWPORT = { width: 1280, height: 800 } as const
-export const DEVICE_SCALE_FACTOR = 1
+const DEVICE_SCALE_FACTOR = 1
 
 /** `1` is unthrottled; `4` is Chrome DevTools' "4x slowdown" mid-tier-mobile preset. */
 export const THROTTLES = [1, 4] as const
@@ -33,12 +33,6 @@ export function percentile(values: readonly number[], p: number): number {
 }
 
 export const median = (values: readonly number[]): number => percentile(values, 50)
-
-/** Median of the non-null values; `null` when every run lacked one (never `NaN`). */
-export function medianOrNull(values: readonly (number | null)[], digits = 1): number | null {
-  const present = values.filter((v): v is number => v !== null)
-  return present.length === 0 ? null : round(median(present), digits)
-}
 
 /** One row of a lane's summary table. */
 export type SummaryRow = { metric: string; value: number | string; unit?: string }
@@ -127,11 +121,7 @@ export async function readProbe(page: Page, t0: number, t1: number): Promise<Pro
 }
 
 /** CPU throttle through CDP. `1` clears it. Must be applied per page, before navigation. */
-export async function throttleCpu(
-  context: BrowserContext,
-  page: Page,
-  rate: Throttle,
-): Promise<void> {
+async function throttleCpu(context: BrowserContext, page: Page, rate: Throttle): Promise<void> {
   const cdp = await context.newCDPSession(page)
   await cdp.send('Emulation.setCPUThrottlingRate', { rate })
 }
