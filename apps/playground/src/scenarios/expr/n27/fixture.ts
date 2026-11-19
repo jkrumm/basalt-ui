@@ -1,209 +1,276 @@
-/** Factory health measures (scenario expr-n27): 8 weekly measures, 12 weeks, the last one partial. Seeded, so every run draws the same weeks. */
+/**
+ * Factory health measures (scenario expr-n27): eight weekly measures with the direction that counts
+ * as better, twelve weeks of values, the newest week partial, some weeks without a value. Seeded and
+ * deterministic: the same fixture name always draws the same weeks.
+ */
+import type { SparkPoint } from 'basalt-ui/charts'
 
-export type Measure = {
+export type Direction = 'lower' | 'higher'
+export type VerdictName = 'Slid' | 'Better' | 'Steady' | 'No reading'
+
+type Measure = {
   id: string
   name: string
-  /** What the figure counts, spelled short: `h`, `%`, `/day`. */
+  direction: Direction
+  /** Printed after the value, with its space. */
   unit: string
-  /** The direction that counts as better. */
-  better: 'lower' | 'higher'
-  /** One plain sentence of what the figure means. */
-  info: string
-  /** Fraction digits of the printed figure. */
+  prefix: string
   digits: number
-  /** Twelve weekly values, oldest first; `null` is a week nobody measured. The last is the partial week. */
+  /** A value above it is drawn on the sparkline's top edge under the kit's caret. */
+  cap: number | undefined
+  /** Why a week has no value, for the row's line when this week has none. */
+  missing: string
   weeks: readonly (number | null)[]
 }
 
-/** The ISO week number of the partial week. */
-export const THIS_WEEK = 47
-const WEEK_COUNT = 12
-export const FIRST_WEEK = THIS_WEEK - WEEK_COUNT + 1
+export type Row = Measure & {
+  now: number | null
+  /** Change against last week in the better direction, whole percent; null without both values. */
+  toward: number | null
+  verdict: VerdictName
+  trend: readonly SparkPoint[]
+}
 
-/** mulberry32: a small seeded generator, so a fixture never changes between runs. */
+/** How many measures held a verdict in each week with a week before it, oldest first. */
+export type CountHistory = { byWeek: readonly SparkPoint[]; now: number; last: number }
+
+export type Fixture = {
+  rows: readonly Row[]
+  slid: CountHistory
+  better: CountHistory
+  /** First, middle and last week of `byWeek`, for a card's axis labels. */
+  axisLabels: readonly [string, string, string]
+  nowLabel: string
+  lastLabel: string
+}
+
+const FIRST_WEEK = 36
+export const WEEKS = 12
+const NOW = WEEKS - 1
+const LAST = WEEKS - 2
+
+const weekLabel = (i: number): string => `W${FIRST_WEEK + i}`
+
+/** mulberry32: a small seeded generator, so a fixture never changes between builds. */
 function seeded(seed: number): () => number {
-  let s = seed
+  let a = seed
   return () => {
-    s = (s + 0x6d2b79f5) | 0
-    let t = Math.imul(s ^ (s >>> 15), 1 | s)
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
 }
 
 type Spec = Omit<Measure, 'weeks'> & {
-  seed: number
-  from: number
-  to: number
-  /** Noise as a share of the value. */
+  base: number
   noise: number
-  /** This week's value against last week's, as a ratio; set so the page has both movers and sliders. */
-  thisWeek: number
-  /** Weeks (0-based) with no value. */
-  gaps?: readonly number[]
-  /** Weeks (0-based) pinned to a value: the spike and the zero. */
-  pins?: Readonly<Record<number, number>>
+  /** Weeks that are set by hand: the story, the spike, the weeks nothing was measured. */
+  set: Readonly<Record<number, number | null>>
 }
 
 const SPECS: readonly Spec[] = [
   {
     id: 'fix-commits',
-    name: 'Fix commits',
-    unit: '/day',
-    better: 'lower',
-    info: 'Commits that repair an earlier change, per working day.',
+    missing: 'no Issue merged',
+    name: 'Fix commits per Issue',
+    direction: 'lower',
+    unit: '',
+    prefix: '',
     digits: 1,
-    seed: 11,
-    from: 9,
-    to: 6.4,
-    noise: 0.06,
-    thisWeek: 1.22,
+    cap: undefined,
+    base: 1.3,
+    noise: 0.25,
+    set: { 9: 1.35, 10: 1.3, 11: 1.9 },
   },
   {
-    id: 'rounds',
-    name: 'Rounds to pass',
-    unit: 'rounds',
-    better: 'lower',
-    info: 'Review rounds a change needs before it passes.',
+    id: 'review-rounds',
+    missing: 'no review finished',
+    name: 'Rounds to pass review',
+    direction: 'lower',
+    unit: '',
+    prefix: '',
     digits: 1,
-    seed: 23,
-    from: 2.7,
-    to: 1.9,
-    noise: 0.05,
-    thisWeek: 0.9,
+    cap: undefined,
+    base: 2.1,
+    noise: 0.3,
+    set: { 9: 2.3, 10: 2.2, 11: 1.7 },
   },
   {
-    id: 'queue',
-    name: 'Time in queue',
-    unit: 'h',
-    better: 'lower',
-    info: 'Median hours an issue waits before an agent picks it up.',
+    id: 'queue-time',
+    missing: 'nothing queued',
+    name: 'Time in queue, median',
+    direction: 'lower',
+    unit: ' h',
+    prefix: '',
     digits: 1,
-    seed: 37,
-    from: 6.2,
-    to: 5,
-    noise: 0.08,
-    thisWeek: 1.28,
-    pins: { 4: 38 },
+    cap: 12,
+    base: 4.5,
+    noise: 1.2,
+    set: { 5: 38.2, 9: 4.4, 10: 5.1, 11: 3.2 },
   },
   {
-    id: 'first-try',
-    name: 'First-try pass',
-    unit: '%',
-    better: 'higher',
-    info: 'Share of changes that pass review and checks on the first round.',
-    digits: 0,
-    seed: 41,
-    from: 58,
-    to: 70,
-    noise: 0.03,
-    thisWeek: 1.04,
-  },
-  {
-    id: 'shipped',
-    name: 'Issues shipped',
-    unit: '/day',
-    better: 'higher',
-    info: 'Issues merged and deployed, per working day.',
+    id: 'first-pass-ci',
+    missing: 'no CI run finished',
+    name: 'First-pass CI runs',
+    direction: 'higher',
+    unit: ' %',
+    prefix: '',
     digits: 1,
-    seed: 53,
-    from: 6.1,
-    to: 7.9,
-    noise: 0.05,
-    thisWeek: 0.91,
-  },
-  {
-    id: 'red-ci',
-    name: 'Red CI runs',
-    unit: '%',
-    better: 'lower',
-    info: 'Share of CI runs that end red.',
-    digits: 0,
-    seed: 67,
-    from: 15,
-    to: 6,
-    noise: 0.1,
-    thisWeek: 0,
-  },
-  {
-    id: 'to-merge',
-    name: 'Time to merge',
-    unit: 'h',
-    better: 'lower',
-    info: 'Median hours from the first push to the merge.',
-    digits: 1,
-    seed: 71,
-    from: 19,
-    to: 15.5,
-    noise: 0.06,
-    thisWeek: 0.94,
-    gaps: [3, 4],
+    cap: undefined,
+    base: 86,
+    noise: 3,
+    set: { 9: 86.2, 10: 86.4, 11: 86.6 },
   },
   {
     id: 'reopened',
-    name: 'Reopened issues',
-    unit: '%',
-    better: 'lower',
-    info: 'Share of closed issues that were reopened within a week.',
+    missing: 'no Issue closed',
+    name: 'Reopened Issues',
+    direction: 'lower',
+    unit: ' %',
+    prefix: '',
+    digits: 0,
+    cap: undefined,
+    base: 6,
+    noise: 2,
+    set: { 9: 7, 10: 6, 11: 0 },
+  },
+  {
+    id: 'green-to-merge',
+    missing: 'no merge',
+    name: 'Time from green to merge, median',
+    direction: 'lower',
+    unit: ' h',
+    prefix: '',
     digits: 1,
-    seed: 83,
-    from: 4,
-    to: 5.2,
-    noise: 0.08,
-    thisWeek: 1,
-    gaps: [11],
+    cap: undefined,
+    base: 1.2,
+    noise: 0.3,
+    set: { 9: 1.4, 10: 1.4, 11: 2.4 },
+  },
+  {
+    id: 'failed-deploys',
+    missing: 'no deploy went out',
+    name: 'Failed deploys',
+    direction: 'lower',
+    unit: ' %',
+    prefix: '',
+    digits: 0,
+    cap: undefined,
+    base: 5,
+    noise: 3,
+    // No deploy went out in W38 and W43, so there is no rate.
+    set: { 2: null, 7: null, 9: 3, 10: 4, 11: 7 },
+  },
+  {
+    id: 'agent-cost',
+    missing: 'the cost report has not run',
+    name: 'Agent cost per Issue',
+    direction: 'lower',
+    unit: '',
+    prefix: '$',
+    digits: 2,
+    cap: undefined,
+    base: 2.4,
+    noise: 0.4,
+    // The cost report missed W37 and W42 and has not run for the current week.
+    set: { 1: null, 6: null, 9: 2.4, 10: 2.3, 11: null },
   },
 ]
 
-const round = (value: number, digits: number): number => {
-  const k = 10 ** digits
-  return Math.round(value * k) / k
+function weeksOf(spec: Spec, rand: () => number, set: Spec['set']): (number | null)[] {
+  const scale = 10 ** spec.digits
+  return Array.from({ length: WEEKS }, (_, i) => {
+    const drawn = spec.base + (rand() * 2 - 1) * spec.noise
+    const value = i in set ? set[i] : drawn
+    if (value === null || value === undefined) return null
+    return Math.max(0, Math.round(value * scale) / scale)
+  })
 }
 
-function build(spec: Spec): Measure {
-  const rand = seeded(spec.seed)
-  const last = WEEK_COUNT - 1
-  const weeks: (number | null)[] = []
-  for (let i = 0; i < WEEK_COUNT; i += 1) {
-    const base = spec.from + ((spec.to - spec.from) * i) / last
-    const wobble = (rand() * 2 - 1) * spec.noise
-    weeks.push(round(Math.max(0, base * (1 + wobble)), spec.digits))
+/** Change against last week in the better direction, in whole percent. */
+function towardBetter(
+  direction: Direction,
+  now: number | null,
+  prev: number | null,
+): number | null {
+  if (now === null || prev === null) return null
+  if (now === prev) return 0
+  if (prev === 0) return null
+  const sign = direction === 'higher' ? 1 : -1
+  return Math.round((sign * (now - prev) * 100) / Math.abs(prev)) || 0
+}
+
+function verdictOf(toward: number | null): VerdictName {
+  if (toward === null) return 'No reading'
+  if (toward > 0) return 'Better'
+  if (toward < 0) return 'Slid'
+  return 'Steady'
+}
+
+const ORDER: readonly VerdictName[] = ['Slid', 'Better', 'Steady', 'No reading']
+
+/** Hand-set weeks of a named fixture; the default is the week the case describes. */
+function overrides(fixture: string | undefined, spec: Spec): Spec['set'] {
+  if (fixture === 'extreme' && spec.id === 'queue-time') return { ...spec.set, 11: 96.4 }
+  if (fixture !== 'zero') return spec.set
+  // Nothing moved: this week repeats last week, and the reopened rate sits at zero for both.
+  const last = spec.id === 'reopened' ? 0 : (spec.set[LAST] ?? null)
+  const set: Record<number, number | null> = { ...spec.set, [LAST]: last }
+  if (spec.id !== 'agent-cost') set[NOW] = last
+  return set
+}
+
+export function loadFixture(fixture: string | undefined): Fixture {
+  const rand = seeded(2711)
+  const measures: Measure[] = SPECS.map((spec) => {
+    const { base: _base, noise: _noise, set: _set, ...measure } = spec
+    return { ...measure, weeks: weeksOf(spec, rand, overrides(fixture, spec)) }
+  })
+
+  const rows: Row[] = measures.map((m) => {
+    const now = m.weeks[NOW] ?? null
+    const toward = towardBetter(m.direction, now, m.weeks[LAST] ?? null)
+    return {
+      ...m,
+      now,
+      toward,
+      verdict: verdictOf(toward),
+      trend: m.weeks.map((value, i) => ({ value, label: weekLabel(i) })),
+    }
+  })
+  rows.sort(
+    (a, b) =>
+      ORDER.indexOf(a.verdict) - ORDER.indexOf(b.verdict) ||
+      Math.abs(b.toward ?? 0) - Math.abs(a.toward ?? 0) ||
+      a.name.localeCompare(b.name),
+  )
+
+  const countAt = (verdict: VerdictName, week: number): number =>
+    measures.filter(
+      (m) =>
+        verdictOf(towardBetter(m.direction, m.weeks[week] ?? null, m.weeks[week - 1] ?? null)) ===
+        verdict,
+    ).length
+  const history = (verdict: VerdictName): SparkPoint[] =>
+    Array.from({ length: WEEKS - 1 }, (_, i) => ({
+      value: countAt(verdict, i + 1),
+      label: weekLabel(i + 1),
+    }))
+  const count = (verdict: VerdictName): CountHistory => ({
+    byWeek: history(verdict),
+    now: countAt(verdict, NOW),
+    last: countAt(verdict, LAST),
+  })
+
+  return {
+    rows,
+    slid: count('Slid'),
+    better: count('Better'),
+    axisLabels: [weekLabel(1), weekLabel(6), weekLabel(NOW)],
+    nowLabel: weekLabel(NOW),
+    lastLabel: weekLabel(LAST),
   }
-  const prev = weeks[last - 1]
-  if (typeof prev === 'number') weeks[last] = round(prev * spec.thisWeek, spec.digits)
-  for (const [week, value] of Object.entries(spec.pins ?? {})) weeks[Number(week)] = value
-  for (const week of spec.gaps ?? []) weeks[week] = null
-  const { id, name, unit, better, info, digits } = spec
-  return { id, name, unit, better, info, digits, weeks }
 }
 
-const MEASURES: readonly Measure[] = SPECS.map(build)
-
-/** This week's value replaced, the rest of the history kept. */
-function withThisWeek(measures: readonly Measure[], pick: (m: Measure) => number | null) {
-  return measures.map((m): Measure => ({ ...m, weeks: [...m.weeks.slice(0, -1), pick(m)] }))
-}
-
-/**
- * The fixture a `?fixture=` name picks:
- * - `extreme`: the queue has stalled (212 h against a 5 h norm) and CI is red on every run;
- * - `steady`: every measure within a hair of last week, so nothing slid and nothing moved;
- * - `bare`: a first week, so no measure has a value yet.
- */
-export function measuresFor(fixture: string | undefined): readonly Measure[] {
-  if (fixture === 'extreme') {
-    return MEASURES.map((m) => {
-      if (m.id === 'queue') return { ...m, weeks: [...m.weeks.slice(0, -1), 212] }
-      if (m.id === 'red-ci') return { ...m, weeks: [...m.weeks.slice(0, -1), 100] }
-      return m
-    })
-  }
-  if (fixture === 'steady') {
-    return withThisWeek(MEASURES, (m) => {
-      const prev = m.weeks[WEEK_COUNT - 2]
-      return typeof prev === 'number' ? prev : null
-    })
-  }
-  if (fixture === 'bare') return withThisWeek(MEASURES, () => null)
-  return MEASURES
-}
+export const VERDICT_ORDER = ORDER

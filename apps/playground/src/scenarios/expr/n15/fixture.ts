@@ -1,151 +1,180 @@
-import { createFormat } from 'basalt-ui'
+/**
+ * Desk walks: about 60 sessions over 8 weeks (Monday to Sunday), a weekly time target and some days
+ * with two walks. Seeded, so every build draws the same pad. "Today" is a fixed Thursday: the last
+ * week is unfinished, which is what the page has to say out loud.
+ */
 
-/** One walk on the pad. `pace` is seconds per km; `energy` is a 1 to 5 self-rating after the walk. */
-export type Session = {
-  date: string
+export type Slot = 'am' | 'pm'
+
+export type Walk = {
+  id: string
+  /** Epoch ms (UTC) of the start. */
+  at: number
+  /** 0 to 7: the week the walk belongs to, 7 being the unfinished one. */
+  week: number
+  /** The walk belongs to the unfinished week. */
+  current: boolean
+  slot: Slot
   minutes: number
   km: number
-  pace: number
-  energy: number
+  /** Seconds per km; lower is faster. */
+  paceSec: number
+  kcal: number
+  /** The median pace of the walk's week. */
+  weekPace: number
+  /** One walk per week carries the week's pace line point. */
+  anchor: boolean
 }
 
-/** One Monday-to-Sunday week, aggregated. `pace` is null where no distance was walked. */
 export type Week = {
   key: string
-  start: string
+  start: number
   minutes: number
   km: number
-  sessions: number
-  pace: number | null
-  energy: number | null
-  /** True for the week the reader is in: it is not over yet. */
+  walks: number
+  /** Days with two walks. */
+  doubles: number
+  /** The week is not over: Monday to today only. */
   partial: boolean
+  current: boolean
 }
 
-export type Walks = {
+export type Pad = {
+  walks: readonly Walk[]
   weeks: readonly Week[]
-  targetMinutes: number
-  sessions: number
+  /** Minutes a week is meant to hold. */
+  target: number
+  /** Days of the unfinished week that have passed, today included. */
+  elapsedDays: number
+  /** The target scaled to the days that have passed. */
+  due: number
+  /** The first day of the pad. */
+  from: number
+  /** The end of today. */
+  until: number
 }
 
-/** Minutes a week should reach. */
-export const TARGET_MINUTES = 150
+export const TARGET_MIN = 150
 
-/** The fixture's "today", a Thursday: the last week is only four days old. */
-const TODAY = '2026-11-12'
-const FIRST_MONDAY = '2026-09-21'
+const DAY = 86_400_000
+const FIRST_MONDAY = Date.UTC(2026, 8, 28)
 const WEEKS = 8
-const DAY_MS = 86_400_000
+const TODAY_INDEX = 52
+const ELAPSED_DAYS = (TODAY_INDEX % 7) + 1
+const ISO_WEEK_OF_FIRST = 40
 
-const fmt = createFormat()
-
-const toMs = (date: string): number => Date.parse(`${date}T00:00:00Z`)
-const addDays = (date: string, n: number): string =>
-  new Date(toMs(date) + n * DAY_MS).toISOString().slice(0, 10)
-
-/** A small seeded generator, so every build draws the same walks. */
-function mulberry32(seed: number): () => number {
-  let a = seed
-  return () => {
-    a = (a + 0x6d2b79f5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-/** The fixture variants `?fixture=` names. */
-const FIXTURES = ['monday', 'marathon'] as const
+export const FIXTURES = ['extreme', 'fresh'] as const
 export type FixtureName = (typeof FIXTURES)[number]
 
-export const isFixtureName = (value: string | undefined): value is FixtureName =>
-  FIXTURES.some((name) => name === value)
+export const isFixtureName = (name: string | undefined): name is FixtureName =>
+  FIXTURES.some((f) => f === name)
 
-/** About 60 walks over 8 weeks; week 4 is a rest week and some days carry two walks. */
-function drawSessions(): Session[] {
-  const rand = mulberry32(1504)
-  const sessions: Session[] = []
-  for (let w = 0; w < WEEKS; w += 1) {
-    if (w === 3) continue
-    for (let d = 0; d < 7; d += 1) {
-      const date = addDays(FIRST_MONDAY, w * 7 + d)
-      if (date > TODAY) continue
-      const walkDay = rand() < (d < 5 ? 0.92 : 0.65)
-      if (!walkDay) continue
-      const count = rand() < 0.5 ? 2 : 1
-      for (let s = 0; s < count; s += 1) {
-        const minutes = Math.round(10 + rand() * 12)
-        const pace = Math.round(700 - w * 6.5 + (rand() - 0.5) * 50)
-        sessions.push({
-          date,
-          minutes,
-          km: Math.round(((minutes * 60) / pace) * 100) / 100,
-          pace,
-          energy: Math.min(5, Math.max(1, Math.round(2 + w * 0.2 + rand() * 2.4))),
-        })
-      }
+function seeded(seed: number): () => number {
+  let s = seed
+  return () => {
+    s = (s + 0x6d2b79f5) | 0
+    let t = Math.imul(s ^ (s >>> 15), 1 | s)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4_294_967_296
+  }
+}
+
+const AWAY_WEEK = 3
+const LONG_WALK_DAY = 5 * 7 + 5
+
+type Draft = Omit<Walk, 'weekPace' | 'anchor'>
+
+function draftWalks(fixture: FixtureName | undefined): Draft[] {
+  const rand = seeded(1511)
+  const drafts: Draft[] = []
+  for (let day = 0; day <= TODAY_INDEX; day += 1) {
+    const week = Math.floor(day / 7)
+    const weekday = day % 7
+    const progress = day / TODAY_INDEX
+    const current = week === WEEKS - 1
+    const skip = week === AWAY_WEEK || (fixture === 'fresh' && current)
+    const walkOdds = weekday < 5 ? 0.97 : weekday === 5 ? 0.6 : 0.45
+    const walking = !skip && rand() < walkOdds
+    const slots: Slot[] = !walking
+      ? []
+      : weekday < 5 && rand() < 0.7
+        ? ['am', 'pm']
+        : [rand() < 0.5 ? 'am' : 'pm']
+    for (const slot of slots) {
+      const minutes = Math.round(11 + rand() * 16)
+      const paceSec = Math.round(428 - 52 * progress + (rand() - 0.5) * 26)
+      const km = Math.round(((minutes * 60) / paceSec) * 10) / 10
+      drafts.push({
+        id: `w-${day}-${slot}`,
+        at: FIRST_MONDAY + day * DAY + (slot === 'am' ? 7.5 : 17.5) * 3_600_000,
+        week,
+        current,
+        slot,
+        minutes,
+        km,
+        paceSec,
+        kcal: Math.round(km * 56 + minutes * 0.4 + rand() * 6),
+      })
     }
   }
-  return sessions
+  if (fixture === 'extreme') {
+    drafts.push({
+      id: 'w-long',
+      at: FIRST_MONDAY + LONG_WALK_DAY * DAY + 9 * 3_600_000,
+      week: 5,
+      current: false,
+      slot: 'am',
+      minutes: 270,
+      km: 20.5,
+      paceSec: Math.round((270 * 60) / 20.5),
+      kcal: 1380,
+    })
+  }
+  return drafts.sort((a, b) => a.at - b.at)
 }
 
-/** An extreme: one three-hour hike on the pad in the last full week. */
-function withMarathon(sessions: readonly Session[]): Session[] {
-  const pace = 640
-  return [
-    ...sessions,
-    {
-      date: '2026-11-08',
-      minutes: 190,
-      km: Math.round(((190 * 60) / pace) * 100) / 100,
-      pace,
-      energy: 3,
-    },
-  ]
+/** The median pace of some walks: one slow stroll does not drag it, which a total over total would. */
+const medianPace = (rows: readonly { paceSec: number }[]): number => {
+  const sorted = rows.map((r) => r.paceSec).sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  if (sorted.length === 0) return 0
+  return sorted.length % 2 === 1
+    ? (sorted[mid] ?? 0)
+    : Math.round(((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2)
 }
 
-function aggregate(sessions: readonly Session[]): Week[] {
-  return Array.from({ length: WEEKS }, (_, w) => {
-    const start = addDays(FIRST_MONDAY, w * 7)
-    const end = addDays(start, 6)
-    const rows = sessions.filter((s) => s.date >= start && s.date <= end)
-    const minutes = rows.reduce((sum, s) => sum + s.minutes, 0)
-    const km = rows.reduce((sum, s) => sum + s.km, 0)
-    const energy = rows.reduce((sum, s) => sum + s.energy, 0)
+/** The pad for a fixture name; `undefined` is the ordinary pad, with an away week that holds no walk. */
+export function buildPad(fixture: FixtureName | undefined): Pad {
+  const drafts = draftWalks(fixture)
+  const weeks: Week[] = Array.from({ length: WEEKS }, (_, i) => {
+    const rows = drafts.filter((d) => d.week === i)
+    const days = new Set(rows.map((r) => Math.floor((r.at - FIRST_MONDAY) / DAY)))
     return {
-      key: fmt.date(start as `${number}-${number}-${number}`, 'short', { year: undefined }),
-      start,
-      minutes,
-      km: Math.round(km * 10) / 10,
-      sessions: rows.length,
-      pace: km > 0 ? Math.round((minutes * 60) / km) : null,
-      energy: rows.length > 0 ? Math.round((energy / rows.length) * 10) / 10 : null,
-      partial: end > TODAY,
+      key: `W${ISO_WEEK_OF_FIRST + i}`,
+      start: FIRST_MONDAY + i * 7 * DAY,
+      minutes: rows.reduce((sum, r) => sum + r.minutes, 0),
+      km: Math.round(rows.reduce((sum, r) => sum + r.km, 0) * 10) / 10,
+      walks: rows.length,
+      doubles: days.size === 0 ? 0 : rows.length - days.size,
+      partial: i === WEEKS - 1,
+      current: i === WEEKS - 1,
     }
   })
+  const weekPace = weeks.map((_, i) => medianPace(drafts.filter((d) => d.week === i)))
+  const walks = drafts.map((d, index) => {
+    const mates = drafts.filter((m) => m.week === d.week)
+    const anchor = mates[Math.floor(mates.length / 2)]?.id === d.id
+    return { ...d, weekPace: weekPace[d.week] ?? 0, anchor, index }
+  })
+  return {
+    walks: walks.map(({ index: _index, ...w }) => w),
+    weeks,
+    target: TARGET_MIN,
+    elapsedDays: ELAPSED_DAYS,
+    due: Math.round((TARGET_MIN * ELAPSED_DAYS) / 7),
+    from: FIRST_MONDAY,
+    until: FIRST_MONDAY + (TODAY_INDEX + 1) * DAY,
+  }
 }
 
-/** The walks the scenario shows; `monday` is the week's first morning, `marathon` the extreme. */
-export function walks(name: FixtureName | undefined): Walks {
-  const base = drawSessions()
-  const sessions =
-    name === 'monday'
-      ? base.filter((s) => s.date < '2026-11-09')
-      : name === 'marathon'
-        ? withMarathon(base)
-        : base
-  return { weeks: aggregate(sessions), targetMinutes: TARGET_MINUTES, sessions: sessions.length }
-}
-
-/** `m:ss` from seconds, rounding to the second before splitting so 59.6 never prints `:60`. */
-export function mmss(seconds: number): string {
-  const total = Math.round(Math.abs(seconds))
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
-}
-
-/** Pace over several weeks: total time over total distance, not the mean of the weekly paces. */
-export function paceOf(weeks: readonly Week[]): number | null {
-  const minutes = weeks.reduce((sum, w) => sum + (w.pace === null ? 0 : w.minutes), 0)
-  const km = weeks.reduce((sum, w) => sum + w.km, 0)
-  return km > 0 ? Math.round((minutes * 60) / km) : null
-}
+export { medianPace }

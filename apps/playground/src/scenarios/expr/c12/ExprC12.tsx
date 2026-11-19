@@ -1,222 +1,206 @@
-import { BarList, StatCell, StatGroup } from 'basalt-ui/cards'
-import { Bars, ChartCard, useChartFocus } from 'basalt-ui/charts'
+/**
+ * Expression c12: a team lead checks AI spend. Are we inside this week's budget, and which model
+ * drives the cost? One card answers the first (the week against its pace and budget), one chart
+ * the second by day, one list by share; the chart's focus joins all three.
+ */
 import { useFormat } from 'basalt-ui'
-import { CardGrid, Page, PageBar } from 'basalt-ui/page'
-import { BASALT, alpha } from 'basalt-ui/tokens'
-import type { ComponentProps } from 'react'
+import { BarList, StatCard } from 'basalt-ui/cards'
+import type { Delta, Phase } from 'basalt-ui/cards'
+import { Bars, ChartCard, useChartFocus } from 'basalt-ui/charts'
+import { Page, PageBar } from 'basalt-ui/page'
+import { alpha, BASALT } from 'basalt-ui/tokens'
+import { Meter } from 'basalt-ui/ui/meter'
+import { BUDGET_SERIES } from '../../../demo/series'
 import type { ScenarioProps } from '../../shot-state'
-import { CURRENCY, MODELS, pickFixture } from './fixture'
-import type { Day, ModelKey, SpendFixture } from './fixture'
+import { spendFixture } from './fixture'
+import { readSpend, type DayRow } from './model'
 
-type Frame = Pick<ComponentProps<typeof ChartCard>, 'phase' | 'empty'>
-
-const INK_STEPS = [alpha(BASALT.ink, 0.7), alpha(BASALT.ink, 0.45), alpha(BASALT.ink, 0.25)]
-
-function frameFor(shotState: ScenarioProps['shotState'], range: string): Frame {
-  if (shotState === 'loading') return { phase: 'loading' }
-  if (shotState === 'error') {
-    return {
-      phase: { tag: 'error', message: 'The billing export did not answer.', retry: () => {} },
-    }
-  }
-  if (shotState === 'empty') {
-    return {
-      phase: 'ready',
-      empty: {
-        cause: `No model calls were billed for ${range}. Check that the billing export is connected.`,
-      },
-    }
-  }
-  return {}
-}
-
-const dayDriver = (d: Day) =>
-  d.total > 0
-    ? MODELS.map((m) => ({ label: m.label, value: d[m.key] })).toSorted(
-        (a, b) => b.value - a.value,
-      )[0]
-    : undefined
-
-function summarize(f: SpendFixture) {
-  const week = f.days.slice(f.weekStart)
-  const spent = week.reduce((sum, d) => sum + d.total, 0)
-  const byModel = MODELS.map((m) => ({
-    key: m.key,
-    label: m.label,
-    value: week.reduce((sum, d) => sum + d[m.key], 0),
-  })).toSorted((a, b) => b.value - a.value)
-  const elapsed = f.days.length - 1 - f.weekStart + f.dayShare
-  const left = f.weeklyBudget - spent
-  const daysLeft = f.daysAfterToday + (1 - f.dayShare)
-  return { spent, byModel, left, daysLeft, elapsed, projected: (spent / elapsed) * 7 }
-}
+const retry = (): void => undefined
 
 export function ExprC12Scenario({ shotState, fixture }: ScenarioProps) {
-  const fmt = useFormat()
-  const usd = (v: number) => fmt.money(v, CURRENCY, { maximumFractionDigits: 0 })
-  const usdExact = (v: number) => fmt.money(v, CURRENCY)
-  const dayLabel = (at: Date) => fmt.date(at, 'short', { weekday: 'short', timeZone: 'UTC' })
-  const f = pickFixture(fixture)
-  const s = summarize(f)
-  const [first, last] = [f.days[0], f.days.at(-1)]
-  const range = first && last ? `${dayLabel(first.day)} to ${dayLabel(last.day)}` : ''
-  const frame = frameFor(shotState, range)
-  const settled = shotState === undefined
-  const loading = shotState === 'loading'
-  const driver = s.byModel[0]
-  const over = s.spent > f.weeklyBudget
-  const behind = !over && s.projected > f.weeklyBudget
+  const f = useFormat()
+  const spend = readSpend(spendFixture(fixture))
+  const ready = shotState === undefined
+  const isEmpty = shotState === 'empty'
+  const phase: Phase =
+    shotState === 'loading'
+      ? 'loading'
+      : shotState === 'error'
+        ? { tag: 'error', message: 'The billing API did not answer.', retry }
+        : 'ready'
 
-  const listFrame: Frame =
-    shotState === 'error'
-      ? { phase: { tag: 'error', retry: () => {} } }
-      : shotState === 'empty'
-        ? { phase: 'ready', empty: { cause: 'Models appear here once a call is billed.' } }
-        : frame
-  const focus = useChartFocus(f.days, {
-    announce: (d) => {
-      const top = dayDriver(d)
-      const split = top ? `, mostly ${top.label} ${usdExact(top.value)}` : ''
-      return `${dayLabel(d.day)}${d.partial ? ' so far' : ''}: ${usdExact(d.total)}${split}`
-    },
+  const usd = (n: number): string =>
+    f.money(n, 'USD', { maximumFractionDigits: 0, currencyDisplay: 'narrowSymbol' })
+  const signed = (n: number): string => `${n < 0 ? '−' : '+'}${usd(Math.abs(n))}`
+  const dayShort = (key: DayRow['key']): string => f.date(key, 'weekday', { day: 'numeric' })
+  const dayLong = (key: DayRow['key']): string =>
+    f.date(key, 'weekday', { day: 'numeric', month: 'short' })
+  const hour = (h: number): string =>
+    `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.floor((h % 1) * 60)).padStart(2, '0')}`
+
+  const { rows, models } = spend
+  const focus = useChartFocus(rows, {
+    announce: (d) =>
+      `${dayLong(d.key)}: ${models.map((m) => `${m.name} ${usd(d.costs[m.id])}`).join(', ')}`,
   })
-  const today = f.days.at(-1)
-  const dayNote = (d: Day) => {
-    const top = dayDriver(d)
-    return top ? `${top.label} ${usd(top.value)}` : 'nothing billed'
+  const labels = new Map<string, string>(rows.map((d) => [d.key, dayShort(d.key)]))
+  const today = rows.find((d) => d.key === spend.today)
+
+  /** A day against the budget's daily pace; today only against the hours that passed. */
+  const dayDelta = (d: DayRow): Delta => {
+    const pace = d.partial ? spend.dailyPace * (spend.hoursElapsed / 24) : spend.dailyPace
+    return {
+      value: signed(d.total - pace),
+      polarity: d.total > pace ? 'up-bad' : 'neutral',
+      label: d.partial ? 'vs pace so far' : 'vs budget pace',
+    }
   }
-  const todayNote = today && today.total > 0 ? `so far, ${dayNote(today)}` : 'nothing billed yet'
-  const paceAllowance = (f.weeklyBudget * s.elapsed) / 7
+  const complete = rows.filter((d) => !d.partial)
+  const over = complete.filter((d) => d.total > spend.dailyPace).length
+  const share = spend.weekTotal > 0 ? (models[0]?.week ?? 0) / spend.weekTotal : 0
 
-  const colorOf = (key: ModelKey) => {
-    const rank = s.byModel.findIndex((m) => m.key === key)
-    const token = rank === 0 ? BASALT.brand : (INK_STEPS[rank - 1] ?? BASALT.inkFaint)
-    return { light: token, dark: token }
+  const weekDelta: Delta = {
+    value: signed(spend.weekTotal - spend.paceSoFar),
+    polarity: spend.weekTotal > spend.paceSoFar ? 'up-bad' : 'neutral',
+    label: 'vs even pace',
   }
-
-  const status = over
-    ? { tone: 'bad' as const, label: 'Over budget' }
-    : behind
-      ? { tone: 'warn' as const, label: 'Pace is over budget' }
-      : { tone: 'good' as const, label: 'Inside budget' }
-
-  const share = (v: number) => fmt.percent(s.spent === 0 ? 0 : v / s.spent)
-
-  const hasDriver = settled && driver !== undefined && driver.value > 0
+  const meterMax = Math.max(spend.budget * 1.25, spend.weekTotal * 1.1)
 
   return (
     <Page area="expr-c12">
-      <PageBar title="AI spend" />
-      <StatGroup variant="strip" label="This week's AI spend against budget">
-        <StatCell
-          phase={frame.phase}
-          label="Spent"
-          qualifier="Mon to today"
-          value={settled || loading ? usd(s.spent) : null}
-          {...(settled || loading
-            ? {
-                status,
-                sub: `${usd(s.projected)} projected by Sunday`,
-                meter: {
-                  label: 'Weekly budget used',
-                  value: s.spent,
-                  max: f.weeklyBudget,
-                  format: (v: number) => `${usd(v)} of ${usd(f.weeklyBudget)}`,
-                  zones: [
-                    { to: paceAllowance, tone: 'good', label: 'Under pace' },
-                    { to: f.weeklyBudget, tone: 'warn', label: 'Over pace' },
-                  ],
-                },
-              }
-            : {})}
-        />
-        <StatCell
-          phase={loading ? 'loading' : 'ready'}
-          label={over ? 'Over budget by' : 'Left'}
-          qualifier={`${fmt.number(s.daysLeft, { maximumFractionDigits: 1 })} days to go`}
-          value={settled || loading ? usd(Math.abs(s.left)) : null}
-          {...(settled || loading
-            ? {
-                sub: over
-                  ? 'every further call adds to it'
-                  : `${usd(s.left / s.daysLeft)} a day to stay inside`,
-              }
-            : {})}
-        />
-        <StatCell
-          phase={loading ? 'loading' : 'ready'}
-          label="Biggest driver"
-          value={hasDriver ? driver.label : null}
-          {...(hasDriver || loading ? { sub: `${share(driver?.value ?? 0)} of the spend` } : {})}
-        />
-      </StatGroup>
-      <CardGrid min="regular">
-        <ChartCard
-          {...frame}
-          title="Daily cost by model"
-          subtitle="USD per day"
-          footer={[
-            { label: 'Budget line', value: `${usd(f.weeklyBudget / 7)} a day` },
-            today && today.total > 0 ? { label: 'Lighter bar', value: 'today, partial' } : null,
-          ]}
-          legend={MODELS.map((m) => ({
-            key: m.key,
-            label: m.label,
-            color: colorOf(m.key),
-            swatch: 'bar' as const,
-          }))}
-          figure={{
-            value:
-              settled || loading
-                ? focus.readout(usdExact(today?.total ?? 0), (d) => usdExact(d.total))
-                : null,
-            ...(settled || loading
-              ? {
-                  period: focus.readout(todayNote, dayNote),
-                }
-              : {}),
-          }}
-          chart={() => (
-            <Bars
-              ariaLabel="Daily AI cost per model for 14 days; today is partial"
-              data={f.days}
-              focus={focus}
-              x={{
-                value: (d) => d.day,
-                format: (v) => (v instanceof Date ? `${v.getUTCDate()}` : String(v)),
-              }}
-              refLines={[
-                {
-                  value: f.weeklyBudget / 7,
-                  color: { light: BASALT.ink, dark: BASALT.ink },
-                  dashed: true,
-                },
-              ]}
-              series={MODELS.map((m) => ({
-                mark: 'bar' as const,
-                key: m.key,
-                label: m.label,
-                color: colorOf(m.key),
-                y: (d: Day) => d[m.key],
-                opacity: (d: Day) => (d.partial ? 0.35 : f.days.indexOf(d) < f.weekStart ? 0.6 : 1),
-                format: (v: number) => usdExact(v),
-                legend: false as const,
-              }))}
-            />
-          )}
-        />
-        <BarList
-          {...listFrame}
-          title="Cost by model"
-          items={s.byModel.map((m) => ({
-            label: m.label,
-            value: m.value,
-            secondary: share(m.value),
-          }))}
-          format={usdExact}
-          rows={4}
-        />
-      </CardGrid>
+      <PageBar title="AI spend against the weekly budget" />
+      <div className="grid items-start gap-4 @wide:grid-cols-3">
+        <div className="min-w-0 @wide:col-start-3 @wide:row-start-1">
+          <StatCard
+            title="Spend this week"
+            subtitle={`Since Monday, all models, ${usd(spend.budget)} budget`}
+            info="Gateway cost across all models since Monday. Lower is better."
+            phase={phase}
+            empty={isEmpty ? { cause: 'No spend this week yet.' } : null}
+            value={ready ? usd(spend.weekTotal) : null}
+            delta={ready ? weekDelta : undefined}
+            sub={ready && share > 0 ? `${models[0]?.name} is ${f.percent(share)} of it` : undefined}
+            chart={() => (
+              <Meter
+                label="Spend this week against the weekly budget"
+                value={spend.weekTotal}
+                max={meterMax}
+                format={usd}
+                zones={[
+                  { to: spend.paceSoFar, tone: 'neutral', label: 'Under pace' },
+                  { to: spend.budget, tone: 'warn', label: 'Over pace' },
+                  { to: meterMax, tone: 'bad', label: 'Over budget' },
+                ]}
+              />
+            )}
+            footer={[
+              { label: 'Projected week', value: ready ? usd(spend.projected) : '' },
+              { label: 'Budget', value: usd(spend.budget) },
+            ]}
+          />
+        </div>
+        <div className="min-w-0 @wide:col-span-2 @wide:col-start-1 @wide:row-span-2 @wide:row-start-1">
+          <ChartCard
+            title="Daily spend by model"
+            subtitle="Last 14 days, USD per day"
+            height="tall"
+            phase={phase}
+            empty={
+              isEmpty
+                ? {
+                    cause:
+                      'No spend in the last 14 days. It appears here once a model call is billed.',
+                  }
+                : null
+            }
+            figure={
+              ready
+                ? {
+                    value: usd(focus.readout(today?.total ?? 0, (d) => d.total)),
+                    delta: focus.readout(today ? dayDelta(today) : undefined, dayDelta),
+                    period: focus.readout(
+                      `Today until ${hour(spend.hoursElapsed)}`,
+                      (d) => `${dayLong(d.key)}: ${d.top.name} ${usd(d.top.cost)}`,
+                    ),
+                    periodMono: focus.datum === null,
+                  }
+                : undefined
+            }
+            footer={[
+              { label: 'Days over pace', value: ready ? `${over} of ${complete.length}` : '' },
+              {
+                label: '14-day total',
+                value: ready ? usd(rows.reduce((t, d) => t + d.total, 0)) : '',
+              },
+            ]}
+            chart={(box) => (
+              <Bars
+                label="Daily AI spend by model over the last 14 days"
+                height={box.height}
+                data={rows}
+                focus={focus}
+                tooltip={false}
+                x={{ value: (d) => d.key, format: (k) => labels.get(String(k)) ?? '' }}
+                y={{ domain: [0, spend.cap], title: 'USD per day', format: usd }}
+                series={models.map((m, i) => ({
+                  mark: 'bar',
+                  key: m.id,
+                  label: m.name,
+                  color: BUDGET_SERIES[m.role],
+                  y: (d: DayRow) => d.costs[m.id],
+                  format: usd,
+                  opacity: (d: DayRow) => (d.partial ? 0.45 : 1),
+                  values: i === models.length - 1 ? (_v: number, d: DayRow) => usd(d.total) : false,
+                }))}
+                zones={[
+                  {
+                    axis: 'x',
+                    from: spend.today,
+                    to: spend.today,
+                    fill: alpha(BASALT.inkMuted, 0.12),
+                    label: 'Partial',
+                  },
+                ]}
+                refLines={[
+                  {
+                    value: spend.dailyPace,
+                    color: BUDGET_SERIES.pace,
+                    dashed: true,
+                    label: `Budget pace ${usd(spend.dailyPace)}`,
+                  },
+                  {
+                    value: spend.weekStart,
+                    axis: 'x',
+                    at: 'start',
+                    color: BUDGET_SERIES.week,
+                    dashed: true,
+                    label: 'This week',
+                  },
+                ]}
+              />
+            )}
+          />
+        </div>
+        <div className="min-w-0 @wide:col-start-3 @wide:row-start-2">
+          <BarList
+            title="Spend by model"
+            subtitle="This week so far"
+            phase={phase}
+            empty={isEmpty ? { cause: 'No model has spend this week.' } : null}
+            bodyRows={4}
+            max={Math.max(spend.weekTotal, 1)}
+            format={usd}
+            series={models.map((m) => ({ key: m.id, label: m.name, color: BUDGET_SERIES[m.role] }))}
+            items={models.map((m) => ({
+              key: m.id,
+              label: m.name,
+              value: m.week,
+              parts: { [m.id]: m.week },
+            }))}
+            focusSeries={{ focus, key: (row) => row.key ?? row.label }}
+          />
+        </div>
+      </div>
     </Page>
   )
 }
