@@ -262,6 +262,38 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
     blurb: 'Is rain coming in the next two hours, when does it arrive, and how heavy will it be?',
   },
   {
+    id: 'expr-n45',
+    title: 'Expression n45: which containers restart or run near their memory limit',
+    blurb: 'Which containers restart often, and which run close to their memory limit?',
+  },
+  {
+    id: 'expr-n46',
+    title: 'Expression n46: whether the line delivered the contracted speed',
+    blurb:
+      'Did the line deliver the contracted speed this month, and on how many days did it fall below the minimum?',
+  },
+  {
+    id: 'expr-n47',
+    title: "Expression n47: where one Issue's time went",
+    blurb: 'Where did the time go between filing and shipping, and which attempt failed and why?',
+  },
+  {
+    id: 'expr-n48',
+    title: 'Expression n48: a year of training',
+    blurb: 'On which days did I train, which sport, and did I keep going through winter?',
+  },
+  {
+    id: 'expr-n49',
+    title: 'Expression n49: which wiki pages are stale and still read',
+    blurb: 'Which pages are stale, who owns them, and which stale pages are still read?',
+  },
+  {
+    id: 'expr-n50',
+    title: 'Expression n50: which project shipped the most',
+    blurb:
+      'Which project shipped the most this month, which went quiet, and where does a shipped Issue cost the most?',
+  },
+  {
     id: 'linked-windows',
     title: 'Linked windows: a table of runs beside an hourly chart',
     blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',
