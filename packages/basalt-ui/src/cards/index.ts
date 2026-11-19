@@ -1,4 +1,4 @@
-/** `basalt-ui/cards` — the card composites (`StatCard`, `StatGroup`, `StatCell`, `DataPanel`, `BarList`, `EventList`, `RowList`, `StepRail`, `KanbanCard`). Peers: react, `@base-ui/react` (via `ui/card`). */
+/** `basalt-ui/cards` — the card composites (`StatCard`, `StatGroup`, `StatCell`, `DataPanel`, `BarList`, `EventList`, `RowList`, `StepRail`, `KanbanCard`, `ChainView`). Peers: react, `@base-ui/react` (via `ui/card`). */
 
 export { StatCard } from './stat-card'
 export { StatGroup } from './stat-group'
@@ -9,6 +9,7 @@ export { EventList } from './event-list'
 export { RowList } from './row-list'
 export { StepRail } from './step-rail'
 export { KanbanCard } from './kanban-card'
+export { ChainView } from './chain-view'
 export type {
   StatCardProps,
   DataPanelProps,
@@ -29,3 +30,4 @@ export type { BarListProps } from './bar-list'
 export type { EventListProps } from './event-list'
 export type { RowListProps } from './row-list'
 export type { StepRailProps, StepRailRow } from './step-rail'
+export type { ChainViewProps, ChainFace } from './chain-view'

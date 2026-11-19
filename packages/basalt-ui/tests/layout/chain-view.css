@@ -1,0 +1,9 @@
+/*
+ * The `chain-view` fixture's Tailwind v4 entry, compiled WITH preflight. `chain-view.layout.test.ts`
+ * compiles it into a temp directory and inlines the tier sheet `src/table/table.css` beside it.
+ */
+@import '../../src/css/tailwind.css' source(none);
+@source './chain-view-fixture.tsx';
+@source '../../src/ui';
+@source '../../src/cards';
+@source '../../src/table';

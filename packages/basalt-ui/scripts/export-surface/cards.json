@@ -1,5 +1,6 @@
 [
   "BarList",
+  "ChainView",
   "DataPanel",
   "EventList",
   "KanbanCard",
