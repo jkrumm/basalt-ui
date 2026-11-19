@@ -15,6 +15,7 @@ const AREAS = [
   'date',
   'cards',
   'lists',
+  'chain',
   'kanban',
   'controls',
   'home',

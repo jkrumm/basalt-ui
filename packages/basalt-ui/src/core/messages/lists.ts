@@ -15,30 +15,14 @@ export type ListsMessages = Record<
   | 'lists.stepColumn'
   | 'lists.durationColumn'
   | 'lists.timeColumn'
-  | 'lists.detailColumn'
-  | 'lists.chainBlocks'
-  | 'lists.chainDone'
-  | 'lists.chainZoomIn'
-  | 'lists.chainZoomOut'
-  | 'lists.chainFit'
-  | 'lists.chainFocusNone'
-  | 'lists.chainShowAll'
-  | 'lists.chainControls',
+  | 'lists.detailColumn',
   string
 > &
   Record<
-    | 'lists.showMore'
-    | 'lists.eventCount'
-    | 'lists.stepDuration'
-    | 'lists.stepScale'
-    | 'lists.chainZoomLevel',
+    'lists.showMore' | 'lists.eventCount' | 'lists.stepDuration' | 'lists.stepScale',
     (f: Format, n: number) => string
   > &
-  Record<'lists.rowsShown', (f: Format, shown: number, total: number) => string> &
-  Record<
-    'lists.chainWaitsOn' | 'lists.chainAlsoWaitsOn' | 'lists.chainFocus',
-    (f: Format, names: string) => string
-  >
+  Record<'lists.rowsShown', (f: Format, shown: number, total: number) => string>
 
 /** A step's working time, not the clock form of `Format.duration`: sub-second steps read in ms. */
 function stepDuration(f: Format, ms: number): string {
@@ -70,18 +54,6 @@ export const lists = {
   'lists.durationColumn': 'Duration',
   'lists.timeColumn': 'Time',
   'lists.detailColumn': 'Detail',
-  'lists.chainBlocks': 'Blocks',
-  'lists.chainDone': 'Done',
-  'lists.chainWaitsOn': (_f, names) => `Waits on ${names}`,
-  'lists.chainAlsoWaitsOn': (_f, names) => `Also waits on ${names}`,
-  'lists.chainZoomIn': 'Zoom in',
-  'lists.chainZoomOut': 'Zoom out',
-  'lists.chainFit': 'Fit to width',
-  'lists.chainZoomLevel': (f, n) => f.number(n, { style: 'percent' }),
-  'lists.chainFocus': (_f, name) => `Focus on ${name}`,
-  'lists.chainFocusNone': 'Point at a node to focus it',
-  'lists.chainShowAll': 'Show all',
-  'lists.chainControls': 'Chain view',
   'lists.stepDuration': stepDuration,
   'lists.stepScale': (f, longest) =>
     `Bars are scaled to the longest step, ${stepDuration(f, longest)}`,
