@@ -7,8 +7,20 @@
  * The value comes from one of two sources, never both: `field` (a `FieldLike`, the submit forms'
  * TanStack Form field) or `control` (a `ControlHandle`, an instant-apply preference). The child is
  * the bare control: `FormField` hands it the value, the change handler and `required`.
+ *
+ * `layout="row"` is the settings row: the label and the description at the start, the control at
+ * the end, stacked once the field's own width is under the `regular` size. A switch or a checkbox
+ * stays at the end at every width. Inside a `FormSection` the section's `layout` is the default.
  */
-import { cloneElement, isValidElement, useLayoutEffect, useRef, useState } from 'react'
+import {
+  cloneElement,
+  createContext,
+  isValidElement,
+  use,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import type { ControlHandle, FieldLike } from '../core/ports'
@@ -16,6 +28,7 @@ import { Field, FieldDescription, FieldError } from '../ui/field'
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
 export const formFieldParts = [
+  'form-field-row',
   'field-required',
   'field-dirty',
   'field-error-region',
@@ -43,11 +56,23 @@ export type FormFieldProps<T = unknown> = Source<T> & {
   required?: boolean
   /** Disables the control. A disabled fieldset around the field does the same. */
   disabled?: boolean
+  /**
+   * `stack` puts the label over the control; `row` is the settings row, label and description at
+   * the start and the control at the end, stacking when the field is narrow. Default: the enclosing
+   * `FormSection`'s layout, else `stack`.
+   */
+  layout?: FormFieldLayout
   /** Layout only (`w-full`, `max-w-sm`). */
   className?: string
   /** The bare control: an `Input`, a `Select`, a `Switch`, a `Checkbox`, a `NumberField`, a `Slider`. */
   children: ReactElement
 }
+
+/** `stack`: label over control. `row`: label and description at the start, control at the end. */
+export type FormFieldLayout = 'stack' | 'row'
+
+/** The layout a `FormField` takes when it names none: a `FormSection` sets it, a `FormRow` resets it. */
+export const FormFieldLayoutContext = createContext<FormFieldLayout>('stack')
 
 /** The first message of a field's `errors`, by record order; undefined when none reads. */
 export function firstError(errors: readonly unknown[]): string | undefined {
@@ -82,6 +107,10 @@ function bindChild(
   bind: Bind,
   required: boolean | undefined,
   label: ReactNode,
+  state: { invalid: boolean; disabled: boolean | undefined } = {
+    invalid: false,
+    disabled: undefined,
+  },
 ): ReactElement {
   if (!isValidElement<Record<string, unknown>>(child)) return child
   const own = child.props
@@ -99,6 +128,9 @@ function bindChild(
   if (bind.onBlur !== undefined && own['onBlur'] === undefined) next['onBlur'] = bind.onBlur
   if (required === true) give('required', true)
   if (typeof label === 'string' && own['aria-labelledby'] === undefined) give('aria-label', label)
+  // A Base UI control reads both from `Field`; a platform one (`NativeSelect`) only from its props.
+  if (state.invalid) give('aria-invalid', true)
+  if (state.disabled === true) give('disabled', true)
   return cloneElement(child, next)
 }
 
@@ -137,6 +169,9 @@ function useNativeFieldsetDisabled(): [boolean, (el: HTMLElement | null) => void
 }
 
 type FrameProps = {
+  layout: FormFieldLayout | undefined
+  /** The control is an on/off one (a switch, a checkbox): in a row it stays at the end at every width. */
+  toggle: boolean
   label: ReactNode
   description: ReactNode
   required: boolean | undefined
@@ -147,7 +182,18 @@ type FrameProps = {
   children: ReactNode
 }
 
+// The row's grid: the label and the description share the start column, the control and its error
+// the end one. Narrow, it stacks label, description, control, error; a toggle keeps its end column.
+const ROW_GRID =
+  'grid min-w-0 gap-x-6 gap-y-1 [grid-template-areas:"label"_"desc"_"control"_"error"] @regular:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @regular:grid-rows-[auto_1fr_auto] @regular:[grid-template-areas:"label_control"_"desc_control"_"._error"]'
+const ROW_TOGGLE_GRID =
+  'grid min-w-0 grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_1fr_auto] gap-x-6 gap-y-1 [grid-template-areas:"label_control"_"desc_control"_"error_error"]'
+const ROW_AREAS =
+  '*:data-[slot=field-label]:[grid-area:label] *:data-[slot=field-description]:[grid-area:desc] *:data-[slot=field-description]:self-start *:data-[slot=field-control]:[grid-area:control] *:data-[slot=field-control]:self-start *:data-[slot=field-error-region]:[grid-area:error] *:data-[slot=field-error-region]:empty:hidden'
+
 function Frame({
+  layout: own,
+  toggle,
   label,
   description,
   required,
@@ -158,8 +204,10 @@ function Frame({
   children,
 }: FrameProps): ReactElement {
   const [nativeDisabled, ref] = useNativeFieldsetDisabled()
+  const inherited = use(FormFieldLayoutContext)
+  const row = (own ?? inherited) === 'row'
   const off = disabled === true || nativeDisabled
-  return (
+  const field = (
     <Field
       ref={ref}
       label={
@@ -182,11 +230,19 @@ function Frame({
       invalid={error !== undefined}
       {...(off && { disabled: true })}
       {...(dirty && { 'data-dirty': '' })}
-      className={cn('min-w-0', className)}
+      className={cn(
+        'min-w-0',
+        row && (toggle ? ROW_TOGGLE_GRID : ROW_GRID),
+        row && ROW_AREAS,
+        row ? undefined : className,
+      )}
     >
       <div
         data-slot="field-control"
-        className="min-w-0 *:not-data-[slot=switch]:not-data-[slot=checkbox]:w-full"
+        className={cn(
+          'min-w-0 *:not-data-[slot=switch]:not-data-[slot=checkbox]:w-full',
+          row && toggle && 'flex min-h-5 items-center',
+        )}
       >
         {children}
       </div>
@@ -197,6 +253,14 @@ function Frame({
       </div>
     </Field>
   )
+  if (!row) return field
+  // The container is an inner box, never the root: a size container directly in a `<fieldset>`
+  // loses its layout in Chrome (form-row.tsx), and a caller's fieldset may wrap the field.
+  return (
+    <div data-slot="form-field-row" className={cn('min-w-0', className)}>
+      <div className="@container min-w-0">{field}</div>
+    </div>
+  )
 }
 
 function SubmitField<T>({
@@ -205,9 +269,11 @@ function SubmitField<T>({
   description,
   required,
   disabled,
+  layout,
   className,
   children,
 }: FormFieldProps<T> & { field: FieldLike<T> }): ReactElement {
+  const error = firstError(field.state.meta.errors)
   const bound = bindChild(
     children,
     {
@@ -221,15 +287,18 @@ function SubmitField<T>({
     },
     required,
     label,
+    { invalid: error !== undefined, disabled },
   )
   return (
     <Frame
+      layout={layout}
+      toggle={typeof field.state.value === 'boolean'}
       label={label}
       description={description}
       required={required}
       disabled={disabled}
       dirty={false}
-      error={firstError(field.state.meta.errors)}
+      error={error}
       className={className}
     >
       {bound}
@@ -243,6 +312,7 @@ function PreferenceField<T>({
   description,
   required,
   disabled,
+  layout,
   className,
   children,
 }: FormFieldProps<T> & { control: ControlHandle<T> }): ReactElement {
@@ -252,9 +322,12 @@ function PreferenceField<T>({
     { value, onChange: (next: never) => set(next as T) },
     required,
     label,
+    { invalid: false, disabled },
   )
   return (
     <Frame
+      layout={layout}
+      toggle={typeof value === 'boolean'}
       label={label}
       description={description}
       required={required}

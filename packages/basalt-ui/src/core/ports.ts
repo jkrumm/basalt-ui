@@ -160,7 +160,14 @@ export type FieldLike<T> = {
 
 export type FormLike<V> = {
   /** `errors` are form-level. */
-  state: { values: V; isSubmitting: boolean; canSubmit: boolean; errors: unknown[] }
+  state: {
+    values: V
+    isSubmitting: boolean
+    canSubmit: boolean
+    errors: unknown[]
+    /** True once a value differs from its default; TanStack Form sets it. Read by `FormFooter`'s status. */
+    isDirty?: boolean
+  }
   /** Stays the server value under `keepDefaultValues`. */
   options: { defaultValues?: V }
   store: { subscribe(cb: () => void): { unsubscribe(): void } }
