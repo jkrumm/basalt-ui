@@ -113,16 +113,33 @@ export function fitsWith(
 /**
  * Place each label on the first free spot, highest `priority` first (ties keep input order). A
  * spot is free when its box lies fully inside `frame` and overlaps no placed label, no obstacle and
- * nothing the host published (`hostObstacles`); a label with no free spot is returned in `dropped`.
+ * nothing the host published (`hostObstacles`).
+ *
+ * A dense cloud leaves no free spot: every one of the eight meets a dot. With `pointMarks` (a page's
+ * own `chartLabels.place`), an obstacle the page passes
+ * that is no taller or wider than a label line is a point mark (a dot, a tick), and a label with no
+ * free spot lands on the spot that meets the fewest of them, beside its anchor, as long as it clears
+ * everything else (placed labels, bars, captions, the host's boxes). Only a label whose every spot
+ * meets something larger is returned in `dropped`.
  */
 export function placeWith<K extends string>(
   measure: MeasureText,
   labels: readonly ChartLabel<K>[],
   frame: { width: number; height: number },
-  options: { gap?: number; obstacles?: readonly LabelBox[]; size: number },
+  options: { gap?: number; obstacles?: readonly LabelBox[]; size: number; pointMarks?: boolean },
 ): { placed: PlacedLabel<K>[]; dropped: ChartLabel<K>[] } {
   const gap = options.gap ?? DEFAULT_GAP
-  const taken: LabelBox[] = [...(options.obstacles ?? []), ...hostObstacles()]
+  const reach = lineHeight(options.size)
+  // Only a page's own call (`chartLabels.place`) says its small obstacles are point marks: the kinds
+  // pass placed labels as obstacles, and those stay hard.
+  const isPoint = (box: LabelBox): boolean =>
+    options.pointMarks === true && box.width <= reach && box.height <= reach
+  // Hard boxes stop a label for good; point marks only count against a spot.
+  const points: LabelBox[] = (options.obstacles ?? []).filter(isPoint)
+  const taken: LabelBox[] = [
+    ...(options.obstacles ?? []).filter((b) => !isPoint(b)),
+    ...hostObstacles(),
+  ]
   const placed: PlacedLabel<K>[] = []
   const dropped: ChartLabel<K>[] = []
   const ranked = labels
@@ -134,17 +151,17 @@ export function placeWith<K extends string>(
     const width = measure(label.text, size, label.weight ?? 400)
     const height = lineHeight(size)
     let landed: PlacedLabel<K> | undefined
-    for (const spot of label.spots ?? SPOTS) {
+    // The spot that clears everything hard and meets the fewest point marks, for a crowded anchor.
+    let crowded: { spot: LabelSpot; box: LabelBox; met: number } | undefined
+    const land = (spot: LabelSpot, box: LabelBox): PlacedLabel<K> => {
       const at = boxFor(spot, label.x, label.y, width, height, gap)
-      const box = slid(spot, { left: at.left, top: at.top, width, height }, frame)
-      if (!inside(box, frame) || taken.some((other) => overlaps(box, other))) continue
       const textX =
         at.textAnchor === 'start'
           ? box.left
           : at.textAnchor === 'end'
             ? box.left + width
             : box.left + width / 2
-      landed = {
+      return {
         ...label,
         size,
         spot,
@@ -155,8 +172,19 @@ export function placeWith<K extends string>(
         dx: textX - label.x,
         dy: box.top + height / 2 - label.y,
       }
-      break
     }
+    for (const spot of label.spots ?? SPOTS) {
+      const at = boxFor(spot, label.x, label.y, width, height, gap)
+      const box = slid(spot, { left: at.left, top: at.top, width, height }, frame)
+      if (!inside(box, frame) || taken.some((other) => overlaps(box, other))) continue
+      const met = points.filter((other) => overlaps(box, other)).length
+      if (met === 0) {
+        landed = land(spot, box)
+        break
+      }
+      if (crowded === undefined || met < crowded.met) crowded = { spot, box, met }
+    }
+    if (landed === undefined && crowded !== undefined) landed = land(crowded.spot, crowded.box)
     if (landed === undefined) {
       dropped.push(label)
       continue
