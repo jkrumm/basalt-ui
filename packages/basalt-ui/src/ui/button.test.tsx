@@ -102,5 +102,4 @@ describe('button loading spinner', () => {
     const { getByRole } = render(<Button>Save</Button>)
     expect(getByRole('button').querySelector('svg')).toBeNull()
   })
-
 })
