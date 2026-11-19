@@ -70,6 +70,7 @@ export const BASALT_NAMES: readonly string[] = [
   '--basalt-hairline',
   '--basalt-hit',
   '--basalt-hit-gap',
+  '--basalt-hit-gap-block',
   '--basalt-hover',
   '--basalt-icon',
   '--basalt-info',

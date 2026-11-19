@@ -30,6 +30,13 @@ const ROLE_ORDER = ['series', 'overlay', 'reference'] as const
  */
 const DOTS_GAP = 30
 
+/**
+ * The pitch between wrapped rows. `--basalt-hit-gap-block` caps the hit area's height at the entry plus
+ * 2px and this gap, so a wrapped legend's rows never overlap: the trade is a block-axis hit target of
+ * about 29px (23 + 2 + 4), above the 24px WCAG 2.5.8 floor but under the 44px coarse floor.
+ */
+const ROW_GAP = 4
+
 const byReferenceLast = <T,>(a: ChartSeries<T>, b: ChartSeries<T>): number =>
   Number(a.role === 'reference') - Number(b.role === 'reference')
 
@@ -54,21 +61,23 @@ const rowBaseStyle: CSSProperties = {
   minWidth: 0,
   flexWrap: 'wrap',
   alignItems: 'center',
-  rowGap: 4,
+  rowGap: ROW_GAP,
   // The tick step: ticks, legend and tooltip are one size, so a chart card has at most three.
   fontSize: BASALT.text.micro,
   color: CV.inkMuted,
   lineHeight: 1.35,
 }
 const rowStyle: CSSProperties = { ...rowBaseStyle, display: 'flex' }
-/** The gaps `chart-legend.module.css` reads, as custom properties. */
-type LegendVars = CSSProperties & Record<'--bc-legend-gap' | '--bc-dots-gap', string>
+/** The gaps `chart-legend.module.css` reads, and the block-axis hit cap, as custom properties. */
+type LegendVars = CSSProperties &
+  Record<'--bc-legend-gap' | '--bc-dots-gap' | '--basalt-hit-gap-block', string>
 // `flex-wrap` is the stylesheet's too, so the same rule wraps at every width.
 const { flexWrap: _wrap, ...autoBaseStyle } = rowBaseStyle
 const autoRowStyle: LegendVars = {
   ...autoBaseStyle,
   '--bc-legend-gap': `${BASALT.legendGap}px`,
   '--bc-dots-gap': `${DOTS_GAP}px`,
+  '--basalt-hit-gap-block': `${ROW_GAP}px`,
 }
 /** The row's layout; a concealed legend keeps it (and so its height) but is not visible. */
 function rowLayout(mode: LegendMode, concealed: boolean): CSSProperties {
@@ -80,8 +89,11 @@ function rowLayout(mode: LegendMode, concealed: boolean): CSSProperties {
   return {
     ...rowStyle,
     columnGap: gap,
-    // Caps each entry's `[data-basalt-hit]` overlay at the real gap between entries.
-    ...({ '--basalt-hit-gap': `${gap}px` } as CSSProperties),
+    // Caps each entry's `[data-basalt-hit]` overlay at the real gaps: columns between entries, rows across a wrap.
+    ...({
+      '--basalt-hit-gap': `${gap}px`,
+      '--basalt-hit-gap-block': `${ROW_GAP}px`,
+    } as CSSProperties),
     ...hide,
   }
 }

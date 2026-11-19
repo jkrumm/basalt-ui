@@ -44,7 +44,8 @@ describe('BASALT_NAMES', () => {
   })
 
   it('carries --basalt-hit and the component-scoped names', () => {
-    for (const n of ['--basalt-hit', '--basalt-hit-gap']) expect(BASALT_NAMES).toContain(n)
+    for (const n of ['--basalt-hit', '--basalt-hit-gap', '--basalt-hit-gap-block'])
+      expect(BASALT_NAMES).toContain(n)
   })
 
   it('never lists a removed name, and every named replacement is live', () => {

@@ -11,6 +11,7 @@ const DEFINED = new Set(SHEET.match(/--basalt-[a-z0-9-]+(?=\s*:)/g))
 /** Set by a chart file itself on the element that reads it (`legend.tsx`), with a fallback at the read. */
 const LOCAL = new Set([
   '--basalt-hit-gap',
+  '--basalt-hit-gap-block',
   // Override hooks that were `--basalt-*` before the token rename: a host sets them, every read carries
   // a fallback (or `styles.css` declares it), so the v3 sheet need not.
   '--basalt-chart-font',
