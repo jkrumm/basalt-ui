@@ -21,7 +21,8 @@
         font: inherit;
       }
       button:focus-visible,
-      a:focus-visible {
+      a:focus-visible,
+      .tall:focus-visible {
         outline: 2px solid #1d4ed8;
         outline-offset: 2px;
       }
@@ -34,6 +35,17 @@
         min-width: 48px;
         min-height: 48px;
         margin: 8px;
+      }
+      /* A scroller shorter than its focusable child: the ring is clipped only where scrolling cannot reveal it. */
+      .scroller {
+        box-sizing: border-box;
+        width: 240px;
+        height: 120px;
+        padding: 8px;
+        overflow: auto;
+      }
+      .tall {
+        height: 400px;
       }
       .fit {
         width: 240px;
@@ -52,6 +64,9 @@
       <button type="button">One</button>
       <button type="button">Two</button>
       <a href="#top">A link</a>
+      <div class="scroller" aria-label="Tall">
+        <div class="tall" tabindex="0">A focusable block taller than its scroller</div>
+      </div>
     </main>
   </body>
 </html>
