@@ -306,11 +306,4 @@ describe('file-upload module', () => {
     expect(getByLabelText('Invoice')).toBe(inputOf(container))
     expect(inputOf(container).getAttribute('name')).toBe('invoice')
   })
-
-  test('maxFiles without multiple warns in development', () => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    render(<FileUpload aria-label="Docs" maxFiles={2} />)
-    expect(warn).toHaveBeenCalledTimes(1)
-    warn.mockRestore()
-  })
 })

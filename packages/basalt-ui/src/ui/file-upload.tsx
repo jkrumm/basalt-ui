@@ -1,6 +1,6 @@
 import { Input as BaseInput } from '@base-ui/react/input'
 import { cva } from 'class-variance-authority'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import type { ChangeEvent, DragEvent, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 
@@ -223,8 +223,6 @@ function CloseIcon(): ReactElement {
   )
 }
 
-const DEV = process.env.NODE_ENV !== 'production'
-
 /**
  * A file picker with a drop zone on Base UI's `Input` (the hidden `<input type="file">`, so it joins a
  * Base UI `Field`: the label, `name` and `disabled` reach the input). The zone is one button: Enter or
@@ -271,13 +269,6 @@ export function FileUpload({
   const hintId = useId()
   const errorsId = useId()
   const files = value ?? inner
-
-  useEffect(() => {
-    if (DEV && maxFiles !== undefined && !multiple) {
-      // oxlint-disable-next-line no-console -- dev-only misuse warning, gated on NODE_ENV
-      console.warn('basalt-ui FileUpload: maxFiles has no effect without multiple.')
-    }
-  }, [maxFiles, multiple])
 
   const limits: Limits = { tokens: acceptTokens(accept), multiple, maxSize, maxFiles }
 

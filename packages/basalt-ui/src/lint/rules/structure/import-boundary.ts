@@ -353,6 +353,7 @@ export const SHIPPED_PRIMITIVES: ReadonlySet<string> = new Set([
   'date-picker',
   'dialog',
   'field',
+  'file-upload',
   'info-hint',
   'input',
   'kbd',
