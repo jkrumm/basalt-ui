@@ -443,6 +443,13 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     }
     return out
   }, [stable.series, stable.data])
+  // The axis each `spread` dot series moves its coincident dots along.
+  const dotSpread = useMemo(() => {
+    const out = new Map<string, 'x' | 'y'>()
+    for (const s of stable.series)
+      if (s.mark === 'dot' && s.spread !== undefined) out.set(s.key, s.spread)
+    return out
+  }, [stable.series])
   const width = measured || INITIAL_WIDTH
   const definition = useMemo(() => {
     const compiled = compileCartesian<D, ChartX>({
@@ -451,6 +458,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       chartId,
       locale,
       dotRadius,
+      ...(dotSpread.size > 0 && { dotSpread }),
       hidden,
       highlighted,
       coarse,
@@ -476,6 +484,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     chartId,
     locale,
     dotRadius,
+    dotSpread,
     hidden,
     highlighted,
     coarse,

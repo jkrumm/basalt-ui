@@ -46,6 +46,7 @@ import {
 } from './axis-ext'
 import { barValueLabels } from './bar-values'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
+import { spreadAlong } from './spread'
 import { claimedLabelBoxes } from '../labels'
 import type { LabelBox as PxBox } from '../chart-labels'
 import {
@@ -141,6 +142,8 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   locale?: string
   /** The largest radius a dot series draws, px by series key: the plot keeps room for it at its edge. */
   dotRadius?: ReadonlyMap<string, number>
+  /** The axis a dot series moves its coincident dots along (`Series.spread`), by series key. */
+  dotSpread?: ReadonlyMap<string, 'x' | 'y'>
   /** Series keys the legend has toggled off. */
   hidden?: ReadonlySet<string>
   /** The legend entry under the pointer. */
@@ -1470,6 +1473,73 @@ function rowsOf<T, X extends ChartX>(
   }
 }
 
+/**
+ * `rows` with each `spread` dot series' rows moved apart where they would overlap
+ * (`spreadAlong`, in plot pixels). Only the drawn position moves: `datum` still reads the true value
+ * for the tooltip and the readout. An x spread needs a linear x (a number or a time); on a band, point
+ * or log x the dots stay where they are.
+ */
+function spreadRowsOf<T, X extends ChartX>(
+  rows: (key: string) => PlotRow<T, X>[],
+  input: CartesianInput<T, X>,
+  at: {
+    visible: readonly ChartSeries<T>[]
+    model: XScaleModel<X>
+    axes: Axes<T>
+    plotWidth: number
+    plotHeight: number
+  },
+): (key: string) => PlotRow<T, X>[] {
+  const spread = input.dotSpread
+  if (spread === undefined || spread.size === 0) return rows
+  const { model, axes, plotWidth, plotHeight } = at
+  if (plotWidth <= 0 || plotHeight <= 0) return rows
+  const memo = new Map<string, PlotRow<T, X>[]>()
+  return (key) => {
+    const drawn = rows(key)
+    const axis = spread.get(key)
+    const s = at.visible.find((v) => v.key === key)
+    if (axis === undefined || s === undefined || drawn.length === 0) return drawn
+    const known = memo.get(key)
+    if (known !== undefined) return known
+    const extent = model.extent
+    const xLinear = extent !== undefined && model.log !== true && !model.band
+    if (axis === 'x' && !xLinear) return drawn
+    const domain = axes.axisOf(axes.onRight(s) ? 'right' : 'left').domain
+    const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+    if (hi === lo) return drawn
+    const yPx = (y: number): number => ((hi - y) / (hi - lo)) * plotHeight
+    const r = input.dotRadius?.get(key) ?? BASALT.dotR
+    const live: { row: PlotRow<T, X>; px: number; py: number }[] = []
+    for (const row of drawn) {
+      const f = model.fraction(row.x)
+      if (row.y === null || f === null) continue
+      live.push({ row, px: f * plotWidth, py: yPx(row.y) })
+    }
+    const placed = spreadAlong(
+      live.map((p) =>
+        axis === 'x' ? { along: p.px, across: p.py, r } : { along: p.py, across: p.px, r },
+      ),
+      axis === 'x' ? plotWidth : plotHeight,
+    )
+    const moved = new Map(live.map((p, i) => [p.row, placed[i] as number]))
+    const toX = (px: number): X => {
+      const [from, to] = extent ?? [0, 1]
+      const v = from + (px / plotWidth) * (to - from)
+      return (model.kind === 'date' ? new Date(v) : v) as unknown as X
+    }
+    const out = drawn.map((row) => {
+      const to = moved.get(row)
+      if (to === undefined) return row
+      return axis === 'x'
+        ? { ...row, x: toX(to) }
+        : { ...row, y: hi - (to / plotHeight) * (hi - lo) }
+    })
+    memo.set(key, out)
+    return out
+  }
+}
+
 /** The cursor dots of the visible series that opt in with `cursorValue`. */
 function cursorDotMarks<T, X extends ChartX>(
   input: CartesianInput<T, X>,
@@ -1813,9 +1883,20 @@ export function compileCartesian<T, X extends ChartX>(
       model = dotRoomX(access, width)
       const capped = axesAt(cls)
       const axes = dotRoomAxes(capped, access, height)
+      // A spread reads the plot's size: dots move apart in pixels, so it recompiles once measured.
+      const spreads = visible.some((s) => input.dotSpread?.has(s.key) === true)
+      if (spreads) access.read()
       const plot = plotContext(
         {
-          rows: rowsOf(input, visibleKeys, capped),
+          rows: spreads
+            ? spreadRowsOf(rowsOf(input, visibleKeys, capped), input, {
+                visible,
+                model,
+                axes,
+                plotWidth: access.size()?.width ?? width,
+                plotHeight: access.size()?.height ?? height,
+              })
+            : rowsOf(input, visibleKeys, capped),
           visible,
           highlighted: input.highlighted ?? null,
           focused: input.focused ?? null,
