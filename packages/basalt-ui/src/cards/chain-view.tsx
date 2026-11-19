@@ -197,7 +197,9 @@ export function ChainView<T>({
         }
   const waitsOnLine = (id: string): string | undefined => {
     const blockers = blockersOf.get(id) ?? []
-    return blockers.length === 0 ? undefined : t('lists.chainWaitsOn', blockers.map(titleOf))
+    return blockers.length === 0
+      ? undefined
+      : t('lists.chainWaitsOn', blockers.map(titleOf).join(', '))
   }
 
   /** `roving`: a node of the graph, whose tab stop is the list when a focus is shared. */
@@ -251,7 +253,7 @@ export function ChainView<T>({
           <ul
             aria-label={label}
             {...keys}
-            className="relative m-0 list-none p-0 focus-ring"
+            className="relative m-0 list-none p-0 focus-ring focus-visible:-outline-offset-2"
             style={{ width: geometry.width, height: geometry.height }}
           >
             <svg
@@ -331,7 +333,7 @@ export function ChainView<T>({
               <div className="h-16">{body(node, id, false)}</div>
               {more.length > 0 && (
                 <span className="truncate pl-3 text-xs text-muted-foreground">
-                  {t('lists.chainAlsoWaitsOn', more.map(titleOf))}
+                  {t('lists.chainAlsoWaitsOn', more.map(titleOf).join(', '))}
                 </span>
               )}
             </li>
