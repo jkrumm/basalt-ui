@@ -21,7 +21,7 @@ export function Timeline({ bars, now }: { bars: Bar[]; now: number }) {
       title="Deploys"
       subtitle="Today, UTC"
       legend={LEGEND}
-      bodySize={{ rows: bars.length + 1 }} // the hour row plus one 32 px row per bar
+      bodySize={{ height: (bars.length + 1) * 40 - 8 }} // the hour row plus one row per bar: 32 px rows, 8 px apart
       body={() => (
         <ScrollArea aria-label="Deploys by hour" orientation="horizontal">
           <div
