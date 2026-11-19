@@ -90,6 +90,20 @@ function PanelSkeleton({ size }: { size: DataPanelProps['bodySize'] }): ReactEle
   )
 }
 
+const FILL = 'bg-(--swatch-light) dark:bg-(--swatch-dark)'
+const EDGE = 'border-[1.5px] border-(color:--swatch-light) dark:border-(color:--swatch-dark)'
+
+/** The swatch per entry shape, the chart legend's: a line key, a dot, a ring, a square or an open square. */
+const SWATCH: Readonly<Record<NonNullable<LegendEntry['swatch']>, string>> = {
+  solid: cn('size-2 rounded-xs', FILL),
+  dashed:
+    'h-0 w-3 border-t-2 border-dashed border-(color:--swatch-light) dark:border-(color:--swatch-dark)',
+  dot: cn('size-2 rounded-full', FILL),
+  ring: cn('size-2 rounded-full', EDGE),
+  bar: cn('size-2 rounded-xs', FILL),
+  hollow: cn('size-2 rounded-xs', EDGE),
+}
+
 /** The legend row of a card: one swatch and label per entry, under the header. `BarList` draws it too. */
 export function Legend({ entries }: { entries: readonly LegendEntry[] }): ReactElement {
   const t = useMessages(cards)
@@ -111,11 +125,10 @@ export function Legend({ entries }: { entries: readonly LegendEntry[] }): ReactE
                 '--swatch-dark': entry.color.dark,
               } as CSSProperties
             }
+            data-swatch={entry.swatch ?? 'solid'}
             className={cn(
               'shrink-0',
-              entry.swatch === 'dashed'
-                ? 'h-0 w-3 border-t-2 border-dashed border-(color:--swatch-light) dark:border-(color:--swatch-dark)'
-                : 'size-2 rounded-xs bg-(--swatch-light) dark:bg-(--swatch-dark)',
+              SWATCH[entry.swatch ?? 'solid'],
               entry.failed === true && 'opacity-40',
             )}
           />
