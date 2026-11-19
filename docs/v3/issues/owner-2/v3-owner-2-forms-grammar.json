@@ -1,0 +1,30 @@
+{
+  "why": "Owner on Fleet settings: 'forms need way more love', 'way richer and more beautiful appearance and options and rendering', 'BlueprintJS or other open source libraries can be helpful', 'or again challenging Expressions and iterating on them to learn'. The settings page is plain because the kit gives a builder nothing to compose a form from beyond a stacked field: the settings grammar was dropped on purpose (docs/v3/concepts/migration-release.md:113), SettingsRow was merged into FormField and FormRow and FormSection mapped to Section (docs/v3/concepts/controls-url-state.md:142). FormField always stacks label over control (controls/form-field.tsx, Frame), so there is no label-left row; FormRow lays fields out by container width, not as settings rows (controls/form-row.tsx:38); there is no grouped surface, no legend use, and FormFooter exists but nothing leads a builder to it. The gaps v3-owner-2-forms-gallery lists (stepper, file upload, creatable tags) land here.",
+  "what": "packages/basalt-ui/src/controls and src/ui (form layout parts and the missing controls), a research page, the basalt-design form reference, the Forms gallery pages.",
+  "owns": [
+    "packages/basalt-ui/src/controls/form-*.tsx and new form layout parts",
+    "packages/basalt-ui/src/ui/** (new controls and the look of field controls)",
+    "docs/v3/verdicts/forms-research.md (new)",
+    "docs/v3/concepts/controls-url-state.md",
+    "packages/basalt-ui/agent/skills/basalt-design/references/forms*.md",
+    "apps/playground/src/routes/kit/forms*.tsx"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** and apps/playground/src/cycle/** (trial builds are never hand-finished; v3-owner-2-rerun rebuilds them)"
+  ],
+  "change": "Research first, from sources (/research): Blueprint forms and its FormGroup and ControlGroup, Primer, Polaris, Carbon, Radix Themes, shadcn form blocks, GitHub, Linear and Stripe settings pages where public. Per source: label placement rules, section and group surfaces, help and error text, required and optional marking, inline versus footer save, long-form navigation, multi-step structure. Write docs/v3/verdicts/forms-research.md with take or refuse. Then a Spec with shots of the same three forms from the gallery (create dialog, settings page, multi-step flow) before and after, proposing: a settings row (label and description at the start, control at the end, stacking when narrow), a form section as a titled group on a surface, the save model (dirty footer versus per-field), a Stepper for multi-step forms, file upload, creatable tags, and the look of the field controls themselves where the research shows them thin (density, affordance, icons in fields, select and combobox popups with search, groups and rich options). The reversal of the dropped settings grammar is named as a reversal with its reason. Build what the verdict keeps. Engine: keep the FieldLike port; say in the Spec whether basalt should ship a TanStack Form adapter subpath, with a default.",
+  "acceptance": [
+    "docs/v3/verdicts/forms-research.md cites each source read and states take or refuse per pattern",
+    "A Spec with before and after shots of the three forms, light and dark, 1800 and 390, has a verdict before code merges",
+    "The parts the verdict keeps ship with tests, generated docs and a skill reference, and the gallery pages use them",
+    "The Forms rows in showcase-gaps.md are each closed or carried with a reason",
+    "Contract additions are additive and pinned; budgets recorded",
+    "make check passes"
+  ],
+  "out_of_scope": "A schema-driven form generator; validation libraries.",
+  "proof": "make check; the research page; the Spec shots.",
+  "commits": "docs: the research page; feat: per part with its test (package); chore: the gallery pages.",
+  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it."
+}

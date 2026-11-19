@@ -1,0 +1,29 @@
+{
+  "why": "Owner on /table: 'the filters may have been on the columns so we get sorting icon, filter icon, more icon', 'maybe more icons here and there for columns or values or buttons', 'view to be saved', 'full text search'. The parts exist but the header hides them. parts/head.tsx draws a sort mark that is faint until hover and a column menu caret (parts/column-actions.tsx:94-108) hidden until hover or focus; a funnel appears only once a filter is active, and a filter is reached through the menu's 'Filter...' item (column-actions.tsx:136-138). So a reader cannot see that a column filters at all. A column header takes no icon: spec.header is a string (core/kinds-spec.ts:77). Saved views ship as ViewsMenu inside TableToolbar (parts/views.tsx:268) but sit behind a toolbar item and Rooms on /table has no toolbar (routes/table.tsx:379), so the owner asked for a feature that is there. Global search ships (contract.ts:50, parts/toolbar.tsx:35-56) but reads only columns with a text filter (core/kinds-engine.ts:40, core/kinds.tsx:479,495), so a status, number or date value is not found.",
+  "what": "packages/basalt-ui/src/table (head, column actions, toolbar, kinds), its docs and skill reference, apps/playground/src/routes/table.tsx.",
+  "owns": [
+    "packages/basalt-ui/src/table/**",
+    "packages/basalt-ui/agent/skills/basalt-design/references/table*.md",
+    "apps/playground/src/routes/table.tsx",
+    "docs/v3/concepts (the table concept page)"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** and apps/playground/src/cycle/** (trial builds are never hand-finished; v3-owner-2-rerun rebuilds them)"
+  ],
+  "change": "(1) Header affordances are visible at rest on a pointer device: every sortable column shows its sort control, every filterable column a filter control that opens the editor directly, and the column menu its trigger, in one fixed order and one visual weight that does not shout (rest ink faint, active ink brand); on a coarse pointer the existing menu stays the door. A header never changes width when a control appears. (2) A column takes an optional icon (IconComponent) in its header, and the value kinds that already carry meaning (status, entity, boolean, link, date) get a consistent icon option in the cell; state it in the contract, additive. (3) Search reads every column's display text, not only text-filter columns, in client mode; in server mode it stays `q`. (4) Saved views are visible: when views are enabled the toolbar names the current view and offers save beside it without opening a menu first; every /table demo has a toolbar. Measure the table-own budget and record the change.",
+  "acceptance": [
+    "At rest on a fine pointer a sortable, filterable column shows sort, filter and menu controls; clicking filter opens that column's editor (test)",
+    "Header cell width is the same at rest, on hover and with an active filter (layout test, 1800 and 390)",
+    "A column `icon` renders in the header and is in the generated docs",
+    "Search for a status label, a number and a date string each finds its row in client mode (test)",
+    "With views enabled the current view and a save action are visible without opening a menu (test); all three /table demos carry the toolbar",
+    "Contract additions go through the contract-amendment path; the table-own budget change is recorded",
+    "make check passes"
+  ],
+  "out_of_scope": "The bordered grid look, column reorder, resize and pinning (v3-owner-2-table-grid).",
+  "proof": "make check; before and after shots of a header at rest in the PR.",
+  "commits": "feat: per part with its test (package); chore: the playground table demos.",
+  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it."
+}

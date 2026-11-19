@@ -1,0 +1,29 @@
+{
+  "why": "Owner, with a shot of the strip on Fleet overview (Services 6, Deploys 164, Failure rate 11.0 %, Median duration 174 s): 'I still really don't like this stat-group component which you often render at the top of pages; it looks like a way less thought-through version of cards, way too simplistic, boring and not structured enough'. The strip is one flush Card with a column grid, gap-x-6, no dividers and no icon (cards/stat-group.tsx:27-38, cards/stat-cell.tsx); each cell can take a delta, a 28 px chart slot, a meter and rows (cards/contract.ts:77-95), and the trial builders use none of them, so what he sees is four numbers on a grey band. It is the flush look he already rejected for StatCard on 2026-11-11 (docs/v3/DIRECTION.md:444, docs/v3/verdicts/statcard.md:31), kept alive under another name. Builders reach for it by default because the skill says 'One strip or row of cards first' (agent/skills/basalt-design/references/cards.md:44) while cards.md:30 says a strip of counts falls short: the skill contradicts itself and the easy one wins. It is on 17 playground files.",
+  "what": "packages/basalt-ui/src/cards (StatGroup, StatCell), the basalt-design cards reference, the rubric line, /cards.",
+  "owns": [
+    "packages/basalt-ui/src/cards/stat-group.tsx",
+    "packages/basalt-ui/src/cards/stat-cell.tsx",
+    "packages/basalt-ui/src/cards/contract.ts (StatCell and StatGroup only)",
+    "packages/basalt-ui/agent/skills/basalt-design/references/cards.md and encoding.md",
+    "docs/v3/verdicts/statcard.md",
+    "apps/playground/src/routes/cards.tsx"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** and apps/playground/src/cycle/** (trial builds are never hand-finished; v3-owner-2-rerun rebuilds them)"
+  ],
+  "change": "Spec with shots on the owner's own four figures, light and dark, 1800 and 390: the present strip and three alternatives. (a) Retire the strip: StatGroup lays out StatCards on the 4 px gutter the owner chose, and the strip variant goes. (b) A structured strip: cells divided by rules, each with a label row (icon optional), the figure, a delta with its comparison period, and a trend where the data has one, so a cell is a small card and not a number. (c) No stat row by default: the page's first card answers the page's question and counts live where they are acted on. Recommend one. Then fix the cause of the habit whichever wins: resolve cards.md:30 against :44 into one rule that says when a stat row earns its place and what each figure must carry (a comparison or a state, never a bare count), and a lint or rubric line that catches a row of bare numbers. If the variant is removed, migrate the playground's own non-trial pages; trial pages are rebuilt, never edited.",
+  "acceptance": [
+    "A Spec with the present strip and three alternatives on the same four figures has a verdict before code merges",
+    "The cards reference has one rule for a stat row, with no contradiction between its lines",
+    "A stat row of bare numbers (no delta, state or trend on any cell) is caught by lint or by a rubric line with a cap",
+    "The chosen form ships with layout tests at 1800 and 390 and passes the quality matrix",
+    "make check passes"
+  ],
+  "out_of_scope": "StatCard's own design (decided 2026-11-11).",
+  "proof": "make check; the Spec shots.",
+  "commits": "feat or fix: the stat row with its test (package); docs: the skill rule; chore: the playground.",
+  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it."
+}

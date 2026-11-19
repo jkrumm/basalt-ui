@@ -1,0 +1,29 @@
+{
+  "why": "Owner on /kit/chain: 'first, quite nice'; then 'don't like the AI slop left yellow borders', 'the arrows and positioning can be optimised visually', 'not sure how I could zoom and move on bigger chains', 'the chain view below is nice but maybe switchable also to nested, table'. A blocked node draws a 2 px warn bar on its leading edge as a pseudo-element (cards/chain-view.tsx:65, applied :217). Edges are orthogonal elbows with rounded corners and a hand-drawn triangle head (cards/chain-layout.ts:144-151, chain-view.tsx:56-57, 269-298). There is no pan or zoom, by the file's own word (:131); a horizontal ScrollArea is the only movement (:263). The Table, Nested and Chain switch exists only in the playground route (routes/kit/chain.tsx:19-28, 73-78), so every consumer rebuilds it.",
+  "what": "packages/basalt-ui/src/cards/chain-view.tsx and chain-layout.ts, a kit-wide check for side-stripe accents, /kit/chain, docs/chain-view.md.",
+  "owns": [
+    "packages/basalt-ui/src/cards/chain-view.tsx",
+    "packages/basalt-ui/src/cards/chain-layout.ts",
+    "packages/basalt-ui/src/lint/** (the side-stripe rule)",
+    "packages/basalt-ui/agent/skills/basalt-design/** (one anti-default line)",
+    "apps/playground/src/routes/kit/chain.tsx",
+    "docs/chain-view.md"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** and apps/playground/src/cycle/** (trial builds are never hand-finished; v3-owner-2-rerun rebuilds them)"
+  ],
+  "change": "(1) Side stripes: remove the leading-edge bar; a blocked node says so with the status part the kit already has (badge, dot or tone of the whole border). Then the cause: search the package for the same pattern (a coloured bar on one edge of a card, row or callout, by border-l, border-s, or a before/after bar) and remove each; add a lint rule that refuses a one-sided coloured border or bar on a surface in app code, and one anti-default line in the skill. (2) Edges: Spec with shots of the present routing and two alternatives on a chain with crossings and long spans (for example smooth curves with a shared trunk, or elbows with lane separation and edge bundling); arrowheads as markers sized to the stroke; edges meet nodes at fixed ports, never under a label. Compare with software-factory apps/console/src/components/chain/graph.tsx, which this view dogfoods. (3) Large chains: the Spec states the size at which the present view stops working (measure it: nodes and columns at 1440) and proposes the smallest thing that solves it, with a default: fit-to-width with a zoom control and drag to pan, plus a focus mode that shows one node's ancestors and descendants. Keyboard and touch included. (4) The switch: a recipe in docs/recipes and the playground that gives chain, nested rows and table over one dataset with ViewTabs, so a consumer copies one file; say in the Spec why it is a recipe and not a prop, or the reverse.",
+  "acceptance": [
+    "No one-sided coloured bar remains in packages/basalt-ui/src (the new lint rule passes on the package and the playground, and fails on a fixture)",
+    "A Spec with edge alternatives and the large-chain proposal, with a measured breaking size, has a verdict before code merges",
+    "The chosen routing and the pan and zoom ship with layout tests at 1800 and 390 and pass the quality matrix",
+    "The view switch is a documented recipe used by /kit/chain",
+    "make check passes"
+  ],
+  "out_of_scope": "Editing a chain (drag to connect), a general graph component.",
+  "proof": "make check; the Spec shots.",
+  "commits": "fix: the side stripes and the lint rule; feat: routing and pan and zoom with tests (package); docs: the recipe.",
+  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it."
+}

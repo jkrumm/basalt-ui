@@ -1,0 +1,23 @@
+{
+  "why": "The owner named pages again on 2026-11-19: expr-n04 (flicker), the shell-5 Fleet overview (stat strip) and Fleet settings (forms). The rows before this one change the kit, the lint and the skill. As in owner review 1, the proof is a fresh builder who never saw the complaint producing the page without the fault.",
+  "what": "apps/playground trial builds for expr-n04 and a new shell trial (overview and settings), a results page, shots.",
+  "owns": [
+    "apps/playground/src/scenarios/expr/n04/**",
+    "apps/playground/src/cycle/shell-6/** (new)",
+    "apps/playground/src/demo/nav-model.tsx",
+    "docs/v3/cycles/owner-review-2.md (new)"
+  ],
+  "must_not_touch": ["packages/basalt-ui/**", "docs/v3/expression/cases.md", "CHANGELOG.md"],
+  "change": "On current master, one fresh builder per page under the trial protocol (shipped surface and skill only, the case text unchanged, never the owner's remarks, the old build or the rubric): expr-n04, and the fleet shell case as shell-6 with its overview, services and settings pages. Keep the old builds' shots as the before. Check each remark by looking and by the guard: n04 passes the extended hover guard and its headline never changes on hover; the overview's first row is not a strip of bare numbers; the settings page uses the form grammar and reads as designed. A remark not met is a finding with a class and a proposed row, not a hand fix. Write docs/v3/cycles/owner-review-2.md with a before and after shot pair per page and submit it as a Report.",
+  "acceptance": [
+    "Fresh one-shot builds of expr-n04 and shell-6 are on master, each passing lint with no new waiver",
+    "docs/v3/cycles/owner-review-2.md states each remark met or not met with a shot pair",
+    "Every not-met remark has a class and a proposed plan row",
+    "The page is submitted as a Report artifact for the owner",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit changes.",
+  "proof": "make check; the Report.",
+  "commits": "feat: the rebuilt pages; docs: the results page.",
+  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it."
+}

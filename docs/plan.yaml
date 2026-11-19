@@ -984,3 +984,80 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-expr-11-kit-fixes, v3-expr-11-contract, v3-expr-11-skill]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-12.json' }
+  - key: v3-owner-2-table-header
+    title: 'Table headers that show sort, filter and menu at rest, column icons, search over every column, saved views in sight, from owner review 2'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-table-header.json' }
+  - key: v3-owner-2-table-grid
+    title: 'A grid look for working data beside the reading table, movable columns, and a study of open-source data grids (Spec), from owner review 2'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-owner-2-table-header]
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-table-grid.json' }
+  - key: v3-owner-2-controls-labels
+    title: 'Filters that always name their field, the cards tier on /kit/controls measured, date picker colours, from owner review 2'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-controls-labels.json' }
+  - key: v3-owner-2-chart-calm
+    title: 'Charts: a tooltip that keeps its side, a headline a hover never rewrites, a guard that catches both, no outline on a click, from owner review 2'
+    repo: basalt-ui
+    kind: bug
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-11-kit-fixes, v3-expr-11-contract]
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-chart-calm.json' }
+  - key: v3-owner-2-interval-look
+    title: 'IntervalTrack: a quieter fill, label ink by contrast, a hover that does not veil (Spec), from owner review 2'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-owner-2-chart-calm]
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-interval-look.json' }
+  - key: v3-owner-2-chain-polish
+    title: 'Chain view: no side stripes anywhere, better edges, pan and zoom for large chains, a view-switch recipe (Spec), from owner review 2'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-chain-polish.json' }
+  - key: v3-owner-2-forms-gallery
+    title: 'Playground: a Forms gallery of every shipped control and three whole forms, and the list of form gaps, from owner review 2'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-forms-gallery.json' }
+  - key: v3-owner-2-forms-grammar
+    title: 'Forms: a settings row, sections, a stepper, upload and richer field controls, after a study of open-source form systems (Spec), from owner review 2'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-owner-2-forms-gallery, v3-owner-2-controls-labels]
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-forms-grammar.json' }
+  - key: v3-owner-2-stat-strip
+    title: 'The stat row: retire or restructure the flush strip, and one skill rule for when a page leads with figures (Spec), from owner review 2'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-stat-strip.json' }
+  - key: v3-owner-2-rerun
+    title: 'Rebuild expr-n04 and the fleet shell one shot each on the fixed kit and show the owner before and after, from owner review 2'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after:
+      [
+        v3-owner-2-chart-calm,
+        v3-owner-2-forms-grammar,
+        v3-owner-2-stat-strip,
+        v3-owner-2-table-grid,
+        v3-owner-1-rerun,
+      ]
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-rerun.json' }
