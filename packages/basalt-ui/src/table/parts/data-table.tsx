@@ -212,7 +212,8 @@ export function DataTable<T, I = unknown>({
           }
         >
           <Table
-            role="table"
+            // Nested rows make the table a tree grid: its rows carry a level and open or close.
+            role={model.nested ? 'treegrid' : 'table'}
             aria-colcount={colcount}
             aria-busy={phase.tag === 'loading' || undefined}
             className="table-fixed"

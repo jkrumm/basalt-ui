@@ -10,6 +10,7 @@
  * | Space                         | toggles the tick, only when rows are selectable; NEVER activates |
  * | `/`                           | focuses the table's own search (the root handler, not a global one) |
  * | Escape                        | `onClear` (the selection), unless the key came from a text field |
+ * | Right, Left                   | nested rows only: open or step in, close or step to the parent |
  *
  * Law: a row handles only its OWN keys. A key from a button, link or input inside the row has
  * `target !== currentTarget` and is left alone, so Enter on a nested control never also activates
@@ -33,6 +34,17 @@ export type RowKeyboardOptions = {
   searchRef?: RefObject<HTMLElement | null> | undefined
   /** @default 10 */
   pageStep?: number | undefined
+  /**
+   * Nested rows: Right opens a closed row or steps to its first row below, Left closes an open row
+   * or steps to its parent. `open` and `close` return whether they changed the row.
+   */
+  tree?:
+    | {
+        open(id: string): boolean
+        close(id: string): boolean
+        parentOf(id: string): string | undefined
+      }
+    | undefined
 }
 
 export type RowProps = {
@@ -106,8 +118,8 @@ export function nextIndex(
 }
 
 export function useRowKeyboard(options: RowKeyboardOptions): RowKeyboard {
-  const { rowIds, onActivate, onToggle, onClear, searchRef, pageStep } = options
-  const enabled = onActivate !== undefined || onToggle !== undefined
+  const { rowIds, onActivate, onToggle, onClear, searchRef, pageStep, tree } = options
+  const enabled = onActivate !== undefined || onToggle !== undefined || tree !== undefined
   const [stop, setStop] = useState<string | undefined>(undefined)
   const elements = useRef(new Map<string, HTMLElement>())
   const pending = useRef<string | undefined>(undefined)
@@ -198,6 +210,19 @@ export function useRowKeyboard(options: RowKeyboardOptions): RowKeyboard {
             return
           }
           const index = rowIds.indexOf(id)
+          if (tree !== undefined && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+            event.preventDefault()
+            if (event.key === 'ArrowRight') {
+              if (tree.open(id)) return
+              const below = rowIds[index + 1]
+              if (below !== undefined && tree.parentOf(below) === id) focusRow(below)
+              return
+            }
+            if (tree.close(id)) return
+            const parent = tree.parentOf(id)
+            if (parent !== undefined) focusRow(parent)
+            return
+          }
           const next = nextIndex(event.key, index, rowIds.length, pageStep)
           const nextId = next === undefined ? undefined : rowIds[next]
           if (nextId === undefined) return

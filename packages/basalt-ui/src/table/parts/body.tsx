@@ -6,7 +6,7 @@
  * (I2), and a throw in a cell lands in the error arm instead of the page.
  */
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
-import type { ReactElement, ReactNode } from 'react'
+import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
 import { PhaseBoundary } from '../../core/phase-boundary'
@@ -28,6 +28,7 @@ import { EmptyRow, ErrorRow, LoadingRows, OfflineRow } from './phases'
 import { useRowFocusLeave, useRowFocusProps } from './row-focus'
 import { SelectCell } from './select-cell'
 import { TickCell } from './tick-column'
+import type { TreeInfo } from './tree-row-model'
 
 /** The height a `spark` draws in; the table owns the box at every phase. */
 const BOX_HEIGHT = 24
@@ -123,6 +124,45 @@ function ExpandButton({
   )
 }
 
+/**
+ * The disclosure of a nested row: the indent of its level, then a chevron that opens or closes the
+ * rows below it, or the chevron's room on a row with none, so every title starts on its level's line.
+ * The row's own keys (Right, Left) do the same, so the chevron is a pointer target, not a tab stop.
+ */
+function TreeLead({ tree, onToggle }: { tree: TreeInfo; onToggle: () => void }): ReactElement {
+  const label = useMessages(table)('table.rowsBelow')
+  return (
+    <span data-slot="table-tree-lead" className="flex shrink-0 items-center">
+      {tree.parent ? (
+        <Button
+          shape="icon"
+          size="sm"
+          variant="ghost"
+          aria-label={label}
+          aria-expanded={tree.open}
+          tabIndex={-1}
+          onClick={(event) => {
+            event.stopPropagation()
+            onToggle()
+          }}
+        >
+          <svg
+            viewBox="0 0 16 16"
+            className={tree.open ? 'size-4 rotate-90' : 'size-4'}
+            fill="none"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M6 4l4 4-4 4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Button>
+      ) : (
+        <span data-slot="table-tree-spacer" aria-hidden="true" className="size-7 shrink-0" />
+      )}
+    </span>
+  )
+}
+
 function content<T>(spec: KindSpec<T>, row: T, env: CellEnv, tabbable: boolean): ReactNode {
   if (spec.kind === 'actions') return <RowActions row={row} actions={spec.actions ?? []} />
   if (spec.kind === 'select' && spec.edit !== undefined) {
@@ -168,12 +208,15 @@ export function DataRow<T>({
   row,
   env,
   rowIndex,
+  tree,
 }: {
   model: TableModel<T>
   row: ModelRow<T>
   env: CellEnv
   /** `aria-rowindex` in a virtual window, where the mounted rows are not all the rows. */
   rowIndex?: number
+  /** The row's place among nested rows. */
+  tree?: TreeInfo | undefined
 }): ReactElement {
   const { selection, keyboard } = model
   const columns = visibleColumns(model.specs, model.plan.columns)
@@ -189,6 +232,15 @@ export function DataRow<T>({
       data-selected={ticked || active ? '' : undefined}
       aria-current={active ? 'true' : undefined}
       {...(rowIndex !== undefined && { 'aria-rowindex': rowIndex })}
+      {...(tree !== undefined && {
+        'aria-level': tree.level,
+        'aria-setsize': tree.setSize,
+        'aria-posinset': tree.posInSet,
+        ...(tree.parent && { 'aria-expanded': tree.open }),
+        'data-level': String(tree.level),
+        style: { '--table-level': tree.level } as CSSProperties,
+        ...(tree.context && { 'data-context': '' }),
+      })}
       {...rowProps}
     >
       {selection !== undefined && <TickCell selection={selection} id={row.id} ticked={ticked} />}
@@ -207,7 +259,17 @@ export function DataRow<T>({
             numeric={numeric}
             className={spec.wrap ? `${className ?? ''} whitespace-normal` : className}
           >
-            {planned.identity && model.expandable ? (
+            {planned.identity && tree !== undefined ? (
+              <div className="flex min-w-0 items-center gap-1">
+                <TreeLead tree={tree} onToggle={() => model.toggleRow(row.id)} />
+                <div className="min-w-0 flex-1 overflow-hidden text-ellipsis">
+                  {content(spec, row.original, env, tabbable)}
+                </div>
+                {model.expandable && (
+                  <ExpandButton onOpen={() => model.openDetails(row.id)} tabbable={tabbable} />
+                )}
+              </div>
+            ) : planned.identity && model.expandable ? (
               <div className="flex min-w-0 items-center gap-1">
                 <div className="min-w-0 flex-1 overflow-hidden text-ellipsis">
                   {content(spec, row.original, env, tabbable)}
@@ -240,7 +302,7 @@ export function BodyItemRow<T>({
   return item.type === 'group' ? (
     <GroupRow model={model} item={item} env={env} {...index} />
   ) : (
-    <DataRow model={model} row={item.row} env={env} {...index} />
+    <DataRow model={model} row={item.row} env={env} tree={item.tree} {...index} />
   )
 }
 

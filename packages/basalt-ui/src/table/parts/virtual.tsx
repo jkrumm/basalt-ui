@@ -151,7 +151,7 @@ export function VirtualTable<T>({
         columns={colcount}
         tableProps={{
           'data-slot': 'table',
-          role: 'table',
+          role: model.nested ? 'treegrid' : 'table',
           'aria-rowcount': rowcount,
           'aria-colcount': colcount,
           'aria-busy': busy || undefined,
