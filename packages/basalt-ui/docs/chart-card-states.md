@@ -25,13 +25,13 @@ page agree.
 
 ## Phase
 
-| Phase     | Box                                                                          |
-| --------- | ---------------------------------------------------------------------------- |
-| `ready`   | the chart                                                                    |
-| `loading` | a plot skeleton; the figure row shows bars                                   |
-| `stale`   | the chart and an `Updating` line; `Could not refresh` after a failed refetch |
-| `error`   | the error arm with Retry (none for a 403); a throwing slot lands here too    |
-| `empty`   | the cause and its action; `filtered` offers Clear filters                    |
+| Phase     | Box                                                                                                             |
+| --------- | --------------------------------------------------------------------------------------------------------------- |
+| `ready`   | the chart                                                                                                       |
+| `loading` | a plot skeleton; the figure row shows bars                                                                      |
+| `stale`   | the chart and an `Updating` line; `Could not refresh` after a failed refetch                                    |
+| `error`   | the error arm with Retry (none for a 403, drawn once for frames on one `retry`); a throwing slot lands here too |
+| `empty`   | the cause and its action; `filtered` offers Clear filters                                                       |
 
 `empty` wins over `ready` and `stale` once the query settled; `loading` wins over everything. The phase
 prints on the card and on the box as `data-phase`.

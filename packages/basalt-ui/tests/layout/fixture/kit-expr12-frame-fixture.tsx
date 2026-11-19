@@ -8,11 +8,16 @@ import { StatCell } from '../../../src/cards/stat-cell'
 import { StatGroup } from '../../../src/cards/stat-group'
 import type { Phase } from '../../../src/index'
 
-const retry = (): void => undefined
+// One source per group: frames that share a `retry` draw one Retry between them (Issue 2452).
+const RETRY = { strip: (): void => undefined, cards: (): void => undefined }
 
 function Group({ variant, state }: { variant: 'strip' | 'cards'; state: string }): ReactElement {
   const phase: Phase =
-    state === 'loading' ? 'loading' : state === 'error' ? { tag: 'error', retry } : 'ready'
+    state === 'loading'
+      ? 'loading'
+      : state === 'error'
+        ? { tag: 'error', retry: RETRY[variant] }
+        : 'ready'
   const none = state !== 'ready' // the page holds no data in loading and error: null figures, no status
   return (
     <div data-testid={`x12-${variant}-${state}`} className="min-w-0">

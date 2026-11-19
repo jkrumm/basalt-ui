@@ -78,7 +78,8 @@ CardBand({ icon: Icon, title, subtitle, info, end, className, ...props }: CardBa
 
 Renders the phase for every frame: the skeleton, the error arm, the empty arm and the stale line
 around the body, inside one box. A throwing box slot renders the error arm and leaves the
-neighbouring cards alone; Retry runs the slot again.
+neighbouring cards alone; Retry runs the slot again. Frames given one `retry` function (one query
+result, one `Phase`) draw Retry once, on the first frame to mount; the others show their message alone.
 
 ```ts
 CardPhase({ phase, empty, height, skeleton, children, arms, staleLine, className, }: CardPhaseProps): ReactElement

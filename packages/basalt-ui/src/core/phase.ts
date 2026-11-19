@@ -102,6 +102,22 @@ function kindOf(error: unknown): ErrorKind | undefined {
 
 type Base = Exclude<ResolvedPhase, { tag: 'empty' }>
 
+const retryOfRefetch = new WeakMap<() => unknown, () => void>()
+
+/**
+ * One `retry` per query `refetch`, however often the card renders: frames fed one query result
+ * hold the same function, so a group runs it once and frames can tell they share a source.
+ */
+function retryOf(refetch: () => unknown): () => void {
+  const known = retryOfRefetch.get(refetch)
+  if (known !== undefined) return known
+  const retry = (): void => {
+    void refetch()
+  }
+  retryOfRefetch.set(refetch, retry)
+  return retry
+}
+
 function resolveInput(phase: Phase | QueryStateLike | undefined): Base {
   if (phase === undefined || phase === 'ready') return { tag: 'ready', body: true }
   if (phase === 'loading') return { tag: 'loading', body: false }
@@ -126,12 +142,7 @@ function resolveInput(phase: Phase | QueryStateLike | undefined): Base {
       body: false,
       ...(kind !== undefined && { kind }),
       ...(phase.error instanceof Error && { message: phase.error.message }),
-      ...(refetch !== undefined &&
-        kind !== 'forbidden' && {
-          retry: () => {
-            void refetch()
-          },
-        }),
+      ...(refetch !== undefined && kind !== 'forbidden' && { retry: retryOf(refetch) }),
     }
   }
   if (phase.isPlaceholderData === true) return { tag: 'stale', body: true, refreshFailed: false }

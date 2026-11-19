@@ -15,6 +15,7 @@ import { AppLink } from '../../core/link'
 import { OfflineLine } from '../../core/offline-line'
 import type { Empty, Fact, FootFacts, MenuEntry, ResolvedPhase } from '../../core/phase'
 import { PhaseBoundary } from '../../core/phase-boundary'
+import { useRetryOwner } from '../../core/retry-owner'
 import type { BoxSlot, ControlsSlot, IconComponent } from '../../core/ports'
 
 const NUMBER = new Intl.NumberFormat('en')
@@ -205,6 +206,7 @@ function ErrorArm({
   const kind = resolved?.kind
   const message = resolved?.message
   const run = retry ?? resolved?.retry
+  const showRetry = useRetryOwner(run)
   return (
     <div
       role="alert"
@@ -219,7 +221,7 @@ function ErrorArm({
       {message !== undefined && kind === undefined && (
         <p className="text-xs text-muted-foreground">{message}</p>
       )}
-      {run !== undefined && (
+      {run !== undefined && showRetry && (
         <button type="button" className={ACTION} onClick={run}>
           Retry
         </button>
