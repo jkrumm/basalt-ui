@@ -212,6 +212,10 @@ const exemplar = defineControls({
       '2026-10': 'October',
       '2026-11': 'November',
     }),
+    look: field.enum(['reading', 'grid'] as const, 'reading').labels({
+      reading: 'Reading',
+      grid: 'Grid',
+    }),
     table: field.composite(tableCodec(bookingsSchema)),
     large: field.composite(tableCodec(entriesSchema)),
     grouped: field.composite(tableCodec(roomsSchema)),
@@ -330,12 +334,14 @@ const TONES = { Settled: 'good', Awaiting: 'warn', Disputed: 'bad' } as const
 function Finances(): ReactElement {
   const [state] = exemplar.field.table.use()
   const [month] = exemplar.field.month.use()
+  const [look] = exemplar.field.look.use()
   const [done, setDone] = useState('')
   const { host, sheet } = useSheetHost()
   const page = serve(state.request, month)
   const t = useDataTable({
     id: 'bookings',
     label: 'Bookings',
+    look,
     columns: [
       book.entity('payee', { header: 'Payee', headerIcon: Building, filter: 'text' }),
       book.text('category', { header: 'Category', headerIcon: Tag }),
@@ -410,6 +416,7 @@ function Large(): ReactElement {
   const t = useDataTable({
     id: 'entries',
     label: 'Entries',
+    look: 'grid',
     columns: [
       entry.entity('name', { header: 'Booking', filter: 'text' }),
       entry.status('state', {
@@ -494,7 +501,11 @@ function Grouped(): ReactElement {
 function TableRoute(): ReactElement {
   return (
     <Page area="table">
-      <Section title="Bookings" controls={filterSlot([spec(exemplar.field.month, 'Month')])}>
+      <Section
+        title="Bookings"
+        tabs={{ state: exemplar.field.look, label: 'Table look' }}
+        controls={filterSlot([spec(exemplar.field.month, 'Month')])}
+      >
         <Finances />
       </Section>
       <Section title="Entries">
