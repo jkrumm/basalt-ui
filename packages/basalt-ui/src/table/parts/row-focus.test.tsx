@@ -7,11 +7,17 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { useEffect } from 'react'
 import type { ReactElement } from 'react'
 import { useChartFocus } from '../../charts/focus'
+import { RELEASE_MS } from '../../core/focus-release'
 import { installLayoutDoubles, restoreLayoutDoubles } from '../../page/page.test-support'
 import { col } from '../core/kinds'
 import { useMemoryHandle } from '../core/state'
 import { useDataTable } from '../use-data-table'
 import { DataTable } from './data-table'
+
+const released = (): Promise<void> =>
+  act(async () => {
+    await new Promise((done) => setTimeout(done, RELEASE_MS + 40))
+  })
 
 beforeEach(installLayoutDoubles)
 afterEach(() => {
@@ -80,11 +86,12 @@ describe('DataTable focus', () => {
     expect(dimmed()).toEqual([false, false, false])
   })
 
-  test('row DOM focus sets the item; leaving the rows or the table clears it', () => {
+  test('row DOM focus sets the item; leaving the rows or the table clears it', async () => {
     render(<Subject />)
     act(() => bodyRows()[1]?.focus())
     expect(seen.handle?.index).toBe(1)
     fireEvent.pointerLeave(document.querySelector('tbody') as HTMLElement, { pointerType: 'mouse' })
+    await released()
     expect(seen.handle?.index).toBeNull()
     act(() => bodyRows()[2]?.focus())
     expect(seen.handle?.index).toBe(2)

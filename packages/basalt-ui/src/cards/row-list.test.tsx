@@ -2,10 +2,16 @@ import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { act } from 'react'
 import { useChartFocus } from '../charts/focus'
+import { RELEASE_MS } from '../core/focus-release'
 import { RowList } from './row-list'
 import type { RowListItem, RowListProps } from './row-list'
 
 afterEach(cleanup)
+
+const released = (): Promise<void> =>
+  act(async () => {
+    await new Promise((done) => setTimeout(done, RELEASE_MS + 40))
+  })
 
 // The list shapes the owner's review found hand-written: n02 (two lines, two figures), n04 (one
 // line, one figure), n07 (a verdict dot and word) and c10 (a tree depth with a chip).
@@ -156,7 +162,7 @@ function Linked({ items }: { items: RowListItem[] }): ReturnType<typeof RowList>
 }
 
 describe('RowList focus', () => {
-  test('pointing at a row focuses its item and leaving clears it', () => {
+  test('pointing at a row focuses its item and leaving clears it', async () => {
     const { container, getByTestId } = render(<Linked items={N04} />)
     const rows = container.querySelectorAll('[data-slot="row-list-row"]')
     act(() => {
@@ -167,6 +173,7 @@ describe('RowList focus', () => {
     act(() => {
       fireEvent.pointerLeave(container.querySelector('ul')!)
     })
+    await released()
     expect(getByTestId('index').textContent).toBe('null')
   })
 

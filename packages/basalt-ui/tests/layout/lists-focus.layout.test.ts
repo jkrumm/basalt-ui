@@ -13,6 +13,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { RELEASE_MS } from '../../src/core/focus-release'
 import type { FixtureSpec } from './fixture/spec'
 import {
   CLOSE_BUDGET_MS,
@@ -157,6 +158,7 @@ layout('lists joined to a chart focus', () => {
       await page.settle()
       expect(await index(page)).toBe('1')
       await page.raw.mouse.move(2, 2)
+      await page.raw.waitForTimeout(RELEASE_MS + 100)
       await page.settle()
       expect(await index(page)).toBe('')
       expect(await marked(page, TABLE_ROWS)).toEqual([false, false, false, false, false])
