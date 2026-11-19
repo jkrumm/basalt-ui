@@ -8,5 +8,5 @@
     "make check passes"
   ],
   "out_of_scope": "Other rubric items.",
-  "note": "Filed by the owner-review-1 rerun (Issue 2404)."
+  "note": "Filed by the owner-review-1 rerun (Issue 2404). Planned findings from expression cycle 12 (docs/v3/cycles/expression-12.md § Findings .9, .64), appended here instead of a row of their own: n51's and n56's reviewers scored R2 2 by listing defects F6, K5 or K1 already charged (a detached label and dropped 390 labels on n51; a clipped header, an over-limit bead, a dropped zone label and a rule stub on n56). The rubric's charge-once sentence names R items only; when R2 counts kit-drawn clips, say which item owns a defect so it is charged once across F, K and R. Shots in .evidence/v3-shots/expression-12/r0 on the dev host."
 }

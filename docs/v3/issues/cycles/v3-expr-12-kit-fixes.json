@@ -1,0 +1,34 @@
+{
+  "why": "Expression cycle 12 (docs/v3/cycles/expression-12.md) lost 19 of its 64 round-0 points to the kit (class `primitive`), all P3: no item scored 0 or 1. Three of the groups are older than this cycle: the phone-card focus gap has been open since cycle 10 and v3-expr-11-kit-fixes shipped it with a test, yet the lead's probe on master 3237445b still saw n42's cards undim in the 32 px gap at 390 (probe/verdicts.md item 11); the half-width table fold was fixed in cycle 11's item (1), yet n51 and n56 folded into phone cards at about 750 px and n53 and n55 report the same with their priority 1 and 2 columns summed under 480 px; and the joined-row reveal landed for a bare DataTable but not for one inside a DataPanel (n51).",
+  "what": "Kit behaviour fixes for seven findings groups of expression cycle 12 and two partly-landed gaps of cycle 11, with no export and no contract change.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/cards/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/table/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/docs/** generated from the above (through gen-docs)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/src/cards/contract.ts",
+    "packages/basalt-ui/src/table/contract.ts",
+    "packages/basalt-ui/src/core/ports.ts",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) A DataTable in a half-width column (about 750 px) keeps its columns while they fit, and the shipped table doc says how the kit decides the fold (the 480 px sum or what replaced it, measured how), so a builder can plan the columns before the shot: n51 kept only merchant, amount and ratio in a 748 px cell; n56 went to `phone: 'scroll'` and lost two columns at 390; n53 and n55 report a fold with priority 1 and 2 under 480 px (.7, .60). Check first whether cycle 11's item (1) is reached through a DataPanel body, where all four tables sat. (2) A DataPanel body declared in rows fits the phone form of its table at 390: no card cut off, a loading skeleton as tall as the loaded cards, and no reserved blank rows at 1800 (n52 reserved six rows for four to fit 390; n55 rebuilt the frame from Card, CardBand and Inset because 3 of 5 revisions were cut at 390, and its 390 skeleton is about 80 px short: .17, .47, .54). If this needs a field on DataPanel, say so in the PR and split it behind a Spec. (3) A shared focus holds while the pointer crosses the gap between two phone cards at 390 and between two lists in two cards at 1800 (n52 at 390, n55 at 390 and across its 44 px gap at 1800, n42's probe: .18, .51, .52). v3-expr-11-kit-fixes shipped a test for the card gap; find why the probe on a real page still sees the drop (lead-shots' SWEEP: pointer at A, then the gap middle, 60 ms and 400 ms, then B) and test what the probe does. (4) A chart focus reveals the joined DataTable row inside a DataPanel body, as it does outside one (n51's reach frame shows the table at its top with the row off screen: .8). (5) Heatmap draws a held span: a BarList row on `focusItems` that holds a source's 14 cells lights all 14, not the one cell `focus.datum` names (n54: .40). (6) A frame group's error arm keeps the group's height and shows one Retry where its cards share one source; n53's three StatCells collapse into one banner 12 px taller with three Retry buttons (.24), and n52, n54, n55 and n56 wished for one Retry. If one Retry needs a field, split it behind a Spec. (7) chartLabels.place keeps a label beside its anchor in a dense dot cloud instead of placing it 100 px away or dropping it, and a dropped label can be told apart from a placed one in dev (n51 .3; the wishes of n52 and n56, whose labels dropped silently at 390 or at a 690 px plot). (8) The two gaps the cycle-12 probe found partly landed from cycle 11: at 390 a reference line strikes a zone caption and bar values (n46 rest at 390, probe item 5), and a DataTable in n48's frame loses its header in empty and error (probe item 10).",
+  "acceptance": [
+    "A DataTable in a 750 px DataPanel body with columns that fit keeps its columns, and the table doc states the fold rule (layout test)",
+    "A DataPanel body sized in rows shows every phone card at 390 and its loading frame ends at the loaded height (layout test)",
+    "A shared focus holds across the gap between two phone cards at 390 and between two lists at 1800, reproduced by a pointer sweep on a real page (test plus a probe shot)",
+    "A chart focus scrolls a joined row into view inside a DataPanel (test)",
+    "A BarList row on focusItems lights every Heatmap cell it holds (test)",
+    "A frame group's error arm keeps its height (layout test)",
+    "A label in a dense dot cloud stays beside its anchor or is reported dropped (test)",
+    "No rule label strikes a zone caption or a bar value at 390, and a framed DataTable keeps its header in empty and error on n48's frame (tests)",
+    "No export added and no contract file changed; make check passes"
+  ],
+  "out_of_scope": "A ring style for a dot series, a Heatmap zero bin and legend edges, a BarList part value on its segment, a wrapping table cell (one case each, fields); the figure row at 390 (one case); skill text (v3-expr-12-skill); the trial scenarios.",
+  "proof": "make check; the tests named in acceptance; shots of n51, n52, n54, n55 and n56 at 1800 and 390 in light and dark with the lead tool's SWEEP and REACH lines (.evidence/v3-shots/expression-12/lead-shots.ts in the main checkout), and n42, n46 and n48 for the older gaps.",
+  "commits": "fix: per behaviour with its test."
+}

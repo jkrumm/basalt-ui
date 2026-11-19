@@ -1,0 +1,23 @@
+{
+  "why": "Expression cycle 12 (docs/v3/cycles/expression-12.md, finding .65) scored n52's F4 2 while the reviewer wrote that a stricter reading gives 1 and caps the case at 79. n52 draws its running total and its 30 daily bars in the one accent across two cards, both meaning 'spent'. rubric.md F4 says a second series or mark class in the accent, across the cards of one view, scores 1 at most unless the accent means something else there that the surface says in a word; it names no exception for one measure at two grains, and the reviewer read one in.",
+  "what": "One rubric sentence that says one measure drawn at two grains is two mark classes for F4, and the reviewer prompt agreeing.",
+  "owns": [
+    "docs/v3/expression/rubric.md",
+    "the shipped reviewer's text in packages/basalt-ui/agent/** (the design reviewer subagent and its references), through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/cases.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "F4 states that a measure drawn twice in the accent, as a running total and as its daily bars or any two grains, counts two mark classes, quoting n52. Rescore n52 from its round-0 shots and source (.evidence/v3-shots/expression-12/r0 and src-r0 in the main checkout, the cycle-12 reviewer prompt with the rubric path kept) with a fresh reviewer, as EXPRESSION.md § Owner calibration requires before a rubric change lands; the change holds when n52's F4 is 1 or lower.",
+  "acceptance": [
+    "rubric.md F4 counts one measure at two grains in the accent as two mark classes, quoting n52",
+    "A fresh reviewer scores n52's round-0 F4 at 1 or lower on the new text",
+    "The shipped reviewer's text agrees, or the PR names where none restates it",
+    "make check passes"
+  ],
+  "out_of_scope": "R2's charge-once reading (v3-owner-1-rerun-rubric, with cycle 12's .9 and .64 as notes); other items; skill text.",
+  "proof": "make check; the rubric diff; the rescore file.",
+  "commits": "docs: the rubric text; feat: the shipped reviewer text if it changes; package commits separate from non-package ones."
+}

@@ -1,0 +1,22 @@
+{
+  "why": "Expression cycle 12 (docs/v3/cycles/expression-12.md) lost 36 of its 64 round-0 points to lessons the kit could already do (class `skill`), all P3. X1 (word economy) and X2 (one view) lost a point on 6 of 6 cases for the third cycle running. v3-expr-11-skill turned the fact count into a word count over the page source and moved the one-view table beside the page; in cycle 12 all six builders ran the count and wrote DESIGN.md with both tables, and each stopped with content words at four to seven uses ('untagged' 19 on n54, 'month' 6 on n52, 'wait' 6 on n55), calling the rest identifiers inside template strings. The step is followed and does not bite.",
+  "what": "Skill and rule text for nine lessons of expression cycle 12, and a fact count with a stop rule a builder cannot argue past.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** and packages/basalt-ui/agent/rules/** (through their generators where generated)",
+    "the dogfooded copies the repo syncs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no kit change, except a script the count runs if the skill ships one)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) The fact count (X1 on 6 of 6, three cycles: .6, .16, .27, .38, .49, .61): read the six DESIGN.md files and the builds in .evidence/v3-shots/expression-12/src-r0 (main checkout), and make the count separate the strings a viewer reads from code keys, so 'done' is zero words past three in rendered text, not a judgement; add the read-aloud pass for one fact said in several phrasings (n52's pace said by a pill, a mark and a subtitle with a different number). Say in the PR what the new step would have cut on each of the six. (2) The answer sits on the mark that answers: a hero, a sub line or a sentence beside the mark does not replace a label or a held focus on it (n53's five held rows, n54's leading source, n55's 26 h row, n56's decision hour: .19, .32, .43, .56). (3) Every part's empty names its cause and the next step; a part left on the kit default or `empty={null}` beside a chart that states its cause fails K2 (n52, n54, n56: .15, .36, .59). (4) `mono` is for an id or a timestamp, never a whole sentence, and a slot keeps one face at rest and on focus (n53, n54, n56: .29, .41, .63). (5) At 390 the answer comes first and one surface carries it: order the parts so the answering rows are in the first screen, give a chain the full width, and drop a table that repeats the chart (n53, n55, n56: .26, .48, .50, .62; X2 on 6 of 6 for three cycles); coordinate with v3-owner-1-rerun-skill, which owns the full-width track or chain. (6) Name each line at its end with a placed text mark, not in the legend only (n52, n56: .14, .57). (7) The form draws every structure the question names: spans over time are an IntervalTrack, and each measure the case names is drawn, not left to a table (n55, n56: .42, .55). (8) An extreme fixture keeps the rest readable: cap a heat domain and annotate the clipped cell, thin per-hour marks over a limit (n54, n56: .35, .58). (9) A dense dot series sets `spread` (n51 .1, .2, .5; n45 and n49 from the bank, which the cycle-11 Spec served).",
+  "acceptance": [
+    "The PR names, per cycle-12 build, what the changed fact count would have cut",
+    "Lessons (2) to (9) are in the shipped skill or rule text where a builder reads them before the shoot",
+    "Agent-doc drift and make check pass"
+  ],
+  "out_of_scope": "Kit behaviour (v3-expr-12-kit-fixes); one-case lessons (one sign for a delta, an absent value as a dash, focus.live on a page with no chart, a cue in a truncating slot); the rubric (v3-expr-12-rubric); the trial scenarios.",
+  "proof": "make check; the skill diff; the PR's per-case table for (1).",
+  "commits": "docs: skill and rule text; package commits separate from non-package ones."
+}
