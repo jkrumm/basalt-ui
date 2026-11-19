@@ -294,6 +294,39 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
       'Which project shipped the most this month, which went quiet, and where does a shipped Issue cost the most?',
   },
   {
+    id: 'expr-n51',
+    title: 'Expression n51: which charges are unusual',
+    blurb: 'Which charges are unusual for their merchant, and which are still uncategorised?',
+  },
+  {
+    id: 'expr-n52',
+    title: 'Expression n52: is this month running faster than usual',
+    blurb:
+      'Is this month running faster than usual, and how much income is left once the bills still due are paid?',
+  },
+  {
+    id: 'expr-n53',
+    title: 'Expression n53: how far along is the plan',
+    blurb: 'How far along is the plan, which rows are blocked, and which row can start next?',
+  },
+  {
+    id: 'expr-n54',
+    title: 'Expression n54: which sources bring the most mail',
+    blurb: 'Which sources bring the most mail this week, and how much of it is still untagged?',
+  },
+  {
+    id: 'expr-n55',
+    title: 'Expression n55: how many revisions a Spec took',
+    blurb:
+      'How many revisions did it take, how long did each verdict wait, and which annotations are still unanswered?',
+  },
+  {
+    id: 'expr-n56',
+    title: 'Expression n56: what waves reach the harbour',
+    blurb:
+      'What wave height and period reach the harbour in the next 12 hours, and when is the calmest window to go?',
+  },
+  {
     id: 'linked-windows',
     title: 'Linked windows: a table of runs beside an hourly chart',
     blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',

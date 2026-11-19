@@ -25,6 +25,14 @@ export const DEMO_SERIES = defineSeries({
   churn: { light: '#af293e', dark: '#e46360' },
 })
 
+/** Harbour waves (scenario expr-n56): the accent is the calmest window, a tint from the brand token; the harbour line sits in the dark ink step, the four offshore points in a pale one, the limit rule in a mid one, and the status red marks the hours over the limit. */
+export const HARBOUR_SERIES = defineSeries({
+  harbour: { light: '#262626', dark: '#e6e6e6' },
+  offshore: { light: '#b0b0b0', dark: '#666666' },
+  limit: { light: '#4a4a4a', dark: '#c4c4c4' },
+  over: { light: '#af293e', dark: '#e46360' },
+})
+
 /** A calendar week (route /kit/interval-track): meetings take the hue, focus and personal time ink steps, a declined event a hollow grey. */
 export const CALENDAR_SERIES = defineSeries({
   meeting: { light: '#2871c7', dark: '#5190f7' },
@@ -331,4 +339,27 @@ export const WEEK_SERIES = defineSeries({
   focus: { light: '#6b6b6b', dark: '#a8a8a8' },
   personal: { light: '#b0b0b0', dark: '#666666' },
   open: { light: '#9a9a9a', dark: '#7d7d7d' },
+})
+
+/** Work inbox (scenario expr-n54): the accent is mail nobody tagged; tagged mail sits in a dark ink step. */
+export const INBOX_SERIES = defineSeries({
+  untagged: { light: '#2871c7', dark: '#5190f7' },
+  tagged: { light: '#6b6b6b', dark: '#a8a8a8' },
+})
+
+/** Household month (scenario expr-n52): the accent is this month's spending; the usual pace sits in a mid ink step, the bills still due in the dark one, the income rule and the payday rule in ink steps. */
+export const MONTH_SERIES = defineSeries({
+  spent: { light: '#2871c7', dark: '#5190f7' },
+  usual: { light: '#8a8a8a', dark: '#8f8f8f' },
+  committed: { light: '#262626', dark: '#e6e6e6' },
+  income: { light: '#4a4a4a', dark: '#c4c4c4' },
+  payday: { light: '#9a9a9a', dark: '#7d7d7d' },
+})
+
+/** Card charges (scenario expr-n51): the accent is a charge unusual for its merchant; charges in range sit in a pale ink step, an uncategorised one gets a dark ink ring under its dot, the median and 2x rules a mid step. */
+export const CHARGE_SERIES = defineSeries({
+  unusual: { light: '#2871c7', dark: '#5190f7' },
+  inRange: { light: '#9a9a9a', dark: '#7d7d7d' },
+  uncategorised: { light: '#262626', dark: '#e6e6e6' },
+  rule: { light: '#4a4a4a', dark: '#c4c4c4' },
 })
