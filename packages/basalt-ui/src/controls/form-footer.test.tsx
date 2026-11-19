@@ -113,6 +113,34 @@ describe('FormFooter', () => {
     expect(document.activeElement).toBe(getByLabelText('Email'))
   })
 
+  test("an invalid control that is not rendered hands focus to its field's visible control", async () => {
+    const form = fakeForm()
+    const { getByText, getByRole } = render(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+        }}
+      >
+        <div data-slot="field">
+          <input aria-label="File" aria-invalid="true" hidden />
+          <button type="button">Choose a file</button>
+        </div>
+        <input aria-label="Email" aria-invalid="true" />
+        <FormFooter form={form} actions={[{ label: 'Save', primary: true }]} />
+      </form>,
+    )
+    // happy-dom lays nothing out, so say which elements have boxes.
+    const proto = HTMLElement.prototype as unknown as { getClientRects: () => unknown[] }
+    const original = proto.getClientRects
+    proto.getClientRects = function (this: HTMLElement) {
+      return this.hidden ? [] : [{}]
+    }
+    fireEvent.click(getByText('Save'))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    proto.getClientRects = original
+    expect(document.activeElement).toBe(getByRole('button', { name: 'Choose a file' }))
+  })
+
   test('a form-level error shows in the live region', () => {
     const form = fakeForm()
     const { container } = render(

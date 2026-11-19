@@ -220,8 +220,9 @@ export type ComboboxProps<Value = string, Multiple extends boolean | undefined =
     /**
      * Makes the combobox creatable. When the trimmed text typed matches no item's label (ignoring
      * case), the popup ends with a `Create "<text>"` row; choosing it calls `onCreate(text)`, adds the
-     * returned value to the items and selects it. Needs a flat `items` array; the text of the row is
-     * the message key `combobox.create`.
+     * returned value to the items and selects it. Needs a flat `items` array: with grouped items the
+     * combobox is not creatable and `onCreate` is never called. The text of the row is the message
+     * key `combobox.create`.
      */
     onCreate?: (text: string) => Value
   }

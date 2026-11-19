@@ -45,19 +45,33 @@ export const formFooterParts = [
 /**
  * After a submit the engine rejected on the client, focus the first invalid control of the form:
  * two frames let the fields render `aria-invalid` first. A server error has `toSubmitErrors` do it.
+ * An invalid element that is not rendered (a file upload's hidden input) hands focus to the first
+ * visible control of its field instead.
  */
+function visible(el: Element): el is HTMLElement {
+  return el instanceof HTMLElement && el.getClientRects().length > 0
+}
+
+/** The element itself when rendered, else the first visible, enabled control of its field. */
+function target(el: Element): HTMLElement | null {
+  if (visible(el)) return el
+  const field = el.closest('[data-slot="field"]')
+  if (field === null) return null
+  const controls = field.querySelectorAll('button, input, select, textarea, [tabindex]')
+  return [...controls].find((c): c is HTMLElement => visible(c) && !c.matches(':disabled')) ?? null
+}
+
 function focusFirstInvalid(from: HTMLElement): void {
   const form = from.closest('form')
   if (form === null) return
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      const invalid = form.querySelector<HTMLElement>('[aria-invalid="true"]')
-      if (
-        invalid === null ||
-        (form.contains(document.activeElement) && document.activeElement === invalid)
-      )
+      for (const el of form.querySelectorAll('[aria-invalid="true"]')) {
+        const next = target(el)
+        if (next === null) continue
+        if (document.activeElement !== next) next.focus()
         return
-      invalid.focus()
+      }
     })
   })
 }
