@@ -47,23 +47,20 @@ describe('placeLaneLabels', () => {
     expect(placed[0]?.spot).toBe('inside')
   })
 
-  test('a label with no free spot is cut to the inside with an ellipsis', () => {
+  test('a label with no whole spot is dropped, never cut to an ellipsis', () => {
     const w = chartLabels.width('Architecture review', { size: SIZE })
     const marks = [
       { key: 0, from: 0, to: 40 },
       { key: 1, from: 40, to: 40 + w * 0.7 },
       { key: 2, from: 40 + w * 0.7, to: 600 },
     ]
-    const { placed } = placeLaneLabels(
+    const { placed, dropped } = placeLaneLabels(
       [{ ...marks[1]!, text: 'Architecture review', priority: 0 }],
       marks,
       OPTS,
     )
-    expect(placed[0]?.spot).toBe('inside')
-    expect(placed[0]?.text.endsWith('\u2026')).toBe(true)
-    expect(
-      chartLabels.width(placed[0]?.text ?? '', { size: SIZE }) * LABEL_SLACK,
-    ).toBeLessThanOrEqual(w * 0.7 - 8)
+    expect(placed).toEqual([])
+    expect(dropped).toEqual([1])
   })
 
   test('a span too narrow to cut drops its label', () => {
@@ -107,6 +104,27 @@ describe('placeLaneLabels', () => {
       OPTS,
     )
     expect(placed[0]?.spot).not.toBe('after')
+  })
+})
+
+describe('assignLanes points', () => {
+  test('coincident points each take a lane, so the second stays visible', () => {
+    const { lanes, count } = assignLanes([
+      { start: 5, end: 5 },
+      { start: 5, end: 5 },
+      { start: 5, end: 5 },
+    ])
+    expect(lanes).toEqual([0, 1, 2])
+    expect(count).toBe(3)
+  })
+
+  test('a point still shares a lane with a span that ends where it sits', () => {
+    expect(
+      assignLanes([
+        { start: 0, end: 10 },
+        { start: 10, end: 10 },
+      ]),
+    ).toEqual({ lanes: [0, 0], count: 1 })
   })
 })
 

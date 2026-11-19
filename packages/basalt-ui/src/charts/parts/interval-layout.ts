@@ -2,9 +2,9 @@
  * The pure geometry of `IntervalTrack`: lanes for the spans of one row that overlap, and the label
  * pass of one lane at the plot's px width. A label goes after its mark's end, inside its end, or
  * before its start, the first spot that stays on the plot and clears the lane's other marks and
- * labels; with none free it is cut to the mark's inside with an ellipsis, and with no room for that
- * it is dropped. Highest priority first, ties in input order. Measured with the checked-in width
- * table (`chartLabels.width`), so the server render equals the client's.
+ * labels; with none free it is dropped, never cut to an ellipsis. Highest priority first, ties in
+ * input order. Measured with the checked-in width table (`chartLabels.width`), so the server render
+ * equals the client's.
  */
 import { chartLabels } from '../chart-labels'
 
@@ -63,15 +63,25 @@ export function assignLanes(items: readonly { start: number; end: number }[]): {
       return p.start - q.start || p.end - q.end || a - b
     })
   const ends: number[] = []
+  // Whether the last item in each lane is a point.
+  const pointLast: boolean[] = []
   const lanes: number[] = Array.from({ length: items.length }, () => 0)
   for (const i of order) {
     const item = items[i] as { start: number; end: number }
-    // A point (start === end) shares a lane with a span that ends where it sits.
-    let lane = ends.findIndex((end) => end <= item.start)
+    const point = item.start === item.end
+    // A point (start === end) shares a lane with a span that ends where it sits, but never with
+    // another point at the same instant: coincident points each take a lane, so the second shows.
+    let lane = ends.findIndex(
+      (end, l) => end < item.start || (end === item.start && !(point && pointLast[l])),
+    )
     if (lane === -1) {
       lane = ends.length
       ends.push(item.end)
-    } else ends[lane] = item.end
+      pointLast.push(point)
+    } else {
+      ends[lane] = item.end
+      pointLast[lane] = point
+    }
     lanes[i] = lane
   }
   return { lanes, count: Math.max(1, ends.length) }
@@ -126,18 +136,8 @@ export function placeLaneLabels(
       placed.push({ key: label.key, text: label.text, spot: hit[0] })
       continue
     }
-    // No spot holds it whole: cut it to the mark's inside.
-    const inside = { from: label.from + gap, to: label.to - gap }
-    const cut =
-      inside.to > inside.from && free(inside)
-        ? cutToFit(label.text, inside.to - inside.from, size)
-        : null
-    if (cut === null) {
-      dropped.push(label.key)
-      continue
-    }
-    boxes.push(inside)
-    placed.push({ key: label.key, text: cut, spot: 'inside' })
+    // No spot holds it whole: it is dropped. A cut label reads as a different one, so none is cut.
+    dropped.push(label.key)
   }
   return { placed, dropped }
 }
