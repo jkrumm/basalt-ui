@@ -1,0 +1,9 @@
+/*
+ * The `loading-frames` fixture's Tailwind v4 entry, compiled like a Tailwind consumer.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './loading-frames-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/table';
+@source '../../../src/cards';
+@source '../../../src/page';

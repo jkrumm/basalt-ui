@@ -82,7 +82,7 @@ type Geometry = { box: { top: number; bottom: number }; rows: { top: number; bot
 
 const geometry = (page: LayoutPage): Promise<Geometry> =>
   page.raw.evaluate(() => {
-    const box = document.querySelector('[data-testid="pr-panel"] [data-slot="card-phase"]')!
+    const box = document.querySelector('[data-testid="pr-panel"] [data-slot="data-panel-rows"]')!
     const b = box.getBoundingClientRect()
     return {
       box: { top: b.top, bottom: b.bottom },
