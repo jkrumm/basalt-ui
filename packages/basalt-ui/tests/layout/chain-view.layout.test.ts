@@ -120,7 +120,7 @@ layout('ChainView and nested rows', () => {
         (li) => {
           const r = li.getBoundingClientRect()
           return {
-            id: li.dataset.id!,
+            id: li.dataset['id']!,
             x: r.x,
             y: r.y,
             w: r.width,
@@ -133,7 +133,7 @@ layout('ChainView and nested rows', () => {
       const edges = [...graph.querySelectorAll<SVGGElement>('[data-slot="chain-edge"]')].map(
         (g) => {
           const arrow = g.querySelectorAll('path')[1]!.getBoundingClientRect()
-          return { state: g.dataset.state!, tipX: arrow.right, tipY: arrow.y + arrow.height / 2 }
+          return { state: g.dataset['state']!, tipX: arrow.right, tipY: arrow.y + arrow.height / 2 }
         },
       )
       return {
@@ -213,7 +213,7 @@ layout('ChainView and nested rows', () => {
         const head = document.querySelector(`${table} thead`)!
         return {
           graphShown: graph.getBoundingClientRect().height > 0,
-          levels: items.map((li) => li.dataset.level),
+          levels: items.map((li) => li.dataset['level']),
           starts: items.map(
             (li) =>
               li.getBoundingClientRect().x +

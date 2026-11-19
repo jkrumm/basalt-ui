@@ -424,7 +424,7 @@ export function useDataTable<
   }
   const setOpen = (id: string, open: boolean): boolean => {
     const tree = treeOf(id)
-    if (tree === undefined || !tree.parent || tree.open === open) return false
+    if (tree === undefined || !tree.parent || tree.pinned || tree.open === open) return false
     state.setDisplay({ collapsed: toggled(display.collapsed, id) })
     return true
   }
@@ -597,6 +597,8 @@ export function useDataTable<
     },
     nested: nestedRows,
     toggleRow(id) {
+      const tree = treeOf(id)
+      if (tree === undefined || tree.pinned) return
       state.setDisplay({ collapsed: toggled(display.collapsed, id) })
     },
     server,

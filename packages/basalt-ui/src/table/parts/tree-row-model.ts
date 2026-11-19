@@ -26,6 +26,8 @@ export type TreeInfo = {
   posInSet: number
   /** Drawn only because a row below it matched the filters. */
   context: boolean
+  /** Held open while a search or filter narrows the rows: it cannot be closed until they clear. */
+  pinned: boolean
 }
 
 export type TreeRowItem<T> = { type: 'row'; key: string; row: ModelRow<T>; tree: TreeInfo }
@@ -108,6 +110,7 @@ export function treeItems<T>({
           setSize: siblings.length,
           posInSet: index + 1,
           context: entry.context,
+          pinned: narrowed,
         },
       })
       if (open) visit(id, level + 1)

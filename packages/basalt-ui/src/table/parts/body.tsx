@@ -140,6 +140,8 @@ function TreeLead({ tree, onToggle }: { tree: TreeInfo; onToggle: () => void }):
           variant="ghost"
           aria-label={label}
           aria-expanded={tree.open}
+          // A search or filter holds every path open: the chevron waits until it clears.
+          disabled={tree.pinned}
           tabIndex={-1}
           onClick={(event) => {
             event.stopPropagation()
