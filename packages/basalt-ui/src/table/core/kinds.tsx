@@ -380,10 +380,10 @@ type Base<T> = {
 const HEADER_CHROME_CH = 5
 /** A header asks for floor room up to this many `ch`; a longer one truncates (its title shows it whole). */
 const HEADER_MAX_CH = 24
-/** A filterable header's extra room in `ch`: the filter button (24 px) it shows at rest. */
-const FILTER_MARK_CH = 3
-/** A header icon's room in `ch`: 14 px and its gap. */
-const HEADER_ICON_CH = 2
+/** A filterable header's extra room in `ch`: the filter button it shows at rest, 24 px and its 4 px gap. */
+const FILTER_MARK_CH = 4
+/** A header icon's room in `ch`: 14 px and its 6 px gap. */
+const HEADER_ICON_CH = 3
 /** A status icon is wider than the dot it replaces by this many `ch`. */
 const STATUS_ICON_EXTRA_CH = 1
 
@@ -566,10 +566,14 @@ export function col<T>(): Col<T> {
               return isAbsent(value) ? 1 : (o?.labels?.[String(value)] ?? String(value)).length
             },
             short: {
-              minCh: Math.min(
-                HEADER_MAX_CH,
-                (o?.header ?? humanize(o?.id ?? key)).length + HEADER_CHROME_CH,
-              ),
+              // the header's own floor, with room for its icon and filter button as floorOf gives it
+              minCh:
+                Math.min(
+                  HEADER_MAX_CH,
+                  (o?.header ?? humanize(o?.id ?? key)).length + HEADER_CHROME_CH,
+                ) +
+                (o?.headerIcon === undefined ? 0 : HEADER_ICON_CH) +
+                (o?.filter === 'text' ? FILTER_MARK_CH : 0),
               maxCh: SHORT_TEXT_MAX_CH,
             },
           },
