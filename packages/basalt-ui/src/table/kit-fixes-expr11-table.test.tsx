@@ -1,6 +1,6 @@
 /**
- * The table kit fixes of expression cycle 11 (table group): the card threshold steps to 720 when
- * priority 1+2 fit 720 px (n45, n49), and the card threshold steps follow the plan. The geometry
+ * The table kit fixes of expression cycle 11 (table group): the card threshold steps to 700 when
+ * priority 1+2 fit 700 px (n45, n49; cycle 13 moved the 720 px step to 700), and the card threshold steps follow the plan. The geometry
  * lives in `tests/layout/table-expr11.layout.test.ts`.
  */
 import { cleanup, render } from '@testing-library/react'
@@ -27,7 +27,7 @@ function input(
   return { id, kind, card: ['meta'], priority, width: { ch, flex }, pin: null }
 }
 
-describe('the card threshold steps through 480, 720 and 800', () => {
+describe('the card threshold steps through 480, 700 and 800', () => {
   test('priority 1+2 at 480 px keep the 480 step', () => {
     // 168 (flexible title, 18ch) + three 10ch numbers at 104 px each = 480
     const inputs = [
@@ -39,7 +39,7 @@ describe('the card threshold steps through 480, 720 and 800', () => {
     expect(planInputs(inputs, quiet).reducedFrom).toBe(480)
   })
 
-  test('priority 1+2 above 480 and at most 720 px step to 720 (a 750 px table keeps its columns)', () => {
+  test('priority 1+2 above 480 and at most 700 px step to 700 (a 750 px table keeps its columns)', () => {
     // 168 + 152 (16ch text) + 104 + 104 = 528
     const inputs = [
       input('t', 18, 1, 'entity', true),
@@ -47,10 +47,10 @@ describe('the card threshold steps through 480, 720 and 800', () => {
       input('y', 16, 2, 'text', true),
       input('z', 10, 2),
     ]
-    expect(planInputs(inputs, quiet).reducedFrom).toBe(720)
+    expect(planInputs(inputs, quiet).reducedFrom).toBe(700)
   })
 
-  test('priority 1+2 above 720 px step to 800', () => {
+  test('priority 1+2 above 700 px step to 800', () => {
     // 168 + six 10ch numbers at 104 px each = 792
     const inputs = [
       input('t', 18, 1, 'entity', true),

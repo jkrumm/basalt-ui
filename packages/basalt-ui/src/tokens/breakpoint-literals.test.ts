@@ -52,6 +52,7 @@ const OWN_CONTAINER_LITERALS = new Set([
   '599.9px',
   '639.9px',
   '679.9px',
+  '699.9px',
   '719.9px',
   '759.9px',
   '899.9px',
@@ -61,8 +62,8 @@ const OWN_CONTAINER_LITERALS = new Set([
   '1439.9px',
   '1599.9px',
   '1799.9px',
-  // table.css: the 720 card step, between 480 and 800 (plan.ts `reducedFromOf`)
-  '719.9px',
+  // table.css: the 700 card step, between 480 and 800 (plan.ts `reducedFromOf`)
+  '699.9px',
 ])
 
 function containerConditions(css: string): { name: string; literals: string[] }[] {

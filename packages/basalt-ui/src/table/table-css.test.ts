@@ -34,8 +34,9 @@ describe('table.css', () => {
   })
 
   // Gated at the landed value: 3,467 bytes before the grid look (owner review 2), 3,979 with it, 4,136
-  // with the finer fold steps of expression cycle 12.
-  test('stays small: under 4,200 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(4200)
+  // with the finer fold steps of expression cycle 12, 4,273 with the 700 px step and the phone card's
+  // padding and entity rules of expression cycle 13.
+  test('stays small: under 4,300 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(4300)
   })
 })
