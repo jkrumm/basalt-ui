@@ -2,7 +2,8 @@
  * The data-driven `FilterSet`: one row of pills, a measured `+N` fold, and below the `@regular`
  * container a `Filters (n)` button that opens a sheet of row forms.
  *
- * - A pill prints the VALUE (also at its default), and is named by the filter (`Region: Europe`).
+ * - A pill always names its filter beside the value (`Region: All` at rest, `Region: Europe` once set):
+ *   its width follows the value, never a name that comes and goes. Active is the value's weight and the dot.
  * - It opens as a `row` form in a popover. A folded pill is that same row form inside the `+N`
  *   panel, never a pill inside a pill (a nested portal would read as an outside click).
  * - The swap between row and button is a container query, not a JS viewport: both are in the server
@@ -30,8 +31,8 @@ import { describeValue } from './renderers'
 type T = Translate<typeof filters>
 
 /**
- * The text a pill prints for `value`: the value itself, the filter's name when there is none. A pill
- * that narrows the rows prefixes its filter's name (`Project: pearl`); the caller does that.
+ * The text a pill prints for `value`: the value itself, the filter's name when there is none. The
+ * caller prefixes the filter's name (`Project: pearl`) unless the text already holds it.
  */
 function pillText(spec: AnySpec, value: unknown, t: T): string {
   const empty = spec.placeholder ?? spec.label
@@ -96,7 +97,8 @@ function Pill({ spec, size }: { spec: AnySpec; size: 'sm' | 'md' }): ReactElemen
   const t = useMessages(filters)
   const [value] = spec.handle.use()
   const text = pillText(spec, value, t)
-  const name = text.includes(spec.label) ? text : `${spec.label}: ${text}`
+  const named = text.includes(spec.label)
+  const name = named ? text : `${spec.label}: ${text}`
   const active = isActive(spec, value)
   // A single-value choice is the whole job of its popover: it closes on the pick. An enum is one choice;
   // a range is one only while it picks a preset, its custom dates take two edits and stay open.
@@ -115,7 +117,10 @@ function Pill({ spec, size }: { spec: AnySpec; size: 'sm' | 'md' }): ReactElemen
       <PopoverTrigger
         render={<Button variant="secondary" size={size} aria-label={name} className="max-w-56" />}
       >
-        <span className="min-w-0 truncate">{active ? name : text}</span>
+        <span className="min-w-0 truncate font-normal">
+          {!named && <span className="text-muted-foreground">{spec.label}: </span>}
+          <span className={active ? 'font-medium' : undefined}>{text}</span>
+        </span>
         {active && <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-brand" />}
       </PopoverTrigger>
       <PopoverContent aria-label={spec.label} align="start" className="w-80 max-w-[90vw]">

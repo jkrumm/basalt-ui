@@ -221,7 +221,7 @@ layout('FilterSet', () => {
         expect(counts).toEqual(['Filters (3)', 'Filters (3)', 'Filters (3)', 'Filters (3)'])
       })
 
-      test('a pill prints the value at its default, and the filter name once it narrows', async () => {
+      test('a pill names its filter beside the value, at its default and once it narrows', async () => {
         const page = await open(viewport)
         const pills = await page.raw.evaluate(() =>
           [
@@ -237,11 +237,11 @@ layout('FilterSet', () => {
           ],
           ['Operating regions worldwide: 2 selected', 'Operating regions worldwide: 2 selected'],
           ['Search the full text: latency regression', 'Search the full text: latency regression'],
-          ['Free', 'Subscription tier: Free'],
-          ['20', 'Maximum rows per page: 20'],
+          ['Subscription tier: Free', 'Subscription tier: Free'],
+          ['Maximum rows per page: 20', 'Maximum rows per page: 20'],
           ['Live updates: On', 'Live updates: On'],
-          ['Everything', 'View: Everything'],
-          ['Most recent first', 'Sort order: Most recent first'],
+          ['View: Everything', 'View: Everything'],
+          ['Sort order: Most recent first', 'Sort order: Most recent first'],
         ])
       })
 
@@ -360,7 +360,7 @@ layout('FilterSet', () => {
             document.querySelector(`${sel} [data-slot="filter-set-pill"] button`)?.textContent,
           frame,
         )
-        expect(first).toBe('Production deployment')
+        expect(first).toBe('Environment of the deployment: Production deployment')
       })
 
       test('a folded pill opens as a row, and a select inside keeps the panel open', async () => {

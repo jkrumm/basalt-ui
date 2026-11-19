@@ -424,10 +424,9 @@ const tree = createElement(controls.FilterSet, {
   ],
 })
 const html = renderToStaticMarkup(tree)
-// The pill prints the SELECTED OPTION's label, at the field's fallback too — `Currency`/`Channel`
-// name the popover and the accessible name and are never printed on the pill
-// (`src/controls/filter-set-spec.tsx`). So the render proof is the two VALUES, which also proves BOTH
-// children rendered rather than just the first.
+// The pill prints its filter's name beside the SELECTED OPTION's label, at the field's fallback too
+// (`Currency: USD`, `src/controls/filter-set-spec.tsx`). So the render proof is the two VALUES, which
+// also proves BOTH children rendered rather than just the first.
 if (!html.includes('USD')) throw new Error('FilterSet did not render its first child filter')
 if (!html.includes('web')) throw new Error('FilterSet did not render its second child filter')
 if (!html.includes('Filters')) throw new Error('FilterSet did not render its mobile sheet pill')

@@ -1,6 +1,6 @@
 /**
  * `FilterSet({ specs })` (docs/v3/issues/g1/v3-ctl-5-filterset.json), the invariants it carries over
- * from 2.x: a pill prints the VALUE even at its default, an off-catalogue value still renders, a
+ * from 2.x: a pill prints its filter's name and the VALUE, at its default too, an off-catalogue value still renders, a
  * multi equal to the full set behaves as empty, the census (`Filters (n)`) reads the handles, and
  * `Reset all` unsets them. Layout (the fold, the sheet, no wrap) is `tests/layout/controls-filter-set`.
  */
@@ -49,9 +49,11 @@ const count = (container: HTMLElement) =>
   container.querySelector('[data-slot="filter-count"]')?.textContent
 
 describe('FilterSet specs', () => {
-  test('a pill prints the value at its default, named by the filter', () => {
+  test('a pill names its filter beside the value at its default', () => {
     const { container } = render(<FilterSet specs={[env()]} />)
-    expect(pills(container)).toEqual([{ text: 'Production', name: 'Environment: Production' }])
+    expect(pills(container)).toEqual([
+      { text: 'Environment: Production', name: 'Environment: Production' },
+    ])
   })
 
   test('an active pill keeps its filter name beside the value', () => {
@@ -65,10 +67,28 @@ describe('FilterSet specs', () => {
     ])
   })
 
+  test('the active state is the weight of the value and the dot, never the name', () => {
+    const e = env()
+    const { container } = render(<FilterSet specs={[e]} />)
+    const button = () =>
+      container.querySelector<HTMLElement>('[data-slot="filter-set-pill"] button')!
+    const value = () => [...button().querySelectorAll('span span')].at(-1)!
+    const dot = () => button().querySelector('.bg-brand')
+    expect(value().textContent).toBe('Production')
+    expect(value().className).not.toContain('font-medium')
+    expect(dot()).toBeNull()
+    act(() => {
+      ;(e.handle as ReturnType<typeof memoryHandle<string>>).put('staging')
+    })
+    expect(button().textContent).toBe('Environment: Staging')
+    expect(value().className).toContain('font-medium')
+    expect(dot()).not.toBeNull()
+  })
+
   test('an off-catalogue value still renders', () => {
     const e = env('retired')
     const { container } = render(<FilterSet specs={[e]} />)
-    expect(pills(container)[0]?.text).toBe('retired')
+    expect(pills(container)[0]?.text).toBe('Environment: retired')
     expect(catalogueOf(withCurrentValue(e, 'retired')).map((o) => o.value)).toContain('retired')
   })
 
@@ -117,7 +137,10 @@ describe('FilterSet specs', () => {
       ;(q.handle as ReturnType<typeof memoryHandle<string>>).put('latency')
     })
     expect(count(container)).toBe('Filters (1)')
-    expect(pills(container).map((p) => p.text)).toEqual(['Production', 'Search: latency'])
+    expect(pills(container).map((p) => p.text)).toEqual([
+      'Environment: Production',
+      'Search: latency',
+    ])
     act(() => {
       ;(a.handle as ReturnType<typeof memoryHandle<string>>).put('staging')
     })
@@ -130,7 +153,7 @@ describe('FilterSet specs', () => {
       fireEvent.click(reset)
     })
     expect(count(container)).toBe('Filters')
-    expect(pills(container).map((p) => p.text)).toEqual(['Production', 'Search'])
+    expect(pills(container).map((p) => p.text)).toEqual(['Environment: Production', 'Search'])
   })
 
   test('an enum pill closes on the pick; a range pill stays open while its custom days are edited', () => {
