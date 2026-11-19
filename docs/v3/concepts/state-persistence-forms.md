@@ -148,7 +148,7 @@ Behaviour of `createSyncedState` (counted fits: argo gym, epos `settings` and `f
 ```ts
 // ./controls (structural, TanStack Form stays the consumer's dependency) ------------------------
 type FieldLike<T> = { state: { value: T; meta: { errors: unknown[] } }; handleChange(v: T): void; handleBlur(): void }
-type FormLike<V> = { state: { values: V; isSubmitting: boolean; canSubmit: boolean; errors: unknown[] }  // errors = form-level (spike G)
+type FormLike<V> = { state: { values: V; isSubmitting: boolean; canSubmit: boolean; errors: unknown[]; isDirty?: boolean }  // errors = form-level (spike G); isDirty feeds the sticky footer (Issue 2428)
   options: { defaultValues?: V }                                      // stays the server value under keepDefaultValues
   store: { subscribe(cb: () => void): { unsubscribe(): void } }       // v1 shape, spike C
   reset(values: V, o?: { keepDefaultValues?: boolean }): void }
@@ -159,10 +159,10 @@ export function useFormDraft<V>(form: FormLike<V>, o: { key: string; version: nu
 // A successful submit clears the draft and re-bases the form by itself (isSubmitted and isSubmitSuccessful reset with it); clear() is for a discard; logout = persisted.clearOwner(owner). ttlDays, baseRev/stale, apply(), savedAt return additively when a consumer asks.
 export function toSubmitErrors<V>(save: (v: V) => Promise<unknown>):
   (a: { value: V }) => Promise<{ form?: string; fields?: Record<string, string> } | undefined>  // maps {fieldErrors}/thrown API errors (via unwrap) to the form's error shape
-export function FormFooter(p: { form: FormLike<unknown>; actions: readonly FormAction[] }): ReactElement  // ARCHITECTURE 7.2 `actions` slot: max 5, one primary = submit, disabled on !canSubmit, aria-busy on isSubmitting; renders form.state.errors
+export function FormFooter(p: { form: FormLike<unknown>; actions: readonly FormAction[]; sticky?: boolean }): ReactElement  // ARCHITECTURE 7.2 `actions` slot: max 5, one primary = submit, enabled while invalid (a rejected submit focuses the first invalid control; was disabled on !canSubmit until Issue 2428), disabled and aria-busy on isSubmitting; renders form.state.errors
 
 // consumer wiring, the whole form story ---------------------------------------------------------
-const form = useForm({ defaultValues, validationLogic: revalidateLogic({ mode: 'submit', modeAfterSubmission: 'change' }),
+const form = useForm({ defaultValues, validationLogic: revalidateLogic({ mode: 'blur', modeAfterSubmission: 'change' }),
   validators: { onDynamic: Schema, onSubmitAsync: toSubmitErrors(save) } })   // schema on onDynamic: taught, unguarded
 useFormDraft(form, { key: `run-edit:${id}`, version: 1, schema: Schema, owner: userId })
 <fieldset disabled={form.state.isSubmitting}> <form.Field name="title" children={(f) => <FormField label="Title" field={f}><Input /></FormField>} /> </fieldset>
