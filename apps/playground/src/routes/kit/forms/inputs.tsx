@@ -2,12 +2,16 @@ import { createFileRoute } from '@tanstack/react-router'
 import { FormField } from 'basalt-ui/controls'
 import { Page, Section } from 'basalt-ui/page'
 import { Checkbox } from 'basalt-ui/ui/checkbox'
+import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem } from 'basalt-ui/ui/combobox'
+import { FileUpload } from 'basalt-ui/ui/file-upload'
 import { Input } from 'basalt-ui/ui/input'
+import { NumberField } from 'basalt-ui/ui/number-field'
 import { NativeSelect, Select } from 'basalt-ui/ui/select'
+import { Switch } from 'basalt-ui/ui/switch'
 import { Textarea } from 'basalt-ui/ui/textarea'
 import type { FieldLike } from 'basalt-ui/core/ports'
 import type { ReactElement } from 'react'
-import { ENVIRONMENTS, STATES, useSpecimen } from './-specimen'
+import { ENVIRONMENTS, Search, STATES, TEAM_VALUES, teamLabel, useSpecimen } from './-specimen'
 import type { State } from './-specimen'
 
 /** One cell: its state, the value it starts with and, for the invalid cell, the message. */
@@ -108,12 +112,7 @@ function RegionCell({ cell }: { cell: Cell<string> }): ReactElement {
   const c = useCell(cell)
   return (
     <FormField label={c.label} field={c.field} disabled={c.disabled}>
-      <NativeSelect
-        options={REGIONS}
-        onChange={(event) => {
-          c.field.handleChange(event.target.value)
-        }}
-      />
+      <NativeSelect options={REGIONS} />
     </FormField>
   )
 }
@@ -133,17 +132,111 @@ function TermsCell({ cell }: { cell: Cell<boolean> }): ReactElement {
   )
 }
 
+const TEAM = cellsOf<string | null>({
+  empty: null,
+  filled: 'payments',
+  invalid: null,
+  error: 'Pick the team that owns it.',
+})
+function TeamCell({ cell }: { cell: Cell<string | null> }): ReactElement {
+  const c = useCell(cell)
+  return (
+    <FormField label={c.label} field={c.field} disabled={c.disabled}>
+      <Combobox items={TEAM_VALUES} itemToStringLabel={teamLabel} readOnly={c.readOnly}>
+        <ComboboxInput aria-label={c.label} placeholder="Search teams" />
+        <ComboboxContent empty="No team matches.">
+          {(team: string) => (
+            <ComboboxItem key={team} value={team}>
+              {teamLabel(team)}
+            </ComboboxItem>
+          )}
+        </ComboboxContent>
+      </Combobox>
+    </FormField>
+  )
+}
+
+const REPLICAS = cellsOf<number | null>({
+  empty: null,
+  filled: 4,
+  invalid: null,
+  error: 'Enter how many replicas to run.',
+})
+function ReplicasCell({ cell }: { cell: Cell<number | null> }): ReactElement {
+  const c = useCell(cell)
+  return (
+    <FormField label={c.label} field={c.field} disabled={c.disabled}>
+      <NumberField min={1} max={20} readOnly={c.readOnly} />
+    </FormField>
+  )
+}
+
+const SWITCH = cellsOf({
+  empty: false,
+  filled: true,
+  invalid: false,
+  error: 'Turn it on to go on.',
+})
+function SwitchCell({ cell }: { cell: Cell<boolean> }): ReactElement {
+  const c = useCell(cell)
+  return (
+    <FormField label={c.label} field={c.field} disabled={c.disabled}>
+      <Switch readOnly={c.readOnly} />
+    </FormField>
+  )
+}
+
+const UPLOAD_STATES = ['Rest', 'Invalid', 'Disabled'] as const
+function UploadCell({ state }: { state: (typeof UPLOAD_STATES)[number] }): ReactElement {
+  const field = useSpecimen<File[]>(
+    [],
+    state === 'Invalid' ? 'Attach a PNG or SVG under 1 MB.' : undefined,
+  )
+  return (
+    <FormField label={state} field={field} disabled={state === 'Disabled'}>
+      <FileUpload
+        accept="image/png,image/svg+xml"
+        maxSize={1_000_000}
+        hint="PNG or SVG, up to 1 MB."
+      />
+    </FormField>
+  )
+}
+
+/** Two fields that carry an icon or a unit, beside each other from `@regular`. */
+function Affixes(): ReactElement {
+  const query = useSpecimen('')
+  const timeout = useSpecimen('')
+  return (
+    <div className="grid max-w-5xl gap-6 @regular:grid-cols-2">
+      <FormField
+        label="Search the logs"
+        description="A leading icon, drawn inside the field."
+        field={query}
+      >
+        <Input autoComplete="off" placeholder="Service or message" start={Search} />
+      </FormField>
+      <FormField
+        label="Timeout"
+        description="A trailing unit, drawn inside the field."
+        field={timeout}
+      >
+        <Input inputMode="numeric" autoComplete="off" placeholder="5000" end="ms" />
+      </FormField>
+    </div>
+  )
+}
+
 /** The cells of one control, one column on a phone and a row of five wide. */
 function Cells({ children }: { children: ReactElement[] }): ReactElement {
   return <div className="grid gap-4 @regular:grid-cols-3 @wide:grid-cols-5">{children}</div>
 }
 
 /**
- * Every input control in every state the kit draws: rest, filled, invalid, disabled and read-only.
- * Hover and focus are live on each cell (point at it, tab into it); the scheme is the shell's own,
- * so light and dark are the toggle in the settings menu. Loading has no input form in the kit:
- * only `Button` takes `loading` (/kit/forms/buttons). The parts the quality matrix fails at rest are
- * held back and listed (docs/v3/verdicts/showcase-gaps.md, Forms).
+ * Each input control in the states the kit draws: rest, filled, invalid, disabled and read-only for
+ * the field controls; file upload shows rest, invalid and disabled. Hover and focus are live on each
+ * cell (point at it, tab into it); the scheme is the shell's own, so light and dark are the toggle in
+ * the settings menu. Loading has no input form in the kit: only `Button` takes `loading` (/kit/forms/buttons).
  */
 function InputsRoute(): ReactElement {
   return (
@@ -186,14 +279,36 @@ function InputsRoute(): ReactElement {
           ))}
         </Cells>
       </Section>
-      <Section title="Held back" summary="Parts the quality matrix fails at rest on a page.">
-        <p className="m-0 max-w-2xl text-sm text-muted-foreground">
-          Combobox, NumberField and Switch are not drawn here: the matrix finds no focus ring on the
-          Combobox and NumberField inputs, a Combobox input under the 24 px hit floor, and a Switch
-          frame that vanishes under forced colours. Each is a row in the Forms list of
-          docs/v3/verdicts/showcase-gaps.md; the whole forms (/kit/forms/whole) still use them in
-          the dialog and the settings form.
-        </p>
+      <Section title="Combobox" summary="Search, or 50 or more options; typing filters the list.">
+        <Cells>
+          {TEAM.map((cell) => (
+            <TeamCell key={cell.state} cell={cell} />
+          ))}
+        </Cells>
+      </Section>
+      <Section title="Number" summary="A number with steppers, formatted in the locale.">
+        <Cells>
+          {REPLICAS.map((cell) => (
+            <ReplicasCell key={cell.state} cell={cell} />
+          ))}
+        </Cells>
+      </Section>
+      <Section title="Switch" summary="A setting that takes effect as it flips.">
+        <Cells>
+          {SWITCH.map((cell) => (
+            <SwitchCell key={cell.state} cell={cell} />
+          ))}
+        </Cells>
+      </Section>
+      <Section title="Affixes" summary="An icon before the value, a unit after it.">
+        <Affixes />
+      </Section>
+      <Section title="File upload" summary="Files from disk; the limits are in the hint.">
+        <Cells>
+          {UPLOAD_STATES.map((state) => (
+            <UploadCell key={state} state={state} />
+          ))}
+        </Cells>
       </Section>
     </Page>
   )

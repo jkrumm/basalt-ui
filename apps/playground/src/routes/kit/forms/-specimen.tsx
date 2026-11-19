@@ -55,11 +55,36 @@ export const Trash = glyph(
   </>,
 )
 export const Chevron = glyph(<path d="M6 9l6 6 6-6" />)
+export const Link = glyph(
+  <>
+    <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+    <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+  </>,
+)
 export const More = glyph(
   <>
     <circle cx="5" cy="12" r="1" />
     <circle cx="12" cy="12" r="1" />
     <circle cx="19" cy="12" r="1" />
+  </>,
+)
+
+export const Search = glyph(
+  <>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M20 20l-4-4" />
+  </>,
+)
+export const Mail = glyph(
+  <>
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="M3 7l9 6 9-6" />
+  </>,
+)
+export const Globe = glyph(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18M12 3c-3 3-3 15 0 18M12 3c3 3 3 15 0 18" />
   </>,
 )
 
@@ -127,22 +152,49 @@ export const TEAMS = [
   { value: 'data', label: 'Data' },
 ] as const
 
+export const TEAM_VALUES: readonly string[] = TEAMS.map((team) => team.value)
+export const teamLabel = (value: string): string =>
+  TEAMS.find((team) => team.value === value)?.label ?? value
+
 export const STRATEGIES = [
-  { value: 'rolling', label: 'Rolling' },
-  { value: 'blue-green', label: 'Blue-green' },
-  { value: 'canary', label: 'Canary' },
+  { value: 'rolling', label: 'Rolling', description: 'Replaces a few instances at a time.' },
+  {
+    value: 'blue-green',
+    label: 'Blue-green',
+    description: 'Switches traffic to a full copy at once.',
+  },
+  {
+    value: 'canary',
+    label: 'Canary',
+    description: 'Sends a share of traffic first, then the rest.',
+  },
 ] as const
 export type Strategy = (typeof STRATEGIES)[number]['value']
-/** The three rollouts in one line: a radio option has no description part of its own. */
-export const STRATEGY_HINT =
-  'Rolling replaces a few at a time; blue-green switches to a full copy; canary sends 5% first.'
 
 export const EVENTS = [
   { value: 'deploy-started', label: 'A deploy starts' },
-  { value: 'deploy-failed', label: 'A deploy fails' },
+  {
+    value: 'deploy-failed',
+    label: 'A deploy fails',
+    description: 'With the failing step and its log.',
+  },
   { value: 'incident', label: 'An incident opens' },
-  { value: 'digest', label: 'The weekly digest' },
+  {
+    value: 'digest',
+    label: 'The weekly digest',
+    description: 'Mondays at 9:00 in the workspace time zone.',
+  },
 ] as const
+
+/** Labels a service already carries somewhere; a new one is created by typing it. */
+export const LABELS: readonly string[] = [
+  'api',
+  'batch',
+  'critical',
+  'customer-facing',
+  'internal',
+  'pci',
+]
 
 export const SIZES = [
   { value: 's', label: 'S' },

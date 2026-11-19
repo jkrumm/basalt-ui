@@ -1,6 +1,5 @@
 import { revalidateLogic, useForm } from '@tanstack/react-form'
-import { FormField, FormFooter, FormRow } from 'basalt-ui/controls'
-import { Section } from 'basalt-ui/page'
+import { FormField, FormFooter, FormSection } from 'basalt-ui/controls'
 import { Checkbox, CheckboxGroup } from 'basalt-ui/ui/checkbox'
 import {
   Combobox,
@@ -10,12 +9,11 @@ import {
   ComboboxItem,
 } from 'basalt-ui/ui/combobox'
 import { DatePicker, DateRangePicker } from 'basalt-ui/ui/date-picker'
-import type { CalendarDate } from 'basalt-ui'
-import type { CalendarRange } from 'basalt-ui/ui/date-picker'
-import { Fieldset } from 'basalt-ui/ui/field'
+import { FileUpload } from 'basalt-ui/ui/file-upload'
+import type { CalendarDate, CalendarRange } from 'basalt-ui/ui/date-picker'
 import { Input } from 'basalt-ui/ui/input'
 import { NumberField } from 'basalt-ui/ui/number-field'
-import { Radio, RadioGroup } from 'basalt-ui/ui/radio-group'
+import { RadioGroup } from 'basalt-ui/ui/radio-group'
 import { Segmented } from 'basalt-ui/ui/segmented'
 import { Select } from 'basalt-ui/ui/select'
 import { Slider } from 'basalt-ui/ui/slider'
@@ -29,7 +27,6 @@ import {
   LANGUAGES,
   SIZES,
   STRATEGIES,
-  STRATEGY_HINT,
   TIME_ZONES,
   languageLabel,
   later,
@@ -39,6 +36,7 @@ import type { Strategy } from './-specimen'
 const LANGUAGE_CODES = LANGUAGES.map((l) => l.value)
 
 type Settings = {
+  logo: File[]
   name: string
   slug: string
   about: string
@@ -57,6 +55,7 @@ type Settings = {
 }
 
 const SAVED: Settings = {
+  logo: [],
   name: 'Acme platform',
   slug: 'acme',
   about: 'The services behind checkout, search and the ledger.',
@@ -82,7 +81,8 @@ const EMAIL = z.email('Enter an address, like oncall@example.com.')
 const PARALLEL = z.number('Enter a number.').int().min(1, 'At least 1.').max(10, 'At most 10.')
 
 /**
- * A long settings form: four sections, one TanStack form across them and one save footer at the end.
+ * A long settings form: four `FormSection`s of settings rows, one TanStack form across them and one
+ * sticky save footer that says when something is unsaved.
  * Leaving with unsaved changes asks first (`useUnsavedGuard`, the playground's form-guard recipe).
  */
 export function SettingsForm(): ReactElement {
@@ -100,201 +100,214 @@ export function SettingsForm(): ReactElement {
   return (
     <form
       noValidate
-      className="flex flex-col gap-4"
+      className="flex max-w-3xl flex-col gap-4"
       onSubmit={(event) => {
         event.preventDefault()
         void form.handleSubmit()
       }}
     >
-      <Section
+      <FormSection
         title="General"
-        summary="One TanStack form across the four sections, bound through FormField; saved by the footer at the end."
+        description="How the workspace is named and where it lives. One TanStack form across the four sections, bound through FormField."
       >
-        <Fieldset className="max-w-2xl">
-          <FormRow>
-            <form.Field name="name" validators={{ onDynamic: NAME }}>
-              {(f) => (
-                <FormField label="Workspace name" required field={f}>
-                  <Input autoComplete="organization" />
-                </FormField>
-              )}
-            </form.Field>
-            <form.Field name="slug" validators={{ onDynamic: SLUG }}>
-              {(f) => (
-                <FormField label="URL slug" description="example.com/acme" required field={f}>
-                  <Input autoComplete="off" spellCheck={false} />
-                </FormField>
-              )}
-            </form.Field>
-          </FormRow>
-          <form.Field name="about">
-            {(f) => (
-              <FormField label="Description" description="Shown to new members." field={f}>
-                <Textarea rows={3} autoComplete="off" />
-              </FormField>
-            )}
-          </form.Field>
-          <FormRow>
-            <form.Field name="zone">
-              {(f) => (
-                <FormField label="Time zone" field={f}>
-                  <Combobox items={TIME_ZONES}>
-                    <ComboboxInput aria-label="Time zone" placeholder="Search zones" />
-                    <ComboboxContent empty="No zone matches.">
-                      {(zone: string) => (
-                        <ComboboxItem key={zone} value={zone}>
-                          {zone}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxContent>
-                  </Combobox>
-                </FormField>
-              )}
-            </form.Field>
-            <form.Field name="environment">
-              {(f) => (
-                <FormField label="Default environment" field={f}>
-                  <Select aria-label="Default environment" options={ENVIRONMENTS} />
-                </FormField>
-              )}
-            </form.Field>
-          </FormRow>
-        </Fieldset>
-      </Section>
-      <Section title="Deploys" summary="How a merge reaches production.">
-        <Fieldset className="max-w-2xl">
-          <form.Field name="autoDeploy">
-            {(f) => (
-              <FormField
-                label="Deploy main on push"
-                description="A checkbox, not a switch: it applies when the form is saved."
-                field={f}
-              >
-                <Checkbox />
-              </FormField>
-            )}
-          </form.Field>
-          <form.Field name="strategy">
-            {(f) => (
-              <FormField label="Rollout" description={STRATEGY_HINT} field={f}>
-                <RadioGroup>
-                  {STRATEGIES.map((s) => (
-                    <label key={s.value} className="flex items-center gap-2 text-sm">
-                      <Radio value={s.value} />
-                      {s.label}
-                    </label>
-                  ))}
-                </RadioGroup>
-              </FormField>
-            )}
-          </form.Field>
-          <form.Subscribe selector={(state) => state.values.strategy}>
-            {(strategy) =>
-              strategy === 'canary' ? (
-                <form.Field name="canary">
-                  {(f) => (
-                    <FormField
-                      label="Canary share"
-                      description="Of traffic, before the rest."
-                      field={f}
-                    >
-                      <Slider
-                        min={1}
-                        max={50}
-                        step={1}
-                        format={{ style: 'unit', unit: 'percent' }}
-                      />
-                    </FormField>
+        <form.Field name="name" validators={{ onDynamic: NAME }}>
+          {(f) => (
+            <FormField
+              label="Workspace name"
+              description="Shown in the header and in emails."
+              required
+              field={f}
+            >
+              <Input autoComplete="organization" />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="slug" validators={{ onDynamic: SLUG }}>
+          {(f) => (
+            <FormField label="URL slug" description="example.com/acme" required field={f}>
+              <Input autoComplete="off" spellCheck={false} />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="logo">
+          {(f) => (
+            <FormField
+              label="Logo"
+              description="Square, shown in the header and on invoices."
+              field={f}
+            >
+              <FileUpload accept="image/png,image/svg+xml" maxSize={1_048_576} />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="about">
+          {(f) => (
+            <FormField label="Description" description="Shown to new members." field={f}>
+              <Textarea rows={3} autoComplete="off" />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="zone">
+          {(f) => (
+            <FormField label="Time zone" description="Schedules and digests run in it." field={f}>
+              <Combobox items={TIME_ZONES}>
+                <ComboboxInput aria-label="Time zone" placeholder="Search zones" />
+                <ComboboxContent empty="No zone matches.">
+                  {(zone: string) => (
+                    <ComboboxItem key={zone} value={zone}>
+                      {zone}
+                    </ComboboxItem>
                   )}
-                </form.Field>
-              ) : null
-            }
-          </form.Subscribe>
-          <FormRow>
-            <form.Field name="parallel" validators={{ onDynamic: PARALLEL }}>
-              {(f) => (
-                <FormField label="Parallel deploys" required field={f}>
-                  <NumberField min={1} max={10} />
-                </FormField>
-              )}
-            </form.Field>
-            <form.Field name="size">
-              {(f) => (
-                <FormField label="Instance size" field={f}>
-                  <Segmented options={SIZES} />
-                </FormField>
-              )}
-            </form.Field>
-          </FormRow>
-        </Fieldset>
-      </Section>
-      <Section title="Notifications" summary="Who hears about what.">
-        <Fieldset className="max-w-2xl">
-          <form.Field name="events">
-            {(f) => (
-              <FormField label="Notify when" field={f}>
-                <CheckboxGroup>
-                  {EVENTS.map((e) => (
-                    <label key={e.value} className="flex items-center gap-2 text-sm">
-                      <Checkbox value={e.value} />
-                      {e.label}
-                    </label>
-                  ))}
-                </CheckboxGroup>
-              </FormField>
-            )}
-          </form.Field>
-          <form.Field name="email" validators={{ onDynamic: EMAIL }}>
-            {(f) => (
-              <FormField label="Alert address" required field={f}>
-                <Input type="email" autoComplete="email" />
-              </FormField>
-            )}
-          </form.Field>
-          <form.Field name="languages">
-            {(f) => (
-              <FormField label="Digest languages" description="One digest per language." field={f}>
-                <Combobox multiple items={LANGUAGE_CODES} itemToStringLabel={languageLabel}>
-                  <ComboboxChips
-                    aria-label="Digest languages"
-                    placeholder="Add a language"
-                    itemToLabel={languageLabel}
-                  />
-                  <ComboboxContent empty="No language matches.">
-                    {(code: string) => (
-                      <ComboboxItem key={code} value={code}>
-                        {languageLabel(code)}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxContent>
-                </Combobox>
-              </FormField>
-            )}
-          </form.Field>
-        </Fieldset>
-      </Section>
-      <Section title="Maintenance" summary="When nothing ships.">
-        <Fieldset className="max-w-2xl">
-          <FormRow>
-            <form.Field name="freeze">
-              {(f) => (
-                <FormField label="Deploy freeze" field={f}>
-                  <DateRangePicker aria-label="Deploy freeze" onChange={f.handleChange} />
-                </FormField>
-              )}
-            </form.Field>
-            <form.Field name="review">
-              {(f) => (
-                <FormField label="Next review" field={f}>
-                  <DatePicker aria-label="Next review" onChange={f.handleChange} />
-                </FormField>
-              )}
-            </form.Field>
-          </FormRow>
-        </Fieldset>
-      </Section>
+                </ComboboxContent>
+              </Combobox>
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="environment">
+          {(f) => (
+            <FormField
+              label="Default environment"
+              description="Where a new service deploys first."
+              field={f}
+            >
+              <Select aria-label="Default environment" options={ENVIRONMENTS} />
+            </FormField>
+          )}
+        </form.Field>
+      </FormSection>
+      <FormSection title="Deploys" description="How a merge reaches production.">
+        <form.Field name="autoDeploy">
+          {(f) => (
+            <FormField
+              label="Deploy main on push"
+              description="A checkbox, not a switch: it applies when the form is saved."
+              field={f}
+            >
+              <Checkbox />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="strategy">
+          {(f) => (
+            <FormField
+              label="Rollout"
+              description="How a deploy replaces the running version."
+              field={f}
+            >
+              <RadioGroup options={STRATEGIES} />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Subscribe selector={(state) => state.values.strategy}>
+          {(strategy) =>
+            strategy === 'canary' ? (
+              <form.Field name="canary">
+                {(f) => (
+                  <FormField
+                    label="Canary share"
+                    description="Of traffic, before the rest."
+                    field={f}
+                  >
+                    <Slider
+                      min={1}
+                      max={50}
+                      step={1}
+                      showValue
+                      format={{ style: 'unit', unit: 'percent' }}
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+            ) : null
+          }
+        </form.Subscribe>
+        <form.Field name="parallel" validators={{ onDynamic: PARALLEL }}>
+          {(f) => (
+            <FormField
+              label="Parallel deploys"
+              description="Services that roll out at once."
+              required
+              field={f}
+            >
+              <NumberField min={1} max={10} />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="size">
+          {(f) => (
+            <FormField
+              label="Instance size"
+              description="For new services; each can override it."
+              field={f}
+            >
+              <Segmented options={SIZES} />
+            </FormField>
+          )}
+        </form.Field>
+      </FormSection>
+      <FormSection title="Notifications" description="Who hears about what.">
+        <form.Field name="events">
+          {(f) => (
+            <FormField label="Notify when" description="Sent to the alert address." field={f}>
+              <CheckboxGroup options={EVENTS} />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="email" validators={{ onDynamic: EMAIL }}>
+          {(f) => (
+            <FormField
+              label="Alert address"
+              description="A team list, not a person."
+              required
+              field={f}
+            >
+              <Input type="email" autoComplete="email" />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="languages">
+          {(f) => (
+            <FormField label="Digest languages" description="One digest per language." field={f}>
+              <Combobox multiple items={LANGUAGE_CODES} itemToStringLabel={languageLabel}>
+                <ComboboxChips
+                  aria-label="Digest languages"
+                  placeholder="Add a language"
+                  itemToLabel={languageLabel}
+                />
+                <ComboboxContent empty="No language matches.">
+                  {(code: string) => (
+                    <ComboboxItem key={code} value={code}>
+                      {languageLabel(code)}
+                    </ComboboxItem>
+                  )}
+                </ComboboxContent>
+              </Combobox>
+            </FormField>
+          )}
+        </form.Field>
+      </FormSection>
+      <FormSection title="Maintenance" description="When nothing ships.">
+        <form.Field name="freeze">
+          {(f) => (
+            <FormField label="Deploy freeze" description="No deploys start in this span." field={f}>
+              <DateRangePicker aria-label="Deploy freeze" />
+            </FormField>
+          )}
+        </form.Field>
+        <form.Field name="review">
+          {(f) => (
+            <FormField
+              label="Next review"
+              description="The owners get a reminder that day."
+              field={f}
+            >
+              <DatePicker aria-label="Next review" />
+            </FormField>
+          )}
+        </form.Field>
+      </FormSection>
       <FormFooter
-        className="max-w-2xl"
+        sticky
         form={form}
         actions={[
           {

@@ -3,17 +3,22 @@ import { FormField, FormFooter, FormRow, toSubmitErrors } from 'basalt-ui/contro
 import { Section } from 'basalt-ui/page'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { Button } from 'basalt-ui/ui/button'
-import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem } from 'basalt-ui/ui/combobox'
+import {
+  Combobox,
+  ComboboxChips,
+  ComboboxContent,
+  ComboboxInput,
+  ComboboxItem,
+} from 'basalt-ui/ui/combobox'
 import { Dialog, DialogContent, DialogTrigger } from 'basalt-ui/ui/dialog'
 import { Fieldset } from 'basalt-ui/ui/field'
 import { Input } from 'basalt-ui/ui/input'
 import { NumberField } from 'basalt-ui/ui/number-field'
 import { Select } from 'basalt-ui/ui/select'
-import { Textarea } from 'basalt-ui/ui/textarea'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { z } from 'zod'
-import { Plus, TEAMS, TIME_ZONES, later } from './-specimen'
+import { LABELS, Link, Plus, TEAMS, TIME_ZONES, later } from './-specimen'
 
 export type Service = {
   id: string
@@ -22,7 +27,7 @@ export type Service = {
   repo: string
   zone: string | null
   replicas: number | null
-  notes: string
+  labels: string[]
 }
 type Values = Omit<Service, 'id'>
 
@@ -36,7 +41,7 @@ const SEED: readonly Service[] = [
     repo: 'https://git.example.com/payments/checkout',
     zone: 'Europe/Berlin',
     replicas: 6,
-    notes: '',
+    labels: ['customer-facing'],
   },
   {
     id: 's-2',
@@ -45,7 +50,7 @@ const SEED: readonly Service[] = [
     repo: 'https://git.example.com/search/api',
     zone: 'America/New_York',
     replicas: 4,
-    notes: '',
+    labels: ['customer-facing'],
   },
   {
     id: 's-3',
@@ -54,7 +59,7 @@ const SEED: readonly Service[] = [
     repo: 'https://git.example.com/payments/ledger',
     zone: 'Europe/Berlin',
     replicas: 3,
-    notes: '',
+    labels: ['customer-facing'],
   },
 ]
 
@@ -92,7 +97,7 @@ function CreateServiceForm({
       repo: '',
       zone: null,
       replicas: 2,
-      notes: '',
+      labels: [],
     } as Values,
     validators: { onSubmitAsync: toSubmitErrors(save) },
     onSubmit: ({ value }) => {
@@ -142,7 +147,13 @@ function CreateServiceForm({
             <form.Field name="repo" validators={{ onDynamic: REPO }}>
               {(f) => (
                 <FormField label="Repository" required field={f}>
-                  <Input type="url" inputMode="url" autoComplete="url" placeholder="https://" />
+                  <Input
+                    type="url"
+                    inputMode="url"
+                    autoComplete="url"
+                    placeholder="https://"
+                    start={Link}
+                  />
                 </FormField>
               )}
             </form.Field>
@@ -167,14 +178,19 @@ function CreateServiceForm({
                 </FormField>
               )}
             </form.Field>
-            <form.Field name="notes">
+            <form.Field name="labels">
               {(f) => (
-                <FormField
-                  label="Notes"
-                  description="Optional; shown on the service page."
-                  field={f}
-                >
-                  <Textarea rows={3} autoComplete="off" />
+                <FormField label="Labels" description="Pick one or type a new one." field={f}>
+                  <Combobox multiple items={LABELS} onCreate={(text) => text.trim().toLowerCase()}>
+                    <ComboboxChips aria-label="Labels" placeholder="Add a label" />
+                    <ComboboxContent empty="No label matches.">
+                      {(label: string) => (
+                        <ComboboxItem key={label} value={label}>
+                          {label}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxContent>
+                  </Combobox>
                 </FormField>
               )}
             </form.Field>
