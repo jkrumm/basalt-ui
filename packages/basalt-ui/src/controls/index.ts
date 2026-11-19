@@ -14,6 +14,13 @@ export { FormField } from './form-field'
 export type { FormFieldProps } from './form-field'
 export { FormRow } from './form-row'
 export type { FormRowProps } from './form-row'
+export { FormSection } from './form-section'
+export type { FormSectionProps } from './form-section'
+export type { FormFieldLayout } from './form-field'
+
+// A multi-step form's step list: the current step marked, done steps reachable, folded when narrow.
+export { Stepper } from './stepper'
+export type { StepperProps, StepperStep } from './stepper'
 
 // v3 forms, state side: the local draft, the save-error mapper and the action row (`FormLike` is structural; the form engine stays the app's).
 export { useFormDraft } from './draft'
