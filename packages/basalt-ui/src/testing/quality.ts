@@ -402,8 +402,26 @@ async function tabWalk(
 }
 
 /** The in-page body of {@link ringWalk}; serialised, so it closes over nothing. */
-function inspectRing(el: Element): string[] {
+function inspectRing(focused: Element): string[] {
   const problems: string[] = []
+  const draws = (e: Element): boolean => {
+    const o = getComputedStyle(e)
+    return (
+      o.outlineStyle !== 'none' && o.outlineStyle !== 'hidden' && parseFloat(o.outlineWidth) > 0
+    )
+  }
+  // A grouped control (combobox, number field, chips box) draws one ring around its whole box, which
+  // holds the focused input. The nearest ancestor within three levels that holds the focus and draws
+  // an outline is that ring; every condition below then reads that box, not the bare input.
+  let el: Element = focused
+  if (!draws(focused)) {
+    let up = focused.parentElement
+    for (let i = 0; i < 3 && up !== null; i++, up = up.parentElement) {
+      if (!up.matches(':has(:focus-visible)') || !draws(up)) continue
+      el = up
+      break
+    }
+  }
   const s = getComputedStyle(el)
   const width = parseFloat(s.outlineWidth)
   if (s.outlineStyle === 'none' || s.outlineStyle === 'hidden' || !(width > 0)) {
@@ -502,7 +520,9 @@ function inspectRing(el: Element): string[] {
 
 /**
  * Tabs through every stop: the computed outline is solid (or the browser's own `auto` ring), at least 2px, opaque, at least 3:1 against
- * the element's own fill and the surface under it, and no clipping ancestor cuts it off (a scroller is judged at its scrollable content edges, a hidden or clipped box at its own).
+ * the element's own fill and the surface under it, and no clipping ancestor cuts it off (a scroller is judged at its scrollable content edges, a hidden or clipped box at its own). A control
+ * that draws one ring around its whole box (a combobox, a number field) passes when the nearest
+ * ancestor within three levels that holds the focus carries that ring; the same conditions then apply to it.
  */
 async function ringWalk(page: PageLike, options: WalkOptions = {}): Promise<{ stops: number }> {
   await expectScheme(page)

@@ -2,7 +2,7 @@ import { Autocomplete as BaseAutocomplete } from '@base-ui/react/autocomplete'
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
-import { createContext, useCallback, useContext, useRef } from 'react'
+import { createContext, useCallback, useContext, useRef, useState } from 'react'
 import type { ReactElement, ReactNode, Ref } from 'react'
 import { cn } from '../core/cn'
 import { select } from '../core/messages/select'
@@ -18,14 +18,15 @@ import { useMessages } from '../core/messages/use-messages'
 export const comboboxVariants = cva('relative block w-full min-w-0')
 
 /**
- * The `ComboboxInput` cva table: the visible input box. A coarse pointer gets the 44 px floor and
+ * The `ComboboxInput` cva table: the visible input box. The inner input spans the box edge to edge,
+ * so the hit target is the full control height. A coarse pointer gets the 44 px floor and
  * 16 px text (below that iOS Safari zooms the page on focus).
  *
  * @example
  * comboboxInputVariants({ size: 'sm' })
  */
 export const comboboxInputVariants = cva(
-  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base [&_input]:min-w-0 [&_input]:flex-1 [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
+  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base [&_input]:-my-px [&_input]:min-w-0 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:self-stretch [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
   {
     variants: {
       size: {
@@ -66,12 +67,12 @@ export const comboboxItemVariants = cva(
  * comboboxChipsVariants({ size: 'sm' })
  */
 export const comboboxChipsVariants = cva(
-  'flex w-full min-w-0 flex-wrap items-center gap-1 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base [&_input]:min-w-16 [&_input]:flex-1 [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
+  'flex w-full min-w-0 flex-wrap items-center gap-1 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:py-0 pointer-coarse:text-base [&_input]:min-h-6 [&_input]:min-w-16 [&_input]:flex-1 [&_input]:scroll-my-1.5 pointer-coarse:[&_input]:-my-px pointer-coarse:[&_input]:min-h-11 [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
   {
     variants: {
       size: {
-        md: 'min-h-ctl px-2 py-1 text-sm',
-        sm: 'min-h-6 px-1.5 py-0.5 text-xs',
+        md: 'min-h-ctl px-2 py-0.5 text-sm',
+        sm: 'min-h-6 px-1.5 py-0 text-xs',
       },
     },
     defaultVariants: { size: 'md' },
@@ -103,7 +104,7 @@ export const autocompleteVariants = cva('relative block w-full min-w-0')
  * autocompleteInputVariants({ size: 'sm' })
  */
 export const autocompleteInputVariants = cva(
-  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base [&_input]:min-w-0 [&_input]:flex-1 [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
+  'flex w-full min-w-0 items-center gap-2 rounded-ctrl border border-input bg-background text-foreground transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand has-focus-visible:outline-solid data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base [&_input]:-my-px [&_input]:min-w-0 [&_input]:flex-1 [&_input]:scroll-my-1.5 [&_input]:self-stretch [&_input]:bg-transparent [&_input]:outline-none [&_input]:placeholder:text-faint',
   {
     variants: {
       size: {
@@ -214,7 +215,119 @@ export type ComboboxProps<Value = string, Multiple extends boolean | undefined =
   BaseCombobox.Root.Props<Value, Multiple>,
   'children'
 > &
-  Layout & { children?: ReactNode }
+  Layout & {
+    children?: ReactNode
+    /**
+     * Makes the combobox creatable. When the trimmed text typed matches no item's label (ignoring
+     * case), the popup ends with a `Create "<text>"` row; choosing it calls `onCreate(text)`, adds the
+     * returned value to the items and selects it. Needs a flat `items` array; the text of the row is
+     * the message key `combobox.create`.
+     */
+    onCreate?: (text: string) => Value
+  }
+
+/** The row a creatable combobox appends to its items for the typed text; never a selected value. */
+const CREATE_ITEM = Object.freeze({ create: true })
+
+/** The typed text while the create row shows, for `ComboboxContent` to name the row. */
+const CreateContext = createContext<string | undefined>(undefined)
+
+function labelOf(item: unknown, toLabel: ((item: never) => string) | undefined): string {
+  if (toLabel !== undefined) return toLabel(item as never)
+  if (typeof item === 'object' && item !== null && 'label' in item) return String(item.label)
+  return String(item)
+}
+
+type CreatableRootProps = Omit<
+  ComboboxProps<unknown, boolean | undefined>,
+  'className' | 'onCreate'
+> & {
+  items: readonly unknown[]
+  onCreate: (text: string) => unknown
+}
+
+/**
+ * Base UI has no creatable mode, so the wrapper composes one: it owns the typed text, the created
+ * values and the selection, and appends the create row to the items while it applies. Choosing the
+ * row arrives as a value change carrying `CREATE_ITEM`, which is swapped for the created value.
+ */
+function CreatableRoot({
+  items,
+  onCreate,
+  multiple,
+  value,
+  defaultValue,
+  onValueChange,
+  inputValue,
+  defaultInputValue,
+  onInputValueChange,
+  itemToStringLabel,
+  filter,
+  autoHighlight,
+  locale,
+  children,
+  ...props
+}: CreatableRootProps): ReactElement {
+  const matcher = BaseCombobox.useFilter({ locale })
+  const [created, setCreated] = useState<readonly unknown[]>([])
+  const [inner, setInner] = useState<unknown>(defaultValue ?? (multiple === true ? [] : null))
+  const current = value !== undefined ? value : inner
+  const [typedState, setTypedState] = useState<string>(
+    String(
+      inputValue ??
+        defaultInputValue ??
+        (multiple === true || current === null ? '' : labelOf(current, itemToStringLabel)),
+    ),
+  )
+  const typed = inputValue !== undefined ? String(inputValue) : typedState
+  const text = typed.trim()
+  const known = [...items, ...created]
+  const taken = known.some(
+    (item) => labelOf(item, itemToStringLabel).toLowerCase() === text.toLowerCase(),
+  )
+  const showCreate = text !== '' && !taken
+  const toLabel = (item: unknown): string =>
+    item === CREATE_ITEM ? text : labelOf(item, itemToStringLabel)
+
+  const commit = (next: unknown, details: never): void => {
+    setInner(next)
+    ;(onValueChange as ((v: unknown, d: never) => void) | undefined)?.(next, details)
+  }
+  const change = (next: unknown, details: never): void => {
+    const picked = Array.isArray(next) ? next.includes(CREATE_ITEM) : next === CREATE_ITEM
+    if (!picked) return commit(next, details)
+    const made = onCreate(text)
+    setCreated([...created, made])
+    setTypedState('')
+    commit(Array.isArray(next) ? next.map((v) => (v === CREATE_ITEM ? made : v)) : made, details)
+  }
+  const typing = (next: string, details: never): void => {
+    setTypedState(next)
+    ;(onInputValueChange as ((v: string, d: never) => void) | undefined)?.(next, details)
+  }
+  const matches = (item: unknown, query: string, toString?: (item: unknown) => string): boolean => {
+    if (item === CREATE_ITEM) return true
+    return (filter ?? matcher.contains)(item, query, toString)
+  }
+
+  return (
+    <BaseCombobox.Root<unknown, boolean | undefined>
+      {...props}
+      {...(locale !== undefined && { locale })}
+      multiple={multiple}
+      items={showCreate ? [...known, CREATE_ITEM] : known}
+      value={current}
+      onValueChange={change as never}
+      inputValue={typed}
+      onInputValueChange={typing as never}
+      itemToStringLabel={toLabel}
+      filter={filter === null ? null : matches}
+      autoHighlight={autoHighlight ?? true}
+    >
+      <CreateContext value={showCreate ? text : undefined}>{children}</CreateContext>
+    </BaseCombobox.Root>
+  )
+}
 
 /**
  * A searchable select on Base UI. Which job, which part: fewer than 10 known values, `Select`;
@@ -223,7 +336,8 @@ export type ComboboxProps<Value = string, Multiple extends boolean | undefined =
  * Pass `items` (strings, or objects with `label` and `value`) and compose `ComboboxInput` and
  * `ComboboxContent`; `multiple` with `ComboboxChips` selects several. The hidden close buttons are
  * named from the message key `combobox.dismiss`. Works with no provider and joins a Base UI `Field`
- * when wrapped in one. No virtualisation here.
+ * when wrapped in one. `onCreate` makes it creatable (a tag input): typed text that matches no item
+ * ends the list with a `Create "<text>"` row. No virtualisation here.
  *
  * @useWhen search, async or multi-select, or 50 or more options
  * @neverWhen fewer than 10 known values (Select) or free text (Autocomplete)
@@ -235,15 +349,30 @@ export type ComboboxProps<Value = string, Multiple extends boolean | undefined =
  *     {(item) => <ComboboxItem key={item} value={item}>{item}</ComboboxItem>}
  *   </ComboboxContent>
  * </Combobox>
+ * <Combobox multiple items={tags} value={v} onValueChange={setV} onCreate={(text) => text}>
+ *   <ComboboxChips aria-label="Tags" placeholder="Add a tag" />
+ *   <ComboboxContent>...</ComboboxContent>
+ * </Combobox>
  */
 export function Combobox<Value = string, Multiple extends boolean | undefined = false>({
   className,
   children,
+  onCreate,
   ...props
 }: ComboboxProps<Value, Multiple>): ReactElement {
   return (
     <Field slot="combobox" table={comboboxVariants()} className={className}>
-      <BaseCombobox.Root<Value, Multiple> {...props}>{children}</BaseCombobox.Root>
+      {onCreate !== undefined && Array.isArray(props.items) ? (
+        <CreatableRoot
+          {...(props as unknown as Omit<CreatableRootProps, 'items' | 'onCreate' | 'children'>)}
+          items={props.items as readonly unknown[]}
+          onCreate={onCreate}
+        >
+          {children}
+        </CreatableRoot>
+      ) : (
+        <BaseCombobox.Root<Value, Multiple> {...props}>{children}</BaseCombobox.Root>
+      )}
     </Field>
   )
 }
@@ -295,6 +424,25 @@ export function ComboboxContent({
 }: ComboboxContentProps): ReactElement {
   const anchor = useContext(AnchorContext)
   const dismiss = useDismissRef()
+  const t = useMessages(select)
+  const createText = useContext(CreateContext)
+  const createRow = (
+    <ComboboxItem key="create" value={CREATE_ITEM}>
+      {t('combobox.create', createText ?? '')}
+    </ComboboxItem>
+  )
+  const list =
+    createText === undefined ? (
+      children
+    ) : typeof children === 'function' ? (
+      (item: never, index: number): ReactNode =>
+        (item as unknown) === CREATE_ITEM ? createRow : children(item, index)
+    ) : (
+      <>
+        {children}
+        {createRow}
+      </>
+    )
   return (
     <BaseCombobox.Portal {...(container !== undefined && { container })}>
       <BaseCombobox.Positioner
@@ -313,7 +461,7 @@ export function ComboboxContent({
               {empty}
             </BaseCombobox.Empty>
           )}
-          <BaseCombobox.List>{children as ReactNode}</BaseCombobox.List>
+          <BaseCombobox.List>{list as ReactNode}</BaseCombobox.List>
         </BaseCombobox.Popup>
       </BaseCombobox.Positioner>
     </BaseCombobox.Portal>
@@ -428,7 +576,7 @@ export function ComboboxChip({ className, label = '', ...props }: ComboboxChipPr
       <span className="truncate">{label}</span>
       <BaseCombobox.ChipRemove
         aria-label={t('combobox.remove', label)}
-        className="inline-flex size-4 cursor-pointer items-center justify-center rounded-chip text-muted-foreground hover:bg-selected pointer-coarse:after:absolute pointer-coarse:after:size-11"
+        className="relative inline-flex size-4 cursor-pointer items-center justify-center rounded-chip text-muted-foreground hover:bg-selected after:absolute after:top-1/2 after:left-1/2 after:size-6 after:-translate-1/2 pointer-coarse:after:size-11"
       >
         <svg viewBox="0 0 16 16" className="size-3" fill="none" aria-hidden="true">
           <path
