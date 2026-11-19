@@ -491,6 +491,31 @@ describe('BarList mono', () => {
 })
 
 describe('BarList legend, series and body rows', () => {
+  const SERIES = [
+    { key: 'work', label: 'Work', color: { light: 'red', dark: 'red' } },
+    {
+      key: 'hold',
+      label: 'Hold',
+      color: { light: 'blue', dark: 'blue' },
+      swatch: 'hollow' as const,
+    },
+  ]
+  const STACKED = [{ label: 'Attempt 1', value: 3, parts: { work: 2, hold: 1 } }]
+
+  test('draws the series legend row with each entry in its own swatch shape', () => {
+    const { container } = draw({ items: STACKED, series: SERIES })
+    const swatches = [
+      ...container.querySelectorAll('[data-slot="data-panel-legend"] [data-swatch]'),
+    ]
+    expect(swatches.map((s) => s.getAttribute('data-swatch'))).toEqual(['solid', 'hollow'])
+  })
+
+  test('legend={false} drops the legend row and keeps the stacked parts', () => {
+    const { container } = draw({ items: STACKED, series: SERIES, legend: false })
+    expect(container.querySelector('[data-slot="data-panel-legend"]')).toBeNull()
+    expect(container.querySelectorAll('[data-slot="bar-list-segment"]')).toHaveLength(2)
+  })
+
   const MONTHS = Array.from({ length: 12 }, (_, i) => ({ label: `M${i + 1}`, value: 12 - i }))
   const bodyOf = (root: ParentNode): HTMLElement =>
     root.querySelector('[data-slot="inset"]') as HTMLElement

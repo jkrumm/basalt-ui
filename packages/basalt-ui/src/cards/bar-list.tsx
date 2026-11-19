@@ -121,6 +121,11 @@ export type BarListProps<I = unknown> = FrameHead &
      * 8 px tall; without it every bar is one neutral fill.
      */
     series?: readonly LegendEntry[]
+    /**
+     * `false` draws no legend row for `series`: the page's one legend sits elsewhere (a `ChartCard
+     * legend` beside it keys the same colours), so the card does not repeat it.
+     */
+    legend?: false
     /** Draw every label in the mono face with tabular figures: ids, hashes, paths. */
     mono?: boolean
   }
@@ -236,7 +241,9 @@ export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
             ),
           })}
         />
-        {series !== undefined && series.length > 0 && <Legend entries={series} />}
+        {props.legend !== false && series !== undefined && series.length > 0 && (
+          <Legend entries={series} />
+        )}
         <Inset className="flex flex-col" style={bodyHeight(rows, 10)}>
           <HostTitleContext.Provider value={title}>
             <CardPhase
