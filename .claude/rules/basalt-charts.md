@@ -22,7 +22,7 @@ Every chart is a shipped kind or `CartesianChart`; props live in the shipped typ
 - Extra tooltip rows are data, never markup. [type:ChartTooltipConfig]
 - A card footer holds at most two facts. [type:FootFacts]
 - An optional figure, card or footer field takes a maybe-value straight; `undefined` is an absent key, so never a conditional spread or a placeholder. [type:ChartFigure] [type:StatCellProps]
-- A time or an id in a figure `period`, a stat card's `sub`, an entity column's name or `sub`, a `BarList`'s labels or a footer fact's value sets `periodMono`, `subMono` or `mono`; never a class, never a whole sentence, and one face for a slot at rest and on focus. [type:ChartFigure] [type:StatCellProps] [type:FootFacts]
+- A time or an id in a figure `period` (at rest, on focus and in a hover stamp), a stat card's `sub`, an entity column's name or `sub`, a `BarList`'s labels or a footer fact's value sets `periodMono`, `subMono` or `mono`; never a class, never a whole sentence, and one face for a slot at rest and on focus. [type:ChartFigure] [type:StatCellProps] [type:FootFacts]
 
 ## Boundaries
 
@@ -36,5 +36,5 @@ not guarded:
 - Draw `plot.rows(key)` and `plot.visible`, never the `series` prop, so a legend toggle hides the mark; a size in a mark reads `plot.plotHeight`.
 - Date text on a time axis comes from `useFormat` or `createFormat`, never a raw `Intl` call.
 - Every list of the page's items (`DataTable`, `BarList`) takes `focus` from the one `useChartFocus`, chart or none, drawn at the list's grain so a row and a mark are one item, and the tooltip is off where the figure's period follows focus; long names ranked by a total stacked by kind are a `BarList` with `series` and per-row `parts`, since a band axis drops names.
-- The hero, the marks and the baseline measure one quantity; the focused datum's reading goes in the figure's `period` and `status` through `focus.readout`, which takes any value.
+- The hero, the marks and the baseline measure one quantity; the focused datum's reading goes in the figure's `period` and `status` through `focus.readout`, which takes any value; a held run reads `focus.span`, its best or its sum, never its first item; `announce` names only the series a datum draws, and every readout value carries its unit.
 - Charts share one cursor by default; a chart that must not share isolates itself with a cursor group.
