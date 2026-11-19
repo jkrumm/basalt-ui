@@ -472,7 +472,7 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
               radius: RADIUS,
               ...(s.fill === 'outline'
                 ? { fill: CV.surface, stroke: color, strokeWidth: OUTLINE_PX }
-                : { fill: tint(color, TINT), stroke: CV.surface, strokeWidth: SEAM_PX }),
+                : { fill: seriesPaint(s, single), stroke: CV.surface, strokeWidth: SEAM_PX }),
             }),
           )
         }
@@ -617,8 +617,8 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
       series.map((s) => ({
         key: s.key,
         label: s.label,
-        // The swatch shows the paint: neutral on a one-series track.
-        color: paintOf(s, isOneSeries(series)),
+        // The swatch shows the paint its spans take: neutral on a one-series track, tinted when solid.
+        color: seriesPaint(s, isOneSeries(series)),
         mark: s.fill === 'outline' ? ('hollow' as const) : ('bar' as const),
         ...(s.legend !== undefined && { legend: s.legend }),
         getValue: () => null,
@@ -688,6 +688,9 @@ const isOneSeries = (series: readonly IntervalSeries[]): boolean =>
 const isNeutral = (s: IntervalSeries, single: boolean): boolean => single && s.layer !== 'back'
 const paintOf = (s: IntervalSeries, single: boolean): string =>
   isNeutral(s, single) ? CV.line : cssColor(s.color)
+/** What a series shows in its legend swatch and paints its spans with: a solid span's tint, an outline's stroke. */
+const seriesPaint = (s: IntervalSeries, single: boolean): string =>
+  s.fill === 'outline' ? paintOf(s, single) : tint(paintOf(s, single), TINT)
 const NONE_HIDDEN: ReadonlySet<string> = new Set()
 const noop = (): void => {}
 // A column: the box takes the height the legend row leaves, so the legend sits inside the parent.
