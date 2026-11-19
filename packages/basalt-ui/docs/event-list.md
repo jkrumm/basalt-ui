@@ -25,7 +25,7 @@ EventList(props: EventListProps): ReactElement
   phase?: Phase | QueryStateLike
   empty?: Empty | null
   items: readonly EventListItem[]  // Events in display order: the list never re-sorts
-  bodyRows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
+  bodyRows?: number  // The body holds this many rows of height at every phase; more rows scroll
   pageSize?: number  // Rows shown before, and added by each "Show more"
   now?: number | Date  // The instant "Today" is measured from
 ```

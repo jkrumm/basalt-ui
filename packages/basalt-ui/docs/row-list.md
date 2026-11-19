@@ -27,7 +27,7 @@ RowList(props: RowListProps): ReactElement
   phase?: Phase | QueryStateLike
   empty?: Empty | null
   items: readonly RowListItem[]  // Rows in display order: the list never re-sorts
-  bodyRows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
+  bodyRows?: number  // The body holds this many rows of height at every phase; more rows scroll
   lines?: 2 | 1  // Lines per row, 1 or 2 (a row with a `detail` or `valueDetail` is two)
   mono?: boolean  // Draw every label in the mono face with tabular figures: ids, hashes, paths
   separator?: "hairline" | "none"  // What sits between rows

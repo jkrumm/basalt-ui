@@ -107,8 +107,11 @@ zones={[{ axis: 'x', from: MIN_PER_WEEK, to: weekEnd, y: { from: 0, to: MAX_OPEN
 `x.title` and `y.title` name an axis with its unit. `x.scale: 'log'` puts a numeric x on decades; a
 row with x <= 0 is not drawn. A `refLines` entry with `axis: 'x'` is a full-height rule at a band
 key, number or Date; on a band axis `at: 'start' | 'end'` puts it on the band's edge, mid-gap between
-two bars (default `centre`). A `mark: 'dot'` series legends as a dot. Focus and readout:
-`use-chart-focus.md`.
+two bars (default `centre`). A `mark: 'dot'` series legends as a dot. Dots that coincide or touch
+(equal peaks, a heap of near-zero values) take `spread: 'x'` or `'y'` on the series: each moves the least
+distance along that axis to a free spot, the same data always draws the same layout, and the tooltip
+and readout keep the true value. Name the axis that can take a few pixels without a misread: a
+whole-number count, or the wider of two spans. Focus and readout: `use-chart-focus.md`.
 
 `x.ticks` as a number is the most labels: on a band axis they sit at an even stride that keeps the
 first and the last band (`ticks: 3` over five stages at 390 px); as a list it labels exactly those

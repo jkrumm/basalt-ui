@@ -31,9 +31,10 @@ BarList<I = unknown>(props: BarListProps<I>): ReactElement
   focusItems?: { focus: ListFocus<I>; holds: (row: BarListItem, item: I) => boolean; }  // A chart's focus over items of another grain: `holds(row, item)` is true for every item the row stands for (the hours of a window, the probes under a service), never by position
   items: readonly BarListItem[]  // Rows in display order: sort them yourself, the list does not reorder
   max?: number  // The scale end every bar fills against
-  bodyRows?: ListRows  // The body holds this many rows of height at every phase; more rows scroll
+  bodyRows?: number  // The body holds this many rows of height at every phase; more rows scroll
   format?: (value: number) => string  // Formats each value
   series?: readonly LegendEntry[]  // The series a row's `parts` stack by: their order (first at the bar's start), their colour and a legend row under the header
+  legend?: false  // `false` draws no legend row for `series`: the page's one legend sits elsewhere (a `ChartCard legend` beside it keys the same colours), so the card does not repeat it
   mono?: boolean  // Draw every label in the mono face with tabular figures: ids, hashes, paths
 ```
 
