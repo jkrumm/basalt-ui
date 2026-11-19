@@ -338,6 +338,19 @@ export type UseDataTable<
     by: string
     summary?: (rows: readonly T[], box: Box) => ReactNode
   }
+  /**
+   * Nested rows (client mode only, never with `group`): each row is drawn under the row
+   * `parentOf` names, one level deeper, with the indent and the expander the table draws in its
+   * first column; a row whose parent is absent, itself or below it is a root. Sort orders the rows
+   * within each level, a search or filter keeps every match with the rows above it, and the table
+   * becomes a tree grid (Right opens a row or steps into it, Left closes it or steps to its parent).
+   * A closed row's id is kept in the display state, so it survives a reload and a saved view. A
+   * nested table shows every row: it never pages.
+   *
+   * @example
+   * nested: { parentOf: (issue) => issue.waitsOn[0] }
+   */
+  nested?: { parentOf: (row: T) => string | null | undefined }
   selection?: { bulk: BulkAction<T>[]; selectAll?: boolean }
   views?: { store?: ViewStore }
 } & (
