@@ -99,3 +99,47 @@ describe('DataTable focus', () => {
     expect(seen.handle?.index).toBeNull()
   })
 })
+
+/** A table of four rows beside a chart that draws three: `d` has no item (a container with no limit). */
+function WithOrphan(): ReactElement {
+  const focus = useChartFocus(ROWS, { announce: (d) => d.name })
+  useEffect(() => keep(focus))
+  const c = col<Row>()
+  const state = useMemoryHandle()
+  const t = useDataTable<Row>({
+    id: 'row-focus-orphan-test',
+    label: 'Rows',
+    columns: [c.text('name', { header: 'Name' })],
+    data: [...ROWS, { id: 'd', name: 'Delta' }],
+    getRowId: (r) => r.id,
+    mode: { kind: 'client' },
+    state,
+    onRowActivate: () => undefined,
+  })
+  return <DataTable table={t} focus={focus} />
+}
+
+describe('DataTable focus, a row with no chart item', () => {
+  const orphan = (): HTMLElement => bodyRows()[3] as HTMLElement
+
+  test('dims with the rest while an item is focused, and only then', () => {
+    render(<WithOrphan />)
+    expect(orphan().hasAttribute('data-dimmed')).toBe(false)
+    act(() => seen.handle?.set(1))
+    expect(orphan().hasAttribute('data-dimmed')).toBe(true)
+    expect(orphan().hasAttribute('data-chart-mark')).toBe(true)
+    expect(orphan().hasAttribute('data-focused')).toBe(false)
+    act(() => seen.handle?.set(null))
+    expect(orphan().hasAttribute('data-dimmed')).toBe(false)
+  })
+
+  test('pointing at it or moving the row focus onto it clears the focus', () => {
+    render(<WithOrphan />)
+    act(() => seen.handle?.set(0))
+    fireEvent.pointerEnter(orphan())
+    expect(seen.handle?.index).toBeNull()
+    act(() => seen.handle?.set(2))
+    act(() => orphan().focus())
+    expect(seen.handle?.index).toBeNull()
+  })
+})
