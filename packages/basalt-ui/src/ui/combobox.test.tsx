@@ -304,6 +304,29 @@ describe('creatable combobox', () => {
     expect(createRow()).toBeUndefined()
   })
 
+  test('grouped items are not creatable: no row, onCreate never called', async () => {
+    let created = 0
+    const groups = [{ value: 'North', items: ['Hamburg'] }]
+    const { getByRole } = render(
+      <Combobox
+        multiple
+        items={groups}
+        onCreate={(text) => {
+          created += 1
+          return text
+        }}
+      >
+        <ComboboxChips aria-label="Tags" />
+        <ComboboxContent empty="No results">
+          {(group: { value: string }) => <div key={group.value}>{group.value}</div>}
+        </ComboboxContent>
+      </Combobox>,
+    )
+    await type(getByRole('combobox', { name: 'Tags' }), 'Zzz')
+    expect(createRow()).toBeUndefined()
+    expect(created).toBe(0)
+  })
+
   test('the row text comes from the message key combobox.create', async () => {
     const { getByRole } = render(
       <IntlScope messages={{ 'combobox.create': (_f, text) => `${text} anlegen` }}>

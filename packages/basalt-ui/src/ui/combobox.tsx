@@ -227,6 +227,19 @@ export type ComboboxProps<Value = string, Multiple extends boolean | undefined =
     onCreate?: (text: string) => Value
   }
 
+/** True when `items` is a flat list; Base UI groups (`{ value, items }`) are not. */
+function isFlat(items: unknown): items is readonly unknown[] {
+  return (
+    Array.isArray(items) &&
+    !items.some(
+      (item) =>
+        typeof item === 'object' &&
+        item !== null &&
+        Array.isArray((item as { items?: unknown }).items),
+    )
+  )
+}
+
 /** The row a creatable combobox appends to its items for the typed text; never a selected value. */
 const CREATE_ITEM = Object.freeze({ create: true })
 
@@ -363,10 +376,10 @@ export function Combobox<Value = string, Multiple extends boolean | undefined = 
 }: ComboboxProps<Value, Multiple>): ReactElement {
   return (
     <Field slot="combobox" table={comboboxVariants()} className={className}>
-      {onCreate !== undefined && Array.isArray(props.items) ? (
+      {onCreate !== undefined && isFlat(props.items) ? (
         <CreatableRoot
           {...(props as unknown as Omit<CreatableRootProps, 'items' | 'onCreate' | 'children'>)}
-          items={props.items as readonly unknown[]}
+          items={props.items}
           onCreate={onCreate}
         >
           {children}
