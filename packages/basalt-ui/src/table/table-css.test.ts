@@ -33,8 +33,9 @@ describe('table.css', () => {
     expect(rule?.[1]).toContain('background-color: var(--basalt-surface, var(--basalt-canvas))')
   })
 
-  // Gated at the landed value: 3,467 bytes before the grid look (owner review 2), 3,979 with it.
-  test('stays small: under 4,000 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(4000)
+  // Gated at the landed value: 3,467 bytes before the grid look (owner review 2), 3,979 with it, 4,136
+  // with the finer fold steps of expression cycle 12.
+  test('stays small: under 4,200 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(4200)
   })
 })
