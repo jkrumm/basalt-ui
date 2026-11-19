@@ -87,9 +87,16 @@ describe('the tooltip', () => {
     ])
     expect(at).toEqual({ x: 10, y: 40 })
   })
-  test('a column opens over its top, then beside it, never below onto its body', () => {
+  test('a column opens beside it at the pointer, never on its body, and at its top without a pointer', () => {
     const { def } = build((r) => r.d, [bar])
-    const tip = def.tooltip as { placement: readonly string[] }
-    expect(tip.placement).toEqual(['top', 'right', 'left'])
+    const tip = def.tooltip as { anchor: unknown; placement: readonly string[] }
+    expect(tip.placement).toEqual(['right', 'left'])
+    const anchor = tip.anchor as (p: unknown[], c: { pointer: unknown }) => { x: number; y: number }
+    const points = [
+      { x: 10, y: 80 },
+      { x: 10, y: 40 },
+    ]
+    expect(anchor(points, { pointer: { x: 12, y: 120 } })).toEqual({ x: 10, y: 120 })
+    expect(anchor(points, { pointer: null })).toEqual({ x: 10, y: 40 })
   })
 })

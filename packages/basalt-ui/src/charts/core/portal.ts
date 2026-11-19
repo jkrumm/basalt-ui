@@ -5,9 +5,15 @@
  * covers no tick label (rows 204, 207, 217). It replaces the 2.x MutationObserver clamp: the engine
  * hands every placement to `position`, and a scroll or resize asks the engine to place again.
  * A placement that does not move writes nothing (invariant 29).
+ *
+ * A tooltip keeps its side for as long as it shows: the side it took first is tried first at every
+ * later datum, so it changes side only when it would leave its boundary there, and then keeps the new
+ * one. Owner review 2 saw the first fitting side re-picked per datum: a line's tooltip flipped above
+ * and below the next point, the height of itself for a 10 px pointer move.
  */
 import { resolveChartTooltipPlacement } from '@tanstack/charts/tooltip/model'
 import type { TooltipBounds, TooltipSize } from '@tanstack/charts/tooltip/model'
+import type { ChartTooltipPlacement } from '@tanstack/charts/types/core'
 import type {
   ChartTooltipPortalExtension,
   ChartTooltipPortalPositionContext,
@@ -107,7 +113,10 @@ function create(mode: TipMode): ChartTooltipPortalExtension['create'] {
       view?.[method]('scroll', schedulePosition, { capture: true, passive: true })
       view?.[method]('resize', schedulePosition, { passive: true })
     }
+    // The side this showing took; a hide ends the showing, so the next one picks afresh.
+    let kept: ChartTooltipPlacement | undefined
     const hide = (): void => {
+      kept = undefined
       listen(false)
       if (popover && element.matches(':popover-open')) element.hidePopover()
       element.hidden = true
@@ -121,13 +130,20 @@ function create(mode: TipMode): ChartTooltipPortalExtension['create'] {
         const size = { width: element.offsetWidth, height: element.offsetHeight }
         if (!size.width || !size.height || !ctx.scene.width || !ctx.scene.height) return true
         const { anchor, bounds, clear } = boundary(ctx, mode, size)
+        // The kept side first, then the rest in their order: the resolver takes the first that fits.
+        // A chart hands a list of sides or none (`compile.ts`); none is the vertical pair.
+        const sides: readonly ChartTooltipPlacement[] =
+          typeof ctx.placement === 'object' ? ctx.placement : VERTICAL
         const placed = resolveChartTooltipPlacement(
           anchor,
           size,
           bounds,
-          ctx.placement ?? VERTICAL,
+          kept !== undefined && sides.includes(kept)
+            ? [kept, ...sides.filter((side) => side !== kept)]
+            : sides,
           ctx.offset,
         )
+        kept = placed.placement
         write(element, 'left', placed.left + besideColumn(ctx, placed.placement))
         write(
           element,
