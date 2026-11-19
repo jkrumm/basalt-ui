@@ -11,6 +11,7 @@ import { HostTitleContext } from '../../core/could-not-load'
 import type { FrameArm } from '../../core/frame-arm'
 import { useMessages } from '../../core/messages/use-messages'
 import { OfflineLine } from '../../core/offline-line'
+import { useRetryOwner } from '../../core/retry-owner'
 import { table } from '../../core/messages/table'
 import { AppLink } from '../../core/link'
 import type { CardAction, ResolvedPhase } from '../../core/phase'
@@ -134,6 +135,7 @@ export function ErrorRow<T>({
 }): ReactElement {
   const t = useMessages(table)
   const run = phase?.retry ?? retry
+  const showRetry = useRetryOwner(run)
   const host = useContext(HostTitleContext)
   const name = host?.trim() || model.label.trim()
   const text =
@@ -148,7 +150,7 @@ export function ErrorRow<T>({
     <MessageRow model={model} slot="table-error" fit={fit}>
       <span className="text-foreground">{text}</span>
       {phase?.message !== undefined && phase.kind === undefined && <span>{phase.message}</span>}
-      {run !== undefined && (
+      {run !== undefined && showRetry && (
         <Button size="sm" onClick={run}>
           {t('table.retry')}
         </Button>

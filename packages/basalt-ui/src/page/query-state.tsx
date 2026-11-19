@@ -3,7 +3,7 @@ import { cn } from '../core/cn'
 import { home } from '../core/messages/home'
 import { useMessages } from '../core/messages/use-messages'
 import { OfflineLine } from '../core/offline-line'
-import { resolvePhase } from '../core/phase'
+import { resolvePhase, retryOf as retryOfRefetch } from '../core/phase'
 import type { Empty, ErrorKind } from '../core/phase'
 import type { Phase, QueryStateLike } from '../core/ports'
 import { buttonVariants } from '../ui/button'
@@ -42,10 +42,7 @@ const isQueryResult = (phase: QueryStateProps['phase']): phase is QueryResultLik
 
 const retryOf = (phase: QueryStateProps['phase']): (() => void) | undefined => {
   if (!isQueryResult(phase) || phase.refetch === undefined) return undefined
-  const { refetch } = phase
-  return () => {
-    void refetch()
-  }
+  return retryOfRefetch(phase.refetch)
 }
 
 const ERROR_KEYS = {

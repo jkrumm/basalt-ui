@@ -108,7 +108,7 @@ const retryOfRefetch = new WeakMap<() => unknown, () => void>()
  * One `retry` per query `refetch`, however often the card renders: frames fed one query result
  * hold the same function, so a group runs it once and frames can tell they share a source.
  */
-function retryOf(refetch: () => unknown): () => void {
+export function retryOf(refetch: () => unknown): () => void {
   const known = retryOfRefetch.get(refetch)
   if (known !== undefined) return known
   const retry = (): void => {
