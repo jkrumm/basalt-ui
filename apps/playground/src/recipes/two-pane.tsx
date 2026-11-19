@@ -16,12 +16,14 @@ const blue = { light: 'var(--basalt-info)', dark: 'var(--basalt-info)' }
 const amber = { light: 'var(--basalt-warn)', dark: 'var(--basalt-warn)' }
 const x = { value: (d: Bar) => d.day }
 export function TwoPane({ bars }: { bars: Bar[] }) {
+  // The last tick is dropped: its label widens the reserve and moves this plot's right edge off the upper pane's.
+  const ticks = bars.filter((_, i) => i % 14 === 0 && i < bars.length - 1).map((b) => b.day)
   return (
     <div className="flex flex-col gap-1">
       <Lines
         label="Price"
         data={bars}
-        x={x}
+        x={{ ...x, ticks: [] }}
         y={{ gutter: GUTTER }}
         cursor={GROUP}
         height={180}
@@ -30,7 +32,7 @@ export function TwoPane({ bars }: { bars: Bar[] }) {
       <Lines
         label="Momentum"
         data={bars}
-        x={x}
+        x={{ ...x, ticks }}
         y={{ gutter: GUTTER }}
         cursor={GROUP}
         height={110}
