@@ -1062,7 +1062,7 @@ rows:
       ]
     facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-rerun.json' }
   - key: v3-owner-1-rerun-kit-fixes
-    title: 'A chain wider than its panel and a list link lost on the crossing, from the owner review 1 rerun'
+    title: 'A BarList series link lost when the pointer crosses the chart, from the owner review 1 rerun'
     repo: basalt-ui
     kind: bug
     after: [v3-owner-1-rerun]
