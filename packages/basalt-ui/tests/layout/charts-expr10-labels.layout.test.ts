@@ -143,7 +143,11 @@ layout('labels that name the answer', () => {
       test('every run label of a zone that lines cross is drawn', async () => {
         const page = await open(viewport)
         const { plot, found } = await texts(page, 'e10-zone', '^\\d h$')
-        expect(found.map((f) => f.text).toSorted()).toEqual(['5 h', '6 h', '7 h', '8 h', '9 h'])
+        const drawn = found.map((f) => f.text).toSorted()
+        // A caption is never struck through (cycle 13): one that finds no clean spot is dropped, as the
+        // last zone's does on the phone, where it is 15 px wide at the plot's edge.
+        if (viewport.name === 'iPhone 14') expect(drawn).toEqual(['5 h', '6 h', '7 h', '8 h'])
+        else expect(drawn).toEqual(['5 h', '6 h', '7 h', '8 h', '9 h'])
         for (const f of found) expect(inside(f, plot), f.text).toBe(true)
       })
 

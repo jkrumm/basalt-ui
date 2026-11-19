@@ -4,7 +4,7 @@
  * with a per-glyph estimate, so a chart that labels its bars does not carry the 8 KB table.
  */
 import type { ChartLabel, LabelBox, LabelSpot, LabelWeight, PlacedLabel } from './chart-labels'
-import { hostObstacles } from './label-obstacles'
+import { hostObstacles, recordPlacedLabels } from './label-obstacles'
 
 /** A text's width in px at a size and weight. */
 export type MeasureText = (text: string, size: number, weight: LabelWeight) => number
@@ -173,6 +173,19 @@ export function placeWith<K extends string>(
         dy: box.top + height / 2 - label.y,
       }
     }
+    const nudged = (): PlacedLabel<K> | undefined => {
+      for (const spot of (label.spots ?? SPOTS).filter((s) => s === 'right' || s === 'left')) {
+        const at = boxFor(spot, label.x, label.y, width, height, gap)
+        for (let dy = 1; dy <= height / 2; dy++) {
+          for (const sign of [-1, 1]) {
+            const box = { left: at.left, top: at.top + sign * dy, width, height }
+            if (inside(box, frame) && !taken.some((other) => overlaps(box, other)))
+              return land(spot, box)
+          }
+        }
+      }
+      return undefined
+    }
     for (const spot of label.spots ?? SPOTS) {
       const at = boxFor(spot, label.x, label.y, width, height, gap)
       const box = slid(spot, { left: at.left, top: at.top, width, height }, frame)
@@ -185,6 +198,9 @@ export function placeWith<K extends string>(
       if (crowded === undefined || met < crowded.met) crowded = { spot, box, met }
     }
     if (landed === undefined && crowded !== undefined) landed = land(crowded.spot, crowded.box)
+    // Still nothing: a spot beside the anchor slides up or down, by at most half its height, to
+    // squeeze between what blocks it (a rule a pixel too close, the plot's edge).
+    if (landed === undefined) landed = nudged()
     if (landed === undefined) {
       dropped.push(label)
       continue
@@ -192,5 +208,6 @@ export function placeWith<K extends string>(
     taken.push(landed)
     placed.push(landed)
   }
+  if (options.pointMarks === true) recordPlacedLabels(placed)
   return { placed, dropped }
 }

@@ -3,8 +3,10 @@
  * so the rules are tested without an engine; `endLabelMarks` is the only part that draws.
  */
 import { decorative } from '@tanstack/charts/mark/decorative'
+import { rect } from '@tanstack/charts/rect'
 import { text } from '@tanstack/charts/text'
 import { BASALT } from '../tokens'
+import { lineHeight } from './label-place'
 import { yRangeWithin } from './ref-label'
 import type { LabelBox, RefLabelPoint } from './ref-label'
 import { rowX } from './types'
@@ -28,6 +30,8 @@ const END_LABEL_FLIP_DY_BELOW = 13
 const END_LABEL_EDGE = 7
 /** A glyph's advance as a share of the font size, for a label's drawn box (the room check's {@link END_LABEL_GLYPH_EM} errs wide). */
 const BOX_GLYPH_EM = 0.68
+/** A glyph's advance as a share of the font size when a flipped label asks again for the right of its end: the shipped face measures about 0.5 on mixed text. */
+const RETRY_GLYPH_EM = 0.58
 /** A label's ink is this share of its font size tall, centred on its text's y. */
 const BOX_INK = 0.75
 /** Air a label keeps from any line, px, and the margin a claimed box carries for a caption. */
@@ -40,6 +44,8 @@ const MIN_AIR = 1
 const MAX_SIDE_SEARCH = 5
 /** How far a dot mark reaches from its centre, px: its radius and ring. */
 const DOT_REACH = BASALT.dotR + 1
+/** A label this far off its natural spot, px, is joined to its line's end by a leader: nearer, it reads as the line's own. */
+const LEADER_AFTER_PX = lineHeight(BASALT.text.micro)
 
 export type EndLabelAnchor = 'start' | 'end'
 /** Which side of its line a flipped label sits: away from the line's last segment. */
@@ -66,6 +72,21 @@ export function endLabelAnchor(opts: {
 /** `Lines`' one naming switch: who names the series. */
 export type LinesNaming = 'auto' | 'legend' | 'endLabels'
 
+/**
+ * A thin elbow from a line's end to its label, drawn when the label was moved off its natural spot:
+ * a stalk up (or down) from the end to the label's height, then a stub to the label's edge. `from` and
+ * `to` are values on the left axis; `thinX` and `thinY` are a hairline's width in fractions of the
+ * plot and in values.
+ */
+export type EndLabelLeader = {
+  fraction: number
+  from: number
+  to: number
+  dx: number
+  thinX: number
+  thinY: number
+}
+
 export type EndLabel<T, X extends ChartX> = {
   series: ChartSeries<T>
   row: PlotRow<T, X>
@@ -76,6 +97,8 @@ export type EndLabel<T, X extends ChartX> = {
   nudge: number
   /** The room the drawn label takes, for a reference caption to keep clear of. */
   box: LabelBox
+  /** Present when the label sits too far from its line's end to read as its own. */
+  leader?: EndLabelLeader
 }
 
 const claimedBoxes = new WeakMap<object, readonly LabelBox[]>()
@@ -131,7 +154,7 @@ export function spreadLabels(ys: readonly number[], plotHeight: number): number[
  * The end labels to draw. `auto`: on the wide class only, with ≤ {@link MAX_END_LABELS} lines and
  * no right axis; `endLabels`: at every width and any line count (still no right axis, whose
  * series read another scale); `legend`: none. Labels that would collide are spread apart, never
- * dropped. A series whose last point the plot's own x scale cannot place, or places outside the plot
+ * dropped. A label the spread moves off its line's end gets a `leader` back to it. A series whose last point the plot's own x scale cannot place, or places outside the plot
  * (`plot.xFraction` outside [0, 1]: clipped by a narrower `xDomain`), has no label.
  */
 export function endLabelPlan<T, X extends ChartX>(
@@ -140,6 +163,36 @@ export function endLabelPlan<T, X extends ChartX>(
   naming: LinesNaming = 'auto',
   /** The values of the reference lines on the left axis: rules a label must not sit on. */
   rules: readonly number[] = [],
+): EndLabel<T, X>[] {
+  const plan = planEndLabels(plot, lines, naming, rules, new Set())
+  // The room check errs wide, so a label can flip over its own line for room it has, and the lines
+  // it then has to clear carry it far off its end. Such a label tries the right of its end, by the
+  // drawn box's width, and keeps that side when the labels end up nearer their lines.
+  const plotW = Math.max(plot.plotWidth, 1)
+  const beside = plan.flatMap((l) => {
+    const fraction = plot.xFraction(l.row.x)
+    const room = END_LABEL_DX + l.series.label.length * BASALT.text.micro * RETRY_GLYPH_EM
+    return l.anchor === 'end' &&
+      l.leader !== undefined &&
+      fraction !== null &&
+      (1 - fraction) * plotW >= room
+      ? [l.series.key]
+      : []
+  })
+  if (beside.length === 0) return plan
+  const again = planEndLabels(plot, lines, naming, rules, new Set(beside))
+  const drift = (p: readonly EndLabel<T, X>[]): number =>
+    p.reduce((sum, l) => sum + Math.abs(l.nudge), 0)
+  return drift(again) < drift(plan) ? again : plan
+}
+
+function planEndLabels<T, X extends ChartX>(
+  plot: PlotContext<T, X>,
+  lines: readonly ChartSeries<T>[],
+  naming: LinesNaming,
+  rules: readonly number[],
+  /** Series whose label goes right of its end whatever the room estimate says. */
+  startAt: ReadonlySet<string>,
 ): EndLabel<T, X>[] {
   if (naming === 'legend' || plot.y2 !== undefined || lines.length === 0) return []
   if (naming === 'auto' && (plot.containerClass !== 'wide' || lines.length > MAX_END_LABELS))
@@ -154,13 +207,15 @@ export function endLabelPlan<T, X extends ChartX>(
   })
   // No `y2` here (returned above), so every label reads the left domain.
   const [lo, hi] = plot.yDomain
-  const anchors = last.map(({ series, fraction }) =>
-    endLabelAnchor({
-      fraction,
-      plotWidth: plot.plotWidth,
-      label: series.label,
-      fontSize: BASALT.text.micro,
-    }),
+  const anchors = last.map(({ series, fraction }): EndLabelAnchor =>
+    startAt.has(series.key)
+      ? 'start'
+      : endLabelAnchor({
+          fraction,
+          plotWidth: plot.plotWidth,
+          label: series.label,
+          fontSize: BASALT.text.micro,
+        }),
   )
   // Flipped labels (left of their point) sit over their own line. A line falling into its end
   // comes from above, so its label drops below; a rising line's rises above. Several flipped lines
@@ -329,12 +384,25 @@ export function endLabelPlan<T, X extends ChartX>(
     const [x0, x1] = spans[i] as readonly [number, number]
     const perPx = (hi - lo) / (plot.plotHeight || 1)
     // Two pixels of margin each way: the caption keeps its own gap from the claimed box.
+    const fraction = last[i]?.fraction ?? 0
+    const leader =
+      Math.abs(nominal(i, side) - centre) > LEADER_AFTER_PX
+        ? {
+            fraction,
+            from: lineY(i),
+            to: lo + (centre * (hi - lo)) / (plot.plotHeight || 1),
+            dx: endLabelOffset(anchors[i] as EndLabelAnchor, side).dx,
+            thinX: 1 / plotW,
+            thinY: (hi - lo) / (plot.plotHeight || 1),
+          }
+        : undefined
     return {
       series,
       row,
       anchor: anchors[i] as EndLabelAnchor,
       side,
       nudge: nominal(i, side) - centre,
+      ...(leader !== undefined && { leader }),
       box: {
         fx0: x0 - 2 / plotW,
         fx1: x1 + 2 / plotW,
@@ -359,7 +427,8 @@ export function endLabelMarks<T, X extends ChartX>(
   plan: readonly EndLabel<T, X>[],
   paint: (color: string) => string = (color) => color,
 ): ChartMarks {
-  return plan.map(({ series, row, anchor, side, nudge }) =>
+  return plan.flatMap(({ series, row, anchor, side, nudge, leader }) => [
+    ...(leader === undefined ? [] : leaderMarks(series.key, leader, paint(series.color))),
     decorative(
       text([row], {
         id: `${series.key}-end-label`,
@@ -373,5 +442,31 @@ export function endLabelMarks<T, X extends ChartX>(
         dy: endLabelOffset(anchor, side).dy + nudge,
       }),
     ),
-  )
+  ])
+}
+
+/** The elbow of a displaced end label: a stalk from its line's end to its height, then a stub to its edge. */
+function leaderMarks(key: string, leader: EndLabelLeader, fill: string): ChartMarks {
+  const { fraction: f, from, to, dx, thinX, thinY } = leader
+  const stalk = { f0: f, f1: f + thinX, y0: Math.min(from, to), y1: Math.max(from, to) }
+  const stub = {
+    f0: Math.min(f, f + dx * thinX),
+    f1: Math.max(f, f + dx * thinX),
+    y0: to - thinY / 2,
+    y1: to + thinY / 2,
+  }
+  const channels = {
+    x1: 'f0',
+    x2: 'f1',
+    y1: 'y0',
+    y2: 'y1',
+    xScale: 'zx',
+    yScale: 'y',
+    fill,
+    inset: 0,
+  } as const
+  return [
+    decorative(rect([stalk], { ...channels, id: `${key}-end-leader` })),
+    decorative(rect([stub], { ...channels, id: `${key}-end-leader-stub` })),
+  ]
 }

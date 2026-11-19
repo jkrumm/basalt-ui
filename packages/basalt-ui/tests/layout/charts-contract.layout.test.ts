@@ -170,8 +170,9 @@ layout('charts contract amendment', () => {
           const label = await captionRect(page, id, caption)
           expect(label).not.toBeNull()
           const l = label!
-          // Under the zone's top edge, inside the plot, starting at or after the zone's start.
-          expect(l.t).toBeGreaterThanOrEqual(z.t - 0.5)
+          // Under the zone's top edge, or above it where a line crosses the corner (cycle 13: a caption
+          // is never struck through), inside the plot, starting at or after the zone's start.
+          expect(l.t >= z.t - 0.5 || l.b <= z.t + 0.5).toBe(true)
           expect(l.l).toBeGreaterThanOrEqual(z.l - 0.5)
           expect(l.r).toBeLessThanOrEqual(plot.r + 0.5)
         })

@@ -207,16 +207,16 @@ describe('line paths, zone captions and rule captions', () => {
     refLines: [{ value: 50, color: COLOR, dashed: true, label: 'Limit' }],
   }
 
-  test('a zone caption and a rule caption are obstacles', async () => {
+  test('a zone caption and a rule caption are not obstacles: they give way to a data label', async () => {
     const { plot, obstacles } = await built(lineChart(captioned))
     const zoneLeft = plot.x(1) as number
-    // The zone caption sits at its top-start corner, inside the zone.
+    // The zone caption's top-start corner is free for a page's label.
     expect(
       obstacles.some(
         (o) => o.top < 24 && o.left >= zoneLeft && o.left < zoneLeft + 20 && o.width > 40,
       ),
-    ).toBe(true)
-    // The rule caption sits beside its line, at an end of the plot.
+    ).toBe(false)
+    // So is the rule caption's end of the plot beside its line.
     const rule = plot.y(50)
     expect(
       obstacles.some(
@@ -226,10 +226,10 @@ describe('line paths, zone captions and rule captions', () => {
           o.width < 80 &&
           (o.left < 12 || o.left + o.width > plot.plotWidth - 12),
       ),
-    ).toBe(true)
+    ).toBe(false)
   })
 
-  test('a label aimed at the zone caption goes elsewhere or drops', async () => {
+  test('a label aimed at the zone caption keeps its spot', async () => {
     const { result, obstacles } = await built(lineChart(captioned), (plot) =>
       place(plot, [
         {
@@ -241,8 +241,7 @@ describe('line paths, zone captions and rule captions', () => {
         },
       ]),
     )
-    const caption = obstacles.find((o) => o.top < 24 && o.width > 40) as LabelBox
-    expect(caption).toBeDefined()
+    expect(result.placed.map((l) => l.key)).toEqual(['n'])
     for (const l of result.placed) for (const o of obstacles) expect(overlaps(l, o)).toBe(false)
   })
 })
