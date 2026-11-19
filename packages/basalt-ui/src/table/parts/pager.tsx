@@ -2,7 +2,8 @@
  * The table pager (docs/v3/concepts/data-table.md sections 6 and 8; I21): previous and next, the
  * range label and the page-size select. The current page size is always an option, so a size a URL
  * carried that the list does not know still shows; a range is never printed for a page with no rows
- * and "of N" never without an N. The range label is hidden by CSS at the card tier, not removed.
+ * and "of N" never without an N. While the table loads, fails or holds no rows the label is empty;
+ * "No rows on this page" is for a page past the end of a table that has rows. The range label is hidden by CSS at the card tier, not removed.
  * A cursor table gets one `Load more` instead of pages.
  */
 import type { ReactElement } from 'react'
@@ -80,16 +81,21 @@ export function TablePager<T>({
   const inRange = last === undefined || request.page <= last
   const onPage = inRange && model.phase.tag !== 'loading' ? model.rows.length : 0
   const range = describeRange(request, model.count, onPage)
+  // A range names rows the table holds: while it loads, fails or is empty there is none to name, and
+  // "No rows on this page" is only true of a page past the end of a table that has rows.
+  const settled = model.phase.tag === 'ready' || model.phase.tag === 'stale'
   const label =
-    onPage === 0
-      ? t('table.rowRangeNone')
-      : // `describeRange` names the key (state.ts holds the literal); the unknown form ignores the numbers
-        (t as (key: string, ...args: number[]) => string)(
-          range.key,
-          range.from,
-          range.to,
-          range.total ?? 0,
-        )
+    !settled || model.count === 0
+      ? ''
+      : onPage === 0
+        ? t('table.rowRangeNone')
+        : // `describeRange` names the key (state.ts holds the literal); the unknown form ignores the numbers
+          (t as (key: string, ...args: number[]) => string)(
+            range.key,
+            range.from,
+            range.to,
+            range.total ?? 0,
+          )
 
   return (
     <nav

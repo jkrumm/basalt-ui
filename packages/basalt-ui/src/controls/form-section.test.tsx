@@ -110,7 +110,7 @@ describe('FormSection', () => {
     ).toBe('Saved')
   })
 
-  test('server render keeps the legend and every slot it declares but the footer', () => {
+  test('server render keeps the legend and every slot it declares but the footer and the loading row', () => {
     const html = renderToString(
       <FormSection title="General" description="About">
         <FormField label="Name" control={text}>
@@ -118,10 +118,62 @@ describe('FormSection', () => {
         </FormField>
       </FormSection>,
     )
-    for (const slot of formSectionParts.filter((s) => s !== 'form-section-footer')) {
+    for (const slot of formSectionParts.filter(
+      (s) => s !== 'form-section-footer' && s !== 'form-section-loading-row',
+    )) {
       expect(html).toContain(`data-slot="${slot}"`)
     }
     expect(html).toContain('General')
+  })
+})
+
+describe('FormSection phase', () => {
+  const section = (phase?: 'loading' | 'ready') => (
+    <FormSection
+      title="General"
+      description="About"
+      footer={<span>Saved</span>}
+      {...(phase !== undefined && { phase })}
+    >
+      <FormField label="Name" control={text}>
+        <Input />
+      </FormField>
+    </FormSection>
+  )
+
+  test('loading keeps the title and holds three placeholder rows: no field, no footer', () => {
+    const { container, getByRole, queryByRole } = render(section('loading'))
+    expect(getByRole('group', { name: 'General' }).getAttribute('aria-busy')).toBe('true')
+    expect(container.querySelectorAll('[data-slot="form-section-loading-row"]').length).toBe(3)
+    expect(queryByRole('textbox')).toBeNull()
+    expect(container.querySelector('[data-slot="form-section-footer"]')).toBeNull()
+  })
+
+  test('a query that is pending is loading, a settled one draws the fields', () => {
+    const pending = render(
+      <FormSection title="A" phase={{ isPending: true, isError: false, error: null }}>
+        <FormField label="Name" control={text}>
+          <Input />
+        </FormField>
+      </FormSection>,
+    )
+    expect(pending.container.querySelector('[data-slot="form-section-loading-row"]')).not.toBeNull()
+    cleanup()
+    const settled = render(section('ready'))
+    expect(settled.container.querySelector('[data-slot="form-section-loading-row"]')).toBeNull()
+    expect(settled.getByRole('textbox', { name: 'Name' })).toBeTruthy()
+    expect(settled.container.querySelector('[data-slot="form-section-footer"]')).not.toBeNull()
+    expect(settled.getByRole('group', { name: 'General' }).getAttribute('aria-busy')).toBeNull()
+  })
+
+  test('the footer band keeps the card surface and the frame keeps an edge under forced colours', () => {
+    const { container } = render(section())
+    const frame = container.querySelector('[data-slot="form-section"]')!
+    expect(frame.className).toContain('forced-colors:border')
+    const footer = container.querySelector('[data-slot="form-section-footer"]')!
+    // The inset token is the page colour in dark: a band painted with it reads as the page.
+    expect(footer.className).not.toContain('bg-inset')
+    expect(footer.className).toContain('border-t')
   })
 })
 

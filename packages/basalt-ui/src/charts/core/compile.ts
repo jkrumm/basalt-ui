@@ -1815,7 +1815,10 @@ const GUIDE_LABEL = {
  * The hover's guide: the x rule (a bar kind has none, its hover is the bar) and the y rule through the
  * focused point, each with its value pinned on its axis, so a hover reads x and y where the ticks do.
  * Unpinned (a micro plot without axes, a bare slot) the line keeps its x rule alone. The y label is the
- * left axis' and only drawn without a right axis, where one y value cannot name both scales.
+ * left axis' and only drawn without a right axis, where one y value cannot name both scales. An x axis
+ * with no tick labels (`x.ticks: []`, the upper panels of charts stacked on one x) pins no x value: the
+ * chip would sit on the plot's baseline over the marks, once per panel; the panel that labels the axis
+ * carries it.
  */
 function crosshairMarks<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
@@ -1823,18 +1826,30 @@ function crosshairMarks<T, X extends ChartX>(opts: {
   formatX: (v: ChartValue) => string
   formatY: ((v: number) => string) | null
 }): ChartMarks {
+  const guide = crosshairGuide(opts)
+  return guide === null ? [] : [crosshair(guide)]
+}
+
+/** The options `crosshairMarks` hands the engine, or `null` for a chart with no guide at all. */
+export function crosshairGuide<T, X extends ChartX>(opts: {
+  input: CartesianInput<T, X>
+  pinned: boolean
+  formatX: (v: ChartValue) => string
+  formatY: ((v: number) => string) | null
+}): { x: object | false; y: object | false } | null {
   const { input, pinned, formatX, formatY } = opts
+  const xLabelled = !(Array.isArray(input.xTicks) && input.xTicks.length === 0)
   const rule = input.crosshair !== false
-  if (!pinned) return rule ? [crosshair({ x: CROSSHAIR, y: false })] : []
+  if (!pinned) return rule ? { x: CROSSHAIR, y: false } : null
   const x = {
     ...(rule ? CROSSHAIR : { strokeOpacity: 0 }),
-    label: { ...GUIDE_LABEL, format: (v: ChartValue) => formatX(v) },
+    label: xLabelled ? { ...GUIDE_LABEL, format: (v: ChartValue) => formatX(v) } : false,
   }
   const y =
     formatY === null
       ? false
       : { ...CROSSHAIR, label: { ...GUIDE_LABEL, format: (v: ChartValue) => formatY(Number(v)) } }
-  return [crosshair({ x, y })]
+  return { x, y }
 }
 
 export function compileCartesian<T, X extends ChartX>(

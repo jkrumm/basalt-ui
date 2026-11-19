@@ -1,0 +1,6 @@
+/*
+ * The `charts-owner2-rerun` fixture's Tailwind v4 entry, compiled with preflight like `charts-axes.css`.
+ * `charts-owner2-rerun.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './charts-owner2-rerun-fixture.tsx';
