@@ -52,7 +52,10 @@ export const rows: readonly RowDef[] = [
     // track's whole-or-dropped labels and minimum width, the kit fixes of expression cycle 11.
     // 125600 -> 126000 (Issue 2445): 125652 B measured, +~50 B gz over the cap for the dense-cloud label
     // placement, the held-focus release and the rule-aware zone caption, the kit fixes of expression cycle 12.
-    ceiling: 126000,
+    // 126000 -> 127500 (Issue 2468): 127202 B measured, +~1.2 KB gz over the cap for the zone captions that
+    // give way to page labels and keep clear of lines, the end-label leaders and the shared value-label pass
+    // with its one caret per clamped value, the kit fixes of expression cycle 13.
+    ceiling: 127500,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -75,6 +78,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 126000,
+      to: 127500,
+      consumer:
+        "the kit fixes of expression cycle 13 (Issue 2468): n57's, n59's and n62's zone captions were struck by lines or sat over another zone, n59's vault label lost to the 'Limit' caption, n58's end labels floated far from their lines, and n58's and n62's clamped values printed twice or with another hour's number",
+      repo: 'basalt-ui',
+    },
     {
       from: 125600,
       to: 126000,
