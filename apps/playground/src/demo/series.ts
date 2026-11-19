@@ -308,12 +308,6 @@ export const WALK_SERIES = defineSeries({
   target: { light: '#4a4a4a', dark: '#c4c4c4' },
 })
 
-/** Ride windows (scenario expr-n04): the accent is the window itself, a tint from the brand token; rain chance sits in a mid ink step, wind in the dark one, and each limit rule takes its series' colour. */
-export const RIDE_SERIES = defineSeries({
-  rain: { light: '#8a8a8a', dark: '#8f8f8f' },
-  wind: { light: '#262626', dark: '#e6e6e6' },
-})
-
 /** Stuck Issues (scenario expr-n02): the accent is the Issue stuck past 2x its stage's typical time; Issues within typical sit in an ink step, the typical and stuck rules in darker ones. */
 export const STUCK_SERIES = defineSeries({
   stuck: { light: '#2871c7', dark: '#5190f7' },
@@ -411,4 +405,20 @@ export const DARKSITE_SERIES = defineSeries({
   mid: { light: '#858585', dark: '#9a9a9a' },
   high: { light: '#adadad', dark: '#737373' },
   limit: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Fleet deploys (route /cycle/shell-6): the status red is a failed deploy, the one outcome that needs a hand; a rolled-back deploy takes the amber, a succeeded one an ink step. */
+export const FLEET6_SERIES = defineSeries({
+  succeeded: { light: '#6b6b6b', dark: '#a8a8a8' },
+  rolledBack: { light: '#c07e3c', dark: '#f9a13d' },
+  failed: { light: '#af293e', dark: '#e46360' },
+})
+
+/** Ride windows (scenario expr-n04): the accent is the ride window, a tint from the brand token; rain chance sits in a mid ink step, wind in the dark one, temperature in a pale one, the limit and midnight rules in ink steps. */
+export const RIDE_SERIES = defineSeries({
+  rain: { light: '#6b6b6b', dark: '#a8a8a8' },
+  wind: { light: '#262626', dark: '#e6e6e6' },
+  temp: { light: '#9a9a9a', dark: '#7d7d7d' },
+  limit: { light: '#4a4a4a', dark: '#c4c4c4' },
+  day: { light: '#b0b0b0', dark: '#666666' },
 })
