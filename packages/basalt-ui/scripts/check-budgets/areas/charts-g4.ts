@@ -3,7 +3,7 @@
  * concepts/quality-contract.md section 6, ARCHITECTURE.md section 3: +4 KB each). A marginal is the
  * three-kind fixture (`charts-three-kind` in `charts.ts`: Sparkline, Lines, Bars) plus the kind,
  * minus the same fixture without it, each gzip over a build with peers bundled. Ceiling = measured
- * +5% rounded up to 0.5 KB, at most 4000 B until Issue 1627 raised the heat grid to 4150 B and Issue 1872 to 4250 B (above that is an amendment, not a raise). Ratcheted down only.
+ * +5% rounded up to 0.5 KB, at most 4000 B until Issue 1627 raised the heat grid to 4150 B, Issue 1872 to 4250 B and Issue 2468 to 4500 B (above that is an amendment, not a raise). Ratcheted down only.
  * BandStrip and Heatmap compose `core/compile`, the host and the card portal like the v3 kinds (Issue 1417), so
  * the Issue 1227 and 1407 amendments are gone: Heatmap measures 3969 B (ceiling at the 4000 B cap), BandStrip
  * 2438 B (3000 B).
@@ -41,7 +41,9 @@ export const rows: readonly RowDef[] = [
     // no chart change fits the old cap.
     // 4150 -> 4250 (Issue 1872): 4193 B measured, +45 B gz over master (4148) for the zone caption's line and mark
     // obstacles and the line-hue dim, which the heat grid's closure carries through `core/compile`.
-    ceiling: 4250,
+    // 4250 -> 4500 (Issue 2468): 4405 B measured, +~155 B gz over the cap for the cell label ink chosen on the
+    // fill the cell draws and the caption and label placement of `core/compile`, which the heat grid's closure carries.
+    ceiling: 4500,
     measure: () => marginal(HEATMAP),
   },
   {
@@ -78,6 +80,13 @@ export const raises: Raises = {
       to: 4250,
       consumer:
         "the chart kit fixes of expression cycle 7: n26's zone caption was struck through by a line (.76) and n22's focus turned both lines slate (.19, .28), so the zone caption now takes line paths as obstacles and a multi-line focus keeps each hue (Issue 1872)",
+      repo: 'basalt-ui',
+    },
+    {
+      from: 4250,
+      to: 4500,
+      consumer:
+        "the chart kit fixes of expression cycle 13 (Issue 2468): n57's white cell labels went grey on grey when the rest dimmed and its focus dot sat on the '6 best' annotation, so the label ink follows the fill it is drawn on and the engine's dot gives way to the cell ring",
       repo: 'basalt-ui',
     },
   ],
