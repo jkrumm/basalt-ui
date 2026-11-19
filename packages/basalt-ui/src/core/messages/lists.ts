@@ -25,10 +25,7 @@ export type ListsMessages = Record<
     (f: Format, n: number) => string
   > &
   Record<'lists.rowsShown', (f: Format, shown: number, total: number) => string> &
-  Record<
-    'lists.chainWaitsOn' | 'lists.chainAlsoWaitsOn',
-    (f: Format, names: readonly string[]) => string
-  >
+  Record<'lists.chainWaitsOn' | 'lists.chainAlsoWaitsOn', (f: Format, names: string) => string>
 
 /** A step's working time, not the clock form of `Format.duration`: sub-second steps read in ms. */
 function stepDuration(f: Format, ms: number): string {
@@ -62,8 +59,8 @@ export const lists = {
   'lists.detailColumn': 'Detail',
   'lists.chainBlocks': 'Blocks',
   'lists.chainDone': 'Done',
-  'lists.chainWaitsOn': (_f, names) => `Waits on ${names.join(', ')}`,
-  'lists.chainAlsoWaitsOn': (_f, names) => `Also waits on ${names.join(', ')}`,
+  'lists.chainWaitsOn': (_f, names) => `Waits on ${names}`,
+  'lists.chainAlsoWaitsOn': (_f, names) => `Also waits on ${names}`,
   'lists.stepDuration': stepDuration,
   'lists.stepScale': (f, longest) =>
     `Bars are scaled to the longest step, ${stepDuration(f, longest)}`,
