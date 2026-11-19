@@ -7,5 +7,5 @@
     "make check passes"
   ],
   "out_of_scope": "Kit changes; the rubric.",
-  "note": "Filed by the owner-review-1 rerun (Issue 2404)."
+  "note": "Filed by the owner-review-1 rerun (Issue 2404). Planned finding from expression cycle 12 (docs/v3/cycles/expression-12.md § Findings .28), appended here instead of a row of its own: a third case, n53, put its ChainView in a 3/5 column beside the plan table, leaving about 150 px blank beside the chain while the 2/5 table kept only Row and State. Shots in .evidence/v3-shots/expression-12/r0 on the dev host."
 }
