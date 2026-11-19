@@ -123,15 +123,22 @@ export const rows: readonly RowDef[] = [
     id: 'ui-value-exports',
     order: 350,
     label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
-    // 226 measured. Exact: a new value export is a row here and a consumer named for it; a lower
+    // 229 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
-    ceiling: 226,
+    ceiling: 229,
     measure: valueExports,
   },
 ]
 
 export const raises: Raises = {
   'ui-value-exports': [
+    {
+      from: 226,
+      to: 229,
+      consumer:
+        "`FileUpload`, `fileUploadVariants` and `fileUploadParts` from `basalt-ui/ui/file-upload`: the owner's second review of the playground (2026-11-19) asked for richer forms; the Forms gallery's settings form takes a logo and the inputs page shows the part (Issue 2428)",
+      repo: 'basalt-ui',
+    },
     {
       from: 222,
       to: 226,

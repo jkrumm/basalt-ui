@@ -112,5 +112,7 @@
   "useSizeClass": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "ViewTabs": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "BASALT": "argo:apps/dashboard/src/lib/error-boundary.tsx",
-  "windowKey": "linewatch:web/src/lib/queries.ts"
+  "windowKey": "linewatch:web/src/lib/queries.ts",
+  "FormSection": "basalt-ui:apps/playground/src/routes/kit/forms/-settings-form.tsx",
+  "Stepper": "basalt-ui:apps/playground/src/routes/kit/forms/-steps-form.tsx"
 }

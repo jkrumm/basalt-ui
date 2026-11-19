@@ -49,10 +49,17 @@
         "FieldLabel": "label",
         "Fieldset": "fieldset",
         "FieldsetLegend": "legend",
+        "FileUpload": "div",
+        "FileUploadErrors": "div",
+        "FileUploadHint": "div",
+        "FileUploadItem": "div",
+        "FileUploadList": "div",
+        "FileUploadZone": "div",
         "Form": "form",
         "IconTile": "div",
         "InfoHint": "div",
         "Input": "input",
+        "InputGroup": "div",
         "Inset": "div",
         "Kbd": "kbd",
         "Lozenge": "div",
@@ -390,6 +397,12 @@
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
             "message": "Form owns its height and display: eject it (basalt-ui eject field) to change them."
+          },
+          {
+            "pattern": "^FileUpload$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "FileUpload owns its height and display: eject it (basalt-ui eject file-upload) to change them."
           },
           {
             "pattern": "^Input$",
