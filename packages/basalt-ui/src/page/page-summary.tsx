@@ -78,8 +78,17 @@ export function PageSummary(props: PageSummaryProps): ReactElement {
   }
   if (tag === 'loading' || tag === 'offline' || props.sentence === undefined) {
     return (
-      <div data-slot="page-summary" aria-busy="true" className="flex min-w-0 flex-col gap-1">
-        <Skeleton className="w-3/5 text-lg" />
+      <div
+        data-slot="page-summary"
+        aria-busy="true"
+        className="@container flex min-w-0 flex-col gap-1"
+      >
+        <div className="flex flex-col text-lg">
+          <Skeleton className="w-3/5" />
+          {/* Below @regular a loaded headline wraps to three lines, so the skeleton holds three (states.md). */}
+          <Skeleton className="w-4/5 @regular:hidden" />
+          <Skeleton className="w-2/5 @regular:hidden" />
+        </div>
         {props.facts !== undefined && <Skeleton className="w-2/5 text-xs" />}
       </div>
     )

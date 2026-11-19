@@ -49,12 +49,13 @@ describe('PageSummary', () => {
     const root = document.querySelector('[data-slot="page-summary"]')
     expect(root?.getAttribute('aria-busy')).toBe('true')
     expect(screen.queryByRole('heading')).toBeNull()
-    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(1)
+    // One headline line at @regular and up, three below it: the narrow case is the tallest headline.
+    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(3)
   })
 
   test('loading keeps a facts-line skeleton when facts are expected', () => {
     render(<PageSummary phase="loading" facts={['x']} />)
-    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2)
+    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(4)
   })
 
   test('a pending query is the skeleton and a settled one shows the sentence', () => {
@@ -63,7 +64,7 @@ describe('PageSummary', () => {
     expect(document.querySelector('[data-slot="page-summary"]')?.getAttribute('aria-busy')).toBe(
       'true',
     )
-    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2)
+    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(4)
     rerender(
       <PageSummary phase={{ isPending: false, isError: false, error: null }} sentence="3 open" />,
     )
