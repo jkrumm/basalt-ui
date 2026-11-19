@@ -141,3 +141,28 @@ layout('a DataPanel sized in rows fits its phone cards', () => {
     }
   })
 })
+
+layout('a chart focus scrolls the joined row into a DataPanel body', () => {
+  for (const viewport of [WIDE, PHONE]) {
+    test(`row 12 of a fill table in a 160 px panel body comes into view at ${viewport.width}`, async () => {
+      const page = await open(viewport)
+      const read = (): Promise<{ inside: boolean; scrolled: number }> =>
+        page.raw.evaluate(() => {
+          const root = document.querySelector('[data-testid="x12-reveal"]')!
+          const scroller = root.querySelector<HTMLElement>('[data-slot="table-scroller"]')!
+          const row = root.querySelectorAll('tbody tr')[12]!.getBoundingClientRect()
+          const box = scroller.getBoundingClientRect()
+          return {
+            inside: row.top >= box.top - 1 && row.bottom <= box.bottom + 1,
+            scrolled: scroller.scrollTop,
+          }
+        })
+      expect((await read()).inside).toBe(false)
+      await page.raw.click('[data-testid="x12-reveal-set"]')
+      await page.settle()
+      const after = await read()
+      expect(after.inside).toBe(true)
+      expect(after.scrolled).toBeGreaterThan(0)
+    })
+  }
+})

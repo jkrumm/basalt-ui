@@ -21,7 +21,8 @@ box keeps the declared height in every phase. A `rows` count is table rows at th
 rows of cards (so declare the rows the desktop table needs, not the cards' height) and a shorter
 list ends at its last card. A loading frame has no cards to measure: it is that many card-high
 blocks (one 92 px card each) until a list has been measured, then the height it had; the panel
-never runs the body in loading. The box clips with `overflow: clip`, never
+never runs the body in loading. A table body with `height="fill"` takes the box's height and scrolls
+inside it, so a chart focus brings its joined row into view. The box clips with `overflow: clip`, never
 `hidden`, so a table head that sticks to the page keeps sticking.
 
 ## Signature
