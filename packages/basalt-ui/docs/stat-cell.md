@@ -4,14 +4,15 @@ use when: 'a status bar or KPI row shows one figure with its qualifier, meter, t
 never when: 'the figure stands alone as a card (use a stat card) or the rows are the content (use a list)'
 subpath: basalt-ui/cards
 peers: ['@base-ui/react']
-slots: [stat-caption, stat-cell, stat-chart, stat-empty, stat-foot, stat-meter, stat-row, stat-swatch]
+slots: [stat-base, stat-caption, stat-cell, stat-chart, stat-empty, stat-foot, stat-meter, stat-row, stat-swatch]
 ---
 
 # StatCell
 
-One cell of a `StatGroup`, or a lone cell on its own tracks: a caption (label, qualifier,
-definition glyph), the figure with its delta and verdict, then the meter, chart, rows and foot
-line it declares. Inside a group its tracks are shared with its neighbours; a track a cell does
+One cell of a `StatGroup`, or a lone cell on its own tracks: a caption (icon, label, qualifier,
+definition glyph), the figure with its delta pill and verdict, the delta's base on the line under
+the pill ("vs prior 7 days", from `delta.label`), then the meter, chart, rows and foot line it
+declares. Inside a group its tracks are shared with its neighbours; a track a cell does
 not declare is left empty, and one nobody declares collapses. It owns its height at every phase
 and its loading skeleton draws the declared shape; `chart` is called only in `ready` and `stale`,
 in a 28 px box.
@@ -26,6 +27,7 @@ StatCell(props: StatCellProps): ReactElement
   phase?: Phase | QueryStateLike
   empty?: Empty | null
   label: string
+  icon?: IconComponent  // A glyph before the label, drawn in the caption's muted ink
   swatch?: { light: string; dark: string; }  // The series colour of the mark this figure reads, drawn as a dot before the label
   qualifier?: string
   info?: string

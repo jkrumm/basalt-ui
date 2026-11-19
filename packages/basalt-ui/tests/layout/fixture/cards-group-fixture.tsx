@@ -6,8 +6,10 @@
  * Probes, each a `data-testid` box around one composite:
  * - `cg-strip-<ready|loading|stale|empty|error|forbidden|not-found|throw>`: the same six cells in a
  *   strip, one phase per strip (`throw` is a chart slot that throws);
- * - `cg-strip-230`: the six ready cells in a strip 1532 px wide, so each is 230 px, inside a
- *   horizontal scroller so the page does not widen;
+ * - `cg-strip-230`: the six ready cells in a strip 1379 px wide (the grid sits 1 px left of the
+ *   card, so it is 1380), so each is 230 px, inside a horizontal scroller so the page does not widen;
+ * - `cg-strip-fleet`: the owner's four fleet figures, each with an icon, a delta that names its
+ *   base or a verdict, and a trend: the structured strip at the page's own width;
  * - `cg-cards`, `cg-cards-one`: the cards variant with five cells and with one;
  * - `cg-panel-<ready|loading|stale|empty|error|forbidden|not-found|throw>`: one panel per phase,
  *   `throw` being a body slot that throws.
@@ -57,6 +59,53 @@ const sparkline = (height: number | 'fill'): ReactElement => (
     />
   </svg>
 )
+
+const glyph = ({ className }: { className?: string }): ReactElement => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+    <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="2" />
+  </svg>
+)
+
+const trend = (box: { height: number | 'fill' }): ReactElement => sparkline(box.height)
+const BASE = 'vs prior 7 days'
+
+/** The fleet overview's four figures, as the owner's review named them. */
+const fleet = (): StatCellElement[] => [
+  <StatCell
+    key="services"
+    icon={glyph}
+    label="Services healthy"
+    value="5 / 6"
+    status={{ tone: 'warn', label: '1 degraded' }}
+    chart={trend}
+  />,
+  <StatCell
+    key="deploys"
+    icon={glyph}
+    label="Deploys"
+    value={164}
+    delta={{ value: '+12%', polarity: 'up-good', label: BASE }}
+    chart={trend}
+  />,
+  <StatCell
+    key="failure"
+    icon={glyph}
+    label="Failure rate"
+    value="11.0"
+    unit="%"
+    delta={{ value: '+2.4 pts', polarity: 'up-bad', label: BASE }}
+    chart={trend}
+  />,
+  <StatCell
+    key="median"
+    icon={glyph}
+    label="Median duration"
+    value={174}
+    unit="s"
+    delta={{ value: '-14 s', polarity: 'up-bad', label: BASE }}
+    chart={trend}
+  />,
+]
 
 const boom = (): ReactElement => {
   throw new Error('the slot threw')
@@ -172,11 +221,16 @@ function Fixture(): ReactElement {
         tabIndex={0}
         className="overflow-x-auto focus-ring"
       >
-        <div data-testid="cg-strip-230" className="w-[1532px]">
+        <div data-testid="cg-strip-230" className="w-[1379px]">
           <StatGroup variant="strip" label="Link health, 230 px">
             {cells('ready')}
           </StatGroup>
         </div>
+      </div>
+      <div data-testid="cg-strip-fleet">
+        <StatGroup variant="strip" label="Fleet health">
+          {fleet()}
+        </StatGroup>
       </div>
       <div data-testid="cg-cards">
         <StatGroup variant="cards" label="Link health cards">

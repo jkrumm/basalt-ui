@@ -50,6 +50,27 @@ describe('dev assertions', () => {
     expect(warn).not.toHaveBeenCalled()
   })
 
+  test('a group of bare numbers warns once, naming the fix', () => {
+    render(
+      <StatGroup variant="strip" label="Fleet">
+        <StatCell label="Services" value={6} sub="1 not healthy" />
+        <StatCell label="Deploys" value={164} sub="Last 7 days" />
+      </StatGroup>,
+    )
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(String(warn.mock.calls[0]?.[0])).toContain('bare numbers')
+  })
+
+  test('one cell with a baseline is not a bare group', () => {
+    render(
+      <StatGroup variant="strip" label="Fleet">
+        <StatCell label="Services" value={6} status={{ tone: 'warn', label: '1 degraded' }} />
+        <StatCell label="Deploys" value={164} />
+      </StatGroup>,
+    )
+    expect(warn).not.toHaveBeenCalled()
+  })
+
   test('more than four rows warn once and draw the first four', () => {
     const rows = ['a', 'b', 'c', 'd', 'e'].map(row) as unknown as NonNullable<StatCellProps['rows']>
     const { container } = render(<StatCell label="Recovery" rows={rows} />)

@@ -35,9 +35,9 @@ const cellProps = (probe: Probe, chart: NonNullable<StatCellProps['chart']>): St
 /** The tracks a cell draws, as the grid rows its parts sit in. */
 const tracksOf = (root: ParentNode): string[] =>
   [...root.querySelectorAll<HTMLElement>('[data-slot^="stat-"]')]
-    .map((el) => el.className.match(/row-start-(\d)/)?.[1] ?? '')
+    .map((el) => el.className.match(/row-start-(\d+)/)?.[1] ?? '')
     .filter(Boolean)
-    .toSorted()
+    .toSorted((a, b) => Number(a) - Number(b))
 
 describe('StatCell phase matrix', () => {
   test('every phase prints its own data-phase', () => {
@@ -51,7 +51,7 @@ describe('StatCell phase matrix', () => {
   test('every phase reserves the same declared tracks, so the height holds', () => {
     const ready = render(<StatCell {...cellProps('ready', () => null)} />)
     const expected = tracksOf(ready.container).filter((t, i, all) => all.indexOf(t) === i)
-    expect(expected).toEqual(['1', '2', '3', '4', '5', '6', '9'])
+    expect(expected).toEqual(['1', '2', '4', '5', '6', '7', '10'])
     cleanup()
     for (const probe of PHASES) {
       const { container } = render(<StatCell {...cellProps(probe, () => null)} />)
@@ -126,8 +126,8 @@ describe('StatCell phase matrix', () => {
   test('empty.cause spans the meter, chart and row tracks when the cell declares them', () => {
     const { container } = render(<StatCell {...cellProps('empty', () => null)} />)
     const span = container.querySelector('[data-slot="stat-empty"]')
-    expect(span?.className).toContain('row-start-3')
-    expect(span?.className).toContain('row-end-9')
+    expect(span?.className).toContain('row-start-4')
+    expect(span?.className).toContain('row-end-10')
     expect(span?.textContent).toContain('No readings yet')
   })
 
@@ -215,7 +215,7 @@ describe('StatCell phase matrix', () => {
     const cells = container.querySelectorAll('[data-phase]')
     expect(cells).toHaveLength(2)
     for (const cell of cells) {
-      expect(cell.className).toContain('row-span-9')
+      expect(cell.className).toContain('row-span-10')
       expect(cell.className).toContain('grid-rows-subgrid')
     }
   })

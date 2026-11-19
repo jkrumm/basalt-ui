@@ -32,7 +32,7 @@ const warned = new Set<string>()
  * Dev only: says once per page load, per key, that a card broke a density rule. The gate is the
  * literal `process.env.NODE_ENV` read, so a bundler folds the whole body away in production.
  */
-export function warnOnce(key: 'controls' | 'rows' | 'depth', message: string): void {
+export function warnOnce(key: 'controls' | 'rows' | 'depth' | 'bare', message: string): void {
   if (process.env.NODE_ENV === 'production' || warned.has(key)) return
   warned.add(key)
   console.warn(message)

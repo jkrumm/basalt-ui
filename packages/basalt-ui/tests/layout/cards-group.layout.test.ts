@@ -145,6 +145,99 @@ layout('StatGroup strip on a phone', () => {
   })
 })
 
+const DESKTOP_1800: Viewport = { name: 'desktop', width: 1800, height: 1200 }
+
+/** One cell's box, its rules and its figure's overflow, read in the page. */
+type RuledCell = {
+  left: number
+  top: number
+  ruleLeft: string
+  ruleTop: string
+  ruleColour: string
+  ink: string
+  figureClipped: boolean
+  base: string | null
+  pill: string | null
+}
+
+async function ruledCells(
+  page: LayoutPage,
+  id: string,
+): Promise<{ card: Rect; cells: RuledCell[] }> {
+  return page.raw.evaluate((probe) => {
+    const root = document.querySelector(`[data-testid="${probe}"]`)!
+    const c = root.querySelector('[data-slot="card"]')!.getBoundingClientRect()
+    const cells = [...root.querySelectorAll('[data-phase][role="group"]')].map((el) => {
+      const r = el.getBoundingClientRect()
+      const style = getComputedStyle(el)
+      const figure = el.querySelector('[data-slot="stat-figure"] > span') as HTMLElement
+      return {
+        left: r.left,
+        top: r.top,
+        ruleLeft: style.borderLeftWidth,
+        ruleTop: style.borderTopWidth,
+        ruleColour: style.borderLeftColor,
+        ink: style.color,
+        figureClipped: figure.scrollWidth > figure.clientWidth + 1,
+        base: el.querySelector('[data-slot="stat-base"]')?.textContent ?? null,
+        pill:
+          el.querySelector('[data-slot="stat-figure"] [data-slot="delta-badge"]')?.textContent ??
+          null,
+      }
+    })
+    return {
+      card: { left: c.left, top: c.top, bottom: c.bottom, height: c.height, width: c.width },
+      cells,
+    }
+  }, id)
+}
+
+layout('StatGroup strip: ruled cells at 1800 and 390', () => {
+  for (const [viewport, perLine] of [
+    [DESKTOP_1800, 4],
+    [PHONE, 2],
+  ] as const) {
+    for (const scheme of [undefined, 'dark'] as const) {
+      test(`${viewport.width}${scheme ? ` ${scheme}` : ''}: ${perLine} cells a line, a hairline only between cells`, async () => {
+        const page = await open(viewport, scheme)
+        const { card, cells } = await ruledCells(page, 'cg-strip-fleet')
+        expect(cells).toHaveLength(4)
+        const lines = [...new Set(cells.map((c) => Math.round(c.top)))]
+        expect(lines, 'lines of cells').toHaveLength(4 / perLine)
+        cells.forEach((cell, i) => {
+          expect(cell.ruleLeft, `cell ${i} left rule`).toBe('1px')
+          expect(cell.ruleTop, `cell ${i} top rule`).toBe('1px')
+          expect(cell.ruleColour, `cell ${i} rule is a hairline, not ink`).not.toBe(cell.ink)
+          // The first cell of a line sits 1 px left of the card, which clips its left rule.
+          const first = i % perLine === 0
+          if (first) near(cell.left, card.left - 1, `cell ${i} starts the line`)
+          else
+            expect(cell.left, `cell ${i} is ruled off its neighbour`).toBeGreaterThan(card.left + 1)
+          // The first line's top rule is clipped the same way; a later line is ruled off the one above.
+          if (i < perLine) near(cell.top, card.top - 1, `cell ${i} is on the first line`)
+          else
+            expect(cell.top, `cell ${i} is ruled off the line above`).toBeGreaterThan(card.top + 1)
+        })
+      })
+    }
+
+    test(`${viewport.width}: every figure is whole and every delta names its base under the pill`, async () => {
+      const page = await open(viewport)
+      const { cells } = await ruledCells(page, 'cg-strip-fleet')
+      for (const [i, cell] of cells.entries()) {
+        expect(cell.figureClipped, `cell ${i} figure is truncated`).toBe(false)
+        if (i === 0) continue
+        expect(cell.base, `cell ${i} base line`).toBe('vs prior 7 days')
+        expect(cell.pill ?? '', `cell ${i} pill stays short`).not.toContain('vs prior')
+      }
+      const bases = await rects(page, 'cg-strip-fleet', '[data-slot="stat-base"]')
+      const onFirstLine = bases.filter((b) => Math.abs(b.top - bases[0]!.top) <= 1)
+      for (const base of onFirstLine)
+        near(base.top, onFirstLine[0]!.top, 'base lines share a track')
+    })
+  }
+})
+
 layout('StatGroup, StatCell and DataPanel', () => {
   for (const viewport of VIEWPORTS) {
     describe(`${viewport.name} ${viewport.width}`, () => {
@@ -177,9 +270,10 @@ layout('StatGroup, StatCell and DataPanel', () => {
         const caption = (await rects(page, 'cg-strip-230', '[data-slot="stat-caption"]'))[0]!
         const figure = (await rects(page, 'cg-strip-230', '[data-slot="stat-figure"]'))[0]!
         near(figure.top, caption.top + 16, 'the figure track starts under a 16 px caption')
-        near(figure.height, 32, 'figure track')
-        // 16 + 32 + meter 34 + chart 28 + 4 rows of 20 + foot 16.
-        near(cells[0]!.height, 16 + 32 + 34 + 28 + 80 + 16, 'a fully declared strip')
+        near(figure.height, 36, 'figure track, at the hero size from @regular')
+        // The top rule 1 and padding 12, caption 16, figure 36, no base line (no delta names one),
+        // meter 4 + 34, chart 4 + 28, four rows of 20, foot 16, padding 12.
+        near(cells[0]!.height, 1 + 12 + 16 + 36 + 38 + 32 + 80 + 16 + 12, 'a fully declared strip')
       })
 
       for (const kind of ['strip', 'panel'] as const) {

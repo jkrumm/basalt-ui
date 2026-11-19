@@ -32,15 +32,16 @@ export type StatGroupProps = {
 }
 
 /**
- * Every cell's tracks are one set of rows: nine, in the order caption, figure, meter, chart, four
- * rows and a foot line. A cell is `row-span-9` on a subgrid, so a track one cell fills is as tall
- * in all of them and a track nobody fills is 0 px. Rows have no gap; the space between wrapped
- * lines is the cells' bottom margin, which the last line gives back. In a narrow container (under
- * `@regular`, 30 rem) the tracks are 8 rem, so a phone lays out two stats per line; from `@regular`
- * they are 12 rem.
+ * Every cell's tracks are one set of rows: ten, in the order caption, figure, the delta's base,
+ * meter, chart, four rows and a foot line. A cell is `row-span-10` on a subgrid, so a track one cell
+ * fills is as tall in all of them and a track nobody fills is 0 px. Each cell is ruled on its left
+ * and top and carries its own padding; the grid sits 1 px up and left of the card, which clips the
+ * outer rules, so a hairline only ever divides two cells. In a narrow container (under `@regular`,
+ * 30 rem) the tracks are 8 rem, so a phone lays out two stats per line, ruled both ways; from
+ * `@regular` they are 12 rem.
  */
 const STRIP =
-  'relative grid -mb-3 grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-x-6 @regular:grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))]'
+  'relative -mt-px -ml-px grid grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] @regular:grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))]'
 
 /**
  * One card per cell on auto-fit tracks: two to a line (9 rem and up) in a narrow container, 14 rem
@@ -51,18 +52,19 @@ const CARDS =
   'relative grid -mx-1 -mt-1 -mb-4 grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))] p-1 gap-x-3 @regular:grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))]'
 
 /**
- * A row of `StatCell`s on shared tracks. `strip` draws them on one surface for the dense status bar
- * of a dashboard; `cards` draws one card each with the headline bands aligned across them, two to a line
- * in a narrow container. A cell fills the tracks it
- * declares and the rest collapse, so a loading cell is already its final height.
+ * A row of `StatCell`s on shared tracks. `strip` draws them on one surface, ruled into cells, for
+ * the status bar of a dashboard; `cards` draws one card each with the headline bands aligned across
+ * them, two to a line in a narrow container. A cell fills the tracks it declares and the rest
+ * collapse, so a loading cell is already its final height. Every cell carries a baseline: a delta
+ * naming its base, a verdict, a meter or a trend; a group of bare numbers warns in development.
  *
  * @useWhen a page shows several headline figures side by side, a status bar or a row of KPIs
- * @neverWhen there is one figure (use a stat card) or the figures need a chart each (use chart cards)
+ * @neverWhen there is one figure (use a stat card), the figures are bare counts (put them in the footer of the card they belong to) or need a chart each (use chart cards)
  *
  * @example
- * <StatGroup variant="strip" label="Link health">
- *   <StatCell label="Downstream" value={412} unit="Mbit/s" phase={query} />
- *   <StatCell label="Upstream" value={44} unit="Mbit/s" phase={query} />
+ * <StatGroup variant="strip" label="Fleet health">
+ *   <StatCell icon={Rocket} label="Deploys" value={164} delta={{ value: '+12%', polarity: 'up-good', label: 'vs prior 7 days' }} chart={perDay} phase={query} />
+ *   <StatCell icon={Clock} label="Median duration" value={174} unit="s" delta={{ value: '-14 s', polarity: 'up-bad', label: 'vs prior 7 days' }} phase={query} />
  * </StatGroup>
  */
 export function StatGroup({ variant, label, children }: StatGroupProps): ReactElement {
@@ -73,6 +75,7 @@ export function StatGroup({ variant, label, children }: StatGroupProps): ReactEl
       `A StatGroup sits ${depth} frames deep (over ${MAX_DEPTH}). Lay the frames out side by side instead of nesting them.`,
     )
   }
+  warnBare(children)
   const shared = sharedFailure(children)
   const message =
     shared === null ? null : <GroupMessage failure={shared} label={label} variant={variant} />
@@ -92,6 +95,30 @@ export function StatGroup({ variant, label, children }: StatGroupProps): ReactEl
         </StatGroupCollapsedContext.Provider>
       </StatGroupContext.Provider>
     </FrameDepthContext.Provider>
+  )
+}
+
+/**
+ * Dev only: a group of two or more cells where none carries a delta, a verdict, a meter or a chart
+ * is a row of bare numbers, which reads as four figures on a band and compares nothing.
+ */
+function warnBare(children: ReactNode): void {
+  if (process.env.NODE_ENV === 'production') return
+  const cells = Children.toArray(children).flatMap((child) =>
+    isValidElement<StatCellProps>(child) ? [child.props] : [],
+  )
+  if (cells.length < 2) return
+  const bare = cells.every(
+    (cell) =>
+      cell.delta === undefined &&
+      cell.status === undefined &&
+      cell.meter === undefined &&
+      cell.chart === undefined,
+  )
+  if (!bare) return
+  warnOnce(
+    'bare',
+    `A StatGroup of ${cells.length} cells shows bare numbers: give each cell a delta that names its base, a status, a meter or a trend, or put the counts in the footer of the card they belong to.`,
   )
 }
 
@@ -169,7 +196,7 @@ function GroupMessage({
   return variant === 'strip' ? (
     <div
       data-slot="stat-group-message"
-      className="absolute inset-x-0 top-4 flex h-8 min-w-0 items-center"
+      className="absolute inset-x-0 top-7 mt-px flex h-8 min-w-0 items-center px-(--card-edge) @regular:h-9"
     >
       {line}
     </div>
@@ -195,7 +222,7 @@ type BodyProps = {
 function StripGroup({ label, message, children }: BodyProps): ReactElement {
   return (
     <div data-slot="stat-group" data-variant="strip" className="@container min-w-0">
-      <Card flush className="px-(--card-edge) py-3">
+      <Card flush>
         {/* The explicit role is deliberate: a `fieldset` carries form semantics and a UA border. */}
         {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
         <div role="group" aria-label={label} className={STRIP}>
