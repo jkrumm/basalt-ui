@@ -18,8 +18,8 @@ import {
   warnOnce,
 } from './stat-group-shared'
 
-/** The row height a `{ rows }` body is declared in until the table's row token is read: the normal density. */
-const DEFAULT_ROW = 40
+/** The row height a `{ rows }` body is declared in until the table's row token is read: the `:root` default (dense) density, 2rem. */
+const DEFAULT_ROW = 32
 
 /**
  * The phase arms (error, empty) are laid out for 96 px, so a panel never draws a body shorter than
