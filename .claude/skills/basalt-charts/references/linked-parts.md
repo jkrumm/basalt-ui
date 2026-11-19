@@ -1,6 +1,6 @@
 # Linked parts
 
-A chart and the list of the same items beside it, one focus. The list scrolls in its own region at the chart's height at a wide container and stacks under the chart at a narrow one; its `onPointerLeave` clears the focus, so the gap between rows never flashes the unfocused state; the kit dims, so the page sets no opacity.
+A chart and the list of the same items beside it, one focus (a form laid out along time or a chain, `IntervalTrack` or `ChainView`, takes the row's full width with the list below it on the same focus: see [charts](../../basalt-design/references/charts.md) § One view). The list scrolls in its own region at the chart's height at a wide container and stacks under the chart at a narrow one; its `onPointerLeave` clears the focus, so the gap between rows never flashes the unfocused state; the kit dims, so the page sets no opacity.
 
 A container query reads an ancestor, never the element itself: `@container` sits on a parent of the grid that carries `@wide:grid-cols-2`, so the two columns form (n18 found `@container` and `@wide:` on one element and wrapped the grid; every page that copies the snippet inherits the order it shows).
 
