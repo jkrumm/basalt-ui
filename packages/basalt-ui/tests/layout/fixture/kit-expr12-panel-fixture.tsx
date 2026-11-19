@@ -7,6 +7,7 @@ import { createRoot } from 'react-dom/client'
 import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
 import { DataPanel } from '../../../src/cards/data-panel'
+import { useChartFocus } from '../../../src/charts/focus'
 import { col } from '../../../src/table/core/kinds'
 import { DataTable } from '../../../src/table/parts/data-table'
 import { useDataTable } from '../../../src/table/use-data-table'
@@ -115,6 +116,38 @@ function Switch(): ReactElement {
   )
 }
 
+type Hour = { id: string; name: string }
+const HOURS: readonly Hour[] = Array.from({ length: 14 }, (_, i) => ({
+  id: `h${i}`,
+  name: `Hour ${i}`,
+}))
+const ch = col<Hour>()
+
+function Reveal(): ReactElement {
+  const focus = useChartFocus(HOURS, { announce: (d) => d.name })
+  const table = useDataTable<Hour>({
+    id: 'x12-reveal',
+    label: 'Hours',
+    columns: [ch.entity('name', { header: 'Hour', priority: 1 })],
+    data: HOURS,
+    getRowId: (r) => r.id,
+    mode: { kind: 'client' },
+  })
+  return (
+    <div data-testid="x12-reveal" className="min-w-0">
+      <button type="button" data-testid="x12-reveal-set" onClick={() => focus.set(12)}>
+        Focus hour 12
+      </button>
+      <DataPanel
+        title="Hours"
+        phase="ready"
+        bodySize={{ height: 160 }}
+        body={() => <DataTable table={table} focus={focus} height="fill" />}
+      />
+    </div>
+  )
+}
+
 function Fixture(): ReactElement {
   return (
     <main lang="en" className="flex flex-col gap-8 p-4 text-foreground">
@@ -135,6 +168,7 @@ function Fixture(): ReactElement {
         />
       </div>
       <Switch />
+      <Reveal />
       <Bills state="ready" />
       <Bills state="loading" />
       <Bills state="empty" />

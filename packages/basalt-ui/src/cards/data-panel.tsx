@@ -281,7 +281,8 @@ function PanelHead(
  * rows of cards (so declare the rows the desktop table needs, not the cards' height) and a shorter
  * list ends at its last card. A loading frame has no cards to measure: it is that many card-high
  * blocks (one 92 px card each) until a list has been measured, then the height it had; the panel
- * never runs the body in loading. The box clips with `overflow: clip`, never
+ * never runs the body in loading. A table body with `height="fill"` takes the box's height and scrolls
+ * inside it, so a chart focus brings its joined row into view. The box clips with `overflow: clip`, never
  * `hidden`, so a table head that sticks to the page keeps sticking.
  *
  * @useWhen a page needs the card frame around a table, a row list or a board, with a header, controls and a legend
@@ -359,7 +360,7 @@ export function DataPanel(props: DataPanelProps): ReactElement {
                   {(box) => (
                     <div
                       data-slot="data-panel-rows"
-                      className="overflow-clip"
+                      className="h-full overflow-clip"
                       style={fit === undefined ? undefined : { height: fit }}
                     >
                       {body(box)}
