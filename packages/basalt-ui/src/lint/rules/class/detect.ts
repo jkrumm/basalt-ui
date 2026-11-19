@@ -11,6 +11,7 @@ import {
   mergeVisitors,
   topLevelConsts,
 } from '../../factory'
+import { zoneANames } from '../../generated/zone-a'
 import type { AstForm, ClassForm } from '../../rule-table'
 
 /** Calls whose first argument is a media query string. */
@@ -1145,6 +1146,71 @@ export function borderedCard(tokens: readonly string[], element?: string): strin
   if (radius === undefined || third === undefined || border === undefined) return undefined
   if (tokens.some((token) => /^border-(?:dashed|dotted)$/.test(token))) return undefined
   return `${radius} ${border} ${third}`
+}
+
+/** The roles a bar is painted in: every earned colour but the neutral line, the ring and brand ink. */
+const NEUTRAL_ROLE = /^(?:line|ring|on-brand)$/
+/** The hues a bar is painted in: the status, brand and chart roles, a palette step or an arbitrary colour. */
+const STRIPE_HUE =
+  `${zoneANames
+    .filter((name) => !NEUTRAL_ROLE.test(name))
+    .toSorted((a, b) => b.length - a.length)
+    .join('|')}|` +
+  '(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\\d+|' +
+  '\\[(?:#|rgb|hsl|oklch|color)[^\\]]*\\]|\\((?:color:)?--[\\w-]+\\)'
+/** A border on one inline side (`border-l`, `border-s-2`, `border-e-[3px]`), under any variant. */
+const ONE_SIDE_WIDTH = /^(?:.*:)?!?border-[lrse](?:-(?:\d+|\[[^\]]+\]))?!?$/
+const BORDER_HUE = new RegExp(`^(?:.*:)?!?border(?:-[lrse])?-(?:${STRIPE_HUE})(?:\\/[^\\s!]+)?!?$`)
+/** A pointer, focus or drag variant: a splitter or a focus mark that lights while it is used, not a resting bar. */
+const IN_USE = /(?:^|[-:])(?:hover|focus|active|dragging|drag)(?=[:\]/-])/
+
+const pseudoBar = (tokens: readonly string[], at: 'before' | 'after'): string | undefined => {
+  const own = (pattern: string): string | undefined =>
+    tokens.find((token) => new RegExp(`^(?:[^:\\s]+:)*${at}:!?${pattern}!?$`).test(token))
+  const full = own('(?:inset-y-0|h-full)') ?? (own('top-0') && own('bottom-0'))
+  const width = own('w-(?:px|0\\.5|1|1\\.5|2|\\[\\d+(?:\\.\\d+)?px\\])')
+  const edge = own('(?:left|right|start|end|inset-s|inset-e)-0')
+  const fill = tokens.find(
+    (token) =>
+      new RegExp(`^(?:[^:\\s]+:)*${at}:!?bg-(?:${STRIPE_HUE})(?:\\/[^\\s!]+)?!?$`).test(token) &&
+      !IN_USE.test(token),
+  )
+  if (full === undefined || width === undefined || edge === undefined || fill === undefined)
+    return undefined
+  return `${fill} ${width}`
+}
+
+/**
+ * `side-stripe`, whole-string form: a coloured bar on one inline edge of an element, the "AI slop"
+ * accent the owner rejected on cards, rows, toasts and nodes (2026-11-19). Two shapes: a one-side
+ * border width (`border-l-2`, `border-s`) beside a hue on a border (`border-warn`,
+ * `data-active:border-s-brand`), or a `before:`/`after:` bar that is full height, narrow (`w-px`
+ * to `w-2`), pinned to a side and filled with a hue. A hue is a status, brand, chart or sequential
+ * role, a Tailwind palette step or an arbitrary colour; a neutral rule (`border-s border-border`, a
+ * divider) and a top or bottom rule (a tab underline) pass, as does a pseudo bar lit only under a
+ * hover, focus or drag variant (a splitter's line). Known limit: a stripe split across two class
+ * strings (`cn(base, active && 'border-brand')`) and an inset box-shadow stripe are not read.
+ */
+export function sideStripe(tokens: readonly string[]): string | undefined {
+  const width = tokens.find((token) => ONE_SIDE_WIDTH.test(token))
+  const hue = tokens.find((token) => BORDER_HUE.test(token))
+  if (width !== undefined && hue !== undefined) return `${width} ${hue}`
+  return pseudoBar(tokens, 'before') ?? pseudoBar(tokens, 'after')
+}
+
+/** A whole-string form that runs at every profile, bridge included. */
+export function wholeString(
+  base: Omit<ClassForm, 'pattern'>,
+  whole: (tokens: readonly string[]) => string | undefined,
+): AstForm {
+  return {
+    ...base,
+    detect: ({ report }) =>
+      classStringVisitor((node, text) => {
+        const subject = whole(classTokens(text))
+        if (subject !== undefined) report(node, subject)
+      }),
+  }
 }
 
 const nameOf = (node: Node | undefined): string | undefined =>

@@ -19,7 +19,7 @@ describe('ToastHost', () => {
     await act(async () => {})
     expect(toasts()).toHaveLength(1)
     expect(toasts()[0]?.textContent).toContain('Saved')
-    expect(toasts()[0]?.className).toContain('border-s-good')
+    expect(toasts()[0]?.className).toContain('before:bg-good')
   })
 
   test('title and message both render, and an error takes the bad tone', async () => {
@@ -31,7 +31,7 @@ describe('ToastHost', () => {
     expect(document.querySelector('[data-slot="toast-description"]')?.textContent).toBe(
       'Upload failed',
     )
-    expect(toasts()[0]?.className).toContain('border-s-bad')
+    expect(toasts()[0]?.className).toContain('before:bg-bad')
   })
 
   test('the viewport is a named, polite region hidden in print; an error mirrors into role=alert', async () => {

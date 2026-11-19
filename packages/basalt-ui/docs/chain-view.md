@@ -12,7 +12,7 @@ slots: [chain-edge, chain-graph, chain-list, chain-list-node, chain-node, chain-
 A dependency chain: nodes that wait on other nodes, drawn left to right with each blocker left
 of what waits on it. An edge from an open node is solid in the warn hue and reads "blocks", one
 from a done node is dashed and reads "done", and a node waiting on an open blocker carries the
-warn bar. The graph scrolls sideways inside the scroll primitive; below 480 px of container it
+warn outline. The graph scrolls sideways inside the scroll primitive; below 480 px of container it
 is a nested list instead, each node under the first node it waits on with the rest named. It
 shares a `focus` with a `DataTable` over the same records, so a node and its row are one item.
 The layout is the kit's own (no dependency): it never pans or zooms, and nodes do not move.

@@ -108,7 +108,8 @@ export function TabsList({ className, ...props }: TabsListProps): ReactElement {
 export type TabsTriggerProps = Omit<BaseTabs.Tab.Props, 'className'> & LayoutClass
 
 /**
- * One tab. The active tab takes the ink colour and a brand underline (`segment`: a raised face); a
+ * One tab. The active tab takes the ink colour and a brand underline, or the selected fill when the
+ * list is vertical (`segment`: a raised face); a
  * disabled tab stays reachable by the arrow keys (it cannot be activated), as the WAI-ARIA tabs pattern asks.
  *
  * @example
@@ -124,7 +125,7 @@ export function TabsTrigger({ className, ...props }: TabsTriggerProps): ReactEle
         'relative inline-flex shrink-0 cursor-pointer items-center gap-1.5 px-3 font-medium whitespace-nowrap text-muted-foreground select-none focus-ring focus-visible:-outline-offset-2 transition-colors hover:text-foreground data-active:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 motion-reduce:transition-none',
         look === 'segment'
           ? 'h-[calc(var(--tabs-h)-0.25rem)] justify-center rounded-[calc(var(--radius-ctrl)-2px)] data-active:bg-secondary data-active:shadow-raised forced-colors:border forced-colors:border-current forced-colors:data-active:border-2'
-          : 'h-(--tabs-h) -mb-px border-b-2 border-transparent data-active:border-brand data-[orientation=vertical]:mr-[-1px] data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:border-r-2 data-[orientation=vertical]:border-b-0',
+          : 'h-(--tabs-h) -mb-px border-b-2 border-transparent data-active:border-brand data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:rounded-ctrl data-[orientation=vertical]:border-b-0 data-[orientation=vertical]:data-active:bg-selected',
         className,
       )}
     />

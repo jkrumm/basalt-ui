@@ -1,5 +1,5 @@
 /**
- * The class-rule family: seven ids, twenty-one enabled forms and one built-but-off form, all data
+ * The class-rule family: seven ids, twenty-two enabled forms and one built-but-off form, all data
  * (guardrails section 4, rows 1-7). The factory turns each entry into an oxlint/ESLint rule; this
  * module holds the patterns, the fix each message names and the next rung of the bending ladder.
  *
@@ -19,6 +19,8 @@ import {
   partsOnlyExceptSeamMark,
   partsOnlyExceptStyleVar,
   schemeForkForm,
+  sideStripe,
+  wholeString,
 } from './detect'
 
 const ALL: readonly Profile[] = ['bridge', 'parts', 'app', 'repo']
@@ -375,6 +377,16 @@ export const CLASS_RULES = defineRules({
         next: 'A reasoned waiver',
         fixture: 'class/tw-off-law/fixed-width.tsx',
       }),
+      // Every profile and zone but vendored: a primitive owns its colour roles, never a stripe.
+      wholeString(
+        {
+          id: 'side-stripe',
+          fix: 'Say the state with Status, a Badge or the tone of the whole border, never a coloured bar on one edge',
+          next: 'A reasoned waiver',
+          fixture: 'class/tw-off-law/side-stripe.tsx',
+        },
+        sideStripe,
+      ),
       {
         id: 'track-length',
         // A grid track list with a fixed length, explicit (`grid-rows-[…]`) or implicit

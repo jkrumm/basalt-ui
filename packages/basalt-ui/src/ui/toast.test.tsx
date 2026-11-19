@@ -35,13 +35,13 @@ describe('toast module', () => {
     }
   })
 
-  test('the toast carries its own title and description, and the tone picks the edge', () => {
+  test('the toast carries its own title and description, and the tone picks the dot', () => {
     render(<Stack tone="bad" />)
     expect(document.querySelector('[data-slot="toast-title"]')?.textContent).toBe('Saved')
     expect(document.querySelector('[data-slot="toast-description"]')?.textContent).toBe(
       'Project renamed.',
     )
-    expect(document.querySelector('[data-slot="toast"]')?.className).toContain('border-s-bad')
+    expect(document.querySelector('[data-slot="toast"]')?.className).toContain('before:bg-bad')
   })
 
   test('toast.viewport and toast.dismiss come from the catalog and an override replaces them', () => {

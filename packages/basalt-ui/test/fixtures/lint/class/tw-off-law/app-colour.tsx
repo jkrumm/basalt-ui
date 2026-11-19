@@ -12,7 +12,7 @@
 import { useChartFocus } from 'basalt-ui/charts'
 
 export const a = (
-  <div className="border-l-4 border-bad text-good bg-brand shadow-line bg-good-tint bg-current" />
+  <div className="border border-bad text-good bg-brand shadow-line bg-good-tint bg-current" />
 )
 
 export const banner = <div className="bg-brand-fill" />

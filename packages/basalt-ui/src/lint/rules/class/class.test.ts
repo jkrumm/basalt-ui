@@ -108,6 +108,7 @@ describe('input to id', () => {
       code: `export const a = <div className="border-l-4 border-bad" />`,
       ruleId: 'basalt/tw-off-law',
       messageId: 'app-colour',
+      also: [{ ruleId: 'basalt/tw-off-law', messageId: 'side-stripe' }],
     },
     {
       input: `['gap-4.5','flex']`,
@@ -193,6 +194,7 @@ describe('forms', () => {
     'template-interpolation': 'cva variant',
     'fixed-width': 'Parent-owned width',
     'track-length': 'minmax(0,1fr)',
+    'side-stripe': 'tone of the whole border',
     'space-between': 'gap-',
     margin: 'gap-',
     padding: 'Inset',
@@ -201,7 +203,7 @@ describe('forms', () => {
     entry.forms.map((form) => ({ id, form })),
   )
 
-  it('is twenty-one enabled forms in seven ids, plus the padding form', () => {
+  it('is twenty-two enabled forms in seven ids, plus the padding form', () => {
     expect(Object.keys(CLASS_RULES)).toEqual([
       'viewport-keyed',
       'dark-fork',
@@ -211,8 +213,8 @@ describe('forms', () => {
       'tw-off-law',
       'app-spacing',
     ])
-    expect(all.filter(({ form }) => isEnabled(form))).toHaveLength(21)
-    expect(all).toHaveLength(22)
+    expect(all.filter(({ form }) => isEnabled(form))).toHaveLength(22)
+    expect(all).toHaveLength(23)
   })
 
   it('runs viewport-keyed, dark-fork, fixed-colour and status-fill-as-text from bridge up', () => {
