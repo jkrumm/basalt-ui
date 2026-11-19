@@ -1,8 +1,11 @@
 /**
  * ChainView and nested rows in real Chrome at 1800 and 390, over one dataset with a shared focus:
- * at 1800 the chain draws a fan-out, a fan-in and a blocked node with every edge ending on its
- * node's left side and no two nodes overlapping, pointing at a node marks its table row, and the
- * nested table indents three levels by its own lead. At 390 the chain is the nested list, the
+ * at 1800 the chain draws a fan-out, a fan-in and a blocked node with every edge leaving its
+ * blocker's right-middle port and ending on its node's left-middle port, no two nodes overlapping,
+ * pointing at a node marks its table row, and the nested table indents three levels by its own
+ * lead. A generated chain of 12 columns opens fitted to its frame's width at the half-size floor,
+ * zooms by key and by Ctrl with the wheel around the pointer, pans by a drag on empty canvas, and
+ * holds one node's trace in focus mode until Show all. At 390 the chain is the nested list, the
  * table is cards that step in by level, and nothing scrolls sideways. Axe clean at both.
  *
  * Self-contained like `table-group`: the fixture CSS is compiled with the Tailwind CLI into a temp
@@ -35,6 +38,7 @@ const REPO_ROOT = join(import.meta.dirname, '..', '..', '..', '..')
 const EMPTY_SPEC = { sections: [] } as FixtureSpec
 const WIDE: Viewport = { name: 'wide', width: 1800, height: 1000 }
 const CHAIN = '[data-testid="cv-chain"]'
+const LARGE = '[data-testid="cv-large"]'
 const TABLE = '[data-testid="cv-table"] [data-slot="table-root"]'
 
 let documentPath = ''
@@ -129,17 +133,27 @@ layout('ChainView and nested rows', () => {
           }
         },
       )
-      const svg = graph.querySelector('svg')!.getBoundingClientRect()
-      const edges = [...graph.querySelectorAll<SVGGElement>('[data-slot="chain-edge"]')].map(
-        (g) => {
-          const arrow = g.querySelectorAll('path')[1]!.getBoundingClientRect()
-          return { state: g.dataset['state']!, tipX: arrow.right, tipY: arrow.y + arrow.height / 2 }
+      const screen = (path: SVGPathElement, at: number) => {
+        const point = path.getPointAtLength(at).matrixTransform(path.getScreenCTM()!)
+        return { x: point.x, y: point.y }
+      }
+      const edges = [...graph.querySelectorAll<SVGPathElement>('[data-slot="chain-edge"]')].map(
+        (path) => {
+          const tip = screen(path, path.getTotalLength())
+          const tail = screen(path, 0)
+          return {
+            state: path.dataset['state']!,
+            tipX: tip.x,
+            tipY: tip.y,
+            tailX: tail.x,
+            tailY: tail.y,
+            marker: path.getAttribute('marker-end') ?? '',
+          }
         },
       )
       return {
         graphShown: graph.getBoundingClientRect().height > 0,
         listShown: list.getBoundingClientRect().height > 0,
-        svgX: svg.x,
         nodes,
         edges,
       }
@@ -148,13 +162,22 @@ layout('ChainView and nested rows', () => {
     expect(m.listShown).toBe(false)
     expect(m.nodes).toHaveLength(8)
     expect(m.edges).toHaveLength(11)
-    // Every edge's arrow tip touches the left side of exactly one node, inside its height.
+    // Every edge ends on the left-middle port of exactly one node and starts on the right-middle
+    // port of another, under an arrowhead marker.
+    const middle = (n: { y: number; h: number }) => n.y + n.h / 2
     const targets = m.edges.map((e) =>
       m.nodes
-        .filter((n) => Math.abs(n.x - e.tipX) <= 1.5 && e.tipY > n.y && e.tipY < n.y + n.h)
+        .filter((n) => Math.abs(n.x - e.tipX) <= 1.5 && Math.abs(middle(n) - e.tipY) <= 1.5)
         .map((n) => n.id),
     )
     for (const t of targets) expect(t).toHaveLength(1)
+    for (const e of m.edges) {
+      const sources = m.nodes.filter(
+        (n) => Math.abs(n.x + n.w - e.tailX) <= 1.5 && Math.abs(middle(n) - e.tailY) <= 1.5,
+      )
+      expect(sources).toHaveLength(1)
+      expect(e.marker).toMatch(/^url\(#.+-(blocks|done)\)$/)
+    }
     const into = (id: string) => targets.filter((t) => t[0] === id).length
     expect(into('f')).toBe(3) // fan-in
     expect(into('h')).toBe(2)
@@ -246,6 +269,110 @@ layout('ChainView and nested rows', () => {
       'the chain and the nested table',
       PHONE,
     )
+  })
+
+  test('1800: a chain wider than its frame opens fitted at the half-size floor, never past the visible height', async () => {
+    const page = await open(WIDE)
+    const m = await page.raw.evaluate((sel) => {
+      const graph = document.querySelector<HTMLElement>(`${sel} [data-slot="chain-graph"]`)!
+      const frame = graph.querySelector<HTMLElement>('[data-slot="scroll-area"]')!
+      const list = graph.querySelector<HTMLElement>('ul')!
+      return {
+        zoom: Number(graph.dataset['zoom']),
+        fitted: graph.dataset['fitted'] !== undefined,
+        frameW: frame.clientWidth,
+        frameH: frame.getBoundingClientRect().height,
+        graphW: list.offsetWidth,
+        canvasW: frame.querySelector<HTMLElement>('[data-slot="chain-canvas"]')!.offsetWidth,
+        room: window.innerHeight,
+      }
+    }, LARGE)
+    expect(m.fitted).toBe(true)
+    expect(m.zoom).toBeCloseTo(Math.max(0.5, Math.min(1, m.frameW / m.graphW)), 2)
+    expect(Math.abs(m.canvasW - m.graphW * m.zoom)).toBeLessThanOrEqual(2)
+    expect(m.frameH).toBeLessThanOrEqual(m.room)
+    // Above the floor the whole width is in view.
+    if (m.zoom > 0.5) expect(m.canvasW).toBeLessThanOrEqual(m.frameW + 1)
+  })
+
+  test('1800: +, - and 0 zoom from the frame; Ctrl with the wheel zooms around the pointer', async () => {
+    const page = await open(WIDE)
+    const graph = page.raw.locator(`${LARGE} [data-slot="chain-graph"]`)
+    const zoom = async () => Number(await graph.getAttribute('data-zoom'))
+    const fitted = await zoom()
+    await graph.locator('[data-slot="scroll-area"]').focus()
+    await page.raw.keyboard.press('+')
+    expect(await zoom()).toBeCloseTo(fitted * 1.25, 2)
+    expect(await graph.getAttribute('data-fitted')).toBeNull()
+    await page.raw.keyboard.press('-')
+    await page.raw.keyboard.press('-')
+    expect(await zoom()).toBeCloseTo(fitted / 1.25, 2)
+    await page.raw.keyboard.press('0')
+    expect(await zoom()).toBeCloseTo(fitted, 2)
+    expect(await graph.getAttribute('data-fitted')).toBe('')
+    // A plain wheel scrolls; Ctrl with the wheel zooms in and keeps the point under the pointer.
+    const box = (await graph.locator('[data-slot="scroll-area"]').boundingBox())!
+    await page.raw.mouse.move(box.x + box.width / 2, box.y + 100)
+    await page.raw.mouse.wheel(0, 100)
+    expect(await zoom()).toBeCloseTo(fitted, 2)
+    await page.raw.keyboard.down('Control')
+    await page.raw.mouse.wheel(0, -100)
+    await page.raw.keyboard.up('Control')
+    await page.settle()
+    expect(await zoom()).toBeGreaterThan(fitted)
+  })
+
+  test('1800: a drag on empty canvas pans the frame', async () => {
+    const page = await open(WIDE)
+    const frame = page.raw.locator(`${LARGE} [data-slot="chain-graph"] [data-slot="scroll-area"]`)
+    await frame.scrollIntoViewIfNeeded()
+    // Zoomed in past the fit, the graph is wider than the frame.
+    await frame.focus()
+    for (let i = 0; i < 3; i++) await page.raw.keyboard.press('+')
+    expect(await frame.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true)
+    // A point of empty canvas: no node under it.
+    const spot = await frame.evaluate((el) => {
+      const box = el.getBoundingClientRect()
+      const y = Math.max(box.top, 0) + 60
+      for (let x = box.left + 10; x < box.right - 10; x += 4) {
+        const slot = document
+          .elementFromPoint(x, y)
+          ?.closest('[data-slot]')
+          ?.getAttribute('data-slot')
+        if (slot === 'chain-canvas') return { x, y }
+      }
+      return null
+    })
+    expect(spot).not.toBeNull()
+    const { x, y } = spot!
+    const before = await frame.evaluate((el) => el.scrollLeft)
+    await page.raw.mouse.move(x, y)
+    await page.raw.mouse.down()
+    await page.raw.mouse.move(x - 150, y - 20, { steps: 5 })
+    await page.raw.mouse.up()
+    const after = await frame.evaluate((el) => el.scrollLeft)
+    expect(after - before).toBeCloseTo(150, -1)
+  })
+
+  test('1800: pointing at a node lights its trace; Focus holds and zooms to it until Show all', async () => {
+    const page = await open(WIDE)
+    const root = page.raw.locator(LARGE)
+    const graph = root.locator('[data-slot="chain-graph"]')
+    const node = graph.locator('[data-slot="chain-node"][data-id="n5-4"]')
+    await node.scrollIntoViewIfNeeded()
+    await node.hover()
+    const dimmed = () => graph.locator('[data-slot="chain-node"][data-dimmed]').count()
+    const lit = 120 - (await dimmed())
+    expect(lit).toBeGreaterThan(1)
+    expect(lit).toBeLessThan(120)
+    const focus = root.getByRole('button', { name: 'Focus on Task 6.5' })
+    await focus.click()
+    expect(await graph.getAttribute('data-held')).toBe('n5-4')
+    expect(await dimmed()).toBe(120 - lit)
+    expect(await graph.getAttribute('data-fitted')).toBeNull()
+    await root.getByRole('button', { name: 'Show all' }).click()
+    expect(await graph.getAttribute('data-held')).toBeNull()
+    expect(await graph.getAttribute('data-fitted')).toBe('')
   })
 
   for (const viewport of [WIDE, PHONE]) {

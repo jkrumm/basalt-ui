@@ -11,9 +11,9 @@
  *    with the fewest crossings.
  * 3. Place: a node moves to the median height of its blockers where its column leaves room, so a
  *    chain of one blocker each is one straight line.
- * 4. Route: an edge leaves its blocker's right side, runs through its waypoints and enters the
- *    waiting node's left side at a port of its own; a change of height is one rounded step halfway
- *    between two columns.
+ * 4. Route: an edge leaves its blocker at the middle of its right side and enters the waiting node
+ *    at the middle of its left side, so a fan-out starts as one stem and a fan-in meets at one
+ *    point; each column gap is one cubic curve and a crossed column is a straight run in its lane.
  */
 
 export type ChainSize = { width: number; height: number; gapX: number; gapY: number }
@@ -30,9 +30,9 @@ export type ChainRoute = {
   from: string
   /** The node that waits on it. */
   to: string
-  /** SVG path data, ending at the waiting node's left side. */
+  /** SVG path data, from the blocker's right-middle port to the waiting node's left-middle port. */
   path: string
-  /** Where the path ends: the arrowhead's tip. */
+  /** Where the path ends: the waiting node's left-middle port, the arrowhead's tip. */
   end: { x: number; y: number }
 }
 
@@ -48,8 +48,6 @@ export type ChainGeometry = {
 /** Height of a waypoint slot: an edge passing through a column takes this much room in it. */
 const WAYPOINT = 8
 const SWEEPS = 8
-const PORT_STEP = 10
-const CORNER = 6
 
 type Edge = { from: string; to: string }
 
@@ -139,17 +137,6 @@ function median(values: readonly number[]): number | undefined {
   const sorted = values.toSorted((a, b) => a - b)
   const mid = (sorted.length - 1) / 2
   return ((sorted[Math.floor(mid)] ?? 0) + (sorted[Math.ceil(mid)] ?? 0)) / 2
-}
-
-/** The step from (ax, ay) to (bx, by): straight when level, else one rounded step at `mx`. */
-function step(ax: number, ay: number, bx: number, by: number, mx: number): string {
-  if (Math.abs(ay - by) < 0.5) return ` L ${bx} ${by}`
-  const dir = by > ay ? 1 : -1
-  const r = Math.min(CORNER, Math.abs(by - ay) / 2, mx - ax, bx - mx)
-  return (
-    ` L ${mx - r} ${ay} Q ${mx} ${ay} ${mx} ${ay + dir * r}` +
-    ` L ${mx} ${by - dir * r} Q ${mx} ${by} ${mx + r} ${by} L ${bx} ${by}`
-  )
 }
 
 /** Lays out `inputs` (in reading order: it breaks ties) at `size`. */
@@ -271,80 +258,33 @@ export function chainLayout(
     nodes.set(node.id, { id: node.id, rank: r, x: xOf(r), y: yOf(node.id) - size.height / 2 })
   }
 
-  // Ports: the edges into one node enter at their own heights, in the order their last hop arrives.
-  const into = new Map<string, { edge: Edge; from: number }[]>()
-  for (const edge of edges) {
-    const last = (waypoints.get(edge) ?? []).at(-1) ?? edge.from
-    into.set(edge.to, [...(into.get(edge.to) ?? []), { edge, from: yOf(last) }])
-  }
-  // An edge level with the node keeps the middle port, so its line stays straight; the others step
-  // above and below it in the order they arrive. Edges from one height share a port.
-  const port = new Map<Edge, number>()
-  for (const [id, list] of into) {
-    const mid = yOf(id)
-    const heights = [...new Set(list.map((entry) => entry.from))].toSorted((a, b) => a - b)
-    const level = heights.findIndex((h) => Math.abs(h - mid) < 0.5)
-    const middle = level === -1 ? (heights.length - 1) / 2 : level
-    const farthest = Math.max(middle, heights.length - 1 - middle)
-    const stepY = farthest === 0 ? 0 : Math.min(PORT_STEP, (size.height / 2 - 8) / farthest)
-    for (const entry of list) {
-      port.set(entry.edge, (heights.indexOf(entry.from) - middle) * stepY)
-    }
-  }
-
-  // Hops: one per gap an edge crosses, from a node or waypoint on the left to the next on the right.
-  type Hop = { source: string; gap: number; ay: number; by: number }
-  const hopsOf = new Map<Edge, Hop[]>()
-  for (const edge of edges) {
-    const chain = [edge.from, ...(waypoints.get(edge) ?? [])]
-    const hops = chain.map((source, i) => {
-      const next = chain[i + 1]
-      return {
-        source,
-        gap: rank.get(source) ?? 0,
-        ay: yOf(source),
-        by: next === undefined ? yOf(edge.to) + (port.get(edge) ?? 0) : yOf(next),
-      }
-    })
-    hopsOf.set(edge, hops)
-  }
-  // Channels: in each gap every source whose hops turn gets a vertical run of its own, spread across
-  // the gap in the order the sources sit, so two trunks never share a line. A fan-out shares one.
-  const channel = new Map<string, number>()
-  const turning = new Map<number, Map<string, number>>()
-  for (const hops of hopsOf.values()) {
-    for (const hop of hops) {
-      if (Math.abs(hop.ay - hop.by) < 0.5) continue
-      const gap = turning.get(hop.gap) ?? new Map<string, number>()
-      gap.set(hop.source, hop.ay)
-      turning.set(hop.gap, gap)
-    }
-  }
-  for (const [gap, sources] of turning) {
-    const left = xOf(gap) + size.width
-    const sorted = [...sources].toSorted((a, b) => a[1] - b[1])
-    sorted.forEach(([source], i) => {
-      channel.set(
-        `${gap}:${source}`,
-        Math.round(left + (size.gapX * (i + 1)) / (sorted.length + 1)),
-      )
-    })
-  }
-
+  // Route: one fixed port per side. An edge leaves its blocker at the middle of the right side,
+  // crosses each column gap as one cubic curve (level ends: a straight line), runs straight through
+  // the waypoint lane of each column it spans, and ends at the middle of the waiting node's left side.
   const routes: ChainRoute[] = edges.map((edge) => {
-    const hops = hopsOf.get(edge) ?? []
-    const first = hops[0]
-    let path = `M ${xOf(first?.gap ?? 0) + size.width} ${first?.ay ?? 0}`
-    let end = { x: 0, y: 0 }
-    hops.forEach((hop, i) => {
-      const ax = xOf(hop.gap) + size.width
-      const bx = xOf(hop.gap + 1)
-      const mx = channel.get(`${hop.gap}:${hop.source}`) ?? (ax + bx) / 2
-      if (i > 0) path += ` L ${ax} ${hop.ay}`
-      path += step(ax, hop.ay, bx, hop.by, mx)
-      end = { x: bx, y: hop.by }
-    })
-    return { from: edge.from, to: edge.to, path, end }
+    const chain = [edge.from, ...(waypoints.get(edge) ?? []), edge.to]
+    const right = (id: string): number => xOf(rank.get(id) ?? 0) + size.width
+    let path = `M ${right(edge.from)} ${yOf(edge.from)}`
+    for (let i = 1; i < chain.length; i++) {
+      const a = chain[i - 1] ?? edge.from
+      const b = chain[i] ?? edge.to
+      const ax = right(a)
+      const ay = yOf(a)
+      const bx = xOf(rank.get(b) ?? 0)
+      const by = yOf(b)
+      const k = (bx - ax) / 2
+      path +=
+        Math.abs(ay - by) < 0.5
+          ? ` L ${bx} ${by}`
+          : ` C ${ax + k} ${ay} ${bx - k} ${by} ${bx} ${by}`
+      if (i < chain.length - 1) path += ` L ${right(b)} ${by}`
+    }
+    return {
+      from: edge.from,
+      to: edge.to,
+      path,
+      end: { x: xOf(rank.get(edge.to) ?? 0), y: yOf(edge.to) },
+    }
   })
 
   return {

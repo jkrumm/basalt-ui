@@ -4,18 +4,24 @@ use when: 'records wait on other records (Issues, tasks, deploy steps) and the a
 never when: 'the records form a strict tree with nothing to compare across branches (use `DataTable` with `nested`), or the relation is a flow of quantities (a chart)'
 subpath: basalt-ui/cards
 peers: ['@base-ui/react']
-slots: [chain-edge, chain-graph, chain-list, chain-list-node, chain-node, chain-view]
+slots: [chain-canvas, chain-controls, chain-edge, chain-graph, chain-list, chain-list-node, chain-node, chain-view]
 ---
 
 # ChainView
 
 A dependency chain: nodes that wait on other nodes, drawn left to right with each blocker left
-of what waits on it. An edge from an open node is solid in the warn hue and reads "blocks", one
-from a done node is dashed and reads "done", and a node waiting on an open blocker carries the
-warn outline. The graph scrolls sideways inside the scroll primitive; below 480 px of container it
-is a nested list instead, each node under the first node it waits on with the rest named. It
-shares a `focus` with a `DataTable` over the same records, so a node and its row are one item.
-The layout is the kit's own (no dependency): it never pans or zooms, and nodes do not move.
+of what waits on it. Every edge leaves its blocker at the middle of the right side and ends in an
+arrowhead at the middle of the waiting node's left side; one from an open node is solid in the
+warn hue and reads "blocks", one from a done node is dashed and reads "done", and a node waiting
+on an open blocker is outlined in the warn tone. The graph opens fitted to its width (never below
+half size) in a frame no taller than the page's visible scroll area: a drag on empty canvas, the
+wheel and one finger pan it, Ctrl or Cmd with the wheel, a pinch, the zoom buttons and the
+`+`, `-` and `0` keys zoom it. Pointing at a node (or focusing its row) lights its whole trace,
+every node it waits on and every node waiting on it; Focus (or `F`) holds that trace and zooms
+to it, Show all (or Escape) returns. Below 480 px of container it is a nested list instead, each
+node under the first node it waits on with the rest named. It shares a `focus` with a
+`DataTable` over the same records, so a node and its row are one item. The layout is the kit's
+own (no dependency), and nodes never move.
 
 ## Signature
 
