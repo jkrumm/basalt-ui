@@ -150,9 +150,10 @@ function sharedFailure(children: ReactNode): SharedFailure | null {
       tag: 'error',
       kind: first.kind,
       message: first.message,
+      // One shared retry passes through unwrapped, so a frame beside the group recognises it.
       retry:
-        retries.length === 0
-          ? undefined
+        retries.length <= 1
+          ? retries[0]
           : () => {
               for (const retry of retries) retry()
             },

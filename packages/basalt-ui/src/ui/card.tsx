@@ -9,6 +9,7 @@ import { AppLink } from '../core/link'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ErrorKind, FrameState } from '../core/phase'
 import { PhaseBoundary } from '../core/phase-boundary'
+import { useRetryOwner } from '../core/retry-owner'
 import type { Box, BoxSlot, IconComponent } from '../core/ports'
 
 /**
@@ -264,6 +265,7 @@ function ErrorArm({
 }): ReactElement {
   const detail = message !== undefined && kind === undefined ? message : undefined
   const host = useContext(HostTitleContext)?.trim()
+  const showRetry = useRetryOwner(retry)
   const text = kind === undefined && host ? `${couldNotLoad(host)}.` : ERROR_TEXT[kind ?? 'default']
   return (
     <div role="alert" data-phase={caught ? 'error' : undefined} className={ARM[arms]}>
@@ -276,7 +278,7 @@ function ErrorArm({
       {detail !== undefined && arms === 'stack' && (
         <p className="text-xs text-muted-foreground">{detail}</p>
       )}
-      {retry !== undefined && (
+      {retry !== undefined && showRetry && (
         <button type="button" className={ACTION} onClick={retry}>
           Retry
         </button>
@@ -379,7 +381,8 @@ export type CardPhaseProps = FrameState & {
 /**
  * Renders the phase for every frame: the skeleton, the error arm, the empty arm and the stale line
  * around the body, inside one box. A throwing box slot renders the error arm and leaves the
- * neighbouring cards alone; Retry runs the slot again.
+ * neighbouring cards alone; Retry runs the slot again. Frames given one `retry` function (one query
+ * result, one `Phase`) draw Retry once, on the first frame to mount; the others show their message alone.
  *
  * @example
  * <CardPhase phase={query} empty={rows.length ? null : { cause: 'No merges yet' }} height={72}>

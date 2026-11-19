@@ -254,7 +254,8 @@ const hasNoRows = (phase: object): boolean => {
  * The phase: `ready` shows the chart; `loading` a plot skeleton with bars in the figure row; `stale`
  * the chart and an `Updating` line (`Could not refresh` after a failed refetch); `error` the error arm
  * with Retry (none for a 403) under a dashed figure row and footer, where a throwing slot lands too; `empty` the cause and its action, with
- * Clear filters when `filtered`. `empty` wins over `ready` and `stale` once the query settled, and
+ * Clear filters when `filtered`. Frames given one `retry` function (one query result, one `Phase`) draw Retry once, on the first
+ * frame to mount; the others show their message alone. `empty` wins over `ready` and `stale` once the query settled, and
  * `loading` wins over everything. The phase prints on the card and the box as `data-phase`.
  *
  * A `legend` of two or more entries toggles the series of the chart in the box with the same `key`

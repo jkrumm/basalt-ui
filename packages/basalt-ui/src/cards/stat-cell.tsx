@@ -6,6 +6,7 @@ import { OfflineLine } from '../core/offline-line'
 import { resolvePhase } from '../core/phase'
 import type { Empty, ErrorKind, ResolvedPhase } from '../core/phase'
 import { PhaseBoundary } from '../core/phase-boundary'
+import { useRetryOwner } from '../core/retry-owner'
 import { useMessages } from '../core/messages/use-messages'
 import { cards } from '../core/messages/cards'
 import type { Box, BoxSlot } from '../core/ports'
@@ -428,6 +429,7 @@ export function ErrorLine({
   compact?: boolean
 }): ReactElement {
   const t = useMessages(cards)
+  const showRetry = useRetryOwner(retry)
   const text =
     kind === 'forbidden'
       ? t('cards.errorForbidden')
@@ -450,7 +452,7 @@ export function ErrorLine({
       >
         {text}
       </p>
-      {retry !== undefined && (
+      {retry !== undefined && showRetry && (
         <button type="button" className={ACTION} onClick={retry}>
           {t('cards.retry')}
         </button>
