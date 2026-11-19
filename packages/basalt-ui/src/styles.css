@@ -203,7 +203,10 @@
      `any-pointer` — a touch laptop's mouse-first session must not inflate every hit area.
      OVERLAP CAP: a host with neighbours sets `--basalt-hit-gap` (its real gap between controls); the
      expansion is then limited to that gap in total (half per side), so adjacent hit boxes never
-     overlap and a later sibling never steals a tap. Unset = uncapped (an isolated control). The
+     overlap and a later sibling never steals a tap. Unset = uncapped (an isolated control).
+     `--basalt-hit-gap-block` caps the block axis alone where the rows sit closer than the columns
+     (a wrapping legend: 30px between entries, 4px between rows); unset, the block axis follows
+     `--basalt-hit-gap`. The
      `+ 2px` is the control's own 1px border (a button carries one, transparent or not): `100%`
      is the PADDING box, the gap is measured between border boxes.
      `position: relative` is the ::after's containing block; an adopter that must be
@@ -223,7 +226,10 @@
     left: 50%;
     translate: -50% -50%;
     width: min(max(100%, var(--basalt-hit)), calc(100% + 2px + var(--basalt-hit-gap, 100vmax)));
-    height: min(max(100%, var(--basalt-hit)), calc(100% + 2px + var(--basalt-hit-gap, 100vmax)));
+    height: min(
+      max(100%, var(--basalt-hit)),
+      calc(100% + 2px + var(--basalt-hit-gap-block, var(--basalt-hit-gap, 100vmax)))
+    );
   }
 }
 

@@ -35,6 +35,14 @@ describe('Legend', () => {
     expect(el.querySelectorAll('[data-legend-key="a"] svg').length).toBe(2)
   })
 
+  test('the row caps the hit area across a wrap: the block axis at the row gap, not the column gap', () => {
+    const row = html(<Legend entries={entries} onToggle={() => {}} />).querySelector<HTMLElement>(
+      '[data-basalt-chart-legend]',
+    )
+    expect(row?.style.getPropertyValue('--basalt-hit-gap-block')).toBe('4px')
+    expect(row?.style.rowGap).toBe('4px')
+  })
+
   test('a failed entry reads unavailable, a healthy one reads nothing extra', () => {
     const el = html(<Legend entries={entries} />)
     expect(el.querySelector('[data-legend-key="b"]')?.textContent).toContain('unavailable')
