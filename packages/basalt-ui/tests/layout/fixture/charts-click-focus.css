@@ -1,0 +1,8 @@
+/*
+ * The `charts-click-focus` fixture's Tailwind v4 entry, compiled with preflight and the font faces like
+ * `charts-kinds.css`. `charts-click-focus.layout.test.ts` compiles it into a temp directory.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+/* The keyboard ring is the kit's: `:where([tabindex]):focus-visible` lives here, not in tailwind.css. */
+@import '../../../src/css/typography.css';
+@source './charts-click-focus-fixture.tsx';

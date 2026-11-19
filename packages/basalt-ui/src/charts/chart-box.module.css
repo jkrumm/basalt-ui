@@ -245,6 +245,16 @@
   outline-offset: -0.125rem;
 }
 
+/* The ring is the keyboard's. A pointer click focuses the chart's own target (the engine's `svg.ts-chart`,
+ * a seam host's group, an engine host's wrapper), and a focus the browser does not call visible paints
+ * no outline, its own `auto` one included: owner review 2 clicked an `IntervalTrack` and saw the
+ * browser's 5 px ring round the whole chart. Tab and the arrow keys still ring it (the rules around). */
+:global(.ts-chart:focus:not(:focus-visible)),
+:global([role='group'][aria-roledescription='chart']:focus:not(:focus-visible)),
+:global([data-chart-focus]:focus:not(:focus-visible)) {
+  outline: none;
+}
+
 /* A hand-drawn list of marks (`focus.target` on a container of `focus.item` rows) is one tab stop
  * whose box often fills its card body, where an outer ring is clipped by the body and half of it
  * lands on the first letters of the rows. The ring is inset, whole at every edge, like a chart's.
