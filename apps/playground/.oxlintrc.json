@@ -11,11 +11,7 @@
   },
   "overrides": [
     {
-      "files": [
-        "src/scenarios/expr/n02/**",
-        "src/scenarios/expr/n04/**",
-        "src/scenarios/expr/c10/**"
-      ],
+      "files": ["src/scenarios/expr/c10/**"],
       "rules": { "basalt/primitive-bypass": ["error", { "formsOff": ["list-rows"] }] }
     }
   ]
