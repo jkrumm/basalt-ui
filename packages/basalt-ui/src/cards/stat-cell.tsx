@@ -41,7 +41,7 @@ const CHART_HEIGHT = 28
 // share a line.
 const T_CAPTION = 'row-start-1 flex h-4 min-w-0 items-center gap-1'
 const T_FIGURE = 'row-start-2 flex h-8 min-w-0 items-center gap-2 @regular:h-9'
-const T_BASE = 'row-start-3 flex h-4 min-w-0 items-center'
+const T_BASE = 'row-start-3 flex h-6 min-w-0 items-center gap-1.5'
 const T_METER = 'row-start-4 mt-1 h-8.5 min-w-0 overflow-clip'
 const T_CHART = 'row-start-5 mt-1 h-7 min-w-0 overflow-clip'
 const T_ROWS = [
@@ -82,8 +82,8 @@ const rowsOf = (rows: StatCellProps['rows']): StatRow[] => {
 
 /**
  * One cell of a `StatGroup`, or a lone cell on its own tracks: a caption (icon, label, qualifier,
- * definition glyph), the figure with its delta pill and verdict, the delta's base on the line under
- * the pill ("vs prior 7 days", from `delta.label`), then the meter, chart, rows and foot line it
+ * definition glyph), the figure with its verdict, the delta pill on the line under it beside the base
+ * it names ("vs prior 7 days", from `delta.label`), then the meter, chart, rows and foot line it
  * declares. Inside a group its tracks are shared with its neighbours; a track a cell does
  * not declare is left empty, and one nobody declares collapses. It owns its height at every phase
  * and its loading skeleton draws the declared shape; `chart` is called only in `ready` and `stale`,
@@ -178,7 +178,6 @@ export function StatCell(props: StatCellProps): ReactElement {
         resolved={resolved}
         figure={figure}
         unit={unit}
-        delta={delta}
         status={status}
         hidden={hidden}
         solo={!spans}
@@ -186,12 +185,21 @@ export function StatCell(props: StatCellProps): ReactElement {
         empty={resolved.tag === 'empty' ? resolved.empty : undefined}
         collapsed={collapsed}
       />
-      {delta?.label !== undefined && (
+      {delta !== undefined && (
         <div data-slot="stat-base" aria-hidden={hidden} className={T_BASE}>
-          {resolved.tag === 'loading' ? (
-            <div className={cn(BAR, 'h-3 w-1/2')} />
-          ) : (
-            body && <p className="truncate text-xs text-muted-foreground">{delta.label}</p>
+          {resolved.tag === 'loading' && (
+            <>
+              <div className={cn(BAR, 'h-5 w-12 shrink-0 rounded-full')} />
+              {delta.label !== undefined && <div className={cn(BAR, 'h-3 w-1/3')} />}
+            </>
+          )}
+          {body && !collapsed && (
+            <>
+              <DeltaBadge value={delta.value} polarity={delta.polarity} />
+              {delta.label !== undefined && (
+                <p className="min-w-0 truncate text-xs text-muted-foreground">{delta.label}</p>
+              )}
+            </>
           )}
         </div>
       )}
@@ -276,7 +284,6 @@ type FigureProps = {
   resolved: ResolvedPhase
   figure: string | null
   unit: string | undefined
-  delta: StatCellProps['delta']
   status: StatCellProps['status']
   hidden: true | undefined
   /** No other track is declared, so a cause or an error is read in the figure's own track. */
@@ -292,7 +299,6 @@ function Figure({
   resolved,
   figure,
   unit,
-  delta,
   status,
   hidden,
   solo,
@@ -307,7 +313,6 @@ function Figure({
     return (
       <div data-slot="stat-figure" aria-hidden="true" className={T_FIGURE}>
         <div className={cn(BAR, 'h-6 w-20')} />
-        {delta !== undefined && <div className={cn(BAR, 'h-5 w-12 rounded-full')} />}
       </div>
     )
   }
@@ -351,9 +356,6 @@ function Figure({
           <span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span>
         )}
       </span>
-      {resolved.tag !== 'empty' && delta !== undefined && (
-        <DeltaBadge value={delta.value} polarity={delta.polarity} />
-      )}
       {resolved.tag !== 'empty' && status !== undefined && <StatusMark status={status} />}
     </div>
   )

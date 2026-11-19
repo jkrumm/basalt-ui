@@ -181,7 +181,7 @@ async function ruledCells(
         figureClipped: figure.scrollWidth > figure.clientWidth + 1,
         base: el.querySelector('[data-slot="stat-base"]')?.textContent ?? null,
         pill:
-          el.querySelector('[data-slot="stat-figure"] [data-slot="delta-badge"]')?.textContent ??
+          el.querySelector('[data-slot="stat-base"] [data-slot="delta-badge"]')?.textContent ??
           null,
       }
     })
@@ -227,7 +227,8 @@ layout('StatGroup strip: ruled cells at 1800 and 390', () => {
       for (const [i, cell] of cells.entries()) {
         expect(cell.figureClipped, `cell ${i} figure is truncated`).toBe(false)
         if (i === 0) continue
-        expect(cell.base, `cell ${i} base line`).toBe('vs prior 7 days')
+        expect(cell.base ?? '', `cell ${i} base line`).toContain('vs prior 7 days')
+        expect(cell.pill, `cell ${i} pill on the base line`).not.toBeNull()
         expect(cell.pill ?? '', `cell ${i} pill stays short`).not.toContain('vs prior')
       }
       const bases = await rects(page, 'cg-strip-fleet', '[data-slot="stat-base"]')
@@ -271,9 +272,13 @@ layout('StatGroup, StatCell and DataPanel', () => {
         const figure = (await rects(page, 'cg-strip-230', '[data-slot="stat-figure"]'))[0]!
         near(figure.top, caption.top + 16, 'the figure track starts under a 16 px caption')
         near(figure.height, 36, 'figure track, at the hero size from @regular')
-        // The top rule 1 and padding 12, caption 16, figure 36, no base line (no delta names one),
+        // The top rule 1 and padding 12, caption 16, figure 36, the delta line 24 (Downstream's pill),
         // meter 4 + 34, chart 4 + 28, four rows of 20, foot 16, padding 12.
-        near(cells[0]!.height, 1 + 12 + 16 + 36 + 38 + 32 + 80 + 16 + 12, 'a fully declared strip')
+        near(
+          cells[0]!.height,
+          1 + 12 + 16 + 36 + 24 + 38 + 32 + 80 + 16 + 12,
+          'a fully declared strip',
+        )
       })
 
       for (const kind of ['strip', 'panel'] as const) {
