@@ -957,3 +957,30 @@ rows:
         v3-owner-1-chain-view,
       ]
     facts: { 'brief': 'docs/v3/issues/owner-1/v3-owner-1-rerun.json' }
+  - key: v3-expr-11-kit-fixes
+    title: 'Half-width tables, the joined-row reveal, hover readouts on ticks, clamped values, rule labels, IntervalTrack labels, loading heights, from expression cycle 11'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-11]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-11-kit-fixes.json' }
+  - key: v3-expr-11-contract
+    title: 'Coincident dots, a BarList legend switch and its exported type, a table row with no chart item in the focus, a BarList body past 10 rows (Spec), from expression cycle 11'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-cycle-expression-11]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-11-contract.json' }
+  - key: v3-expr-11-skill
+    title: 'Expression skill: why the fact count and one view fail on every page, loading slots, a number per clause, answer text at 390, one status hue, from expression cycle 11'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-expression-11]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-11-skill.json' }
+  - key: v3-cycle-expression-12
+    title: 'Improvement cycle 12: expression, six one-shot visualization trials'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-11-kit-fixes, v3-expr-11-contract, v3-expr-11-skill]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-12.json' }

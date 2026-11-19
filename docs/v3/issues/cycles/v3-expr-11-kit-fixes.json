@@ -1,0 +1,37 @@
+{
+  "why": "Expression cycle 11 (docs/v3/cycles/expression-11.md) lost 41 of its 60 round-0 points to the kit (class `primitive`), two of its P2s among them: n47's `IntervalTrack` cuts 'Lead session' to 'Lead…' and leaves attempt 3's minute steps unlabelled (F6 1, expression-11.20), and n50's clamped '$63.1' is drawn dark on the bar's top edge over a gridline with its caret hidden while the axis hover readout prints '19' on the '20' tick (F6 1, .54 and .55). The other primitive P3s that need no contract field ride along. Two gaps cycle 10's kit row left open are still open on master 3d3f2659 (lead probe, expression-11 § Before round 0).",
+  "what": "Kit behaviour fixes for nine findings groups of expression cycle 11 and the two open gaps of cycle 10, with no export and no contract change.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/cards/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/table/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/page/** (the PageSummary skeleton)",
+    "apps/playground/src/demo/series.ts (the stale BarList dark-half comment only)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/src/cards/contract.ts",
+    "packages/basalt-ui/src/table/contract.ts",
+    "packages/basalt-ui/src/core/ports.ts",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) A `DataTable` in a half-width column (about 750 px) keeps its columns while its priority columns fit, instead of turning into phone cards; a full-width table does not stretch its first column into a gap before the numbers (n45, n46, n47, n49, n50: .7, .16, .27, .48, .59). If keeping columns needs a field, say so in the PR and split it behind a Spec. (2) A chart focus brings the joined `DataTable` row into view inside its scroll region, as the basalt-charts linked-parts reference promises; the three builds wire `DataTable focus` with a fill height and the row stays below the clip (n45, n47, n48: .8, .28, .38). Check the hypothesis that the focus registry holds one element per index, so a chart mark and a table row on one index overwrite each other. (3) The axis hover readout never lands on a tick label: it replaces or nudges the nearest tick (n49 '18194' over 180 and 194, n50 '19' on '20', n46 'Apr Apr 2': .42, .55, .12). (4) Every clamped bar shows its true value beside its caret, readable on the bar's fill or outside it, never over a gridline, and clear of zone labels (n46, n50, and n44's cloudburst from the lead probe: .13, .18, .51, .53, .54, .56). (5) Reference-line and zone labels join the label obstacles, sit at their own line, and never stack with each other or cross another rule (n45, n46: .3, .4, .10, .12). (6) A kit-drawn label (bar `values`, an `IntervalTrack` label) keeps its contrast on a dimmed mark in both schemes (n46, n47: .17, .29). (7) On an `IntervalTrack`, a label too long for its span moves outside the span or drops whole instead of ending in an ellipsis, the focus ring stays off labels, a one-day span keeps a minimum width at 390 instead of fusing with its neighbours, and coincident point events in one row are offset so the second stays visible (n47, n48: .19, .20, .23, .30, .32, .35, .40). (8) Loading skeletons end at the ready height: a `DataPanel` or `BarList` body sized in rows (n48 24 px, n49 7 px: .34, .44) and a `PageSummary` headline at 390 that will wrap to three lines (n46: .14). (9) A `c.meter` value sits on the row's text line, not under the bar (n49 .49, and n47's wish). (10) Cycle 10's two open gaps: a `DataTable` inside a `DataPanel` body keeps its column header in empty and error (cycles 9 to 11: n33, n47, n48, n49), and a phone card list holds a shared focus while the pointer crosses the gap between cards (n42 at 390, 32 px). (11) Drop or correct the comment in apps/playground/src/demo/series.ts that says `BarList` paints only the light half of a pair under auto: the kit fix landed, and two cycle-11 builders wrote `light-dark()` pairs because of it.",
+  "acceptance": [
+    "A DataTable at 750 px with priority columns that fit keeps its columns, and a full-width table puts no gap before its numbers (layout test)",
+    "A chart focus scrolls a joined DataTable row into view inside its region (test)",
+    "The axis hover readout never overlaps a tick label at 1800 and 390 (layout test)",
+    "Every clamped bar shows its value beside its caret, legible, clear of zone labels (layout test)",
+    "Rule and zone labels never overlap each other, a rule or a mark (layout test)",
+    "A kit-drawn label on a dimmed mark keeps a contrast the quality matrix accepts (test)",
+    "IntervalTrack: no ellipsised span label, a minimum one-day width at 390, coincident points both visible, the focus ring clear of labels (tests)",
+    "DataPanel, BarList and PageSummary loading frames end at the ready height at 1800 and 390 (layout test)",
+    "A c.meter value sits on its row's text line (test)",
+    "A framed DataTable keeps its header in empty and error, and a phone card list holds focus across the gap (tests)",
+    "No export added and no contract file changed; make check passes"
+  ],
+  "out_of_scope": "Coincident dots on a dot series, a BarList legend switch and its exported type, a table row with no chart item, a BarList body past 10 rows (v3-expr-11-contract); skill text (v3-expr-11-skill); a duration channel or an axis break on IntervalTrack, even thinning of an explicit tick list (one case each); the trial scenarios.",
+  "proof": "make check; the tests named in acceptance; shots of n45, n46, n47, n48, n49 and n50 at 1800 and 390 in light and dark, with ?fixture=extreme (n45), burst (n46), stalled (n47) and the focus frames of n45 and n47 showing the joined row.",
+  "commits": "fix: per behaviour with its test."
+}

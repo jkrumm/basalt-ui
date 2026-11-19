@@ -1,0 +1,26 @@
+{
+  "why": "Expression cycle 11 (docs/v3/cycles/expression-11.md) lost six points to kit gaps that need a contract field or an export, so they cannot ride in the behaviour row. (a) A dot series has no way to show coincident dots: n45's containers at equal peaks merge (F5, .2) and n49's hundred fresh pages heap on the baseline (F5 and K1, .41, .43). (b) `BarList` draws its legend with no way to drop it, so n47 turned the track's legend off and the list's swatches differ from the track's marks (F8, .22); n49 could not type a `BarList` legend because the entry type is not exported from `basalt-ui/cards` (its marker). (c) A table row whose item has no mark (a container with no memory limit) can neither join the chart's focus nor dim, so n45's five no-limit rows stay full ink beside a focused row (X4, .9). (d) `BarList` `bodyRows` stops at 10, so n48's months October and November sit below the fold at rest (X2, .37).",
+  "what": "A Spec, then the fields it keeps: coincident dots on a dot series, a BarList legend switch with its exported entry type, a table row with no chart item in the focus, and a BarList body past 10 rows, or the Spec's ruling against each.",
+  "owns": [
+    "packages/basalt-ui/src/charts/contract.ts (the dot series field, only as the Spec keeps it)",
+    "packages/basalt-ui/src/cards/contract.ts and the cards barrel (the BarList legend switch, its entry type and the row count)",
+    "packages/basalt-ui/src/table/contract.ts and packages/basalt-ui/src/core/ports.ts (a row with no chart item, only if the Spec needs them)",
+    "the components that read the changed fields, and their tests",
+    "packages/basalt-ui/agent/** text that teaches the changed fields, through its generator",
+    "the contract-frozen pins the amendment moves, with the amendment commit the repo's process names"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md (the Spec names any section it would amend; the owner rules)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** (the trial builds stay as their builders left them)"
+  ],
+  "change": "Write a Spec before any code. (a) Coincident dots: name what the field standard does (stack, dodge, jitter, a count on the dot) and pick one for a dot series, or rule that the kit dodges by default with no field. (b) `BarList` `legend={false}` (or the name the kit uses on ChartCard), and the legend entry type exported from `basalt-ui/cards`. (c) A table row whose item the chart does not draw joins the page focus by id and dims with the rest; say whether `ListFocus` needs a field. (d) `BarList` `bodyRows` past 10, or a ruling that a list longer than its body scrolls the focused row into view instead. (c) and (d) serve one case each; rule them out if the Spec finds no second case in the bank.",
+  "acceptance": [
+    "A Spec submitted and ruled before code",
+    "Each kept field has a unit test and its agent text, through the generator",
+    "The contract amendment commit moves the pins; make check passes"
+  ],
+  "out_of_scope": "Behaviour fixes with no field (v3-expr-11-kit-fixes); skill text (v3-expr-11-skill); a duration channel or an axis break on IntervalTrack (one case each); the trial scenarios.",
+  "proof": "The Spec and its verdict; make check; shots of n45 and n49 (dots), n47 (BarList legend), n45 (no-limit rows dimmed) and n48 (twelve months) on the fixed kit.",
+  "commits": "feat: per field with its tests; chore: contract amendment; docs: regenerated agent text. Package commits separate."
+}
