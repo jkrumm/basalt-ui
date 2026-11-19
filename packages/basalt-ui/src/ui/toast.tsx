@@ -19,22 +19,22 @@ export const toastViewportVariants = cva(
 )
 
 /**
- * The `Toast` cva table: a card on the popup surface with a `tone` edge. A toast without a tone is
- * `neutral`.
+ * The `Toast` cva table: a card on the popup surface that leads with a `tone` dot, as `Status`
+ * does. A toast without a tone is `neutral` and has no dot.
  *
  * @example
  * toastVariants({ tone: 'bad' })
  */
 export const toastVariants = cva(
-  'relative flex items-start gap-3 rounded-card border-s-2 bg-popover p-3 text-foreground shadow-overlay transition-[opacity,translate] duration-150 ease-standard data-starting-style:translate-y-2 data-starting-style:opacity-0 data-ending-style:translate-y-2 data-ending-style:opacity-0 motion-reduce:transition-none',
+  'relative flex items-start gap-3 rounded-card bg-popover p-3 before:mt-1.5 before:size-2 before:shrink-0 before:rounded-full text-foreground shadow-overlay transition-[opacity,translate] duration-150 ease-standard data-starting-style:translate-y-2 data-starting-style:opacity-0 data-ending-style:translate-y-2 data-ending-style:opacity-0 motion-reduce:transition-none',
   {
     variants: {
       tone: {
-        neutral: 'border-s-border',
-        good: 'border-s-good',
-        warn: 'border-s-warn',
-        bad: 'border-s-bad',
-        info: 'border-s-info',
+        neutral: 'before:hidden',
+        good: 'before:bg-good',
+        warn: 'before:bg-warn',
+        bad: 'before:bg-bad',
+        info: 'before:bg-info',
       },
     },
     defaultVariants: { tone: 'neutral' },
@@ -85,7 +85,7 @@ export function ToastViewport({ className, ...props }: ToastViewportProps): Reac
 }
 
 /**
- * One toast: the surface with its `tone` edge. Pass the queue's toast object as `toast`.
+ * One toast: the surface with its `tone` dot. Pass the queue's toast object as `toast`.
  *
  * @useWhen a result needs a short, passing note the user can ignore (toast vs inline vs inbox)
  * @neverWhen the message must be read to continue (use `Dialog`) or belongs next to a field (use inline `FieldError`)

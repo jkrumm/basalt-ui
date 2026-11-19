@@ -1,6 +1,6 @@
 /**
  * `ChainView`: one node per record placed by the layout, an edge per known blocker drawn as blocks
- * or done, the warn bar on a node waiting on an open blocker, a node's waits named for a reader,
+ * or done, the warn outline on a node waiting on an open blocker, a node's waits named for a reader,
  * the narrow nested list, and a focus shared with a list of the same records.
  */
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
@@ -53,6 +53,7 @@ describe('ChainView', () => {
     const { container } = render(<ChainView {...props()} />)
     const blocked = (id: string) => node(container, id).querySelector('[data-blocked]') !== null
     expect(blocked('d')).toBe(true)
+    expect(node(container, 'd').querySelector('[data-blocked]')?.className).toContain('border-warn')
     expect(blocked('b')).toBe(false)
     expect(blocked('a')).toBe(false)
   })

@@ -2,7 +2,7 @@
 
 Taste checks for a page that reads as a default. Read before the first build and at every look. Where a rule guards a tell, its tag is named; the rest are judgement, not law, and a reviewer scores them.
 
-## Six defects earlier builds shipped with
+## Seven defects earlier builds shipped with
 
 - **Clipped at 390.** A wide table with no scroll region, a fixed height on a card, text in a clipped box. [lint:raw-scroll]
 - **Nameless controls.** An icon-only button or an input with no accessible name. [lint:primitive-bypass]
@@ -10,6 +10,7 @@ Taste checks for a page that reads as a default. Read before the first build and
 - **A generic title.** "Overview" or "Dashboard" alone: name the subject and its scope. [type:PageBarProps]
 - **A page root of its own.** A `div` with its own `gap` or `p-4`, a fragment, or a `@container` wrapper around the page: return `Page`, which owns the gutter and the top inset. [lint:page-root]
 - **Colour on its own.** A status carried by hue only: a word plus its tone, and polarity is data on the delta. [lint:status-fill-as-text]
+- **A side stripe.** A coloured bar on one edge of a card, row, toast or node reads as generated filler (the owner's word: "AI slop"): say the state with `Status`, a badge or the tone of the whole border. [lint:tw-off-law]
 
 ## Owner self-check
 

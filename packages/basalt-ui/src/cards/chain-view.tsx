@@ -24,7 +24,7 @@ export type ChainFace = {
   /**
    * Finished: what waits on it no longer waits on it. An edge out of a done node is drawn dashed
    * (done), out of any other node solid in the warn hue (blocks), and a node with a blocking edge in
-   * is marked blocked.
+   * is outlined in the warn tone.
    */
   done?: boolean | undefined
 }
@@ -61,8 +61,8 @@ const NODE =
   'relative flex h-full min-w-0 flex-col justify-center gap-1 overflow-hidden rounded-card border border-border bg-card px-3 text-left text-foreground shadow-card'
 const TARGET =
   'w-full cursor-pointer hover:bg-accent focus-ring focus-visible:-outline-offset-2 group-data-focused/node:bg-accent'
-/** A node waiting on an open blocker carries a bar in the warn fill on its leading edge. */
-const BLOCKED = 'before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-warn'
+/** A node waiting on an open blocker is outlined in the warn tone, its whole border, never one edge. */
+const BLOCKED = 'border-warn'
 
 function Face({
   face,
@@ -125,7 +125,7 @@ function Legend(): ReactElement {
  * A dependency chain: nodes that wait on other nodes, drawn left to right with each blocker left
  * of what waits on it. An edge from an open node is solid in the warn hue and reads "blocks", one
  * from a done node is dashed and reads "done", and a node waiting on an open blocker carries the
- * warn bar. The graph scrolls sideways inside the scroll primitive; below 480 px of container it
+ * warn outline. The graph scrolls sideways inside the scroll primitive; below 480 px of container it
  * is a nested list instead, each node under the first node it waits on with the rest named. It
  * shares a `focus` with a `DataTable` over the same records, so a node and its row are one item.
  * The layout is the kit's own (no dependency): it never pans or zooms, and nodes do not move.

@@ -9,7 +9,7 @@ slots: [toast-viewport, toast, toast-title, toast-description, toast-close]
 
 # Toast
 
-One toast: the surface with its `tone` edge. Pass the queue's toast object as `toast`.
+One toast: the surface with its `tone` dot. Pass the queue's toast object as `toast`.
 
 ## Props
 
@@ -27,7 +27,7 @@ ToastViewport({ className, ...props }: ToastViewportProps): ReactElement
 
 ### `Toast`
 
-One toast: the surface with its `tone` edge. Pass the queue's toast object as `toast`.
+One toast: the surface with its `tone` dot. Pass the queue's toast object as `toast`.
 
 ```ts
 Toast({ tone, className, ...props }: ToastProps): ReactElement

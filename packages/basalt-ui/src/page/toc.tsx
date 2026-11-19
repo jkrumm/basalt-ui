@@ -198,9 +198,9 @@ export function Toc({
             <a
               href={`#${item.id}`}
               className={cn(
-                'focus-ring -ml-px block border-l-2 border-transparent py-1 pl-3 text-sm text-muted-foreground no-underline transition-colors hover:text-foreground motion-reduce:transition-none',
+                'focus-ring block py-1 pl-3 text-sm text-muted-foreground no-underline transition-colors hover:text-foreground motion-reduce:transition-none',
                 item.level >= 3 && 'pl-6',
-                activeId === item.id && 'border-brand text-foreground',
+                activeId === item.id && 'font-medium text-foreground',
               )}
               aria-current={activeId === item.id ? 'location' : undefined}
               onClick={handleClick(item.id)}
