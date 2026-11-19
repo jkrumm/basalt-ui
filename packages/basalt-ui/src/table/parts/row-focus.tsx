@@ -2,7 +2,8 @@
  * A table's link to a chart's shared focus (`DataTable focus` or `focusSeries`). `DataTable`
  * provides it; a data row reads it, so `DataRow` stays one markup with or without a focus. A row
  * maps to its focus item by `getRowId`, or to its series by `focusSeries.key`, never by position,
- * so a sort or a filter keeps the link.
+ * so a sort or a filter keeps the link. Under `focus`, a row whose id names no item dims with the
+ * rest and clears the focus when pointed at.
  */
 import { createContext, useContext } from 'react'
 import type { FocusEvent, PointerEvent, ReactElement, ReactNode } from 'react'
@@ -67,16 +68,26 @@ export function rowLinkOf<T, I>(
   if (focus === undefined) return undefined
   const ids = new Map<string, number>()
   focus.items.forEach((item, i) => ids.set(getRowId(item), i))
+  // A row the chart draws no item for (a container with no limit): it dims while any item is
+  // focused, and pointing at it clears the focus, so it never reads as the focused row.
+  const clear = (): void => focus.set(null)
+  const unmarked = (): MarkedItem => ({
+    'data-chart-mark': '',
+    ...(focus.span.length > 0 && { 'data-dimmed': '' as const }),
+    ref: () => undefined,
+    onPointerEnter: clear,
+    onPointerDown: clear,
+  })
   return {
     item: (id) => {
       const index = ids.get(id)
-      return index === undefined ? undefined : focus.item(index)
+      return index === undefined ? unmarked() : focus.item(index)
     },
     enter: (id) => {
       const index = ids.get(id)
-      if (index !== undefined) focus.set(index)
+      focus.set(index ?? null)
     },
-    clear: () => focus.set(null),
+    clear,
   }
 }
 
