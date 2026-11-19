@@ -1453,7 +1453,7 @@ function buildScales<T, X extends ChartX>(opts: {
         grid: input.y?.grid ?? true,
         locale: input.locale,
         edges: edgesOn('left'),
-        // The hover pins the y value only without a right axis (see `crosshairMarks`).
+        // The hover pins the y value only without a right axis (see `crosshairGuide`).
         readout: right === null,
       }),
     },
@@ -1820,17 +1820,6 @@ const GUIDE_LABEL = {
  * chip would sit on the plot's baseline over the marks, once per panel; the panel that labels the axis
  * carries it.
  */
-function crosshairMarks<T, X extends ChartX>(opts: {
-  input: CartesianInput<T, X>
-  pinned: boolean
-  formatX: (v: ChartValue) => string
-  formatY: ((v: number) => string) | null
-}): ChartMarks {
-  const guide = crosshairGuide(opts)
-  return guide === null ? [] : [crosshair(guide)]
-}
-
-/** The options `crosshairMarks` hands the engine, or `null` for a chart with no guide at all. */
 export function crosshairGuide<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
   pinned: boolean
@@ -2320,6 +2309,12 @@ export function compileCartesian<T, X extends ChartX>(
               format: axes.axisOf('left').format,
               labels: capLabels,
             })
+      const guide = crosshairGuide({
+        input,
+        pinned: cls !== 'micro' && input.bare !== true,
+        formatX,
+        formatY: axes.right === null ? axes.axisOf('left').format : null,
+      })
       const offScale = offScaleMarks({
         labels: capLabels,
         formatOf: (s) => (v, d) =>
@@ -2367,12 +2362,7 @@ export function compileCartesian<T, X extends ChartX>(
               : undefined,
             plotHeight: hasXCaption ? captionContext().plotHeight : undefined,
           }),
-          ...crosshairMarks({
-            input,
-            pinned: cls !== 'micro' && input.bare !== true,
-            formatX,
-            formatY: axes.right === null ? axes.axisOf('left').format : null,
-          }),
+          ...(guide === null ? [] : [crosshair(guide)]),
         ],
         scales: buildScales({
           input,
