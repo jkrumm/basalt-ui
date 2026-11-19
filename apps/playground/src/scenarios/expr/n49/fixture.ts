@@ -17,11 +17,11 @@ export type WikiPage = {
   stillRead: boolean
 }
 
-export const NO_OWNER = 'No owner'
+const NO_OWNER = 'No owner'
 export const STALE_DAYS = 180
 export const READ_VIEWS = 100
 /** The wiki's own clock, so the fixture is the same on every run. */
-export const TODAY = Date.UTC(2026, 10, 19)
+const TODAY = Date.UTC(2026, 10, 19)
 
 const DAY = 86_400_000
 

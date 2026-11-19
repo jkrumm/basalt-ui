@@ -27,8 +27,7 @@ export const NOW = Date.UTC(2026, 10, 19, 9, 0)
 export const MIN = 60_000
 export const HOUR = 60 * MIN
 export const DAY = 24 * HOUR
-export const SAMPLES = 288
-export const FIXTURE_NAMES = ['quiet', 'extreme'] as const
+const SAMPLES = 288
 
 type Memory =
   | { kind: 'flat'; pct: number }

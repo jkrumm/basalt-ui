@@ -6,7 +6,7 @@
  * same month with the spike taken out; `quiet` is a month in which no project shipped.
  */
 
-export const DAYS = 30
+const DAYS = 30
 
 export type ProjectState = 'shipping' | 'quiet' | 'spike'
 

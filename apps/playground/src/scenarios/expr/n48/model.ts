@@ -23,10 +23,10 @@ export const START = Date.UTC(2024, 11, 1)
 export const DAYS = 365
 /** Window month 0 is December 2024. */
 export const MONTHS = 12
-export const WINTER_MONTHS = 3
+const WINTER_MONTHS = 3
 export const WINTER_DAYS = 31 + 31 + 28
 
-export const FIXTURES = ['no-winter', 'ultra'] as const
+const FIXTURES = ['no-winter', 'ultra'] as const
 export type Fixture = (typeof FIXTURES)[number]
 export const isFixture = (v: string | undefined): v is Fixture => FIXTURES.some((f) => f === v)
 
