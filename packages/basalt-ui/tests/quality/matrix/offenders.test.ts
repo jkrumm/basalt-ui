@@ -11,8 +11,14 @@ import { quality } from '../../../src/testing/quality'
 import type { PageLike } from '../../../src/testing/quality'
 import { fit, forcedColors, hitFloor, hitOverlap, reducedMotion } from './assertions'
 import { bootMatrix } from './harness'
+import { parseShard } from './shard'
 
-const enabled = process.env['BASALT_MATRIX'] !== undefined && process.env['BASALT_MATRIX'] !== ''
+// A sharded run (BASALT_MATRIX_SHARD, shard.ts) holds this small suite on its first shard only.
+const shard = parseShard(process.env['BASALT_MATRIX_SHARD'])
+const enabled =
+  process.env['BASALT_MATRIX'] !== undefined &&
+  process.env['BASALT_MATRIX'] !== '' &&
+  (shard === null || shard.index === 1)
 const harness = enabled ? await bootMatrix() : null
 afterAll(async () => {
   await harness?.close()
