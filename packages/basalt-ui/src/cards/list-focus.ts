@@ -14,6 +14,7 @@ export function rowFocus(
   return {
     ref: item.ref,
     onPointerEnter: item.onPointerEnter,
+    onPointerOver: item.onPointerEnter,
     onPointerDown: item.onPointerDown,
     onFocus: () => focus.set(i),
     ...((item as MarkedItem)['data-chart-mark'] !== undefined && { 'data-chart-mark': '' }),
@@ -128,6 +129,9 @@ export function linkedRow(
   return {
     ref: item.ref,
     onPointerEnter: item.onPointerEnter,
+    // `pointerover` too: a chart's crosshair node can leave the DOM under the pointer, so no `pointerout`
+    // names the arrival and React drops the row's `pointerenter` (its related target is still a React node).
+    onPointerOver: item.onPointerEnter,
     onPointerDown: item.onPointerDown,
     // A link or a button row takes focus itself: entering it is the row's step.
     onFocus: (event) => {

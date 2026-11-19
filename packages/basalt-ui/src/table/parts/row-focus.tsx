@@ -27,6 +27,7 @@ export type FocusedRowProps = RowProps & {
   'data-dimmed'?: ''
   'data-focused'?: ''
   onPointerEnter?: () => void
+  onPointerOver?: () => void
   onPointerDown?: () => void
 }
 
@@ -121,6 +122,9 @@ export function useRowFocusProps(id: string, row: unknown, base: RowProps): Focu
       item.ref(el)
     },
     onPointerEnter: item.onPointerEnter,
+    // `pointerover` too: a chart's crosshair node can leave the DOM under the pointer, so no `pointerout`
+    // names the arrival and React drops the row's `pointerenter` (its related target is still a React node).
+    onPointerOver: item.onPointerEnter,
     onPointerDown: item.onPointerDown,
     onFocus: (event: FocusEvent<HTMLElement>) => {
       base.onFocus?.(event)
