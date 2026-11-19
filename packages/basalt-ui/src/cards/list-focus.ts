@@ -59,6 +59,11 @@ export function listFocus(focus: ListFocus<unknown>): {
 export type RowsLink = {
   /** Every row's props in row order; with a row marked, the rows that are not dim. */
   items: readonly MarkedItem[]
+  /**
+   * Whether row `i` still stands for the focus: its items are focused, or it holds none and nothing is
+   * focused. A pointer elsewhere, or a focus set by the chart, silences the row the keys stepped to.
+   */
+  stands: (row: number) => boolean
   enter: (row: number) => void
   clear: () => void
   /** Clears after the focus's grace, for a pointer leave: the pointer crossing to the next list keeps it. */
@@ -67,8 +72,15 @@ export type RowsLink = {
 
 /** The link of a list's `focusItems`: a row holds every item `holds` accepts. */
 export function itemsRows<T, I>(link: ItemsLink<T, I>, rows: readonly T[]): RowsLink {
+  const items = rows.map((row) => heldItem(link, row))
   return {
-    items: rows.map((row) => heldItem(link, row)),
+    items,
+    stands: (i) => {
+      const row = rows[i]
+      if (row === undefined) return false
+      if (heldBy(link, row).length === 0) return link.focus.index === null
+      return items[i]?.['data-focused'] !== undefined
+    },
     // `hold` of no index clears, so stepping onto a row that holds nothing clears the focus too.
     enter: (i) => {
       const row = rows[i]
@@ -86,12 +98,14 @@ export function itemsRows<T, I>(link: ItemsLink<T, I>, rows: readonly T[]): Rows
 export function seriesRows<T>(link: SeriesLink<T>, rows: readonly T[]): RowsLink {
   const own = rows.map((row) => link.focus.seriesItem(link.key(row)))
   const lit = own.some((item) => item['data-focused'] !== undefined)
+  const items = own.map((item) => ({
+    ...item,
+    'data-chart-mark': '' as const,
+    ...(lit && item['data-focused'] === undefined && { 'data-dimmed': '' as const }),
+  }))
   return {
-    items: own.map((item) => ({
-      ...item,
-      'data-chart-mark': '' as const,
-      ...(lit && item['data-focused'] === undefined && { 'data-dimmed': '' as const }),
-    })),
+    items,
+    stands: (i) => items[i]?.['data-focused'] !== undefined,
     enter: (i) => {
       const row = rows[i]
       link.focus.setSeries(row === undefined ? null : link.key(row))

@@ -217,11 +217,9 @@ export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
     setAt(row)
     link?.enter(row)
   }
-  // The row the keys stepped to, while it is still the one marked (a pointer elsewhere silences it).
+  // The row the keys stepped to, while it still stands for the focus (a pointer elsewhere silences it).
   const said =
-    link === undefined || at === null || link.items[at]?.['data-focused'] === undefined
-      ? ''
-      : sayRow(items[at], drawn[at])
+    link === undefined || at === null || !link.stands(at) ? '' : sayRow(items[at], drawn[at])
   return (
     <div data-slot="bar-list" className="@container min-w-0">
       <Card flush>
