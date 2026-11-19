@@ -264,3 +264,49 @@ export const SERVED_SERIES = defineSeries({
   lumenEmbed: { light: 'light-dark(#adadad, #737373)', dark: 'light-dark(#adadad, #737373)' },
   lumenLite: { light: 'light-dark(#d6d6d6, #4a4a4a)', dark: 'light-dark(#d6d6d6, #4a4a4a)' },
 })
+
+/** Training year (scenario expr-n48): the accent is the winter days; the rest of the year sits in an ink step, the longest break in a mid step drawn hollow. */
+export const TRAINING_SERIES = defineSeries({
+  winter: { light: '#2871c7', dark: '#5190f7' },
+  rest: { light: '#4a4a4a', dark: '#c4c4c4' },
+  pause: { light: '#6b6b6b', dark: '#a8a8a8' },
+})
+
+/** Team wiki (scenario expr-n49): the accent is a stale page still read; stale pages with few reads sit in a dark ink step, fresh pages in a pale one, the read-threshold rule in a mid step. Each pair is `light-dark()` in both halves (BarList paints only the light half while the scheme is auto-dark). */
+export const WIKI_SERIES = defineSeries({
+  read: { light: 'light-dark(#2871c7, #5190f7)', dark: 'light-dark(#2871c7, #5190f7)' },
+  quiet: { light: 'light-dark(#4a4a4a, #c4c4c4)', dark: 'light-dark(#4a4a4a, #c4c4c4)' },
+  fresh: { light: 'light-dark(#b0b0b0, #666666)', dark: 'light-dark(#b0b0b0, #666666)' },
+  rule: { light: 'light-dark(#6b6b6b, #a8a8a8)', dark: 'light-dark(#6b6b6b, #a8a8a8)' },
+})
+
+/** Project output (scenario expr-n50): shipped Issues and cost per Issue each sit in one ink step; the accent is the project that answers in its card. */
+export const PROJECTS_SERIES = defineSeries({
+  shipped: { light: '#6b6b6b', dark: '#a8a8a8' },
+  cost: { light: '#6b6b6b', dark: '#a8a8a8' },
+})
+
+/** Line speed (scenario expr-n46): the accent is the days under the minimum (the kit's highlight); ordinary days sit in an ink step, the contract rules in ink steps from dark (minimum) to pale (maximum). */
+export const SPEED_SERIES = defineSeries({
+  day: { light: '#8a8a8a', dark: '#8f8f8f' },
+  minimum: { light: '#262626', dark: '#e6e6e6' },
+  normal: { light: '#5c5c5c', dark: '#b4b4b4' },
+  maximum: { light: '#a3a3a3', dark: '#757575' },
+})
+
+/** Issue timeline (scenario expr-n47): the status red is the blocked wait, the one state that needs a hand; sessions sit in the dark ink step, owner and CI waits in mid steps, queue and merge-window holds in the palest, events in the darkest. Each pair is `light-dark()` in both halves (cycle-expression-11: BarList paints only the light half while the scheme is auto-dark). */
+export const ISSUE_SERIES = defineSeries({
+  work: { light: 'light-dark(#4a4a4a, #c4c4c4)', dark: 'light-dark(#4a4a4a, #c4c4c4)' },
+  owner: { light: 'light-dark(#858585, #9a9a9a)', dark: 'light-dark(#858585, #9a9a9a)' },
+  ci: { light: 'light-dark(#adadad, #737373)', dark: 'light-dark(#adadad, #737373)' },
+  hold: { light: 'light-dark(#d6d6d6, #4a4a4a)', dark: 'light-dark(#d6d6d6, #4a4a4a)' },
+  blocked: { light: 'light-dark(#af293e, #e46360)', dark: 'light-dark(#af293e, #e46360)' },
+  event: { light: 'light-dark(#262626, #ececec)', dark: 'light-dark(#262626, #ececec)' },
+})
+
+/** Containers (scenario expr-n45): red marks a container past a line (restarting often or near its memory limit); the rest sit in an ink step, the two lines in a mid one. */
+export const CONTAINER_SERIES = defineSeries({
+  flagged: { light: '#af293e', dark: '#e46360' },
+  quiet: { light: '#6b6b6b', dark: '#a8a8a8' },
+  rule: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
