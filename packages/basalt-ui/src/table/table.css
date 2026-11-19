@@ -117,6 +117,102 @@
     display: table-column;
     width: 0 !important;
   }
+  @container table (max-width: 479.9px) {
+    [data-full-at='480'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='480'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='480'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
+  @container table (max-width: 519.9px) {
+    [data-full-at='520'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='520'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='520'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
+  @container table (max-width: 559.9px) {
+    [data-full-at='560'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='560'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='560'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
+  @container table (max-width: 599.9px) {
+    [data-full-at='600'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='600'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='600'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
+  @container table (max-width: 639.9px) {
+    [data-full-at='640'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='640'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='640'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
+  @container table (max-width: 679.9px) {
+    [data-full-at='680'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='680'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='680'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
+  @container table (max-width: 719.9px) {
+    [data-full-at='720'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='720'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='720'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
+  @container table (max-width: 759.9px) {
+    [data-full-at='760'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='760'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='760'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
   @container table (max-width: 799.9px) {
     [data-full-at='800'] [data-priority='3'] {
       display: none;
@@ -125,6 +221,18 @@
       display: inline-flex;
     }
     [data-full-at='800'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
+  @container table (max-width: 899.9px) {
+    [data-full-at='900'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='900'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='900'] [data-slot='virtual-list'] col[data-priority='3'] {
       display: table-column;
       width: 0 !important;
     }
@@ -141,6 +249,18 @@
       width: 0 !important;
     }
   }
+  @container table (max-width: 1099.9px) {
+    [data-full-at='1100'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='1100'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='1100'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
   @container table (max-width: 1199.9px) {
     [data-full-at='1200'] [data-priority='3'] {
       display: none;
@@ -153,6 +273,18 @@
       width: 0 !important;
     }
   }
+  @container table (max-width: 1299.9px) {
+    [data-full-at='1300'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='1300'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='1300'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
   @container table (max-width: 1439.9px) {
     [data-full-at='1440'] [data-priority='3'] {
       display: none;
@@ -161,6 +293,18 @@
       display: inline-flex;
     }
     [data-full-at='1440'] [data-slot='virtual-list'] col[data-priority='3'] {
+      display: table-column;
+      width: 0 !important;
+    }
+  }
+  @container table (max-width: 1599.9px) {
+    [data-full-at='1600'] [data-priority='3'] {
+      display: none;
+    }
+    [data-full-at='1600'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-full-at='1600'] [data-slot='virtual-list'] col[data-priority='3'] {
       display: table-column;
       width: 0 !important;
     }

@@ -12,8 +12,8 @@
  * Priority rules: the identity column is priority 1 and pinned start. More than two priority-1
  * columns demote by declaration order (identity first), one dev warning, never a throw.
  *
- * Tier rules: `fullAt` is the smallest of 800, 1000, 1200, 1440, 1800 the visible widths fit; a sum
- * above 1800 stays reduced (`null`) with a dev warning. If priority 1+2 exceed 480 px the card or
+ * Tier rules: `fullAt` is the smallest of `FULL_AT_STEPS` (40 px apart up to 800, then 100 to 200 px apart) the visible widths
+ * fit and never below the card threshold; a sum above 1800 stays reduced (`null`) with a dev warning. If priority 1+2 exceed 480 px the card or
  * scroll threshold moves to 720 when they fit 720 px, else to 800; above 800 the trailing priority-2
  * columns demote to 3.
  */
@@ -21,7 +21,9 @@ import type { CardSlot, KindColumn, Priority } from '../contract'
 import { specOf } from './kinds'
 import type { CardPlace, KindName, KindSpec, Width } from './kinds-spec'
 
-export const FULL_AT_STEPS = [800, 1000, 1200, 1440, 1800] as const
+export const FULL_AT_STEPS = [
+  480, 520, 560, 600, 640, 680, 720, 760, 800, 900, 1000, 1100, 1200, 1300, 1440, 1600, 1800,
+] as const
 export type FullAt = (typeof FULL_AT_STEPS)[number]
 
 /** Below this inline size the card (or scroll) tier applies: the smallest step priority 1+2 fit. */
@@ -219,19 +221,21 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
       0,
     )
   const total = sum(() => true)
-  const fullAt = fullAtFor(total)
-  if (fullAt === null) {
-    warn(
-      `basalt-ui/table: visible columns need ${total}px, above 1800; the table stays in the reduced tier`,
-    )
-  }
-
   const narrow = (index: number) => {
     const p = priorities[index]
     return p === null || p === 1 || p === 2
   }
   let core = sum(narrow)
   const reducedFrom = reducedFromOf(core)
+  // Priority 3 shows from the smallest step every visible column fits, and never while the table is
+  // still cards or a scroll: the card threshold is the floor.
+  const fullAt = fullAtFor(Math.max(total, reducedFrom))
+  if (fullAt === null) {
+    warn(
+      `basalt-ui/table: visible columns need ${total}px, above 1800; the table stays in the reduced tier`,
+    )
+  }
+
   for (let index = inputs.length - 1; core > 800 && index >= 0; index -= 1) {
     if (priorities[index] !== 2 || !visible[index]) continue
     priorities[index] = 3

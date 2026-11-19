@@ -198,13 +198,8 @@ function FramedArm<T>({
  * that imports `basalt-ui/table`, so the app adds nothing; without the plugin, import it once beside
  * `basalt-ui/tailwind.css`, or a phone table stays a table.
  *
- * A column's `priority` is decided against the table's container, not the viewport. A column is
- * `ch` x 8 px + 24 px wide (an icon column 44 px). Priority 3 shows only from `data-full-at`, the
- * smallest of 800, 1000, 1200, 1440 or 1800 px that holds every visible column; above 1800 px of
- * columns the table stays reduced. Priority 1 and 2 show from 480 px, from 720 px once they sum
- * above 480 px and fit 720, or from 800 px above that. While they sum above 800 px the last priority 2 columns drop to 3 whatever the
- * container, so a table in a half-width cell (about 900 px at 1800) shows a priority 3 column only
- * when every column sums to 800 px or less. When the title is the one flexible column it grows to 40
+ * A column's `priority` is decided against the table's container, not the viewport; the rule, with the
+ * column widths it adds, is in `useDataTable`'s doc. When the title is the one flexible column it grows to 40
  * characters (80 with a `sub` line) and no further: the width above that is a filler at the end of
  * the table, so the figures stay beside the title and the head, the hairlines and the row tint still
  * span the table.
