@@ -145,7 +145,7 @@ describe('every label against its own ground', () => {
     root = createRoot(el)
     let handle: ChartFocus<Span> | undefined
     function Track() {
-      const focus = useChartFocus(SPANS, { announce: (s) => s.label })
+      const focus = useChartFocus(SPANS, { announce: (s) => s.label ?? s.kind })
       useEffect(() => {
         handle = focus
       })
