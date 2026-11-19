@@ -321,6 +321,32 @@ layout('SplitPage at 390', () => {
   })
 })
 
+layout('SplitPage list ring at 390', () => {
+  // The list scroll area takes tabindex while its content overflows, which makes it a Tab stop with its own 4px ring.
+  // It extends past its pane by the room the link rings need, so that ring has to fit in the narrowest page
+  // gutter (the shell's 8px on a phone) or the shell's scroll region clips it.
+  const RING = 4
+  const NARROWEST_GUTTER = 8
+
+  test('the list scroll area overshoots its pane by less than the gutter leaves for its own ring', async () => {
+    const page = await openFixture(specOf('split'), PHONE)
+    const overshoot = await page.raw.evaluate(
+      ({ list }) => {
+        const pane = document.querySelector<HTMLElement>(list)
+        const area = pane?.querySelector<HTMLElement>('[data-slot="scroll-area"]')
+        if (pane === null || pane === undefined || area === null || area === undefined) {
+          throw new Error('LAYOUT: no list scroll area')
+        }
+        const p = pane.getBoundingClientRect()
+        const a = area.getBoundingClientRect()
+        return Math.max(p.left - a.left, a.right - p.right)
+      },
+      { list: slot('split-page-list') },
+    )
+    expect(overshoot + RING).toBeLessThanOrEqual(NARROWEST_GUTTER)
+  })
+})
+
 layout('SplitPage at 1440', () => {
   test('both panes show and the list column is sticky with a scroll area', async () => {
     const page = await openFixture(specOf('split'), DESKTOP_1440)

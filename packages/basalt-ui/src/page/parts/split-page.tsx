@@ -113,8 +113,8 @@ export function SplitPage({
           selected && 'hidden @wide:block',
         )}
       >
-        {/* The pane scrolls, so it clips: its padding is the room the 4px link rings need, taken back by the margin. */}
-        <ScrollArea className="-m-1.5 p-1.5 @wide:max-h-[calc(100dvh-var(--page-sticky-top))]">
+        {/* The pane scrolls, so it clips: its padding is the room the 4px link rings need, taken back by the margin. The margin is no wider, so the scroller's own ring (it takes a tab stop while it overflows) still fits the 8px phone gutter. */}
+        <ScrollArea className="-m-1 p-1 @wide:max-h-[calc(100dvh-var(--page-sticky-top))]">
           <SplitListContext value={true}>{list()}</SplitListContext>
         </ScrollArea>
       </div>
