@@ -86,6 +86,60 @@ describe('search reads every column', () => {
     expect(searchFor('no')).toEqual(['b'])
   })
 
+  test('a money change is found as its cell writes it', () => {
+    type Change = { id: string; change: number }
+    const d = col<Change>()
+    let model2: TableModel<Change> | undefined
+    function Changes(): ReactElement {
+      const t = useDataTable<Change>({
+        id: 'changes',
+        label: 'Changes',
+        columns: [d.delta('change', { polarity: 'up-good', currency: 'EUR' })],
+        data: [
+          { id: 'x', change: 50 },
+          { id: 'y', change: -7 },
+        ],
+        getRowId: (r) => r.id,
+        mode: { kind: 'client' },
+      })
+      const built = modelOf(t)
+      useEffect(() => {
+        model2 = built
+      })
+      return <DataTable table={t} />
+    }
+    render(<Changes />)
+    act(() => model2?.state.setRequest({ q: '+€50.00' }))
+    expect(model2?.rows.map((r) => r.id)).toEqual(['x'])
+  })
+
+  test('an invalid date is skipped by search, never thrown', () => {
+    type Due = { id: string; due: Date }
+    const d = col<Due>()
+    let model3: TableModel<Due> | undefined
+    function Dues(): ReactElement {
+      const t = useDataTable<Due>({
+        id: 'dues',
+        label: 'Dues',
+        columns: [d.date('due', { header: 'Due' })],
+        data: [
+          { id: 'ok', due: new Date('2026-11-15T12:00:00Z') },
+          { id: 'bad', due: new Date('not a date') },
+        ],
+        getRowId: (r) => r.id,
+        mode: { kind: 'client' },
+      })
+      const built = modelOf(t)
+      useEffect(() => {
+        model3 = built
+      })
+      return <DataTable table={t} />
+    }
+    render(<Dues />)
+    act(() => model3?.state.setRequest({ q: '2026-11-15' }))
+    expect(model3?.rows.map((r) => r.id)).toEqual(['ok'])
+  })
+
   test('a server table keeps every row it was sent and carries the phrase as q', () => {
     render(<Subject server />)
     expect(searchFor('legal')).toEqual(['a', 'b', 'c'])

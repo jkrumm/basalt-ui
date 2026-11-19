@@ -9,7 +9,7 @@
  * matter. `c.codec` takes ids and kinds only, so it can sit at module scope.
  */
 import type { ReactNode } from 'react'
-import type { CalendarDate, DateStyle, Format } from '../../core/format'
+import type { DateStyle, Format } from '../../core/format'
 import type { Box, Delta, IconComponent, NavTarget, Tone } from '../../core/ports'
 import type { CardSlot, DateRangeLike, KindColumn, Priority, RowAction } from '../contract'
 import { codec } from './kinds-codec'
@@ -24,10 +24,11 @@ import {
   RelativeTimeCell,
   StatusCell,
   WithIcon,
+  dateLabel,
+  deltaLabel,
   formatMoney,
   formatNumber,
   isAbsent,
-  toInstant,
 } from './kinds-cells'
 import { KIND_DEFAULTS, KIND_SPEC } from './kinds-spec'
 import type {
@@ -452,22 +453,22 @@ function searchOf<T>(b: Base<T>): (row: T, format: Format) => string {
   return (row, format) => {
     const value = b.value(row)
     if (isAbsent(value)) return ''
-    const raw = value instanceof Date ? value.toISOString() : String(value)
+    // An invalid Date draws the dash in its cell; its stored text is empty here, never a throw.
+    const raw =
+      value instanceof Date
+        ? Number.isNaN(value.getTime())
+          ? ''
+          : value.toISOString()
+        : String(value)
     const shown = b.text?.(value, row, format)
     return shown === undefined || shown === '' ? raw : `${shown}\n${raw}`
   }
 }
 
-const CALENDAR_DAY = /^\d{4}-\d{2}-\d{2}$/
-
 /** A date value as its cell writes it, and its ISO day, so `2026-11-03` finds a timestamp too. */
 function dateText(value: unknown, format: Format, style: DateStyle): string {
-  if (typeof value === 'string' && CALENDAR_DAY.test(value)) {
-    return format.date(value as CalendarDate, style)
-  }
-  const instant = toInstant(value)
-  if (instant === null) return ''
-  return `${format.date(instant, style)}\n${instant.toISOString().slice(0, 10)}`
+  const label = dateLabel(value, format, style)
+  return label === null ? '' : `${label.text}\n${label.iso.slice(0, 10)}`
 }
 
 function byOption(options: readonly string[]): (a: unknown, b: unknown) => number {
@@ -693,7 +694,7 @@ export function col<T>(): Col<T> {
           ),
         {
           text: (v, _row, format) =>
-            typeof v === 'number' ? format.number(v, { signDisplay: 'exceptZero' }) : '',
+            typeof v === 'number' ? deltaLabel(format, v, o.unit, o.currency) : '',
           spec: rangeFilter<T>(o),
         },
       ),
