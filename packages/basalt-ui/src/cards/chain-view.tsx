@@ -1,5 +1,5 @@
 /* oxlint-disable jsx-a11y/no-noninteractive-element-interactions -- the list is the one tab stop of a shared chart focus (listFocus), as RowList's is */
-import type { CSSProperties, ReactElement } from 'react'
+import type { CSSProperties, KeyboardEvent, ReactElement } from 'react'
 import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
 import { lists } from '../core/messages/lists'
@@ -177,13 +177,31 @@ export function ChainView<T>({
     if (focus === undefined || i === undefined) return undefined
     return rowFocus(focus as ListFocus<unknown>, i)
   }
-  const keys = focus === undefined ? {} : listFocus(focus as ListFocus<unknown>)
+  // With a shared focus the graph is one tab stop whose arrows step the focus; Enter activates the
+  // focused node, as a click on it does.
+  const shared = focus === undefined ? undefined : listFocus(focus as ListFocus<unknown>)
+  const keys =
+    shared === undefined || focus === undefined
+      ? {}
+      : {
+          ...shared,
+          onKeyDown: (event: KeyboardEvent<HTMLUListElement>) => {
+            const at = focus.index === null ? undefined : focus.items[focus.index]
+            if (event.key === 'Enter' && onActivate !== undefined && at !== undefined) {
+              event.preventDefault()
+              onActivate(at)
+              return
+            }
+            shared.onKeyDown(event)
+          },
+        }
   const waitsOnLine = (id: string): string | undefined => {
     const blockers = blockersOf.get(id) ?? []
     return blockers.length === 0 ? undefined : t('lists.chainWaitsOn', blockers.map(titleOf))
   }
 
-  const body = (node: T, id: string): ReactElement => {
+  /** `roving`: a node of the graph, whose tab stop is the list when a focus is shared. */
+  const body = (node: T, id: string, roving: boolean): ReactElement => {
     const own = faces.get(id) ?? { title: id }
     const blocked = isBlocked(id)
     const inner = <Face face={own} waitsOnLine={waitsOnLine(id)} />
@@ -197,7 +215,7 @@ export function ChainView<T>({
         type="button"
         className={className}
         data-blocked={blocked ? '' : undefined}
-        tabIndex={focus === undefined ? undefined : -1}
+        tabIndex={roving && focus !== undefined ? -1 : undefined}
         onClick={() => onActivate(node)}
       >
         {inner}
@@ -286,7 +304,7 @@ export function ChainView<T>({
                   }
                   {...share(id)}
                 >
-                  {body(node, id)}
+                  {body(node, id, true)}
                 </li>
               )
             })}
@@ -310,7 +328,7 @@ export function ChainView<T>({
               className="flex min-w-0 flex-col gap-1"
               style={{ paddingInlineStart: `calc(var(--spacing) * ${level * 4})` }}
             >
-              <div className="h-16">{body(node, id)}</div>
+              <div className="h-16">{body(node, id, false)}</div>
               {more.length > 0 && (
                 <span className="truncate pl-3 text-xs text-muted-foreground">
                   {t('lists.chainAlsoWaitsOn', more.map(titleOf))}

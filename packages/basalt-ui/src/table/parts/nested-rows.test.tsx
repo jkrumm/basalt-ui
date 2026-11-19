@@ -184,4 +184,21 @@ describe('nested rows', () => {
       false,
     ])
   })
+
+  test('while a search holds the paths open, Left steps to the parent and nothing is closed', async () => {
+    const searched: TableState = { ...STATE, request: { ...STATE.request, q: 'Search' } }
+    const { container } = render(<Subject state={searched} />)
+    const before = written.length
+    const network = rows(container)[1]!
+    expect(
+      network.querySelector<HTMLButtonElement>('[data-slot="table-tree-lead"] button')?.disabled,
+    ).toBe(true)
+    await act(async () => {
+      network.focus()
+      fireEvent.keyDown(network, { key: 'ArrowLeft' })
+    })
+    expect(document.activeElement).toBe(rows(container)[0])
+    expect(network.getAttribute('aria-expanded')).toBe('true')
+    expect(written.length).toBe(before)
+  })
 })

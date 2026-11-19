@@ -76,19 +76,43 @@ describe('ChainView', () => {
     expect(onActivate).toHaveBeenCalledWith(TASKS[2])
   })
 
+  test('with a shared focus the graph is one tab stop whose Enter activates the focused node; the narrow list stays tabbable', () => {
+    const onActivate = mock(() => undefined)
+    function Shared(): ReactElement {
+      const focus = useChartFocus(TASKS, { announce: (t) => t.title })
+      return <ChainView {...props({ focus, onActivate })} />
+    }
+    const { container } = render(<Shared />)
+    const list = graph(container).querySelector<HTMLElement>('ul')!
+    expect(list.tabIndex).toBe(0)
+    expect(node(container, 'b').querySelector('button')?.tabIndex).toBe(-1)
+    act(() => {
+      fireEvent.pointerEnter(node(container, 'c'))
+    })
+    act(() => {
+      fireEvent.keyDown(list, { key: 'Enter' })
+    })
+    expect(onActivate).toHaveBeenCalledWith(TASKS[2])
+    const narrow = [
+      ...container.querySelectorAll<HTMLButtonElement>('[data-slot="chain-list"] button'),
+    ]
+    expect(narrow.length).toBe(4)
+    for (const button of narrow) expect(button.tabIndex).toBe(0)
+  })
+
   test('a shared focus marks the node, dims the edges that do not touch it, and a node sets it', () => {
-    let seen: number | null = null
+    const seen: { index: number | null } = { index: null }
     function Shared(): ReactElement {
       // The focus items run in another order than the nodes: the chain maps them by id.
       const focus = useChartFocus(TASKS.toReversed(), { announce: (t) => t.title })
-      seen = focus.index
+      seen.index = focus.index
       return <ChainView {...props({ focus })} />
     }
     const { container } = render(<Shared />)
     act(() => {
       fireEvent.pointerEnter(node(container, 'b'))
     })
-    expect(seen).toBe(2)
+    expect(seen.index).toBe(2)
     expect(node(container, 'b').hasAttribute('data-focused')).toBe(true)
     const lit = [...graph(container).querySelectorAll('[data-slot="chain-edge"]')].filter(
       (e) => e.getAttribute('opacity') === '1',
