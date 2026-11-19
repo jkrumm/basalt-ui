@@ -56,7 +56,7 @@ const HEALTHY = week([6, 6, 5, 6, 6, 6, 5])
 const DEPLOYS = week([21, 26, 19, 24, 27, 22, 25])
 const FAILURE = week([9.5, 11.5, 21.1, 4.2, 11.1, 9.1, 12])
 const MEDIAN = week([181, 176, 170, 179, 168, 174, 172])
-const BASE = 'vs prior 7 days'
+const BASE = 'vs last week'
 
 // #region stat-group
 /** The stat row: four figures of equal weight, each against its base, its target or its trend. */
