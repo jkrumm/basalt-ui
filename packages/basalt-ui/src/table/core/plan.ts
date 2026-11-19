@@ -14,7 +14,8 @@
  *
  * Tier rules: `fullAt` is the smallest of 800, 1000, 1200, 1440, 1800 the visible widths fit; a sum
  * above 1800 stays reduced (`null`) with a dev warning. If priority 1+2 exceed 480 px the card or
- * scroll threshold moves to 800; above 800 the trailing priority-2 columns demote to 3.
+ * scroll threshold moves to 720 when they fit 720 px, else to 800; above 800 the trailing priority-2
+ * columns demote to 3.
  */
 import type { CardSlot, KindColumn, Priority } from '../contract'
 import { specOf } from './kinds'
@@ -23,8 +24,8 @@ import type { CardPlace, KindName, KindSpec, Width } from './kinds-spec'
 export const FULL_AT_STEPS = [800, 1000, 1200, 1440, 1800] as const
 export type FullAt = (typeof FULL_AT_STEPS)[number]
 
-/** Below this inline size the card (or scroll) tier applies; 800 when priority 1+2 do not fit 480. */
-export type ReducedFrom = 480 | 800
+/** Below this inline size the card (or scroll) tier applies: the smallest step priority 1+2 fit. */
+export type ReducedFrom = 480 | 720 | 800
 
 /** px per `ch` at the table's body size, the cell's inline padding, the icon column. S3 checks them. */
 export const CH_PX = 8
@@ -183,6 +184,12 @@ function resolvePriorities(
   return { priorities, demoted }
 }
 
+/** The card threshold for a priority 1+2 width: the smallest step it fits, 800 above 720. */
+function reducedFromOf(core: number): ReducedFrom {
+  if (core <= 480) return 480
+  return core <= 720 ? 720 : 800
+}
+
 function fullAtFor(total: number): FullAt | null {
   return FULL_AT_STEPS.find((step) => total <= step) ?? null
 }
@@ -222,7 +229,7 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
     return p === null || p === 1 || p === 2
   }
   let core = sum(narrow)
-  const reducedFrom: ReducedFrom = core > 480 ? 800 : 480
+  const reducedFrom = reducedFromOf(core)
   for (let index = inputs.length - 1; core > 800 && index >= 0; index -= 1) {
     if (priorities[index] !== 2 || !visible[index]) continue
     priorities[index] = 3

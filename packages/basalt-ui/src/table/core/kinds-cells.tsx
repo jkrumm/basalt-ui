@@ -217,7 +217,15 @@ export function MeterCell({
   value: number
   max: number
 }): ReactNode {
-  return <Meter label={label} value={value} max={max} />
+  // A table cell holds one text line: the bar and its value sit side by side on that line, not stacked.
+  return (
+    <Meter
+      label={label}
+      value={value}
+      max={max}
+      className="flex-row items-center gap-2 [&_[data-readout]]:contents [&_[data-readout]>span:empty]:hidden [&_[data-readout]>span:last-child]:shrink-0 [&_[data-readout]>span:last-child]:whitespace-nowrap"
+    />
+  )
 }
 
 export function BooleanCell({

@@ -477,6 +477,7 @@ export function col<T>(): Col<T> {
         {
           spec: {
             filter: o?.filter === 'text' ? 'contains' : null,
+            ...(o?.sub !== undefined && { sub: true }),
             ...(o?.width === 'content' && {
               content: {
                 measure: (row: T) =>

@@ -68,13 +68,23 @@ export const rows: readonly RowDef[] = [
     // would move the bytes, not drop them, and the first open would wait on a fetch.
     // 155000 -> 156500 (Issue 2314): 155942 B measured for nested rows (owner review 1): `nested.parentOf`,
     // the tree item model, the indent and chevron lead, the treegrid row attributes and Right/Left keys.
-    ceiling: 156500,
+    // 156500 -> 157200 (Issue 2409): 157138 B measured, +~640 B gz for the 720 px card step, the trailing
+    // filler column, the framed table's head in empty and error and the one-line meter, the kit fixes of
+    // expression cycle 11.
+    ceiling: 157200,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 156500,
+      to: 157200,
+      consumer:
+        "the kit fixes of expression cycle 11 (Issue 2409): a DataTable in a half-width column (n45, n46, n47, n49, n50) turned into phone cards and a full-width one left a gap before its numbers, a framed table lost its head in empty and error (n33, n47, n48, n49) and a meter's value sat under its bar (n49)",
+      repo: 'basalt-ui',
+    },
     {
       from: 155000,
       to: 156500,

@@ -94,6 +94,8 @@ export type KindSpec<T> = {
    * `maxCh`, never below `minCh` (its header), and otherwise stays a flexible column.
    */
   content?: { measure: (row: T) => number; short?: { minCh: number; maxCh: number } }
+  /** `entity` with a sub line under its name: the title column may grow wider before the filler column takes the rest. */
+  sub?: boolean
   /** `null` for `actions`: never hidden by a tier. */
   priority: Priority | null
   pin: 'start' | 'end' | null

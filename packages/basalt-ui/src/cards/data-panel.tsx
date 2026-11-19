@@ -1,6 +1,9 @@
 import { useContext, useLayoutEffect, useRef, useState } from 'react'
-import type { CSSProperties, ReactElement, RefObject } from 'react'
+import type { CSSProperties, ReactElement, ReactNode, RefObject } from 'react'
 import { HostTitleContext } from '../core/could-not-load'
+import { FrameArmContext } from '../core/frame-arm'
+import { PhaseBoundary } from '../core/phase-boundary'
+import { resolvePhase } from '../core/phase'
 import { cn } from '../core/cn'
 import { useMessages } from '../core/messages/use-messages'
 import { cards } from '../core/messages/cards'
@@ -35,16 +38,16 @@ const bodyHeightOf = (size: DataPanelProps['bodySize']): number => {
 }
 
 /**
- * A `{ rows }` body shows whole rows: when its table's rows run past the declared height, the box
- * is cut after the last row that fits, so no row is clipped through its text. The measure reads the
- * rows against the declared height, never the snapped one, so it holds under a resize and a refetch;
- * the snapped height is kept through the loading, empty and error arms, so a panel that has shown
- * its rows keeps their height. Bodies that draw no table rows keep the declared height.
+ * A `{ rows }` body shows whole rows: when its table's rows run past the declared height, the rows
+ * are cut after the last one that fits, so no row is clipped through its text. The box keeps the
+ * declared height in every phase (a loading skeleton draws it), so the cut leaves at most one row of
+ * space at the bottom of the box. The measure reads the rows against the declared height, so it
+ * holds under a resize and a refetch. Bodies that draw no table rows get no cut.
  */
 function useWholeRows(
   enabled: boolean,
   declared: number,
-): { ref: RefObject<HTMLDivElement | null>; height: number } {
+): { ref: RefObject<HTMLDivElement | null>; fit: number | undefined } {
   const ref = useRef<HTMLDivElement | null>(null)
   const [snapped, setSnapped] = useState<number | undefined>(undefined)
   useLayoutEffect(() => {
@@ -68,7 +71,12 @@ function useWholeRows(
     for (const child of box.children) observer.observe(child)
     return () => observer.disconnect()
   })
-  return { ref, height: snapped === undefined ? declared : Math.max(MIN_BODY, snapped) }
+  return { ref, fit: snapped === undefined ? undefined : Math.max(MIN_BODY, snapped) }
+}
+
+/** Calls the body as a component, so a throw lands in the boundary and not in the panel. */
+function ArmBody({ body, height }: { body: DataPanelProps['body']; height: number }): ReactNode {
+  return body({ height, phase: 'ready' })
 }
 
 const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
@@ -195,7 +203,9 @@ function PanelHead(
  * The frame for a body that is not a chart: the same header and phase handling as the other cards,
  * around a table, a list or a board. The body is one box slot at a fixed height, declared by the
  * required `bodySize`, so a loading, empty or error panel is as tall as a ready one and
- * the body is called only in `ready` and `stale`. A `{ rows }` body whose table rows run past
+ * the body is called in `ready` and `stale`; in `empty` and `error` it is called too, so a table in it
+ * keeps its column header row and draws the arm under it (a body that draws no table stays hidden
+ * there and the panel draws its own arm). A `{ rows }` body whose table rows run past
  * the declared height shows whole rows: the box is cut after the last row that fits, and the
  * panel keeps that height through the other phases. The box clips with `overflow: clip`, never
  * `hidden`, so a table head that sticks to the page keeps sticking.
@@ -230,7 +240,16 @@ export function DataPanel(props: DataPanelProps): ReactElement {
     )
   }
   const declared = bodyHeightOf(bodySize)
-  const { ref: insetRef, height } = useWholeRows('rows' in bodySize, declared)
+  const { ref: insetRef, fit } = useWholeRows('rows' in bodySize, declared)
+  const [claims, setClaims] = useState(0)
+  // oxlint-disable-next-line react/hook-use-state -- the lazy initialiser holds one stable function for the context; there is no setter to name
+  const [claim] = useState(() => (): (() => void) => {
+    setClaims((n) => n + 1)
+    return () => setClaims((n) => n - 1)
+  })
+  const resolved = resolvePhase({ phase: props.phase, empty })
+  const arm = resolved.tag === 'empty' || resolved.tag === 'error' ? resolved : undefined
+  const claimed = arm !== undefined && claims > 0
   return (
     <div data-slot="data-panel" className="@container min-w-0">
       <Card flush>
@@ -247,14 +266,41 @@ export function DataPanel(props: DataPanelProps): ReactElement {
         <Inset ref={insetRef} className="flex flex-col">
           <HostTitleContext.Provider value={title}>
             <FrameDepthContext.Provider value={depth + 1}>
-              <CardPhase
-                phase={phase}
-                empty={empty}
-                height={height}
-                skeleton={<PanelSkeleton size={bodySize} />}
-              >
-                {body}
-              </CardPhase>
+              {!claimed && (
+                <CardPhase
+                  phase={phase}
+                  empty={empty}
+                  height={declared}
+                  skeleton={<PanelSkeleton size={bodySize} />}
+                >
+                  {(box) => (
+                    <div
+                      data-slot="data-panel-rows"
+                      className="overflow-clip"
+                      style={fit === undefined ? undefined : { height: fit }}
+                    >
+                      {body(box)}
+                    </div>
+                  )}
+                </CardPhase>
+              )}
+              {arm !== undefined && (
+                // A table in the body draws the arm itself under its column header row (claim); the
+                // body is no table when nothing claims, and stays hidden behind the frame's own arm.
+                <div
+                  hidden={!claimed}
+                  data-slot={claimed ? 'card-phase' : undefined}
+                  data-phase={claimed ? arm.tag : undefined}
+                  style={claimed ? { height: declared } : undefined}
+                  className="relative min-w-0 shrink-0 overflow-clip"
+                >
+                  <FrameArmContext.Provider value={{ arm, height: declared, claim }}>
+                    <PhaseBoundary fallback={() => null}>
+                      <ArmBody body={body} height={declared} />
+                    </PhaseBoundary>
+                  </FrameArmContext.Provider>
+                </div>
+              )}
             </FrameDepthContext.Provider>
           </HostTitleContext.Provider>
         </Inset>
