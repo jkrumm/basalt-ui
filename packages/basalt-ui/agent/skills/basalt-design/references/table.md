@@ -57,6 +57,8 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 - A column of ages or durations (waiting for, open for, run time) is `c.meter(key, { max })` with `max` the oldest in view, so the eye reads the long ones before it reads a number; bare text ('3 weeks ago') draws nothing to compare (n33 .1 and n36 .29: both builders found `c.meter` only in round 1).
 - State the rule that makes an item late where the reader meets the column: the column `header` ('Waiting, late after 48 h') or the card's context line. A threshold that lives only in the code leaves every row unexplained (n36 .32: the stuck rule was on no row and no caption). The row that crosses it carries its verdict word in its own column ('Stuck', 'Overdue') and takes the one status hue ([charts](charts.md)).
 
+- A meter column sets `card` (`c.meter(key, { max, card })`), so the phone card keeps it: n58's `pools.meter('usedPct', …)` set none and lost its "Used, %" at 390, and n57, n59 and n60 each found the option only by trial. Every column that answers the question sets its `card` slot, since a column without one takes the kit's order and can drop at 390 (n58 .19).
+
 ## Where state lives
 
 - `request` (search, filters, sort, page) is the query key and belongs in the URL; `display` (hidden, moved and pinned columns) is the device's. Bind `state` to a `field.composite` of a `defineControls` store, or omit it for a table that holds its own memory.
