@@ -83,6 +83,23 @@ export function toInstant(value: unknown): Date | null {
   return null
 }
 
+/**
+ * A date value as its cell writes it: the `dateTime` attribute (the calendar day, or the instant's
+ * ISO string) and the text; `null` when the value is no date. Read by the cell and by search.
+ */
+export function dateLabel(
+  value: unknown,
+  format: Format,
+  style: DateStyle,
+): { iso: string; text: string } | null {
+  if (typeof value === 'string' && CALENDAR_DATE.test(value)) {
+    return { iso: value, text: format.date(value as CalendarDate, style) }
+  }
+  const instant = toInstant(value)
+  if (instant === null) return null
+  return { iso: instant.toISOString(), text: format.date(instant, style) }
+}
+
 export function DateCell({
   value,
   format,
@@ -92,12 +109,9 @@ export function DateCell({
   format: Format
   style: DateStyle
 }): ReactNode {
-  if (typeof value === 'string' && CALENDAR_DATE.test(value)) {
-    return <time dateTime={value}>{format.date(value as CalendarDate, style)}</time>
-  }
-  const instant = toInstant(value)
-  if (instant === null) return <Absent />
-  return <time dateTime={instant.toISOString()}>{format.date(instant, style)}</time>
+  const label = dateLabel(value, format, style)
+  if (label === null) return <Absent />
+  return <time dateTime={label.iso}>{label.text}</time>
 }
 
 export function RelativeTimeCell({
@@ -234,6 +248,16 @@ export function DeltaCell({
 }): ReactNode {
   // No change is not a figure: the muted dash, as an absent value (a chip would say `0`).
   if (value === 0) return <Absent />
+  return <DeltaBadge value={deltaLabel(format, value, unit, currency)} polarity={polarity} />
+}
+
+/** A change as its cell writes it: `+€50.00` in the currency's own digits, else the signed number and its unit. */
+export function deltaLabel(
+  format: Format,
+  value: number,
+  unit: string | undefined,
+  currency: string | undefined,
+): string {
   if (currency !== undefined) {
     const digits = currencyDigits(currency)
     const money = format.number(value, {
@@ -243,10 +267,10 @@ export function DeltaCell({
       minimumFractionDigits: digits,
       maximumFractionDigits: digits,
     })
-    return <DeltaBadge value={deltaText(money, value)} polarity={polarity} />
+    return deltaText(money, value)
   }
   const shown = deltaText(format.number(value, { signDisplay: 'exceptZero' }), value)
-  return <DeltaBadge value={unit === undefined ? shown : `${shown}${unit}`} polarity={polarity} />
+  return unit === undefined ? shown : `${shown}${unit}`
 }
 
 /**
