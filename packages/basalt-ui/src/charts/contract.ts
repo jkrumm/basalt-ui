@@ -4,7 +4,7 @@
  * `chore: contract amendment` commit. Sketched in docs/v3/concepts/charts-cards-kanban.md
  * section 4 (the `src/charts/contract.ts` block, plus the frame types it names).
  */
-import type { FootFacts, FrameHead, FrameState, CardMenu } from '../core/phase'
+import type { FootFacts, FrameHead, FrameState, CardMenu, LegendEntry } from '../core/phase'
 import type { BoxSlot, ControlsSlot, Delta, Phase, QueryStateLike, Verdict } from '../core/ports'
 import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 
@@ -75,21 +75,26 @@ export type Series<D> = SeriesBase<D> &
          */
         highlight?: (d: D) => boolean
       }
-    | { mark: 'dot'; r?: (d: D) => number }
+    | {
+        mark: 'dot'
+        r?: (d: D) => number
+        /**
+         * Coincident dots move apart along this axis: a dot that would overlap one drawn before it
+         * (in data order) moves the least distance, either way, to the nearest free spot inside the
+         * plot, and the same data always draws the same layout. The tooltip, the readout and the
+         * announcement keep the true value. Name the axis that can take a few pixels without a
+         * misread: a whole-number count, or the wider of two spans. Default: dots stay on their
+         * values and may overlap.
+         *
+         * @example
+         * { key: 'containers', label: 'Containers', color, mark: 'dot', y: (c) => c.peak, spread: 'x' }
+         */
+        spread?: 'x' | 'y'
+      }
   )
 
-/** No fake series for legends. */
-export type LegendEntry = {
-  key: string
-  label: string
-  color: SeriesColor
-  /**
-   * `dot` is a filled dot, `ring` a hollow one; a `mark: 'dot'` series legends as `dot`. `bar` is a
-   * filled square and `hollow` an outlined one: the keys of marks a page draws through the seam.
-   */
-  swatch?: 'solid' | 'dashed' | 'dot' | 'ring' | 'bar' | 'hollow'
-  failed?: boolean
-}
+/** No fake series for legends: declared once in `core/phase.ts`, shared with `./cards`. */
+export type { LegendEntry }
 
 // ---- Focus and readout (the geometry seam) -------------------------------------------------
 
