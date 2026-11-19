@@ -1,0 +1,11 @@
+{
+  "why": "In the owner-review-1 rerun (docs/v3/cycles/owner-review-1.md § Finding 2) two fresh builders put a wide form in a half-width card beside its list: n35's week track and n32's chain. Each lost half its width, which cut n35's titles and n32's last column. The skill names no width for a track or a chain.",
+  "what": "packages/basalt-ui/agent/skills/basalt-design (and basalt-charts where it names IntervalTrack), one rule with two worked lines.",
+  "change": "Say that a form laid out along time or along a chain (IntervalTrack, ChainView, a timeline) takes the row's full width, with the list or table that shares its focus below it, and that a half-width card beside a list is for a form that reads at half width. Name the two rerun cases as the evidence.",
+  "acceptance": [
+    "The skill states the rule where it places parts on the page, with the two cases",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit changes; the rubric.",
+  "note": "Filed by the owner-review-1 rerun (Issue 2404)."
+}

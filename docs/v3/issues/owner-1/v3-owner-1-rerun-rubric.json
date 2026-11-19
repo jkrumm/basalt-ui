@@ -1,0 +1,12 @@
+{
+  "why": "In the owner-review-1 rerun (docs/v3/cycles/owner-review-1.md § Finding 6) the n35 reviewer scored R2 3 on a track with nine ellipsised titles, charging them to F6 because the kit drew them, while the n32 reviewer scored R2 1 for a kit chain cut at its panel edge. The owner judges the surface, not who drew it, and his n35 remark is about exactly this.",
+  "what": "docs/v3/expression/rubric.md R2, then the shipped reviewer's Craft 10.",
+  "change": "Make R2 count a clipped, cut or ellipsised label or title the same whether the app or a kit part drew it, and drop the reading that a page of shipped parts scores 3 by default. Rescore n35 and n32 from the rerun's round-0 shots (.evidence/v3-shots/owner-review-1/r0 and src-r0 on the dev host) with fresh reviewers, as EXPRESSION.md § Owner calibration requires before a rubric change lands.",
+  "acceptance": [
+    "R2's text scores a kit-drawn clipped title as a defect",
+    "Fresh reviewers score n35's rerun R2 at 1 or lower on the new text",
+    "make check passes"
+  ],
+  "out_of_scope": "Other rubric items.",
+  "note": "Filed by the owner-review-1 rerun (Issue 2404)."
+}
