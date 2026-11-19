@@ -53,16 +53,16 @@ Run it against the rendered page at 1800 and 390, light and dark, and one keyboa
 
 ## Dashboard tells
 
-| Tell                                          | Do instead                                                                            |
-| --------------------------------------------- | ------------------------------------------------------------------------------------- |
-| A hue on every card                           | Neutral cards; one accent, spent where a decision turns on it                         |
-| A delta with no period or polarity            | A tinted delta badge with its period ("vs last week") and `up-bad` when a rise is bad |
-| Title-case or uppercase captions              | Sentence-case sans captions                                                           |
-| A primary action drawn in the accent          | One ink-inverted primary per view [type:PageBarProps]                                 |
-| Equal cards in a uniform grid                 | Figures first, then the table or chart that explains them                             |
-| A card wrapped around a `StatCard`            | The part is already the card; place it directly                                       |
-| A big number with no history, target or parts | Add a sparkline or a target, or make it a cell of a `StatGroup`                       |
-| A marker that restates the headline value     | Mark the target or the limit, not the reading                                         |
-| Unlabelled marks with no axis or scale        | Direct-label the end points, add an axis, or use a table                              |
-| Hand-formatted numbers in JSX                 | Pass the number; the part formats it                                                  |
-| Three rows of KPI cards                       | One strip, then the evidence                                                          |
+| Tell                                          | Do instead                                                                                                    |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| A hue on every card                           | Neutral cards; one accent, spent where a decision turns on it                                                 |
+| A delta with no period or polarity            | A tinted delta badge with its period ("vs last week") and `up-bad` when a rise is bad                         |
+| Title-case or uppercase captions              | Sentence-case sans captions                                                                                   |
+| A primary action drawn in the accent          | One ink-inverted primary per view [type:PageBarProps]                                                         |
+| Equal cards in a uniform grid                 | Figures first, then the table or chart that explains them                                                     |
+| A card wrapped around a `StatCard`            | The part is already the card; place it directly                                                               |
+| A big number with no history, target or parts | Add a sparkline or a target, or make it a cell of a `StatGroup`                                               |
+| A marker that restates the headline value     | Mark the target or the limit, not the reading                                                                 |
+| Unlabelled marks with no axis or scale        | Direct-label the end points, add an axis, or use a table                                                      |
+| Hand-formatted numbers in JSX                 | Pass the number; the part formats it                                                                          |
+| Three rows of KPI cards                       | The card that answers, then the evidence; a stat row only for figures of equal weight, each with its baseline |
