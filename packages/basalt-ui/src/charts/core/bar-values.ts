@@ -115,6 +115,7 @@ function candidates<T, X extends ChartX>(input: BarValuesInput<T, X>): Candidate
       : input.focused !== null && opts.group.includes(input.focused)
         ? 'focused'
         : 'rest'
+    // The ink is chosen against the series' own fill opacity; a per-datum `Series.opacity` is not modelled.
     const onBar = inkOn(
       barOnCard(lit ? CV.brand : top.color, top.fillOpacity ?? DEFAULT_BAR_OPACITY, state),
     )

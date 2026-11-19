@@ -23,7 +23,7 @@ export type LaneSpot = 'after' | 'inside' | 'before'
 
 export type PlacedLaneLabel = {
   key: number
-  /** The text drawn: the label's own, or a prefix of it ending in an ellipsis. */
+  /** The text drawn: always the label's own, never a cut prefix. */
   text: string
   spot: LaneSpot
 }

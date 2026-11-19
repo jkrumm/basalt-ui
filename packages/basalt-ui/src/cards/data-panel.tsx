@@ -206,8 +206,8 @@ function PanelHead(
  * the body is called in `ready` and `stale`; in `empty` and `error` it is called too, so a table in it
  * keeps its column header row and draws the arm under it (a body that draws no table stays hidden
  * there and the panel draws its own arm). A `{ rows }` body whose table rows run past
- * the declared height shows whole rows: the box is cut after the last row that fits, and the
- * panel keeps that height through the other phases. The box clips with `overflow: clip`, never
+ * the declared height shows whole rows: the rows are cut after the last one that fits, while the
+ * box keeps the declared height in every phase. The box clips with `overflow: clip`, never
  * `hidden`, so a table head that sticks to the page keeps sticking.
  *
  * @useWhen a page needs the card frame around a table, a row list or a board, with a header, controls and a legend
