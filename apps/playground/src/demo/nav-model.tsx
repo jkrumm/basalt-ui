@@ -178,6 +178,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/kit/interval-track' }),
         },
         {
+          id: 'kit-bar-list-series',
+          label: 'BarList by series',
+          icon: Layout,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/bar-list-series' }),
+        },
+        {
           id: 'kit-library',
           label: 'Library (reference)',
           icon: Image,
