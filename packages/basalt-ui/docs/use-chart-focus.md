@@ -29,8 +29,8 @@ export function PipelinePace() {
       title="Pipeline pace"
       subtitle="Seconds behind the best run, per stage"
       figure={{
-        value: focus.readout(`${STAGES_TOTAL} s`, (s) => `${s.behind} s`),
-        period: focus.readout('whole run', (s) => s.name),
+        value: `${STAGES_TOTAL} s`,
+        period: focus.readout('whole run', (s) => `${s.name}: ${s.behind} s`),
       }}
       chart={() => (
         <CartesianChart

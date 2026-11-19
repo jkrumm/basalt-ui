@@ -41,20 +41,23 @@ const DOT: Record<Verdict['tone'], string> = {
 const MONO = 'font-mono tabular-nums'
 /** A figure longer than this steps down a size where the card is narrower than `regular`. */
 const LONG_FIGURE = 10
-/** Below `regular` the period takes a line of its own, in every phase, so loading and failed hold the ready height. */
-const PERIOD_LINE = 'hidden h-4 basis-full items-center @max-regular:flex'
 /**
- * The period's own box: one line that truncates, beside the figure from `regular` up and on a line
- * of its own, one line tall even while empty, below it. A period that follows focus changes its text
- * and never the row's height, so a hover cannot push the plot away from the pointer.
+ * The readout line: the status and the period, the one place in the figure row a hover may change.
+ * Its box takes the rest of the row from `regular` up and a line of its own, one line tall even while
+ * empty, below it, so the text inside changes and never the box: owner review 2 saw a headline that
+ * followed the focus resize the whole card on every datum. The headline (value, unit, delta) is the
+ * answer and stays; a readout that follows focus goes here or in the tooltip.
  */
-const PERIOD_BOX = 'min-w-0 truncate text-xs leading-4 @max-regular:h-4 @max-regular:basis-full'
+const READOUT_BOX =
+  'flex min-w-0 flex-1 items-center gap-2 text-xs leading-4 tabular-nums @max-regular:h-4 @max-regular:basis-full'
+/** The period inside the readout line: one line that truncates. */
+const PERIOD_TEXT = 'min-w-0 truncate'
 
 /**
  * The period's place while the card loads, is empty or failed. With the text declared (a static
- * period, or the ready frame's last one) it takes the lines that text wraps to at this width, drawn
- * through `content: attr()` so the text is neither read nor selectable; with none (`''`) it holds the
- * one line the period takes below `regular`. A loading card draws it as a bar, the others blank.
+ * period, or the ready frame's last one) it holds that text, drawn through `content: attr()` so it is
+ * neither read nor selectable; with none (`''`) the readout line's own box holds the line. A loading
+ * card draws it as a bar, the others blank.
  */
 function PeriodHold({
   period,
@@ -64,23 +67,15 @@ function PeriodHold({
   period: string
   mono: boolean
   loading: boolean
-}): ReactElement {
-  if (period === '') {
-    return loading ? (
-      <div aria-hidden="true" className={PERIOD_LINE}>
-        <div className={cn(BAR, 'h-3 w-32')} />
-      </div>
-    ) : (
-      <span aria-hidden="true" className={PERIOD_LINE} />
-    )
-  }
+}): ReactElement | null {
+  if (period === '')
+    return loading ? <div className={cn(BAR, 'hidden h-3 w-32 @max-regular:block')} /> : null
   return (
     <span
-      aria-hidden="true"
       data-slot="chart-period-hold"
       data-hold={period}
       className={cn(
-        PERIOD_BOX,
+        PERIOD_TEXT,
         'select-none after:content-[attr(data-hold)]',
         mono && MONO,
         loading ? cn(BAR, 'w-fit text-transparent') : 'invisible',
@@ -103,12 +98,13 @@ function FigureRow({
 }): ReactElement {
   const { value, unit, delta, period, periodMono, status } = figure
   const text = failed ? null : formatValue(value)
+  const held = loading || blank
   return (
     <div
       data-slot="chart-figure"
       className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 @regular:flex-nowrap"
     >
-      {/* The figure line has one height in every phase; the period joins it from `regular` up and takes the line under it below. */}
+      {/* The figure line has one height in every phase; the readout line joins it from `regular` up and takes the line under it below. */}
       <div className="flex h-9 max-w-full min-w-0 items-center gap-2">
         {loading ? (
           <>
@@ -136,33 +132,42 @@ function FigureRow({
                 {...(delta.label !== undefined && { label: delta.label })}
               />
             )}
-            {!failed && status !== undefined && (
-              <span
-                data-slot="chart-status"
-                data-tone={status.tone}
-                className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground"
-              >
-                <span
-                  aria-hidden="true"
-                  className={cn('size-1.5 rounded-full', DOT[status.tone])}
-                />
-                {status.label}
-              </span>
-            )}
           </>
         )}
       </div>
-      {period !== undefined &&
-        (loading || blank ? (
-          <PeriodHold period={period} mono={periodMono === true} loading={loading} />
-        ) : (
-          <span
-            data-monospace={periodMono === true ? '' : undefined}
-            className={cn(PERIOD_BOX, 'text-muted-foreground', periodMono === true && MONO)}
-          >
-            {period}
-          </span>
-        ))}
+      {period !== undefined && (
+        <div
+          data-slot="chart-readout"
+          aria-hidden={held ? 'true' : undefined}
+          className={READOUT_BOX}
+        >
+          {held ? (
+            <PeriodHold period={period} mono={periodMono === true} loading={loading} />
+          ) : (
+            <>
+              {status !== undefined && (
+                <span
+                  data-slot="chart-status"
+                  data-tone={status.tone}
+                  className="inline-flex shrink-0 items-center gap-1.5 text-muted-foreground"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn('size-1.5 rounded-full', DOT[status.tone])}
+                  />
+                  {status.label}
+                </span>
+              )}
+              <span
+                data-monospace={periodMono === true ? '' : undefined}
+                className={cn(PERIOD_TEXT, 'text-muted-foreground', periodMono === true && MONO)}
+              >
+                {period}
+              </span>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

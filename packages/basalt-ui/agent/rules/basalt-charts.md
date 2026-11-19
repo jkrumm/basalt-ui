@@ -15,7 +15,7 @@ Every chart is a shipped kind or `CartesianChart`; props live in the shipped typ
 - `label` is required on every chart. [type:CartesianChartProps]
 - Custom marks return engine marks (a `text` mark included, placed by `chartLabels`) from a `ChartPlot` and nothing else; margins, scales, axes, grid, cursor, legend and tooltip are the host's. [type:ChartPlot]
 - Supply `series` once; a legend entry with no series is a `LegendEntry`, never a fake series. [type:LegendEntry]
-- Wrap a chart in `ChartCard`; its headline figure and period are the `figure`, not a filler `subtitle`. [type:ChartCardProps]
+- Wrap a chart in `ChartCard`; its headline figure and period are the `figure`, not a filler `subtitle`; its `value` and `delta` are the answer and never follow focus, a reading that does goes in `period`, `status` or the tooltip. [type:ChartCardProps] [lint:primitive-bypass]
 - A pending, failed or empty query is `FrameState`, never `data ?? []`; a Suspense fallback is the same card with `phase: 'loading'`. [type:FrameState]
 - A chart's `useChartFocus` is built over the array the chart draws; a list of a subset maps its rows to that focus by id, and a list of its series spreads `focus.seriesItem(key)` (a table or a `BarList` passes `focusSeries`). [type:ChartFocus] [type:DataTableProps]
 - The threshold that defines the answer is drawn as a zone or reference line, never only stated in a footer. [type:ChartZone] [type:ChartRefLine]
@@ -35,6 +35,6 @@ not guarded:
 
 - Draw `plot.rows(key)` and `plot.visible`, never the `series` prop, so a legend toggle hides the mark; a size in a mark reads `plot.plotHeight`.
 - Date text on a time axis comes from `useFormat` or `createFormat`, never a raw `Intl` call.
-- Every list of the page's items (`DataTable`, `BarList`) takes `focus` from the one `useChartFocus`, chart or none, drawn at the list's grain so a row and a mark are one item, and the tooltip is off where the figure follows focus; long names ranked by a total stacked by kind are a `BarList` with `series` and per-row `parts`, since a band axis drops names.
-- The hero, the marks and the baseline measure one quantity; the figure's delta and status follow focus through `focus.readout`, which takes any value.
+- Every list of the page's items (`DataTable`, `BarList`) takes `focus` from the one `useChartFocus`, chart or none, drawn at the list's grain so a row and a mark are one item, and the tooltip is off where the figure's period follows focus; long names ranked by a total stacked by kind are a `BarList` with `series` and per-row `parts`, since a band axis drops names.
+- The hero, the marks and the baseline measure one quantity; the focused datum's reading goes in the figure's `period` and `status` through `focus.readout`, which takes any value.
 - Charts share one cursor by default; a chart that must not share isolates itself with a cursor group.
