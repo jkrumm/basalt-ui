@@ -59,7 +59,18 @@ export type TableRequest = {
   ranks?: Readonly<Record<string, readonly string[]>>
 }
 
-export type TableDisplay = { visibility: Record<string, boolean>; collapsed?: readonly string[] }
+/**
+ * What a reader changed about how the table shows, on the device and in a saved view, never in the
+ * URL. `order` lists column ids in the order the reader gave them (the identity column stays first
+ * and `actions` last); `pinned` lists the ids a reader pinned to the start of a grid. Absent or
+ * empty, the declared order holds and nothing is pinned.
+ */
+export type TableDisplay = {
+  visibility: Record<string, boolean>
+  collapsed?: readonly string[]
+  order?: readonly string[]
+  pinned?: readonly string[]
+}
 
 export type TableState = { v: 1; request: TableRequest; display: TableDisplay }
 
@@ -321,6 +332,16 @@ export type UseDataTable<
    * @default 'cards'
    */
   phone?: 'cards' | 'scroll'
+  /**
+   * How the table draws its rules. `reading` draws a hairline under each row and drops columns by
+   * `priority` as the table narrows: a list a reader scans down and summarises. `grid` draws a rule
+   * between every two cells, compact rows and tabular figures, keeps every visible column and
+   * scrolls sideways inside its scroller with the identity column pinned: working data a reader
+   * compares across and down.
+   *
+   * @default 'reading'
+   */
+  look?: 'reading' | 'grid'
   /**
    * The width below which the table becomes cards (`regular` is 480 px, `wide` 800 px, `always` never a table).
    *
