@@ -10,7 +10,7 @@ src/
 ├── components/
 │   ├── ui/              # ShadCN components (auto-generated via CLI)
 │   ├── layout/          # Header, Footer, Navigation
-│   ├── features/        # Feature-specific (ComponentShowcase, etc.)
+│   ├── features/        # Feature-specific components
 │   └── shared/          # Reusable (ThemeToggle, etc.)
 ├── layouts/
 │   └── Layout.astro     # Base layout with SEO
