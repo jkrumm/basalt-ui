@@ -79,6 +79,7 @@ describe('the Kit nav', () => {
       '/kit/split',
       '/kit/interval-track',
       '/kit/bar-list-series',
+      '/kit/chain',
       '/kit/library',
     ])
     expect(navPaths('recipes')).toEqual([
@@ -127,6 +128,24 @@ describe('the Kit pages', () => {
     mount(`/kit/split?photo=${first.id}`)
     expect(await screen.findByRole('navigation', { name: 'Photos' })).toBeDefined()
     expect(screen.getAllByText('Exposure').length).toBeGreaterThan(0)
+  })
+
+  test('dependency chain: one dataset as the chain, the nested table and the flat table', async () => {
+    mount('/kit/chain')
+    expect((await screen.findAllByText('Provision the new cluster')).length).toBeGreaterThan(0)
+    const chain = document.querySelector('[data-slot="chain-graph"]')
+    expect(chain?.querySelectorAll('[data-slot="chain-node"]').length).toBe(14)
+    expect(screen.getByRole('table').querySelectorAll('tbody tr').length).toBe(14)
+    cleanup()
+    mount('/kit/chain?as=nested')
+    const tree = await screen.findByRole('treegrid')
+    expect(tree.querySelectorAll('tbody tr[aria-level="3"]').length).toBeGreaterThan(0)
+    expect(document.querySelector('[data-slot="chain-view"]')).toBeNull()
+    cleanup()
+    mount('/kit/chain?as=table')
+    const flat = await screen.findByRole('table')
+    expect(flat.querySelectorAll('tbody tr').length).toBe(14)
+    expect(flat.querySelector('tbody tr[aria-level]')).toBeNull()
   })
 
   test('library: the filters, the result cards and the aside for a chosen photo', async () => {
