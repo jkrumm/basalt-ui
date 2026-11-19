@@ -5,6 +5,8 @@
   "FormField",
   "FormFooter",
   "FormRow",
+  "FormSection",
+  "Stepper",
   "ViewTabs",
   "filterSlot",
   "spec",

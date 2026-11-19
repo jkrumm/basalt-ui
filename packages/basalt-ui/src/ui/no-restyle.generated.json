@@ -201,6 +201,14 @@
       "message": "Form owns its height and display: eject it (basalt-ui eject field) to change them."
     },
     {
+      "module": "file-upload",
+      "part": "file-upload",
+      "pattern": "^FileUpload$",
+      "allow": ["layout"],
+      "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+      "message": "FileUpload owns its height and display: eject it (basalt-ui eject file-upload) to change them."
+    },
+    {
       "module": "input",
       "part": "input",
       "pattern": "^Input$",

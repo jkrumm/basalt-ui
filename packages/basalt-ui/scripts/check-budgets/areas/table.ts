@@ -77,13 +77,23 @@ export const rows: readonly RowDef[] = [
     // 158500 -> 160500 (Issue 2439): 160334 B measured, +~2300 B gz over master (158030) for the grid look
     // (owner review 2): `look: 'grid'` with its cell keyboard, movable columns (the Display list's drag and
     // keys, the menu's Move left and Move right) and a reader's pins, all in the display state and saved views.
-    ceiling: 160500,
+    // 160500 -> 163500 (Issue 2428): +~2.7 KB gz from the ui parts the header's filter editors
+    // share (owner review 2 forms): Combobox's create row, Select options with an icon and a description,
+    // Input's start and end, the Button spinner, the read-only looks.
+    ceiling: 163500,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 160500,
+      to: 163500,
+      consumer:
+        "the owner's second review of the v3 playground (2026-11-19): richer form controls in the Forms gallery (apps/playground/src/routes/kit/forms), whose ui parts the table's filter editors import (Issue 2428)",
+      repo: 'basalt-ui',
+    },
     {
       from: 158500,
       to: 160500,

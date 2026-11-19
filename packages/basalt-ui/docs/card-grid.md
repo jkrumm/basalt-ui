@@ -18,7 +18,7 @@ grid reads right in a phone column, a docked aside and a 1440 page.
 ```ts
 CardGrid({ min, narrow, children }: CardGridProps): ReactElement
   min?: "regular" | "wide" | "narrow"  // The narrowest a card may get
-  narrow?: "scroll" | "stack"  // What a row of stat cards does in a container narrower than `regular`: `scroll` lays the cards on one line that scrolls sideways with snap points, one card and the next one's edge per screen; `stack` keeps the tracks
+  narrow?: "stack" | "scroll"  // What a row of stat cards does in a container narrower than `regular`: `scroll` lays the cards on one line that scrolls sideways with snap points, one card and the next one's edge per screen; `stack` keeps the tracks
   children?: ReactNode
 ```
 
