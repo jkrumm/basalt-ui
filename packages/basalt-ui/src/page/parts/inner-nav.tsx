@@ -5,10 +5,12 @@ import { scrollParentOf } from '../../common/scroll-parent'
 import { cn } from '../../core/cn'
 import { AppLink } from '../../core/link'
 import { page } from '../../core/messages/page'
+import { resolvePhase } from '../../core/phase'
 import { useMessages } from '../../core/messages/use-messages'
 import { Button } from '../../ui/button'
 import { CountBadge } from '../../ui/badge'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../../ui/menu'
+import { Skeleton } from '../../ui/skeleton'
 import type { InnerNavGroup, InnerNavItem, InnerNavProps, PushField } from '../contract'
 import { SplitListContext } from './split-page'
 
@@ -149,11 +151,13 @@ function Group<K extends string>({
   active,
   anchor,
   strip,
+  loading,
 }: {
   group: InnerNavGroup
   active: K
   anchor: (value: K) => AnchorLink
   strip: boolean
+  loading: boolean
 }): ReactElement {
   const labelId = useId()
   return (
@@ -181,6 +185,15 @@ function Group<K extends string>({
         )}
       >
         {group.items.map((item) => {
+          // Loading: the group's rows hold their places and carry no link until the data settles.
+          if (loading)
+            return (
+              <li key={item.id} data-slot="inner-nav-item" className="flex shrink-0 items-center">
+                <div className="flex h-ctl min-w-0 flex-1 items-center px-2.5 text-sm">
+                  <Skeleton className="w-24" />
+                </div>
+              </li>
+            )
           const Icon = item.icon
           return (
             <li key={item.id} data-slot="inner-nav-item" className="flex shrink-0 items-center">
@@ -211,7 +224,9 @@ function Group<K extends string>({
  * horizontally scrolling link strip below it (never a `Select`, which would lose the hrefs); inside
  * a `SplitPage` list pane it stays a list. An item may carry a count or dot `badge` and a `menu`
  * of two or more actions (a single action is a plain button elsewhere). A section change resets
- * the page's scroll; a write to a `filter` control does not.
+ * the page's scroll; a write to a `filter` control does not. Given a `phase` that is loading, the
+ * groups keep their labels and each item draws a placeholder row with no link, so the column holds
+ * its width and height until the data lands.
  *
  * @useWhen a page has named sections or panes the URL should remember (settings, the sections of a record)
  * @neverWhen the state is a `replace` field (it is a type error) or the choices are views of one dataset (use `ViewTabs`) or an inspector for a row (use `PageAside`)
@@ -232,7 +247,9 @@ export function InnerNav<K extends string = string>({
   state,
   filter,
   groups,
+  phase,
 }: InnerNavProps<K>): ReactElement {
+  const loading = resolvePhase({ phase }).tag === 'loading'
   const handle = handleOf(state)
   const [active, set] = state.use()
   const router = useRouter({ warn: false }) as unknown as HrefRouter | undefined
@@ -259,6 +276,7 @@ export function InnerNav<K extends string = string>({
       ref={nav}
       data-slot="inner-nav"
       aria-label={label}
+      {...(loading && { 'aria-busy': true, 'data-phase': 'loading' })}
       className={cn(
         'flex min-w-0 gap-2',
         strip
@@ -272,7 +290,14 @@ export function InnerNav<K extends string = string>({
         </div>
       )}
       {groups.map((group) => (
-        <Group key={group.id} group={group} active={active} anchor={anchor} strip={strip} />
+        <Group
+          key={group.id}
+          group={group}
+          active={active}
+          anchor={anchor}
+          strip={strip}
+          loading={loading}
+        />
       ))}
     </nav>
   )
