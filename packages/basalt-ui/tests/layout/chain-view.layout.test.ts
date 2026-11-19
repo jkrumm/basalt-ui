@@ -352,6 +352,12 @@ layout('ChainView and nested rows', () => {
     await page.raw.mouse.up()
     const after = await frame.evaluate((el) => el.scrollLeft)
     expect(after - before).toBeCloseTo(150, -1)
+    // Fit returns to the origin, and a second Fit on the fitted view still does.
+    await frame.focus()
+    await page.raw.keyboard.press('0')
+    await frame.evaluate((el) => el.scrollTo(40, 0))
+    await page.raw.keyboard.press('0')
+    expect(await frame.evaluate((el) => el.scrollLeft)).toBe(0)
   })
 
   test('1800: pointing at a node lights its trace; Focus holds and zooms to it until Show all', async () => {

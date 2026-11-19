@@ -127,9 +127,15 @@ export function useChainViewport(graph: { width: number; height: number }): Chai
   )
 
   const fit = useCallback(() => {
+    // Already fitted, the state set draws nothing: back to the origin now, with no anchor left over.
+    if (zoom === null) {
+      anchor.current = null
+      scrollTo(0, 0)
+      return
+    }
     anchor.current = { gx: 0, gy: 0, fx: 0, fy: 0 }
     setZoom(null)
-  }, [])
+  }, [zoom, scrollTo])
 
   const zoomTo = useCallback(
     (box: ChainBox) => {
