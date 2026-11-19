@@ -136,6 +136,7 @@ interface AxeResults {
   incomplete: unknown[]
 }
 interface AxeBuilderLike {
+  setLegacyMode(legacy: boolean): AxeBuilderLike
   withTags(tags: string[]): AxeBuilderLike
   include(selector: string): AxeBuilderLike
   exclude(selector: string): AxeBuilderLike
@@ -179,7 +180,9 @@ async function scan(page: PageLike, label: string, options: AxeOptions): Promise
   await expectScheme(page)
   await animationsSettled(page)
   const Builder = await loadAxe()
-  let builder = new Builder({ page }).withTags(AXE_TAGS)
+  // Legacy mode runs axe inside the page and returns the finished result. The default hands the runner every
+  // frame's partial result (5 MB on a 1,900-node page), which Playwright's protocol holds at ~50x its size.
+  let builder = new Builder({ page }).setLegacyMode(true).withTags(AXE_TAGS)
   if (options.include !== undefined) builder = builder.include(options.include)
   // Base UI parks focusable `aria-hidden` sentinels beside an open popup; focus cannot rest on them.
   builder = builder.exclude(FOCUS_GUARD)
