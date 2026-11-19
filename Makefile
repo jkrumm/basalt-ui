@@ -25,10 +25,17 @@ bail = $(if $(shell command -v factory 2>/dev/null),--bail,)
 # `check` and `check-fast` differ in TWO steps: the layout suite (`check` runs all of it, `check-fast` the files the
 # branch's changes reach, scripts/layout-select.ts) and the unit suite (the tests the changes reach, scripts/unit-select.ts).
 # CI runs both in full on every pull request head.
-check: ## Local CI gate: gen sync checks + build + pre + playground build + layout + coverage/doc-drift + pack-test
+# `CI_SPLIT=1` is CI's `gate` job: `make check CI_SPLIT=1` runs only the steps of `check` that no other CI job runs
+# (`ci-gate`), because the `checks`, `unit` and `layout` jobs run the rest. The step stays `make check`, the target
+# project.yaml `checks.full` names, so the one gate has one name; locally `check` is unchanged.
+check: ## Local CI gate: gen sync checks + build + pre + playground build + layout + coverage/doc-drift + pack-test (CI_SPLIT=1: only the steps no other CI job runs)
+ifeq ($(CI_SPLIT),1)
+	@$(MAKE) --no-print-directory ci-gate
+else
 	@$(MAKE) --no-print-directory check-pre browser-shell
 	@$(call slot,layout) sh -c 'bun run test:layout $(bail) && bun run test:layout:harness $(bail)'
 	@$(MAKE) --no-print-directory check-post
+endif
 
 # The lead's local check (project.yaml `checks.fast`): everything of `check` but the layout and unit suites is the same;
 # those run only the files the branch's changes reach, and CI (checks.ci) runs the rest.
@@ -37,7 +44,7 @@ check-fast: ## Local check for a lead: `check` with only the layout and unit fil
 	@$(MAKE) --no-print-directory layout-fast
 	@$(MAKE) --no-print-directory check-post QUALITY_STEP=quality-matrix-fast
 
-# What CI's `gate` job runs (.github/workflows/ci.yml): the steps of `check` that no other CI job runs. The `checks`
+# What CI's `gate` job runs as `make check CI_SPLIT=1` (.github/workflows/ci.yml): the steps of `check` that no other CI job runs. The `checks`
 # job runs the formatters, lint, typecheck, budgets, coverage, drift, contract-frozen and pack-test gates, the `unit` job
 # the unit suite (which includes the contract tests), the `layout` shards the layout suite, so `check` whole would run
 # each of those twice. Together the jobs cover every step of `check`. It builds first, as `check` does: the lint-style
