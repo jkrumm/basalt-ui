@@ -1129,3 +1129,15 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-expr-13-kit-fixes, v3-expr-13-skill, v3-expr-13-rubric]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-14.json' }
+  - key: v3-owner-2-rerun-skill
+    title: "Design skill: a stat row cell is the verdict's cell, a settings page covers its domain with described options, from the owner review 2 rerun"
+    repo: basalt-ui
+    kind: feature
+    after: [v3-owner-2-rerun]
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-rerun-skill.json' }
+  - key: v3-owner-2-rerun-kit-fixes
+    title: 'Hover chips over tick labels, a focus ring through the axis title, zero bars, the dark form footer, loading phases, the pager text, rail tab order, from the owner review 2 rerun'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-owner-2-rerun]
+    facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-rerun-kit-fixes.json' }

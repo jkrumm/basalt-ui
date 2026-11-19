@@ -1,0 +1,22 @@
+{
+  "why": "The owner-review-2 rerun (docs/v3/cycles/owner-review-2.md § Findings 3 to 5) turned up kit defects on the owner's themes on pages whose remark is met, seen in the rebuilt n04 and fleet shell frames and reported by their builders. They come from shots and builder reports, not a code read: confirm each before fixing it.",
+  "what": "packages/basalt-ui/src/charts (crosshair chips, focus ring, zero bars), src/controls (FormSection footer, loading phase), src/page (InnerNav loading phase), src/table (pager text), src/shell (rail tab order), and the hover guard in the quality matrix.",
+  "owns": [
+    "packages/basalt-ui/src/**",
+    "packages/basalt-ui/tests/**",
+    "packages/basalt-ui/agent/** (only lines that name a fixed part)"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** and apps/playground/src/cycle/** (trial builds are never hand-finished)"
+  ],
+  "change": "Fix each, with a test per part: (1) on a chart whose hover chips sit on the axes, the y chip covers the chart's own tick labels and the x chip sits on the plot's bottom edge over the bars' baseline; with three charts stacked on one cursor each repeats the same x chip (r0/scenarios-expr-n04--sweep-gap--light--1800x1200.png); (2) a chart's keyboard focus ring is drawn tight around the chart including its axis title and cuts through it (r0/scenarios-expr-n04--focus--light--1800x1200.png); (3) a zero-height bar in a stacked Bars chart gives a '0.03' y chip and tick (r0/cycle-shell-6--focus--dark--1800x1200.png); (4) in dark a FormSection's footer band has the page background, so Discard and Save float under the card (r0/cycle-shell-6-settings-section-notifications--dark--1800x1200.png); (5) InnerNav and FormSection have no loading phase, so a pending settings page hand-builds skeleton columns; (6) the DataTable pager reads 'No rows on this page' while the table loads or is empty; (7) the builder saw links of collapsed rail sections stay in the tab order (about 40 stops before main without the skip link): confirm, and fix if so; (8) decide whether the kit owns charts stacked on one x (n04 built three CartesianCharts in a grid with a shared y gutter and dropped a tick by hand): a Spec if it becomes a new surface, else a recipe; (9) extend the hover guard so a chip that covers a tick label fails it.",
+  "acceptance": [
+    "Each confirmed item has a fix with its test, or a line in the PR saying why it was not reproduced",
+    "The hover guard fails a chip over a tick label (shown red once in the PR)",
+    "make check passes"
+  ],
+  "out_of_scope": "Trial builds; the skill lines of v3-owner-2-rerun-skill.",
+  "note": "Filed by the owner-review-2 rerun (Issue 2464). Shots in .evidence/v3-shots/owner-review-2/r0 on the dev host; builder reports in .evidence/v3-shots/owner-review-2/builder-reports."
+}

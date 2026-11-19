@@ -1,0 +1,21 @@
+{
+  "why": "In the owner-review-2 rerun (docs/v3/cycles/owner-review-2.md § Findings 1 and 2) a fresh builder on the fixed kit met two of the owner's remarks only in part. The fleet overview's first row is the structured strip without its structure: references/cards.md:46 accepts any one of a delta, a verdict, a meter or a trend per cell, so the builder shipped no icon, no trend though the page draws deploys per day, a median compared in a footnote and a state cell that names no service; the stat-row verdict's design (docs/v3/verdicts/statcard.md) sits in line 47 as a description only. The settings page uses the form grammar but is sparse: references/forms.md:21 asks for a description per radio and checkbox option and the builder passed bare labels, and nothing leads a settings page to cover what its domain has (members, a danger zone with a confirmed destructive action), so it came out with three short sections where the old build had five.",
+  "what": "packages/basalt-ui/agent/skills/basalt-design references cards.md and forms.md, and the anti-defaults list if it names either.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/basalt-design/**",
+    "packages/basalt-ui/agent/rules/** (only a line that restates these)"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** and apps/playground/src/cycle/** (trial builds are never hand-finished)"
+  ],
+  "change": "(1) Stat row: make the verdict's cell the rule, not a description: in a strip every cell has its icon and label, the figure, a delta pill that names its base, and the 28 px trend wherever the page holds the series; a footnote comparison is not a delta; a state cell names the item it counts and links to it. Resolve line 46 against line 47 so the minimum is the structure. If a dev-time assertion or the reviewer's Expression 4 line can tell a strip with no trend or icon from the verdict's, say which and add it. (2) Settings page: a page that edits a domain covers its settings in sections of the domain (people, policies, notifications, a danger zone whose destructive action confirms), every choice group gives each option its description line, and a section of one or two rows joins its neighbour. Name the rerun's frames as evidence.",
+  "acceptance": [
+    "cards.md states one stat-row rule whose minimum is the verdict's cell (icon, label, figure, pill with base, trend where the series exists), with no contradiction between its lines",
+    "forms.md says what a settings page covers and that every choice option carries its description",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit changes (v3-owner-2-rerun-kit-fixes); rebuilding the fleet shell (the next shell or owner rerun does that).",
+  "note": "Filed by the owner-review-2 rerun (Issue 2464). Shots in .evidence/v3-shots/owner-review-2/{before,r0} on the dev host: r0/cycle-shell-6--light--1800x1200.png (the strip), r0/cycle-shell-6-settings-section-deploys--light--1800x1200.png (the settings)."
+}
