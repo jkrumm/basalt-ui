@@ -33,5 +33,6 @@
   ],
   "out_of_scope": "Coincident dots on a dot series, a BarList legend switch and its exported type, a table row with no chart item, a BarList body past 10 rows (v3-expr-11-contract); skill text (v3-expr-11-skill); a duration channel or an axis break on IntervalTrack, even thinning of an explicit tick list (one case each); the trial scenarios.",
   "proof": "make check; the tests named in acceptance; shots of n45, n46, n47, n48, n49 and n50 at 1800 and 390 in light and dark, with ?fixture=extreme (n45), burst (n46), stalled (n47) and the focus frames of n45 and n47 showing the joined row.",
-  "commits": "fix: per behaviour with its test."
+  "commits": "fix: per behaviour with its test.",
+  "note": "Planned findings from the owner review 1 rerun (docs/v3/cycles/owner-review-1.md § Findings 1 and 4), appended here instead of a new row: item 7 is also n35's rebuild (nine ellipsised titles at 1800, three named at 390, 'Lunch' inside the longest-block outline); item 3 is also c12 ('Sat 7' over 'Fri 6' at 390), n04 ('Sa Sat 07:00') and n15 ('29 Sep' against the crosshair), and its y-axis twin: n02's y readout ignores y.format and prints '0.13333333333333×'. Shots in .evidence/v3-shots/owner-review-1/r0 on the dev host."
 }
