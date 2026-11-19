@@ -184,11 +184,18 @@ jobs:
       - name: Gate steps no other job runs (make check CI_SPLIT=1)
         run: make check CI_SPLIT=1
 
-  # The quality matrix (sampled, every playground route in real browser geometry): the longest step of the old single gate,
-  # so it runs beside it. It reads dist and the playground build, as `make check` does, and `make quality-matrix` installs
-  # the headless shell itself (a no-op on a cache hit). There is no `factory` on a hosted runner, so the slot wrapper is bare.
+  # The quality matrix (sampled, every playground route in real browser geometry), split across five jobs: it is one file of
+  # `test.each` cells, so `BASALT_MATRIX_SHARD=<i>/5` (tests/quality/matrix/shard.ts) keeps every fifth cell, not a file.
+  # Each shard prints "matrix-shard <i>/5 ran=K total=T"; the `ci` job asserts the shards ran every cell of every matrix file.
+  # It reads dist and the playground build, as `make check` does, and `make quality-matrix` installs the headless shell
+  # itself (a no-op on a cache hit). There is no `factory` on a hosted runner, so the slot wrapper is bare.
   quality-matrix:
+    name: quality-matrix (${{ matrix.shard }}/5)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5]
 
     steps:
       - name: Checkout
@@ -209,8 +216,22 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-shell-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
-      - name: Quality matrix (make quality-matrix, sampled)
-        run: make quality-matrix
+      - name: Quality matrix (make quality-matrix, sampled, one shard)
+        env:
+          BASALT_MATRIX_SHARD: ${{ matrix.shard }}/5
+        # pipefail: the tee must not hide a failing run
+        shell: bash
+        run: make quality-matrix 2>&1 | tee "quality-matrix-shard-${{ matrix.shard }}.log"
+
+      # Run even when the tests failed: the `ci` job reads the logs only when every shard passed.
+      - name: Keep the shard log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-matrix-shard-${{ matrix.shard }}
+          path: quality-matrix-shard-${{ matrix.shard }}.log
+          if-no-files-found: ignore
+          overwrite: true # a re-run of one failed shard uploads its log again
 
   # The one result: needs every job above and fails unless each succeeded (a skipped or cancelled need is a
   # failure too), so a green ci.yml run still means everything passed.
@@ -222,11 +243,11 @@ jobs:
     steps:
       # The shards must sum to the whole suite: a shard that ran less than its share is a green run that skipped files.
       - name: Checkout
-        if: needs.layout.result == 'success'
+        if: needs.layout.result == 'success' || needs.quality-matrix.result == 'success'
         uses: actions/checkout@v7
 
-      - name: Setup Bun (the script has no dependencies)
-        if: needs.layout.result == 'success'
+      - name: Setup Bun (the scripts have no dependencies)
+        if: needs.layout.result == 'success' || needs.quality-matrix.result == 'success'
         uses: oven-sh/setup-bun@v2
 
       - name: Download the shard logs
@@ -241,6 +262,18 @@ jobs:
         if: needs.layout.result == 'success'
         run: bun scripts/check-layout-shards.ts layout-logs --shards 4
 
+      - name: Download the quality-matrix shard logs
+        if: needs.quality-matrix.result == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: quality-matrix-shard-*
+          path: quality-matrix-logs
+          merge-multiple: true
+
+      - name: Quality-matrix shards run every cell
+        if: needs.quality-matrix.result == 'success'
+        run: bun scripts/check-matrix-shards.ts quality-matrix-logs --shards 5
+
       - name: Fail unless every job succeeded
         if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success' || needs.quality-matrix.result != 'success'
         run: |
@@ -248,4 +281,4 @@ jobs:
           exit 1
 
       - name: Every job succeeded
-        run: echo "checks, unit, all layout shards, the gate and the quality matrix passed"
+        run: echo "checks, unit, all layout shards, the gate and all quality-matrix shards passed"
