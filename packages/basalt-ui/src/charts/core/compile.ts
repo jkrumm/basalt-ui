@@ -1648,16 +1648,30 @@ const slotAnchor = (
 const SLOT_TOOLTIP_PLACEMENT = ['top'] as const
 
 /**
- * A column's or a point's tooltip opens off the mark, never on it: anchored at the topmost mark of the
- * group (a bar's top, a dot's centre), over it first, then beside it (`portal.ts` clears the column's
- * own half width), and below only for a dot, which has no body under it.
+ * A point's tooltip opens off the mark, never on it: anchored at the topmost mark of the group (a
+ * dot's centre, a column's top for {@link pointerAnchor} without a pointer), over it, then below it.
  */
 const markAnchor = (points: readonly ChartPoint[]): { x: number; y: number } => {
   const xs = points.map((p) => p.x)
   return { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: Math.min(...points.map((p) => p.y)) }
 }
 const MARK_TOOLTIP_OFFSET = 12
-const BAR_TOOLTIP_PLACEMENT = ['top', 'right', 'left'] as const
+/**
+ * A line's, an area's or a column's tooltip sits at the group's x and the pointer's height, so a sweep
+ * along the plot keeps it on one side however the data climbs and falls (owner review 2: anchored at
+ * the data, a line's flipped above and below each next point). A column's opens beside it, right of
+ * it, left once the right side would leave the plot: over the column first put it above a short bar
+ * and beside a tall one. A focus with no pointer (keys, a linked list, a shared cursor) anchors at the
+ * group's topmost mark.
+ */
+const pointerAnchor = (
+  points: readonly ChartPoint[],
+  { pointer }: ChartTooltipAnchorContext,
+): { x: number; y: number } => {
+  const at = markAnchor(points)
+  return { x: at.x, y: pointer?.y ?? at.y }
+}
+const BAR_TOOLTIP_PLACEMENT = ['right', 'left'] as const
 const DOT_TOOLTIP_PLACEMENT = ['top', 'bottom'] as const
 
 function tooltipSpec<T, X extends ChartX>(opts: {
@@ -1686,9 +1700,9 @@ function tooltipSpec<T, X extends ChartX>(opts: {
       ? slot
         ? slotAnchor
         : stripAnchor
-      : onMarks
+      : onMarks && !visible.some(isBar)
         ? markAnchor
-        : 'group-center',
+        : pointerAnchor,
     ...(input.tooltipBelow &&
       (slot
         ? { placement: SLOT_TOOLTIP_PLACEMENT, offset: 0 }
