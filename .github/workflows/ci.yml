@@ -159,7 +159,7 @@ jobs:
         if: matrix.shard == 1
         run: bun run test:layout:harness
 
-  # What no other job runs: `make ci-gate` (generated-file gates, the literal, recipe, README and playground-lint
+  # What no other job runs: `make check CI_SPLIT=1`, which is `make ci-gate` (generated-file gates, the literal, recipe, README and playground-lint
   # checks, the quality matrix, the guard-completeness gate and the test ledger). Every other step of `make check`
   # runs in `checks`, `unit` or a `layout` shard, so the whole of `check` runs once per head. There is no `factory`
   # on a hosted runner, so the slot wrapper is bare.
@@ -181,8 +181,8 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-shell-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
-      - name: Gate steps no other job runs (make ci-gate)
-        run: make ci-gate
+      - name: Gate steps no other job runs (make check CI_SPLIT=1)
+        run: make check CI_SPLIT=1
 
   # The one result: needs every job above and fails unless each succeeded (a skipped or cancelled need is a
   # failure too), so a green ci.yml run still means everything passed.
