@@ -237,9 +237,19 @@ export function xRefLabelSpots<X extends ChartX>(opts: {
   return taken
 }
 
-/** A rule caption's box for a reference caption to keep clear of: a share of the plot width, px below the plot top. */
+/** A box for a reference or zone caption to keep clear of: a share of the plot width, px below the plot top. */
 export type XRefLabelBox = { fx0: number; fx1: number; top: number; bottom: number }
 
+/** Half the width of a vertical rule's box, px: its half stroke and the air a caption keeps. */
+const X_RULE_REACH = 2
+/** The bottom of a vertical rule's box, px below the plot top: it runs the plot's full height whatever that is. */
+const X_RULE_BOTTOM = 1e5
+
+/**
+ * The boxes of the vertical rules that carry a caption, for the other captions to keep clear of:
+ * each caption's own box, and its rule, a thin box down the plot's full height at the side of the
+ * caption it hangs from, so a reference or zone caption never sits across a rule or stacks beside it.
+ */
 export function xRefLabelBoxes(
   spots: readonly XRefLabelSpot[],
   opts: {
@@ -250,11 +260,18 @@ export function xRefLabelBoxes(
   const { plotWidth, fontSize } = opts
   if (plotWidth <= 0) return []
   // The drawn line box (about 1.35 of the font size) and a pixel of air.
-  return spots.map((s) => ({
-    fx0: s.x0 / plotWidth,
-    fx1: s.x1 / plotWidth,
-    ...captionRows(s.row, fontSize),
-  }))
+  return spots.flatMap((s) => {
+    const rule = s.toRight ? s.x0 - X_REF_LABEL_DX : s.x1 + X_REF_LABEL_DX
+    return [
+      { fx0: s.x0 / plotWidth, fx1: s.x1 / plotWidth, ...captionRows(s.row, fontSize) },
+      {
+        fx0: (rule - X_RULE_REACH) / plotWidth,
+        fx1: (rule + X_RULE_REACH) / plotWidth,
+        top: 0,
+        bottom: X_RULE_BOTTOM,
+      },
+    ]
+  })
 }
 
 /**

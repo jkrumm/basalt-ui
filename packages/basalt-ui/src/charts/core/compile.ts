@@ -84,6 +84,7 @@ import {
   yTitleScale,
 } from '../axis-gaps'
 import type { XRefLabelBox } from '../axis-gaps'
+import { xTickOpacity, yTickOpacity } from './readout-clear'
 import {
   AREA_BOTTOM,
   AREA_TOP,
@@ -498,8 +499,10 @@ export function yGuide<T>(opts: {
   locale?: string | undefined
   /** The edges of the zones drawn on this axis: a tick sits on each when the domain allows. */
   edges?: readonly number[] | undefined
+  /** The hover pins its y value beside this axis: the tick on the readout's row is blanked while it shows. */
+  readout?: boolean | undefined
 }): Omit<ChartPositionScaleOptions<number>, 'scale'> {
-  const { cfg, axis, cls, side, grid, locale, edges = [] } = opts
+  const { cfg, axis, cls, side, grid, locale, edges = [], readout = false } = opts
   const ladder = LADDER[cls]
   const planned =
     typeof cfg?.ticks === 'object'
@@ -525,7 +528,7 @@ export function yGuide<T>(opts: {
     axis: {
       line: false,
       ticks: { ...ticks, format: tickFormat, line: false },
-      tickLabels: { fontSize: TICK_FONT, opacity: 1 },
+      tickLabels: { fontSize: TICK_FONT, opacity: readout ? yTickOpacity(TICK_FONT) : 1 },
     },
   }
 }
@@ -619,6 +622,8 @@ export function xGuide<X extends ChartX>(opts: {
   locale?: string | undefined
   /** The chart's width in px: a band axis anchors a label wider than its slot to the plot edge. */
   width?: number | undefined
+  /** What the hover's x readout prints; given, the tick under the readout is blanked while it shows. */
+  readout?: ((v: ChartValue) => string) | undefined
 }): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
   const { model, xTicks, cls } = opts
   const ladder = LADDER[cls]
@@ -631,6 +636,22 @@ export function xGuide<X extends ChartX>(opts: {
     !model.band && model.extent
       ? [model.extent[0], model.extent[1] - model.extent[0]]
       : [Number.NaN, Number.NaN]
+  // A label centred on a tick near the plot's left edge hangs left of it, under the gutter's
+  // lowest y label: start-anchor it. `+value` is a Date's timestamp, or the number itself.
+  // On a band axis a label that hangs over the plot's right edge would make the engine shrink the
+  // plot: it is right-aligned to the edge instead (see `dx`).
+  const anchor = ({ value }: { value: ChartValue }) => {
+    if (model.band)
+      return bandEdgeShift(model, value, format(value), opts.width) === undefined
+        ? undefined
+        : ('end' as const)
+    const share = model.log
+      ? (model.fraction(value as X) ?? Number.NaN)
+      : (+value - leftEdgeX) / spanX
+    return share >= 0 && share <= LEFT_EDGE_SHARE ? ('start' as const) : undefined
+  }
+  const dx = ({ value }: { value: ChartValue }) =>
+    model.band ? bandEdgeShift(model, value, format(value), opts.width) : undefined
   return {
     axis: {
       line: AXIS_LINE,
@@ -638,24 +659,21 @@ export function xGuide<X extends ChartX>(opts: {
       ...(opts.title && { label: xTitleLabel(opts.title) }),
       tickLabels: {
         fontSize: TICK_FONT,
-        opacity: 1,
+        opacity: opts.readout
+          ? xTickOpacity({
+              tick: {
+                text: format,
+                anchor: (value) => anchor({ value }),
+                dx: (value) => dx({ value }),
+              },
+              readoutText: opts.readout,
+              fontSize: TICK_FONT,
+              width: opts.width,
+            })
+          : 1,
         thin: { minGap: TICK_MIN_GAP },
-        // A label centred on a tick near the plot's left edge hangs left of it, under the gutter's
-        // lowest y label: start-anchor it. `+value` is a Date's timestamp, or the number itself.
-        // On a band axis a label that hangs over the plot's right edge would make the engine shrink the
-        // plot: it is right-aligned to the edge instead (see `dx`).
-        anchor: ({ value }: { value: ChartValue }) => {
-          if (model.band)
-            return bandEdgeShift(model, value, format(value), opts.width) === undefined
-              ? undefined
-              : ('end' as const)
-          const share = model.log
-            ? (model.fraction(value as X) ?? Number.NaN)
-            : (+value - leftEdgeX) / spanX
-          return share >= 0 && share <= LEFT_EDGE_SHARE ? ('start' as const) : undefined
-        },
-        dx: ({ value }: { value: ChartValue }) =>
-          model.band ? bandEdgeShift(model, value, format(value), opts.width) : undefined,
+        anchor,
+        dx,
       },
     },
   }
@@ -1107,11 +1125,32 @@ function xCaptionOn(
   return { fx0: box.fx0, fx1: box.fx1, y0: hi - box.bottom * perPx, y1: hi - box.top * perPx }
 }
 
+/** Half the height of another rule's claim, px: its half stroke and a pixel of air. */
+const RULE_CLAIM_PX = 2
+
+/** Other reference rules as boxes across the plot's width, for a caption to keep off. */
+function ruleClaims(
+  values: readonly number[],
+  domain: readonly [number, number],
+  plotHeight: number,
+): LabelBox[] {
+  const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+  const perPx = plotHeight > 0 ? (hi - lo) / plotHeight : 0
+  return values.map((v) => ({
+    fx0: 0,
+    fx1: 1,
+    y0: v - RULE_CLAIM_PX * perPx,
+    y1: v + RULE_CLAIM_PX * perPx,
+  }))
+}
+
 /** The caption naming a reference line, at the spot {@link placeRefLabel} picks; none when no spot is clear of the other captions. */
 const refLabelMark = <T, X extends ChartX>(
   r: RefLine,
   i: number,
   ctx: RefLabelContext<T, X>,
+  /** The values of the other rules on this line's axis: a caption never crosses one. */
+  others: readonly number[] = [],
 ): ChartMarks => {
   const { axes } = ctx
   const startFirst = r.axis === 'right' && axes.scaleId(r.axis) === 'y2'
@@ -1132,6 +1171,7 @@ const refLabelMark = <T, X extends ChartX>(
       ...(startFirst ? [] : ctx.claimed),
       ...ctx.xCaptions.map((b) => xCaptionOn(b, domain, ctx.plotHeight)),
       ...ctx.placed[side],
+      ...ruleClaims(others, domain, ctx.plotHeight),
     ],
   })
   if (placed === null) return []
@@ -1308,7 +1348,20 @@ const refLineMarks = <T, X extends ChartX>(
             yScale: axes.scaleId(r.axis),
             ...(r.dashed && { strokeDasharray: DASH }),
           }),
-          ...(r.label ? refLabelMark(r, i, label()) : []),
+          ...(r.label
+            ? refLabelMark(
+                r,
+                i,
+                label(),
+                (input.refLines ?? []).flatMap((o, j) =>
+                  j === i ||
+                  input.hidden?.has(refLegendKey(j)) ||
+                  axes.scaleId(o.axis) !== axes.scaleId(r.axis)
+                    ? []
+                    : [o.value],
+                ),
+              )
+            : []),
         ],
   )
 
@@ -1357,6 +1410,7 @@ function buildScales<T, X extends ChartX>(opts: {
         cls,
         locale: input.locale,
         width,
+        readout: cls === 'micro' ? undefined : formatX,
       }),
     },
     y: {
@@ -1369,6 +1423,8 @@ function buildScales<T, X extends ChartX>(opts: {
         grid: input.y?.grid ?? true,
         locale: input.locale,
         edges: edgesOn('left'),
+        // The hover pins the y value only without a right axis (see `crosshairMarks`).
+        readout: right === null,
       }),
     },
     ...(right && {
@@ -1711,7 +1767,6 @@ const GUIDE_LABEL = {
   strokeWidth: 6,
   offset: 5,
 } as const
-
 /**
  * The hover's guide: the x rule (a bar kind has none, its hover is the bar) and the y rule through the
  * focused point, each with its value pinned on its axis, so a hover reads x and y where the ticks do.

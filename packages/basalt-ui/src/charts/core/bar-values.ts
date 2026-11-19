@@ -8,12 +8,14 @@
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { text } from '@tanstack/charts/text'
 import { BASALT } from '../../tokens'
-import type { ChartLabel, LabelBox, LabelSpot } from '../chart-labels'
-import { estimateWidth as measure, fitsWith, placeWith } from '../label-place'
-import { dimmedPaint } from '../marks'
+import type { ChartLabel, LabelBox, LabelSpot, PlacedLabel } from '../chart-labels'
+import { estimateWidth as measure, fitsWith, lineHeight, placeWith } from '../label-place'
+import { barOnCard, dimmedPaint, inkOn } from '../marks'
+import { DEFAULT_BAR_OPACITY } from '../parts/bars-marks'
+import type { BarState } from '../marks'
 import type { PlotPx } from '../label-obstacles'
 import type { ChartMarks, ChartSeries, ChartX } from '../types'
-import { clampToDomain } from './axis-ext'
+import { CARET_SIZE, clampToDomain, offScaleSide } from './axis-ext'
 import { CV } from './theme'
 
 /** The share of a bar slot kept between two grouped bars (`group({ padding })` in `bars-marks`). */
@@ -23,6 +25,10 @@ const GAP = 3
 /** Air a label keeps inside the bar it stands in, px. */
 const INSIDE_PAD = 2
 const SIZE = BASALT.text.micro
+/** The centre of a clamped value's row from the plot's edge: its box clears the edge's gridline. */
+const CLAMPED_ROW = Math.max(CARET_SIZE / 2, lineHeight(SIZE) / 2 + 2)
+/** The least side of a text-sized box, px: a rule is 4 px thick and a line path piece under 11, a caption is 13 and more. */
+const CAPTION_MIN_PX = 12
 type Side = 'left' | 'right'
 
 /** One bar (or one stack end) to label. */
@@ -32,8 +38,13 @@ type Candidate<X extends ChartX> = {
   text: string
   /** The value, drawn position: held on the plot's edge. */
   at: number
-  /** The anchor in plot px: the middle of the bar's end. */
+  /** The anchor in plot px: the middle of the bar's end, or for a value past the edge its caret's height. */
   anchor: { x: number; y: number }
+  /** The bar's end in plot px, where its value's datum sits. */
+  edge: number
+  /** The value lies past a bounded axis: its caret is on the plot edge, on this side. */
+  clamped: boolean
+  caretSide: 'top' | 'bottom' | null
   /** The band's centre in plot px, where the text mark's datum sits. */
   band: number
   /** The bar's body in px, for a label that stands inside it. */
@@ -42,6 +53,8 @@ type Candidate<X extends ChartX> = {
   up: boolean
   highlighted: boolean
   dimmed: boolean
+  /** The ink of a label standing on this bar: read against the fill the bar shows in its state. */
+  onBar: string
   magnitude: number
   /** A grouped bar's name: `<series key>:<x fraction>`; none for a stack end. */
   id?: string
@@ -94,20 +107,41 @@ function candidates<T, X extends ChartX>(input: BarValuesInput<T, X>): Candidate
     s: readonly ChartSeries<T>[]
     id?: string
   }): Candidate<X> => {
+    const dimmed = input.focused !== null && !opts.group.includes(input.focused)
+    const top = opts.s.at(-1) as ChartSeries<T>
+    const lit = opts.s.some((s) => opts.group.some((d) => s.highlight?.(d)))
+    const state: BarState = dimmed
+      ? 'dimmed'
+      : input.focused !== null && opts.group.includes(input.focused)
+        ? 'focused'
+        : 'rest'
+    const onBar = inkOn(
+      barOnCard(lit ? CV.brand : top.color, top.fillOpacity ?? DEFAULT_BAR_OPACITY, state),
+    )
     const { side, value } = opts
     const bandX = (input.fraction(opts.x) ?? 0) * frame.width
     const end = yPx(side, value)
+    const past = offScaleSide(value, input.domainOf(side))
     return {
       x: opts.x,
       side,
       text: opts.text,
       at: clampToDomain(value, input.domainOf(side)),
-      anchor: { x: opts.centre * frame.width, y: end },
+      edge: end,
+      clamped: past !== null,
+      caretSide: past,
+      anchor: {
+        x: opts.centre * frame.width,
+        // A clamped bar's value sits in the caret's row, beside its body, its box just inside the
+        // plot's edge so the gridline on the edge does not run through it.
+        y: past === null ? end : past === 'bottom' ? frame.height - CLAMPED_ROW : CLAMPED_ROW,
+      },
       band: bandX,
       body: { width: opts.width * frame.width, height: Math.abs(end - yPx(side, 0)) },
       up: value >= 0,
-      highlighted: opts.s.some((s) => opts.group.some((d) => s.highlight?.(d))),
-      dimmed: input.focused !== null && !opts.group.includes(input.focused),
+      highlighted: lit,
+      dimmed,
+      onBar,
       magnitude: Math.abs(value),
       ...(opts.id !== undefined && { id: opts.id }),
     }
@@ -242,6 +276,8 @@ export function barValueLabels<T, X extends ChartX>(
     spots,
   })
   const outsideSpots = (c: Candidate<X>, i: number): readonly LabelSpot[] => {
+    // A value past the edge has no room above or below its end: its caret is there.
+    if (c.clamped) return []
     const end: LabelSpot = c.up ? 'above' : 'below'
     if (!named.has(String(i))) return [end]
     return [end, `${end}-right`, `${end}-left`, 'right', 'left']
@@ -254,7 +290,9 @@ export function barValueLabels<T, X extends ChartX>(
   )
   const taken = new Set(outside.placed.map((p) => p.key))
   const fitting = found.flatMap((c, i) =>
-    !taken.has(String(i)) && fitsWith(measure, c.text, c.body, { size: SIZE, pad: INSIDE_PAD })
+    !taken.has(String(i)) &&
+    !c.clamped &&
+    fitsWith(measure, c.text, c.body, { size: SIZE, pad: INSIDE_PAD })
       ? [label(c, i, [c.up ? 'below' : 'above'])]
       : [],
   )
@@ -266,35 +304,121 @@ export function barValueLabels<T, X extends ChartX>(
   // A named bar still without a label takes any spot clear of the other labels, over a rule or a
   // line if it must: a label that names the answer is never dropped for what the host drew.
   const standing = new Set([...taken, ...inside.placed.map((p) => p.key)])
-  const rescued = placeWith(
+  const rescue = (
+    pending: ReadonlySet<string>,
+    obstacles: readonly LabelBox[],
+  ): ReturnType<typeof placeWith<string>> =>
+    placeWith(
+      measure,
+      found.flatMap((c, i) =>
+        named.has(String(i)) && !c.clamped && !pending.has(String(i))
+          ? [label(c, i, outsideSpots(c, i))]
+          : [],
+      ),
+      input.frame,
+      { gap: GAP, obstacles: [...outside.placed, ...inside.placed, ...obstacles], size: SIZE },
+    )
+  // The captions first: a reference or zone caption is text, and a value over it hides both. Only a
+  // bar that finds no spot clear of them crosses a rule or a line.
+  const captioned = rescue(
+    standing,
+    input.clear.filter((b) => Math.min(b.width, b.height) >= CAPTION_MIN_PX),
+  )
+  const rescued = {
+    placed: [
+      ...captioned.placed,
+      ...rescue(new Set([...standing, ...captioned.placed.map((p) => p.key)]), []).placed,
+    ],
+  }
+  // A clamped bar's value is never dropped: beside its body in the caret's row, the right side
+  // first, then the left; over the bar under its caret when neither side has room.
+  const others = [...outside.placed, ...rescued.placed, ...inside.placed]
+  const right = placeWith(
     measure,
     found.flatMap((c, i) =>
-      named.has(String(i)) && !standing.has(String(i)) ? [label(c, i, outsideSpots(c, i))] : [],
+      c.clamped && !standing.has(String(i))
+        ? [{ ...label(c, i, ['right']), x: c.anchor.x + c.body.width / 2 }]
+        : [],
     ),
     input.frame,
-    { gap: GAP, obstacles: [...outside.placed, ...inside.placed], size: SIZE },
+    { gap: GAP, obstacles: [...input.obstacles, ...others], size: SIZE },
   )
-  const marks = [
-    ...[...outside.placed, ...rescued.placed].map((p) => ({ p, ink: CV.inkMuted })),
-    ...inside.placed.map((p) => ({ p, ink: CV.surface })),
-  ].map(({ p, ink }) => {
+  const beside = new Set([...standing, ...right.placed.map((p) => p.key)])
+  const left = placeWith(
+    measure,
+    found.flatMap((c, i) =>
+      c.clamped && !beside.has(String(i))
+        ? [{ ...label(c, i, ['left']), x: c.anchor.x - c.body.width / 2 }]
+        : [],
+    ),
+    input.frame,
+    { gap: GAP, obstacles: [...input.obstacles, ...others, ...right.placed], size: SIZE },
+  )
+  const settled = new Set([...beside, ...left.placed.map((p) => p.key)])
+  // Under the caret, row by row down the bar, the first row clear of the other labels and the zone
+  // captions: a value that lost its side of the bar still keeps a row of its own.
+  const rowStep = lineHeight(SIZE) + INSIDE_PAD
+  const overPlaced: PlacedLabel<string>[] = []
+  for (let row = 0; row * rowStep < input.frame.height; row++) {
+    const pending = found.flatMap((c, i) =>
+      c.clamped && !settled.has(String(i)) && !overPlaced.some((p) => p.key === String(i))
+        ? [
+            label(
+              {
+                ...c,
+                anchor: {
+                  x: c.anchor.x,
+                  y: overY(c, input.frame) + (c.caretSide === 'bottom' ? -row : row) * rowStep,
+                },
+              },
+              i,
+              [c.caretSide === 'bottom' ? 'above' : 'below'],
+            ),
+          ]
+        : [],
+    )
+    if (pending.length === 0) break
+    const got = placeWith(measure, pending, input.frame, {
+      gap: INSIDE_PAD,
+      obstacles: [...input.clear, ...others, ...right.placed, ...left.placed, ...overPlaced],
+      size: SIZE,
+    })
+    overPlaced.push(...got.placed)
+  }
+  const placedAll: PlacedLabel<string>[] = [
+    ...outside.placed,
+    ...rescued.placed,
+    ...right.placed,
+    ...left.placed,
+    ...inside.placed,
+    ...overPlaced,
+  ]
+  const paintOf = new Map<string, string>([
+    ...[...outside.placed, ...rescued.placed, ...right.placed, ...left.placed].map(
+      (p) => [p.key, CV.inkMuted] as const,
+    ),
+    ...[...inside.placed, ...overPlaced].map(
+      (p) => [p.key, (found[Number(p.key)] as Candidate<X>).onBar] as const,
+    ),
+  ])
+  const marks = placedAll.map((p) => {
     const c = found[Number(p.key)] as Candidate<X>
+    const ink = paintOf.get(p.key) ?? CV.inkMuted
+    const onBar = ink === c.onBar
     return {
       x: c.x,
       y: c.at,
       scale: input.scaleOf(c.side),
       text: p.text,
-      dx: p.dx + (c.anchor.x - c.band),
-      dy: p.dy,
-      fill: c.dimmed ? dimmedPaint(ink) : ink,
+      anchor: p.textAnchor,
+      dx: p.textX - c.band,
+      dy: p.dy + (p.y - c.edge),
+      // A label on a bar reads against the fill the bar shows (dimmed already), so it never dims itself.
+      fill: c.dimmed && !onBar ? dimmedPaint(ink) : ink,
     }
   })
   const scales = [...new Set(marks.map((m) => m.scale))]
-  const written = new Set(
-    [...outside.placed, ...rescued.placed, ...inside.placed].flatMap(
-      (p) => found[Number(p.key)]?.id ?? [],
-    ),
-  )
+  const written = new Set(placedAll.flatMap((p) => found[Number(p.key)]?.id ?? []))
   return {
     written,
     marks: scales.map((scale) =>
@@ -309,20 +433,18 @@ export function barValueLabels<T, X extends ChartX>(
             text: (m: (typeof marks)[number]) => m.text,
             fill: (m: (typeof marks)[number]) => m.fill,
             fontSize: SIZE,
-            anchor: 'middle',
+            anchor: (m: (typeof marks)[number]) => m.anchor,
             dx: (m: (typeof marks)[number]) => m.dx,
             dy: (m: (typeof marks)[number]) => m.dy,
           },
         ),
       ),
     ) as unknown as ChartMarks,
-    boxes: [...outside.placed, ...rescued.placed, ...inside.placed].map(
-      ({ left, top, width, height }) => ({
-        left,
-        top,
-        width,
-        height,
-      }),
-    ),
+    boxes: placedAll.map(({ left, top, width, height }) => ({ left, top, width, height })),
   }
+}
+
+/** The y of a clamped bar's value written over its bar, under (or over, at the bottom) its caret. */
+function overY(c: { caretSide: 'top' | 'bottom' | null }, frame: { height: number }): number {
+  return c.caretSide === 'bottom' ? frame.height - 2 * CARET_SIZE : 2 * CARET_SIZE
 }
