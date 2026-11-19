@@ -457,6 +457,35 @@ export const NAV = defineNav({
         },
       ],
     },
+    // Shell cycle 6 (owner review 2): the fleet app's three pages, rebuilt.
+    {
+      id: 'fleet-6',
+      label: 'Trial evidence: fleet, shell cycle 6',
+      collapsible: true,
+      items: [
+        {
+          id: 'fleet-6-overview',
+          label: 'Fleet overview',
+          icon: Dashboard,
+          mobile: 'more',
+          link: linkOptions({ to: '/cycle/shell-6' }),
+        },
+        {
+          id: 'fleet-6-services',
+          label: 'Services',
+          icon: Table,
+          mobile: 'more',
+          link: linkOptions({ to: '/cycle/shell-6/services' }),
+        },
+        {
+          id: 'fleet-6-settings',
+          label: 'Fleet settings',
+          icon: Layout,
+          mobile: 'more',
+          link: linkOptions({ to: '/cycle/shell-6/settings' }),
+        },
+      ],
+    },
     // One entry per scenario in the registry.
     {
       id: 'scenarios',

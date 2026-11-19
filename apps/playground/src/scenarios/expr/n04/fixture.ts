@@ -1,70 +1,160 @@
 /**
- * A seeded 48-hour forecast for the ride question: hourly rain chance, wind and temperature from a
- * fixed start, plus the cyclist's two personal limits. `forecastFor` takes the `?fixture=` name:
- * `mixed` (the default) has a front each day, a wind-only night, a one-hour rain blip and a 58 km/h
- * gust; `wet` never gets under the rain limit; `clear` is dry and calm all 48 hours.
+ * Next 48 hours for a cyclist: hourly rain chance, wind and temperature, plus the rider's own
+ * limits. Seeded and deterministic: keyframes per fixture, linear between them, a small seeded
+ * jitter on top. `?fixture=storm` holds every hour over a limit (no window, a gale), `?fixture=clear`
+ * holds none over (one window of all 48 hours, rain at zero).
  */
 
-const HOUR = 3_600_000
-/** Friday 20 Nov 2026, 06:00 UTC: the forecast's first hour. */
-const START = Date.UTC(2026, 10, 20, 6)
+export type Cause = 'ride' | 'rain' | 'wind' | 'both'
 
-export const RAIN_LIMIT = 30
-export const WIND_LIMIT = 25
-/** A ride is worth the kit-up from this many hours. */
-export const MIN_WINDOW_HOURS = 2
-/** When the model run behind the fixture was issued. */
-export const ISSUED_AT = new Date(Date.UTC(2026, 10, 20, 5))
+export type Hour = {
+  /** Hour index from the first hour, 0 to 47. */
+  h: number
+  at: Date
+  /** Chance of rain, 0 to 100. */
+  rain: number
+  /** Wind, km/h. */
+  wind: number
+  /** Air temperature, degrees Celsius. */
+  temp: number
+  cause: Cause
+}
 
-export type Hour = { at: Date; rain: number; wind: number; temp: number }
-export type RideWindow = {
+/** A run of hours with one verdict; `from` and `to` are hour indexes, both inclusive. */
+export type Stretch = {
   id: string
-  from: Date
-  /** The start of the window's last hour. */
-  to: Date
+  cause: Cause
+  from: number
+  to: number
+  start: Date
+  end: Date
   hours: number
-  rainMax: number
-  windMax: number
-  tempAvg: number
-}
-export type ForecastName = 'mixed' | 'wet' | 'clear'
-export type Forecast = {
-  name: ForecastName
-  hours: readonly Hour[]
-  windows: readonly RideWindow[]
+  peakRain: number
+  peakWind: number
+  minTemp: number
+  maxTemp: number
 }
 
-type Front = { centre: number; width: number; rain: number; wind: number; temp: number }
-type Recipe = { seed: number; fronts: readonly Front[]; rainFloor: number; rainNoise: number }
+/** The rider's own limits: a ride hour has rain chance and wind at or under both. */
+export const LIMITS = { rain: 30, wind: 25 } as const
 
-const RECIPES: Record<ForecastName, Recipe> = {
-  mixed: {
-    seed: 48,
-    rainFloor: 0,
-    rainNoise: 6,
-    fronts: [
-      { centre: 9.5, width: 3, rain: 90, wind: 10, temp: -2 },
-      { centre: 21, width: 5.5, rain: 0, wind: 29, temp: -1 },
-      { centre: 30, width: 1.1, rain: 36, wind: 0, temp: 0 },
-      { centre: 42, width: 3.2, rain: 92, wind: 20, temp: -3 },
-    ],
-  },
-  wet: {
+export const HOURS_SHOWN = 48
+const START = Date.UTC(2026, 10, 20, 7)
+const HOUR_MS = 3_600_000
+
+type Keyframes = readonly (readonly [number, number])[]
+type Weather = { seed: number; rain: Keyframes; wind: Keyframes; temp: Keyframes; jitter: number }
+
+const FIXTURES: Record<string, Weather> = {
+  rest: {
     seed: 7,
-    rainFloor: 34,
-    rainNoise: 8,
-    fronts: [
-      { centre: 12, width: 8, rain: 92, wind: 14, temp: -2 },
-      { centre: 38, width: 9, rain: 88, wind: 16, temp: -3 },
+    jitter: 1,
+    rain: [
+      [0, 0],
+      [3, 5],
+      [4, 35],
+      [5, 70],
+      [7, 100],
+      [11, 80],
+      [15, 25],
+      [17, 10],
+      [22, 5],
+      [24, 0],
+      [29, 0],
+      [31, 40],
+      [33, 55],
+      [34, 25],
+      [35, 10],
+      [38, 0],
+      [41, 10],
+      [44, 60],
+      [47, 80],
+    ],
+    wind: [
+      [0, 10],
+      [3, 16],
+      [4, 22],
+      [6, 44],
+      [8, 66],
+      [11, 40],
+      [14, 34],
+      [18, 30],
+      [22, 28],
+      [23, 22],
+      [24, 14],
+      [29, 18],
+      [31, 22],
+      [33, 24],
+      [34, 20],
+      [36, 22],
+      [38, 31],
+      [41, 38],
+      [47, 44],
+    ],
+    temp: [
+      [0, 6],
+      [6, 10],
+      [11, 9],
+      [14, 7],
+      [22, 4],
+      [24, 5],
+      [30, 10],
+      [34, 9],
+      [40, 6],
+      [47, 5],
     ],
   },
-  clear: { seed: 11, rainFloor: 0, rainNoise: 0, fronts: [] },
+  storm: {
+    seed: 11,
+    jitter: 1,
+    rain: [
+      [0, 70],
+      [10, 100],
+      [30, 90],
+      [47, 100],
+    ],
+    wind: [
+      [0, 40],
+      [6, 48],
+      [20, 78],
+      [30, 64],
+      [47, 52],
+    ],
+    temp: [
+      [0, 5],
+      [20, 3],
+      [47, 4],
+    ],
+  },
+  clear: {
+    seed: 3,
+    jitter: 0,
+    rain: [
+      [0, 0],
+      [26, 0],
+      [28, 4],
+      [30, 0],
+      [47, 0],
+    ],
+    wind: [
+      [0, 8],
+      [12, 14],
+      [24, 10],
+      [36, 18],
+      [47, 12],
+    ],
+    temp: [
+      [0, 3],
+      [12, 9],
+      [24, 2],
+      [36, 10],
+      [47, 4],
+    ],
+  },
 }
 
-const isForecastName = (name: string | undefined): name is ForecastName =>
-  name === 'mixed' || name === 'wet' || name === 'clear'
-
-function mulberry32(seed: number): () => number {
+/** A small deterministic generator (mulberry32). */
+function seeded(seed: number): () => number {
   let a = seed
   return () => {
     a = (a + 0x6d2b79f5) | 0
@@ -74,64 +164,68 @@ function mulberry32(seed: number): () => number {
   }
 }
 
-function buildHours(name: ForecastName): Hour[] {
-  const { seed, fronts, rainFloor, rainNoise } = RECIPES[name]
-  const random = mulberry32(seed)
-  const hours = Array.from({ length: 48 }, (_, i): Hour => {
-    const clock = (6 + i) % 24
-    const reach = (f: Front) => Math.exp(-(((i - f.centre) / f.width) ** 2))
-    const rain = Math.max(0, ...fronts.map((f) => f.rain * reach(f)), rainFloor)
-    const windFronts = fronts.reduce((sum, f) => sum + f.wind * reach(f), 0)
-    const tempFronts = fronts.reduce((sum, f) => sum + f.temp * reach(f), 0)
-    const noisyRain = Math.round(rain + random() * rainNoise - rainNoise / 4)
-    const wind = 6 + 7 * Math.max(0, Math.sin(((clock - 8) / 24) * 2 * Math.PI)) + windFronts
-    const temp = 7 + 5 * Math.sin(((clock - 9) / 24) * 2 * Math.PI) + tempFronts
-    return {
-      at: new Date(START + i * HOUR),
-      rain: noisyRain < 5 ? 0 : Math.min(100, noisyRain),
-      wind: Math.round(wind + random() * 4),
-      temp: Math.round(temp + random() - 0.5),
-    }
-  })
-  if (name === 'mixed') hours[40] = { ...hours[40]!, wind: 58 }
-  if (name === 'clear') hours[22] = { ...hours[22]!, wind: 0 }
-  return hours
+function at(frames: Keyframes, h: number): number {
+  const next = frames.findIndex(([x]) => x >= h)
+  const hi = frames[next]
+  if (next <= 0 || hi === undefined) return frames[Math.max(next, 0)]?.[1] ?? 0
+  const lo = frames[next - 1]
+  if (lo === undefined) return hi[1]
+  return lo[1] + ((hi[1] - lo[1]) * (h - lo[0])) / (hi[0] - lo[0])
 }
 
-/** The end of a window: the start of the hour after its last hour. */
-export const windowEnd = (w: RideWindow): Date => new Date(w.to.getTime() + HOUR)
+const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v))
 
-export const isRideHour = (h: Hour): boolean => h.rain <= RAIN_LIMIT && h.wind <= WIND_LIMIT
+function causeOf(rain: number, wind: number): Cause {
+  const wet = rain > LIMITS.rain
+  const windy = wind > LIMITS.wind
+  if (wet && windy) return 'both'
+  if (wet) return 'rain'
+  return windy ? 'wind' : 'ride'
+}
 
-/** Every run of ride hours of at least `MIN_WINDOW_HOURS`, in time order. */
-function windowsOf(hours: readonly Hour[]): RideWindow[] {
-  const runs: Hour[][] = []
-  let open: Hour[] = []
-  for (const h of hours) {
-    if (isRideHour(h)) {
-      open.push(h)
+/** The 48 hours of a fixture; an unknown name is the rest fixture. */
+export function hoursFor(fixture: string | undefined): readonly Hour[] {
+  const w = FIXTURES[fixture ?? ''] ?? FIXTURES['rest']
+  if (w === undefined) return []
+  const next = seeded(w.seed)
+  return Array.from({ length: HOURS_SHOWN }, (_, h) => {
+    const wiggle = (): number => (next() - 0.5) * 2 * w.jitter
+    const base = at(w.rain, h)
+    const rain = clamp(Math.round(base === 0 ? 0 : base + wiggle() * 3), 0, 100)
+    const wind = Math.max(0, Math.round(at(w.wind, h) + wiggle() * 2))
+    const temp = Math.round((at(w.temp, h) + wiggle() * 0.6) * 10) / 10
+    return { h, at: new Date(START + h * HOUR_MS), rain, wind, temp, cause: causeOf(rain, wind) }
+  })
+}
+
+/** Runs of hours with one verdict, in time order. */
+export function stretchesOf(hours: readonly Hour[]): readonly Stretch[] {
+  const out: Stretch[] = []
+  for (const hour of hours) {
+    const last = out.at(-1)
+    if (last !== undefined && last.cause === hour.cause) {
+      last.to = hour.h
+      last.end = new Date(hour.at.getTime() + HOUR_MS)
+      last.hours += 1
+      last.peakRain = Math.max(last.peakRain, hour.rain)
+      last.peakWind = Math.max(last.peakWind, hour.wind)
+      last.minTemp = Math.min(last.minTemp, hour.temp)
+      last.maxTemp = Math.max(last.maxTemp, hour.temp)
       continue
     }
-    if (open.length > 0) runs.push(open)
-    open = []
+    out.push({
+      id: `s${hour.h}`,
+      cause: hour.cause,
+      from: hour.h,
+      to: hour.h,
+      start: hour.at,
+      end: new Date(hour.at.getTime() + HOUR_MS),
+      hours: 1,
+      peakRain: hour.rain,
+      peakWind: hour.wind,
+      minTemp: hour.temp,
+      maxTemp: hour.temp,
+    })
   }
-  if (open.length > 0) runs.push(open)
-  return runs
-    .filter((run) => run.length >= MIN_WINDOW_HOURS)
-    .map((run) => ({
-      id: `w-${run[0]!.at.getTime()}`,
-      from: run[0]!.at,
-      to: run.at(-1)!.at,
-      hours: run.length,
-      rainMax: Math.max(...run.map((h) => h.rain)),
-      windMax: Math.max(...run.map((h) => h.wind)),
-      tempAvg: Math.round(run.reduce((sum, h) => sum + h.temp, 0) / run.length),
-    }))
-}
-
-/** The forecast for a `?fixture=` name; an unknown or missing name is `mixed`. */
-export function forecastFor(fixture: string | undefined): Forecast {
-  const name = isForecastName(fixture) ? fixture : 'mixed'
-  const hours = buildHours(name)
-  return { name, hours, windows: windowsOf(hours) }
+  return out
 }

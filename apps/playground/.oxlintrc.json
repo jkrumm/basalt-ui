@@ -19,6 +19,10 @@
       "rules": {
         "basalt/primitive-bypass": ["error", { "formsOff": ["list-rows", "figure-readout"] }]
       }
+    },
+    {
+      "files": ["src/scenarios/expr/n04/**", "src/cycle/shell-6/**"],
+      "rules": { "basalt/primitive-bypass": ["error", { "formsOff": [] }] }
     }
   ]
 }
