@@ -6,7 +6,7 @@ import { createRoot } from 'react-dom/client'
 import type { ReactElement } from 'react'
 import { StatCell } from '../../../src/cards/stat-cell'
 import { StatGroup } from '../../../src/cards/stat-group'
-import type { Phase } from '../../../src/cards/contract'
+import type { Phase } from '../../../src/index'
 
 const retry = (): void => undefined
 

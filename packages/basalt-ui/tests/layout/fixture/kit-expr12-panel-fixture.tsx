@@ -156,7 +156,7 @@ function VirtualTable({ state }: { state: State }): ReactElement {
     columns: [
       c.entity('name', { header: 'Day', priority: 1 }),
       c.number('amount', { header: 'Minutes', priority: 1 }),
-      c.number('due', { header: 'Distance', priority: 1 }),
+      c.text('due', { header: 'Distance', priority: 1 }),
     ],
     data: state === 'ready' ? ROWS : [],
     getRowId: (r) => r.id,
