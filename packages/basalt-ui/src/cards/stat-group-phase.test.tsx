@@ -236,7 +236,7 @@ describe('DataPanel phase matrix', () => {
       const { container } = render(panel(probe, () => <p>rows</p>))
       const box = container.querySelector<HTMLElement>('[data-slot="card-phase"]')
       expect(box?.getAttribute('data-phase')).toBe(probe)
-      expect(box?.style.height, probe).toBe('232px')
+      expect(box?.style.height, probe).toBe('240px')
       cleanup()
     }
   })

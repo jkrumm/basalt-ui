@@ -14,16 +14,16 @@ around a table, a list or a board. The body is one box slot at a fixed height, d
 required `bodySize`, so a loading, empty or error panel is as tall as a ready one and
 the body is called in `ready` and `stale`; in `empty` and `error` it is called too, so a table in it
 keeps its column header row and draws the arm under it (a body that draws no table stays hidden
-there and the panel draws its own arm). A `{ rows }` body whose table rows run past
-the declared height shows whole rows: the rows are cut after the last one that fits, while the
-box keeps the declared height in every phase. A `rows` count is table rows at the desktop height
-(the head row included): where the table folds to phone cards, the box is as tall as that many data
-rows of cards (so declare the rows the desktop table needs, not the cards' height) and a shorter
-list ends at its last card. A loading frame has no cards to measure: it is that many card-high
-blocks (one 92 px card each) until a list has been measured, then the height it had; the panel
-never runs the body in loading. A table body with `height="fill"` takes the box's height and scrolls
-inside it, so a chart focus brings its joined row into view. The box clips with `overflow: clip`, never
-`hidden`, so a table head that sticks to the page keeps sticking.
+there and the panel draws its own arm). A `rows` count is table rows at the table's row height
+(`--basalt-row-h`, the head row included), so the box is `rows` x that height: declare N data rows
+as `rows: N + 1`, and the desktop box holds the head row and all N with no blank row; a table with
+more rows than the box shows whole rows, cut after the last that fits. Where the table folds to phone
+cards the cards are taller than a row (108 px with a meter, 92 px without), so the box is as tall as
+the N data cards and a shorter list ends at its last card: every card is whole at 390 px. A loading
+frame has no cards to measure: until a list has been measured it gives each data row one 108 px card,
+then the height it had; the panel never runs the body in loading. A table body with `height="fill"`
+takes the box's height and scrolls inside it, so a chart focus brings its joined row into view. The
+box clips with `overflow: clip`, never `hidden`, so a table head that sticks to the page keeps sticking.
 
 ## Signature
 
