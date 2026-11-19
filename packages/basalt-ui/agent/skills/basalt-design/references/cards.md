@@ -28,7 +28,7 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 
 ## A page of rows still leads with a card
 
-- A page whose body is rows (courses, monitors, books) leads with a card: the figure that answers, its context line and a footer of two pairs, then the rows. A strip of counts beside a flush table, or one sentence over a table, falls short of the anatomy (n11 .8 and .15: a sentence over a flush table; n23 .36 and .44: a flush band of label, figure and free text). Round 1 of n11 led with a [StatCard](node_modules/basalt-ui/docs/stat-card.md) and scored.
+- A page whose body is rows (courses, monitors, books) leads with a card: the figure that answers, its context line and a footer of two pairs, then the rows. A strip of bare counts beside a flush table, or one sentence over a table, falls short of the anatomy (n11 .8 and .15: a sentence over a flush table; n23 .36 and .44: a flush band of label, figure and free text). Round 1 of n11 led with a [StatCard](node_modules/basalt-ui/docs/stat-card.md) and scored.
 
 ## Every figure has a baseline
 
@@ -37,13 +37,17 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 - A count over a total is a figure with its share or delta ("13", pill "68% of 19"), where a sentence in prose gives nothing to compare (c10 F3, c11 F3).
 - A share shows its whole beside it ("9 / 18" next to the percent bar), so a small and a large item draw differently: 12 and 48 lessons drew the same bar (n11 .3).
 - A card with none of these is allowed when the number lacks a history, a target and parts.
-- Name the base in the pill and keep it at 390: n39's hero count lacked a margin to 0 °C and its pill named its base only as 'GFS' after its builder cut `delta.label` for the phone (.2); shorten the words around the base and keep the base. n41's medians and Rate column carried a figure with nothing beside it (.27); n42's CPU and Memory strip lacked one, and on `pegged` its pill signed noise as '+1 pts CPU' (.38): a change inside the noise takes a neutral pill or an absent one, and a saturated figure stands against its limit.
+- Name the base in the pill, or in a strip cell on the line under it (`delta.label`, which the cell draws there), and keep it at 390: n39's hero count lacked a margin to 0 °C and its pill named its base only as 'GFS' after its builder cut `delta.label` for the phone (.2); shorten the words around the base and keep the base. n41's medians and Rate column carried a figure with nothing beside it (.27); n42's CPU and Memory strip lacked one, and on `pegged` its pill signed noise as '+1 pts CPU' (.38): a change inside the noise takes a neutral pill or an absent one, and a saturated figure stands against its limit.
 - A duration or an age is a fact for the footer or a meter, and a delta is a signed change against a named base: n40's Overdue pill was an unsigned duration drawn with the delta arrow (.13); round 1 moved it to the footer as a pair, 'Overdue 31 days'.
 
-## Compose, in this order
+## When a page leads with figures
 
-- One strip or row of cards first, then the table or chart that explains them; equal cards in a uniform grid leave the reader to find the order.
-- Use [StatGroup](node_modules/basalt-ui/docs/stat-group.md) `strip` for a dense status bar and `cards` where each figure needs its own surface; a lone figure is a [StatCard](node_modules/basalt-ui/docs/stat-card.md).
+- Lead with the card that answers the page's question, then the table or chart that explains it; equal cards in a uniform grid leave the reader to find the order.
+- A stat row earns its place only when the page has three or more headline figures of equal weight, and every cell carries a delta that names its base, a verdict, a meter or a trend. A bare count goes in the footer of the card it belongs to, or in the list where it is acted on: the owner rejected four figures on a band as "a way less thought-through version of cards" (owner review 2, the fleet overview's Services 6, Deploys 164, 11.0 %, 174 s). The reviewer fails a row where every cell is a bare figure (Expression 4), and the group warns in development.
+- The row is a [StatGroup](node_modules/basalt-ui/docs/stat-group.md): `strip` rules the cells on one surface, each an icon, its label, the figure with its pill, the base under it and a 28 px trend; `cards` gives each figure its own surface. A lone figure is a [StatCard](node_modules/basalt-ui/docs/stat-card.md). Region `stat-group` in `apps/playground/src/routes/cards.tsx` is the fleet row composed.
+
+## Compose
+
 - Pass the numbers; the part formats them. Pass the phase or the query; the card draws its own skeleton at its loaded height. [type:StatCardProps]
 - The card's action sits in the card menu; the page's one primary action sits in [PageBar](node_modules/basalt-ui/docs/page-bar.md), drawn ink-inverted. [type:PageBarProps]
 - Cards in one row align their heights; a card's subtitle carries a fact, with filler left out.
