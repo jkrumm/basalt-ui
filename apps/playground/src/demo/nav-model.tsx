@@ -185,6 +185,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/kit/bar-list-series' }),
         },
         {
+          id: 'kit-chain',
+          label: 'Dependency chain',
+          icon: Table,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/chain' }),
+        },
+        {
           id: 'kit-library',
           label: 'Library (reference)',
           icon: Image,
