@@ -7,7 +7,6 @@
  */
 import {
   cpSync,
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -116,4 +115,3 @@ export function eject(app: App, name: string): void {
 }
 
 export const read = (dir: string, rel: string): string => readFileSync(join(dir, rel), 'utf8')
-const exists = (dir: string, rel: string): boolean => existsSync(join(dir, rel))
