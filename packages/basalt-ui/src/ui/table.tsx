@@ -8,6 +8,10 @@ import { cn } from '../core/cn'
  * (`--basalt-row-h`); `sm` is a fixed 28 px row for a table that sits in a card and carries many
  * rows. A coarse pointer takes the density floor in both, so a row stays a touch target.
  *
+ * `look` is what the rules say: `reading` draws a hairline under each row, for a table a reader
+ * scans down and summarises; `grid` adds a rule between every two cells, sets every figure
+ * tabular and takes the compact row, for working data a reader compares across and down.
+ *
  * @example
  * tableVariants({ size: 'sm' }) // class string for a non-`Table` element
  */
@@ -19,8 +23,12 @@ export const tableVariants = cva(
         md: '',
         sm: '[--table-row-h:1.75rem] pointer-coarse:[--table-row-h:var(--basalt-row-h)]',
       },
+      look: {
+        reading: '',
+        grid: 'tabular-nums [--table-row-h:1.75rem] pointer-coarse:[--table-row-h:var(--basalt-row-h)] [&_:is(th,td)]:border-e [&_:is(th,td)]:border-border [&_:is(th,td):last-child]:border-e-0',
+      },
     },
-    defaultVariants: { size: 'md' },
+    defaultVariants: { size: 'md', look: 'reading' },
   },
 )
 
@@ -59,8 +67,15 @@ export type TableProps = PartProps<'table'> & VariantProps<typeof tableVariants>
  *   <TableBody><TableRow><TableCell>#4821</TableCell></TableRow></TableBody>
  * </Table>
  */
-export function Table({ size, className, ...props }: TableProps): ReactElement {
-  return <table {...props} data-slot="table" className={cn(tableVariants({ size }), className)} />
+export function Table({ size, look, className, ...props }: TableProps): ReactElement {
+  return (
+    <table
+      {...props}
+      data-slot="table"
+      data-look={look ?? undefined}
+      className={cn(tableVariants({ size, look }), className)}
+    />
+  )
 }
 
 /**

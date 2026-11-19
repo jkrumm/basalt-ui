@@ -6,10 +6,13 @@ import type { TableProps } from './table'
  */
 
 // basalt:guard requires
-type Called = { size?: 'md' | 'sm' }
+type Called = { size?: 'md' | 'sm'; look?: 'reading' | 'grid' }
 
-export const requires = (c: Called): Pick<TableProps, 'size'> => c
+export const requires = (c: Called): Pick<TableProps, 'size' | 'look'> => c
 
 // basalt:guard closed
 // @ts-expect-error size is md or sm, not a free string
 export const closedSize: Pick<TableProps, 'size'> = { size: 'unknown' }
+
+// @ts-expect-error look is reading or grid, not a free string
+export const closedLook: Pick<TableProps, 'look'> = { look: 'striped' }
