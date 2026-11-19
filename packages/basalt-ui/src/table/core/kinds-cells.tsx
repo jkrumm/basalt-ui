@@ -163,8 +163,59 @@ export function EntityCell({
   )
 }
 
-export function StatusCell({ value, tone }: { value: string; tone: Tone }): ReactNode {
-  return <Status tone={tone}>{value}</Status>
+/**
+ * A cell's leading icon (`icon` on `status`, `boolean`, `date` and `relativeTime`, like
+ * `entity`'s): muted ink before the value, so it marks the value without competing with it.
+ */
+export function WithIcon({
+  icon: Icon,
+  children,
+}: {
+  icon: IconComponent | undefined
+  children: ReactNode
+}): ReactNode {
+  if (Icon === undefined) return children
+  return (
+    <span
+      data-slot="table-cell-icon"
+      className="inline-flex max-w-full min-w-0 items-center gap-1.5"
+    >
+      <Icon aria-hidden="true" size={16} className="shrink-0 text-muted-foreground" />
+      {children}
+    </span>
+  )
+}
+
+/** The ink of a status icon per tone: the icon takes the dot's place and its colour. */
+const TONE_INK: Readonly<Record<Tone, string>> = {
+  neutral: 'text-muted-foreground',
+  accent: 'text-brand',
+  good: 'text-good',
+  warn: 'text-warn',
+  bad: 'text-bad',
+  info: 'text-info',
+}
+
+export function StatusCell({
+  value,
+  tone,
+  icon: Icon,
+}: {
+  value: string
+  tone: Tone
+  icon?: IconComponent | undefined
+}): ReactNode {
+  if (Icon === undefined) return <Status tone={tone}>{value}</Status>
+  return (
+    <span
+      data-slot="table-status"
+      data-tone={tone}
+      className="inline-flex max-w-full items-center gap-1.5 text-sm whitespace-nowrap text-foreground"
+    >
+      <Icon aria-hidden="true" size={14} className={cn('shrink-0', TONE_INK[tone])} />
+      {value}
+    </span>
+  )
 }
 
 export function DeltaCell({
@@ -231,10 +282,25 @@ export function MeterCell({
 export function BooleanCell({
   value,
   labels,
+  icon: Icon,
 }: {
   value: boolean
   labels: readonly [string, string]
+  /** Takes the place of the check or cross glyph. */
+  icon?: IconComponent | undefined
 }): ReactNode {
+  if (Icon !== undefined) {
+    return (
+      <span
+        data-slot="table-boolean"
+        data-value={value ? 'true' : 'false'}
+        className="inline-flex items-center gap-1.5"
+      >
+        <Icon aria-hidden="true" size={16} className="shrink-0 text-muted-foreground" />
+        {value ? labels[0] : labels[1]}
+      </span>
+    )
+  }
   return (
     <span data-slot="table-boolean" data-value={value ? 'true' : 'false'}>
       <span aria-hidden="true">{value ? '✓' : '✕'}</span> {value ? labels[0] : labels[1]}

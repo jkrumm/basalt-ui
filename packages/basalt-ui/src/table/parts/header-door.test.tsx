@@ -420,7 +420,10 @@ describe('one state behind the header, the chips and the sheet', () => {
     )
     await settled()
     expect(model().state.request.filters).toEqual([])
-    expect(mark.isConnected).toBe(false)
+    // the filter button stays where it was, back at rest
+    expect(mark.isConnected).toBe(true)
+    expect(mark.getAttribute('aria-label')).toBe('Filter State')
+    expect(mark.hasAttribute('data-active')).toBe(false)
     expect(
       within(sheet)
         .getByRole('checkbox', { name: /^Done\b/ })
