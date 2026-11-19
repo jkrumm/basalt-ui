@@ -7,7 +7,7 @@
  *
  * Probes, each in a `data-testid` box: `cc-ready`, `cc-loading`, `cc-stale`, `cc-error`, `cc-empty`
  * (same props, one phase each), `cc-slot-small` and `cc-slot-tall` (a plain div at 40 and 2x the
- * box), `cc-fill` (a 420 px parent), `cc-failed`, `cc-tip` (30 points, a legend, hover target),
+ * box), `cc-fill` (a 420 px parent), `cc-tall` (`height="tall"`), `cc-failed`, `cc-tip` (30 points, a legend, hover target),
  * `cc-legend` (the card's own legend driving a chart whose series name no entry).
  */
 import { createRoot } from 'react-dom/client'
@@ -108,6 +108,9 @@ function Fixture() {
       </div>
       <div data-testid="cc-fill" className="h-[420px] min-w-0">
         <ChartCard {...FRAME} height="fill" chart={chart} />
+      </div>
+      <div data-testid="cc-tall" className={BOX}>
+        <ChartCard {...FRAME} height="tall" chart={chart} />
       </div>
       <div data-testid="cc-failed" className={BOX}>
         <ChartCard

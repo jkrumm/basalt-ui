@@ -2,7 +2,7 @@
  * v3 `ChartCard` (docs/v3/concepts/charts-cards-kanban.md section 9) in real Chrome at 1440, 768, 390
  * and 320. Asserted here because happy-dom has no geometry: the card is as tall in ready, loading,
  * stale, error and empty and as a Suspense fallback; a chart slot at twice the box height does not
- * move the card; a `fill` card takes its parent; the tooltip stays inside the card on both axes and
+ * move the card; a `fill` card takes its parent; a `tall` card keeps a 288 px box at phone width; the tooltip stays inside the card on both axes and
  * off the plot's tick labels; a failed series reads unavailable with the chart still drawn; nothing
  * pushes the page sideways; axe finds nothing serious or critical in either colour scheme.
  *
@@ -165,6 +165,22 @@ layout('ChartCard', () => {
         expect(card.h).toBeCloseTo(parent.h, 0)
         expect(svg.h).toBeGreaterThan(150)
         expect(svg.b).toBeLessThanOrEqual(card.b + 0.5)
+      })
+
+      test('a tall card keeps a readable plot at phone width and matches auto on a wide card', async () => {
+        const page = await open(viewport)
+        const card = await rectOf(page, CARD('cc-tall'))
+        const tall = await rectOf(page, BOX('cc-tall'))
+        const auto = await rectOf(page, BOX('cc-ready'))
+        const svg = await rectOf(page, `${BOX('cc-tall')} svg`)
+        // Half the card width between 288 and 420 px: the floor lifts only a card under 576 px.
+        const expected = Math.min(420, Math.max(288, card.w / 2))
+        expect(tall.h).toBeCloseTo(expected, 0)
+        if (card.w >= 576) expect(tall.h).toBeCloseTo(auto.h, 0)
+        else expect(tall.h - auto.h).toBeGreaterThan(80)
+        // The plot with its x axis keeps the box: at 390 about 225 px of plot where auto left ~130.
+        expect(svg.h).toBeGreaterThanOrEqual(250)
+        expect(svg.b).toBeLessThanOrEqual(tall.b + 0.5)
       })
 
       test('the header, figure and footer share one left edge', async () => {
