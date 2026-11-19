@@ -59,7 +59,7 @@ describe('input module', () => {
     expect(input?.className).toContain('max-w-xs')
     expect(input?.className).not.toContain('ps-8')
     expect(input?.className).not.toContain('pe-8')
-    expect(container.querySelector('[data-slot="input-group"]')).toBeNull()
+    expect(container.querySelector('[data-input-group]')).toBeNull()
   })
 
   test('a start icon is aria-hidden in a non-interactive overlay, and the input is padded for it', () => {
@@ -82,7 +82,7 @@ describe('input module', () => {
     const { container, getByLabelText } = render(
       <Input aria-label="Search" start={Mark} className="max-w-xs" />,
     )
-    expect(container.querySelector('[data-slot="input-group"]')?.className).toContain('max-w-xs')
+    expect(container.querySelector('[data-input-group]')?.className).toContain('max-w-xs')
     expect(getByLabelText('Search').className).not.toContain('max-w-xs')
   })
 

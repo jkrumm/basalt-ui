@@ -10,13 +10,11 @@ The app owns the form engine; basalt owns the shape around it. Props are in the 
 
 ## Pick the shape
 
-| The form                                         | Its shape                                                                                                                                   |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| A create or edit dialog, up to about five fields | `FormField`s stacked, two short related ones side by side in a `FormRow`, `FormFooter` at the end                                           |
-| A settings or edit page                          | One `FormSection` per group (title and a one-line description), its fields as settings rows, one `FormFooter sticky` after the last section |
-| A page of many groups                            | Split it with `InnerNav` or `PageBar tabs`, one URL per part; never collapsible sections                                                    |
-| Three or more steps taken in order               | A `Stepper` over one form with one step mounted at a time; `FormFooter` with Back and Continue, the last primary names what it creates      |
-| Settings that apply at once                      | `FormField control={handle}` with a `Switch` or a `Segmented`; no footer                                                                    |
+- A create or edit dialog, up to about five fields: `FormField`s stacked, two short related ones side by side in a `FormRow`, `FormFooter` at the end.
+- A settings or edit page: one `FormSection` per group (title and a one-line description), its fields as settings rows, one `FormFooter sticky` after the last section.
+- A page of many groups: split it with `InnerNav` or `PageBar tabs`, one URL per part; never collapsible sections.
+- Three or more steps taken in order: a `Stepper` over one form with one step mounted at a time; `FormFooter` with Back and Continue, the last primary names what it creates.
+- Settings that apply at once: `FormField control={handle}` with a `Switch` or a `Segmented`; no footer.
 
 - A settings row is `FormField layout="row"`: label and description at the start, the control at the end, stacked when the field is under 480px wide; a `FormSection` makes it the default for its fields. A switch or a checkbox stays at the end at every width.
 - A group of more than five fields gets its own `FormSection`; a page with one short group can be one section with its own `footer`.

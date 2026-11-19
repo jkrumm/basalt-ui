@@ -27,7 +27,7 @@ export const inputVariants = cva(
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
-export const inputParts = ['input-group', 'input'] as const
+export const inputParts = ['input'] as const
 
 export type InputProps = Omit<BaseInput.Props, 'className' | 'size'> &
   VariantProps<typeof inputVariants> & {
@@ -56,7 +56,7 @@ export function Input({ size, className, start: Start, end, ...props }: InputPro
     )
   }
   return (
-    <div data-slot="input-group" className={cn('relative w-full min-w-0', className)}>
+    <div data-input-group="" className={cn('relative w-full min-w-0', className)}>
       <BaseInput
         {...props}
         data-slot="input"

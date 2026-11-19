@@ -20,7 +20,7 @@ const png = (name = 'b.png', size = 1): File => {
 }
 
 const zoneOf = (container: HTMLElement): HTMLElement => {
-  const zone = container.querySelector<HTMLElement>('[data-slot="file-upload-zone"]')
+  const zone = container.querySelector<HTMLElement>('[data-file-upload="zone"]')
   if (zone === null) throw new Error('no zone')
   return zone
 }
@@ -36,10 +36,10 @@ const pick = (input: HTMLInputElement, files: File[]): void => {
   fireEvent.change(input, { target: { files } })
 }
 const errorsOf = (container: HTMLElement): string =>
-  container.querySelector('[data-slot="file-upload-errors"]')?.textContent ?? ''
+  container.querySelector('[data-file-upload="errors"]')?.textContent ?? ''
 
 describe('file-upload module', () => {
-  test('renders every part, each with its data-slot, and fileUploadParts lists them', () => {
+  test('the root is the one data-slot; the inner parts are named by data-file-upload', () => {
     const { container } = render(
       <FileUpload aria-label="Docs" accept=".pdf" defaultValue={[pdf()]} />,
     )
@@ -54,12 +54,12 @@ describe('file-upload module', () => {
   test('server render keeps the root slot', () => {
     const html = renderToString(<FileUpload aria-label="Docs" />)
     expect(html).toContain('data-slot="file-upload"')
-    expect(html).toContain('data-slot="file-upload-zone"')
+    expect(html).toContain('data-file-upload="zone"')
   })
 
   test('the errors region is always mounted and live', () => {
     const { container } = render(<FileUpload aria-label="Docs" />)
-    const region = container.querySelector('[data-slot="file-upload-errors"]')
+    const region = container.querySelector('[data-file-upload="errors"]')
     expect(region?.getAttribute('aria-live')).toBe('polite')
   })
 
@@ -68,17 +68,15 @@ describe('file-upload module', () => {
       <FileUpload aria-label="Docs" accept="application/pdf,.png" maxSize={5 * MB} />,
     )
     expect(zoneOf(container).textContent).toContain('Drop a file here or browse')
-    expect(container.querySelector('[data-slot="file-upload-hint"]')?.textContent).toBe(
+    expect(container.querySelector('[data-file-upload="hint"]')?.textContent).toBe(
       'PDF or PNG, up to 5 MB',
     )
     rerender(<FileUpload aria-label="Docs" multiple />)
     expect(zoneOf(container).textContent).toContain('Drop files here or browse')
     rerender(<FileUpload aria-label="Docs" hint="Max 3 invoices" />)
-    expect(container.querySelector('[data-slot="file-upload-hint"]')?.textContent).toBe(
-      'Max 3 invoices',
-    )
+    expect(container.querySelector('[data-file-upload="hint"]')?.textContent).toBe('Max 3 invoices')
     rerender(<FileUpload aria-label="Docs" hint={null} accept=".pdf" />)
-    expect(container.querySelector('[data-slot="file-upload-hint"]')).toBeNull()
+    expect(container.querySelector('[data-file-upload="hint"]')).toBeNull()
   })
 
   test('accepts by MIME type, by extension and by wildcard', () => {
@@ -159,12 +157,12 @@ describe('file-upload module', () => {
       <FileUpload aria-label="Docs" onValueChange={(f) => seen.push(f)} />,
     )
     drop(zoneOf(container), [pdf('a.pdf')])
-    expect(container.querySelectorAll('[data-slot="file-upload-item"]').length).toBe(1)
+    expect(container.querySelectorAll('[data-file-upload="item"]').length).toBe(1)
     expect(zoneOf(container).textContent).toContain('Replace file')
     expect(zoneOf(container).className).toBe(fileUploadVariants({ compact: true }))
     drop(zoneOf(container), [pdf('b.pdf')])
     expect(seen.at(-1)?.map((f) => f.name)).toEqual(['b.pdf'])
-    const items = container.querySelectorAll('[data-slot="file-upload-item"]')
+    const items = container.querySelectorAll('[data-file-upload="item"]')
     expect(items.length).toBe(1)
     expect(items[0]?.textContent).toContain('b.pdf')
   })
@@ -177,7 +175,7 @@ describe('file-upload module', () => {
     drop(zoneOf(container), [pdf('a.pdf')])
     drop(zoneOf(container), [pdf('a.pdf'), pdf('b.pdf')])
     expect(seen.at(-1)?.map((f) => f.name)).toEqual(['a.pdf', 'b.pdf'])
-    expect(container.querySelectorAll('[data-slot="file-upload-item"]').length).toBe(2)
+    expect(container.querySelectorAll('[data-file-upload="item"]').length).toBe(2)
     expect(errorsOf(container)).toBe('')
   })
 
@@ -191,7 +189,7 @@ describe('file-upload module', () => {
         onValueChange={(f) => seen.push(f)}
       />,
     )
-    const first = container.querySelectorAll('[data-slot="file-upload-item"]')[0]
+    const first = container.querySelectorAll('[data-file-upload="item"]')[0]
     if (first === undefined) throw new Error('no item')
     expect(
       within(first as HTMLElement)
@@ -202,7 +200,7 @@ describe('file-upload module', () => {
     expect(container.textContent).toContain('2 MB')
     fireEvent.click(getByRole('button', { name: 'Remove a.pdf' }))
     expect(seen.at(-1)?.map((f) => f.name)).toEqual(['b.pdf'])
-    expect(container.querySelectorAll('[data-slot="file-upload-item"]').length).toBe(1)
+    expect(container.querySelectorAll('[data-file-upload="item"]').length).toBe(1)
   })
 
   test('is controlled by value: the list follows the prop, not the choice', () => {
@@ -212,9 +210,9 @@ describe('file-upload module', () => {
     )
     drop(zoneOf(container), [pdf('a.pdf')])
     expect(seen.at(-1)?.map((f) => f.name)).toEqual(['a.pdf'])
-    expect(container.querySelector('[data-slot="file-upload-list"]')).toBeNull()
+    expect(container.querySelector('[data-file-upload="list"]')).toBeNull()
     rerender(<FileUpload aria-label="Docs" value={[pdf('a.pdf')]} onValueChange={() => {}} />)
-    expect(container.querySelectorAll('[data-slot="file-upload-item"]').length).toBe(1)
+    expect(container.querySelectorAll('[data-file-upload="item"]').length).toBe(1)
   })
 
   test('the hidden input carries the picker: change, name, accept and multiple', () => {
@@ -293,8 +291,8 @@ describe('file-upload module', () => {
     )
     const ids = (zoneOf(container).getAttribute('aria-describedby') ?? '').split(' ')
     expect(ids[0]).toBe('outside')
-    expect(container.querySelector('[data-slot="file-upload-hint"]')?.id).toBe(ids[1])
-    expect(container.querySelector('[data-slot="file-upload-errors"]')?.id).toBe(ids[2])
+    expect(container.querySelector('[data-file-upload="hint"]')?.id).toBe(ids[1])
+    expect(container.querySelector('[data-file-upload="errors"]')?.id).toBe(ids[2])
   })
 
   test('inside a Field the label names the input and the name reaches it', () => {

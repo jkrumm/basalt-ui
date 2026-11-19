@@ -4,7 +4,7 @@ use when: 'one line of free text, a number as text, a search or an email'
 never when: 'several lines (use Textarea), a number with steppers (use NumberField), or a choice from known values (use Select or Combobox)'
 subpath: basalt-ui/ui/input
 peers: ['@base-ui/react']
-slots: [input-group, input]
+slots: [input]
 ---
 
 # Input
@@ -35,5 +35,4 @@ Part `input`.
 
 ## Slots
 
-- `input-group`
 - `input`

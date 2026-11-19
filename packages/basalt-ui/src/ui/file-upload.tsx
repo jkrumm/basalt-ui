@@ -27,14 +27,7 @@ export const fileUploadVariants = cva(
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
-export const fileUploadParts = [
-  'file-upload',
-  'file-upload-zone',
-  'file-upload-hint',
-  'file-upload-errors',
-  'file-upload-list',
-  'file-upload-item',
-] as const
+export const fileUploadParts = ['file-upload'] as const
 
 /** One file the part refused, with why: `type` (not in `accept`), `size` (over `maxSize`) or `count` (over `maxFiles`, or a second file in single mode). */
 export type FileRejection = { file: File; reason: 'type' | 'size' | 'count' }
@@ -351,7 +344,7 @@ export function FileUpload({
       />
       <button
         type="button"
-        data-slot="file-upload-zone"
+        data-file-upload="zone"
         aria-disabled={disabled || undefined}
         data-invalid={invalid ? '' : undefined}
         aria-describedby={describedBy}
@@ -372,14 +365,14 @@ export function FileUpload({
           </span>
         </span>
         {shownHint ? (
-          <span id={hintId} data-slot="file-upload-hint" className="text-xs text-muted-foreground">
+          <span id={hintId} data-file-upload="hint" className="text-xs text-muted-foreground">
             {shownHint}
           </span>
         ) : null}
       </button>
       <div
         id={errorsId}
-        data-slot="file-upload-errors"
+        data-file-upload="errors"
         aria-live="polite"
         className="flex flex-col gap-1 text-xs text-bad pointer-coarse:text-sm empty:hidden"
       >
@@ -388,11 +381,11 @@ export function FileUpload({
         ))}
       </div>
       {files.length > 0 ? (
-        <ul data-slot="file-upload-list" className="flex flex-col gap-1">
+        <ul data-file-upload="list" className="flex flex-col gap-1">
           {files.map((file, index) => (
             <li
               key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
-              data-slot="file-upload-item"
+              data-file-upload="item"
               className="flex items-center gap-2 text-sm pointer-coarse:text-base"
             >
               <FileIcon />
