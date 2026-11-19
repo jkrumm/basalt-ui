@@ -19,6 +19,7 @@ export type {
   CardChip,
   CardMenu,
   MenuEntry,
+  LegendEntry,
 } from './contract'
 // The frame's value types, one subpath for every frame part's doc (wiring-3.2): `Phase` and
 // `QueryStateLike` type the `phase` of `StatCard`, `ChartCard`, `QueryState` and `useDataTable` alike.

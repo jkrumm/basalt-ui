@@ -5,10 +5,17 @@
  * section 4 (the `src/cards/contract.ts` block, plus the frame types it names).
  *
  * `./cards` never imports `./charts`; the frame types both contracts name (`Fact`, `FootFacts`,
- * `FrameHead`) are declared once in `core/phase.ts`. `LegendEntry` is still repeated here,
- * structurally identical.
+ * `FrameHead`, `LegendEntry`) are declared once in `core/phase.ts`.
  */
-import type { Fact, FootFacts, FrameHead, FrameState, CardMenu, MenuEntry } from '../core/phase'
+import type {
+  Fact,
+  FootFacts,
+  FrameHead,
+  FrameState,
+  CardMenu,
+  LegendEntry,
+  MenuEntry,
+} from '../core/phase'
 import type {
   BoxSlot,
   ControlsSlot,
@@ -21,19 +28,10 @@ import type {
 
 // ---- Frame types the sketch files under ports (absent from ports.ts) ----------------------
 
-export type { Fact, FootFacts, FrameHead, CardMenu, MenuEntry }
+export type { Fact, FootFacts, FrameHead, CardMenu, LegendEntry, MenuEntry }
 
 /** A chip on a `KanbanCard`. Minimal; the concept elides it. */
 export type CardChip = { label: string; icon?: IconComponent }
-
-/** A legend entry; structurally the charts contract's `LegendEntry` (no `./charts` import). */
-export type LegendEntry = {
-  key: string
-  label: string
-  color: { light: string; dark: string }
-  swatch?: 'solid' | 'dashed'
-  failed?: boolean
-}
 
 // ---- Cards --------------------------------------------------------------------------------
 

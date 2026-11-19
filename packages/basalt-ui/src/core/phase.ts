@@ -43,6 +43,23 @@ export type Fact = {
  */
 export type FootFacts = readonly [Fact | null | undefined, (Fact | null | undefined)?]
 
+/**
+ * A legend entry: the key of a series, or of a mark a page draws through the seam (no fake series).
+ * One declaration for `./charts` (`ChartCard legend`) and `./cards` (`DataPanel legend`, `BarList
+ * series`), so one array types both.
+ */
+export type LegendEntry = {
+  key: string
+  label: string
+  color: { light: string; dark: string }
+  /**
+   * `dot` is a filled dot, `ring` a hollow one; a `mark: 'dot'` series legends as `dot`. `bar` is a
+   * filled square and `hollow` an outlined one: the keys of marks a page draws through the seam.
+   */
+  swatch?: 'solid' | 'dashed' | 'dot' | 'ring' | 'bar' | 'hollow'
+  failed?: boolean
+}
+
 /** The header every frame shares. An `undefined` field is an absent one. */
 export type FrameHead = {
   title: string
