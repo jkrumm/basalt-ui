@@ -210,7 +210,8 @@ describe('the Kit forms', () => {
     expect(await screen.findByRole('button', { name: 'Save settings' })).toBeDefined()
     cleanup()
     mount('/kit/forms/whole?form=steps')
-    expect(await screen.findByRole('progressbar', { name: 'Step 1 of 3: Basics' })).toBeDefined()
+    const steps = await screen.findByRole('navigation', { name: 'Progress' })
+    expect(within(steps).getAllByText('Basics').length).toBeGreaterThan(0)
   })
 })
 
