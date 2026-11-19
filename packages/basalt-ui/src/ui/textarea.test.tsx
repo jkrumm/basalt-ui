@@ -103,6 +103,22 @@ describe('textarea focus reveal', () => {
     expect(scrollIntoView).toHaveBeenCalledTimes(1)
   })
 
+  test('a box inside its scroller but below the window is revealed', () => {
+    const { container, getByLabelText } = render(
+      <div style={{ overflowY: 'auto' }}>
+        <Textarea aria-label="Note" />
+      </div>,
+    )
+    const scroller = container.firstElementChild as HTMLElement
+    scroller.getBoundingClientRect = () => rectOf(window.innerHeight + 20, window.innerHeight + 300)
+    const el = getByLabelText('Note') as HTMLTextAreaElement
+    const scrollIntoView = mock(() => {})
+    el.scrollIntoView = scrollIntoView
+    el.getBoundingClientRect = () => rectOf(window.innerHeight + 40, window.innerHeight + 100)
+    el.focus()
+    expect(scrollIntoView).toHaveBeenCalledTimes(1)
+  })
+
   test('a caller onFocus still runs', () => {
     const onFocus = mock(() => {})
     const { getByLabelText } = render(<Textarea aria-label="Note" onFocus={onFocus} />)
