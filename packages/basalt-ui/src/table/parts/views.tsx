@@ -163,7 +163,8 @@ function useViews<T>(model: TableModel<T>): ViewList {
   }
 }
 
-function ViewsPanel<T>({
+/** Save the current state under a name; the same name overwrites. */
+function SaveForm<T>({
   model,
   views,
   close,
@@ -188,6 +189,40 @@ function ViewsPanel<T>({
     })
   }
 
+  return (
+    <div className="flex flex-col gap-2">
+      {views.failed && (
+        <p role="alert" className="m-0 text-xs text-bad">
+          {t('table.viewFailed')}
+        </p>
+      )}
+      <form className="flex items-center gap-2" onSubmit={save}>
+        <Input
+          type="text"
+          aria-label={t('table.viewName')}
+          value={name}
+          onChange={(event) => setName(event.currentTarget.value)}
+        />
+        <Button type="submit" variant="secondary" disabled={name.trim() === ''}>
+          {t('table.viewSave')}
+        </Button>
+      </form>
+    </div>
+  )
+}
+
+function ViewsPanel<T>({
+  model,
+  views,
+  close,
+  param,
+}: {
+  model: TableModel<T>
+  views: ViewList
+  close: () => void
+  param: ViewParam
+}): ReactElement {
+  const t = useMessages(table)
   return (
     <div className="flex flex-col gap-3">
       {views.views.length === 0 ? (
@@ -238,17 +273,6 @@ function ViewsPanel<T>({
           {t('table.viewFailed')}
         </p>
       )}
-      <form className="flex items-center gap-2" onSubmit={save}>
-        <Input
-          type="text"
-          aria-label={t('table.viewName')}
-          value={name}
-          onChange={(event) => setName(event.currentTarget.value)}
-        />
-        <Button type="submit" variant="secondary" disabled={name.trim() === ''}>
-          {t('table.viewSave')}
-        </Button>
-      </form>
       <Button
         variant="ghost"
         className="justify-start"
@@ -264,7 +288,21 @@ function ViewsPanel<T>({
   )
 }
 
-/** The panel and the `?view=` bookkeeping for one model; shared by `TableViews` and the toolbar. */
+/** Whether the table shows every row and column: no search, no filter, no hidden column. */
+function showsAll(state: TableState): boolean {
+  const { request, display } = state
+  return (
+    request.q === '' &&
+    request.filters.length === 0 &&
+    Object.values(display.visibility).every((shown) => shown)
+  )
+}
+
+/**
+ * The views of one model, in sight: a trigger that names the current view (the applied one, `All
+ * rows` on an untouched table, else `Unsaved view`) and opens the list, and `Save view` beside it,
+ * which opens the name field. Holds the `?view=` bookkeeping; shared by `TableViews` and the toolbar.
+ */
 export function ViewsMenu<T>({
   model,
   view,
@@ -275,9 +313,11 @@ export function ViewsMenu<T>({
   const t = useMessages(table)
   const own = useAddressParam()
   const param = view ?? own
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState<'list' | 'save' | null>(null)
   const views = useViews(model)
   const state: TableState = model.state.state
+  const applied = views.views.find((v) => v.id === param.id)
+  const current = applied?.name ?? (showsAll(state) ? t('table.viewNone') : t('table.viewUnsaved'))
 
   // The id only stays while the state equals the view: an unknown id or any edit drops it.
   useEffect(() => {
@@ -289,13 +329,25 @@ export function ViewsMenu<T>({
     }
   })
 
+  const close = (): void => setOpen(null)
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger render={<Button />}>{t('table.views')}</PopoverTrigger>
-      <PopoverContent aria-label={t('table.views')} align="end">
-        <ViewsPanel model={model} views={views} close={() => setOpen(false)} param={param} />
-      </PopoverContent>
-    </Popover>
+    <span data-slot="table-views" className="inline-flex min-w-0 items-center gap-1">
+      <Popover open={open === 'list'} onOpenChange={(next) => setOpen(next ? 'list' : null)}>
+        <PopoverTrigger render={<Button className="min-w-0" />}>
+          <span className="text-muted-foreground">{t('table.views')}</span>
+          <span className="max-w-40 min-w-0 truncate">{current}</span>
+        </PopoverTrigger>
+        <PopoverContent aria-label={t('table.views')} align="end">
+          <ViewsPanel model={model} views={views} close={close} param={param} />
+        </PopoverContent>
+      </Popover>
+      <Popover open={open === 'save'} onOpenChange={(next) => setOpen(next ? 'save' : null)}>
+        <PopoverTrigger render={<Button variant="ghost" />}>{t('table.viewSave')}</PopoverTrigger>
+        <PopoverContent aria-label={t('table.viewSave')} align="end">
+          <SaveForm model={model} views={views} close={close} param={param} />
+        </PopoverContent>
+      </Popover>
+    </span>
   )
 }
 

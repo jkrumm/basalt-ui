@@ -2,7 +2,7 @@
  * Saved views: the pure model (dirty diff, prune, same-name overwrite, the `{v,value}` envelope,
  * the codec round trip) and the `Views` menu (apply, save by name, Reset, `?view=` while clean).
  */
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { useEffect } from 'react'
 import type { ReactElement } from 'react'
@@ -176,11 +176,18 @@ function Subject({ store }: { store?: ViewStore }): ReactElement {
 
 const search = (): URLSearchParams => new URLSearchParams(window.location.search)
 
+/** The views trigger: its name is `Views` and the current view's. */
+const viewsButton = (): HTMLElement => screen.getByRole('button', { name: /^Views/ })
+
+/** `Save view` beside the views trigger: opens the name field, then saves under it. */
 async function saveAs(name: string): Promise<void> {
-  fireEvent.click(screen.getByRole('button', { name: 'Views' }))
-  await settled()
-  fireEvent.change(screen.getByRole('textbox', { name: 'View name' }), { target: { value: name } })
   fireEvent.click(screen.getByRole('button', { name: 'Save view' }))
+  await settled()
+  const form = screen.getByRole('dialog', { name: 'Save view' })
+  fireEvent.change(within(form).getByRole('textbox', { name: 'View name' }), {
+    target: { value: name },
+  })
+  fireEvent.click(within(form).getByRole('button', { name: 'Save view' }))
   await settled()
 }
 
@@ -203,7 +210,7 @@ describe('Views menu', () => {
         .views,
     )
     render(<Subject />)
-    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    fireEvent.click(viewsButton())
     await settled()
     fireEvent.click(screen.getByRole('button', { name: 'Open' }))
     await settled()
@@ -223,7 +230,7 @@ describe('Views menu', () => {
     await saveAs('Ranked')
     act(() => model().setRank('state', ['Open', 'Done']))
     expect(model().state.request.ranks).toEqual({})
-    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    fireEvent.click(viewsButton())
     await settled()
     fireEvent.click(screen.getByRole('button', { name: 'Ranked' }))
     await settled()
@@ -236,7 +243,7 @@ describe('Views menu', () => {
     viewsStore('v').set(saveView([], 'Plain', state({ q: 'p' })).views)
     render(<Subject />)
     act(() => model().setRank('state', ['Done', 'Open']))
-    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    fireEvent.click(viewsButton())
     await settled()
     fireEvent.click(screen.getByRole('button', { name: 'Plain' }))
     await settled()
@@ -260,7 +267,7 @@ describe('Views menu', () => {
       },
     ])
     render(<Subject />)
-    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    fireEvent.click(viewsButton())
     await settled()
     fireEvent.click(screen.getByRole('button', { name: 'Old' }))
     await settled()
@@ -288,7 +295,7 @@ describe('Views menu', () => {
       })
       model().state.setDisplay({ visibility: { state: false } })
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    fireEvent.click(viewsButton())
     await settled()
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
     await settled()
@@ -328,24 +335,18 @@ describe("a caller's ViewStore", () => {
   test('lists, applies, saves and removes through the store, never the device', async () => {
     const store = memory([stored])
     render(<Subject store={store} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    fireEvent.click(viewsButton())
     await settled()
     fireEvent.click(screen.getByRole('button', { name: 'Open' }))
     await settled()
     expect(model().state.request.filters).toEqual(stored.state.request.filters)
     expect(search().get('view')).toBe('open')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
-    await settled()
-    fireEvent.change(screen.getByRole('textbox', { name: 'View name' }), {
-      target: { value: 'Second' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Save view' }))
-    await settled()
+    await saveAs('Second')
     expect(store.rows.map((v) => v.name)).toEqual(['Open', 'Second'])
     expect(viewsStore('v').get()).toEqual([])
 
-    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    fireEvent.click(viewsButton())
     await settled()
     fireEvent.click(screen.getByRole('button', { name: 'Delete view Second' }))
     await settled()
@@ -384,16 +385,29 @@ describe("a caller's ViewStore", () => {
     const store = memory([stored])
     store.fail = true
     render(<Subject store={store} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Views' }))
-    await settled()
-    fireEvent.change(screen.getByRole('textbox', { name: 'View name' }), {
-      target: { value: 'New' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Save view' }))
-    await settled()
+    await saveAs('New')
     expect(screen.getByRole('alert').textContent).toBe('The views could not be updated')
+    expect(screen.getByRole('dialog', { name: 'Save view' })).toBeDefined()
+    expect(search().get('view')).toBeNull()
+    fireEvent.click(viewsButton())
+    await settled()
     expect(screen.queryByRole('button', { name: 'New' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Open' })).toBeDefined()
-    expect(search().get('view')).toBeNull()
+  })
+})
+
+describe('views in sight (owner review 2)', () => {
+  test('the current view and Save view show without opening a menu', async () => {
+    render(<Subject />)
+    expect(viewsButton().textContent).toContain('All rows')
+    expect(screen.getByRole('button', { name: 'Save view' })).toBeDefined()
+    act(() => model().state.setRequest({ q: 'acme' }))
+    await settled()
+    expect(viewsButton().textContent).toContain('Unsaved view')
+    await saveAs('Acme only')
+    expect(viewsButton().textContent).toContain('Acme only')
+    act(() => model().state.setRequest({ q: '' }))
+    await settled()
+    expect(viewsButton().textContent).toContain('All rows')
   })
 })

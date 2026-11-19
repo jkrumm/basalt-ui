@@ -66,6 +66,8 @@ export type TableMessages = Record<
   | 'table.viewReset'
   | 'table.viewEmpty'
   | 'table.viewFailed'
+  | 'table.viewNone'
+  | 'table.viewUnsaved'
   | 'table.details'
   | 'table.rowsBelow'
   | 'table.footer'
@@ -163,6 +165,8 @@ export const table = {
   'table.viewReset': 'Reset',
   'table.viewEmpty': 'No saved views',
   'table.viewFailed': 'The views could not be updated',
+  'table.viewNone': 'All rows',
+  'table.viewUnsaved': 'Unsaved view',
   'table.details': 'Details',
   'table.rowsBelow': 'Rows below',
   'table.footer': 'Summary',
