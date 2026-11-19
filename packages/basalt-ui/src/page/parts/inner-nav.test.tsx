@@ -42,6 +42,34 @@ const links = (): HTMLAnchorElement[] => [
   ...document.querySelectorAll<HTMLAnchorElement>('a[href]'),
 ]
 
+describe('InnerNav phase', () => {
+  test('loading keeps the group headings and draws a placeholder row per item, with no link', () => {
+    const state = pushField<Section>(SECTIONS, 'general', 'section')
+    render(<InnerNav label="Settings" state={state} groups={GROUPS} phase="loading" />)
+    const nav = screen.getByRole('navigation', { name: 'Settings' })
+    expect(nav.getAttribute('aria-busy')).toBe('true')
+    expect(nav.getAttribute('data-phase')).toBe('loading')
+    expect(screen.getByRole('list', { name: 'Account' })).toBeTruthy()
+    expect(links()).toHaveLength(0)
+    expect(
+      document.querySelectorAll('[data-slot="inner-nav-item"] [data-slot="skeleton"]'),
+    ).toHaveLength(3)
+  })
+
+  test('a settled phase draws the links, and so does none', () => {
+    const state = pushField<Section>(SECTIONS, 'general', 'section')
+    const { rerender } = render(
+      <InnerNav label="Settings" state={state} groups={GROUPS} phase="ready" />,
+    )
+    expect(links()).toHaveLength(3)
+    expect(
+      screen.getByRole('navigation', { name: 'Settings' }).getAttribute('aria-busy'),
+    ).toBeNull()
+    rerender(<InnerNav label="Settings" state={state} groups={GROUPS} />)
+    expect(links()).toHaveLength(3)
+  })
+})
+
 describe('InnerNav links', () => {
   test('every item is an <a href> and exactly one carries aria-current', () => {
     const state = pushField<Section>(SECTIONS, 'general', 'section')

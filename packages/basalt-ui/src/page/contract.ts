@@ -13,6 +13,8 @@ import type {
   FreshnessView,
   IconComponent,
   NavTarget,
+  Phase,
+  QueryStateLike,
 } from '../core/ports'
 
 // ---- Targets and badges shared with the shell (`shell -> page` is the declared edge) -------
@@ -136,6 +138,8 @@ export type InnerNavProps<K extends string = string> = {
   state: PushField<K>
   filter?: ControlsSlot
   groups: readonly InnerNavGroup[]
+  /** The query the nav's items wait on: while it loads, every item draws a placeholder row with no link. */
+  phase?: Phase | QueryStateLike | undefined
 }
 
 export type SplitPageProps = {

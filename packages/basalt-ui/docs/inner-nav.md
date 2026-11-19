@@ -17,17 +17,22 @@ at every width: a standalone nav is a vertical list from the `wide` container ti
 horizontally scrolling link strip below it (never a `Select`, which would lose the hrefs); inside
 a `SplitPage` list pane it stays a list. An item may carry a count or dot `badge` and a `menu`
 of two or more actions (a single action is a plain button elsewhere). A section change resets
-the page's scroll; a write to a `filter` control does not.
+the page's scroll; a write to a `filter` control does not. Given a `phase` that is loading, the
+groups keep their labels and each item draws a placeholder row with no link, so the column holds
+its width and height until the data lands.
 
 ## Signature
 
 ```ts
-InnerNav<K extends string = string>({ label, state, filter, groups, }: InnerNavProps<K>): ReactElement
+InnerNav<K extends string = string>({ label, state, filter, groups, phase, }: InnerNavProps<K>): ReactElement
   label: string
   state: PushField<K>
   filter?: { readonly kind: "controls-slot"; readonly count: number; readonly compact?: boolean; render(): ReactNode; }
   groups: readonly InnerNavGroup[]
+  phase?: Phase | QueryStateLike  // The query the nav's items wait on: while it loads, every item draws a placeholder row with no link
 ```
+
+`Phase`, `QueryStateLike` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike } from 'basalt-ui/cards'`.
 
 `PushField` import from `basalt-ui/router`: `import type { PushField } from 'basalt-ui/router'`.
 
