@@ -1,0 +1,22 @@
+{
+  "why": "Expression cycle 13 (docs/v3/cycles/expression-13.md) lost 30 of its 63 round-0 points to lessons the kit could already do (class `skill`), two of them P2: n57 and n58 put the one accent on two mark classes (F4 1). n57 drew one measure at two grains in blue (a heat ramp and a detail zone of usable hours), which the rubric counts as two classes since v3-expr-12-rubric, but no builder skill says so; n58 put two series in blue across two cards. X1 (word economy) lost a point on 5 of 6 cases and X2 (one view) on 6 of 6, the fourth cycle running. The fact count from v3-expr-12-skill ended at zero on 3 of 6 builds (n57, n59, n62); the other three stopped on `header` or `label`, option keys the count reads between two quoted strings (n58, n60, n61), so the step still prints a false positive a builder learns to ignore.",
+  "what": "Skill and rule text for the skill findings of expression cycle 13, and a fact count with no false positive on option keys.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** and packages/basalt-ui/agent/rules/** (through their generators where generated)",
+    "the dogfooded copies the repo syncs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no kit change, except a script the count runs if the skill ships one)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) The accent: say beside the colour-budget lesson that one measure drawn at two grains (a ramp and its detail zone, a running total and its daily bars) is two accent classes, and that a second series in the accent needs a word on the surface that says what blue means there (n57 .1, n58 .11; the rubric's F4 sentence since cycle 12). (2) The fact count skips option keys (`header:`, `label:` and any `key:` inside an object literal) so it ends at zero on a clean page, and adds a check for one quantity under two words ('usable' and 'clear' on n57) (n57 .5, n58 .20, n59 .29, n61 .50, n62 .58; read the six DESIGN.md files and builds in .evidence/v3-shots/expression-13/src-r0 in the main checkout and say in the PR what the changed count prints on each). (3) A readout of a held run reads `focus.span` (its best or its sum), never the first item through `focus.readout` (n57 .7, n62 .55; linked-parts.md already says it, so move it where a builder reads it before the shoot). (4) Many near-identical series: draw the leader against a quiet rest, or a `c.spark` per row, rather than six lines in one band (n58 .10, n59 .25). (5) Every part's empty names its real cause and next step, per part (n57 .4, n59 .28). (6) `mono`, `subMono`, `periodMono` and fact `mono` on every id and timestamp, including hover stamps (n58 .23, n59 .32, n62 .60). (7) An axis or a zone ends at the last slot's end, and no tick label repeats the first (n57 .2, n60 .35). (8) One view: charts that share an x share one card, and a card is sized to what it holds (n61 .51, n62 .59). (9) A meter column sets `card` so the phone card keeps it (n58 .19; n57, n59 and n60 found it only by trial), only drawn series announce and every readout carries its unit (n58 .15, .18), a subtitle fits one line at 390 (n58 .24), a loading frame keeps every slot, the subtitle included (n61 .48), and a hero line that must name its rule is a CartesianChart with a labelled refLine, not a Sparkline (n61 .43, .44, .46).",
+  "acceptance": [
+    "The PR names, per cycle-13 build, what the changed fact count prints",
+    "Lessons (1) and (3) to (9) are in the shipped skill or rule text where a builder reads them before the shoot",
+    "Agent-doc drift and make check pass"
+  ],
+  "out_of_scope": "Kit behaviour (v3-expr-13-kit-fixes); the rubric (v3-expr-13-rubric); the trial scenarios.",
+  "proof": "make check; the skill diff; the PR's per-case table for (2).",
+  "commits": "docs: skill and rule text; package commits separate from non-package ones."
+}

@@ -1104,3 +1104,28 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-expr-12-kit-fixes, v3-expr-12-skill, v3-expr-12-rubric]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-13.json' }
+  - key: v3-expr-13-kit-fixes
+    title: 'DataPanel rows that measure their phone card, half-width tables, captions and end labels, caret labels, rows that hold nothing, a held run in view, Heatmap label ink, from expression cycle 13'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-13]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-13-kit-fixes.json' }
+  - key: v3-expr-13-skill
+    title: 'Expression skill: one measure at two grains is two accent classes, a fact count that skips option keys, a held run read whole, many series against a quiet rest, from expression cycle 13'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-expression-13]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-13-skill.json' }
+  - key: v3-expr-13-rubric
+    title: 'Expression rubric: X4 on line charts, F2 on footer facts, an IntervalTrack focus, keys and sweep, a good-direction pill under F4, from expression cycle 13'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-cycle-expression-13]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-13-rubric.json' }
+  - key: v3-cycle-expression-14
+    title: 'Improvement cycle 14: expression, six one-shot visualization trials'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-13-kit-fixes, v3-expr-13-skill, v3-expr-13-rubric]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-14.json' }

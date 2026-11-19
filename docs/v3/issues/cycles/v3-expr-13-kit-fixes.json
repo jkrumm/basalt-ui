@@ -1,0 +1,36 @@
+{
+  "why": "Expression cycle 13 (docs/v3/cycles/expression-13.md) lost 26 of its 63 round-0 points to the kit (class `primitive`), two of them P2 (n58's end labels and its struck 'Expiry' caption, F6 1). Two groups are older than this cycle and were claimed by v3-expr-12-kit-fixes: a DataPanel body sized in rows still reserves blank rows at 1800 or cuts phone cards at 390 (six findings on five of six cases; the n57 builder measured why: the kit sizes a phone card at 92 px while a card with a meter slot is 108 px), and a half-width DataTable still folds or drops priority 3 columns at about 750 px (n62, and the wishes of n58 and n59). The lead's probe on master d5a10c45 also saw the phone-card focus gap and a dense-cloud label 100 px from its dot still open (probe/verdicts.md items 3 and 7).",
+  "what": "Kit behaviour fixes for the primitive findings of expression cycle 13 and the partly-landed gaps of cycle 12, with no export and no contract change.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/cards/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/table/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/docs/** generated from the above (through gen-docs)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/src/cards/contract.ts",
+    "packages/basalt-ui/src/table/contract.ts",
+    "packages/basalt-ui/src/core/ports.ts",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) A DataPanel body declared in rows measures the phone card it draws, so a table whose columns put a meter or a sub line on the card keeps every card whole at 390 and reserves no blank row at 1800; the loading skeleton ends at the loaded height (n57, n58, n59, n60, n62: .6, .21, .30, .39, .42, .61; probe item 2; the n57 builder measured 92 px assumed against 108 px drawn). Reproduce on a real page first: v3-expr-12-kit-fixes shipped a layout test for (2) and the trial pages still show it. (2) A DataTable in a half-width column (about 750 px) keeps its columns while they fit, priority 3 included, and the doc states the rule with the sum it measures (n62 .57 folded with columns summing about 430 px; n58 and n59 wishes; probe item 1, n51 still drops Check and Category). (3) Zone and rule captions: a caption sits inside or beside its own zone, never over a neighbouring zone, and a line or mark never strikes it; a rule caption gives way to a data label rather than dropping it (n57 .3, n58 .14, n59 .26 and .33, n62 .54). (4) An end label stays on its line's end or is joined to it by a leader, in `naming=\"endLabels\"` and in `chartLabels.place`; a two-point stub keeps its label (n58 .12, .13; n59 .27; probe item 7). (5) Off-scale carets: one label per clamped value, at both widths, and the same number in every place (n58 .16 'US$40.00 US$40.00'; n62 .56, no value at 1800 and '81 kt' beside a 91 kt footer at 390). (6) A row that holds no chart item dims with the rest (n60 .40, a DataTable row whose `holds` is false stays at full ink, which the cycle-11 contract says it must not) and a BarList row that holds nothing still announces itself (n61 .49). (7) A chart or list focus that holds a run scrolls the first held DataTable row into view, as a single joined row already does (n61 .47, .52: the seven held rows were rows 21 to 27). (8) Heatmap annotations: the label ink follows the cell's contrast and dims with its cell, and the focus dot does not sit on the cell's text (n57 .8, .9; its round-1 builder capped the scale at 15 to keep every label dark). (9) An IntervalTrack legend swatch draws the tint its spans are painted with since v3-owner-2-interval-look (n60 .37). (10) A mono entity on a phone card keeps its value on its label's line, and a header keeps one row of icons (n61 .53). (11) The phone-card focus gap of probe item 3: at 390 the next card of a list that shares a chart focus takes the focus when the pointer arrives (n42 and n52 at 390: dimmed 0 at B), and a table's phone cards hold the focus across the gap (n55 at 390). If any fix needs a field (a caption position, a leader option), say so in the PR and split it behind a Spec row with `checkpoint: spec`.",
+  "acceptance": [
+    "A DataPanel rows body with a meter on its phone card keeps every card whole at 390, reserves no blank row at 1800 and its loading frame ends at the loaded height, reproduced on a page like n57's Sites panel (layout test)",
+    "A half-width DataTable keeps its priority 3 columns while they fit, and the table doc states the measured rule (layout test)",
+    "No zone or rule caption is struck by a line or sits over another zone, at 1800 and 390 (tests)",
+    "An end label stays at its line's end or carries a leader, and a two-point stub keeps its label (test)",
+    "One clamped value shows one caret label with its true value at both widths (test)",
+    "A row that holds no item dims with the rest, and a BarList row that holds nothing announces itself (tests)",
+    "A held run scrolls its first joined row into view (test)",
+    "Heatmap labels keep contrast and dim with their cell, and the focus dot clears the text (test)",
+    "An IntervalTrack legend swatch matches its span tint (test)",
+    "At 390 the next phone card takes the focus on arrival and a table's cards hold it across the gap, shown by a lead-shots SWEEP on a real page",
+    "No export added and no contract file changed; make check passes"
+  ],
+  "out_of_scope": "A Meter off-scale cap (n61 .45, a field on two contracts: one case, a later Spec if a second case asks); one Retry across separate frames (Issue 2452 owns it); skill text (v3-expr-13-skill); the rubric (v3-expr-13-rubric); the trial scenarios.",
+  "proof": "make check; the tests named in acceptance; shots of n57, n58, n59, n60, n61 and n62 at 1800 and 390 in light and dark with the lead tool's SWEEP and REACH lines (.evidence/v3-shots/expression-13/lead-shots.ts in the main checkout), and n42, n51 and n52 for the older gaps.",
+  "commits": "fix: per behaviour with its test."
+}
