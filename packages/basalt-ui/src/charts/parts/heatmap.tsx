@@ -26,6 +26,7 @@ import type { CartesianDefinition } from '../core/compile'
 import { GLYPH_MIN_PX, glyphOf, resolveNamedState } from './band-fold'
 import type { NamedChartState } from './band-fold'
 import { ABSENT_OPACITY, RAMP_LEVELS, RAMP_OPACITIES } from './heatmap-fill'
+import { flatInk, stateInk } from './heatmap-ink'
 import { dimmedPaint } from '../marks'
 import { engineTooltip } from '../core/cursor'
 import { cardPortal } from '../core/portal'
@@ -264,13 +265,6 @@ const fillStyle: CSSProperties = {
   minHeight: HEIGHT_MIN,
 }
 
-/**
- * A stated cell's label while the cell is dimmed: the fill dims toward the card (`dimmedPaint`), so
- * the light-on-saturated ink of the resting cell loses its ground. In light the dimmed fill is pale
- * and the label takes ink; in dark the dimmed fill stays light and the card colour still reads.
- */
-const DIMMED_LABEL = `light-dark(${BASALT.ink}, ${CV.surface})`
-
 /** The datum at each grid position, by `row\0col`; the last datum at a position wins. */
 const gridIndex = <T,>(
   data: readonly T[],
@@ -434,6 +428,9 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
     const scale = scaleQuantize<string>()
       .domain([lo, hi > lo ? hi : lo + 1])
       .range(ramp(color))
+    const levelOf = scaleQuantize<number>()
+      .domain([lo, hi > lo ? hi : lo + 1])
+      .range(RAMP_OPACITIES)
     const header = (c: Cell<T, K>): string => cellHeader(c.row, c.col, formatRow, formatCol)
     const heldSet = new Set<unknown>(held?.length ? held : [focused])
     const isHeld = (c: Cell<T, K>): boolean => focused !== null && heldSet.has(c.datum)
@@ -467,16 +464,18 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         at(group.filter(isHeld), `${id}:focused`),
       ]
     }
-    // An annotation sits on a dark fill (a stated cell, the ramp's upper half) in panel ink, else in ink.
-    const span = hi > lo ? hi - lo : 1
-    const darkFill = (c: Cell<T, K>): boolean =>
-      c.state !== undefined || (c.value !== null && (c.value - lo) / span >= 0.5)
-    const labelFill = (c: Cell<T, K>): string =>
-      c.state !== undefined && focused !== null && !isHeld(c)
-        ? DIMMED_LABEL
-        : darkFill(c)
-          ? CV.surface
-          : BASALT.ink
+    // The label ink holds on the cell's own fill as it is drawn: a stated cell's bar paint, a value
+    // cell's ramp step, dimmed with the rest (`heatmap-ink.ts`). A dimmed label draws at DIMMED_TEXT:
+    // at DIMMED the ink fell to 2.4:1 on the dark card.
+    const labelFill = (c: Cell<T, K>): string => {
+      const dimmed = focused !== null && !isHeld(c)
+      if (c.state !== undefined) {
+        const named = stateByKey.get(c.state)
+        return stateInk(fillOf(named), named?.fillOpacity ?? 1, dimmed)
+      }
+      if (c.value === null) return flatInk(CV.neutral, ABSENT_OPACITY, dimmed)
+      return flatInk(color, levelOf(c.value), dimmed)
+    }
     const drawn = [...present, ...absentWithDatum, ...[...stated.values()].flat()]
     const annotated =
       annotate === undefined
@@ -622,6 +621,8 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         }
       },
       tooltip: tooltipOptions,
+      // The focused cell's ring marks it; the engine's dot would sit on the cell's centred text.
+      focusRing: false,
       // With `focus` the wrapper is the one tab stop and steps the grid itself.
       ...(ownsKeys && { keyboard: false as const }),
     }

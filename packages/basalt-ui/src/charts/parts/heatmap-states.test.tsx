@@ -14,6 +14,8 @@ import { buildPaletteData } from '../../tokens/palette'
 import { DIMMED, DIMMED_TEXT } from '../core/theme'
 import { useChartFocus } from '../focus'
 import { Heatmap } from './heatmap'
+import { stateInk } from './heatmap-ink'
+import { hexToOklab } from '../../tokens/oklab'
 
 let root: ReturnType<typeof createRoot> | undefined
 afterEach(() => {
@@ -155,7 +157,8 @@ describe('a keyboard-focused cell', () => {
 const labelFills = (el: HTMLElement) =>
   [...el.querySelectorAll('g[data-ts-key="annotations"] text')].map((t) => t.getAttribute('fill'))
 
-const DIMMED_LABEL = 'light-dark(var(--basalt-ink), var(--basalt-card))'
+/** The ink a label takes on a fill: `inkOn`'s switch, black or white by the fill's OKLab lightness. */
+const inkHex = (fill: string): string => (hexToOklab(fill).L < 0.565 ? '#ffffff' : '#000000')
 
 const hex = (c: string): number[] => [1, 3, 5].map((i) => Number.parseInt(c.slice(i, i + 2), 16))
 const out = (c: number[]): string =>
@@ -164,9 +167,9 @@ const over = (fg: number[], a: number, bg: number[]): number[] =>
   fg.map((c, i) => a * c + (1 - a) * (bg[i] as number))
 
 describe('a dimmed stated cell', () => {
-  test('resting labels keep the card colour; a dimmed one takes the dimmed-ground ink', async () => {
+  test('every label is the ink its own cell draws; a dimmed stated one takes the dimmed-fill ink', async () => {
     const el = await mount(<Focused />)
-    expect(new Set(labelFills(el))).toEqual(new Set(['var(--basalt-card)']))
+    expect(labelFills(el).every((f) => f?.startsWith('oklch(from '))).toBe(true)
     await act(async () => {
       el.querySelector('[data-chart-focus]')?.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
@@ -174,17 +177,14 @@ describe('a dimmed stated cell', () => {
     })
     const fills = labelFills(el)
     // The measured cell is focused first (reading order); the three stated cells dim.
-    expect(fills.filter((f) => f?.startsWith('light-dark(')).length).toBe(3)
-    expect(fills.filter((f) => f?.startsWith('light-dark(')).every((f) => f === DIMMED_LABEL)).toBe(
-      true,
-    )
+    expect(fills.filter((f) => f === stateInk('var(--basalt-good)', 1, true)).length).toBe(2)
+    expect(fills.filter((f) => f === stateInk('var(--basalt-bad)', 1, true)).length).toBe(1)
   })
 
   test('the label keeps 3:1 against the dimmed fill in both schemes, for every status tone', async () => {
     const data = buildPaletteData(DEFAULT_DERIVE_CONFIG)
     for (const side of ['light', 'dark'] as const) {
       const card = hex(data.SURFACE.panel[side])
-      const ink = data.INK.ink[side]
       const muted = hex(data.INK.muted[side])
       for (const tone of ['good', 'warn', 'bad'] as const) {
         const fill = hex(data.SEMANTIC[tone][side])
@@ -200,7 +200,7 @@ describe('a dimmed stated cell', () => {
                 )
                 return over(mixed, alpha, card)
               })()
-        const label = side === 'light' ? ink : data.SURFACE.panel[side]
+        const label = out(over(hex(inkHex(out(dimmed))), DIMMED_TEXT, dimmed))
         expect(contrastRatio(label, out(dimmed))).toBeGreaterThanOrEqual(3)
       }
     }
