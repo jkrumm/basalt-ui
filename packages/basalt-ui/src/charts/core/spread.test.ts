@@ -122,3 +122,28 @@ describe('a dot series with spread', () => {
     expect(rows[3]?.y).toBe(30)
   })
 })
+
+describe('the tooltip of a spread dot', () => {
+  test("names the datum's true x, never the position the dot moved to", () => {
+    let seen: PlotContext<Box, number> | undefined
+    const def = compileCartesian({
+      chartId: 'spread-tip',
+      data: boxes,
+      x: (b: Box) => b.restarts,
+      series: [dots],
+      y: { domain: [0, 100] },
+      dotSpread: new Map([['peak', 'x']]),
+      marks: (plot: PlotContext<Box, number>) => {
+        seen = plot
+        return []
+      },
+    } as never)
+    def.chart({ width: 600, height: 300, defaultTheme: {} as never })
+    const [a, b] = (seen as PlotContext<Box, number>).rows('peak')
+    expect(b?.x).not.toBe(0)
+    const content = (def.tooltip as unknown as { content: (p: unknown[]) => { title: string } })
+      .content
+    const titleOf = (row: typeof a) => content([{ xValue: row?.x, datum: row }]).title
+    expect(titleOf(b)).toBe(titleOf(a))
+  })
+})

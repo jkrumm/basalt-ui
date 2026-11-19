@@ -146,6 +146,34 @@ describe('marks', () => {
     expect(seen).toEqual({ rows: 5, height: expect.any(Number), keys: ['v'] })
   })
 
+  test('a dot series with spread draws coincident dots apart', () => {
+    const same: Row[] = [0, 1, 2].map(() => ({ t: Date.UTC(2026, 8, 1), v: 5 }))
+    // The drawn centres of the three coincident dots, read off the server render.
+    const centres = (spread?: 'x'): string[] => {
+      const html = renderToString(
+        <CartesianChart
+          ariaLabel="V"
+          data={[...same, { t: Date.UTC(2026, 8, 30), v: 1 }]}
+          x={x}
+          y={{ domain: [0, 10] }}
+          series={[
+            {
+              mark: 'dot',
+              key: 'v',
+              label: 'V',
+              color: pair('dot'),
+              y: (d) => d.v,
+              ...(spread !== undefined && { spread }),
+            },
+          ]}
+        />,
+      )
+      return [...html.matchAll(/<circle[^>]*cx="([^"]+)"/g)].slice(0, 3).map((m) => m[1] ?? '')
+    }
+    expect(new Set(centres()).size).toBe(1)
+    expect(new Set(centres('x')).size).toBe(3)
+  })
+
   test('custom marks get pixel positions on the axis scales', () => {
     let seen:
       | {

@@ -1663,7 +1663,8 @@ function tooltipSpec<T, X extends ChartX>(opts: {
         held !== null && heldPoint === undefined
           ? [input.x(held), held]
           : row && keys.has(row.series)
-            ? [row.x, row.datum]
+            ? // The datum's own x: a `spread` dot draws off it, and the header names the true value.
+              [input.x(row.datum), row.datum]
             : [primary.xValue, primary.datum as T]
       const rows: EngineTooltipRow[] = []
       for (const s of rowSeries) {
