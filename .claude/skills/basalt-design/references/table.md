@@ -37,6 +37,12 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 }
 ```
 
+## Reading or grid
+
+- Keep the reading look for a list a reader scans, summarises and opens; pass `look: 'grid'` when the reader works the data, comparing cells across columns and down rows.
+- A grid draws a rule between every two cells, compact rows and tabular figures, keeps every visible column and scrolls sideways inside its scroller with the name column pinned, so `priority` hides nothing there. Give it `height: 'fill'` or `{ maxRows }` when it holds more rows than a screen: a sideways scroller cannot stick its head to the page. The reader moves through it cell by cell with the arrow keys; a click on the name opens the row.
+- Readers move columns (the Display list, the column menu) and pin them in a grid. Order and pins live with hidden columns in the display state, on the device and in a saved view, never in the URL; declare the columns in the order most readers want and never reorder `columns` in app code to fake a reader's choice.
+
 ## Kinds and priority
 
 - A column is a kind (`c.entity`, `c.money`, `c.status`, `c.date`, ...); the kind sets alignment, numerals, width, sort, filter and card slot. A raw column or a free `cell` does not exist. `c.custom` is the one counted escape and must declare `sortValue`, `card` and `priority`.
@@ -51,9 +57,11 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 - A column of ages or durations (waiting for, open for, run time) is `c.meter(key, { max })` with `max` the oldest in view, so the eye reads the long ones before it reads a number; bare text ('3 weeks ago') draws nothing to compare (n33 .1 and n36 .29: both builders found `c.meter` only in round 1).
 - State the rule that makes an item late where the reader meets the column: the column `header` ('Waiting, late after 48 h') or the card's context line. A threshold that lives only in the code leaves every row unexplained (n36 .32: the stuck rule was on no row and no caption). The row that crosses it carries its verdict word in its own column ('Stuck', 'Overdue') and takes the one status hue ([charts](charts.md)).
 
+- A meter column sets `card` (`c.meter(key, { max, card })`), so the phone card keeps it: n58's `pools.meter('usedPct', …)` set none and lost its "Used, %" at 390, and n57, n59 and n60 each found the option only by trial. Every column that answers the question sets its `card` slot, since a column without one takes the kit's order and can drop at 390 (n58 .19).
+
 ## Where state lives
 
-- `request` (search, filters, sort, page) is the query key and belongs in the URL; `display` (hidden columns) is the device's. Bind `state` to a `field.composite` of a `defineControls` store, or omit it for a table that holds its own memory.
+- `request` (search, filters, sort, page) is the query key and belongs in the URL; `display` (hidden, moved and pinned columns) is the device's. Bind `state` to a `field.composite` of a `defineControls` store, or omit it for a table that holds its own memory.
 - A filter the page shares with other widgets stays a page control and reaches the table through `resetOn`; a filter that is a chip on this table stays in `request`. A second table on a page needs a `prefix` on its codec.
 - A presentation switch (table or cards) is its own param, never `view`: see the `view-switch` recipe.
 

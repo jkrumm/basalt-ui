@@ -19,9 +19,10 @@ The phase vocabulary and the words each phase carries. The shapes are owned by t
 ## What each state says
 
 - Empty: the cause, then the next step. A filter caused it: name the filter and offer its reset. "No decisions are waiting. New ones appear when an agent asks for a verdict."
-- Loading: a skeleton in the loaded shape and height; the title row stays put.
+- Loading: a skeleton in the loaded shape and height; the title row stays put, and every slot of the ready frame is passed, the subtitle included: `subtitle=''` during loading drops the header line and ends the card 16 px short of ready (n61 .48).
 - Error: one title, "Could not load <thing>", the cause in one line, one Retry. n28, n30 and n32 shipped an error that named neither its cause nor a retry (.18, .41, .57).
 - Every part names its own empty cause and next step. A part on the kit default ("No rows to show") or on `empty={null}` beside a chart that states its cause fails: a [BarList](node_modules/basalt-ui/docs/bar-list.md) with `empty={null}` drew eight zero rows (n54 .36), and a [DataPanel](node_modules/basalt-ui/docs/data-panel.md) `empty` takes a `cause` that replaces the default for the panel and its table together (n52 .15, n56 .59).
+- Check it as a list: write each part's empty sentence beside its part, and fail any that lacks a cause or a step, or says only "X readings yet" beside a sibling that names its step. State the cause the data can show: n57 said "No sites listed yet." where the sites existed (the empty was a night without a forecast) and "No night to show yet." named neither; n59's disk, memory, load and network cards said only "No X readings yet." (n57 .4, n59 .28).
 - Empty says the next step on one line (n32 printed it on three, .57; n30's named none, .41).
 - Stale: the data stays and the line says it is old and when it was fresh.
 - A missing value prints a dash and a caption that names the gap ("No sleep logged since Tue."); a zero reads as a measurement.
