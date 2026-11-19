@@ -142,7 +142,9 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : BASALT.
   never read the viewport. A container name is a SHARED boundary, not a per-component scope:
   `StatGroup` and `WidgetGrid` both declare `basalt-grid`, and a query resolves against the nearest.
   (3) **Pointer tier** — modality, not width: `--basalt-hit` 24px (WCAG 2.5.8), 44px under `(pointer:
-  coarse)` (2.5.5); hover gates on `(hover: hover)`. A narrow desktop is not a phone.
+  coarse)` (2.5.5); hover gates on `(hover: hover)`. A narrow desktop is not a phone. One exception: a
+  chart legend caps the block axis at its 4px row gap (`--basalt-hit-gap-block`), so a wrapped legend's
+  rows never overlap; its coarse hit target is about 29px tall, above the 24px floor.
 
 ## Scales (decided values)
 
