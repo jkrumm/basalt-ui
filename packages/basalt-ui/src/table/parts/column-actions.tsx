@@ -83,8 +83,19 @@ export function ColumnActionsMenu<T>({
   if (offered === null || spec === undefined) return null
   const direction = model.sortOf(column)
   const { sortable, hideable } = offered
-  // Where the column stands among those a reader can move; -1 for the identity column.
-  const movable = model.movable.indexOf(column)
+  // A move steps over the columns the reader sees in the same group (pinned or not), so every
+  // click changes the drawn order; the identity column and `actions` never move.
+  const shown = new Set(model.plan.columns.flatMap((c) => (c.visible ? [c.id] : [])))
+  const pinned = model.look === 'grid' && model.pinnedOf(column)
+  const peers = model.movable.filter(
+    (id) => shown.has(id) && (model.look === 'grid' && model.pinnedOf(id)) === pinned,
+  )
+  const at = peers.indexOf(column)
+  const before = at > 0 ? peers[at - 1] : undefined
+  const after = at >= 0 ? peers[at + 1] : undefined
+  const moveNext = (to: string | undefined): void => {
+    if (to !== undefined) model.moveColumn(column, model.movable.indexOf(to))
+  }
   const { request } = model.state
   const touched =
     direction !== 'none' ||
@@ -144,18 +155,12 @@ export function ColumnActionsMenu<T>({
             <MenuSeparator />
           </>
         )}
-        {movable >= 0 && (
+        {at >= 0 && (
           <>
-            <MenuItem
-              disabled={movable === 0}
-              onClick={() => model.moveColumn(column, movable - 1)}
-            >
+            <MenuItem disabled={before === undefined} onClick={() => moveNext(before)}>
               {t('table.moveLeft')}
             </MenuItem>
-            <MenuItem
-              disabled={movable === model.movable.length - 1}
-              onClick={() => model.moveColumn(column, movable + 1)}
-            >
+            <MenuItem disabled={after === undefined} onClick={() => moveNext(after)}>
               {t('table.moveRight')}
             </MenuItem>
             {model.look === 'grid' && (

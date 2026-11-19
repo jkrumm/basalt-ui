@@ -168,9 +168,17 @@ function TreeLead({ tree, onToggle }: { tree: TreeInfo; onToggle: () => void }):
   )
 }
 
-function content<T>(spec: KindSpec<T>, row: T, env: CellEnv, tabbable: boolean): ReactNode {
+function content<T>(
+  spec: KindSpec<T>,
+  row: T,
+  env: CellEnv,
+  tabbable: boolean,
+  grid = false,
+): ReactNode {
+  // The row menu stays a tab stop on every row of a reading table, as before the grid look; a grid
+  // reaches it through its cell.
   if (spec.kind === 'actions')
-    return <RowActions row={row} actions={spec.actions ?? []} tabbable={tabbable} />
+    return <RowActions row={row} actions={spec.actions ?? []} tabbable={!grid} />
   if (spec.kind === 'select' && spec.edit !== undefined) {
     const value = spec.value(row)
     return (
@@ -282,7 +290,7 @@ export function DataRow<T>({
               <div className="flex min-w-0 items-center gap-1">
                 <TreeLead tree={tree} onToggle={() => model.toggleRow(row.id)} />
                 <div className="min-w-0 flex-1 overflow-hidden text-ellipsis">
-                  {content(spec, row.original, env, tabbable)}
+                  {content(spec, row.original, env, tabbable, grid)}
                 </div>
                 {model.expandable && (
                   <ExpandButton onOpen={() => model.openDetails(row.id)} tabbable={tabbable} />
@@ -291,12 +299,12 @@ export function DataRow<T>({
             ) : planned.identity && model.expandable ? (
               <div className="flex min-w-0 items-center gap-1">
                 <div className="min-w-0 flex-1 overflow-hidden text-ellipsis">
-                  {content(spec, row.original, env, tabbable)}
+                  {content(spec, row.original, env, tabbable, grid)}
                 </div>
                 <ExpandButton onOpen={() => model.openDetails(row.id)} tabbable={tabbable} />
               </div>
             ) : (
-              content(spec, row.original, env, tabbable)
+              content(spec, row.original, env, tabbable, grid)
             )}
           </TableCell>
         )

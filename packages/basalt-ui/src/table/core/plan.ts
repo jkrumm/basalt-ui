@@ -31,6 +31,8 @@ export type ReducedFrom = 480 | 720 | 800
 export const CH_PX = 8
 export const CELL_PAD_PX = 24
 export const ICON_COL_PX = 44
+/** The tick column's width: the `<col>` a selectable table draws and the offset of the first pinned column. */
+export const TICK_COL_PX = 40
 
 /** The caps per card place; `detail` and `hidden` are unbounded. */
 export const SLOT_CAPS: Readonly<Partial<Record<CardPlace, number>>> = {

@@ -45,7 +45,7 @@ import type { RowKeyboard } from './core/keyboard'
 import { engineColumn } from './core/kinds-engine'
 import { specOf } from './core/kinds-spec'
 import type { KindSpec } from './core/kinds-spec'
-import { planTable } from './core/plan'
+import { planTable, TICK_COL_PX } from './core/plan'
 import type { TablePlan } from './core/plan'
 import { useSelection } from './core/selection'
 import type { SelectionApi } from './core/selection'
@@ -180,8 +180,6 @@ export function modelOf<T>(instance: DataTableInstance<T>): TableModel<T> {
 }
 
 const MINUTE = 60_000
-/** The tick column's width, the start offset of the first pinned column on a selectable table. */
-const TICK_COL_PX = 40
 
 /**
  * Stands in for an absent `detailState`, so `use()` is called on every render either way; the table
