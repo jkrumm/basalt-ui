@@ -1291,15 +1291,16 @@ const xZoneLabelMarks = <T, X extends ChartX>(
         bottom: edge + rowBottom + offset(spot),
       }
     }
-    // `relaxed` 1 lets a line run under the caption, 2 lets a bar or dot too: a zone that names the
-    // answer keeps its caption over a mark, never loses it to one.
+    // `relaxed` 1 lets a bar or dot sit under the caption, 2 lets a line or a reference rule run
+    // through it too: a zone that names the answer keeps its caption over a mark, never loses it to
+    // one, and a rule struck through the text reads worse than a mark under it, so it goes last.
     const fits = (s: Spot, relaxed: 0 | 1 | 2): boolean =>
       s.left >= 0 &&
       s.left + width <= (s.inside ? x1 - REF_LABEL_DX : plotWidth) &&
       (s.inside || pxOf(s).bottom <= plotHeight) &&
       !avoid().some((b) => boxesMeet(boxOf(s), b)) &&
-      (relaxed === 2 || !ctx.xBlocked(pxOf(s))) &&
-      (relaxed >= 1 || !ctx.lineHits(pxOf(s)))
+      (relaxed >= 1 || !ctx.xBlocked(pxOf(s))) &&
+      (relaxed === 2 || !ctx.lineHits(pxOf(s)))
     // Before the plot is measured the caption keeps its first spot.
     const spot =
       plotWidth <= 0
@@ -2027,7 +2028,11 @@ export function compileCartesian<T, X extends ChartX>(
           marks: marksOn,
           xBlocked: xBlocked(plotWidth, size?.height ?? height),
           lineHits: (box) => {
-            lineMemo ??= lineBoxes({ width: plotWidth, height: size?.height ?? height })
+            // A reference rule is a line a caption keeps off too, level with the series lines.
+            lineMemo ??= (() => {
+              const frame = { width: plotWidth, height: size?.height ?? height }
+              return [...lineBoxes(frame), ...refRuleBoxes(frame)]
+            })()
             return lineMemo.some(
               (b) =>
                 b.left < box.x1 &&
@@ -2140,6 +2145,16 @@ export function compileCartesian<T, X extends ChartX>(
         return out.filter((b) => b.width > 0 && b.height > 0)
       }
       /** Everything a label keeps clear of but the bar bodies, in plot px. */
+      /** The drawn horizontal reference rules, as boxes in plot px. */
+      const refRuleBoxes = (frame: PlotPx): PxBox[] =>
+        ruleBoxes(
+          (input.refLines ?? []).flatMap((r, i) =>
+            input.hidden?.has(refLegendKey(i))
+              ? []
+              : [{ value: r.value, domain: axes.axisOf(r.axis).domain }],
+          ),
+          frame,
+        )
       const hostBoxesBesidesBars = (): PxBox[] => {
         const ctx = captionContext()
         const frame = { width: ctx.plotWidth, height: ctx.plotHeight }
@@ -2151,14 +2166,7 @@ export function compileCartesian<T, X extends ChartX>(
           ...ctx.placed.right.map((b) => pxBox(b, rightDomain, frame)),
           ...ctx.claimed.map((b) => pxBox(b, axes.left.domain, frame)),
           ...lineBoxes(frame),
-          ...ruleBoxes(
-            (input.refLines ?? []).flatMap((r, i) =>
-              input.hidden?.has(refLegendKey(i))
-                ? []
-                : [{ value: r.value, domain: axes.axisOf(r.axis).domain }],
-            ),
-            frame,
-          ),
+          ...refRuleBoxes(frame),
           ...xRuleBoxes(
             (input.xRefLines ?? []).flatMap((l) => edgeFraction(model, l.x, l.at) ?? []),
             frame,
