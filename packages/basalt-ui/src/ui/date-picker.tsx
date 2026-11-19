@@ -1,8 +1,8 @@
 import { cva } from 'class-variance-authority'
 import { useId, useState } from 'react'
 import type { ReactElement } from 'react'
-import { DayPicker } from 'react-day-picker'
-import type { ClassNames, DateRange, DayPickerProps } from 'react-day-picker'
+import { DayButton, DayPicker } from 'react-day-picker'
+import type { ClassNames, DateRange, DayButtonProps, DayPickerProps } from 'react-day-picker'
 import { cn } from '../core/cn'
 import type { CalendarDate } from '../core/format'
 import { useFormat } from '../core/format'
@@ -29,6 +29,12 @@ export const datePickerParts = ['date-picker', 'date-range-picker'] as const
 const CALENDAR_ROOT =
   'relative w-fit text-sm text-foreground select-none [--cell:--spacing(9)] pointer-coarse:[--cell:--spacing(11)]'
 
+/**
+ * The day colours, all tokens. A picked day (the single day, or either end of a range) is the one
+ * strong fill; the middle of a range is the quiet `selected` band its ends sit on; hover is the
+ * lighter `accent`; today is a neutral ring and weight, never the brand, so it never competes with
+ * the pick.
+ */
 const CALENDAR_CLASSES: Partial<ClassNames> = {
   months: 'flex flex-col',
   month: 'flex flex-col gap-1',
@@ -46,10 +52,18 @@ const CALENDAR_CLASSES: Partial<ClassNames> = {
   week: '',
   day: 'group/day size-(--cell) p-0 text-center',
   day_button:
-    'inline-flex size-(--cell) cursor-pointer items-center justify-center rounded-ctrl tabular-nums focus-ring hover:bg-accent group-data-today/day:font-semibold group-data-today/day:text-primary group-data-outside/day:text-faint group-data-disabled/day:pointer-events-none group-data-disabled/day:opacity-50 group-data-selected/day:bg-primary group-data-selected/day:text-primary-foreground group-data-selected/day:hover:bg-primary/90',
-  range_middle: 'bg-accent',
-  range_start: 'rounded-l-ctrl bg-accent',
-  range_end: 'rounded-r-ctrl bg-accent',
+    'inline-flex size-(--cell) cursor-pointer items-center justify-center rounded-ctrl tabular-nums focus-ring hover:bg-accent group-data-today/day:font-semibold group-data-today/day:inset-ring group-data-today/day:inset-ring-input group-data-outside/day:text-faint group-data-disabled/day:pointer-events-none group-data-disabled/day:opacity-50 data-picked:bg-primary data-picked:text-primary-foreground data-picked:hover:bg-primary/90',
+  range_middle: 'bg-selected',
+  range_start: 'rounded-l-ctrl bg-selected',
+  range_end: 'rounded-r-ctrl bg-selected',
+}
+
+/** DayPicker's own day button (it keeps the roving focus), flagged `data-picked` on a single pick or a range end. */
+function CalendarDayButton(props: DayButtonProps): ReactElement {
+  const { selected, range_middle: middle } = props.modifiers
+  return (
+    <DayButton {...props} {...(selected === true && middle !== true && { 'data-picked': '' })} />
+  )
 }
 
 type Layout = {
@@ -175,6 +189,7 @@ function useCalendarProps(): Pick<
     },
     components: {
       Chevron: (p) => <Chevron {...(p.orientation && { orientation: p.orientation })} />,
+      DayButton: CalendarDayButton,
     },
     showOutsideDays: true,
   }
