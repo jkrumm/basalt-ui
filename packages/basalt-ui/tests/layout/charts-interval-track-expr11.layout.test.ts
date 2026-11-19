@@ -1,7 +1,7 @@
 /**
  * `IntervalTrack` at expression cycle 11's shapes, in real Chrome at 390 and 1800 px: no span label is
  * ellipsised (it is placed whole or dropped); every span draws at least 5.5 px, one-day marks
- * included; three coincident points in one row each keep their own mark; and the focus ring clears
+ * included; three coincident points in one row each keep their own mark; and the lifted span's ring clears
  * every label, row label and tick. The page is self-contained, as `charts-interval-track.layout.test.ts`.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
@@ -77,13 +77,13 @@ afterAll(() => {
 
 async function open(viewport: Viewport): Promise<LayoutPage> {
   const page = await openFixture(EMPTY_SPEC, viewport, documentPath, 'reduce', 'fine')
-  await page.raw.waitForSelector('[data-testid="expr11-card"] svg rect[data-ts-key^="focus-ring"]')
+  await page.raw.waitForSelector('[data-testid="expr11-card"] svg rect[data-ts-key^="lift"]')
   await page.settle()
   return page
 }
 
 type Box = { l: number; t: number; r: number; b: number; w: number; h: number; text: string }
-/** The focus ring as its stroke band: the outer edge 1.5 px out, the inner edge 2.5 px in. */
+/** The lifted span's ring as its stroke band (1.5 px, centred): the outer edge 1.25 px out, the inner 1.75 px in. */
 type Ring = { outer: Box; inner: Box }
 
 type Probe = {
@@ -95,7 +95,7 @@ type Probe = {
   texts: Box[]
   /** The focus ring's stroke band. */
   ring: Ring | null
-  /** Every other drawn shape: anything that is not a span, a veil, a row extent or the grid. */
+  /** Every other drawn shape: anything that is not a span, the lift, a row extent or the grid. */
   others: Box[]
 }
 
@@ -124,15 +124,12 @@ const probe = (page: LayoutPage): Promise<Probe> =>
     const texts = [...svg.querySelectorAll('text')]
       .filter((el) => (el.textContent ?? '') !== '')
       .map((el) => box(el))
-    const ringEl = svg.querySelector('rect[data-ts-key^="focus-ring"]')
-    const ring = ringEl ? { outer: box(ringEl, 1.5), inner: box(ringEl, -2.5) } : null
+    const ringEl = svg.querySelector('rect[data-ts-key^="lift"]')
+    const ring = ringEl ? { outer: box(ringEl, 1.25), inner: box(ringEl, -1.75) } : null
     const others = [...svg.querySelectorAll('rect, circle, path')]
       .filter((el) => {
         const key = el.getAttribute('data-ts-key') ?? ''
-        return (
-          !/^(span:|dim|row-extent|grid|focus-ring)/.test(key) &&
-          !el.closest('[data-ts-key^="labels"]')
-        )
+        return !/^(span:|row-extent|grid|lift)/.test(key) && !el.closest('[data-ts-key^="labels"]')
       })
       .map((el) => box(el))
     return { spans, labels, texts, ring, others }

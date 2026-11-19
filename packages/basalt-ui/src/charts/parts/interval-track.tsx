@@ -2,8 +2,9 @@
  * `IntervalTrack` — rows of spans and point events over one shared x axis (a calendar week by the
  * hour, the steps of a run by elapsed time, the outages of a line by day). Each row is a band; spans of
  * one row that overlap take a lane each, and a series on the `back` layer spans the row's full height
- * behind the lanes and takes none. A span's colour is its series' registered `{ light, dark }` pair,
- * solid or outlined; a datum with no end is a point, and coincident points take a lane each. A mark
+ * behind the lanes and takes none. A span is a tinted block: its series' registered `{ light, dark }`
+ * pair mixed into the card at `TINT`, or outlined; with one lane series the spans paint neutral and the
+ * accent is kept for the focused span. A datum with no end is a point; coincident points take a lane each. A mark
  * draws at least `MIN_MARK_PX`. Labels are placed by the kit's lane pass at the plot's own px width
  * (after, inside, before, else dropped by priority; never cut), so no page writes a breakpoint.
  * Built like `Heatmap`: its own definition on `core/compile` and the host, because `CartesianChart`
@@ -33,7 +34,7 @@ import type { CartesianDefinition } from '../core/compile'
 import { engineTooltip } from '../core/cursor'
 import { cardPortal } from '../core/portal'
 import { xScaleFor } from '../core/scales'
-import { CHART_THEME, CV, DIMMED, GRID_LINE } from '../core/theme'
+import { CHART_THEME, CV, GRID_LINE } from '../core/theme'
 import { engineFocusHandler, hostFocusProps } from '../focus'
 import { ChartEngine, idPrefixOf } from '../host'
 import { ChartLegend } from '../legend'
@@ -52,7 +53,7 @@ export type IntervalSeries<K extends string = string> = {
   label: string
   /** A `{ light, dark }` pair from the app's series file. */
   color: SeriesColor
-  /** `solid` (default) fills the span; `outline` draws it hollow (declined, planned, free). */
+  /** `solid` (default) tints the span; `outline` draws it hollow (declined, planned, free). */
   fill?: 'solid' | 'outline' | undefined
   /**
    * `back` draws the series' spans the row's full height behind the lanes, taking no lane (a free
@@ -100,8 +101,9 @@ export type IntervalTrackProps<
     /** Rows after the span row (a status, an owner). `false` turns the tooltip off. */
     tooltip?: false | { rows?: ((d: T) => readonly ChartTooltipRow[]) | undefined } | undefined
     /**
-     * `useChartFocus(data, …)`: pointing at a span or stepping with the arrow keys focuses it, every
-     * other span dims, and `focus.readout` drives a card fact. The track stays one tab stop.
+     * `useChartFocus(data, …)`: pointing at a span or stepping with the arrow keys focuses it, it lifts
+     * one tone with a ring while every other span keeps its paint, and `focus.readout` drives a card
+     * fact. The track stays one tab stop.
      */
     focus?: ChartFocus<T> | undefined
     /** A fixed height, or `'fill'` (a `ChartCard` box) to take the parent's. Default: by lane count. */
@@ -132,8 +134,28 @@ const RECT_INSET_PX = 0.75
 /** Row labels take at most this share of the chart's width. */
 const ROW_LABEL_SHARE = 0.3
 const ROW_LABEL_AIR = 8
-const OUTLINE_PX = 1.5
+const OUTLINE_PX = 1
 const RADIUS = 3
+/** The focused span's ring, px. */
+const LIFT_PX = 1.5
+/** The card-coloured seam round a tinted span, px: two neighbours of one series read as two. */
+const SEAM_PX = 1
+/** The row extent's band: a quiet neutral, under the tint of the quietest span. */
+const BAND_SHARE = 0.08
+
+/**
+ * The most of a colour mixed into the card that still holds `ink` at 4.5:1 for any colour at all
+ * (black on the light card, white on the dark one): 43 % and 25 % with the shipped tokens, held here
+ * with a margin for a derived palette. The focused span lifts to it; `interval-ink.test.ts` holds it.
+ */
+export const TINT_CAP = { light: 0.4, dark: 0.22 } as const
+/** A span's share of its colour at rest, under the cap, so an inside label is always `ink`. */
+export const TINT = { light: 0.16, dark: 0.16 } as const
+/** A colour mixed into the card at its scheme's share: an opaque fill, so its contrast is known. */
+export const tint = (color: string, share: { light: number; dark: number }): string =>
+  `light-dark(${mixCard(color, share.light)}, ${mixCard(color, share.dark)})`
+const mixCard = (color: string, share: number): string =>
+  `color-mix(in srgb, ${color} ${Math.round(share * 100)}%, ${CV.surface})`
 /** Round x ticks per container class. */
 const TICKS = { micro: 2, narrow: 3, regular: 5, wide: 8 } as const
 
@@ -392,7 +414,8 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
           if (kept === undefined) boxCache.current.set(it.i, next)
           return kept === undefined ? next : Object.assign(kept, next)
         }
-        const isDim = (it: Item<T>): boolean => focused !== null && it.d !== focused
+        const isFocused = (it: Item<T>): boolean => focused !== null && it.d === focused
+        const single = isOneSeries(series)
 
         // Round ticks over the domain (whole hours on a time axis), as many as the class holds.
         const count = typeof xTicks === 'number' ? xTicks : TICKS[cls]
@@ -427,7 +450,7 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
               rect(backdrops, {
                 id: 'row-extent',
                 ...AT_BOX,
-                fill: alpha(CV.neutral, 0.16),
+                fill: alpha(CV.neutral, BAND_SHARE),
                 radius: RADIUS,
               }),
             ),
@@ -441,7 +464,7 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
         for (const s of ordered) {
           const boxes = items.filter((it) => it.series === s.key).map(boxOf)
           if (boxes.length === 0) continue
-          const color = cssColor(s.color)
+          const color = paintOf(s, single)
           marks.push(
             rect(boxes, {
               id: `span:${s.key}`,
@@ -449,38 +472,29 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
               radius: RADIUS,
               ...(s.fill === 'outline'
                 ? { fill: CV.surface, stroke: color, strokeWidth: OUTLINE_PX }
-                : { fill: color }),
+                : { fill: tint(color, TINT), stroke: CV.surface, strokeWidth: SEAM_PX }),
             }),
           )
         }
-        // The rest dims under a veil of the card's colour: decorative, so it takes no pointer.
-        const veiled = items.filter(isDim).map(boxOf)
-        if (veiled.length > 0)
+        // The focused span lifts one tone, to the cap, with a ring in its own colour (the accent on a
+        // one-series track); every other span keeps its paint. Decorative, so it takes no pointer.
+        for (const it of items.filter(isFocused)) {
+          const s = seriesByKey.get(it.series)
+          if (s === undefined) continue
+          const ring = isNeutral(s, single) ? CV.brand : cssColor(s.color)
           marks.push(
             decorative(
-              rect(veiled, {
-                id: 'dim',
+              rect([boxOf(it)], {
+                id: 'lift',
                 ...AT_BOX,
                 radius: RADIUS,
-                fill: CV.surface,
-                fillOpacity: 1 - DIMMED,
+                fill: s.fill === 'outline' ? 'none' : tint(ring, TINT_CAP),
+                stroke: ring,
+                strokeWidth: LIFT_PX,
               }),
             ),
           )
-        const ringed = items.filter((it) => focused !== null && it.d === focused).map(boxOf)
-        if (ringed.length > 0)
-          marks.push(
-            decorative(
-              rect(ringed, {
-                id: 'focus-ring',
-                ...AT_BOX,
-                fill: 'none',
-                stroke: CV.brand,
-                strokeWidth: 2,
-                radius: RADIUS,
-              }),
-            ),
-          )
+        }
 
         // Labels, one lane at a time at the plot's px width; a back span labels in its row's first lane.
         const texts: Text[] = []
@@ -565,13 +579,10 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
           const b = boxOf(it)
           const y = it.lane < 0 ? laneTop(it) + 0.5 : (b.y1 + b.y2) / 2
           const s = seriesByKey.get(it.series)
-          // On a solid fill the card colour reads; a back span names itself in its own colour.
+          // Ink by what the label sits on: a tinted span is under the cap, so `ink` holds on it; the
+          // card and the row band take the muted ink, which holds on both.
           const onBar = p.spot === 'inside' && s?.fill !== 'outline' && it.lane >= 0
-          const ink = onBar ? CV.surface : it.lane < 0 && s ? cssColor(s.color) : CV.inkMuted
-          // Text is never faded: a dimmed inside label takes the full ink on the veiled bar, a dimmed
-          // outside label the quietest ink that holds 4.5:1 on the card (`CV.axis`).
-          const fillInk = isDim(it) ? (onBar ? CV.ink : CV.axis) : ink
-          const base = { id: it.i, y, text: p.text, fill: fillInk }
+          const base = { id: it.i, y, text: p.text, fill: onBar ? CV.ink : CV.inkMuted }
           if (p.spot === 'after') return { ...base, x: b.x2, anchor: 'start', dx: LABEL_GAP }
           if (p.spot === 'inside') return { ...base, x: b.x2, anchor: 'end', dx: -LABEL_GAP }
           return { ...base, x: b.x1, anchor: 'end', dx: -LABEL_GAP }
@@ -605,7 +616,8 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
       series.map((s) => ({
         key: s.key,
         label: s.label,
-        color: cssColor(s.color),
+        // The swatch shows the paint: neutral on a one-series track.
+        color: paintOf(s, isOneSeries(series)),
         mark: s.fill === 'outline' ? ('hollow' as const) : ('bar' as const),
         ...(s.legend !== undefined && { legend: s.legend }),
         getValue: () => null,
@@ -666,6 +678,15 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
 }
 
 const AT_BOX = { x1: 'x1', x2: 'x2', y1: 'y1', y2: 'y2', key: 'id' } as const
+/**
+ * Colour names a category only when there are two: one lane series paints neutral, and the accent is
+ * kept for the focused span. A back series keeps its own colour.
+ */
+const isOneSeries = (series: readonly IntervalSeries[]): boolean =>
+  series.filter((s) => s.layer !== 'back').length <= 1
+const isNeutral = (s: IntervalSeries, single: boolean): boolean => single && s.layer !== 'back'
+const paintOf = (s: IntervalSeries, single: boolean): string =>
+  isNeutral(s, single) ? CV.line : cssColor(s.color)
 const NONE_HIDDEN: ReadonlySet<string> = new Set()
 const noop = (): void => {}
 // A column: the box takes the height the legend row leaves, so the legend sits inside the parent.

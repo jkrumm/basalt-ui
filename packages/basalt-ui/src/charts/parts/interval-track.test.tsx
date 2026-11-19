@@ -1,7 +1,7 @@
 /**
  * `IntervalTrack` (Issue 2306): rows of spans on one x axis. The track is one tab stop whose arrow
- * keys step along a row and across rows; a pointer or a key focuses a span, dims the rest and drives
- * the readout; a `DataTable` on the same focus links both ways; lanes take overlaps; a `back`
+ * keys step along a row and across rows; a pointer or a key focuses a span, lifts it alone (no veil
+ * over the rest) and drives the readout; a `DataTable` on the same focus links both ways; lanes take overlaps; a `back`
  * series takes no lane; and the phase draws the placeholder instead of the plot.
  */
 import { fireEvent } from '@testing-library/react'
@@ -68,8 +68,28 @@ const press = (target: Element, key: string) =>
 const bodyRows = (el: HTMLElement) => [
   ...el.querySelectorAll<HTMLElement>('[data-slot="table-body"] [role="row"]'),
 ]
-/** The spans drawn under the dimming veil. */
+/** The spans drawn under a dimming veil: the track draws none (Issue 2451). */
 const dimmed = (el: HTMLElement) => el.querySelectorAll('rect[data-ts-key^="dim"]').length
+/** The lifted (focused) span's overlay. */
+const lifted = (el: HTMLElement) => [...el.querySelectorAll('rect[data-ts-key^="lift"]')]
+/** Every span's and every label's paint, in drawing order. */
+const paint = (el: HTMLElement) =>
+  [...el.querySelectorAll('rect[data-ts-key^="span:"], text[data-ts-key^="labels:"]')].map((n) =>
+    ['fill', 'stroke', 'stroke-width', 'opacity', 'fill-opacity']
+      .map((a) => n.getAttribute(a))
+      .join('|'),
+  )
+const pointAt = (el: HTMLElement, x: number) =>
+  act(async () => {
+    el.querySelector('svg')?.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        clientX: x,
+        clientY: 30,
+        pointerType: 'mouse',
+      }),
+    )
+  })
 
 let handle: ChartFocus<Span> | undefined
 const c = col<Span>()
@@ -110,15 +130,16 @@ function Week({ phase }: { phase?: 'loading' }) {
 }
 
 describe('IntervalTrack focus', () => {
-  test('the track is one tab stop; at rest nothing dims', async () => {
+  test('the track is one tab stop; at rest nothing lifts or dims', async () => {
     const el = await mount(<Week />)
     const stops = el.querySelectorAll('[data-chart-focus][tabindex="0"]')
     expect(stops.length).toBe(1)
     expect(readout(el)).toBe('the week')
     expect(dimmed(el)).toBe(0)
+    expect(lifted(el).length).toBe(0)
   })
 
-  test('arrow keys step along a row and across rows, dim the rest and drive the readout', async () => {
+  test('arrow keys step along a row and across rows, lift the span and drive the readout', async () => {
     const el = await mount(<Week />)
     const wrap = el.querySelector('[data-chart-focus]') as Element
     await press(wrap, 'ArrowRight')
@@ -128,7 +149,8 @@ describe('IntervalTrack focus', () => {
     await press(wrap, 'ArrowDown')
     expect(readout(el)).toBe('Planning')
     expect(live(el)).toBe('Tue Planning')
-    expect(dimmed(el)).toBeGreaterThan(0)
+    expect(lifted(el).length).toBe(1)
+    expect(dimmed(el)).toBe(0)
     await press(wrap, 'Escape')
     expect(readout(el)).toBe('the week')
   })
@@ -141,11 +163,25 @@ describe('IntervalTrack focus', () => {
     expect(rows[0]?.hasAttribute('data-dimmed')).toBe(true)
     await act(async () => fireEvent.pointerEnter(rows[1] as Element))
     expect(readout(el)).toBe('Design review')
-    expect(dimmed(el)).toBeGreaterThan(0)
+    expect(lifted(el).length).toBe(1)
   })
 })
 
 describe('IntervalTrack pointer', () => {
+  test('a hover changes paint on the hovered span only: it lifts, every other span and label keeps its paint', async () => {
+    const el = await mount(<Week />)
+    const rest = paint(el)
+    await pointAt(el, 120)
+    expect(readout(el)).toBe('Standup')
+    expect(paint(el)).toEqual(rest)
+    expect(dimmed(el)).toBe(0)
+    const [lift] = lifted(el)
+    const standup = el.querySelector('rect[data-ts-key^="span:meeting"][data-ts-key$=":0"]')
+    expect(lifted(el).length).toBe(1)
+    expect(lift?.getAttribute('x')).toBe(standup?.getAttribute('x') ?? null)
+    expect(lift?.getAttribute('width')).toBe(standup?.getAttribute('width') ?? null)
+  })
+
   test('pointing at a span focuses it and the track settles (no update loop)', async () => {
     const el = await mount(<Week />)
     const svg = el.querySelector('svg') as Element
@@ -166,6 +202,48 @@ describe('IntervalTrack pointer', () => {
     await move(500)
     expect(first).toBe('Standup')
     expect(el.querySelectorAll('[data-basalt-chart]').length).toBe(1)
+  })
+})
+
+const spanFills = (el: HTMLElement) =>
+  [...el.querySelectorAll('rect[data-ts-key^="span:meeting"]')].map((r) => r.getAttribute('fill'))
+
+describe('IntervalTrack colour', () => {
+  const brand = 'var(--basalt-brand)'
+  test('a one-series track paints neutral at rest, no brand; the accent is the focused span', async () => {
+    const el = await mount(<Week />)
+    const all = [...el.querySelectorAll('rect')].map(
+      (r) => `${r.getAttribute('fill')} ${r.getAttribute('stroke')}`,
+    )
+    expect(all.some((p) => p.includes(brand))).toBe(false)
+    expect(spanFills(el).every((f) => f?.includes('var(--basalt-line)'))).toBe(true)
+    expect(spanFills(el).some((f) => f?.includes('#2871c7'))).toBe(false)
+    await pointAt(el, 120)
+    expect(lifted(el)[0]?.getAttribute('stroke')).toBe(brand)
+  })
+
+  test('with two lane series, colour names the category as a tint of the series colour', async () => {
+    const two: readonly IntervalSeries<Span['kind']>[] = [
+      SERIES[0] as IntervalSeries<Span['kind']>,
+      { key: 'free', label: 'Free', color: { light: '#4a4a4a', dark: '#c4c4c4' } },
+    ]
+    const el = await mount(
+      <IntervalTrack
+        label="Two"
+        data={SPANS}
+        getRow={(s) => s.day}
+        getStart={(s) => s.start}
+        getEnd={(s) => s.end}
+        series={two}
+        getSeries={(s) => s.kind}
+        xDomain={[540, 1080]}
+      />,
+    )
+    const fills = spanFills(el)
+    expect(fills.length).toBeGreaterThan(0)
+    expect(fills.every((f) => f?.includes('#2871c7') && f.includes('var(--basalt-card)'))).toBe(
+      true,
+    )
   })
 })
 
