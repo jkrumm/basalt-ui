@@ -1,0 +1,31 @@
+{
+  "why": "Owner: 'we really want to get great data viz level of tables for real work', 'Blueprint from Palantir also achieves great stuff', 'movable and hideable columns', 'research, compare and learn from other open source implementations', 'maybe two options in rendering: a real data table (with borders, like Excel or Blueprint) for real data, or tables like we have now for just visualizing', 'still weird UX patterns we can optimize'. The kit has one look: ui/table.tsx:15-20 has only size md and sm, cells draw a bottom hairline only (ui/table.tsx:142,167), and DataTable exposes neither (contract.ts:174-224; parts/virtual.tsx:158 takes the default). Columns hide (parts/toolbar.tsx:105-122, column-actions.tsx:145-147) but do not move: the only drag reorder is a status column's categories (parts/category-order.tsx). Resize was left out on purpose (core/features.ts:17-18). Pinning is the identity column only (core/plan.ts:238). So a table for dense working data (many columns, scanning down and across, comparing cells) has no form in the kit, and the same list-like look serves both reading and work.",
+  "what": "packages/basalt-ui/src/table and src/ui/table.tsx, a research page under docs/v3/verdicts, the table concept and skill reference, /table in the playground.",
+  "owns": [
+    "packages/basalt-ui/src/table/**",
+    "packages/basalt-ui/src/ui/table.tsx",
+    "docs/v3/verdicts/table-grid-research.md (new)",
+    "docs/v3/concepts (the table concept page)",
+    "packages/basalt-ui/agent/skills/basalt-design/references/table*.md",
+    "apps/playground/src/routes/table.tsx"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** and apps/playground/src/cycle/** (trial builds are never hand-finished; v3-owner-2-rerun rebuilds them)"
+  ],
+  "change": "Research first, from sources and not memory (/research): Blueprint Table, AG Grid community, TanStack Table's own examples, Glide Data Grid, Mantine React Table, MUI X Data Grid community, Linear and Airtable where public. For each: header affordances, cell borders and density, column reorder, resize, pin and hide, selection and keyboard model, frozen rows and columns, what it does at narrow widths. Write docs/v3/verdicts/table-grid-research.md with what basalt takes, what it refuses and why. Then a Spec with shots of both looks on the same data: (a) the present look, named for reading and summarising; (b) a grid look for working data: cell rules on both axes, compact rows, tabular figures, a sticky header and identity column, cell focus that moves by arrow keys. State the rule that tells a builder which to pick, as one skill line. In the Spec decide, with a default each: one `variant` prop or a second component; column reorder by drag and by keyboard, stored in the saved view; user pinning; whether resize stays out (it was a decision; name what would change it). The Spec also lists the UX patterns of the present table that the research shows as odd, each with its fix or its reason to stay. Build what the verdict keeps. Everything a user changes (order, visibility, pin) lives in the saved view and the URL state the table already has.",
+  "acceptance": [
+    "docs/v3/verdicts/table-grid-research.md cites each source it read and states take or refuse per pattern",
+    "A Spec with shots of both looks on one dataset, light and dark, 1800 and 390, has a verdict before code merges",
+    "The grid look renders cell rules on both axes at the kit's rule colour, passes the quality matrix, and is on /table beside the present look",
+    "A column moves by drag and by keyboard, the order survives reload and is part of a saved view (tests)",
+    "The skill states in one line when to use which look",
+    "Contract additions are additive and pinned; the table-own budget change is recorded",
+    "make check passes"
+  ],
+  "out_of_scope": "Cell editing, spreadsheet formulas, row grouping changes, server-mode protocol changes.",
+  "proof": "make check; the research page; the Spec shots.",
+  "commits": "docs: the research page; feat: per part with its test (package); chore: the playground.",
+  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it."
+}

@@ -1,0 +1,28 @@
+{
+  "why": "Owner: 'Expression n04 still has that confusing flickering when hovering the chart, fix the cause not the symptom', and on the interval track 'hovering and focus also a bit weird, maybe we need to prevent focus borders e.g. when clicking on a chart'. Owner review 1 fixed the wrong cause. Browser, 2026-11-19, /scenarios/expr-n04 at 1600 wide, 20-step pointer sweep: the plot does not move (no rect change, ResizeObserver silent, one pointerenter and one pointerleave), so the hover-shift guard passes. What flickers: (a) the engine tooltip (div.ts-chart-tooltip[data-placement]) flips between top and bottom from one datum to the next, a 77 px jump for a 10 px pointer move, and toggles hidden between hour bands; placement is the engine's, basalt sets none (see charts/core/cursor.ts:301 and chart-box.module.css:231). (b) The card's headline figure is overwritten on hover: the text-display span swaps between the answer 'Ride Tue 07-17 · Up, favourable +3 h' (280 px) and per-hour readouts ('Tue 21:00 · Skip', about 180 px), a period line is inserted and removed, and a delta badge swaps for a status pill; the page does it (ExprN04.tsx:115-134), ChartCard allows it and the skill teaches a figure that follows the focus. (c) A side value changes width ('7 °C' to '9 °C', 68 to 29 px). Each alone is small; together the whole card changes on every hour. Focus, browser: clicking the plot on /kit/interval-track focuses svg.ts-chart[tabindex=-1] and the browser paints its default outline (auto, 5 px, blue) around the whole chart; no kit rule removes the outline for a pointer focus (chart-box.module.css:243-256 styles :focus-visible only). The legend toggle's ring is a hard-coded hex (chart-legend.module.css:56).",
+  "what": "packages/basalt-ui/src/charts (tooltip placement, ChartCard figure contract, focus CSS, the guard), the basalt-charts skill lines, the hover guard in the quality matrix.",
+  "owns": [
+    "packages/basalt-ui/src/charts/**",
+    "packages/basalt-ui/agent/skills/basalt-charts/**",
+    "the quality matrix or layout file that holds the hover guard",
+    "packages/basalt-ui/src/lint/** (only if a rule is the fix for the figure)"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** and apps/playground/src/cycle/** (trial builds are never hand-finished; v3-owner-2-rerun rebuilds them)"
+  ],
+  "change": "(1) Tooltip: within one hover sweep the tooltip keeps its side; it changes side only when it would leave the plot, and then with hysteresis; it does not hide between adjacent data of the same series. If the engine owns this, set its option or wrap it in host.tsx; if it cannot be done there, say so in the PR and file the engine issue, and do not ship a workaround that fights the engine per frame. (2) The headline of a card is the answer and stays: a hover readout has one fixed place of its own (the period and status line reserved by owner review 1, or the tooltip), never the display figure. Make the wrong thing hard: ChartCard's figure does not take focus-driven text (type, or a lint rule on a figure value derived from the chart focus), and the skill says so in one line. Where a value does follow the focus, its box has a fixed width in ch and tabular figures. (3) Extend the guard: during the pointer sweep it also fails when the tooltip's side changes more than once, when any text outside the tooltip and the reserved readout line changes, or when any element in the card changes width. Show it red on the present n04 once in the PR. (4) Focus: a pointer click on any chart paints no outline; keyboard focus keeps the kit ring. Replace the hard-coded legend ring with the token. Check every chart kind, IntervalTrack and Sparkline included.",
+  "acceptance": [
+    "The extended guard fails on the present expr-n04 and names the tooltip flips and the figure swap (shown once in the PR)",
+    "On a sweep across any playground chart the tooltip changes side at most once (guard)",
+    "A ChartCard figure fed from the chart focus is refused by type or lint, and the skill line is in place",
+    "A mouse click on each chart kind shows no outline; Tab shows the ring (test over every kind)",
+    "No hex in chart-legend.module.css",
+    "make check passes"
+  ],
+  "out_of_scope": "Rebuilding n04 (v3-owner-2-rerun). IntervalTrack colours (v3-owner-2-interval-look).",
+  "proof": "make check; the red guard run; a screen recording or shot pair of the sweep after the fix.",
+  "commits": "fix: per part with its test (package); chore: the guard.",
+  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it."
+}

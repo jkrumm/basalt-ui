@@ -1,0 +1,26 @@
+{
+  "why": "Owner on Fleet settings: 'forms need way more love and iteration; do we use TanStack Form?', 'way richer and more beautiful appearance and options', then a list: select boxes with filters, multi select, radios, date range, tabs, buttons, multi-step forms, 'so many more'. Most of that list ships and he has never seen it, the same cause as the page controls in owner review 1: Combobox and Autocomplete (ui/combobox.tsx:239, 467), multi Combobox with chips (:213, 354), RadioGroup (ui/radio-group.tsx:52), DatePicker and DateRangePicker (ui/date-picker.tsx:247, 314), Tabs, Switch, Slider, NumberField, Textarea, Button in four variants and two sizes (ui/button.tsx:16-47). The only form the playground shows is the trial settings page, which uses Field, one Switch and a danger Button (cycle/shell-5/SettingsPage.tsx). Really missing: a stepper for a multi-step form (cards/step-rail.tsx is a duration timeline), file upload, a creatable tags input. TanStack Form is not the kit's engine: the kit takes a structural FieldLike port (core/ports.ts:155-159), FormField accepts `field` or `control` (controls/form-field.tsx:37-45), and @tanstack/react-form is a playground dependency only.",
+  "what": "apps/playground only: a Forms group in the Kit gallery, and the gap list.",
+  "owns": [
+    "apps/playground/src/routes/kit/forms*.tsx and kit/forms/** (new)",
+    "apps/playground/src/demo/nav-model.tsx",
+    "docs/v3/verdicts/showcase-gaps.md (append a Forms section)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/**",
+    "CHANGELOG.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** and apps/playground/src/cycle/** (trial builds are never hand-finished; v3-owner-2-rerun rebuilds them)"
+  ],
+  "change": "Build from what ships, as the Kit gallery did, and build around nothing. Pages: (1) every input control in every state (rest, hover, focus, filled, invalid, disabled, read-only, loading) in light and dark; (2) choice controls on real data: Select, searchable Combobox, multi Combobox with chips, Autocomplete, RadioGroup, Checkbox group, Switch, Segmented; (3) dates and numbers: DatePicker, DateRangePicker, NumberField, Slider; (4) buttons: every variant, size, icon placement, loading and a split or menu button if one ships; (5) three whole forms bound to TanStack Form through FormField: a create-record dialog, a long settings page with sections and a save footer, and a multi-step flow built with what ships. For each thing a page needed and the kit could not do, add a row to showcase-gaps.md with what was tried and where it lands; the stepper, file upload, creatable tags and a label-left settings row are expected rows. State in the page copy which engine binds the forms.",
+  "acceptance": [
+    "A Forms group is in the Kit nav with the five pages, each rendering through Page and passing playground lint with no new waiver",
+    "showcase-gaps.md has a Forms section with one row per gap, each with what was tried",
+    "The quality matrix passes on the new routes",
+    "make check passes"
+  ],
+  "out_of_scope": "Any package change; the look of the controls (v3-owner-2-forms-grammar).",
+  "proof": "make check; shots of the five pages at 1800 and 390 in the PR.",
+  "commits": "chore: the Forms gallery; docs: the gap rows.",
+  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it."
+}

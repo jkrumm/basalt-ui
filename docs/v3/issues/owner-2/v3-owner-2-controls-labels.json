@@ -1,0 +1,26 @@
+{
+  "why": "Owner on /kit/controls: (1) \"top controls nice, but 'All' didn't explain what, and only when changing it said 'Verdict: Picked', so the prefix should always be there\". A filter pill prints the bare value at its default and the field name only once active: controls/filter-set-spec.tsx:118 renders `{active ? name : text}` while `name` ('Verdict: All') is already built at :99 and used as aria-label at :116. It is deliberate (file header :5, filter-set.specs.test.tsx:52-54), and it fails for every enum whose default option is a generic word. The row renderers have the same gap: Segmented and Select carry the field name as aria-label only (controls/renderers.tsx:101-124). (2) 'Not sure why this table renders no proper table.' Not reproduced. Two readings: the table fell to cards because its own inline size was under the 800 px tier (table/core/plan.ts:224-225 sets the tier from the priority 1 and 2 column sum, default cardsBelow 'regular' at use-data-table.ts:619, table.css:296-297), or he means the list look without cell rules (v3-owner-2-table-grid). (3) 'date picker colors not optimal': ui/date-picker.tsx:49-52 paints the selected day bg-primary, the range middle and ends bg-accent, today as brand text, hover bg-accent, so a range reads as two strong dots on a grey bar and today competes with the selection.",
+  "what": "packages/basalt-ui/src/controls (pill and row renderers), src/ui/date-picker.tsx, the table tier only if reading one of (2) is confirmed, /kit/controls.",
+  "owns": [
+    "packages/basalt-ui/src/controls/**",
+    "packages/basalt-ui/src/ui/date-picker.tsx",
+    "packages/basalt-ui/src/table/core/plan.ts (only if the cards reading is confirmed)",
+    "apps/playground/src/routes/kit/controls.tsx"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** and apps/playground/src/cycle/** (trial builds are never hand-finished; v3-owner-2-rerun rebuilds them)"
+  ],
+  "change": "(1) A filter always names its field: a pill shows 'Verdict: All' at rest and 'Verdict: Picked' when set, the active state carried by weight and the dot, not by the name appearing; the pill's width may change with the value, never by the name coming and going. Segmented and Select in a filter row show a visible field name too (the existing ControlView label, not a new mechanism). Update the test that asserts the bare value. (2) Open /kit/controls at 1800, 1440 and 1280 with the rail open and measure the table's inline size. If it is cards at a width where a table fits, fix the tier rule in plan.ts (the tier should follow what fits, not the priority sum crossing 480); if it is a table, close this point with the measurement and leave the look to v3-owner-2-table-grid. (3) Date picker: the range reads as one quiet band with clear ends, today is marked without competing with the selection, hover is lighter than selected, all from tokens, checked in light and dark; shots in the PR.",
+  "acceptance": [
+    "A filter pill and a filter-row Segmented and Select show the field name at the default value and at a chosen value (tests)",
+    "The measurement of the /kit/controls table at three widths is in the PR, with the tier fix or the reason none is needed",
+    "Date picker shots, single and range, light and dark, are in the PR and the quality matrix passes",
+    "make check passes"
+  ],
+  "out_of_scope": "A DateRangePicker inside a filter set and a side filter column (both in docs/v3/verdicts/showcase-gaps.md).",
+  "proof": "make check; the shots; the measurement.",
+  "commits": "fix: per part with its test (package); chore: the playground page.",
+  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it."
+}

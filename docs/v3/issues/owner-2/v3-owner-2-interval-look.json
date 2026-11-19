@@ -1,0 +1,27 @@
+{
+  "why": "Owner on /kit/interval-track: 'still not the biggest fan of the blue and the text colour choices, maybe review that component again', 'hovering and focus also a bit weird'. Span fills come from series registration (charts/parts/interval-track.tsx:432-440 via parts/cartesian-adapt.ts:37), so a one-series track is a wall of full-strength brand blue. Label ink is picked by position, not by contrast (interval-track.tsx:557-563): card-surface ink inside a solid span, the series colour on a back layer, muted ink elsewhere. Hover draws a brand ring rect on the span (:463) and a surface veil over all others (:450-456), which reads as the chart blinking.",
+  "what": "packages/basalt-ui/src/charts/parts/interval-track.tsx and its tokens, /kit/interval-track.",
+  "owns": [
+    "packages/basalt-ui/src/charts/parts/interval-track*.tsx",
+    "packages/basalt-ui/src/charts/core/theme.ts (only for a token the track needs)",
+    "apps/playground/src/routes/kit/interval-track.tsx",
+    "docs/interval-track.md"
+  ],
+  "must_not_touch": [
+    "CHANGELOG.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/** and apps/playground/src/cycle/** (trial builds are never hand-finished; v3-owner-2-rerun rebuilds them)"
+  ],
+  "change": "Spec with shots, light and dark, three variants side by side on the same week: the present one and two quieter ones. Aim: a span is a tinted block with a stronger leading edge or a soft fill with full-ink text, colour carries a category only when there is more than one, and a single-series track is neutral with the accent kept for the focused or current span. Label ink meets contrast against its own fill by derivation, not by position. Hover: the hovered span gets a small lift (stroke or tone), the others keep their paint; no veil unless a selection is held. Take the owner's verdict, build the chosen variant, remove the others.",
+  "acceptance": [
+    "A Spec with three variants in light and dark has a verdict before code merges",
+    "Every label passes the kit's contrast check against its fill in both schemes (test)",
+    "A hover changes paint on the hovered span only (test)",
+    "A one-series track uses no brand fill at rest",
+    "make check passes"
+  ],
+  "out_of_scope": "New track features (drag, resize, zoom).",
+  "proof": "make check; the Spec shots.",
+  "commits": "feat: the look with its test (package); chore: the playground page.",
+  "note": "Source: the owner's second hands-on review of the v3 playground on 2026-11-19, after owner review 1 merged. He asked again for the cause to be fixed, not the page he named. File citations come from a code read on that date at master 108c2d2bc; only the facts marked 'browser' were run. Confirm each before building on it."
+}
