@@ -140,15 +140,12 @@ function IntervalTrackRoute(): ReactElement {
         figure={
           ready
             ? {
-                value: focus.readout(
-                  longest ? `${length(longest.to - longest.from)} free` : '0 min free',
-                  (s) => s.title,
-                ),
+                value: longest ? `${length(longest.to - longest.from)} free` : '0 min free',
                 period: focus.readout(
                   longest && week.longestDay
                     ? `${dayKey(week.longestDay.index)} ${clock(longest.from)} to ${clock(longest.to)}, longest block`
                     : 'No block is free',
-                  (s) => `${s.day} ${s.when}`,
+                  (s) => `${s.day} ${s.when}, ${s.title}`,
                 ),
                 periodMono: true,
               }

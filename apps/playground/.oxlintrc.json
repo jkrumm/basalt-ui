@@ -11,8 +11,14 @@
   },
   "overrides": [
     {
+      "files": ["src/scenarios/expr/**", "src/cycle/**"],
+      "rules": { "basalt/primitive-bypass": ["error", { "formsOff": ["figure-readout"] }] }
+    },
+    {
       "files": ["src/scenarios/expr/c10/**"],
-      "rules": { "basalt/primitive-bypass": ["error", { "formsOff": ["list-rows"] }] }
+      "rules": {
+        "basalt/primitive-bypass": ["error", { "formsOff": ["list-rows", "figure-readout"] }]
+      }
     }
   ]
 }

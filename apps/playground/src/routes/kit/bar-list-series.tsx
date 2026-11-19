@@ -76,11 +76,13 @@ function BarListSeriesRoute(): ReactElement {
         figure={
           phase === 'ready' && s.requests > 0
             ? {
-                value: focus.readout(pct(s.rate), (h) =>
-                  pct(h.requests === 0 ? 0 : h.fallbacks / h.requests),
-                ),
+                value: pct(s.rate),
                 unit: 'fell back',
-                period: focus.readout(`of ${f.number(s.requests)} requests`, hourText),
+                period: focus.readout(
+                  `of ${f.number(s.requests)} requests`,
+                  (h) =>
+                    `${hourText(h)}: ${pct(h.requests === 0 ? 0 : h.fallbacks / h.requests)} fell back`,
+                ),
               }
             : { value: null }
         }

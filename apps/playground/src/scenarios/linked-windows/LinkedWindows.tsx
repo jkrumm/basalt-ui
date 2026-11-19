@@ -71,8 +71,10 @@ export function LinkedWindowsScenario({ shotState }: ScenarioProps) {
         title="Tide by hour"
         phase={phase}
         figure={{
-          value: focus.readout(`${windows.length} windows`, (d) => `${d.tide} m`),
-          period: focus.span.length > 1 ? `${focus.span.length} h held` : undefined,
+          value: `${windows.length} windows`,
+          period: focus.readout('', (d) =>
+            focus.span.length > 1 ? `${focus.span.length} h held` : `${clock(d.h)}: ${d.tide} m`,
+          ),
         }}
         chart={() => (
           <CartesianChart
