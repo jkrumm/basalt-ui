@@ -3,7 +3,10 @@ import { cva } from 'class-variance-authority'
 import type { ComponentProps, CSSProperties, FocusEvent, ReactElement } from 'react'
 import { cn } from '../core/cn'
 
-/** The nearest ancestor that scrolls, or null when only the page does. */
+/**
+ * The nearest ancestor that may scroll, or null when only the page does. A local copy of
+ * `common/scroll-parent`'s question: a `ui` file imports only `core`, so it stays ejectable.
+ */
 function scrollingAncestor(el: HTMLElement): HTMLElement | null {
   for (let node = el.parentElement; node !== null; node = node.parentElement) {
     const { overflowX, overflowY } = getComputedStyle(node)
@@ -14,15 +17,17 @@ function scrollingAncestor(el: HTMLElement): HTMLElement | null {
 
 /**
  * Chrome scrolls only the first line of a textarea that is partly off its scroll box on Tab, and the
- * focus ring stays clipped. When any edge of the box is outside the visible area, reveal the box.
+ * focus ring stays clipped. When any edge of the box is outside the visible area (its scroll box, cut
+ * to the window, since that box may itself sit below the fold), reveal the box.
  */
 function revealOnFocus(el: HTMLElement): void {
   const box = el.getBoundingClientRect()
-  const view = scrollingAncestor(el)?.getBoundingClientRect() ?? {
-    top: 0,
-    left: 0,
-    bottom: window.innerHeight,
-    right: window.innerWidth,
+  const scroller = scrollingAncestor(el)?.getBoundingClientRect()
+  const view = {
+    top: Math.max(scroller?.top ?? 0, 0),
+    left: Math.max(scroller?.left ?? 0, 0),
+    bottom: Math.min(scroller?.bottom ?? window.innerHeight, window.innerHeight),
+    right: Math.min(scroller?.right ?? window.innerWidth, window.innerWidth),
   }
   const inside =
     box.top >= view.top &&
