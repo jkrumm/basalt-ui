@@ -29,6 +29,7 @@ import {
   formatMoney,
   formatNumber,
   isAbsent,
+  toInstant,
 } from './kinds-cells'
 import { KIND_DEFAULTS, KIND_SPEC } from './kinds-spec'
 import type {
@@ -369,7 +370,7 @@ type Base<T> = {
   common?: CommonOptions | undefined
   draw: ((value: unknown, row: T, env: CellEnv) => ReactNode) | null
   /** What the cell shows of a present value, for search; the stored value is searched beside it. */
-  text?: (value: unknown, row: T, format: Format) => string
+  text?: (value: unknown, row: T, format: Format, now: number) => string
   /** Renders even when the value is absent (`spark`, `custom`). */
   always?: boolean
   extra?: Partial<KindSpec<T>>
@@ -449,8 +450,8 @@ function build<T>(b: Base<T>): KindColumn<T> {
 }
 
 /** The search text of a row: what the cell shows, then the stored value, one per line. */
-function searchOf<T>(b: Base<T>): (row: T, format: Format) => string {
-  return (row, format) => {
+function searchOf<T>(b: Base<T>): (row: T, format: Format, now: number) => string {
+  return (row, format, now) => {
     const value = b.value(row)
     if (isAbsent(value)) return ''
     // An invalid Date draws the dash in its cell; its stored text is empty here, never a throw.
@@ -460,7 +461,7 @@ function searchOf<T>(b: Base<T>): (row: T, format: Format) => string {
           ? ''
           : value.toISOString()
         : String(value)
-    const shown = b.text?.(value, row, format)
+    const shown = b.text?.(value, row, format, now)
     return shown === undefined || shown === '' ? raw : `${shown}\n${raw}`
   }
 }
@@ -634,7 +635,15 @@ export function col<T>(): Col<T> {
             <RelativeTimeCell value={v} format={env.format} now={env.now} />
           </WithIcon>
         ),
-        { text: (v, _row, format) => dateText(v, format, 'long'), spec: dateFilter<T>(o) },
+        {
+          // what the cell shows (`3 days ago`, at the table's clock) and the date it stands for
+          text: (v, _row, format, now) => {
+            const instant = toInstant(v)
+            const relative = instant === null ? '' : format.relative(instant, now)
+            return `${relative}\n${dateText(v, format, 'long')}`
+          },
+          spec: dateFilter<T>(o),
+        },
       ),
     status: <const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O, T>) =>
       keyed<T>(
@@ -694,7 +703,8 @@ export function col<T>(): Col<T> {
           ),
         {
           text: (v, _row, format) =>
-            typeof v === 'number' ? deltaLabel(format, v, o.unit, o.currency) : '',
+            // a zero change draws the dash, so it has no shown text
+            typeof v === 'number' && v !== 0 ? deltaLabel(format, v, o.unit, o.currency) : '',
           spec: rangeFilter<T>(o),
         },
       ),
