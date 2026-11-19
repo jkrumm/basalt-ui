@@ -3,10 +3,11 @@
  * hour, the steps of a run by elapsed time, the outages of a line by day). Each row is a band; spans of
  * one row that overlap take a lane each, and a series on the `back` layer spans the row's full height
  * behind the lanes and takes none. A span's colour is its series' registered `{ light, dark }` pair,
- * solid or outlined; a datum with no end is a point. Labels are placed by the kit's lane pass at the
- * plot's own px width (after, inside, before, else cut, else dropped by priority), so no page writes a
- * breakpoint. Built like `Heatmap`: its own definition on `core/compile` and the host, because
- * `CartesianChart` has no band y.
+ * solid or outlined; a datum with no end is a point, and coincident points take a lane each. A mark
+ * draws at least `MIN_MARK_PX`. Labels are placed by the kit's lane pass at the plot's own px width
+ * (after, inside, before, else dropped by priority; never cut), so no page writes a breakpoint.
+ * Built like `Heatmap`: its own definition on `core/compile` and the host, because `CartesianChart`
+ * has no band y.
  */
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
@@ -124,8 +125,10 @@ const LABEL_SIZE = BASALT.text.micro
 const X_AXIS_PX = LABEL_SIZE + 14
 const X_TITLE_PX = LABEL_SIZE + 8
 const LABEL_GAP = 4
-/** A point's drawn width, px. */
-const POINT_PX = 3
+/** The least a mark paints, px: a short span or a point is widened to it, centred on its time. */
+const MIN_MARK_PX = 6
+/** The rect mark's default inset per edge, px: a box paints this much inside its edges. */
+const RECT_INSET_PX = 0.75
 /** Row labels take at most this share of the chart's width. */
 const ROW_LABEL_SHARE = 0.3
 const ROW_LABEL_AIR = 8
@@ -222,7 +225,7 @@ function trackModel<T>(input: {
 }
 
 /**
- * Rows of spans and point events on one shared x axis, with labels the kit places, cuts and drops.
+ * Rows of spans and point events on one shared x axis, with labels the kit places or drops.
  *
  * @useWhen spans with a start and an end sit on rows over time: a calendar week by the hour, the steps of a run, outages by day, shifts by person
  * @neverWhen the spans are one gap-free row of states (use BandStrip), a value is the answer (use Bars or Lines), or tasks depend on each other (a dependency view)
@@ -361,16 +364,25 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
         const plotW = Math.max(1, width - left - right)
         const plotH = Math.max(1, boxPx - MARGIN_TOP - bottom)
         const px = (v: number): number => ((v - lo) / span) * plotW
-        const half = ((POINT_PX / 2) * span) / plotW
+        const minSpan = ((MIN_MARK_PX + 2 * RECT_INSET_PX) * span) / plotW
+        // A mark draws at least MIN_MARK_PX: a short span or a point is widened about its time and
+        // held inside the plot, so a mark at the edge never reaches the row labels.
+        const markX = (it: Item<T>): [number, number] => {
+          if (it.end - it.start >= minSpan) return [it.start, it.end]
+          const mid = (it.start + it.end) / 2
+          const x1 = Math.max(lo, Math.min(mid - minSpan / 2, hi - minSpan))
+          return [x1, x1 + minSpan]
+        }
         const labelsFit = plotH / total >= LABEL_SIZE + 2
 
         const boxOf = (it: Item<T>): Box<T> => {
           const [b0, b1] = rowBand(it.row)
           const y = laneTop(it)
+          const [x1, x2] = markX(it)
           const next: Box<T> = {
             id: it.i,
-            x1: it.point ? it.start - half : it.start,
-            x2: it.point ? it.end + half : it.end,
+            x1,
+            x2,
             y1: it.lane < 0 ? b0 : y + SPAN_INSET,
             y2: it.lane < 0 ? b1 : y + 1 - SPAN_INSET,
             item: it,
@@ -554,13 +566,11 @@ export function IntervalTrack<T, X extends IntervalX = IntervalX, K extends stri
           const y = it.lane < 0 ? laneTop(it) + 0.5 : (b.y1 + b.y2) / 2
           const s = seriesByKey.get(it.series)
           // On a solid fill the card colour reads; a back span names itself in its own colour.
-          const ink =
-            p.spot === 'inside' && s?.fill !== 'outline' && it.lane >= 0
-              ? CV.surface
-              : it.lane < 0 && s
-                ? cssColor(s.color)
-                : CV.inkMuted
-          const fillInk = isDim(it) ? alpha(ink, DIMMED) : ink
+          const onBar = p.spot === 'inside' && s?.fill !== 'outline' && it.lane >= 0
+          const ink = onBar ? CV.surface : it.lane < 0 && s ? cssColor(s.color) : CV.inkMuted
+          // Text is never faded: a dimmed inside label takes the full ink on the veiled bar, a dimmed
+          // outside label the quietest ink that holds 4.5:1 on the card (`CV.axis`).
+          const fillInk = isDim(it) ? (onBar ? CV.ink : CV.axis) : ink
           const base = { id: it.i, y, text: p.text, fill: fillInk }
           if (p.spot === 'after') return { ...base, x: b.x2, anchor: 'start', dx: LABEL_GAP }
           if (p.spot === 'inside') return { ...base, x: b.x2, anchor: 'end', dx: -LABEL_GAP }

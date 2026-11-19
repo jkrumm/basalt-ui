@@ -9,7 +9,7 @@ slots: []
 
 # IntervalTrack
 
-Rows of spans and point events on one shared x axis, with labels the kit places, cuts and drops.
+Rows of spans and point events on one shared x axis, with labels the kit places or drops.
 
 ## Signature
 
