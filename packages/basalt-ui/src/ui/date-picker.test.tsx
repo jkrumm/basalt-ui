@@ -2,7 +2,9 @@
  * `DatePicker` and `DateRangePicker` under TZ=America/Los_Angeles and TZ=Asia/Tokyo: a picked day is
  * the clicked day, a stored day prints as itself, and the boundary only ever carries `YYYY-MM-DD`.
  * Zone-less means the same wall-clock day west of UTC (where `new Date('2026-11-20')` is the 19th)
- * and east of it (where a local midnight is still yesterday in UTC).
+ * and east of it (where a local midnight is still yesterday in UTC). The day colours: one strong
+ * fill on a pick or a range's ends (`data-picked`), the quiet `selected` band under the middle, and
+ * today a neutral ring, never the brand.
  */
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
@@ -159,5 +161,43 @@ describe('date-picker module', () => {
   test('a malformed value reads as no value', () => {
     render(<DatePicker aria-label="Due" value={'2026-02-31' as CalendarDate} />)
     expect(trigger().textContent).toContain('Pick a date')
+  })
+})
+
+describe('day colours', () => {
+  const cell = (iso: string): HTMLElement => {
+    const el = document.querySelector(`[data-day="${iso}"]`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no day cell for ${iso}`)
+    return el
+  }
+
+  test('a single pick is the one strong fill', () => {
+    render(<DatePicker aria-label="Due date" defaultOpen defaultValue="2026-11-12" />)
+    expect(dayButton('2026-11-12').hasAttribute('data-picked')).toBe(true)
+    expect(dayButton('2026-11-13').hasAttribute('data-picked')).toBe(false)
+  })
+
+  test('a range fills its ends and lays the quiet band under the middle', () => {
+    render(
+      <DateRangePicker
+        aria-label="Report window"
+        defaultOpen
+        defaultValue={{ from: '2026-11-09', to: '2026-11-16' }}
+      />,
+    )
+    expect(dayButton('2026-11-09').hasAttribute('data-picked')).toBe(true)
+    expect(dayButton('2026-11-16').hasAttribute('data-picked')).toBe(true)
+    expect(dayButton('2026-11-12').hasAttribute('data-picked')).toBe(false)
+    expect(cell('2026-11-12').className).toContain('bg-selected')
+    expect(cell('2026-11-09').className).toContain('bg-selected')
+  })
+
+  test('today is a neutral ring, never brand, and hover is the lighter hover surface', () => {
+    render(<DatePicker aria-label="Due date" defaultOpen />)
+    const today = document.querySelector('[data-today] button')
+    if (!(today instanceof HTMLButtonElement)) throw new Error('no today button')
+    expect(today.className).toContain('group-data-today/day:inset-ring-input')
+    expect(today.className).not.toMatch(/group-data-today\/day:(text|bg)-(primary|brand)/)
+    expect(today.className).toContain('hover:bg-accent')
   })
 })
