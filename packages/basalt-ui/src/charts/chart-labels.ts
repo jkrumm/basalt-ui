@@ -167,8 +167,9 @@ export const chartLabels = {
    * a label no spot can hold is `dropped`, and a dev build warns once, naming its key and the frame.
    *
    * Called from `CartesianChart.custom`'s `build`, it also keeps clear of what the host drew under
-   * the marks, with no option to pass: the zone and rule captions, the end labels, the line paths
-   * and the bodies of the bars (`frame` is the plot, as `ChartPlot.plotWidth` and `plotHeight`).
+   * the marks, with no option to pass: the end labels, the line paths, the rules and the bodies of
+   * the bars (`frame` is the plot, as `ChartPlot.plotWidth` and `plotHeight`). The zone and rule
+   * captions give way: they are placed after the page's labels, and move or drop to clear them.
    */
   place<K extends string>(
     labels: readonly ChartLabel<K>[],

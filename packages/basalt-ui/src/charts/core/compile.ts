@@ -48,12 +48,14 @@ import { barValueLabels } from './bar-values'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
 import { spreadAlong } from './spread'
 import { claimedLabelBoxes } from '../labels'
+import { estimateWidth } from '../label-place'
 import type { LabelBox as PxBox } from '../chart-labels'
 import {
   captionPx,
   pathBoxes,
   pxBox,
   ruleBoxes,
+  valueBox,
   withHostObstacles,
   xRuleBoxes,
 } from '../label-obstacles'
@@ -1089,6 +1091,8 @@ const REF_LABEL_LEADER_PAD = 4
 const MAX_ZONE_ROWS = 24
 /** The most rows a zone caption tries down the side of its zone, after and before it. */
 const MAX_ZONE_SIDE_ROWS = 6
+/** How many rows above its top edge and under its bottom edge a zone bounded in y tries for its caption. */
+const MAX_ZONE_EDGE_ROWS = 3
 /** The share of a bar slot kept between two grouped bars (`group({ padding })` in `bars-marks`). */
 const GROUP_PADDING = 0.1
 
@@ -1223,9 +1227,10 @@ const refLabelMark = <T, X extends ChartX>(
 /**
  * The captions of the x zones that carry a `label`, over the marks, muted like a reference
  * caption: inside the zone at its top-start corner; after the zone, then before it, when the
- * caption is wider than the zone; dropped when no spot stays in the plot clear of the reference
- * captions and the zone captions placed before it. Reads the plot size, so only a chart with a
- * zone caption pays the measured re-render.
+ * caption is wider than the zone, and never over another zone; dropped when no spot stays in the
+ * plot clear of the reference captions, the zone captions placed before it, the end labels, the
+ * page's own labels and every line and rule; a spot clear of the bars and dots is preferred. Reads the plot size,
+ * so only a chart with a zone caption pays the measured re-render.
  */
 const xZoneLabelMarks = <T, X extends ChartX>(
   input: CartesianInput<T, X>,
@@ -1239,13 +1244,14 @@ const xZoneLabelMarks = <T, X extends ChartX>(
   const avoid = (): LabelBox[] => [
     ...ctx.xCaptions.map((b) => xCaptionOn(b, domain, plotHeight)),
     ...ctx.placed.left,
+    ...ctx.claimed,
   ]
   return (input.xZones ?? []).flatMap((z, i) => {
     const f = z.label ? xZoneFractions(z, model) : null
     if (!z.label || f === null) return []
     const top = z.y ? clampTo(Math.max(z.y.from, z.y.to), domain) : hi
     const bottom = z.y ? clampTo(Math.min(z.y.from, z.y.to), domain) : lo
-    const width = captionWidth(z.label, fontSize)
+    const width = estimateWidth(z.label, fontSize)
     const [x0, x1] = [f[0] * plotWidth, f[1] * plotWidth]
     // A line box from the zone's top: its first row sits in the corner, each next one a row lower.
     const rowTop = fontSize / 2 - 2
@@ -1263,10 +1269,29 @@ const xZoneLabelMarks = <T, X extends ChartX>(
       inside: true,
       row,
     }))
-    // Inside the zone, top to bottom, then after it and before it on the top row, then lower down
-    // beside it: a zone that lines cross keeps its caption beside it rather than lose it.
+    // A zone bounded in y has room above its top edge and under its bottom one, over its own columns.
+    const edge = z.y
+      ? [
+          // The first row clears the zone's own edge rule by a pixel or two, the next ones step away.
+          ...Array.from({ length: MAX_ZONE_EDGE_ROWS }, (_, k) => -(rowBottom + 2.5) / stepPx - k),
+          ...Array.from(
+            { length: MAX_ZONE_EDGE_ROWS },
+            (_, k) => (zoneHeightPx + 3 - rowTop) / stepPx + k,
+          ),
+        ].map((row) => ({
+          at: f[0],
+          side: 1 as const,
+          left: x0 + REF_LABEL_DX,
+          inside: false,
+          row,
+        }))
+      : []
+    // Inside the zone, top to bottom, then above and under it, then after it and before it on the top
+    // row, then lower down beside it: a zone that lines cross keeps its caption beside it rather
+    // than lose it.
     const spots = [
       ...inside,
+      ...edge,
       ...Array.from({ length: MAX_ZONE_SIDE_ROWS }, (_, row) => [
         { at: f[1], side: 1 as const, left: x1 + REF_LABEL_DX, inside: false, row },
         { at: f[0], side: -1 as const, left: x0 - REF_LABEL_DX - width, inside: false, row },
@@ -1274,6 +1299,13 @@ const xZoneLabelMarks = <T, X extends ChartX>(
     ]
     type Spot = (typeof spots)[number]
     const offset = (spot: Spot): number => spot.row * stepPx
+    // Every other zone as a box (its x span, its y span or the plot's): a caption beside its zone never lies over one.
+    const neighbours = (input.xZones ?? []).flatMap((o, j): LabelBox[] => {
+      const g = j === i ? null : xZoneFractions(o, model)
+      if (g === null) return []
+      const [from, to] = o.y ? [o.y.from, o.y.to] : [lo, hi]
+      return [{ fx0: g[0], fx1: g[1], y0: Math.min(from, to), y1: Math.max(from, to) }]
+    })
     // The caption's line box from the zone's top, in values, for the collision pass.
     const boxOf = (spot: Spot): LabelBox => ({
       fx0: spot.left / plotWidth,
@@ -1291,23 +1323,20 @@ const xZoneLabelMarks = <T, X extends ChartX>(
         bottom: edge + rowBottom + offset(spot),
       }
     }
-    // `relaxed` 1 lets a bar or dot sit under the caption, 2 lets a line or a reference rule run
-    // through it too: a zone that names the answer keeps its caption over a mark, never loses it to
-    // one, and a rule struck through the text reads worse than a mark under it, so it goes last.
-    const fits = (s: Spot, relaxed: 0 | 1 | 2): boolean =>
+    // A caption sits where no line or rule passes through its box, or it is dropped: a struck-through
+    // caption reads worse than none, and the zone's fill still shows what it spans. `marks` 1 lets a bar
+    // or a dot sit under it when no spot is clear of them: a zone that names the answer keeps its caption.
+    const fits = (s: Spot, marks: 0 | 1): boolean =>
       s.left >= 0 &&
       s.left + width <= (s.inside ? x1 - REF_LABEL_DX : plotWidth) &&
-      (s.inside || pxOf(s).bottom <= plotHeight) &&
+      (s.inside || !neighbours.some((o) => boxesMeet(boxOf(s), o))) &&
+      (s.inside || (pxOf(s).top >= 0 && pxOf(s).bottom <= plotHeight)) &&
       !avoid().some((b) => boxesMeet(boxOf(s), b)) &&
-      (relaxed >= 1 || !ctx.xBlocked(pxOf(s))) &&
-      (relaxed === 2 || !ctx.lineHits(pxOf(s)))
+      (marks === 1 || !ctx.xBlocked(pxOf(s))) &&
+      !ctx.lineHits(pxOf(s))
     // Before the plot is measured the caption keeps its first spot.
     const spot =
-      plotWidth <= 0
-        ? spots[0]
-        : (spots.find((s) => fits(s, 0)) ??
-          spots.find((s) => fits(s, 1)) ??
-          spots.find((s) => fits(s, 2)))
+      plotWidth <= 0 ? spots[0] : (spots.find((s) => fits(s, 0)) ?? spots.find((s) => fits(s, 1)))
     if (spot === undefined) return []
     if (plotWidth > 0) ctx.placed.left.push(boxOf(spot))
     return [
@@ -2008,17 +2037,33 @@ export function compileCartesian<T, X extends ChartX>(
         }
       let captions: RefLabelContext<T, X> | undefined
       let lineMemo: PxBox[] | undefined
+      // The labels a page's own marks landed: the captions placed after them keep clear of these.
+      const pageLabels: PxBox[] = []
       const captionContext = (): RefLabelContext<T, X> => {
         if (captions !== undefined) return captions
         access.read()
         const size = access.size()
         const plotWidth = size?.width ?? width
+        // A reference rule is a line a caption keeps off too, level with the series lines.
+        const lineHits: RefLabelContext<T, X>['lineHits'] = (box) => {
+          const frame = { width: plotWidth, height: size?.height ?? height }
+          lineMemo ??= [...lineBoxes(frame), ...refRuleBoxes(frame)]
+          return lineMemo.some(
+            (b) =>
+              b.left < box.x1 &&
+              b.left + b.width > box.x0 &&
+              b.top < box.bottom &&
+              b.top + b.height > box.top,
+          )
+        }
+        const marksBlock = xBlocked(plotWidth, size?.height ?? height)
         const xSpots = xRefLabelSpots({
           lines: input.xRefLines,
           fraction: (x, at) => edgeFraction(model, x, at),
           plotWidth,
           fontSize: BASALT.text.micro,
-          blocked: xBlocked(plotWidth, size?.height ?? height),
+          // A line path or a horizontal rule through a rule's caption strikes it as a bar or a dot does.
+          blocked: (box) => marksBlock(box) || lineHits(box),
           plotHeight: size?.height ?? height,
         })
         captions = {
@@ -2026,26 +2071,21 @@ export function compileCartesian<T, X extends ChartX>(
           plotHeight: size?.height ?? height,
           lines: linesOn,
           marks: marksOn,
-          xBlocked: xBlocked(plotWidth, size?.height ?? height),
-          lineHits: (box) => {
-            // A reference rule is a line a caption keeps off too, level with the series lines.
-            const frame = { width: plotWidth, height: size?.height ?? height }
-            lineMemo ??= [...lineBoxes(frame), ...refRuleBoxes(frame)]
-            return lineMemo.some(
-              (b) =>
-                b.left < box.x1 &&
-                b.left + b.width > box.x0 &&
-                b.top < box.bottom &&
-                b.top + b.height > box.top,
-            )
+          xBlocked: marksBlock,
+          lineHits,
+          get claimed() {
+            return [...claimedLabelBoxes(plot), ...pageClaims()]
           },
-          claimed: claimedLabelBoxes(plot),
           xCaptions: xRefLabelBoxes(xSpots, { plotWidth, fontSize: BASALT.text.micro }),
           placed: { left: [], right: [] },
           axes,
           model,
         }
         return captions
+      }
+      const pageClaims = (): LabelBox[] => {
+        const frame = { width: captions?.plotWidth ?? 0, height: captions?.plotHeight ?? 0 }
+        return pageLabels.map((b) => valueBox(b, axes.left.domain, frame))
       }
       const hasXCaption = (input.xRefLines ?? []).some((l) => l.label)
       // The captions are placed once, in one order: the vertical rules', then the reference
@@ -2159,9 +2199,21 @@ export function compileCartesian<T, X extends ChartX>(
         captionMarks()
         const rightDomain = axes.right?.domain ?? axes.left.domain
         return [
-          ...ctx.xCaptions.map((b) => captionPx(b, frame)),
           ...ctx.placed.left.map((b) => pxBox(b, axes.left.domain, frame)),
           ...ctx.placed.right.map((b) => pxBox(b, rightDomain, frame)),
+          ...hostBoxesBeforeCaptions(),
+        ]
+      }
+      /**
+       * What a label keeps clear of before the reference and zone captions are placed: the vertical
+       * rules' captions, the end labels, the lines and the rules. A page's own labels are placed
+       * against these alone, and the captions that come after give way to them.
+       */
+      const hostBoxesBeforeCaptions = (): PxBox[] => {
+        const ctx = captionContext()
+        const frame = { width: ctx.plotWidth, height: ctx.plotHeight }
+        return [
+          ...ctx.xCaptions.map((b) => captionPx(b, frame)),
           ...ctx.claimed.map((b) => pxBox(b, axes.left.domain, frame)),
           ...lineBoxes(frame),
           ...refRuleBoxes(frame),
@@ -2209,9 +2261,21 @@ export function compileCartesian<T, X extends ChartX>(
           clear: hostBoxesBesidesBars(),
         })
       })()
+      // The page's own labels come before the captions unless a value label already placed them: a
+      // caption is the first thing to give way to a data label.
+      const captionsFirst = placedCaptions !== undefined
       const kindMarks = withHostObstacles(
-        () => [...hostBoxes(), ...valueLabels.boxes],
+        captionsFirst
+          ? () => [...hostBoxes(), ...valueLabels.boxes]
+          : () => [
+              ...hostBoxesBeforeCaptions(),
+              ...barBoxes({
+                width: captionContext().plotWidth,
+                height: captionContext().plotHeight,
+              }),
+            ],
         () => input.marks(plot),
+        captionsFirst ? undefined : pageLabels,
       )
       const { xPlotWidth, over, zoneCaptions } = captionMarks()
       // A stack's bars are capped together: its total past the edge is one caret, not one per segment.
@@ -2283,7 +2347,9 @@ export function compileCartesian<T, X extends ChartX>(
             fraction: (x, at) => edgeFraction(model, x, at),
             top: Math.max(...axes.left.domain),
             plotWidth: xPlotWidth,
-            blocked: hasXCaption ? captionContext().xBlocked : undefined,
+            blocked: hasXCaption
+              ? (box) => captionContext().xBlocked(box) || captionContext().lineHits(box)
+              : undefined,
             plotHeight: hasXCaption ? captionContext().plotHeight : undefined,
           }),
           ...crosshairMarks({
@@ -2305,7 +2371,8 @@ export function compileCartesian<T, X extends ChartX>(
             names ||
             (input.xRefLines?.length ?? 0) > 0 ||
             offScale.length > 0 ||
-            stackCaps.length > 0,
+            stackCaps.length > 0 ||
+            visible.some((s) => s.mark === 'line'),
         }),
         theme: CHART_THEME,
         ...(input.bare === true

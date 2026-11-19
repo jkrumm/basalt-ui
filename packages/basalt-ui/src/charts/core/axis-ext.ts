@@ -85,6 +85,10 @@ const CARETS = { top: '▲', bottom: '▼' } as const
 
 /** Air between a caret and the value label beside it, px: the caret's half width and the dot's reach. */
 const CAP_LABEL_GAP = 8
+/** The gaps a value beside a bare caret tries, px: a line past the caret takes the next gap that clears it. */
+const CAP_LABEL_GAPS: readonly number[] = [CAP_LABEL_GAP, 16, 24, 32]
+/** The wider gaps a value tries when the near ones are taken: only across bare plot, never past another caret. */
+const CAP_LABEL_FAR_GAPS: readonly number[] = [48, 64]
 
 /** Where a clamped mark's true value is written: the plot's size and what to keep clear of. */
 export type CapLabelsOptions = {
@@ -115,7 +119,15 @@ const BESIDE_GAP = 2
  */
 function capValueMarks(
   found: { top: CapMark[]; bottom: CapMark[] },
-  opts: { id: string; edge: readonly [number, number]; scale: 'y' | 'y2' } & CapLabelsOptions,
+  opts: {
+    id: string
+    edge: readonly [number, number]
+    scale: 'y' | 'y2'
+    /** The boxes of the values already written on this plot, shared by every series of one chart. */
+    taken?: LabelBox[]
+    /** The plot fractions of every caret on the chart: a value never lies over one. */
+    carets?: { top: readonly number[]; bottom: readonly number[] }
+  } & CapLabelsOptions,
 ): ChartMarks {
   if (found.top.length === 0 && found.bottom.length === 0) return []
   const frame = opts.frame()
@@ -128,7 +140,7 @@ function capValueMarks(
   const byKey = new Map(sides.map((s) => [s.key, s]))
   const edgeY = (side: 'top' | 'bottom'): number => (side === 'top' ? 0 : frame.height)
   const pending = new Set(byKey.keys())
-  const taken: LabelBox[] = []
+  const taken: LabelBox[] = opts.taken ?? []
   type Spot = 'right' | 'left' | 'below' | 'above'
   const marks: (CapMark & {
     side: 'top' | 'bottom'
@@ -184,7 +196,15 @@ function capValueMarks(
         : undefined,
     { gap: INSIDE_GAP, obstacles: (opts.clear ?? opts.obstacles)(), color: CV.surface },
   )
-  const all = opts.obstacles()
+  const caretBoxes: LabelBox[] = (['top', 'bottom'] as const).flatMap((side) =>
+    (opts.carets?.[side] ?? []).map((f) => ({
+      left: f * frame.width - CARET_SIZE / 2,
+      top: side === 'top' ? 0 : frame.height - CARET_SIZE - 1,
+      width: CARET_SIZE,
+      height: CARET_SIZE + 1,
+    })),
+  )
+  const all = [...opts.obstacles(), ...caretBoxes]
   // A bar too narrow for it: beside the bar's end, right of the bar else left.
   for (const [sign, spot] of [
     [1, 'right'],
@@ -197,14 +217,53 @@ function capValueMarks(
           : { x: centre(m) + (sign * room(m)) / 2, y: rim(side), spots: [spot] },
       { gap: BESIDE_GAP, obstacles: all },
     )
-  // A mark with no bar under it: beside its caret, right of it else left.
-  land(
-    (side, m) =>
-      m.slot === undefined
-        ? { x: m.f * frame.width, y: rim(side), spots: ['right', 'left'] }
-        : undefined,
-    { gap: CAP_LABEL_GAP, obstacles: all },
+  // A mark with no bar under it: beside its caret, right of it else left, at the first gap that clears.
+  for (const gap of CAP_LABEL_GAPS)
+    land(
+      (side, m) =>
+        m.slot === undefined
+          ? { x: m.f * frame.width, y: rim(side), spots: ['right', 'left'] }
+          : undefined,
+      { gap, obstacles: all },
+    )
+  // Further out, one value at a time, highest first: the stretch between its caret and its box holds no
+  // other caret, so the number cannot be read as belonging to a neighbour.
+  const byMagnitude = [...pending].toSorted(
+    (x, y) => (byKey.get(y)?.m.magnitude ?? 0) - (byKey.get(x)?.m.magnitude ?? 0),
   )
+  for (const gap of CAP_LABEL_FAR_GAPS)
+    for (const key of byMagnitude)
+      for (const spot of ['right', 'left'] as const) {
+        const entry = byKey.get(key)
+        if (entry === undefined || !pending.has(key) || entry.m.slot !== undefined) continue
+        const x = entry.m.f * frame.width
+        const corridor: LabelBox = {
+          left: spot === 'right' ? x : x - gap,
+          top: entry.side === 'top' ? 0 : frame.height - CARET_SIZE - 1,
+          width: gap,
+          height: CARET_SIZE + 1,
+        }
+        // The caret's own box is not a neighbour: other carets and written values block the way.
+        const blockers = [
+          ...caretBoxes.filter((b) => Math.abs(b.left + CARET_SIZE / 2 - x) > 0.5),
+          ...taken,
+        ]
+        if (
+          blockers.some(
+            (b) =>
+              b.left < corridor.left + corridor.width &&
+              corridor.left < b.left + b.width &&
+              b.top < corridor.top + corridor.height &&
+              corridor.top < b.top + b.height,
+          )
+        )
+          continue
+        land(
+          (side, m) =>
+            m === entry.m && m.slot === undefined ? { x, y: rim(side), spots: [spot] } : undefined,
+          { gap, obstacles: all },
+        )
+      }
   if (marks.length === 0) return []
   type Mark = (typeof marks)[number]
   return [
@@ -249,31 +308,61 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
   /** Bars whose own `values` label was placed, `<series key>:<x fraction>`: their value is not written twice. */
   written?: ReadonlySet<string>
 }): ChartMarks {
-  return opts.series.flatMap((s) => {
+  // One pass over the chart's values: a value past the cap is written once, and no two labels overprint.
+  const taken: LabelBox[] = []
+  const written = new Set<string>()
+  const scanned = opts.series.flatMap((s) => {
+    const domain = opts.domainOf(s)
+    if (domain === null) return []
     const slot = opts.slotOf?.(s)
     // A series that labels its own values is left to its labels, where they landed.
     const own = s.values !== undefined && s.values !== false
-    const domain = opts.domainOf(s)
-    if (domain === null) return []
     const found = { top: [] as number[], bottom: [] as number[] }
     const values = { top: [] as CapMark[], bottom: [] as CapMark[] }
+    // An unbroken stretch of data past one end of the cap is written once, at its furthest point:
+    // the number says how far the stretch reaches, and every caret of it is still drawn.
+    let run: { side: 'top' | 'bottom'; peak: CapMark } | undefined
+    const close = (): void => {
+      if (run === undefined) return
+      const { side, peak } = run
+      run = undefined
+      // Two series past the cap at one datum with one true value write it once.
+      const once = `${side}:${peak.f}:${peak.text}`
+      if (written.has(once)) return
+      written.add(once)
+      values[side].push(peak)
+    }
     for (const d of opts.data) {
       const v = s.getValue(d)
       const side = v === null ? null : offScaleSide(v, domain)
       const f = side === null ? null : opts.fraction(opts.x(d))
-      if (side === null || f === null || v === null) continue
+      if (side === null || f === null || v === null) {
+        close()
+        continue
+      }
       found[side].push(f)
       if (own && (opts.written === undefined || opts.written.has(`${s.key}:${f}`))) continue
-      values[side].push({
+      if (run !== undefined && run.side !== side) close()
+      const at: CapMark = {
         f,
         text: opts.formatOf(s)(v, d),
         color: s.color,
         magnitude: Math.abs(v),
         ...(slot !== undefined && { slot }),
-      })
+      }
+      if (run === undefined || at.magnitude > run.peak.magnitude) run = { side, peak: at }
     }
+    close()
+    return [{ s, domain, found, values }]
+  })
+  // Every caret of the chart is a mark a value keeps clear of, whichever series drew it.
+  const carets = {
+    top: scanned.flatMap((x) => x.found.top),
+    bottom: scanned.flatMap((x) => x.found.bottom),
+  }
+  return scanned.flatMap(({ s, domain, found, values }) => {
     const edge = opts.edgeOf?.(s) ?? domain
-    const carets = (['top', 'bottom'] as const).flatMap((side) =>
+    const marks = (['top', 'bottom'] as const).flatMap((side) =>
       found[side].length === 0
         ? []
         : [
@@ -297,9 +386,11 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
       id: `off-scale-${s.key}-value`,
       edge,
       scale: opts.yScaleOf(s),
+      taken,
+      carets,
       ...opts.labels,
     })
-    return [...carets, ...named]
+    return [...marks, ...named]
   }) as unknown as ChartMarks
 }
 

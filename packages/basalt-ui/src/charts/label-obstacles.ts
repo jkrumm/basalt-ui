@@ -1,7 +1,8 @@
 /**
  * What a host chart lays under the marks a page draws through `CartesianChart.custom`, as boxes in
  * the plot's own px (from its top left, the space `ChartPlot.x` and `ChartPlot.y` answer in): the
- * zone and rule captions, the end labels, the line paths and the bodies of the bars. While the
+ * end labels, the line paths, the rules and the bodies of the bars; the zone and rule captions are
+ * placed after the page's labels and give way to them. While the
  * host builds the custom marks it publishes them here, and `chartLabels.place` adds them to the
  * obstacles a page passes, so a placed label clears what the page cannot see. Outside a host (a
  * hand-built SVG) nothing is published and `place` is as it was.
@@ -24,17 +25,34 @@ const PIECE_PX = 6
 const RULE_REACH = 2
 
 let current: (() => readonly LabelBox[]) | undefined
+let sink: LabelBox[] | undefined
 
-/** Runs `run` with `boxes` as the host's obstacles; read lazily, once, on the first `place`. */
-export function withHostObstacles<T>(boxes: () => readonly LabelBox[], run: () => T): T {
+/**
+ * Runs `run` with `boxes` as the host's obstacles; read lazily, once, on the first `place`. The
+ * labels a page's own `chartLabels.place` lands while it runs are pushed to `placed`, so the host
+ * can have its captions give way to them.
+ */
+export function withHostObstacles<T>(
+  boxes: () => readonly LabelBox[],
+  run: () => T,
+  placed?: LabelBox[],
+): T {
   const before = current
+  const beforeSink = sink
   let memo: readonly LabelBox[] | undefined
   current = () => (memo ??= boxes())
+  sink = placed
   try {
     return run()
   } finally {
     current = before
+    sink = beforeSink
   }
+}
+
+/** Tells the host which boxes a page's own label pass landed; nothing outside a host. */
+export function recordPlacedLabels(boxes: readonly LabelBox[]): void {
+  sink?.push(...boxes)
 }
 
 /** The boxes the host published for the marks being built; none outside a host. */
@@ -52,6 +70,18 @@ export function pxBox(box: ValueBox, domain: readonly [number, number], plot: Pl
     top,
     width: (box.fx1 - box.fx0) * plot.width,
     height: bottom - top,
+  }
+}
+
+/** A px box as a share of the plot width and a span of values on an axis with `domain`: `pxBox` read back. */
+export function valueBox(box: LabelBox, domain: readonly [number, number], plot: PlotPx): ValueBox {
+  const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+  const perPx = plot.height > 0 ? (hi - lo) / plot.height : 0
+  return {
+    fx0: plot.width > 0 ? box.left / plot.width : 0,
+    fx1: plot.width > 0 ? (box.left + box.width) / plot.width : 0,
+    y0: hi - (box.top + box.height) * perPx,
+    y1: hi - box.top * perPx,
   }
 }
 
