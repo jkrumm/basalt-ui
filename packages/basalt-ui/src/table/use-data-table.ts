@@ -211,12 +211,12 @@ function domainOf(spec: Pick<KindSpec<never>, 'kind'>, zone: string | undefined)
  * The search over every column (client mode): a row matches when any column's search text (what
  * its cell shows and the stored value) contains the phrase, case-insensitive.
  */
-function searchFnOf<T>(specs: readonly KindSpec<T>[], format: Format) {
+function searchFnOf<T>(specs: readonly KindSpec<T>[], format: Format, now: number) {
   const byId = new Map(specs.map((spec) => [spec.id, spec]))
   return (row: { original: T }, columnId: string, phrase: unknown): boolean => {
     const needle = String(phrase).trim().toLocaleLowerCase()
     if (needle === '') return true
-    const text = byId.get(columnId)?.search?.(row.original, format)
+    const text = byId.get(columnId)?.search?.(row.original, format, now)
     return text !== undefined && text.toLocaleLowerCase().includes(needle)
   }
 }
@@ -387,7 +387,7 @@ export function useDataTable<
     })) as never,
     data,
     getRowId,
-    globalFilterFn: searchFnOf(specs, format),
+    globalFilterFn: searchFnOf(specs, format, now),
     state: {
       sorting: request.sort,
       columnFilters: toColumnFilters(request.filters, known),

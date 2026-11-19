@@ -140,6 +140,35 @@ describe('search reads every column', () => {
     expect(model3?.rows.map((r) => r.id)).toEqual(['ok'])
   })
 
+  test('a relative time is found as its cell writes it, at the table clock', () => {
+    type Seen = { id: string; at: string }
+    const d = col<Seen>()
+    let model4: TableModel<Seen> | undefined
+    const now = Date.parse('2026-11-19T12:00:00Z')
+    function Seens(): ReactElement {
+      const t = useDataTable<Seen>({
+        id: 'seen',
+        label: 'Seen',
+        columns: [d.relativeTime('at', { header: 'Seen' })],
+        data: [
+          { id: 'old', at: '2026-11-16T12:00:00Z' },
+          { id: 'new', at: '2026-11-19T11:00:00Z' },
+        ],
+        getRowId: (r) => r.id,
+        mode: { kind: 'client' },
+        now,
+      })
+      const built = modelOf(t)
+      useEffect(() => {
+        model4 = built
+      })
+      return <DataTable table={t} />
+    }
+    render(<Seens />)
+    act(() => model4?.state.setRequest({ q: 'days ago' }))
+    expect(model4?.rows.map((r) => r.id)).toEqual(['old'])
+  })
+
   test('a server table keeps every row it was sent and carries the phrase as q', () => {
     render(<Subject server />)
     expect(searchFor('legal')).toEqual(['a', 'b', 'c'])

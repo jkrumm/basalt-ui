@@ -103,7 +103,7 @@ export type KindSpec<T> = {
    * formatted number or date) and the stored value. Absent on `spark` and `actions`, which search
    * never reads.
    */
-  search?: (row: T, format: Format) => string
+  search?: (row: T, format: Format, now: number) => string
   /** `null` for `actions`: never hidden by a tier. */
   priority: Priority | null
   pin: 'start' | 'end' | null
