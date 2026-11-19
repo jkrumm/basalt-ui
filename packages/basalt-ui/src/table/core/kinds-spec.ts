@@ -6,7 +6,7 @@
  */
 import type { ReactNode } from 'react'
 import type { Format } from '../../core/format'
-import type { Box, Tone } from '../../core/ports'
+import type { Box, IconComponent, Tone } from '../../core/ports'
 import type { CardSlot, DateRangeLike, KindColumn, Priority, RowAction } from '../contract'
 import type { SortFnName } from './features'
 
@@ -75,6 +75,8 @@ export type KindSpec<T> = {
   kind: KindName
   /** Header text; `money` and `number` with `unit` carry the unit here, never in the cell. */
   header: string
+  /** An icon drawn before the header text. */
+  headerIcon?: IconComponent
   /** The cell's raw value; `null` or `undefined` is absent and renders a muted dash. */
   value: (row: T) => unknown
   align: Align
@@ -96,6 +98,12 @@ export type KindSpec<T> = {
   content?: { measure: (row: T) => number; short?: { minCh: number; maxCh: number } }
   /** `entity` with a sub line under its name: the title column may grow wider before the filler column takes the rest. */
   sub?: boolean
+  /**
+   * The text the table's search reads in client mode: what the cell shows (a status label, a
+   * formatted number or date) and the stored value. Absent on `spark` and `actions`, which search
+   * never reads.
+   */
+  search?: (row: T, format: Format) => string
   /** `null` for `actions`: never hidden by a tier. */
   priority: Priority | null
   pin: 'start' | 'end' | null

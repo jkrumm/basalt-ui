@@ -9,7 +9,7 @@
  * matter. `c.codec` takes ids and kinds only, so it can sit at module scope.
  */
 import type { ReactNode } from 'react'
-import type { DateStyle } from '../../core/format'
+import type { CalendarDate, DateStyle, Format } from '../../core/format'
 import type { Box, Delta, IconComponent, NavTarget, Tone } from '../../core/ports'
 import type { CardSlot, DateRangeLike, KindColumn, Priority, RowAction } from '../contract'
 import { codec } from './kinds-codec'
@@ -23,9 +23,11 @@ import {
   MeterCell,
   RelativeTimeCell,
   StatusCell,
+  WithIcon,
   formatMoney,
   formatNumber,
   isAbsent,
+  toInstant,
 } from './kinds-cells'
 import { KIND_DEFAULTS, KIND_SPEC } from './kinds-spec'
 import type {
@@ -65,6 +67,18 @@ export type CommonOptions = {
   card?: CardSlot
   /** `false` turns sorting off for this column. */
   sortable?: false
+  /** An icon drawn before the header text (any component with the `IconComponent` shape). */
+  headerIcon?: IconComponent
+}
+
+/**
+ * A value cell's leading icon, per row (`status`, `boolean`, `date`, `relativeTime`), the same
+ * option `entity` takes: a status icon takes the dot's place in its tone, a boolean icon the check
+ * or cross, a date icon sits before the date.
+ */
+type CellIconOption<T> = {
+  /** The cell's icon for this row: a status icon replaces the dot, a boolean icon the check or cross. */
+  icon?: (row: T) => IconComponent | undefined
 }
 
 export type EntityOptions<T> = CommonOptions & {
@@ -105,17 +119,20 @@ export type NumberOptions = CommonOptions &
   FooterOption &
   RangeFilterOptions & { unit?: string; digits?: number }
 export type MoneyOptions = CommonOptions & FooterOption & RangeFilterOptions & { currency: string }
-export type DateOptions = CommonOptions & DateFilterOptions & { style?: DateStyle }
-export type RelativeTimeOptions = CommonOptions & DateFilterOptions
-export type StatusOptions<O extends string = string> = CommonOptions & {
-  options: readonly O[]
-  /** The text of each option in the cell, the phone card and the column filter; the stored value without it. */
-  labels?: Readonly<Record<O, string>>
-  /** Receives the closed option union `options` declares, so a `Record<Option, Tone>` indexes without a cast. */
-  tone?: (value: O) => Tone
-  /** `'multi'` filters by a checklist of the options; the user can also rank them from the header. */
-  filter?: 'multi'
-}
+export type DateOptions<T = unknown> = CommonOptions &
+  DateFilterOptions &
+  CellIconOption<T> & { style?: DateStyle }
+export type RelativeTimeOptions<T = unknown> = CommonOptions & DateFilterOptions & CellIconOption<T>
+export type StatusOptions<O extends string = string, T = unknown> = CommonOptions &
+  CellIconOption<T> & {
+    options: readonly O[]
+    /** The text of each option in the cell, the phone card and the column filter; the stored value without it. */
+    labels?: Readonly<Record<O, string>>
+    /** Receives the closed option union `options` declares, so a `Record<Option, Tone>` indexes without a cast. */
+    tone?: (value: O) => Tone
+    /** `'multi'` filters by a checklist of the options; the user can also rank them from the header. */
+    filter?: 'multi'
+  }
 export type DeltaOptions = CommonOptions &
   RangeFilterOptions & {
     polarity: Delta['polarity']
@@ -126,10 +143,11 @@ export type DeltaOptions = CommonOptions &
 /** `filter: 'range'` filters by a min and a max over the meter's own scale, 0 to `max`. */
 export type MeterOptions = CommonOptions & { max?: number; filter?: 'range' }
 /** `filter: 'multi'` filters by Yes or No (the two `labels`). */
-export type BooleanOptions = CommonOptions & {
-  labels?: readonly [string, string]
-  filter?: 'multi'
-}
+export type BooleanOptions<T = unknown> = CommonOptions &
+  CellIconOption<T> & {
+    labels?: readonly [string, string]
+    filter?: 'multi'
+  }
 export type SparkOptions<T> = Omit<CommonOptions, 'id' | 'sortable'> & {
   label: string
   render: (row: T, box: Box) => ReactNode
@@ -137,6 +155,8 @@ export type SparkOptions<T> = Omit<CommonOptions, 'id' | 'sortable'> & {
 export type SelectOptions<T> = CommonOptions & SelectEdit<T> & { filter?: 'multi' }
 export type CustomOptions<T> = {
   header?: string
+  /** An icon drawn before the header text. */
+  headerIcon?: IconComponent
   render: (row: T, env: CellEnv) => ReactNode
   /** Required: the value the column sorts by. */
   sortValue: (row: T) => string | number | null | undefined
@@ -154,12 +174,12 @@ export type Col<T> = {
   text(key: KeysOf<T, string>, o?: TextOptions): KindColumn<T>
   number(key: KeysOf<T, number>, o?: NumberOptions): KindColumn<T>
   money(key: KeysOf<T, number>, o: MoneyOptions): KindColumn<T>
-  date(key: KeysOf<T, string | number | Date>, o?: DateOptions): KindColumn<T>
-  relativeTime(key: KeysOf<T, string | number | Date>, o?: RelativeTimeOptions): KindColumn<T>
-  status<const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O>): KindColumn<T>
+  date(key: KeysOf<T, string | number | Date>, o?: DateOptions<T>): KindColumn<T>
+  relativeTime(key: KeysOf<T, string | number | Date>, o?: RelativeTimeOptions<T>): KindColumn<T>
+  status<const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O, T>): KindColumn<T>
   delta(key: KeysOf<T, number>, o: DeltaOptions): KindColumn<T>
   meter(key: KeysOf<T, number>, o?: MeterOptions): KindColumn<T>
-  boolean(key: KeysOf<T, boolean>, o?: BooleanOptions): KindColumn<T>
+  boolean(key: KeysOf<T, boolean>, o?: BooleanOptions<T>): KindColumn<T>
   spark(id: string, o: SparkOptions<T>): KindColumn<T>
   select(key: KeysOf<T, string>, o: SelectOptions<T>): KindColumn<T>
   actions(actions: readonly RowAction<T>[], o?: { header?: string }): KindColumn<T>
@@ -173,7 +193,7 @@ export type Col<T> = {
 
 // ---- Dev validation -----------------------------------------------------------------------
 
-const COMMON = ['header', 'id', 'priority', 'card', 'sortable'] as const
+const COMMON = ['header', 'id', 'priority', 'card', 'sortable', 'headerIcon'] as const
 
 /** Allowed and required option keys per kind; anything else throws in dev naming the column. */
 const OPTION_KEYS: Readonly<
@@ -189,17 +209,20 @@ const OPTION_KEYS: Readonly<
     allowed: [...COMMON, 'currency', 'footer', 'filter', 'bounds'],
     required: ['currency'],
   },
-  date: { allowed: [...COMMON, 'style', 'filter', 'picker'], required: [] },
-  relativeTime: { allowed: [...COMMON, 'filter', 'picker'], required: [] },
-  status: { allowed: [...COMMON, 'options', 'labels', 'tone', 'filter'], required: ['options'] },
+  date: { allowed: [...COMMON, 'style', 'filter', 'picker', 'icon'], required: [] },
+  relativeTime: { allowed: [...COMMON, 'filter', 'picker', 'icon'], required: [] },
+  status: {
+    allowed: [...COMMON, 'options', 'labels', 'tone', 'filter', 'icon'],
+    required: ['options'],
+  },
   delta: {
     allowed: [...COMMON, 'polarity', 'unit', 'currency', 'filter', 'bounds'],
     required: ['polarity'],
   },
   meter: { allowed: [...COMMON, 'max', 'filter'], required: [] },
-  boolean: { allowed: [...COMMON, 'labels', 'filter'], required: [] },
+  boolean: { allowed: [...COMMON, 'labels', 'filter', 'icon'], required: [] },
   spark: {
-    allowed: ['header', 'priority', 'card', 'label', 'render'],
+    allowed: ['header', 'priority', 'card', 'label', 'render', 'headerIcon'],
     required: ['label', 'render'],
   },
   select: {
@@ -208,7 +231,7 @@ const OPTION_KEYS: Readonly<
   },
   actions: { allowed: ['header'], required: [] },
   custom: {
-    allowed: ['header', 'render', 'sortValue', 'card', 'priority', 'width', 'align'],
+    allowed: ['header', 'headerIcon', 'render', 'sortValue', 'card', 'priority', 'width', 'align'],
     required: ['render', 'sortValue', 'card', 'priority'],
   },
 }
@@ -344,6 +367,8 @@ type Base<T> = {
   value: (row: T) => unknown
   common?: CommonOptions | undefined
   draw: ((value: unknown, row: T, env: CellEnv) => ReactNode) | null
+  /** What the cell shows of a present value, for search; the stored value is searched beside it. */
+  text?: (value: unknown, row: T, format: Format) => string
   /** Renders even when the value is absent (`spark`, `custom`). */
   always?: boolean
   extra?: Partial<KindSpec<T>>
@@ -353,8 +378,12 @@ type Base<T> = {
 const HEADER_CHROME_CH = 5
 /** A header asks for floor room up to this many `ch`; a longer one truncates (its title shows it whole). */
 const HEADER_MAX_CH = 24
-/** A filterable header's extra room in `ch`: the filter mark (a 24 px button) its column shows while filtered. */
+/** A filterable header's extra room in `ch`: the filter button (24 px) it shows at rest. */
 const FILTER_MARK_CH = 3
+/** A header icon's room in `ch`: 14 px and its gap. */
+const HEADER_ICON_CH = 2
+/** A status icon is wider than the dot it replaces by this many `ch`. */
+const STATUS_ICON_EXTRA_CH = 1
 
 /** A `text` column whose widest loaded value is at most this many `ch` sizes to it; a longer one stays flexible. */
 const SHORT_TEXT_MAX_CH = 24
@@ -392,6 +421,8 @@ function build<T>(b: Base<T>): KindColumn<T> {
     id: b.id,
     kind: b.kind,
     header: b.header,
+    ...(common.headerIcon !== undefined && { headerIcon: common.headerIcon }),
+    ...(b.kind !== 'spark' && b.kind !== 'actions' && { search: searchOf(b) }),
     value: b.value,
     align: defaults.align,
     numerals: defaults.numerals,
@@ -406,11 +437,37 @@ function build<T>(b: Base<T>): KindColumn<T> {
     render,
     ...b.extra,
   }
-  // A filterable header keeps room for its filter mark, so filtering a column never cuts its label.
-  if (spec.filter !== null)
-    spec.width = floorOf(spec.width, b.header, HEADER_CHROME_CH + FILTER_MARK_CH)
+  // A header keeps room for its icon and its filter button, so no control ever cuts its label.
+  const chrome =
+    HEADER_CHROME_CH +
+    (spec.headerIcon === undefined ? 0 : HEADER_ICON_CH) +
+    (spec.filter === null ? 0 : FILTER_MARK_CH)
+  if (chrome !== HEADER_CHROME_CH) spec.width = floorOf(spec.width, b.header, chrome)
   const column: BuiltColumn<T> = { __brand: 'KindColumn', id: b.id, [KIND_SPEC]: spec }
   return column
+}
+
+/** The search text of a row: what the cell shows, then the stored value, one per line. */
+function searchOf<T>(b: Base<T>): (row: T, format: Format) => string {
+  return (row, format) => {
+    const value = b.value(row)
+    if (isAbsent(value)) return ''
+    const raw = value instanceof Date ? value.toISOString() : String(value)
+    const shown = b.text?.(value, row, format)
+    return shown === undefined || shown === '' ? raw : `${shown}\n${raw}`
+  }
+}
+
+const CALENDAR_DAY = /^\d{4}-\d{2}-\d{2}$/
+
+/** A date value as its cell writes it, and its ISO day, so `2026-11-03` finds a timestamp too. */
+function dateText(value: unknown, format: Format, style: DateStyle): string {
+  if (typeof value === 'string' && CALENDAR_DAY.test(value)) {
+    return format.date(value as CalendarDate, style)
+  }
+  const instant = toInstant(value)
+  if (instant === null) return ''
+  return `${format.date(instant, style)}\n${instant.toISOString().slice(0, 10)}`
 }
 
 function byOption(options: readonly string[]): (a: unknown, b: unknown) => number {
@@ -431,7 +488,11 @@ function keyed<T>(
   key: string,
   o: CommonOptions | undefined,
   draw: Base<T>['draw'],
-  extra?: { header?: (base: string) => string; spec?: Partial<KindSpec<T>> },
+  extra?: {
+    header?: (base: string) => string
+    spec?: Partial<KindSpec<T>>
+    text?: Base<T>['text']
+  },
 ): KindColumn<T> {
   const id = o?.id ?? key
   validate(kind, id, o)
@@ -443,6 +504,7 @@ function keyed<T>(
     value: read<T>(key),
     common: o,
     draw,
+    ...(extra?.text !== undefined && { text: extra.text }),
     ...(extra?.spec === undefined ? {} : { extra: extra.spec }),
   })
 }
@@ -475,6 +537,7 @@ export function col<T>(): Col<T> {
           />
         ),
         {
+          text: (_v, row) => o?.sub?.(row) ?? '',
           spec: {
             filter: o?.filter === 'text' ? 'contains' : null,
             ...(o?.sub !== undefined && { sub: true }),
@@ -492,6 +555,7 @@ export function col<T>(): Col<T> {
       ),
     text: (key, o) =>
       keyed<T>('text', key, o, (v) => o?.labels?.[String(v)] ?? String(v), {
+        text: (v) => o?.labels?.[String(v)] ?? '',
         spec: {
           filter: o?.filter === 'text' ? 'contains' : null,
           content: {
@@ -518,6 +582,8 @@ export function col<T>(): Col<T> {
           typeof v === 'number' ? formatNumber(env.format, v, o?.digits) : String(v),
         {
           header: (h) => withUnit(h, o?.unit),
+          text: (v, _row, format) =>
+            typeof v === 'number' ? formatNumber(format, v, o?.digits) : '',
           spec: {
             ...footerOf<T>(o?.footer, (v, env) => formatNumber(env.format, v, o?.digits)).spec,
             ...rangeFilter<T>(o),
@@ -533,6 +599,8 @@ export function col<T>(): Col<T> {
           typeof v === 'number' ? formatMoney(env.format, v, o.currency) : String(v),
         {
           header: (h) => withUnit(h, o?.currency),
+          text: (v, _row, format) =>
+            typeof v === 'number' ? formatMoney(format, v, o.currency) : '',
           spec: {
             unit: o.currency,
             ...footerOf<T>(o?.footer, (v, env) => formatMoney(env.format, v, o.currency)).spec,
@@ -545,30 +613,43 @@ export function col<T>(): Col<T> {
         'date',
         key,
         o,
-        (v, _row, env) => <DateCell value={v} format={env.format} style={o?.style ?? 'short'} />,
-        { spec: dateFilter<T>(o) },
+        (v, row, env) => (
+          <WithIcon icon={o?.icon?.(row)}>
+            <DateCell value={v} format={env.format} style={o?.style ?? 'short'} />
+          </WithIcon>
+        ),
+        {
+          text: (v, _row, format) => dateText(v, format, o?.style ?? 'short'),
+          spec: dateFilter<T>(o),
+        },
       ),
     relativeTime: (key, o) =>
       keyed<T>(
         'relativeTime',
         key,
         o,
-        (v, _row, env) => <RelativeTimeCell value={v} format={env.format} now={env.now} />,
-        { spec: dateFilter<T>(o) },
+        (v, row, env) => (
+          <WithIcon icon={o?.icon?.(row)}>
+            <RelativeTimeCell value={v} format={env.format} now={env.now} />
+          </WithIcon>
+        ),
+        { text: (v, _row, format) => dateText(v, format, 'long'), spec: dateFilter<T>(o) },
       ),
-    status: <const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O>) =>
+    status: <const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O, T>) =>
       keyed<T>(
         'status',
         key,
         o,
         // A cell holds the stored value, which the column's `options` name as a closed list.
-        (v) => (
+        (v, row) => (
           <StatusCell
             value={o.labels?.[String(v) as O] ?? String(v)}
             tone={o.tone?.(String(v) as O) ?? 'neutral'}
+            icon={o.icon?.(row)}
           />
         ),
         {
+          text: (v) => o.labels?.[String(v) as O] ?? '',
           spec: {
             // The options are a closed list, so the widest word is known before a row loads.
             width: floorOf(
@@ -576,7 +657,10 @@ export function col<T>(): Col<T> {
                 ch: Math.max(
                   0,
                   ...(o?.options ?? []).map(
-                    (option) => (o?.labels?.[option] ?? option).length + STATUS_DOT_CH,
+                    (option) =>
+                      (o?.labels?.[option] ?? option).length +
+                      STATUS_DOT_CH +
+                      (o?.icon === undefined ? 0 : STATUS_ICON_EXTRA_CH),
                   ),
                 ),
                 flex: false,
@@ -607,7 +691,11 @@ export function col<T>(): Col<T> {
           ) : (
             String(v)
           ),
-        { spec: rangeFilter<T>(o) },
+        {
+          text: (v, _row, format) =>
+            typeof v === 'number' ? format.number(v, { signDisplay: 'exceptZero' }) : '',
+          spec: rangeFilter<T>(o),
+        },
       ),
     meter: (key, o) => {
       const id = o?.id ?? key
@@ -635,8 +723,9 @@ export function col<T>(): Col<T> {
         'boolean',
         key,
         o,
-        (v) => <BooleanCell value={v === true} labels={[yes, no]} />,
+        (v, row) => <BooleanCell value={v === true} labels={[yes, no]} icon={o?.icon?.(row)} />,
         {
+          text: (v) => (v === true ? yes : no),
           spec:
             o?.filter === 'multi'
               ? { filter: 'anyOf', options: ['true', 'false'], labels: { true: yes, false: no } }
@@ -658,6 +747,7 @@ export function col<T>(): Col<T> {
     },
     select: (key, o) =>
       keyed<T>('select', key, o, (v) => String(v), {
+        text: (_v, row) => o.label(row),
         spec: {
           edit: { label: o?.label, options: o?.options ?? [], commit: o?.commit },
           ...(o?.filter === 'multi' && { filter: 'anyOf', options: o.options }),
@@ -685,6 +775,7 @@ export function col<T>(): Col<T> {
         always: true,
         draw: (_v, row, env) => o.render(row, env),
         extra: {
+          ...(o.headerIcon !== undefined && { headerIcon: o.headerIcon }),
           sort: { fn: 'basic' },
           card: [o.card],
           cardFirst: true,
