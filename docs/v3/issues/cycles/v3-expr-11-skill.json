@@ -1,0 +1,22 @@
+{
+  "why": "Expression cycle 11 (docs/v3/cycles/expression-11.md) lost 19 of its 60 round-0 points to lessons the kit could already do (class `skill`), one P2 among them: n47 put its block reason on the mark's label and a card `sub`, both cut at 390 ('Blocked on owner:…'), F6 1 (expression-11.21). The fact count and the one-view check failed again on every page: X1 and X2 lost a point on 6 of 6 cases, as in cycle 10, after v3-expr-10-skill added tables for both. Three builders could not write the fact-count file, because the skill puts it at docs/design/<screen>.md and the trial fence keeps builders in their case directory; a consumer has no such fence, so that is not the whole cause.",
+  "what": "Skill and rule text for five lessons of expression cycle 11, and an answer to why the fact count and the one-view check do not hold.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** and packages/basalt-ui/agent/rules/** (through their generators where generated)",
+    "the dogfooded copies the repo syncs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no kit change)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) The fact count and the one-view check (X1 and X2 on 6 of 6 cases, two cycles running: .6, .15, .26, .36, .47, .58): read the six cycle-11 builds against the step as shipped, say in the PR why it did not change what they drew, and change the step so it bites (where the count lives, when it runs, what it removes). (2) A loading frame passes every slot the ready frame draws; a footer passed only when ready makes the card jump (n45, n47: .5, .24); the rule exists in the basalt-design states reference and did not reach the builders. (3) A question with two clauses gets a number at rest for each, in the figure, a status or a footer fact, not only a sentence (n45, n46: .1, .11). (4) At 390 the answer text wraps or moves to a list; a mark label or a card `sub` is cut to one line and lower-priority labels drop, so the answer never rides on either (n47 P2, n49: .21, .25, .46). (5) One status hue and one accent meaning across the cards of one view, a table's status column included (n50 .52, and cycle 10's n40).",
+  "acceptance": [
+    "The PR names, per cycle-11 build, what the fact count and the one-view step would have removed, and the changed step",
+    "Lessons (2) to (5) are in the shipped skill or rule text where a builder reads them before the shoot",
+    "Agent-doc drift and make check pass"
+  ],
+  "out_of_scope": "Kit behaviour (v3-expr-11-kit-fixes) and fields (v3-expr-11-contract); one-case lessons the shipped text already holds (phone cards over phone: 'scroll', mono on a date column, ranked and named bars, focus item order).",
+  "proof": "make check; the diff of the shipped skill and rule text; the PR's per-build reading for (1).",
+  "commits": "docs: per lesson, or feat: where a generator changes."
+}
