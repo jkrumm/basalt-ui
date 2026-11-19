@@ -37,7 +37,9 @@ export function engineColumn<T extends RowData>(spec: KindSpec<T>): EngineColumn
     ...sortFn,
     enableColumnFilter: spec.filter !== null,
     ...(spec.filter === 'contains' ? { filterFn: 'includesString' as const } : {}),
-    enableGlobalFilter: spec.filter === 'contains',
+    // Search reads every column with a search text (all but `spark` and `actions`), through the
+    // table's `globalFilterFn`, which matches what the cell shows as well as the stored value.
+    enableGlobalFilter: spec.search !== undefined,
     enableHiding: spec.pin === null,
     meta: { kind: spec.kind },
   }) as EngineColumn<T>
