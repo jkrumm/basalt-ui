@@ -12,9 +12,10 @@
  * Priority rules: the identity column is priority 1 and pinned start. More than two priority-1
  * columns demote by declaration order (identity first), one dev warning, never a throw.
  *
- * Tier rules: `fullAt` is the smallest of `FULL_AT_STEPS` (40 px apart up to 800, then 100 to 200 px apart) the visible widths
- * fit and never below the card threshold; a sum above 1800 stays reduced (`null`) with a dev warning. If priority 1+2 exceed 480 px the card or
- * scroll threshold moves to 720 when they fit 720 px, else to 800; above 800 the trailing priority-2
+ * Tier rules: `fullAt` is the smallest of `FULL_AT_STEPS` (40 px apart up to 800, with 700 between 680 and 720,
+ * then 100 to 200 px apart) the visible widths fit and never below the card threshold; a sum above 1800 stays
+ * reduced (`null`) with a dev warning. If priority 1+2 exceed 480 px the card or scroll threshold moves to 700
+ * when they fit 700 px, else to 800; above 800 the trailing priority-2
  * columns demote to 3.
  */
 import type { CardSlot, KindColumn, Priority } from '../contract'
@@ -22,12 +23,12 @@ import { specOf } from './kinds'
 import type { CardPlace, KindName, KindSpec, Width } from './kinds-spec'
 
 export const FULL_AT_STEPS = [
-  480, 520, 560, 600, 640, 680, 720, 760, 800, 900, 1000, 1100, 1200, 1300, 1440, 1600, 1800,
+  480, 520, 560, 600, 640, 680, 700, 720, 760, 800, 900, 1000, 1100, 1200, 1300, 1440, 1600, 1800,
 ] as const
 export type FullAt = (typeof FULL_AT_STEPS)[number]
 
 /** Below this inline size the card (or scroll) tier applies: the smallest step priority 1+2 fit. */
-export type ReducedFrom = 480 | 720 | 800
+export type ReducedFrom = 480 | 700 | 800
 
 /** px per `ch` at the table's body size, the cell's inline padding, the icon column. S3 checks them. */
 export const CH_PX = 8
@@ -188,10 +189,10 @@ function resolvePriorities(
   return { priorities, demoted }
 }
 
-/** The card threshold for a priority 1+2 width: the smallest step it fits, 800 above 720. */
+/** The card threshold for a priority 1+2 width: the smallest step it fits, 800 above 700. */
 function reducedFromOf(core: number): ReducedFrom {
   if (core <= 480) return 480
-  return core <= 720 ? 720 : 800
+  return core <= 700 ? 700 : 800
 }
 
 function fullAtFor(total: number): FullAt | null {

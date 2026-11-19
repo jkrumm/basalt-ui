@@ -255,14 +255,24 @@ describe('tiers', () => {
     pin: null,
   })
 
+  test('the windows table of a 750 px cell (696 px, priority 1+2 at 560 px) keeps priority 3 in 718 px', () => {
+    // 168 (flexible title, 18ch) + 120 + 136 + 136 + 136 (the priority 3 ratio) = 696, under the 700 step
+    const plan = planInputs(
+      [at(18, 1, 'entity'), at(12, 1), at(14, 2), at(14, 2), at(14, 3)],
+      quiet,
+    )
+    expect(plan.reducedFrom).toBe(700)
+    expect(plan.fullAt).toBe(700)
+  })
+
   test('fullAt is the smallest step the visible widths fit; above 1800 stays reduced with a warning', () => {
     expect(planInputs([at(10)], quiet).fullAt).toBe(480)
     // a 748 px cell: five columns of 664 px keep every column (the next step up used to be 800)
     expect(
       planInputs([at(18, 1, 'entity'), at(14), at(10), at(10, 3), at(16, 3)], quiet).fullAt,
     ).toBe(680)
-    // never below the card threshold: priority 1+2 of 600 px (reducedFrom 720) with one 3 of 32 px
-    expect(planInputs([at(18, 1, 'entity'), at(18), at(18), at(1, 3)], quiet).fullAt).toBe(720)
+    // never below the card threshold: priority 1+2 of 504 px (reducedFrom 700) with one 3 of 32 px
+    expect(planInputs([at(18, 1, 'entity'), at(18), at(18), at(1, 3)], quiet).fullAt).toBe(700)
     // 10 columns of 12ch: 10 * (96 + 24) = 1200
     expect(
       planInputs(
