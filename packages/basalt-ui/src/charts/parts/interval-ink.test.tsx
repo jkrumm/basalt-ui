@@ -103,8 +103,8 @@ describe('the tint cap', () => {
   }
 })
 
-type Span = { id: number; row: string; start: number; end: number; kind: K; label: string }
-type K = 'deep' | 'pale' | 'blue' | 'grey' | 'free'
+type Span = { id: number; row: string; start: number; end: number; kind: K; label: string | null }
+type K = 'deep' | 'pale' | 'blue' | 'grey' | 'free' | 'block'
 const SERIES: readonly IntervalSeries<K>[] = [
   { key: 'deep', label: 'Deep', color: { light: '#000000', dark: '#1a1a1a' } },
   { key: 'pale', label: 'Pale', color: { light: '#f0f0f0', dark: '#ffffff' } },
@@ -117,6 +117,7 @@ const SERIES: readonly IntervalSeries<K>[] = [
     fill: 'outline',
     layer: 'back',
   },
+  { key: 'block', label: 'Block', color: { light: '#000000', dark: '#ffffff' }, layer: 'back' },
 ]
 const SPANS: readonly Span[] = [
   { id: 0, row: 'Mon', start: 0, end: 300, kind: 'deep', label: 'Deep' },
@@ -124,6 +125,8 @@ const SPANS: readonly Span[] = [
   { id: 2, row: 'Tue', start: 0, end: 300, kind: 'blue', label: 'Blue' },
   { id: 3, row: 'Tue', start: 300, end: 330, kind: 'grey', label: 'A long outside label' },
   { id: 4, row: 'Wed', start: 100, end: 500, kind: 'free', label: 'Free' },
+  { id: 5, row: 'Thu', start: 300, end: 900, kind: 'block', label: 'Block' },
+  { id: 6, row: 'Thu', start: 320, end: 400, kind: 'blue', label: null },
 ]
 
 let root: ReturnType<typeof createRoot> | undefined
@@ -150,7 +153,7 @@ describe('every label against its own ground', () => {
         <IntervalTrack
           label="Ink"
           data={SPANS}
-          rows={['Mon', 'Tue', 'Wed']}
+          rows={['Mon', 'Tue', 'Wed', 'Thu']}
           getRow={(s) => s.row}
           getStart={(s) => s.start}
           getEnd={(s) => s.end}
@@ -165,7 +168,7 @@ describe('every label against its own ground', () => {
     }
     await act(async () => root?.render(<Track />))
 
-    for (const focusId of [null, 0, 2]) {
+    for (const focusId of [null, 0, 2, 5]) {
       await act(async () => handle?.set(focusId))
       await act(async () => new Promise((r) => setTimeout(r, 20)))
       const rects = [...el.querySelectorAll('rect')]
@@ -186,17 +189,14 @@ describe('every label against its own ground', () => {
         const x = Number(t.getAttribute('x'))
         const left = Number(box?.getAttribute('x'))
         const right = left + Number(box?.getAttribute('width'))
-        const onSpan =
-          t.getAttribute('text-anchor') === 'end' &&
-          x > left &&
-          x <= right &&
-          SPANS[id]?.kind !== 'free'
+        const onSpan = t.getAttribute('text-anchor') === 'end' && x > left && x <= right && true
         const fill = SERIES.find((s) => s.key === SPANS[id]?.kind)?.fill
         const grounds: string[] = []
         if (onSpan && fill !== 'outline') {
           inside++
           grounds.push(box?.getAttribute('fill') ?? '')
-          if (id === focusId) grounds.push(lift?.getAttribute('fill') ?? '')
+          const liftFill = lift?.getAttribute('fill') ?? 'none'
+          if (id === focusId && liftFill !== 'none') grounds.push(liftFill)
         } else {
           grounds.push('var(--basalt-card)')
           grounds.push(`color-mix(in srgb, var(--basalt-line) 8%, var(--basalt-card))`)
@@ -215,6 +215,8 @@ describe('every label against its own ground', () => {
           }
       }
       expect(inside).toBeGreaterThan(0)
+      // A back span lifts as a ring only: a tint over its row would cover the lane spans on it.
+      if (focusId === 5) expect(lift?.getAttribute('fill')).toBe('none')
       expect(band?.getAttribute('fill')).toContain('8%')
     }
   })
