@@ -46,9 +46,9 @@ check-fast: ## Local check for a lead: `check` with only the layout and unit fil
 
 # What CI's `gate` job runs as `make check CI_SPLIT=1` (.github/workflows/ci.yml): the steps of `check` that no other CI job runs. The `checks`
 # job runs the formatters, lint, typecheck, budgets, coverage, drift, contract-frozen and pack-test gates, the `unit` job
-# the unit suite (which includes the contract tests), the `layout` shards the layout suite, so `check` whole would run
-# each of those twice. Together the jobs cover every step of `check`. It builds first, as `check` does: the lint-style
-# gates and the quality matrix read dist and the playground build.
+# the unit suite (which includes the contract tests), the `layout` shards the layout suite, the `quality-matrix` job
+# the quality matrix (`make quality-matrix`, sampled), so `check` whole would run each of those twice. Together the jobs
+# cover every step of `check`. It builds first, as `check` does: the lint-style gates read dist and the playground build.
 ci-gate:
 	@cd packages/basalt-ui && bun run build
 	@bun --filter @basalt-ui/playground build
@@ -57,7 +57,6 @@ ci-gate:
 	@bun run check-recipes-lint
 	@bun run check-readme-types
 	@bun run check-playground-lint
-	@$(MAKE) --no-print-directory quality-matrix
 	@bun packages/basalt-ui/src/ui/guard-completeness.ts
 	@bun packages/basalt-ui/scripts/check-test-ledger.ts
 
