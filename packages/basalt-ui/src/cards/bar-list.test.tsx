@@ -355,3 +355,120 @@ describe('BarList focus', () => {
     expect(container.querySelector('[data-focused]')).toBeNull()
   })
 })
+
+describe('BarList across grains', () => {
+  const KINDS = [
+    { key: 'chat', label: 'chat', value: 120 },
+    { key: 'code', label: 'code', value: 80 },
+    { key: 'embed', label: 'embedding', value: 40 },
+  ]
+  const MODEL: Record<string, string> = { chat: 'opus', code: 'sonnet', embed: 'haiku' }
+  const HOURS = Array.from({ length: 6 }, (_, h) => ({ h }))
+  type Hour = (typeof HOURS)[number]
+  let hours: ReturnType<typeof useChartFocus<Hour>> | undefined
+  const rowAt = (root: ParentNode, i: number): Element =>
+    root.querySelectorAll('[data-slot="bar-list-row"]')[i] as Element
+  const marks = (root: ParentNode, attr: string): boolean[] =>
+    [...root.querySelectorAll('[data-slot="bar-list-row"]')].map((el) => el.hasAttribute(attr))
+  const liveOf = (root: ParentNode): string =>
+    root.querySelector('[data-slot="bar-list-live"]')?.textContent ?? ''
+
+  function BySeries() {
+    const focus = useChartFocus(HOURS, { announce: (d) => `hour ${d.h}` })
+    hours = focus
+    return (
+      <BarList
+        title="Requests by kind"
+        items={KINDS}
+        focusSeries={{ focus, key: (row) => MODEL[row.key ?? row.label] ?? '' }}
+      />
+    )
+  }
+
+  function ByItems() {
+    const focus = useChartFocus(HOURS, { announce: (d) => `hour ${d.h}` })
+    hours = focus
+    return (
+      <BarList
+        title="Windows"
+        items={[
+          { key: 'early', label: 'early', value: 3 },
+          { key: 'late', label: 'late', value: 2 },
+          { key: 'none', label: 'never', value: 0 },
+        ]}
+        focusItems={{
+          focus,
+          holds: (row, hour: Hour) =>
+            row.key === 'early' ? hour.h < 3 : row.key === 'late' ? hour.h >= 4 : false,
+        }}
+      />
+    )
+  }
+
+  test('a row that stands for a series emphasises it; the legend marks the row and dims the rest', () => {
+    const { container } = render(<BySeries />)
+    fireEvent.pointerEnter(rowAt(container, 1))
+    expect(hours?.series).toBe('sonnet')
+    expect(marks(container, 'data-focused')).toEqual([false, true, false])
+    expect(marks(container, 'data-dimmed')).toEqual([true, false, true])
+    act(() => hours?.setSeries('haiku'))
+    expect(marks(container, 'data-focused')).toEqual([false, false, true])
+    act(() => hours?.setSeries('other'))
+    expect(marks(container, 'data-dimmed')).toEqual([false, false, false])
+    fireEvent.pointerLeave(container.querySelector('ul') as Element, { pointerType: 'mouse' })
+    expect(hours?.series).toBeNull()
+  })
+
+  test('series rows: the list is one tab stop, its keys step its own rows and the live region names the row', () => {
+    const { getByRole, container } = render(<BySeries />)
+    const list = getByRole('list', { name: 'Requests by kind' })
+    expect(list.getAttribute('tabindex')).toBe('0')
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(hours?.series).toBe('opus')
+    expect(liveOf(container)).toBe('chat, 120')
+    fireEvent.keyDown(list, { key: 'End' })
+    expect(hours?.series).toBe('haiku')
+    expect(liveOf(container)).toBe('embedding, 40')
+    fireEvent.keyDown(list, { key: 'ArrowUp' })
+    expect(liveOf(container)).toBe('code, 80')
+    // A pointer that emphasises another series silences the stepped row.
+    fireEvent.pointerEnter(rowAt(container, 0))
+    expect(liveOf(container)).toBe('')
+    fireEvent.keyDown(list, { key: 'Escape' })
+    expect(hours?.series).toBeNull()
+    expect(fireEvent.keyDown(list, { key: 'a' })).toBe(true)
+  })
+
+  test('a row that holds items of another grain holds them all; a focused item marks its row', () => {
+    const { container } = render(<ByItems />)
+    fireEvent.pointerEnter(rowAt(container, 0))
+    expect(hours?.span.map((d) => d.h)).toEqual([0, 1, 2])
+    expect(marks(container, 'data-focused')).toEqual([true, false, false])
+    expect(marks(container, 'data-dimmed')).toEqual([false, true, true])
+    act(() => hours?.set(5))
+    expect(marks(container, 'data-focused')).toEqual([false, true, false])
+    act(() => hours?.set(3))
+    expect(marks(container, 'data-focused')).toEqual([false, false, false])
+    fireEvent.pointerEnter(rowAt(container, 2))
+    expect(hours?.index).toBeNull()
+  })
+
+  test('item rows: keys hold the items of the row and the live region names it', () => {
+    const { getByRole, container } = render(<ByItems />)
+    const list = getByRole('list', { name: 'Windows' })
+    fireEvent.keyDown(list, { key: 'ArrowRight' })
+    expect(hours?.span.map((d) => d.h)).toEqual([0, 1, 2])
+    expect(liveOf(container)).toBe('early, 3')
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(hours?.span.map((d) => d.h)).toEqual([4, 5])
+    expect(liveOf(container)).toBe('late, 2')
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(hours?.index).toBeNull()
+    expect(liveOf(container)).toBe('')
+  })
+
+  test('a list with neither arm draws no live region of its own', () => {
+    const { container } = draw()
+    expect(container.querySelector('[data-slot="bar-list-live"]')).toBeNull()
+  })
+})

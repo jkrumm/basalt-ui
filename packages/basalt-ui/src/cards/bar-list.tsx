@@ -1,10 +1,11 @@
+import { useState } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import { AppLink } from '../core/link'
 import { cn } from '../core/cn'
 import { HostTitleContext } from '../core/could-not-load'
 import { resolvePhase } from '../core/phase'
 import type { FrameState } from '../core/phase'
-import type { ListFocus } from '../core/ports'
+import type { ListFocus, ListFocusItem } from '../core/ports'
 import { useFormat } from '../core/format'
 import { useRowsShown } from '../core/rows-shown'
 import { useMessages } from '../core/messages/use-messages'
@@ -14,7 +15,8 @@ import { BAR_BODY_HEIGHT, DEFAULT_ROWS, ScrollRegion } from './bar-list-scroll'
 import type { ListRows } from './bar-list-scroll'
 import type { CardTarget, FrameHead, LegendEntry } from './contract'
 import { Legend } from './data-panel'
-import { listFocus, rowFocus } from './list-focus'
+import { itemsRows, linkedList, linkedRow, listFocus, rowFocus, seriesRows } from './list-focus'
+import type { RowsLink } from './list-focus'
 
 /**
  * One ranked row. A row is a link, a button or inert; never a link and a button at once. The type
@@ -34,8 +36,68 @@ export type BarListItem = CardTarget & {
   parts?: Readonly<Record<string, number>>
 }
 
-export type BarListProps = FrameHead &
-  FrameState & {
+/**
+ * How a list joins a chart's focus: at the chart's own grain (`focus`), by the series a row stands
+ * for (`focusSeries`), or by the items of another grain a row holds (`focusItems`). One at most.
+ */
+export type BarListFocus<I = unknown> =
+  | {
+      /**
+       * A chart's focus (`useChartFocus(items, …)`): row i is `focus.items[i]`, so pass the list in the
+       * same order as the chart's items. Pointing at a row focuses its item, an item focused elsewhere
+       * marks its row, and the list becomes one tab stop whose arrow keys, Home, End and Escape step
+       * the shared focus.
+       */
+      focus?: ListFocus<unknown> | undefined
+      focusSeries?: never
+      focusItems?: never
+    }
+  | {
+      focus?: never
+      focusItems?: never
+      /**
+       * A chart's focus whose series the rows stand for (a row per request kind beside bars stacked
+       * by the model that served it): `key` maps a row to its series key. Pointing at a row emphasises
+       * that series across every x and dims the rest; a series emphasised elsewhere (the chart's
+       * legend, a table row) marks its row and dims the others.
+       *
+       * @example
+       * <BarList title="Requests by kind" items={kinds} focusSeries={{ focus, key: (row) => MODEL[row.key ?? row.label] }} />
+       */
+      focusSeries: {
+        focus: {
+          readonly setSeries: (key: string | null) => void
+          readonly seriesItem: (key: string) => ListFocusItem
+        }
+        key: (row: BarListItem) => string
+      }
+    }
+  | {
+      focus?: never
+      focusSeries?: never
+      /**
+       * A chart's focus over items of another grain: `holds(row, item)` is true for every item the
+       * row stands for (the hours of a window, the probes under a service), never by position.
+       * Pointing at a row focuses every item it holds (`focus.hold`; a cartesian chart draws a run as
+       * one x band); a focused item marks every row that holds it, and the rest dim. A row that holds
+       * nothing clears the focus.
+       *
+       * @example
+       * <BarList title="Windows" items={windows} focusItems={{ focus, holds: (w, h) => inWindow(w, h) }} />
+       */
+      focusItems: {
+        focus: ListFocus<I>
+        holds: (row: BarListItem, item: I) => boolean
+      }
+    }
+
+/**
+ * `focusSeries` and `focusItems` make the list one tab stop whose arrow keys, Home and End step its
+ * own rows (the chart's items are another grain) and whose polite live region names the row.
+ */
+export type BarListProps<I = unknown> = FrameHead &
+  FrameState &
+  BarListFocus<I> & {
     /** Rows in display order: sort them yourself, the list does not reorder. */
     items: readonly BarListItem[]
     /**
@@ -50,13 +112,6 @@ export type BarListProps = FrameHead &
     rows?: ListRows
     /** Formats each value. Default: the number in the provider's locale. */
     format?: (value: number) => string
-    /**
-     * A chart's focus (`useChartFocus(items, …)`): row i is `focus.items[i]`, so pass the list in the
-     * same order as the chart's items. Pointing at a row focuses its item, an item focused elsewhere
-     * marks its row, and the list becomes one tab stop whose arrow keys, Home, End and Escape step
-     * the shared focus.
-     */
-    focus?: ListFocus<unknown>
     /**
      * The series a row's `parts` stack by: their order (first at the bar's start), their colour and
      * a legend row under the header. With it each row's track draws its parts in the series colours,
@@ -115,7 +170,7 @@ function BarSkeleton({ rows }: { rows: number }): ReactElement {
  *   phase={query}
  * />
  */
-export function BarList(props: BarListProps): ReactElement {
+export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
   const { items, max, format, phase, empty, focus, series } = props
   const rows = props.bodyRows ?? props.rows ?? DEFAULT_ROWS
   const { title, subtitle, icon, info } = props
@@ -129,6 +184,33 @@ export function BarList(props: BarListProps): ReactElement {
   // The body holds `rows` rows of height: past that it scrolls, and the header says how many show.
   // Only a body that is drawn says it, so the frame fills no slot before ready.
   const scrolls = items.length > rows && resolvePhase({ phase, empty: emptyState }).body
+  const drawn = items.map((item) => {
+    const segments = series === undefined ? undefined : segmentsOf(item, series, scale, show)
+    const value = Number.isFinite(item.value) ? show(item.value) : '—'
+    const secondary =
+      item.secondary ??
+      (whole && Number.isFinite(item.value)
+        ? f.percent(item.value / scale, { maximumFractionDigits: 0 })
+        : undefined)
+    return { percent: percentOf(item.value, scale), segments, value, secondary }
+  })
+  // A row that stands for a series or for items of another grain: the list steps its own rows.
+  const link: RowsLink | undefined =
+    props.focusItems !== undefined
+      ? itemsRows(props.focusItems, items)
+      : props.focusSeries !== undefined
+        ? seriesRows(props.focusSeries, items)
+        : undefined
+  const [at, setAt] = useState<number | null>(null)
+  const enter = (row: number): void => {
+    setAt(row)
+    link?.enter(row)
+  }
+  // The row the keys stepped to, while it is still the one marked (a pointer elsewhere silences it).
+  const said =
+    link === undefined || at === null || link.items[at]?.['data-focused'] === undefined
+      ? ''
+      : sayRow(items[at], drawn[at])
   return (
     <div data-slot="bar-list" className="@container min-w-0">
       <Card flush>
@@ -167,36 +249,37 @@ export function BarList(props: BarListProps): ReactElement {
                     data-whole={whole ? '' : undefined}
                     className="m-0 list-none p-0"
                     // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- with a shared focus the list is the one tab stop that steps it
-                    {...(focus !== undefined && listFocus(focus))}
+                    {...(link !== undefined
+                      ? linkedList(link, at, setAt)
+                      : focus !== undefined && listFocus(focus))}
                   >
                     {items.map((item, i) => (
                       <li
                         key={item.key ?? `${item.label}-${i}`}
                         data-slot="bar-list-row"
-                        {...(focus !== undefined && rowFocus(focus, i))}
+                        {...(link !== undefined
+                          ? linkedRow(link, i, enter)
+                          : focus !== undefined && rowFocus(focus, i))}
                         className={
-                          focus === undefined ? undefined : '[&[data-focused]>*]:bg-accent'
+                          focus === undefined && link === undefined
+                            ? undefined
+                            : '[&[data-focused]>*]:bg-accent'
                         }
                       >
-                        <Row
-                          item={item}
-                          percent={percentOf(item.value, scale)}
-                          segments={
-                            series === undefined ? undefined : segmentsOf(item, series, scale, show)
-                          }
-                          value={Number.isFinite(item.value) ? show(item.value) : '—'}
-                          secondary={
-                            item.secondary ??
-                            (whole && Number.isFinite(item.value)
-                              ? f.percent(item.value / scale, {
-                                  maximumFractionDigits: 0,
-                                })
-                              : undefined)
-                          }
-                        />
+                        <Row item={item} {...(drawn[i] as RowView)} />
                       </li>
                     ))}
                   </ul>
+                  {link !== undefined && (
+                    <output
+                      aria-live="polite"
+                      aria-atomic="true"
+                      data-slot="bar-list-live"
+                      className="sr-only"
+                    >
+                      {said}
+                    </output>
+                  )}
                 </ScrollRegion>
               )}
             </CardPhase>
@@ -238,13 +321,24 @@ function segmentsOf(
   })
 }
 
-type RowProps = {
-  item: BarListItem
+/** What a row draws beside its item: its bar, its parts and its text. */
+type RowView = {
   percent: number
   /** Present on a stacked list: the track draws these in place of the one neutral fill. */
   segments: readonly Segment[] | undefined
   value: string
   secondary: string | undefined
+}
+
+type RowProps = RowView & { item: BarListItem }
+
+/** A row as the live region says it: its label, value, second figure and parts. */
+function sayRow(item: BarListItem | undefined, view: RowView | undefined): string {
+  if (item === undefined || view === undefined) return ''
+  const parts = view.segments?.map((s) => `${s.label} ${s.text}`).join(', ')
+  return [item.label, view.value, view.secondary, parts]
+    .filter((part) => part !== undefined && part !== '')
+    .join(', ')
 }
 
 /** The 8 px track of a stacked row: each part in its series colour, a hairline between parts. */
