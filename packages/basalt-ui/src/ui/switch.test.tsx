@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
-import { Switch, switchParts } from './switch'
+import { Switch, switchParts, switchVariants } from './switch'
 
 afterEach(cleanup)
 
@@ -42,5 +42,17 @@ describe('switch module', () => {
     rerender(<Switch aria-label="On" disabled onCheckedChange={(next) => seen.push(next)} />)
     fireEvent.click(getByRole('switch'))
     expect(seen).toEqual([true])
+  })
+})
+
+describe('switch track under forced colours', () => {
+  test('the track has a 1px transparent border that forced colours paint, with a 1px inset so the thumb stays put', () => {
+    const tokens = switchVariants().split(' ')
+    expect(tokens).toContain('border')
+    expect(tokens).toContain('border-transparent')
+    expect(tokens).toContain('p-px')
+    const { container } = render(<Switch aria-label="On" />)
+    const track = container.querySelector('[data-slot="switch"]')
+    expect(track?.className).toContain('border-transparent')
   })
 })

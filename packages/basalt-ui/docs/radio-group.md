@@ -11,7 +11,7 @@ slots: [radio-group, radio]
 
 A group of radios on Base UI: one selected value, arrow keys move it in DOM order. Works with no
 provider and joins a Base UI `Field` when wrapped in one. Name each radio with a wrapping
-`<label>`.
+`<label>`, or give `options` and each row is labelled and described for you.
 
 ## Props
 
@@ -19,11 +19,12 @@ provider and joins a Base UI `Field` when wrapped in one. Name each radio with a
 
 A group of radios on Base UI: one selected value, arrow keys move it in DOM order. Works with no
 provider and joins a Base UI `Field` when wrapped in one. Name each radio with a wrapping
-`<label>`.
+`<label>`, or give `options` and each row is labelled and described for you.
 
 ```ts
-RadioGroup<Value = string>({ className, ...props }: RadioGroupProps<Value>): ReactElement
+RadioGroup<Value = string>({ className, options, children, ...props }: RadioGroupProps<Value>): ReactElement
   className?: string  // Layout only (`w-full`, `max-w-sm`, `mt-2`)
+  options?: readonly ChoiceOption<Value>[]  // The choices, each a row with its label and description
 ```
 
 ### `Radio`

@@ -188,6 +188,9 @@ export function FieldsetLegend({ className, ...props }: FieldsetLegendProps): Re
  * A form on Base UI: native validation wired to every `Field` inside it, `errors` from the server
  * and one `onFormSubmit` with the collected values.
  *
+ * @useWhen a small form with no form engine validates natively and submits its values once
+ * @neverWhen the form is a TanStack form with `FormField`s: its native validity stops the submit before the engine runs, so use a plain `<form noValidate>`
+ *
  * @example
  * <Form errors={serverErrors} onFormSubmit={(values) => save(values)}>
  *   <Field label="Name"><Input name="name" required /></Field>

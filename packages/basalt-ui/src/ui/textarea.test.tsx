@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render } from '@testing-library/react'
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
 import { Textarea, textareaParts, textareaVariants } from './textarea'
 
@@ -52,5 +52,63 @@ describe('textarea module', () => {
     )
     fireEvent.change(getByLabelText('Note'), { target: { value: 'a\nb' } })
     expect(value).toBe('a\nb')
+  })
+
+  test('a read-only textarea carries the read-only look, not the disabled one', () => {
+    const { getByLabelText } = render(<Textarea aria-label="Note" readOnly defaultValue="kept" />)
+    const el = getByLabelText('Note')
+    expect(el.hasAttribute('readonly')).toBe(true)
+    expect(el.className).toContain('[&[readonly]]:bg-inset')
+    expect(el.className).toContain('[&[readonly]]:border-transparent')
+  })
+})
+
+const rectOf = (top: number, bottom: number): DOMRect =>
+  ({ top, bottom, left: 0, right: 100 }) as DOMRect
+
+describe('textarea focus reveal', () => {
+  test('focus reveals a box that is partly below the viewport', () => {
+    const { getByLabelText } = render(<Textarea aria-label="Note" />)
+    const el = getByLabelText('Note') as HTMLTextAreaElement
+    const scrollIntoView = mock(() => {})
+    el.scrollIntoView = scrollIntoView
+    el.getBoundingClientRect = () => rectOf(window.innerHeight - 10, window.innerHeight + 50)
+    el.focus()
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+  })
+
+  test('focus leaves a fully visible box alone', () => {
+    const { getByLabelText } = render(<Textarea aria-label="Note" />)
+    const el = getByLabelText('Note') as HTMLTextAreaElement
+    const scrollIntoView = mock(() => {})
+    el.scrollIntoView = scrollIntoView
+    el.getBoundingClientRect = () => rectOf(10, 40)
+    el.focus()
+    expect(scrollIntoView).not.toHaveBeenCalled()
+  })
+
+  test('the nearest scrolling ancestor, not the page, is the area the box must fit', () => {
+    const { container, getByLabelText } = render(
+      <div style={{ overflowY: 'auto' }}>
+        <Textarea aria-label="Note" />
+      </div>,
+    )
+    const scroller = container.firstElementChild as HTMLElement
+    scroller.getBoundingClientRect = () => rectOf(0, 100)
+    const el = getByLabelText('Note') as HTMLTextAreaElement
+    const scrollIntoView = mock(() => {})
+    el.scrollIntoView = scrollIntoView
+    el.getBoundingClientRect = () => rectOf(90, 150)
+    el.focus()
+    expect(scrollIntoView).toHaveBeenCalledTimes(1)
+  })
+
+  test('a caller onFocus still runs', () => {
+    const onFocus = mock(() => {})
+    const { getByLabelText } = render(<Textarea aria-label="Note" onFocus={onFocus} />)
+    const el = getByLabelText('Note') as HTMLTextAreaElement
+    el.scrollIntoView = mock(() => {})
+    el.focus()
+    expect(onFocus).toHaveBeenCalledTimes(1)
   })
 })

@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import type { IconComponent } from '../core/ports'
 
 /**
  * The `Select` cva table: the box a trigger fills. A width class on `Select` sizes the box and the
@@ -21,7 +22,7 @@ export const selectVariants = cva('relative block w-full min-w-0')
  * selectTriggerVariants({ size: 'sm' })
  */
 export const selectTriggerVariants = cva(
-  'flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground focus-ring transition-colors data-placeholder:text-faint data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground focus-ring transition-colors data-placeholder:text-faint data-readonly:cursor-default data-readonly:border-transparent data-readonly:bg-inset data-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
   {
     variants: {
       size: {
@@ -98,6 +99,10 @@ export type SelectOption<Value = string> = {
   value: Value
   label: ReactNode
   disabled?: boolean
+  /** A second line under the label, in the open list only; the trigger shows the label. */
+  description?: string
+  /** Drawn before the label, in the list and in the trigger. */
+  icon?: IconComponent
 }
 
 type SelectRootProps<Value> = Omit<
@@ -130,6 +135,34 @@ export type SelectProps<Value = string> =
       children: ReactNode
     })
 
+/** The part of an option that shows its icon and label; its description joins only in the open list. */
+type OptionDisplay = Pick<SelectOption, 'label' | 'icon' | 'description'>
+
+function OptionContent({
+  option,
+  described,
+}: {
+  option: OptionDisplay
+  described: boolean
+}): ReactElement {
+  const { icon: Icon, label, description } = option
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      {Icon !== undefined && (
+        <Icon className="size-icon shrink-0 text-muted-foreground" aria-hidden="true" />
+      )}
+      {described && description !== undefined ? (
+        <span className="flex min-w-0 flex-col">
+          <span>{label}</span>
+          <span className="text-xs text-muted-foreground">{description}</span>
+        </span>
+      ) : (
+        label
+      )}
+    </span>
+  )
+}
+
 function Chevron(): ReactElement {
   return (
     <svg
@@ -147,6 +180,12 @@ function Chevron(): ReactElement {
       />
     </svg>
   )
+}
+
+/** The trigger's label for an option: its icon and label, never the description. */
+function triggerItem<Value>(option: SelectOption<Value>): SelectOption<Value> {
+  if (option.icon === undefined) return option
+  return { ...option, label: <OptionContent option={option} described={false} /> }
 }
 
 /**
@@ -173,7 +212,10 @@ export function Select<Value = string>(props: SelectProps<Value>): ReactElement 
   } = rest as SelectRootProps<Value> & Partial<{ 'aria-label': string; 'aria-labelledby': string }>
   return (
     <div data-slot="select" className={cn(selectVariants(), className)}>
-      <BaseSelect.Root<Value, false> {...root} items={options ?? items}>
+      <BaseSelect.Root<Value, false>
+        {...root}
+        items={options === undefined ? items : options.map(triggerItem)}
+      >
         {options === undefined ? (
           children
         ) : (
@@ -189,7 +231,11 @@ export function Select<Value = string>(props: SelectProps<Value>): ReactElement 
             <SelectContent>
               {options.map((o) => (
                 <SelectItem key={String(o.value)} value={o.value} disabled={o.disabled ?? false}>
-                  {o.label}
+                  {o.icon === undefined && o.description === undefined ? (
+                    o.label
+                  ) : (
+                    <OptionContent option={o} described />
+                  )}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -344,6 +390,8 @@ export type NativeSelectProps = Omit<ComponentPropsWithoutRef<'select'>, 'classN
   VariantProps<typeof nativeSelectVariants> & {
     /** The choices; omit it to write `<option>` children. */
     options?: readonly SelectOption<string>[]
+    /** Fires with the picked value, so a form field's value writer takes it. `onChange` still fires. */
+    onValueChange?: (value: string) => void
   }
 
 /**
@@ -361,12 +409,20 @@ export function NativeSelect({
   size,
   className,
   options,
+  onValueChange,
+  onChange,
   children,
   ...props
 }: NativeSelectProps): ReactElement {
   return (
     <div data-slot="native-select" className={cn(nativeSelectVariants({ size }), className)}>
-      <select {...props}>
+      <select
+        {...props}
+        onChange={(event) => {
+          onChange?.(event)
+          onValueChange?.(event.target.value)
+        }}
+      >
         {options === undefined
           ? children
           : options.map((o) => (

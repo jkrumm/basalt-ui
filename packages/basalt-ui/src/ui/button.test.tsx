@@ -84,3 +84,23 @@ describe('button module', () => {
     expect(getByRole('button').className).not.toContain('bg-')
   })
 })
+
+describe('button loading spinner', () => {
+  test('loading draws an animated spinner and keeps the label', () => {
+    const { getByRole } = render(<Button loading>Save</Button>)
+    const el = getByRole('button')
+    const svg = el.querySelector('svg')
+    expect(svg?.getAttribute('class')).toContain('animate-spin')
+    expect(svg?.getAttribute('class')).toContain('motion-reduce:animate-none')
+    expect(el.textContent).toBe('Save')
+    // The label stays in place, transparent, so the width holds and it still names the button.
+    expect(getByRole('button', { name: 'Save' })).toBe(el)
+    expect(el.querySelector('span')?.className).toContain('opacity-0')
+  })
+
+  test('no spinner when not loading', () => {
+    const { getByRole } = render(<Button>Save</Button>)
+    expect(getByRole('button').querySelector('svg')).toBeNull()
+  })
+
+})

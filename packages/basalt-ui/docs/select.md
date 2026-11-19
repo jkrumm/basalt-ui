@@ -94,10 +94,11 @@ The platform `<select>` with the design's box and chevron: appearance stripped, 
 picker is the better phone UI. Name it with a wrapping `<label>` or `aria-label`.
 
 ```ts
-NativeSelect({ size, className, options, children, ...props }: NativeSelectProps): ReactElement
+NativeSelect({ size, className, options, onValueChange, onChange, children, ...props }: NativeSelectProps): ReactElement
   className?: string  // Layout only (`w-full`, `w-40`, `flex-1`)
   size?: "md" | "sm" | null
   options?: readonly SelectOption<string>[]  // The choices; omit it to write `<option>` children
+  onValueChange?: (value: string) => void  // Fires with the picked value, so a form field's value writer takes it
 ```
 
 ## `selectVariants`

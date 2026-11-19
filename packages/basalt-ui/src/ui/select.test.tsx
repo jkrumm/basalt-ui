@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import {
@@ -21,6 +22,20 @@ const OPTIONS = [
   { value: 'b', label: 'Beta' },
   { value: 'c', label: 'Gamma', disabled: true },
 ]
+
+function Mark(props: {
+  className?: string
+  'aria-hidden'?: boolean | 'true' | 'false'
+}): ReactElement {
+  return <svg data-testid="mark" className={props.className} aria-hidden={props['aria-hidden']} />
+}
+
+function Controlled(): ReactElement {
+  const [value, setValue] = useState('a')
+  return (
+    <NativeSelect aria-label="Status" options={OPTIONS} value={value} onValueChange={setValue} />
+  )
+}
 
 const slots = (root: ParentNode): string[] =>
   [...root.querySelectorAll('[data-slot]')].map((el) => el.getAttribute('data-slot') ?? '')
@@ -100,6 +115,44 @@ describe('select module', () => {
   })
 })
 
+describe('Select options with an icon and a description', () => {
+  test('the trigger shows the icon and the label, never the description', () => {
+    const { getByRole, getByTestId } = render(
+      <Select
+        aria-label="Stage"
+        defaultValue="a"
+        options={[{ value: 'a', label: 'Alpha', description: 'The first stage', icon: Mark }]}
+      />,
+    )
+    const trigger = getByRole('combobox', { name: 'Stage' })
+    expect(trigger.textContent).toContain('Alpha')
+    expect(trigger.textContent).not.toContain('The first stage')
+    expect(trigger.contains(getByTestId('mark'))).toBe(true)
+    expect(getByTestId('mark').getAttribute('aria-hidden')).toBe('true')
+  })
+
+  test('an option without an icon or a description keeps the plain label in the trigger', () => {
+    const { getByRole, queryByTestId } = render(
+      <Select aria-label="Stage" defaultValue="a" options={OPTIONS} />,
+    )
+    expect(getByRole('combobox', { name: 'Stage' }).textContent).toContain('Alpha')
+    expect(queryByTestId('mark')).toBeNull()
+  })
+})
+
+describe('Select read-only look', () => {
+  test('a read-only trigger carries the read-only look and the data-readonly attribute', () => {
+    const { getByRole } = render(
+      <Select aria-label="Stage" defaultValue="a" readOnly options={OPTIONS} />,
+    )
+    const trigger = getByRole('combobox', { name: 'Stage' })
+    expect(trigger.getAttribute('data-readonly')).not.toBeNull()
+    expect(trigger.className).toContain('data-readonly:bg-inset')
+    expect(trigger.className).toContain('data-readonly:border-transparent')
+    expect(trigger.className).toContain('data-readonly:cursor-default')
+  })
+})
+
 describe('NativeSelect', () => {
   test('renders a native select with options and a decorative chevron', () => {
     const { container, getByRole } = render(
@@ -123,6 +176,38 @@ describe('NativeSelect', () => {
     )
     fireEvent.change(getByRole('combobox'), { target: { value: 'y' } })
     expect(seen).toBe('y')
+  })
+
+  test('onValueChange fires with the picked value, and onChange still fires', () => {
+    let picked = ''
+    let changed = ''
+    const { getByRole } = render(
+      <NativeSelect
+        aria-label="Status"
+        options={OPTIONS}
+        onValueChange={(value) => (picked = value)}
+        onChange={(e) => (changed = e.target.value)}
+      />,
+    )
+    fireEvent.change(getByRole('combobox'), { target: { value: 'b' } })
+    expect(picked).toBe('b')
+    expect(changed).toBe('b')
+  })
+
+  test('the picked value reaches a controlled select through onValueChange', () => {
+    const { getByRole } = render(<Controlled />)
+    fireEvent.change(getByRole('combobox'), { target: { value: 'b' } })
+    expect((getByRole('combobox') as HTMLSelectElement).value).toBe('b')
+  })
+
+  test('aria-invalid and disabled carry their look on the native select', () => {
+    const { getByRole, container } = render(
+      <NativeSelect aria-label="Status" options={OPTIONS} aria-invalid="true" disabled />,
+    )
+    expect(getByRole('combobox').getAttribute('aria-invalid')).toBe('true')
+    const wrapper = container.querySelector('[data-slot="native-select"]')?.className ?? ''
+    expect(wrapper).toContain('[&_select]:aria-invalid:border-bad')
+    expect(wrapper).toContain('[&_select]:disabled:opacity-50')
   })
 })
 

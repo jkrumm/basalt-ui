@@ -1,9 +1,14 @@
-import { cleanup, render } from '@testing-library/react'
+import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { Radio, RadioGroup, radioGroupParts } from './radio-group'
+
+const describedBy = (el: HTMLElement): string | null => {
+  const id = el.getAttribute('aria-describedby')
+  return id === null ? null : (document.getElementById(id)?.textContent ?? null)
+}
 
 afterEach(cleanup)
 
@@ -58,5 +63,53 @@ describe('radio-group module', () => {
       'false',
     ])
     expect(getByRole('radio', { name: 'Plan b' })).toBeDefined()
+  })
+})
+
+describe('radio-group options', () => {
+  test('each radio is named by its label and described by its description', () => {
+    const { getByRole } = render(
+      <RadioGroup
+        aria-label="Plan"
+        defaultValue="free"
+        options={[
+          { value: 'free', label: 'Free', description: 'Up to three users' },
+          { value: 'pro', label: 'Pro' },
+        ]}
+      />,
+    )
+    expect(describedBy(getByRole('radio', { name: 'Free' }))).toBe('Up to three users')
+    expect(getByRole('radio', { name: 'Pro' }).getAttribute('aria-describedby')).toBeNull()
+  })
+
+  test('a click on the label text selects the option', () => {
+    const seen: string[] = []
+    const { getByRole, getByText } = render(
+      <RadioGroup
+        aria-label="Plan"
+        defaultValue="free"
+        onValueChange={(next) => seen.push(next)}
+        options={[
+          { value: 'free', label: 'Free', description: 'Up to three users' },
+          { value: 'pro', label: 'Pro', description: 'Team seats' },
+        ]}
+      />,
+    )
+    fireEvent.click(getByText('Pro'))
+    expect(getByRole('radio', { name: 'Pro' }).getAttribute('aria-checked')).toBe('true')
+    expect(seen).toEqual(['pro'])
+  })
+
+  test('a disabled option is disabled', () => {
+    const { getByRole } = render(
+      <RadioGroup
+        aria-label="Plan"
+        options={[
+          { value: 'free', label: 'Free' },
+          { value: 'pro', label: 'Pro', disabled: true },
+        ]}
+      />,
+    )
+    expect(getByRole('radio', { name: 'Pro' }).getAttribute('aria-disabled')).toBe('true')
   })
 })

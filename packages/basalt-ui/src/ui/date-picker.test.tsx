@@ -164,6 +164,49 @@ describe('date-picker module', () => {
   })
 })
 
+describe('form binding', () => {
+  test('a pick calls onValueChange with the day', () => {
+    const picked: CalendarDate[] = []
+    render(<DatePicker aria-label="Due date" defaultOpen onValueChange={(v) => picked.push(v)} />)
+    fireEvent.click(dayButton('2026-11-20'))
+    expect(picked).toEqual(['2026-11-20'])
+  })
+
+  test('onValueChange and onChange are both called on a pick', () => {
+    const calls: string[] = []
+    render(
+      <DatePicker
+        aria-label="Due date"
+        defaultOpen
+        onChange={(v) => calls.push(`onChange ${v}`)}
+        onValueChange={(v) => calls.push(`onValueChange ${v}`)}
+      />,
+    )
+    fireEvent.click(dayButton('2026-11-20'))
+    expect(calls).toEqual(['onChange 2026-11-20', 'onValueChange 2026-11-20'])
+  })
+
+  test('a completed range calls onValueChange with both ends', () => {
+    const picked: CalendarRange[] = []
+    render(
+      <DateRangePicker aria-label="Window" defaultOpen onValueChange={(r) => picked.push(r)} />,
+    )
+    fireEvent.click(dayButton('2026-11-10'))
+    expect(picked).toEqual([])
+    fireEvent.click(dayButton('2026-11-14'))
+    expect(picked).toEqual([{ from: '2026-11-10', to: '2026-11-14' }])
+  })
+
+  test('onBlur fires when the calendar closes after a pick and is not spread onto the popup', async () => {
+    let blurred = 0
+    render(<DatePicker aria-label="Due date" defaultOpen onBlur={() => blurred++} />)
+    expect(blurred).toBe(0)
+    fireEvent.click(dayButton('2026-11-20'))
+    expect(blurred).toBe(1)
+    await waitFor(() => expect(document.querySelector('[role="dialog"]') === null).toBe(true))
+  })
+})
+
 describe('day colours', () => {
   const cell = (iso: string): HTMLElement => {
     const el = document.querySelector(`[data-day="${iso}"]`)
