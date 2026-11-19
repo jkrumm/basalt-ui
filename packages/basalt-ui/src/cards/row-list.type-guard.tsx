@@ -55,7 +55,7 @@ export const rowStatusTone: ReactElement = (
   <RowList title="Open Issues" items={[{ label: 'a', status: { tone: 'red', label: 'Bad' } }]} />
 )
 
-export const rowsOutOfRange: ReactElement = (
-  // @ts-expect-error the body holds 3 to 10 rows
-  <RowList title="Open Issues" items={items} bodyRows={2} />
+export const rowsNotACount: ReactElement = (
+  // @ts-expect-error the body holds a count of rows, never a height
+  <RowList title="Open Issues" items={items} bodyRows="h-56" />
 )

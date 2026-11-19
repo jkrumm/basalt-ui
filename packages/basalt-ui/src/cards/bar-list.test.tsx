@@ -211,21 +211,22 @@ describe('BarList phases', () => {
   test('every phase keeps the one body height', () => {
     const heights = (['ready', 'loading', 'stale'] as const).map((phase) => {
       const { container } = draw({ phase, bodyRows: 6 })
-      const cls = container.querySelector('[data-slot="inset"]')?.className ?? ''
+      const height = container.querySelector<HTMLElement>('[data-slot="inset"]')?.style.height
       cleanup()
-      return cls
+      return height
     })
     expect(new Set(heights).size).toBe(1)
-    expect(heights[0]).toContain('h-66')
+    expect(heights[0]).toBe('calc(var(--spacing) * 66)')
   })
 
   test('rows is the deprecated name of bodyRows', () => {
-    const heightOf = (props: { rows?: 6; bodyRows?: 6 }): string => {
+    const heightOf = (props: { rows?: 6; bodyRows?: 6 }): string | undefined => {
       const { container } = draw(props)
-      const cls = container.querySelector('[data-slot="inset"]')?.className ?? ''
+      const height = container.querySelector<HTMLElement>('[data-slot="inset"]')?.style.height
       cleanup()
-      return cls
+      return height
     }
+    expect(heightOf({ rows: 6 })).toBe('calc(var(--spacing) * 66)')
     expect(heightOf({ rows: 6 })).toBe(heightOf({ bodyRows: 6 }))
   })
 })
@@ -486,5 +487,35 @@ describe('BarList mono', () => {
     expect(
       container.querySelector('[data-slot="bar-list-label"]')?.classList.contains('font-mono'),
     ).toBe(false)
+  })
+})
+
+describe('BarList legend, series and body rows', () => {
+  const MONTHS = Array.from({ length: 12 }, (_, i) => ({ label: `M${i + 1}`, value: 12 - i }))
+  const bodyOf = (root: ParentNode): HTMLElement =>
+    root.querySelector('[data-slot="inset"]') as HTMLElement
+
+  test('a body past ten rows holds every one of twelve, with no scroll cue', () => {
+    const { container } = draw({ items: MONTHS, bodyRows: 12 })
+    expect(bodyOf(container).style.height).toBe('calc(var(--spacing) * 126)')
+    expect(container.querySelector('[data-slot="bar-list-scroll-cue"]')).toBeNull()
+  })
+
+  test('the default body holds five rows and says how many of twelve show', () => {
+    const { container } = draw({ items: MONTHS })
+    expect(bodyOf(container).style.height).toBe('calc(var(--spacing) * 56)')
+    expect(container.querySelector('[data-slot="bar-list-scroll-cue"]')).not.toBeNull()
+  })
+
+  test('a count under three, a fraction or no number holds a whole count of at least three', () => {
+    for (const [asked, steps] of [
+      [2, 36],
+      [7.6, 76],
+      [Number.NaN, 56],
+    ] as const) {
+      cleanup()
+      const { container } = draw({ bodyRows: asked })
+      expect(bodyOf(container).style.height).toBe(`calc(var(--spacing) * ${steps})`)
+    }
   })
 })

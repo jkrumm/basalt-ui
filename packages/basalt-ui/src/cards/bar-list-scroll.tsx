@@ -1,37 +1,33 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ReactElement, ReactNode } from 'react'
-
-/** How many rows of body a list card holds; anything beyond scrolls inside the card. */
-export type ListRows = 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
-
-export const DEFAULT_ROWS: ListRows = 5
+import type { CSSProperties, ReactElement, ReactNode } from 'react'
 
 /**
- * The inset's height per row count: rows times the row height plus the inset's 24 px of padding.
- * Literal class strings, so Tailwind sees every one. One fixed height per count is what keeps a
- * loading, empty or error card exactly as tall as a ready one.
+ * How many rows of body a list card holds; anything beyond scrolls inside the card. A whole number,
+ * 3 or more: a fraction rounds down and a smaller or unusable count holds 3 (`listRows`).
  */
-export const BAR_BODY_HEIGHT: Readonly<Record<ListRows, string>> = {
-  3: 'h-36',
-  4: 'h-46',
-  5: 'h-56',
-  6: 'h-66',
-  7: 'h-76',
-  8: 'h-86',
-  9: 'h-96',
-  10: 'h-106',
-}
+export type ListRows = number
 
-export const EVENT_BODY_HEIGHT: Readonly<Record<ListRows, string>> = {
-  3: 'h-48',
-  4: 'h-62',
-  5: 'h-76',
-  6: 'h-90',
-  7: 'h-104',
-  8: 'h-118',
-  9: 'h-132',
-  10: 'h-146',
-}
+export const DEFAULT_ROWS = 5
+
+const FEWEST_ROWS = 3
+
+/** The rows a body holds for a requested count: whole, at least three, the default when unusable. */
+export const listRows = (rows: number | undefined): number =>
+  rows === undefined || !Number.isFinite(rows)
+    ? DEFAULT_ROWS
+    : Math.max(FEWEST_ROWS, Math.floor(rows))
+
+/** The spacing steps of one row: `h-10` (40 px) for a bar or a one-line row, `h-12` for two lines, `h-14` for an event. */
+export type RowSteps = 10 | 12 | 14
+
+/**
+ * The inset's height for `rows` rows: rows times the row height plus the inset's 24 px of padding, in
+ * the spacing scale the row classes use. One height per count is what keeps a loading, empty or error
+ * card exactly as tall as a ready one, at any count.
+ */
+export const bodyHeight = (rows: number, steps: RowSteps): CSSProperties => ({
+  height: `calc(var(--spacing) * ${rows * steps + 6})`,
+})
 
 /**
  * Whether the element's content is taller than its box. Measured after paint and on every resize,

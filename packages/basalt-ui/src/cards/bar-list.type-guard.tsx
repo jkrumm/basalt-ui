@@ -59,9 +59,11 @@ export const barRowLinkAndButton: ReactElement = (
   />
 )
 
-export const barRowsOutOfRange: ReactElement = (
-  // @ts-expect-error the body holds 3 to 10 rows
-  <BarList title="Top projects" items={items} bodyRows={2} />
+export const barRowsPastTen: ReactElement = <BarList title="Months" items={items} bodyRows={12} />
+
+export const barRowsNotACount: ReactElement = (
+  // @ts-expect-error the body holds a count of rows, never a height
+  <BarList title="Top projects" items={items} bodyRows="h-56" />
 )
 
 declare const focus: ListFocus<unknown>
