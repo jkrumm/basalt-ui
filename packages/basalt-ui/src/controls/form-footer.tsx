@@ -1,7 +1,10 @@
 /**
  * `FormFooter`: the action row of a submit form. At most five actions and one primary, by type; the
- * primary is the submit button, disabled while the form cannot submit; the footer reads `aria-busy`
- * while it submits and shows the form-level error in an always-mounted live region.
+ * primary is the submit button. It stays enabled while the form is invalid or unchanged, so a click
+ * always answers: a submit with errors shows them and moves focus to the first invalid control. It
+ * is disabled only while the form submits, when the footer reads `aria-busy`. The form-level error
+ * shows in an always-mounted live region; `sticky` keeps the row in view at the bottom of the
+ * scrollport and says when the form has unsaved changes.
  */
 import { useSyncExternalStore } from 'react'
 import type { ReactElement } from 'react'
@@ -31,23 +34,59 @@ export type ValidActions<A extends readonly FormAction[]> = A['length'] extends
     : never
   : never
 
+/** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
+export const formFooterParts = [
+  'form-footer',
+  'form-footer-error',
+  'form-footer-actions',
+  'form-footer-status',
+] as const
+
 /**
- * The action row under a form's fields. The primary submits the form and is disabled on `!canSubmit`;
- * a server error returned by `toSubmitErrors` shows under the row.
+ * After a submit the engine rejected on the client, focus the first invalid control of the form:
+ * two frames let the fields render `aria-invalid` first. A server error has `toSubmitErrors` do it.
+ */
+function focusFirstInvalid(from: HTMLElement): void {
+  const form = from.closest('form')
+  if (form === null) return
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const invalid = form.querySelector<HTMLElement>('[aria-invalid="true"]')
+      if (
+        invalid === null ||
+        (form.contains(document.activeElement) && document.activeElement === invalid)
+      )
+        return
+      invalid.focus()
+    })
+  })
+}
+
+/**
+ * The action row under a form's fields. The primary submits the form; it stays enabled while the
+ * form is invalid or unchanged and is disabled only while it submits. A server error returned by
+ * `toSubmitErrors` shows under the row.
  *
  * @useWhen a submit form needs Cancel and Save
  * @neverWhen the form saves as you type, or the page already has a bar action for it
  *
  * @example
  * <FormFooter form={form} actions={[{ label: 'Cancel', onClick: close }, { label: 'Save', primary: true }]} />
+ * <FormFooter sticky form={form} actions={[{ label: 'Discard', onClick: reset }, { label: 'Save settings', primary: true }]} />
  */
 export function FormFooter<const A extends readonly FormAction[]>({
   form,
   actions,
+  sticky = false,
   className,
 }: {
   form: FormLike<unknown>
   actions: A & ValidActions<A>
+  /**
+   * Keeps the row at the bottom of the scrollport while the form scrolls, on a band of its own, and
+   * reads `Unsaved changes` while the form is dirty: the save of a long settings page.
+   */
+  sticky?: boolean
   /** Layout only (`mt-4`, `w-full`). */
   className?: string
 }): ReactElement {
@@ -60,11 +99,18 @@ export function FormFooter<const A extends readonly FormAction[]>({
     () => form.state,
   )
   const error = firstError(state.errors)
+  const dirty = state.isDirty === true
   return (
     <div
       data-slot="form-footer"
       aria-busy={state.isSubmitting}
-      className={cn('flex flex-col gap-2', className)}
+      {...(sticky && { 'data-sticky': '' })}
+      {...(dirty && { 'data-dirty': '' })}
+      className={cn(
+        'flex flex-col gap-2',
+        sticky && 'sticky bottom-0 z-10 border-t border-border bg-background py-3',
+        className,
+      )}
     >
       <div
         data-slot="form-footer-error"
@@ -73,7 +119,24 @@ export function FormFooter<const A extends readonly FormAction[]>({
       >
         {error}
       </div>
-      <div data-slot="form-footer-actions" className="flex flex-wrap justify-end gap-2">
+      <div
+        data-slot="form-footer-actions"
+        className="flex flex-wrap items-center justify-end gap-2"
+      >
+        {sticky && (
+          <p
+            data-slot="form-footer-status"
+            aria-live="polite"
+            className="m-0 mr-auto flex items-center gap-2 text-sm text-muted-foreground"
+          >
+            {dirty && (
+              <>
+                <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-fill" />
+                Unsaved changes
+              </>
+            )}
+          </p>
+        )}
         {(actions as readonly FormAction[]).map((action) => {
           const primary = action.primary === true
           return primary ? (
@@ -82,8 +145,10 @@ export function FormFooter<const A extends readonly FormAction[]>({
               type="submit"
               variant="primary"
               loading={state.isSubmitting}
-              disabled={!state.canSubmit}
-              onClick={action.onClick}
+              onClick={(event) => {
+                action.onClick?.()
+                focusFirstInvalid(event.currentTarget)
+              }}
             >
               {action.label}
             </Button>

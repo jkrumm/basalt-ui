@@ -7,6 +7,7 @@
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import { Fieldset, FieldsetLegend } from '../ui/field'
+import { FormFieldLayoutContext } from './form-field'
 
 export type FormRowProps = {
   /** Names the row for assistive technology and shows above it: `Line 2` for a repeated row. */
@@ -49,7 +50,8 @@ export function FormRow({ legend, disabled, className, children }: FormRowProps)
           data-slot="form-row-fields"
           className="grid min-w-0 grid-cols-1 gap-3 @regular:auto-cols-fr @regular:grid-flow-col *:min-w-0"
         >
-          {children}
+          {/* Fields side by side are stacked fields, also inside a `FormSection` of rows. */}
+          <FormFieldLayoutContext value="stack">{children}</FormFieldLayoutContext>
         </div>
       </Fieldset>
     </div>

@@ -24,6 +24,7 @@ FormField<T>(props: FormFieldProps<T>): ReactElement
   description?: ReactNode  // Help text under the control, wired to it through `aria-describedby`
   required?: boolean  // Marks the control required: a `*` glyph for the eye and `required` on the control
   disabled?: boolean  // Disables the control
+  layout?: FormFieldLayout  // `stack` puts the label over the control; `row` is the settings row, label and description at the start and the control at the end, stacking when the field is narrow
   className?: string  // Layout only (`w-full`, `max-w-sm`)
   children: ReactElement<unknown, string | JSXElementConstructor<any>>  // The bare control: an `Input`, a `Select`, a `Switch`, a `Checkbox`, a `NumberField`, a `Slider`
 ```

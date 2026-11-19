@@ -1,4 +1,4 @@
-/** `FormFooter`: the primary submits and follows `canSubmit`, `aria-busy` tracks `isSubmitting`. */
+/** `FormFooter`: the primary submits and stays enabled while invalid, `aria-busy` tracks `isSubmitting`. */
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import type { FormLike } from '../core/ports'
@@ -7,7 +7,13 @@ import { FormFooter } from './form-footer'
 afterEach(cleanup)
 
 function fakeForm() {
-  let state = { values: {}, isSubmitting: false, canSubmit: true, errors: [] as unknown[] }
+  let state = {
+    values: {},
+    isSubmitting: false,
+    canSubmit: true,
+    errors: [] as unknown[],
+    isDirty: false,
+  }
   const subs = new Set<() => void>()
   const form: FormLike<unknown> & { patch(p: Partial<typeof state>): void } = {
     get state() {
@@ -48,7 +54,7 @@ describe('FormFooter', () => {
     expect(getByText('Cancel').closest('button')!.getAttribute('type')).toBe('button')
   })
 
-  test('the primary is disabled on !canSubmit and aria-busy tracks isSubmitting', () => {
+  test('the primary stays enabled on !canSubmit, so a click shows the errors; aria-busy tracks isSubmitting', () => {
     const form = fakeForm()
     const { container, getByText } = render(
       <FormFooter form={form} actions={[{ label: 'Save', primary: true }]} />,
@@ -58,11 +64,53 @@ describe('FormFooter', () => {
     expect(save.hasAttribute('disabled') || save.hasAttribute('data-disabled')).toBe(false)
     expect(footer.getAttribute('aria-busy')).toBe('false')
     act(() => form.patch({ canSubmit: false }))
-    expect(save.hasAttribute('disabled') || save.hasAttribute('data-disabled')).toBe(true)
+    expect(save.hasAttribute('disabled') || save.hasAttribute('data-disabled')).toBe(false)
     act(() => form.patch({ canSubmit: true, isSubmitting: true }))
     expect(footer.getAttribute('aria-busy')).toBe('true')
     act(() => form.patch({ isSubmitting: false }))
     expect(footer.getAttribute('aria-busy')).toBe('false')
+  })
+
+  test('sticky: the row is a sticky band and says when the form is dirty', () => {
+    const form = fakeForm()
+    const { container } = render(
+      <FormFooter sticky form={form} actions={[{ label: 'Save', primary: true }]} />,
+    )
+    const footer = container.querySelector('[data-slot="form-footer"]')!
+    expect(footer.hasAttribute('data-sticky')).toBe(true)
+    expect(footer.className).toContain('sticky')
+    const status = container.querySelector('[data-slot="form-footer-status"]')!
+    expect(status.textContent).toBe('')
+    act(() => form.patch({ isDirty: true }))
+    expect(status.textContent).toBe('Unsaved changes')
+    expect(footer.hasAttribute('data-dirty')).toBe(true)
+  })
+
+  test('not sticky: no status line and no band', () => {
+    const form = fakeForm()
+    const { container } = render(
+      <FormFooter form={form} actions={[{ label: 'Save', primary: true }]} />,
+    )
+    expect(container.querySelector('[data-slot="form-footer-status"]')).toBeNull()
+    expect(container.querySelector('[data-slot="form-footer"]')!.className).not.toContain('sticky')
+  })
+
+  test('a rejected submit moves focus to the first invalid control of the form', async () => {
+    const form = fakeForm()
+    const { getByText, getByLabelText } = render(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+        }}
+      >
+        <input aria-label="Name" />
+        <input aria-label="Email" aria-invalid="true" />
+        <FormFooter form={form} actions={[{ label: 'Save', primary: true }]} />
+      </form>,
+    )
+    fireEvent.click(getByText('Save'))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(document.activeElement).toBe(getByLabelText('Email'))
   })
 
   test('a form-level error shows in the live region', () => {
