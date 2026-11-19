@@ -22,9 +22,10 @@ native `<table>` and works with no provider; wrap it in a scroll container to sc
 head sticks inside that container (or to the page when there is none).
 
 ```ts
-Table({ size, className, ...props }: TableProps): ReactElement
+Table({ size, look, className, ...props }: TableProps): ReactElement
   className?: string  // Layout only (`w-1/3`, `text-right`, `whitespace-nowrap`)
   size?: "md" | "sm" | null
+  look?: "grid" | "reading" | null
 ```
 
 ### `TableHeader`
@@ -90,6 +91,7 @@ TableCaption({ className, ...props }: PartProps<"caption">): ReactElement
 Part `table`.
 
 - `size`: `md`, `sm` (default `md`)
+- `look`: `reading`, `grid` (default `reading`)
 
 ## Slots
 

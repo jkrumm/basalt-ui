@@ -67,6 +67,33 @@ describe('table module', () => {
     expect(container.querySelector('td')?.className).toContain('border-b')
   })
 
+  test('the grid look rules both axes in the row rule colour, compact and tabular', () => {
+    const { getByLabelText } = render(
+      <Table look="grid" aria-label="Orders">
+        <TableBody>
+          <TableRow>
+            <TableCell>#4821</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>,
+    )
+    const table = getByLabelText('Orders')
+    expect(table.getAttribute('data-look')).toBe('grid')
+    expect(table.className).toContain('[&_:is(th,td)]:border-e')
+    expect(table.className).toContain('[&_:is(th,td)]:border-border')
+    expect(table.className).toContain('[&_:is(th,td):last-child]:border-e-0')
+    expect(table.className).toContain('tabular-nums')
+    expect(table.className).toContain('[--table-row-h:1.75rem]')
+    // the row rule the cells already draw is the same token: both axes share one colour
+    expect(table.querySelector('td')?.className).toContain('border-border')
+  })
+
+  test('the reading look is the default and draws no column rules', () => {
+    const { getByLabelText } = render(<Sample />)
+    expect(getByLabelText('Orders').hasAttribute('data-look')).toBe(false)
+    expect(getByLabelText('Orders').className).not.toContain('border-e')
+  })
+
   test('numeric aligns right with tabular numerals, the plain column does not', () => {
     const { getByText } = render(<Sample />)
     expect(getByText('Amount').className).toContain('tabular-nums')
