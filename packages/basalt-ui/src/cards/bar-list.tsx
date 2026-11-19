@@ -118,6 +118,8 @@ export type BarListProps<I = unknown> = FrameHead &
      * 8 px tall; without it every bar is one neutral fill.
      */
     series?: readonly LegendEntry[]
+    /** Draw every label in the mono face with tabular figures: ids, hashes, paths. */
+    mono?: boolean
   }
 
 /** A row of body height, in `h-10` (40 px): the label line, a gap and the 4 px track. */
@@ -172,6 +174,7 @@ function BarSkeleton({ rows }: { rows: number }): ReactElement {
  */
 export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
   const { items, max, format, phase, empty, focus, series } = props
+  const mono = props.mono ?? false
   const rows = props.bodyRows ?? props.rows ?? DEFAULT_ROWS
   const { title, subtitle, icon, info } = props
   const f = useFormat()
@@ -266,7 +269,7 @@ export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
                             : '[&[data-focused]>*]:bg-accent'
                         }
                       >
-                        <Row item={item} {...(drawn[i] as RowView)} />
+                        <Row item={item} mono={mono} {...(drawn[i] as RowView)} />
                       </li>
                     ))}
                   </ul>
@@ -330,7 +333,7 @@ type RowView = {
   secondary: string | undefined
 }
 
-type RowProps = RowView & { item: BarListItem }
+type RowProps = RowView & { item: BarListItem; mono: boolean }
 
 /** A row as the live region says it: its label, value, second figure and parts. */
 function sayRow(item: BarListItem | undefined, view: RowView | undefined): string {
@@ -373,13 +376,13 @@ function StackedTrack({ segments }: { segments: readonly Segment[] }): ReactElem
   )
 }
 
-function Row({ item, percent, segments, value, secondary }: RowProps): ReactElement {
+function Row({ item, mono, percent, segments, value, secondary }: RowProps): ReactElement {
   const content = (
     <>
       <span className="flex min-w-0 items-baseline gap-2">
         <span
           data-slot="bar-list-label"
-          className="min-w-0 flex-1 truncate text-sm"
+          className={cn('min-w-0 flex-1 truncate text-sm', mono && 'font-mono tabular-nums')}
           title={item.label}
         >
           {item.label}

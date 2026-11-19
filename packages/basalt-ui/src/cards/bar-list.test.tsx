@@ -472,3 +472,19 @@ describe('BarList across grains', () => {
     expect(container.querySelector('[data-slot="bar-list-live"]')).toBeNull()
   })
 })
+
+describe('BarList mono', () => {
+  test('mono draws every label in the mono face with tabular figures', () => {
+    const { container } = draw({ mono: true })
+    const labels = [...container.querySelectorAll('[data-slot="bar-list-label"]')]
+    expect(labels.every((el) => el.classList.contains('font-mono'))).toBe(true)
+    expect(labels.every((el) => el.classList.contains('tabular-nums'))).toBe(true)
+  })
+
+  test('without mono a label keeps the body face', () => {
+    const { container } = draw()
+    expect(
+      container.querySelector('[data-slot="bar-list-label"]')?.classList.contains('font-mono'),
+    ).toBe(false)
+  })
+})
