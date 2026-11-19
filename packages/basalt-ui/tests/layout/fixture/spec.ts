@@ -225,11 +225,6 @@ export type ChartsSpec = {
   xDomain?: true
 }
 
-/** The `rail` probe: a stated pixel thickness along the top of a plot whose y domain tops out at
- * {@link RAIL_DOMAIN_MAX}. The test asserts the rail measures {@link RAIL_PX} px. */
-export const RAIL_PX = 3
-export const RAIL_DOMAIN_MAX = 100
-
 /**
  * A `basalt-ui/agent-chat` transcript, mounted in the shell body. Exists for the invariants happy-
  * dom cannot see at all (`docs/AGENT-CHAT-SPEC.md`'s `@tanstack/react-virtual` integration):
@@ -307,9 +302,6 @@ export type CardsSpec = {
 export type FormsSpec = {
   widths: number[]
 }
-
-/** The `TocSpec` fixture's sticky title bar height, which is also each heading's `scroll-margin-top`. */
-export const TOC_SCROLL_MARGIN_PX = 48
 
 /**
  * A `TableOfContents` beside an article in the shell body — the scroll-spy's only real-geometry

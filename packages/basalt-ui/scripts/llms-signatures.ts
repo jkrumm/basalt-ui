@@ -42,7 +42,7 @@ function clip(text: string, max: number): string {
 type PropEntry = { sym: ts.Symbol; has: boolean }
 
 /** A prop tagged `@deprecated`: an old spelling kept for one minor, never part of a doc's signature. */
-export const isDeprecatedProp = (checker: ts.TypeChecker, sym: ts.Symbol): boolean =>
+const isDeprecatedProp = (checker: ts.TypeChecker, sym: ts.Symbol): boolean =>
   sym.getJsDocTags(checker).some((tag) => tag.name === 'deprecated')
 
 /** The deprecated props an arm really carries: a `?: undefined` stand-in does not count. */
@@ -75,7 +75,7 @@ export function currentArms(checker: ts.TypeChecker, type: ts.Type, node: ts.Nod
 }
 
 /** The names a doc leaves out: every prop tagged `@deprecated` in any arm. */
-export function deprecatedNames(checker: ts.TypeChecker, type: ts.Type): Set<string> {
+function deprecatedNames(checker: ts.TypeChecker, type: ts.Type): Set<string> {
   const arms = type.isUnion() ? type.types : [type]
   return new Set(
     arms.flatMap((arm) =>
@@ -242,7 +242,7 @@ export function valueSignature(
 }
 
 /** `'a' | 'b'` from a declaration's own type node, in declaration order; undefined unless every member is a scalar literal. */
-export function literalUnionText(decl: ts.TypeAliasDeclaration): string | undefined {
+function literalUnionText(decl: ts.TypeAliasDeclaration): string | undefined {
   const node = decl.type
   if (!ts.isUnionTypeNode(node) || node.types.length > MAX_UNION_MEMBERS) return undefined
   return node.types.every(ts.isLiteralTypeNode)

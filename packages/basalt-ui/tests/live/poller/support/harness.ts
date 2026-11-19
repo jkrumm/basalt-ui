@@ -19,7 +19,7 @@ export type Core = Pick<
 
 type Timer = { id: number; at: number; cb: () => void; every?: number | undefined }
 
-export const EPOCH_MS = 1_700_000_000_000
+const EPOCH_MS = 1_700_000_000_000
 
 export type Clock = {
   readonly now: number

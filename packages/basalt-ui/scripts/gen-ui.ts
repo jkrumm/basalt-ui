@@ -63,7 +63,7 @@ export const DENY = ['h-*', 'min-h-*', 'size-*', 'hidden', 'flex', 'block', 'gri
 // ── Names ────────────────────────────────────────────────────────────────────────────────────────
 
 /** `toggle-group` → `ToggleGroup`. */
-export const pascal = (name: string): string =>
+const pascal = (name: string): string =>
   name
     .split('-')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -215,7 +215,7 @@ const isExported = (node: ts.Node): boolean =>
   (ts.getModifiers(node) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
 
 /** One module: its parts, its cva tables in source order, the primary export's JSDoc. */
-export function readModule(pkgRoot: string, file: string): UiModule {
+function readModule(pkgRoot: string, file: string): UiModule {
   const name = file.replace(/\.tsx$/, '')
   const text = readFileSync(join(pkgRoot, 'src', 'ui', file), 'utf8')
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
@@ -345,7 +345,7 @@ const CLASS_FIX: Readonly<Record<string, string>> = {
 }
 
 /** The deny message: one fixed phrasing, `size` first when the table has a `size` axis. */
-export function contractMessage(module: string, table: Table): string {
+function contractMessage(module: string, table: Table): string {
   const name = pascal(table.part)
   const size = table.axes.find((a) => a.name === 'size')
   const fix = CLASS_FIX[table.part]
@@ -462,7 +462,7 @@ export function generate(roots: UiRoots): Map<string, string> {
 }
 
 /** The JSDoc gap of every module's primary export: the docs would print an empty `use when`. */
-export function jsdocGaps(roots: UiRoots): string[] {
+function jsdocGaps(roots: UiRoots): string[] {
   return moduleFiles(roots.pkgRoot).flatMap((file) => {
     const m = readModule(roots.pkgRoot, file)
     return checkExport({

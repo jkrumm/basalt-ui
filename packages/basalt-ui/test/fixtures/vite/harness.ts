@@ -24,8 +24,8 @@ import { fileURLToPath } from 'node:url'
 import { ejectHeader, withHeader } from '../../../src/cli/merge/header'
 import { ejectedSource, readSeed } from '../../../src/cli/merge/seed'
 
-export const FIXTURES = dirname(fileURLToPath(import.meta.url))
-export const PKG_ROOT = join(FIXTURES, '../../..')
+const FIXTURES = dirname(fileURLToPath(import.meta.url))
+const PKG_ROOT = join(FIXTURES, '../../..')
 
 /** What a `parts` app installs beside basalt-ui. */
 export const PARTS_PEERS = [
@@ -116,4 +116,4 @@ export function eject(app: App, name: string): void {
 }
 
 export const read = (dir: string, rel: string): string => readFileSync(join(dir, rel), 'utf8')
-export const exists = (dir: string, rel: string): boolean => existsSync(join(dir, rel))
+const exists = (dir: string, rel: string): boolean => existsSync(join(dir, rel))

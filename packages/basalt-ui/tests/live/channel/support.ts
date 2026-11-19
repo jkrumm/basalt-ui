@@ -177,7 +177,7 @@ export function serve(handler: (req: { n: number; cursor: string | null; url: UR
 type EsListener = (e: { data: string; lastEventId: string; type: string }) => void
 
 /** The slice of the `EventSource` spec the adapter uses, over fetch + the SSE parser. */
-export class TestEventSource {
+class TestEventSource {
   onopen: (() => void) | null = null
   onerror: (() => void) | null = null
   private readonly listeners = new Map<string, EsListener[]>()

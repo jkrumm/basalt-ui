@@ -30,7 +30,7 @@ const OXFMT = fileURLToPath(new URL('../../../../../node_modules/.bin/oxfmt', im
 export const FILE = 'src/components/ui/widget.tsx'
 export const GUARD = 'src/components/ui/widget.guard.ts'
 export const BASE = '.basalt/base/src/widget.tsx'
-export const KEY = 'src#widget'
+const KEY = 'src#widget'
 
 /** The v1 seed, in basalt's own style (single quotes, no semicolons): one line per entry. */
 export const SEED_V1 = [
@@ -107,7 +107,7 @@ export function bump(pkg: string, version: string, seed: string, guard: string |
 type Run = { code: number; log: string }
 
 /** Runs `fn` with both console streams captured. */
-export function capture(fn: () => number): Run {
+function capture(fn: () => number): Run {
   const saved = { log: console.log, error: console.error }
   let log = ''
   const sink = (...args: unknown[]): void => {

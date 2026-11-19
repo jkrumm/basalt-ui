@@ -94,7 +94,7 @@ export const SHELL_SLOTS = {
 export type ShellSlot = keyof typeof SHELL_SLOTS
 
 /** The selector for `name` under the active `LAYOUT_TARGET`; throws where 2.x has none. */
-export function shellSelector(name: ShellSlot): string {
+function shellSelector(name: ShellSlot): string {
   const { v2, v3 } = SHELL_SLOTS[name]
   if (LAYOUT_TARGET === 'v3') return v3
   if (v2 === null) throw new Error(`LAYOUT: slot ${name} has no 2.x selector`)

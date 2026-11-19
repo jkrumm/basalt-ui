@@ -8,7 +8,7 @@ import { buildRule, classPatternRule } from './factory'
 import type { AstForm, ClassForm } from './rule-table'
 import { defineRules } from './rule-table'
 
-export const viewport: ClassForm = {
+const viewport: ClassForm = {
   id: 'prefix',
   pattern: /(?:^|:)(?:(?:max|min)-)?(?:sm|md|lg|xl|2xl):/,
   fix: 'Key on the container: @narrow: @regular: @wide:',
@@ -24,7 +24,7 @@ export const toneHole: ClassForm = {
   fixture: 'synthetic/tone-hole.tsx',
 }
 
-export const offForm: ClassForm = {
+const offForm: ClassForm = {
   id: 'padding',
   pattern: /^p-/,
   fix: 'Surfaces own padding: Inset, CardBand',
@@ -34,7 +34,7 @@ export const offForm: ClassForm = {
   reason: 'off until a structural F5P retest',
 }
 
-export const noAlert: AstForm = {
+const noAlert: AstForm = {
   id: 'alert',
   detect: ({ report }) => ({
     CallExpression(node: Node) {

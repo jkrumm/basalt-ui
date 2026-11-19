@@ -13,7 +13,7 @@ export const ROWS: readonly Row[] = [
   { id: 'c', name: 'Project 1', amount: 7, state: 'Engineering' },
 ]
 
-export const STATES = ['Engineering', 'Eng'] as const
+const STATES = ['Engineering', 'Eng'] as const
 
 export type TableOptions = Omit<
   UseDataTable<Row>,

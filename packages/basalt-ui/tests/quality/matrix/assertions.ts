@@ -290,7 +290,7 @@ export interface CellOptions {
 
 type Step = { name: string; run: () => Promise<unknown> }
 
-export function cellSteps(page: Page, options: CellOptions): Step[] {
+function cellSteps(page: Page, options: CellOptions): Step[] {
   const like: PageLike = page
   return [
     {

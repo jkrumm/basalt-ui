@@ -21,7 +21,7 @@ const SECTIONS = ['Overview', 'Activity', 'Deployments', 'Members', 'Billing', '
  * - `accordion-keep`: `keepMounted`, a typed value survives a close;
  * - `collapsible-found` / `collapsible-keep`: the same two on the single region.
  */
-export function UiDiscloseFixture(): ReactElement {
+function UiDiscloseFixture(): ReactElement {
   return (
     // theme-allow -- the wrappers are the probe's payload (full-width boxes on one page)
     <main className="flex flex-col gap-8 bg-background p-4 text-foreground">

@@ -58,7 +58,7 @@ function seedOf(file: string, components: Component[]): SeedName {
 }
 
 /** One reviewer `last.json` → one per-seed verdict; a degraded or failed-closed run is refused. */
-export function verdictOf(file: string, raw: string): SeedVerdict {
+function verdictOf(file: string, raw: string): SeedVerdict {
   const data = JSON.parse(raw) as {
     degraded?: unknown
     failedClosed?: unknown

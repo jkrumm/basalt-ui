@@ -31,7 +31,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const PACKAGE = resolve(HERE, '../../..')
 const CACHE = join(PACKAGE, 'node_modules/.cache/basalt-ssr')
 
-export const FIXTURE_DIR = join(HERE, 'fixtures')
+const FIXTURE_DIR = join(HERE, 'fixtures')
 
 export type HydrateOptions = { locale: string; timeZone: string }
 
@@ -62,7 +62,7 @@ export function rowStatus(name: string): 'covered' | 'not covered' {
 const built = new Map<string, Promise<string>>()
 
 /** `vite build --ssr` for one fixture; cached per entry within the process. */
-export function buildServerBundle(entry: string): Promise<string> {
+function buildServerBundle(entry: string): Promise<string> {
   const cached = built.get(entry)
   if (cached !== undefined) return cached
   const run = (async () => {
@@ -84,7 +84,7 @@ export function buildServerBundle(entry: string): Promise<string> {
 }
 
 /** Server HTML from a fresh no-DOM process. Throws with the process' stderr when it logs or fails. */
-export async function renderOnServer(bundle: string, options: HydrateOptions): Promise<string> {
+async function renderOnServer(bundle: string, options: HydrateOptions): Promise<string> {
   const child = Bun.spawn(
     [process.execPath, 'run', join(HERE, 'render-server.ts'), bundle, JSON.stringify(options)],
     { cwd: PACKAGE, stdout: 'pipe', stderr: 'pipe', env: { ...process.env, TZ: options.timeZone } },

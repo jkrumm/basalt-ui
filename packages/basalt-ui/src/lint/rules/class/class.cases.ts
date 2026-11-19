@@ -33,7 +33,7 @@ const EXPECT = /^\/\/ expect: (.+)$/gm
 export const readFixture = (path: string): string => readFileSync(join(FIXTURES_ROOT, path), 'utf8')
 export const validPath = (form: Form): string => form.fixture.replace(/\.tsx$/, '.valid.tsx')
 
-export const subjectsOf = (code: string): string[] =>
+const subjectsOf = (code: string): string[] =>
   [...code.matchAll(EXPECT)].map((match) => match[1] as string)
 
 const errorsOf = (form: Form, code: string): ErrorCase[] =>
