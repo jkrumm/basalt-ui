@@ -17,6 +17,13 @@ import type { ChartMarks, ChartX, XRefAt, XRefLine } from './types'
 /** The title's text size: the tick font, so a card never mixes sizes. */
 const TITLE_FONT = BASALT.text.micro
 
+/**
+ * A y title keeps this far from the chart's left and right edge, px: the keyboard focus ring is an inset
+ * 2 px outline along those edges (`chart-box.module.css`), and a title that starts at the edge reads as
+ * struck through by it. The ring's width and 2 px of air.
+ */
+const TITLE_RING_CLEAR = 4
+
 /** The x title as the engine's own axis label: centred under the ticks, its row reserved by the margin solver. */
 export const xTitleLabel = (title: string) => ({
   text: title,
@@ -48,6 +55,7 @@ export function yTitleScale(
         opacity: 1,
         // The caption starts at the plot's edge and runs inward: it never widens the tick gutter.
         anchor: side === 'right' ? ('end' as const) : ('start' as const),
+        dx: side === 'right' ? -TITLE_RING_CLEAR : TITLE_RING_CLEAR,
         dy: -Math.round(TITLE_FONT * 1.4),
       },
     },

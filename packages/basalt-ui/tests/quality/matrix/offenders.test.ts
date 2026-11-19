@@ -11,6 +11,7 @@ import { quality } from '../../../src/testing/quality'
 import type { PageLike } from '../../../src/testing/quality'
 import { fit, forcedColors, hitFloor, hitOverlap, reducedMotion } from './assertions'
 import { bootMatrix } from './harness'
+import { chipFindingsNow } from './hover-shift'
 import { parseShard } from './shard'
 
 // A sharded run (BASALT_MATRIX_SHARD, shard.ts) holds this small suite on its first shard only.
@@ -126,7 +127,25 @@ const CASES: Case[] = [
     fails: /smaller than the floor/,
   },
   { assertion: 'hitOverlap', offender: 'hit-overlap', run: hitOverlap, fails: /hit boxes overlap/ },
+  {
+    assertion: 'hoverChips (over a tick)',
+    offender: 'hover-chip-covers-tick',
+    run: hoverChips,
+    fails: /the x chip "06:00" covers the tick label "06:00"/,
+  },
+  {
+    assertion: 'hoverChips (repeated)',
+    offender: 'hover-chip-repeated',
+    run: hoverChips,
+    fails: /the x chip "06:00" is drawn on two charts stacked/,
+  },
 ]
+
+/** The hover guard's chip check, as an assertion: throws what it names. */
+async function hoverChips(page: Page): Promise<void> {
+  const found = await chipFindingsNow(page)
+  if (found.length > 0) throw new Error(found.join('\n'))
+}
 
 async function openOffender(name: string): Promise<Page> {
   if (harness === null) throw new Error('no harness')
@@ -169,6 +188,7 @@ describe.skipIf(harness === null)('seeded offenders', () => {
       'reducedMotion',
       'hitFloor',
       'hitOverlap',
+      'hoverChips',
     ]) {
       expect(covered).toContain(name)
     }
@@ -189,6 +209,7 @@ describe.skipIf(harness === null)('seeded offenders', () => {
       await reducedMotion(page)
       await hitFloor(page, 'fine')
       await hitOverlap(page)
+      await hoverChips(page)
     } finally {
       await page.context().close()
     }

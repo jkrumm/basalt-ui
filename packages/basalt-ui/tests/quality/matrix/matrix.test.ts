@@ -13,7 +13,7 @@ import { runCell } from './assertions'
 import { classify, KNOWN } from './known'
 import type { KnownFinding } from './known'
 import { bootMatrix } from './harness'
-import { hoverFindings, KNOWN_SHIFTS, REBUILT_PAGES, TRIAL_PAGES } from './hover-shift'
+import { hoverFindings, KNOWN_CHIPS, KNOWN_SHIFTS, REBUILT_PAGES, TRIAL_PAGES } from './hover-shift'
 import { routePaths, scenarioPaths } from './routes'
 import { inShard, parseShard, shardLine } from './shard'
 
@@ -116,6 +116,8 @@ describe.skipIf(harness === null)('hover changes the readout, never the chart or
             .map((f) => f.text)
             .join('\n')
         expect(of('tooltip')).toBe('')
+        // A chip over a tick label is the kit's on every page; the listed pages wait for the follow-up row.
+        if (!KNOWN_CHIPS.includes(cell.route)) expect(of('chip')).toBe('')
         // A trial build's card follows the focus until its rerun (`TRIAL_PAGES`): only its card check is skipped.
         const trial = TRIAL_PAGES.some((prefix) => cell.route.startsWith(prefix))
         const rebuilt = REBUILT_PAGES.some((prefix) => cell.route.startsWith(prefix))

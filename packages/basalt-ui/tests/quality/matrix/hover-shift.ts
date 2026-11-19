@@ -7,6 +7,9 @@
  *   focus clears, the line closes, and it starts again);
  * - had its tooltip change side more than once (owner review 2: a tooltip that flips above and below
  *   the next datum jumps the height of itself for a 10 px pointer move);
+ * - drew a hover chip (the value pinned to an axis) over a tick label that stayed visible, or drew the
+ *   same x chip on charts stacked one above the other (owner review 2 rerun: a y chip on the tick
+ *   column, an x chip on the baseline of every panel);
  * - changed any text, or any element's width, in its card outside the tooltip, the plot's svg and the
  *   reserved readout line (`[data-slot="chart-readout"]`, whose own box keeps its width): owner review
  *   2 saw the headline figure swap for the hovered hour, a delta badge swap for a status pill and a side
@@ -33,6 +36,34 @@ export const TRIAL_PAGES: readonly string[] = ['/scenarios/expr-', '/cycle/']
 
 /** Trial builds `v3-owner-2-rerun` rebuilt on that contract: their card is checked like any page's. */
 export const REBUILT_PAGES: readonly string[] = ['/scenarios/expr-n04', '/cycle/shell-6']
+
+/**
+ * Pages where a chip still covers a tick label that stays painted, or the same x chip repeats on charts
+ * stacked on one cursor, found when the guard learned to look (`v3-owner-2-rerun-kit-fixes`; no earlier
+ * guard read chips). They are the kit's: the corner where the x chip meets the y axis' lowest tick, band
+ * and date axes whose tick the readout lands beside, and a shared cursor drawing the chip on every panel.
+ * The sweep still runs on them and the findings go unchecked until the follow-up kit row (a signal on
+ * basalt-ui) fixes the cause; an entry is deleted with its fix. A page not listed here fails on a chip.
+ */
+export const KNOWN_CHIPS: readonly string[] = [
+  '/charts',
+  '/kit/bar-list-series',
+  '/recipes/two-pane',
+  '/scenarios/expr-c11',
+  '/scenarios/expr-n03',
+  '/scenarios/expr-n13',
+  '/scenarios/expr-n14',
+  '/scenarios/expr-n15',
+  '/scenarios/expr-n16',
+  '/scenarios/expr-n40',
+  '/scenarios/expr-n41',
+  '/scenarios/expr-n44',
+  '/scenarios/expr-n45',
+  '/scenarios/expr-n46',
+  '/scenarios/expr-n50',
+  '/scenarios/expr-n52',
+  '/scenarios/expr-n58',
+]
 
 /** The boxes a pointer sweeps: a cartesian chart's root and an answering sparkline's plot. */
 const PLOTS = '[data-basalt-chart], [data-slot="spark-plot"]'
@@ -108,10 +139,91 @@ function cardChange(rest: readonly Item[], now: readonly Item[]): string | null 
   return null
 }
 
+/** Air kept round a tick label's text before a chip counts as covering it, px: a text box is a line box taller than its glyphs. */
+const GLYPH_AIR_X = 1
+const GLYPH_AIR_Y = 2
+/** Wait before the chips are read at a stop, ms: the tick labels' opacity follows the focus a frame or two later. */
+const CHIP_SETTLE_MS = 80
+/** Charts this close one above the other (or closer) are one stack, px. */
+const STACK_GAP = 24
+
+/**
+ * Runs in the page: the hover chips (`.ts-chart__crosshair-label`) of every chart, at the pointer's
+ * stop. Names each chip that covers a tick label still visible (axis texts: `g.ts-chart__axes`, the
+ * axis titles included; the engine's opacity callback blanks the ticks a chip lands on), and each x chip
+ * that shows with the same text on two charts stacked one above the other: only the panel that
+ * labels the axis carries it.
+ */
+function readChips(air: { x: number; y: number; stackGap: number }): string[] {
+  const { x: glyphAirX, y: glyphAirY, stackGap } = air
+  const found: string[] = []
+  const charts = [...document.querySelectorAll<HTMLElement>('[data-basalt-chart]')]
+  const seen = (el: Element, chart: Element): number => {
+    let opacity = 1
+    for (let n: Element | null = el; n !== null && n !== chart; n = n.parentElement)
+      opacity *= Number(getComputedStyle(n).opacity)
+    return opacity
+  }
+  const labelOf = (chart: HTMLElement, i: number): string =>
+    (
+      chart.closest('[data-slot="chart-card"], [data-slot="stat-card"]')?.querySelector('h2, h3, p')
+        ?.textContent ??
+      chart.getAttribute('aria-label') ??
+      `chart ${i + 1}`
+    ).trim()
+  const xChips: { chart: HTMLElement; text: string }[] = []
+  for (const [i, chart] of charts.entries()) {
+    const texts = [...chart.querySelectorAll<SVGTextElement>('svg text')]
+    const chips = texts.filter((t) => t.classList.contains('ts-chart__crosshair-label-text'))
+    if (chips.length === 0) continue
+    const ticks = texts.filter(
+      (t) =>
+        t.closest('g.ts-chart__axes') !== null &&
+        (t.textContent ?? '').trim() !== '' &&
+        seen(t, chart) > 0.05,
+    )
+    for (const chip of chips) {
+      const a = chip.getBoundingClientRect()
+      const axis = chip.classList.contains('ts-chart__crosshair-label--x') ? 'x' : 'y'
+      if (axis === 'x') xChips.push({ chart, text: chip.textContent ?? '' })
+      for (const tick of ticks) {
+        const b = tick.getBoundingClientRect()
+        // Each text gives up its own leading and its own side bearing.
+        const apart =
+          a.right - glyphAirX <= b.left + glyphAirX ||
+          b.right - glyphAirX <= a.left + glyphAirX ||
+          a.bottom - glyphAirY <= b.top + glyphAirY ||
+          b.bottom - glyphAirY <= a.top + glyphAirY
+        if (!apart)
+          found.push(
+            `${labelOf(chart, i)}: the ${axis} chip "${chip.textContent}" covers the tick label "${(tick.textContent ?? '').trim()}"`,
+          )
+      }
+    }
+  }
+  for (const [i, one] of xChips.entries()) {
+    for (const other of xChips.slice(i + 1)) {
+      if (one.text !== other.text || one.chart === other.chart) continue
+      const a = one.chart.getBoundingClientRect()
+      const b = other.chart.getBoundingClientRect()
+      const column = Math.abs(a.left - b.left) < 1 && Math.abs(a.width - b.width) < 1
+      const gap = Math.max(a.top, b.top) - Math.min(a.bottom, b.bottom)
+      if (column && gap <= stackGap)
+        found.push(`the x chip "${one.text}" is drawn on two charts stacked one above the other`)
+    }
+  }
+  return [...new Set(found)]
+}
+
 export type HoverFinding = {
-  /** `moved` and `tooltip` are the kit's; `card` is the page's or the card's. */
-  kind: 'moved' | 'tooltip' | 'card'
+  /** `moved`, `tooltip` and `chip` are the kit's; `card` is the page's or the card's. */
+  kind: 'moved' | 'tooltip' | 'chip' | 'card'
   text: string
+}
+
+/** The chip check of the page at the pointer's current stop: what it names, as `<chart>: <what>`. */
+export function chipFindingsNow(page: Page): Promise<string[]> {
+  return page.evaluate(readChips, { x: GLYPH_AIR_X, y: GLYPH_AIR_Y, stackGap: STACK_GAP })
 }
 
 /** Every finding of a sweep across each plot on the page, as `<label>: <what>`; empty when calm. */
@@ -119,6 +231,7 @@ export async function hoverFindings(page: Page): Promise<HoverFinding[]> {
   const plots = page.locator(PLOTS)
   const count = Math.min(await plots.count(), MAX_PLOTS)
   const found: HoverFinding[] = []
+  const chips = new Set<string>()
   for (let i = 0; i < count; i++) {
     const plot = plots.nth(i)
     if (!(await plot.isVisible())) continue
@@ -151,6 +264,9 @@ export async function hoverFindings(page: Page): Promise<HoverFinding[]> {
       const dy = now.y - rest.y
       if (moved === null && (Math.abs(dx) > TOLERANCE_PX || Math.abs(dy) > TOLERANCE_PX))
         moved = `moved ${dx.toFixed(1)},${dy.toFixed(1)} px at ${stop.toFixed(2)}`
+      // The engine restores a tick label's opacity after layout, a follower chart a frame later: read once settled.
+      await page.waitForTimeout(CHIP_SETTLE_MS)
+      for (const text of await chipFindingsNow(page)) chips.add(text)
       const frame = await plot.evaluate(readFrame)
       if (frame.side !== null && frame.side !== sides.at(-1)) sides.push(frame.side)
       card ??= cardChange(atRest.items, frame.items)
@@ -165,6 +281,7 @@ export async function hoverFindings(page: Page): Promise<HoverFinding[]> {
     if (card !== null) found.push({ kind: 'card', text: `${label}: ${card}` })
   }
   await page.mouse.move(0, 0)
+  for (const text of chips) found.push({ kind: 'chip', text })
   return found
 }
 

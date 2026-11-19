@@ -7,6 +7,9 @@
 import { useId } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { resolvePhase } from '../core/phase'
+import type { Phase, QueryStateLike } from '../core/ports'
+import { Skeleton } from '../ui/skeleton'
 import { Fieldset, FieldsetLegend } from '../ui/field'
 import { FormFieldLayoutContext } from './form-field'
 import type { FormFieldLayout } from './form-field'
@@ -20,6 +23,12 @@ export type FormSectionProps = {
   layout?: FormFieldLayout
   /** Disables every field of the section. */
   disabled?: boolean
+  /**
+   * The query the section's values wait on. While it loads the title and description stand and the
+   * body holds three placeholder rows (no field, no footer); every other phase draws the section.
+   * The page's own frame (`QueryState`) owns error and empty.
+   */
+  phase?: Phase | QueryStateLike | undefined
   /**
    * A band at the bottom of the surface: a `FormFooter` when this section saves on its own (a form
    * of one section), never a second save inside a larger form.
@@ -37,7 +46,23 @@ export const formSectionParts = [
   'form-section-header',
   'form-section-body',
   'form-section-footer',
+  'form-section-loading-row',
 ] as const
+
+const LOADING_ROWS = ['a', 'b', 'c'] as const
+
+/** One placeholder settings row: a label and its description at the start, the control at the end. */
+function LoadingRow(): ReactElement {
+  return (
+    <div data-slot="form-section-loading-row" className="flex items-center justify-between gap-4">
+      <div className="flex w-1/3 flex-col gap-1 text-sm">
+        <Skeleton className="w-24" />
+        <Skeleton className="w-40" />
+      </div>
+      <Skeleton className="h-ctl w-1/3 rounded-ctrl" />
+    </div>
+  )
+}
 
 /**
  * A titled group of fields on a surface, one row per field divided by a hairline, with an optional
@@ -58,11 +83,13 @@ export function FormSection({
   description,
   layout = 'row',
   disabled,
+  phase,
   footer,
   className,
   children,
 }: FormSectionProps): ReactElement {
   const descriptionId = useId()
+  const loading = resolvePhase({ phase }).tag === 'loading'
   const hasDescription = description !== undefined && description !== null && description !== ''
   // The surface is a plain box around the fieldset, so the fields' size containers never sit
   // directly in the `<fieldset>` (form-row.tsx names the Chrome bug that avoids).
@@ -70,12 +97,13 @@ export function FormSection({
     <div
       data-slot="form-section"
       className={cn(
-        'min-w-0 overflow-clip rounded-card bg-card text-foreground shadow-card',
+        'min-w-0 overflow-clip rounded-card bg-card text-foreground shadow-card forced-colors:border forced-colors:border-current',
         className,
       )}
     >
       <Fieldset
         {...(disabled === true && { disabled: true })}
+        {...(loading && { 'aria-busy': true })}
         {...(hasDescription && { 'aria-describedby': descriptionId })}
         className="min-w-0 gap-0"
       >
@@ -96,13 +124,14 @@ export function FormSection({
           data-slot="form-section-body"
           className="flex min-w-0 flex-col border-t border-border *:min-w-0 *:border-b *:border-border *:px-4 *:py-3 *:last:border-b-0"
         >
-          <FormFieldLayoutContext value={layout}>{children}</FormFieldLayoutContext>
+          {loading ? (
+            LOADING_ROWS.map((row) => <LoadingRow key={row} />)
+          ) : (
+            <FormFieldLayoutContext value={layout}>{children}</FormFieldLayoutContext>
+          )}
         </div>
-        {footer === undefined ? null : (
-          <div
-            data-slot="form-section-footer"
-            className="min-w-0 border-t border-border bg-inset px-4 py-3"
-          >
+        {footer === undefined || loading ? null : (
+          <div data-slot="form-section-footer" className="min-w-0 border-t border-border px-4 py-3">
             {footer}
           </div>
         )}

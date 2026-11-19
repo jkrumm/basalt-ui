@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>offender: the same x chip on two charts stacked one above the other</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          16px/1.4 system-ui,
+          sans-serif;
+        color: #111;
+        background: #fff;
+      }
+      [data-basalt-chart] {
+        display: block;
+        width: 480px;
+        height: 120px;
+      }
+      svg {
+        display: block;
+      }
+      text {
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div data-basalt-chart>
+        <svg width="480" height="120" aria-hidden="true">
+          <g class="ts-chart__axes"></g>
+          <g class="ts-chart__marks">
+            <text class="ts-chart__crosshair-label ts-chart__crosshair-label--x ts-chart__crosshair-label-text" x="200" y="100">06:00</text>
+          </g>
+        </svg>
+      </div>
+      <div data-basalt-chart>
+        <svg width="480" height="120" aria-hidden="true">
+          <g class="ts-chart__axes"></g>
+          <g class="ts-chart__marks">
+            <text class="ts-chart__crosshair-label ts-chart__crosshair-label--x ts-chart__crosshair-label-text" x="200" y="100">06:00</text>
+          </g>
+        </svg>
+      </div>
+    </main>
+  </body>
+</html>

@@ -89,6 +89,20 @@ describe('TablePager', () => {
     expect(pager.textContent).toMatch(/1–5 of 5/)
   })
 
+  test('the range label is empty while the table loads or holds no rows, never "No rows on this page"', () => {
+    const loading = render(<Subject pager="pages" phase="loading" />)
+    const range = (c: HTMLElement) =>
+      c.querySelector('[data-slot="table-pager-range"]')?.textContent
+    expect(range(loading.container)).toBe('')
+    cleanup()
+    const empty = render(<Subject pager="pages" data={[]} />)
+    expect(range(empty.container)).toBe('')
+    expect(empty.container.textContent).not.toContain('No rows on this page')
+    cleanup()
+    const ready = render(<Subject pager="pages" />)
+    expect(range(ready.container)).toMatch(/1–5 of 5/)
+  })
+
   test('next and previous write the page; the size select writes the size', () => {
     const rows = Array.from({ length: 30 }, (_, i) => ({ id: `r${i}`, name: `n${i}`, qty: i }))
     render(<Subject pager="pages" data={rows} />)

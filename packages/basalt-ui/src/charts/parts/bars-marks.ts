@@ -6,6 +6,7 @@
 import { barY } from '@tanstack/charts/bar'
 import { dot } from '@tanstack/charts/dot'
 import { group } from '@tanstack/charts/group'
+import { decorative } from '@tanstack/charts/mark/decorative'
 import { stack } from '@tanstack/charts/stack'
 import { CV } from '../core/theme'
 import { dimmedPaint, emphasis, focusedPaint } from '../marks'
@@ -153,16 +154,20 @@ function zeroTicks<D>(
     layout === 'grouped'
       ? rows.map((row) => ({ ...row, y: ticks.includes(row) ? height : null }))
       : ticks.map((row) => ({ ...row, y: height }))
+  // Decorative: the tick's height is a drawing size (`ZERO_TICK_PX`), not a value, so it must not be the
+  // focus point the hover chip and the cursor read ('0.03'); the zero rows' own 0 is.
   return [
-    barY(drawn, {
-      id: 'zero-ticks',
-      x: rowX,
-      y: 'y',
-      z: 'series',
-      fill: paint.fill,
-      states: [{ when: { focus: 'x' }, style: { fill: paint.solid } }],
-      layout: layout === 'grouped' ? group({ padding: 0.1 }) : stack({ order }),
-    }),
+    decorative(
+      barY(drawn, {
+        id: 'zero-ticks',
+        x: rowX,
+        y: 'y',
+        z: 'series',
+        fill: paint.fill,
+        states: [{ when: { focus: 'x' }, style: { fill: paint.solid } }],
+        layout: layout === 'grouped' ? group({ padding: 0.1 }) : stack({ order }),
+      }),
+    ),
   ]
 }
 
