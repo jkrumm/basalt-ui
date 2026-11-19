@@ -113,9 +113,9 @@ export const PLAYGROUND_COMPILER_RULE_EXEMPTIONS: readonly CompilerRuleExemption
 
 /**
  * A form of a rule switched off for named playground files, the rest of the rule staying on. The
- * three expression scenarios below were built by hand before `primitive-bypass/list-rows` existed;
- * `v3-owner-1-rerun` rebuilds n02 and n04 with `RowList` and deletes their entries, c10 follows
- * with its next cycle. Never a blanket off, never a new file.
+ * expression scenario below was built by hand before `primitive-bypass/list-rows` existed; c10
+ * follows with its next cycle (`v3-owner-1-rerun` rebuilt n02 and n04 and deleted theirs). Never a
+ * blanket off, never a new file.
  */
 type FormWaiver = { rule: string; forms: readonly string[]; reason: string; files: string[] }
 
@@ -123,8 +123,8 @@ export const PLAYGROUND_FORM_WAIVERS: readonly FormWaiver[] = [
   {
     rule: 'basalt/primitive-bypass',
     forms: ['list-rows'],
-    reason: 'hand-built row lists from before RowList; rebuilt by v3-owner-1-rerun',
-    files: ['src/scenarios/expr/n02/**', 'src/scenarios/expr/n04/**', 'src/scenarios/expr/c10/**'],
+    reason: 'a hand-built row list from before RowList; rebuilt by its next cycle',
+    files: ['src/scenarios/expr/c10/**'],
   },
 ]
 
