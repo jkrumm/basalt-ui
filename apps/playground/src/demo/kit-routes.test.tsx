@@ -82,6 +82,13 @@ describe('the Kit nav', () => {
       '/kit/chain',
       '/kit/library',
     ])
+    expect(navPaths('kit-forms')).toEqual([
+      '/kit/forms/inputs',
+      '/kit/forms/choices',
+      '/kit/forms/dates',
+      '/kit/forms/buttons',
+      '/kit/forms/whole',
+    ])
     expect(navPaths('recipes')).toEqual([
       '/recipes/view-switch',
       '/recipes/saved-views',
@@ -92,6 +99,7 @@ describe('the Kit nav', () => {
       (id) => id.startsWith('trial') || id.startsWith('fleet') || id === 'scenarios',
     )
     expect(ids.indexOf('kit')).toBeLessThan(Math.min(...trial.map((id) => ids.indexOf(id))))
+    expect(ids.indexOf('kit-forms')).toBe(ids.indexOf('kit') + 1)
     for (const section of NAV.sections.filter((s) => trial.includes(s.id))) {
       expect(section.label).toStartWith('Trial evidence')
     }
@@ -158,6 +166,51 @@ describe('the Kit pages', () => {
   test("a photo's own page", async () => {
     mount(`/kit/photos/${first.id}`)
     expect(await screen.findByText('Exposure')).toBeDefined()
+  })
+})
+
+describe('the Kit forms', () => {
+  test('inputs: every control in its five states', async () => {
+    mount('/kit/forms/inputs')
+    const text = await screen.findByRole('region', { name: 'Text' })
+    expect(within(text).getAllByRole('textbox').length).toBe(5)
+    expect(within(text).getByRole('textbox', { name: 'Read-only' })).toHaveProperty(
+      'readOnly',
+      true,
+    )
+    expect(within(text).getByText('Enter a full address, like ada@example.com.')).toBeDefined()
+    const checks = screen.getByRole('region', { name: 'Checkbox' })
+    expect(within(checks).getByRole('checkbox', { name: 'Filled' })).toBeDefined()
+  })
+
+  test('choices: select, segmented, radios and a checkbox group', async () => {
+    mount('/kit/forms/choices')
+    expect(await screen.findByRole('radiogroup', { name: 'Rollout' })).toBeDefined()
+    expect(screen.getAllByRole('checkbox').length).toBe(4)
+  })
+
+  test('dates and numbers: the two pickers and the sliders', async () => {
+    mount('/kit/forms/dates')
+    expect(await screen.findByRole('button', { name: /^Launch day: / })).toBeDefined()
+    expect(screen.getAllByRole('slider').length).toBe(3)
+  })
+
+  test('buttons: variants, icons, states and the menu button', async () => {
+    mount('/kit/forms/buttons')
+    expect((await screen.findAllByRole('button', { name: 'Deploy' })).length).toBeGreaterThan(1)
+    expect(screen.getByRole('button', { name: 'More actions' })).toBeDefined()
+  })
+
+  test('whole forms: the create dialog, the settings form and the steps, each on TanStack Form', async () => {
+    mount('/kit/forms/whole')
+    expect(await screen.findByRole('button', { name: 'New service' })).toBeDefined()
+    expect(screen.getByText('checkout')).toBeDefined()
+    cleanup()
+    mount('/kit/forms/whole?form=settings')
+    expect(await screen.findByRole('button', { name: 'Save settings' })).toBeDefined()
+    cleanup()
+    mount('/kit/forms/whole?form=steps')
+    expect(await screen.findByRole('progressbar', { name: 'Step 1 of 3: Basics' })).toBeDefined()
   })
 })
 

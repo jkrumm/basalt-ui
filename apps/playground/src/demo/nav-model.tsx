@@ -7,7 +7,7 @@
  * generated route tree. It is PURE (no registration, no global), so this file imports nothing from
  * `routes/` and either side can read it without a cycle.
  *
- * Destinations: the overview pages, then the Kit (one page per capability) and the routed recipes, then the
+ * Destinations: the overview pages, then the Kit (one page per capability), its Forms group and the routed recipes, then the
  * trial evidence (the cycle apps and the scenarios built from `SCENARIO_INFO`), labelled as such.
  * Settings is the shell's `settings` menu, not a nav item.
  */
@@ -85,6 +85,13 @@ const Panel = glyph(
   <>
     <path d="M4 5h16v14H4z" />
     <path d="M14 5v14" />
+  </>,
+)
+const Form = glyph(
+  <>
+    <path d="M4 5h16v4H4z" />
+    <path d="M4 13h16v4H4z" />
+    <path d="M14 21h6" />
   </>,
 )
 const Image = glyph(
@@ -197,6 +204,48 @@ export const NAV = defineNav({
           icon: Image,
           mobile: 'more',
           link: linkOptions({ to: '/kit/library' }),
+        },
+      ],
+    },
+    // The kit's forms: every shipped control in its states, then three whole forms on TanStack Form.
+    {
+      id: 'kit-forms',
+      label: 'Kit: Forms',
+      items: [
+        {
+          id: 'kit-forms-inputs',
+          label: 'Inputs and states',
+          icon: Form,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/forms/inputs' }),
+        },
+        {
+          id: 'kit-forms-choices',
+          label: 'Choices',
+          icon: Form,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/forms/choices' }),
+        },
+        {
+          id: 'kit-forms-dates',
+          label: 'Dates and numbers',
+          icon: Form,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/forms/dates' }),
+        },
+        {
+          id: 'kit-forms-buttons',
+          label: 'Buttons',
+          icon: Form,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/forms/buttons' }),
+        },
+        {
+          id: 'kit-forms-whole',
+          label: 'Whole forms',
+          icon: Form,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/forms/whole' }),
         },
       ],
     },
