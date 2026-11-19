@@ -35,6 +35,10 @@ const playgroundPlugin = (pseudo: boolean): Bun.BunPlugin => ({
     if (pseudo) {
       build.onResolve({ filter: /\/demo\/page-format$/ }, () => ({ path: PSEUDO_FORMAT }))
     }
+    // The fonts are basalt-ui's dependencies: their url() resolves from the package that imports them.
+    build.onResolve({ filter: /^@fontsource-variable\// }, (args) => ({
+      path: Bun.resolveSync(args.path, join(REPO, 'packages/basalt-ui')),
+    }))
     build.onResolve({ filter: /\?inline$/ }, (args) => {
       const bare = args.path.slice(0, -'?inline'.length)
       return {
