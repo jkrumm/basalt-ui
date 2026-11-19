@@ -104,13 +104,6 @@ export const KNOWN: readonly KnownFinding[] = [
     owner: 'content: the CodeBlock frame has no border or outline under forced-colors',
   },
   {
-    route: '/scenarios/mdx',
-    assertion: 'hitFloor',
-    // The pseudo catalog prints `Copy` as `[Çôþý~~]`.
-    item: /button\[button\] "(Copy|\[Çôþý~+\])" 24x44 < 44x44/,
-    owner: 'content: the CodeBlock copy button is 24px wide under a coarse pointer',
-  },
-  {
     route: '/overview',
     assertion: 'ringWalk',
     item: /button "More information": no focus outline/,

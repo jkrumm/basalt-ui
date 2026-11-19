@@ -8,7 +8,9 @@ import { cn } from '../core/cn'
  * The `Button` cva table: the one source the generator reads for the type union, the `no-restyle`
  * contract and the props docs. Heights come from the density tokens (`h-ctl`); `pointer-coarse:`
  * lifts the visible control to the 44 px floor, and the small sizes keep 24 px visible with a 44 px
- * `::after` hit area.
+ * `::after` hit area. A small icon button also takes 10 px of inline margin under a coarse pointer, so
+ * its 44 px wide `::after` sits inside the button's own margin box and adds no scrollable overflow to
+ * the scroller it ends (a row of links, a code frame).
  *
  * @example
  * buttonVariants({ variant: 'ghost', size: 'sm', shape: 'icon' }) // class string for a non-`Button` element
@@ -34,7 +36,11 @@ export const buttonVariants = cva(
       { size: 'md', shape: 'default', class: 'h-ctl px-3 pointer-coarse:min-h-11' },
       { size: 'sm', shape: 'default', class: 'h-6 px-2' },
       { size: 'md', shape: 'icon', class: 'size-ctl pointer-coarse:size-11' },
-      { size: 'sm', shape: 'icon', class: 'size-6' },
+      {
+        size: 'sm',
+        shape: 'icon',
+        class: 'size-6 pointer-coarse:mx-2.5 pointer-coarse:after:-inset-x-2.5',
+      },
     ],
     defaultVariants: { variant: 'secondary', size: 'md', shape: 'default' },
   },

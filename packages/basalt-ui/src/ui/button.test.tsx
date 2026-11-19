@@ -46,6 +46,13 @@ describe('button module', () => {
     expect(getByRole('button', { name: 'Close' })).toBeTruthy()
   })
 
+  test('a small icon button reserves its coarse hit slop in its own margin box', () => {
+    const { getByRole } = render(<Button size="sm" shape="icon" aria-label="Close" />)
+    const { className } = getByRole('button', { name: 'Close' })
+    expect(className).toContain('pointer-coarse:mx-2.5')
+    expect(className).toContain('pointer-coarse:after:-inset-x-2.5')
+  })
+
   test('loading disables the action, keeps focus and sets aria-busy', () => {
     let clicks = 0
     const { getByRole } = render(
