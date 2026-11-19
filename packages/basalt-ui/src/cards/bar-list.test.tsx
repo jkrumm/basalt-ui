@@ -406,6 +406,16 @@ describe('BarList across grains', () => {
     )
   }
 
+  test("a row's pointerover alone links it: the chart node under the pointer left the DOM, so no pointerout came", () => {
+    const { container } = render(<BySeries />)
+    // React skips a pointerover whose related target is one of its nodes (it expects the pointerout):
+    // the chart's crosshair is such a node, removed under the pointer, so only pointerover reaches the row.
+    const crossed = container.querySelector('ul') as Element
+    fireEvent.pointerOver(rowAt(container, 1), { relatedTarget: crossed })
+    expect(hours?.series).toBe('sonnet')
+    expect(marks(container, 'data-focused')).toEqual([false, true, false])
+  })
+
   test('a row that stands for a series emphasises it; the legend marks the row and dims the rest', () => {
     const { container } = render(<BySeries />)
     fireEvent.pointerEnter(rowAt(container, 1))
