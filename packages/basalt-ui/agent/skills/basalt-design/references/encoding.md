@@ -4,7 +4,7 @@ Which form carries which shape of data, and what the marks may say. The question
 
 ## Is it a chart at all
 
-- One current value is a [StatCard](node_modules/basalt-ui/docs/stat-card.md); a handful of headline values is a [StatGroup](node_modules/basalt-ui/docs/stat-group.md) strip.
+- One current value is a [StatCard](node_modules/basalt-ui/docs/stat-card.md); three or more headline values of equal weight, each with its baseline, are a [StatGroup](node_modules/basalt-ui/docs/stat-group.md) strip ([cards](cards.md) § When a page leads with figures).
 - One ratio against a limit is a [Meter](node_modules/basalt-ui/docs/meter.md) with its zones; the verdict is a word under the marker.
 - A top-N or a share of a total is a [BarList](node_modules/basalt-ui/docs/bar-list.md). Many rows with several attributes is a [DataTable](node_modules/basalt-ui/docs/data-table.md), unless the question is which items changed state or passed: that is one mark per item (a square per case) with the table holding the detail.
 - Rows of one kind beside a chart (a name, a second line, a verdict, a figure) are a [RowList](node_modules/basalt-ui/docs/row-list.md) with the chart's `focus`, quiet by default; never a mapped `div` with a `border-b` or `divide-y`. [lint:primitive-bypass]

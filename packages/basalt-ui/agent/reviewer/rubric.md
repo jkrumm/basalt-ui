@@ -54,7 +54,7 @@ Score per component, then add one line per page for the page items (Communicatio
 1. Name the data's shape and the encoding used; both must match a row of the question-to-form table in the AGENTS block.
 2. Every visual answers the question its caption names; a decorative visual fails.
 3. A hue appears only for a trend, a status or a category; a single metric is neutral. A delta is the tinted delta badge with its polarity and its period: a delta in untinted ink, or a delta whose tint contradicts its polarity (a rise that is bad drawn good), fails here. A status drawn as a coloured leading-edge stripe fails too: it is decoration, where the dot and the word carry the verdict in shape and text.
-4. A number with a target shows the target; a number with a history shows it; a whole with parts shows the parts.
+4. A number with a target shows the target; a number with a history shows it; a whole with parts shows the parts. A stat row (a strip or a row of figure cells) in which no cell carries a delta naming its base, a verdict, a meter or a trend fails here: figures on a band compare nothing.
 5. No axis repeats a label; ticks fit the span.
 6. A grid of five or more cards that each show one record of one shape offers a table view of the same records (a toggle, or a table beside the grid), or is a table.
 
