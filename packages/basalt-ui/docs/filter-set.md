@@ -9,9 +9,9 @@ slots: []
 
 # FilterSet
 
-Draws a list of `spec(...)`s as pills in one row: each pill prints its value, opens as a row form,
-and the tail that does not fit folds into `+N`. Below the `@regular` container the row becomes one
-`Filters (n)` button that opens a sheet. `n` counts the filters off their default (a multi that
+Draws a list of `spec(...)`s as pills in one row: each pill names its filter beside its value
+(`Region: All`), opens as a row form, and the tail that does not fit folds into `+N`. Below the
+`@regular` container the row becomes one `Filters (n)` button that opens a sheet. `n` counts the filters off their default (a multi that
 holds every option counts as none). The row ends with `Reset all` while any spec differs from its
 default, and the sheet has its own; either unsets them all. Inside a `ControlHome` the home's
 presentation applies: a `row` home draws the row forms stacked.
