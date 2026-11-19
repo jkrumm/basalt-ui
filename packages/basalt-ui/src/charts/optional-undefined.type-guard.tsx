@@ -18,7 +18,7 @@ declare const legend: readonly LegendEntry[] | undefined
 declare const footer: FootFacts | undefined
 declare const controls: ControlsSlot<'widget'> | undefined
 declare const menu: CardMenu | undefined
-declare const height: 'auto' | 'short' | 'fill' | undefined
+declare const height: 'auto' | 'tall' | 'short' | 'fill' | undefined
 declare const icon: IconComponent | undefined
 declare const figure: ChartFigure | undefined
 

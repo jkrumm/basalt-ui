@@ -15,13 +15,15 @@ const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-n
 
 /**
  * The chart box height, a CSS class by the card's own width, so the server HTML, the first paint
- * and the hydrated page agree. `auto` is half the width between 192 and 420 px (the floor keeps a plot, an x axis and a legend row at 390), `short` is
+ * and the hydrated page agree. `auto` is half the width between 192 and 420 px (the floor keeps a plot, an x axis and a legend row at 390), `tall` is
+ * half the width between 288 and 420 px (the same as `auto` from a 576 px card up, a plot of about 225 px at 390), `short` is
  * 160, and
  * `fill` takes the card's remainder inside a card that fills its parent. Every phase draws inside
  * the same box, so a loading, empty or error card is exactly as tall as a ready one.
  */
 const BOX = {
   auto: 'h-[clamp(12rem,50cqw,26.25rem)] shrink-0',
+  tall: 'h-[clamp(18rem,50cqw,26.25rem)] shrink-0',
   short: 'h-40 shrink-0',
   fill: 'min-h-40 flex-1',
 } as const
@@ -240,7 +242,8 @@ const hasNoRows = (phase: object): boolean => {
  *
  * `height` sets the chart box by the card's own width, a container-class rule, so the server HTML, the
  * first paint and the hydrated page agree: `auto` (default) is half the width between 192 and 420 px,
- * `short` is 160 px, `fill` is the card's remainder and the card takes its parent's height. The slot
+ * `tall` the same with a 288 px floor (the chart that answers the page, whose axis needs the height
+ * at 390), `short` is 160 px, `fill` is the card's remainder and the card takes its parent's height. The slot
  * always receives `height: 'fill'`, so the chart takes the box and never states its own.
  *
  * The phase: `ready` shows the chart; `loading` a plot skeleton with bars in the figure row; `stale`
