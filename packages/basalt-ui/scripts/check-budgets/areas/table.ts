@@ -71,13 +71,23 @@ export const rows: readonly RowDef[] = [
     // 156500 -> 157200 (Issue 2409): 157138 B measured, +~640 B gz for the 720 px card step, the trailing
     // filler column, the framed table's head in empty and error and the one-line meter, the kit fixes of
     // expression cycle 11.
-    ceiling: 157200,
+    // 157200 -> 158500 (Issue 2418): 158030 B measured, +~890 B gz over master (157138) for the header at rest
+    // (owner review 2): the filter button and the menu shown at rest, `headerIcon` and the cells' `icon`, search
+    // over every column's shown text, and the toolbar's current view with Save beside it.
+    ceiling: 158500,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 157200,
+      to: 158500,
+      consumer:
+        "the owner's second review of the v3 playground /table (2026-11-19): sort, filter and menu in sight on every header, column icons, search that finds a status, a number or a date, and saved views named in the toolbar (apps/playground/src/routes/table.tsx; Issue 2418)",
+      repo: 'basalt-ui',
+    },
     {
       from: 156500,
       to: 157200,
