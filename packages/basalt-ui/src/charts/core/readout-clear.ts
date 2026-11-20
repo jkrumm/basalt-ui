@@ -68,6 +68,28 @@ const spanOf = (at: number, width: number, anchor: Anchor): Span =>
 
 const meet = (a: Span, b: Span): boolean => a[0] < b[1] && b[0] < a[1]
 
+/** One x tick label as the axis draws it: its value, its text, and the anchor and shift that move it off its tick. */
+export type XTickLabel = {
+  value: ChartValue
+  text: string
+  anchor: Anchor | undefined
+  dx: number | undefined
+}
+
+const sameValue = (a: ChartValue, b: ChartValue): boolean =>
+  a instanceof Date && b instanceof Date ? a.getTime() === b.getTime() : a === b
+
+/**
+ * Whether the readout of `value` only repeats a tick label: a tick at the same value prints the same text
+ * (a band axis names each band, so the focused band's own tick is its reading). The tick then stands as
+ * the readout: no tick next to it is blanked for it, and a chart that cannot blank the tick draws no chip.
+ */
+export const chipRepeatsTick = (
+  value: ChartValue,
+  readoutText: string,
+  ticks: readonly XTickLabel[],
+): boolean => ticks.some((t) => sameValue(t.value, value) && t.text === readoutText)
+
 /** What one tick label needs to know to find its own box. */
 export type XTickText = {
   /** The tick text the axis prints for a value. */
@@ -88,6 +110,8 @@ export function xTickOpacity(opts: {
   width: number | undefined
   /** Given, the first tick is also blanked while the y chip sits at the plot's bottom. */
   corner?: Corner | undefined
+  /** The axis' tick labels: a readout that only repeats one of them blanks none. */
+  ticks?: readonly XTickLabel[] | undefined
 }): (context: { value: ChartValue; position: number; focus: ReadoutFocus }) => number {
   const { tick, readoutText, fontSize, width, corner } = opts
   return ({ value, position, focus }) => {
@@ -99,7 +123,12 @@ export function xTickOpacity(opts: {
       width === undefined
         ? x
         : clamp(x, EDGE_INSET + half, Math.max(EDGE_INSET + half, width - EDGE_INSET - half))
-    const readout: Span = [centre - half - READOUT_AIR, centre + half + READOUT_AIR]
+    // A readout that only repeats a tick of its own value sits exactly where that tick does: it replaces it
+    // and a neighbour, which the thinning already holds apart from it, needs no air for it.
+    const repeats =
+      opts.ticks !== undefined && chipRepeatsTick(xValue, readoutText(xValue), opts.ticks)
+    const air = repeats ? 0 : READOUT_AIR
+    const readout: Span = [centre - half - air, centre + half + air]
     const label = spanOf(
       position + (tick.dx(value) ?? 0),
       captionWidth(tick.text(value), fontSize),
@@ -114,6 +143,39 @@ export function xTickOpacity(opts: {
       ? 0
       : 1
   }
+}
+
+/**
+ * Whether the x readout of `value` would cover one of the tick labels. The engine blanks a tick under the
+ * readout only for a chart that holds the focus: a chart that merely follows the shared cursor (the
+ * labelled pane under panes with no x axis, a chart the keys moved) is handed no focus, so its readout
+ * is dropped where it would cover a tick. Positions are read from the axis' own shares of `plotWidth`.
+ */
+export function chipCoversTick(opts: {
+  value: ChartValue
+  readoutText: string
+  fontSize: number
+  plotWidth: number
+  share: EdgeShare
+  ticks: readonly XTickLabel[]
+}): boolean {
+  const { value, readoutText, fontSize, plotWidth, share, ticks } = opts
+  const at = share(value)
+  if (at === null || plotWidth <= 0) return false
+  const half = captionWidth(readoutText, fontSize) / 2
+  const readout: Span = [at * plotWidth - half - READOUT_AIR, at * plotWidth + half + READOUT_AIR]
+  return ticks.some((tick) => {
+    const position = share(tick.value)
+    if (position === null) return false
+    return meet(
+      readout,
+      spanOf(
+        position * plotWidth + (tick.dx ?? 0),
+        captionWidth(tick.text, fontSize),
+        tick.anchor ?? 'middle',
+      ),
+    )
+  })
 }
 
 /**

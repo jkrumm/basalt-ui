@@ -4,7 +4,7 @@
  * with a per-glyph estimate, so a chart that labels its bars does not carry the 8 KB table.
  */
 import type { ChartLabel, LabelBox, LabelSpot, LabelWeight, PlacedLabel } from './chart-labels'
-import { hostObstacles, recordPlacedLabels } from './label-obstacles'
+import { hostObstacles, isDotBox, recordPlacedLabels } from './label-obstacles'
 
 /** A text's width in px at a size and weight. */
 export type MeasureText = (text: string, size: number, weight: LabelWeight) => number
@@ -126,7 +126,14 @@ export function placeWith<K extends string>(
   measure: MeasureText,
   labels: readonly ChartLabel<K>[],
   frame: { width: number; height: number },
-  options: { gap?: number; obstacles?: readonly LabelBox[]; size: number; pointMarks?: boolean },
+  options: {
+    gap?: number
+    obstacles?: readonly LabelBox[]
+    size: number
+    pointMarks?: boolean
+    /** Air each placed label keeps from the labels placed after it, px: two values never touch. Default 0. */
+    air?: number
+  },
 ): { placed: PlacedLabel<K>[]; dropped: ChartLabel<K>[] } {
   const gap = options.gap ?? DEFAULT_GAP
   const reach = lineHeight(options.size)
@@ -134,11 +141,17 @@ export function placeWith<K extends string>(
   // pass placed labels as obstacles, and those stay hard.
   const isPoint = (box: LabelBox): boolean =>
     options.pointMarks === true && box.width <= reach && box.height <= reach
+  // The dots the host drew (a spread series') are point marks of a page's own pass as well: in a dense
+  // cloud a label lands where it meets the fewest of them rather than drop.
+  const hostDots = (b: LabelBox): boolean => options.pointMarks === true && isDotBox(b)
   // Hard boxes stop a label for good; point marks only count against a spot.
-  const points: LabelBox[] = (options.obstacles ?? []).filter(isPoint)
+  const points: LabelBox[] = [
+    ...(options.obstacles ?? []).filter(isPoint),
+    ...hostObstacles().filter(hostDots),
+  ]
   const taken: LabelBox[] = [
     ...(options.obstacles ?? []).filter((b) => !isPoint(b)),
-    ...hostObstacles(),
+    ...hostObstacles().filter((b) => !hostDots(b)),
   ]
   const placed: PlacedLabel<K>[] = []
   const dropped: ChartLabel<K>[] = []
@@ -205,7 +218,17 @@ export function placeWith<K extends string>(
       dropped.push(label)
       continue
     }
-    taken.push(landed)
+    const air = options.air ?? 0
+    taken.push(
+      air === 0
+        ? landed
+        : {
+            left: landed.left - air,
+            top: landed.top - air,
+            width: landed.width + 2 * air,
+            height: landed.height + 2 * air,
+          },
+    )
     placed.push(landed)
   }
   if (options.pointMarks === true) recordPlacedLabels(placed)
