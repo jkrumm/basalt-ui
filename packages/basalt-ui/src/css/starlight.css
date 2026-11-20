@@ -1,0 +1,62 @@
+/* @generated basalt-ui — do not edit; regenerate with the command on the next line */
+/* basalt-ui 3.0.0 — `bun packages/basalt-ui/src/css/generate.ts` */
+/* basalt-ui/starlight.css: Starlight's theme variables read from basalt's tokens. List it in
+   Starlight's `customCss` after the site's own sheet. Every value is a token, so one rule serves
+   both schemes: the tokens switch on `data-theme` and on the system scheme. Unlayered on purpose:
+   Starlight's own defaults sit in cascade layers, and an unlayered rule outranks them. */
+:root,
+:root[data-theme='light'],
+:root[data-theme='dark'],
+::backdrop {
+  --sl-color-white: var(--basalt-ink);
+  --sl-color-gray-1: var(--basalt-ink);
+  --sl-color-gray-2: var(--basalt-ink);
+  --sl-color-gray-3: var(--basalt-ink-muted);
+  --sl-color-gray-4: var(--basalt-ink-faint);
+  --sl-color-gray-5: var(--basalt-hairline);
+  --sl-color-gray-6: var(--basalt-card);
+  --sl-color-gray-7: var(--basalt-inset);
+  --sl-color-black: var(--basalt-canvas);
+
+  --sl-color-accent-low: var(--basalt-selected);
+  --sl-color-accent: var(--basalt-brand-fill);
+  --sl-color-accent-high: var(--basalt-brand);
+
+  --sl-color-orange-low: color-mix(in srgb, var(--basalt-warn) var(--basalt-tint-pct), transparent);
+  --sl-color-orange: var(--basalt-warn);
+  --sl-color-orange-high: var(--basalt-ink);
+  --sl-color-green-low: color-mix(in srgb, var(--basalt-good) var(--basalt-tint-pct), transparent);
+  --sl-color-green: var(--basalt-good);
+  --sl-color-green-high: var(--basalt-ink);
+  --sl-color-blue-low: color-mix(in srgb, var(--basalt-info) var(--basalt-tint-pct), transparent);
+  --sl-color-blue: var(--basalt-info);
+  --sl-color-blue-high: var(--basalt-ink);
+  --sl-color-purple-low: var(--basalt-selected);
+  --sl-color-purple: var(--basalt-brand);
+  --sl-color-purple-high: var(--basalt-ink);
+  --sl-color-red-low: color-mix(in srgb, var(--basalt-bad) var(--basalt-tint-pct), transparent);
+  --sl-color-red: var(--basalt-bad);
+  --sl-color-red-high: var(--basalt-ink);
+
+  --sl-color-text: var(--basalt-ink);
+  --sl-color-text-accent: var(--basalt-brand);
+  --sl-color-text-invert: var(--basalt-on-brand);
+  --sl-color-bg: var(--basalt-canvas);
+  --sl-color-bg-nav: var(--basalt-canvas);
+  --sl-color-bg-sidebar: var(--basalt-canvas);
+  --sl-color-bg-inline-code: var(--basalt-card);
+  --sl-color-bg-accent: var(--basalt-brand-fill);
+  --sl-color-hairline-light: var(--basalt-hairline);
+  --sl-color-hairline: var(--basalt-hairline);
+  --sl-color-hairline-shade: var(--basalt-hairline);
+  --sl-color-backdrop-overlay: var(--basalt-scrim);
+
+  --sl-font: var(--basalt-font-sans);
+  --sl-font-mono: var(--basalt-font-mono);
+}
+
+/* Headings take basalt's heading face, as they do in the site parts. */
+:is(.sl-markdown-content :is(h1, h2, h3, h4, h5), h1#_top) {
+  font-family: var(--basalt-font-head);
+  font-stretch: var(--basalt-font-head-stretch);
+}

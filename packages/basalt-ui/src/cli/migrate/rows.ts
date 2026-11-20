@@ -9,7 +9,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-export const PROFILES = ['tokens', 'bridge', 'parts', 'app'] as const
+export const PROFILES = ['tokens', 'site', 'bridge', 'parts', 'app'] as const
 export type Profile = (typeof PROFILES)[number]
 
 export interface MigrationRow {

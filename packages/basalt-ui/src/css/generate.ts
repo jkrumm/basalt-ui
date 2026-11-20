@@ -1,5 +1,6 @@
 /**
- * Renders the six committed CSS entries (`tokens`, `typography`, `prose`, `fonts`, `tailwind`, `archify`) from
+ * Renders the eight committed CSS entries (`tokens`, `typography`, `prose`, `fonts`, `tailwind`, `static`,
+ * `starlight`, `archify`) from
  * the token table. Pure and deterministic: no clock, no environment. The provenance version is the
  * fixed contract major, so a release bump never dirties a committed file.
  *
@@ -18,6 +19,8 @@ export type CssFileName =
   | 'prose.css'
   | 'fonts.css'
   | 'tailwind.css'
+  | 'static.css'
+  | 'starlight.css'
   | 'archify.css'
 
 const CONTRACT_VERSION = '3.0.0'
@@ -30,7 +33,7 @@ const rule = (selector: string, body: string): string => `${selector} {\n${body}
 
 // ── fonts.css, typography.css ───────────────────────────────────────────────────────────────────
 
-const template = (name: 'fonts' | 'typography' | 'prose'): string =>
+const template = (name: 'fonts' | 'typography' | 'prose' | 'starlight'): string =>
   readFileSync(join(import.meta.dir, 'templates', `${name}.css`), 'utf8')
 
 const fontsCss = (): string => header() + template('fonts')
@@ -129,7 +132,23 @@ const borderRules =
   '  /* A border with no colour utility is the hairline, not ink (Tailwind 4 defaults to currentColor). */\n' +
   '  *,\n  ::after,\n  ::before,\n  ::backdrop,\n  ::file-selector-button {\n    border-color: var(--basalt-hairline);\n  }\n'
 
-function tailwindCss(): string {
+/**
+ * The `@source` lines of `static.css`: the `basalt-ui/static` parts and the two modules they take
+ * classes from. Paths are relative to the sheet, so they resolve from `src/css` and from `dist/css`.
+ */
+const STATIC_SOURCES = ['../static', '../page/prose.{js,tsx}', '../ui/alert.{js,tsx}'] as const
+
+/**
+ * `tailwind.css` and `static.css` share every rule; they differ in their imports. `tailwind.css`
+ * carries basalt's own `@font-face` faces; `static.css` leaves the faces to the host (the Astro
+ * Fonts API through `basalt-ui/astro`), adds the prose sheet and the `@source` lines of the
+ * static parts, so a site needs one import.
+ */
+function tailwindCss(variant: 'app' | 'static' = 'app'): string {
+  const imports =
+    variant === 'app'
+      ? "@import './fonts.css';\n"
+      : "@import './prose.css';\n" + STATIC_SOURCES.map((s) => `@source '${s}';\n`).join('')
   const entries = bridgeEntries()
   const colours = entries.filter((e) => e.tw.startsWith('--color-'))
   const others = entries.filter((e) => !e.tw.startsWith('--color-'))
@@ -175,7 +194,7 @@ function tailwindCss(): string {
     '@layer theme, base, basalt, components, utilities;\n' +
     "@import 'tailwindcss';\n" +
     "@import './tokens.css' layer(theme);\n" +
-    "@import './fonts.css';\n" +
+    imports +
     '@custom-variant dark {\n' +
     "  &:where([data-theme='dark'], [data-theme='dark'] *) {\n    @slot;\n  }\n" +
     '  @media (prefers-color-scheme: dark) {\n' +
@@ -275,7 +294,11 @@ const archifyCss = (): string =>
 
 // ── entry ───────────────────────────────────────────────────────────────────────────────────────
 
-/** The six CSS entries, byte for byte as committed. */
+const staticCss = (): string => tailwindCss('static')
+
+const starlightCss = (): string => header() + template('starlight')
+
+/** The eight CSS entries, byte for byte as committed. */
 export function generateCss(): Record<CssFileName, string> {
   return {
     'archify.css': archifyCss(),
@@ -284,6 +307,8 @@ export function generateCss(): Record<CssFileName, string> {
     'prose.css': proseCss(),
     'fonts.css': fontsCss(),
     'tailwind.css': tailwindCss(),
+    'static.css': staticCss(),
+    'starlight.css': starlightCss(),
   }
 }
 

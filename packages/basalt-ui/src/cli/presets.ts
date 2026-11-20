@@ -1,6 +1,6 @@
 /**
  * The generated preset files `sync` places (and `init` first writes) for a manifest:
- * `.stylelintrc.basalt.json` for every profile and `.oxlintrc.basalt.json` for `bridge` and above.
+ * `.stylelintrc.basalt.json` for every profile and `.oxlintrc.basalt.json` for `site` and above.
  * The oxlint preset is `buildPreset` (src/lint/preset.ts) over the manifest's roots and ejected
  * paths and bespoke directories: the same builder `scripts/gen-oxlint.ts` writes `configs/oxlint-<profile>.json` with, so a
  * root at another profile, a bridge root's vendored zone and an ejected file's zone all come out
@@ -96,11 +96,12 @@ export function renderOxlintPreset(manifest: Manifest, pkgRoot: string): string 
   return preset === undefined ? null : `${JSON.stringify(preset, null, 2)}\n`
 }
 
-const scrolls = (profile: Profile): boolean => profile !== 'tokens' && profile !== 'bridge'
+const scrolls = (profile: Profile): boolean =>
+  profile !== 'tokens' && profile !== 'site' && profile !== 'bridge'
 
 /**
  * The stylelint preset text for a manifest. The scroll-container ban needs `ui/scroll-area`, which
- * ships from `parts` up, so a `tokens` or `bridge` root renders without it; files outside every
+ * ships from `parts` up, so a `tokens`, `site` or `bridge` root renders without it; files outside every
  * root follow the manifest's own profile.
  */
 export function renderStylelintPreset(manifest: Manifest): string {

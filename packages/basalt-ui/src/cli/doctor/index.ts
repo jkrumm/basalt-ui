@@ -42,7 +42,7 @@ export function buildContext(dir: string, options: DoctorOptions): Ctx {
     return {
       ...base,
       manifest: null,
-      manifestError: `${MANIFEST_PATH} is missing: run \`basalt-ui init --profile <tokens|bridge|parts|app>\``,
+      manifestError: `${MANIFEST_PATH} is missing: run \`basalt-ui init --profile <tokens|site|bridge|parts|app>\``,
     }
   }
   return 'error' in read

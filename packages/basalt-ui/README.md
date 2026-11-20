@@ -56,17 +56,18 @@ bunx basalt-ui tokens:css --out src/tokens.css
 ./node_modules/.bin/basalt-ui init --profile app --root src
 ```
 
-`--profile` is required and never inferred: `tokens`, `bridge`, `parts` or `app`. Each `--root`
+`--profile` is required and never inferred: `tokens`, `site`, `bridge`, `parts` or `app`. Each `--root`
 (default `.`, paths relative to the repo root) is declared with it. Step 1 installed the package, so
 `init` runs from the local bin like every later command, never `bunx`. There is no
 plugin, no marketplace and no second version to track. `init` writes at the git root:
 
 - `.basalt/manifest.json` — the profile, the declared roots, the `tokens:css` outputs and the sha256 of every managed file `sync` placed
 - the `tokens:css` outputs (`--tokens-out`, `--tokens-json-out`, `--extra`, with the `--accent --neutral --vibrancy --selector` flags recorded in the manifest)
-- `.stylelintrc.basalt.json` for every profile; `.oxlintrc.basalt.json` and an `.oxlintrc.json` that extends it from `bridge` up
-- the profile's peers at exact pins (stylelint and postcss-html; `bridge` and above add oxlint and `@shadcn/lint`), installed with the lockfile's package manager (`--no-install` prints the command instead)
+- `.stylelintrc.basalt.json` for every profile; `.oxlintrc.basalt.json` and an `.oxlintrc.json` that extends it from `site` up
+- the profile's peers at exact pins (stylelint and postcss-html; `site` and above add oxlint and `@shadcn/lint`), installed with the lockfile's package manager (`--no-install` prints the command instead)
 - above `tokens`: `.claude/rules/basalt-*.md`, `.claude/skills/basalt-*`, the managed `<!-- basalt:begin/end -->` block in `AGENTS.md`, and a thin `DESIGN.md` seed when no declared root has one
 - `.basalt/budget.json` (the seeded ceilings) and the formatter ignore for the managed paths
+- `site` (static pages on Astro) writes no router scaffold and no Vite patch: `init` prints the `basalt()` line for `astro.config` from `basalt-ui/astro` and the tokens stylesheet import
 - with `app`, the router scaffold (the files in the tree below), each written once and never touched by `sync`; a `main.tsx` that is create-vite's stock entry is replaced, any other entry gets the template's lines printed
 - `.basalt/sources.css` in the `.gitignore` beside the Vite config (once; `basalt()` regenerates the file on every run, and `doctor` reports it when git tracks it)
 - in a stock Vite config, `tanstackRouter(...)` and `basalt()` in `plugins`; in a stock stylesheet entry (`index.css`), the `tailwindcss` import becomes `@import 'basalt-ui/tailwind.css'`, the app's `tokens.css` when the `tokens:css` output exists, and `.basalt/sources.css`; any other shape gets the exact lines printed
@@ -504,7 +505,7 @@ you've upgraded away from. That includes `init`: install the package first.
 - **Tarball ships `src/`** alongside `dist/` — go-to-definition lands in real source, not compiled output
 
 The `./configs/*` export gives consumer apps raw presets to `extends` or copy by hand. The oxlint
-presets are generated per profile — `oxlint-app.json`, `oxlint-parts.json`, `oxlint-bridge.json` — and
+presets are generated per profile — `oxlint-app.json`, `oxlint-parts.json`, `oxlint-bridge.json`, `oxlint-site.json` — and
 load `basalt-ui/lint`; `basalt-ui init` and `sync` place the one your profile takes:
 
 ```json

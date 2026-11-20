@@ -57,9 +57,10 @@ export function need(ctx: Ctx): Manifest {
 
 export const PROFILE_RANK: Readonly<Record<Profile, number>> = {
   tokens: 0,
-  bridge: 1,
-  parts: 2,
-  app: 3,
+  site: 1,
+  bridge: 2,
+  parts: 3,
+  app: 4,
 }
 
 /** A declared root as a clean relative path (`./src/` -> `src`, the root itself -> `.`). */

@@ -29,7 +29,12 @@ function walk(dir, out = []) {
 
 let n = 0
 for (const f of walk(SRC)) {
-  if (f.endsWith('.css') || f.endsWith('.css.d.ts') || f.endsWith('.woff2')) {
+  if (
+    f.endsWith('.css') ||
+    f.endsWith('.css.d.ts') ||
+    f.endsWith('.woff2') ||
+    f.endsWith('.astro')
+  ) {
     const dest = join(DIST, relative(SRC, f))
     mkdirSync(dirname(dest), { recursive: true })
     copyFileSync(f, dest)

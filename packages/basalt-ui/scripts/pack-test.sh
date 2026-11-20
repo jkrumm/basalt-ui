@@ -21,7 +21,7 @@ echo "==> publint"
 bunx publint --strict "$TGZ"
 
 echo "==> attw (are-the-types-wrong)"
-bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./typography.css ./prose.css ./fonts.css ./tailwind.css ./archify.css ./table.css
+bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./typography.css ./prose.css ./fonts.css ./tailwind.css ./archify.css ./table.css ./static.css ./starlight.css ./astro/BasaltFonts.astro
 
 echo "==> assert tarball contents"
 # Assert against a FILE, never `echo "$LIST" | grep -q`. Under this script's `set -o pipefail`,
@@ -47,10 +47,12 @@ for f in \
   dist/router/index.js dist/data/index.js dist/page/index.js dist/cards/index.js dist/ai/index.js dist/motion/index.js \
   dist/lint/index.js dist/lint/stylelint/index.js dist/testing/index.js dist/ui/index.js dist/css/theme-script.js \
   dist/css/tokens.css dist/css/typography.css dist/css/prose.css dist/css/fonts.css dist/css/tailwind.css dist/css/archify.css dist/table/table.css \
+  dist/static/index.js dist/static/index.d.ts dist/astro/index.js dist/astro/index.d.ts dist/astro/BasaltFonts.astro \
+  dist/css/static.css dist/css/starlight.css \
   dist/controls/index.js dist/controls/index.d.ts \
   dist/form/index.js dist/form/index.d.ts \
   src/index.ts \
-  configs/oxlint-app.json configs/oxlint-parts.json configs/oxlint-bridge.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
+  configs/oxlint-app.json configs/oxlint-parts.json configs/oxlint-bridge.json configs/oxlint-site.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
   agent/rules/basalt-tokens.md agent/rules/basalt-ui.md agent/rules/basalt-page.md \
   agent/rules/basalt-state.md agent/rules/basalt-charts.md \
   agent/templates/DESIGN.md.tpl agent/templates/AGENTS-block.md.tpl \
@@ -192,6 +194,12 @@ const subpaths = [
   'basalt-ui/tailwind.css',
   'basalt-ui/archify.css',
   'basalt-ui/table.css',
+  // the site profile: static parts, the Astro integration and its head component, two sheets
+  'basalt-ui/static',
+  'basalt-ui/astro',
+  'basalt-ui/astro/BasaltFonts.astro',
+  'basalt-ui/static.css',
+  'basalt-ui/starlight.css',
 ]
 for (const s of subpaths) {
   const url = import.meta.resolve(s)
@@ -204,7 +212,7 @@ const tokens = await import('basalt-ui/tokens')
 if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildPaletteCss missing')
 
 // the raw oxlint presets must resolve via ./configs/* and be valid JSON, each loading the rule plugin
-for (const profile of ['app', 'parts', 'bridge']) {
+for (const profile of ['app', 'parts', 'bridge', 'site']) {
   const preset = JSON.parse(
     readFileSync(require.resolve(`basalt-ui/configs/oxlint-${profile}.json`), 'utf8'),
   )
@@ -215,6 +223,13 @@ for (const profile of ['app', 'parts', 'bridge']) {
 const dataMod = await import('basalt-ui/data')
 if (typeof dataMod.createChannel !== 'function') throw new Error('data.createChannel missing')
 console.log('smoke: basalt-ui/data createChannel OK')
+
+// the site profile: the parts load with react alone, and the integration needs no astro install to import
+const staticMod = await import('basalt-ui/static')
+if (typeof staticMod.SiteHeader !== 'function') throw new Error('static.SiteHeader missing')
+const astroMod = await import('basalt-ui/astro')
+if (astroMod.basaltAstro().name !== 'basalt-ui') throw new Error('astro.basaltAstro() is not the basalt-ui integration')
+console.log('smoke: basalt-ui/static and basalt-ui/astro OK')
 
 // eject (docs/v3/ARCHITECTURE.md 4.1): a seed's `../core/*` and `../tokens` imports are published
 // subpaths, and no compiled file reaches a primitive by a relative path an alias cannot follow.

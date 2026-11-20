@@ -125,5 +125,14 @@
   "FormSection": "basalt-ui:apps/playground/src/routes/kit/forms/-settings-form.tsx",
   "Stepper": "basalt-ui:apps/playground/src/routes/kit/forms/-steps-form.tsx",
   "useAppForm": "basalt-ui:apps/playground/src/routes/kit/forms/-create-service.tsx",
-  "withForm": "basalt-ui:apps/playground/src/routes/kit/forms/-steps-form.tsx"
+  "withForm": "basalt-ui:apps/playground/src/routes/kit/forms/-steps-form.tsx",
+  "basaltAstro": "basalt-ui:apps/marketing/astro.config.mjs",
+  "SiteArticle": "basalt-ui:apps/marketing/src/pages/typography.astro",
+  "SiteCallout": "basalt-ui:apps/marketing/src/pages/charts.astro",
+  "SiteCodeBlock": "basalt-ui:apps/marketing/src/pages/index.astro",
+  "SiteFooter": "basalt-ui:apps/marketing/src/layouts/Layout.astro",
+  "SiteHeader": "basalt-ui:apps/marketing/src/layouts/Layout.astro",
+  "SitePager": "basalt-ui:apps/marketing/src/pages/guides/content-sites.astro",
+  "ThemeSwitch": "basalt-ui:apps/marketing/src/layouts/Layout.astro",
+  "siteMdxComponents": "basalt-ui:apps/marketing/src/pages/guides/content-sites.astro"
 }

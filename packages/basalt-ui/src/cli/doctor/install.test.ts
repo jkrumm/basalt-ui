@@ -40,6 +40,25 @@ describe('check 1: manifest', () => {
     expect(r.detail).toContain('needs parts')
   })
 
+  it('passes a site root whose Astro page imports the static parts', async () => {
+    const page = readFileSync(
+      new URL('../../../test/fixtures/site/src/pages/index.astro', import.meta.url),
+      'utf8',
+    )
+    expect((await runCheck(makeTree('site', { 'src/pages/index.astro': page }), 1)).status).toBe(
+      'pass',
+    )
+  })
+
+  it('fails a site root that imports a parts subpath', async () => {
+    const dir = makeTree('site', {
+      'src/pages/index.astro': "---\nimport { Button } from 'basalt-ui/ui/button'\n---\n",
+    })
+    const r = await runCheck(dir, 1)
+    expect(r.status).toBe('fail')
+    expect(r.detail).toContain('needs parts')
+  })
+
   it('fails when the recorded version is below the gate floor', async () => {
     const dir = makeTree('app')
     editManifest(dir, (m) => void (m.version = '1.0.0'))

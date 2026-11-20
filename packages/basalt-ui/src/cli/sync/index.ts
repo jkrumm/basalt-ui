@@ -27,7 +27,7 @@ export type SyncOptions = {
   presetFiles?: PresetFiles
 }
 
-const MAKE_ONE = 'run `basalt-ui init --profile <tokens|bridge|parts|app>`'
+const MAKE_ONE = 'run `basalt-ui init --profile <tokens|site|bridge|parts|app>`'
 
 /** The install this run belongs to: a manifest here, or one above that declares this directory. */
 function locate(dir: string): { root: string; manifest: Manifest } | { error: string } {
