@@ -40,6 +40,17 @@ A build of an incident page said the same fact four times:
 
 Cut to what the marks cannot say: the figure `13` with its pill `of 19`, one annotation on the mark that needs the eye ("Worst: payments, 4 h"), and nothing else. The headline sentence, the sub line, the limit label (the line is the limit) and the badge (the list is the affected items) each restate the figure. Six cycle 3 builds (c10, c11, c12, c13, n02, n12) lost word economy to this shape; read each line aloud against the mark beside it, and cut every line that says what the figure, its pill or the annotation already says.
 
+### Worked: the read-aloud pass
+
+The count prints nothing on a page whose repeats are not literal strings. Cycle 15's six builders each ended at an empty print on their final source and lost X1 on all six, because the repeats sat in four shapes the count cannot read. The `## Read aloud` section of the design file is the check: read the 1800 rest shot top to bottom, write `fact | every slot that says it`, and for each helper and each label map (a `Record<K, string>`) in the page run `rg -n '<name>' <page dir>` and add one slot per use that reaches the viewer.
+
+- **A value one helper prints into several parts** (n69 .5): "Birch fills Fri 14:00" stands in the strip sub (`stamp(fills.fullAt)`), the Full-by column (`stamp`) and the Will-fill cell (`stamp`), three slots for one fact. Keep the column; the strip names the account.
+- **A label map entry shown in several slots** (n70 .14, n72 .28): "waiting" stands in the status slot, the footer, the ledger subtitle and the legend through `STATUS_LABEL.waiting` (four); "Spam delivered" in the status, the dot label, the legend and the table through `CASE_LABEL`.
+- **A state said by a caption, a pill and a sub line** (n71 .19, n73 .38): "Behind" in the Meter zone, the delta pill and "225 more keepers needed"; "Under limit" in the Meter zone and the "-1.4 pts vs 20 %" pill.
+- **A legend entry that repeats an axis title, a subtitle or a period** (n70 .14, n73 .38, n74 .44): the legend "Net" and "Share of paid" against the y axis titles; "Steps from unrated to fluent" against the axis ticks; "US$38 to US$464" in the period and on the bar labels, "+US$426" in the pill and the table.
+
+A fact with two or more slots keeps one: cut the others, or give each slot something the others do not say. The pass is run on the final source, after the last cut, and the section is part of the report.
+
 ### Worked: the period said once
 
 A build said "last 30 days" in the title, the caption, the axis title and the footer, and the hero repeated the count the chart's pill carried. Keep the period in the card's `figure` period slot and the count in the figure; the axis title names the unit only ("Deploys"), the footer holds two facts the marks do not (the busiest day, the slowest run). Six cycle 4 builds (n13, n09, c15, c14, n04, n16) stated one fact three to five times.
@@ -60,7 +71,7 @@ Run it after the first typecheck and before you open the 1800 shot, and again af
 
 **One quantity, one word.** The count cannot see one quantity under two words: n57 said "usable" on the left and "clear" on the right for the same hours (n57 .5), n58 "Research US$12" in a label, the table and the footer. After the count, list the page's measures (hours, spend, a rate, a state) and for each write every word the page uses for it, with `rg -ci '<word>|<synonym>' <page dir>`; a measure with two words keeps one, in every string.
 
-Then the read-aloud pass, from the 1800 rest shot and not from the code: read the frame top to bottom, aloud, and write one line per fact (a measure, a name, a window, a limit) with every place it stands (hero, pill, mark label, subtitle, footer, legend, axis title, column). A fact on two lines keeps one place. One measure with two numbers (n52's pace in a pill, a mark and a subtitle, each a different number) is a defect, not a repeat. The empty sentence stands on one card; a sort and a window are facts.
+Then the read-aloud pass, a required `## Read aloud` section of the design file (the worked pass above names the four repeats the count cannot see), from the 1800 rest shot and not from the code: read the frame top to bottom, aloud, and write one line per fact (a measure, a name, a window, a limit) with every place it stands (hero, pill, mark label, subtitle, footer, legend, axis title, column). A fact on two lines keeps one place. One measure with two numbers (n52's pace in a pill, a mark and a subtitle, each a different number) is a defect, not a repeat. The empty sentence stands on one card; a sort and a window are facts.
 
 Cycle 13's builds, counted with the scan above (the old count printed `header` on n58, `label` and `header` on n60, `header head` on n61 and four phrases on n59; none of it text):
 
