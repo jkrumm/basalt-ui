@@ -20,7 +20,7 @@ const COOKIE_MAX_AGE = 31536000
 /**
  * The inline script the static parts share: `ThemeSwitch` applies and stores the scheme, `SiteCodeBlock`
  * copies its block. `basaltAstro()` inlines it after `themeScript()` with the same scheme options.
- * About 0.6 kB gzip; a unit test holds it and `themeScript()` under 2 kB together.
+ * About 1.1 kB gzip; a unit test holds it and `themeScript()` under 2 kB together.
  *
  * Internal to the site profile until a host outside Astro needs it exported.
  */

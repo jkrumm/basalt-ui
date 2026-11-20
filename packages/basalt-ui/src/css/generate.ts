@@ -136,7 +136,12 @@ const borderRules =
  * The `@source` lines of `static.css`: the `basalt-ui/static` parts and the two modules they take
  * classes from. Paths are relative to the sheet, so they resolve from `src/css` and from `dist/css`.
  */
-const STATIC_SOURCES = ['../static', '../page/prose.{js,tsx}', '../ui/alert.{js,tsx}'] as const
+const STATIC_SOURCES = [
+  '../static',
+  '../page/prose.{js,tsx}',
+  '../ui/alert.{js,tsx}',
+  '../ui/table.{js,tsx}',
+] as const
 
 /**
  * `tailwind.css` and `static.css` share every rule; they differ in their imports. `tailwind.css`
