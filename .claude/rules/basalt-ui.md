@@ -17,8 +17,9 @@ Compose the shipped surface; each bullet names the lint id or type that holds it
 
 - Use the primitive for a control, a checkable input, a heading and a table; never the raw element. [lint:primitive-bypass]
 - A static table is the table primitive; data is `DataTable`; hand-drawn chart marks are a chart kind. [lint:primitive-bypass]
+- A surface the app draws itself (a game table, a seating plan) lives in one directory listed under `bespoke` in `.basalt/manifest.json`, then `basalt-ui sync`; there a mark is placed from state through a custom property a class reads (`style={{ '--x': … }}` with `left-(--x)`) or drawn as SVG, and every other rule still runs, so an inline `left` or a raw control still fails. [lint:primitive-bypass]
 - A scroll region is the scroll primitive, or the page owns the scroll; never a raw overflow box. [lint:raw-scroll]
-- An icon prop takes any component with the `IconComponent` shape; pass the icon library's own. [type:IconComponent]
+- An icon prop takes any component with the `IconComponent` shape; the recommended set is `lucide-react`, passed as its component (`icon={Users}`), at 16 px (`size-icon`) with the 1.5 px stroke of the shipped glyphs: `<LucideProvider size={16} strokeWidth={1.5} absoluteStrokeWidth>` once at each React root. [type:IconComponent]
 - A link prop takes `string | NavTarget`; install `routerDefaults().link` once on `BasaltProvider link`, never per prop; without it a target is a plain anchor. [type:LinkComponent]
 
 ## Layout
