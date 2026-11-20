@@ -5,7 +5,15 @@
  * section 4 (the `src/charts/contract.ts` block, plus the frame types it names).
  */
 import type { FootFacts, FrameHead, FrameState, CardMenu, LegendEntry } from '../core/phase'
-import type { BoxSlot, ControlsSlot, Delta, Phase, QueryStateLike, Verdict } from '../core/ports'
+import type {
+  Box,
+  BoxSlot,
+  ControlsSlot,
+  Delta,
+  Phase,
+  QueryStateLike,
+  Verdict,
+} from '../core/ports'
 import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 
 // ---- Frame types ---------------------------------------------------------------------------
@@ -200,7 +208,13 @@ export type ChartFocus<D> = {
 // minimal; concept elides it
 export type XConfig<D> = {
   value: (d: D) => number | Date | string
+  /** Writes the hover readout, the tooltip title and the x tick labels (unless `tickFormat` is set). */
   format?: (x: number | Date | string) => string
+  /**
+   * Writes the x tick labels only, so the ticks can be shorter than the readout: `Nov 12` under the
+   * axis while the readout names `Wed, Nov 12, 14:00`. Default: `format`, else the span-aware dates.
+   */
+  tickFormat?: (x: number | Date | string) => string
   domain?: readonly [number | Date, number | Date]
   /** The axis name with its unit, drawn under the ticks. */
   title?: string
@@ -367,6 +381,22 @@ export type MiniBarsProps = Omit<SparklineBase, 'form' | 'reference'> &
     highlight?: number | 'last'
   }
 
+// ---- ChartPanes ---------------------------------------------------------------------------
+
+/** One pane of a {@link ChartPanesProps} group: its share of the box by `weight` (default 1), and the chart. */
+export type ChartPane = {
+  /** The pane's share of the box against the others' weights. Default 1. */
+  weight?: number | undefined
+  /** Called with `height: 'fill'`: the chart takes the pane's box. */
+  chart: BoxSlot
+}
+
+export type ChartPanesProps = {
+  /** The box the group fills: a `ChartCard` slot's own, or `{ height: <px>, phase }` outside a card. */
+  box: Box
+  panes: readonly ChartPane[]
+}
+
 // ---- ChartCard ----------------------------------------------------------------------------
 
 /** An `undefined` field is an absent one, so a maybe-value passes straight. */
@@ -401,7 +431,8 @@ export type ChartCardProps = Omit<FrameState, 'phase'> & {
   /**
    * The chart box: `auto` (default) half the card width between 192 and 420 px; `tall` the same
    * with a 288 px floor, for the chart that answers the page and needs its axis at 390; `short`
-   * 160 px; `fill` the card's remainder in a parent that sets the height.
+   * 160 px; `fill` the card's remainder in a parent that sets the height. Each is a floor: in a grid
+   * row the card takes the row's height and the box grows into it, so the cards of a row end level.
    */
   height?: 'auto' | 'tall' | 'short' | 'fill' | undefined
 } & (
