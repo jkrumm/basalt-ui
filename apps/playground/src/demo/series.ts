@@ -25,6 +25,31 @@ export const DEMO_SERIES = defineSeries({
   churn: { light: '#af293e', dark: '#e46360' },
 })
 
+/** Factory week (scenario expr-n65): the status red is dropped work, the one outcome that needs a hand; done is the dark ink step, cancelled and still-open Issues paler ones; the four finding classes take four ink steps, the leader the darkest; idle hours sit in a mid step. */
+export const N65_SERIES = defineSeries({
+  done: { light: '#262626', dark: '#e6e6e6' },
+  dropped: { light: '#af293e', dark: '#e46360' },
+  cancelled: { light: '#8c8c8c', dark: '#8c8c8c' },
+  open: { light: '#c2c2c2', dark: '#555555' },
+  gate: { light: '#262626', dark: '#e6e6e6' },
+  review: { light: '#5c5c5c', dark: '#b4b4b4' },
+  spec: { light: '#858585', dark: '#9a9a9a' },
+  deploy: { light: '#adadad', dark: '#737373' },
+  idle: { light: '#6b6b6b', dark: '#a8a8a8' },
+})
+
+/** Training block (scenario expr-n67): the accent is the lift that stopped rising; the other lifts take ink steps from dark to pale, the first-session rule a mid one; weekly volume, recovery and session intensity sit in ink steps. */
+export const N67_SERIES = defineSeries({
+  press: { light: '#2871c7', dark: '#5190f7' },
+  squat: { light: '#262626', dark: '#e6e6e6' },
+  deadlift: { light: '#5c5c5c', dark: '#b4b4b4' },
+  bench: { light: '#8a8a8a', dark: '#8f8f8f' },
+  start: { light: '#4a4a4a', dark: '#c4c4c4' },
+  volume: { light: '#6b6b6b', dark: '#a8a8a8' },
+  recovery: { light: '#262626', dark: '#e6e6e6' },
+  intensity: { light: '#858585', dark: '#9a9a9a' },
+})
+
 /** Harbour waves (scenario expr-n56): the accent is the calmest window, a tint from the brand token; the harbour line sits in the dark ink step, the four offshore points in a pale one, the limit rule in a mid one, and the status red marks the hours over the limit. */
 export const HARBOUR_SERIES = defineSeries({
   harbour: { light: '#262626', dark: '#e6e6e6' },
@@ -407,6 +432,13 @@ export const DARKSITE_SERIES = defineSeries({
   limit: { light: '#4a4a4a', dark: '#c4c4c4' },
 })
 
+/** Core months (scenario expr-n68): the accent is the usable hours behind the ridge, a brand token set in the page; the ridge cost is a pale ink step, the ridge's highest line the dark ink step and its mean line a mid one. */
+export const N68_SERIES = defineSeries({
+  cost: { light: '#b0b0b0', dark: '#666666' },
+  highest: { light: '#262626', dark: '#e6e6e6' },
+  mean: { light: '#858585', dark: '#9a9a9a' },
+})
+
 /** Fleet deploys (route /cycle/shell-6): the status red is a failed deploy, the one outcome that needs a hand; a rolled-back deploy takes the amber, a succeeded one an ink step. */
 export const FLEET6_SERIES = defineSeries({
   succeeded: { light: '#6b6b6b', dark: '#a8a8a8' },
@@ -421,4 +453,32 @@ export const RIDE_SERIES = defineSeries({
   temp: { light: '#9a9a9a', dark: '#7d7d7d' },
   limit: { light: '#4a4a4a', dark: '#c4c4c4' },
   day: { light: '#b0b0b0', dark: '#666666' },
+})
+
+/** Model router picks (scenario expr-n64): the three targets sit in ink steps from dark (iu) to pale (iu-api); the three refusal reasons are the status red in three steps, quota the strong one. The accent is the cache-hit ramp, not a series. */
+export const N64_SERIES = defineSeries({
+  iu: { light: '#262626', dark: '#ececec' },
+  me: { light: '#7a7a7a', dark: '#9c9c9c' },
+  iuApi: { light: '#bdbdbd', dark: '#5c5c5c' },
+  quota: { light: '#af293e', dark: '#e46360' },
+  policy: { light: '#d0707f', dark: '#b45454' },
+  down: { light: '#ebb4bc', dark: '#7e4444' },
+})
+
+/** Reading pace (scenario expr-n66): the accent is each finished book's pace, the one measure the question asks about; the median rule sits in an ink step. */
+export const N66_SERIES = defineSeries({
+  pace: { light: '#2871c7', dark: '#5190f7' },
+  median: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Recovery morning (scenario expr-n63): the accent is the recovery score, the one measure the question asks about; HRV, sleep, resting rate, stress and body battery sit in ink steps, the stress rules in a mid one, and the status red marks the hours over 75. */
+export const N63_SERIES = defineSeries({
+  recovery: { light: '#2871c7', dark: '#5190f7' },
+  hrv: { light: '#4a4a4a', dark: '#c4c4c4' },
+  sleep: { light: '#7a7a7a', dark: '#9c9c9c' },
+  rhr: { light: '#6b6b6b', dark: '#a8a8a8' },
+  stress: { light: '#262626', dark: '#e6e6e6' },
+  battery: { light: '#5a5a5a', dark: '#b0b0b0' },
+  rule: { light: '#9a9a9a', dark: '#7d7d7d' },
+  high: { light: '#af293e', dark: '#e46360' },
 })

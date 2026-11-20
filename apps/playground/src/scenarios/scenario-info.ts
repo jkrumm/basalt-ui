@@ -362,6 +362,42 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
       'When in the next two days is the wind steady between 12 and 25 knots, from a usable direction, and how gusty?',
   },
   {
+    id: 'expr-n63',
+    title: 'Expression n63: is today a day to push or to rest',
+    blurb:
+      'An athlete checks the morning. Is today a day to push or to rest, and how did stress and body battery move through the last night and day?',
+  },
+  {
+    id: 'expr-n64',
+    title: 'Expression n64: which target took the model router picks',
+    blurb:
+      'The owner checks the model router. Which target took the picks each day this fortnight, how many were refused, and why?',
+  },
+  {
+    id: 'expr-n65',
+    title: 'Expression n65: which friction reason grew and how the loop ends',
+    blurb:
+      'The factory owner reviews the week. Which friction reason grew the most, and is the loop ending in done work or in dropped work?',
+  },
+  {
+    id: 'expr-n66',
+    title: 'Expression n66: how fast each book reads and what fills the backlog',
+    blurb:
+      'A reader looks back at the year. How fast does each finished book read, and which genre fills the backlog?',
+  },
+  {
+    id: 'expr-n67',
+    title: 'Expression n67: is each lift rising and did load match recovery',
+    blurb:
+      'A lifter checks the training block. Is each main lift still rising, and did the training load match recovery over the last 90 days?',
+  },
+  {
+    id: 'expr-n68',
+    title: 'Expression n68: which months give usable core hours past the ridge',
+    blurb:
+      'An astrophotographer plans the year. In which months does the galactic core give usable dark hours from this site, and how many does the ridge cost?',
+  },
+  {
     id: 'linked-windows',
     title: 'Linked windows: a table of runs beside an hourly chart',
     blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',
