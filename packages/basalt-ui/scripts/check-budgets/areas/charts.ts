@@ -57,7 +57,10 @@ export const rows: readonly RowDef[] = [
     // with its one caret per clamped value, the kit fixes of expression cycle 13.
     // 127500 -> 127800 (Issue 2486): 127548 B measured, +~50 B gz over the cap for the corner blanking and the
     // follower's empty x chip that clear the hover chips off the ticks they covered.
-    ceiling: 127800,
+    // 127800 -> 128400 (Issue 2499): 128293 B measured, +~490 B gz over the cap for the rule caption's slide along
+    // its rule, the x chip's hand-over to the panes of its own stack, the clamped value's free-row search, the
+    // stack fitted to the clamp and the held run revealed whole, the kit fixes of expression cycle 14.
+    ceiling: 128400,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -80,6 +83,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 127800,
+      to: 128400,
+      consumer:
+        "the kit fixes of expression cycle 14 (Issue 2499): n63's rule caption sat on a dense line, n64's stack total sat inside its stack and its clamped stack lost the upper segments, n67's x chip covered its date ticks, and n61's held run showed one row of seven",
+      repo: 'basalt-ui',
+    },
     {
       from: 127500,
       to: 127800,
