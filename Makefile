@@ -204,7 +204,7 @@ astro-matrix-run:
 	@bun apps/playground-astro/scripts/matrix.ts $(if $(filter 1,$(UPDATE)),--update)
 
 # The Astro matrix only when the branch touched one of its inputs (BASE=<ref>, default origin/master); CI runs it on every head.
-ASTRO_INPUTS = packages/basalt-ui/src packages/basalt-ui/package.json packages/basalt-ui/tests/support packages/basalt-ui/scripts/export-surface apps/playground-astro docs/v3/verdicts/astro-matrix.json package.json bun.lock
+ASTRO_INPUTS = packages/basalt-ui/src packages/basalt-ui/package.json packages/basalt-ui/tests/support packages/basalt-ui/scripts/export-surface apps/playground/src/demo apps/playground-astro docs/v3/verdicts/astro-matrix.json package.json bun.lock
 astro-matrix-fast:
 	@base="$$(git merge-base $(or $(BASE),origin/master) HEAD 2>/dev/null)"; \
 	if [ -n "$$base" ] && [ -z "$$(git diff --name-only "$$base" -- $(ASTRO_INPUTS); git ls-files --others --exclude-standard -- $(ASTRO_INPUTS))" ]; then \
