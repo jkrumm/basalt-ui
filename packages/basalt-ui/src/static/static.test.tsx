@@ -11,7 +11,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
-import { beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 import { Fragment, isValidElement } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -248,6 +248,19 @@ describe('siteScript', () => {
     localStorage.clear()
     document.documentElement.removeAttribute('data-theme')
     document.body.innerHTML = html
+  })
+
+  // The DOM is shared with every later test file in this process: leave it as it was found.
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  afterAll(() => {
+    localStorage.clear()
+    document.documentElement.removeAttribute('data-theme')
+    ;(window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(
+      'about:blank',
+    )
   })
 
   const click = (selector: string): void => {
