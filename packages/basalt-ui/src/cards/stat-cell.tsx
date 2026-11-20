@@ -42,6 +42,8 @@ const CHART_HEIGHT = 28
 // share a line.
 const T_CAPTION = 'row-start-1 flex h-4 min-w-0 items-center gap-1'
 const T_FIGURE = 'row-start-2 flex h-8 min-w-0 items-center gap-2 @regular:h-9'
+// A solo empty cause may wrap to more lines than the figure track is tall: the track grows with it.
+const T_FIGURE_WRAP = 'row-start-2 flex min-h-8 min-w-0 items-center gap-2 @regular:min-h-9'
 const T_BASE = 'row-start-3 flex h-6 min-w-0 items-center gap-1.5'
 const T_METER = 'row-start-4 mt-1 h-8.5 min-w-0 overflow-clip'
 const T_CHART = 'row-start-5 mt-1 h-7 min-w-0 overflow-clip'
@@ -232,7 +234,7 @@ export function StatCell(props: StatCellProps): ReactElement {
       ))}
       {resolved.tag === 'empty' && spans && !collapsed && (
         <div data-slot="stat-empty" className={SPAN_BODY}>
-          <EmptyLine empty={resolved.empty} />
+          <EmptyLine empty={resolved.empty} wrap />
         </div>
       )}
       {sub !== undefined && (
@@ -338,8 +340,8 @@ function Figure({
   }
   if (resolved.tag === 'empty' && empty !== undefined && solo) {
     return (
-      <div data-slot="stat-figure" className={T_FIGURE}>
-        <EmptyLine empty={empty} />
+      <div data-slot="stat-figure" className={T_FIGURE_WRAP}>
+        <EmptyLine empty={empty} wrap />
       </div>
     )
   }
@@ -461,12 +463,13 @@ export function ErrorLine({
   )
 }
 
-export function EmptyLine({ empty }: { empty: Empty }): ReactNode {
+/** A cell's cause wraps in its own track; a group's shared cause stays one truncated line in its banner. */
+export function EmptyLine({ empty, wrap = false }: { empty: Empty; wrap?: boolean }): ReactNode {
   const t = useMessages(cards)
   const { cause, action, filtered } = empty
   return (
     <>
-      <p className="min-w-0 truncate text-xs text-muted-foreground" title={cause}>
+      <p className={cn('min-w-0 text-xs text-muted-foreground', !wrap && 'truncate')} title={cause}>
         {cause}
       </p>
       {filtered !== undefined ? (
