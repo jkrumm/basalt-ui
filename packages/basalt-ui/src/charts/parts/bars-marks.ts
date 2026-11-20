@@ -99,28 +99,57 @@ function stacksOf<D>(rows: readonly PlotRow<D, ChartX>[]): PlotRow<D, ChartX>[][
   return [...byX.values()]
 }
 
+/** A segment of a clamped stack keeps at least this many px of height, so no part of the stack vanishes. */
+const MIN_SEGMENT_PX = 2
+
 /**
- * A stack never draws past the plot's edge: each x walks its segments bottom up and cuts a segment
- * at the domain's end (the positive and the negative parts apart), so a stack whose total passes a
- * bounded domain stops at the edge. Rows it leaves alone keep their identity.
+ * The sizes of one side of a stack, fitted to `cap` in proportion: a segment the share would make
+ * thinner than `min` keeps `min`, and the rest share out what is left. `floored` holds the segments
+ * already at `min`. Returns the sizes in order.
+ */
+function fitSegments(
+  sizes: readonly number[],
+  cap: number,
+  min: number,
+  floored: ReadonlySet<number> = new Set(),
+): number[] {
+  if (sizes.length * min >= cap) return sizes.map(() => cap / sizes.length)
+  const free = sizes.reduce((acc, v, i) => (floored.has(i) ? acc : acc + v), 0)
+  const share = (cap - floored.size * min) / free
+  const thin = sizes.flatMap((v, i) => (!floored.has(i) && v * share < min ? [i] : []))
+  if (thin.length > 0) return fitSegments(sizes, cap, min, new Set([...floored, ...thin]))
+  return sizes.map((v, i) => (floored.has(i) ? min : v * share))
+}
+
+/**
+ * A stack never draws past the plot's edge: a stack whose total passes a bounded domain is fitted to
+ * the edge, its segments scaled in proportion, each (positive and negative part apart) kept at least
+ * {@link MIN_SEGMENT_PX} tall, so the upper segments stay readable. A stack inside the domain is left
+ * alone, and rows it does not change keep their identity. `plotHeight` is the px the domain spans.
  */
 export function clampStacks<D>(
   rows: readonly PlotRow<D, ChartX>[],
   order: readonly string[],
   domain: readonly [number, number],
+  plotHeight: number,
 ): PlotRow<D, ChartX>[] {
   const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+  const min = plotHeight > 0 ? (MIN_SEGMENT_PX * (hi - lo)) / plotHeight : 0
   const cut = new Map<PlotRow<D, ChartX>, PlotRow<D, ChartX>>()
   for (const stack of stacksOf(rows)) {
-    let up = 0
-    let down = 0
-    for (const row of stack.toSorted((a, b) => order.indexOf(a.series) - order.indexOf(b.series))) {
-      if (row.y === null || !Number.isFinite(row.y)) continue
-      const y =
-        row.y >= 0 ? Math.min(row.y, Math.max(0, hi - up)) : Math.max(row.y, Math.min(0, lo - down))
-      if (row.y >= 0) up += y
-      else down += y
-      if (y !== row.y) cut.set(row, { ...row, y })
+    const live = stack.toSorted((a, b) => order.indexOf(a.series) - order.indexOf(b.series))
+    const sides = [
+      { parts: live.filter((r) => r.y !== null && r.y > 0), cap: Math.max(0, hi) },
+      { parts: live.filter((r) => r.y !== null && r.y < 0), cap: Math.max(0, -lo) },
+    ]
+    for (const { parts, cap } of sides) {
+      const sizes = parts.map((r) => Math.abs(r.y ?? 0))
+      if (sizes.reduce((acc, v) => acc + v, 0) <= cap) continue
+      const fitted = fitSegments(sizes, cap, min)
+      for (const [i, row] of parts.entries()) {
+        const size = fitted[i] ?? 0
+        cut.set(row, { ...row, y: (row.y ?? 0) < 0 ? -size || 0 : size })
+      }
     }
   }
   return rows.map((row) => cut.get(row) ?? row)
@@ -216,7 +245,8 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
   }
   const order = visibleBars.map((s) => s.key)
   // A stack stops at the plot's edge: a total past a bounded domain would overrun it.
-  const drawn = layout === 'stacked' ? clampStacks(rows, order, plot.yDomain) : rows
+  const drawn =
+    layout === 'stacked' ? clampStacks(rows, order, plot.yDomain, plot.plotHeight) : rows
   return [
     barY(drawn, {
       id: 'bars',
