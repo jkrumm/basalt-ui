@@ -33,7 +33,7 @@ How a stat card and its neighbours read. The slots and props are in [StatCard](n
 ## Every figure has a baseline
 
 - Give the figure a baseline in the card itself: the delta, a target tick, the limit with the distance to it, or a history line.
-- Every headline stands against the reference the data offers (yesterday, a usual day, the rest of the day, the goal's pace) as a signed delta; name the base in words where it is unclear ("+151 min vs usual day"). A threshold in words ("over 500 ms") stands against nothing, and a 30-day figure beside a 1-day one compares nothing (n23 .32, n26 .73).
+- Every headline stands against the reference the data offers (yesterday, a usual day, the rest of the day, the goal's pace) as a signed delta; name the base in words where it is unclear ("+151 min vs usual day"). A threshold in words ("over 500 ms") stands against nothing, and a 30-day figure beside a 1-day one compares nothing (n23 .32, n26 .73). A delta pill compares the figure's own window: a fortnight's '90 refused' beside 'vs first week' compares a fortnight with a week (n64 .11); base the pill on the same fortnight, the previous one.
 - A count over a total is a figure with its share or delta ("13", pill "68% of 19"), where a sentence in prose gives nothing to compare (c10 F3, c11 F3).
 - A share shows its whole beside it ("9 / 18" next to the percent bar), so a small and a large item draw differently: 12 and 48 lessons drew the same bar (n11 .3).
 - A card with none of these is allowed when the number lacks a history, a target and parts.
