@@ -4,7 +4,7 @@
  * `compact` from here for its default axis format. Every formatter accepts `null | undefined` and
  * prints {@link NON_FINITE} for it (as for `NaN` / `±Infinity`).
  */
-import { isFiniteNumber, NON_FINITE, numberFormat, scaleThousands } from './shared'
+import { isFiniteNumber, NON_FINITE, numberFormat, scaleThousands, TRUE_MINUS } from './shared'
 import type { LocaleOption, Numeric } from './shared'
 
 export type { LocaleOption }
@@ -99,6 +99,7 @@ export function money(value: Numeric, options: MoneyOptions): string {
   })
     .format(value)
     .replace(COMPACT_K, '$1k')
+    .replaceAll('-', TRUE_MINUS)
 }
 
 /** Grouped integer: `12,480`. Rounds. */

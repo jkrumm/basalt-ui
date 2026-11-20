@@ -9,6 +9,7 @@ import { cn } from '../../core/cn'
 import type { CalendarDate, DateStyle, Format } from '../../core/format'
 import { AppLink } from '../../core/link'
 import type { Delta, IconComponent, NavTarget, Tone } from '../../core/ports'
+import { TRUE_MINUS } from '../../format/shared'
 import { DeltaBadge } from '../../ui/badge'
 import { Meter } from '../../ui/meter'
 import { Status } from '../../ui/status'
@@ -62,7 +63,9 @@ export function currencyDigits(currency: string): number {
 
 export function formatMoney(format: Format, value: number, currency: string): string {
   const digits = currencyDigits(currency)
-  return format.number(value, { minimumFractionDigits: digits, maximumFractionDigits: digits })
+  return format
+    .number(value, { minimumFractionDigits: digits, maximumFractionDigits: digits })
+    .replaceAll('-', TRUE_MINUS)
 }
 
 export function formatNumber(format: Format, value: number, digits: number | undefined): string {
