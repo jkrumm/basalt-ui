@@ -20,6 +20,7 @@ export type ReadoutFocus = {
     readonly x: number
     readonly y: number
     readonly xValue: ChartValue
+    /** The focused datum's y (the engine's `FocusItem.yValue`): the value the y chip prints. */
     readonly yValue?: ChartValue
   }
 } | null
@@ -32,7 +33,12 @@ export type EdgeShare = (value: ChartValue) => number | null
  * over the y gutter's lowest tick, and the y chip hangs below the plot's bottom over the x axis' first
  * tick, so each cross-axis tick is blanked while the other axis' chip sits in the corner.
  */
-export type Corner = { x: EdgeShare; y: EdgeShare }
+export type Corner = {
+  x: EdgeShare
+  y: EdgeShare
+  /** Whether this chart draws an x chip now (it labels its x axis and does not follow another chart); default yes. */
+  xChip?: () => boolean
+}
 
 /** How near the left edge an x value sits, as a share of the plot's width, for its chip to reach the y gutter (the chip is ~28 px wide). */
 const CORNER_X = 0.06
@@ -127,6 +133,7 @@ export function yTickOpacity(opts: {
     if (chip && Number.isFinite(focus.primary.y) && Math.abs(position - focus.primary.y) < reach)
       return 0
     return corner !== undefined &&
+      corner.xChip?.() !== false &&
       inCorner(corner.x(focus.primary.xValue), CORNER_X) &&
       inCorner(corner.y(value), CORNER_Y)
       ? 0

@@ -116,23 +116,32 @@ export const hasCursorGroup = (group: string): boolean => groups.has(group)
  * host published, so a stamp must never change its identity. A programmatic state (an app timeline)
  * has no owner, so every chart treats it as foreign.
  */
-const owners = new WeakMap<object, string>()
+type Owner = { chartId: string; xChip: boolean }
+const owners = new WeakMap<object, Owner>()
 
-function stamp(state: CursorState, chartId: string): CursorState {
-  if (state) owners.set(state, chartId)
+function stamp(state: CursorState, owner: Owner): CursorState {
+  if (state) owners.set(state, owner)
   return state
 }
 
-export function isForeign(group: string | undefined, chartId: string): boolean {
+const ownerOf = (group: string | undefined): { state: CursorState; owner: Owner | undefined } => {
   const state = chartCursor(group).getState()
-  return state !== null && owners.get(state) !== chartId
+  return { state, owner: state === null ? undefined : owners.get(state) }
 }
 
-/** Whether another chart of the group published the cursor's state: this chart follows it. */
+export function isForeign(group: string | undefined, chartId: string): boolean {
+  const { state, owner } = ownerOf(group)
+  return state !== null && owner?.chartId !== chartId
+}
+
+/**
+ * Whether another chart that draws an x chip published the cursor's state: this chart follows it, and
+ * leaves its own x chip to that chart. A leader with no chip (an upper pane with no x tick labels) hands
+ * the chip to the follower that labels the axis.
+ */
 export function followsChart(group: string | undefined, chartId: string): boolean {
-  const state = chartCursor(group).getState()
-  const owner = state === null ? undefined : owners.get(state)
-  return owner !== undefined && owner !== chartId
+  const { owner } = ownerOf(group)
+  return owner !== undefined && owner.chartId !== chartId && owner.xChip
 }
 
 const valueX = (state: CursorState): ChartValue | undefined =>
@@ -182,7 +191,12 @@ function snapper(
   }
 }
 
-type Snap = { snap: ReturnType<typeof snapper>; memo: WeakMap<object, CursorState> }
+type Snap = {
+  snap: ReturnType<typeof snapper>
+  memo: WeakMap<object, CursorState>
+  /** Whether this chart draws an x chip while it leads (read when it publishes). */
+  xChip: () => boolean
+}
 type View = { controller: ChartCursorController; config: Snap; subscribers: number }
 
 /** One stable view per mounted chart: TanStack compares the binding's controller by reference and
@@ -198,11 +212,12 @@ function makeView(
 ): ChartCursorController {
   // Resolved per call, never at build time: a definition compiled during SSR holds no controller.
   const shared = (): ChartCursorController => chartCursor(group)
+  const owner = (): Owner => ({ chartId, xChip: config().xChip() })
   return {
     subscribe: (listener) => track(shared().subscribe(listener)),
     setState: (next) =>
       shared().setState(
-        typeof next === 'function' ? (prev) => stamp(next(prev), chartId) : stamp(next, chartId),
+        typeof next === 'function' ? (prev) => stamp(next(prev), owner()) : stamp(next, owner()),
       ),
     getState: () => {
       const state = shared().getState()
@@ -232,6 +247,8 @@ export type CursorViewOptions = {
   mode: CursorResolution
   /** The x extent the chart renders (`xDomain`, else the data's); default: the keys' own. */
   extent?: readonly [number, number] | undefined
+  /** Whether the chart draws an x chip while it leads, read when it publishes; default yes. */
+  xChip?: (() => boolean) | undefined
 }
 
 /**
@@ -247,7 +264,11 @@ export type CursorViewOptions = {
  */
 export function chartCursorView(opts: CursorViewOptions): ChartCursorController {
   const { group, chartId } = opts
-  const config: Snap = { snap: snapper(opts.keys, opts.mode, opts.extent), memo: new WeakMap() }
+  const config: Snap = {
+    snap: snapper(opts.keys, opts.mode, opts.extent),
+    memo: new WeakMap(),
+    xChip: opts.xChip ?? (() => true),
+  }
   if (isServer()) return makeView(group, chartId, () => config)
   const id = `${group ?? 'default'}\u0000${chartId}`
   const existing = views.get(id)

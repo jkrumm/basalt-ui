@@ -44,6 +44,16 @@ describe('the x chip at the plot left edge blanks the lowest y tick', () => {
   test('a higher tick, focus at the left edge: kept', () => expect(yAt(150, focus(2, 40))).toBe(1))
 })
 
+describe('a chart that draws no x chip keeps its lowest y tick', () => {
+  const silent = yTickOpacity({
+    fontSize: 11,
+    chip: true,
+    corner: { ...corner, xChip: () => false },
+  })
+  test('focus at the left edge, no x chip: kept', () =>
+    expect(silent({ value: 0, position: 200, focus: focus(2, 120) })).toBe(1))
+})
+
 describe('without a corner the ticks only follow their own chip', () => {
   const plain = yTickOpacity({ fontSize: 11, chip: true })
   test('the tick on the chip row is blanked', () => {
