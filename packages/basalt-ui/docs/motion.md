@@ -8,7 +8,7 @@ slots: []
 
 # Motion
 
-Time every animation from the basalt scale, enter and exit with a preset, and let reduced motion collapse it for you. A duration, delay, spring or easing written as a number or a class like `duration-300` is a `basalt/motion-literal` or `tw-off-law` finding.
+Time every animation from the basalt scale, enter and exit with a preset, and let reduced motion collapse it for you. A duration, delay, spring or easing written as a number or a class like `duration-300` is a `basalt/motion-literal` or `basalt/motion-off-scale` finding.
 
 ## The scale
 
@@ -54,13 +54,14 @@ A hand-made transition takes the constants: `transition={{ duration: MOTION_DURA
 CSS only (an Astro or static page, no React): load `basalt-ui/tokens.css` and `basalt-ui/typography.css`, then
 
 ```html
-<li class="animate-enter-item stagger" style="--i: 3">…</li>
-<!-- Tailwind -->
+<!-- no Tailwind -->
 <li
   style="animation: basalt-enter-item var(--basalt-dur-base) var(--basalt-ease-enter) both; animation-delay: calc(3 * var(--basalt-stagger))"
 >
   …
 </li>
+<!-- with Tailwind -->
+<li class="animate-enter-item stagger" style="--i: 3">…</li>
 ```
 
 The keyframes are `basalt-enter-overlay`, `basalt-enter-item` and `basalt-enter-card` (the card runs on `var(--basalt-spring)`). An exit works in CSS only while the element stays in the DOM until it ends (a `<dialog>` with `transition-behavior: allow-discrete`, a Base UI part). Removing a list item with an exit, layout and reorder animation, drag, and a spring that keeps its speed when interrupted need `motion`.
