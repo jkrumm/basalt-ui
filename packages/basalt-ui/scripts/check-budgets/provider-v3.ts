@@ -16,6 +16,8 @@ import { PKG_ROOT } from './lib'
 
 export const FIXTURE = join(PKG_ROOT, 'scripts/fixtures/provider-v3.tsx')
 export const BASE0 = join(PKG_ROOT, 'scripts/fixtures/provider-v3-base0.tsx')
+/** The smallest island: a router-less `BasaltProvider` around one `Button`. */
+export const ISLAND = join(PKG_ROOT, 'scripts/fixtures/island-button.tsx')
 
 /** The cap (A§0, A§1): never edited here. A measurement above it is a Contract amendment request. */
 export const PROVIDER_V3_CAP = 5000
@@ -126,6 +128,12 @@ export type ProviderV3Measure = {
   /** The two builds, for a caller that serves or inspects the code (the spike harness). */
   app: AppBundle
   base0: AppBundle
+}
+
+/** The smallest island's gzip bytes minus `base0`, both built in this call. */
+export async function measureIsland(): Promise<number> {
+  const [island, base0] = [await bundleApp(ISLAND), await bundleApp(BASE0)]
+  return gzipBytes(island) - gzipBytes(base0)
 }
 
 /** Build the fixture and `base0` once and measure. `entry` is overridable for the closure control. */

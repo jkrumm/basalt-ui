@@ -86,6 +86,27 @@ storage that throws.
 | `cookie`    | none            | a cookie to read after both keys                                             |
 | `attribute` | `data-theme`    | the attribute to stamp                                                       |
 
+## React islands
+
+A React island on a static page (an Astro component with a `client:*` directive) mounts its own React
+root. It can use the `basalt-ui/ui/*` primitives with no router, no query client and no shell: no
+primitive needs `BasaltProvider`, and none needs a router. Each one renders and hydrates with no
+provider and inside a provider with no `link`; `primitive.contract.test.tsx` runs both for every
+`ui` module. Declare the islands' directory as a `parts` root in `.basalt/manifest.json`.
+
+Wrap an island in `<BasaltProvider locale="de-DE">` only for what it changes:
+
+| Prop     | Read by                                                                                                     | Without it                                |
+| -------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `locale` | the numbers and dates of `Num`, `Meter`, `Progress`, `Slider` and `DatePicker`, and counts in built-in text | English                                   |
+| `scheme` | the page: `data-theme` on `<html>` and the stored choice                                                    | the head script's choice, else the system |
+| `link`   | `Card`'s `href` and the composites' link props                                                              | a plain `<a>`                             |
+
+Omit `scheme` in an island: the head script owns the first paint, and two islands that each set it
+would write the stored choice twice. The provider costs about 0.4 KB gzip on top of React, and the
+smallest island (a provider and one `Button`) about 9 KB, nearly all of it the button's class table;
+`check-budgets` holds both (rows `provider-v3` and `island-button`).
+
 ## What a static page does not get
 
 Components, the Tailwind bridge, charts and the shell are other profiles. They read the same tokens,

@@ -1,6 +1,6 @@
 /**
  * The primitive contract (docs/v3/ARCHITECTURE.md section 3): every `src/ui/<name>.tsx` module
- * renders with no provider, puts a `data-slot` equal to the kebab-case of its export on every part
+ * renders with no provider and inside a `BasaltProvider` with no router (an island's root), puts a `data-slot` equal to the kebab-case of its export on every part
  * and lists that slot in `SLOTS`, and survives `renderToString` + `hydrateRoot` without a
  * recoverable hydration error.
  *
@@ -283,35 +283,44 @@ const componentEntries = (exports: Record<string, unknown>): [string, PartCompon
     /^[A-Z]/.test(name) && typeof value === 'function' ? [[name, value as PartComponent]] : [],
   )
 
+/** What a part renders inside: nothing by default, or a provider a check puts around it. */
+export type Wrap = (node: ReactElement) => ReactElement
+const unwrapped: Wrap = (node) => node
+
 /** One part as an element: children `x`, wrapped in its parent when Base UI needs one. */
 function partElement(
   Part: PartComponent,
   slot: string,
   bare: boolean,
   closed = false,
+  wrap: Wrap = unwrapped,
 ): ReactElement {
   const props = PART_PROPS[slot] ?? {}
   const node =
     bare || NO_TEXT.has(slot) ? createElement(Part, props) : createElement(Part, props, 'x')
   const Parent = closed ? (overlayAncestry(false)[slot] ?? PARENTS[slot]) : PARENTS[slot]
-  return Parent === undefined ? node : createElement(Parent, null, node)
+  return wrap(Parent === undefined ? node : createElement(Parent, null, node))
 }
 
 /**
  * A part on a void element (`<input>`) refuses children, so it renders bare. The returned element
  * is the document body, so a portalled popup is found too.
  */
-function renderPart(Part: PartComponent, slot: string): { container: HTMLElement; bare: boolean } {
+function renderPart(
+  Part: PartComponent,
+  slot: string,
+  wrap: Wrap,
+): { container: HTMLElement; bare: boolean } {
   try {
     return {
-      container: render(partElement(Part, slot, false)).baseElement,
+      container: render(partElement(Part, slot, false, false, wrap)).baseElement,
       bare: false,
     }
   } catch (error) {
     if (!(error instanceof Error) || !error.message.includes('void element')) throw error
     cleanup()
     return {
-      container: render(partElement(Part, slot, true)).baseElement,
+      container: render(partElement(Part, slot, true, false, wrap)).baseElement,
       bare: true,
     }
   }
@@ -334,8 +343,14 @@ export async function hydrationErrors(element: () => ReactElement): Promise<numb
   return errors
 }
 
-/** Every contract violation of one module, empty when it conforms. */
-export async function checkPrimitive(mod: PrimitiveModule): Promise<string[]> {
+/**
+ * Every contract violation of one module, empty when it conforms. `wrap` renders each part inside a
+ * provider (a `BasaltProvider` with no router); by default a part renders with none.
+ */
+export async function checkPrimitive(
+  mod: PrimitiveModule,
+  wrap: Wrap = unwrapped,
+): Promise<string[]> {
   const violations: string[] = []
   const parts = componentEntries(mod.exports)
   if (parts.length === 0) return [`${mod.name}: exports no component`]
@@ -344,7 +359,7 @@ export async function checkPrimitive(mod: PrimitiveModule): Promise<string[]> {
     const slot = kebab(exportName)
     const label = `${mod.name}.${exportName}`
     try {
-      const { container, bare } = renderPart(Part, slot)
+      const { container, bare } = renderPart(Part, slot, wrap)
       // A popup is portalled out of the container, so the lookup spans the document.
       const rendered = container.ownerDocument.querySelector(`[data-slot="${slot}"]`)
       if (!ROOTLESS.has(slot)) {
@@ -355,10 +370,10 @@ export async function checkPrimitive(mod: PrimitiveModule): Promise<string[]> {
         }
       }
       cleanup()
-      const errors = await hydrationErrors(() => partElement(Part, slot, bare))
+      const errors = await hydrationErrors(() => partElement(Part, slot, bare, false, wrap))
       if (errors > 0) violations.push(`${label}: ${errors} recoverable hydration error(s)`)
       if (slot in overlayAncestry(false)) {
-        const closedErrors = await hydrationErrors(() => partElement(Part, slot, bare, true))
+        const closedErrors = await hydrationErrors(() => partElement(Part, slot, bare, true, wrap))
         if (closedErrors > 0) {
           violations.push(`${label}: ${closedErrors} recoverable hydration error(s) closed`)
         }
