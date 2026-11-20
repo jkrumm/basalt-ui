@@ -53,6 +53,24 @@ describe('placement', () => {
     expect(read(dir, 'CLAUDE.md')).toBe('# mine\n')
   })
 
+  it('the block names where a gap in basalt-ui is filed, at every profile', async () => {
+    for (const profile of ['app', 'tokens']) {
+      const dir = makeRepo({
+        '.basalt/manifest.json': JSON.stringify({
+          profile,
+          version: '3.0.0',
+          roots: {},
+          managed: {},
+        }),
+      })
+      expect((await cli(['sync'], dir)).code).toBe(0)
+      const block = read(dir, 'AGENTS.md')
+      expect([profile, block]).toEqual([profile, expect.stringContaining('**A gap in basalt-ui**')])
+      expect(block).toContain('factory issue new --repo basalt-ui')
+      expect(block).toContain('minimal reproduction')
+    }
+  })
+
   it('inv 14: skills and rules land at the install (git) root, not the app dir', async () => {
     const dir = installed(
       { 'apps/web/package.json': JSON.stringify({ name: 'web' }) },
