@@ -40,6 +40,8 @@ const NUMBERED = [
   'colour-literal',
   'waiver-needs-reason',
   'page-root',
+  'motion-off-scale',
+  'motion-literal',
 ]
 const numbers = (...ns: number[]): string[] => ns.map((n) => `basalt/${NUMBERED[n - 1]}`).toSorted()
 const basaltOn = (preset: Preset): string[] =>
@@ -65,16 +67,16 @@ describe('profiles', () => {
   })
 
   it('bridge runs exactly ids 1-4, 6, 14, 15', () => {
-    expect(basaltOn(read('oxlint-bridge.json'))).toEqual(numbers(1, 2, 3, 4, 6, 14, 15))
+    expect(basaltOn(read('oxlint-bridge.json'))).toEqual(numbers(1, 2, 3, 4, 6, 14, 15, 17, 18))
   })
 
-  it('parts runs ids 1-15', () => {
+  it('parts runs ids 1-15, 17 and 18', () => {
     expect(basaltOn(read('oxlint-parts.json'))).toEqual(
-      numbers(...NUMBERED.slice(0, 15).map((_, i) => i + 1)),
+      numbers(...NUMBERED.slice(0, 15).map((_, i) => i + 1), 17, 18),
     )
   })
 
-  it('app runs ids 1-16 (page-root is app-only)', () => {
+  it('app runs ids 1-18 (page-root is app-only)', () => {
     expect(basaltOn(read('oxlint-app.json'))).toEqual(numbers(...NUMBERED.map((_, i) => i + 1)))
   })
 

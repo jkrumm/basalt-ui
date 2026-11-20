@@ -1,5 +1,5 @@
 /**
- * The class-rule family: seven ids, twenty-two enabled forms and one built-but-off form, all data
+ * The class-rule family: eight ids, twenty-three enabled forms and one built-but-off form, all data
  * (guardrails section 4, rows 1-7). The factory turns each entry into an oxlint/ESLint rule; this
  * module holds the patterns, the fix each message names and the next rung of the bending ladder.
  *
@@ -430,6 +430,26 @@ export const CLASS_RULES = defineRules({
         enabled: false,
         reason:
           'off until a structural F5P retest (docs/v3/spikes/allow-padding.md): 23% of argo padding props had no satisfiable fix',
+      },
+    ],
+  },
+
+  'motion-off-scale': {
+    family: 'class',
+    profiles: ALL,
+    zonesOff: VENDORED,
+    defect:
+      'Issue 2529: duration and easing classes were typed per call site (duration-150, ease-in), so the motion scale in tokens/motion.ts moved without them',
+    forms: [
+      {
+        id: 'off-scale',
+        // A duration or delay that is not a scale step (`duration-300`, `delay-[120ms]`), or an
+        // easing that is not the stylesheet's (`ease-linear`, `ease-in`, `ease-[…]`), with or without variants.
+        pattern:
+          /(?:^|:)!?(?:(?:duration|delay)-(?!(?:fast|base|slow|0)!?$)|ease-(?:(?:linear|in-out|in|out)(?![\w-])|[[(]))/,
+        fix: 'Duration and delay from the motion scale: duration-fast, duration-base, duration-slow, duration-0; easing from ease-standard, ease-enter, ease-exit; the stagger utility for a list',
+        next: 'A cva variant over those steps, or a reasoned waiver',
+        fixture: 'class/motion-off-scale/off-scale.tsx',
       },
     ],
   },

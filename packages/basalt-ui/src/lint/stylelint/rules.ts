@@ -85,6 +85,14 @@ type ValueGroup = {
   scrollOnly?: true
 }
 
+/** A transition or animation timing longhand, or the shorthands that carry one. */
+const MOTION_PROPERTIES = '/^(?:transition|animation)(?:-(?:duration|delay|timing-function))?$/'
+/** A literal time other than 0s or 0ms (`300ms`, `.3s`): the lookahead lets a zero time through. */
+const MOTION_TIME =
+  '/(?<![\\w.])(?!-?0+(?:\\.0+)?m?s(?![\\w-]))-?(?:\\d+\\.\\d+|\\.\\d+|\\d+)m?s(?![\\w-])/i'
+const MOTION_EASE_FUNCTION = '/(?<![\\w-])(?:cubic-bezier|steps|linear)\\(/i'
+const MOTION_EASE_KEYWORD = '/(?<![\\w-])(?:ease|ease-in|ease-out|ease-in-out|linear)(?![\\w-])/i'
+
 const STATUS_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:good|warn|bad|info|destructive)(?:-[a-z0-9-]+)?\\s*[,)]`
 const CHART_ROLE = `var\\(\\s*${TOKEN_PREFIX}(?:chart|seq)(?:-[a-z0-9-]+)?\\s*[,)]`
 const DECORATION_LEAD =
@@ -153,6 +161,13 @@ const VALUE_GROUPS: readonly ValueGroup[] = [
     values: [SCROLL_VALUES],
     clause: 'overflow auto|scroll is ui/scroll-area, or let Page own the scroll',
     scrollOnly: true,
+  },
+  {
+    // A timing comes from the motion scale: the --basalt-dur-* and --basalt-ease-* variables.
+    properties: MOTION_PROPERTIES,
+    values: [MOTION_TIME, MOTION_EASE_FUNCTION, MOTION_EASE_KEYWORD],
+    clause:
+      'transition and animation take their time and easing from the motion scale: var(--basalt-dur-*) and var(--basalt-ease-*), never a literal time, a cubic-bezier, steps or linear timing function, or an easing keyword (0s and 0ms, the reduced-motion end state, stay legal)',
   },
 ]
 
