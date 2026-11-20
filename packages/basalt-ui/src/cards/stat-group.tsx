@@ -144,7 +144,11 @@ function sharedFailure(children: ReactNode): SharedFailure | null {
   const [first] = cells
   if (first?.tag === 'error') {
     const errors = cells.flatMap((cell) => (cell.tag === 'error' ? [cell] : []))
-    if (errors.length !== cells.length || errors.some((e) => e.kind !== first.kind)) return null
+    if (
+      errors.length !== cells.length ||
+      errors.some((e) => e.kind !== first.kind || e.message !== first.message)
+    )
+      return null
     const retries = [...new Set(errors.flatMap((e) => (e.retry === undefined ? [] : [e.retry])))]
     return {
       tag: 'error',
