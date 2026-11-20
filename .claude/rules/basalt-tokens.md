@@ -25,6 +25,7 @@ Every value is a token and the palette is derived, never authored; each bullet n
 - Space siblings with `gap-*` on the parent; margin and `space-*` are not app code. [lint:app-spacing]
 - A surface recipe is owned by its component; do not rebuild border, radius or shadow on it. [lint:tw-off-law]
 - A pre-mixed token already carries its alpha; use it as it is. [lint:tw-off-law]
+- Time motion from the scale: `MOTION_DURATION`, `MOTION_EASE_*`, `MOTION_SPRING` and `staggerDelay` from `basalt-ui/tokens`, `useMotionPreset` from `basalt-ui/motion`, the `duration-fast|base|slow` and `ease-standard|enter|exit` classes or `var(--basalt-dur-*)`; never a number, a `duration-300` or an `ease-in-out`. [lint:motion-literal] [lint:motion-off-scale]
 
 ## Waivers
 
