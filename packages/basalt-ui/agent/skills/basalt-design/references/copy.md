@@ -71,7 +71,7 @@ Cycle 13's builds, counted with the scan above (the old count printed `header` o
 - n61: `issue` four ("Open Issues", "Issues by state", the list error and empty).
 - n62: empty.
 
-Cycle 14's six builds each ended at an empty print with the cycle-13 command and lost X1 on all six. The command above prints, on the round-0 sources of those builds (`.evidence/v3-shots/expression-14/src-r0`; the old command printed nothing on any of them):
+Cycle 14's six builds each ended at an empty print with the cycle-13 command and lost X1 on all six. The command above prints, on the round-0 sources of those builds (the cycle-13 command printed nothing on any of them):
 
 - n63: `6 sleep`, `4 logged`, `4 =no_sleep`, `4 [sleep logged]`, `2 =overlabel`, `2 [over 75]`, `2 [of 100]`, `2 [low #]`.
 - n64: `4 logged`, `3 =not_logged`, `3 [0 %]`, `2 =first_week`, `2 [first week]`.
