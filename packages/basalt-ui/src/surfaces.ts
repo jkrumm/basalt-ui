@@ -434,6 +434,22 @@ export const SURFACES = {
       "The head component for basalt's faces on Astro: the body face preloaded; needs basaltAstro() from ./astro",
     forbiddenImports: [],
   },
+  './astro/mdx/Chart.astro': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description:
+      'The Chart MDX tag for Astro: a lines or bars chart card from plain data, hydrated by `load` (client:only by default); the site profile',
+    optionalPeers: ['@tanstack/charts', 'd3-scale'],
+    forbiddenImports: [],
+  },
+  './astro/mdx/DataTable.astro': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description:
+      'The DataTable MDX tag for Astro: a static table from plain data, or a sortable DataTable island with `interactive`; the site profile',
+    optionalPeers: ['@tanstack/react-table', '@base-ui/react'],
+    forbiddenImports: [],
+  },
   './fonts.css': {
     kind: 'tooling',
     layer: 'non-js-asset',

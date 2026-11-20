@@ -21,11 +21,17 @@ import {
   SiteArticle,
   SiteCallout,
   SiteCodeBlock,
+  SiteDataTable,
+  SiteField,
+  SiteForm,
   SitePager,
   Prose,
   SiteFooter,
   SiteHeader,
   siteMdxComponents,
+  SiteSubmit,
+  SiteTab,
+  SiteTabs,
   ThemeSwitch,
 } from './index'
 import { siteScript } from './site-script'
@@ -144,6 +150,42 @@ const PARTS: Record<string, ReactElement> = {
   'mdx pre': Mdx('pre', { children: <code>{S('code')}</code> }),
   'mdx Steps': Mdx('Steps', { children: Mdx('Step', { title: S('step'), children: S('text') }) }),
   'mdx Figure': Mdx('Figure', { caption: S('caption'), children: S('figure') }),
+  SiteTabs: (
+    <SiteTabs label={S('tabs')} tabs={[S('one'), S('two')]}>
+      <SiteTab label={S('one')}>{S('first')}</SiteTab>
+      <SiteTab label={S('two')}>{S('second')}</SiteTab>
+    </SiteTabs>
+  ),
+  SiteForm: (
+    <SiteForm action="/subscribe">
+      <SiteField
+        label={S('email')}
+        name="email"
+        type="email"
+        autoComplete="email"
+        description={S('hint')}
+        placeholder={S('placeholder')}
+        required
+      />
+      <SiteField label={S('message')} name="message" type="textarea" autoComplete="off" />
+      <SiteSubmit>{S('send')}</SiteSubmit>
+    </SiteForm>
+  ),
+  SiteDataTable: (
+    <SiteDataTable
+      label={S('table')}
+      columns={[
+        { key: 'name', label: S('name') },
+        { key: 'size', label: S('size'), kind: 'number' },
+      ]}
+      rows={[{ name: S('row'), size: 71500 }]}
+    />
+  ),
+  'mdx Tabs': Mdx('Tabs', {
+    label: S('tabs'),
+    tabs: [S('one')],
+    children: Mdx('Tab', { label: S('one'), children: S('first') }),
+  }),
 }
 
 const markup = (node: ReactElement): string => renderToStaticMarkup(<>{expand(node)}</>)

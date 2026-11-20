@@ -73,7 +73,7 @@ export const rows: readonly RowDef[] = [
     order: 40,
     label: 'published subpaths (package.json exports)',
     // 2.0 target 15.
-    ceiling: 35, // the site profile: `./static`, `./static.css`, `./starlight.css`, `./astro`, `./astro/BasaltFonts.astro` (raise row below); was 30: `./motion` (Issue 2529, raise row below); was 29: `./form` (raise row below); was 28: `./archify.css` (raise row below); was 27: v3 teardown-peers: the count after `./format` retired with src/format (the 2.x subpaths are gone; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router)
+    ceiling: 37, // the MDX island tags `./astro/mdx/Chart.astro` and `./astro/mdx/DataTable.astro` (raise row below); was 35: the site profile: `./static`, `./static.css`, `./starlight.css`, `./astro`, `./astro/BasaltFonts.astro` (raise row below); was 30: `./motion` (Issue 2529, raise row below); was 29: `./form` (raise row below); was 28: `./archify.css` (raise row below); was 27: v3 teardown-peers: the count after `./format` retired with src/format (the 2.x subpaths are gone; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router)
     measure: () => Object.keys(readManifest().exports ?? {}).length,
   },
 ]
@@ -451,6 +451,13 @@ export const raises: Raises = {
     },
   ],
   subpaths: [
+    {
+      from: 35,
+      to: 37,
+      consumer:
+        'the MDX island tags: basalt-ui.com (apps/marketing) renders `/guides/islands-in-mdx` with `./astro/mdx/Chart.astro` and `./astro/mdx/DataTable.astro`, each an `.astro` wrapper because a `client:` directive cannot sit on a component an MDX map names (Issue 2568); FPP and the other content sites copy the same wiring',
+      repo: 'basalt-ui',
+    },
     {
       from: 30,
       to: 35,

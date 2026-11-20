@@ -1,0 +1,6 @@
+/*
+ * The `static-tabs` layout test's Tailwind v4 entry, compiled with preflight like a Tailwind consumer.
+ * `static-tabs.layout.test.ts` compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source '../../../src/static';
