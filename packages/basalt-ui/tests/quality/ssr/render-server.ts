@@ -18,8 +18,14 @@ if (typeof window !== 'undefined' || typeof document !== 'undefined') {
   throw new Error('render-server.ts must run with no DOM globals')
 }
 
-const mod = (await import(bundle)) as { Page?: ComponentType<Record<string, unknown>> }
+const mod = (await import(bundle)) as {
+  Page?: ComponentType<Record<string, unknown>>
+  ready?: Promise<unknown>
+}
 if (typeof mod.Page !== 'function') throw new Error(`${bundle} does not export Page`)
+
+// A fixture with a router exports `ready`, its first load: the server renders the loaded state.
+await mod.ready
 
 const html = renderToString(createElement(mod.Page, JSON.parse(optionsJson)))
 process.stdout.write(JSON.stringify(html))

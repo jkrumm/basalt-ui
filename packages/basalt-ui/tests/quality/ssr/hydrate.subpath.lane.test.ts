@@ -27,7 +27,7 @@ test('hydrate.subpath passes in the jsdom lane', async () => {
     child.exited,
   ])
   const text = `${out}\n${err}`
-  expect(text).toMatch(/\b4 pass/)
+  expect(text).toMatch(/\b5 pass/)
   expect(text).toMatch(/1 todo/)
   expect(code, text).toBe(0)
 }, 180_000)

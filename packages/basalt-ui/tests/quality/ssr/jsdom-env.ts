@@ -31,6 +31,14 @@ for (const key of Object.getOwnPropertyNames(dom.window)) {
 Object.defineProperty(target, 'window', { configurable: true, writable: true, value: dom.window })
 Object.defineProperty(target, 'self', { configurable: true, writable: true, value: dom.window })
 
+// jsdom implements neither `Element.scrollTo` nor `window.scrollTo` (the latter only logs "not implemented"):
+// a router restoring scroll after its first load calls both, and a no-op is what a hydration run needs.
+const noScroll = (): void => {}
+for (const owner of [dom.window, dom.window.Element.prototype] as { scrollTo?: unknown }[]) {
+  Object.defineProperty(owner, 'scrollTo', { configurable: true, writable: true, value: noScroll })
+}
+Object.defineProperty(target, 'scrollTo', { configurable: true, writable: true, value: noScroll })
+
 const { cleanup, configure } = await import('@testing-library/react')
 configure({ asyncUtilTimeout: 5000 })
 
