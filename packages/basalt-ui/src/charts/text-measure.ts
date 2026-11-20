@@ -14,6 +14,15 @@ const WEIGHTS: readonly TableWeight[] = [400, 500, 600, 700]
 /** Ink above the alphabetic baseline (cap and figure height with overshoot) and below it, in em. */
 const ASCENT = 0.72
 const DESCENT = 0.21
+/**
+ * Room per glyph, in em, over the table's advance, for centred text: Chrome without subpixel
+ * positioning (Linux CI) draws an 11 px axis label wider than the Mac-measured table, 19 glyphs by
+ * about 4 px (the band axis layout test, 2026-11-20), and a centred x label is the one the engine
+ * clamps to the svg's edges, where that excess spills. Start- and end-anchored text (y ticks, the y
+ * title) keeps the table's width: a fixed `y.gutter` places the title by it.
+ */
+const GLYPH_ROOM = 0.03
+
 /** Glyphs whose ink reaches below the baseline. */
 const DESCENDERS = /[gjpqyQ,;()[\]{}|/@_$µ]/u
 
@@ -26,7 +35,8 @@ export const measureChartText: ChartTextMeasurer = (text, options) => {
   const scale = options.fontScale > 0 ? options.fontScale : 1
   const size = options.fontSize * scale
   if (!text || !(size > 0)) return NONE
-  const spacing = (options.letterSpacing || 0) * scale
+  const room = options.anchor === 'middle' ? GLYPH_ROOM * size : 0
+  const spacing = (options.letterSpacing || 0) * scale + room
   const width =
     measure(text, size, nearestWeight(options.fontWeight)) +
     Math.max(0, [...text].length - 1) * spacing
