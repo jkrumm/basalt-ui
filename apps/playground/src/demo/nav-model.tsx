@@ -13,94 +13,19 @@
  */
 import { linkOptions } from '@tanstack/react-router'
 import { defineNav } from 'basalt-ui/router'
-import type { ReactNode } from 'react'
+import {
+  ChartColumn as Chart,
+  FlaskConical as Flask,
+  Image,
+  LayoutDashboard as Dashboard,
+  PanelLeft as Layout,
+  PanelRight as Panel,
+  SlidersHorizontal as Sliders,
+  Table,
+  TextCursorInput as Form,
+} from 'lucide-react'
 import { SCENARIO_INFO } from '../scenarios/scenario-info'
 
-/** A 24-unit outline glyph; the shell sizes it with `className`. */
-function glyph(paths: ReactNode): (props: { className?: string }) => ReactNode {
-  return function NavGlyph({ className }) {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        {paths}
-      </svg>
-    )
-  }
-}
-
-const Dashboard = glyph(
-  <>
-    <path d="M4 4h6v8H4z" />
-    <path d="M4 16h6v4H4z" />
-    <path d="M14 4h6v4h-6z" />
-    <path d="M14 12h6v8h-6z" />
-  </>,
-)
-const Chart = glyph(
-  <>
-    <path d="M4 19h16" />
-    <path d="M7 16v-5" />
-    <path d="M12 16V7" />
-    <path d="M17 16v-8" />
-  </>,
-)
-const Table = glyph(
-  <>
-    <path d="M4 5h16v14H4z" />
-    <path d="M4 10h16" />
-    <path d="M10 10v9" />
-  </>,
-)
-const Layout = glyph(
-  <>
-    <path d="M4 5h16v14H4z" />
-    <path d="M9 5v14" />
-  </>,
-)
-const Flask = glyph(
-  <>
-    <path d="M10 4h4" />
-    <path d="M11 4v5l-5 9a1 1 0 0 0 1 2h10a1 1 0 0 0 1-2l-5-9V4" />
-  </>,
-)
-const Sliders = glyph(
-  <>
-    <path d="M4 7h10" />
-    <path d="M18 7h2" />
-    <path d="M4 17h4" />
-    <path d="M12 17h8" />
-    <circle cx="16" cy="7" r="2" />
-    <circle cx="10" cy="17" r="2" />
-  </>,
-)
-const Panel = glyph(
-  <>
-    <path d="M4 5h16v14H4z" />
-    <path d="M14 5v14" />
-  </>,
-)
-const Form = glyph(
-  <>
-    <path d="M4 5h16v4H4z" />
-    <path d="M4 13h16v4H4z" />
-    <path d="M14 21h6" />
-  </>,
-)
-const Image = glyph(
-  <>
-    <path d="M4 5h16v14H4z" />
-    <circle cx="9" cy="10" r="1.5" />
-    <path d="M20 16l-5-5-8 8" />
-  </>,
-)
 export const NAV = defineNav({
   sections: [
     {
