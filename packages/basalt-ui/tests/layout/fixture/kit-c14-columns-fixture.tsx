@@ -5,6 +5,7 @@
  */
 import { createRoot } from 'react-dom/client'
 import type { ReactElement } from 'react'
+import { DataPanel } from '../../../src/cards/data-panel'
 import { col } from '../../../src/table/core/kinds'
 import { DataTable } from '../../../src/table/parts/data-table'
 import { useDataTable } from '../../../src/table/use-data-table'
@@ -41,6 +42,57 @@ const COLUMNS = [
   c.number('share', { header: 'Share', card: 'meta' }),
 ]
 
+/** Seven columns whose priority 1 and 2 sum above 800 px: the plan demotes the answer, declared last, to 3. */
+const WIDE_COLUMNS = [
+  c.entity('name', { header: 'Reason' }),
+  c.number('now', { header: 'This week', card: 'meta' }),
+  c.number('prev', { header: 'Last week' }),
+  c.number('share', { header: 'Share' }),
+  c.number('now', { id: 'now2', header: 'Peak' }),
+  c.number('prev', { id: 'prev2', header: 'Low' }),
+  c.number('change', { header: 'Change', card: 'value' }),
+]
+
+function Wide(): ReactElement {
+  const table = useDataTable<Reason>({
+    id: 'c14-demoted',
+    label: 'Friction reasons, wide',
+    columns: WIDE_COLUMNS,
+    data: REASONS,
+    getRowId: (r) => r.id,
+    mode: { kind: 'client' },
+    phone: 'columns',
+  })
+  return (
+    <div data-testid="c14-demoted">
+      <DataTable table={table} />
+    </div>
+  )
+}
+
+/** A narrow scroll table in a six-row panel: the box keeps its declared height after loading. */
+function Panel(): ReactElement {
+  const table = useDataTable<Reason>({
+    id: 'c14-panel',
+    label: 'Friction reasons in a panel',
+    columns: COLUMNS,
+    data: REASONS,
+    getRowId: (r) => r.id,
+    mode: { kind: 'client' },
+    phone: 'scroll',
+  })
+  return (
+    <div data-testid="c14-panel">
+      <DataPanel
+        title="Reasons"
+        phase="ready"
+        bodySize={{ rows: 6 }}
+        body={() => <DataTable table={table} />}
+      />
+    </div>
+  )
+}
+
 function Table({ id, phone }: { id: string; phone: 'columns' | 'cards' }): ReactElement {
   const table = useDataTable<Reason>({
     id,
@@ -63,6 +115,8 @@ function Fixture(): ReactElement {
     <main className="flex flex-col gap-8 p-4 text-foreground">
       <Table id="c14-columns" phone="columns" />
       <Table id="c14-cards" phone="cards" />
+      <Wide />
+      <Panel />
     </main>
   )
 }

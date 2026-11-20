@@ -82,3 +82,27 @@ layout("a long numeric table as phone: 'columns' at 390", () => {
     expect(columns.height).toBeLessThan(cards.height / 2)
   })
 })
+
+layout("phone: 'columns' with the answer demoted to priority 3", () => {
+  test('still shows the answer at 390', async () => {
+    const page = await open()
+    const table = await shown(page, 'c14-demoted')
+    for (const row of table.cells) expect(row.length).toBe(3)
+    expect(table.cells[0]![2]).toBe('12')
+    expect(table.overflow).toBeLessThanOrEqual(0)
+  })
+})
+
+layout('a narrow scroll table in a DataPanel', () => {
+  test('keeps the six rows it declared, not the loading estimate of six cards', async () => {
+    const page = await open()
+    const { box, row } = await page.raw.evaluate(() => {
+      const root = document.querySelector('[data-testid="c14-panel"]')!
+      return {
+        box: root.querySelector('[data-slot="data-panel-rows"]')!.getBoundingClientRect().height,
+        row: root.querySelector('tbody [data-slot="table-row"]')!.getBoundingClientRect().height,
+      }
+    })
+    expect(box).toBeLessThanOrEqual(6 * row + 1)
+  })
+})
