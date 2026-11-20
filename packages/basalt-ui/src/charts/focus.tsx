@@ -319,14 +319,36 @@ function scrollRegionOf(node: Element): HTMLElement | null {
  * scrolling it would carry the chart or the row away from the pointer that set the focus.
  * `scrollIntoView` cannot be told to stop at one ancestor, so the region's offsets are set directly.
  */
-function revealInOwnRegion(node: Element | undefined): void {
-  if (node === undefined) return
-  const region = scrollRegionOf(node)
+function revealInOwnRegion(nodes: readonly Element[]): void {
+  const first = nodes[0]
+  if (first === undefined) return
+  const region = scrollRegionOf(first)
   if (region === null || region.matches(':hover')) return
+  scrollRegionTo(
+    region,
+    nodes.filter((n) => region.contains(n)),
+  )
+}
+
+/**
+ * Scrolls `region` by the least distance that shows `nodes` together, or, when they are taller than the
+ * region, the first of them alone: a held run comes into view whole where it fits.
+ */
+function scrollRegionTo(region: HTMLElement, nodes: readonly Element[]): void {
+  const first = nodes[0]
+  if (first === undefined) return
   const r = region.getBoundingClientRect()
-  const n = node.getBoundingClientRect()
-  const dy = n.top < r.top ? n.top - r.top : n.bottom > r.bottom ? n.bottom - r.bottom : 0
-  const dx = n.left < r.left ? n.left - r.left : n.right > r.right ? n.right - r.right : 0
+  const boxes = nodes.map((n) => n.getBoundingClientRect())
+  const top = Math.min(...boxes.map((b) => b.top))
+  const bottom = Math.max(...boxes.map((b) => b.bottom))
+  const left = Math.min(...boxes.map((b) => b.left))
+  const right = Math.max(...boxes.map((b) => b.right))
+  const fits = bottom - top <= r.height && right - left <= r.width
+  const [t, b, l, rt] = fits
+    ? [top, bottom, left, right]
+    : [boxes[0]!.top, boxes[0]!.bottom, boxes[0]!.left, boxes[0]!.right]
+  const dy = t < r.top ? t - r.top : b > r.bottom ? b - r.bottom : 0
+  const dx = l < r.left ? l - r.left : rt > r.right ? rt - r.right : 0
   if (dy !== 0) region.scrollTop += dy
   if (dx !== 0) region.scrollLeft += dx
 }
@@ -431,21 +453,30 @@ export function useChartFocus<D>(
   const marks = useRef(new Map<number, Set<Element>>())
   const rows = useRef(new Map<string, Element>())
   // Every mark is drawn already, and focus changes no layout, so the step scrolls before it sets.
+  // The focused marks come into view first, wherever they scroll. The joined row follows only inside the
+  // scroll region it has to itself: when the chart and the row share a region (the page), scrolling it to
+  // the row would carry the focused chart out of view (a 390 page puts the list under the chart).
   const reveal = (next: number): void => {
     const name = groupAt(next)
-    const nodes = [
-      ...(marks.current.get(next) ?? []),
-      name === undefined ? undefined : rows.current.get(name),
-    ]
-    for (const node of nodes) scrollNodeIntoView(node)
+    const own = [...(marks.current.get(next) ?? [])]
+    for (const node of own) scrollNodeIntoView(node)
+    const row = name === undefined ? undefined : rows.current.get(name)
+    if (row === undefined) return
+    const region = scrollRegionOf(row)
+    if (region === null || own.some((node) => region.contains(node))) return
+    scrollRegionTo(region, [row])
   }
-  const revealInRegion = (next: number): void => {
-    const name = groupAt(next)
-    const nodes = [
-      ...(marks.current.get(next) ?? []),
-      name === undefined ? undefined : rows.current.get(name),
-    ]
-    for (const node of nodes) revealInOwnRegion(node)
+  const revealInRegion = (...indexes: readonly number[]): void => {
+    const nodes = indexes.flatMap((next) => {
+      const name = groupAt(next)
+      return [
+        ...(marks.current.get(next) ?? []),
+        ...(name === undefined || rows.current.get(name) === undefined
+          ? []
+          : [rows.current.get(name) as Element]),
+      ]
+    })
+    revealInOwnRegion(nodes)
   }
   // `pointed`: the index a mark or row set by pointer entry, held against a chart's own clear.
   const pointed = useRef<number | null>(null)
@@ -468,12 +499,12 @@ export function useChartFocus<D>(
     const first = valid[0]
     if (first === undefined) return set(null)
     if (valid.length === 1) return point(first)
-    // A run reveals its first row as a single `set` does, before the hold; a run already held does not move.
+    // A run reveals its rows together where they fit (its first row alone where they do not), before the hold; a run already held does not move.
     const sameRun =
       held?.span !== undefined &&
       held.span.length === valid.length &&
       held.span.every((i, k) => i === valid[k])
-    if (!sameRun) revealInRegion(first)
+    if (!sameRun) revealInRegion(...valid)
     pointed.current = first
     setHeld((was) => {
       const same =
