@@ -37,34 +37,6 @@ export const TRIAL_PAGES: readonly string[] = ['/scenarios/expr-', '/cycle/']
 /** Trial builds `v3-owner-2-rerun` rebuilt on that contract: their card is checked like any page's. */
 export const REBUILT_PAGES: readonly string[] = ['/scenarios/expr-n04', '/cycle/shell-6']
 
-/**
- * Pages where a chip still covers a tick label that stays painted, or the same x chip repeats on charts
- * stacked on one cursor, found when the guard learned to look (`v3-owner-2-rerun-kit-fixes`; no earlier
- * guard read chips). They are the kit's: the corner where the x chip meets the y axis' lowest tick, band
- * and date axes whose tick the readout lands beside, and a shared cursor drawing the chip on every panel.
- * The sweep still runs on them and the findings go unchecked until the follow-up kit row (a signal on
- * basalt-ui) fixes the cause; an entry is deleted with its fix. A page not listed here fails on a chip.
- */
-export const KNOWN_CHIPS: readonly string[] = [
-  '/charts',
-  '/kit/bar-list-series',
-  '/recipes/two-pane',
-  '/scenarios/expr-c11',
-  '/scenarios/expr-n03',
-  '/scenarios/expr-n13',
-  '/scenarios/expr-n14',
-  '/scenarios/expr-n15',
-  '/scenarios/expr-n16',
-  '/scenarios/expr-n40',
-  '/scenarios/expr-n41',
-  '/scenarios/expr-n44',
-  '/scenarios/expr-n45',
-  '/scenarios/expr-n46',
-  '/scenarios/expr-n50',
-  '/scenarios/expr-n52',
-  '/scenarios/expr-n58',
-]
-
 /** The boxes a pointer sweeps: a cartesian chart's root and an answering sparkline's plot. */
 const PLOTS = '[data-basalt-chart], [data-slot="spark-plot"]'
 /** Where across the plot the pointer stops, as a share of its width, at half its height: 16 stops, a sweep fine enough to cross every band of a 48-hour chart's six-hour ticks. */
@@ -174,7 +146,12 @@ function readChips(air: { x: number; y: number; stackGap: number }): string[] {
   const xChips: { chart: HTMLElement; text: string }[] = []
   for (const [i, chart] of charts.entries()) {
     const texts = [...chart.querySelectorAll<SVGTextElement>('svg text')]
-    const chips = texts.filter((t) => t.classList.contains('ts-chart__crosshair-label-text'))
+    // A chart that lost focus keeps its chips in the DOM, `visibility: hidden` (it inherits from the guide layer).
+    const chips = texts.filter(
+      (t) =>
+        t.classList.contains('ts-chart__crosshair-label-text') &&
+        getComputedStyle(t).visibility !== 'hidden',
+    )
     if (chips.length === 0) continue
     const ticks = texts.filter(
       (t) =>
@@ -186,6 +163,8 @@ function readChips(air: { x: number; y: number; stackGap: number }): string[] {
       const a = chip.getBoundingClientRect()
       const axis = chip.classList.contains('ts-chart__crosshair-label--x') ? 'x' : 'y'
       const chipText = (chip.textContent ?? '').trim()
+      // A chart that follows another's cursor draws its chip empty: nothing to cover.
+      if (chipText === '') continue
       if (axis === 'x') xChips.push({ chart, text: chipText })
       for (const tick of ticks) {
         const b = tick.getBoundingClientRect()

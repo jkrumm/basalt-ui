@@ -55,7 +55,9 @@ export const rows: readonly RowDef[] = [
     // 126000 -> 127500 (Issue 2468): 127202 B measured, +~1.2 KB gz over the cap for the zone captions that
     // give way to page labels and keep clear of lines, the end-label leaders and the shared value-label pass
     // with its one caret per clamped value, the kit fixes of expression cycle 13.
-    ceiling: 127500,
+    // 127500 -> 127800 (Issue 2486): 127548 B measured, +~50 B gz over the cap for the corner blanking and the
+    // follower's empty x chip that clear the hover chips off the ticks they covered.
+    ceiling: 127800,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -78,6 +80,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 127500,
+      to: 127800,
+      consumer:
+        "the hover chips that still covered a painted tick label (Issue 2486): n46's y chip over its first date tick, n15's x chip over the lowest time tick, and the x chip drawn on every panel of /charts and /recipes/two-pane",
+      repo: 'basalt-ui',
+    },
     {
       from: 126000,
       to: 127500,
