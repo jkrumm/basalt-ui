@@ -5,15 +5,7 @@
  * section 4 (the `src/charts/contract.ts` block, plus the frame types it names).
  */
 import type { FootFacts, FrameHead, FrameState, CardMenu, LegendEntry } from '../core/phase'
-import type {
-  Box,
-  BoxSlot,
-  ControlsSlot,
-  Delta,
-  Phase,
-  QueryStateLike,
-  Verdict,
-} from '../core/ports'
+import type { BoxSlot, ControlsSlot, Delta, Phase, QueryStateLike, Verdict } from '../core/ports'
 import type { KeyboardEvent, PointerEvent, ReactElement } from 'react'
 
 // ---- Frame types ---------------------------------------------------------------------------
@@ -381,20 +373,16 @@ export type MiniBarsProps = Omit<SparklineBase, 'form' | 'reference'> &
     highlight?: number | 'last'
   }
 
-// ---- ChartPanes ---------------------------------------------------------------------------
+// ---- ChartCard panes ----------------------------------------------------------------------
 
-/** One pane of a {@link ChartPanesProps} group: its share of the box by `weight` (default 1), and the chart. */
+/**
+ * One pane of a `ChartCard` stacked on one x (`panes`): its share of the chart box by `weight`
+ * (default 1), and the chart, called with `height: 'fill'` so it takes the pane.
+ */
 export type ChartPane = {
   /** The pane's share of the box against the others' weights. Default 1. */
   weight?: number | undefined
-  /** Called with `height: 'fill'`: the chart takes the pane's box. */
   chart: BoxSlot
-}
-
-export type ChartPanesProps = {
-  /** The box the group fills: a `ChartCard` slot's own, or `{ height: <px>, phase }` outside a card. */
-  box: Box
-  panes: readonly ChartPane[]
 }
 
 // ---- ChartCard ----------------------------------------------------------------------------
@@ -436,7 +424,12 @@ export type ChartCardProps = Omit<FrameState, 'phase'> & {
    */
   height?: 'auto' | 'tall' | 'short' | 'fill' | undefined
 } & (
-    | (FrameHead & { chart: BoxSlot })
+    | (FrameHead & { chart: BoxSlot; panes?: undefined })
+    /**
+     * Two or three charts stacked on one x share the chart box: each pane takes its share by
+     * `weight`, 4 px apart, so no pane states a pixel height at any width.
+     */
+    | (FrameHead & { panes: readonly ChartPane[]; chart?: undefined })
     /** A Suspense fallback. */
-    | (Partial<FrameHead> & { phase: 'loading'; chart?: undefined })
+    | (Partial<FrameHead> & { phase: 'loading'; chart?: undefined; panes?: undefined })
   )
