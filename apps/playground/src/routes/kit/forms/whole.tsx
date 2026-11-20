@@ -18,8 +18,8 @@ const store = defineControls({
 })
 
 /**
- * Three whole forms, each bound to TanStack Form (`@tanstack/react-form`, the app's engine) through
- * FormField's structural `FieldLike` port; the kit ships no form engine of its own. A record created
+ * Three whole forms, each built with `basalt-ui/form` on TanStack Form (`@tanstack/react-form`, the
+ * app's engine); the kit ships no form engine of its own. A record created
  * in a dialog, a long settings page with one save footer, and a three-step flow.
  */
 function WholeRoute(): ReactElement {

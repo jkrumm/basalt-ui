@@ -1,5 +1,5 @@
-import { revalidateLogic, useForm } from '@tanstack/react-form'
-import { FormField, FormFooter, FormRow, toSubmitErrors } from 'basalt-ui/controls'
+import { FormRow, toSubmitErrors } from 'basalt-ui/controls'
+import { useAppForm } from 'basalt-ui/form'
 import { Section } from 'basalt-ui/page'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { Button } from 'basalt-ui/ui/button'
@@ -11,7 +11,6 @@ import {
   ComboboxItem,
 } from 'basalt-ui/ui/combobox'
 import { Dialog, DialogContent, DialogTrigger } from 'basalt-ui/ui/dialog'
-import { Fieldset } from 'basalt-ui/ui/field'
 import { Input } from 'basalt-ui/ui/input'
 import { NumberField } from 'basalt-ui/ui/number-field'
 import { Select } from 'basalt-ui/ui/select'
@@ -87,10 +86,9 @@ function CreateServiceForm({
       throw { fieldErrors: { name: `A service named ${values.name} exists. Pick another name.` } }
     }
   }
-  const form = useForm({
-    // Each field checks on blur, every field on submit, and after a submit on every change, so a fix clears its error
-    // and re-enables the primary at once.
-    validationLogic: revalidateLogic({ mode: 'blur', modeAfterSubmission: 'change' }),
+  const form = useAppForm({
+    // useAppForm checks each field on blur, every field on submit, and after a submit on every change, so a fix
+    // clears its error at once.
     defaultValues: {
       name: '',
       team: 'platform',
@@ -105,106 +103,88 @@ function CreateServiceForm({
     },
   })
   return (
-    <form
-      noValidate
-      className="flex flex-col gap-4"
-      onSubmit={(event) => {
-        event.preventDefault()
-        void form.handleSubmit()
-      }}
-    >
-      <form.Subscribe selector={(state) => state.isSubmitting}>
-        {(busy) => (
-          <Fieldset disabled={busy}>
-            <form.Field name="name" validators={{ onDynamic: NAME }}>
-              {(f) => (
-                <FormField
-                  label="Name"
-                  description="Lowercase, as it appears in URLs. Try checkout to see a server error."
-                  required
-                  field={f}
-                >
-                  <Input autoComplete="off" spellCheck={false} />
-                </FormField>
-              )}
-            </form.Field>
-            <FormRow>
-              <form.Field name="team">
-                {(f) => (
-                  <FormField label="Team" field={f}>
-                    <Select aria-label="Team" options={TEAMS} />
-                  </FormField>
-                )}
-              </form.Field>
-              <form.Field name="replicas" validators={{ onDynamic: REPLICAS }}>
-                {(f) => (
-                  <FormField label="Replicas" required field={f}>
-                    <NumberField min={1} max={20} />
-                  </FormField>
-                )}
-              </form.Field>
-            </FormRow>
-            <form.Field name="repo" validators={{ onDynamic: REPO }}>
-              {(f) => (
-                <FormField label="Repository" required field={f}>
-                  <Input
-                    type="url"
-                    inputMode="url"
-                    autoComplete="url"
-                    placeholder="https://"
-                    start={Link}
-                  />
-                </FormField>
-              )}
-            </form.Field>
-            <form.Field name="zone" validators={{ onDynamic: ZONE }}>
-              {(f) => (
-                <FormField
-                  label="Time zone"
-                  description="Where its schedules run."
-                  required
-                  field={f}
-                >
-                  <Combobox items={TIME_ZONES}>
-                    <ComboboxInput aria-label="Time zone" placeholder="Search zones" />
-                    <ComboboxContent empty="No zone matches.">
-                      {(zone: string) => (
-                        <ComboboxItem key={zone} value={zone}>
-                          {zone}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxContent>
-                  </Combobox>
-                </FormField>
-              )}
-            </form.Field>
-            <form.Field name="labels">
-              {(f) => (
-                <FormField label="Labels" description="Pick one or type a new one." field={f}>
-                  <Combobox multiple items={LABELS} onCreate={(text) => text.trim().toLowerCase()}>
-                    <ComboboxChips aria-label="Labels" placeholder="Add a label" />
-                    <ComboboxContent empty="No label matches.">
-                      {(label: string) => (
-                        <ComboboxItem key={label} value={label}>
-                          {label}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxContent>
-                  </Combobox>
-                </FormField>
-              )}
-            </form.Field>
-            <FormFooter
-              form={form}
-              actions={[
-                { label: 'Cancel', onClick: onCancel },
-                { label: 'Create service', primary: true },
-              ]}
-            />
-          </Fieldset>
-        )}
-      </form.Subscribe>
-    </form>
+    <form.AppForm>
+      <form.Form className="flex flex-col gap-4">
+        <form.AppField name="name" validators={{ onDynamic: NAME }}>
+          {(f) => (
+            <f.FormField
+              label="Name"
+              description="Lowercase, as it appears in URLs. Try checkout to see a server error."
+              required
+            >
+              <Input autoComplete="off" spellCheck={false} />
+            </f.FormField>
+          )}
+        </form.AppField>
+        <FormRow>
+          <form.AppField name="team">
+            {(f) => (
+              <f.FormField label="Team">
+                <Select aria-label="Team" options={TEAMS} />
+              </f.FormField>
+            )}
+          </form.AppField>
+          <form.AppField name="replicas" validators={{ onDynamic: REPLICAS }}>
+            {(f) => (
+              <f.FormField label="Replicas" required>
+                <NumberField min={1} max={20} />
+              </f.FormField>
+            )}
+          </form.AppField>
+        </FormRow>
+        <form.AppField name="repo" validators={{ onDynamic: REPO }}>
+          {(f) => (
+            <f.FormField label="Repository" required>
+              <Input
+                type="url"
+                inputMode="url"
+                autoComplete="url"
+                placeholder="https://"
+                start={Link}
+              />
+            </f.FormField>
+          )}
+        </form.AppField>
+        <form.AppField name="zone" validators={{ onDynamic: ZONE }}>
+          {(f) => (
+            <f.FormField label="Time zone" description="Where its schedules run." required>
+              <Combobox items={TIME_ZONES}>
+                <ComboboxInput aria-label="Time zone" placeholder="Search zones" />
+                <ComboboxContent empty="No zone matches.">
+                  {(zone: string) => (
+                    <ComboboxItem key={zone} value={zone}>
+                      {zone}
+                    </ComboboxItem>
+                  )}
+                </ComboboxContent>
+              </Combobox>
+            </f.FormField>
+          )}
+        </form.AppField>
+        <form.AppField name="labels">
+          {(f) => (
+            <f.FormField label="Labels" description="Pick one or type a new one.">
+              <Combobox multiple items={LABELS} onCreate={(text) => text.trim().toLowerCase()}>
+                <ComboboxChips aria-label="Labels" placeholder="Add a label" />
+                <ComboboxContent empty="No label matches.">
+                  {(label: string) => (
+                    <ComboboxItem key={label} value={label}>
+                      {label}
+                    </ComboboxItem>
+                  )}
+                </ComboboxContent>
+              </Combobox>
+            </f.FormField>
+          )}
+        </form.AppField>
+        <form.Footer
+          actions={[
+            { label: 'Cancel', onClick: onCancel },
+            { label: 'Create service', primary: true },
+          ]}
+        />
+      </form.Form>
+    </form.AppForm>
   )
 }
 
