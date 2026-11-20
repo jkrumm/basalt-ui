@@ -2341,30 +2341,15 @@ export function compileCartesian<T, X extends ChartX>(
         })
       })()
       // A named bar's value label is never dropped for what the host drew, so it may land over a caption
-      // placed before it: the captions are then placed again around the value labels, and a caption with
-      // no spot left clear of them goes (n68 at 390, n64 at 1800: a total under 'Gateway down').
+      // placed before it: the captions are then placed again around the value labels (n68 at 390).
       if (valueLabels.boxes.length > 0) {
         const ctx = captionContext()
         captionMarks()
         const frame = { width: ctx.plotWidth, height: ctx.plotHeight }
-        const rightDomain = axes.right?.domain ?? axes.left.domain
-        const struck = [
-          ...ctx.placed.left.map((b) => pxBox(b, axes.left.domain, frame)),
-          ...ctx.placed.right.map((b) => pxBox(b, rightDomain, frame)),
-        ].some((caption) =>
-          valueLabels.boxes.some(
-            (label) =>
-              label.left < caption.left + caption.width &&
-              caption.left < label.left + label.width &&
-              label.top < caption.top + caption.height &&
-              caption.top < label.top + label.height,
-          ),
-        )
-        if (struck) {
+        const labels = valueLabels.boxes.map((b) => valueBox(b, axes.left.domain, frame))
+        if (ctx.placed.left.some((caption) => labels.some((l) => boxesMeet(caption, l)))) {
           pageLabels.push(...valueLabels.boxes)
-          captions = undefined
-          lineMemo = undefined
-          placedCaptions = undefined
+          captions = lineMemo = placedCaptions = undefined
           captionMarks()
         }
       }
