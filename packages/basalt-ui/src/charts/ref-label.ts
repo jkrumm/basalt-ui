@@ -127,13 +127,15 @@ type RefLabelOpts = {
  * inside the plot. A bar body or a dot is never covered, whatever else gives way: a caption whose
  * four spots all meet one drops. Never `null` when nothing is claimed and no mark is in the way.
  *
- * When every spot beside the rule meets a data line, the caption steps away from the rule, along
- * its end, to the nearest height clear of the lines, and `shift` is that distance in px (the caller
- * draws a leader back to the rule); `shift` is 0 for a caption beside its rule.
+ * When every spot at the rule's ends meets a data line, the caption slides along its rule to the
+ * nearest stretch the lines leave free (`slide`, a share of the plot width from the edge); when no
+ * stretch is free it steps away from the rule, along its end, to the nearest height clear of the lines,
+ * and `shift` is that distance in px (the caller draws a leader back to the rule); `shift` is 0 for a
+ * caption beside its rule.
  */
 export function placeRefLabel(
   opts: RefLabelOpts,
-): { position: RefLabelPosition; box: LabelBox; shift: number } | null {
+): { position: RefLabelPosition; box: LabelBox; shift: number; slide: number } | null {
   const { pinned, startFirst, value, plotWidth, plotHeight, label, fontSize, series } = opts
   const { claimed = [], bars = [], dots = [] } = opts
   const natural = startFirst ? ORDER_START : ORDER_END
@@ -147,37 +149,38 @@ export function placeRefLabel(
     position.endsWith('above')
       ? [value + (LINE_GAP + shift) * perPx, value + (LINE_GAP + shift + heightPx) * perPx]
       : [value - (LINE_GAP + shift + heightPx) * perPx, value - (LINE_GAP + shift) * perPx]
-  const spanOf = (position: RefLabelPosition): [number, number] =>
+  // `slide` moves the caption along its rule, from the plot's edge towards the middle, as a share of the width.
+  const spanOf = (position: RefLabelPosition, slide = 0): [number, number] =>
     position.startsWith('end')
-      ? [1 - widthFx, 1 - EDGE_INSET / plotWidth]
-      : [EDGE_INSET / plotWidth, widthFx]
-  const boxOf = (position: RefLabelPosition, shift = 0): LabelBox => {
+      ? [1 - widthFx - slide, 1 - EDGE_INSET / plotWidth - slide]
+      : [EDGE_INSET / plotWidth + slide, widthFx + slide]
+  const boxOf = (position: RefLabelPosition, shift = 0, slide = 0): LabelBox => {
     const [y0, y1] = bandOf(position, shift)
-    const [fx0, fx1] = spanOf(position)
+    const [fx0, fx1] = spanOf(position, slide)
     // The claim is the drawn line box, taller than the glyph band the room checks use.
     return { fx0, fx1, y0: y0 - CLAIM_PAD * perPx, y1: y1 + CLAIM_PAD * perPx }
   }
   const first = order[0] as RefLabelPosition
-  if (degenerate) return { position: first, box: boxOf(first), shift: 0 }
+  if (degenerate) return { position: first, box: boxOf(first), shift: 0, slide: 0 }
   const inPlot = (position: RefLabelPosition, shift = 0): boolean => {
     const [from, to] = bandOf(position, shift)
     return from >= lo && to <= hi
   }
   const meets = boxesMeet
   const solids = [...bars, ...dots.map((d) => dotBox(d, plotWidth, perPx))]
-  const capsClear = (position: RefLabelPosition, shift = 0): boolean => {
-    const box = boxOf(position, shift)
+  const capsClear = (position: RefLabelPosition, shift = 0, slide = 0): boolean => {
+    const box = boxOf(position, shift, slide)
     return claimed.every((b) => !meets(box, b))
   }
   // The drawn glyph band, not the claim: the caption sits close to its line and bars end at it.
-  const marksClear = (position: RefLabelPosition, shift = 0): boolean => {
+  const marksClear = (position: RefLabelPosition, shift = 0, slide = 0): boolean => {
     const [y0, y1] = bandOf(position, shift)
-    const [fx0, fx1] = spanOf(position)
+    const [fx0, fx1] = spanOf(position, slide)
     return solids.every((b) => !meets({ fx0, fx1, y0, y1 }, b))
   }
-  const linesClear = (position: RefLabelPosition, shift = 0): boolean => {
+  const linesClear = (position: RefLabelPosition, shift = 0, slide = 0): boolean => {
     const [from, to] = bandOf(position, shift)
-    const [fx0, fx1] = spanOf(position)
+    const [fx0, fx1] = spanOf(position, slide)
     return series.every((points) => {
       const range = yRangeWithin(points, fx0, fx1)
       // A line keeps its air from the caption: a label that touches a stroke or an end dot is struck.
@@ -185,19 +188,32 @@ export function placeRefLabel(
       return range === null || range[1] + air < from || range[0] - air > to
     })
   }
-  const clear = (p: RefLabelPosition, shift = 0): boolean =>
-    inPlot(p, shift) && capsClear(p, shift) && marksClear(p, shift) && linesClear(p, shift)
+  const clear = (p: RefLabelPosition, shift = 0, slide = 0): boolean =>
+    inPlot(p, shift) &&
+    capsClear(p, shift, slide) &&
+    marksClear(p, shift, slide) &&
+    linesClear(p, shift, slide)
   const beside = order.find((p) => clear(p))
-  if (beside !== undefined) return { position: beside, box: boxOf(beside), shift: 0 }
-  // Every spot beside the rule meets a line: the nearest height off the rule that is clear of them.
+  if (beside !== undefined) return { position: beside, box: boxOf(beside), shift: 0, slide: 0 }
+  // Every spot at the edge meets a line (a dense one fills the plot's ends): slide along the rule to a
+  // stretch of it the line leaves free, the nearest to the edge, so the caption stays beside its rule.
+  const room = Math.max(1 - 2 * widthFx - EDGE_INSET / plotWidth, 0)
+  for (let slide = widthFx / 2; slide <= room; slide += widthFx / 2) {
+    const along = order.find((p) => clear(p, 0, slide))
+    if (along !== undefined)
+      return { position: along, box: boxOf(along, 0, slide), shift: 0, slide }
+  }
+  // No stretch of the rule is free: the nearest height off the rule that is clear of the lines.
   for (let shift = SHIFT_STEP; shift <= plotHeight; shift += SHIFT_STEP) {
     const away = order.find((p) => clear(p, shift))
-    if (away !== undefined) return { position: away, box: boxOf(away, shift), shift }
+    if (away !== undefined) return { position: away, box: boxOf(away, shift), shift, slide: 0 }
   }
   const spot = order.find((p) => inPlot(p) && capsClear(p) && marksClear(p))
-  if (spot !== undefined) return { position: spot, box: boxOf(spot), shift: 0 }
+  if (spot !== undefined) return { position: spot, box: boxOf(spot), shift: 0, slide: 0 }
   // Nothing clear of the captions and the marks: drop. A plot too small for any spot keeps the first one.
-  return order.some((p) => inPlot(p)) ? null : { position: first, box: boxOf(first), shift: 0 }
+  return order.some((p) => inPlot(p))
+    ? null
+    : { position: first, box: boxOf(first), shift: 0, slide: 0 }
 }
 
 export function refLabelPosition(opts: RefLabelOpts): RefLabelPosition {
