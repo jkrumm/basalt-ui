@@ -1192,12 +1192,12 @@ const refLabelMark = <T, X extends ChartX>(
   })
   if (placed === null) return []
   ctx.placed[side].push(placed.box)
-  const { position, shift } = placed
+  const { position, shift, slide } = placed
   const atStart = position.startsWith('start')
   const above = position.endsWith('above')
   const dy = refLabelDy(position, BASALT.text.micro) + (above ? -shift : shift)
   const label = decorative(
-    text([{ f: atStart ? 0 : 1 }], {
+    text([{ f: atStart ? slide : 1 - slide }], {
       id: `ref-${i}-label`,
       x: (d: { f: number }) => d.f,
       y: () => r.value,
