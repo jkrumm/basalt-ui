@@ -100,8 +100,8 @@ function useRowPx(ref: RefObject<HTMLElement | null>, enabled: boolean): number 
  * still draws the declared height. As phone cards (the table's rows are grids) the cards are taller
  * than a table row, so the box takes the height of the data cards its rows name (`dataRowsOf`: the
  * rows less the head row): every one of them is whole, none is left behind the box, and a shorter
- * list ends at its last card. The measure reads the rows against the declared height, so it holds
- * under a resize and a refetch. Bodies that draw no table rows get no cut.
+ * list ends at its last card. The measure reads the rows against the declared height, or the taller
+ * box a stretched grid row gives the panel, so it holds under a resize and a refetch. Bodies that draw no table rows get no cut.
  */
 function useWholeRows(
   size: DataPanelProps['bodySize'],
@@ -142,11 +142,13 @@ function useWholeRows(
         )
         return
       }
+      // A panel stretched by its grid row has more room than it declared: cut at the box it has.
+      const limit = Math.max(declared, box.parentElement?.clientHeight ?? 0)
       let fit: number | undefined
       let last = 0
       for (const row of rows) {
         last = row.getBoundingClientRect().bottom - top
-        if (last <= declared + 0.5) fit = last
+        if (last <= limit + 0.5) fit = last
       }
       const next = fit === undefined ? undefined : Math.ceil(fit)
       setSnapped((was) =>
@@ -159,6 +161,7 @@ function useWholeRows(
     if (typeof ResizeObserver === 'undefined') return undefined
     const observer = new ResizeObserver(measure)
     for (const child of box.children) observer.observe(child)
+    if (box.parentElement !== null) observer.observe(box.parentElement)
     return () => observer.disconnect()
   })
   return {
@@ -381,8 +384,8 @@ export function DataPanel(props: DataPanelProps): ReactElement {
   const arm = resolved.tag === 'empty' || resolved.tag === 'error' ? resolved : undefined
   const claimed = arm !== undefined && claims > 0
   return (
-    <div ref={rootRef} data-slot="data-panel" className="@container min-w-0">
-      <Card flush>
+    <div ref={rootRef} data-slot="data-panel" className="@container h-full min-w-0">
+      <Card flush className="h-full">
         <PanelHead {...props} />
         {toolbar !== undefined && (
           <div
@@ -393,7 +396,7 @@ export function DataPanel(props: DataPanelProps): ReactElement {
           </div>
         )}
         {legend !== undefined && legend.length > 0 && <Legend entries={legend} />}
-        <Inset ref={insetRef} className="flex flex-col">
+        <Inset ref={insetRef} className="flex grow flex-col">
           <HostTitleContext.Provider value={title}>
             <FrameDepthContext.Provider value={depth + 1}>
               {!claimed && (
@@ -401,6 +404,7 @@ export function DataPanel(props: DataPanelProps): ReactElement {
                   phase={phase}
                   empty={empty}
                   height={boxHeight}
+                  className="grow"
                   skeleton={<PanelSkeleton size={bodySize} cards={narrow} />}
                 >
                   {(box) => (
