@@ -3,13 +3,16 @@
  * hydration is drawn at the box's own size, for the frame the server assumes, so a static page shows the
  * chart the browser draws. The box height comes from the same rule the stylesheet applies.
  */
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 import type { ChartTextMeasureOptions } from '@tanstack/charts/types/core'
 import { renderToString } from 'react-dom/server'
 import { boxHeightAt } from './box'
 import { chartLabels } from './chart-labels'
 import type { SeriesColor } from './contract'
-import { ChartCard } from './parts/chart-card'
+import { BOX, ChartCard, SERVER_FRAME } from './parts/chart-card'
+import { SURFACE } from './parts/chart-card-frame'
+import { INITIAL_WIDTH } from './sizing'
+import * as textMeasure from './text-measure'
 import { Lines } from './parts/lines'
 import type { LineSeries } from './parts/lines'
 import { measureChartText } from './text-measure'
@@ -61,6 +64,54 @@ describe('the server svg is drawn at the box', () => {
     expect(viewBox(renderToString(<ChartCard title="T" height="short" chart={chart} />))).toBe(
       '0 0 608 160',
     )
+  })
+})
+
+describe("a ChartCard's server frame is its box's classes", () => {
+  const REM = 16
+  test("the edge is the card surface's --card-edge", () => {
+    const edge = /\[--card-edge:([\d.]+)rem\]/.exec(SURFACE)?.[1]
+    expect(SERVER_FRAME.auto.width).toBe(INITIAL_WIDTH - 2 * Number(edge) * REM)
+  })
+  test('each box height is its class at a card INITIAL_WIDTH wide', () => {
+    for (const key of ['auto', 'tall', 'short'] as const) {
+      const clamp = /h-\[clamp\(([\d.]+)rem,(\d+)cqw,([\d.]+)rem\)\]/.exec(BOX[key])
+      const fixed = /\bh-(\d+)\b/.exec(BOX[key])
+      const height = clamp
+        ? Math.min(
+            Number(clamp[3]) * REM,
+            Math.max(Number(clamp[1]) * REM, (Number(clamp[2]) / 100) * INITIAL_WIDTH),
+          )
+        : Number(fixed?.[1]) * 4
+      expect(SERVER_FRAME[key].height).toBe(height)
+    }
+  })
+  test('panes split the box by weight, 4 px apart', () => {
+    const pane = (box: { height: 'fill' | number }) => (
+      <Lines label="P" data={data} x={x} height={box.height} series={series} />
+    )
+    const html = renderToString(
+      <ChartCard
+        title="T"
+        panes={[
+          { weight: 3, chart: pane },
+          { weight: 1, chart: pane },
+        ]}
+      />,
+    )
+    const boxes = [...html.matchAll(/<svg class="ts-chart"[^>]*viewBox="([^"]+)"/g)].map(
+      (m) => m[1],
+    )
+    expect(boxes).toEqual(['0 0 608 237', '0 0 608 79'])
+  })
+})
+
+describe('the engine measures text with the label table', () => {
+  test('a server render reads measureChartText', () => {
+    const spy = spyOn(textMeasure, 'measureChartText')
+    renderToString(<Lines label="L" data={data} x={x} height={220} series={series} />)
+    expect(spy).toHaveBeenCalled()
+    spy.mockRestore()
   })
 })
 

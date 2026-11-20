@@ -6,7 +6,7 @@
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { cx } from '../common/props'
 import classes from './chart-box.module.css'
-import { CONTAINER_CLASSES } from '../tokens/size-classes'
+import { resolveContainerClass } from '../tokens/size-classes'
 import type { ResponsiveChartHeight } from './types'
 
 /** `undefined` is the height law; a number is fixed; `'fill'` is the parent's height. */
@@ -62,14 +62,7 @@ function classHeights(height: Exclude<ChartBoxHeight, 'fill'>): [string, string,
  */
 export function boxHeightAt(height: ChartBoxHeight, width: number): number | undefined {
   if (height === 'fill') return undefined
-  const cls =
-    width >= CONTAINER_CLASSES.wide
-      ? 'wide'
-      : width >= CONTAINER_CLASSES.regular
-        ? 'regular'
-        : width >= CONTAINER_CLASSES.narrow
-          ? 'narrow'
-          : 'micro'
+  const cls = resolveContainerClass(width)
   if (height === undefined) {
     return Math.min(HEIGHT_MAX, Math.max(HEIGHT_MIN, HEIGHT_RATIO[cls] * width))
   }

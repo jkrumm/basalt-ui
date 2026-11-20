@@ -51,8 +51,8 @@ type EngineProps = ChartProps<unknown, ChartValue, number>
 
 /** `currentColor` is the axis ink. The font is the proportional sans with tabular figures (Wave 35
  * law: tabular in axis ticks, mono only for captions, times and code); `--basalt-chart-font` retunes
- * the face from outside. It is inherited by the svg —
- * TanStack measures guides with the host's computed font. */
+ * the face from outside. It is inherited by the svg; the engine measures text with the default
+ * sans's label widths ({@link measureChartText}), not the computed face. */
 const HOST_STYLE: CSSProperties = {
   // Overrides the host's own fallback height: the box decides, the engine measures it.
   height: '100%',

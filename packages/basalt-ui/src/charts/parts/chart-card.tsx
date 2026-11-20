@@ -25,7 +25,7 @@ const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-n
  * the same box, so a loading, empty or error card is exactly as tall as a ready one. The card takes
  * its grid cell's height, so a stretched row grows the box past its `auto`, `tall` or `short` floor.
  */
-const BOX = {
+export const BOX = {
   auto: 'h-[clamp(12rem,50cqw,26.25rem)] shrink-0 grow',
   tall: 'h-[clamp(18rem,50cqw,26.25rem)] shrink-0 grow',
   short: 'h-40 shrink-0 grow',
@@ -41,7 +41,7 @@ const halfWidth = (floor: number): number => Math.min(420, Math.max(floor, INITI
  * the card's width less its two edges, and {@link BOX}'s height at that card width. A `fill` box is
  * the card's remainder, which only the page's layout knows.
  */
-const SERVER_FRAME: Record<keyof typeof BOX, ServerFrame> = {
+export const SERVER_FRAME: Record<keyof typeof BOX, ServerFrame> = {
   auto: { width: INITIAL_WIDTH - 2 * CARD_EDGE_PX, height: halfWidth(192) },
   tall: { width: INITIAL_WIDTH - 2 * CARD_EDGE_PX, height: halfWidth(288) },
   short: { width: INITIAL_WIDTH - 2 * CARD_EDGE_PX, height: 160 },
