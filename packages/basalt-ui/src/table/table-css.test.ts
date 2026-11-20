@@ -33,11 +33,17 @@ describe('table.css', () => {
     expect(rule?.[1]).toContain('background-color: var(--basalt-surface, var(--basalt-canvas))')
   })
 
+  test('the phone card puts a mono entity name on the title line, never a mono sub line', () => {
+    const selectors = withoutComments.match(/[^{}]*:has\([^)]*data-monospace[^)]*\)[^{]*\{/g) ?? []
+    expect(selectors.length).toBeGreaterThan(0)
+    for (const selector of selectors) expect(selector).toContain("table-entity-name']")
+  })
+
   // Gated at the landed value: 3,467 bytes before the grid look (owner review 2), 3,979 with it, 4,136
   // with the finer fold steps of expression cycle 12, 4,273 with the 700 px step and the phone card's
-  // padding and entity rules of expression cycle 13, 4,389 with the mono id on the card's title line
+  // padding and entity rules of expression cycle 13, 4,409 with the mono entity name on the card's title line
   // of expression cycle 14 (one rule pair in each of the three fold steps).
-  test('stays small: under 4,400 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(4400)
+  test('stays small: under 4,450 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(4450)
   })
 })

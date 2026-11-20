@@ -319,7 +319,9 @@ function PanelHead(
  * there and the panel draws its own arm). A `rows` count is table rows at the table's row height
  * (`--basalt-row-h`, the head row included), so the box is `rows` x that height: declare N data rows
  * as `rows: N + 1`, and the desktop box holds the head row and all N with no blank row; a table with
- * more rows than the box shows whole rows, cut after the last that fits. Where the table folds to phone
+ * fewer rows than that takes the height of its rows once measured (the declared height stands until
+ * then, and in a loading frame with nothing measured), so no blank row is left under the last; a table
+ * with more rows than the box shows whole rows, cut after the last that fits. Where the table folds to phone
  * cards the cards are taller than a row (108 px with a meter, 92 px without), so the box is as tall as
  * the N data cards and a shorter list ends at its last card: every card is whole at 390 px. A loading
  * frame has no cards to measure: until a list has been measured it gives each data row one 108 px card,

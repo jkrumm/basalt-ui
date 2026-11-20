@@ -422,14 +422,16 @@
     }
     /* a mono entity's id rides on the card's title line, in the mono face, with no labelled line of its own */
     [data-slot='table-root'][data-below='480'][data-phone='cards']
-      [data-slot='table-cell'][data-label]:has([data-monospace]) {
+      [data-slot='table-cell'][data-label]:has([data-slot='table-entity-name'][data-monospace]) {
       grid-column: 2;
       grid-row: 1;
       justify-self: end;
       max-width: 100%;
     }
     [data-slot='table-root'][data-below='480'][data-phone='cards']
-      [data-slot='table-cell'][data-label]:has([data-monospace])::before {
+      [data-slot='table-cell'][data-label]:has(
+        [data-slot='table-entity-name'][data-monospace]
+      )::before {
       content: none;
     }
     /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
@@ -581,14 +583,16 @@
     }
     /* a mono entity's id rides on the card's title line, in the mono face, with no labelled line of its own */
     [data-slot='table-root'][data-below='800'][data-phone='cards']
-      [data-slot='table-cell'][data-label]:has([data-monospace]) {
+      [data-slot='table-cell'][data-label]:has([data-slot='table-entity-name'][data-monospace]) {
       grid-column: 2;
       grid-row: 1;
       justify-self: end;
       max-width: 100%;
     }
     [data-slot='table-root'][data-below='800'][data-phone='cards']
-      [data-slot='table-cell'][data-label]:has([data-monospace])::before {
+      [data-slot='table-cell'][data-label]:has(
+        [data-slot='table-entity-name'][data-monospace]
+      )::before {
       content: none;
     }
     /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */
@@ -741,14 +745,16 @@
     }
     /* a mono entity's id rides on the card's title line, in the mono face, with no labelled line of its own */
     [data-slot='table-root'][data-below='700'][data-phone='cards']
-      [data-slot='table-cell'][data-label]:has([data-monospace]) {
+      [data-slot='table-cell'][data-label]:has([data-slot='table-entity-name'][data-monospace]) {
       grid-column: 2;
       grid-row: 1;
       justify-self: end;
       max-width: 100%;
     }
     [data-slot='table-root'][data-below='700'][data-phone='cards']
-      [data-slot='table-cell'][data-label]:has([data-monospace])::before {
+      [data-slot='table-cell'][data-label]:has(
+        [data-slot='table-entity-name'][data-monospace]
+      )::before {
       content: none;
     }
     /* a column that declared `card: 'hidden'` is drawn in the table and left off the card */

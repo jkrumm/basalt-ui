@@ -218,7 +218,7 @@ describe('linked list of groups', () => {
 })
 
 describe('scroll into view', () => {
-  test('a keyboard step scrolls the focused mark, and its group row only inside a scroll region of its own; pointing does not', async () => {
+  test('a keyboard step scrolls the focused mark, and its group row only inside a scroll region of its own (none here); pointing does not', async () => {
     const calls: string[] = []
     const original = Element.prototype.scrollIntoView
     Element.prototype.scrollIntoView = function (this: Element) {
@@ -229,7 +229,7 @@ describe('scroll into view', () => {
       const track = el.querySelector('[data-track]') as Element
       await press(track, 'PageDown')
       await press(track, 'PageDown')
-      // The row shares the page with the chart here: scrolling it would carry the focused chart away.
+      // No scroll region holds the row here, so only the marks scroll (the shared-region case needs real overflow: see the layout test).
       expect(calls).toEqual(['1', '3'])
       calls.length = 0
       await move(null, day(el, 5))
