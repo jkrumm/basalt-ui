@@ -65,7 +65,7 @@ read files or spawn tools: every test outside `apps/` and the `packages/basalt-u
 each, covered by a script gate of `check-fast` or reached by the graph), plus any test whose text names a changed file by
 its file name or its last two folders (`fixtures/hook`, `src/cli`), `SLOW` ones included: they read fixtures and spawn bins, which are not imports. A change to a `package.json`, `bun.lock`, `bunfig.toml`, a `tsconfig`, `tests/setup/` or the unit scripts
 runs the whole suite. The price is stated in the script: a test that covers code the branch did not touch fails in CI,
-not here; CI and `make check` run the whole suite (`bun test`, `make test`), so what ships is covered the same. Measured
+not here; CI and `make check` run the whole suite (`scripts/unit-test.ts`, `make test`), so what ships is covered the same. Measured
 2026-11-18 on the mini under load: the always-on set is 97 files, about 104 s of the ~330 s the 200 files outside `src/`
 and `apps/` cost, against a whole suite of 412 s. `test-fast` takes the slot `unit-fast`, never `unit`: `project.yaml` may place
 `unit` on the step host, whose copy of the tree has no working-tree diff, and `--changed` would see no change there.
