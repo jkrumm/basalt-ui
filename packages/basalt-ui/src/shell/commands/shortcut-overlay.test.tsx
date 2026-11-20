@@ -103,7 +103,8 @@ describe('ShortcutOverlay', () => {
     await waitFor(() => expect(overlay()).not.toBeNull())
     expect(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeTruthy()
     press('?', { shift: true })
-    await waitFor(() => expect(overlay()).toBeNull())
+    // A failed `toBeNull` prints the open overlay's DOM on every poll: 2.7 GiB resident and 6 s for one test.
+    await waitFor(() => expect(overlay() === null).toBe(true))
   })
 
   test('? typed into a text field opens nothing', async () => {
