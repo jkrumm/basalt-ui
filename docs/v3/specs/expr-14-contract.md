@@ -17,18 +17,16 @@ Expression cycle 14 (`docs/v3/cycles/expression-14.md`) lost points to four gaps
 
 **1. Cards of one row end at one height (no new field).** A grid row already stretches its items; today the card's surface does not follow. From now on `ChartCard`, `DataPanel` and `StatCard` take their grid cell's height, and the body that can grow takes the extra: the chart box of a `ChartCard` (its `auto`, `tall` or `short` height becomes the floor) and the body box of a `DataPanel` (`bodySize` becomes the floor; a `height="fill"` table shows the extra rows, the whole-row cut measures the grown box). A card outside a stretching row (a column page, a `Section` stack) keeps today's height to the pixel. Layout test: a `ChartCard` beside a taller `DataPanel`, and the reverse, end within 1 px at 1800; at 390 the stack is unchanged.
 
-**2. `ChartPanes` in `basalt-ui/charts`.** A pane group that fills the box it is given and hands each pane its share by weight:
+**2. `panes` on `ChartCard`.** In place of `chart`, a card takes `panes`: each pane gets its share of the chart box by weight. (Built as a prop, not the `ChartPanes` export this page first named: `docs/v3/ARCHITECTURE.md` section 3 holds `./charts` at 13 value symbols and calls a fourteenth red, so only the `ChartPane` type is new.)
 
 ```tsx
-<ChartCard title="Recovery" height="tall" chart={(box) => (
-  <ChartPanes box={box} panes={[
-    { weight: 2, chart: (pane) => <Lines height={pane.height} … /> },
-    { chart: (pane) => <Lines height={pane.height} … /> },
-  ]} />
-)} />
+<ChartCard title="Recovery" height="tall" panes={[
+  { weight: 2, chart: (pane) => <Lines height={pane.height} … /> },
+  { chart: (pane) => <Lines height={pane.height} … /> },
+]} />
 ```
 
-Weights default to 1; panes are separated by the recipe's 4 px gap; `box` carries the phase through. Outside a card `box` may be `{ height: 320, phase: 'ready' }`. The two-pane recipe switches to it and drops the equal-rows grid advice. Layout test: two and three panes inside a `ChartCard` fill its box with no pixel height in the test page, at 1800 and 390, and their plots share one x column.
+Weights default to 1; panes are separated by the recipe's 4 px gap; each pane's slot is called with `height: 'fill'` in the card's phase. The two-pane recipe switches to it and drops the equal-rows grid advice. Layout test: two and three panes inside a `ChartCard` fill its box with no pixel height in the test page, at 1800 and 390, and their plots share one x column.
 
 **3. `phone: 'columns'` on `useDataTable`.** Below the phone width the table stays a table with a visible header and drops to three columns: the identity column (wrapping to two lines, never ellipsised mid-word), the column placed in the card's `value`, and the first column placed in its `meta`. The other columns leave the row and stay reachable through the row's expand, as the reduced tier's priority-3 columns already are. It reads the existing `card` placements, so no column gains a field. Layout test: a 12-row, 5-column numeric table at 390 keeps name, answer and count inside the viewport with no horizontal overflow, and is under half the height of its cards form.
 
@@ -46,9 +44,10 @@ Each field gets its doc page in `packages/basalt-ui/docs/`, regenerated agent te
 
 ## Left out on purpose
 
-- No shared y gutter, cursor group or upper-pane tick hiding inside `ChartPanes`: the recipe keeps teaching those; folding them in is later work once a third case asks.
+- No shared y gutter, cursor group or upper-pane tick hiding inside `panes`: the recipe keeps teaching those; folding them in is later work once a third case asks.
 - No minimum pane height: no case measured a pane too short; a builder picks `height="tall"` for three panes.
 - No row height across `Section`s or non-grid flex rows beyond what CSS stretch gives.
+- No other rendering when a row stretches a card far past its floor: the owner's verdict (with notes) welcomes a little stretch and leaves room for a better rendering where the stretch grows large; later work once a case shows one.
 - No `BarList` leader highlight or Heatmap cross-grain focus (one case each, out of scope).
 
 ## What the owner does
