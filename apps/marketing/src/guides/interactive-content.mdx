@@ -44,10 +44,10 @@ Name each tab once in `tabs` and once as the `label` of its panel, in the same o
 
 A form in an article is a native form: it posts to its `action`, the browser validates `required` and `type`, and a field turns red after the reader leaves it, never on the first key.
 
-<Form action="/subscribe">
+<Form action="/guides/interactive-content" method="get">
   <Field label="Email" name="email" type="email" autoComplete="email" description="One message a release, no tracking." required />
   <Field label="What are you building?" name="note" type="textarea" autoComplete="off" />
   <SubmitButton>Subscribe</SubmitButton>
 </Form>
 
-The form posts to a URL on your site or to a form service. For live error summaries, async checks or steps, build the form in an app with `basalt-ui/form`.
+This demo sends its fields back to this page as a query string; a real form posts to a URL on your site or to a form service. For live error summaries, async checks or steps, build the form in an app with `basalt-ui/form`.
