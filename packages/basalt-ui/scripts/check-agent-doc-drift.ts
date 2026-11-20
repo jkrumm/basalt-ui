@@ -372,6 +372,9 @@ const BLOCK_COMMENT_RE = /\/\*[\s\S]*?\*\//g
 // actually corrupts `checkBSrc`'s line-accurate report.
 const LINE_COMMENT_RE = /(?<!:)\/\/.*/g
 
+/** The text with every character but its newlines replaced by a space. */
+const blank = (text: string): string => text.replace(/[^\n]/g, ' ')
+
 /**
  * Blanks every character outside a comment while preserving newlines (so line numbers survive),
  * leaving a same-shaped string where the only surviving content is JSDoc/line-comment text.
@@ -379,8 +382,6 @@ const LINE_COMMENT_RE = /(?<!:)\/\/.*/g
  * comment (an `http://` URL in a string) must not swallow the rest of a code line as fake comment
  * text.
  */
-const blank = (text: string): string => text.replace(/[^\n]/g, ' ')
-
 function maskToComments(source: string): string {
   // Built from slices, not a per-character array: 1100 source files as arrays of one-character strings held
   // about 1.5 GiB at the peak of the check.
