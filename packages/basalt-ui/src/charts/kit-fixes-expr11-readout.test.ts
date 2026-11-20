@@ -87,6 +87,7 @@ describe('the y readout replaces the tick on its row', () => {
       y2: {},
       series: [dots, { ...dots, key: 'w', axis: 'right' }],
     }).y.axis.tickLabels
-    expect(opacity).toBe(1)
+    // The left axis still clears its lowest label for the x chip in the corner (`readout-clear.test.ts`).
+    expect(read(opacity, { ...tickAt(150), focus: at(100, 150) })).toBe(1)
   })
 })

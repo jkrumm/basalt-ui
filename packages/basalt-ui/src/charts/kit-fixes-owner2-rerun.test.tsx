@@ -5,6 +5,7 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { crosshairGuide } from './core/compile'
+import { chartCursorView } from './core/cursor'
 import type { CartesianInput } from './core/compile'
 import { yTitleScale } from './axis-gaps'
 
@@ -44,6 +45,34 @@ describe('the x chip sits on the panel that labels the axis', () => {
       label: false,
       strokeOpacity: 0,
     })
+  })
+})
+
+describe('the x chip is the hovered chart’s, not one per stacked panel', () => {
+  const view = (chartId: string) =>
+    chartCursorView({ group: 'stack', chartId, keys: [0, 1], mode: 'nearest' })
+  const xLabel = (chartId: string, value: number): string => {
+    const x = guide({ chartId, cursorGroup: 'stack' })?.x as {
+      label: { format: (v: number) => string }
+    }
+    return x.label.format(value)
+  }
+
+  test('the chart the pointer is on prints its value, a follower prints none', () => {
+    const lead = view('lead')
+    const follower = view('follower')
+    const release = [lead.subscribe(() => {}), follower.subscribe(() => {})]
+    lead.setState({ anchor: 'value', value: { x: 1 } } as never)
+    expect(xLabel('lead', 1)).toBe('1')
+    expect(xLabel('follower', 1)).toBe('')
+    for (const stop of release) stop()
+  })
+
+  test('a state no chart published (an app timeline) is printed by every chart', () => {
+    const only = view('only')
+    const release = only.subscribe(() => {})
+    expect(xLabel('only', 1)).toBe('1')
+    release()
   })
 })
 

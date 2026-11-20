@@ -14,10 +14,35 @@ import { captionWidth } from '../axis-gaps'
 type Anchor = 'start' | 'middle' | 'end'
 type Span = readonly [from: number, to: number]
 
-/** The part of the engine's focus a tick label reads: where the readouts sit and the x they name. */
+/** The part of the engine's focus a tick label reads: where the readouts sit and the values they name. */
 export type ReadoutFocus = {
-  readonly primary: { readonly x: number; readonly y: number; readonly xValue: ChartValue }
+  readonly primary: {
+    readonly x: number
+    readonly y: number
+    readonly xValue: ChartValue
+    readonly yValue?: ChartValue
+  }
 } | null
+
+/** Where a value sits along its axis: 0 at the plot's left (x) or bottom (y) edge, 1 at the far edge; `null` when unknown. */
+export type EdgeShare = (value: ChartValue) => number | null
+
+/**
+ * The plot's lower-left corner, read from the axes' values: the x chip hangs left of the plot's edge
+ * over the y gutter's lowest tick, and the y chip hangs below the plot's bottom over the x axis' first
+ * tick, so each cross-axis tick is blanked while the other axis' chip sits in the corner.
+ */
+export type Corner = { x: EdgeShare; y: EdgeShare }
+
+/** How near the left edge an x value sits, as a share of the plot's width, for its chip to reach the y gutter (the chip is ~28 px wide). */
+const CORNER_X = 0.06
+/** How near the bottom edge a y value sits, as a share of the plot's height, for its chip to reach the x tick row. */
+const CORNER_Y = 0.1
+/** The x tick labels that can reach the y chip: the first (start-anchored within 5%) and one centred just in from it. */
+const CORNER_TICK_X = 0.12
+
+const inCorner = (share: number | null, within: number): boolean =>
+  share !== null && share <= within
 
 /** Air kept round a readout, px: the reach of its 6 px halo (3) and a gap of 2. */
 const READOUT_AIR = 5
@@ -55,8 +80,10 @@ export function xTickOpacity(opts: {
   readoutText: (value: ChartValue) => string
   fontSize: number
   width: number | undefined
+  /** Given, the first tick is also blanked while the y chip sits at the plot's bottom. */
+  corner?: Corner | undefined
 }): (context: { value: ChartValue; position: number; focus: ReadoutFocus }) => number {
-  const { tick, readoutText, fontSize, width } = opts
+  const { tick, readoutText, fontSize, width, corner } = opts
   return ({ value, position, focus }) => {
     if (focus === null) return 1
     const { x, xValue } = focus.primary
@@ -72,17 +99,37 @@ export function xTickOpacity(opts: {
       captionWidth(tick.text(value), fontSize),
       tick.anchor(value) ?? 'middle',
     )
-    return meet(readout, label) ? 0 : 1
+    if (meet(readout, label)) return 0
+    const { yValue } = focus.primary
+    return corner !== undefined &&
+      typeof yValue === 'number' &&
+      inCorner(corner.y(yValue), CORNER_Y) &&
+      inCorner(corner.x(value), CORNER_TICK_X)
+      ? 0
+      : 1
   }
 }
 
-/** The opacity callback of a y axis: `0` while the focused y readout, drawn beside the axis, is on this tick's row. */
-export function yTickOpacity(
-  fontSize: number,
-): (context: { position: number; focus: ReadoutFocus }) => number {
+/**
+ * The opacity callback of a y axis: `0` while the focused y readout, drawn beside the axis, is on this
+ * tick's row (`chip`), and for the lowest tick while the x chip sits at the plot's left edge (`corner`).
+ */
+export function yTickOpacity(opts: {
+  fontSize: number
+  /** The hover pins its y value beside this axis. */
+  chip: boolean
+  corner?: Corner | undefined
+}): (context: { value: ChartValue; position: number; focus: ReadoutFocus }) => number {
+  const { fontSize, chip, corner } = opts
   const reach = fontSize * LINE_BOX + READOUT_AIR
-  return ({ position, focus }) => {
-    if (focus === null || !Number.isFinite(focus.primary.y)) return 1
-    return Math.abs(position - focus.primary.y) < reach ? 0 : 1
+  return ({ value, position, focus }) => {
+    if (focus === null) return 1
+    if (chip && Number.isFinite(focus.primary.y) && Math.abs(position - focus.primary.y) < reach)
+      return 0
+    return corner !== undefined &&
+      inCorner(corner.x(focus.primary.xValue), CORNER_X) &&
+      inCorner(corner.y(value), CORNER_Y)
+      ? 0
+      : 1
   }
 }

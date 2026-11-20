@@ -30,7 +30,7 @@ import { compact } from '../../format/number'
 import { NON_FINITE, numberFormat } from '../../format/shared'
 import { BASALT } from '../../tokens'
 import type { ContainerClass } from '../../tokens/size-classes'
-import { cursorBinding, followerOptions, quietWhileFollowing } from './cursor'
+import { cursorBinding, followerOptions, followsChart, quietWhileFollowing } from './cursor'
 import { cursorDots } from '../marks'
 import { bucketTicks, strideEvery } from './ticks'
 import {
@@ -87,6 +87,7 @@ import {
 } from '../axis-gaps'
 import type { XRefLabelBox } from '../axis-gaps'
 import { xTickOpacity, yTickOpacity } from './readout-clear'
+import type { Corner } from './readout-clear'
 import {
   AREA_BOTTOM,
   AREA_TOP,
@@ -503,8 +504,10 @@ export function yGuide<T>(opts: {
   edges?: readonly number[] | undefined
   /** The hover pins its y value beside this axis: the tick on the readout's row is blanked while it shows. */
   readout?: boolean | undefined
+  /** The plot's lower-left corner: the lowest tick is blanked while the x chip hangs over it. */
+  corner?: Corner | undefined
 }): Omit<ChartPositionScaleOptions<number>, 'scale'> {
-  const { cfg, axis, cls, side, grid, locale, edges = [], readout = false } = opts
+  const { cfg, axis, cls, side, grid, locale, edges = [], readout = false, corner } = opts
   const ladder = LADDER[cls]
   const planned =
     typeof cfg?.ticks === 'object'
@@ -530,7 +533,13 @@ export function yGuide<T>(opts: {
     axis: {
       line: false,
       ticks: { ...ticks, format: tickFormat, line: false },
-      tickLabels: { fontSize: TICK_FONT, opacity: readout ? yTickOpacity(TICK_FONT) : 1 },
+      tickLabels: {
+        fontSize: TICK_FONT,
+        opacity:
+          readout || corner !== undefined
+            ? yTickOpacity({ fontSize: TICK_FONT, chip: readout, corner })
+            : 1,
+      },
     },
   }
 }
@@ -626,6 +635,8 @@ export function xGuide<X extends ChartX>(opts: {
   width?: number | undefined
   /** What the hover's x readout prints; given, the tick under the readout is blanked while it shows. */
   readout?: ((v: ChartValue) => string) | undefined
+  /** The plot's lower-left corner; given with `readout`, the first tick is blanked while the y chip sits over it. */
+  corner?: Corner | undefined
 }): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
   const { model, xTicks, cls } = opts
   const ladder = LADDER[cls]
@@ -671,6 +682,7 @@ export function xGuide<X extends ChartX>(opts: {
               readoutText: opts.readout,
               fontSize: TICK_FONT,
               width: opts.width,
+              corner: opts.corner,
             })
           : 1,
         thin: { minGap: TICK_MIN_GAP },
@@ -1412,6 +1424,13 @@ function buildScales<T, X extends ChartX>(opts: {
       .filter((z) => axes.scaleId(z.axisSide) === axes.scaleId(side))
       .flatMap((z) => [z.from, z.to])
   const { left, right } = axes
+  const yFloor = Math.min(...left.domain)
+  const ySpan = Math.max(...left.domain) - yFloor
+  // The x chip pins only for a chart with tick labels; the y chip only without a right axis.
+  const corner: Corner = {
+    x: (value) => model.fraction(value as X),
+    y: (value) => (typeof value === 'number' && ySpan > 0 ? (value - yFloor) / ySpan : null),
+  }
   if (input.bare === true) {
     return {
       x: { scale: model.scale, axis: false as const },
@@ -1441,6 +1460,7 @@ function buildScales<T, X extends ChartX>(opts: {
         locale: input.locale,
         width,
         readout: cls === 'micro' ? undefined : formatX,
+        corner: right === null ? corner : undefined,
       }),
     },
     y: {
@@ -1455,6 +1475,7 @@ function buildScales<T, X extends ChartX>(opts: {
         edges: edgesOn('left'),
         // The hover pins the y value only without a right axis (see `crosshairGuide`).
         readout: right === null,
+        corner,
       }),
     },
     ...(right && {
@@ -1818,7 +1839,8 @@ const GUIDE_LABEL = {
  * left axis' and only drawn without a right axis, where one y value cannot name both scales. An x axis
  * with no tick labels (`x.ticks: []`, the upper panels of charts stacked on one x) pins no x value: the
  * chip would sit on the plot's baseline over the marks, once per panel; the panel that labels the axis
- * carries it.
+ * carries it. A chart that follows another's shared cursor pins none either (its chip text is empty),
+ * so the one the pointer is on carries the value.
  */
 export function crosshairGuide<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
@@ -1832,7 +1854,14 @@ export function crosshairGuide<T, X extends ChartX>(opts: {
   if (!pinned) return rule ? { x: CROSSHAIR, y: false } : null
   const x = {
     ...(rule ? CROSSHAIR : { strokeOpacity: 0 }),
-    label: xLabelled ? { ...GUIDE_LABEL, format: (v: ChartValue) => formatX(v) } : false,
+    // A chart that follows another's cursor draws the rule alone: the chip is the hovered chart's, not one per panel.
+    label: xLabelled
+      ? {
+          ...GUIDE_LABEL,
+          format: (v: ChartValue) =>
+            followsChart(input.cursorGroup, input.chartId) ? '' : formatX(v),
+        }
+      : false,
   }
   const y =
     formatY === null

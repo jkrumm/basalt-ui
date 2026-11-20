@@ -128,6 +128,13 @@ export function isForeign(group: string | undefined, chartId: string): boolean {
   return state !== null && owners.get(state) !== chartId
 }
 
+/** Whether another chart of the group published the cursor's state: this chart follows it. */
+export function followsChart(group: string | undefined, chartId: string): boolean {
+  const state = chartCursor(group).getState()
+  const owner = state === null ? undefined : owners.get(state)
+  return owner !== undefined && owner !== chartId
+}
+
 const valueX = (state: CursorState): ChartValue | undefined =>
   state?.anchor === 'value' ? state.value.x : undefined
 
