@@ -3,8 +3,49 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { KNOWN, classify, loadCycleKnown } from './known'
-import { routePaths } from './routes'
+import { KNOWN, KNOWN_CHIPS, classify, loadCycleChips, loadCycleKnown } from './known'
+import { routePaths, scenarioPaths } from './routes'
+
+describe('cycle chip waivers', () => {
+  const inCycle = async <T>(files: Record<string, string>, read: (root: string) => Promise<T>) => {
+    const root = mkdtempSync(join(tmpdir(), 'matrix-cycle-'))
+    try {
+      for (const [cycle, source] of Object.entries(files)) {
+        mkdirSync(join(root, cycle))
+        writeFileSync(join(root, cycle, 'known.ts'), source)
+      }
+      return await read(root)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  }
+
+  test('knownChips of every cycle folder is read, with or without known', async () => {
+    const routes = await inCycle(
+      {
+        'a-1': `export const knownChips = ['/scenarios/expr-n63', '/scenarios/expr-n64']\n`,
+        'b-1': `export const known = []\nexport const knownChips = ['/scenarios/expr-n67']\n`,
+        'c-1': `export const known = []\n`,
+      },
+      loadCycleChips,
+    )
+    expect(routes).toEqual(['/scenarios/expr-n63', '/scenarios/expr-n64', '/scenarios/expr-n67'])
+  })
+
+  test('a cycle that only waives chips has no findings to read', async () => {
+    const findings = await inCycle({ 'a-1': `export const knownChips = ['/x']\n` }, loadCycleKnown)
+    expect(findings).toEqual([])
+  })
+
+  test('knownChips that is not a list of route paths is refused', async () => {
+    await expect(
+      inCycle({ 'a-1': `export const knownChips = ['expr-n63']\n` }, loadCycleChips),
+    ).rejects.toThrow('array of route paths')
+    await expect(
+      inCycle({ 'a-1': `export const knownChips = 'x'\n` }, loadCycleChips),
+    ).rejects.toThrow('array of route paths')
+  })
+})
 
 describe('cycle waivers', () => {
   test('a waiver in a cycle folder is read and covers its route item', async () => {
@@ -45,6 +86,11 @@ describe('cycle waivers', () => {
     const paths = new Set(routePaths())
     const unknown = KNOWN.filter((k) => k.route !== '*' && !paths.has(k.route)).map((k) => k.route)
     expect(unknown).toEqual([])
+  })
+
+  test('every chip waiver names a route the playground has', () => {
+    const paths = new Set([...routePaths(), ...scenarioPaths()])
+    expect(KNOWN_CHIPS.filter((route) => !paths.has(route))).toEqual([])
   })
 
   test('classify covers an item by route and assertion', () => {

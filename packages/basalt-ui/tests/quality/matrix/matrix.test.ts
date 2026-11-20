@@ -10,7 +10,7 @@
  */
 import { afterAll, describe, expect, test } from 'bun:test'
 import { runCell } from './assertions'
-import { classify, KNOWN } from './known'
+import { classify, KNOWN, KNOWN_CHIPS } from './known'
 import type { KnownFinding } from './known'
 import { bootMatrix } from './harness'
 import { hoverFindings, KNOWN_SHIFTS, REBUILT_PAGES, TRIAL_PAGES } from './hover-shift'
@@ -55,6 +55,8 @@ function cells(): Cell[] {
 }
 
 const used = new Set<KnownFinding>()
+/** The cycle-waived routes (`KNOWN_CHIPS`) whose sweep still drew a chip over a tick. */
+const usedChips = new Set<string>()
 
 afterAll(async () => {
   await harness?.close()
@@ -116,8 +118,10 @@ describe.skipIf(harness === null)('hover changes the readout, never the chart or
             .map((f) => f.text)
             .join('\n')
         expect(of('tooltip')).toBe('')
-        // A chip over a tick label, or the same x chip on charts stacked on one cursor, is the kit's on every page.
-        expect(of('chip')).toBe('')
+        // A chip over a tick label, or the same x chip on charts stacked on one cursor, is the kit's on every page;
+        // a cycle folder waives its builds' chips (`knownChips` in its known.ts) until the kit row fixes them.
+        if (!KNOWN_CHIPS.includes(cell.route)) expect(of('chip')).toBe('')
+        else if (of('chip') !== '') usedChips.add(cell.route)
         // A trial build's card follows the focus until its rerun (`TRIAL_PAGES`): only its card check is skipped.
         const trial = TRIAL_PAGES.some((prefix) => cell.route.startsWith(prefix))
         const rebuilt = REBUILT_PAGES.some((prefix) => cell.route.startsWith(prefix))
@@ -147,5 +151,9 @@ describe.skipIf(harness === null || mode !== 'full' || shard !== null)('known fi
       (e) => `${e.route} ${e.assertion} ${String(e.item)}`,
     )
     expect(stale).toEqual([])
+  })
+
+  test('every chip waiver still matches a chip over a tick', () => {
+    expect(KNOWN_CHIPS.filter((route) => !usedChips.has(route))).toEqual([])
   })
 })

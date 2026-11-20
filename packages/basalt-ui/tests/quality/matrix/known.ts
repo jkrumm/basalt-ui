@@ -27,15 +27,27 @@ export interface KnownFinding {
  * the shape inline and this loader checks it. The matrix applies the same rules to these entries: one
  * item per entry, and in the full run an entry that matched nothing fails.
  */
-export async function loadCycleKnown(dir = join(PLAYGROUND, 'src/cycle')): Promise<KnownFinding[]> {
+type CycleModule = { file: string; mod: { known?: unknown; knownChips?: unknown } }
+
+/** The `known.ts` of every cycle folder under `dir`, in name order. */
+async function cycleModules(dir: string): Promise<CycleModule[]> {
   if (!existsSync(dir)) return []
-  const entries: KnownFinding[] = []
+  const found: CycleModule[] = []
   for (const cycle of readdirSync(dir, { withFileTypes: true }).toSorted((a, b) =>
     a.name.localeCompare(b.name),
   )) {
     const file = join(dir, cycle.name, 'known.ts')
     if (!cycle.isDirectory() || !existsSync(file)) continue
-    const mod = (await import(file)) as { known?: unknown }
+    found.push({ file, mod: (await import(file)) as CycleModule['mod'] })
+  }
+  return found
+}
+
+export async function loadCycleKnown(dir = join(PLAYGROUND, 'src/cycle')): Promise<KnownFinding[]> {
+  const entries: KnownFinding[] = []
+  for (const { file, mod } of await cycleModules(dir)) {
+    // A cycle that only waives chips (`knownChips`) has no findings to list.
+    if (mod.known === undefined && mod.knownChips !== undefined) continue
     if (!Array.isArray(mod.known))
       throw new Error(`matrix: ${file} must export \`known\` as an array`)
     for (const entry of mod.known as Partial<KnownFinding>[]) {
@@ -51,6 +63,27 @@ export async function loadCycleKnown(dir = join(PLAYGROUND, 'src/cycle')): Promi
   }
   return entries
 }
+
+/**
+ * Routes of a cycle's builds where the kit's hover chip still covers a tick label that stays painted (the
+ * hover guard, `hover-shift.ts`), waived the way a cycle waives `known`: the optional `knownChips` export
+ * of `apps/playground/src/cycle/<cycle>/known.ts`, an array of route paths. A route listed here is still
+ * swept and its chip findings go unchecked; in the full run a listed route that no longer draws a chip over
+ * a tick fails, so the fix row removes its line. A page not listed fails on a chip.
+ */
+export async function loadCycleChips(dir = join(PLAYGROUND, 'src/cycle')): Promise<string[]> {
+  const routes: string[] = []
+  for (const { file, mod } of await cycleModules(dir)) {
+    if (mod.knownChips === undefined) continue
+    const list = mod.knownChips
+    if (!Array.isArray(list) || !list.every((r) => typeof r === 'string' && r.startsWith('/')))
+      throw new Error(`matrix: ${file} must export \`knownChips\` as an array of route paths`)
+    routes.push(...(list as string[]))
+  }
+  return routes
+}
+
+export const KNOWN_CHIPS: readonly string[] = await loadCycleChips()
 
 export const KNOWN: readonly KnownFinding[] = [
   ...(await loadCycleKnown()),
