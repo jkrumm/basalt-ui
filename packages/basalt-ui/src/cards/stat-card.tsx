@@ -20,7 +20,7 @@ import {
 const CHART_HEIGHT = 72
 /** The plot alone: what the slot gets when the card draws the label row itself (`xLabels`). */
 const PLOT_HEIGHT = 56
-/** A figure longer than this steps down a size where the card is narrower than `regular`. */
+/** A figure longer than this steps down a size where the card is narrower than `regular`; so does any text figure. */
 const LONG_FIGURE = 10
 
 /** The label row: start, middle and end under the plot, in the box's 16 px. */
@@ -116,7 +116,8 @@ export function StatCard(props: StatCardProps): ReactElement {
                   <span
                     className={cn(
                       'truncate text-display font-semibold tabular-nums',
-                      (figure?.length ?? 0) + (unit?.length ?? 0) > LONG_FIGURE &&
+                      (typeof value === 'string' ||
+                        (figure?.length ?? 0) + (unit?.length ?? 0) > LONG_FIGURE) &&
                         '@max-regular:text-lg',
                       figure === null && 'text-muted-foreground',
                     )}
