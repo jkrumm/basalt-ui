@@ -6,7 +6,7 @@ Every basalt-ui part rendered by `apps/playground-astro` (Astro 7, @astrojs/reac
 
 ## Summary
 
-- **90 parts** measured, **73** static-clean: the HTML Astro writes with no directive matches the client:only render word for word and to within 4 pixels (a measured flake) at 1440 and 390 px, light and dark.
+- **90 parts** measured, **75** static-clean: the HTML Astro writes with no directive matches the client:only render word for word and to within 4 pixels (a measured flake) at 1440 and 390 px, light and dark.
 - **Zero JavaScript without an island:** 99 pages carry no island; together they loaded 0 bytes of script from 0 script tags.
 - **The first React island** costs 71.5 kB of gzip JavaScript before any basalt code: React, react-dom and the Astro island runtime (the baseline island). Each further island costs what its part adds, the "further" column.
 - **CSS** is one sheet per page, 25.3 kB gzip, with the whole basalt dist scanned by Tailwind.
@@ -65,8 +65,8 @@ Cells: `no directive` is the static HTML: `clean`, `differs` from the client:onl
 | static-table | Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption | clean | 83.9 kB · CLS 0.0006 | 83.8 kB | 83.8 kB · CLS 0.0006 | 83.8 kB · CLS 0.0006 | no directive | The static HTML is the whole part, 0 bytes of JavaScript: a static table; the picture is the whole part. |
 | table-toolbar | TableToolbar, BulkBar, TablePager | clean | 249.8 kB | 249.8 kB | 249.7 kB | 249.7 kB | client:visible | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, 178.4 kB further (client:idle above the fold). |
 | data-table-body | DataTableBody | clean | 284.8 kB · CLS 0.0012 | 284.8 kB | 284.7 kB · CLS 0.0012 | 284.7 kB · CLS 0.0012 | client:visible | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, 213.4 kB further (client:idle above the fold). |
-| markdown | Markdown | differs | 213.4 kB | 213.4 kB | 213.3 kB | 213.3 kB | client:visible | Static picture first, the island adds behaviour: shiki highlights settled fences and mermaid fences need JS. client:visible, 142.0 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (1420 px (0.5%) at 1440-dark). |
-| code-block | CodeBlock | differs | 169.7 kB | 169.7 kB | 169.6 kB | 169.6 kB | client:visible | Static picture first, the island adds behaviour: shiki highlights the code; the copy button needs JS. client:visible, 98.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (2497 px (1.2%) at 1440-dark). |
+| markdown | Markdown | clean | 213.1 kB | 213.1 kB | 213.0 kB | 213.0 kB | client:visible | Static picture first, the island adds behaviour: the code is coloured in the static HTML; mermaid fences need JS. client:visible, 141.7 kB further (client:idle above the fold). |
+| code-block | CodeBlock | clean | 169.5 kB | 169.4 kB | 169.4 kB | 169.4 kB | client:visible | Static picture first, the island adds behaviour: the code is coloured in the static HTML; the copy button needs JS. client:visible, 98.1 kB further (client:idle above the fold). |
 | article-layout | ArticleLayout, Prose | clean | 132.3 kB · CLS 0.0025 | 132.3 kB · CLS 0.0025 | 132.2 kB · CLS 0.0026 | 132.2 kB · CLS 0.0025 | client:visible | Static picture first, the island adds behaviour: the scroll-spy TOC and reading progress need JS. client:visible, 60.9 kB further (client:idle above the fold). |
 | toc | Toc | clean | 80.8 kB | 80.8 kB | 80.7 kB | 80.7 kB | client:visible | Static picture first, the island adds behaviour: the scroll-spy marks the current section with JS. client:visible, 9.4 kB further (client:idle above the fold). |
 | callout | Callout | clean | 79.7 kB | 79.7 kB | 79.6 kB | 79.6 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: a static note; no behaviour. |
@@ -162,8 +162,8 @@ Gzip. First island: everything the part's client:load page runs. Further island:
 | static-table | 83.8 kB | 12.5 kB | 25.3 kB | 120 ms | 52 ms | 128 ms | 0.0006 |
 | table-toolbar | 249.7 kB | 178.4 kB | 25.3 kB | 44 ms | 64 ms | 136 ms | 0 |
 | data-table-body | 284.7 kB | 213.4 kB | 25.3 kB | 36 ms | 64 ms | 116 ms | 0.0012 |
-| markdown | 213.3 kB | 142.0 kB | 25.3 kB | 44 ms | 44 ms | 80 ms | 0 |
-| code-block | 169.6 kB | 98.3 kB | 25.3 kB | 48 ms | 252 ms | 176 ms | 0 |
+| markdown | 213.0 kB | 141.7 kB | 24.6 kB | 76 ms | 52 ms | 228 ms | 0 |
+| code-block | 169.4 kB | 98.1 kB | 24.6 kB | 72 ms | 44 ms | 376 ms | 0 |
 | article-layout | 132.2 kB | 60.9 kB | 25.3 kB | 36 ms | 56 ms | 88 ms | 0.0026 |
 | toc | 80.7 kB | 9.4 kB | 25.3 kB | 48 ms | 96 ms | 96 ms | 0 |
 | callout | 79.6 kB | 8.3 kB | 25.3 kB | 36 ms | 44 ms | 80 ms | 0 |
@@ -215,7 +215,7 @@ Every part of a family on one page, each its own island, in one mode. Astro send
 | cards | 9 | 0 | 126.9 kB | 137.2 kB | 137.1 kB | 137.1 kB | 27.0 kB | 0 |
 | charts | 8 | 0 | 194.6 kB | 214.6 kB | 214.5 kB | 214.5 kB | 27.0 kB | 0 |
 | table | 4 | 0 | 290.0 kB | 294.6 kB | 294.5 kB | 294.5 kB | 25.3 kB | 0.0006 |
-| content | 5 | 0 | 269.7 kB | 270.9 kB | 270.8 kB | 270.8 kB | 25.3 kB | 0.0026 |
+| content | 5 | 0 | 269.1 kB | 270.6 kB | 270.5 kB | 270.5 kB | 24.6 kB | 0.0026 |
 | page | 19 | 0 | 180.8 kB | 243.3 kB | 243.2 kB | 325.2 kB | 25.3 kB | 0.0001 |
 | forms | 18 | 0 | 161.0 kB | 235.1 kB | 235.1 kB | 235.1 kB | 25.3 kB | 0 |
 
@@ -239,7 +239,6 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 The cause of each difference, read from the source, and the plan row that carries the fix where the part should need no JavaScript for its picture.
 
 - **lines, bars, cartesian-chart, chart-card, heatmap, interval-track, band-strip**: The server SVG is drawn at the engine's default 640 x 320: `packages/basalt-ui/src/charts/host.tsx` passes the engine `initialWidth` only, `@tanstack/charts` then takes `initialHeight = options.height ?? 320` (its `adapter-shared.js`), while the CSS box is the declared height, so the picture is scaled down and letterboxed (the band strip shrinks to a sliver). Measured 2026-11-20 with host.tsx also passing a numeric `height` (an uncommitted probe): the 1440 diff fell to 2.8% lines, 2.2% bars, 3.0% CartesianChart, 7.0% Heatmap, 0% IntervalTrack and 2.8% BandStrip, the rest being axis gutters the engine sizes from text it measures in the browser; at 390 the 640 server width stays wrong (8 to 55%). The fix: pass the box height, give the server a width (a declared width or the container class's), and size gutters from basalt's generated label widths on both sides. Sparkline draws its own SVG and is static-clean already. Hover on top is the same kind as a client:visible island; the engine is most of its 100 to 120 kB further cost. Plan row `astro-chart-server-picture`.
-- **code-block, markdown**: Shiki highlights in the browser after mount: the static page shows the code uncoloured (1 to 5% of pixels). Highlighted on the server, a static page ships coloured code with no JavaScript, and the copy button is the one thing left for an island. Plan row `astro-server-highlight`.
 - **inner-nav, split-page, controls, control-home, app-shell**: App parts: they read field handles or the registered nav from a TanStack Router (no router: "Cannot read properties of null (reading 'stores')", "Invalid value used as weak map key"), on the server and in the browser alike. They are not island parts by contract; an Astro page uses links and the site profile instead.
 - **connection-indicator**: Reads `useConnection`, which needs a QueryClient: an app part, not an island part.
 - **refresh-button**: The age text is relative to the browser's clock and absent until hydration; a static page cannot know it.

@@ -31,12 +31,6 @@ export const FINDINGS: readonly Finding[] = [
     row: 'astro-chart-server-picture',
   },
   {
-    parts: ['code-block', 'markdown'],
-    cause:
-      'Shiki highlights in the browser after mount: the static page shows the code uncoloured (1 to 5% of pixels). Highlighted on the server, a static page ships coloured code with no JavaScript, and the copy button is the one thing left for an island.',
-    row: 'astro-server-highlight',
-  },
-  {
     parts: ['inner-nav', 'split-page', 'controls', 'control-home', 'app-shell'],
     cause:
       'App parts: they read field handles or the registered nav from a TanStack Router (no router: "Cannot read properties of null (reading \'stores\')", "Invalid value used as weak map key"), on the server and in the browser alike. They are not island parts by contract; an Astro page uses links and the site profile instead.',
