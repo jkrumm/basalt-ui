@@ -180,3 +180,35 @@ const a = (
     <Lines data={rows} x="at" y="value" />
   </P.Section>
 )
+// @valid
+import { Section } from 'basalt-ui/page'
+const a = (
+  <Section title="Activity">
+    <StatGroup>
+      <StatCell
+        label="Sessions"
+        value={12}
+        chart={(box) => <Sparkline height={box.height} label="Sessions per day" series={daily} />}
+      />
+    </StatGroup>
+  </Section>
+)
+// @valid
+import { Page } from 'basalt-ui/page'
+const a = (
+  <Page>
+    <StatGroup>
+      <StatCell label="Load" value={3} chart={<Lines data={data} ariaLabel="Load" />} />
+    </StatGroup>
+  </Page>
+)
+// @invalid
+import { Section } from 'basalt-ui/page'
+const a = (
+  <Section title="Activity">
+    <StatGroup>
+      <StatCell label="Sessions" value={12} />
+    </StatGroup>
+    <Sparkline height={28} label="Sessions per day" series={daily} />
+  </Section>
+)
