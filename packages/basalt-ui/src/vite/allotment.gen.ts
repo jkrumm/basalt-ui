@@ -24,6 +24,11 @@ export const ALLOTMENT: Allotment = {
       lazy: [],
       reaches: ['.'],
     },
+    form: {
+      peers: ['@tanstack/react-form', '@base-ui/react'],
+      lazy: [],
+      reaches: ['.'],
+    },
     page: {
       peers: ['react'],
       lazy: [],
