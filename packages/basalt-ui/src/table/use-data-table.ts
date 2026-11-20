@@ -107,7 +107,7 @@ export type TableModel<T> = {
   /** How the table draws its rules; `grid` keeps every column and scrolls sideways. */
   look: 'reading' | 'grid'
   /** What a narrow table becomes (default `cards`, `scroll` for a grid) and the width it does so below. */
-  phone: 'cards' | 'scroll'
+  phone: 'cards' | 'scroll' | 'columns'
   cardsBelow: 'regular' | 'wide' | 'always'
   /** Present on a cursor table: the pager's `Load more` reads it. */
   cursor: { hasNext: boolean; fetchNext(): void } | undefined
@@ -307,7 +307,8 @@ function plannedRows(
 /**
  * The table's state, engine, selection and phase in one call. Hand the result to `DataTable` or
  * to the parts. A narrow table becomes cards: `phone` defaults to `'cards'` (`'scroll'` pins the
- * name and scrolls sideways) and `cardsBelow` to `'regular'` (480 px of the table's own width, 700 or
+ * name and scrolls sideways; `'columns'` keeps a table of the name, the card's `value` and its first
+ * `meta`, the rest in the row's details) and `cardsBelow` to `'regular'` (480 px of the table's own width, 700 or
  * 800 px when its priority 1 and 2 columns need more; `'wide'` is always 800, `'always'` never shows a
  * table). The tiers live in `basalt-ui/table.css`, which `basalt()` imports for any module that imports
  * `basalt-ui/table`; an app without the plugin imports it beside `basalt-ui/table`.
@@ -320,8 +321,9 @@ function plannedRows(
  * 1100, 1200, 1300, 1440, 1600 or 1800 px that holds that sum, so five columns of 664 px keep all five in a 748 px cell (the step is 680 px); above
  * 1800 px of columns the table stays reduced. Priority 1 and 2 show as a table from 480 px, from 700 px
  * once their sum is above 480 px, or from 800 px once it is above 700; below that width the rows are
- * cards (`phone: 'cards'`) or the table scrolls (`phone: 'scroll'`, the title pinned and the other
- * columns off screen at 390 px). Only two priority 1 columns count: a third is a priority 2. While
+ * cards (`phone: 'cards'`), the table scrolls (`phone: 'scroll'`, the title pinned and the other
+ * columns off screen at 390 px) or the table keeps three columns sized to their values
+ * (`phone: 'columns'`, the name wrapping into what they leave). Only two priority 1 columns count: a third is a priority 2. While
  * priority 1 and 2 sum above 800 px the last priority 2 columns drop to 3 whatever the container. A
  * table in a half-width cell (about 750 px at 1800; 718 px of table inside a DataPanel's card edges) therefore
  * keeps its columns while a step at or under that width holds their sum: 700 px holds 696 px of columns,
@@ -733,7 +735,11 @@ export function useDataTable<
     expandable:
       activation.kind === 'row' &&
       plan.columns.some(
-        (column) => column.visible && (column.priority === 3 || column.place === 'detail'),
+        (column) =>
+          column.visible &&
+          (column.priority === 3 ||
+            column.place === 'detail' ||
+            (options.phone === 'columns' && !column.phoneKeep)),
       ),
     detailListed: activation.kind !== 'detail',
     format,

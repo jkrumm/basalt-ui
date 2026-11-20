@@ -70,6 +70,11 @@ export type PlannedColumn = {
   widthPx: number
   /** Shares the width the fixed columns leave: a flexible kind not sized to its content. */
   flex: boolean
+  /**
+   * Kept by `phone: 'columns'`: the identity, the card's `value`, its first `meta` and the actions.
+   * Every other column leaves the phone row and stays in the row's details.
+   */
+  phoneKeep: boolean
 }
 
 export type TablePlan = {
@@ -244,6 +249,8 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
     core -= widths[index]!
   }
 
+  const firstValue = places.findIndex((p, index) => p === 'value' && visible[index])
+  const firstMeta = places.findIndex((p, index) => p === 'meta' && visible[index])
   const columns = inputs.map((c, index): PlannedColumn => ({
     id: c.id,
     kind: c.kind,
@@ -254,6 +261,11 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
     visible: visible[index]!,
     widthPx: widths[index]!,
     flex: sized[index] === null && c.width !== 'icon' && c.width.flex,
+    phoneKeep:
+      index === identity ||
+      places[index] === 'kebab' ||
+      index === firstValue ||
+      index === firstMeta,
   }))
   return { columns, fullAt, reducedFrom, demoted }
 }

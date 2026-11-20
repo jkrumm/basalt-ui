@@ -6,6 +6,7 @@
  *   reduced  below data-full-at  priority 3 hidden (cells and <col>); no data-full-at = always
  *   card     below data-below    the SAME rows projected as cards; thead visually hidden, never none
  *   scroll   below data-below    phone="scroll": identity pinned, scrolls inside the scroller
+ *   columns  below data-below    phone="columns": identity, card value and first meta stay a table
  *
  * Utilities sit above `basalt` in the layer order, so the few declarations that fight a part's
  * utility (cell hairline and nowrap) are `!important`, which layers invert in our favour.
@@ -1004,6 +1005,81 @@
   [data-slot='table-root'][data-look='grid'] [data-slot='table-cell']:focus-visible {
     outline: 2px solid var(--basalt-brand);
     outline-offset: -2px;
+  }
+
+  /* columns: phone="columns" keeps a table of the identity, the card's value, its first meta and the
+     actions (`phoneKeep`); the rest leave for the row's details, the name wraps into what is left. */
+  @container table (max-width: 479.9px) {
+    [data-below='480'][data-phone='columns'] [data-phone-drop] {
+      display: none;
+    }
+    [data-below='480'][data-phone='columns'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-below='480'][data-phone='columns'] [data-slot='table'] {
+      table-layout: auto;
+    }
+    [data-below='480'][data-phone='columns'] col {
+      width: auto !important;
+    }
+    [data-below='480'][data-phone='columns'] [data-identity],
+    [data-below='480'][data-phone='columns'] [data-identity] * {
+      white-space: normal !important;
+    }
+  }
+  @container table (max-width: 699.9px) {
+    [data-below='700'][data-phone='columns'] [data-phone-drop] {
+      display: none;
+    }
+    [data-below='700'][data-phone='columns'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-below='700'][data-phone='columns'] [data-slot='table'] {
+      table-layout: auto;
+    }
+    [data-below='700'][data-phone='columns'] col {
+      width: auto !important;
+    }
+    [data-below='700'][data-phone='columns'] [data-identity],
+    [data-below='700'][data-phone='columns'] [data-identity] * {
+      white-space: normal !important;
+    }
+  }
+  @container table (max-width: 799.9px) {
+    [data-below='800'][data-phone='columns'] [data-phone-drop] {
+      display: none;
+    }
+    [data-below='800'][data-phone='columns'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-below='800'][data-phone='columns'] [data-slot='table'] {
+      table-layout: auto;
+    }
+    [data-below='800'][data-phone='columns'] col {
+      width: auto !important;
+    }
+    [data-below='800'][data-phone='columns'] [data-identity],
+    [data-below='800'][data-phone='columns'] [data-identity] * {
+      white-space: normal !important;
+    }
+  }
+  @container table (width >= 0px) {
+    [data-below='always'][data-phone='columns'] [data-phone-drop] {
+      display: none;
+    }
+    [data-below='always'][data-phone='columns'] [data-slot='table-expand'] {
+      display: inline-flex;
+    }
+    [data-below='always'][data-phone='columns'] [data-slot='table'] {
+      table-layout: auto;
+    }
+    [data-below='always'][data-phone='columns'] col {
+      width: auto !important;
+    }
+    [data-below='always'][data-phone='columns'] [data-identity],
+    [data-below='always'][data-phone='columns'] [data-identity] * {
+      white-space: normal !important;
+    }
   }
 
   @media print {

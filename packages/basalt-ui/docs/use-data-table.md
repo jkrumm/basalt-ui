@@ -11,7 +11,8 @@ slots: []
 
 The table's state, engine, selection and phase in one call. Hand the result to `DataTable` or
 to the parts. A narrow table becomes cards: `phone` defaults to `'cards'` (`'scroll'` pins the
-name and scrolls sideways) and `cardsBelow` to `'regular'` (480 px of the table's own width, 700 or
+name and scrolls sideways; `'columns'` keeps a table of the name, the card's `value` and its first
+`meta`, the rest in the row's details) and `cardsBelow` to `'regular'` (480 px of the table's own width, 700 or
 800 px when its priority 1 and 2 columns need more; `'wide'` is always 800, `'always'` never shows a
 table). The tiers live in `basalt-ui/table.css`, which `basalt()` imports for any module that imports
 `basalt-ui/table`; an app without the plugin imports it beside `basalt-ui/table`.
@@ -34,7 +35,7 @@ useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: Us
   empty?: Empty | null  // Why the table has no rows, and what to do about it: its `cause` replaces the default sentence and its `action` renders beside it
   filters?: PageFilters<T, F>  // Page fields that narrow a client table's rows (a Section's filters over it): each is a field handle with a row predicate, `match(row, value)` typed by that field's value
   resetOn?: readonly unknown[]
-  phone?: "cards" | "scroll"  // What a narrow table becomes: cards, or the table scrolling sideways with its first column pinned; default 'cards'
+  phone?: "cards" | "scroll" | "columns"  // What a narrow table becomes: `cards`; `scroll`, the table scrolling sideways with its first column pinned; or `columns`, the table keeping its header and three columns (the name, the column placed in the card's `value` and the first placed in its `meta`) while the rest move to the row's details: a long numeric table that must keep its answer in view at 390; default 'cards'
   look?: "reading" | "grid"  // How the table draws its rules; default 'reading'
   cardsBelow?: "regular" | "wide" | "always"  // The width below which the table becomes cards (`regular` is 480 px, `wide` 800 px, `always` never a table); default 'regular'
   pager?: "none" | "pages" | "more"  // The pager: `pages` steps through numbered pages, `more` is a Load more button, `none` shows every row; default 'none' on a client table, 'more' on a cursor table, 'pages' on any other server table

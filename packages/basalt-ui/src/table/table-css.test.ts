@@ -43,7 +43,8 @@ describe('table.css', () => {
   // with the finer fold steps of expression cycle 12, 4,273 with the 700 px step and the phone card's
   // padding and entity rules of expression cycle 13, 4,409 with the mono entity name on the card's title line
   // of expression cycle 14 (one rule pair in each of the three fold steps).
-  test('stays small: under 4,450 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(4450)
+  // 4,450 until the `phone: 'columns'` tier (four container blocks, ~300 B) landed at 4,682.
+  test('stays small: under 4,750 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(4750)
   })
 })

@@ -108,6 +108,7 @@ function Columns<T>({
             {...(!flexible && { style: { width: `${planned.widthPx}px` } })}
             data-flex={flexible ? '' : undefined}
             data-priority={planned.priority === null ? undefined : String(planned.priority)}
+            data-phone-drop={planned.phoneKeep ? undefined : ''}
           />
         )
       })}
