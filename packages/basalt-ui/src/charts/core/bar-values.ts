@@ -238,6 +238,17 @@ function candidates<T, X extends ChartX>(input: BarValuesInput<T, X>): Candidate
   return out
 }
 
+/** The width of one bar's slot in px: the distance to the nearest other x of the chart. */
+function slotPx<T, X extends ChartX>(input: BarValuesInput<T, X>): number {
+  const fractions = [
+    ...new Set(
+      input.data.map((d) => input.fraction(input.x(d))).filter((f): f is number => f !== null),
+    ),
+  ].toSorted((a, b) => a - b)
+  const gaps = fractions.slice(1).map((f, i) => f - (fractions[i] ?? 0))
+  return (gaps.length === 0 ? 1 : Math.min(...gaps)) * input.frame.width
+}
+
 /**
  * The value labels as text marks and the boxes they took, in plot px, for the marks a page draws
  * later to keep clear of. Outside the bar's end first; a label that finds no room there stands
@@ -260,7 +271,7 @@ export function barValueLabels<T, X extends ChartX>(
     )
   const priority = new Map(rank.map(({ i }, r) => [i, found.length - r]))
   // The bars that name the answer: the highlighted ones, else the largest. Their label survives:
-  // it tries the sides of the bar's end, and last any free spot, rather than drop.
+  // it tries the spot above or below its end, and last any free spot, rather than drop.
   const named = new Set(
     (rank.some(({ c }) => c.highlighted)
       ? rank.filter(({ c }) => c.highlighted)
@@ -276,11 +287,15 @@ export function barValueLabels<T, X extends ChartX>(
     priority: priority.get(i) ?? 0,
     spots,
   })
+  // Above or below its end, centred over its own bar: a stack total never leaves its stack. A named
+  // grouped value may also stand beside its end, but only while the whole label stays inside the
+  // bar's own slot, never in a neighbour's. A value past the edge has no room there: its caret is.
+  const slot = slotPx(input)
   const outsideSpots = (c: Candidate<X>, i: number): readonly LabelSpot[] => {
-    // A value past the edge has no room above or below its end: its caret is there.
     if (c.clamped) return []
     const end: LabelSpot = c.up ? 'above' : 'below'
-    if (!named.has(String(i))) return [end]
+    if (c.id === undefined || !named.has(String(i)) || GAP + measure(c.text, SIZE) > slot / 2)
+      return [end]
     return [end, `${end}-right`, `${end}-left`, 'right', 'left']
   }
   const outside = placeWith(
@@ -290,9 +305,11 @@ export function barValueLabels<T, X extends ChartX>(
     { gap: GAP, obstacles: input.obstacles, size: SIZE },
   )
   const taken = new Set(outside.placed.map((p) => p.key))
+  // A stack total never goes inside its stack: it sits above it, or it is dropped.
   const fitting = found.flatMap((c, i) =>
     !taken.has(String(i)) &&
     !c.clamped &&
+    c.id !== undefined &&
     fitsWith(measure, c.text, c.body, { size: SIZE, pad: INSIDE_PAD })
       ? [label(c, i, [c.up ? 'below' : 'above'])]
       : [],
@@ -305,30 +322,46 @@ export function barValueLabels<T, X extends ChartX>(
   // A named bar still without a label takes any spot clear of the other labels, over a rule or a
   // line if it must: a label that names the answer is never dropped for what the host drew.
   const standing = new Set([...taken, ...inside.placed.map((p) => p.key)])
+  // A named grouped bar, never a stack total, may cross a rule or a line; a stack total never does.
+  const namedBar = (c: Candidate<X>, i: number): boolean =>
+    c.id !== undefined && named.has(String(i))
   const rescue = (
     pending: ReadonlySet<string>,
     obstacles: readonly LabelBox[],
+    keep: (c: Candidate<X>, i: number) => boolean,
   ): ReturnType<typeof placeWith<string>> =>
     placeWith(
       measure,
       found.flatMap((c, i) =>
-        named.has(String(i)) && !c.clamped && !pending.has(String(i))
+        keep(c, i) && !c.clamped && !pending.has(String(i))
           ? [label(c, i, outsideSpots(c, i))]
           : [],
       ),
       input.frame,
       { gap: GAP, obstacles: [...outside.placed, ...inside.placed, ...obstacles], size: SIZE },
     )
-  // The captions first: a reference or zone caption is text, and a value over it hides both. Only a
-  // bar that finds no spot clear of them crosses a rule or a line.
+  // A stack total that finds no spot clear of the captions, rules and lines is dropped. A named bar
+  // takes a spot clear of the captions first, then any spot clear of the other labels: over a rule or
+  // a line if it must.
+  const stacked = rescue(standing, input.clear, (c) => c.id === undefined)
   const captioned = rescue(
-    standing,
+    new Set([...standing, ...stacked.placed.map((p) => p.key)]),
     input.clear.filter((b) => Math.min(b.width, b.height) >= CAPTION_MIN_PX),
+    namedBar,
   )
   const rescued = {
     placed: [
+      ...stacked.placed,
       ...captioned.placed,
-      ...rescue(new Set([...standing, ...captioned.placed.map((p) => p.key)]), []).placed,
+      ...rescue(
+        new Set([
+          ...standing,
+          ...stacked.placed.map((p) => p.key),
+          ...captioned.placed.map((p) => p.key),
+        ]),
+        [],
+        namedBar,
+      ).placed,
     ],
   }
   // A clamped bar's value is never dropped: beside its body in the caret's row, the right side
