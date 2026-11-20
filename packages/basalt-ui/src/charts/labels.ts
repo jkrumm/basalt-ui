@@ -73,10 +73,9 @@ export function endLabelAnchor(opts: {
 export type LinesNaming = 'auto' | 'legend' | 'endLabels'
 
 /**
- * A thin elbow from a line's end to its label, drawn when the label was moved off its natural spot:
- * a stalk up (or down) from the end to the label's height, then a stub to the label's edge. `from` and
- * `to` are values on the left axis; `thinX` and `thinY` are a hairline's width in fractions of the
- * plot and in values.
+ * A hairline from a line's end to its label, drawn when the label was moved off its natural spot: a
+ * stalk up (or down) from the end to the label's height. `from` and `to` are values on the left axis;
+ * `thinX` and `thinY` are a hairline's width in fractions of the plot and in values.
  */
 export type EndLabelLeader = {
   fraction: number
@@ -445,16 +444,10 @@ export function endLabelMarks<T, X extends ChartX>(
   ])
 }
 
-/** The elbow of a displaced end label: a stalk from its line's end to its height, then a stub to its edge. */
+/** The leader of a displaced end label: a hairline stalk from its line's end up (or down) to the label's height. */
 function leaderMarks(key: string, leader: EndLabelLeader, fill: string): ChartMarks {
-  const { fraction: f, from, to, dx, thinX, thinY } = leader
+  const { fraction: f, from, to, thinX } = leader
   const stalk = { f0: f, f1: f + thinX, y0: Math.min(from, to), y1: Math.max(from, to) }
-  const stub = {
-    f0: Math.min(f, f + dx * thinX),
-    f1: Math.max(f, f + dx * thinX),
-    y0: to - thinY / 2,
-    y1: to + thinY / 2,
-  }
   const channels = {
     x1: 'f0',
     x2: 'f1',
@@ -465,8 +458,6 @@ function leaderMarks(key: string, leader: EndLabelLeader, fill: string): ChartMa
     fill,
     inset: 0,
   } as const
-  return [
-    decorative(rect([stalk], { ...channels, id: `${key}-end-leader` })),
-    decorative(rect([stub], { ...channels, id: `${key}-end-leader-stub` })),
-  ]
+  // A stalk alone: a stub reaching the label's edge would sit against its last glyph and read as a dash after the name.
+  return [decorative(rect([stalk], { ...channels, id: `${key}-end-leader` }))]
 }
