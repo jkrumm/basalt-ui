@@ -4,5 +4,5 @@
  * `basalt-ui/controls` by hand.
  */
 
-export { useAppForm, withFieldGroup, withForm } from './hook'
+export { useAppForm, withForm } from './hook'
 export type { BoundFormFieldProps, FooterProps, FormProps } from './parts'
