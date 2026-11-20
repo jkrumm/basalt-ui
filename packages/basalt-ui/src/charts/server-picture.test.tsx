@@ -131,11 +131,17 @@ describe('measureChartText', () => {
   test('the width is the label table, the same on the server and in the browser', () => {
     const m = measureChartText('1,250', options({}))
     expect(m.width).toBeCloseTo(chartLabels.width('1,250', { size: 11 }), 6)
+    // Centred text keeps a per-glyph room between glyphs (text-measure.ts GLYPH_ROOM).
+    const centred = measureChartText('1,250', options({ anchor: 'middle' }))
+    expect(centred.width).toBeCloseTo(m.width + 4 * 0.03 * 11, 6)
   })
   test('the anchor places the box', () => {
-    const w = measureChartText('Oct 4', options({})).width
+    const w = measureChartText('Oct 4', options({ anchor: 'middle' })).width
     expect(measureChartText('Oct 4', options({ anchor: 'middle' })).x).toBeCloseTo(-w / 2, 6)
-    expect(measureChartText('Oct 4', options({ anchor: 'end' })).x).toBeCloseTo(-w, 6)
+    expect(measureChartText('Oct 4', options({ anchor: 'end' })).x).toBeCloseTo(
+      -measureChartText('Oct 4', options({})).width,
+      6,
+    )
   })
   test('empty text measures nothing', () => {
     expect(measureChartText('', options({}))).toEqual({ x: 0, y: 0, width: 0, height: 0 })
