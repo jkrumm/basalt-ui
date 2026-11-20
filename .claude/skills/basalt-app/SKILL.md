@@ -47,6 +47,7 @@ The profile is declared in `.basalt/manifest.json` and never inferred. Choose th
    `tailwind.css` already brings `tailwindcss`, the shipped tokens and fonts: never import them again. Edit a config `init` printed instead of patching to match. Outside Vite the app lists its own Tailwind sources.
 
 5. `app` profile: the entry `init` writes mounts `BasaltProvider` from `basalt-ui/router` once ([basalt-provider](node_modules/basalt-ui/docs/basalt-provider.md)); mount the frame once in the `_app` layout route ([app-shell recipe](references/recipes.md)), declare `NAV` once with [defineNav](node_modules/basalt-ui/docs/define-nav.md), and gate an authenticated app in the `_app` layout route's `beforeLoad`, never the root's (`login` sits outside `_app`) (the shell has no auth seam and loaders fire before any gate component renders).
+   A TanStack Start host is `init --profile app --start`: it puts `tanstackStart()` before the React plugin, writes `src/router.tsx` (`getRouter()`), a root route whose `shellComponent` is the document and runs `themeScript()` through `ScriptOnce`, and no `main.tsx`; the app owns `@tanstack/react-start` (`bun add` it) and reads `window` and storage only in effects or behind `ClientOnly`.
 6. Fill in `DESIGN.md` (identity, series dictionary, deviations); `/basalt-design` reads it before every page.
 7. Run the repo gate (`make check` or the package's own), which runs lint and typecheck. Fix findings at their source.
 
