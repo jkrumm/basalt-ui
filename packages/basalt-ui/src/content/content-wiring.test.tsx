@@ -5,12 +5,19 @@
  * headings carry deduplicated ids and an anchor.
  */
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, beforeAll, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { Markdown } from './markdown'
 import type { FenceRenderers } from './contract'
 import { settledOnly } from './fences'
+import { getHighlight } from './highlighter'
 
 afterEach(cleanup)
+
+/** Suspending blocks settle before the sync `render`s below; an unsettled one would resolve outside `act`. */
+const warm: [string, string][] = [['{ broken', 'json']]
+beforeAll(async () => {
+  await Promise.all(warm.map(([code, lang]) => getHighlight(code, lang).promise))
+})
 
 let warn: ReturnType<typeof spyOn>
 beforeEach(() => {

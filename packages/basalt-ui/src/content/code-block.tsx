@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { Suspense, use, useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
 import { ai } from '../core/messages/ai'
 import { useMessages } from '../core/messages/use-messages'
 import { Button } from '../ui/button'
 import type { CodeBlockProps } from './contract'
-import { highlightCode } from './highlighter'
+import { canHighlight, getHighlight } from './highlighter'
 
 export type { CodeBlockProps } from './contract'
 
@@ -77,11 +77,36 @@ function CopyButton({ code }: { code: string }): ReactElement {
   )
 }
 
+function PlainBody({ code }: { code: string }): ReactElement {
+  return (
+    // a scroll box must be reachable by keyboard (shiki's own pre carries tabindex 0 too)
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+    <pre tabIndex={0} className={BODY}>
+      <code>{code}</code>
+    </pre>
+  )
+}
+
+/**
+ * Suspends until shiki has answered for exactly this source, so the server render waits for the
+ * markup and ships it, and the client renders the same markup on hydration (an already settled
+ * highlight is read without suspending). A source shiki cannot colour settles as the plain block.
+ */
+function HighlightedBody({ code, lang }: { code: string; lang: string }): ReactElement {
+  const highlight = getHighlight(code, lang)
+  const html = highlight.settled ? highlight.settled.html : use(highlight.promise)
+  if (html === null) return <PlainBody code={code} />
+  return <div className={HIGHLIGHTED} dangerouslySetInnerHTML={{ __html: html }} />
+}
+
 /**
  * A fenced code block: the source always on screen in a box that scrolls on its own, highlighted
  * with shiki once the block is settled and the language is known, plain otherwise (an unknown
- * language, a streaming tail, a shiki that fails to load). The copy button is hidden while the
- * block is still streaming. The dark palette follows `[data-theme='dark']`.
+ * language, a streaming tail, a shiki that fails to load). The highlight is part of the render: a
+ * server render that waits for boundaries (a streaming render, Astro) ships the coloured markup and
+ * the client hydrates it as it is; `renderToString` cannot wait, so it ships the plain block and the
+ * browser colours it. A block over 50 000 characters stays plain (the cost of colouring it is paid
+ * on the server's thread). The copy button is hidden while the block is still streaming. The dark palette follows `[data-theme='dark']`.
  *
  * @useWhen a fenced or standalone block of source or terminal output is shown, highlighted, with a copy button
  * @neverWhen the text is inline (use <code> in prose) or is a diagram (use a mermaid fence)
@@ -91,29 +116,8 @@ function CopyButton({ code }: { code: string }): ReactElement {
  * <CodeBlock lang="bash" code={partial} settled={false} />
  */
 export function CodeBlock({ lang, code, settled = true }: CodeBlockProps): ReactElement {
-  const [highlighted, setHighlighted] = useState<{
-    code: string
-    lang: string
-    html: string
-  } | null>(null)
-
-  useEffect(() => {
-    if (lang === undefined || !settled) return
-    let cancelled = false
-    void highlightCode(code, lang).then((html) => {
-      if (!cancelled && html !== null) setHighlighted({ code, lang, html })
-      return undefined
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [code, lang, settled])
-
-  // Only markup for exactly this source is shown; anything older would lag the text behind it.
-  const html =
-    highlighted !== null && highlighted.code === code && highlighted.lang === lang
-      ? highlighted.html
-      : null
+  // The plain block is the fallback while shiki loads, and the whole story while streaming.
+  const plain = <PlainBody code={code} />
 
   return (
     <div
@@ -121,14 +125,12 @@ export function CodeBlock({ lang, code, settled = true }: CodeBlockProps): React
       data-lang={lang}
       className="group/code relative rounded-inset bg-inset inset-ring-1 inset-ring-border in-[.basalt-prose]:mt-(--basalt-rhythm-2)"
     >
-      {html === null ? (
-        // a scroll box must be reachable by keyboard (shiki's own pre carries tabindex 0 too)
-        // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-        <pre tabIndex={0} className={BODY}>
-          <code>{code}</code>
-        </pre>
+      {lang === undefined || !settled || !canHighlight(lang, code) ? (
+        plain
       ) : (
-        <div className={HIGHLIGHTED} dangerouslySetInnerHTML={{ __html: html }} />
+        <Suspense fallback={plain}>
+          <HighlightedBody code={code} lang={lang} />
+        </Suspense>
       )}
       {settled && <CopyButton code={code} />}
     </div>

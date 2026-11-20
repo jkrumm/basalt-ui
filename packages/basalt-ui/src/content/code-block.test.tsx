@@ -9,11 +9,21 @@
  * real module is put back afterwards so no later test sees the mock.
  */
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
+import { afterEach, beforeAll, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
 import { CodeBlock } from './code-block'
+import { getHighlight } from './highlighter'
 
 afterEach(cleanup)
+
+/** Suspending blocks settle before the sync `render`s below; an unsettled one would resolve outside `act`. */
+const warm: [string, string][] = [
+  ['x', 'ts'],
+  ['const a: number = 1', 'ts'],
+]
+beforeAll(async () => {
+  await Promise.all(warm.map(([code, lang]) => getHighlight(code, lang).promise))
+})
 
 /** A computed specifier: a `?query` gives a fresh module instance, which TypeScript cannot resolve. */
 const freshSpecifier = (path: string, tag: string): string => `${path}?${tag}`
@@ -107,12 +117,14 @@ describe('CodeBlock — the copy button', () => {
 
 describe('CodeBlock — shiki', () => {
   test('a known language highlights and keeps the text', async () => {
+    await getHighlight('const a: number = 1', 'ts').promise
     const { container } = render(<CodeBlock lang="ts" code="const a: number = 1" />)
     await waitFor(() => expect(container.querySelector('[style*="--shiki-"]')).not.toBeNull())
     expect(container.textContent).toContain('const a: number = 1')
   })
 
   test('an alias resolves to its grammar', async () => {
+    await getHighlight('let b = 2', 'TS').promise
     const { container } = render(<CodeBlock lang="TS" code="let b = 2" />)
     await waitFor(() => expect(container.querySelector('[style*="--shiki-"]')).not.toBeNull())
   })
