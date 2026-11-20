@@ -38,6 +38,7 @@ import { persisted } from '../../core/persisted'
 import { DOCK_WIDTH, asideDockQuery, resolveAsideDocking } from '../../page/core/docking'
 import type { AsideDock, AsideSheetState } from '../../page/core/docking'
 import type { SizeClass } from '../contract'
+import { MOTION_DURATION_MS } from '../../tokens/motion'
 import { SHELL_MAIN_ID } from './a11y'
 import { PRINT_FRAME, PRINT_MAIN, PRINT_OFF } from './print'
 
@@ -139,8 +140,8 @@ export type ShellGridProps = {
   children: ReactNode
 }
 
-/** How long the dock's width takes to ease, in ms: `duration-300`, plus a frame of margin. */
-const DOCK_SHIFT_MS = 350
+/** How long the dock's width takes to ease, in ms: `duration-slow`, plus a frame of margin. */
+const DOCK_SHIFT_MS = MOTION_DURATION_MS.slow + 50
 
 /** What arms the dock's easing: a reader's own input. A dock present at load never eases. */
 const INPUT_EVENTS = ['pointerdown', 'keydown', 'click'] as const
@@ -201,7 +202,7 @@ export function ShellGrid({
       style={style}
       className={cn(
         'group/shell grid h-dvh w-full grid-cols-[var(--shell-rail-w)_minmax(0,1fr)_var(--shell-aside-w)_var(--shell-dock-w)] grid-rows-[var(--shell-header-h)_minmax(0,1fr)_auto] bg-background font-sans text-foreground [grid-template-areas:"header_header_header_header"_"rail_main_aside_dock"_"footer_footer_footer_footer"]',
-        'motion-safe:data-dock-shift:transition-[grid-template-columns] motion-safe:data-dock-shift:duration-300 motion-safe:data-dock-shift:ease-standard',
+        'motion-safe:data-dock-shift:transition-[grid-template-columns] motion-safe:data-dock-shift:duration-slow motion-safe:data-dock-shift:ease-standard',
         '[--shell-header-h:--spacing(12)] [--shell-rail-w:0px] [--shell-gutter:--spacing(2)]',
         'md:[--shell-rail-w:--spacing(16)] md:[--shell-gutter:--spacing(4)]',
         'xl:[--shell-rail-w:--spacing(60)] xl:[--shell-gutter:--spacing(6)]',

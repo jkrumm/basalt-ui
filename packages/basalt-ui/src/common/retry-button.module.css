@@ -30,7 +30,7 @@
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
-  transition: box-shadow 120ms ease;
+  transition: box-shadow var(--basalt-dur-fast) var(--basalt-ease);
 }
 
 .retry:focus-visible {

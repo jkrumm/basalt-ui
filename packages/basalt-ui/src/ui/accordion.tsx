@@ -131,7 +131,7 @@ export function AccordionContent({
       {...props}
       data-slot="accordion-content"
       className={cn(
-        'h-(--accordion-panel-height) overflow-hidden text-sm text-muted-foreground transition-[height] duration-150 ease-standard motion-reduce:transition-none [&[hidden]:not([hidden="until-found"])]:hidden data-ending-style:h-0 data-starting-style:h-0',
+        'h-(--accordion-panel-height) overflow-hidden text-sm text-muted-foreground transition-[height] duration-fast ease-standard motion-reduce:transition-none [&[hidden]:not([hidden="until-found"])]:hidden data-ending-style:h-0 data-starting-style:h-0',
         className,
       )}
     >

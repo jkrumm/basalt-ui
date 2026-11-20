@@ -70,7 +70,7 @@ export function CollapsibleContent({ className, ...props }: CollapsibleContentPr
       {...props}
       data-slot="collapsible-content"
       className={cn(
-        'h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-150 ease-standard motion-reduce:transition-none [&[hidden]:not([hidden="until-found"])]:hidden data-ending-style:h-0 data-starting-style:h-0',
+        'h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-fast ease-standard motion-reduce:transition-none [&[hidden]:not([hidden="until-found"])]:hidden data-ending-style:h-0 data-starting-style:h-0',
         className,
       )}
     />

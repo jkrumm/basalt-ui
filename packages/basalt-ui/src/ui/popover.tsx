@@ -12,7 +12,7 @@ import { cn } from '../core/cn'
  * popoverContentVariants() // class string for a hand-built popup
  */
 export const popoverContentVariants = cva(
-  'max-h-(--available-height) w-72 max-w-(--available-width) origin-(--transform-origin) overflow-y-auto rounded-ctrl border border-border bg-popover p-3 text-sm shadow-overlay outline-none transition-[opacity,scale] duration-150 ease-standard data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none',
+  'max-h-(--available-height) w-72 max-w-(--available-width) origin-(--transform-origin) overflow-y-auto rounded-ctrl border border-border bg-popover p-3 text-sm shadow-overlay outline-none transition-[opacity,scale] duration-fast ease-enter data-ending-style:ease-exit data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */

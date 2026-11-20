@@ -64,6 +64,7 @@ export function ArticleProgress({ target }: ArticleProgressProps = {}): ReactEle
           // The resting state until a timeline is in scope: an unresolved name leaves the bar at 0.
           transform: 'scaleX(0)',
           animationName: 'basalt-article-progress',
+          // oxlint-disable-next-line basalt/motion-literal -- a scroll timeline maps scroll to progress 1:1; any curve would bend it
           animationTimingFunction: 'linear',
           animationFillMode: 'both',
           animationTimeline: name,

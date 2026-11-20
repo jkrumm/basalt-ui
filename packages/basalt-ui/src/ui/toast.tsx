@@ -26,7 +26,7 @@ export const toastViewportVariants = cva(
  * toastVariants({ tone: 'bad' })
  */
 export const toastVariants = cva(
-  'relative flex items-start gap-3 rounded-card bg-popover p-3 before:mt-1.5 before:size-2 before:shrink-0 before:rounded-full text-foreground shadow-overlay transition-[opacity,translate] duration-150 ease-standard data-starting-style:translate-y-2 data-starting-style:opacity-0 data-ending-style:translate-y-2 data-ending-style:opacity-0 motion-reduce:transition-none',
+  'relative flex items-start gap-3 rounded-card bg-popover p-3 before:mt-1.5 before:size-2 before:shrink-0 before:rounded-full text-foreground shadow-overlay transition-[opacity,translate] duration-fast ease-enter data-ending-style:ease-exit data-starting-style:translate-y-2 data-starting-style:opacity-0 data-ending-style:translate-y-2 data-ending-style:opacity-0 motion-reduce:transition-none',
   {
     variants: {
       tone: {
