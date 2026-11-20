@@ -101,6 +101,11 @@ __pycache__/
 .claude/settings.local.json
 .claude/plans/
 .claude/e2e-shots/
+# apps/marketing is a sibling install (profile site): its sync places the shipped rules and skills
+# here under a `basalt-v3-` name. The root's own `basalt-*` copies already carry that law, so the
+# placed copies stay local; CI runs `basalt-ui sync` before `basalt-ui doctor` on the app.
+.claude/rules/basalt-v3-*.md
+.claude/skills/basalt-v3-*/
 
 # Generated at build and release (scripts/gen-llms.ts); the tarball carries it, git does not
 packages/basalt-ui/llms.txt

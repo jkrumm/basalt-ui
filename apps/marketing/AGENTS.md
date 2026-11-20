@@ -1,116 +1,87 @@
-# Basalt UI - Web App (Astro + React + Starlight)
+# apps/marketing — basalt-ui.com
 
-**Inherits from**: `../../AGENTS.md` (monorepo conventions: Bun, Biome, TypeScript strict, Tailwind v4)
-**This file adds**: Astro + React specific patterns and web app conventions
+basalt's own site, and the proof of the `site` profile: Astro 7 pages built from `basalt-ui/static`
+parts, rendered to HTML with no client JavaScript. FPP and the owner's other content sites copy what
+works here, so a shortcut taken on this site becomes theirs. Root `AGENTS.md` holds the repo rules
+(Bun, oxlint, oxfmt, commits); this file adds what only this app needs.
 
-Documentation site and design playground for the Basalt UI design system.
+## How it is wired
 
-Stale where it names Biome or Prettier: the root `AGENTS.md` (oxlint, oxfmt) wins there.
+- `astro.config.mjs`: `integrations: [react(), basaltAstro(), starlight(...)]`. `basaltAstro()` from
+  `basalt-ui/astro` adds `@tailwindcss/vite`, injects `basalt-ui/static.css` on every page, registers
+  the three faces with the Astro Fonts API and inlines the scheme script and the parts' listeners in the head.
+  Never add `tailwindcss()` to `vite.plugins` by hand: the integration adds it once.
+- `src/layouts/Layout.astro` is the one layout for non-docs pages: `<BasaltFonts />` in the head,
+  `SiteHeader`, `SiteFooter`, `ThemeSwitch`. Links and every visible word live in `src/lib/site.ts`;
+  a part takes its words as props, never from basalt.
+- `/docs/*` is Starlight (`src/content/docs/docs/`), themed by `basalt-ui/starlight.css` in
+  `customCss`. `src/components/starlight/` overrides `Head` (fonts), `ThemeProvider` (basalt's scheme
+  script) and `ThemeSelect` (basalt's `ThemeSwitch`), so docs and site share one stored scheme.
+- `/guides/*` are MDX files under `src/guides/` rendered in `SiteArticle` with
+  `siteMdxComponents(...)` as their components; raw Markdown is styled by element through
+  `.basalt-prose`, and `<SiteCallout>`, `<Steps>` and `<Figure>` need no import.
+- `/charts` holds the site's one island (`src/islands/`). `src/styles/site.css` adds the `@source`
+  lines for the chart and card classes it uses.
 
-## Tech Stack
+## Rules for a page
 
-- **Framework**: Astro 5+ (static site generation)
-- **Documentation**: Starlight (integrated at `/docs/*`)
-- **UI Library**: React 19 (islands architecture)
-- **Styling**: Tailwind CSS v4 + basalt-ui preset
-- **Components**: ShadCN UI (copy-paste, not dependency)
-- **TypeScript**: Strict mode with React JSX
+- Render a basalt part with no `client:` directive. A part that needs one belongs in `src/islands/`:
+  `client:visible` below the fold, `client:idle` above it when not urgent, `client:load` only for
+  the first tap, `client:only="react"` only for a part that measures its box (a chart), with a
+  fallback of the same height.
+- One `BasaltProvider` per island, never around the page; parts that share state share an island.
+- A node passed to a part is a named slot (`<Fragment slot="meta">`), never JSX inside an object
+  prop: Astro hands that over as an Astro template and the build fails.
+- Keep every URL: the site is linked from npm, GitHub and search results.
+- `prefetch` stays off: Starlight would turn it on and put a module script on every page.
 
-## Validation & Development
+## Validate
 
 ```bash
-# Build & Verify
-bun run build            # Production build (astro build)
-bun run typecheck        # astro check; also part of the root `bun run typecheck` and so of `bun run pre` and CI. Needs the root `overrides` pin of @emnapi/runtime (bun otherwise pairs @astrojs/astro2tsx with @emnapi/runtime 2.0.0-beta.2 and astro check crashes)
-bun run preview          # Preview production build (optional)
-
-# Add ShadCN Component
-bunx shadcn@latest add [component-name]
-
-# Quality (run from monorepo root)
-bun run format           # Format all files (Biome + Prettier)
-bun run format:prettier  # Format only Astro files with Prettier
-bun run lint             # Lint all files with Biome
-bun run pre              # Full validation (format + lint + typecheck)
+bun run build                                  # astro build (needs packages/basalt-ui built first)
+bun run typecheck                              # astro check, also part of the root typecheck
+bun run measure -- --check [--browser]         # site-budgets.json: zero JS on static pages, island cost, CSS, LCP, CLS
 ```
 
-**Workflow:**
+`site-budgets.json` records the measured numbers as budgets; raise one only with the reason in the
+commit. CI runs the check on every pull request. The image builds `packages/basalt-ui` before the
+site (`Dockerfile`), so a workspace change carries its `COPY` edit.
 
-1. Make changes to components/pages
-2. Check `package.json` for validation commands
-3. Run `bun run pre` from root to validate everything
-4. Fix any errors in changed files only
-5. Commit with conventional format
+<!-- basalt:begin 2.29.0 -->
 
-**Note**: User runs `bun dev` manually for validation. Focus on type-checking and formatting.
+## basalt-ui (managed — do not hand-edit)
 
-## Integration with basalt-ui Package
+Placed by `basalt-ui init`, refreshed by `basalt-ui sync` (`--check` gates drift in CI); edit `DESIGN.md`, not this block.
 
-**Importing CSS in Workspace:**
+**Stack** (profile `site`): `tokens` is CSS only; `site` is `basalt-ui/static` parts rendered to static HTML with no client JavaScript, wired by `basalt-ui/astro`, with the lint preset and these rules; `bridge` adds Tailwind 4, `cn`, the lint preset and these rules; `parts` adds `basalt-ui/ui/*` and the page, card, control, table, chart and content composites; `app` adds `basalt-ui/shell` and the router. Colour is a `BASALT.*` token or a series colour, never a literal.
 
-```css
-/* src/styles/global.css */
-@import 'tailwindcss';
+**Precedence** (highest wins): consumer `DESIGN.md` > the five `basalt-v3-*` rules in `.claude/rules/` > the `basalt-v3-*` skills > the shadcn skill > global skills (`frontend-design`, `dataviz`). Each rule bullet ends in the lint id or type that holds it, or sits under `not guarded:`; skills are procedure, not law.
 
-/* Import basalt-ui tokens from workspace using relative path */
-@import '../../../../packages/basalt-ui/src/styles.css';
-```
+**Before guessing an import**, read `node_modules/basalt-ui/docs/<name>.md` (`basalt-ui doctor` prints where it is installed). Primitives are `node_modules/basalt-ui/src/ui/<name>.tsx`, or `src/components/ui` once ejected. A missing export is a recipe in `docs/recipes/`.
 
-**Why relative path?**
-In Bun workspaces, CSS imports from workspace packages work best with relative paths. When publishing to npm, consumers can use `import "basalt-ui/css"`, but within the monorepo, relative paths are more reliable.
+**Which form answers the question** (the shipped surface; compose it, never rebuild it):
 
-**What You Get:**
+| Question                    | Form                                  |
+| --------------------------- | ------------------------------------- |
+| One number and how it moves | `StatCard`, `StatGroup`               |
+| A value over time           | `Lines`, `Sparkline` in a `ChartCard` |
+| Compare or rank categories  | `Bars`, `BarList`                     |
+| Many records with columns   | `DataTable`                           |
+| One record's detail         | `PageAside`, `SplitPage`              |
+| Narrow the data             | `FilterSet`, `ViewTabs`               |
+| Stages of work              | `KanbanCard`                          |
+| Prose, markdown, code       | `Markdown`, `CodeBlock`               |
 
-- Tailwind v4 base styles
-- Light/dark theme CSS variables
-- Color tokens (background, foreground, primary, muted, border, ring)
-- Typography scale
-- Border radius tokens
+**Skills and subagent** (installed in `.claude/`; invoke by name):
 
-**Workspace Dependency:**
+- `/basalt-v3-design`: build or restyle a screen: question first, then the form, then the marks, then a look at 1800 and 390 wide. Reads `DESIGN.md`; its Direction is never yours to write.
+- `/basalt-v3-app`: set up, upgrade or migrate the app (`init`, `doctor`, `sync`).
+- `basalt-design-reviewer` (subagent): scores a `basalt-ui shot` out dir per component; run it after every round, never on your own work. Without it, say "reviewer not run".
 
-```json
-{
-  "dependencies": {
-    "basalt-ui": "workspace:*"
-  }
-}
-```
+**Run the local bin** (`./node_modules/.bin/basalt-ui` or a package script), never `bunx`, `init` included: install `basalt-ui` first, then run `init` once from the local bin. In a workspace: the app package's `node_modules/.bin/basalt-ui`. Run the repo gate before reporting done.
 
-## Critical Gotchas
+**Never `shadcn add` a primitive basalt ships.** Eject it (`basalt-ui eject <name> --reason`) to change it.
 
-**Framework:**
+**Overrides.** Restraint over "bold aesthetic direction" (`frontend-design`): neutral by default, the single accent spent only when earned. Basalt charts over `dataviz`: compose `CartesianChart` or a shipped kind.
 
-- ❌ DON'T use `@astrojs/tailwind` (deprecated for Tailwind v4)
-- ✅ DO use `@tailwindcss/vite` plugin
-
-**React Islands:**
-
-- ❌ DON'T forget `client:load` on interactive components
-- ✅ DO add hydration directive explicitly
-
-**Imports:**
-
-- ❌ DON'T mix path styles: `../components` vs `@/components`
-- ✅ DO use `@/` prefix consistently
-
-**Exports:**
-
-- ❌ DON'T use default exports
-- ✅ DO use named exports only
-
-**Formatting + Linting:**
-
-- `.astro` files are formatted by **Prettier** (better Astro support + Tailwind sorting)
-- `.ts/.tsx` files are formatted by **Biome** (25x faster)
-- All files are linted by **Biome**
-- Prettier plugin automatically sorts Tailwind classes in Astro files
-- Biome has relaxed rules for Astro files (`noUnusedVariables`: off, `noUnusedImports`: off)
-- Reason: Biome doesn't understand Astro template syntax, causes false positives
-- See root `AGENTS.md` for full hybrid tooling strategy
-
-## Branches
-
-- Before changing a page, layout or component under `src/`, Read `docs/agents/marketing-astro.md`: the project structure, the component and styling conventions, the architecture decisions.
-- Before changing anything under `src/components/tremor/`, `src/lib/chartUtils.ts` or a chart in an `.astro` page, Read `docs/agents/marketing-tremor.md`.
-- Before adding or editing a doc under `src/content/docs/` or `astro.config.mjs`, Read `docs/agents/marketing-starlight.md`.
+<!-- basalt:end -->

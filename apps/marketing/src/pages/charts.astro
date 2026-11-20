@@ -1,130 +1,33 @@
 ---
-import { Card } from '@/components/ui/card';
-import Layout from '@/layouts/Layout.astro';
-import { AreaChart } from '@/components/tremor/AreaChart';
+import { SiteArticle, SiteCallout } from 'basalt-ui/static'
+import Layout from '../layouts/Layout.astro'
+import { DeploysChart } from '../islands/DeploysChart'
+import { LABELS } from '../lib/site'
 
-const chartData = [
-  { date: 'Jan', views: 2400 },
-  { date: 'Feb', views: 1398 },
-  { date: 'Mar', views: 9800 },
-  { date: 'Apr', views: 3908 },
-  { date: 'May', views: 4800 },
-  { date: 'Jun', views: 3800 },
-];
+const toc = [
+  { id: 'an-island', label: 'A chart is an island', level: 2 },
+  { id: 'the-ladder', label: 'The hydration ladder', level: 2 },
+]
 ---
 
-<Layout title="Charts - Basalt UI">
-  <main class="container mx-auto max-w-6xl p-8">
-    <h1 class="mb-2">Chart Components</h1>
-    <p class="text-muted-foreground mb-8">
-      Data visualization components powered by Tremor Raw and Recharts, styled with Basalt UI
-      tokens.
+<Layout title="Charts | Basalt UI" description="A basalt chart on a static page: one island, rendered on the client because a chart measures its box.">
+  <SiteArticle title="Charts" description="The one island on this site. Every other part on it is static HTML." toc={toc} tocLabel={LABELS.toc}>
+    <DeploysChart client:only="react">
+      <div slot="fallback" class="h-[25rem] rounded-card bg-card"></div>
+    </DeploysChart>
+    <h2 id="an-island">A chart is an island</h2>
+    <p>
+      A chart measures the box it draws in, so it renders in the browser: <code>client:only="react"</code>, with a fallback of the same height so nothing moves when it arrives. The React runtime ships once per page, however many islands share it.
     </p>
-
-    <section class="space-y-8">
-      <div>
-        <h2 class="mb-4">Area Chart</h2>
-        <Card>
-          <h3 class="text-h4 mb-4">Monthly Page Views</h3>
-          <div class="h-72">
-            <AreaChart
-              client:only="react"
-              data={chartData}
-              index="date"
-              categories={['views']}
-              colors={['blue']}
-            />
-          </div>
-        </Card>
-      </div>
-
-      <div>
-        <h2 class="mb-4">Multi-Series Area Chart</h2>
-        <Card>
-          <h3 class="text-h4 mb-4">Product Sales Comparison</h3>
-          <div class="h-72">
-            <AreaChart
-              client:only="react"
-              data={[
-                { month: 'Jan', product1: 2890, product2: 2338 },
-                { month: 'Feb', product1: 2756, product2: 2103 },
-                { month: 'Mar', product1: 3322, product2: 2194 },
-                { month: 'Apr', product1: 3470, product2: 2108 },
-                { month: 'May', product1: 3475, product2: 1812 },
-                { month: 'Jun', product1: 3129, product2: 1726 },
-              ]}
-              index="month"
-              categories={['product1', 'product2']}
-              colors={['blue', 'emerald']}
-            />
-          </div>
-        </Card>
-      </div>
-
-      <div>
-        <h2 class="mb-4">Color Palette Examples</h2>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Card>
-            <h3 class="text-h5 mb-4">Blue (Primary)</h3>
-            <div class="h-48">
-              <AreaChart
-                client:only="react"
-                data={chartData}
-                index="date"
-                categories={['views']}
-                colors={['blue']}
-                showLegend={false}
-                showYAxis={false}
-              />
-            </div>
-          </Card>
-
-          <Card>
-            <h3 class="text-h5 mb-4">Green (Success)</h3>
-            <div class="h-48">
-              <AreaChart
-                client:only="react"
-                data={chartData}
-                index="date"
-                categories={['views']}
-                colors={['emerald']}
-                showLegend={false}
-                showYAxis={false}
-              />
-            </div>
-          </Card>
-
-          <Card>
-            <h3 class="text-h5 mb-4">Violet (Accent)</h3>
-            <div class="h-48">
-              <AreaChart
-                client:only="react"
-                data={chartData}
-                index="date"
-                categories={['views']}
-                colors={['violet']}
-                showLegend={false}
-                showYAxis={false}
-              />
-            </div>
-          </Card>
-
-          <Card>
-            <h3 class="text-h5 mb-4">Amber (Warning)</h3>
-            <div class="h-48">
-              <AreaChart
-                client:only="react"
-                data={chartData}
-                index="date"
-                categories={['views']}
-                colors={['amber']}
-                showLegend={false}
-                showYAxis={false}
-              />
-            </div>
-          </Card>
-        </div>
-      </div>
-    </section>
-  </main>
+    <SiteCallout tone="info" title="One provider per island">
+      A leaf like this chart needs no provider. An island that needs one wraps its own <code>BasaltProvider</code>; parts that must share state sit in the same island.
+    </SiteCallout>
+    <h2 id="the-ladder">The hydration ladder</h2>
+    <ul>
+      <li><code>client:visible</code> for a part below the fold.</li>
+      <li><code>client:idle</code> for a part above the fold that the reader does not need at once.</li>
+      <li><code>client:load</code> only for a part that must answer the first tap.</li>
+      <li><code>client:only="react"</code> only for a part that measures its box, such as a chart.</li>
+    </ul>
+  </SiteArticle>
 </Layout>

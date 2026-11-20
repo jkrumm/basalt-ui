@@ -1,86 +1,69 @@
-import react from '@astrojs/react'
-import starlight from '@astrojs/starlight'
-import tailwindcss from '@tailwindcss/vite'
-import { defineConfig, fontProviders } from 'astro/config'
+import mdx from "@astrojs/mdx";
+import react from "@astrojs/react";
+import starlight from "@astrojs/starlight";
+import { basaltAstro } from "basalt-ui/astro";
+import { defineConfig } from "astro/config";
 
 export default defineConfig({
-  site: 'https://basalt-ui.com',
+  site: "https://basalt-ui.com",
   server: { port: 7711, host: false },
+  // Starlight turns prefetch on for every page, which puts a module script on pages that have no
+  // island. The site keeps its static pages at zero client JavaScript (site-budgets.json).
+  prefetch: false,
   integrations: [
     react(),
+    // Tailwind 4, basalt-ui/static.css, the three faces (Astro Fonts API) and the head scripts.
+    basaltAstro(),
     starlight({
-      title: 'Basalt UI',
-      description: 'Framework-agnostic Tailwind CSS design system with zinc-based colors',
-
-      // Sidebar navigation
+      title: "Basalt UI",
+      description:
+        "One look for dashboards, docs and content sites: React on Base UI and Tailwind 4.",
       sidebar: [
         {
-          label: 'Getting Started',
+          label: "Getting Started",
           items: [
-            { label: 'Introduction', slug: 'docs/introduction' },
-            { label: 'Installation', slug: 'docs/installation' },
+            { label: "Introduction", slug: "docs/introduction" },
+            { label: "Installation", slug: "docs/installation" },
           ],
         },
         {
-          label: 'Design Tokens',
+          label: "Design Tokens",
           items: [
-            { label: 'Colors', slug: 'docs/colors' },
-            { label: 'Typography', slug: 'docs/typography' },
-            { label: 'Spacing', slug: 'docs/spacing' },
+            { label: "Colors", slug: "docs/colors" },
+            { label: "Typography", slug: "docs/typography" },
+            { label: "Spacing", slug: "docs/spacing" },
           ],
         },
         {
-          label: 'Guides',
-          items: [{ label: 'Astro Font Optimization', slug: 'docs/astro-fonts' }],
+          label: "Guides",
+          items: [{ label: "Astro Font Optimization", slug: "docs/astro-fonts" }],
         },
       ],
-
-      social: [
-        {
-          label: 'GitHub',
-          icon: 'github',
-          href: 'https://github.com/jkrumm/basalt-ui',
-        },
-      ],
-
-      // Frozen vendored copy of basalt-ui 0.4.x Starlight CSS — pending the Mantine rebuild
-      // All Starlight CSS variable mappings defined in ./src/styles/basalt/index.css
-      customCss: ['./src/styles/basalt/starlight.css'],
-
+      social: [{ label: "GitHub", icon: "github", href: "https://github.com/jkrumm/basalt-ui" }],
+      // Starlight's theme variables read basalt's tokens; one scheme store for docs and site.
+      customCss: ["basalt-ui/starlight.css"],
       expressiveCode: {
-        themes: ['github-dark', 'github-light'],
+        themes: ["github-dark", "github-light"],
+        // basalt's scheme: data-theme for an explicit choice, the system scheme when it is absent.
+        useStarlightDarkModeSwitch: false,
+        useDarkModeMediaQuery: true,
+        themeCssSelector: (theme) => `[data-theme='${theme.type}']`,
       },
-
       components: {
-        Head: './src/components/starlight/Head.astro',
+        Head: "./src/components/starlight/Head.astro",
+        ThemeProvider: "./src/components/starlight/ThemeProvider.astro",
+        ThemeSelect: "./src/components/starlight/ThemeSelect.astro",
       },
     }),
-  ],
-  fonts: [
-    {
-      provider: fontProviders.fontsource(),
-      name: 'Instrument Sans',
-      cssVariable: '--font-instrument-sans',
-      weights: [400, 500, 600, 700],
-      styles: ['normal'],
-    },
-    {
-      provider: fontProviders.fontsource(),
-      name: 'JetBrains Mono',
-      cssVariable: '--font-jetbrains-mono',
-      weights: [400, 500, 700],
-      styles: ['normal'],
-    },
+    // After starlight(): Starlight sees it and skips its own mdx({ optimize: true }), whose optimize
+    // compiles plain elements to HTML strings so the guides' siteMdxComponents overrides (h2, a, table,
+    // pre) never run; and Starlight's expressive-code integration still lands before it.
+    mdx(),
   ],
   vite: {
-    plugins: [tailwindcss()],
     // Both doors: the local *.test vhost and the mini's clean tailnet door.
     // Caddy passes the original Host through, so an unlisted name is a 403,
     // not a fallback — see dotfiles/scripts/caddy-tailnet.sh.
-    server: { allowedHosts: ['basalt.test', 'basalt.mini.jkrumm.com'] },
-    // Astro 6 + Starlight prefetch bug (withastro/astro#15520, #15836): Vite's dep optimizer
-    // pre-bundles prefetch.js via esbuild, skipping the prefetch plugin's transform hook, so
-    // __PREFETCH_PREFETCH_ALL__ reaches the browser raw. Exclude it until the upstream fix ships.
-    optimizeDeps: { exclude: ['astro/virtual-modules/prefetch.js'] },
+    server: { allowedHosts: ["basalt.test", "basalt.mini.jkrumm.com"] },
   },
-})
+});

@@ -3,8 +3,6 @@ title: Astro Font Optimization
 description: Eliminate font flickering in Astro projects using the Astro 6 Fonts API
 ---
 
-# Astro Font Optimization
-
 Basalt UI ships `@fontsource-variable` packages as peer dependencies so fonts
 work in any framework. In Astro apps you can go further: the **Astro 6 Fonts
 API** downloads fonts at build time, serves them from `/_astro/fonts/` with
@@ -30,26 +28,26 @@ npx @astrojs/upgrade
 ### 2. Configure `astro.config.mjs`
 
 ```js
-import { defineConfig, fontProviders } from 'astro/config'
+import { defineConfig, fontProviders } from "astro/config";
 
 export default defineConfig({
   fonts: [
     {
       provider: fontProviders.fontsource(),
-      name: 'Instrument Sans', // Fontsource registry name, not the CSS font-family
-      cssVariable: '--font-instrument-sans',
+      name: "Instrument Sans", // Fontsource registry name, not the CSS font-family
+      cssVariable: "--font-instrument-sans",
       weights: [400, 500, 600, 700],
-      styles: ['normal'],
+      styles: ["normal"],
     },
     {
       provider: fontProviders.fontsource(),
-      name: 'JetBrains Mono', // Fontsource registry name
-      cssVariable: '--font-jetbrains-mono',
+      name: "JetBrains Mono", // Fontsource registry name
+      cssVariable: "--font-jetbrains-mono",
       weights: [400, 500, 700],
-      styles: ['normal'],
+      styles: ["normal"],
     },
   ],
-})
+});
 ```
 
 `fontProviders.fontsource()` fetches font files from the Fontsource registry
@@ -85,8 +83,8 @@ them to the tokens:
 
 ```css
 @theme inline {
-  --font-sans: var(--font-instrument-sans, 'Instrument Sans Variable', sans-serif);
-  --font-mono: var(--font-jetbrains-mono, 'JetBrains Mono Variable', monospace);
+  --font-sans: var(--font-instrument-sans, "Instrument Sans Variable", sans-serif);
+  --font-mono: var(--font-jetbrains-mono, "JetBrains Mono Variable", monospace);
 }
 ```
 
@@ -117,21 +115,21 @@ bun add -D fontaine
 
 ```js
 // astro.config.mjs
-import { FontaineTransform } from 'fontaine'
+import { FontaineTransform } from "fontaine";
 
 export default defineConfig({
   vite: {
     plugins: [
       FontaineTransform.vite({
         fallbacks: {
-          'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Arial'],
-          'JetBrains Mono Variable': ['Consolas', 'Menlo', 'Courier New'],
+          "Instrument Sans Variable": ["Helvetica Neue", "Segoe UI", "Arial"],
+          "JetBrains Mono Variable": ["Consolas", "Menlo", "Courier New"],
         },
         resolvePath: (id) => new URL(`../../node_modules/${id}`, import.meta.url),
       }),
     ],
   },
-})
+});
 ```
 
 ### Manual preload links

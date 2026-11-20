@@ -1,0 +1,49 @@
+{
+  "profile": "site",
+  "version": "2.29.0",
+  "roots": {
+    ".": "site"
+  },
+  "ejected": {},
+  "managed": {
+    ".claude/agents/basalt-design-reviewer.md": "5334e1c4a9c6d1125f1e381b02db27310106f6e8a51172917b71935db366094e",
+    "repo:.claude/rules/basalt-v3-charts.md": "acedbaeabc30862b931c49ad331b97bd049fd96a0c2d9b5151de5c2eca59ee88",
+    "repo:.claude/rules/basalt-v3-page.md": "d8831b8d1527cb669bd7072542370833e5332423028ab2f9fe04adb1eb2a1a54",
+    "repo:.claude/rules/basalt-v3-state.md": "9ef52a9fe323db97f4d2a28cf9e717e54d0416246faea23f95a8eff19767898f",
+    "repo:.claude/rules/basalt-v3-tokens.md": "1875d73281a4b9d2218c6f1ed503dc8cddbd0bae14afd1bd7e8893891a728720",
+    "repo:.claude/rules/basalt-v3-ui.md": "e7002cd86fc0571f7c3c29492f274dd1b8e65f77efd4c02ee7c1cd926de9e9c3",
+    "repo:.claude/skills/basalt-v3-app/references/live.md": "ca6d8624a0473ddddfb458282fad6bd52faab391552fef9555017abf9ab3135c",
+    "repo:.claude/skills/basalt-v3-app/references/migrate.md": "164826138518c52e06692ad251b831992158de7b0c9eeac8a0668ec11fae9864",
+    "repo:.claude/skills/basalt-v3-app/references/performance.md": "e6930ff6a2b7c389d152b80a417012fa7b7703db64ffa07356b57b15a83aeade",
+    "repo:.claude/skills/basalt-v3-app/references/recipes.md": "49e8036a8addf43a6024f4b8160f4f9a312c8d24cfe7b5084780325153b5dfbb",
+    "repo:.claude/skills/basalt-v3-app/references/testing.md": "925ac4088d6b8ba8d853059d27aba543aade7f807d55d3d923ca230d1158a8e4",
+    "repo:.claude/skills/basalt-v3-app/SKILL.md": "e638f28c96a025846ed8d0fcb7eb86dc4c03ca028081b289f4e25de49238437d",
+    "repo:.claude/skills/basalt-v3-charts/references/custom-marks.md": "f701ead00b8fefb7dde6a6d3d4d747589dcacf8705e3d283e81c746c4f7d5d24",
+    "repo:.claude/skills/basalt-v3-charts/references/linked-parts.md": "db2a6a838a37b61743c0c6413481d373a52dfdb3d045c246bcdeafae3b122597",
+    "repo:.claude/skills/basalt-v3-charts/SKILL.md": "6867b46cc84480d3f69493d34ce260d3c7683da928a08a517b19020438558d4e",
+    "repo:.claude/skills/basalt-v3-design/references/ai.md": "0e8ade9b7218d462f920124377d535644a005ce6332c9b7b2523485b04cc1bba",
+    "repo:.claude/skills/basalt-v3-design/references/anti-defaults.md": "134ded0315f53c80474513df1dbfa2ce48f39939f4ffe19c6aa6d930bdc0904c",
+    "repo:.claude/skills/basalt-v3-design/references/cards.md": "c2254c42cc95bdd1739f76a8ae611f30306e51b40dd55dc673e5ba74cb0216e8",
+    "repo:.claude/skills/basalt-v3-design/references/charts.md": "5d8edfcdf524cdfb4275a1113cbe3bd549e6d4c20b945cf4f16990112336ec01",
+    "repo:.claude/skills/basalt-v3-design/references/concept.md": "485d769c56d96147cb95c484ff45b59aec570b061404b13ab6cd5be43f42bf8b",
+    "repo:.claude/skills/basalt-v3-design/references/controls.md": "dbbc9c951b2e42935703b14f12b9d26a7977e059ddd73dcd937610b17f89fba0",
+    "repo:.claude/skills/basalt-v3-design/references/copy.md": "1b6a748ac6531a5fafec7f56703abc31a434e526920d3301da17f4105490ed88",
+    "repo:.claude/skills/basalt-v3-design/references/encoding.md": "47ecf91eeecc3d74375909bdb0131f10c8f89995a1deae4319b1d3173daf876c",
+    "repo:.claude/skills/basalt-v3-design/references/forms.md": "d4161509a01de507a25314a435e3d510b1008b509d7edf21f5f1498db5edb56a",
+    "repo:.claude/skills/basalt-v3-design/references/state.md": "234561d6a986805a0de347ca26a49c9a061baaa289187729ba75dbcb2961d732",
+    "repo:.claude/skills/basalt-v3-design/references/states.md": "4645eb90d931a6bc692474e6249cd4f7ecb6268651b966194fdd04e0a1ef51ca",
+    "repo:.claude/skills/basalt-v3-design/references/table.md": "494a944bc059cdf72461748ebec4821321c07ee34e361ad884b348c50c8f7b21",
+    "repo:.claude/skills/basalt-v3-design/SKILL.md": "819cac04e7401961f98c4e3313d1c867316adb7f4e1c9c9f313876056e763b89"
+  },
+  "deepRender": [],
+  "authoredContent": [],
+  "viewports": [],
+  "tokens": [
+    {
+      "out": "tokens.css",
+      "format": "css",
+      "flags": []
+    }
+  ],
+  "sibling": "basalt-v3-"
+}

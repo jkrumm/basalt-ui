@@ -1,0 +1,8 @@
+{
+  "ignorePatterns": [
+    ".basalt/**",
+    ".claude/**",
+    ".oxlintrc.basalt.json",
+    ".stylelintrc.basalt.json"
+  ]
+}

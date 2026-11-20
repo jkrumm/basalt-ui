@@ -1,0 +1,49 @@
+---
+title: Content sites on basalt
+description: Static parts for Astro pages, the same look as a basalt app, with no client JavaScript.
+---
+
+A content page is mostly text. It should load as text: HTML and CSS, no framework runtime, no hydration. The `site` profile gives an Astro page the same parts a basalt app uses, rendered on the server and shipped as markup.
+
+## Why static parts
+
+An Astro page renders a React component with no `client:` directive to HTML at build time. Nothing about it reaches the browser except the markup. That only holds when the component is a **pure function of its props**: no provider, no context, no hook.
+
+- The header, footer, callout and article frame are plain markup.
+- The menu is a native `popover`; the table of contents on a phone is a `<details>`.
+- The theme switch and the copy button share one inline script of about a kilobyte.
+
+### What a part never bakes in
+
+Every visible word and every accessible name is a prop. A site in German passes German labels; nothing in basalt says "Menu".
+
+## Setting it up
+
+1. Add the integration to `astro.config.mjs`.
+2. Import nothing else: the CSS, the fonts and the head script come with it.
+3. Render parts in `.astro` files without a client directive.
+
+| Part          | Script     | Platform feature               |
+| ------------- | ---------- | ------------------------------ |
+| SiteHeader    | none       | `popover`                      |
+| ThemeSwitch   | siteScript | `aria-pressed`                 |
+| SiteCodeBlock | siteScript | Clipboard API                  |
+| SiteArticle   | none       | `<details>`, container queries |
+
+> Raw Markdown is styled by element: this quote, the table above and the list below never pass through a basalt component.
+
+## Right to left
+
+Every spacing and border in the parts uses a logical property: `padding-inline-start`, never `padding-left`. A page with `dir="rtl"` mirrors without a second stylesheet.
+
+### Checked by lint
+
+The `site` lint preset rejects a physical left or right utility in a part or a page component.
+
+## Budget
+
+The parts ship no JavaScript of their own. The one script stays under 2 kB gzip, so a page keeps room for its own islands.
+
+<SiteCallout tone="info" title="Measured, not claimed">
+  `site-budgets.json` holds the numbers CI checks on every pull request: zero module JavaScript on a page without an island, the inline script, the CSS per page, LCP and CLS.
+</SiteCallout>

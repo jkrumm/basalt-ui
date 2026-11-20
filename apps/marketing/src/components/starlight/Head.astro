@@ -1,8 +1,7 @@
 ---
-import Default from '@astrojs/starlight/components/Head.astro';
-import { Font } from 'astro:assets';
+import Default from '@astrojs/starlight/components/Head.astro'
+import BasaltFonts from 'basalt-ui/astro/BasaltFonts.astro'
 ---
 
-<Default {...Astro.props}><slot /></Default>
-<Font cssVariable="--font-instrument-sans" preload />
-<Font cssVariable="--font-jetbrains-mono" preload />
+<Default><slot /></Default>
+<BasaltFonts />
