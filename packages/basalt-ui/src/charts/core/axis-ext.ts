@@ -264,6 +264,21 @@ function capValueMarks(
           { gap, obstacles: all },
         )
       }
+  // Last, row by row down from the edge under the caret: the first row clear of every box holds the
+  // value, so it is never dropped while the plot has a free row beneath its caret.
+  const rowStep = lineHeight(size) + INSIDE_PAD
+  for (let row = 0; row * rowStep < frame.height && pending.size > 0; row++)
+    land(
+      (side, m) =>
+        m.slot === undefined
+          ? {
+              x: m.f * frame.width,
+              y: rim(side) + (side === 'top' ? row : -row) * rowStep,
+              spots: [side === 'top' ? 'below' : 'above'],
+            }
+          : undefined,
+      { gap: INSIDE_PAD, obstacles: all },
+    )
   if (marks.length === 0) return []
   type Mark = (typeof marks)[number]
   return [
