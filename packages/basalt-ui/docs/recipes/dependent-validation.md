@@ -9,8 +9,9 @@ The async delta is two options on one field: `onDynamicAsync` and `onDynamicAsyn
 `onSubmitAsync: toSubmitErrors(save)` sends a server refusal to the field or to the form footer, and clears it on the next change. `useFormDraft` takes the same schema.
 
 ```tsx
-import { revalidateLogic, useForm } from '@tanstack/react-form'
+import { revalidateLogic } from '@tanstack/react-form'
 import { toSubmitErrors } from 'basalt-ui/controls'
+import { useAppForm } from 'basalt-ui/form'
 import { z } from 'zod'
 import type { RunValues } from './optimistic'
 
@@ -33,7 +34,7 @@ export function useRunForm(o: {
   defaultValues: RunValues
   save: (v: RunValues) => Promise<unknown>
 }) {
-  return useForm({
+  return useAppForm({
     defaultValues: o.defaultValues,
     validationLogic: revalidateLogic({ mode: 'submit', modeAfterSubmission: 'change' }),
     validators: { onDynamic: RunSchema, onSubmitAsync: toSubmitErrors(o.save) },
