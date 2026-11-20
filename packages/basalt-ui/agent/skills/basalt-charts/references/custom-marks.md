@@ -2,6 +2,8 @@
 
 A direct label on a custom mark is placed in plot pixels, never in data space with guessed `dx`/`dy`: `plot.x(value)` and `plot.y(value)` give a datum's px on the axis' own scale (time, log, a band key's centre), `chartLabels.place` puts each label on a free spot inside `{ width: plot.plotWidth, height: plot.plotHeight }` clear of the dots you pass as `obstacles`, and the engine `text` mark draws it at its datum with the placed `dx`/`dy`. Its `gap` clears the anchor's own dot, which is one of the obstacles. A label with no clear spot is dropped: the `summary` names what the chart could not.
 
+A custom `text` mark sets `fontSize` (`BASALT.text.micro`) and `fill` (`BASALT.ink`) itself: without them it draws about 15 px, larger than the chart's own labels (n66 .33).
+
 A mark you draw is judged as drawing, apart from whether the idea fits: rows, tracks and labels start on one shared x, every label fits its box at 1800 and 390 (none clipped, cut at the edge or hidden under a mark), marks of one class share one size, and pointing at a mark moves nothing on the page. n35's week track was the right form and the owner called its rendering poorly designed.
 
 A region the question asks about (a ride window, the senders to mute) is a zone, never a hand-drawn `rect`: `axis: 'x'` takes an x range (numbers, `Date`s or band keys), `y` bounds it, and `label` names it on the plot.
