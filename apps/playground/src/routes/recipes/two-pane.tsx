@@ -9,7 +9,7 @@ const BARS = seedBars()
 function TwoPaneRoute(): ReactElement {
   return (
     <Page area="recipe-two-pane">
-      <Section title="Price and momentum" summary="Hover either pane: the cursor follows in both">
+      <Section title="Two panes" summary="Hover either pane: the cursor follows in both">
         <TwoPane bars={BARS} />
       </Section>
     </Page>
