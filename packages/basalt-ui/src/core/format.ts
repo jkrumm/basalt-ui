@@ -25,7 +25,11 @@ export type CalendarDate = `${number}-${number}-${number}`
 /** A message: a literal, or a function of the formatter and its arguments. */
 export type Msg<A extends unknown[] = []> = string | ((f: Format, ...a: A) => string)
 
-export type DateStyle = 'short' | 'long' | 'month' | 'weekday'
+/** `short` `Sep 2, 2026`, `long` `September 2, 2026`, `month` `September 2026`, `weekday` `Wed`, `day` `Sep 2` (a day and month, no year). */
+export type DateStyle = 'short' | 'long' | 'month' | 'weekday' | 'day'
+
+/** `clock` `1:02:03`; `words` the two largest units in the locale's short names: `12 hr 30 min`. */
+export type DurationStyle = 'clock' | 'words'
 
 export interface Format {
   /** Grouped number in the locale. Non-finite prints an em dash. */
@@ -40,8 +44,11 @@ export interface Format {
   time(v: Date | number, o?: Intl.DateTimeFormatOptions): string
   /** `"3 hours ago"`. Pass `now` wherever the output must match between server and client. */
   relative(v: Date | number, now?: Date | number): string
-  /** Clock form of a span in milliseconds: `"1:02:03"`, `"04:12"`. */
-  duration(ms: number): string
+  /**
+   * A span in milliseconds. `clock` (default): `"1:02:03"`, `"04:12"`. `words`: the two largest
+   * units in the locale's short unit names, rounded at the smaller one: `"12 hr 30 min"`, `"2 days 4 hr"`, `"45 sec"`.
+   */
+  duration(ms: number, style?: DurationStyle): string
   plural(n: number): Intl.LDMLPluralRule
 }
 
@@ -62,6 +69,7 @@ const DATE_STYLES: Record<DateStyle, Intl.DateTimeFormatOptions> = {
   long: { day: 'numeric', month: 'long', year: 'numeric' },
   month: { month: 'long', year: 'numeric' },
   weekday: { weekday: 'short' },
+  day: { day: 'numeric', month: 'short' },
 }
 
 const DATE_TIME_STYLES: Record<'short' | 'long', Intl.DateTimeFormatOptions> = {
@@ -70,6 +78,42 @@ const DATE_TIME_STYLES: Record<'short' | 'long', Intl.DateTimeFormatOptions> = {
 }
 
 const TIME_STYLE: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit' }
+
+/** Largest first: the units a worded duration names, in seconds. */
+const DURATION_UNITS: readonly {
+  readonly unit: 'day' | 'hour' | 'minute' | 'second'
+  readonly s: number
+}[] = [
+  { unit: 'day', s: 86_400 },
+  { unit: 'hour', s: 3_600 },
+  { unit: 'minute', s: 60 },
+  { unit: 'second', s: 1 },
+]
+
+/**
+ * The two largest non-zero units of `total` seconds, rounded at the smaller one: 12:29:51 is 12 h
+ * 30 min, 59 min 50 s is 1 h. The second unit is left out when it rounds to zero.
+ */
+function durationParts(
+  total: number,
+): readonly { unit: (typeof DURATION_UNITS)[number]['unit']; n: number }[] {
+  const index = DURATION_UNITS.findIndex(({ s }) => total >= s)
+  const big = DURATION_UNITS[index]
+  if (big === undefined) return [{ unit: 'second', n: 0 }]
+  const small = DURATION_UNITS[index + 1]
+  if (small === undefined) return [{ unit: big.unit, n: total }]
+  const rounded = Math.round(total / small.s) * small.s
+  const larger = DURATION_UNITS[index - 1]
+  if (larger !== undefined && rounded >= larger.s) return durationParts(rounded)
+  const n = Math.floor(rounded / big.s)
+  const rest = Math.round((rounded - n * big.s) / small.s)
+  return rest === 0
+    ? [{ unit: big.unit, n }]
+    : [
+        { unit: big.unit, n },
+        { unit: small.unit, n: rest },
+      ]
+}
 
 const CALENDAR_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
@@ -207,9 +251,16 @@ export function createFormat(o: FormatOptions = {}): Format {
       return relatives.format((diff < 0 ? -1 : 1) * Math.round(magnitude / unit.ms), unit.unit)
     },
 
-    duration: (ms) => {
+    duration: (ms, style) => {
       if (!Number.isFinite(ms)) return NON_FINITE
       const total = Math.max(0, Math.round(ms / 1000))
+      if (style === 'words') {
+        return durationParts(total)
+          .map(({ unit, n }) =>
+            numberFormat({ style: 'unit', unit, unitDisplay: 'short' }).format(n),
+          )
+          .join(' ')
+      }
       const hours = Math.floor(total / 3600)
       const minutes = String(Math.floor((total % 3600) / 60)).padStart(2, '0')
       const seconds = String(total % 60).padStart(2, '0')
