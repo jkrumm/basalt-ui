@@ -67,7 +67,7 @@ plugin, no marketplace and no second version to track. `init` writes at the git 
 - the profile's peers at exact pins (stylelint and postcss-html; `site` and above add oxlint and `@shadcn/lint`), installed with the lockfile's package manager (`--no-install` prints the command instead)
 - above `tokens`: `.claude/rules/basalt-*.md`, `.claude/skills/basalt-*`, the managed `<!-- basalt:begin/end -->` block in `AGENTS.md`, and a thin `DESIGN.md` seed when no declared root has one
 - `.basalt/budget.json` (the seeded ceilings) and the formatter ignore for the managed paths
-- `site` (static pages on Astro) writes no router scaffold and no Vite patch: `init` prints the `basalt()` line for `astro.config` from `basalt-ui/astro` and the tokens stylesheet import
+- `site` (static pages on Astro) writes no router scaffold and no Vite patch: `init` prints the `basaltAstro()` line for `astro.config` from `basalt-ui/astro` and the tokens stylesheet import
 - with `app`, the router scaffold (the files in the tree below), each written once and never touched by `sync`; a `main.tsx` that is create-vite's stock entry is replaced, any other entry gets the template's lines printed
 - `.basalt/sources.css` in the `.gitignore` beside the Vite config (once; `basalt()` regenerates the file on every run, and `doctor` reports it when git tracks it)
 - in a stock Vite config, `tanstackRouter(...)` and `basalt()` in `plugins`; in a stock stylesheet entry (`index.css`), the `tailwindcss` import becomes `@import 'basalt-ui/tailwind.css'`, the app's `tokens.css` when the `tokens:css` output exists, and `.basalt/sources.css`; any other shape gets the exact lines printed

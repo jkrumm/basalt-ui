@@ -19,13 +19,8 @@ export function tocEntries(entries: readonly TocEntry[], maxLevel = 3): TocEntry
 /**
  * An on-this-page list of in-page links, from entries the host already has (Astro's `headings`,
  * a remark plugin's output). Static: the browser's own anchor jump moves the reader, nothing
- * tracks the scroll.
- *
- * @useWhen an article or docs page with three or more sections needs a jump list
- * @neverWhen the page is an app screen (use `Toc` from `basalt-ui/page`, which tracks the scroll)
- *
- * @example
- * <SiteToc label="On this page" entries={headings.map((h) => ({ id: h.slug, label: h.text, level: h.depth }))} />
+ * tracks the scroll. Internal: `SiteArticle` renders it from its `toc` prop; it stays unexported until a
+ * page needs the list outside an article.
  */
 export function SiteToc({
   entries,

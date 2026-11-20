@@ -26,7 +26,7 @@ export type BasaltAstroIntegration = {
 }
 
 export type BasaltAstroOptions = {
-  /** Options of the no-flash scheme script (`basalt-ui/theme-script`). */
+  /** Scheme options (`basalt-ui/theme-script`): the boot script reads and the theme switch writes the same key, attribute and cookie. */
   scheme?: ThemeScriptOptions
   /**
    * Register basalt's faces with the Astro Fonts API (Fontsource provider). Default `true`; `false`
@@ -71,7 +71,7 @@ async function fromSite<T>(root: URL, specifier: string): Promise<T> {
 
 /** The head scripts, in order: the scheme first (before paint), then the parts' listeners. */
 function headScript(options: BasaltAstroOptions = {}): string {
-  return `${themeScript(options.scheme)};${siteScript()}`
+  return `${themeScript(options.scheme)};${siteScript(options.scheme)}`
 }
 
 /**
