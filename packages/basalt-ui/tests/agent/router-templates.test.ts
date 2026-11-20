@@ -34,7 +34,7 @@ const START_VITE =
 const filled = (tpl: string): string =>
   readFileSync(join(pkgRoot, 'agent/templates', tpl), 'utf8')
     .replaceAll('{{APP_NAME}}', 'Scratch')
-    .replaceAll('{{CSS_ENTRY}}', 'index.css')
+    .replaceAll('{{CSS_ENTRY}}', '../index.css')
 
 /** What `init --start` writes instead of `main` and `root`: the Start host seeds. */
 const START_SEEDS = {

@@ -98,10 +98,12 @@ function seedPlan(appRel: string, start: boolean): [string, string, string][] {
   return [...seeds, ['router', router, START_SEED_TEMPLATES.router]]
 }
 
-/** The stylesheet the Start root route links: the app's existing entry, else `index.css` (`wireApp` writes it). */
+/** The stylesheet the Start root route links, as an import path from `src/routes`: the app's entry in `src` or at its root, else `src/index.css` (`wireApp` writes it). */
 function cssEntry(ctx: Ctx, appRel: string): string {
-  const found = CSS_ENTRIES.find((f) => readIfExists(resolve(ctx.root, appRel, 'src', f)) !== null)
-  return found ?? 'index.css'
+  const inSrc = CSS_ENTRIES.find((f) => readIfExists(resolve(ctx.root, appRel, 'src', f)) !== null)
+  if (inSrc !== undefined) return `../${inSrc}`
+  const atRoot = CSS_ENTRIES.find((f) => readIfExists(resolve(ctx.root, appRel, f)) !== null)
+  return atRoot === undefined ? '../index.css' : `../../${atRoot}`
 }
 
 /** A Start host: the files create-vite or a Start starter leaves that nothing mounts, and the dependency the app owns. */
