@@ -31,36 +31,6 @@ export const FINDINGS: readonly Finding[] = [
     row: 'astro-chart-server-picture',
   },
   {
-    parts: ['article-layout'],
-    cause:
-      "The table of contents is placed by a size measured in the browser: the server renders the compact 'On this page' pill, the hydrated page the side column at 1440, 24 px taller and a layout shift of 0.03 on hydrate. A container query can place it with no JavaScript.",
-    row: 'astro-measured-layouts',
-  },
-  {
-    parts: ['data-panel'],
-    cause:
-      'At 390 the hydrated panel grows from 244 to 516 px: its height follows a size measured in the browser, which the server picture cannot know.',
-    row: 'astro-measured-layouts',
-  },
-  {
-    parts: ['resizable'],
-    cause:
-      'Panel sizes are applied by react-resizable-panels after mount: the server HTML lays the panels out at their content width, 106 px tall against 46 px hydrated. The default sizes can be in the server HTML as flex bases.',
-    row: 'astro-measured-layouts',
-  },
-  {
-    parts: ['virtual-list'],
-    cause:
-      'The virtualizer renders no row until it has measured its scroll element, so the static page shows an empty list. Seeded with an initial rect (TanStack Virtual `initialRect`), the server renders the first window.',
-    row: 'astro-measured-layouts',
-  },
-  {
-    parts: ['segmented'],
-    cause:
-      'The selected indicator is placed from a rect measured after mount; one pixel column of its edge differs (0.1%). CSS can place it from the selected item.',
-    row: 'astro-measured-layouts',
-  },
-  {
     parts: ['code-block', 'markdown'],
     cause:
       'Shiki highlights in the browser after mount: the static page shows the code uncoloured (1 to 5% of pixels). Highlighted on the server, a static page ships coloured code with no JavaScript, and the copy button is the one thing left for an island.',

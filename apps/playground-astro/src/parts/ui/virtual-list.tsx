@@ -13,6 +13,7 @@ export function Demo(): ReactElement {
       className="max-h-96 max-w-md"
       count={ROWS.length}
       estimateSize={() => 44}
+      initialHeight={384}
       getItemKey={(index) => ROWS[index]?.id ?? index}
     >
       {(items) =>
