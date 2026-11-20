@@ -920,3 +920,96 @@ describe('init: the router scaffold', () => {
     expect(read(dir, 'src/routes/_app.tsx')).toContain("name: 'it\\'s $&-app'")
   })
 })
+
+describe('init --start: the TanStack Start host', () => {
+  const startApp = (extra: Record<string, string> = {}): string =>
+    repo({
+      'package.json': JSON.stringify({
+        name: 'fixture',
+        dependencies: { '@tanstack/react-start': '1.169.7' },
+      }),
+      'vite.config.ts':
+        "import { defineConfig } from 'vite'\nimport viteReact from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [viteReact()],\n})\n",
+      ...extra,
+    })
+
+  it('writes the Start seeds, no main.tsx, and puts tanstackStart() before the React plugin', async () => {
+    const dir = startApp()
+    const { code } = await runInit(['--profile', 'app', '--start', '--root', 'src'], dir)
+    expect(code).toBe(0)
+    expect(read(dir, 'src/routes/__root.tsx')).toBe(
+      template('__root.start.tpl').replace('{{CSS_ENTRY}}', 'index.css'),
+    )
+    expect(read(dir, 'src/router.tsx')).toBe(template('router.start.tpl'))
+    const shared = {
+      'src/routes/_app.tsx': '_app.tpl',
+      'src/lib/nav.tsx': 'nav.tpl',
+      'src/components/route-pending.tsx': '_app-pending.tpl',
+      'src/components/route-error.tsx': '_app-error.tpl',
+      'src/components/route-missing.tsx': '_app-missing.tpl',
+    }
+    for (const [path, tpl] of Object.entries(shared)) expect(read(dir, path)).toBe(template(tpl))
+    expect(existsSync(join(dir, 'src/main.tsx'))).toBe(false)
+    const vite = read(dir, 'vite.config.ts')
+    expect(vite).toContain("import { tanstackStart } from '@tanstack/react-start/plugin/vite'")
+    expect(vite).toContain(
+      'tanstackStart({ router: { autoCodeSplitting: true } }), viteReact(), tailwindcss(), basalt()',
+    )
+    expect(vite).not.toContain('tanstackRouter')
+  })
+
+  it('writes src/index.css as the one stylesheet entry when the app has none, and keeps it on a re-run', async () => {
+    const dir = startApp()
+    await runInit(['--profile', 'app', '--start', '--root', 'src'], dir)
+    const css = read(dir, 'src/index.css')
+    expect(css).toContain("@import 'basalt-ui/tailwind.css';")
+    expect(css).toContain('.basalt/sources.css')
+    const first = snapshot(dir)
+    await runInit(['--profile', 'app', '--start', '--root', 'src'], dir)
+    expect(snapshot(dir)).toEqual(first)
+  })
+
+  it('links the stylesheet the app already has', async () => {
+    const dir = startApp({ 'src/styles.css': "@import 'tailwindcss';\n" })
+    await runInit(['--profile', 'app', '--start', '--root', 'src'], dir)
+    expect(read(dir, 'src/routes/__root.tsx')).toContain("from '../styles.css?url'")
+  })
+
+  it('says what is left: the dependency the app owns, the files Start replaces, the first route tree', async () => {
+    const dir = repo({
+      'vite.config.ts': 'export default defineConfig(() => ({}))\n',
+      'index.html': '<div id="root"></div>\n',
+      'src/main.tsx': 'import "./x"\n',
+    })
+    const { code, log } = await runInit(['--profile', 'app', '--start', '--root', 'src'], dir)
+    expect(code).toBe(0)
+    expect(log).toContain('to do: add @tanstack/react-start')
+    expect(log).toContain('to do: delete index.html and src/main.tsx')
+    expect(log).toContain('to do: import { tanstackStart }')
+    expect(log).toContain('vite build')
+    expect(read(dir, 'src/main.tsx')).toBe('import "./x"\n')
+  })
+
+  it('installs nothing for @tanstack/react-start: the app owns it', async () => {
+    const dir = startApp()
+    const { commands } = await runInit(['--profile', 'app', '--start', '--root', 'src'], dir)
+    expect(commands.flat().join(' ')).not.toContain('react-start')
+  })
+
+  it('is refused below the app profile, and the flag is listed for the CLI dispatch', async () => {
+    const dir = repo()
+    const before = snapshot(dir)
+    const { code, log } = await runInit(['--profile', 'parts', '--start'], dir)
+    expect(code).toBe(1)
+    expect(log).toContain('--start needs --profile app')
+    expect(snapshot(dir)).toEqual(before)
+    expect(Object.keys(COMMAND_OPTIONS['init'] ?? {})).toContain('start')
+  })
+
+  it('leaves a Start app without the flag as it is: no seeds, the old hint', async () => {
+    const dir = startApp()
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(log).toContain('TanStack Start app')
+    expect(existsSync(join(dir, 'src/router.tsx'))).toBe(false)
+  })
+})

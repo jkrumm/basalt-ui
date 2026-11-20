@@ -20,6 +20,11 @@ export const VITE_DOC = `Usage (vite.config.ts):
   ./tokens.css is the app's own \`tokens:css --out\` output; it follows tailwind.css so a retune wins.
   Without a retune, leave it out. The sources path is relative to this file and ends at the Vite root.
 
+  TanStack Start host (\`init --profile app --start\`): the router plugin is Start's, first in the list, before the React plugin.
+  export default { plugins: [tanstackStart({ router: { autoCodeSplitting: true } }), viteReact(), tailwindcss(), basalt()] }
+  There is no index.html: the root route's shellComponent is the document, and \`basalt()\` has nothing to inject into, so the
+  scheme script runs from the root route (\`ScriptOnce\` with \`themeScript()\` from \`basalt-ui/theme-script\`).
+
 At buildStart, in dev and in every build (deploy builds run where CI does not), basalt() fails
 naming the one command that fixes it:
   missing peer      an imported subpath (or a primitive or composite it reaches) needs a peer

@@ -3,7 +3,8 @@
  * _app-pending,_app-error,_app-missing}.tpl`): each seed goes to its destination once, when nothing
  * is there, and is the consumer's from then on (`sync` never reads them). A create-vite `main.tsx`
  * is the one existing file replaced; any other existing entry is left and the template's lines are
- * printed. A Start app, a code-routed app and `basalt.shell: false` get none.
+ * printed. A Start app (without `--start`), a code-routed app and `basalt.shell: false` get none;
+ * with `--start` the app gets the Start host seeds (`__root.start.tpl`, `router.start.tpl`) and no `main.tsx`.
  */
 import { rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -16,11 +17,13 @@ import {
   routerSeedSkip,
   SHELL_LESS_NOTE,
   START_PROVIDER_HINT,
+  START_ROUTER_DEST,
+  START_SEED_TEMPLATES,
 } from '../router-wiring'
 import type { RouterSeedSkip } from '../router-wiring'
-import { readIfExists, tokenize } from '../source-text'
+import { hasDependency, readIfExists, tokenize } from '../source-text'
 import type { Ctx } from './steps'
-import { appName, say, writeText } from './steps'
+import { appName, CSS_ENTRIES, say, writeText } from './steps'
 
 /** What create-vite's `src/main.tsx` is: renders `App`, mounts no router. */
 export function isStockViteMain(text: string): boolean {
@@ -80,6 +83,41 @@ const SKIP_NOTES: Record<NonNullable<RouterSeedSkip>, string> = {
   'shell-less': SHELL_LESS_NOTE,
 }
 
+/** The seeds to write: [id, dest, template]. A Start host swaps the root route and adds `router.tsx`; it has no `main`. */
+function seedPlan(appRel: string, start: boolean): [string, string, string][] {
+  const seeds = Object.entries(ROUTER_SEED_TEMPLATES).flatMap(
+    ([seed, tpl]): [string, string, string][] => {
+      const id = seed as keyof typeof ROUTER_SEED_TEMPLATES
+      if (start && id === 'main') return []
+      const template = start && id === 'root' ? START_SEED_TEMPLATES.root : tpl
+      return [[seed, routerSeedDest(appRel, id), template]]
+    },
+  )
+  if (!start) return seeds
+  const router = appRel === '' ? START_ROUTER_DEST : `${appRel}/${START_ROUTER_DEST}`
+  return [...seeds, ['router', router, START_SEED_TEMPLATES.router]]
+}
+
+/** The stylesheet the Start root route links: the app's existing entry, else `index.css` (`wireApp` writes it). */
+function cssEntry(ctx: Ctx, appRel: string): string {
+  const found = CSS_ENTRIES.find((f) => readIfExists(resolve(ctx.root, appRel, 'src', f)) !== null)
+  return found ?? 'index.css'
+}
+
+/** A Start host: the files create-vite or a Start starter leaves that nothing mounts, and the dependency the app owns. */
+function startTodos(ctx: Ctx, app: { dir: string; rel: string }): void {
+  if (!hasDependency(app.dir, '@tanstack/react-start')) {
+    ctx.todo.push('add @tanstack/react-start (the app owns it; it needs vite >= 8)')
+  }
+  const left = ['index.html', 'src/main.tsx']
+    .map((f) => (app.rel === '' ? f : `${app.rel}/${f}`))
+    .filter((f) => readIfExists(resolve(ctx.root, f)) !== null)
+  if (left.length > 0) {
+    ctx.todo.push(`delete ${left.join(' and ')}: Start owns the document and the entry`)
+  }
+  ctx.todo.push('run `vite build` once to write src/routeTree.gen.ts, the first route tree')
+}
+
 /**
  * Writes the router seeds of an `app` install and records on `ctx.routerPlugin` whether the app is
  * file-routed (the Vite plugin step reads it). Runs before the Vite patch: that patch registers
@@ -90,21 +128,28 @@ export function placeRouterSeeds(ctx: Ctx): void {
   const app = resolveAppDir(ctx.root)
   if ('error' in app) return void ctx.problems.push(app.error)
 
-  const skip =
-    routerSeedSkip(ctx.root, app.rel) ??
-    (readBasaltConfig(app.dir).shell === false ? 'shell-less' : null)
-  ctx.routerPlugin = skip === null || skip === 'shell-less'
+  const start = ctx.args.start
+  const shellLess = readBasaltConfig(app.dir).shell === false
+  const skip = start
+    ? shellLess
+      ? 'shell-less'
+      : null
+    : (routerSeedSkip(ctx.root, app.rel) ?? (shellLess ? 'shell-less' : null))
+  // A Start host registers `tanstackStart()`, which owns the route tree: never `tanstackRouter()`.
+  ctx.routerPlugin = !start && (skip === null || skip === 'shell-less')
+  if (start) startTodos(ctx, app)
   if (skip !== null) return say(`skipped the router seeds: ${SKIP_NOTES[skip]}`)
 
   const name = appName(ctx.root).replace(/[\\']/g, '\\$&')
-  for (const [seed, tpl] of Object.entries(ROUTER_SEED_TEMPLATES)) {
-    const dest = routerSeedDest(app.rel, seed as keyof typeof ROUTER_SEED_TEMPLATES)
+  for (const [seed, dest, tpl] of seedPlan(app.rel, start)) {
     const template = readIfExists(resolve(ctx.pkgRoot, 'agent/templates', tpl))
     if (template === null) {
       ctx.problems.push(`${ctx.pkgRoot} ships no ${tpl}`)
       continue
     }
-    const text = template.replaceAll('{{APP_NAME}}', () => name)
+    const text = template
+      .replaceAll('{{APP_NAME}}', () => name)
+      .replaceAll('{{CSS_ENTRY}}', () => cssEntry(ctx, app.rel))
     const existing = readIfExists(resolve(ctx.root, dest))
     if (existing === null) {
       writeText(ctx.root, dest, text)
