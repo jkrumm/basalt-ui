@@ -125,10 +125,61 @@ const labelStyle: CSSProperties = { minWidth: 0, overflow: 'hidden', textOverflo
  */
 export type SignedSeries<T> = ChartSeries<T> & { colorNegative?: string | undefined }
 
+/**
+ * A bar key that carries the mark its cells draw: `glyph` is the text (a `!`, a `×`) and `glyphInk` its
+ * colour on the swatch's own fill. Only `Heatmap`'s state keys set it, so a stated cell and its key match.
+ */
+export type GlyphKey = { glyph?: string | undefined; glyphInk?: string | undefined }
+
 type SwatchStyle = Pick<
   SignedSeries<never>,
   'color' | 'colorNegative' | 'mark' | 'dash' | 'strokeOpacity' | 'fillOpacity' | 'role'
->
+> &
+  GlyphKey
+
+/** A glyph key is a 12 px square (the heat cell's glyph floor) so the mark reads inside the fill. */
+const GLYPH_SWATCH_PX = 12
+
+/** A bar key with its glyph: the fill fades on its own layer, the glyph stays at full ink above it. */
+function GlyphSwatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement {
+  return (
+    <span
+      aria-hidden
+      className={mode === 'dots' ? classes.dot : classes.chip}
+      style={{
+        position: 'relative',
+        width: GLYPH_SWATCH_PX,
+        height: GLYPH_SWATCH_PX,
+        flex: 'none',
+      }}
+    >
+      <span
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: 2,
+          background: swatchFill(s),
+          opacity: s.fillOpacity ?? 1,
+        }}
+      />
+      <span
+        data-legend-glyph=""
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'grid',
+          placeItems: 'center',
+          fontSize: BASALT.text.micro,
+          fontWeight: 600,
+          lineHeight: 1,
+          color: s.glyphInk ?? CV.inkMuted,
+        }}
+      >
+        {s.glyph}
+      </span>
+    </span>
+  )
+}
 
 /** A swatch fill: the series colour, or a hard-stop split for a sign-coloured bar. */
 const swatchFill = (s: SwatchStyle): string =>
@@ -214,6 +265,7 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
         }}
       />
     )
+  if (s.glyph) return <GlyphSwatch s={s} mode={mode} />
   return (
     <span
       aria-hidden
@@ -264,7 +316,7 @@ export const isolatableKeys = <T,>(series: readonly ChartSeries<T>[]): string[] 
 const isolating = (e: MouseEvent): boolean => e.altKey || e.metaKey || e.ctrlKey || e.shiftKey
 
 export type ChartLegendProps<T> = {
-  series: readonly SignedSeries<T>[]
+  series: readonly (SignedSeries<T> & GlyphKey)[]
   hidden: ReadonlySet<string>
   mode: LegendMode
   groups: boolean
