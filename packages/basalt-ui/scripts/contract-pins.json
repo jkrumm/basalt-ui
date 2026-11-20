@@ -1,6 +1,6 @@
 {
   "packages/basalt-ui/scripts/export-surface/cards.json": "a2500acbf69785f4610043d63fbe9d1e2c25e65bb69df8564cd75a4bb2ff5afc",
-  "packages/basalt-ui/scripts/export-surface/charts.json": "48e061880ed61e809bcc32655a4ddc23fc317588ae00b5183e346381ba4519a4",
+  "packages/basalt-ui/scripts/export-surface/charts.json": "f519366e3aab46aa21ebb623da5cb21b416b690bb9db7615f0452ca5f82e00f9",
   "packages/basalt-ui/scripts/export-surface/content.json": "100a9771d0b107d4cc8baa346dd31bbaaa49cd38b02b9ef900750223e3e080eb",
   "packages/basalt-ui/scripts/export-surface/controls.json": "e0b29da7aa10b148bca9d63d50192b14442c35a769449608f0dfa83e4ee37fbc",
   "packages/basalt-ui/scripts/export-surface/data.json": "7a51ed563cd61af2abb38975490f55d3a9941ffbaa196ad010280949577961ae",
@@ -9,7 +9,7 @@
   "packages/basalt-ui/scripts/export-surface/table.json": "97b15c42818985343eaa1c3155e693601337ed2977e05cb3364bf81a44a9f269",
   "packages/basalt-ui/src/ai/contract.ts": "0b5edbbf9cefa4ac9e6f88ae72df3ed75a1af1e7ce19fc4e7460100f639d669c",
   "packages/basalt-ui/src/cards/contract.ts": "3e438a44118391cf885ec82dc19f3c1265ade94960938e6aa40af991eb3863c8",
-  "packages/basalt-ui/src/charts/contract.ts": "c35dfdf0c78d72c58abc43572d7ddfc01e6602a17bea309a9e907c2db7825114",
+  "packages/basalt-ui/src/charts/contract.ts": "94a1cb98dd64ce3a1a6748901638ac31c34abbd3676b5a8a6d5edec348ebdb3b",
   "packages/basalt-ui/src/content/contract.ts": "aac81048f2298c66dae01500513764ca0307d959bb3f0e94039fb11c663a32c8",
   "packages/basalt-ui/src/controls/contract.ts": "3a1ea086e12cb451c658114c26185a7e72a68dc20ea419782f850eaf73a329c9",
   "packages/basalt-ui/src/core/ports.ts": "c0c9aefae93c35bafbb75a5335e544c22156358ddc4fede035c7399002d89b96",
