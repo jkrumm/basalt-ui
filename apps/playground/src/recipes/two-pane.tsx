@@ -8,7 +8,7 @@ export const seedBars = (): Bar[] =>
   }))
 
 // #region recipe:two-pane
-import { ChartCard, ChartPanes, Lines } from 'basalt-ui/charts'
+import { ChartCard, Lines } from 'basalt-ui/charts'
 import type { SeriesColor } from 'basalt-ui/charts'
 export type Bar = { day: Date; close: number; momentum: number }
 export const GROUP = 'momentum' // one cursor group for both panes
@@ -38,9 +38,7 @@ export function TwoPane({ bars }: { bars: Bar[] }) {
     <ChartCard
       title="Price and momentum"
       height="tall"
-      chart={(box) => (
-        <ChartPanes box={box} panes={[{ weight: 2, chart: price }, { chart: momentum }]} />
-      )}
+      panes={[{ weight: 2, chart: price }, { chart: momentum }]}
     />
   )
 }
