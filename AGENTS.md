@@ -32,7 +32,7 @@ autonomously execute large roadmap phases.
 
 Before a consolidation PR (deleting or adopting exports) or touching the stack and structure, Read `docs/repo-reference.md`: adopt-or-delete, net-negative waves, one doctrine one home.
 
-Before changing anything under `packages/basalt-ui/`, Read `packages/basalt-ui/AGENTS.md`. Before changing anything under `apps/marketing/`, Read `apps/marketing/AGENTS.md`: its Biome and Prettier lines are stale, this file wins.
+Before changing anything under `packages/basalt-ui/`, Read `packages/basalt-ui/AGENTS.md`. Before changing anything under `apps/marketing/`, Read `apps/marketing/AGENTS.md`: the site profile's proof, its wiring and its budgets.
 
 ## Critical Rules (READ FIRST)
 
@@ -130,8 +130,6 @@ publishing is NOT a deploy — it is the release process (`make release`, below)
 - **`make verify` probes production; `make check` is the local gate.** They are not interchangeable:
   `verify` makes a network call and does not run the tests.
 - **The layout suite never runs in `pre`.** It runs in `make check`, and in part in `make check-fast`, on a headless shell in a host slot; details in `docs/validation.md`.
-- **`apps/marketing/AGENTS.md` describes the 1.x (Tailwind/Biome) era** and is stale; the
-  root + package conventions here are authoritative.
 - **Major lines** (what may ship as a major, and the commit footers that follow): see
   `packages/basalt-ui/MAINTAINING.md` § Major lines; the constants live in `scripts/release.sh`.
 - **A workspace-set change carries its `apps/marketing/Dockerfile` COPY edit** — the image copies each
