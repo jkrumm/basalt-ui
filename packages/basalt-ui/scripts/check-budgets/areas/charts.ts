@@ -65,7 +65,10 @@ export const rows: readonly RowDef[] = [
     // 128800 -> 129000 (Issue 2573): 128904 B measured, +~104 B gz over the cap for the single-series stack's
     // inside value and the captions placed again around a value label that landed on one, the kit fixes of
     // expression cycle 15.
-    ceiling: 129000,
+    // 129000 -> 132100 (Issue 2602): MEASURED B measured, +~3.1 KB gz for the label-width table the engine now
+    // measures its text with on the server and in the browser alike, so the server picture's gutters are the
+    // hydrated ones (Astro matrix) and a late webfont no longer re-lays the plot.
+    ceiling: 132100,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -88,6 +91,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 129000,
+      to: 132100,
+      consumer:
+        "the Astro matrix (Issue 2602): every engine-drawn kind's static HTML differed from its hydrated picture (Lines 3.1%, Bars 13%, Heatmap 26% of pixels at 1440), its gutters sized from text the server estimated and the browser measured; the engine now measures with the label-width table on both sides, so the picture is the same to the pixel. The kinds' value labels keep their glyph estimate; an axis gutter from it would run wide on words",
+      repo: 'basalt-ui',
+    },
     {
       from: 128800,
       to: 129000,

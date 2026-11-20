@@ -30,7 +30,7 @@ import { samePlots } from '../core/plot-context'
 import type { PlotSizes } from '../core/plot-context'
 import { ChartEngine, idPrefixOf } from '../host'
 import { ChartLegend, isolatableKeys, isolatedKeys, legendEntries, toggledKeys } from '../legend'
-import { INITIAL_WIDTH, useChartSize } from '../sizing'
+import { useChartSize, useServerFrame } from '../sizing'
 import { ChartPlaceholder, resolveChartState } from '../state'
 import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext } from '../types'
@@ -227,6 +227,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
   const height = props.height ?? (inCard ? 'fill' : undefined)
   const bare = useContext(VisualSlotContext) !== null
   const { ref, width: measured, coarse } = useChartSize()
+  const serverFrame = useServerFrame()
   const [ownHidden, setOwnHidden] = useState<ReadonlySet<string>>(() => new Set())
   // A card's legend hides series too: the chart reads one set, its own toggles and the card's.
   const cardHidden = useCardHidden()
@@ -450,7 +451,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       if (s.mark === 'dot' && s.spread !== undefined) out.set(s.key, s.spread)
     return out
   }, [stable.series])
-  const width = measured || INITIAL_WIDTH
+  const width = measured || serverFrame.width
   const definition = useMemo(() => {
     const compiled = compileCartesian<D, ChartX>({
       ...spec,

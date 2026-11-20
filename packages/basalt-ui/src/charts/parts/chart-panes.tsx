@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import type { Box, BoxSlot } from '../../core/ports'
 import type { ChartPane } from '../contract'
+import { ServerFrameContext, useServerFrame } from '../sizing'
 
 /** Calls a pane's slot as a component, so a throw lands in the card's boundary and hooks keep their order. */
 function PaneSlot({ chart, phase }: { chart: BoxSlot; phase: Box['phase'] }): ReactNode {
@@ -23,6 +24,17 @@ export function ChartPanes({
   box: Box
   panes: readonly ChartPane[]
 }): ReactElement {
+  const frame = useServerFrame()
+  // Each pane's share of the box, the height its server picture is drawn at (4 px gaps between).
+  const outer = box.height === 'fill' ? frame.height : box.height
+  const total = panes.reduce((sum, pane) => sum + shareOf(pane.weight), 0)
+  const paneFrame = (weight: number | undefined): typeof frame =>
+    outer === undefined || total === 0
+      ? { width: frame.width }
+      : {
+          width: frame.width,
+          height: (Math.max(0, outer - 4 * (panes.length - 1)) * shareOf(weight)) / total,
+        }
   const style: CSSProperties | undefined =
     box.height === 'fill' ? undefined : { height: `${Math.max(0, box.height)}px` }
   return (
@@ -41,7 +53,9 @@ export function ChartPanes({
           className="min-h-0 min-w-0 basis-0 [&>[data-basalt-chart]]:h-full"
           style={{ flexGrow: shareOf(pane.weight) }}
         >
-          <PaneSlot chart={pane.chart} phase={box.phase} />
+          <ServerFrameContext value={paneFrame(pane.weight)}>
+            <PaneSlot chart={pane.chart} phase={box.phase} />
+          </ServerFrameContext>
         </div>
       ))}
     </div>
