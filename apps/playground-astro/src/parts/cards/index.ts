@@ -1,0 +1,77 @@
+import type { PartEntry } from '../types'
+
+/** The cards family: one entry per demo module in this folder. */
+export const PARTS: readonly PartEntry[] = [
+  {
+    id: 'stat-card',
+    family: 'cards',
+    module: 'cards/stat-card',
+    covers: ['StatCard'],
+    interaction: 'none',
+    why: 'figure, delta, verdict and sparkline are all drawn at rest',
+  },
+  {
+    id: 'stat-group',
+    family: 'cards',
+    module: 'cards/stat-group',
+    covers: ['StatGroup', 'StatCell'],
+    interaction: 'none',
+    why: 'figures, deltas and sparklines are drawn at rest; the chart sits in its box',
+  },
+  {
+    id: 'bar-list',
+    family: 'cards',
+    module: 'cards/bar-list',
+    covers: ['BarList'],
+    interaction: 'none',
+    why: 'the ranked bars are the picture; rows are plain text without a link',
+  },
+  {
+    id: 'chain-view',
+    family: 'cards',
+    module: 'cards/chain-view',
+    covers: ['ChainView'],
+    interaction: 'enhance',
+    why: 'pan, zoom and trace focus need JS; the laid-out graph is the static picture',
+  },
+  {
+    id: 'data-panel',
+    family: 'cards',
+    module: 'cards/data-panel',
+    covers: ['DataPanel'],
+    interaction: 'none',
+    why: 'the card frame and its body list are drawn at rest',
+  },
+  {
+    id: 'event-list',
+    family: 'cards',
+    module: 'cards/event-list',
+    covers: ['EventList'],
+    interaction: 'enhance',
+    why: '"Show more" pages the feed; the first page is the static picture',
+  },
+  {
+    id: 'kanban-card',
+    family: 'cards',
+    module: 'cards/kanban-card',
+    covers: ['KanbanCard'],
+    interaction: 'enhance',
+    why: 'the move menu and drag need JS; the card is drawn at rest',
+  },
+  {
+    id: 'row-list',
+    family: 'cards',
+    module: 'cards/row-list',
+    covers: ['RowList'],
+    interaction: 'enhance',
+    why: 'a row shares focus with its chart mark; hover and focus highlight need JS',
+  },
+  {
+    id: 'step-rail',
+    family: 'cards',
+    module: 'cards/step-rail',
+    covers: ['StepRail'],
+    interaction: 'none',
+    why: 'bars scaled to the longest step are drawn at rest; it never animates',
+  },
+]
