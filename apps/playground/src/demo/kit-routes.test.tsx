@@ -81,6 +81,7 @@ describe('the Kit nav', () => {
       '/kit/bar-list-series',
       '/kit/chain',
       '/kit/library',
+      '/kit/motion',
     ])
     expect(navPaths('kit-forms')).toEqual([
       '/kit/forms/inputs',
