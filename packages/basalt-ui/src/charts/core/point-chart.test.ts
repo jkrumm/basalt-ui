@@ -65,6 +65,25 @@ describe('the x domain of a point chart', () => {
     const grown = xRoomForDots([0, 6], [2.1, 5, 40], 6, 300)
     expect(grown === null || grown[1] === 6).toBe(true)
   })
+  test('a line with a dot at its last x scales x wider than its data, so the dot is whole', () => {
+    const line: ChartSeries<Row> = { ...dot, key: 'line', mark: 'line' }
+    const today: ChartSeries<Row> = {
+      ...dot,
+      key: 'today',
+      getValue: (r) => (r.d === 4 ? r.v : null),
+    }
+    const { spec } = build((r) => r.d, [line, today])
+    const scale = (spec.scales as unknown as { x: { scale: { domain: () => number[] } } }).x.scale
+    const [lo, hi] = scale.domain() as [number, number]
+    expect(hi).toBeGreaterThan(4)
+    expect(lo).toBe(1)
+  })
+  test('a line alone keeps the data extent', () => {
+    const line: ChartSeries<Row> = { ...dot, key: 'line', mark: 'line' }
+    const { spec } = build((r) => r.d, [line])
+    const scale = (spec.scales as unknown as { x: { scale: { domain: () => number[] } } }).x.scale
+    expect(scale.domain()).toEqual([1, 4])
+  })
   test('a compiled point chart scales x wider than its data', () => {
     const { spec } = build((r) => r.d)
     const scale = (spec.scales as unknown as { x: { scale: { domain: () => number[] } } }).x.scale
