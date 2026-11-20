@@ -141,7 +141,42 @@ export function isForeign(group: string | undefined, chartId: string): boolean {
  */
 export function followsChart(group: string | undefined, chartId: string): boolean {
   const { owner } = ownerOf(group)
-  return owner !== undefined && owner.chartId !== chartId && owner.xChip
+  if (owner === undefined || owner.chartId === chartId) return false
+  return owner.xChip || !stackedWith(owner.chartId, chartId)
+}
+
+/** Charts this close one above the other (or closer), in one column, are one stack, px. */
+export const STACK_GAP = 24
+
+const sameColumn = (a: DOMRect, b: DOMRect): boolean =>
+  Math.abs(a.left - b.left) < 1 && Math.abs(a.width - b.width) < 1
+
+/**
+ * Whether two charts are panels of one stack: the same column, each within {@link STACK_GAP} of the
+ * next, so a chain of panels counts and a chart in another card does not. A leader with no x chip hands
+ * the chip to a labelled chart of its stack, never to one elsewhere on the page (a chart of another
+ * card would draw a chip no pane of its own explains). Charts the page does not hold (a server render,
+ * an unmounted one) count as stacked, which keeps the hand-over.
+ */
+function stackedWith(ownerId: string, chartId: string): boolean {
+  if (typeof document === 'undefined') return true
+  const boxes = new Map<string, DOMRect>()
+  for (const el of document.querySelectorAll('[data-chart-id]'))
+    boxes.set(el.getAttribute('data-chart-id') ?? '', el.getBoundingClientRect())
+  const start = boxes.get(ownerId)
+  if (start === undefined || !boxes.has(chartId)) return true
+  const reached = new Set<string>([ownerId])
+  const queue = [start]
+  for (let from = queue.shift(); from !== undefined; from = queue.shift()) {
+    for (const [id, box] of boxes) {
+      if (reached.has(id) || !sameColumn(from, box)) continue
+      const gap = Math.max(from.top, box.top) - Math.min(from.bottom, box.bottom)
+      if (gap > STACK_GAP) continue
+      reached.add(id)
+      queue.push(box)
+    }
+  }
+  return reached.has(chartId)
 }
 
 const valueX = (state: CursorState): ChartValue | undefined =>

@@ -539,6 +539,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
       <div
         ref={ref}
         data-basalt-chart=""
+        data-chart-id={chartId}
         data-in-card={inCard ? '' : undefined}
         style={inCard ? cardRootStyle : rootStyle}
       >
