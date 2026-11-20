@@ -1,6 +1,6 @@
 /**
- * `ArticleLayout`: the header (title once, no empty meta row), the rail/trigger swap at the 1200px
- * breakpoint, the popover overlay, the reading-progress prop and the prev/next footer.
+ * `ArticleLayout`: the header (title once, no empty meta row), the rail/trigger swap by the `@wide`
+ * container query, the popover overlay, the reading-progress prop and the prev/next footer.
  *
  * Under happy-dom every element measures zero-size, so the popover's `hide` middleware may mark
  * the reference detached; queries into the open popup pass `{ hidden: true }`.

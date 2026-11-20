@@ -82,7 +82,7 @@ neighbouring cards alone; Retry runs the slot again. Frames given one `retry` fu
 result, one `Phase`) draw Retry once, on the first frame to mount; the others show their message alone.
 
 ```ts
-CardPhase({ phase, empty, height, skeleton, children, arms, staleLine, className, }: CardPhaseProps): ReactElement
+CardPhase({ phase, empty, height, skeleton, children, arms, staleLine, className, style, }: CardPhaseProps): ReactElement
   phase?: Phase | QueryStateLike
   empty?: Empty | null
   height?: number | "fill"  // The box height the body gets and every other phase holds; `fill` takes the card's remainder
@@ -91,6 +91,7 @@ CardPhase({ phase, empty, height, skeleton, children, arms, staleLine, className
   arms?: Arms  // How the empty and error arms sit: `stack` (default) centres them in a box at least 96 px tall; `line` draws each as one row on the card's left edge, for a box as short as one figure row
   staleLine?: "body" | "corner"  // `corner` (default) draws the stale line over the body's top-right corner; `body` leaves it to the body, which places it in its own flow (the stat card's figure row)
   className?: string
+  style?: CSSProperties  // Replaces the inline `height` a numeric `height` sets, for a height CSS decides (a calc on a token)
 ```
 
 ## `cardVariants`
