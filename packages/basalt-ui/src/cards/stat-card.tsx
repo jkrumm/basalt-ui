@@ -101,9 +101,7 @@ export function StatCard(props: StatCardProps): ReactElement {
           controls={controls}
           menu={menu}
         />
-        <Inset
-          className={cn('flex grow flex-col', bodyHeight(sub !== undefined, chart !== undefined))}
-        >
+        <Inset className={cn('flex flex-col', bodyHeight(sub !== undefined, chart !== undefined))}>
           <CardPhase
             phase={phase}
             empty={empty}
