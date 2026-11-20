@@ -21,7 +21,7 @@ export type Charge = {
 
 /** A charge is unusual from this multiple of its merchant's median. */
 export const UNUSUAL_FROM = 2
-export const UNCATEGORISED = 'Uncategorised'
+const UNCATEGORISED = 'Uncategorised'
 
 type Merchant = {
   name: string

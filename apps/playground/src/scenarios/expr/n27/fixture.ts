@@ -45,7 +45,7 @@ export type Fixture = {
 }
 
 const FIRST_WEEK = 36
-export const WEEKS = 12
+const WEEKS = 12
 const NOW = WEEKS - 1
 const LAST = WEEKS - 2
 

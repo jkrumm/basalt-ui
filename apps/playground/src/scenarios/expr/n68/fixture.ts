@@ -28,9 +28,6 @@ export type Site = {
   bortle: number
 }
 
-/** The fixture names `?fixture=` knows besides the default site. */
-export const FIXTURE_NAMES = ['walled-in', 'southern'] as const
-
 function rng(seed: number): () => number {
   let a = seed >>> 0
   return () => {

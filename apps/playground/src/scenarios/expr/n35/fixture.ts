@@ -21,7 +21,7 @@ const minutes = (hhmm: string): number => Number(hhmm.slice(0, 2)) * 60 + Number
 
 const open = minutes('09:00')
 
-export const DAYS: readonly WorkDay[] = [
+const DAYS: readonly WorkDay[] = [
   { key: '2026-11-23', label: 'Mon 23', open, close: minutes('17:00') },
   { key: '2026-11-24', label: 'Tue 24', open, close: minutes('17:00') },
   { key: '2026-11-25', label: 'Wed 25', open, close: minutes('17:00') },

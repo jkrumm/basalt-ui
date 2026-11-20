@@ -18,15 +18,6 @@ export type Task = {
   waitsOn: readonly string[]
 }
 
-export const TASK_STATES = ['running', 'queued', 'waiting', 'done'] as const
-
-export const TASK_STATE_LABELS: Readonly<Record<TaskState, string>> = {
-  done: 'Done',
-  running: 'Running',
-  queued: 'Queued',
-  waiting: 'Waiting',
-}
-
 const task = (
   id: string,
   team: string,

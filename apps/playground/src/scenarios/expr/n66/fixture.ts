@@ -22,10 +22,7 @@ export type ReadingYear = {
 
 export type Genre = { name: string; count: number }
 
-/** Known `?fixture=` names: `extreme` (a skimmed booklet far off the scale, one genre fills the backlog) and `idle` (nothing in progress, one genre at zero). */
-export const FIXTURES = ['extreme', 'idle'] as const
-
-export const GENRES = ['Fantasy', 'Crime', 'Sci-fi', 'History', 'Essays', 'Other'] as const
+const GENRES = ['Fantasy', 'Crime', 'Sci-fi', 'History', 'Essays', 'Other'] as const
 
 const TITLES = [
   'The Salt Road',

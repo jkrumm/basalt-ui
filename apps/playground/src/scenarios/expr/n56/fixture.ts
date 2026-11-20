@@ -3,7 +3,7 @@ import { createFormat } from 'basalt-ui'
 
 export const LIMIT = 1.5
 export const NEXT_HOURS = 12
-export const WINDOW_ROWS = 4
+const WINDOW_ROWS = 4
 export const OFFSHORE_POINTS = 4
 
 export type FixtureName = 'rest' | 'calm' | 'storm'

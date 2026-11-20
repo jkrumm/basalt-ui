@@ -35,11 +35,11 @@ export type Sample = { at: number; read: Record<MachineId, Reading | null> }
 /** `rest` is the case; `quiet` has nothing busy, full or silent; `pegged` pins the build server and its load far past the rest. */
 export type Variant = 'rest' | 'quiet' | 'pegged'
 
-export const STEP_MS = 5 * 60_000
-export const SAMPLE_COUNT = 288
+const STEP_MS = 5 * 60_000
+const SAMPLE_COUNT = 288
 export const NOW = Date.UTC(2026, 10, 19, 22, 0)
 /** The edge machine's last four readings are missing: silent for 20 minutes. */
-export const SILENT_SAMPLES = 4
+const SILENT_SAMPLES = 4
 
 export const BUSY_CPU = 85
 export const FULL_PCT = 90
