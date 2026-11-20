@@ -22,7 +22,7 @@ import type { ModeResult, PartResult, Results, View } from './results'
  * Changed pixels a view may have and still count as the same picture. The static page and its client:only page
  * render in the same browser on the same machine, so a matching picture differs by no pixel, except for a rare
  * one-pixel flake (form-layout, 2026-11-20: 1 px at 1440 light in one run of four, 0 in the other three). The
- * smallest real difference measured is about 37 px (dock's focus ring at 1440); 4 px sits between the two.
+ * smallest real difference recorded is 28 px (segmented's indicator edge at 390 light); 4 px sits between the two.
  */
 export const PIXEL_TOLERANCE = 4
 /**
