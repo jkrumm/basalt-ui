@@ -68,13 +68,6 @@ export type HeatmapState<K extends string = string> = Omit<
   color?: string | undefined
 }
 
-/** The glyph key a state's legend entry draws, in the ink its cells draw it in (`{}` for no glyph). */
-function stateGlyph(s: HeatmapState): { glyph?: string; glyphInk?: string } {
-  const glyph = glyphOf({ ...s, color: fillOf(s) })
-  if (!glyph) return {}
-  return { glyph, glyphInk: stateInk(fillOf(s), s.fillOpacity ?? 1, false) }
-}
-
 /** The fill a state resolves to: its `color`, else its tone's status colour, else neutral. */
 const fillOf = (s: HeatmapState | undefined): string =>
   s?.color ?? (s?.tone === undefined ? CV.neutral : CV_STATUS[s.tone])
@@ -214,39 +207,12 @@ function valueRows<K extends string>(
 /** What the x ticks have to fit in: one column's width and the widest tick label, both in px. */
 export type TickRoom = { cellPx: number; labelPx: number }
 
-/** The clear space (px) kept between two tick labels. */
-const TICK_GAP_PX = 8
-
-/** The index distance two tick labels need: the columns that span the widest label and a gap. */
-const stepFor = (room: TickRoom | undefined): number =>
-  room === undefined ? 1 : Math.max(1, Math.ceil((room.labelPx + TICK_GAP_PX) / room.cellPx))
-
-/** Every `named` column that sits at least `step` columns after the last one kept. */
-function spacedApart(named: readonly string[], cols: readonly string[], step: number): string[] {
-  const kept: string[] = []
-  let last = -Infinity
-  for (const c of named) {
-    const at = cols.indexOf(c)
-    if (at - last < step) continue
-    kept.push(c)
-    last = at
-  }
-  return kept
-}
-
-/** True when every consecutive pair of `picked` sits the same number of columns apart. */
-function evenlyStepped(picked: readonly string[], cols: readonly string[]): boolean {
-  const gaps = picked.slice(1).map((c, i) => cols.indexOf(c) - cols.indexOf(picked[i] as string))
-  return gaps.every((g) => g === gaps[0])
-}
-
 /**
- * The x tick columns: every `named` column (one not in `cols` is ignored), thinned to the ones a
- * label's width leaves room for, in order from the first, so a grid that names every column draws
- * an even step; plus the class's stride ticks that clear a named tick (by half a stride and a label),
- * but only when the named and added ticks together stand an even step apart. Any other mix reads as
- * an uneven axis (weekly names with stride ticks between them), so then none are added. The result
- * keeps `cols` order.
+ * The x tick columns: every `named` column (one not in `cols` is ignored), thinned in order from the
+ * first to the ones a label's width (and an 8 px gap) leaves room for, so a grid that names every column
+ * draws an even step. The class's stride ticks are added only on a shared step: when every kept named
+ * tick is one of them and a label fits between two. Any other mix reads as an uneven axis (weekly names
+ * with stride ticks between them), so then the named ticks stand alone. The result keeps `cols` order.
  */
 export function colTicks(
   cols: readonly string[],
@@ -255,21 +221,13 @@ export function colTicks(
   room?: TickRoom,
 ): string[] {
   const stride = strideTicks(cols, cls)
-  const pinned = cols.filter((c) => named?.includes(c))
-  if (pinned.length === 0) return stride
-  const step = stepFor(room)
-  const kept = spacedApart(pinned, cols, step)
-  const gap = stride.length > 1 ? cols.indexOf(stride[1] as string) : cols.length
-  const clear = Math.max(step, gap / 2)
-  const added =
-    gap < step
-      ? []
-      : stride.filter((c) =>
-          kept.every((p) => Math.abs(cols.indexOf(c) - cols.indexOf(p)) >= clear),
-        )
-  const all = cols.filter((c) => kept.includes(c) || added.includes(c))
-  const wanted = new Set(evenlyStepped(all, cols) ? all : kept)
-  return cols.filter((c) => wanted.has(c))
+  const step = room ? Math.max(1, Math.ceil((room.labelPx + 8) / room.cellPx)) : 1
+  let last = -Infinity
+  // Each named column is kept when it sits a step after the last kept one.
+  const kept = cols.filter((c, i) => named?.includes(c) && i - last >= step && ((last = i), true))
+  if (kept.length === 0) return stride
+  const onStride = kept.every((c) => stride.includes(c))
+  return onStride && step <= cols.indexOf(stride[1] as string) ? stride : kept
 }
 
 /**
@@ -557,13 +515,10 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
         // room: a note too wide for its cell drops that cell's note alone, never every cell's.
         const cellPx = width / Math.max(cols.length, 1)
         // The plot sits right of the row labels: the ticks step by the columns their widest label spans.
-        const rowPx = Math.max(0, ...rows.map((r) => captionWidth(formatRow(r), BASALT.text.micro)))
+        const rowPx = Math.max(...rows.map((r) => captionWidth(formatRow(r), BASALT.text.micro)))
         const tickRoom: TickRoom = {
-          cellPx: Math.max(1, (width - rowPx) / Math.max(cols.length, 1)),
-          labelPx: Math.max(
-            0,
-            ...cols.map((c) => Math.ceil(captionWidth(formatCol(c), BASALT.text.micro))),
-          ),
+          cellPx: (width - rowPx) / cols.length,
+          labelPx: Math.max(...cols.map((c) => captionWidth(formatCol(c), BASALT.text.micro))),
         }
         const centred = (all: readonly Mark[], id: string, fontSize: number) => {
           const items = all.filter(
@@ -709,7 +664,8 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
             label: s.label,
             color: fillOf(s),
             mark: 'bar' as const,
-            ...stateGlyph(s),
+            glyph: glyphOf({ ...s, color: fillOf(s) }),
+            glyphInk: stateInk(fillOf(s), s.fillOpacity ?? 1, false),
             ...(s.fillOpacity !== undefined && { fillOpacity: s.fillOpacity }),
             ...(s.legend !== undefined && { legend: s.legend }),
             ...(s.note !== undefined && { note: s.note }),
