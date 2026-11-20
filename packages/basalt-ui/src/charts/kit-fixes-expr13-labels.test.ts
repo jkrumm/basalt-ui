@@ -4,7 +4,7 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { estimateWidth, lineHeight, placeWith } from './label-place'
-import { endLabelPlan } from './labels'
+import { endLabelMarks, endLabelPlan } from './labels'
 import type { ChartSeries, PlotContext } from './types'
 
 const W = 300
@@ -55,6 +55,22 @@ describe('an end label moved off its line end is joined to it by a leader', () =
       expect(leader.fraction).toBe(1)
       expect(leader.from).toBe(lines[Number(key)]?.at(-1) as number)
     }
+  })
+})
+
+describe('a displaced end label has a stalk and no stub against its last glyph', () => {
+  test('the leader draws one hairline, never a stub that reads as a dash after the name', () => {
+    const lines = [
+      Array.from({ length: POINTS }, (_, i) => 40 + i * 4),
+      Array.from({ length: POINTS }, (_, i) => (i === POINTS - 1 ? 3 : 50)),
+      Array.from({ length: POINTS }, (_, i) => (i === POINTS - 1 ? 2 : 40)),
+    ]
+    const ctx = plot(lines)
+    const plan = endLabelPlan(ctx, ctx.visible as ChartSeries<number>[], 'endLabels', [])
+    expect(plan.some((l) => l.leader !== undefined)).toBe(true)
+    const leaders = plan.filter((l) => l.leader !== undefined).length
+    // One text mark per label and one hairline per leader: a stub would be a third mark of the leader.
+    expect(endLabelMarks(plan)).toHaveLength(plan.length + leaders)
   })
 })
 
