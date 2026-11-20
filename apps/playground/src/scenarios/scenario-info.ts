@@ -434,6 +434,46 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
       "The owner of several AI wallets compares this month with the 30 days before. Which wallet's spend grew the most, and which spend is new with nothing before it?",
   },
   {
+    id: 'expr-n75',
+    title:
+      'Expression n75: whether the request page turns visitors into requests, and how many inquiries are spam',
+    blurb:
+      'A charter business owner checks the website. Is the request page turning visitors into charter requests, and how many of the inquiries are spam or marketing?',
+  },
+  {
+    id: 'expr-n76',
+    title:
+      'Expression n76: whether the catalogue fetch still moves, when it ends, and why it stopped',
+    blurb:
+      'The owner watches a scraper bank a course catalogue. Is the fetch still moving, when will it finish, and if it stopped, why?',
+  },
+  {
+    id: 'expr-n77',
+    title: "Expression n77: whether each app's deploys landed cleanly, and which day or app broke",
+    blurb:
+      "An owner leaves the deploy board open. Did each app's deploys land cleanly over the last two weeks, and which day or app broke?",
+  },
+  {
+    id: 'expr-n78',
+    title:
+      'Expression n78: whether every mailbox still syncs, and what is pending or failed behind each',
+    blurb:
+      'The mail gateway operator checks the mailboxes. Is every mailbox still syncing, and how much mail and how many pending or failed jobs sit behind each?',
+  },
+  {
+    id: 'expr-n79',
+    title: 'Expression n79: whether each class of fix lands less often week over week',
+    blurb:
+      'The factory owner checks whether fixes are slowing down. Is each class of fix landing less often week over week, and across how many repos?',
+  },
+  {
+    id: 'expr-n80',
+    title:
+      'Expression n80: which model and voice a blind listen prefers per preset, at what latency and cost',
+    blurb:
+      'The owner picks a speech model for each use. Which model and voice does a blind listen prefer for each preset, and at what latency and cost per minute?',
+  },
+  {
     id: 'linked-windows',
     title: 'Linked windows: a table of runs beside an hourly chart',
     blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',

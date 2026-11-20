@@ -510,7 +510,49 @@ export const N72_SERIES = defineSeries({
   delivered: { light: '#af293e', dark: '#e46360' },
 })
 
+/** Speech models (scenario expr-n80): the accent is the model a blind listen prefers for its preset, the models that lost sit in a dark ink step. */
+export const N80_SERIES = defineSeries({
+  win: { light: '#2871c7', dark: '#5190f7' },
+  rest: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
 /** Review queue (scenario expr-n73): learned items per confidence step in the dark ink step; the accent is the slipped steps, painted by the bar `highlight`. */
 export const N73_SERIES = defineSeries({
   items: { light: '#262626', dark: '#e6e6e6' },
+})
+
+/** Catalogue fetch (scenario expr-n76): the accent is now (the latest hour, items being fetched); the status red is a real failure; done, queued, paused and dead links sit in ink steps. */
+export const N76_SERIES = defineSeries({
+  pages: { light: '#5c5c5c', dark: '#b4b4b4' },
+  latest: { light: '#2871c7', dark: '#5190f7' },
+  done: { light: '#262626', dark: '#e6e6e6' },
+  fetching: { light: '#2871c7', dark: '#5190f7' },
+  queued: { light: '#c9c9c9', dark: '#4a4a4a' },
+  paused: { light: '#9a9a9a', dark: '#7d7d7d' },
+  dead: { light: '#6b6b6b', dark: '#a8a8a8' },
+  failed: { light: '#af293e', dark: '#e46360' },
+})
+
+/** Fix classes (scenario expr-n79): the accent is the one class that landed more often than in the prior 7 days; the other seven sit in ink steps, told apart by the table beside the chart. */
+export const N79_SERIES = defineSeries({
+  rose: { light: '#2871c7', dark: '#5190f7' },
+  lint: { light: '#262626', dark: '#e6e6e6' },
+  flaky: { light: '#3a3a3a', dark: '#d2d2d2' },
+  types: { light: '#4a4a4a', dark: '#c4c4c4' },
+  build: { light: '#6b6b6b', dark: '#a8a8a8' },
+  deps: { light: '#8a8a8a', dark: '#8f8f8f' },
+  deploy: { light: '#5a5a5a', dark: '#b0b0b0' },
+  docs: { light: '#9a9a9a', dark: '#7d7d7d' },
+  total: { light: '#4a4a4a', dark: '#c4c4c4' },
+  repos: { light: '#8a8a8a', dark: '#8f8f8f' },
+  migration: { light: '#b0b0b0', dark: '#666666' },
+})
+
+/** Charter request page (scenario expr-n75): the accent is the request sent, set by the bar `highlight`; visits and the inquiry verdicts rest in ink steps, page views in a pale one, the marked days in a mid rule. */
+export const N75_SERIES = defineSeries({
+  visitors: { light: '#262626', dark: '#e6e6e6' },
+  views: { light: '#b0b0b0', dark: '#666666' },
+  step: { light: '#6b6b6b', dark: '#a8a8a8' },
+  inquiries: { light: '#6b6b6b', dark: '#a8a8a8' },
+  rule: { light: '#4a4a4a', dark: '#c4c4c4' },
 })
