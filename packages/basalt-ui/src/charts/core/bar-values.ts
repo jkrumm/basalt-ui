@@ -24,7 +24,7 @@ const GROUP_PADDING = 0.1
 const GAP = 3
 /** Air a label keeps inside the bar it stands in, px. */
 const INSIDE_PAD = 2
-/** How far a label standing in a bar may reach past each side of it, px: the text estimate errs wide, and a bar a few px under its label still holds it. */
+/** How far a label standing in a bar may reach past each side of it, px: the text estimate errs wide, and a bar a few px under its label still holds it. A label needs the bar's height for its line, with no air. */
 const OVERHANG = 6
 const SIZE = BASALT.text.micro
 /** The centre of a clamped value's row from the plot's edge: its box clears the edge's gridline. */
@@ -321,7 +321,10 @@ export function barValueLabels<T, X extends ChartX>(
     fitsWith(
       measure,
       c.text,
-      { ...c.body, width: Math.min(slot + 2 * INSIDE_PAD, c.body.width + 2 * OVERHANG) },
+      {
+        width: Math.min(slot + 2 * INSIDE_PAD, c.body.width + 2 * OVERHANG),
+        height: c.body.height + 2 * INSIDE_PAD,
+      },
       { size: SIZE, pad: INSIDE_PAD },
     )
       ? [label(c, i, [c.up ? 'below' : 'above'])]
