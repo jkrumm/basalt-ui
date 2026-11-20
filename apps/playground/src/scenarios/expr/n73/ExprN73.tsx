@@ -173,7 +173,6 @@ export function ExprN73Scenario({ shotState, fixture }: ScenarioProps) {
               subMono
               chart={(box) => (
                 // cycle-expression-15: the lint does not know StatCell's 28 px chart slot (StatCard's is allowed)
-                // oxlint-disable-next-line basalt/primitive-bypass -- the Sparkline is drawn in StatCell's own chart slot, a card
                 <Sparkline
                   height={box.height}
                   label="Sessions per day, last eight weeks"
