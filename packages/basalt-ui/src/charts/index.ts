@@ -25,7 +25,6 @@ export {
   type IntervalX,
 } from './parts/interval-track'
 export { ChartCard } from './parts/chart-card'
-export { ChartPanes } from './parts/chart-panes'
 export { chartCursor } from './core/cursor'
 export {
   useChartFocus,
@@ -60,7 +59,6 @@ export type {
   ChartCardProps,
   ChartFigure,
   ChartPane,
-  ChartPanesProps,
   ChartPlot,
   ChartRefLine,
   ChartSelection,

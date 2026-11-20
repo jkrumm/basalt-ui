@@ -1,12 +1,11 @@
 /**
- * Expression cycle 14 contract (2), panes that share a card's box (n63 .7, n67): a ChartCard of two panes
+ * Expression cycle 14 contract (2), panes that share a card's box (n63 .7, n67): a ChartCard (`panes`) of two panes
  * weighted 2 and 1 (`c14-two`) and one of three equal panes (`c14-three`), no pixel height anywhere. Entry
  * of `kit-c14-panes.layout.test.ts`.
  */
 import { createRoot } from 'react-dom/client'
 import type { ReactElement } from 'react'
 import { ChartCard } from '../../../src/charts/parts/chart-card'
-import { ChartPanes } from '../../../src/charts/parts/chart-panes'
 import { Lines } from '../../../src/charts/parts/lines'
 import type { Box } from '../../../src/core/ports'
 
@@ -48,28 +47,18 @@ function Fixture(): ReactElement {
         <ChartCard
           title="Recovery"
           height="tall"
-          chart={(box) => (
-            <ChartPanes
-              box={box}
-              panes={[{ weight: 2, chart: pane('score', false) }, { chart: pane('load', true) }]}
-            />
-          )}
+          panes={[{ weight: 2, chart: pane('score', false) }, { chart: pane('load', true) }]}
         />
       </div>
       <div data-testid="c14-three">
         <ChartCard
           title="Drivers"
           height="tall"
-          chart={(box) => (
-            <ChartPanes
-              box={box}
-              panes={[
-                { chart: pane('score', false) },
-                { chart: pane('load', false) },
-                { chart: pane('rest', true) },
-              ]}
-            />
-          )}
+          panes={[
+            { chart: pane('score', false) },
+            { chart: pane('load', false) },
+            { chart: pane('rest', true) },
+          ]}
         />
       </div>
     </main>
