@@ -16,7 +16,7 @@ The Astro integration of the `site` profile. Put it after `react()`; do not also
 
 ```ts
 basaltAstro(options?: BasaltAstroOptions): BasaltAstroIntegration
-  scheme?: ThemeScriptOptions  // Options of the no-flash scheme script (`basalt-ui/theme-script`)
+  scheme?: ThemeScriptOptions  // Scheme options (`basalt-ui/theme-script`): the boot script reads and the theme switch writes the same key, attribute and cookie
   fonts?: boolean  // Register basalt's faces with the Astro Fonts API (Fontsource provider)
 ```
 

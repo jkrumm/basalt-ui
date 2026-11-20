@@ -277,6 +277,21 @@ describe('siteScript', () => {
     })
   }
 
+  test('with scheme options, a click writes what themeScript reads back on the next load', () => {
+    // happy-dom drops path-scoped cookies on about:blank
+    ;(window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(
+      'http://localhost/',
+    )
+    const options = { key: 'site:scheme', cookie: 'site-scheme' }
+    new Function(siteScript(options))()
+    click('[data-basalt-scheme="dark"]')
+    expect(localStorage.getItem('site:scheme')).toBe('dark')
+    expect(document.cookie).toContain('site-scheme=dark')
+    document.documentElement.removeAttribute('data-theme')
+    new Function(themeScript(options))()
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+  })
+
   test('a copy click copies the block and announces the given word', async () => {
     click('[data-basalt-copy]')
     await Promise.resolve()
