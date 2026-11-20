@@ -1,63 +1,68 @@
 ---
 import { Code } from 'astro:components'
-import { SiteCodeBlock, Prose } from 'basalt-ui/static'
+import {
+  SiteBento,
+  SiteCallout,
+  SiteCallToAction,
+  SiteCodeBlock,
+  SiteComparison,
+  SiteFeature,
+  SiteHero,
+  SiteQuestionList,
+  ThemeSwitch,
+} from 'basalt-ui/static'
+import { FleetStrip, HeroConsole } from '../components/HeroConsole'
 import Layout from '../layouts/Layout.astro'
+import { BENTO, BLOCKS_SNIPPET, CALL_TO_ACTION, COMPARISON, HERO, QUESTIONS } from '../lib/landing'
 import { LABELS } from '../lib/site'
 
-const points = [
-  {
-    title: 'One look, app and site',
-    text: 'The tokens, type and parts of a basalt dashboard, on a page that ships no JavaScript.',
-  },
-  {
-    title: 'Static by contract',
-    text: 'Every static part renders to a string with no provider. A test holds each one to it.',
-  },
-  {
-    title: 'Your words',
-    text: 'No label is baked in. Pass the strings from your own message catalogue.',
-  },
-]
+const themes = { light: 'github-light', dark: 'github-dark' } as const
 ---
 
 <Layout>
-  <div class="@container">
-    <section class="mx-auto flex max-w-[80rem] flex-col gap-6 px-4 py-16 @regular:px-6 @wide:py-24">
-      <p class="font-mono text-xs tracking-wider text-brand uppercase">basalt-ui 3</p>
-      <h1 class="max-w-[22ch] font-head text-display font-semibold text-balance text-foreground @wide:text-[3.25rem] @wide:leading-[1.05]">
-        Dashboards, docs and content sites in one look.
-      </h1>
-      <p class="max-w-[60ch] text-lg text-muted-foreground">
-        A React framework on Base UI and Tailwind 4. Apps get the shell, charts and tables; content sites get static parts with no client JavaScript.
-      </p>
-      <div class="flex flex-wrap gap-3">
-        <a href="/docs/introduction" class="inline-flex h-10 items-center rounded-ctrl bg-brand-fill px-4 text-sm font-medium text-on-brand no-underline">Get started</a>
-        <a href="https://github.com/jkrumm/basalt-ui" class="inline-flex h-10 items-center rounded-ctrl border border-border bg-card px-4 text-sm font-medium text-foreground no-underline hover:bg-accent">GitHub</a>
+  <SiteHero eyebrow={HERO.eyebrow} title={HERO.title} description={HERO.description} actions={HERO.actions}>
+    <SiteCodeBlock copyLabel={LABELS.copy} copiedLabel={LABELS.copied}>
+      <Code code="bun add basalt-ui" lang="bash" themes={themes} defaultColor={false} />
+    </SiteCodeBlock>
+    <HeroConsole slot="media" />
+  </SiteHero>
+
+  <SiteBento title={BENTO.title} description={BENTO.description}>
+    <SiteFeature title={BENTO.dashboards.title} description={BENTO.dashboards.description} span="wide">
+      <FleetStrip />
+    </SiteFeature>
+    <SiteFeature title={BENTO.scheme.title} description={BENTO.scheme.description}>
+      <div class="flex justify-center">
+        <ThemeSwitch label={LABELS.scheme} labels={LABELS.schemes} />
       </div>
-      <div class="max-w-[40rem]">
-        <SiteCodeBlock copyLabel={LABELS.copy} copiedLabel={LABELS.copied}>
-          <Code code="bun add basalt-ui" lang="bash" themes={{ light: 'github-light', dark: 'github-dark' }} defaultColor={false} />
-        </SiteCodeBlock>
-      </div>
-    </section>
-    <section class="border-y border-border bg-inset">
-      <ul class="mx-auto grid max-w-[80rem] grid-cols-1 gap-px px-4 py-12 @regular:px-6 @wide:grid-cols-3 @wide:gap-8">
-        {points.map((p) => (
-          <li class="flex flex-col gap-2 py-4">
-            <h2 class="font-head text-lg font-semibold text-foreground">{p.title}</h2>
-            <p class="text-muted-foreground">{p.text}</p>
-          </li>
-        ))}
-      </ul>
-    </section>
-    <section class="mx-auto max-w-[80rem] px-4 py-16 @regular:px-6">
-      <Prose>
-        <h2>Two ways in</h2>
-        <p>
-          An app runs <code>basalt-ui init --profile app</code> and gets the shell, the router seeds, charts and tables. A content site runs <code>basalt-ui init --profile site</code> and gets the static parts: prose, an article layout with a table of contents, a callout, a code block with a copy button, a site header with a mobile menu, a footer and a theme switch.
-        </p>
-        <p>This site is the second kind. Read <a href="/guides/content-sites">the guide</a> for how it is built.</p>
-      </Prose>
-    </section>
-  </div>
+    </SiteFeature>
+    <SiteFeature title={BENTO.code.title} description={BENTO.code.description} span="wide">
+      <SiteCodeBlock copyLabel={LABELS.copy} copiedLabel={LABELS.copied}>
+        <Code code={BLOCKS_SNIPPET} lang="astro" themes={themes} defaultColor={false} />
+      </SiteCodeBlock>
+    </SiteFeature>
+    <SiteFeature title={BENTO.callout.title} description={BENTO.callout.description}>
+      <SiteCallout tone="info" title={BENTO.calloutNote.title}>{BENTO.calloutNote.text}</SiteCallout>
+    </SiteFeature>
+  </SiteBento>
+
+  <SiteComparison
+    title={COMPARISON.title}
+    description={COMPARISON.description}
+    caption={COMPARISON.caption}
+    rowHeader={COMPARISON.rowHeader}
+    columns={COMPARISON.columns}
+    rows={COMPARISON.rows}
+    yesLabel={LABELS.yes}
+    noLabel={LABELS.no}
+  >
+    <Fragment slot="footnote">
+      Profiles of basalt-ui 3 as <code>basalt-ui init --help</code> and the basalt-app skill state them, checked
+      <time datetime="2026-11-20">20 November 2026</time>.
+    </Fragment>
+  </SiteComparison>
+
+  <SiteQuestionList title={QUESTIONS.title} description={QUESTIONS.description} questions={QUESTIONS.items} />
+
+  <SiteCallToAction title={CALL_TO_ACTION.title} description={CALL_TO_ACTION.description} actions={CALL_TO_ACTION.actions} />
 </Layout>

@@ -48,6 +48,8 @@ export const LABELS = {
   pages: "Pages",
   previous: "Previous",
   next: "Next",
+  yes: "Yes",
+  no: "No",
 } as const;
 
 /** Marks the link of the page being rendered. */
