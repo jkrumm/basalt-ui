@@ -1,0 +1,7 @@
+---
+import { themeScript } from 'basalt-ui/theme-script'
+---
+
+{/* Starlight renders <html data-theme="dark"> on the server; basalt's script keeps an attribute that is
+    already there, so drop Starlight's before it reads the stored scheme. auto stays attribute-free. */}
+<script is:inline set:html={`document.documentElement.removeAttribute('data-theme');${themeScript()}`} />

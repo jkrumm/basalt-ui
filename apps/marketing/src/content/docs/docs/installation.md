@@ -3,8 +3,6 @@ title: Installation
 description: Install Basalt UI in your project
 ---
 
-# Installation
-
 Basalt UI is a Tailwind CSS v4 design system package. Follow these steps to install and configure it.
 
 ## Quick Start
@@ -39,18 +37,18 @@ Add this to your main CSS file:
 
 ```css
 /* src/styles/globals.css or app/globals.css */
-@import 'basalt-ui/tailwind.css';
+@import "basalt-ui/tailwind.css";
 ```
 
 ⚠️ **Critical:** This import **REPLACES** `@import "tailwindcss"` - do NOT use both!
 
 ```css
 /* ❌ WRONG - Don't import both */
-@import 'tailwindcss';
-@import 'basalt-ui/tailwind.css';
+@import "tailwindcss";
+@import "basalt-ui/tailwind.css";
 
 /* ✅ CORRECT - Only basalt-ui */
-@import 'basalt-ui/tailwind.css';
+@import "basalt-ui/tailwind.css";
 ```
 
 **Why?** BasaltUI includes the complete Tailwind v4 theme. Importing both causes conflicts and duplicate CSS.
@@ -102,7 +100,7 @@ If you need project-specific design tokens or overrides, add them **AFTER** the 
 
 ```css
 /* src/styles/globals.css */
-@import 'basalt-ui/tailwind.css'; /* Must come first */
+@import "basalt-ui/tailwind.css"; /* Must come first */
 
 /* Your custom overrides come after */
 :root {
@@ -136,23 +134,23 @@ bun add -D @tailwindcss/vite
 
 ```typescript
 // vite.config.ts
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [
     tailwindcss(), // ⚠️ Must come before framework plugin
     react(),
   ],
-})
+});
 ```
 
 **3. Import CSS in entry file:**
 
 ```typescript
 // src/main.tsx
-import './styles/globals.css'
+import "./styles/globals.css";
 ```
 
 **4. Create globals.css:**
@@ -161,7 +159,7 @@ import './styles/globals.css'
 /* src/styles/globals.css */
 
 /* basalt-ui design tokens and fonts (includes Tailwind v4) */
-@import 'basalt-ui/tailwind.css';
+@import "basalt-ui/tailwind.css";
 ```
 
 :::tip[Zero FOUT with fontaine]
@@ -174,7 +172,7 @@ Add `vite-plugin-fontaine` to generate metric-calibrated fallbacks and reach nea
 
 ```css
 /* app/globals.css */
-@import 'basalt-ui/tailwind.css';
+@import "basalt-ui/tailwind.css";
 ```
 
 **2. Import in root layout:**
@@ -206,21 +204,21 @@ bun add -D @tailwindcss/vite
 
 ```typescript
 // astro.config.mjs
-import { defineConfig } from 'astro/config'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from "astro/config";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-})
+});
 ```
 
 **3. Create global CSS file:**
 
 ```css
 /* src/styles/global.css */
-@import 'basalt-ui/tailwind.css';
+@import "basalt-ui/tailwind.css";
 ```
 
 **4. Import in layout:**
@@ -247,35 +245,35 @@ files come from, not the family names the tokens use.
 **`astro.config.mjs`:**
 
 ```js
-import { defineConfig, fontProviders } from 'astro/config'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig, fontProviders } from "astro/config";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   fonts: [
     {
       provider: fontProviders.fontsource(),
-      name: 'Hubot Sans',
-      cssVariable: '--font-hubot-sans',
+      name: "Hubot Sans",
+      cssVariable: "--font-hubot-sans",
       weights: [400, 500, 600, 700],
-      styles: ['normal'],
+      styles: ["normal"],
     },
     {
       provider: fontProviders.fontsource(),
-      name: 'Nunito Sans',
-      cssVariable: '--font-nunito-sans',
+      name: "Nunito Sans",
+      cssVariable: "--font-nunito-sans",
       weights: [400, 500, 600, 700],
-      styles: ['normal'],
+      styles: ["normal"],
     },
     {
       provider: fontProviders.fontsource(),
-      name: 'JetBrains Mono',
-      cssVariable: '--font-jetbrains-mono',
+      name: "JetBrains Mono",
+      cssVariable: "--font-jetbrains-mono",
       weights: [400, 500, 700],
-      styles: ['normal'],
+      styles: ["normal"],
     },
   ],
   vite: { plugins: [tailwindcss()] },
-})
+});
 ```
 
 **Layout.astro:**
@@ -333,14 +331,14 @@ npx shadcn@latest add dialog
 Tremor Raw chart components use Basalt colors automatically:
 
 ```tsx
-import { AreaChart } from '@tremor/react'
+import { AreaChart } from "@tremor/react";
 
-;<AreaChart
+<AreaChart
   data={chartData}
   index="date"
-  categories={['sales']}
-  colors={['blue']} // Uses Basalt OKLCH blue
-/>
+  categories={["sales"]}
+  colors={["blue"]} // Uses Basalt OKLCH blue
+/>;
 ```
 
 **Available colors:**
@@ -354,16 +352,16 @@ For Astro Starlight, import the dedicated CSS file:
 
 ```typescript
 // astro.config.mjs
-import starlight from '@astrojs/starlight'
+import starlight from "@astrojs/starlight";
 
 export default defineConfig({
   integrations: [
     starlight({
-      title: 'My Docs',
-      customCss: ['basalt-ui/starlight'],
+      title: "My Docs",
+      customCss: ["basalt-ui/starlight"],
     }),
   ],
-})
+});
 ```
 
 ## Fonts
@@ -376,12 +374,12 @@ a token to use another font.
 
 ```css
 --basalt-font-sans:
-  'Nunito Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+  "Nunito Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
   Arial, sans-serif;
 --basalt-font-head:
-  'Head Digits', 'Hubot Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+  "Head Digits", "Hubot Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
   Helvetica, Arial, sans-serif;
---basalt-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+--basalt-font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
 ```
 
 **Fonts used:**
@@ -420,22 +418,22 @@ bun add -D fontaine
 
 ```ts
 // vite.config.ts
-import { FontaineTransform } from 'fontaine'
+import { FontaineTransform } from "fontaine";
 
 export default defineConfig({
   plugins: [
     tailwindcss(),
     FontaineTransform.vite({
       fallbacks: {
-        'Hubot Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
-        'Nunito Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
-        'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
+        "Hubot Sans Variable": ["Helvetica Neue", "Segoe UI", "Roboto", "Arial"],
+        "Nunito Sans Variable": ["Helvetica Neue", "Segoe UI", "Roboto", "Arial"],
+        "JetBrains Mono Variable": ["Consolas", "Menlo", "SF Mono", "Courier New"],
       },
-      resolvePath: (id) => new URL('node_modules/' + id, import.meta.url),
+      resolvePath: (id) => new URL("node_modules/" + id, import.meta.url),
     }),
     react(),
   ],
-})
+});
 ```
 
 fontaine reads your font files at build time and generates `@font-face` overrides
@@ -450,30 +448,30 @@ The faces load through the stylesheet import in `app/globals.css`; nothing to in
 
 ```ts
 // next.config.ts
-import { FontaineTransform } from 'fontaine'
+import { FontaineTransform } from "fontaine";
 
 const nextConfig = {
   webpack(config) {
     config.plugins.push(
       FontaineTransform.webpack({
         fallbacks: {
-          'Hubot Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
-          'Nunito Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
-          'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
+          "Hubot Sans Variable": ["Helvetica Neue", "Segoe UI", "Roboto", "Arial"],
+          "Nunito Sans Variable": ["Helvetica Neue", "Segoe UI", "Roboto", "Arial"],
+          "JetBrains Mono Variable": ["Consolas", "Menlo", "SF Mono", "Courier New"],
         },
-        resolvePath: (id) => new URL('node_modules/' + id, import.meta.url),
+        resolvePath: (id) => new URL("node_modules/" + id, import.meta.url),
       }),
-    )
-    return config
+    );
+    return config;
   },
-}
+};
 ```
 
 :::note[Monorepo resolvePath]
 When `node_modules` is hoisted to the monorepo root, adjust the path:
 
 ```js
-resolvePath: (id) => new URL('../../node_modules/' + id, import.meta.url)
+resolvePath: (id) => new URL("../../node_modules/" + id, import.meta.url);
 ```
 :::
 
@@ -529,11 +527,11 @@ bun add -D @tailwindcss/typography shadcn tw-animate-css
 
 ```css
 /* ❌ Wrong */
-@import 'basalt-ui';
-@import 'basalt-ui/src/index.css';
+@import "basalt-ui";
+@import "basalt-ui/src/index.css";
 
 /* ✅ Correct */
-@import 'basalt-ui/tailwind.css';
+@import "basalt-ui/tailwind.css";
 ```
 
 ### Styles not applying / Components look unstyled
@@ -567,7 +565,7 @@ export default defineConfig({
     tailwindcss(), // ✅ First
     react(), // ✅ Second
   ],
-})
+});
 
 // ❌ Wrong order:
 // plugins: [react(), tailwindcss()]
@@ -628,27 +626,27 @@ export default defineConfig({
 ### React Example
 
 ```tsx
-'use client' // For Next.js App Router
+"use client"; // For Next.js App Router
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
 
   // Load theme from localStorage on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
-    const initialTheme = savedTheme || 'dark'
-    setTheme(initialTheme)
-    document.documentElement.classList.toggle('dark', initialTheme === 'dark')
-  }, [])
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+    const initialTheme = savedTheme || "dark";
+    setTheme(initialTheme);
+    document.documentElement.classList.toggle("dark", initialTheme === "dark");
+  }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark'
-    setTheme(newTheme)
-    document.documentElement.classList.toggle('dark', newTheme === 'dark')
-    localStorage.setItem('theme', newTheme)
-  }
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
+    localStorage.setItem("theme", newTheme);
+  };
 
   return (
     <button
@@ -656,9 +654,9 @@ export function ThemeToggle() {
       className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
       aria-label="Toggle theme"
     >
-      {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
+      {theme === "dark" ? "🌙 Dark" : "☀️ Light"}
     </button>
-  )
+  );
 }
 ```
 
@@ -666,23 +664,23 @@ export function ThemeToggle() {
 
 ```vue
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from "vue";
 
-const theme = ref<'light' | 'dark'>('dark')
+const theme = ref<"light" | "dark">("dark");
 
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
-  const initialTheme = savedTheme || 'dark'
-  theme.value = initialTheme
-  document.documentElement.classList.toggle('dark', initialTheme === 'dark')
-})
+  const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+  const initialTheme = savedTheme || "dark";
+  theme.value = initialTheme;
+  document.documentElement.classList.toggle("dark", initialTheme === "dark");
+});
 
 const toggleTheme = () => {
-  const newTheme = theme.value === 'dark' ? 'light' : 'dark'
-  theme.value = newTheme
-  document.documentElement.classList.toggle('dark', newTheme === 'dark')
-  localStorage.setItem('theme', newTheme)
-}
+  const newTheme = theme.value === "dark" ? "light" : "dark";
+  theme.value = newTheme;
+  document.documentElement.classList.toggle("dark", newTheme === "dark");
+  localStorage.setItem("theme", newTheme);
+};
 </script>
 
 <template>
@@ -691,7 +689,7 @@ const toggleTheme = () => {
     class="rounded-md bg-primary px-4 py-2 text-primary-foreground"
     aria-label="Toggle theme"
   >
-    {{ theme === 'dark' ? '🌙 Dark' : '☀️ Light' }}
+    {{ theme === "dark" ? "🌙 Dark" : "☀️ Light" }}
   </button>
 </template>
 ```
@@ -701,13 +699,13 @@ const toggleTheme = () => {
 ```javascript
 // Toggle dark mode
 function toggleTheme() {
-  const isDark = document.documentElement.classList.toggle('dark')
-  localStorage.setItem('theme', isDark ? 'dark' : 'light')
+  const isDark = document.documentElement.classList.toggle("dark");
+  localStorage.setItem("theme", isDark ? "dark" : "light");
 }
 
 // Load saved theme on page load
-const savedTheme = localStorage.getItem('theme') || 'dark'
-document.documentElement.classList.toggle('dark', savedTheme === 'dark')
+const savedTheme = localStorage.getItem("theme") || "dark";
+document.documentElement.classList.toggle("dark", savedTheme === "dark");
 ```
 
 ### TypeScript errors
@@ -737,13 +735,13 @@ bun update basalt-ui
 
 ```css
 /* apps/web/src/styles/global.css */
-@import '../../../../packages/basalt-ui/src/index.css';
+@import "../../../../packages/basalt-ui/src/index.css";
 ```
 
 **Fix (Option 2):** Use `@source` directive (Tailwind v4):
 
 ```css
-@import 'basalt-ui/tailwind.css';
+@import "basalt-ui/tailwind.css";
 
 @source "../../../packages/basalt-ui/src";
 ```

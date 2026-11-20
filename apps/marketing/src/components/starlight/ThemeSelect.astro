@@ -1,0 +1,10 @@
+---
+import { ThemeSwitch } from 'basalt-ui/static'
+
+const t = Astro.locals.t
+---
+
+<ThemeSwitch
+  label={t('themeSelect.accessibleLabel')}
+  labels={{ light: t('themeSelect.light'), dark: t('themeSelect.dark'), auto: t('themeSelect.auto') }}
+/>

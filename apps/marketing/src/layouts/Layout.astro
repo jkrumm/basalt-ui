@@ -1,61 +1,63 @@
 ---
-import '../styles/global.css';
-
-import { Font } from 'astro:assets';
-import Navigation from '@/components/layout/Navigation.astro';
-import ThemeScript from '@/components/shared/ThemeScript.astro';
+import '../styles/site.css'
+import BasaltFonts from 'basalt-ui/astro/BasaltFonts.astro'
+import { SiteFooter, SiteHeader, ThemeSwitch } from 'basalt-ui/static'
+import { FOOTER, LABELS, NAV, current } from '../lib/site'
 
 interface Props {
-  title?: string;
-  description?: string;
+  title?: string
+  description?: string
 }
 
 const {
-  title = 'Basalt UI - Unified Design System for Modern UI Libraries',
-  description = 'One Tailwind CSS theme that unifies components, docs, and dashboards. Basalt UI brings visual consistency to modern UI libraries.',
-} = Astro.props;
+  title = 'Basalt UI: one look for dashboards, docs and content sites',
+  description = 'A React framework on Base UI and Tailwind 4. Apps get the shell, charts and tables; content sites get static parts that ship no client JavaScript.',
+} = Astro.props
 
-// Create canonical URL with fallback for development
-const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : null;
+const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : null
+const links = current(NAV, Astro.url.pathname)
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
-    <ThemeScript />
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="darkreader-lock" />
-
-    <Font cssVariable="--font-instrument-sans" preload />
-    <Font cssVariable="--font-jetbrains-mono" preload />
-
+    <BasaltFonts />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     {canonicalURL && <link rel="canonical" href={canonicalURL} />}
-
     <title>{title}</title>
     <meta name="description" content={description} />
-
-    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     {canonicalURL && <meta property="og:url" content={canonicalURL} />}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-
-    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-
-    <!-- Umami Analytics -->
-    <script
-      is:inline
-      defer
-      src="https://umami.jkrumm.com/p.js"
-      data-website-id="d6758a6a-6006-4f77-a778-54b74c3ac53d"></script>
+    <script is:inline defer src="https://umami.jkrumm.com/p.js" data-website-id="d6758a6a-6006-4f77-a778-54b74c3ac53d"></script>
   </head>
-  <body class="bg-background text-foreground min-h-screen antialiased">
-    <Navigation />
-    <slot />
+  <body class="flex min-h-dvh flex-col bg-background text-foreground antialiased">
+    <SiteHeader links={links} navLabel={LABELS.nav} menuLabel={LABELS.menu}>
+      <a slot="brand" href="/" class="flex items-center gap-2">
+        <span class="inline-block size-5 rounded-chip bg-brand-fill" aria-hidden="true"></span>
+        Basalt UI
+      </a>
+      <Fragment slot="actions">
+        <a href="https://github.com/jkrumm/basalt-ui" class="text-sm text-muted-foreground hover:text-foreground">GitHub</a>
+        <ThemeSwitch label={LABELS.scheme} labels={LABELS.schemes} />
+      </Fragment>
+    </SiteHeader>
+    <main class="flex-1"><slot /></main>
+    <SiteFooter groups={FOOTER}>
+      <Fragment slot="brand">
+        <span class="font-head text-md font-semibold text-foreground">Basalt UI</span>
+        <p>A React framework on Base UI and Tailwind 4 for dashboards, docs and content sites.</p>
+      </Fragment>
+      <span>© 2026 Johannes Krumm</span>
+      <span>MIT licence</span>
+    </SiteFooter>
   </body>
 </html>

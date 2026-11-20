@@ -69,9 +69,11 @@
       "picomatch": "2.3.2"
     },
     "pacote": "21.5.1",
+    "rolldown": "1.2.13",
     "seroval": "1.6.11",
     "seroval-plugins": "1.6.7",
     "tar": "7.5.23",
+    "vite": "8.3.4",
     "zod": "4.6.7"
   },
   "packageManager": "bun@1.4.3"
