@@ -938,7 +938,7 @@ describe('init --start: the TanStack Start host', () => {
     const { code } = await runInit(['--profile', 'app', '--start', '--root', 'src'], dir)
     expect(code).toBe(0)
     expect(read(dir, 'src/routes/__root.tsx')).toBe(
-      template('__root.start.tpl').replace('{{CSS_ENTRY}}', 'index.css'),
+      template('__root.start.tpl').replace('{{CSS_ENTRY}}', '../index.css'),
     )
     expect(read(dir, 'src/router.tsx')).toBe(template('router.start.tpl'))
     const shared = {
@@ -967,6 +967,13 @@ describe('init --start: the TanStack Start host', () => {
     const first = snapshot(dir)
     await runInit(['--profile', 'app', '--start', '--root', 'src'], dir)
     expect(snapshot(dir)).toEqual(first)
+  })
+
+  it('links a stylesheet at the app root from src/routes', async () => {
+    const dir = startApp({ 'index.css': "@import 'tailwindcss';\n" })
+    await runInit(['--profile', 'app', '--start', '--root', 'src'], dir)
+    expect(read(dir, 'src/routes/__root.tsx')).toContain("from '../../index.css?url'")
+    expect(existsSync(join(dir, 'src/index.css'))).toBe(false)
   })
 
   it('links the stylesheet the app already has', async () => {

@@ -20,7 +20,7 @@ import {
 import type { ReactNode } from 'react'
 import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
 import { themeScript } from 'basalt-ui/theme-script'
-import appCss from '../{{CSS_ENTRY}}?url'
+import appCss from '{{CSS_ENTRY}}?url'
 
 export type RouterContext = { queryClient: QueryClient }
 
