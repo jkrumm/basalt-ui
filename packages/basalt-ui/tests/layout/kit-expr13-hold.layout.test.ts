@@ -65,7 +65,31 @@ const firstRowScroll = (page: LayoutPage, index: number): Promise<Scroll> =>
     }
   }, index)
 
+/** Whether every row of `from` to `to` sits inside the table's scroller. */
+const rowsInside = (page: LayoutPage, from: number, to: number): Promise<boolean> =>
+  page.raw.evaluate(
+    ([a, b]) => {
+      const root = document.querySelector('[data-testid="k13-run"]')!
+      const scroller = root.querySelector<HTMLElement>('[data-slot="table-scroller"]')!
+      const box = scroller.getBoundingClientRect()
+      const rows = [...root.querySelectorAll('tbody tr')].slice(a, b + 1)
+      return rows.every((r) => {
+        const rect = r.getBoundingClientRect()
+        return rect.top >= box.top - 1 && rect.bottom <= box.bottom + 1
+      })
+    },
+    [from, to] as const,
+  )
+
 layout('a held run reveals its first row in a fill table', () => {
+  test('a run held past the fold comes into the scroller whole where it fits', async () => {
+    const page = await open()
+    expect(await rowsInside(page, 12, 14)).toBe(false)
+    await page.raw.click('[data-testid="k13-run-far"]')
+    await page.settle()
+    expect(await rowsInside(page, 12, 14)).toBe(true)
+  })
+
   test('a run held past the fold brings its first row into the scroller', async () => {
     const page = await open()
     expect((await firstRowScroll(page, 12)).inside).toBe(false)
