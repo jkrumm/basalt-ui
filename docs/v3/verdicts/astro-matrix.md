@@ -246,6 +246,6 @@ The cause of each difference, read from the source, and the plan row that carrie
 
 ## Not covered
 
-Exported components no demo renders (16): `ComboboxChip`, `DialogDescription`, `DialogTitle`, `SheetTitle`, `SiteArticle`, `SiteCallout`, `SiteCodeBlock`, `SiteFooter`, `SiteHeader`, `SitePager`, `ThemeSwitch`, `Toast`, `ToastClose`, `ToastDescription`, `ToastTitle`, `ToastViewport`; they render only inside an open dialog or sheet, a queued toast or an open combobox, which a page at rest never shows.
+Exported components no demo renders (22): `ComboboxChip`, `DialogDescription`, `DialogTitle`, `SheetTitle`, `SiteArticle`, `SiteBento`, `SiteCallToAction`, `SiteCallout`, `SiteCodeBlock`, `SiteComparison`, `SiteFeature`, `SiteFooter`, `SiteHeader`, `SiteHero`, `SitePager`, `SiteQuestionList`, `ThemeSwitch`, `Toast`, `ToastClose`, `ToastDescription`, `ToastTitle`, `ToastViewport`; they render only inside an open dialog or sheet, a queued toast or an open combobox, which a page at rest never shows.
 
 `server:defer` (server islands) is not measured: it needs an adapter and on-demand rendering, and this playground builds static output only.
