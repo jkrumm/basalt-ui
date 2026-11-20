@@ -379,16 +379,27 @@ const LINE_COMMENT_RE = /(?<!:)\/\/.*/g
  * comment (an `http://` URL in a string) must not swallow the rest of a code line as fake comment
  * text.
  */
+const blank = (text: string): string => text.replace(/[^\n]/g, ' ')
+
 function maskToComments(source: string): string {
-  const masked = source.replace(/[^\n]/g, ' ').split('')
-  const keep = (start: number, length: number): void => {
-    for (let i = start; i < start + length; i++) {
-      if (source[i] !== '\n') masked[i] = source[i]
-    }
+  // Built from slices, not a per-character array: 1100 source files as arrays of one-character strings held
+  // about 1.5 GiB at the peak of the check.
+  const ranges: [number, number][] = []
+  for (const match of source.matchAll(BLOCK_COMMENT_RE))
+    ranges.push([match.index, match.index + match[0].length])
+  for (const match of source.matchAll(LINE_COMMENT_RE))
+    ranges.push([match.index, match.index + match[0].length])
+  ranges.sort((a, b) => a[0] - b[0])
+  const parts: string[] = []
+  let at = 0
+  for (const [start, end] of ranges) {
+    if (end <= at) continue
+    const from = Math.max(start, at)
+    parts.push(blank(source.slice(at, from)), source.slice(from, end))
+    at = end
   }
-  for (const match of source.matchAll(BLOCK_COMMENT_RE)) keep(match.index, match[0].length)
-  for (const match of source.matchAll(LINE_COMMENT_RE)) keep(match.index, match[0].length)
-  return masked.join('')
+  parts.push(blank(source.slice(at)))
+  return parts.join('')
 }
 
 /**
@@ -409,16 +420,20 @@ export const CHECK_B_SRC_ALLOWLIST: ReadonlySet<string> = new Set([
 
 export function checkBSrc(tsFiles: readonly string[]): CheckBFailure[] {
   const failures: CheckBFailure[] = []
-  const entries = Object.entries(REMOVED_APIS)
+  const matchers = Object.entries(REMOVED_APIS).map(([name, replacement]) => ({
+    name,
+    replacement,
+    re: new RegExp(`\\b${name}\\b`),
+  }))
   for (const file of tsFiles) {
     const relFile = relative(pkgRoot, file)
     const lines = maskToComments(readFileSync(file, 'utf8')).split('\n')
     lines.forEach((lineText, idx) => {
-      for (const [name, replacement] of entries) {
+      // Most masked lines are blank: code is blanked, only comment text survives.
+      if (lineText.trim() === '') return
+      for (const { name, replacement, re } of matchers) {
         if (CHECK_B_SRC_ALLOWLIST.has(`${relFile}::${name}`)) continue
-        if (new RegExp(`\\b${name}\\b`).test(lineText)) {
-          failures.push({ file: relFile, line: idx + 1, name, replacement })
-        }
+        if (re.test(lineText)) failures.push({ file: relFile, line: idx + 1, name, replacement })
       }
     })
   }
