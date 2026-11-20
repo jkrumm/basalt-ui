@@ -44,7 +44,7 @@ for f in \
   dist/vite.js dist/vite.d.ts \
   dist/cli/index.js dist/styles.css \
   dist/shell/index.js \
-  dist/router/index.js dist/data/index.js dist/page/index.js dist/cards/index.js dist/ai/index.js \
+  dist/router/index.js dist/data/index.js dist/page/index.js dist/cards/index.js dist/ai/index.js dist/motion/index.js \
   dist/lint/index.js dist/lint/stylelint/index.js dist/testing/index.js dist/ui/index.js dist/css/theme-script.js \
   dist/css/tokens.css dist/css/typography.css dist/css/prose.css dist/css/fonts.css dist/css/tailwind.css dist/css/archify.css dist/table/table.css \
   dist/controls/index.js dist/controls/index.d.ts \
@@ -177,6 +177,7 @@ const subpaths = [
   'basalt-ui/form',
   'basalt-ui/page',
   'basalt-ui/cards',
+  'basalt-ui/motion',
   'basalt-ui/ai',
   'basalt-ui/lint',
   'basalt-ui/stylelint',

@@ -139,6 +139,8 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   './data': ['@tanstack/react-query'],
   // `useAppForm` is `createFormHook`; its `FormField` draws `ui/field`, which wraps Base UI.
   './form': ['@tanstack/react-form', '@base-ui/react'],
+  // `useMotionPreset` reads `useReducedMotionConfig` from `motion/react`; the scale itself is `./tokens`, peer-free.
+  './motion': ['motion'],
   './vite': ['vite'],
   [CHART_SUBPATH]: ['@tanstack/charts', 'd3-scale'],
 }

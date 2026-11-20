@@ -203,7 +203,7 @@ export const SURFACES = {
     rule: 'tokens',
     skill: ['basalt-design', 'basalt-charts'],
     description:
-      'BASALT token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha',
+      'BASALT token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha, the motion scale (MOTION_DURATION, MOTION_EASE_STANDARD, MOTION_EASE_ENTER, MOTION_EASE_EXIT, MOTION_SPRING, MOTION_STAGGER, staggerDelay)',
     globs: {
       shipped: ['**/tokens/**'],
       repo: ['packages/basalt-ui/src/tokens/**'],
@@ -309,6 +309,15 @@ export const SURFACES = {
     description:
       'v3 card composites — StatCard, StatGroup, BarList, EventList, RowList, StepRail, ChainView',
     globs: { shipped: [], repo: ['packages/basalt-ui/src/cards/**'] },
+    forbiddenImports: [],
+  },
+  './motion': {
+    kind: 'tooling',
+    layer: 'headless',
+    description:
+      'v3 motion presets — useMotionPreset and motionPreset (overlay, item, card) on motion/react, collapsed under reduced motion',
+    optionalPeers: ['motion'],
+    globs: { shipped: [], repo: ['packages/basalt-ui/src/motion/**'] },
     forbiddenImports: [],
   },
   './ai': {
