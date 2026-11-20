@@ -22,8 +22,8 @@ const args = new Set(process.argv.slice(2));
 
 /** The pages LCP and CLS are taken on: a landing page, an article and a Starlight docs page. */
 const BROWSER_PAGES = ["/", "/guides/content-sites/", "/docs/introduction/"] as const;
-/** Pages that ship JavaScript on purpose: Starlight's docs (search, menu) and the chart island. */
-const SCRIPTED = [/^\/docs\//, /^\/404\//, /^\/charts\//];
+/** Pages that ship JavaScript on purpose: Starlight's docs (search, menu), the chart island and the MDX islands page. */
+const SCRIPTED = [/^\/docs\//, /^\/404\//, /^\/charts\//, /^\/guides\/islands-in-mdx\//];
 
 const gz = (text: string | Buffer): number => gzipSync(text).byteLength;
 
@@ -65,6 +65,8 @@ type PageNumbers = {
   moduleScripts: number;
   islands: number;
   moduleJsGzip: number;
+  /** The page's scripts and the React renderer with what they import: the cost the first island brings. */
+  runtimeGzip: number;
   inlineJsGzip: number;
   cssGzip: number;
 };
@@ -80,9 +82,10 @@ function measurePage(file: string): PageNumbers & { modules: Set<string>; island
   const rendererChunks = [...html.matchAll(/renderer-url="([^"]+)"/g)].map((m) =>
     fileOf(m[1] ?? ""),
   );
-  const modules = new Set<string>();
-  for (const entry of [...srcs.map(fileOf), ...islandChunks, ...rendererChunks])
-    closure(entry, modules);
+  const runtime = new Set<string>();
+  for (const entry of [...srcs.map(fileOf), ...rendererChunks]) closure(entry, runtime);
+  const modules = new Set<string>(runtime);
+  for (const entry of islandChunks) closure(entry, modules);
   const inline = [...html.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/g)]
     .map((m) => m[1] ?? "")
     .join(";");
@@ -97,6 +100,7 @@ function measurePage(file: string): PageNumbers & { modules: Set<string>; island
     moduleScripts: srcs.length + (islandChunks.length > 0 ? 1 : 0),
     islands: (html.match(/<astro-island/g) ?? []).length,
     moduleJsGzip: sumGz(modules),
+    runtimeGzip: sumGz(runtime),
     inlineJsGzip: inline.trim() === "" ? 0 : gz(inline),
     cssGzip: sumGz(css.filter(existsSync)) + (inlineCss === "" ? 0 : gz(inlineCss)),
     modules,
@@ -160,6 +164,7 @@ type Budgets = {
   inlineJsGzip: number;
   reactRuntimeGzip: number;
   furtherIslandGzip: number;
+  mdxIslandsGzip: number;
   cssGzipPerPage: number;
   lcpMs: number;
   cls: number;
@@ -172,13 +177,17 @@ if (!existsSync(DIST)) {
 
 const measured = pages(DIST).map(measurePage);
 const statics = measured.filter((p) => !SCRIPTED.some((r) => r.test(p.route)));
-const islandPage = measured.find((p) => p.islands > 0);
-const islandOwn = islandPage === undefined ? 0 : sumGz(islandPage.islandChunks);
+/** What a page's islands add to the runtime the first one brings, whatever chunks Vite split them into. */
+const further = (p: PageNumbers | undefined): number =>
+  p === undefined ? 0 : p.moduleJsGzip - p.runtimeGzip;
+const islandPage = measured.find((p) => p.route === "/charts/");
+const mdxPage = measured.find((p) => p.route === "/guides/islands-in-mdx/");
 const numbers: Budgets = {
   staticModuleJsGzip: Math.max(0, ...statics.map((p) => p.moduleJsGzip)),
   inlineJsGzip: Math.max(0, ...measured.map((p) => p.inlineJsGzip)),
-  reactRuntimeGzip: islandPage === undefined ? 0 : islandPage.moduleJsGzip - islandOwn,
-  furtherIslandGzip: islandOwn,
+  reactRuntimeGzip: islandPage?.runtimeGzip ?? 0,
+  furtherIslandGzip: further(islandPage),
+  mdxIslandsGzip: further(mdxPage),
   cssGzipPerPage: Math.max(0, ...measured.map((p) => p.cssGzip)),
   lcpMs: 0,
   cls: 0,

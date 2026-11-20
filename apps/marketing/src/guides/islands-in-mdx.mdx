@@ -1,0 +1,59 @@
+---
+title: Islands in MDX
+description: A sortable table and a chart in an Astro article, each an island with one hydration rule and a measured cost.
+---
+
+Two parts need React in the browser: a table the reader sorts and pages, and a chart that measures its box. Both are MDX tags that take plain data, so Astro can carry them into an island. Everything else on the page stays static.
+
+## A sortable table
+
+Add `interactive` to the `DataTable` tag. The page is rendered as HTML first and hydrated when the table scrolls into view (`client:visible`).
+
+<DataTable
+  interactive
+  label="Deploys per week"
+  columns={[
+    { key: 'week', label: 'Week', kind: 'date' },
+    { key: 'deploys', label: 'Deploys', kind: 'number' },
+    { key: 'rollbacks', label: 'Rollbacks', kind: 'number' },
+  ]}
+  rows={[
+    { week: '2026-07-06', deploys: 14, rollbacks: 2 },
+    { week: '2026-07-13', deploys: 18, rollbacks: 1 },
+    { week: '2026-07-20', deploys: 17, rollbacks: 3 },
+    { week: '2026-07-27', deploys: 22, rollbacks: 1 },
+    { week: '2026-08-03', deploys: 19, rollbacks: 2 },
+    { week: '2026-08-10', deploys: 25, rollbacks: 1 },
+  ]}
+/>
+
+## A chart
+
+A chart measures the box it draws in, so the `Chart` tag renders on the client behind a fallback of the card's height: `client:only="react"`. Pass `load="visible"` to render it on the server and hydrate it in view once a chart kind's server picture matches the browser's.
+
+<Chart
+  title="Deploys per week"
+  figure="25"
+  period="week of 10 Aug"
+  x="week"
+  series={[
+    { key: 'deploys', label: 'Deploys' },
+    { key: 'rollbacks', label: 'Rollbacks', color: 3 },
+  ]}
+  data={[
+    { week: '2026-07-06', deploys: 14, rollbacks: 2 },
+    { week: '2026-07-13', deploys: 18, rollbacks: 1 },
+    { week: '2026-07-20', deploys: 17, rollbacks: 3 },
+    { week: '2026-07-27', deploys: 22, rollbacks: 1 },
+    { week: '2026-08-03', deploys: 19, rollbacks: 2 },
+    { week: '2026-08-10', deploys: 25, rollbacks: 1 },
+  ]}
+/>
+
+## The rule and the cost
+
+The first island on a page brings React, react-dom and Astro's island runtime. Each further island costs what its part adds. The numbers are the Astro matrix's, gzip.
+
+- Put an island below the fold on `client:visible`; use `load="idle"` or `client:idle` above it.
+- One island per part is fine: React ships once per page.
+- A part that needs more than data (custom marks, linked readouts) is your own island in `src/islands/`.

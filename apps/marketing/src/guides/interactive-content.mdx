@@ -1,0 +1,53 @@
+---
+title: Interactive content in MDX
+description: Tabs, a data table and a form in an Astro article, with no client JavaScript.
+---
+
+The same MDX map that styles headings and code blocks also carries the parts an article needs most: tabs, a table of figures and a form. None of them ships a framework. This page loads no JavaScript of its own beyond the two kilobytes every page of this site carries.
+
+## Tabs
+
+Tabs are platform markup: an ARIA tab list, panels in the page, and the arrow keys, Home and End wired by the one inline script. Without the script every panel shows under its name.
+
+<Tabs label="Install with" tabs={['bun', 'npm', 'pnpm']}>
+<Tab label="bun">`bun add basalt-ui`</Tab>
+<Tab label="npm">`npm install basalt-ui`</Tab>
+<Tab label="pnpm">`pnpm add basalt-ui`</Tab>
+</Tabs>
+
+Name each tab once in `tabs` and once as the `label` of its panel, in the same order. The panels stay in the document, so find-in-page and a printout still reach them.
+
+## A table of figures
+
+`DataTable` takes plain columns and rows, so the same tag can run as an island. With no `interactive` prop it is the static table: formatted numbers and dates, rows as given, 0 bytes of JavaScript.
+
+<DataTable
+  label="Cost of a basalt island, gzip"
+  columns={[
+    { key: 'part', label: 'Part' },
+    { key: 'kb', label: 'Further cost (kB)', kind: 'number' },
+    { key: 'rule', label: 'Directive' },
+  ]}
+  rows={[
+    { part: 'Tabs (platform)', kb: 0.4, rule: 'none' },
+    { part: 'Table, static', kb: 0, rule: 'none' },
+    { part: 'Table, sortable', kb: 218.3, rule: 'client:visible' },
+    { part: 'Chart', kb: 122.2, rule: 'client:only' },
+  ]}
+/>
+
+<SiteCallout tone="info" title="Islands have their own page">
+  A sortable table and a chart each need React on the page. [Islands in MDX](/guides/islands-in-mdx) shows both and what they cost.
+</SiteCallout>
+
+## A form
+
+A form in an article is a native form: it posts to its `action`, the browser validates `required` and `type`, and a field turns red after the reader leaves it, never on the first key.
+
+<Form action="/subscribe">
+  <Field label="Email" name="email" type="email" autoComplete="email" description="One message a release, no tracking." required />
+  <Field label="What are you building?" name="note" type="textarea" autoComplete="off" />
+  <SubmitButton>Subscribe</SubmitButton>
+</Form>
+
+The form posts to a URL on your site or to a form service. For live error summaries, async checks or steps, build the form in an app with `basalt-ui/form`.

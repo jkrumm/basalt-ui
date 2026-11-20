@@ -47,3 +47,7 @@ The parts ship no JavaScript of their own. The one script stays under 2 kB gzip,
 <SiteCallout tone="info" title="Measured, not claimed">
   `site-budgets.json` holds the numbers CI checks on every pull request: zero module JavaScript on a page without an island, the inline script, the CSS per page, LCP and CLS.
 </SiteCallout>
+
+## Interactive parts
+
+An article that needs tabs, a table of figures or a form takes them from the same MDX map, still with no client JavaScript: [Interactive content in MDX](/guides/interactive-content). A sortable table and a chart are islands, with one hydration rule and a measured cost each: [Islands in MDX](/guides/islands-in-mdx).
