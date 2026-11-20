@@ -47,7 +47,7 @@ Score per component, then add one line per page for the page items (Communicatio
 7. Hover, focus and tooltip states are present in the shots; focus is the 2 px outline. **[measured]** An `ignored` state shot fails (`craft-7/states-ignored`).
 8. A rule between rows, list entries or cards is at most the hairline or grid token, as faint as a chart's grid lines in both schemes. A rule that reads as ink fails: a bare `border`, `border-b` or `divide-y` paints in the text colour.
 9. Hover and focus change colour and the readout only: in the hover, focus and tooltip crops the plot, its axes and the parts beside it sit where the ready crop has them. A shift, a tooltip or readout that grows the card, or a label that wraps on focus fails.
-10. A hand-composed mark is drawn with craft, judged apart from whether its form fits (Expression 1): rows, tracks and labels start on one shared x, every label and title fits its box at every viewport (none clipped, hidden under a mark or cut at the edge), and marks of one class have one size. A clipped, cut or ellipsised label or title fails the same whether the app or a shipped part drew it; a page of shipped parts is no default pass. A good idea drawn badly fails here.
+10. A hand-composed mark is drawn with craft, judged apart from whether its form fits (Expression 1): rows, tracks and labels start on one shared x, every label and title fits its box at every viewport (none clipped, hidden under a mark or cut at the edge), and marks of one class have one size. A clipped, cut or ellipsised label or title fails the same whether the app or a shipped part drew it; a page of shipped parts is no default pass. A good idea drawn badly fails here. A defect another item already charged (a misplaced or lone data label is Craft 6's or Expression 5's, a card-height mismatch is Craft 3's) is not charged again here: Craft 10 fails only on a rendering fault of its own.
 
 ### Expression
 
@@ -57,6 +57,8 @@ Score per component, then add one line per page for the page items (Communicatio
 4. A number with a target shows the target; a number with a history shows it; a whole with parts shows the parts. A stat row (a strip or a row of figure cells) in which no cell carries a delta naming its base, a verdict, a meter or a trend fails here: figures on a band compare nothing.
 5. No axis repeats a label; ticks fit the span.
 6. A grid of five or more cards that each show one record of one shape offers a table view of the same records (a toggle, or a table beside the grid), or is a table.
+
+This rubric scores no link between parts. Two parts that share no items and no item-and-children relation (a month chart beside a ridge-by-azimuth chart) are not linked parts, and a link the question needed that the page lacks is Expression 1's.
 
 ### Communication
 
