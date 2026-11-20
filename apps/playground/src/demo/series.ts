@@ -25,6 +25,11 @@ export const DEMO_SERIES = defineSeries({
   churn: { light: '#af293e', dark: '#e46360' },
 })
 
+/** Photo library (scenario expr-n71): the accent is the kept photos, a brand token set by the chart's highlight; the other ratings sit in one mid ink step. */
+export const N71_SERIES = defineSeries({
+  photos: { light: '#8c8c8c', dark: '#8c8c8c' },
+})
+
 /** Factory week (scenario expr-n65): the status red is dropped work, the one outcome that needs a hand; done is the dark ink step, cancelled and still-open Issues paler ones; the four finding classes take four ink steps, the leader the darkest; idle hours sit in a mid step. */
 export const N65_SERIES = defineSeries({
   done: { light: '#262626', dark: '#e6e6e6' },
@@ -481,4 +486,31 @@ export const N63_SERIES = defineSeries({
   battery: { light: '#5a5a5a', dark: '#b0b0b0' },
   rule: { light: '#9a9a9a', dark: '#7d7d7d' },
   high: { light: '#af293e', dark: '#e46360' },
+})
+
+/** Household events (scenario expr-n70): the net per event rests in an ink step and the accent, from the kit's highlight, marks the events over the limit; the reimbursed share sits in a pale step, the limit rule in a dark one. */
+export const N70_SERIES = defineSeries({
+  net: { light: '#6b6b6b', dark: '#a8a8a8' },
+  back: { light: '#9a9a9a', dark: '#7d7d7d' },
+  limit: { light: '#262626', dark: '#e6e6e6' },
+})
+
+/** AI wallets (scenario expr-n74): the accent marks the wallets that answer, the one that grew most and a new one; last month sits in the dark ink step, the 30 days before in the neutral `other` grey. */
+export const N74_SERIES = defineSeries({
+  answer: { light: '#2871c7', dark: '#5190f7' },
+  last: { light: '#4a4a4a', dark: '#c4c4c4' },
+  other: { light: '#b0b0b0', dark: '#666666' },
+})
+
+/** Spam filter (scenario expr-n72): the accent is a disagreement between the two classifiers when both are sure; the status red is a message delivered although a classifier called it spam; the other disagreements sit in a dark ink step, agreement in a pale one. */
+export const N72_SERIES = defineSeries({
+  agree: { light: '#b0b0b0', dark: '#666666' },
+  other: { light: '#4a4a4a', dark: '#c4c4c4' },
+  sure: { light: '#2871c7', dark: '#5190f7' },
+  delivered: { light: '#af293e', dark: '#e46360' },
+})
+
+/** Review queue (scenario expr-n73): learned items per confidence step in the dark ink step; the accent is the slipped steps, painted by the bar `highlight`. */
+export const N73_SERIES = defineSeries({
+  items: { light: '#262626', dark: '#e6e6e6' },
 })

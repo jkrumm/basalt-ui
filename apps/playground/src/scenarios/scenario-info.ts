@@ -398,6 +398,42 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
       'An astrophotographer plans the year. In which months does the galactic core give usable dark hours from this site, and how many does the ridge cost?',
   },
   {
+    id: 'expr-n69',
+    title: 'Expression n69: which account takes the next lead and which fills before its reset',
+    blurb:
+      "The factory owner routes new leads across Claude accounts. Which account takes the next lead, which one fills before its week resets, and how much of each week's allowance went unused?",
+  },
+  {
+    id: 'expr-n70',
+    title: 'Expression n70: which events cost more than the limit once reimbursed',
+    blurb:
+      'A household closes out its trips and shared costs. Which events cost more than the 300 euro limit once reimbursements are in, and which still wait for money back?',
+  },
+  {
+    id: 'expr-n71',
+    title: 'Expression n71: has the keeper rate reached its target',
+    blurb:
+      'A photographer reviews the library after a season. Has the keeper rate reached the 35 percent target, and how many more kept photos would it take?',
+  },
+  {
+    id: 'expr-n72',
+    title: 'Expression n72: which spam got through and how often the classifiers disagree',
+    blurb:
+      'The owner of a contact form checks the spam filter. Which messages were delivered although a classifier called them spam, and how often do the two classifiers disagree when both are sure?',
+  },
+  {
+    id: 'expr-n73',
+    title: 'Expression n73: how many items are due and whether the slipped share holds',
+    blurb:
+      'A learner opens the review queue. How many items are due now, and is the share that slipped to forgotten or shaky still under 20 percent of what was learned?',
+  },
+  {
+    id: 'expr-n74',
+    title: 'Expression n74: which wallet grew the most and which spend is new',
+    blurb:
+      "The owner of several AI wallets compares this month with the 30 days before. Which wallet's spend grew the most, and which spend is new with nothing before it?",
+  },
+  {
     id: 'linked-windows',
     title: 'Linked windows: a table of runs beside an hourly chart',
     blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',
