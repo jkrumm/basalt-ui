@@ -47,6 +47,10 @@ bun run measure -- --check [--browser]         # site-budgets.json: zero JS on s
 commit. CI runs the check on every pull request. The image builds `packages/basalt-ui` before the
 site (`Dockerfile`), so a workspace change carries its `COPY` edit.
 
+This is a sibling install (`basalt.sibling` in `package.json`): its presets and manifest follow the
+shipped rules. `make sync-self` resyncs it with the root copies; CI fails when `basalt-ui sync` would
+rewrite a committed file here. The tokens are the stock ones inside `basalt-ui/static.css`.
+
 <!-- basalt:begin 2.29.0 -->
 
 ## basalt-ui (managed — do not hand-edit)

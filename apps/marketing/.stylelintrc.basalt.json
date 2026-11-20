@@ -12,9 +12,7 @@
       "customSyntax": "postcss-html"
     }
   ],
-  "ignoreFiles": [
-    "tokens.css"
-  ],
+  "ignoreFiles": [],
   "rules": {
     "color-no-hex": [
       true,
