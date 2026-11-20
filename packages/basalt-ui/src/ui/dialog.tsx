@@ -17,7 +17,7 @@ import { buttonVariants } from './button'
  * dialogContentVariants({ size: 'lg' }) // class string for a hand-built popup
  */
 export const dialogContentVariants = cva(
-  'relative flex max-h-[calc(100dvh-2rem)] w-full flex-col gap-4 overflow-y-auto rounded-card bg-popover p-4 text-foreground shadow-overlay outline-none transition-[opacity,scale] duration-150 ease-standard data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none',
+  'relative flex max-h-[calc(100dvh-2rem)] w-full flex-col gap-4 overflow-y-auto rounded-card bg-popover p-4 text-foreground shadow-overlay outline-none transition-[opacity,scale] duration-fast ease-enter data-ending-style:ease-exit data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none',
   {
     variants: {
       size: {
@@ -38,7 +38,7 @@ export const dialogContentVariants = cva(
  * alertDialogContentVariants()
  */
 export const alertDialogContentVariants = cva(
-  'relative flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col gap-4 overflow-y-auto rounded-card bg-popover p-4 text-foreground shadow-overlay outline-none transition-[opacity,scale] duration-150 ease-standard data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none',
+  'relative flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col gap-4 overflow-y-auto rounded-card bg-popover p-4 text-foreground shadow-overlay outline-none transition-[opacity,scale] duration-fast ease-enter data-ending-style:ease-exit data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none',
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -53,7 +53,7 @@ export const dialogParts = [
 ] as const
 
 const BACKDROP =
-  'fixed inset-0 z-50 bg-scrim transition-opacity duration-150 data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none'
+  'fixed inset-0 z-50 bg-scrim transition-opacity duration-fast data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none'
 const VIEWPORT =
   'fixed inset-0 z-50 grid place-items-center overflow-hidden p-4 data-ending-style:pointer-events-none'
 

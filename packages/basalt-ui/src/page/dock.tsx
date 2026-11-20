@@ -86,7 +86,7 @@ export function Dock({ title, tag, fullPage, onClose, children }: DockProps): Re
       style={style}
       className={cn(
         'flex h-full min-w-0 flex-col bg-background text-foreground outline-none',
-        'transition-[translate,opacity] duration-300 ease-standard starting:translate-x-8 starting:opacity-0 motion-reduce:transition-none',
+        'transition-[translate,opacity] duration-slow ease-standard starting:translate-x-8 starting:opacity-0 motion-reduce:transition-none',
         // The panel is pinned to the end edge in both states: while the region grows, the panel is
         // revealed from the edge rather than squeezed. Its header meets the page-bar band's bottom edge.
         shelled

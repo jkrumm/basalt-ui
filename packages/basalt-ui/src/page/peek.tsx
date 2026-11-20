@@ -116,7 +116,7 @@ export function Peek({
       style={style}
       className={cn(
         'm-0 flex h-full max-h-none w-(--peek-w) min-w-0 flex-col border-0 bg-popover p-0 text-popover-foreground shadow-overlay outline-none',
-        'transition-[translate,opacity] duration-300 ease-standard starting:translate-x-8 starting:opacity-0 motion-reduce:transition-none',
+        'transition-[translate,opacity] duration-slow ease-standard starting:translate-x-8 starting:opacity-0 motion-reduce:transition-none',
         // In the shell the region is zero wide, so a percentage cap would cap the panel at nothing, and the
         // dialog's own `inset-inline-start: 0` must give way to the end edge.
         shelled ? 'absolute inset-y-0 start-auto end-0 z-30' : 'max-w-full',

@@ -30,7 +30,7 @@ const BOTTOM =
  * sheetContentVariants({ placement: 'right' }) // class string for a hand-built popup
  */
 export const sheetContentVariants = cva(
-  'relative flex flex-col gap-4 overflow-y-auto bg-popover p-4 text-foreground shadow-overlay outline-none transition-transform duration-300 ease-standard data-swiping:transition-none motion-reduce:transition-none',
+  'relative flex flex-col gap-4 overflow-y-auto bg-popover p-4 text-foreground shadow-overlay outline-none transition-transform duration-slow ease-standard data-swiping:transition-none motion-reduce:transition-none',
   {
     variants: {
       placement: {
@@ -184,7 +184,7 @@ export function SheetContent({
     <BaseDrawer.Portal>
       <BaseDrawer.Backdrop
         forceRender
-        className="fixed inset-0 z-50 bg-scrim transition-opacity duration-300 data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
+        className="fixed inset-0 z-50 bg-scrim transition-opacity duration-slow data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
       />
       <BaseDrawer.Viewport className="fixed inset-0 z-50 flex overflow-hidden data-ending-style:pointer-events-none">
         <BaseDrawer.Popup
