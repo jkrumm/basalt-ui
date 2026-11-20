@@ -34,9 +34,10 @@ describe('DataPanel: the server HTML is the final layout', () => {
     expect(bars).toHaveLength(3)
   })
 
-  test('a ready frame holds the declared rows at the row token, whatever the pointer, and no phone floor', () => {
+  test('a ready frame holds the declared rows at the row token, whatever the pointer, and the same phone floor as loading', () => {
     const html = renderToString(<DataPanel title="Open tasks" bodySize={{ rows: 6 }} body={list} />)
-    expect(html).not.toContain('--panel-cards')
+    expect(html).toContain('--panel-cards:540px')
+    expect(html).toContain('@max-regular:min-h-(--panel-cards)')
     // the row token is CSS: a coarse pointer's taller row is the server's height too
     expect(html).toContain('height:calc(6 * var(--basalt-row-h, 2rem))')
   })
