@@ -7,6 +7,7 @@
 @source '../static';
 @source '../page/prose.{js,tsx}';
 @source '../ui/alert.{js,tsx}';
+@source '../ui/table.{js,tsx}';
 @custom-variant dark {
   &:where([data-theme='dark'], [data-theme='dark'] *) {
     @slot;
@@ -107,7 +108,17 @@
   --text-lg--line-height: var(--basalt-text-lg-lh);
   --text-display: var(--basalt-text-display);
   --text-display--line-height: var(--basalt-text-display-lh);
+  --transition-duration-fast: var(--basalt-dur-fast);
+  --transition-duration-base: var(--basalt-dur-base);
+  --transition-duration-slow: var(--basalt-dur-slow);
   --ease-standard: var(--basalt-ease);
+  --ease-enter: var(--basalt-ease-enter);
+  --ease-exit: var(--basalt-ease-exit);
+}
+@theme inline {
+  --animate-enter-overlay: basalt-enter-overlay var(--basalt-dur-fast) var(--basalt-ease-enter) both;
+  --animate-enter-item: basalt-enter-item var(--basalt-dur-base) var(--basalt-ease-enter) both;
+  --animate-enter-card: basalt-enter-card var(--basalt-spring) both;
 }
 @utility h-ctl {
   height: var(--basalt-ctl-h);
@@ -128,6 +139,10 @@
 }
 @utility word-head {
   word-spacing: 0.12em;
+}
+@utility stagger {
+  animation-delay: min(calc(var(--i, 0) * var(--basalt-stagger)), var(--basalt-dur-slow));
+  transition-delay: min(calc(var(--i, 0) * var(--basalt-stagger)), var(--basalt-dur-slow));
 }
 @utility focus-ring {
   /* Focus scrolls the element flush to its scrollport; the margin keeps the 2px ring + 2px offset in view. */
@@ -191,12 +206,32 @@
   }
   @media (prefers-reduced-motion: no-preference) {
     [data-chart-mark] {
-      transition: opacity 120ms ease-out;
+      transition: opacity var(--basalt-dur-fast) var(--basalt-ease);
     }
   }
   @keyframes basalt-article-progress {
     to {
       transform: scaleX(1);
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes basalt-enter-overlay {
+      from {
+        opacity: 0;
+        transform: scale(0.96);
+      }
+    }
+    @keyframes basalt-enter-item {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+    }
+    @keyframes basalt-enter-card {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+      }
     }
   }
 }
