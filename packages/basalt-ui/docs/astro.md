@@ -136,7 +136,7 @@ const components = { ...siteMdxComponents(labels), Chart, DataTable }
 | `Form`, `Field`, `SubmitButton` | a native form | none | none | none | 0 |
 | `DataTable` | a static table | none | none | none | 0 |
 | `DataTable interactive` | the same table | sortable, pageable `DataTable` | `client:visible` (`load="idle"` above the fold) | `data-table` | 218.3 kB |
-| `Chart` | a fallback box of the card's height | `ChartCard` over `Lines` or `Bars` | `client:only="react"` (`load="visible"` or `"idle"` once its server picture is right) | `chart-card` | 122.2 kB |
+| `Chart` | a fallback box of the card's height | `ChartCard` over `Lines` or `Bars` | `client:only="react"` (`load="visible"` or `"idle"` once its server picture is right) | `chart-card` | 125.1 kB |
 
 <!-- mdx-island-cost:end -->
 
@@ -149,8 +149,10 @@ holds the two together.
   script every panel shows under its name and the tab row is hidden.
 - **Columns, rows and series are plain data** (strings, numbers, dates): a function cannot cross an island
   boundary. A chart with custom marks, zones or linked readouts is your own island in `src/islands/`.
-- **A chart's server picture still differs from the browser's**, which is why the default is
-  `client:only`. A table's does not: `interactive` server-renders it, then hydrates.
+- **A chart's server picture is right only at the width the server assumes** (640 px, a card less its
+  edges) and differs on a phone (3% to 18% of the pixels at 390 px, `docs/v3/verdicts/astro-matrix.md`),
+  which is why the default is `client:only`. A table's does not differ: `interactive` server-renders it,
+  then hydrates.
 - **No provider.** Neither island needs `BasaltProvider`; an island you write that does wraps its own.
 - **Classes.** The two islands use chart, card and table classes. Add `@source` lines for
   `basalt-ui/dist/charts`, `dist/cards`, `dist/table` and `dist/astro/mdx` to the site's sheet, as
