@@ -11,6 +11,10 @@ export function Demo(): ReactElement {
         readingTime: 4,
       }}
       toc
+      tocItems={[
+        { id: 'setup', label: 'Setup', level: 2 },
+        { id: 'load', label: 'Training load', level: 2 },
+      ]}
       readingProgress
       next={{ label: 'Training load', href: '/guides/load' }}
     >
