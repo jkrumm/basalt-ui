@@ -65,9 +65,11 @@ const isRelative = (root: string): boolean =>
   !/^([/\\]|[a-zA-Z]:)/.test(root) &&
   !/\n|\r/.test(root) &&
   !root.split('/').includes('..')
-/** `.` would be a waiver for the whole project: a bespoke surface is one named directory, no glob. */
+/** The root (`.`, `./.`) would waive the whole project: a bespoke surface is one named directory, no glob. */
 const isBespokeDir = (dir: string): boolean =>
-  isRelative(dir) && dir.replace(/\/+$/, '') !== '.' && !/[*?[\]{}]/.test(dir)
+  isRelative(dir) &&
+  dir.split('/').some((segment) => segment !== '' && segment !== '.') &&
+  !/[*?[\]{}]/.test(dir)
 const isTokenOutput = (v: unknown): v is TokenOutput =>
   isRecord(v) &&
   typeof v['out'] === 'string' &&
