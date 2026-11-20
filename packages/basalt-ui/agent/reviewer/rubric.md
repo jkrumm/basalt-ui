@@ -49,7 +49,7 @@ A defect is charged once across every item: the item whose text names it owns it
 7. Hover, focus and tooltip states are present in the shots; focus is the 2 px outline. **[measured]** An `ignored` state shot fails (`craft-7/states-ignored`). **[mobile]** A key press whose focus frame shows the page scrolled so that the focused chart and its ring are out of the viewport (a kit gap) fails here once, P3, on every case that shows it, and no other item charges it.
 8. A rule between rows, list entries or cards is at most the hairline or grid token, as faint as a chart's grid lines in both schemes. A rule that reads as ink fails: a bare `border`, `border-b` or `divide-y` paints in the text colour.
 9. Hover and focus change colour and the readout only: in the hover, focus and tooltip crops the plot, its axes and the parts beside it sit where the ready crop has them. A shift, a tooltip or readout that grows the card, or a label that wraps on focus fails.
-10. A hand-composed mark is drawn with craft, judged apart from whether its form fits (Expression 1): rows, tracks and labels start on one shared x, every label and title fits its box at every viewport (none clipped, hidden under a mark or cut at the edge), and marks of one class have one size. A clipped, cut or ellipsised label or title fails the same whether the app or a shipped part drew it; a page of shipped parts is no default pass. A good idea drawn badly fails here. A defect another item already charged (a misplaced or lone data label is Craft 6's or Expression 5's, a card-height mismatch is Craft 3's) is not charged again here: Craft 10 fails only on a rendering fault of its own.
+10. A hand-composed mark is drawn with craft, judged apart from whether its form fits (Expression 1): rows, tracks and labels start on one shared x, every label and title fits its box at every viewport (none clipped, hidden under a mark or cut at the edge), and marks of one class have one size. A clipped, cut or ellipsised label or title fails the same whether the app or a shipped part drew it; a page of shipped parts is no default pass. A good idea drawn badly fails here. A defect another item already charged (a misplaced, lone or colliding data label, and a line's end label with its leader, is Craft 6's or Expression 5's; a card-height mismatch is Craft 3's) is not charged again here: Craft 10 fails only on a rendering fault of its own.
 
 ### Expression
 
@@ -60,7 +60,7 @@ A defect is charged once across every item: the item whose text names it owns it
 5. No axis repeats a label; ticks fit the span.
 6. A grid of five or more cards that each show one record of one shape offers a table view of the same records (a toggle, or a table beside the grid), or is a table.
 
-This rubric scores no link between parts. Two parts that share no items and no item-and-children relation (a month chart beside a ridge-by-azimuth chart) are not linked parts, and a link the question needed that the page lacks is Expression 1's.
+This rubric scores no link between parts. Two parts that share no items and no item-and-children relation (a month chart beside a ridge-by-azimuth chart) are not linked parts, and a link the question needed that the page lacks is Expression 1's. A list's focus clears 0.15 to 0.6 s after the pointer leaves the list, so a pointer sweep whose first step marks list rows carries the previous hover and is no evidence of a link; read the chart-to-list direction from the keyboard frame and the sweep.
 
 ### Communication
 
