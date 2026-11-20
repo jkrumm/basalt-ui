@@ -7,7 +7,7 @@
   "ejected": {},
   "managed": {
     ".claude/agents/basalt-design-reviewer.md": "5334e1c4a9c6d1125f1e381b02db27310106f6e8a51172917b71935db366094e",
-    "repo:.claude/rules/basalt-v3-charts.md": "acedbaeabc30862b931c49ad331b97bd049fd96a0c2d9b5151de5c2eca59ee88",
+    "repo:.claude/rules/basalt-v3-charts.md": "494f80ba94b40a236d3389540cb913fdec93b0b6135273591ae3b717f4b980e4",
     "repo:.claude/rules/basalt-v3-page.md": "d8831b8d1527cb669bd7072542370833e5332423028ab2f9fe04adb1eb2a1a54",
     "repo:.claude/rules/basalt-v3-state.md": "9ef52a9fe323db97f4d2a28cf9e717e54d0416246faea23f95a8eff19767898f",
     "repo:.claude/rules/basalt-v3-tokens.md": "1bef89518363af3c6f75e7de1af9735e9e8c6dd41216d0ff8867972559185f32",
@@ -19,32 +19,26 @@
     "repo:.claude/skills/basalt-v3-app/references/testing.md": "925ac4088d6b8ba8d853059d27aba543aade7f807d55d3d923ca230d1158a8e4",
     "repo:.claude/skills/basalt-v3-app/SKILL.md": "e86282f873b34daa89d2347bffca1da47b3a8f2894283c45c08a422ad773c9c0",
     "repo:.claude/skills/basalt-v3-charts/references/custom-marks.md": "f701ead00b8fefb7dde6a6d3d4d747589dcacf8705e3d283e81c746c4f7d5d24",
-    "repo:.claude/skills/basalt-v3-charts/references/linked-parts.md": "db2a6a838a37b61743c0c6413481d373a52dfdb3d045c246bcdeafae3b122597",
-    "repo:.claude/skills/basalt-v3-charts/SKILL.md": "6867b46cc84480d3f69493d34ce260d3c7683da928a08a517b19020438558d4e",
+    "repo:.claude/skills/basalt-v3-charts/references/linked-parts.md": "c7ba0d319d40116cd1b6f51b6603f6cba288ad3092078ded9e7b7fed09a4adb6",
+    "repo:.claude/skills/basalt-v3-charts/SKILL.md": "d11e8d183cac53f8661eeb9b9d22423047d11d871e375371d36dbc7fad36e1b1",
     "repo:.claude/skills/basalt-v3-design/references/ai.md": "0e8ade9b7218d462f920124377d535644a005ce6332c9b7b2523485b04cc1bba",
     "repo:.claude/skills/basalt-v3-design/references/anti-defaults.md": "134ded0315f53c80474513df1dbfa2ce48f39939f4ffe19c6aa6d930bdc0904c",
-    "repo:.claude/skills/basalt-v3-design/references/cards.md": "c2254c42cc95bdd1739f76a8ae611f30306e51b40dd55dc673e5ba74cb0216e8",
-    "repo:.claude/skills/basalt-v3-design/references/charts.md": "5d8edfcdf524cdfb4275a1113cbe3bd549e6d4c20b945cf4f16990112336ec01",
+    "repo:.claude/skills/basalt-v3-design/references/cards.md": "a83daa94fffed5608d0f73771b5b5abd52e66a374019abfcddd26babe1207f03",
+    "repo:.claude/skills/basalt-v3-design/references/charts.md": "c5c93a6d22c2194d425ba43d47384c7ef2224c9c8e240ed4f80fb581c8f0200f",
     "repo:.claude/skills/basalt-v3-design/references/concept.md": "485d769c56d96147cb95c484ff45b59aec570b061404b13ab6cd5be43f42bf8b",
     "repo:.claude/skills/basalt-v3-design/references/controls.md": "dbbc9c951b2e42935703b14f12b9d26a7977e059ddd73dcd937610b17f89fba0",
-    "repo:.claude/skills/basalt-v3-design/references/copy.md": "1b6a748ac6531a5fafec7f56703abc31a434e526920d3301da17f4105490ed88",
+    "repo:.claude/skills/basalt-v3-design/references/copy.md": "94f96fd69196dfe13fca674edcc90724b821dc7f7c18aa09e4b2f0a42db8a7f5",
     "repo:.claude/skills/basalt-v3-design/references/encoding.md": "47ecf91eeecc3d74375909bdb0131f10c8f89995a1deae4319b1d3173daf876c",
     "repo:.claude/skills/basalt-v3-design/references/forms.md": "b4dd9b77355984266b44895727692529a18654a84a2cc5179e4f0f999a2e17f7",
     "repo:.claude/skills/basalt-v3-design/references/motion.md": "519022fe01efc554c65e9ec81cdfbd29aaf8563496cce8deca995f064c482a62",
     "repo:.claude/skills/basalt-v3-design/references/state.md": "234561d6a986805a0de347ca26a49c9a061baaa289187729ba75dbcb2961d732",
     "repo:.claude/skills/basalt-v3-design/references/states.md": "4645eb90d931a6bc692474e6249cd4f7ecb6268651b966194fdd04e0a1ef51ca",
-    "repo:.claude/skills/basalt-v3-design/references/table.md": "494a944bc059cdf72461748ebec4821321c07ee34e361ad884b348c50c8f7b21",
-    "repo:.claude/skills/basalt-v3-design/SKILL.md": "0ddf77b09d7c909bb3ce74ff2acd8f570701600fa7d0dac2ec5236db82ed4166"
+    "repo:.claude/skills/basalt-v3-design/references/table.md": "c8b14a8e32fee97b98b55166b9cf5854613a0e25feef43c6c76de39bb6505b60",
+    "repo:.claude/skills/basalt-v3-design/SKILL.md": "014f80b3abb820244836396bd519087b93b3838f8325736cd246a3838c75eb0b"
   },
   "deepRender": [],
   "authoredContent": [],
   "viewports": [],
-  "tokens": [
-    {
-      "out": "tokens.css",
-      "format": "css",
-      "flags": []
-    }
-  ],
+  "tokens": [],
   "sibling": "basalt-v3-"
 }
