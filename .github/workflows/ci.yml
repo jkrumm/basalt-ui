@@ -223,18 +223,18 @@ jobs:
       - name: Gate steps no other job runs (make check CI_SPLIT=1)
         run: make check CI_SPLIT=1
 
-  # The quality matrix (sampled, every playground route in real browser geometry), split across five jobs: it is one file of
-  # `test.each` cells, so `BASALT_MATRIX_SHARD=<i>/5` (tests/quality/matrix/shard.ts) keeps every fifth cell, not a file.
-  # Each shard prints "matrix-shard <i>/5 ran=K total=T"; the `ci` job asserts the shards ran every cell of every matrix file.
+  # The quality matrix (sampled, every playground route in real browser geometry), split across eight jobs: it is one file of
+  # `test.each` cells, so `BASALT_MATRIX_SHARD=<i>/8` (tests/quality/matrix/shard.ts) keeps every eighth cell, not a file.
+  # Each shard prints "matrix-shard <i>/8 ran=K total=T"; the `ci` job asserts the shards ran every cell of every matrix file.
   # It reads dist and the playground build, as `make check` does, and `make quality-matrix` installs the headless shell
   # itself (a no-op on a cache hit). There is no `factory` on a hosted runner, so the slot wrapper is bare.
   quality-matrix:
-    name: quality-matrix (${{ matrix.shard }}/5)
+    name: quality-matrix (${{ matrix.shard }}/8)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
 
     steps:
       - name: Checkout
@@ -257,7 +257,7 @@ jobs:
 
       - name: Quality matrix (make quality-matrix, sampled, one shard)
         env:
-          BASALT_MATRIX_SHARD: ${{ matrix.shard }}/5
+          BASALT_MATRIX_SHARD: ${{ matrix.shard }}/8
         # pipefail: the tee must not hide a failing run
         shell: bash
         run: make quality-matrix 2>&1 | tee "quality-matrix-shard-${{ matrix.shard }}.log"
@@ -349,7 +349,7 @@ jobs:
 
       - name: Quality-matrix shards run every cell
         if: needs.quality-matrix.result == 'success'
-        run: bun scripts/check-matrix-shards.ts quality-matrix-logs --shards 5
+        run: bun scripts/check-matrix-shards.ts quality-matrix-logs --shards 8
 
       - name: Fail unless every job succeeded
         if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.site.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success' || needs.quality-matrix.result != 'success' || needs.astro-matrix.result != 'success'

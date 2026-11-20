@@ -172,7 +172,7 @@ evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> 
 # check` runs (1800 light en + 390 dark pseudo-locale per route); `make evidence` runs `full` (x both
 # schemes) unless LANES excludes `quality`. Needs the built package and playground deps, like `check`.
 QUALITY_MATRIX ?= sampled
-# BASALT_MATRIX_SHARD=<i>/<n> runs one share of the cells (tests/quality/matrix/shard.ts; CI runs the sampled matrix as five shards).
+# BASALT_MATRIX_SHARD=<i>/<n> runs one share of the cells (tests/quality/matrix/shard.ts; CI runs the sampled matrix as eight shards).
 BASALT_MATRIX_SHARD ?=
 quality-matrix: browser-shell ## Quality matrix in a real browser: make quality-matrix [QUALITY_MATRIX=sampled|full] [BASALT_MATRIX_SHARD=<i>/<n>]
 	@$(call slot,quality-matrix) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) BASALT_MATRIX_SHARD=$(BASALT_MATRIX_SHARD) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 $(bail) packages/basalt-ui/tests/quality/matrix'
