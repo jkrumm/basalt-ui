@@ -233,11 +233,49 @@ jobs:
           if-no-files-found: ignore
           overwrite: true # a re-run of one failed shard uploads its log again
 
+  # The Astro matrix (docs/validation.md § Astro matrix): apps/playground-astro on the built package, every part in every
+  # render mode measured in the headless shell and judged against docs/v3/verdicts/astro-matrix.json. It fails when a part
+  # that was static-clean is not, a page passes its byte budget, or a page without an island loads a script.
+  astro-matrix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build package
+        run: bun --filter basalt-ui build
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-shell-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      - name: Install the headless shell
+        run: make browser-shell
+
+      - name: Astro matrix (build the Astro playground, measure, check against the record)
+        run: make astro-matrix-run
+
+      # The raw results and the chart pictures, to compare a failing run with the record.
+      - name: Keep the measurements
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: astro-matrix
+          path: apps/playground-astro/.astro-matrix
+          if-no-files-found: ignore
+          overwrite: true
+
   # The one result: needs every job above and fails unless each succeeded (a skipped or cancelled need is a
   # failure too), so a green ci.yml run still means everything passed.
   ci:
     if: always()
-    needs: [checks, unit, layout, gate, quality-matrix]
+    needs: [checks, unit, layout, gate, quality-matrix, astro-matrix]
     runs-on: ubuntu-latest
 
     steps:
@@ -275,10 +313,10 @@ jobs:
         run: bun scripts/check-matrix-shards.ts quality-matrix-logs --shards 5
 
       - name: Fail unless every job succeeded
-        if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success' || needs.quality-matrix.result != 'success'
+        if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success' || needs.quality-matrix.result != 'success' || needs.astro-matrix.result != 'success'
         run: |
-          echo "checks=${{ needs.checks.result }} unit=${{ needs.unit.result }} layout=${{ needs.layout.result }} gate=${{ needs.gate.result }} quality-matrix=${{ needs.quality-matrix.result }}"
+          echo "checks=${{ needs.checks.result }} unit=${{ needs.unit.result }} layout=${{ needs.layout.result }} gate=${{ needs.gate.result }} quality-matrix=${{ needs.quality-matrix.result }} astro-matrix=${{ needs.astro-matrix.result }}"
           exit 1
 
       - name: Every job succeeded
-        run: echo "checks, unit, all layout shards, the gate and all quality-matrix shards passed"
+        run: echo "checks, unit, all layout shards, the gate, all quality-matrix shards and the Astro matrix passed"

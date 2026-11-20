@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-fast ci-gate check-pre check-pre-fast check-post gen-check quality-matrix-fast verify deploy logs marketing-image pre test test-fast layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
+.PHONY: help check check-fast ci-gate check-pre check-pre-fast check-post gen-check quality-matrix-fast astro-matrix astro-matrix-run astro-matrix-fast verify deploy logs marketing-image pre test test-fast layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -42,7 +42,7 @@ endif
 check-fast: ## Local check for a lead: `check` with only the layout and unit files the branch's changes reach (CI runs both in full)
 	@$(MAKE) --no-print-directory check-pre-fast
 	@$(MAKE) --no-print-directory layout-fast
-	@$(MAKE) --no-print-directory check-post QUALITY_STEP=quality-matrix-fast
+	@$(MAKE) --no-print-directory check-post QUALITY_STEP=quality-matrix-fast ASTRO_STEP=astro-matrix-fast
 
 # What CI's `gate` job runs as `make check CI_SPLIT=1` (.github/workflows/ci.yml): the steps of `check` that no other CI job runs. The `checks`
 # job runs the formatters, lint, typecheck, budgets, coverage, drift, contract-frozen and pack-test gates, the `unit` job
@@ -78,10 +78,12 @@ check-build:
 	@bun scripts/check-legacy-names.ts
 	@cd packages/basalt-ui && bun run build
 
-# `check` runs the quality matrix always; `check-fast` only when the branch touched a UI input (quality-matrix-fast).
+# `check` runs the quality matrix and the Astro matrix always; `check-fast` each only when the branch touched one of its inputs.
 QUALITY_STEP ?= quality-matrix
+ASTRO_STEP ?= astro-matrix-run
 check-post:
 	@$(MAKE) --no-print-directory $(QUALITY_STEP)
+	@$(MAKE) --no-print-directory $(ASTRO_STEP)
 	@bun packages/basalt-ui/scripts/check-coverage.ts --check
 	@bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
 	@bun packages/basalt-ui/scripts/check-contract-frozen.ts
@@ -186,6 +188,29 @@ quality-matrix-fast: ## Quality matrix only when the branch touched a UI input (
 		echo "quality-matrix: no UI input changed since $(or $(BASE),origin/master); CI runs it on the head"; exit 0; \
 	fi; \
 	$(MAKE) --no-print-directory quality-matrix
+
+# The Astro matrix (docs/validation.md § Astro matrix): apps/playground-astro renders every part in every render mode
+# on the built package; scripts/measure.ts measures each page in the headless shell and scripts/matrix.ts judges the run
+# against docs/v3/verdicts/astro-matrix.json: a part that was static-clean and is not, a page past its byte budget or a
+# page without an island that loads a script fails. UPDATE=1 records the run (the .json and the .md rendered from it).
+# `astro-matrix` builds the package first; `check` has built it already and runs `astro-matrix-run`.
+astro-matrix: browser-shell ## Astro playground: build, measure every part per render mode, check against docs/v3/verdicts/astro-matrix.json (UPDATE=1 records it)
+	@cd packages/basalt-ui && bun run build
+	@$(MAKE) --no-print-directory astro-matrix-run
+
+astro-matrix-run:
+	@bun --filter @basalt-ui/playground-astro build
+	@$(call slot,astro-matrix) bun apps/playground-astro/scripts/measure.ts
+	@bun apps/playground-astro/scripts/matrix.ts $(if $(filter 1,$(UPDATE)),--update)
+
+# The Astro matrix only when the branch touched one of its inputs (BASE=<ref>, default origin/master); CI runs it on every head.
+ASTRO_INPUTS = packages/basalt-ui/src packages/basalt-ui/package.json apps/playground-astro docs/v3/verdicts/astro-matrix.json package.json bun.lock
+astro-matrix-fast:
+	@base="$$(git merge-base $(or $(BASE),origin/master) HEAD 2>/dev/null)"; \
+	if [ -n "$$base" ] && [ -z "$$(git diff --name-only "$$base" -- $(ASTRO_INPUTS); git ls-files --others --exclude-standard -- $(ASTRO_INPUTS))" ]; then \
+		echo "astro-matrix: no input changed since $(or $(BASE),origin/master); CI runs it on the head"; exit 0; \
+	fi; \
+	$(MAKE) --no-print-directory astro-matrix-run
 
 # Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the local
 # Keel reference (.design-parity/keel/) into .design-parity/<LABEL>/ unless OUT is given. Images and board.html
