@@ -13,7 +13,8 @@ The frame for a body that is not a chart: the same header and phase handling as 
 around a table, a list or a board. The body is one box slot at the height the required `bodySize`
 declares, so a loading, empty or error panel is as tall as a ready one; in a grid row the panel
 takes the row's height and the box grows past that floor, so the cards of a row end level and a
-table shows the whole rows the taller box holds. The body is called in `ready` and `stale`; in `empty` and `error` it is called too, so a table in it
+table shows the whole rows the taller box holds; a body shorter than the box (fewer rows than it
+holds) keeps its own height and the extra sits below it. The body is called in `ready` and `stale`; in `empty` and `error` it is called too, so a table in it
 keeps its column header row and draws the arm under it (a body that draws no table stays hidden
 there and the panel draws its own arm). A `rows` count is table rows at the table's row height
 (`--basalt-row-h`, the head row included), so the box is `rows` x that height: declare N data rows
