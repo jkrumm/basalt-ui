@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { BYTE_SLACK, compare, decide, judge, render, serialize } from './matrix'
+import { BYTE_SLACK, PIXEL_TOLERANCE, compare, decide, judge, render, serialize } from './matrix'
 import type { MatrixRecord, ModeVerdict, Verdict, ViewVerdict } from './matrix'
 import { MODES } from '../src/parts/registry'
 import type { Mode } from '../src/parts/registry'
@@ -144,7 +144,7 @@ describe('decide', () => {
 })
 
 describe('judge', () => {
-  test('counts pixels, not the rounded share: three changed pixels in a large section are a difference', () => {
+  test('counts pixels, not the rounded share: a few changed pixels past the tolerance are a difference', () => {
     const load: ModeResult = {
       hydrated: true,
       htmlScriptTags: 0,
@@ -177,7 +177,7 @@ describe('judge', () => {
             MODES.map((m) => [m, { ...load, further: 0 }]),
           ) as Results['parts'][number]['modes'],
           views: {
-            '1440-light': pic(3),
+            '1440-light': pic(PIXEL_TOLERANCE + 1),
             '1440-dark': pic(0),
             '390-light': pic(0),
             '390-dark': pic(0),
