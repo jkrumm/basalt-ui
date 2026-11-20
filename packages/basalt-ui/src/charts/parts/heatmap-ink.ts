@@ -23,12 +23,13 @@ export function flatInk(color: string, opacity: number, dimmed: boolean): string
 }
 
 /**
- * The ink of a stated cell: its state fill at `strength` in the bar's own rest or dimmed paint. An
- * `alpha()` fill folds its share into the strength, so the composite is the one the cell draws.
+ * The ink of a stated cell: its state fill at `strength`, faded to `DIMMED` of it when the cell dims
+ * (as the value ramp fades), over the card. An `alpha()` fill folds its share into the strength, so
+ * the composite is the one the cell draws.
  */
 export function stateInk(fill: string, strength: number, dimmed: boolean): string {
   const mixed = ALPHA_MIX.exec(fill)
   const color = mixed ? (mixed[1] as string) : fill
-  const own = mixed ? (Number(mixed[2]) / 100) * strength : strength
-  return labelOn(barOnCard(color, own, dimmed ? 'dimmed' : 'rest'), dimmed)
+  const own = (mixed ? (Number(mixed[2]) / 100) * strength : strength) * (dimmed ? DIMMED : 1)
+  return labelOn(barOnCard(color, own, 'rest'), dimmed)
 }
