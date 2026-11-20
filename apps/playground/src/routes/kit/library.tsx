@@ -65,7 +65,7 @@ function LibraryRoute(): ReactElement {
         labels: VERDICT_LABELS,
         tone: (value) => VERDICT_TONE[value],
       }),
-      c.date('taken', { header: 'Taken' }),
+      c.date('taken', { header: 'Taken', mono: true }),
       c.number('views', { header: 'Views' }),
     ],
     data: rows,
