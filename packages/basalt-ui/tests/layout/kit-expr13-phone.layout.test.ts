@@ -28,6 +28,8 @@ type Card = {
   idCellOffset: number
   idValueLine: number
   idCellHeight: number
+  idCentreGap: number
+  idEndOffset: number
 }
 
 const card = (): Promise<Card> =>
@@ -51,23 +53,29 @@ const card = (): Promise<Card> =>
           const idEntity = id.querySelector('[data-slot="table-entity"]')!.getBoundingClientRect()
           const edge =
             row.getBoundingClientRect().left + parseFloat(getComputedStyle(row).paddingLeft)
+          const edgeRight =
+            row.getBoundingClientRect().right - parseFloat(getComputedStyle(row).paddingRight)
           return {
             titleOffset: titleEntity.left - titleCell.left,
             titleCellOffset: titleCell.left - edge,
             idCellOffset: idRect.left - edge,
             idValueLine: idEntity.top - idRect.top,
             idCellHeight: idRect.height,
+            idCentreGap: Math.abs(
+              idRect.top + idRect.height / 2 - (titleCell.top + titleCell.height / 2),
+            ),
+            idEndOffset: edgeRight - idRect.right,
           }
         })
       })
     : Promise.reject(new Error('fixture not built'))
 
 layout(
-  'a phone card keeps its mono value on the label line and its values on the content edge',
+  'a phone card keeps its mono id on the title line and its values on the content edge',
   () => {
-    test('the id value sits on the line of its label', async () => {
+    test('the id sits on the title line, not on a labelled line of its own', async () => {
       const c = await card()
-      expect(c.idValueLine).toBeLessThan(12)
+      expect(c.idCentreGap).toBeLessThan(3)
       expect(c.idCellHeight).toBeLessThan(30)
     })
 
@@ -76,9 +84,9 @@ layout(
       expect(c.titleOffset).toBe(0)
     })
 
-    test('a labelled cell starts on the card content edge, its label before its value', async () => {
+    test('the id ends on the card content edge and the title starts on it', async () => {
       const c = await card()
-      expect(c.idCellOffset).toBe(0)
+      expect(c.idEndOffset).toBe(0)
       expect(c.titleCellOffset).toBe(0)
     })
   },
