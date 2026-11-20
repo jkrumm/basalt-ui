@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { FormField, FormFooter, FormRow, useFormDraft } from 'basalt-ui/controls'
+import { FormRow, useFormDraft } from 'basalt-ui/controls'
 import { Page, PageBar, Section } from 'basalt-ui/page'
-import { Fieldset, Form } from 'basalt-ui/ui/field'
 import { Input } from 'basalt-ui/ui/input'
 import { Select } from 'basalt-ui/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'basalt-ui/ui/tabs'
@@ -48,6 +47,7 @@ function RunEditForm({ run }: { run: Run }): ReactElement {
     defaultValues: valuesOf(run),
     save: (values) => save.mutateAsync(values),
   })
+  // `useFormDraft` clears the draft and re-bases the form when the submit succeeds.
   const draft = useFormDraft(form, {
     key: `run-edit:${run.id}`,
     version: 1,
@@ -55,21 +55,9 @@ function RunEditForm({ run }: { run: Run }): ReactElement {
     owner: 'demo',
   })
 
-  async function submit(): Promise<void> {
-    // `useFormDraft` clears the draft and re-bases the form when the submit succeeds.
-    await form.handleSubmit()
-  }
-
   return (
-    <Form
-      noValidate
-      className="max-w-2xl"
-      onSubmit={(event) => {
-        event.preventDefault()
-        void submit()
-      }}
-    >
-      <Fieldset disabled={form.state.isSubmitting}>
+    <form.AppForm>
+      <form.Form className="flex max-w-2xl flex-col gap-4">
         <output className="block text-sm text-muted-foreground empty:hidden">
           {draft.status === 'restored' ? 'Draft restored from this device.' : null}
         </output>
@@ -80,69 +68,65 @@ function RunEditForm({ run }: { run: Run }): ReactElement {
           </TabsList>
           <TabsContent value="details">
             <div className="flex flex-col gap-4">
-              <form.Field name="title" validators={titleFree(runsApi.titleTaken)}>
+              <form.AppField name="title" validators={titleFree(runsApi.titleTaken)}>
                 {(f) => (
-                  <FormField label="Title" required field={f}>
+                  <f.FormField label="Title" required>
                     <Input />
-                  </FormField>
+                  </f.FormField>
                 )}
-              </form.Field>
+              </form.AppField>
               <FormRow>
-                <form.Field name="kind">
+                <form.AppField name="kind">
                   {(f) => (
-                    <FormField label="Kind" field={f}>
+                    <f.FormField label="Kind">
                       <Select aria-label="Kind" options={KINDS} />
-                    </FormField>
+                    </f.FormField>
                   )}
-                </form.Field>
-                <form.Field name="km">
+                </form.AppField>
+                <form.AppField name="km">
                   {(f) => (
-                    <FormField label="Distance (km)" field={f}>
+                    <f.FormField label="Distance (km)">
                       <NumberInput />
-                    </FormField>
+                    </f.FormField>
                   )}
-                </form.Field>
+                </form.AppField>
               </FormRow>
               <form.Subscribe selector={(state) => state.values.kind}>
                 {(kind) =>
                   kind === 'tempo' ? (
-                    <form.Field name="intervals">
+                    <form.AppField name="intervals">
                       {(f) => (
-                        <FormField
-                          label="Intervals"
-                          description="Only tempo runs have them."
-                          field={f}
-                        >
+                        <f.FormField label="Intervals" description="Only tempo runs have them.">
                           <NumberInput />
-                        </FormField>
+                        </f.FormField>
                       )}
-                    </form.Field>
+                    </form.AppField>
                   ) : null
                 }
               </form.Subscribe>
-              <form.Field name="notes">
+              <form.AppField name="notes">
                 {(f) => (
-                  <FormField label="Notes" field={f}>
+                  <f.FormField label="Notes">
                     <Textarea rows={4} />
-                  </FormField>
+                  </f.FormField>
                 )}
-              </form.Field>
+              </form.AppField>
             </div>
           </TabsContent>
           {/* Mounted on first open: its field never exists while the draft restores. */}
           <TabsContent value="gear">
-            <form.Field name="shoes">
+            <form.AppField name="shoes">
               {(f) => (
-                <FormField label="Shoes" field={f}>
+                <f.FormField label="Shoes">
                   <Select aria-label="Shoes" options={SHOES} />
-                </FormField>
+                </f.FormField>
               )}
-            </form.Field>
+            </form.AppField>
           </TabsContent>
         </Tabs>
-        <FormFooter form={form} actions={[{ label: 'Save', primary: true }]} />
-      </Fieldset>
-    </Form>
+        <form.Footer actions={[{ label: 'Save', primary: true }]} />
+      </form.Form>
+    </form.AppForm>
   )
 }
 

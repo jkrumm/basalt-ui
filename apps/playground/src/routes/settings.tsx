@@ -1,8 +1,9 @@
-import { revalidateLogic, useForm } from '@tanstack/react-form'
+import { revalidateLogic } from '@tanstack/react-form'
 import { createFileRoute } from '@tanstack/react-router'
-import { FormField, FormFooter } from 'basalt-ui/controls'
+import { FormField } from 'basalt-ui/controls'
 import type { FormFieldProps } from 'basalt-ui/controls'
 import { createSyncedState } from 'basalt-ui/data'
+import { useAppForm } from 'basalt-ui/form'
 import { InnerNav, Page, PageBar, Section, SplitPage } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
 import { Fieldset } from 'basalt-ui/ui/field'
@@ -96,7 +97,7 @@ function AppearanceForm(): ReactElement {
   return (
     <Fieldset className="max-w-md">
       <output className="block text-sm text-muted-foreground">{STATUS[status]}</output>
-      <FormField label="Density" field={density}>
+      <FormField field={density} label="Density">
         <Select
           aria-label="Density"
           options={[
@@ -105,7 +106,7 @@ function AppearanceForm(): ReactElement {
           ]}
         />
       </FormField>
-      <FormField label="Language" field={language}>
+      <FormField field={language} label="Language">
         <Select
           aria-label="Language"
           options={[
@@ -114,7 +115,7 @@ function AppearanceForm(): ReactElement {
           ]}
         />
       </FormField>
-      <FormField label="Weekly digest" description="One email on Monday." field={digest}>
+      <FormField field={digest} label="Weekly digest" description="One email on Monday.">
         <Switch />
       </FormField>
     </Fieldset>
@@ -129,7 +130,7 @@ const Profile = z.object({
 })
 
 function ProfileForm(): ReactElement {
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: { name: 'Ada Lovelace', email: 'ada@example.com', bio: '' },
     validationLogic: revalidateLogic({ mode: 'submit', modeAfterSubmission: 'change' }),
     validators: { onDynamic: Profile },
@@ -140,40 +141,33 @@ function ProfileForm(): ReactElement {
   })
   const guard = useUnsavedGuard(form)
   return (
-    <form
-      noValidate
-      className="max-w-md"
-      onSubmit={(event) => {
-        event.preventDefault()
-        void form.handleSubmit()
-      }}
-    >
-      <Fieldset disabled={form.state.isSubmitting}>
-        <form.Field name="name">
+    <form.AppForm>
+      <form.Form className="max-w-md">
+        <form.AppField name="name">
           {(f) => (
-            <FormField label="Name" required field={f}>
+            <f.FormField label="Name" required>
               <Input />
-            </FormField>
+            </f.FormField>
           )}
-        </form.Field>
-        <form.Field name="email">
+        </form.AppField>
+        <form.AppField name="email">
           {(f) => (
-            <FormField label="Email" required field={f}>
+            <f.FormField label="Email" required>
               <Input type="email" />
-            </FormField>
+            </f.FormField>
           )}
-        </form.Field>
-        <form.Field name="bio">
+        </form.AppField>
+        <form.AppField name="bio">
           {(f) => (
-            <FormField label="Bio" description="Shown on your profile." field={f}>
+            <f.FormField label="Bio" description="Shown on your profile.">
               <Textarea rows={3} />
-            </FormField>
+            </f.FormField>
           )}
-        </form.Field>
-        <FormFooter form={form} actions={[{ label: 'Save', primary: true }]} />
-      </Fieldset>
+        </form.AppField>
+        <form.Footer actions={[{ label: 'Save', primary: true }]} />
+      </form.Form>
       {guard}
-    </form>
+    </form.AppForm>
   )
 }
 

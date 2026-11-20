@@ -1,5 +1,5 @@
-import { revalidateLogic, useForm } from '@tanstack/react-form'
-import { FormField, FormFooter, Stepper } from 'basalt-ui/controls'
+import { Stepper } from 'basalt-ui/controls'
+import { useAppForm, withForm } from 'basalt-ui/form'
 import { Facts, Section } from 'basalt-ui/page'
 import { Button } from 'basalt-ui/ui/button'
 import { Checkbox } from 'basalt-ui/ui/checkbox'
@@ -50,6 +50,97 @@ const CONFIRM = z.literal(true, 'Confirm to create the environment.')
 const labelOf = (list: readonly { value: string; label: string }[], value: string | null): string =>
   list.find((o) => o.value === value)?.label ?? 'None'
 
+const Basics = withForm({
+  defaultValues: EMPTY,
+  props: {},
+  render: function Render({ form }) {
+    return (
+      <>
+        <form.AppField name="name" validators={{ onDynamic: NAME }}>
+          {(f) => (
+            <f.FormField label="Environment name" description="Like qa or eu-preview." required>
+              <Input autoComplete="off" spellCheck={false} />
+            </f.FormField>
+          )}
+        </form.AppField>
+        <form.AppField name="team">
+          {(f) => (
+            <f.FormField label="Owning team">
+              <Select aria-label="Owning team" options={TEAMS} />
+            </f.FormField>
+          )}
+        </form.AppField>
+        <form.AppField name="base">
+          {(f) => (
+            <f.FormField label="Copy settings from">
+              <Select aria-label="Copy settings from" options={ENVIRONMENTS} />
+            </f.FormField>
+          )}
+        </form.AppField>
+      </>
+    )
+  },
+})
+
+const Schedule = withForm({
+  defaultValues: EMPTY,
+  props: {},
+  render: function Render({ form }) {
+    return (
+      <>
+        <form.AppField name="window" validators={{ onDynamic: PICKED }}>
+          {(f) => (
+            <f.FormField label="First deploy window" required>
+              <DateRangePicker aria-label="First deploy window" />
+            </f.FormField>
+          )}
+        </form.AppField>
+        <form.AppField name="strategy">
+          {(f) => (
+            <f.FormField label="Rollout">
+              <RadioGroup options={STRATEGIES} />
+            </f.FormField>
+          )}
+        </form.AppField>
+      </>
+    )
+  },
+})
+
+const Review = withForm({
+  defaultValues: EMPTY,
+  props: {},
+  render: function Render({ form }) {
+    return (
+      <>
+        <form.Subscribe selector={(state) => state.values}>
+          {(v) => (
+            <Facts
+              rows={[
+                { label: 'Name', value: v.name },
+                { label: 'Team', value: labelOf(TEAMS, v.team) },
+                { label: 'Copied from', value: labelOf(ENVIRONMENTS, v.base) },
+                {
+                  label: 'Window',
+                  value: v.window === null ? 'None' : `${v.window.from} to ${v.window.to}`,
+                },
+                { label: 'Rollout', value: labelOf(STRATEGIES, v.strategy) },
+              ]}
+            />
+          )}
+        </form.Subscribe>
+        <form.AppField name="confirm" validators={{ onDynamic: CONFIRM }}>
+          {(f) => (
+            <f.FormField label="Start the first deploy in its window">
+              <Checkbox />
+            </f.FormField>
+          )}
+        </form.AppField>
+      </>
+    )
+  },
+})
+
 /**
  * A multi-step flow: one TanStack form, one step mounted at a time, a `Stepper` over it (a done step
  * is a button back to it) and `FormFooter` as Back and Continue.
@@ -59,10 +150,9 @@ const labelOf = (list: readonly { value: string; label: string }[], value: strin
 export function StepsForm(): ReactElement {
   const [step, setStep] = useState(0)
   const [created, setCreated] = useState<string | null>(null)
-  const form = useForm({
-    // Each field checks on blur, every field on submit, and after a submit on every change, so a fix clears its error
-    // and re-enables the primary at once.
-    validationLogic: revalidateLogic({ mode: 'blur', modeAfterSubmission: 'change' }),
+  const form = useAppForm({
+    // useAppForm checks each field on blur, every field on submit, and after a submit on every change, so a fix
+    // clears its error at once.
     defaultValues: EMPTY,
     onSubmitMeta: { step: 0 },
     onSubmit: async ({ value, meta }) => {
@@ -96,108 +186,32 @@ export function StepsForm(): ReactElement {
     )
   }
   return (
-    <Section
-      title="New environment"
-      summary="One TanStack form across the steps, bound through FormField."
-    >
-      <form
-        noValidate
-        className="flex max-w-xl flex-col gap-4"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void form.handleSubmit({ step })
-        }}
+    <form.AppForm>
+      <Section
+        title="New environment"
+        summary="One TanStack form across the steps, bound through FormField."
       >
-        <Stepper steps={STEPS} current={step} onStepChange={setStep} />
-        <Fieldset>
-          {step === 0 && (
-            <>
-              <form.Field name="name" validators={{ onDynamic: NAME }}>
-                {(f) => (
-                  <FormField
-                    label="Environment name"
-                    description="Like qa or eu-preview."
-                    required
-                    field={f}
-                  >
-                    <Input autoComplete="off" spellCheck={false} />
-                  </FormField>
-                )}
-              </form.Field>
-              <form.Field name="team">
-                {(f) => (
-                  <FormField label="Owning team" field={f}>
-                    <Select aria-label="Owning team" options={TEAMS} />
-                  </FormField>
-                )}
-              </form.Field>
-              <form.Field name="base">
-                {(f) => (
-                  <FormField label="Copy settings from" field={f}>
-                    <Select aria-label="Copy settings from" options={ENVIRONMENTS} />
-                  </FormField>
-                )}
-              </form.Field>
-            </>
-          )}
-          {step === 1 && (
-            <>
-              <form.Field name="window" validators={{ onDynamic: PICKED }}>
-                {(f) => (
-                  <FormField label="First deploy window" required field={f}>
-                    <DateRangePicker aria-label="First deploy window" />
-                  </FormField>
-                )}
-              </form.Field>
-              <form.Field name="strategy">
-                {(f) => (
-                  <FormField label="Rollout" field={f}>
-                    <RadioGroup options={STRATEGIES} />
-                  </FormField>
-                )}
-              </form.Field>
-            </>
-          )}
-          {step === LAST && (
-            <>
-              <form.Subscribe selector={(state) => state.values}>
-                {(v) => (
-                  <Facts
-                    rows={[
-                      { label: 'Name', value: v.name },
-                      { label: 'Team', value: labelOf(TEAMS, v.team) },
-                      { label: 'Copied from', value: labelOf(ENVIRONMENTS, v.base) },
-                      {
-                        label: 'Window',
-                        value: v.window === null ? 'None' : `${v.window.from} to ${v.window.to}`,
-                      },
-                      { label: 'Rollout', value: labelOf(STRATEGIES, v.strategy) },
-                    ]}
-                  />
-                )}
-              </form.Subscribe>
-              <form.Field name="confirm" validators={{ onDynamic: CONFIRM }}>
-                {(f) => (
-                  <FormField label="Start the first deploy in its window" field={f}>
-                    <Checkbox />
-                  </FormField>
-                )}
-              </form.Field>
-            </>
-          )}
-          {step === 0 ? (
-            <FormFooter form={form} actions={[{ label: 'Continue', primary: true }]} />
-          ) : (
-            <FormFooter
-              form={form}
-              actions={[
-                { label: 'Back', onClick: back },
-                { label: step === LAST ? 'Create environment' : 'Continue', primary: true },
-              ]}
-            />
-          )}
-        </Fieldset>
-      </form>
-    </Section>
+        <form.Form meta={{ step }} className="flex max-w-xl flex-col gap-4">
+          <div className="flex flex-col gap-4">
+            <Stepper steps={STEPS} current={step} onStepChange={setStep} />
+            <Fieldset>
+              {step === 0 && <Basics form={form} />}
+              {step === 1 && <Schedule form={form} />}
+              {step === LAST && <Review form={form} />}
+              {step === 0 ? (
+                <form.Footer actions={[{ label: 'Continue', primary: true }]} />
+              ) : (
+                <form.Footer
+                  actions={[
+                    { label: 'Back', onClick: back },
+                    { label: step === LAST ? 'Create environment' : 'Continue', primary: true },
+                  ]}
+                />
+              )}
+            </Fieldset>
+          </div>
+        </form.Form>
+      </Section>
+    </form.AppForm>
   )
 }
