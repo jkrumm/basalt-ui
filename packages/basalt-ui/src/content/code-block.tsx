@@ -119,7 +119,7 @@ export function CodeBlock({ lang, code, settled = true }: CodeBlockProps): React
     <div
       data-slot="code-block"
       data-lang={lang}
-      className="group/code relative rounded-inset bg-inset ring-1 ring-border ring-inset in-[.basalt-prose]:mt-(--basalt-rhythm-2)"
+      className="group/code relative rounded-inset bg-inset inset-ring-1 inset-ring-border in-[.basalt-prose]:mt-(--basalt-rhythm-2)"
     >
       {html === null ? (
         // a scroll box must be reachable by keyboard (shiki's own pre carries tabindex 0 too)
