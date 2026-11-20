@@ -34,6 +34,7 @@
     "!src/**/*.test.tsx",
     "!src/**/*.cases.ts",
     "!src/**/*.oxlint.mjs",
+    "!src/css/files",
     "configs/",
     "agent/",
     "bin/",

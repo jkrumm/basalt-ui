@@ -1,15 +1,14 @@
 /* @generated basalt-ui — do not edit; regenerate with the command on the next line */
 /* basalt-ui 3.0.0 — `bun packages/basalt-ui/src/css/generate.ts` */
 /* @font-face only: latin and latin-ext of the three variable faces, the one weight/width axis each,
-   plus Head Digits (Nunito's digits behind the Hubot heading face). Files resolve through the bundler
-   or sit next to this sheet; nothing is imported, so unused weights, italics and scripts never ship. */
+   plus Head Digits (Nunito's digits behind the Hubot heading face). The woff2 files sit in ./files
+   next to this sheet, so a bundler resolves them and a static site copies the folder; nothing is imported, so unused weights, italics and scripts never ship. */
 @font-face {
   font-family: 'Nunito Sans Variable';
   font-style: normal;
   font-display: swap;
   font-weight: 200 1000;
-  src: url('@fontsource-variable/nunito-sans/files/nunito-sans-latin-ext-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('./files/nunito-sans-latin-ext-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
     U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
@@ -21,8 +20,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 200 1000;
-  src: url('@fontsource-variable/nunito-sans/files/nunito-sans-latin-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('./files/nunito-sans-latin-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -34,8 +32,7 @@
   font-display: swap;
   font-weight: 200 900;
   font-stretch: 75% 125%;
-  src: url('@fontsource-variable/hubot-sans/files/hubot-sans-latin-ext-wdth-normal.woff2')
-    format('woff2-variations');
+  src: url('./files/hubot-sans-latin-ext-wdth-normal.woff2') format('woff2-variations');
   unicode-range:
     U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
     U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
@@ -48,8 +45,7 @@
   font-display: swap;
   font-weight: 200 900;
   font-stretch: 75% 125%;
-  src: url('@fontsource-variable/hubot-sans/files/hubot-sans-latin-wdth-normal.woff2')
-    format('woff2-variations');
+  src: url('./files/hubot-sans-latin-wdth-normal.woff2') format('woff2-variations');
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -60,8 +56,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 800;
-  src: url('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-ext-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('./files/jetbrains-mono-latin-ext-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
     U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
@@ -73,8 +68,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 800;
-  src: url('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('./files/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -85,7 +79,6 @@
   font-style: normal;
   font-display: swap;
   font-weight: 200 1000;
-  src: url('@fontsource-variable/nunito-sans/files/nunito-sans-latin-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('./files/nunito-sans-latin-wght-normal.woff2') format('woff2-variations');
   unicode-range: U+0030-0039;
 }

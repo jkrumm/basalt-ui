@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
 import { resolveTokens } from '../src/tokens/table'
 
 const css = (name: string): string =>
@@ -63,5 +64,31 @@ describe('fonts.css', () => {
     for (const [, file] of fonts.matchAll(/files\/([^']+)'/g)) {
       expect(file, file).toMatch(/-latin(-ext)?-(wght|wdth)-normal\.woff2$/)
     }
+  })
+
+  test('every face is a relative url() to a file shipped beside the sheet, byte-equal to the fontsource original', () => {
+    const require = createRequire(import.meta.url)
+    const urls = [...fonts.matchAll(/url\('([^']+)'\)/g)].map((m) => m[1] ?? '')
+    expect(urls).toHaveLength(7)
+    for (const url of urls) {
+      expect(url, url).toMatch(/^\.\/files\/[a-z-]+\.woff2$/)
+      const name = url.slice('./files/'.length)
+      const shipped = join(import.meta.dir, '../src/css/files', name)
+      expect(existsSync(shipped), name).toBe(true)
+      const pkg = name.replace(/-latin.*$/, '')
+      const original = join(
+        dirname(require.resolve(`@fontsource-variable/${pkg}/package.json`)),
+        'files',
+        name,
+      )
+      expect(readFileSync(shipped).equals(readFileSync(original)), name).toBe(true)
+    }
+  })
+
+  test('styles.css names its Head Digits file relative to itself, inside the same folder', () => {
+    const styles = readFileSync(join(import.meta.dir, '../src/styles.css'), 'utf8')
+    const [, file] = /url\('\.\/css\/files\/([^']+)'\)/.exec(styles) ?? []
+    expect(file).toBeDefined()
+    expect(existsSync(join(import.meta.dir, '../src/css/files', file ?? ''))).toBe(true)
   })
 })
