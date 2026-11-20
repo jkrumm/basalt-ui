@@ -15,7 +15,7 @@
     "format": "bun run fmt",
     "lint": "oxlint --ignore-pattern 'apps/playground/**' && bun run lint:playground",
     "lint:playground": "cd apps/playground && oxlint --deny-warnings --report-unused-disable-directives",
-    "typecheck": "bun --filter basalt-ui --filter @basalt-ui/playground --filter marketing typecheck && cd packages/basalt-ui && ./node_modules/.bin/tsc -p ../../scripts/evidence",
+    "typecheck": "bun --filter basalt-ui typecheck && bun --filter @basalt-ui/playground typecheck && bun --filter marketing typecheck && cd packages/basalt-ui && ./node_modules/.bin/tsc -p ../../scripts/evidence",
     "test": "bun test",
     "test:layout": "bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 .layout.test.ts",
     "test:layout:harness": "bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 packages/basalt-ui/tests/layout/harness",
