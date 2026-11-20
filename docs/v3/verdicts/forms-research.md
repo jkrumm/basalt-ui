@@ -180,7 +180,12 @@ a screenshot of either.
 All of the systems above leave the form engine to the app: shadcn integrates TanStack Form and React Hook Form by example
 [25], Base UI ships its own native-validation `Form` [56], Mantine ships `@mantine/form`. Basalt's `FormField` reads a
 structural `FieldLike` (`state.value`, `state.meta.errors`, `handleChange`, `handleBlur`), which a TanStack Form field
-satisfies with no glue; the gallery binds all three whole forms through it. The Spec recommends no adapter subpath.
+satisfies with no glue; the gallery binds all three whole forms through it.
+
+Superseded on 2026-11-20 by the owner's TanStack-first direction (`tanstack-map.md`, Issue 2525): basalt now ships the
+binding as `basalt-ui/form`, TanStack Form's own `createFormHook` with `FormField`, the `<form noValidate>` and
+`FormFooter` pre-bound and blur-then-change revalidation as the default. `FormField` keeps reading `FieldLike`, so an
+app without the `@tanstack/react-form` peer still composes the parts from `basalt-ui/controls` by hand.
 
 ## Sources
 
