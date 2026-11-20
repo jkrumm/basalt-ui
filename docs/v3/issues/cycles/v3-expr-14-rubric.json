@@ -1,0 +1,21 @@
+{
+  "why": "Expression cycle 14 (docs/v3/cycles/expression-14.md) has three `rubric` findings, all P3. Two reviewers charged one defect in two items: n64's R2 cites the '92' total and the 611/635 card heights already charged under F6 and X2 (.19), and n68's R2 charges the '85/129' label F6 already charged (.43), against rubric.md's 'a defect is charged once'. And X3 has no reading for two parts that share no items and no parent-child relation: n68's reviewer scored 2 on a month chart beside a ridge-by-azimuth chart and asked the lead to rule between `n/a` and 2 (.42).",
+  "what": "Rubric text for one defect charged once across R2 and the F and X items, and X3 on parts that share no items, with the shipped reviewer agreeing.",
+  "owns": [
+    "docs/v3/expression/rubric.md",
+    "the shipped reviewer's text in packages/basalt-ui/agent/** (the design reviewer subagent and its references), through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/cases.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) R2 charges a rendering defect another item already charged only where it adds a rendering fault of its own; say which item owns a misplaced data label (F6) and a card-height mismatch (X2) (n64 .19, n68 .43). (2) X3 where the page has two or more parts and no two of them show the same items or an item and its children: X3 is `n/a`, and a missing link the question needed is F1's or X2's (n68 .42). Rescore the named items on the cycle-14 last-round shots with fresh reviewers, as EXPRESSION.md § Owner calibration asks, and record the rescore.",
+  "acceptance": [
+    "rubric.md and the shipped reviewer carry both readings with the cycle-14 cases cited",
+    "A fresh rescore of n64 R2, n68 R2 and n68 X3 is recorded"
+  ],
+  "out_of_scope": "Kit, skill and case text; the trial scenarios.",
+  "proof": "The rescore reports in .evidence/v3-shots/expression-14/reports/ in the main checkout.",
+  "commits": "docs: rubric readings."
+}
