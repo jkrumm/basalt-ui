@@ -95,9 +95,9 @@ function useRowPx(ref: RefObject<HTMLElement | null>, enabled: boolean): number 
 
 /**
  * A `{ rows }` body shows whole rows. As a table its rows run past the declared height, the rows
- * are cut after the last one that fits, so no row is clipped through its text; the box keeps the
- * declared height in every phase (a loading skeleton draws it), so the cut leaves at most one row of
- * space at the bottom of the box. As phone cards (the table's rows are grids) the cards are taller
+ * are cut after the last one that fits, so no row is clipped through its text; a table that fits
+ * takes the height of its rows, so no blank row is left under the last one. The loading skeleton
+ * still draws the declared height. As phone cards (the table's rows are grids) the cards are taller
  * than a table row, so the box takes the height of the data cards its rows name (`dataRowsOf`: the
  * rows less the head row): every one of them is whole, none is left behind the box, and a shorter
  * list ends at its last card. The measure reads the rows against the declared height, so it holds
@@ -148,7 +148,7 @@ function useWholeRows(
         last = row.getBoundingClientRect().bottom - top
         if (last <= declared + 0.5) fit = last
       }
-      const next = last <= declared + 0.5 || fit === undefined ? undefined : Math.ceil(fit)
+      const next = fit === undefined ? undefined : Math.ceil(fit)
       setSnapped((was) =>
         !was.cards && was.fit === next && was.measured
           ? was
@@ -360,11 +360,11 @@ export function DataPanel(props: DataPanelProps): ReactElement {
   const rowPx = useRowPx(rootRef, 'rows' in bodySize)
   const declared = bodyHeightOf(bodySize, rowPx)
   const narrow = useNarrow(rootRef)
-  const { ref: insetRef, fit, cards, measured } = useWholeRows(bodySize, declared)
-  // Phone cards are taller than the rows the declared height counts: the box takes their height, and
-  // a first loading frame (no list measured yet) takes the tallest card per data row.
+  const { ref: insetRef, fit, measured } = useWholeRows(bodySize, declared)
+  // A measured list takes the height its whole rows or cards fill (`fit`). Before the first measure, a
+  // phone's loading frame takes the tallest card per data row.
   const boxHeight =
-    cards && fit !== undefined
+    fit !== undefined
       ? fit
       : narrow && 'rows' in bodySize && !measured
         ? Math.max(declared, dataRowsOf(bodySize) * CARD_TALL)
