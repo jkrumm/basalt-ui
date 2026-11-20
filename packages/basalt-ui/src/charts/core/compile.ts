@@ -1955,10 +1955,12 @@ export function compileCartesian<T, X extends ChartX>(
   const dotRoomX = (access: PlotAccess, frameWidth: number): XScaleModel<X> => {
     const { extent } = baseModel
     if (extent === undefined || baseModel.log === true || visible.length === 0) return baseModel
-    if (!visible.every((s) => s.mark === 'dot')) return baseModel
+    // Dots among lines keep their room too; a bar on the plot has a band (or a floor) of its own.
+    const pointed = visible.filter((s) => s.mark === 'dot')
+    if (pointed.length === 0 || visible.some(isBar)) return baseModel
     access.read()
-    const drawn = input.data.filter((d) => visible.some((s) => s.getValue(d) !== null))
-    const r = Math.max(...visible.map((s) => input.dotRadius?.get(s.key) ?? BASALT.dotR)) + DOT_RING
+    const drawn = input.data.filter((d) => pointed.some((s) => s.getValue(d) !== null))
+    const r = Math.max(...pointed.map((s) => input.dotRadius?.get(s.key) ?? BASALT.dotR)) + DOT_RING
     const grown = xRoomForDots(
       extent,
       drawn.map((d) => Number(input.x(d))),
