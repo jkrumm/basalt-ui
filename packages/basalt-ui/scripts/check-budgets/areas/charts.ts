@@ -62,7 +62,10 @@ export const rows: readonly RowDef[] = [
     // stack fitted to the clamp and the held run revealed whole, the kit fixes of expression cycle 14.
     // 128600 -> 128800 (Issue 2500): 128646 B measured, +~46 B gz over the cap for `x.tickFormat`, the tick
     // text apart from the readout's (expression cycle 14 contract).
-    ceiling: 128800,
+    // 128800 -> 129000 (Issue 2573): 128904 B measured, +~104 B gz over the cap for the single-series stack's
+    // inside value and the captions placed again around a value label that landed on one, the kit fixes of
+    // expression cycle 15.
+    ceiling: 129000,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -85,6 +88,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 128800,
+      to: 129000,
+      consumer:
+        "the kit fixes of expression cycle 15 (Issue 2573): n70's negative bar and n71's tallest bar lost their values, and n68's tallest value label sat over its zone caption",
+      repo: 'basalt-ui',
+    },
     {
       from: 128600,
       to: 128800,
