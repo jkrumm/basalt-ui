@@ -80,7 +80,7 @@ describe('compare', () => {
     const views = { ...part('button').views, '390-dark': view(0.04) }
     const is = record([part('button', { staticClean: false, views })])
     const { failures } = compare(was, is)
-    expect(failures).toEqual(['button: was static-clean, now 4.0% of pixels at 390-dark'])
+    expect(failures).toEqual(['button: was static-clean, now 2227 px (4.0%) at 390-dark'])
   })
 
   test('fails a part that stops rendering on the server', () => {

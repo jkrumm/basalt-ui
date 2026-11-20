@@ -97,9 +97,9 @@ function modeOf(m: ModeResult & { further: number }): ModeVerdict {
 export const kb = (n: number): string => (n === 0 ? '0' : `${(n / 1024).toFixed(1)} kB`)
 
 function worst(views: Record<View, ViewVerdict>): string {
-  const [view, p] = Object.entries(views).sort((a, b) => b[1].ratio - a[1].ratio)[0]!
+  const [view, p] = Object.entries(views).toSorted((a, b) => b[1].changed - a[1].changed)[0]!
   return p.sameSize
-    ? `${(p.ratio * 100).toFixed(1)}% of pixels at ${view}`
+    ? `${p.changed} px (${(p.ratio * 100).toFixed(1)}%) at ${view}`
     : `size ${p.static.join('x')} vs ${p.only.join('x')} at ${view}`
 }
 
