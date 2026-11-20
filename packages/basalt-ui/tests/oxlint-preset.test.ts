@@ -52,7 +52,7 @@ const basaltOn = (preset: Preset): string[] =>
 
 describe('profiles', () => {
   it('has every numbered id in the rule table', () => {
-    expect(Object.keys(RULES).toSorted()).toEqual([...NUMBERED].toSorted())
+    expect(Object.keys(RULES).toSorted()).toEqual([...NUMBERED, 'logical-properties'].toSorted())
   })
 
   it('tokens yields no oxlint preset', () => {
@@ -80,6 +80,23 @@ describe('profiles', () => {
     expect(basaltOn(read('oxlint-app.json'))).toEqual(numbers(...NUMBERED.map((_, i) => i + 1)))
   })
 
+  it('site runs the bridge ids and logical-properties, and no app-structure id', () => {
+    expect(basaltOn(read('oxlint-site.json'))).toEqual(
+      [...numbers(1, 2, 3, 4, 6, 14, 15, 17, 18), 'basalt/logical-properties'].toSorted(),
+    )
+    expect(read('oxlint-site.json').rules['basalt/tw-off-law']).toEqual([
+      'error',
+      { profile: 'bridge' },
+    ])
+  })
+
+  it('logical-properties runs at site only', () => {
+    for (const file of ['oxlint-bridge.json', 'oxlint-parts.json', 'oxlint-app.json']) {
+      expect(read(file).rules['basalt/logical-properties']).toBe('off')
+    }
+    expect(read('oxlint-site.json').rules['basalt/logical-properties']).toBe('error')
+  })
+
   it('writes the table options, never typed in the generator', () => {
     expect(read('oxlint-bridge.json').rules['basalt/tw-off-law']).toEqual([
       'error',
@@ -89,7 +106,12 @@ describe('profiles', () => {
   })
 
   it('runs the five bought token rules everywhere; no-restyle points at own components at bridge', () => {
-    for (const file of ['oxlint-bridge.json', 'oxlint-parts.json', 'oxlint-app.json']) {
+    for (const file of [
+      'oxlint-bridge.json',
+      'oxlint-parts.json',
+      'oxlint-app.json',
+      'oxlint-site.json',
+    ]) {
       const { rules } = read(file)
       for (const rule of [
         'no-raw-colors',
@@ -113,6 +135,8 @@ describe('profiles', () => {
     expect(restyle('oxlint-bridge.json').contracts).toEqual([])
     expect(restyle('oxlint-parts.json').componentImports).toEqual(['^basalt-ui/ui/'])
     expect(restyle('oxlint-parts.json').contracts.length).toBeGreaterThan(0)
+    expect(restyle('oxlint-site.json').componentImports).toEqual(['^basalt-ui/(?:ui|static)/'])
+    expect(restyle('oxlint-site.json').contracts).toEqual([])
   })
 })
 

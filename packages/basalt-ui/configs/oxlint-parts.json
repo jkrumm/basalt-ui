@@ -143,6 +143,7 @@
     "basalt/tw-off-law": "error",
     "basalt/app-spacing": "error",
     "basalt/motion-off-scale": "error",
+    "basalt/logical-properties": "off",
     "basalt/import-boundary": "error",
     "basalt/primitive-bypass": "error",
     "basalt/colour-literal": "error",

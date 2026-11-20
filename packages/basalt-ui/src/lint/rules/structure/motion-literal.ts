@@ -187,7 +187,7 @@ export const styleLiteralForm: AstForm = {
 export const motionLiteralRules = defineRules({
   'motion-literal': {
     family: 'structure',
-    profiles: ['bridge', 'parts', 'app'],
+    profiles: ['bridge', 'parts', 'app', 'site'],
     defect:
       'Issue 2529: durations and easings were typed per component, so a change to the motion scale reached some of the app and not the rest',
     forms: [objectLiteralForm, styleLiteralForm],

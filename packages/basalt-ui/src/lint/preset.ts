@@ -11,9 +11,14 @@ import { zoneAPremixed, zoneATokenClasses } from './generated/zone-a'
 import type { Profile, RuleTable } from './rule-table'
 import { PLUGIN_NAME, presetInput } from './rule-table'
 
-/** `tokens` has no oxlint preset (guardrails section 6); the other three ship as files. */
-export type PresetProfile = 'tokens' | 'bridge' | 'parts' | 'app'
-export const SHIPPED_PROFILES = ['bridge', 'parts', 'app'] as const satisfies readonly Profile[]
+/** `tokens` has no oxlint preset (guardrails section 6); the other four ship as files. */
+export type PresetProfile = 'tokens' | 'bridge' | 'parts' | 'app' | 'site'
+export const SHIPPED_PROFILES = [
+  'bridge',
+  'parts',
+  'app',
+  'site',
+] as const satisfies readonly Profile[]
 
 /** The five bought token rules every shipped profile runs. */
 export const SHADCN_TOKEN_RULES = [
@@ -59,6 +64,16 @@ export const JS_PLUGINS = ['basalt-ui/lint', '@shadcn/lint'] as const
 export const PARTS_COMPONENT_IMPORTS = ['^basalt-ui/ui/'] as const
 /** At bridge it recognises only the app's own `components/ui` (zone V is where they live). */
 export const BRIDGE_COMPONENT_IMPORTS = ['(?:^|/)components/ui(?:/|$)'] as const
+/** At site, basalt's own primitives and static parts: the site parts are basalt's, never a restyle. */
+export const SITE_COMPONENT_IMPORTS = ['^basalt-ui/(?:ui|static)/'] as const
+/** The profiles that carry bridge's shape: bridge's rule options, no restyle contracts, zone V. */
+const BRIDGE_LIKE: readonly PresetProfile[] = ['bridge', 'site']
+const componentImportsAt = (profile: PresetProfile): readonly string[] =>
+  profile === 'bridge'
+    ? BRIDGE_COMPONENT_IMPORTS
+    : profile === 'site'
+      ? SITE_COMPONENT_IMPORTS
+      : PARTS_COMPONENT_IMPORTS
 /**
  * Zones E and S: a rule that stays on but loses single forms there gets `formsOff` in its options,
  * written per profile so the options the profile gives the rule (`bridge`'s gate) are kept.
@@ -181,13 +196,10 @@ export const SHADCN_MESSAGES: Readonly<
     // One string for the unknown class and the unknown variant; `rounded-card` is surface-recipe's to report.
     'no-unknown-classes': `"{{className}}" is no class or variant this project's Tailwind knows. ${TOKEN_CLASSES} Nearest spelling: {{suggestions|none}}. A radius is rounded-ctrl or rounded-chip; a card surface is owned by Card and Inset; no class or variant is declared per app.`,
   }
-  return {
-    bridge: {
-      'no-raw-colors': `"{{className}}" is a raw colour. Use one theme class with no dark: variant (tokens switch per scheme): ink is text-foreground or text-muted-foreground, status text text-good or text-brand, a surface bg-background, bg-card or bg-popover, a line border-border. ${TOKEN_CLASSES} No colour is added per app.`,
-    },
-    parts: owned,
-    app: owned,
+  const bridge = {
+    'no-raw-colors': `"{{className}}" is a raw colour. Use one theme class with no dark: variant (tokens switch per scheme): ink is text-foreground or text-muted-foreground, status text text-good or text-brand, a surface bg-background, bg-card or bg-popover, a line border-border. ${TOKEN_CLASSES} No colour is added per app.`,
   }
+  return { bridge, site: bridge, parts: owned, app: owned }
 })()
 
 /** One `shadcn/no-restyle` contract, generated from a primitive's cva table. */
@@ -281,15 +293,14 @@ const on = (options: readonly unknown[] | undefined): unknown =>
   options && options.length > 0 ? ['error', ...options] : 'error'
 
 function restyleOptions(profile: PresetProfile, contracts: readonly Contract[]): unknown {
-  const bridge = profile === 'bridge'
   const message = SHADCN_MESSAGES[profile]?.[SHADCN_RESTYLE]
   return [
     'error',
     {
       allow: ['layout'],
       ...(message === undefined ? {} : { message }),
-      componentImports: bridge ? BRIDGE_COMPONENT_IMPORTS : PARTS_COMPONENT_IMPORTS,
-      contracts: bridge ? [] : contracts,
+      componentImports: componentImportsAt(profile),
+      contracts: BRIDGE_LIKE.includes(profile) ? [] : contracts,
     },
   ]
 }
@@ -302,8 +313,7 @@ function shadcnRule(profile: PresetProfile, rule: string, inputs: PresetInputs):
   // It finds a design-system component as `no-restyle` does; with no option it reads only a
   // components.json ui directory, which a basalt app has none of, and never fires (lint-8.6).
   if (rule === 'require-static-classes')
-    options['componentImports'] =
-      profile === 'bridge' ? [...BRIDGE_COMPONENT_IMPORTS] : [...PARTS_COMPONENT_IMPORTS]
+    options['componentImports'] = [...componentImportsAt(profile)]
   if (rule === 'no-raw-colors') options['allow'] = [...SHADOW_SIZES, ...PREMIXED_ALPHA]
   if (rule === 'no-unknown-classes') {
     const prefixes = inputs.classPrefixes ?? []
@@ -449,14 +459,14 @@ export function buildPreset(inputs: PresetInputs): PresetConfig | undefined {
   // Route files keep their component unexported so the router splits it; the rule would warn on `Route`.
   const overrides: Override[] = [ROUTE_FILE_OVERRIDE]
   // Zone V first: a root at another profile then re-enables its own `components/ui` files.
-  if (inputs.profile === 'bridge') overrides.push(vendoredZone(VENDORED_GLOB, inputs))
+  if (BRIDGE_LIKE.includes(inputs.profile)) overrides.push(vendoredZone(VENDORED_GLOB, inputs))
   for (const [root, profile] of roots) {
     if (profile !== inputs.profile) {
       overrides.push({ files: [rootGlob(root)], rules: rulesFor(profile, inputs) })
     }
   }
   for (const [root, profile] of roots) {
-    if (profile === 'bridge')
+    if (BRIDGE_LIKE.includes(profile))
       overrides.push(vendoredZone(`${rootGlob(root)}/components/ui/**`, inputs))
   }
   // Zone B before E and S: an ejected file inside a bespoke directory keeps the rule off.

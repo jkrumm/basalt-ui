@@ -118,8 +118,8 @@ describe('forms', () => {
 
 describe('profiles', () => {
   it('carries the profiles the contract names', () => {
-    expect(FAMILY['colour-literal']?.profiles).toEqual(['bridge', 'parts', 'app'])
-    expect(FAMILY['waiver-needs-reason']?.profiles).toEqual(['bridge', 'parts', 'app'])
+    expect(FAMILY['colour-literal']?.profiles).toEqual(['bridge', 'parts', 'app', 'site'])
+    expect(FAMILY['waiver-needs-reason']?.profiles).toEqual(['bridge', 'parts', 'app', 'site'])
     for (const id of ['data-primitive', 'untrusted-markdown', 'router-search', 'control-home']) {
       expect(FAMILY[id]?.profiles).toEqual(['parts', 'app'])
     }
