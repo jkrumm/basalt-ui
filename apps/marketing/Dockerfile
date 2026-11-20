@@ -8,6 +8,7 @@ WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/marketing/package.json ./apps/marketing/package.json
 COPY apps/playground/package.json ./apps/playground/package.json
+COPY apps/playground-astro/package.json ./apps/playground-astro/package.json
 COPY packages/basalt-ui/package.json ./packages/basalt-ui/package.json
 RUN --mount=type=cache,target=/root/.bun/install/cache \
     bun install --frozen-lockfile --ignore-scripts
