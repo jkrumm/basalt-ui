@@ -6,7 +6,7 @@ import { buildContext, doctor, runChecks } from './index'
 
 afterEach(cleanupTrees)
 
-const PROFILES: Profile[] = ['tokens', 'bridge', 'parts', 'app']
+const PROFILES: Profile[] = ['tokens', 'site', 'bridge', 'parts', 'app']
 
 /** `doctor` with both console streams captured. */
 async function capture(dir: string, flags: string[] = []): Promise<{ code: number; log: string }> {

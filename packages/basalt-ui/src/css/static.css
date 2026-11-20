@@ -1,0 +1,202 @@
+/* @generated basalt-ui — do not edit; regenerate with the command on the next line */
+/* basalt-ui 3.0.0 — `bun packages/basalt-ui/src/css/generate.ts` */
+@layer theme, base, basalt, components, utilities;
+@import 'tailwindcss';
+@import './tokens.css' layer(theme);
+@import './prose.css';
+@source '../static';
+@source '../page/prose.{js,tsx}';
+@source '../ui/alert.{js,tsx}';
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme]), :root:not([data-theme]) *) {
+      @slot;
+    }
+  }
+}
+@theme {
+  --color-*: initial;
+  --shadow-*: initial;
+  --radius-*: initial;
+  --text-*: initial;
+  --breakpoint-*: initial;
+}
+@theme inline {
+  --color-background: var(--basalt-canvas);
+  --color-inset: var(--basalt-inset);
+  --color-card: var(--basalt-card);
+  --color-popover: var(--basalt-raised);
+  --color-surface: var(--basalt-surface);
+  --color-accent: var(--basalt-hover);
+  --color-selected: var(--basalt-selected);
+  --color-scrim: var(--basalt-scrim);
+  --color-border: var(--basalt-hairline);
+  --color-input: var(--basalt-input);
+  --color-foreground: var(--basalt-ink);
+  --color-muted-foreground: var(--basalt-ink-muted);
+  --color-faint: var(--basalt-ink-faint);
+  --color-brand: var(--basalt-brand);
+  --color-ring: var(--basalt-brand);
+  --color-brand-fill: var(--basalt-brand-fill);
+  --color-on-brand: var(--basalt-on-brand);
+  --color-good: var(--basalt-good);
+  --color-good-tint: color-mix(in srgb, var(--basalt-good) var(--basalt-tint-pct), transparent);
+  --color-warn: var(--basalt-warn);
+  --color-warn-tint: color-mix(in srgb, var(--basalt-warn) var(--basalt-tint-pct), transparent);
+  --color-bad: var(--basalt-bad);
+  --color-bad-tint: color-mix(in srgb, var(--basalt-bad) var(--basalt-tint-pct), transparent);
+  --color-destructive: var(--basalt-bad);
+  --color-destructive-tint: color-mix(in srgb, var(--basalt-bad) var(--basalt-tint-pct), transparent);
+  --color-info: var(--basalt-info);
+  --color-info-tint: color-mix(in srgb, var(--basalt-info) var(--basalt-tint-pct), transparent);
+  --color-line: var(--basalt-line);
+  --color-dim-bar: var(--basalt-dim-bar);
+  --color-grid: var(--basalt-grid);
+  --color-crosshair: var(--basalt-crosshair);
+  --color-chart-1: var(--basalt-chart-1);
+  --color-chart-2: var(--basalt-chart-2);
+  --color-chart-3: var(--basalt-chart-3);
+  --color-chart-4: var(--basalt-chart-4);
+  --color-chart-5: var(--basalt-chart-5);
+  --color-seq-1: var(--basalt-seq-1);
+  --color-seq-2: var(--basalt-seq-2);
+  --color-seq-3: var(--basalt-seq-3);
+  --color-seq-4: var(--basalt-seq-4);
+  --color-seq-5: var(--basalt-seq-5);
+  --color-primary: var(--basalt-ink);
+  --color-primary-foreground: var(--basalt-canvas);
+  --color-secondary: var(--basalt-raised);
+  --color-muted: var(--basalt-card);
+}
+@theme {
+  --spacing: 0.25rem;
+  --breakpoint-md: 840px;
+  --breakpoint-xl: 1200px;
+  --container-narrow: 15rem;
+  --container-regular: 30rem;
+  --container-wide: 50rem;
+}
+@theme inline {
+  --shadow-card: var(--basalt-shadow-card);
+  --shadow-raised: var(--basalt-shadow-raised);
+  --shadow-overlay: var(--basalt-shadow-overlay);
+  --radius-card: var(--basalt-radius-card);
+  --radius-inset: var(--basalt-radius-inset);
+  --radius-ctrl: var(--basalt-radius-ctrl);
+  --radius-chip: var(--basalt-radius-chip);
+  --font-sans: var(--basalt-font-sans);
+  --font-head: var(--basalt-font-head);
+  --font-mono: var(--basalt-font-mono);
+  --font-weight-normal: var(--basalt-weight-body);
+  --font-weight-medium: var(--basalt-weight-medium);
+  --font-weight-semibold: var(--basalt-weight-strong);
+  --text-micro: var(--basalt-text-micro);
+  --text-micro--line-height: var(--basalt-text-micro-lh);
+  --text-xs: var(--basalt-text-xs);
+  --text-xs--line-height: var(--basalt-text-xs-lh);
+  --text-sm: var(--basalt-text-sm);
+  --text-sm--line-height: var(--basalt-text-sm-lh);
+  --text-md: var(--basalt-text-md);
+  --text-md--line-height: var(--basalt-text-md-lh);
+  --text-base: var(--basalt-text-base);
+  --text-base--line-height: var(--basalt-text-base-lh);
+  --text-lg: var(--basalt-text-lg);
+  --text-lg--line-height: var(--basalt-text-lg-lh);
+  --text-display: var(--basalt-text-display);
+  --text-display--line-height: var(--basalt-text-display-lh);
+  --ease-standard: var(--basalt-ease);
+}
+@utility h-ctl {
+  height: var(--basalt-ctl-h);
+}
+@utility size-ctl {
+  width: var(--basalt-ctl-h);
+  height: var(--basalt-ctl-h);
+}
+@utility min-h-ctl {
+  min-height: var(--basalt-ctl-h);
+}
+@utility min-h-row {
+  min-height: var(--basalt-row-h);
+}
+@utility size-icon {
+  width: var(--basalt-icon);
+  height: var(--basalt-icon);
+}
+@utility word-head {
+  word-spacing: 0.12em;
+}
+@utility focus-ring {
+  /* Focus scrolls the element flush to its scrollport; the margin keeps the 2px ring + 2px offset in view. */
+  scroll-margin: 4px;
+  &:focus-visible {
+    outline: 2px solid var(--basalt-brand);
+    outline-offset: 2px;
+  }
+}
+@utility link {
+  color: var(--basalt-brand);
+  text-underline-offset: 2px;
+}
+@layer basalt {
+  /* A border with no colour utility is the hairline, not ink (Tailwind 4 defaults to currentColor). */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--basalt-hairline);
+  }
+  [data-surface='canvas'] {
+    --basalt-surface: var(--basalt-canvas);
+  }
+  [data-surface='card'] {
+    --basalt-surface: var(--basalt-card);
+  }
+  [data-surface='inset'] {
+    --basalt-surface: var(--basalt-inset);
+  }
+  [data-surface='raised'] {
+    --basalt-surface: var(--basalt-raised);
+  }
+  @media (forced-colors: active) {
+    [data-surface] {
+      border: 1px solid CanvasText;
+    }
+  }
+  input:-webkit-autofill,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 100vh var(--basalt-surface) inset;
+    -webkit-text-fill-color: var(--basalt-ink);
+    caret-color: var(--basalt-ink);
+  }
+  @media (pointer: coarse) {
+    input,
+    select,
+    textarea {
+      font-size: max(16px, 1em) !important;
+    }
+  }
+  /* A mark drawn through useChartFocus dims as the kit marks do (charts/core/theme DIMMED). */
+  [data-chart-mark][data-dimmed] {
+    opacity: 0.5;
+  }
+  /* A marked row of text keeps its ink readable (charts/core/theme DIMMED_TEXT). */
+  [data-chart-mark][data-dimmed]:not(:where(svg *)) {
+    opacity: 0.7;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-chart-mark] {
+      transition: opacity 120ms ease-out;
+    }
+  }
+  @keyframes basalt-article-progress {
+    to {
+      transform: scaleX(1);
+    }
+  }
+}

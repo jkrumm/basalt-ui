@@ -375,6 +375,23 @@ export const SURFACES = {
     description: 'v3 pre-paint color-scheme script, frozen per major',
     forbiddenImports: [],
   },
+  './static': {
+    kind: 'tooling',
+    layer: 'ui',
+    description:
+      'Content-site parts that render to static HTML with no client JavaScript: no provider, context, hook or router, every label a prop (Prose, SiteArticle, SitePager, SiteCallout, SiteCodeBlock, SiteHeader, SiteFooter, ThemeSwitch, siteMdxComponents); the site profile',
+    optionalPeers: ['react'],
+    globs: { shipped: [], repo: ['packages/basalt-ui/src/static/**'] },
+    forbiddenImports: [],
+  },
+  './astro': {
+    kind: 'tooling',
+    layer: 'build-tooling',
+    description:
+      'basaltAstro() Astro integration — Tailwind 4, static.css on every page, the three faces through the Astro Fonts API and the head scripts; the site profile',
+    optionalPeers: ['@tailwindcss/vite', 'tailwindcss'],
+    forbiddenImports: [],
+  },
 
   // ── Non-JS published assets (ToolingSpec; not JS subpaths — check-coverage exempts these) ─────
   './tokens.css': {
@@ -393,6 +410,28 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'non-js-asset',
     description: 'v3 prose styles, frozen per major',
+    forbiddenImports: [],
+  },
+  './static.css': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description:
+      'v3 site sheet — tailwind.css without the font faces, plus prose.css and the @source lines of the static parts; one import for a content site',
+    optionalPeers: ['tailwindcss'],
+    forbiddenImports: [],
+  },
+  './starlight.css': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description:
+      "v3 Starlight bridge — Starlight's --sl-* theme variables read from the --basalt-* tokens; list it in Starlight's customCss",
+    forbiddenImports: [],
+  },
+  './astro/BasaltFonts.astro': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description:
+      "The head component for basalt's faces on Astro: the body face preloaded; needs basaltAstro() from ./astro",
     forbiddenImports: [],
   },
   './fonts.css': {

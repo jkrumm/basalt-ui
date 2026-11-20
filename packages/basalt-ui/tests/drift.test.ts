@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
 
+import { SIBLING_PREFIX } from '../src/cli/sync/sibling'
 import { SURFACES } from '../src/surfaces'
 import type { SurfaceSpec } from '../src/surfaces'
 
@@ -277,9 +278,12 @@ describe('sync-self', () => {
   // The other direction: a rule dropped from `agent/rules/` (e.g. this repo's own dead-rule
   // cleanup) must not survive in `.claude/rules` — `sync-self.ts`'s prune step is what deletes it,
   // and this fails closed if that step regresses or `make sync-self` was never re-run.
+  // A `basalt-v3-` name is a sibling install's placement (apps/marketing's sync), owned by that
+  // install's ledger and gitignored here, so it is no orphan of this repo's own sync.
   it('the installed rules carry no orphan — every basalt-*.md in .claude/rules has a shipped source', () => {
     const installed = readdirSync(RULES_DEST).filter(
-      (name) => name.startsWith('basalt-') && name.endsWith('.md'),
+      (name) =>
+        name.startsWith('basalt-') && !name.startsWith(SIBLING_PREFIX) && name.endsWith('.md'),
     )
     for (const name of installed) {
       expect([name, existsSync(join(RULES_SRC, name))]).toEqual([name, true])
@@ -302,7 +306,7 @@ describe('sync-self', () => {
   // Same law, the skills half.
   it('the installed skills carry no orphan — every basalt-* dir in .claude/skills has a shipped source', () => {
     const installed = readdirSync(SKILLS_DEST, { withFileTypes: true }).filter(
-      (e) => e.isDirectory() && e.name.startsWith('basalt-'),
+      (e) => e.isDirectory() && e.name.startsWith('basalt-') && !e.name.startsWith(SIBLING_PREFIX),
     )
     for (const dir of installed) {
       expect([dir.name, existsSync(join(SKILLS_SRC, dir.name))]).toEqual([dir.name, true])

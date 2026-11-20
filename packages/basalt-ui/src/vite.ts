@@ -92,7 +92,7 @@ function warnIfUnenforced(cwd: string): void {
   console.warn(
     '\n[basalt-ui] Installed, but `basalt-ui init` has never run here — no oxlint preset, no lint\n' +
       '            wiring, no agent rules. You have the components and none of the enforcement.\n' +
-      '            Fix: `./node_modules/.bin/basalt-ui init --profile <tokens|bridge|parts|app>`, then run\n' +
+      '            Fix: `./node_modules/.bin/basalt-ui init --profile <tokens|site|bridge|parts|app>`, then run\n' +
       '            `basalt-ui doctor` in CI. Silence: pass `enforcementNotice: false` to basaltViteConfig().\n',
   )
 }

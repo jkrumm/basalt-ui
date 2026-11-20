@@ -73,7 +73,7 @@ export const rows: readonly RowDef[] = [
     order: 40,
     label: 'published subpaths (package.json exports)',
     // 2.0 target 15.
-    ceiling: 30, // `./motion` (Issue 2529, raise row below); was 29: `./form` (raise row below); was 28: `./archify.css` (raise row below); was 27: v3 teardown-peers: the count after `./format` retired with src/format (the 2.x subpaths are gone; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router)
+    ceiling: 35, // the site profile: `./static`, `./static.css`, `./starlight.css`, `./astro`, `./astro/BasaltFonts.astro` (raise row below); was 30: `./motion` (Issue 2529, raise row below); was 29: `./form` (raise row below); was 28: `./archify.css` (raise row below); was 27: v3 teardown-peers: the count after `./format` retired with src/format (the 2.x subpaths are gone; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router)
     measure: () => Object.keys(readManifest().exports ?? {}).length,
   },
 ]
@@ -451,6 +451,13 @@ export const raises: Raises = {
     },
   ],
   subpaths: [
+    {
+      from: 30,
+      to: 35,
+      consumer:
+        'the site profile: basalt-ui.com (apps/marketing) renders every page from `./static` parts on Astro through the `./astro` integration and its `./astro/BasaltFonts.astro` head component, imports `./static.css` as its one sheet and themes its Starlight docs with `./starlight.css` (Issue 2531); FPP and the other content sites copy the same wiring',
+      repo: 'basalt-ui',
+    },
     {
       from: 29,
       to: 30,

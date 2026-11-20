@@ -48,14 +48,14 @@ async function uiModules() {
 }
 
 /**
- * Every published JS subpath — non-JS assets (`.css`, `./configs/*`) and the `./core/*` eject paths
+ * Every published JS subpath — non-JS assets (`.css`, `.astro`, `./configs/*`) and the `./core/*` eject paths
  * have no snapshot of their own. `./ui/*` expands to one subpath per primitive module, so a symbol
  * added to or dropped from one is a shard diff.
  */
 const subpaths = (
   await Promise.all(
     Object.keys(exportsMap)
-      .filter((k) => !k.startsWith('./configs') && !k.endsWith('.css'))
+      .filter((k) => !k.startsWith('./configs') && !k.endsWith('.css') && !k.endsWith('.astro'))
       .flatMap(async (k) => {
         if (k === UI_WILDCARD) return (await uiModules()).map((name) => `./ui/${name}`)
         return k.includes('*') ? [] : [k]

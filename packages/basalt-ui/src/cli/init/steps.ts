@@ -698,10 +698,16 @@ function seedStartCss(ctx: Ctx, vite: string): void {
   }
 }
 
-/** Above `tokens`: the Vite plugin and the Tailwind entry, patched only when the shape is stock. */
+/** Above `tokens`: the Vite plugin and the Tailwind entry, patched only when the shape is stock. A `site` is an Astro project: its wiring is the `basalt-ui/astro` integration, named as a to-do. */
 export function wireApp(ctx: Ctx): void {
   if (ctx.args.profile === 'tokens') {
     return void ctx.todo.push(`import ${ctx.args.tokensOut} in your stylesheet entry`)
+  }
+  if (ctx.args.profile === 'site') {
+    ctx.todo.push(`import ${ctx.args.tokensOut} in your global stylesheet`)
+    return void ctx.todo.push(
+      'add basaltAstro() from "basalt-ui/astro" to integrations in astro.config: integrations: [react(), basaltAstro()]',
+    )
   }
   const dirs = appDirs(ctx)
   const first = ctx.args.start ? START_FIRST : ctx.routerPlugin === true ? ROUTER_FIRST : null

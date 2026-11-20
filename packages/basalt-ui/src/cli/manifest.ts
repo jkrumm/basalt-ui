@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
 export const MANIFEST_PATH = '.basalt/manifest.json'
-export const PROFILES = ['tokens', 'bridge', 'parts', 'app'] as const
+export const PROFILES = ['tokens', 'site', 'bridge', 'parts', 'app'] as const
 export type Profile = (typeof PROFILES)[number]
 
 /** One committed `tokens:css` output and the flags that reproduce it. */

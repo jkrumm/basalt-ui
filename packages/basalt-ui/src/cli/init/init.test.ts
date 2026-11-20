@@ -90,7 +90,7 @@ const manifestOf = (dir: string): Manifest => {
   return parsed.manifest
 }
 
-const PROFILES: Profile[] = ['tokens', 'bridge', 'parts', 'app']
+const PROFILES: Profile[] = ['tokens', 'site', 'bridge', 'parts', 'app']
 
 describe('init: the declaration', () => {
   it('exits 1 without --profile or with an unknown one, and writes nothing', async () => {
@@ -249,7 +249,7 @@ describe('init: presets by profile', () => {
       await runInit(['--profile', profile, '--root', 'src'], dir)
       presets.add(read(dir, '.oxlintrc.basalt.json'))
     }
-    expect(presets.size).toBe(3)
+    expect(presets.size).toBe(4)
   })
 
   it("drops create-vite's stock only-export-components rule and keeps the rest", async () => {

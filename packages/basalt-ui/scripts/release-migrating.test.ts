@@ -329,7 +329,7 @@ describe('release step', () => {
     expect(merged.rows).toEqual([ROW])
     expect(merged.to).toBe('3.0.0')
     expect(merged.from).toBe('>=1.40 <3')
-    expect(merged.profiles).toEqual(['tokens', 'bridge', 'parts', 'app'])
+    expect(merged.profiles).toEqual(['tokens', 'site', 'bridge', 'parts', 'app'])
     expect(readFileSync(join(pkg, 'MIGRATING.md'), 'utf8')).toContain('`gone` (removed)')
   })
 

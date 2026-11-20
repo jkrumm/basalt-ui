@@ -28,9 +28,10 @@ import type { Check } from './types'
 /** The oldest `version` a manifest may record: below it the shape is not the v3 one. */
 export const VERSION_FLOOR = '2.29.0'
 
-/** The lowest profile each subpath needs (primitives-distribution L4): `ui/*` parts, `shell` app. */
+/** The lowest profile each subpath needs (primitives-distribution L4): `ui/*` parts, `shell` app, `static` and `astro` site. */
 const SUBPATH_PROFILE: readonly (readonly [RegExp, Profile])[] = [
   [/^basalt-ui\/shell(?:\/|$)/, 'app'],
+  [/^basalt-ui\/(?:static|astro)(?:\/|$)/, 'site'],
   [/^basalt-ui\/ui(?:\/|$)/, 'parts'],
 ]
 

@@ -45,7 +45,7 @@ export const AREAS = [
   'removed-2x',
 ] as const
 
-const PROFILES = ['tokens', 'bridge', 'parts', 'app'] as const
+const PROFILES = ['tokens', 'site', 'bridge', 'parts', 'app'] as const
 const FROM_RANGE = '>=1.40 <3'
 /** The row kinds. A kind outside this list is a typo, not a new class: add it here with its meaning. */
 const KINDS = [

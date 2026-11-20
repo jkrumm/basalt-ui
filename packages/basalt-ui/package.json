@@ -146,11 +146,18 @@
       "import": "./dist/shell/index.js",
       "default": "./dist/shell/index.js"
     },
+    "./starlight.css": "./dist/css/starlight.css",
     "./stylelint": {
       "types": "./dist/lint/stylelint/index.d.ts",
       "import": "./dist/lint/stylelint/index.js",
       "default": "./dist/lint/stylelint/index.js"
     },
+    "./static": {
+      "types": "./dist/static/index.d.ts",
+      "import": "./dist/static/index.js",
+      "default": "./dist/static/index.js"
+    },
+    "./static.css": "./dist/css/static.css",
     "./theme-script": {
       "types": "./dist/css/theme-script.d.ts",
       "import": "./dist/css/theme-script.js",
@@ -163,6 +170,12 @@
     "./table.css": "./dist/table/table.css",
     "./tailwind.css": "./dist/css/tailwind.css",
     "./archify.css": "./dist/css/archify.css",
+    "./astro": {
+      "types": "./dist/astro/index.d.ts",
+      "import": "./dist/astro/index.js",
+      "default": "./dist/astro/index.js"
+    },
+    "./astro/BasaltFonts.astro": "./dist/astro/BasaltFonts.astro",
     "./styles.css": "./dist/styles.css",
     "./configs/*": "./configs/*"
   },
@@ -238,6 +251,7 @@
     "@shadcn/lint": "0.2.5",
     "@shikijs/langs": "^4.5.0",
     "@shikijs/themes": "^4.5.0",
+    "@tailwindcss/vite": "4.3.5",
     "@tanstack/charts": "1.5.0",
     "@tanstack/react-form": "^1.33.0",
     "@tanstack/react-query": "^5.104.0",
@@ -279,6 +293,9 @@
       "optional": true
     },
     "@shikijs/themes": {
+      "optional": true
+    },
+    "@tailwindcss/vite": {
       "optional": true
     },
     "@tanstack/charts": {

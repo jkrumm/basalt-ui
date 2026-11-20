@@ -1,5 +1,5 @@
 /**
- * `init --profile tokens|bridge|parts|app [--root <path>]... [--tokens-out <css>]
+ * `init --profile tokens|site|bridge|parts|app [--root <path>]... [--tokens-out <css>]
  * [--tokens-json-out <json>] [--extra <file>] [--accent --neutral --vibrancy --selector]`: the one
  * door into an install (docs/v3/concepts/skills-agent-layer.md 4.1). The profile is declared,
  * never inferred. It declares the manifest, generates the token outputs, installs the profile's

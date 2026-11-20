@@ -35,6 +35,8 @@ Everything else is internal: `./guard`, `./data/virtual`, `./llms.txt` and `./pa
 | `basalt-ui/stylelint`    | build-tooling |
 | `basalt-ui/testing`      | build-tooling |
 | `basalt-ui/theme-script` | build-tooling |
+| `basalt-ui/static`       | ui            |
+| `basalt-ui/astro`        | build-tooling |
 
 ## Hard rules
 
