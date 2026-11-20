@@ -16,6 +16,8 @@ packages/basalt-ui/src/css/tokens.css
 # tailwind.css is the same generator's output under the same pin; the `--basalt-*` names put its
 # `color-mix` lines past the print width.
 packages/basalt-ui/src/css/tailwind.css
+# static.css is tailwind.css with other imports, from the same generator under the same pin.
+packages/basalt-ui/src/css/static.css
 
 # Package fixture trees are byte-exact (deliberate offenders, golden files); never formatted.
 packages/basalt-ui/test/fixtures/**
