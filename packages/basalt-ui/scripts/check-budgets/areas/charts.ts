@@ -65,7 +65,7 @@ export const rows: readonly RowDef[] = [
     // 128800 -> 129000 (Issue 2573): 128904 B measured, +~104 B gz over the cap for the single-series stack's
     // inside value and the captions placed again around a value label that landed on one, the kit fixes of
     // expression cycle 15.
-    // 129000 -> 132100 (Issue 2602): MEASURED B measured, +~3.1 KB gz for the label-width table the engine now
+    // 129000 -> 132100 (Issue 2602): 131978 B measured, +~3.1 KB gz for the label-width table the engine now
     // measures its text with on the server and in the browser alike, so the server picture's gutters are the
     // hydrated ones (Astro matrix) and a late webfont no longer re-lays the plot.
     ceiling: 132100,
