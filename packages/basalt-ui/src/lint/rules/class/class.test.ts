@@ -108,7 +108,10 @@ describe('input to id', () => {
       code: `export const a = <div className="border-l-4 border-bad" />`,
       ruleId: 'basalt/tw-off-law',
       messageId: 'app-colour',
-      also: [{ ruleId: 'basalt/tw-off-law', messageId: 'side-stripe' }],
+      also: [
+        { ruleId: 'basalt/tw-off-law', messageId: 'side-stripe' },
+        { ruleId: 'basalt/logical-properties', messageId: 'border-side' },
+      ],
     },
     {
       input: `['gap-4.5','flex']`,
@@ -199,12 +202,22 @@ describe('forms', () => {
     margin: 'gap-',
     padding: 'Inset',
     'off-scale': 'duration-fast',
+    'inline-margin': 'ms-',
+    'inline-padding': 'ps-',
+    'inline-offset': 'start-',
+    'text-align': 'text-start',
+    'border-side': 'border-s',
+    'radius-side': 'rounded-s',
+    'scroll-inline': 'scroll-ms',
+    'float-side': 'float-start',
+    'clear-side': 'clear-start',
+    'style-object': 'insetInlineStart',
   }
   const all = Object.entries(CLASS_RULES).flatMap(([id, entry]) =>
     entry.forms.map((form) => ({ id, form })),
   )
 
-  it('is twenty-three enabled forms in eight ids, plus the padding form', () => {
+  it('is thirty-three enabled forms in nine ids, plus the padding form', () => {
     expect(Object.keys(CLASS_RULES)).toEqual([
       'viewport-keyed',
       'dark-fork',
@@ -214,9 +227,10 @@ describe('forms', () => {
       'tw-off-law',
       'app-spacing',
       'motion-off-scale',
+      'logical-properties',
     ])
-    expect(all.filter(({ form }) => isEnabled(form))).toHaveLength(23)
-    expect(all).toHaveLength(24)
+    expect(all.filter(({ form }) => isEnabled(form))).toHaveLength(33)
+    expect(all).toHaveLength(34)
   })
 
   it('runs viewport-keyed, dark-fork, fixed-colour and status-fill-as-text from bridge up', () => {

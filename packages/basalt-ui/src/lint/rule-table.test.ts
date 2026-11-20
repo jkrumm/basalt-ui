@@ -143,7 +143,7 @@ describe('defineRules', () => {
 
   it(`fails on more than ${ID_CEILING} ids`, () => {
     expect(problemsOf(() => family(0, ID_CEILING + 1))).toEqual([
-      `19 ids exceed the ceiling of ${ID_CEILING}`,
+      `${ID_CEILING + 1} ids exceed the ceiling of ${ID_CEILING}`,
     ])
     expect(problemsOf(() => family(0, ID_CEILING))).toEqual([])
   })
@@ -157,8 +157,8 @@ describe('mergeTables', () => {
   })
 
   it('fails when the families together pass the ceiling', () => {
-    expect(problemsOf(() => mergeTables([family(0, 10), family(10, 9)]))).toEqual([
-      `19 ids exceed the ceiling of ${ID_CEILING}`,
+    expect(problemsOf(() => mergeTables([family(0, 10), family(10, ID_CEILING - 9)]))).toEqual([
+      `${ID_CEILING + 1} ids exceed the ceiling of ${ID_CEILING}`,
     ])
   })
 
@@ -191,12 +191,13 @@ describe('derived lists', () => {
   it('generates the preset input per profile and zone', () => {
     expect(presetInput(TABLE)).toEqual({
       plugin: 'basalt',
-      options: { bridge: {}, parts: {}, app: {}, repo: {} },
+      options: { bridge: {}, parts: {}, app: {}, repo: {}, site: {} },
       profiles: {
         bridge: ['basalt/dark-fork'],
         parts: ['basalt/dark-fork', 'basalt/app-spacing', 'basalt/router-search'],
         app: ['basalt/dark-fork', 'basalt/app-spacing', 'basalt/router-search'],
         repo: ['basalt/no-dev-helper'],
+        site: [],
       },
       zonesOff: {
         ejected: ['basalt/app-spacing'],
@@ -241,6 +242,7 @@ describe('profile options', () => {
       parts: {},
       app: {},
       repo: {},
+      site: {},
     })
   })
 

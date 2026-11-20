@@ -58,10 +58,10 @@ describe('oxlint plugins-dev RuleTester', () => {
 })
 
 describe('motion-literal forms', () => {
-  it('are the two live forms at bridge, parts and app', () => {
+  it('are the two live forms at bridge, parts, app and site', () => {
     expect(ENTRY.forms.map((form) => form.id)).toEqual(['object-literal', 'css-literal'])
     expect(ENTRY.forms.every(isEnabled)).toBe(true)
-    expect(ENTRY.profiles).toEqual(['bridge', 'parts', 'app'])
+    expect(ENTRY.profiles).toEqual(['bridge', 'parts', 'app', 'site'])
   })
 
   for (const form of ENTRY.forms) {

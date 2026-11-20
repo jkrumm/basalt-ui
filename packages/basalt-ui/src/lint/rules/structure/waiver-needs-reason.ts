@@ -136,7 +136,7 @@ export const fileLevelScope: AstForm = {
 export const waiverRules = defineRules({
   'waiver-needs-reason': {
     family: 'structure',
-    profiles: ['bridge', 'parts', 'app'],
+    profiles: ['bridge', 'parts', 'app', 'site'],
     defect:
       'linewatch disarmed a file by mentioning the directive token (I1); a bare waiver widened the guard (I2)',
     forms: [missingReason, fileLevelScope],

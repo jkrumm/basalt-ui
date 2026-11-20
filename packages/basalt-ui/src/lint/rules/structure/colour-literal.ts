@@ -245,7 +245,7 @@ export const colourLiteralForm: AstForm = {
 export const colourLiteralRules = defineRules({
   'colour-literal': {
     family: 'structure',
-    profiles: ['bridge', 'parts', 'app'],
+    profiles: ['bridge', 'parts', 'app', 'site'],
     defect:
       '11 shutterflow canvas waivers (overlay.ts 10, Stage.tsx 1); the regex guard gave the escape and an AST rule replaces it',
     forms: [colourLiteralForm],

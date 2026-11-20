@@ -1,5 +1,5 @@
 /**
- * The class-rule family: eight ids, twenty-three enabled forms and one built-but-off form, all data
+ * The class-rule family: nine ids, thirty-three enabled forms and one built-but-off form, all data
  * (guardrails section 4, rows 1-7). The factory turns each entry into an oxlint/ESLint rule; this
  * module holds the patterns, the fix each message names and the next rung of the bending ladder.
  *
@@ -12,6 +12,7 @@ import type { Profile, Zone } from '../../rule-table'
 import { defineRules } from '../../rule-table'
 import {
   borderedCard,
+  inlineStyleForm,
   mediaQueryForm,
   platformGlyphForm,
   PROFILE_GATE_SCHEMA,
@@ -23,8 +24,10 @@ import {
   wholeString,
 } from './detect'
 
-const ALL: readonly Profile[] = ['bridge', 'parts', 'app', 'repo']
+const ALL: readonly Profile[] = ['bridge', 'parts', 'app', 'repo', 'site']
 const PARTS_UP: readonly Profile[] = ['parts', 'app', 'repo']
+/** The static site (Astro pages, React parts, no client JS): bridge's rules plus logical-properties. */
+const SITE: readonly Profile[] = ['site']
 /** Zone V (vendored shadcn files, bridge only): the class rules are off there (section 6). */
 const VENDORED: readonly Zone[] = ['vendored']
 
@@ -281,7 +284,7 @@ export const CLASS_RULES = defineRules({
     profiles: ALL,
     zonesOff: VENDORED,
     schema: [PROFILE_GATE_SCHEMA],
-    profileOptions: { bridge: [{ profile: 'bridge' }] },
+    profileOptions: { bridge: [{ profile: 'bridge' }], site: [{ profile: 'bridge' }] },
     defect:
       'shadcn suggests `p-3.25` and `w-105`; console 16 bordered vs 4 shadow cards; coloured left bars; `/NN` on `color-mix` tokens; epos `grid-cols-1!`; `bg-${tone}-600` unscanned by anything',
     forms: [
@@ -450,6 +453,85 @@ export const CLASS_RULES = defineRules({
         fix: 'Duration and delay from the motion scale: duration-fast, duration-base, duration-slow, duration-0; easing from ease-standard, ease-enter, ease-exit; the stagger utility for a list',
         next: 'A cva variant over those steps, or a reasoned waiver',
         fixture: 'class/motion-off-scale/off-scale.tsx',
+      },
+    ],
+  },
+  'logical-properties': {
+    family: 'class',
+    profiles: SITE,
+    zonesOff: VENDORED,
+    defect:
+      'a site page under dir="rtl" keeps ml-, pl-, left- and text-left physical, so the margin, gutter and text edge land on the wrong side; content sites take every word from a message catalogue, so a right-to-left locale must be a translation, not a stylesheet rewrite',
+    forms: [
+      {
+        id: 'inline-margin',
+        pattern: /(?:^|:)!?-?m[lr]-/,
+        fix: 'Use ms-* for the start margin and me-* for the end margin: the sides that follow the text direction, where the physical margin does not',
+        next: 'A reasoned waiver where the side is physical on purpose, an overlay placed from the viewport edge',
+        fixture: 'class/logical-properties/inline-margin.tsx',
+      },
+      {
+        id: 'inline-padding',
+        pattern: /(?:^|:)!?p[lr]-/,
+        fix: 'Use ps-* for the start padding and pe-* for the end padding: the sides that follow the text direction, where the physical padding does not',
+        next: 'A reasoned waiver where the side is physical on purpose',
+        fixture: 'class/logical-properties/inline-padding.tsx',
+      },
+      {
+        id: 'inline-offset',
+        pattern: /(?:^|:)!?-?(?:left|right)-/,
+        fix: 'Use start-* and end-* for the inline offset: the edges that follow the text direction, where the physical offset does not',
+        next: 'A reasoned waiver where the side is physical on purpose, a map or a measured overlay',
+        fixture: 'class/logical-properties/inline-offset.tsx',
+      },
+      {
+        id: 'text-align',
+        pattern: /(?:^|:)!?text-(?:left|right)(?:[!/]|$)/,
+        fix: 'Use text-start and text-end: the edges of the text that follow the text direction, where the physical alignment does not',
+        next: 'A reasoned waiver where the text edge is physical on purpose',
+        fixture: 'class/logical-properties/text-align.tsx',
+      },
+      {
+        id: 'border-side',
+        pattern: /(?:^|:)!?border-[lr](?:[-!/]|$)/,
+        fix: 'Use border-s and border-e for the inline border: the edges that follow the text direction, where the physical border does not; colour included',
+        next: 'A reasoned waiver where the edge is physical on purpose',
+        fixture: 'class/logical-properties/border-side.tsx',
+      },
+      {
+        id: 'radius-side',
+        pattern: /(?:^|:)!?rounded-(?:l|r|tl|tr|bl|br)(?:[-!/]|$)/,
+        fix: 'Use rounded-s, rounded-e, rounded-ss, rounded-se, rounded-es and rounded-ee: the logical corners follow the text direction',
+        next: 'A reasoned waiver where the corner is physical on purpose',
+        fixture: 'class/logical-properties/radius-side.tsx',
+      },
+      {
+        id: 'scroll-inline',
+        pattern: /(?:^|:)!?-?scroll-[mp][lr]-/,
+        fix: 'Use scroll-ms and scroll-me for the inline scroll margin, scroll-ps and scroll-pe for the inline scroll padding',
+        next: 'A reasoned waiver where the snap offset is physical on purpose',
+        fixture: 'class/logical-properties/scroll-inline.tsx',
+      },
+      {
+        id: 'float-side',
+        pattern: /(?:^|:)!?float-(?:left|right)(?:[!/]|$)/,
+        fix: 'Use float-start and float-end: the sides that follow the text direction, where the physical float does not',
+        next: 'A reasoned waiver where the float is physical on purpose',
+        fixture: 'class/logical-properties/float-side.tsx',
+      },
+      {
+        id: 'clear-side',
+        pattern: /(?:^|:)!?clear-(?:left|right)(?:[!/]|$)/,
+        fix: 'Use clear-start and clear-end: the sides that follow the text direction, where the physical clear does not',
+        next: 'A reasoned waiver where the clear is physical on purpose',
+        fixture: 'class/logical-properties/clear-side.tsx',
+      },
+      {
+        id: 'style-object',
+        detect: inlineStyleForm,
+        fix: 'Use the logical property in a style object: insetInlineStart for left, marginInlineStart for marginLeft, paddingInlineEnd for paddingRight, borderInlineStart for borderLeft, and textAlign start or end',
+        next: 'A reasoned waiver where the side is physical on purpose',
+        fixture: 'class/logical-properties/style-object.tsx',
       },
     ],
   },

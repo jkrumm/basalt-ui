@@ -1223,6 +1223,41 @@ const nodesOf = (node: Node, key: string): Node[] => {
   return Array.isArray(value) ? value.filter(isNode) : []
 }
 
+/** A physical side key a `style` object sets: one edge's margin, padding or border, or an inset. */
+const PHYSICAL_STYLE_KEY =
+  /^(?:margin|padding)(?:Left|Right)$|^border(?:Left|Right)|^(?:left|right)$/
+const literalOf = (node: Node | undefined): unknown => node?.['value']
+
+/**
+ * `logical-properties`, style form: a `style` object that sets a physical side (`marginLeft`,
+ * `paddingRight`, `left`, `borderLeft*`) or `textAlign` to `left` or `right`. The logical
+ * property follows the text direction; the physical one does not.
+ */
+export function inlineStyleForm({ report }: FormContext): Visitor {
+  return {
+    JSXAttribute(node) {
+      if (nameOf(field(node, 'name')) !== 'style') return
+      const container = field(node, 'value')
+      const object =
+        container?.type === 'JSXExpressionContainer' ? field(container, 'expression') : undefined
+      if (object?.type !== 'ObjectExpression') return
+      for (const property of nodesOf(object, 'properties')) {
+        if (property.type !== 'Property' || property['computed'] === true) continue
+        const key = field(property, 'key')
+        const text = literalOf(key)
+        const name = nameOf(key) ?? (typeof text === 'string' ? text : undefined)
+        if (name === undefined) continue
+        if (name === 'textAlign') {
+          const align = literalOf(field(property, 'value'))
+          if (align === 'left' || align === 'right') report(property, name)
+        } else if (PHYSICAL_STYLE_KEY.test(name)) {
+          report(property, name)
+        }
+      }
+    },
+  }
+}
+
 /** `focus.item(i)` as a spread attribute: the handle's name, or undefined for any other spread. */
 function itemSpreadHandle(attr: Node): string | undefined {
   if (attr.type !== 'JSXSpreadAttribute') return undefined

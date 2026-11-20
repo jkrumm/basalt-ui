@@ -111,7 +111,7 @@ const proposedTokens = (text: string): string[] => [
 ]
 
 /** A clause that names its profile (`text-good or text-brand at bridge`) is read there only. */
-const AT_PROFILE = /\bat (bridge|parts|app)\b/g
+const AT_PROFILE = /\bat (bridge|parts|app|site)\b/g
 
 function clauses(message: Message): { text: string; profiles: readonly ShippedProfile[] }[] {
   return message.text.split(/;|\.\s/).map((text) => {
@@ -248,7 +248,7 @@ describe('shipped messages', () => {
     const colourMessages = messages.filter((m) =>
       /shadcn\/no-(?:raw-colors|unknown-classes) message$/.test(m.source),
     )
-    expect(colourMessages.length).toBe(5)
+    expect(colourMessages.length).toBe(6)
     for (const { source, text } of colourMessages) {
       expect(text, source).toContain('hover is bg-accent')
       expect(text, source).toContain('canvas is bg-background')

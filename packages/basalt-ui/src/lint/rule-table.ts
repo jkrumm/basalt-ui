@@ -10,15 +10,19 @@
  */
 import type { FormContext, Visitor } from './factory'
 
-/** Guardrails section 1: 18 own ids, 16 planned. Raising it is an owner decision (DPO 15). */
-export const ID_CEILING = 18
+/**
+ * Guardrails section 1: 18 own ids, 16 planned. Raising it is an owner decision (DPO 15); 19 is the
+ * site profile's `logical-properties`, which the owner filed as "logical CSS properties only, checked
+ * by lint" (Issue 2531, Spec verdict 2026-11-20).
+ */
+export const ID_CEILING = 19
 
 /** The plugin namespace every id is reported and waived under: `basalt/<id>`. */
 export const PLUGIN_NAME = 'basalt'
 
 /** `tokens` has no oxlint preset; `repo` ships in no preset (basalt-ui's own dogfood only). */
-export type Profile = 'bridge' | 'parts' | 'app' | 'repo'
-export const PROFILES: readonly Profile[] = ['bridge', 'parts', 'app', 'repo']
+export type Profile = 'bridge' | 'parts' | 'app' | 'repo' | 'site'
+export const PROFILES: readonly Profile[] = ['bridge', 'parts', 'app', 'repo', 'site']
 
 /**
  * Zones a rule can be off in (section 6). Zone A, app code, switches nothing off. Zone B, `bespoke`,
@@ -242,12 +246,14 @@ export function presetInput(table: RuleTable): PresetInput {
       parts: optionsFor('parts'),
       app: optionsFor('app'),
       repo: optionsFor('repo'),
+      site: optionsFor('site'),
     },
     profiles: {
       bridge: byProfile('bridge'),
       parts: byProfile('parts'),
       app: byProfile('app'),
       repo: byProfile('repo'),
+      site: byProfile('site'),
     },
     zonesOff: {
       ejected: byZone('ejected'),
