@@ -1,0 +1,21 @@
+{
+  "why": "Expression cycle 15 (docs/v3/cycles/expression-15.md) has one `rubric` finding and three readings where reviewers scored the same behaviour two ways. n69's reviewer charged K5 for the 390 heat grid with no values, the defect and the frame F6 already charged (.4), against rubric.md's 'a defect is charged once', which today names R2 against the F, K and X items but not two F, K or X items against each other. And the same behaviour scored differently: at 390 the arrow keys scroll the chart out of view (a known kit gap) cost n73 a K3 point and n70 none; a flat `StatGroup` strip with no inset scored X5 3 on n69 and 2 on n73; a `StatGroup` error frame that leaves a second source's cell blank scored K2 3 on n69 and 2 on n73.",
+  "what": "Rubric text for one defect charged once across every item, and one reading each for a kit keyboard gap at 390, a flat stat strip under X5 and a blank cell in a group's error frame, with the shipped reviewer agreeing.",
+  "owns": [
+    "docs/v3/expression/rubric.md",
+    "the shipped reviewer's text in packages/basalt-ui/agent/** (the design reviewer subagent and its references), through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/cases.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) A defect is charged once across all items, not only R2 against the rest: a 390 part with no values is F6's, and K5 charges only what is lost beyond the label (n69 .4). (2) One reading for each split: a known kit gap the shots show (the arrow keys scrolling the chart away at 390) is charged under K3 or not at all, the same on every case (n70 3 against n73 2); a `StatGroup` strip is or is not a flat card under X5 (n69 3 against n73 2); a group error frame that leaves a cell blank is or is not a K2 defect (n69 3 against n73 2). Rescore the named items on the cycle-15 last-round shots with fresh reviewers, as EXPRESSION.md § Owner calibration asks, and record the rescore.",
+  "acceptance": [
+    "rubric.md and the shipped reviewer carry the four readings with the cycle-15 cases cited",
+    "A fresh rescore of n69 K5, X5 and K2, n70 K3 and n73 K3, X5 and K2 is recorded"
+  ],
+  "out_of_scope": "Kit, skill and case text; the trial scenarios.",
+  "proof": "The rescore reports in .evidence/v3-shots/expression-15/reports/ in the main checkout.",
+  "commits": "docs: rubric readings."
+}
