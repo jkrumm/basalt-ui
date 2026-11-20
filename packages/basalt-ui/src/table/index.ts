@@ -4,7 +4,7 @@
  * state, and the parts `DataTable` composes (toolbar, body, pager, bulk bar). No TanStack hook,
  * feature or row-model symbol leaves this subpath.
  *
- * Peers: @tanstack/react-table 9.2.8 (exact) and @base-ui/react (the `col` kinds render `ui/*`
+ * Peers: @tanstack/react-table ~9.3.1 (tilde) and @base-ui/react (the `col` kinds render `ui/*`
  * primitives).
  */
 
