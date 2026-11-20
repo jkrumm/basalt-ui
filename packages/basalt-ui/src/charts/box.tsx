@@ -7,6 +7,7 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { cx } from '../common/props'
 import classes from './chart-box.module.css'
 import { resolveContainerClass } from '../tokens/size-classes'
+import type { ContainerClass } from '../tokens/size-classes'
 import type { ResponsiveChartHeight } from './types'
 
 /** `undefined` is the height law; a number is fixed; `'fill'` is the parent's height. */
@@ -51,8 +52,19 @@ function classHeights(height: Exclude<ChartBoxHeight, 'fill'>): [string, string,
     ]
   }
   if (typeof height === 'number') return [px(height), px(height), px(height), px(height)]
+  return [
+    px(responsiveAt(height, 'micro')),
+    px(responsiveAt(height, 'narrow')),
+    px(responsiveAt(height, 'regular')),
+    px(responsiveAt(height, 'wide')),
+  ]
+}
+
+/** A responsive height's pick for one container class: `base` below `regular`, each tier falling back to the one under it. */
+function responsiveAt(height: ResponsiveChartHeight, cls: ContainerClass): number {
   const regular = height.regular ?? height.base
-  return [px(height.base), px(height.base), px(regular), px(height.wide ?? regular)]
+  if (cls === 'wide') return height.wide ?? regular
+  return cls === 'regular' ? regular : height.base
 }
 
 /**
@@ -67,9 +79,7 @@ export function boxHeightAt(height: ChartBoxHeight, width: number): number | und
     return Math.min(HEIGHT_MAX, Math.max(HEIGHT_MIN, HEIGHT_RATIO[cls] * width))
   }
   if (typeof height === 'number') return height
-  const regular = height.regular ?? height.base
-  if (cls === 'wide') return height.wide ?? regular
-  return cls === 'regular' ? regular : height.base
+  return responsiveAt(height, cls)
 }
 
 export function chartBoxVars(height: Exclude<ChartBoxHeight, 'fill'>): ChartBoxVars {

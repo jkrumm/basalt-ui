@@ -23,7 +23,8 @@ const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-n
  * 160, and
  * `fill` takes the card's remainder inside a card that fills its parent. Every phase draws inside
  * the same box, so a loading, empty or error card is exactly as tall as a ready one. The card takes
- * its grid cell's height, so a stretched row grows the box past its `auto`, `tall` or `short` floor.
+ * its grid cell's height, so a stretched row grows the box past its `auto`, `tall` or `short` floor;
+ * the server picture ({@link SERVER_FRAME}) is drawn at the floor, since a row's height is the page's.
  */
 export const BOX = {
   auto: 'h-[clamp(12rem,50cqw,26.25rem)] shrink-0 grow',
