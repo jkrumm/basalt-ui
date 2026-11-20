@@ -1,34 +1,28 @@
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import type { Box, BoxSlot } from '../../core/ports'
-import type { ChartPanesProps } from '../contract'
+import type { ChartPane } from '../contract'
 
 /** Calls a pane's slot as a component, so a throw lands in the card's boundary and hooks keep their order. */
 function PaneSlot({ chart, phase }: { chart: BoxSlot; phase: Box['phase'] }): ReactNode {
   return chart({ height: 'fill', phase })
 }
 
-/** A weight below zero or not finite counts as none: the pane keeps no share and draws nothing. */
+/** A weight below zero or not finite counts as none: the pane keeps no share. */
 const shareOf = (weight: number | undefined): number =>
   weight === undefined ? 1 : Number.isFinite(weight) && weight > 0 ? weight : 0
 
 /**
- * Charts stacked on one x inside one box: each pane takes its share of the box by `weight`, so a
- * `ChartCard` with two or three panes needs no pixel height per pane or per size class. Each pane's
- * slot is called with `height: 'fill'`. The panes sit 4 px apart; a shared cursor group, one
- * `y.gutter` and `x.ticks: []` on every pane but the bottom stay the page's (the two-pane recipe).
- *
- * @useWhen two or three charts share one x inside one `ChartCard` (a price over a momentum line, a score over its drivers)
- * @neverWhen the charts answer different questions: give each its own `ChartCard` in a `CardGrid`
- *
- * @example
- * <ChartCard title="Recovery" height="tall" chart={(box) => (
- *   <ChartPanes box={box} panes={[
- *     { weight: 2, chart: (pane) => <Lines height={pane.height} label="Score" ... /> },
- *     { chart: (pane) => <Lines height={pane.height} label="HRV" ... /> },
- *   ]} />
- * )} />
+ * The panes of a `ChartCard` (`panes`): a column that fills the chart box, each pane taking its share
+ * by `weight` and its slot called with `height: 'fill'`, 4 px apart. Not exported: `ChartCard` is
+ * the one way in, so `./charts` keeps its 13 value symbols (docs/v3/ARCHITECTURE.md section 3).
  */
-export function ChartPanes({ box, panes }: ChartPanesProps): ReactElement {
+export function ChartPanes({
+  box,
+  panes,
+}: {
+  box: Box
+  panes: readonly ChartPane[]
+}): ReactElement {
   const style: CSSProperties | undefined =
     box.height === 'fill' ? undefined : { height: `${Math.max(0, box.height)}px` }
   return (

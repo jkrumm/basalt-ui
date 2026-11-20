@@ -11,10 +11,10 @@ One x chip: give every pane but the bottom `x.ticks: []`, so no axis labels repe
 
 Leave the bottom pane's last tick out of its explicit `ticks`. A label at the plot's right edge widens that pane's label reserve and shifts its right edge off the others; the kit has no option for this yet.
 
-Read the shared cursor outside the charts with `chartCursor(group)`. Stack the panes in one `ChartCard` with `ChartPanes`: each pane takes its share of the card's box by `weight` (default 1) and is called with `height: 'fill'`, so no pane states a pixel height at any width. Pick `height="tall"` on the card for three panes. Pass the page's `focus` to every pane, not only the top one.
+Read the shared cursor outside the charts with `chartCursor(group)`. Stack the panes in one `ChartCard` with `panes`: each pane takes its share of the card's box by `weight` (default 1) and is called with `height: 'fill'`, so no pane states a pixel height at any width. Pick `height="tall"` on the card for three panes. Pass the page's `focus` to every pane, not only the top one.
 
 ```tsx
-import { ChartCard, ChartPanes, Lines } from 'basalt-ui/charts'
+import { ChartCard, Lines } from 'basalt-ui/charts'
 import type { SeriesColor } from 'basalt-ui/charts'
 export type Bar = { day: Date; close: number; momentum: number }
 export const GROUP = 'momentum' // one cursor group for both panes
@@ -44,9 +44,7 @@ export function TwoPane({ bars }: { bars: Bar[] }) {
     <ChartCard
       title="Price and momentum"
       height="tall"
-      chart={(box) => (
-        <ChartPanes box={box} panes={[{ weight: 2, chart: price }, { chart: momentum }]} />
-      )}
+      panes={[{ weight: 2, chart: price }, { chart: momentum }]}
     />
   )
 }

@@ -22,7 +22,7 @@ is drawn in every phase, so loading does not move the box.
 
 ```ts
 ChartCard(props: ChartCardProps): ReactElement
-  // either title + chart or phase
+  // either title + chart, title + panes or phase
   empty?: Empty | null
   phase?: Phase | QueryStateLike  // A `Phase` or the query itself
   figure?: ChartFigure
@@ -36,6 +36,7 @@ ChartCard(props: ChartCardProps): ReactElement
   icon?: IconComponent
   info?: string
   chart?: BoxSlot
+  panes?: readonly ChartPane[]
 ```
 
 `Phase`, `QueryStateLike`, `Empty`, `CardMenu`, `FootFacts` import from `basalt-ui/cards`: `import type { Phase, QueryStateLike, Empty, CardMenu, FootFacts } from 'basalt-ui/cards'`.

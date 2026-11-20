@@ -1,14 +1,15 @@
 import { useState } from 'react'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../../core/cn'
 import { resolvePhase } from '../../core/phase'
 import type { Fact, FootFacts, ResolvedPhase } from '../../core/phase'
-import type { Verdict } from '../../core/ports'
+import type { Box, Verdict } from '../../core/ports'
 import { DeltaBadge } from '../../ui/badge'
 import { CardHiddenContext, ChartCardContext } from '../card-context'
 import { isolatedKeys, toggledKeys } from '../legend'
 import type { ChartCardProps, ChartFigure } from '../contract'
 import { Footer, formatValue, Head, PhaseBox, SURFACE } from './chart-card-frame'
+import { ChartPanes } from './chart-panes'
 import { Legend } from './legend'
 
 const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
@@ -266,6 +267,11 @@ const hasNoRows = (phase: object): boolean => {
  * figure's period is one line that never wraps, held below `regular` even while empty, so a period
  * that follows focus changes text, never the height under the pointer.
  *
+ * `panes` in place of `chart` stacks two or three charts on one x in the box: each pane takes its
+ * share by `weight` (default 1), 4 px apart, and its slot is called with `height: 'fill'`, so no pane
+ * states a pixel height at any width. One cursor group, one `y.gutter` and `x.ticks: []` on every pane
+ * but the bottom stay the page's (the two-pane recipe).
+ *
  * A series with `failed: true` keeps its legend entry, which reads `unavailable`, draws nothing in the
  * plot and leaves the phase on `ready`; the word is the message `charts.unavailable`, which an app
  * overrides through the provider's `messages`. The tooltip is the engine's, placed inside the card.
@@ -283,7 +289,11 @@ const hasNoRows = (phase: object): boolean => {
  * />
  */
 export function ChartCard(props: ChartCardProps): ReactElement {
-  const { figure, legend, footer, controls, menu, height = 'auto', chart } = props
+  const { figure, legend, footer, controls, menu, height = 'auto', panes } = props
+  const chart =
+    panes === undefined
+      ? props.chart
+      : (box: Box): ReactNode => <ChartPanes box={box} panes={panes} />
   const { phase } = props
   // A query phase measures emptiness itself: `empty` applies only when its `data` is an empty array.
   const empty =

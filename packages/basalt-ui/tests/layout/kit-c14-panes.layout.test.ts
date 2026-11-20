@@ -1,6 +1,6 @@
 /**
  * Expression cycle 14 contract (2), panes that share a card's box (n63 .7, n67; Spec artifact_01a1f6fb,
- * Issue 2500): `ChartPanes` hands each pane its share of the ChartCard's box by weight, at 1800 and at
+ * Issue 2500): a ChartCard's `panes` hands each pane its share of the box by weight, at 1800 and at
  * 390, with no pixel height in the page; the panes' plots share one x column.
  * Fixture: `fixture/kit-c14-panes-fixture.tsx`.
  */
@@ -71,7 +71,7 @@ const geometry = (
 const GAP = 4
 
 for (const viewport of [DESKTOP, PHONE]) {
-  layout(`ChartPanes at ${viewport.width}`, () => {
+  layout(`ChartCard panes at ${viewport.width}`, () => {
     test('two panes weighted 2 and 1 fill the card box', async () => {
       const page = await open(viewport)
       const { box, panes, svgs } = await geometry(page, 'c14-two')
