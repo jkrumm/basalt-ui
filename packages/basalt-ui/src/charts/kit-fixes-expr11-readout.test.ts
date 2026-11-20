@@ -82,12 +82,14 @@ describe('the y readout replaces the tick on its row', () => {
     expect(read(opacity, { ...tickAt(150), focus: null })).toBe(1)
   })
 
-  test('a chart with a right axis draws no y readout, so no y label is blanked', () => {
+  test('a chart with a right axis draws no y readout: only the lowest label clears, for the x chip', () => {
     const { opacity } = scalesOf({
       y2: {},
       series: [dots, { ...dots, key: 'w', axis: 'right' }],
     }).y.axis.tickLabels
-    // The left axis still clears its lowest label for the x chip in the corner (`readout-clear.test.ts`).
     expect(read(opacity, { ...tickAt(150), focus: at(100, 150) })).toBe(1)
+    // The x chip at the plot's left edge hangs over the lowest label of the left axis.
+    expect(read(opacity, { value: 0, position: 150, focus: at(2, 150) })).toBe(0)
+    expect(read(opacity, { value: 60, position: 150, focus: at(2, 150) })).toBe(1)
   })
 })

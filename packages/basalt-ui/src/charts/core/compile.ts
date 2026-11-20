@@ -1426,9 +1426,11 @@ function buildScales<T, X extends ChartX>(opts: {
   const { left, right } = axes
   const yFloor = Math.min(...left.domain)
   const ySpan = Math.max(...left.domain) - yFloor
-  // The x chip pins only for a chart with tick labels; the y chip only without a right axis.
+  // The x chip hangs left of the plot only where it is drawn: on a chart that labels its x axis and does not
+  // follow another chart's cursor. The y chip pins only without a right axis.
   const corner: Corner = {
     x: (value) => model.fraction(value as X),
+    xChip: () => labelsX(input) && !followsChart(input.cursorGroup, input.chartId),
     y: (value) => (typeof value === 'number' && ySpan > 0 ? (value - yFloor) / ySpan : null),
   }
   if (input.bare === true) {
@@ -1842,6 +1844,10 @@ const GUIDE_LABEL = {
  * carries it. A chart that follows another's shared cursor pins none either (its chip text is empty),
  * so the one the pointer is on carries the value.
  */
+/** Whether the chart labels its x axis: the panel that does carries the hover's x chip. */
+const labelsX = (input: { xTicks?: unknown }): boolean =>
+  !(Array.isArray(input.xTicks) && input.xTicks.length === 0)
+
 export function crosshairGuide<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
   pinned: boolean
@@ -1849,7 +1855,7 @@ export function crosshairGuide<T, X extends ChartX>(opts: {
   formatY: ((v: number) => string) | null
 }): { x: object | false; y: object | false } | null {
   const { input, pinned, formatX, formatY } = opts
-  const xLabelled = !(Array.isArray(input.xTicks) && input.xTicks.length === 0)
+  const xLabelled = labelsX(input)
   const rule = input.crosshair !== false
   if (!pinned) return rule ? { x: CROSSHAIR, y: false } : null
   const x = {
@@ -1886,6 +1892,8 @@ export function compileCartesian<T, X extends ChartX>(
   )
   // The x scale of the build in hand: `baseModel`, or one grown so an edge dot draws whole (`dotRoomX`).
   let model = baseModel
+  // Whether this chart draws an x chip while it leads: set at each layout (a micro plot draws none).
+  let xChipDrawn = input.bare !== true && labelsX(input)
   // The y domain depends on the tick count, so on the class; everything else about the axes
   // (formats, sides) does not, and `shared` stands for it.
   const byClass = new Map<ContainerClass, Axes<T>>()
@@ -2338,6 +2346,7 @@ export function compileCartesian<T, X extends ChartX>(
               format: axes.axisOf('left').format,
               labels: capLabels,
             })
+      xChipDrawn = cls !== 'micro' && input.bare !== true && labelsX(input)
       const guide = crosshairGuide({
         input,
         pinned: cls !== 'micro' && input.bare !== true,
@@ -2429,6 +2438,7 @@ export function compileCartesian<T, X extends ChartX>(
       extent: model.extent,
       mode: input.cursorResolution ?? 'nearest',
       pin: input.coarse === true,
+      xChip: () => xChipDrawn,
     }),
     tooltip:
       input.tooltip === false

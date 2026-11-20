@@ -68,6 +68,21 @@ describe('the x chip is the hovered chart’s, not one per stacked panel', () =>
     for (const stop of release) stop()
   })
 
+  test('a leader that draws no x chip leaves the chip to the follower that labels the axis', () => {
+    const lead = chartCursorView({
+      group: 'stack',
+      chartId: 'upper',
+      keys: [0, 1],
+      mode: 'nearest',
+      xChip: () => false,
+    })
+    const follower = view('lower')
+    const release = [lead.subscribe(() => {}), follower.subscribe(() => {})]
+    lead.setState({ anchor: 'value', value: { x: 1 } } as never)
+    expect(xLabel('lower', 1)).toBe('1')
+    for (const stop of release) stop()
+  })
+
   test('a state no chart published (an app timeline) is printed by every chart', () => {
     const only = view('only')
     const release = only.subscribe(() => {})
