@@ -24,6 +24,23 @@ const PLACES: readonly CardPlace[] = [
 ]
 const quiet = { warn: () => {} }
 
+describe('phoneKeep', () => {
+  test("keeps the identity, the card's value, its first meta and the actions", () => {
+    const c = col<{ id: string; name: string; a: number; b: number; c: number }>()
+    const plan = planTable(
+      [
+        c.number('a', { header: 'A' }),
+        c.entity('name', { header: 'Name' }),
+        c.number('b', { header: 'B', card: 'value' }),
+        c.number('c', { header: 'C', card: 'meta' }),
+      ],
+      quiet,
+    )
+    const kept = Object.fromEntries(plan.columns.map((p) => [p.id, p.phoneKeep]))
+    expect(kept).toEqual({ a: true, name: true, b: true, c: false })
+  })
+})
+
 /** Mulberry32: a seeded generator, so a failing set reproduces from its seed. */
 function rng(seed: number): () => number {
   let a = seed

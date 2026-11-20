@@ -67,6 +67,8 @@ export function tierAttributes(
     'data-priority': planned.priority === null ? undefined : String(planned.priority),
     'data-pin': planned.pin ?? undefined,
     'data-identity': planned.identity ? '' : undefined,
+    // A column `phone: 'columns'` leaves off the phone row (the tier CSS reads it only there).
+    'data-phone-drop': planned.phoneKeep ? undefined : '',
     // A column left off the phone card: hidden by the display state, or placed in the detail (a meter,
     // a spark, or the overflow of the card's six meta values), which the row's derived detail sheet
     // lists; a custom `detail` render lists only what it writes, so there the column (the overflow
