@@ -170,6 +170,57 @@ describe('renderOxlintPreset', () => {
   })
 })
 
+const formsOff = (rule: unknown): unknown => (rule as [string, { formsOff?: unknown }])[1].formsOff
+
+describe('manifest bespoke (zone B)', () => {
+  it('turns off only the geometry and mark forms of primitive-bypass for the directory', () => {
+    const overrides = overridesOf(manifest({ bespoke: ['src/table/'] }))
+    const zone = overrides.find((o) => o.files.includes('src/table/**'))
+    expect(zone).toEqual({
+      files: ['src/table/**'],
+      rules: {
+        'basalt/primitive-bypass': ['error', { formsOff: ['svg-data-marks', 'html-data-marks'] }],
+      },
+    })
+  })
+
+  it('writes the block before an ejected file, so a copy inside the directory keeps the rule off', () => {
+    const path = 'src/table/ui/button.tsx'
+    const overrides = overridesOf(
+      manifest({ bespoke: ['src/table'], ejected: { '.#button': row(path) } }),
+    )
+    const bespoke = overrides.findIndex((o) => o.files.includes('src/table/**'))
+    const ejected = overrides.findIndex(
+      (o) => o.files.includes(path) && o.rules['basalt/primitive-bypass'] === 'off',
+    )
+    expect(bespoke).toBeGreaterThanOrEqual(0)
+    expect(ejected).toBeGreaterThan(bespoke)
+  })
+
+  it('a directory under a bridge root gets no block: primitive-bypass does not run there', () => {
+    const overrides = overridesOf(
+      manifest({ roots: { legacy: 'bridge' }, bespoke: ['legacy/table'] }),
+    )
+    expect(overrides.some((o) => o.files.includes('legacy/table/**'))).toBe(false)
+    expect(formsOff(rulesOf(manifest({ bespoke: ['src/table'] }))['basalt/primitive-bypass'])).toBe(
+      undefined,
+    )
+  })
+
+  it('round-trips, is absent when unset, and refuses the root, a glob or a parent path', () => {
+    const parsed = parseManifest(serializeManifest(manifest({ bespoke: ['src/table'] })))
+    expect('manifest' in parsed && parsed.manifest.bespoke).toEqual(['src/table'])
+    const bare = parseManifest(JSON.stringify({ profile: 'app', version: '3.0.0' }))
+    expect('manifest' in bare && bare.manifest.bespoke).toBeUndefined()
+    for (const dir of ['.', './', 'src/**', '../table', '/abs']) {
+      expect([
+        dir,
+        'error' in parseManifest(JSON.stringify({ profile: 'app', bespoke: [dir] })),
+      ]).toEqual([dir, true])
+    }
+  })
+})
+
 describe('manifest classPrefixes', () => {
   it('round-trips, is absent when unset, and rejects a non-string list', () => {
     const text = serializeManifest(manifest({ classPrefixes: ['maplibregl-'] }))

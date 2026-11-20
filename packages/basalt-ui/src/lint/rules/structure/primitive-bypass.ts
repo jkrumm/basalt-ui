@@ -6,7 +6,10 @@
  * now carries `time` and an options bag. A mark drawn through the geometry seam (`useChartFocus`)
  * is legal in both the SVG and the HTML data-mark form.
  *
- * Ejected and seed files define the primitives, so the preset switches the rule off there.
+ * Ejected and seed files define the primitives, so the preset switches the rule off there. A
+ * directory the consumer names in `manifest.bespoke` (zone B: a game table, a seating plan) draws
+ * its own surface, so the two forms that deny positioned geometry and hand-drawn marks
+ * (`svg-data-marks`, `html-data-marks`) are off there and every other form still runs.
  *
  * Known limits (syntactic rule, no type information, no cross-file reads):
  * - `table-rows`: rows built by a helper or a hook (`rowsOf(data).map(...)`) read as data too; a
@@ -223,6 +226,9 @@ const form = (id: string, fix: string, next: string, detect: AstForm['detect']):
   next,
   fixture: `import-bypass/${id}.tsx`,
 })
+
+/** A form that is off in a `manifest.bespoke` directory (zone B), where the rest of the rule runs. */
+const bespokeOff = (f: AstForm): AstForm => ({ ...f, zonesOff: ['bespoke'] })
 
 /** A visitor over the opening tag of every JSX element. */
 const opening = (onOpening: (node: Node) => void): Visitor => ({ JSXOpeningElement: onOpening })
@@ -729,88 +735,91 @@ function isDecorative(mark: Node): boolean {
  * where another mark spreads `focus.item(...)`: it is decoration beside seam marks (an edge between
  * nodes) and must not take a tab stop. With no seam spread in the file it still reports.
  */
-const svgDataMarks = form(
-  'svg-data-marks',
-  `Draw the chart with ChartCard and a kind from basalt-ui/charts, or ${SEAM_FIX}`,
-  'CartesianChart marks for a mark the kinds lack',
-  ({ report }) => {
-    type SvgScope = { maps: MapScope[]; reported: Set<Node> }
-    const scopes: SvgScope[] = []
-    const entered = new WeakSet<Node>()
-    const seam = dataMarkScope()
-    const builtPaths = new Set<string>()
-    const decorative = new Map<Node, { node: Node; message: string }>()
-    let itemSpread = false
-    const pathFromData = (opening: Node, name: string): boolean => {
-      const value = child(attribute(opening, name) ?? { type: '' }, 'value')
-      const expression =
-        value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
-      if (!expression) return false
-      const bound = nameOf(builtChainRoot(expression))
-      return (bound !== undefined && builtPaths.has(bound)) || someNode(expression, isBuildCall)
-    }
-    return mergeVisitors([
-      seam.visitor,
-      {
-        VariableDeclarator(node) {
-          const name = nameOf(child(node, 'id'))
-          if (name !== undefined && someNode(child(node, 'init'), isBuildCall)) builtPaths.add(name)
-        },
-        JSXElement(node) {
-          const open = child(node, 'openingElement')
-          const root = open && tagOf(open)
-          if (root === 'svg' || (root === 'g' && scopes.length === 0)) {
-            scopes.push({ maps: [], reported: new Set() })
-            entered.add(node)
-          }
-        },
-        'JSXElement:exit'(node) {
-          if (entered.has(node)) scopes.pop()
-        },
-        CallExpression(node) {
-          const scope = scopes.at(-1)
-          if (scope && isMapCall(node)) {
-            scope.maps.push(seam.maps.at(-1) as MapScope)
-            entered.add(node)
-          }
-        },
-        'CallExpression:exit'(node) {
-          if (entered.has(node)) scopes.at(-1)?.maps.pop()
-        },
-        JSXOpeningElement(node) {
-          const scope = scopes.at(-1)
-          const map = scope?.maps.at(-1)
-          const tag = tagOf(node)
-          const built =
-            tag === 'path' ? 'd' : tag === 'polyline' || tag === 'polygon' ? 'points' : ''
-          if (built && !map && pathFromData(node, built)) {
-            if (!children(node, 'attributes').some((attr) => seamSpread(attr))) {
-              report(node, `<${tag}> ${built} built from data`)
+const svgDataMarks = bespokeOff(
+  form(
+    'svg-data-marks',
+    `Draw the chart with ChartCard and a kind from basalt-ui/charts, or ${SEAM_FIX}`,
+    'CartesianChart marks for a mark the kinds lack',
+    ({ report }) => {
+      type SvgScope = { maps: MapScope[]; reported: Set<Node> }
+      const scopes: SvgScope[] = []
+      const entered = new WeakSet<Node>()
+      const seam = dataMarkScope()
+      const builtPaths = new Set<string>()
+      const decorative = new Map<Node, { node: Node; message: string }>()
+      let itemSpread = false
+      const pathFromData = (opening: Node, name: string): boolean => {
+        const value = child(attribute(opening, name) ?? { type: '' }, 'value')
+        const expression =
+          value?.type === 'JSXExpressionContainer' ? child(value, 'expression') : undefined
+        if (!expression) return false
+        const bound = nameOf(builtChainRoot(expression))
+        return (bound !== undefined && builtPaths.has(bound)) || someNode(expression, isBuildCall)
+      }
+      return mergeVisitors([
+        seam.visitor,
+        {
+          VariableDeclarator(node) {
+            const name = nameOf(child(node, 'id'))
+            if (name !== undefined && someNode(child(node, 'init'), isBuildCall))
+              builtPaths.add(name)
+          },
+          JSXElement(node) {
+            const open = child(node, 'openingElement')
+            const root = open && tagOf(open)
+            if (root === 'svg' || (root === 'g' && scopes.length === 0)) {
+              scopes.push({ maps: [], reported: new Set() })
+              entered.add(node)
             }
-            return
-          }
-          if (!scope || !map || tag === undefined || !SVG_MARKS.has(tag)) return
-          if (scope.reported.has(map.node) || seam.wired(map)) return
-          if (isDecorative(node)) {
-            if (!decorative.has(map.node)) {
-              decorative.set(map.node, { node, message: `<${tag}> mapped over data` })
+          },
+          'JSXElement:exit'(node) {
+            if (entered.has(node)) scopes.pop()
+          },
+          CallExpression(node) {
+            const scope = scopes.at(-1)
+            if (scope && isMapCall(node)) {
+              scope.maps.push(seam.maps.at(-1) as MapScope)
+              entered.add(node)
             }
-            return
-          }
-          scope.reported.add(map.node)
-          decorative.delete(map.node)
-          report(node, `<${tag}> mapped over data`)
+          },
+          'CallExpression:exit'(node) {
+            if (entered.has(node)) scopes.at(-1)?.maps.pop()
+          },
+          JSXOpeningElement(node) {
+            const scope = scopes.at(-1)
+            const map = scope?.maps.at(-1)
+            const tag = tagOf(node)
+            const built =
+              tag === 'path' ? 'd' : tag === 'polyline' || tag === 'polygon' ? 'points' : ''
+            if (built && !map && pathFromData(node, built)) {
+              if (!children(node, 'attributes').some((attr) => seamSpread(attr))) {
+                report(node, `<${tag}> ${built} built from data`)
+              }
+              return
+            }
+            if (!scope || !map || tag === undefined || !SVG_MARKS.has(tag)) return
+            if (scope.reported.has(map.node) || seam.wired(map)) return
+            if (isDecorative(node)) {
+              if (!decorative.has(map.node)) {
+                decorative.set(map.node, { node, message: `<${tag}> mapped over data` })
+              }
+              return
+            }
+            scope.reported.add(map.node)
+            decorative.delete(map.node)
+            report(node, `<${tag}> mapped over data`)
+          },
+          JSXSpreadAttribute(node) {
+            if (seamSpread(node)?.half === 'item') itemSpread = true
+          },
+          'Program:exit'() {
+            if (itemSpread) return
+            for (const { node, message } of decorative.values()) report(node, message)
+          },
         },
-        JSXSpreadAttribute(node) {
-          if (seamSpread(node)?.half === 'item') itemSpread = true
-        },
-        'Program:exit'() {
-          if (itemSpread) return
-          for (const { node, message } of decorative.values()) report(node, message)
-        },
-      },
-    ])
-  },
+      ])
+    },
+  ),
 )
 
 const GEOMETRY_STYLE: ReadonlySet<string> = new Set([
@@ -961,48 +970,50 @@ const percentWidth = (opening: Node): boolean => {
  * class on the element sizes it by (`w-(--w)`, `h-(--h)`, `[width:var(--w)]`, cast or not), unless
  * the element sits in a seam-wired map.
  */
-const htmlDataMarks = form(
-  'html-data-marks',
-  `Use ui/progress or ui/meter for one value, BarList from basalt-ui/cards for a share bar, or ${SEAM_FIX}`,
-  'CartesianChart marks for a mark the kinds lack',
-  ({ report }) => {
-    const seam = dataMarkScope()
-    const reported = new Set<Node>()
-    return mergeVisitors([
-      seam.visitor,
-      {
-        JSXOpeningElement(node) {
-          const tag = tagOf(node)
-          if (tag === undefined || !/^[a-z]/.test(tag) || SVG_MARKS.has(tag)) return
-          for (const map of seam.maps) {
-            const key = datumGeometry(node, map.params)
-            if (key === undefined) continue
-            if (!reported.has(map.node) && !seam.wired(map)) {
-              reported.add(map.node)
-              report(node, `<${tag}> ${key} set from a datum`)
+const htmlDataMarks = bespokeOff(
+  form(
+    'html-data-marks',
+    `Use ui/progress or ui/meter for one value, BarList from basalt-ui/cards for a share bar, or ${SEAM_FIX}`,
+    'CartesianChart marks for a mark the kinds lack',
+    ({ report }) => {
+      const seam = dataMarkScope()
+      const reported = new Set<Node>()
+      return mergeVisitors([
+        seam.visitor,
+        {
+          JSXOpeningElement(node) {
+            const tag = tagOf(node)
+            if (tag === undefined || !/^[a-z]/.test(tag) || SVG_MARKS.has(tag)) return
+            for (const map of seam.maps) {
+              const key = datumGeometry(node, map.params)
+              if (key === undefined) continue
+              if (!reported.has(map.node) && !seam.wired(map)) {
+                reported.add(map.node)
+                report(node, `<${tag}> ${key} set from a datum`)
+              }
+              return
             }
-            return
-          }
-          if (percentWidth(node)) {
-            report(node, `<${tag}> width set to a computed percentage`)
-            return
-          }
-          // A mark of a seam-wired `.map` (`focus.item(i)`) is the seam's, however it is sized.
-          if (seam.maps.some((map) => seam.wired(map))) return
-          const parentOpening = child(
-            enclosingElement(parentOf(node) as Node) ?? { type: '' },
-            'openingElement',
-          )
-          const property =
-            computedSizeProperty(node) ??
-            (parentOpening ? computedSizeProperty(node, parentOpening) : undefined)
-          if (property !== undefined) {
-            report(node, `<${tag}> sized by ${property}, set from a computed value`)
-          }
+            if (percentWidth(node)) {
+              report(node, `<${tag}> width set to a computed percentage`)
+              return
+            }
+            // A mark of a seam-wired `.map` (`focus.item(i)`) is the seam's, however it is sized.
+            if (seam.maps.some((map) => seam.wired(map))) return
+            const parentOpening = child(
+              enclosingElement(parentOf(node) as Node) ?? { type: '' },
+              'openingElement',
+            )
+            const property =
+              computedSizeProperty(node) ??
+              (parentOpening ? computedSizeProperty(node, parentOpening) : undefined)
+            if (property !== undefined) {
+              report(node, `<${tag}> sized by ${property}, set from a computed value`)
+            }
+          },
         },
-      },
-    ])
-  },
+      ])
+    },
+  ),
 )
 
 /** The roles that only make sense inside a table, grid or treegrid. */

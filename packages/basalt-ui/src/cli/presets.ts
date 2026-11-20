@@ -2,7 +2,7 @@
  * The generated preset files `sync` places (and `init` first writes) for a manifest:
  * `.stylelintrc.basalt.json` for every profile and `.oxlintrc.basalt.json` for `bridge` and above.
  * The oxlint preset is `buildPreset` (src/lint/preset.ts) over the manifest's roots and ejected
- * paths: the same builder `scripts/gen-oxlint.ts` writes `configs/oxlint-<profile>.json` with, so a
+ * paths and bespoke directories: the same builder `scripts/gen-oxlint.ts` writes `configs/oxlint-<profile>.json` with, so a
  * root at another profile, a bridge root's vendored zone and an ejected file's zone all come out
  * as they do there.
  */
@@ -91,6 +91,7 @@ export function renderOxlintPreset(manifest: Manifest, pkgRoot: string): string 
     roots,
     ejected: ejectedPaths(manifest),
     classPrefixes: manifest.classPrefixes ?? [],
+    bespoke: manifest.bespoke ?? [],
   })
   return preset === undefined ? null : `${JSON.stringify(preset, null, 2)}\n`
 }

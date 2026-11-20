@@ -20,9 +20,13 @@ export const PLUGIN_NAME = 'basalt'
 export type Profile = 'bridge' | 'parts' | 'app' | 'repo'
 export const PROFILES: readonly Profile[] = ['bridge', 'parts', 'app', 'repo']
 
-/** Zones a rule can be off in (section 6). Zone A, app code, switches nothing off. */
-export type Zone = 'ejected' | 'seed' | 'vendored'
-export const ZONES: readonly Zone[] = ['ejected', 'seed', 'vendored']
+/**
+ * Zones a rule can be off in (section 6). Zone A, app code, switches nothing off. Zone B, `bespoke`,
+ * is a directory a consumer names in `manifest.bespoke` for a surface it draws itself (a game table):
+ * only the forms that deny positioned geometry and hand-drawn marks are off there.
+ */
+export type Zone = 'ejected' | 'seed' | 'vendored' | 'bespoke'
+export const ZONES: readonly Zone[] = ['ejected', 'seed', 'vendored', 'bespoke']
 
 export type Family = 'class' | 'import' | 'structure'
 
@@ -245,11 +249,17 @@ export function presetInput(table: RuleTable): PresetInput {
       app: byProfile('app'),
       repo: byProfile('repo'),
     },
-    zonesOff: { ejected: byZone('ejected'), seed: byZone('seed'), vendored: byZone('vendored') },
+    zonesOff: {
+      ejected: byZone('ejected'),
+      seed: byZone('seed'),
+      vendored: byZone('vendored'),
+      bespoke: byZone('bespoke'),
+    },
     formsOff: {
       ejected: formsByZone('ejected'),
       seed: formsByZone('seed'),
       vendored: formsByZone('vendored'),
+      bespoke: formsByZone('bespoke'),
     },
   }
 }

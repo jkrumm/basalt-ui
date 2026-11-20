@@ -26,6 +26,11 @@ export type Manifest = {
   authoredContent: string[]
   viewports: string[]
   classPrefixes?: string[]
+  /**
+   * Directories (relative to the install root) that draw their own surface, a game table or a
+   * seating plan: `primitive-bypass` lets positioned geometry and hand-drawn marks through there.
+   */
+  bespoke?: string[]
   tokens: TokenOutput[]
   /** The `--extra` file `tokens:css` reads. */
   extra?: string
@@ -37,7 +42,7 @@ export type Manifest = {
 
 export type ManifestRead = { manifest: Manifest } | { error: string }
 
-const LISTS = ['deepRender', 'authoredContent', 'viewports', 'classPrefixes'] as const
+const LISTS = ['deepRender', 'authoredContent', 'viewports', 'classPrefixes', 'bespoke'] as const
 const KNOWN = [
   'profile',
   'version',
@@ -60,6 +65,9 @@ const isRelative = (root: string): boolean =>
   !/^([/\\]|[a-zA-Z]:)/.test(root) &&
   !/\n|\r/.test(root) &&
   !root.split('/').includes('..')
+/** `.` would be a waiver for the whole project: a bespoke surface is one named directory, no glob. */
+const isBespokeDir = (dir: string): boolean =>
+  isRelative(dir) && dir.replace(/\/+$/, '') !== '.' && !/[*?[\]{}]/.test(dir)
 const isTokenOutput = (v: unknown): v is TokenOutput =>
   isRecord(v) &&
   typeof v['out'] === 'string' &&
@@ -117,6 +125,9 @@ export function parseManifest(text: string): ManifestRead {
   }
   const lists = LISTS.map((key) => raw[key] ?? [])
   if (!lists.every(isStrings)) return bad(`${LISTS.join(', ')} must be arrays of strings`)
+  if (!(lists[4] as string[]).every(isBespokeDir)) {
+    return bad('`bespoke` must list relative directories below the root, without globs')
+  }
 
   return {
     manifest: {
@@ -129,6 +140,7 @@ export function parseManifest(text: string): ManifestRead {
       authoredContent: lists[1] as string[],
       viewports: lists[2] as string[],
       ...((lists[3] as string[]).length > 0 ? { classPrefixes: lists[3] as string[] } : {}),
+      ...((lists[4] as string[]).length > 0 ? { bespoke: lists[4] as string[] } : {}),
       tokens,
       ...(extra === undefined ? {} : { extra }),
       ...(typeof sibling === 'string' ? { sibling } : {}),
@@ -154,6 +166,7 @@ export function serializeManifest(m: Manifest): string {
     authoredContent,
     viewports,
     ...(m.classPrefixes?.length ? { classPrefixes: m.classPrefixes } : {}),
+    ...(m.bespoke?.length ? { bespoke: m.bespoke } : {}),
     tokens,
     ...(extra === undefined ? {} : { extra }),
     ...(sibling === undefined ? {} : { sibling }),
