@@ -24,10 +24,6 @@
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {
-    :where(:root) {
-      --basalt-dur-fast: 0ms !important;
-      --basalt-dur-base: 0ms !important;
-    }
     *,
     ::before,
     ::after {

@@ -88,8 +88,22 @@ function scalarBlocks(tokens: readonly ResolvedToken[]): string {
       1,
     ) +
     block(':root', [basaltDecl('hit', COARSE.hit)], 1) +
+    `}\n` +
+    // The one reduced-motion policy: every motion token ends at once, so anything timed by a token
+    // (a `duration-*` class, an `animate-enter-*` preset, a hand-written `var(--basalt-dur-base)`) lands
+    // on its end state with no caller asking. `basalt-ui/motion` collapses its presets the same way.
+    `@media (prefers-reduced-motion: reduce) {\n` +
+    block(':root', reducedMotionDecls(tokens), 1) +
     `}\n`
   )
+}
+
+/** Every motion token's reduced value: a duration or a stagger is `0ms`, a spring `0ms linear`. */
+function reducedMotionDecls(tokens: readonly ResolvedToken[]): Decl[] {
+  return tokens.flatMap(({ def }): Decl[] => {
+    if (def.family !== 'motion' || def.name.startsWith('ease')) return []
+    return [basaltDecl(def.name, def.name.startsWith('spring') ? '0ms linear' : '0ms')]
+  })
 }
 
 function tokenScalar(tokens: readonly ResolvedToken[], name: string): string {

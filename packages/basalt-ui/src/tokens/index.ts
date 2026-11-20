@@ -6,6 +6,18 @@
 export { BP, p } from './palette'
 export { CONTAINER_CLASSES, CONTAINER_GRID_BREAKPOINTS, CONTAINER_KEYS } from './size-classes'
 export {
+  MOTION_DURATION,
+  MOTION_EASE_ENTER,
+  MOTION_EASE_EXIT,
+  MOTION_EASE_STANDARD,
+  MOTION_SPRING,
+  MOTION_STAGGER,
+  staggerDelay,
+  type MotionBezier,
+  type MotionPresetName,
+  type MotionSpring,
+} from './motion'
+export {
   alpha,
   buildPaletteCss,
   defineSeries,

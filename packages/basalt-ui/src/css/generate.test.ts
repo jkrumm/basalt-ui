@@ -73,7 +73,11 @@ describe('generateCss', () => {
     expect(type).toContain(':where(:root) {')
     expect(type).not.toMatch(/^\s*h[1-6]\b/m)
     expect(type).toContain('@media (prefers-reduced-motion: reduce)')
-    expect(type).toContain('--basalt-dur-fast: 0ms !important')
+    // The motion tokens' own reduced values live in tokens.css, the one file every profile loads.
+    expect(type).not.toContain('--basalt-dur-fast')
+    expect(generated['tokens.css']).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{\n {2}:root \{\n {4}--basalt-dur-fast: 0ms;/,
+    )
     expect(type).toContain('animation-duration: 0.01ms !important')
     expect(type).toContain('transition-duration: 0.01ms !important')
     expect(type).toContain('@media (forced-colors: active)')

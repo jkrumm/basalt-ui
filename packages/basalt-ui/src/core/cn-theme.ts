@@ -52,6 +52,6 @@ export const CN_THEME = {
   shadows: ['card', 'raised', 'overlay'],
   fonts: ['sans', 'head', 'mono'],
   fontWeights: ['normal', 'medium', 'semibold'],
-  durations: [],
-  eases: ['standard'],
+  durations: ['fast', 'base', 'slow'],
+  eases: ['standard', 'enter', 'exit'],
 } as const

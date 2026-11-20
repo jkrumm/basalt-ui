@@ -13,6 +13,15 @@
  */
 import { DEFAULT_DERIVE_V3_CONFIG, INK_MIX_PCT, TINT_PCT, deriveV3 } from './derive'
 import type { ColorNameV3, DerivedV3, DeriveV3Config } from './derive'
+import {
+  MOTION_DURATION_MS,
+  MOTION_EASE_ENTER,
+  MOTION_EASE_EXIT,
+  MOTION_EASE_STANDARD,
+  MOTION_SPRING_CSS,
+  MOTION_STAGGER,
+  cubicBezier,
+} from './motion'
 
 export type Scheme = 'light' | 'dark'
 export type SchemePair = { light: string; dark: string }
@@ -442,14 +451,66 @@ export const TOKENS: readonly TokenDef[] = [
     },
   ]),
   // ── Motion, rhythm, contract ──────────────────────────────────────────────────────────────────
-  { name: 'dur-fast', family: 'motion', role: 'Hover, press', value: scalar('150ms') },
-  { name: 'dur-base', family: 'motion', role: 'Enter, exit, reveal', value: scalar('250ms') },
+  // Values come from `motion.ts`, the one source the JS constants share; `0ms` under reduced motion (emit.ts).
+  {
+    name: 'dur-fast',
+    family: 'motion',
+    role: 'Hover, press, small overlays',
+    value: scalar(`${MOTION_DURATION_MS.fast}ms`),
+    tw: ['--transition-duration-fast'],
+  },
+  {
+    name: 'dur-base',
+    family: 'motion',
+    role: 'Enter, exit, reveal',
+    value: scalar(`${MOTION_DURATION_MS.base}ms`),
+    tw: ['--transition-duration-base'],
+  },
+  {
+    name: 'dur-slow',
+    family: 'motion',
+    role: 'Large surfaces: sheet, dock, peek',
+    value: scalar(`${MOTION_DURATION_MS.slow}ms`),
+    tw: ['--transition-duration-slow'],
+  },
   {
     name: 'ease',
     family: 'motion',
     role: 'Standard curve',
-    value: scalar('cubic-bezier(0.4, 0, 0.2, 1)'),
+    value: scalar(cubicBezier(MOTION_EASE_STANDARD)),
     tw: ['--ease-standard'],
+  },
+  {
+    name: 'ease-enter',
+    family: 'motion',
+    role: 'Decelerate: an element arriving',
+    value: scalar(cubicBezier(MOTION_EASE_ENTER)),
+    tw: ['--ease-enter'],
+  },
+  {
+    name: 'ease-exit',
+    family: 'motion',
+    role: 'Accelerate: an element leaving',
+    value: scalar(cubicBezier(MOTION_EASE_EXIT)),
+    tw: ['--ease-exit'],
+  },
+  {
+    name: 'spring',
+    family: 'motion',
+    role: 'Spring, no overshoot: duration and curve (`transition: transform var(--basalt-spring)`)',
+    value: scalar(MOTION_SPRING_CSS.standard),
+  },
+  {
+    name: 'spring-bouncy',
+    family: 'motion',
+    role: 'Spring, light overshoot: duration and curve',
+    value: scalar(MOTION_SPRING_CSS.bouncy),
+  },
+  {
+    name: 'stagger',
+    family: 'motion',
+    role: 'Delay between two items of a staggered list',
+    value: scalar(`${MOTION_STAGGER * 1000}ms`),
   },
   { name: 'measure', family: 'rhythm', role: '`.basalt-prose` line length', value: scalar('72ch') },
   { name: 'rhythm-1', family: 'rhythm', role: 'Tight block gap', value: scalar('0.75em') },

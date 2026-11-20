@@ -9,6 +9,8 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { emitTokensCss, provenanceHeader } from '../tokens/emit'
 import { bridgeEntries, resolveTokens } from '../tokens/table'
+import { MOTION_ENTER_FROM } from '../tokens/motion'
+import type { MotionPresetName } from '../tokens/motion'
 
 export type CssFileName =
   | 'tokens.css'
@@ -40,8 +42,48 @@ function typographyCss(): string {
     .map(({ def, value }) => decl(`--basalt-${def.name}`, String(value)))
     .join('')
   const scale = `@layer basalt.type {\n${rule(':where(:root)', vars).replace(/^(?=.)/gm, '  ')}}\n`
-  return header() + scale + template('typography')
+  const motion = `@layer basalt.type {\n${indent(ENTER_KEYFRAMES)}}\n`
+  return header() + scale + template('typography') + motion
 }
+
+// ── motion presets ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The enter presets as CSS: each preset's keyframes start where `MOTION_ENTER_FROM` says and end on the
+ * element's own style (`both` fill), and each animation reads the motion tokens. The keyframes exist only
+ * under `prefers-reduced-motion: no-preference`: under reduce the name resolves to nothing, so no
+ * animation is created at all (a 0 ms one with `both` fill would stay in `getAnimations()`) and the
+ * element renders in its end state. A page without Tailwind writes the animation itself:
+ * `animation: basalt-enter-item var(--basalt-dur-base) var(--basalt-ease-enter) both`.
+ */
+export const ENTER_ANIMATIONS: Readonly<Record<MotionPresetName, string>> = {
+  overlay: 'basalt-enter-overlay var(--basalt-dur-fast) var(--basalt-ease-enter) both',
+  item: 'basalt-enter-item var(--basalt-dur-base) var(--basalt-ease-enter) both',
+  card: 'basalt-enter-card var(--basalt-spring) both',
+}
+
+function enterTransform(name: MotionPresetName): string {
+  const { y, scale } = MOTION_ENTER_FROM[name]
+  const parts = [y === 0 ? '' : `translateY(${y}px)`, scale === 1 ? '' : `scale(${scale})`]
+  return parts.filter(Boolean).join(' ')
+}
+
+const indent = (css: string): string => css.replace(/^(?=.)/gm, '  ')
+
+export const ENTER_KEYFRAMES =
+  '@media (prefers-reduced-motion: no-preference) {\n' +
+  indent(
+    (Object.keys(MOTION_ENTER_FROM) as MotionPresetName[])
+      .map(
+        (name) =>
+          `@keyframes basalt-enter-${name} {\n  from {\n    opacity: ${MOTION_ENTER_FROM[name].opacity};\n    transform: ${enterTransform(name)};\n  }\n}\n`,
+      )
+      .join(''),
+  ) +
+  '}\n'
+
+/** A staggered item's delay: `--i` (its index) steps of `--basalt-stagger`, at most `--basalt-dur-slow`. */
+const STAGGER_DELAY = 'min(calc(var(--i, 0) * var(--basalt-stagger)), var(--basalt-dur-slow))'
 
 // ── prose.css ───────────────────────────────────────────────────────────────────────────────────
 
@@ -70,7 +112,7 @@ const chartMarkRules =
   `  [data-chart-mark][data-dimmed] {\n    opacity: ${CHART_MARK_DIM};\n  }\n` +
   '  /* A marked row of text keeps its ink readable (charts/core/theme DIMMED_TEXT). */\n' +
   `  [data-chart-mark][data-dimmed]:not(:where(svg *)) {\n    opacity: ${CHART_TEXT_MARK_DIM};\n  }\n` +
-  '  @media (prefers-reduced-motion: no-preference) {\n    [data-chart-mark] {\n      transition: opacity 120ms ease-out;\n    }\n  }\n'
+  '  @media (prefers-reduced-motion: no-preference) {\n    [data-chart-mark] {\n      transition: opacity var(--basalt-dur-fast) var(--basalt-ease);\n    }\n  }\n'
 
 /** The reading-progress bar's keyframes (`page/article-progress.tsx`): a scroll or view timeline plays them. */
 const articleProgressRules =
@@ -100,6 +142,8 @@ function tailwindCss(): string {
     ['size-icon', ['width: var(--basalt-icon)', 'height: var(--basalt-icon)']],
     // Hubot Sans at 88% stretch draws a word space of ~0.15em; with tracking-tight a heading reads as one word.
     ['word-head', ['word-spacing: 0.12em']],
+    // `animate-enter-item stagger` with `style={{ '--i': index }}`: the CSS twin of `staggerDelay(index)`.
+    ['stagger', [`animation-delay: ${STAGGER_DELAY}`, `transition-delay: ${STAGGER_DELAY}`]],
   ] as const
   const utilityCss = utilities.map(([name, lines]) => block(`@utility ${name}`, lines)).join('')
   const focusRing =
@@ -123,6 +167,7 @@ function tailwindCss(): string {
     '  @media (pointer: coarse) {\n    input,\n    select,\n    textarea {\n      font-size: max(16px, 1em) !important;\n    }\n  }\n' +
     chartMarkRules +
     articleProgressRules +
+    indent(ENTER_KEYFRAMES) +
     '}\n'
 
   return (
@@ -155,6 +200,12 @@ function tailwindCss(): string {
     block(
       '@theme inline',
       others.map((e) => `${e.tw}: ${e.value}`),
+    ) +
+    block(
+      '@theme inline',
+      (Object.keys(ENTER_ANIMATIONS) as MotionPresetName[]).map(
+        (name) => `--animate-enter-${name}: ${ENTER_ANIMATIONS[name]}`,
+      ),
     ) +
     utilityCss +
     focusRing +
