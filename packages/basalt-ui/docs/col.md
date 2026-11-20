@@ -94,6 +94,7 @@ col<T>(): Col<T>
     picker?: DateRangeLike
     icon?: (row: T) => IconComponent  // The cell's icon for this row: a status icon replaces the dot, a boolean icon the check or cross
     style?: DateStyle
+    mono?: boolean  // The date is a time: drawn in the mono face with tabular numerals, in the cell and on its phone card line
 
   RelativeTimeOptions<T>:
     // either filter + picker or neither
@@ -106,6 +107,7 @@ col<T>(): Col<T>
     filter?: "range"
     picker?: DateRangeLike
     icon?: (row: T) => IconComponent  // The cell's icon for this row: a status icon replaces the dot, a boolean icon the check or cross
+    mono?: boolean  // The relative time is a time: drawn in the mono face with tabular numerals, in the cell and on its phone card line
 
   StatusOptions<O, T>:
     header?: string  // Header text

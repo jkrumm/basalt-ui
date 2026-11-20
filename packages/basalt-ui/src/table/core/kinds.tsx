@@ -123,8 +123,17 @@ export type NumberOptions = CommonOptions &
 export type MoneyOptions = CommonOptions & FooterOption & RangeFilterOptions & { currency: string }
 export type DateOptions<T = unknown> = CommonOptions &
   DateFilterOptions &
-  CellIconOption<T> & { style?: DateStyle }
-export type RelativeTimeOptions<T = unknown> = CommonOptions & DateFilterOptions & CellIconOption<T>
+  CellIconOption<T> & {
+    style?: DateStyle
+    /** The date is a time: drawn in the mono face with tabular numerals, in the cell and on its phone card line. */
+    mono?: boolean | undefined
+  }
+export type RelativeTimeOptions<T = unknown> = CommonOptions &
+  DateFilterOptions &
+  CellIconOption<T> & {
+    /** The relative time is a time: drawn in the mono face with tabular numerals, in the cell and on its phone card line. */
+    mono?: boolean | undefined
+  }
 export type StatusOptions<O extends string = string, T = unknown> = CommonOptions &
   CellIconOption<T> & {
     options: readonly O[]
@@ -211,8 +220,8 @@ const OPTION_KEYS: Readonly<
     allowed: [...COMMON, 'currency', 'footer', 'filter', 'bounds'],
     required: ['currency'],
   },
-  date: { allowed: [...COMMON, 'style', 'filter', 'picker', 'icon'], required: [] },
-  relativeTime: { allowed: [...COMMON, 'filter', 'picker', 'icon'], required: [] },
+  date: { allowed: [...COMMON, 'style', 'filter', 'picker', 'icon', 'mono'], required: [] },
+  relativeTime: { allowed: [...COMMON, 'filter', 'picker', 'icon', 'mono'], required: [] },
   status: {
     allowed: [...COMMON, 'options', 'labels', 'tone', 'filter', 'icon'],
     required: ['options'],
@@ -621,7 +630,12 @@ export function col<T>(): Col<T> {
         o,
         (v, row, env) => (
           <WithIcon icon={o?.icon?.(row)}>
-            <DateCell value={v} format={env.format} style={o?.style ?? 'short'} />
+            <DateCell
+              value={v}
+              format={env.format}
+              style={o?.style ?? 'short'}
+              mono={o?.mono === true}
+            />
           </WithIcon>
         ),
         {
@@ -636,7 +650,7 @@ export function col<T>(): Col<T> {
         o,
         (v, row, env) => (
           <WithIcon icon={o?.icon?.(row)}>
-            <RelativeTimeCell value={v} format={env.format} now={env.now} />
+            <RelativeTimeCell value={v} format={env.format} now={env.now} mono={o?.mono === true} />
           </WithIcon>
         ),
         {
