@@ -21,7 +21,7 @@ import type { ModeResult, PartResult, Results, View } from './results'
 /**
  * A static page and its client:only page are rendered by the same browser on the same machine, so an exact
  * picture differs by no pixel: the pilot measured 0 on every part whose markup matched. A differing pixel is
- * a difference.
+ * a difference: the count of changed pixels is compared, never the rounded share.
  */
 export const PIXEL_TOLERANCE = 0
 /**
@@ -41,6 +41,7 @@ export type ModeVerdict = Pick<
 }
 
 export type ViewVerdict = {
+  changed: number
   ratio: number
   sameSize: boolean
   static: [number, number]
@@ -176,13 +177,16 @@ export function judge(
       VIEWS.map((view) => {
         const p = r.views[view]
         const sameSize = p.static[0] === p.only[0] && p.static[1] === p.only[1]
-        return [view, { ratio: p.ratio, sameSize, static: p.static, only: p.only }]
+        return [
+          view,
+          { changed: p.changed, ratio: p.ratio, sameSize, static: p.static, only: p.only },
+        ]
       }),
     ) as Record<View, ViewVerdict>
     const staticClean =
       r.ssr === 'ok' &&
       r.textMatch &&
-      VIEWS.every((view) => views[view].sameSize && views[view].ratio <= PIXEL_TOLERANCE)
+      VIEWS.every((view) => views[view].sameSize && views[view].changed <= PIXEL_TOLERANCE)
     const modes = Object.fromEntries(MODES.map((m) => [m, modeOf(r.modes[m])])) as Record<
       Mode,
       ModeVerdict
@@ -322,7 +326,9 @@ function chartVerdict(v: Verdict): string {
   if (v.ssr !== 'ok') return `no: ${v.ssr} on the server`
   if (v.staticClean) return 'correct'
   const at = v.views['1440-light']
-  return at.sameSize && at.ratio <= PIXEL_TOLERANCE ? 'correct at the declared width only' : 'wrong'
+  return at.sameSize && at.changed <= PIXEL_TOLERANCE
+    ? 'correct at the declared width only'
+    : 'wrong'
 }
 
 export function render(rec: MatrixRecord, findings: readonly Finding[]): string {

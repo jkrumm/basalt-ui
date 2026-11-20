@@ -79,7 +79,7 @@ async function distGz(pathname: string): Promise<number> {
   return size
 }
 
-/** Keep the side-by-side picture of every view that differs at all, not only the charts'. */
+/** Keep the side-by-side picture of every view with a differing pixel, not only the charts'. */
 const PIXEL_KEEP = 0
 
 const HYDRATION = /hydrat|Minified React error #(418|419|421|422|423|425)/i
@@ -195,7 +195,11 @@ async function shoot(context: BrowserContext, url: string): Promise<Shot> {
 }
 
 /** Pixel diff of two PNGs in the browser's canvas: the share of pixels whose largest channel moved by more than 8. */
-async function diff(page: Page, a: Shot, b: Shot): Promise<{ ratio: number; composite: string }> {
+async function diff(
+  page: Page,
+  a: Shot,
+  b: Shot,
+): Promise<{ changed: number; ratio: number; composite: string }> {
   return page.evaluate(
     async ({ a, b }) => {
       const img = (src: string) =>
@@ -205,8 +209,8 @@ async function diff(page: Page, a: Shot, b: Shot): Promise<{ ratio: number; comp
           i.onerror = reject
           i.src = src
         })
-      if (!a && !b) return { ratio: 0, composite: '' }
-      if (!a || !b) return { ratio: 1, composite: '' }
+      if (!a && !b) return { changed: 0, ratio: 0, composite: '' }
+      if (!a || !b) return { changed: Number.POSITIVE_INFINITY, ratio: 1, composite: '' }
       const [ia, ib] = await Promise.all([img(a), img(b)])
       const w = Math.max(ia.width, ib.width)
       const h = Math.max(ia.height, ib.height)
@@ -243,7 +247,7 @@ async function diff(page: Page, a: Shot, b: Shot): Promise<{ ratio: number; comp
         mask.data[p + 3] = 255
       }
       ctx.putImageData(mask, w * 2, 0)
-      return { ratio: changed / (w * h), composite: out.toDataURL('image/png') }
+      return { changed, ratio: changed / (w * h), composite: out.toDataURL('image/png') }
     },
     {
       a: a.png.length ? 'data:image/png;base64,' + a.png.toString('base64') : '',
@@ -270,15 +274,17 @@ async function picture(
     const s = await shoot(context, `${base}/m/${id}/static/`)
     const o = await shoot(context, `${base}/m/${id}/only/`)
     const page = await context.newPage()
-    const { ratio, composite } = await diff(page, s, o)
+    const { changed, ratio, composite } = await diff(page, s, o)
     await context.close()
     if (s.text !== o.text) textMatch = false
+    // The count decides (matrix.ts); the rounded share is what the matrix prints.
     views[view] = {
+      changed: Number.isFinite(changed) ? changed : s.w * s.h,
       ratio: Math.round(ratio * 100_000) / 100_000,
       static: [s.w, s.h],
       only: [o.w, o.h],
     }
-    if ((keep || ratio > PIXEL_KEEP || s.w !== o.w || s.h !== o.h) && composite) {
+    if ((keep || changed > PIXEL_KEEP || s.w !== o.w || s.h !== o.h) && composite) {
       await mkdir(values.shots!, { recursive: true })
       await writeFile(
         join(values.shots!, `${id}.${view}.png`),

@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
-import { BYTE_SLACK, compare, decide, render, serialize } from './matrix'
+import { BYTE_SLACK, compare, decide, judge, render, serialize } from './matrix'
 import type { MatrixRecord, ModeVerdict, Verdict, ViewVerdict } from './matrix'
 import { MODES } from '../src/parts/registry'
 import type { Mode } from '../src/parts/registry'
 import { VIEWS } from './results'
-import type { View } from './results'
+import type { ModeResult, Results, View } from './results'
 
 const mode = (js: number, over: Partial<ModeVerdict> = {}): ModeVerdict => ({
   js,
@@ -20,6 +20,7 @@ const mode = (js: number, over: Partial<ModeVerdict> = {}): ModeVerdict => ({
 })
 
 const view = (ratio: number): ViewVerdict => ({
+  changed: Math.round(ratio * 1392 * 40),
   ratio,
   sameSize: true,
   static: [1392, 40],
@@ -139,6 +140,62 @@ describe('decide', () => {
       views: { ...part('lines').views, '1440-light': view(0.03) },
     })
     expect(decide({ interaction: 'none', why: 'drawn at rest' }, p).best).toBe('visible')
+  })
+})
+
+describe('judge', () => {
+  test('counts pixels, not the rounded share: three changed pixels in a large section are a difference', () => {
+    const load: ModeResult = {
+      hydrated: true,
+      htmlScriptTags: 0,
+      scriptTags: 0,
+      js: 0,
+      jsInline: 0,
+      css: 0,
+      cls: 0,
+      lcp: 0,
+      errors: [],
+      hydrationErrors: 0,
+    }
+    const pic = (changed: number) => ({
+      changed,
+      ratio: 0,
+      static: [1392, 800] as [number, number],
+      only: [1392, 800] as [number, number],
+    })
+    const results: Results = {
+      browser: 'shell',
+      seconds: 1,
+      baseline: Object.fromEntries(MODES.map((m) => [m, load])) as Results['baseline'],
+      parts: [
+        {
+          id: 'button',
+          ssr: 'ok',
+          ssrError: '',
+          textMatch: true,
+          modes: Object.fromEntries(
+            MODES.map((m) => [m, { ...load, further: 0 }]),
+          ) as Results['parts'][number]['modes'],
+          views: {
+            '1440-light': pic(3),
+            '1440-dark': pic(0),
+            '390-light': pic(0),
+            '390-dark': pic(0),
+          },
+        },
+      ],
+      families: [],
+      index: load,
+    }
+    const entry = {
+      id: 'button',
+      family: 'ui',
+      module: 'ui/button',
+      covers: ['Button'],
+      interaction: 'none',
+      why: 'a button',
+    } as const
+    expect(judge(results, [entry], ['Button']).parts[0]?.staticClean).toBe(false)
   })
 })
 
