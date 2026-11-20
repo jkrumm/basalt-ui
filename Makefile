@@ -226,8 +226,9 @@ release-dry: ## Preview the next release — dry run only, publishes nothing
 release: ## Dry run, show the version bump, confirm, then publish to npm
 	@scripts/release.sh
 
-sync-self: ## Install basalt-ui's own shipped rules + skills into this repo's /.claude/ (dogfood)
+sync-self: ## Install basalt-ui's own shipped rules + skills into this repo's /.claude/ (dogfood), then resync apps/marketing's site install
 	@bun packages/basalt-ui/scripts/sync-self.ts
+	@cd apps/marketing && ./node_modules/.bin/basalt-ui sync
 
 # A lead runs this right before it merges its pull request: PR CI green for the exact HEAD, generated files in sync, master not moved under it.
 merge-guard: ## Refuse unless PR CI is green for HEAD, generated files are in sync and master did not move under the branch (MERGE_GUARD_ARGS=--wait waits for the head's CI first)
