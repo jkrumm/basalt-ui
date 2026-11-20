@@ -15,6 +15,7 @@ const REFERENCES = [
   'copy',
   'encoding',
   'forms',
+  'motion',
   'state',
   'states',
   'table',
