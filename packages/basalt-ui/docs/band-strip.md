@@ -26,6 +26,7 @@ BandStrip<T, X extends ChartX = ChartX, K extends string = string>(props: BandSt
   xTicks?: number | readonly X[]  // A tick count, or the exact x tick values
   xDomain?: readonly [X, X]  // `[min, max]` of the x scale, in `x`'s type
   formatX?: ((x: X) => string)  // Tick label for an x value
+  formatXTick?: ((x: X) => string)  // Tick label for an x value when it differs from the readout's: `formatX` then writes only the hover readout and the tooltip title
   xRefLines?: readonly XRefLine<X>[]  // Vertical reference rules at x values, on a band, numeric or time x
   xTitle?: string  // The x axis name with its unit, drawn under the ticks
   state?: ChartState

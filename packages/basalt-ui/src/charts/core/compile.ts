@@ -130,6 +130,7 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   | 'xTicks'
   | 'xDomain'
   | 'formatX'
+  | 'formatXTick'
   | 'zones'
   | 'xZones'
   | 'refLines'
@@ -1456,7 +1457,7 @@ function buildScales<T, X extends ChartX>(opts: {
       ...xGuide({
         model,
         xTicks: input.xTicks,
-        format: input.formatX ? formatX : undefined,
+        format: tickFormatOf(input, formatX),
         title: cls === 'micro' ? undefined : input.xTitle,
         cls,
         locale: input.locale,
@@ -1504,6 +1505,16 @@ function buildScales<T, X extends ChartX>(opts: {
       right &&
       input.y2?.title && { y2title: yTitleScale(input.y2.title, 'right') }),
   }
+}
+
+/** The x tick text: the consumer's tick format, else its readout format, else the default (`undefined`). */
+function tickFormatOf<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  formatX: (v: ChartValue) => string,
+): ((v: ChartValue) => string) | undefined {
+  const tick = input.formatXTick
+  if (tick !== undefined) return (v) => tick(v as X)
+  return input.formatX ? formatX : undefined
 }
 
 /**

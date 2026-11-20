@@ -176,6 +176,7 @@ export type EngineSpec<D> = {
   xScale?: 'linear' | 'log'
   xTicks?: number | readonly ChartX[]
   formatX?: (x: ChartX) => string
+  formatXTick?: (x: ChartX) => string
   zones?: readonly ZoneSpec[]
   xZones?: readonly XZoneSpec[]
   refLines?: readonly RefLine[]
@@ -214,6 +215,7 @@ export function toEngineSpec<D>(
     ...(series.some((s) => s.axis === 'right') && { y2: {} }),
     ...(x.domain !== undefined && { xDomain: asXDomain(x.domain) }),
     ...(x.format !== undefined && { formatX: x.format }),
+    ...(x.tickFormat !== undefined && { formatXTick: x.tickFormat }),
     ...(x.title !== undefined && { xTitle: x.title }),
     ...(x.scale !== undefined && { xScale: x.scale }),
     ...(x.ticks !== undefined && { xTicks: x.ticks as number | readonly ChartX[] }),

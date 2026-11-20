@@ -372,6 +372,8 @@ export type CartesianChartProps<T, X extends ChartX = ChartX> = BasaltProps & {
    * date text is `createFormat({ timeZone: 'UTC' }).date(x)` from `basalt-ui`, as the `basalt-charts` rule says.
    */
   formatX?: ((x: X) => string) | undefined
+  /** Tick label for an x value when it differs from the readout's: `formatX` then writes only the hover readout and the tooltip title. */
+  formatXTick?: ((x: X) => string) | undefined
   zones?: readonly ZoneSpec[] | undefined
   xZones?: readonly XZoneSpec<X>[] | undefined
   refLines?: readonly RefLine[] | undefined
