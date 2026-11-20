@@ -156,7 +156,10 @@ const check12 = (name: string): Check => ({
       if (!/\blang\s*=/.test(tag)) findings.push(`${host.file}: <html> has no lang`)
       const hardCoded = LITERAL_THEME.test(tag)
       const booted =
-        /<script\b[^>]*>[^<]*(?:data-theme|basalt:scheme)/s.test(host.text) || bootInjected
+        /<script\b[^>]*>[^<]*(?:data-theme|basalt:scheme)/s.test(host.text) ||
+        // A Start root route has no index.html for the plugin to inject into: it runs the shipped script itself.
+        /<ScriptOnce\b[^>]*>\s*\{\s*themeScript\s*\(/.test(host.text) ||
+        bootInjected
       if (!hardCoded && !booted) {
         findings.push(
           `${host.file}: no boot script sets data-theme before paint (or hard-code data-theme on <html>)`,

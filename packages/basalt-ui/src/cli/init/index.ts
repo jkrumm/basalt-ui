@@ -4,7 +4,8 @@
  * door into an install (docs/v3/concepts/skills-agent-layer.md 4.1). The profile is declared,
  * never inferred. It declares the manifest, generates the token outputs, installs the profile's
  * peers at exact pins, places the managed files through `sync`, seeds the budget and DESIGN.md,
- * writes the router scaffold at `app` (`./router-seeds`) and ends in `doctor`, which reports; `init` exits 0 when every step ran, 1 when one could not.
+ * writes the router scaffold at `app` (`./router-seeds`; with `--start` the TanStack Start host
+ * scaffold instead) and ends in `doctor`, which reports; `init` exits 0 when every step ran, 1 when one could not.
  * Running it twice changes nothing. The steps live in `./steps`.
  */
 import { spawnSync } from 'node:child_process'
@@ -70,6 +71,7 @@ export const FLAGS = {
   vibrancy: { type: 'string' },
   selector: { type: 'string' },
   'no-install': { type: 'boolean' },
+  start: { type: 'boolean' },
 } as const
 
 /** A path inside the repo: relative, no `..`, no line breaks. */
@@ -97,6 +99,9 @@ export function parseInit(argv: readonly string[]): { args: Args } | { error: st
           ? `--profile is required and never inferred: ${PROFILES.join(' | ')}`
           : `--profile must be one of ${PROFILES.join(' | ')} (got '${profile}')`,
     }
+  }
+  if (values.start === true && profile !== 'app') {
+    return { error: `--start needs --profile app (got '${profile}')` }
   }
   const roots = [...new Set((values.root ?? ['.']).map(clean))]
   const tokensOut = clean(
@@ -130,6 +135,7 @@ export function parseInit(argv: readonly string[]): { args: Args } | { error: st
       extra,
       identity,
       noInstall: values['no-install'] === true,
+      start: values.start === true,
     },
   }
 }

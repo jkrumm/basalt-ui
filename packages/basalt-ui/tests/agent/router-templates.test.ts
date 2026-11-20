@@ -28,8 +28,22 @@ const SEEDS = {
   '_app-pending.tpl': 'src/components/route-pending.tsx',
 } as const
 
+const START_VITE =
+  'export default { plugins: [tanstackStart({ router: { autoCodeSplitting: true } })] }\n'
+
 const filled = (tpl: string): string =>
-  readFileSync(join(pkgRoot, 'agent/templates', tpl), 'utf8').replaceAll('{{APP_NAME}}', 'Scratch')
+  readFileSync(join(pkgRoot, 'agent/templates', tpl), 'utf8')
+    .replaceAll('{{APP_NAME}}', 'Scratch')
+    .replaceAll('{{CSS_ENTRY}}', 'index.css')
+
+/** What `init --start` writes instead of `main` and `root`: the Start host seeds. */
+const START_SEEDS = {
+  '__root.start.tpl': 'src/routes/__root.tsx',
+  'router.start.tpl': 'src/router.tsx',
+} as const
+const SHARED_SEEDS = Object.fromEntries(
+  Object.entries(SEEDS).filter(([tpl]) => tpl !== '__root.tpl' && tpl !== 'main.tpl'),
+)
 
 /** What the TanStack router plugin writes for the `_app` layout and its index route. */
 const ROUTE_TREE = `import { Route as rootRouteImport } from './routes/__root'
@@ -130,8 +144,24 @@ describe('router templates', () => {
     }
   })
 
+  test('the Start root route keeps its components unexported and the shell runs the scheme script', () => {
+    const root = filled('__root.start.tpl')
+    const exported = [...root.matchAll(/^export (?:function|const) (\w+)/gm)].map((m) => m[1])
+    expect(exported).toEqual(['Route'])
+    expect(root).toMatch(/shellComponent: RootDocument/)
+    expect(root).toMatch(/<html lang="en" suppressHydrationWarning>/)
+    expect(root).toMatch(/<ScriptOnce>\{themeScript\(\)\}<\/ScriptOnce>/)
+    expect(root).toContain("from 'basalt-ui/theme-script'")
+    // The provider wraps the outlet in the app component, not in the document shell.
+    expect(root).toMatch(/function RootLayout\(\)[\s\S]*<BasaltProvider[\s\S]*<Outlet \/>/)
+    expect(filled('router.start.tpl')).toMatch(/export function getRouter\(\)/)
+    expect(filled('router.start.tpl')).toMatch(
+      /const queryClient = createQueryClient\(\)\n  const defaults/,
+    )
+  })
+
   test('no template names a 2.x router symbol', () => {
-    for (const tpl of Object.keys(SEEDS)) {
+    for (const tpl of [...Object.keys(SEEDS), ...Object.keys(START_SEEDS)]) {
       const text = readFileSync(join(pkgRoot, 'agent/templates', tpl), 'utf8')
       expect(text).not.toMatch(/BasaltShell|createBasaltRouter|basaltRouterOptions|navGroup/)
     }
@@ -263,6 +293,73 @@ describe('router templates', () => {
       rmSync(dir, { recursive: true, force: true })
     }
   }, 180_000)
+
+  test('the Start seeds type-check against the built dist', async () => {
+    expect(existsSync(join(pkgRoot, 'dist/router/index.d.ts')), 'run `bun run build` first').toBe(
+      true,
+    )
+    const cacheRoot = join(pkgRoot, 'node_modules/.cache')
+    mkdirSync(cacheRoot, { recursive: true })
+    const dir = mkdtempSync(join(cacheRoot, 'router-templates-start-'))
+    try {
+      for (const [tpl, dest] of Object.entries({ ...SHARED_SEEDS, ...START_SEEDS })) {
+        write(dir, dest, filled(tpl))
+      }
+      write(dir, 'src/routes/_app.index.tsx', INDEX_ROUTE)
+      write(dir, 'src/routeTree.gen.ts', ROUTE_TREE)
+      write(
+        dir,
+        'src/css.d.ts',
+        "declare module '*.css'\ndeclare module '*.css?url' {\n  const href: string\n  export default href\n}\n",
+      )
+      write(
+        dir,
+        'tsconfig.json',
+        JSON.stringify({
+          extends: join(pkgRoot, 'configs/tsconfig.react-app.json'),
+          compilerOptions: {
+            types: ['bun'],
+            paths: { 'basalt-ui/*': [join(pkgRoot, 'dist/*')] },
+          },
+          include: ['./src/**/*.ts', './src/**/*.tsx'],
+        }),
+      )
+      const tsc = Bun.spawn([join(pkgRoot, 'node_modules/.bin/tsc'), '-p', dir], {
+        stdout: 'pipe',
+        stderr: 'pipe',
+      })
+      const output = await new Response(tsc.stdout).text()
+      expect(await tsc.exited, output).toBe(0)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  }, 180_000)
+
+  describe('doctor check 12 on the seeded Start app', () => {
+    const seeded = (patch: (root: string) => string = (r) => r): string =>
+      makeTree('app', {
+        'index.html': null,
+        'src/main.tsx': null,
+        'src/router.tsx': filled('router.start.tpl'),
+        'src/routes/__root.tsx': patch(filled('__root.start.tpl')),
+        'vite.config.ts': START_VITE,
+      })
+
+    test('passes: the router defaults, the Register interface, the document and its scheme script', async () => {
+      const result = await runCheck(seeded(), 12)
+      expect(result.detail).toBe('app wiring is complete')
+      expect(result.status).toBe('pass')
+    })
+
+    test('fails when the shell no longer runs the scheme script', async () => {
+      const result = await runCheck(
+        seeded((root) => root.replace('<ScriptOnce>{themeScript()}</ScriptOnce>', '')),
+        12,
+      )
+      expect(result.status).toBe('fail')
+      expect(result.detail).toContain('no boot script sets data-theme before paint')
+    })
+  })
 
   describe('doctor check 12 on the seeded app', () => {
     const seeded = (patch: (main: string) => string = (m) => m): string =>

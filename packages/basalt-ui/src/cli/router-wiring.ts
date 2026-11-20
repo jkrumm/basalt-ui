@@ -222,6 +222,17 @@ export function routerSeedDest(appRel: string, seed: keyof typeof ROUTER_SEED_DE
   return appRel === '' ? ROUTER_SEED_DESTS[seed] : `${appRel}/${ROUTER_SEED_DESTS[seed]}`
 }
 
+/**
+ * What `init --profile app --start` writes instead of the SPA's `main` and `root`: Start owns the
+ * entry, so there is no `main.tsx`; its root route is the document shell, and `router.tsx` exports
+ * the `getRouter()` Start calls. The other five seeds are host-neutral and are shared.
+ */
+export const START_SEED_TEMPLATES = {
+  root: '__root.start.tpl',
+  router: 'router.start.tpl',
+} as const
+export const START_ROUTER_DEST = 'src/router.tsx'
+
 /** The router seeds' dests for an app dir (`main.tsx`, `nav.tsx`, `__root.tsx`, `_app.tsx` and the three route components). */
 export function routerSeedDests(appRel: string): string[] {
   return (Object.keys(ROUTER_SEED_DESTS) as (keyof typeof ROUTER_SEED_DESTS)[]).map((seed) =>

@@ -27,6 +27,7 @@ export const COMMAND_OPTIONS: Record<
     vibrancy: { type: 'string' },
     selector: { type: 'string' },
     'no-install': { type: 'boolean' },
+    start: { type: 'boolean' },
   },
   sync: {
     force: { type: 'boolean' },
@@ -171,12 +172,16 @@ export const USAGE =
   '  --from <x.y.z> is accepted for the 2.x upgrade flow and only points at MIGRATING.md.\n\n' +
   'init --profile <tokens|bridge|parts|app> [--root <path>]… [--tokens-out <css>] [--tokens-json-out <json>]\n' +
   '     [--extra <file>] [--accent <#hex>] [--neutral <name>] [--vibrancy <n>] [--selector <sel>] [--no-install]\n' +
+  '     [--start]\n' +
   '  The one door into an install. The profile is declared, never inferred (exit 1 without it); each --root\n' +
   '  (default .) is declared with it. Paths are relative to the repo root. Writes .basalt/manifest.json and the\n' +
   "  token outputs, installs the profile's peers at exact pins with the lockfile's package manager, places the\n" +
   '  managed files and presets through sync, seeds .basalt/budget.json and DESIGN.md, at app writes the router scaffold (main.tsx, routes, nav) once, writes the formatter\n' +
   '  ignore, and ends in doctor. --no-install prints the install command instead of running it. Running it\n' +
-  '  twice changes nothing. Vite and CSS are patched only for a stock shape; otherwise the lines are printed.\n\n' +
+  '  twice changes nothing. Vite and CSS are patched only for a stock shape; otherwise the lines are printed.\n' +
+  '  --start (with --profile app) makes the app a TanStack Start host: tanstackStart() before the React plugin,\n' +
+  '  src/router.tsx (getRouter), a root route with the document shell and the pre-paint scheme script, no main.tsx.\n' +
+  '  The app owns @tanstack/react-start; init installs nothing for it.\n\n' +
   'sync [--check] [--force]\n' +
   '  Renders every managed file (.claude/{rules,skills,agents}/basalt-*, the AGENTS.md block, the\n' +
   '  preset files) and compares bytes; it refreshes an EXISTING install and never creates one (that\n' +

@@ -40,6 +40,8 @@ export type Args = {
   /** The identity flags (`--accent`, `--neutral`, `--vibrancy`, `--selector`) as `tokens:css` argv. */
   identity: string[]
   noInstall: boolean
+  /** `--start`: the app is a TanStack Start host (`init --profile app --start`). */
+  start: boolean
 }
 
 export type Ctx = {
@@ -505,10 +507,25 @@ export function appName(root: string): string {
 // ── Vite and CSS ────────────────────────────────────────────────────────────────────────────────
 
 const VITE_CONFIGS = ['vite.config.ts', 'vite.config.mts', 'vite.config.js', 'vite.config.mjs']
-const CSS_ENTRIES = ['index.css', 'styles.css', 'main.css', 'app.css', 'globals.css']
+export const CSS_ENTRIES = ['index.css', 'styles.css', 'main.css', 'app.css', 'globals.css']
 const BASALT_IMPORT = "import { basalt } from 'basalt-ui/vite'"
 const ROUTER_IMPORT = "import { tanstackRouter } from '@tanstack/router-plugin/vite'"
 const ROUTER_PLUGIN = `tanstackRouter({ target: '${ROUTER_PLUGIN_OPTIONS.target}', autoCodeSplitting: ${ROUTER_PLUGIN_OPTIONS.autoCodeSplitting} })`
+const START_IMPORT = "import { tanstackStart } from '@tanstack/react-start/plugin/vite'"
+const START_PLUGIN = 'tanstackStart({ router: { autoCodeSplitting: true } })'
+
+/** The plugin that goes first in the list: the router plugin of a file-routed SPA, or Start's. */
+type FirstPlugin = { import: string; call: string; present: (text: string) => boolean }
+const ROUTER_FIRST: FirstPlugin = {
+  import: ROUTER_IMPORT,
+  call: ROUTER_PLUGIN,
+  present: registersRouterPlugin,
+}
+const START_FIRST: FirstPlugin = {
+  import: START_IMPORT,
+  call: START_PLUGIN,
+  present: (text) => /\btanstackStart\s*\(/.test(text),
+}
 
 /** The directories an app's build config or stylesheet entry sits in, nearest the declared roots. */
 function appDirs(ctx: Ctx): string[] {
@@ -549,13 +566,14 @@ function callEnd(text: string, name: string, from: number, to: number): number {
 
 /**
  * Patches `plugins: [` of a stock Vite config to the order `docs/vite.md` gives: the router plugin
- * first (it must see the routes before the React transform does), then `react()`, `tailwindcss()`,
- * `basalt()`. Any other shape returns null.
+ * (or `tanstackStart()`) first (it must see the routes before the React transform does), then
+ * `react()`, `tailwindcss()`, `basalt()`. Any other shape returns null.
  */
-function patchVite(text: string, router: boolean): string | null {
+function patchVite(text: string, first: FirstPlugin | null): string | null {
   const needBasalt = !text.includes('basalt(')
   const needTailwind = !/\btailwindcss\(/.test(text)
-  const needRouter = router && !registersRouterPlugin(text)
+  const missing = first !== null && !first.present(text) ? first : null
+  const needRouter = missing !== null
   if (!needBasalt && !needTailwind && !needRouter) return text
   const list = pluginList(text)
   if (list === null) return null
@@ -576,6 +594,7 @@ function patchVite(text: string, router: boolean): string | null {
     } else {
       const anchor = Math.max(
         callEnd(out, 'react', list.open, list.close),
+        callEnd(out, 'viteReact', list.open, list.close),
         callEnd(out, 'tailwindcss', list.open, list.close),
       )
       if (anchor !== -1) {
@@ -587,18 +606,18 @@ function patchVite(text: string, router: boolean): string | null {
       }
     }
   }
-  if (needRouter) {
+  if (missing !== null) {
     const empty = out
       .slice(list.open + 1)
       .trimStart()
       .startsWith(']')
-    out = `${out.slice(0, list.open + 1)}${ROUTER_PLUGIN}${empty ? '' : ', '}${out.slice(list.open + 1)}`
+    out = `${out.slice(0, list.open + 1)}${missing.call}${empty ? '' : ', '}${out.slice(list.open + 1)}`
   }
   const spliced = out.split('\n')
   spliced.splice(
     lastImport + 1,
     0,
-    ...(needRouter ? [ROUTER_IMPORT] : []),
+    ...(missing === null ? [] : [missing.import]),
     ...(needTailwind ? [TAILWIND_IMPORT] : []),
     ...(needBasalt ? [BASALT_IMPORT] : []),
   )
@@ -662,17 +681,34 @@ function ignoreSources(ctx: Ctx, viteDir: string): void {
   if (writeText(ctx.root, file, `${lead}${SOURCES_PATH}\n`)) say(`${file}: ignores ${SOURCES_PATH}`)
 }
 
+/** A Start app has no create-vite stylesheet: when none exists, `src/index.css` is written as the one entry. */
+function seedStartCss(ctx: Ctx, vite: string): void {
+  const app = resolveAppDir(ctx.root)
+  const rel = 'error' in app ? 'src/index.css' : join(app.rel, 'src/index.css')
+  const abs = resolve(ctx.root, rel)
+  const tokensAbs = resolve(ctx.root, ctx.args.tokensOut)
+  const from = (target: string): string => {
+    const path = relative(dirname(abs), target).replaceAll('\\', '/')
+    return path.startsWith('.') ? path : `./${path}`
+  }
+  const tokens = existsSync(tokensAbs) ? from(tokensAbs) : null
+  const sources = from(resolve(ctx.root, dirname(vite), SOURCES_PATH))
+  if (writeText(ctx.root, rel, `${stylesheetEntry(tokens, sources)}\n`)) {
+    say(`wrote ${rel}: the one stylesheet entry (tailwind.css, tokens, sources)`)
+  }
+}
+
 /** Above `tokens`: the Vite plugin and the Tailwind entry, patched only when the shape is stock. */
 export function wireApp(ctx: Ctx): void {
   if (ctx.args.profile === 'tokens') {
     return void ctx.todo.push(`import ${ctx.args.tokensOut} in your stylesheet entry`)
   }
   const dirs = appDirs(ctx)
+  const first = ctx.args.start ? START_FIRST : ctx.routerPlugin === true ? ROUTER_FIRST : null
   const vite = dirs
     .flatMap((d) => VITE_CONFIGS.map((f) => join(d, f)))
     .find((f) => existsSync(resolve(ctx.root, f)))
-  const patched =
-    vite === undefined ? null : patchVite(readText(ctx.root, vite) ?? '', ctx.routerPlugin === true)
+  const patched = vite === undefined ? null : patchVite(readText(ctx.root, vite) ?? '', first)
   if (vite !== undefined) ignoreSources(ctx, dirname(vite))
   if (vite !== undefined && patched !== null) {
     if (writeText(ctx.root, vite, patched)) say(`${vite}: added the Vite plugins`)
@@ -680,7 +716,11 @@ export function wireApp(ctx: Ctx): void {
     ctx.todo.push(
       `${BASALT_IMPORT} and ${TAILWIND_IMPORT}, then make the plugins of your Vite config [react(), tailwindcss(), basalt()] (docs/vite.md)`,
     )
-    if (ctx.routerPlugin === true) {
+    if (ctx.args.start) {
+      ctx.todo.push(
+        `${START_IMPORT}, then add ${START_PLUGIN} first in those plugins, before the React plugin (Start generates the route tree)`,
+      )
+    } else if (ctx.routerPlugin === true) {
       ctx.todo.push(
         `${ROUTER_IMPORT}, then add ${ROUTER_PLUGIN} first in those plugins (a file-routed entry imports the routeTree.gen file it writes)`,
       )
@@ -690,6 +730,7 @@ export function wireApp(ctx: Ctx): void {
     .flatMap((d) => ['src', '.'].flatMap((s) => CSS_ENTRIES.map((f) => join(d, s, f))))
     .map((f) => join(f))
     .find((f) => existsSync(resolve(ctx.root, f)))
+  if (css === undefined && vite !== undefined && ctx.args.start) return seedStartCss(ctx, vite)
   const cssPatched =
     css === undefined || vite === undefined
       ? null
