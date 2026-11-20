@@ -89,8 +89,8 @@ export function StatCard(props: StatCardProps): ReactElement {
   const stale = resolved.tag === 'stale' ? resolved : null
   const staleText = useStaleText(stale?.refreshFailed === true)
   return (
-    <div data-slot="stat-card" className="@container min-w-0">
-      <Card flush className="relative">
+    <div data-slot="stat-card" className="@container h-full min-w-0">
+      <Card flush className="relative h-full">
         {href !== undefined && <Target label={title} href={href} />}
         {onClick !== undefined && <Target label={title} onClick={onClick} />}
         <StatHead
@@ -101,7 +101,9 @@ export function StatCard(props: StatCardProps): ReactElement {
           controls={controls}
           menu={menu}
         />
-        <Inset className={cn('flex flex-col', bodyHeight(sub !== undefined, chart !== undefined))}>
+        <Inset
+          className={cn('flex grow flex-col', bodyHeight(sub !== undefined, chart !== undefined))}
+        >
           <CardPhase
             phase={phase}
             empty={empty}

@@ -338,13 +338,13 @@ describe('height', () => {
     expect(boxOf('fill')?.split(' ')).not.toContain('h-40')
   })
 
-  test('the card is a container, and fill also fills its parent', () => {
+  test('the card is a container that takes its grid cell, whatever its height', () => {
     const root = (h: 'auto' | 'fill'): string =>
       html(<ChartCard title="R" chart={() => null} height={h} />).querySelector(
         '[data-slot="chart-card"]',
       )?.className ?? ''
     expect(root('auto')).toContain('@container')
-    expect(root('auto')).not.toContain('h-full')
+    expect(root('auto')).toContain('h-full')
     expect(root('fill')).toContain('h-full')
   })
 })

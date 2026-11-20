@@ -19,12 +19,13 @@ const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-n
  * half the width between 288 and 420 px (the same as `auto` from a 576 px card up, a plot of about 225 px at 390), `short` is
  * 160, and
  * `fill` takes the card's remainder inside a card that fills its parent. Every phase draws inside
- * the same box, so a loading, empty or error card is exactly as tall as a ready one.
+ * the same box, so a loading, empty or error card is exactly as tall as a ready one. The card takes
+ * its grid cell's height, so a stretched row grows the box past its `auto`, `tall` or `short` floor.
  */
 const BOX = {
-  auto: 'h-[clamp(12rem,50cqw,26.25rem)] shrink-0',
-  tall: 'h-[clamp(18rem,50cqw,26.25rem)] shrink-0',
-  short: 'h-40 shrink-0',
+  auto: 'h-[clamp(12rem,50cqw,26.25rem)] shrink-0 grow',
+  tall: 'h-[clamp(18rem,50cqw,26.25rem)] shrink-0 grow',
+  short: 'h-40 shrink-0 grow',
   fill: 'min-h-40 flex-1',
 } as const
 
@@ -249,7 +250,9 @@ const hasNoRows = (phase: object): boolean => {
  * first paint and the hydrated page agree: `auto` (default) is half the width between 192 and 420 px,
  * `tall` the same with a 288 px floor (the chart that answers the page, whose axis needs the height
  * at 390), `short` is 160 px, `fill` is the card's remainder and the card takes its parent's height. The slot
- * always receives `height: 'fill'`, so the chart takes the box and never states its own.
+ * always receives `height: 'fill'`, so the chart takes the box and never states its own. In a grid row
+ * the card takes the row's height and its box grows past that floor, so cards of one row end at one
+ * height; outside a stretching row the card keeps the box's own height.
  *
  * The phase: `ready` shows the chart; `loading` a plot skeleton with bars in the figure row; `stale`
  * the chart and an `Updating` line (`Could not refresh` after a failed refetch); `error` the error arm
@@ -312,16 +315,12 @@ export function ChartCard(props: ChartCardProps): ReactElement {
   return (
     <ChartCardContext value={true}>
       <CardHiddenContext value={hidden}>
-        <div
-          data-slot="chart-card"
-          data-height={height}
-          className={cn('@container min-w-0', height === 'fill' && 'h-full')}
-        >
+        <div data-slot="chart-card" data-height={height} className="@container h-full min-w-0">
           <div
             data-slot="card"
             data-surface="card"
             data-phase={effective.tag}
-            className={cn(SURFACE, 'relative', height === 'fill' && 'h-full')}
+            className={cn(SURFACE, 'relative h-full')}
           >
             <Head
               title={props.title}
@@ -336,7 +335,7 @@ export function ChartCard(props: ChartCardProps): ReactElement {
               data-surface="inset"
               className={cn(
                 'mx-(--card-gutter) flex min-h-0 flex-col rounded-inset bg-inset px-[calc(var(--card-edge)_-_var(--card-gutter))] py-3 first:mt-(--card-gutter) last:mb-(--card-gutter)',
-                height === 'fill' && 'flex-1',
+                height === 'fill' ? 'flex-1' : 'grow',
               )}
             >
               {shownFigure !== undefined && (
