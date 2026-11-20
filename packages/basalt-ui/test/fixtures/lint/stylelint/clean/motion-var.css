@@ -1,0 +1,7 @@
+.a {
+  transition:
+    opacity var(--basalt-dur-fast) var(--basalt-ease-exit),
+    transform var(--basalt-dur-base) var(--basalt-ease-standard);
+  transition-delay: 0s;
+  animation-duration: var(--basalt-dur-slow);
+}

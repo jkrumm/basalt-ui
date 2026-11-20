@@ -198,12 +198,13 @@ describe('forms', () => {
     'space-between': 'gap-',
     margin: 'gap-',
     padding: 'Inset',
+    'off-scale': 'duration-fast',
   }
   const all = Object.entries(CLASS_RULES).flatMap(([id, entry]) =>
     entry.forms.map((form) => ({ id, form })),
   )
 
-  it('is twenty-two enabled forms in seven ids, plus the padding form', () => {
+  it('is twenty-three enabled forms in eight ids, plus the padding form', () => {
     expect(Object.keys(CLASS_RULES)).toEqual([
       'viewport-keyed',
       'dark-fork',
@@ -212,9 +213,10 @@ describe('forms', () => {
       'raw-scroll',
       'tw-off-law',
       'app-spacing',
+      'motion-off-scale',
     ])
-    expect(all.filter(({ form }) => isEnabled(form))).toHaveLength(22)
-    expect(all).toHaveLength(23)
+    expect(all.filter(({ form }) => isEnabled(form))).toHaveLength(23)
+    expect(all).toHaveLength(24)
   })
 
   it('runs viewport-keyed, dark-fork, fixed-colour and status-fill-as-text from bridge up', () => {

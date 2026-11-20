@@ -14,6 +14,7 @@ import { colourLiteralRules } from './rules/structure/colour-literal'
 import { controlHomeRules } from './rules/structure/control-home'
 import { dataPrimitiveRules } from './rules/structure/data-primitive'
 import { importBoundaryRules } from './rules/structure/import-boundary'
+import { motionLiteralRules } from './rules/structure/motion-literal'
 import { pageRootRules } from './rules/structure/page-root'
 import { primitiveBypassRules } from './rules/structure/primitive-bypass'
 import { routerSearchRules } from './rules/structure/router-search'
@@ -26,6 +27,7 @@ const FAMILIES: readonly RuleTable[] = [
   importBoundaryRules,
   primitiveBypassRules,
   colourLiteralRules,
+  motionLiteralRules,
   waiverRules,
   dataPrimitiveRules,
   routerSearchRules,

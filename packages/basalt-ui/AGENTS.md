@@ -26,6 +26,7 @@ Everything else is internal: `./guard`, `./data/virtual`, `./llms.txt` and `./pa
 | `basalt-ui/form`         | ui            |
 | `basalt-ui/page`         | headless      |
 | `basalt-ui/cards`        | headless      |
+| `basalt-ui/motion`       | headless      |
 | `basalt-ui/ai`           | headless      |
 | `basalt-ui/ui/*`         | headless      |
 | `basalt-ui/core/*`       | headless      |
@@ -53,9 +54,11 @@ CSS vars. Never write `#rrggbb`, `rgb(…)`, or `hsl(…)` in component or style
 `alpha(token, a)` for opacity (`color-mix` under the hood) — never `rgba()`.
 
 **Motion discipline**: import animation from `motion/react`, never the raw `framer-motion`
-package (enforced by oxlint `no-restricted-imports`). Route transition timing through the shared
-`MOTION_DURATION` / `MOTION_SPRING` / `MOTION_EASE_STANDARD` tokens — never a hardcoded
-duration/spring/ease literal in a `transition={{...}}` prop.
+package (enforced by oxlint `no-restricted-imports`). Time it with the scale from `basalt-ui/tokens`
+(`MOTION_DURATION`, `MOTION_SPRING`, `MOTION_EASE_STANDARD` / `_ENTER` / `_EXIT`, `staggerDelay`), or in CSS
+with `--basalt-dur-*`, `--basalt-ease-*`, `--basalt-spring` and the `duration-fast` / `ease-enter` classes;
+enter and exit come from `useMotionPreset` (`basalt-ui/motion`) or `animate-enter-*`, which collapse under
+reduced motion on their own. A literal duration, delay, spring or easing is a `basalt/motion-literal` finding.
 
 **The escape hatch is `// oxlint-disable-next-line basalt/<rule-id> -- <why>`**, scoped to that one rule
 and line; a waiver without `-- <why>` is itself a finding (`basalt/waiver-needs-reason`). The 2.x
