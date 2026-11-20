@@ -1834,6 +1834,11 @@ const GUIDE_LABEL = {
   strokeWidth: 6,
   offset: 5,
 } as const
+
+/** Whether the chart labels its x axis: the panel that does carries the hover's x chip. */
+const labelsX = (input: { xTicks?: unknown }): boolean =>
+  !(Array.isArray(input.xTicks) && input.xTicks.length === 0)
+
 /**
  * The hover's guide: the x rule (a bar kind has none, its hover is the bar) and the y rule through the
  * focused point, each with its value pinned on its axis, so a hover reads x and y where the ticks do.
@@ -1842,12 +1847,8 @@ const GUIDE_LABEL = {
  * with no tick labels (`x.ticks: []`, the upper panels of charts stacked on one x) pins no x value: the
  * chip would sit on the plot's baseline over the marks, once per panel; the panel that labels the axis
  * carries it. A chart that follows another's shared cursor pins none either (its chip text is empty),
- * so the one the pointer is on carries the value.
+ * so the one the pointer is on carries the value; a leader with no x chip leaves it to the labelled follower.
  */
-/** Whether the chart labels its x axis: the panel that does carries the hover's x chip. */
-const labelsX = (input: { xTicks?: unknown }): boolean =>
-  !(Array.isArray(input.xTicks) && input.xTicks.length === 0)
-
 export function crosshairGuide<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
   pinned: boolean
