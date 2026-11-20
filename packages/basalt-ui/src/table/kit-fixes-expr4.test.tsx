@@ -89,7 +89,8 @@ describe('card: hidden', () => {
 
   test('a column that did not declare it carries no marker', () => {
     const { container } = render(<Subject />)
-    expect(container.querySelector('[data-card]')).toBeNull()
+    // a group row's empty cells carry it (expression cycle 16): they hold nothing a card could show
+    expect(container.querySelector('tbody tr:not([data-group]) [data-card]')).toBeNull()
   })
 })
 
