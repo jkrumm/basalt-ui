@@ -101,7 +101,11 @@ jobs:
         run: bun --filter basalt-ui build
 
       - name: Tests
-        run: bun test
+        # The factory's step host runs this suite at width 4 (scripts/unit-parallelism.ts); the hosted runner has the same 4 vCPUs.
+        env:
+          FACTORY_STEP_CORES: 4
+          FACTORY_STEP_MEM_MIB: 16384
+        run: bun scripts/unit-test.ts
 
   # The site profile's proof (apps/marketing, basalt-ui.com): build the site on the built package and
   # hold its measured numbers to apps/marketing/site-budgets.json — zero module JavaScript on a page
