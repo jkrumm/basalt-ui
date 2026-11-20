@@ -1,0 +1,23 @@
+{
+  "why": "The Astro matrix (docs/v3/verdicts/astro-matrix.md, Issue 2540): CodeBlock and Markdown render their code uncoloured on a static page and Shiki colours it after mount (1 to 5% of pixels differ). Highlighting is presentation: a content site (Issue 2531, Astro) should ship coloured code with no JavaScript and keep an island only for the copy button.",
+  "what": "Shiki output in the server HTML of CodeBlock and of Markdown fences, the same markup the browser renders after hydration.",
+  "owns": [
+    "packages/basalt-ui/src/content/** (behaviour)",
+    "their tests",
+    "docs/v3/verdicts/astro-matrix.{json,md} (recorded with make astro-matrix UPDATE=1)"
+  ],
+  "must_not_touch": [
+    "apps/playground-astro/scripts/**",
+    "packages/basalt-ui/src/content/contract.ts unless a prop is added through the contract-amendment path"
+  ],
+  "change": "Render the highlighted tokens during the server render (await the highlighter inside the render, for example with Suspense and use()), keep the streaming and untrusted-content paths as they are, and hydrate without a mismatch.",
+  "acceptance": [
+    "The Astro matrix records code-block and markdown static-clean at 1440 and 390, light and dark (make astro-matrix UPDATE=1, the record in the same PR)",
+    "An SSR test: renderToString (or the stream) of a CodeBlock contains the highlighted spans and hydrates without a mismatch warning",
+    "The untrusted Markdown tests pass unchanged",
+    "make check passes"
+  ],
+  "out_of_scope": ["The copy button without React", "Mermaid fences"],
+  "proof": "make astro-matrix UPDATE=1 (the record and its .md change only for the parts above), make check",
+  "commits": "package changes in their own commit; the matrix record (docs/v3/verdicts/astro-matrix.*) in a non-package commit"
+}

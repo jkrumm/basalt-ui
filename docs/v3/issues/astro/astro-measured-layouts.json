@@ -1,0 +1,27 @@
+{
+  "why": "The Astro matrix (docs/v3/verdicts/astro-matrix.md, Issue 2540) found five parts whose static HTML differs from the hydrated picture because they decide a layout from a size measured in the browser, where CSS could decide it. ArticleLayout: the server renders the compact 'On this page' pill and the hydrated page the side column at 1440 (24 px taller, layout shift 0.03 on hydrate); a content page (Issue 2531, Astro) shows the wrong layout until JavaScript runs. DataPanel: at 390 the hydrated panel grows from 244 to 516 px. Resizable: react-resizable-panels applies sizes after mount, so the server panels are 106 px tall against 46 hydrated. VirtualList: the virtualizer renders no row before it has measured, so the static list is empty. Segmented: the selected indicator is placed from a measured rect, one pixel column differs.",
+  "what": "Each of the five renders its final layout in the server HTML; JavaScript adds behaviour only.",
+  "owns": [
+    "packages/basalt-ui/src/page/article-layout.tsx and the TOC placement it uses",
+    "packages/basalt-ui/src/cards/data-panel.tsx",
+    "packages/basalt-ui/src/ui/resizable.tsx",
+    "packages/basalt-ui/src/ui/virtual-list.tsx",
+    "packages/basalt-ui/src/ui/segmented.tsx",
+    "their tests and layout tests",
+    "docs/v3/verdicts/astro-matrix.{json,md} (recorded with make astro-matrix UPDATE=1)"
+  ],
+  "must_not_touch": ["apps/playground-astro/scripts/**", "contract.ts files (behaviour only)"],
+  "change": "(1) ArticleLayout places its TOC with a container query, not a measured size class. (2) DataPanel takes its phone height from CSS, the same on the server and in the browser. (3) Resizable emits each panel's default size in the server HTML (a flex basis), so the first paint is the hydrated layout. (4) VirtualList seeds the virtualizer with an initial rect (TanStack Virtual `initialRect`) from its declared height, so the server renders the first window. (5) Segmented places the selected indicator in CSS from the selected item.",
+  "acceptance": [
+    "The Astro matrix records article-layout, data-panel, resizable, virtual-list and segmented static-clean at 1440 and 390, light and dark, with no layout shift on hydrate (make astro-matrix UPDATE=1, the record in the same PR)",
+    "Layout tests cover each of the five at 390 and 1440",
+    "No regression on the Vite playground (layout suite, quality matrix)",
+    "make check passes"
+  ],
+  "out_of_scope": [
+    "Charts (astro-chart-server-picture)",
+    "Parts that need a router or a query client by contract"
+  ],
+  "proof": "make astro-matrix UPDATE=1 (the record and its .md change only for the parts above), make check",
+  "commits": "package changes in their own commit; the matrix record (docs/v3/verdicts/astro-matrix.*) in a non-package commit"
+}

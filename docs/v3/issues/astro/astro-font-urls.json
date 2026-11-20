@@ -1,0 +1,22 @@
+{
+  "why": "The Astro matrix (docs/v3/verdicts/astro-matrix.md, Issue 2540): basalt-ui/fonts.css (imported by tailwind.css) and the Head Digits @font-face in styles.css name their woff2 files by bare specifier in url() (url('@fontsource-variable/nunito-sans/files/...')). Vite leaves them unresolved (six build warnings, in the Astro playground's build and the Vite playground's alike) and the browser requests them relative to the stylesheet: 404. A site that imports tailwind.css alone, as docs/static-site.md describes for fonts.css, renders in fallback fonts; the Astro playground loads the faces only because it also imports styles.css.",
+  "what": "Every font url() basalt ships resolves under Vite (Astro included) with no consumer alias, and fonts.css works as docs/static-site.md says.",
+  "owns": [
+    "packages/basalt-ui/src/css/fonts.css and its generator",
+    "packages/basalt-ui/src/styles.css (the Head Digits face)",
+    "packages/basalt-ui/scripts/copy-assets.mjs if the files must ship beside the CSS",
+    "docs/static-site.md (packages/basalt-ui/docs) if the instructions change",
+    "docs/v3/verdicts/astro-matrix.{json,md} (recorded with make astro-matrix UPDATE=1)"
+  ],
+  "must_not_touch": ["apps/playground-astro/scripts/**"],
+  "change": "Make each url() resolvable from the stylesheet's own location in dist (a relative path to files the package ships or to the fontsource package Vite can resolve), or import the fontsource faces by @import as styles.css does; prove it with a Vite build that emits no 'didn't resolve at build time' warning.",
+  "acceptance": [
+    "astro build of apps/playground-astro and vite build of apps/playground print no unresolved-url warning for a basalt font",
+    "The Astro matrix records missingFonts 0 (make astro-matrix UPDATE=1)",
+    "pack-test still passes",
+    "make check passes"
+  ],
+  "out_of_scope": ["The Astro Fonts API integration (Issue 2531)"],
+  "proof": "make astro-matrix UPDATE=1 (the record and its .md change only for the parts above), make check",
+  "commits": "package changes in their own commit; the matrix record (docs/v3/verdicts/astro-matrix.*) in a non-package commit"
+}
