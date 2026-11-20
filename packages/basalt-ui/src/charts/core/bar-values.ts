@@ -322,9 +322,9 @@ export function barValueLabels<T, X extends ChartX>(
   // A named bar still without a label takes any spot clear of the other labels, over a rule or a
   // line if it must: a label that names the answer is never dropped for what the host drew.
   const standing = new Set([...taken, ...inside.placed.map((p) => p.key)])
-  // A named grouped bar, never a stack total, may cross a rule or a line; a stack total never does.
-  const namedBar = (c: Candidate<X>, i: number): boolean =>
-    c.id !== undefined && named.has(String(i))
+  // A bar that names the answer, a stack total included, takes a spot over a rule or a line when none is
+  // clear (a rule through the whole bar): the answer is never dropped for what the host drew.
+  const namedBar = (_: Candidate<X>, i: number): boolean => named.has(String(i))
   const rescue = (
     pending: ReadonlySet<string>,
     obstacles: readonly LabelBox[],
@@ -344,8 +344,43 @@ export function barValueLabels<T, X extends ChartX>(
   // takes a spot clear of the captions first, then any spot clear of the other labels: over a rule or
   // a line if it must.
   const stacked = rescue(standing, input.clear, (c) => c.id === undefined)
+  // A named stack total that every spot beside its caption, rule and line refused climbs above them one
+  // line at a time: still centred over its own stack, never inside it, and off the rule.
+  const reached = new Set([...standing, ...stacked.placed.map((p) => p.key)])
+  const lifted: PlacedLabel<string>[] = []
+  const liftStep = lineHeight(SIZE)
+  for (let step = 1; step * liftStep < input.frame.height; step++) {
+    const pending = found.flatMap((c, i) =>
+      c.id === undefined &&
+      named.has(String(i)) &&
+      !c.clamped &&
+      !reached.has(String(i)) &&
+      !lifted.some((p) => p.key === String(i))
+        ? [
+            {
+              ...label(c, i, [c.up ? 'above' : 'below']),
+              y: c.anchor.y + (c.up ? -1 : 1) * step * liftStep,
+            },
+          ]
+        : [],
+    )
+    if (pending.length === 0) break
+    lifted.push(
+      ...placeWith(measure, pending, input.frame, {
+        gap: GAP,
+        obstacles: [
+          ...outside.placed,
+          ...inside.placed,
+          ...stacked.placed,
+          ...lifted,
+          ...input.obstacles,
+        ],
+        size: SIZE,
+      }).placed,
+    )
+  }
   const captioned = rescue(
-    new Set([...standing, ...stacked.placed.map((p) => p.key)]),
+    new Set([...standing, ...stacked.placed.map((p) => p.key), ...lifted.map((p) => p.key)]),
     input.clear.filter((b) => Math.min(b.width, b.height) >= CAPTION_MIN_PX),
     namedBar,
   )
@@ -353,10 +388,12 @@ export function barValueLabels<T, X extends ChartX>(
     placed: [
       ...stacked.placed,
       ...captioned.placed,
+      ...lifted,
       ...rescue(
         new Set([
           ...standing,
           ...stacked.placed.map((p) => p.key),
+          ...lifted.map((p) => p.key),
           ...captioned.placed.map((p) => p.key),
         ]),
         [],
