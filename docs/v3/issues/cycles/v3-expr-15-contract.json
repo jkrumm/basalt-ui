@@ -1,0 +1,26 @@
+{
+  "why": "Expression cycle 15 (docs/v3/cycles/expression-15.md) met two kit gaps that need a public field or change what `primitive-bypass` denies, so they cannot ride in a behaviour row. A date column has no mono face: `c.date` takes no `mono` (table.md, col.md list it only on `c.entity`), so n72's phone card prints 'Received: 8 Nov 2026' in the body face (.30, X5) and n73's builder wished the same for 'Due: 15 Nov 2026'. And `primitive-bypass` reads a `Sparkline` in a `StatCell` `chart` slot as a chart outside a card, while the same slot on `StatCard` passes: n69 moved its trend into a wrapper component to get past it (marker at ExprN69.tsx:249) and n73 took a waiver with a reason (ExprN73.tsx:166). No point was lost to the lint, but it cost one escape hatch and a wrapper in two of six builds.",
+  "what": "A Spec, then the fields it rules on: a mono face for date and time columns, and a `primitive-bypass` that knows the `StatCell` chart slot.",
+  "owns": [
+    "packages/basalt-ui/src/table/** including table/contract.ts where the Spec rules a field",
+    "packages/basalt-ui/src/cards/** where the Spec rules the StatCell slot",
+    "the basalt oxlint plugin's primitive-bypass rule and its tests",
+    "packages/basalt-ui/docs/** and agent references generated from them",
+    "their tests and the playground's kit pages that show them"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "Write a one-page Spec first, then build what it rules. (1) A mono face for a date or time column: `mono` on `c.date` and `c.relativeTime` (or a rule that a time column is mono by default, as the shipped rule already asks of a time in a figure's period), drawn in the cell and on its phone card line (n72 .30; n73 wish; the probe's open phone-card id in the body face is the kit row's behaviour fix). (2) The `StatCell` `chart` slot under `primitive-bypass`: the rule allows a shipped chart kind in a `StatCell` `chart` slot as it does in `StatCard`'s, or the Spec says why a cell differs and the skill names the form to use (n69 marker, n73 waiver). Say in the Spec what changing each after 3.0 would cost.",
+  "acceptance": [
+    "A Spec with both choices and their defaults is submitted and ruled on before code",
+    "A date column can set mono, in the cell and on its phone card (test)",
+    "primitive-bypass passes a shipped chart kind in a StatCell chart slot, or the Spec's ruling is in the rule's message and the skill (lint test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Behaviour fixes (v3-expr-15-kit-fixes); spread positions handed to app code (n72, one case); a time-of-day column from a fixed clock (n69 wish, one case); a byte formatter (n71 wish, one case); the trial scenarios.",
+  "proof": "The Spec's verdict; make check; lint and unit tests; the next cycle reads the fields from what ships.",
+  "commits": "feat: per field with its test; docs: the Spec page."
+}
