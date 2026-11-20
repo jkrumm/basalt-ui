@@ -100,34 +100,48 @@ export function dateLabel(
   return { iso: instant.toISOString(), text: format.date(instant, style) }
 }
 
+/** A time drawn in the mono face: the attribute the base styles read and the classes the cell draws. */
+const monoProps = (mono: boolean): { 'data-monospace'?: ''; className?: string } =>
+  mono ? { 'data-monospace': '', className: 'font-mono tabular-nums' } : {}
+
 export function DateCell({
   value,
   format,
   style,
+  mono = false,
 }: {
   value: unknown
   format: Format
   style: DateStyle
+  /** The date is a time: the mono face with tabular numerals. */
+  mono?: boolean
 }): ReactNode {
   const label = dateLabel(value, format, style)
   if (label === null) return <Absent />
-  return <time dateTime={label.iso}>{label.text}</time>
+  return (
+    <time dateTime={label.iso} {...monoProps(mono)}>
+      {label.text}
+    </time>
+  )
 }
 
 export function RelativeTimeCell({
   value,
   format,
   now,
+  mono = false,
 }: {
   value: unknown
   format: Format
   now: number
+  /** The relative time is a time: the mono face with tabular numerals. */
+  mono?: boolean
 }): ReactNode {
   const instant = toInstant(value)
   if (instant === null) return <Absent />
   const full = format.dateTime(instant, 'long')
   return (
-    <time dateTime={instant.toISOString()} title={full} aria-label={full}>
+    <time dateTime={instant.toISOString()} title={full} aria-label={full} {...monoProps(mono)}>
       {format.relative(instant, now)}
     </time>
   )
