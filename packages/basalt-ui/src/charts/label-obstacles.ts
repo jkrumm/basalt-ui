@@ -58,6 +58,17 @@ export function recordPlacedLabels(boxes: readonly LabelBox[]): void {
 /** The boxes the host published for the marks being built; none outside a host. */
 export const hostObstacles = (): readonly LabelBox[] => current?.() ?? []
 
+const dotBoxes = new WeakSet<LabelBox>()
+
+/** Marks a published box as one dot: a crowded cloud of them leaves a label the spot that meets the fewest. */
+export function markDot(box: LabelBox): LabelBox {
+  dotBoxes.add(box)
+  return box
+}
+
+/** Whether the host published `box` as a dot. */
+export const isDotBox = (box: LabelBox): boolean => dotBoxes.has(box)
+
 /** A box in a share of the plot width and a span of values on an axis with `domain`, as plot px. */
 export function pxBox(box: ValueBox, domain: readonly [number, number], plot: PlotPx): LabelBox {
   const [lo, hi] = [Math.min(...domain), Math.max(...domain)]

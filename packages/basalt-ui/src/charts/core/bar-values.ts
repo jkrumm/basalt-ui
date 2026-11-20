@@ -29,9 +29,22 @@ const OVERHANG = 6
 const SIZE = BASALT.text.micro
 /** The centre of a clamped value's row from the plot's edge: its box clears the edge's gridline. */
 const CLAMPED_ROW = Math.max(CARET_SIZE / 2, lineHeight(SIZE) / 2 + 2)
+/** Air two value labels keep between their boxes, px: a box is the line, and a line against a line reads as touching. */
+const LABEL_AIR = 1.5
+/** How far a label may overlap the body of the bar beside its own, px: the text estimate errs wide, and a body the label grazes by a few px still reads as the neighbour's. */
+const BODY_TOLERANCE = 3
 /** The least side of a text-sized box, px: a rule is 4 px thick and a line path piece under 11, a caption is 13 and more. */
 const CAPTION_MIN_PX = 12
 type Side = 'left' | 'right'
+
+/** The boxes with `LABEL_AIR` more on every side: what the next label keeps clear of. */
+const aired = (boxes: readonly LabelBox[]): LabelBox[] =>
+  boxes.map((b) => ({
+    left: b.left - LABEL_AIR,
+    top: b.top - LABEL_AIR,
+    width: b.width + 2 * LABEL_AIR,
+    height: b.height + 2 * LABEL_AIR,
+  }))
 
 /** One bar (or one stack end) to label. */
 type Candidate<X extends ChartX> = {
@@ -306,11 +319,38 @@ export function barValueLabels<T, X extends ChartX>(
       return [end]
     return [end, `${end}-right`, `${end}-left`, 'right', 'left']
   }
+  // The bodies of the grouped bars among the obstacles are shaved at both sides: at a phone's width the slots
+  // are narrower than a label, and a label above its bar may graze the body beside it.
+  const bodies = found.flatMap((c): LabelBox[] =>
+    c.id === undefined || c.clamped
+      ? []
+      : [
+          {
+            left: c.anchor.x - c.body.width / 2,
+            top: c.up ? c.edge : c.edge - c.body.height,
+            width: c.body.width,
+            height: c.body.height,
+          },
+        ],
+  )
+  const isBody = (b: LabelBox): boolean =>
+    bodies.some(
+      (x) =>
+        Math.abs(x.left - b.left) < 1.5 &&
+        Math.abs(x.width - b.width) < 1.5 &&
+        Math.abs(x.top - b.top) < 1.5 &&
+        Math.abs(x.height - b.height) < 1.5,
+    )
+  const shaved = input.obstacles.map((b) =>
+    isBody(b) && b.width > 2 * BODY_TOLERANCE + 4
+      ? { ...b, left: b.left + BODY_TOLERANCE, width: b.width - 2 * BODY_TOLERANCE }
+      : b,
+  )
   const outside = placeWith(
     measure,
     found.map((c, i) => label(c, i, outsideSpots(c, i))),
     input.frame,
-    { gap: GAP, obstacles: input.obstacles, size: SIZE },
+    { gap: GAP, obstacles: shaved, size: SIZE, air: LABEL_AIR },
   )
   const taken = new Set(outside.placed.map((p) => p.key))
   // A stack total never goes inside its stack: it sits above it, or it is dropped.
@@ -322,7 +362,8 @@ export function barValueLabels<T, X extends ChartX>(
       measure,
       c.text,
       {
-        width: Math.min(slot + 2 * INSIDE_PAD, c.body.width + 2 * OVERHANG),
+        // The text itself may fill the slot (and the bar's width less than its overhang), air at the ends or not.
+        width: Math.min(slot + INSIDE_PAD, c.body.width + 2 * OVERHANG) + 2 * INSIDE_PAD,
         height: c.body.height + 2 * INSIDE_PAD,
       },
       { size: SIZE, pad: INSIDE_PAD },
@@ -342,7 +383,8 @@ export function barValueLabels<T, X extends ChartX>(
   )
   const inside = placeWith(measure, fitting, input.frame, {
     gap: INSIDE_PAD,
-    obstacles: [...input.clear, ...outside.placed],
+    obstacles: [...input.clear, ...aired(outside.placed)],
+    air: LABEL_AIR,
     size: SIZE,
   })
   // A named bar still without a label takes any spot clear of the other labels, over a rule or a
@@ -357,6 +399,8 @@ export function barValueLabels<T, X extends ChartX>(
   const rescue = (
     obstacles: readonly LabelBox[],
     keep: (c: Candidate<X>, i: number) => boolean,
+    /** Air kept from the labels already placed: none for the last pass of a label that names the answer. */
+    air = LABEL_AIR,
   ): ReturnType<typeof placeWith<string>> => {
     const pending = new Set([...standing, ...earlier.map((p) => p.key)])
     const got = placeWith(
@@ -369,7 +413,13 @@ export function barValueLabels<T, X extends ChartX>(
       input.frame,
       {
         gap: GAP,
-        obstacles: [...outside.placed, ...inside.placed, ...earlier, ...obstacles],
+        obstacles: [
+          ...(air === 0
+            ? [...outside.placed, ...inside.placed, ...earlier]
+            : aired([...outside.placed, ...inside.placed, ...earlier])),
+          ...obstacles,
+        ],
+        air,
         size: SIZE,
       },
     )
@@ -384,37 +434,50 @@ export function barValueLabels<T, X extends ChartX>(
   // line at a time: still centred over its own stack, never inside it, and off the rule.
   const lifted: PlacedLabel<string>[] = []
   const liftStep = lineHeight(SIZE)
-  for (let step = 1; step * liftStep < input.frame.height; step++) {
-    const reached = new Set([...standing, ...earlier.map((p) => p.key)])
-    const pending = found.flatMap((c, i) =>
-      c.id === undefined && named.has(String(i)) && !c.clamped && !reached.has(String(i))
-        ? [
-            {
-              ...label(c, i, [c.up ? 'above' : 'below']),
-              y: c.anchor.y + (c.up ? -1 : 1) * step * liftStep,
-            },
-          ]
-        : [],
-    )
-    if (pending.length === 0) break
-    const got = placeWith(measure, pending, input.frame, {
-      gap: GAP,
-      obstacles: [...outside.placed, ...inside.placed, ...earlier, ...input.obstacles],
-      size: SIZE,
-    }).placed
-    lifted.push(...got)
-    earlier.push(...got)
+  const climb = (
+    pick: (c: Candidate<X>, i: number) => boolean,
+    obstacles: readonly LabelBox[],
+  ): void => {
+    for (let step = 1; step * liftStep < input.frame.height; step++) {
+      const reached = new Set([...standing, ...earlier.map((p) => p.key)])
+      const pending = found.flatMap((c, i) =>
+        pick(c, i) && !c.clamped && !reached.has(String(i))
+          ? [
+              {
+                ...label(c, i, [c.up ? 'above' : 'below']),
+                y: c.anchor.y + (c.up ? -1 : 1) * step * liftStep,
+              },
+            ]
+          : [],
+      )
+      if (pending.length === 0) break
+      const got = placeWith(measure, pending, input.frame, {
+        gap: GAP,
+        obstacles: [...aired([...outside.placed, ...inside.placed, ...earlier]), ...obstacles],
+        air: LABEL_AIR,
+        size: SIZE,
+      }).placed
+      lifted.push(...got)
+      earlier.push(...got)
+    }
   }
+  climb((c, i) => c.id === undefined && named.has(String(i)), input.obstacles)
   rescue(
     input.clear.filter((b) => Math.min(b.width, b.height) >= CAPTION_MIN_PX),
     namedBar,
   )
   rescue([], namedBar)
+  // A named bar still without a label (every spot beside it is a neighbour's label or body) climbs above them,
+  // centred over its own bar: the answer is never dropped, and no label is written over another.
+  climb((c, i) => c.id !== undefined && named.has(String(i)), shaved)
+  // The last pass of a label that names the answer: any spot above its bar clear of the other labels' boxes,
+  // their air given up (a label squeezed between two others is still readable, a dropped one is not).
+  rescue([], namedBar, 0)
   rescue(input.clear, (c, i) => c.id === undefined && !named.has(String(i)))
   const rescued = { placed: earlier }
   // A clamped bar's value is never dropped: beside its body in the caret's row, the right side
   // first, then the left; over the bar under its caret when neither side has room.
-  const others = [...outside.placed, ...rescued.placed, ...inside.placed]
+  const others = aired([...outside.placed, ...rescued.placed, ...inside.placed])
   const right = placeWith(
     measure,
     found.flatMap((c, i) =>
@@ -423,7 +486,7 @@ export function barValueLabels<T, X extends ChartX>(
         : [],
     ),
     input.frame,
-    { gap: GAP, obstacles: [...input.obstacles, ...others], size: SIZE },
+    { gap: GAP, obstacles: [...input.obstacles, ...others], size: SIZE, air: LABEL_AIR },
   )
   const beside = new Set([...standing, ...right.placed.map((p) => p.key)])
   const left = placeWith(
@@ -434,7 +497,12 @@ export function barValueLabels<T, X extends ChartX>(
         : [],
     ),
     input.frame,
-    { gap: GAP, obstacles: [...input.obstacles, ...others, ...right.placed], size: SIZE },
+    {
+      gap: GAP,
+      obstacles: [...input.obstacles, ...others, ...aired(right.placed)],
+      size: SIZE,
+      air: LABEL_AIR,
+    },
   )
   const settled = new Set([...beside, ...left.placed.map((p) => p.key)])
   // Under the caret, row by row down the bar, the first row clear of the other labels and the zone
@@ -462,7 +530,12 @@ export function barValueLabels<T, X extends ChartX>(
     if (pending.length === 0) break
     const got = placeWith(measure, pending, input.frame, {
       gap: INSIDE_PAD,
-      obstacles: [...input.clear, ...others, ...right.placed, ...left.placed, ...overPlaced],
+      obstacles: [
+        ...input.clear,
+        ...others,
+        ...aired([...right.placed, ...left.placed, ...overPlaced]),
+      ],
+      air: LABEL_AIR,
       size: SIZE,
     })
     overPlaced.push(...got.placed)

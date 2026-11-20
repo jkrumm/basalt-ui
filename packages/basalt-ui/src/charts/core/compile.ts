@@ -46,12 +46,14 @@ import {
 } from './axis-ext'
 import { barValueLabels } from './bar-values'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
-import { spreadAlong } from './spread'
+import { spreadPoints } from './spread'
+import type { SpreadPlace } from './spread'
 import { claimedLabelBoxes } from '../labels'
-import { estimateWidth } from '../label-place'
+import { estimateWidth, lineHeight } from '../label-place'
 import type { LabelBox as PxBox } from '../chart-labels'
 import {
   captionPx,
+  markDot,
   pathBoxes,
   pxBox,
   ruleBoxes,
@@ -86,8 +88,8 @@ import {
   yTitleScale,
 } from '../axis-gaps'
 import type { XRefLabelBox } from '../axis-gaps'
-import { xTickOpacity, yTickOpacity } from './readout-clear'
-import type { Corner } from './readout-clear'
+import { chipCoversTick, chipRepeatsTick, xTickOpacity, yTickOpacity } from './readout-clear'
+import type { Corner, XTickLabel } from './readout-clear'
 import {
   AREA_BOTTOM,
   AREA_TOP,
@@ -622,23 +624,20 @@ export function xTickFormat(
   return (v) => (v instanceof Date ? dateFormat(v) : plain(v))
 }
 
-export function xGuide<X extends ChartX>(opts: {
+/** What the x axis' tick labels are built from: the scale, the caller's ticks and format, the class and the chart's width. */
+type XTickSetupOpts<X extends ChartX> = {
   model: XScaleModel<X>
   xTicks: number | readonly X[] | undefined
   /** A consumer's formatter; absent, Date ticks get the span-aware {@link xTickFormat}. */
   format?: ((v: ChartValue) => string) | undefined
-  /** The axis name, drawn centred under the ticks by the engine's own axis label. */
-  title?: string | undefined
   cls: ContainerClass
   /** The locale the default tick text reads; absent, the format defaults'. */
   locale?: string | undefined
   /** The chart's width in px: a band axis anchors a label wider than its slot to the plot edge. */
   width?: number | undefined
-  /** What the hover's x readout prints; given, the tick under the readout is blanked while it shows. */
-  readout?: ((v: ChartValue) => string) | undefined
-  /** The plot's lower-left corner; given with `readout`, the first tick is blanked while the y chip sits over it. */
-  corner?: Corner | undefined
-}): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
+}
+
+function xTickSetup<X extends ChartX>(opts: XTickSetupOpts<X>) {
   const { model, xTicks, cls } = opts
   const ladder = LADDER[cls]
   const ticks = xTickPolicy(model, xTicks ?? ladder.xTicks, xTicks !== undefined)
@@ -666,6 +665,48 @@ export function xGuide<X extends ChartX>(opts: {
   }
   const dx = ({ value }: { value: ChartValue }) =>
     model.band ? bandEdgeShift(model, value, format(value), opts.width) : undefined
+  return { ticks, format, anchor, dx }
+}
+
+/**
+ * The x tick labels the axis prints, as the readout's coverage check reads them: each tick's value, text,
+ * anchor and shift. A number axis with a tick count has the ticks d3 picks for it (the engine may thin them).
+ */
+export function xTickLabelList<X extends ChartX>(opts: XTickSetupOpts<X>): readonly XTickLabel[] {
+  return tickLabelsOf(opts.model, xTickSetup(opts))
+}
+
+function tickLabelsOf<X extends ChartX>(
+  model: XScaleModel<X>,
+  { ticks, format, anchor, dx }: ReturnType<typeof xTickSetup>,
+): readonly XTickLabel[] {
+  const { extent } = model
+  const values: readonly ChartValue[] =
+    'values' in ticks
+      ? ticks.values
+      : extent === undefined
+        ? []
+        : scaleLinear().domain([extent[0], extent[1]]).ticks(ticks.count)
+  return values.map((value) => ({
+    value,
+    text: format(value),
+    anchor: anchor({ value }),
+    dx: dx({ value }),
+  }))
+}
+
+export function xGuide<X extends ChartX>(
+  opts: XTickSetupOpts<X> & {
+    /** The axis name, drawn centred under the ticks by the engine's own axis label. */
+    title?: string | undefined
+    /** What the hover's x readout prints; given, the tick under the readout is blanked while it shows. */
+    readout?: ((v: ChartValue) => string) | undefined
+    /** The plot's lower-left corner; given with `readout`, the first tick is blanked while the y chip sits over it. */
+    corner?: Corner | undefined
+  },
+): Omit<ChartPositionScaleOptions<ChartValue>, 'scale'> {
+  const setup = xTickSetup(opts)
+  const { ticks, format, anchor, dx } = setup
   return {
     axis: {
       line: AXIS_LINE,
@@ -684,6 +725,7 @@ export function xGuide<X extends ChartX>(opts: {
               fontSize: TICK_FONT,
               width: opts.width,
               corner: opts.corner,
+              ticks: tickLabelsOf(opts.model, setup),
             })
           : 1,
         thin: { minGap: TICK_MIN_GAP },
@@ -1106,6 +1148,8 @@ const MAX_ZONE_ROWS = 24
 const MAX_ZONE_SIDE_ROWS = 6
 /** How many rows above its top edge and under its bottom edge a zone bounded in y tries for its caption. */
 const MAX_ZONE_EDGE_ROWS = 3
+/** The room a bar's value label takes above its end (below a negative bar's), px: its line and the air under it. */
+const VALUE_HEAD_PX = lineHeight(BASALT.text.micro) + 3
 /** The share of a bar slot kept between two grouped bars (`group({ padding })` in `bars-marks`). */
 const GROUP_PADDING = 0.1
 
@@ -1242,7 +1286,7 @@ const refLabelMark = <T, X extends ChartX>(
  * caption: inside the zone at its top-start corner; after the zone, then before it, when the
  * caption is wider than the zone, and never over another zone; dropped when no spot stays in the
  * plot clear of the reference captions, the zone captions placed before it, the end labels, the
- * page's own labels and every line and rule; a spot clear of the bars and dots is preferred. Reads the plot size,
+ * page's own labels, every line and rule, every bar and dot and the room a bar's value label takes. Reads the plot size,
  * so only a chart with a zone caption pays the measured re-render.
  */
 const xZoneLabelMarks = <T, X extends ChartX>(
@@ -1336,20 +1380,18 @@ const xZoneLabelMarks = <T, X extends ChartX>(
         bottom: edge + rowBottom + offset(spot),
       }
     }
-    // A caption sits where no line or rule passes through its box, or it is dropped: a struck-through
-    // caption reads worse than none, and the zone's fill still shows what it spans. `marks` 1 lets a bar
-    // or a dot sit under it when no spot is clear of them: a zone that names the answer keeps its caption.
-    const fits = (s: Spot, marks: 0 | 1): boolean =>
+    // A caption sits where no line, rule, bar, dot or bar value passes through its box, or it is dropped: a
+    // struck-through or overprinted caption reads worse than none, and the zone's fill still shows what it spans.
+    const fits = (s: Spot): boolean =>
       s.left >= 0 &&
       s.left + width <= (s.inside ? x1 - REF_LABEL_DX : plotWidth) &&
       (s.inside || !neighbours.some((o) => boxesMeet(boxOf(s), o))) &&
       (s.inside || (pxOf(s).top >= 0 && pxOf(s).bottom <= plotHeight)) &&
       !avoid().some((b) => boxesMeet(boxOf(s), b)) &&
-      (marks === 1 || !ctx.xBlocked(pxOf(s))) &&
+      !ctx.xBlocked(pxOf(s)) &&
       !ctx.lineHits(pxOf(s))
     // Before the plot is measured the caption keeps its first spot.
-    const spot =
-      plotWidth <= 0 ? spots[0] : (spots.find((s) => fits(s, 0)) ?? spots.find((s) => fits(s, 1)))
+    const spot = plotWidth <= 0 ? spots[0] : spots.find(fits)
     if (spot === undefined) return []
     if (plotWidth > 0) ctx.placed.left.push(boxOf(spot))
     return [
@@ -1595,9 +1637,10 @@ function rowsOf<T, X extends ChartX>(
 
 /**
  * `rows` with each `spread` dot series' rows moved apart where they would overlap
- * (`spreadAlong`, in plot pixels). Only the drawn position moves: `datum` still reads the true value
+ * (`spreadPoints`, in plot pixels). Only the drawn position moves: `datum` still reads the true value
  * for the tooltip and the readout. An x spread needs a linear x (a number or a time); on a band, point
- * or log x the dots stay where they are.
+ * or log x the dots stay where they are. A y spread of a column too dense to part along y also steps
+ * its dots sideways on a linear x, so the column swells to a swarm instead of drawing one solid bar.
  */
 function spreadRowsOf<T, X extends ChartX>(
   rows: (key: string) => PlotRow<T, X>[],
@@ -1636,24 +1679,36 @@ function spreadRowsOf<T, X extends ChartX>(
       if (row.y === null || f === null) continue
       live.push({ row, px: f * plotWidth, py: yPx(row.y) })
     }
-    const placed = spreadAlong(
+    const placed = spreadPoints(
       live.map((p) =>
         axis === 'x' ? { along: p.px, across: p.py, r } : { along: p.py, across: p.px, r },
       ),
-      axis === 'x' ? plotWidth : plotHeight,
+      axis === 'x'
+        ? { along: plotWidth, across: plotHeight }
+        : { along: plotHeight, across: xLinear ? plotWidth : 0 },
     )
-    const moved = new Map(live.map((p, i) => [p.row, placed[i] as number]))
+    const moved = new Map(live.map((p, i) => [p.row, { to: placed[i] as SpreadPlace, p }]))
     const toX = (px: number): X => {
       const [from, to] = extent ?? [0, 1]
       const v = from + (px / plotWidth) * (to - from)
       return (model.kind === 'date' ? new Date(v) : v) as unknown as X
     }
+    const toY = (py: number): number => hi - (py / plotHeight) * (hi - lo)
     const out = drawn.map((row) => {
-      const to = moved.get(row)
-      if (to === undefined) return row
-      return axis === 'x'
-        ? { ...row, x: toX(to) }
-        : { ...row, y: hi - (to / plotHeight) * (hi - lo) }
+      const at = moved.get(row)
+      if (at === undefined) return row
+      const { to, p } = at
+      if (axis === 'x')
+        return {
+          ...row,
+          x: toX(to.along),
+          ...(to.across !== p.py && { y: toY(to.across) }),
+        }
+      return {
+        ...row,
+        y: toY(to.along),
+        ...(to.across !== p.px && { x: toX(to.across) }),
+      }
     })
     memo.set(key, out)
     return out
@@ -1865,8 +1920,10 @@ export function crosshairGuide<T, X extends ChartX>(opts: {
   pinned: boolean
   formatX: (v: ChartValue) => string
   formatY: ((v: number) => string) | null
+  /** What the chip text `text` of `v` does to the x tick labels: it only repeats one, or it would cover one. */
+  clashOf?: ((v: ChartValue, text: string) => 'repeats' | 'covers' | null) | undefined
 }): { x: object | false; y: object | false } | null {
-  const { input, pinned, formatX, formatY } = opts
+  const { input, pinned, formatX, formatY, clashOf } = opts
   const xLabelled = labelsX(input)
   const rule = input.crosshair !== false
   if (!pinned) return rule ? { x: CROSSHAIR, y: false } : null
@@ -1876,15 +1933,44 @@ export function crosshairGuide<T, X extends ChartX>(opts: {
     label: xLabelled
       ? {
           ...GUIDE_LABEL,
-          format: (v: ChartValue) =>
-            followsChart(input.cursorGroup, input.chartId) ? '' : formatX(v),
+          format: (v: ChartValue) => {
+            if (followsChart(input.cursorGroup, input.chartId)) return ''
+            const text = formatX(v)
+            const clash = clashOf?.(v, text)
+            // The engine blanks a tick under the chip only for the chart that holds the focus; any other chart
+            // drawing a chip (a follower, a chart the keys moved) drops it where it would cover a tick, or
+            // sit over the tick that already prints the reading.
+            if (clash === undefined || clash === null) return text
+            // The engine blanks a tick under the chip only while this chart holds the focus. A chart that tracks
+            // its focus (a `focus` owns its keys: `keyboard` is `false`) and holds none (the pointer is between
+            // its data, or the focused datum is another pane's) has no callback to blank the tick: no chip there.
+            const tracks = input.keyboard === false
+            const { focused } = input
+            const holds =
+              focused !== undefined &&
+              focused !== null &&
+              input.data.includes(focused) &&
+              visibleSeries(input.series, input.hidden ?? new Set<string>()).some((s) => {
+                const v = s.getValue(focused)
+                return v !== null && Number.isFinite(v)
+              })
+            return tracks && !holds ? '' : text
+          },
         }
       : false,
   }
+  // A bar that prints its value labels needs no read-across: the guide at the focused value would run through
+  // the labels of the bars beside it (it struck a neighbour's '4 · 3.4%'), so its chip stands alone.
+  const valued = input.series.some(
+    (s) => s.mark === 'bar' && s.values !== undefined && s.values !== false,
+  )
   const y =
     formatY === null
       ? false
-      : { ...CROSSHAIR, label: { ...GUIDE_LABEL, format: (v: ChartValue) => formatY(Number(v)) } }
+      : {
+          ...(valued ? { strokeOpacity: 0 } : CROSSHAIR),
+          label: { ...GUIDE_LABEL, format: (v: ChartValue) => formatY(Number(v)) },
+        }
   return { x, y }
 }
 
@@ -1962,6 +2048,29 @@ export function compileCartesian<T, X extends ChartX>(
         }),
       )
   }
+  // The room the value label of the largest bar on one axis takes above its end: the label that names the
+  // answer. A caption keeps off it as it keeps off the bar, so no caption takes the spot that value needs
+  // (the other values give way to a caption, as before).
+  const valueHeads = (
+    side: 'left' | 'right' | undefined,
+    domain: readonly [number, number],
+    plotHeight: number,
+  ): LabelBox[] => {
+    const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
+    if (plotHeight <= 0 || hi === lo || input.stack === 'normalized') return []
+    const onSide = visible.filter(
+      (s) => shared.onRight(s) === (side === 'right' && shared.right !== null),
+    )
+    if (!onSide.some((s) => isBar(s) && s.values !== undefined && s.values !== false)) return []
+    const head = (VALUE_HEAD_PX * (hi - lo)) / plotHeight
+    const largest = marksOn(side).bars.reduce<LabelBox | undefined>(
+      (best, b) => (best === undefined || b.y1 > best.y1 ? b : best),
+      undefined,
+    )
+    return largest === undefined || largest.y1 <= 0
+      ? []
+      : [{ fx0: largest.fx0, fx1: largest.fx1, y0: largest.y1, y1: largest.y1 + head }]
+  }
   // A point chart's x domain grown so the dot at either end sits whole inside the clipped plot.
   const dotRoomX = (access: PlotAccess, frameWidth: number): XScaleModel<X> => {
     const { extent } = baseModel
@@ -1997,14 +2106,18 @@ export function compileCartesian<T, X extends ChartX>(
   // The bar bodies and dots a caption must not sit on, on one axis. A stack's body runs to the sum
   // of its positive parts (and down to its negative ones); a grouped bar is taken at the band's full
   // width at its own height, which over-covers by a slot and never under-covers.
-  const marksOn = (side: 'left' | 'right' | undefined): { bars: LabelBox[]; dots: DotMark[] } => {
+  const marksOn = (
+    side: 'left' | 'right' | undefined,
+    /** The rows a dot is drawn at: a spread series' dots are where the spread put them. */
+    dotRows: (key: string) => PlotRow<T, X>[] = rows,
+  ): { bars: LabelBox[]; dots: DotMark[] } => {
     const onSide = visible.filter(
       (s) => shared.onRight(s) === (side === 'right' && shared.right !== null),
     )
     const bodies = new Map<number, { fx: number; up: number; down: number }>()
     const dotMarks: DotMark[] = []
     for (const s of onSide) {
-      for (const r of rows(s.key)) {
+      for (const r of s.mark === 'dot' ? dotRows(s.key) : rows(s.key)) {
         const fx = model.fraction(r.x)
         if (fx === null || r.y === null) continue
         if (s.mark === 'dot')
@@ -2084,12 +2197,16 @@ export function compileCartesian<T, X extends ChartX>(
             y0: hi - box.bottom * perPx,
             y1: hi - box.top * perPx,
           }
-          const { bars, dots } = marksOn('left')
+          const { bars, dots } = marksOn('left', spreadDrawn(plotWidth, plotHeight))
           return (
             bars.some((b) => boxesMeet(at, b)) ||
+            valueHeads('left', axes.left.domain, plotHeight).some((b) => boxesMeet(at, b)) ||
             dots.some((d) => boxesMeet(at, dotBox(d, plotWidth, perPx)))
           )
         }
+      // The rows the dots are drawn at in a plot of this size: a spread series' dots are moved apart.
+      const spreadDrawn = (plotWidth: number, plotHeight: number) =>
+        spreadRowsOf(rows, input, { visible, model, axes, plotWidth, plotHeight })
       let captions: RefLabelContext<T, X> | undefined
       let lineMemo: PxBox[] | undefined
       // The labels a page's own marks landed: the captions placed after them keep clear of these.
@@ -2125,7 +2242,15 @@ export function compileCartesian<T, X extends ChartX>(
           plotWidth,
           plotHeight: size?.height ?? height,
           lines: linesOn,
-          marks: marksOn,
+          marks: (side) => {
+            const found = marksOn(side, spreadDrawn(plotWidth, size?.height ?? height))
+            const heads = valueHeads(
+              side,
+              axes.axisOf(side === 'right' ? 'right' : 'left').domain,
+              size?.height ?? height,
+            )
+            return heads.length === 0 ? found : { ...found, bars: [...found.bars, ...heads] }
+          },
           xBlocked: marksBlock,
           lineHits,
           get claimed() {
@@ -2197,7 +2322,7 @@ export function compileCartesian<T, X extends ChartX>(
             if (row.y === null || fx === null || !Number.isFinite(row.y)) return []
             const cx = fx * frame.width
             const cy = ((Math.max(lo, hi) - row.y) / span) * frame.height
-            return [{ left: cx - r, top: cy - r, width: 2 * r, height: 2 * r }]
+            return [markDot({ left: cx - r, top: cy - r, width: 2 * r, height: 2 * r })]
           })
         })
       }
@@ -2398,11 +2523,34 @@ export function compileCartesian<T, X extends ChartX>(
               labels: capLabels,
             })
       xChipDrawn = cls !== 'micro' && input.bare !== true && labelsX(input)
+      // The tick labels the chip may cover, read the first time a chip is drawn.
+      let tickLabels: ReturnType<typeof xTickLabelList> | undefined
       const guide = crosshairGuide({
         input,
         pinned: cls !== 'micro' && input.bare !== true,
         formatX,
         formatY: axes.right === null ? axes.axisOf('left').format : null,
+        clashOf: (v, text) => {
+          tickLabels ??= xTickLabelList({
+            model,
+            xTicks: input.xTicks,
+            format: tickFormatOf(input, formatX),
+            cls,
+            locale: input.locale,
+            width,
+          })
+          if (chipRepeatsTick(v, text, tickLabels)) return 'repeats'
+          return chipCoversTick({
+            value: v,
+            readoutText: text,
+            fontSize: TICK_FONT,
+            plotWidth: Math.max(0, width - Y_GUTTER),
+            share: (value) => model.fraction(value as X),
+            ticks: tickLabels,
+          })
+            ? 'covers'
+            : null
+        },
       })
       const offScale = offScaleMarks({
         labels: capLabels,

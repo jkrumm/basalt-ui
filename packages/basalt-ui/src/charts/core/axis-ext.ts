@@ -109,6 +109,8 @@ const INSIDE_GAP = 1
 const INSIDE_PAD = 2
 /** Air between a clamped bar's end and the value written beside it, px. */
 const BESIDE_GAP = 2
+/** The least side of a text-sized box, px: a rule is 4 px thick and a line path piece under 11, a caption is 13 and more. */
+const TEXT_BOX_MIN_PX = 12
 
 /**
  * The true values of the marks held on the plot's edge, one text mark per series and side: each is
@@ -279,6 +281,26 @@ function capValueMarks(
           : undefined,
       { gap: INSIDE_PAD, obstacles: all },
     )
+  // Still pending: every spot clear of the lines and rules is taken (a spike's own line runs under its caret
+  // and the plot's top is full). A clamped value is never dropped for a line: it stands beside its caret,
+  // right then left, row by row down from the edge, clear of every label, caption and caret, over a line
+  // if it must. It never overprints another text.
+  const texts = [...(opts.clear ?? opts.obstacles)()].filter(
+    (b) => Math.min(b.width, b.height) >= TEXT_BOX_MIN_PX,
+  )
+  for (let row = 0; row * rowStep < frame.height && pending.size > 0; row++)
+    for (const spot of ['right', 'left'] as const)
+      land(
+        (side, m) =>
+          m.slot === undefined
+            ? {
+                x: m.f * frame.width,
+                y: rim(side) + (side === 'top' ? row : -row) * rowStep,
+                spots: [spot],
+              }
+            : undefined,
+        { gap: BESIDE_GAP, obstacles: [...texts, ...caretBoxes] },
+      )
   if (marks.length === 0) return []
   type Mark = (typeof marks)[number]
   return [

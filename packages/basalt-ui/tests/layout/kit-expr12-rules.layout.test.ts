@@ -67,7 +67,8 @@ layout('a reference rule keeps off the zone captions and the bar values', () => 
       const rules = found.filter((p) => p.kind === 'rule')
       expect(rules.length, 'the rules are drawn').toBe(3)
       const zones = found.filter((p) => p.kind === 'caption' && !/\d$/.test(p.text))
-      expect(zones.length, 'a zone caption is drawn').toBeGreaterThan(0)
+      // These bars fill the plot up to its top rule: a zone caption has no spot clear of the bars here and
+      // is dropped (v3-expr-16-kit-fixes 3: a caption never overprints a bar), so none is required.
       const struck = [...zones, ...found.filter((p) => p.kind === 'label')].flatMap((p) =>
         rules.filter((r) => meet(p.rect, r.rect)).map((r) => `${p.text} meets ${r.text}`),
       )

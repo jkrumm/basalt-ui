@@ -153,7 +153,9 @@ export function spreadLabels(ys: readonly number[], plotHeight: number): number[
  * The end labels to draw. `auto`: on the wide class only, with ≤ {@link MAX_END_LABELS} lines and
  * no right axis; `endLabels`: at every width and any line count (still no right axis, whose
  * series read another scale); `legend`: none. Labels that would collide are spread apart, never
- * dropped. A label the spread moves off its line's end gets a `leader` back to it. A series whose last point the plot's own x scale cannot place, or places outside the plot
+ * dropped, except a label no height clears of the other series' lines (a plot where eight converge): it is
+ * dropped rather than struck through, and the legend names the series. A label the
+ * spread moves off its line's end gets a `leader` back to it. A series whose last point the plot's own x scale cannot place, or places outside the plot
  * (`plot.xFraction` outside [0, 1]: clipped by a narrower `xDomain`), has no label.
  */
 export function endLabelPlan<T, X extends ChartX>(
@@ -182,6 +184,8 @@ export function endLabelPlan<T, X extends ChartX>(
   const again = planEndLabels(plot, lines, naming, rules, new Set(beside))
   const drift = (p: readonly EndLabel<T, X>[]): number =>
     p.reduce((sum, l) => sum + Math.abs(l.nudge), 0)
+  // A plan that keeps more of the labels wins: one that dropped a struck label is not nearer for it.
+  if (again.length !== plan.length) return again.length > plan.length ? again : plan
   return drift(again) < drift(plan) ? again : plan
 }
 
@@ -287,6 +291,21 @@ function planEndLabels<T, X extends ChartX>(
     }),
   )
   const ranges = (i: number): readonly [number, number][] => windowRanges[i] as [number, number][]
+  /** Per label, the ranges of the other series' lines alone: a label's own line and a rule do not drop it. */
+  const rivalRanges = last.map(({ series, fraction }, i) => {
+    // The glyphs' own width (the box above errs wide, for the room a caption keeps): only a line through them strikes.
+    const reach = (END_LABEL_DX + series.label.length * BASALT.text.micro * RETRY_GLYPH_EM) / plotW
+    const edge = END_LABEL_DX / plotW
+    const [x0, x1] =
+      anchors[i] === 'end'
+        ? [fraction - reach, fraction - edge]
+        : [fraction + edge, fraction + reach]
+    return plot.visible.flatMap((s, k) => {
+      if (s.key === series.key) return []
+      const range = yRangeWithin(obstacles[k] as RefLabelPoint[], x0, x1)
+      return range === null ? [] : [range]
+    })
+  })
   /** Where the centre goes to clear the lines on `side` of `start`, stepping past each one it meets. */
   const cleared = (i: number, side: EndLabelSide, start: number): number => {
     const blockers = ranges(i)
@@ -377,9 +396,12 @@ function planEndLabels<T, X extends ChartX>(
     const trial = place(sides)
     if (trial.score > best.score + 0.01) best = trial
   }
-  return last.map(({ series, row }, i) => {
+  return last.flatMap(({ series, row }, i): EndLabel<T, X>[] => {
     const side = best.sides[i] as EndLabelSide
     const centre = best.centres[i] as number
+    // Another line through the label's ink reads worse than no label: nowhere was free, so it is dropped.
+    const rivals = rivalRanges[i] as [number, number][]
+    if (rivals.some(([a, b]) => b > centre - half && a < centre + half)) return []
     const [x0, x1] = spans[i] as readonly [number, number]
     const perPx = (hi - lo) / (plot.plotHeight || 1)
     // Two pixels of margin each way: the caption keeps its own gap from the claimed box.
@@ -395,20 +417,22 @@ function planEndLabels<T, X extends ChartX>(
             thinY: (hi - lo) / (plot.plotHeight || 1),
           }
         : undefined
-    return {
-      series,
-      row,
-      anchor: anchors[i] as EndLabelAnchor,
-      side,
-      nudge: nominal(i, side) - centre,
-      ...(leader !== undefined && { leader }),
-      box: {
-        fx0: x0 - 2 / plotW,
-        fx1: x1 + 2 / plotW,
-        y0: lo + (centre - half - 2) * perPx,
-        y1: lo + (centre + half + 2) * perPx,
+    return [
+      {
+        series,
+        row,
+        anchor: anchors[i] as EndLabelAnchor,
+        side,
+        nudge: nominal(i, side) - centre,
+        ...(leader !== undefined && { leader }),
+        box: {
+          fx0: x0 - 2 / plotW,
+          fx1: x1 + 2 / plotW,
+          y0: lo + (centre - half - 2) * perPx,
+          y1: lo + (centre + half + 2) * perPx,
+        },
       },
-    }
+    ]
   })
 }
 
@@ -444,10 +468,24 @@ export function endLabelMarks<T, X extends ChartX>(
   ])
 }
 
+/**
+ * The hairline of a displaced end label as a box: its two plot fractions and its two values. A line that
+ * ends on the plot's right edge has its stalk just inside it: past the edge the plot clips it away.
+ */
+export function leaderStalk(leader: EndLabelLeader): {
+  f0: number
+  f1: number
+  y0: number
+  y1: number
+} {
+  const { fraction, from, to, thinX } = leader
+  const f0 = Math.min(fraction, 1 - thinX)
+  return { f0, f1: f0 + thinX, y0: Math.min(from, to), y1: Math.max(from, to) }
+}
+
 /** The leader of a displaced end label: a hairline stalk from its line's end up (or down) to the label's height. */
 function leaderMarks(key: string, leader: EndLabelLeader, fill: string): ChartMarks {
-  const { fraction: f, from, to, thinX } = leader
-  const stalk = { f0: f, f1: f + thinX, y0: Math.min(from, to), y1: Math.max(from, to) }
+  const stalk = leaderStalk(leader)
   const channels = {
     x1: 'f0',
     x2: 'f1',
