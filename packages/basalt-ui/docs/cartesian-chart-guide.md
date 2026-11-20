@@ -116,7 +116,9 @@ whole-number count, or the wider of two spans. Focus and readout: `use-chart-foc
 `x.ticks` as a number is the most labels: on a band axis they sit at an even stride that keeps the
 first and the last band (`ticks: 3` over five stages at 390 px); as a list it labels exactly those
 keys. Overlapping labels still thin. `y.format` writes the y tick labels (`2,5`); a series' `format`
-still writes its tooltip value.
+still writes its tooltip value. `x.format` writes the hover readout, the tooltip title and the x
+ticks; `x.tickFormat` takes the ticks alone, so the axis reads `Nov 12` while the readout names
+`Wed, Nov 12, 14:00`.
 
 ## Capping an outlier
 
