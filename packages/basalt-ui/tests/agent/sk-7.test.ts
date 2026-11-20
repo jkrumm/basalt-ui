@@ -30,6 +30,8 @@ const SK7B = ['state', 'forms', 'controls'] as const
 const AI = ['ai'] as const
 /** 2.x reference names the kill dropped; `cards` replaces `stat-tile`. */
 const TABLE = ['table'] as const
+/** Owned by the motion row (Issue 2529, `tests/motion-guide.test.ts`). */
+const MOTION = ['motion'] as const
 
 const DROPPED = ['catalogue', 'encoding-rules', 'recipes', 'stat-tile'] as const
 
@@ -59,7 +61,9 @@ describe('sk-7 references', () => {
 
   test('no file exists for a dropped reference, and nothing else is in the folder', () => {
     for (const name of DROPPED) expect(existsSync(join(refsDir, `${name}.md`))).toBe(false)
-    const expected = [...KEPT, ...SK6, ...SK7B, ...TABLE, ...AI].map((n) => `${n}.md`).toSorted()
+    const expected = [...KEPT, ...SK6, ...SK7B, ...TABLE, ...AI, ...MOTION]
+      .map((n) => `${n}.md`)
+      .toSorted()
     expect(readdirSync(refsDir).toSorted()).toEqual(expected)
   })
 
