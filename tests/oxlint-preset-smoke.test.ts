@@ -29,7 +29,8 @@ import {
   run as eject,
 } from '../packages/basalt-ui/test/fixtures/eject/harness'
 
-import { OXLINT_PRESET_FILE } from '../packages/basalt-ui/src/cli/presets'
+import { parseManifest } from '../packages/basalt-ui/src/cli/manifest'
+import { OXLINT_PRESET_FILE, renderOxlintPreset } from '../packages/basalt-ui/src/cli/presets'
 import plugin from '../packages/basalt-ui/src/lint'
 import { findBlanketDisables } from '../packages/basalt-ui/src/lint/blanket-disable'
 import { tableOf } from '../packages/basalt-ui/src/lint/factory'
@@ -402,6 +403,61 @@ describe('zones and roots', () => {
     expect(at('apps/console/src', 'basalt(raw-scroll)')).toBe(0)
     // tokens: no oxlint rule runs at all.
     expect(found.filter((d) => d.filename.startsWith('apps/share/')).map((d) => d.code)).toEqual([])
+  })
+
+  it('zone B: a declared bespoke directory passes positioned geometry and marks, the same file fails outside it', () => {
+    // A consumer's `.basalt/manifest.json` declaring its game table, through the preset `sync` writes.
+    const read = parseManifest(
+      JSON.stringify({ profile: 'app', version: '3.0.0', bespoke: ['src/table'] }),
+    )
+    if (!('manifest' in read)) throw new Error(read.error)
+    const config = JSON.parse(renderOxlintPreset(read.manifest, PKG) ?? 'null') as object
+    const seats = [
+      "import type { CSSProperties } from 'react'",
+      'type Seat = { id: string; name: string; x: number; y: number }',
+      'export function Seats({ seats }: { seats: readonly Seat[] }) {',
+      '  return (',
+      '    <div className="relative">',
+      '      {seats.map((seat) => (',
+      '        <div',
+      '          key={seat.id}',
+      '          className="absolute left-(--x) top-(--y)"',
+      "          style={{ '--x': `${seat.x}%`, '--y': `${seat.y}%` } as CSSProperties}",
+      '        >',
+      '          {seat.name}',
+      '        </div>',
+      '      ))}',
+      '      <svg viewBox="0 0 100 100" aria-label="Table">',
+      '        {seats.map((seat) => (',
+      '          <circle key={seat.id} cx={seat.x} cy={seat.y} r={4} />',
+      '        ))}',
+      '      </svg>',
+      '      <button type="button">Reveal</button>',
+      '    </div>',
+      '  )',
+      '}',
+    ].join('\n')
+    const dir = project('bespoke', config, {
+      'src/table/seats.tsx': seats,
+      'src/room/seats.tsx': seats,
+    })
+    const found = lint(dir, ['src'])
+    const bypass = (file: string): string[] =>
+      found
+        .filter((d) => d.filename === file && d.code === 'basalt(primitive-bypass)')
+        .map((d) => d.message.split(':')[0] ?? '')
+    // Inside: the geometry and the marks pass; the raw control is still reported.
+    expect(bypass('src/table/seats.tsx')).toEqual(['`<button>`'])
+    // Outside: the same file reports the positioned div and the mapped circles too.
+    expect(bypass('src/room/seats.tsx')).toEqual([
+      '`<div> --x set from a datum`',
+      '`<circle> mapped over data`',
+      '`<button>`',
+    ])
+    // Everything else still lints inside: an inline `left` is no-inline-styles' to report.
+    const inline = 'export const a = (x: number) => <div style={{ left: x }} />'
+    const inlineDir = project('bespoke-inline', config, { 'src/table/inline.tsx': inline })
+    expect(lint(inlineDir, ['src']).map((d) => d.code)).toContain('shadcn(no-inline-styles)')
   })
 
   it('zone E turns no-restyle off in an ejected file and keeps it on at the call site', () => {
