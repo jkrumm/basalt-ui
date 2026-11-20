@@ -212,7 +212,7 @@ describe('manifest bespoke (zone B)', () => {
     expect('manifest' in parsed && parsed.manifest.bespoke).toEqual(['src/table'])
     const bare = parseManifest(JSON.stringify({ profile: 'app', version: '3.0.0' }))
     expect('manifest' in bare && bare.manifest.bespoke).toBeUndefined()
-    for (const dir of ['.', './', 'src/**', '../table', '/abs']) {
+    for (const dir of ['.', './', './.', '././', 'src/**', '../table', '/abs']) {
       expect([
         dir,
         'error' in parseManifest(JSON.stringify({ profile: 'app', bespoke: [dir] })),
