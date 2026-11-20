@@ -17,3 +17,12 @@ else English and UTC. Built on first use, not when the provider mounts.
 ```ts
 useFormat(): Format
 ```
+
+## Example
+
+```tsx
+const f = useFormat()
+f.duration(45_000_000, 'words') // '12 hr 30 min', not the clock's '12:30:00'
+f.date(day, 'day') // 'Nov 12': a day and month, no year
+f.date(day) // 'Nov 12, 2026'
+```

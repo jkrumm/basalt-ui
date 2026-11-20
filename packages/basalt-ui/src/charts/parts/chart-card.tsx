@@ -241,8 +241,9 @@ const hasNoRows = (phase: object): boolean => {
  * The frame every chart sits in: a header (icon, title, definition glyph, subtitle, controls, menu),
  * an inset holding the headline figure with its delta, period and verdict over the chart box, and an
  * optional footer of at most two facts. It owns the box and the phase: `chart` is a box slot called
- * only in `ready` and `stale`, in a fixed clipping box, so a taller chart cannot move the card and a
- * loading, empty or error card is as tall as a ready one. With `phase="loading"` and no `chart` it is
+ * only in `ready` and `stale`, in a clipping box the card sizes (its `height`, grown to a stretched
+ * grid row), so a taller chart cannot move the card and a loading, empty or error card is as tall as
+ * a ready one. With `phase="loading"` and no `chart` it is
  * a Suspense fallback that draws the same rows. A kind draws its own legend, in the server HTML; marks
  * a page draws through the seam take theirs from `legend`, a row between the figure and the box that
  * is drawn in every phase, so loading does not move the box.

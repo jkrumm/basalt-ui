@@ -295,7 +295,7 @@ export type PhaseBoxProps = {
 }
 
 /**
- * The chart box: one fixed clipping box whose height the card chose, holding the skeleton, the
+ * The chart box: one clipping box whose height the card chose (grown to a stretched grid row), holding the skeleton, the
  * offline line, the error arm, the empty arm or the chart. The slot is called only in `ready` and `stale`; whatever it
  * draws is clipped, so a taller chart cannot move the card.
  */
