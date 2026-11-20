@@ -137,6 +137,8 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   // `BasaltProvider` and the route-aware views read the router; the data layer is TanStack Query's.
   './router': ['@tanstack/react-router'],
   './data': ['@tanstack/react-query'],
+  // `useAppForm` is `createFormHook`; its `FormField` draws `ui/field`, which wraps Base UI.
+  './form': ['@tanstack/react-form', '@base-ui/react'],
   './vite': ['vite'],
   [CHART_SUBPATH]: ['@tanstack/charts', 'd3-scale'],
 }

@@ -287,6 +287,15 @@ export const SURFACES = {
     globs: { shipped: [], repo: ['packages/basalt-ui/src/data/**'] },
     forbiddenImports: [],
   },
+  './form': {
+    kind: 'tooling',
+    layer: 'ui',
+    description:
+      "basalt's form parts bound to TanStack Form through createFormHook: useAppForm (FormField on every AppField, Form and Footer inside AppForm, blur-then-change revalidation by default), withForm, withFieldGroup, extendForm",
+    optionalPeers: ['@tanstack/react-form'],
+    globs: { shipped: [], repo: ['packages/basalt-ui/src/form/**'] },
+    forbiddenImports: [],
+  },
   './page': {
     kind: 'tooling',
     layer: 'headless',

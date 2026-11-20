@@ -73,7 +73,7 @@ export const rows: readonly RowDef[] = [
     order: 40,
     label: 'published subpaths (package.json exports)',
     // 2.0 target 15.
-    ceiling: 28, // `./archify.css` (raise row below); was 27: v3 teardown-peers: the count after `./format` retired with src/format (the 2.x subpaths are gone; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router)
+    ceiling: 29, // `./form` (raise row below); was 28: `./archify.css` (raise row below); was 27: v3 teardown-peers: the count after `./format` retired with src/format (the 2.x subpaths are gone; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router)
     measure: () => Object.keys(readManifest().exports ?? {}).length,
   },
 ]
@@ -451,6 +451,13 @@ export const raises: Raises = {
     },
   ],
   subpaths: [
+    {
+      from: 28,
+      to: 29,
+      consumer:
+        '`./form` (`useAppForm`, `withForm`, `withFieldGroup` on `@tanstack/react-form`, an optional peer the barrel rule keeps out of `./controls`): the playground forms move to it (apps/playground/src/routes/kit/forms), and FPP takes it for its three forms (owner note of 2026-11-20 on Issue 2525)',
+      repo: 'basalt-ui',
+    },
     {
       from: 27,
       to: 28,
