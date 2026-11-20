@@ -3,7 +3,7 @@
  * definition's ticks and fonts. Nothing here sizes the box: `box.tsx` and `chart-box.module.css`
  * own the height in CSS so it exists before JS runs (W10 SSR contract).
  */
-import { useCallback, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useRef, useState } from 'react'
 import type { RefCallback } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { useCoarsePointer } from '../common/use-media-query'
@@ -12,6 +12,17 @@ import { useCoarsePointer } from '../common/use-media-query'
  * class, so SSR markup and the first client frame agree. Only the svg's internal geometry follows
  * the real width; the box around it is already final. */
 export const INITIAL_WIDTH = 640
+
+/**
+ * The frame the server picture is drawn for, before anything is measured: {@link INITIAL_WIDTH} wide,
+ * or what an enclosing frame (a `ChartCard`'s box, a pane) leaves of it, with the height a box that
+ * fills its parent (`height: 'fill'`) gets, which only that frame knows.
+ */
+export type ServerFrame = { width: number; height?: number | undefined }
+
+export const ServerFrameContext = createContext<ServerFrame>({ width: INITIAL_WIDTH })
+
+export const useServerFrame = (): ServerFrame => useContext(ServerFrameContext)
 
 /** Measures the width of the element `ref` lands on (`0` until measured, e.g. on the server). */
 export function useChartSize(): {

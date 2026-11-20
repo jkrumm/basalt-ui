@@ -8,6 +8,8 @@ import { DeltaBadge } from '../../ui/badge'
 import { CardHiddenContext, ChartCardContext } from '../card-context'
 import { isolatedKeys, toggledKeys } from '../legend'
 import type { ChartCardProps, ChartFigure } from '../contract'
+import { INITIAL_WIDTH, ServerFrameContext } from '../sizing'
+import type { ServerFrame } from '../sizing'
 import { Footer, formatValue, Head, PhaseBox, SURFACE } from './chart-card-frame'
 import { ChartPanes } from './chart-panes'
 import { Legend } from './legend'
@@ -29,6 +31,22 @@ const BOX = {
   short: 'h-40 shrink-0 grow',
   fill: 'min-h-40 flex-1',
 } as const
+
+/** The card's `--card-edge` from the narrow class up: 1rem at the default root size. */
+const CARD_EDGE_PX = 16
+const halfWidth = (floor: number): number => Math.min(420, Math.max(floor, INITIAL_WIDTH / 2))
+
+/**
+ * The box of a card {@link INITIAL_WIDTH} wide, the frame its chart's server picture is drawn for:
+ * the card's width less its two edges, and {@link BOX}'s height at that card width. A `fill` box is
+ * the card's remainder, which only the page's layout knows.
+ */
+const SERVER_FRAME: Record<keyof typeof BOX, ServerFrame> = {
+  auto: { width: INITIAL_WIDTH - 2 * CARD_EDGE_PX, height: halfWidth(192) },
+  tall: { width: INITIAL_WIDTH - 2 * CARD_EDGE_PX, height: halfWidth(288) },
+  short: { width: INITIAL_WIDTH - 2 * CARD_EDGE_PX, height: 160 },
+  fill: { width: INITIAL_WIDTH - 2 * CARD_EDGE_PX },
+}
 
 const DOT: Record<Verdict['tone'], string> = {
   good: 'bg-good',
@@ -373,16 +391,18 @@ export function ChartCard(props: ChartCardProps): ReactElement {
                   />
                 </div>
               )}
-              <PhaseBox
-                title={props.title}
-                resolved={effective}
-                chart={chart}
-                className={cn(
-                  (shownFigure !== undefined || (legend !== undefined && legend.length > 0)) &&
-                    'mt-2',
-                  BOX[height],
-                )}
-              />
+              <ServerFrameContext value={SERVER_FRAME[height]}>
+                <PhaseBox
+                  title={props.title}
+                  resolved={effective}
+                  chart={chart}
+                  className={cn(
+                    (shownFigure !== undefined || (legend !== undefined && legend.length > 0)) &&
+                      'mt-2',
+                    BOX[height],
+                  )}
+                />
+              </ServerFrameContext>
             </div>
             <Footer
               facts={shownFooter}

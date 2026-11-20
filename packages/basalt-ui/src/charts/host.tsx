@@ -3,13 +3,18 @@
  * (a `no-restricted-imports` override in `/.oxlintrc.json`). It knows a compiled definition, a size and an accessible name, and
  * nothing about legends, placeholders or cards (`docs/V2-SPEC.md` § 9.2).
  *
- * The engine is never given a height: it fills a CSS-owned {@link ChartBox} and measures it, so the
- * box is final in the server HTML and hydration only redraws the svg inside it (W10).
+ * The engine fills a CSS-owned {@link ChartBox} and measures it, so the box is final in the server
+ * HTML and hydration only redraws the svg inside it (W10). The server svg is drawn for the server
+ * frame (`useServerFrame`: `INITIAL_WIDTH`, or what a card leaves of it), and only the server pass
+ * (the server render and the hydration render that must match it) hands the engine the height the
+ * box resolves to in that frame, so the picture is the box's size rather than the engine's 640 x 320
+ * scaled into it; once hydrated the engine measures the box again. Text is measured from
+ * basalt's label widths on both sides ({@link measureChartText}), so the gutters agree.
  */
 import { Chart } from '@tanstack/charts/react'
 import type { ChartProps } from '@tanstack/charts/react'
 import type { ChartValue } from '@tanstack/charts/types/core'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import type { CartesianDefinition } from './core/compile'
 import {
@@ -20,9 +25,10 @@ import {
   watchPlotReads,
 } from './core/plot-context'
 import type { PlotSizes } from './core/plot-context'
-import { ChartBox } from './box'
+import { boxHeightAt, ChartBox } from './box'
 import type { ChartBoxHeight } from './box'
-import { INITIAL_WIDTH } from './sizing'
+import { useServerFrame } from './sizing'
+import { measureChartText } from './text-measure'
 
 export type ChartEngineProps = {
   definition: CartesianDefinition
@@ -56,6 +62,15 @@ const HOST_STYLE: CSSProperties = {
 }
 const COARSE_STYLE: CSSProperties = { ...HOST_STYLE, touchAction: 'pan-y' }
 
+const subscribeNever = (): (() => void) => () => {}
+/** `true` on the server and through the hydration pass, `false` from the first client render on. */
+const useServerPass = (): boolean =>
+  useSyncExternalStore(
+    subscribeNever,
+    () => false,
+    () => true,
+  )
+
 export function ChartEngine({
   definition,
   ariaLabel,
@@ -87,12 +102,18 @@ export function ChartEngine({
       }),
     [onPlot, definition],
   )
+  const frame = useServerFrame()
+  const serverHeight = useServerPass()
+    ? (boxHeightAt(height, frame.width) ?? frame.height)
+    : undefined
   return (
     <ChartBox height={height}>
       <Chart
         definition={definition}
         ariaLabel={ariaLabel}
-        initialWidth={INITIAL_WIDTH}
+        initialWidth={frame.width}
+        {...(serverHeight !== undefined && { height: serverHeight })}
+        measureText={measureChartText}
         idPrefix={idPrefix}
         className="basalt-chart"
         {...(onRender && { onRender })}

@@ -5,7 +5,7 @@
  */
 import { afterEach, describe, expect, test } from 'bun:test'
 import { act } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { CartesianChart } from '../parts/cartesian'
 import type { ChartPlot } from '../contract'
@@ -182,7 +182,7 @@ describe('termination', () => {
 })
 
 describe('rendered', () => {
-  let root: ReturnType<typeof createRoot> | undefined
+  let root: ReturnType<typeof createRoot> | ReturnType<typeof hydrateRoot> | undefined
   afterEach(() => {
     act(() => root?.unmount())
     root = undefined
@@ -214,13 +214,22 @@ describe('rendered', () => {
     await act(settle)
   }
 
-  test('the server HTML and the first client frame see the frame; the measured plot replaces it', async () => {
+  test('the server HTML and the hydration frame see the box; the measured plot replaces it', async () => {
     const server: number[] = []
-    renderToString(chart((p) => server.push(p.plotHeight)))
+    const el = document.createElement('div')
+    el.innerHTML = renderToString(chart((p) => server.push(p.plotHeight)))
+    document.body.append(el)
     const client: number[] = []
-    await mount(chart((p) => client.push(p.plotHeight)))
+    await act(async () => {
+      root = hydrateRoot(
+        el,
+        chart((p) => client.push(p.plotHeight)),
+      )
+    })
+    await act(settle)
     expect(server.length).toBeGreaterThan(0)
-    // First frame: the frame height, as the server saw it.
+    // The server draws the box's own height, and the hydration frame is the server's.
+    expect(server[0]).toBe(200)
     expect(client[0]).toBe(server[0])
     // After settle: the measured plot, smaller than the frame by the axis gutters.
     const last = client.at(-1) as number

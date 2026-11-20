@@ -6,6 +6,7 @@
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { cx } from '../common/props'
 import classes from './chart-box.module.css'
+import { CONTAINER_CLASSES } from '../tokens/size-classes'
 import type { ResponsiveChartHeight } from './types'
 
 /** `undefined` is the height law; a number is fixed; `'fill'` is the parent's height. */
@@ -52,6 +53,30 @@ function classHeights(height: Exclude<ChartBoxHeight, 'fill'>): [string, string,
   if (typeof height === 'number') return [px(height), px(height), px(height), px(height)]
   const regular = height.regular ?? height.base
   return [px(height.base), px(height.base), px(regular), px(height.wide ?? regular)]
+}
+
+/**
+ * The height in px the stylesheet gives the box in a frame `width` px wide: the container query's
+ * pick, read in JS for the server picture (the engine draws the server svg before anything is
+ * measured). `undefined` for a fill box, whose height is its parent's.
+ */
+export function boxHeightAt(height: ChartBoxHeight, width: number): number | undefined {
+  if (height === 'fill') return undefined
+  const cls =
+    width >= CONTAINER_CLASSES.wide
+      ? 'wide'
+      : width >= CONTAINER_CLASSES.regular
+        ? 'regular'
+        : width >= CONTAINER_CLASSES.narrow
+          ? 'narrow'
+          : 'micro'
+  if (height === undefined) {
+    return Math.min(HEIGHT_MAX, Math.max(HEIGHT_MIN, HEIGHT_RATIO[cls] * width))
+  }
+  if (typeof height === 'number') return height
+  const regular = height.regular ?? height.base
+  if (cls === 'wide') return height.wide ?? regular
+  return cls === 'regular' ? regular : height.base
 }
 
 export function chartBoxVars(height: Exclude<ChartBoxHeight, 'fill'>): ChartBoxVars {

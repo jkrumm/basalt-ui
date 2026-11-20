@@ -5,8 +5,8 @@
  * geometry of `label-place.ts` over those widths.
  */
 import { BASALT } from '../tokens'
-import { GLYPHS, WIDTHS } from './chart-labels-widths.gen'
 import { fitsWith, placeWith } from './label-place'
+import { measure } from './label-widths'
 import { trackAxis, trackRow } from './track'
 import type {
   RowLabel,
@@ -80,18 +80,6 @@ type TrackAxisOf = {
 }
 
 const DEFAULT_SIZE: number = BASALT.text.micro
-
-const INDEX = new Map<string, number>([...GLYPHS].map((ch, i) => [ch, i]))
-
-function measure(text: string, size: number, weight: LabelWeight): number {
-  const table = WIDTHS[weight]
-  let em = 0
-  for (const ch of text) {
-    const i = INDEX.get(ch)
-    em += i === undefined ? table.mean : (table.advances[i] ?? table.mean)
-  }
-  return em * size
-}
 
 const warnedDrops = new Set<string>()
 
