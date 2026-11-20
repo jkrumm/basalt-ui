@@ -23,7 +23,9 @@ export type ModeResult = {
 }
 
 export type Picture = {
-  /** Share of pixels that differ between the static page and the client:only page. */
+  /** Pixels that differ between the static page and the client:only page. */
+  changed: number
+  /** Their share of the section. */
   ratio: number
   /** The measured section, width and height, on each page. */
   static: [number, number]
