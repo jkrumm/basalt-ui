@@ -2,8 +2,5 @@
 @import 'basalt-ui/tailwind.css';
 @import 'basalt-ui/prose.css';
 @import 'basalt-ui/table.css';
-/* The faces through the fontsource packages: fonts.css (inside tailwind.css) names its woff2 files by bare
- * specifier in url(), which Vite leaves unresolved (a 404 per face, the matrix counts them). */
-@import 'basalt-ui/styles.css';
 @source '../../node_modules/basalt-ui/dist';
 @source '../parts';
