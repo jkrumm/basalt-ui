@@ -327,7 +327,17 @@ export function barValueLabels<T, X extends ChartX>(
       },
       { size: SIZE, pad: INSIDE_PAD },
     )
-      ? [label(c, i, [c.up ? 'below' : 'above'])]
+      ? [
+          {
+            ...label(c, i, [c.up ? 'below' : 'above']),
+            // The air at the bar's end shrinks to what its height spares, so the line stays inside it.
+            y:
+              c.anchor.y +
+              (c.up ? 1 : -1) *
+                (Math.max(0, Math.min(INSIDE_PAD, (c.body.height - lineHeight(SIZE)) / 2)) -
+                  INSIDE_PAD),
+          },
+        ]
       : [],
   )
   const inside = placeWith(measure, fitting, input.frame, {
