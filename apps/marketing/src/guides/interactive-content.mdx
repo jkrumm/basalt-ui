@@ -45,7 +45,7 @@ Name each tab once in `tabs` and once as the `label` of its panel, in the same o
 A form in an article is a native form: it posts to its `action`, the browser validates `required` and `type`, and a field turns red after the reader leaves it, never on the first key.
 
 <Form action="/guides/interactive-content" method="get">
-  <Field label="Email" name="email" type="email" autoComplete="email" description="One message a release, no tracking." required />
+  <Field label="Email" name="email" type="email" autoComplete="email" description="This demo sends it to this page's own URL as a query string; nothing is stored." required />
   <Field label="What are you building?" name="note" type="textarea" autoComplete="off" />
   <SubmitButton>Subscribe</SubmitButton>
 </Form>
