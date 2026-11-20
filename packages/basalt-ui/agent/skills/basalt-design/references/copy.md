@@ -49,7 +49,11 @@ The count prints nothing on a page whose repeats are not literal strings. Cycle 
 - **A state said by a caption, a pill and a sub line** (n71 .19, n73 .38): "Behind" in the Meter zone, the delta pill and "225 more keepers needed"; "Under limit" in the Meter zone and the "-1.4 pts vs 20 %" pill.
 - **A legend entry that repeats an axis title, a subtitle or a period** (n70 .14, n73 .38, n74 .44): the legend "Net" and "Share of paid" against the y axis titles; "Steps from unrated to fluent" against the axis ticks; "US$38 to US$464" in the period and on the bar labels, "+US$426" in the pill and the table.
 
-A fact with two or more slots keeps one: cut the others, or give each slot something the others do not say. The pass is run on the final source, after the last cut, and the section is part of the report.
+- **A meter that prints its value beside the figure** (n78 .21): a strip meter's "4", "59", "23" under the figure that says it; the bar is the mark, the figure is the number.
+- **A window in a page title, a card title and a subtitle** (n77 .15): "UTC days, 200 newest jobs" under a title that already says the days. List each of the three as a slot.
+- **A measure in every pane title and the subtitle** (n80 .40): "mean rank" three times plus the subtitle. Name it once, in the axis title or the subtitle, and let the pane titles say what differs.
+
+A fact with two or more slots keeps one: cut the others, or give each slot something the others do not say. The pass cuts what it finds, in the same sitting: cycle 16's passes listed "3.4 % in the hero and on its bar" and "236 in a subtitle and a footer" (n75 .4), "31" and "5" in the strip and as bar labels (n79 .30) and the winner's numbers in the strip and the table (n80 .40), and kept each with a reason ("a second place by design", "the mark's own place", "Kept repeats"); all three lost X1. "Kept on purpose" is not a reason and no line of the section carries one: the figure is the slot, and a mark carries its own value only where no figure says it. The pass is run on the final source, after the last cut, and the section is part of the report.
 
 ### Worked: the period said once
 
@@ -71,7 +75,7 @@ Run it after the first typecheck and before you open the 1800 shot, and again af
 
 **One quantity, one word.** The count cannot see one quantity under two words: n57 said "usable" on the left and "clear" on the right for the same hours (n57 .5), n58 "Research US$12" in a label, the table and the footer. After the count, list the page's measures (hours, spend, a rate, a state) and for each write every word the page uses for it, with `rg -ci '<word>|<synonym>' <page dir>`; a measure with two words keeps one, in every string.
 
-Then the read-aloud pass, a required `## Read aloud` section of the design file (the worked pass above names the four repeats the count cannot see), from the 1800 rest shot and not from the code: read the frame top to bottom, aloud, and write one line per fact (a measure, a name, a window, a limit) with every place it stands (hero, pill, mark label, subtitle, footer, legend, axis title, column). A fact on two lines keeps one place. One measure with two numbers (n52's pace in a pill, a mark and a subtitle, each a different number) is a defect, not a repeat. The empty sentence stands on one card; a sort and a window are facts.
+Then the read-aloud pass, a required `## Read aloud` section of the design file (the worked pass above names the four repeats the count cannot see), from the 1800 rest shot and not from the code: read the frame top to bottom, aloud, and write one line per fact (a measure, a name, a window, a limit) with every place it stands (hero, pill, mark label, subtitle, footer, legend, axis title, column). A fact on two lines keeps one place, and the pass cuts it rather than keeping it with a reason. One measure with two numbers (n52's pace in a pill, a mark and a subtitle, each a different number) is a defect, not a repeat. The empty sentence stands on one card; a sort and a window are facts.
 
 Cycle 13's builds, counted with the scan above (the old count printed `header` on n58, `label` and `header` on n60, `header head` on n61 and four phrases on n59; none of it text):
 
