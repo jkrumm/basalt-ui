@@ -111,6 +111,15 @@ const controlPrimitive = (source: unknown): boolean => {
 /** The element's tag when it is a plain identifier: `Select`; `a.b` has none. */
 const tagOf = (opening: Node): string | undefined => nameOf(child(opening, 'name'))
 
+/**
+ * A home reached through a form hook: `f.FormField` and `group.FormField` (`basalt-ui/form` binds
+ * `FormField` to the enclosing `AppField`). Only `FormField` is a bound part; `f.Select` is not.
+ */
+const isBoundHome = (opening: Node): boolean => {
+  const name = child(opening, 'name')
+  return name?.type === 'JSXMemberExpression' && nameOf(child(name, 'property')) === 'FormField'
+}
+
 /** The root identifier of a JSX member tag (`Select.Root` is `Select`), or the plain tag. */
 const tagRoot = (opening: Node): string | undefined => {
   let name = child(opening, 'name')
@@ -294,7 +303,7 @@ const outsideHome: AstForm = {
         const isControl = root !== undefined && controls.has(root)
         const inside = frames.some((frame) => frame.kind === 'element' && frame.control)
         frames.push(
-          tag !== undefined && HOMES.has(tag)
+          (tag !== undefined && HOMES.has(tag)) || isBoundHome(opening)
             ? { kind: 'home' }
             : { kind: 'element', handles, bound, control: isControl },
         )

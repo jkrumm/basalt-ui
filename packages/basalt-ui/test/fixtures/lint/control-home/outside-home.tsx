@@ -90,6 +90,26 @@ export const Wrapped = () => (
 )
 
 // @valid
+import { Input } from 'basalt-ui/ui/input'
+export const Bound = () => (
+  <form.AppField name="name">
+    {(f) => (
+      <f.FormField label="Name">
+        <Input />
+      </f.FormField>
+    )}
+  </form.AppField>
+)
+
+// @invalid
+import { Select } from 'basalt-ui/ui/select'
+export const NotBound = () => (
+  <f.Wrapper>
+    <Select value={unit} onValueChange={setUnit} />
+  </f.Wrapper>
+)
+
+// @valid
 import { Segmented } from 'basalt-ui/ui/segmented'
 export const Filters = () => (
   <FilterSet>
