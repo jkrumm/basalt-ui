@@ -2178,6 +2178,29 @@ export function compileCartesian<T, X extends ChartX>(
           }
           return pathBoxes(runs, s.strokeWidth ?? LINE_STROKE_WIDTH)
         })
+      /** The dots of a spread series at their drawn (spread) positions, as boxes in plot px: a page's label keeps off the dots it sees. */
+      const spreadDotBoxes = (frame: PlotPx): PxBox[] => {
+        const spread = spreadRowsOf(rows, input, {
+          visible,
+          model,
+          axes,
+          plotWidth: frame.width,
+          plotHeight: frame.height,
+        })
+        return visible.flatMap((s) => {
+          if (s.mark !== 'dot' || input.dotSpread?.has(s.key) !== true) return []
+          const r = input.dotRadius?.get(s.key) ?? BASALT.dotR
+          const [lo, hi] = axes.axisOf(axes.onRight(s) ? 'right' : 'left').domain
+          const span = Math.max(lo, hi) - Math.min(lo, hi) || 1
+          return spread(s.key).flatMap((row) => {
+            const fx = model.fraction(row.x)
+            if (row.y === null || fx === null || !Number.isFinite(row.y)) return []
+            const cx = fx * frame.width
+            const cy = ((Math.max(lo, hi) - row.y) / span) * frame.height
+            return [{ left: cx - r, top: cy - r, width: 2 * r, height: 2 * r }]
+          })
+        })
+      }
       /** The bodies of the bars of a band axis, as boxes in plot px: a group splits its band, a stack is one body. */
       const barBoxes = (frame: PlotPx): PxBox[] => {
         if (!model.band) return []
@@ -2271,6 +2294,7 @@ export function compileCartesian<T, X extends ChartX>(
           ...ctx.xCaptions.map((b) => captionPx(b, frame)),
           ...ctx.claimed.map((b) => pxBox(b, axes.left.domain, frame)),
           ...lineBoxes(frame),
+          ...spreadDotBoxes(frame),
           ...refRuleBoxes(frame),
           ...xRuleBoxes(
             (input.xRefLines ?? []).flatMap((l) => edgeFraction(model, l.x, l.at) ?? []),
@@ -2316,6 +2340,34 @@ export function compileCartesian<T, X extends ChartX>(
           clear: hostBoxesBesidesBars(),
         })
       })()
+      // A named bar's value label is never dropped for what the host drew, so it may land over a caption
+      // placed before it: the captions are then placed again around the value labels, and a caption with
+      // no spot left clear of them goes (n68 at 390, n64 at 1800: a total under 'Gateway down').
+      if (valueLabels.boxes.length > 0) {
+        const ctx = captionContext()
+        captionMarks()
+        const frame = { width: ctx.plotWidth, height: ctx.plotHeight }
+        const rightDomain = axes.right?.domain ?? axes.left.domain
+        const struck = [
+          ...ctx.placed.left.map((b) => pxBox(b, axes.left.domain, frame)),
+          ...ctx.placed.right.map((b) => pxBox(b, rightDomain, frame)),
+        ].some((caption) =>
+          valueLabels.boxes.some(
+            (label) =>
+              label.left < caption.left + caption.width &&
+              caption.left < label.left + label.width &&
+              label.top < caption.top + caption.height &&
+              caption.top < label.top + label.height,
+          ),
+        )
+        if (struck) {
+          pageLabels.push(...valueLabels.boxes)
+          captions = undefined
+          lineMemo = undefined
+          placedCaptions = undefined
+          captionMarks()
+        }
+      }
       // The page's own labels come before the captions unless a value label already placed them: a
       // caption is the first thing to give way to a data label.
       const captionsFirst = placedCaptions !== undefined
