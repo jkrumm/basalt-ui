@@ -143,7 +143,7 @@ const Review = withForm({
 
 /**
  * A multi-step flow: one TanStack form, one step mounted at a time, a `Stepper` over it (a done step
- * is a button back to it) and `FormFooter` as Back and Continue.
+ * is a button back to it) and `form.Footer` as Back and Continue.
  * Continue submits the form: the mounted step's fields validate, and the submit meta says whether
  * this is the last step.
  */
