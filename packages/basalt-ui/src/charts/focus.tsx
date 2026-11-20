@@ -313,6 +313,16 @@ function scrollRegionOf(node: Element): HTMLElement | null {
   return null
 }
 
+/** The element holding the document's focus (a chart's tab stop, a list, a row), or `null` when none does. */
+function focusHolder(): Element | null {
+  if (typeof document === 'undefined') return null
+  const at = document.activeElement
+  return at === null || at === document.body || at === document.documentElement ? null : at
+}
+
+/** A node with a box: the phone card or the table row of the tier that is not showing has none. */
+const isDrawn = (node: Element): boolean => node.getClientRects().length > 0
+
 /**
  * Scrolls `node` into its own list's region by the least distance, and nothing else. A region the
  * pointer is in never moves: that is the page (the shell's scrollport) or the list itself, and
@@ -320,14 +330,18 @@ function scrollRegionOf(node: Element): HTMLElement | null {
  * `scrollIntoView` cannot be told to stop at one ancestor, so the region's offsets are set directly.
  */
 function revealInOwnRegion(nodes: readonly Element[]): void {
-  const first = nodes[0]
-  if (first === undefined) return
-  const region = scrollRegionOf(first)
-  if (region === null || region.matches(':hover')) return
-  scrollRegionTo(
-    region,
-    nodes.filter((n) => region.contains(n)),
-  )
+  const held = focusHolder()
+  const byRegion = new Map<HTMLElement, Element[]>()
+  for (const node of nodes) {
+    if (!isDrawn(node)) continue
+    const region = scrollRegionOf(node)
+    if (region === null || region.matches(':hover')) continue
+    // The region holding the focused element (a chart at 390 sits in the page's) never moves for a node
+    // outside that element: it would carry the chart out of view.
+    if (held !== null && region.contains(held) && !held.contains(node)) continue
+    byRegion.set(region, [...(byRegion.get(region) ?? []), node])
+  }
+  for (const [region, own] of byRegion) scrollRegionTo(region, own)
 }
 
 /**
@@ -459,11 +473,17 @@ export function useChartFocus<D>(
   const reveal = (next: number): void => {
     const name = groupAt(next)
     const own = [...(marks.current.get(next) ?? [])]
-    for (const node of own) scrollNodeIntoView(node)
+    const held = focusHolder()
+    for (const node of own) {
+      // A mark of the element holding the focus scrolls wherever it must; a list row beside it only in its own region.
+      if (held === null || held.contains(node)) scrollNodeIntoView(node)
+      else revealInOwnRegion([node])
+    }
     const row = name === undefined ? undefined : rows.current.get(name)
     if (row === undefined) return
     const region = scrollRegionOf(row)
     if (region === null || own.some((node) => region.contains(node))) return
+    if (held !== null && region.contains(held) && !held.contains(row)) return
     scrollRegionTo(region, [row])
   }
   const revealInRegion = (...indexes: readonly number[]): void => {
