@@ -1,0 +1,11 @@
+/*
+ * The Tailwind v4 entry of the expression cycle 16 focus fixtures (`kit-expr16f-*-fixture.tsx`),
+ * compiled like a Tailwind consumer by `expr12-support.ts`.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './kit-expr16f-*-fixture.tsx';
+@source '../../../src/ui';
+@source '../../../src/table';
+@source '../../../src/cards';
+@source '../../../src/core';
+@source '../../../src/charts';

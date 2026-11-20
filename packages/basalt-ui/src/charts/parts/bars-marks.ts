@@ -9,7 +9,7 @@ import { group } from '@tanstack/charts/group'
 import { decorative } from '@tanstack/charts/mark/decorative'
 import { stack } from '@tanstack/charts/stack'
 import { CV } from '../core/theme'
-import { dimmedPaint, emphasis, focusedPaint } from '../marks'
+import { INK_STEP_DIM, dimmedPaint, emphasis, focusedPaint, isInkStep } from '../marks'
 import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext, PlotRow } from '../types'
 
@@ -241,7 +241,15 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
     // A `focus` holding a datum dims every other bar (`dimmedPaint`: the dark card's floor included)
     // and lifts the focused one past its resting colour (`focusedPaint`).
     if (row.datum === plot.focused) return focusedPaint(color)
+    // An ink-step bar keeps its resting paint and fades through `fillOpacity` below: `dimmedPaint`'s floor is its own colour.
+    if (isInkStep(color)) return paint(color, strength)
     return dimmedPaint(color, strength)
+  }
+  /** An ink-step bar while another datum holds the focus: it recedes by opacity. */
+  const recedes = (context: { datum: PlotRow<D, ChartX> }): boolean => {
+    if (plot.focused === null || context.datum.datum === plot.focused) return false
+    const color = colorOf(context.datum)
+    return color !== undefined && isInkStep(color)
   }
   const order = visibleBars.map((s) => s.key)
   // A stack stops at the plot's edge: a total past a bounded domain would overrun it.
@@ -257,7 +265,10 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
       // Series of one colour differ by shade alone: a surface hairline keeps stacked segments apart.
       ...(sharedColor && layout !== 'grouped' && { stroke: CV.surface, strokeWidth: 1 }),
       // The hovered x is its own highlight: the bar reads at full strength.
-      states: [{ when: { focus: 'x' }, style: { fill: solid } }],
+      states: [
+        { when: recedes, style: { fillOpacity: INK_STEP_DIM } },
+        { when: { focus: 'x' }, style: { fill: solid } },
+      ],
       layout:
         layout === 'grouped'
           ? group({ padding: 0.1 })

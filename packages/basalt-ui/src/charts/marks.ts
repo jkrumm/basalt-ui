@@ -41,6 +41,34 @@ const mixed = (color: string, opacity: number): string =>
 const withFloor = (paint: string, ink: number): string =>
   `color-mix(in srgb, ${paint}, ${CV.inkMuted} ${Math.round(ink * 100)}%)`
 
+/** What a dimmed ink-step bar keeps of its resting opacity: the lightest the 3:1 floor leaves a mid grey on the card. */
+export const INK_STEP_DIM = 0.88
+
+/** The widest spread between a grey's channels that still reads as a step of the ink scale. */
+const GREY_SPREAD = 6
+const INK_VAR = /^var\(--basalt-ink(?:-muted|-faint)?\)$/
+const HEX = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i
+
+function isInkValue(value: string): boolean {
+  if (INK_VAR.test(value)) return true
+  const channels = HEX.exec(value)
+    ?.slice(1)
+    .map((c) => Number.parseInt(c, 16))
+  return channels !== undefined && Math.max(...channels) - Math.min(...channels) <= GREY_SPREAD
+}
+
+/**
+ * Whether a series colour is a step of the ink scale: a grey hex (or a `light-dark()` pair of them) or
+ * one of the ink tokens. `dimmedPaint` mixes the card's muted ink into a mark as its floor, which is
+ * the colour of such a step already, so a dimmed ink-step bar looked as it does at rest: it dims by
+ * `INK_STEP_DIM` of its resting opacity instead.
+ */
+export function isInkStep(color: string): boolean {
+  const pair = color.startsWith('light-dark(') && color.endsWith(')')
+  const values = pair ? color.slice(11, -1).split(',') : [color]
+  return values.every((v) => isInkValue(v.trim()))
+}
+
 /** The state of a bar for the paint a label standing on it is read against: the focused datum, another's, or neither. */
 export type BarState = 'rest' | 'focused' | 'dimmed'
 
@@ -56,6 +84,8 @@ export function barOnCard(color: string, strength: number, state: BarState): str
   if (state === 'focused') return focusedPaint(color)
   if (state === 'rest')
     return strength >= 1 ? color : `color-mix(in srgb, ${color} ${share(strength)}%, ${CV.surface})`
+  if (state === 'dimmed' && isInkStep(color))
+    return `color-mix(in srgb, ${color} ${share(strength * INK_STEP_DIM)}%, ${CV.surface})`
   const flat = (opacity: number, floor: number): string => {
     const own = (1 - floor) * strength * opacity
     const inner = `color-mix(in srgb, ${CV.inkMuted} ${share(floor / (1 - own))}%, ${CV.surface})`
