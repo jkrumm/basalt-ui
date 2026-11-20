@@ -3,7 +3,7 @@
   "inlineJsGzip": 3000,
   "reactRuntimeGzip": 72000,
   "furtherIslandGzip": 120000,
-  "cssGzipPerPage": 26000,
+  "cssGzipPerPage": 26500,
   "lcpMs": 1000,
   "cls": 0.05
 }

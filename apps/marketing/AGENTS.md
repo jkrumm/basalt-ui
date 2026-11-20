@@ -20,6 +20,9 @@ works here, so a shortcut taken on this site becomes theirs. Root `AGENTS.md` ho
 - `/guides/*` are MDX files under `src/guides/` rendered in `SiteArticle` with
   `siteMdxComponents(...)` as their components; raw Markdown is styled by element through
   `.basalt-prose`, and `<SiteCallout>`, `<Steps>` and `<Figure>` need no import.
+- `/` is built from the landing blocks (`SiteHero`, `SiteBento`, `SiteComparison`, `SiteQuestionList`,
+  `SiteCallToAction`); its words and data live in `src/lib/landing.ts`. `src/components/` holds React
+  compositions of basalt parts that render with no directive (the hero's stat cards).
 - `/charts` holds the site's one island (`src/islands/`). `src/styles/site.css` adds the `@source`
   lines for the chart and card classes it uses.
 
