@@ -26,12 +26,18 @@ import {
   SiteForm,
   SitePager,
   Prose,
+  SiteBento,
+  SiteCallToAction,
+  SiteComparison,
+  SiteFeature,
   SiteFooter,
   SiteHeader,
+  SiteHero,
   siteMdxComponents,
   SiteSubmit,
   SiteTab,
   SiteTabs,
+  SiteQuestionList,
   ThemeSwitch,
 } from './index'
 import { siteScript } from './site-script'
@@ -135,6 +141,64 @@ const PARTS: Record<string, ReactElement> = {
     >
       <p>{S('body')}</p>
     </SiteArticle>
+  ),
+  SiteHero: (
+    <SiteHero
+      eyebrow={S('eyebrow')}
+      title={S('title')}
+      description={S('description')}
+      actions={[
+        { href: '/start', label: S('start'), primary: true },
+        { href: '/code', label: S('code') },
+      ]}
+      media={<p>{S('media')}</p>}
+    >
+      {S('install')}
+    </SiteHero>
+  ),
+  SiteBento: (
+    <SiteBento title={S('title')} description={S('description')}>
+      <SiteFeature title={S('feature')} description={S('text')} span="wide">
+        <p>{S('body')}</p>
+      </SiteFeature>
+      <SiteFeature title={S('feature-2')} span="tall" />
+    </SiteBento>
+  ),
+  SiteComparison: (
+    <SiteComparison
+      title={S('title')}
+      description={S('description')}
+      caption={S('caption')}
+      rowHeader={S('row-header')}
+      yesLabel={S('yes')}
+      noLabel={S('no')}
+      columns={[
+        { key: 'a', label: S('ours'), ours: true },
+        { key: 'b', label: S('theirs') },
+      ]}
+      rows={[
+        { label: S('trait'), values: { a: true, b: false } },
+        { label: S('text-trait'), values: { a: S('value') } },
+      ]}
+      footnote={S('sources')}
+    />
+  ),
+  SiteQuestionList: (
+    <SiteQuestionList
+      title={S('title')}
+      description={S('description')}
+      questions={[
+        { id: 'q1', question: S('question'), answer: S('answer') },
+        { question: S('question-2'), answer: [S('para-1'), S('para-2')] },
+      ]}
+    />
+  ),
+  SiteCallToAction: (
+    <SiteCallToAction
+      title={S('title')}
+      description={S('description')}
+      actions={[{ href: '/start', label: S('start'), primary: true }]}
+    />
   ),
   'mdx h2': Mdx('h2', { children: S('heading') }),
   'mdx a': Mdx('a', { href: 'https://example.com', children: S('link') }),
@@ -354,5 +418,49 @@ describe('siteScript', () => {
     expect(copied.at(-1)).toContain('bun add basalt-ui')
     expect(document.querySelector('[data-basalt-copy]')?.hasAttribute('data-copied')).toBe(true)
     expect(document.querySelector('[data-basalt-copy-status]')?.textContent).toBe('Copied')
+  })
+})
+
+describe('SiteQuestionList: the questions are data', () => {
+  test('one native details per question, its answer as paragraphs, no script', () => {
+    const host = document.createElement('div')
+    host.innerHTML = markup(
+      <SiteQuestionList
+        questions={[
+          { id: 'free', question: 'Q1', answer: 'A1' },
+          { question: 'Q2', answer: ['A2a', 'A2b'] },
+        ]}
+      />,
+    )
+    const items = Array.from(host.querySelectorAll('details'))
+    expect(items.map((d) => d.querySelector('summary')?.textContent)).toEqual(['Q1', 'Q2'])
+    expect(items[0]?.id).toBe('free')
+    expect(Array.from(items[1]?.querySelectorAll('p') ?? []).map((p) => p.textContent)).toEqual([
+      'A2a',
+      'A2b',
+    ])
+  })
+})
+
+describe('SiteComparison: a mark announces its word', () => {
+  test('true and false cells carry the yes and no labels, a missing key is empty', () => {
+    const host = document.createElement('div')
+    host.innerHTML = markup(
+      <SiteComparison
+        caption="c"
+        rowHeader="r"
+        yesLabel="Y"
+        noLabel="N"
+        columns={[
+          { key: 'a', label: 'A' },
+          { key: 'b', label: 'B' },
+          { key: 'c', label: 'C' },
+        ]}
+        rows={[{ label: 'row', values: { a: true, b: false } }]}
+      />,
+    )
+    const cells = Array.from(host.querySelectorAll('tbody td')).map((td) => td.textContent)
+    expect(cells).toEqual(['Y', 'N', ''])
+    expect(host.querySelectorAll('tbody th[scope=row]').length).toBe(1)
   })
 })

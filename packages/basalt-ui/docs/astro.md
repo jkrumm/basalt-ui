@@ -64,6 +64,37 @@ Your own files are found by Tailwind's automatic source detection; the parts' so
 | `SiteDataTable` | a table of plain columns and rows, numbers and dates formatted | nothing |
 | `siteMdxComponents(labels)` | the MDX map: anchored headings, safe links, scrolling tables, code blocks, `SiteCallout`, `Steps`, `Figure`, `Tabs`, `Tab`, `Form`, `Field`, `SubmitButton` | the head script, for copy and tabs |
 
+### Landing blocks
+
+| Block | What it is | Interactive through |
+|-|-|-|
+| `SiteHero` | `h1`, eyebrow, standfirst, actions; a `media` slot beside the text from 64rem | nothing |
+| `SiteBento`, `SiteFeature` | a grid of tiles, one to three columns by its container; a tile's body is a slot for the real part | nothing |
+| `SiteComparison` | a versus table: options as columns, traits as rows, a `footnote` slot for the dated sources | nothing |
+| `SiteQuestionList` | questions as data, rendered as `<details>` | the `<details>` element |
+| `SiteCallToAction` | the closing band: heading, line, actions | nothing |
+
+Actions are data, `{ href, label, primary? }`, at most one `primary` in a row. A slot takes an island
+too: an island inside a static block's slot hydrates on its own. basalt emits no structured data; the
+question list's array is the source for your own:
+
+```astro
+---
+const questions = [{ question: 'Is it free?', answer: 'Yes, and open source.' }]
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: questions.map((q) => ({
+    '@type': 'Question',
+    name: q.question,
+    acceptedAnswer: { '@type': 'Answer', text: q.answer },
+  })),
+}
+---
+<SiteQuestionList title="Questions" questions={questions} />
+<script type="application/ld+json" set:html={JSON.stringify(faq)} />
+```
+
 Pass a node to a part as a named slot (`<Fragment slot="meta">…</Fragment>`), never as JSX inside an
 object prop: Astro hands that over as an Astro template and the build fails. Labels are plain strings.
 

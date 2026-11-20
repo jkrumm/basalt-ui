@@ -10,6 +10,7 @@ const PATHS = {
   copy: 'M5.5 5.5h7v8h-7zM10.5 5.5v-1A1.5 1.5 0 0 0 9 3H4.5A1.5 1.5 0 0 0 3 4.5v6A1.5 1.5 0 0 0 4.5 12h1',
   check: 'M3.5 8.5l3 3 6-7',
   chevron: 'M6 4l4 4-4 4',
+  dash: 'M4.5 8h7',
 } as const
 
 export type GlyphName = keyof typeof PATHS

@@ -20,5 +20,12 @@ export type TocEntry = {
   level: number
 }
 
+/** A link drawn as a button: a page block's call to action. At most one in a row is `primary`. */
+export type SiteAction = {
+  href: string
+  label: string
+  primary?: boolean
+}
+
 /** A node a consumer renders: a label from its own message catalogue, a logo, a link. */
 export type Slot = ReactNode
