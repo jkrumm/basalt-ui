@@ -213,6 +213,8 @@ export type PresetInputs = {
   readonly ejected?: readonly string[]
   /** Zone S: seeds, in basalt-ui's own repo only. */
   readonly seeds?: readonly string[]
+  /** Zone B: `manifest.bespoke`, directories that draw their own surface. */
+  readonly bespoke?: readonly string[]
   /** `manifest.classPrefixes`: third-party class prefixes (`maplibregl-`) `no-unknown-classes` lets through. */
   readonly classPrefixes?: readonly string[]
 }
@@ -384,6 +386,27 @@ function profileOfPath(path: string, inputs: PresetInputs): PresetProfile {
 }
 
 /**
+ * Zone B for `manifest.bespoke`: a directory that draws its own surface (a game table, a seating
+ * plan) positions and draws marks from state, so the forms marked off in `bespoke` (positioned
+ * geometry, hand-drawn marks) go off in `formsOff` for its files, per the profile its files lint at.
+ * Every other rule and form stays on, `shadcn/no-inline-styles` included: a mark is placed through a
+ * custom property a class reads (`left-(--x)`), not an inline `left`.
+ */
+function bespokeZones(dirs: readonly string[], inputs: PresetInputs): Override[] {
+  const input = presetInput(inputs.table)
+  return dirs.flatMap((dir) => {
+    const profile = profileOfPath(dir, inputs)
+    if (profile === 'tokens') return []
+    const rules: Rules = {}
+    for (const [name, ids] of Object.entries(input.formsOff.bespoke)) {
+      if (!input.profiles[profile].includes(name)) continue
+      rules[name] = ['error', { ...(input.options[profile][name]?.[0] as object), formsOff: ids }]
+    }
+    return Object.keys(rules).length > 0 ? [{ files: [rootGlob(dir)], rules }] : []
+  })
+}
+
+/**
  * Zone E for `manifest.ejected`: the structure block, plus `import-boundary` told which files are
  * owned copies (so a copy may hold its own `@base-ui` import) where that rule runs at all.
  */
@@ -436,6 +459,8 @@ export function buildPreset(inputs: PresetInputs): PresetConfig | undefined {
     if (profile === 'bridge')
       overrides.push(vendoredZone(`${rootGlob(root)}/components/ui/**`, inputs))
   }
+  // Zone B before E and S: an ejected file inside a bespoke directory keeps the rule off.
+  overrides.push(...bespokeZones(inputs.bespoke ?? [], inputs))
   const ejected = inputs.ejected ?? []
   if (ejected.length > 0) overrides.push(...ejectedZones(ejected, inputs))
   const seeds = inputs.seeds ?? []
@@ -454,10 +479,10 @@ export function buildPreset(inputs: PresetInputs): PresetConfig | undefined {
   }
 }
 
-/** The preset a shipped profile writes to `configs/oxlint-<profile>.json`: no roots, no zones E/S. */
+/** The preset a shipped profile writes to `configs/oxlint-<profile>.json`: no roots, no zones E/S/B. */
 export const shippedPreset = (
   profile: (typeof SHIPPED_PROFILES)[number],
-  inputs: Omit<PresetInputs, 'profile' | 'roots' | 'ejected' | 'seeds'>,
+  inputs: Omit<PresetInputs, 'profile' | 'roots' | 'ejected' | 'seeds' | 'bespoke'>,
 ): PresetConfig => {
   const preset = buildPreset({ ...inputs, profile })
   if (!preset) throw new Error(`no preset for profile ${profile}`)

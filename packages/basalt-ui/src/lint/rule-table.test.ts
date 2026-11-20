@@ -202,8 +202,9 @@ describe('derived lists', () => {
         ejected: ['basalt/app-spacing'],
         seed: ['basalt/app-spacing'],
         vendored: ['basalt/dark-fork', 'basalt/app-spacing'],
+        bespoke: [],
       },
-      formsOff: { ejected: {}, seed: {}, vendored: {} },
+      formsOff: { ejected: {}, seed: {}, vendored: {}, bespoke: {} },
     })
   })
 
