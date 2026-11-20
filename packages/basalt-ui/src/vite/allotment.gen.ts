@@ -29,6 +29,11 @@ export const ALLOTMENT: Allotment = {
       lazy: [],
       reaches: ['.'],
     },
+    motion: {
+      peers: ['motion'],
+      lazy: [],
+      reaches: ['.'],
+    },
     page: {
       peers: ['react'],
       lazy: [],
