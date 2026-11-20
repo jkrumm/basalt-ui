@@ -24,6 +24,8 @@ const GROUP_PADDING = 0.1
 const GAP = 3
 /** Air a label keeps inside the bar it stands in, px. */
 const INSIDE_PAD = 2
+/** How far a label standing in a bar may reach past each side of it, px: the text estimate errs wide, and a bar a few px under its label still holds it. */
+const OVERHANG = 4
 const SIZE = BASALT.text.micro
 /** The centre of a clamped value's row from the plot's edge: its box clears the edge's gridline. */
 const CLAMPED_ROW = Math.max(CARET_SIZE / 2, lineHeight(SIZE) / 2 + 2)
@@ -228,12 +230,18 @@ function candidates<T, X extends ChartX>(input: BarValuesInput<T, X>): Candidate
       group: t.data,
       s: stackSeries,
     }
+    // A stack of one series has one segment: its total is the bar's own value, so it may stand inside the bar
+    // like a grouped value does, where the end has no room outside (a negative bar at the domain's floor, the
+    // tallest bar of a fixed domain).
+    const idOf = stackSeries.length === 1 ? { id: `${s.key}:${t.fx}` } : {}
     const parts = [t.up > 0 ? t.up : null, t.down < 0 ? t.down : null]
     if (parts.every((p) => p === null))
-      out.push(make({ ...base, text: textOf(s, 0, d, input.formatOf(t.side)), value: 0 }))
+      out.push(make({ ...base, text: textOf(s, 0, d, input.formatOf(t.side)), value: 0, ...idOf }))
     for (const value of parts)
       if (value !== null)
-        out.push(make({ ...base, text: textOf(s, value, d, input.formatOf(t.side)), value }))
+        out.push(
+          make({ ...base, text: textOf(s, value, d, input.formatOf(t.side)), value, ...idOf }),
+        )
   }
   return out
 }
@@ -310,7 +318,12 @@ export function barValueLabels<T, X extends ChartX>(
     !taken.has(String(i)) &&
     !c.clamped &&
     c.id !== undefined &&
-    fitsWith(measure, c.text, c.body, { size: SIZE, pad: INSIDE_PAD })
+    fitsWith(
+      measure,
+      c.text,
+      { ...c.body, width: c.body.width + 2 * OVERHANG },
+      { size: SIZE, pad: INSIDE_PAD },
+    )
       ? [label(c, i, [c.up ? 'below' : 'above'])]
       : [],
   )
@@ -325,12 +338,15 @@ export function barValueLabels<T, X extends ChartX>(
   // A bar that names the answer, a stack total included, takes a spot over a rule or a line when none is
   // clear (a rule through the whole bar): the answer is never dropped for what the host drew.
   const namedBar = (_: Candidate<X>, i: number): boolean => named.has(String(i))
+  // Every label a rescue pass landed, in order: the next pass keeps clear of them, so two rescued labels
+  // never overlap (n68 at 390: '81/124' and '85/129').
+  const earlier: PlacedLabel<string>[] = []
   const rescue = (
-    pending: ReadonlySet<string>,
     obstacles: readonly LabelBox[],
     keep: (c: Candidate<X>, i: number) => boolean,
-  ): ReturnType<typeof placeWith<string>> =>
-    placeWith(
+  ): ReturnType<typeof placeWith<string>> => {
+    const pending = new Set([...standing, ...earlier.map((p) => p.key)])
+    const got = placeWith(
       measure,
       found.flatMap((c, i) =>
         keep(c, i) && !c.clamped && !pending.has(String(i))
@@ -338,24 +354,27 @@ export function barValueLabels<T, X extends ChartX>(
           : [],
       ),
       input.frame,
-      { gap: GAP, obstacles: [...outside.placed, ...inside.placed, ...obstacles], size: SIZE },
+      {
+        gap: GAP,
+        obstacles: [...outside.placed, ...inside.placed, ...earlier, ...obstacles],
+        size: SIZE,
+      },
     )
-  // A stack total that finds no spot clear of the captions, rules and lines is dropped. A named bar
-  // takes a spot clear of the captions first, then any spot clear of the other labels: over a rule or
-  // a line if it must.
-  const stacked = rescue(standing, input.clear, (c) => c.id === undefined)
+    earlier.push(...got.placed)
+    return got
+  }
+  // The named stack totals come first, so the others keep clear of them. A stack total that finds no
+  // spot clear of the captions, rules and lines is dropped. A named bar takes a spot clear of the
+  // captions first, then any spot clear of the other labels: over a rule or a line if it must.
+  rescue(input.clear, (c, i) => c.id === undefined && named.has(String(i)))
   // A named stack total that every spot beside its caption, rule and line refused climbs above them one
   // line at a time: still centred over its own stack, never inside it, and off the rule.
-  const reached = new Set([...standing, ...stacked.placed.map((p) => p.key)])
   const lifted: PlacedLabel<string>[] = []
   const liftStep = lineHeight(SIZE)
   for (let step = 1; step * liftStep < input.frame.height; step++) {
+    const reached = new Set([...standing, ...earlier.map((p) => p.key)])
     const pending = found.flatMap((c, i) =>
-      c.id === undefined &&
-      named.has(String(i)) &&
-      !c.clamped &&
-      !reached.has(String(i)) &&
-      !lifted.some((p) => p.key === String(i))
+      c.id === undefined && named.has(String(i)) && !c.clamped && !reached.has(String(i))
         ? [
             {
               ...label(c, i, [c.up ? 'above' : 'below']),
@@ -365,42 +384,21 @@ export function barValueLabels<T, X extends ChartX>(
         : [],
     )
     if (pending.length === 0) break
-    lifted.push(
-      ...placeWith(measure, pending, input.frame, {
-        gap: GAP,
-        obstacles: [
-          ...outside.placed,
-          ...inside.placed,
-          ...stacked.placed,
-          ...lifted,
-          ...input.obstacles,
-        ],
-        size: SIZE,
-      }).placed,
-    )
+    const got = placeWith(measure, pending, input.frame, {
+      gap: GAP,
+      obstacles: [...outside.placed, ...inside.placed, ...earlier, ...input.obstacles],
+      size: SIZE,
+    }).placed
+    lifted.push(...got)
+    earlier.push(...got)
   }
-  const captioned = rescue(
-    new Set([...standing, ...stacked.placed.map((p) => p.key), ...lifted.map((p) => p.key)]),
+  rescue(
     input.clear.filter((b) => Math.min(b.width, b.height) >= CAPTION_MIN_PX),
     namedBar,
   )
-  const rescued = {
-    placed: [
-      ...stacked.placed,
-      ...captioned.placed,
-      ...lifted,
-      ...rescue(
-        new Set([
-          ...standing,
-          ...stacked.placed.map((p) => p.key),
-          ...lifted.map((p) => p.key),
-          ...captioned.placed.map((p) => p.key),
-        ]),
-        [],
-        namedBar,
-      ).placed,
-    ],
-  }
+  rescue([], namedBar)
+  rescue(input.clear, (c, i) => c.id === undefined && !named.has(String(i)))
+  const rescued = { placed: earlier }
   // A clamped bar's value is never dropped: beside its body in the caret's row, the right side
   // first, then the left; over the bar under its caret when neither side has room.
   const others = [...outside.placed, ...rescued.placed, ...inside.placed]
