@@ -133,8 +133,8 @@ const borderRules =
   '  *,\n  ::after,\n  ::before,\n  ::backdrop,\n  ::file-selector-button {\n    border-color: var(--basalt-hairline);\n  }\n'
 
 /**
- * The `@source` lines of `static.css`: the `basalt-ui/static` parts and the two modules they take
- * classes from. Paths are relative to the sheet, so they resolve from `src/css` and from `dist/css`.
+ * The `@source` lines of `static.css`: the `basalt-ui/static` parts and the modules they take
+ * classes from (the prose sheet's component, `Alert`, `Table`). Paths are relative to the sheet, so they resolve from `src/css` and from `dist/css`.
  */
 const STATIC_SOURCES = [
   '../static',
