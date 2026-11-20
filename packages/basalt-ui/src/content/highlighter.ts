@@ -71,6 +71,11 @@ const LANG_ALIASES: Record<string, string> = {
  */
 const NO_TIME_LIMIT = 0
 
+function normalizeLang(lang: string): string {
+  const lowered = lang.toLowerCase()
+  return Object.hasOwn(LANG_ALIASES, lowered) ? (LANG_ALIASES[lowered] as string) : lowered
+}
+
 let highlighterPromise: Promise<HighlighterCore | null> | null = null
 let warnedMissingPeer = false
 
@@ -109,6 +114,7 @@ function getHighlighter(): Promise<HighlighterCore | null> {
 /** Loads `lang` into the shared highlighter on demand (no-op if already loaded). */
 async function ensureLanguage(highlighter: HighlighterCore, lang: string): Promise<boolean> {
   if (highlighter.getLoadedLanguages().includes(lang)) return true
+  if (!Object.hasOwn(LANG_LOADERS, lang)) return false
   const loadLang = LANG_LOADERS[lang]
   if (!loadLang) return false
   try {
@@ -130,8 +136,7 @@ export async function highlightCode(code: string, lang: string): Promise<string 
   const highlighter = await getHighlighter()
   if (!highlighter) return null
 
-  const lowered = lang.toLowerCase()
-  const normalized = LANG_ALIASES[lowered] ?? lowered
+  const normalized = normalizeLang(lang)
   const loaded = await ensureLanguage(highlighter, normalized)
   if (!loaded) return null
 
@@ -145,4 +150,84 @@ export async function highlightCode(code: string, lang: string): Promise<string 
   } catch {
     return null
   }
+}
+
+/**
+ * Longest source that is highlighted. A server render runs shiki on the request's thread for
+ * whatever a model wrote into a fence: measured on the mini, about 5 ms per 1000 characters and 15
+ * times the source in markup (50 000 characters: 250 ms, 750 KB), so a larger block stays plain on
+ * the server and in the browser alike (hydration needs the same answer on both sides). The cost of
+ * a render is then bounded per fence, and in total by the size of the message the host accepts.
+ */
+const MAX_HIGHLIGHT_CHARS = 50_000
+
+/** Whether `code` as `lang` is worth waiting on: a grammar the curated map loads, of a size shiki is asked for. */
+export function canHighlight(lang: string, code: string): boolean {
+  return code.length <= MAX_HIGHLIGHT_CHARS && Object.hasOwn(LANG_LOADERS, normalizeLang(lang))
+}
+
+/** One highlight for one source: the promise to suspend on, and the markup once it has settled. */
+export type Highlight = {
+  promise: Promise<string | null>
+  /** `undefined` while pending; the markup, or `null` for "stays plain", once settled. */
+  settled?: { html: string | null }
+  /** A render has taken the settled markup: the entry is no longer a retry waiting to happen. */
+  read?: boolean
+}
+
+/**
+ * Source characters the cache keeps (about 15 times that in markup), up to twice that while entries
+ * wait unread (see `evict`). A settled block asks for the
+ * same source on every render and on the server render before it, so a hit is the common case; the
+ * bound only stops a long-lived page that shows ever-new sources from holding them all.
+ */
+const CACHE_CHARS = 500_000
+const cache = new Map<string, Highlight>()
+let cachedChars = 0
+
+/**
+ * Drops the least recently asked-for settled entries until the cache fits. A pending entry is still awaited by a
+ * render, and a settled one nobody has read yet is a suspended boundary's retry about to happen, so
+ * both stay until the cache is twice over budget (a render that was aborted never reads its entry).
+ */
+function evict(): void {
+  for (const [limit, evictable] of [
+    [CACHE_CHARS, (entry: Highlight): boolean => entry.read === true],
+    [2 * CACHE_CHARS, (entry: Highlight): boolean => entry.settled !== undefined],
+  ] as const) {
+    for (const [key, entry] of cache) {
+      if (cachedChars <= limit) return
+      if (!evictable(entry)) continue
+      cache.delete(key)
+      cachedChars -= key.length
+    }
+  }
+}
+
+/**
+ * The highlight of `code` as `lang`, one per distinct pair. A render that reads it suspends on
+ * `promise` until `settled` is set, so the server render waits for the markup and the client's first
+ * hydration pass finds it already there when the same process rendered it (tests, a dev server).
+ * `NUL` cannot occur in a language name, so the key is unambiguous.
+ */
+export function getHighlight(code: string, lang: string): Highlight {
+  const key = `${lang}\0${code}`
+  const hit = cache.get(key)
+  if (hit) {
+    if (hit.settled) hit.read = true
+    // Map order is recency, so the eviction below drops what no render has asked for in the longest time.
+    cache.delete(key)
+    cache.set(key, hit)
+    return hit
+  }
+  const entry: Highlight = {
+    promise: highlightCode(code, lang).then((html) => {
+      entry.settled = { html }
+      return html
+    }),
+  }
+  cache.set(key, entry)
+  cachedChars += key.length
+  evict()
+  return entry
 }

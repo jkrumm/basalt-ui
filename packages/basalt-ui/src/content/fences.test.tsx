@@ -6,13 +6,23 @@
  * calls, fed a real hast node.
  */
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, beforeAll, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import type { Element } from 'hast'
+import { getHighlight } from './highlighter'
 import { Fence, FenceSettled, createFencePre, settledOnly } from './fences'
 import type { FenceRenderers } from './fences'
 
 afterEach(cleanup)
+
+/** Suspending blocks settle before the sync `render`s below; an unsettled one would resolve outside `act`. */
+const warm: [string, string][] = [
+  ['{ not json', 'json'],
+  ['{', 'json'],
+]
+beforeAll(async () => {
+  await Promise.all(warm.map(([code, lang]) => getHighlight(code, lang).promise))
+})
 
 let warn: ReturnType<typeof spyOn>
 beforeEach(() => {
@@ -123,7 +133,8 @@ describe('Fence — a throw is contained', () => {
     expect(preOf(container)?.textContent).toBe('spec body')
   })
 
-  test('a fence that was malformed and becomes valid gets a retry', () => {
+  test('a fence that was malformed and becomes valid gets a retry', async () => {
+    await getHighlight('{', 'json').promise // the fallback block is settled, not suspended
     const error = spyOn(console, 'error').mockImplementation(() => undefined)
     function Parse({ code }: { code: string }): ReactNode {
       return <b>{JSON.parse(code).ok as string}</b>
