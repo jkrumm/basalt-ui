@@ -221,8 +221,8 @@ export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
   const said =
     link === undefined || at === null || !link.stands(at) ? '' : sayRow(items[at], drawn[at])
   return (
-    <div data-slot="bar-list" className="@container min-w-0">
-      <Card flush>
+    <div data-slot="bar-list" className="@container h-full min-w-0">
+      <Card flush className="h-full">
         <CardBand
           title={title}
           {...(subtitle !== undefined && { subtitle })}
@@ -367,8 +367,9 @@ function StackedTrack({ segments }: { segments: readonly Segment[] }): ReactElem
             key={s.key}
             data-slot="bar-list-segment"
             data-series={s.key}
-            // The divider is a border inside the part's own width, so the parts sum to the scale.
-            className="block h-full shrink-0 border-card bg-(--swatch-light) not-first:border-l dark:bg-(--swatch-dark)"
+            // The divider is a border inside the part's own width, so the parts sum to the scale; a part that is
+            // not zero keeps a width the eye reads as a mark, the track clips what the minimum adds.
+            className="block h-full min-w-1.5 shrink-0 border-card bg-(--swatch-light) not-first:border-l dark:bg-(--swatch-dark)"
             style={
               {
                 width: `${s.percent}%`,

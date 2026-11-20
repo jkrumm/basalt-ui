@@ -42,9 +42,10 @@ const CHART_HEIGHT = 28
 // share a line.
 const T_CAPTION = 'row-start-1 flex h-4 min-w-0 items-center gap-1'
 const T_FIGURE = 'row-start-2 flex h-8 min-w-0 items-center gap-2 @regular:h-9'
-// A solo empty cause may wrap to more lines than the figure track is tall: the track grows with it.
+// A solo empty cause or an error cause may wrap to more lines than the figure track is tall: the track grows with it.
 const T_FIGURE_WRAP = 'row-start-2 flex min-h-8 min-w-0 items-center gap-2 @regular:min-h-9'
-const T_BASE = 'row-start-3 flex h-6 min-w-0 items-center gap-1.5'
+// The pill and its base label share a line while they fit; a base label too wide for the cell moves whole under the pill and the track grows with it.
+const T_BASE = 'row-start-3 flex min-h-6 min-w-0 flex-wrap items-center gap-x-1.5'
 const T_METER = 'row-start-4 mt-1 h-8.5 min-w-0 overflow-clip'
 const T_CHART = 'row-start-5 mt-1 h-7 min-w-0 overflow-clip'
 const T_ROWS = [
@@ -200,7 +201,7 @@ export function StatCell(props: StatCellProps): ReactElement {
             <>
               <DeltaBadge value={delta.value} polarity={delta.polarity} />
               {delta.label !== undefined && (
-                <p className="min-w-0 truncate text-xs text-muted-foreground">{delta.label}</p>
+                <p className="min-w-0 text-xs text-muted-foreground">{delta.label}</p>
               )}
             </>
           )}
@@ -328,7 +329,7 @@ function Figure({
   }
   if (resolved.tag === 'error') {
     return (
-      <div data-slot="stat-figure" className={T_FIGURE}>
+      <div data-slot="stat-figure" className={T_FIGURE_WRAP}>
         <ErrorLine
           kind={resolved.kind}
           message={resolved.message}
@@ -449,7 +450,7 @@ export function ErrorLine({
       className={cn('flex min-w-0 items-center gap-2', compact && 'h-full')}
     >
       <p
-        className="min-w-0 truncate text-xs text-foreground"
+        className={cn('min-w-0 text-xs text-foreground', compact && 'truncate')}
         title={kind === undefined && message?.trim() ? message : undefined}
       >
         {text}
