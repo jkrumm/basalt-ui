@@ -368,9 +368,10 @@ export function DataPanel(props: DataPanelProps): ReactElement {
   })
   const resolved = resolvePhase({ phase: props.phase, empty })
   // Before a list is ever measured, a phone's loading frame (a panel under `@regular`) gives each data
-  // row the tallest card, so it never ends shorter than the loaded list. A CSS floor on the frame, not a
-  // measured width: the server render and the browser draw the same height.
-  const cardsFloor = resolved.tag === 'loading' && 'rows' in bodySize && !measured
+  // row the tallest card, so it never ends shorter than the loaded list, and every phase holds that height
+  // until a table has been measured (the phases of one panel stay one height). A CSS floor on the frame,
+  // not a measured width: the server render and the browser draw the same height.
+  const cardsFloor = 'rows' in bodySize && !measured
   const arm = resolved.tag === 'empty' || resolved.tag === 'error' ? resolved : undefined
   const claimed = arm !== undefined && claims > 0
   return (
@@ -434,7 +435,10 @@ export function DataPanel(props: DataPanelProps): ReactElement {
                   data-slot={claimed ? 'card-phase' : undefined}
                   data-phase={claimed ? arm.tag : undefined}
                   style={claimed ? { height: boxHeight } : undefined}
-                  className="relative min-w-0 shrink-0 overflow-clip"
+                  className={cn(
+                    'relative min-w-0 shrink-0 overflow-clip',
+                    cardsFloor && '@max-regular:min-h-(--panel-cards)',
+                  )}
                 >
                   <FrameArmContext.Provider value={{ arm, height: boxHeight, claim }}>
                     <PhaseBoundary fallback={() => null}>
