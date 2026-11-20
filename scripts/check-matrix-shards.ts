@@ -8,7 +8,7 @@
  *   - the `matrix-shard <i>/<n> ran=K total=T` lines (printed by matrix.test.ts) name each of the n shards once, agree on
  *     T, the cells the matrix has, and their K add up to T.
  *
- * Usage: bun scripts/check-matrix-shards.ts <log-dir> [--shards <n>]   (default 5)
+ * Usage: bun scripts/check-matrix-shards.ts <log-dir> [--shards <n>]   (default 8)
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -90,7 +90,7 @@ if (import.meta.main) {
     process.exit(2)
   }
   const flag = process.argv.indexOf('--shards')
-  const shards = flag > -1 ? Number(process.argv[flag + 1]) : 5
+  const shards = flag > -1 ? Number(process.argv[flag + 1]) : 8
   const logs = readdirSync(dir)
     .filter((f) => /^quality-matrix-shard-.*\.log$/.test(f))
     .toSorted()
