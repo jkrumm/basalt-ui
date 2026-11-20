@@ -117,7 +117,13 @@ export async function expectHydrates(
 ): Promise<HydrateReport> {
   const bundle = await buildServerBundle(fixture.entry)
   const html = await renderOnServer(bundle, options)
-  const { Page } = (await import(fixture.entry)) as { Page: ComponentType<HydrateOptions> }
+  const mod = (await import(fixture.entry)) as {
+    Page: ComponentType<HydrateOptions>
+    ready?: Promise<unknown>
+  }
+  const { Page } = mod
+  // A fixture that owns a router exports `ready` (its first load): both sides render the loaded state.
+  await mod.ready
 
   const problems: string[] = []
   const errorSpy = spyOn(console, 'error').mockImplementation((...args: unknown[]) => {

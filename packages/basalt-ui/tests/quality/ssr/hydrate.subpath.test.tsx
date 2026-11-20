@@ -18,6 +18,7 @@ const OPTIONS = { locale: 'de-DE', timeZone: 'Europe/Berlin' } as const
 const tokens: Fixture = { name: 'tokens', entry: fixturePath('tokens'), document: true }
 const root: Fixture = { name: 'root', entry: fixturePath('root') }
 const control: Fixture = { name: 'control', entry: fixturePath('control') }
+const shell: Fixture = { name: 'shell', entry: fixturePath('shell') }
 
 const jsdom = domRunner() === 'jsdom'
 
@@ -44,6 +45,12 @@ describe.skipIf(!jsdom)('hydrate.subpath', () => {
     expect(report.lang).toBe('de-DE')
   }, 60_000)
 
+  test('shell: BasaltProvider and AppShell render with no window or storage and hydrate clean', async () => {
+    const report = await expectHydrates(shell, OPTIONS)
+    expect(report.html).toContain('data-slot="fixture"')
+    expect(report.html).toContain('Home')
+  }, 60_000)
+
   test('positive control: Math.random() in a value raises Hydration failed', async () => {
     await expect(expectHydrates(control, OPTIONS)).rejects.toThrow(/Hydration failed/)
   }, 60_000)
@@ -53,6 +60,7 @@ describe('hydrate.subpath coverage', () => {
   test('the full row is reported as not covered while no such fixture exists', () => {
     expect(rowStatus('tokens')).toBe('covered')
     expect(rowStatus('root')).toBe('covered')
+    expect(rowStatus('shell')).toBe('covered')
     expect(rowStatus('full')).toBe('not covered')
   })
 
