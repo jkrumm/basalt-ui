@@ -103,6 +103,42 @@ jobs:
       - name: Tests
         run: bun test
 
+  # The site profile's proof (apps/marketing, basalt-ui.com): build the site on the built package and
+  # hold its measured numbers to apps/marketing/site-budgets.json — zero module JavaScript on a page
+  # without an island, the React runtime and island cost, CSS per page, LCP and CLS in a headless shell.
+  site:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build package
+        run: bun --filter basalt-ui build
+
+      - name: Build the marketing site
+        run: bun --filter marketing build
+
+      # The site profile's own proof: the sibling install's managed files place, then doctor passes.
+      - name: basalt-ui doctor on apps/marketing
+        working-directory: apps/marketing
+        run: ./node_modules/.bin/basalt-ui sync && ./node_modules/.bin/basalt-ui doctor
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-shell-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      - name: Install the headless shell
+        run: make browser-shell
+
+      - name: Site budgets (apps/marketing/site-budgets.json)
+        run: bun apps/marketing/scripts/measure.ts --check --browser
+
   # The layout suite (real browser geometry), split by file across four jobs. `bun test --shard=i/N`
   # partitions the test files, so the shards together run exactly the files one run would; each prints
   # "Ran X tests across Y files", and Y must sum to the suite's file count (the `ci` job asserts it from the shard logs).
@@ -275,7 +311,7 @@ jobs:
   # failure too), so a green ci.yml run still means everything passed.
   ci:
     if: always()
-    needs: [checks, unit, layout, gate, quality-matrix, astro-matrix]
+    needs: [checks, unit, site, layout, gate, quality-matrix, astro-matrix]
     runs-on: ubuntu-latest
 
     steps:
@@ -313,10 +349,10 @@ jobs:
         run: bun scripts/check-matrix-shards.ts quality-matrix-logs --shards 5
 
       - name: Fail unless every job succeeded
-        if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success' || needs.quality-matrix.result != 'success' || needs.astro-matrix.result != 'success'
+        if: needs.checks.result != 'success' || needs.unit.result != 'success' || needs.site.result != 'success' || needs.layout.result != 'success' || needs.gate.result != 'success' || needs.quality-matrix.result != 'success' || needs.astro-matrix.result != 'success'
         run: |
-          echo "checks=${{ needs.checks.result }} unit=${{ needs.unit.result }} layout=${{ needs.layout.result }} gate=${{ needs.gate.result }} quality-matrix=${{ needs.quality-matrix.result }} astro-matrix=${{ needs.astro-matrix.result }}"
+          echo "checks=${{ needs.checks.result }} unit=${{ needs.unit.result }} site=${{ needs.site.result }} layout=${{ needs.layout.result }} gate=${{ needs.gate.result }} quality-matrix=${{ needs.quality-matrix.result }} astro-matrix=${{ needs.astro-matrix.result }}"
           exit 1
 
       - name: Every job succeeded
-        run: echo "checks, unit, all layout shards, the gate, all quality-matrix shards and the Astro matrix passed"
+        run: echo "checks, unit, the site budgets, all layout shards, the gate, all quality-matrix shards and the Astro matrix passed"
