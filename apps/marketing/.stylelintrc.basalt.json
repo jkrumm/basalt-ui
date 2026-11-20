@@ -63,10 +63,15 @@
         ],
         "/^grid-(?:template(?:-columns|-rows)?|auto-(?:columns|rows))$/": [
           "/(?<![\\w])[+-]?(?:\\d*\\.)?\\d+(?:px|rem|em|ex|ch|lh|rlh|cap|ic|vw|vh|vmin|vmax|vi|vb|[sld]v[whib]|[sld]vmin|[sld]vmax|cq[whib]|cqmin|cqmax|pt|pc|cm|mm|q|in)\\b/i"
+        ],
+        "/^(?:transition|animation)(?:-(?:duration|delay|timing-function))?$/": [
+          "/(?<![\\w.])(?!-?0+(?:\\.0+)?m?s(?![\\w-]))-?(?:\\d+\\.\\d+|\\.\\d+|\\d+)m?s(?![\\w-])/i",
+          "/(?<![\\w-])(?:cubic-bezier|steps|linear)\\(/i",
+          "/(?<![\\w-])(?:ease|ease-in|ease-out|ease-in-out|linear)(?![\\w-])/i"
         ]
       },
       {
-        "message": "Disallowed `%s: %s`. By property: padding, margin, gap and inset (top, right, bottom, left) take a --basalt-rhythm-* token (--basalt-rhythm-1 to -3), 0, auto or %, and font size a --basalt-text-* token, never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status, chart or brand colour: a status colour or tint is Status, Lozenge, DeltaBadge or a Num tone, a chart colour belongs to a chart kind, and only a brand tint is var(--basalt-selected) or a surface token; color-mix runs over --basalt tokens or transparent only; color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill, a status tint); grid-template, grid-template-columns and -rows, grid-auto-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length."
+        "message": "Disallowed `%s: %s`. By property: padding, margin, gap and inset (top, right, bottom, left) take a --basalt-rhythm-* token (--basalt-rhythm-1 to -3), 0, auto or %, and font size a --basalt-text-* token, never a raw length or calc(); background, border, outline and shadow take the colour role of their surface, never a status, chart or brand colour: a status colour or tint is Status, Lozenge, DeltaBadge or a Num tone, a chart colour belongs to a chart kind, and only a brand tint is var(--basalt-selected) or a surface token; color-mix runs over --basalt tokens or transparent only; color takes a text role (Status or Num tone from parts; text-good or text-brand at bridge), never a fill-only role (chart, seq, the brand fill, a status tint); grid-template, grid-template-columns and -rows, grid-auto-columns and -rows size tracks by fr, auto or minmax(0,1fr), never a raw length; transition and animation take their time and easing from the motion scale: var(--basalt-dur-*) and var(--basalt-ease-*), never a literal time, a cubic-bezier, steps or linear timing function, or an easing keyword (0s and 0ms, the reduced-motion end state, stay legal)."
       }
     ],
     "declaration-property-value-allowed-list": [
