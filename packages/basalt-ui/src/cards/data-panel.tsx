@@ -38,6 +38,15 @@ const bodyHeightOf = (size: DataPanelProps['bodySize'], rowPx: number): number =
 }
 
 /**
+ * The same height as `bodyHeightOf` for a `rows` body, as CSS: the table row token is read by the
+ * browser (the coarse-pointer tier is taller than the dense one), so the server HTML and the first client
+ * render are one height before the token is measured. The fallback is the `:root` default, 2rem. The
+ * `MIN_BODY` floor is `min-h-24` (6rem, 96 px) on the same box.
+ */
+const rowsHeightCss = (rows: number): string =>
+  `calc(${Math.max(0, Math.round(rows))} * var(--basalt-row-h, 2rem))`
+
+/**
  * The tallest phone card the kit draws: a title, a sub line, a value and a meter, 108 px at 390 px
  * (measured in cycle 13; a card with no meter is 92 px). Until a list is measured, a loading frame of a
  * `rows` body gives each data row one card this tall, so it never ends shorter than the loaded list.
@@ -47,25 +56,6 @@ const CARD_TALL = 108
 /** The data rows a `rows` body names: its rows less the head row, at least one. */
 const dataRowsOf = (size: DataPanelProps['bodySize']): number =>
   'rows' in size ? Math.max(1, Math.round(size.rows) - 1) : 1
-
-/** Whether the panel is as narrow as a phone, the width under which its table is cards. */
-function useNarrow(ref: RefObject<HTMLDivElement | null>): boolean {
-  const [narrow, setNarrow] = useState(false)
-  useLayoutEffect(() => {
-    const el = ref.current
-    if (el === null) return undefined
-    const read = (): void => {
-      const { width } = el.getBoundingClientRect()
-      setNarrow(width > 0 && width < 480)
-    }
-    read()
-    if (typeof ResizeObserver === 'undefined') return undefined
-    const observer = new ResizeObserver(read)
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [ref])
-  return narrow
-}
 
 /** The table row height token, in px: the rows the desktop box holds are counted in it. */
 function rowHeightOf(el: HTMLElement): number {
@@ -145,9 +135,10 @@ function useWholeRows(
       // A panel stretched by its grid row has more room than it declared: cut at the box it has. Only a
       // box taller than its own stated height is stretched; a loading estimate is not room.
       const phaseBox = box.parentElement
-      const stated = Number.parseFloat(phaseBox?.style.height ?? '')
-      const grown =
-        phaseBox !== null && Number.isFinite(stated) && phaseBox.clientHeight > stated + 0.5
+      // the frame's own height is CSS (a calc on the row token) until a list is measured: that is `declared`
+      const parsed = Number.parseFloat(phaseBox?.style.height ?? '')
+      const stated = Number.isFinite(parsed) ? parsed : declared
+      const grown = phaseBox !== null && phaseBox.clientHeight > stated + 0.5
       const limit = grown ? Math.max(declared, phaseBox.clientHeight) : declared
       let fit: number | undefined
       let last = 0
@@ -184,28 +175,23 @@ function ArmBody({ body, height }: { body: DataPanelProps['body']; height: numbe
 
 const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
 
-function PanelSkeleton({
-  size,
-  cards,
-}: {
-  size: DataPanelProps['bodySize']
-  /** The panel is as narrow as a phone: its rows are cards that share the box, as tall as a card. */
-  cards: boolean
-}): ReactElement {
-  if ('rows' in size && cards) {
-    return (
-      <div aria-hidden="true" className="flex h-full flex-col gap-2 overflow-clip">
-        {Array.from({ length: Math.max(0, Math.round(size.rows)) }, (_, i) => (
-          <div key={i} className={cn(BAR, 'min-h-8 flex-1')} />
-        ))}
-      </div>
-    )
-  }
+/**
+ * The loading shape. In a panel as narrow as a phone (`@max-regular`) the rows are cards that share
+ * the box, as tall as a card; a container query lays that out, so the server HTML and the first client
+ * render are one picture.
+ */
+function PanelSkeleton({ size }: { size: DataPanelProps['bodySize'] }): ReactElement {
   if ('rows' in size) {
     return (
       <div aria-hidden="true" className="flex h-full flex-col gap-2 overflow-clip">
         {Array.from({ length: Math.max(0, Math.round(size.rows)) }, (_, i) => (
-          <div key={i} className={cn(BAR, 'h-8 shrink-0')} />
+          <div
+            key={i}
+            className={cn(
+              BAR,
+              'h-8 shrink-0 @max-regular:h-auto @max-regular:min-h-8 @max-regular:flex-1 @max-regular:shrink',
+            )}
+          />
         ))}
       </div>
     )
@@ -371,16 +357,9 @@ export function DataPanel(props: DataPanelProps): ReactElement {
   const rootRef = useRef<HTMLDivElement | null>(null)
   const rowPx = useRowPx(rootRef, 'rows' in bodySize)
   const declared = bodyHeightOf(bodySize, rowPx)
-  const narrow = useNarrow(rootRef)
   const { ref: insetRef, fit, measured } = useWholeRows(bodySize, declared)
-  // A measured list takes the height its whole rows or cards fill (`fit`). Before the first measure, a
-  // phone's loading frame takes the tallest card per data row.
-  const boxHeight =
-    fit !== undefined
-      ? fit
-      : narrow && 'rows' in bodySize && !measured
-        ? Math.max(declared, dataRowsOf(bodySize) * CARD_TALL)
-        : declared
+  // A measured list takes the height its whole rows or cards fill (`fit`), else the declared height.
+  const boxHeight = fit ?? declared
   const [claims, setClaims] = useState(0)
   // oxlint-disable-next-line react/hook-use-state -- the lazy initialiser holds one stable function for the context; there is no setter to name
   const [claim] = useState(() => (): (() => void) => {
@@ -388,10 +367,23 @@ export function DataPanel(props: DataPanelProps): ReactElement {
     return () => setClaims((n) => n - 1)
   })
   const resolved = resolvePhase({ phase: props.phase, empty })
+  // Before a list is ever measured, a phone's loading frame (a panel under `@regular`) gives each data
+  // row the tallest card, so it never ends shorter than the loaded list. A CSS floor on the frame, not a
+  // measured width: the server render and the browser draw the same height.
+  const cardsFloor = resolved.tag === 'loading' && 'rows' in bodySize && !measured
   const arm = resolved.tag === 'empty' || resolved.tag === 'error' ? resolved : undefined
   const claimed = arm !== undefined && claims > 0
   return (
-    <div ref={rootRef} data-slot="data-panel" className="@container h-full min-w-0">
+    <div
+      ref={rootRef}
+      data-slot="data-panel"
+      className="@container h-full min-w-0"
+      style={
+        cardsFloor
+          ? ({ '--panel-cards': `${dataRowsOf(bodySize) * CARD_TALL}px` } as CSSProperties)
+          : undefined
+      }
+    >
       <Card flush className="h-full">
         <PanelHead {...props} />
         {toolbar !== undefined && (
@@ -411,8 +403,17 @@ export function DataPanel(props: DataPanelProps): ReactElement {
                   phase={phase}
                   empty={empty}
                   height={boxHeight}
-                  className="grow"
-                  skeleton={<PanelSkeleton size={bodySize} cards={narrow} />}
+                  style={
+                    fit === undefined && 'rows' in bodySize
+                      ? { height: rowsHeightCss(bodySize.rows) }
+                      : undefined
+                  }
+                  className={cn(
+                    'grow',
+                    fit === undefined && 'rows' in bodySize && 'min-h-24',
+                    cardsFloor && '@max-regular:min-h-(--panel-cards)',
+                  )}
+                  skeleton={<PanelSkeleton size={bodySize} />}
                 >
                   {(box) => (
                     <div

@@ -236,7 +236,7 @@ describe('DataPanel phase matrix', () => {
       const { container } = render(panel(probe, () => <p>rows</p>))
       const box = container.querySelector<HTMLElement>('[data-slot="card-phase"]')
       expect(box?.getAttribute('data-phase')).toBe(probe)
-      expect(box?.style.height, probe).toBe('192px')
+      expect(box?.style.height, probe).toBe('calc(6 * var(--basalt-row-h, 2rem))')
       cleanup()
     }
   })
@@ -261,9 +261,10 @@ describe('DataPanel phase matrix', () => {
     const { container } = render(
       <DataPanel title="Board" bodySize={{ rows: 1 }} body={() => null} />,
     )
-    expect(container.querySelector<HTMLElement>('[data-slot="card-phase"]')?.style.height).toBe(
-      '96px',
-    )
+    const box = container.querySelector<HTMLElement>('[data-slot="card-phase"]')
+    // CSS: one 2rem row under the 6rem floor, which `min-h-24` holds on the same box
+    expect(box?.style.height).toBe('calc(1 * var(--basalt-row-h, 2rem))')
+    expect(box?.className).toContain('min-h-24')
   })
 
   test('a throwing body renders the error arm and keeps the header', () => {

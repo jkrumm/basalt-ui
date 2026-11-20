@@ -15,12 +15,17 @@ export type TocItem = {
 
 export type TocProps = {
   /** Explicit item list. Omit to auto-collect from `containerRef`. */
-  items?: TocItem[]
+  items?: TocItem[] | undefined
   /** The article container to auto-collect headings from (ignored when `items` is provided). */
   containerRef?: RefObject<HTMLElement | null>
   /** Heading levels to collect when auto-collecting. Default `[2, 3]`. */
   levels?: readonly [number, number]
   title?: string
+  /**
+   * The id marked current until the spy resolves one. A page read from its top passes its first
+   * section, so the server HTML is the picture the spy confirms. Default: none is current.
+   */
+  startAt?: string | undefined
   /** Called after a rail item is clicked and the target has been scrolled to. */
   onNavigate?: (id: string) => void
   className?: string
@@ -73,13 +78,14 @@ export function Toc({
   containerRef,
   levels = DEFAULT_LEVELS,
   title,
+  startAt,
   onNavigate,
   className,
 }: TocProps): ReactElement | null {
   const t = useMessages(page)
   const heading = title ?? t('page.toc')
   const [collected, setCollected] = useState<TocItem[]>([])
-  const [activeId, setActiveId] = useState<string | null>(null)
+  const [activeId, setActiveId] = useState<string | null>(startAt ?? null)
   // The rail's own node — the probe `scrollParentOf` walks from when there is no `containerRef`.
   const navRef = useRef<HTMLElement | null>(null)
   // The spy's working set, resolved once per effect run: headings, scroller, and the band's members.

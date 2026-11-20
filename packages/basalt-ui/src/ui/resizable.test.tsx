@@ -71,6 +71,18 @@ describe('resizable', () => {
     expect(html).toContain('data-slot="resizable-handle"')
   })
 
+  test('server render carries a percent defaultSize as a flex basis, so the first paint is the hydrated layout', () => {
+    const html = renderToString(
+      <ResizablePanelGroup className="h-96">
+        <ResizablePanel defaultSize="35%">a</ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel defaultSize="65%">b</ResizablePanel>
+      </ResizablePanelGroup>,
+    )
+    expect(html).toContain('flex-basis:35%')
+    expect(html).toContain('flex-basis:65%')
+  })
+
   test('a panel clips instead of scrolling, so the page keeps one scrollport', () => {
     const { container } = render(<Split />)
     const inner = container.querySelector('[data-slot="resizable-panel"] > div')

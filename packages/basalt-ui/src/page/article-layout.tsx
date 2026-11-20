@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react'
-import { useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cn } from '../core/cn'
 import { AppLink } from '../core/link'
 import { page } from '../core/messages/page'
@@ -10,6 +10,7 @@ import { ArticleProgress } from './article-progress'
 import { formatArticleDate } from './core/article-date'
 import type { ProseDensity } from './prose'
 import { Prose } from './prose'
+import type { TocItem } from './toc'
 import { Toc } from './toc'
 
 export type ArticleLayoutMeta = {
@@ -32,8 +33,14 @@ export type ArticleLayoutProps = {
   /** The article body, typically `Markdown` output or plain HTML. */
   children: ReactNode
   meta?: ArticleLayoutMeta
-  /** Scroll-spy TOC collected from the body: a sticky rail from 1200px, a popover below. Default `true`. */
+  /** Scroll-spy TOC collected from the body: a sticky rail in a container of `@wide` (50rem) or more, a popover below. Default `true`. */
   toc?: boolean
+  /**
+   * The TOC entries (`{ id, label, level }`), when the page knows them (an Astro or MDX page reads
+   * them from its headings). They draw in the server HTML, so a static page carries the rail's
+   * entries; without them the TOC collects the body's `h2` and `h3` after mount.
+   */
+  tocItems?: TocItem[]
   /** A thin fixed bar at the top that tracks the scroll through the body. Default `false`. */
   readingProgress?: boolean
   prev?: ArticleNavTarget
@@ -47,21 +54,6 @@ export type ArticleLayoutProps = {
   /** Layout only (`mt-8`). */
   className?: string
 }
-
-/** The `xl` breakpoint (`--breakpoint-xl` in `css/tailwind.css`): the rail shows from this width. */
-const RAIL_QUERY = '(min-width: 1200px)'
-
-function subscribeRail(onChange: () => void): () => void {
-  // the TOC swap needs one of two branches mounted, not both hidden by CSS
-  const list = window.matchMedia(RAIL_QUERY)
-  list.addEventListener('change', onChange)
-  return () => list.removeEventListener('change', onChange)
-}
-
-// the same TOC swap read
-const railSnapshot = (): boolean => window.matchMedia(RAIL_QUERY).matches
-// Below the breakpoint until the client says otherwise: the trigger is the safe first paint.
-const railServerSnapshot = (): boolean => false
 
 function defaultRenderLink(target: ArticleNavTarget, node: ReactNode): ReactNode {
   return <AppLink href={target.href}>{node}</AppLink>
@@ -93,9 +85,11 @@ function NavCell({
 
 /**
  * The docs-page frame: a centered article column with a title, description, date and reading-time
- * header, an optional scroll-spy TOC, an optional reading-progress bar and a prev/next footer. From
- * 1200px the TOC is a sticky right rail; below it an "On this page" button opens the same TOC in a
- * popover. The meta row renders only when `meta.date` or `meta.readingTime` is given.
+ * header, an optional scroll-spy TOC, an optional reading-progress bar and a prev/next footer. In a
+ * container of `@wide` (50rem) or more the TOC is a sticky right rail; below it an "On this page"
+ * button opens the same TOC in a popover. A container query picks the one, so the server HTML is the
+ * final layout and a page in static HTML shifts nothing on hydrate. The meta row renders only when
+ * `meta.date` or `meta.readingTime` is given.
  *
  * @useWhen a docs or note page needs a title header, a table of contents and prev/next links around its body
  * @neverWhen the page is a dashboard or a form (use Page)
@@ -114,6 +108,7 @@ export function ArticleLayout({
   children,
   meta,
   toc = true,
+  tocItems,
   readingProgress = false,
   prev,
   next,
@@ -125,85 +120,102 @@ export function ArticleLayout({
   const t = useMessages(page)
   const tocLabel = t('page.tocTrigger')
   const articleRef = useRef<HTMLDivElement>(null)
-  const wide = useSyncExternalStore(subscribeRail, railSnapshot, railServerSnapshot)
-  const showRail = toc && wide
+  const triggerRef = useRef<HTMLDivElement>(null)
   const [tocOpen, setTocOpen] = useState(false)
-  // Crossing the breakpoint unmounts the popover without closing it; reset during render so it does
-  // not come back open with no user action.
-  const [prevWide, setPrevWide] = useState(wide)
-  if (prevWide !== wide) {
-    setPrevWide(wide)
-    if (tocOpen) setTocOpen(false)
-  }
+  // Crossing into the rail hides the trigger the popover hangs from (it has no box then): close it,
+  // so it does not float loose or come back open with no user action.
+  useEffect(() => {
+    const trigger = triggerRef.current
+    if (!tocOpen || trigger === null || typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(() => {
+      if (trigger.offsetWidth === 0) setTocOpen(false)
+    })
+    observer.observe(trigger)
+    return () => observer.disconnect()
+  }, [tocOpen])
   const hasMetaRow = meta?.date !== undefined || meta?.readingTime !== undefined
 
   return (
-    <div
-      data-slot="article-layout"
-      className={cn(
-        'grid justify-center gap-x-12 grid-cols-[minmax(0,72ch)]',
-        showRail && 'grid-cols-[minmax(0,72ch)_14rem]',
-        className,
-      )}
-    >
+    <>
+      {/* outside the container: a container is the containing block of a fixed child */}
       {readingProgress && <ArticleProgress target={articleRef} />}
-
-      {meta !== undefined && (
-        <header className="col-start-1 row-start-1 mb-8 flex flex-col gap-2">
-          <h1 className="font-head text-display font-semibold text-balance text-foreground">
-            {meta.title}
-          </h1>
-          {meta.description !== undefined && (
-            <p className="text-base text-muted-foreground">{meta.description}</p>
+      <div data-slot="article-layout" className={cn('@container', className)}>
+        <div
+          className={cn(
+            'grid justify-center gap-x-12 grid-cols-[minmax(0,72ch)]',
+            toc && '@wide:grid-cols-[minmax(0,72ch)_14rem]',
           )}
-          {hasMetaRow && (
-            <div className="flex items-center gap-2 font-mono text-micro tracking-wider text-faint uppercase">
-              {meta.date !== undefined && <span>{formatArticleDate(meta.date, locale)}</span>}
-              {meta.date !== undefined && meta.readingTime !== undefined && (
-                <span aria-hidden="true">·</span>
+        >
+          {meta !== undefined && (
+            <header className="col-start-1 row-start-1 mb-8 flex flex-col gap-2">
+              <h1 className="font-head text-display font-semibold text-balance text-foreground">
+                {meta.title}
+              </h1>
+              {meta.description !== undefined && (
+                <p className="text-base text-muted-foreground">{meta.description}</p>
               )}
-              {meta.readingTime !== undefined && <span>{t('page.minRead', meta.readingTime)}</span>}
+              {hasMetaRow && (
+                <div className="flex items-center gap-2 font-mono text-micro tracking-wider text-faint uppercase">
+                  {meta.date !== undefined && <span>{formatArticleDate(meta.date, locale)}</span>}
+                  {meta.date !== undefined && meta.readingTime !== undefined && (
+                    <span aria-hidden="true">·</span>
+                  )}
+                  {meta.readingTime !== undefined && (
+                    <span>{t('page.minRead', meta.readingTime)}</span>
+                  )}
+                </div>
+              )}
+            </header>
+          )}
+
+          <div className="col-start-1 row-start-2 min-w-0" ref={articleRef}>
+            {toc && (
+              <div ref={triggerRef} className="sticky top-2 z-10 flex justify-end @wide:hidden">
+                <Popover open={tocOpen} onOpenChange={setTocOpen}>
+                  <PopoverTrigger className="rounded-ctrl bg-popover px-2 py-1 text-xs font-medium text-muted-foreground shadow-raised hover:text-foreground">
+                    {tocLabel}
+                  </PopoverTrigger>
+                  <PopoverContent aria-label={tocLabel} side="bottom" align="end">
+                    <Toc
+                      containerRef={articleRef}
+                      items={tocItems}
+                      startAt={tocItems?.[0]?.id}
+                      onNavigate={() => setTocOpen(false)}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+            <Prose density={density}>{children}</Prose>
+          </div>
+
+          {toc && (
+            <div className="col-start-2 row-start-2 sticky top-6 hidden max-h-[calc(100vh-6rem)] self-start overflow-y-auto @wide:block">
+              <Toc containerRef={articleRef} items={tocItems} startAt={tocItems?.[0]?.id} />
             </div>
           )}
-        </header>
-      )}
 
-      <div className="col-start-1 row-start-2 min-w-0" ref={articleRef}>
-        {toc && !wide && (
-          <div className="sticky top-2 z-10 flex justify-end">
-            <Popover open={tocOpen} onOpenChange={setTocOpen}>
-              <PopoverTrigger className="rounded-ctrl bg-popover px-2 py-1 text-xs font-medium text-muted-foreground shadow-raised hover:text-foreground">
-                {tocLabel}
-              </PopoverTrigger>
-              <PopoverContent aria-label={tocLabel} side="bottom" align="end">
-                <Toc containerRef={articleRef} onNavigate={() => setTocOpen(false)} />
-              </PopoverContent>
-            </Popover>
-          </div>
-        )}
-        <Prose density={density}>{children}</Prose>
-      </div>
-
-      {showRail && (
-        <div className="col-start-2 row-start-2 sticky top-6 max-h-[calc(100vh-6rem)] self-start overflow-y-auto">
-          <Toc containerRef={articleRef} />
+          {(prev !== undefined || next !== undefined) && (
+            <footer className="col-start-1 row-start-3 mt-12 grid grid-cols-2 gap-4 border-t border-border pt-6 [&_a]:text-inherit [&_a]:no-underline">
+              {prev !== undefined ? (
+                <NavCell
+                  target={prev}
+                  side="prev"
+                  label={t('page.previous')}
+                  renderLink={renderLink}
+                />
+              ) : (
+                <span />
+              )}
+              {next !== undefined ? (
+                <NavCell target={next} side="next" label={t('page.next')} renderLink={renderLink} />
+              ) : (
+                <span />
+              )}
+            </footer>
+          )}
         </div>
-      )}
-
-      {(prev !== undefined || next !== undefined) && (
-        <footer className="col-start-1 row-start-3 mt-12 grid grid-cols-2 gap-4 border-t border-border pt-6 [&_a]:text-inherit [&_a]:no-underline">
-          {prev !== undefined ? (
-            <NavCell target={prev} side="prev" label={t('page.previous')} renderLink={renderLink} />
-          ) : (
-            <span />
-          )}
-          {next !== undefined ? (
-            <NavCell target={next} side="next" label={t('page.next')} renderLink={renderLink} />
-          ) : (
-            <span />
-          )}
-        </footer>
-      )}
-    </div>
+      </div>
+    </>
   )
 }

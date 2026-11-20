@@ -2,7 +2,7 @@ import { useRender } from '@base-ui/react/use-render'
 import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import { isValidElement, useContext, useId } from 'react'
-import type { ComponentProps, ReactElement, ReactNode } from 'react'
+import type { ComponentProps, CSSProperties, ReactElement, ReactNode } from 'react'
 import { HostTitleContext, couldNotLoad } from '../core/could-not-load'
 import { cn } from '../core/cn'
 import { AppLink } from '../core/link'
@@ -376,6 +376,11 @@ export type CardPhaseProps = FrameState & {
    */
   staleLine?: 'corner' | 'body'
   className?: string
+  /**
+   * Replaces the inline `height` a numeric `height` sets, for a height CSS decides (a calc on a token).
+   * A frame passes it only where the server and the browser must draw one height.
+   */
+  style?: CSSProperties | undefined
 }
 
 /**
@@ -398,6 +403,7 @@ export function CardPhase({
   arms = 'stack',
   staleLine = 'corner',
   className,
+  style,
 }: CardPhaseProps): ReactElement {
   const resolved = resolvePhase({ phase, empty })
   const box: Box = { height, phase: resolved.tag === 'stale' ? 'stale' : 'ready' }
@@ -407,7 +413,7 @@ export function CardPhase({
       data-slot="card-phase"
       data-phase={resolved.tag}
       aria-busy={resolved.tag === 'loading' || undefined}
-      style={typeof height === 'number' ? { height } : undefined}
+      style={typeof height === 'number' ? { height, ...style } : style}
       className={cn(
         'relative min-w-0',
         height === 'fill' ? fill : 'shrink-0 overflow-clip',

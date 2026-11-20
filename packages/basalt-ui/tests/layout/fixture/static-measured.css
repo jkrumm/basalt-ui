@@ -1,0 +1,11 @@
+/*
+ * The `static-measured` fixture's Tailwind v4 entry, compiled with preflight like a Tailwind consumer.
+ * `static-measured.layout.test.ts` compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@import '../../../src/css/prose.css';
+@source './static-measured-parts.tsx';
+@source '../../../src/cards';
+@source '../../../src/core';
+@source '../../../src/page';
+@source '../../../src/ui';

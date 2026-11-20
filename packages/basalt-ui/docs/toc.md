@@ -17,11 +17,12 @@ positioning is the caller's job.
 ## Signature
 
 ```ts
-Toc({ items, containerRef, levels, title, onNavigate, className, }: TocProps): ReactElement | null
+Toc({ items, containerRef, levels, title, startAt, onNavigate, className, }: TocProps): ReactElement | null
   items?: TocItem[]  // Explicit item list
   containerRef?: RefObject<HTMLElement | null>  // The article container to auto-collect headings from (ignored when `items` is provided)
   levels?: readonly [number, number]  // Heading levels to collect when auto-collecting
   title?: string
+  startAt?: string  // The id marked current until the spy resolves one
   onNavigate?: (id: string) => void  // Called after a rail item is clicked and the target has been scrolled to
   className?: string
 ```

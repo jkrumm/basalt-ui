@@ -155,10 +155,28 @@ describe('virtual-list module', () => {
     expect(table?.getAttributeNames()).toEqual(['class'])
   })
 
-  test('server render keeps the slot and mounts no rows', () => {
+  test('server render keeps the slot and draws the first window for the initial height', () => {
     const html = renderToString(<List rows={make(100)} />)
     expect(html).toContain('data-slot="virtual-list"')
-    expect(html).not.toContain('data-row')
+    expect(html).toContain('data-row="r0"')
+    // 640 px default over 20 px rows is 32 rows, 2 more of overscan, the rest one spacer
+    expect(html.match(/data-row=/g)).toHaveLength(34)
+    expect(html).toContain('height:1320px')
+  })
+
+  test('initialHeight sets how many rows the server renders before the list is measured', () => {
+    const html = renderToString(
+      <VirtualList
+        count={100}
+        estimateSize={() => ROW}
+        getItemKey={(i) => i}
+        initialHeight={100}
+        overscan={0}
+      >
+        {([item]) => <i data-row={item!.index} />}
+      </VirtualList>,
+    )
+    expect(html.match(/data-row=/g)).toHaveLength(5)
   })
 
   test('only ui/virtual-list imports @tanstack/react-virtual', () => {

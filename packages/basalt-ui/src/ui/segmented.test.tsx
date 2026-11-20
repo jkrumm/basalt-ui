@@ -47,12 +47,13 @@ describe('segmented module', () => {
     for (const slot of found) expect(segmentedParts).toContain(slot as never)
   })
 
-  test('server render shows the selection on the item and draws no indicator', () => {
+  test('server render shows the selection on the item, drawn in CSS from its pressed state', () => {
     const html = renderToString(
       <Segmented aria-label="Range" options={OPTIONS} defaultValue="week" />,
     )
     expect(html).toContain('data-slot="segmented-item"')
-    expect(html).toContain('data-indicator="false"')
+    expect(html).toMatch(/data-pressed[^>]*>Week/)
+    expect(html).toContain('data-pressed:bg-secondary')
     expect(html).not.toContain('data-pill')
   })
 
@@ -120,16 +121,13 @@ describe('segmented module', () => {
     expect(getByText('Locked').hasAttribute('data-disabled')).toBe(true)
   })
 
-  test('multiple keeps several on and draws no indicator', () => {
+  test('multiple keeps several on, each drawn raised', () => {
     const { container, getByText } = render(
       <Segmented aria-label="Series" multiple options={OPTIONS} defaultValue={['day']} />,
     )
     fireEvent.click(getByText('Week'))
     expect(pressed(container).toSorted()).toEqual(['Day', 'Week'])
     expect(container.querySelector('[data-pill]')).toBeNull()
-    expect(container.querySelector('[data-slot="segmented"]')?.getAttribute('data-indicator')).toBe(
-      'false',
-    )
   })
 
   test('fill takes the box width and gives every option an equal share', () => {
