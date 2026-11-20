@@ -22,6 +22,9 @@ describe('date, dateTime, time', () => {
     expect(f.date(AT, 'long')).toBe('September 2, 2026')
     expect(f.date(AT, 'month')).toBe('September 2026')
     expect(f.date(AT, 'weekday')).toBe('Wed')
+    expect(f.date(AT, 'day')).toBe('Sep 2')
+    expect(f.date('2026-11-12', 'day')).toBe('Nov 12')
+    expect(createFormat({ locale: 'de' }).date(AT, 'day')).toBe('2. Sept.')
     expect(f.dateTime(AT)).toMatch(/^Sep 2, 2026(,| at) 3:04\sPM$/)
     expect(f.time(AT)).toMatch(/^3:04\sPM$/)
     expect(f.time(AT, { hour12: false })).toBe('15:04')
@@ -60,6 +63,21 @@ describe('duration, plural', () => {
     expect(f.duration(3_723_000)).toBe('1:02:03')
     expect(f.duration(252_000)).toBe('04:12')
     expect(f.duration(-5)).toBe('00:00')
+  })
+
+  test('words: the two largest units, rounded at the smaller', () => {
+    expect(f.duration(12 * 3_600_000 + 29 * 60_000 + 51_000, 'words')).toBe('12 hr 30 min')
+    expect(f.duration(52 * 3_600_000, 'words')).toBe('2 days 4 hr')
+    expect(f.duration(45_000, 'words')).toBe('45 sec')
+    expect(f.duration(0, 'words')).toBe('0 sec')
+    expect(f.duration(59 * 60_000 + 50_000, 'words')).toBe('59 min 50 sec')
+    expect(f.duration(2 * 3_600_000 - 20_000, 'words')).toBe('2 hr')
+    expect(f.duration(86_400_000 - 20_000, 'words')).toBe('1 day')
+    expect(f.duration(3 * 3_600_000 + 10_000, 'words')).toBe('3 hr')
+    expect(f.duration(90_000, 'words')).toBe('1 min 30 sec')
+    expect(f.duration(Number.NaN, 'words')).toBe('—')
+    expect(f.duration(3_723_000, 'clock')).toBe('1:02:03')
+    expect(createFormat({ locale: 'de' }).duration(45_000_000, 'words')).toBe('12 Std. 30 Min.')
   })
 
   test('plural categories follow the locale', () => {
