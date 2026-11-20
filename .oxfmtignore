@@ -39,3 +39,8 @@ packages/basalt-ui/docs/*.md
 !packages/basalt-ui/docs/testing.md
 !packages/basalt-ui/docs/vite.md
 !packages/basalt-ui/docs/widgets.md
+
+# The Astro matrix record: scripts/matrix.ts --update writes the JSON one part per line and renders the
+# .md from it; `make astro-matrix` fails when the .md is not that rendering, so a formatter pass would fail it.
+docs/v3/verdicts/astro-matrix.json
+docs/v3/verdicts/astro-matrix.md

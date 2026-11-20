@@ -1,0 +1,26 @@
+{
+  "why": "The Astro matrix (docs/v3/verdicts/astro-matrix.md, Issue 2540) renders every chart kind with no client directive and compares the static HTML with the client:only render. Every engine-drawn kind is wrong: Lines 3.1%, Bars 13%, CartesianChart 3.7%, ChartCard 1.3%, Heatmap 26%, IntervalTrack 6.9%, BandStrip 22.5% of pixels at 1440 in a 640 px box, 8 to 53% at 390. Cause: packages/basalt-ui/src/charts/host.tsx passes the engine `initialWidth` (INITIAL_WIDTH, 640) only, so @tanstack/charts draws the server SVG at its default 640 x 320 (`initialHeight = options.height ?? 320`, adapter-shared.js) inside a CSS box of the declared height, and `preserveAspectRatio` shrinks and letterboxes it. An uncommitted probe on 2026-11-20 passed a numeric box height to the engine: the 1440 diff fell to 2.8% Lines, 2.2% Bars, 3.0% CartesianChart, 7.0% Heatmap, 0% IntervalTrack, 2.8% BandStrip; the remainder is the axis gutters, which the engine sizes from text it measures in the browser. At 390 the 640 server width stays wrong. Sparkline draws its own SVG and is already static-clean. Content sites (Astro, Issue 2531) want a chart as a static picture with an island only for hover.",
+  "what": "Chart kinds whose server HTML is the picture the browser draws at the declared box, so a static page shows the right chart before (or without) hydration.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (behaviour; a new optional prop through the contract-amendment path if one is needed)",
+    "their tests and layout tests",
+    "docs/v3/verdicts/astro-matrix.{json,md} and its images (recorded with make astro-matrix UPDATE=1)"
+  ],
+  "must_not_touch": [
+    "apps/playground-astro/scripts/** (the measurement)",
+    "apps/playground-astro/src/parts/charts/** beyond what a new prop needs"
+  ],
+  "change": "(1) The host passes the engine the box height when it is a number (and the class height the box resolves to for a responsive height) so the server viewBox matches the box. (2) The server width: a chart in a box of known width (a declared width, or the container class the box resolves to) draws its server SVG at that width instead of 640; choose the smallest surface, prefer reading what CSS already knows over a new prop. (3) Axis gutters and label room come from the same measure on the server and in the browser (basalt's generated label widths, chart-labels-widths.gen.ts), so the hydrated redraw does not move the plot. Keep W10: the box is final in the server HTML.",
+  "acceptance": [
+    "The Astro matrix records Lines, Bars, CartesianChart, ChartCard, Heatmap, IntervalTrack and BandStrip static-clean at 1440 (their declared 640 px box), light and dark (make astro-matrix UPDATE=1, the record in the same PR)",
+    "At 390 each kind is static-clean or its residual is stated in the matrix finding with its cause",
+    "No layout or quality-matrix regression on the Vite playground",
+    "make check passes"
+  ],
+  "out_of_scope": [
+    "Hover and focus without React (the island stays the way to add them)",
+    "A new chart kind"
+  ],
+  "proof": "make astro-matrix UPDATE=1 (the record and its .md change only for the parts above), make check",
+  "commits": "package changes in their own commit; the matrix record (docs/v3/verdicts/astro-matrix.*) in a non-package commit"
+}
