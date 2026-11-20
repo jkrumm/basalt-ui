@@ -155,12 +155,12 @@ describe('check 3: peers and ai-major-parity', () => {
         'node_modules/@tanstack/react-table/package.json': JSON.stringify({ version: installed }),
       }
     }
-    const bad = await runCheck(makeTree('app', withTable('9.3.1')), 3)
+    const bad = await runCheck(makeTree('app', withTable('9.2.8')), 3)
     expect(bad.status).toBe('fail')
-    expect(bad.detail).toContain('@tanstack/react-table 9.3.1')
-    expect(bad.detail).toContain('9.2.8')
-    expect(bad.detail).toContain('bun add @tanstack/react-table@9.2.8')
-    expect((await runCheck(makeTree('app', withTable('9.2.8')), 3)).status).toBe('pass')
+    expect(bad.detail).toContain('@tanstack/react-table 9.2.8')
+    expect(bad.detail).toContain('9.3.1')
+    expect(bad.detail).toContain('bun add @tanstack/react-table@~9.3.1')
+    expect((await runCheck(makeTree('app', withTable('9.3.1')), 3)).status).toBe('pass')
   })
 
   it('fails a profile peer installed outside its range and prints the declared spec', async () => {
