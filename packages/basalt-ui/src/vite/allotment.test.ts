@@ -13,8 +13,8 @@ describe('allotment.gen.ts', () => {
     expect(ALLOTMENT).toEqual(parseAllotment(readFileSync(ARCHITECTURE, 'utf8')))
   })
 
-  it('reads the thirteen runtime subpaths, 37 primitives and the three primitive peers', () => {
-    expect(Object.keys(ALLOTMENT.subpaths)).toHaveLength(13)
+  it('reads the fourteen runtime subpaths, 37 primitives and the three primitive peers', () => {
+    expect(Object.keys(ALLOTMENT.subpaths)).toHaveLength(14)
     expect(ALLOTMENT.primitives).toHaveLength(37)
     expect(ALLOTMENT.primitivePeers).toEqual({
       'date-picker': ['react-day-picker'],
