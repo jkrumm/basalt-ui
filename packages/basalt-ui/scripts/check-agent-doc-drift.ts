@@ -737,6 +737,7 @@ export const CHECK_I_NON_EXPORTS: ReadonlySet<string> = new Set([
   'basalt-ui/content:sanitize', // a prop of Markdown
   'basalt-ui/content:rehypePlugins', // a prop of Markdown
   'basalt-ui/shell:defineNav', // the nav declaration the shell takes, exported by ./router
+  'basalt-ui/form:createFormHook', // the TanStack Form factory the hook is built on, never re-exported
 ])
 
 const BACKTICK_IDENT_RE = /`([A-Za-z_$][\w$]*)(?:\(\))?`/g
