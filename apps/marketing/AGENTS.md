@@ -20,12 +20,17 @@ works here, so a shortcut taken on this site becomes theirs. Root `AGENTS.md` ho
 - `/guides/*` are MDX files under `src/guides/` rendered in `SiteArticle` with
   `siteMdxComponents(...)` as their components; raw Markdown is styled by element through
   `.basalt-prose`, and `<SiteCallout>`, `<Steps>` and `<Figure>` need no import.
-- `/charts` holds the site's one island (`src/islands/`). `src/styles/site.css` adds the `@source`
-  lines for the chart and card classes it uses.
+- `/charts` holds the site's one hand-written island (`src/islands/`). `src/styles/site.css` adds the
+  `@source` lines for the chart, card and table classes the islands use.
+- MDX pages take `Tabs`, `Tab`, `Form`, `Field` and `SubmitButton` from `siteMdxComponents(...)`, which render
+  with no JavaScript; `DataTable` and `Chart` are the package's `basalt-ui/astro/mdx/*.astro` tags, added to
+  `components` by the page. `/guides/interactive-content` is held at zero module JavaScript (it is not in
+  `SCRIPTED`); `/guides/islands-in-mdx` carries the two islands.
 
 ## Rules for a page
 
-- Render a basalt part with no `client:` directive. A part that needs one belongs in `src/islands/`:
+- Render a basalt part with no `client:` directive. A part that needs one is the `DataTable` or `Chart` tag
+  (their directive is the tag's `interactive` and `load` props), or belongs in `src/islands/`:
   `client:visible` below the fold, `client:idle` above it when not urgent, `client:load` only for
   the first tap, `client:only="react"` only for a part that measures its box (a chart), with a
   fallback of the same height.
