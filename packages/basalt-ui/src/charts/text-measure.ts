@@ -6,17 +6,19 @@
  * is measured as that sans.
  */
 import type { ChartTextMeasurer, ChartTextMetrics } from '@tanstack/charts/types/core'
+import { WIDTHS } from './chart-labels-widths.gen'
 import { measure } from './label-widths'
 import type { TableWeight } from './label-widths'
 
-const WEIGHTS: readonly TableWeight[] = [400, 500, 600, 700]
+/** The weights the generated table measured. */
+const WEIGHTS = Object.keys(WIDTHS).map(Number) as TableWeight[]
 
 /** Ink above the alphabetic baseline (cap and figure height with overshoot) and below it, in em. */
 const ASCENT = 0.72
 const DESCENT = 0.21
 /**
- * Room per glyph, in em, over the table's advance, for centred text: Chrome without subpixel
- * positioning (Linux CI) draws an 11 px axis label wider than the Mac-measured table, 19 glyphs by
+ * Room per gap between two glyphs, in em, over the table's advance, for centred text: Chrome
+ * without subpixel positioning (Linux CI) draws an 11 px axis label wider than the Mac-measured table, 19 glyphs by
  * about 4 px (the band axis layout test, 2026-11-20), and a centred x label is the one the engine
  * clamps to the svg's edges, where that excess spills. Start- and end-anchored text (y ticks, the y
  * title) keeps the table's width: a fixed `y.gutter` places the title by it.
