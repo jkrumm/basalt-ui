@@ -53,8 +53,6 @@ export type CacheCell = {
 
 export type Fixture = { picks: readonly Pick[]; days: readonly Day[]; cache: readonly CacheCell[] }
 
-export const FIXTURE_NAMES = ['extreme', 'calm'] as const
-
 const DAY_MS = 86_400_000
 const START = Date.UTC(2026, 10, 5)
 /** The gateway was down for this whole day (an index into the fortnight). */

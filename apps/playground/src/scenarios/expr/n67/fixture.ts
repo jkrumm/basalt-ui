@@ -10,11 +10,11 @@ export const LIFTS: readonly { key: LiftKey; name: string }[] = [
   { key: 'press', name: 'Press' },
 ]
 
-export const DAY_COUNT = 90
+const DAY_COUNT = 90
 /** The last 35 days: the window "still rising" asks about. */
 export const WINDOW_DAYS = 35
 /** A lift is rising when its last two weeks sit this many kg above the window's first two weeks. */
-export const RISE_KG = 1
+const RISE_KG = 1
 /** A week runs ahead of recovery when its mean session intensity beats its mean recovery by more than this. */
 export const AHEAD_POINTS = 15
 

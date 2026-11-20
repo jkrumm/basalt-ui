@@ -54,7 +54,7 @@ export type Pad = {
   until: number
 }
 
-export const TARGET_MIN = 150
+const TARGET_MIN = 150
 
 const DAY = 86_400_000
 const FIRST_MONDAY = Date.UTC(2026, 8, 28)
@@ -63,7 +63,7 @@ const TODAY_INDEX = 52
 const ELAPSED_DAYS = (TODAY_INDEX % 7) + 1
 const ISO_WEEK_OF_FIRST = 40
 
-export const FIXTURES = ['extreme', 'fresh'] as const
+const FIXTURES = ['extreme', 'fresh'] as const
 export type FixtureName = (typeof FIXTURES)[number]
 
 export const isFixtureName = (name: string | undefined): name is FixtureName =>

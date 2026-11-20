@@ -1,11 +1,11 @@
 /** API credit: three pools and thirty days of hourly spend, seeded so every build draws the same page. */
 
-export const HOUR = 3_600_000
+const HOUR = 3_600_000
 export const DAY = 24 * HOUR
 /** The page's "now": the hour starting here is not finished, so it holds no spend. */
 export const NOW = Date.UTC(2026, 10, 19, 10)
-export const WEEK_HOURS = 168
-export const RECENT_HOURS = 72
+const WEEK_HOURS = 168
+const RECENT_HOURS = 72
 const WINDOW_HOURS = 720
 
 export type PoolId = 'team' | 'research' | 'batch'
@@ -40,7 +40,7 @@ export const POOLS: readonly Pool[] = [
   },
 ]
 
-export const SOURCES: readonly Source[] = [
+const SOURCES: readonly Source[] = [
   { id: 'review', name: 'Review bot', pool: 'team' },
   { id: 'code', name: 'Code agent', pool: 'team' },
   { id: 'evals', name: 'Nightly evals', pool: 'team' },
@@ -173,7 +173,7 @@ export type PoolView = {
 }
 
 /** Fewer hours of data than this carry no projection. */
-export const MIN_PROJECT_HOURS = 24
+const MIN_PROJECT_HOURS = 24
 
 export function poolViews(rows: readonly SpendRow[]): PoolView[] {
   return POOLS.map((pool) => {

@@ -22,9 +22,6 @@ export type Week = {
 export type Day = { key: string; day: Date; idle: number; weekId: string; weekend: boolean }
 export type Data = { reasons: readonly Reason[]; weeks: readonly Week[]; days: readonly Day[] }
 
-/** The fixture names the page knows: `surge` is the extreme case, one reason and one week far past the rest. */
-export const FIXTURES = ['surge'] as const
-
 const REASONS: readonly (readonly [string, string, number, number])[] = [
   ['review-wait', 'Review wait', 21, 12],
   ['gate-flake', 'Gate flake', 17, 11],

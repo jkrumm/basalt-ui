@@ -8,7 +8,7 @@ const USABLE = { light: BASALT.brand, dark: BASALT.brand }
 const MINUS = '\u2212'
 
 /** The months as one run when they are consecutive, else a list. */
-export function monthsLabel(months: readonly MonthHours[]): string {
+function monthsLabel(months: readonly MonthHours[]): string {
   const at = months.map((m) => MONTH_NAMES.indexOf(m.month as (typeof MONTH_NAMES)[number]))
   const run = at.every((v, i) => i === 0 || v === (at[i - 1] ?? 0) + 1)
   const first = months[0]

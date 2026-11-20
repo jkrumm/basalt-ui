@@ -21,7 +21,7 @@ export type Morning = {
   noSleepDays: readonly Date[]
 }
 
-export const FIXTURES = ['rest', 'nosleep', 'calm'] as const
+const FIXTURES = ['rest', 'nosleep', 'calm'] as const
 export type FixtureName = (typeof FIXTURES)[number]
 
 export const REST_BELOW = 40

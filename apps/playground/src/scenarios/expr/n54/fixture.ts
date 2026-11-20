@@ -143,8 +143,6 @@ const SHAPES: Record<string, Shape> = {
   flood: { surge: 12, untaggedScale: 1, olderScale: 0.3 },
 }
 
-export const FIXTURE_NAMES = Object.keys(SHAPES)
-
 /** The messages of a named fixture; an unknown name is the default week. */
 export function messagesNamed(name: string | undefined): readonly Message[] {
   const shape = SHAPES[name ?? 'default'] ?? SHAPES['default']

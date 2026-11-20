@@ -31,7 +31,7 @@ const signed = (n: number): string => (n < 0 ? MINUS + String(-n) : n > 0 ? '+' 
 
 const sentence = (...parts: readonly (string | number | null)[]): string => parts.join(' ')
 
-export function verdictOf(recovery: number | null): Verdict {
+function verdictOf(recovery: number | null): Verdict {
   if (recovery === null) return { tone: 'neutral', label: 'Not scored' }
   if (recovery >= PUSH_FROM) return { tone: 'accent', label: 'Push day' }
   if (recovery < REST_BELOW) return { tone: 'bad', label: 'Rest day' }

@@ -60,7 +60,7 @@ const REST_WEATHER: readonly (readonly Weather[])[] = [
 ]
 
 /** Every name `?fixture=` takes: the rest nights, a cloud-covered run and a clear one. */
-export const FIXTURES = ['overcast', 'clear'] as const
+const FIXTURES = ['overcast', 'clear'] as const
 export type FixtureName = (typeof FIXTURES)[number]
 
 function weatherFor(fixture: string | undefined): readonly (readonly Weather[])[] {

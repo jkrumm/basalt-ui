@@ -30,9 +30,9 @@ export type PlanView = PlanRow & {
   sub: string
 }
 
-export const DAY = 86_400_000
+const DAY = 86_400_000
 /** The fixture's today, so ages never read the clock. */
-export const TODAY = Date.UTC(2026, 10, 19)
+const TODAY = Date.UTC(2026, 10, 19)
 const START = Date.UTC(2026, 8, 21)
 
 type Spec = readonly [

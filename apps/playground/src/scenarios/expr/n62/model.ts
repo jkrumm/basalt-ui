@@ -15,7 +15,7 @@ export const inSector = (dir: number): boolean => dir >= SECTOR.from && dir <= S
 
 const FMT = createFormat()
 const CLOCK = { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' } as const
-export const clock = (at: Date): string => FMT.time(at, CLOCK)
+const clock = (at: Date): string => FMT.time(at, CLOCK)
 export const stamp = (at: Date): string => `${FMT.date(at, 'weekday')} ${clock(at)}`
 export const whole = (n: number): string => FMT.number(n, { maximumFractionDigits: 0 })
 export const tenth = (n: number): string =>

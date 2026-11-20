@@ -53,7 +53,7 @@ export type Settings = {
 /** A dial the URL turns, so one state is reachable without a click: an empty fleet, or a server that is down. */
 export type Dial = 'empty' | 'error' | undefined
 
-export class ServerError extends Error {
+class ServerError extends Error {
   readonly status: number
   constructor(status: number, message: string) {
     super(message)
@@ -64,7 +64,7 @@ export class ServerError extends Error {
 const DAY_MS = 86_400_000
 
 /** The fixed clock of the fixture: 90 days end here. */
-export const NOW = Date.UTC(2026, 10, 19, 12, 0)
+const NOW = Date.UTC(2026, 10, 19, 12, 0)
 
 function seeded(seed: number): () => number {
   let a = seed

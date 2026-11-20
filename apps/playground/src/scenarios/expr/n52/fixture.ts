@@ -48,7 +48,7 @@ export type Summary = {
 const pad = (n: number): string => String(n).padStart(2, '0')
 const isCalendarDate = (s: string): s is CalendarDate => /^\d{4}-\d{2}-\d{2}$/.test(s)
 
-export function dateOf(day: number): CalendarDate {
+function dateOf(day: number): CalendarDate {
   const date = `2026-11-${pad(day)}`
   if (!isCalendarDate(date)) throw new Error(`bad day ${day}`)
   return date
@@ -122,8 +122,6 @@ const VARIANTS: Readonly<Record<string, Variant>> = {
   /** Nothing left to pay and a quiet month: spending under the usual pace, no one-off. */
   nobills: { income: 4200, oneOff: null, bills: false, everyday: 0.5 },
 }
-
-export const FIXTURE_NAMES = Object.keys(VARIANTS).filter((n) => n !== 'rest')
 
 export function monthNamed(name: string | undefined): Month {
   const v = VARIANTS[name ?? 'rest'] ?? VARIANTS['rest']
