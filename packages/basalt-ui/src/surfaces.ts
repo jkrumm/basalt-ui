@@ -148,7 +148,7 @@ const v = (spec: string, message: string, extra?: Partial<ForbiddenImport>): For
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./table, ./format, ./content, ./vite, plus the v3 subpaths ./router, ./data, ./page, ./cards, ./ai, ./ui/*, ./core/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
+ * - JS-subpath keys (., ./charts, ./tokens, ./controls, ./table, ./format, ./content, ./vite, plus the v3 subpaths ./router, ./data, ./form, ./page, ./cards, ./ai, ./ui/*, ./core/*, ./shell, ./lint, ./stylelint, ./testing, ./theme-script) — real package.json exports (the 15-subpath map of docs/V2-SPEC.md §1, with ./styles.css, ./configs/* and the v3 CSS entries as the non-JS assets).
  * - #-prefixed synthetic keys (#app) — the synthetic global app-wide ban layer. The #-prefix
  *   guarantees it is never mistaken for an export path.
  *

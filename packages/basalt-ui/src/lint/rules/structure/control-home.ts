@@ -10,7 +10,7 @@
  *
  * A control is in a home when an ancestor (or the control itself) is
  *
- * - `FormField`, `FilterSet`, `ViewTabs` or `ControlHome`;
+ * - `FormField` (a form hook's `f.FormField` included), `FilterSet`, `ViewTabs` or `ControlHome`;
  * - a render passed to `filterSlot.custom(...)` that keeps no state of its own (`useState` or
  *   `useReducer` in that function, or a control value prop reading such state from an enclosing
  *   function, is a value with no handle, so the custom render is not a home);
@@ -191,7 +191,7 @@ type Use = {
 
 const outsideHome: AstForm = {
   id: 'outside-home',
-  fix: 'Put the control in a home: FormField, FilterSet, ViewTabs or ControlHome around it, or filterSlot.custom(handle, label, render) over a field handle',
+  fix: 'Put the control in a home: FormField (or f.FormField from basalt-ui/form), FilterSet, ViewTabs or ControlHome around it, or filterSlot.custom(handle, label, render) over a field handle',
   next: 'A panel-local value takes <ControlHome home="..."> with externalField; a counted line waiver names why no home fits',
   fixture: 'control-home/outside-home.tsx',
   detect: ({ report }): Visitor => {
