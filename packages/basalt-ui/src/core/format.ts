@@ -13,6 +13,7 @@
 import { useMemo } from 'react'
 import { useProviderContext } from './provider'
 import { useIntl } from './provider-props'
+import { TRUE_MINUS } from '../format/shared'
 
 export type { BasaltMessages } from './messages'
 
@@ -207,7 +208,9 @@ export function createFormat(o: FormatOptions = {}): Format {
 
     money: (n, currency, options) =>
       Number.isFinite(n)
-        ? numberFormat({ ...SIGN, ...options, style: 'currency', currency }).format(n)
+        ? numberFormat({ ...SIGN, ...options, style: 'currency', currency })
+            .format(n)
+            .replaceAll('-', TRUE_MINUS)
         : NON_FINITE,
 
     date: (v, style, options) => {

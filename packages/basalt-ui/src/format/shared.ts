@@ -12,6 +12,12 @@
  */
 export const NON_FINITE = '—'
 
+/**
+ * The sign a negative money amount prints: U+2212, a true minus a reader tells from a dash. `Intl`
+ * prints an ASCII hyphen, so every money formatter swaps it here.
+ */
+export const TRUE_MINUS = '\u2212'
+
 /** Options every number/measure formatter accepts. */
 export type LocaleOption = {
   /** BCP-47 tag. Default: the {@link setFormatDefaults} default, else the runtime's own locale. */
