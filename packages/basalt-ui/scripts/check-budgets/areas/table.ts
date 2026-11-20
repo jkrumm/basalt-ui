@@ -29,7 +29,7 @@ export const rows: readonly RowDef[] = [
     id: 'table-engine',
     order: 430,
     label: 'table engine fixture, 10 features (gzip B minus base0, peers bundled)',
-    // 23177 B measured (table-core 9.2.8 + React adapter); the pre-freeze guard in
+    // 23206 B measured (table-core 9.3.1 + React adapter, 2026-11-20); the pre-freeze guard in
     // src/table/core/features.bytes.test.ts reads 24500.
     ceiling: 24500,
     measure: engineBytes,

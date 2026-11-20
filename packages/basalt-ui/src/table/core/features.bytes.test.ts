@@ -13,7 +13,8 @@ import { FEATURE_NAMES } from './features'
 const FIXTURE = join(import.meta.dir, '../../../scripts/fixtures/table-engine.tsx')
 
 /**
- * Measured 23,248 B on table-core 9.2.8 (2026-11-11) + 5%, rounded up to 0.5 KB (section 6). The
+ * Measured 23,248 B on table-core 9.2.8 (2026-11-11) + 5%, rounded up to 0.5 KB (section 6), and
+ * 23,206 B on table-core 9.3.1 (check-budgets, 2026-11-20), still under it. The
  * concept's 17,913 B was table-core alone through `bun build --minify`; this adds the React
  * adapter (`createTableHook`, the store) that every `DataTable` pays.
  */
