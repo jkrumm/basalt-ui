@@ -1,11 +1,17 @@
 [
   "Prose",
   "SiteArticle",
+  "SiteBento",
+  "SiteCallToAction",
   "SiteCallout",
   "SiteCodeBlock",
+  "SiteComparison",
+  "SiteFeature",
   "SiteFooter",
   "SiteHeader",
+  "SiteHero",
   "SitePager",
+  "SiteQuestionList",
   "ThemeSwitch",
   "siteMdxComponents"
 ]

@@ -379,7 +379,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'ui',
     description:
-      'Content-site parts that render to static HTML with no client JavaScript: no provider, context, hook or router, every label a prop (Prose, SiteArticle, SitePager, SiteCallout, SiteCodeBlock, SiteHeader, SiteFooter, ThemeSwitch, siteMdxComponents); the site profile',
+      'Content-site parts that render to static HTML with no client JavaScript: no provider, context, hook or router, every label a prop (Prose, SiteArticle, SitePager, SiteCallout, SiteCodeBlock, SiteHeader, SiteFooter, ThemeSwitch, siteMdxComponents) and the landing blocks (SiteHero, SiteBento, SiteFeature, SiteComparison, SiteQuestionList, SiteCallToAction); the site profile',
     optionalPeers: ['react'],
     globs: { shipped: [], repo: ['packages/basalt-ui/src/static/**'] },
     forbiddenImports: [],

@@ -49,17 +49,48 @@ Your own files are found by Tailwind's automatic source detection; the parts' so
 
 ## The parts
 
-| Part | What it is | Interactive through |
-|-|-|-|
-| `Prose` | the article typography; styles raw Markdown and MDX output by element | nothing |
-| `SiteArticle` | title block, body, a table of contents and an optional docs nav | `<details>` below 64rem |
-| `SitePager` | previous and next links | nothing |
-| `SiteCallout` | a tinted note with a tone | nothing |
-| `SiteCodeBlock` | wraps your toolchain's `<pre>` with a copy button | the integration's head script |
-| `SiteHeader` | brand, links, actions; a menu below the `wide` size | the `popover` attribute |
-| `SiteFooter` | brand, link columns, fine print | nothing |
-| `ThemeSwitch` | light, dark, system | the integration's head script |
-| `siteMdxComponents(labels)` | the MDX map: anchored headings, safe links, scrolling tables, code blocks, `SiteCallout`, `Steps`, `Figure` | the head script, for copy |
+| Part                        | What it is                                                                                                  | Interactive through           |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `Prose`                     | the article typography; styles raw Markdown and MDX output by element                                       | nothing                       |
+| `SiteArticle`               | title block, body, a table of contents and an optional docs nav                                             | `<details>` below 64rem       |
+| `SitePager`                 | previous and next links                                                                                     | nothing                       |
+| `SiteCallout`               | a tinted note with a tone                                                                                   | nothing                       |
+| `SiteCodeBlock`             | wraps your toolchain's `<pre>` with a copy button                                                           | the integration's head script |
+| `SiteHeader`                | brand, links, actions; a menu below the `wide` size                                                         | the `popover` attribute       |
+| `SiteFooter`                | brand, link columns, fine print                                                                             | nothing                       |
+| `ThemeSwitch`               | light, dark, system                                                                                         | the integration's head script |
+| `siteMdxComponents(labels)` | the MDX map: anchored headings, safe links, scrolling tables, code blocks, `SiteCallout`, `Steps`, `Figure` | the head script, for copy     |
+
+### Landing blocks
+
+| Block                      | What it is                                                                                        | Interactive through     |
+| -------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------- |
+| `SiteHero`                 | `h1`, eyebrow, standfirst, actions; a `media` slot beside the text from 64rem                     | nothing                 |
+| `SiteBento`, `SiteFeature` | a grid of tiles, one to three columns by its container; a tile's body is a slot for the real part | nothing                 |
+| `SiteComparison`           | a versus table: options as columns, traits as rows, a `footnote` slot for the dated sources       | nothing                 |
+| `SiteQuestionList`         | questions as data, rendered as `<details>`                                                        | the `<details>` element |
+| `SiteCallToAction`         | the closing band: heading, line, actions                                                          | nothing                 |
+
+Actions are data, `{ href, label, primary? }`, at most one `primary` in a row. A slot takes an island
+too: an island inside a static block's slot hydrates on its own. basalt emits no structured data; the
+question list's array is the source for your own:
+
+```astro
+---
+const questions = [{ question: 'Is it free?', answer: 'Yes, and open source.' }]
+const faq = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: questions.map((q) => ({
+    '@type': 'Question',
+    name: q.question,
+    acceptedAnswer: { '@type': 'Answer', text: q.answer },
+  })),
+}
+---
+<SiteQuestionList title="Questions" questions={questions} />
+<script type="application/ld+json" set:html={JSON.stringify(faq)} />
+```
 
 Pass a node to a part as a named slot (`<Fragment slot="meta">…</Fragment>`), never as JSX inside an
 object prop: Astro hands that over as an Astro template and the build fails. Labels are plain strings.
@@ -85,16 +116,16 @@ object prop: Astro hands that over as an Astro template and the build fails. Lab
 7. **Measured, not claimed.** basalt-ui.com is held in CI (`apps/marketing/scripts/measure.ts --check
    --browser`) to these budgets, measured on its build:
 
-| Number | Measured | Budget |
-|-|-|-|
-| module JavaScript on a page with no island | 0 B | 0 B |
-| basalt's head scripts (scheme + parts), gzip | 735 B | 2 kB (unit test) |
-| inline JavaScript on any page, Astro's island loader included, gzip | 2.6 kB | 3 kB |
-| the React runtime the first island brings, gzip | 69.8 kB | 72 kB |
-| a further island's own chunk (the chart island), gzip | 117 kB | 120 kB |
-| CSS per page, gzip | 25.0 kB | 26 kB |
-| LCP, landing, article and docs page, 390 px, local | 72 ms | 1,000 ms |
-| CLS, the same three pages | 0 | 0.02 |
+| Number                                                              | Measured | Budget           |
+| ------------------------------------------------------------------- | -------- | ---------------- |
+| module JavaScript on a page with no island                          | 0 B      | 0 B              |
+| basalt's head scripts (scheme + parts), gzip                        | 735 B    | 2 kB (unit test) |
+| inline JavaScript on any page, Astro's island loader included, gzip | 2.6 kB   | 3 kB             |
+| the React runtime the first island brings, gzip                     | 69.8 kB  | 72 kB            |
+| a further island's own chunk (the chart island), gzip               | 117 kB   | 120 kB           |
+| CSS per page, gzip                                                  | 26.1 kB  | 26.5 kB          |
+| LCP, landing, article and docs page, 390 px, local                  | 72 ms    | 1,000 ms         |
+| CLS, the same three pages                                           | 0        | 0.02             |
 
 ## Starlight
 
