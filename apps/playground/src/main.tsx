@@ -6,6 +6,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { createQueryClient } from 'basalt-ui/data'
 import { IntlScope } from 'basalt-ui/core/provider-props'
 import { BasaltProvider, routerDefaults } from 'basalt-ui/router'
+import { LucideProvider } from 'lucide-react'
 import { StrictMode } from 'react'
 import type { ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -44,7 +45,9 @@ createRoot(root).render(
   <StrictMode>
     <BasaltProvider link={defaults.link} locale={PAGE_FORMAT.locale}>
       <IntlScope {...PAGE_FORMAT}>
-        <RouterProvider router={router} />
+        <LucideProvider size={16} strokeWidth={1.5} absoluteStrokeWidth>
+          <RouterProvider router={router} />
+        </LucideProvider>
       </IntlScope>
     </BasaltProvider>
   </StrictMode>,

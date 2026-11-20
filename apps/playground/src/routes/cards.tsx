@@ -2,52 +2,14 @@ import { createFileRoute } from '@tanstack/react-router'
 import { CardGrid, Page, Section } from 'basalt-ui/page'
 import { StatCard, StatCell, StatGroup } from 'basalt-ui/cards'
 import { Sparkline } from 'basalt-ui/charts'
+import {
+  Clock as ClockGlyph,
+  GitMerge as MergeGlyph,
+  Rocket as RocketGlyph,
+  Server as ServerGlyph,
+  TriangleExclamationPoint as AlertGlyph,
+} from 'lucide-react'
 import type { ReactElement } from 'react'
-
-/** A merge: two branches joining, for merged pull requests. */
-function MergeGlyph({ className }: { className?: string }): ReactElement {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="18" cy="18" r="3" />
-      <circle cx="6" cy="6" r="3" />
-      <path d="M6 21V9a9 9 0 0 0 9 9" />
-    </svg>
-  )
-}
-
-/** A one-path outline glyph in the icon library's shape: `currentColor` stroke on a 24 grid. */
-function glyph(d: string): (props: { className?: string }) => ReactElement {
-  return function Glyph({ className }) {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d={d} />
-      </svg>
-    )
-  }
-}
-
-const ServerGlyph = glyph('M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01')
-const RocketGlyph = glyph('M12 2c4 3 6 7 6 11l-3 3H9l-3-3c0-4 2-8 6-11zM9 16l-2 5 5-2 5 2-2-5')
-const AlertGlyph = glyph('M12 3l10 18H2zM12 10v5M12 18h.01')
-const ClockGlyph = glyph('M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2')
 
 /** The fleet's last seven days, one value per day, dated so a readout names its day. */
 const week = (values: readonly number[]) =>

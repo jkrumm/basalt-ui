@@ -9,89 +9,19 @@ import { DateRangePicker } from 'basalt-ui/ui/date-picker'
 import { Progress } from 'basalt-ui/ui/progress'
 import { Sheet, SheetContent } from 'basalt-ui/ui/sheet'
 import { VirtualList } from 'basalt-ui/ui/virtual-list'
+import {
+  Building,
+  Calendar,
+  CircleCheck as CheckCircle,
+  Clock,
+  Coins,
+  House as Home,
+  Radio as Signal,
+  Tag,
+  TriangleExclamationPoint as Alert,
+} from 'lucide-react'
 import { useState } from 'react'
-import type { ReactElement, ReactNode } from 'react'
-
-// ---- Column glyphs: any component with the IconComponent shape; an app passes its icon library's own
-
-/** A 24-unit outline glyph at the size the table asks for. */
-function glyph(paths: ReactNode): IconComponent {
-  return function TableGlyph({ className, size = 16 }) {
-    return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        className={className}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        {paths}
-      </svg>
-    )
-  }
-}
-
-const Building = glyph(
-  <>
-    <path d="M5 21V4h10v17" />
-    <path d="M15 9h4v12" />
-    <path d="M3 21h18" />
-    <path d="M9 8h2M9 12h2M9 16h2" />
-  </>,
-)
-const Tag = glyph(
-  <>
-    <path d="M3 12V4h8l10 10-8 8z" />
-    <path d="M7.5 7.5h.01" />
-  </>,
-)
-const Signal = glyph(
-  <>
-    <circle cx="12" cy="12" r="3" />
-    <path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" />
-  </>,
-)
-const Coins = glyph(
-  <>
-    <circle cx="9" cy="9" r="6" />
-    <path d="M15.5 9.5a6 6 0 1 1-6 6" />
-  </>,
-)
-const Calendar = glyph(
-  <>
-    <path d="M4 6h16v14H4z" />
-    <path d="M4 10h16M8 3v4M16 3v4" />
-  </>,
-)
-const Home = glyph(
-  <>
-    <path d="M3 11 12 4l9 7" />
-    <path d="M5 10v10h14V10" />
-  </>,
-)
-const Clock = glyph(
-  <>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 7v5l3 2" />
-  </>,
-)
-const CheckCircle = glyph(
-  <>
-    <circle cx="12" cy="12" r="9" />
-    <path d="m8 12 3 3 5-6" />
-  </>,
-)
-const Alert = glyph(
-  <>
-    <path d="M12 3 2 20h20z" />
-    <path d="M12 10v4M12 17h.01" />
-  </>,
-)
+import type { ReactElement } from 'react'
 
 /** One glyph per booking state, drawn in its tone where the dot was. */
 const STATE_ICONS: Record<string, IconComponent> = {
