@@ -69,6 +69,12 @@
     text-overflow: ellipsis;
   }
 
+  /* a delta cell holds a pill, not a run of text: a pill a few px wider than its column is cut by the
+     cell's own padding, never ended with a stray ellipsis beside it */
+  [data-slot='table-cell'][data-kind='delta'] {
+    text-overflow: clip;
+  }
+
   /* pinned and tick cells are opaque in every row state: the surface the table sits on (the same one
      the head cells take, the canvas where no surface is declared), with the row's own tint (hover,
      selected) layered over it, so a cell that scrolls under a pin never shows through and never
@@ -1020,7 +1026,7 @@
       display: inline-flex;
     }
     [data-below='480'][data-phone='columns'] [data-slot='table'] {
-      table-layout: auto;
+      table-layout: auto !important;
     }
     [data-below='480'][data-phone='columns'] col {
       width: auto !important;
@@ -1041,7 +1047,7 @@
       display: inline-flex;
     }
     [data-below='700'][data-phone='columns'] [data-slot='table'] {
-      table-layout: auto;
+      table-layout: auto !important;
     }
     [data-below='700'][data-phone='columns'] col {
       width: auto !important;
@@ -1062,7 +1068,7 @@
       display: inline-flex;
     }
     [data-below='800'][data-phone='columns'] [data-slot='table'] {
-      table-layout: auto;
+      table-layout: auto !important;
     }
     [data-below='800'][data-phone='columns'] col {
       width: auto !important;
@@ -1083,7 +1089,7 @@
       display: inline-flex;
     }
     [data-below='always'][data-phone='columns'] [data-slot='table'] {
-      table-layout: auto;
+      table-layout: auto !important;
     }
     [data-below='always'][data-phone='columns'] col {
       width: auto !important;

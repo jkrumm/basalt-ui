@@ -83,7 +83,8 @@ export function GroupRow<T>({
       data-group=""
       data-collapsed={item.collapsed ? '' : undefined}
       {...(rowIndex !== undefined && { 'aria-rowindex': rowIndex })}
-      className="bg-muted/40"
+      // the tint is the row's and, through `--row-tint`, the opaque pinned cell's too, so the band runs the whole row
+      className="bg-muted/40 [--row-tint:color-mix(in_oklab,var(--color-muted)_40%,transparent)]"
     >
       {model.selection !== undefined && <TableCell role="cell" aria-colindex={1} />}
       {columns.map(({ spec, planned }, index) => {
@@ -96,6 +97,8 @@ export function GroupRow<T>({
             aria-colindex={index + offset}
             {...cellAttributes(spec)}
             {...tierAttributes(planned, model.detailListed)}
+            // a cell that draws nothing is off the phone card, so its grid gap leaves no blank band under the label
+            {...(index > 0 && footer === undefined && { 'data-card': 'hidden' })}
             style={pinStyle(planned)}
             numeric={numeric}
             className={cn(className, 'font-medium')}
