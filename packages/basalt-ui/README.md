@@ -384,7 +384,7 @@ collision is the engine's `tickLabels.thin`; labels never rotate.
 ### `./table` — TanStack Table
 
 ```bash
-bun add -E @tanstack/react-table@9.2.8 @base-ui/react
+bun add -E @tanstack/react-table@9.3.1 @base-ui/react
 ```
 
 ```tsx
