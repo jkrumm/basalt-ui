@@ -27,7 +27,6 @@ import { GLYPH_MIN_PX, glyphOf, resolveNamedState } from './band-fold'
 import type { NamedChartState } from './band-fold'
 import { ABSENT_OPACITY, RAMP_LEVELS, RAMP_OPACITIES } from './heatmap-fill'
 import { flatInk, stateInk } from './heatmap-ink'
-import { dimmedPaint } from '../marks'
 import { engineTooltip } from '../core/cursor'
 import { cardPortal } from '../core/portal'
 import { ChartEngine, idPrefixOf } from '../host'
@@ -444,7 +443,6 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
       id: string,
       group: Cell<T, K>[],
       paint: { fill?: string; color?: 'value'; fillOpacity?: number },
-      dimByPaint = false,
     ) => {
       const at = (cells: Cell<T, K>[], markId: string, fillOpacity?: number) =>
         cell(cells, {
@@ -456,16 +454,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
       if (focused === null) return [at(group, id)]
       const base = paint.fillOpacity ?? 1
       const rest = group.filter((c) => !isHeld(c))
-      return [
-        dimByPaint && paint.fill !== undefined
-          ? cell(rest, {
-              id,
-              ...AT_CELL,
-              fill: dimmedPaint(paint.fill, base),
-            })
-          : at(rest, id, base * DIMMED),
-        at(group.filter(isHeld), `${id}:focused`),
-      ]
+      return [at(rest, id, base * DIMMED), at(group.filter(isHeld), `${id}:focused`)]
     }
     // The label ink holds on the cell's own fill as it is drawn: a stated cell's bar paint, a value
     // cell's ramp step, dimmed with the rest (`heatmap-ink.ts`). A dimmed label draws at DIMMED_TEXT:
@@ -518,15 +507,16 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
           opacity: 1,
           thin: true,
         }
-        // A mark in the cell's centre (a stated cell's glyph, a per-cell note), skipped where the
-        // cell is too narrow to hold it.
-        const centred = (items: readonly Mark[], id: string, fontSize: number) =>
-          items.length > 0 &&
-          width / Math.max(cols.length, 1) >=
-            Math.max(
-              GLYPH_MIN_PX,
-              ...items.map((m) => Math.ceil(captionWidth(m.text, fontSize)) + CELL_INSET * 2),
-            )
+        // A mark in the cell's centre (a stated cell's glyph, a per-cell note). Each mark keeps its own
+        // room: a note too wide for its cell drops that cell's note alone, never every cell's.
+        const cellPx = width / Math.max(cols.length, 1)
+        const centred = (all: readonly Mark[], id: string, fontSize: number) => {
+          const items = all.filter(
+            (m) =>
+              cellPx >=
+              Math.max(GLYPH_MIN_PX, Math.ceil(captionWidth(m.text, fontSize)) + CELL_INSET * 2),
+          )
+          return items.length > 0
             ? [
                 decorative(
                   text(items, {
@@ -543,6 +533,7 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
                 ),
               ]
             : []
+        }
         const glyphs = [...stated].flatMap(([key, group]) => {
           const named = stateByKey.get(key)
           const glyph = named && glyphOf({ ...named, color: fillOf(named) })
@@ -561,15 +552,10 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
           ...cellMark('absent', absentWithDatum, { fill: CV.neutral, fillOpacity: ABSENT_OPACITY }),
           ...[...stated].flatMap(([key, group]) => {
             const named = stateByKey.get(key)
-            return cellMark(
-              `state:${key}`,
-              group,
-              {
-                fill: fillOf(named),
-                ...(named?.fillOpacity !== undefined && { fillOpacity: named.fillOpacity }),
-              },
-              true,
-            )
+            return cellMark(`state:${key}`, group, {
+              fill: fillOf(named),
+              ...(named?.fillOpacity !== undefined && { fillOpacity: named.fillOpacity }),
+            })
           }),
           ...cellMark('cells', present, { color: 'value' }),
           decorative(

@@ -185,21 +185,10 @@ describe('a dimmed stated cell', () => {
     const data = buildPaletteData(DEFAULT_DERIVE_CONFIG)
     for (const side of ['light', 'dark'] as const) {
       const card = hex(data.SURFACE.panel[side])
-      const muted = hex(data.INK.muted[side])
       for (const tone of ['good', 'warn', 'bad'] as const) {
         const fill = hex(data.SEMANTIC[tone][side])
-        // `dimmedPaint` (marks.ts): light is the fill at DIMMED; dark is the fill at DIMMED_TEXT mixed with
-        // 30% of the muted ink (alpha-premultiplied by color-mix), both over the card.
-        const dimmed =
-          side === 'light'
-            ? over(fill, DIMMED, card)
-            : (() => {
-                const alpha = DIMMED_TEXT * 0.7 + 0.3
-                const mixed = fill.map(
-                  (c, i) => (DIMMED_TEXT * 0.7 * c + 0.3 * (muted[i] as number)) / alpha,
-                )
-                return over(mixed, alpha, card)
-              })()
+        // A dimmed state cell fades its fill to DIMMED over the card, as the value ramp does.
+        const dimmed = over(fill, DIMMED, card)
         const label = out(over(hex(inkHex(out(dimmed))), DIMMED_TEXT, dimmed))
         expect(contrastRatio(label, out(dimmed))).toBeGreaterThanOrEqual(3)
       }
