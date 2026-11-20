@@ -59,7 +59,10 @@ Your own files are found by Tailwind's automatic source detection; the parts' so
 | `SiteHeader` | brand, links, actions; a menu below the `wide` size | the `popover` attribute |
 | `SiteFooter` | brand, link columns, fine print | nothing |
 | `ThemeSwitch` | light, dark, system | the integration's head script |
-| `siteMdxComponents(labels)` | the MDX map: anchored headings, safe links, scrolling tables, code blocks, `SiteCallout`, `Steps`, `Figure` | the head script, for copy |
+| `SiteTabs`, `SiteTab` | tabs as platform markup; panels named by `label` | the integration's head script |
+| `SiteForm`, `SiteField`, `SiteSubmit` | a native form that posts to `action` | the browser: `required`, `type`, `:user-invalid` |
+| `SiteDataTable` | a table of plain columns and rows, numbers and dates formatted | nothing |
+| `siteMdxComponents(labels)` | the MDX map: anchored headings, safe links, scrolling tables, code blocks, `SiteCallout`, `Steps`, `Figure`, `Tabs`, `Tab`, `Form`, `Field`, `SubmitButton` | the head script, for copy and tabs |
 
 Pass a node to a part as a named slot (`<Fragment slot="meta">…</Fragment>`), never as JSX inside an
 object prop: Astro hands that over as an Astro template and the build fails. Labels are plain strings.
@@ -95,6 +98,63 @@ object prop: Astro hands that over as an Astro template and the build fails. Lab
 | CSS per page, gzip | 25.0 kB | 26 kB |
 | LCP, landing, article and docs page, 390 px, local | 72 ms | 1,000 ms |
 | CLS, the same three pages | 0 | 0.02 |
+
+## Interactive parts in MDX
+
+An MDX page asks for more than headings and code: tabs, a table of figures, a chart, a form. Four tags
+cover them, each with one hydration rule. The tags that need no React are in `siteMdxComponents(labels)`;
+the two that do are `.astro` files, because Astro puts a `client:` directive only on a component written
+in a template, never on one an MDX `components` map names.
+
+```astro
+---
+import { siteMdxComponents } from 'basalt-ui/static'
+import Chart from 'basalt-ui/astro/mdx/Chart.astro'
+import DataTable from 'basalt-ui/astro/mdx/DataTable.astro'
+import { Content } from '../guides/post.mdx'
+const components = { ...siteMdxComponents(labels), Chart, DataTable }
+---
+<Content components={components} />
+```
+
+```mdx
+<Tabs label="Install with" tabs={['bun', 'npm']}>
+<Tab label="bun">`bun add basalt-ui`</Tab>
+<Tab label="npm">`npm i basalt-ui`</Tab>
+</Tabs>
+
+<DataTable label="Releases" columns={[{ key: 'v', label: 'Version' }]} rows={[{ v: '3.0' }]} />
+<DataTable interactive label="Runs" columns={cols} rows={rows} />
+<Chart title="Deploys" x="week" series={[{ key: 'deploys', label: 'Deploys' }]} data={weeks} />
+```
+
+<!-- mdx-island-cost:begin -->
+
+| Tag | Picture | Island | Directive | Matrix part | Further cost, gzip |
+|-|-|-|-|-|-|
+| `Tabs`, `Tab` | ARIA tab list and panels | none | none | none | 0.4 kB inline, in the head script |
+| `Form`, `Field`, `SubmitButton` | a native form | none | none | none | 0 |
+| `DataTable` | a static table | none | none | none | 0 |
+| `DataTable interactive` | the same table | sortable, pageable `DataTable` | `client:visible` (`load="idle"` above the fold) | `data-table` | 218.3 kB |
+| `Chart` | a fallback box of the card's height | `ChartCard` over `Lines` or `Bars` | `client:only="react"` (`load="visible"` or `"idle"` once its server picture is right) | `chart-card` | 122.2 kB |
+
+<!-- mdx-island-cost:end -->
+
+The first island on a page also brings React, react-dom and Astro's island runtime (71.5 kB), once, however
+many islands follow. The island cost column comes from `docs/v3/verdicts/astro-matrix.md`, and a test
+holds the two together.
+
+- **Names are data.** A `Tab` is told apart from its siblings by its `label`, which names one entry of the
+  `tabs` list, because an MDX compiler hands a part its children as finished HTML. Without the head
+  script every panel shows under its name and the tab row is hidden.
+- **Columns, rows and series are plain data** (strings, numbers, dates): a function cannot cross an island
+  boundary. A chart with custom marks, zones or linked readouts is your own island in `src/islands/`.
+- **A chart's server picture still differs from the browser's**, which is why the default is
+  `client:only`. A table's does not: `interactive` server-renders it, then hydrates.
+- **No provider.** Neither island needs `BasaltProvider`; an island you write that does wraps its own.
+- **Classes.** The two islands use chart, card and table classes. Add `@source` lines for
+  `basalt-ui/dist/charts`, `dist/cards`, `dist/table` and `dist/astro/mdx` to the site's sheet, as
+  `apps/marketing/src/styles/site.css` does.
 
 ## Starlight
 

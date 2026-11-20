@@ -3,9 +3,15 @@
   "SiteArticle",
   "SiteCallout",
   "SiteCodeBlock",
+  "SiteDataTable",
+  "SiteField",
   "SiteFooter",
+  "SiteForm",
   "SiteHeader",
   "SitePager",
+  "SiteSubmit",
+  "SiteTab",
+  "SiteTabs",
   "ThemeSwitch",
   "siteMdxComponents"
 ]
