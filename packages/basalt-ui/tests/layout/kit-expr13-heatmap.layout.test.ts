@@ -58,6 +58,41 @@ const focusMarks = (page: LayoutPage) =>
     return { dots: dots.length, onText: dots.filter(hits).length, rings }
   })
 
+/** The annotation texts drawn and the focus ring's box, in page px. */
+const ringAndLabels = (page: LayoutPage) =>
+  page.raw.evaluate(() => {
+    const host = document.querySelector('[data-testid="x13-heatmap"]')!
+    const ring = host.querySelector('[data-ts-key="focus-ring"] rect')?.getBoundingClientRect()
+    const labels = [...host.querySelectorAll('g[data-ts-key="annotations"] text')].map((t) => {
+      const r = t.getBoundingClientRect()
+      return { text: t.textContent ?? '', l: r.left, r: r.right, t: r.top, b: r.bottom }
+    })
+    return {
+      ring:
+        ring === undefined ? null : { l: ring.left, r: ring.right, t: ring.top, b: ring.bottom },
+      labels,
+    }
+  })
+
+for (const viewport of [PHONE, WIDE]) {
+  layout(`the focused cell's label at ${viewport.name}`, () => {
+    test('stays drawn inside the cell ring', async () => {
+      const page = await open(viewport)
+      const at = await bestCentre(page)
+      await page.raw.mouse.move(at.x, at.y, { steps: 6 })
+      await page.settle()
+      const { ring, labels } = await ringAndLabels(page)
+      const best = labels.find((l) => l.text === '6 best')
+      expect(ring, 'the focused cell rings').not.toBeNull()
+      expect(best, 'the focused cell keeps its label').toBeDefined()
+      expect(best!.l).toBeGreaterThanOrEqual(ring!.l - 1)
+      expect(best!.r).toBeLessThanOrEqual(ring!.r + 1)
+      expect(best!.t).toBeGreaterThanOrEqual(ring!.t - 1)
+      expect(best!.b).toBeLessThanOrEqual(ring!.b + 1)
+    })
+  })
+}
+
 for (const viewport of [PHONE, WIDE]) {
   layout(`a pointer-focused cell at ${viewport.name}`, () => {
     test('keeps its ring and draws no focus dot over the annotation text', async () => {
