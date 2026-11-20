@@ -54,7 +54,7 @@
  *   or `aside` above it in the same JSX tree, or a `Section` or `Page` imported from
  *   `basalt-ui/page`; one under a `div` or that is the whole return of a
  *   component (a `ChartCard` may wrap it in another file) is a cross-file fact and passes. A `Card`, `ChartCard`, `DataPanel` or any
- *   `*Card`/`*Panel` ancestor passes.
+ *   `*Card`/`*Panel` ancestor passes, and so does a `StatCell` (its `chart` slot is a kit frame).
  * - `intl-format`: a dayjs or moment formatter is read by the callee name (`dayjs(...)`,
  *   `moment(...)`, `.utc()` chains); a value held in a variable first (`const d = dayjs(at)`) is not.
  *   luxon's `toFormat`, `toRelative` and `toRelativeCalendar` read on a `DateTime.*(...)` chain
@@ -1279,8 +1279,12 @@ function bodyRoots(expression: Node | undefined): Node[] {
   }
 }
 
-/** A card frame: `ChartCard`, `DataPanel`, `Card`, and any `*Card` or `*Panel` (`StatCard`). */
-const isCardFrame = (tag: string): boolean => /^(?:Card|[A-Z]\w*(?:Card|Panel))$/.test(tag)
+/**
+ * A card frame: `ChartCard`, `DataPanel`, `Card`, any `*Card` or `*Panel` (`StatCard`), and
+ * `StatCell`, whose `chart` slot is a box the kit draws inside its `StatGroup` as `StatCard`'s is.
+ */
+const isCardFrame = (tag: string): boolean =>
+  tag === 'StatCell' || /^(?:Card|[A-Z]\w*(?:Card|Panel))$/.test(tag)
 
 /** The sectioning elements a page is made of; a `div` is a layout wrapper a card may wrap elsewhere. */
 const PAGE_ELEMENTS: ReadonlySet<string> = new Set(['section', 'main', 'article', 'aside'])
