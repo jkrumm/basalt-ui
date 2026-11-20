@@ -19,11 +19,12 @@ import { VIEWS } from './results'
 import type { ModeResult, PartResult, Results, View } from './results'
 
 /**
- * A static page and its client:only page are rendered by the same browser on the same machine, so an exact
- * picture differs by no pixel: the pilot measured 0 on every part whose markup matched. A differing pixel is
- * a difference: the count of changed pixels is compared, never the rounded share.
+ * Changed pixels a view may have and still count as the same picture. The static page and its client:only page
+ * render in the same browser on the same machine, so a matching picture differs by no pixel, except for a rare
+ * one-pixel flake (form-layout, 2026-11-20: 1 px at 1440 light in one run of four, 0 in the other three). The
+ * smallest real difference measured is about 37 px (dock's focus ring at 1440); 4 px sits between the two.
  */
-export const PIXEL_TOLERANCE = 0
+export const PIXEL_TOLERANCE = 4
 /**
  * How far a page's gzip JavaScript or CSS may grow past its record before the check fails: one KiB, an order
  * below the smallest further-island cost measured (Button, 9.5 KiB), so a part that grows fails while a few
@@ -342,7 +343,7 @@ export function render(rec: MatrixRecord, findings: readonly Finding[]): string 
     '',
     '## Summary',
     '',
-    `- **${rec.parts.length} parts** measured, **${clean}** static-clean: the HTML Astro writes with no directive matches the client:only render pixel for pixel and word for word at 1440 and 390 px, light and dark.`,
+    `- **${rec.parts.length} parts** measured, **${clean}** static-clean: the HTML Astro writes with no directive matches the client:only render word for word and to within ${PIXEL_TOLERANCE} pixels (a measured flake) at 1440 and 390 px, light and dark.`,
     `- **Zero JavaScript without an island:** ${rec.zeroJs.pages} pages carry no island; together they loaded ${rec.zeroJs.js} bytes of script from ${rec.zeroJs.scriptTags} script tags.`,
     `- **The first React island** costs ${kb(rec.runtime.js)} of gzip JavaScript before any basalt code: React, react-dom and the Astro island runtime (the baseline island). Each further island costs what its part adds, the "further" column.`,
     `- **CSS** is one sheet per page, ${kb(rec.runtime.css)} gzip, with the whole basalt dist scanned by Tailwind.`,
