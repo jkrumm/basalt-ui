@@ -115,6 +115,11 @@
       "import": "./dist/cards/index.js",
       "default": "./dist/cards/index.js"
     },
+    "./motion": {
+      "types": "./dist/motion/index.d.ts",
+      "import": "./dist/motion/index.js",
+      "default": "./dist/motion/index.js"
+    },
     "./ai": {
       "types": "./dist/ai/index.d.ts",
       "import": "./dist/ai/index.js",

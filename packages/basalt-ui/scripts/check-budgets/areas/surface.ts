@@ -73,7 +73,7 @@ export const rows: readonly RowDef[] = [
     order: 40,
     label: 'published subpaths (package.json exports)',
     // 2.0 target 15.
-    ceiling: 29, // `./form` (raise row below); was 28: `./archify.css` (raise row below); was 27: v3 teardown-peers: the count after `./format` retired with src/format (the 2.x subpaths are gone; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router)
+    ceiling: 30, // `./motion` (Issue 2529, raise row below); was 29: `./form` (raise row below); was 28: `./archify.css` (raise row below); was 27: v3 teardown-peers: the count after `./format` retired with src/format (the 2.x subpaths are gone; consumers: rollhook for CSS, lint, testing; linewatch for ui, page, cards, data, router)
     measure: () => Object.keys(readManifest().exports ?? {}).length,
   },
 ]
@@ -451,6 +451,13 @@ export const raises: Raises = {
     },
   ],
   subpaths: [
+    {
+      from: 29,
+      to: 30,
+      consumer:
+        '`./motion` (Issue 2529): useMotionPreset and motionPreset need the `motion` peer, so they cannot sit in the peer-free `./tokens`; free-planning-poker v9 builds its room table on them',
+      repo: 'free-planning-poker',
+    },
     {
       from: 28,
       to: 29,
