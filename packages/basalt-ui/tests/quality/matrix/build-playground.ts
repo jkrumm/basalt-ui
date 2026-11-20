@@ -39,6 +39,13 @@ const playgroundPlugin = (pseudo: boolean): Bun.BunPlugin => ({
     build.onResolve({ filter: /^@fontsource-variable\// }, (args) => ({
       path: Bun.resolveSync(args.path, join(REPO, 'packages/basalt-ui')),
     }))
+    // The Tailwind CLI inlines fonts.css without rebasing its url()s: `./files/<face>.woff2` is meant
+    // relative to the sheet, which lives in basalt-ui's `src/css`.
+    build.onResolve({ filter: /^\.\/files\/[^/]+\.woff2$/ }, (args) =>
+      args.importer.endsWith('apps/playground/src/index.css')
+        ? { path: join(REPO, 'packages/basalt-ui/src/css', args.path) }
+        : undefined,
+    )
     build.onResolve({ filter: /\?inline$/ }, (args) => {
       const bare = args.path.slice(0, -'?inline'.length)
       return {

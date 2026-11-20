@@ -3,7 +3,8 @@
  * Mirror non-transpiled assets into the unbundled dist.
  *
  * tsup (bundle: false) emits only `.ts`/`.tsx`. Two asset classes must be copied
- * verbatim, preserving the src/ tree, so the dist resolves:
+ * verbatim, preserving the src/ tree, so the dist resolves (and `css/files/*.woff2`, the faces `fonts.css` and
+ * `styles.css` name relative to themselves):
  *   - `*.css`        — the standalone `styles.css` and the shell `*.module.css`.
  *     Their imports are left verbatim in the emitted JS; the consumer's bundler
  *     processes the `.module.css` as CSS modules and serves `styles.css`.
@@ -28,7 +29,7 @@ function walk(dir, out = []) {
 
 let n = 0
 for (const f of walk(SRC)) {
-  if (f.endsWith('.css') || f.endsWith('.css.d.ts')) {
+  if (f.endsWith('.css') || f.endsWith('.css.d.ts') || f.endsWith('.woff2')) {
     const dest = join(DIST, relative(SRC, f))
     mkdirSync(dirname(dest), { recursive: true })
     copyFileSync(f, dest)

@@ -558,8 +558,8 @@ import { build } from 'vite'
 const require = createRequire(import.meta.url)
 const css = readFileSync(require.resolve('basalt-ui/styles.css'), 'utf8')
 mkdirSync('styles-proof', { recursive: true })
-writeFileSync('styles-proof/styles.css', css)
-writeFileSync('styles-proof/main.js', "import './styles.css'\n")
+// The sheet is bundled from the installed package, not a copy: its font url() is relative to it.
+writeFileSync('styles-proof/main.js', "import 'basalt-ui/styles.css'\n")
 const result = await build({
   configFile: false,
   logLevel: 'silent',
@@ -576,6 +576,25 @@ if (!digitsFont) throw new Error('the Basalt Head Digits url() did not resolve t
 const face = out.match(/@font-face\s*\{[^}]*Basalt Head Digits[^}]*\}/)?.[0] ?? ''
 if (!face.includes(digitsFont.fileName)) throw new Error('the bundled Basalt Head Digits @font-face does not point at the emitted woff2')
 console.log('styles.css bundles; head-digits font resolves')
+
+// fonts.css alone (what static-site.md and tailwind.css give a consumer): every face's url() resolves to an
+// emitted woff2 and Vite warns about none.
+const warnings = []
+mkdirSync('fonts-proof', { recursive: true })
+writeFileSync('fonts-proof/main.js', "import 'basalt-ui/fonts.css'\n")
+const fonts = await build({
+  configFile: false,
+  logLevel: 'warn',
+  customLogger: { info() {}, warn: (m) => warnings.push(m), warnOnce: (m) => warnings.push(m), error: (m) => warnings.push(m), clearScreen() {}, hasErrorLogged: () => false, hasWarned: false },
+  root: 'fonts-proof',
+  build: { write: false, assetsInlineLimit: 0, rolldownOptions: { input: 'main.js' } },
+})
+const fontBundle = Array.isArray(fonts) ? fonts[0] : fonts
+const woff2 = fontBundle.output.filter((o) => o.fileName.endsWith('.woff2'))
+const fontCss = fontBundle.output.filter((o) => o.fileName.endsWith('.css')).map((o) => String(o.source)).join('\n')
+if (woff2.length !== 6) throw new Error(`fonts.css emitted ${woff2.length} woff2 assets, expected 6`)
+if (/url\(['"]?(\.\/|@)/.test(fontCss) || warnings.length) throw new Error(`fonts.css left a font url() unresolved: ${warnings.join(' | ')}`)
+console.log('fonts.css bundles; six woff2 faces resolve')
 JS
 node styles-proof.mjs
 

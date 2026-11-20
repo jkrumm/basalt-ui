@@ -13,10 +13,11 @@ variable fonts. None of them runs on a static page. The four entries total about
 
 ## The four CSS entries
 
-Import them in this order from your CSS bundler (Astro, Vite) or copy the files next to the page.
+Import them in this order from your CSS bundler (Astro, Vite) or copy the files next to the page. `fonts.css` names
+its six woff2 files relative to itself (`./files/`), so copy `dist/css/files` beside it too.
 
 ```css
-@import 'basalt-ui/fonts.css'; /* @font-face only: needs a bundler or a copy step for the woff2 files */
+@import 'basalt-ui/fonts.css'; /* @font-face only: the woff2 files sit in dist/css/files, resolved by a bundler or copied with the sheet */
 @import 'basalt-ui/tokens.css'; /* unlayered on purpose: :root[data-theme] must out-rank :root */
 @import 'basalt-ui/typography.css'; /* @layer basalt.type: the 7-rung type ladder and the base rules */
 @import 'basalt-ui/prose.css'; /* @layer basalt.prose: .basalt-prose, every selector inside :where() */

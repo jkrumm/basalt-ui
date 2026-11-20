@@ -24,8 +24,7 @@
   font-style: normal;
   font-display: swap;
   font-weight: 200 1000;
-  src: url('@fontsource-variable/nunito-sans/files/nunito-sans-latin-wght-normal.woff2')
-    format('woff2-variations');
+  src: url('./css/files/nunito-sans-latin-wght-normal.woff2') format('woff2-variations');
   unicode-range: U+0030-0039;
 }
 
