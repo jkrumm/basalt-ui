@@ -122,10 +122,11 @@ jobs:
       - name: Build the marketing site
         run: bun --filter marketing build
 
-      # The site profile's own proof: the sibling install's managed files place, then doctor passes.
+      # The site profile's own proof: sync places the sibling install's gitignored root copies and must
+      # leave every committed file in apps/marketing as it is (a stale preset fails here), then doctor passes.
       - name: basalt-ui doctor on apps/marketing
         working-directory: apps/marketing
-        run: ./node_modules/.bin/basalt-ui sync && ./node_modules/.bin/basalt-ui doctor
+        run: ./node_modules/.bin/basalt-ui sync && git diff --exit-code -- . && ./node_modules/.bin/basalt-ui doctor
 
       - name: Cache Playwright browsers
         uses: actions/cache@v6
