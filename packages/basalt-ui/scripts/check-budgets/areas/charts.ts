@@ -60,7 +60,9 @@ export const rows: readonly RowDef[] = [
     // 127800 -> 128600 (Issue 2499): 128425 B measured, +~625 B gz over the cap for the rule caption's slide along
     // its rule, the x chip's hand-over to the panes of its own stack, the clamped value's free-row search, the
     // stack fitted to the clamp and the held run revealed whole, the kit fixes of expression cycle 14.
-    ceiling: 128600,
+    // 128600 -> 128800 (Issue 2500): 128646 B measured, +~46 B gz over the cap for `x.tickFormat`, the tick
+    // text apart from the readout's (expression cycle 14 contract).
+    ceiling: 128800,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -83,6 +85,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 128600,
+      to: 128800,
+      consumer:
+        'the expression cycle 14 contract (Issue 2500, Spec artifact_01a1f6fb): n66 printed reading times as clock times and n63, n64 and n67 hand-built short date ticks, so an x axis takes ticks apart from its readout',
+      repo: 'basalt-ui',
+    },
     {
       from: 127800,
       to: 128600,

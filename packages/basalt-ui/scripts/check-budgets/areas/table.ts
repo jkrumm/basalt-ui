@@ -80,13 +80,22 @@ export const rows: readonly RowDef[] = [
     // 160500 -> 163500 (Issue 2428): 163022 B measured, +~2.7 KB gz over master (160334) from the ui parts the header's filter editors
     // share (owner review 2 forms): Combobox's create row, Select options with an icon and a description,
     // Input's start and end, the Button spinner, the read-only looks.
-    ceiling: 163500,
+    // 163500 -> 163800 (Issue 2500): 163623 B measured, +~120 B gz for `phone: 'columns'`, the plan's kept
+    // columns and the details door for the columns a phone row leaves (expression cycle 14 contract).
+    ceiling: 163800,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 163500,
+      to: 163800,
+      consumer:
+        "the expression cycle 14 contract (Issue 2500, Spec artifact_01a1f6fb): n65's twelve friction reasons scrolled sideways at 390 and their cards ran ~1,500 px, as cycle 13's n62 windows table did, so a phone table keeps its name, answer and count as columns",
+      repo: 'basalt-ui',
+    },
     {
       from: 160500,
       to: 163500,
