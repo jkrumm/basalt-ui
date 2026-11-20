@@ -1,0 +1,21 @@
+{
+  "why": "Expression cycle 16 (docs/v3/cycles/expression-16.md) has two `rubric` findings. n79's reviewer charged R2 for end labels in a second column with no leader (.33), the defect and the frame F6 already charged, against rubric.md's 'a misplaced, lone or colliding data label is F6's, so R2 does not charge them again'. And one behaviour read two ways under X3 (.6): n75's REACH line marked 48 table rows with the pointer on the funnel, and its reviewer scored X3 2 for a list focus that seemed to outlive the pointer, while n76's reviewer read the same shape of REACH line as the previous list hover not yet cleared and scored X3 3.",
+  "what": "Rubric text that names an end label and its leader as F6's, and one reading for a REACH line that may carry the previous hover, with the shipped reviewer agreeing.",
+  "owns": [
+    "docs/v3/expression/rubric.md",
+    "the shipped reviewer's text in packages/basalt-ui/agent/** (the design reviewer subagent and its references), through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/cases.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) The charge-once sentence names a line's end label and its leader as F6's: R2 does not charge them again (n79 .33). (2) First find out whether the kit keeps a list's focus after the pointer leaves the list: hover a row of n75's inquiries table, move to the funnel chart, and read `data-focused` (lead-shots.ts in .evidence/v3-shots/expression-16 logs it). If the kit keeps it, the defect is the kit's: file a signal for the next kit row and score it as the defect it is. If not, write one reading: a REACH line that marks list rows before the pointer reaches the chart's marks carries the previous hover and is no evidence either way; X3 then reads the chart-to-list direction from the keyboard frame and the sweep, as the item says. Rescore n75 X3 and n79 R2 on the cycle-16 last-round shots with fresh reviewers, as EXPRESSION.md § Owner calibration asks, and record the rescore.",
+  "acceptance": [
+    "rubric.md and the shipped reviewer carry both readings with the cycle-16 cases cited",
+    "The n75 list-focus question is answered with evidence, and a fresh rescore of n75 X3 and n79 R2 is recorded"
+  ],
+  "out_of_scope": "Kit, skill and case text; the trial scenarios.",
+  "proof": "The rescore reports in .evidence/v3-shots/expression-16/reports/ in the main checkout.",
+  "commits": "docs: rubric readings."
+}

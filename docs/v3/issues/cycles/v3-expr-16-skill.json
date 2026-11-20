@@ -1,0 +1,23 @@
+{
+  "why": "Expression cycle 16 (docs/v3/cycles/expression-16.md) lost 19 of its 40 round-0 points to lessons the kit could already do (class `skill`), all P3. X1 (word economy) lost a point on 5 of 6 cases although every builder wrote the read-aloud pass cycle 15's skill row added: three passes found the repeat and kept it with a reason (n75 '3.4 %' in the hero and on its bar and '236' in a subtitle and a footer, 'a second place by design'; n79 '31' and '5' in the strip and again as bar labels, 'the mark's own place'; n80 the winner's numbers in the strip and the table, 'Kept repeats'), and three missed shapes the pass does not name: a strip meter that prints its value beside the figure (n78), a window restated by the page title, a card title and its subtitle (n77), a measure named in every pane title and the subtitle (n80). Three builders let a table of 6 to 18 rows fall to phone cards that run past a screen at 390, under the skill's ten-row threshold for `phone: 'columns'` (n78, n79, n80), and one left a column out of every card (n78's provider).",
+  "what": "Skill and rule text for the skill findings of expression cycle 16: a read-aloud pass that cuts what it finds, phone tables sized to a screen, a sign on every compared figure, one view, heat-grid legends that say their cap and unit, and the single lessons the builders missed.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** and packages/basalt-ui/agent/rules/** (through their generators where generated)",
+    "the dogfooded copies the repo syncs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no kit change)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) The read-aloud pass cuts what it finds: a fact the pass lists in two slots keeps one, and 'kept on purpose' is not a reason (n75 .4, n79 .30, n80 .40); the figure is the slot, and the mark carries its own value only where no figure says it. Name the shapes the pass missed: a strip meter's printed value beside the figure (n78 .21), a window in a page title, a card title and a subtitle (n77 .15), a measure in every pane title and a subtitle (n80 .40). (2) A table at 390: lower the `phone: 'columns'` threshold from ten numeric rows to any table whose phone cards run past one screen, keep the answering column among the three (n75's builder found `columns` dropped its Verdict; n78's that it cut the addresses), and give every answering column a `card` slot so no column appears nowhere (n78 .20 provider, n79 .29, n80 .39). (3) Sign every compared figure the data holds a base for: a footer pair of a total and a previous total is a delta left unsigned (n75 .1); a winner's cost and latency stand against the cheapest and the fastest (n80 .35). (4) One view: a part that restates another's rows or figures is folded into it or dropped (n78 .22: a heat grid and an in/out list restating the status table; n79 .31: a Totals card repeating the strip). (5) A heat grid's legend says its cap and its unit and its tooltip names the measure: `formatLegend` ('4+'), `legend.label`, `tooltip.valueLabel`, a compact `annotate` that fits a cell (n77 .12, n78 .18). (6) Single lessons, each one case: one accent, one measure (n76 .7: the latest hour and the fetching state in one blue); many near-identical series get the leader against a quiet rest or a spark per row (n79 .26: eight class lines); a keyboard focus carries the focused item's numbers into the figure's period or status, not only the live region (n79 .28; n76 .10 second cause); draw each measure the case names (n80 .34: latency only in a table meter); every card has the console anatomy (n79 .32: a bare Totals card).",
+  "acceptance": [
+    "The read-aloud pass cuts a repeat it lists, and names the three missed shapes (a meter's printed value, a window in titles, a measure in pane titles) with cycle-16 cases cited",
+    "The phone-table text lowers the phone: 'columns' threshold to one screen of cards and asks for a card slot on every answering column",
+    "Lessons (3) to (6) are in the skill or its references with their cases",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit behaviour (v3-expr-16-kit-fixes); the rubric; the trial scenarios.",
+  "proof": "The skill diff and make check.",
+  "commits": "docs: skill and rule text."
+}
