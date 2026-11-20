@@ -84,12 +84,6 @@ export const FINDINGS: readonly Finding[] = [
     parts: ['dock'],
     cause: 'The dock takes focus on mount: the focus ring is the whole difference (0.03%).',
   },
-  {
-    parts: '*',
-    cause:
-      "`basalt-ui/fonts.css` (imported by `tailwind.css`) and the Head Digits face in `styles.css` name their woff2 files by bare specifier in `url()`. Vite leaves those unresolved (six build warnings, the same in the Vite playground's build) and the browser requests them relative to the stylesheet: 404. This playground loads the faces through `styles.css`' fontsource imports; a site that imports only `tailwind.css` renders in fallback fonts.",
-    row: 'astro-font-urls',
-  },
 ]
 
 /** Why an export is in no demo: it renders only inside an open overlay or a queued toast, which no static page shows. */
