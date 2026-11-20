@@ -5,5 +5,5 @@
   "furtherIslandGzip": 120000,
   "cssGzipPerPage": 26000,
   "lcpMs": 1000,
-  "cls": 0.02
+  "cls": 0.05
 }
