@@ -25,7 +25,8 @@ export function themeNames() {
     shadows: names('shadow'),
     fonts: names('font', /^weight-/),
     fontWeights: names('font-weight'),
-    durations: names('duration'),
+    // Tailwind reads `duration-*` from the `--transition-duration-*` namespace.
+    durations: names('transition-duration'),
     eases: names('ease'),
   }
 }

@@ -79,17 +79,27 @@ const BOOKED_74: readonly string[] = [
   'contract',
 ].map((name) => `--basalt-${name}`)
 
+/** Issue 2529: the motion scale beyond 3.2's two durations and one easing. */
+const MOTION_ADDED = [
+  'dur-slow',
+  'ease-enter',
+  'ease-exit',
+  'spring',
+  'spring-bouncy',
+  'stagger',
+].map((name) => `--basalt-${name}`)
+
 describe('public names', () => {
   test('the 3.2 list is 74 names', () => {
     expect(BOOKED_74).toHaveLength(74)
     expect(new Set(BOOKED_74).size).toBe(74)
   })
 
-  test('the emitted --basalt-* name set equals the 74 names of 3.2 plus --basalt-input, and is at most 90', () => {
+  test('the emitted --basalt-* name set equals the 74 names of 3.2, --basalt-input and the motion scale, and is at most 90', () => {
     const css = emitTokensCss({ version: '3.0.0' })
     const emitted = new Set([...css.matchAll(/(--basalt-[a-z0-9-]+)\s*:/g)].map((m) => m[1]!))
-    expect([...emitted].sort()).toEqual([...BOOKED_74, '--basalt-input'].sort())
-    expect(emitted.size).toBe(75)
+    expect([...emitted].sort()).toEqual([...BOOKED_74, '--basalt-input', ...MOTION_ADDED].sort())
+    expect(emitted.size).toBe(81)
     expect(emitted.size).toBeLessThanOrEqual(90)
     expect([...tokenNames()].sort()).toEqual([...emitted].sort())
   })

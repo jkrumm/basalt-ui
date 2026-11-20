@@ -37,8 +37,11 @@ const ready = await initLayoutSuite()
 const layout = ready ? describe : describe.skip
 afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
-/** Measured on the four entry sheets at 3.0.0 (tokens + typography + prose + fonts): 17705 bytes. */
-const CSS_BYTES_MEASURED = 17_705
+/**
+ * Measured on the four entry sheets (tokens + typography + prose + fonts): 17705 bytes at 3.0.0,
+ * 19332 with the motion scale (Issue 2529: two spring curves, the reduced-motion zeros, the enter keyframes).
+ */
+const CSS_BYTES_MEASURED = 19_332
 const CSS_BYTES_CEILING = Math.ceil(CSS_BYTES_MEASURED * 1.05)
 
 const ENTRIES = ['tokens.css', 'typography.css', 'prose.css', 'fonts.css'] as const

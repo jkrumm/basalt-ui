@@ -177,7 +177,7 @@ export function nearestToken(name: string, known: Iterable<string>): string | un
   const head = segmentsOf(folded)[0]
   const tail = folded.replace(/^--basalt-/, '')
   let best: string | undefined
-  let bestRank: [number, number, number] = [Infinity, Infinity, Infinity]
+  let bestRank: [number, number, number, number] = [Infinity, Infinity, Infinity, Infinity]
   for (const candidate of [...knownSet].toSorted()) {
     const candidateKind = KINDS_BY_NAME.get(candidate)
     if (kind !== undefined && candidateKind !== undefined && candidateKind !== kind) continue
@@ -186,17 +186,18 @@ export function nearestToken(name: string, known: Iterable<string>): string | un
     if (distance > NEAR && !shares) continue
     const suffix = tail.endsWith(`-${candidate.replace(/^--basalt-/, '')}`)
     const sameHead = segmentsOf(candidate)[0] === head
-    // A suffix match ranks first, the longest one first; then the same family prefix; then the fewest edits.
-    const rank: [number, number, number] = [
+    const prefix = tail.startsWith(candidate.replace(/^--basalt-/, ''))
+    // A suffix match ranks first, the longest one first; then the same family prefix; then the fewest
+    // edits; then, at equal edits, a known name the unknown one starts with (`--basalt-warning` is
+    // `--basalt-warn` lengthened, not `--basalt-spring` at the same distance).
+    const rank: [number, number, number, number] = [
       suffix ? -candidate.length : 0,
       sameHead ? 0 : 1,
       distance,
+      prefix ? 0 : 1,
     ]
-    if (
-      rank[0] < bestRank[0] ||
-      (rank[0] === bestRank[0] &&
-        (rank[1] < bestRank[1] || (rank[1] === bestRank[1] && rank[2] < bestRank[2])))
-    ) {
+    const better = rank.findIndex((r, i) => r !== bestRank[i])
+    if (better !== -1 && rank[better]! < bestRank[better]!) {
       best = candidate
       bestRank = rank
     }

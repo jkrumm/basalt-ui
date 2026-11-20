@@ -89,8 +89,8 @@ export const rows: readonly RowDef[] = [
     id: 'tokens-css-gzip',
     order: 320,
     label: 'tokens.css (gzip B, src/css/tokens.css)',
-    // 1539 B measured (zlib default level), +5 percent rounded up.
-    ceiling: 1616,
+    // 1539 B measured (zlib default level), +5 percent rounded up; 1876 with the motion scale (1786 B, raise row below).
+    ceiling: 1876,
     measure: () => gzipFileBytes(join(CSS_DIR, 'tokens.css')),
   },
   {
@@ -122,6 +122,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'tokens-css-gzip': [
+    {
+      from: 1616,
+      to: 1876,
+      consumer:
+        'the motion scale (Issue 2529): a slow step, enter and exit easings, two springs as linear() curves, the stagger step and their reduced-motion zeros; free-planning-poker v9 animates its Astro landing page from plain tokens.css and its room table from the same values',
+      repo: 'free-planning-poker',
+    },
     {
       from: 1615,
       to: 1616,

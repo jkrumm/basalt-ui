@@ -52,6 +52,8 @@ export const BASALT_FAMILIES: readonly string[] = [
   'seq',
   'shadow',
   'space',
+  'spring',
+  'stagger',
   'status',
   'surface',
   'text',

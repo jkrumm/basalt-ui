@@ -220,7 +220,8 @@ export function valueSignature(
   flags: ts.TypeFormatFlags,
 ): string {
   const props = type.getProperties()
-  if (props.length === 0)
+  // An array or tuple prints as its type: its members are Array.prototype, not the value's keys.
+  if (props.length === 0 || checker.isArrayType(type) || checker.isTupleType(type))
     return clip(`${name}: ${checker.typeToString(type, node, flags)}`, MAX_LINE)
   const entries = props.map((k) => ({ key: k.name, t: checker.getTypeOfSymbolAtLocation(k, node) }))
   if (
