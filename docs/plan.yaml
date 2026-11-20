@@ -1141,3 +1141,36 @@ rows:
     kind: bug
     after: [v3-owner-2-rerun]
     facts: { 'brief': 'docs/v3/issues/owner-2/v3-owner-2-rerun-kit-fixes.json' }
+  - key: v3-expr-14-kit-fixes
+    title: 'Rule captions and end labels, stack totals, clamped values at 390, whole end dots, a StatCard value at 390, the chart kept in view, the open phone-card and panel gaps, from expression cycle 14'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-14]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-14-kit-fixes.json' }
+  - key: v3-expr-14-contract
+    title: 'One height for the cards of a row, panes that share a card box, a phone form for a long numeric table, duration and date formats (Spec), from expression cycle 14'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-cycle-expression-14]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-14-contract.json' }
+  - key: v3-expr-14-skill
+    title: 'Expression skill: a fact count that reads values not property names, a focused period that carries its number, one view, twelve single lessons, from expression cycle 14'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-expression-14]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-14-skill.json' }
+  - key: v3-expr-14-rubric
+    title: 'Expression rubric: one defect charged once across R2, X3 on parts that share no items, from expression cycle 14'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-cycle-expression-14]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-14-rubric.json' }
+  - key: v3-cycle-expression-15
+    title: 'Improvement cycle 15: expression, six one-shot visualization trials'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-14-kit-fixes, v3-expr-14-contract, v3-expr-14-skill, v3-expr-14-rubric]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-15.json' }

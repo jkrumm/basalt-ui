@@ -1,0 +1,22 @@
+{
+  "why": "Expression cycle 14 (docs/v3/cycles/expression-14.md) lost 23 of its 44 round-0 points to lessons the kit could already do (class `skill`), all P3. X1 (word economy) lost a point on 6 of 6 cases and X2 (one view) on 6 of 6, the fifth cycle running. Every builder ran the fact count from v3-expr-13-skill to an empty print, but four of six (n64, n65, n67, n68) say the command reads property names inside template strings as words (`${x.label}`, `${w.done}`, `d.flat`, aria `label` strings), so they destructured or reworded until it printed nothing, and n65 says that hid its real repeat; the diagnosis verified `${w.done}` prints `4 done` and `4 {w}`. Two builders (n63, n65) kept the card's figure on the whole period while its period tag moved to the focused item.",
+  "what": "Skill and rule text for the skill findings of expression cycle 14, and a fact count that reads values, not property names.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** and packages/basalt-ui/agent/rules/** (through their generators where generated)",
+    "the dogfooded copies the repo syncs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no kit change, except a script the count runs if the skill ships one)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) The fact count reads the words a page prints, not the property names in its source: skip `${a.b}` interpolations and member names, keep numbers with their unit, and catch one fact repeated across strings (a number and unit in the status and on a mark, 'Low 5' twice, '3 h over 75' twice) (n63 .6, n64 .15, n65 .24, n66 .31, n67 .36, n68 .40; read the six DESIGN.md files and builds in .evidence/v3-shots/expression-14/src-r0 in the main checkout and say in the PR what the changed count prints on each). (2) A focused period and status carry the focused item's own number, so a figure that stays on the whole period never sits beside a period tag naming one day or week (n63 .4 'Push day 23 Oct' beside 78, n65 .22 '20 ended' beside W41); the figure stays the answer, as `primitive-bypass` holds. (3) One view: a part that restates another part's measures, a card large for six bars, or an empty lower half fails the one-view check; fold the restating table into the chart's rows or drop it (n66 .32, n67 .37, n68 .41; X2 on 6 of 6). (4) Single lessons the builders missed, each a line where the builder reads it: stacked panes each take the one `focus` (n63 .8; n67 did and scored X3 3); the accent goes on the pointed-at mark, the rest of its series in ink (n63 .2); a zone that answers carries its word and a dense series is binned (n63 .1); at 390 the second clause is in the first screen (n63 .5); a delta pill compares the figure's own window (n64 .11); a `highlight` fill gets a `LegendEntry` (n64 .10); `c.entity` takes `mono` for ids (n64 .18); a table measure draws its size with `c.meter` or `c.spark` (n65 .20); a chart of a parent's children joins its focus through `focus.hold` (n65 .26); separate sources keep separate `retry` functions so each keeps its Retry (n66 .30); a custom `text` mark sets `fontSize` and `fill` from tokens (n66 .33); a status on a span focus fits one line (n67 .38).",
+  "acceptance": [
+    "The fact count prints nothing on a clean page with property names in template strings and prints a repeated number with its unit; the PR states what it prints on the six cycle-14 builds",
+    "The focused period and status lesson, the one-view lesson and each single lesson sit where a builder reads them before the shoot",
+    "make check passes, including the skill sync and drift tests"
+  ],
+  "out_of_scope": "Kit behaviour (v3-expr-14-kit-fixes); new fields (v3-expr-14-contract); the rubric; the trial scenarios.",
+  "proof": "make check; the fact count's output on the six cycle-14 builds in the PR body.",
+  "commits": "docs: skill and rule text; docs: sync the dogfooded skill copies."
+}

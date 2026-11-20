@@ -1,0 +1,34 @@
+{
+  "why": "Expression cycle 14 (docs/v3/cycles/expression-14.md) lost 17 of its 44 round-0 points to the kit (class `primitive`), one of them the cycle's only P2: n65's answer 'Gate flake' ellipsised to 'Gate ...' in a StatCard at 390 (R2 1, the rendering cap, 79). The lead's probe on master 6fb28df8 (`.evidence/v3-shots/expression-14/probe/verdicts.md` in the main checkout) found v3-expr-13-kit-fixes landed in part: the next phone card still takes no focus at 390 (n42, n52, open since cycle 10), a DataPanel rows body still reserves about one blank row at 1800 (n57, n60), a focused Heatmap cell draws no label, a held run scrolls only its first row into view (n61), a phone card's id sits on a labelled line of its own in the body face (n61), and at 390 end labels drop and a rule caption can sit 150 px from its rule under keyboard focus (n57, n58, n59).",
+  "what": "Kit behaviour fixes for the primitive findings of expression cycle 14 and the gaps of v3-expr-13-kit-fixes that landed in part, with no export and no contract change.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/cards/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/table/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/docs/** generated from the above (through gen-docs)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/src/cards/contract.ts",
+    "packages/basalt-ui/src/table/contract.ts",
+    "packages/basalt-ui/src/core/ports.ts",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) Rule captions and line end labels: a rule caption keeps clear of a dense line and of its own rule's neighbours (n63 .3, the '50' caption on the stress line), a line's end label stays drawn at half width and at 390 or is replaced by the legend name the card already shows, and `Lines` end labels print no stray dash ('Deadlift–', n67 wish) (n63 .3, n65 .21 the dropped Deploy label; n68 wish, no end names at 750 px; probe items 3 and 4). (2) Bar value labels: a stack total sits above its stack, never inside the top segment over a gridline (n64 .12, '92' at 1800); at 390 value labels thin by priority and each kept label stays on its own bar (n68 .39, '85/129' on the Jul slot). (3) Clamp fidelity: a clamped value keeps its caret label with its true value at 390 as at 1800 (n67 .34, '+49.0 kg'), and a stacked bar past the clamp keeps every segment readable instead of only its lowest (n64 .13: 2,026 quota refusals vanished). (4) A dot at the first or last x is drawn whole: the plot insets a continuous x so an end mark is not cut by the plot edge (n63 .9 today's dot, n67 .34 the intensity dots). If this needs an x `pad` field, split it behind a Spec row. (5) A StatCard value at 390 wraps or fits where the card has room rather than ellipsising (n65 .27, P2; reproduce on `/scenarios/expr-n65?fixture=surge` at 390 first). (6) A chart focus at 390 keeps the chart in view: revealing the joined row never scrolls the page away from the focused chart (n64 .14, the 390 focus frame scrolled to the table). (7) The open probe gaps: at 390 the next phone card of a list that shares a chart's focus takes the focus when the pointer arrives (n42 and n52: 0 dimmed at B, open since cycle 10); a DataPanel rows body reserves no blank row at 1800 (n57 Sites about 35 px, n60 Outages about 32 px); a focused Heatmap cell keeps its label inside its ring (n57); a held run scrolls the whole run into view where it fits, not only its first row (n61, 1 of 7 Checking rows in view); a phone card shows a mono entity's id on its title line in mono (n61). (8) The n64 builder saw a focused Heatmap loop (React error 185 on hover) when `getRow`, `getCol` and `getValue` were inline arrows in a build without the React Compiler: reproduce, then make the Heatmap tolerate fresh accessors or name the requirement in heatmap.md beside `getState` and `tickCols`.",
+  "acceptance": [
+    "A rule caption stays clear of a dense line, and an end label is drawn or replaced at half width and at 390 with no stray dash (tests)",
+    "A stack total sits above its stack, and kept value labels sit on their own bar at 390 (tests)",
+    "A clamped value shows its true value at 390, and a clamped stack keeps its segments readable (tests)",
+    "A dot at the first or last x is drawn whole (test)",
+    "A StatCard value at 390 does not ellipsise where the card has room (layout test on a page like n65 surge)",
+    "A chart focus at 390 leaves the chart in view (layout test)",
+    "At 390 the next phone card takes the focus on arrival, a rows body reserves no blank row at 1800, a focused Heatmap cell keeps its label, a held run is in view whole where it fits, and a phone card's mono id sits on its title line, shown by lead-shots frames on n42, n52, n57, n60 and n61",
+    "A focused Heatmap with inline accessors does not loop, or heatmap.md names the requirement (test)",
+    "No export added and no contract file changed; make check passes"
+  ],
+  "out_of_scope": "A field on a contract (v3-expr-14-contract owns heights, panes, the phone form and formatters); a Heatmap joined to a focus of another grain (n64 .17, one case, and an earlier Spec ruled the grid's drive back out); a BarList leader highlight (n66 .28, one case); hover chips over ticks (Issue 2483); skill text; the rubric; the trial scenarios.",
+  "proof": "make check; the tests named in acceptance; shots of n63 to n68 at 1800 and 390 in light and dark with the lead tool's SWEEP, REACH and KEY lines (.evidence/v3-shots/expression-14/lead-shots.ts in the main checkout), and n42, n52, n57, n60 and n61 for the older gaps.",
+  "commits": "fix: per behaviour with its test."
+}

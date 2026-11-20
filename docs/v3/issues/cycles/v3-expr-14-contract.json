@@ -1,0 +1,29 @@
+{
+  "why": "Expression cycle 14 (docs/v3/cycles/expression-14.md) lost points to four kit gaps that need a public field, so they cannot ride in a behaviour row: two cards in one row end at different heights (n64 .16: 611 against 635 px; n65 .25: 7 px and a blank band under row 12; n63's fixed wrappers leave a dead band), stacked panes inside one ChartCard cannot share its box (n63 .7, markers in n63 and n67: a nested `height=\"fill\"` draws 320 px and ignores its parent, so both builders hard-coded pixel heights), a long numeric table has no phone form between 1,500 px of cards and a sideways scroll (n65 .23 K5; cycle 13's n62 windows table scrolled sideways at 390 too), and `useFormat` has no duration in words, no day-and-month date and no tick format apart from the readout's (n66 .29 F6 '12:29:51' read as a clock; wishes in n63, n64 and n66).",
+  "what": "A Spec, then the fields it rules on: one height for the cards of a row, panes that share a card's box, a phone form for a long numeric table, and three formats.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** including charts/contract.ts where the Spec rules a field",
+    "packages/basalt-ui/src/cards/** including cards/contract.ts where the Spec rules a field",
+    "packages/basalt-ui/src/table/** including table/contract.ts where the Spec rules a field",
+    "packages/basalt-ui/src/core/format* where the Spec rules a format",
+    "packages/basalt-ui/docs/** and agent references generated from them",
+    "their tests and the playground's kit pages that show them"
+  ],
+  "must_not_touch": [
+    "docs/v3/ARCHITECTURE.md",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "Write a one-page Spec first, then build what it rules. (1) Cards and panels in one row end at one height: a ChartCard beside a DataPanel or StatCard in one grid row stretches to the row or declares a shared height, with a rows body that fills rather than reserves (n64 .16, n65 .25, n63's dead band). (2) Panes that share a card's box: a ChartCard that stacks two or three charts on one x (the two-pane recipe) hands each pane its share of `box.height`, or a pane group takes weights, so no app hard-codes pixel heights per size class (n63 .7; n67 marker; the two-pane recipe's equal-rows grid did not help either builder). (3) A phone form for a long numeric table: between `phone: 'cards'` (12 cards, about 1,500 px on n65) and `phone: 'scroll'` (the answer column off screen), a form that keeps the name, the answer column and one count in view at 390 (n65 .23; cycle 13 n62 .57). (4) Formats: a duration in words ('12 h 30 min'), a day-and-month date with no year (`date(d, 'short')` ignores its options today), and an x tick format apart from the cursor readout's (n66 .29; n63, n64 and n66 wishes). Each field names two cases; say in the Spec what changing it after 3.0 would cost.",
+  "acceptance": [
+    "A Spec with these four choices and their defaults is submitted and ruled on before code",
+    "Two cards in one row end at one height in the layout harness",
+    "Stacked panes share the card's box at 1800 and 390 with no pixel heights in app code (layout test)",
+    "A long numeric table keeps its name and answer column in view at 390 in the chosen form (layout test)",
+    "The three formats exist and are documented",
+    "make check passes"
+  ],
+  "out_of_scope": "Behaviour fixes (v3-expr-14-kit-fixes); a Heatmap joined to another grain's focus and a BarList leader highlight (one case each); the trial scenarios.",
+  "proof": "The Spec's verdict; make check; layout tests; shots of n63, n64, n65 and n66 rebuilt by nobody: the next cycle reads the fields from what ships.",
+  "commits": "feat: per field with its test; docs: the Spec page."
+}
