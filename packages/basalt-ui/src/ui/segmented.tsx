@@ -2,13 +2,13 @@ import { Toggle as BaseToggle } from '@base-ui/react/toggle'
 import { ToggleGroup as BaseToggleGroup } from '@base-ui/react/toggle-group'
 import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
-import { createContext, useContext, useLayoutEffect, useRef, useState } from 'react'
-import type { CSSProperties, KeyboardEvent, ReactElement, ReactNode } from 'react'
+import { createContext, useContext, useRef, useState } from 'react'
+import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 
 /**
- * The `Segmented` cva table: a track holding a row of options, with one raised indicator under the
- * selected one. The track is tinted with an ink mix, so it reads on a card and on the page alike. Each
+ * The `Segmented` cva table: a track holding a row of options; the selected one is drawn raised. The
+ * track is tinted with an ink mix, so it reads on a card and on the page alike. Each
  * option sizes to its label on one line; a track wider than its box scrolls sideways rather than break
  * a label, and the focus ring sits inside the option so the scroll box does not clip it. The track is at
  * least one control high and a coarse pointer gets the 44 px floor.
@@ -33,10 +33,9 @@ export const segmentedVariants = cva(
   },
 )
 
-// Before the indicator is measured (server render, first paint) and in `multiple` mode the pressed
-// option draws its own raised face, so the selection is visible without the script.
-const OWN_FACE =
-  'group-data-[indicator=false]/segmented:data-pressed:bg-secondary group-data-[indicator=false]/segmented:data-pressed:shadow-raised'
+// The pressed option draws the raised face itself, in CSS: the server HTML shows the selection, and
+// no measured rect decides where it sits.
+const OWN_FACE = 'data-pressed:bg-secondary data-pressed:shadow-raised'
 
 /**
  * The `SegmentedItem` cva table: one option. Its drawn height is the track's; the `::after` overlay
@@ -111,7 +110,7 @@ type Single = {
 }
 
 type Multiple = {
-  /** Several options can be on at once; the indicator is not drawn. */
+  /** Several options can be on at once; each is drawn raised. */
   multiple: true
   value?: readonly string[]
   defaultValue?: readonly string[]
@@ -122,12 +121,11 @@ export type SegmentedProps = Shared & Items & (Single | Multiple)
 
 const ARROWS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'])
 
-type Box = { x: number; w: number } | null
-
 /**
  * A row of options on Base UI's toggle group. Single select (the default) keeps exactly one option
- * on and draws one indicator that slides to it; the arrow keys move the selection through the
- * options in DOM order. `multiple` lets several be on and draws no indicator. Works with no provider.
+ * on and draws it raised; the arrow keys move the selection through the options in DOM order.
+ * `multiple` lets several be on. The raised face is CSS on the pressed option, so a server render
+ * shows the selection with no script. Works with no provider.
  *
  * @useWhen a view or a range is one of two to five short options switched in place
  * @neverWhen the options are more than five (use Select), or they open different pages (use Tabs or InnerNav)
@@ -145,23 +143,7 @@ export function Segmented(props: SegmentedProps): ReactElement {
     rest.multiple === true ? undefined : rest.defaultValue,
   )
   const current = rest.multiple === true ? undefined : (rest.value ?? inner)
-  const [box, setBox] = useState<Box>(null)
-  const track = useRef<HTMLDivElement>(null)
   const viaArrow = useRef(false)
-
-  useLayoutEffect(() => {
-    const root = track.current
-    if (multiple || root === null) return
-    const measure = (): void => {
-      const on = root.querySelector<HTMLElement>('[data-pressed]')
-      setBox(on === null ? null : { x: on.offsetLeft, w: on.offsetWidth })
-    }
-    measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measure)
-    observer.observe(root)
-    return () => observer.disconnect()
-  }, [multiple, current, size, options])
 
   const select = (value: string): void => {
     if (rest.multiple === true) return
@@ -191,9 +173,7 @@ export function Segmented(props: SegmentedProps): ReactElement {
     <GroupContext value={{ size, select: multiple ? undefined : select, viaArrow }}>
       <BaseToggleGroup
         {...groupProps}
-        ref={track}
         data-slot="segmented"
-        data-indicator={!multiple && box !== null}
         data-fill={fill}
         className={cn(segmentedVariants({ size, fill }), className)}
         onKeyDownCapture={(event: KeyboardEvent) => {
@@ -203,16 +183,6 @@ export function Segmented(props: SegmentedProps): ReactElement {
           viaArrow.current = false
         }}
       >
-        {!multiple && box !== null ? (
-          <span
-            aria-hidden
-            data-pill=""
-            style={
-              { '--segmented-x': `${box.x}px`, '--segmented-w': `${box.w}px` } as CSSProperties
-            }
-            className="pointer-events-none absolute inset-y-0.5 left-(--segmented-x) w-(--segmented-w) rounded-[calc(var(--radius-ctrl)-2px)] bg-secondary shadow-raised transition-[left,width] motion-reduce:transition-none"
-          />
-        ) : null}
         {options === undefined
           ? children
           : options.map((option) => (

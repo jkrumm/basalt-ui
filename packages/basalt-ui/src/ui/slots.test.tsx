@@ -78,6 +78,8 @@ const PART_PROPS: Record<string, Record<string, unknown>> = {
   'menu-group': { label: 'x' },
   'menu-sub': { label: 'x' },
   'menu-radio-item': { value: 'a' },
+  // an empty list: the first window is drawn on the server, and `x` is no row function
+  'virtual-list': { count: 0, estimateSize: () => 20, getItemKey: (index: number) => index },
 }
 
 /** With children `x`; a part on a void element (`<input>`) refuses children, so it renders bare. */

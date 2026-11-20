@@ -1,9 +1,9 @@
 /**
  * P3d (docs/v3/concepts/primitives-distribution.md section 4, rows 10-11): the `Slider` and
  * `Segmented` primitives in real Chrome at 1440, 768, 390 and 320. Asserted here because happy-dom
- * has no geometry, no focus movement on arrow keys and no pointer drag: the indicator sits under the
- * selected option and follows a click, ArrowRight and ArrowLeft move the selection in DOM order,
- * `multiple` draws no indicator, a drag fires `onValueChange` while moving and
+ * has no geometry, no focus movement on arrow keys and no pointer drag: the selected option is drawn
+ * raised and the raised face follows a click, ArrowRight and ArrowLeft move the selection in DOM order,
+ * `multiple` raises each pressed option, a drag fires `onValueChange` while moving and
  * `onValueCommitted` once on release, the value text is `1,5` in `de-DE`, the hit floor is 24 px
  * for a fine pointer and 44 px for a coarse one, nothing pushes the page sideways, and axe finds
  * nothing serious or critical in either colour scheme.
@@ -88,7 +88,7 @@ async function open(
   scheme?: 'dark',
 ): Promise<LayoutPage> {
   const page = await openFixture(EMPTY_SPEC, viewport, documentPath, 'reduce', pointer)
-  await page.raw.waitForSelector('[data-pill]')
+  await page.raw.waitForSelector('[data-slot="segmented-item"]')
   if (scheme === 'dark') {
     await page.raw.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'))
   }
@@ -112,19 +112,23 @@ const pressed = (page: LayoutPage, id: string): Promise<string[]> =>
     ITEMS(id),
   )
 
-/** Where the indicator is drawn against the pressed option, in px. */
-const indicatorGap = (page: LayoutPage, id: string): Promise<{ dx: number; dw: number } | null> =>
-  page.raw.evaluate(
-    ({ group, items }) => {
-      const indicator = document.querySelector(`${group} [data-pill]`)
-      const on = document.querySelector(`${items}[aria-pressed="true"]`)
-      if (indicator === null || on === null) return null
-      const a = indicator.getBoundingClientRect()
-      const b = on.getBoundingClientRect()
-      return { dx: a.left - b.left, dw: a.width - b.width }
-    },
-    { group: `[data-testid="${id}"]`, items: ITEMS(id) },
-  )
+/** The raised face: the pressed option's background and shadow, and every other option's. */
+const faces = (
+  page: LayoutPage,
+  id: string,
+): Promise<{ on: { bg: string; shadow: string }[]; off: string[] }> =>
+  page.raw.evaluate((items) => {
+    const all = [...document.querySelectorAll(items)]
+    const on = all.filter((el) => el.getAttribute('aria-pressed') === 'true')
+    const off = all.filter((el) => el.getAttribute('aria-pressed') !== 'true')
+    return {
+      on: on.map((el) => {
+        const style = getComputedStyle(el)
+        return { bg: style.backgroundColor, shadow: style.boxShadow }
+      }),
+      off: off.map((el) => getComputedStyle(el).backgroundColor),
+    }
+  }, ITEMS(id))
 
 /** The edge lengths of an element's hit box: its own rect unioned with its `::after`. */
 const hitBox = (page: LayoutPage, selector: string): Promise<{ w: number; h: number }> =>
@@ -146,19 +150,19 @@ layout('Slider and Segmented', () => {
   for (const viewport of VIEWPORTS) {
     for (const pointer of POINTERS) {
       describe(`${viewport.name} ${viewport.width}, ${pointer} pointer`, () => {
-        test('the indicator sits exactly under the selected option', async () => {
+        test('the selected option is drawn raised and the others are flat', async () => {
           const page = await open(viewport, pointer)
           for (const id of ['ur-seg', 'ur-seg-small', 'ur-seg-long']) {
-            const gap = await indicatorGap(page, id)
-            expect(gap, id).not.toBeNull()
-            expect(Math.abs(gap!.dx), `${id} dx`).toBeLessThan(0.6)
-            expect(Math.abs(gap!.dw), `${id} dw`).toBeLessThan(0.6)
+            const { on, off } = await faces(page, id)
+            expect(on, id).toHaveLength(1)
+            expect(on[0]!.bg, `${id} face`).not.toBe('rgba(0, 0, 0, 0)')
+            expect(on[0]!.shadow, `${id} shadow`).not.toBe('none')
+            for (const bg of off) expect(bg, `${id} others`).toBe('rgba(0, 0, 0, 0)')
           }
         })
 
-        test('multiple draws no indicator and shows each pressed option', async () => {
+        test('multiple shows each pressed option', async () => {
           const page = await open(viewport, pointer)
-          expect(await page.count(IN('ur-seg-multi', '[data-pill]'))).toBe(0)
           await page.raw.click(IN('ur-seg-multi', 'button:nth-of-type(2)'))
           expect(await pressed(page, 'ur-seg-multi')).toEqual(['Alpha', 'Beta'])
           const faces = await page.raw.evaluate(() =>
@@ -227,14 +231,13 @@ layout('Slider and Segmented', () => {
   }
 
   describe('keyboard and pointer, desktop fine pointer', () => {
-    test('a click moves the selection and the indicator follows', async () => {
+    test('a click moves the selection and the raised face follows', async () => {
       const page = await open(DESKTOP_1440)
       await page.raw.click(IN('ur-seg', 'button:nth-of-type(3)'))
       await page.settle()
       expect(await pressed(page, 'ur-seg')).toEqual(['Month'])
       expect(await log(page)).toContain('picked:month')
-      const gap = await indicatorGap(page, 'ur-seg')
-      expect(Math.abs(gap!.dx)).toBeLessThan(0.6)
+      expect((await faces(page, 'ur-seg')).on).toHaveLength(1)
     })
 
     test('ArrowRight and ArrowLeft move the selection in DOM order', async () => {
@@ -247,7 +250,7 @@ layout('Slider and Segmented', () => {
       await page.raw.keyboard.press('ArrowLeft')
       expect(await pressed(page, 'ur-seg')).toEqual(['Week'])
       await page.settle()
-      expect(Math.abs((await indicatorGap(page, 'ur-seg'))!.dx)).toBeLessThan(0.6)
+      expect((await faces(page, 'ur-seg')).on).toHaveLength(1)
       expect(await log(page)).toContain('picked:week')
     })
 

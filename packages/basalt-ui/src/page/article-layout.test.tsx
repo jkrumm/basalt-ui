@@ -9,7 +9,8 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { ReactElement } from 'react'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { renderToString } from 'react-dom/server'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { LinkContext } from '../core/link'
 import type { LinkComponent } from '../core/ports'
@@ -30,53 +31,54 @@ function renderArticle(): ReturnType<typeof render> {
   return render(<ArticleLayout>{ARTICLE_BODY}</ArticleLayout>)
 }
 
-/** Every `(min-width)` query matching is the wide class; the shared dom shim pins them to `false`. */
-function withWideViewport<T>(fn: () => T): T {
-  const original = window.matchMedia
-  window.matchMedia = (query: string): MediaQueryList =>
-    ({
-      matches: true,
-      media: query,
-      onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-    }) as MediaQueryList
-  try {
-    return fn()
-  } finally {
-    window.matchMedia = original
-  }
-}
-
 describe('ArticleLayout: the rail/trigger swap', () => {
-  test('below the breakpoint: the trigger renders, the rail does not', () => {
-    renderArticle()
-    expect(screen.getByRole('button', { name: 'On this page' })).toBeDefined()
-    expect(screen.queryByRole('navigation', { name: 'On this page' })).toBeNull()
+  // Under happy-dom no stylesheet is loaded, so both are in the tree; the container query shows one.
+  test('the server HTML holds both: the trigger hides at @wide, the rail shows from @wide', () => {
+    const { container } = renderArticle()
+    const trigger = screen.getByRole('button', { name: 'On this page' })
+    expect(trigger.parentElement?.className).toContain('@wide:hidden')
+    const rail = container.querySelector('nav[aria-label="On this page"]')?.parentElement
+    expect(rail?.className).toContain('hidden')
+    expect(rail?.className).toContain('@wide:block')
   })
 
-  test('at/above the breakpoint: the rail renders, the trigger does not', () => {
-    withWideViewport(() => renderArticle())
-    expect(screen.queryByRole('button', { name: 'On this page' })).toBeNull()
-    expect(screen.getByRole('navigation', { name: 'On this page' })).toBeDefined()
+  test('the layout is a container and the grid takes the rail column from @wide', () => {
+    const { container } = renderArticle()
+    const root = container.querySelector('[data-slot="article-layout"]')
+    expect(root?.className).toContain('@container')
+    expect(root?.firstElementChild?.className).toContain('@wide:grid-cols-[minmax(0,72ch)_14rem]')
   })
 
-  test('toc={false} renders neither', () => {
-    render(<ArticleLayout toc={false}>{ARTICLE_BODY}</ArticleLayout>)
+  test('toc={false} renders neither and keeps one column', () => {
+    const { container } = render(<ArticleLayout toc={false}>{ARTICLE_BODY}</ArticleLayout>)
     expect(screen.queryByRole('button', { name: 'On this page' })).toBeNull()
     expect(screen.queryByRole('navigation', { name: 'On this page' })).toBeNull()
+    expect(container.querySelector('[data-slot="article-layout"]')?.innerHTML).not.toContain(
+      '@wide:grid-cols',
+    )
+  })
+
+  test('server render matches the browser: no measured size picks the layout', () => {
+    const html = renderToString(<ArticleLayout>{ARTICLE_BODY}</ArticleLayout>)
+    expect(html).toContain('On this page')
+    expect(html).toContain('@wide:hidden')
+    expect(html).toContain('@wide:block')
   })
 })
+
+/** A link inside the open popover; the rail holds the same entries, so a screen query would match both. */
+function popupLink(name: string): HTMLElement {
+  const popup = document.querySelector<HTMLElement>('[data-slot="popover-content"]')
+  if (popup === null) throw new Error('the popover is not open')
+  return within(popup).getByRole('link', { name, hidden: true })
+}
 
 describe('ArticleLayout: the popover overlay', () => {
   test('opens the same Toc, and a click on an entry closes it (onNavigate)', async () => {
     renderArticle()
     const trigger = screen.getByRole('button', { name: 'On this page' })
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
-    expect(screen.queryByRole('link', { name: 'Usage', hidden: true })).toBeNull()
+    expect(document.querySelector('[data-slot="popover-content"]')).toBeNull()
 
     await act(async () => {
       fireEvent.click(trigger)
@@ -84,13 +86,13 @@ describe('ArticleLayout: the popover overlay', () => {
     expect(trigger.getAttribute('aria-expanded')).toBe('true')
     await waitFor(
       () => {
-        expect(screen.getByRole('link', { name: 'Usage', hidden: true })).toBeDefined()
+        expect(popupLink('Usage')).toBeDefined()
       },
       { timeout: 2000 },
     )
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('link', { name: 'Usage', hidden: true }))
+      fireEvent.click(popupLink('Usage'))
     })
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
   })
@@ -104,7 +106,7 @@ describe('ArticleLayout: the popover overlay', () => {
     })
     await waitFor(
       () => {
-        expect(screen.getByRole('link', { name: 'Setup', hidden: true })).toBeDefined()
+        expect(popupLink('Setup')).toBeDefined()
       },
       { timeout: 2000 },
     )
@@ -222,10 +224,15 @@ describe('ArticleLayout: reading progress and footer', () => {
 describe('ArticleLayout: the breakpoint', () => {
   const dir = dirname(fileURLToPath(import.meta.url))
 
-  test('the JS rail query reads the xl breakpoint the Tailwind theme declares', () => {
-    const css = readFileSync(resolve(dir, '../css/tailwind.css'), 'utf8')
-    const px = /--breakpoint-xl:\s*(\d+)px/.exec(css)?.[1]
+  test('it reads the wide container size, never a measured width or a media query', () => {
     const source = readFileSync(resolve(dir, 'article-layout.tsx'), 'utf8')
-    expect(source).toContain(`(min-width: ${px}px)`)
+    expect(source).not.toContain('matchMedia')
+    expect(source).not.toContain('useSyncExternalStore')
+    expect(source).toContain('@wide:')
+  })
+
+  test('the wide container size is the one the theme declares', () => {
+    const css = readFileSync(resolve(dir, '../css/tailwind.css'), 'utf8')
+    expect(/--container-wide:\s*50rem/.test(css)).toBe(true)
   })
 })

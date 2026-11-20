@@ -1,7 +1,7 @@
 /**
  * The markdown region in real Chrome at 1800x1200 and 390x844, light and dark (docs/v3/concepts/
  * ai-mdx.md section 7, P8 and P9; Issue v3-ai-i2): no sideways scroll at 390, code scrolls in its
- * own box instead of widening the page, the table of contents is a rail from 1200 and a trigger
+ * own box instead of widening the page, the table of contents is a rail from a wide container (50rem) and a trigger
  * below it, headings carry anchors, the diagram renders, and axe finds nothing serious or
  * critical. Asserted here because happy-dom has no geometry and no colour computation.
  *
@@ -129,10 +129,13 @@ layout('Markdown region', () => {
 
       test('the table of contents is a rail from 1200 and a trigger below', async () => {
         const page = await open(viewport)
+        // both are in the HTML; the container query (@wide, 50rem) shows the one that fits
         const toc = await page.raw.evaluate(() => ({
-          nav: document.querySelectorAll('nav[aria-label="On this page"]').length,
+          nav: [...document.querySelectorAll('nav[aria-label="On this page"]')].filter(
+            (n) => (n as HTMLElement).offsetWidth > 0,
+          ).length,
           trigger: [...document.querySelectorAll('button')].some(
-            (b) => b.textContent === 'On this page',
+            (b) => b.textContent === 'On this page' && b.offsetWidth > 0,
           ),
         }))
         if (viewport.width >= 1200) expect(toc).toEqual({ nav: 1, trigger: false })

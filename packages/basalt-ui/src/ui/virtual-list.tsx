@@ -22,6 +22,7 @@ export const virtualListVariants = cva(
 export const virtualListParts = ['virtual-list'] as const
 
 const DEFAULT_OVERSCAN = 6
+const DEFAULT_INITIAL_HEIGHT = 640
 
 /** Any `data-*` attribute, which an object literal of table props needs spelled out. */
 type DataAttributes = { [name: `data-${string}`]: string | number | undefined }
@@ -49,6 +50,12 @@ export type VirtualListProps = Omit<ComponentProps<'div'>, 'className' | 'childr
   keepIndex?: number | undefined
   /** Rows rendered beyond the viewport on each side. Defaults to 6. */
   overscan?: number | undefined
+  /**
+   * The scroller's height in px until it is measured: the server render and the first client render
+   * window the rows for this height, so a static page carries the first rows. Set it to the height the
+   * class bounds the list at (`max-h-96` is 384). Defaults to 640; rows past the real height are clipped.
+   */
+  initialHeight?: number | undefined
   /**
    * What fills the space of the rows that are not rendered: `div` (the default) for a list of
    * blocks, `tr` for table rows, which wraps the rows in a `<table><tbody>` (`tableProps` and
@@ -86,7 +93,8 @@ const withKept =
  * rows near the viewport are in the DOM, each keyed by `getItemKey` so a prepend keeps its row and
  * its focus; `keepIndex` holds one row mounted wherever the scroll is. The space of the rows left
  * out is a spacer, a `div` or (with `spacer="tr"`) a table row, so the rows stay real siblings.
- * `children` is called once per rendered row with `[item]`. Works with no provider; assignable to
+ * `children` is called once per rendered row with `[item]`. The first window is drawn for
+ * `initialHeight` before the scroller is measured, so server HTML holds rows. Works with no provider; assignable to
  * the `VirtualLike` port of `src/core/ports.ts`.
  *
  * @useWhen a list is long enough (hundreds of rows) that mounting every row costs more than the user sees
@@ -104,6 +112,7 @@ export function VirtualList({
   getItemKey,
   keepIndex,
   overscan = DEFAULT_OVERSCAN,
+  initialHeight = DEFAULT_INITIAL_HEIGHT,
   spacer = 'div',
   columns = 1,
   head,
@@ -120,6 +129,8 @@ export function VirtualList({
     estimateSize,
     getItemKey,
     overscan,
+    // the server and the first client render have no scroll element to measure
+    initialRect: { width: 0, height: initialHeight },
     rangeExtractor: withKept(keepIndex, count),
   })
   const total = virtualizer.getTotalSize()
