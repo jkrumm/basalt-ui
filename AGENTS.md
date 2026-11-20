@@ -52,6 +52,7 @@ Before changing anything under `packages/basalt-ui/`, Read `packages/basalt-ui/A
 - **Files**: `kebab-case.ts`; components `PascalCase.tsx`
 - **basalt-ui is ALWAYS a separate commit** (NPM published — lefthook `isolated-basalt-ui` guard)
 - **Published subpaths**: `./query`, `./connectivity` and `./data` were dropped or folded in 1.29.0; symbol-level mapping in `packages/basalt-ui/MIGRATING.md` § 2.x to 3.0, history in `docs/repo-reference.md`.
+- **Content pages**: a page that is content (docs, marketing, guide, README-like) is Astro with MDX on the `basalt-ui/static` parts and the `--basalt-*` tokens, so one token set serves app and site. A Spec that proposes another stack names why `basalt-ui/static` does not fit.
 
 ## Charts
 
