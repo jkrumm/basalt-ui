@@ -48,6 +48,7 @@ for f in \
   dist/lint/index.js dist/lint/stylelint/index.js dist/testing/index.js dist/ui/index.js dist/css/theme-script.js \
   dist/css/tokens.css dist/css/typography.css dist/css/prose.css dist/css/fonts.css dist/css/tailwind.css dist/css/archify.css dist/table/table.css \
   dist/controls/index.js dist/controls/index.d.ts \
+  dist/form/index.js dist/form/index.d.ts \
   src/index.ts \
   configs/oxlint-app.json configs/oxlint-parts.json configs/oxlint-bridge.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
   agent/rules/basalt-tokens.md agent/rules/basalt-ui.md agent/rules/basalt-page.md \
@@ -173,6 +174,7 @@ const subpaths = [
   // v3 skeleton: the stub barrels, the 2.x shell alias, and the CSS entries (frozen per major)
   'basalt-ui/router',
   'basalt-ui/data',
+  'basalt-ui/form',
   'basalt-ui/page',
   'basalt-ui/cards',
   'basalt-ui/ai',

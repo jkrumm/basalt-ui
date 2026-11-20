@@ -114,5 +114,8 @@
   "BASALT": "argo:apps/dashboard/src/lib/error-boundary.tsx",
   "windowKey": "linewatch:web/src/lib/queries.ts",
   "FormSection": "basalt-ui:apps/playground/src/routes/kit/forms/-settings-form.tsx",
-  "Stepper": "basalt-ui:apps/playground/src/routes/kit/forms/-steps-form.tsx"
+  "Stepper": "basalt-ui:apps/playground/src/routes/kit/forms/-steps-form.tsx",
+  "useAppForm": "basalt-ui:apps/playground/src/routes/kit/forms/-create-service.tsx",
+  "withFieldGroup": "basalt-ui:apps/playground/src/recipes/field-array.tsx",
+  "withForm": "basalt-ui:apps/playground/src/routes/kit/forms/-steps-form.tsx"
 }

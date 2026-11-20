@@ -110,20 +110,22 @@ for (const { rel, onlyBare } of subpaths) {
   if (!subpathFailed) console.log(`UI-free OK: ${rel} (${files.size} files in graph)`)
 }
 
-// An optional peer owned by one primitive (`react-day-picker` by `ui/date-picker`, docs/v3/ARCHITECTURE.md
-// section 3; `react-resizable-panels` by `ui/resizable`). No other published entry may load it up
-// front: every export of package.json except `./ui/*` is walked over its static imports (a dynamic
-// `import()` is the lazy edge `./controls` may use), and the primitive's own `dist/ui/<name>.js` must
-// still reach it, so this check cannot pass by walking the wrong files.
-for (const { PEER, MODULE } of [
-  { PEER: 'react-day-picker', MODULE: 'date-picker' },
-  { PEER: 'react-resizable-panels', MODULE: 'resizable' },
+// An optional peer owned by one entry (`react-day-picker` by `ui/date-picker`, docs/v3/ARCHITECTURE.md
+// section 3; `react-resizable-panels` by `ui/resizable`; `@tanstack/react-form` by `./form`,
+// docs/v3/verdicts/tanstack-map.md). No other published entry may load it up front: every export of
+// package.json except the owner's own export key is walked over its static imports (a dynamic
+// `import()` is the lazy edge `./controls` may use), and the owner's dist file must still reach it,
+// so this check cannot pass by walking the wrong files.
+for (const { PEER, OWNER, EXPORT } of [
+  { PEER: 'react-day-picker', OWNER: 'ui/date-picker.js', EXPORT: './ui/*' },
+  { PEER: 'react-resizable-panels', OWNER: 'ui/resizable.js', EXPORT: './ui/*' },
+  { PEER: '@tanstack/react-form', OWNER: 'form/index.js', EXPORT: './form' },
 ]) {
   const exportsMap = JSON.parse(readFileSync(resolve(DIST, '..', 'package.json'), 'utf8')).exports
   const entries = new Set()
   for (const [key, value] of Object.entries(exportsMap)) {
     const target = typeof value === 'object' && value !== null ? value.import : undefined
-    if (key === './ui/*' || typeof target !== 'string' || !target.endsWith('.js')) continue
+    if (key === EXPORT || typeof target !== 'string' || !target.endsWith('.js')) continue
     if (!target.includes('*')) {
       entries.add(resolve(DIST, '..', target))
       continue
@@ -141,16 +143,16 @@ for (const { PEER, MODULE } of [
     reached += 1
     if ([...bare].some((spec) => spec === PEER || spec.startsWith(`${PEER}/`))) {
       fail(
-        `${entry.slice(DIST.length + 1)} eagerly reaches ${PEER}, an optional peer of ui/${MODULE} alone`,
+        `${entry.slice(DIST.length + 1)} eagerly reaches ${PEER}, an optional peer of ${OWNER} alone`,
       )
       eagerFailed = true
     }
   }
-  const owner = resolve(DIST, `ui/${MODULE}.js`)
+  const owner = resolve(DIST, OWNER)
   if (!existsSync(owner)) {
-    fail(`missing dist entry: ui/${MODULE}.js`)
+    fail(`missing dist entry: ${OWNER}`)
   } else if (![...walkGraph(owner, { staticOnly: true }).bare].includes(PEER)) {
-    fail(`ui/${MODULE}.js no longer reaches ${PEER}: the eager check above proves nothing`)
+    fail(`${OWNER} no longer reaches ${PEER}: the eager check above proves nothing`)
     eagerFailed = true
   }
   if (!eagerFailed)

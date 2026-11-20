@@ -23,6 +23,7 @@ Everything else is internal: `./guard`, `./data/virtual`, `./llms.txt` and `./pa
 | `basalt-ui/controls`     | ui            |
 | `basalt-ui/router`       | headless      |
 | `basalt-ui/data`         | headless      |
+| `basalt-ui/form`         | ui            |
 | `basalt-ui/page`         | headless      |
 | `basalt-ui/cards`        | headless      |
 | `basalt-ui/ai`           | headless      |
