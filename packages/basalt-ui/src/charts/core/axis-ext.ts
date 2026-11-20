@@ -279,6 +279,20 @@ function capValueMarks(
           : undefined,
       { gap: INSIDE_PAD, obstacles: all },
     )
+  // Still pending: no spot is free anywhere on the plot. A clamped value is never dropped; it stands
+  // under its own caret, over whatever is there.
+  for (const key of pending) {
+    const entry = byKey.get(key)
+    if (entry === undefined) continue
+    const { side, m } = entry
+    marks.push({
+      ...m,
+      side,
+      dx: 0,
+      dy: side === 'top' ? CARET_SIZE : -CARET_SIZE,
+      anchor: 'middle',
+    })
+  }
   if (marks.length === 0) return []
   type Mark = (typeof marks)[number]
   return [
