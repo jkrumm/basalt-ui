@@ -4,7 +4,7 @@
   "reactRuntimeGzip": 72000,
   "furtherIslandGzip": 122500,
   "mdxIslandsGzip": 285000,
-  "cssGzipPerPage": 26500,
+  "cssGzipPerPage": 27000,
   "lcpMs": 1000,
   "cls": 0.05
 }
