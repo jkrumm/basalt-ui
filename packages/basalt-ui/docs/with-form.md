@@ -1,7 +1,7 @@
 ---
 name: withForm
 use when: 'a long form splits into components that each render some of its fields'
-never when: 'the fields fit the one component that calls `useAppForm`; the same fields recur across forms (`withFieldGroup`)'
+never when: 'the fields fit the one component that calls `useAppForm`'
 subpath: basalt-ui/form
 peers: ['@base-ui/react', '@tanstack/react-form']
 slots: []
@@ -21,10 +21,5 @@ withForm<TFormData, TOnMount extends FormValidateOrFn<TFormData> | undefined, TO
 ## Example
 
 ```tsx
-const Contact = withForm({
-  defaultValues,
-  render: function Render({ form }) {
-    return <form.AppField name="email">…</form.AppField>
-  },
-})
+const Contact = withForm({ defaultValues, render: function Render({ form }) { return <form.AppField name="email">…</form.AppField> } })
 ```

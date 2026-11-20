@@ -455,7 +455,7 @@ export const raises: Raises = {
       from: 28,
       to: 29,
       consumer:
-        '`./form` (`useAppForm`, `withForm`, `withFieldGroup` on `@tanstack/react-form`, an optional peer the barrel rule keeps out of `./controls`): the playground forms move to it (apps/playground/src/routes/kit/forms), and FPP takes it for its three forms (owner note of 2026-11-20 on Issue 2525)',
+        '`./form` (`useAppForm`, `withForm` on `@tanstack/react-form`, an optional peer the barrel rule keeps out of `./controls`): the playground forms move to it (apps/playground/src/routes/kit/forms), and FPP takes it for its three forms (owner note of 2026-11-20 on Issue 2525)',
       repo: 'basalt-ui',
     },
     {

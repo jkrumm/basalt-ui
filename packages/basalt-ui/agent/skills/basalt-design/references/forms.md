@@ -1,11 +1,11 @@
 # Forms
 
-basalt binds TanStack Form; the app owns its schema and its save. Props are in the generated docs: [useAppForm](node_modules/basalt-ui/docs/use-app-form.md), [withForm](node_modules/basalt-ui/docs/with-form.md), [withFieldGroup](node_modules/basalt-ui/docs/with-field-group.md), [FormField](node_modules/basalt-ui/docs/form-field.md), [FormSection](node_modules/basalt-ui/docs/form-section.md), [FormRow](node_modules/basalt-ui/docs/form-row.md), [FormFooter](node_modules/basalt-ui/docs/form-footer.md), [Stepper](node_modules/basalt-ui/docs/stepper.md), [FileUpload](node_modules/basalt-ui/docs/file-upload.md), [toSubmitErrors](node_modules/basalt-ui/docs/to-submit-errors.md), [useFormDraft](node_modules/basalt-ui/docs/use-form-draft.md).
+basalt binds TanStack Form; the app owns its schema and its save. Props are in the generated docs: [useAppForm](node_modules/basalt-ui/docs/use-app-form.md), [withForm](node_modules/basalt-ui/docs/with-form.md), [FormField](node_modules/basalt-ui/docs/form-field.md), [FormSection](node_modules/basalt-ui/docs/form-section.md), [FormRow](node_modules/basalt-ui/docs/form-row.md), [FormFooter](node_modules/basalt-ui/docs/form-footer.md), [Stepper](node_modules/basalt-ui/docs/stepper.md), [FileUpload](node_modules/basalt-ui/docs/file-upload.md), [toSubmitErrors](node_modules/basalt-ui/docs/to-submit-errors.md), [useFormDraft](node_modules/basalt-ui/docs/use-form-draft.md).
 
 ## Ownership
 
 - A submit form is `useAppForm` from `basalt-ui/form` (peer `@tanstack/react-form`) with a Standard Schema library (zod, valibot or arktype): `form.AppForm` around `form.Form`, each field a `form.AppField` rendering `f.FormField`, the actions in `form.Footer`. `form.Form` is the `<form noValidate>` that submits through `handleSubmit` and disables the fields while it submits, so a form never hand-writes either.
-- A long form splits into components with `withForm`; a set of fields two forms share is a `withFieldGroup`. A control of the app's own renders as the child of `f.FormField`, which hands it the value and the change handler.
+- A long form splits into components with `withForm`, each rendering its part of the one form. A control of the app's own renders as the child of `f.FormField`, which hands it the value and the change handler.
 - A form control sits in a [FormField](node_modules/basalt-ui/docs/form-field.md): label required, description and error beneath. A filter is not a form field; it is a `spec` in a [FilterSet](node_modules/basalt-ui/docs/filter-set.md).
 
 ## Pick the shape

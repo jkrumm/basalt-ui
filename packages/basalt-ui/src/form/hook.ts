@@ -55,21 +55,9 @@ export const useAppForm = withRevalidation(bound.useAppForm)
  * `Stepper` form. `defaultValues` only types the form.
  *
  * @useWhen a long form splits into components that each render some of its fields
- * @neverWhen the fields fit the one component that calls `useAppForm`; the same fields recur across forms (`withFieldGroup`)
+ * @neverWhen the fields fit the one component that calls `useAppForm`
  *
  * @example
  * const Contact = withForm({ defaultValues, render: function Render({ form }) { return <form.AppField name="email">…</form.AppField> } })
  */
 export const withForm = bound.withForm
-
-/**
- * A group of fields reused by more than one form (an address, a time window); mounted with
- * `fields="address"` or a key map.
- *
- * @useWhen the same set of fields appears in two or more forms
- * @neverWhen the fields belong to one form only (`withForm`), or the group needs a validator of its own
- *
- * @example
- * const Address = withFieldGroup({ defaultValues: { street: '', city: '' }, render: function Render({ group }) { return <group.AppField name="city">…</group.AppField> } })
- */
-export const withFieldGroup = bound.withFieldGroup
