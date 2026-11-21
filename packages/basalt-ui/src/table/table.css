@@ -1035,6 +1035,12 @@
     [data-below='480'][data-phone='columns'] [data-identity] * {
       white-space: normal !important;
     }
+    /* a mono id is one word: the column takes its width, the id never breaks at a hyphen */
+    [data-below='480'][data-phone='columns']
+      [data-identity]
+      [data-slot='table-entity-name'][data-monospace] {
+      white-space: nowrap !important;
+    }
   }
   @container table (max-width: 699.9px) {
     [data-below='700'][data-phone='columns'] [data-phone-drop] {
@@ -1055,6 +1061,12 @@
     [data-below='700'][data-phone='columns'] [data-identity],
     [data-below='700'][data-phone='columns'] [data-identity] * {
       white-space: normal !important;
+    }
+    /* a mono id is one word: the column takes its width, the id never breaks at a hyphen */
+    [data-below='700'][data-phone='columns']
+      [data-identity]
+      [data-slot='table-entity-name'][data-monospace] {
+      white-space: nowrap !important;
     }
   }
   @container table (max-width: 799.9px) {
@@ -1077,6 +1089,12 @@
     [data-below='800'][data-phone='columns'] [data-identity] * {
       white-space: normal !important;
     }
+    /* a mono id is one word: the column takes its width, the id never breaks at a hyphen */
+    [data-below='800'][data-phone='columns']
+      [data-identity]
+      [data-slot='table-entity-name'][data-monospace] {
+      white-space: nowrap !important;
+    }
   }
   @container table (width >= 0px) {
     [data-below='always'][data-phone='columns'] [data-phone-drop] {
@@ -1097,6 +1115,12 @@
     [data-below='always'][data-phone='columns'] [data-identity],
     [data-below='always'][data-phone='columns'] [data-identity] * {
       white-space: normal !important;
+    }
+    /* a mono id is one word: the column takes its width, the id never breaks at a hyphen */
+    [data-below='always'][data-phone='columns']
+      [data-identity]
+      [data-slot='table-entity-name'][data-monospace] {
+      white-space: nowrap !important;
     }
   }
 
