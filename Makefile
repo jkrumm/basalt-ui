@@ -173,21 +173,26 @@ evidence: ## Measure bundle/screens/lighthouse/...: make evidence LABEL=<label> 
 # schemes) unless LANES excludes `quality`. Needs the built package and playground deps, like `check`.
 QUALITY_MATRIX ?= sampled
 # BASALT_MATRIX_SHARD=<i>/<n> runs one share of the cells (tests/quality/matrix/shard.ts; CI runs the sampled matrix as eight shards).
+# BASALT_MATRIX_ROUTES=<route,route> keeps only those routes' cells, before the shard divides them (tests/quality/matrix/routes.ts).
 BASALT_MATRIX_SHARD ?=
+BASALT_MATRIX_ROUTES ?=
 quality-matrix: browser-shell ## Quality matrix in a real browser: make quality-matrix [QUALITY_MATRIX=sampled|full] [BASALT_MATRIX_SHARD=<i>/<n>]
-	@$(call slot,quality-matrix) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) BASALT_MATRIX_SHARD=$(BASALT_MATRIX_SHARD) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 $(bail) packages/basalt-ui/tests/quality/matrix'
+	@$(call slot,quality-matrix) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) BASALT_MATRIX_SHARD=$(BASALT_MATRIX_SHARD) BASALT_MATRIX_ROUTES=$(BASALT_MATRIX_ROUTES) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 $(bail) packages/basalt-ui/tests/quality/matrix'
 
-# The matrix is 400 runs (~200 s) and only a UI input reaches a route: the package source, the matrix itself, the
-# playground, a dependency bump. `check-fast` runs it when the branch (merge base with BASE, default origin/master,
-# through the working tree, untracked files included) touched one of QUALITY_INPUTS; CI runs it on every head.
-# No merge base to diff against: it runs. `make quality-matrix` and `make check` always run it.
-QUALITY_INPUTS = packages/basalt-ui/src packages/basalt-ui/tests/quality packages/basalt-ui/tests/support packages/basalt-ui/package.json apps/playground package.json bun.lock
-quality-matrix-fast: ## Quality matrix only when the branch touched a UI input (BASE=<ref>, default origin/master)
-	@base="$$(git merge-base $(or $(BASE),origin/master) HEAD 2>/dev/null)"; \
-	if [ -n "$$base" ] && [ -z "$$(git diff --name-only "$$base" -- $(QUALITY_INPUTS); git ls-files --others --exclude-standard -- $(QUALITY_INPUTS))" ]; then \
-		echo "quality-matrix: no UI input changed since $(or $(BASE),origin/master); CI runs it on the head"; exit 0; \
-	fi; \
-	$(MAKE) --no-print-directory quality-matrix
+# The sampled matrix is 394 cells (53 routes and 144 pages, two cells each; 93 of the pages are scenarios) and 4.8 s a cell
+# under host load (measured 2026-11-21: 318 cells in 1515 s), so about 30 minutes whole. CI runs it as eight shards.
+# Only a UI input reaches a route: the package source, the matrix itself, the playground, a dependency bump.
+# `check-fast` asks scripts/matrix-select.ts (merge base with BASE, default origin/master, through the working tree,
+# untracked files included): no UI input changed -> skip; only scenarios added or edited -> those routes' cells
+# (BASALT_MATRIX_ROUTES, the log names them); anything else, or no merge base to diff against -> the whole sampled matrix.
+# `make quality-matrix` and `make check` always run it whole; CI runs every cell on every head.
+quality-matrix-fast: ## Quality matrix: skipped without a UI input change, the changed scenarios' cells for a scenario-only branch (BASE=<ref>, default origin/master)
+	@sel="$$(bun scripts/matrix-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
+	case "$$sel" in \
+		skip) exit 0;; \
+		routes\ *) $(MAKE) --no-print-directory quality-matrix BASALT_MATRIX_ROUTES="$${sel#routes }";; \
+		*) $(MAKE) --no-print-directory quality-matrix;; \
+	esac
 
 # The Astro matrix (docs/validation.md § Astro matrix): apps/playground-astro renders every part in every render mode
 # on the built package; scripts/measure.ts measures each page in the headless shell and scripts/matrix.ts judges the run

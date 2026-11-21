@@ -31,8 +31,8 @@ everything passed. Every step of `make check` runs once per head. The `ci` job a
 ran, together, every `*.layout.test.ts` file (`scripts/check-layout-shards.ts` over the shard logs), and that the eight quality-matrix shards ran every cell of every matrix file (`scripts/check-matrix-shards.ts`: each shard's file count and its `matrix-shard <i>/8 ran=K total=T` line); a step added to `check`
 belongs to `ci-gate` unless the `checks`, `unit` or `quality-matrix` job already runs it. `make check` runs them in sequence and is unchanged without `CI_SPLIT=1`; `make check-fast` is the same but for the layout
 and the unit step, which run only the files the branch's changes reach (`make test-fast`, below), and the quality matrix, which runs only when the branch touched
-`packages/basalt-ui/src`, the matrix's own tests and test support, `apps/playground`, or a package manifest or lockfile
-(`make quality-matrix-fast`; `make quality-matrix` always runs it) (a lead's check, `project.yaml` `checks`; CI runs the full suite on the head). It exits
+`packages/basalt-ui/src`, the matrix's own tests and test support, `apps/playground`, or a package manifest or lockfile, and then only the cells of the changed scenarios when the branch touched nothing but scenarios
+(`make quality-matrix-fast`, `scripts/matrix-select.ts`: the files of `apps/playground/src/scenarios/expr/<id>/` and additive lines of the registry, the scenario info and `demo/series.ts` select `/scenarios/expr-<id>` through `BASALT_MATRIX_ROUTES`; any other input runs the whole 394-cell sampled matrix, ~30 min under load, hence `slots.run: 60m` in `project.yaml`; `make quality-matrix` always runs it whole) (a lead's check, `project.yaml` `checks`; CI runs the full suite on the head). It exits
 non-zero on the first failure and writes only gitignored output (`dist/`, `*.tgz`). `pre` alone is
 the fast inner loop. Its last step, the unit suite, is `scripts/unit-test.ts`: consecutive `bun test` processes (the five
 ts-program files alone, the rest in chunks of 40), peak ~2.2 GiB resident where one process held 6.1 GiB. It runs through
