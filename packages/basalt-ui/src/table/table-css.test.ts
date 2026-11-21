@@ -44,8 +44,9 @@ describe('table.css', () => {
   // padding and entity rules of expression cycle 13, 4,409 with the mono entity name on the card's title line
   // of expression cycle 14 (one rule pair in each of the three fold steps).
   // 4,450 until the `phone: 'columns'` tier (four container blocks, ~300 B) landed at 4,714; 4,803 with
-  // the delta cell's clipped overflow and the columns tier's `!important` auto layout (expression cycle 16).
-  test('stays small: under 4,850 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(4850)
+  // the delta cell's clipped overflow and the columns tier's `!important` auto layout (expression cycle 16);
+  // 4,872 with the mono id kept on one line in the four columns blocks (expression cycle 17).
+  test('stays small: under 4,900 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(4900)
   })
 })
