@@ -32,7 +32,8 @@ The phase vocabulary and the words each phase carries. The shapes are owned by t
 
 - Say once what is missing and what to do. The same sentence in every cell of a grid is one sentence too many: put it on the container and let the cells stay quiet.
 - One missing source has one wording on every card that depends on it; write it once and pass it to each.
-- The sentence is written once and passed to the first part only; "written once, passed to every part" prints it on every part (n90 .25, n91 .34 kept it in the read-aloud as "the shared cause" and lost X1). One empty cause with one next step across the parts of a page: n84's table said "Nothing to list until the report loads", its chart "Export the usage, then reload", and the strip cells left the step out (.21).- A titled host names the thing itself ("Could not load revenue" from the title); outside a host the title must name it.
+- The sentence is written once and passed to the first part only; "written once, passed to every part" prints it on every part (n90 .25, n91 .34 kept it in the read-aloud as "the shared cause" and lost X1). One empty cause with one next step across the parts of a page: n84's table said "Nothing to list until the report loads", its chart "Export the usage, then reload", and the strip cells left the step out (.21).
+- A titled host names the thing itself ("Could not load revenue" from the title); outside a host the title must name it.
 
 ## Show every state
 
