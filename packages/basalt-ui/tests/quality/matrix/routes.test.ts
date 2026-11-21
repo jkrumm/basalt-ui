@@ -1,5 +1,23 @@
 import { describe, expect, test } from 'bun:test'
-import { routePaths, scenarioPaths } from './routes'
+import { parseRoutes, routePaths, scenarioPaths } from './routes'
+
+describe('parseRoutes', () => {
+  test('unset or empty keeps every route', () => {
+    expect(parseRoutes(undefined)).toBeNull()
+    expect(parseRoutes('')).toBeNull()
+  })
+
+  test('names a route and a scenario', () => {
+    expect([...(parseRoutes('/table, /scenarios/expr-n04') ?? [])]).toEqual([
+      '/table',
+      '/scenarios/expr-n04',
+    ])
+  })
+
+  test('a path that is no route throws, so a typo cannot run an empty matrix', () => {
+    expect(() => parseRoutes('/scenarios/expr-nope')).toThrow('names no route')
+  })
+})
 
 describe('routePaths', () => {
   test('reads the playground routes', () => {

@@ -14,7 +14,7 @@ import { classify, KNOWN, KNOWN_CHIPS } from './known'
 import type { KnownFinding } from './known'
 import { bootMatrix } from './harness'
 import { hoverFindings, KNOWN_SHIFTS, REBUILT_PAGES, TRIAL_PAGES } from './hover-shift'
-import { routePaths, scenarioPaths } from './routes'
+import { parseRoutes, routePaths, scenarioPaths } from './routes'
 import { inShard, parseShard, shardLine } from './shard'
 
 const mode = process.env['BASALT_MATRIX']
@@ -22,6 +22,9 @@ const enabled = mode === 'sampled' || mode === 'full'
 const harness = enabled ? await bootMatrix() : null
 // `BASALT_MATRIX_SHARD=<i>/<n>` runs a share of the cells (CI: one job per share); shard.ts has the rule.
 const shard = parseShard(process.env['BASALT_MATRIX_SHARD'])
+// `BASALT_MATRIX_ROUTES=<list>` keeps only those routes' cells, before the shard divides them (routes.ts).
+const only = parseRoutes(process.env['BASALT_MATRIX_ROUTES'])
+const wanted = (route: string): boolean => only === null || only.has(route)
 let ran = 0
 let total = 0
 
@@ -38,7 +41,7 @@ const PHONE = { width: 390, height: 844 }
 
 function cells(): Cell[] {
   const out: Cell[] = []
-  for (const route of routePaths()) {
+  for (const route of routePaths().filter(wanted)) {
     if (mode === 'full') {
       for (const size of [DESKTOP, PHONE]) {
         for (const scheme of ['light', 'dark'] as const) {
@@ -62,6 +65,8 @@ afterAll(async () => {
   await harness?.close()
   // `scripts/check-matrix-shards.ts` sums these lines over the shard logs: the shards ran every cell.
   if (harness !== null) process.stdout.write(`${shardLine(shard, ran, total)}\n`)
+  if (harness !== null && only !== null)
+    process.stdout.write(`matrix-routes ${[...only].join(',')}\n`)
 }, 30_000)
 
 describe.skipIf(harness === null)(`quality matrix (${mode})`, () => {
@@ -98,7 +103,7 @@ describe.skipIf(harness === null)(`quality matrix (${mode})`, () => {
 // swept across each chart plot. A plot that moves under the pointer, a tooltip that changes side more
 // than once, or a card whose text or widths change outside its readout line fails its page.
 describe.skipIf(harness === null)('hover changes the readout, never the chart or its card', () => {
-  const pages = [...new Set([...routePaths(), ...scenarioPaths()])]
+  const pages = [...new Set([...routePaths(), ...scenarioPaths()])].filter(wanted)
   const sizes = [DESKTOP, PHONE] as const
   const all = enabled ? pages.flatMap((route) => sizes.map((size) => ({ route, ...size }))) : []
   total += all.length

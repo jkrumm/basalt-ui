@@ -23,6 +23,21 @@ export function scenarioPaths(): string[] {
   return [...source.matchAll(/\bid:\s*'([\w-]+)'/g)].map((m) => `/scenarios/${m[1]}`)
 }
 
+/**
+ * `BASALT_MATRIX_ROUTES=/scenarios/expr-n87,/table` keeps only those routes' cells (`make quality-matrix-fast`, through
+ * scripts/matrix-select.ts, when a branch touched only scenarios). Unset or empty: every route (null). A path that is no
+ * route or scenario throws: a typo must not run an empty matrix and pass.
+ */
+export function parseRoutes(value: string | undefined): ReadonlySet<string> | null {
+  if (value === undefined || value.trim() === '') return null
+  const known = new Set([...routePaths(), ...scenarioPaths()])
+  const wanted = value.split(',').map((route) => route.trim())
+  const unknown = wanted.filter((route) => !known.has(route))
+  if (unknown.length > 0)
+    throw new Error(`matrix: BASALT_MATRIX_ROUTES names no route: ${unknown.join(', ')}`)
+  return new Set(wanted)
+}
+
 /** Route files under `dir`, relative to it, skipping the `__`/`-` prefixed entries TanStack's generator ignores. */
 function routeFiles(dir: string, prefix = ''): string[] {
   return readdirSync(join(dir, prefix), { withFileTypes: true }).flatMap((entry) => {
