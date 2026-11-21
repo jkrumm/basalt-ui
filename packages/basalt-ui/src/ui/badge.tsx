@@ -131,35 +131,40 @@ export function CountBadge({
 }
 
 export type DeltaPolarity = Delta['polarity']
-type Direction = 'up' | 'down' | 'zero'
+type Direction = 'up' | 'down' | 'zero' | 'none'
 
-/** Direction from the sign of a number, or of a string such as `+12%`, `-3.1` or `0`. */
+/**
+ * Direction from the sign of a number, or of a string such as `+12%`, `-3.1` or `0`. A string with no
+ * sign (a count, a share or a word: `2 of 3 scheduled`, `53 % of all`) is no change against anything, so
+ * it has no direction and draws no arrow.
+ */
 function directionOf(value: Delta['value']): Direction {
   // The sign and the first number, whatever symbol sits between them: `-€5.66`, `+12%`, `−3.1`.
   const number =
     typeof value === 'number'
       ? value
       : Number.parseFloat(value.replace('−', '-').replaceAll(/[^\d.+-]/g, ''))
-  if (Number.isNaN(number)) return 'up'
+  if (Number.isNaN(number)) return 'none'
   if (number === 0) return 'zero'
+  if (typeof value === 'string' && !/[+\-−]/.test(value)) return 'none'
   return number > 0 ? 'up' : 'down'
 }
 
 /** The verdict: direction against polarity. `up-good` reads a rise as good, `up-bad` as bad. */
 function verdictOf(direction: Direction, polarity: DeltaPolarity): 'good' | 'bad' | 'neutral' {
-  if (direction === 'zero' || polarity === 'neutral') return 'neutral'
+  if (direction === 'zero' || direction === 'none' || polarity === 'neutral') return 'neutral'
   const rising = direction === 'up'
   return rising === (polarity === 'up-good') ? 'good' : 'bad'
 }
 
-/** Up-right, down-right and a minus: the arrow names the direction, the tint the verdict. */
-const GLYPH: Record<Direction, string> = {
+/** Up-right, down-right and a minus: the arrow names the direction, the tint the verdict. A value with no sign has no glyph. */
+const GLYPH: Record<Exclude<Direction, 'none'>, string> = {
   up: 'M4.5 11.5 11.5 4.5M5.5 4.5h6v6',
   down: 'M4.5 4.5 11.5 11.5M11.5 5.5v6h-6',
   zero: 'M4 8h8',
 }
 
-const DIRECTION_WORD: Record<Direction, string> = {
+const DIRECTION_WORD: Record<Exclude<Direction, 'none'>, string> = {
   up: 'Up',
   down: 'Down',
   zero: 'No change',
@@ -175,7 +180,8 @@ export type DeltaBadgeProps = Omit<BadgeProps<'span'>, 'children'> & {
 
 /**
  * A change against a period. The arrow is the direction, the tint is the verdict; a zero change is
- * a neutral chip with a minus glyph, and a `neutral` polarity never takes a verdict colour.
+ * a neutral chip with a minus glyph, a `neutral` polarity never takes a verdict colour, and a string
+ * with no sign (`2 of 3 scheduled`, `53 % of all`) is a neutral chip with no arrow.
  *
  * @example
  * <DeltaBadge value="+12%" polarity="up-good" label="vs last week" />
@@ -199,16 +205,20 @@ export function DeltaBadge({
       data-tone={tone}
       className={cn(deltaBadgeVariants({ tone }), className)}
     >
-      <svg viewBox="0 0 16 16" className="size-3.5 shrink-0" fill="none" aria-hidden="true">
-        <path
-          d={GLYPH[direction]}
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <span className="sr-only">{`${DIRECTION_WORD[direction]}${verdict}: `}</span>
+      {direction !== 'none' && (
+        <>
+          <svg viewBox="0 0 16 16" className="size-3.5 shrink-0" fill="none" aria-hidden="true">
+            <path
+              d={GLYPH[direction]}
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="sr-only">{`${DIRECTION_WORD[direction]}${verdict}: `}</span>
+        </>
+      )}
       {value}
       {label !== undefined && <span className="font-normal opacity-80">{label}</span>}
     </span>
