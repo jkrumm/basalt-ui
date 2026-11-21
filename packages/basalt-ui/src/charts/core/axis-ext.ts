@@ -411,7 +411,8 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
                 xScale: 'zx',
                 yScale: opts.yScaleOf(s),
                 text: () => CARETS[side],
-                fill: s.color,
+                // On a bar the caret sits inside the body that fills the edge: in the series colour it is the bar's own, so it is cut in the card's colour.
+                fill: opts.slotOf?.(s) === undefined ? s.color : CV.surface,
                 fontSize: CARET_SIZE,
                 anchor: 'middle',
                 dy: side === 'top' ? CARET_SIZE : -1,
@@ -483,7 +484,8 @@ export function stackCapMarks<T, X extends ChartX>(opts: {
               xScale: 'zx',
               yScale: 'y',
               text: () => CARETS[side],
-              fill: (c: { color: string }) => c.color,
+              // The caret sits inside the stack's top bar, whose own colour it would be: it is cut in the card's colour.
+              fill: CV.surface,
               fontSize: CARET_SIZE,
               anchor: 'middle',
               dy: side === 'top' ? CARET_SIZE : -1,
