@@ -78,9 +78,9 @@ export function tierAttributes(
       planned.place === 'hidden' || (planned.place === 'detail' && detailListed)
         ? 'hidden'
         : undefined,
-    // The column named no card slot and fell to the detail: no phone card shows it (`shot detect` names it).
+    // The column is in the detail without asking for it (its kind's default, or its slot was full): no phone card shows it, and `shot detect` names it.
     'data-card-left':
-      planned.place === 'detail' && detailListed && !planned.cardNamed ? '' : undefined,
+      planned.place === 'detail' && detailListed && !planned.cardDetail ? '' : undefined,
   }
 }
 
