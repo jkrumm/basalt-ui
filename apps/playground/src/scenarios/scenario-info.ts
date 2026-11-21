@@ -557,6 +557,48 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
       'A lifter checks lift balance. Are the four lift pairs inside their healthy ranges, and which pair sits furthest out?',
   },
   {
+    id: 'expr-n93',
+    title:
+      'Expression n93: day-by-day vigorous and moderate minutes and steps, and which days have no reading',
+    blurb:
+      'An athlete returning to training checks day-by-day movement. How many vigorous and moderate minutes and steps did each day carry, and which days have no reading at all?',
+  },
+  {
+    id: 'expr-n94',
+    title:
+      'Expression n94: which detectors file mostly noise, which muted one is due again, and which is too new to judge',
+    blurb:
+      'The factory owner reviews the detectors that file Issues unasked. Which ones file mostly noise and how far past the mute line is each, which muted one is due to be asked again, and which has too little history to judge?',
+  },
+  {
+    id: 'expr-n95',
+    title:
+      'Expression n95: the worst pile-up of Issues in one state, and whether the typical load is steady',
+    blurb:
+      'The factory owner checks whether work piled up in one state. At its worst, how many Issues sat in one state and when, and is the typical load steady or a few spikes?',
+  },
+  {
+    id: 'expr-n96',
+    title:
+      'Expression n96: which focal lengths, apertures, ISO values and shutter speeds carry most photos',
+    blurb:
+      'A photographer planning kit checks the settings the library was shot at. Which focal lengths, apertures, ISO values and shutter speeds carry most photos, and which are almost never used?',
+  },
+  {
+    id: 'expr-n97',
+    title:
+      'Expression n97: in which period rating fell furthest behind shooting, and how many photos are undated',
+    blurb:
+      'A photographer who shoots in bursts checks whether culling keeps up. In which period did rating fall furthest behind shooting, and how many photos have no capture time?',
+  },
+  {
+    id: 'expr-n98',
+    title:
+      'Expression n98: how far estimates missed measured cost per model and quality, and the spend with no price',
+    blurb:
+      "The owner of an image library picks a model and quality for the next batch. How far did the plan's estimate miss the measured cost on each model and quality, and how much spend is hidden in entries with no price?",
+  },
+  {
     id: 'linked-windows',
     title: 'Linked windows: a table of runs beside an hourly chart',
     blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',

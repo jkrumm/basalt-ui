@@ -100,6 +100,12 @@ import { ExprN89Scenario } from './expr/n89/ExprN89'
 import { ExprN90Scenario } from './expr/n90/ExprN90'
 import { ExprN91Scenario } from './expr/n91/ExprN91'
 import { ExprN92Scenario } from './expr/n92/ExprN92'
+import { ExprN93Scenario } from './expr/n93/ExprN93'
+import { ExprN94Scenario } from './expr/n94/ExprN94'
+import { ExprN95Scenario } from './expr/n95/ExprN95'
+import { ExprN96Scenario } from './expr/n96/ExprN96'
+import { ExprN97Scenario } from './expr/n97/ExprN97'
+import { ExprN98Scenario } from './expr/n98/ExprN98'
 import { MdxScenario } from './mdx-scenario'
 import { LinkedWindowsScenario } from './linked-windows/LinkedWindows'
 import { RowListScenario } from './row-list/RowListScenario'
@@ -202,6 +208,12 @@ const RENDERERS = {
   'expr-n90': (p) => <ExprN90Scenario {...p} />,
   'expr-n91': (p) => <ExprN91Scenario {...p} />,
   'expr-n92': (p) => <ExprN92Scenario {...p} />,
+  'expr-n93': (p) => <ExprN93Scenario {...p} />,
+  'expr-n94': (p) => <ExprN94Scenario {...p} />,
+  'expr-n95': (p) => <ExprN95Scenario {...p} />,
+  'expr-n96': (p) => <ExprN96Scenario {...p} />,
+  'expr-n97': (p) => <ExprN97Scenario {...p} />,
+  'expr-n98': (p) => <ExprN98Scenario {...p} />,
   mdx: () => <MdxScenario />,
   'linked-windows': (p) => <LinkedWindowsScenario {...p} />,
   'row-list': (p) => <RowListScenario {...p} />,
