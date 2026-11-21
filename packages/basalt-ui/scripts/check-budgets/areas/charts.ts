@@ -71,7 +71,9 @@ export const rows: readonly RowDef[] = [
     // 132100 -> 134000 (Issue 2680): 133930 B measured, +~1.9 KB gz over the cap for the bar values kept at 390 and
     // the captions kept off bars and dots, the dots' sideways step, the chip dropped over a tick and the ink-step
     // bars' recede, the kit fixes of expression cycle 16.
-    ceiling: 134000,
+    // 134000 -> 134200 (Issue 2696): 134090 B measured, +~90 B gz over the cap for the surface backing under an end
+    // label another line runs through, a series the `endLabels` naming leaves no legend to name.
+    ceiling: 134200,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -94,6 +96,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 134000,
+      to: 134200,
+      consumer:
+        "n79's end labels struck by converging lines at 390 (Issue 2696): a series named only by its end label keeps it on a card-coloured backing, as the text mark has no stroke",
+      repo: 'basalt-ui',
+    },
     {
       from: 132100,
       to: 134000,
