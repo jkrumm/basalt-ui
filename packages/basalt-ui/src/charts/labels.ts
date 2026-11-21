@@ -293,7 +293,7 @@ function planEndLabels<T, X extends ChartX>(
     }),
   )
   const ranges = (i: number): readonly [number, number][] => windowRanges[i] as [number, number][]
-  /** Per label, the ranges of the other series' lines under the glyphs alone: a label's own line and a rule never strike it. */
+  /** Per label, the ranges of every line but its own (the other series and the reference rules) under the glyphs alone: its own line never strikes it. */
   const inkSpans = last.map(({ series, fraction }, i): readonly [number, number] => {
     const reach = (END_LABEL_DX + series.label.length * BASALT.text.micro * RETRY_GLYPH_EM) / plotW
     const edge = END_LABEL_DX / plotW
@@ -302,8 +302,8 @@ function planEndLabels<T, X extends ChartX>(
       : [fraction + edge, fraction + reach]
   })
   const rivalRanges = last.map(({ series }, i) =>
-    plot.visible.flatMap((s, k) => {
-      if (s.key === series.key) return []
+    obstacles.flatMap((_, k) => {
+      if (plot.visible[k]?.key === series.key) return []
       const range = yRangeWithin(
         obstacles[k] as RefLabelPoint[],
         ...(inkSpans[i] as readonly [number, number]),

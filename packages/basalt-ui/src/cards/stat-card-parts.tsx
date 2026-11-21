@@ -172,7 +172,7 @@ export function StatSkeleton({ sub, chart }: { sub: boolean; chart: boolean }): 
         </div>
       )}
       {chart && (
-        <div className="mt-2 flex h-[var(--chart-h,72px)] shrink-0 flex-col gap-1">
+        <div className="mt-2 flex h-(--chart-h) shrink-0 flex-col gap-1">
           <div className={cn(BAR, 'flex-1')} />
           <div className="flex h-3 shrink-0 justify-between">
             <div className={cn(BAR, 'w-10')} />
