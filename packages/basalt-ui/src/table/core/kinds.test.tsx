@@ -7,6 +7,7 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { createFormat } from '../../core/format'
+import type { DateStyle } from '../../core/format'
 import { checkSchema, col, specOf } from './kinds'
 import { ABSENT, DeltaCell, cellAttributes, deltaText } from './kinds-cells'
 import { KIND_DEFAULTS } from './kinds-spec'
@@ -273,6 +274,13 @@ describe('dev validation (I16)', () => {
   test('an option a kind does not take throws and names the column', () => {
     const bad = { currency: 'EUR', align: 'middle' } as unknown as { currency: string }
     expect(() => c.money('amount', bad)).toThrow(/c\.money\('amount'\).*"align"/)
+  })
+
+  test('c.date takes every DateStyle it types, day included', () => {
+    const styles: DateStyle[] = ['short', 'long', 'month', 'weekday', 'day']
+    for (const style of styles) expect(() => c.date('at', { style })).not.toThrow()
+    const bad = { style: 'year' } as unknown as { style: 'day' }
+    expect(() => c.date('at', bad)).toThrow(/c\.date\('at'\).*style/)
   })
 
   test('a wrong closed value throws and names the column', () => {
