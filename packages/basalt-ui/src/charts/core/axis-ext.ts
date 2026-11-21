@@ -179,7 +179,7 @@ function capValueMarks(
       const { side, m } = byKey.get(p.key)!
       pending.delete(p.key)
       taken.push(p)
-      if (options.backed === true && isStruck(p, all)) struck.push(p)
+      if (options.backed === true && isStruck(p, all, frame)) struck.push(p)
       // The text mark centres on its datum, which is the edge: carry it to the box's middle.
       marks.push({
         ...m,

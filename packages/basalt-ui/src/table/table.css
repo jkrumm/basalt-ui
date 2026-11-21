@@ -1036,7 +1036,9 @@
       white-space: normal !important;
     }
     /* a mono id is one word: the column takes its width, the id never breaks at a hyphen */
-    [data-below='480'][data-phone='columns'] [data-identity] [data-monospace] {
+    [data-below='480'][data-phone='columns']
+      [data-identity]
+      [data-slot='table-entity-name'][data-monospace] {
       white-space: nowrap !important;
     }
   }
@@ -1060,7 +1062,9 @@
     [data-below='700'][data-phone='columns'] [data-identity] * {
       white-space: normal !important;
     }
-    [data-below='700'][data-phone='columns'] [data-identity] [data-monospace] {
+    [data-below='700'][data-phone='columns']
+      [data-identity]
+      [data-slot='table-entity-name'][data-monospace] {
       white-space: nowrap !important;
     }
   }
@@ -1084,7 +1088,9 @@
     [data-below='800'][data-phone='columns'] [data-identity] * {
       white-space: normal !important;
     }
-    [data-below='800'][data-phone='columns'] [data-identity] [data-monospace] {
+    [data-below='800'][data-phone='columns']
+      [data-identity]
+      [data-slot='table-entity-name'][data-monospace] {
       white-space: nowrap !important;
     }
   }
@@ -1108,7 +1114,9 @@
     [data-below='always'][data-phone='columns'] [data-identity] * {
       white-space: normal !important;
     }
-    [data-below='always'][data-phone='columns'] [data-identity] [data-monospace] {
+    [data-below='always'][data-phone='columns']
+      [data-identity]
+      [data-slot='table-entity-name'][data-monospace] {
       white-space: nowrap !important;
     }
   }

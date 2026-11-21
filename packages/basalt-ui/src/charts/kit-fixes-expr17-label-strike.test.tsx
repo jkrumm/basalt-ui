@@ -12,11 +12,22 @@ const INK = { light: '#9a9a9a', dark: '#7d7d7d' }
 const rule = { left: 0, top: 40, width: 200, height: 4 }
 
 describe('isStruck', () => {
-  test('a box over a rule is struck, one beside it or over a caption-sized box is not', () => {
-    expect(isStruck({ left: 20, top: 30, width: 20, height: 14 }, [rule])).toBe(true)
-    expect(isStruck({ left: 20, top: 60, width: 20, height: 14 }, [rule])).toBe(false)
+  const frame = { width: 200, height: 100 }
+  const label = { left: 20, top: 30, width: 20, height: 14 }
+  test('a box over a rule spanning the plot is struck, one beside it is not', () => {
+    expect(isStruck(label, [rule], frame)).toBe(true)
+    expect(isStruck({ ...label, top: 60 }, [rule], frame)).toBe(false)
+    const vertical = { left: 28, top: 0, width: 4, height: 100 }
+    expect(isStruck(label, [vertical], frame)).toBe(true)
+  })
+
+  test('a thin bar, a dot, a label or a line piece is not a rule', () => {
+    const bar = { left: 24, top: 20, width: 8, height: 60 }
+    const dot = { left: 24, top: 32, width: 6, height: 6 }
     const caption = { left: 0, top: 0, width: 80, height: 14 }
-    expect(isStruck({ left: 20, top: 4, width: 20, height: 14 }, [caption])).toBe(false)
+    const piece = { left: 24, top: 30, width: 5, height: 6 }
+    for (const other of [bar, dot, caption, piece])
+      expect(isStruck(label, [other], frame)).toBe(false)
   })
 })
 

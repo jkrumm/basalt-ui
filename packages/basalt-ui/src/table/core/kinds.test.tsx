@@ -202,6 +202,7 @@ describe('kind cells', () => {
     expect(deltaText('+3', 3)).toBe('+3')
     expect(deltaText('-0,5', -0.5)).toBe('-0.5')
     expect(deltaText('؜-٠٫٥', -0.5)).toBe('-0.5')
+    expect(deltaText('؜+٠٫٥', 0.5)).toBe('+0.5')
     const de = createFormat({ locale: 'de' })
     const { container } = render(
       <DeltaCell value={-0.5} polarity="up-good" format={de} unit={undefined} />,

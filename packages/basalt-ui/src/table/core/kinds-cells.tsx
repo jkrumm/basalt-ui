@@ -293,11 +293,13 @@ export function deltaLabel(
 /**
  * `DeltaBadge` reads the direction back off its text with `parseFloat`. A locale whose output
  * does not parse to the value's sign (`-0,5` in `de` reads as -0, Arabic-Indic digits as NaN)
- * would get the wrong direction and verdict, so the cell then shows the plain number instead.
+ * would get the wrong direction and verdict, so the cell then shows the plain signed number instead.
  */
 export function deltaText(formatted: string, value: number): string {
   const parsed = Number.parseFloat(formatted.replace('−', '-').replaceAll(/[^\d.,+-]/g, ''))
-  return Math.sign(parsed) === Math.sign(value) ? formatted : String(value)
+  if (Math.sign(parsed) === Math.sign(value)) return formatted
+  // A rise keeps its plus: a figure with no sign draws no arrow.
+  return value > 0 ? `+${value}` : String(value)
 }
 
 export function MeterCell({

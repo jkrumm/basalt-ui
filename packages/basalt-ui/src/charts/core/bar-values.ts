@@ -570,7 +570,7 @@ export function barValueLabels<T, X extends ChartX>(
     placedAll.flatMap((p) => {
       const c = found[Number(p.key)] as Candidate<X>
       const onBody = paintOf.get(p.key) !== CV.inkMuted && c.body.height >= p.height
-      return !onBody && isStruck(p, input.obstacles) ? [p.key] : []
+      return !onBody && isStruck(p, input.obstacles, input.frame) ? [p.key] : []
     }),
   )
   const marks = placedAll.map((p) => {

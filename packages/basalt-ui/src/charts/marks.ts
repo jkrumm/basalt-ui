@@ -41,7 +41,7 @@ const mixed = (color: string, opacity: number): string =>
 const withFloor = (paint: string, ink: number): string =>
   `color-mix(in srgb, ${paint}, ${CV.inkMuted} ${Math.round(ink * 100)}%)`
 
-/** What a dimmed ink-step bar keeps of its resting opacity: a mid grey recedes from 3.9:1 on the card to 2.7:1, far enough to read against the focused bar and its resting neighbours. */
+/** What a dimmed ink-step bar keeps of its resting opacity: a mid grey recedes from 3.9:1 on the card to 2.7:1, far enough to read against the focused bar and its resting neighbours. Deliberately under the 3:1 `dimmedPaint` keeps: a bar left in its own ink has no other way to recede. */
 export const INK_STEP_DIM = 0.78
 
 /** The widest spread between a grey's channels that still reads as a step of the ink scale. */
