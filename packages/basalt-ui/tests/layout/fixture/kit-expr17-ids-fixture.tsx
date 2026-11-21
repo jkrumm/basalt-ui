@@ -48,7 +48,7 @@ function WhenPanel(): ReactElement {
     phone: 'columns',
   })
   return (
-    <div data-testid="k17-when">
+    <div data-testid="k17-when" className="w-56">
       <DataPanel
         title="Runs"
         phase="ready"
