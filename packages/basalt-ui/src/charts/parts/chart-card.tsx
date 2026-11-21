@@ -346,7 +346,12 @@ export function ChartCard(props: ChartCardProps): ReactElement {
   return (
     <ChartCardContext value={true}>
       <CardHiddenContext value={hidden}>
-        <div data-slot="chart-card" data-height={height} className="@container h-full min-w-0">
+        <div
+          data-slot="chart-card"
+          data-height={height}
+          // A card's text follows the page's focus (a readout, a pill) and reflows under it; the browser would answer by scrolling the page to keep that text where it was, so no node in a card anchors the scrollport.
+          className="@container h-full min-w-0 [overflow-anchor:none]"
+        >
           <div
             data-slot="card"
             data-surface="card"
