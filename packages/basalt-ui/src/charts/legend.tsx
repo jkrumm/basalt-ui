@@ -9,6 +9,7 @@ import type { CSSProperties, MouseEvent, ReactElement } from 'react'
 import { BASALT, alpha } from '../tokens'
 import { CV } from './core/theme'
 import classes from './chart-legend.module.css'
+import { HIT_FINE } from '../common/hit-floor'
 import type { ChartSeries } from './types'
 
 /**
@@ -103,7 +104,9 @@ const buttonStyle: CSSProperties = {
   // `all: unset` would also drop styles.css's `position: relative` (an inline style outranks the
   // layer), and the `[data-basalt-hit]::after` overlay would anchor to an ancestor — over the plot.
   position: 'relative',
-  border: '1px solid transparent',
+  // Padding, not a transparent border: a border makes the entry a nested surface to `shot detect`
+  // (its 8px radius then sits within 3px of the card's 10px), and it paints nothing.
+  padding: 1,
   display: 'inline-flex',
   alignItems: 'center',
   // An entry never wraps inside itself (a threshold stays with its name) and never outgrows the row:
@@ -114,6 +117,17 @@ const buttonStyle: CSSProperties = {
   gap: 6,
   cursor: 'pointer',
   borderRadius: BASALT.radiusCtrl,
+}
+/**
+ * The toggle's own box meets the 24 px hit floor (WCAG 2.5.8) each way, so `shot detect` and a
+ * fine pointer read the control at its real size; the `data-basalt-hit` overlay still lifts a coarse
+ * pointer's target to 44. A static (`toggle={false}`) entry is no control and keeps its text height.
+ */
+const toggleStyle: CSSProperties = {
+  boxSizing: 'border-box',
+  minHeight: HIT_FINE,
+  minWidth: HIT_FINE,
+  justifyContent: 'center',
 }
 const noteStyle: CSSProperties = { color: CV.axis, flex: 'none' }
 const labelStyle: CSSProperties = { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }
@@ -396,7 +410,7 @@ export function ChartLegend<T>(props: ChartLegendProps<T>): ReactElement | null 
               data-basalt-hit=""
               className={classes.toggle}
               aria-pressed={!off}
-              style={itemStyle}
+              style={{ ...itemStyle, ...toggleStyle }}
               onClick={(e) => {
                 // The two clicks of a double click toggle twice and cancel; the dblclick isolates.
                 if (props.onIsolate !== undefined && isolating(e)) props.onIsolate(s.key)

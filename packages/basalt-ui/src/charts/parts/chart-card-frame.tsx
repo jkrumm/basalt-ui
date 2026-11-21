@@ -116,7 +116,7 @@ export function Head({
           {title !== undefined && info !== undefined && <Info title={title}>{info}</Info>}
         </div>
         {subtitle !== undefined && (
-          <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+          <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
         )}
       </div>
       {controls !== undefined && (

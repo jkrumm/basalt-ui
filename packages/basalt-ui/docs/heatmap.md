@@ -11,9 +11,9 @@ slots: []
 
 A band by band grid of cells whose intensity is absolute (one scale across the whole grid), with
 named states for cells that are failed, idle or absent. `getRow`, `getCol`, `getValue`, `getState` and
-`tickCols` need a stable identity (module scope or memoized): a new function every render rebuilds the
-chart on each pass, and in a build without the React Compiler a focused grid can re-render in a loop (seen as React
-error 185 on hover).
+`tickCols` need a stable identity (module scope or memoized) to spare the work: a new function every render
+rebuilds the chart on each pass. Focus settles either way: an inline `data`, `domain`, `legend` or `tooltip`
+and a build without the React Compiler hover, key and hold the grid without a render loop.
 
 ## Signature
 
