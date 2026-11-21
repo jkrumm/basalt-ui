@@ -3,6 +3,7 @@ import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import { basaltAstro } from "basalt-ui/astro";
 import { defineConfig } from "astro/config";
+import guideStaticCode from "./plugins/guide-static-code.mjs";
 
 export default defineConfig({
   site: "https://basalt-ui.com",
@@ -55,6 +56,9 @@ export default defineConfig({
         ThemeSelect: "./src/components/starlight/ThemeSelect.astro",
       },
     }),
+    // After starlight(), whose expressive-code integration it must follow: it drops expressive-code's
+    // module script from the guides, which keep the site's own copy button and zero module JavaScript.
+    guideStaticCode(),
     // After starlight(): Starlight sees it and skips its own mdx({ optimize: true }), whose optimize
     // compiles plain elements to HTML strings so the guides' siteMdxComponents overrides (h2, a, table,
     // pre) never run; and Starlight's expressive-code integration still lands before it.
