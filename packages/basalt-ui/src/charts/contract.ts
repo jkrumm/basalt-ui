@@ -235,6 +235,15 @@ export type YConfig = {
   title?: string
   /** Writes the y tick labels (a series' `format` still writes its tooltip value). */
   format?: (v: number) => string
+  /**
+   * `log` puts the axis on decades for values that span orders of magnitude: ticks fall on 1, 2 and 5
+   * times a power of ten (thinned to fit) and go through `format`. Zones, reference lines, the cursor
+   * and the tooltip stay in data values. A value of zero or below has no place on it: a dev build
+   * throws an error naming the series and the value, a production build skips the point. Bars, areas
+   * and stacks need a zero baseline and do not take it (`Bars` does not type it; `CartesianChart`
+   * throws in a dev build and draws linear in production). Default `linear`.
+   */
+  scale?: 'linear' | 'log'
 }
 
 // minimal; concept elides it
