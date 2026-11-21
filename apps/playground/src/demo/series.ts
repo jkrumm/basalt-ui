@@ -25,6 +25,13 @@ export const DEMO_SERIES = defineSeries({
   churn: { light: '#af293e', dark: '#e46360' },
 })
 
+/** Issues per state (scenario expr-n95): the accent is the worst hour or day, painted by the bar `highlight`; every other peak rests in a pale ink step, the average in the dark one, the half-peak rule in a mid step. */
+export const N95_SERIES = defineSeries({
+  peak: { light: '#b0b0b0', dark: '#666666' },
+  avg: { light: '#262626', dark: '#e6e6e6' },
+  rule: { light: '#6b6b6b', dark: '#a8a8a8' },
+})
+
 /** Review seats (scenario expr-n88): the accent is the light seat, the seat the question is about; the lead seat is the dark ink step. */
 export const N88_SERIES = defineSeries({
   light: { light: '#2871c7', dark: '#5190f7' },
@@ -620,6 +627,14 @@ export const N89_SERIES = defineSeries({
   released: { light: '#6b6b6b', dark: '#a8a8a8' },
 })
 
+/** Daily activity (scenario expr-n93): vigorous minutes are the dark ink step and moderate minutes a pale one, steps a mid one, the median rule a mid grey; the one accent is the brand token on the days with no reading, set where the zone is drawn. */
+export const N93_SERIES = defineSeries({
+  vigorous: { light: '#262626', dark: '#e6e6e6' },
+  moderate: { light: '#b0b0b0', dark: '#666666' },
+  steps: { light: '#6b6b6b', dark: '#a8a8a8' },
+  median: { light: '#8c8c8c', dark: '#8c8c8c' },
+})
+
 /** Library enrichment (scenario expr-n91): the accent is the bill a schema change repeats; spend and the waiting bill are the dark ink step, failures retried a mid one; the failure kinds sit in three ink steps, entries the sweep cannot reach the palest; the cache line rests in a mid ink step. */
 export const N91_SERIES = defineSeries({
   schema: { light: '#2871c7', dark: '#5190f7' },
@@ -630,4 +645,29 @@ export const N91_SERIES = defineSeries({
   transport: { light: '#262626', dark: '#e6e6e6' },
   model: { light: '#6b6b6b', dark: '#a8a8a8' },
   unreachable: { light: '#b0b0b0', dark: '#666666' },
+})
+
+/** Photo culling (scenario expr-n97): the accent is the unrated shots of the run that fell furthest behind, set by the bar `highlight`; kept photos are the dark ink step, rejected a mid one, unrated shots a pale one. */
+export const N97_SERIES = defineSeries({
+  kept: { light: '#262626', dark: '#e6e6e6' },
+  rejected: { light: '#7a7a7a', dark: '#9c9c9c' },
+  unrated: { light: '#c9c9c9', dark: '#4a4a4a' },
+})
+
+/** Image generation cost (scenario expr-n98): the accent is the widest miss; Standard is a mid ink step and HD the dark one; the estimate rule rests in a darker mid step. */
+export const N98_SERIES = defineSeries({
+  standard: { light: '#8c8c8c', dark: '#8c8c8c' },
+  hd: { light: '#262626', dark: '#e6e6e6' },
+  estimate: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Photo settings (scenario expr-n96): photos per setting rest in a mid ink step; the accent is the setting that carries most photos, set by the chart's highlight. */
+export const N96_SERIES = defineSeries({
+  photos: { light: '#8c8c8c', dark: '#8c8c8c' },
+})
+
+/** Detector noise (scenario expr-n94): the accent is a detector past the mute line, set by the chart's highlight; the other bars rest in a mid ink step; the mute line is the dark ink step. */
+export const N94_SERIES = defineSeries({
+  noise: { light: '#6b6b6b', dark: '#a8a8a8' },
+  line: { light: '#262626', dark: '#e6e6e6' },
 })
