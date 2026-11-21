@@ -521,7 +521,12 @@ function keyed<T>(
 }
 
 /**
- * The column factory, typed by the row. Call it at module scope; it carries `T` and nothing else.
+ * The column factory, typed by the row. Call it at module scope; it carries `T` and nothing else. The
+ * column plan is silent in a production build, so know its three rules: more than two priority 1 columns
+ * demote to 2 by declaration order, the identity column first; a visible width sum above 1800 px stays
+ * reduced, so priority 3 never shows; and above 800 px of priority 1 and 2 the trailing priority 2
+ * columns demote to 3. Dev builds warn; `basalt-ui shot detect` names a column hidden at 1800 px or
+ * missing from every phone card (`craft-6/hidden-column`).
  *
  * @useWhen declaring the columns of a v3 data table: each column is a kind (`entity`, `money`, `status`, ...)
  * @neverWhen the table is static with no sort, filter, page or selection (use `ui/table`), or a cell needs free markup (`custom` is the one counted escape)

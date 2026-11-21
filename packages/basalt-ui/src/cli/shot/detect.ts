@@ -14,6 +14,7 @@
  * | craft-1/off-scale-inset, -gap   | layout  | P1; P3 when every off value is within 1 px  |
  * | craft-3/empty-region            | layout  | P1                                          |
  * | craft-6/overlap, -hit-floor, -document-overflow | layout | P1                      |
+ * | craft-6/hidden-column           | layout  | P1                                          |
  * | craft-1/off-scale-radius        | style   | P1; P3 within 1 px (never a nested one)     |
  * | craft-1/nested-radius-step      | style   | P1                                          |
  * | craft-2/font-sizes              | style   | P1                                          |
@@ -25,7 +26,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
-import { LAST_SHOT, PAGE_ANCHOR } from './types'
+import { LAST_SHOT, PAGE_ANCHOR, parseViewport } from './types'
 import type { AnchorMetrics, Scale, ShotMetrics, Sides } from './types'
 
 export type Severity = 'P0' | 'P1' | 'P2' | 'P3'
@@ -94,7 +95,11 @@ const stepsText = (steps: Record<string, number>): string =>
   [...new Set(Object.values(steps))].sort((a, b) => a - b).join(', ')
 
 /** The findings of one measured anchor in one scheme × viewport. */
-function anchorFindings(a: AnchorMetrics, scale: Scale | undefined): Draft[] {
+function anchorFindings(
+  a: AnchorMetrics,
+  scale: Scale | undefined,
+  viewports: readonly string[],
+): Draft[] {
   const base = { anchor: a.name, route: a.route, where: where(a) }
   const cite = (field: string): string => `metrics.json anchors[${a.name} ${where(a)}].${field}`
   const out: Draft[] = []
@@ -177,6 +182,28 @@ function anchorFindings(a: AnchorMetrics, scale: Scale | undefined): Draft[] {
       'layout',
       'overlaps',
       `Text boxes cover each other: ${listed(overlaps)}.`,
+    )
+  // A table column the plan hides is read where the table is widest (hidden at every tier there) and narrowest (no card
+  // slot), so a page that drops a column on purpose at a phone is not flagged for it.
+  const widths = viewports.map((v) => parseViewport(v)?.width ?? 0)
+  const here = parseViewport(a.viewport)?.width ?? 0
+  const hidden = here >= Math.max(...widths) ? (a.hiddenColumns ?? []) : []
+  const cardLeft = here <= Math.min(...widths) ? (a.cardLeftColumns ?? []) : []
+  if (hidden.length > 0)
+    add(
+      'craft-6/hidden-column',
+      'P1',
+      'layout',
+      'hiddenColumns',
+      `Table columns hidden at every tier of the widest viewport: ${listed(hidden)}. The plan keeps priority 1 and 2 only while they sum to 800 px, and a column sum above 1800 px stays reduced (see \`col\`).`,
+    )
+  if (cardLeft.length > 0)
+    add(
+      'craft-6/hidden-column',
+      'P1',
+      'layout',
+      'cardLeftColumns',
+      `Table columns in no phone card slot (no \`card\` option, so they fell to the detail): ${listed(cardLeft)}.`,
     )
   if (small.length > 0)
     add(
@@ -278,6 +305,7 @@ export function detectFindings(m: ShotMetrics, lint?: LintReport): Finding[] {
           (s) =>
             s.scheme === a.scheme && s.viewport === a.viewport && (s.route ?? a.route) === a.route,
         ),
+        m.viewports,
       ),
     )
   if (lint) drafts.push(...lintFindings(lint))

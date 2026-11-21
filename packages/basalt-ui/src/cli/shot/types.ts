@@ -58,6 +58,10 @@ export type Measurement = {
   small?: string[]
   /** Text boxes that cover each other, as `pathA × pathB`. */
   overlaps?: string[]
+  /** Table columns the plan hides on a table wide enough to be a table, as `<table label>: <column id>`. */
+  hiddenColumns?: string[]
+  /** Table columns no phone card shows: they named no `card` slot and fell to the detail. */
+  cardLeftColumns?: string[]
 }
 
 export type AnchorMetrics = Measurement & {

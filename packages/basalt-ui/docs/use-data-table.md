@@ -15,7 +15,9 @@ name and scrolls sideways; `'columns'` keeps a table of the name, the card's `va
 `meta`, the rest in the row's details) and `cardsBelow` to `'regular'` (480 px of the table's own width, 700 or
 800 px when its priority 1 and 2 columns need more; `'wide'` is always 800, `'always'` never shows a
 table). The tiers live in `basalt-ui/table.css`, which `basalt()` imports for any module that imports
-`basalt-ui/table`; an app without the plugin imports it beside `basalt-ui/table`.
+`basalt-ui/table`; an app without the plugin imports it beside `basalt-ui/table`. The column plan's three
+rules (more than two priority 1 demote, a sum above 1800 px stays reduced, above 800 px the trailing
+priority 2 demote) are in `col`; `shot detect` names a column the plan hides.
 
 ## Signature
 
