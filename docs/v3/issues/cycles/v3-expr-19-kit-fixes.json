@@ -1,0 +1,31 @@
+{
+  "why": "Expression cycle 19 (docs/v3/cycles/expression-19.md) lost 14 of 39 round-0 points to `primitive` findings, three of them causes of a P2. n94 lost F6 to bar value labels the kit placed: '+10 pts' inside its bar in dark on the accent, '+17 pts' floating 26 px over its bar with no leader, '29%' struck by its bar at 390 (.12, P2); n98's '+18%' and '-38%' straddle their bars at 390 and the highlighted widest bar loses its '+101%' (.35). n96 lost F5 2 (P2, .22): a 1-photo and a 2-photo bucket draw sub-pixel bars that read emptier than the zero buckets' baseline tick, against the rubric's 'a non-zero value is never invisible'. n93 lost R2 (P2, .9) and K5 (.5) to a `phone: 'columns'` table that runs past its card at 390 (Moderate cut to 'Mod… (r', never on screen without a sideways scroll) and to a header row cut at the card edge in the empty and error frames at 1800, after v3-expr-18-kit-fixes claimed a columns table fits its card with its header whole. The P3s: a card stretched to its row still leaves a blank band (n98's BarList 120 px, .38; the lead's probe found n88 45 px, n90 125 px, n92 175 px, n70 190 px and n76 50 to 90 px, although Issue 2784 shipped it as met); the x hover chip removes the neighbouring tick labels at 1800 and abuts them at 390, and repeats the tick's own name (n96 .27, n98, n93 uncharged); the clamp label and the average line's off-scale value crowd one another and a zone caption sits outside its zone at 390 (n95 .19); a long entity name ellipsises in a half-width table at 1800 (n94 .17); a table row's hover in a two-pane `ChartCard` moves the readout but dims no mark (n93 .7, LIST 'faded 89/264' against KEY '259/264').",
+  "what": "Kit behaviour fixes for every `primitive` finding of cycle 19 that needs no new field, and the card band the probe found still open.",
+  "owns": [
+    "packages/basalt-ui/src/charts/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/cards/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/table/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/page/** (behaviour only)",
+    "packages/basalt-ui/docs/** generated from the above (through gen-docs)",
+    "packages/basalt-ui/tests/quality/matrix/hover-shift.ts (only to remove an entry a fix clears)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) A card stretched to its row's height leaves no blank band under its content at 1800: the body or the chart box takes the extra height, or the footer sits at the card's bottom with the content above it (n98 .38; probe n88, n90, n92, n70, n76 `?fixture=finished`); reproduce on those pages first, since Issue 2784's layout test passed while the pages kept the band. (2) Bar value labels: a value sits above its bar where the bar has room and inside it only with the ink that reads on the bar's fill; a value moved off its bar keeps a leader or stays on it; a bar never strikes its own value at 390; a highlighted bar keeps its value when others drop (n94 .12, n98 .35). (3) A non-zero bar draws at least a visible minimum height above the zero bar's tick, so one item never reads as none (n96 .22; the zero-bar tick shipped in an earlier Spec). (4) The x hover chip leaves the neighbouring tick labels drawn (or hides them for every focus alike) at both widths, never touches them at 390, and does not repeat the tick's own name beside it (n96 .27, n98, n93). (5) Labels at a clamp: a clamped bar's value label and an off-scale line value keep apart and the line value names its series; a zone caption at 390 sits inside its zone or is dropped whole (n95 .19). (6) A `phone: 'columns'` table at 390 keeps its three columns inside the card with every header whole, and an empty or failed half-width table at 1800 keeps its header row inside the card (n93 .5, .9; n91 and n86 from earlier cycles). (7) A `DataTable` row's hover on a `ChartCard` with two panes dims the other marks in both panes as a chart focus does (n93 .7; probe first: n94's one-pane card dims 13 bars from the same arm). (8) A long entity name in a half-width table wraps to a second line rather than ellipsise (n94 .17, `?fixture=extreme`).",
+  "acceptance": [
+    "No blank band under a stretched card's content on n98 and on the cycle-18 n88, n90 and n92 pages and n70, n76 `?fixture=finished` at 1800 (layout tests on those pages, not only a synthetic one)",
+    "n94's and n98's round-0 sources show every kept bar value on or above its bar with readable ink at 1800 and 390, none struck by its bar (frames)",
+    "n96's 1-photo and 2-photo buckets are visible above the zero tick (frame)",
+    "The x hover chip on n96 and n98 keeps its neighbours and prints the tick name once (frames)",
+    "n93's round-0 table at 390 keeps three whole columns in its card, and its empty and error frames at 1800 keep the header row in the card",
+    "Each of (5), (7) and (8) has its test or, where probed and not reproduced, a line in the PR saying so",
+    "No export added and no contract file changed; make check passes"
+  ],
+  "out_of_scope": "Stacked-bar values and the stack cap (v3-expr-19-contract); the y chip over a tick and dropped zone captions (Issue 2835); skill text; the rubric; the trial scenarios.",
+  "proof": "make check; the tests named in acceptance; shots of n93 to n98 (the round-0 sources in .evidence/v3-shots/expression-19/src-r0 in the main checkout) at 1800 and 390 in light and dark with the lead tool's SWEEP, REACH, KEY and FULL lines (.evidence/v3-shots/expression-19/lead-shots.ts), and the cycle-18 pages for (1).",
+  "commits": "fix: per behaviour with its test."
+}

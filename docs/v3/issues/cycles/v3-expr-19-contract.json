@@ -1,0 +1,26 @@
+{
+  "why": "Expression cycle 19 (docs/v3/cycles/expression-19.md) met one stacked-bar gap that only a contract change closes, on two cases. n93 capped its stacked minutes at 120 with a fixed domain because a `y.domain` function reads one series' extent, not the stack total, so a 14-day fixture drew a caret on every bar (.3, marker `cycle-expression-19` at ExprN93.tsx:16); its clamped 238-minute day then carries the stack total '269' in faint ink while the footer says 238 (.4). n97 wanted the unrated segment's count on its stack and `values` on a stack writes one label per stack at the total, so '148', '122' and '110' sit at the stack tops where the axis reads 160, 130 and 110 and read as totals (.30, builder: 'No other way to say a per-segment value'). `cartesian-chart-guide.md:30-31` documents a stack labelled once by its total and a page-set tuple as the only stack cap.",
+  "what": "A Spec, then the fields: a stack cap that reads the stack total, a clamp label that names the clamped measure, and a value label on one segment of a stack.",
+  "owns": [
+    "packages/basalt-ui/src/charts/contract.ts (YConfig domain and the bar series `values`, behind the Spec)",
+    "packages/basalt-ui/src/charts/** (the stack, clamp and label code the fields reach)",
+    "packages/basalt-ui/docs/** generated from the above",
+    "the skill text that teaches stacked bars and value labels (packages/basalt-ui/agent/**, through its generator)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**",
+    "docs/v3/ARCHITECTURE.md"
+  ],
+  "change": "(1) Spec first (checkpoint), one page: what a `y.domain` function receives on a stacked chart (the stack totals' extent, or both); what a clamped stack's caret label says (the stack total, the focused segment's value, or the value of the series the figure names); and how a stacked series labels one segment (`values` on a series of a stack placing the text at that segment, or a separate field). State the default for each and what changing it later costs, and say which of these touch `charts/contract.ts`, which the procedure for a pinned file then covers. Evidence: n93's and n97's round-0 frames (.evidence/v3-shots/expression-19/r0/ in the main checkout). (2) After the verdict, the fields with tests at 1800 and 390, and the docs and skill text through their generators.",
+  "acceptance": [
+    "A Spec with a verdict before code",
+    "n93's 90-day and 14-day fixtures cap at a stack-aware domain without a caret on every bar, and the clamp label reads as the Spec says (test page at 1800 and 390)",
+    "n97's unrated count sits on its own segment (test page)",
+    "make check passes; the contract change follows the pinned-file procedure"
+  ],
+  "out_of_scope": "Unstacked bar value placement (v3-expr-19-kit-fixes); skill lessons beyond the fields; the trial scenarios.",
+  "proof": "make check; the layout tests at 1800 and 390.",
+  "commits": "feat: per field with its test and docs."
+}
