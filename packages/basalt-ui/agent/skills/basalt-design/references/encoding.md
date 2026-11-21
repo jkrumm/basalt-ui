@@ -5,7 +5,7 @@ Which form carries which shape of data, and what the marks may say. The question
 ## Is it a chart at all
 
 - One current value is a [StatCard](node_modules/basalt-ui/docs/stat-card.md); three or more headline values of equal weight, each with its baseline, are a [StatGroup](node_modules/basalt-ui/docs/stat-group.md) strip ([cards](cards.md) § When a page leads with figures).
-- One ratio against a limit is a [Meter](node_modules/basalt-ui/docs/meter.md) with its zones; the verdict is a word under the marker.
+- One ratio against a limit is a [Meter](node_modules/basalt-ui/docs/meter.md) with its zones; the verdict is a word under the marker. Its value carries a `caption` that names it on screen ("US$13.89 spent", "of 150 listed"), never a bare number or a `format` bent into words (n87, n90, n91); a range's ends or a limit are its `ticks` on the track and the reason is its `cause`, never sibling text (n92).
 - A top-N or a share of a total is a [BarList](node_modules/basalt-ui/docs/bar-list.md). Many rows with several attributes is a [DataTable](node_modules/basalt-ui/docs/data-table.md), unless the question is which items changed state or passed: that is one mark per item (a square per case) with the table holding the detail.
 - Rows of one kind beside a chart (a name, a second line, a verdict, a figure) are a [RowList](node_modules/basalt-ui/docs/row-list.md) with the chart's `focus`, quiet by default; never a mapped `div` with a `border-b` or `divide-y`. [lint:primitive-bypass]
 - A value over time is a chart in a [ChartCard](node_modules/basalt-ui/docs/chart-card.md); compare categories with bars, follow a shape with a line.
