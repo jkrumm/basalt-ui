@@ -18,7 +18,8 @@
   }
   /* the scroller cannot restyle itself from its own query, so a scroll table scrolls statically:
      with the table at 100% below the threshold nothing overflows and no bar shows */
-  [data-slot='table-root'][data-phone='scroll'] [data-slot='table-scroller'] {
+  [data-slot='table-root'][data-phone='scroll'] [data-slot='table-scroller'],
+  [data-slot='table-root'][data-phone='columns'] [data-slot='table-scroller'] {
     overflow-x: auto;
   }
   [data-slot='table-scroller'] [data-slot='table'] {
