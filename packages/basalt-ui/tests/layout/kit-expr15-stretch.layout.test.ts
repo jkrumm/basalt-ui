@@ -31,8 +31,8 @@ async function open(): Promise<LayoutPage> {
   return page
 }
 
-layout('a card a grid row stretches keeps its extra height below its content', () => {
-  test('a DataPanel rows body ends at its last row and the extra height sits under the inset', async () => {
+layout('a card a grid row stretches puts its extra height in its body, not under it', () => {
+  test('a DataPanel rows body ends at its last row and the inset grows to the card bottom (cycle 18: no band under it)', async () => {
     const page = await open()
     const m = await page.raw.evaluate(() => {
       const panel = document.querySelector('[data-testid="st-panel"] [data-slot="data-panel"]')!
@@ -43,11 +43,11 @@ layout('a card a grid row stretches keeps its extra height below its content', (
       return { card: card.bottom, inset: inset.bottom, lastRow: last.bottom, rows: rows.length }
     })
     expect(m.rows).toBe(9)
-    expect(m.inset - m.lastRow).toBeLessThan(24)
-    expect(m.card - m.inset).toBeGreaterThan(100)
+    expect(m.inset - m.lastRow).toBeGreaterThan(100)
+    expect(m.card - m.inset).toBeLessThan(12)
   })
 
-  test('a StatCard inset keeps its content height and the extra height sits below it', async () => {
+  test('a StatCard inset keeps its content height and the extra height sits below it, above its footer', async () => {
     const page = await open()
     const m = await page.raw.evaluate(() => {
       const stat = document.querySelector('[data-testid="st-stat"] [data-slot="stat-card"]')!

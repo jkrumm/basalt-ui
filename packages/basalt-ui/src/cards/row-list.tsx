@@ -224,7 +224,7 @@ export function RowList(props: RowListProps): ReactElement {
             ),
           })}
         />
-        <Inset className="flex flex-col" style={bodyHeight(rows, ROW_STEPS[lines])}>
+        <Inset className="flex grow flex-col" style={bodyHeight(rows, ROW_STEPS[lines])}>
           <HostTitleContext.Provider value={title}>
             <CardPhase
               phase={phase}
