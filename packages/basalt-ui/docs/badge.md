@@ -39,7 +39,8 @@ CountBadge({ count, max, attention, className, ...props }: CountBadgeProps): Rea
 ### `DeltaBadge`
 
 A change against a period. The arrow is the direction, the tint is the verdict; a zero change is
-a neutral chip with a minus glyph, and a `neutral` polarity never takes a verdict colour.
+a neutral chip with a minus glyph, a `neutral` polarity never takes a verdict colour, and a string
+with no sign (`2 of 3 scheduled`, `53 % of all`) is a neutral chip with no arrow.
 
 ```ts
 DeltaBadge({ value, polarity, label, className, ...props }: DeltaBadgeProps): ReactElement
