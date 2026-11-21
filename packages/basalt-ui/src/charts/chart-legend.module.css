@@ -46,6 +46,17 @@
 }
 
 /*
+ * The toggle's own box meets the 24 px hit floor (`common/hit-floor`, WCAG 2.5.8) each way, so `shot detect` and
+ * a fine pointer read the control at its real size; the `data-basalt-hit` overlay still lifts a coarse
+ * pointer's target to 44. A static (`toggle={false}`) entry is no control and keeps its text height. The
+ * inline `all: unset` outranks a class, hence `!important`.
+ */
+.toggle {
+  min-width: 24px !important;
+  min-height: 24px !important;
+}
+
+/*
  * The toggle's inline `all: unset` (`buttonStyle`) outranks the layered focus rule, so the ring is
  * restated here and wins by `!important`: the kit's ring token, which clears 3:1 on the card and the
  * inset in both schemes; the offset is negative because the legend row is a clip box.
