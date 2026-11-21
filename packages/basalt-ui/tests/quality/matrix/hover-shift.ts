@@ -24,8 +24,6 @@ import type { Page } from 'playwright-core'
 export const KNOWN_SHIFTS: Readonly<Record<string, string>> = {
   '/scenarios/expr-c13 390':
     'the page hand-scrolls its table row with scrollIntoView on focus, which scrolls the shell (Issue 2134)',
-  '/scenarios/expr-n46 390':
-    "the shell's scrollport moves 9 px on the 'Below minimum' day, once the 24 px legend toggles lengthen the page (Issue 2823); without them it holds, so the page's days table, which scrolls its own region on focus, is the next thing to read",
 }
 
 /**
