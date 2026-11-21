@@ -74,7 +74,8 @@ export const rows: readonly RowDef[] = [
     // 134000 -> 134200 (Issue 2696): 134090 B measured, +~90 B gz over the cap for the surface backing under an end
     // label another line runs through, a series the `endLabels` naming leaves no legend to name.
     // 134200 -> 134700 (Issue 2716): 134553 B measured, +~460 B gz over the cap for the card-coloured backing under a value label a rule crosses, the clamp caret cut in the card's colour on a bar, and the ink-step bars' stronger recede and rise, the kit fixes of expression cycle 17.
-    ceiling: 134700,
+    // 134700 -> 135100 (Issue 2784): 135017 B measured, +~320 B gz over the cap for the stacked panes' shared y gutter, the tick rows a bar value keeps off and the focused band label that keeps its neighbours, the kit fixes of expression cycle 18.
+    ceiling: 135100,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -97,6 +98,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 134700,
+      to: 135100,
+      consumer:
+        "n91's two panes whose x ticks stood 22 px apart, its bar value that read as one string with a y tick, and n89's four band labels that lost a different pair for every focus at 390 (Issue 2784): panes share the widest y gutter, a value label keeps off the tick rows and a focused band label drops no neighbour",
+      repo: 'basalt-ui',
+    },
     {
       from: 134200,
       to: 134700,

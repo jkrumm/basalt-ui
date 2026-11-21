@@ -24,13 +24,21 @@ export const rows: readonly RowDef[] = [
     // 107199 B measured.
     // 113000 -> 114000 (v3 dock): `Dock` and the shared record-panel parts join the barrel (113303 B measured with them).
     // 114000 -> 115500 (v3 peek width): the width handle (peek-handle.tsx) joins the barrel.
-    ceiling: 115500,
+    // 115500 -> 115600 (Issue 2784): the summary's error arm says its cause and keeps a Retry.
+    ceiling: 115600,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
   'page-subpath': [
+    {
+      from: 115500,
+      to: 115600,
+      consumer:
+        "n87's and n91's `PageSummary` over a source only the summary reads (Issue 2784): its error arm held the headline's line empty with no cause and no Retry",
+      repo: 'basalt-ui',
+    },
     {
       from: 114000,
       to: 115500,
