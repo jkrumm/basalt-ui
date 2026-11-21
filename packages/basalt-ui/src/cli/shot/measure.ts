@@ -140,6 +140,25 @@ export function measureAnchor(root: Element): Reading {
     }
   }
 
+  // Columns the table plan hides without a word: a header the tier CSS removed from a table that is a table, and a
+  // column no phone card shows. The ids come from `data-col`; the table is named by its caption.
+  const hiddenColumns: string[] = []
+  const cardLeftColumns: string[] = []
+  for (const table of Array.from(root.querySelectorAll('[data-slot="table-root"]'))) {
+    const below = table.getAttribute('data-below')
+    const phone = table.getAttribute('data-phone')
+    const cards =
+      phone !== 'scroll' &&
+      (below === 'always' || table.getBoundingClientRect().width < Number(below))
+    const label = table.querySelector('[data-slot="table-caption"]')?.textContent?.trim() || 'table'
+    for (const th of Array.from(table.querySelectorAll('thead th[data-col]'))) {
+      const name = `${label}: ${th.getAttribute('data-col')}`
+      if (cards) {
+        if (th.hasAttribute('data-card-left')) cardLeftColumns.push(name)
+      } else if (getComputedStyle(th).display === 'none') hiddenColumns.push(name)
+    }
+  }
+
   // emptyRatio: the largest vertical run (edges included) with nothing painted in it.
   const { top, bottom } = rect
   let cursor = top
@@ -163,5 +182,7 @@ export function measureAnchor(root: Element): Reading {
     emptyRatio,
     small,
     overlaps,
+    hiddenColumns,
+    cardLeftColumns,
   }
 }

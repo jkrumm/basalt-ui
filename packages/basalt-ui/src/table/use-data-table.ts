@@ -311,7 +311,9 @@ function plannedRows(
  * `meta`, the rest in the row's details) and `cardsBelow` to `'regular'` (480 px of the table's own width, 700 or
  * 800 px when its priority 1 and 2 columns need more; `'wide'` is always 800, `'always'` never shows a
  * table). The tiers live in `basalt-ui/table.css`, which `basalt()` imports for any module that imports
- * `basalt-ui/table`; an app without the plugin imports it beside `basalt-ui/table`.
+ * `basalt-ui/table`; an app without the plugin imports it beside `basalt-ui/table`. The column plan's three
+ * rules (more than two priority 1 demote, a sum above 1800 px stays reduced, above 800 px the trailing
+ * priority 2 demote) are in `col`; `shot detect` names a column the plan hides.
  *
  * How the table folds: a column's `priority` is decided against the table's container, not the
  * viewport, from widths the kit estimates and never measures, so plan the columns before the shot. A

@@ -230,6 +230,32 @@ describe('detectFindings', () => {
     expect(f[0]?.defect).toContain('div.a × span.b; p × em')
   })
 
+  test('craft-6/hidden-column: a column hidden at the widest viewport is P1 and named, not at a phone', () => {
+    const hidden = ['Cycle summary: peak', 'Cycle summary: id']
+    const wide = detectFindings(metrics({ anchors: [anchor({ hiddenColumns: hidden })] }))
+    expect(wide).toHaveLength(1)
+    expect(wide[0]).toMatchObject({
+      rule: 'craft-6/hidden-column',
+      severity: 'P1',
+      layer: 'layout',
+    })
+    expect(wide[0]?.defect).toContain('Cycle summary: peak; Cycle summary: id')
+    expect(
+      rules(metrics({ anchors: [anchor({ viewport: PHONE, hiddenColumns: hidden })] })),
+    ).toEqual([])
+  })
+
+  test('craft-6/hidden-column: a column in no phone card is P1 at the narrowest viewport only', () => {
+    const left = ['Cycle summary: id']
+    const phone = detectFindings(
+      metrics({ anchors: [anchor({ viewport: PHONE, cardLeftColumns: left })] }),
+    )
+    expect(phone).toHaveLength(1)
+    expect(phone[0]).toMatchObject({ rule: 'craft-6/hidden-column', severity: 'P1' })
+    expect(phone[0]?.defect).toContain('no phone card slot')
+    expect(rules(metrics({ anchors: [anchor({ cardLeftColumns: left })] }))).toEqual([])
+  })
+
   test('craft-6/hit-floor: a control under 24 px is P1 and listed', () => {
     const f = detectFindings(metrics({ anchors: [anchor({ small: ['button.x 20x20'] })] }))
     expect(f).toHaveLength(1)
