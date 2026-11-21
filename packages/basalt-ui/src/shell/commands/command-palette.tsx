@@ -13,7 +13,8 @@ import {
 import { Dialog, DialogContent } from '../../ui/dialog'
 import { RailControlProvider } from '../parts/grid'
 import { currentArea } from './area'
-import { isApplePlatform, matchesChord, mayFireOn, parseChordSequence } from './chord'
+import { useChordBindings } from './bindings'
+import { parseChordSequence } from './chord'
 import { ChordKeys } from './chord-keys'
 import { SHELL_PALETTE } from './define-commands'
 import type { CommandSet } from './define-commands'
@@ -31,12 +32,6 @@ export type CommandPaletteProps = {
   onOpenChange?: (open: boolean) => void
   placeholder?: string
 }
-
-/** A key press that is only a modifier going down: it neither continues nor breaks a sequence. */
-const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Shift', 'Control', 'Alt', 'Meta'])
-
-/** How long a sequence waits for its next step. */
-const SEQUENCE_MS = 1000
 
 /**
  * The command palette and the app's one key listener. It lists every command of the set, every
@@ -126,55 +121,8 @@ export function CommandPalette({
     [commands, rail, open, onOpenChange, openProp],
   )
 
-  useEffect(() => {
-    const apple = isApplePlatform()
-    // The sequence in progress: the commands whose steps so far matched, and the step they wait for.
-    let pending: { items: readonly PaletteItem[]; index: number; timer: number } | undefined
-    const disarm = (): void => {
-      if (pending !== undefined) window.clearTimeout(pending.timer)
-      pending = undefined
-    }
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.defaultPrevented || event.isComposing || event.repeat) return
-      if (MODIFIER_KEYS.has(event.key)) return
-      const scope = currentArea()
-      const matching = (items: readonly PaletteItem[], index: number): PaletteItem[] =>
-        items.filter((item) => {
-          const step = item.steps[index]
-          if (step === undefined || !matchesChord(event, step, apple)) return false
-          // The palette owns the keyboard while it is open: only its own chord gets through.
-          if (open && item.id !== SHELL_PALETTE) return false
-          if (item.area !== undefined && item.area !== scope) return false
-          return item.enabled?.() !== false && mayFireOn(step, event.target)
-        })
-      /** Runs the command a key completes, or waits for the next step of the ones it began. */
-      const advance = (hits: readonly PaletteItem[], index: number): boolean => {
-        if (hits.length === 0) return false
-        event.preventDefault()
-        const done = hits.filter((item) => item.steps.length === index + 1)
-        if (done.length === 0) {
-          const timer = window.setTimeout(disarm, SEQUENCE_MS)
-          pending = { items: hits, index: index + 1, timer }
-          return true
-        }
-        // An area command beats a global one on the same chord, whichever was declared first.
-        void (done.find((item) => item.area !== undefined) ?? done[0])?.run()
-        return true
-      }
-      const waiting = pending
-      disarm()
-      // A key that breaks a sequence may begin one: `g g n` still goes to `n`.
-      if (waiting !== undefined && advance(matching(waiting.items, waiting.index), waiting.index)) {
-        return
-      }
-      advance(matching(runnable, 0), 0)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => {
-      disarm()
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [runnable, open])
+  // The palette owns the keyboard while it is open: only its own chord gets through.
+  useChordBindings(runnable, (item) => !open || item.id === SHELL_PALETTE)
 
   // Escape closes the top layer. Capturing on the window runs before any dialog underneath sees it.
   useEffect(() => {

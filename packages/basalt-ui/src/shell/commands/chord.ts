@@ -1,7 +1,7 @@
 /**
- * The chord matcher: one pure parser, one canonical form for the duplicate check, one event
- * matcher and one guard that keeps a bare key away from the control it belongs to. No library:
- * `defineCommands` owns a single `keydown` listener (in `CommandPalette`) and nothing else binds keys.
+ * The chord grammar: one pure parser, one canonical form for the duplicate check, the display keys
+ * and the spelling the hotkey library takes. Key events are not matched here: `bindings.ts`
+ * hands every chord to `@tanstack/react-hotkeys` and nothing else binds keys.
  *
  * A chord is `Mod+Shift+P`: modifiers `Mod` (the platform's command key), `Ctrl`, `Meta`, `Alt` and
  * `Shift` in any order, then one key. Named keys are `Enter`, `Space`, `Escape`, `Tab`, the arrows,
@@ -98,51 +98,45 @@ export function isApplePlatform(): boolean {
   return /mac|iphone|ipad/i.test(platform ?? navigator.userAgent)
 }
 
-type KeyEventLike = Pick<
-  KeyboardEvent,
-  'key' | 'code' | 'metaKey' | 'ctrlKey' | 'altKey' | 'shiftKey'
->
+const HOTKEY_NAMES: Readonly<Record<string, string>> = {
+  ' ': 'Space',
+  escape: 'Escape',
+  enter: 'Enter',
+  tab: 'Tab',
+  backspace: 'Backspace',
+  delete: 'Delete',
+  home: 'Home',
+  end: 'End',
+  pageup: 'PageUp',
+  pagedown: 'PageDown',
+  arrowup: 'ArrowUp',
+  arrowdown: 'ArrowDown',
+  arrowleft: 'ArrowLeft',
+  arrowright: 'ArrowRight',
+}
 
-/** Whether a physical digit or letter key matches although the layout produced another character. */
-function codeMatches(event: KeyEventLike, key: string): boolean {
-  if (/^[a-z0-9]$/i.test(event.key)) return false
-  return event.code === `Key${key.toUpperCase()}` || event.code === `Digit${key}`
+/** The chord as the hotkey library spells it: `Mod+Shift+P`, `Escape`, `F5`, `?`. */
+export function chordHotkey(chord: Chord): string {
+  const named = HOTKEY_NAMES[chord.key]
+  const key =
+    named ??
+    (/^f\d{1,2}$/.test(chord.key) || chord.key.length === 1 ? chord.key.toUpperCase() : chord.key)
+  const parts = [
+    chord.mod && 'Mod',
+    chord.ctrl && 'Control',
+    chord.meta && 'Meta',
+    chord.alt && 'Alt',
+    chord.shift && 'Shift',
+    key,
+  ]
+  return parts.filter((part) => part !== false).join('+')
 }
 
 /**
- * Whether the event is exactly this chord: every modifier it names is down and no other is. `Mod`
- * is `Meta` on Apple platforms and `Ctrl` elsewhere.
+ * Whether a chord leaves a focused control its own keys: a chord with no `Mod`, `Ctrl`, `Meta` or
+ * `Alt` is a key the control may want (typing, Enter on a button), so it never fires there. A chord
+ * with one fires everywhere.
  */
-export function matchesChord(event: KeyEventLike, chord: Chord, apple: boolean): boolean {
-  const wantMeta = chord.meta || (chord.mod && apple)
-  const wantCtrl = chord.ctrl || (chord.mod && !apple)
-  if (event.metaKey !== wantMeta || event.ctrlKey !== wantCtrl) return false
-  if (event.altKey !== chord.alt) return false
-  // A symbol key (`?`) already says whether Shift is down; some layouts need it, some do not.
-  const symbol = chord.key.length === 1 && !/[a-z0-9 ]/.test(chord.key)
-  if (event.shiftKey !== chord.shift && !(symbol && !chord.shift)) return false
-  const key = event.key.toLowerCase()
-  if (key === chord.key) return true
-  // Shift turns `1` into `!` and Alt turns `k` into a dead character; the physical key is the chord.
-  return chord.key.length === 1 && codeMatches(event, chord.key)
-}
-
-const EDITABLE = 'input, textarea, select, [contenteditable=""], [contenteditable="true"]'
-const ACTIVATES =
-  'button, a[href], summary, [role=button], [role=link], [role^=menuitem], [role=option], [role=checkbox], [role=switch], [role=tab], [role=radio]'
-
-/**
- * Whether a chord may fire with `target` focused. A chord with no command modifier is a key the
- * focused control may want: it never fires in a text field, and a bare `Enter` or `Space` never
- * fires on anything that activates on that key (a button, a link, a menu item, a checkbox), so the
- * control still gets its keydown. A chord with `Mod`, `Ctrl`, `Meta` or `Alt` fires everywhere.
- */
-export function mayFireOn(chord: Chord, target: EventTarget | null): boolean {
-  if (chord.mod || chord.ctrl || chord.meta || chord.alt) return true
-  if (!(target instanceof Element)) return true
-  if (target.closest(EDITABLE) !== null) return false
-  if ((chord.key === 'enter' || chord.key === ' ') && target.closest(ACTIVATES) !== null) {
-    return false
-  }
-  return true
+export function yieldsToControls(chord: Chord): boolean {
+  return !(chord.mod || chord.ctrl || chord.meta || chord.alt)
 }

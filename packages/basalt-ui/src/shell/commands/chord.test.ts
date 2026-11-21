@@ -1,22 +1,13 @@
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'bun:test'
 import {
+  chordHotkey,
   chordId,
   chordKeys,
-  matchesChord,
-  mayFireOn,
   parseChord,
   parseChordSequence,
   sequenceId,
+  yieldsToControls,
 } from './chord'
-
-const key = (init: Partial<KeyboardEvent> & { key: string }) => ({
-  code: '',
-  metaKey: false,
-  ctrlKey: false,
-  altKey: false,
-  shiftKey: false,
-  ...init,
-})
 
 describe('parseChord', () => {
   test('two spellings of one chord share a canonical id', () => {
@@ -44,60 +35,28 @@ describe('parseChord', () => {
   })
 })
 
-describe('matchesChord', () => {
-  const modK = parseChord('Mod+K')
-
-  test('Mod is Meta on Apple and Ctrl elsewhere', () => {
-    expect(matchesChord(key({ key: 'k', metaKey: true }), modK, true)).toBe(true)
-    expect(matchesChord(key({ key: 'k', ctrlKey: true }), modK, true)).toBe(false)
-    expect(matchesChord(key({ key: 'k', ctrlKey: true }), modK, false)).toBe(true)
-    expect(matchesChord(key({ key: 'k', metaKey: true }), modK, false)).toBe(false)
-  })
-
-  test('an extra modifier is a different chord', () => {
-    expect(matchesChord(key({ key: 'K', metaKey: true, shiftKey: true }), modK, true)).toBe(false)
-    expect(matchesChord(key({ key: 'k', metaKey: true, altKey: true }), modK, true)).toBe(false)
-  })
-
-  test('a symbol key like ? matches with or without Shift, a letter does not', () => {
-    const help = parseChord('?')
-    expect(matchesChord(key({ key: '?', shiftKey: true }), help, true)).toBe(true)
-    expect(matchesChord(key({ key: '?' }), help, true)).toBe(true)
-    expect(matchesChord(key({ key: '?', shiftKey: true, ctrlKey: true }), help, false)).toBe(false)
-    expect(matchesChord(key({ key: 'g', shiftKey: true }), parseChord('g'), true)).toBe(false)
-  })
-
-  test('the physical digit key matches when shift or the layout changed the character', () => {
-    const mod1 = parseChord('Mod+1')
-    expect(matchesChord(key({ key: '&', code: 'Digit1', metaKey: true }), mod1, true)).toBe(true)
-    expect(matchesChord(key({ key: '2', code: 'Digit2', metaKey: true }), mod1, true)).toBe(false)
+describe('chordHotkey', () => {
+  test('spells a chord the way the hotkey library takes it', () => {
+    expect(chordHotkey(parseChord('shift+mod+p'))).toBe('Mod+Shift+P')
+    expect(chordHotkey(parseChord('Esc'))).toBe('Escape')
+    expect(chordHotkey(parseChord('space'))).toBe('Space')
+    expect(chordHotkey(parseChord('ctrl+arrowup'))).toBe('Control+ArrowUp')
+    expect(chordHotkey(parseChord('f5'))).toBe('F5')
+    expect(chordHotkey(parseChord('?'))).toBe('?')
+    expect(chordHotkey(parseChord('Mod+.'))).toBe('Mod+.')
   })
 })
 
-describe('mayFireOn', () => {
-  const host = document.createElement('div')
-  beforeAll(() => {
-    host.innerHTML =
-      '<button id="b">b</button><input id="i"><a id="a" href="#">a</a><div id="d" tabindex="0">d</div><div role="menuitem" id="m">m</div>'
-    document.body.append(host)
-  })
-  afterAll(() => host.remove())
-  const el = (id: string): Element => host.querySelector(`#${id}`) as Element
-
-  test('a command chord fires everywhere', () => {
-    for (const id of ['b', 'i', 'a', 'd']) expect(mayFireOn(parseChord('Mod+K'), el(id))).toBe(true)
+describe('yieldsToControls', () => {
+  test('a bare key or a Shift chord leaves a focused control its keys', () => {
+    expect(yieldsToControls(parseChord('j'))).toBe(true)
+    expect(yieldsToControls(parseChord('Enter'))).toBe(true)
+    expect(yieldsToControls(parseChord('Shift+J'))).toBe(true)
   })
 
-  test('a bare key never fires in a text field', () => {
-    expect(mayFireOn(parseChord('j'), el('i'))).toBe(false)
-    expect(mayFireOn(parseChord('j'), el('d'))).toBe(true)
-  })
-
-  test('a bare Enter or Space never fires on a control that activates on it', () => {
-    for (const chord of ['Enter', 'Space']) {
-      for (const id of ['b', 'i', 'a', 'm'])
-        expect(mayFireOn(parseChord(chord), el(id))).toBe(false)
-      expect(mayFireOn(parseChord(chord), el('d'))).toBe(true)
+  test('a chord with Mod, Ctrl, Meta or Alt fires everywhere', () => {
+    for (const chord of ['Mod+K', 'Ctrl+K', 'Meta+K', 'Alt+K']) {
+      expect(yieldsToControls(parseChord(chord))).toBe(false)
     }
   })
 })
