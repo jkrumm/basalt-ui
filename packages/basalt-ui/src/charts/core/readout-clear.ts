@@ -10,6 +10,7 @@
  */
 import type { ChartValue } from '@tanstack/charts/types/core'
 import { captionWidth } from '../axis-gaps'
+import { measureChartText } from '../text-measure'
 
 type Anchor = 'start' | 'middle' | 'end'
 type Span = readonly [from: number, to: number]
@@ -54,8 +55,23 @@ const inCorner = (share: number | null, within: number): boolean =>
 const READOUT_AIR = 5
 /** The inset the engine keeps between a readout and the chart's edge, px (`clampLabel`). */
 const EDGE_INSET = 2
-/** The share of an estimated caption width a label really draws: `captionWidth` over-estimates (a 12-letter name at the micro size is ~65 px, estimated ~90). */
-const DRAWN_SHARE = 0.75
+/** The weight of the crosshair's chip, which the engine draws bolder than a tick label. */
+const CHIP_WEIGHT = 600
+
+/** A centred caption's width as the engine measures it (its table plus the room a Linux Chrome adds), px: what its thinning placed the names apart by. */
+const measuredWidth = (text: string, fontSize: number, fontWeight: number): number =>
+  measureChartText(text, {
+    fontSize,
+    fontScale: 1,
+    fontFamily: '',
+    fontStyle: 'normal',
+    fontStretch: 'normal',
+    fontWeight,
+    letterSpacing: 0,
+    anchor: 'middle',
+    baseline: 'middle',
+    direction: 'ltr',
+  }).width
 
 /** A readout's line box as a multiple of its font size: what a tick label above or below it must clear. */
 const LINE_BOX = 1.25
@@ -134,15 +150,17 @@ export function xTickOpacity(opts: {
         ? x
         : clamp(x, EDGE_INSET + half, Math.max(EDGE_INSET + half, width - EDGE_INSET - half))
     const air = repeats ? 0 : READOUT_AIR
-    // Both boxes of a band name are over-estimates and the engine placed the names apart at rest by their
-    // real widths: a neighbour is blanked only where the two still meet shrunk to what they draw, so a
-    // phone's four band labels keep their neighbours whichever bar is focused. Dates stay on the estimate:
-    // their labels are packed to the engine's minimum gap, and a bold chip over one is the garbled string.
-    const shrink = band ? DRAWN_SHARE : 1
-    const readout: Span = [centre - half * shrink - air, centre + half * shrink + air]
+    // A band name is measured as the engine measures it, the chip bold and the tick regular: the engine placed
+    // the names apart at rest by those widths, and `captionWidth` over-estimates them, so on a phone it blanked
+    // neighbours the chip never touches. Dates stay on the estimate: their labels are packed to the engine's
+    // minimum gap, and a bold chip over one is the garbled string.
+    const chipHalf = band ? measuredWidth(readoutText(xValue), fontSize, CHIP_WEIGHT) / 2 : half
+    const readout: Span = [centre - chipHalf - air, centre + chipHalf + air]
     const label = spanOf(
       position + (tick.dx(value) ?? 0),
-      captionWidth(tick.text(value), fontSize) * shrink,
+      band
+        ? measuredWidth(tick.text(value), fontSize, 400)
+        : captionWidth(tick.text(value), fontSize),
       tick.anchor(value) ?? 'middle',
     )
     if (meet(readout, label)) return 0
