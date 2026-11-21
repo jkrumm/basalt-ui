@@ -4,11 +4,12 @@ import { home } from '../core/messages/home'
 import { useMessages } from '../core/messages/use-messages'
 import { OfflineLine } from '../core/offline-line'
 import { resolvePhase, retryOf as retryOfRefetch } from '../core/phase'
-import type { Empty, ErrorKind } from '../core/phase'
+import type { Empty } from '../core/phase'
 import type { Phase, QueryStateLike } from '../core/ports'
 import { buttonVariants } from '../ui/button'
 import { Spinner } from '../ui/skeleton'
 import { EmptyState } from './empty-state'
+import { errorCause } from './error-cause'
 
 /**
  * A TanStack query result also carries `fetchStatus`; `QueryStateLike` does not name it, so it is
@@ -43,20 +44,6 @@ const isQueryResult = (phase: QueryStateProps['phase']): phase is QueryResultLik
 const retryOf = (phase: QueryStateProps['phase']): (() => void) | undefined => {
   if (!isQueryResult(phase) || phase.refetch === undefined) return undefined
   return retryOfRefetch(phase.refetch)
-}
-
-export const ERROR_KEYS = {
-  forbidden: 'home.error.forbidden',
-  'not-found': 'home.error.not-found',
-  default: 'home.error.default',
-} as const satisfies Record<ErrorKind | 'default', keyof typeof home>
-
-/** What a failed query says: the kind's line, and the source's own message only when it has no kind. */
-export function errorCause(
-  kind: ErrorKind | undefined,
-  message: string | undefined,
-): { key: (typeof ERROR_KEYS)[ErrorKind | 'default']; detail: string | undefined } {
-  return { key: ERROR_KEYS[kind ?? 'default'], detail: kind === undefined ? message : undefined }
 }
 
 function Notice({

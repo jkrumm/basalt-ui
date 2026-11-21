@@ -8,8 +8,8 @@ import { resolvePhase } from '../core/phase'
 import type { ErrorKind, Fact as LabelledFact } from '../core/phase'
 import type { Phase, QueryStateLike } from '../core/ports'
 import { Skeleton } from '../ui/skeleton'
-import { errorCause } from './query-state'
-import type { ERROR_KEYS } from './query-state'
+import { errorCause } from './error-cause'
+import type { ERROR_KEYS } from './error-cause'
 
 /**
  * A fact is a node, or a label and a value as a footer fact is: `{ label: 'Last reindex', value,
