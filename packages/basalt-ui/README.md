@@ -88,7 +88,7 @@ src/
   components/route-pending.tsx, route-error.tsx, route-missing.tsx
 ```
 
-It ends in `basalt-ui doctor`, which reports. Running `init` twice changes nothing; `sync` refreshes
+It ends in `basalt-ui doctor`, which reports, then prints the session note when its run wrote agent-read files. Running `init` twice changes nothing; `sync` refreshes
 what `init` placed and never creates an install.
 
 `init` on an **existing** app is a lint-debt event, not a no-op: the generated preset switches on

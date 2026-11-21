@@ -177,7 +177,7 @@ export const USAGE =
   '  (default .) is declared with it. Paths are relative to the repo root. Writes .basalt/manifest.json and the\n' +
   "  token outputs, installs the profile's peers at exact pins with the lockfile's package manager, places the\n" +
   '  managed files and presets through sync, seeds .basalt/budget.json and DESIGN.md, at app writes the router scaffold (main.tsx, routes, nav) once, writes the formatter\n' +
-  '  ignore, and ends in doctor. --no-install prints the install command instead of running it. Running it\n' +
+  '  ignore, and ends in doctor, then the session note when its run wrote agent-read files. --no-install prints the install command instead of running it. Running it\n' +
   '  twice changes nothing. Vite and CSS are patched only for a stock shape; otherwise the lines are printed.\n' +
   '  --start (with --profile app) makes the app a TanStack Start host: tanstackStart() before the React plugin,\n' +
   '  src/router.tsx (getRouter), a root route with the document shell and the pre-paint scheme script, no main.tsx.\n' +
