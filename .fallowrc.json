@@ -12,6 +12,9 @@
     "scripts/**",
     "tests/setup/**",
     "tools/**",
+    "apps/playground-astro/scripts/**",
+    "apps/playground-astro/src/parts/**",
+    "apps/playground-astro/src/lib/probe.ts",
     "apps/playground/src/cycle/*/known.ts",
     "apps/playground/src/recipes/**",
     "apps/playground/src/**/*.type-guard.ts"
