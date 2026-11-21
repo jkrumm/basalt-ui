@@ -138,10 +138,11 @@ fits, else the decades, thinned) and go through `y.format`; the auto domain pads
 by 10 % at both ends, and a `{ floor, ceil, pad }` domain pads in decades. Zones, reference lines,
 the cursor, the focus readout, the tooltip and `plot.y` all work in data values. A value of zero or
 below has no place: a dev build throws an error naming the series and the value, a production build
-skips the point; a rule at one is not drawn, and a zone bound at one reaches the plot's edge, as
-`-Infinity` does. A `y.domain` with a bound at or below zero is ignored with a dev warning. A bar, an `area: 'fade'` and a stack stand on zero, so
+skips the point; a left-axis rule at or below zero is not drawn, and a zone bound at or below zero
+reaches the plot's edge, as `-Infinity` does. A `y.domain` (a tuple or a function's answer) with a
+bound at or below zero is ignored with a dev warning. A bar, an `area: 'fade'` and a stack stand on zero, so
 they do not take it: `Bars` does not type `scale`, and `CartesianChart` and `Lines` throw a named error in
-a dev build and draw linear in production. A right-axis series stays linear. Plot `log10(v)` yourself
+a dev build and draw linear in production. A right-axis series and its rules stay linear. Plot `log10(v)` yourself
 and ticks land on `63.1K`; the scale does it right.
 
 ## Not yet applied

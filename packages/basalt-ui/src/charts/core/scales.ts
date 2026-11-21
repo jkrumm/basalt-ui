@@ -55,17 +55,14 @@ function resolveLogDomain<T>(
 ): readonly [number, number] {
   const domain = cfg.domain ?? 'auto'
   const positive = (v: number | null): v is number => v !== null && Number.isFinite(v) && v > 0
-  if (Array.isArray(domain) && domain.every(positive) && domain[0] < domain[1])
-    return domain as readonly [number, number]
-  if (Array.isArray(domain))
+  const given = typeof domain === 'function' ? domain(data, series) : domain
+  if (Array.isArray(given) && given.every(positive) && given[0] < given[1])
+    return given as readonly [number, number]
+  if (given !== 'auto')
     reportOnce(
       'CartesianChart',
       "[basalt] CartesianChart: a log y.domain needs positive bounds, min below max; using the data's extent",
     )
-  if (typeof domain === 'function') {
-    const given = domain(data, series)
-    if (given.every(positive) && given[0] < given[1]) return given
-  }
   let min = Infinity
   let max = -Infinity
   for (const d of data)
