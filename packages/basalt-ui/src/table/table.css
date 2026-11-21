@@ -1035,7 +1035,7 @@
     [data-below='480'][data-phone='columns'] [data-identity] * {
       white-space: normal !important;
     }
-    /* a mono identity cell (an id, a date) is one word: the column takes its width and it never breaks at a hyphen or a space; the sub line still wraps */
+    /* a mono identity cell (id, date) never breaks; its sub line wraps */
     [data-below='480'][data-phone='columns']
       [data-identity]
       [data-monospace]:not([data-slot='table-entity-sub']) {
