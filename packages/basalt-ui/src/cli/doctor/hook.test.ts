@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
 import { cleanupTrees, makeTree, runCheck, settingsJson, wrappedHook } from './fixture.test'
@@ -14,6 +15,44 @@ describe('check 8: the hook, run black-box from a subdirectory', () => {
     expect(r.status).toBe('pass')
     expect(r.detail).toContain('from src')
     expect(existsSync(resolve(dir, 'src/__basalt_seeded_offender__.tsx'))).toBe(false)
+  })
+
+  it('leaves no seeded file in a declared root for a concurrent scan to see', async () => {
+    const dir = makeTree('app')
+    const flags = mkdtempSync(resolve(tmpdir(), 'basalt-poll-'))
+    const poller = `
+      const { existsSync, readdirSync, writeFileSync } = require('node:fs')
+      const [root, flags] = process.argv.slice(1)
+      const seen = new Set()
+      let polls = 0
+      writeFileSync(flags + '/ready', '')
+      while (!existsSync(flags + '/stop')) {
+        polls++
+        for (const f of readdirSync(root, { recursive: true }))
+          if (String(f).includes('__basalt_seeded_offender__')) seen.add(String(f))
+      }
+      writeFileSync(flags + '/result.json', JSON.stringify({ polls, seen: [...seen] }))
+    `
+    const child = Bun.spawn(['bun', '-e', poller, dir, flags], {
+      stdout: 'ignore',
+      stderr: 'inherit',
+    })
+    try {
+      while (!existsSync(resolve(flags, 'ready'))) await Bun.sleep(10)
+      const r = await runCheck(dir, 8)
+      expect(r.status).toBe('pass')
+      writeFileSync(resolve(flags, 'stop'), '')
+      await child.exited
+      const result = JSON.parse(readFileSync(resolve(flags, 'result.json'), 'utf8')) as {
+        polls: number
+        seen: string[]
+      }
+      expect(result.polls).toBeGreaterThan(0)
+      expect(result.seen).toEqual([])
+    } finally {
+      child.kill()
+      rmSync(flags, { recursive: true, force: true })
+    }
   })
 
   it('fails when settings.json registers no hook', async () => {

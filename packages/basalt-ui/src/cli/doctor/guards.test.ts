@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { execFileSync } from 'node:child_process'
-import { appendFileSync } from 'node:fs'
+import { appendFileSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import { packageRoot } from '../index'
 import { cleanupTrees, commitTree, editManifest, HEALTHY, makeTree, runCheck } from './fixture.test'
 
 afterEach(cleanupTrees)
@@ -178,5 +179,19 @@ describe('check 11: budgets, ejects, weakened config, DESIGN.md', () => {
       11,
     )
     expect(reasoned.status).toBe('pass')
+  })
+
+  it('accepts every separator the seeded DESIGN.md names', async () => {
+    const seed = readFileSync(resolve(packageRoot(), 'agent/templates/DESIGN.md.tpl'), 'utf8')
+    const separators = [' — ', ' -- ', ' because ', 'reason:']
+    for (const sep of separators) {
+      expect(seed).toContain(sep)
+      const line = `- radius capped at 2${sep}${sep.endsWith(':') ? ' ' : ''}the dense table`
+      const r = await runCheck(
+        healthy('app', { 'DESIGN.md': `# D\n\n## Deviations\n\n${line}\n` }),
+        11,
+      )
+      expect(r.status, line).toBe('pass')
+    }
   })
 })

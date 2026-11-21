@@ -124,6 +124,8 @@ export const USAGE =
   '  separate arguments (zsh does not word-split $ROUTES).\n' +
   '  --out is required and must not exist yet: every round writes a fresh dir (shots-1, shots-2, …).\n' +
   '  .basalt/last-shot.json records the latest round (at, out, round).\n' +
+  '  empty, loading and error reload the route with ?shot-state=<state>; the page obeys only when its query result goes through\n' +
+  '  shotState() from basalt-ui/data (it acts under the runner, never on a production URL). A state crop equal to rest is `states-ignored`.\n' +
   '  A real, signed-in app: [--local-storage <key>=<@env:NAME|@file:path>]… seeds localStorage (app origin\n' +
   '  only) before any page script; [--api <prefix>=<origin>]… (with --dist) proxies GET/HEAD under that\n' +
   '  prefix to the origin (other methods get 405 unless --api-allow-writes); [--header <name>=@env:NAME]… is\n' +

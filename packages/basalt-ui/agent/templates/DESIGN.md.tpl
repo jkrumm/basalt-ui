@@ -29,6 +29,6 @@ series earns a hue for a trend, a status or a split a reader must tell apart; th
 ## Deviations
 
 A deviation only narrows a default (a smaller set, a stricter limit) and carries its reason on the
-same line. A deviation that widens the law is an eject or a waiver, recorded where it lives.
+same line, set off by ` — `, ` -- `, ` because ` or `reason:` (`- no dark charts — print needs light`). A deviation that widens the law is an eject or a waiver, recorded where it lives.
 
 - _none yet_

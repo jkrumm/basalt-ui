@@ -5,7 +5,19 @@
  * whether it would touch a managed path, because `oxfmt` reads no ignore file of its own.
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, rmSync, rmdirSync, writeFileSync } from 'node:fs'
+import {
+  cpSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  rmdirSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 
 import { DEFAULT_OFFENDER, SEEDED_FILE } from '../../lint/weakened'
@@ -87,11 +99,15 @@ const check8 = (name: string): Check => ({
     if (findings.length > 0 || probe === null) return verdictOf(findings, '')
 
     const [root = '.'] = lintRoots(manifest)
-    const sub = resolve(ctx.root, rootsOf(manifest).find(([r]) => r !== '.')?.[0] ?? '.basalt')
-    const seeded = resolve(ctx.root, root, SEEDED_FILE)
-    if (existsSync(seeded))
-      return fail(`${root}/${SEEDED_FILE} already exists; remove it and run again`)
+    const subRel = rootsOf(manifest).find(([r]) => r !== '.')?.[0] ?? '.basalt'
+    const shadow = shadowInstall(
+      ctx.root,
+      rootsOf(manifest).map(([r]) => r),
+    )
+    const sub = resolve(shadow, subRel)
+    const seeded = resolve(shadow, root, SEEDED_FILE)
     try {
+      mkdirSync(sub, { recursive: true })
       writeFileSync(seeded, DEFAULT_OFFENDER.content, 'utf8')
       const event = JSON.stringify({
         hook_event_name: 'PostToolUse',
@@ -102,7 +118,7 @@ const check8 = (name: string): Check => ({
       })
       const run = spawnSync('/bin/sh', ['-c', probe], {
         cwd: sub,
-        env: { ...process.env, CLAUDE_PROJECT_DIR: ctx.root },
+        env: { ...process.env, CLAUDE_PROJECT_DIR: shadow },
         input: event,
         encoding: 'utf8',
         timeout: 120_000,
@@ -111,9 +127,7 @@ const check8 = (name: string): Check => ({
         throw new Skip(`could not run the registered command: ${run.error.message}`)
       const out = `${run.stdout}${run.stderr}`.trim()
       if (run.status === 2 && FINDING.test(out)) {
-        return pass(
-          `the seeded offender returned a finding from ${sub.slice(ctx.root.length + 1) || '.'}`,
-        )
+        return pass(`the seeded offender returned a finding from ${subRel}`)
       }
       return fail(
         run.status === 0
@@ -121,10 +135,36 @@ const check8 = (name: string): Check => ({
           : `the hook exited ${run.status} with no finding: ${out.split('\n').find((l) => l.startsWith('basalt hook:')) ?? (out.slice(-200) || '(no output)')}`,
       )
     } finally {
-      rmSync(seeded, { force: true })
+      rmSync(shadow, { recursive: true, force: true })
     }
   },
 })
+
+/**
+ * A copy of the install the probe can write into: the config files and `.basalt/` copied, `node_modules`
+ * linked, the declared roots empty. The seeded offender lives here, never in a declared root, so a
+ * lint run, a watcher or a build of the real roots never sees it. Caller removes the directory.
+ */
+function shadowInstall(root: string, roots: readonly string[]): string {
+  const shadow = mkdtempSync(resolve(tmpdir(), 'basalt-doctor-'))
+  const rootHeads = new Set(roots.map((r) => r.split('/')[0]))
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const name = entry.name
+    if (rootHeads.has(name) && name !== '.basalt') continue
+    const from = resolve(root, name)
+    const to = resolve(shadow, name)
+    if (name === 'node_modules' || (lstatSync(from).isSymbolicLink() && entry.isDirectory())) {
+      symlinkSync(from, to)
+    } else if (name === '.basalt' || (entry.isFile() && CONFIG_FILE.test(name))) {
+      cpSync(from, to, { recursive: true })
+    }
+  }
+  for (const r of roots) mkdirSync(resolve(shadow, r), { recursive: true })
+  return shadow
+}
+
+/** The top-level files lint and the hook read: dotfiles and config-like `json`, `jsonc`, `mjs`, `cjs` and `ts` files. */
+const CONFIG_FILE = /^\.|\.(?:jsonc?|[cm]js|ts)$/
 
 /** A finding line: `src/pages/a.tsx:41 basalt/class-policy: ...` (guardrails section 8). */
 const FINDING = /:\d+\s+basalt\/[a-z][\w-]*:/

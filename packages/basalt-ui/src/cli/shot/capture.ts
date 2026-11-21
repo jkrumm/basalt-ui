@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 
+import { SHOT_FLAG } from '../../data/shot-state'
 import { buildSheet } from './board'
 import { finishMeasurement, measureAnchor } from './measure'
 import type { Box, PwBrowser, PwContext, PwLocator, PwPage, ShotOptions } from './playwright'
@@ -810,7 +811,7 @@ async function capturePage(
   return out
 }
 
-/** A fresh context for one scheme × viewport: the scheme is set on the context AND seeded (`data-theme`, the stored choice) before load. */
+/** A fresh context for one scheme × viewport: the scheme is set on the context AND seeded (`data-theme`, the stored choice) before load, and the page is marked as a shot so `shotState` obeys `?shot-state`. */
 export async function openContext<C extends PwContext>(
   browser: PwBrowser<C>,
   scheme: Scheme,
@@ -828,7 +829,7 @@ export async function openContext<C extends PwContext>(
     reducedMotion: 'reduce',
   })
   await context.addInitScript(
-    `try{localStorage.setItem('basalt:scheme','${scheme}');document.documentElement.setAttribute('data-theme','${scheme}')}catch{}`,
+    `window.${SHOT_FLAG}=true;try{localStorage.setItem('basalt:scheme','${scheme}');document.documentElement.setAttribute('data-theme','${scheme}')}catch{}`,
   )
   if (seeded.length > 0) await context.addInitScript(seedScript(seeded, origin))
   return context
