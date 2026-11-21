@@ -127,7 +127,8 @@ export const SUBPATH_REQUIRED_PEERS: Readonly<Record<string, readonly string[]>>
   './cards': ['@base-ui/react'],
   './page': ['@base-ui/react', '@tanstack/react-router'],
   // v3 shell: the header's popover actions and the compact aside sheet draw `ui/popover`, `ui/sheet` and `ui/button`, which wrap Base UI.
-  './shell': ['@base-ui/react', '@tanstack/react-router'],
+  // `CommandPalette` binds every `defineCommands` chord through `@tanstack/react-hotkeys`, pinned exact.
+  './shell': ['@base-ui/react', '@tanstack/react-router', '@tanstack/react-hotkeys'],
   // v3 ctl-4: `ControlView` and its renderers draw `ui/select`, `ui/combobox`, `ui/segmented`, `ui/number-field` and `ui/switch`, which wrap Base UI.
   './controls': ['@base-ui/react'],
   // `CodeBlock` renders `ui/button`, which wraps Base UI; `./page` (above) takes the same peer for `ui/alert`, `ui/popover`, `ui/dialog` and `ui/sheet`.

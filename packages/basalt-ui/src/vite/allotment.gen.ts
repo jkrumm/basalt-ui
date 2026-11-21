@@ -40,7 +40,7 @@ export const ALLOTMENT: Allotment = {
       reaches: ['.'],
     },
     shell: {
-      peers: ['@tanstack/react-router'],
+      peers: ['@tanstack/react-router', '@tanstack/react-hotkeys'],
       lazy: [],
       reaches: ['.', 'page', 'router'],
     },

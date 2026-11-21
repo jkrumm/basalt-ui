@@ -348,7 +348,8 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'ui',
     description:
-      'App shell — AppShell, the CSS-grid frame: header, rail, one scrollport, aside and phone tab bar from one defineNav',
+      'App shell — AppShell, the CSS-grid frame: header, rail, one scrollport, aside and phone tab bar from one defineNav; defineCommands chords run on TanStack Hotkeys',
+    optionalPeers: ['@tanstack/react-hotkeys'],
     forbiddenImports: [],
   },
   './lint': {
