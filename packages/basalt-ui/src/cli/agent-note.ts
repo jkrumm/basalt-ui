@@ -3,7 +3,7 @@
  * session start: `.claude/`, the hook shim and the managed AGENTS.md. The note names no agent product
  * and no terminal, because the CLI detects neither. A run that changes none of them prints nothing.
  */
-import { readdirSync, statSync } from 'node:fs'
+import { readdirSync, realpathSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { SHIM } from './lint/settings'
@@ -23,30 +23,43 @@ export type AgentFiles = Map<string, string>
 /** `.claude/worktrees` holds other checkouts of this repo, not this install. */
 const WORKTREES = join('.claude', 'worktrees')
 
-const stamp = (path: string): string | null => {
+/** Follows links: a symlinked rule or directory is stamped as what it points at. Null when absent or broken. */
+const statOf = (path: string) => {
   try {
-    const info = statSync(path)
-    return info.isFile() ? `${info.size}:${info.mtimeMs}` : null
+    return statSync(path)
   } catch {
     return null
   }
 }
 
-function walk(dir: string, skip: string, out: AgentFiles): void {
-  let entries
+const realOf = (path: string): string | null => {
   try {
-    entries = readdirSync(dir, { withFileTypes: true })
+    return realpathSync(path)
+  } catch {
+    return null
+  }
+}
+
+/** Stamps the regular files under `dir`. A directory is entered once by its real path, so a link cycle ends. */
+function walk(dir: string, skip: string, seen: Set<string>, out: AgentFiles): void {
+  const real = realOf(dir)
+  if (real === null || seen.has(real)) return
+  seen.add(real)
+  let names: string[]
+  try {
+    names = readdirSync(dir)
   } catch {
     return
   }
-  for (const entry of entries) {
-    const path = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      if (path !== skip) walk(path, skip, out)
-      continue
+  for (const name of names) {
+    const path = join(dir, name)
+    const info = statOf(path)
+    if (info === null) continue
+    if (info.isDirectory()) {
+      if (path !== skip) walk(path, skip, seen, out)
+    } else if (info.isFile()) {
+      out.set(path, `${info.size}:${info.mtimeMs}`)
     }
-    const value = entry.isFile() ? stamp(path) : null
-    if (value !== null) out.set(path, value)
   }
 }
 
@@ -54,11 +67,11 @@ function walk(dir: string, skip: string, out: AgentFiles): void {
 export function agentFiles(bases: readonly string[]): AgentFiles {
   const out: AgentFiles = new Map()
   for (const base of new Set(bases)) {
-    walk(join(base, '.claude'), join(base, WORKTREES), out)
+    walk(join(base, '.claude'), join(base, WORKTREES), new Set(), out)
     for (const rel of [SHIM, AGENTS_FILE]) {
       const path = join(base, rel)
-      const value = stamp(path)
-      if (value !== null) out.set(path, value)
+      const info = statOf(path)
+      if (info !== null && info.isFile()) out.set(path, `${info.size}:${info.mtimeMs}`)
     }
   }
   return out
