@@ -34,3 +34,4 @@ A recipe is the shipped answer to a pattern basalt composes but does not export:
 - [view-switch](node_modules/basalt-ui/docs/recipes/view-switch.md): one dataset shows as a dependency chain, nested rows or a table (or as table and cards) and the visitor can link to each
 - [saved-views](node_modules/basalt-ui/docs/recipes/saved-views.md): a table's search, filters, sort and visible columns are worth naming and coming back to
 - [export](node_modules/basalt-ui/docs/recipes/export.md): a table needs a CSV of its rows, because the table itself has no export
+- [shot-state](node_modules/basalt-ui/docs/recipes/shot-state.md): a page's empty, loading and error states must be scored by `basalt-ui shot`
