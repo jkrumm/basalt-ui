@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { PKG_ROOT, walkFiles } from '../lib'
-import type { RowDef } from '../lib'
+import type { Raises, RowDef } from '../lib'
 import { measureSource, reExportAll, reExportNamed } from '../ui-bundle'
 
 const SRC = join(PKG_ROOT, 'src')
@@ -70,8 +70,8 @@ export const rows: readonly RowDef[] = [
     id: 'shell-subpath',
     order: 461,
     label: 'shell, whole barrel (gzip B minus base0, src/shell, peers bundled)',
-    // 129009 B measured.
-    ceiling: 135500,
+    // 129009 B measured; 142851 B with `@tanstack/react-hotkeys` bundled (Issue 2570).
+    ceiling: 143500,
     measure: () => measureSource(reExportAll({ shell: 'shell/index' })),
   },
   {
@@ -81,7 +81,8 @@ export const rows: readonly RowDef[] = [
       'shell palette marginal: CommandPalette + defineCommands over the shell without them (gzip B)',
     // 19905 B measured (the palette's dialog, kbd and rank closure). The shell-i8 acceptance read 2.0 KB;
     // this build does not, so the seed is the measurement and the 2.0 KB is the target it ratchets toward.
-    ceiling: 21000,
+    // 30983 B with the hotkeys library, which only the palette binds through (Issue 2570).
+    ceiling: 31500,
     measure: async () =>
       (await measureSource(`${SHELL_WITHOUT_PALETTE}\n${PALETTE}`)) -
       (await measureSource(SHELL_WITHOUT_PALETTE)),
@@ -96,3 +97,24 @@ export const rows: readonly RowDef[] = [
     measure: largestAuthoredFile,
   },
 ]
+
+export const raises: Raises = {
+  'shell-subpath': [
+    {
+      from: 135500,
+      to: 143500,
+      consumer:
+        "Issue 2570 (Spec artifact_01a1f951): `./shell` binds every `defineCommands` chord through `@tanstack/react-hotkeys` 0.27.1, bundled in this row's measurement (11.5 KB gz alone, the peer's own code); FPP takes Hotkeys through basalt for its room's keys (owner note 2026-11-20)",
+      repo: 'basalt-ui',
+    },
+  ],
+  'shell-palette-marginal': [
+    {
+      from: 21000,
+      to: 31500,
+      consumer:
+        "Issue 2570 (Spec artifact_01a1f951): `./shell` binds every `defineCommands` chord through `@tanstack/react-hotkeys` 0.27.1, bundled in this row's measurement (11.5 KB gz alone, the peer's own code); FPP takes Hotkeys through basalt for its room's keys (owner note 2026-11-20)",
+      repo: 'basalt-ui',
+    },
+  ],
+}

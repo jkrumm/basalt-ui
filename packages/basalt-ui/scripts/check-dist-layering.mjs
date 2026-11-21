@@ -111,8 +111,8 @@ for (const { rel, onlyBare } of subpaths) {
 }
 
 // An optional peer owned by one entry (`react-day-picker` by `ui/date-picker`, docs/v3/ARCHITECTURE.md
-// section 3; `react-resizable-panels` by `ui/resizable`; `@tanstack/react-form` by `./form`,
-// docs/v3/verdicts/tanstack-map.md). No other published entry may load it up front: every export of
+// section 3; `react-resizable-panels` by `ui/resizable`; `@tanstack/react-form` by `./form`;
+// `@tanstack/react-hotkeys` by `./shell`, docs/v3/verdicts/tanstack-map.md). No other published entry may load it up front: every export of
 // package.json except the owner's own export key is walked over its static imports (a dynamic
 // `import()` is the lazy edge `./controls` may use), and the owner's dist file must still reach it,
 // so this check cannot pass by walking the wrong files.
@@ -120,6 +120,7 @@ for (const { PEER, OWNER, EXPORT } of [
   { PEER: 'react-day-picker', OWNER: 'ui/date-picker.js', EXPORT: './ui/*' },
   { PEER: 'react-resizable-panels', OWNER: 'ui/resizable.js', EXPORT: './ui/*' },
   { PEER: '@tanstack/react-form', OWNER: 'form/index.js', EXPORT: './form' },
+  { PEER: '@tanstack/react-hotkeys', OWNER: 'shell/index.js', EXPORT: './shell' },
 ]) {
   const exportsMap = JSON.parse(readFileSync(resolve(DIST, '..', 'package.json'), 'utf8')).exports
   const entries = new Set()
