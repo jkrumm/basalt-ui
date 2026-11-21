@@ -1,7 +1,8 @@
 /**
- * Loading frames (expression cycle 11, `v3-expr-11-kit-fixes` 8): a loading `DataPanel` and `BarList` hold the
- * height their ready frame has, and a `PageSummary` skeleton is at least as tall as its loaded headline can
- * be at 390 (states.md: "the loaded summary is at most as tall as its skeleton at 390").
+ * Loading frames (expression cycle 11, `v3-expr-11-kit-fixes` 8; cycle 18 `v3-expr-18-kit-fixes` 1 and 2): a
+ * loading `DataPanel` and `BarList` hold the height their ready frame has, and a `PageSummary` ends at its
+ * ready height at both widths: a skeleton with no sentence is one headline line (n87, n91), one given its
+ * expected sentence holds that sentence's box, and an error with its cause and Retry holds the line.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
@@ -89,6 +90,8 @@ const heights = (page: LayoutPage): Promise<Heights> =>
       panel: '[data-slot="data-panel"]',
       list: '[data-slot="bar-list"]',
       summary: '[data-slot="page-summary"]',
+      short: '[data-slot="page-summary"]',
+      failed: '[data-slot="page-summary"]',
     }
     const out: Record<string, number> = {}
     for (const [name, selector] of Object.entries(roots)) {
@@ -100,7 +103,7 @@ const heights = (page: LayoutPage): Promise<Heights> =>
     return out
   })
 
-const FRAMES = ['panel', 'list', 'summary'] as const
+const FRAMES = ['panel', 'list', 'summary', 'short', 'failed'] as const
 
 layout('loading frames hold the height of their ready frame', () => {
   for (const viewport of [WIDE, PHONE]) {
@@ -108,8 +111,6 @@ layout('loading frames hold the height of their ready frame', () => {
       const h = await heights(await open(viewport))
       const off = FRAMES.filter((name) => {
         const diff = h[`${name}-loading`]! - h[`${name}-ready`]!
-        // states.md: at 390 a loaded summary may be shorter than its skeleton, never taller.
-        if (name === 'summary' && viewport === PHONE) return diff < -0.5
         // A first loading frame of a card list has no card to measure: it is the tallest card (108 px) per
         // data row, so it may run one card taller than the 92 px no-meter list it shows, never shorter.
         if (name === 'panel' && viewport === PHONE) return diff < -0.5 || diff > 108
