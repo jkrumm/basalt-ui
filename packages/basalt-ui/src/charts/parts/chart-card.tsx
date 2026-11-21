@@ -70,7 +70,7 @@ const LONG_FIGURE = 10
  * answer and stays; a readout that follows focus goes here or in the tooltip.
  */
 const READOUT_BOX =
-  'flex min-w-0 flex-1 items-center gap-2 text-sm leading-4 tabular-nums @max-regular:h-4 @max-regular:basis-full'
+  'flex min-w-0 flex-1 items-center gap-2 text-xs leading-4 tabular-nums @max-regular:h-4 @max-regular:basis-full'
 /** The period inside the readout line: one line that truncates. */
 const PERIOD_TEXT = 'min-w-0 truncate'
 
@@ -143,7 +143,7 @@ function FigureRow({
             >
               {text ?? '–'}
               {text !== null && unit !== undefined && (
-                <span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span>
+                <span className="ml-1 text-xs font-normal text-muted-foreground">{unit}</span>
               )}
             </span>
             {!failed && delta !== undefined && (

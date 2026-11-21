@@ -116,7 +116,7 @@ export function Head({
           {title !== undefined && info !== undefined && <Info title={title}>{info}</Info>}
         </div>
         {subtitle !== undefined && (
-          <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
+          <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
         )}
       </div>
       {controls !== undefined && (
@@ -155,7 +155,7 @@ export function Footer({
   return (
     <dl
       data-slot="chart-footer"
-      className="m-0 flex h-10 items-center justify-between gap-4 px-(--card-edge) text-sm"
+      className="m-0 flex h-10 items-center justify-between gap-4 px-(--card-edge) text-xs"
     >
       {shown.map((fact) => (
         <div key={fact.label} className="flex min-w-0 items-baseline gap-2">
