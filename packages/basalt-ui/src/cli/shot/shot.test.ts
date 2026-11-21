@@ -1929,6 +1929,7 @@ describe('real-data run', () => {
     const [desktop, phone] = SPECS as [ViewportSpec, ViewportSpec]
     await openContext(browser as never, 'dark', desktop, [['auth', 'a"b']], 'http://app')
     expect(scripts).toHaveLength(2)
+    expect(scripts[0]).toContain('window.__basaltShot=true')
     expect(scripts[0]).toContain("setItem('basalt:scheme','dark')")
     expect(scripts[0]).toContain("setAttribute('data-theme','dark')")
     expect(scripts[0]).not.toContain('color-scheme-value')

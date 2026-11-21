@@ -296,6 +296,20 @@ rows.forEach((r, n) => r.addEventListener('keydown', (e) => {
 }))
 </script>`
 
+/** The page side of `?shot-state`: the shipped helper, as the browser runs it, behind a query result that is ready with one row. */
+const SHOT_STATE_JS = new Bun.Transpiler({ loader: 'ts' })
+  .transformSync(readFileSync(join(import.meta.dir, '../../data/shot-state.ts'), 'utf8'))
+  .replaceAll(/^export /gm, '')
+const SHOT_STATE_FIXTURE = `<!doctype html><body style="margin:0"><script>${SHOT_STATE_JS}</script>
+<div data-shot=page data-phase=ready style="height:80px"></div>
+<script>
+  const r = shotState({ isPending: false, isError: false, error: null, data: [1] })
+  const phase = r.isPending ? 'loading' : r.isError ? 'error' : r.data.length === 0 ? 'empty' : 'ready'
+  const fill = { ready: '#00f', loading: '#0f0', error: '#f00', empty: '#ff0' }
+  document.body.dataset.phase = phase
+  document.querySelector('[data-shot=page]').style.background = fill[phase]
+</script>`
+
 const pw = resolvePlaywright(process.cwd())
 const out = mkdtempSync(join(tmpdir(), 'basalt-harness-'))
 afterAll(() => rmSync(out, { recursive: true, force: true }))
@@ -328,7 +342,7 @@ async function shoot(
   states: ShotState[],
   check: (run: Run) => Promise<void>,
   route = '/',
-  inBrowser?: (browser: PwBrowser) => Promise<void>,
+  inBrowser?: (browser: PwBrowser, base: string) => Promise<void>,
 ): Promise<void> {
   if (!pw) {
     if (process.env['CI']) throw new Error('no Playwright to run the real-Chrome tests in CI')
@@ -350,9 +364,11 @@ async function shoot(
                 ? SLOTS_FIXTURE
                 : req.url?.startsWith('/ignored')
                   ? IGNORED_FIXTURE
-                  : req.url === '/skeleton'
-                    ? SKELETON_FIXTURE
-                    : FIXTURE,
+                  : req.url?.startsWith('/shot-state')
+                    ? SHOT_STATE_FIXTURE
+                    : req.url === '/skeleton'
+                      ? SKELETON_FIXTURE
+                      : FIXTURE,
     )
   })
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
@@ -360,7 +376,7 @@ async function shoot(
   const dir = mkdtempSync(join(out, 'run-'))
   try {
     await withBrowser(pw, async (browser: PwBrowser) => {
-      if (inBrowser) return inBrowser(browser)
+      if (inBrowser) return inBrowser(browser, `http://127.0.0.1:${port}`)
       const done = await capture({
         browser,
         base: `http://127.0.0.1:${port}`,
@@ -421,6 +437,37 @@ describe('real Chrome', () => {
         expect(shots.some((s) => s.name === 'card-1' || s.name === 'other-1')).toBe(false)
       },
       '/slots',
+    )
+  }, 120_000)
+
+  test('a page that routes its query through shotState obeys all three states, and only under the runner', async () => {
+    await shoot(
+      ['empty', 'loading', 'error'],
+      async ({ shots }) => {
+        const states = shots.filter((s) => s.state !== 'rest' && s.name === 'page')
+        expect(states.length).toBeGreaterThan(0)
+        expect(states.every((s) => s.status === 'ok' && s.ignored === undefined)).toBe(true)
+      },
+      '/shot-state',
+    )
+    await shoot(
+      [],
+      async () => undefined,
+      '/',
+      async (browser, base) => {
+        const context = await browser.newContext({
+          viewport: { width: 400, height: 300 },
+          deviceScaleFactor: 1,
+          isMobile: false,
+          hasTouch: false,
+          colorScheme: 'light',
+          reducedMotion: 'reduce',
+        })
+        const page = await context.newPage()
+        await page.goto(`${base}/shot-state?shot-state=empty`, { waitUntil: 'load' })
+        expect(await page.evaluate<string>('document.body.dataset.phase')).toBe('ready')
+        await context.close()
+      },
     )
   }, 120_000)
 

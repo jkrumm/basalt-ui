@@ -9,7 +9,7 @@ export const STATES = [
   'loading',
   'error',
 ] as const
-/** The states a page reaches with `?shot-state=<phase>`: an anchor declares them with `data-phase` or `data-shot-states`. */
+/** The states a page reaches with `?shot-state=<phase>`: an anchor declares them with `data-phase` or `data-shot-states`, and the page obeys through `shotState` (`basalt-ui/data`) on its query result. */
 export const URL_STATES = ['empty', 'loading', 'error'] as const
 
 /** The public `data-slot`s that are anchors on their own: no consumer attribute needed. */

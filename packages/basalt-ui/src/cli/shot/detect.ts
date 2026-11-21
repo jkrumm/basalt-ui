@@ -271,7 +271,7 @@ export function detectFindings(m: ShotMetrics, lint?: LintReport): Finding[] {
         route: s.route,
         where: `${s.scheme}/${s.viewport}`,
         cite: `metrics.json shots[${at}].ignored`,
-        defect: `The ${s.state} crop is identical to the ready crop: the page ignored ?shot-state=${s.state}, so the state was never scored.`,
+        defect: `The ${s.state} crop is identical to the ready crop: the page ignored ?shot-state=${s.state}, so the state was never scored. Route the query result through shotState() from basalt-ui/data.`,
       })
   }
   for (const p of m.pages ?? [])
