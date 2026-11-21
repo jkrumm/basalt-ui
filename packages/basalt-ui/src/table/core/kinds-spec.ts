@@ -93,7 +93,8 @@ export type KindSpec<T> = {
   /**
    * `entity` with `width: 'content'`: sized to its widest loaded value (`measure`, in `ch`). A `text`
    * column carries `short` too: it takes that width only while the widest value stays within
-   * `maxCh`, never below `minCh` (its header), and otherwise stays a flexible column.
+   * `maxCh`, never below `minCh` (its header), and otherwise stays a flexible column. With no loaded rows
+   * (loading, empty, error) the column takes its kind width, so a head sized to content moves when rows arrive.
    */
   content?: { measure: (row: T) => number; short?: { minCh: number; maxCh: number } }
   /** `entity` with a sub line under its name: the title column may grow wider before the filler column takes the rest. */
