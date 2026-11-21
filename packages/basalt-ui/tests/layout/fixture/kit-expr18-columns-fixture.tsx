@@ -15,11 +15,7 @@ type Entry = { id: string; title: string; kind: string; reason: string; bill: nu
 const KINDS = ['waiting', 'failed', 'older'] as const
 const ROWS: readonly Entry[] = Array.from({ length: 9 }, (_, i) => ({
   id: `img-${1200 + i * 37}`,
-  title: [
-    'Faded harbour on ferry timetables',
-    'Quiet nets on lock repairs',
-    'Brass orchard on wool prices',
-  ][i % 3]!,
+  title: ['Faded harbour', 'Quiet nets', 'Brass orchard'][i % 3]!,
   kind: KINDS[i % 3]!,
   reason: 'Transport error',
   bill: 0.33 + i * 0.11,
