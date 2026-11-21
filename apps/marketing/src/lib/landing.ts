@@ -72,7 +72,7 @@ export const COMPARISON = {
     },
     { label: "Tokens and fonts", values: { tokens: true, site: true, app: true } },
     { label: "Tailwind 4 and the lint preset", values: { tokens: false, site: true, app: true } },
-    { label: "Static parts", values: { tokens: false, site: true, app: false } },
+    { label: "Static parts", values: { tokens: false, site: true, app: true } },
     { label: "App shell and router", values: { tokens: false, site: false, app: true } },
     {
       label: "Client JavaScript",
