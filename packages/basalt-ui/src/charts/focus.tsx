@@ -459,6 +459,8 @@ export function useChartFocus<D>(
       shown.current = null
       return setHeld(null)
     }
+    // The same focus is no change (an engine echoes it on every rebuild): setting it would render the owner again.
+    if (next === shown.current && held?.span === undefined) return
     if (reveal && next !== index) revealInRegion(next)
     shown.current = next
     setHeld((was) => {
@@ -551,10 +553,9 @@ export function useChartFocus<D>(
   const fromChart = (next: number | null): void => {
     if (next === null && pointed.current !== null) return
     // An engine echoes its focused datum back on every definition it rebuilds, and an app without the React
-    // Compiler hands it a new one on each render. The same focus is no change: a state set to it would render the
-    // owner again, and that render the echo again. A held span keeps its span.
+    // Compiler hands it a new one on each render, so an echo of the focus shown must set nothing (`apply`): the
+    // set would render the owner, and that render the echo again. The span's own first item keeps the span.
     if (next !== null && next === index && held?.span !== undefined) return
-    if (next === shown.current) return cancel()
     set(next)
   }
 
