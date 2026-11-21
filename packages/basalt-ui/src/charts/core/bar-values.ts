@@ -16,6 +16,7 @@ import type { BarState } from '../marks'
 import type { PlotPx } from '../label-obstacles'
 import type { ChartMarks, ChartSeries, ChartX } from '../types'
 import { CARET_SIZE, clampToDomain, offScaleSide } from './axis-ext'
+import { backingMarks, isStruck } from './label-backing'
 import { CV } from './theme'
 
 /** The share of a bar slot kept between two grouped bars (`group({ padding })` in `bars-marks`). */
@@ -277,10 +278,16 @@ function slotPx<T, X extends ChartX>(input: BarValuesInput<T, X>): number {
  */
 export function barValueLabels<T, X extends ChartX>(
   input: BarValuesInput<T, X>,
-): { marks: ChartMarks; boxes: LabelBox[]; written: ReadonlySet<string> } {
+): {
+  marks: ChartMarks
+  boxes: LabelBox[]
+  written: ReadonlySet<string>
+  /** A label sits on a backing: the chart's hidden `[0, 1]` x scale is then in use. */
+  backed: boolean
+} {
   const found = candidates(input)
   if (found.length === 0 || input.frame.width <= 0 || input.frame.height <= 0)
-    return { marks: [], boxes: [], written: new Set() }
+    return { marks: [], boxes: [], written: new Set(), backed: false }
   // Highlighted first, then the larger value, then the earlier x.
   const rank = found
     .map((c, i) => ({ c, i }))
@@ -556,9 +563,19 @@ export function barValueLabels<T, X extends ChartX>(
       (p) => [p.key, (found[Number(p.key)] as Candidate<X>).onBar] as const,
     ),
   ])
+  // A label a rule or a line piece still crosses (every clear spot was taken) sits on a card-coloured
+  // backing: the rule gives way to the number. A label on a bar's body keeps the bar behind it; one on a
+  // bar too short to carry it (a zero) is read against the card, in the card's muted ink.
+  const backed = new Set(
+    placedAll.flatMap((p) => {
+      const c = found[Number(p.key)] as Candidate<X>
+      const onBody = paintOf.get(p.key) !== CV.inkMuted && c.body.height >= p.height
+      return !onBody && isStruck(p, input.obstacles) ? [p.key] : []
+    }),
+  )
   const marks = placedAll.map((p) => {
     const c = found[Number(p.key)] as Candidate<X>
-    const ink = paintOf.get(p.key) ?? CV.inkMuted
+    const ink = backed.has(p.key) ? CV.inkMuted : (paintOf.get(p.key) ?? CV.inkMuted)
     const onBar = ink === c.onBar
     return {
       x: c.x,
@@ -573,28 +590,49 @@ export function barValueLabels<T, X extends ChartX>(
     }
   })
   const scales = [...new Set(marks.map((m) => m.scale))]
+  const backings = scales.flatMap((scale) => {
+    const struck = placedAll.filter(
+      (p) =>
+        backed.has(p.key) && input.scaleOf((found[Number(p.key)] as Candidate<X>).side) === scale,
+    )
+    const side =
+      struck[0] === undefined ? undefined : (found[Number(struck[0].key)] as Candidate<X>).side
+    return side === undefined
+      ? []
+      : backingMarks({
+          id: `bar-values-${scale}-backing`,
+          boxes: struck.map(({ left, top, width, height }) => ({ left, top, width, height })),
+          frame: input.frame,
+          domain: input.domainOf(side),
+          scale,
+        })
+  })
   const written = new Set(placedAll.flatMap((p) => found[Number(p.key)]?.id ?? []))
   return {
     written,
-    marks: scales.map((scale) =>
-      decorative(
-        text(
-          marks.filter((m) => m.scale === scale),
-          {
-            id: `bar-values-${scale}`,
-            x: (m: (typeof marks)[number]) => m.x,
-            y: (m: (typeof marks)[number]) => m.y,
-            yScale: scale,
-            text: (m: (typeof marks)[number]) => m.text,
-            fill: (m: (typeof marks)[number]) => m.fill,
-            fontSize: SIZE,
-            anchor: (m: (typeof marks)[number]) => m.anchor,
-            dx: (m: (typeof marks)[number]) => m.dx,
-            dy: (m: (typeof marks)[number]) => m.dy,
-          },
+    backed: backed.size > 0,
+    marks: [
+      ...backings,
+      ...scales.map((scale) =>
+        decorative(
+          text(
+            marks.filter((m) => m.scale === scale),
+            {
+              id: `bar-values-${scale}`,
+              x: (m: (typeof marks)[number]) => m.x,
+              y: (m: (typeof marks)[number]) => m.y,
+              yScale: scale,
+              text: (m: (typeof marks)[number]) => m.text,
+              fill: (m: (typeof marks)[number]) => m.fill,
+              fontSize: SIZE,
+              anchor: (m: (typeof marks)[number]) => m.anchor,
+              dx: (m: (typeof marks)[number]) => m.dx,
+              dy: (m: (typeof marks)[number]) => m.dy,
+            },
+          ),
         ),
       ),
-    ) as unknown as ChartMarks,
+    ] as unknown as ChartMarks,
     boxes: placedAll.map(({ left, top, width, height }) => ({ left, top, width, height })),
   }
 }

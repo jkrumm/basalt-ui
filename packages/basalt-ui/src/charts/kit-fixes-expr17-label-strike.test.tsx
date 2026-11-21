@@ -1,0 +1,85 @@
+/**
+ * Expression cycle 17 (`v3-expr-17-kit-fixes` 5, n82 quiet and n84 spike at 390): a value label that a rule
+ * crosses sits on a card-coloured backing and the vertical rules are drawn under the labels, so the rule gives
+ * way to the number.
+ */
+import { describe, expect, test } from 'bun:test'
+import { renderToString } from 'react-dom/server'
+import { Bars } from './index'
+import { backingMarks, isStruck } from './core/label-backing'
+
+const INK = { light: '#9a9a9a', dark: '#7d7d7d' }
+const rule = { left: 0, top: 40, width: 200, height: 4 }
+
+describe('isStruck', () => {
+  test('a box over a rule is struck, one beside it or over a caption-sized box is not', () => {
+    expect(isStruck({ left: 20, top: 30, width: 20, height: 14 }, [rule])).toBe(true)
+    expect(isStruck({ left: 20, top: 60, width: 20, height: 14 }, [rule])).toBe(false)
+    const caption = { left: 0, top: 0, width: 80, height: 14 }
+    expect(isStruck({ left: 20, top: 4, width: 20, height: 14 }, [caption])).toBe(false)
+  })
+})
+
+describe('backingMarks', () => {
+  test('draws one mark for struck boxes and none for none', () => {
+    const frame = { width: 300, height: 100 }
+    const at = (boxes: (typeof rule)[]) =>
+      backingMarks({ id: 'b', boxes, frame, domain: [0, 10], scale: 'y' })
+    expect(at([])).toHaveLength(0)
+    expect(at([rule])).toHaveLength(1)
+  })
+})
+
+describe('a zero value a rule runs through', () => {
+  test('is written on a card-coloured backing', () => {
+    const html = renderToString(
+      <Bars<{ k: string; a: number }>
+        label="V"
+        height={100}
+        data={[
+          { k: 'a', a: 3 },
+          { k: 'b', a: 0 },
+          { k: 'c', a: 4 },
+        ]}
+        x={{ value: (d) => d.k }}
+        layout="grouped"
+        refLines={[{ value: 0.7, color: INK, dashed: true }]}
+        series={[
+          {
+            mark: 'bar',
+            key: 'a',
+            label: 'A',
+            color: INK,
+            y: (d) => d.a,
+            values: true,
+            highlight: (d) => d.k === 'b',
+          },
+        ]}
+      />,
+    )
+    expect(html).toContain('data-ts-key="bar-values-y-backing')
+  })
+})
+
+describe('a chart with a vertical rule', () => {
+  test('draws the rule before the value labels, so a label covers it', () => {
+    const html = renderToString(
+      <Bars<{ k: string; a: number }>
+        label="V"
+        height={100}
+        data={[
+          { k: 'a', a: 3 },
+          { k: 'b', a: 4 },
+        ]}
+        x={{ value: (d) => d.k }}
+        layout="grouped"
+        refLines={[{ value: 'b', axis: 'x', color: INK }]}
+        series={[{ mark: 'bar', key: 'a', label: 'A', color: INK, y: (d) => d.a, values: true }]}
+      />,
+    )
+    expect(html.indexOf('data-ts-key="xref-0"')).toBeGreaterThan(-1)
+    expect(html.indexOf('data-ts-key="xref-0"')).toBeLessThan(
+      html.indexOf('data-ts-key="bar-values-y"'),
+    )
+  })
+})
