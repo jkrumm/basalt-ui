@@ -25,7 +25,13 @@ export const DEMO_SERIES = defineSeries({
   churn: { light: '#af293e', dark: '#e46360' },
 })
 
-/** Photo library (scenario expr-n71): the accent is the kept photos, a brand token set by the chart's highlight; the other ratings sit in one mid ink step. */
+/** Review seats (scenario expr-n88): the accent is the light seat, the seat the question is about; the lead seat is the dark ink step. */
+export const N88_SERIES = defineSeries({
+  light: { light: '#2871c7', dark: '#5190f7' },
+  lead: { light: '#262626', dark: '#e6e6e6' },
+})
+
+/** Photo library (scenario expr-n71):the accent is the kept photos, a brand token set by the chart's highlight; the other ratings sit in one mid ink step. */
 export const N71_SERIES = defineSeries({
   photos: { light: '#8c8c8c', dark: '#8c8c8c' },
 })
@@ -590,4 +596,38 @@ export const N85_SERIES = defineSeries({
   unmeasured: { light: '#9a9a9a', dark: '#7d7d7d' },
   dropped: { light: '#262626', dark: '#e6e6e6' },
   open: { light: '#d4d4d4', dark: '#5c5c5c' },
+})
+
+/** Remote test steps (scenario expr-n90): the accent is a run that stayed remote; local for lack of remote room is the dark ink step, local as faster a mid one, local with a free slot a pale one; the status red is a held step; the pressure line rests in a mid ink step, its baseline in a darker one. */
+export const N90_SERIES = defineSeries({
+  remote: { light: '#2871c7', dark: '#5190f7' },
+  room: { light: '#262626', dark: '#e6e6e6' },
+  faster: { light: '#6b6b6b', dark: '#a8a8a8' },
+  free: { light: '#b0b0b0', dark: '#666666' },
+  held: { light: '#af293e', dark: '#e46360' },
+  pressure: { light: '#8c8c8c', dark: '#8c8c8c' },
+  baseline: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Added waits and test memory (scenario expr-n89): the accent is a wait judged not needed; needed is the dark ink step, taken back a mid one, not measured a pale one; the peak run of a step is the dark ink step over its median run in a pale one; released holds rest in a mid ink step. */
+export const N89_SERIES = defineSeries({
+  needed: { light: '#262626', dark: '#e6e6e6' },
+  notNeeded: { light: '#2871c7', dark: '#5190f7' },
+  takenBack: { light: '#8c8c8c', dark: '#8c8c8c' },
+  notMeasured: { light: '#c9c9c9', dark: '#4a4a4a' },
+  peak: { light: '#262626', dark: '#e6e6e6' },
+  median: { light: '#b0b0b0', dark: '#666666' },
+  released: { light: '#6b6b6b', dark: '#a8a8a8' },
+})
+
+/** Library enrichment (scenario expr-n91): the accent is the bill a schema change repeats; spend and the waiting bill are the dark ink step, failures retried a mid one; the failure kinds sit in three ink steps, entries the sweep cannot reach the palest; the cache line rests in a mid ink step. */
+export const N91_SERIES = defineSeries({
+  schema: { light: '#2871c7', dark: '#5190f7' },
+  waiting: { light: '#262626', dark: '#e6e6e6' },
+  retry: { light: '#6b6b6b', dark: '#a8a8a8' },
+  spend: { light: '#262626', dark: '#e6e6e6' },
+  cache: { light: '#6b6b6b', dark: '#a8a8a8' },
+  transport: { light: '#262626', dark: '#e6e6e6' },
+  model: { light: '#6b6b6b', dark: '#a8a8a8' },
+  unreachable: { light: '#b0b0b0', dark: '#666666' },
 })
