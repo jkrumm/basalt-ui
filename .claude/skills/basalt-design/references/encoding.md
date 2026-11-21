@@ -5,12 +5,12 @@ Which form carries which shape of data, and what the marks may say. The question
 ## Is it a chart at all
 
 - One current value is a [StatCard](node_modules/basalt-ui/docs/stat-card.md); three or more headline values of equal weight, each with its baseline, are a [StatGroup](node_modules/basalt-ui/docs/stat-group.md) strip ([cards](cards.md) § When a page leads with figures).
-- One ratio against a limit is a [Meter](node_modules/basalt-ui/docs/meter.md) with its zones; the verdict is a word under the marker. Its value carries a `caption` that names it on screen ("US$13.89 spent", "of 150 listed"), where n87, n90 and n91 printed a bare number or bent `format` into words; a range's ends or a limit are its `ticks` on the track and the reason is its `cause` (n92 wrote both as sibling text).
+- One ratio against a limit is a [Meter](node_modules/basalt-ui/docs/meter.md) with its zones; the verdict is a word under the marker. Its value carries a `caption` that names it on screen ("US$13.89 spent", "of 150 listed"); a bare number or a `format` bent into words is the defect. A range's ends or a limit are its `ticks` on the track and the reason is its `cause`; sibling text is the defect.
 - A top-N or a share of a total is a [BarList](node_modules/basalt-ui/docs/bar-list.md). Many rows with several attributes is a [DataTable](node_modules/basalt-ui/docs/data-table.md), unless the question is which items changed state or passed: that is one mark per item (a square per case) with the table holding the detail.
 - Rows of one kind beside a chart (a name, a second line, a verdict, a figure) are a [RowList](node_modules/basalt-ui/docs/row-list.md) with the chart's `focus`, quiet by default; never a mapped `div` with a `border-b` or `divide-y`. [lint:primitive-bypass]
 - A value over time is a chart in a [ChartCard](node_modules/basalt-ui/docs/chart-card.md); compare categories with bars, follow a shape with a line.
-- A question of when (when does it run out, when did it change) is a time axis with the boundary drawn (a ref line at the limit, the next run marked) (n09 drew a table, which answers what and leaves when to the reader).
-- A ranking is one order that is also the mark order (c14 showed two orders in one list); a commitment is split by what makes it up (n13 drew one total).
+- A question of when (when does it run out, when did it change) is a time axis with the boundary drawn (a ref line at the limit, the next run marked); a table answers what and leaves when to the reader.
+- A ranking is one order that is also the mark order (two orders in one list are the defect); a commitment is split by what makes it up (one total hides the split).
 - Events in order are an [EventList](node_modules/basalt-ui/docs/event-list.md). Intervals on a time axis (a stay, a run, a notice window) get one row each, drawn as a bar on the axis.
 - A series that must dim on focus is [CartesianChart](node_modules/basalt-ui/docs/cartesian-chart.md) marks: [Lines](node_modules/basalt-ui/docs/lines.md) ignores marks and so cannot dim, while [Bars](node_modules/basalt-ui/docs/bars.md) dims through its own `opacity`.
 
