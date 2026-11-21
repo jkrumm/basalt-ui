@@ -221,7 +221,7 @@ export function colTicks(
   room?: TickRoom,
 ): string[] {
   const stride = strideTicks(cols, cls)
-  const step = room ? Math.max(1, Math.ceil((room.labelPx + 8) / room.cellPx)) : 1
+  const step = room ? Math.ceil((room.labelPx + 8) / room.cellPx) : 1
   let last = -Infinity
   // Each named column is kept when it sits a step after the last kept one.
   const kept = cols.filter((c, i) => named?.includes(c) && i - last >= step && ((last = i), true))
@@ -660,15 +660,11 @@ export function Heatmap<T, K extends string = string>(props: HeatmapProps<T, K>)
       getState === undefined
         ? []
         : states.map((s) => ({
-            key: s.key,
-            label: s.label,
+            ...s,
             color: fillOf(s),
             mark: 'bar' as const,
             glyph: glyphOf({ ...s, color: fillOf(s) }),
             glyphInk: stateInk(fillOf(s), s.fillOpacity ?? 1, false),
-            ...(s.fillOpacity !== undefined && { fillOpacity: s.fillOpacity }),
-            ...(s.legend !== undefined && { legend: s.legend }),
-            ...(s.note !== undefined && { note: s.note }),
             getValue: () => null,
           })),
     [states, getState],

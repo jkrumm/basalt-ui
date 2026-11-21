@@ -6,7 +6,7 @@
  */
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { CSSProperties, MouseEvent, ReactElement } from 'react'
-import { BASALT } from '../tokens'
+import { BASALT, alpha } from '../tokens'
 import { CV } from './core/theme'
 import classes from './chart-legend.module.css'
 import type { ChartSeries } from './types'
@@ -137,50 +137,6 @@ type SwatchStyle = Pick<
 > &
   GlyphKey
 
-/** A glyph key is a 12 px square (the heat cell's glyph floor) so the mark reads inside the fill. */
-const GLYPH_SWATCH_PX = 12
-
-/** A bar key with its glyph: the fill fades on its own layer, the glyph stays at full ink above it. */
-function GlyphSwatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement {
-  return (
-    <span
-      aria-hidden
-      className={mode === 'dots' ? classes.dot : classes.chip}
-      style={{
-        position: 'relative',
-        width: GLYPH_SWATCH_PX,
-        height: GLYPH_SWATCH_PX,
-        flex: 'none',
-      }}
-    >
-      <span
-        style={{
-          position: 'absolute',
-          inset: 0,
-          borderRadius: 2,
-          background: swatchFill(s),
-          opacity: s.fillOpacity ?? 1,
-        }}
-      />
-      <span
-        data-legend-glyph=""
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'grid',
-          placeItems: 'center',
-          fontSize: BASALT.text.micro,
-          fontWeight: 600,
-          lineHeight: 1,
-          color: s.glyphInk ?? CV.inkMuted,
-        }}
-      >
-        {s.glyph}
-      </span>
-    </span>
-  )
-}
-
 /** A swatch fill: the series colour, or a hard-stop split for a sign-coloured bar. */
 const swatchFill = (s: SwatchStyle): string =>
   s.colorNegative ? `linear-gradient(90deg, ${s.color} 50%, ${s.colorNegative} 50%)` : s.color
@@ -265,7 +221,31 @@ function Swatch({ s, mode }: { s: SwatchStyle; mode: LegendMode }): ReactElement
         }}
       />
     )
-  if (s.glyph) return <GlyphSwatch s={s} mode={mode} />
+  // A state key carries its cells' mark: a 12 px square (the heat cell's glyph floor) whose fill fades
+  // in its own colour, so the glyph stays at full ink.
+  if (s.glyph)
+    return (
+      <span
+        aria-hidden
+        data-legend-glyph=""
+        className={mode === 'dots' ? classes.dot : classes.chip}
+        style={{
+          width: 12,
+          height: 12,
+          display: 'grid',
+          placeItems: 'center',
+          borderRadius: 2,
+          background: alpha(s.color, s.fillOpacity ?? 1),
+          fontSize: BASALT.text.micro,
+          fontWeight: 600,
+          lineHeight: 1,
+          color: s.glyphInk,
+          flex: 'none',
+        }}
+      >
+        {s.glyph}
+      </span>
+    )
   return (
     <span
       aria-hidden
