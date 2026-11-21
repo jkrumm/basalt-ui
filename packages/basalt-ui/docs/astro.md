@@ -86,18 +86,24 @@ object prop: Astro hands that over as an Astro template and the build fails. Lab
 6. **Prefetch** is the site's call. basalt never turns it on. Starlight does, for every page; set
    `prefetch: false` in `astro.config` to keep pages without islands at zero JavaScript.
 7. **Measured, not claimed.** basalt-ui.com is held in CI (`apps/marketing/scripts/measure.ts --check
-   --browser`) to these budgets, measured on its build:
+   --browser`) to these budgets; `bun run measure` in `apps/marketing` prints the numbers behind them. A
+   test holds the budget column to `site-budgets.json`.
 
-| Number | Measured | Budget |
-|-|-|-|
-| module JavaScript on a page with no island | 0 B | 0 B |
-| basalt's head scripts (scheme + parts), gzip | 735 B | 2 kB (unit test) |
-| inline JavaScript on any page, Astro's island loader included, gzip | 2.6 kB | 3 kB |
-| the React runtime the first island brings, gzip | 69.8 kB | 72 kB |
-| a further island's own chunk (the chart island), gzip | 117 kB | 120 kB |
-| CSS per page, gzip | 25.0 kB | 26 kB |
-| LCP, landing, article and docs page, 390 px, local | 72 ms | 1,000 ms |
-| CLS, the same three pages | 0 | 0.02 |
+<!-- site-budgets:begin -->
+
+| Number | Budget |
+|-|-|
+| module JavaScript on a page with no island | 0 B |
+| basalt's head scripts (scheme + parts), gzip | 2 kB (unit test) |
+| inline JavaScript on any page, Astro's island loader included, gzip | 3.25 kB |
+| the React runtime the first island brings, gzip | 72 kB |
+| a further island's cost (the chart island on `/charts`), gzip | 121.5 kB |
+| the two MDX islands together (`/guides/islands-in-mdx`), gzip | 285 kB |
+| CSS per page, gzip | 27 kB |
+| LCP, landing, article and docs page, 390 px, local | 1,000 ms |
+| CLS, the same three pages | 0.05 |
+
+<!-- site-budgets:end -->
 
 ## Interactive parts in MDX
 

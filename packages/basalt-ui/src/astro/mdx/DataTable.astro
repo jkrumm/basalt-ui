@@ -9,13 +9,12 @@ interface Props {
   label: string
   columns: SiteColumn[]
   rows: SiteRow[]
-  locale?: string
   interactive?: boolean
   load?: 'visible' | 'idle'
 }
-const { interactive = false, load = 'visible', locale, ...props } = Astro.props
+const { interactive = false, load = 'visible', ...props } = Astro.props
 ---
 
-{!interactive && <SiteDataTable {...props} locale={locale} />}
+{!interactive && <SiteDataTable {...props} />}
 {interactive && load === 'visible' && <TableIsland {...props} client:visible />}
 {interactive && load === 'idle' && <TableIsland {...props} client:idle />}
