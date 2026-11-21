@@ -31,13 +31,14 @@ import type { BasaltConfig } from './config'
 
 /**
  * The one consumer series path (DESIGN.md's `{{SERIES_MODULE_PATH}}`,
- * the skills' prose). Derived from the FIRST configured root (`<root>/lib/series.ts`), since a
+ * the skills' prose). Derived from the FIRST configured root (`<root>/basalt.tokens.ts`, the
+ * `tokens:css --extra` input), since a
  * monorepo with `roots: ['apps/web/src']` has no top-level `src/`. `seriesModulePath` overrides.
  */
 function resolveSeriesModulePath(cfg: BasaltConfig): string {
   if (cfg.seriesModulePath !== undefined) return cfg.seriesModulePath
   const [firstRoot = DEFAULT_ROOT] = resolveRoots(cfg)
-  return `${firstRoot}/lib/series.ts`
+  return `${firstRoot}/basalt.tokens.ts`
 }
 
 /**

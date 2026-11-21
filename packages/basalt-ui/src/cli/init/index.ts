@@ -10,7 +10,6 @@
  * Running it twice changes nothing. The steps live in `./steps`.
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
 import { isAbsolute } from 'node:path'
 import { parseArgs } from 'node:util'
 
@@ -18,7 +17,7 @@ import { doctor } from '../doctor'
 import { findRepoRoot, packageRoot, resolveAppDir } from '../index'
 import { agentFiles, sessionNote } from '../agent-note'
 import { generateRouteTree } from '../route-tree'
-import { PROFILES } from '../manifest'
+import { PROFILES, readManifest } from '../manifest'
 import { isSiblingApp } from '../resolver'
 import type { Profile } from '../manifest'
 import {
@@ -27,11 +26,13 @@ import {
   installHook,
   installPeers,
   installRoot,
+  defaultExtra,
   skipPlacements,
   placeManaged,
   say,
   seedBudgetFile,
   seedDesign,
+  seedSeries,
   wireApp,
   wireBuildScript,
   wireFormatterAndLint,
@@ -150,9 +151,14 @@ export async function init(
   const fail = (why: string): number => (console.error(`✖ basalt-ui init: ${why}`), 1)
   const parsed = parseInit(argv)
   if ('error' in parsed) return fail(parsed.error)
-  const { args } = parsed
-
   const root = installRoot(cwd)
+  // No --extra: the file the manifest already records, else the profile's conventional one.
+  const recorded = readManifest(root)
+  const kept = recorded !== null && !('error' in recorded) ? recorded.manifest.extra : undefined
+  const args: Args = {
+    ...parsed.args,
+    extra: parsed.args.extra ?? kept ?? defaultExtra(parsed.args.profile, parsed.args.roots),
+  }
   const ctx: Ctx = {
     root,
     args,
@@ -161,9 +167,7 @@ export async function init(
     problems: [],
     todo: [],
   }
-  if (args.extra !== undefined && !existsSync(`${root}/${args.extra}`)) {
-    return fail(`--extra ${args.extra} does not exist: write the file, then run init again`)
-  }
+  seedSeries(ctx)
 
   if (!generateTokens(ctx)) return fail('a token output could not be generated (see above)')
   const declared = declareManifest(ctx)

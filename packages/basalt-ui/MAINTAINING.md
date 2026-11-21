@@ -179,7 +179,8 @@ Three tiers: **palette data** (pure data, zero React/DOM) → **`--basalt-*` CSS
   frozen at module load from the level-0 snapshot and never re-derive from a `density` option.
   `deriveSpacing`'s JSDoc has the full accounting.
 - **Series color is consumer data.** `BASALT.series` is not in the framework: an app declares its own in
-  one guard-exempt file via `defineSeries` → `seriesTokens`/`groupTokens` → `buildPaletteCss`. Every
+  one guard-exempt file, `src/basalt.tokens.ts`, which `tokens:css --extra` emits as `--basalt-<group>-<key>`
+  (`groupTokens` mints the refs). `defineSeries` and `buildPaletteCss({ groups })` are internal. Every
   `defineX` factory follows ONE shape — `<const T extends Constraint>(spec: T): T`, exact-keyed, no
   widening annotation, no fluent builder, no accumulating config bag. A new factory matches that
   shape before it reaches the public surface.

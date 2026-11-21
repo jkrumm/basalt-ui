@@ -67,6 +67,12 @@ const other = { light: '#ff8800', dark: '#112233' }
 const warn = '#ff8800'
 // @errors colour-literal,colour-literal,colour-literal
 
+// @valid
+// @filename src/basalt.tokens.ts
+export default {
+  series: { app: { sessions: { light: '#2871c7', dark: '#5190f7' } } },
+}
+
 // @invalid
 const nested = defineSeries({ sessions: { light: BASALT.accent, extra: '#2871c7' } })
 

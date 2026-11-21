@@ -742,7 +742,10 @@ export type ColorSchemeSelector = {
 
 /** Options for {@link buildPaletteCss}. */
 export type BuildPaletteOpts = {
-  /** Extra named series maps to emit under the given prefixes (each one is the return value of `groupTokens`). */
+  /**
+   * Extra named series maps to emit under the given prefixes (each one is the return value of `groupTokens`).
+   * Internal: an app declares its series in `src/basalt.tokens.ts` and `tokens:css --extra` emits the same variables.
+   */
   groups?: readonly SeriesGroup[]
   /** Theme-independent derived declarations (gradients, semantic fills) emitted once on `:root`. */
   derived?: string[]
