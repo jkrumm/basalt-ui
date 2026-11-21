@@ -11,7 +11,7 @@ import type { ChartCardProps, ChartFigure } from '../contract'
 import { INITIAL_WIDTH, ServerFrameContext } from '../sizing'
 import type { ServerFrame } from '../sizing'
 import { Footer, formatValue, Head, PhaseBox, SURFACE } from './chart-card-frame'
-import { ChartPanes, panesFloorCss } from './chart-panes'
+import { ChartPanes, panesFloorPx } from './chart-panes'
 import { Legend } from './legend'
 
 const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
@@ -403,7 +403,9 @@ export function ChartCard(props: ChartCardProps): ReactElement {
                       'mt-2',
                     BOX[height],
                   )}
-                  minHeight={panes === undefined ? undefined : panesFloorCss(panes.length)}
+                  minHeight={
+                    panes === undefined ? undefined : `${panesFloorPx(panes.length) / 16}rem`
+                  }
                 />
               </ServerFrameContext>
             </div>
