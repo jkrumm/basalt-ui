@@ -71,6 +71,8 @@ export type StatRow = {
   value: string | number
   delta?: Delta
   bar?: { value: number; max: number }
+  /** The value is a time or an id: drawn in the mono face with tabular numerals. */
+  mono?: boolean | undefined
 }
 
 /** An `undefined` field is an absent one, so a maybe-value passes straight. */

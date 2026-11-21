@@ -55,6 +55,8 @@ export type MeterSpec = {
   max: number
   zones?: readonly [MeterZone, MeterZone, ...MeterZone[]]
   format?: (v: number) => string
+  /** Words after the value that name it on screen: "spent", "of 150 listed". `label` stays for assistive tech. */
+  caption?: string
 }
 
 // ---- A list joined to a chart's focus -----------------------------------------------------
