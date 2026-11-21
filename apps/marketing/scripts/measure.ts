@@ -182,6 +182,12 @@ const further = (p: PageNumbers | undefined): number =>
   p === undefined ? 0 : p.moduleJsGzip - p.runtimeGzip;
 const islandPage = measured.find((p) => p.route === "/charts/");
 const mdxPage = measured.find((p) => p.route === "/guides/islands-in-mdx/");
+if (islandPage === undefined || mdxPage === undefined) {
+  console.error(
+    "the island pages /charts/ and /guides/islands-in-mdx/ must be built: the island budgets read them",
+  );
+  process.exit(1);
+}
 const numbers: Budgets = {
   staticModuleJsGzip: Math.max(0, ...statics.map((p) => p.moduleJsGzip)),
   inlineJsGzip: Math.max(0, ...measured.map((p) => p.inlineJsGzip)),
