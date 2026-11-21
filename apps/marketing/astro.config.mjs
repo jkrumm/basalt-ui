@@ -3,7 +3,7 @@ import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import { basaltAstro } from "basalt-ui/astro";
 import { defineConfig } from "astro/config";
-import guideStaticCode from "./plugins/guide-static-code.mjs";
+import { guideStaticCode } from "./plugins/guide-static-code.mjs";
 
 export default defineConfig({
   site: "https://basalt-ui.com",
