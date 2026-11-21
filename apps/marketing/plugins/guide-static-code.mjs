@@ -22,7 +22,7 @@ const isEcCopy = (node) =>
     (child) => child.tagName === "button" && child.properties?.dataCode !== undefined,
   );
 
-const guideStaticCode = {
+const hastPlugin = {
   name: "basalt-guide-static-code",
   element: {
     filter: ["script", "div"],
@@ -33,12 +33,12 @@ const guideStaticCode = {
   },
 };
 
-export default function guideStaticCodeIntegration() {
+export function guideStaticCode() {
   return {
     name: "basalt-guide-static-code",
     hooks: {
       "astro:config:setup": ({ config }) => {
-        config.markdown.processor.options.hastPlugins.push(guideStaticCode);
+        config.markdown.processor.options.hastPlugins.push(hastPlugin);
       },
     },
   };
