@@ -48,8 +48,8 @@ function XLabels({ labels }: { labels: NonNullable<StatCardProps['xLabels']> }):
 const BODY_HEIGHT = {
   plain: 'h-15',
   sub: 'h-20 @max-narrow:h-15',
-  chart: 'h-[calc(var(--chart-h,72px)+68px)]',
-  both: 'h-[calc(var(--chart-h,72px)+88px)] @max-narrow:h-[calc(var(--chart-h,72px)+68px)]',
+  chart: 'h-[calc(var(--chart-h)+68px)]',
+  both: 'h-[calc(var(--chart-h)+88px)] @max-narrow:h-[calc(var(--chart-h)+68px)]',
 } as const
 
 const bodyHeight = (hasSub: boolean, hasChart: boolean): string =>
@@ -105,9 +105,7 @@ export function StatCard(props: StatCardProps): ReactElement {
         <Inset
           className={cn('flex flex-col', bodyHeight(sub !== undefined, chart !== undefined))}
           style={
-            props.chartHeight === undefined
-              ? undefined
-              : ({ '--chart-h': `${chartHeight}px` } as CSSProperties)
+            chart === undefined ? undefined : ({ '--chart-h': `${chartHeight}px` } as CSSProperties)
           }
         >
           <CardPhase
@@ -164,10 +162,11 @@ export function StatCard(props: StatCardProps): ReactElement {
                 {chart !== undefined && (
                   <div
                     data-slot="stat-chart"
-                    className="relative z-20 mt-2 h-[var(--chart-h,72px)] shrink-0 overflow-clip"
+                    className="relative z-20 mt-2 h-(--chart-h) shrink-0 overflow-clip"
                   >
                     {chart({
-                      height: xLabels === undefined ? chartHeight : chartHeight - LABEL_ROW,
+                      height:
+                        xLabels === undefined ? chartHeight : Math.max(0, chartHeight - LABEL_ROW),
                       phase: box.phase,
                     })}
                     {xLabels !== undefined && <XLabels labels={xLabels} />}
