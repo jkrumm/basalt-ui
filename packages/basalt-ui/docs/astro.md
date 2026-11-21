@@ -87,7 +87,7 @@ const faq = {
   mainEntity: questions.map((q) => ({
     '@type': 'Question',
     name: q.question,
-    acceptedAnswer: { '@type': 'Answer', text: q.answer },
+    acceptedAnswer: { '@type': 'Answer', text: [q.answer].flat().join('\n\n') },
   })),
 }
 ---
