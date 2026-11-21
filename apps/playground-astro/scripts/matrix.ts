@@ -94,7 +94,7 @@ function modeOf(m: ModeResult & { further: number }): ModeVerdict {
   }
 }
 
-export const kb = (n: number): string => (n === 0 ? '0' : `${(n / 1024).toFixed(1)} kB`)
+const kb = (n: number): string => (n === 0 ? '0' : `${(n / 1024).toFixed(1)} kB`)
 
 function worst(views: Record<View, ViewVerdict>): string {
   const [view, p] = Object.entries(views).toSorted((a, b) => b[1].changed - a[1].changed)[0]!
@@ -155,7 +155,7 @@ export function decide(
 }
 
 /** Every exported component of the package: the PascalCase names of the export-surface shards, constants excluded. */
-export async function exportedParts(shards: string): Promise<string[]> {
+async function exportedParts(shards: string): Promise<string[]> {
   const out = new Set<string>()
   for (const f of (await readdir(shards)).sort()) {
     const names = JSON.parse(await readFile(join(shards, f), 'utf8')) as string[]

@@ -2,7 +2,7 @@
 import type { Account, Snapshot } from './fixture'
 
 /** A reading older than this is stale: its use and its forecast are not trusted. */
-export const STALE_AFTER_MS = 2 * 3_600_000
+const STALE_AFTER_MS = 2 * 3_600_000
 
 export type Route = 'next' | 'open' | 'fills' | 'closed' | 'stale'
 

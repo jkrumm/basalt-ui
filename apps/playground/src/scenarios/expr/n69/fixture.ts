@@ -151,8 +151,6 @@ const none = (): readonly Account[] =>
     set('birch', { weekUse: 100, fullAt: '2026-11-17T21:30:00Z', projectedAtReset: 100 }),
   )
 
-export const FIXTURE_NAMES = ['quiet', 'extreme', 'none'] as const
-
 export function snapshotFor(fixture: string | undefined): Snapshot {
   if (fixture === 'quiet') return { now: NOW, accounts: quiet() }
   if (fixture === 'extreme') return { now: NOW, accounts: extreme() }

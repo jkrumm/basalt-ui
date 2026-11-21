@@ -7,7 +7,7 @@ const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
 
 /** A mailbox with no successful sync for this long is stalled. */
-export const STALL_AFTER_MS = HOUR
+const STALL_AFTER_MS = HOUR
 
 export type Fixture = 'rest' | 'calm' | 'backlog'
 
@@ -167,13 +167,13 @@ function backlog(): Mailbox[] {
   )
 }
 
-export function mailboxesOf(fixture: Fixture): Mailbox[] {
+function mailboxesOf(fixture: Fixture): Mailbox[] {
   if (fixture === 'calm') return calm()
   if (fixture === 'backlog') return backlog()
   return rest()
 }
 
-export function rowOf(m: Mailbox): MailboxRow {
+function rowOf(m: Mailbox): MailboxRow {
   const silentMs = m.lastSuccessAt === null ? null : NOW - m.lastSuccessAt
   const state: SyncState =
     silentMs === null ? 'never' : silentMs > STALL_AFTER_MS ? 'stalled' : 'syncing'

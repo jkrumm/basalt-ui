@@ -11,7 +11,7 @@ export type JobStatus = 'success' | 'failed' | 'queued' | 'running'
 export type Job = { id: string; app: App; tag: string; status: JobStatus; startedAt: string }
 
 /** The fixture names a page `?fixture=` knows; anything else draws the default list. */
-export const FIXTURES = ['clean', 'storm'] as const
+const FIXTURES = ['clean', 'storm'] as const
 /** The heat grid's last row: every app's jobs of one day added up. */
 export const ALL = 'all'
 
@@ -19,7 +19,7 @@ export type FixtureName = (typeof FIXTURES)[number]
 
 const DAY_MS = 86_400_000
 const FIRST_DAY = Date.UTC(2026, 10, 7)
-export const DAY_COUNT = 14
+const DAY_COUNT = 14
 export const DAYS: readonly string[] = Array.from({ length: DAY_COUNT }, (_, i) =>
   new Date(FIRST_DAY + i * DAY_MS).toISOString().slice(0, 10),
 )

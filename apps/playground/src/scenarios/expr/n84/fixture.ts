@@ -17,7 +17,7 @@ export const WINDOW_DAYS = 30
 const FIRST_DAY = Date.UTC(2026, 8, 22)
 /** Day index of the gateway cutover, 5 Nov: the team key should bill nothing from here on. */
 export const CUTOVER_INDEX = 44
-export const MODELS: readonly ModelId[] = ['atlas-large', 'atlas-fast', 'nova-code', 'lumen-embed']
+const MODELS: readonly ModelId[] = ['atlas-large', 'atlas-fast', 'nova-code', 'lumen-embed']
 
 export const dayAt = (index: number): string =>
   new Date(FIRST_DAY + index * 86_400_000).toISOString().slice(0, 10)

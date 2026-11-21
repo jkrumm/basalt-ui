@@ -39,7 +39,7 @@ export type Summary = {
 }
 
 /** A rise under this multiple is not growth: the month ran at the usual level. */
-export const GROWTH_FLOOR = 1.25
+const GROWTH_FLOOR = 1.25
 
 export function summarize(wallets: readonly Wallet[]): Summary {
   const named = wallets.filter((w) => w.kind !== 'Small callers')

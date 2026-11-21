@@ -32,14 +32,14 @@ export type Row = {
   medianHours: number | null
 }
 
-export const LOOPS: readonly { id: LoopId; name: string; hasPassRecord: boolean }[] = [
+const LOOPS: readonly { id: LoopId; name: string; hasPassRecord: boolean }[] = [
   { id: 'lint', name: 'Lint drift', hasPassRecord: true },
   { id: 'flaky', name: 'Flaky tests', hasPassRecord: true },
   { id: 'dead', name: 'Dead code', hasPassRecord: false },
   { id: 'docs', name: 'Docs drift', hasPassRecord: false },
 ]
 
-export const WINDOW_LABEL: Readonly<Record<WindowId, string>> = {
+const WINDOW_LABEL: Readonly<Record<WindowId, string>> = {
   '7d': '7 days',
   '30d': '30 days',
 }

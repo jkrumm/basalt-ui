@@ -153,7 +153,7 @@ function build(): Sample[] {
   return out
 }
 
-export const SAMPLES: readonly Sample[] = build()
+const SAMPLES: readonly Sample[] = build()
 
 /** One model in one preset, over its four samples. */
 export type Candidate = {

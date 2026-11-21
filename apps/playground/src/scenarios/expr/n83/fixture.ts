@@ -34,7 +34,7 @@ export function fixtureKey(name: string | undefined): FixtureName {
 }
 
 /** The batch that carries most of one week's cost: Wed 4 Nov, 03:00 in the owner's zone. */
-export const BATCH_DAY = '2026-11-04'
+const BATCH_DAY = '2026-11-04'
 
 const TOOLS = ['Claude Code', 'Codex', 'OpenCode', 'Hermes'] as const
 

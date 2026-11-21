@@ -74,7 +74,7 @@ function mulberry32(seed: number): () => number {
 
 const clamp = (v: number): number => Math.min(99, Math.max(50, v))
 
-export function kindOf(
+function kindOf(
   s: Pick<Submission, 'first' | 'second' | 'firstConf' | 'secondConf' | 'held'>,
 ): Kind {
   if (!s.held && (s.first === 'spam' || s.second === 'spam')) return 'delivered'
