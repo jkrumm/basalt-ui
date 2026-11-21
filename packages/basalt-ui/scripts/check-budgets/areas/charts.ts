@@ -68,10 +68,10 @@ export const rows: readonly RowDef[] = [
     // 129000 -> 132100 (Issue 2602): 131978 B measured, +~3.1 KB gz for the label-width table the engine now
     // measures its text with on the server and in the browser alike, so the server picture's gutters are the
     // hydrated ones (Astro matrix) and a late webfont no longer re-lays the plot.
-    // 132100 -> 134200 (Issue 2680): 134098 B measured, +~2.0 KB gz over the cap for the bar values kept at 390 and
-    // the captions kept off bars and dots, the dots' sideways step, the end labels dropped where a line strikes them,
-    // the chip dropped over a tick and the ink-step bars' recede, the kit fixes of expression cycle 16.
-    ceiling: 134200,
+    // 132100 -> 134000 (Issue 2680): 133930 B measured, +~1.9 KB gz over the cap for the bar values kept at 390 and
+    // the captions kept off bars and dots, the dots' sideways step, the chip dropped over a tick and the ink-step
+    // bars' recede, the kit fixes of expression cycle 16.
+    ceiling: 134000,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -96,9 +96,9 @@ export const raises: Raises = {
   'charts-three-kind': [
     {
       from: 132100,
-      to: 134200,
+      to: 134000,
       consumer:
-        "the kit fixes of expression cycle 16 (Issue 2680): n76's hourly values and n70's '100 %' dropped at 390, n64's total lost under a caption, n72's dots solid and captioned over, n79's end labels struck by lines, and n80's x chip over its own tick",
+        "the kit fixes of expression cycle 16 (Issue 2680): n76's hourly values and n70's '100 %' dropped at 390, n64's total lost under a caption, n72's dots solid and captioned over, and n80's x chip over its own tick",
       repo: 'basalt-ui',
     },
     {
