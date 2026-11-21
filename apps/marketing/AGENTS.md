@@ -26,6 +26,9 @@ works here, so a shortcut taken on this site becomes theirs. Root `AGENTS.md` ho
   with no JavaScript; `DataTable` and `Chart` are the package's `basalt-ui/astro/mdx/*.astro` tags, added to
   `components` by the page. `/guides/interactive-content` is held at zero module JavaScript (it is not in
   `SCRIPTED`); `/guides/islands-in-mdx` carries the two islands.
+- A fence in a guide is highlighted by Starlight's expressive-code, whose copy-button module script
+  `plugins/guide-static-code.mjs` removes from `src/guides/` pages (the site's `SiteCodeBlock` button stays);
+  the docs keep it. The integration must follow `starlight()` in `integrations`.
 
 ## Rules for a page
 
