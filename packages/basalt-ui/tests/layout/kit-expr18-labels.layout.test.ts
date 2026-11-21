@@ -43,6 +43,40 @@ const plots = (page: LayoutPage): Promise<{ x: number; width: number }[]> =>
     ),
   )
 
+const texts = (page: LayoutPage) =>
+  page.raw.evaluate(() => {
+    const svg = document.querySelector('[data-testid="k18-panes"] svg.ts-chart')!
+    const o = svg.getBoundingClientRect()
+    return [...svg.querySelectorAll('text')].map((t) => {
+      const r = t.getBoundingClientRect()
+      return {
+        key: t.getAttribute('data-ts-key') ?? '',
+        text: t.textContent ?? '',
+        l: r.left - o.left,
+        r: r.right - o.left,
+        t: r.top - o.top,
+        b: r.bottom - o.top,
+      }
+    })
+  })
+
+layout('bar values and y ticks', () => {
+  for (const viewport of [WIDE, PHONE]) {
+    test(`${viewport.name}: no value label shares a row with a tick label it would read as one string with (n91)`, async () => {
+      const all = await texts(await open(viewport))
+      const ticks = all.filter((m) => m.key.startsWith('y-tick-label:'))
+      const values = all.filter((m) => m.key.startsWith('bar-values-'))
+      expect(values.length).toBeGreaterThan(0)
+      for (const value of values)
+        for (const tick of ticks) {
+          const sameRow = value.t < tick.b && tick.t < value.b
+          if (sameRow)
+            expect(value.l - tick.r, `${value.text} beside ${tick.text}`).toBeGreaterThanOrEqual(48)
+        }
+    })
+  }
+})
+
 for (const viewport of [WIDE, PHONE]) {
   layout(`stacked panes of one card, ${viewport.name}`, () => {
     test('two panes with different y labels share one plot x and width, so a date is on one x (n91)', async () => {

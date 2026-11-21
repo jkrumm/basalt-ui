@@ -12,7 +12,7 @@ type Day = { at: Date; spend: number; cache: number | null }
 const DAY_MS = 86_400_000
 const START = Date.UTC(2026, 9, 23)
 const SPEND = [
-  0.04, 0.09, 0.16, 0.33, 0.21, 0.12, 0.07, 0.19, 0.28, 0.14, 0.06, 0.1, 0.22, 0.31, 0.17,
+  0.365, 0.09, 0.16, 0.04, 0.21, 0.12, 0.07, 0.19, 0.28, 0.14, 0.06, 0.1, 0.22, 0.31, 0.38,
 ]
 const DAYS: readonly Day[] = SPEND.map((spend, i) => ({
   at: new Date(START + i * DAY_MS),
