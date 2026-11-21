@@ -25,7 +25,7 @@
 - **(d) The repo's gate.** The lead ran the quality matrix on the six routes alone (`-t 'expr-n(8[7-9]|9[0-2])'`, in a slot, 176 s): 12 of 12 passed in round 0 and again after round 1. No chip and no moving plot, so `apps/playground/src/cycle/expression-18/` holds no `known.ts`. `make check-fast` ran once on the round-0 tree after every builder had returned: format, lint, types, unit tests and `scenarios.test.ts` passed, and the factory's test-slot run limit killed the full quality matrix after 318 tests (bailed on n50, 'Browser closed') before it reached the trial routes, as in cycle 17. The six-route run is the matrix verdict. Filed as Issue 2776 (Issue 2713 took cycle 17's and closed).
 - **(e) Reviewer notes.** The prompt keeps cycle 17's lines on the two sanctioned colour forms, the LIST approach, the REACH, KEYDOWN, FULL and BOX lines and the shipped fields, adds what the cycle-17 kit and contract rows shipped and the seven open gaps, and tells each reviewer what its LIST, REACH and SWEEP lines hovered. No reviewer marked down a colour form.
 - **(f) The keyboard frame.** The builder prompt names no keys state. **6 of 6** builders asked for a keys frame unasked; n92's page has no focus host, so its frame showed nothing to step (its F7 and K3 findings).
-- **(g) The shared series file.** n88, n89, n90 and n91 appended a group under their case id; n87 and n92 added none. No name clashed and no group was lost; the lead ran oxfmt on the file once all were back.
+- **(g) The shared series file.** n88, n89, n90 and n91 appended a group under their case id; n87 and n92 added none. No name clashed and no group was lost, but n88's insert dropped a space in the N71 group's comment, which the lead restored; the lead ran oxfmt on the file once all were back.
 - **(h) The bank.** See Filing: six new cases.
 - **(i) Scores** are reported on all items, on F, K and X without the R items and the cap, and on F and K alone, each recomputed from the item table; all seven reviews' totals matched, `n/a` items left out.
 - **(j) The full-page 390 frame** is kept, and the sweep scrolls its pair into view. n87 and n92 have no two adjacent marks, so they have no sweep; their reviewers scored X4 `n/a`, as nothing on either page dims.
@@ -61,7 +61,7 @@
 
 The pass mark is 80 on all items, the rendering cap included. n87 scored 83 before the cap in round 0, capped by R2 1 for its cause text cut at 390, a headline whose spaces collapse and an empty panel that packs its columns. Round 1 passed it at 88: its two causes fit one line at 390, its summary draws its own loading line and its own error with a Retry, its empty panel keeps the cause in view, and two meters give the backed-up and listed shares. R4 is `n/a` on all six cases, X3 and X4 on n87 and n92, X3 on n89, R1 on n89, n90 and n92.
 
-Glue is the builder's own count of geometry, ticks, label placement, measuring, and focus or readout lines; it excludes fixtures. n92's ~45 is its zone geometry (~18), state and miss ordering (~20) and the unmeasured row (~7). n89's ~30 is an outlier cap, domain headroom, three listed date ticks and a zero-run zone (~12). n87's round 1 added ~6 lines of skeleton nodes and ~12 of a summary error with its Retry, both behind markers. No build placed a tick by measure or measured text, and no build hand-wrote an `<svg>`. Markers (`// cycle-expression-18:`) name what the kit lacked:
+Glue is the builder's own count of geometry, ticks, label placement, measuring, and focus or readout lines; it excludes fixtures. n92's ~45 is its zone geometry (~18), state and miss ordering (~20) and the unmeasured row (~7). n89's ~30 is an outlier cap, domain headroom, three listed date ticks and a zero-run zone (~12). n87's round-1 report counts ~18 in all and names among them a summary error with its Retry (~12) and two skeleton nodes (~6), both behind markers; the count is the builder's. No build placed a tick by measure or measured text, and no build hand-wrote an `<svg>`. Markers (`// cycle-expression-18:`) name what the kit lacked:
 
 - n87: a summary fact cannot be set in mono; (round 1) the summary's loading skeleton is taller than its line, and its error arm draws nothing;
 - n89: no outlier cap, no headroom on an auto domain, no start, middle and end ticks for a day axis, no zone from a run of zeros;
@@ -100,7 +100,7 @@ Round 0 against cycle 17:
 - The minimum held at 79 on all items, one case capped, which passed in one round; on F, K and X it fell to 82 and on F and K it held at 83 (n92).
 - Three items scored 1: n87 K2, n87 R2 and n92 F7. There is still no P1.
 - The glue median fell from 29 to 25; no build hand-wrote an `<svg>`.
-- The R items cost 3 points, all R2 (cycle 17: 7). X1, X2 and F6 lost a point on all six cases; F2, F8, K4, K6 and R3 held 3 on all six.
+- The R items cost 4 points, all R2 (cycle 17: 7). X1, X2 and F6 lost a point on all six cases; F2, F8, K4, K6 and R3 held 3 on all six.
 
 ## Cases
 
