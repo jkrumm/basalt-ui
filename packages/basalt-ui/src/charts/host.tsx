@@ -19,6 +19,7 @@ import type { CSSProperties, ReactElement } from 'react'
 import type { CartesianDefinition } from './core/compile'
 import {
   measuredPlots,
+  plotLeftOf,
   plotSizesOf,
   readsPlot,
   recordPlots,
@@ -42,6 +43,8 @@ export type ChartEngineProps = {
   /** The laid-out plot area of every pane after each layout, in px; fires only for a definition
    * whose `marks` read it (and once more for a read that comes after the measurement). */
   onPlot?: (sizes: PlotSizes) => void
+  /** Told where the plot starts from the chart's left edge (the y axis' margin), px, after every layout. */
+  onPlotLeft?: ((left: number) => void) | undefined
   /** The engine's focused point (pointer or arrow keys) as its datum; `null` when it leaves. */
   onFocusDatum?: ((datum: unknown) => void) | undefined
 }
@@ -78,6 +81,7 @@ export function ChartEngine({
   idPrefix,
   coarse,
   onPlot,
+  onPlotLeft,
   onFocusDatum,
 }: ChartEngineProps): ReactElement {
   useEffect(() => {
@@ -99,8 +103,10 @@ export function ChartEngine({
         const sizes = plotSizesOf(context.scene)
         recordPlots(definition, sizes)
         if (readsPlot(definition)) onPlot(sizes)
+        const left = plotLeftOf(context.scene)
+        if (left !== undefined) onPlotLeft?.(left)
       }),
-    [onPlot, definition],
+    [onPlot, onPlotLeft, definition],
   )
   const frame = useServerFrame()
   const serverHeight = useServerPass()

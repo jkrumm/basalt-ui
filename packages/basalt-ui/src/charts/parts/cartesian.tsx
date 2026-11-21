@@ -36,6 +36,7 @@ import { rowX } from '../types'
 import type { ChartMarks, ChartSeries, ChartX, PlotContext } from '../types'
 import type { CartesianChartProps, ChartZone, CustomMarks, Series } from '../contract'
 import { chartName } from '../chart-name'
+import { PaneGutterContext } from '../pane-gutter'
 import { applySeams } from '../seams'
 import { asMarks, customPlot, toChartState, toEngineSpec } from './cartesian-adapt'
 import { chartSelection, indexMap } from './cartesian-selection'
@@ -241,7 +242,16 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
     setPlot((prev) => (samePlots(prev, next) ? prev : next))
   }, [])
 
-  const { data, x, y, series, refLines, cursor, tooltip, selection, focus } = props
+  const { data, x, series, refLines, cursor, tooltip, selection, focus } = props
+  // Panes of one card share the widest y gutter unless the page fixed its own (`y.gutter`).
+  const pane = useContext(PaneGutterContext)
+  const ownGutter = props.y?.gutter !== undefined
+  const sharedGutter = ownGutter ? undefined : pane?.gutter
+  const y = useMemo(
+    () => (sharedGutter === undefined ? props.y : { ...props.y, gutter: sharedGutter }),
+    [props.y, sharedGutter],
+  )
+  const reportLeft = ownGutter ? undefined : pane?.report
   const custom = props.marks
   const hostFocus = useCursorFocus(focus, { group: cursor, x: x.value, label: ariaLabel })
   const ownsKeys = hostFocus !== undefined
@@ -553,6 +563,7 @@ export function CartesianPlot<D>(props: CartesianChartProps<D> & PlotOptions): R
               idPrefix={idPrefixOf(chartId)}
               coarse={coarse}
               onPlot={onPlot}
+              onPlotLeft={reportLeft}
             />
           </FocusWrap>
         ) : (
