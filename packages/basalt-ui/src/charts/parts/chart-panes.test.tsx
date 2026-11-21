@@ -5,7 +5,7 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
 import type { Box } from '../../core/ports'
-import { ChartPanes, paneHeights, panesFloorCss, panesFloorPx } from './chart-panes'
+import { ChartPanes, paneHeights, panesFloorPx } from './chart-panes'
 
 const host = (markup: string): HTMLElement => {
   const el = document.createElement('div')
@@ -49,9 +49,8 @@ describe('ChartPanes', () => {
     ])
   })
 
-  test('the floor of n panes is n times 160 px with 4 px gaps, in px and in rem', () => {
+  test('the floor of n panes is n times 160 px with 4 px gaps', () => {
     expect([0, 1, 2, 5].map(panesFloorPx)).toEqual([0, 160, 324, 816])
-    expect([0, 1, 2, 5].map(panesFloorCss)).toEqual(['0rem', '10rem', '20.25rem', '51rem'])
   })
 
   test('five equal panes in a 288 px box are held at the floor and the group grows', () => {

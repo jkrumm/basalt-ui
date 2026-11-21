@@ -4,20 +4,13 @@ import type { ChartPane } from '../contract'
 import { ServerFrameContext, useServerFrame } from '../sizing'
 
 /** A pane's floor: the `short` chart box (`h-40`), the smallest chart the card draws alone. */
-const PANE_FLOOR_PX = 160
-/** The space between two panes (`gap-1`). */
-const PANE_GAP_PX = 4
-
-/** The height `count` panes need at their floors with the gaps between them, in px. */
-export const panesFloorPx = (count: number): number =>
-  count <= 0 ? 0 : count * PANE_FLOOR_PX + (count - 1) * PANE_GAP_PX
+const FLOOR = 160
 
 /**
- * The same floor as a CSS length for the card's chart box: `h-40` and `gap-1` are spacing steps, so the
- * floor is in rem and keeps the root size as the classes do.
+ * The height `count` panes need at their floors with the 4 px gaps (`gap-1`) between them, in px. The
+ * card sets it in rem (px / 16), as `h-40` and `gap-1` are, so it keeps the root size as they do.
  */
-export const panesFloorCss = (count: number): string =>
-  `${count <= 0 ? 0 : (count * 40 + (count - 1)) / 4}rem`
+export const panesFloorPx = (count: number): number => Math.max(0, count * (FLOOR + 4) - 4)
 
 /** Calls a pane's slot as a component, so a throw lands in the card's boundary and hooks keep their order. */
 function PaneSlot({ chart, phase }: { chart: BoxSlot; phase: Box['phase'] }): ReactNode {
@@ -34,26 +27,24 @@ const shareOf = (weight: number | undefined): number =>
  * what is left by weight, until no share falls under. The group is never shorter than its floors.
  */
 export function paneHeights(outer: number, weights: readonly number[]): number[] {
-  const space = Math.max(outer, panesFloorPx(weights.length)) - PANE_GAP_PX * (weights.length - 1)
   const held = weights.map(() => false)
   for (;;) {
-    const free = weights.reduce((sum, w, i) => (held[i] ? sum : sum + w), 0)
-    const rest = space - PANE_FLOOR_PX * held.filter(Boolean).length
-    const heights = weights.map((w, i) =>
-      held[i] ? PANE_FLOOR_PX : free === 0 ? PANE_FLOOR_PX : (rest * w) / free,
-    )
-    const under = heights.findIndex((h, i) => !held[i] && h < PANE_FLOOR_PX)
-    if (under === -1) return heights
-    heights.forEach((h, i) => {
-      if (h < PANE_FLOOR_PX) held[i] = true
-    })
+    let rest = Math.max(outer, panesFloorPx(weights.length)) - 4 * (weights.length - 1)
+    let free = 0
+    for (const [i, w] of weights.entries()) {
+      if (held[i]) rest -= FLOOR
+      else free += w
+    }
+    const heights = weights.map((w, i) => (held[i] || free === 0 ? FLOOR : (rest * w) / free))
+    if (heights.every((h) => h >= FLOOR)) return heights
+    for (const [i, h] of heights.entries()) if (h < FLOOR) held[i] = true
   }
 }
 
 /**
  * The panes of a `ChartCard` (`panes`): a column that fills the chart box, each pane taking its share
  * by `weight` above a 160 px floor (`h-40`, the `short` box) and its slot called with `height: 'fill'`,
- * 4 px apart. The card grows its box to hold every floor ({@link panesFloorCss}), so five panes at 390
+ * 4 px apart. The card grows its box to hold every floor ({@link panesFloorPx}), so five panes at 390
  * stay readable without a floor in the page. Not exported: `ChartCard` is the one way in, so
  * `./charts` keeps its 13 value symbols (docs/v3/ARCHITECTURE.md section 3).
  */
