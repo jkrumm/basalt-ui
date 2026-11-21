@@ -222,6 +222,21 @@ describe('a value of zero or below on a log y', () => {
     })
   })
 
+  test('a right-axis rule at zero stays on its linear axis', () => {
+    const right: Series<Row> = { ...price, key: 'cost', label: 'Cost', axis: 'right' }
+    const html = renderToString(
+      <CartesianChart
+        label="Both"
+        data={rows}
+        x={x}
+        series={[price, right]}
+        y={{ scale: 'log' }}
+        refLines={[{ value: 0, axis: 'right', color: pair('line') }]}
+      />,
+    )
+    expect(html).toContain('ref-0')
+  })
+
   test('a right-axis series keeps its linear scale and its zeros', () => {
     const right: Series<Row> = { ...price, key: 'cost', label: 'Cost', axis: 'right' }
     expect(() =>

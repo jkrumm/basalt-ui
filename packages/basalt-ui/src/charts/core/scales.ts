@@ -11,6 +11,7 @@ import { scalePoint } from '@tanstack/charts/scales/point'
 import { scaleUtc } from '@tanstack/charts/scales/time'
 import type { ChartPositionScaleOptions } from '@tanstack/charts/types/core'
 import { scaleLog } from 'd3-scale'
+import { reportOnce } from '../../common/validate'
 import { logExtent, logFraction, logHalfStep } from '../axis-gaps'
 import type { AxisConfig, ChartSeries, ChartX, XZoneSpec } from '../types'
 
@@ -56,6 +57,11 @@ function resolveLogDomain<T>(
   const positive = (v: number | null): v is number => v !== null && Number.isFinite(v) && v > 0
   if (Array.isArray(domain) && domain.every(positive) && domain[0] < domain[1])
     return domain as readonly [number, number]
+  if (Array.isArray(domain))
+    reportOnce(
+      'CartesianChart',
+      "[basalt] CartesianChart: a log y.domain needs positive bounds, min below max; using the data's extent",
+    )
   if (typeof domain === 'function') {
     const given = domain(data, series)
     if (given.every(positive) && given[0] < given[1]) return given

@@ -2520,7 +2520,9 @@ export function compileCartesian<T, X extends ChartX>(
         const frame = { width: ctx.plotWidth, height: ctx.plotHeight }
         return [
           ...ctx.xCaptions.map((b) => captionPx(b, frame)),
-          ...ctx.claimed.map((b) => pxBox(b, axes.left.domain, frame)),
+          ...ctx.claimed.map((b) =>
+            pxBox(b, warpFor(axes.left.log).domain(axes.left.domain), frame),
+          ),
           ...lineBoxes(frame),
           ...spreadDotBoxes(frame),
           ...refRuleBoxes(frame),
