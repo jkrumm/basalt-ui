@@ -7,7 +7,8 @@
  * the rest run in chunks of CHUNK files, so no process carries the suite. Same files, same bunfig and preload,
  * same assertions. The processes run one after another by default (the point is the peak); on the factory's step
  * host, which grants a step its cores and memory (FACTORY_STEP_CORES, FACTORY_STEP_MEM_MIB), they run in parallel
- * up to what the grant holds (scripts/unit-parallelism.ts).
+ * up to what the grant holds and while the sum of their estimated peaks stays under 2 GiB, the step's peak budget
+ * (scripts/unit-parallelism.ts; UNIT_PEAK_MIB overrides).
  *
  * A failed run stops: no further process starts and the running ones end (a slot minute spent on a run that already
  * failed is lost either way), and the files of the failed process are remembered in node_modules/.cache, so the next
@@ -24,23 +25,28 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 
 import { failedFirst, parseFailedFiles } from './unit-order'
-import { parallelism } from './unit-parallelism'
+import { parallelism, peakBudgetMib, pickNext } from './unit-parallelism'
 import { changedSince, selectUnit } from './unit-select'
 
 /**
- * Files whose own process peaked above 800 MiB (measured alone, 2026-11-17); two of them in one chunk stacked to
- * 2.4 GiB. A rename fails loudly rather than going unnoticed.
+ * Files whose own process peaked above 700 MiB, each with that peak in MiB rounded up (measured alone, 2026-11-21; two
+ * of them in one chunk stacked to 2.4 GiB). The cost lets a parallel run keep the sum of what runs under its budget
+ * (scripts/unit-parallelism.ts). A rename fails loudly rather than going unnoticed.
  */
-const HEAVY = [
-  'packages/basalt-ui/scripts/check-agent-doc-drift.test.ts',
-  'packages/basalt-ui/scripts/gen-docs.test.ts',
-  'packages/basalt-ui/scripts/gen-llms-assert.test.ts',
-  'packages/basalt-ui/scripts/gen-llms.test.ts',
-  'packages/basalt-ui/scripts/gen-ui.test.ts',
-  'packages/basalt-ui/scripts/migrating-imports.test.ts',
-  'packages/basalt-ui/src/page/define-overlays.test.tsx',
-  'tests/agent-doc-drift.test.ts',
-]
+const HEAVY_MIB: Record<string, number> = {
+  'packages/basalt-ui/scripts/check-agent-doc-drift.test.ts': 1100,
+  'packages/basalt-ui/scripts/gen-docs.test.ts': 900,
+  'packages/basalt-ui/scripts/gen-llms-assert.test.ts': 1600,
+  'packages/basalt-ui/scripts/gen-llms.test.ts': 1700,
+  'packages/basalt-ui/scripts/gen-ui.test.ts': 1450,
+  'packages/basalt-ui/scripts/migrating-imports.test.ts': 750,
+  'packages/basalt-ui/src/page/define-overlays.test.tsx': 900,
+  'tests/agent-doc-drift.test.ts': 1600,
+}
+const HEAVY = Object.keys(HEAVY_MIB)
+
+/** A chunk of 40 files peaked at 870 MiB at most (measured 2026-11-21, the playground matrix chunk). */
+const CHUNK_MIB = 900
 
 const CHUNK = 40
 
@@ -127,7 +133,18 @@ const groups = failedFirst(
 console.log(`unit-test: ${all.length} files in ${groups.length} bun test processes`)
 
 const width = Math.min(parallelism(process.env), groups.length)
-console.log(`unit-test: ${width === 1 ? 'one process at a time' : `${width} processes at a time`}`)
+const budgetMib = peakBudgetMib(process.env)
+console.log(
+  `unit-test: ${width === 1 ? 'one process at a time' : `${width} processes at a time, their estimated cost under ${budgetMib} MiB`}`,
+)
+
+/** A group's estimated peak: its heavy file alone, else the largest measured chunk. */
+function costMib(group: string[]): number {
+  const [only] = group
+  return group.length === 1 && only !== undefined && only in HEAVY_MIB
+    ? (HEAVY_MIB[only] as number)
+    : CHUNK_MIB
+}
 
 const running = new Set<ReturnType<typeof Bun.spawn>>()
 const killed = new Set<ReturnType<typeof Bun.spawn>>()
@@ -183,19 +200,39 @@ async function run(index: number, group: string[]): Promise<boolean> {
 }
 
 let failed = 0
-let next = 0
-await Promise.all(
-  Array.from({ length: width }, async () => {
-    while (next < groups.length && !stopped) {
-      const index = next++
-      const group = groups[index] as string[]
-      if (await run(index, group)) continue
-      failed++
-      failedFiles.push(...group)
-      stop()
+// The groups not started yet, in order; one starts when a slot of the width is free and its cost fits the budget.
+const pending = groups.map((group, index) => ({ group, index, cost: costMib(group) }))
+let runningMib = 0
+let runningCount = 0
+await new Promise<void>((done) => {
+  function fill(): void {
+    while (!stopped && runningCount < width) {
+      const at = pickNext({
+        pending: pending.map((entry) => entry.cost),
+        runningMib,
+        budgetMib,
+        running: runningCount,
+      })
+      if (at === null) break
+      const [entry] = pending.splice(at, 1)
+      if (!entry) break
+      runningMib += entry.cost
+      runningCount++
+      void run(entry.index, entry.group).then((ok) => {
+        runningMib -= entry.cost
+        runningCount--
+        if (!ok) {
+          failed++
+          failedFiles.push(...entry.group)
+          stop()
+        }
+        fill()
+      })
     }
-  }),
-)
+    if (runningCount === 0) done()
+  }
+  fill()
+})
 
 if (failed > 0) {
   mkdirSync('node_modules/.cache', { recursive: true })

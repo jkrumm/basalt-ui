@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { MAX_PARALLEL, parallelism } from './unit-parallelism'
+import {
+  DEFAULT_PEAK_MIB,
+  MAX_PARALLEL,
+  parallelism,
+  peakBudgetMib,
+  pickNext,
+} from './unit-parallelism'
 
 describe('parallelism', () => {
   test('no grant is the serial default', () => {
@@ -25,5 +31,35 @@ describe('parallelism', () => {
     expect(parallelism({ FACTORY_STEP_CORES: '64', FACTORY_STEP_MEM_MIB: '65536' })).toBe(
       MAX_PARALLEL,
     )
+  })
+})
+
+describe('peakBudgetMib', () => {
+  test('defaults to the throughput budget, UNIT_PEAK_MIB overrides', () => {
+    expect(peakBudgetMib({})).toBe(DEFAULT_PEAK_MIB)
+    expect(peakBudgetMib({ UNIT_PEAK_MIB: 'lots' })).toBe(DEFAULT_PEAK_MIB)
+    expect(peakBudgetMib({ UNIT_PEAK_MIB: '16384' })).toBe(16384)
+  })
+})
+
+describe('pickNext', () => {
+  test('nothing pending waits for nothing', () => {
+    expect(pickNext({ pending: [], runningMib: 0, budgetMib: 2048, running: 0 })).toBeNull()
+  })
+
+  test('a group starts alone whatever it costs', () => {
+    expect(pickNext({ pending: [5000, 900], runningMib: 0, budgetMib: 2048, running: 0 })).toBe(0)
+  })
+
+  test('the first pending group that fits beside the running ones starts', () => {
+    expect(pickNext({ pending: [1700, 900], runningMib: 1100, budgetMib: 2048, running: 1 })).toBe(
+      1,
+    )
+  })
+
+  test('none that fits waits', () => {
+    expect(
+      pickNext({ pending: [1700, 900], runningMib: 1700, budgetMib: 2048, running: 1 }),
+    ).toBeNull()
   })
 })

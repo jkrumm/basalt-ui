@@ -9,6 +9,35 @@ const PER_PROCESS_MIB = 1024
  */
 export const MAX_PARALLEL = 6
 
+/** What a step peaks at before the throughput loop reads it as over budget (project.yaml `budgets.peak`, 2048 MiB when unset). */
+export const DEFAULT_PEAK_MIB = 2048
+
+/**
+ * The most resident memory the processes of one run may hold together, by their estimated cost. A grant is a ceiling
+ * for the host, this is the step's own budget: 6 processes in parallel held 3.9 GiB where one at a time holds 1.7.
+ * `UNIT_PEAK_MIB` overrides it (the CI unit job, which has its own 16 GiB runner and no peak budget).
+ */
+export function peakBudgetMib(env: Readonly<Record<string, string | undefined>>): number {
+  const value = Number(env.UNIT_PEAK_MIB)
+  return Number.isFinite(value) && value >= 1 ? value : DEFAULT_PEAK_MIB
+}
+
+/**
+ * The next group to start: the first pending one whose estimated cost fits beside what already runs. One group always
+ * starts alone, whatever it costs, so a run cannot stall. Returns its index in `pending`, or null to wait.
+ */
+export function pickNext(input: {
+  pending: readonly number[]
+  runningMib: number
+  budgetMib: number
+  running: number
+}): number | null {
+  if (input.pending.length === 0) return null
+  if (input.running === 0) return 0
+  const fit = input.pending.findIndex((cost) => input.runningMib + cost <= input.budgetMib)
+  return fit === -1 ? null : fit
+}
+
 /**
  * The factory's step host grants a step its cores and memory (`FACTORY_STEP_CORES`, `FACTORY_STEP_MEM_MIB`); the
  * suite sizes itself to the smaller of the two. Neither set (the mini, CI, a bare `make test`): serial, which is

@@ -105,6 +105,7 @@ jobs:
         env:
           FACTORY_STEP_CORES: 4
           FACTORY_STEP_MEM_MIB: 16384
+          UNIT_PEAK_MIB: 16384
         run: bun scripts/unit-test.ts
 
   # The site profile's proof (apps/marketing, basalt-ui.com): build the site on the built package and
