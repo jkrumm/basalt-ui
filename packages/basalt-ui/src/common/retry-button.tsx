@@ -9,10 +9,13 @@ import classes from './retry-button.module.css'
 export function RetryButton({
   onClick,
   retrying = false,
+  label = 'Retry',
 }: {
   onClick: () => void
   /** A refetch is in flight: inert and marked busy. */
   retrying?: boolean
+  /** The button's word: a caller that reads the message table passes `home.retry`; this leaf imports none. */
+  label?: string
 }): ReactElement {
   return (
     <button
@@ -23,7 +26,7 @@ export function RetryButton({
       {...(retrying && { 'aria-busy': true })}
       onClick={onClick}
     >
-      Retry
+      {label}
     </button>
   )
 }

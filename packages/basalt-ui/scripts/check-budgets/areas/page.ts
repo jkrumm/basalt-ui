@@ -25,13 +25,21 @@ export const rows: readonly RowDef[] = [
     // 113000 -> 114000 (v3 dock): `Dock` and the shared record-panel parts join the barrel (113303 B measured with them).
     // 114000 -> 115500 (v3 peek width): the width handle (peek-handle.tsx) joins the barrel.
     // 115500 -> 115600 (Issue 2784): the summary's error arm says its cause and keeps a Retry.
-    ceiling: 115600,
+    // 115600 -> 115700 (Issue 2835): 115612 B measured; the summary's Retry reads `home.retry` instead of a hard-coded word.
+    ceiling: 115700,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
   'page-subpath': [
+    {
+      from: 115600,
+      to: 115700,
+      consumer:
+        "a localised app's `PageSummary` error arm (Issue 2835): its Retry printed English whatever `home.retry` said; the button now takes the message the query state prints",
+      repo: 'basalt-ui',
+    },
     {
       from: 115500,
       to: 115600,
