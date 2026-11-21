@@ -1,0 +1,21 @@
+{
+  "why": "Expression cycle 19 (docs/v3/cycles/expression-19.md) has two `rubric` findings on one shape, and one item charged three ways. An empty page with several parts whose first part states the cause and the action and whose other parts keep a short caption or a held dash, as states.md teaches ('a short caption that leaves the cause to the first'), scored K2 3 on n93 ('thin but the page says it once') and K2 2 on n94 (.14, 'Nothing to list.') and n98 (.36, a bare dash); the K2 row says 'empty says what is missing and what to do' with no page-level reading. And a kit hover chip over or beside a tick label was charged under F6 (n95), F7 (n97) and R2 (n96), and not at all on n93, n94 and n98, where builders saw it.",
+  "what": "Rubric text that gives one reading for an empty page with several parts under K2 and names the item that charges a hover chip over a tick, with the shipped reviewer agreeing.",
+  "owns": [
+    "docs/v3/expression/rubric.md",
+    "the shipped reviewer's text in packages/basalt-ui/agent/** (the design reviewer subagent and its references), through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/cases.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) K2: on an empty page where one part states what is missing and what to do, the other parts meet K2 with a short caption or a held dash that leaves the cause to it; a part with no caption and no dash, or a page where no part states the cause, still costs it (n93 against n94 .14 and n98 .36). (2) A hover chip that covers or removes a tick label is charged once, under one named item, on every case whose frames show it (n95 F6, n97 F7, n96 R2; n93, n94, n98 uncharged). Rescore n94 K2 and n98 K2, and the chip's item on n93, n95, n96 and n97, on the cycle-19 last-round shots with fresh reviewers, as EXPRESSION.md § Owner calibration asks, and record the rescore.",
+  "acceptance": [
+    "rubric.md and the shipped reviewer carry both readings with the cycle-19 cases cited",
+    "A fresh rescore of n94 K2, n98 K2 and the chip's item on the four cases is recorded"
+  ],
+  "out_of_scope": "Kit, skill and case text; the trial scenarios.",
+  "proof": "The rescore reports in .evidence/v3-shots/expression-19/reports/ in the main checkout.",
+  "commits": "docs: rubric readings."
+}

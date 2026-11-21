@@ -1,0 +1,23 @@
+{
+  "why": "Expression cycle 19 (docs/v3/cycles/expression-19.md) lost 21 of 39 round-0 points to `skill` findings, two of them causes of a P2. n93's figure readout is one mono sentence that the kit cuts at 390 to '...40 min moderate, …', so the day's steps never show (R2, .8, P2), and n95's readout names only the busiest state while the four peaks sit in the live region (F7, .20). n94's band axis names 6 of 14 detectors under the default thinning although `x.ticks` as a list names the keys that matter (F6, .13, P2). X1 lost a point on 4 of 6 cases, down from 6 of 6 in cycles 17 and 18: every builder wrote a read-aloud pass, none ended with no kept line, and each lost point was a string the pass never listed (n94's '14 detectors, most noise first', n96's axis-order subtitles, n98's 'In the chart's order', n93's table note) or a repeat it named and kept (n93 .6, n94 .15, n96 .25, n98 .37). A fact the footer states is not on its mark: the ask-again detector and the too-few names (n94 .10, .11), the steps median (n93 .2), the guessed estimates (n98 .34). A mark's state is named by its look or not at all: 'Lighter bar' that reads darker in dark (n97 .29), a latest bucket at half opacity with no word (n95 .18), a highlight fill with no legend entry (n97 .32). A frame drops a slot or a cause: a subtitle only in ready, 16 px short (n97 .33), an error `PageSummary` with no message or Retry (n96 .24). A half-width table drops the columns the question needs (n93 .1 Steps and Score, n94 .16 Open Issues). Single lessons: the pill names its measure as well as its base (n97 .28); a dense series of 168 bars at 390 reads as a hash (n95 .21); four peer cards that each answer one setting are joined into one answer (n96 .26).",
+  "what": "Skill and rule text for the `skill` findings of cycle 19.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** and packages/basalt-ui/agent/rules/** (through their generators where generated)",
+    "the dogfooded copies the repo syncs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no kit change)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) The figure readout carries every measure the parts draw in a line that fits at 390: short value forms, or the readout split into period and status, never one sentence the kit cuts (n93 .8, n95 .20). (2) A band axis names the keys the answer needs with `x.ticks` as a list; default thinning is for ordered axes (n94 .13; n96's unnamed 25,600 tick). (3) The read-aloud pass lists every rendered string, subtitles and table notes included, and its last line keeps no repeat: a pass that names a repeat cuts it (n93 .6, n94 .15, n96 .25, n98 .37; X1 4 of 6). (4) A fact the footer states that belongs to one mark is also on that mark (a highlight, an opacity, a value label, a legend-only entry), and a count of named things names them where they fit (n93 .2, n94 .10, .11, n98 .34). (5) A mark's state is named by what it means, never by its look ('so far', not 'lighter'), and every fill a mark uses, a highlight included, has a legend entry (n95 .18, n97 .29, .32). (6) Every frame holds every slot it holds when ready, subtitle included, and an error `Phase` on a `PageSummary` carries its message and Retry (n96 .24, n97 .33). (7) A table that answers the question gets the width its question's columns need, or sets those columns at priority 1 (n93 .1, n94 .16). (8) Single lessons, a line each with its case: the pill names its measure and its base (n97 .28); a series denser than about one bar per 3 px at 390 is drawn as an area or merged buckets (n95 .21); peer cards that each answer one dimension of one question share a figure or a line that joins them (n96 .26).",
+  "acceptance": [
+    "The readout lesson (1) and the band-axis lesson (2) are in the skill with their cycle-19 cases cited",
+    "The read-aloud pass lists every rendered string and ends with no kept repeat, citing n93, n94, n96 and n98",
+    "Lessons (4) to (8) are in the skill or its references with their cases",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit behaviour (v3-expr-19-kit-fixes); stacked-bar fields (v3-expr-19-contract); the rubric; the trial scenarios.",
+  "proof": "The skill diff and make check.",
+  "commits": "docs: skill and rule text."
+}
