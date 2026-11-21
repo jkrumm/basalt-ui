@@ -294,19 +294,23 @@ function planEndLabels<T, X extends ChartX>(
   )
   const ranges = (i: number): readonly [number, number][] => windowRanges[i] as [number, number][]
   /** Per label, the ranges of the other series' lines under the glyphs alone: a label's own line and a rule never strike it. */
-  const rivalRanges = last.map(({ series, fraction }, i) => {
+  const inkSpans = last.map(({ series, fraction }, i): readonly [number, number] => {
     const reach = (END_LABEL_DX + series.label.length * BASALT.text.micro * RETRY_GLYPH_EM) / plotW
     const edge = END_LABEL_DX / plotW
-    const [x0, x1] =
-      anchors[i] === 'end'
-        ? [fraction - reach, fraction - edge]
-        : [fraction + edge, fraction + reach]
-    return plot.visible.flatMap((s, k) => {
-      if (s.key === series.key) return []
-      const range = yRangeWithin(obstacles[k] as RefLabelPoint[], x0, x1)
-      return range === null ? [] : [range]
-    })
+    return anchors[i] === 'end'
+      ? [fraction - reach, fraction - edge]
+      : [fraction + edge, fraction + reach]
   })
+  const rivalRanges = last.map(({ series }, i) =>
+    plot.visible.flatMap((s, k) => {
+      if (s.key === series.key) return []
+      const range = yRangeWithin(
+        obstacles[k] as RefLabelPoint[],
+        ...(inkSpans[i] as readonly [number, number]),
+      )
+      return range === null ? [] : [range]
+    }),
+  )
   /** Where the centre goes to clear the lines on `side` of `start`, stepping past each one it meets. */
   const cleared = (i: number, side: EndLabelSide, start: number): number => {
     const blockers = ranges(i)
@@ -404,7 +408,6 @@ function planEndLabels<T, X extends ChartX>(
     const perPx = (hi - lo) / (plot.plotHeight || 1)
     // Two pixels of margin each way: the caption keeps its own gap from the claimed box.
     const fraction = last[i]?.fraction ?? 0
-    const glyphs = (END_LABEL_DX + series.label.length * BASALT.text.micro * RETRY_GLYPH_EM) / plotW
     const struck = (rivalRanges[i] as [number, number][]).some(
       ([a, b]) => b > centre - half && a < centre + half,
     )
@@ -428,8 +431,8 @@ function planEndLabels<T, X extends ChartX>(
       ...(leader !== undefined && { leader }),
       ...(struck && {
         backing: {
-          fx0: anchors[i] === 'end' ? fraction - glyphs : fraction + END_LABEL_DX / plotW,
-          fx1: anchors[i] === 'end' ? fraction - END_LABEL_DX / plotW : fraction + glyphs,
+          fx0: (inkSpans[i] as readonly [number, number])[0],
+          fx1: (inkSpans[i] as readonly [number, number])[1],
           y0: lo + (centre - half) * perPx,
           y1: lo + (centre + half) * perPx,
         },
