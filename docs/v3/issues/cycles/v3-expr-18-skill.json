@@ -1,0 +1,23 @@
+{
+  "why": "Expression cycle 18 (docs/v3/cycles/expression-18.md) lost 27 of 45 round-0 points to `skill` findings, two of them P2: n92 drew four pair rows that nothing focuses (F7 1, .40; K3, .42) although `useChartFocus` hands a page that draws its own marks `focus.target` and `focus.item(i)`, and n87 wrote two cell causes that the kit cuts to one line at 390 (R2, .9), which the skill already says. X1 lost a point on 6 of 6 cases for the second cycle running although every builder ran the fact count to an empty print and wrote the read-aloud pass: the count reads the tsx, so it never sees one fact said in several words across a label, a status, a sub, a subtitle and an axis title (n87 .6, n88 .16, n89 .20, n92 .43), and three of six passes kept the empty sentence on every part, which states.md itself asks for in one line and forbids in another (n90 .25, n91 .34).",
+  "what": "Skill and rule text for every `skill` finding of cycle 18.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** and packages/basalt-ui/agent/rules/** (through their generators where generated)",
+    "the dogfooded copies the repo syncs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no kit change)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) The read-aloud pass reads the rendered 1800 text, not the source: one fact said in other words (a cell label, a status, a sub, a card subtitle, an axis title, a zone caption, a pill that restates the figure) is one fact in several slots (n87 .6, n88 .16, n89 .20, n92 .43). (2) One empty cause: states.md says both 'every part names its own empty cause' and 'put it on the container'; rule one reading, one sentence and one next step on the page's first part, the others quiet (n90 .25, n91 .34; n88, n92). (3) A count of a whole draws its share: a `Meter` or a row `bar` beside the figure, never only a footer row (n87 .1, n91 .29). (4) A page with no chart still has one focus: hand-drawn rows spread `focus.target` and `focus.item(i)`, a `DataTable` takes `focus`, and the keys step the rows with a readout (n87 .3, n92 .40 P2, .42). (5) Name every line and every rule at its end, and a hero line that must name its rule is a `CartesianChart` with a labelled `refLines` rule, never a `Sparkline` (n88 .12, n90 .23). (6) A meter against a limit has zones and a scale that holds the data, and never clamps the value under its own range (n90 .24, n92 .38). (7) Gate the 390 frames you opened on every `sub` and status string: none cut (n87 .9, P2). (8) Single lessons, each one case: strip cells declare `rows` (n87 .7); card sparklines on the chart's x either join its focus or are folded into the chart (n88 .11, .18); a zero fixture keeps its cause and draws no empty pill (n88 .13); a meter column sets `card` (n88 .15); the answer is a label on its mark and an outlier is capped (n89 .21); an id in a figure period sets `periodMono` (n89 .22); dense dots set `spread` (n90 .28); only the active zone takes a status tint (n92 .37); a table that answers the question sits above the fold (n91 .35).",
+  "acceptance": [
+    "The read-aloud pass reads the rendered text and names the shapes above with cycle-18 cases cited",
+    "states.md gives one reading for an empty page with several parts",
+    "Lessons (3) to (8) are in the skill or its references with their cases",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit behaviour (v3-expr-18-kit-fixes); the Meter, StatRow and PageSummary fields (v3-expr-18-contract); the rubric; the trial scenarios.",
+  "proof": "The skill diff and make check.",
+  "commits": "docs: skill and rule text."
+}

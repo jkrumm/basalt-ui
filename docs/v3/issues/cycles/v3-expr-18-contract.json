@@ -1,0 +1,32 @@
+{
+  "why": "Expression cycle 18 (docs/v3/cycles/expression-18.md) met four kit gaps that only a new field closes. A `Meter` prints its own value and never draws its `label` (assistive tech only, docs/meter.md): n87's sidecar meter shows a bare '100' (F6, .2), n91's bill meter an unlabelled 'US$13.89' (F3, .30), and n90 bent `format` to print its limit instead. A zoned `Meter` has no range ticks and no slot for a row's cause, so n92 wrote its four ranges and causes as sibling text (F6, .39). `src/charts/focus.tsx:6` and the basalt-charts skill name `Meter` a `useChartFocus` host, but `src/ui/meter.tsx` takes no `focus`, so n92's four pair meters had no host and lost F7 2 (P2, .40) and K3 1 (.42). And no slot sets a time or an id in mono where the shipped rule asks for it: a `StatRow` value (n90's held step id, .27) and a `PageSummary` fact (n87's last reindex time, .8, behind a marker; n91 dropped its lag fact for the same gap).",
+  "what": "A Spec, then the fields: a drawn `Meter` caption, range ticks and a cause slot, `focus` on `Meter` (or the claim removed), and `mono` on a `StatRow` value and a `PageSummary` fact.",
+  "owns": [
+    "packages/basalt-ui/src/core/ports.ts (MeterSpec, behind the Spec)",
+    "packages/basalt-ui/src/ui/meter.tsx",
+    "packages/basalt-ui/src/cards/contract.ts (StatRow, behind the Spec)",
+    "packages/basalt-ui/src/cards/stat-cell.tsx",
+    "packages/basalt-ui/src/page/page-summary.tsx (the fact shape, behind the Spec)",
+    "packages/basalt-ui/src/charts/focus.tsx (the host list in its header)",
+    "packages/basalt-ui/docs/** generated from the above",
+    "the skill text that teaches meters, stat rows and summary facts (packages/basalt-ui/agent/**, through its generator)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**",
+    "docs/v3/ARCHITECTURE.md"
+  ],
+  "change": "(1) Spec first (checkpoint), one page: a `Meter` caption the meter draws (its label, or words beside its value, or no value at all), range ticks for a zoned meter and a per-meter cause line; `focus` on `Meter` as a host the way `focus.tsx` already claims, or the claim removed from `focus.tsx` and the skill; `mono` on a `StatRow` value and on a `PageSummary` fact, the two slots the rule 'a time or an id ... sets mono' cannot reach today. State the default for each and what changing it later costs. Evidence: the round-0 frames of n87, n90, n91 and n92 (`.evidence/v3-shots/expression-18/r0/` in the main checkout). (2) After the verdict, the fields, their docs and one skill line each.",
+  "acceptance": [
+    "A Spec with the defaults and at most three open choices is submitted before code",
+    "n87's and n91's meters print a caption a reader can name, n92's zoned meters draw their range, n92's four rows take one focus with arrow keys and a readout (layout tests on the round-0 sources, or on a test page where the Spec rules a field out)",
+    "A StatRow value and a PageSummary fact set in mono render in the mono face (test)",
+    "focus.tsx's host list and the skill name only hosts that take `focus`",
+    "make check passes"
+  ],
+  "out_of_scope": "Behaviour fixes (v3-expr-18-kit-fixes); a clamp caret on a `Meter`; a `focus` prop on `Sparkline`; the trial scenarios; the rubric.",
+  "proof": "The Spec, its verdict, the tests and the frames of n87, n90, n91 and n92 at 1800 and 390.",
+  "commits": "feat: per field with its test; docs: the skill lines."
+}

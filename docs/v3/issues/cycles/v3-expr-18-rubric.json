@@ -1,0 +1,21 @@
+{
+  "why": "Expression cycle 18 (docs/v3/cycles/expression-18.md) has two `rubric` findings. One behaviour read two ways under K2 (.14): n88's error frame names the one failed source on every part with one Retry on the first card, and its reviewer scored K2 2 for parts with no Retry of their own, while n92's reviewer scored the same shape K2 3 ('every failed part names the failure and one Retry serves the source'), which the K2 row's 'one banner and one Retry that name each failed source ... meet it' supports. And one clamp charged twice (.41): n92's reviewer charged K1 for pinned markers that lose their magnitude while the same review gave that clamp to F5, against the rubric's 'a defect is charged once'.",
+  "what": "Rubric text that settles one Retry for one failed source under K2 and keeps a clamp F5 charged out of K1, with the shipped reviewer agreeing.",
+  "owns": [
+    "docs/v3/expression/rubric.md",
+    "the shipped reviewer's text in packages/basalt-ui/agent/** (the design reviewer subagent and its references), through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/**",
+    "docs/v3/expression/cases.md",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) K2: where one source fails and every part it feeds names the cause, one Retry for that source meets the item; a part left blank with no cause still costs it (n88 .14 against n92). (2) K1: a clamp or a pinned marker that F5 charged is not charged again under K1, which reads only whether the zero, one-item, negative and extreme fixtures render without overlap or a broken axis (n92 .41). Rescore n88 K2 and n92 K1 on the cycle-18 last-round shots with fresh reviewers, as EXPRESSION.md § Owner calibration asks, and record the rescore.",
+  "acceptance": [
+    "rubric.md and the shipped reviewer carry both readings with the cycle-18 cases cited",
+    "A fresh rescore of n88 K2 and n92 K1 is recorded"
+  ],
+  "out_of_scope": "Kit, skill and case text; the trial scenarios.",
+  "proof": "The rescore reports in .evidence/v3-shots/expression-18/reports/ in the main checkout.",
+  "commits": "docs: rubric readings."
+}
