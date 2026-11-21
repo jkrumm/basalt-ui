@@ -61,11 +61,11 @@ const BUDGET_ROWS: readonly (readonly [string, string])[] = [
   ['CLS', 'cls'],
 ]
 
+/** Budgets are bytes, written as bytes: the doc's cost column is kB of 1024, so one unit never means two bases. */
 const show = (key: string, value: number): string => {
   if (key === 'lcpMs') return `${value.toLocaleString('en-US')} ms`
   if (key === 'cls') return String(value)
-  if (value === 0) return '0 B'
-  return `${Number((value / 1000).toFixed(2))} kB`
+  return `${value.toLocaleString('en-US')} B`
 }
 
 const budgetTable =
