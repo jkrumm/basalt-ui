@@ -14,13 +14,21 @@ export const rows: readonly RowDef[] = [
     // 12928 B measured. Informative target 16 KB (J); the seed is the measurement.
     // 14000 -> 14100 (Issue 2500): 14011 B measured, +~11 B gz for the card taking its grid row's height.
     // 14100 -> 14150 (Issue 2696): 14117 B measured, +~17 B gz for `chartHeight`, the chart box's own height.
-    ceiling: 14150,
+    // 14150 -> 14200 (Issue 2716): 14157 B measured, +~40 B gz for the delta pill that draws no arrow for an unsigned value.
+    ceiling: 14200,
     measure: () => measureSource(reExportNamed('cards/stat-card', ['StatCard'])),
   },
 ]
 
 export const raises: Raises = {
   'cards-stat-card': [
+    {
+      from: 14150,
+      to: 14200,
+      consumer:
+        "n81's '2 of 3 scheduled' and n86's '53 % of all' (Issue 2716): a delta pill with an unsigned value drew an up arrow, so it draws none",
+      repo: 'basalt-ui',
+    },
     {
       from: 14100,
       to: 14150,

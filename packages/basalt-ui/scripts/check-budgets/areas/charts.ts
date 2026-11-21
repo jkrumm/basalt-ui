@@ -73,7 +73,8 @@ export const rows: readonly RowDef[] = [
     // bars' recede, the kit fixes of expression cycle 16.
     // 134000 -> 134200 (Issue 2696): 134090 B measured, +~90 B gz over the cap for the surface backing under an end
     // label another line runs through, a series the `endLabels` naming leaves no legend to name.
-    ceiling: 134200,
+    // 134200 -> 134700 (Issue 2716): 134553 B measured, +~460 B gz over the cap for the card-coloured backing under a value label a rule crosses, the clamp caret cut in the card's colour on a bar, and the ink-step bars' stronger recede and rise, the kit fixes of expression cycle 17.
+    ceiling: 134700,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -96,6 +97,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 134200,
+      to: 134700,
+      consumer:
+        "n82's '0' at Now under the typical-day rule and n84's 'US$1,832' under the 'No report' rule (Issue 2716): a value label a rule crosses sits on a card-coloured backing, and the caret of a clamped bar is cut in the card's colour",
+      repo: 'basalt-ui',
+    },
     {
       from: 134000,
       to: 134200,
