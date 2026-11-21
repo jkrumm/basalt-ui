@@ -3,7 +3,7 @@ name: file-drop
 use-when: a form takes a file from the person, by a picker first and by dropping onto the page as an enhancement
 ---
 
-There is no upload primitive: the transport, progress and limits are the app's. The recipe is the picker.
+`FileUpload` (`basalt-ui/ui/file-upload`) ships the picker and the drop zone: use it first. The transport, progress and limits stay the app's. This recipe is the hand-built fallback for a surface `FileUpload` does not fit.
 The picker is a `Button` rendered as a `<label>` (`nativeButton={false}`) around a visually hidden `<input type="file">`. The button is focusable and Enter or Space opens the dialog, so a keyboard and a screen reader never need the drop.
 `label` is a required string: it names the control. Dropping is an enhancement on the wrapper, and `data-over` is the only state it draws.
 The recipe hands back `File[]` and holds none of them: validate the type and size where the app decides, and show the failure through the form's error.
