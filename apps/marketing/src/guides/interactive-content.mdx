@@ -22,22 +22,22 @@ Name each tab once in `tabs` and once as the `label` of its panel, in the same o
 `DataTable` takes plain columns and rows, so the same tag can run as an island. With no `interactive` prop it is the static table: formatted numbers and dates, rows as given, 0 bytes of JavaScript.
 
 <DataTable
-  label="Cost of a basalt island, gzip"
+  label="What each part needs on the page"
   columns={[
     { key: 'part', label: 'Part' },
-    { key: 'kb', label: 'Further cost (kB)', kind: 'number' },
-    { key: 'rule', label: 'Directive' },
+    { key: 'directive', label: 'Directive' },
+    { key: 'react', label: 'React on the page' },
   ]}
   rows={[
-    { part: 'Tabs (platform)', kb: 0.4, rule: 'none' },
-    { part: 'Table, static', kb: 0, rule: 'none' },
-    { part: 'Table, sortable', kb: 218.3, rule: 'client:visible' },
-    { part: 'Chart', kb: 125.1, rule: 'client:only' },
+    { part: 'Tabs', directive: 'none', react: 'no' },
+    { part: 'Table, static', directive: 'none', react: 'no' },
+    { part: 'Table, sortable', directive: 'client:visible', react: 'yes' },
+    { part: 'Chart', directive: 'client:only', react: 'yes' },
   ]}
 />
 
 <SiteCallout tone="info" title="Islands have their own page">
-  A sortable table and a chart each need React on the page. [Islands in MDX](/guides/islands-in-mdx) shows both and what they cost.
+  A sortable table and a chart each need React on the page. [Islands in MDX](/guides/islands-in-mdx) shows both and the rule for each.
 </SiteCallout>
 
 ## A form
@@ -45,9 +45,9 @@ Name each tab once in `tabs` and once as the `label` of its panel, in the same o
 A form in an article is a native form: it posts to its `action`, the browser validates `required` and `type`, and a field turns red after the reader leaves it, never on the first key.
 
 <Form action="/guides/interactive-content" method="get">
-  <Field label="Email" name="email" type="email" autoComplete="email" description="This demo sends it to this page's own URL as a query string; nothing is stored." required />
-  <Field label="What are you building?" name="note" type="textarea" autoComplete="off" />
-  <SubmitButton>Subscribe</SubmitButton>
+  <Field label="Topic" name="topic" autoComplete="off" description="This demo sends it back to this page as a query string." required />
+  <Field label="Your question" name="question" type="textarea" autoComplete="off" />
+  <SubmitButton>Send</SubmitButton>
 </Form>
 
 This demo sends its fields back to this page as a query string; a real form posts to a URL on your site or to a form service. For live error summaries, async checks or steps, build the form in an app with `basalt-ui/form`.
