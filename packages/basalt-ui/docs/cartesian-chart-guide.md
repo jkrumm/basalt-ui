@@ -1,6 +1,6 @@
 ---
 name: CartesianChart guide
-use when: 'a CartesianChart needs its series fields, selection, custom marks, axis titles, log x or a capped y'
+use when: 'a CartesianChart needs its series fields, selection, custom marks, axis titles, log x or log y, or a capped y'
 never when: 'you only need the props (read cartesian-chart.md)'
 peers: ['@tanstack/charts']
 slots: []
@@ -102,7 +102,7 @@ scale cannot place (at or under 0 on a log x, an unknown key) reaches the plot's
 zones={[{ axis: 'x', from: MIN_PER_WEEK, to: weekEnd, y: { from: 0, to: MAX_OPEN_PCT }, fill: alpha(BASALT.brand, 0.1), label: 'Mute' }]}
 ```
 
-## Axis titles, log x, vertical rules
+## Axis titles, log x and y, vertical rules
 
 `x.title` and `y.title` name an axis with its unit. `x.scale: 'log'` puts a numeric x on decades; a
 row with x <= 0 is not drawn. A `refLines` entry with `axis: 'x'` is a full-height rule at a band
@@ -128,8 +128,20 @@ ticks; `x.tickFormat` takes the ticks alone, so the axis reads `Nov 12` while th
 its series colour and the true value beside the caret (right of it, else left, dropped when neither
 has room); the tooltip and the focus readout read it too. A stack of two or more
 bar series with a page-set domain stops at the plot's edge under one caret per x, in the colour of
-its top segment, and its value label keeps the true total; a `normalized` stack never clamps. There
-is no log y.
+its top segment, and its value label keeps the true total; a `normalized` stack never clamps.
+
+## A log y
+
+`y: { scale: 'log' }` puts the left axis on decades, on `CartesianChart` and `Lines`, and per chart, so a
+pane of a `ChartCard` takes its own. Ticks sit on 1, 2 and 5 times a power of ten (the densest set that
+fits, else the decades, thinned) and go through `y.format`; the auto domain pads the data's extent
+by `autoPad` at both ends, and a `{ floor, ceil, pad }` domain pads in decades. Zones, reference lines,
+the cursor, the focus readout, the tooltip and `plot.y` all work in data values. A value of zero or
+below has no place: a dev build throws an error naming the series and the value, a production build
+skips the point; a rule at one is not drawn. A bar, an `area: 'fade'` and a stack stand on zero, so
+they do not take it: `Bars` does not type `scale`, and `CartesianChart` and `Lines` throw a named error in
+a dev build and draw linear in production. A right-axis series stays linear. Plot `log10(v)` yourself
+and ticks land on `63.1K`; the scale does it right.
 
 ## Not yet applied
 

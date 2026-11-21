@@ -339,6 +339,8 @@ export type PlotContext<T, X extends ChartX = ChartX> = {
   /** The resolved y domain (and the right axis', with `y2`): basalt's, never the engine's. */
   yDomain: readonly [number, number]
   y2Domain: readonly [number, number] | undefined
+  /** The left y axis is logarithmic: pixel maps run in decades. */
+  yLog?: boolean
 }
 
 /** The marks a `marks` function returns: TanStack marks from the allowed `@tanstack/charts/*`
