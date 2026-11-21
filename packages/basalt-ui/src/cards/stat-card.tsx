@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import type { CSSProperties, ReactElement } from 'react'
 import { cn } from '../core/cn'
 import { AppLink } from '../core/link'
 import { resolvePhase } from '../core/phase'
@@ -18,8 +18,8 @@ import {
 
 /** The chart box: plot 56 plus the 16 px label row. The slot draws inside it and cannot grow it. */
 const CHART_HEIGHT = 72
-/** The plot alone: what the slot gets when the card draws the label row itself (`xLabels`). */
-const PLOT_HEIGHT = 56
+/** The label row the card draws itself under the plot (`xLabels`), px. */
+const LABEL_ROW = 16
 /** A figure longer than this steps down a size where the card is narrower than `regular`; so does any text figure. */
 const LONG_FIGURE = 10
 
@@ -42,14 +42,14 @@ function XLabels({ labels }: { labels: NonNullable<StatCardProps['xLabels']> }):
 /**
  * The inset is exactly as tall as its anatomy, so a loading, empty or error card is as tall as a
  * ready one and nothing leaves an empty band under the figure: figure row 36, sub row 20 (hidden
- * below `@narrow`, and its height with it), an 8 px gap and the chart box 72, plus the inset's 24 px
- * of padding. With no chart the phase arms are one row, so they fit a box one figure row tall.
+ * below `@narrow`, and its height with it), an 8 px gap and the chart box (`chartHeight`, 72 by default), plus the
+ * inset's 24 px of padding. With no chart the phase arms are one row, so they fit a box one figure row tall.
  */
 const BODY_HEIGHT = {
   plain: 'h-15',
   sub: 'h-20 @max-narrow:h-15',
-  chart: 'h-35',
-  both: 'h-40 @max-narrow:h-35',
+  chart: 'h-[calc(var(--chart-h,72px)+68px)]',
+  both: 'h-[calc(var(--chart-h,72px)+88px)] @max-narrow:h-[calc(var(--chart-h,72px)+68px)]',
 } as const
 
 const bodyHeight = (hasSub: boolean, hasChart: boolean): string =>
@@ -83,6 +83,7 @@ const bodyHeight = (hasSub: boolean, hasChart: boolean): string =>
 export function StatCard(props: StatCardProps): ReactElement {
   const { title, value, unit, delta, status, sub, subMono, chart, xLabels, footer, href, onClick } =
     props
+  const chartHeight = props.chartHeight ?? CHART_HEIGHT
   const { phase, empty, subtitle, icon, info, controls, menu } = props
   const figure = formatValue(value)
   const resolved = resolvePhase({ phase, empty })
@@ -101,7 +102,14 @@ export function StatCard(props: StatCardProps): ReactElement {
           controls={controls}
           menu={menu}
         />
-        <Inset className={cn('flex flex-col', bodyHeight(sub !== undefined, chart !== undefined))}>
+        <Inset
+          className={cn('flex flex-col', bodyHeight(sub !== undefined, chart !== undefined))}
+          style={
+            props.chartHeight === undefined
+              ? undefined
+              : ({ '--chart-h': `${chartHeight}px` } as CSSProperties)
+          }
+        >
           <CardPhase
             phase={phase}
             empty={empty}
@@ -156,10 +164,10 @@ export function StatCard(props: StatCardProps): ReactElement {
                 {chart !== undefined && (
                   <div
                     data-slot="stat-chart"
-                    className="relative z-20 mt-2 h-18 shrink-0 overflow-clip"
+                    className="relative z-20 mt-2 h-[var(--chart-h,72px)] shrink-0 overflow-clip"
                   >
                     {chart({
-                      height: xLabels === undefined ? CHART_HEIGHT : PLOT_HEIGHT,
+                      height: xLabels === undefined ? chartHeight : chartHeight - LABEL_ROW,
                       phase: box.phase,
                     })}
                     {xLabels !== undefined && <XLabels labels={xLabels} />}

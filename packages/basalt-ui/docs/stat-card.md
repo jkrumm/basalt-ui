@@ -35,7 +35,8 @@ StatCard(props: StatCardProps): ReactElement
   status?: Verdict  // The verdict home: dot plus word
   sub?: string
   subMono?: boolean  // The sub line is a time or an id: drawn in the mono face with tabular numerals
-  chart?: BoxSlot  // Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16)
+  chart?: BoxSlot  // Called only in `ready` and `stale`, in a fixed clipping box of `chartHeight` (72 px: plot 56 + label row 16)
+  chartHeight?: number  // The chart box's height in px, default 72
   xLabels?: readonly [string, string, string]  // The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alone
   footer?: FootFacts
   controls?: ControlsSlot<"widget">

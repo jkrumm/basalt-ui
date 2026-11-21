@@ -26,6 +26,18 @@ describe('DataPanel: the server HTML is the final layout', () => {
     expect(html).toContain('height:calc(6 * var(--basalt-row-h, 2rem))')
   })
 
+  test('cardHeight sizes the phone floor: five 92 px cards, not five 108 px ones', () => {
+    const html = renderToString(
+      <DataPanel
+        title="Open tasks"
+        phase="loading"
+        bodySize={{ rows: 6, cardHeight: 92 }}
+        body={list}
+      />,
+    )
+    expect(html).toContain('--panel-cards:460px')
+  })
+
   test('the loading skeleton folds to cards by container query, one markup for both widths', () => {
     const html = renderToString(
       <DataPanel title="Open tasks" phase="loading" bodySize={{ rows: 3 }} body={list} />,
