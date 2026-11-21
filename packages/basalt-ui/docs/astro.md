@@ -173,7 +173,7 @@ const components = { ...siteMdxComponents(labels), Chart, DataTable }
 | `Form`, `Field`, `SubmitButton` | a native form | none | none | none | 0 |
 | `DataTable` | a static table | none | none | none | 0 |
 | `DataTable interactive` | the same table | sortable, pageable `DataTable` | `client:visible` (`load="idle"` above the fold) | `data-table` | 218.4 kB |
-| `Chart` | a fallback box of the card's height | `ChartCard` over `Lines` or `Bars` | `client:only="react"` (`load="visible"` or `"idle"` once its server picture is right) | `chart-card` | 128.0 kB |
+| `Chart` | a fallback box of the card's height | `ChartCard` over `Lines` or `Bars` | `client:only="react"` (`load="visible"` or `"idle"` once its server picture is right) | `chart-card` | 128.1 kB |
 
 <!-- mdx-island-cost:end -->
 
