@@ -798,6 +798,13 @@ describe('init: the router scaffold', () => {
     expect(log).toContain('kept src/routes/_app/index.tsx: it exists')
   })
 
+  it('writes the start page beside a route group directory, which serves no path itself', async () => {
+    const dir = createVite()
+    put(dir, 'src/routes/(auth)/login.tsx', 'export const Route = 1\n')
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(existsSync(join(dir, 'src/routes/_app/index.tsx'))).toBe(true)
+  })
+
   it('writes no start page when a route file already serves `/`, so `/` never has two routes', async () => {
     const dir = createVite()
     put(dir, 'src/routes/_app.index.tsx', 'export const Route = 1\n')

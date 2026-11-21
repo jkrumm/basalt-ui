@@ -26,18 +26,23 @@ async function capture(dir: string, flags: string[] = []): Promise<{ code: numbe
 }
 
 describe('doctor and a missing Playwright', () => {
-  it('prints the note with the install line and still exits by its other checks', async () => {
+  it('names it with the install line and still exits by its other checks', async () => {
     const dir = makeTree('app')
     commitTree(dir)
     const healthy = await capture(dir)
     expect(healthy.code).toBe(0)
-    expect(healthy.log).toContain('note: `basalt-ui shot` needs Playwright')
+    expect(healthy.log).toContain('playwright is not installed')
     expect(healthy.log).toContain('bun add -d playwright && bunx playwright install chromium')
     expect(healthy.log).toContain('All 12 checks passed.')
+    expect(
+      healthy.log
+        .split('\n')
+        .filter((l) => l.includes('Playwright is not') || l.includes('playwright is not')),
+    ).toHaveLength(1)
 
     const broken = await capture(makeTree('app', { 'src/router.tsx': null }))
     expect(broken.code).toBe(1)
-    expect(broken.log).toContain('note: `basalt-ui shot` needs Playwright')
+    expect(broken.log).toContain('playwright is not installed')
   })
 })
 

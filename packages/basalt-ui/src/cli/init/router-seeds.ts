@@ -7,7 +7,7 @@
  * with `--start` the app gets the Start host seeds (`__root.start.tpl`, `router.start.tpl`) and no `main.tsx`.
  */
 import { readdirSync, rmSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 
 import { readBasaltConfig, resolveAppDir } from '../index'
 import {
@@ -104,7 +104,9 @@ function routeServesRoot(ctx: Ctx, appRel: string): boolean {
   const routes = dirname(routerSeedDest(appRel, 'root'))
   const files = (() => {
     try {
-      return readdirSync(resolve(ctx.root, routes), { recursive: true, encoding: 'utf8' })
+      return readdirSync(resolve(ctx.root, routes), { recursive: true, withFileTypes: true })
+        .filter((entry) => entry.isFile())
+        .map((entry) => join(relative(resolve(ctx.root, routes), entry.parentPath), entry.name))
     } catch {
       return []
     }

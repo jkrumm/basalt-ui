@@ -29,8 +29,9 @@ That is the whole install. A create-vite React app already has `react`, `react-d
 (step 2) installs the rest of the `app` profile's peers (`tailwindcss`, `@tailwindcss/vite`,
 `@base-ui/react`, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/router-plugin`) and the lint
 tools. Most go in at the exact pin it prints; three are ranges (`@base-ui/react` `~1.9.0`,
-`@tanstack/react-router` `^1.170.0`, `@tanstack/react-query` `^5.104.0`), so an app already on a newer
-version inside the range keeps it, and a fresh install takes the newest one and saves it exactly. A
+`@tanstack/react-router` `^1.170.0`, `@tanstack/react-query` `^5.104.0`) and `@tanstack/router-plugin`
+is pinned at `1.168.40` but accepts any newer 1.x, so an app already on a newer version inside the range keeps it,
+and a fresh install takes the newest one and saves it exactly. A
 dependency the app already had whose version falls outside the range or pin is changed, and `init` prints
 one line for it (for example `oxlint ^1.90.0` moves to the preset's pin). Installing the peers yourself first only pins them twice. A peer a subpath
 needs that `init` does not install (`./charts`, `./table`) is named by `basalt()` (the Vite plugin)

@@ -11,7 +11,7 @@ import { designLoopLines } from '../board-freshness'
 import { findBasaltInstall, noteRelocation, packageRoot, resolveProjectDir } from '../index'
 import { findManifestAbove } from '../install-root'
 import { MANIFEST_PATH, readManifest } from '../manifest'
-import { appChecks, playwrightNote } from './app'
+import { appChecks } from './app'
 import { guardChecks } from './guards'
 import { hookChecks } from './hook'
 import { installChecks } from './install'
@@ -97,8 +97,6 @@ export async function doctor(
       `${install.dir}/${rel}${existsSync(resolve(install.dir ?? '', rel)) ? '' : ' (missing)'}`
     console.log(`docs/ resolves at ${where('docs')}; llms.txt at ${where('llms.txt')}`)
   }
-  const note = playwrightNote(ctx)
-  if (note !== null) console.log(note)
   for (const line of designLoopLines(ctx.root, Object.keys(ctx.manifest?.roots ?? {}))) {
     console.log(line)
   }

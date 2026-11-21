@@ -1,15 +1,14 @@
 /**
  * Check 12: app wiring. Textual, no TS program: the router defaults a profile `app` must set, the
  * `notify` and `ToastHost` pair, `<html lang>`, the scheme boot script, selectors from the 2.x
- * era, and a route file behind every nav link. A missing Playwright is not a finding: `playwrightNote`
- * names it beside the results.
+ * era, and a route file behind every nav link. A missing Playwright is not a finding: the design-loop
+ * lines beside the results (`designLoopLines`) name it with the install command.
  */
 import { spawnSync } from 'node:child_process'
 import { dirname } from 'node:path'
 import { SOURCES_PATH } from '../../vite/sources'
 import { resolveAppDir } from '../index'
 import { routePatterns, typechecksBeforeTree } from '../route-tree'
-import { PLAYWRIGHT_INSTALL } from '../shot/playwright'
 import { need, readJson, readText, rootFiles, rootsOf, verdictOf } from './types'
 import type { Check, Ctx } from './types'
 
@@ -215,28 +214,5 @@ const check12 = (name: string): Check => ({
     return verdictOf(findings, 'app wiring is complete')
   },
 })
-
-/**
- * What `basalt-ui shot` needs and `init` does not install: Playwright, when the install root or
- * the app declares none. A note beside the results, never a failure: an app that never shoots passes.
- */
-export function playwrightNote(ctx: Ctx): string | null {
-  const manifest = ctx.manifest
-  if (manifest === null || manifest.profile === 'tokens' || manifest.profile === 'site') return null
-  const app = resolveAppDir(ctx.root)
-  const files = [
-    'package.json',
-    ...('error' in app || app.rel === '' ? [] : [`${app.rel}/package.json`]),
-  ]
-  const has = (name: string): boolean =>
-    files.some((file) => {
-      const pkg = readJson(ctx.root, file) ?? {}
-      return ['dependencies', 'devDependencies'].some(
-        (field) => (pkg[field] as Record<string, string> | undefined)?.[name] !== undefined,
-      )
-    })
-  if (has('playwright') || has('playwright-core') || has('@playwright/test')) return null
-  return `note: \`basalt-ui shot\` needs Playwright, which init does not install (it downloads a browser): ${PLAYWRIGHT_INSTALL}`
-}
 
 export const appChecks: Check[] = [check12('app-wiring')]
