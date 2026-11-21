@@ -51,4 +51,22 @@ layout('a mono id in a phone row', () => {
       expect(n.cut, n.text).toBeLessThanOrEqual(0)
     }
   })
+
+  test('the rows body holds every declared row whole', async () => {
+    const page = await openFixture(EMPTY_SPEC, PHONE, doc!.path, 'reduce', 'fine')
+    await page.raw.waitForSelector('[data-testid="k17-ids"] tbody [data-slot="table-row"]')
+    await page.settle()
+    const rows = await page.raw.evaluate(() => {
+      const box = document
+        .querySelector('[data-testid="k17-ids"] [data-slot="data-panel-rows"]')!
+        .getBoundingClientRect()
+      return [
+        ...document.querySelectorAll('[data-testid="k17-ids"] tbody [data-slot="table-row"]'),
+      ].map((row) => {
+        const b = row.getBoundingClientRect()
+        return b.top >= box.top - 1 && b.bottom <= box.bottom + 1
+      })
+    })
+    expect(rows).toEqual([true, true, true, true])
+  })
 })

@@ -41,7 +41,7 @@ function Panel(): ReactElement {
       <DataPanel
         title="Checks"
         phase="ready"
-        bodySize={{ rows: CHECKS.length + 2 }}
+        bodySize={{ rows: CHECKS.length + 1 }}
         body={() => <DataTable table={table} height="fill" />}
       />
     </div>
