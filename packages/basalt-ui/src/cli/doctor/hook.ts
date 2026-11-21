@@ -142,10 +142,10 @@ const check8 = (name: string): Check => ({
 
 /**
  * A copy of the install the probe can write into: the config files and `.basalt/` copied, `node_modules`
- * linked, the declared roots empty. The seeded offender lives here, never in a declared root, so a
+ * linked (the root's and the one beside each declared root), the declared roots empty. The seeded offender lives here, never in a declared root, so a
  * lint run, a watcher or a build of the real roots never sees it. Caller removes the directory.
  */
-function shadowInstall(root: string, roots: readonly string[]): string {
+export function shadowInstall(root: string, roots: readonly string[]): string {
   const shadow = mkdtempSync(resolve(tmpdir(), 'basalt-doctor-'))
   const rootHeads = new Set(roots.map((r) => r.split('/')[0]))
   for (const entry of readdirSync(root, { withFileTypes: true })) {
@@ -159,7 +159,15 @@ function shadowInstall(root: string, roots: readonly string[]): string {
       cpSync(from, to, { recursive: true })
     }
   }
-  for (const r of roots) mkdirSync(resolve(shadow, r), { recursive: true })
+  for (const r of roots) {
+    mkdirSync(resolve(shadow, r), { recursive: true })
+    // The shim looks for the bin beside each declared root, then in every directory above it.
+    for (let at = r; at !== '.' && at !== ''; at = dirname(at)) {
+      const modules = resolve(root, at, 'node_modules')
+      const link = resolve(shadow, at, 'node_modules')
+      if (existsSync(modules) && !existsSync(link)) symlinkSync(modules, link)
+    }
+  }
   return shadow
 }
 

@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
 import { cleanupTrees, makeTree, runCheck, settingsJson, wrappedHook } from './fixture.test'
+import { shadowInstall } from './hook'
 
 afterEach(cleanupTrees)
 
@@ -52,6 +53,21 @@ describe('check 8: the hook, run black-box from a subdirectory', () => {
     } finally {
       child.kill()
       rmSync(flags, { recursive: true, force: true })
+    }
+  })
+
+  it('links a node_modules beside a declared root into the temp copy, and copies no source', () => {
+    const dir = makeTree('app', {
+      'apps/web/node_modules/.bin/tool': '',
+      'apps/web/src/a.tsx': 'x',
+    })
+    const shadow = shadowInstall(dir, ['apps/web'])
+    try {
+      expect(existsSync(resolve(shadow, 'apps/web/node_modules/.bin/tool'))).toBe(true)
+      expect(existsSync(resolve(shadow, 'apps/web/src/a.tsx'))).toBe(false)
+      expect(existsSync(resolve(shadow, '.basalt/manifest.json'))).toBe(true)
+    } finally {
+      rmSync(shadow, { recursive: true, force: true })
     }
   })
 
