@@ -51,6 +51,14 @@ export const ERROR_KEYS = {
   default: 'home.error.default',
 } as const satisfies Record<ErrorKind | 'default', keyof typeof home>
 
+/** What a failed query says: the kind's line, and the source's own message only when it has no kind. */
+export function errorCause(
+  kind: ErrorKind | undefined,
+  message: string | undefined,
+): { key: (typeof ERROR_KEYS)[ErrorKind | 'default']; detail: string | undefined } {
+  return { key: ERROR_KEYS[kind ?? 'default'], detail: kind === undefined ? message : undefined }
+}
+
 function Notice({
   tier,
   alert,
@@ -125,12 +133,11 @@ export function QueryState({
     )
   } else if (resolved.tag === 'error') {
     const { kind, message, retry } = resolved
+    const { key, detail } = errorCause(kind, message)
     body = (
       <Notice tier={tier} alert>
-        <p className="m-0 text-sm text-foreground">{t(ERROR_KEYS[kind ?? 'default'])}</p>
-        {message !== undefined && kind === undefined && (
-          <p className="m-0 text-xs text-muted-foreground">{message}</p>
-        )}
+        <p className="m-0 text-sm text-foreground">{t(key)}</p>
+        {detail !== undefined && <p className="m-0 text-xs text-muted-foreground">{detail}</p>}
         {retryBtn(retry)}
       </Notice>
     )
