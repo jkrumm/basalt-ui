@@ -1,0 +1,29 @@
+{
+  "why": "The owner: opening a table entry as a pop-up or a drawer is \"sehr schön\" in Accordee, ours are \"komische\" side surfaces without the controls on top and with less room. Facts: Dialog and Sheet are modal on `bg-scrim`; only Peek is non-modal and resizable; Sheet, Dock and PageAside have fixed widths; the record header (src/page/record-panel.tsx) holds tag, title, full-page link, pin and close, with no actions and no previous or next; nothing opens a record as a floating window. Our lead: `?peek=` makes the overlay addressable, Accordee's pop-ups have no URL.",
+  "what": "The side surfaces in src/page and src/ui/sheet, the peek hook in ./router.",
+  "owns": [
+    "packages/basalt-ui/src/page/{peek.tsx,peek-handle.tsx,record-panel.tsx,dock.tsx,page-aside.tsx,contract.ts}",
+    "packages/basalt-ui/src/ui/sheet.tsx (right placement on wide screens)",
+    "the usePeek hook under packages/basalt-ui/src/router",
+    "packages/basalt-ui/src/table/parts/{auto-detail,detail-sheet}.tsx (the host a row opens)",
+    "generated docs and the skill text on overlays through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/ui/dialog.tsx and src/page/{define-overlays.ts,overlay-host.tsx} (bench-dialog-wizard)",
+    "packages/basalt-ui/src/shell/parts/grid.tsx beyond the aside region contract"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. README decisions 6 and 7 are settled: names stay, one anatomy, no scrim under a non-modal panel. (1) One panel anatomy shared by Peek, Dock, PageAside and a right Sheet on a wide screen: a header at the bar height with icon or avatar, title, optional tag, then typed actions (data, like PageBar actions, with an overflow menu), the presentation menu where it applies, and close; a body that scrolls; an optional footer band for a form. The panel sits inside the work surface and clips to its corners. (2) Every such panel is resizable by its inner edge: pointer, keyboard separator with a value, double-click resets, a minimum width, the width remembered per panel kind through `persisted`. (3) The record surface: Peek gains a presentation, `peek` (side panel), `window` (a floating non-modal window the user can drag by its header and resize from edges and corners) or `page` (the surface fills main); the user switches from a menu in the header and the choice persists per record kind. All three keep the URL field (`?peek=`), close on Escape, and return focus to the row. A window can minimise to a chip in the corner and restore. (4) Record navigation: when the opener passes the ordered ids, the header shows previous and next and the keys the table already uses move through records while the panel swaps in place. (5) One panel of a kind at a time, as today; state how a Dock and a Peek stack. (6) On a phone every presentation is a bottom sheet with the scrim.",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/records.md 2.1, 2.5, 2.8): drawers are asides absolutely placed inside the main panel, border-left, shadow -10px 0 60px -20px at 30%, slide in 300 ms, always mounted; widths by job: manage view 400 (min 340), help 420, new task 440 (min 380), add card and person 480, note 680 (min 460), invoice 1040 (min 720); resize separator 8 px on the edge with aria-valuenow, \"Drag to resize, double-click to reset\"; header 44 or 48 px: leading icon or 16 px avatar, 13 px title, then 28 px icon buttons: favourite, more, a divider, the layout menu (\"Open as\": Pop-up, Drawer, Full screen, then Minimize), close; clicking another row swaps the record in place. Pop-up: fixed, 620 by 700 for a note and 920 by 780 for an invoice, radius 16, 1 px border, shadow 0 32 100 -24 at 35%, header is the drag handle, eight resize handles, no overlay, rises in 300 ms. Minimised chip: 320 by 46, bottom right, radius 12. Their gaps to avoid: no URL for notes, Esc does not close the pop-up. Shots: records/03-notes-popup-viewmode-menu.png, records/04-notes-record-as-drawer.png, records/07 (full), records/26-invoices-row-opened.png, records/28 (chip), records/29 (invoice pop-up), records/58 and 61 (phone), tables/10-customers-manage-view-drawer.png.",
+  "acceptance": [
+    "A table row opens its record as peek, window or page; the header menu switches between them; the choice and the panel width survive a reload",
+    "In every presentation the URL holds the record, Back closes it, Escape closes it and focus returns to the row (tests)",
+    "Previous and next step through the opener's rows and stop at the ends",
+    "Peek, Dock, PageAside and a right Sheet draw the same header anatomy and all resize (layout test)",
+    "No scrim renders under a non-modal panel on a wide screen; the page behind stays usable",
+    "At 390 px each presentation is a bottom sheet",
+    "make check passes"
+  ],
+  "out_of_scope": "Dialog sizes and the wizard (bench-dialog-wizard). The manage-view panel content (bench-manage-view). A record page layout. Stacked drawers. A chat panel.",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

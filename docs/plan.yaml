@@ -1313,3 +1313,132 @@ rows:
     repo: basalt-ui
     kind: bug
     facts: { 'brief': 'docs/v3/issues/astro/astro-font-urls.json' }
+  - key: bench-surface
+    title: 'AppShell work surface: a frame and one panel in place of one plane with hairlines'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    lane: browser
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/bench/bench-surface.json' }
+  - key: bench-avatar-entity
+    title: 'Avatar, AvatarStack, EntityTitle and EntityChip primitives'
+    repo: basalt-ui
+    kind: feature
+    facts: { 'brief': 'docs/v3/issues/bench/bench-avatar-entity.json' }
+  - key: bench-control-groups
+    title: 'One size and variant vocabulary for every control, and public ButtonGroup and ControlGroup'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/bench/bench-control-groups.json' }
+  - key: bench-table-view
+    title: 'DataTable: the view owns column widths, row height, grouping and footer aggregates'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    lane: browser
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/bench/bench-table-view.json' }
+  - key: bench-board
+    title: 'Board with drag and drop, and a sortable list'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    lane: browser
+    checkpoint: spec
+    facts: { 'brief': 'docs/v3/issues/bench/bench-board.json' }
+  - key: bench-view-row
+    title: 'PageBar view row: counted tabs left, search, filter, layout and one primary right'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    lane: browser
+    checkpoint: spec
+    after: [bench-surface]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-view-row.json' }
+  - key: bench-panels
+    title: 'One panel anatomy for Peek, Dock, PageAside and Sheet, and a record surface that opens as peek, window or page'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    lane: browser
+    checkpoint: spec
+    after: [bench-surface]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-panels.json' }
+  - key: bench-dialog-wizard
+    title: 'Dialog: a wide size, a light wash, and a wizard dialog with a preview pane'
+    repo: basalt-ui
+    kind: feature
+    lane: browser
+    after: [bench-surface]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-dialog-wizard.json' }
+  - key: bench-table-kinds
+    title: 'DataTable column kinds: person, tags, countdown, link, an entity with a logo, a typed-icon title'
+    repo: basalt-ui
+    kind: feature
+    after: [bench-avatar-entity, bench-table-view]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-table-kinds.json' }
+  - key: bench-manage-view
+    title: 'Saved views as tabs, and a manage-view panel that edits the view'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    lane: browser
+    checkpoint: spec
+    after: [bench-view-row, bench-table-view, bench-panels]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-manage-view.json' }
+  - key: bench-view-layouts
+    title: 'One record set as table, list, board or gallery, chosen per view'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    lane: browser
+    checkpoint: spec
+    after: [bench-board, bench-manage-view, bench-table-kinds]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-view-layouts.json' }
+  - key: bench-form-rows
+    title: 'Settings grammar: bordered sections of rows, instant apply or one unsaved bar, a settings page frame'
+    repo: basalt-ui
+    kind: feature
+    lane: browser
+    after: [bench-surface, bench-control-groups]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-form-rows.json' }
+  - key: bench-form-parts
+    title: 'Form parts: choice cards, a checkbox matrix, tag input, one-time code, swatch picker, quick picks'
+    repo: basalt-ui
+    kind: feature
+    lane: browser
+    after: [bench-control-groups]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-form-parts.json' }
+  - key: bench-reference-pages
+    title: 'Reference pages: a list, a record, a settings page and a create flow built only from shipped parts'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    lane: browser
+    after: [bench-view-layouts, bench-form-rows, bench-form-parts, bench-dialog-wizard]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-reference-pages.json' }
+  - key: bench-next-plan
+    title: 'Plan the next benchmark rows from the landed parts: calendar, flow canvas, inbox and mail, chat parts, list engine, record page parts, theme attributes, blocks'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [bench-reference-pages]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-next-plan.json' }
+  - key: bench-stale-docs
+    title: 'Docs that contradict the tree: radius and density as config, the llms.txt stamp, file-drop, the reorder header, the rule file count'
+    repo: basalt-ui
+    kind: docs
+    facts: { 'brief': 'docs/v3/issues/bench/bench-stale-docs.json' }

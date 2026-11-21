@@ -1,0 +1,23 @@
+{
+  "why": "basalt has no avatar. `src/ui` holds no avatar module and primitives-distribution.md left it unwrapped on purpose. Every CRM-grade screen needs one: a person or company cell in a table, a record header, presence in a header, an inbox row, a board card. Blueprint ships the same shape as EntityTitle.",
+  "what": "Four small primitives in src/ui and their docs, guards and tests.",
+  "owns": [
+    "packages/basalt-ui/src/ui/avatar.tsx, entity.tsx (new) with their guard files",
+    "packages/basalt-ui/src/ui/index.ts, package exports, generated docs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/table/** (bench-table-kinds adds the cells)",
+    "packages/basalt-ui/src/page/**"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. (1) `Avatar`: image with a fallback of initials or an icon, round for a person and a rounded square for a company or object, sizes from the ladder that cover 16 px in a table cell up to 48 px in a record header, a deterministic fallback tint from the name out of existing tokens (no colour literal). (2) `AvatarStack`: overlapping avatars with a +N. (3) `EntityTitle`: avatar or icon, title, optional subtitle and trailing tags, as a heading or as inline text, optionally a link. (4) `EntityChip`: avatar plus label as a pill that links to a record, with an optional remove button. Decided: this reverses the \"unwrapped on purpose\" line for avatar, because five row files here need it.",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/tables.md 2.1, records.md 2.3): 16 px logo chip radius 4 and 16 px round avatar in table cells; 20 px avatar in author cells; 28 px with name and role in a person cell; 48 px logo radius 8 in a record header with 16/24 name and 13 px muted domain; presence stack of 18 px avatars with a ring in the surface colour; linked-record chip 28 px high with a hover-revealed unlink. Blueprint EntityTitle: ~/.local/state/basalt-accordee/reports/blueprint.md section 6.",
+  "acceptance": [
+    "The four parts render at each size in light and dark with image, initials and icon fallbacks (layout test)",
+    "A missing or failing image falls back without a layout shift",
+    "Each has a per-export doc with use when and never when, and a guard",
+    "make check passes"
+  ],
+  "out_of_scope": "Table kinds, record headers and presence wiring. Upload of an avatar.",
+  "proof": "A playground page of the four parts, shot at 1800 and 390 in light and dark.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

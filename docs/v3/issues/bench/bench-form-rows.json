@@ -1,0 +1,28 @@
+{
+  "why": "The owner: Accordee's settings are \"schön ordentlich, gut sortiert, mit Übersicht, mit Sektionen, mit schönen Input-Items\". basalt has the pieces (FormSection, FormField layout row, a sticky FormFooter, InnerNav with a filter) and two form APIs side by side (STOCKTAKE freeze row 13). What is missing is the settled grammar on the new surface and the few states a settings page needs.",
+  "what": "The form layout parts in src/controls and src/form and a settings page pattern.",
+  "owns": [
+    "packages/basalt-ui/src/controls/{form-field,form-section,form-row,form-footer}.tsx",
+    "packages/basalt-ui/src/form/**",
+    "packages/basalt-ui/src/page/parts for the settings frame if one is added",
+    "the forms reference of the basalt-design skill through its generator",
+    "generated docs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/ui/** controls (bench-control-groups, bench-form-parts)",
+    "packages/basalt-ui/src/shell/**"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. (1) FormSection on the work surface: a heading row outside the box (title, optional badge, optional action, one muted line), then one bordered box of rows divided by hairlines. A row: label and help at the start, one control at the end at a fixed control width for text inputs, stacking below the regular tier. Rows carry a stable id so a link can scroll to and flash one. (2) Save models, stated once and typed: a row bound to a store control applies at once; a section or page bound to a form shows one floating unsaved bar (discard, save) through FormFooter. Never both on one row (the existing FormField rule). (3) States: a locked section (plan or permission) dims and shows why; a danger row; a type-to-confirm row that enables its button when the typed text matches. (4) Row variants: a row whose control is a second line under the label (a tag input, a table); a row with an icon tile at the start; an expandable row that reveals a list of switches. (5) A settings page: a padded page with a centred column, a title and description, sections; its navigation is InnerNav with its filter, and a hit on a setting's name deep-links to the row. (6) Close STOCKTAKE freeze row 13 if this row can: name the one form API the docs teach and what the other is for.",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/settings.md 2.1 and section 3): content column 820 max with 32 px side padding, 48 top; title 26/32, description 14/21 secondary, max 600; section header min 28 with a 14/21 heading and 13/20 muted line, 12 px to its box, 40 px between sections; box radius 12, 1 px border, hairline dividers, no hover fill; row padded 14 by 20, gap 16, heights 56 to 73; label 14/21, help 13/20 muted 4 px below; controls right-aligned, inputs 300 wide; rows stack below the sm breakpoint; switches, selects and reorders apply at once, Profile uses a floating unsaved bar with Discard and Save and a toast; delete workspace is an inline type-to-confirm panel; locked Enterprise groups at about 50% opacity with a chip and a \"See plans\" button; settings search by \"/\" lists setting-level hits grouped by page and flashes the row after the jump. Their flaws to avoid: three focus styles, 32 and 36 px controls on one page, inputs labelled only by aria-label. Shots: settings/01-profile-rest.png, settings/03-notifications-rest.png, settings/18-security-rest.png, settings/23-notifications-custom-types.png, settings/66-profile-phone.png.",
+  "acceptance": [
+    "A playground settings page shows sections of rows with instant-apply rows and one form section with the unsaved bar, a locked section, a danger row and a type-to-confirm row (shot at 1800 and 390, light and dark)",
+    "Every control in a row has a programmatic label and one focus ring",
+    "A deep link to a row scrolls to it and marks it once",
+    "Rows stack below the regular tier",
+    "The docs name one form API to teach",
+    "make check passes"
+  ],
+  "out_of_scope": "New input primitives (bench-form-parts). Roles, billing or audit screens as shipped parts. A settings search index beyond InnerNav's filter.",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

@@ -1,0 +1,27 @@
+{
+  "why": "`Dialog` ends at `max-w-2xl`, 672 px (src/ui/dialog.tsx `dialogContentVariants`), so basalt has no document viewer, no wide form and no create wizard. Accordee's five create flows share one 1100 by 700 split dialog whose left pane previews the record as it is filled; the owner singled out the dialogs and their room.",
+  "what": "src/ui/dialog.tsx, the overlay host, a wizard composite over the existing Stepper.",
+  "owns": [
+    "packages/basalt-ui/src/ui/dialog.tsx and guard",
+    "packages/basalt-ui/src/page/{define-overlays.ts,overlay-host.tsx}",
+    "packages/basalt-ui/src/controls/stepper.tsx and a new wizard-dialog module beside it",
+    "the scrim tokens in packages/basalt-ui/src/tokens (two levels)",
+    "generated docs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/page/{peek,dock,page-aside,record-panel}.tsx",
+    "packages/basalt-ui/src/ui/sheet.tsx"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. (1) Dialog sizes above lg: one for a wide form or a viewer and one for a split wizard, both capped by the viewport as today; `defineOverlays` accepts them. (2) Two scrim levels (README decision 7): `AlertDialog` and phone sheets keep today's scrim, `Dialog` takes a light wash of the frame colour so the page stays readable behind it. (3) A wizard dialog: two panes, a preview pane that renders from the form's current values (a render function, so it mirrors every input) and a form pane with a top bar (back, segmented progress, an \"n/m\" counter, close), a heading with one help line, the step's fields, and one full-width primary at the bottom that stays disabled until the step is valid; a last review step lists every answer with a jump back to its step. It builds on Stepper and the form layer (useAppForm), keeps the draft across a reload through useFormDraft, and collapses to the form pane alone below the regular tier. (4) A header action row for a viewer dialog: title, a meta line, typed actions, close.",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/records.md 2.4, 2.6, 2.7): wizard 1100 by 700, radius 16, shadow 0 32 100 -24, opens with zoom .98 and fade in 300 ms; left pane 562 with a tinted ground and a centred preview card (max 360); right pane 536: top bar 56 with back (32), progress of N segments 4 px high with 6 px gaps, counter 12 px, close (32); body padded 24 by 48, heading 20/32, help 13 muted, fields 32 px below with 24 px gaps; footer one full-width primary 40 px high, 40% opacity while disabled. Steps for a contract: customer and title; plan as five radio cards (66 px, selected with a 2 px ink border) and a seats stepper; billing with segmented controls and a switch card; signer; review as seven key-value rows each with Edit. Small dialog: 420 wide, padding 24, radius 16, reason pills as a radio group, footer right-aligned Cancel and a primary. Upload: 560 wide with a dashed drop zone. Viewer: 1040 by 820 inside the main region, header with file name, meta, copy link, download, delete, close. Washes: transparent blocker for the small dialog, frame colour at 50% for upload and wizards. Shots: records/38-contract-wizard-step-2.png, records/36 to 42, records/23 (mark lost), records/34 (viewer), records/35 (upload), settings/85-new-workspace-step2-selected.png.",
+  "acceptance": [
+    "A five-step wizard in the playground previews its values live, blocks Continue on an invalid step, jumps back from review and restores its draft after a reload (tests)",
+    "At 390 px the wizard shows the form pane alone and stays usable",
+    "Dialog renders at each size in light and dark; AlertDialog keeps the strong scrim, Dialog the wash (layout test)",
+    "Focus trap, Escape and return focus hold at every size",
+    "make check passes"
+  ],
+  "out_of_scope": "Illustrations and animated previews. Radio cards and one-time code as primitives (bench-form-parts; use RadioGroup until it lands). A floating non-modal window (bench-panels).",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

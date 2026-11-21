@@ -1,0 +1,8 @@
+{
+  "why": "The 2026-11-21 benchmark inventory found five statements the tree contradicts. An agent that reads them acts on a wrong fact.",
+  "what": "Docs and one code comment; no behaviour.",
+  "change": "(1) packages/basalt-ui/agent/rules source for basalt-tokens (\"Radius, density and fonts change only through the `basalt()` configuration\") and the root AGENTS.md Critical Rules line on `radius` (integer -5..+5) and `density` (integer -3..+3) against packages/basalt-ui/src/tokens/table.ts line 341 (\"no knob in 3.0\") and docs/v3/concepts/tokens-visual.md point 9: make them say what 3.0 ships. Fix the rule in its generator source, then `make sync-self` as its own commit. (2) packages/basalt-ui/llms.txt is stamped v2.29.0: find why the stamp did not move and fix the generator or the stamp. (3) packages/basalt-ui/docs/recipes/file-drop.md says no upload primitive exists; `FileUpload` ships. (4) The header comment of packages/basalt-ui/src/table/core/features.ts says reorder is absent; it ships. (5) The root AGENTS.md counts six shipped rule files; count them and state the number. Verify each claim in the tree before editing; where the tree agrees with the doc after all, leave it and say so in the PR.",
+  "acceptance": "Each of the five is corrected or shown to be right in the PR text, and make check passes.",
+  "out_of_scope": "Any behaviour change. docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

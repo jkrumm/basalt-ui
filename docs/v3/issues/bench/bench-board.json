@@ -1,0 +1,28 @@
+{
+  "why": "Accordee shows customers, contracts, leads and tasks as boards and reorders its sidebar, pipeline stages and view tabs by drag. basalt ships `KanbanCard` with a required non-drag move path, a board recipe (packages/basalt-ui/docs/recipes/board.md) and no drag dependency; `Board` was cut for zero consumers (charts-cards-kanban concept, DPO 10). README decision 8 reverses the cut. The factory console needs a board too.",
+  "what": "One drag-and-drop dependency behind a seam, `Board` in ./cards, a sortable list primitive.",
+  "owns": [
+    "packages/basalt-ui/src/cards/board*.tsx (new), kanban-card.tsx, kanban-actions.ts, kanban-menu.tsx",
+    "packages/basalt-ui/src/ui/sortable-list.tsx (new)",
+    "packages/basalt-ui/package.json peers, the import-boundary rule for the chosen library",
+    "packages/basalt-ui/docs/recipes/board.md (shrinks to wiring notes)",
+    "docs/v3/concepts/charts-cards-kanban.md (the Board verdict)"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/table/** (order-list.tsx keeps its own pointer reorder until a later row)",
+    "packages/basalt-ui/src/shell/**"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. (1) Choose the library with /research, not from memory: the concept names pragmatic-drag-and-drop and @dnd-kit/react as candidates; check current versions, maintenance, React 19 and Compiler fit, touch and keyboard support, bundle cost. No beta: the TanStack rule in docs/v3/verdicts/tanstack-map.md applies here too. It ships as an optional peer, imported in one module, banned elsewhere by import-boundary. (2) `Board`: columns from typed data (id, label, tone dot, count, an optional total), cards from a render of `KanbanCard`, drag within and between columns calling one `onMove`, a drop target state on the column, an empty-column placeholder, horizontal scroll through the scroll primitive, one active column below the regular container tier as the recipe does today. The menu move path of KanbanCard stays and is the keyboard and assistive path; announce moves politely. Virtual columns keep working. (3) `SortableList`: a vertical list reordered by handle and by keyboard, for settings lists and tab orders. (4) Optimistic move and rollback follow ./data `optimistic`.",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/tables.md 2.1 and 2.4, settings.md on the sidebar page): dnd-kit attributes in the DOM; column 300 px, radius 12, tinted ground, padding 10, gap 10, header 36 px with dot, name, count and on contracts and leads a value total; card 280 px, radius 8, border, padding 16, gap 12; while dragging the source card stays at 40% opacity, a copy follows the pointer tilted about 2 degrees with a larger shadow, the target column takes a border and a darker fill; an empty column shows a dashed placeholder; a sub-bar holds \"Group by\" as a segmented control and a one-line hint. Sortable list: 24 px handle buttons, source row at 30% opacity, live region, keyboard reorder, a Reset. Shots: tables/22-customers-kanban.png, tables/24 (drag), tables/43-contracts-kanban.png, settings/27c-sidebar-mouse-dragging.png.",
+  "acceptance": [
+    "A card moves within and between columns by pointer, by touch and by the menu path, and `onMove` receives column and index (tests)",
+    "A screen reader hears the move; focus returns to the moved card",
+    "A column of 500 cards stays virtual while dragging",
+    "SortableList reorders by handle and by keyboard",
+    "The library is importable in one module only (lint test)",
+    "make check passes"
+  ],
+  "out_of_scope": "Switching a table to a board (bench-view-layouts). Swimlanes. Drag in the table column list. A free canvas.",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them. A short screen recording of a drag is welcome and not required.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

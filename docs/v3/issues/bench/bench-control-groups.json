@@ -1,0 +1,27 @@
+{
+  "why": "The owner finds our inputs and form items \"noch nicht so glatt durchgedacht\" and names Blueprint's joined controls as the model. Blueprint's strength is one closed vocabulary (size, variant, intent, fill) on one height ladder, so a button, an input, a select and a tag line up without tuning. Ours: `Button` has sizes md and sm (src/ui/button.tsx), the other controls were not audited against it, and the only fused group is private to PageBar (`page-action-group` in src/page/page-bar.tsx). primitives-distribution.md section 4 lists InputGroup, InputAddon, PasswordInput and CopyButton; none is exported.",
+  "what": "The control primitives in src/ui and one new group module.",
+  "owns": [
+    "packages/basalt-ui/src/ui/{button,input,textarea,select,combobox,number-field,segmented,date-picker,toolbar}.tsx and guards",
+    "packages/basalt-ui/src/ui/control-group.tsx (new)",
+    "packages/basalt-ui/src/page/page-bar.tsx only to replace its private group with the public one",
+    "generated docs, the forms reference of the basalt-design skill through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/controls/form-*.tsx (bench-form-rows)",
+    "packages/basalt-ui/src/table/**",
+    "the option model of Select and Combobox (a later row unifies it)"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. (1) Audit every control in src/ui against one vocabulary: the same size names resolve to the same heights, the same variant names to the same border, fill and focus ring, and a control at a given size has the same height whichever primitive it is. Write the table of what differed into the Spec and fix it. (2) `ButtonGroup`: buttons shown as one, fused edges, neighbour-aware radius, a stacking order so hover and focus rings show above neighbours. (3) `ControlGroup`: several different controls on one line as one unit (a select, an input, a button), with `fill` and a way to keep one child at its own width. Decide in the Spec whether it fuses or keeps a hairline gap; Blueprint moved to a 2 px gap and fuses only buttons. (4) A group sets size and variant for its children through CSS custom properties or data attributes, so a child can still opt out; Blueprint's class cascade cannot be undone by a child, do not repeat that. (5) `Input` keeps `start` and `end`; add what the concept promised and the audit shows missing: an addon (text or select outside the field edge), a password field with a reveal button, a copy button. (6) Docs state the rule: a button inside a field acts on that field only; if it reaches further it belongs in a group.",
+  "reference": "~/.local/state/basalt-accordee/reports/blueprint.md sections 2 and 3 (vocabulary, FormGroup, ControlGroup, InputGroup, ButtonGroup with the docs examples) and section 9.1 items 1 to 5. Accordee uses 28, 30 and 32 px controls and is inconsistent itself (~/.local/state/basalt-accordee/reports/settings.md section 3, \"Inconsistencies seen\"); do not take its values.",
+  "acceptance": [
+    "A layout test renders every control at every size side by side and asserts equal heights and one focus ring",
+    "ButtonGroup and ControlGroup render horizontal and vertical, with fill, with a child that opts out of the group size, in light and dark",
+    "PageBar action groups use the public group and its frames do not change",
+    "Keyboard order and labels inside a group pass the a11y checks the repo runs",
+    "make check passes"
+  ],
+  "out_of_scope": "A shared list engine for Select, Combobox and the palette. Tag input, one-time code, choice cards (bench-form-parts). Form layout (bench-form-rows).",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

@@ -1,0 +1,24 @@
+{
+  "why": "The benchmark asked whether a consumer can build Accordee-grade screens with basalt. After the earlier rows the answer has to be shown, through the app profile and its lint at error, the way STOCKTAKE section 3 demands. These pages also become the exemplars an agent copies (\"a list page copies this one\") and replace the Accordee screenshots as the reference.",
+  "what": "Pages in apps/playground on one fixture domain, their shots, and a findings list.",
+  "owns": [
+    "apps/playground/src/** for the new pages and fixtures",
+    "docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md (a results section)",
+    "packages/basalt-ui/agent/** exemplar pointers through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (a gap found here is filed, not patched in this row)"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. On one invented domain that is not a CRM clone (pick one: a parts inventory with suppliers and purchase orders fits), with typed fixtures and a fixed \"today\": (1) a list page: view row with counted tabs and saved views, summary strip, a grid-look table with person, tags, status and countdown cells, sticky leading columns, group-by, footer aggregates, the manage-view panel, bulk bar, and the same set as board and gallery; (2) a second list in the Notes shape: title with a type icon, a quiet preview column, linked-record cells, no tick column; a row opens the record as peek, window or page with previous and next; (3) a record page: identity block with avatar and actions, a property list, tabs with counts, an activity list, related lists; (4) a settings page with sections of rows, choice cards, a matrix, a tag input, a danger row; (5) a create flow in the wizard dialog with a live preview. Every page compiles with zero basalt lint waivers and no `custom` column kind; where that is impossible, stop, write the gap down and file it with `factory issue new`, then continue with the rest. Run `basalt-ui shot` and the design reviewer on all of it. Then append a results section to the benchmark doc: per screen family of its section 2, built or not, and the gaps filed.",
+  "reference": "The whole reference: ~/.local/state/basalt-accordee/reports/tables.md, records.md, settings.md. Look at tables/31-notes-rest.png, tables/38-invoices-rest.png, records/04-notes-record-as-drawer.png, records/12-customers-row-opened.png, settings/03-notifications-rest.png, records/38-contract-wizard-step-2.png for the level to reach, then judge by the rules in the README.",
+  "acceptance": [
+    "The five pages render at 1800x1200 and 390x844 in light and dark and the design reviewer returns no P1",
+    "Zero basalt lint waivers and zero custom column kinds on these pages, or each exception names the Issue filed for it",
+    "The benchmark doc states per screen family whether it is now buildable",
+    "The skill names each page as the exemplar for its archetype",
+    "make check passes"
+  ],
+  "out_of_scope": "Fixing package gaps in this row. Calendar, inbox, chat, workflow canvas pages (the next plan).",
+  "proof": "The shot board of the five pages and the reviewer report, linked in the PR.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}
