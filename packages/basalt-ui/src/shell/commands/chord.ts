@@ -134,8 +134,8 @@ export function chordHotkey(chord: Chord): string {
 
 /**
  * Whether a chord leaves a focused control its own keys: a chord with no `Mod`, `Ctrl`, `Meta` or
- * `Alt` is a key the control may want (typing, Enter on a button), so it never fires there. A chord
- * with one fires everywhere.
+ * `Alt` is a key the control may want (typing, Enter on a button), so the hotkey library's
+ * `ignoreInputs` skips it there. A chord with one fires everywhere.
  */
 export function yieldsToControls(chord: Chord): boolean {
   return !(chord.mod || chord.ctrl || chord.meta || chord.alt)

@@ -1,7 +1,7 @@
 /**
  * `defineCommands`: the one declaration behind the chord matcher, the palette and the native menu.
  * It is pure data plus a check: it registers nothing and binds no key. `CommandPalette` reads the
- * set and owns the one `keydown` listener; `toMenuTemplate` reads the same set for the host menu.
+ * set and binds its chords through `bindings.ts`; `toMenuTemplate` reads the same set for the host menu.
  */
 import type { IconComponent } from '../../core/ports'
 import { chordId, parseChord, parseChordSequence, sequenceId } from './chord'
