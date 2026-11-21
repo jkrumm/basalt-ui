@@ -1259,6 +1259,39 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-expr-17-kit-fixes, v3-expr-17-contract, v3-expr-17-skill]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-18.json' }
+  - key: v3-expr-18-kit-fixes
+    title: 'Summary skeleton and error arm, headline spaces, empty panels, card bands, axis focus labels, bar values off ticks, phone columns in their card, from expression cycle 18'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-18]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-18-kit-fixes.json' }
+  - key: v3-expr-18-contract
+    title: 'A drawn Meter caption, range ticks and focus, mono on stat rows and summary facts (Spec), from expression cycle 18'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-cycle-expression-18]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-18-contract.json' }
+  - key: v3-expr-18-skill
+    title: 'Expression skill: a read-aloud pass over the rendered text, one empty cause, a share for a count of a whole, one focus without a chart, from expression cycle 18'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-expression-18]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-18-skill.json' }
+  - key: v3-expr-18-rubric
+    title: 'Expression rubric: one Retry for one failed source under K2, a clamp F5 charged stays out of K1, from expression cycle 18'
+    repo: basalt-ui
+    kind: chore
+    after: [v3-cycle-expression-18]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-18-rubric.json' }
+  - key: v3-cycle-expression-19
+    title: 'Improvement cycle 19: expression, six one-shot visualization trials'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-18-kit-fixes, v3-expr-18-contract, v3-expr-18-skill, v3-expr-18-rubric]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-19.json' }
   - key: astro-chart-server-picture
     title: 'Chart kinds draw a correct server picture at their box height and a declared width, from the Astro matrix'
     repo: basalt-ui

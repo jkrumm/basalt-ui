@@ -1,0 +1,33 @@
+{
+  "why": "Expression cycle 18 (docs/v3/cycles/expression-18.md) lost 16 of 45 round-0 points to `primitive` findings, three of them P2. n87 lost K2 to `PageSummary`: its loading skeleton at 390 draws three headline bars and a facts bar against two loaded lines, a 48 px jump (.4; n91 the same, .32), and its error arm holds the line empty with no cause and no Retry, so a source that feeds only the summary fails in silence (.5; n91 the same). n87 lost R2 to a headline whose word spaces collapse under the head face's tracking ('5,000 photos, 1,200 stillinstaging', the source joins with spaces, .10) and to an empty `DataPanel` that packs its columns left and centres its cause off the panel and under the 390 tab bar (.10). The P3s: a card stretched to its row still leaves a band under its content (n88 .17, n90 .26, n92 .44; the probe found n70's 165 px and n76's 37 to 55 px still open), a focused x label at 390 drops its neighbours and a y chip covers a tick at 1800 (n89 .19, n88's 0 % tick), a bar value label shares a row with an axis tick (n91 .31), a `phone: 'columns'` table is wider than its card at 390 (n91 .33, .36), two panes of one card put their x ticks 22 px apart (n91), and `BarListItem.secondary` takes no maybe-value although the shipped rule says an optional field takes one (n90 marker). The lead's probe before round 0 (`.evidence/v3-shots/expression-18/probe/verdicts.md` in the main checkout) found six of v3-expr-17-kit-fixes' gaps not landed.",
+  "what": "Kit behaviour fixes for every `primitive` finding of cycle 18 that needs no new field, and the probe's open gaps.",
+  "owns": [
+    "packages/basalt-ui/src/page/** (behaviour only)",
+    "packages/basalt-ui/src/charts/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/src/cards/** (behaviour only, not contract.ts, except the `secondary` maybe-value of (6))",
+    "packages/basalt-ui/src/table/** (behaviour only, not contract.ts)",
+    "packages/basalt-ui/docs/** generated from the above (through gen-docs)",
+    "packages/basalt-ui/tests/quality/matrix/hover-shift.ts (only to remove an entry a fix clears)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/charts/contract.ts",
+    "packages/basalt-ui/src/core/ports.ts",
+    "packages/basalt-ui/src/ui/meter.tsx",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) `PageSummary` loading ends at the ready height at both widths: the skeleton takes the sentence's line count, or holds the sentence's box (n87 .4, n91 .32). (2) `PageSummary` in an error phase draws the phase's cause and its Retry in the held block when the query carries them, and stays the quiet held line only where a frame on the page already shows that source's error (n87 .5, n91). (3) A `PageSummary` headline keeps its word spaces in the head face at every width (n87 .10, 'stillinstaging'). (4) An empty `DataPanel` table keeps its columns across the panel and its cause in view at 390, above the tab bar (n87 .10). (5) A card stretched to its row's height puts the extra height below its content with no blank band: a `StatCard` footer stays at the card's bottom, a table card ends at its last row or its body grows (n88 .17, n90 .26, n92 .44; probe n70, n76 finished). (6) `BarListItem.secondary` takes `string | undefined` (n90 marker; `basalt-charts.md`: an optional field takes a maybe-value straight). (7) Axis focus: a focused x label at 390 keeps its neighbours or drops them for every focus alike, and a y hover chip covers no tick at 1800 (n89 .19, n88 0 % tick). (8) A bar value label never shares a row with an axis tick label (n91 .31) and two values at 390 keep apart (probe n76 spike). (9) A `phone: 'columns'` table fits its card at 390, its header whole (n91 .33, .36), and its loading frame ends at the ready rows (probe n86). (10) Stacked panes of one card share one x scale and put their ticks at one x (n91, 22 px apart). (11) The probe's other open gaps: n79 `?fixture=surge` displaced end labels each with a leader, none struck; n68's zone caption at 390 and n71's 'Not counted' under `?fixture=few`; n71's inset clipping its caption; n72's direct labels off other dots at 390; n61's held run in view among the 390 cards. (12) docs/page-summary.md names `facts` as the type has it (n87).",
+  "acceptance": [
+    "n87's and n91's round-0 sources at 390 keep the cards' start y in loading and ready (layout test)",
+    "n87's round-0 source in `?shot-state=error` names the library failure with a Retry in the summary (frames)",
+    "A head-face headline keeps its word spaces (test on n87's sentence)",
+    "An empty DataPanel table keeps its columns across the panel and its cause above the 390 fold (n87 `?shot-state=empty` frames)",
+    "No blank band under a stretched card's content on n88, n90 and n92 round 0, n70 and n76 `?fixture=finished` at 1800 (layout tests)",
+    "Each of (6) to (12) has its test or, where probed and not reproduced, a line in the PR saying so",
+    "No export added and no contract file changed; make check passes"
+  ],
+  "out_of_scope": "Fields: a drawn `Meter` caption, range ticks and focus, and `mono` on a `StatRow` value or a summary fact (v3-expr-18-contract); skill text; the rubric; the trial scenarios.",
+  "proof": "make check; the tests named in acceptance; shots of n87 to n92 (the round-0 sources in .evidence/v3-shots/expression-18/src-r0 in the main checkout) at 1800 and 390 in light and dark with the lead tool's SWEEP, REACH, KEY and FULL lines (.evidence/v3-shots/expression-18/lead-shots.ts), and n61, n68, n70, n71, n72, n76, n79 and n86 for the older gaps.",
+  "commits": "fix: per behaviour with its test."
+}
