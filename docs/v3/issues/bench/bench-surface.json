@@ -1,0 +1,33 @@
+{
+  "why": "The owner never liked the shell edges toward the sidebar and the top. Today rail, header and main share `bg-background` and hairlines cut that one plane in three (`border-e` in src/shell/parts/rail.tsx, the `after:h-px` rule in header.tsx, grid.tsx paints the plane). Content is white only inside a card, so a table sits in a card on grey: in the expression-18 n87 frames a card inside a card. Accordee puts the sidebar on a tinted frame and the work on one white panel, and every later row here builds on that ground.",
+  "what": "The shell frame, the surface tokens, the ground under cards, sections and tables, a fill mode for `Page`, the design law and the reviewer text that state the ground.",
+  "owns": [
+    "packages/basalt-ui/src/shell/app-shell.tsx, contract.ts, parts/{grid,rail,header,header-kebab}.tsx, parts/mobile/**",
+    "packages/basalt-ui/src/page/{page.tsx,section.tsx,card-grid.tsx}",
+    "packages/basalt-ui/src/ui/card.tsx and the surface recipe of the frames in src/cards",
+    "packages/basalt-ui/src/tokens/** (surface roles only, through derive)",
+    "packages/basalt-ui/src/table/table.css (ground and outer edge only)",
+    "docs/DESIGN-CORE.md (Layout, elevation, shapes)",
+    "packages/basalt-ui/agent/** text that names the ground, through its generator",
+    "layout tests and shot records that change with the ground"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/page/page-bar.tsx beyond what the moved header forces (bench-view-row owns it)",
+    "packages/basalt-ui/src/page/{peek,dock,page-aside,record-panel}.tsx (bench-panels)",
+    "packages/basalt-ui/src/table/core/** and parts/**",
+    "the palette seed and the derive knobs"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. (1) AppShell gains a work surface: main is one surface in the card colour, rail and brand zone stay on the frame colour. A typed `frame: 'panel' | 'flush'` option: panel is an inset, rounded, hairline-bordered surface from the md shell tier up; flush has no inset and no radius and is what compact and phone always get. (2) The header's identity content (breadcrumb, the page's claimed actions, global actions) moves inside the surface as its first row; the brand zone stays above the rail on the frame. (3) Cards, sections and frames on the surface take a hairline border and lose their dependence on a grey ground. (4) `Page` gains a fill mode in which its main part (a table, a SplitPage, a canvas) runs to the surface edges with no gutter and no wrapping card; padded stays the default. (5) Aside and dock columns sit inside the surface so a panel clips to its corners. (6) DESIGN-CORE and the skill and reviewer lines that describe the ground follow. Token names, the exact inset and which existing radius step the panel takes are yours; decision 4 in the README binds them to the ladder.",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/shell.md sections 2 and 3): frame #fafafa; panel white, margin 8 8 8 0 (none on the sidebar side), radius 8, 1 px border at 10% black, shadow 0 1 2 at 5%; inside it a 44 px identity row and a 44 px tab row, both hairline rows, not fills; cards 1 px border, radius 8, no shadow; dark: panel #0a0a0a darker than the sidebar #0f0f10, cards #171717 lighter; phone and the Classic layout: flush with a 1 px sidebar border. Shots: shell/01-start-resting.png, shell/23-dashboard-resting.png, tables/38-invoices-rest.png, shell/41-phone-start-resting.png. Ours today: .evidence/v3-shots/shell--light--1800x1200.png and expression-18/r1/scenarios-expr-n87--list--light--1800x1200.png in the main checkout.",
+  "acceptance": [
+    "The playground shell renders rail on the frame and one surface holding the page, as panel from md up and flush below, in light and dark (shot frames)",
+    "A fill page shows a DataTable edge to edge on the surface with no card around it; a padded page shows hairline cards on the surface (layout tests)",
+    "No hairline divides rail, header and main on one shared colour any more",
+    "Contrast of text and borders on both planes holds in the derive checks",
+    "docs/DESIGN-CORE.md and the shipped skill text describe the two planes",
+    "make check passes"
+  ],
+  "out_of_scope": "The view row and saved-view tabs (bench-view-row). Panels and overlays (bench-panels). A resizable rail, a workspace switcher, favourites. Type weights. Runtime switching of the frame by an end user.",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

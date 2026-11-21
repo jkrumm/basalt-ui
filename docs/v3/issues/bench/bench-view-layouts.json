@@ -1,0 +1,22 @@
+{
+  "why": "Accordee shows the same customers as table, list, kanban, gallery and more, each saved as its own view with shared filters and sort. basalt has one recipe (packages/basalt-ui/docs/recipes/view-switch.md) and the phone card projection of a table. With Board, the view model and the kinds in place, the column definitions can drive every layout.",
+  "what": "A layout property on the view and renderers that read the table model.",
+  "owns": [
+    "a new module under packages/basalt-ui/src/table for layouts, parts/toolbar.tsx (the layout toggle)",
+    "packages/basalt-ui/docs/recipes/view-switch.md (shrinks to wiring notes)",
+    "generated docs and skill text through its generator"
+  ],
+  "must_not_touch": ["packages/basalt-ui/src/cards/board*.tsx internals", "the table core"],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. (1) A view has a layout: table, list, board or gallery. The layout toggle in the view row and \"+ View\" set it. Filters, search, sort and selection are shared; the bulk bar works in every layout. (2) list: one row per record from the columns' `card` slots (title, subtitle, badge, value, meta), a quiet header strip, grouped when the view groups. (3) board: `Board` with columns from a status or select column the user picks as \"group by\"; a drop calls that column's `commit`, so only a column with an inline edit path can be a board axis; column totals come from a footer rule. (4) gallery: `CardGrid` of cards from the same slots, grouped into sections with a label and count when the view groups. (5) Virtualisation where the layout scrolls a long set; server mode limits stated in the docs. (6) The phone projection keeps working and is the list layout's renderer.",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/tables.md 2.1 \"Other layouts\", 2.2 cards, 2.7): list rows 56 px with a 32 px logo, name and inline tags, contact chip, owner, growth and rating; board as in bench-board with a \"Group by\" segmented control (Rating, Owner) and a hint line; gallery of four columns, gap 16, cards radius 12 with a 1 px border and no shadow, a hover lift, 40 px logo, name, location, tag chips with +N, a divider, two facts; notes cards grouped by time bucket (\"Today 1\", \"Earlier this week 4\") with a 12 px muted label and count chip; layout toggle as a two or three button segmented icon control. Map, timeline, folders and forecast exist there and are out. Shots: tables/21 to 30, tables/36 (notes cards), tables/43, tables/52.",
+  "acceptance": [
+    "A playground record set switches between the four layouts from the view row and each is saved with its view (tests)",
+    "Filter, sort, search and selection carry across layouts; the bulk bar acts on a selection made in any of them",
+    "Dragging a card on the board commits the column value with optimistic rollback on failure",
+    "Each layout renders at 1800 and 390 in light and dark (shot)",
+    "make check passes"
+  ],
+  "out_of_scope": "Map, timeline, folders, forecast, calendar. Custom card renderers beyond the card slots.",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

@@ -1,0 +1,28 @@
+{
+  "why": "The owner calls Accordee's shell \"mit oben den Tabs [...] oben rechts auch noch die Controls\" better than ours. There every list page has the same single row. We spread the job over three places: segment tabs in the PageBar band (src/page/page-tabs.tsx), saved views in a toolbar popover (src/table/parts/views.tsx) and FilterSet pills. Accordee refactored 16 list pages onto one ToolbarTabs component before it could lint the pattern.",
+  "what": "PageBar, its tabs, ViewTabs, and the summary strip of a fill page.",
+  "owns": [
+    "packages/basalt-ui/src/page/{page-bar.tsx,page-tabs.tsx,page-summary.tsx,contract.ts}",
+    "packages/basalt-ui/src/controls/{view-tabs.tsx,filter-set*.tsx,control-home.tsx}",
+    "packages/basalt-ui/src/ui/tabs.tsx (a row variant)",
+    "packages/basalt-ui/src/cards/stat-group*.tsx (the flush strip only)",
+    "generated docs and the page reference of the basalt-design skill through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/table/** (bench-manage-view binds saved views to the tabs)",
+    "packages/basalt-ui/src/shell/**"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. (1) PageBar gains the view row as the grammar of a list page: on the left a tab list where each tab is a named view or a named filter with an optional count and tone dot; on the right, in this order, an inline search, a filter trigger that shows the number of active filters, a layout toggle, a view-settings trigger, secondary actions and at most one primary. One line at the bar height, a hairline below, no fill. It folds by the existing tiers: labels become icons, tabs scroll, the rest goes to the \"more\" menu; on a phone the search takes its own row. (2) Tabs variant for the row: a quiet pill for the active tab, count in muted tabular figures, a red or toned count allowed for an attention tab. The tab still binds a ControlHandle. (3) The filter trigger opens the FilterSet as a popover of grouped chip sets and checkbox lists with a live \"showing N of M\" and a reset; pills in the bar stay available where a page has two filters or fewer. Decide the threshold in the Spec. (4) A fill page may put a flush summary strip under the view row: StatGroup cells divided by hairlines, each with label, value, a sub-line and an optional sparkline. The owner rejected a bare stat strip on 2026-11-19, so a cell without a sub-line or context does not render in the strip. (5) The identity row above it (bench-surface) holds breadcrumb, record navigation and global actions; a page's primary action moves to the view row.",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/tables.md 2.0 to 2.3, shell.md): toolbar 44 px, border-b, padding 8, gap 16; tab and ghost buttons 28 px, radius 6, 14 px text, 16 px icon; active tab tinted with a 1 px border; counts 12 px muted tabular, the Overdue count red; primary 28 px; KPI strip 96 px, four cells padded 14 by 20, label 12 muted, value 18, sub-line 12 muted, cells split by 1 px borders, a 70 by 24 sparkline at the right on invoices; filter popover 340 wide with 11 px uppercase section labels, 26 px chips, footer \"Showing 21 of 50\" and Done; a badge with the active count on the trigger. Three tab looks exist there (fill, bordered pill with count, underline with icon and count); take one for the row. Shots: tables/38-invoices-rest.png, tables/01-customers-table-rest.png, tables/03 to 06 (filter popover), records/03-notes-popup-viewmode-menu.png (notes row), tables/83 (phone).",
+  "acceptance": [
+    "A playground list page shows one row: counted tabs left, search, filter with count, layout toggle, view settings and one primary right (shot at 1800 and 390, light and dark)",
+    "The row folds at each container tier without wrapping to a second line, except the phone search row",
+    "A tab with a count updates when its count changes and binds a ControlHandle",
+    "The filter popover shows a live match count and resets",
+    "A summary strip cell without context is refused by type or not rendered",
+    "make check passes"
+  ],
+  "out_of_scope": "Saved views as tabs and the manage-view panel (bench-manage-view). Board and gallery layouts (bench-view-layouts). The record header.",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

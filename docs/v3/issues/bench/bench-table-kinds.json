@@ -1,0 +1,23 @@
+{
+  "why": "The Notes table the owner compares to Notion works through its cells: a title with a type icon, a muted one-line preview, typed link icons, people and agents at one avatar size, almost no colour. Our 14 kinds cover none of person, tags, a due date as a distance, or a link; `entity` takes an icon only. Each of these is a counted `custom` escape today.",
+  "what": "Column kinds in src/table/core and their phone card projection.",
+  "owns": [
+    "packages/basalt-ui/src/table/core/kinds*.ts(x) and the cell parts they need under src/table/parts",
+    "generated docs and the table reference of the basalt-design skill through its generator"
+  ],
+  "must_not_touch": [
+    "sizing, grouping and footer code from bench-table-view",
+    "packages/basalt-ui/src/ui/avatar.tsx, entity.tsx"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. Add kinds, each with sort value, filter, group value, footer rule, priority and a `card` slot like the existing ones. (1) `person`: avatar and name, optional muted role; a variant for several people as an AvatarStack. (2) `entity` accepts an Avatar image or logo and an optional muted id beside the name. (3) `tags`: chips that never wrap, with a +N when the cell is too narrow, tone from the status tone map; filter is any-of. (4) `countdown`: a date shown as its distance from now (\"26 days late\", \"in 4 days\"), toned by thresholds the column declares, falling back to the date beyond a horizon; it reads the clock through useNow and sorts by the date. (5) `link`: a URL, an email or a record link as quiet text with an optional leading icon. (6) A title kind with a leading type icon chosen per row from a typed map, for records of mixed kinds in one list. (7) A muted one-line preview is `text` with a `quiet` option, not a new kind. Rule for all: colour sits in a pill or in the countdown text, never in a row tint; figures are tabular.",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/tables.md 2.1 to 2.9): company cell 16 px logo radius 4, 10 px gap, 13 px text; person 16 px round avatar and name, 20 px in author columns, 28 px with name and role on the network table; tags 17 px high, radius 4, 10 px text, tinted border and ground, clipped not wrapped; status pill 20 px, fully round, 12 px text, 6 px dot, ground at 10% of the tone; due as \"26 days late\" in red, \"In 4 days\" in amber, a date otherwise; renewal as a split cell with the date left and \"in 491 days\" right in 12 px muted, amber at 60 days or fewer; probability as a 48 by 4 track with the percent after it; \"Known by\" as overlapping 20 px avatars; notes: 16 px type icon (AI or human) before the title, linked record as a 14 px typed icon and label in secondary ink, content preview 13 px muted truncated. What makes Notes clear, eight points: tables.md 2.2. Shots: tables/31-notes-rest.png, tables/38-invoices-rest.png, tables/01-customers-table-rest.png, tables/42 (contracts), tables/58 (network).",
+  "acceptance": [
+    "A playground table shows every new kind, sorted, filtered and grouped, at 1800 and as phone cards at 390 (layout test)",
+    "tags folds to +N instead of wrapping; countdown re-renders as time passes and sorts by date",
+    "No new kind needs the custom escape for the cases above; the custom-kind count in the playground drops where they applied",
+    "make check passes"
+  ],
+  "out_of_scope": "Inline editing of the new kinds. A sparkline-with-delta combined cell. Flags and brand logos as data.",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

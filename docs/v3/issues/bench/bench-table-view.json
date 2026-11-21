@@ -1,0 +1,30 @@
+{
+  "why": "The owner rates Accordee's tables a level above ours. Our engine is stronger (URL state, server modes, virtualisation, 14 kinds), but docs/v3/concepts/data-table.md line 341 cut for zero consumers what makes those tables feel owned by the user: column resize, per-table density, a user group-by. README decision 8 reverses those three.",
+  "what": "src/table: sizing, the view model, group-by, the footer, the leading columns.",
+  "owns": [
+    "packages/basalt-ui/src/table/contract.ts, use-data-table.ts, core/**",
+    "packages/basalt-ui/src/table/parts/{head,body,footer,footer-model,group-row,group-row-model,column-actions,order-list,tick-column,select-cell,virtual,views-model}.tsx/.ts",
+    "packages/basalt-ui/src/table/table.css",
+    "docs/v3/concepts/data-table.md (the kill list line and the sections it contradicts)",
+    "generated docs, the table reference of the basalt-design skill through its generator"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/table/parts/{toolbar,toolbar-editor,views}.tsx (bench-manage-view owns the UI that edits a view)",
+    "column kinds in core/kinds*.ts beyond what sizing needs (bench-table-kinds)",
+    "packages/basalt-ui/src/page/**"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. Everything below is state of the view (the display lane and the ViewStore), never of the URL, and each has a programmatic setter so bench-manage-view can drive it. (1) Column resize: a handle on the header edge, pointer and keyboard (a separator with a value), double-click resets to the kind's width, a minimum per kind, widths saved per view. Pinned offsets follow resized widths. (2) Row height as a view property: compact, default, comfortable, mapped to the row-height tokens `data-density` already moves; the header keeps its height. (3) User group-by: any column whose kind can group may be picked; group rows are collapsible, carry label and count and reuse the existing reduce; client mode only, as today. (4) Footer aggregate chosen per column by the user from what the kind allows (count, sum, mean, min, max), saved per view; the declared `footer` stays the default. (5) In `look: 'grid'`: sticky leading columns (tick, an optional row-number column, the identity column) with an edge shadow that appears once the table has scrolled sideways; cell hairlines on both axes. (6) Virtualisation, server modes, phone cards and keyboard keep working with all of it; state the limits in the docs where one does not combine (group-by in server mode).",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/tables.md 2.1): real table in one scroller; header and rows 40 px, footer 44 px, cells 12 px horizontal padding, 1 px hairlines on every cell; header cells sticky top; checkbox 40, row number 44 and the name column sticky left with shadow 8px 0 12px -8px at 14% black once scrolled; resize handle 7 px hit area, 2 px line while active, double-click resets; row height compact 32, default 40, comfortable 52 with the header staying 40; group row 36 px full-width with a sticky-left button (chevron, label, count), row numbers continue across groups; footer is a sticky row where a click cycles Count N or Total; no row tint for status. Shots: tables/01-customers-table-rest.png, 63 (sticky edge), 66 (resize), 14 and 15 (groups), 16 and 17 (footer).",
+  "acceptance": [
+    "Dragging a header edge resizes the column, the keyboard does the same, double-click resets, and the width survives a reload through the view (tests)",
+    "Row height switches between three steps per view without a reflow of the header",
+    "Group-by on a status and on a text column gives collapsible groups with count and footer reduce in client mode",
+    "A user-picked footer aggregate persists per view",
+    "In the grid look the leading columns stay put under horizontal scroll, in a virtual table too (layout test at 1800 and 390)",
+    "docs/v3/concepts/data-table.md no longer lists the three as cut",
+    "make check passes"
+  ],
+  "out_of_scope": "The manage-view panel and saved-view tabs. New column kinds. Multi-sort, filter operators, a DataGrid, cell editors, export (still cut). Column virtualisation.",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

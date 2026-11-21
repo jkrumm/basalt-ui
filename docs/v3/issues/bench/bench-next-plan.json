@@ -1,0 +1,16 @@
+{
+  "why": "The benchmark lists more than the first rows build. Those items sit on parts that will have landed by now (surface, panels, board, view row, form parts), so their briefs are better written against the real exports than guessed in advance. The owner asked that the leads build the benchmark without specs waiting on him.",
+  "what": "New rows in docs/plan.yaml and one brief file each under docs/v3/issues/bench/. No package code.",
+  "owns": ["docs/plan.yaml (new rows only)", "docs/v3/issues/bench/*.json (new files)"],
+  "must_not_touch": ["packages/basalt-ui/**", "existing rows of docs/plan.yaml"],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. Read the results section bench-reference-pages wrote, the gaps it filed, and the reports. Then write one row and one brief per item below, in the shape of the existing bench files (why, what, owns, must_not_touch, change, reference with measured numbers and shot names, acceptance, out_of_scope, proof, commits), with decisions made in the brief and `after` edges only where a row needs another row's output. Items: (1) Calendar: a calendar primitive and week, month and day views with events, a now line, a mini month, an event opening in the record surface (~/.local/state/basalt-accordee/reports/comms.md, meetings). (2) Flow canvas: a pan and zoom surface with pointer and hand tools, zoom menu and fit; group cards of rows that collapse; an SVG connector layer of elbow edges between anchors; a docked details panel; validation shown on the card, the edge, the row and the panel. Accordee's builder is a CSS grid of group cards, not a node graph (~/.local/state/basalt-accordee/reports/workflows.md); the factory console is the named consumer. (3) Inbox and mail: a two-pane list and reader with a resizable remembered split, a row with avatar, unread dot and a hover checkbox, day groups, a thread, a composer that opens as panel, window or page. (4) Chat parts as shipped parts in place of the copy-in recipes: composer, reasoning trace, message actions, model picker, mentions. (5) One list engine behind Select, Combobox and the command palette: groups as data, rich options, async, virtual rows (~/.local/state/basalt-accordee/reports/blueprint.md section 4). (6) Record page parts: a property list that edits in place, tabs with counts, an activity timeline with period groups, relationship cards. (7) Runtime theme attributes: density, frame and a set of pre-derived accents as public attributes with a switcher part. (8) Blocks: product-shaped source installed into the app by the CLI and tracked in the eject ledger (benchmark doc section 6); start with the reference pages. (9) Shell nav: workspace switcher, favourites, a resizable rail. Leave out: whiteboard, network map, map view, a user-arranged dashboard grid, an invoice editor, a runtime font choice. Run `factory plan check` before the PR.",
+  "acceptance": [
+    "docs/plan.yaml gains one row per item with a brief file each and passes `factory plan check`",
+    "Every brief names the landed exports it builds on by their real names and paths",
+    "No row carries `checkpoint: gate`",
+    "make check passes"
+  ],
+  "out_of_scope": "Building any of it.",
+  "proof": "The PR diff.",
+  "commits": "docs: one commit."
+}

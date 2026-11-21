@@ -18,7 +18,10 @@ additive and fits 3.x minors.
 - **Blueprint:** five mechanisms are worth taking (section 5). Its styling layer is not.
 - **Distribution:** no public registry. Add a block tier on the ledger `eject` already has (section 6).
 
-**Five calls are the owner's.**
+**Filed 2026-11-21.** The owner approved the direction the same day. The first rows are `bench-*` in `docs/plan.yaml`;
+their decisions, which settle the five calls below with defaults, are in `docs/v3/issues/bench/README.md`.
+
+**Five calls were the owner's.**
 
 1. **The surface model** (3.1): a frame and one work surface, replacing the single grey plane with floating cards.
 2. **Kill-list reversals** (section 4): column resize, row height per view, a user group-by, `Board`.

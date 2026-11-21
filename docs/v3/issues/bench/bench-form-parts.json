@@ -1,0 +1,25 @@
+{
+  "why": "The inventory found these absent and every settings, wizard and sign-in screen of the benchmark uses them: a selectable card (Accordee's plan and appearance cards, Blueprint's ControlCard), a permission matrix, a tag input, a six-box code field, a colour swatch picker, quick-pick pills that feed a field.",
+  "what": "New primitives in src/ui with docs, guards and tests.",
+  "owns": [
+    "new modules under packages/basalt-ui/src/ui and their guards",
+    "packages/basalt-ui/src/ui/{radio-group,checkbox}.tsx where a card variant extends them",
+    "generated docs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/controls/**",
+    "packages/basalt-ui/src/ui/combobox.tsx option model"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. All on the vocabulary from bench-control-groups, all with a field binding like the existing controls. (1) Choice cards: RadioGroup and CheckboxGroup as cards, each with a title, a line of text, an optional trailing value and an optional preview slot; selected state by border, not by fill alone. (2) A checkbox matrix: rows and columns from typed data, a header row, a row label with help, per-cell disabled and locked states, row and column \"all\" toggles, built on the table primitive with real checkboxes and correct header associations. (3) Tag input: free values as removable chips in a field, paste splits on separators, validation per tag. (4) One-time code: N boxes, `autocomplete=\"one-time-code\"`, numeric input mode, paste fills all, an error state for the whole group. (5) Swatch picker: a small set of named tokens as swatches in a menu or inline, selected by ring, never free colour values. (6) Quick picks: a single-select chip row that writes a field (dates, durations), composed with the field it feeds.",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/settings.md, records.md 2.7): radio cards 66 px, radius 8, selected with a 2 px ink border and a radio dot, price right-aligned with a small unit line; appearance cards as 120 by 76 thumbnails with a label below; permission matrix as a real table of native checkboxes with Owner, Admin, Member, Guest columns; tag input with chips inside a 36 px field; one-time code as six 60 by 44 inputs, all red with a message below on a wrong code; stage colour as a menu with a 4-column grid of 28 px swatches; due date quick pills (Today, Tomorrow, In 3 days, Next week) over a date input, selected pill filled. Blueprint ControlCard and TagInput: ~/.local/state/basalt-accordee/reports/blueprint.md sections 3 and 8. Shots: settings/02-preferences-rest.png, settings/19-security-bottom-matrix-sessions.png, settings/31-pipeline-colour-popover.png, settings/95-verification-code-wrong.png, records/38-contract-wizard-step-2.png, records/32 (new task).",
+  "acceptance": [
+    "Each part renders its states (rest, hover, focus, selected, disabled, invalid) in light and dark and at 390 px (layout test)",
+    "Each binds a field, validates on blur and on submit, and exposes label, description and error to assistive tech",
+    "One-time code fills from a paste and from the platform suggestion; tag input splits a pasted list",
+    "The matrix is operable by keyboard cell by cell",
+    "make check passes"
+  ],
+  "out_of_scope": "A free colour picker. A rich text editor. Avatar upload. A date-time picker.",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}

@@ -1,0 +1,27 @@
+{
+  "why": "Saved views are a device-local popover in the table toolbar today (src/table/parts/views.tsx): apply, save-as, reset. No view tabs, no default view, no duplicate, and no single place to edit what a view is. In Accordee a view is a tab and \"Edit view\" opens one panel that holds everything the view owns. The three earlier rows deliver the row, the view properties and the panel; this row joins them.",
+  "what": "The table toolbar, the views model and UI, the binding between views and the PageBar view row.",
+  "owns": [
+    "packages/basalt-ui/src/table/parts/{toolbar,toolbar-editor,toolbar-filters,views,views-model}.tsx/.ts",
+    "the ViewStore contract in packages/basalt-ui/src/table/contract.ts",
+    "packages/basalt-ui/docs/recipes/saved-views.md (shrinks to wiring notes)",
+    "generated docs and skill text through its generator"
+  ],
+  "must_not_touch": [
+    "table core from bench-table-view beyond calling its setters",
+    "the panel anatomy from bench-panels beyond using it"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. (1) A saved view is a tab in the view row: its name, an optional icon for its layout, a count when the store can give one. A tab's own menu: rename, copy link, edit, duplicate, export, delete. Tabs reorder (SortableList if bench-board has landed, else the menu). \"+ View\" adds one. `?view=<id>` stays the address. A view may be the default. (2) The view owns: name, columns shown and their order and widths, row height, filters, sort, group-by, footer aggregates, and later its layout (bench-view-layouts). An unsaved change to the active view shows as modified with save and discard. (3) The manage-view panel, on the shared panel anatomy, non-modal so the table reacts live: a root of grouped rows (icon, label, current value, chevron) that drill into one page each with Back: name; sharing, shown only when the ViewStore says it can share; copy link; row height; column width preset and reset; columns (show, hide, the identity column locked); filter; sort; group; duplicate; export, shown only when the app passes an exporter; remove. On a phone it is a bottom sheet. (4) The ViewStore port grows what the above needs (order, default, sharing capability) with the device-local store as the default; write the migration of stored views. (5) The header menu's \"Filter column\" opens the panel on the filter page.",
+  "reference": "Accordee, measured (~/.local/state/basalt-accordee/reports/tables.md 2.1, records.md 2.8): Manage View aside 400 px, non-modal, header 48 with title and close, sub-pages add Back; four bordered groups of 41 px rows: Name, Share View (Private), Copy Link, Overview Cards; Row Height, Column Width, Reset Column Width; Columns (Show All), Filter (2 active), Sort (Amount up), Group (None); Duplicate View, Export Table, Remove View in red. Row height page: Compact \"More rows on screen\", Default \"Balanced for reading\", Comfortable \"Extra room around each row\". Columns page: checkbox, icon, name, a lock on the identity column, \"Deselect all\". View tabs: each tab is a menu trigger and is draggable; \"+ View\" opens a menu of layouts with 36 px icon tiles and two lines each; views and the group setting persisted across a reload, filters did not (do better: the view holds them). Shots: tables/10-customers-manage-view-drawer.png, tables/11 to 13, 23, 29, 68, 69.",
+  "acceptance": [
+    "Views show as tabs; create, rename, duplicate, reorder, set default and delete work and survive a reload through the device store (tests)",
+    "Every property in the panel changes the table live and is saved with the view; a modified view shows save and discard",
+    "With a ViewStore that cannot share, the sharing row is absent; with one that can, it lists private and shared",
+    "The panel is a bottom sheet at 390 px",
+    "Views stored by the current format still load",
+    "make check passes"
+  ],
+  "out_of_scope": "A server ViewStore implementation. Layout switching. Permissions on shared views. CSV export itself (the recipe stays).",
+  "proof": "Before and after frames from `basalt-ui shot` at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}
