@@ -28,7 +28,7 @@ export type BarListItem = CardTarget & {
   label: string
   value: number
   /** A muted second figure or word after the label (a share, a status word). */
-  secondary?: string
+  secondary?: string | undefined
   /**
    * The row's segments by series key (`BarListProps.series`), stacked in the series' order on the
    * list's one scale. `value` stays the printed total, so the parts sum to it.
