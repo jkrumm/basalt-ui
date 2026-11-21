@@ -17,6 +17,17 @@ describe('couldNotLoad', () => {
     expect(couldNotLoad('2024 sales')).toBe('Could not load 2024 sales')
   })
 
+  test('a title-cased name keeps its case: a later word starts in capitals', () => {
+    expect(couldNotLoad('Bull Run Index')).toBe('Could not load Bull Run Index')
+    expect(couldNotLoad('Weekly Revenue')).toBe('Could not load Weekly Revenue')
+    expect(couldNotLoad('Revenue by Region')).toBe('Could not load Revenue by Region')
+  })
+
+  test('a sentence-case label still lowercases its first word', () => {
+    expect(couldNotLoad('Revenue this week')).toBe('Could not load revenue this week')
+    expect(couldNotLoad('Revenue (7 days)')).toBe('Could not load revenue (7 days)')
+  })
+
   test('a missing or blank label is the bare title', () => {
     expect(couldNotLoad()).toBe('Could not load')
     expect(couldNotLoad('   ')).toBe('Could not load')
