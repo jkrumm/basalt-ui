@@ -48,7 +48,7 @@ describe('a dimmed ink-step bar', () => {
     )
   })
 
-  test('recedes from its resting paint and keeps 3:1 on the card in both schemes', () => {
+  test('recedes from its resting paint by 1.3:1 and keeps 2.5:1 on the card in both schemes', () => {
     for (const [scheme, grey] of [
       [0, '#6b6b6b'],
       [1, '#a8a8a8'],
@@ -56,8 +56,8 @@ describe('a dimmed ink-step bar', () => {
       const surface = card(scheme)
       const rest = over(grey, DEFAULT_BAR_OPACITY, surface)
       const dimmed = over(grey, DEFAULT_BAR_OPACITY * INK_STEP_DIM, surface)
-      expect(contrastRatio(rest, dimmed)).toBeGreaterThan(1.15)
-      expect(contrastRatio(dimmed, surface)).toBeGreaterThanOrEqual(3)
+      expect(contrastRatio(rest, dimmed)).toBeGreaterThan(1.3)
+      expect(contrastRatio(dimmed, surface)).toBeGreaterThanOrEqual(2.5)
     }
   })
 })

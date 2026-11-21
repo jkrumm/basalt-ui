@@ -229,8 +229,12 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
     const bar = byKey.get(row.series)
     return bar?.highlight?.(row.datum) ? CV.brand : bar?.color
   }
-  const solid = ({ datum }: { datum: PlotRow<D, ChartX> }): string =>
-    colorOf(datum) ?? 'transparent'
+  /** The hovered bar: an ink-step bar rises through `focusedPaint`, as the focused one does, so it stands out from the bars that recede. */
+  const solid = ({ datum }: { datum: PlotRow<D, ChartX> }): string => {
+    const color = colorOf(datum)
+    if (color === undefined) return 'transparent'
+    return isInkStep(color) ? focusedPaint(color) : color
+  }
   const fill = (row: PlotRow<D, ChartX>): string => {
     const bar = byKey.get(row.series)
     const color = colorOf(row)
