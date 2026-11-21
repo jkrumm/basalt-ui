@@ -261,6 +261,15 @@ export function installPeers(ctx: Ctx): void {
   const base = isSiblingApp(ctx.root) ? findRepoRoot(ctx.root) : ctx.root
   const runtime = missing(plan.runtime)
   const dev = missing(plan.dev)
+  for (const spec of [...runtime, ...dev]) {
+    const name = spec.slice(0, spec.lastIndexOf('@'))
+    const declared = have[name]
+    if (declared !== undefined) {
+      say(
+        `peers: ${name} ${declared} is outside what basalt-ui supports (${plan.ranges[name] ?? spec}); installing ${spec.slice(name.length + 1)}`,
+      )
+    }
+  }
   const commands = [
     ...(runtime.length > 0 ? [installCommand(base, runtime, false)] : []),
     ...(dev.length > 0 ? [installCommand(base, dev)] : []),
@@ -669,16 +678,24 @@ function patchCss(
   return stock.test(text) ? text.replace(stock, () => entry) : `${entry}\n`
 }
 
-/** `<viteDir>/.gitignore` lists `.basalt/sources.css` once; the file is created when it is missing. */
-function ignoreSources(ctx: Ctx, viteDir: string): void {
+/** What `basalt-ui shot --out shots-<n>` writes: a fresh directory per round, never tracked. */
+export const SHOTS_IGNORE = 'shots-*/'
+
+/**
+ * `<viteDir>/.gitignore` lists `.basalt/sources.css` (regenerated on every run) and the `shot`
+ * rounds (`SHOTS_IGNORE`), each once; the file is created when it is missing.
+ */
+function ignoreGenerated(ctx: Ctx, viteDir: string): void {
   const file = viteDir === '.' ? '.gitignore' : `${viteDir}/.gitignore`
   const text = readText(ctx.root, file) ?? ''
-  const listed = text
-    .split('\n')
-    .some((line) => [SOURCES_PATH, `/${SOURCES_PATH}`].includes(line.trim()))
-  if (listed) return
+  const lines = text.split('\n').map((line) => line.trim())
+  const add = [SOURCES_PATH, SHOTS_IGNORE].filter(
+    (entry) => !lines.some((line) => line === entry || line === `/${entry}`),
+  )
+  if (add.length === 0) return
   const lead = text === '' || text.endsWith('\n') ? text : `${text}\n`
-  if (writeText(ctx.root, file, `${lead}${SOURCES_PATH}\n`)) say(`${file}: ignores ${SOURCES_PATH}`)
+  if (writeText(ctx.root, file, `${lead}${add.join('\n')}\n`))
+    say(`${file}: ignores ${add.join(', ')}`)
 }
 
 /** A Start app has no create-vite stylesheet: when none exists, `src/index.css` is written as the one entry. */
@@ -715,7 +732,7 @@ export function wireApp(ctx: Ctx): void {
     .flatMap((d) => VITE_CONFIGS.map((f) => join(d, f)))
     .find((f) => existsSync(resolve(ctx.root, f)))
   const patched = vite === undefined ? null : patchVite(readText(ctx.root, vite) ?? '', first)
-  if (vite !== undefined) ignoreSources(ctx, dirname(vite))
+  if (vite !== undefined) ignoreGenerated(ctx, dirname(vite))
   if (vite !== undefined && patched !== null) {
     if (writeText(ctx.root, vite, patched)) say(`${vite}: added the Vite plugins`)
   } else {

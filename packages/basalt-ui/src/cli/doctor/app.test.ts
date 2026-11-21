@@ -5,6 +5,8 @@ import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { cleanupTrees, editManifest, makeTree, runCheck } from './fixture.test'
+import { buildContext } from './index'
+import { playwrightNote } from './app'
 
 afterEach(cleanupTrees)
 
@@ -137,12 +139,85 @@ describe('check 12: app wiring', () => {
     })
   })
 
-  it('fails when the manifest declares viewports but Playwright is not a dependency', async () => {
+  it('never fails a missing Playwright, declared viewports included: it is a note', async () => {
     const dir = makeTree('app')
     editManifest(dir, (m) => void (m.viewports = ['1440x900']))
-    const r = await runCheck(dir, 12)
-    expect(r.status).toBe('fail')
-    expect(r.detail).toContain('Playwright')
+    expect((await runCheck(dir, 12)).status).toBe('pass')
+    const note = playwrightNote(buildContext(dir, {}))
+    expect(note).toContain('bun add -d playwright && bunx playwright install chromium')
+    expect(note).toMatch(/^note: /)
+  })
+
+  it('names no Playwright note once it is declared, and none for a tokens or site profile', () => {
+    const declared = makeTree('app', {
+      'package.json': JSON.stringify({ name: 'app', devDependencies: { playwright: '1.60.0' } }),
+    })
+    expect(playwrightNote(buildContext(declared, {}))).toBeNull()
+    expect(playwrightNote(buildContext(makeTree('tokens'), {}))).toBeNull()
+    expect(playwrightNote(buildContext(makeTree('site'), {}))).toBeNull()
+  })
+
+  describe('a nav link needs a route file', () => {
+    const NAV = (...to: string[]): string =>
+      `import { linkOptions } from '@tanstack/react-router'
+export const NAV = defineNav({ sections: [{ id: 'm', label: 'M', items: [${to
+        .map((t, i) => `{ id: 'i${i}', label: 'I', link: linkOptions({ to: '${t}' }) }`)
+        .join(', ')}] }] })
+`
+    const LAYOUT = "export const Route = createFileRoute('/_app')({})\n"
+    const PAGE = "export const Route = createFileRoute('/_app/x')({})\n"
+    const tree = (nav: string[], routes: Record<string, string>): string =>
+      makeTree('app', { 'src/lib/nav.tsx': NAV(...nav), ...routes })
+
+    it('fails a link to / when only the layout exists, naming the file and the path', async () => {
+      const r = await runCheck(tree(['/'], { 'src/routes/_app.tsx': LAYOUT }), 12)
+      expect(r.status).toBe('fail')
+      expect(r.detail).toContain('src/lib/nav.tsx links to / but no route file')
+    })
+
+    it.each([
+      ['src/routes/_app/index.tsx', '/'],
+      ['src/routes/_app.index.tsx', '/'],
+      ['src/routes/index.tsx', '/'],
+      ['src/routes/_app/runs.tsx', '/runs'],
+      ['src/routes/_app.runs.index.tsx', '/runs'],
+      ['src/routes/_app/runs/index.tsx', '/runs'],
+      ['src/routes/_app/runs/$id.tsx', '/runs/$id'],
+      ['src/routes/_app/runs/$id.tsx', '/runs/42'],
+      ['src/routes/(admin)/users.tsx', '/users'],
+      ['src/routes/_app/docs/$.tsx', '/docs/a/b'],
+    ])('passes %s for a link to %s', async (route, to) => {
+      const r = await runCheck(tree([to], { 'src/routes/_app.tsx': LAYOUT, [route]: PAGE }), 12)
+      expect(r.detail).not.toContain('no route file')
+      expect(r.status).toBe('pass')
+    })
+
+    it('reports each unserved link once and only those', async () => {
+      const r = await runCheck(
+        tree(['/', '/runs', '/gone'], {
+          'src/routes/_app.tsx': LAYOUT,
+          'src/routes/_app/index.tsx': PAGE,
+          'src/routes/_app/runs.tsx': PAGE,
+        }),
+        12,
+      )
+      expect(r.status).toBe('fail')
+      expect(r.detail).toContain('links to /gone but')
+      expect(r.detail).not.toContain('links to / but')
+      expect(r.detail).not.toContain('links to /runs but')
+    })
+
+    it('does not judge a code-routed app, which has no routes directory', async () => {
+      expect((await runCheck(tree(['/anything'], {}), 12)).status).toBe('pass')
+    })
+
+    it('ignores a route file in an ignored (-) path and the root route', async () => {
+      const r = await runCheck(
+        tree(['/'], { 'src/routes/__root.tsx': LAYOUT, 'src/routes/-index.tsx': PAGE }),
+        12,
+      )
+      expect(r.status).toBe('fail')
+    })
   })
 
   describe('a generated .basalt/sources.css', () => {

@@ -8,7 +8,16 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { createElement } from 'react'
 import type { ReactElement } from 'react'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { managedFiles } from '../../src/cli'
 import { cleanupTrees, makeTree, runCheck } from '../../src/cli/doctor/fixture.test'
@@ -26,6 +35,7 @@ const SEEDS = {
   '_app-error.tpl': 'src/components/route-error.tsx',
   '_app-missing.tpl': 'src/components/route-missing.tsx',
   '_app-pending.tpl': 'src/components/route-pending.tsx',
+  '_app-index.tpl': 'src/routes/_app/index.tsx',
 } as const
 
 const START_VITE =
@@ -48,7 +58,7 @@ const SHARED_SEEDS = Object.fromEntries(
 /** What the TanStack router plugin writes for the `_app` layout and its index route. */
 const ROUTE_TREE = `import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
-import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -114,11 +124,6 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 `
 
-const INDEX_ROUTE = `import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/_app/')({ component: () => <p>Home</p> })
-`
-
 const write = (dir: string, rel: string, text: string): void => {
   mkdirSync(dirname(join(dir, rel)), { recursive: true })
   writeFileSync(join(dir, rel), text)
@@ -141,6 +146,45 @@ describe('router templates', () => {
       const file = seeds.get(`agent/templates/${tpl}`)
       expect(file?.dest, tpl).toBe(dest)
       expect(file?.mode, tpl).toBe('seed')
+    }
+  })
+
+  test('the start page is the `/` route under the layout and is a Page', () => {
+    const page = filled('_app-index.tpl')
+    expect(page).toContain("createFileRoute('/_app/')")
+    expect(page).toMatch(/<Page>[\s\S]*<PageBar title="[^"]+" \/>[\s\S]*<\/Page>/)
+    expect(page).toContain('Scratch')
+    const exported = [...page.matchAll(/^export (?:function|const) (\w+)/gm)].map((m) => m[1])
+    expect(exported).toEqual(['Route'])
+  })
+
+  test('the start page lints clean on the app preset, which still flags an offender beside it', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'basalt-start-page-'))
+    try {
+      mkdirSync(join(dir, 'node_modules/@shadcn'), { recursive: true })
+      symlinkSync(pkgRoot, join(dir, 'node_modules/basalt-ui'))
+      symlinkSync(
+        join(pkgRoot, 'node_modules/@shadcn/lint'),
+        join(dir, 'node_modules/@shadcn/lint'),
+      )
+      write(dir, '.oxlintrc.json', readFileSync(join(pkgRoot, 'configs/oxlint-app.json'), 'utf8'))
+      write(dir, 'src/routes/_app/index.tsx', filled('_app-index.tpl'))
+      write(
+        dir,
+        'src/routes/_app/bad.tsx',
+        "export function Bad() { return <div style={{ color: '#ff0000' }}>x</div> }\n",
+      )
+      const oxlint = join(pkgRoot, '../../node_modules/.bin/oxlint')
+      const lint = (path: string): { code: number; out: string } => {
+        const run = Bun.spawnSync([oxlint, '-c', '.oxlintrc.json', path], { cwd: dir })
+        return { code: run.exitCode, out: `${run.stdout}${run.stderr}` }
+      }
+      const page = lint('src/routes/_app/index.tsx')
+      expect(page.out).toBe('')
+      expect(page.code).toBe(0)
+      expect(lint('src/routes/_app/bad.tsx').out).toContain('basalt(colour-literal)')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
     }
   })
 
@@ -268,7 +312,6 @@ describe('router templates', () => {
     const dir = mkdtempSync(join(cacheRoot, 'router-templates-'))
     try {
       for (const [tpl, dest] of Object.entries(SEEDS)) write(dir, dest, filled(tpl))
-      write(dir, 'src/routes/_app.index.tsx', INDEX_ROUTE)
       write(dir, 'src/routeTree.gen.ts', ROUTE_TREE)
       write(dir, 'src/css.d.ts', "declare module '*.css'\n")
       write(
@@ -305,7 +348,6 @@ describe('router templates', () => {
       for (const [tpl, dest] of Object.entries({ ...SHARED_SEEDS, ...START_SEEDS })) {
         write(dir, dest, filled(tpl))
       }
-      write(dir, 'src/routes/_app.index.tsx', INDEX_ROUTE)
       write(dir, 'src/routeTree.gen.ts', ROUTE_TREE)
       write(
         dir,

@@ -622,6 +622,7 @@ export function managedFiles(
       ['appError', '_app-error.tpl'],
       ['appMissing', '_app-missing.tpl'],
       ['appPending', '_app-pending.tpl'],
+      ['appIndex', '_app-index.tpl'],
     ] as const
   ).map(([seed, tpl]) => ({
     dest: routerSeedDest(placement.appRel, seed),

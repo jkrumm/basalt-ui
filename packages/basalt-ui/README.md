@@ -27,8 +27,12 @@ bun add basalt-ui
 
 That is the whole install. A create-vite React app already has `react`, `react-dom` and `vite`; `init`
 (step 2) installs the rest of the `app` profile's peers (`tailwindcss`, `@tailwindcss/vite`,
-`@base-ui/react`, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/router-plugin`) at
-the exact pins it prints, so installing them yourself first only pins them twice. A peer a subpath
+`@base-ui/react`, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/router-plugin`) and the lint
+tools. Most go in at the exact pin it prints; three are ranges (`@base-ui/react` `~1.9.0`,
+`@tanstack/react-router` `^1.170.0`, `@tanstack/react-query` `^5.104.0`), so an app already on a newer
+version inside the range keeps it, and a fresh install takes the newest one and saves it exactly. A
+dependency the app already had whose version falls outside the range or pin is changed, and `init` prints
+one line for it (for example `oxlint ^1.90.0` moves to the preset's pin). Installing the peers yourself first only pins them twice. A peer a subpath
 needs that `init` does not install (`./charts`, `./table`) is named by `basalt()` (the Vite plugin)
 as the exact `bun add` line, and `basalt-ui doctor` lists what is missing; a missing peer otherwise
 surfaces as an unresolved import at build time, not as an install warning. Exact versions:
@@ -69,7 +73,7 @@ plugin, no marketplace and no second version to track. `init` writes at the git 
 - `.basalt/budget.json` (the seeded ceilings) and the formatter ignore for the managed paths
 - `site` (static pages on Astro) writes no router scaffold and no Vite patch: `init` prints the `basaltAstro()` line for `astro.config` from `basalt-ui/astro` and the tokens stylesheet import
 - with `app`, the router scaffold (the files in the tree below), each written once and never touched by `sync`; a `main.tsx` that is create-vite's stock entry is replaced, any other entry gets the template's lines printed
-- `.basalt/sources.css` in the `.gitignore` beside the Vite config (once; `basalt()` regenerates the file on every run, and `doctor` reports it when git tracks it)
+- `.basalt/sources.css` and `shots-*/` in the `.gitignore` beside the Vite config (once each; `basalt()` regenerates the sources file on every run, and `doctor` reports it when git tracks it; `shots-*/` holds the `shot` rounds). `init` does not install Playwright, which `shot` needs and which downloads a browser: `doctor` prints a note with the install line until the app declares it
 - in a stock Vite config, `tanstackRouter(...)` and `basalt()` in `plugins`; in a stock stylesheet entry (`index.css`), the `tailwindcss` import becomes `@import 'basalt-ui/tailwind.css'`, the app's `tokens.css` when the `tokens:css` output exists, and `.basalt/sources.css`; any other shape gets the exact lines printed
 
 ```text
@@ -78,6 +82,7 @@ src/
   index.css                 stylesheet entry
   routes/__root.tsx
   routes/_app.tsx           the AppShell layout
+  routes/_app/index.tsx     the start page at /, which the nav's Home item opens
   lib/nav.tsx               the one defineNav
   components/route-pending.tsx, route-error.tsx, route-missing.tsx
 ```
