@@ -6,7 +6,10 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { shotState, SHOT_FLAG } from './shot-state'
 
 const ready = { isPending: false, isError: false, error: null, data: [1, 2], refetch: () => 0 }
-const at = (search: string): void => window.history.replaceState(null, '', `/page${search}`)
+const at = (search: string): void =>
+  (window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(
+    `http://localhost/page${search}`,
+  )
 const mark = (on: boolean): void => {
   ;(window as unknown as Record<string, unknown>)[SHOT_FLAG] = on ? true : undefined
 }
