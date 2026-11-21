@@ -548,6 +548,32 @@ export const N79_SERIES = defineSeries({
   migration: { light: '#b0b0b0', dark: '#666666' },
 })
 
+/** Study stats (scenario expr-n81): the accent is the one most practised item; the other items sit in an ink step; on the confidence bars done is the dark ink step, learning a mid one, not started a pale one; the status red is a review past due, a review not yet due a mid step, the today rule a dark one. */
+export const N81_SERIES = defineSeries({
+  top: { light: '#2871c7', dark: '#5190f7' },
+  rest: { light: '#6b6b6b', dark: '#a8a8a8' },
+  done: { light: '#262626', dark: '#e6e6e6' },
+  learning: { light: '#7a7a7a', dark: '#9c9c9c' },
+  notStarted: { light: '#c9c9c9', dark: '#4a4a4a' },
+  due: { light: '#af293e', dark: '#e46360' },
+  later: { light: '#7a7a7a', dark: '#9c9c9c' },
+  rule: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Planning poker counts (scenario expr-n82): the accent is the last 24 hours, a brand token set by the bar `highlight`; every other day rests in one mid ink step, the typical-day rule and the day divider in a darker one. */
+export const N82_SERIES = defineSeries({
+  day: { light: '#9a9a9a', dark: '#7d7d7d' },
+  typical: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** API keys (scenario expr-n84): the accent is spend still billing outside the gateway since the cutover; the team key and the bars before the cutover take the dark ink step, the gateway key a pale one, the cap rule a mid one. */
+export const N84_SERIES = defineSeries({
+  outside: { light: '#262626', dark: '#e6e6e6' },
+  leak: { light: '#2871c7', dark: '#5190f7' },
+  gateway: { light: '#9a9a9a', dark: '#7d7d7d' },
+  cap: { light: '#6b6b6b', dark: '#a8a8a8' },
+})
+
 /** Charter request page (scenario expr-n75): the accent is the request sent, set by the bar `highlight`; visits and the inquiry verdicts rest in ink steps, page views in a pale one, the marked days in a mid rule. */
 export const N75_SERIES = defineSeries({
   visitors: { light: '#262626', dark: '#e6e6e6' },
@@ -555,4 +581,13 @@ export const N75_SERIES = defineSeries({
   step: { light: '#6b6b6b', dark: '#a8a8a8' },
   inquiries: { light: '#6b6b6b', dark: '#a8a8a8' },
   rule: { light: '#4a4a4a', dark: '#c4c4c4' },
+})
+
+/** Loop outcomes (scenario expr-n85): the accent is the Issue that closed with a measured gain; the other four outcomes sit in ink steps, dropped as noise the darkest and still open the palest. */
+export const N85_SERIES = defineSeries({
+  gain: { light: '#2871c7', dark: '#5190f7' },
+  flat: { light: '#6b6b6b', dark: '#a8a8a8' },
+  unmeasured: { light: '#9a9a9a', dark: '#7d7d7d' },
+  dropped: { light: '#262626', dark: '#e6e6e6' },
+  open: { light: '#d4d4d4', dark: '#5c5c5c' },
 })

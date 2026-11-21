@@ -474,6 +474,47 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
       'The owner picks a speech model for each use. Which model and voice does a blind listen prefer for each preset, and at what latency and cost per minute?',
   },
   {
+    id: 'expr-n81',
+    title:
+      'Expression n81: whether practice builds up, how sure the learner is, and how many reviews are due',
+    blurb:
+      'A learner opens the study stats between sessions. Is practice building up, how sure is the learner across the catalogue, and how many reviews are due now?',
+  },
+  {
+    id: 'expr-n82',
+    title:
+      'Expression n82: whether the planning-poker site was used in the last 24 hours, and what is unusual',
+    blurb:
+      'The owner of a small planning-poker site reads the morning digest. Was the site used in the last 24 hours, and is anything unusual?',
+  },
+  {
+    id: 'expr-n83',
+    title:
+      "Expression n83: in which hours and weekdays agent spend lands, in the owner's time zone",
+    blurb:
+      "An owner wants to know when the agents actually run. In which hours of the day and on which days of the week does spend land, read in the owner's own time zone?",
+  },
+  {
+    id: 'expr-n84',
+    title:
+      'Expression n84: what each team key spent over 30 days against its cap, and what still bills outside the gateway',
+    blurb:
+      'The owner of a shared team API key checks its panel. How much has each key spent over the rolling 30 days against its cap, and is anything still billing through the team key that should go through the gateway?',
+  },
+  {
+    id: 'expr-n85',
+    title: 'Expression n85: whether each self-improvement loop pays its way over 7 and 30 days',
+    blurb:
+      'The factory owner checks whether the self-improvement loops pay their way. For each loop over the last 7 and 30 days, how many Issues did it open, how many closed with a measured gain, and how many were dropped as noise?',
+  },
+  {
+    id: 'expr-n86',
+    title:
+      'Expression n86: which hygiene checks came back clean, found work, were skipped, failed or never ran',
+    blurb:
+      'A project owner opens the hygiene checks after the weekly sweep. Which checks came back clean, which found work, which were skipped or failed, and which have never run?',
+  },
+  {
     id: 'linked-windows',
     title: 'Linked windows: a table of runs beside an hourly chart',
     blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',
