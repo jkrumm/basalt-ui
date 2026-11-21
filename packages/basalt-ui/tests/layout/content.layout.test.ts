@@ -142,6 +142,24 @@ layout('Markdown region', () => {
         else expect(toc).toEqual({ nav: 0, trigger: true })
       })
 
+      test('the diagram fits its container without scrolling sideways', async () => {
+        const page = await open(viewport)
+        const box = await page.raw.evaluate(() => {
+          const wrapper = document.querySelector<HTMLElement>('[data-slot="mermaid"]')!
+          const svg = wrapper.querySelector('svg')!
+          return {
+            scrollWidth: wrapper.scrollWidth,
+            clientWidth: wrapper.clientWidth,
+            wrapperRight: wrapper.getBoundingClientRect().right,
+            svgRight: svg.getBoundingClientRect().right,
+            innerWidth: window.innerWidth,
+          }
+        })
+        expect(box.scrollWidth).toBeLessThanOrEqual(box.clientWidth)
+        expect(box.svgRight).toBeLessThanOrEqual(box.wrapperRight + 0.5)
+        expect(box.wrapperRight).toBeLessThanOrEqual(box.innerWidth + 0.5)
+      })
+
       test('headings carry an anchor and the diagram renders', async () => {
         const page = await open(viewport)
         const found = await page.raw.evaluate(() => ({

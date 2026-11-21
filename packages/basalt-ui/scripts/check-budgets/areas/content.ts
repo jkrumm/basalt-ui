@@ -1,7 +1,7 @@
 /**
  * Area: content — the `./content` subpath, G2 freeze. Value symbols are exact. Byte rows count the
  * static closure only (the entry chunk and the chunks it imports statically): shiki languages and
- * beautiful-mermaid are lazy chunks a consumer pays for on first use, and counting them reads 810 KB.
+ * pele are lazy chunks a consumer pays for on first use, and counting them reads 810 KB.
  * Seeds are the first complete build plus 5 percent, rounded up to 0.5 KB (quality-contract section
  * 6), ratcheted down only (gzip B minus `base0`, peers bundled).
  */

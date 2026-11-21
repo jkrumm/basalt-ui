@@ -21,7 +21,7 @@ describe('allotment.gen.ts', () => {
       resizable: ['react-resizable-panels'],
       'virtual-list': ['@tanstack/react-virtual'],
     })
-    expect(ALLOTMENT.subpaths['content']?.lazy).toEqual(['shiki', 'beautiful-mermaid'])
+    expect(ALLOTMENT.subpaths['content']?.lazy).toEqual(['shiki', 'pele'])
     expect(ALLOTMENT.subpaths['ai']).toEqual({
       peers: ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
       lazy: [],

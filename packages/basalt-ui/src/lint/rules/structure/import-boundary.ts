@@ -718,7 +718,7 @@ const STACK_PACKAGES: ReadonlySet<string> = new Set([
   'remark-gfm',
   'remend',
   'shiki',
-  'beautiful-mermaid',
+  'pele',
   'eventsource-parser',
   'tailwindcss',
   'vite',

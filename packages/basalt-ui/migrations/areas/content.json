@@ -175,6 +175,15 @@
       "manual": true
     },
     {
+      "id": "content-mermaid-pele",
+      "kind": "replace",
+      "from": "beautiful-mermaid, the optional peer behind a mermaid fence",
+      "to": "pele",
+      "profiles": ["app"],
+      "manual": true,
+      "note": "an app with beautiful-mermaid installed and no pele silently shows mermaid fences as code blocks; swap the peer with bun remove beautiful-mermaid, then bun add pele (a dev-only console warning names it once); pele draws every diagram type of Mermaid 12.1, in --basalt-* tokens that follow a scheme flip with no re-render"
+    },
+    {
       "id": "content-settledOnly",
       "kind": "removed",
       "from": "basalt-ui/content#settledOnly",
@@ -195,6 +204,11 @@
         "token": "Markdown link or image to //host or /\\host",
         "from": "kept as same-origin",
         "to": "blocked, rendered without a destination"
+      },
+      {
+        "token": "a mermaid fence under contentTrust=\"untrusted\"",
+        "from": "no image or link policy (beautiful-mermaid drew neither)",
+        "to": "images off and links limited to https:, mailto:, tel: and relative references"
       },
       {
         "token": "Markdown with a missing peer",

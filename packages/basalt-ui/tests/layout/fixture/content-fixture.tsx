@@ -21,7 +21,7 @@ const REPLY = [
   'A table, a fence and a [guide](/docs/guide). Mermaid fences become diagrams, and a very long unbroken-identifier-that-would-push-the-page-sideways-if-nothing-wrapped-it-at-all-1234567890 wraps.',
   '| Stage | Latency | Owner | Notes |\n| - | - | - | - |\n| Ingest | 40 ms | platform | the first stage reads from the queue |\n| Serve | 8 ms | edge | the last stage writes to the cache |',
   `~~~ts\n${LONG_LINE}\n~~~`,
-  '~~~mermaid\ngraph LR\n  Ingest --> Parse --> Enrich --> Serve\n~~~',
+  '~~~mermaid\ngraph LR\n  Ingest --> Parse --> Validate --> Enrich --> Route --> Serve\n~~~',
   '### A subsection',
   'Text under the subsection.',
   '## Next steps',

@@ -177,7 +177,7 @@ export const SURFACES = {
       'rehype-sanitize',
       'remend',
       'shiki',
-      'beautiful-mermaid',
+      'pele',
       '@tanstack/react-router-devtools',
     ],
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin
@@ -240,7 +240,7 @@ export const SURFACES = {
       'shiki',
       '@shikijs/langs',
       '@shikijs/themes',
-      'beautiful-mermaid',
+      'pele',
       'react-markdown',
       'remark-gfm',
       'rehype-sanitize',
