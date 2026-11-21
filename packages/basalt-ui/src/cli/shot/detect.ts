@@ -203,7 +203,7 @@ function anchorFindings(
       'P1',
       'layout',
       'cardLeftColumns',
-      `Table columns in no phone card slot (no \`card\` option, so they fell to the detail): ${listed(cardLeft)}.`,
+      `Table columns in no phone card slot (left in the detail: their kind's default or a full slot; set \`card\`): ${listed(cardLeft)}.`,
     )
   if (small.length > 0)
     add(

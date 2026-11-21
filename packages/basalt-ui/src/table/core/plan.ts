@@ -75,8 +75,8 @@ export type PlannedColumn = {
    * Every other column leaves the phone row and stays in the row's details.
    */
   phoneKeep: boolean
-  /** The caller named a card slot (`card` option): a column that did not lands in `detail` by default or overflow. */
-  cardNamed: boolean
+  /** The caller asked for `card: 'detail'`: any other column in `detail` was left there by its kind or by a full slot. */
+  cardDetail: boolean
 }
 
 export type TablePlan = {
@@ -263,7 +263,7 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
     visible: visible[index]!,
     widthPx: widths[index]!,
     flex: sized[index] === null && c.width !== 'icon' && c.width.flex,
-    cardNamed: c.cardFirst === true,
+    cardDetail: c.cardFirst === true && c.card[0] === 'detail',
     phoneKeep:
       index === identity ||
       places[index] === 'kebab' ||

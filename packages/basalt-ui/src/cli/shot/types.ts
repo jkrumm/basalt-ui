@@ -60,7 +60,7 @@ export type Measurement = {
   overlaps?: string[]
   /** Table columns the plan hides on a table wide enough to be a table, as `<table label>: <column id>`. */
   hiddenColumns?: string[]
-  /** Table columns no phone card shows: they named no `card` slot and fell to the detail. */
+  /** Table columns no phone card shows: they sit in the detail without asking for `card: 'detail'`. */
   cardLeftColumns?: string[]
 }
 
