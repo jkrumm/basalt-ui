@@ -126,16 +126,19 @@ export function xTickOpacity(opts: {
     // and a neighbour, which the thinning already holds apart from it, needs no air for it.
     const repeats =
       opts.ticks !== undefined && chipRepeatsTick(xValue, readoutText(xValue), opts.ticks)
-    // A repeated tick is drawn where its tick is, so the engine pushes it in from the chart edge no more than the tick.
+    // A band name repeated as the readout is drawn where its tick is (a name, not a date or a number, whose
+    // chip the engine pushes in from the chart edge).
+    const band = repeats && typeof xValue === 'string'
     const centre =
-      width === undefined || repeats
+      width === undefined || band
         ? x
         : clamp(x, EDGE_INSET + half, Math.max(EDGE_INSET + half, width - EDGE_INSET - half))
     const air = repeats ? 0 : READOUT_AIR
-    // Both boxes of a repeated tick are over-estimates and the engine placed these labels apart at rest by
-    // their real widths: a neighbour is blanked only where the two still meet shrunk to what they draw, so a
-    // phone's four band labels keep their neighbours whichever bar is focused.
-    const shrink = repeats ? DRAWN_SHARE : 1
+    // Both boxes of a band name are over-estimates and the engine placed the names apart at rest by their
+    // real widths: a neighbour is blanked only where the two still meet shrunk to what they draw, so a
+    // phone's four band labels keep their neighbours whichever bar is focused. Dates stay on the estimate:
+    // their labels are packed to the engine's minimum gap, and a bold chip over one is the garbled string.
+    const shrink = band ? DRAWN_SHARE : 1
     const readout: Span = [centre - half * shrink - air, centre + half * shrink + air]
     const label = spanOf(
       position + (tick.dx(value) ?? 0),
