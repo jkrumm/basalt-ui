@@ -290,3 +290,19 @@ describe('init --profile app in a declared sibling', () => {
     expect((await capture(() => sync({ check: true }, join(dir, 'apps/y-v3')))).code).toBe(0)
   })
 })
+
+describe('sibling: the session note', () => {
+  it('prints it when a sibling sync rewrites a repo-root agent file', async () => {
+    const dir = repo()
+    await appInit(dir, 'apps/x-v3')
+    const rules = join(dir, '.claude/rules')
+    const first = readdirSync(rules).find((name) => name.startsWith('basalt-'))
+    expect(first).toBeDefined()
+    rmSync(join(rules, first ?? ''))
+    const app = join(dir, 'apps/x-v3')
+    const healed = await capture(() => sync({}, app))
+    expect(healed.code).toBe(0)
+    expect(healed.log).toContain('Agent sessions:')
+    expect((await capture(() => sync({}, app))).log).not.toContain('Agent sessions:')
+  })
+})

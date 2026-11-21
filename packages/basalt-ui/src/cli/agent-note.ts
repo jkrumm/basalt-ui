@@ -3,24 +3,28 @@
  * session start: `.claude/`, the hook shim and the managed AGENTS.md. The note names no agent product
  * and no terminal, because the CLI detects neither. A run that changes none of them prints nothing.
  */
-import { readdirSync, readFileSync } from 'node:fs'
+import { readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { SHIM } from './lint/settings'
 import { AGENTS_FILE } from './sync/engine'
 
 export const SESSION_NOTE =
-  'Agent sessions: a coding agent reads these files when its session starts. A session that was already running, the one that ran this command included, may still lack the new rules, skills and hook. If you are an agent: tell the user, commit or finish what is in flight, and continue in a new session before you write app code.'
+  'Agent sessions: a coding agent reads these files when its session starts. A session that was already running, the one that ran this command included, may still lack the new rules, skills and hook. If you are an agent: tell the user, finish or save what is in flight without committing, and continue in a new session before you write app code.'
 
-/** The bytes of each agent-read file, by absolute path. */
+/**
+ * The `size:mtime` stamp of each agent-read file, by absolute path. A write always moves the mtime, and
+ * `init` and `sync` write only what differs, so a stamp tells a change without reading the bytes.
+ */
 export type AgentFiles = Map<string, string>
 
 /** `.claude/worktrees` holds other checkouts of this repo, not this install. */
 const WORKTREES = join('.claude', 'worktrees')
 
-const readText = (path: string): string | null => {
+const stamp = (path: string): string | null => {
   try {
-    return readFileSync(path, 'utf8')
+    const info = statSync(path)
+    return info.isFile() ? `${info.size}:${info.mtimeMs}` : null
   } catch {
     return null
   }
@@ -39,8 +43,8 @@ function walk(dir: string, skip: string, out: AgentFiles): void {
       if (path !== skip) walk(path, skip, out)
       continue
     }
-    const text = entry.isFile() ? readText(path) : null
-    if (text !== null) out.set(path, text)
+    const value = entry.isFile() ? stamp(path) : null
+    if (value !== null) out.set(path, value)
   }
 }
 
@@ -51,8 +55,8 @@ export function agentFiles(bases: readonly string[]): AgentFiles {
     walk(join(base, '.claude'), join(base, WORKTREES), out)
     for (const rel of [SHIM, AGENTS_FILE]) {
       const path = join(base, rel)
-      const text = readText(path)
-      if (text !== null) out.set(path, text)
+      const value = stamp(path)
+      if (value !== null) out.set(path, value)
     }
   }
   return out
