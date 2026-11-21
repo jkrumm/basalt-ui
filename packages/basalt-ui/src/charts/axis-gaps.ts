@@ -124,7 +124,7 @@ const LOG_Y_REFUSED = (what: string): string =>
  * A log y: a series that stands on zero (a bar, an area fade, a stack) cannot draw on it. A dev build
  * throws and names the series; a production build draws the chart linear. A left-axis value of zero
  * or below has no place on decades: a dev build throws with the series and the value, a production
- * build skips the point (the series reads `null` there). A rule at a non-positive value is dropped.
+ * build skips the point (the series reads `null` there). A left-axis rule at a non-positive value is dropped.
  */
 export function withLogY<
   T,
