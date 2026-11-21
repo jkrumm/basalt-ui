@@ -186,6 +186,8 @@ export function ExprN71Scenario({ shotState, fixture }: ScenarioProps) {
                 }
                 sub={view.sub}
                 phase={tallyPhase}
+                // a Meter is 17 px (bar and readout line): the chart box takes its height, so the inset has no empty band
+                chartHeight={17}
                 chart={() => (
                   <Meter
                     label="Progress to target"
