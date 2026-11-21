@@ -102,7 +102,7 @@ for (const viewport of VIEWPORTS) {
       await settle(400)
       const after = await probe(page)
       expect(after.errors).toEqual([])
-      expect(after.renders.heat ?? 0).toBeLessThan(60)
+      expect(after.renders['heat'] ?? 0).toBeLessThan(60)
     })
   })
 }
