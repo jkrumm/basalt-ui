@@ -1,5 +1,5 @@
 /**
- * The surface a struck value label is drawn on. A text mark has no stroke, so a rule or a line piece that
+ * The surface a struck value label is drawn on. A text mark has no stroke, so a rule that
  * crosses a label's glyphs is covered by a card-coloured box under them: the rule gives way to the number.
  */
 import { decorative } from '@tanstack/charts/mark/decorative'
@@ -8,14 +8,22 @@ import type { LabelBox } from '../chart-labels'
 import type { ChartMarks } from '../types'
 import { CV } from './theme'
 
-/** The least side of a text-sized box, px: a rule is 4 px thick and a line path piece under 11, a caption is 13 and more. */
-const TEXT_BOX_MIN_PX = 12
+/** The thickest a rule's box is, px: a hairline and the air a label keeps. A bar, a dot or a label is thicker or shorter than the plot. */
+const RULE_MAX_PX = 6
 
-/** Whether `box` lies over a rule or a line piece among `obstacles` (a box thinner than a caption). */
-export function isStruck(box: LabelBox, obstacles: readonly LabelBox[]): boolean {
+/**
+ * Whether `box` lies over a rule among `obstacles`: a box no thicker than a hairline that spans the plot's
+ * whole width (a value's rule) or height (an x rule). A bar, a dot, a label or a line piece is none of them.
+ */
+export function isStruck(
+  box: LabelBox,
+  obstacles: readonly LabelBox[],
+  frame: { width: number; height: number },
+): boolean {
   return obstacles.some(
     (o) =>
-      Math.min(o.width, o.height) < TEXT_BOX_MIN_PX &&
+      ((o.height <= RULE_MAX_PX && o.width >= frame.width - 1) ||
+        (o.width <= RULE_MAX_PX && o.height >= frame.height - 1)) &&
       o.left < box.left + box.width &&
       box.left < o.left + o.width &&
       o.top < box.top + box.height &&
