@@ -11,7 +11,7 @@ import type { ChartCardProps, ChartFigure } from '../contract'
 import { INITIAL_WIDTH, ServerFrameContext } from '../sizing'
 import type { ServerFrame } from '../sizing'
 import { Footer, formatValue, Head, PhaseBox, SURFACE } from './chart-card-frame'
-import { ChartPanes } from './chart-panes'
+import { ChartPanes, panesFloorCss } from './chart-panes'
 import { Legend } from './legend'
 
 const BAR = 'animate-pulse rounded-chip bg-foreground/10 motion-reduce:animate-none'
@@ -287,9 +287,10 @@ const hasNoRows = (phase: object): boolean => {
  * figure's period is one line that never wraps, held below `regular` even while empty, so a period
  * that follows focus changes text, never the height under the pointer.
  *
- * `panes` in place of `chart` stacks two or three charts on one x in the box: each pane takes its
- * share by `weight` (default 1), 4 px apart, and its slot is called with `height: 'fill'`, so no pane
- * states a pixel height at any width. One cursor group, one `y.gutter` and `x.ticks: []` on every pane
+ * `panes` in place of `chart` stacks charts on one x in the box: each pane takes its share by `weight`
+ * (default 1) above a 160 px floor (the `short` box), 4 px apart, and its slot is called with
+ * `height: 'fill'`, so no pane states a pixel height at any width. The box grows to hold every floor
+ * (five panes take 816 px at any width), so a page never wraps the card in a floor of its own. One cursor group, one `y.gutter` and `x.ticks: []` on every pane
  * but the bottom stay the page's (the two-pane recipe).
  *
  * A series with `failed: true` keeps its legend entry, which reads `unavailable`, draws nothing in the
@@ -402,6 +403,7 @@ export function ChartCard(props: ChartCardProps): ReactElement {
                       'mt-2',
                     BOX[height],
                   )}
+                  minHeight={panes === undefined ? undefined : panesFloorCss(panes.length)}
                 />
               </ServerFrameContext>
             </div>
