@@ -207,14 +207,13 @@ config-first props. When to extract one, stay bespoke or add a colour: `docs/V2-
 Series colours are **domain data**, not framework identity — so they live **app-side**, not in
 basalt. The framework ships the primitives; the consumer defines its own series and wires them in:
 
-Define the series map in ONE app-side file via `defineSeries` / `seriesTokens` / `groupTokens`, and pass
-it to `buildPaletteCss({ series })` (`BasaltProvider`'s `paletteOptions`).
+Define the series map in ONE app-side file, `src/basalt.tokens.ts`; `basalt-ui tokens:css --extra` emits it as
+`--basalt-<group>-<key>` and `groupTokens` mints the refs.
 
 `buildPaletteCss()` with no options already emits **every framework var** (status scale, semantic
 solids, neutral line/axis/grid/tooltip chrome, legend text, surface ramp). There is **no built-in
 `BASALT.series`** — the framework deliberately doesn't ship a domain dictionary. A consumer rebuilds its
-series map in one guard-exempt file and feeds it through `defineSeries` / `groupTokens` /
-`paletteOptions`.
+series map in one guard-exempt file (`src/basalt.tokens.ts`) and reads it through `groupTokens`.
 
 ## Guardrails (mechanical enforcement)
 
