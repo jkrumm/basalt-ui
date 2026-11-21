@@ -11,6 +11,7 @@
  * - `cg-strip-fleet`: the owner's four fleet figures, each with an icon, a delta that names its
  *   base or a verdict, and a trend: the structured strip at the page's own width;
  * - `cg-cards`, `cg-cards-one`: the cards variant with five cells and with one;
+ * - `cg-strip-three`, `cg-cards-three`: three cells each, whose last line two tracks leave half empty;
  * - `cg-panel-<ready|loading|stale|empty|error|forbidden|not-found|throw>`: one panel per phase,
  *   `throw` being a body slot that throws.
  */
@@ -230,6 +231,16 @@ function Fixture(): ReactElement {
       <div data-testid="cg-strip-fleet">
         <StatGroup variant="strip" label="Fleet health">
           {fleet()}
+        </StatGroup>
+      </div>
+      <div data-testid="cg-strip-three">
+        <StatGroup variant="strip" label="Three figures">
+          {fleet().slice(0, 3)}
+        </StatGroup>
+      </div>
+      <div data-testid="cg-cards-three">
+        <StatGroup variant="cards" label="Three cards">
+          {cells('ready').slice(0, 3)}
         </StatGroup>
       </div>
       <div data-testid="cg-cards">
