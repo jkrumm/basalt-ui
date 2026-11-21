@@ -9,7 +9,7 @@ import type { Phase, QueryStateLike } from '../core/ports'
 import { buttonVariants } from '../ui/button'
 import { Spinner } from '../ui/skeleton'
 import { EmptyState } from './empty-state'
-import { errorCause } from './error-cause'
+import { errorCause, RETRY_KEY } from './error-cause'
 
 /**
  * A TanStack query result also carries `fetchStatus`; `QueryStateLike` does not name it, so it is
@@ -101,7 +101,7 @@ export function QueryState({
   const retryBtn = (retry: (() => void) | undefined): ReactNode =>
     retry === undefined ? null : (
       <button type="button" data-slot="query-state-retry" className={ACTION} onClick={retry}>
-        {t('home.retry')}
+        {t(RETRY_KEY)}
       </button>
     )
 

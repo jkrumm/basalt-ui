@@ -8,7 +8,7 @@ import { resolvePhase } from '../core/phase'
 import type { ErrorKind, Fact as LabelledFact } from '../core/phase'
 import type { Phase, QueryStateLike } from '../core/ports'
 import { Skeleton } from '../ui/skeleton'
-import { errorCause } from './error-cause'
+import { errorCause, RETRY_KEY } from './error-cause'
 import type { ERROR_KEYS } from './error-cause'
 
 /**
@@ -136,7 +136,7 @@ export function PageSummary(props: PageSummaryProps): ReactElement {
             <span className="min-w-0 truncate text-sm text-muted-foreground">
               {causeOf(t, kind, message)}
             </span>
-            {retry !== undefined && <RetryButton onClick={retry} label={t('home.retry')} />}
+            {retry !== undefined && <RetryButton onClick={retry} label={t(RETRY_KEY)} />}
           </div>
         ) : (
           <div aria-hidden="true" className="h-lh text-lg" />
