@@ -164,7 +164,8 @@ function BarSkeleton({ rows }: { rows: number }): ReactElement {
 
 /**
  * A ranked list on one shared scale: label, a thin bar against the largest value, the value as
- * text and an optional muted second figure. Each row is a link, a button or plain text. It holds
+ * text and an optional muted second figure (`secondary`: a share, a status word, or the counts a
+ * stacked row's segments carry, "11 gained, 9 dropped"). Each row is a link, a button or plain text. It holds
  * one body height at every phase, scrolls past `bodyRows`, and its loading skeleton draws the rows it
  * will become. Colour belongs to a verdict, so a single bar is neutral; a row with `parts` stacks
  * them in the colours of `series`, and the name stays on its own line above the bar at every width.

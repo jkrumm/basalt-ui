@@ -82,6 +82,9 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 
 ## Linked parts
 
+- The focus readout carries every measure the parts draw, in the figure's period or status or a strip cell's `sub`. n84's readout wrote the daily outside spend while pane one drew the rolling total, so the gateway key's rolling value and the distance to the cap showed nowhere (.20); n85's bar card drew its numbers only in the live region and a table below the fold at 390 (.30). List the measures each part draws and check that the focus writes each one.
+- A part at a grain a focus arm cannot reach is folded into a part that joins, or dropped; "no list at the day grain" in DESIGN.md is a part left standing. n81's Practice and Reviews bars held items the Items table held, without `focusItems.holds` and without a mark on the table's two past-due rows (.4, .5).
+
 - Where a chart and a list, a table or a timeline show the same items, they share one focus: pointing at or stepping to an item in either focuses it in the other, both ways, and the rest dims in both.
 - The figure's value and delta are the answer and never follow focus (`basalt/primitive-bypass` refuses `focus.readout` there: owner review 2 saw n04's headline swap and its card resize on every hour); the focused reading goes in `period` and `status` through `focus.readout(rest, read)`, which takes any value (n20 put a placeholder 'partial' delta on its figure). The focused period and status carry the focused item's own number, so a figure that stays on the whole period never sits beside a period tag that names one day or week: n63 kept 78 beside 'Push day 23 Oct' (.4) and n65 kept '20 ended' beside W41 (.22). Write the readout as 'Push day 23 Oct, 85' (name and number), keep the figure as the answer, and keep the status to one line on a span focus (n67 .38). [lint:primitive-bypass]
 - One [useChartFocus](node_modules/basalt-ui/docs/use-chart-focus.md) is passed to the chart host as `focus` and spread on each row of the list through `focus.item(i)`; the list sits in its own [ScrollArea](node_modules/basalt-ui/docs/scroll-area.md) at the chart's height, and the keyboard step scrolls the focused row into view. The wiring is the snippet in the basalt-charts skill.
@@ -145,6 +148,8 @@ How a chart earns its place and its marks. Props are in the generated docs: [Car
 - Binned bars carry a unit caption ("per 15 min"). A count axis and a share-of-limit axis carry a caption (`y.title`: "Requests", "% of limit"), and a `y.format` keeps a decimal for a domain under 2 units (ticks `0.5`, `1.0`, `1.5`, where `1`, `1`, `2` repeats a label) (c14, n04, n16).
 
 ## Heatmap tools
+
+- At 390 a heat grid omits its cell values, so a value that answers needs another carrier: n83's 190 batch and its two 22 cells lost their labels, and the footer's "US$186" stood unexplained beside the cell's "190" (.16). Name the cell in the footer ("Wed 03:00") or put the value in a list under the grid.
 
 - A [Heatmap](node_modules/basalt-ui/docs/heatmap.md) shows magnitude by hue, so the cells that answer carry their value: `annotate` returns a short mark for a datum (a two-digit hour, a peak glyph) and `null` for the rest, and the few cells that matter are the few it marks.
 - The legend says the cap and the unit: `formatLegend` ends the ramp at its cap ('4+') where the colour domain is capped, `legend.label` names the unit, and `tooltip.valueLabel` names the measure where the default says 'Value' (n77 .12 drew '0 ... 4' without a cap or a unit; n78 .18 '0 / 123' and a 'Value' tooltip). A cell wider than its mark takes a compact `annotate` ('1.2k', '4+'); the kit drops a note wider than its cell, so a row of bare grey is an `annotate` too wide for its cell.
