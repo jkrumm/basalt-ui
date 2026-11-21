@@ -79,7 +79,8 @@
     --basalt-seq-4: #6e9ed9;
     --basalt-seq-5: #96c4ff;
     --basalt-shadow-card: none;
-    --basalt-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent);
+    --basalt-shadow-raised:
+      0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent);
     --basalt-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5);
   }
 }
@@ -122,7 +123,8 @@
       --basalt-seq-4: #6e9ed9;
       --basalt-seq-5: #96c4ff;
       --basalt-shadow-card: none;
-      --basalt-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent);
+      --basalt-shadow-raised:
+        0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent);
       --basalt-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5);
     }
   }
@@ -134,8 +136,12 @@
   --basalt-radius-ctrl: 8px;
   --basalt-radius-chip: 5px;
   --basalt-icon: 1rem;
-  --basalt-font-sans: 'Nunito Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --basalt-font-head: 'Head Digits', 'Hubot Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --basalt-font-sans:
+    'Nunito Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  --basalt-font-head:
+    'Head Digits', 'Hubot Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif;
   --basalt-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
   --basalt-font-head-stretch: 88%;
   --basalt-weight-body: 400;
@@ -161,8 +167,52 @@
   --basalt-ease: cubic-bezier(0.4, 0, 0.2, 1);
   --basalt-ease-enter: cubic-bezier(0, 0, 0.2, 1);
   --basalt-ease-exit: cubic-bezier(0.4, 0, 1, 1);
-  --basalt-spring: 500ms linear(0, 0.1402, 0.3764, 0.584, 0.7361, 0.838, 0.9029, 0.9428, 0.9668, 0.9809, 0.9892, 0.9939, 0.9966, 0.9981, 0.9989, 0.9994, 1);
-  --basalt-spring-bouncy: 700ms linear(0, 0.0702, 0.226, 0.4079, 0.5805, 0.7263, 0.8392, 0.92, 0.9735, 1.0055, 1.0219, 1.0279, 1.0276, 1.0239, 1.0189, 1.0138, 1.0093, 1.0057, 1.0031, 1.0013, 1.0001, 0.9995, 1);
+  --basalt-spring: 500ms
+    linear(
+      0,
+      0.1402,
+      0.3764,
+      0.584,
+      0.7361,
+      0.838,
+      0.9029,
+      0.9428,
+      0.9668,
+      0.9809,
+      0.9892,
+      0.9939,
+      0.9966,
+      0.9981,
+      0.9989,
+      0.9994,
+      1
+    );
+  --basalt-spring-bouncy: 700ms
+    linear(
+      0,
+      0.0702,
+      0.226,
+      0.4079,
+      0.5805,
+      0.7263,
+      0.8392,
+      0.92,
+      0.9735,
+      1.0055,
+      1.0219,
+      1.0279,
+      1.0276,
+      1.0239,
+      1.0189,
+      1.0138,
+      1.0093,
+      1.0057,
+      1.0031,
+      1.0013,
+      1.0001,
+      0.9995,
+      1
+    );
   --basalt-stagger: 30ms;
   --basalt-measure: 72ch;
   --basalt-rhythm-1: 0.75em;

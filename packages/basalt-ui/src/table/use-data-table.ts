@@ -826,13 +826,17 @@ function groupOf<T>(
 /** Rows read when sizing a `width: 'content'` column; a longer list is sampled from its head. */
 const CONTENT_SAMPLE = 1000
 
-/** The widest loaded value in `ch` of each `width: 'content'` column, by id; `{}` when none. */
+/**
+ * The widest loaded value in `ch` of each `width: 'content'` column, by id; `{}` when none. An empty list has no
+ * loaded value to measure: a zero width would size a text column to its header, so the empty table packed its
+ * columns to the start and the cause centred in the first ones, where the ready table spreads them.
+ */
 function contentWidths<T>(
   specs: readonly KindSpec<T>[],
   data: readonly T[] | undefined,
 ): Record<string, number> {
   const widths: Record<string, number> = {}
-  if (data === undefined) return widths
+  if (data === undefined || data.length === 0) return widths
   for (const spec of specs) {
     if (spec.content === undefined) continue
     let widest = 0

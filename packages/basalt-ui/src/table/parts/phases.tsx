@@ -7,6 +7,7 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
 import { useContext } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { cn } from '../../core/cn'
 import { HostTitleContext } from '../../core/could-not-load'
 import type { FrameArm } from '../../core/frame-arm'
 import { useMessages } from '../../core/messages/use-messages'
@@ -50,6 +51,11 @@ function span<T>(model: TableModel<T>): number {
   )
   return narrow.length + (model.selection === undefined ? 0 : 1)
 }
+
+/** The priority 3 columns a wider tier draws past the narrow ones: the message row's filler spans them. */
+const wideSpan = <T,>(model: TableModel<T>): number =>
+  visibleColumns(model.specs, model.plan.columns).filter(({ planned }) => planned.priority === 3)
+    .length
 
 export function LoadingRows<T>({ model }: { model: TableModel<T> }): ReactElement {
   const columns = visibleColumns(model.specs, model.plan.columns)
@@ -96,6 +102,7 @@ function MessageRow<T>({
   fit?: number | undefined
   children: ReactNode
 }): ReactElement {
+  const wide = wideSpan(model)
   return (
     <TableRow role="row" data-slot="table-row">
       <TableCell
@@ -107,16 +114,27 @@ function MessageRow<T>({
             ? undefined
             : { height: `calc(${fit}px - var(--table-row-h, var(--basalt-row-h)))` }
         }
-        className="h-24 text-center whitespace-normal text-muted-foreground"
+        // A frame's body is tall (its rows' worth), so the message sits near the head, in view, not at the
+        // middle of a box that can fall under the fold; a table of its own centres in its short row.
+        className={cn(
+          'h-24 text-center whitespace-normal text-muted-foreground',
+          fit !== undefined && 'align-top',
+        )}
       >
+        {/* The row is as wide as the table: the message is centred across every column the tier draws, not across
+            the narrow ones the cell spans (-ms-4 undoes the first cell's start padding). */}
         <div
           data-slot={slot}
           role={slot === 'table-error' ? 'alert' : undefined}
-          className="flex flex-col items-center gap-2"
+          className={cn(
+            'flex w-[100cqw] max-w-[100cqw] -ms-4 flex-col items-center gap-2 px-4',
+            fit !== undefined && 'pt-8',
+          )}
         >
           {children}
         </div>
       </TableCell>
+      {wide > 0 && <TableCell aria-hidden="true" colSpan={wide} data-priority="3" />}
     </TableRow>
   )
 }
