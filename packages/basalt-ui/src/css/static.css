@@ -50,7 +50,11 @@
   --color-bad: var(--basalt-bad);
   --color-bad-tint: color-mix(in srgb, var(--basalt-bad) var(--basalt-tint-pct), transparent);
   --color-destructive: var(--basalt-bad);
-  --color-destructive-tint: color-mix(in srgb, var(--basalt-bad) var(--basalt-tint-pct), transparent);
+  --color-destructive-tint: color-mix(
+    in srgb,
+    var(--basalt-bad) var(--basalt-tint-pct),
+    transparent
+  );
   --color-info: var(--basalt-info);
   --color-info-tint: color-mix(in srgb, var(--basalt-info) var(--basalt-tint-pct), transparent);
   --color-line: var(--basalt-line);

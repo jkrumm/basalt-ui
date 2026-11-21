@@ -5,6 +5,7 @@
 @import '../../../src/css/tailwind.css' source(none);
 @source './kit-expr18-*-fixture.tsx';
 @source '../../../src/ui';
+@source '../../../src/table';
 @source '../../../src/cards';
 @source '../../../src/page';
 @source '../../../src/core';
