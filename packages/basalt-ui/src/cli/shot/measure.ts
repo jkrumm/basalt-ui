@@ -89,7 +89,10 @@ export function measureAnchor(root: Element): Reading {
     if (!shown(s) || r.width === 0) continue
     const hasBg = fills(s)
     const hasBorder = edges(s, 'border', '-width').some((w) => w > 0)
-    if (el !== root && (hasBg || hasBorder) && nested.length < 60) {
+    // A box under 16 px each way is a mark (a legend swatch, a status dot), not a surface that nests: its radius
+    // is the mark's own shape, so it is neither stepped against its parent nor held to the radius scale.
+    const mark = r.width < 16 && r.height < 16
+    if (el !== root && (hasBg || hasBorder) && !mark && nested.length < 60) {
       nested.push({
         path: pathOf(el),
         radius: { value: s.borderTopLeftRadius, width: px(r.width), height: px(r.height) },
@@ -120,7 +123,11 @@ export function measureAnchor(root: Element): Reading {
       (n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim(),
     )
     if (text.length === 0) continue
-    fontSizes.add(px(s.fontSize))
+    // The type ladder is the component's own: the text a nested chart draws (ticks, legend, labels: the
+    // engine's micro scale) and text no one sees (the chart's screen-reader summary, 1 px clipped) are not rungs of it.
+    const chart = el.closest('[data-basalt-chart]')
+    if (!clipped && !(chart !== null && chart !== root && root.contains(chart)))
+      fontSizes.add(px(s.fontSize))
     for (const node of text) {
       range.selectNodeContents(node)
       const tr = range.getBoundingClientRect()
