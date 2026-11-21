@@ -39,5 +39,5 @@ not guarded:
 
 - `auto` means the `data-theme` attribute is absent and the system scheme applies; an explicit choice sets the attribute and is stored under the `basalt:scheme` key. Never write either by hand.
 - Secondary text is `text-muted-foreground`; `text-muted` is a surface and paints the card colour.
-- Radius, density and fonts change only through the `basalt()` configuration, never a local override.
+- Radius has no knob in 3.0 (four fixed values, `tokens/table.ts`): never override it locally. Density is the `data-density` attribute (`dense`, `normal`, `comfortable`) on `<html>` or a subtree; never set `--basalt-ctl-h` or `--basalt-row-h` by hand. `basalt()` takes no radius, density or fonts option; the three faces ship in `fonts.css`.
 - A token name you did not see in `basalt-ui/tokens` does not exist; read the generated token list before inventing one.
