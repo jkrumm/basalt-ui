@@ -86,7 +86,7 @@ describe("a ChartCard's server frame is its box's classes", () => {
       expect(SERVER_FRAME[key].height).toBe(height)
     }
   })
-  test('panes split the box by weight, 4 px apart', () => {
+  test('panes split the box by weight above a 160 px floor, 4 px apart', () => {
     const pane = (box: { height: 'fill' | number }) => (
       <Lines label="P" data={data} x={x} height={box.height} series={series} />
     )
@@ -102,7 +102,8 @@ describe("a ChartCard's server frame is its box's classes", () => {
     const boxes = [...html.matchAll(/<svg class="ts-chart"[^>]*viewBox="([^"]+)"/g)].map(
       (m) => m[1],
     )
-    expect(boxes).toEqual(['0 0 608 237', '0 0 608 79'])
+    // 3:1 of the 320 px box would leave the second pane 79 px: it is held at 160, the first takes the rest.
+    expect(boxes).toEqual(['0 0 608 160', '0 0 608 160'])
   })
 })
 

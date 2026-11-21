@@ -292,6 +292,8 @@ export type PhaseBoxProps = {
   /** `undefined` when the card is a Suspense fallback: there is no chart to call. */
   chart: BoxSlot | undefined
   className: string
+  /** A floor over the box's height class: stacked panes grow the box to hold each pane's floor. */
+  minHeight?: string | undefined
 }
 
 /**
@@ -299,7 +301,13 @@ export type PhaseBoxProps = {
  * offline line, the error arm, the empty arm or the chart. The slot is called only in `ready` and `stale`; whatever it
  * draws is clipped, so a taller chart cannot move the card.
  */
-export function PhaseBox({ resolved, chart, className, title }: PhaseBoxProps): ReactElement {
+export function PhaseBox({
+  resolved,
+  chart,
+  className,
+  title,
+  minHeight,
+}: PhaseBoxProps): ReactElement {
   const phase = resolved.tag === 'stale' ? 'stale' : 'ready'
   return (
     <div
@@ -307,6 +315,7 @@ export function PhaseBox({ resolved, chart, className, title }: PhaseBoxProps): 
       data-phase={resolved.tag}
       aria-busy={resolved.tag === 'loading' || undefined}
       className={cn('relative flex min-h-0 min-w-0 flex-col overflow-clip', className)}
+      style={minHeight === undefined ? undefined : { minHeight }}
     >
       {resolved.tag === 'loading' && <PlotSkeleton />}
       {resolved.tag === 'offline' && <OfflineArm />}

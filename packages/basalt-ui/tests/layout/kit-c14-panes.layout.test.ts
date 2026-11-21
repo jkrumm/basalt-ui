@@ -1,7 +1,8 @@
 /**
  * Expression cycle 14 contract (2), panes that share a card's box (n63 .7, n67; Spec artifact_01a1f6fb,
  * Issue 2500): a ChartCard's `panes` hands each pane its share of the box by weight, at 1800 and at
- * 390, with no pixel height in the page; the panes' plots share one x column.
+ * 390, with no pixel height in the page; the panes' plots share one x column. Since expression cycle 17
+ * (Issue 2717) a pane keeps a 160 px floor and the box grows to hold the floors.
  * Fixture: `fixture/kit-c14-panes-fixture.tsx`.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
@@ -69,16 +70,19 @@ const geometry = (
   }, id) as Promise<{ box: Rect; panes: Rect[]; svgs: Rect[] }>
 
 const GAP = 4
+const FLOOR = 160
 
 for (const viewport of [DESKTOP, PHONE]) {
   layout(`ChartCard panes at ${viewport.width}`, () => {
-    test('two panes weighted 2 and 1 fill the card box', async () => {
+    test('two panes weighted 2 and 1 fill the card box, the lighter held at its floor', async () => {
       const page = await open(viewport)
       const { box, panes, svgs } = await geometry(page, 'c14-two')
       expect(panes.length).toBe(2)
       expect(panes[0]!.top).toBeCloseTo(box.top, 0)
       expect(Math.abs(panes[1]!.bottom - box.bottom)).toBeLessThanOrEqual(1)
-      expect(Math.abs(panes[0]!.height - 2 * panes[1]!.height)).toBeLessThanOrEqual(2)
+      // 2:1 leaves the second pane under 160 px in a 288 px and a 420 px box (cycle 17 floor, Issue 2717).
+      expect(panes[1]!.height).toBeCloseTo(FLOOR, 0)
+      expect(panes[0]!.height).toBeGreaterThanOrEqual(panes[1]!.height - 0.5)
       expect(Math.abs(panes[0]!.height + panes[1]!.height + GAP - box.height)).toBeLessThanOrEqual(
         1,
       )
@@ -95,7 +99,7 @@ for (const viewport of [DESKTOP, PHONE]) {
       for (const pane of panes)
         expect(Math.abs(pane.height - panes[0]!.height)).toBeLessThanOrEqual(1)
       for (const svg of svgs) {
-        expect(svg.height).toBeGreaterThan(30)
+        expect(svg.height).toBeGreaterThanOrEqual(FLOOR - 0.5)
         expect(svg.left).toBeCloseTo(svgs[0]!.left, 0)
         expect(svg.width).toBeCloseTo(svgs[0]!.width, 0)
       }
