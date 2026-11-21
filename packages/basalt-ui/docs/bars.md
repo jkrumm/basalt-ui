@@ -18,7 +18,6 @@ normalised by `layout`.
 Bars<D>(props: BarsProps<D>): ReactElement
   data: readonly D[]
   x: XConfig<D>
-  y?: YConfig
   summary?: string
   table?: boolean
   height?: number | "fill"
@@ -31,6 +30,7 @@ Bars<D>(props: BarsProps<D>): ReactElement
   focus?: ChartFocus<D>  // Pointer and arrow keys focus a datum of `focus.items`; the rest dims, the readout follows
   label: string
   series: readonly BarsSeries<D>[]
+  y?: Omit<YConfig, "scale">  // A bar stands on zero, so `y` takes no `scale`: a log y is a type error here
   layout?: "stacked" | "grouped" | "normalized"  // Default `'stacked'`
 ```
 

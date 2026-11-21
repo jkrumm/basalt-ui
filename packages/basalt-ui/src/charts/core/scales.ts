@@ -45,6 +45,40 @@ function coverTop(lower: number, upper: number, max: number, count: number): num
   return top
 }
 
+/** A log y domain: the positive values (and positive rule bounds) padded by `pad` at both ends. */
+function resolveLogDomain<T>(
+  cfg: AxisConfig<T>,
+  data: readonly T[],
+  series: readonly ChartSeries<T>[],
+  extraBounds: readonly number[],
+): readonly [number, number] {
+  const domain = cfg.domain ?? 'auto'
+  const positive = (v: number | null): v is number => v !== null && Number.isFinite(v) && v > 0
+  if (Array.isArray(domain) && domain.every(positive) && domain[0] < domain[1])
+    return domain as readonly [number, number]
+  if (typeof domain === 'function') {
+    const given = domain(data, series)
+    if (given.every(positive) && given[0] < given[1]) return given
+  }
+  let min = Infinity
+  let max = -Infinity
+  for (const d of data)
+    for (const s of series) {
+      const v = s.getValue(d)
+      if (!positive(v)) continue
+      if (v < min) min = v
+      if (v > max) max = v
+    }
+  for (const v of extraBounds) {
+    if (!positive(v)) continue
+    if (v < min) min = v
+    if (v > max) max = v
+  }
+  if (min === Infinity) return [1, 10]
+  const pad = cfg.autoPad ?? DEFAULT_AUTO_PAD
+  return [min / pad, max * pad]
+}
+
 /**
  * One y axis' domain. `extraBounds` are the finite zone and reference-line values pinned to this
  * axis — a target past the data must stay inside the plot. Infinite bounds clamp to the domain by
@@ -59,6 +93,7 @@ export function resolveYDomain<T>(
    * domain ends on a tick at or above the data's maximum. */
   tickCount = 0,
 ): readonly [number, number] {
+  if (cfg?.scale === 'log') return resolveLogDomain(cfg, data, series, extraBounds)
   const domain = cfg?.domain ?? 'auto'
   if (Array.isArray(domain)) return domain as readonly [number, number]
   if (typeof domain === 'function') return domain(data, series)
@@ -85,21 +120,41 @@ export function resolveYDomain<T>(
   return [lower, tickCount > 0 && !cfg?.nice ? coverTop(lower, upper, max, tickCount) : upper]
 }
 
-/** A configured y scale instance for a resolved domain. Linear only: log rules are retired
- * (invariant 18) and the engine has no log scale, so a 2.x `scale: 'log'` draws linear. */
+/**
+ * The space the label placement works in. A pixel is a fixed step in it, so the linear placement math
+ * (a caption's air from a line, the room a label takes) is exact on any axis: the value itself on a
+ * linear one, its base-10 logarithm on a log one. `to` and `from` convert, `domain` carries an
+ * axis domain over.
+ */
+export type Warp = {
+  to: (v: number) => number
+  from: (w: number) => number
+  domain: (d: readonly [number, number]) => [number, number]
+}
+
+const LINEAR_WARP: Warp = { to: (v) => v, from: (w) => w, domain: (d) => [d[0], d[1]] }
+const LOG_WARP: Warp = {
+  to: (v) => (v > 0 ? Math.log10(v) : Number.NEGATIVE_INFINITY),
+  from: (w) => 10 ** w,
+  domain: (d) => [
+    Math.log10(Math.max(d[0], Number.MIN_VALUE)),
+    Math.log10(Math.max(d[1], Number.MIN_VALUE)),
+  ],
+}
+
+/** The {@link Warp} of an axis: the log one when `log`. */
+export const warpFor = (log: boolean | undefined): Warp => (log === true ? LOG_WARP : LINEAR_WARP)
+
+/** A configured y scale instance for a resolved domain: d3's log scale on `scale: 'log'` (the one the x axis takes), else linear. */
 export function yScaleFor<T>(
   cfg: AxisConfig<T> | undefined,
   domain: readonly [number, number],
 ): LinearScale {
-  if (cfg?.scale === 'log' && process.env.NODE_ENV !== 'production' && !warnedLog) {
-    warnedLog = true
-    console.warn("[basalt] y scale 'log' is retired; the axis draws linear")
-  }
+  if (cfg?.scale === 'log')
+    return scaleLog().domain([domain[0], domain[1]]) as unknown as LinearScale
   const linear = scaleLinear().domain([domain[0], domain[1]])
   return cfg?.nice ? linear.nice() : linear
 }
-
-let warnedLog = false
 
 /**
  * `domain` split into equal buckets, one per `range` value, clamped at both ends: Heatmap's fill

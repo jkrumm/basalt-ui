@@ -116,6 +116,94 @@ export function withLogX<
   return { ...input, data }
 }
 
+/** The y axis of a log chart is drawn by values above zero; a bar, an area and a stack stand on one. */
+const LOG_Y_REFUSED = (what: string): string =>
+  `[basalt] CartesianChart: y.scale 'log' has no zero baseline, so it does not take ${what}`
+
+/**
+ * A log y: a series that stands on zero (a bar, an area fade, a stack) cannot draw on it. A dev build
+ * throws and names the series; a production build draws the chart linear. A left-axis value of zero
+ * or below has no place on decades: a dev build throws with the series and the value, a production
+ * build skips the point (the series reads `null` there). A rule at a non-positive value is dropped.
+ */
+export function withLogY<
+  T,
+  I extends {
+    data: readonly T[]
+    series: readonly {
+      key: string
+      mark?: string | undefined
+      area?: unknown
+      axis?: 'left' | 'right' | undefined
+      getValue: (d: T) => number | null
+    }[]
+    y?: { scale?: 'linear' | 'log' | undefined } | undefined
+    stack?: 'stacked' | 'normalized' | undefined
+    refLines?: readonly { value: number }[] | undefined
+  },
+>(input: I): I {
+  if (input.y?.scale !== 'log') return input
+  const dev = process.env.NODE_ENV !== 'production'
+  const flat = { ...input, y: { ...input.y, scale: 'linear' as const } }
+  const bar = input.series.find((s) => s.mark === 'bar')
+  const area = input.series.find((s) => s.area !== undefined && s.area !== false)
+  const refused = bar
+    ? `the bar series "${bar.key}"`
+    : area
+      ? `the area of series "${area.key}"`
+      : input.stack !== undefined
+        ? 'a stack'
+        : null
+  if (refused !== null) {
+    if (dev) throw new Error(LOG_Y_REFUSED(refused))
+    return flat
+  }
+  const series = input.series.map((s) => {
+    if (s.axis === 'right') return s
+    return {
+      ...s,
+      getValue: (d: T): number | null => {
+        const v = s.getValue(d)
+        if (v === null || !Number.isFinite(v) || v > 0) return v
+        if (dev)
+          throw new Error(
+            `[basalt] CartesianChart: series "${s.key}" has the value ${v} on a log y, which needs values above zero`,
+          )
+        return null
+      },
+    }
+  })
+  if (dev) for (const s of series) if (s.axis !== 'right') for (const d of input.data) s.getValue(d)
+  const refLines = input.refLines?.filter((r) => !(typeof r.value === 'number' && r.value <= 0))
+  return { ...input, series, ...(refLines !== undefined && { refLines }) }
+}
+
+/**
+ * The y ticks of a log axis over `[lo, hi]` (positive): 1, 2 and 5 times a power of ten, the densest of
+ * those sets that fits `count`, else the decades thinned to an even stride. A domain too narrow for
+ * any of them takes every digit, then the linear ticks.
+ */
+export function logYTicks(lo: number, hi: number, count: number): number[] {
+  const first = Math.floor(Math.log10(lo))
+  const last = Math.ceil(Math.log10(hi))
+  const within = (mantissas: readonly number[]): number[] =>
+    Array.from({ length: last - first + 1 }, (_, k) => mantissas.map((m) => m * 10 ** (first + k)))
+      .flat()
+      .filter((v) => v >= lo * (1 - 1e-9) && v <= hi * (1 + 1e-9))
+  const most = Math.max(2, count)
+  const fives = within([1, 2, 5])
+  if (fives.length >= 2 && fives.length <= most) return fives
+  const decades = within([1])
+  if (decades.length > most) {
+    const stride = Math.ceil(decades.length / most)
+    return decades.filter((_, i) => i % stride === 0)
+  }
+  if (decades.length >= 2) return decades
+  if (fives.length >= 2) return fives.slice(0, most)
+  const digits = within([1, 2, 3, 4, 5, 6, 7, 8, 9])
+  return digits.length >= 2 ? digits : scaleLinear().domain([lo, hi]).ticks(most)
+}
+
 /** The log-scale fraction `(log v - log lo) / (log hi - log lo)`, or `null` for a non-positive `v`. */
 export const logFraction =
   (lo: number, hi: number) =>

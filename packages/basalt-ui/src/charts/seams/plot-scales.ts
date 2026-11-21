@@ -1,3 +1,4 @@
+import { warpFor } from '../core/scales'
 import { planar } from './define'
 
 /** The slice of the engine's `PlotContext` the pixel seams read: the laid-out plot and the left y domain. */
@@ -5,6 +6,8 @@ export type PlotGeometry = {
   plotWidth: number
   plotHeight: number
   yDomain: readonly [number, number]
+  /** The y axis is logarithmic: a pixel is a step in decades, the maps answer in values. */
+  yLog?: boolean
 }
 
 /** An x domain as the chart is given it (`x.domain`), or the extent of the data. */
@@ -37,15 +40,18 @@ export function plotScales(plot: PlotGeometry, xDomain: XExtent): PlotScales {
   const x0 = at(xDomain[0])
   const xSpan = at(xDomain[1]) - x0
   const ySpan = yMax - yMin
+  const warp = warpFor(plot.yLog)
+  const [wMin, wMax] = warp.domain([yMin, yMax])
+  const wSpan = wMax - wMin
   const isDate = xDomain[0] instanceof Date
   return {
     x: (value) => (xSpan === 0 ? 0 : ((at(value) - x0) / xSpan) * width),
-    y: (value) => (ySpan === 0 ? 0 : ((yMax - value) / ySpan) * height),
+    y: (value) => (ySpan === 0 ? 0 : ((wMax - warp.to(value)) / wSpan) * height),
     xAt: (px) => {
       const value = x0 + (px / width) * xSpan
       return isDate ? new Date(value) : value
     },
-    yAt: (px) => yMax - (px / height) * ySpan,
+    yAt: (px) => warp.from(wMax - (px / height) * wSpan),
   }
 }
 

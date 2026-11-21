@@ -73,6 +73,7 @@ import {
   xZoneFractions,
   xZoneWiden,
   yScaleFor,
+  warpFor,
 } from './scales'
 import type { XScaleModel } from './scales'
 import {
@@ -81,6 +82,8 @@ import {
   logTicks,
   ringSwatch,
   withLogX,
+  withLogY,
+  logYTicks,
   xRefLabelBoxes,
   xRefLabelSpots,
   xRefLineMarks,
@@ -368,6 +371,8 @@ type YAxis = {
   format: (v: number) => string
   /** Every value on this axis is a whole number and a bar draws it (a count): ticks land on integers. */
   whole?: boolean
+  /** The axis is logarithmic: label placement works in decades (`warpFor`). */
+  log?: boolean
   /** The domain is fixed or bounded: a datum past it is drawn on the edge, with a caret. */
   bounded?: boolean
   /**
@@ -443,7 +448,7 @@ function withEndTick<T>(
   axis: YAxis,
   count: number,
 ): { values: readonly number[] } | null {
-  if (!Array.isArray(cfg?.domain) || cfg.nice === true) return null
+  if (!Array.isArray(cfg?.domain) || cfg.nice === true || cfg.scale === 'log') return null
   const [lo, hi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
   const round = scaleLinear().domain([lo, hi]).ticks(count)
   const [first, next, last] = [round.at(0), round.at(1), round.at(-1)]
@@ -518,14 +523,23 @@ export function yGuide<T>(opts: {
       : ((cls === 'narrow' && cfg?.ticks === undefined
           ? withEndTick(cfg, axis, ladder.yTicks)
           : null) ?? { count: typeof cfg?.ticks === 'number' ? cfg.ticks : ladder.yTicks })
+  const [domLo, domHi] = [Math.min(...axis.domain), Math.max(...axis.domain)]
   const ticks =
-    axis.flat === true
-      ? { values: [0] }
-      : axis.whole === true
-        ? wholeTicks(axis, cfg, planned)
-        : cfg?.ticks === undefined && cfg?.scale !== 'log'
-          ? withEdgeTicks(axis, planned, edges)
-          : planned
+    cfg?.scale === 'log' && cfg.ticks === undefined
+      ? {
+          values: logYTicks(
+            domLo,
+            domHi,
+            typeof planned === 'object' && 'count' in planned ? planned.count : ladder.yTicks,
+          ),
+        }
+      : axis.flat === true
+        ? { values: [0] }
+        : axis.whole === true
+          ? wholeTicks(axis, cfg, planned)
+          : cfg?.ticks === undefined && cfg?.scale !== 'log'
+            ? withEdgeTicks(axis, planned, edges)
+            : planned
   const gridLine = grid ? { grid: GRID_LINE } : {}
   if (cls === 'micro') return { ...gridLine, axis: false }
   const tickFormat = wholeStepFormat(axis, cfg, ticks, locale)
@@ -992,6 +1006,7 @@ const flatAxis = <T, X extends ChartX>(
   series: readonly ChartSeries<T>[],
   bounds: readonly number[],
 ): boolean =>
+  cfg?.scale !== 'log' &&
   (cfg?.domain === undefined || cfg.domain === 'auto') &&
   input.stack !== 'normalized' &&
   allZero(input.data, series, bounds)
@@ -1017,6 +1032,7 @@ function resolveAxes<T, X extends ChartX>(
     ),
     format: input.y?.format ?? ((v) => defaultNumberFormat(v, input.locale)),
     bounded: isBounded(input, input.y),
+    ...(input.y?.scale === 'log' && { log: true }),
     ...(flatAxis(
       input,
       input.y,
@@ -1240,11 +1256,13 @@ const refLabelMark = <T, X extends ChartX>(
   const { axes } = ctx
   const startFirst = r.axis === 'right' && axes.scaleId(r.axis) === 'y2'
   const side = startFirst ? 'right' : 'left'
-  const domain = axes.axisOf(r.axis).domain
+  const axis = axes.axisOf(r.axis)
+  const warp = warpFor(axis.log)
+  const domain = warp.domain(axis.domain)
   const placed = placeRefLabel({
     pinned: r.labelPosition,
     startFirst,
-    value: r.value,
+    value: warp.to(r.value),
     domain,
     plotWidth: ctx.plotWidth,
     plotHeight: ctx.plotHeight,
@@ -1256,7 +1274,7 @@ const refLabelMark = <T, X extends ChartX>(
       ...(startFirst ? [] : ctx.claimed),
       ...ctx.xCaptions.map((b) => xCaptionOn(b, domain, ctx.plotHeight)),
       ...ctx.placed[side],
-      ...ruleClaims(others, domain, ctx.plotHeight),
+      ...ruleClaims(others.map(warp.to), domain, ctx.plotHeight),
     ],
   })
   if (placed === null) return []
@@ -1289,17 +1307,27 @@ const refLabelMark = <T, X extends ChartX>(
   const f = atStart ? 0 : 1
   return [
     decorative(
-      rect([{ f0: f, f1: f + edge, y0: r.value, y1: r.value + (above ? reach : -reach) }], {
-        id: `ref-${i}-leader`,
-        x1: 'f0',
-        x2: 'f1',
-        y1: 'y0',
-        y2: 'y1',
-        xScale: 'zx',
-        yScale: axes.scaleId(r.axis),
-        fill: CV.inkMuted,
-        inset: 0,
-      }),
+      rect(
+        [
+          {
+            f0: f,
+            f1: f + edge,
+            y0: r.value,
+            y1: warp.from(warp.to(r.value) + (above ? reach : -reach)),
+          },
+        ],
+        {
+          id: `ref-${i}-leader`,
+          x1: 'f0',
+          x2: 'f1',
+          y1: 'y0',
+          y2: 'y1',
+          xScale: 'zx',
+          yScale: axes.scaleId(r.axis),
+          fill: CV.inkMuted,
+          inset: 0,
+        },
+      ),
     ),
     label,
   ]
@@ -1320,9 +1348,11 @@ const xZoneLabelMarks = <T, X extends ChartX>(
 ): ChartMarks => {
   const { plotWidth, plotHeight, axes, model } = ctx
   const fontSize = BASALT.text.micro
-  const domain = axes.left.domain
+  const warp = warpFor(axes.left.log)
+  const domain = warp.domain(axes.left.domain)
   const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
   const perPx = plotHeight > 0 && hi > lo ? (hi - lo) / plotHeight : 0
+  const inDomain = (v: number): number => warp.to(clampTo(v, axes.left.domain))
   const avoid = (): LabelBox[] => [
     ...ctx.xCaptions.map((b) => xCaptionOn(b, domain, plotHeight)),
     ...ctx.placed.left,
@@ -1331,8 +1361,8 @@ const xZoneLabelMarks = <T, X extends ChartX>(
   return (input.xZones ?? []).flatMap((z, i) => {
     const f = z.label ? xZoneFractions(z, model) : null
     if (!z.label || f === null) return []
-    const top = z.y ? clampTo(Math.max(z.y.from, z.y.to), domain) : hi
-    const bottom = z.y ? clampTo(Math.min(z.y.from, z.y.to), domain) : lo
+    const top = z.y ? inDomain(Math.max(z.y.from, z.y.to)) : hi
+    const bottom = z.y ? inDomain(Math.min(z.y.from, z.y.to)) : lo
     const width = estimateWidth(z.label, fontSize)
     const [x0, x1] = [f[0] * plotWidth, f[1] * plotWidth]
     // A line box from the zone's top: its first row sits in the corner, each next one a row lower.
@@ -1397,7 +1427,7 @@ const xZoneLabelMarks = <T, X extends ChartX>(
     const neighbours = (input.xZones ?? []).flatMap((o, j): LabelBox[] => {
       const g = j === i ? null : xZoneFractions(o, model)
       if (g === null) return []
-      const [from, to] = o.y ? [o.y.from, o.y.to] : [lo, hi]
+      const [from, to] = o.y ? [warp.to(o.y.from), warp.to(o.y.to)] : [lo, hi]
       return [{ fx0: g[0], fx1: g[1], y0: Math.min(from, to), y1: Math.max(from, to) }]
     })
     // The caption's line box from the zone's top, in values, for the collision pass.
@@ -1436,7 +1466,7 @@ const xZoneLabelMarks = <T, X extends ChartX>(
         text([{ f: spot.at }], {
           id: `xzone-${i}-label`,
           x: (d: { f: number }) => d.f,
-          y: () => top,
+          y: () => warp.from(top),
           xScale: 'zx',
           yScale: 'y',
           text: () => z.label ?? '',
@@ -1511,14 +1541,17 @@ function buildScales<T, X extends ChartX>(opts: {
   const { input, model, axes, formatX, cls, zoneScale, width } = opts
   const edgesOn = (side: 'left' | 'right'): number[] => zoneEdgesOn(input, axes, side)
   const { left, right } = axes
-  const yFloor = Math.min(...left.domain)
-  const ySpan = Math.max(...left.domain) - yFloor
+  const leftWarp = warpFor(left.log)
+  const [warpLo, warpHi] = leftWarp.domain(left.domain)
+  const yFloor = Math.min(warpLo, warpHi)
+  const ySpan = Math.max(warpLo, warpHi) - yFloor
   // The x chip hangs left of the plot only where it is drawn: on a chart that labels its x axis and does not
   // follow another chart's cursor. The y chip pins only without a right axis.
   const corner: Corner = {
     x: (value) => model.fraction(value as X),
     xChip: () => labelsX(input) && !followsChart(input.cursorGroup, input.chartId),
-    y: (value) => (typeof value === 'number' && ySpan > 0 ? (value - yFloor) / ySpan : null),
+    y: (value) =>
+      typeof value === 'number' && ySpan > 0 ? (leftWarp.to(value) - yFloor) / ySpan : null,
   }
   if (input.bare === true) {
     return {
@@ -1712,10 +1745,12 @@ function spreadRowsOf<T, X extends ChartX>(
     const extent = model.extent
     const xLinear = extent !== undefined && model.log !== true && !model.band
     if (axis === 'x' && !xLinear) return drawn
-    const domain = axes.axisOf(axes.onRight(s) ? 'right' : 'left').domain
+    const yAxis = axes.axisOf(axes.onRight(s) ? 'right' : 'left')
+    const warp = warpFor(yAxis.log)
+    const domain = warp.domain(yAxis.domain)
     const [lo, hi] = [Math.min(...domain), Math.max(...domain)]
     if (hi === lo) return drawn
-    const yPx = (y: number): number => ((hi - y) / (hi - lo)) * plotHeight
+    const yPx = (y: number): number => ((hi - warp.to(y)) / (hi - lo)) * plotHeight
     const r = input.dotRadius?.get(key) ?? BASALT.dotR
     const live: { row: PlotRow<T, X>; px: number; py: number }[] = []
     for (const row of drawn) {
@@ -1737,7 +1772,7 @@ function spreadRowsOf<T, X extends ChartX>(
       const v = from + (px / plotWidth) * (to - from)
       return (model.kind === 'date' ? new Date(v) : v) as unknown as X
     }
-    const toY = (py: number): number => hi - (py / plotHeight) * (hi - lo)
+    const toY = (py: number): number => warp.from(hi - (py / plotHeight) * (hi - lo))
     const out = drawn.map((row) => {
       const at = moved.get(row)
       if (at === undefined) return row
@@ -2021,7 +2056,9 @@ export function crosshairGuide<T, X extends ChartX>(opts: {
 export function compileCartesian<T, X extends ChartX>(
   given: CartesianInput<T, X>,
 ): CartesianDefinition {
-  const input = withLogX<T, CartesianInput<T, X>>(given, given.band === true)
+  const input = withLogY<T, CartesianInput<T, X>>(
+    withLogX<T, CartesianInput<T, X>>(given, given.band === true),
+  )
   guardReservedKeys(input.series)
   const visible = visibleSeries(input.series, input.hidden ?? new Set<string>())
   const visibleKeys = new Set(visible.map((s) => s.key))
@@ -2059,6 +2096,8 @@ export function compileCartesian<T, X extends ChartX>(
   // What an unpinned reference caption avoids: each visible series as (x share, y) points. A bar is
   // a filled column from zero, so it walks round its body instead of through its top centre.
   const barHalf = model.halfStep * BAR_BODY
+  const warpOn = (side: 'left' | 'right' | undefined) =>
+    warpFor(shared.axisOf(side === 'right' ? 'right' : 'left').log)
   const linesOn = (side: 'left' | 'right' | undefined): RefLabelPoint[][] =>
     visible
       .filter((s) => shared.onRight(s) === (side === 'right' && shared.right !== null))
@@ -2066,7 +2105,7 @@ export function compileCartesian<T, X extends ChartX>(
         rows(s.key).flatMap((r) => {
           const fx = model.fraction(r.x)
           if (fx === null || r.y === null) return []
-          if (!(model.band && s.mark === 'bar')) return [{ fx, y: r.y }]
+          if (!(model.band && s.mark === 'bar')) return [{ fx, y: warpOn(side).to(r.y) }]
           return [
             { fx: fx - barHalf, y: 0 },
             { fx: fx - barHalf, y: r.y },
@@ -2136,6 +2175,7 @@ export function compileCartesian<T, X extends ChartX>(
     return xScaleFor(input.data.map(input.x), false, domain as unknown as readonly [X, X])
   }
   const dotRoomAxes = (base: Axes<T>, access: PlotAccess, frameHeight: number): Axes<T> => {
+    if (input.y?.scale === 'log') return base
     const onLeft = dotsOn('left')
     const onRight = base.right === null ? [] : dotsOn('right')
     if (!nearEnd(base.left, onLeft) && !(base.right && nearEnd(base.right, onRight))) return base
@@ -2165,7 +2205,11 @@ export function compileCartesian<T, X extends ChartX>(
         const fx = model.fraction(r.x)
         if (fx === null || r.y === null) continue
         if (s.mark === 'dot')
-          dotMarks.push({ fx, y: r.y, r: input.dotRadius?.get(s.key) ?? BASALT.dotR })
+          dotMarks.push({
+            fx,
+            y: warpOn(side).to(r.y),
+            r: input.dotRadius?.get(s.key) ?? BASALT.dotR,
+          })
         if (!(model.band && s.mark === 'bar')) continue
         const at = bodies.get(fx) ?? { fx, up: 0, down: 0 }
         const stacked = input.stack !== undefined
@@ -2220,6 +2264,7 @@ export function compileCartesian<T, X extends ChartX>(
           y2: axes.right ? 'y2' : undefined,
           yDomain: axes.left.domain,
           y2Domain: axes.right?.domain,
+          ...(axes.left.log === true && { yLog: true }),
         },
         access,
       )
@@ -2232,7 +2277,8 @@ export function compileCartesian<T, X extends ChartX>(
       const xBlocked =
         (plotWidth: number, plotHeight: number): RefLabelContext<T, X>['xBlocked'] =>
         (box) => {
-          const [lo, hi] = [Math.min(...axes.left.domain), Math.max(...axes.left.domain)]
+          const warped = warpFor(axes.left.log).domain(axes.left.domain)
+          const [lo, hi] = [Math.min(...warped), Math.max(...warped)]
           if (plotWidth <= 0 || plotHeight <= 0 || hi === lo) return false
           const perPx = (hi - lo) / plotHeight
           const at = {
@@ -2309,7 +2355,8 @@ export function compileCartesian<T, X extends ChartX>(
       }
       const pageClaims = (): LabelBox[] => {
         const frame = { width: captions?.plotWidth ?? 0, height: captions?.plotHeight ?? 0 }
-        return pageLabels.map((b) => valueBox(b, axes.left.domain, frame))
+        const domain = warpFor(axes.left.log).domain(axes.left.domain)
+        return pageLabels.map((b) => valueBox(b, domain, frame))
       }
       const hasXCaption = (input.xRefLines ?? []).some((l) => l.label)
       // The captions are placed once, in one order: the vertical rules', then the reference
@@ -2332,7 +2379,9 @@ export function compileCartesian<T, X extends ChartX>(
       const lineBoxes = (frame: PlotPx): PxBox[] =>
         visible.flatMap((s) => {
           if (s.mark !== 'line') return []
-          const [lo, hi] = axes.axisOf(axes.onRight(s) ? 'right' : 'left').domain
+          const axis = axes.axisOf(axes.onRight(s) ? 'right' : 'left')
+          const warp = warpFor(axis.log)
+          const [lo, hi] = warp.domain(axis.domain)
           const span = Math.max(lo, hi) - Math.min(lo, hi) || 1
           const runs: { x: number; y: number }[][] = [[]]
           for (const r of rows(s.key)) {
@@ -2341,9 +2390,10 @@ export function compileCartesian<T, X extends ChartX>(
               if (s.gaps !== 'connect' && runs.at(-1)?.length !== 0) runs.push([])
               continue
             }
-            runs
-              .at(-1)
-              ?.push({ x: fx * frame.width, y: ((Math.max(lo, hi) - r.y) / span) * frame.height })
+            runs.at(-1)?.push({
+              x: fx * frame.width,
+              y: ((Math.max(lo, hi) - warp.to(r.y)) / span) * frame.height,
+            })
           }
           return pathBoxes(runs, s.strokeWidth ?? LINE_STROKE_WIDTH)
         })
@@ -2359,13 +2409,15 @@ export function compileCartesian<T, X extends ChartX>(
         return visible.flatMap((s) => {
           if (s.mark !== 'dot' || input.dotSpread?.has(s.key) !== true) return []
           const r = input.dotRadius?.get(s.key) ?? BASALT.dotR
-          const [lo, hi] = axes.axisOf(axes.onRight(s) ? 'right' : 'left').domain
+          const axis = axes.axisOf(axes.onRight(s) ? 'right' : 'left')
+          const warp = warpFor(axis.log)
+          const [lo, hi] = warp.domain(axis.domain)
           const span = Math.max(lo, hi) - Math.min(lo, hi) || 1
           return spread(s.key).flatMap((row) => {
             const fx = model.fraction(row.x)
             if (row.y === null || fx === null || !Number.isFinite(row.y)) return []
             const cx = fx * frame.width
-            const cy = ((Math.max(lo, hi) - row.y) / span) * frame.height
+            const cy = ((Math.max(lo, hi) - warp.to(row.y)) / span) * frame.height
             return [markDot({ left: cx - r, top: cy - r, width: 2 * r, height: 2 * r })]
           })
         })
@@ -2435,7 +2487,12 @@ export function compileCartesian<T, X extends ChartX>(
           (input.refLines ?? []).flatMap((r, i) =>
             input.hidden?.has(refLegendKey(i))
               ? []
-              : [{ value: r.value, domain: axes.axisOf(r.axis).domain }],
+              : [
+                  {
+                    value: warpFor(axes.axisOf(r.axis).log).to(r.value),
+                    domain: warpFor(axes.axisOf(r.axis).log).domain(axes.axisOf(r.axis).domain),
+                  },
+                ],
           ),
           frame,
         )
@@ -2446,7 +2503,9 @@ export function compileCartesian<T, X extends ChartX>(
         captionMarks()
         const rightDomain = axes.right?.domain ?? axes.left.domain
         return [
-          ...ctx.placed.left.map((b) => pxBox(b, axes.left.domain, frame)),
+          ...ctx.placed.left.map((b) =>
+            pxBox(b, warpFor(axes.left.log).domain(axes.left.domain), frame),
+          ),
           ...ctx.placed.right.map((b) => pxBox(b, rightDomain, frame)),
           ...hostBoxesBeforeCaptions(),
         ]

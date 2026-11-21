@@ -77,7 +77,8 @@ export const rows: readonly RowDef[] = [
     // 134700 -> 135100 (Issue 2784): 135017 B measured, +~320 B gz over the cap for the stacked panes' shared y gutter, the tick rows a bar value keeps off and the focused band label that keeps its neighbours, the kit fixes of expression cycle 18.
     // 135100 -> 135300 (Issue 2784): 135262 B measured, +~160 B gz over the cap for the band label measured as the engine measures it (chip bold, tick regular) in place of a shrunk estimate that Linux Chrome's wider glyphs defeated.
     // 135300 -> 135400 (Issue 2889): 135349 B measured, +~90 B gz over master (135262) for the zone caption that slides along a zone full of bars (n96's aperture, ISO and shutter cards lost the caption their focal card kept).
-    ceiling: 135400,
+    // 135400 -> 136700 (Issue 2828): 136599 B measured, +~1.25 KB gz over master (135349) for `y.scale: 'log'`: the log scale and decade ticks, the dev errors and the production skip, the decade-space label placement and the pixel maps in values.
+    ceiling: 136700,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -100,6 +101,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 135400,
+      to: 136700,
+      consumer:
+        "The Bitcoin trial's price from $16 to $120,000 (Issue 2828, consumer trial FRICTION.md entry 7): on a linear y everything before 2020 is a flat line, and the builder's `log10` plot put the ticks on $63.1K and $39.8K; `y.scale: 'log'` takes decade ticks, zones and rules in data values and the named errors",
+      repo: 'basalt-ui',
+    },
     {
       from: 135300,
       to: 135400,

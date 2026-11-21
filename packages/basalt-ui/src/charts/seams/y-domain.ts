@@ -9,14 +9,15 @@ const finite = (v: number | null): v is number => v !== null && Number.isFinite(
  * per-datum positive and negative totals (a stack spans from 0). Failed series draw nothing and a
  * right-axis series has its own scale. `null` when there is no finite value.
  */
-export function leftExtent<D>({
-  data,
-  series,
-}: Pick<SeamProps<D>, 'data' | 'series'>): Extent | null {
+export function leftExtent<D>(
+  { data, series }: Pick<SeamProps<D>, 'data' | 'series'>,
+  /** A log y reads only the values above zero. */
+  positive = false,
+): Extent | null {
   let lo = Number.POSITIVE_INFINITY
   let hi = Number.NEGATIVE_INFINITY
   const take = (v: number | null): void => {
-    if (!finite(v)) return
+    if (!finite(v) || (positive && v <= 0)) return
     if (v < lo) lo = v
     if (v > hi) hi = v
   }
@@ -53,7 +54,19 @@ type Bounds = { floor?: number; ceil?: number; pad?: number }
  * up (each defaults to 0: a zero baseline), then `pad` adds that share of the span to both ends,
  * except an end that is exactly 0 the data does not cross.
  */
-export function boundedDomain([lo, hi]: Extent, { floor, ceil, pad = 0 }: Bounds): Extent {
+export function boundedDomain(
+  [lo, hi]: Extent,
+  { floor, ceil, pad = 0 }: Bounds,
+  log = false,
+): Extent {
+  if (log) {
+    // Decades: the domain reaches `floor` down and `ceil` up (the data's own ends by default), then
+    // `pad` is that share of the span in decades.
+    const low = Math.min(lo, floor !== undefined && floor > 0 ? floor : lo)
+    const high = Math.max(hi, ceil !== undefined && ceil > 0 ? ceil : hi)
+    const margin = (Math.log10(high) - Math.log10(low)) * pad
+    return [low / 10 ** margin, high * 10 ** margin]
+  }
   const low = Math.min(lo, floor ?? 0)
   const high = Math.max(hi, ceil ?? 0)
   const margin = (high - low) * pad
@@ -62,17 +75,19 @@ export function boundedDomain([lo, hi]: Extent, { floor, ceil, pad = 0 }: Bounds
   return [low - down, high + up]
 }
 
-const usable = (d: Extent): boolean => d.every(Number.isFinite) && d[0] < d[1]
+const usable = (d: Extent, log = false): boolean =>
+  d.every(Number.isFinite) && d[0] < d[1] && (!log || d[0] > 0)
 
 const seam: Seam = (spec, props) => {
   const given = props.y?.domain
   // A tuple is applied by `toEngineSpec` already; nothing given leaves the engine's auto domain.
   if (given === undefined || Array.isArray(given)) return spec
-  const extent = leftExtent(props)
+  const log = props.y?.scale === 'log'
+  const extent = leftExtent(props, log)
   if (extent === null) return spec
-  const domain = typeof given === 'function' ? given(extent) : boundedDomain(extent, given)
+  const domain = typeof given === 'function' ? given(extent) : boundedDomain(extent, given, log)
   // A reversed, flat or non-finite answer falls back to the auto domain rather than drawing nothing.
-  return usable(domain) ? { ...spec, y: { ...spec.y, domain } } : spec
+  return usable(domain, log) ? { ...spec, y: { ...spec.y, domain } } : spec
 }
 
 /**

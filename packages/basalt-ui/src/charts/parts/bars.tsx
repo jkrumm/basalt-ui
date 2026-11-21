@@ -7,15 +7,17 @@
  * @neverWhen the measure is continuous (use Lines) or the chart is an inline trend (use MiniBars)
  */
 import type { ReactElement } from 'react'
-import type { CartesianChartBase, ChartName, Series } from '../contract'
+import type { CartesianChartBase, ChartName, Series, YConfig } from '../contract'
 import { CartesianPlot } from './cartesian'
 
 /** A series of `mark: 'bar'` or `mark: 'line'` (an overlay). */
 export type BarsSeries<D> = Extract<Series<D>, { mark: 'bar' | 'line' }>
 
-export type BarsProps<D> = Omit<CartesianChartBase<D>, 'series' | 'marks'> &
+export type BarsProps<D> = Omit<CartesianChartBase<D>, 'series' | 'marks' | 'y'> &
   ChartName & {
     series: readonly BarsSeries<D>[]
+    /** A bar stands on zero, so `y` takes no `scale`: a log y is a type error here. */
+    y?: Omit<YConfig, 'scale'>
     /** Default `'stacked'`. `'normalized'` stacks each x to its share of the total. */
     layout?: 'stacked' | 'grouped' | 'normalized'
   }

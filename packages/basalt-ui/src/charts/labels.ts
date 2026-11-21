@@ -6,6 +6,7 @@ import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
 import { text } from '@tanstack/charts/text'
 import { BASALT } from '../tokens'
+import { warpFor } from './core/scales'
 import { CV } from './core/theme'
 import { lineHeight } from './label-place'
 import { yRangeWithin } from './ref-label'
@@ -168,6 +169,62 @@ export function endLabelPlan<T, X extends ChartX>(
   naming: LinesNaming = 'auto',
   /** The values of the reference lines on the left axis: rules a label must not sit on. */
   rules: readonly number[] = [],
+): EndLabel<T, X>[] {
+  return plot.yLog === true
+    ? endLabelPlanLog(plot, lines, naming, rules)
+    : endLabelPlanIn(plot, lines, naming, rules)
+}
+
+/**
+ * A log y: the plan is made in decades (a pixel is a fixed step there, so the spread and the air
+ * from the lines are exact), then each value the marks draw at is carried back. The claimed `box`
+ * stays in decades, the space every caption on this axis is placed in.
+ */
+function endLabelPlanLog<T, X extends ChartX>(
+  plot: PlotContext<T, X>,
+  lines: readonly ChartSeries<T>[],
+  naming: LinesNaming,
+  rules: readonly number[],
+): EndLabel<T, X>[] {
+  const warp = warpFor(true)
+  const original = new Map<PlotRow<T, X>, PlotRow<T, X>>()
+  const rows = new Map<string, PlotRow<T, X>[]>()
+  const warpedRows = (key: string): PlotRow<T, X>[] => {
+    const found = rows.get(key)
+    if (found !== undefined) return found
+    const made = plot.rows(key).map((r) => {
+      const w = { ...r, y: r.y === null ? null : warp.to(r.y) }
+      original.set(w, r)
+      return w
+    })
+    rows.set(key, made)
+    return made
+  }
+  const warped: PlotContext<T, X> = {
+    ...plot,
+    plotWidth: plot.plotWidth,
+    plotHeight: plot.plotHeight,
+    focused: plot.focused,
+    rows: warpedRows,
+    yDomain: warp.domain(plot.yDomain),
+  }
+  return endLabelPlanIn(warped, lines, naming, rules.map(warp.to)).map((l) => ({
+    ...l,
+    row: original.get(l.row) ?? l.row,
+    ...(l.leader !== undefined && {
+      leader: { ...l.leader, from: warp.from(l.leader.from), to: warp.from(l.leader.to) },
+    }),
+    ...(l.backing !== undefined && {
+      backing: { ...l.backing, y0: warp.from(l.backing.y0), y1: warp.from(l.backing.y1) },
+    }),
+  }))
+}
+
+function endLabelPlanIn<T, X extends ChartX>(
+  plot: PlotContext<T, X>,
+  lines: readonly ChartSeries<T>[],
+  naming: LinesNaming,
+  rules: readonly number[],
 ): EndLabel<T, X>[] {
   const plan = planEndLabels(plot, lines, naming, rules, new Set())
   // The room check errs wide, so a label can flip over its own line for room it has, and the lines

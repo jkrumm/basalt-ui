@@ -1,3 +1,4 @@
+import { warpFor } from '../core/scales'
 import { planar } from './define'
 import type { PlotGeometry } from './plot-scales'
 
@@ -22,15 +23,17 @@ export function pixelExtent(
   plot: PlotGeometry,
   { edge, px, inset = 0 }: PixelExtent,
 ): { y1: number; y2: number } {
-  const yMin = Math.min(...plot.yDomain)
-  const yMax = Math.max(...plot.yDomain)
+  const warp = warpFor(plot.yLog)
+  const [low, high] = warp.domain(plot.yDomain)
+  const yMin = Math.min(low, high)
+  const yMax = Math.max(low, high)
   const perPx = (yMax - yMin) / Math.max(1, plot.plotHeight)
   if (edge === 'bottom') {
     const y1 = yMin + inset * perPx
-    return { y1, y2: y1 + px * perPx }
+    return { y1: warp.from(y1), y2: warp.from(y1 + px * perPx) }
   }
   const y2 = yMax - inset * perPx
-  return { y1: y2 - px * perPx, y2 }
+  return { y1: warp.from(y2 - px * perPx), y2: warp.from(y2) }
 }
 
 export const pixelExtentRule = planar({

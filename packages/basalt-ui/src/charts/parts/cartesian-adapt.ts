@@ -192,6 +192,7 @@ function toEngineY<D>(y: YConfig | undefined): EngineSpec<D>['y'] {
   const axis: AxisConfig<D> = {
     ...(y.title !== undefined && { title: y.title }),
     ...(y.format !== undefined && { format: y.format }),
+    ...(y.scale === 'log' && { scale: 'log' as const }),
     ...(Array.isArray(domain) && { domain: domain as [number, number] }),
   }
   return Object.keys(axis).length === 0 ? undefined : (axis as EngineSpec<D>['y'])
@@ -255,7 +256,12 @@ export function customPlot<D>(
     y: (value, axis) => {
       const yDomain = axis === 'right' ? (plot.y2Domain ?? plot.yDomain) : plot.yDomain
       return plotScales(
-        { plotWidth: plot.plotWidth, plotHeight: plot.plotHeight, yDomain },
+        {
+          plotWidth: plot.plotWidth,
+          plotHeight: plot.plotHeight,
+          yDomain,
+          ...(axis !== 'right' && plot.yLog === true && { yLog: true }),
+        },
         [0, 1],
       ).y(value)
     },
