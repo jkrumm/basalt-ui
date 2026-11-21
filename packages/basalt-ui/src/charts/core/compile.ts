@@ -2442,6 +2442,7 @@ export function compileCartesian<T, X extends ChartX>(
           marks: [] as ChartMarks,
           boxes: [] as PxBox[],
           written: new Set<string>(),
+          backed: false,
         }
         if (!model.band || !bars.some((s) => s.values !== undefined && s.values !== false))
           return none
@@ -2586,9 +2587,7 @@ export function compileCartesian<T, X extends ChartX>(
           ...dots,
           ...over,
           ...zoneCaptions,
-          ...offScale,
-          ...stackCaps,
-          ...valueLabels.marks,
+          // The rules are drawn under the value labels: a label a rule crosses sits on its backing, and the rule gives way.
           ...xRefLineMarks({
             lines: input.xRefLines,
             fraction: (x, at) => edgeFraction(model, x, at),
@@ -2599,6 +2598,9 @@ export function compileCartesian<T, X extends ChartX>(
               : undefined,
             plotHeight: hasXCaption ? captionContext().plotHeight : undefined,
           }),
+          ...offScale,
+          ...stackCaps,
+          ...valueLabels.marks,
           ...(guide === null ? [] : [crosshair(guide)]),
         ],
         scales: buildScales({
@@ -2614,6 +2616,7 @@ export function compileCartesian<T, X extends ChartX>(
             (input.xRefLines?.length ?? 0) > 0 ||
             offScale.length > 0 ||
             stackCaps.length > 0 ||
+            valueLabels.backed ||
             visible.some((s) => s.mark === 'line'),
         }),
         theme: CHART_THEME,

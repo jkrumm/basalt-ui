@@ -7,6 +7,7 @@ import { text } from '@tanstack/charts/text'
 import { BASALT } from '../../tokens'
 import type { LabelBox } from '../chart-labels'
 import { estimateWidth, fitsWith, lineHeight, placeWith } from '../label-place'
+import { backingMarks, isStruck } from './label-backing'
 import type { PlotPx } from '../label-obstacles'
 import type { ChartMarks, ChartSeries, ChartX, XRefAt } from '../types'
 import type { XScaleModel } from './scales'
@@ -143,6 +144,7 @@ function capValueMarks(
   const edgeY = (side: 'top' | 'bottom'): number => (side === 'top' ? 0 : frame.height)
   const pending = new Set(byKey.keys())
   const taken: LabelBox[] = opts.taken ?? []
+  const struck: LabelBox[] = []
   type Spot = 'right' | 'left' | 'below' | 'above'
   const marks: (CapMark & {
     side: 'top' | 'bottom'
@@ -153,7 +155,13 @@ function capValueMarks(
   /** Places the pending marks `at` gives a spot for; each that lands is written there and leaves the queue. */
   const land = (
     at: (side: 'top' | 'bottom', m: CapMark) => { x: number; y: number; spots: Spot[] } | undefined,
-    options: { gap: number; obstacles: readonly LabelBox[]; color?: string },
+    options: {
+      gap: number
+      obstacles: readonly LabelBox[]
+      color?: string
+      /** A spot over a rule or a line piece is taken on a card-coloured backing, so the rule gives way to the value. */
+      backed?: boolean
+    },
   ): void => {
     const wanted = [...pending].flatMap((key) => {
       const { side, m } = byKey.get(key)!
@@ -171,6 +179,7 @@ function capValueMarks(
       const { side, m } = byKey.get(p.key)!
       pending.delete(p.key)
       taken.push(p)
+      if (options.backed === true && isStruck(p, all)) struck.push(p)
       // The text mark centres on its datum, which is the edge: carry it to the box's middle.
       marks.push({
         ...m,
@@ -299,11 +308,18 @@ function capValueMarks(
                 spots: [spot],
               }
             : undefined,
-        { gap: BESIDE_GAP, obstacles: [...texts, ...caretBoxes] },
+        { gap: BESIDE_GAP, obstacles: [...texts, ...caretBoxes], backed: true },
       )
   if (marks.length === 0) return []
   type Mark = (typeof marks)[number]
   return [
+    ...backingMarks({
+      id: `${opts.id}-backing`,
+      boxes: struck.map(({ left, top, width, height }) => ({ left, top, width, height })),
+      frame,
+      domain: opts.edge,
+      scale: opts.scale,
+    }),
     decorative(
       text(marks, {
         id: opts.id,
