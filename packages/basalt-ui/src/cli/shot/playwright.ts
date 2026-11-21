@@ -7,10 +7,8 @@ import { join } from 'node:path'
 
 import type { Scheme } from './types'
 
-/** The consumer-side install: `init` does not run it, because it downloads a browser an app that never shoots should not pay for. */
-export const PLAYWRIGHT_INSTALL = 'bun add -d playwright && bunx playwright install chromium'
-
-export const INSTALL_LINE = `basalt-ui shot needs Playwright: ${PLAYWRIGHT_INSTALL}`
+export const INSTALL_LINE =
+  'basalt-ui shot needs Playwright: bun add -d playwright && bunx playwright install chromium'
 
 /** A headless Chromium reports `(hover: none)`; these make its primary input a mouse so `@media (hover: hover)` applies. */
 export const POINTER_ARGS = [

@@ -5,8 +5,6 @@ import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { cleanupTrees, editManifest, makeTree, runCheck } from './fixture.test'
-import { buildContext } from './index'
-import { playwrightNote } from './app'
 
 afterEach(cleanupTrees)
 
@@ -139,22 +137,10 @@ describe('check 12: app wiring', () => {
     })
   })
 
-  it('never fails a missing Playwright, declared viewports included: it is a note', async () => {
+  it('never fails a missing Playwright, declared viewports included', async () => {
     const dir = makeTree('app')
     editManifest(dir, (m) => void (m.viewports = ['1440x900']))
     expect((await runCheck(dir, 12)).status).toBe('pass')
-    const note = playwrightNote(buildContext(dir, {}))
-    expect(note).toContain('bun add -d playwright && bunx playwright install chromium')
-    expect(note).toMatch(/^note: /)
-  })
-
-  it('names no Playwright note once it is declared, and none for a tokens or site profile', () => {
-    const declared = makeTree('app', {
-      'package.json': JSON.stringify({ name: 'app', devDependencies: { playwright: '1.60.0' } }),
-    })
-    expect(playwrightNote(buildContext(declared, {}))).toBeNull()
-    expect(playwrightNote(buildContext(makeTree('tokens'), {}))).toBeNull()
-    expect(playwrightNote(buildContext(makeTree('site'), {}))).toBeNull()
   })
 
   describe('a nav link needs a route file', () => {
