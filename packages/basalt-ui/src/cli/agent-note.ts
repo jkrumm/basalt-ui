@@ -14,7 +14,9 @@ export const SESSION_NOTE =
 
 /**
  * The `size:mtime` stamp of each agent-read file, by absolute path. A write always moves the mtime, and
- * `init` and `sync` write only what differs, so a stamp tells a change without reading the bytes.
+ * `init` and `sync` write only what differs, so a stamp tells a change without reading the bytes. That
+ * needs an mtime finer than a second (APFS and ext4 keep one): on a coarser filesystem a same-size rewrite
+ * within the same second would go unseen.
  */
 export type AgentFiles = Map<string, string>
 
