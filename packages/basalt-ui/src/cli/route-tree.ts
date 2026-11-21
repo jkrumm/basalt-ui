@@ -10,6 +10,34 @@ import { createRequire } from 'node:module'
 /** The router plugin's options `init` writes into the Vite config; the generator reads the same. */
 export const ROUTER_PLUGIN_OPTIONS = { target: 'react', autoCodeSplitting: true } as const
 
+/**
+ * The path pattern each page file under a `routes/` directory serves, as segments (`$` is a
+ * param, `$$` a splat). A pathless layout (`_app`, `_app/route`), a group (`(g)`), `index` and
+ * `route` add no segment, and a file that only lays out nothing serves nothing; the root route
+ * and an ignored `-` file serve nothing either.
+ */
+export function routePatterns(files: readonly string[]): string[][] {
+  return files.flatMap((file) => {
+    const at = file.split('/').lastIndexOf('routes')
+    if (at === -1) return []
+    const parts = file
+      .split('/')
+      .slice(at + 1)
+      .join('/')
+      .replace(/\.[cm]?[jt]sx?$/, '')
+      .split(/[/.]/)
+    if (parts.some((p) => p.startsWith('-') || p === '__root' || p === 'gen')) return []
+    const segments = parts
+      .filter((p) => p !== 'index' && p !== 'route' && !p.startsWith('_') && !/^\(.*\)$/.test(p))
+      .map((p) => p.replace(/_$/, ''))
+      .map((p) => (p === '$' ? '$$' : p.startsWith('$') ? '$' : p))
+    const last = parts.at(-1) ?? ''
+    // `_app.tsx` and `_app/route.tsx` are layouts: they match `/` only through a child.
+    if (segments.length === 0 && (last.startsWith('_') || last === 'route')) return []
+    return [segments]
+  })
+}
+
 const SEGMENT = /&&|\|\||;/
 const TSC = /(?:^|[\s/])tsc(?:\s|$)/
 /** A command that runs the generator: a Vite run (the plugin generates) or the generator CLI. */

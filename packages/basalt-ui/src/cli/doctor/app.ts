@@ -1,13 +1,15 @@
 /**
  * Check 12: app wiring. Textual, no TS program: the router defaults a profile `app` must set, the
  * `notify` and `ToastHost` pair, `<html lang>`, the scheme boot script, selectors from the 2.x
- * era, and Playwright when the manifest declares `shot`.
+ * era, and a route file behind every nav link. A missing Playwright is not a finding: `playwrightNote`
+ * names it beside the results.
  */
 import { spawnSync } from 'node:child_process'
 import { dirname } from 'node:path'
 import { SOURCES_PATH } from '../../vite/sources'
 import { resolveAppDir } from '../index'
-import { typechecksBeforeTree } from '../route-tree'
+import { routePatterns, typechecksBeforeTree } from '../route-tree'
+import { PLAYWRIGHT_INSTALL } from '../shot/playwright'
 import { need, readJson, readText, rootFiles, rootsOf, verdictOf } from './types'
 import type { Check, Ctx } from './types'
 
@@ -53,6 +55,42 @@ function htmlHosts(ctx: Ctx, roots: readonly string[], sources: readonly Source[
 
 const htmlTag = (text: string): string => /<html\b[^>]*>/s.exec(text)?.[0] ?? ''
 const LITERAL_THEME = /\bdata-theme\s*=\s*(?:"[^"{}]+"|'[^'{}]+')/
+
+/** Whether a route pattern serves the path a nav item links to (`$month` in a link is a param too). */
+function serves(pattern: readonly string[], target: readonly string[]): boolean {
+  const splat = pattern.indexOf('$$')
+  if (splat !== -1) return target.length >= splat && pattern.slice(0, splat).every(same(target))
+  return pattern.length === target.length && pattern.every(same(target))
+}
+
+const same =
+  (target: readonly string[]) =>
+  (segment: string, i: number): boolean =>
+    segment === '$' || segment === target[i] || target[i]?.startsWith('$') === true
+
+/**
+ * The `to` of every `linkOptions`/`navTarget` in a file that calls `defineNav`, for which no route
+ * file serves the path. Quiet for an app with no `routes/` directory (code-routed).
+ */
+function navFindings(sources: readonly Source[]): string[] {
+  const files = sources.map((s) => s.file)
+  if (!files.some((f) => f.split('/').includes('routes'))) return []
+  const patterns = routePatterns(files)
+  const found = sources
+    .filter((s) => /\bdefineNav\s*\(/.test(s.text))
+    .flatMap((s) =>
+      [...s.text.matchAll(/\bto:\s*(['"])(\/[^'"]*)\1/g)].map((m) => ({
+        file: s.file,
+        to: m[2] ?? '/',
+      })),
+    )
+  return found.flatMap(({ file, to }) => {
+    const target = to.split(/[?#]/)[0]?.split('/').filter(Boolean) ?? []
+    return patterns.some((p) => serves(p, target))
+      ? []
+      : [`app: ${file} links to ${to} but no route file under routes/ serves it`]
+  })
+}
 
 /** `build` and `typecheck` scripts of the install root and the app that run `tsc` before the route tree exists. */
 function treeFirstFindings(ctx: Ctx): string[] {
@@ -126,6 +164,7 @@ const check12 = (name: string): Check => ({
       if (!configs.some((c) => /autoCodeSplitting\s*:\s*true/.test(c.text))) {
         findings.push('app: autoCodeSplitting is not enabled in the vite config')
       }
+      findings.push(...navFindings(sources))
       findings.push(...trackedSources(ctx, configs))
       if (configs.some((c) => /\btanstackRouter\s*\(/.test(c.text))) {
         findings.push(...treeFirstFindings(ctx))
@@ -173,18 +212,31 @@ const check12 = (name: string): Check => ({
       }
     }
 
-    if (manifest.viewports.length > 0) {
-      const pkg = readJson(ctx.root, 'package.json') ?? {}
-      const has = (name: string): boolean =>
-        ['dependencies', 'devDependencies'].some(
-          (field) => (pkg[field] as Record<string, string> | undefined)?.[name] !== undefined,
-        )
-      if (!has('playwright') && !has('@playwright/test')) {
-        findings.push('the manifest declares `viewports` (shot) but Playwright is not a dependency')
-      }
-    }
     return verdictOf(findings, 'app wiring is complete')
   },
 })
+
+/**
+ * What `basalt-ui shot` needs and `init` does not install: Playwright, when the install root or
+ * the app declares none. A note beside the results, never a failure: an app that never shoots passes.
+ */
+export function playwrightNote(ctx: Ctx): string | null {
+  const manifest = ctx.manifest
+  if (manifest === null || manifest.profile === 'tokens' || manifest.profile === 'site') return null
+  const app = resolveAppDir(ctx.root)
+  const files = [
+    'package.json',
+    ...('error' in app || app.rel === '' ? [] : [`${app.rel}/package.json`]),
+  ]
+  const has = (name: string): boolean =>
+    files.some((file) => {
+      const pkg = readJson(ctx.root, file) ?? {}
+      return ['dependencies', 'devDependencies'].some(
+        (field) => (pkg[field] as Record<string, string> | undefined)?.[name] !== undefined,
+      )
+    })
+  if (has('playwright') || has('playwright-core') || has('@playwright/test')) return null
+  return `note: \`basalt-ui shot\` needs Playwright, which init does not install (it downloads a browser): ${PLAYWRIGHT_INSTALL}`
+}
 
 export const appChecks: Check[] = [check12('app-wiring')]

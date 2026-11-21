@@ -1,12 +1,12 @@
 /**
  * The router scaffold `init --profile app` writes (`agent/templates/{main,__root,_app,nav,
- * _app-pending,_app-error,_app-missing}.tpl`): each seed goes to its destination once, when nothing
+ * _app-index,_app-pending,_app-error,_app-missing}.tpl`): each seed goes to its destination once, when nothing
  * is there, and is the consumer's from then on (`sync` never reads them). A create-vite `main.tsx`
  * is the one existing file replaced; any other existing entry is left and the template's lines are
  * printed. A Start app (without `--start`), a code-routed app and `basalt.shell: false` get none;
  * with `--start` the app gets the Start host seeds (`__root.start.tpl`, `router.start.tpl`) and no `main.tsx`.
  */
-import { rmSync } from 'node:fs'
+import { readdirSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 
 import { readBasaltConfig, resolveAppDir } from '../index'
@@ -21,6 +21,7 @@ import {
   START_SEED_TEMPLATES,
 } from '../router-wiring'
 import type { RouterSeedSkip } from '../router-wiring'
+import { routePatterns } from '../route-tree'
 import { hasDependency, readIfExists, tokenize } from '../source-text'
 import type { Ctx } from './steps'
 import { appName, CSS_ENTRIES, say, writeText } from './steps'
@@ -98,6 +99,19 @@ function seedPlan(appRel: string, start: boolean): [string, string, string][] {
   return [...seeds, ['router', router, START_SEED_TEMPLATES.router]]
 }
 
+/** True when a page file under the app's `routes/` already serves `/`: a second one would be a duplicate route. */
+function routeServesRoot(ctx: Ctx, appRel: string): boolean {
+  const routes = dirname(routerSeedDest(appRel, 'root'))
+  const files = (() => {
+    try {
+      return readdirSync(resolve(ctx.root, routes), { recursive: true, encoding: 'utf8' })
+    } catch {
+      return []
+    }
+  })()
+  return routePatterns(files.map((f) => `${routes}/${f}`)).some((p) => p.length === 0)
+}
+
 /** The stylesheet the Start root route links, as an import path from `src/routes`: the app's entry in `src` or at its root, else `src/index.css` (`wireApp` writes it). */
 function cssEntry(ctx: Ctx, appRel: string): string {
   const inSrc = CSS_ENTRIES.find((f) => readIfExists(resolve(ctx.root, appRel, 'src', f)) !== null)
@@ -153,7 +167,9 @@ export function placeRouterSeeds(ctx: Ctx): void {
       .replaceAll('{{APP_NAME}}', () => name)
       .replaceAll('{{CSS_ENTRY}}', () => cssEntry(ctx, app.rel))
     const existing = readIfExists(resolve(ctx.root, dest))
-    if (existing === null) {
+    if (seed === 'appIndex' && existing === null && routeServesRoot(ctx, app.rel)) {
+      say(`skipped ${dest}: a route file already serves /`)
+    } else if (existing === null) {
       writeText(ctx.root, dest, text)
       say(`wrote ${dest}`)
     } else if (seed === 'main' && isStockViteMain(existing)) {

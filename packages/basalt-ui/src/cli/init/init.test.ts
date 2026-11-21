@@ -394,6 +394,24 @@ describe('init: the budget, the install and the seeds', () => {
     expect(older.commands.flat().join(' ')).toContain('@tanstack/router-plugin@1.168.40')
   })
 
+  it('prints one line for a dependency the app already had whose version it changes, and none for a kept one', async () => {
+    const dir = repo()
+    put(
+      dir,
+      'package.json',
+      JSON.stringify({
+        name: 'fixture',
+        devDependencies: { oxlint: '^1.90.0', '@tanstack/router-plugin': '^1.169.0' },
+      }),
+    )
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    const changed = log
+      .split('\n')
+      .filter((line) => line.includes('is outside what basalt-ui supports'))
+    expect(changed).toHaveLength(1)
+    expect(changed[0]).toMatch(/^peers: oxlint \^1\.90\.0 is outside .*installing \d+\.\d+\.\d+$/)
+  })
+
   it('installs every peer the app profile needs, and no oxfmt for a Prettier repo', async () => {
     const { commands } = await runInit(['--profile', 'app', '--root', 'src'], repo())
     const all = commands.flat().map((s) => s.replace(/@[\d~^].*$/, ''))
@@ -516,21 +534,25 @@ describe('init: the budget, the install and the seeds', () => {
     }
     const fresh = repo(vite)
     await runInit(['--profile', 'app', '--root', 'src'], fresh)
-    expect(read(fresh, '.gitignore')).toBe('.basalt/sources.css\n')
+    expect(read(fresh, '.gitignore')).toBe('.basalt/sources.css\nshots-*/\n')
     await runInit(['--profile', 'app', '--root', 'src'], fresh)
-    expect(read(fresh, '.gitignore')).toBe('.basalt/sources.css\n')
+    expect(read(fresh, '.gitignore')).toBe('.basalt/sources.css\nshots-*/\n')
 
     const existing = repo({ ...vite, '.gitignore': 'node_modules\ndist' })
     await runInit(['--profile', 'app', '--root', 'src'], existing)
-    expect(read(existing, '.gitignore')).toBe('node_modules\ndist\n.basalt/sources.css\n')
+    expect(read(existing, '.gitignore')).toBe('node_modules\ndist\n.basalt/sources.css\nshots-*/\n')
 
-    const listed = repo({ ...vite, '.gitignore': '/.basalt/sources.css\n' })
+    const listed = repo({ ...vite, '.gitignore': '/.basalt/sources.css\nshots-*/\n' })
     await runInit(['--profile', 'app', '--root', 'src'], listed)
-    expect(read(listed, '.gitignore')).toBe('/.basalt/sources.css\n')
+    expect(read(listed, '.gitignore')).toBe('/.basalt/sources.css\nshots-*/\n')
+
+    const half = repo({ ...vite, '.gitignore': '.basalt/sources.css\n' })
+    await runInit(['--profile', 'app', '--root', 'src'], half)
+    expect(read(half, '.gitignore')).toBe('.basalt/sources.css\nshots-*/\n')
 
     const below = repo({ 'apps/web/vite.config.ts': vite['vite.config.ts'] })
     await runInit(['--profile', 'app', '--root', 'apps/web/src'], below)
-    expect(read(below, 'apps/web/.gitignore')).toBe('.basalt/sources.css\n')
+    expect(read(below, 'apps/web/.gitignore')).toBe('.basalt/sources.css\nshots-*/\n')
   })
 
   it('splices the import after a multi-line last import, not inside it', async () => {
@@ -737,6 +759,7 @@ const SEEDED = [
   'src/components/route-pending.tsx',
   'src/components/route-error.tsx',
   'src/components/route-missing.tsx',
+  'src/routes/_app/index.tsx',
 ] as const
 
 const template = (name: string): string =>
@@ -757,9 +780,31 @@ describe('init: the router scaffold', () => {
     expect(read(dir, 'src/components/route-pending.tsx')).toBe(template('_app-pending.tpl'))
     expect(read(dir, 'src/components/route-error.tsx')).toBe(template('_app-error.tpl'))
     expect(read(dir, 'src/components/route-missing.tsx')).toBe(template('_app-missing.tpl'))
+    expect(read(dir, 'src/routes/_app/index.tsx')).toBe(template('_app-index.tpl'))
     expect(log).toContain("src/main.tsx: replaced create-vite's entry")
     expect(log).toContain('wrote src/routes/_app.tsx')
     expect(read(dir, 'src/App.tsx')).toContain('export default function App')
+  })
+
+  it('writes the start page under the _app layout once, and a second run keeps what the app made of it', async () => {
+    const dir = createVite()
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    const page = read(dir, 'src/routes/_app/index.tsx')
+    expect(page).toContain("createFileRoute('/_app/')")
+    expect(page).toContain('<Page>')
+    put(dir, 'src/routes/_app/index.tsx', `${page}// mine\n`)
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(read(dir, 'src/routes/_app/index.tsx')).toBe(`${page}// mine\n`)
+    expect(log).toContain('kept src/routes/_app/index.tsx: it exists')
+  })
+
+  it('writes no start page when a route file already serves `/`, so `/` never has two routes', async () => {
+    const dir = createVite()
+    put(dir, 'src/routes/_app.index.tsx', 'export const Route = 1\n')
+    const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(read(dir, 'src/routes/_app.index.tsx')).toBe('export const Route = 1\n')
+    expect(existsSync(join(dir, 'src/routes/_app/index.tsx'))).toBe(false)
+    expect(log).toContain('skipped src/routes/_app/index.tsx: a route file already serves /')
   })
 
   it("swaps create-vite's `tsc -b && vite build` so the route tree exists before tsc, and writes the first tree", async () => {
@@ -947,6 +992,7 @@ describe('init --start: the TanStack Start host', () => {
       'src/components/route-pending.tsx': '_app-pending.tpl',
       'src/components/route-error.tsx': '_app-error.tpl',
       'src/components/route-missing.tsx': '_app-missing.tpl',
+      'src/routes/_app/index.tsx': '_app-index.tpl',
     }
     for (const [path, tpl] of Object.entries(shared)) expect(read(dir, path)).toBe(template(tpl))
     expect(existsSync(join(dir, 'src/main.tsx'))).toBe(false)
