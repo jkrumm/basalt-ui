@@ -13,13 +13,21 @@ export const rows: readonly RowDef[] = [
     label: 'cards StatCard, no chart (gzip B minus base0, src/cards, peers bundled)',
     // 12928 B measured. Informative target 16 KB (J); the seed is the measurement.
     // 14000 -> 14100 (Issue 2500): 14011 B measured, +~11 B gz for the card taking its grid row's height.
-    ceiling: 14100,
+    // 14100 -> 14150 (Issue 2696): 14117 B measured, +~17 B gz for `chartHeight`, the chart box's own height.
+    ceiling: 14150,
     measure: () => measureSource(reExportNamed('cards/stat-card', ['StatCard'])),
   },
 ]
 
 export const raises: Raises = {
   'cards-stat-card': [
+    {
+      from: 14100,
+      to: 14150,
+      consumer:
+        'the Keeper rate card of n71 (Issue 2696, Spec artifact_01a1fbc2): a Meter in the chart slot left a 55 px empty band in the fixed 72 px box, so the box takes a height of its own',
+      repo: 'basalt-ui',
+    },
     {
       from: 14000,
       to: 14100,
