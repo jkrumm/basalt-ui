@@ -317,7 +317,7 @@ import type { BasaltRegister } from 'basalt-ui'
 import { buildPaletteCss, defineSeries, groupTokens } from 'basalt-ui/tokens'
 import type { SeriesKey } from 'basalt-ui'
 
-// groupTokens returns a branded SeriesGroup that paletteOptions.groups accepts
+// groupTokens returns a branded SeriesGroup that buildPaletteCss({ groups }) accepts
 const _group = groupTokens('x', defineSeries({ a: { light: '#111111', dark: '#eeeeee' } }))
 const _css = buildPaletteCss({ groups: [_group] })
 

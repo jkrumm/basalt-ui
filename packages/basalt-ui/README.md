@@ -288,41 +288,45 @@ waives nothing. The 2.x `theme-allow` and `theme-allow-file` annotations are ine
 
 ### Consumer-series extensibility
 
-App-specific series colors live in the consumer, not the framework. The framework ships the factories:
+App-specific series colours live in the consumer, authored once in `src/basalt.tokens.ts`. `init` seeds it at `bridge` and above (`--extra <file>` at `tokens` and `site`), emits `src/basalt.tokens.css` from it with `tokens:css --extra`, and imports that sheet in the stylesheet entry. The file is import-free, the one place raw colour is written, and a pair is `{ light, dark }`:
 
 ```ts
-// src/lib/series.ts — the app's one series file
-import { defineSeries, groupTokens } from 'basalt-ui/tokens'
+// src/basalt.tokens.ts
+export default {
+  series: {
+    app: {
+      sessions: { light: '#4f78a4', dark: '#7099c4' },
+      churn: { light: '#c23030', dark: '#f08c8c' },
+    },
+  },
+} as const
+```
 
-// 1. Declare the series with light/dark pairs (ColorPair shape — hex strings per scheme)
-export const SERIES = defineSeries({
-  sessions: { light: '#4f78a4', dark: '#7099c4' },
-  signups: { light: '#3f8a63', dark: '#62c08f' },
-  revenue: { light: '#d9822b', dark: '#f0a868' },
-  churn: { light: '#c23030', dark: '#f08c8c' },
-})
+Both uses read that one file:
 
-// 2. Augment BasaltRegister — gives exact-keyed typing everywhere that reads series
-declare module 'basalt-ui' {
-  interface BasaltRegister {
-    series: typeof SERIES
-  }
-}
+```ts
+import { groupTokens } from 'basalt-ui/tokens'
+import tokens from './basalt.tokens'
 
-// 3. Namespaced token refs — stale keys fail tsc at the call site
-export const GROUP = 'app'
-export const colors = groupTokens(GROUP, SERIES)
+// A chart series takes the pair as its `color`
+const series = [
+  {
+    mark: 'line',
+    key: 'sessions',
+    label: 'Sessions',
+    color: tokens.series.app.sessions,
+    y: (d: Row) => d.sessions,
+  },
+]
+
+// An HTML mark (a Meter, a track div, a dot) takes the variable the sheet declares
+export const colors = groupTokens('app', tokens.series.app)
 // colors.sessions → 'var(--basalt-app-sessions)'
 ```
 
-> **Put it at `<first basalt.root>/lib/series.ts`.** `defineSeries` takes hex `ColorPair`s _by
-> type_, so this is the one file the doctrine tells you to write raw hex in. `seriesModulePath` in
-> the `basalt` key moves the path `DESIGN.md`'s `{{SERIES_MODULE_PATH}}` renders:
->
-> ```json
-> // package.json
-> { "basalt": { "seriesModulePath": "src/theme/series.ts" } }
-> ```
+After an edit, regenerate the sheet: `basalt-ui tokens:css --extra src/basalt.tokens.ts --out src/basalt.tokens.css` (`doctor` re-runs it with `--check` for every row of the manifest). The sheet also writes `src/basalt.tokens.css.d.ts`, which registers the keys on `BasaltRegister`, so write no `declare module` of your own. `vars: { <name>: '<css value>' }` beside `series` emits `--basalt-<name>` once on `:root`. A ramp entry (`{ hue: 'blue', light: 3, dark: 4 }`) gives the variable only; a chart needs a literal pair.
+
+`tokens:css --extra` is the one route. `defineSeries` and `buildPaletteCss({ groups })` are internal: the first types a pair map the CLI does not read, the second emits the same variables at runtime for a build with no CLI, and neither is documented for an app. A hand-written `BasaltRegister` series augmentation is removed from the docs: it conflicts with the generated one.
 
 Every `defineX` factory is const-generic and exact-keyed — the return type mirrors the literal input shape, so `tsc` catches stale keys.
 
@@ -354,9 +358,7 @@ formatting in `useFormat` from `basalt-ui`.
 
 ```tsx
 import { CartesianChart } from 'basalt-ui/charts'
-import { defineSeries } from 'basalt-ui/tokens'
-
-const SERIES = defineSeries({ sessions: { light: '#4f78a4', dark: '#7099c4' } })
+import tokens from './basalt.tokens'
 
 export const Sessions = () => (
   <CartesianChart
@@ -368,7 +370,7 @@ export const Sessions = () => (
         mark: 'line',
         key: 'sessions',
         label: 'Sessions',
-        color: SERIES.sessions,
+        color: tokens.series.app.sessions,
         y: (d) => d.sessions,
       },
     ]}

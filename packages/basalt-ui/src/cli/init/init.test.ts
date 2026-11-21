@@ -151,16 +151,59 @@ describe('init: the declaration', () => {
     }
   })
 
-  it('refuses an --extra file that does not exist, before writing anything', async () => {
+  it('seeds an --extra file that does not exist, and never over one that does', async () => {
     const dir = repo()
-    const before = snapshot(dir)
-    const { code, log } = await runInit(
-      ['--profile', 'tokens', '--extra', 'src/basalt.tokens.ts'],
+    const { code } = await runInit(
+      ['--profile', 'tokens', '--tokens-out', 'src/tokens.css', '--extra', 'src/basalt.tokens.ts'],
       dir,
     )
-    expect(code).toBe(1)
-    expect(log).toContain('--extra src/basalt.tokens.ts does not exist')
-    expect(snapshot(dir)).toEqual(before)
+    expect(code).toBe(0)
+    expect(read(dir, 'src/basalt.tokens.ts')).toContain('export default')
+    expect(existsSync(join(dir, 'src/basalt.tokens.css'))).toBe(true)
+    const own = 'export default { series: { app: { a: { light: "#111111", dark: "#eeeeee" } } } }\n'
+    put(dir, 'src/basalt.tokens.ts', own)
+    await runInit(
+      ['--profile', 'tokens', '--tokens-out', 'src/tokens.css', '--extra', 'src/basalt.tokens.ts'],
+      dir,
+    )
+    expect(read(dir, 'src/basalt.tokens.ts')).toBe(own)
+    expect(read(dir, 'src/basalt.tokens.css')).toContain('--basalt-app-a: #111111;')
+  })
+
+  it('imports the series sheet on a re-run over an entry that is already wired', async () => {
+    const dir = repo({
+      'vite.config.ts':
+        "import react from '@vitejs/plugin-react'\nexport default { plugins: [react()] }\n",
+      'src/index.css':
+        "@import 'basalt-ui/tailwind.css';\n@import './tokens.css';\n@import '../.basalt/sources.css';\n",
+    })
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    const wired =
+      "@import 'basalt-ui/tailwind.css';\n@import './tokens.css';\n@import './basalt.tokens.css';\n@import '../.basalt/sources.css';\n"
+    expect(read(dir, 'src/index.css')).toBe(wired)
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    expect(read(dir, 'src/index.css')).toBe(wired)
+  })
+
+  it('keeps the series file the manifest records when --extra is not passed again', async () => {
+    const dir = repo({ 'src/series.tokens.ts': 'export default { series: {} }\n' })
+    await runInit(['--profile', 'app', '--root', 'src', '--extra', 'src/series.tokens.ts'], dir)
+    await runInit(['--profile', 'app', '--root', 'src'], dir)
+    const { extra, tokens } = manifestOf(dir)
+    expect(extra).toBe('src/series.tokens.ts')
+    expect(tokens.filter((t) => t.flags.includes('--extra'))).toHaveLength(1)
+    expect(existsSync(join(dir, 'src/basalt.tokens.ts'))).toBe(false)
+  })
+
+  it('gives an app profile the series file by default, a tokens one only by --extra', async () => {
+    const app = repo()
+    await runInit(['--profile', 'app', '--root', 'src'], app)
+    expect(manifestOf(app).extra).toBe('src/basalt.tokens.ts')
+    expect(existsSync(join(app, 'src/basalt.tokens.ts'))).toBe(true)
+    const tokens = repo()
+    await runInit(['--profile', 'tokens'], tokens)
+    expect(manifestOf(tokens).extra).toBeUndefined()
+    expect(existsSync(join(tokens, 'src/basalt.tokens.ts'))).toBe(false)
   })
 })
 
@@ -518,7 +561,7 @@ describe('init: the budget, the install and the seeds', () => {
       "import { tanstackRouter } from '@tanstack/router-plugin/vite'",
     )
     expect(read(stock, 'src/index.css')).toBe(
-      "@import 'basalt-ui/tailwind.css';\n@import './tokens.css';\n@import '../.basalt/sources.css';\n",
+      "@import 'basalt-ui/tailwind.css';\n@import './tokens.css';\n@import './basalt.tokens.css';\n@import '../.basalt/sources.css';\n",
     )
 
     const odd = repo({ 'vite.config.ts': 'export default defineConfig(() => ({}))\n' })
@@ -575,7 +618,7 @@ describe('init: the budget, the install and the seeds', () => {
     })
     await runInit(['--profile', 'app', '--root', 'apps/web/src'], dir)
     expect(read(dir, 'apps/web/src/index.css')).toBe(
-      "@import 'basalt-ui/tailwind.css';\n@import './tokens.css';\n@import '../.basalt/sources.css';\n",
+      "@import 'basalt-ui/tailwind.css';\n@import './tokens.css';\n@import './basalt.tokens.css';\n@import '../.basalt/sources.css';\n",
     )
   })
 
@@ -598,7 +641,7 @@ describe('init: the budget, the install and the seeds', () => {
     const stock = repo({ ...vite, 'src/index.css': stockCss })
     await runInit(['--profile', 'app', '--root', 'src'], stock)
     expect(read(stock, 'src/index.css')).toBe(
-      "@import 'basalt-ui/tailwind.css';\n@import './tokens.css';\n@import '../.basalt/sources.css';\n",
+      "@import 'basalt-ui/tailwind.css';\n@import './tokens.css';\n@import './basalt.tokens.css';\n@import '../.basalt/sources.css';\n",
     )
     expect(read(stock, 'vite.config.ts')).toContain(
       "plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), tailwindcss(), basalt()]",

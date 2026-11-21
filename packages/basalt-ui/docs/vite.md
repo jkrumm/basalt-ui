@@ -12,11 +12,13 @@ Usage (vite.config.ts):
   /* src/index.css: the one stylesheet entry, in this order. `init` writes it. */
   @import 'basalt-ui/tailwind.css';
   @import './tokens.css';
+  @import './basalt.tokens.css';
   @import '../.basalt/sources.css';
 
   tailwind.css imports tailwindcss, the shipped tokens and fonts, so none of them is imported again.
   ./tokens.css is the app's own `tokens:css --out` output; it follows tailwind.css so a retune wins.
-  Without a retune, leave it out. The sources path is relative to this file and ends at the Vite root.
+  Without a retune, leave it out. ./basalt.tokens.css is the series sheet `tokens:css --extra` writes from src/basalt.tokens.ts (`init` seeds both).
+  The sources path is relative to this file and ends at the Vite root.
 
   TanStack Start host (`init --profile app --start`): the router plugin is Start's, first in the list, before the React plugin.
   export default { plugins: [tanstackStart({ router: { autoCodeSplitting: true } }), viteReact(), tailwindcss(), basalt()] }

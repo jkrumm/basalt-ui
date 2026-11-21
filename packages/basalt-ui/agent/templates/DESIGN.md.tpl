@@ -19,7 +19,8 @@ _The owner writes this: what the app is for, who reads it, the tone it keeps. Ag
 
 ## Series
 
-The colour of a metric is authored once, as a `{ light, dark }` pair in {{SERIES_MODULE_PATH}}. A
+The colour of a metric is authored once, as a `{ light, dark }` pair under `series.<group>.<key>` in
+{{SERIES_MODULE_PATH}}; a chart takes the pair, an HTML mark `groupTokens('<group>', …)`'s variable. A
 series earns a hue for a trend, a status or a split a reader must tell apart; the rest stay neutral.
 
 | Series | Key | Why it earned a hue |

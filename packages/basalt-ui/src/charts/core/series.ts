@@ -1,7 +1,8 @@
 /**
  * The series dictionary entry point (`docs/v3/concepts/charts-cards-kanban.md` § 3: `defineSeries`
  * sits in `./charts`). Identity at runtime: the value is the typed authoring seam, read by
- * `groupTokens`, `seriesTokens` and the `series-palette` audit.
+ * `groupTokens`, `seriesTokens` and the `series-palette` audit. Internal for an app: its series are
+ * authored in `src/basalt.tokens.ts` (README § Consumer-series extensibility).
  */
 import type { SeriesColor } from '../contract'
 

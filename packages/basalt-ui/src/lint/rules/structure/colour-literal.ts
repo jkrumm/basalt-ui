@@ -11,6 +11,9 @@
  * is the alpha the `alpha(BASALT.x, n)` helper owns and reports; `color-mix` and `light-dark` are the
  * stylesheet's, not this rule's.
  *
+ * `basalt.tokens.ts`, the series file `tokens:css --extra` reads, is the one file that writes raw
+ * colour pairs, and is not read at all.
+ *
  * A `light` or `dark` string of a series entry inside a `defineSeries({ name: { light, dark } })`
  * call is the colour pair the series file exists to hold, and is not reported; a hex beside it, in
  * a sibling object of the same file or in a component still is.
@@ -41,7 +44,7 @@
 import type { AstForm } from '../../rule-table'
 import { defineRules } from '../../rule-table'
 import type { Node } from '../../factory'
-import { isTestFile } from '../../factory'
+import { isSeriesFile, isTestFile } from '../../factory'
 
 const HEX = /(?<!url\(['"]?)(?<![\w&#-])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])/gi
 const COLOUR_FUNCTION =
@@ -222,23 +225,27 @@ const namedColourIn = (literal: Node, text: string): string | undefined =>
 
 export const colourLiteralForm: AstForm = {
   id: 'colour-literal',
-  detect: ({ context, report }) => ({
-    Literal(node) {
-      const text = node['value']
-      if (typeof text !== 'string' || isModuleSource(node) || isSeriesColourPair(node)) return
-      // A test passes a colour word as input (`{ color: 'red' }`); a hex is still a literal there.
-      if (/^#\d{3,4}$/.test(text.trim()) && isReferenceValue(node)) return
-      if (/^#[\w-]+$/.test(text.trim()) && isAnchorValue(node)) return
-      const found = literalIn(text) ?? (isTestFile(context) ? undefined : namedColourIn(node, text))
-      if (found) report(node, found)
-    },
-    TemplateLiteral(node) {
-      const found = literalIn(templateText(node))
-      if (found) report(node, found)
-    },
-  }),
-  fix: 'A BASALT.* token, alpha(BASALT.x, n) or the series file (a defineSeries pair); a deep-rendering file takes a reasoned file waiver',
-  next: 'A canvas renderer lists its file in manifest.deepRender and waives colour-literal once with -- <why>; a series colour goes in defineSeries, never a waiver',
+  detect: ({ context, report }) =>
+    isSeriesFile(context)
+      ? {}
+      : {
+          Literal(node) {
+            const text = node['value']
+            if (typeof text !== 'string' || isModuleSource(node) || isSeriesColourPair(node)) return
+            // A test passes a colour word as input (`{ color: 'red' }`); a hex is still a literal there.
+            if (/^#\d{3,4}$/.test(text.trim()) && isReferenceValue(node)) return
+            if (/^#[\w-]+$/.test(text.trim()) && isAnchorValue(node)) return
+            const found =
+              literalIn(text) ?? (isTestFile(context) ? undefined : namedColourIn(node, text))
+            if (found) report(node, found)
+          },
+          TemplateLiteral(node) {
+            const found = literalIn(templateText(node))
+            if (found) report(node, found)
+          },
+        },
+  fix: 'A BASALT.* token, alpha(BASALT.x, n) or the series file (src/basalt.tokens.ts); a deep-rendering file takes a reasoned file waiver',
+  next: 'A canvas renderer lists its file in manifest.deepRender and waives colour-literal once with -- <why>; a series colour goes in basalt.tokens.ts, never a waiver',
   fixture: 'structure-rest/colour-literal.tsx',
 }
 

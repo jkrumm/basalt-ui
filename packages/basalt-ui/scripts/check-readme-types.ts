@@ -86,6 +86,9 @@ export function checkBlocks(blocks: readonly Block[], dir = join(PLAYGROUND, OUT
     writeFileSync(join(dir, 'root.ts'), "export type * from 'basalt-ui'\n")
     writeFileSync(join(dir, 'tsconfig.json'), JSON.stringify(TSCONFIG))
     for (const b of blocks) writeFileSync(join(dir, `block-${b.line}.${b.lang}`), b.code + '\n')
+    // The series block is the app's own file: the blocks that `import tokens from './basalt.tokens'` resolve it.
+    const series = blocks.find((b) => b.code.startsWith('// src/basalt.tokens.ts\n'))
+    if (series !== undefined) writeFileSync(join(dir, 'basalt.tokens.ts'), series.code + '\n')
     const result = Bun.spawnSync(
       [
         join(PLAYGROUND, 'node_modules', '.bin', 'tsc'),

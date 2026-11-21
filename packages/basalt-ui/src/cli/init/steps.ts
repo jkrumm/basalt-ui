@@ -94,6 +94,28 @@ function isStrictJson(text: string): boolean {
 
 // ── manifest and token outputs ──────────────────────────────────────────────────────────────────
 
+/** The `--extra` sheet `tokens:css` writes beside the identity sheet. */
+export const extraCssOut = (args: Args): string =>
+  join(dirname(args.tokensOut), 'basalt.tokens.css')
+
+/** The series file a profile with React code gets by default; `tokens` and `site` take one only by `--extra`. */
+export function defaultExtra(profile: Profile, roots: readonly string[]): string | undefined {
+  if (profile === 'tokens' || profile === 'site') return undefined
+  const [first = '.'] = roots
+  return join(first === '.' ? 'src' : first, 'basalt.tokens.ts')
+}
+
+/** The series file: a starter when it is not there yet, never over an existing one. */
+export function seedSeries(ctx: Ctx): void {
+  const { extra } = ctx.args
+  if (extra === undefined || existsSync(resolve(ctx.root, extra))) return
+  const template = readIfExists(resolve(ctx.pkgRoot, 'agent/templates/basalt.tokens.ts.tpl'))
+  if (template === null)
+    return void ctx.problems.push(`${ctx.pkgRoot} ships no basalt.tokens.ts.tpl`)
+  writeText(ctx.root, extra, template)
+  say(`wrote ${extra}: the one series file`)
+}
+
 /** The `tokens[]` rows this run declares; `--extra` is its own row (`tokens:css --extra` takes no identity flag). */
 function tokenRows(args: Args): Manifest['tokens'] {
   const rows: Manifest['tokens'] = [{ out: args.tokensOut, format: 'css', flags: args.identity }]
@@ -102,8 +124,7 @@ function tokenRows(args: Args): Manifest['tokens'] {
     rows.push({ out: args.tokensJsonOut, format: 'json', flags: [...flags, '--format', 'json'] })
   }
   if (args.extra !== undefined) {
-    const out = join(dirname(args.tokensOut), 'basalt.tokens.css')
-    rows.push({ out, format: 'css', flags: ['--extra', args.extra] })
+    rows.push({ out: extraCssOut(args), format: 'css', flags: ['--extra', args.extra] })
   }
   return rows
 }
@@ -641,10 +662,15 @@ function patchVite(text: string, first: FirstPlugin | null): string | null {
  * the shipped tokens and fonts; the app's own `tokens:css` output follows it so a retune wins; the
  * generated sources come last.
  */
-export function stylesheetEntry(tokens: string | null, sources: string): string {
+export function stylesheetEntry(
+  tokens: string | null,
+  sources: string,
+  extra: string | null = null,
+): string {
   return [
     "@import 'basalt-ui/tailwind.css';",
     ...(tokens === null ? [] : [`@import '${tokens}';`]),
+    ...(extra === null ? [] : [`@import '${extra}';`]),
     `@import '${sources}';`,
   ].join('\n')
 }
@@ -662,22 +688,45 @@ export function isStockViteCss(text: string): boolean {
   )
 }
 
+const extraOutAbs = (ctx: Ctx): string | null =>
+  ctx.args.extra === undefined ? null : resolve(ctx.root, extraCssOut(ctx.args))
+
+/**
+ * An entry that is already the one entry (it names tailwind.css) gains the series sheet on a re-run:
+ * the import goes in front of the sources import. An entry with no sources line comes back null, so
+ * the exact entry is printed instead of guessed at.
+ */
+function withExtraImport(
+  text: string,
+  extraAbs: string | null,
+  rel: (abs: string) => string,
+): string | null {
+  if (extraAbs === null || !existsSync(extraAbs)) return text
+  const sheet = rel(extraAbs)
+  if (text.includes(sheet)) return text
+  const sources = /^@import\s+(['"])[^'"]*\.basalt\/sources\.css\1;?[ \t]*$/m
+  if (!sources.test(text)) return null
+  return text.replace(sources, (line) => `@import '${sheet}';\n${line}`)
+}
+
 /** `viteRoot` is where `basalt()` writes `.basalt/sources.css`: the directory of the Vite config. */
 function patchCss(
   text: string,
   cssDir: string,
   viteRoot: string,
   tokensAbs: string,
+  extraAbs: string | null,
 ): string | null {
-  if (text.includes('basalt-ui/tailwind.css')) return text
-  const stock = /^@import\s+(['"])tailwindcss\1;?[ \t]*$/m
-  if (!stock.test(text) && !isStockViteCss(text)) return null
   const rel = (abs: string): string => {
     const path = relative(cssDir, abs).replaceAll('\\', '/')
     return path.startsWith('.') ? path : `./${path}`
   }
+  if (text.includes('basalt-ui/tailwind.css')) return withExtraImport(text, extraAbs, rel)
+  const stock = /^@import\s+(['"])tailwindcss\1;?[ \t]*$/m
+  if (!stock.test(text) && !isStockViteCss(text)) return null
   const tokens = existsSync(tokensAbs) ? rel(tokensAbs) : null
-  const entry = stylesheetEntry(tokens, rel(resolve(viteRoot, '.basalt/sources.css')))
+  const extra = extraAbs !== null && existsSync(extraAbs) ? rel(extraAbs) : null
+  const entry = stylesheetEntry(tokens, rel(resolve(viteRoot, '.basalt/sources.css')), extra)
   return stock.test(text) ? text.replace(stock, () => entry) : `${entry}\n`
 }
 
@@ -713,7 +762,9 @@ function seedStartCss(ctx: Ctx, vite: string): void {
   }
   const tokens = existsSync(tokensAbs) ? from(tokensAbs) : null
   const sources = from(resolve(ctx.root, dirname(vite), SOURCES_PATH))
-  if (writeText(ctx.root, rel, `${stylesheetEntry(tokens, sources)}\n`)) {
+  const extraAbs = extraOutAbs(ctx)
+  const extra = extraAbs !== null && existsSync(extraAbs) ? from(extraAbs) : null
+  if (writeText(ctx.root, rel, `${stylesheetEntry(tokens, sources, extra)}\n`)) {
     say(`wrote ${rel}: the one stylesheet entry (tailwind.css, tokens, sources)`)
   }
 }
@@ -765,13 +816,18 @@ export function wireApp(ctx: Ctx): void {
           dirname(resolve(ctx.root, css)),
           dirname(resolve(ctx.root, vite)),
           resolve(ctx.root, ctx.args.tokensOut),
+          extraOutAbs(ctx),
         )
   if (css !== undefined && cssPatched !== null) {
     if (writeText(ctx.root, css, cssPatched))
       say(`${css}: is the one stylesheet entry (tailwind.css, tokens, sources)`)
   } else {
     ctx.todo.push(
-      `make your stylesheet entry exactly:\n${stylesheetEntry(`<path to>/${basename(ctx.args.tokensOut)}`, '<path to>/.basalt/sources.css')}`,
+      `make your stylesheet entry exactly:\n${stylesheetEntry(
+        `<path to>/${basename(ctx.args.tokensOut)}`,
+        '<path to>/.basalt/sources.css',
+        ctx.args.extra === undefined ? null : `<path to>/${basename(extraCssOut(ctx.args))}`,
+      )}`,
     )
   }
 }

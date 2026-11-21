@@ -37,8 +37,8 @@ export type BasaltConfig = {
   /** Earned accent hue recorded in DESIGN.md `{{ACCENT_HUE}}`. Default: `blue`. */
   accentHue?: string
   /**
-   * Path of the consumer's series file, for DESIGN.md `{{SERIES_MODULE_PATH}}`.
-   * Default: `<first basalt.root>/lib/series.ts` — see `resolveSeriesModulePath`.
+   * Path of the consumer's series file (the `tokens:css --extra` input), for DESIGN.md `{{SERIES_MODULE_PATH}}`.
+   * Default: `<first basalt.root>/basalt.tokens.ts` — see `resolveSeriesModulePath`.
    */
   seriesModulePath?: string
   /**
