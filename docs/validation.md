@@ -50,8 +50,8 @@ passes `--bail` and reports every failure. A passing run runs the same files eit
 The step may run off the mini (`project.yaml` `steps.unit`): the factory's step host builds `tools/step-image/Dockerfile`
 (Ubuntu 24.04, bun, the `.nvmrc` Node, Chrome) and runs `make test` in it with the build output carried in. There the
 host grants cores and memory (`FACTORY_STEP_CORES`, `FACTORY_STEP_MEM_MIB`) and `scripts/unit-test.ts` runs up to
-`min(cores, memory / 1 GiB, 6)` processes at once (`scripts/unit-parallelism.ts`); unset, as on the mini and a bare `make test`, it
-stays serial; the CI unit job sets 4 cores and 16 GiB and runs at width 4. Every process runs with `--timeout 30000`, because a host 1.7x slower under parallel load took 5 to 8 s
+`min(cores, memory / 1 GiB, 6)` processes at once, while the sum of their estimated peaks (`HEAVY_MIB`, measured per file) stays under 2 GiB, the step's peak budget (`UNIT_PEAK_MIB` overrides; the CI job sets 16384) (`scripts/unit-parallelism.ts`); unset, as on the mini and a bare `make test`, it
+stays serial; the CI unit job sets 4 cores and 16 GiB and runs at width 4. Peak measured serially 2026-11-21: 1.78 GiB for the largest process (gen-llms); six in parallel measured 3.9 GiB (2026-11-17), which the budget now bounds. Every process runs with `--timeout 30000`, because a host 1.7x slower under parallel load took 5 to 8 s
 for tests that take under 3 s on the mini. `FACTORY_SLOT_HOST=vps make test` pins one run there.
 
 ## Unit tests the branch reaches (`make test-fast`)
