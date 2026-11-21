@@ -68,6 +68,9 @@ describe('DeltaBadge', () => {
     [{ value: '−3%', polarity: 'up-good' }, 'down', 'bad'],
     [{ value: '-3%', polarity: 'up-bad' }, 'down', 'good'],
     [{ value: '0%', polarity: 'up-bad' }, 'zero', 'neutral'],
+    [{ value: '2 of 3 scheduled', polarity: 'up-good' }, 'none', 'neutral'],
+    [{ value: '53 % of all', polarity: 'up-bad' }, 'none', 'neutral'],
+    [{ value: 'new', polarity: 'up-good' }, 'none', 'neutral'],
   ]
   for (const [props, direction, tone] of matrix) {
     test(`${String(props.value)} ${props.polarity}: arrow ${direction}, verdict ${tone}`, () => {
@@ -81,6 +84,13 @@ describe('DeltaBadge', () => {
   test('the verdict is in the words, not only the tint', () => {
     const el = read({ value: -3, polarity: 'up-good' })
     expect(el.textContent).toContain('Down, unfavourable')
+  })
+
+  test('a value with no sign draws no arrow and says no direction', () => {
+    const el = read({ value: '2 of 3 scheduled', polarity: 'up-good' })
+    expect(el.querySelector('svg')).toBeNull()
+    expect(el.textContent).not.toMatch(/Up|Down|No change/)
+    expect(el.textContent).toContain('2 of 3 scheduled')
   })
 
   test('the label rides along', () => {
