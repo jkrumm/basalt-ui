@@ -52,6 +52,18 @@ layout('a mono id in a phone row', () => {
     }
   })
 
+  test('a mono date that is the identity column stays on one line', async () => {
+    const page = await openFixture(EMPTY_SPEC, PHONE, doc!.path, 'reduce', 'fine')
+    await page.raw.waitForSelector('[data-testid="k17-when"] tbody [data-slot="table-row"]')
+    await page.settle()
+    const lines = await page.raw.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('[data-testid="k17-when"] tbody time')].map((el) =>
+        Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)),
+      ),
+    )
+    expect(lines).toEqual([1, 1])
+  })
+
   test('the rows body holds every declared row whole', async () => {
     const page = await openFixture(EMPTY_SPEC, PHONE, doc!.path, 'reduce', 'fine')
     await page.raw.waitForSelector('[data-testid="k17-ids"] tbody [data-slot="table-row"]')
