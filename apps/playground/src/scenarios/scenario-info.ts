@@ -515,6 +515,48 @@ export const SCENARIO_INFO: readonly ScenarioInfo[] = [
       'A project owner opens the hygiene checks after the weekly sweep. Which checks came back clean, which found work, which were skipped or failed, and which have never run?',
   },
   {
+    id: 'expr-n87',
+    title:
+      'Expression n87: whether every final photo is backed up, which raws are orphaned, and what waits',
+    blurb:
+      'A photo owner checks the library after a big import, before wiping a card. Is every final photo backed up, are any raw files orphaned, and is anything waiting to be dealt with?',
+  },
+  {
+    id: 'expr-n88',
+    title:
+      'Expression n88: whether the cheaper review seat passes as often as the lead seat, and at what cost',
+    blurb:
+      'The factory owner decides whether new Issues start on the cheaper review seat. Does it pass first verification as often as the lead seat, what does an Issue cost on each, and has it earned its move-up share?',
+  },
+  {
+    id: 'expr-n89',
+    title:
+      'Expression n89: whether the waits the factory adds help, and which test steps hold the most memory',
+    blurb:
+      'The factory owner checks the ordering the factory adds on its own. Do the waits it puts between Issues help or only slow the queue, and which test steps hold the most memory?',
+  },
+  {
+    id: 'expr-n90',
+    title:
+      'Expression n90: whether remote test steps stay remote, why the local host took any back, and what is held',
+    blurb:
+      'The factory owner checks the test steps meant to run on the remote host. Do they stay there, why did the local machine take any back, and is a hold blocking a step?',
+  },
+  {
+    id: 'expr-n91',
+    title:
+      'Expression n91: how much of the library is enriched, what fails and why, and what the rest will cost',
+    blurb:
+      'A library owner checks the enrichment pass. How much of the library is enriched, what fails and why, and what will the rest cost, including what a schema change will bill again?',
+  },
+  {
+    id: 'expr-n92',
+    title:
+      'Expression n92: whether four lift pairs sit inside their ranges, and which sits furthest out',
+    blurb:
+      'A lifter checks lift balance. Are the four lift pairs inside their healthy ranges, and which pair sits furthest out?',
+  },
+  {
     id: 'linked-windows',
     title: 'Linked windows: a table of runs beside an hourly chart',
     blurb: 'Each window row holds the hours it spans: point at it or step onto it to hold the run.',
