@@ -1038,7 +1038,7 @@
     /* a mono id is one word: the column takes its width, the id never breaks at a hyphen */
     [data-below='480'][data-phone='columns']
       [data-identity]
-      [data-slot='table-entity-name'][data-monospace] {
+      [data-monospace]:not([data-slot='table-entity-sub']) {
       white-space: nowrap !important;
     }
   }
@@ -1064,7 +1064,7 @@
     }
     [data-below='700'][data-phone='columns']
       [data-identity]
-      [data-slot='table-entity-name'][data-monospace] {
+      [data-monospace]:not([data-slot='table-entity-sub']) {
       white-space: nowrap !important;
     }
   }
@@ -1090,7 +1090,7 @@
     }
     [data-below='800'][data-phone='columns']
       [data-identity]
-      [data-slot='table-entity-name'][data-monospace] {
+      [data-monospace]:not([data-slot='table-entity-sub']) {
       white-space: nowrap !important;
     }
   }
@@ -1116,7 +1116,7 @@
     }
     [data-below='always'][data-phone='columns']
       [data-identity]
-      [data-slot='table-entity-name'][data-monospace] {
+      [data-monospace]:not([data-slot='table-entity-sub']) {
       white-space: nowrap !important;
     }
   }

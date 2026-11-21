@@ -24,6 +24,41 @@ const COLUMNS = [
   c.number('share', { header: 'Share', sortable: false, priority: 2, card: 'meta' }),
 ]
 
+type When = { at: string; found: number }
+const WHENS: readonly When[] = [
+  { at: '2026-11-18T10:00:00Z', found: 4 },
+  { at: '2026-11-19T08:30:00Z', found: 7 },
+]
+const cw = col<When>()
+const WHEN_COLUMNS = [
+  cw.date('at', { header: 'When', mono: true, sortable: false, priority: 1, style: 'long' }),
+  cw.number('found', { header: 'Found', sortable: false, priority: 2, card: 'value' }),
+]
+
+function WhenPanel(): ReactElement {
+  const table = useDataTable<When>({
+    id: 'k17-when',
+    label: 'Runs',
+    columns: WHEN_COLUMNS,
+    data: WHENS,
+    getRowId: (r) => r.at,
+    mode: { kind: 'client' },
+    phase: 'ready',
+    bodyRows: WHENS.length,
+    phone: 'columns',
+  })
+  return (
+    <div data-testid="k17-when">
+      <DataPanel
+        title="Runs"
+        phase="ready"
+        bodySize={{ rows: WHENS.length + 1 }}
+        body={() => <DataTable table={table} height="fill" />}
+      />
+    </div>
+  )
+}
+
 function Panel(): ReactElement {
   const table = useDataTable<Check>({
     id: 'k17-ids',
@@ -56,5 +91,6 @@ document.body.classList.add('bg-background')
 createRoot(container).render(
   <main className="grid gap-4 p-4 text-foreground">
     <Panel />
+    <WhenPanel />
   </main>,
 )
