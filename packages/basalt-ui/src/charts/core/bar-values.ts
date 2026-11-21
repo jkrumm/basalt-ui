@@ -28,6 +28,9 @@ const INSIDE_PAD = 2
 /** How far a label standing in a bar may reach past each side of it, px: the text estimate errs wide, and a bar a few px under its label still holds it. A label needs the bar's height for its line, with no air. */
 const OVERHANG = 6
 const SIZE = BASALT.text.micro
+/** How far into the plot a value label keeps off a tick label's row, px: a tick label is ~47 px wide and a value that starts within this of it reads as its neighbour (`US$0.40 US$0.33`). */
+const TICK_REACH = 52
+
 /** The centre of a clamped value's row from the plot's edge: its box clears the edge's gridline. */
 const CLAMPED_ROW = Math.max(CARET_SIZE / 2, lineHeight(SIZE) / 2 + 2)
 /** Air two value labels keep between their boxes, px: a box is the line, and a line against a line reads as touching. */
@@ -91,11 +94,31 @@ export type BarValuesInput<T, X extends ChartX> = {
   /** The axis' number format: the label's text when the series sets none. */
   formatOf: (side: Side) => (v: number) => string
   frame: PlotPx
+  /** The values each y axis labels, by side: the tick labels stand against the plot's edge, outside it. */
+  ticks?: readonly { side: Side; value: number }[]
   focused: T | null
   /** Every box a label keeps clear of: captions, rules, line paths and the bar bodies. */
   obstacles: readonly LabelBox[]
   /** The same without the bar bodies: where a label inside a bar may stand. */
   clear: readonly LabelBox[]
+}
+
+/** The row of each y tick label, from the plot's edge in as far as {@link TICK_REACH}, as boxes in plot px. */
+function tickRows<T, X extends ChartX>(input: BarValuesInput<T, X>): LabelBox[] {
+  const height = lineHeight(SIZE)
+  return (input.ticks ?? []).flatMap(({ side, value }): LabelBox[] => {
+    const [lo, hi] = [Math.min(...input.domainOf(side)), Math.max(...input.domainOf(side))]
+    if (!(value >= lo && value <= hi)) return []
+    const y = ((hi - value) / (hi - lo || 1)) * input.frame.height
+    return [
+      {
+        left: side === 'left' ? 0 : input.frame.width - TICK_REACH,
+        top: y - height / 2,
+        width: TICK_REACH,
+        height,
+      },
+    ]
+  })
 }
 
 /** The text of a bar's value: the series' own function, its `format`, else the y axis'. */
@@ -277,7 +300,7 @@ function slotPx<T, X extends ChartX>(input: BarValuesInput<T, X>): number {
  * inside the bar's end, in the card's own colour, when it fits the bar; else it is dropped.
  */
 export function barValueLabels<T, X extends ChartX>(
-  input: BarValuesInput<T, X>,
+  given: BarValuesInput<T, X>,
 ): {
   marks: ChartMarks
   boxes: LabelBox[]
@@ -285,6 +308,13 @@ export function barValueLabels<T, X extends ChartX>(
   /** A label sits on a backing: the chart's hidden `[0, 1]` x scale is then in use. */
   backed: boolean
 } {
+  // A value label keeps off the rows of the tick labels that stand against the plot's edge.
+  const rows = tickRows(given)
+  const input: BarValuesInput<T, X> = {
+    ...given,
+    obstacles: [...given.obstacles, ...rows],
+    clear: [...given.clear, ...rows],
+  }
   const found = candidates(input)
   if (found.length === 0 || input.frame.width <= 0 || input.frame.height <= 0)
     return { marks: [], boxes: [], written: new Set(), backed: false }
@@ -570,7 +600,7 @@ export function barValueLabels<T, X extends ChartX>(
     placedAll.flatMap((p) => {
       const c = found[Number(p.key)] as Candidate<X>
       const onBody = paintOf.get(p.key) !== CV.inkMuted && c.body.height >= p.height
-      return !onBody && isStruck(p, input.obstacles, input.frame) ? [p.key] : []
+      return !onBody && isStruck(p, given.obstacles, input.frame) ? [p.key] : []
     }),
   )
   const marks = placedAll.map((p) => {

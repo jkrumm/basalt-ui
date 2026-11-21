@@ -548,6 +548,28 @@ export function yGuide<T>(opts: {
 }
 
 /**
+ * The values the y axis of `side` labels, as `yGuide` plans them: a written list, else the ticks of the
+ * planned count on the axis' domain (the zone edges `yGuide` adds are left out). Empty on the micro class.
+ */
+export function yTickValues<T>(opts: {
+  cfg: AxisConfig<T> | undefined
+  axis: YAxis
+  cls: ContainerClass
+}): number[] {
+  if (opts.cls === 'micro') return []
+  const guide = yGuide({ ...opts, side: 'left', grid: false })
+  const axisSpec = guide.axis
+  if (axisSpec === undefined) return []
+  const ticks = axisSpec.ticks as { values?: readonly number[]; count?: number } | undefined
+  if (ticks === undefined) return []
+  if (ticks.values !== undefined) return [...ticks.values]
+  const [lo, hi] = [Math.min(...opts.axis.domain), Math.max(...opts.axis.domain)]
+  return scaleLinear()
+    .domain([lo, hi])
+    .ticks(ticks.count ?? LADDER[opts.cls].yTicks)
+}
+
+/**
  * How far a band axis label wider than its slot hangs past the plot's right edge, px: the engine would
  * shrink the plot to make room for it. Such a label is right-aligned to the plot edge instead
  * (anchor `end`, shifted by the distance from its band centre to the edge). `undefined` when it fits or
@@ -2462,6 +2484,15 @@ export function compileCartesian<T, X extends ChartX>(
           formatOf: (side) => axes.axisOf(side).format,
           frame: { width: ctx.plotWidth, height: ctx.plotHeight },
           focused: input.focused ?? null,
+          ticks: (['left', 'right'] as const).flatMap((side) =>
+            side === 'right' && axes.right === null
+              ? []
+              : yTickValues({
+                  cfg: side === 'right' ? input.y2 : input.y,
+                  axis: axes.axisOf(side),
+                  cls: resolveContainerClass(width),
+                }).map((value) => ({ side, value })),
+          ),
           obstacles: hostBoxes(),
           clear: hostBoxesBesidesBars(),
         })
