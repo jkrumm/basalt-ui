@@ -55,6 +55,6 @@ not guarded:
 - A section, card or table title is its frame's `title`; never an in-body heading. A page of rows leads with a card of figure, context line and footer; every headline names its base as a signed delta.
 - Date range navigation sits in the `controls` slot, not in `actions`; count and reset active filters with the store.
 - `CardGrid` takes a `min` tier (`narrow`, `regular`, `wide`), never a column count or a width.
-- One `PageBar` per `Page`, one lit attention badge, one chord per command in an area: the dev build asserts the first two, `defineCommands` throws on the third.
+- One `PageBar` per `Page`, one lit attention badge: the dev build asserts both. A shortcut that runs an action is a `defineCommands` entry, one chord per command in an area (`defineCommands` throws on a second; `listed: false` keeps it out of the palette); a key that is no command is `useHotkey` from `@tanstack/react-hotkeys` (optional peer, pinned exact, `target` a ref); never a hand-written `window` `keydown`.
 - App CSS never targets `data-slot` or a shell class; stylelint `selector-disallowed-list` holds it where configured.
 - Build the router from `routerDefaults` and the template's `_app` layout; never `createBasaltRouter`.
