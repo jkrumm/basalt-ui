@@ -66,7 +66,7 @@ export const ALLOTMENT: Allotment = {
     },
     content: {
       peers: ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'remend'],
-      lazy: ['shiki', 'beautiful-mermaid'],
+      lazy: ['shiki', 'pele'],
       reaches: ['.'],
     },
     ai: {

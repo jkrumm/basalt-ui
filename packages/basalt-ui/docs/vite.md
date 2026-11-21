@@ -28,7 +28,7 @@ naming the one command that fixes it:
   missing peer      an imported subpath (or a primitive or composite it reaches) needs a peer
                     that is not installed: "Run: bun add <peers>". The peers come from the
                     subpath allotment; date-picker adds react-day-picker, resizable adds react-resizable-panels, virtual-list adds
-                    @tanstack/react-virtual. Lazy peers (shiki, beautiful-mermaid) are not gated.
+                    @tanstack/react-virtual. Lazy peers (shiki, pele) are not gated.
   stale seed        an ejected file's recorded seedDigest differs from the installed seed plus
                     guard: "Run: basalt-ui sync". A release that does not touch the seed asks
                     nothing. origin "local" records no digest and is skipped.

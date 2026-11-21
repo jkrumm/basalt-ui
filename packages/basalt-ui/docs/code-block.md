@@ -3,7 +3,7 @@ name: CodeBlock
 use when: 'a fenced or standalone block of source or terminal output is shown, highlighted, with a copy button'
 never when: 'the text is inline (use <code> in prose) or is a diagram (use a mermaid fence)'
 subpath: basalt-ui/content
-peers: ['@base-ui/react', '@shikijs/langs', '@shikijs/themes', beautiful-mermaid, react-markdown, rehype-sanitize, remark-gfm, remend, shiki]
+peers: ['@base-ui/react', '@shikijs/langs', '@shikijs/themes', pele, react-markdown, rehype-sanitize, remark-gfm, remend, shiki]
 slots: [code-block]
 ---
 

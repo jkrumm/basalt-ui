@@ -29,6 +29,7 @@ import type { UrlTrust } from '../core/url'
 import { SlugTracker } from '../core/slug'
 import { blockSplit } from './block-split'
 import type { FenceRenderers } from './contract'
+import { FenceTrust } from './fence-trust'
 import { FenceSettled, createFencePre } from './fences'
 import { HeadingSlugs, createHeadingComponents } from './headings'
 import { createSanitizeSchema } from './sanitize'
@@ -96,6 +97,7 @@ type Pipeline = {
   rehypePlugins: RehypePlugins
   components: Components
   urlTransform: UrlTransform
+  trust: UrlTrust
 }
 
 function buildUrlTransform(trust: UrlTrust, images: 'none' | 'same-origin'): UrlTransform {
@@ -131,6 +133,7 @@ function usePipeline(props: MarkdownProps): Pipeline {
         ...components,
       },
       urlTransform: buildUrlTransform(trusted ? 'trusted' : 'untrusted', images),
+      trust: trusted ? 'trusted' : 'untrusted',
     }),
     [trusted, images, sanitize, rehypePlugins, remarkPlugins, components, fenceRenderers],
   )
@@ -151,14 +154,16 @@ function Block({
   return (
     <HeadingSlugs value={new SlugTracker()}>
       <FenceSettled value={settled}>
-        <ReactMarkdown
-          remarkPlugins={pipeline.remarkPlugins}
-          rehypePlugins={pipeline.rehypePlugins}
-          components={pipeline.components}
-          urlTransform={pipeline.urlTransform}
-        >
-          {text}
-        </ReactMarkdown>
+        <FenceTrust value={pipeline.trust}>
+          <ReactMarkdown
+            remarkPlugins={pipeline.remarkPlugins}
+            rehypePlugins={pipeline.rehypePlugins}
+            components={pipeline.components}
+            urlTransform={pipeline.urlTransform}
+          >
+            {text}
+          </ReactMarkdown>
+        </FenceTrust>
       </FenceSettled>
     </HeadingSlugs>
   )
