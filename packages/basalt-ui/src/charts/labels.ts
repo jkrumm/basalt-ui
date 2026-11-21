@@ -6,6 +6,7 @@ import { decorative } from '@tanstack/charts/mark/decorative'
 import { rect } from '@tanstack/charts/rect'
 import { text } from '@tanstack/charts/text'
 import { BASALT } from '../tokens'
+import { CV } from './core/theme'
 import { lineHeight } from './label-place'
 import { yRangeWithin } from './ref-label'
 import type { LabelBox, RefLabelPoint } from './ref-label'
@@ -98,6 +99,8 @@ export type EndLabel<T, X extends ChartX> = {
   box: LabelBox
   /** Present when the label sits too far from its line's end to read as its own. */
   leader?: EndLabelLeader
+  /** Present when another series' line runs through the label's glyphs where no height clears: the label is drawn on a surface backing, in plot fractions and values. */
+  backing?: LabelBox
 }
 
 const claimedBoxes = new WeakMap<object, readonly LabelBox[]>()
@@ -155,7 +158,7 @@ export function spreadLabels(ys: readonly number[], plotHeight: number): number[
  * series read another scale); `legend`: none. Labels that would collide are spread apart, never
  * dropped: a label no height clears of the other series' lines stays where the spread left it, because
  * the legend may be hidden (`endLabels` draws none) and the label is then the only name. The text mark has no
- * stroke, so it cannot wear a halo against a line through it. A label the
+ * stroke, so a label another line runs through gets a card-coloured `backing` box under its glyphs. A label the
  * spread moves off its line's end gets a `leader` back to it. A series whose last point the plot's own x scale cannot place, or places outside the plot
  * (`plot.xFraction` outside [0, 1]: clipped by a narrower `xDomain`), has no label.
  */
@@ -290,6 +293,20 @@ function planEndLabels<T, X extends ChartX>(
     }),
   )
   const ranges = (i: number): readonly [number, number][] => windowRanges[i] as [number, number][]
+  /** Per label, the ranges of the other series' lines under the glyphs alone: a label's own line and a rule never strike it. */
+  const rivalRanges = last.map(({ series, fraction }, i) => {
+    const reach = (END_LABEL_DX + series.label.length * BASALT.text.micro * RETRY_GLYPH_EM) / plotW
+    const edge = END_LABEL_DX / plotW
+    const [x0, x1] =
+      anchors[i] === 'end'
+        ? [fraction - reach, fraction - edge]
+        : [fraction + edge, fraction + reach]
+    return plot.visible.flatMap((s, k) => {
+      if (s.key === series.key) return []
+      const range = yRangeWithin(obstacles[k] as RefLabelPoint[], x0, x1)
+      return range === null ? [] : [range]
+    })
+  })
   /** Where the centre goes to clear the lines on `side` of `start`, stepping past each one it meets. */
   const cleared = (i: number, side: EndLabelSide, start: number): number => {
     const blockers = ranges(i)
@@ -387,6 +404,10 @@ function planEndLabels<T, X extends ChartX>(
     const perPx = (hi - lo) / (plot.plotHeight || 1)
     // Two pixels of margin each way: the caption keeps its own gap from the claimed box.
     const fraction = last[i]?.fraction ?? 0
+    const glyphs = (END_LABEL_DX + series.label.length * BASALT.text.micro * RETRY_GLYPH_EM) / plotW
+    const struck = (rivalRanges[i] as [number, number][]).some(
+      ([a, b]) => b > centre - half && a < centre + half,
+    )
     const leader =
       Math.abs(nominal(i, side) - centre) > LEADER_AFTER_PX
         ? {
@@ -405,6 +426,14 @@ function planEndLabels<T, X extends ChartX>(
       side,
       nudge: nominal(i, side) - centre,
       ...(leader !== undefined && { leader }),
+      ...(struck && {
+        backing: {
+          fx0: anchors[i] === 'end' ? fraction - glyphs : fraction + END_LABEL_DX / plotW,
+          fx1: anchors[i] === 'end' ? fraction - END_LABEL_DX / plotW : fraction + glyphs,
+          y0: lo + (centre - half) * perPx,
+          y1: lo + (centre + half) * perPx,
+        },
+      }),
       box: {
         fx0: x0 - 2 / plotW,
         fx1: x1 + 2 / plotW,
@@ -429,8 +458,9 @@ export function endLabelMarks<T, X extends ChartX>(
   plan: readonly EndLabel<T, X>[],
   paint: (color: string) => string = (color) => color,
 ): ChartMarks {
-  return plan.flatMap(({ series, row, anchor, side, nudge, leader }) => [
+  return plan.flatMap(({ series, row, anchor, side, nudge, leader, backing }) => [
     ...(leader === undefined ? [] : leaderMarks(series.key, leader, paint(series.color))),
+    ...(backing === undefined ? [] : backingMarks(series.key, backing)),
     decorative(
       text([row], {
         id: `${series.key}-end-label`,
@@ -445,6 +475,25 @@ export function endLabelMarks<T, X extends ChartX>(
       }),
     ),
   ])
+}
+
+/** The surface a struck label is drawn on: the text mark has no stroke, so a line through it is covered by a card-coloured box instead of a halo. */
+function backingMarks(key: string, box: LabelBox): ChartMarks {
+  return [
+    decorative(
+      rect([box], {
+        x1: 'fx0',
+        x2: 'fx1',
+        y1: 'y0',
+        y2: 'y1',
+        xScale: 'zx',
+        yScale: 'y',
+        fill: CV.surface,
+        inset: 0,
+        id: `${key}-end-backing`,
+      }),
+    ),
+  ]
 }
 
 /**

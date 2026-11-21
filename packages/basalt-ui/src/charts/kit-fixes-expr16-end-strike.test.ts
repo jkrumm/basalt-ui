@@ -56,3 +56,28 @@ describe('a plan keeps every end label (n79 surge)', () => {
     })
   }
 })
+
+describe('a label another line runs through is drawn on a backing (n79 surge)', () => {
+  test('390: the struck labels carry a backing the height of their glyphs', () => {
+    const ctx = plot('narrow', 312)
+    const plan = endLabelPlan(ctx, ctx.visible as ChartSeries<number>[], 'endLabels', [])
+    const backed = plan.filter((l) => l.backing !== undefined)
+    expect(backed.length).toBeGreaterThan(0)
+    for (const l of backed) {
+      const b = l.backing!
+      expect(b.fx1).toBeGreaterThan(b.fx0)
+      expect(b.y1).toBeGreaterThan(b.y0)
+      // inside the claimed box, which adds a margin on each side
+      expect(b.fx0).toBeGreaterThanOrEqual(l.box.fx0)
+      expect(b.y0).toBeGreaterThanOrEqual(l.box.y0)
+      expect(b.y1).toBeLessThanOrEqual(l.box.y1)
+    }
+  })
+
+  test('a lone line has no backing', () => {
+    const ctx = plot('wide', 1000)
+    const only = { ...ctx, visible: ctx.visible.slice(0, 1) } as typeof ctx
+    const plan = endLabelPlan(only, only.visible as ChartSeries<number>[], 'endLabels', [])
+    expect(plan.every((l) => l.backing === undefined)).toBe(true)
+  })
+})
