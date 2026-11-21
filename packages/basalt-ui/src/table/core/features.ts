@@ -15,7 +15,7 @@
  *   `DataTable` inside another table's `detail` never reads the outer instance.
  *
  * `columnSizing` is not registered: pinned offsets are CSS sums of kind widths (section 3,
- * "Visibility, pinning"). Resize, reorder, tree, export and aggregation are absent on purpose;
+ * "Visibility, pinning"). Resize, column reorder (`columnOrderingFeature`), tree, export and aggregation are absent on purpose; the one reorder that ships, the category order list, is a table part outside this engine (`parts/order-list.tsx`);
  * each is additive later (concept section 10).
  */
 import {
