@@ -559,7 +559,7 @@ export function yTickValues<T>(opts: {
   if (opts.cls === 'micro') return []
   const guide = yGuide({ ...opts, side: 'left', grid: false })
   const axisSpec = guide.axis
-  if (axisSpec === undefined) return []
+  if (axisSpec === undefined || axisSpec === false) return []
   const ticks = axisSpec.ticks as { values?: readonly number[]; count?: number } | undefined
   if (ticks === undefined) return []
   if (ticks.values !== undefined) return [...ticks.values]
