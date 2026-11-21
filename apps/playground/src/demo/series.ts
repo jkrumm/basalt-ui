@@ -31,7 +31,7 @@ export const N88_SERIES = defineSeries({
   lead: { light: '#262626', dark: '#e6e6e6' },
 })
 
-/** Photo library (scenario expr-n71):the accent is the kept photos, a brand token set by the chart's highlight; the other ratings sit in one mid ink step. */
+/** Photo library (scenario expr-n71): the accent is the kept photos, a brand token set by the chart's highlight; the other ratings sit in one mid ink step. */
 export const N71_SERIES = defineSeries({
   photos: { light: '#8c8c8c', dark: '#8c8c8c' },
 })
