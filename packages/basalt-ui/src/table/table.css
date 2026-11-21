@@ -1014,7 +1014,7 @@
   }
 
   /* columns: phone="columns" keeps a table of the identity, the card's value, its first meta and the
-     actions (`phoneKeep`); the rest leave for the row's details, the name wraps into what is left. */
+     actions (`phoneKeep`); the rest leave for the row's details; the name, the head and the state wrap into what is left, so the table fits its card. */
   @container table (max-width: 479.9px) {
     [data-below='480'][data-phone='columns'] [data-phone-drop] {
       display: none;
@@ -1032,7 +1032,8 @@
       width: auto !important;
     }
     [data-below='480'][data-phone='columns'] [data-identity],
-    [data-below='480'][data-phone='columns'] [data-identity] * {
+    [data-below='480'][data-phone='columns'] [data-identity] *,
+    [data-below='480'][data-phone='columns'] :is(th, [data-kind='status']) * {
       white-space: normal !important;
     }
     /* a mono identity cell (id, date) never breaks; its sub line wraps */
@@ -1059,7 +1060,8 @@
       width: auto !important;
     }
     [data-below='700'][data-phone='columns'] [data-identity],
-    [data-below='700'][data-phone='columns'] [data-identity] * {
+    [data-below='700'][data-phone='columns'] [data-identity] *,
+    [data-below='700'][data-phone='columns'] :is(th, [data-kind='status']) * {
       white-space: normal !important;
     }
     [data-below='700'][data-phone='columns']
@@ -1085,7 +1087,8 @@
       width: auto !important;
     }
     [data-below='800'][data-phone='columns'] [data-identity],
-    [data-below='800'][data-phone='columns'] [data-identity] * {
+    [data-below='800'][data-phone='columns'] [data-identity] *,
+    [data-below='800'][data-phone='columns'] :is(th, [data-kind='status']) * {
       white-space: normal !important;
     }
     [data-below='800'][data-phone='columns']
@@ -1111,7 +1114,8 @@
       width: auto !important;
     }
     [data-below='always'][data-phone='columns'] [data-identity],
-    [data-below='always'][data-phone='columns'] [data-identity] * {
+    [data-below='always'][data-phone='columns'] [data-identity] *,
+    [data-below='always'][data-phone='columns'] :is(th, [data-kind='status']) * {
       white-space: normal !important;
     }
     [data-below='always'][data-phone='columns']
