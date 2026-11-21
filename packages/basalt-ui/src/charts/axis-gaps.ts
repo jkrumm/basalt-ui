@@ -138,8 +138,9 @@ export function withLogY<
       getValue: (d: T) => number | null
     }[]
     y?: { scale?: 'linear' | 'log' | undefined } | undefined
+    y2?: unknown
     stack?: 'stacked' | 'normalized' | undefined
-    refLines?: readonly { value: number }[] | undefined
+    refLines?: readonly { value: number; axis?: 'left' | 'right' | undefined }[] | undefined
   },
 >(input: I): I {
   if (input.y?.scale !== 'log') return input
@@ -158,8 +159,11 @@ export function withLogY<
     if (dev) throw new Error(LOG_Y_REFUSED(refused))
     return flat
   }
+  // Only the left axis is log: a right-axis series or rule (with a `y2` to carry it) stays linear.
+  const onRight = (axis: 'left' | 'right' | undefined): boolean =>
+    input.y2 !== undefined && axis === 'right'
   const series = input.series.map((s) => {
-    if (s.axis === 'right') return s
+    if (onRight(s.axis)) return s
     return {
       ...s,
       getValue: (d: T): number | null => {
@@ -173,8 +177,8 @@ export function withLogY<
       },
     }
   })
-  if (dev) for (const s of series) if (s.axis !== 'right') for (const d of input.data) s.getValue(d)
-  const refLines = input.refLines?.filter((r) => !(typeof r.value === 'number' && r.value <= 0))
+  if (dev) for (const s of series) if (!onRight(s.axis)) for (const d of input.data) s.getValue(d)
+  const refLines = input.refLines?.filter((r) => onRight(r.axis) || !(r.value <= 0))
   return { ...input, series, ...(refLines !== undefined && { refLines }) }
 }
 
