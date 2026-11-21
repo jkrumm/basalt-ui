@@ -8,6 +8,7 @@ import { resolvePhase } from '../core/phase'
 import type { ErrorKind, Fact as LabelledFact } from '../core/phase'
 import type { Phase, QueryStateLike } from '../core/ports'
 import { Skeleton } from '../ui/skeleton'
+import { ERROR_KEYS } from './query-state'
 
 /**
  * A fact is a node, or a label and a value as a footer fact is: `{ label: 'Last reindex', value,
@@ -37,12 +38,6 @@ type PageSummaryLoading = Partial<Omit<PageSummaryContent, 'phase'>> & {
 export type PageSummaryProps = PageSummaryContent | PageSummaryLoading
 
 const NO_FACTS: readonly Fact[] = []
-
-const ERROR_KEYS = {
-  forbidden: 'home.error.forbidden',
-  'not-found': 'home.error.not-found',
-  default: 'home.error.default',
-} as const
 
 /** The line a failed summary says: the kind's sentence, then the source's own message when it has no kind. */
 function causeOf(

@@ -45,7 +45,7 @@ const retryOf = (phase: QueryStateProps['phase']): (() => void) | undefined => {
   return retryOfRefetch(phase.refetch)
 }
 
-const ERROR_KEYS = {
+export const ERROR_KEYS = {
   forbidden: 'home.error.forbidden',
   'not-found': 'home.error.not-found',
   default: 'home.error.default',

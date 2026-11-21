@@ -549,12 +549,14 @@ export function yGuide<T>(opts: {
 
 /**
  * The values the y axis of `side` labels, as `yGuide` plans them: a written list, else the ticks of the
- * planned count on the axis' domain (the zone edges `yGuide` adds are left out). Empty on the micro class.
+ * planned count on the axis' domain, with the zone edges `yGuide` adds. Empty on the micro class.
  */
 export function yTickValues<T>(opts: {
   cfg: AxisConfig<T> | undefined
   axis: YAxis
   cls: ContainerClass
+  /** The edges of the zones drawn on this axis: `yGuide` puts a tick on each. */
+  edges?: readonly number[] | undefined
 }): number[] {
   if (opts.cls === 'micro') return []
   const guide = yGuide({ ...opts, side: 'left', grid: false })
@@ -1472,6 +1474,17 @@ const refLineMarks = <T, X extends ChartX>(
         ],
   )
 
+/** The edges of the zones drawn against one axis: a tick sits on each. */
+function zoneEdgesOn<T, X extends ChartX>(
+  input: CartesianInput<T, X>,
+  axes: Axes<T>,
+  side: 'left' | 'right',
+): number[] {
+  return (input.zones ?? [])
+    .filter((z) => axes.scaleId(z.axisSide) === axes.scaleId(side))
+    .flatMap((z) => [z.from, z.to])
+}
+
 function buildScales<T, X extends ChartX>(opts: {
   input: CartesianInput<T, X>
   model: XScaleModel<X>
@@ -1483,11 +1496,7 @@ function buildScales<T, X extends ChartX>(opts: {
   width?: number
 }): StoredChartSpec['scales'] {
   const { input, model, axes, formatX, cls, zoneScale, width } = opts
-  // The edges of the zones drawn against one axis: a tick sits on each.
-  const edgesOn = (side: 'left' | 'right'): number[] =>
-    (input.zones ?? [])
-      .filter((z) => axes.scaleId(z.axisSide) === axes.scaleId(side))
-      .flatMap((z) => [z.from, z.to])
+  const edgesOn = (side: 'left' | 'right'): number[] => zoneEdgesOn(input, axes, side)
   const { left, right } = axes
   const yFloor = Math.min(...left.domain)
   const ySpan = Math.max(...left.domain) - yFloor
@@ -2491,6 +2500,7 @@ export function compileCartesian<T, X extends ChartX>(
                   cfg: side === 'right' ? input.y2 : input.y,
                   axis: axes.axisOf(side),
                   cls: resolveContainerClass(width),
+                  edges: zoneEdgesOn(input, axes, side),
                 }).map((value) => ({ side, value })),
           ),
           obstacles: hostBoxes(),
