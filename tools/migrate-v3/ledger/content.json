@@ -87,7 +87,7 @@
       "area": "content",
       "class": "ab",
       "disposition": "port",
-      "target": "packages/basalt-ui/src/content/mermaid-sanitize.test.ts",
+      "target": "packages/basalt-ui/src/content/mermaid.test.tsx",
       "laws": ["Markdown"]
     },
     {
