@@ -155,8 +155,7 @@ export function ExprN57Scenario({ shotState, fixture }: ScenarioProps) {
                 domain={[0, SCALE_MAX]}
                 formatValue={(v) => `${hoursText(v)} h`}
                 formatLegend={(v) => `${hoursText(v)} h`}
-                // cycle-expression-13: the kit's focus dot sits on the cell's centred annotation, so the focused cell's text is held back
-                annotate={(c) => (c === focus.datum ? null : data.annotate(c))}
+                annotate={data.annotate}
                 focus={focus}
                 tooltip={false}
                 matchHeight
