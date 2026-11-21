@@ -151,7 +151,7 @@ export function ExprN86Scenario({ shotState, fixture }: ScenarioProps) {
               }
             : null
         }
-        bodySize={{ rows: 18 }}
+        bodySize={{ rows: 18, cardHeight: 33 }}
         body={() => <DataTable table={table} focus={focus} />}
       />
       {focus.live}
