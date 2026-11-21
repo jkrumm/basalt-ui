@@ -265,7 +265,7 @@ const OPTION_VALUES: Readonly<Record<string, readonly unknown[]>> = {
   sortable: [false],
   polarity: ['up-good', 'up-bad', 'neutral'],
   align: ['start', 'end', 'center'],
-  style: ['short', 'long', 'month', 'weekday'],
+  style: ['short', 'long', 'month', 'weekday', 'day'],
   footer: ['sum', 'mean', 'min', 'max', 'count'],
 }
 
