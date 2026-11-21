@@ -14,6 +14,7 @@ import { resolve } from 'node:path'
 
 import { SKILL_NAMES } from '../src/surfaces'
 import {
+  AGENT_BYTE_BUDGETS,
   AGENT_LAYER_TOTAL_BUDGET,
   AGENT_LINE_BUDGETS,
   RULES_TOTAL_BUDGET,
@@ -54,6 +55,11 @@ describe('checkCoverage', () => {
     expect(SHIPPED_RULES).toHaveLength(5)
     for (const [rel, budget] of Object.entries(AGENT_LINE_BUDGETS)) {
       expect(lines(rel)).toBeLessThanOrEqual(budget)
+    }
+    for (const [rel, budget] of Object.entries(AGENT_BYTE_BUDGETS)) {
+      expect(Buffer.byteLength(readFileSync(resolve(pkgRoot, rel), 'utf8'))).toBeLessThanOrEqual(
+        budget,
+      )
     }
     const layer = [
       ...SHIPPED_RULES.map((rule) => `agent/rules/${rule}.md`),
