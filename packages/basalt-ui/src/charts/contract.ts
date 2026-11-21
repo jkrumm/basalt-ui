@@ -377,7 +377,8 @@ export type MiniBarsProps = Omit<SparklineBase, 'form' | 'reference'> &
 
 /**
  * One pane of a `ChartCard` stacked on one x (`panes`): its share of the chart box by `weight`
- * (default 1), and the chart, called with `height: 'fill'` so it takes the pane.
+ * (default 1) above a 160 px floor (the `short` box), and the chart, called with `height: 'fill'` so
+ * it takes the pane. The card grows its box to hold every pane's floor.
  */
 export type ChartPane = {
   /** The pane's share of the box against the others' weights. Default 1. */
@@ -426,8 +427,9 @@ export type ChartCardProps = Omit<FrameState, 'phase'> & {
 } & (
     | (FrameHead & { chart: BoxSlot; panes?: undefined })
     /**
-     * Two or three charts stacked on one x share the chart box: each pane takes its share by
-     * `weight`, 4 px apart, so no pane states a pixel height at any width.
+     * Charts stacked on one x share the chart box: each pane takes its share by `weight` above a
+     * 160 px floor, 4 px apart, and the box grows to hold the floors, so no pane and no page states a
+     * pixel height at any width.
      */
     | (FrameHead & { panes: readonly ChartPane[]; chart?: undefined })
     /** A Suspense fallback. */
