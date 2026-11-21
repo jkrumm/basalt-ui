@@ -8,7 +8,7 @@
   "managed": {
     ".claude/agents/basalt-design-reviewer.md": "5334e1c4a9c6d1125f1e381b02db27310106f6e8a51172917b71935db366094e",
     "repo:.claude/rules/basalt-v3-charts.md": "7ff28adf17b5709964bdb9fb8e308d5daf3b14d92bb0329daac361b193b40539",
-    "repo:.claude/rules/basalt-v3-page.md": "d8831b8d1527cb669bd7072542370833e5332423028ab2f9fe04adb1eb2a1a54",
+    "repo:.claude/rules/basalt-v3-page.md": "f83c9422de89f183e3e5a459fb6f33f6755313473bfd2e763912590a07b2ef67",
     "repo:.claude/rules/basalt-v3-state.md": "9ef52a9fe323db97f4d2a28cf9e717e54d0416246faea23f95a8eff19767898f",
     "repo:.claude/rules/basalt-v3-tokens.md": "1bef89518363af3c6f75e7de1af9735e9e8c6dd41216d0ff8867972559185f32",
     "repo:.claude/rules/basalt-v3-ui.md": "92d5fcb687b4a7edeac4d195a906392043aae76ceb3bd287390c2917ae58d44f",
@@ -17,7 +17,7 @@
     "repo:.claude/skills/basalt-v3-app/references/performance.md": "e6930ff6a2b7c389d152b80a417012fa7b7703db64ffa07356b57b15a83aeade",
     "repo:.claude/skills/basalt-v3-app/references/recipes.md": "49e8036a8addf43a6024f4b8160f4f9a312c8d24cfe7b5084780325153b5dfbb",
     "repo:.claude/skills/basalt-v3-app/references/testing.md": "925ac4088d6b8ba8d853059d27aba543aade7f807d55d3d923ca230d1158a8e4",
-    "repo:.claude/skills/basalt-v3-app/SKILL.md": "4c464192a9f4134dba5872a0ca0dc7d21327b5da669842866c858dc21586df40",
+    "repo:.claude/skills/basalt-v3-app/SKILL.md": "7436b0f3c891870e48413c80762c285790cc91fe07b36e5b793549ddfba165c2",
     "repo:.claude/skills/basalt-v3-charts/references/custom-marks.md": "65c7af1788ad13de6cdc808e382cf93d1e73be5ec2a1914d9e97926e0d3c347a",
     "repo:.claude/skills/basalt-v3-charts/references/linked-parts.md": "e8921b5a2d4de95f530a1ec540ad689d66298e067af4b9bd0a0a22ddefc2474e",
     "repo:.claude/skills/basalt-v3-charts/SKILL.md": "adc08d68a28538ce92b6a06f5969200f6c692349acc9fe2d94e228a2efd9b1af",
