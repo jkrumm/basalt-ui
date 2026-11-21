@@ -64,6 +64,7 @@ export function tierAttributes(
   detailListed: boolean,
 ): Record<string, string | undefined> {
   return {
+    'data-col': planned.id,
     'data-priority': planned.priority === null ? undefined : String(planned.priority),
     'data-pin': planned.pin ?? undefined,
     'data-identity': planned.identity ? '' : undefined,
@@ -77,6 +78,9 @@ export function tierAttributes(
       planned.place === 'hidden' || (planned.place === 'detail' && detailListed)
         ? 'hidden'
         : undefined,
+    // The column is in the detail without asking for it (its kind's default, or its slot was full): no phone card shows it, and `shot detect` names it.
+    'data-card-left':
+      planned.place === 'detail' && detailListed && !planned.cardDetail ? '' : undefined,
   }
 }
 

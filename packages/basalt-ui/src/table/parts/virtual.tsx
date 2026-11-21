@@ -165,7 +165,7 @@ export function VirtualTable<T>({
         }}
         head={
           <>
-            <TableCaption ref={caption} className="sr-only">
+            <TableCaption ref={caption} className="sr-only p-0">
               {model.label}
             </TableCaption>
             {head}

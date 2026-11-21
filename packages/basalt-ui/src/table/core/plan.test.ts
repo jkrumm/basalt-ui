@@ -24,6 +24,33 @@ const PLACES: readonly CardPlace[] = [
 ]
 const quiet = { warn: () => {} }
 
+describe('cardDetail', () => {
+  const input = (id: string, card: PlanInput['card'], cardFirst: boolean): PlanInput => ({
+    id,
+    kind: 'text',
+    card,
+    ...(cardFirst && { cardFirst }),
+    priority: 2,
+    width: { ch: 12, flex: false },
+    pin: null,
+  })
+
+  test('a column that overflows its named slot is in the detail without asking for it', () => {
+    const inputs = [
+      input('name', ['title'], false),
+      ...Array.from({ length: 7 }, (_, i) => input(`m${i}`, ['meta', 'detail'], true)),
+      input('asked', ['detail', 'meta'], true),
+    ]
+    const plan = planInputs(inputs, quiet)
+    const left = plan.columns.filter((p) => p.place === 'detail' && !p.cardDetail).map((p) => p.id)
+    expect(left).toEqual(['m6'])
+    expect(plan.columns.find((p) => p.id === 'asked')).toMatchObject({
+      place: 'detail',
+      cardDetail: true,
+    })
+  })
+})
+
 describe('phoneKeep', () => {
   test("keeps the identity, the card's value, its first meta and the actions", () => {
     const c = col<{ id: string; name: string; a: number; b: number; c: number }>()

@@ -182,7 +182,7 @@ function FramedArm<T>({
         style={scrollMinWidth(model)}
       >
         <Table role="table" aria-colcount={colcount} look={model.look} className="table-fixed">
-          <TableCaption className="sr-only">{model.label}</TableCaption>
+          <TableCaption className="sr-only p-0">{model.label}</TableCaption>
           <Columns model={model} fill />
           <DataTableHead table={table} />
           <TableBody role="rowgroup">
@@ -338,7 +338,7 @@ export function DataTable<T, I = unknown>({
             look={model.look}
             className="table-fixed"
           >
-            <TableCaption className="sr-only">{model.label}</TableCaption>
+            <TableCaption className="sr-only p-0">{model.label}</TableCaption>
             <Columns model={model} fill />
             <DataTableHead table={table} />
             <DataTableBody table={table} {...(detail !== undefined && { detail })} />
