@@ -33,5 +33,8 @@ export const unlabelledZone: Pick<MeterProps, 'zones'> = {
 // @ts-expect-error a zoned meter has at least two zones
 export const oneZone: Pick<MeterProps, 'zones'> = { zones: [{ to: 2, tone: 'good', label: 'All' }] }
 
+// @ts-expect-error ticks are a range's two ends or one limit, never a scale
+export const threeTicks: Pick<MeterProps, 'ticks'> = { ticks: [1, 2, 3] }
+
 // @ts-expect-error a meter needs a name
 export const unnamed: Pick<MeterProps, 'label'> = {}

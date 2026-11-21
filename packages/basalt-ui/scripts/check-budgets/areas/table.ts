@@ -82,13 +82,22 @@ export const rows: readonly RowDef[] = [
     // Input's start and end, the Button spinner, the read-only looks.
     // 163500 -> 163800 (Issue 2500): 163623 B measured, +~120 B gz for `phone: 'columns'`, the plan's kept
     // columns and the details door for the columns a phone row leaves (expression cycle 14 contract).
-    ceiling: 163800,
+    // 163800 -> 164100 (Issue 2785): 163919 B measured, +~120 B gz from `Meter`, which `c.meter` cells draw:
+    // its `caption`, `ticks` and `cause` (expression cycle 18 contract).
+    ceiling: 164100,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 163800,
+      to: 164100,
+      consumer:
+        "the expression cycle 18 contract (Issue 2785, Spec artifact_01a1fdd4): n87's and n91's meters printed a bare value and n92 wrote its ranges and causes as sibling text, so a Meter draws a caption, range ticks and a cause line, and the table's c.meter cells import that Meter",
+      repo: 'basalt-ui',
+    },
     {
       from: 163500,
       to: 163800,

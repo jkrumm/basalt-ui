@@ -12,7 +12,11 @@ slots: [meter]
 A gauge for a value on a scale. With `zones` the track is tinted by zone, a marker sits at the
 value and the active zone's word is printed under it, so a verdict is never colour alone; every
 zone must carry a `label`. Without zones it is a neutral bar. `label` names the meter for
-assistive tech, `format` prints the value (default the page locale's number).
+assistive tech, `format` prints the value (default the page locale's number) and `caption` the
+words after it that name it on screen ("US$13.89 spent", "of 150 listed"). `ticks` mark a range's
+ends or a limit on the track, `cause` says why in a line under the readout. A list of meters
+joins one `useChartFocus` through the seam: the list spreads `focus.target`, each meter
+`focus.item(i)`, and the page renders `focus.live` once.
 
 ## Props
 
@@ -21,18 +25,25 @@ assistive tech, `format` prints the value (default the page locale's number).
 A gauge for a value on a scale. With `zones` the track is tinted by zone, a marker sits at the
 value and the active zone's word is printed under it, so a verdict is never colour alone; every
 zone must carry a `label`. Without zones it is a neutral bar. `label` names the meter for
-assistive tech, `format` prints the value (default the page locale's number).
+assistive tech, `format` prints the value (default the page locale's number) and `caption` the
+words after it that name it on screen ("US$13.89 spent", "of 150 listed"). `ticks` mark a range's
+ends or a limit on the track, `cause` says why in a line under the readout. A list of meters
+joins one `useChartFocus` through the seam: the list spreads `focus.target`, each meter
+`focus.item(i)`, and the page renders `focus.live` once.
 
 ```ts
-Meter({ label, value, min, max, zones, format: formatValue, tone, className, ...props }: MeterProps): ReactElement
+Meter({ label, value, min, max, zones, format: formatValue, caption, ticks, cause, tone, className, ...props }: MeterProps): ReactElement
   label: string
   value: number | null
   min?: number
   max: number
   zones?: readonly [MeterZone, MeterZone, ...MeterZone[]]
   format?: (v: number) => string
+  caption?: string  // Words after the value that name it on screen: "spent", "of 150 listed"
   tone?: "neutral" | "accent" | "good" | "warn" | "bad" | "info" | null
   className?: string  // Layout only (`max-w-xs`, `mt-2`)
+  ticks?: readonly [number] | readonly [number, number]  // One or two values marked across the track, each with its `format`ted number under it: a range's two ends or one limit
+  cause?: string  // Why the meter reads as it does, one muted line under the readout ("70 % under 0.40")
 ```
 
 ## `meterVariants`

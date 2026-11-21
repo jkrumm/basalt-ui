@@ -78,6 +78,55 @@ describe('meter module', () => {
     expect(getByRole('meter').getAttribute('aria-valuetext')).toBe('—')
   })
 
+  test('a caption names the value on screen and in the value text', () => {
+    const { container, getByRole } = render(
+      <Meter label="Pass progress by cost" value={13.89} max={20} caption="spent" />,
+    )
+    expect(container.querySelector('[data-readout]')?.textContent).toBe('13.89 spent')
+    expect(getByRole('meter').getAttribute('aria-valuetext')).toBe('13.89 spent')
+  })
+
+  test('a zoned caption sits before the zone word in the value text', () => {
+    const { getByRole } = render(
+      <Meter label="Load" value={1.1} max={2} zones={ZONES} caption="ACWR" />,
+    )
+    expect(getByRole('meter').getAttribute('aria-valuetext')).toBe('1.1 ACWR, Optimal')
+  })
+
+  test('ticks mark the track and print their formatted value', () => {
+    const { container } = render(
+      <Meter
+        label="Deadlift to squat"
+        value={1.5}
+        min={0.5}
+        max={1.875}
+        zones={ZONES}
+        ticks={[1, 1.25]}
+        format={(v) => v.toFixed(2)}
+      />,
+    )
+    expect(container.querySelectorAll('[data-meter-tick]')).toHaveLength(2)
+    const labels = [...container.querySelectorAll('[data-meter-tick-label]')]
+    expect(labels.map((l) => l.textContent)).toEqual(['1.00', '1.25'])
+  })
+
+  test('a cause prints under the readout and describes the meter', () => {
+    const { getByRole, getByText } = render(
+      <Meter label="Pull-up to bodyweight" value={0.12} max={1} cause="70 % under 0.40" />,
+    )
+    const cause = getByText('70 % under 0.40')
+    expect(getByRole('meter').getAttribute('aria-describedby')).toBe(cause.id)
+  })
+
+  test('a focus item spread lands on the meter root', () => {
+    const { getByRole } = render(
+      <Meter label="Load" value={1} max={2} {...{ 'data-chart-mark': '', 'data-dimmed': '' }} />,
+    )
+    const meter = getByRole('meter')
+    expect(meter.hasAttribute('data-chart-mark')).toBe(true)
+    expect(meter.hasAttribute('data-dimmed')).toBe(true)
+  })
+
   test('format prints the value; the page locale prints it by default', () => {
     const { getByText, rerender } = render(
       <Meter label="L" value={1.1} max={2} format={(v) => `${v.toFixed(2)} ACWR`} />,
