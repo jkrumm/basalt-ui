@@ -54,6 +54,9 @@ const inCorner = (share: number | null, within: number): boolean =>
 const READOUT_AIR = 5
 /** The inset the engine keeps between a readout and the chart's edge, px (`clampLabel`). */
 const EDGE_INSET = 2
+/** The share of an estimated caption width a label really draws: `captionWidth` over-estimates (a 12-letter name at the micro size is ~65 px, estimated ~90). */
+const DRAWN_SHARE = 0.75
+
 /** A readout's line box as a multiple of its font size: what a tick label above or below it must clear. */
 const LINE_BOX = 1.25
 
@@ -119,19 +122,24 @@ export function xTickOpacity(opts: {
     const { x, xValue } = focus.primary
     if (!Number.isFinite(x)) return 1
     const half = captionWidth(readoutText(xValue), fontSize) / 2
-    const centre =
-      width === undefined
-        ? x
-        : clamp(x, EDGE_INSET + half, Math.max(EDGE_INSET + half, width - EDGE_INSET - half))
     // A readout that only repeats a tick of its own value sits exactly where that tick does: it replaces it
     // and a neighbour, which the thinning already holds apart from it, needs no air for it.
     const repeats =
       opts.ticks !== undefined && chipRepeatsTick(xValue, readoutText(xValue), opts.ticks)
+    // A repeated tick is drawn where its tick is, so the engine pushes it in from the chart edge no more than the tick.
+    const centre =
+      width === undefined || repeats
+        ? x
+        : clamp(x, EDGE_INSET + half, Math.max(EDGE_INSET + half, width - EDGE_INSET - half))
     const air = repeats ? 0 : READOUT_AIR
-    const readout: Span = [centre - half - air, centre + half + air]
+    // Both boxes of a repeated tick are over-estimates and the engine placed these labels apart at rest by
+    // their real widths: a neighbour is blanked only where the two still meet shrunk to what they draw, so a
+    // phone's four band labels keep their neighbours whichever bar is focused.
+    const shrink = repeats ? DRAWN_SHARE : 1
+    const readout: Span = [centre - half * shrink - air, centre + half * shrink + air]
     const label = spanOf(
       position + (tick.dx(value) ?? 0),
-      captionWidth(tick.text(value), fontSize),
+      captionWidth(tick.text(value), fontSize) * shrink,
       tick.anchor(value) ?? 'middle',
     )
     if (meet(readout, label)) return 0
