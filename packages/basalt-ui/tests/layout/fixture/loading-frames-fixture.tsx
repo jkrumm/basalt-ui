@@ -27,6 +27,7 @@ const ITEMS: readonly BarListItem[] = Array.from({ length: 12 }, (_, i) => ({
   value: 100 - i * 6,
 }))
 
+const SHORT = '5,000 photos, 1,200 still in staging'
 const SENTENCE = 'Download fell below the minimum on 3 days, upload on 2 days'
 
 function PanelTable({ data }: { data: readonly Row[] }): ReactElement {
@@ -55,15 +56,30 @@ function Frame({ name, phase }: { name: string; phase: 'loading' | 'ready' }): R
       {name === 'list' && <BarList title="Months" items={ITEMS} phase={phase} bodyRows={5} />}
       {name === 'summary' &&
         (phase === 'loading' ? (
-          <PageSummary phase="loading" facts={[]} />
+          <PageSummary phase="loading" sentence={SENTENCE} facts={[]} />
         ) : (
           <PageSummary sentence={SENTENCE} facts={['3 days without tests are left out']} />
+        ))}
+      {name === 'short' &&
+        (phase === 'loading' ? (
+          <PageSummary phase="loading" facts={[]} />
+        ) : (
+          <PageSummary sentence={SHORT} facts={['Last reindex 21 Nov 2026, 6:10']} />
+        ))}
+      {name === 'failed' &&
+        (phase === 'loading' ? (
+          <PageSummary
+            phase={{ tag: 'error', message: 'The library index is unreachable', retry: () => {} }}
+            facts={[]}
+          />
+        ) : (
+          <PageSummary sentence={SHORT} facts={['Last reindex 21 Nov 2026, 6:10']} />
         ))}
     </section>
   )
 }
 
-const FRAMES = ['panel', 'list', 'summary'] as const
+const FRAMES = ['panel', 'list', 'summary', 'short', 'failed'] as const
 
 function Fixture(): ReactElement {
   return (

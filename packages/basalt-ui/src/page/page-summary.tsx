@@ -1,8 +1,11 @@
 import { isValidElement } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { RetryButton } from '../common/retry-button'
 import { cn } from '../core/cn'
+import { home } from '../core/messages/home'
+import { useMessages } from '../core/messages/use-messages'
 import { resolvePhase } from '../core/phase'
-import type { Fact as LabelledFact } from '../core/phase'
+import type { ErrorKind, Fact as LabelledFact } from '../core/phase'
 import type { Phase, QueryStateLike } from '../core/ports'
 import { Skeleton } from '../ui/skeleton'
 
@@ -34,6 +37,22 @@ type PageSummaryLoading = Partial<Omit<PageSummaryContent, 'phase'>> & {
 export type PageSummaryProps = PageSummaryContent | PageSummaryLoading
 
 const NO_FACTS: readonly Fact[] = []
+
+const ERROR_KEYS = {
+  forbidden: 'home.error.forbidden',
+  'not-found': 'home.error.not-found',
+  default: 'home.error.default',
+} as const
+
+/** The line a failed summary says: the kind's sentence, then the source's own message when it has no kind. */
+function causeOf(
+  t: (key: (typeof ERROR_KEYS)[ErrorKind | 'default']) => string,
+  kind: ErrorKind | undefined,
+  message: string | undefined,
+): string {
+  const line = t(ERROR_KEYS[kind ?? 'default'])
+  return message !== undefined && kind === undefined ? `${line} ${message}` : line
+}
 
 const isShown = (fact: Fact): boolean =>
   fact !== null && fact !== false && fact !== undefined && fact !== ''
@@ -80,9 +99,14 @@ const FACT =
  * face. `null`, `false`, `undefined` and `''` facts drop, so conditional facts pass inline. `phase="loading"`
  * renders a skeleton of the same shape, with a facts bar when `facts` is passed, so the page does
  * not jump when the numbers arrive. `phase` takes a `Phase` or the query itself, as on every data
- * part: a pending query is the skeleton. An `error` phase with no `sentence` draws no skeleton and
- * is not busy: it holds the headline's line height empty, so the page does not jump, and the frames'
- * own error arms say what failed. A settled phase with no `sentence` yet stays the skeleton.
+ * part: a pending query is the skeleton, one headline line by default (a short sentence). A `sentence`
+ * passed while loading is the expected shape: it is held invisible, so a headline that wraps at a
+ * phone width keeps its line count and the page does not jump. An `error` phase with no `sentence` draws
+ * no skeleton and is not busy: it holds the headline's line height and says the cause with a Retry
+ * when the phase carries them (a query always does), so a summary that is the only reader of its
+ * source does not fail in silence. A bare `{ tag: 'error' }` holds the line empty: use it where a
+ * frame on the page already shows that source's error. A settled phase with no `sentence` yet stays
+ * the skeleton.
  *
  * @useWhen a page opens with a headline that carries its live number and a line of supporting facts
  * @neverWhen the headline would restate the page title (leave it out) or the figure is a KPI card (use `StatCard`)
@@ -98,11 +122,28 @@ const FACT =
  * <PageSummary phase="loading" facts={[]} />
  */
 export function PageSummary(props: PageSummaryProps): ReactElement {
-  const tag = resolvePhase({ phase: props.phase }).tag
-  if (tag === 'error' && props.sentence === undefined) {
+  const t = useMessages(home)
+  const resolved = resolvePhase({ phase: props.phase })
+  const tag = resolved.tag
+  if (resolved.tag === 'error' && props.sentence === undefined) {
+    const { kind, message, retry } = resolved
+    const says = kind !== undefined || message !== undefined || retry !== undefined
     return (
       <div data-slot="page-summary" className="flex min-w-0 flex-col gap-1">
-        <div aria-hidden="true" className="h-lh text-lg" />
+        {says ? (
+          <div
+            role="alert"
+            data-slot="page-summary-error"
+            className="flex h-lh min-w-0 items-center gap-3 text-lg"
+          >
+            <span className="min-w-0 truncate text-sm text-muted-foreground">
+              {causeOf(t, kind, message)}
+            </span>
+            {retry !== undefined && <RetryButton onClick={retry} />}
+          </div>
+        ) : (
+          <div aria-hidden="true" className="h-lh text-lg" />
+        )}
         {props.facts !== undefined && <div aria-hidden="true" className="h-lh text-xs" />}
       </div>
     )
@@ -114,12 +155,23 @@ export function PageSummary(props: PageSummaryProps): ReactElement {
         aria-busy="true"
         className="@container flex min-w-0 flex-col gap-1"
       >
-        <div className="flex flex-col text-lg">
-          <Skeleton className="w-3/5" />
-          {/* Below @regular a loaded headline wraps to three lines, so the skeleton holds three (states.md). */}
-          <Skeleton className="w-4/5 @regular:hidden" />
-          <Skeleton className="w-2/5 @regular:hidden" />
-        </div>
+        {props.sentence === undefined ? (
+          <div className="flex flex-col text-lg">
+            <Skeleton className="w-3/5" />
+          </div>
+        ) : (
+          // A sentence passed while loading is the shape the page expects: its box is held invisible, so the
+          // line count at every width is the loaded one, and one skeleton bar stands where the first line will be.
+          <div className="relative min-w-0 text-lg">
+            <div
+              aria-hidden="true"
+              className="invisible m-0 min-w-0 font-head font-semibold tracking-tight word-head text-balance"
+            >
+              {props.sentence}
+            </div>
+            <Skeleton className="absolute inset-s-0 top-0 w-3/5" />
+          </div>
+        )}
         {props.facts !== undefined && <Skeleton className="w-2/5 text-xs" />}
       </div>
     )
@@ -129,7 +181,7 @@ export function PageSummary(props: PageSummaryProps): ReactElement {
   return (
     <div data-slot="page-summary" className="flex min-w-0 flex-col gap-1">
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 className="m-0 min-w-0 font-head text-lg font-semibold tracking-tight text-balance text-foreground">
+        <h2 className="m-0 min-w-0 font-head text-lg font-semibold tracking-tight word-head text-balance text-foreground">
           {sentence}
         </h2>
         {aside !== undefined && (

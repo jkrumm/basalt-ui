@@ -49,13 +49,13 @@ describe('PageSummary', () => {
     const root = document.querySelector('[data-slot="page-summary"]')
     expect(root?.getAttribute('aria-busy')).toBe('true')
     expect(screen.queryByRole('heading')).toBeNull()
-    // One headline line at @regular and up, three below it: the narrow case is the tallest headline.
-    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(3)
+    // One headline line at every width: the line count of a short sentence, so the page does not jump.
+    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(1)
   })
 
   test('loading keeps a facts-line skeleton when facts are expected', () => {
     render(<PageSummary phase="loading" facts={['x']} />)
-    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(4)
+    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2)
   })
 
   test('a pending query is the skeleton and a settled one shows the sentence', () => {
@@ -64,22 +64,57 @@ describe('PageSummary', () => {
     expect(document.querySelector('[data-slot="page-summary"]')?.getAttribute('aria-busy')).toBe(
       'true',
     )
-    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(4)
+    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2)
     rerender(
       <PageSummary phase={{ isPending: false, isError: false, error: null }} sentence="3 open" />,
     )
     expect(screen.getByRole('heading', { level: 2, name: '3 open' })).toBeDefined()
   })
 
-  test('an error phase with no sentence is not busy, draws no skeleton and keeps the line height', () => {
-    const failed = { isPending: false, isError: true, error: new Error('x') }
-    for (const phase of [failed, { tag: 'error' as const }]) {
+  test('an error phase with no sentence says its cause with a Retry and keeps the line height', () => {
+    let retried = 0
+    const phase = { tag: 'error' as const, message: 'library index down', retry: () => retried++ }
+    render(<PageSummary phase={phase} facts={[]} />)
+    const alert = screen.getByRole('alert')
+    expect(alert.textContent).toContain('library index down')
+    expect(alert.getAttribute('class')).toContain('h-lh')
+    screen.getByRole('button', { name: 'Retry' }).click()
+    expect(retried).toBe(1)
+    const root = document.querySelector('[data-slot="page-summary"]')
+    expect(root?.hasAttribute('aria-busy')).toBe(false)
+    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0)
+    expect([...(root?.children ?? [])]).toHaveLength(2)
+  })
+
+  test('a failed query carries its message and its refetch into the summary', () => {
+    let refetched = 0
+    const failed = {
+      isPending: false,
+      isError: true,
+      error: new Error('x'),
+      refetch: () => refetched++,
+    }
+    render(<PageSummary phase={failed} />)
+    expect(screen.getByRole('alert').textContent).toContain('x')
+    screen.getByRole('button', { name: 'Retry' }).click()
+    expect(refetched).toBe(1)
+  })
+
+  test('a forbidden error offers no Retry', () => {
+    render(<PageSummary phase={{ tag: 'error', kind: 'forbidden', retry: () => {} }} />)
+    expect(screen.queryByRole('button')).toBeNull()
+    expect(screen.getByRole('alert').textContent).toContain('access')
+  })
+
+  test('a bare error phase holds the line empty: the frames on the page say what failed', () => {
+    for (const phase of [{ tag: 'error' as const }]) {
       const { unmount } = render(<PageSummary phase={phase} facts={[]} />)
       const root = document.querySelector('[data-slot="page-summary"]')
       expect(root?.hasAttribute('aria-busy')).toBe(false)
       expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0)
       expect(screen.queryByRole('heading')).toBeNull()
       const lines = [...(root?.children ?? [])].map((el) => el.getAttribute('class') ?? '')
+      expect(screen.queryByRole('alert')).toBeNull()
       expect(lines[0]).toContain('h-lh')
       expect(lines[0]).toContain('text-lg')
       expect(lines).toHaveLength(2)
@@ -114,10 +149,11 @@ describe('PageSummary classes (the separator law)', () => {
     expect(c).not.toMatch(/mono|tabular/)
   })
 
-  test('the sentence is the head face, never mono', () => {
+  test('the sentence is the head face, never mono, and keeps its word spaces', () => {
     render(<PageSummary sentence="1 open" />)
     const c = document.querySelector('h2')?.getAttribute('class') ?? ''
     expect(c).toContain('font-head')
+    expect(c).toContain('word-head')
     expect(c).not.toContain('mono')
   })
 
