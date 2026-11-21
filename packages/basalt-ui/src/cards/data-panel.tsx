@@ -125,7 +125,9 @@ function useWholeRows(
       const rows = box.querySelectorAll('tbody [data-slot="table-row"]')
       const first = rows[0]
       if (first === undefined) return
-      const top = box.getBoundingClientRect().top
+      // A row's place in the box is its place in the table's own scroll: a focus that scrolls the table to a row must not move where the rows end.
+      const scroller = box.querySelector('[data-slot="table-scroller"]')
+      const top = box.getBoundingClientRect().top - (scroller?.scrollTop ?? 0)
       if (getComputedStyle(first).display === 'grid') {
         const last = rows[Math.min(dataRows, rows.length) - 1]!
         const bottom = Math.ceil(last.getBoundingClientRect().bottom - top)
@@ -161,6 +163,8 @@ function useWholeRows(
     if (typeof ResizeObserver === 'undefined') return undefined
     const observer = new ResizeObserver(measure)
     for (const child of box.children) observer.observe(child)
+    // A row that settles a pixel taller or shorter (a font arriving, a wrapped id) moves where the whole rows end, though the fixed box around it does not resize.
+    for (const row of box.querySelectorAll('tbody [data-slot="table-row"]')) observer.observe(row)
     if (box.parentElement !== null) observer.observe(box.parentElement)
     return () => observer.disconnect()
   })
