@@ -11,7 +11,7 @@ One x chip: give every pane but the bottom `x.ticks: []`, so no axis labels repe
 
 Leave the bottom pane's last tick out of its explicit `ticks`. A label at the plot's right edge widens that pane's label reserve and shifts its right edge off the others; the kit has no option for this yet.
 
-Read the shared cursor outside the charts with `chartCursor(group)`. Stack the panes in one `ChartCard` with `panes`: each pane takes its share of the card's box by `weight` (default 1) and is called with `height: 'fill'`, so no pane states a pixel height at any width. Pick `height="tall"` on the card for three panes. Pass the page's `focus` to every pane, not only the top one.
+Read the shared cursor outside the charts with `chartCursor(group)`. Stack the panes in one `ChartCard` with `panes`: each pane takes its share of the card's box by `weight` (default 1) above a 160 px floor and is called with `height: 'fill'`, so no pane states a pixel height at any width. The box grows to hold every floor, so five panes at 390 stay readable and the page never wraps the card in a `min-h` of its own. Pick `height="tall"` on the card for three panes. Pass the page's `focus` to every pane, not only the top one.
 
 ```tsx
 import { ChartCard, Lines } from 'basalt-ui/charts'
