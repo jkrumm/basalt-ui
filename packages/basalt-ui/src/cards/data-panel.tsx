@@ -53,6 +53,10 @@ const rowsHeightCss = (rows: number): string =>
  */
 const CARD_TALL = 108
 
+/** One phone card's px in a `rows` body: the `cardHeight` it names, else {@link CARD_TALL}. */
+const cardHeightOf = (size: DataPanelProps['bodySize']): number =>
+  'rows' in size ? Math.max(0, Math.round(size.cardHeight ?? CARD_TALL)) : CARD_TALL
+
 /** The data rows a `rows` body names: its rows less the head row, at least one. */
 const dataRowsOf = (size: DataPanelProps['bodySize']): number =>
   'rows' in size ? Math.max(1, Math.round(size.rows) - 1) : 1
@@ -320,7 +324,7 @@ function PanelHead(
  * with more rows than the box shows whole rows, cut after the last that fits. Where the table folds to phone
  * cards the cards are taller than a row (108 px with a meter, 92 px without), so the box is as tall as
  * the N data cards and a shorter list ends at its last card: every card is whole at 390 px. A loading
- * frame has no cards to measure: until a list has been measured it gives each data row one 108 px card,
+ * frame has no cards to measure: until a list has been measured it gives each data row one card (108 px, or `bodySize.cardHeight`),
  * then the height it had; the panel never runs the body in loading. A table body with `height="fill"`
  * takes the box's height and scrolls inside it, so a chart focus brings its joined row into view. The
  * box clips with `overflow: clip`, never `hidden`, so a table head that sticks to the page keeps sticking.
@@ -381,7 +385,9 @@ export function DataPanel(props: DataPanelProps): ReactElement {
       className="@container h-full min-w-0"
       style={
         cardsFloor
-          ? ({ '--panel-cards': `${dataRowsOf(bodySize) * CARD_TALL}px` } as CSSProperties)
+          ? ({
+              '--panel-cards': `${dataRowsOf(bodySize) * cardHeightOf(bodySize)}px`,
+            } as CSSProperties)
           : undefined
       }
     >
