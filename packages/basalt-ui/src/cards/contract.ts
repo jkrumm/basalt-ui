@@ -55,8 +55,10 @@ export type StatCardProps = CardTarget &
     sub?: string | undefined
     /** The sub line is a time or an id: drawn in the mono face with tabular numerals. */
     subMono?: boolean | undefined
-    /** Called only in `ready` and `stale`, in a fixed 72 px clipping box (plot 56 + label row 16). */
+    /** Called only in `ready` and `stale`, in a fixed clipping box of `chartHeight` (72 px: plot 56 + label row 16). */
     chart?: BoxSlot | undefined
+    /** The chart box's height in px, default 72. A one-line chart (a `Meter`, about 20 px) passes its own, so the card has no empty band; every phase holds the one height. */
+    chartHeight?: number | undefined
     /** The three labels under the chart (start, middle, end), drawn in the 16 px row so the slot draws the plot alone. */
     xLabels?: readonly [string, string, string] | undefined
     footer?: FootFacts | undefined
@@ -101,8 +103,12 @@ export type DataPanelProps = FrameHead &
     toolbar?: ControlsSlot<'widget'>
     menu?: CardMenu
     legend?: readonly LegendEntry[]
-    /** Required: the loading card draws its final shape. */
-    bodySize: { rows: number } | { height: number }
+    /**
+     * Required: the loading card draws its final shape. `cardHeight` is the px of one phone card of the `rows` body
+     * (default 108, a card with a meter; pass 92 for a list of cards with none), so a loading frame under `@regular`
+     * ends where the loaded list does.
+     */
+    bodySize: { rows: number; cardHeight?: number | undefined } | { height: number }
     /** Tables, lists and boards. A chart goes in `ChartCard`. */
     body: BoxSlot
   }
