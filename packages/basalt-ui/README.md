@@ -286,6 +286,7 @@ App-specific series colors live in the consumer, not the framework. The framewor
 
 ```ts
 // src/lib/series.ts — the app's one series file
+import type {} from 'basalt-ui'
 import { defineSeries, groupTokens } from 'basalt-ui/tokens'
 
 // 1. Declare the series with light/dark pairs (ColorPair shape — hex strings per scheme)
@@ -478,6 +479,8 @@ default are byte-identical to what they always emitted. Full doctrine and plugin
 
 ```ts
 // src/series.ts — augment the series slot
+import type {} from 'basalt-ui'
+
 declare module 'basalt-ui' {
   interface BasaltRegister {
     series: typeof SERIES

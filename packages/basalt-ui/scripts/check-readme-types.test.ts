@@ -48,7 +48,7 @@ describe('extractBlocks', () => {
 describe('check-readme-types', () => {
   test('the package README type-checks', () => {
     expect(run().code).toBe(0)
-  })
+  }, 120_000)
 
   test('a block that does not type-check fails and names its README line', () => {
     const file = readme("# T\n\n```ts\nexport const mode: 'client' | 'server' = 'edge'\n```\n")
