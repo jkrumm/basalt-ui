@@ -12,11 +12,13 @@ import { renderToString } from 'react-dom/server'
 import {
   CLOSE_BUDGET_MS,
   DESKTOP_1440,
+  PHONE,
   closeLayoutSuite,
   initLayoutSuite,
   openDocument,
 } from './harness'
 import { Parts } from './fixture/static-table-parts'
+import { finishMeasurement, measureAnchor } from '../../src/cli/shot/measure'
 
 const ready = await initLayoutSuite()
 const layout = ready ? describe : describe.skip
@@ -77,4 +79,14 @@ layout('static table', () => {
     expect(look.spacing).toBe('separate')
     expect(look.caption).toBe('bottom')
   })
+
+  for (const viewport of [DESKTOP_1440, PHONE]) {
+    test(`the caption covers no row at ${viewport.width}`, async () => {
+      const page = await openDocument(document_, viewport)
+      await page.settle()
+      const handle = await page.raw.$('[data-slot="data-table"]')
+      const m = finishMeasurement(await page.raw.evaluate(measureAnchor, handle as never))
+      expect(m.overlaps, 'craft-6/overlap').toEqual([])
+    })
+  }
 })
