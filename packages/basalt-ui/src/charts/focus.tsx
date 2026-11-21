@@ -438,13 +438,8 @@ export function useChartFocus<D>(
   }
   // An index past the end (the items shrank) is no focus, without an effect to clear it.
   const index = held !== null && held.index < items.length ? held.index : null
-  // What the state will show once the sets queued so far have rendered: the last commit's, then each set's.
-  // An engine echo compares against it, so a burst of reports before a render never reads a stale index.
-  const shownFocus = useRef({ index, span: held?.span !== undefined })
-  const spanned = held?.span !== undefined
-  useLayoutEffect(() => {
-    shownFocus.current = { index, span: spanned }
-  }, [index, spanned])
+  // The index the state will show once the sets queued so far have rendered, for an engine echo to compare against.
+  const shown = useRef<number | null>(null)
   const datum = index === null ? null : (items[index] as D)
   // One identity while the hold and the items stand, so a host can key its drawing on it.
   const { inSpan, span } = useMemo(() => {
@@ -461,11 +456,11 @@ export function useChartFocus<D>(
   // already under it, and a repeat of the held index never scrolls a list the viewer moved.
   const apply = (next: number | null, reveal: boolean): void => {
     if (next === null || next < 0 || next >= items.length) {
-      shownFocus.current = { index: null, span: false }
+      shown.current = null
       return setHeld(null)
     }
     if (reveal && next !== index) revealInRegion(next)
-    shownFocus.current = { index: next, span: false }
+    shown.current = next
     setHeld((was) => {
       const from = was === null || was.index >= items.length ? null : was.index
       // The same index keeps the same state: an engine host reports its focus on every render.
@@ -537,7 +532,7 @@ export function useChartFocus<D>(
       held.span.every((i, k) => i === valid[k])
     if (!sameRun) revealInRegion(...valid)
     pointed.current = first
-    shownFocus.current = { index: first, span: true }
+    shown.current = first
     setHeld((was) => {
       const same =
         was !== null &&
@@ -555,14 +550,11 @@ export function useChartFocus<D>(
   }
   const fromChart = (next: number | null): void => {
     if (next === null && pointed.current !== null) return
-    // An engine echoes its focused datum back on every definition it rebuilds, and an app without the
-    // React Compiler hands it a new one on each render. The same focus is no change: a state set to it
-    // would render the owner again, and that render the echo again. A held span keeps its span.
-    const { index: shown, span: spanned } = shownFocus.current
-    if (next === shown) {
-      if (!spanned) cancel()
-      return
-    }
+    // An engine echoes its focused datum back on every definition it rebuilds, and an app without the React
+    // Compiler hands it a new one on each render. The same focus is no change: a state set to it would render the
+    // owner again, and that render the echo again. A held span keeps its span.
+    if (next !== null && next === index && held?.span !== undefined) return
+    if (next === shown.current) return cancel()
     set(next)
   }
 
