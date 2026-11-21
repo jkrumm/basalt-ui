@@ -1,14 +1,21 @@
+import { isValidElement } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { cn } from '../core/cn'
 import { resolvePhase } from '../core/phase'
+import type { Fact as LabelledFact } from '../core/phase'
 import type { Phase, QueryStateLike } from '../core/ports'
 import { Skeleton } from '../ui/skeleton'
 
-type Fact = ReactNode | null | false | undefined
+/**
+ * A fact is a node, or a label and a value as a footer fact is: `{ label: 'Last reindex', value,
+ * mono: true }` sets a time or an id in the mono face, which a node cannot ask for.
+ */
+type Fact = ReactNode | LabelledFact | null | false | undefined
 
 type PageSummaryContent = {
   /** The headline sentence. It must state a live number: never describe the page. */
   sentence: ReactNode
-  /** Short facts under the headline, e.g. `['3 need you', oldest && `oldest ${oldest}`]`. */
+  /** Short facts under the headline, e.g. `['3 need you', { label: 'oldest', value: at, mono: true }]`. */
   facts?: readonly Fact[]
   /** After the headline: a date or a freshness word. */
   aside?: ReactNode
@@ -31,6 +38,29 @@ const NO_FACTS: readonly Fact[] = []
 const isShown = (fact: Fact): boolean =>
   fact !== null && fact !== false && fact !== undefined && fact !== ''
 
+const isLabelled = (fact: Fact): fact is LabelledFact =>
+  typeof fact === 'object' &&
+  fact !== null &&
+  !isValidElement(fact) &&
+  !(Symbol.iterator in fact) &&
+  'label' in fact &&
+  'value' in fact
+
+function FactText({ fact }: { fact: Fact }): ReactNode {
+  if (!isLabelled(fact)) return fact as ReactNode
+  return (
+    <>
+      {fact.label}{' '}
+      <span
+        data-monospace={fact.mono === true ? '' : undefined}
+        className={cn(fact.mono === true && 'font-mono tabular-nums')}
+      >
+        {fact.value}
+      </span>
+    </>
+  )
+}
+
 /**
  * Each fact draws its own dot one gap to its inline-start, centred in the gap, and the list clips
  * inline overflow: the fact that opens a wrapped line starts at the list's edge, so its dot falls
@@ -46,7 +76,8 @@ const FACT =
  * the `PageBar` title, and a second one would split the outline. The sentence states a fact, "12
  * open, 3 need you", never "Overview of your tickets"; the title already says what the page is.
  *
- * `null`, `false`, `undefined` and `''` facts drop, so conditional facts pass inline. `phase="loading"`
+ * A fact is a node or a footer's `{ label, value, mono }`; `mono` sets a time or an id in the mono
+ * face. `null`, `false`, `undefined` and `''` facts drop, so conditional facts pass inline. `phase="loading"`
  * renders a skeleton of the same shape, with a facts bar when `facts` is passed, so the page does
  * not jump when the numbers arrive. `phase` takes a `Phase` or the query itself, as on every data
  * part: a pending query is the skeleton. An `error` phase with no `sentence` draws no skeleton and
@@ -117,7 +148,7 @@ export function PageSummary(props: PageSummaryProps): ReactElement {
         >
           {shown.map((fact, i) => (
             <span key={i} data-slot="page-summary-fact" className={FACT}>
-              {fact}
+              <FactText fact={fact} />
             </span>
           ))}
         </p>

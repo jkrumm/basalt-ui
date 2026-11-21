@@ -383,7 +383,15 @@ function Row({ row }: { row: StatRow }): ReactElement {
           />
         </span>
       )}
-      <span className="shrink-0 font-medium text-foreground tabular-nums">{value}</span>
+      <span
+        data-monospace={row.mono === true ? '' : undefined}
+        className={cn(
+          'shrink-0 font-medium text-foreground tabular-nums',
+          row.mono === true && 'font-mono',
+        )}
+      >
+        {value}
+      </span>
       {row.delta !== undefined && (
         <DeltaBadge
           value={row.delta.value}
