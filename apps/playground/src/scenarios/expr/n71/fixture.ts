@@ -6,7 +6,7 @@
  */
 
 export type RatingKey = 'rejected' | 'one' | 'two' | 'three' | 'four' | 'five' | 'unrated'
-export const RATING_KEYS: readonly RatingKey[] = [
+const RATING_KEYS: readonly RatingKey[] = [
   'rejected',
   'one',
   'two',

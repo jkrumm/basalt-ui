@@ -136,14 +136,3 @@ export function multiple(w: Wallet): number | null {
 
 export const isNew = (w: Wallet): boolean => w.prev === 0 && w.last > 0
 export const isSilent = (w: Wallet): boolean => w.prev === 0 && w.last === 0
-
-export type Verdict = 'grew' | 'new' | 'silent' | 'flat' | 'fell'
-
-export function verdictOf(w: Wallet): Verdict {
-  if (isNew(w)) return 'new'
-  if (isSilent(w)) return 'silent'
-  const m = multiple(w) ?? 1
-  if (m >= 1.25) return 'grew'
-  if (m <= 0.9) return 'fell'
-  return 'flat'
-}

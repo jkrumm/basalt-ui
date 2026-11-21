@@ -171,8 +171,8 @@ function makeFresh(): Study {
   return { today: TODAY, days: dayKeys(), items, sessions: [], reviews: [] }
 }
 
-export const BUSY: Study = makeBusy()
-export const FRESH: Study = makeFresh()
+const BUSY: Study = makeBusy()
+const FRESH: Study = makeFresh()
 
 /** `?fixture=` names this scenario knows. */
 export function studyFor(fixture: string | undefined, empty: boolean): Study {

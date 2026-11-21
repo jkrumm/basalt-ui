@@ -8,7 +8,6 @@
 
 export const DAY = 86_400_000
 export const TODAY = Date.UTC(2026, 10, 20)
-export const NOW = TODAY + 9 * 3_600_000
 
 /** Confidence steps 0 to 5, in order. */
 export const STEP_NAMES = ['Unrated', 'Forgotten', 'Shaky', 'Partial', 'Solid', 'Fluent'] as const
@@ -64,8 +63,8 @@ const PLANS: Record<FixtureName, Plan> = {
 const TOTAL = 500
 const IN_PROGRESS = 46
 /** The longest wait of the queue: one fluent item reviewed 180 days ago. */
-export const LONG_INTERVAL = 180
-export const SESSION_COUNT = 1300
+const LONG_INTERVAL = 180
+const SESSION_COUNT = 1300
 /** The last session was this many days before `TODAY`. */
 const IDLE_DAYS = 6
 
@@ -184,14 +183,14 @@ function fixtureOf(name: string | undefined): Fixture {
   return { items: buildItems(PLANS[key]), sessions: buildSessions() }
 }
 
-export const isDue = (item: Item): boolean => item.due !== null && item.due <= TODAY
-export const overdueDays = (item: Item): number =>
+const isDue = (item: Item): boolean => item.due !== null && item.due <= TODAY
+const overdueDays = (item: Item): number =>
   item.due === null ? 0 : Math.max(0, Math.round((TODAY - item.due) / DAY))
 
 export type StepRow = { step: number; name: string; count: number; due: number; slipped: boolean }
 
 /** Learned items per confidence step, every step present, empty ones at 0. */
-export function stepRows(items: readonly Item[]): StepRow[] {
+function stepRows(items: readonly Item[]): StepRow[] {
   return STEP_NAMES.map((name, step) => {
     const learned = items.filter((i) => i.step === step)
     return {
@@ -205,14 +204,14 @@ export function stepRows(items: readonly Item[]): StepRow[] {
 }
 
 /** The due items, the longest overdue first. */
-export function dueItems(items: readonly Item[]): Item[] {
+function dueItems(items: readonly Item[]): Item[] {
   return items
     .filter(isDue)
     .sort((a, b) => overdueDays(b) - overdueDays(a) || a.id.localeCompare(b.id))
 }
 
 /** Sessions per day for the `days` days ending today, oldest first. */
-export function sessionsPerDay(sessions: readonly number[], days: number): number[] {
+function sessionsPerDay(sessions: readonly number[], days: number): number[] {
   const counts = Array.from({ length: days }, () => 0)
   for (const t of sessions) {
     const idx = days - 1 - (TODAY / DAY - Math.floor(t / DAY))
@@ -246,7 +245,7 @@ export type View = Fixture & {
   daily: readonly { value: number; at: number }[]
 }
 
-export const SESSION_WINDOW = 56
+const SESSION_WINDOW = 56
 const VIEWS = new Map<string, View>()
 
 /** The cached view of a variant name, or of the empty queue (a learner with nothing yet). */

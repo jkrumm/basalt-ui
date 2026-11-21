@@ -32,8 +32,8 @@ export type Snapshot = {
 
 export const HOUR_MS = 3_600_000
 /** The fixture's clock: the last bar is 13:00 to 14:00. */
-export const NOW = Date.UTC(2026, 10, 20, 14, 0)
-export const TYPES: readonly ItemType[] = ['tutorial', 'course', 'lesson', 'other']
+const NOW = Date.UTC(2026, 10, 20, 14, 0)
+const TYPES: readonly ItemType[] = ['tutorial', 'course', 'lesson', 'other']
 const PAGES_PER_ITEM = 9
 /** The spike fixture's one hour: far over a usual 300. */
 const SPIKE_PAGES = 5200
@@ -55,9 +55,6 @@ const CONFIGS: Record<string, Config> = {
   spike: { status: 'moving', reason: null, zeroRun: 0, spike: true },
   finished: { status: 'finished', reason: null, zeroRun: 5, clean: true },
 }
-/** The fixture names a scenario's `?fixture=` knows; the first is the rest state. */
-export const FIXTURE_NAMES = Object.keys(CONFIGS)
-
 const TOTAL: Record<ItemType, number> = { tutorial: 150, course: 164, lesson: 128, other: 56 }
 const DONE: Record<ItemType, number> = { tutorial: 118, course: 121, lesson: 94, other: 42 }
 const DEAD: Record<ItemType, number> = { tutorial: 3, course: 4, lesson: 4, other: 0 }

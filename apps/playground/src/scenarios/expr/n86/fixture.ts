@@ -18,7 +18,7 @@ export type Check = {
 
 const DAY = 86_400_000
 /** The page's clock: the morning after the Saturday sweep. */
-export const NOW = Date.UTC(2026, 10, 22, 9, 0)
+const NOW = Date.UTC(2026, 10, 22, 9, 0)
 const SWEEP_DAY = Date.UTC(2026, 10, 21)
 
 /** mulberry32: one seed gives one sequence. */
