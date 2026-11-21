@@ -1,6 +1,8 @@
+import { useCallback, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import type { Box, BoxSlot } from '../../core/ports'
 import type { ChartPane } from '../contract'
+import { PaneGutterContext } from '../pane-gutter'
 import { ServerFrameContext, useServerFrame } from '../sizing'
 
 /** A pane's floor: the `short` chart box (`h-40`), the smallest chart the card draws alone. */
@@ -56,6 +58,12 @@ export function ChartPanes({
   panes: readonly ChartPane[]
 }): ReactElement {
   const frame = useServerFrame()
+  // The widest plot start any pane reports: a pane with no `y.gutter` of its own locks it, so one x is one column.
+  const [gutter, setGutter] = useState<number | undefined>(undefined)
+  const report = useCallback((left: number) => {
+    setGutter((was) => (was !== undefined && was >= left - 0.01 ? was : left))
+  }, [])
+  const shared = useMemo(() => ({ gutter, report }), [gutter, report])
   // Each pane's share of the box above its floor, the height its server picture is drawn at.
   const outer = box.height === 'fill' ? frame.height : box.height
   const heights =
@@ -70,32 +78,36 @@ export function ChartPanes({
       ? undefined
       : { height: `${Math.max(box.height, panesFloorPx(panes.length))}px` }
   return (
-    <div
-      data-slot="chart-panes"
-      className={
-        box.height === 'fill' ? 'flex h-full min-h-0 flex-col gap-1' : 'flex min-h-0 flex-col gap-1'
-      }
-      style={style}
-    >
-      {panes.map((pane, index) => (
-        <div
-          // oxlint-disable-next-line react/no-array-index-key -- a pane is its position in the stack; panes are never reordered
-          key={index}
-          data-slot="chart-pane"
-          className="min-h-40 min-w-0 basis-0 [&>[data-basalt-chart]]:h-full"
-          style={{ flexGrow: shareOf(pane.weight) }}
-        >
-          <ServerFrameContext
-            value={
-              heights === undefined
-                ? { width: frame.width }
-                : { width: frame.width, height: heights[index]! }
-            }
+    <PaneGutterContext value={shared}>
+      <div
+        data-slot="chart-panes"
+        className={
+          box.height === 'fill'
+            ? 'flex h-full min-h-0 flex-col gap-1'
+            : 'flex min-h-0 flex-col gap-1'
+        }
+        style={style}
+      >
+        {panes.map((pane, index) => (
+          <div
+            // oxlint-disable-next-line react/no-array-index-key -- a pane is its position in the stack; panes are never reordered
+            key={index}
+            data-slot="chart-pane"
+            className="min-h-40 min-w-0 basis-0 [&>[data-basalt-chart]]:h-full"
+            style={{ flexGrow: shareOf(pane.weight) }}
           >
-            <PaneSlot chart={pane.chart} phase={box.phase} />
-          </ServerFrameContext>
-        </div>
-      ))}
-    </div>
+            <ServerFrameContext
+              value={
+                heights === undefined
+                  ? { width: frame.width }
+                  : { width: frame.width, height: heights[index]! }
+              }
+            >
+              <PaneSlot chart={pane.chart} phase={box.phase} />
+            </ServerFrameContext>
+          </div>
+        ))}
+      </div>
+    </PaneGutterContext>
   )
 }

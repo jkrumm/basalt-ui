@@ -58,3 +58,12 @@ export function plotSizesOf(scene: Pick<ChartScene, 'chart' | 'nodes'>): PlotSiz
 }
 
 const size = (width: number, height: number): PlotSize => ({ width, height })
+
+/**
+ * Where the first plot starts from the chart's left edge, px: the left margin the y axis took (its tick
+ * labels), read off the same clip the plot size is. `undefined` before the engine has laid the plot out.
+ */
+export function plotLeftOf(scene: Pick<ChartScene, 'nodes'>): number | undefined {
+  const [marks] = find(scene.nodes, (g) => g.key.endsWith('marks') && g.clip !== undefined)
+  return marks?.clip?.x
+}
