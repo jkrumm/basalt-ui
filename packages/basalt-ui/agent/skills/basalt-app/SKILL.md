@@ -65,10 +65,10 @@ The profile is declared in `.basalt/manifest.json` and never inferred. Choose th
 
 ## Refresh after any upgrade
 
-1. `./node_modules/.bin/basalt-ui sync`, then read its output: an edited file is skipped and reported, a retired file is deleted, the AGENTS block is rewritten.
-2. `./node_modules/.bin/basalt-ui doctor`, read to the last line.
-3. CI: `sync --check`, `doctor` and `tokens:css --out <file> --check` so a stale managed file or a stale token sheet fails the build.
-4. An app with a board baseline builds the old version first (`vite build --outDir /tmp/before-dist`), bumps, then `shot /a /b --dist /tmp/before-dist --out <app-dir>/.shots/before` and the same with `--dist dist --out <app-dir>/.shots/after`. `--out` is inside the app dir; each route is its own argument. A locked or API-backed app shoots its lock screen on every route: serve fixtures on `127.0.0.1` and pass `--api /api=http://127.0.0.1:<port>` plus `--local-storage key=@env:NAME`.
+1. `./node_modules/.bin/basalt-ui sync`, then read its output: an edited file is skipped, a retired one deleted, AGENTS block rewritten. A session note: a running session may lack the new files; tell the user, finish in-flight work, start a new session.
+2. `./node_modules/.bin/basalt-ui doctor`, read to its end.
+3. CI: `sync --check`, `doctor` and `tokens:css --out <file> --check`: a stale file fails the build.
+4. An app with a board baseline builds the old version first (`vite build --outDir /tmp/before-dist`), bumps, then `shot /a /b --dist /tmp/before-dist --out <app-dir>/.shots/before` and the same with `--dist dist --out <app-dir>/.shots/after`. `--out` is in the app dir. A locked or API app shoots its lock screen: serve fixtures on `127.0.0.1` and pass `--api /api=http://127.0.0.1:<port>` plus `--local-storage key=@env:NAME`.
 
 ## Upgrade within 3.x
 

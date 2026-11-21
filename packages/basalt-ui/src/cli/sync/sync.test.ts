@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url'
 
 import { parseManifest, readManifest, serializeManifest, writeManifest } from '../manifest'
 import type { Manifest } from '../manifest'
+import { SESSION_NOTE } from '../agent-note'
 import { sync } from './index'
 import type { SyncOptions } from './index'
 
@@ -503,5 +504,18 @@ describe('the preset seam', () => {
     const dir = consumer('single-root')
     run(dir)
     expect(existsSync(join(dir, '.oxlintrc.basalt.json'))).toBe(false)
+  })
+})
+
+describe('sync: the session note', () => {
+  it('prints it when a run writes an agent file, and not on a no-op or under --check', () => {
+    const dir = consumer('single-root')
+    run(dir)
+    rmSync(join(dir, '.claude/rules/basalt-state.md'))
+    expect(run(dir, { check: true }).log).not.toContain('Agent sessions:')
+    const healed = run(dir)
+    expect(healed.code).toBe(0)
+    expect(healed.log).toContain(SESSION_NOTE)
+    expect(run(dir).log).not.toContain('Agent sessions:')
   })
 })

@@ -292,7 +292,10 @@ export function installPeers(ctx: Ctx): void {
 
 /** Managed agent files, both presets and the AGENTS block, through `sync` (never a second renderer). */
 export function placeManaged(ctx: Ctx): void {
-  const code = sync({ pkgRoot: ctx.pkgRoot, presetFiles: presetFilesFor(ctx.pkgRoot) }, ctx.root)
+  const code = sync(
+    { pkgRoot: ctx.pkgRoot, presetFiles: presetFilesFor(ctx.pkgRoot), note: false },
+    ctx.root,
+  )
   if (code !== 0) ctx.problems.push('sync could not place the managed files')
 }
 

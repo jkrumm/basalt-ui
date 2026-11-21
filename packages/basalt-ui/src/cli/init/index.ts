@@ -5,7 +5,8 @@
  * never inferred. It declares the manifest, generates the token outputs, installs the profile's
  * peers at exact pins, places the managed files through `sync`, seeds the budget and DESIGN.md,
  * writes the router scaffold at `app` (`./router-seeds`; with `--start` the TanStack Start host
- * scaffold instead) and ends in `doctor`, which reports; `init` exits 0 when every step ran, 1 when one could not.
+ * scaffold instead) and ends in `doctor`, which reports, then the session note when the run changed an
+ * agent-read file (`../agent-note`); `init` exits 0 when every step ran, 1 when one could not.
  * Running it twice changes nothing. The steps live in `./steps`.
  */
 import { spawnSync } from 'node:child_process'
@@ -14,7 +15,8 @@ import { isAbsolute } from 'node:path'
 import { parseArgs } from 'node:util'
 
 import { doctor } from '../doctor'
-import { packageRoot, resolveAppDir } from '../index'
+import { findRepoRoot, packageRoot, resolveAppDir } from '../index'
+import { agentFiles, sessionNote } from '../agent-note'
 import { generateRouteTree } from '../route-tree'
 import { PROFILES } from '../manifest'
 import { isSiblingApp } from '../resolver'
@@ -169,6 +171,8 @@ export async function init(
 
   // A sibling install registers no hook at the repo root: its `check-v3` holds the line.
   const sibling = isSiblingApp(root)
+  const bases = sibling ? [root, findRepoRoot(root)] : [root]
+  const before = agentFiles(bases)
   for (const step of [
     installPeers,
     placeManaged,
@@ -207,6 +211,8 @@ export async function init(
   } else {
     await (deps.doctor ?? ((dir) => doctor(dir)))(root)
   }
+  const note = sessionNote(before, bases)
+  if (note !== null) console.log(`\n${note}`)
   if (ctx.problems.length === 0) return 0
   for (const problem of ctx.problems) console.error(`✖ basalt-ui init: ${problem}`)
   return 1
