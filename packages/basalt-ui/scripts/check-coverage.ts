@@ -55,13 +55,24 @@ export const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/rules/basalt-state.md': 45,
   'agent/rules/basalt-charts.md': 40,
   'agent/skills/basalt-app/SKILL.md': 300, // W10: +40 streaming snippet; +43 form-dialog snippet
-  'agent/skills/basalt-design/SKILL.md': 36, // W31: the design-round procedure
+  'agent/skills/basalt-design/SKILL.md': 50, // a map of short lines; AGENT_BYTE_BUDGETS is the bar that binds
   'agent/skills/basalt-charts/SKILL.md': 40,
   'agent/templates/AGENTS-block.md.tpl': 55, // concept 4.4: at most 55 lines, imports nothing
   'agent/templates/AGENTS-block.tokens.md.tpl': 15, // the tokens-profile variant
   // Outside the layer total: a subagent loads only when invoked, not into every session.
   'agent/reviewer/basalt-design-reviewer.md': 40, // the thin wrapper; agent/reviewer/rubric.md carries the items
   'agent/templates/DESIGN.md.tpl': 45,
+}
+
+/**
+ * A skill body is budgeted in bytes as well. A line budget alone is met by long lines:
+ * `basalt-design/SKILL.md` held 22 KB on 32 lines. 8,000 bytes is the bar for a body; `basalt-app`
+ * sits at its landed value until it is split.
+ */
+export const AGENT_BYTE_BUDGETS: Readonly<Record<string, number>> = {
+  'agent/skills/basalt-app/SKILL.md': 12_900,
+  'agent/skills/basalt-design/SKILL.md': 8_000,
+  'agent/skills/basalt-charts/SKILL.md': 8_000,
 }
 
 /**
@@ -85,7 +96,7 @@ export const AGENT_LAYER_TOTAL_BUDGET = 625 // v3 rules: five files at 215 lines
  *  5. Every real package.json exports key has a SURFACES entry.
  *  6. Every surface with non-empty forbiddenImports has a globs field.
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
- * 10. Every shipped agent-layer file is inside its line budget, and rules + skills + the AGENTS block are inside the
+ * 10. Every shipped agent-layer file is inside its line budget, every skill body inside its byte budget, and rules + skills + the AGENTS block are inside the
  *     whole-layer total (`AGENT_LINE_BUDGETS` / `AGENT_LAYER_TOTAL_BUDGET`). *
  * Tooling surfaces are exempt from assertions 2–3 by the discriminant.
  * Synthetic #-keys participate in assertion 2 but feed assertion 3 only
@@ -210,6 +221,12 @@ export function checkCoverage(flags: readonly string[] = [], pkgRoot: string = P
     if (!existsSync(abs)) continue // assertions 2/3 already report a missing rule or skill
     const lines = readFileSync(abs, 'utf8').split('\n').length - 1
     if (lines > budget) failures.push(`${rel}: ${lines} lines exceeds its ${budget}-line budget`)
+  }
+  for (const [rel, budget] of Object.entries(AGENT_BYTE_BUDGETS)) {
+    const abs = resolve(pkgRoot, rel)
+    if (!existsSync(abs)) continue
+    const bytes = Buffer.byteLength(readFileSync(abs, 'utf8'))
+    if (bytes > budget) failures.push(`${rel}: ${bytes} bytes exceeds its ${budget}-byte budget`)
   }
   for (const name of AGENT_NAMES) {
     if (!existsSync(resolve(pkgRoot, `agent/reviewer/${name}.md`)))
