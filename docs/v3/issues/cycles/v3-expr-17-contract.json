@@ -1,0 +1,25 @@
+{
+  "why": "Expression cycle 17 (docs/v3/cycles/expression-17.md): two builders stacked panes in one `ChartCard` and found no way to give a pane a readable height at 390. n82 drew five measures as five panes and got about 58 px each in a 288 px box, so it wrapped the card in a hand floor (`min-h-180`, marker `// cycle-expression-17:` at ExprN82.tsx:212 of the round-0 source); n84 drew a rolling total over daily bars, and at 390 its daily pane is about 75 px with the post-cutover bars 3 to 12 px slivers (K5 2, .22). `ChartPane` (charts/contract.ts) takes only `weight` and `chart`, so a pane's share of the box is all a page can say.",
+  "what": "A Spec, then the field: how a stacked pane keeps a readable height at 390 (a minimum pane height, or a card box that grows with its pane count), on the charts contract.",
+  "owns": [
+    "packages/basalt-ui/src/charts/contract.ts (ChartPane, behind the Spec)",
+    "packages/basalt-ui/src/charts/** (the ChartCard panes layout)",
+    "packages/basalt-ui/docs/** generated from the above",
+    "the skill text that teaches panes (packages/basalt-ui/agent/**, through its generator)",
+    "their tests and layout tests"
+  ],
+  "must_not_touch": [
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**",
+    "docs/v3/ARCHITECTURE.md"
+  ],
+  "change": "(1) Spec first (checkpoint): what a page says about a stacked pane's height (a `minHeight` on `ChartPane`, a per-pane height class, or a card box that grows by pane count at 390), with the default and what changing it costs. Evidence: n82 and n84 round-0 frames at 390 (`.evidence/v3-shots/expression-17/r0/scenarios-expr-n82--light--390x844.png`, `scenarios-expr-n84--light--390x844.png` in the main checkout). (2) After the verdict, the field or behaviour, its docs, and one skill line on stacked panes at 390.",
+  "acceptance": [
+    "A Spec with the default and at most three open choices is submitted before code",
+    "n82's five panes and n84's two panes keep a readable pane height at 390 without a page-side floor (layout test on the round-0 sources)",
+    "make check passes"
+  ],
+  "out_of_scope": "Other kit fixes (v3-expr-17-kit-fixes); the trial scenarios; the rubric.",
+  "proof": "The Spec, its verdict, layout tests and 390 frames of n82 and n84.",
+  "commits": "feat: the pane height field with its test; docs: the skill line."
+}

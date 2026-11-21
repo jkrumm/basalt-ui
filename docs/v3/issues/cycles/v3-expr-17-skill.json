@@ -1,0 +1,24 @@
+{
+  "why": "Expression cycle 17 (docs/v3/cycles/expression-17.md) lost 23 of its 46 round-0 points to lessons the kit could already do (class `skill`), two P2 items among them: n86 stood a 90-day-old weekly check against nothing, and its 'of all' pills are shares of the whole, not a baseline (F3 1, .37); n82 drew five measure cells, a grid of five records one per measure, with no table view, which cards.md:60 and the owner's self-check name (R4 1, .15). X1 (word economy) lost a point on 6 of 6 cases (cycle 16: 5 of 6) although every builder wrote the read-aloud pass v3-expr-16-skill made cut what it finds: five of six passes named the repeat and kept it under a reason ('the base, not the window' n81, 'kit forces' n82, 'one fact on two slots' n84, 'different slots' n85, 'each a different count' n86), and n83's missed two subtitles that restate their titles. Of the three shapes cycle 16 named, only one recurred (n82's measure in pane titles, named and kept).",
+  "what": "Skill and rule text for the skill findings of expression cycle 17: a read-aloud pass with no 'kept' line, a stated reference for every figure, a table view for a strip of five measures, phone columns that keep every answering column, readouts that carry every measure the parts draw, held pill slots and one empty cause, and the single lessons.",
+  "owns": [
+    "packages/basalt-ui/agent/skills/** and packages/basalt-ui/agent/rules/** (through their generators where generated)",
+    "packages/basalt-ui/docs/bar-list.md (the `secondary` field, through gen-docs if generated)",
+    "the dogfooded copies the repo syncs"
+  ],
+  "must_not_touch": [
+    "packages/basalt-ui/src/** (no kit change)",
+    "docs/v3/expression/**",
+    "apps/playground/src/scenarios/expr/**"
+  ],
+  "change": "(1) The read-aloud pass ends with every fact in one slot: its table has no 'kept' or 'on purpose' outcome, a second slot is cut or rewritten to say something new, and a reason is not a slot (n81 .3, n82 .11, n84 .23, n85 .32, n86 .41); add the shapes this cycle missed: a subtitle or caption sentence that restates the title or the marks (n83 .17, n84's two captions, n86 'Work first, then clean'), and a row that prints bar, share and amount at once (n83). (2) Stand every figure against the reference the data holds and name the base in the pill (n85 .28: '-8 pts vs 33 %'; n86 .37, P2: a cadence beside a last-run age is an overdue state, and a share of the whole is a `sub`, not a delta). (3) A strip of five or more measure cells is a grid of records: give it a table view or keep the strip at four (n82 .15, P2; cards.md:60 already says 'a measure'). (4) Phone columns keep every answering column in a card slot or the three columns, and a table whose cards fit one screen keeps its cards (n85 .31, n86 .40). (5) The focus readout carries every measure the parts draw, in the figure's period or status or a strip cell's sub (n84 .20: the rolling totals and the distance to the cap; n85 .30: no readout on the bar card). (6) Hold a pill's slot in loading and empty with the held-value `Delta`, and give one empty cause with one next step across the parts of a page (n82 .10, n84 .21). (7) Single lessons, each one case: a missing day is a gap and a caption, never a zero in a rolling total (n84 .18); a status column draws a mark per state with its icon (n86 .35); a stacked `BarList` row carries its counts in `secondary` (n85 .27; document `secondary` in bar-list.md); a value a 390 heat grid cannot print gets another carrier (n83 .16); a part at a grain no focus arm reaches joins, folds or drops (n81 .4, .5).",
+  "acceptance": [
+    "The read-aloud pass has no kept outcome and names the new shapes with cycle-17 cases cited",
+    "The skill says a stated reference for every figure, the overdue state for an age against a cadence, and a table view for a strip of five measure cells",
+    "Lessons (4) to (7) are in the skill or its references with their cases, and bar-list.md documents `secondary`",
+    "make check passes"
+  ],
+  "out_of_scope": "Kit behaviour (v3-expr-17-kit-fixes); the pane height field (v3-expr-17-contract); the rubric; the trial scenarios.",
+  "proof": "The skill diff and make check.",
+  "commits": "docs: skill and rule text."
+}

@@ -1232,6 +1232,33 @@ rows:
     seat: { tier: opus, effort: high }
     after: [v3-expr-16-kit-fixes, v3-expr-16-skill, v3-expr-16-rubric]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-17.json' }
+  - key: v3-expr-17-kit-fixes
+    title: 'A plot still under focus at 390, ink-step dims and clamp carets, pills without a sign, labels off rules, card bands and panel rows, whole mono ids, c.date day, from expression cycle 17'
+    repo: basalt-ui
+    kind: bug
+    after: [v3-cycle-expression-17]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-17-kit-fixes.json' }
+  - key: v3-expr-17-contract
+    title: 'A readable height for stacked chart panes at 390 (Spec), from expression cycle 17'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    checkpoint: spec
+    after: [v3-cycle-expression-17]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-17-contract.json' }
+  - key: v3-expr-17-skill
+    title: 'Expression skill: a read-aloud pass with no kept line, a reference for every figure, a table view for five measures, phone columns, full readouts, from expression cycle 17'
+    repo: basalt-ui
+    kind: feature
+    after: [v3-cycle-expression-17]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-17-skill.json' }
+  - key: v3-cycle-expression-18
+    title: 'Improvement cycle 18: expression, six one-shot visualization trials'
+    repo: basalt-ui
+    kind: chore
+    seat: { tier: opus, effort: high }
+    after: [v3-expr-17-kit-fixes, v3-expr-17-contract, v3-expr-17-skill]
+    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-18.json' }
   - key: astro-chart-server-picture
     title: 'Chart kinds draw a correct server picture at their box height and a declared width, from the Astro matrix'
     repo: basalt-ui
