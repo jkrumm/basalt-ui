@@ -3,9 +3,9 @@
  * datum that three readers share: the marks dim the rest against it, a card fact reads it through
  * `readout` (the total again on leave), and one polite live region says it.
  *
- * A host (`CartesianChart`, `Heatmap`, `Meter`) takes the handle as `focus` and owns the tab stop
- * and the live region. A page that draws its own marks spreads `focus.target` on the container,
- * `focus.item(i)` on each mark, and renders `focus.live` once. A list of a coarser grain beside it
+ * A host (`CartesianChart`, `Heatmap`) takes the handle as `focus` and owns the tab stop and the
+ * live region. A page that draws its own marks, a list of `Meter`s included, spreads `focus.target`
+ * on the container, `focus.item(i)` on each mark, and renders `focus.live` once. A list of a coarser grain beside it
  * (versions beside samples) spreads `focus.groupItem(name)` on each row and shares the one focus.
  */
 import {
