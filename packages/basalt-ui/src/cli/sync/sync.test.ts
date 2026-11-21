@@ -519,3 +519,19 @@ describe('sync: the session note', () => {
     expect(run(dir).log).not.toContain('Agent sessions:')
   })
 })
+
+describe('sync: the session note sees a symlinked rule', () => {
+  it('prints it when a forced sync writes through a rule that is a link', () => {
+    const dir = consumer('single-root')
+    run(dir)
+    const rule = join(dir, '.claude/rules/basalt-state.md')
+    const shared = join(dir, 'shared-rule.md')
+    writeFileSync(shared, 'stale\n')
+    rmSync(rule)
+    symlinkSync(shared, rule)
+    const forced = run(dir, { force: true })
+    expect(forced.code).toBe(0)
+    expect(forced.log).toContain(SESSION_NOTE)
+    expect(readFileSync(shared, 'utf8')).not.toBe('stale\n')
+  })
+})
