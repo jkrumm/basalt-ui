@@ -136,7 +136,7 @@ export function PageSummary(props: PageSummaryProps): ReactElement {
             <span className="min-w-0 truncate text-sm text-muted-foreground">
               {causeOf(t, kind, message)}
             </span>
-            {retry !== undefined && <RetryButton onClick={retry} />}
+            {retry !== undefined && <RetryButton onClick={retry} label={t('home.retry')} />}
           </div>
         ) : (
           <div aria-hidden="true" className="h-lh text-lg" />

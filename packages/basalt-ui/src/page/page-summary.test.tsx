@@ -6,6 +6,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
+import { IntlScope } from '../core/provider-props'
 import { PageSummary } from './page-summary'
 
 afterEach(cleanup)
@@ -84,6 +85,15 @@ describe('PageSummary', () => {
     expect(root?.hasAttribute('aria-busy')).toBe(false)
     expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0)
     expect([...(root?.children ?? [])]).toHaveLength(2)
+  })
+
+  test('the error arm Retry reads its word from home.retry', () => {
+    render(
+      <IntlScope messages={{ 'home.retry': 'Erneut' }}>
+        <PageSummary phase={{ tag: 'error', message: 'x', retry: () => {} }} />
+      </IntlScope>,
+    )
+    expect(screen.getByRole('button', { name: 'Erneut' })).toBeDefined()
   })
 
   test('a failed query carries its message and its refetch into the summary', () => {
