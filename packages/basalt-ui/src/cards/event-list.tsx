@@ -128,7 +128,7 @@ export function EventList(props: EventListProps): ReactElement {
           {...(icon !== undefined && { icon })}
           {...(info !== undefined && { info })}
         />
-        <Inset className="flex flex-col" style={bodyHeight(rows, 14)}>
+        <Inset className="flex grow flex-col" style={bodyHeight(rows, 14)}>
           <CardPhase
             phase={phase}
             empty={emptyState}

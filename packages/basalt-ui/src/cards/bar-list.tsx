@@ -243,7 +243,7 @@ export function BarList<I = unknown>(props: BarListProps<I>): ReactElement {
         {props.legend !== false && series !== undefined && series.length > 0 && (
           <Legend entries={series} />
         )}
-        <Inset className="flex flex-col" style={bodyHeight(rows, 10)}>
+        <Inset className="flex grow flex-col" style={bodyHeight(rows, 10)}>
           <HostTitleContext.Provider value={title}>
             <CardPhase
               phase={phase}

@@ -67,7 +67,7 @@ export function StatFooter({
   return (
     <dl
       data-slot="stat-footer"
-      className="m-0 flex h-10 items-center justify-between gap-4 px-(--card-edge) text-sm"
+      className="m-0 mt-auto flex h-10 items-center justify-between gap-4 px-(--card-edge) text-sm"
     >
       {shown.map((fact) => (
         <div key={fact.label} className="flex min-w-0 items-baseline gap-2">

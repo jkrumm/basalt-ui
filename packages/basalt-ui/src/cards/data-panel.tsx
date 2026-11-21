@@ -406,7 +406,7 @@ export function DataPanel(props: DataPanelProps): ReactElement {
           </div>
         )}
         {legend !== undefined && legend.length > 0 && <Legend entries={legend} />}
-        <Inset ref={insetRef} className="flex flex-col">
+        <Inset ref={insetRef} className="flex grow flex-col">
           <HostTitleContext.Provider value={title}>
             <FrameDepthContext.Provider value={depth + 1}>
               {!claimed && (
