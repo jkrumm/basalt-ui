@@ -22,6 +22,7 @@ import { sync } from '../sync'
 import { parseManifest } from '../manifest'
 import type { Manifest, Profile } from '../manifest'
 import { COMMAND_OPTIONS } from '../help'
+import { SESSION_NOTE } from '../agent-note'
 import { FLAGS, init } from './index'
 import type { InitDeps } from './index'
 
@@ -1071,5 +1072,22 @@ describe('init --start: the TanStack Start host', () => {
     const { log } = await runInit(['--profile', 'app', '--root', 'src'], dir)
     expect(log).toContain('TanStack Start app')
     expect(existsSync(join(dir, 'src/router.tsx'))).toBe(false)
+  })
+})
+
+describe('init: the session note', () => {
+  it('ends a first run that writes agent files with the note once, and a second run prints none', async () => {
+    const dir = createVite()
+    const argv = ['--profile', 'app', '--root', 'src']
+    const first = await runInit(argv, dir)
+    expect(first.code).toBe(0)
+    expect(first.log.trimEnd().endsWith(SESSION_NOTE)).toBe(true)
+    expect(first.log.split(SESSION_NOTE)).toHaveLength(2)
+    const second = await runInit(argv, dir)
+    expect(second.log).not.toContain('Agent sessions:')
+  })
+
+  it('names no agent product or terminal', () => {
+    expect(SESSION_NOTE).not.toMatch(/claude|opencode|codex|cursor|tmux|herdr/i)
   })
 })

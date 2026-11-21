@@ -3,9 +3,11 @@
  * tree. It refreshes an install `init` made, never creates one, never touches `CLAUDE.md`.
  * Ejected primitives are three-way merged (`three-way.ts`); a conflict exits 1.
  * Resolution is the shared one: `BASALT_CWD`, else the cwd, then the manifest there or above.
+ * A run that wrote an agent-read file ends with the session note (`../agent-note`); `--check` never does.
  */
 import { relative } from 'node:path'
 
+import { agentFiles, sessionNote } from '../agent-note'
 import { noteRelocation, packageRoot, readFrameworkVersion, resolveProjectDir } from '../index'
 import { findManifestAbove } from '../install-root'
 import { MANIFEST_PATH, readManifest, writeManifest } from '../manifest'
@@ -25,6 +27,8 @@ export type SyncOptions = {
   pkgRoot?: string
   /** The generated preset files. Defaults to the shipped presets of `pkgRoot`. */
   presetFiles?: PresetFiles
+  /** The session note when this run changed an agent-read file; `init` turns it off and prints its own. */
+  note?: boolean
 }
 
 const MAKE_ONE = 'run `basalt-ui init --profile <tokens|site|bridge|parts|app>`'
@@ -95,6 +99,8 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     return 1
   }
 
+  const bases = repo === root ? [root] : [root, repo]
+  const before = agentFiles(bases)
   const applied = applySync(root, manifest, plan, opts.force === true, repo)
   applyEjected(root, ejects)
   writeManifest(root, { ...applied.manifest, ejected: ejects.ejected, version })
@@ -106,5 +112,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     console.log('Locally edited files were left as they are (run with --force to overwrite):')
     for (const path of applied.left) console.log(`  ${path}`)
   }
+  const note = opts.note === false ? null : sessionNote(before, bases)
+  if (note !== null) console.log(`\n${note}`)
   return ejects.conflicts.length + ejects.errors.length === 0 ? 0 : 1
 }
