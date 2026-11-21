@@ -39,8 +39,12 @@ export type SiteComparisonProps = {
   className?: string
 }
 
-/** The tint band of the column the page is about. */
-const ours = (column: SiteComparisonColumn): string | false => column.ours === true && 'bg-inset'
+/**
+ * The tint band of the column the page is about: an ink wash that lifts it off the card in both
+ * schemes (the inset fill sinks below the card in dark), with its text at full contrast.
+ */
+const ours = (column: SiteComparisonColumn): string | false =>
+  column.ours === true && 'bg-selected text-foreground'
 
 function Cell({
   value,
