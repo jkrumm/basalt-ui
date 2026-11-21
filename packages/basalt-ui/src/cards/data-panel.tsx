@@ -330,8 +330,8 @@ function PanelHead(
  * the N data cards and a shorter list ends at its last card: every card is whole at 390 px. A loading
  * frame has no cards to measure: until a list has been measured it gives each data row one card (108 px, or `bodySize.cardHeight`),
  * then the height it had; the panel never runs the body in loading, so it cannot see that a table is `phone: 'columns'`: such a
- * table keeps its rows at 390 px, and its panel passes `cardHeight` as that row (33 at the default density), or the loading frame
- * runs one 108 px card per row. A table body with `height="fill"`
+ * table keeps its rows at 390 px, and its caller passes `bodySize.cardHeight` as that row (33 at the default density), or the
+ * loading frame runs one 108 px card per row. A table body with `height="fill"`
  * takes the box's height and scrolls inside it, so a chart focus brings its joined row into view. The
  * box clips with `overflow: clip`, never `hidden`, so a table head that sticks to the page keeps sticking.
  *

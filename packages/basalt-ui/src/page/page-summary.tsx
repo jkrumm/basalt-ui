@@ -8,7 +8,8 @@ import { resolvePhase } from '../core/phase'
 import type { ErrorKind, Fact as LabelledFact } from '../core/phase'
 import type { Phase, QueryStateLike } from '../core/ports'
 import { Skeleton } from '../ui/skeleton'
-import { ERROR_KEYS } from './query-state'
+import { errorCause } from './query-state'
+import type { ERROR_KEYS } from './query-state'
 
 /**
  * A fact is a node, or a label and a value as a footer fact is: `{ label: 'Last reindex', value,
@@ -45,8 +46,9 @@ function causeOf(
   kind: ErrorKind | undefined,
   message: string | undefined,
 ): string {
-  const line = t(ERROR_KEYS[kind ?? 'default'])
-  return message !== undefined && kind === undefined ? `${line} ${message}` : line
+  const { key, detail } = errorCause(kind, message)
+  const line = t(key)
+  return detail === undefined ? line : `${line} ${detail}`
 }
 
 const isShown = (fact: Fact): boolean =>
