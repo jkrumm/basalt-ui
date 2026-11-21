@@ -32,24 +32,37 @@ export type StatGroupProps = {
 }
 
 /**
+ * Two tracks and an odd count leave the last cell alone on its line beside a dead half cell: the
+ * first cell takes both tracks of the first line instead (a lone cell counts too), so every line
+ * is full. `of [data-slot=stat-cell]` counts the cells only, not the group's message, and the rule
+ * applies from `@narrow` (two tracks) to `@regular`, where the tracks turn auto-fit.
+ */
+const ODD_FIRST_SPANS =
+  '@narrow:@max-regular:[&>[data-slot=stat-cell]:first-child:nth-last-child(odd_of_[data-slot=stat-cell])]:col-span-2'
+
+/**
  * Every cell's tracks are one set of rows: ten, in the order caption, figure, the delta with its base,
  * meter, chart, four rows and a foot line. A cell is `row-span-10` on a subgrid, so a track one cell
  * fills is as tall in all of them and a track nobody fills is 0 px. Each cell is ruled on its left
  * and top and carries its own padding; the grid sits 1 px up and left of the card, which clips the
  * outer rules, so a hairline only ever divides two cells. In a narrow container (under `@regular`,
- * 30 rem) the tracks are 8 rem, so a phone lays out two stats per line, ruled both ways; from
- * `@regular` they are 12 rem.
+ * 30 rem) the tracks are two (one under `@narrow`), so a phone lays out two stats per line, ruled
+ * both ways; from `@regular` they are auto-fit 12 rem tracks.
  */
-const STRIP =
-  'relative -mt-px -ml-px grid grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] @regular:grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))]'
+const STRIP = cn(
+  'relative -mt-px -ml-px grid grid-cols-1 @narrow:grid-cols-2 @regular:grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))]',
+  ODD_FIRST_SPANS,
+)
 
 /**
- * One card per cell on auto-fit tracks: two to a line (9 rem and up) in a narrow container, 14 rem
+ * One card per cell: two to a line in a narrow container (one under `@narrow`), auto-fit 14 rem
  * tracks from `@regular`. Nothing scrolls sideways. The padding and negative margin keep the cards'
  * ring and shadow inside the group's box.
  */
-const CARDS =
-  'relative grid -mx-1 -mt-1 -mb-4 grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))] p-1 gap-x-3 @regular:grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))]'
+const CARDS = cn(
+  'relative grid -mx-1 -mt-1 -mb-4 grid-cols-1 p-1 gap-x-3 @narrow:grid-cols-2 @regular:grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))]',
+  ODD_FIRST_SPANS,
+)
 
 /**
  * A row of `StatCell`s on shared tracks. `strip` draws them on one surface, ruled into cells, for

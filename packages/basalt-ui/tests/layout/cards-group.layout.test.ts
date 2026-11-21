@@ -145,6 +145,22 @@ layout('StatGroup strip on a phone', () => {
   })
 })
 
+layout('StatGroup with an odd count on two tracks', () => {
+  for (const probe of ['cg-strip-three', 'cg-cards-three'] as const) {
+    test(`${probe} at 390: the first cell takes the first line, the other two share the second`, async () => {
+      const page = await open(PHONE)
+      const cells = await rects(page, probe, CELL)
+      expect(cells).toHaveLength(3)
+      const [first, second, third] = cells as [Rect, Rect, Rect]
+      near(second.top, third.top, 'the last two cells share a line')
+      expect(second.top, 'the last two cells are under the first').toBeGreaterThan(first.bottom - 1)
+      near(second.width, third.width, 'the last two cells are as wide as each other')
+      near(first.left, second.left, 'the first cell starts where the second does')
+      near(first.left + first.width, third.left + third.width, 'both lines end at the same edge')
+    })
+  }
+})
+
 const DESKTOP_1800: Viewport = { name: 'desktop', width: 1800, height: 1200 }
 
 /** One cell's box, its rules and its figure's overflow, read in the page. */
