@@ -131,11 +131,16 @@ function ResizeHandle<T>({
   // A flexible column is drawn wider than its planned floor: an edge moves from the width on screen,
   // read from the header cell when the handle is focused or pressed, never measured to lay out.
   const [drawn, setDrawn] = useState<number | null>(null)
-  const widthOn = (handle: HTMLElement): number => {
-    if (resized) return planned
+  const measure = (handle: HTMLElement): number => {
     const cell = handle.closest('th')
     const width = cell === null ? 0 : Math.round(cell.getBoundingClientRect().width)
     return width > 0 ? width : planned
+  }
+  const widthOn = (handle: HTMLElement): number => (resized ? planned : measure(handle))
+  // A reset hands the column back to the plan: its value is the width drawn once the plan has laid out.
+  const reset = (handle: HTMLElement): void => {
+    model.setWidth(spec.id, undefined)
+    requestAnimationFrame(() => setDrawn(measure(handle)))
   }
   const px = resized ? planned : (drawn ?? planned)
   const widthAt = (event: PointerEvent<HTMLElement>): number | null => {
@@ -172,7 +177,8 @@ function ResizeHandle<T>({
     if (next === null) return
     event.preventDefault()
     event.stopPropagation()
-    model.setWidth(spec.id, next)
+    if (next === undefined) reset(event.currentTarget)
+    else model.setWidth(spec.id, next)
   }
   return (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex, jsx-a11y/no-noninteractive-element-interactions -- a focusable separator is the WAI-ARIA window-splitter pattern: its value moves with the keys
@@ -203,13 +209,15 @@ function ResizeHandle<T>({
       }}
       onPointerMove={(event) => {
         const next = widthAt(event)
-        if (next !== null && drag.current?.moved === true) model.previewWidth(spec.id, next)
+        if (next === null || drag.current?.moved !== true) return
+        model.previewWidth(spec.id, next)
+        setDrawn(next)
       }}
       onPointerUp={(event) => end(event, true)}
       onPointerCancel={(event) => end(event, false)}
       onDoubleClick={(event) => {
         event.stopPropagation()
-        model.setWidth(spec.id, undefined)
+        reset(event.currentTarget)
       }}
       onKeyDown={onKeyDown}
     />
