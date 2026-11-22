@@ -68,6 +68,8 @@ export type ChartSeries<T> = {
   formatValue?: ((v: number, d: T) => string) | undefined
   /** Bars: a value label per bar (`true` writes `formatValue`, else the y axis format), see `Series.values`. */
   values?: boolean | ((v: number, d: T) => string) | undefined
+  /** Bars: where `values` writes, see `Series.valuesAt`. `'segment'` on a stack labels this series' own segment. */
+  valuesAt?: 'end' | 'segment' | undefined
   /** Bars: the datum draws in the brand accent, see `Series.highlight`. */
   highlight?: ((d: T) => boolean) | undefined
   /**

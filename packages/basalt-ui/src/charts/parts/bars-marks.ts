@@ -100,14 +100,14 @@ function stacksOf<D>(rows: readonly PlotRow<D, ChartX>[]): PlotRow<D, ChartX>[][
 }
 
 /** A segment of a clamped stack keeps at least this many px of height, so no part of the stack vanishes. */
-const MIN_SEGMENT_PX = 2
+export const MIN_SEGMENT_PX = 2
 
 /**
  * The sizes of one side of a stack, fitted to `cap` in proportion: a segment the share would make
  * thinner than `min` keeps `min`, and the rest share out what is left. `floored` holds the segments
  * already at `min`. Returns the sizes in order.
  */
-function fitSegments(
+export function fitSegments(
   sizes: readonly number[],
   cap: number,
   min: number,

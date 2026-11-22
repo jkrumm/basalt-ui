@@ -492,7 +492,9 @@ export function stackCapMarks<T, X extends ChartX>(opts: {
     for (const side of ['top', 'bottom'] as const) {
       const s = last[side]
       if (s === undefined || offScaleSide(sums[side], opts.domain) !== side) continue
-      found[side].push({ f, color: s.highlight?.(d) ? CV.brand : s.color, total: sums[side] })
+      // The total is the whole stack's, no one segment's: it takes the ink of a stack total above an
+      // unclamped stack, never its top segment's colour (a pale segment's colour read as that segment's value).
+      found[side].push({ f, color: CV.inkMuted, total: sums[side] })
     }
   }
   const carets = (['top', 'bottom'] as const).flatMap((side) =>
@@ -516,7 +518,10 @@ export function stackCapMarks<T, X extends ChartX>(opts: {
           ),
         ],
   )
-  const own = opts.series.some((s) => s.values !== undefined && s.values !== false)
+  // A series that labels its own segment writes no total, so the caret's total stays the kit's to write.
+  const own = opts.series.some(
+    (s) => s.values !== undefined && s.values !== false && s.valuesAt !== 'segment',
+  )
   const named = own
     ? []
     : capValueMarks(
