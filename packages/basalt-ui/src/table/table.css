@@ -1032,6 +1032,15 @@
     [data-below='480'][data-phone='columns'] col {
       width: auto !important;
     }
+    /* the head's controls and the cell gutters tighten, so the three columns' least widths sum to what the card holds */
+    [data-below='480'][data-phone='columns']
+      :is([data-slot='table-head'], [data-slot='table-cell']) {
+      padding-inline: calc(var(--spacing) * 2) !important;
+    }
+    [data-below='480'][data-phone='columns'] [data-slot='table-head'] [data-slot='button'] {
+      inline-size: calc(var(--spacing) * 4);
+      min-inline-size: 0;
+    }
     [data-below='480'][data-phone='columns'] [data-identity],
     [data-below='480'][data-phone='columns'] [data-identity] *,
     [data-below='480'][data-phone='columns'] :is(th, [data-kind='status']) * {
@@ -1060,6 +1069,15 @@
     [data-below='700'][data-phone='columns'] col {
       width: auto !important;
     }
+    /* the head's controls and the cell gutters tighten, so the three columns' least widths sum to what the card holds */
+    [data-below='700'][data-phone='columns']
+      :is([data-slot='table-head'], [data-slot='table-cell']) {
+      padding-inline: calc(var(--spacing) * 2) !important;
+    }
+    [data-below='700'][data-phone='columns'] [data-slot='table-head'] [data-slot='button'] {
+      inline-size: calc(var(--spacing) * 4);
+      min-inline-size: 0;
+    }
     [data-below='700'][data-phone='columns'] [data-identity],
     [data-below='700'][data-phone='columns'] [data-identity] *,
     [data-below='700'][data-phone='columns'] :is(th, [data-kind='status']) * {
@@ -1087,6 +1105,15 @@
     [data-below='800'][data-phone='columns'] col {
       width: auto !important;
     }
+    /* the head's controls and the cell gutters tighten, so the three columns' least widths sum to what the card holds */
+    [data-below='800'][data-phone='columns']
+      :is([data-slot='table-head'], [data-slot='table-cell']) {
+      padding-inline: calc(var(--spacing) * 2) !important;
+    }
+    [data-below='800'][data-phone='columns'] [data-slot='table-head'] [data-slot='button'] {
+      inline-size: calc(var(--spacing) * 4);
+      min-inline-size: 0;
+    }
     [data-below='800'][data-phone='columns'] [data-identity],
     [data-below='800'][data-phone='columns'] [data-identity] *,
     [data-below='800'][data-phone='columns'] :is(th, [data-kind='status']) * {
@@ -1113,6 +1140,15 @@
     }
     [data-below='always'][data-phone='columns'] col {
       width: auto !important;
+    }
+    /* the head's controls and the cell gutters tighten, so the three columns' least widths sum to what the card holds */
+    [data-below='always'][data-phone='columns']
+      :is([data-slot='table-head'], [data-slot='table-cell']) {
+      padding-inline: calc(var(--spacing) * 2) !important;
+    }
+    [data-below='always'][data-phone='columns'] [data-slot='table-head'] [data-slot='button'] {
+      inline-size: calc(var(--spacing) * 4);
+      min-inline-size: 0;
     }
     [data-below='always'][data-phone='columns'] [data-identity],
     [data-below='always'][data-phone='columns'] [data-identity] *,
