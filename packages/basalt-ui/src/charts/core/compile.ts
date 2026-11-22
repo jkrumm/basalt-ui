@@ -1187,7 +1187,7 @@ const MAX_ZONE_ROWS = 24
 /** The most rows a zone caption tries down the side of its zone, after and before it. */
 const MAX_ZONE_SIDE_ROWS = 6
 /** A plot narrower than this (a phone's) keeps a zone caption inside its zone, over its own columns, or drops it: beside the zone it reads as the next thing's, px. */
-const ZONE_SIDE_MIN_PLOT_PX = 480
+const ZONE_SIDE_MIN_PLOT_PX = 400
 /** A caption this wide or less (a run's '5 h') still stands beside its zone on a phone's plot, px. */
 const ZONE_SHORT_CAPTION_PX = 40
 /** Whether a zone's caption of this width may stand beside the zone on a plot of this width: a phone's plot keeps a longer caption inside its zone or drops it (a plot not yet measured keeps its first spot). */
