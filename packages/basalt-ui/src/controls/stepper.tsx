@@ -22,7 +22,7 @@ export type StepperProps = {
   steps: readonly StepperStep[]
   /** The index of the current step, from 0. */
   current: number
-  /** Makes each done step a button that goes back to it. Without it the list only shows progress. */
+  /** Makes each done step a button that goes back to it. Without it the list only shows progress; the `bar` variant ignores it. */
   onStepChange?: (index: number) => void
   /** Names the list for assistive technology. Default `Progress`. */
   'aria-label'?: string
