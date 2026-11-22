@@ -133,56 +133,58 @@ const STATUS = {
 function PreferencesPane(): ReactElement {
   const { status } = prefs.use()
   return (
-    <FormSection
-      title="Interface"
-      description="Kept on your account, so every device agrees."
-      action={<output className="text-sm text-muted-foreground">{STATUS[status]}</output>}
-    >
-      <FormField
-        id="row-density"
-        label="Density"
-        description="Row height in lists and tables."
-        control={prefs.field('density')}
+    <div data-shot="preferences">
+      <FormSection
+        title="Interface"
+        description="Kept on your account, so every device agrees."
+        action={<output className="text-sm text-muted-foreground">{STATUS[status]}</output>}
       >
-        <Select
-          aria-label="Density"
-          options={[
-            { value: 'comfortable', label: 'Comfortable' },
-            { value: 'compact', label: 'Compact' },
-          ]}
-        />
-      </FormField>
-      <FormField
-        id="row-language"
-        label="Language"
-        description="Menus, dates and numbers."
-        control={prefs.field('language')}
-      >
-        <Select
-          aria-label="Language"
-          options={[
-            { value: 'en', label: 'English' },
-            { value: 'de', label: 'Deutsch' },
-          ]}
-        />
-      </FormField>
-      <FormField
-        id="row-motion"
-        label="Reduce motion"
-        description="Fades replace slides and zooms."
-        control={prefs.field('motion')}
-      >
-        <Switch />
-      </FormField>
-      <FormField
-        id="row-digest"
-        label="Weekly digest"
-        description="One email on Monday."
-        control={prefs.field('digest')}
-      >
-        <Switch />
-      </FormField>
-    </FormSection>
+        <FormField
+          id="row-density"
+          label="Density"
+          description="Row height in lists and tables."
+          control={prefs.field('density')}
+        >
+          <Select
+            aria-label="Density"
+            options={[
+              { value: 'comfortable', label: 'Comfortable' },
+              { value: 'compact', label: 'Compact' },
+            ]}
+          />
+        </FormField>
+        <FormField
+          id="row-language"
+          label="Language"
+          description="Menus, dates and numbers."
+          control={prefs.field('language')}
+        >
+          <Select
+            aria-label="Language"
+            options={[
+              { value: 'en', label: 'English' },
+              { value: 'de', label: 'Deutsch' },
+            ]}
+          />
+        </FormField>
+        <FormField
+          id="row-motion"
+          label="Reduce motion"
+          description="Fades replace slides and zooms."
+          control={prefs.field('motion')}
+        >
+          <Switch />
+        </FormField>
+        <FormField
+          id="row-digest"
+          label="Weekly digest"
+          description="One email on Monday."
+          control={prefs.field('digest')}
+        >
+          <Switch />
+        </FormField>
+      </FormSection>
+    </div>
   )
 }
 
@@ -194,35 +196,37 @@ function NotificationsPane(): ReactElement {
   const [mentions] = prefs.field('mentions').use()
   const [comments] = prefs.field('comments').use()
   return (
-    <FormSection title="Email" description="A row opens to the events it covers.">
-      <FormGroupRow
-        id="row-deploys"
-        label="Deploys"
-        description="What happens to your pipelines."
-        summary={on(ok, failed)}
-        defaultOpen
-      >
-        <FormField label="Deploy succeeded" control={prefs.field('deployOk')}>
-          <Switch />
-        </FormField>
-        <FormField label="Deploy failed" control={prefs.field('deployFailed')}>
-          <Switch />
-        </FormField>
-      </FormGroupRow>
-      <FormGroupRow
-        id="row-activity"
-        label="Activity"
-        description="People talking to you."
-        summary={on(mentions, comments)}
-      >
-        <FormField label="Mentions" control={prefs.field('mentions')}>
-          <Switch />
-        </FormField>
-        <FormField label="Comments on your runs" control={prefs.field('comments')}>
-          <Switch />
-        </FormField>
-      </FormGroupRow>
-    </FormSection>
+    <div data-shot="notifications">
+      <FormSection title="Email" description="A row opens to the events it covers.">
+        <FormGroupRow
+          id="row-deploys"
+          label="Deploys"
+          description="What happens to your pipelines."
+          summary={on(ok, failed)}
+          defaultOpen
+        >
+          <FormField label="Deploy succeeded" control={prefs.field('deployOk')}>
+            <Switch />
+          </FormField>
+          <FormField label="Deploy failed" control={prefs.field('deployFailed')}>
+            <Switch />
+          </FormField>
+        </FormGroupRow>
+        <FormGroupRow
+          id="row-activity"
+          label="Activity"
+          description="People talking to you."
+          summary={on(mentions, comments)}
+        >
+          <FormField label="Mentions" control={prefs.field('mentions')}>
+            <Switch />
+          </FormField>
+          <FormField label="Comments on your runs" control={prefs.field('comments')}>
+            <Switch />
+          </FormField>
+        </FormGroupRow>
+      </FormSection>
+    </div>
   )
 }
 
@@ -251,46 +255,48 @@ function ProfilePane({ edited }: { edited: boolean }): ReactElement {
   return (
     <form.AppForm>
       <form.Form>
-        <FormSection title="Identity" description="Shown to your team. Saved together.">
-          <form.AppField name="name">
-            {(f) => (
-              <f.FormField
-                id="row-name"
-                label="Name"
-                description="How you appear in lists."
-                required
-              >
-                <Input autoComplete="name" />
-              </f.FormField>
-            )}
-          </form.AppField>
-          <form.AppField name="email">
-            {(f) => (
-              <f.FormField id="row-email" label="Email" description="Where receipts go." required>
-                <Input type="email" autoComplete="email" inputMode="email" />
-              </f.FormField>
-            )}
-          </form.AppField>
-          <form.AppField name="bio">
-            {(f) => (
-              <f.FormField
-                id="row-bio"
-                label="Bio"
-                description="Up to 160 characters."
-                layout="stack"
-              >
-                <Textarea rows={3} autoComplete="off" />
-              </f.FormField>
-            )}
-          </form.AppField>
-        </FormSection>
-        <form.Footer
-          floating
-          actions={[
-            { label: 'Discard', onClick: () => form.reset() },
-            { label: 'Save changes', primary: true },
-          ]}
-        />
+        <div data-shot="profile-form" className="flex flex-col gap-10">
+          <FormSection title="Identity" description="Shown to your team. Saved together.">
+            <form.AppField name="name">
+              {(f) => (
+                <f.FormField
+                  id="row-name"
+                  label="Name"
+                  description="How you appear in lists."
+                  required
+                >
+                  <Input autoComplete="name" />
+                </f.FormField>
+              )}
+            </form.AppField>
+            <form.AppField name="email">
+              {(f) => (
+                <f.FormField id="row-email" label="Email" description="Where receipts go." required>
+                  <Input type="email" autoComplete="email" inputMode="email" />
+                </f.FormField>
+              )}
+            </form.AppField>
+            <form.AppField name="bio">
+              {(f) => (
+                <f.FormField
+                  id="row-bio"
+                  label="Bio"
+                  description="Up to 160 characters."
+                  layout="stack"
+                >
+                  <Textarea rows={3} autoComplete="off" />
+                </f.FormField>
+              )}
+            </form.AppField>
+          </FormSection>
+          <form.Footer
+            floating
+            actions={[
+              { label: 'Discard', onClick: () => form.reset() },
+              { label: 'Save changes', primary: true },
+            ]}
+          />
+        </div>
       </form.Form>
       {guard}
     </form.AppForm>
@@ -300,47 +306,53 @@ function ProfilePane({ edited }: { edited: boolean }): ReactElement {
 function WorkspacePane(): ReactElement {
   return (
     <>
-      <FormSection title="Data" description="What leaves the workspace.">
-        <FormActionRow
-          id="row-export"
-          label="Export data"
-          description="A CSV of every run and its logs, mailed when it is ready."
-          action={<Button>Export</Button>}
-        />
-      </FormSection>
-      <FormSection
-        title="Single sign-on"
-        badge={<Lozenge tone="accent">Enterprise</Lozenge>}
-        description="Sign in through your identity provider."
-        locked="Part of the Enterprise plan."
-        action={<Button>See plans</Button>}
-      >
-        <FormField
-          id="row-sso"
-          label="Require SSO"
-          description="Members sign in through SAML only."
-          control={prefs.field('sso')}
+      <div data-shot="workspace-data">
+        <FormSection title="Data" description="What leaves the workspace.">
+          <FormActionRow
+            id="row-export"
+            label="Export data"
+            description="A CSV of every run and its logs, mailed when it is ready."
+            action={<Button>Export</Button>}
+          />
+        </FormSection>
+      </div>
+      <div data-shot="workspace-locked">
+        <FormSection
+          title="Single sign-on"
+          badge={<Lozenge tone="accent">Enterprise</Lozenge>}
+          description="Sign in through your identity provider."
+          locked="Part of the Enterprise plan."
+          action={<Button>See plans</Button>}
         >
-          <Switch />
-        </FormField>
-      </FormSection>
-      <FormSection title="Danger zone" description="None of this can be undone.">
-        <FormActionRow
-          id="row-transfer"
-          tone="danger"
-          label="Transfer ownership"
-          description="The new owner can remove you."
-          action={<Button variant="danger">Transfer</Button>}
-        />
-        <FormConfirmRow
-          id="row-delete"
-          label="Delete workspace"
-          description="Removes every project, run and member."
-          confirmText="acme"
-          actionLabel="Delete workspace"
-          onConfirm={() => later(600)}
-        />
-      </FormSection>
+          <FormField
+            id="row-sso"
+            label="Require SSO"
+            description="Members sign in through SAML only."
+            control={prefs.field('sso')}
+          >
+            <Switch />
+          </FormField>
+        </FormSection>
+      </div>
+      <div data-shot="workspace-danger">
+        <FormSection title="Danger zone" description="None of this can be undone.">
+          <FormActionRow
+            id="row-transfer"
+            tone="danger"
+            label="Transfer ownership"
+            description="The new owner can remove you."
+            action={<Button variant="danger">Transfer</Button>}
+          />
+          <FormConfirmRow
+            id="row-delete"
+            label="Delete workspace"
+            description="Removes every project, run and member."
+            confirmText="acme"
+            actionLabel="Delete workspace"
+            onConfirm={() => later(600)}
+          />
+        </FormSection>
+      </div>
     </>
   )
 }
