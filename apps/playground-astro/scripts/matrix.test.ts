@@ -1,8 +1,21 @@
 import { describe, expect, test } from 'bun:test'
-import { BYTE_SLACK, PIXEL_TOLERANCE, compare, decide, judge, render, serialize } from './matrix'
-import type { MatrixRecord, ModeVerdict, Verdict, ViewVerdict } from './matrix'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { FINDINGS } from '../src/parts/findings'
+import {
+  BYTE_SLACK,
+  PIXEL_TOLERANCE,
+  compare,
+  decide,
+  judge,
+  render,
+  renderRun,
+  serialize,
+  toRecord,
+} from './matrix'
+import type { MatrixRecord, ModeVerdict, Run, Verdict, ViewVerdict } from './matrix'
 import { MODES } from '../src/parts/registry'
-import type { Mode } from '../src/parts/registry'
+import type { Mode, PartEntry } from '../src/parts/registry'
 import { VIEWS } from './results'
 import type { ModeResult, Results, View } from './results'
 
@@ -48,7 +61,7 @@ function part(id: string, over: Partial<Verdict> = {}): Verdict {
   }
 }
 
-function record(parts: Verdict[], over: Partial<MatrixRecord> = {}): MatrixRecord {
+function run(parts: Verdict[], over: Partial<Run> = {}): Run {
   return {
     browser: 'shell',
     runtime: { js: 72_000, css: 24_000 },
@@ -69,65 +82,131 @@ function record(parts: Verdict[], over: Partial<MatrixRecord> = {}): MatrixRecor
   }
 }
 
+const entry = (id: string): PartEntry =>
+  ({
+    id,
+    family: 'ui',
+    module: `ui/${id}`,
+    covers: ['Button'],
+    interaction: 'none',
+    why: 'a button',
+  }) as PartEntry
+
+/** The record a run sets: every budget at the measured size plus the slack. */
+const recordOf = (r: Run): MatrixRecord =>
+  toRecord(r, null, { parts: r.parts.map((p) => entry(p.id)) }).record
+
+/** A run whose button pages load `by` more bytes of JavaScript in client:load. */
+const grown = (by: number, key: 'js' | 'further' = 'js'): Run => {
+  const p = part('button')
+  const load = mode(80_000, { [key]: (key === 'js' ? 80_000 : 10_000) + by })
+  return run([{ ...p, modes: { ...p.modes, load } }])
+}
+
 describe('compare', () => {
-  test('passes an unchanged record', () => {
-    const r = record([part('button')])
-    expect(compare(r, r)).toEqual({ failures: [], notes: [] })
+  test('passes an unchanged run', () => {
+    const r = run([part('button')])
+    expect(compare(recordOf(r), r)).toEqual({ failures: [], notes: [] })
   })
 
   test('fails a part that was static-clean and is not (the seeded regression)', () => {
-    const was = record([part('button')])
+    const was = recordOf(run([part('button')]))
     const views = { ...part('button').views, '390-dark': view(0.04) }
-    const is = record([part('button', { staticClean: false, views })])
+    const is = run([part('button', { staticClean: false, views })])
     const { failures } = compare(was, is)
     expect(failures).toEqual(['button: was static-clean, now 2227 px (4.0%) at 390-dark'])
   })
 
   test('fails a part that stops rendering on the server', () => {
-    const is = record([
+    const is = run([
       part('button', { staticClean: false, ssr: 'fail', ssrError: 'useRouter outside a router' }),
     ])
-    expect(compare(record([part('button')]), is).failures).toEqual([
+    expect(compare(recordOf(run([part('button')])), is).failures).toEqual([
       'button: was static-clean, now ssr fail: useRouter outside a router',
     ])
   })
 
-  test('fails a page whose JavaScript grows past its budget, and only past the slack', () => {
-    const grown = (by: number) => {
-      const p = part('button')
-      return record([{ ...p, modes: { ...p.modes, load: mode(80_000 + by) } }])
-    }
-    expect(compare(record([part('button')]), grown(BYTE_SLACK)).failures).toEqual([])
-    expect(compare(record([part('button')]), grown(BYTE_SLACK + 1)).failures).toEqual([
-      'button load: JavaScript 81025 B gzip, budget 80000 B',
-    ])
+  test('a page that grows inside its budget passes; one byte past it fails (an island raised past its tolerance)', () => {
+    const rec = recordOf(run([part('button')]))
+    expect(rec.parts[0]?.budget.js).toBe(80_000 + BYTE_SLACK)
+    expect(compare(rec, grown(BYTE_SLACK)).failures).toEqual([])
+    const [failure] = compare(rec, grown(BYTE_SLACK + 1)).failures
+    expect(failure).toStartWith(
+      'button: JavaScript 81025 B gzip, budget 81024 B; raise it on purpose',
+    )
+  })
+
+  test('fails a further-island cost past its budget', () => {
+    const rec = recordOf(run([part('button')]))
+    expect(compare(rec, grown(BYTE_SLACK + 1, 'further')).failures).toHaveLength(1)
+    expect(compare(rec, grown(BYTE_SLACK + 1, 'further')).failures[0]).toStartWith(
+      'button: further-island JavaScript 11025 B gzip, budget 11024 B',
+    )
   })
 
   test('fails a page without an island that loads a script', () => {
-    const is = record([part('button')], { zeroJs: { pages: 3, js: 812, scriptTags: 1 } })
-    expect(compare(record([part('button')]), is).failures).toEqual([
+    const is = run([part('button')], { zeroJs: { pages: 3, js: 812, scriptTags: 1 } })
+    expect(compare(recordOf(run([part('button')])), is).failures).toEqual([
       'a page without an island loaded 812 B of JavaScript from 1 script tags',
     ])
   })
 
   test('a partial run checks the parts it measured and leaves the rest', () => {
-    const was = record([part('button'), part('badge')])
+    const was = recordOf(run([part('button'), part('badge')]))
     const views = { ...part('button').views, '390-dark': view(0.04) }
-    expect(compare(was, record([part('button')]), true).failures).toEqual([])
-    expect(compare(was, record([part('button')])).failures).toEqual([
+    expect(compare(was, run([part('button')]), true).failures).toEqual([])
+    expect(compare(was, run([part('button')])).failures).toEqual([
       'badge: recorded but not measured (removed from the registry? record it with UPDATE=1)',
     ])
     expect(
-      compare(was, record([part('button', { staticClean: false, views })]), true).failures,
+      compare(was, run([part('button', { staticClean: false, views })]), true).failures,
     ).toEqual(['button: was static-clean, now 2227 px (4.0%) at 390-dark'])
   })
 
   test('reports an improvement without failing', () => {
-    const was = record([part('chart', { staticClean: false })])
-    expect(compare(was, record([part('chart')]))).toEqual({
+    const was = recordOf(run([part('chart', { staticClean: false })]))
+    expect(compare(was, run([part('chart')]))).toEqual({
       failures: [],
-      notes: ['chart: now static-clean; record it with UPDATE=1'],
+      notes: [
+        'chart: now static-clean; record it with UPDATE=1',
+        'chart: best is now static, the record says visible; record it with UPDATE=1',
+      ],
     })
+  })
+})
+
+describe('toRecord', () => {
+  test('a run inside every budget leaves the record byte for byte', () => {
+    const rec = recordOf(run([part('button')]))
+    const shrunk = run([part('button', { modes: { ...part('button').modes, load: mode(60_000) } })])
+    const { record, raised } = toRecord(grown(BYTE_SLACK), rec, { parts: [entry('button')] })
+    expect(raised).toEqual([])
+    expect(serialize(record)).toBe(serialize(rec))
+    expect(serialize(toRecord(shrunk, rec, { parts: [entry('button')] }).record)).toBe(
+      serialize(rec),
+    )
+  })
+
+  test('raises an exceeded budget to the measured size plus the slack, with its reason', () => {
+    const rec = recordOf(run([part('button')]))
+    const { record, raised } = toRecord(grown(5000), rec, {
+      parts: [entry('button')],
+      reason: 'the table view',
+    })
+    expect(raised).toEqual(['button JavaScript: 81024 B to 86024 B'])
+    expect(record.parts[0]?.budget.js).toBe(85_000 + BYTE_SLACK)
+    expect(record.parts[0]?.raised).toBe('the table view')
+    expect(render(record, [])).toContain('- button: the table view')
+  })
+
+  test('a partial run keeps the parts it did not measure', () => {
+    const rec = recordOf(run([part('button'), part('badge')]))
+    const { record } = toRecord(grown(5000), rec, {
+      parts: [entry('button'), entry('badge')],
+      reason: 'grew',
+    })
+    expect(record.parts.map((p) => p.id)).toEqual(['button', 'badge'])
+    expect(record.parts[1]).toEqual(rec.parts[1]!)
   })
 })
 
@@ -213,15 +292,39 @@ describe('judge', () => {
 
 describe('serialize', () => {
   test('round-trips the record', () => {
-    const r = record([part('button'), part('lines', { chart: true })])
+    const r = recordOf(run([part('button'), part('lines', { chart: true })]))
     expect(JSON.parse(serialize(r))).toEqual(r)
   })
 })
 
 describe('render', () => {
   test('is a pure function of the record', () => {
-    const r = record([part('button')])
+    const r = recordOf(run([part('button')]))
     expect(render(r, [])).toBe(render(r, []))
-    expect(render(r, [])).toContain('| button | Button | clean |')
+    expect(render(r, [])).toContain('| button | Button | clean | no directive | 79.1 kB |')
+  })
+
+  test("the run's table carries the measured sizes", () => {
+    expect(renderRun(run([part('button')]), [])).toContain('| button | 78.1 kB |')
+  })
+})
+
+describe('the committed record', () => {
+  const dir = join(import.meta.dir, '../../../docs/v3/verdicts')
+  const json = readFileSync(join(dir, 'astro-matrix.json'), 'utf8')
+  const rec = JSON.parse(json) as MatrixRecord
+
+  test('is in its serialized form, one part per line', () => {
+    expect(serialize(rec)).toBe(json)
+  })
+
+  test('astro-matrix.md is its rendering (bun apps/playground-astro/scripts/matrix.ts --render)', () => {
+    expect(readFileSync(join(dir, 'astro-matrix.md'), 'utf8') === render(rec, FINDINGS)).toBe(true)
+  })
+
+  test('holds budgets, never a measured size', () => {
+    for (const p of rec.parts)
+      expect(Object.keys(p.budget).toSorted()).toEqual(['css', 'further', 'js'])
+    expect(json).not.toContain('"lcp"')
   })
 })

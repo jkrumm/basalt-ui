@@ -1,15 +1,22 @@
 /**
  * Turns the measurements (scripts/measure.ts) into the Astro matrix and keeps it honest.
  *
- *   bun scripts/matrix.ts --update   judge the fresh results, write docs/v3/verdicts/astro-matrix.{json,md}
- *   bun scripts/matrix.ts --check    judge the fresh results against the recorded JSON: exit 1 when a part that
- *                                    was static-clean is not, a page's JavaScript or CSS grew past its budget,
- *                                    a page without an island loads any script, or the .md is not the JSON's
+ *   bun scripts/matrix.ts                judge the fresh results against docs/v3/verdicts/astro-matrix.json: exit 1
+ *                                        when a part that was static-clean is not, a page's JavaScript or CSS is past
+ *                                        its budget, or a page without an island loads any script
+ *   bun scripts/matrix.ts --update [--reason <why>]
+ *                                        write the record: new parts, flipped verdicts, and every budget the run
+ *                                        exceeds raised to the measured size plus BYTE_SLACK (a raise needs --reason)
+ *   bun scripts/matrix.ts --render       render astro-matrix.md from the JSON (no results needed)
+ *   bun scripts/matrix.ts --check-render exit 1 when astro-matrix.md is not the JSON's rendering
  *
- * The .md is rendered from the JSON alone, never written by hand.
+ * The record holds what is judged: each part's verdicts and its byte budgets, never a measured size. A size inside its
+ * budget does not touch the record, so two branches that change the package rebase over each other with no re-record.
+ * Every run writes the whole measured table to .astro-matrix/matrix.md beside the results (CI keeps it as an
+ * artifact). The .md beside the record is rendered from the JSON alone, never written by hand.
  */
-import { copyFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { readdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { FINDINGS, UNCOVERED_WHY } from '../src/parts/findings'
 import type { Finding } from '../src/parts/findings'
@@ -26,9 +33,8 @@ import type { ModeResult, PartResult, Results, View } from './results'
  */
 export const PIXEL_TOLERANCE = 4
 /**
- * How far a page's gzip JavaScript or CSS may grow past its record before the check fails: one KiB, an order
- * below the smallest further-island cost measured (Button, 9.5 KiB), so a part that grows fails while a few
- * bytes of hash or banner drift do not.
+ * The headroom a budget is set with: the measured gzip size plus one KiB, an order below the smallest further-island
+ * cost measured (Button, 9.5 KiB), so a part that grows fails while a few bytes of hash or banner drift do not.
  */
 export const BYTE_SLACK = 1024
 
@@ -65,7 +71,8 @@ export type Verdict = {
   chart: boolean
 }
 
-export type MatrixRecord = {
+/** One run, judged: every measured number. It is the artifact's table, never committed. */
+export type Run = {
   browser: string
   runtime: { js: number; css: number }
   parts: Verdict[]
@@ -109,6 +116,7 @@ type Judged = Omit<Verdict, 'best' | 'why'>
 export function decide(
   part: Pick<PartEntry, 'interaction' | 'why'>,
   v: Judged,
+  further: string = kb(v.modes.load.further),
 ): { best: Verdict['best']; why: string } {
   const load = v.modes.load
   if (v.ssr === 'fail') {
@@ -131,7 +139,6 @@ export function decide(
   const wrong = v.staticClean
     ? ''
     : ` The static picture differs from the hydrated one until it hydrates (${worst(v.views)}).`
-  const further = kb(load.further)
   if (part.interaction === 'none') {
     return v.staticClean
       ? {
@@ -168,7 +175,7 @@ export function judge(
   results: Results,
   parts: readonly PartEntry[],
   exported: readonly string[],
-): MatrixRecord {
+): Run {
   const byId = new Map(results.parts.map((p) => [p.id, p]))
   const verdicts: Verdict[] = []
   for (const part of parts) {
@@ -239,13 +246,174 @@ export function judge(
   }
 }
 
+/** A part's byte ceilings, gzip: its page's JavaScript and the further-island share of it in any hydrating mode, and its CSS. */
+export type Budget = { js: number; further: number; css: number }
+
+/** What is judged of one part: its verdicts and its budgets. A measured size is never recorded. */
+export type PartRecord = {
+  id: string
+  family: string
+  covers: readonly string[]
+  interaction: Interaction
+  chart: boolean
+  ssr: PartResult['ssr']
+  staticClean: boolean
+  /** A chart kind's static picture: correct, correct at the declared width only, or wrong. */
+  picture?: string
+  best: Mode | 'none'
+  why: string
+  budget: Budget
+  /** Why a budget was last raised past the size it was set at. */
+  raised?: string
+}
+
+export type FamilyRecord = {
+  family: string
+  parts: number
+  /** Gzip JavaScript ceiling of the family page in each mode. */
+  js: Record<Mode, number>
+  raised?: string
+}
+
+/** docs/v3/verdicts/astro-matrix.json: the verdicts and budgets a run is checked against. */
+export type MatrixRecord = {
+  browser: string
+  /** The headroom each budget was set with over the size measured then. */
+  slack: number
+  /** The island runtime (React, react-dom, the Astro island script): the baseline island's page. */
+  runtime: { js: number; raised?: string }
+  parts: PartRecord[]
+  families: FamilyRecord[]
+}
+
+const HYDRATING: readonly Mode[] = MODES.filter((m) => m !== 'static')
+
+/** The sizes a part's budget bounds, from one run. */
+export function sizes(v: Verdict): Budget {
+  return {
+    js: Math.max(...HYDRATING.map((m) => v.modes[m].js)),
+    further: Math.max(...HYDRATING.map((m) => v.modes[m].further)),
+    css: Math.max(...MODES.map((m) => v.modes[m].css)),
+  }
+}
+
+export function chartVerdict(v: Pick<Verdict, 'ssr' | 'staticClean' | 'views'>): string {
+  if (v.ssr !== 'ok') return `no: ${v.ssr} on the server`
+  if (v.staticClean) return 'correct'
+  const at = v.views['1440-light']
+  return at.sameSize && at.changed <= PIXEL_TOLERANCE
+    ? 'correct at the declared width only'
+    : 'wrong'
+}
+
+const BUDGET_KEYS = ['js', 'further', 'css'] as const
+
+const BUDGET_NAME: Record<keyof Budget, string> = {
+  js: 'JavaScript',
+  further: 'further-island JavaScript',
+  css: 'CSS',
+}
+
 /**
- * What the fresh record does worse than the recorded one: `failures` fail the check, `notes` only report. `partial`
+ * The record after a run: every measured part with its verdicts, its budgets kept while the run fits them, a budget
+ * the run exceeds raised to the measured size plus `BYTE_SLACK`. A budget is never lowered: an improvement leaves the
+ * record alone, which is what lets branches rebase over each other. `raised` lists each raise of an existing budget;
+ * the caller refuses one without a reason. A partial run (`only`) keeps the parts and families it did not measure.
+ */
+export function toRecord(
+  run: Run,
+  previous: MatrixRecord | null,
+  opts: { parts: readonly PartEntry[]; reason?: string },
+): { record: MatrixRecord; raised: string[] } {
+  const raised: string[] = []
+  const was = new Map(previous?.parts.map((p) => [p.id, p]) ?? [])
+  const measured = new Map(run.parts.map((p) => [p.id, p]))
+  const partial = previous !== null && run.parts.length < opts.parts.length
+  const parts: PartRecord[] = []
+  for (const entry of opts.parts) {
+    const v = measured.get(entry.id)
+    const prev = was.get(entry.id)
+    if (!v) {
+      if (partial && prev) parts.push(prev)
+      continue
+    }
+    const size = sizes(v)
+    let bumped = false
+    const budget = {} as Budget
+    for (const key of BUDGET_KEYS) {
+      const kept = prev?.budget[key]
+      if (kept !== undefined && size[key] <= kept) {
+        budget[key] = kept
+        continue
+      }
+      budget[key] = size[key] + BYTE_SLACK
+      if (kept === undefined) continue
+      bumped = true
+      raised.push(`${entry.id} ${BUDGET_NAME[key]}: ${kept} B to ${budget[key]} B`)
+    }
+    const reason = bumped ? opts.reason : prev?.raised
+    parts.push({
+      id: v.id,
+      family: v.family,
+      covers: v.covers,
+      interaction: v.interaction,
+      chart: v.chart,
+      ssr: v.ssr,
+      staticClean: v.staticClean,
+      ...(v.chart ? { picture: chartVerdict(v) } : {}),
+      ...decide(entry, v, `up to ${kb(budget.further)}`),
+      budget,
+      ...(reason ? { raised: reason } : {}),
+    })
+  }
+  const fams = new Map(run.families.map((f) => [f.family, f]))
+  const families: FamilyRecord[] = []
+  const order = [...new Set([...(previous?.families.map((f) => f.family) ?? []), ...fams.keys()])]
+  for (const name of order) {
+    const f = fams.get(name)
+    const prev = previous?.families.find((p) => p.family === name)
+    if (!f) {
+      if (partial && prev) families.push(prev)
+      continue
+    }
+    let bumped = false
+    const js = {} as Record<Mode, number>
+    for (const m of MODES) {
+      const kept = prev?.js[m]
+      if (kept !== undefined && f.js[m] <= kept) {
+        js[m] = kept
+        continue
+      }
+      js[m] = f.js[m] === 0 ? 0 : f.js[m] + BYTE_SLACK
+      if (kept === undefined) continue
+      bumped = true
+      raised.push(`family ${name} ${LABEL[m]}: ${kept} B to ${js[m]} B`)
+    }
+    const reason = bumped ? opts.reason : prev?.raised
+    families.push({ family: name, parts: f.parts, js, ...(reason ? { raised: reason } : {}) })
+  }
+  const keptRuntime = previous?.runtime.js
+  let runtime: MatrixRecord['runtime']
+  if (keptRuntime !== undefined && run.runtime.js <= keptRuntime) runtime = previous!.runtime
+  else {
+    runtime = { js: run.runtime.js + BYTE_SLACK }
+    if (keptRuntime !== undefined) {
+      raised.push(`the island runtime: ${keptRuntime} B to ${runtime.js} B`)
+      if (opts.reason) runtime.raised = opts.reason
+    }
+  }
+  return { record: { browser: run.browser, slack: BYTE_SLACK, runtime, parts, families }, raised }
+}
+
+const RAISE = 'raise it on purpose: make astro-matrix-run ASTRO_PARTS=<id> UPDATE=1 REASON="<why>"'
+
+/**
+ * What the fresh run does worse than the record allows: `failures` fail the check, `notes` only report. `partial`
  * (a `--parts` run, `make astro-matrix-fast`) checks the parts and families it measured and leaves the rest to CI.
  */
 export function compare(
   recorded: MatrixRecord,
-  fresh: MatrixRecord,
+  fresh: Run,
   partial = false,
 ): { failures: string[]; notes: string[] } {
   const failures: string[] = []
@@ -266,35 +434,37 @@ export function compare(
       )
     if (!was.staticClean && is.staticClean)
       notes.push(`${was.id}: now static-clean; record it with UPDATE=1`)
-    for (const m of MODES) {
-      if (is.modes[m].js > was.modes[m].js + BYTE_SLACK)
+    if (was.best !== is.best)
+      notes.push(
+        `${was.id}: best is now ${is.best}, the record says ${was.best}; record it with UPDATE=1`,
+      )
+    const size = sizes(is)
+    for (const key of BUDGET_KEYS)
+      if (size[key] > was.budget[key])
         failures.push(
-          `${was.id} ${m}: JavaScript ${is.modes[m].js} B gzip, budget ${was.modes[m].js} B`,
+          `${was.id}: ${BUDGET_NAME[key]} ${size[key]} B gzip, budget ${was.budget[key]} B; ${RAISE}`,
         )
-      if (is.modes[m].css > was.modes[m].css + BYTE_SLACK)
-        failures.push(`${was.id} ${m}: CSS ${is.modes[m].css} B gzip, budget ${was.modes[m].css} B`)
-    }
   }
   for (const p of fresh.parts)
     if (!recorded.parts.some((r) => r.id === p.id))
-      notes.push(`${p.id}: new part; record it with UPDATE=1`)
+      notes.push(`${p.id}: new part with no budget; record it with UPDATE=1`)
   const families = new Map(fresh.families.map((f) => [f.family, f]))
   for (const was of recorded.families) {
     const is = families.get(was.family)
     if (!is) continue
     for (const m of MODES)
-      if (is.js[m] > was.js[m] + BYTE_SLACK)
+      if (is.js[m] > was.js[m])
         failures.push(
-          `family ${was.family} ${m}: JavaScript ${is.js[m]} B gzip, budget ${was.js[m]} B`,
+          `family ${was.family} ${m}: JavaScript ${is.js[m]} B gzip, budget ${was.js[m]} B; ${RAISE}`,
         )
   }
   if (fresh.zeroJs.js > 0 || fresh.zeroJs.scriptTags > 0)
     failures.push(
       `a page without an island loaded ${fresh.zeroJs.js} B of JavaScript from ${fresh.zeroJs.scriptTags} script tags`,
     )
-  if (fresh.runtime.js > recorded.runtime.js + BYTE_SLACK)
+  if (fresh.runtime.js > recorded.runtime.js)
     failures.push(
-      `the island runtime is ${fresh.runtime.js} B gzip, budget ${recorded.runtime.js} B`,
+      `the island runtime is ${fresh.runtime.js} B gzip, budget ${recorded.runtime.js} B; ${RAISE}`,
     )
   return { failures, notes }
 }
@@ -328,21 +498,13 @@ function cellOf(v: Verdict, m: Mode): string {
 const esc = (s: string): string => s.replaceAll('|', '\\|').replaceAll('\n', ' ')
 const code = (s: string): string => '`' + s + '`'
 
-function chartVerdict(v: Verdict): string {
-  if (v.ssr !== 'ok') return `no: ${v.ssr} on the server`
-  if (v.staticClean) return 'correct'
-  const at = v.views['1440-light']
-  return at.sameSize && at.changed <= PIXEL_TOLERANCE
-    ? 'correct at the declared width only'
-    : 'wrong'
-}
-
-export function render(rec: MatrixRecord, findings: readonly Finding[]): string {
+/** The measured table of one run: `.astro-matrix/matrix.md`, kept by CI as an artifact. */
+export function renderRun(rec: Run, findings: readonly Finding[]): string {
   const clean = rec.parts.filter((p) => p.staticClean).length
   const out: string[] = [
-    '# Astro matrix',
+    '# Astro matrix: the measured run',
     '',
-    '<!-- @generated by apps/playground-astro/scripts/matrix.ts --update from astro-matrix.json: do not edit -->',
+    '<!-- written by apps/playground-astro/scripts/matrix.ts from results.json on every run; never committed -->',
     '',
     `Every basalt-ui part rendered by ${code('apps/playground-astro')} (Astro 7, @astrojs/react, Tailwind 4, the package's built dist) in each render mode and measured in a real browser (${rec.browser}). How to run it and how a change is checked against it: ${code('docs/validation.md')} § Astro matrix.`,
     '',
@@ -417,7 +579,7 @@ export function render(rec: MatrixRecord, findings: readonly Finding[]): string 
         const text = p.sameSize
           ? `${(p.ratio * 100).toFixed(2)}%`
           : `size ${p.static.join('x')} vs ${p.only.join('x')}`
-        return view.endsWith('light') ? `[${text}](astro-matrix/${v.id}.${view}.png)` : text
+        return view.endsWith('light') ? `[${text}](shots/${v.id}.${view}.png)` : text
       })
       out.push(
         `| ${v.id} | ${chartVerdict(v)} | ${cells.join(' | ')} | client:visible, ${kb(v.modes.visible.further)} further |`,
@@ -459,6 +621,107 @@ export function render(rec: MatrixRecord, findings: readonly Finding[]): string 
   return out.join('\n')
 }
 
+/** docs/v3/verdicts/astro-matrix.md: the record as prose and tables, rendered from the JSON alone. */
+export function render(rec: MatrixRecord, findings: readonly Finding[]): string {
+  const clean = rec.parts.filter((p) => p.staticClean).length
+  const out: string[] = [
+    '# Astro matrix',
+    '',
+    '<!-- @generated by apps/playground-astro/scripts/matrix.ts from astro-matrix.json: do not edit -->',
+    '',
+    `Every basalt-ui part rendered by ${code('apps/playground-astro')} (Astro 7, @astrojs/react, Tailwind 4, the package's built dist) in each render mode and measured in a real browser (${rec.browser}) on every CI head. This file is the record a run is checked against: each part's verdicts and its byte budgets. The measured run (every size, LCP, CLS, the pixel diffs and side-by-side pictures, the exports no demo renders) is ${code('.astro-matrix/matrix.md')}, kept as the ${code('astro-matrix')} artifact of the CI run. How to run it and how a budget is raised: ${code('docs/validation.md')} § Astro matrix.`,
+    '',
+    '## Summary',
+    '',
+    `- **${rec.parts.length} parts**, **${clean}** static-clean: the HTML Astro writes with no directive matches the client:only render word for word and to within ${PIXEL_TOLERANCE} pixels (a measured flake) at 1440 and 390 px, light and dark.`,
+    '- **Zero JavaScript without an island:** a page without an island loads no script, checked on every run.',
+    `- **The first React island** (React, react-dom and the Astro island runtime, before any basalt code) is budgeted at ${kb(rec.runtime.js)} of gzip JavaScript.`,
+    `- **Budgets** are gzip ceilings, set at the size measured then plus ${kb(rec.slack)}. A run fails past one and never below one; a budget is raised on purpose, with its reason, and an improvement leaves the record as it is.`,
+    '',
+    `Columns: ${code('No directive')} is the static HTML: ${code('clean')}, ${code('differs')} from the client:only picture, or ${code('fails')} on the server. JavaScript is the most any hydrating mode's page loads; further island is what it loads beyond the baseline island, the cost of adding the part to a page that already has one.`,
+    '',
+    '## Per part',
+    '',
+    '| Part | Exports | No directive | Best | JavaScript | Further island | CSS | Why |',
+    '|-|-|-|-|-|-|-|-|',
+  ]
+  for (const v of rec.parts) {
+    const best = v.best === 'none' ? 'none works' : LABEL[v.best]
+    const pic =
+      v.ssr === 'fail'
+        ? 'fails'
+        : (v.staticClean ? 'clean' : 'differs') +
+          (v.ssr === 'partial' ? ' (part left to client)' : '')
+    out.push(
+      `| ${v.id} | ${v.covers.join(', ')} | ${pic} | ${best} | ${kb(v.budget.js)} | ${kb(v.budget.further)} | ${kb(v.budget.css)} | ${esc(v.why)} |`,
+    )
+  }
+  out.push(
+    '',
+    '## Several islands on one page',
+    '',
+    `Every part of a family on one page, each its own island, in one mode: the JavaScript budget of each page. Astro sends React once per page; client:visible counts only the islands in the first viewport.`,
+    '',
+    `| Family | Parts | ${MODES.map((m) => LABEL[m]).join(' | ')} |`,
+    `|-|-|${MODES.map(() => '-').join('|')}|`,
+  )
+  for (const f of rec.families)
+    out.push(`| ${f.family} | ${f.parts} | ${MODES.map((m) => kb(f.js[m])).join(' | ')} |`)
+  const charts = rec.parts.filter((p) => p.chart)
+  if (charts.length) {
+    out.push(
+      '',
+      '## Charts: is the static picture correct?',
+      '',
+      `Each kind renders in a box of a declared 640 px (the engine's server width, ${code('INITIAL_WIDTH')} in ${code('packages/basalt-ui/src/charts/sizing.ts')}); at 390 the box is narrower than that. The run's matrix.md gives the share of differing pixels per view and the side-by-side pictures.`,
+      '',
+      '| Kind | Static picture | Hover on top |',
+      '|-|-|-|',
+    )
+    for (const v of charts)
+      out.push(
+        `| ${v.id} | ${v.picture ?? ''} | client:visible, up to ${kb(v.budget.further)} further |`,
+      )
+  }
+  const raised = [
+    ...(rec.runtime.raised ? [`the island runtime: ${rec.runtime.raised}`] : []),
+    ...rec.parts.filter((p) => p.raised).map((p) => `${p.id}: ${p.raised}`),
+    ...rec.families.filter((f) => f.raised).map((f) => `family ${f.family}: ${f.raised}`),
+  ]
+  if (raised.length) out.push('', '## Raised budgets', '', ...raised.map((r) => `- ${esc(r)}`))
+  const relevant = findings.filter(
+    (f) => f.parts === '*' || f.parts.some((id) => rec.parts.some((p) => p.id === id)),
+  )
+  if (relevant.length) {
+    out.push(
+      '',
+      '## Findings',
+      '',
+      'The cause of each difference, read from the source, and the plan row that carries the fix where the part should need no JavaScript for its picture.',
+      '',
+    )
+    for (const f of relevant) {
+      const parts = f.parts === '*' ? [] : rec.parts.filter((p) => f.parts.includes(p.id))
+      const resolved =
+        parts.length && parts.every((p) => p.staticClean)
+          ? ' **Resolved: static-clean now; delete this finding.**'
+          : ''
+      const row = f.row ? ` Plan row ${code(f.row)}.` : ''
+      out.push(
+        `- **${f.parts === '*' ? 'Every page' : f.parts.join(', ')}**: ${f.cause}${row}${resolved}`,
+      )
+    }
+  }
+  out.push(
+    '',
+    '## Not measured',
+    '',
+    `${code('server:defer')} (server islands) is not measured: it needs an adapter and on-demand rendering, and this playground builds static output only.`,
+    '',
+  )
+  return out.join('\n')
+}
+
 /** The record as JSON with one part and one family per line, so a diff of the record reads part by part. */
 export function serialize(rec: MatrixRecord): string {
   const { parts, families, ...head } = rec
@@ -472,46 +735,60 @@ if (import.meta.main) {
   const { values } = parseArgs({
     options: {
       update: { type: 'boolean', default: false },
+      reason: { type: 'string' },
+      render: { type: 'boolean', default: false },
+      'check-render': { type: 'boolean', default: false },
       results: { type: 'string', default: join(import.meta.dir, '../.astro-matrix/results.json') },
-      shots: { type: 'string', default: join(import.meta.dir, '../.astro-matrix/shots') },
     },
   })
   const repo = join(import.meta.dir, '../../..')
   const jsonPath = join(repo, 'docs/v3/verdicts/astro-matrix.json')
   const mdPath = join(repo, 'docs/v3/verdicts/astro-matrix.md')
+  const recorded = JSON.parse(await readFile(jsonPath, 'utf8')) as MatrixRecord
+  if (values.render || values['check-render']) {
+    const md = render(recorded, FINDINGS)
+    if (values.render) await writeFile(mdPath, md)
+    else if ((await readFile(mdPath, 'utf8')) !== md) {
+      console.error(
+        'astro-matrix: docs/v3/verdicts/astro-matrix.md is not rendered from astro-matrix.json: bun apps/playground-astro/scripts/matrix.ts --render',
+      )
+      process.exit(1)
+    }
+    process.exit(0)
+  }
   const results = JSON.parse(await readFile(values.results!, 'utf8')) as Results
   const exported = await exportedParts(join(repo, 'packages/basalt-ui/scripts/export-surface'))
   const fresh = judge(results, PARTS, exported)
   const partial = results.only !== undefined
-  if (values.update && partial) {
-    console.error(
-      'astro-matrix: a --parts run measured only some parts; record a whole run (make astro-matrix UPDATE=1)',
-    )
-    process.exit(1)
-  }
+  const runMd = join(dirname(values.results!), 'matrix.md')
+  await writeFile(runMd, renderRun(fresh, FINDINGS))
   if (values.update) {
-    await writeFile(jsonPath, serialize(fresh))
-    await writeFile(mdPath, render(fresh, FINDINGS))
-    const dir = join(repo, 'docs/v3/verdicts/astro-matrix')
-    await mkdir(dir, { recursive: true })
-    for (const v of fresh.parts.filter((p) => p.chart))
-      for (const view of VIEWS.filter((x) => x.endsWith('light')))
-        await copyFile(join(values.shots!, `${v.id}.${view}.png`), join(dir, `${v.id}.${view}.png`))
+    const { record, raised } = toRecord(fresh, recorded, { parts: PARTS, reason: values.reason })
+    if (raised.length && !values.reason) {
+      for (const r of raised) console.error(`astro-matrix: raise ${r}`)
+      console.error(
+        'astro-matrix: a raise needs its reason: UPDATE=1 REASON="<why the part grew>"; nothing written',
+      )
+      process.exit(1)
+    }
+    await writeFile(jsonPath, serialize(record))
+    await writeFile(mdPath, render(record, FINDINGS))
+    for (const r of raised) console.log(`astro-matrix: raised ${r} (${values.reason})`)
     console.log(
-      `astro-matrix: recorded ${fresh.parts.length} parts in docs/v3/verdicts/astro-matrix.{json,md}`,
+      `astro-matrix: recorded ${fresh.parts.length}${partial ? ` of ${PARTS.length}` : ''} parts in docs/v3/verdicts/astro-matrix.{json,md}; the run is ${runMd}`,
     )
   } else {
-    const recorded = JSON.parse(await readFile(jsonPath, 'utf8')) as MatrixRecord
     const { failures, notes } = compare(recorded, fresh, partial)
     if ((await readFile(mdPath, 'utf8')) !== render(recorded, FINDINGS))
       failures.push(
-        'docs/v3/verdicts/astro-matrix.md is not rendered from astro-matrix.json: record it with UPDATE=1',
+        'docs/v3/verdicts/astro-matrix.md is not rendered from astro-matrix.json: bun apps/playground-astro/scripts/matrix.ts --render',
       )
     for (const n of notes) console.log(`astro-matrix: ${n}`)
     for (const f of failures) console.error(`astro-matrix: FAIL ${f}`)
+    console.log(`astro-matrix: the measured run is ${runMd}`)
     if (failures.length) process.exit(1)
     console.log(
-      `astro-matrix: ${fresh.parts.length}${partial ? ` of ${recorded.parts.length}` : ''} parts checked against the record, no regression${partial ? '; CI checks every part' : ''}`,
+      `astro-matrix: ${fresh.parts.length}${partial ? ` of ${recorded.parts.length}` : ''} parts inside their budgets, no regression${partial ? '; CI checks every part' : ''}`,
     )
   }
 }

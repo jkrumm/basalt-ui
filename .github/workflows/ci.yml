@@ -305,7 +305,7 @@ jobs:
       - name: Astro matrix (build the Astro playground, measure, check against the record)
         run: make astro-matrix-run
 
-      # The raw results and the chart pictures, to compare a failing run with the record.
+      # The raw results, the measured table (matrix.md) and the pictures, to compare a run with the record's budgets.
       - name: Keep the measurements
         if: always()
         uses: actions/upload-artifact@v7
