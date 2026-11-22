@@ -1184,7 +1184,7 @@
     }
   }
 
-  /* the view: a 7 px resize handle on the head's end edge, the brand rule while dragged or focused */
+  /* the view: a 7 px resize handle on the head's end edge, a bar while dragged */
   [data-slot='table-resize'] {
     position: absolute;
     inset-block: 0;
