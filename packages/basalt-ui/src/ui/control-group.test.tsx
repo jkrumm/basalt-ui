@@ -123,6 +123,23 @@ describe('control-group module', () => {
     expect(byName(container, 'clear').className).not.toMatch(/(^| )grow( |$)/)
   })
 
+  test('a small icon button in a group keeps its hit area inside its own edge', () => {
+    const { container } = render(
+      <ButtonGroup size="sm" aria-label="Zoom">
+        <Button shape="icon" aria-label="Zoom out">
+          -
+        </Button>
+        <Button shape="icon" aria-label="Zoom in">
+          +
+        </Button>
+      </ButtonGroup>,
+    )
+    const cls = byName(container, 'Zoom in').className
+    expect(cls).toContain('pointer-coarse:after:inset-x-0')
+    expect(cls).not.toContain('pointer-coarse:after:-inset-x-2.5')
+    expect(cls).not.toContain('pointer-coarse:mx-2.5')
+  })
+
   test('a popup opened from a group draws its controls with their own defaults', () => {
     render(
       <ButtonGroup size="sm" variant="ghost" fill>
