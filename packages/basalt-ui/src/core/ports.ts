@@ -33,6 +33,15 @@ export type Box = { height: number | 'fill'; phase: 'ready' | 'stale' }
 /** The composite owns the box at every phase; the slot only draws inside it. */
 export type BoxSlot = (box: Box) => ReactNode
 
+/**
+ * A change against a base: the figure's delta pill. `polarity` names whether up is good, bad or neither,
+ * which sets the tint; the sign of `value` sets the arrow.
+ *
+ * @useWhen a figure carries its change against a period, passed as `delta` on a stat card or a chart figure
+ * @neverWhen the change is not a number the reader can act on (state it in `sub`) or no base exists
+ * @example
+ * delta={{ value: '+12%', polarity: 'up-good', label: 'vs last week' }}
+ */
 export type Delta = {
   /** Printed as given, never scaled: `0.12` shows 0.12, not 12 %, so pass `'+12%'`; the sign sets the arrow. */
   value: number | string
@@ -40,7 +49,14 @@ export type Delta = {
   label?: string
 }
 
-/** The verdict a card shows: a tone and a word, the type of `StatCard status`. */
+/**
+ * The verdict a card shows: a tone and a word, the type of `StatCard status`.
+ *
+ * @useWhen a card states a state in one word with a tone (`status` on a stat card)
+ * @neverWhen the state is a count or a sentence, or the row is a table cell (use `Status` from `basalt-ui/ui/status`)
+ * @example
+ * status={{ tone: 'warn', label: 'Degraded' }}
+ */
 export type Verdict = { tone: Tone; label: string }
 
 /** @deprecated Use `Verdict`, which no `ui/*` component shares a name with; removed in the next minor. */

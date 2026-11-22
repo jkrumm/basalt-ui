@@ -21,6 +21,11 @@ export type Menu = CardMenu
 /**
  * The measured-empty state. It cannot lack a cause. `filtered` is the no-results case under active
  * filters: it renders Clear filters instead of `action`.
+ *
+ * @useWhen a frame's query settled with no rows and the card must say why and what to do next
+ * @neverWhen the query is pending or failed (pass the phase) or the card is merely short of data
+ * @example
+ * empty={{ cause: 'No deploys in this range', action: { label: 'Widen range', onClick: widen } }}
  */
 export type Empty = { cause: string; action?: CardAction; filtered?: { reset: () => void } }
 
@@ -30,7 +35,14 @@ export type FrameState = {
   empty?: Empty | null | undefined
 }
 
-/** One labelled fact in a footer. `value` is data, never a node, so every card formats alike. */
+/**
+ * One labelled fact in a footer. `value` is data, never a node, so every card formats alike.
+ *
+ * @useWhen a card footer states a fact beside its figure: a source, a time, an id
+ * @neverWhen the text is the card's headline figure or a sentence (use `value` or `sub`)
+ * @example
+ * { label: 'Updated', value: '14:02', mono: true }
+ */
 export type Fact = {
   label: string
   value: string | number
@@ -40,6 +52,11 @@ export type Fact = {
 
 /**
  * Capped at 2; `null` or `undefined` drops one, so a conditional fact type-checks without a hole.
+ *
+ * @useWhen a card's `footer` prop takes one or two facts
+ * @neverWhen a card needs three facts or a node in the footer (cut a fact: the footer holds two)
+ * @example
+ * footer={[{ label: 'Source', value: 'CI' }, stale ? { label: 'Age', value: '2 h' } : null]}
  */
 export type FootFacts = readonly [Fact | null | undefined, (Fact | null | undefined)?]
 
