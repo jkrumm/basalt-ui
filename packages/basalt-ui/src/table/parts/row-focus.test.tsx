@@ -68,6 +68,7 @@ describe('DataTable focus', () => {
   test('pointing at a row sets its item index, whatever the sort', () => {
     render(<Subject />)
     fireEvent.click(screen.getByRole('button', { name: 'Name' }))
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Sort ascending' }))
     expect(bodyRows().map((tr) => tr.textContent)).toEqual(['Alpha', 'Bravo', 'Charlie'])
     fireEvent.pointerEnter(bodyRows()[0] as HTMLElement)
     expect(seen.handle?.index).toBe(1)

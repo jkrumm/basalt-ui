@@ -11,7 +11,6 @@ import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect
 import { cn } from '../../core/cn'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
-import { Button, Pressable } from '../../ui/button'
 import { Popover, PopoverContent } from '../../ui/popover'
 import { TableHead, TableHeader, TableRow } from '../../ui/table'
 import type { DataTableInstance } from '../contract'
@@ -234,41 +233,44 @@ const ARIA_SORT: Record<SortDirection, 'ascending' | 'descending' | 'none'> = {
   none: 'none',
 }
 
-/**
- * The sort mark, drawn at rest so a reader sees the column sorts: faint ink until it sorts, brand
- * ink once it does. Its box never changes, so the header keeps its width in every state.
- */
-function SortMark({ direction }: { direction: SortDirection }): ReactElement {
+/** The sort arrow a sorted column shows after its label: up ascending, down descending. */
+function SortArrow({ direction }: { direction: 'asc' | 'desc' }): ReactElement {
   return (
     <svg
       data-slot="table-sort-mark"
-      viewBox="0 0 8 12"
-      className={cn(
-        'size-2 shrink-0',
-        direction === 'none'
-          ? 'text-muted-foreground opacity-60 group-hover/sort:opacity-100'
-          : 'text-brand',
-      )}
-      fill="currentColor"
+      data-direction={direction}
+      viewBox="0 0 16 16"
+      className="size-3 shrink-0 text-brand"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M4 0 8 5H0z" className={direction === 'desc' ? 'opacity-30' : undefined} />
-      <path d="M4 12 0 7h8z" className={direction === 'asc' ? 'opacity-30' : undefined} />
+      <path d={direction === 'asc' ? 'M8 13V3M4 7l4-4 4 4' : 'M8 3v10M4 9l4 4 4-4'} />
     </svg>
   )
 }
 
-function FunnelGlyph(): ReactElement {
+/** The one mark a filtered column shows after its label. */
+function FilterMark(): ReactElement {
   return (
-    <svg viewBox="0 0 16 16" className="size-3" fill="currentColor" aria-hidden="true">
+    <svg
+      data-slot="table-filter-mark"
+      viewBox="0 0 16 16"
+      className="size-3 shrink-0 text-brand"
+      fill="currentColor"
+      aria-hidden="true"
+    >
       <path d="M2 3h12l-4.5 5.5V13l-3 1.5V8.5z" />
     </svg>
   )
 }
 
-/** The header's label: the column's icon, when it declares one, then its text. */
-function HeaderLabel<T>({ spec }: { spec: KindSpec<T> }): ReactElement {
-  const Icon = spec.headerIcon
+/** The header's label: the column's icon (unless the table turned icons off), then its text. */
+function HeaderLabel<T>({ spec, icons }: { spec: KindSpec<T>; icons: boolean }): ReactElement {
+  const Icon = icons ? spec.headerIcon : undefined
   const text = (
     <span className="min-w-0 truncate" title={spec.header}>
       {spec.header}
@@ -277,22 +279,19 @@ function HeaderLabel<T>({ spec }: { spec: KindSpec<T> }): ReactElement {
   if (Icon === undefined) return text
   return (
     <span data-slot="table-head-label" className="inline-flex min-w-0 items-center gap-1.5">
-      <Icon aria-hidden="true" size={14} className="shrink-0 text-muted-foreground" />
+      <Icon aria-hidden="true" size={16} className="size-icon shrink-0 text-muted-foreground" />
       {text}
     </span>
   )
 }
 
-/** The ink of a header control: faint at rest, brand while it holds state. */
-const restInk = 'text-muted-foreground hover:text-foreground data-popup-open:text-foreground'
-
 /**
- * One header's controls, in one fixed order: the label with its sort mark (a sortable column), the
- * filter button (a filterable column), the ▾ column menu. Every control shows at rest on a fine
- * pointer, so a reader sees what the column does without hovering it; on a coarse pointer the menu
- * stays the door and the filter button shows only while the column is filtered. The filter button
- * and the menu's `Filter...` open one popover, anchored to the header so the editor sits under the
- * column it filters; focus returns to the control that opened it.
+ * One header at rest: its icon and label, and only the state it holds: a sorted column adds its
+ * direction arrow, a filtered column one mark, each named for assistive tech (`aria-sort` stays on the
+ * cell). The whole content is one button that opens the column's one menu, by click, tap or the
+ * keyboard; the menu's `Filter column...` and `Order categories...` open their panel in a popover
+ * anchored to the header, so the editor sits under the column it filters, and focus returns to the
+ * header button when it closes.
  */
 function HeaderContent<T>({
   instance,
@@ -312,81 +311,47 @@ function HeaderContent<T>({
   const titleId = useId()
   const anchor = useRef<HTMLDivElement | null>(null)
   const trigger = useRef<HTMLButtonElement | null>(null)
-  const returnTo = useRef<HTMLButtonElement | null>(null)
   const [panel, setPanel] = useState<'filter' | 'order' | null>(null)
-  const openFrom = (from: HTMLButtonElement | null, next: 'filter' | 'order'): void => {
-    returnTo.current = from
-    setPanel(next)
-  }
-  const sortable = spec.sort !== null
   const filterable = spec.filter !== null
   const rankable = rankableSpecs([spec]).length > 0
   const active = model.state.request.filters.find(
     (f) => f.id === spec.id && isUsable(f.op, f.values),
   )
+  // The button reads as the column and the state it holds: "Amount (EUR), sorted ascending, filtered: over 100".
+  const name = [
+    spec.header,
+    direction === 'asc' && t('table.sortedAsc'),
+    direction === 'desc' && t('table.sortedDesc'),
+    active !== undefined && t('table.filteredBy', textOf(spec, active).value),
+  ]
+    .filter((part): part is string => typeof part === 'string')
+    .join(', ')
   return (
     <div
       ref={anchor}
       className={cn(
-        'flex min-w-0 items-center gap-1',
-        numeric && 'flex-row-reverse',
+        'flex min-w-0',
+        numeric && 'justify-end',
         spec.align === 'center' && 'justify-center',
       )}
     >
-      {sortable ? (
-        <Pressable
-          data-slot="table-sort"
-          className={cn(
-            'group/sort inline-flex min-h-6 min-w-0 items-center gap-1 pointer-coarse:after:-inset-x-1',
-            numeric && 'flex-row-reverse',
-          )}
-          onClick={() => model.toggleSort(spec.id)}
-        >
-          <HeaderLabel spec={spec} />
-          <SortMark direction={direction} />
-        </Pressable>
-      ) : (
-        <HeaderLabel spec={spec} />
-      )}
-      {filterable && (
-        <Button
-          data-active={active === undefined ? undefined : ''}
-          size="sm"
-          shape="icon"
-          variant="ghost"
-          aria-label={
-            active === undefined
-              ? t('table.filterOf', spec.header)
-              : t('table.filterMark', spec.header, textOf(spec, active).value)
-          }
-          aria-haspopup="dialog"
-          aria-expanded={panel === 'filter'}
-          className={cn(
-            'shrink-0',
-            active === undefined
-              ? cn(restInk, 'pointer-coarse:hidden', panel === 'filter' && 'text-foreground')
-              : 'text-brand',
-          )}
-          onClick={(event) => openFrom(event.currentTarget, 'filter')}
-        >
-          <FunnelGlyph />
-        </Button>
-      )}
-      {/* beside the sort button, never over it: a narrow column truncates the label and keeps both targets; on touch the hit area grows away from the sort button */}
       <ColumnActionsMenu
         table={instance}
         column={spec.id}
         triggerRef={trigger}
-        {...(filterable && { onFilter: () => openFrom(trigger.current, 'filter') })}
-        {...(rankable && { onOrder: () => openFrom(trigger.current, 'order') })}
+        label={name}
+        {...(filterable && { onFilter: () => setPanel('filter') })}
+        {...(rankable && { onOrder: () => setPanel('order') })}
         className={cn(
-          'shrink-0',
-          restInk,
-          numeric
-            ? 'pointer-coarse:after:inset-x-auto pointer-coarse:after:right-0 pointer-coarse:after:w-11'
-            : 'pointer-coarse:after:inset-x-auto pointer-coarse:after:left-0 pointer-coarse:after:w-11',
+          'group/sort inline-flex min-h-6 max-w-full min-w-0 items-center gap-1 rounded-sm',
+          'hover:text-foreground data-popup-open:text-foreground',
+          numeric && 'flex-row-reverse',
         )}
-      />
+      >
+        <HeaderLabel spec={spec} icons={model.headerIcons} />
+        {direction !== 'none' && <SortArrow direction={direction} />}
+        {active !== undefined && <FilterMark />}
+      </ColumnActionsMenu>
       <Popover
         open={panel !== null}
         onOpenChange={(open) => {
@@ -396,7 +361,7 @@ function HeaderContent<T>({
         <PopoverContent
           anchor={anchor}
           align={numeric ? 'end' : 'start'}
-          finalFocus={returnTo}
+          finalFocus={trigger}
           aria-labelledby={titleId}
           {...(spec.filter === 'range' && panel === 'filter' && { className: 'w-80' })}
         >

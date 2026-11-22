@@ -62,6 +62,10 @@ export type TableMessages = Record<
   | 'table.resetColumn'
   | 'table.moveLeft'
   | 'table.moveRight'
+  | 'table.moveStart'
+  | 'table.moveEnd'
+  | 'table.sortedAsc'
+  | 'table.sortedDesc'
   | 'table.pinColumn'
   | 'table.unpinColumn'
   | 'table.columns'
@@ -105,13 +109,14 @@ export type TableMessages = Record<
     (f: Format, name: string) => string
   > &
   Record<'table.cellFilter', (f: Format, header: string, value: string) => string> &
-  Record<'table.rangeBetween' | 'table.filterMark', (f: Format, a: string, b: string) => string> &
+  Record<'table.rangeBetween', (f: Format, a: string, b: string) => string> &
   Record<
     | 'table.rangeFrom'
     | 'table.rangeTo'
     | 'table.dayFrom'
     | 'table.dayTo'
     | 'table.filterOf'
+    | 'table.filteredBy'
     | 'table.orderOf'
     | 'table.dateRange'
     | 'table.optionsOf'
@@ -157,7 +162,7 @@ export const table = {
   'table.chips': 'Active filters',
   'table.opContains': 'contains',
   'table.opAnyOf': 'is',
-  'table.headerFilter': 'Filter...',
+  'table.headerFilter': 'Filter column...',
   'table.rangeMin': 'Min',
   'table.rangeMax': 'Max',
   'table.filterClear': 'Clear',
@@ -176,11 +181,15 @@ export const table = {
   'table.bulkClear': 'Clear selection',
   'table.sortAsc': 'Sort ascending',
   'table.sortDesc': 'Sort descending',
-  'table.sortClear': 'Clear sort',
+  'table.sortClear': 'No sorting',
   'table.hideColumn': 'Hide column',
   'table.resetColumn': 'Reset column',
   'table.moveLeft': 'Move left',
   'table.moveRight': 'Move right',
+  'table.moveStart': 'Move to left end',
+  'table.moveEnd': 'Move to right end',
+  'table.sortedAsc': 'sorted ascending',
+  'table.sortedDesc': 'sorted descending',
   'table.pinColumn': 'Pin column',
   'table.unpinColumn': 'Unpin column',
   'table.columns': 'Columns',
@@ -224,12 +233,12 @@ export const table = {
   'table.errorNamed': (_f, name) => `${couldNotLoad(String(name))}.`,
   'table.cellFilter': (_f, header, value) => `Filter ${header} by ${value}`,
   'table.rangeBetween': (_f, from, to) => `${from} – ${to}`,
-  'table.filterMark': (_f, header, value) => `${header} filtered: ${value}. Edit filter`,
   'table.rangeFrom': (_f, value) => `≥ ${value}`,
   'table.rangeTo': (_f, value) => `≤ ${value}`,
   'table.dayFrom': (_f, value) => `from ${value}`,
   'table.dayTo': (_f, value) => `until ${value}`,
   'table.filterOf': (_f, header) => `Filter ${header}`,
+  'table.filteredBy': (_f, value) => `filtered: ${value}`,
   'table.orderOf': (_f, header) => `Order of ${header}`,
   'table.dateRange': (_f, header) => `${header} range`,
   'table.optionsOf': (_f, header) => `${header} values`,

@@ -119,21 +119,22 @@ function Title({ text }: { text?: boolean }): ReactElement {
   return <DataTable table={t} />
 }
 
-describe('a lone flexible title column stops at its cap and a filler column takes the rest', () => {
+describe('a flexible column shares the rest of the row with a trailing filler column', () => {
   test('the title is the one flexible column: a filler col and the root flag', () => {
     // The cap itself (40ch, 80ch with a sub line) is a calc() the DOM shim drops: tests/layout/table-expr11 measures it.
     const { container } = render(<Title />)
     expect(container.querySelector('col[data-fill]')).not.toBeNull()
+    expect(container.querySelector('col[data-fill]')?.hasAttribute('style')).toBe(false)
     expect(container.querySelector('[data-slot="table-root"]')?.hasAttribute('data-fill')).toBe(
       true,
     )
   })
 
-  test('another flexible column takes the width: no filler', () => {
+  test('another flexible column shares the row too: the filler is still the trailing col', () => {
     const { container } = render(<Title text />)
-    expect(container.querySelector('col[data-fill]')).toBeNull()
+    expect(container.querySelector('col[data-fill]')).not.toBeNull()
     expect(container.querySelector('[data-slot="table-root"]')?.hasAttribute('data-fill')).toBe(
-      false,
+      true,
     )
   })
 })

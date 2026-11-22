@@ -1,8 +1,9 @@
 /**
- * Owner review 2 (Issue 2418): a header shows its sort, filter and menu controls at rest and the
- * filter button opens the column's editor; a column carries a header icon and a value cell an icon.
+ * Owner review 2 (Issue 2418): a header is one button at rest, its kind icon and its label; a sorted
+ * or filtered column adds one mark each, named for assistive tech, and the button's menu opens the
+ * column's editor; a column carries a header icon and a value cell an icon.
  */
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { useEffect } from 'react'
 import type { ReactElement } from 'react'
@@ -54,14 +55,21 @@ const model = (): TableModel<Row> => {
   return latest
 }
 
-function Subject(): ReactElement {
+function Subject({
+  columns = COLUMNS,
+  headerIcons = true,
+}: {
+  columns?: typeof COLUMNS
+  headerIcons?: boolean
+}): ReactElement {
   const t = useDataTable<Row>({
     id: 'rest',
     label: 'Invoices',
-    columns: COLUMNS,
+    columns,
     data: ROWS,
     getRowId: (r) => r.id,
     mode: { kind: 'client' },
+    headerIcons,
   })
   const built = modelOf(t)
   useEffect(() => {
@@ -78,34 +86,69 @@ function Subject(): ReactElement {
 const header = (name: string): HTMLElement => screen.getByRole('columnheader', { name })
 
 describe('header controls at rest', () => {
-  test('a sortable, filterable column shows sort, filter and menu controls without a hover', () => {
+  test('at rest a header is one button: its kind icon and its label, with no sort or filter mark', () => {
     render(<Subject />)
     const amount = header('Amount (EUR)')
-    const sort = within(amount).getByRole('button', { name: 'Amount (EUR)' })
-    const mark = amount.querySelector('[data-slot="table-sort-mark"]')
-    const filter = within(amount).getByRole('button', { name: 'Filter Amount (EUR)' })
-    const menu = within(amount).getByRole('button', { name: 'Amount (EUR) column actions' })
-    expect(sort.querySelector('[data-slot="table-sort-mark"]')).toBe(mark)
-    for (const control of [mark, filter, menu]) {
-      // nothing hides a control until hover: no zero opacity at rest
-      expect(control?.getAttribute('class') ?? '').not.toMatch(/(^|\s)opacity-0(\s|$)/)
-    }
-    // a fine pointer sees the filter button at rest; a coarse one keeps the menu as the door
-    expect(filter.className).toContain('pointer-coarse:hidden')
-    expect(menu.className).not.toContain('pointer-coarse:hidden')
+    const buttons = within(amount).getAllByRole('button')
+    expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual(['Amount (EUR)'])
+    expect(buttons[0]?.querySelector('[data-slot="table-kind-icon"]')).not.toBeNull()
+    expect(buttons[0]?.querySelector('[data-slot="table-head-label"]')?.textContent).toBe(
+      'Amount (EUR)',
+    )
+    expect(amount.querySelector('[data-slot="table-sort-mark"]')).toBeNull()
+    expect(amount.querySelector('[data-slot="table-filter-mark"]')).toBeNull()
+    expect(amount.getAttribute('aria-sort')).toBe('none')
   })
 
-  test('the controls sit in one order: label and sort mark, filter, menu', () => {
+  test('a sorted column shows exactly one sort mark with its direction, and its name says sorted', () => {
     render(<Subject />)
-    const names = within(header('Amount (EUR)'))
-      .getAllByRole('button')
-      .map((el) => el.getAttribute('aria-label') ?? el.textContent)
-    expect(names).toEqual(['Amount (EUR)', 'Filter Amount (EUR)', 'Amount (EUR) column actions'])
+    act(() => model().state.setRequest({ sort: [{ id: 'amount', desc: false }] }))
+    const amount = header('Amount (EUR)')
+    const marks = amount.querySelectorAll('[data-slot="table-sort-mark"]')
+    expect(marks).toHaveLength(1)
+    expect(marks[0]?.getAttribute('data-direction')).toBe('asc')
+    expect(
+      within(amount).getByRole('button', { name: 'Amount (EUR), sorted ascending' }),
+    ).toBeTruthy()
+    expect(amount.getAttribute('aria-sort')).toBe('ascending')
+    expect(amount.querySelector('[data-slot="table-filter-mark"]')).toBeNull()
   })
 
-  test("clicking filter opens that column's editor in one click", async () => {
+  test('a filtered column shows exactly one filter mark, and its name says filtered', () => {
     render(<Subject />)
-    fireEvent.click(within(header('State')).getByRole('button', { name: 'Filter State' }))
+    act(() =>
+      model().state.setRequest({ filters: [{ id: 'amount', op: 'range', values: ['10', ''] }] }),
+    )
+    const amount = header('Amount (EUR)')
+    expect(amount.querySelectorAll('[data-slot="table-filter-mark"]')).toHaveLength(1)
+    expect(amount.querySelector('[data-slot="table-sort-mark"]')).toBeNull()
+    expect(within(amount).getByRole('button', { name: /^Amount \(EUR\), filtered: / })).toBeTruthy()
+  })
+
+  test('a sorted and filtered header keeps its label before one sort mark and one filter mark', () => {
+    render(<Subject />)
+    act(() =>
+      model().state.setRequest({
+        sort: [{ id: 'amount', desc: true }],
+        filters: [{ id: 'amount', op: 'range', values: ['10', ''] }],
+      }),
+    )
+    const button = within(header('Amount (EUR)')).getByRole('button', {
+      name: /^Amount \(EUR\), sorted descending, filtered: /,
+    })
+    expect(
+      Array.from(button.querySelectorAll('[data-slot]'), (el) => el.getAttribute('data-slot')),
+    ).toEqual(['table-head-label', 'table-kind-icon', 'table-sort-mark', 'table-filter-mark'])
+    expect(
+      button.querySelector('[data-slot="table-sort-mark"]')?.getAttribute('data-direction'),
+    ).toBe('desc')
+  })
+
+  test("the menu's Filter column... opens that column's editor, and the filtered header shows its mark", async () => {
+    render(<Subject />)
+    fireEvent.click(within(header('State')).getByRole('button', { name: 'State' }))
+    await settled()
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Filter column...' }))
     await settled()
     const dialog = screen.getByRole('dialog', { name: 'Filter State' })
     fireEvent.click(
@@ -115,12 +158,13 @@ describe('header controls at rest', () => {
     )
     await settled()
     expect(model().state.request.filters).toEqual([{ id: 'state', op: 'anyOf', values: ['done'] }])
-    // the same button now carries the filter, in brand ink
+    // the header button now names the filter and carries one filter mark, in brand ink
     const active = within(header('State')).getByRole('button', {
-      name: 'State filtered: Shipped. Edit filter',
+      name: 'State, filtered: Shipped',
     })
-    expect(active.hasAttribute('data-active')).toBe(true)
-    expect(active.className).toContain('text-brand')
+    const marks = active.querySelectorAll('[data-slot="table-filter-mark"]')
+    expect(marks).toHaveLength(1)
+    expect(marks[0]?.getAttribute('class')).toContain('text-brand')
   })
 
   test('a column without a filter shows no filter button', () => {
@@ -128,25 +172,23 @@ describe('header controls at rest', () => {
     expect(within(header('Due')).queryByRole('button', { name: /^Filter/ })).toBeNull()
   })
 
-  test('the header floor keeps room for the filter button and the icon', () => {
+  test('the header floor keeps room for the icon, and a filter mark takes none', () => {
     const plain = specOf(c.money('amount', { header: 'Amount', currency: 'EUR' }))
     const filtered = specOf(
       c.money('amount', { header: 'Amount', currency: 'EUR', filter: 'range' }),
     )
-    const iconed = specOf(
-      c.money('amount', { header: 'Amount', currency: 'EUR', headerIcon: Glyph('x') }),
+    const noIcon = specOf(
+      c.money('amount', { header: 'Amount', currency: 'EUR', headerIcon: false }),
     )
     const width = (s: typeof plain): number => (s.width === 'icon' ? 0 : s.width.ch)
-    expect(width(filtered)).toBeGreaterThan(width(plain))
-    expect(width(iconed)).toBeGreaterThan(width(plain))
-    // a short text column sizes to its values, never below its header with icon and filter
+    expect(width(filtered)).toBe(width(plain))
+    expect(width(plain)).toBeGreaterThan(width(noIcon))
+    // a short text column sizes to its values, never below its header with its icon
     const text = (o: Parameters<typeof c.text>[1]): number =>
       specOf(c.text('name', o)).content?.short?.minCh ?? 0
-    expect(text({ header: 'Category', headerIcon: Glyph('x') })).toBeGreaterThan(
-      text({ header: 'Category' }),
-    )
-    expect(text({ header: 'Category', filter: 'text' })).toBeGreaterThan(
-      text({ header: 'Category' }),
+    expect(text({ header: 'Category', filter: 'text' })).toBe(text({ header: 'Category' }))
+    expect(text({ header: 'Category' })).toBeGreaterThan(
+      text({ header: 'Category', headerIcon: false }),
     )
   })
 })
@@ -177,5 +219,37 @@ describe('icons', () => {
     expect(() => loose.number('amount', { icon: () => undefined })).toThrow(
       /c\.number\('amount'\) got unknown option "icon"/,
     )
+  })
+
+  test('a table headerIcons:false and a column headerIcon:false draw no header icon', () => {
+    const { unmount } = render(<Subject headerIcons={false} />)
+    expect(document.querySelectorAll('[data-slot="table-head-label"]')).toHaveLength(0)
+    expect(document.querySelectorAll('th [data-slot="table-kind-icon"]')).toHaveLength(0)
+    unmount()
+    render(
+      <Subject
+        columns={[
+          c.entity('name', { header: 'Name' }),
+          c.money('amount', { header: 'Amount', currency: 'EUR', headerIcon: false }),
+        ]}
+      />,
+    )
+    expect(
+      document.querySelector('th[data-col="name"] [data-slot="table-kind-icon"]'),
+    ).not.toBeNull()
+    expect(
+      document.querySelector('th[data-col="amount"] [data-slot="table-head-label"]'),
+    ).toBeNull()
+  })
+
+  test('a custom kind has no default header icon', () => {
+    const custom = c.custom('code', {
+      header: 'Code',
+      render: () => 'x',
+      sortValue: (r) => r.amount,
+      card: 'meta',
+      priority: 3,
+    })
+    expect(specOf(custom).headerIcon).toBeUndefined()
   })
 })

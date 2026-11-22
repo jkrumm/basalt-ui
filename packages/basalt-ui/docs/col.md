@@ -49,7 +49,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     href?: (row: T) => string | NavTarget
     icon?: (row: T) => IconComponent
     image?: (row: T) => string | null  // A logo or photo URL drawn as a 16 px face before the name (initials while it loads or when absent); wins over `icon`
@@ -68,7 +68,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     href?: (row: T) => string | NavTarget
     imageShape?: "object" | "person"  // `'object'` (default) is a rounded square for a company or logo; `'person'` a circle
     ref?: (row: T) => string | null  // A short reference (`INV-0042`) in muted mono beside the name
@@ -85,7 +85,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     avatar?: (row: T) => string | null  // The face's image URL; initials show while it loads or when absent
     role?: (row: T) => string | null  // Muted text after the name: a job title, a team
     href?: (row: T) => string | NavTarget
@@ -97,7 +97,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     avatar?: (name: string, row: T) => string | null  // The face's image URL of one name
     max?: number  // Faces shown before the `+N`
     filter?: "multi"
@@ -108,7 +108,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     labels?: Readonly<Record<string, string>>  // The text of a stored tag; the tag itself without an entry
     tone?: (tag: string) => Tone  // The chip's tone, from the status tone map
     filter?: "multi"  // `'multi'` filters by a checklist of the tags the rows hold; a row passes on any of its tags
@@ -120,7 +120,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     filter?: "range"
     picker?: DateRangeLike
     bad?: number
@@ -133,7 +133,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     href?: (row: T) => string | NavTarget  // A record link or in-app path; without it the value's own URL or address is the destination
     label?: (row: T) => string | null  // What is printed for the row; without it the value minus its scheme
     icon?: (row: T) => IconComponent
@@ -145,7 +145,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     filter?: "text"
     labels?: Readonly<Record<string, string>>  // The text of a stored value in the cell and the phone card; the stored value without an entry
     quiet?: boolean  // A muted one-line preview: secondary ink, truncated, never wrapped
@@ -156,7 +156,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     footer?: Aggregate
     filter?: "range"
     bounds?: readonly [number, number]
@@ -169,7 +169,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     footer?: Aggregate
     filter?: "range"
     bounds?: readonly [number, number]
@@ -182,7 +182,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     filter?: "range"
     picker?: DateRangeLike
     icon?: (row: T) => IconComponent  // The cell's icon for this row: a status icon replaces the dot, a boolean icon the check or cross
@@ -196,7 +196,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     filter?: "range"
     picker?: DateRangeLike
     icon?: (row: T) => IconComponent  // The cell's icon for this row: a status icon replaces the dot, a boolean icon the check or cross
@@ -208,7 +208,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     icon?: (row: T) => IconComponent  // The cell's icon for this row: a status icon replaces the dot, a boolean icon the check or cross
     options: readonly O[]
     labels?: Readonly<Record<O, string>>  // The text of each option in the cell, the phone card and the column filter; the stored value without it
@@ -221,7 +221,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     filter?: "range"
     bounds?: readonly [number, number]
     polarity: "neutral" | "up-good" | "up-bad"
@@ -234,7 +234,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     max?: number
     filter?: "range"
 
@@ -244,7 +244,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     icon?: (row: T) => IconComponent  // The cell's icon for this row: a status icon replaces the dot, a boolean icon the check or cross
     labels?: readonly [string, string]
     filter?: "multi"
@@ -253,7 +253,7 @@ col<T>(): Col<T>
     header?: string  // Header text
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     label: string
     render: (row: T, box: Box) => ReactNode
 
@@ -263,7 +263,7 @@ col<T>(): Col<T>
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
-    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    headerIcon?: false | IconComponent  // The icon drawn before the header text (any component with the `IconComponent` shape)
     label: (row: T) => string
     options: readonly string[]
     commit: (row: T, value: string) => unknown

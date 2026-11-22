@@ -9,9 +9,14 @@
  * ignores keys and clicks from a nested control; the wrapper also stops the portalled popup's
  * clicks, which React bubbles through the tree to the row. The control is a tab stop only in the
  * focused row of a table whose rows rove.
+ *
+ * At rest the control reads as the cell's text: `table.css` drops its border, ground and chevron
+ * until the row is hovered (a fine pointer), the control is focused, open or pending. F2 on the
+ * control (or on its row or grid cell, `core/keyboard.ts`) and Enter on the closed trigger open it;
+ * a tap opens it as a click does.
  */
 import { useState } from 'react'
-import type { ReactElement, SyntheticEvent } from 'react'
+import type { KeyboardEvent, ReactElement, SyntheticEvent } from 'react'
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem } from '../../ui/combobox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import type { SelectEdit } from '../core/kinds-spec'
@@ -29,6 +34,21 @@ export type SelectCellProps<T> = {
 }
 
 const stop = (event: SyntheticEvent): void => event.stopPropagation()
+
+/**
+ * F2 on the control, or Enter on the closed select trigger, opens it as a click would; the key never
+ * reaches the row. An open popup keeps its own keys.
+ */
+function onKey(event: KeyboardEvent<HTMLElement>): void {
+  event.stopPropagation()
+  const control = event.target
+  if (!(control instanceof HTMLElement)) return
+  if (control.getAttribute('aria-expanded') === 'true') return
+  const trigger = control.closest('[data-slot="select-trigger"]') === control
+  if (event.key !== 'F2' && !(event.key === 'Enter' && trigger)) return
+  event.preventDefault()
+  control.click()
+}
 
 /**
  * Runs a commit and waits for it either way, a synchronous throw included: the app's mutation
@@ -70,7 +90,7 @@ export function SelectCell<T>({ row, value, edit, tabbable }: SelectCellProps<T>
       aria-busy={pending || undefined}
       className="block min-w-0"
       onClick={stop}
-      onKeyDown={stop}
+      onKeyDown={onKey}
     >
       {edit.options.length > SELECT_MAX_OPTIONS ? (
         <Combobox items={edit.options} value={value} onValueChange={commit} disabled={pending}>

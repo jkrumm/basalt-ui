@@ -11,6 +11,7 @@
  * | `/`                           | focuses the table's own search (the root handler, not a global one) |
  * | Escape                        | `onClear` (the selection), unless the key came from a text field |
  * | Right, Left                   | nested rows only: open or step in, close or step to the parent |
+ * | F2                            | opens the row's first inline edit cell (`c.select`)           |
  *
  * The grid look passes `cells`: the stop is then one cell, never a row (the WAI-ARIA grid pattern).
  *
@@ -20,8 +21,8 @@
  * | Left, Right                   | the next cell in the row, stopping at its ends; on the identity cell of a nested row, open or close first |
  * | Home, End                     | the row's first or last cell                                |
  * | Ctrl or Cmd with Home, End    | the first cell of the first row, the last cell of the last row |
- * | Enter                         | into the cell's control (tick, editor, row menu); elsewhere activates the row |
- * | F2                            | into the cell's control, whatever the cell                  |
+ * | Enter                         | into the cell's control (tick, editor, row menu), opening an editor; elsewhere activates the row |
+ * | F2                            | into the cell's control, whatever the cell; an editor opens |
  * | Escape, from a control        | back to its cell                                            |
  * | Space                         | toggles the tick, as on a row                               |
  *
@@ -116,6 +117,16 @@ const NON_TEXT_INPUTS = new Set([
 
 /** The kinds whose cell holds one control: Enter goes into it rather than activating the row. */
 const CONTROL_KINDS = new Set(['tick', 'select', 'actions'])
+
+/** The control of an inline edit cell (`c.select`), which F2 and Enter open rather than only focus. */
+const EDIT_CONTROL =
+  '[data-slot="table-select-cell"] :is(button:not(:disabled), input:not(:disabled), [role="combobox"])'
+
+/** Focuses a control; an inline edit control also opens, as a click on it would. */
+function enter(control: HTMLElement): void {
+  control.focus()
+  if (control.matches(EDIT_CONTROL)) control.click()
+}
 
 /** The first control in a cell, or `null`. */
 function controlOf(cell: HTMLElement): HTMLElement | null {
@@ -268,7 +279,7 @@ export function useRowKeyboard(options: RowKeyboardOptions): RowKeyboard {
     const into = (): boolean => {
       const control = controlOf(cell)
       if (control === null) return false
-      control.focus()
+      enter(control)
       return true
     }
     switch (event.key) {
@@ -394,6 +405,13 @@ export function useRowKeyboard(options: RowKeyboardOptions): RowKeyboard {
             if (!onToggle) return
             event.preventDefault()
             onToggle(id)
+            return
+          }
+          if (event.key === 'F2') {
+            const control = event.currentTarget.querySelector<HTMLElement>(EDIT_CONTROL)
+            if (control === null) return
+            event.preventDefault()
+            enter(control)
             return
           }
           const index = rowIds.indexOf(id)

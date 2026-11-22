@@ -174,15 +174,16 @@ describe('column widths', () => {
     expect(colWidth(again.container, 3)).toBe(`${start + 60}px`)
   })
 
-  test('a windowed reading table whose flexible columns are all resized hands the rest of the row to a filler', () => {
+  test('a windowed reading table hands the rest of the row to its trailing filler, resized columns or not', () => {
     const { container } = render(<Subject id="windowed" windowed />)
     const root = container.querySelector<HTMLElement>('[data-slot="table-root"]')!
     expect(root.hasAttribute('data-virtual')).toBe(true)
-    expect(container.querySelector('col[data-fill]')).toBeNull()
+    expect(root.hasAttribute('data-fill')).toBe(true)
+    expect(container.querySelector('col[data-fill]')).not.toBeNull()
     act(() => latest().setWidth('name', 300))
     act(() => latest().setWidth('team', 160))
     expect(root.hasAttribute('data-fill')).toBe(true)
-    expect(container.querySelector('col[data-fill]')).not.toBeNull()
+    expect(container.querySelector('col[data-fill]')?.hasAttribute('style')).toBe(false)
   })
 
   test('a cancelled drag and a menu reset give the handle the width drawn on screen', () => {
@@ -297,7 +298,7 @@ const groups = (container: HTMLElement): string[] =>
 describe('group-by', () => {
   test('a status column groups from its column menu, with a count and the footer reduce', () => {
     const { container, getByRole } = render(<Subject id="by-status" />)
-    fireEvent.click(getByRole('button', { name: 'Status column actions' }))
+    fireEvent.click(getByRole('button', { name: 'Status' }))
     fireEvent.click(getByRole('menuitem', { name: 'Group by Status' }))
     expect(groups(container)).toEqual(['open3 rows', 'done1 row'])
     expect(stored('by-status').groupBy).toBe('status')

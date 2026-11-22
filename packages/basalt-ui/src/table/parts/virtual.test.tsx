@@ -127,12 +127,12 @@ describe('virtual body', () => {
     expect(seen.keys).toEqual(['r0', 'r1', 'r2'])
     expect(seen.counts.at(-1)).toBe(10_000)
     // Sort descending by amount: the keys follow the rows, not the indexes.
-    const sort = getByRole('button', { name: /^Amount$/ })
+    const header = getByRole('button', { name: /^Amount(, |$)/ })
     await act(async () => {
-      fireEvent.click(sort)
+      fireEvent.click(header)
     })
     await act(async () => {
-      fireEvent.click(sort)
+      fireEvent.click(getByRole('menuitemradio', { name: 'Sort descending' }))
     })
     expect(seen.keys).toEqual(['r9999', 'r9998', 'r9997'])
   })
@@ -155,7 +155,10 @@ describe('virtual body', () => {
     if (port === null) throw new Error('no port')
     port.scrollTop = 4_000
     await act(async () => {
-      fireEvent.click(getByRole('button', { name: /^Name$/ }))
+      fireEvent.click(getByRole('button', { name: /^Name(, |$)/ }))
+    })
+    await act(async () => {
+      fireEvent.click(getByRole('menuitemradio', { name: 'Sort ascending' }))
     })
     expect(port.scrollTop).toBe(0)
   })

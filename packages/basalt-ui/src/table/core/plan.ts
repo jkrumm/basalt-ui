@@ -62,7 +62,7 @@ export const SLOT_CAPS: Readonly<Partial<Record<CardPlace, number>>> = {
 /** What the plan needs of a column; a pure input, so tests can generate sets without React. */
 export type PlanInput = Pick<
   KindSpec<unknown>,
-  'id' | 'kind' | 'card' | 'priority' | 'width' | 'pin'
+  'id' | 'kind' | 'card' | 'priority' | 'width' | 'pin' | 'sub'
 > & {
   /** The caller named a card slot (`card` option): placed before the columns left to a default. */
   cardFirst?: boolean
@@ -80,8 +80,13 @@ export type PlannedColumn = {
   identity: boolean
   visible: boolean
   widthPx: number
-  /** Shares the width the fixed columns leave: a flexible kind not sized to its content. */
+  /**
+   * A text-like column (title, text, link, person, tags) not resized by a reader and not sized to a short
+   * value: it shares the free width of its table, from `widthPx` up to `capPx`.
+   */
   flex: boolean
+  /** The widest a flexible column grows in px (`null`: no cap, or not flexible). */
+  capPx: number | null
   /**
    * Kept by `phone: 'columns'`: the identity, the card's `value`, its first `meta` and the actions.
    * Every other column leaves the phone row and stays in the row's details.
@@ -107,6 +112,11 @@ export type PlanOptions = {
   contentCh?: Readonly<Record<string, number>>
   /** `display.widths`: the px a reader dragged a column to; it wins over the kind and the content width. */
   widths?: Readonly<Record<string, number>>
+  /**
+   * The grid look draws each column at its kind's roomier `gridCh`, never below its floor or its
+   * content, and scrolls sideways instead of shrinking it.
+   */
+  look?: 'reading' | 'grid'
   /** Dev warnings; default `console.warn` outside production. */
   warn?: (message: string) => void
 }
@@ -132,6 +142,24 @@ function contentWidth(input: PlanInput, loaded: number | undefined): number | nu
     return widthPx({ ch: Math.max(content.short.minCh, ch), flex: false })
   }
   return widthPx({ ch: Math.min(CONTENT_MAX_CH, Math.max(CONTENT_MIN_CH, ch)), flex: false })
+}
+
+/** The width the grid look draws a column at: its kind's `gridCh`, never below its own floor. */
+function gridWidthPx(input: PlanInput): number {
+  const gridCh = KIND_DEFAULTS[input.kind].gridCh
+  if (input.width === 'icon' || gridCh === null) return widthPx(input.width)
+  return Math.max(widthPx(input.width), widthPx({ ch: gridCh, flex: false }))
+}
+
+/**
+ * The widest a flexible column grows: its kind's `capCh` (twice that for a title with a sub line, the
+ * wider text set smaller), never below the width it already has; `null` for a kind with no cap.
+ */
+function capWidthPx(input: PlanInput, floorPx: number): number | null {
+  const capCh = KIND_DEFAULTS[input.kind].capCh
+  if (capCh === null) return null
+  const ch = input.kind === 'entity' && input.sub === true ? 2 * capCh : capCh
+  return Math.max(floorPx, widthPx({ ch, flex: false }))
 }
 
 /** The narrowest a reader may drag a column of `kind`, in px. */
@@ -256,10 +284,21 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
     )
   }
   // A width the reader set wins; a resized flexible column is fixed at it, the filler takes the rest.
-  const sized = inputs.map(
-    (c) => resizedWidth(c, options.widths?.[c.id]) ?? contentWidth(c, options.contentCh?.[c.id]),
+  const resized = inputs.map((c) => resizedWidth(c, options.widths?.[c.id]))
+  const content = inputs.map((c) => contentWidth(c, options.contentCh?.[c.id]))
+  const grid = options.look === 'grid'
+  const widths = inputs.map(
+    (c, index) =>
+      resized[index] ?? Math.max(content[index] ?? widthPx(c.width), grid ? gridWidthPx(c) : 0),
   )
-  const widths = inputs.map((c, index) => sized[index] ?? widthPx(c.width))
+  // A short text column sized to its values is a category: it keeps that width like a figure.
+  const flexible = inputs.map(
+    (c, index) =>
+      resized[index] === null &&
+      c.width !== 'icon' &&
+      c.width.flex &&
+      !(content[index] !== null && c.content?.short !== undefined),
+  )
 
   const sum = (pick: (index: number) => boolean) =>
     widths.reduce(
@@ -300,7 +339,8 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
     identity: index === identity,
     visible: visible[index]!,
     widthPx: widths[index]!,
-    flex: sized[index] === null && c.width !== 'icon' && c.width.flex,
+    flex: flexible[index]!,
+    capPx: flexible[index] ? capWidthPx(c, widths[index]!) : null,
     cardDetail: c.cardFirst === true && c.card[0] === 'detail',
     phoneKeep:
       index === identity ||

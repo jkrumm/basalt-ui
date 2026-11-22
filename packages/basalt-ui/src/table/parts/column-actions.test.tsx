@@ -1,13 +1,14 @@
 /**
- * The header column menu (docs/v3/issues/g3/v3-table-t3b-selection.json): Sort, Hide and Reset act
- * on the column through the table's state, the identity column cannot be hidden, and the actions
- * column has no menu.
+ * The header column menu (docs/v3/issues/g3/v3-table-t3b-selection.json): the header's one button opens
+ * the menu, where Sort, Hide and Reset act on the column through the table's state. The identity
+ * column cannot be hidden, and the actions column has no menu.
  */
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
 import type { UseDataTable } from '../contract'
 import { col } from '../core/kinds'
+import { settled } from '../../testing/settled'
 import { DataTable } from './data-table'
 import { useDataTable } from '../use-data-table'
 
@@ -43,24 +44,31 @@ function Subject(): ReactElement {
 }
 
 const payees = (container: HTMLElement): string[] =>
-  [...container.querySelectorAll('tbody td:first-child')].map((td) => td.textContent ?? '')
-const menuOf = (header: string): HTMLElement =>
-  screen.getByRole('button', { name: `${header} column actions` })
+  [...container.querySelectorAll('td[data-col="payee"]')].map((td) => td.textContent ?? '')
+// A header's one button, named by its label and, while it holds one, its sort or filter state.
+const menuOf = (header: string): HTMLElement => {
+  const escaped = header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return screen.getByRole('button', { name: new RegExp(`^${escaped}(, |$)`) })
+}
 
 async function open(header: string): Promise<void> {
-  await act(async () => {
-    fireEvent.click(menuOf(header))
-  })
+  fireEvent.click(menuOf(header))
+  await settled()
 }
 async function pick(name: string): Promise<void> {
-  const item = await screen.findByRole('menuitem', { name })
-  await act(async () => {
-    fireEvent.click(item)
-  })
+  const sort = name.startsWith('Sort ') || name === 'No sorting'
+  const item = await screen.findByRole(sort ? 'menuitemradio' : 'menuitem', { name })
+  fireEvent.click(item)
+  await settled()
+  // a sort radio item keeps the menu open (Base UI closes a radio item only when asked): Escape closes it
+  if (sort) {
+    fireEvent.keyDown(item, { key: 'Escape' })
+    await settled()
+  }
 }
 
 describe('column actions menu', () => {
-  test('sort descending, then clear sort, act on the column', async () => {
+  test('sort descending, then no sorting, act on the column', async () => {
     const { container } = render(<Subject />)
     await open('Amount (EUR)')
     await pick('Sort descending')
@@ -70,7 +78,7 @@ describe('column actions menu', () => {
     )
 
     await open('Amount (EUR)')
-    await pick('Clear sort')
+    await pick('No sorting')
     expect(payees(container)).toEqual(['Rent', 'Bakery', 'Gym'])
   })
 
@@ -96,11 +104,12 @@ describe('column actions menu', () => {
     render(<Subject />)
     await open('Payee')
     expect(screen.queryByRole('menuitem', { name: 'Hide column' })).toBeNull()
-    expect(screen.getByRole('menuitem', { name: 'Sort ascending' })).toBeTruthy()
+    expect(screen.getByRole('menuitemradio', { name: 'Sort ascending' })).toBeTruthy()
   })
 
-  test('the actions column has no menu', () => {
+  test('the actions column has no menu: only the two data headers carry a header button', () => {
     const { container } = render(<Subject />)
-    expect(container.querySelectorAll('th button[aria-label$="column actions"]')).toHaveLength(2)
+    expect(container.querySelectorAll('th button')).toHaveLength(2)
+    expect(container.querySelectorAll('th button[aria-label$="column actions"]')).toHaveLength(0)
   })
 })

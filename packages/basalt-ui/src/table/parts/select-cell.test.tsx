@@ -1,7 +1,7 @@
 /**
  * `c.select` (docs/v3/issues/g3/v3-table-t4-virtual.json): the cell is disabled while `commit` is
- * pending and usable again after a rejection, and neither Enter nor a tap in the control activates
- * the row (I10).
+ * pending and usable again after a rejection; Enter, F2 and a tap in the control open it, and none of
+ * them activates the row (I10).
  */
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, mock, test } from 'bun:test'
@@ -9,6 +9,7 @@ import type { ReactElement } from 'react'
 import type { UseDataTable } from '../contract'
 import { col } from '../core/kinds'
 import { specOf } from '../core/kinds-spec'
+import { settled } from '../../testing/settled'
 import { DataTable } from './data-table'
 import { SELECT_MAX_OPTIONS } from './select-cell'
 import { useDataTable } from '../use-data-table'
@@ -25,10 +26,12 @@ function Subject({
   commit,
   onRowActivate,
   options = CATEGORIES,
+  look = 'reading',
 }: {
   commit: (row: Row, next: string) => unknown
   onRowActivate?: (row: Row) => void
   options?: readonly string[]
+  look?: 'reading' | 'grid'
 }): ReactElement {
   const c = col<Row>()
   const t = useDataTable<Row>({
@@ -41,6 +44,7 @@ function Subject({
     data: ROWS,
     getRowId: (r) => r.id,
     mode: { kind: 'client' },
+    look,
     ...(onRowActivate !== undefined && { onRowActivate }),
   } as UseDataTable<Row>)
   return <DataTable table={t} />
@@ -137,8 +141,16 @@ describe('SelectCell', () => {
     const commit = mock((_row: Row, _next: string) => Promise.resolve())
     render(<Subject commit={commit} onRowActivate={onRowActivate} />)
     const control = trigger('Category of Rent')
+    // Enter on the closed trigger opens the listbox; Escape closes it again before the tap below.
     fireEvent.keyDown(control, { key: 'Enter' })
+    await settled()
+    expect(screen.getByRole('option', { name: 'Travel' })).toBeTruthy()
     expect(onRowActivate).not.toHaveBeenCalled()
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole('option', { name: 'Travel' }), { key: 'Escape' })
+    })
+    await settled()
+    expect(screen.queryByRole('option', { name: 'Travel' })).toBeNull()
     // A tap on the trigger and on an option (portalled, bubbling through the React tree).
     await choose('Category of Rent', 'Travel')
     expect(commit).toHaveBeenCalledTimes(1)
@@ -164,6 +176,57 @@ describe('SelectCell', () => {
     expect(trigger('Category of Rent').getAttribute('tabindex')).not.toBe('-1')
     expect(trigger('Category of Bakery').getAttribute('tabindex')).toBe('-1')
   })
+
+  test('F2 on the trigger opens the listbox', async () => {
+    render(<Subject commit={() => undefined} />)
+    fireEvent.keyDown(trigger('Category of Rent'), { key: 'F2' })
+    await settled()
+    expect(screen.getByRole('option', { name: 'Travel' })).toBeTruthy()
+  })
+
+  test('a click on the trigger opens the listbox', async () => {
+    render(<Subject commit={() => undefined} />)
+    fireEvent.click(trigger('Category of Rent'))
+    await settled()
+    expect(screen.getByRole('option', { name: 'Travel' })).toBeTruthy()
+  })
+
+  test('a touch tap on the trigger opens the listbox', async () => {
+    render(<Subject commit={() => undefined} />)
+    const control = trigger('Category of Rent')
+    // A tap: the pointer events, then the compatibility mouse events and the click a browser fires after them.
+    fireEvent.pointerDown(control, { pointerType: 'touch', pointerId: 1, button: 0 })
+    fireEvent.pointerUp(control, { pointerType: 'touch', pointerId: 1, button: 0 })
+    fireEvent.mouseDown(control, { button: 0 })
+    fireEvent.mouseUp(control, { button: 0 })
+    fireEvent.click(control)
+    await settled()
+    expect(screen.getByRole('option', { name: 'Travel' })).toBeTruthy()
+  })
+
+  test('F2 on the focused row focuses the row select and opens it', async () => {
+    render(<Subject commit={() => undefined} onRowActivate={() => undefined} />)
+    const row = trigger('Category of Rent').closest('tr')
+    if (row === null) throw new Error('no row')
+    act(() => row.focus())
+    fireEvent.keyDown(row, { key: 'F2' })
+    await settled()
+    expect(trigger('Category of Rent').getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('option', { name: 'Travel' })).toBeTruthy()
+  })
+
+  test.each(['Enter', 'F2'])(
+    'in a grid-look table %s on the select cell focuses and opens its control',
+    async (key) => {
+      render(<Subject commit={() => undefined} look="grid" />)
+      const cell = trigger('Category of Rent').closest('td')
+      if (cell === null) throw new Error('no cell')
+      fireEvent.keyDown(cell, { key })
+      await settled()
+      expect(trigger('Category of Rent').getAttribute('aria-expanded')).toBe('true')
+      expect(screen.getByRole('option', { name: 'Travel' })).toBeTruthy()
+    },
+  )
 
   test('picking the current value commits nothing', async () => {
     const commit = mock((_row: Row, _next: string) => Promise.resolve())
