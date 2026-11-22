@@ -201,6 +201,19 @@ describe('PasswordInput', () => {
 })
 
 describe('CopyButton', () => {
+  test('with its word showing it still names what it copies', () => {
+    const { container } = render(
+      <>
+        <CopyButton value="sk-123" label="API key" showLabel />
+        <CopyButton value="https://example.com/hook" label="Webhook URL" showLabel />
+      </>,
+    )
+    const names = [...container.querySelectorAll('[data-slot="copy-button"]')].map((el) =>
+      el.getAttribute('aria-label'),
+    )
+    expect(names).toEqual(['Copy API key', 'Copy Webhook URL'])
+  })
+
   test('writes the value, then names itself Copied until focus leaves', async () => {
     const writeText = mock<(text: string) => Promise<void>>(() => Promise.resolve())
     const restore = Object.getOwnPropertyDescriptor(window, 'isSecureContext')
