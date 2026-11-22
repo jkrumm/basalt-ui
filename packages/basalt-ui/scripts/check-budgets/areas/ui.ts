@@ -76,7 +76,7 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   sheet: 44000, // 41473 B
   skeleton: 7000, // 6522 B
   slider: 21000, // 19636 B
-  'sortable-list': 16500, // 15354 B
+  'sortable-list': 18000, // 16970 B with the drag engine it loads on first registration
   status: 5500, // 4999 B
   switch: 11500, // 10848 B
   table: 6000, // 5240 B
