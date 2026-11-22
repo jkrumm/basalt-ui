@@ -1,5 +1,5 @@
 import { useCallback, useContext, useId, useState, useSyncExternalStore } from 'react'
-import type { MouseEvent, ReactElement, ReactNode } from 'react'
+import type { ChangeEvent, MouseEvent, ReactElement, ReactNode } from 'react'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { requestMainFocus } from '../common/focus'
 import { cn } from '../core/cn'
@@ -9,11 +9,20 @@ import { SlotHomeContext } from '../core/slot-home'
 import { useMessages } from '../core/messages/use-messages'
 import { Button } from '../ui/button'
 import { ButtonGroup } from '../ui/control-group'
+import { Input } from '../ui/input'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
 import { ConnectionIndicator } from './connection-indicator'
 import { devAssertOnce, createBarClaims } from './core/claims'
 import { observeBarHeight, publishBarHeight } from './core/bar-measure'
-import type { PageAction, PageBarProps, PageButtonAction, PageTextAction } from './contract'
+import type {
+  PageAction,
+  PageBarProps,
+  PageButtonAction,
+  PageLayout,
+  PageSearch,
+  PageSettings,
+  PageTextAction,
+} from './contract'
 import { PageContext, PageHostContext } from './page'
 import { isEmptyTabs, renderTabs } from './page-tabs'
 import { RefreshButton } from './refresh-button'
@@ -199,23 +208,173 @@ function PageActions({ actions }: { actions: readonly PageAction[] }): ReactElem
 const isEmptySlot = (slot: { count: number } | undefined): boolean =>
   slot === undefined || slot.count === 0
 
+const isPrimary = (action: PageAction): boolean => 'primary' in action && action.primary === true
+
+/** The primary last, the rest in the caller's order: the view row ends on its one primary. */
+function primaryLast(actions: readonly PageAction[]): PageAction[] {
+  return [...actions.filter((a) => !isPrimary(a)), ...actions.filter(isPrimary)]
+}
+
+function SearchGlyph({ className }: { className?: string }): ReactElement {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="7" cy="7" r="4.25" />
+      <path d="m10.25 10.25 3 3" />
+    </svg>
+  )
+}
+
+function SlidersGlyph({ className }: { className?: string }): ReactElement {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M2.5 4.5h6m3 0h2M2.5 11.5h2m3 0h6" />
+      <circle cx="10" cy="4.5" r="1.5" />
+      <circle cx="6" cy="11.5" r="1.5" />
+    </svg>
+  )
+}
+
 /**
- * The page's band: the title and breadcrumb, the page tabs, the controls, the connection indicator,
- * the refresh button and the actions. One per `Page`; a second renders nothing and raises a dev warning, so nested layouts
- * that each render a bar fail loudly instead of stacking two bands.
+ * The view row's search box, bound to a string field and written as the reader types: an empty box
+ * unsets the field. An IME composition writes once, at its end, so a half-built word is never a
+ * query. A value the field takes from elsewhere (a link, Back, a reset) replaces the box's text.
+ */
+function SearchBox({ search, className }: { search: PageSearch; className: string }): ReactElement {
+  const [value, set] = search.state.use()
+  const [text, setText] = useState(value)
+  const [seen, setSeen] = useState(value)
+  if (seen !== value) {
+    setSeen(value)
+    setText(value)
+  }
+  const commit = (next: string): void => {
+    setSeen(next)
+    if (next === '') search.state.clear()
+    else set(next)
+  }
+  return (
+    <div data-slot="page-bar-search" className={className}>
+      <Input
+        type="search"
+        aria-label={search.label}
+        placeholder={search.placeholder ?? search.label}
+        start={SearchGlyph}
+        value={text}
+        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+          const next = event.currentTarget.value
+          setText(next)
+          if (!(event.nativeEvent as InputEvent).isComposing) commit(next)
+        }}
+        onCompositionEnd={(event) => {
+          commit(event.currentTarget.value)
+        }}
+      />
+    </div>
+  )
+}
+
+/**
+ * The view row's layout toggle: one icon per layout, named by its label. Below `@regular` it gives
+ * its room to the tabs: a phone draws a table as cards whichever layout is set.
+ */
+function LayoutToggle<L extends string>({ layout }: { layout: PageLayout<L> }): ReactElement {
+  const [value, set] = layout.state.use()
+  // Pressed icon buttons on a tinted track, the look of `Segmented` without its toggle group in
+  // the page barrel. One stays pressed: picking the pressed one again keeps it.
+  return (
+    <fieldset
+      aria-label={layout.label}
+      data-slot="page-bar-layout"
+      className="m-0 hidden shrink-0 items-center gap-0.5 rounded-ctrl border-0 bg-accent p-0.5 @regular:inline-flex"
+    >
+      {layout.options.map(({ value: option, label, icon: Icon }) => (
+        <Button
+          key={option}
+          variant="ghost"
+          shape="icon"
+          aria-label={label}
+          aria-pressed={option === value}
+          title={label}
+          className="size-[calc(var(--basalt-ctl-h)-0.25rem)] rounded-[calc(var(--radius-ctrl)-2px)] text-muted-foreground hover:bg-transparent hover:text-foreground aria-pressed:bg-secondary aria-pressed:text-foreground aria-pressed:shadow-raised"
+          onClick={() => {
+            set(option)
+          }}
+        >
+          <Icon className="size-icon" aria-hidden="true" />
+        </Button>
+      ))}
+    </fieldset>
+  )
+}
+
+function SettingsButton({ settings }: { settings: PageSettings }): ReactElement {
+  const Icon = settings.icon ?? SlidersGlyph
+  return (
+    <Button
+      variant="ghost"
+      shape="icon"
+      aria-label={settings.label}
+      title={settings.label}
+      onClick={settings.onClick}
+    >
+      <Icon className="size-icon" aria-hidden="true" />
+    </Button>
+  )
+}
+
+/**
+ * The page's band: the title and breadcrumb, then the view row of a list page. On its start the
+ * page tabs, each a named view with an optional count and tone dot; on its end, in this order, the
+ * search, the controls (the filters), the connection indicator, the refresh button, the layout
+ * toggle, the view-settings button and the actions, the one primary last. One per `Page`; a second
+ * renders nothing and raises a dev warning, so nested layouts that each render a bar fail loudly
+ * instead of stacking two bands.
+ *
+ * The row is one line at every container tier: the tabs scroll sideways, the filters fold (`+N`, or
+ * one `Filter` trigger for three or more), action labels become icons and secondary actions move to
+ * the More menu below `@wide`, the search takes a line of its own below `@wide`, and below
+ * `@regular` the layout toggle steps aside.
  *
  * Where it renders follows the context, never a prop. Under an `AppShell` `title` claims the
  * header's breadcrumb leaf (`parent` the trail before it, a link through the provider's `link` for a
  * path string and a `NavTarget` alike, so a click keeps the document), names the in-flow screen-reader `h1` and
- * `document.title`, and `actions` claim the header's end; the band holds only `tabs`, `controls`,
- * `connection` and `refresh`. Without a shell `title` is the visible `h1` and `actions` sit in the band. A
- * band that holds a control (tabs, controls, connection, refresh, or actions without a shell) is
- * sticky at the nearest scrollport; a band of a title alone scrolls away. It publishes its measured
- * height as `--page-bar-h`; an empty band renders nothing. `tabs` is `{ state, label }` of an enum field (a tab strip bound to it;
- * the phone track and `Select` forms are `ViewTabs` in a slot) or a `ControlsSlot` for custom content. `actions` holds at most five entries and at most one `primary`.
+ * `document.title`. `actions` end the band when it holds a control (tabs, search, controls,
+ * connection, refresh, layout or settings) and claim the header's end, the identity row, when it
+ * holds none. Without a shell `title` is the visible `h1` and `actions` sit in the band. A
+ * band that holds a control is sticky at the nearest scrollport; a band of a title alone scrolls
+ * away. It publishes its measured height as `--page-bar-h`; an empty band renders nothing. `tabs`
+ * is `{ state, label, badges }` of an enum field (a tab strip bound to it; `badges` keyed by value
+ * give a tab its count, `attention` and tone) or a `ControlsSlot` for custom content.
+ * `actions` holds at most five entries and at most one `primary`.
  *
- * @useWhen a screen needs a title, tabs, filters, a refresh button or page-level actions in one band
+ * @useWhen a screen needs a title, tabs, search, filters, a layout toggle, a refresh button or page-level actions in one band
  * @neverWhen the screen has none of those (leave the bar out) or the title belongs to a card (use the card title)
+ *
+ * @example
+ * <PageBar
+ *   tabs={{ state: store.field.status, label: 'Invoices', badges: { all: { count: 236 }, overdue: { count: 17, attention: true } } }}
+ *   search={{ state: store.field.q, label: 'Search invoices' }}
+ *   controls={filterSlot([customerSpec, methodSpec, issuedSpec], { match: { shown, total } })}
+ *   layout={{ state: store.field.layout, label: 'Layout', options: [{ value: 'table', label: 'Table', icon: Rows3 }, { value: 'cards', label: 'Cards', icon: LayoutGrid }] }}
+ *   settings={{ label: 'View settings', onClick: openView }}
+ *   actions={[{ id: 'new', label: 'New invoice', icon: Plus, primary: true, onClick: create }]}
+ * />
  *
  * @example
  * <PageBar
@@ -223,11 +382,7 @@ const isEmptySlot = (slot: { count: number } | undefined): boolean =>
  *   parent={{ label: 'Runs', href: '/runs' }}
  *   controls={filterSlot([rangeSpec, envSpec])}
  *   refresh={{ scope: 'page', ...freshness.button }}
- *   actions={[{ id: 'new', label: 'New run', icon: Plus, primary: true, onClick: create }]}
  * />
- *
- * @example
- * <PageBar title="Orders" tabs={{ state: store.field.view, label: 'Orders view' }} />
  *
  * @example
  * // Date navigation: grouped actions that stay in the phone bar and a text action that does not.
@@ -239,15 +394,18 @@ const isEmptySlot = (slot: { count: number } | undefined): boolean =>
  *   ]}
  * />
  */
-export function PageBar<K extends string = string>({
+export function PageBar<K extends string = string, L extends string = string>({
   title,
   parent,
   controls,
   tabs,
+  search,
   connection,
   refresh,
+  layout,
+  settings,
   actions,
-}: PageBarProps<K>): ReactElement | null {
+}: PageBarProps<K, L>): ReactElement | null {
   const context = useContext(PageContext)
   const host = useContext(PageHostContext)
   const id = useId()
@@ -263,6 +421,16 @@ export function PageBar<K extends string = string>({
   const inShell = host !== null
   const list = actions?.filter((action) => action !== undefined) ?? []
   const primaries = list.filter((action) => 'primary' in action && action.primary === true).length
+  // A band that holds a control is the view row, and the page's actions end it.
+  const hasRow =
+    !isEmptySlot(controls) ||
+    !isEmptyTabs(tabs) ||
+    search !== undefined ||
+    connection !== undefined ||
+    refresh !== undefined ||
+    layout !== undefined ||
+    settings !== undefined
+  const actionsInHeader = inShell && !hasRow
 
   useIsomorphicLayoutEffect(() => {
     const handle = store.claim(id, undefined)
@@ -288,10 +456,10 @@ export function PageBar<K extends string = string>({
   }, [host, owns, id, title, parent])
 
   useIsomorphicLayoutEffect(() => {
-    if (host === null || !owns || list.length === 0) return undefined
+    if (host === null || !owns || list.length === 0 || !actionsInHeader) return undefined
     return host.claim('actions', <PageActions actions={list} />, `${id}:actions`)
     // `list` is rebuilt per render, `actions` is the caller's value.
-  }, [host, owns, id, actions])
+  }, [host, owns, id, actions, actionsInHeader])
 
   // Publish the band height onto Page before paint, then on every resize. A zero reading is refused.
   useIsomorphicLayoutEffect(() => {
@@ -319,13 +487,8 @@ export function PageBar<K extends string = string>({
 
   if (!owns) return null
 
-  const visibleActions = !inShell && list.length > 0
-  const hasControls =
-    !isEmptySlot(controls) ||
-    !isEmptyTabs(tabs) ||
-    connection !== undefined ||
-    refresh !== undefined ||
-    visibleActions
+  const bandActions = !actionsInHeader && list.length > 0
+  const hasControls = hasRow || (!inShell && list.length > 0)
   const bandHasContent = hasControls || (!inShell && title !== undefined)
 
   const heading: ReactNode =
@@ -369,7 +532,7 @@ export function PageBar<K extends string = string>({
         data-slot="page-bar"
         data-sticky={sticky ? '' : undefined}
         className={cn(
-          'flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-surface py-2',
+          'flex flex-col gap-2 border-b border-border bg-surface py-2',
           // Flush with the chrome above (the page's top gutter is pulled back) and full bleed; the
           // gutter below the rule is kept, so content starts one gutter under it as on a bandless page.
           '-mx-(--page-gutter) -mt-(--page-gutter) mb-[calc(var(--page-gutter,--spacing(4))_-_--spacing(4))] px-[max(var(--page-gutter,0px),--spacing(1))]',
@@ -378,39 +541,46 @@ export function PageBar<K extends string = string>({
           sticky && 'sticky top-0 z-30',
         )}
       >
-        {!inShell && (trail !== null || heading !== null) && (
-          <div className="flex min-w-0 items-baseline gap-2">
-            {trail}
-            {heading}
-          </div>
-        )}
-        {!isEmptyTabs(tabs) && (
-          <div data-slot="page-bar-tabs" className="min-w-0 @max-regular:basis-full">
-            {renderTabs(tabs)}
-          </div>
-        )}
-        <div
-          className={cn(
-            'ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2',
-            // The controls own the rest of the line from `regular` up, so the fold measures the
-            // bar's room; below it they wrap to a line of their own (F2 n13, n14).
-            !isEmptySlot(controls) && 'basis-full @regular:flex-1 @regular:basis-0',
-          )}
-        >
-          {!isEmptySlot(controls) && (
-            <div
-              data-slot="page-bar-controls"
-              className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2"
-            >
-              <SlotHomeContext value="page-bar">{controls?.render()}</SlotHomeContext>
+        {/* One line at every tier: what does not fit scrolls (the tabs) or folds (filters, actions). */}
+        <div data-slot="page-bar-row" className="flex min-w-0 flex-nowrap items-center gap-3">
+          {!inShell && (trail !== null || heading !== null) && (
+            <div className="flex min-w-0 shrink items-baseline gap-2">
+              {trail}
+              {heading}
             </div>
           )}
-          {connection !== undefined && (
-            <ConnectionIndicator connection={connection} className="shrink-0" />
+          {!isEmptyTabs(tabs) && (
+            <div data-slot="page-bar-tabs" className="flex min-w-0 shrink">
+              {renderTabs(tabs, 'pill')}
+            </div>
           )}
-          {refresh !== undefined && <RefreshButton {...refresh} />}
-          {visibleActions && <PageActions actions={list} />}
+          {/* Grows into the room the tabs leave; never narrower than its fixed parts, so the tabs scroll first. */}
+          <div
+            data-slot="page-bar-end"
+            className="ms-auto flex flex-1 flex-nowrap items-center justify-end gap-2 *:shrink-0"
+          >
+            {search !== undefined && (
+              <SearchBox search={search} className="hidden w-56 shrink-0 @wide:block" />
+            )}
+            {!isEmptySlot(controls) && (
+              // Pills take the room left and fold to it; a lone trigger keeps its own width beside the search.
+              <div
+                data-slot="page-bar-controls"
+                className="flex min-w-0 flex-nowrap items-center justify-end gap-2 has-[[data-slot=filter-pills]]:flex-1 has-[[data-slot=filter-pills]]:shrink"
+              >
+                <SlotHomeContext value="page-bar">{controls?.render()}</SlotHomeContext>
+              </div>
+            )}
+            {connection !== undefined && (
+              <ConnectionIndicator connection={connection} className="shrink-0" />
+            )}
+            {refresh !== undefined && <RefreshButton {...refresh} />}
+            {layout !== undefined && <LayoutToggle layout={layout} />}
+            {settings !== undefined && <SettingsButton settings={settings} />}
+            {bandActions && <PageActions actions={primaryLast(list)} />}
+          </div>
         </div>
+        {search !== undefined && <SearchBox search={search} className="w-full @wide:hidden" />}
       </div>
     </>
   )

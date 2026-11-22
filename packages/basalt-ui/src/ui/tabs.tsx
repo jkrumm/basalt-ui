@@ -27,7 +27,7 @@ export const tabsVariants = cva(
 )
 
 /** The look the triggers and the list read from their `Tabs`. */
-type Look = 'line' | 'segment'
+type Look = 'line' | 'segment' | 'pill'
 const LookContext = createContext<Look>('line')
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -44,7 +44,9 @@ export type TabsProps = Omit<BaseTabs.Root.Props, 'className'> &
     /**
      * `line` (default) is triggers on a hairline with a brand underline: tabs that sit over their
      * panels. `segment` is a tinted track with one raised option, the look of `Segmented`: a view
-     * switch that sits beside controls in a band or a header. Horizontal only.
+     * switch that sits beside controls in a band or a header. `pill` is quiet triggers on no track,
+     * the active one tinted inside a hairline: the view row of a list page, where a tab carries a
+     * count. `segment` and `pill` are horizontal only.
      */
     variant?: Look
   }
@@ -95,10 +97,13 @@ export function TabsList({ className, ...props }: TabsListProps): ReactElement {
       {...props}
       data-slot="tabs-list"
       className={cn(
-        'flex shrink-0 items-center overflow-x-auto',
-        look === 'segment'
-          ? 'gap-0.5 rounded-ctrl bg-accent p-0.5 [scrollbar-width:none]'
-          : 'gap-1 border-b border-border data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch data-[orientation=vertical]:overflow-x-visible data-[orientation=vertical]:border-r data-[orientation=vertical]:border-b-0',
+        // `relative`: the list is its tabs' offset parent, so Base UI's scroll-into-view measures a
+        // tab against the list and never scrolls a visible first tab out of view.
+        'relative flex shrink-0 items-center overflow-x-auto',
+        look === 'segment' && 'gap-0.5 rounded-ctrl bg-accent p-0.5 [scrollbar-width:none]',
+        look === 'pill' && 'gap-1 [scrollbar-width:none]',
+        look === 'line' &&
+          'gap-1 border-b border-border data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch data-[orientation=vertical]:overflow-x-visible data-[orientation=vertical]:border-r data-[orientation=vertical]:border-b-0',
         className,
       )}
     />
@@ -109,7 +114,7 @@ export type TabsTriggerProps = Omit<BaseTabs.Tab.Props, 'className'> & LayoutCla
 
 /**
  * One tab. The active tab takes the ink colour and a brand underline, or the selected fill when the
- * list is vertical (`segment`: a raised face); a
+ * list is vertical (`segment`: a raised face; `pill`: a tint inside a hairline); a
  * disabled tab stays reachable by the arrow keys (it cannot be activated), as the WAI-ARIA tabs pattern asks.
  *
  * @example
@@ -123,9 +128,12 @@ export function TabsTrigger({ className, ...props }: TabsTriggerProps): ReactEle
       data-slot="tabs-trigger"
       className={cn(
         'relative inline-flex shrink-0 cursor-pointer items-center gap-1.5 px-3 font-medium whitespace-nowrap text-muted-foreground select-none focus-ring focus-visible:-outline-offset-2 transition-colors hover:text-foreground data-active:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:min-h-11 motion-reduce:transition-none',
-        look === 'segment'
-          ? 'h-[calc(var(--tabs-h)-0.25rem)] justify-center rounded-[calc(var(--radius-ctrl)-2px)] data-active:bg-secondary data-active:shadow-raised forced-colors:border forced-colors:border-current forced-colors:data-active:border-2'
-          : 'h-(--tabs-h) -mb-px border-b-2 border-transparent data-active:border-brand data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:rounded-ctrl data-[orientation=vertical]:border-b-0 data-[orientation=vertical]:data-active:bg-selected',
+        look === 'segment' &&
+          'h-[calc(var(--tabs-h)-0.25rem)] justify-center rounded-[calc(var(--radius-ctrl)-2px)] data-active:bg-secondary data-active:shadow-raised forced-colors:border forced-colors:border-current forced-colors:data-active:border-2',
+        look === 'pill' &&
+          'h-(--tabs-h) justify-center rounded-ctrl border border-transparent px-2.5 text-sm hover:bg-accent data-active:border-border data-active:bg-accent forced-colors:data-active:border-current',
+        look === 'line' &&
+          'h-(--tabs-h) -mb-px border-b-2 border-transparent data-active:border-brand data-[orientation=vertical]:mb-0 data-[orientation=vertical]:justify-start data-[orientation=vertical]:rounded-ctrl data-[orientation=vertical]:border-b-0 data-[orientation=vertical]:data-active:bg-selected',
         className,
       )}
     />
