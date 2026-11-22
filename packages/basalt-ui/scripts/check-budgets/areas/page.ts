@@ -26,13 +26,21 @@ export const rows: readonly RowDef[] = [
     // 114000 -> 115500 (v3 peek width): the width handle (peek-handle.tsx) joins the barrel.
     // 115500 -> 115600 (Issue 2784): the summary's error arm says its cause and keeps a Retry.
     // 115600 -> 115700 (Issue 2835): 115612 B measured; the summary's Retry reads `home.retry` instead of a hard-coded word.
-    ceiling: 115700,
+    // 115700 -> 115800 (Issue 2851): 115757 B measured; `Page fill` drops the gutter and `SplitPage` insets its panes in a fill page.
+    ceiling: 115800,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
   'page-subpath': [
+    {
+      from: 115700,
+      to: 115800,
+      consumer:
+        'the AppShell work surface (Issue 2851): a list or split page fills the surface edge to edge, so `Page fill` drops its gutter and `SplitPage` takes the inset into its own panes',
+      repo: 'basalt-ui',
+    },
     {
       from: 115600,
       to: 115700,
