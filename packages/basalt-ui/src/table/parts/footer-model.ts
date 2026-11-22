@@ -17,9 +17,10 @@ export const NUMERIC_AGGREGATES: readonly Aggregate[] = ['sum', 'mean', 'min', '
 const NO_AGGREGATES: readonly Aggregate[] = []
 const COUNT_ONLY: readonly Aggregate[] = ['count']
 
-/** Whether a cell value counts as present: not `null`, `undefined`, `''` or `NaN`. */
+/** Whether a cell value counts as present: not `null`, `undefined`, `''`, an empty list or `NaN`. */
 function present(v: unknown): boolean {
   if (v === null || v === undefined || v === '') return false
+  if (Array.isArray(v)) return v.length > 0
   return typeof v !== 'number' || !Number.isNaN(v)
 }
 
