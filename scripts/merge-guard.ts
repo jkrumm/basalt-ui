@@ -34,9 +34,14 @@ export interface GuardPorts {
   staleGenerated(): string[]
 }
 
-/** The generation sync checks `make check` runs first. */
+/**
+ * The generation sync checks: what `make regen` writes after a rebase, each with no slot and no browser. The marketing
+ * install's manifest needs the built CLI, so PR CI's `site` job holds it (`basalt-ui sync && git diff --exit-code`).
+ */
 const GENERATION_CHECKS: readonly (readonly string[])[] = [
   ['packages/basalt-ui/scripts/gen-oxlint.ts', '--check'],
+  ['packages/basalt-ui/scripts/sync-self.ts', '--check'],
+  ['apps/playground-astro/scripts/matrix.ts', '--check-render'],
 ]
 
 /**
@@ -119,7 +124,7 @@ export function evaluate(ports: GuardPorts): string[] {
 
   for (const command of ports.staleGenerated())
     refusals.push(
-      `generated files are stale: \`${command}\` failed. Regenerate without --check and commit it`,
+      `generated files are stale: \`${command}\` failed. Run make regen and commit what it writes`,
     )
 
   const sha = ports.git(['rev-parse', 'HEAD'])
