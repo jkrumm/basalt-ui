@@ -77,6 +77,7 @@ describe('the Kit nav', () => {
       '/kit/aside',
       '/kit/peek',
       '/kit/list',
+      '/kit/projects',
       '/kit/split',
       '/kit/interval-track',
       '/kit/bar-list-series',
