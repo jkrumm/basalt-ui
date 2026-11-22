@@ -333,7 +333,7 @@ describe('footer aggregates', () => {
     const foot = (): HTMLElement =>
       container.querySelector('[data-slot="table-footer"]') as HTMLElement
     expect(within(foot()).getByText('100.00')).not.toBeNull()
-    fireEvent.click(getByRole('button', { name: 'Summary of Amount (EUR): Sum' }))
+    fireEvent.click(getByRole('button', { name: /^Amount \(EUR\), Sum/ }))
     expect(within(foot()).getByText('25.00')).not.toBeNull()
     expect(stored('pick').aggregates).toEqual({ amount: 'mean' })
     unmount()
