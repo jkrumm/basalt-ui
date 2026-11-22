@@ -88,20 +88,21 @@ describe('warnWithoutTierSheet', () => {
     Object.defineProperty(globalThis, name, { configurable: true, writable: true, value })
   }
 
-  function scroller(containerType: string): HTMLElement {
+  function scroller(containerName: string): HTMLElement {
     const el = document.createElement('div')
-    el.dataset['containerType'] = containerType
+    el.dataset['containerName'] = containerName
     return el
   }
 
   test('says nothing with the sheet or without container queries, and warns once without the sheet', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     stub('requestAnimationFrame', (run: () => void) => (run(), 0))
-    stub('getComputedStyle', (el: HTMLElement) => ({ containerType: el.dataset['containerType'] }))
-    const plain = scroller('normal')
+    stub('getComputedStyle', (el: HTMLElement) => ({ containerName: el.dataset['containerName'] }))
+    // the scroller is always an inline-size container (`scrollMinWidth`); the sheet names it `table`
+    const plain = scroller('none')
 
     warnWithoutTierSheet(scroller(''))
-    warnWithoutTierSheet(scroller('inline-size'))
+    warnWithoutTierSheet(scroller('table'))
     warnWithoutTierSheet(null)
     expect(warn).not.toHaveBeenCalled()
 
