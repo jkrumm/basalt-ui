@@ -15,7 +15,7 @@ type CalledDialog = {
 type CalledContent = {
   title: string
   description?: string
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'wide' | 'split'
 }
 type CalledAlert = { title: string; description?: string }
 

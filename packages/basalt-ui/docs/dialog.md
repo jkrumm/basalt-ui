@@ -4,7 +4,7 @@ use when: 'a modal decision or a short form interrupts the page; a destructive c
 never when: 'the content is a long edit beside the page (use `Sheet`) or a hint on a trigger (use `Popover` or `Tooltip`)'
 subpath: basalt-ui/ui/dialog
 peers: ['@base-ui/react']
-slots: [dialog-trigger, dialog-content, dialog-title, dialog-description, dialog-close, alert-dialog-trigger, alert-dialog-content]
+slots: [dialog-trigger, dialog-content, dialog-title, dialog-description, dialog-meta, dialog-actions, dialog-close, alert-dialog-trigger, alert-dialog-content]
 ---
 
 # Dialog
@@ -36,15 +36,21 @@ DialogTrigger({ className, ...props }: DialogTriggerProps): ReactElement
 
 ### `DialogContent`
 
-The dialog panel with its backdrop. `title` is required and names the dialog; `description` is
-optional. The corner close button is part of the panel and named by the `dialog.close` message.
+The dialog panel with its backdrop, a light wash of the canvas so the page stays readable behind
+it. `title` is required and names the dialog; `description` is optional. The corner close button
+is part of the panel and named by the `dialog.close` message. A viewer adds `meta` (a muted line)
+and `actions` (icon buttons) to the header. `size="split"` is the wizard panel: no header and no
+padding, the title and description are read by assistive tech only, and the children (a
+`WizardDialog`) draw their own top bar with a `DialogClose`.
 
 ```ts
-DialogContent({ title, description, size, className, children, ...props }: DialogContentProps): ReactElement
+DialogContent({ title, description, meta, actions, size, className, children, ...props }: DialogContentProps): ReactElement
   className?: string  // Layout only (`w-full`, `mt-2`)
   title: ReactNode  // The accessible name and the visible heading
   description?: ReactNode  // One sentence under the title; it also describes the dialog to assistive tech
-  size?: "sm" | "md" | "lg" | null
+  size?: "sm" | "md" | "lg" | "wide" | "split" | null
+  meta?: ReactNode  // A muted line under the title, such as a file's size and date
+  actions?: readonly DialogAction[]  // Icon actions between the title and the close, at most four
 ```
 
 ### `DialogTitle`
@@ -110,7 +116,7 @@ AlertDialogContent({ title, description, className, children, ...props }: AlertD
 
 Part `dialog-content`.
 
-- `size`: `sm`, `md`, `lg` (default `md`)
+- `size`: `sm`, `md`, `lg`, `wide`, `split` (default `md`)
 
 ## `alertDialogContentVariants`
 
@@ -124,6 +130,8 @@ No variant axes.
 - `dialog-content`
 - `dialog-title`
 - `dialog-description`
+- `dialog-meta`
+- `dialog-actions`
 - `dialog-close`
 - `alert-dialog-trigger`
 - `alert-dialog-content`

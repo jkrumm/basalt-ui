@@ -14,8 +14,8 @@ export type OverlaySpec<P> = {
   description?: string
   /** `dialog` centres a panel, `sheet` slides in from the edge (the bottom on a phone). Default `dialog`. */
   as?: 'dialog' | 'sheet'
-  /** Dialog width. Default `md`. */
-  size?: 'sm' | 'md' | 'lg'
+  /** Dialog width: `wide` for a wide form or a viewer, `split` for a `WizardDialog` body. Default `md`. */
+  size?: 'sm' | 'md' | 'lg' | 'wide' | 'split'
   render: (props: P, api: OverlayApi) => ReactNode
 }
 

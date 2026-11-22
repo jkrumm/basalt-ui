@@ -125,6 +125,7 @@
   "shotState": "basalt-ui:apps/playground/src/recipes/shot-state.tsx",
   "FormSection": "basalt-ui:apps/playground/src/routes/kit/forms/-settings-form.tsx",
   "Stepper": "basalt-ui:apps/playground/src/routes/kit/forms/-steps-form.tsx",
+  "WizardDialog": "basalt-ui:apps/playground/src/routes/kit/forms/-contract-wizard.tsx",
   "useAppForm": "basalt-ui:apps/playground/src/routes/kit/forms/-create-service.tsx",
   "withForm": "basalt-ui:apps/playground/src/routes/kit/forms/-steps-form.tsx",
   "basaltAstro": "basalt-ui:apps/marketing/astro.config.mjs",

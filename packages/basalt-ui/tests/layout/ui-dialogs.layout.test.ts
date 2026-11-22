@@ -44,12 +44,27 @@ const EMPTY_SPEC = { sections: [] } as FixtureSpec
 const MD = 840
 
 type Overlay = { name: string; trigger: string; popup: string; close: string }
+
+/** A `data-testid` id, or a selector when it starts with `[`. */
+const closeSelector = (close: string): string => (close.startsWith('[') ? close : byId(close))
 const OVERLAYS: Overlay[] = [
   {
     name: 'dialog',
     trigger: 'ud-open-dialog',
     popup: '[data-slot="dialog-content"]',
     close: 'ud-close-dialog',
+  },
+  {
+    name: 'wide dialog',
+    trigger: 'ud-open-wide',
+    popup: '[data-slot="dialog-content"]',
+    close: 'ud-close-wide',
+  },
+  {
+    name: 'wizard dialog',
+    trigger: 'ud-open-wizard',
+    popup: '[data-slot="dialog-content"]',
+    close: '[data-slot="wizard-top-bar"] [data-slot="dialog-close"]',
   },
   {
     name: 'alert dialog',
@@ -212,7 +227,7 @@ layout('Dialog, AlertDialog, Sheet and Toast', () => {
           test('the close button inside closes it', async () => {
             const page = await open(viewport)
             await show(page, overlay)
-            await page.raw.click(byId(overlay.close))
+            await page.raw.click(closeSelector(overlay.close))
             await page.raw.waitForSelector(overlay.popup, { state: 'detached' })
             expect(await page.count(overlay.popup)).toBe(0)
           })
@@ -221,7 +236,10 @@ layout('Dialog, AlertDialog, Sheet and Toast', () => {
 
       test('the sheet sits on the edge placement="auto" picks for this width', async () => {
         const page = await open(viewport)
-        await show(page, OVERLAYS[2]!)
+        await show(
+          page,
+          OVERLAYS.find((o) => o.name === 'sheet')!,
+        )
         const rect = await rectOf(page, '[data-slot="sheet-content"]')
         const { innerWidth, innerHeight } = await page.raw.evaluate(() => ({
           innerWidth: window.innerWidth,
@@ -267,6 +285,80 @@ layout('Dialog, AlertDialog, Sheet and Toast', () => {
       })
     })
   }
+
+  describe('sizes, wash and the wizard panes', () => {
+    const named = (name: string): Overlay => OVERLAYS.find((o) => o.name === name)!
+    const backdropOf = (page: LayoutPage): Promise<string> =>
+      page.raw.evaluate(
+        () =>
+          getComputedStyle(
+            document.querySelector('[role="dialog"], [role="alertdialog"]')!.parentElement!
+              .previousElementSibling!,
+          ).backgroundColor,
+      )
+
+    test('the wide dialog is 64 rem at 1440 and fills a phone minus its margin', async () => {
+      const page = await open(DESKTOP_1440)
+      await show(page, named('wide dialog'))
+      expect((await rectOf(page, '[data-slot="dialog-content"]')).width).toBeCloseTo(1024, 0)
+      await page.raw.keyboard.press('Escape')
+      const phone = await open(PHONE)
+      await show(phone, named('wide dialog'))
+      expect((await rectOf(phone, '[data-slot="dialog-content"]')).width).toBeCloseTo(390 - 32, 0)
+    })
+
+    test('the wizard is 1100 by 700 with two panes at 1440 and the form pane alone at 390', async () => {
+      const page = await open(DESKTOP_1440)
+      await show(page, named('wizard dialog'))
+      const panel = await rectOf(page, '[data-slot="dialog-content"]')
+      expect(panel.width).toBeCloseTo(1100, 0)
+      expect(panel.height).toBeCloseTo(700, 0)
+      const preview = await rectOf(page, '[data-slot="wizard-preview"]')
+      const form = await rectOf(page, '[data-slot="wizard-form"]')
+      expect(preview.width).toBeGreaterThan(400)
+      expect(form.left).toBeGreaterThanOrEqual(preview.right - 0.5)
+
+      const phone = await open(PHONE)
+      await show(phone, named('wizard dialog'))
+      expect(await phone.count('[data-slot="wizard-preview"]')).toBe(1)
+      const hidden = await phone.raw.evaluate(
+        () => getComputedStyle(document.querySelector('[data-slot="wizard-preview"]')!).display,
+      )
+      expect(hidden).toBe('none')
+      const formPane = await rectOf(phone, '[data-slot="wizard-form"]')
+      const panelPhone = await rectOf(phone, '[data-slot="dialog-content"]')
+      expect(formPane.width).toBeCloseTo(panelPhone.width, 0)
+      expect(formPane.bottom).toBeLessThanOrEqual(panelPhone.bottom + 0.5)
+    })
+
+    test('the wizard primary is disabled until the step is valid and its preview follows typing', async () => {
+      const page = await open(DESKTOP_1440)
+      await show(page, named('wizard dialog'))
+      const primary = '[data-slot="wizard-footer"] button'
+      expect(await page.raw.getAttribute(primary, 'data-disabled')).not.toBeNull()
+      await page.raw.fill('[data-slot="wizard-body"] input', 'Acme')
+      await page.settle()
+      expect(await page.raw.getAttribute(primary, 'data-disabled')).toBeNull()
+      expect(await page.raw.textContent('[data-testid="ud-preview"]')).toBe('Acme')
+    })
+
+    test('a Dialog backdrop is a light wash and an AlertDialog keeps the strong scrim', async () => {
+      const page = await open(DESKTOP_1440)
+      await show(page, named('dialog'))
+      const wash = await backdropOf(page)
+      await page.raw.keyboard.press('Escape')
+      await page.raw.waitForSelector('[data-slot="dialog-content"]', { state: 'detached' })
+      await show(page, named('alert dialog'))
+      const scrim = await backdropOf(page)
+      // Light scheme: the wash is the pale canvas, the scrim is dark ink, so the wash is lighter.
+      const lightness = (c: string): number => {
+        const [r = 0, g = 0, b = 0] = (c.match(/[\d.]+/g) ?? []).map(Number)
+        return (r + g + b) / (r > 1 || g > 1 || b > 1 ? 255 * 3 : 3)
+      }
+      expect(wash).not.toBe(scrim)
+      expect(lightness(wash)).toBeGreaterThan(lightness(scrim))
+    })
+  })
 
   describe('keyboard, desktop fine pointer', () => {
     test('focus moves into the dialog on open and Tab stays inside it', async () => {
