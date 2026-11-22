@@ -287,9 +287,12 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
   const resized = inputs.map((c) => resizedWidth(c, options.widths?.[c.id]))
   const content = inputs.map((c) => contentWidth(c, options.contentCh?.[c.id]))
   const grid = options.look === 'grid'
+  // The pinned identity keeps its floor: the room it holds over the sideways scroll is room every other
+  // column loses (at 390 a 30 ch title left a scrolled column 46 px).
   const widths = inputs.map(
     (c, index) =>
-      resized[index] ?? Math.max(content[index] ?? widthPx(c.width), grid ? gridWidthPx(c) : 0),
+      resized[index] ??
+      Math.max(content[index] ?? widthPx(c.width), grid && index !== identity ? gridWidthPx(c) : 0),
   )
   // A short text column sized to its values is a category: it keeps that width like a figure.
   const flexible = inputs.map(
