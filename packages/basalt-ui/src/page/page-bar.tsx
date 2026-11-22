@@ -318,7 +318,7 @@ function LayoutToggle<L extends string>({ layout }: { layout: PageLayout<L> }): 
           aria-label={label}
           aria-pressed={option === value}
           title={label}
-          className="size-[calc(var(--basalt-ctl-h)-0.25rem)] rounded-[calc(var(--radius-ctrl)-2px)] text-muted-foreground hover:bg-transparent hover:text-foreground aria-pressed:bg-secondary aria-pressed:text-foreground aria-pressed:shadow-raised"
+          className="size-[calc(var(--basalt-ctl-h)-0.25rem)] rounded-[calc(var(--radius-ctrl)-2px)] text-muted-foreground hover:bg-transparent hover:text-foreground aria-pressed:bg-secondary aria-pressed:text-foreground aria-pressed:shadow-raised forced-colors:border forced-colors:border-current forced-colors:aria-pressed:border-2"
           onClick={() => {
             set(option)
           }}
