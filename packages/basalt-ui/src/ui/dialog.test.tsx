@@ -133,8 +133,8 @@ describe('dialog module', () => {
         </DialogContent>
       </Dialog>,
     )
-    expect(document.querySelector('[data-slot="dialog-meta"]')?.textContent).toBe('2.4 MB, 12 Nov')
-    const names = [...document.querySelectorAll('[data-slot="dialog-actions"] button')]
+    expect(document.querySelector('header p')?.textContent).toBe('2.4 MB, 12 Nov')
+    const names = [...document.querySelectorAll('header button[title]')]
     expect(names.map((b) => b.getAttribute('aria-label'))).toEqual(['Download', 'Delete'])
     fireEvent.click(names[1]!)
     expect(seen).toEqual(['delete'])
