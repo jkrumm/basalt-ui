@@ -155,7 +155,21 @@ export type TableMessages = Record<
   | 'table.summaryMenu'
   | 'table.rowNumber'
   | 'table.resetWidth'
-  | 'table.groupNone',
+  | 'table.groupNone'
+  | 'table.layout'
+  | 'table.layoutTable'
+  | 'table.layoutList'
+  | 'table.layoutBoard'
+  | 'table.layoutGallery'
+  | 'table.layoutTableHint'
+  | 'table.layoutListHint'
+  | 'table.layoutBoardHint'
+  | 'table.layoutGalleryHint'
+  | 'table.viewAddLayout'
+  | 'table.boardGroupBy'
+  | 'table.cardOpen'
+  | 'table.cardSelect'
+  | 'table.cardDeselect',
   string
 > &
   Record<
@@ -175,7 +189,10 @@ export type TableMessages = Record<
     | 'table.errorNamed'
     | 'table.resizeColumn'
     | 'table.groupBy'
-    | 'table.summaryOf',
+    | 'table.summaryOf'
+    | 'table.boardHint'
+    | 'table.boardFailed'
+    | 'table.cardPick',
     (f: Format, name: string) => string
   > &
   Record<'table.cellFilter', (f: Format, header: string, value: string) => string> &
@@ -356,6 +373,20 @@ export const table = {
   'table.rowNumber': 'Row',
   'table.resetWidth': 'Reset width',
   'table.groupNone': 'Remove grouping',
+  'table.layout': 'Layout',
+  'table.layoutTable': 'Table',
+  'table.layoutList': 'List',
+  'table.layoutBoard': 'Board',
+  'table.layoutGallery': 'Gallery',
+  'table.layoutTableHint': 'Rows and columns to compare',
+  'table.layoutListHint': 'One line per record',
+  'table.layoutBoardHint': 'Cards in columns, moved by drag',
+  'table.layoutGalleryHint': 'Cards in a grid',
+  'table.viewAddLayout': 'Add a view',
+  'table.boardGroupBy': 'Group by',
+  'table.cardOpen': 'Open',
+  'table.cardSelect': 'Select',
+  'table.cardDeselect': 'Deselect',
   'table.countdownToday': 'Today',
   'table.countdownLate': (f, days) =>
     `${f.number(days)} ${f.plural(days) === 'one' ? 'day' : 'days'} late`,
@@ -375,6 +406,9 @@ export const table = {
   'table.resizeColumn': (_f, header) => `Resize ${header}`,
   'table.groupBy': (_f, header) => `Group by ${header}`,
   'table.summaryOf': (_f, header) => `Summary of ${header}`,
+  'table.boardHint': (_f, header) => `Drag a card to change its ${header.toLocaleLowerCase()}`,
+  'table.boardFailed': (_f, title) => `${title} could not move. It is back where it was.`,
+  'table.cardPick': (_f, title) => `Select ${title}`,
   'table.viewCopyOf': (_f, name) => `${name} copy`,
   'table.viewMenu': (_f, name) => `${name} view actions`,
   'table.panelTitleOf': (_f, name) => `Edit view: ${name}`,

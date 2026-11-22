@@ -1,10 +1,10 @@
 ---
 name: view-switch
-use-when: one dataset shows as a dependency chain, nested rows or a table (or as table and cards) and the visitor can link to each
+use-when: one dataset shows as a dependency chain, nested rows or a table and the visitor can link to each
 ---
 
 A presentation is state, never a second query: `ViewTabs` writes the `as` param, one `useDataTable` serves the table and the nested rows, and one `useChartFocus` makes a chain node and its row one item.
-It is a recipe, not a `ChainView` prop: the tabs live in the page bar's `tabs` slot, the store is the page's, and only the app writes the columns. Table or cards is the same shape with `cardsBelow: 'always'`. Name the field `as`, not `view`: `view` is the saved-view param of the table, and two fields on one param throw.
+It is a recipe, not a `ChainView` prop: the tabs live in the page bar's `tabs` slot, the store is the page's, and only the app writes the columns. Name the field `as`, not `view`: `view` is the saved-view param of the table, and two fields on one param throw. A table, a list, a board or a gallery of one record set is no recipe: pass `useDataTable({ layouts: ['table', 'list', 'board', 'gallery'] })` and `PageBar layout={useTableViews(t).layout}`; the view saves its layout, and `DataTable` draws it from the columns' card slots. A board stands on a `c.select` column (a drop calls its `commit`, rolled back on a rejection) and moves by drag given `DataTable drag` (`drag` from `basalt-ui/ui/sortable-list`); a server table offers no board, and a server gallery pages.
 
 ```tsx
 import { ChainView } from 'basalt-ui/cards'

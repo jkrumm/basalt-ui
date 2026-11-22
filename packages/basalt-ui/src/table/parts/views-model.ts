@@ -1,7 +1,8 @@
 /**
  * Saved views, as pure values (docs/v3/concepts/data-table.md sections 3 and 6). A view stores
  * explicit values: `q`, filters, sort, page size, the columns (visibility, order, pins, widths), the
- * row height, the grouping and the footer reduces, never the page. It lives
+ * row height, the grouping, the footer reduces and the layout, never the page. A view stored before
+ * the layout existed has none and draws as a table. It lives
  * on the device at `basalt:table-views:<id>` in the frozen `{v,value}` envelope; the list's order is
  * the tabs' order. Version 2 added `default` and `sharing`; a version 1 list migrates as it is, any
  * other version is discarded instead of read wrong.
@@ -88,13 +89,14 @@ const listKey = (ids: readonly string[] | undefined): string => (ids ?? []).join
 const mapKey = (map: Readonly<Record<string, unknown>> | undefined): string =>
   JSON.stringify(Object.entries(map ?? {}).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
 
-/** The view properties beyond the columns: the row height, the grouping and the reduces. */
+/** The view properties beyond the columns: the row height, the grouping, the reduces and the layout. */
 const viewKey = (display: TableState['display']): string =>
   JSON.stringify([
     mapKey(display.widths),
     display.rowHeight ?? '',
     display.groupBy === undefined ? '' : display.groupBy === null ? '\u0000' : display.groupBy,
     mapKey(display.aggregates),
+    display.layout === undefined || display.layout === 'table' ? '' : display.layout,
   ])
 
 /** Whether the table state differs from the view in anything the view carries. The page never counts. */
@@ -191,7 +193,7 @@ export function pruneView(
  * device's while the grouping holds.
  */
 export function viewDisplay(prev: TableDisplay, saved: TableDisplay): TableDisplay {
-  const { rowHeight: _rowHeight, groupBy: _groupBy, ...rest } = prev
+  const { rowHeight: _rowHeight, groupBy: _groupBy, layout: _layout, ...rest } = prev
   const sameGroup = prev.groupBy === saved.groupBy
   return {
     ...rest,
@@ -202,6 +204,7 @@ export function viewDisplay(prev: TableDisplay, saved: TableDisplay): TableDispl
     aggregates: saved.aggregates ?? {},
     ...(saved.rowHeight !== undefined && { rowHeight: saved.rowHeight }),
     ...(saved.groupBy !== undefined && { groupBy: saved.groupBy }),
+    ...(saved.layout !== undefined && saved.layout !== 'table' && { layout: saved.layout }),
     ...(!sameGroup && { collapsed: [] }),
   }
 }
@@ -228,6 +231,7 @@ export function storedState(state: TableState): TableState {
       ...(Object.keys(display.aggregates ?? {}).length > 0 && {
         aggregates: { ...display.aggregates },
       }),
+      ...(display.layout !== undefined && display.layout !== 'table' && { layout: display.layout }),
     },
   }
 }

@@ -31,7 +31,7 @@ A recipe is the shipped answer to a pattern basalt composes but does not export:
 - [timeline](node_modules/basalt-ui/docs/recipes/timeline.md): dated bars on a shared time axis, read-only, in a card frame
 - [two-pane](node_modules/basalt-ui/docs/recipes/two-pane.md): charts stacked on one x (a price over a momentum line) that share one crosshair, one x chip and one plot box
 - [websocket-transport](node_modules/basalt-ui/docs/recipes/websocket-transport.md): the server pushes over a WebSocket, not SSE, and a channel must still reconnect, resume and stop on a refused token
-- [view-switch](node_modules/basalt-ui/docs/recipes/view-switch.md): one dataset shows as a dependency chain, nested rows or a table (or as table and cards) and the visitor can link to each
+- [view-switch](node_modules/basalt-ui/docs/recipes/view-switch.md): one dataset shows as a dependency chain, nested rows or a table and the visitor can link to each
 - [saved-views](node_modules/basalt-ui/docs/recipes/saved-views.md): a table's search, filters, sort, columns, widths, row height and grouping are worth naming and coming back to
 - [export](node_modules/basalt-ui/docs/recipes/export.md): a table needs a CSV of its rows, because the table itself has no export
 - [shot-state](node_modules/basalt-ui/docs/recipes/shot-state.md): a page's empty, loading and error states must be scored by `basalt-ui shot`

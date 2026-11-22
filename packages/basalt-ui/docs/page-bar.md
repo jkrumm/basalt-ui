@@ -25,7 +25,7 @@ PageBar<K extends string = string, L extends string = string>({ title, parent, c
   controls?: { readonly kind: "controls-slot"; readonly count: number; readonly compact?: boolean; render(): ReactNode; }
   tabs?: PageTabs<K>
   search?: PageSearch  // Before `controls`; below `@wide` it takes a line of its own
-  layout?: PageLayout<L>  // After `refresh`, before `settings`
+  layout?: PageLayout<L>  // After `refresh`, before `settings`; `undefined` draws none (`useTableViews().layout` with one layout)
   settings?: PageSettings  // After `layout`, before `actions`
   connection?: ConnectionView  // `useConnection()`: draws `ConnectionIndicator` in the end slot, before `refresh`
   refresh?: { scope: "page" | "global"; } & { syncing: boolean; lastCompletedAt?: number; onSync(): void; error?: string; }

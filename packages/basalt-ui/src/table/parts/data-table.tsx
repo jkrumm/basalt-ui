@@ -9,8 +9,10 @@
  * focusable row, decided from props alone.
  */
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
-import { useContext, useLayoutEffect } from 'react'
-import type { CSSProperties, ReactElement } from 'react'
+import { Suspense, lazy, useContext, useLayoutEffect } from 'react'
+import type { ComponentType, CSSProperties, ReactElement } from 'react'
+import type { DetailHost, DragLike, VirtualLike } from '../../core/ports'
+import { useDetailHost } from './detail-sheet'
 import { cn } from '../../core/cn'
 import { FrameArmContext } from '../../core/frame-arm'
 import type { FrameArm } from '../../core/frame-arm'
@@ -35,6 +37,61 @@ import {
 } from './tiers'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
+
+type BoardProps = {
+  model: TableModel<unknown>
+  drag: DragLike | undefined
+  virtual: VirtualLike | undefined
+}
+
+/** The board and the gallery load on first use: a table-only page never fetches `./cards`' board. */
+const LazyBoard = lazy(async (): Promise<{ default: ComponentType<BoardProps> }> => ({
+  default: (await import('../layouts/board-layout')).BoardLayout,
+}))
+const LazyGallery = lazy(
+  async (): Promise<{ default: ComponentType<{ model: TableModel<unknown> }> }> => ({
+    default: (await import('../layouts/gallery-layout')).GalleryLayout,
+  }),
+)
+
+/**
+ * A ready board or gallery: the bulk bar, the layout, the pager and the detail host an activation
+ * shows into, around the same model the table reads.
+ */
+function CardLayout<T>({
+  table,
+  detail,
+  drag,
+  virtual,
+}: {
+  table: DataTableProps<T>['table']
+  detail: DetailHost | undefined
+  drag: DragLike | undefined
+  virtual: VirtualLike | undefined
+}): ReactElement {
+  const model = modelOf(table)
+  const sheet = useDetailHost(model, detail)
+  const any = model as unknown as TableModel<unknown>
+  return (
+    <div
+      data-slot="table-root"
+      data-phase={model.phase.tag}
+      data-layout={model.layout}
+      className="flex w-full max-w-full min-w-0 flex-col"
+    >
+      <BulkBar table={table} />
+      <Suspense fallback={null}>
+        {model.layout === 'board' ? (
+          <LazyBoard model={any} drag={drag} virtual={virtual} />
+        ) : (
+          <LazyGallery model={any} />
+        )}
+      </Suspense>
+      <TablePager table={table} />
+      {sheet}
+    </div>
+  )
+}
 
 /** A flexible `entity` column takes this many shares of the free width, another text-like one takes 1. */
 const ENTITY_SHARES = 2
@@ -218,9 +275,15 @@ export function DataTable<T, I = unknown>({
   focus,
   focusSeries,
   focusItems,
+  drag,
 }: DataTableProps<T, I>): ReactElement {
   const frame = useContext(FrameArmContext)
   const model = modelOf(table)
+  const list = model.layout === 'list'
+  // A list draws the phone card projection below the regular tier, whatever the table's own tier.
+  const listTier = list
+    ? ({ 'data-layout': 'list', 'data-below': '480', 'data-phone': 'cards' } as const)
+    : {}
   const scrolls = typeof height === 'object' || height === 'fill' || model.phone === 'scroll'
   const columns = visibleColumns(model.specs, model.plan.columns).length
   const colcount = columns + model.lead.cols
@@ -237,6 +300,12 @@ export function DataTable<T, I = unknown>({
   if (frame !== undefined)
     return <FramedArm table={table} frame={frame} windowed={virtual !== undefined} />
 
+  if (
+    (model.layout === 'board' || model.layout === 'gallery') &&
+    (phase.tag === 'ready' || phase.tag === 'stale')
+  )
+    return <CardLayout table={table} detail={detail} drag={drag} virtual={virtual} />
+
   if (windowed) {
     return (
       <RowFocusProvider link={link}>
@@ -249,6 +318,7 @@ export function DataTable<T, I = unknown>({
           data-look={model.look === 'grid' ? 'grid' : undefined}
           data-full-at={model.look === 'grid' ? undefined : (model.plan.fullAt ?? undefined)}
           {...tierAttributesOf(model)}
+          {...(list && { 'data-layout': 'list' })}
           onFocus={revealFocus}
           onBlur={onBlur}
           onScrollCapture={markScrolled}
@@ -302,6 +372,7 @@ export function DataTable<T, I = unknown>({
         data-look={model.look === 'grid' ? 'grid' : undefined}
         data-full-at={model.look === 'grid' ? undefined : (model.plan.fullAt ?? undefined)}
         {...tierAttributesOf(model)}
+        {...listTier}
         onFocus={revealFocus}
         onBlur={onBlur}
         onScrollCapture={markScrolled}
