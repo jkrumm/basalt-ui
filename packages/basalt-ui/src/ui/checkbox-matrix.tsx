@@ -30,6 +30,8 @@ export type MatrixRow = {
   description?: ReactNode
   /** Disables every cell of the row. */
   disabled?: boolean
+  /** Plain text for the row's "all" toggle name when `label` is not a string. */
+  name?: string
 }
 
 /** One column of the matrix: who or what the cells grant to. */
@@ -38,6 +40,8 @@ export type MatrixColumn = {
   label: ReactNode
   /** Disables every cell of the column. */
   disabled?: boolean
+  /** Plain text for the column's "all" toggle name when `label` is not a string. */
+  name?: string
 }
 
 /** `disabled`: cannot change, drawn faded. `locked`: cannot change and keeps its state readable. */
@@ -199,7 +203,7 @@ export function CheckboxMatrix({
   /** A group's toggle: every cell it can change, and whether they are all on, some on or none. */
   const group = (
     cells: readonly (readonly [MatrixRow, MatrixColumn])[],
-  ): { cells: typeof cells; checked: boolean; indeterminate: boolean } => {
+  ): { cells: typeof cells; checked: boolean; indeterminate: boolean; allOpenOn: boolean } => {
     const open = cells.filter(([row, column]) => stateOf(row, column) === undefined)
     // A locked cell counts toward what the toggle shows but never changes; a disabled one is left out.
     const shown = cells.filter(([row, column]) => stateOf(row, column) !== 'disabled')
@@ -208,6 +212,8 @@ export function CheckboxMatrix({
       cells: open,
       checked: shown.length > 0 && on === shown.length,
       indeterminate: on > 0 && on < shown.length,
+      // What a click does: switch every open cell off once they are all on, else switch them on.
+      allOpenOn: open.every(([row, column]) => isChecked(row, column)),
     }
   }
 
@@ -253,11 +259,14 @@ export function CheckboxMatrix({
                     <span id={colHeadId(column)}>{column.label}</span>
                     {columnToggles && (
                       <CellBox
-                        aria-label={t('base.matrix.allForColumn', text(column.label))}
+                        aria-label={t(
+                          'base.matrix.allForColumn',
+                          column.name ?? text(column.label),
+                        )}
                         checked={toggle.checked}
                         indeterminate={toggle.indeterminate}
                         disabled={toggle.cells.length === 0}
-                        onCheckedChange={(on) => commit(toggle.cells, on)}
+                        onCheckedChange={() => commit(toggle.cells, !toggle.allOpenOn)}
                       />
                     )}
                   </span>
@@ -316,11 +325,11 @@ export function CheckboxMatrix({
                     <CellBox
                       data-matrix-row={r}
                       data-matrix-col={columns.length}
-                      aria-label={t('base.matrix.allForRow', text(row.label))}
+                      aria-label={t('base.matrix.allForRow', row.name ?? text(row.label))}
                       checked={toggle.checked}
                       indeterminate={toggle.indeterminate}
                       disabled={toggle.cells.length === 0}
-                      onCheckedChange={(on) => commit(toggle.cells, on)}
+                      onCheckedChange={() => commit(toggle.cells, !toggle.allOpenOn)}
                     />
                   </TableCell>
                 )}

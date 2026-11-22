@@ -8,7 +8,7 @@ import type { Format } from '../format'
  * `base.password.show` and `base.password.hide` name a `PasswordInput`'s reveal button,
  * `base.tags.remove` a `TagInput` chip's remove button, `base.otp.character` one box of a
  * `OneTimeCode`, `base.matrix.all`, `base.matrix.allForRow` and `base.matrix.allForColumn` the
- * toggles of a `CheckboxMatrix`.
+ * toggles of a `CheckboxMatrix`, `base.swatch.menu` the panel of a `SwatchPicker` menu.
  */
 export type BaseMessages = Record<
   | 'base.spinner.loading'
@@ -16,7 +16,8 @@ export type BaseMessages = Record<
   | 'base.copy.done'
   | 'base.password.show'
   | 'base.password.hide'
-  | 'base.matrix.all',
+  | 'base.matrix.all'
+  | 'base.swatch.menu',
   string
 > &
   Record<
@@ -38,6 +39,7 @@ export const base = {
   'base.tags.remove': (_f, tag) => `Remove ${tag}`,
   'base.otp.character': (_f, index, length) => `Character ${index} of ${length}`,
   'base.matrix.all': 'All',
+  'base.swatch.menu': 'Colour',
   'base.matrix.allForRow': (_f, row) => `All for ${row}`,
   'base.matrix.allForColumn': (_f, column) => `${column} for every row`,
 } satisfies Partial<BasaltMessages>
