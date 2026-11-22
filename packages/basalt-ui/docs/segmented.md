@@ -26,7 +26,7 @@ shows the selection with no script. Works with no provider.
 ```ts
 Segmented(props: SegmentedProps): ReactElement
   // either options, options + multiple, children or children + multiple
-  size?: "md" | "sm" | null
+  size?: "sm" | "md" | null
   fill?: boolean  // The track takes its box's width and every option an equal share of it (a phone's full-width switch)
   disabled?: boolean
   className?: string  // Layout only (`w-full`, `mt-2`)

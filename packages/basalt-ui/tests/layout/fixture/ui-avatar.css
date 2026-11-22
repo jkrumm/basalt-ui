@@ -1,0 +1,9 @@
+/*
+ * The `ui-avatar` fixture's Tailwind v4 entry, compiled with preflight by `ui-avatar.layout.test.ts`
+ * into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './ui-avatar-fixture.tsx';
+@source '../../../src/ui/avatar.tsx';
+@source '../../../src/ui/entity.tsx';
+@source '../../../src/ui/button.tsx';

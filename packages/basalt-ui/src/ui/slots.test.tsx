@@ -69,6 +69,10 @@ const PARENTS: Record<string, ComponentType<{ children?: ReactNode }>> = {
 const PART_PROPS: Record<string, Record<string, unknown>> = {
   'field-error': { match: true },
   'card-info': { label: 'About' },
+  avatar: { name: 'Ada Lovelace' },
+  'avatar-stack': { label: 'Assignees', people: [{ name: 'Ada Lovelace' }] },
+  'entity-title': { title: 'Acme' },
+  'entity-chip': { label: 'Acme' },
   'count-badge': { count: 1 },
   'delta-badge': { value: 1, polarity: 'neutral' },
   'tabs-trigger': { value: 'a' },

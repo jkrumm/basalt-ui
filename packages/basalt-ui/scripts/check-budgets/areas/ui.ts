@@ -123,15 +123,22 @@ export const rows: readonly RowDef[] = [
     id: 'ui-value-exports',
     order: 350,
     label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
-    // 229 measured. Exact: a new value export is a row here and a consumer named for it; a lower
+    // 239 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
-    ceiling: 229,
+    ceiling: 239,
     measure: valueExports,
   },
 ]
 
 export const raises: Raises = {
   'ui-value-exports': [
+    {
+      from: 229,
+      to: 239,
+      consumer:
+        '`Avatar`, `AvatarStack`, `EntityTitle`, `EntityChip`, their cva tables and part lists from `basalt-ui/ui/avatar` and `basalt-ui/ui/entity`: the table kinds, record header, presence stack and reference pages of the Accordee and Blueprint benchmark rows in this repo take their faces and linked-record chips from them (Issue 2852)',
+      repo: 'basalt-ui',
+    },
     {
       from: 226,
       to: 229,

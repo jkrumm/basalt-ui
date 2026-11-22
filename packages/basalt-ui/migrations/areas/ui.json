@@ -682,7 +682,7 @@
       "id": "mantine-Avatar",
       "kind": "map",
       "from": "@mantine/core#Avatar",
-      "to": "<img> with `rounded-full`"
+      "to": "basalt-ui/ui/avatar#Avatar (image over initials or an icon; size xs | sm | md | lg, shape person | object); AvatarStack for a group"
     },
     {
       "profiles": ["parts", "app"],

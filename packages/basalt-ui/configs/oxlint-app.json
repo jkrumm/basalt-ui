@@ -18,6 +18,8 @@
         "AutocompleteContent": "div",
         "AutocompleteInput": "div",
         "AutocompleteItem": "div",
+        "Avatar": "div",
+        "AvatarStack": "div",
         "Button": "button",
         "Card": "div",
         "CardBand": "div",
@@ -43,6 +45,8 @@
         "DialogDescription": "div",
         "DialogTitle": "div",
         "DialogTrigger": "div",
+        "EntityChip": "div",
+        "EntityTitle": "div",
         "Field": "div",
         "FieldDescription": "div",
         "FieldError": "div",
@@ -252,6 +256,18 @@
             "message": "Alert owns its height and display: eject it (basalt-ui eject alert) to change them."
           },
           {
+            "pattern": "^Avatar$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "Avatar owns its height and display: use size (xs, sm, md, lg) and shape (person, object), or eject it (basalt-ui eject avatar)."
+          },
+          {
+            "pattern": "^AvatarStack$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "AvatarStack owns its height and display: use size (xs, sm, md, lg), or eject it (basalt-ui eject avatar)."
+          },
+          {
             "pattern": "^Lozenge$",
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
@@ -376,6 +392,18 @@
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
             "message": "AlertDialogContent owns its height and display: eject it (basalt-ui eject dialog) to change them."
+          },
+          {
+            "pattern": "^EntityTitle$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "EntityTitle owns its height and display: use size (sm, md, lg), or eject it (basalt-ui eject entity)."
+          },
+          {
+            "pattern": "^EntityChip$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "EntityChip owns its height and display: eject it (basalt-ui eject entity) to change them."
           },
           {
             "pattern": "^Field$",

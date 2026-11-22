@@ -344,6 +344,7 @@ const isUiPath = (source: string): boolean =>
 export const SHIPPED_PRIMITIVES: ReadonlySet<string> = new Set([
   'accordion',
   'alert',
+  'avatar',
   'badge',
   'button',
   'card',
@@ -352,6 +353,7 @@ export const SHIPPED_PRIMITIVES: ReadonlySet<string> = new Set([
   'combobox',
   'date-picker',
   'dialog',
+  'entity',
   'field',
   'file-upload',
   'info-hint',

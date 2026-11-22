@@ -21,7 +21,7 @@ A text input on Base UI. Works with no provider and joins a Base UI `Field` when
 
 ```ts
 Input({ size, className, start: Start, end, ...props }: InputProps): ReactElement
-  size?: "md" | "sm" | null
+  size?: "sm" | "md" | null
   className?: string  // Layout only (`w-full`, `max-w-xs`, `flex-1`)
   start?: IconComponent  // A non-interactive leading icon, drawn inside the field
   end?: ReactNode  // A trailing unit (`ms`) or one small button, drawn inside the field
