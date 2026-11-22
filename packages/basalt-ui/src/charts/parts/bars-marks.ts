@@ -200,6 +200,61 @@ function zeroTicks<D>(
   ]
 }
 
+/** A bar of a non-zero value is drawn at least this tall, px: above the zero bar's {@link ZERO_TICK_PX} tick, so one item never reads as none. */
+const MIN_BAR_PX = 4
+
+/**
+ * The bars of a non-zero value drawn thinner than {@link MIN_BAR_PX} (a value a few hundredths of the
+ * domain) as one bar mark of that height from the baseline, laid out like the bars so it is as wide as its
+ * bar and on the side of its sign. A stack is judged by its total. Decorative, as the zero ticks are: the
+ * height is a drawing size, never the value the hover chip and the cursor read. A normalized stack has none.
+ */
+function minBars<D>(
+  plot: PlotContext<D, ChartX>,
+  rows: readonly PlotRow<D, ChartX>[],
+  paint: BarPaint<D>,
+  layout: BarLayout,
+  order: readonly string[],
+): ChartMarks {
+  if (layout === 'normalized' || !floorIsZero(plot.yDomain) || plot.plotHeight <= 0) return []
+  const [lo, hi] = [Math.min(...plot.yDomain), Math.max(...plot.yDomain)]
+  const unit = (hi - lo) / plot.plotHeight
+  const thin = (value: number): boolean => value !== 0 && Math.abs(value) < MIN_BAR_PX * unit
+  const valued = rows.filter((row) => row.y !== null && Number.isFinite(row.y))
+  const lifted = new Map<PlotRow<D, ChartX>, number>()
+  if (layout === 'grouped') {
+    for (const row of valued)
+      if (thin(row.y ?? 0)) lifted.set(row, Math.sign(row.y ?? 0) * MIN_BAR_PX * unit)
+  } else {
+    for (const stack of stacksOf(valued)) {
+      const values = stack.map((row) => row.y ?? 0)
+      const total = values.reduce((acc, v) => acc + v, 0)
+      // One side only: a stack with parts on both sides has a body on each and is never thin.
+      if (values.some((v) => v * total < 0) || !thin(total)) continue
+      const widest = stack.reduce((a, b) => (Math.abs(b.y ?? 0) > Math.abs(a.y ?? 0) ? b : a))
+      lifted.set(widest, Math.sign(total) * MIN_BAR_PX * unit)
+    }
+  }
+  if (lifted.size === 0) return []
+  const drawn =
+    layout === 'grouped'
+      ? rows.map((row) => ({ ...row, y: lifted.get(row) ?? null }))
+      : [...lifted].map(([row, y]) => ({ ...row, y }))
+  return [
+    decorative(
+      barY(drawn, {
+        id: 'min-bars',
+        x: rowX,
+        y: 'y',
+        z: 'series',
+        fill: paint.fill,
+        states: [{ when: { focus: 'x' }, style: { fill: paint.solid } }],
+        layout: layout === 'grouped' ? group({ padding: 0.1 }) : stack({ order }),
+      }),
+    ),
+  ]
+}
+
 /** How a bar row paints: at rest and dimmed (`fill`), at full strength on hover (`solid`). */
 type BarPaint<D> = {
   fill: (row: PlotRow<D, ChartX>) => string
@@ -245,15 +300,11 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
     // A `focus` holding a datum dims every other bar (`dimmedPaint`: the dark card's floor included)
     // and lifts the focused one past its resting colour (`focusedPaint`).
     if (row.datum === plot.focused) return focusedPaint(color)
-    // An ink-step bar keeps its resting paint and fades through `fillOpacity` below: `dimmedPaint`'s floor is its own colour.
-    if (isInkStep(color)) return paint(color, strength)
+    // An ink-step bar fades by opacity (`INK_STEP_DIM`): `dimmedPaint`'s floor is its own colour. It fades here, in its
+    // paint, so a focus held outside the chart (a table row, a list) dims it as it dims a hue; a state the engine
+    // resolves on its own hover never ran for such a focus.
+    if (isInkStep(color)) return paint(color, strength * INK_STEP_DIM)
     return dimmedPaint(color, strength)
-  }
-  /** An ink-step bar while another datum holds the focus: it recedes by opacity. */
-  const recedes = (context: { datum: PlotRow<D, ChartX> }): boolean => {
-    if (plot.focused === null || context.datum.datum === plot.focused) return false
-    const color = colorOf(context.datum)
-    return color !== undefined && isInkStep(color)
   }
   const order = visibleBars.map((s) => s.key)
   // A stack stops at the plot's edge: a total past a bounded domain would overrun it.
@@ -269,10 +320,7 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
       // Series of one colour differ by shade alone: a surface hairline keeps stacked segments apart.
       ...(sharedColor && layout !== 'grouped' && { stroke: CV.surface, strokeWidth: 1 }),
       // The hovered x is its own highlight: the bar reads at full strength.
-      states: [
-        { when: recedes, style: { fillOpacity: INK_STEP_DIM } },
-        { when: { focus: 'x' }, style: { fill: solid } },
-      ],
+      states: [{ when: { focus: 'x' }, style: { fill: solid } }],
       layout:
         layout === 'grouped'
           ? group({ padding: 0.1 })
@@ -281,6 +329,7 @@ export function barMarks<D>(plot: PlotContext<D, ChartX>, input: BarMarksInput<D
     ...(emptyTicks
       ? emptyBinTicks(rows, plot.focused)
       : zeroTicks(plot, rows, { fill, solid }, layout, order)),
+    ...minBars(plot, rows, { fill, solid }, layout, order),
   ]
 }
 
