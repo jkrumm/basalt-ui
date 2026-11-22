@@ -354,11 +354,11 @@ describe('tiers', () => {
   test('widths are ch estimates plus padding; the icon column is a hit floor', () => {
     expect(widthPx({ ch: 10, flex: false })).toBe(104)
     expect(widthPx('icon')).toBe(44)
-    // the header "Amount (EUR)" is 12 characters; its floor adds the icon (3 ch) and the sort mark and menu (5 ch)
-    expect(specOf(c.money('amount', { currency: 'EUR' })).width).toEqual({ ch: 20, flex: false })
-    // "Total (EUR)" is 11 characters: 11 + 8 = 19
+    // the header "Amount (EUR)" is 12 characters; its floor adds the icon (3 ch) and one state mark (2 ch)
+    expect(specOf(c.money('amount', { currency: 'EUR' })).width).toEqual({ ch: 17, flex: false })
+    // "Total (EUR)" is 11 characters: 11 + 5 = 16
     expect(specOf(c.money('fee', { header: 'Total', currency: 'EUR' })).width).toEqual({
-      ch: 19,
+      ch: 16,
       flex: false,
     })
     expect(specOf(c.number('tax', { header: 'Q' })).width).toEqual({ ch: 10, flex: false })

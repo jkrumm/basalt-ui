@@ -491,8 +491,12 @@ type Base<T> = {
   extra?: Partial<KindSpec<T>>
 }
 
-/** Room beside a header's text in `ch`: the sort arrow and the filter mark it shows while it sorts or filters, with their gaps. */
-const HEADER_CHROME_CH = 5
+/**
+ * Room beside a header's text in `ch`: one state mark (the sort arrow or the filter mark) and its gap.
+ * With the icon's room that is the 5 ch a header kept before it lost its standing controls, so floors
+ * and tiers hold; a column both sorted and filtered may trim its label (its `title` shows it whole).
+ */
+const HEADER_CHROME_CH = 2
 /** A header asks for floor room up to this many `ch`; a longer one truncates (its title shows it whole). */
 const HEADER_MAX_CH = 24
 /** A header icon's room in `ch`: 16 px and its 6 px gap. */
