@@ -4,7 +4,7 @@
  * title as `h1` or breadcrumb leaf, the measured `--page-bar-h`, typed actions. Geometry is
  * `tests/layout/page-core.layout.test.ts`'s.
  */
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { useLayoutEffect } from 'react'
 import { renderToString } from 'react-dom/server'
@@ -136,7 +136,7 @@ describe('PageBar without a shell', () => {
     expect(band()?.querySelector('[data-slot="page-bar-controls"]')?.textContent).toBe('Range')
   })
 
-  test('a filterSlot in the controls slot renders as a FilterSet, and the controls cell owns the line from regular up', () => {
+  test('a filterSlot in the controls slot renders as a FilterSet, and its pills take the room the row leaves', () => {
     const range = memoryHandle<string>('range', 'a', {
       kind: 'enum',
       options: [
@@ -162,9 +162,9 @@ describe('PageBar without a shell', () => {
     )
     const controls = band()!.querySelector('[data-slot="page-bar-controls"]')!
     expect(controls.querySelector('[data-slot="filter-set"]')).not.toBeNull()
-    const cell = controls.parentElement!
-    expect(cell.className).toContain('basis-full')
-    expect(cell.className).toContain('@regular:flex-1')
+    expect(controls.className).toContain('has-[[data-slot=filter-pills]]:flex-1')
+    expect(controls.parentElement!.getAttribute('data-slot')).toBe('page-bar-end')
+    expect(controls.parentElement!.className).toContain('flex-1')
   })
 
   test('a band with no controls keeps its cell at content width', () => {
@@ -199,7 +199,7 @@ describe('PageBar without a shell', () => {
     expect(view.writes).toEqual(['b'])
   })
 
-  test('the tab strip is the segment look; under the regular tier its home takes the line and each tab an equal share', () => {
+  test('the tab strip is the pill look on the one line of the row, scrolling instead of wrapping', () => {
     const view = memoryHandle<string>('view', 'a', {
       kind: 'enum',
       options: [
@@ -213,12 +213,11 @@ describe('PageBar without a shell', () => {
       </Page>,
     )
     const home = band()?.querySelector('[data-slot="page-bar-tabs"]')
-    expect(home?.className).toContain('@max-regular:basis-full')
-    expect(home?.querySelector('[data-slot="tabs"]')?.getAttribute('data-variant')).toBe('segment')
+    expect(home?.className).not.toContain('basis-full')
+    expect(home?.parentElement?.className).toContain('flex-nowrap')
+    expect(home?.querySelector('[data-slot="tabs"]')?.getAttribute('data-variant')).toBe('pill')
     for (const name of ['Alpha', 'Beta']) {
-      const cls = screen.getByRole('tab', { name }).className
-      expect(cls).toContain('@max-regular:flex-1')
-      expect(cls).toContain('@max-regular:basis-0')
+      expect(screen.getByRole('tab', { name }).className).not.toContain('@max-regular:flex-1')
     }
   })
 
@@ -727,12 +726,19 @@ describe('PageBar in a shell (PageHost)', () => {
     expect(document.title).toBe('basalt')
   })
 
-  test('actions claim the header end and are not drawn in the band', () => {
+  test('beside a control the actions end the band, the view row, and claim nothing in the header', () => {
     const shell = fakeHost()
     inShell(shell.host, <PageBar controls={slotOf('Range')} actions={[action('new')]} />)
-    expect(shell.of('actions')).toHaveLength(1)
-    expect(band()?.querySelector('[data-action-id]')).toBeNull()
+    expect(shell.of('actions')).toHaveLength(0)
+    expect(band()?.querySelector('[data-action-id="new"]')).not.toBeNull()
     expect(screen.getByRole('button', { name: 'Range' })).toBeDefined()
+  })
+
+  test('with no control in the band the actions claim the header end, the identity row', () => {
+    const shell = fakeHost()
+    inShell(shell.host, <PageBar title="Runs" actions={[action('new')]} />)
+    expect(shell.of('actions')).toHaveLength(1)
+    expect(band()).toBeNull()
   })
 
   test('every claim is released on unmount', () => {
@@ -797,5 +803,143 @@ describe('PageBar on the server', () => {
     )
     expect(html.match(/<h1/g)).toHaveLength(1)
     expect(html).toContain('data-slot="page-bar"')
+  })
+})
+
+describe('PageBar view row', () => {
+  const statusOf = () =>
+    memoryHandle<string>('status', 'all', {
+      kind: 'enum',
+      options: [
+        { value: 'all', label: 'All' },
+        { value: 'overdue', label: 'Overdue' },
+      ],
+    })
+
+  test('a tab carries its count and tone, and the count follows the value it is given', () => {
+    const status = statusOf()
+    const bar = (overdue: number) => (
+      <Page>
+        <PageBar
+          tabs={{
+            state: status,
+            label: 'Invoices',
+            badges: {
+              all: { count: 236 },
+              overdue: { count: overdue, attention: true, tone: 'bad' },
+            },
+          }}
+        />
+      </Page>
+    )
+    const { rerender } = render(bar(17))
+    const overdue = screen.getByRole('tab', { name: 'Overdue 17' })
+    const count = overdue.querySelector('[data-slot="page-tab-count"]')!
+    expect(count.hasAttribute('data-attention')).toBe(true)
+    expect(count.className).toContain('text-bad')
+    expect(overdue.querySelector('[data-slot="page-tab-dot"]')?.className).toContain('bg-bad')
+    expect(
+      screen.getByRole('tab', { name: 'All 236' }).querySelector('[data-slot="page-tab-count"]')
+        ?.className,
+    ).toContain('text-muted-foreground')
+    rerender(bar(18))
+    expect(screen.getByRole('tab', { name: 'Overdue 18' })).toBeDefined()
+  })
+
+  test('a counted tab binds its handle: a click writes it, a write from outside selects it', () => {
+    const status = statusOf()
+    render(
+      <Page>
+        <PageBar tabs={{ state: status, label: 'Invoices', badges: { overdue: { count: 3 } } }} />
+      </Page>,
+    )
+    fireEvent.click(screen.getByRole('tab', { name: 'Overdue 3' }))
+    expect(status.writes).toEqual(['overdue'])
+    act(() => {
+      status.put('all')
+    })
+    expect(screen.getByRole('tab', { name: 'All' }).hasAttribute('data-active')).toBe(true)
+  })
+
+  test('the search writes as the reader types, an empty box unsets, a composition writes at its end', () => {
+    const q = memoryHandle<string>('q', '', { kind: 'string' })
+    render(
+      <Page>
+        <PageBar search={{ state: q, label: 'Search invoices' }} />
+      </Page>,
+    )
+    const [box] = screen.getAllByRole('searchbox', { name: 'Search invoices' })
+    fireEvent.change(box!, { target: { value: 'acme' } })
+    expect(q.writes).toEqual(['acme'])
+    fireEvent.change(box!, { target: { value: '' } })
+    expect(q.clears.count).toBe(1)
+    fireEvent.compositionEnd(box!, { target: { value: 'とう' } })
+    expect(q.writes.at(-1)).toBe('とう')
+    act(() => {
+      q.put('from a link')
+    })
+    expect((box as HTMLInputElement).value).toBe('from a link')
+  })
+
+  test('below wide the search takes a line of its own; the inline one is hidden there', () => {
+    const q = memoryHandle<string>('q', '', { kind: 'string' })
+    render(
+      <Page>
+        <PageBar
+          search={{ state: q, label: 'Search' }}
+          tabs={{ state: statusOf(), label: 'Views' }}
+        />
+      </Page>,
+    )
+    const boxes = [...document.querySelectorAll('[data-slot="page-bar-search"]')]
+    expect(boxes).toHaveLength(2)
+    const row = band()!.querySelector('[data-slot="page-bar-row"]')!
+    expect(row.contains(boxes[0]!)).toBe(true)
+    expect(boxes[0]!.className).toContain('hidden')
+    expect(boxes[0]!.className).toContain('@wide:block')
+    expect(row.contains(boxes[1]!)).toBe(false)
+    expect(boxes[1]!.className).toContain('@wide:hidden')
+  })
+
+  test('the end holds search, controls, layout, settings, then the actions with the primary last', () => {
+    const layout = memoryHandle<string>('layout', 'table', { kind: 'enum' })
+    const opened: string[] = []
+    const Icon = () => <svg aria-hidden="true" />
+    render(
+      <Page>
+        <PageBar
+          search={{ state: memoryHandle<string>('q', '', { kind: 'string' }), label: 'Search' }}
+          controls={slotOf('Range')}
+          layout={{
+            state: layout,
+            label: 'Layout',
+            options: [
+              { value: 'table', label: 'Table', icon: Icon },
+              { value: 'cards', label: 'Cards', icon: Icon },
+            ],
+          }}
+          settings={{ label: 'View settings', onClick: () => opened.push('settings') }}
+          actions={[action('new', { primary: true }), action('export')]}
+        />
+      </Page>,
+    )
+    const end = band()!.querySelector('[data-slot="page-bar-end"]')!
+    const order = [...end.children].map(
+      (el) =>
+        el.getAttribute('data-slot') ?? el.getAttribute('aria-label') ?? el.tagName.toLowerCase(),
+    )
+    expect(order).toEqual([
+      'page-bar-search',
+      'page-bar-controls',
+      'page-bar-layout',
+      'button',
+      'page-actions',
+    ])
+    const ids = [...end.querySelectorAll('[data-action-id]')].map((el) =>
+      el.getAttribute('data-action-id'),
+    )
+    expect(ids).toEqual(['export', 'new'])
+    fireEvent.click(screen.getByRole('button', { name: 'View settings' }))
+    expect(opened).toEqual(['settings'])
   })
 })

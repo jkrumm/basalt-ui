@@ -112,7 +112,7 @@ function SectionFrame<K extends string>({
           data-slot="section-tabs"
           className="flex min-w-0 items-center @max-regular:block @max-regular:basis-full"
         >
-          {renderTabs(tabs)}
+          {renderTabs(tabs, 'segment')}
         </div>
       )}
       {controls !== undefined && controls.count > 0 && (
