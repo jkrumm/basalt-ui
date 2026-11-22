@@ -108,7 +108,8 @@ export function CopyButton({
   return (
     <BaseButton
       {...props}
-      {...(!showLabel && { 'aria-label': name })}
+      // The name leads with the visible word, so a label beside it still meets label-in-name.
+      aria-label={name}
       data-slot="copy-button"
       data-copied={done ? '' : undefined}
       className={cn(
