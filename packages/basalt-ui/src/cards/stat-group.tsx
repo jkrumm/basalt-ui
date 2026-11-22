@@ -25,8 +25,8 @@ export type StatGroupProps = {
    * `strip` is one dense surface whose cells share their tracks; `cards` is one card per cell with
    * the bands aligned across them, two to a line when the container is narrow. `flush` is the strip
    * with no card: cells split by hairlines and a rule below, edge to edge under the view row of a
-   * fill page. A ready flush cell with no sub-line, delta, status, meter, chart or rows does not
-   * render; a loading, empty, failed or offline cell keeps its slot.
+   * fill page. A ready or stale flush cell with no sub-line, delta, status, meter, chart or rows
+   * does not render; a loading, empty, failed or offline cell keeps its slot.
    */
   variant: 'strip' | 'cards' | 'flush'
   /** Names the group for assistive tech (`Recovery`). */
@@ -76,7 +76,7 @@ const CARDS = cn(
  *
  * `flush` is the summary strip of a list page: it sits under the `PageBar` of a fill page, with no
  * card, and every cell carries the line that gives its figure a base. A bare number does not
- * render there (the owner rejected the bare stat strip): a ready cell with none of `sub`, `delta`,
+ * render there (the owner rejected the bare stat strip): a ready or stale cell with none of `sub`, `delta`,
  * `status`, `meter`, `chart` or `rows` is dropped, with a development warning; a loading, empty, failed or offline cell keeps its slot.
  *
  * @useWhen a page shows several headline figures side by side, a status bar or a row of KPIs
