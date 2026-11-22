@@ -3,8 +3,9 @@
  * card is dropped or sent through its menu, and after the card remounts in a virtualised target
  * column focus is back on it.
  */
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import type { Move } from 'basalt-ui/cards'
+import type { DragData, DragLike } from 'basalt-ui/core/ports'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { createElement } from 'react'
 import type { Col } from './board'
@@ -34,12 +35,24 @@ const until = async (done: () => boolean): Promise<void> => {
   expect(done()).toBe(true)
 }
 
+// The port's stand-in: what a native drag reports, driven by hand (the shipped engine is pdnd).
+type Watch = Parameters<DragLike['watch']>[0]
+const sources = new Map<HTMLElement, DragData>()
+const targets = new Map<HTMLElement, DragData>()
+const watchers = new Set<Watch>()
+const engine: DragLike = {
+  item: (o) => (sources.set(o.element, o.data), () => void sources.delete(o.element)),
+  target: (o) => (targets.set(o.element, o.data), () => void targets.delete(o.element)),
+  watch: (o) => (watchers.add(o), () => void watchers.delete(o)),
+}
+
 const mount = (): Move<Col>[] => {
   const sent: Move<Col>[] = []
   render(
     createElement(BoardDemo, {
       initial: seedCards({ todo: 3, doing: 2, done: 30 }),
       onMove: (m) => void sent.push(m),
+      engine,
     }),
   )
   return sent
@@ -47,8 +60,8 @@ const mount = (): Move<Col>[] => {
 
 const card = (id: string): HTMLElement =>
   document.querySelector<HTMLElement>(`[data-card-id="${id}"]`)!
-const wrapperOf = (id: string): HTMLElement =>
-  document.querySelector<HTMLElement>(`[data-testid="drag-${id}"]`)!
+const itemOf = (id: string): HTMLElement =>
+  card(id).closest<HTMLElement>('[data-slot="board-item"]')!
 
 async function viaMenu(id: string, item: string): Promise<void> {
   const trigger = card(id).querySelector<HTMLButtonElement>('[data-slot="kanban-menu"]')!
@@ -62,14 +75,12 @@ async function viaMenu(id: string, item: string): Promise<void> {
 }
 
 function viaDrop(id: string, onto: string): void {
-  const data = new Map<string, string>()
-  const dataTransfer = {
-    setData: (k: string, v: string) => void data.set(k, v),
-    getData: (k: string) => data.get(k) ?? '',
-  }
-  fireEvent.dragStart(wrapperOf(id), { dataTransfer })
-  fireEvent.dragOver(wrapperOf(onto), { dataTransfer })
-  fireEvent.drop(wrapperOf(onto), { dataTransfer })
+  const source = sources.get(itemOf(id))!
+  const target = targets.get(itemOf(onto))!
+  act(() => {
+    for (const w of watchers) w.onStart?.(source)
+    for (const w of watchers) w.onDrop({ source, target, edge: 'after' })
+  })
 }
 
 describe('S9 board recipe', () => {
@@ -98,6 +109,8 @@ describe('S9 board recipe', () => {
     expect(document.activeElement?.getAttribute('data-slot')).toBe('kanban-menu')
     expect(document.activeElement?.closest('section')?.getAttribute('aria-label')).toBe('Done')
     expect(doneRows()).toBeLessThan(31)
-    expect(document.querySelector('output')?.textContent).toBe('Moved to Done')
+    expect(document.querySelector('[data-slot="board"] output')?.textContent).toBe(
+      'Fix the cache key (todo 1) moved to Done, position 31 of 31',
+    )
   })
 })

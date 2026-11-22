@@ -1,25 +1,14 @@
-// The board recipe wired to state and to native drag and drop: what the layout fixture and the S9
-// test mount. Nothing here is a recipe; the drag half is one app's choice of engine.
+// The board wired to local state: what the layout fixture and the S9 test mount. The engine is the
+// shipped `drag`; the S9 test passes a stand-in with the same port.
+import { applyMove, Board, KanbanCard } from 'basalt-ui/cards'
+import type { DragLike } from 'basalt-ui/core/ports'
+import type { Move } from 'basalt-ui/cards'
+import { drag } from 'basalt-ui/ui/sortable-list'
+import { VirtualList } from 'basalt-ui/ui/virtual-list'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
-import type { Move } from 'basalt-ui/cards'
-import { KanbanBoard } from './board'
-import type { Cards, Col, Wrap } from './board'
-
-const COLUMNS: readonly Col[] = ['todo', 'doing', 'done']
-
-const columnOf = (cards: Cards, id: string): Col | undefined =>
-  COLUMNS.find((c) => cards[c].some((item) => item.id === id))
-
-/** The next board after `m`: the card leaves `from` and lands at `index` of `to`. */
-function applyMove(cards: Cards, m: Move<Col>): Cards {
-  const item = cards[m.from].find((i) => i.id === m.id)
-  if (item === undefined) return cards
-  const without = Object.fromEntries(
-    COLUMNS.map((c) => [c, cards[c].filter((i) => i.id !== m.id)]),
-  ) as Cards
-  return { ...without, [m.to]: without[m.to].toSpliced(m.index, 0, item) }
-}
+import { COLUMNS } from './board'
+import type { Cards, Col } from './board'
 
 /** `n` cards spread over the columns; `done` takes the long tail so its list must virtualise. */
 export function seedCards(counts: Record<Col, number>): Cards {
@@ -36,46 +25,27 @@ export function BoardDemo({
   initial,
   active = 'todo',
   onMove,
+  engine = drag,
 }: {
   initial: Cards
   active?: Col
   onMove?: (m: Move<Col>) => void
+  engine?: DragLike
 }): ReactElement {
   const [cards, setCards] = useState(initial)
-  // A drop on a card lands the dragged card right after it, so dropping on the last card of a
-  // column appends: the same `Move` the menu's "Move to" item sends.
-  const wrap: Wrap = (card) => {
-    const { move } = card.props
-    if (move === 'static') return card
-    const { column, index } = move
-    return (
-      <div
-        draggable
-        data-testid={`drag-${card.props.id}`}
-        onDragStart={(e) => e.dataTransfer.setData('text', card.props.id)}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          const id = e.dataTransfer.getData('text')
-          const from = columnOf(cards, id)
-          if (from === undefined || from === column.id) return
-          const m = { id, from, to: column.id, index: index + 1 }
-          onMove?.(m)
-          setCards(applyMove(cards, m))
-        }}
-      >
-        {card}
-      </div>
-    )
-  }
   return (
-    <KanbanBoard
-      cards={cards}
+    <Board
+      label="Issues"
+      columns={COLUMNS}
+      items={cards}
       active={active}
-      wrap={wrap}
+      drag={engine}
+      virtual={{ list: VirtualList, cardHeight: 116 }}
       onMove={(m) => {
         onMove?.(m)
-        setCards(applyMove(cards, m))
+        setCards((prev) => applyMove(prev, m))
       }}
+      card={(item, move) => <KanbanCard {...item} move={move} />}
     />
   )
 }

@@ -80,6 +80,7 @@ describe('the Kit nav', () => {
       '/kit/split',
       '/kit/interval-track',
       '/kit/bar-list-series',
+      '/kit/board',
       '/kit/chain',
       '/kit/library',
       '/kit/motion',
