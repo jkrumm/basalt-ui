@@ -91,6 +91,7 @@ export function PageAsidePanel({
         records={records}
         onClose={onClose}
         closeLabel={t('page.closeAside')}
+        closeMark="data-aside-close"
       />
       <PanelBody>{children}</PanelBody>
     </aside>
