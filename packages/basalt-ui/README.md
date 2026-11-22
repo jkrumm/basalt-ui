@@ -257,7 +257,7 @@ framework-agnostic and does not guess at the boundary.
 
 ## Compose a page
 
-`node_modules/basalt-ui/docs/` holds one page per export. For a dashboard page read these first, in this order:
+`node_modules/basalt-ui/docs/` holds one page per documented export. For a dashboard page read these first, in this order:
 
 1. [`page`](docs/page.md): the root every route returns; it owns the gutter.
 2. [`stat-group`](docs/stat-group.md) and [`stat-card`](docs/stat-card.md): the strip of headline figures.
