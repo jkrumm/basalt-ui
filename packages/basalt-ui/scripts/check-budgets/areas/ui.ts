@@ -128,9 +128,9 @@ export const rows: readonly RowDef[] = [
     id: 'ui-value-exports',
     order: 350,
     label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
-    // 256 measured. Exact: a new value export is a row here and a consumer named for it; a lower
+    // 275 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
-    ceiling: 256,
+    ceiling: 275,
     measure: valueExports,
   },
 ]
@@ -164,6 +164,13 @@ export const raises: Raises = {
     },
   ],
   'ui-value-exports': [
+    {
+      from: 256,
+      to: 275,
+      consumer:
+        "`ChoiceCard`, `CheckboxMatrix`, `TagInput`, `OneTimeCode`, `SwatchPicker` (with `SWATCH_TOKENS`) and `QuickPicks`, each with its cva tables and part list, from `basalt-ui/ui/choice-card`, `checkbox-matrix`, `tag-input`, `one-time-code`, `swatch-picker` and `quick-picks`: the owner's 2026-11-21 benchmark found choice cards, a permission matrix, a tag input, a code field, a swatch picker and quick picks absent while every settings, wizard and sign-in screen of Accordee and Blueprint uses them (plan row bench-form-parts, Issue 2996); the playground's forms gallery shows them",
+      repo: 'basalt-ui',
+    },
     {
       from: 239,
       to: 252,
