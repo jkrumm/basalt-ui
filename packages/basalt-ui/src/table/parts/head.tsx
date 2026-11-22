@@ -25,6 +25,7 @@ import { ColumnActionsMenu } from './column-actions'
 import { useFilterText } from './filter-text'
 import { RowNumberHead } from './row-number'
 import { FilterEditor } from './toolbar-editor'
+import { openViewPanel } from './view-door'
 import { rankableSpecs } from './toolbar-filters'
 import type { FilterableSpec } from './toolbar-filters'
 import { TriStateHeader } from './tri-state-header'
@@ -340,7 +341,12 @@ function HeaderContent<T>({
         column={spec.id}
         triggerRef={trigger}
         label={name}
-        {...(filterable && { onFilter: () => setPanel('filter') })}
+        {...(filterable && {
+          // The menu's Filter... edits in the manage-view panel while one is mounted for the table.
+          onFilter: () => {
+            if (!openViewPanel(model.id, `filter:${spec.id}`)) setPanel('filter')
+          },
+        })}
         {...(rankable && { onOrder: () => setPanel('order') })}
         className={cn(
           'group/sort inline-flex min-h-6 max-w-full min-w-0 items-center gap-1 rounded-sm',

@@ -15,6 +15,8 @@ export { useDataTable } from './use-data-table'
 
 // The parts `DataTable` composes: a bespoke layout takes the ones it wants (rung 3).
 export { TableToolbar } from './parts/toolbar'
+export { useTableViews } from './parts/views'
+export type { TableViewsOptions, TableViewsResult, ViewParam } from './parts/views'
 export { DataTableBody } from './parts/body'
 export { TablePager } from './parts/pager'
 export { BulkBar } from './parts/bulk-bar'

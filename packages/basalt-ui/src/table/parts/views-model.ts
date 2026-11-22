@@ -2,15 +2,18 @@
  * Saved views, as pure values (docs/v3/concepts/data-table.md sections 3 and 6). A view stores
  * explicit values: `q`, filters, sort, page size, the columns (visibility, order, pins, widths), the
  * row height, the grouping and the footer reduces, never the page. It lives
- * on the device at `basalt:table-views:<id>` in the frozen `{v,value}` envelope, so a bumped
- * version discards what an older shape wrote instead of reading it wrong.
+ * on the device at `basalt:table-views:<id>` in the frozen `{v,value}` envelope; the list's order is
+ * the tabs' order. Version 2 added `default` and `sharing`; a version 1 list migrates as it is, any
+ * other version is discarded instead of read wrong.
  *
  * Law:
  * - Same name, same view: saving a name that exists overwrites it in place and keeps its id.
  * - A view applied to a table that lost a column is pruned, never rejected: filters, sort and
  *   visibility entries on unknown ids are dropped and named.
- * - A view is "clean" while the table state equals it (the page excluded). `?view=<id>` is only
- *   ever written while clean; any edit makes the state differ and the id goes.
+ * - A view is "clean" while the table state equals it (the page excluded). An edit keeps
+ *   `?view=<id>` and makes the view read modified until it is saved or discarded.
+ * - At most one view is the default; `all` (`BASE_VIEW`) names the declared table and is never
+ *   handed out as an id.
  */
 import { persisted } from '../../core/persisted'
 import type { Persisted, PersistedSchema } from '../../core/persisted'
@@ -18,7 +21,10 @@ import type { TableDisplay, TableState, View } from '../contract'
 import { sameScope } from '../core/state'
 
 /** The envelope version of the views store. Bump when `View` changes shape. */
-export const VIEWS_VERSION = 1
+export const VIEWS_VERSION = 2
+
+/** The id `?view=` holds for the declared table while a default view exists; never a saved view's. */
+export const BASE_VIEW = 'all'
 
 /** The persisted key (the store adds the `basalt:` namespace): `basalt:table-views:<id>`. */
 export const viewsKey = (tableId: string): string => `table-views:${tableId}`
@@ -27,6 +33,8 @@ const isView = (value: unknown): value is View => {
   if (typeof value !== 'object' || value === null) return false
   const v = value as Partial<View>
   return (
+    (v.default === undefined || typeof v.default === 'boolean') &&
+    (v.sharing === undefined || v.sharing === 'private' || v.sharing === 'shared') &&
     typeof v.id === 'string' &&
     typeof v.name === 'string' &&
     typeof v.state === 'object' &&
@@ -49,7 +57,18 @@ const schema: PersistedSchema<View[]> = {
 
 /** The device store of a table's views. One definition per table id. */
 export function viewsStore(tableId: string): Persisted<View[]> {
-  return persisted<View[]>(viewsKey(tableId), { version: VIEWS_VERSION, initial: [], schema })
+  return persisted<View[]>(viewsKey(tableId), {
+    version: VIEWS_VERSION,
+    initial: [],
+    schema,
+    migrate: migrateViews,
+  })
+}
+
+/** A version 1 list is a version 2 list without a default or a sharing; any other version is lost. */
+export function migrateViews(old: unknown, from: number): View[] {
+  if (from !== 1 || !Array.isArray(old)) return []
+  return old.filter(isView)
 }
 
 // ---- Values -------------------------------------------------------------------------------
@@ -193,9 +212,46 @@ const slug = (name: string): string =>
     .replaceAll(/[^\p{L}\p{N}]+/gu, '-')
     .replaceAll(/^-+|-+$/g, '') || 'view'
 
+/** The state as a view stores it: explicit values only, and page 1. */
+export function storedState(state: TableState): TableState {
+  const { display } = state
+  return {
+    v: 1 as const,
+    request: { ...state.request, page: 1 },
+    display: {
+      visibility: { ...display.visibility },
+      ...((display.order?.length ?? 0) > 0 && { order: [...(display.order ?? [])] }),
+      ...((display.pinned?.length ?? 0) > 0 && { pinned: [...(display.pinned ?? [])] }),
+      ...(Object.keys(display.widths ?? {}).length > 0 && { widths: { ...display.widths } }),
+      ...(display.rowHeight !== undefined && { rowHeight: display.rowHeight }),
+      ...(display.groupBy !== undefined && { groupBy: display.groupBy }),
+      ...(Object.keys(display.aggregates ?? {}).length > 0 && {
+        aggregates: { ...display.aggregates },
+      }),
+    },
+  }
+}
+
+/** An id from the name that no view holds and that is never `BASE_VIEW`. */
+function freeId(views: readonly View[], name: string): string {
+  const taken = new Set([BASE_VIEW, ...views.map((view) => view.id)])
+  const base = slug(name)
+  let id = base
+  for (let n = 2; taken.has(id); n += 1) id = `${base}-${n}`
+  return id
+}
+
+/** `base` when no view holds it, else `base 2`, `base 3`, ... */
+export function freeName(views: readonly View[], base: string): string {
+  const taken = new Set(views.map((view) => view.name))
+  let name = base.trim()
+  for (let n = 2; taken.has(name); n += 1) name = `${base.trim()} ${n}`
+  return name
+}
+
 /**
  * `views` with the current state saved under `name`. An existing name is overwritten and keeps its
- * id; a new one gets an id from the name, made unique. The page is not stored.
+ * id, its default and its sharing; a new one gets an id from the name, made unique. The page is not stored.
  */
 export function saveView(
   views: readonly View[],
@@ -203,25 +259,7 @@ export function saveView(
   state: TableState,
 ): { views: View[]; id: string } {
   const clean = name.trim()
-  const stored = {
-    v: 1 as const,
-    request: { ...state.request, page: 1 },
-    display: {
-      visibility: { ...state.display.visibility },
-      ...((state.display.order?.length ?? 0) > 0 && { order: [...(state.display.order ?? [])] }),
-      ...((state.display.pinned?.length ?? 0) > 0 && {
-        pinned: [...(state.display.pinned ?? [])],
-      }),
-      ...(Object.keys(state.display.widths ?? {}).length > 0 && {
-        widths: { ...state.display.widths },
-      }),
-      ...(state.display.rowHeight !== undefined && { rowHeight: state.display.rowHeight }),
-      ...(state.display.groupBy !== undefined && { groupBy: state.display.groupBy }),
-      ...(Object.keys(state.display.aggregates ?? {}).length > 0 && {
-        aggregates: { ...state.display.aggregates },
-      }),
-    },
-  }
+  const stored = storedState(state)
   const existing = views.find((view) => view.name === clean)
   if (existing !== undefined) {
     return {
@@ -229,9 +267,85 @@ export function saveView(
       views: views.map((view) => (view === existing ? { ...view, state: stored } : view)),
     }
   }
-  const taken = new Set(views.map((view) => view.id))
-  const base = slug(clean)
-  let id = base
-  for (let n = 2; taken.has(id); n += 1) id = `${base}-${n}`
+  const id = freeId(views, clean)
   return { id, views: [...views, { id, name: clean, state: stored }] }
+}
+
+/** `views` with `id`'s state replaced by `state` (Save on a modified view). */
+export function storeView(views: readonly View[], id: string, state: TableState): View[] {
+  const stored = storedState(state)
+  return views.map((view) => (view.id === id ? { ...view, state: stored } : view))
+}
+
+/**
+ * `views` with `id` renamed. `undefined` when the name is blank or another view holds it, since the
+ * name is how a save finds a view.
+ */
+export function renameView(views: readonly View[], id: string, name: string): View[] | undefined {
+  const clean = name.trim()
+  if (clean === '' || views.some((view) => view.id !== id && view.name === clean)) return undefined
+  return views.map((view) => (view.id === id ? { ...view, name: clean } : view))
+}
+
+/** A copy of `id` right after it, under a free name, never the default; `undefined` for an unknown id. */
+export function duplicateView(
+  views: readonly View[],
+  id: string,
+  name: string,
+): { views: View[]; id: string } | undefined {
+  const at = views.findIndex((view) => view.id === id)
+  const source = views[at]
+  if (source === undefined) return undefined
+  const copyName = freeName(views, name)
+  const { default: _default, ...rest } = source
+  const copy: View = { ...rest, id: freeId(views, copyName), name: copyName }
+  return { id: copy.id, views: [...views.slice(0, at + 1), copy, ...views.slice(at + 1)] }
+}
+
+/** `views` with `id` moved to index `to`, clamped to the list. */
+export function moveView(views: readonly View[], id: string, to: number): View[] {
+  const from = views.findIndex((view) => view.id === id)
+  const moved = views[from]
+  if (moved === undefined) return [...views]
+  const rest = views.filter((view) => view.id !== id)
+  const at = Math.max(0, Math.min(to, rest.length))
+  return [...rest.slice(0, at), moved, ...rest.slice(at)]
+}
+
+/** `views` with `id` the one default (`undefined` for none): the flag moves, never doubles. */
+export function setDefaultView(views: readonly View[], id: string | undefined): View[] {
+  return views.map((view) => {
+    const { default: _default, ...rest } = view
+    return view.id === id ? { ...rest, default: true } : rest
+  })
+}
+
+/** `views` with `id`'s sharing set. */
+export function shareView(
+  views: readonly View[],
+  id: string,
+  sharing: NonNullable<View['sharing']>,
+): View[] {
+  return views.map((view) => (view.id === id ? { ...view, sharing } : view))
+}
+
+/** The default view, if one is marked. */
+export const defaultView = (views: readonly View[]): View | undefined =>
+  views.find((view) => view.default === true)
+
+/**
+ * Whether the table differs from its declared self in anything a view carries, the sort aside (the
+ * declared sort is the codec's, which the views never see): the base tab reads modified then.
+ */
+export function isBaseDirty(state: TableState): boolean {
+  const { request, display } = state
+  return (
+    request.q !== '' ||
+    request.filters.length > 0 ||
+    Object.keys(request.ranks ?? {}).length > 0 ||
+    hidden(display.visibility) !== '' ||
+    (display.order?.length ?? 0) > 0 ||
+    (display.pinned?.length ?? 0) > 0 ||
+    viewKey(display) !== viewKey({ visibility: {} })
+  )
 }

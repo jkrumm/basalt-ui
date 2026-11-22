@@ -1,19 +1,18 @@
 ---
 name: saved-views
-use-when: a table's search, filters, sort and visible columns are worth naming and coming back to
+use-when: a table's search, filters, sort, columns, widths, row height and grouping are worth naming and coming back to
 ---
 
-Views are the toolbar's: `Views` lists them, saves the current state under a name (the same name overwrites) and resets.
-A view stores explicit values, never the page, and lives on the device under `basalt:table-views:<table id>`.
-Applying a view writes `?view=<id>`; the id stays only while the table state equals the view, so any edit drops it and leaves the explicit slices.
-A view that names a column the table lost is pruned on apply, with a development warning, never rejected.
-`field.composite(tableCodec(...))` carries the table in the URL; `view` binds the applied id to the route's own search instead of the address bar.
-The saved-view param is `view`; a presentation switch uses another name.
-Pass `views: { store }` to `useDataTable` to keep them elsewhere: a `ViewStore` (async `list`, `save`, `remove` per table) is how views follow the person. A refused write leaves the list as it was and the panel says so.
+On a list page, `useTableViews(t)` puts the views in the `PageBar` view row: `tabs={views.tabs}`, `settings={views.settings}`, and `{views.panel}` once on the page. In a card, `TableToolbar` draws the same tabs and panel; pass `views={false}` where the page bar holds them, or the panel opens twice.
+`?view=<id>` names the applied view. An edit keeps it and the tab reads modified until Save or Discard. A named view applies on load only over a request with no search or filter, so a link with its own slices keeps them.
+A default view opens a bare address; the declared table is then `?view=all`, an id no saved view gets.
+Views live on the device under `basalt:table-views:<table id>` (envelope 2; a version 1 list migrates as it is). `views: { store }` on `useDataTable` keeps them in a `ViewStore`; `reorder`, `share` and `count` are capabilities, and each one missing removes its control. A refused write leaves the list as it was and the strip says so.
+`onExport` adds Export to the tab menu and the panel; the file itself is `export.md`.
 
 ```tsx
+import { Page, PageBar } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
-import { col, DataTable, TableToolbar, tableCodec, useDataTable } from 'basalt-ui/table'
+import { col, DataTable, tableCodec, useDataTable, useTableViews } from 'basalt-ui/table'
 
 type Run = { id: string; name: string; km: number }
 const c = col<Run>()
@@ -27,6 +26,7 @@ const runs = defineControls({
   },
 })
 
+/** A list page: the view row holds the saved views, the panel edits the applied one. */
 export function Runs({ data }: { data: readonly Run[] }) {
   const [applied, setApplied] = runs.field.view.use()
   const t = useDataTable({
@@ -38,15 +38,18 @@ export function Runs({ data }: { data: readonly Run[] }) {
     mode: { kind: 'client' },
     state: runs.field.table,
   })
-  const view = {
-    id: applied === '' ? undefined : applied,
-    set: (id: string | undefined) => (id === undefined ? runs.field.view.clear() : setApplied(id)),
-  }
+  const views = useTableViews(t, {
+    view: {
+      id: applied === '' ? undefined : applied,
+      set: (id) => (id === undefined ? runs.field.view.clear() : setApplied(id)),
+    },
+  })
   return (
-    <>
-      <TableToolbar table={t} view={view} />
+    <Page area="runs" fill>
+      <PageBar tabs={views.tabs} settings={views.settings} />
       <DataTable table={t} />
-    </>
+      {views.panel}
+    </Page>
   )
 }
 ```

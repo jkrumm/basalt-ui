@@ -128,7 +128,7 @@ function Subject(): ReactElement {
   })
   return (
     <>
-      <TableToolbar table={t} />
+      <TableToolbar table={t} views={false} />
       <DataTable table={t} />
     </>
   )

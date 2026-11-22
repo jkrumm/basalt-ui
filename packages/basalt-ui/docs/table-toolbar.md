@@ -9,14 +9,17 @@ slots: [table-filter-add, table-toolbar]
 
 # TableToolbar
 
-The toolbar of a table: search, filters, chips, display and saved views.
+The toolbar of a table: the saved views as tabs with Edit view, then search, filters, chips and
+display. A page that draws the views in its `PageBar` (`useTableViews`) passes `views={false}`.
 
 ## Signature
 
 ```ts
-TableToolbar<T>({ table: instance, view, }: { table: DataTableInstance<T>; view?: ViewParam; }): ReactElement
+TableToolbar<T>({ table: instance, view, views, onExport, }: { table: DataTableInstance<T>; view?: ViewParam; views?: boolean; onExport?: () => void; }): ReactElement
   table: DataTableInstance<T>
   view?: ViewParam  // Binds the applied view's id to the route's own search; the address bar's `?view=` when omitted
+  views?: boolean  // Draws the saved views; `false` where the page's `PageBar` holds them
+  onExport?: () => void  // Draws Export in the views' menu and panel; the app writes the file
 ```
 
 ## Example
