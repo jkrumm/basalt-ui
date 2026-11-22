@@ -458,12 +458,14 @@ export function useDataTable<
   const look = options.look ?? 'reading'
   const tick = options.selection !== undefined
   const numbers = options.rowNumbers === true
-  // The number column fits the largest number it can print: every row of a client table, the counted
-  // (or reached) rows of a server one.
+  // The number column fits the largest number it can print, as it prints it: every row of a client
+  // table; the counted rows of a server one, else the rows it has loaded (a cursor table's Load more)
+  // or reached by paging.
+  const loaded = options.data?.length ?? 0
   const largest = server
-    ? (countOf(mode) ?? request.page * request.pageSize)
-    : (options.data?.length ?? 0)
-  const numberPx = numbers ? rowNumberPx(largest) : 0
+    ? (countOf(mode) ?? Math.max(loaded, request.page * request.pageSize))
+    : loaded
+  const numberPx = numbers ? rowNumberPx(format.number(Math.max(1, largest))) : 0
   const lead = {
     tick,
     numbers,

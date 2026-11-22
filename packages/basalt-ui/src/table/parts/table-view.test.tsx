@@ -398,10 +398,16 @@ describe('the view carries them', () => {
 })
 
 describe('the grid look', () => {
-  test('the row-number column fits the largest number it prints', () => {
-    expect(rowNumberPx(9)).toBe(44)
-    expect(rowNumberPx(3334)).toBe(48)
-    expect(rowNumberPx(10_000)).toBe(56)
+  test('the row-number column fits the largest number as it prints, separator included', () => {
+    expect(rowNumberPx('9')).toBe(44)
+    expect(rowNumberPx('3,334')).toBe(56)
+    expect(rowNumberPx('10,000')).toBe(64)
+    const many = Array.from({ length: 1200 }, (_, i) => ({ ...ROWS[0]!, id: `m${i}` }))
+    const { container } = render(
+      <Subject id="numbers" options={{ data: many, rowNumbers: true }} />,
+    )
+    const col = container.querySelector<HTMLElement>('colgroup col[data-kind="row-number"]')
+    expect(col?.style.width).toBe(`${rowNumberPx('1,200')}px`)
   })
 
   test('row numbers run on across groups, and the identity column carries the pinned edge', () => {

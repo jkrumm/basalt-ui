@@ -1241,13 +1241,13 @@
   [data-kind='row-number'] {
     padding-inline: calc(var(--spacing) * 2) !important;
   }
-  /* an empty footer pick shows on hover or focus */
-  [data-slot='table-footer-pick'][data-quiet] {
-    opacity: 0;
+  /* an empty footer pick takes no room until its row is pointed at or the pick is focused */
+  [data-footer-pick][data-quiet] > * {
+    display: none;
   }
-  [data-slot='table-row']:hover [data-slot='table-footer-pick'][data-quiet],
-  [data-slot='table-footer-pick'][data-quiet]:focus-visible {
-    opacity: 1;
+  [data-slot='table-row']:hover [data-footer-pick][data-quiet] > *,
+  [data-footer-pick][data-quiet]:focus-visible > * {
+    display: inline;
   }
 
   @media print {
