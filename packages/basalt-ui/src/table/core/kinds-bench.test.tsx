@@ -110,7 +110,7 @@ describe('tags', () => {
         tone: (tag) => (tag === 'ops' ? 'warn' : 'neutral'),
       }),
     )
-    const chips = [...td.querySelectorAll('[data-slot="lozenge"]')]
+    const chips = [...td.querySelectorAll('[data-slot="table-tag"]')]
     expect(chips.map((chip) => chip.textContent)).toEqual(['Design', 'ops'])
     expect(chips[1]?.className).toContain('text-warn')
   })
