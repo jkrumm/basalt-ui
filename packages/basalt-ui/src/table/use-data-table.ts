@@ -450,7 +450,12 @@ export function useDataTable<
     preview === null ? (display.widths ?? {}) : { ...display.widths, [preview.id]: preview.px }
   const plan = usePlan(
     columns,
-    shapeKey + visibilityKey + JSON.stringify(contentCh) + JSON.stringify(widths),
+    // A release re-plans even at the width last previewed, so its dev warnings run once.
+    shapeKey +
+      visibilityKey +
+      JSON.stringify(contentCh) +
+      JSON.stringify(widths) +
+      (preview === null ? '' : '|preview'),
     display.visibility,
     contentCh,
     widths,
