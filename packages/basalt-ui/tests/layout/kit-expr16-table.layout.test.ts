@@ -1,6 +1,6 @@
 /**
  * Expression cycle 16 (`v3-expr-16-kit-fixes` 1, 9): a `phone: 'columns'` table fits its headers whole at 390
- * (n77 .16); a group row is tinted across the whole row and leaves no blank band under its label at 390
+ * (n77 .16); a group row is tinted the same across the whole row (in the reading look, not at all) and leaves no blank band under its label at 390
  * (n80 .41); a long DataTable in a DataPanel keeps its own scroll box at 390 (n75 .5, probed: it held).
  * Fixtures: `fixture/kit-expr16t-columns-fixture.tsx`, `fixture/kit-expr16t-long-fixture.tsx`.
  */
@@ -57,7 +57,7 @@ layout("a phone: 'columns' table at 390", () => {
 })
 
 layout('a grouped DataTable in a DataPanel', () => {
-  test('tints the pinned cell of a group row as it tints the rest of the row', async () => {
+  test('a group row in the reading look carries no tint, its pinned cell neither', async () => {
     const page = await open(long, DESKTOP)
     const group = await page.raw.evaluate(() => {
       const row = document.querySelector(
@@ -69,9 +69,10 @@ layout('a grouped DataTable in a DataPanel', () => {
         pinnedImage: getComputedStyle(pinned).backgroundImage,
       }
     })
-    expect(group.rowBackground).not.toBe('rgba(0, 0, 0, 0)')
-    expect(group.pinnedImage).toContain('linear-gradient')
-    expect(group.pinnedImage).not.toContain('rgba(0, 0, 0, 0)')
+    // bench-table-reading: the reading look draws a quiet group row, so the pinned cell's tint layer is as
+    // clear as the row's ground and the band never stops short at the pinned edge.
+    expect(group.rowBackground).toBe('rgba(0, 0, 0, 0)')
+    expect(group.pinnedImage).toBe('linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))')
   })
 
   test('draws no blank band under the label of a group row on the phone card', async () => {

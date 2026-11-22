@@ -224,9 +224,9 @@ layout('DataTable at rest', () => {
       const body = rows.filter((r) => r.what === 'body')
       for (const row of body.slice(0, -1)) expect(row.line).toBe('1px')
       expect(rows.find((r) => r.what === 'foot')?.line).toBe('1px')
-      // A group row's tint is the row's own ground, so it runs through the filler too.
+      // The reading look draws a group row quiet: no tint, the row's own rule only (bench-table-reading).
       for (const row of rows.filter((r) => r.what === 'group'))
-        expect(row.ground).not.toBe('rgba(0, 0, 0, 0)')
+        expect(row.ground).toBe('rgba(0, 0, 0, 0)')
     })
   }
 

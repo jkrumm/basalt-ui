@@ -67,6 +67,7 @@ export function GroupRow<T>({
   const t = useMessages(table)
   const aggregateLabel = useAggregateLabel()
   const group = model.group
+  const quiet = model.look === 'reading'
   const columns = visibleColumns(model.specs, model.plan.columns)
   const offset = model.lead.cols + 1
   // Count, reduce and summary read every matching row of the group, not only this page.
@@ -85,8 +86,13 @@ export function GroupRow<T>({
       data-group=""
       data-collapsed={item.collapsed ? '' : undefined}
       {...(rowIndex !== undefined && { 'aria-rowindex': rowIndex })}
-      // the tint is the row's and, through `--row-tint`, the opaque pinned cell's too, so the band runs the whole row
-      className="bg-muted/40 [--row-tint:color-mix(in_oklab,var(--color-muted)_40%,transparent)]"
+      data-quiet={quiet ? '' : undefined}
+      // The grid look tints the band, through `--row-tint` the opaque pinned cell's too, so it runs the
+      // whole row; the reading look draws a quiet label and count with no tint and no rule but the row's own.
+      {...(!quiet && {
+        className:
+          'bg-muted/40 [--row-tint:color-mix(in_oklab,var(--color-muted)_40%,transparent)]',
+      })}
     >
       {model.selection !== undefined && <TableCell role="cell" aria-colindex={1} />}
       <RowNumberCell model={model} />
@@ -105,7 +111,7 @@ export function GroupRow<T>({
             {...pinEdge(planned)}
             style={pinStyle(planned)}
             numeric={numeric}
-            className={cn(className, 'font-medium')}
+            className={cn(className, 'font-medium', quiet && 'text-muted-foreground')}
           >
             {index === 0 ? (
               <span
@@ -114,7 +120,7 @@ export function GroupRow<T>({
               >
                 <Pressable
                   aria-expanded={!item.collapsed}
-                  className="inline-flex min-w-0 items-center gap-1"
+                  className="inline-flex min-h-6 min-w-0 items-center gap-1"
                   onClick={() => model.toggleGroup(item.value)}
                 >
                   <Chevron open={!item.collapsed} />

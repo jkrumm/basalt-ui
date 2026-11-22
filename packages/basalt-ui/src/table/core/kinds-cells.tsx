@@ -4,7 +4,7 @@
  * polarity (concept section 5); alignment, numerals and wrapping are attributes the parts put on
  * the cell (`cellAttributes`), so a renderer draws content only.
  */
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { cn } from '../../core/cn'
 import type { CalendarDate, DateStyle, Format } from '../../core/format'
@@ -339,18 +339,26 @@ export function MeterCell({
   label,
   value,
   max,
+  write,
 }: {
   label: string
   value: number
   max: number
+  /** How the readout writes the value: a fraction column writes `455/472`. */
+  write?: ((value: number) => string) | undefined
 }): ReactNode {
   // A table cell holds one text line: the bar and its value sit side by side on that line, not stacked.
+  // A written readout (a fraction) keeps one width down the column, so every track ends at one x.
   return (
     <Meter
       label={label}
       value={value}
       max={max}
-      className="flex-row items-center gap-2 [&_[data-readout]]:contents [&_[data-readout]>span:empty]:hidden [&_[data-readout]>span:last-child]:shrink-0 [&_[data-readout]>span:last-child]:whitespace-nowrap"
+      {...(write !== undefined && { format: write })}
+      className={cn(
+        'flex-row items-center gap-2 [&>div:first-child]:min-w-6 [&>div:first-child]:flex-1 [&_[data-readout]]:contents [&_[data-readout]>span:empty]:hidden [&_[data-readout]>span:last-child]:shrink-0 [&_[data-readout]>span:last-child]:whitespace-nowrap',
+        write !== undefined && '[&_[data-readout]>span:last-child]:min-w-12',
+      )}
     />
   )
 }
@@ -705,6 +713,355 @@ export function QuietText({ text }: { text: string }): ReactNode {
       className="inline-block max-w-full truncate align-bottom text-muted-foreground"
     >
       {text}
+    </span>
+  )
+}
+
+// ---- the reading look: a stacked meter, a figure with its trend and age, a lamp -------------
+
+/**
+ * A span in the one largest unit, for a figure in a column: `45 sec`, `30 min`, `1.4 hr`, `2.1 days`,
+ * `12 days` (the locale's short unit names, a decimal below ten from an hour up). A value that rounds
+ * into the next unit takes it: 59 min 50 s is `1 hr`.
+ */
+export function durationText(format: Format, ms: number): string {
+  if (!Number.isFinite(ms)) return ABSENT
+  const total = Math.max(0, Math.round(ms / 1000))
+  const minutes = Math.round(total / 60)
+  const hours = total / 3_600
+  const [unit, n] =
+    total < 60
+      ? (['second', total] as const)
+      : minutes < 60
+        ? (['minute', minutes] as const)
+        : Math.round(hours * 10) / 10 < 24
+          ? (['hour', hours] as const)
+          : (['day', total / 86_400] as const)
+  const decimal = (unit === 'hour' || unit === 'day') && n < 10 ? 1 : 0
+  return format.number(n, {
+    style: 'unit',
+    unit,
+    unitDisplay: 'short',
+    maximumFractionDigits: decimal,
+  })
+}
+
+/** The fill of a meter part, one class per tone, written out so the scanner sees each. */
+const TONE_FILL: Readonly<Record<Tone, string>> = {
+  neutral: 'bg-muted-foreground',
+  accent: 'bg-brand-fill',
+  good: 'bg-good',
+  warn: 'bg-warn',
+  bad: 'bg-bad',
+  info: 'bg-info',
+}
+
+/** The dot of a lamp, one class per tone: a quiet lamp is a ring, so it differs from a lit one by shape. */
+const TONE_DOT: Readonly<Record<Tone, string>> = {
+  ...TONE_FILL,
+  neutral: 'border-[1.5px] border-muted-foreground',
+}
+
+const share = (part: number, whole: number): string =>
+  `${Math.min(100, Math.max(0, (part / whole) * 100))}%`
+
+/** One toned part of a stacked meter, as the cell draws it. */
+export type MeterPart = { label: string; value: number; tone: Tone }
+
+/**
+ * Several toned parts on one track and their total beside it, all on the track's scale (`max`,
+ * or the total when it is larger). The parts are named in order with their counts for assistive
+ * tech and on hover; a part of zero draws nothing.
+ */
+export function StackedMeterCell({
+  label,
+  parts,
+  total,
+  max,
+  format,
+}: {
+  label: string
+  parts: readonly MeterPart[]
+  total: number
+  max: number
+  format: Format
+}): ReactNode {
+  const drawn = parts.filter((part) => part.value > 0)
+  const scale = Math.max(max, total, 1)
+  const named = drawn.map((part) => `${part.label} ${format.number(part.value)}`).join(', ')
+  const head = `${label}: ${format.number(total)}`
+  const said = named === '' ? head : `${head}; ${named}`
+  return (
+    <span data-slot="table-meter-stack" title={said} className="flex min-w-0 items-center gap-2">
+      <span
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the track of toned parts is one image to assistive tech, and an <img> holds no children
+        role="img"
+        aria-label={head}
+        className="flex h-2 min-w-0 flex-1 gap-px overflow-hidden rounded-full bg-selected"
+      >
+        {drawn.map((part) => (
+          <span
+            key={part.label}
+            data-part={part.label}
+            data-tone={part.tone}
+            style={{ '--part': share(part.value, scale) } as CSSProperties}
+            className={cn('h-full w-(--part) shrink-0', TONE_FILL[part.tone])}
+          />
+        ))}
+      </span>
+      <span aria-hidden="true" className="min-w-6 shrink-0 text-end tabular-nums">
+        {format.number(total)}
+      </span>
+      {/* the parts in words: heard after the total, and read on the phone card beside the track */}
+      {named !== '' && (
+        <span data-slot="table-meter-parts" className="sr-only">
+          {named}
+        </span>
+      )}
+    </span>
+  )
+}
+
+/** A column's trend: the value before, the words that name when it was, and which way is better. */
+export type TrendSpec = {
+  before: number | null | undefined
+  /** Which way is the good one: a duration is better `lower`, a count of shipped work `higher`. */
+  better: 'lower' | 'higher'
+  /** A change within this share of the value before is flat. */
+  flat: number
+  /** Words after the comparison that name the value before: `the 7 days before`. */
+  against: string | undefined
+  /** How the value before is written: the column's own format. */
+  write: (value: number) => string
+}
+
+type Direction = 'up' | 'down' | 'flat'
+
+/** The direction of a change against the value before, or `null` without one. */
+export function trendOf(value: number, trend: TrendSpec): Direction | null {
+  const before = trend.before
+  if (before === null || before === undefined || !Number.isFinite(before)) return null
+  const base = Math.max(Math.abs(before), Number.EPSILON)
+  const change = (value - before) / base
+  if (Math.abs(change) <= trend.flat) return 'flat'
+  return change > 0 ? 'up' : 'down'
+}
+
+const TREND_PATH: Readonly<Record<Direction, string>> = {
+  up: 'M4.5 11.5l7-7M6 4.5h5.5V10',
+  down: 'M4.5 4.5l7 7M11.5 6v5.5H6',
+  flat: 'M3 8h10M9.5 4.5L13 8l-3.5 3.5',
+}
+
+/** The arrow of a trend, in the tone its column's rule gives it; the slot stays when there is none. */
+function TrendMark({
+  direction,
+  better,
+}: {
+  direction: Direction | null
+  better: 'lower' | 'higher'
+}): ReactNode {
+  if (direction === null) return <span aria-hidden="true" className="size-3.5 shrink-0" />
+  const good = better === 'lower' ? 'down' : 'up'
+  const tone: Tone = direction === 'flat' ? 'neutral' : direction === good ? 'good' : 'bad'
+  return (
+    <svg
+      data-slot="table-trend"
+      data-direction={direction}
+      data-tone={tone}
+      viewBox="0 0 16 16"
+      className={cn('size-3.5 shrink-0', TONE_INK[tone])}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={TREND_PATH[direction]} />
+    </svg>
+  )
+}
+
+/** The second value of a cell: an instant, and the words that name it for assistive tech. */
+export type AgeSpec = { at: unknown; label: string | undefined }
+
+/**
+ * A quiet age after a cell's first value (`3 hr`, `2.1 days`): a slot of its own width, so the
+ * first values line up down the column whether a row has an age or not. Assistive tech hears the
+ * relative time, after the column's label for it; a hover shows the date and time.
+ */
+function Age({
+  age,
+  format,
+  now,
+  align,
+}: {
+  age: AgeSpec
+  format: Format
+  now: number
+  align: 'start' | 'end'
+}): ReactNode {
+  const instant = toInstant(age.at)
+  const slot = cn(
+    'w-15 shrink-0 font-mono text-xs text-muted-foreground tabular-nums',
+    align === 'end' ? 'text-end' : 'text-start',
+  )
+  if (instant === null) return <span aria-hidden="true" className={slot} />
+  const relative = format.relative(instant, now)
+  return (
+    <span data-slot="table-age" title={format.dateTime(instant)} className={slot}>
+      <span aria-hidden="true">{durationText(format, now - instant.getTime())}</span>
+      <span className="sr-only">
+        , {age.label === undefined ? relative : `${age.label} ${relative}`}
+      </span>
+    </span>
+  )
+}
+
+/**
+ * A numeric cell of the reading look: the figure, then the trend arrow and the age in slots of
+ * their own, so figures line up down the column. A fraction writes `11/12` and is heard as
+ * `11 of 12`; a toned figure (a fraction under its threshold) takes the tone in its ink. The
+ * comparison of a trend is said in words for assistive tech and on hover.
+ */
+export function FigureCell({
+  text,
+  fraction,
+  tone,
+  trend,
+  age,
+  format,
+  now,
+}: {
+  /** The figure as written; an absent value passes the dash, so its slots keep the column's line. */
+  text: ReactNode
+  fraction?: { part: number; whole: number } | undefined
+  tone?: Tone | undefined
+  /** `value: null`: no figure to compare, the arrow's slot stays empty. */
+  trend?: { value: number | null; spec: TrendSpec } | undefined
+  age?: AgeSpec | undefined
+  format: Format
+  now: number
+}): ReactNode {
+  const t = useMessages(table)
+  const said =
+    fraction === undefined ? undefined : t('table.fraction', fraction.part, fraction.whole)
+  const direction =
+    trend === undefined || trend.value === null ? null : trendOf(trend.value, trend.spec)
+  const before = trend?.spec.before
+  const words =
+    trend === undefined || direction === null || before === null || before === undefined
+      ? undefined
+      : [
+          t(
+            direction === 'up'
+              ? 'table.trendUp'
+              : direction === 'down'
+                ? 'table.trendDown'
+                : 'table.trendFlat',
+            trend.spec.write(before),
+          ),
+          trend.spec.against,
+        ]
+          .filter((part) => part !== undefined)
+          .join(' ')
+  const toned = tone !== undefined && tone !== 'neutral'
+  return (
+    <span
+      data-slot="table-figure"
+      {...(toned && { 'data-tone': tone })}
+      title={
+        words === undefined ? said : `${said ?? (typeof text === 'string' ? text : '')}, ${words}`
+      }
+      className="inline-flex max-w-full items-center justify-end gap-1.5 whitespace-nowrap"
+    >
+      <span className={cn('min-w-0 truncate', toned && TONE_INK[tone])}>
+        {said === undefined ? (
+          text
+        ) : (
+          <>
+            <span aria-hidden="true">{text}</span>
+            <span className="sr-only">{said}</span>
+          </>
+        )}
+      </span>
+      {trend !== undefined && (
+        <>
+          <TrendMark direction={direction} better={trend.spec.better} />
+          {words !== undefined && <span className="sr-only">, {words}</span>}
+        </>
+      )}
+      {age !== undefined && <Age age={age} format={format} now={now} align="end" />}
+    </span>
+  )
+}
+
+/**
+ * A status as a lamp: the toned dot alone, its word for assistive tech and on hover, and an
+ * optional age after it in a slot of its own.
+ */
+export function LampCell({
+  value,
+  tone,
+  age,
+  format,
+  now,
+}: {
+  value: string
+  tone: Tone
+  age?: AgeSpec | undefined
+  format: Format
+  now: number
+}): ReactNode {
+  return (
+    <span
+      data-slot="table-lamp"
+      data-tone={tone}
+      title={value}
+      className="inline-flex max-w-full items-center gap-2 whitespace-nowrap"
+    >
+      <span aria-hidden="true" className={cn('size-2 shrink-0 rounded-full', TONE_DOT[tone])} />
+      <span data-slot="table-lamp-word" className="sr-only">
+        {value}
+      </span>
+      {age !== undefined && <Age age={age} format={format} now={now} align="start" />}
+    </span>
+  )
+}
+
+/** A cell's first value and its age after it: the value takes the room, so the ages line up down the column. */
+export function WithAge({
+  children,
+  age,
+  format,
+  now,
+}: {
+  children: ReactNode
+  age: AgeSpec
+  format: Format
+  now: number
+}): ReactNode {
+  return (
+    <span className="flex w-full min-w-0 items-center gap-2 whitespace-nowrap">
+      <span className="flex min-w-0 flex-1">{children}</span>
+      <Age age={age} format={format} now={now} align="start" />
+    </span>
+  )
+}
+
+/** A spark and its total beside it: the line takes the room, the figure keeps its own. */
+export function SparkTotalCell({
+  spark,
+  total,
+}: {
+  spark: ReactNode
+  total: ReactNode
+}): ReactNode {
+  return (
+    <span data-slot="table-spark-total" className="flex min-w-0 items-center gap-2">
+      <span className="min-w-0 flex-1">{spark}</span>
+      <span className="min-w-6 shrink-0 text-end tabular-nums">{total}</span>
     </span>
   )
 }

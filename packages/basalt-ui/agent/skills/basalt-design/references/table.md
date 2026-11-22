@@ -67,6 +67,16 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 - A meter column sets `card` (`c.meter(key, { max, card })`), so the phone card keeps it: a `pools.meter('usedPct', …)` set none and lost its "Used, %" at 390. A meter column read from the page without it dropped "Median cycle, min" from the phone cards (`c.meter('cycleMin', { …, priority: 2 })`). Every column that answers the question sets its `card` slot, since a column without one takes the kit's order and can drop at 390.
 - A status column draws one mark per state through its per-row `icon`, which replaces the dot: one page's "Clean", "Skipped" and "Never run" drew the same grey dot, so five states were told by reading. Pick the icon per state from the tone map you already wrote.
 
+## A monitoring row
+
+A row per watched thing (a project, a host, a queue) reads in the reading look with no `c.custom`; `/kit/projects` is the exemplar.
+
+- Work in several states is one track: `c.meter('open', { segments: [{ label: 'Running', tone: 'accent', value }, ...], max })` draws the toned parts and the total, each part named in the tooltip and for assistive tech. A share of a per-row whole is `c.meter('done', { max: (row) => row.total, fraction: true })`, read `455/472` and sorted by the share.
+- A median time is `c.number(key, { duration: 'ms', trend: { before, better: 'lower', against: 'the 7 days before' } })`: `1.4 hr` and an arrow toned by the rule you declare, the comparison in words on hover. A count of a count is `c.number('clean', { of: (row) => row.run, warnBelow: 1 })`: `11/12`, amber under full, sorted by the share.
+- A state read at a glance is `c.status(key, { lamp: true })`: the dot alone, the word on hover and for assistive tech. `age: { at, label }` on `number` or `status` adds a quiet age (`3 hr`) in a slot of its own, so the first values line up.
+- A header the reader may not know takes `help`: one mark after the label opens the sentence. A spark with `value` draws its total beside the line and sorts by it.
+- A small fixed set of named filters (All, Alerts, Moving) is the view row's counted tabs: `PageBar` `tabs` over an enum field, with the page keeping the rows its tab matches.
+
 ## Where state lives
 
 - `request` (search, filters, sort, page) is the query key and belongs in the URL; `display` (hidden, moved and pinned columns) is the device's. Bind `state` to a `field.composite` of a `defineControls` store, or omit it for a table that holds its own memory.

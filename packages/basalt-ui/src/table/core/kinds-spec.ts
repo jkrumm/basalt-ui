@@ -94,6 +94,13 @@ export type KindSpec<T> = {
   header: string
   /** An icon drawn before the header text. */
   headerIcon?: IconComponent
+  /** What the column answers: one mark after the header label opens it as a hint. */
+  help?: string
+  /**
+   * `number` with a trend arrow, an age or both after the figure: the header ends where the figures
+   * end, over the figure and not over the slots after it.
+   */
+  trail?: 'trend' | 'age' | 'both'
   /** The cell's raw value; `null` or `undefined` is absent and renders a muted dash. */
   value: (row: T) => unknown
   align: Align

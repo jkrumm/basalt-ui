@@ -43,7 +43,7 @@ useDataTable<T, const F extends readonly unknown[] = readonly any[]>(options: Us
   pager?: "none" | "pages" | "more"  // The pager: `pages` steps through numbered pages, `more` is a Load more button, `none` shows every row; default 'none' on a client table, 'more' on a cursor table, 'pages' on any other server table
   rowHeight?: RowHeight  // The body's row height until a reader picks one in a view: the density row of `dense` (2rem), `normal` (2.5rem) or `comfortable` (3rem); the head keeps its height
   rowNumbers?: boolean  // A row-number column after the tick: the row's place in the request (it runs on across groups and pages)
-  group?: { by: string; summary?: (rows: readonly T[], box: Box) => ReactNode; }  // The rows grouped by a column, until a reader picks another column or none in a view
+  group?: { by: string; summary?: (rows: readonly T[], box: Box) => ReactNode; fold?: boolean; }  // The rows grouped by a column, until a reader picks another column or none in a view
   nested?: { parentOf: (row: T) => string | null | undefined; }  // Nested rows (client mode only, never with `group`): each row is drawn under the row `parentOf` names, one level deeper, with the indent and the expander the table draws in its first column; a row whose parent is absent, itself or below it is a root
   selection?: { bulk: BulkAction<T>[]; selectAll?: boolean; }
   views?: { store?: ViewStore; }

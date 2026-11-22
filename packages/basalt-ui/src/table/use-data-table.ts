@@ -26,6 +26,7 @@ import type {
   KindColumn,
   PageFilter,
   RowHeight,
+  TableDisplay,
   TableEscape,
   TableRequest,
   Totals,
@@ -349,6 +350,15 @@ function plannedRows(
   return Math.max(1, Math.min(request.pageSize, count - (request.page - 1) * request.pageSize))
 }
 
+/** Drops a folded column's derived hide from a display write, so only a reader's own choice is stored. */
+function withoutFold(patch: Partial<TableDisplay>, id: string): Partial<TableDisplay> {
+  if (patch.visibility?.[id] !== false) return patch
+  const visibility = Object.fromEntries(
+    Object.entries(patch.visibility).filter(([key]) => key !== id),
+  )
+  return { ...patch, visibility }
+}
+
 /**
  * The table's state, engine, selection and phase in one call. Hand the result to `DataTable` or
  * to the parts. A narrow table becomes cards: `phone` defaults to `'cards'` (`'scroll'` pins the
@@ -440,7 +450,17 @@ export function useDataTable<
     clearRef.current = selection.clear
   })
 
-  const visibilityKey = JSON.stringify(display.visibility)
+  const group = nestedRows ? undefined : groupOf(options.group, specs, server, display.groupBy)
+  const groupSpec = group?.spec
+  // A folded grouping draws its column in the group rows only, unless a reader showed or hid it.
+  const folds =
+    options.group?.fold === true &&
+    groupSpec?.id === options.group.by &&
+    display.visibility[groupSpec.id] === undefined
+  const folded = folds ? groupSpec.id : undefined
+  const visibility =
+    folded === undefined ? display.visibility : { ...display.visibility, [folded]: false }
+  const visibilityKey = JSON.stringify(visibility)
   const shapeKey = specs
     .map(
       (s) =>
@@ -461,7 +481,7 @@ export function useDataTable<
       JSON.stringify(widths) +
       (preview === null ? '' : '|preview') +
       (options.look ?? 'reading'),
-    display.visibility,
+    visibility,
     contentCh,
     widths,
     preview !== null,
@@ -537,8 +557,6 @@ export function useDataTable<
     setLastRows(rows.length)
   }
 
-  const group = nestedRows ? undefined : groupOf(options.group, specs, server, display.groupBy)
-  const groupSpec = group?.spec
   // A date groups by its day in the table's zone, never by the instant.
   const groupKey =
     groupSpec !== undefined && isDayKind(groupSpec.kind)
@@ -861,7 +879,16 @@ export function useDataTable<
     phone: options.phone ?? (look === 'grid' ? 'scroll' : 'cards'),
     cardsBelow: options.cardsBelow ?? 'regular',
     cursor: server && 'cursor' in mode ? mode.cursor : undefined,
-    state,
+    // A folded column reads as hidden to every part (the columns menu too) until a reader decides; a part
+    // that writes back the visibility it read does not store the fold's hide as the reader's choice.
+    state:
+      folded === undefined
+        ? state
+        : {
+            ...state,
+            display: { ...display, visibility },
+            setDisplay: (patch) => state.setDisplay(withoutFold(patch, folded)),
+          },
     selection: options.selection === undefined ? undefined : selection,
     bulk:
       options.selection === undefined
