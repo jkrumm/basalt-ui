@@ -123,6 +123,10 @@ export function SwatchPicker({
 }: SwatchPickerProps): ReactElement {
   const t = useMessages(baseMessages)
   const [open, setOpen] = useState(false)
+  const pick = () => {
+    setOpen(false)
+    onBlur?.()
+  }
   const picked = options.find((option) => option.value === value)
   const triggerName =
     ariaLabel === undefined || picked === undefined ? ariaLabel : `${ariaLabel}: ${picked.label}`
@@ -147,11 +151,9 @@ export function SwatchPicker({
       data-slot="swatch-picker"
       className={cn(swatchPickerVariants(), display === 'inline' && className)}
       onBlur={onFocusOut}
-      onValueChange={(next) => {
-        onValueChange?.(next as SwatchToken)
-        if (display !== 'menu') return
-        setOpen(false)
-        onBlur?.()
+      onValueChange={(next) => onValueChange?.(next as SwatchToken)}
+      onKeyDown={(event) => {
+        if (display === 'menu' && (event.key === 'Enter' || event.key === ' ')) pick()
       }}
     >
       {options.map((option) => (
@@ -160,6 +162,10 @@ export function SwatchPicker({
           value={option.value}
           disabled={option.disabled ?? false}
           aria-label={option.label}
+          // An arrow key selects a radio by clicking it with no pointer (detail 0): browsing must not close the menu.
+          onClick={(event) => {
+            if (display === 'menu' && event.detail > 0) pick()
+          }}
           className={cn(swatchVariants(), FILL[option.value])}
         >
           <BaseRadio.Indicator>

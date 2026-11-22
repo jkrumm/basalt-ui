@@ -88,7 +88,27 @@ describe('swatch-picker', () => {
       />,
     )
     fireEvent.click(getByRole('button'))
-    fireEvent.click(getByRole('radio', { name: options[1]!.label }))
+    // Arrow keys select with a click that has no pointer behind it: the menu stays open to browse.
+    fireEvent.click(getByRole('radio', { name: options[2]!.label }))
+    expect(blurs).toBe(0)
+    expect(document.querySelector('[role="dialog"]')).not.toBeNull()
+    fireEvent.click(getByRole('radio', { name: options[1]!.label }), { detail: 1 })
+    expect(blurs).toBe(1)
+  })
+
+  test('menu: Enter on a swatch closes the menu', () => {
+    let blurs = 0
+    const { getByRole } = render(
+      <SwatchPicker
+        aria-label="Stage colour"
+        display="menu"
+        options={options}
+        value="good"
+        onBlur={() => (blurs += 1)}
+      />,
+    )
+    fireEvent.click(getByRole('button'))
+    fireEvent.keyDown(getByRole('radiogroup'), { key: 'Enter' })
     expect(blurs).toBe(1)
   })
 
