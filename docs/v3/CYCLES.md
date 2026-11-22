@@ -38,7 +38,7 @@ A build row proves that its piece works. A cycle proves that the pieces work tog
    - one row per class for the P2s, if any;
    - P3s ride along with the P2 row of the same class.
 
-   If the cycle has not converged, add the next cycle, `v3-cycle-<area>-<n+1>`, after every fix row, with a brief that copies this one and bumps `n`. If `docs/plan.yaml` passes 60 KiB, collapse done rows to `key` and `issue`, the adopted-row form.
+   If the cycle has not converged, add the next cycle, `v3-cycle-<area>-<n+1>`, after every fix row, with a brief that copies this one and bumps `n`. If `docs/plan.yaml` passes 60 KiB, collapse done rows to `key` and `issue`, the adopted-row form. The expression area is paused by the owner (2026-11-22): while the pause stands, its cycles file no next cycle; see `docs/v3/EXPRESSION.md` § Convergence.
 
 7. **Converge.** A cycle converges at zero P1 and at most three P2. Its file says so, and it adds no next cycle.
 

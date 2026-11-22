@@ -1318,22 +1318,6 @@ rows:
     kind: chore
     after: [v3-cycle-expression-19]
     facts: { 'brief': 'docs/v3/issues/cycles/v3-expr-19-rubric.json' }
-  - key: v3-cycle-expression-20
-    title: 'Improvement cycle 20: expression, six one-shot visualization trials'
-    repo: basalt-ui
-    kind: chore
-    seat: { tier: opus, effort: high }
-    after:
-      [
-        v3-expr-19-kit-fixes,
-        v3-expr-19-contract,
-        v3-expr-19-skill,
-        v3-expr-19-rubric,
-        bench-view-row,
-        bench-panels,
-        bench-table-kinds,
-      ]
-    facts: { 'brief': 'docs/v3/issues/cycles/v3-cycle-expression-20.json' }
   - key: astro-chart-server-picture
     title: 'Chart kinds draw a correct server picture at their box height and a declared width, from the Astro matrix'
     repo: basalt-ui

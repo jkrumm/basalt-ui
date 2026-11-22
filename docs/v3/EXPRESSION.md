@@ -91,13 +91,17 @@ A `skill` or `primitive` fix names at least two cases it serves, from this cycle
 
 ## Convergence
 
+**Paused by the owner, 2026-11-22.** Dictated: "Basalt UI is getting a new wave of improvements right now. So maybe the cycling should be kind of stopped and paused until we then maybe pick it up more holistically and wholly after all of these current and chain items are done ... I think this queue can be stopped". While the pause stands, a cycle files no next cycle: `v3-cycle-expression-20` is off `docs/plan.yaml` (its brief is kept, marked not run), and the fix rows cycle 19 filed ship. The area is taken up again as a whole after the current wave of rows has landed, on the owner's word. The pause does not change the convergence rule.
+
+Open for that restart: may a cycle with no referenced case converge on the other clauses? Cycle 10's Decision asked it and closed on its default, "keep EXPRESSION.md as written"; the owner has not ruled. Until he does, the rule above applies as written, and no cycle can meet its referenced clause while no referenced case can run.
+
 The area converges on a cycle whose six cases had all never run, when:
 
 - the median first-try score is 80 or more and no case is under 60;
 - at least three of the four referenced cases end `build` or `tie` in round 0;
 - its round-0 findings hold no P1 and at most three P2, by the severity rule in `docs/v3/expression/rubric.md`.
 
-Until then each cycle adds `v3-cycle-expression-<n+1>` after its fix rows. Each cycle also adds two cases to the bank. A new case comes from a TuffUI component published after the last cycle, or from a page of argo, linewatch, weatherorb or the factory console that no case covers yet.
+Until then each cycle adds `v3-cycle-expression-<n+1>` after its fix rows (while the pause stands, none does). Each cycle also adds two cases to the bank. A new case comes from a TuffUI component published after the last cycle, or from a page of argo, linewatch, weatherorb or the factory console that no case covers yet.
 
 ## Guards against a hollow win
 
