@@ -194,6 +194,11 @@ export type TableMessages = Record<
     (f: Format, value: string) => string
   > &
   Record<'table.countdownToday', string> &
+  Record<
+    'table.trendUp' | 'table.trendDown' | 'table.trendFlat',
+    (f: Format, before: string) => string
+  > &
+  Record<'table.fraction', (f: Format, part: number, whole: number) => string> &
   Record<'table.countdownLate' | 'table.countdownIn', (f: Format, days: number) => string> &
   Record<'table.displayHidden', (f: Format, hidden: number) => string> &
   Record<'table.panelHidden' | 'table.panelActive', (f: Format, count: number) => string> &
@@ -356,6 +361,10 @@ export const table = {
     `${f.number(days)} ${f.plural(days) === 'one' ? 'day' : 'days'} late`,
   'table.countdownIn': (f, days) =>
     `in ${f.number(days)} ${f.plural(days) === 'one' ? 'day' : 'days'}`,
+  'table.trendUp': (_f, before) => `up from ${before}`,
+  'table.trendDown': (_f, before) => `down from ${before}`,
+  'table.trendFlat': (_f, before) => `unchanged from ${before}`,
+  'table.fraction': (f, part, whole) => `${f.number(part)} of ${f.number(whole)}`,
   'table.groupRows': (f, count) => (count === 1 ? '1 row' : `${f.number(count)} rows`),
   'table.selectedCount': (f, count) => `${f.number(count)} selected`,
   'table.allMatching': (f, count) => `All ${f.number(count)} rows selected`,

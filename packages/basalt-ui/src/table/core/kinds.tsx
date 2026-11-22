@@ -21,8 +21,13 @@ import {
   DateCell,
   DeltaCell,
   EntityCell,
+  FigureCell,
+  LampCell,
   LinkCell,
   MeterCell,
+  SparkTotalCell,
+  StackedMeterCell,
+  WithAge,
   linkLabel,
   PeopleCell,
   PersonCell,
@@ -34,6 +39,7 @@ import {
   dateLabel,
   deltaLabel,
   formatMoney,
+  durationText,
   formatNumber,
   isAbsent,
   toInstant,
@@ -82,6 +88,17 @@ export type CommonOptions = {
    * but `custom` and `actions` draws its own by default; `false` draws none.
    */
   headerIcon?: IconComponent | false
+  /** What the column answers, one or two sentences: one mark after the header label opens it as a hint. */
+  help?: string
+}
+
+/**
+ * A quiet second value after a cell's first (`number`, `status`): an instant drawn as its age
+ * (`3 hr`, `2.1 days`) in a slot of its own width, so the first values line up down the column.
+ * `label` names it for assistive tech (`Open since` is heard as `Open since 3 hours ago`).
+ */
+export type AgeOption<T> = {
+  age?: { at: (row: T) => string | number | Date | null | undefined; label?: string }
 }
 
 /**
@@ -181,9 +198,36 @@ export type RangeFilterOptions = { filter?: 'range'; bounds?: readonly [number, 
 export type DateFilterOptions =
   | { filter?: undefined; picker?: undefined }
   | { filter: 'range'; picker: DateRangeLike }
-export type NumberOptions = CommonOptions &
+/**
+ * A figure against the value before it: an arrow up, down or flat (a change within `flat`, a share
+ * of the value before, default 0.1), toned good or bad by `better`, with the comparison in words
+ * for assistive tech and on hover (`down from 4.2 hr the 7 days before`, `against` the last words).
+ */
+export type TrendOption<T> = {
+  before: (row: T) => number | null | undefined
+  better: 'lower' | 'higher'
+  flat?: number
+  against?: string
+}
+export type NumberOptions<T = unknown> = CommonOptions &
   FooterOption &
-  RangeFilterOptions & { unit?: string; digits?: number }
+  RangeFilterOptions &
+  AgeOption<T> & {
+    unit?: string
+    digits?: number
+    /** The value is a span in this unit, written in its one largest unit: `30 min`, `1.4 hr`, `2 days`. */
+    duration?: 'ms' | 's'
+    trend?: TrendOption<T>
+    /**
+     * The whole the value is a part of: the cell writes `11/12`, sorts and range-filters by the share
+     * (0 to 1), and takes no `footer`. A row whose whole is absent or zero draws the dash.
+     */
+    of?: (row: T) => number | null | undefined
+    /** With `of`: a share below this is drawn in the warn ink (`1`: anything under full). */
+    warnBelow?: number
+    /** With `of`: a share below this is drawn in the bad ink. */
+    badBelow?: number
+  }
 export type MoneyOptions = CommonOptions & FooterOption & RangeFilterOptions & { currency: string }
 export type DateOptions<T = unknown> = CommonOptions &
   DateFilterOptions &
@@ -207,7 +251,9 @@ export type StatusOptions<O extends string = string, T = unknown> = CommonOption
     tone?: (value: O) => Tone
     /** `'multi'` filters by a checklist of the options; the user can also rank them from the header. */
     filter?: 'multi'
-  }
+    /** The toned dot alone, its word for assistive tech and on hover: a column of states read by colour at a glance. */
+    lamp?: boolean
+  } & AgeOption<T>
 export type DeltaOptions = CommonOptions &
   RangeFilterOptions & {
     polarity: Delta['polarity']
@@ -215,8 +261,24 @@ export type DeltaOptions = CommonOptions &
     /** A money change: `+€50.00` in the currency's own digits, like `c.money`; wins over `unit`. */
     currency?: string
   }
-/** `filter: 'range'` filters by a min and a max over the meter's own scale, 0 to `max`. */
-export type MeterOptions = CommonOptions & { max?: number; filter?: 'range' }
+/** One toned part of a stacked meter: its name (heard and shown on hover with its count) and its count. */
+export type MeterSegment<T> = {
+  label: string
+  tone: Tone
+  value: (row: T) => number | null | undefined
+}
+/**
+ * `max` is the scale, the same for every row or one per row (a plan's rows, a host's seats). With
+ * `segments` the key is the total, drawn beside one track of toned parts. `fraction` writes the
+ * readout as `455/472`. A per-row `max` sorts and range-filters by the share (0 to 1);
+ * `filter: 'range'` otherwise filters over the meter's own scale, 0 to `max`.
+ */
+export type MeterOptions<T = unknown> = CommonOptions & {
+  max?: number | ((row: T) => number | null | undefined)
+  segments?: readonly MeterSegment<T>[]
+  fraction?: boolean
+  filter?: 'range'
+}
 /** `filter: 'multi'` filters by Yes or No (the two `labels`). */
 export type BooleanOptions<T = unknown> = CommonOptions &
   CellIconOption<T> & {
@@ -226,12 +288,16 @@ export type BooleanOptions<T = unknown> = CommonOptions &
 export type SparkOptions<T> = Omit<CommonOptions, 'id' | 'sortable'> & {
   label: string
   render: (row: T, box: Box) => ReactNode
+  /** The line's total, drawn beside it: the column then sorts by it. */
+  value?: (row: T) => number | null | undefined
 }
 export type SelectOptions<T> = CommonOptions & SelectEdit<T> & { filter?: 'multi' }
 export type CustomOptions<T> = {
   header?: string
   /** An icon drawn before the header text. */
   headerIcon?: IconComponent
+  /** What the column answers: one mark after the header label opens it as a hint. */
+  help?: string
   render: (row: T, env: CellEnv) => ReactNode
   /** Required: the value the column sorts by. */
   sortValue: (row: T) => string | number | null | undefined
@@ -259,13 +325,13 @@ export type Col<T> = {
   /** A URL, an address or a record link as quiet text. */
   link(key: KeysOf<T, string>, o?: LinkOptions<T>): KindColumn<T>
   text(key: KeysOf<T, string>, o?: TextOptions): KindColumn<T>
-  number(key: KeysOf<T, number>, o?: NumberOptions): KindColumn<T>
+  number(key: KeysOf<T, number>, o?: NumberOptions<T>): KindColumn<T>
   money(key: KeysOf<T, number>, o: MoneyOptions): KindColumn<T>
   date(key: KeysOf<T, string | number | Date>, o?: DateOptions<T>): KindColumn<T>
   relativeTime(key: KeysOf<T, string | number | Date>, o?: RelativeTimeOptions<T>): KindColumn<T>
   status<const O extends string>(key: KeysOf<T, string>, o: StatusOptions<O, T>): KindColumn<T>
   delta(key: KeysOf<T, number>, o: DeltaOptions): KindColumn<T>
-  meter(key: KeysOf<T, number>, o?: MeterOptions): KindColumn<T>
+  meter(key: KeysOf<T, number>, o?: MeterOptions<T>): KindColumn<T>
   boolean(key: KeysOf<T, boolean>, o?: BooleanOptions<T>): KindColumn<T>
   spark(id: string, o: SparkOptions<T>): KindColumn<T>
   select(key: KeysOf<T, string>, o: SelectOptions<T>): KindColumn<T>
@@ -280,7 +346,7 @@ export type Col<T> = {
 
 // ---- Dev validation -----------------------------------------------------------------------
 
-const COMMON = ['header', 'id', 'priority', 'card', 'sortable', 'headerIcon'] as const
+const COMMON = ['header', 'id', 'priority', 'card', 'sortable', 'headerIcon', 'help'] as const
 
 /** Allowed and required option keys per kind; anything else throws in dev naming the column. */
 const OPTION_KEYS: Readonly<
@@ -313,7 +379,23 @@ const OPTION_KEYS: Readonly<
   },
   link: { allowed: [...COMMON, 'href', 'label', 'icon', 'filter'], required: [] },
   text: { allowed: [...COMMON, 'filter', 'labels', 'quiet'], required: [] },
-  number: { allowed: [...COMMON, 'unit', 'digits', 'footer', 'filter', 'bounds'], required: [] },
+  number: {
+    allowed: [
+      ...COMMON,
+      'unit',
+      'digits',
+      'footer',
+      'filter',
+      'bounds',
+      'duration',
+      'trend',
+      'of',
+      'warnBelow',
+      'badBelow',
+      'age',
+    ],
+    required: [],
+  },
   money: {
     allowed: [...COMMON, 'currency', 'footer', 'filter', 'bounds'],
     required: ['currency'],
@@ -321,17 +403,17 @@ const OPTION_KEYS: Readonly<
   date: { allowed: [...COMMON, 'style', 'filter', 'picker', 'icon', 'mono'], required: [] },
   relativeTime: { allowed: [...COMMON, 'filter', 'picker', 'icon', 'mono'], required: [] },
   status: {
-    allowed: [...COMMON, 'options', 'labels', 'tone', 'filter', 'icon'],
+    allowed: [...COMMON, 'options', 'labels', 'tone', 'filter', 'icon', 'lamp', 'age'],
     required: ['options'],
   },
   delta: {
     allowed: [...COMMON, 'polarity', 'unit', 'currency', 'filter', 'bounds'],
     required: ['polarity'],
   },
-  meter: { allowed: [...COMMON, 'max', 'filter'], required: [] },
+  meter: { allowed: [...COMMON, 'max', 'segments', 'fraction', 'filter'], required: [] },
   boolean: { allowed: [...COMMON, 'labels', 'filter', 'icon'], required: [] },
   spark: {
-    allowed: ['header', 'priority', 'card', 'label', 'render', 'headerIcon'],
+    allowed: ['header', 'priority', 'card', 'label', 'render', 'headerIcon', 'help', 'value'],
     required: ['label', 'render'],
   },
   select: {
@@ -340,7 +422,17 @@ const OPTION_KEYS: Readonly<
   },
   actions: { allowed: ['header'], required: [] },
   custom: {
-    allowed: ['header', 'headerIcon', 'render', 'sortValue', 'card', 'priority', 'width', 'align'],
+    allowed: [
+      'header',
+      'headerIcon',
+      'help',
+      'render',
+      'sortValue',
+      'card',
+      'priority',
+      'width',
+      'align',
+    ],
     required: ['render', 'sortValue', 'card', 'priority'],
   },
 }
@@ -366,6 +458,9 @@ const OPTION_VALUES: Readonly<Record<string, readonly unknown[]>> = {
   style: ['short', 'long', 'month', 'weekday', 'day'],
   footer: ['sum', 'mean', 'min', 'max', 'count'],
   imageShape: ['person', 'object'],
+  duration: ['ms', 's'],
+  lamp: [true, false],
+  fraction: [true, false],
 }
 
 /** The footer spec of a numeric kind, or nothing when the column declares no `footer`. */
@@ -432,6 +527,20 @@ function validate(kind: KindName, id: string, options: object | undefined): void
       )
     }
   }
+  if (given['of'] !== undefined) {
+    if (given['footer'] !== undefined)
+      fail(kind, id, 'has "of" and takes no "footer": a sum of shares is no total')
+    if (given['duration'] !== undefined)
+      fail(kind, id, 'has "of" and "duration": a fraction is a count of a count')
+  } else if (given['warnBelow'] !== undefined || given['badBelow'] !== undefined) {
+    fail(
+      kind,
+      id,
+      'has "warnBelow" or "badBelow" and needs "of": the thresholds are shares of a whole',
+    )
+  }
+  if (given['segments'] !== undefined && given['fraction'] === true)
+    fail(kind, id, 'has "segments" and "fraction": a stacked meter writes its total')
   const bounds = given['bounds']
   if (bounds !== undefined) {
     const ok =
@@ -501,6 +610,12 @@ const HEADER_CHROME_CH = 2
 const HEADER_MAX_CH = 24
 /** A header icon's room in `ch`: 16 px and its 6 px gap. Counted whether or not the table draws icons (`headerIcons` is read at draw time), so a floor never depends on the table. */
 const HEADER_ICON_CH = 3
+/** A header's help mark: 24 px and its gap, in `ch`. */
+const HEADER_HELP_CH = 3
+/** The age slot after a cell's first value: 60 px and its gap, in `ch`. */
+const AGE_CH = 8
+/** A trend arrow after a figure: 14 px and its gap, in `ch`. */
+const TREND_CH = 3
 /** A status icon is wider than the dot it replaces by this many `ch`. */
 const STATUS_ICON_EXTRA_CH = 1
 
@@ -543,6 +658,7 @@ function build<T>(b: Base<T>): KindColumn<T> {
     kind: b.kind,
     header: b.header,
     ...(icon !== undefined && { headerIcon: icon }),
+    ...(common.help !== undefined && { help: common.help }),
     ...(b.kind !== 'spark' && b.kind !== 'actions' && { search: searchOf(b) }),
     value: b.value,
     align: defaults.align,
@@ -559,7 +675,10 @@ function build<T>(b: Base<T>): KindColumn<T> {
     ...b.extra,
   }
   // A header keeps room for its icon and its state marks, so neither ever cuts its label.
-  const chrome = HEADER_CHROME_CH + (spec.headerIcon === undefined ? 0 : HEADER_ICON_CH)
+  const chrome =
+    HEADER_CHROME_CH +
+    (spec.headerIcon === undefined ? 0 : HEADER_ICON_CH) +
+    (spec.help === undefined ? 0 : HEADER_HELP_CH)
   if (chrome !== HEADER_CHROME_CH) spec.width = floorOf(spec.width, b.header, chrome)
   const column: BuiltColumn<T> = { __brand: 'KindColumn', id: b.id, [KIND_SPEC]: spec }
   return column
@@ -587,6 +706,10 @@ function dateText(value: unknown, format: Format, style: DateStyle): string {
   const label = dateLabel(value, format, style)
   return label === null ? '' : `${label.text}\n${label.iso.slice(0, 10)}`
 }
+
+/** A meter's readout as a fraction of its scale: `455/472`. */
+const meterFraction = (format: Format, value: number, of: number): string =>
+  `${format.number(value)}/${format.number(of)}`
 
 /** A maybe-null string as the optional string a cell prop takes. */
 const hold = (value: string | null | undefined): string | undefined => value ?? undefined
@@ -843,24 +966,116 @@ export function col<T>(): Col<T> {
           },
         },
       ),
-    number: (key, o) =>
-      keyed<T>(
-        'number',
-        key,
-        o,
-        (v, _row, env) =>
-          typeof v === 'number' ? formatNumber(env.format, v, o?.digits) : String(v),
-        {
-          header: (h) => withUnit(h, o?.unit),
-          text: (v, _row, format) =>
-            typeof v === 'number' ? formatNumber(format, v, o?.digits) : '',
-          spec: {
-            drawTotal: (v, env) => formatNumber(env.format, v, o?.digits),
-            ...footerOf<T>(o?.footer, (v, env) => formatNumber(env.format, v, o?.digits)).spec,
-            ...rangeFilter<T>(o),
-          },
+    number: (key, o) => {
+      const scale = o?.duration === 's' ? 1000 : 1
+      const write = (format: Format, v: number): string =>
+        o?.duration === undefined
+          ? formatNumber(format, v, o?.digits)
+          : durationText(format, v * scale)
+      const whole = o?.of
+      const part = read<T>(key)
+      const wholeOf = (row: T): number | null => {
+        const value = whole?.(row)
+        return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
+      }
+      const shareOf = (row: T): number | null => {
+        const value = part(row)
+        const of = wholeOf(row)
+        return typeof value === 'number' && of !== null ? value / of : null
+      }
+      const toneOf = (share: number): Tone =>
+        o?.badBelow !== undefined && share < o.badBelow
+          ? 'bad'
+          : o?.warnBelow !== undefined && share < o.warnBelow
+            ? 'warn'
+            : 'neutral'
+      const fractionText = (format: Format, v: number, of: number): string =>
+        `${formatNumber(format, v, o?.digits)}/${formatNumber(format, of, o?.digits)}`
+      const header = withUnit(o?.header ?? humanize(o?.id ?? key), o?.unit)
+      const slotted = o?.trend !== undefined || o?.age !== undefined
+      // the figure's own room (a fraction is `455/472`), then a slot each for the arrow and the age
+      const ch =
+        (whole === undefined ? 10 : 7) +
+        (o?.trend === undefined ? 0 : TREND_CH) +
+        (o?.age === undefined ? 0 : AGE_CH)
+      /** The slots after the figure; a value of `null` keeps them empty. */
+      const slots = (row: T, env: CellEnv, value: number | null) => ({
+        trend:
+          o?.trend === undefined
+            ? undefined
+            : {
+                value,
+                spec: {
+                  before: o.trend.before(row),
+                  better: o.trend.better,
+                  flat: o.trend.flat ?? 0.1,
+                  against: o.trend.against,
+                  write: (n: number) => write(env.format, n),
+                },
+              },
+        age:
+          o?.age === undefined
+            ? undefined
+            : { at: value === null ? null : o.age.at(row), label: o.age.label },
+      })
+      const draw = (v: unknown, row: T, env: CellEnv): ReactNode => {
+        const of = wholeOf(row)
+        const present =
+          typeof v === 'number' && Number.isFinite(v) && (whole === undefined || of !== null)
+        if (!present) {
+          // A figure with trailing slots keeps them when absent, so its dash sits under the figures.
+          if (!slotted) return isAbsent(v) || typeof v === 'number' ? <Absent /> : String(v)
+          return (
+            <FigureCell
+              text={<Absent />}
+              {...slots(row, env, null)}
+              format={env.format}
+              now={env.now}
+            />
+          )
+        }
+        const { trend, age } = slots(row, env, v)
+        if (whole !== undefined && of !== null) {
+          return (
+            <FigureCell
+              text={fractionText(env.format, v, of)}
+              fraction={{ part: v, whole: of }}
+              tone={toneOf(v / of)}
+              trend={trend}
+              age={age}
+              format={env.format}
+              now={env.now}
+            />
+          )
+        }
+        const text = write(env.format, v)
+        if (!slotted) return text
+        return <FigureCell text={text} trend={trend} age={age} format={env.format} now={env.now} />
+      }
+      return keyed<T>('number', key, o, draw, {
+        header: (h) => withUnit(h, o?.unit),
+        text: (v, row, format) => {
+          if (typeof v !== 'number') return ''
+          const of = wholeOf(row)
+          return whole === undefined
+            ? write(format, v)
+            : of === null
+              ? ''
+              : fractionText(format, v, of)
         },
-      ),
+        spec: {
+          ...(slotted && {
+            render: (row: T, env: CellEnv) => draw(part(row), row, env),
+            trail: o?.trend === undefined ? 'age' : o?.age === undefined ? 'trend' : 'both',
+          }),
+          ...(whole !== undefined && { value: shareOf }),
+          ...((slotted || whole !== undefined) && { width: floorOf({ ch, flex: false }, header) }),
+          drawTotal: (v, env) => write(env.format, v),
+          ...footerOf<T>(o?.footer, (v, env) => write(env.format, v)).spec,
+          ...rangeFilter<T>(o),
+        },
+      })
+    },
     money: (key, o) =>
       keyed<T>(
         'money',
@@ -926,28 +1141,40 @@ export function col<T>(): Col<T> {
         key,
         o,
         // A cell holds the stored value, which the column's `options` name as a closed list.
-        (v, row) => (
-          <StatusCell
-            value={o.labels?.[String(v) as O] ?? String(v)}
-            tone={o.tone?.(String(v) as O) ?? 'neutral'}
-            icon={o.icon?.(row)}
-          />
-        ),
+        (v, row, env) => {
+          const word = o.labels?.[String(v) as O] ?? String(v)
+          const tone = o.tone?.(String(v) as O) ?? 'neutral'
+          const age = o.age === undefined ? undefined : { at: o.age.at(row), label: o.age.label }
+          if (o.lamp === true)
+            return <LampCell value={word} tone={tone} age={age} format={env.format} now={env.now} />
+          const cell = <StatusCell value={word} tone={tone} icon={o.icon?.(row)} />
+          return age === undefined ? (
+            cell
+          ) : (
+            <WithAge age={age} format={env.format} now={env.now}>
+              {cell}
+            </WithAge>
+          )
+        },
         {
           text: (v) => o.labels?.[String(v) as O] ?? '',
           spec: {
             // The options are a closed list, so the widest word is known before a row loads.
             width: floorOf(
               {
-                ch: Math.max(
-                  0,
-                  ...(o?.options ?? []).map(
-                    (option) =>
-                      (o?.labels?.[option] ?? option).length +
-                      STATUS_DOT_CH +
-                      (o?.icon === undefined ? 0 : STATUS_ICON_EXTRA_CH),
-                  ),
-                ),
+                // a lamp is its dot alone; an age takes its own slot after the state
+                ch:
+                  (o?.lamp === true
+                    ? STATUS_DOT_CH
+                    : Math.max(
+                        0,
+                        ...(o?.options ?? []).map(
+                          (option) =>
+                            (o?.labels?.[option] ?? option).length +
+                            STATUS_DOT_CH +
+                            (o?.icon === undefined ? 0 : STATUS_ICON_EXTRA_CH),
+                        ),
+                      )) + (o?.age === undefined ? 0 : AGE_CH),
                 flex: false,
               },
               o?.header ?? humanize(o?.id ?? key),
@@ -985,21 +1212,74 @@ export function col<T>(): Col<T> {
       ),
     meter: (key, o) => {
       const id = o?.id ?? key
+      const label = o?.header ?? humanize(id)
+      const max = o?.max
+      const perRow = typeof max === 'function'
+      const maxOf = (row: T): number | null => {
+        const value = typeof max === 'function' ? max(row) : (max ?? 1)
+        return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
+      }
+      const raw = read<T>(key)
+      const shareOf = (row: T): number | null => {
+        const value = raw(row)
+        const of = maxOf(row)
+        return typeof value === 'number' && of !== null ? value / of : null
+      }
+      const segments = o?.segments
       return keyed<T>(
         'meter',
         key,
         o,
-        (v) =>
-          typeof v === 'number' ? (
-            <MeterCell label={o?.header ?? humanize(id)} value={v} max={o?.max ?? 1} />
-          ) : (
-            String(v)
-          ),
+        (v, row, env) => {
+          if (typeof v !== 'number') return String(v)
+          if (segments !== undefined) {
+            return (
+              <StackedMeterCell
+                label={label}
+                total={v}
+                max={maxOf(row) ?? v}
+                format={env.format}
+                parts={segments.map((segment) => {
+                  const value = segment.value(row)
+                  return {
+                    label: segment.label,
+                    tone: segment.tone,
+                    value: typeof value === 'number' && Number.isFinite(value) ? value : 0,
+                  }
+                })}
+              />
+            )
+          }
+          const of = maxOf(row)
+          if (of === null) return <Absent />
+          return (
+            <MeterCell
+              label={label}
+              value={v}
+              max={of}
+              write={o?.fraction === true ? (n) => meterFraction(env.format, n, of) : undefined}
+            />
+          )
+        },
         {
-          spec:
-            o?.filter === 'range'
-              ? rangeFilter<T>({ filter: 'range', bounds: [0, o.max ?? 1] })
-              : {},
+          ...(o?.fraction === true && {
+            text: (v: unknown, row: T, format: Format) => {
+              const of = maxOf(row)
+              return typeof v === 'number' && of !== null ? meterFraction(format, v, of) : ''
+            },
+          }),
+          spec: {
+            ...(perRow && { value: shareOf }),
+            // a track keeps room beside a readout of one figure (a total) or of two (a fraction)
+            ...((segments !== undefined || o?.fraction === true) && {
+              width: floorOf({ ch: segments === undefined ? 13 : 14, flex: false }, label),
+            }),
+            ...(o?.filter === 'range' &&
+              rangeFilter<T>({
+                filter: 'range',
+                bounds: [0, perRow ? 1 : typeof max === 'number' ? max : 1],
+              })),
+          },
         },
       )
     },
@@ -1021,14 +1301,36 @@ export function col<T>(): Col<T> {
     },
     spark: (id, o) => {
       validate('spark', id, o)
+      const total = o.value
+      const header = o?.header ?? o.label
       return build<T>({
         kind: 'spark',
         id,
-        header: o?.header ?? o.label,
-        value: () => undefined,
+        header,
+        value: total ?? (() => undefined),
         common: o,
         always: true,
-        draw: (_v, row, env) => o.render(row, env.box),
+        draw: (_v, row, env) => {
+          const line = o.render(row, env.box)
+          if (total === undefined) return line
+          const value = total(row)
+          return (
+            <SparkTotalCell
+              spark={line}
+              total={
+                typeof value === 'number' && Number.isFinite(value) ? (
+                  env.format.number(value)
+                ) : (
+                  <Absent />
+                )
+              }
+            />
+          )
+        },
+        // the total is the line's figure: the column sorts by it
+        ...(total !== undefined && {
+          extra: { sort: { fn: 'basic' }, width: floorOf({ ch: 20, flex: false }, header) },
+        }),
       })
     },
     select: (key, o) =>
@@ -1062,6 +1364,7 @@ export function col<T>(): Col<T> {
         draw: (_v, row, env) => o.render(row, env),
         extra: {
           ...(o.headerIcon !== undefined && { headerIcon: o.headerIcon }),
+          ...(o.help !== undefined && { help: o.help }),
           sort: { fn: 'basic' },
           card: [o.card],
           cardFirst: true,

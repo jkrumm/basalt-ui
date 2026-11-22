@@ -11,6 +11,7 @@ import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect
 import { cn } from '../../core/cn'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
+import { InfoHint } from '../../ui/info-hint'
 import { Popover, PopoverContent } from '../../ui/popover'
 import { TableHead, TableHeader, TableRow } from '../../ui/table'
 import type { DataTableInstance } from '../contract'
@@ -269,6 +270,19 @@ function FilterMark(): ReactElement {
   )
 }
 
+/** The inset a header keeps at its end over a figure's trailing slots: the arrow (14 px and its gap), the age (60 px and its gap). */
+const TRAIL_INSET: Readonly<Record<NonNullable<KindSpec<never>['trail']>, string>> = {
+  trend: 'pe-5',
+  age: 'pe-16.5',
+  both: 'pe-21.5',
+}
+/** The same inset with a help mark (24 px) in it, after the label, over the slots. */
+const TRAIL_INSET_HELP: Readonly<Record<NonNullable<KindSpec<never>['trail']>, string>> = {
+  trend: 'pe-0',
+  age: 'pe-10.5',
+  both: 'pe-15.5',
+}
+
 /** The header's label: the column's icon (unless the table turned icons off), then its text. */
 function HeaderLabel<T>({ spec, icons }: { spec: KindSpec<T>; icons: boolean }): ReactElement {
   const Icon = icons ? spec.headerIcon : undefined
@@ -333,6 +347,9 @@ function HeaderContent<T>({
       className={cn(
         'flex min-w-0',
         numeric && 'justify-end',
+        numeric &&
+          spec.trail !== undefined &&
+          (spec.help === undefined ? TRAIL_INSET : TRAIL_INSET_HELP)[spec.trail],
         spec.align === 'center' && 'justify-center',
       )}
     >
@@ -358,6 +375,19 @@ function HeaderContent<T>({
         {direction !== 'none' && <SortArrow direction={direction} />}
         {active !== undefined && <FilterMark />}
       </ColumnActionsMenu>
+      {spec.help !== undefined && (
+        // Over a figure's slots the mark sits after the label, in the inset; else a figure's mark leads it.
+        // Its ring is inset: the head's row has no room for an offset ring at the scroller's top edge.
+        <InfoHint
+          label={spec.header}
+          className={cn(
+            '-my-1 focus-visible:-outline-offset-2',
+            numeric && spec.trail === undefined && '-order-1',
+          )}
+        >
+          {spec.help}
+        </InfoHint>
+      )}
       <Popover
         open={panel !== null}
         onOpenChange={(open) => {

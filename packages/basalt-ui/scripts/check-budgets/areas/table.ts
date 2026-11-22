@@ -101,13 +101,24 @@ export const rows: readonly RowDef[] = [
     // 180000 -> 182000 (Issue 3017): +~1.1 KB gz for the table at rest (bench-table-rest): sixteen kind icons
     // drawn as inline SVG, the one header menu with its sort radio group and moves to either end, and the
     // inline select's F2 and Enter doors.
-    ceiling: 182000,
+    // 182000 -> 186500 (Issue 3061): 186199 B measured over the saved views, +~3.2 KB gz for the reading look of a monitoring row
+    // (bench-table-reading): the stacked meter, the meter and number fractions, the duration writer, the trend
+    // arrow and its words, the age slot, the lamp, the spark total, the header help mark (InfoHint) and a folded
+    // grouping.
+    ceiling: 186500,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 182000,
+      to: 186500,
+      consumer:
+        "the factory console's Projects table (plan row bench-table-reading, Issue 3061): a monitoring table in the reading look needs a stacked meter, fractions, a duration with a trend, a lamp, an age and header help, each a counted custom column until now",
+      repo: 'basalt-ui',
+    },
     {
       from: 180000,
       to: 182000,

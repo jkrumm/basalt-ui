@@ -1,6 +1,7 @@
 /**
  * Expression cycle 16 (`v3-expr-16-kit-fixes` 1, 9): a `phone: 'columns'` table sizes its columns to what they
- * hold (n77 .16), and a group row tints its pinned cell too and draws no blank cell on the phone card (n80 .41).
+ * hold (n77 .16), and a group row tints its pinned cell too and draws no blank cell on the phone card (n80 .41);
+ * in the reading look a group row draws no tint at all (bench-table-reading).
  */
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
@@ -29,7 +30,7 @@ const RUNS: Run[] = [
   { id: 'c', preset: 'Podcast', model: 'three', cost: 3 },
 ]
 
-function Grouped(): ReturnType<typeof DataTable> {
+function Grouped({ look }: { look?: 'reading' | 'grid' }): ReturnType<typeof DataTable> {
   const c = col<Run>()
   const table = useDataTable<Run>({
     id: 'e16-group',
@@ -39,16 +40,25 @@ function Grouped(): ReturnType<typeof DataTable> {
     getRowId: (r) => r.id,
     mode: { kind: 'client' },
     group: { by: 'preset' },
+    ...(look !== undefined && { look }),
   } as UseDataTable<Run>)
   return <DataTable table={table} />
 }
 
 describe('a group row', () => {
-  test('hands its tint to the opaque pinned cell, so the band runs the whole row', () => {
-    const { container } = render(<Grouped />)
+  test('in the grid look hands its tint to the opaque pinned cell, so the band runs the whole row', () => {
+    const { container } = render(<Grouped look="grid" />)
     const row = container.querySelector('tbody tr[data-group]')
     expect(row?.className).toContain('--row-tint:')
     expect(row?.className).toContain('bg-muted/40')
+  })
+
+  test('in the reading look draws a quiet label and count, with no tint', () => {
+    const { container } = render(<Grouped />)
+    const row = container.querySelector('tbody tr[data-group]')
+    expect(row?.hasAttribute('data-quiet')).toBe(true)
+    expect(row?.className ?? '').not.toContain('bg-muted')
+    expect(row?.querySelector('td')?.className).toContain('text-muted-foreground')
   })
 
   test('leaves a cell that draws nothing off the phone card, and keeps one that holds a reduce', () => {

@@ -51,8 +51,9 @@ describe('table.css', () => {
   // (three container blocks, expression cycle 19), 5,209 with the virtual tables it leaves out; 5,782 with the
   // view's resize handle, row height, pinned edge shadow, row-number pin and footer pick (bench-table-view);
   // 6,234 with the rest state of an edit cell, the filler's lines in the grid and under the footer, and the
-  // card's drawn edit control (bench-table-rest).
-  test('stays small: under 6,300 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(6300)
+  // card's drawn edit control (bench-table-rest); 6,373 with a lamp's word and a stacked meter's parts shown
+  // on the phone card, four container blocks (bench-table-reading).
+  test('stays small: under 6,400 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(6400)
   })
 })
