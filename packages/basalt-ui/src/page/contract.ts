@@ -118,8 +118,8 @@ export type PageBarProps<K extends string = string, L extends string = string> =
   tabs?: PageTabs<K>
   /** Before `controls`; below `@wide` it takes a line of its own. */
   search?: PageSearch
-  /** After `refresh`, before `settings`. */
-  layout?: PageLayout<L>
+  /** After `refresh`, before `settings`; `undefined` draws none (`useTableViews().layout` with one layout). */
+  layout?: PageLayout<L> | undefined
   /** After `layout`, before `actions`. */
   settings?: PageSettings
   /** `useConnection()`: draws `ConnectionIndicator` in the end slot, before `refresh`. */
