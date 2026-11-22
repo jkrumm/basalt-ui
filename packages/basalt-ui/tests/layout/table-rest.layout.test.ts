@@ -248,6 +248,28 @@ layout('DataTable at rest', () => {
     expect(fill?.width).toBeGreaterThan(0)
   })
 
+  test('below its full tier the hidden columns leave the free width to the title', async () => {
+    const page = await open()
+    const read = await page.raw.evaluate(() => {
+      const root = document.querySelector('[data-testid="tr-reduced"] [data-slot="table-root"]')!
+      const cols = [...root.querySelectorAll('col')].map((col) =>
+        Math.round(col.getBoundingClientRect().width),
+      )
+      return {
+        fullAt: Number(root.getAttribute('data-full-at')),
+        port: Math.round(root.getBoundingClientRect().width),
+        cols,
+      }
+    })
+    // The table is reduced here: the Note column (priority 3) draws no width.
+    expect(read.port).toBeLessThan(read.fullAt)
+    expect(read.cols[1]).toBe(0)
+    // Account, the one column that grows, takes the width Note would have held: the row fills the port
+    // with no filler left, and the title is past its 168 px floor.
+    expect(read.cols[0]).toBeGreaterThan(168)
+    expect(read.cols[0]! + read.cols[2]! + read.cols[3]!).toBe(read.port)
+  })
+
   test('a grid wider than its port scrolls sideways under its pinned column', async () => {
     const page = await open()
     const read = (by: number) =>

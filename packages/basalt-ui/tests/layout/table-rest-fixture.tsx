@@ -2,7 +2,8 @@
  * The `table-rest` fixture (docs/v3/issues/bench/bench-table-rest.json): the table at rest in real
  * Chrome. `tr-plain` is a reading table with no sort or filter; `tr-state` the same table that the
  * test sorts and filters through `window.basaltTableState`, with a footer and an inline select;
- * `tr-group` groups its rows and sums a footer; `tr-grid` is a grid wider than any viewport.
+ * `tr-group` groups its rows and sums a footer; `tr-reduced` sits below its full tier; `tr-grid` is a grid
+ * wider than any viewport.
  */
 import { useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -126,6 +127,24 @@ function Grid(): ReactElement {
   return <DataTable table={t} />
 }
 
+/** Below its full tier: the priority 3 Note column is hidden, so its floor leaves the free width. */
+function Reduced(): ReactElement {
+  const t = useDataTable<Row>({
+    id: 'tr-reduced',
+    label: 'Accounts, reduced',
+    columns: [
+      c.entity('name', { header: 'Account' }),
+      c.text('note', { header: 'Note', priority: 3 }),
+      c.money('amount', { header: 'Amount', currency: 'EUR' }),
+      c.date('due', { header: 'Due', priority: 2 }),
+    ],
+    data: ROWS,
+    getRowId: (r) => r.id,
+    mode: { kind: 'client' },
+  })
+  return <DataTable table={t} />
+}
+
 function Fixture(): ReactElement {
   return (
     <main lang="en" className="flex flex-col gap-8 text-foreground">
@@ -137,6 +156,9 @@ function Fixture(): ReactElement {
       </div>
       <div data-testid="tr-group" className="min-w-0">
         <Grouped />
+      </div>
+      <div data-testid="tr-reduced" className="w-[560px] min-w-0">
+        <Reduced />
       </div>
       <div data-testid="tr-grid" className="min-w-0">
         <Grid />

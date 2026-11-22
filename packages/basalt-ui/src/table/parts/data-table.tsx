@@ -55,23 +55,33 @@ function weight(kind: string): number {
 function Columns<T>({ model }: { model: TableModel<T> }): ReactElement {
   const visible = visibleColumns(model.specs, model.plan.columns)
   const grid = model.look === 'grid'
-  // A priority 3 column counts only where a tier can show it, so a table that stays reduced shares its width.
-  const counted = (planned: PlannedColumn): boolean =>
-    grid || planned.priority !== 3 || model.plan.fullAt !== null
-  const grows = (planned: PlannedColumn): boolean => planned.flex && !(grid && planned.pin !== null)
-  const floorsPx = visible.reduce(
-    (sum, { planned }) => (counted(planned) ? sum + planned.widthPx : sum),
+  // A reading table hides priority 3 below `data-full-at` (always, with none): those floors leave the
+  // free width only from the full tier up, a step the clamp draws on the scroller's width, and those
+  // columns keep their floor rather than take a share that a narrower tier would hide.
+  const tiered = (planned: PlannedColumn): boolean => !grid && planned.priority === 3
+  const grows = (planned: PlannedColumn): boolean =>
+    planned.flex && !tiered(planned) && !(grid && planned.pin !== null)
+  const coreFloors = visible.reduce(
+    (sum, { planned }) => (tiered(planned) ? sum : sum + planned.widthPx),
     model.lead.px,
   )
+  const tierFloors = visible.reduce(
+    (sum, { planned }) => (tiered(planned) ? sum + planned.widthPx : sum),
+    0,
+  )
+  const fullAt = model.plan.fullAt
+  const tierStep =
+    tierFloors > 0 && fullAt !== null
+      ? ` - clamp(0px, (100cqw - ${fullAt - 1}px) * 1000, ${tierFloors}px)`
+      : ''
   const shares = visible.reduce(
-    (sum, { spec, planned }) =>
-      grows(planned) && counted(planned) ? sum + weight(spec.kind) : sum,
+    (sum, { spec, planned }) => (grows(planned) ? sum + weight(spec.kind) : sum),
     0,
   )
   const widthOf = (kind: string, planned: PlannedColumn): string => {
     if (!grows(planned) || shares === 0) return `${planned.widthPx}px`
     const share = weight(kind) / shares
-    const grown = `calc(${planned.widthPx}px + (100cqw - ${floorsPx}px) * ${share})`
+    const grown = `calc(${planned.widthPx}px + (100cqw - ${coreFloors}px${tierStep}) * ${share})`
     return planned.capPx === null
       ? `max(${planned.widthPx}px, ${grown})`
       : `clamp(${planned.widthPx}px, ${grown}, ${planned.capPx}px)`
