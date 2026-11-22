@@ -148,7 +148,7 @@ export function DataTableFooter<T>({
                 <Pressable
                   data-footer-pick=""
                   data-quiet={quiet ? '' : undefined}
-                  className="block w-full min-w-0 [text-align:inherit]"
+                  className="block w-full min-w-0 [text-align:inherit] focus-visible:-outline-offset-2 data-quiet:after:hidden"
                   onClick={() => model.setAggregate(spec.id, next)}
                 >
                   {item ?? (
