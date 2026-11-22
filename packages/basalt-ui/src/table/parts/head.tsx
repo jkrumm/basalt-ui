@@ -5,8 +5,9 @@
  * priority and pin go out as `data-*` for the tier CSS.
  */
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
-import { useId, useLayoutEffect, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactElement } from 'react'
+import { useIsomorphicLayoutEffect } from '../../common/isomorphic-layout-effect'
 import { cn } from '../../core/cn'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
@@ -110,12 +111,6 @@ export function pinEdge(planned: PlannedColumn & { pinEdge?: boolean }): {
 export const RESIZE_STEP_PX = 8
 export const RESIZE_STEP_WIDE_PX = 40
 
-/**
- * The resize handle on a header's end edge: a focusable separator whose value is the column's width.
- * A drag previews the width and writes it to the view on release; Left and Right move the edge by
- * 8 px (Shift 40), Home and End go to the kind's minimum and the maximum, Enter and a double-click
- * return the column to its kind's width. In a right-to-left table the edge moves the other way.
- */
 /** The width the header cell of a handle is drawn at, or `fallback` where it has no box (a hidden head). */
 function drawnWidth(handle: HTMLElement, fallback: number): number {
   const cell = handle.closest('th')
@@ -123,6 +118,12 @@ function drawnWidth(handle: HTMLElement, fallback: number): number {
   return width > 0 ? width : fallback
 }
 
+/**
+ * The resize handle on a header's end edge: a focusable separator whose value is the column's width.
+ * A drag previews the width and writes it to the view on release; Left and Right move the edge by
+ * 8 px (Shift 40), Home and End go to the kind's minimum and the maximum, Enter and a double-click
+ * return the column to its kind's width. In a right-to-left table the edge moves the other way.
+ */
 function ResizeHandle<T>({
   model,
   spec,
@@ -137,13 +138,13 @@ function ResizeHandle<T>({
   const drag = useRef<{ x: number; px: number; sign: 1 | -1; moved: boolean } | null>(null)
   const [active, setActive] = useState(false)
   // A flexible column is drawn wider than its planned floor: an edge moves from the width on screen,
-  // read from the header cell when the handle is focused or pressed, never measured to lay out.
+  // read from the header cell when the handle is focused or pressed and after each layout below.
   const [drawn, setDrawn] = useState<number | null>(null)
   const widthOn = (handle: HTMLElement): number => (resized ? planned : drawnWidth(handle, planned))
   // An unresized column reads the width the plan draws, after every layout that can move it: a reset
   // from here or the column menu, a preview, a cancelled drag.
   const ref = useRef<HTMLDivElement>(null)
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const handle = ref.current
     if (handle !== null && stored === undefined) setDrawn(drawnWidth(handle, planned))
   }, [stored, planned])

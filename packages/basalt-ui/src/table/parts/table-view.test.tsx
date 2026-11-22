@@ -170,19 +170,24 @@ describe('column widths', () => {
     expect(colWidth(again.container, 3)).toBe(`${start + 60}px`)
   })
 
-  test('a cancelled drag and a menu reset give the handle the width the plan draws', () => {
-    const { container, getByRole } = render(<Subject id="cancel" />)
+  test('a cancelled drag and a menu reset give the handle the width drawn on screen', () => {
+    const { getByRole } = render(<Subject id="cancel" />)
     const handle = getByRole('separator', { name: /^Resize Amount/ })
-    const start = Number(handle.getAttribute('aria-valuenow'))
-    fireEvent.pointerDown(handle, { button: 0, clientX: 100, pointerId: 1 })
-    fireEvent.pointerMove(handle, { clientX: 160, pointerId: 1 })
-    expect(handle.getAttribute('aria-valuenow')).toBe(String(start + 60))
-    fireEvent.pointerCancel(handle, { clientX: 160, pointerId: 1 })
-    expect(colWidth(container, 3)).toBe(`${start}px`)
-    expect(handle.getAttribute('aria-valuenow')).toBe(String(start))
-    fireEvent.keyDown(handle, { key: 'ArrowRight' })
+    // jsdom lays nothing out: the header cell reports the width a browser would draw.
+    let onScreen = 211
+    const cell = handle.closest('th')!
+    cell.getBoundingClientRect = () => ({ width: onScreen }) as DOMRect
+    act(() => latest().setWidth('amount', 300))
     act(() => latest().setWidth('amount', undefined))
-    expect(handle.getAttribute('aria-valuenow')).toBe(String(start))
+    expect(handle.getAttribute('aria-valuenow')).toBe('211')
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100, pointerId: 1 })
+    onScreen = 271
+    fireEvent.pointerMove(handle, { clientX: 160, pointerId: 1 })
+    expect(handle.getAttribute('aria-valuenow')).toBe('271')
+    onScreen = 211
+    fireEvent.pointerCancel(handle, { clientX: 160, pointerId: 1 })
+    expect(handle.getAttribute('aria-valuenow')).toBe('211')
+    expect(latest().state.display.widths?.amount).toBeUndefined()
   })
 
   test('the keyboard moves the edge, Home and End go to the bounds, Enter and a double-click reset it', () => {
