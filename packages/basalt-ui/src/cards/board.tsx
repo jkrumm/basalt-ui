@@ -6,6 +6,7 @@ import { kanban } from '../core/messages/kanban'
 import { useMessages } from '../core/messages/use-messages'
 import type { DragData, DragEdge, DragLike, Tone, VirtualLike } from '../core/ports'
 import { ScrollArea } from '../ui/scroll-area'
+import { Segmented } from '../ui/segmented'
 import { statusVariants } from '../ui/status'
 import type { ColumnRef, KanbanCardProps, Move } from './contract'
 
@@ -31,8 +32,13 @@ export type BoardProps<C extends string, T extends { id: string; title: string }
   onMove(move: Move<C>): void
   /** The drag engine: `drag` from `basalt-ui/ui/sortable-list`. Without it the menu moves cards. */
   drag?: DragLike | undefined
-  /** The one column shown below the regular container tier (a URL field); the first by default. */
+  /**
+   * The one column shown below the regular container tier, where a switch above the board picks
+   * it. Pass it with `onActiveChange` to hold it in a URL field; without it the board keeps its own,
+   * the first column at first.
+   */
   active?: C | undefined
+  onActiveChange?: ((column: C) => void) | undefined
   /**
    * Window every column: `VirtualList` from `basalt-ui/ui/virtual-list` and the fixed px height
    * of one card. The dragged card and the one just moved stay mounted.
@@ -98,6 +104,7 @@ export function Board<C extends string, T extends { id: string; title: string }>
   onMove,
   drag,
   active,
+  onActiveChange,
   virtual,
 }: BoardProps<C, T>): ReactElement {
   const t = useMessages(kanban)
@@ -108,7 +115,12 @@ export function Board<C extends string, T extends { id: string; title: string }>
   // The move whose card already took focus back; read and written in the effect alone.
   const focusedFor = useRef<Moved<C> | null>(null)
   const [said, setSaid] = useState('')
-  const shown = active ?? columns[0]?.id
+  const [own, setOwn] = useState<C | undefined>(undefined)
+  const shown = active ?? own ?? columns[0]?.id
+  const pick = (column: string): void => {
+    setOwn(column as C)
+    onActiveChange?.(column as C)
+  }
   const lanes: ColumnRef<C>[] = columns.map((col) => ({
     id: col.id,
     label: col.label,
@@ -173,7 +185,19 @@ export function Board<C extends string, T extends { id: string; title: string }>
   }
 
   return (
-    <div ref={root} data-slot="board" className="@container min-w-0">
+    <div ref={root} data-slot="board" className="@container flex min-w-0 flex-col gap-2.5">
+      {columns.length > 1 && shown !== undefined && (
+        <div className="@regular:hidden">
+          <Segmented
+            aria-label={label}
+            fill={columns.length <= 5}
+            size="sm"
+            value={shown}
+            onValueChange={pick}
+            options={columns.map((col) => ({ value: col.id, label: col.label }))}
+          />
+        </div>
+      )}
       <ScrollArea orientation="horizontal" aria-label={label}>
         <div className="flex items-start gap-2.5 pb-1">
           {columns.map((col, c) => (
@@ -233,7 +257,7 @@ export function Board<C extends string, T extends { id: string; title: string }>
                     {...(keep === undefined ? {} : { keepIndex: keep })}
                   >
                     {([row]) => (
-                      <div className="h-(--board-row) pb-2.5" style={rowHeight}>
+                      <div className="h-(--board-row) pb-2.5 *:h-full" style={rowHeight}>
                         {renderAt(row!.index)}
                       </div>
                     )}
@@ -287,7 +311,7 @@ function BoardColumn<C extends string>({
       data-column={col.id}
       data-over={over ? '' : undefined}
       data-shown={shown ? '' : undefined}
-      className="hidden w-full min-w-0 shrink-0 flex-col gap-2.5 rounded-card border border-transparent bg-secondary p-2.5 transition-colors duration-fast data-over:border-brand data-over:bg-accent data-shown:flex @regular:flex @regular:w-75"
+      className="hidden w-full min-w-0 shrink-0 flex-col gap-2.5 rounded-card border border-transparent bg-secondary p-2.5 transition-colors duration-fast data-over:border-brand data-over:bg-accent data-shown:flex @regular:flex @regular:w-72"
     >
       <header className="flex h-9 min-w-0 items-center justify-between gap-2 px-1">
         <span className="flex min-w-0 items-center gap-2">
@@ -310,7 +334,7 @@ function BoardColumn<C extends string>({
       {count === 0 ? (
         <p
           data-slot="board-empty"
-          className="m-0 flex h-24 items-center justify-center rounded-card border border-dashed border-line text-xs text-muted-foreground"
+          className="m-0 flex h-24 items-center justify-center rounded-inset border border-dashed border-line text-xs text-muted-foreground"
         >
           {empty}
         </p>
