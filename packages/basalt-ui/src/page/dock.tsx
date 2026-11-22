@@ -2,17 +2,21 @@ import { useContext, useId, useRef } from 'react'
 import type { CSSProperties, KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
-import { PANEL_MAX } from '../common/panel-anatomy'
-import { PanelHandle, usePanelWidth } from '../common/panel-handle'
+import { PANEL_MAX, PanelHandle, usePanelWidth } from '../core/panel'
 import { cn } from '../core/cn'
-import { page } from '../core/messages/page'
-import { useMessages } from '../core/messages/use-messages'
 import type { IconComponent, NavTarget, RecordSequence } from '../core/ports'
 import type { AvatarEntry } from '../ui/avatar'
 import { DOCK_WIDTH } from './core/docking'
 import { widthStore } from './core/panel-store'
 import { PageHostContext, ShellDockContext } from './page'
-import { PanelBody, PanelFooter, PanelHeader, panelKeys, useFocusIn } from './record-panel'
+import {
+  PanelBody,
+  PanelFooter,
+  PanelHeader,
+  panelKeys,
+  useFocusIn,
+  usePanelLabels,
+} from './record-panel'
 import type { PanelActions } from './record-panel'
 import { useSizeClass } from './use-size-class'
 
@@ -79,7 +83,7 @@ export function Dock({
   footer,
   children,
 }: DockProps): ReactElement | null {
-  const t = useMessages(page)
+  const labels = usePanelLabels()
   const host = useContext(PageHostContext)
   const dock = useContext(ShellDockContext)
   const sizeClass = useSizeClass()
@@ -129,7 +133,7 @@ export function Dock({
         <PanelHandle
           panel={panel}
           min={DOCK_MIN}
-          label={t('page.resizePeek')}
+          label={labels.resize}
           onResize={width.resize}
           onCommit={width.commit}
         />
@@ -143,7 +147,7 @@ export function Dock({
         actions={actions}
         fullPage={fullPage}
         onClose={onClose}
-        closeLabel={t('page.closePeek')}
+        closeLabel={labels.close}
       />
       <PanelBody>{children}</PanelBody>
       <PanelFooter>{footer}</PanelFooter>

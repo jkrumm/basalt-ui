@@ -56,7 +56,7 @@ function installPackage(consumer: string, seeds: readonly string[]): string {
       // no guard ships for this primitive
     }
   }
-  for (const file of ['cn.ts', 'cn-theme.ts', 'control-scope.ts']) {
+  for (const file of ['cn.ts', 'cn-theme.ts', 'control-scope.ts', 'panel.tsx']) {
     cpSync(join(PKG_ROOT, 'src/core', file), join(pkg, 'src/core', file))
   }
   for (const peer of PEERS) {

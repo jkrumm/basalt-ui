@@ -33,11 +33,10 @@ describe('sheet module', () => {
       document.querySelector('[data-slot="sheet-title"]')?.id ?? 'missing',
     )
     expect(panel?.className).toContain('w-90')
-    // The body is the scroll primitive, whose slot is its own.
-    for (const el of document.querySelectorAll('[data-slot]:not([data-slot="scroll-area"])')) {
+    for (const el of document.querySelectorAll('[data-slot]')) {
       expect(sheetParts as readonly string[]).toContain(el.getAttribute('data-slot') ?? '')
     }
-    expect(panel?.querySelector('[data-slot="scroll-area"]')).not.toBeNull()
+    expect(panel?.querySelector('[data-panel="body"]')?.className).toContain('overflow-y-auto')
     expect(screen.getByRole('separator', { name: 'Resize panel' })).toBeTruthy()
   })
 

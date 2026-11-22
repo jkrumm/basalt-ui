@@ -18,6 +18,7 @@ import { useMessages } from '../core/messages/use-messages'
 import { Button } from '../ui/button'
 import { windowStore } from './core/panel-store'
 import type { WindowSize } from './core/panel-store'
+import { usePanelLabels } from './record-panel'
 
 /** The narrowest and the lowest a window goes: a header and a few lines of body. */
 const MIN_W = 360
@@ -242,6 +243,7 @@ export function PeekChip({
   onClose,
 }: PeekChipProps): ReactElement {
   const t = useMessages(page)
+  const labels = usePanelLabels()
   return (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape bubbles from its two buttons; the chip itself takes no input
     <section
@@ -277,7 +279,7 @@ export function PeekChip({
         variant="ghost"
         size="sm"
         shape="icon"
-        aria-label={t('page.closePeek')}
+        aria-label={labels.close}
         data-panel="close"
         onClick={onClose}
       >

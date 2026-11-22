@@ -16,7 +16,7 @@ import {
   PANEL_LEAD,
   PANEL_TAG,
   PANEL_TITLE,
-} from '../common/panel-anatomy'
+} from '../core/panel'
 import { cn } from '../core/cn'
 import { AppLink } from '../core/link'
 import { page } from '../core/messages/page'
@@ -32,6 +32,12 @@ import { ScrollArea } from '../ui/scroll-area'
  * One of a panel's own actions: data, like a `PageBar` action. The first two draw in the header and
  * the rest fold into its More menu; a third alone draws inline rather than as a menu of one.
  */
+/** The labels every side panel shares, so each message has one home: its close button and its width handle. */
+export function usePanelLabels(): { close: string; resize: string } {
+  const t = useMessages(page)
+  return { close: t('page.closePeek'), resize: t('page.resizePeek') }
+}
+
 export type PanelAction = {
   id: string
   label: string
@@ -204,7 +210,7 @@ export function PanelActionBar({ actions }: { actions: PanelActions }): ReactEle
                 variant="ghost"
                 size="sm"
                 shape="icon"
-                aria-label={t('page.moreActions')}
+                aria-label={t('page.recordActions')}
                 data-panel="more"
               />
             }

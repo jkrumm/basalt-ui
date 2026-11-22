@@ -1,8 +1,7 @@
 import { useContext, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactElement, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { PANEL_MAX } from '../common/panel-anatomy'
-import { PanelHandle, usePanelWidth } from '../common/panel-handle'
+import { PANEL_MAX, PanelHandle, usePanelWidth } from '../core/panel'
 import { cn } from '../core/cn'
 import { page } from '../core/messages/page'
 import { useMessages } from '../core/messages/use-messages'
@@ -34,6 +33,7 @@ import {
   FullPageLink,
   panelKeys,
   useFocusIn,
+  usePanelLabels,
 } from './record-panel'
 import type { PanelActions } from './record-panel'
 import { useSizeClass } from './use-size-class'
@@ -263,7 +263,7 @@ function PeekPanel({
   children,
   shelled,
 }: PeekProps & { shelled: boolean }): ReactElement | null {
-  const t = useMessages(page)
+  const labels = usePanelLabels()
   const slot = useContext(ShellOverlayContext)
   const node = useRef<HTMLElement | null>(null)
   const [stored, setPresent] = presentationStore(kind).use()
@@ -315,7 +315,7 @@ function PeekPanel({
       onPin={onPin}
       menu={menu}
       onClose={onClose}
-      closeLabel={t('page.closePeek')}
+      closeLabel={labels.close}
       onPointerDown={extra?.onPointerDown}
     />
   )
@@ -413,7 +413,7 @@ function PeekPanel({
           panel={node}
           min={PEEK_MIN}
           slot="peek-handle"
-          label={t('page.resizePeek')}
+          label={labels.resize}
           onResize={width.resize}
           onCommit={width.commit}
         />
