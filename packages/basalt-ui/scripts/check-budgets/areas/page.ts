@@ -34,13 +34,21 @@ export const rows: readonly RowDef[] = [
     // 117400 -> 125700 (Issue 2939): the one panel anatomy (typed actions with a More menu, previous and next, the
     // avatar lead), Peek's window (drag, eight edges, the minimised chip), its page presentation and Open as menu, the
     // width stores and the phone's bottom sheet.
-    ceiling: 125700,
+    // 125700 -> 129000 (Issue 2938): 128756 B measured; the PageBar view row: the search box (`ui/input`), counted pill tabs, the layout toggle and the settings button.
+    ceiling: 129000,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
   'page-subpath': [
+    {
+      from: 125700,
+      to: 129000,
+      consumer:
+        'the PageBar view row (Issue 2938): a list page puts its counted tabs, search, filters, layout toggle, view settings and one primary in one row, so the bar draws a search box (Base UI Input) and the toggle itself',
+      repo: 'basalt-ui',
+    },
     {
       from: 117400,
       to: 125700,
