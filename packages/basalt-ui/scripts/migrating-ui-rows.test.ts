@@ -1,6 +1,6 @@
 /**
  * The `ui` migration rows (docs/v3/concepts/primitives-distribution.md section 9): every 2.x
- * symbol the census names has a row, no row points at a primitive outside the 37 modules, and each
+ * symbol the census names has a row, no row points at a primitive outside the 40 modules, and each
  * `valueShifts` target is the value `src/tokens/table.ts` ships.
  */
 import { readFileSync } from 'node:fs'
@@ -18,7 +18,10 @@ const area: AreaFile = validateArea(
   JSON.parse(readFileSync(FILE, 'utf8')),
 )
 
-/** ARCHITECTURE section 3, "Primitives (36, census-derived)", and `avatar`, which the Accordee benchmark added. */
+/**
+ * ARCHITECTURE section 3, "Primitives (36, census-derived)", and `avatar`, `control-group`,
+ * `copy-button` and `password-input`, which the Accordee and Blueprint benchmark added.
+ */
 const MODULES = [
   'button',
   'input',
@@ -57,6 +60,9 @@ const MODULES = [
   'date-picker',
   'virtual-list',
   'avatar',
+  'control-group',
+  'copy-button',
+  'password-input',
 ]
 
 const CENSUS = `
@@ -97,9 +103,9 @@ describe('migrations/areas/ui.json', () => {
     }
   })
 
-  test('no row points at a primitive outside the 37 modules', () => {
-    expect(MODULES.length).toBe(37)
-    expect(new Set(MODULES).size).toBe(37)
+  test('no row points at a primitive outside the 40 modules', () => {
+    expect(MODULES.length).toBe(40)
+    expect(new Set(MODULES).size).toBe(40)
     const referenced = area.rows.flatMap((row) =>
       [...(row.to ?? '').matchAll(/basalt-ui\/ui\/([a-z-]+)/g)].map((m) => m[1] as string),
     )
