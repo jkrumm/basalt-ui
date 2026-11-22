@@ -44,6 +44,11 @@ describe('Page markup', () => {
     expect(root(container).classList.contains('@container')).toBe(true)
   })
 
+  test('it isolates its body, so the sticky band outranks the page layers and not the shell overlays', () => {
+    const { container } = render(<Page />)
+    expect(root(container).classList.contains('isolate')).toBe(true)
+  })
+
   test('--page-sticky-top is zero, and the published band height only while a band sticks', () => {
     const { container } = render(<Page />)
     const classes = root(container).className.split(/\s+/)

@@ -9,7 +9,7 @@ export function isEmptyTabs<K extends string>(tabs: PageTabs<K> | undefined): bo
 }
 
 /** Below the `regular` container tier each tab takes an equal share of its (full-width) home. */
-const PHONE_EQUAL = 'max-@regular:flex-1 max-@regular:basis-0'
+const PHONE_EQUAL = '@max-regular:flex-1 @max-regular:basis-0'
 
 /**
  * The strip a handle draws: one trigger per declared option, the handle owning the value, so a

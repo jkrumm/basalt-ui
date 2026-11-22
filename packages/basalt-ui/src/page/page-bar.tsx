@@ -373,7 +373,9 @@ export function PageBar<K extends string = string>({
           // Flush with the chrome above (the page's top gutter is pulled back) and full bleed; the
           // gutter below the rule is kept, so content starts one gutter under it as on a bandless page.
           '-mx-(--page-gutter) -mt-(--page-gutter) mb-[calc(var(--page-gutter,--spacing(4))_-_--spacing(4))] px-[max(var(--page-gutter,0px),--spacing(1))]',
-          sticky && 'sticky top-0 z-10',
+          // `Page` is an isolated stacking context, so z-30 clears the page body's z-10 and z-20 layers
+          // (table head, event-list day rows, card menus) without reaching the shell's aside overlay.
+          sticky && 'sticky top-0 z-30',
         )}
       >
         {!inShell && (trail !== null || heading !== null) && (
@@ -383,7 +385,7 @@ export function PageBar<K extends string = string>({
           </div>
         )}
         {!isEmptyTabs(tabs) && (
-          <div data-slot="page-bar-tabs" className="min-w-0 max-@regular:basis-full">
+          <div data-slot="page-bar-tabs" className="min-w-0 @max-regular:basis-full">
             {renderTabs(tabs)}
           </div>
         )}
