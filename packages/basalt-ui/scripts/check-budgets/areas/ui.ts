@@ -73,7 +73,7 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   segmented: 15000, // 14087 B
   select: 54500, // 51614 B
   separator: 7500, // 6767 B
-  sheet: 44000, // 41473 B
+  sheet: 45300, // 41473 B; 45114 B with the panel header, the scrolling body, the footer band and the width handle (Issue 2939)
   skeleton: 7000, // 6522 B
   slider: 21000, // 19636 B
   'sortable-list': 18000, // 16970 B with the drag engine it loads on first registration
@@ -141,6 +141,15 @@ export const raises: Raises = {
       to: 10100,
       consumer:
         'the wizard dialog (Issue 2940): the theme gains the `scrim-wash` colour, four bytes over the old ceiling in every primitive that carries the class merger',
+      repo: 'basalt-ui',
+    },
+  ],
+  'ui-prim-sheet': [
+    {
+      from: 44000,
+      to: 45300,
+      consumer:
+        'the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md decision 6): one panel anatomy for Peek, Dock, PageAside and a right Sheet, each resizable with the width remembered, and a record that opens as a side panel, a window or the page, with previous and next (Issue 2939)',
       repo: 'basalt-ui',
     },
   ],

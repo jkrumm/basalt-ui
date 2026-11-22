@@ -73,7 +73,8 @@ export const rows: readonly RowDef[] = [
     // 129009 B measured; 142851 B with `@tanstack/react-hotkeys` bundled (Issue 2570); 143529 B with the work surface (Issue 2851);
     // 143778 B with the group scope every shell control reads and the popups reset (Issue 2853).
     // 143900 -> 144400 (Issue 2940): 144069 B measured; the Dialog sizes, header actions and wash backdrop.
-    ceiling: 144400,
+    // 144400 -> 147100 (Issue 2939): the panel anatomy the Dock and the aside draw and the Dock's dragged width.
+    ceiling: 147100,
     measure: () => measureSource(reExportAll({ shell: 'shell/index' })),
   },
   {
@@ -102,6 +103,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'shell-subpath': [
+    {
+      from: 144400,
+      to: 147100,
+      consumer:
+        'the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md decision 6): one panel anatomy for Peek, Dock, PageAside and a right Sheet, each resizable with the width remembered, and a record that opens as a side panel, a window or the page, with previous and next (Issue 2939)',
+      repo: 'basalt-ui',
+    },
     {
       from: 143900,
       to: 144400,
