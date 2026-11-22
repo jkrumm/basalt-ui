@@ -43,9 +43,11 @@
         "DatePicker": "div",
         "DateRangePicker": "div",
         "DeltaBadge": "div",
+        "DialogActions": "div",
         "DialogClose": "div",
         "DialogContent": "div",
         "DialogDescription": "div",
+        "DialogMeta": "div",
         "DialogTitle": "div",
         "DialogTrigger": "div",
         "EntityChip": "div",
@@ -416,7 +418,7 @@
             "pattern": "^DialogContent$",
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
-            "message": "DialogContent owns its height and display: use size (sm, md, lg), or eject it (basalt-ui eject dialog)."
+            "message": "DialogContent owns its height and display: use size (sm, md, lg, wide, split), or eject it (basalt-ui eject dialog)."
           },
           {
             "pattern": "^AlertDialogContent$",
