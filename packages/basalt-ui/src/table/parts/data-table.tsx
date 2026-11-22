@@ -18,7 +18,7 @@ import { useRowsShown } from '../../core/rows-shown'
 import type { DataTableProps } from '../contract'
 import { CONTENT_MAX_CH, ROW_NUMBER_COL_PX, widthPx } from '../core/plan'
 import { TableBody, TableCaption, Table } from '../../ui/table'
-import { DataTableBody } from './body'
+import { bodyDensity, DataTableBody } from './body'
 import { BulkBar } from './bulk-bar'
 import { DataTableFooter, hasFooter } from './footer'
 import { VirtualTable } from './virtual'
@@ -195,6 +195,7 @@ function FramedArm<T>({
     >
       <div
         data-slot="table-scroller"
+        {...bodyDensity(model)}
         ref={warnWithoutTierSheet}
         role="region"
         aria-label={model.label}
@@ -296,6 +297,7 @@ export function DataTable<T, I = unknown>({
           <BulkBar table={table} />
           <div
             data-slot="table-scroller"
+            {...bodyDensity(model)}
             ref={warnWithoutTierSheet}
             style={{ ...scrollportStyle(height), ...scrollMinWidth(model) }}
             className="flex min-h-0 flex-1 flex-col"
@@ -345,6 +347,7 @@ export function DataTable<T, I = unknown>({
         <BulkBar table={table} />
         <div
           data-slot="table-scroller"
+          {...bodyDensity(model)}
           ref={warnWithoutTierSheet}
           role="region"
           aria-label={model.label}

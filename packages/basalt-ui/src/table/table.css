@@ -1212,8 +1212,18 @@
     background: var(--basalt-brand);
   }
 
-  /* a view's row height is `data-density` on the body alone: the head keeps its height */
-  [data-slot='table-body'][data-density] {
+  /* a view's row height: `data-density` on the scroller, the head keeps the app's */
+  [data-slot='table-root'] {
+    --table-app-row-h: var(--basalt-row-h);
+    --table-app-ctl-h: var(--basalt-ctl-h);
+  }
+  [data-slot='table-scroller'][data-density] [data-slot='table-header'] {
+    --table-row-h: var(--table-app-row-h);
+    --basalt-ctl-h: var(--table-app-ctl-h);
+  }
+  [data-look='grid']
+    [data-slot='table-scroller'][data-density]:not([data-density='dense'])
+    [data-slot='table-body'] {
     --table-row-h: var(--basalt-row-h);
   }
 
