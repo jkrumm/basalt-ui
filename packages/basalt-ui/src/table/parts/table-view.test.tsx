@@ -204,7 +204,7 @@ describe('column widths', () => {
 describe('row height', () => {
   test('a step rebinds the density under the body alone; the head keeps its height', () => {
     const { container } = render(<Subject id="rows" />)
-    const body = container.querySelector('[data-slot="table-body"]')
+    const body = container.querySelector('[data-slot="table-scroller"]')
     expect(body?.hasAttribute('data-density')).toBe(false)
     for (const [height, density] of [
       ['compact', 'dense'],
@@ -225,7 +225,7 @@ describe('row height', () => {
 
   test('the declared rowHeight holds until the view picks one', () => {
     const { container } = render(<Subject id="declared" options={{ rowHeight: 'comfortable' }} />)
-    const body = container.querySelector('[data-slot="table-body"]')
+    const body = container.querySelector('[data-slot="table-scroller"]')
     expect(body?.getAttribute('data-density')).toBe('comfortable')
     act(() => latest().setRowHeight('compact'))
     expect(body?.getAttribute('data-density')).toBe('dense')

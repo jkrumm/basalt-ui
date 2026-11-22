@@ -119,9 +119,20 @@ function ResizeHandle<T>({
   spec: KindSpec<T>
 }): ReactElement {
   const t = useMessages(table)
-  const { px, min, max } = model.widthOf(spec.id)
+  const { px: planned, min, max } = model.widthOf(spec.id)
+  const resized = model.state.display.widths?.[spec.id] !== undefined
   const drag = useRef<{ x: number; px: number; sign: 1 | -1; moved: boolean } | null>(null)
   const [active, setActive] = useState(false)
+  // A flexible column is drawn wider than its planned floor: an edge moves from the width on screen,
+  // read from the header cell when the handle is focused or pressed, never measured to lay out.
+  const [drawn, setDrawn] = useState<number | null>(null)
+  const widthOn = (handle: HTMLElement): number => {
+    if (resized) return planned
+    const cell = handle.closest('th')
+    const width = cell === null ? 0 : Math.round(cell.getBoundingClientRect().width)
+    return width > 0 ? width : planned
+  }
+  const px = resized ? planned : (drawn ?? planned)
   const widthAt = (event: PointerEvent<HTMLElement>): number | null => {
     const start = drag.current
     if (start === null) return null
@@ -138,6 +149,7 @@ function ResizeHandle<T>({
     else model.previewWidth(spec.id, null)
   }
   const onKeyDown = (event: KeyboardEvent<HTMLElement>): void => {
+    const px = widthOn(event.currentTarget)
     const rtl = getComputedStyle(event.currentTarget).direction === 'rtl'
     const step = (event.shiftKey ? RESIZE_STEP_WIDE_PX : RESIZE_STEP_PX) * (rtl ? -1 : 1)
     const next =
@@ -167,6 +179,7 @@ function ResizeHandle<T>({
       aria-valuemin={min}
       aria-valuemax={max}
       tabIndex={0}
+      onFocus={(event) => setDrawn(widthOn(event.currentTarget))}
       data-slot="table-resize"
       data-active={active ? '' : undefined}
       onPointerDown={(event) => {
@@ -175,7 +188,12 @@ function ResizeHandle<T>({
         event.stopPropagation()
         event.currentTarget.setPointerCapture?.(event.pointerId)
         const rtl = getComputedStyle(event.currentTarget).direction === 'rtl'
-        drag.current = { x: event.clientX, px, sign: rtl ? -1 : 1, moved: false }
+        drag.current = {
+          x: event.clientX,
+          px: widthOn(event.currentTarget),
+          sign: rtl ? -1 : 1,
+          moved: false,
+        }
         setActive(true)
       }}
       onPointerMove={(event) => {

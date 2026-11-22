@@ -177,9 +177,9 @@ export function ColumnActionsMenu<T>({
             <MenuSeparator />
           </>
         )}
-        {(groupable || aggregates.length > 0) && (
+        {(groupable || grouped || aggregates.length > 0) && (
           <>
-            {groupable && (
+            {(groupable || grouped) && (
               <MenuItem onClick={() => model.setGroupBy(grouped ? null : column)}>
                 {grouped ? t('table.groupNone') : t('table.groupBy', spec.header)}
               </MenuItem>
