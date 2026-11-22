@@ -61,6 +61,21 @@ describe('swatch-picker', () => {
     expect(getByRole('radiogroup', { name: 'Stage colour' })).toBeDefined()
   })
 
+  test('menu: the panel is named by aria-labelledby, else by aria-label, else by the catalog', () => {
+    const { getByRole, unmount } = render(
+      <>
+        <span id="who">Pipeline colour</span>
+        <SwatchPicker aria-labelledby="who" display="menu" options={options} value="good" />
+      </>,
+    )
+    fireEvent.click(getByRole('button'))
+    expect(getByRole('radiogroup', { name: 'Pipeline colour' })).toBeDefined()
+    unmount()
+    const bare = render(<SwatchPicker display="menu" options={options} value="good" />)
+    fireEvent.click(bare.getByRole('button'))
+    expect(document.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('Colour')
+  })
+
   test('server render keeps the slots', () => {
     const html = renderToString(<Picker />)
     for (const part of swatchPickerParts) expect(html).toContain(`data-slot="${part}"`)
