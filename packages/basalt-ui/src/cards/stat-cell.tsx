@@ -135,7 +135,8 @@ export function StatCell(props: StatCellProps): ReactElement {
   const spans = meter !== undefined || chart !== undefined || rows.length > 0
   const body = resolved.body
   const root = cn(
-    'relative grid min-w-0 grid-cols-1',
+    // `isolate`: the cell's raised action stacks inside it, never over a sticky page bar.
+    'relative isolate grid min-w-0 grid-cols-1',
     variant === null && 'grid-rows-[repeat(10,auto)]',
     variant === 'strip' && STRIP_CELL,
     variant === 'cards' && 'row-span-10 mb-3 grid-rows-subgrid',
