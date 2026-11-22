@@ -112,11 +112,13 @@ function MultiChecks({ spec }: { spec: AnySpec }): ReactElement {
 
 function Section({ spec }: { spec: AnySpec }): ReactElement {
   const [value] = spec.handle.use()
-  const count = catalogueOf(spec).length
+  // The catalogue also holds an applied value it lacks (a link, an archived option), so it shows.
+  const shown = withCurrentValue(spec, value)
+  const count = catalogueOf(shown).length
   if (spec.handle.kind === 'enum' && count > 0 && count <= CHIPS_MAX)
-    return <EnumChips spec={spec} />
-  if (spec.handle.kind === 'multi' && count > 0) return <MultiChecks spec={spec} />
-  return <ControlView spec={withCurrentValue(spec, value)} />
+    return <EnumChips spec={shown} />
+  if (spec.handle.kind === 'multi' && count > 0) return <MultiChecks spec={shown} />
+  return <ControlView spec={shown} />
 }
 
 /** Every filter, then the match line and the reset: the popover's and the sheet's body alike. */
