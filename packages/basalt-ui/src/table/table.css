@@ -1014,6 +1014,25 @@
     outline-offset: -2px;
   }
 
+  /* a long name wraps onto a second line in a table's column rather than end in an ellipsis; a mono id or time stays one line */
+  @container table (min-width: 480px) {
+    [data-below='480'] [data-slot='table-entity-name']:not([data-monospace]) {
+      white-space: normal !important;
+      overflow-wrap: break-word;
+    }
+  }
+  @container table (min-width: 700px) {
+    [data-below='700'] [data-slot='table-entity-name']:not([data-monospace]) {
+      white-space: normal !important;
+      overflow-wrap: break-word;
+    }
+  }
+  @container table (min-width: 800px) {
+    [data-below='800'] [data-slot='table-entity-name']:not([data-monospace]) {
+      white-space: normal !important;
+      overflow-wrap: break-word;
+    }
+  }
   /* columns: phone="columns" keeps a table of the identity, the card's value, its first meta and the
      actions (`phoneKeep`); the rest leave for the row's details; the name, the head and the state wrap into what is left, so the table fits its card. */
   @container table (max-width: 479.9px) {

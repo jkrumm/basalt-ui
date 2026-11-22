@@ -14,7 +14,10 @@ import { useDataTable } from '../../../src/table/use-data-table'
 type Row = { id: string; name: string; amount: string }
 const ROWS: readonly Row[] = Array.from({ length: 4 }, (_, i) => ({
   id: `r${i}`,
-  name: `Entry ${i}`,
+  name:
+    i === 0
+      ? 'Quarterly ledger entry with a very long descriptive name that needs a second line'
+      : `Entry ${i}`,
   amount: `${i}`,
 }))
 const c = col<Row>()

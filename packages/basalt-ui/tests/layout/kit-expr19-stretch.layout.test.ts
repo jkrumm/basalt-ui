@@ -62,6 +62,21 @@ const band = (page: LayoutPage, id: string): Promise<{ band: number; height: num
     return { band: box.bottom - lowest, height: box.height }
   }, id)
 
+layout('a long entity name in a half-width table', () => {
+  test('wraps onto a second line, never ends in an ellipsis', async () => {
+    const page = await open()
+    const m = await page.raw.evaluate(() => {
+      const name = document.querySelector(
+        '[data-testid="k19-panel"] [data-slot="table-entity-name"]',
+      ) as HTMLElement
+      const box = name.getBoundingClientRect()
+      return { cut: name.scrollWidth - name.clientWidth, height: box.height }
+    })
+    expect(m.cut, 'the name is whole').toBeLessThanOrEqual(1)
+    expect(m.height, 'it took a second line').toBeGreaterThan(24)
+  })
+})
+
 layout('a stretched card leaves no blank band under what it paints', () => {
   for (const id of ['list', 'panel']) {
     test(`${id}: the band under the last row is the natural card's, plus a share of the extra`, async () => {
