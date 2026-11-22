@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { scopeClass, useControlScope } from '../core/control-scope'
 import { buttonVariants } from './button'
 
 /**
@@ -115,20 +116,22 @@ export type ToolbarButtonProps = Omit<BaseToolbar.Button.Props, 'className'> &
  * <ToolbarButton render={<SelectTrigger aria-label="Zoom">{...}</SelectTrigger>} />
  */
 export function ToolbarButton({
-  variant = 'ghost',
+  variant,
   size,
   shape,
   className,
   render,
   ...props
 }: ToolbarButtonProps): ReactElement {
+  const scope = useControlScope()
+  const axes = { variant: variant ?? scope?.variant ?? 'ghost', size: size ?? scope?.size, shape }
   return (
     <BaseToolbar.Button
       {...props}
       render={render}
       data-slot="toolbar-button"
       className={
-        render === undefined ? cn(buttonVariants({ variant, size, shape }), className) : className
+        render === undefined ? cn(buttonVariants(axes), scopeClass(scope), className) : className
       }
     />
   )

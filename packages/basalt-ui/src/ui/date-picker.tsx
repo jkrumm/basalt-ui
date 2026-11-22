@@ -1,9 +1,11 @@
 import { cva } from 'class-variance-authority'
+import type { VariantProps } from 'class-variance-authority'
 import { useId, useState } from 'react'
 import type { ReactElement } from 'react'
 import { DayButton, DayPicker } from 'react-day-picker'
 import type { ClassNames, DateRange, DayButtonProps, DayPickerProps } from 'react-day-picker'
 import { cn } from '../core/cn'
+import { scopeClass, useControlScope } from '../core/control-scope'
 import type { CalendarDate } from '../core/format'
 import { useFormat } from '../core/format'
 import { date as dateMessages } from '../core/messages/date'
@@ -16,13 +18,23 @@ export type { CalendarDate } from '../core/format'
 /**
  * The trigger's cva table: a field-shaped button on the input surface that shows the picked day
  * (or the placeholder) and opens the calendar. It is the root element of `DatePicker` and
- * `DateRangePicker`. Coarse pointers get the 44 px floor and 16 px text.
+ * `DateRangePicker`. `size` takes the steps every field takes; coarse pointers get the 44 px floor and
+ * 16 px text.
  *
  * @example
- * datePickerVariants() // class string for a hand-built trigger
+ * datePickerVariants({ size: 'sm' }) // class string for a hand-built trigger
  */
 export const datePickerVariants = cva(
-  'flex h-ctl w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-ctrl border border-input bg-background px-3 text-left text-sm text-foreground tabular-nums focus-ring transition-colors data-placeholder:text-faint data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  'flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-ctrl border border-input bg-background text-left text-foreground tabular-nums focus-ring transition-colors aria-invalid:border-bad data-placeholder:text-faint data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11 pointer-coarse:text-base',
+  {
+    variants: {
+      size: {
+        md: 'h-ctl px-3 text-sm',
+        sm: 'h-6 px-2 text-xs',
+      },
+    },
+    defaultVariants: { size: 'md' },
+  },
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -69,8 +81,8 @@ function CalendarDayButton(props: DayButtonProps): ReactElement {
   )
 }
 
-type Layout = {
-  /** Layout only (`w-48`, `flex-1`). Height belongs to the trigger. */
+type Layout = VariantProps<typeof datePickerVariants> & {
+  /** Layout only (`w-48`, `flex-1`). Height belongs to `size`. */
   className?: string
   /** The trigger's `id`, so a `<label htmlFor>` can name it. */
   id?: string
@@ -221,19 +233,24 @@ function PickerShell({
   text: string | null
   placeholder: string
   name: DatePickerName
-  layout: Pick<Layout, 'className' | 'id' | 'disabled'>
+  layout: Pick<Layout, 'className' | 'id' | 'disabled' | 'size'>
   open: boolean
   setOpen: (next: boolean) => void
   children: ReactElement
 }): ReactElement {
   const autoId = useId()
+  const scope = useControlScope()
   const id = layout.id ?? autoId
   const shown = text ?? placeholder
+  // A FormField hands its control `aria-invalid`; it marks the trigger, never the popup.
+  const { 'aria-invalid': invalid, ...popupName } = name as DatePickerName & {
+    'aria-invalid'?: boolean | 'true' | 'false'
+  }
   // The trigger's own text is the value, so its name is the label followed by that value.
   const triggerName =
-    'aria-label' in name
-      ? { 'aria-label': `${name['aria-label']}: ${shown}` }
-      : { 'aria-labelledby': `${name['aria-labelledby']} ${id}` }
+    'aria-label' in popupName
+      ? { 'aria-label': `${popupName['aria-label']}: ${shown}` }
+      : { 'aria-labelledby': `${popupName['aria-labelledby']} ${id}` }
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
@@ -243,12 +260,17 @@ function PickerShell({
         disabled={layout.disabled === true}
         {...(text === null && { 'data-placeholder': '' })}
         {...triggerName}
-        className={cn(datePickerVariants(), layout.className)}
+        {...(invalid !== undefined && { 'aria-invalid': invalid })}
+        className={cn(
+          datePickerVariants({ size: layout.size ?? scope?.size }),
+          scopeClass(scope),
+          layout.className,
+        )}
       >
         <span className="truncate">{shown}</span>
         <CalendarGlyph />
       </PopoverTrigger>
-      <PopoverContent {...name} align="start" className="w-auto">
+      <PopoverContent {...(popupName as DatePickerName)} align="start" className="w-auto">
         {children}
       </PopoverContent>
     </Popover>
@@ -277,6 +299,7 @@ export function DatePicker({
   onValueChange,
   onBlur,
   placeholder,
+  size,
   className,
   id,
   disabled,
@@ -306,6 +329,7 @@ export function DatePicker({
       placeholder={placeholder ?? t('date.placeholder')}
       name={name}
       layout={{
+        size,
         ...(className !== undefined && { className }),
         ...(id !== undefined && { id }),
         ...(disabled !== undefined && { disabled }),
@@ -354,6 +378,7 @@ export function DateRangePicker({
   onValueChange,
   onBlur,
   placeholder,
+  size,
   className,
   id,
   disabled,
@@ -396,6 +421,7 @@ export function DateRangePicker({
       placeholder={placeholder ?? t('date.rangePlaceholder')}
       name={name}
       layout={{
+        size,
         ...(className !== undefined && { className }),
         ...(id !== undefined && { id }),
         ...(disabled !== undefined && { disabled }),

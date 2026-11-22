@@ -259,7 +259,9 @@ export const pascal = (slot: string): string =>
 const NATIVE_ELEMENT: Readonly<Record<string, string>> = {
   button: 'button',
   pressable: 'button',
+  'copy-button': 'button',
   input: 'input',
+  'password-input': 'input',
   textarea: 'textarea',
   'native-select': 'select',
   'number-field': 'input',

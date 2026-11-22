@@ -1,7 +1,7 @@
 /**
  * Compile-time proof of the `textarea` guard, checked by `tsc --noEmit`: a props type that stops
- * accepting a prop composites call fails, one that accepts more passes. The module has no cva axes,
- * so the guard pins its props and the table's classes.
+ * accepting a prop composites call fails, one that accepts more passes. Its one axis is `size`, so
+ * the guard pins its props and the table's classes.
  */
 import { describe, expect, test } from 'bun:test'
 import type { ComponentProps } from 'react'
@@ -26,9 +26,10 @@ export const removed: Accepts<WithoutRows> = requires
 
 export const added: Accepts<WithMoreRows> = requires
 
-// Growing with content adds no prop: every key is a native textarea attribute or `onValueChange`.
+// Growing with content adds no prop: every key is a native textarea attribute, `onValueChange` or
+// the `size` every field takes.
 type NewProps = Exclude<keyof TextareaProps, keyof ComponentProps<'textarea'> | 'onValueChange'>
-export const noNewProp: NewProps extends never ? true : false = true
+export const noNewProp: [NewProps] extends ['size'] ? true : false = true
 
 describe('textarea guard', () => {
   test('every called prop is accepted and the table resolves', () => {

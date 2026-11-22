@@ -5,6 +5,7 @@ import type { VariantProps } from 'class-variance-authority'
 import { createContext, useCallback, useContext, useRef, useState } from 'react'
 import type { ReactElement, ReactNode, Ref } from 'react'
 import { cn } from '../core/cn'
+import { scopeClass, useControlScope } from '../core/control-scope'
 import { select } from '../core/messages/select'
 import { useMessages } from '../core/messages/use-messages'
 
@@ -196,6 +197,7 @@ function Field({
   children: ReactNode
 }): ReactElement {
   const dismiss = useDismissRef()
+  const scope = useControlScope()
   const anchor = useRef<HTMLDivElement | null>(null)
   const ref = useCallback(
     (node: HTMLDivElement | null) => {
@@ -205,7 +207,7 @@ function Field({
     [dismiss],
   )
   return (
-    <div data-slot={slot} className={cn(table, className)} ref={ref}>
+    <div data-slot={slot} className={cn(table, scopeClass(scope), className)} ref={ref}>
       <AnchorContext value={anchor}>{children}</AnchorContext>
     </div>
   )
@@ -403,10 +405,11 @@ export type ComboboxInputProps = Omit<BaseCombobox.Input.Props, 'className' | 's
  * <ComboboxInput aria-label="Country" placeholder="Search" />
  */
 export function ComboboxInput({ size, className, ...props }: ComboboxInputProps): ReactElement {
+  const scope = useControlScope()
   return (
     <BaseCombobox.InputGroup
       data-slot="combobox-input"
-      className={cn(comboboxInputVariants({ size }), className)}
+      className={cn(comboboxInputVariants({ size: size ?? scope?.size }), className)}
     >
       <BaseCombobox.Input {...props} />
     </BaseCombobox.InputGroup>
@@ -542,13 +545,14 @@ export function ComboboxChips({
   'aria-label': label,
   ...props
 }: ComboboxChipsProps): ReactElement {
+  const scope = useControlScope()
   const text = (value: unknown): string =>
     (itemToLabel as ((v: unknown) => string) | undefined)?.(value) ?? String(value)
   return (
     <BaseCombobox.Chips
       {...props}
       data-slot="combobox-chips"
-      className={cn(comboboxChipsVariants({ size }), className)}
+      className={cn(comboboxChipsVariants({ size: size ?? scope?.size }), className)}
     >
       <BaseCombobox.Value>
         {(values: readonly unknown[]) => (
@@ -657,10 +661,11 @@ export function AutocompleteInput({
   className,
   ...props
 }: AutocompleteInputProps): ReactElement {
+  const scope = useControlScope()
   return (
     <BaseAutocomplete.InputGroup
       data-slot="autocomplete-input"
-      className={cn(autocompleteInputVariants({ size }), className)}
+      className={cn(autocompleteInputVariants({ size: size ?? scope?.size }), className)}
     >
       <BaseAutocomplete.Input {...props} />
     </BaseAutocomplete.InputGroup>

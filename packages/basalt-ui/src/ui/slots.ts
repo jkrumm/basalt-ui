@@ -23,6 +23,8 @@ export const SLOTS = {
     'autocomplete-content',
     'autocomplete-item',
   ],
+  'control-group': ['button-group', 'control-group', 'input-group', 'input-addon'],
+  'copy-button': ['copy-button'],
   'date-picker': ['date-picker', 'date-range-picker'],
   dialog: [
     'dialog-trigger',
@@ -61,6 +63,7 @@ export const SLOTS = {
   meter: ['meter'],
   num: ['num'],
   'number-field': ['number-field'],
+  'password-input': ['password-input'],
   popover: ['popover-trigger', 'popover-content'],
   'preview-card': ['preview-card-trigger', 'preview-card-content'],
   progress: ['progress', 'ring'],

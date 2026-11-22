@@ -40,8 +40,10 @@ describe('textarea module', () => {
   test('the class string grows the box between the rows floor and a 10-line ceiling', () => {
     const classes = textareaVariants()
     expect(classes).toContain('field-sizing-content')
-    expect(classes).toContain('min-h-[calc(var(--textarea-rows,3)*1lh+1rem+2px)]')
-    expect(classes).toContain('max-h-[calc(10lh+1rem+2px)]')
+    expect(classes).toContain('min-h-[calc(var(--textarea-rows,3)*1lh+var(--textarea-pad)+2px)]')
+    expect(classes).toContain('max-h-[calc(10lh+var(--textarea-pad)+2px)]')
+    expect(classes).toContain('[--textarea-pad:1rem]')
+    expect(textareaVariants({ size: 'sm' })).toContain('[--textarea-pad:0.5rem]')
     expect(classes).toContain('resize-y')
   })
 

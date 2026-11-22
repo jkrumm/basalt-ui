@@ -53,6 +53,8 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   checkbox: 15000, // 14142 B
   collapsible: 13000, // 11967 B
   combobox: 61500, // 58535 B
+  'control-group': 6000, // 5672 B
+  'copy-button': 12000, // 10982 B, the message catalog for its name
   'date-picker': 73500, // 69556 B
   dialog: 32000, // 30378 B
   field: 15000, // 13972 B
@@ -62,6 +64,7 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   meter: 10500, // 9767 B
   num: 7000, // 6236 B
   'number-field': 18000, // 16912 B
+  'password-input': 14000, // 12984 B, the message catalog for the reveal button's name
   popover: 47000, // 44567 B
   progress: 10500, // 9676 B
   'radio-group': 18500, // 17153 B
@@ -123,15 +126,22 @@ export const rows: readonly RowDef[] = [
     id: 'ui-value-exports',
     order: 350,
     label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
-    // 239 measured. Exact: a new value export is a row here and a consumer named for it; a lower
+    // 252 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
-    ceiling: 239,
+    ceiling: 252,
     measure: valueExports,
   },
 ]
 
 export const raises: Raises = {
   'ui-value-exports': [
+    {
+      from: 239,
+      to: 252,
+      consumer:
+        "`ButtonGroup`, `ControlGroup`, `InputGroup`, `InputAddon` (with their four tables and `controlGroupParts`) from `basalt-ui/ui/control-group`, `CopyButton` and `copyButtonParts` from `basalt-ui/ui/copy-button`, `PasswordInput` and `passwordInputParts` from `basalt-ui/ui/password-input`: the owner's 2026-11-21 benchmark asked for Blueprint's joined controls (plan row bench-control-groups, Issue 2853); `PageBar` draws its action groups with `ButtonGroup` and the playground's forms pages show the rest",
+      repo: 'basalt-ui',
+    },
     {
       from: 229,
       to: 239,

@@ -387,7 +387,7 @@ describe('PageBar actions', () => {
         />
       </Page>,
     )
-    const groups = document.querySelectorAll('[data-slot="page-action-group"]')
+    const groups = document.querySelectorAll('[data-slot="button-group"]')
     expect(groups).toHaveLength(1)
     expect([...groups[0]!.querySelectorAll('[data-action-id]')].map((e) => e.textContent)).toEqual([
       'prev',

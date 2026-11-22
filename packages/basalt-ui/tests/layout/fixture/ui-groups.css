@@ -1,0 +1,19 @@
+/*
+ * The `ui-groups` fixture's Tailwind v4 entry, compiled WITH preflight and the font faces like
+ * `ui-inputs.css`, because the primitives are measured the way a Tailwind consumer renders them.
+ * `ui-groups.layout.test.ts` compiles it into a temp directory; nothing generated lands in the repo.
+ */
+@import '../../../src/css/tailwind.css' source(none);
+@source './ui-groups-fixture.tsx';
+@source '../../../src/ui/button.tsx';
+@source '../../../src/ui/control-group.tsx';
+@source '../../../src/ui/input.tsx';
+@source '../../../src/ui/copy-button.tsx';
+@source '../../../src/ui/password-input.tsx';
+@source '../../../src/ui/select.tsx';
+@source '../../../src/ui/combobox.tsx';
+@source '../../../src/ui/number-field.tsx';
+@source '../../../src/ui/date-picker.tsx';
+@source '../../../src/ui/segmented.tsx';
+@source '../../../src/ui/popover.tsx';
+@source '../../../src/core/control-scope.ts';

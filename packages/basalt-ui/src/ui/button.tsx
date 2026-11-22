@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { scopeClass, useControlScope } from '../core/control-scope'
 
 /**
  * The `Button` cva table: the one source the generator reads for the type union, the `no-restyle`
@@ -70,6 +71,31 @@ export const pressableVariants = cva(
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
 export const buttonParts = ['button', 'pressable'] as const
 
+/**
+ * A button inside a group: its axes fall back to the group's, a small one lifts to the 44 px floor
+ * of its neighbours under a coarse pointer (alone it keeps 24 px drawn and a 44 px `::after`), and
+ * a small icon drops the coarse inline margin that would open a gap in a fused row.
+ */
+function useScopedAxes(
+  variant: ButtonAxes['variant'],
+  size: ButtonAxes['size'],
+): { variant: ButtonAxes['variant']; size: ButtonAxes['size']; scoped: string | undefined } {
+  const scope = useControlScope()
+  const resolved = size ?? scope?.size
+  return {
+    variant: variant ?? scope?.variant,
+    size: resolved,
+    scoped:
+      scope === null
+        ? undefined
+        : cn(
+            scopeClass(scope),
+            resolved === 'sm' &&
+              'pointer-coarse:mx-0 pointer-coarse:min-h-11 pointer-coarse:min-w-11',
+          ),
+  }
+}
+
 /** The `loading` spinner: a 16 px arc that turns, still for reduced motion, centred over the label. */
 function Spinner(): ReactElement {
   return (
@@ -125,6 +151,7 @@ export function Button({
   children,
   ...props
 }: ButtonProps): ReactElement {
+  const axes = useScopedAxes(variant, size)
   return (
     <BaseButton
       {...props}
@@ -133,7 +160,11 @@ export function Button({
       aria-busy={loading || undefined}
       data-loading={loading ? '' : undefined}
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, shape }), className)}
+      className={cn(
+        buttonVariants({ variant: axes.variant, size: axes.size, shape }),
+        axes.scoped,
+        className,
+      )}
     >
       {loading === true ? (
         <>

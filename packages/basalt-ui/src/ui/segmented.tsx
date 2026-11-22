@@ -5,19 +5,20 @@ import type { VariantProps } from 'class-variance-authority'
 import { createContext, useContext, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { scopeClass, useControlScope } from '../core/control-scope'
 
 /**
  * The `Segmented` cva table: a track holding a row of options; the selected one is drawn raised. The
  * track is tinted with an ink mix, so it reads on a card and on the page alike. Each
  * option sizes to its label on one line; a track wider than its box scrolls sideways rather than break
  * a label, and the focus ring sits inside the option so the scroll box does not clip it. The track is at
- * least one control high and a coarse pointer gets the 44 px floor.
+ * least one control high and a coarse pointer gets the 44 px floor every control has (each option keeps a 44 px target through its `::after`).
  *
  * @example
  * segmentedVariants({ size: 'sm' })
  */
 export const segmentedVariants = cva(
-  'group/segmented relative inline-flex max-w-full items-stretch overflow-x-auto rounded-ctrl bg-accent p-0.5 [scrollbar-width:none] pointer-coarse:min-h-12',
+  'group/segmented relative inline-flex max-w-full items-stretch overflow-x-auto rounded-ctrl bg-accent p-0.5 [scrollbar-width:none] pointer-coarse:min-h-11',
   {
     variants: {
       size: {
@@ -139,7 +140,9 @@ const ARROWS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home
  * </Segmented>
  */
 export function Segmented(props: SegmentedProps): ReactElement {
-  const { size, fill = false, className, options, children, ...rest } = props
+  const { size: ownSize, fill = false, className, options, children, ...rest } = props
+  const scope = useControlScope()
+  const size = ownSize ?? scope?.size
   const multiple = rest.multiple === true
   const [inner, setInner] = useState<string | undefined>(
     rest.multiple === true ? undefined : rest.defaultValue,
@@ -177,7 +180,7 @@ export function Segmented(props: SegmentedProps): ReactElement {
         {...groupProps}
         data-slot="segmented"
         data-fill={fill}
-        className={cn(segmentedVariants({ size, fill }), className)}
+        className={cn(segmentedVariants({ size, fill }), scopeClass(scope), className)}
         onKeyDownCapture={(event: KeyboardEvent) => {
           viaArrow.current = ARROWS.has(event.key)
         }}

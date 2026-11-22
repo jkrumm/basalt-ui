@@ -88,13 +88,22 @@ export const rows: readonly RowDef[] = [
     // (bench-table-view): the header's resize separator, a reader's group-by and footer summaries (the column
     // menu's labelled summary group, the footer's stepping cells), the body row height, row numbers and the
     // pinned edge, all in the display state and saved views. A submenu with radio items cost 1.85 KB more and went.
-    ceiling: 167600,
+    // 167600 -> 168000 (Issue 2853): +~250 B gz: the table's Button, Input, Select and
+    // Combobox read the control group scope (`core/control-scope`), so a group sets their size.
+    ceiling: 168000,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 167600,
+      to: 168000,
+      consumer:
+        "one control vocabulary (plan row bench-control-groups, Issue 2853): every control resolves its size and variant through the group scope, so the table's header editors and toolbar take a ControlGroup's size like any other control",
+      repo: 'basalt-ui',
+    },
     {
       from: 164100,
       to: 167600,
