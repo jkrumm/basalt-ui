@@ -83,7 +83,10 @@ export const rows: readonly RowDef[] = [
     // point scale keeps right of the last points (scale room, planner anchor, measured width), the ring and leader
     // of a page label in a crowded cloud with the plate under a label that lies over dots, and the Retry word read
     // from `home.retry` (the message table joins the chart closure).
-    ceiling: 139400,
+    // 139400 -> 140400 (Issue 2883): +~1.0 KB gz over master for the segment value label (`valuesAt: 'segment'`)
+    // placed inside its own segment of a stack, fitted like a clamped stack, and the stack-aware `y.domain` extent
+    // (expression cycle 19 contract).
+    ceiling: 140400,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -106,6 +109,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 139400,
+      to: 140400,
+      consumer:
+        "n97's unrated counts printed at the stack tops where they read as totals, and n93's 14-day fixture that drew a caret on every bar under a capping `y.domain` function (Issue 2883): a series of a stack labels its own segment with `valuesAt: 'segment'`, and a domain function reads the stack totals",
+      repo: 'basalt-ui',
+    },
     {
       from: 137600,
       to: 139400,
