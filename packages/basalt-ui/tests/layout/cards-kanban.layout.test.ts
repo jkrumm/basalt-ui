@@ -200,8 +200,9 @@ layout('KanbanCard and Board', () => {
             els.map((el) => el.textContent),
           )
           expect(items).toEqual(['Move up', 'Move down', 'Move to Doing'])
-          expect(await page.raw.evaluate(() => document.activeElement?.getAttribute('role'))).toBe(
-            'menuitem',
+          // Base UI moves focus into the menu a frame after it mounts; under load that frame lags.
+          await page.raw.waitForFunction(
+            () => document.activeElement?.getAttribute('role') === 'menuitem',
           )
           await page.raw.keyboard.press('Escape')
           await page.raw.waitForSelector('[role="menu"]', { state: 'detached' })
