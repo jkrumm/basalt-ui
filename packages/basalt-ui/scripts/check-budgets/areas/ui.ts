@@ -49,7 +49,7 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   alert: 6000, // 5300 B
   badge: 6000, // 5625 B
   button: 9500, // 8574 B
-  card: 10000, // 9446 B
+  card: 10100, // 10004 B
   checkbox: 15000, // 14142 B
   collapsible: 13000, // 11967 B
   combobox: 61500, // 58535 B
@@ -134,6 +134,15 @@ export const rows: readonly RowDef[] = [
 ]
 
 export const raises: Raises = {
+  'ui-prim-card': [
+    {
+      from: 10000,
+      to: 10100,
+      consumer:
+        'the wizard dialog (Issue 2940): the theme gains the `scrim-wash` colour, four bytes over the old ceiling in every primitive that carries the class merger',
+      repo: 'basalt-ui',
+    },
+  ],
   'ui-value-exports': [
     {
       from: 239,

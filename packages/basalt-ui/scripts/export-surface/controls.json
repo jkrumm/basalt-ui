@@ -8,6 +8,7 @@
   "FormSection",
   "Stepper",
   "ViewTabs",
+  "WizardDialog",
   "filterSlot",
   "spec",
   "toSubmitErrors",

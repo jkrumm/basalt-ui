@@ -31,6 +31,8 @@ export const SLOTS = {
     'dialog-content',
     'dialog-title',
     'dialog-description',
+    'dialog-meta',
+    'dialog-actions',
     'dialog-close',
     'alert-dialog-trigger',
     'alert-dialog-content',

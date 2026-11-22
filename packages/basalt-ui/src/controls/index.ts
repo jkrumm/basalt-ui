@@ -22,6 +22,10 @@ export type { FormFieldLayout } from './form-field'
 export { Stepper } from './stepper'
 export type { StepperProps, StepperStep } from './stepper'
 
+// A multi-step create flow in a split dialog: a live preview beside the stepped form, ending on a review.
+export { WizardDialog } from './wizard-dialog'
+export type { WizardDialogProps, WizardForm, WizardStep } from './wizard-dialog'
+
 // v3 forms, state side: the local draft, the save-error mapper and the action row (`FormLike` is structural; the form engine stays the app's).
 export { useFormDraft } from './draft'
 export { toSubmitErrors } from './submit'

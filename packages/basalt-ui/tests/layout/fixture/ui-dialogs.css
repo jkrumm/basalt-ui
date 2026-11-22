@@ -10,3 +10,8 @@
 @source '../../../src/ui/toast.tsx';
 @source '../../../src/ui/button.tsx';
 @source '../../../src/ui/input.tsx';
+@source '../../../src/ui/field.tsx';
+@source '../../../src/ui/tooltip.tsx';
+@source '../../../src/controls/wizard-dialog.tsx';
+@source '../../../src/controls/stepper.tsx';
+@source '../../../src/controls/form-field.tsx';

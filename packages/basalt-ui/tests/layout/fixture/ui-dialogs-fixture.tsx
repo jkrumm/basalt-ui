@@ -5,13 +5,16 @@
  * by a no-op `window.basaltMountFixture`, since the page renders itself on load.
  *
  * Probes, each a `data-testid`:
- * - `ud-open-dialog`, `ud-open-alert`, `ud-open-sheet`: the triggers; each overlay holds a field
- *   and a `ud-close-*` close button;
+ * - `ud-open-dialog`, `ud-open-wide`, `ud-open-wizard`, `ud-open-alert`, `ud-open-sheet`: the
+ *   triggers; each overlay holds a field and a `ud-close-*` close button (the wizard's is its own
+ *   top-bar close);
  * - `ud-add-toast`: queues one toast through a Base UI toast manager (the real host is `ToastHost`,
  *   state-5); `ud-page`: the page content behind every overlay.
  */
 import { Toast as BaseToast } from '@base-ui/react/toast'
 import { createRoot } from 'react-dom/client'
+import { WizardDialog } from '../../../src/controls/wizard-dialog'
+import { useAppForm } from '../../../src/form'
 import type { ReactElement } from 'react'
 import { Button } from '../../../src/ui/button'
 import {
@@ -34,6 +37,55 @@ import {
 } from '../../../src/ui/toast'
 
 const manager = BaseToast.createToastManager()
+
+type Values = { name: string; plan: string }
+
+function Wizard(): ReactElement {
+  const form = useAppForm({
+    defaultValues: { name: '', plan: 'team' } as Values,
+    onSubmit: () => {},
+  })
+  return (
+    <WizardDialog
+      form={form}
+      submitLabel="Create"
+      preview={(v) => <p data-testid="ud-preview">{v.name === '' ? 'Untitled' : v.name}</p>}
+      steps={[
+        {
+          label: 'Name',
+          title: 'Name it',
+          help: 'What the record is called.',
+          valid: (v) => v.name.trim().length > 1,
+          summary: (v) => [{ label: 'Name', value: v.name }],
+          render: () => (
+            <form.AppField name="name">
+              {(f) => (
+                <f.FormField label="Name" required>
+                  <Input autoComplete="off" />
+                </f.FormField>
+              )}
+            </form.AppField>
+          ),
+        },
+        {
+          label: 'Plan',
+          title: 'Pick a plan',
+          valid: () => true,
+          summary: (v) => [{ label: 'Plan', value: v.plan }],
+          render: () => (
+            <form.AppField name="plan">
+              {(f) => (
+                <f.FormField label="Plan">
+                  <Input autoComplete="off" />
+                </f.FormField>
+              )}
+            </form.AppField>
+          ),
+        },
+      ]}
+    />
+  )
+}
 
 function ToastList(): ReactElement {
   const { toasts } = BaseToast.useToastManager()
@@ -67,6 +119,28 @@ function Fixture(): ReactElement {
             <div className="flex justify-end gap-2">
               <DialogClose render={<Button data-testid="ud-close-dialog" />}>Cancel</DialogClose>
             </div>
+          </DialogContent>
+        </Dialog>
+        <Dialog>
+          <DialogTrigger render={<Button data-testid="ud-open-wide" />}>View</DialogTrigger>
+          <DialogContent
+            title="report.pdf"
+            size="wide"
+            meta="2.4 MB, 12 Nov"
+            actions={[
+              { label: 'Download', icon: () => <svg viewBox="0 0 16 16" />, onClick: () => {} },
+            ]}
+          >
+            <Input aria-label="Note" defaultValue="Quarterly" />
+            <div className="flex justify-end gap-2">
+              <DialogClose render={<Button data-testid="ud-close-wide" />}>Done</DialogClose>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <Dialog>
+          <DialogTrigger render={<Button data-testid="ud-open-wizard" />}>New</DialogTrigger>
+          <DialogContent title="New record" description="Two steps and a review." size="split">
+            <Wizard />
           </DialogContent>
         </Dialog>
         <AlertDialog>

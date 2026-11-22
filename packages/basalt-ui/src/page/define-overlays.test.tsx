@@ -35,6 +35,8 @@ function make() {
       as: 'sheet',
       render: () => <p data-testid="logs">filters</p>,
     },
+    'viewer:wide': { title: 'Viewer', size: 'wide', render: () => <p>doc</p> },
+    'wizard:split': { title: 'Wizard', size: 'split', render: () => <p>steps</p> },
     'confirm:wide': {
       title: 'Wide',
       size: 'lg',
@@ -70,6 +72,18 @@ describe('defineOverlays + OverlayHost', () => {
     render(<OverlayHost overlays={overlays} />)
     act(() => overlays.open('confirm:wide', { n: 1 }))
     expect(document.querySelector('[data-slot="dialog-content"]')?.className).toContain('max-w-2xl')
+  })
+
+  test('the wide and split sizes reach the dialog panel', () => {
+    const overlays = make()
+    render(<OverlayHost overlays={overlays} />)
+    act(() => overlays.open('viewer:wide'))
+    expect(document.querySelector('[data-slot="dialog-content"]')?.className).toContain('max-w-5xl')
+    act(() => overlays.close())
+    act(() => overlays.open('wizard:split'))
+    const panel = [...document.querySelectorAll('[data-slot="dialog-content"]')].at(-1)
+    expect(panel?.className).toContain('max-w-275')
+    expect(panel?.querySelector('header')).toBeNull()
   })
 
   test('opening before the host mounts keeps the entry until it does', () => {

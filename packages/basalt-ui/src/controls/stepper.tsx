@@ -4,6 +4,8 @@
  * goes back to it; an upcoming step is never reachable from the list, so the form validates each
  * step before the next. From the `regular` container size up it is a row of numbered steps joined
  * by a line; narrower it folds into `Step 2 of 3`, the current name and one segment per step.
+ * `variant="bar"` is the progress strip alone, one 4 px segment per step with no text: the top bar of
+ * a `WizardDialog`, which prints its own counter.
  */
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
@@ -24,12 +26,24 @@ export type StepperProps = {
   onStepChange?: (index: number) => void
   /** Names the list for assistive technology. Default `Progress`. */
   'aria-label'?: string
+  /**
+   * `list` (default) is the numbered row that folds into a count when narrow; `bar` is the
+   * segmented strip alone, named for assistive technology by each step's label and status.
+   */
+  variant?: 'list' | 'bar'
   /** Layout only (`w-full`, `max-w-3xl`). */
   className?: string
 }
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
-export const stepperParts = ['stepper', 'stepper-compact', 'stepper-list', 'stepper-step'] as const
+export const stepperParts = [
+  'stepper',
+  'stepper-compact',
+  'stepper-list',
+  'stepper-step',
+  'stepper-bar',
+  'stepper-segment',
+] as const
 
 type Status = 'done' | 'current' | 'upcoming'
 
@@ -88,12 +102,40 @@ export function Stepper({
   current,
   onStepChange,
   'aria-label': ariaLabel = 'Progress',
+  variant = 'list',
   className,
 }: StepperProps): ReactElement {
   const at = Math.min(Math.max(current, 0), Math.max(steps.length - 1, 0))
   const statusOf = (index: number): Status =>
     index < at ? 'done' : index === at ? 'current' : 'upcoming'
   const now = steps[at]
+  if (variant === 'bar') {
+    return (
+      <nav aria-label={ariaLabel} data-slot="stepper" className={cn('min-w-0', className)}>
+        <ol data-slot="stepper-bar" className="m-0 flex list-none gap-1.5 p-0">
+          {steps.map((step, index) => {
+            const status = statusOf(index)
+            return (
+              <li
+                key={step.label}
+                data-slot="stepper-segment"
+                data-status={status}
+                {...(status === 'current' && { 'aria-current': 'step' as const })}
+                className={cn(
+                  'h-1 flex-1 rounded-full',
+                  index <= at ? 'bg-brand-fill' : 'bg-input',
+                )}
+              >
+                <span className="sr-only">
+                  {step.label}, {STATUS_TEXT[status]}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+      </nav>
+    )
+  }
   return (
     <nav aria-label={ariaLabel} data-slot="stepper" className={cn('@container min-w-0', className)}>
       <div data-slot="stepper-compact" className="flex min-w-0 flex-col gap-2 @regular:hidden">

@@ -65,6 +65,23 @@ describe('Stepper', () => {
 
   test('server render holds every slot', () => {
     const html = renderToString(<Stepper steps={STEPS} current={1} />)
-    for (const slot of stepperParts) expect(html).toContain(`data-slot="${slot}"`)
+    for (const slot of stepperParts.filter(
+      (s) => !s.startsWith('stepper-bar') && s !== 'stepper-segment',
+    ))
+      expect(html).toContain(`data-slot="${slot}"`)
+  })
+
+  test('the bar variant is one named segment per step with the current one marked', () => {
+    const { container, getByRole } = render(<Stepper steps={STEPS} current={1} variant="bar" />)
+    expect(getByRole('navigation', { name: 'Progress' })).toBeTruthy()
+    const segments = [...container.querySelectorAll('[data-slot="stepper-segment"]')]
+    expect(segments.map((s) => s.getAttribute('data-status'))).toEqual([
+      'done',
+      'current',
+      'upcoming',
+    ])
+    expect(segments[1]!.getAttribute('aria-current')).toBe('step')
+    expect(segments[2]!.textContent).toBe('Review, not started')
+    expect(container.querySelector('[data-slot="stepper-list"]')).toBeNull()
   })
 })

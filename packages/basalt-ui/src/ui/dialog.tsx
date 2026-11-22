@@ -7,12 +7,15 @@ import { cn } from '../core/cn'
 import { ControlScopeProvider } from '../core/control-scope'
 import { dialogs } from '../core/messages/dialogs'
 import { useMessages } from '../core/messages/use-messages'
-import { buttonVariants } from './button'
+import type { IconComponent } from '../core/ports'
+import { Button, buttonVariants } from './button'
 
 /**
  * The `DialogContent` cva table: a centered panel on the popup surface, always above the page
  * (`z-50` is on the viewport that holds it). `size` sets the width; the height follows the content
- * and scrolls past the viewport.
+ * and scrolls past the viewport. `wide` (64 rem) holds a wide form or a document viewer; `split` is
+ * the wizard panel: 68.75 rem by 43.75 rem, no padding, its panes fill it. Every size is capped by
+ * the viewport.
  *
  * @example
  * dialogContentVariants({ size: 'lg' }) // class string for a hand-built popup
@@ -25,6 +28,8 @@ export const dialogContentVariants = cva(
         sm: 'max-w-sm',
         md: 'max-w-lg',
         lg: 'max-w-2xl',
+        wide: 'max-w-5xl',
+        split: 'h-175 max-w-275 gap-0 overflow-hidden p-0',
       },
     },
     defaultVariants: { size: 'md' },
@@ -48,13 +53,19 @@ export const dialogParts = [
   'dialog-content',
   'dialog-title',
   'dialog-description',
+  'dialog-meta',
+  'dialog-actions',
   'dialog-close',
   'alert-dialog-trigger',
   'alert-dialog-content',
 ] as const
 
-const BACKDROP =
-  'fixed inset-0 z-50 bg-scrim transition-opacity duration-fast data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none'
+const BACKDROP_BASE =
+  'fixed inset-0 z-50 transition-opacity duration-fast data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none'
+/** A `Dialog` leaves the page readable behind it: the canvas at half strength. */
+const WASH = `${BACKDROP_BASE} bg-scrim-wash`
+/** An `AlertDialog` asks for an answer: the strong scrim. */
+const SCRIM = `${BACKDROP_BASE} bg-scrim`
 const VIEWPORT =
   'fixed inset-0 z-50 grid place-items-center overflow-hidden p-4 data-ending-style:pointer-events-none'
 
@@ -73,9 +84,25 @@ type Heading = {
 
 export type DialogProps = BaseDialog.Root.Props
 export type DialogTriggerProps = Layout<BaseDialog.Trigger.Props>
+/** One typed action of a viewer's header: an icon button named by its `label`. */
+export type DialogAction = {
+  /** The accessible name and the tooltip. */
+  label: string
+  /** Any component with the `IconComponent` shape (`icon={Download}`). */
+  icon: IconComponent
+  onClick: () => void
+  /** `danger` for a destructive action such as delete. Default `default`. */
+  tone?: 'default' | 'danger'
+}
+
 export type DialogContentProps = Layout<Omit<BaseDialog.Popup.Props, 'title'>> &
   Heading &
-  VariantProps<typeof dialogContentVariants>
+  VariantProps<typeof dialogContentVariants> & {
+    /** A muted line under the title, such as a file's size and date. Not rendered at `size="split"`. */
+    meta?: ReactNode
+    /** Icon actions between the title and the close, at most four. Not rendered at `size="split"`. */
+    actions?: readonly DialogAction[]
+  }
 export type DialogTitleProps = Layout<BaseDialog.Title.Props>
 export type DialogDescriptionProps = Layout<BaseDialog.Description.Props>
 export type DialogCloseProps = Layout<BaseDialog.Close.Props>
@@ -120,8 +147,12 @@ export function DialogTrigger({ className, ...props }: DialogTriggerProps): Reac
 }
 
 /**
- * The dialog panel with its backdrop. `title` is required and names the dialog; `description` is
- * optional. The corner close button is part of the panel and named by the `dialog.close` message.
+ * The dialog panel with its backdrop, a light wash of the canvas so the page stays readable behind
+ * it. `title` is required and names the dialog; `description` is optional. The corner close button
+ * is part of the panel and named by the `dialog.close` message. A viewer adds `meta` (a muted line)
+ * and `actions` (icon buttons) to the header. `size="split"` is the wizard panel: no header and no
+ * padding, the title and description are read by assistive tech only, and the children (a
+ * `WizardDialog`) draw their own top bar with a `DialogClose`.
  *
  * @example
  * <DialogContent title="Delete project" size="sm">Body</DialogContent>
@@ -129,35 +160,75 @@ export function DialogTrigger({ className, ...props }: DialogTriggerProps): Reac
 export function DialogContent({
   title,
   description,
+  meta,
+  actions,
   size,
   className,
   children,
   ...props
 }: DialogContentProps): ReactElement {
+  const split = size === 'split'
   return (
     <ControlScopeProvider value={null}>
       <BaseDialog.Portal>
-        <BaseDialog.Backdrop forceRender className={BACKDROP} />
+        <BaseDialog.Backdrop forceRender className={WASH} />
         <BaseDialog.Viewport className={VIEWPORT}>
           <BaseDialog.Popup
             {...props}
             data-slot="dialog-content"
             className={cn(dialogContentVariants({ size }), className)}
           >
-            <header className="flex items-start gap-3">
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <DialogTitle>{title}</DialogTitle>
+            {split ? (
+              <>
+                <DialogTitle className="sr-only">{title}</DialogTitle>
                 {description === undefined ? null : (
-                  <DialogDescription>{description}</DialogDescription>
+                  <DialogDescription className="sr-only">{description}</DialogDescription>
                 )}
-              </div>
-              <DialogClose />
-            </header>
+              </>
+            ) : (
+              <header className="flex items-start gap-3">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <DialogTitle>{title}</DialogTitle>
+                  {description === undefined ? null : (
+                    <DialogDescription>{description}</DialogDescription>
+                  )}
+                  {meta === undefined ? null : (
+                    <p data-slot="dialog-meta" className="m-0 text-xs text-muted-foreground">
+                      {meta}
+                    </p>
+                  )}
+                </div>
+                {actions === undefined ? null : (
+                  <div data-slot="dialog-actions" className="flex shrink-0 items-center gap-1">
+                    {actions.map((action) => (
+                      <HeaderAction key={action.label} action={action} />
+                    ))}
+                  </div>
+                )}
+                <DialogClose />
+              </header>
+            )}
             {children}
           </BaseDialog.Popup>
         </BaseDialog.Viewport>
       </BaseDialog.Portal>
     </ControlScopeProvider>
+  )
+}
+
+function HeaderAction({ action }: { action: DialogAction }): ReactElement {
+  const Icon = action.icon
+  return (
+    <Button
+      variant={action.tone === 'danger' ? 'danger' : 'ghost'}
+      size="sm"
+      shape="icon"
+      aria-label={action.label}
+      title={action.label}
+      onClick={action.onClick}
+    >
+      <Icon className="size-icon" aria-hidden="true" />
+    </Button>
   )
 }
 
@@ -278,7 +349,7 @@ export function AlertDialogContent({
   return (
     <ControlScopeProvider value={null}>
       <BaseAlertDialog.Portal>
-        <BaseAlertDialog.Backdrop forceRender className={BACKDROP} />
+        <BaseAlertDialog.Backdrop forceRender className={SCRIM} />
         <BaseAlertDialog.Viewport className={VIEWPORT}>
           <BaseAlertDialog.Popup
             {...props}
