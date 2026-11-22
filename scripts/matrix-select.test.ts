@@ -61,9 +61,10 @@ describe('selectMatrix', () => {
   })
 
   test('one primitive runs every route that renders it', () => {
-    const file = 'packages/basalt-ui/src/ui/radio-group.tsx'
+    // A primitive few pages render: radio-group joined every table with the manage-view panel.
+    const file = 'packages/basalt-ui/src/ui/date-picker.tsx'
     const sel = run([file])
-    expect(rendering(file)).toContain('/kit/forms/choices')
+    expect(rendering(file)).toContain('/kit/forms/dates')
     expect(sel.mode).toBe('pages')
     expect(pagesOf(sel)).toEqual(rendering(file).toSorted())
   })
