@@ -176,8 +176,9 @@ export function PanelHandle({
       onPointerCancel={endDrag}
       onKeyDown={onKeyDown}
       onDoubleClick={reset}
-      // The hairline shows on hover, keyboard focus and while dragging; the hit area is the full 8px.
-      className="absolute inset-y-0 start-0 z-10 w-2 cursor-col-resize touch-none outline-none select-none after:absolute after:inset-y-0 after:start-0 after:w-px after:bg-transparent after:transition-colors hover:after:bg-border focus-visible:after:w-0.5 focus-visible:after:bg-brand data-dragging:after:w-0.5 data-dragging:after:bg-brand motion-reduce:after:transition-none"
+      // The hairline shows on hover and while dragging, keyboard focus draws the shared ring inside the 8px
+      // hit area, so a panel that clips its overflow keeps it whole.
+      className="absolute inset-y-0 start-0 z-10 w-2 cursor-col-resize touch-none select-none focus-ring focus-visible:-outline-offset-2 after:absolute after:inset-y-0 after:start-0 after:w-px after:bg-transparent after:transition-colors hover:after:bg-border data-dragging:after:w-0.5 data-dragging:after:bg-brand motion-reduce:after:transition-none"
     />
   )
 }
