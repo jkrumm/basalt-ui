@@ -1,0 +1,8 @@
+/*
+ * The `table-view` fixture's Tailwind v4 entry, compiled WITH preflight the way a Tailwind consumer
+ * renders the table. `table-view.layout.test.ts` compiles it and inlines `src/table/table.css`.
+ */
+@import '../../src/css/tailwind.css' source(none);
+@source './table-view-fixture.tsx';
+@source '../../src/ui';
+@source '../../src/table';

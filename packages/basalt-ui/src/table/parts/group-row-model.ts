@@ -34,24 +34,29 @@ function groupValue(v: unknown): string {
   return v === null || v === undefined ? '' : String(v)
 }
 
-/** The body's items: rows as they are, or grouped by `by` with `collapsed` groups closed. */
+/**
+ * The body's items: rows as they are, or grouped by `by` with `collapsed` groups closed. `keyOf` is
+ * the value a row groups under (a date column passes its day), the column's value by default.
+ */
 export function bodyItems<T>(
   rows: readonly BodyRow<T>[],
   by: KindSpec<T> | undefined,
   collapsed: readonly string[] | undefined,
   matched: readonly T[] = rows.map((row) => row.original),
+  keyOf?: (row: T) => string,
 ): BodyItem<T>[] {
   if (by === undefined) return rows.map((row) => ({ type: 'row', key: row.id, row }))
+  const valueOf = keyOf ?? ((row: T) => groupValue(by.value(row)))
   const members = new Map<string, T[]>()
   for (const original of matched) {
-    const value = groupValue(by.value(original))
+    const value = valueOf(original)
     const list = members.get(value)
     if (list === undefined) members.set(value, [original])
     else list.push(original)
   }
   const groups = new Map<string, BodyRow<T>[]>()
   for (const row of rows) {
-    const value = groupValue(by.value(row.original))
+    const value = valueOf(row.original)
     const page = groups.get(value)
     if (page === undefined) groups.set(value, [row])
     else page.push(row)

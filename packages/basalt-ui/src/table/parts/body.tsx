@@ -14,13 +14,21 @@ import type { DetailHost } from '../../core/ports'
 import { Button } from '../../ui/button'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../../ui/menu'
 import { TableBody, TableCell, TableRow } from '../../ui/table'
-import type { DataTableInstance, RowAction } from '../contract'
+import type { DataTableInstance, RowAction, RowHeight } from '../contract'
 import { cellAttributes } from '../core/kinds-cells'
 import type { CellEnv, KindSpec } from '../core/kinds-spec'
 import type { PlannedColumn } from '../core/plan'
 import { modelOf } from '../use-data-table'
 import type { ModelRow, TableModel } from '../use-data-table'
-import { alignProps, pinStyle, tierAttributes, useActionsLabel, visibleColumns } from './head'
+import {
+  alignProps,
+  pinEdge,
+  pinStyle,
+  tierAttributes,
+  useActionsLabel,
+  visibleColumns,
+} from './head'
+import { RowNumberCell } from './row-number'
 import { GroupRow } from './group-row'
 import type { BodyItem } from './group-row-model'
 import { useDetailHost } from './detail-sheet'
@@ -32,6 +40,20 @@ import type { TreeInfo } from './tree-row-model'
 
 /** The height a `spark` draws in; the table owns the box at every phase. */
 const BOX_HEIGHT = 24
+
+const DENSITY: Record<RowHeight, 'dense' | 'normal' | 'comfortable'> = {
+  compact: 'dense',
+  default: 'normal',
+  comfortable: 'comfortable',
+}
+
+/**
+ * The body's `data-density`: a view's row height rebinds the density row (`--basalt-row-h`) under the
+ * body alone, so the head keeps its height; nothing when the app's density holds.
+ */
+export function bodyDensity<T>(model: TableModel<T>): { 'data-density'?: string } {
+  return model.rowHeight === undefined ? {} : { 'data-density': DENSITY[model.rowHeight] }
+}
 
 function RowActions<T>({
   row,
@@ -234,7 +256,7 @@ export function DataRow<T>({
 }): ReactElement {
   const { selection, keyboard } = model
   const columns = visibleColumns(model.specs, model.plan.columns)
-  const offset = selection === undefined ? 1 : 2
+  const offset = model.lead.cols + 1
   const ticked = selection?.isSelected(row.id) === true
   const active = model.activeId === row.id
   const rowProps = useRowFocusProps(row.id, row.original, keyboard.rowProps(row.id))
@@ -242,7 +264,7 @@ export function DataRow<T>({
   // grid roves its cells, so a control is reached through its cell (Enter or F2), never by Tab.
   const grid = model.look === 'grid'
   const tabbable = !grid && rowProps.tabIndex !== -1
-  const tick = selection === undefined ? 0 : 1
+  const lead = model.lead.cols
   return (
     <TableRow
       role="row"
@@ -269,6 +291,11 @@ export function DataRow<T>({
           {...(grid && { cellProps: keyboard.cellProps(row.id, 0) })}
         />
       )}
+      <RowNumberCell
+        model={model}
+        id={row.id}
+        {...(grid && { cellProps: keyboard.cellProps(row.id, model.lead.tick ? 1 : 0) })}
+      />
       {columns.map(({ spec, planned }, index) => {
         const { numeric, className } = alignProps(spec)
         const label = labelOf(planned, spec)
@@ -277,9 +304,10 @@ export function DataRow<T>({
             key={spec.id}
             role={grid ? 'gridcell' : 'cell'}
             aria-colindex={index + offset}
-            {...keyboard.cellProps(row.id, index + tick)}
+            {...keyboard.cellProps(row.id, index + lead)}
             {...cellAttributes(spec)}
             {...tierAttributes(planned, model.detailListed)}
+            {...pinEdge(planned)}
             style={pinStyle(planned)}
             data-unit={spec.unit}
             {...(label !== '' && { 'data-label': label })}
@@ -390,6 +418,7 @@ export function DataTableBody<T>({
   return (
     <TableBody
       role="rowgroup"
+      {...bodyDensity(model)}
       {...model.keyboard.rootProps}
       {...(onPointerLeave !== undefined && { onPointerLeave })}
     >

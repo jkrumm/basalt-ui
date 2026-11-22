@@ -19,7 +19,8 @@ import type { TableModel } from '../use-data-table'
 import { drawAggregate } from './footer'
 import { footerValue } from './footer-model'
 import type { BodyItem } from './group-row-model'
-import { alignProps, pinStyle, tierAttributes, visibleColumns } from './head'
+import { alignProps, pinEdge, pinStyle, tierAttributes, visibleColumns } from './head'
+import { RowNumberCell } from './row-number'
 
 export type GroupItem<T> = Extract<BodyItem<T>, { type: 'group' }>
 
@@ -66,7 +67,7 @@ export function GroupRow<T>({
   const t = useMessages(table)
   const group = model.group
   const columns = visibleColumns(model.specs, model.plan.columns)
-  const offset = model.selection === undefined ? 1 : 2
+  const offset = model.lead.cols + 1
   // Count, reduce and summary read every matching row of the group, not only this page.
   const { members } = item
   const first = members[0]
@@ -87,9 +88,10 @@ export function GroupRow<T>({
       className="bg-muted/40 [--row-tint:color-mix(in_oklab,var(--color-muted)_40%,transparent)]"
     >
       {model.selection !== undefined && <TableCell role="cell" aria-colindex={1} />}
+      <RowNumberCell model={model} />
       {columns.map(({ spec, planned }, index) => {
         const { numeric, className } = alignProps(spec)
-        const footer = spec.footer
+        const fn = model.aggregateOf(spec.id)
         return (
           <TableCell
             key={spec.id}
@@ -98,7 +100,8 @@ export function GroupRow<T>({
             {...cellAttributes(spec)}
             {...tierAttributes(planned, model.detailListed)}
             // a cell that draws nothing is off the phone card, so its grid gap leaves no blank band under the label
-            {...(index > 0 && footer === undefined && { 'data-card': 'hidden' })}
+            {...(index > 0 && fn === undefined && { 'data-card': 'hidden' })}
+            {...pinEdge(planned)}
             style={pinStyle(planned)}
             numeric={numeric}
             className={cn(className, 'font-medium')}
@@ -131,8 +134,8 @@ export function GroupRow<T>({
                   </span>
                 )}
               </span>
-            ) : footer === undefined ? null : (
-              drawAggregate(spec, footerValue(spec, { kind: 'client', rows: members }), env)
+            ) : fn === undefined ? null : (
+              drawAggregate(spec, footerValue(spec, { kind: 'client', rows: members }, fn), env, fn)
             )}
           </TableCell>
         )

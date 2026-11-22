@@ -27,7 +27,7 @@ describe('table.css', () => {
 
   test('a pinned or tick cell takes the surface the table sits on, never the bare canvas', () => {
     const rule = withoutComments.match(
-      /\[data-slot='table-cell'\]:is\(\[data-pin\], \[data-kind='tick'\]\) \{([^}]*)\}/,
+      /\[data-slot='table-cell'\]:is\(\[data-pin\], \[data-kind='tick'\], \[data-kind='row-number'\]\) \{([^}]*)\}/,
     )
     expect(rule).not.toBeNull()
     expect(rule?.[1]).toContain('background-color: var(--basalt-surface, var(--basalt-canvas))')
@@ -48,8 +48,9 @@ describe('table.css', () => {
   // 4,872 with the mono id kept on one line in the four columns blocks (expression cycle 17); 4,930 with the
   // columns tier's head and state wrapping into the card (expression cycle 18); 5,063 with the tighter head
   // controls and cell gutters in its four blocks (expression cycle 19); 5,177 with the entity name that wraps in a table tier
-  // (three container blocks, expression cycle 19), 5,209 with the virtual tables it leaves out.
-  test('stays small: under 5,250 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(5250)
+  // (three container blocks, expression cycle 19), 5,209 with the virtual tables it leaves out; 5,782 with the
+  // view's resize handle, row height, pinned edge shadow, row-number pin and footer pick (bench-table-view).
+  test('stays small: under 5,800 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(5800)
   })
 })

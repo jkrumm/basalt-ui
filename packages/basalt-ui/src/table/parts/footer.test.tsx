@@ -80,7 +80,8 @@ describe('aggregate', () => {
     ['mean', 15],
     ['min', 5],
     ['max', 30],
-    ['count', 3],
+    // A count reads every present value, so a text column counts its rows too; the rest read numbers.
+    ['count', 4],
   ] as const)('%s skips absent values', (fn, expected) => {
     expect(aggregate(fn, values, read)).toBe(expected)
   })

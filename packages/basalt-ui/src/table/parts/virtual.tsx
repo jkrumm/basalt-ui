@@ -25,7 +25,7 @@ import { useDetailHost } from './detail-sheet'
 import type { DetailHost, VirtualItem, VirtualLike } from '../../core/ports'
 import { TableCaption, tableVariants } from '../../ui/table'
 import type { TableModel } from '../use-data-table'
-import { BodyItemRow, cellEnvOf } from './body'
+import { BodyItemRow, bodyDensity, cellEnvOf } from './body'
 import { useRowFocusLeave } from './row-focus'
 
 /** The row height until the first row is measured: `--basalt-row-h` at the default density. */
@@ -161,6 +161,7 @@ export function VirtualTable<T>({
         bodyProps={{
           'data-slot': 'table-body',
           role: 'rowgroup',
+          ...bodyDensity(model),
           ...(onPointerLeave !== undefined && { onPointerLeave }),
         }}
         head={

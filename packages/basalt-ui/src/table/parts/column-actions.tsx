@@ -10,10 +10,20 @@ import type { ReactElement, Ref } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
 import { Button } from '../../ui/button'
-import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '../../ui/menu'
-import type { DataTableInstance } from '../contract'
+import {
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuSeparator,
+  MenuSub,
+  MenuTrigger,
+} from '../../ui/menu'
+import type { Aggregate, DataTableInstance } from '../contract'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
+import { useAggregateLabel } from './footer'
 
 /** What a column's menu offers: sort when it sorts, hide unless it is the identity column. */
 export function columnActionsOf<T>(
@@ -78,6 +88,7 @@ export function ColumnActionsMenu<T>({
 }): ReactElement | null {
   const model = modelOf(instance)
   const t = useMessages(table)
+  const aggregateLabel = useAggregateLabel()
   const offered = columnActionsOf(model, column)
   const spec = model.specs.find((s) => s.id === column)
   if (offered === null || spec === undefined) return null
@@ -97,6 +108,10 @@ export function ColumnActionsMenu<T>({
     if (to !== undefined) model.moveColumn(column, model.movable.indexOf(to))
   }
   const { request } = model.state
+  const groupable = model.groupable(column)
+  const grouped = model.groupBy === column
+  const aggregates = model.aggregatesOf(column)
+  const widened = model.state.display.widths?.[column] !== undefined
   const touched =
     direction !== 'none' ||
     request.filters.some((f) => f.id === column) ||
@@ -171,8 +186,37 @@ export function ColumnActionsMenu<T>({
             <MenuSeparator />
           </>
         )}
+        {(groupable || aggregates.length > 0) && (
+          <>
+            {groupable && (
+              <MenuItem onClick={() => model.setGroupBy(grouped ? null : column)}>
+                {grouped ? t('table.groupNone') : t('table.groupBy', spec.header)}
+              </MenuItem>
+            )}
+            {aggregates.length > 0 && (
+              <MenuSub label={t('table.summaryMenu')}>
+                <MenuRadioGroup
+                  value={model.aggregateOf(column) ?? 'none'}
+                  onValueChange={(value: Aggregate | 'none') => model.setAggregate(column, value)}
+                >
+                  {[...aggregates, 'none' as const].map((fn) => (
+                    <MenuRadioItem key={fn} value={fn}>
+                      {aggregateLabel(fn)}
+                    </MenuRadioItem>
+                  ))}
+                </MenuRadioGroup>
+              </MenuSub>
+            )}
+            <MenuSeparator />
+          </>
+        )}
         {hideable && (
           <MenuItem onClick={() => hide(model, column)}>{t('table.hideColumn')}</MenuItem>
+        )}
+        {widened && (
+          <MenuItem onClick={() => model.setWidth(column, undefined)}>
+            {t('table.resetWidth')}
+          </MenuItem>
         )}
         <MenuItem disabled={!touched} onClick={() => reset(model, column)}>
           {t('table.resetColumn')}

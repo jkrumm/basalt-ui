@@ -21,7 +21,8 @@ import { Skeleton } from '../../ui/skeleton'
 import { TableCell, TableRow } from '../../ui/table'
 import type { TableModel } from '../use-data-table'
 import { TickSkeleton } from './tick-column'
-import { alignProps, pinStyle, tierAttributes, visibleColumns } from './head'
+import { alignProps, pinEdge, pinStyle, tierAttributes, visibleColumns } from './head'
+import { RowNumberCell } from './row-number'
 
 /** Skeleton rows of a table that has shown none yet; once it has, the loading arm keeps the last height. */
 export const SKELETON_ROWS = 6
@@ -49,7 +50,7 @@ function span<T>(model: TableModel<T>): number {
   const narrow = visibleColumns(model.specs, model.plan.columns).filter(
     ({ planned }) => planned.priority !== 3,
   )
-  return narrow.length + (model.selection === undefined ? 0 : 1)
+  return narrow.length + model.lead.cols
 }
 
 /** The priority 3 columns a wider tier draws past the narrow ones: the message row's filler spans them. */
@@ -59,12 +60,13 @@ const wideSpan = <T,>(model: TableModel<T>): number =>
 
 export function LoadingRows<T>({ model }: { model: TableModel<T> }): ReactElement {
   const columns = visibleColumns(model.specs, model.plan.columns)
-  const offset = model.selection === undefined ? 1 : 2
+  const offset = model.lead.cols + 1
   return (
     <>
       {Array.from({ length: model.skeletonRows ?? SKELETON_ROWS }, (_, row) => (
         <TableRow key={row} role="row" data-slot="table-row" data-skeleton="">
           {model.selection !== undefined && <TickSkeleton />}
+          <RowNumberCell model={model} />
           {columns.map(({ spec, planned }, index) => {
             const { numeric, className } = alignProps(spec)
             return (
@@ -75,6 +77,7 @@ export function LoadingRows<T>({ model }: { model: TableModel<T> }): ReactElemen
                 data-kind={spec.kind}
                 data-align={spec.align}
                 {...tierAttributes(planned, model.detailListed)}
+                {...pinEdge(planned)}
                 style={pinStyle(planned)}
                 numeric={numeric}
                 className={className}

@@ -80,7 +80,12 @@ export type TableMessages = Record<
   | 'table.aggMean'
   | 'table.aggMin'
   | 'table.aggMax'
-  | 'table.aggCount',
+  | 'table.aggCount'
+  | 'table.aggNone'
+  | 'table.summaryMenu'
+  | 'table.rowNumber'
+  | 'table.resetWidth'
+  | 'table.groupNone',
   string
 > &
   Record<
@@ -90,7 +95,13 @@ export type TableMessages = Record<
   Record<'table.rowRange', (f: Format, from: number, to: number, total: number) => string> &
   Record<'table.filters', (f: Format, count: number) => string> &
   Record<
-    'table.chipRemove' | 'table.columnActions' | 'table.viewRemove' | 'table.errorNamed',
+    | 'table.chipRemove'
+    | 'table.columnActions'
+    | 'table.viewRemove'
+    | 'table.errorNamed'
+    | 'table.resizeColumn'
+    | 'table.groupBy'
+    | 'table.summaryOf',
     (f: Format, name: string) => string
   > &
   Record<'table.cellFilter', (f: Format, header: string, value: string) => string> &
@@ -187,6 +198,11 @@ export const table = {
   'table.aggMin': 'Min',
   'table.aggMax': 'Max',
   'table.aggCount': 'Count',
+  'table.aggNone': 'None',
+  'table.summaryMenu': 'Summary',
+  'table.rowNumber': 'Row',
+  'table.resetWidth': 'Reset width',
+  'table.groupNone': 'Remove grouping',
   'table.groupRows': (f, count) => (count === 1 ? '1 row' : `${f.number(count)} rows`),
   'table.selectedCount': (f, count) => `${f.number(count)} selected`,
   'table.allMatching': (f, count) => `All ${f.number(count)} rows selected`,
@@ -194,6 +210,9 @@ export const table = {
   'table.filters': (f, count) => (count > 0 ? `Filters (${f.number(count)})` : 'Filters'),
   'table.chipRemove': (_f, subject) => `Remove filter ${subject}`,
   'table.columnActions': (_f, header) => `${header} column actions`,
+  'table.resizeColumn': (_f, header) => `Resize ${header}`,
+  'table.groupBy': (_f, header) => `Group by ${header}`,
+  'table.summaryOf': (_f, header) => `Summary of ${header}`,
   'table.viewRemove': (_f, name) => `Delete view ${name}`,
   'table.errorNamed': (_f, name) => `${couldNotLoad(String(name))}.`,
   'table.cellFilter': (_f, header, value) => `Filter ${header} by ${value}`,
