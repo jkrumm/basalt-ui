@@ -246,10 +246,10 @@ sync-self: ## Link basalt-ui's own shipped rules + skills into this repo's /.cla
 
 # The one command after a rebase (docs/factory-leads.md): every committed file a script derives from the tree, written
 # again. No slot, no browser: the dogfood links, the marketing install's manifest digests, the Astro matrix's .md and
-# the oxlint presets. A measured number is no committed record, so nothing here measures. The marketing sync runs the
-# built CLI, so a tree without packages/basalt-ui/dist builds it first.
+# the oxlint presets. A measured number is no committed record, so nothing here measures. The marketing sync renders
+# its presets from the built package, and a rebase leaves dist behind the source, so it builds first (about 45 s).
 regen: ## After a rebase: rewrite every generated file (sync-self, the marketing manifest, the Astro matrix .md, the oxlint presets); no slot, no browser
-	@test -f packages/basalt-ui/dist/cli/index.js || (cd packages/basalt-ui && bun run build)
+	@cd packages/basalt-ui && bun run build > /dev/null
 	@$(MAKE) --no-print-directory sync-self
 	@bun apps/playground-astro/scripts/matrix.ts --render
 	@bun packages/basalt-ui/scripts/gen-oxlint.ts
