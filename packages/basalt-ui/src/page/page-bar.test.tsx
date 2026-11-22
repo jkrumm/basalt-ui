@@ -72,6 +72,7 @@ describe('PageBar without a shell', () => {
       </Page>,
     )
     expect(band()?.classList.contains('sticky')).toBe(true)
+    expect(band()?.classList.contains('z-30')).toBe(true)
     expect(band()?.classList.contains('top-0')).toBe(true)
     expect(band()?.hasAttribute('data-sticky')).toBe(true)
   })
@@ -212,12 +213,12 @@ describe('PageBar without a shell', () => {
       </Page>,
     )
     const home = band()?.querySelector('[data-slot="page-bar-tabs"]')
-    expect(home?.className).toContain('max-@regular:basis-full')
+    expect(home?.className).toContain('@max-regular:basis-full')
     expect(home?.querySelector('[data-slot="tabs"]')?.getAttribute('data-variant')).toBe('segment')
     for (const name of ['Alpha', 'Beta']) {
       const cls = screen.getByRole('tab', { name }).className
-      expect(cls).toContain('max-@regular:flex-1')
-      expect(cls).toContain('max-@regular:basis-0')
+      expect(cls).toContain('@max-regular:flex-1')
+      expect(cls).toContain('@max-regular:basis-0')
     }
   })
 

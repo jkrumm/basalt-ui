@@ -157,7 +157,9 @@ export function Page({ area, fill, landmark, children }: PageProps): ReactElemen
           data-fill={filled ? '' : undefined}
           style={style}
           className={cn(
-            '@container flex min-w-0 [--page-gutter:--spacing(4)] [--page-sticky-top:0px]',
+            // `isolate`: the page body's raised layers (z-10, z-20) stay inside the page, so the sticky band
+            // (z-30) outranks them and the shell's aside overlay (z-20, a sibling of main) still outranks the page.
+            '@container isolate flex min-w-0 [--page-gutter:--spacing(4)] [--page-sticky-top:0px]',
             // Sticky content clears the band only while the band itself sticks.
             'has-[[data-slot=page-bar][data-sticky]]:[--page-sticky-top:var(--page-bar-h,0px)]',
             filled && 'h-full min-h-(--page-fill-min,0px)',
