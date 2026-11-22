@@ -54,7 +54,7 @@ const inCorner = (share: number | null, within: number): boolean =>
 /** Air kept round a readout, px: the reach of its 6 px halo (3) and a gap of 2. */
 const READOUT_AIR = 5
 /** Air a band name's chip keeps from the tick labels beside it, px: a chip bolder than its tick never touches the neighbour the thinning placed against the regular name. */
-const BAND_CHIP_GAP = 3
+const BAND_CHIP_GAP = 1
 /** The inset the engine keeps between a readout and the chart's edge, px (`clampLabel`). */
 const EDGE_INSET = 2
 /** The weight of the crosshair's chip, which the engine draws bolder than a tick label. */
