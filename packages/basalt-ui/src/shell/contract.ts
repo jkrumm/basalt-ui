@@ -109,6 +109,12 @@ export type Account =
 /** `native-overlay`: header 52, lead inset, drag region. */
 export type ShellChrome = 'web' | 'native-overlay'
 
+/**
+ * How the work surface sits on the frame from `md` up: `panel` is inset, rounded and hairline
+ * bordered; `flush` meets the window's edges with one hairline on the rail side. Compact is always flush.
+ */
+export type ShellFrame = 'panel' | 'flush'
+
 export type ShellBrand = { name: string; logo?: IconComponent }
 
 export type AppShellProps<Id extends string = string> = {
@@ -123,6 +129,8 @@ export type AppShellProps<Id extends string = string> = {
   search?: { onOpen: () => void }
   storageKey?: string
   chrome?: ShellChrome
+  /** Default `panel`. */
+  frame?: ShellFrame
   compactHeader?: 'show' | 'hidden'
   children?: ReactNode
 }
