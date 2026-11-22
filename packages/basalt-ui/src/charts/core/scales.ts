@@ -213,6 +213,16 @@ const BAND_PADDING_INNER = 0.2
 const BAND_PADDING_OUTER = 0.1
 
 /**
+ * The steps of room a point scale keeps right of its last point when `room` asks for `px` of a plot
+ * `plotWidth` wide: with `n` points and the step the plot ends up with (`plotWidth` over `n - 1/2 + right`),
+ * `px = right * step`. Zero when there is no room to ask for (one point, or half the plot or more).
+ */
+function pointRoomSteps(n: number, room: { px: number; plotWidth: number } | undefined): number {
+  if (room === undefined || n < 2 || room.px <= 0 || room.px >= room.plotWidth / 2) return 0
+  return (room.px * (n - POINT_PADDING)) / (room.plotWidth - room.px)
+}
+
+/**
  * The x scale and the normalized position of any x value inside the plot (0 = left edge, 1 = right
  * edge). Zones and x-zones are drawn on a hidden `[0, 1]` scale from those fractions, so a band
  * spans the plot exactly whatever the x scale is.
@@ -306,6 +316,8 @@ export function xScaleFor<X extends ChartX>(
   xDomain?: readonly [X, X],
   /** A numeric continuous x on a log scale (`withLogX` has dropped the rows with x <= 0). */
   log = false,
+  /** Room kept right of the last point, px of a plot `plotWidth` wide: the end labels' gutter. A page's own `xDomain`, a band and a log axis keep theirs. */
+  room?: { px: number; plotWidth: number },
 ): XScaleModel<X> {
   const values = distinctX(raw)
   // The kind comes from the data; an empty series has none to read, so the domain stands in.
@@ -336,11 +348,18 @@ export function xScaleFor<X extends ChartX>(
         },
       }
     }
-    const step = 1 / Math.max(1, n - 1 + 2 * POINT_PADDING)
+    // The room right of the last point, in steps: `px` over the step the plot ends up with.
+    const right = Math.max(pointRoomSteps(n, room), POINT_PADDING)
+    const outer = POINT_PADDING + right
+    const step = 1 / Math.max(1, n - 1 + outer)
     return {
       kind,
       band: false,
-      scale: scalePoint<X>().domain(keys).padding(POINT_PADDING),
+      // The padding is split by `align`: half a step stays at the left, the rest goes right.
+      scale: scalePoint<X>()
+        .domain(keys)
+        .padding(outer / 2)
+        .align(POINT_PADDING / outer),
       values: keys,
       halfStep: step / 2,
       step: 1,
@@ -383,11 +402,15 @@ export function xScaleFor<X extends ChartX>(
   const explicit = explicitDomain(xDomain)
   if (explicit !== null) {
     ;[lo, hi] = explicit
-  } else if (lo === hi) {
-    // One sample: give the axis a day (or a unit) of width so the point sits in the middle.
-    const half = kind === 'date' ? DAY_MS / 2 : 0.5
-    lo -= half
-    hi += half
+  } else {
+    if (lo === hi) {
+      // One sample: give the axis a day (or a unit) of width so the point sits in the middle.
+      const half = kind === 'date' ? DAY_MS / 2 : 0.5
+      lo -= half
+      hi += half
+    }
+    if (room !== undefined && room.px > 0 && room.px < room.plotWidth / 2)
+      hi += ((hi - lo) * room.px) / (room.plotWidth - room.px)
   }
   const span = hi - lo
   const sorted = nums.toSorted((a, b) => a - b)

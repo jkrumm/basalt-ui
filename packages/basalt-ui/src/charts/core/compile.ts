@@ -48,7 +48,8 @@ import { barValueLabels } from './bar-values'
 import { MAIN_PANE, plotAccess, plotContext } from './plot-context'
 import { spreadPoints } from './spread'
 import type { SpreadPlace } from './spread'
-import { claimedLabelBoxes } from '../labels'
+import { claimedLabelBoxes, endLabelGutter } from '../labels'
+import type { LinesNaming } from '../labels'
 import { estimateWidth, lineHeight } from '../label-place'
 import type { LabelBox as PxBox } from '../chart-labels'
 import {
@@ -182,6 +183,8 @@ export type CartesianInput<T, X extends ChartX> = Pick<
   bare?: boolean
   /** `y.gutter` (the seam): a fixed left margin in px, so stacked panes share one plot x. */
   yGutter?: number
+  /** How the lines are named (`Lines`' `naming`, resolved): with end labels the point scale keeps them a gutter right of the last points. */
+  endLabels?: LinesNaming
 }
 
 /** The one tick-label size, at every container width: the caption size, so a card never mixes sizes. */
@@ -2163,6 +2166,27 @@ export function compileCartesian<T, X extends ChartX>(
       ? []
       : [{ fx0: largest.fx0, fx1: largest.fx1, y0: largest.y1, y1: largest.y1 + head }]
   }
+  // The end labels' gutter: room right of the last points of a point-scale line chart when the labels
+  // would otherwise sit over the lines (`endLabelGutter`). Read on the measured plot, so a first frame
+  // takes the frame less the y gutter.
+  const endRoomPx = (access: PlotAccess, frameWidth: number, cls: ContainerClass): number => {
+    const naming = input.endLabels
+    if (naming === undefined || input.band === true || input.y2 !== undefined) return 0
+    if (baseModel.kind !== 'string' || baseModel.band) return 0
+    const lines = visible.filter((s) => s.mark === 'line' && s.role !== 'reference')
+    if (lines.length === 0 || lines.length !== visible.length) return 0
+    access.read()
+    return endLabelGutter({
+      naming,
+      containerClass: cls,
+      plotWidth: access.size()?.width ?? Math.max(frameWidth - Y_GUTTER, 0),
+      labels: lines.flatMap((s) => {
+        const last = input.data.findLast((d) => s.getValue(d) !== null)
+        const fraction = last === undefined ? null : baseModel.fraction(input.x(last))
+        return fraction === null ? [] : [{ label: s.label, fraction }]
+      }),
+    })
+  }
   // A point chart's x domain grown so the dot at either end sits whole inside the clipped plot.
   const dotRoomX = (access: PlotAccess, frameWidth: number): XScaleModel<X> => {
     const { extent } = baseModel
@@ -2246,6 +2270,12 @@ export function compileCartesian<T, X extends ChartX>(
       // `capped` holds the page's domain; `axes` may grow it so an edge dot draws whole. A datum
       // past the cap is clamped to the cap, so the growth keeps it whole too.
       model = dotRoomX(access, width)
+      const gutter = model === baseModel ? endRoomPx(access, width, cls) : 0
+      if (gutter > 0)
+        model = xScaleFor(input.data.map(input.x), false, input.xDomain, input.xScale === 'log', {
+          px: gutter,
+          plotWidth: access.size()?.width ?? Math.max(width - Y_GUTTER, 0),
+        })
       const capped = axesAt(cls)
       const axes = dotRoomAxes(capped, access, height)
       // A spread reads the plot's size: dots move apart in pixels, so it recompiles once measured.
@@ -2274,6 +2304,7 @@ export function compileCartesian<T, X extends ChartX>(
           yDomain: axes.left.domain,
           y2Domain: axes.right?.domain,
           ...(axes.left.log === true && { yLog: true }),
+          ...(gutter > 0 && { endRoom: true }),
         },
         access,
       )

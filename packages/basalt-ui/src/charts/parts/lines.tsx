@@ -16,7 +16,12 @@ export type LineSeries<D> = Extract<Series<D>, { mark: 'line' }>
 export type LinesProps<D> = Omit<CartesianChartBase<D>, 'series' | 'marks'> &
   ChartName & {
     series: readonly LineSeries<D>[]
-    /** Who names the lines: `'auto'` (end labels from the wide class, the legend below it), `'legend'` or `'endLabels'`. */
+    /**
+     * Who names the lines: `'auto'` (end labels from the wide class, the legend below it), `'legend'` or `'endLabels'`.
+     * On a categorical x axis the end labels sit beside the last points, in a gutter the axis keeps for the widest label
+     * where the plot is too narrow to hold them (never over a line); a continuous axis keeps the room the page gave it
+     * (`x.domain`).
+     */
     naming?: 'auto' | 'legend' | 'endLabels'
   }
 

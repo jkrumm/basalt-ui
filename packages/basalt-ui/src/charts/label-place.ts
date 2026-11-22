@@ -4,7 +4,7 @@
  * with a per-glyph estimate, so a chart that labels its bars does not carry the 8 KB table.
  */
 import type { ChartLabel, LabelBox, LabelSpot, LabelWeight, PlacedLabel } from './chart-labels'
-import { hostObstacles, isDotBox, recordPlacedLabels } from './label-obstacles'
+import { hostObstacles, isDotBox, recordLabelTies, recordPlacedLabels } from './label-obstacles'
 
 /** A text's width in px at a size and weight. */
 export type MeasureText = (text: string, size: number, weight: LabelWeight) => number
@@ -86,6 +86,25 @@ function slid(spot: LabelSpot, box: LabelBox, frame: { width: number; height: nu
   return Math.abs(top - box.top) <= reach ? { ...box, left, top } : { ...box, left }
 }
 
+/** The ring of a crowded anchor: the first distance (px past the gap) a label tries, the step and the farthest. */
+const RING_FROM = 8
+const RING_STEP = 6
+const RING_FAR = 84
+/** The directions tried at each distance of the ring, in turns of a circle (a ring starts to the right, then goes round). */
+const RING_DIRECTIONS = 16
+
+/** Whether the segment from `a` to `b` runs through `box`, sampled every 2 px. */
+function crosses(a: { x: number; y: number }, b: { x: number; y: number }, box: LabelBox): boolean {
+  const steps = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 2))
+  for (let i = 0; i <= steps; i++) {
+    const x = a.x + ((b.x - a.x) * i) / steps
+    const y = a.y + ((b.y - a.y) * i) / steps
+    if (x > box.left && x < box.left + box.width && y > box.top && y < box.top + box.height)
+      return true
+  }
+  return false
+}
+
 const overlaps = (a: LabelBox, b: LabelBox): boolean =>
   a.left < b.left + b.width &&
   b.left < a.left + a.width &&
@@ -154,6 +173,7 @@ export function placeWith<K extends string>(
     ...hostObstacles().filter((b) => !hostDots(b)),
   ]
   const placed: PlacedLabel<K>[] = []
+  const plates: LabelBox[] = []
   const dropped: ChartLabel<K>[] = []
   const ranked = labels
     .map((label, index) => ({ label, index }))
@@ -199,6 +219,64 @@ export function placeWith<K extends string>(
       }
       return undefined
     }
+    // The first box clear of every dot, bar, line and placed label, at a growing distance from the
+    // anchor, round it; the label is joined to the anchor by a leader.
+    const ring = (): PlacedLabel<K> | undefined => {
+      for (let d = gap + RING_FROM; d <= gap + RING_FAR; d += RING_STEP) {
+        for (let k = 0; k < RING_DIRECTIONS; k++) {
+          const turn = (2 * Math.PI * k) / RING_DIRECTIONS
+          const [cx, cy] = [Math.cos(turn), Math.sin(turn)]
+          // The box sits past the point d along the direction, on the side that faces away from the anchor.
+          const centreX = label.x + cx * d + Math.sign(cx) * (Math.abs(cx) > 0.3 ? width / 2 : 0)
+          const centreY = label.y + cy * d + Math.sign(cy) * (Math.abs(cy) > 0.3 ? height / 2 : 0)
+          const box = { left: centreX - width / 2, top: centreY - height / 2, width, height }
+          if (!inside(box, frame) || taken.some((other) => overlaps(box, other))) continue
+          if (points.some((other) => overlaps(box, other))) continue
+          // The hairline never runs through a label already placed.
+          const to = {
+            x: Math.min(Math.max(label.x, box.left), box.left + width),
+            y: Math.min(Math.max(label.y, box.top), box.top + height),
+          }
+          if (placed.some((p) => crosses({ x: label.x, y: label.y }, to, p))) continue
+          return landFar(box)
+        }
+      }
+      return undefined
+    }
+    const landFar = (box: LabelBox): PlacedLabel<K> => {
+      const textAnchor =
+        box.left >= label.x ? 'start' : box.left + width <= label.x ? 'end' : 'middle'
+      const textX =
+        textAnchor === 'start'
+          ? box.left
+          : textAnchor === 'end'
+            ? box.left + width
+            : box.left + width / 2
+      // The leader leaves the anchor for the nearest point of the box.
+      const to = {
+        x: Math.min(Math.max(label.x, box.left), box.left + width),
+        y: Math.min(Math.max(label.y, box.top), box.top + height),
+      }
+      return {
+        ...label,
+        size,
+        spot:
+          box.left >= label.x
+            ? 'right'
+            : box.left + width <= label.x
+              ? 'left'
+              : box.top > label.y
+                ? 'below'
+                : 'above',
+        ...box,
+        textAnchor,
+        baselineY: box.top + height / 2 + size * BASELINE_OFFSET,
+        textX,
+        dx: textX - label.x,
+        dy: box.top + height / 2 - label.y,
+        leader: { from: { x: label.x, y: label.y }, to },
+      }
+    }
     for (const spot of label.spots ?? SPOTS) {
       const at = boxFor(spot, label.x, label.y, width, height, gap)
       const box = slid(spot, { left: at.left, top: at.top, width, height }, frame)
@@ -210,7 +288,16 @@ export function placeWith<K extends string>(
       }
       if (crowded === undefined || met < crowded.met) crowded = { spot, box, met }
     }
-    if (landed === undefined && crowded !== undefined) landed = land(crowded.spot, crowded.box)
+    // A crowded anchor: a farther ring with a leader back to it beats a label that lies over dots.
+    if (landed === undefined && crowded !== undefined) {
+      const far = ring()
+      if (far !== undefined) landed = far
+    }
+    // Dots are everywhere within reach: the fewest-dots spot, on a surface plate so the text reads.
+    if (landed === undefined && crowded !== undefined) {
+      landed = land(crowded.spot, crowded.box)
+      plates.push(crowded.box)
+    }
     // Still nothing: a spot beside the anchor slides up or down, by at most half its height, to
     // squeeze between what blocks it (a rule a pixel too close, the plot's edge).
     if (landed === undefined) landed = nudged()
@@ -231,6 +318,12 @@ export function placeWith<K extends string>(
     )
     placed.push(landed)
   }
-  if (options.pointMarks === true) recordPlacedLabels(placed)
+  if (options.pointMarks === true) {
+    recordPlacedLabels(placed)
+    recordLabelTies({
+      leaders: placed.flatMap((p) => (p.leader === undefined ? [] : [p.leader])),
+      plates,
+    })
+  }
   return { placed, dropped }
 }

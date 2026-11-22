@@ -341,6 +341,8 @@ export type PlotContext<T, X extends ChartX = ChartX> = {
   y2Domain: readonly [number, number] | undefined
   /** The left y axis is logarithmic: pixel maps run in decades. */
   yLog?: boolean
+  /** Internal: the x scale kept a gutter right of the last points for the end labels (`endLabelGutter`), so each sits beside its line's end. */
+  endRoom?: boolean
 }
 
 /** The marks a `marks` function returns: TanStack marks from the allowed `@tanstack/charts/*`

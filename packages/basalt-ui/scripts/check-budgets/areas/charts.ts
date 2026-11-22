@@ -79,7 +79,11 @@ export const rows: readonly RowDef[] = [
     // 135300 -> 135400 (Issue 2889): 135349 B measured, +~90 B gz over master (135262) for the zone caption that slides along a zone full of bars (n96's aperture, ISO and shutter cards lost the caption their focal card kept).
     // 135400 -> 136800 (Issue 2828): 136702 B measured, +~1.25 KB gz over master (135349) for `y.scale: 'log'`: the log scale and decade ticks, the dev errors and the production skip, the decade-space label placement and the pixel maps in values.
     // 136800 -> 137600 (Issue 2882): 137464 B measured, +~760 B gz over master (136702) for the bar values raised over their bar with a leader or put beside an edge bar, the minimum height of a thin bar, the ink-step dim in the bar's own paint, the line value that names its series and the band chip's air, the kit fixes of expression cycle 19.
-    ceiling: 137600,
+    // 137600 -> 139400 (Issue 2911): 139280 B measured, +~1.8 KB gz over master (137464) for the end-label gutter a
+    // point scale keeps right of the last points (scale room, planner anchor, measured width), the ring and leader
+    // of a page label in a crowded cloud with the plate under a label that lies over dots, and the Retry word read
+    // from `home.retry` (the message table joins the chart closure).
+    ceiling: 139400,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -102,6 +106,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 137600,
+      to: 139400,
+      consumer:
+        "n79's end labels at 390 and n72's label over a dot in a dense cloud (Issue 2911): the end labels crossed the rising line at every spot, and the page label lay over the sure dot; the point scale keeps a gutter for the labels, a crowded label goes a ring away with a leader or onto a plate, and the Retry word reads `home.retry`",
+      repo: 'basalt-ui',
+    },
     {
       from: 136800,
       to: 137600,
