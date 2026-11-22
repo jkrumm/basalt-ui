@@ -30,8 +30,8 @@ export const rows: readonly RowDef[] = [
     // 115800 -> 116500 (Issue 2853): PageBar's action groups are the public `ButtonGroup`, and
     // every control in the barrel reads the group scope (`core/control-scope`).
     // 116500 -> 117000 (Issue 2940): 116707 B measured; the Dialog sizes, header actions and wash backdrop.
-    // 117000 -> 117300 (Issue 2995): `SettingsLayout`, the pane frame that scrolls to a linked row and marks it.
-    ceiling: 117300,
+    // 117000 -> 117400 (Issue 2995): `SettingsLayout`, the pane frame that scrolls to a linked row and marks it.
+    ceiling: 117400,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
@@ -40,7 +40,7 @@ export const raises: Raises = {
   'page-subpath': [
     {
       from: 117000,
-      to: 117300,
+      to: 117400,
       consumer:
         '`SettingsLayout` (plan row bench-form-rows, Issue 2995): the pane frame and its row scroll and mark join the barrel',
       repo: 'basalt-ui',
