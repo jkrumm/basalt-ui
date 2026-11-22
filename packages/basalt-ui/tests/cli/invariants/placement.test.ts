@@ -66,7 +66,7 @@ describe('placement', () => {
       expect((await cli(['sync'], dir)).code).toBe(0)
       const block = read(dir, 'AGENTS.md')
       expect([profile, block]).toEqual([profile, expect.stringContaining('**A gap in basalt-ui**')])
-      expect(block).toContain('factory issue new --repo basalt-ui')
+      expect(block).toContain('bugs.url')
       expect(block).toContain('minimal reproduction')
     }
   })
