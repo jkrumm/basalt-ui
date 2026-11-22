@@ -6,8 +6,9 @@
   first, 45 min by default, `--wait-minutes <n>`). Local `make check` does not replace PR CI.
 - `packages/basalt-ui/**` and non-package changes are separate commits in one PR; what `make regen` writes is its own
   non-package commit. Never edit `CHANGELOG.md`.
-- **After a rebase, run `make regen`** (seconds; no slot, no browser): it rewrites every generated file the tree derives,
-  the dogfood links in `.claude/`, apps/marketing's manifest digests, the Astro matrix `.md` and the oxlint presets.
+- **After a rebase, run `make regen`** (under a minute, the package build; no slot, no browser): it rewrites every
+  generated file the tree derives, the dogfood links in `.claude/`, apps/marketing's manifest digests and presets, the
+  Astro matrix `.md` and the oxlint presets.
   Commit what it writes, then land. Nothing measured is committed, so a rebase never needs a matrix run: the Astro
   record holds budgets, and a size inside its budget changes no file (`docs/validation.md` § Astro matrix). On a
   conflict in a generated file, take either side and run `make regen`; `make merge-guard` refuses a stale one.
