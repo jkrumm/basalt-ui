@@ -44,7 +44,6 @@ export type {
   StateHandle,
   TableDisplay,
   TableEscape,
-  TableLayout,
   TableRequest,
   TableState,
   Totals,

@@ -406,7 +406,8 @@ export const table = {
   'table.resizeColumn': (_f, header) => `Resize ${header}`,
   'table.groupBy': (_f, header) => `Group by ${header}`,
   'table.summaryOf': (_f, header) => `Summary of ${header}`,
-  'table.boardHint': (_f, header) => `Drag a card to change its ${header.toLocaleLowerCase()}`,
+  'table.boardHint': (_f, header) =>
+    `Drag a card to change its ${String(header).toLocaleLowerCase()}`,
   'table.boardFailed': (_f, title) => `${title} could not move. It is back where it was.`,
   'table.cardPick': (_f, title) => `Select ${title}`,
   'table.viewCopyOf': (_f, name) => `${name} copy`,

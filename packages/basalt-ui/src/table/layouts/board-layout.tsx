@@ -23,12 +23,18 @@ import { Segmented } from '../../ui/segmented'
 import type { ModelRow, TableModel } from '../use-data-table'
 import { CardTick, INTERACTIVE_IN_CARD } from './card-tick'
 import { boardAxis, boardLanes, cardFace, laneTotal, totalColumn } from './model'
-import type { Pending } from './model'
+import type { FaceValue, Pending } from './model'
 
 /** The px of one board card in a windowed column: a title, two meta lines and a row of chips. */
 export const BOARD_CARD_PX = 112
 
 type Item<T> = { id: string; title: string; row: ModelRow<T> }
+
+/** The card's figure with the column it reads, so a bare amount is never unnamed: `Revenue 28,557.00 USD`. */
+const named = <T,>(value: FaceValue<T> | undefined): string | undefined =>
+  value === undefined
+    ? undefined
+    : `${value.spec.unit === undefined ? value.label : value.label.replace(` (${value.spec.unit})`, '')} ${value.text}`
 
 /** A move in flight: `done` once its commit resolved, kept until the row's value agrees. */
 type Flight = Pending & { done: boolean }
@@ -147,7 +153,7 @@ export function BoardLayout<T>({
           const face = cardFace(model, item.row.original, axis)
           const lines = [
             face.subtitle?.text,
-            [face.value?.text, ...face.meta.map((m) => m.text)]
+            [named(face.value), ...face.meta.map((m) => m.text)]
               .filter(Boolean)
               .slice(0, 2)
               .join(' · '),
