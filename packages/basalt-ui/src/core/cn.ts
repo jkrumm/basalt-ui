@@ -317,7 +317,8 @@ rule(
   either('ring-offset', 'ring-offset-color', (rest) => STRICT_NUMBER.test(rest)),
 )
 rule('outline', (rest) => {
-  if (rest === '' || /^(?:none|dashed|dotted|double|hidden)$/.test(rest)) return 'outline-style'
+  if (rest === '' || /^(?:none|solid|dashed|dotted|double|hidden)$/.test(rest))
+    return 'outline-style'
   return isWidth(rest) ? 'outline-width' : 'outline-color'
 })
 rule('outline-offset', always('outline-offset'))
