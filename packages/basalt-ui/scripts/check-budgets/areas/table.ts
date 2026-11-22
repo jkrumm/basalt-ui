@@ -84,11 +84,11 @@ export const rows: readonly RowDef[] = [
     // columns and the details door for the columns a phone row leaves (expression cycle 14 contract).
     // 163800 -> 164100 (Issue 2785): 163919 B measured, +~120 B gz from `Meter`, which `c.meter` cells draw:
     // its `caption`, `ticks` and `cause` (expression cycle 18 contract).
-    // 164100 -> 167500 (Issue 2854): 167192 B measured, +~3.3 KB gz over master (163919) for the view lane
+    // 164100 -> 167600 (Issue 2854): 167517 B measured after review fixes (167192 at first landing), +~3.3 KB gz over master (163919) for the view lane
     // (bench-table-view): the header's resize separator, a reader's group-by and footer summaries (the column
     // menu's labelled summary group, the footer's stepping cells), the body row height, row numbers and the
     // pinned edge, all in the display state and saved views. A submenu with radio items cost 1.85 KB more and went.
-    ceiling: 167500,
+    ceiling: 167600,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -97,7 +97,7 @@ export const raises: Raises = {
   'table-own': [
     {
       from: 164100,
-      to: 167500,
+      to: 167600,
       consumer:
         "the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md decision 8): column resize, the row height as a view property and a reader's group-by and footer summaries, reversed from the kill list (Issue 2854)",
       repo: 'basalt-ui',
