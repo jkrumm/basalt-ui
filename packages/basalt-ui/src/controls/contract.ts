@@ -73,6 +73,8 @@ export type FilterSetProps = {
   // `any` is the concept's `FilterSpec<any>[]`: handles of different `T` share one list
   // oxlint-disable-next-line typescript/no-explicit-any
   specs: readonly FilterSpec<any>[]
+  /** The rows the filters keep, of all: the folded set's "Showing N of M". */
+  match?: { shown: number; total: number }
 }
 
 /** The bound field is `state`; `handle` is a deprecated alias for one minor. */
