@@ -102,7 +102,7 @@ function ActionButton({
     <Button
       variant={action.primary === true ? 'primary' : 'secondary'}
       data-action-id={action.id}
-      {...(folded && { className: FOLDED })}
+      className={cn(folded && FOLDED, Icon !== undefined && 'pointer-coarse:min-w-11')}
       onClick={action.onClick}
     >
       {Icon !== undefined && <Icon className="size-icon" aria-hidden="true" />}
@@ -355,7 +355,8 @@ function SettingsButton({ settings }: { settings: PageSettings }): ReactElement 
  *
  * The row is one line at every container tier: the tabs scroll sideways, the filters fold (`+N`, or
  * one `Filter` trigger for three or more), action labels become icons and secondary actions move to
- * the More menu below `@wide`, the search takes a line of its own below `@wide`, and below
+ * the More menu below `@wide`, the search takes a line of its own under the band below `@wide`
+ * (it scrolls away, so the sticky band stays one line tall), and below
  * `@regular` the layout toggle steps aside.
  *
  * Where it renders follows the context, never a prop. Under an `AppShell` `title` claims the
@@ -587,8 +588,16 @@ export function PageBar<K extends string = string, L extends string = string>({
             {bandActions && <PageActions actions={primaryLast(list)} />}
           </div>
         </div>
-        {search !== undefined && <SearchBox search={search} className="w-full @wide:hidden" />}
       </div>
+      {search !== undefined && (
+        // Below the sticky band, so the band stays one line tall and the search scrolls away with the page.
+        <div
+          data-slot="page-bar-search-line"
+          className="@wide:hidden in-data-fill:px-[max(var(--page-gutter,0px),--spacing(1))] in-data-fill:pt-2"
+        >
+          <SearchBox search={search} className="w-full" />
+        </div>
+      )}
     </>
   )
 }

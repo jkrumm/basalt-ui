@@ -909,7 +909,7 @@ describe('PageBar view row', () => {
     expect(box!.value).toBe('from a link')
   })
 
-  test('below wide the search takes a line of its own; the inline one is hidden there', () => {
+  test('below wide the search takes a line of its own under the sticky band; the inline one is hidden there', () => {
     const q = memoryHandle<string>('q', '', { kind: 'string' })
     render(
       <Page>
@@ -925,8 +925,10 @@ describe('PageBar view row', () => {
     expect(row.contains(boxes[0]!)).toBe(true)
     expect(boxes[0]!.className).toContain('hidden')
     expect(boxes[0]!.className).toContain('@wide:block')
-    expect(row.contains(boxes[1]!)).toBe(false)
-    expect(boxes[1]!.className).toContain('@wide:hidden')
+    expect(band()!.contains(boxes[1]!)).toBe(false)
+    const line = boxes[1]!.closest('[data-slot="page-bar-search-line"]')!
+    expect(line.className).toContain('@wide:hidden')
+    expect(band()!.nextElementSibling).toBe(line)
   })
 
   test('the end holds search, controls, layout, settings, then the actions with the primary last', () => {
