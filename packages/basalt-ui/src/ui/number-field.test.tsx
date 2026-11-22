@@ -51,9 +51,9 @@ describe('number-field module', () => {
     expect(container.querySelector('[data-slot="number-field"]')?.className).toContain('h-6')
   })
 
-  test('the text input reaches the 44 px floor under a coarse pointer, steppers span the row', () => {
+  test('the text input spans the row border to border (24 px at sm, 44 px coarse), steppers too', () => {
     const { getByLabelText, container } = render(<NumberField aria-label="Qty" />)
-    expect(getByLabelText('Qty').className).toContain('pointer-coarse:-my-px')
+    expect(getByLabelText('Qty').className).toMatch(/(^| )-my-px( |$)/)
     expect(container.querySelector('[data-slot="number-field"]')?.className).toContain(
       'pointer-coarse:min-h-11',
     )
