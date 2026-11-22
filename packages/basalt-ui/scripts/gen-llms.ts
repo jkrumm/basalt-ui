@@ -12,7 +12,12 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { SURFACES } from '../src/surfaces'
-import { readOptionTypes, readSignatures, readTypeGlossary } from './llms-signatures'
+import {
+  readOptionTypes,
+  readSignatures,
+  readTypeGlossary,
+  releaseEntryProgram,
+} from './llms-signatures'
 import { SUBPATH_REQUIRED_PEERS } from './surface-gates'
 
 const root = join(import.meta.dirname, '..', '..', '..')
@@ -53,16 +58,15 @@ const SUBPATH_TYPES: Record<string, string> = Object.fromEntries(
       : [],
   ),
 )
-// Each reader builds a TypeScript program of its own. Collect between them: left to the collector, the
-// programs stack up and a process importing this module peaked at 2.3 to 2.9 GiB instead of 1.8 to 1.9.
+// The three readers share one TypeScript program, in this order (llms-signatures.ts `entryProgram`): a process
+// importing this module peaked at 1.5 GiB with a program per reader and at 0.95 GiB with one.
 const SIGNATURES = readSignatures(SUBPATH_TYPES)
-Bun.gc(true)
 const OPTION_TYPES = readOptionTypes(SUBPATH_TYPES)
-Bun.gc(true)
 
 // Literal-union aliases a signature names but cannot show (`kind?: CalloutKind`). Read AFTER the
-// signatures, from a program of its own, so it cannot change how they print.
+// signatures, so it cannot change how they print.
 const TYPE_GLOSSARY = readTypeGlossary(SUBPATH_TYPES, Object.values(SIGNATURES).flat().join('\n'))
+releaseEntryProgram()
 
 /** Peer ranges like `^7 || ^8` contain spaces and pipes; quote any spec the shell would split. */
 const SHELL_SAFE_RE = /^[\w@/.^~-]+$/

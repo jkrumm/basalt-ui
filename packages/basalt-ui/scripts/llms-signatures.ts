@@ -357,7 +357,7 @@ export function namedOptionTypes(checker: ts.TypeChecker, type: ts.Type): ts.Dec
  * of `date()`, `ChartLegendConfig` of a chart's `legend` — as `Type:` blocks, one level deep
  * (a type named only inside another option type is not followed), each once, capped at
  * `MAX_OPTION_TYPES`. The props type that `propShapeLines` already lists member by member is not
- * repeated. A program of its own, like the glossary, so the signatures print as they always did.
+ * repeated. Read after `readSignatures` and before `readTypeGlossary`, from the program they share.
  */
 export function readOptionTypes(
   subpaths: Readonly<Record<string, string>>,
@@ -418,8 +418,31 @@ export function readOptionTypes(
   return out
 }
 
-/** Program over the published source entries, shared by the signature and glossary readers. */
+/**
+ * Program over the published source entries, built once per `subpaths` object and shared by the three readers
+ * until `releaseEntryProgram`. A checker interns types in the order it is asked, and that order decides how a
+ * union prints, so the readers must run in one order: signatures first (they print as they always did), then the
+ * option types, then the glossary. Three programs of their own held 1.5 GiB at the peak and took 7 s; one holds
+ * 0.95 GiB and takes 3 s, with the same `llms.txt`.
+ */
 function entryProgram(subpaths: Readonly<Record<string, string>>) {
+  if (shared?.subpaths === subpaths) return shared.built
+  const built = buildEntryProgram(subpaths)
+  shared = { subpaths, built }
+  return built
+}
+
+let shared: {
+  subpaths: Readonly<Record<string, string>>
+  built: ReturnType<typeof buildEntryProgram>
+} | null = null
+
+/** Lets the collector take the shared program once the last reader has run. */
+export function releaseEntryProgram(): void {
+  shared = null
+}
+
+function buildEntryProgram(subpaths: Readonly<Record<string, string>>) {
   const entries = Object.entries(subpaths).flatMap(([key, typesPath]) => {
     const file = sourceEntry(typesPath)
     return file === undefined ? [] : [[key, file] as const]
@@ -438,9 +461,8 @@ function entryProgram(subpaths: Readonly<Record<string, string>>) {
 }
 
 /**
- * The glossary lines for every documented entry, in a program of their own: the signatures'
- * checker is never asked anything new, so the order it interns (and prints) union members in is
- * the order it always was.
+ * The glossary lines for every documented entry, read last: the signatures and option types are
+ * already printed, so the checker is never asked anything new before them.
  */
 export function readTypeGlossary(
   subpaths: Readonly<Record<string, string>>,
