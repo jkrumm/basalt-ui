@@ -6,7 +6,7 @@ Every basalt-ui part rendered by `apps/playground-astro` (Astro 7, @astrojs/reac
 
 ## Summary
 
-- **90 parts**, **75** static-clean: the HTML Astro writes with no directive matches the client:only render word for word and to within 4 pixels (a measured flake) at 1440 and 390 px, light and dark.
+- **90 parts**, **76** static-clean: the HTML Astro writes with no directive matches the client:only render word for word and to within 4 pixels (a measured flake) at 1440 and 390 px, light and dark.
 - **Zero JavaScript without an island:** a page without an island loads no script, checked on every run.
 - **The first React island** (React, react-dom and the Astro island runtime, before any basalt code) is budgeted at 72.3 kB of gzip JavaScript.
 - **Budgets** are gzip ceilings, set at the size measured then plus 1.0 kB. A run fails past one and never below one; a budget is raised on purpose, with its reason, and an improvement leaves the record as it is.
@@ -26,7 +26,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | collapsible | Collapsible, CollapsibleTrigger, CollapsibleContent | clean | client:visible | 90.0 kB | 18.8 kB | 29.1 kB | Static picture first, the island adds behaviour: the trigger is static; JS opens the hidden region. client:visible, up to 18.8 kB further (client:idle above the fold). |
 | dialog | Dialog, DialogTrigger, DialogContent, DialogClose | clean | client:visible | 116.1 kB | 44.9 kB | 29.1 kB | Needs the island to work: a modal opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 44.9 kB further. |
 | alert-dialog | AlertDialog, AlertDialogTrigger, AlertDialogContent | clean | client:visible | 116.1 kB | 44.9 kB | 29.1 kB | Needs the island to work: a confirm opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 44.9 kB further. |
-| sheet | Sheet, SheetTrigger, SheetContent, SheetClose | clean | client:visible | 127.1 kB | 55.9 kB | 29.1 kB | Needs the island to work: a panel opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 55.9 kB further. |
+| sheet | Sheet, SheetTrigger, SheetContent, SheetClose | clean | client:visible | 130.5 kB | 59.3 kB | 29.1 kB | Needs the island to work: a panel opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 59.3 kB further. |
 | menu | Menu, MenuTrigger, MenuContent, MenuItem, MenuGroup, MenuSeparator, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuSub | clean | client:visible | 142.9 kB | 71.7 kB | 29.1 kB | Needs the island to work: the list opens from its trigger and runs items on click; closed in the static picture. client:idle above the fold, client:visible below, up to 71.7 kB further. |
 | popover | Popover, PopoverTrigger, PopoverContent | clean | client:visible | 127.3 kB | 56.1 kB | 29.1 kB | Needs the island to work: the panel opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, up to 56.1 kB further. |
 | preview-card | PreviewCard, PreviewCardTrigger, PreviewCardContent | clean | client:visible | 130.9 kB | 59.7 kB | 29.1 kB | Static picture first, the island adds behaviour: the link is followed without JS; JS adds the card on hover and focus. client:visible, up to 59.7 kB further (client:idle above the fold). |
@@ -61,10 +61,10 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | interval-track | IntervalTrack | differs | client:visible | 190.5 kB | 119.3 kB | 31.1 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 119.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | sparkline | Sparkline | clean | client:visible | 89.6 kB | 18.4 kB | 31.1 kB | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, up to 18.4 kB further (client:idle above the fold). |
 | band-strip | BandStrip | differs | client:visible | 184.8 kB | 113.6 kB | 31.1 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 113.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| data-table | DataTable | clean | client:visible | 298.1 kB | 226.9 kB | 29.1 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 226.9 kB further (client:idle above the fold). |
+| data-table | DataTable | clean | client:visible | 307.7 kB | 236.5 kB | 29.1 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 236.5 kB further (client:idle above the fold). |
 | static-table | Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption | clean | no directive | 84.7 kB | 13.5 kB | 29.1 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static table; the picture is the whole part. |
-| table-toolbar | TableToolbar, BulkBar, TablePager | clean | client:visible | 256.7 kB | 185.5 kB | 29.1 kB | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, up to 185.5 kB further (client:idle above the fold). |
-| data-table-body | DataTableBody | clean | client:visible | 293.0 kB | 221.8 kB | 29.1 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 221.8 kB further (client:idle above the fold). |
+| table-toolbar | TableToolbar, BulkBar, TablePager | clean | client:visible | 259.2 kB | 188.0 kB | 29.1 kB | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, up to 188.0 kB further (client:idle above the fold). |
+| data-table-body | DataTableBody | clean | client:visible | 302.6 kB | 231.4 kB | 29.1 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 231.4 kB further (client:idle above the fold). |
 | markdown | Markdown | clean | client:visible | 215.4 kB | 144.2 kB | 29.1 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; mermaid fences need JS. client:visible, up to 144.2 kB further (client:idle above the fold). |
 | code-block | CodeBlock | clean | client:visible | 171.6 kB | 100.3 kB | 29.1 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; the copy button needs JS. client:visible, up to 100.3 kB further (client:idle above the fold). |
 | article-layout | ArticleLayout, Prose | clean | client:visible | 133.8 kB | 62.6 kB | 29.6 kB | Static picture first, the island adds behaviour: the scroll-spy TOC and reading progress need JS. client:visible, up to 62.6 kB further (client:idle above the fold). |
@@ -75,18 +75,18 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | empty-state | EmptyState | clean | no directive | 86.6 kB | 15.4 kB | 29.6 kB | The static HTML is the whole part, 0 bytes of JavaScript: the cause line and the link action are drawn at rest; the filtered reset needs JS and is not shown. |
 | facts | Facts | clean | no directive | 73.1 kB | 1.9 kB | 29.6 kB | The static HTML is the whole part, 0 bytes of JavaScript: a definition list is drawn at rest. |
 | inner-nav | InnerNav | fails | none works | 162.4 kB | 91.2 kB | 29.6 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| page-aside | PageAside | clean | client:visible | 132.3 kB | 61.1 kB | 29.6 kB | Static picture first, the island adds behaviour: the docked panel is the picture; its open, close and sheet states need JS. client:visible, up to 61.1 kB further (client:idle above the fold). |
+| page-aside | PageAside | clean | client:visible | 173.8 kB | 102.6 kB | 29.6 kB | Static picture first, the island adds behaviour: the docked panel is the picture; its open, close and sheet states need JS. client:visible, up to 102.6 kB further (client:idle above the fold). |
 | split-page | SplitPage | fails | none works | 173.4 kB | 102.3 kB | 29.6 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| dock | Dock | differs | client:visible | 91.6 kB | 20.4 kB | 29.6 kB | Static picture first, the island adds behaviour: the open record panel is the picture; close and focus hand-off need JS. client:visible, up to 20.4 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 1440-light). |
-| peek | Peek | clean | client:visible | 92.5 kB | 21.3 kB | 29.6 kB | Static picture first, the island adds behaviour: the open panel is the picture; Escape, close and the width drag need JS. client:visible, up to 21.3 kB further (client:idle above the fold). |
+| dock | Dock | clean | client:visible | 157.5 kB | 86.3 kB | 29.6 kB | Static picture first, the island adds behaviour: the open record panel is the picture; close and focus hand-off need JS. client:visible, up to 86.3 kB further (client:idle above the fold). |
+| peek | Peek | clean | client:visible | 176.1 kB | 104.9 kB | 29.6 kB | Static picture first, the island adds behaviour: the open panel is the picture; Escape, close and the width drag need JS. client:visible, up to 104.9 kB further (client:idle above the fold). |
 | query-state | QueryState | clean | no directive | 89.9 kB | 18.7 kB | 29.6 kB | The static HTML is the whole part, 0 bytes of JavaScript: the ready branch is drawn at rest; loading and error arms are not shown. |
 | refresh-button | RefreshButton | differs | client:visible | 87.1 kB | 15.9 kB | 29.6 kB | Static picture first, the island adds behaviour: the press runs the refresh and needs JS; the age text is absent until hydration. client:visible, up to 15.9 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 1440-dark). |
 | connection-indicator | ConnectionIndicator | fails | none works | 133.0 kB | 61.9 kB | 29.6 kB | fails on the server (No QueryClient set, use QueryClientProvider to set one) and in the browser (No QueryClient set, use QueryClientProvider to set one) |
-| overlay-host | OverlayHost | clean | client:visible | 129.9 kB | 58.7 kB | 29.6 kB | Needs the island to work: overlays open by key from JS; nothing is open at rest, so the host draws nothing. client:idle above the fold, client:visible below, up to 58.7 kB further. |
+| overlay-host | OverlayHost | clean | client:visible | 133.5 kB | 62.3 kB | 29.6 kB | Needs the island to work: overlays open by key from JS; nothing is open at rest, so the host draws nothing. client:idle above the fold, client:visible below, up to 62.3 kB further. |
 | toast-host | ToastHost | clean | client:visible | 108.9 kB | 37.7 kB | 29.6 kB | Static picture first, the island adds behaviour: it drains notify() calls made after mount; the viewport is empty at rest. client:visible, up to 37.7 kB further (client:idle above the fold). |
-| app-shell | AppShell | fails | none works | 218.1 kB | 147.0 kB | 29.6 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
+| app-shell | AppShell | fails | none works | 224.4 kB | 153.3 kB | 29.6 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
 | command-palette | CommandPalette | clean | client:visible | 168.5 kB | 97.2 kB | 29.1 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 97.2 kB further. |
-| controls | FilterSet, ViewTabs | fails | none works | 233.4 kB | 162.3 kB | 29.1 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
+| controls | FilterSet, ViewTabs | fails | none works | 235.5 kB | 164.4 kB | 29.1 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | control-home | ControlHome, ControlView | fails | none works | 201.8 kB | 130.6 kB | 29.1 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | basalt-provider | BasaltProvider | clean | no directive | 83.4 kB | 12.2 kB | 29.1 kB | The static HTML is the whole part, 0 bytes of JavaScript: the provider only sets locale and scheme; a Button inside it is the whole picture. |
 | input | Input | clean | no directive | 84.4 kB | 13.2 kB | 29.1 kB | The static HTML is the whole part, 0 bytes of JavaScript: native typing; the field needs no script. |
@@ -114,12 +114,12 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 
 | Family | Parts | no directive | client:visible | client:idle | client:load | client:only |
 |-|-|-|-|-|-|-|
-| ui | 27 | 0 | 131.4 kB | 240.6 kB | 240.5 kB | 240.5 kB |
+| ui | 27 | 0 | 131.4 kB | 244.2 kB | 244.1 kB | 244.1 kB |
 | cards | 9 | 0 | 129.2 kB | 139.5 kB | 139.4 kB | 139.4 kB |
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
-| table | 4 | 0 | 298.4 kB | 303.3 kB | 303.3 kB | 303.3 kB |
+| table | 4 | 0 | 308.0 kB | 312.9 kB | 312.9 kB | 312.9 kB |
 | content | 5 | 0 | 271.7 kB | 272.9 kB | 272.9 kB | 272.9 kB |
-| page | 19 | 0 | 184.3 kB | 255.9 kB | 255.9 kB | 338.4 kB |
+| page | 19 | 0 | 184.3 kB | 262.9 kB | 262.8 kB | 345.4 kB |
 | forms | 18 | 0 | 162.3 kB | 237.3 kB | 237.2 kB | 237.2 kB |
 
 ## Charts: is the static picture correct?
@@ -139,10 +139,19 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 
 ## Raised budgets
 
-- data-table: the record kinds: person, tags, countdown and link cells in the table island (Issue 2969), about 2 kB gzip
-- table-toolbar: the record kinds: person, tags, countdown and link cells in the table island (Issue 2969), about 2 kB gzip
-- data-table-body: the record kinds: person, tags, countdown and link cells in the table island (Issue 2969), about 2 kB gzip
-- family table: the record kinds: person, tags, countdown and link cells in the table island (Issue 2969), about 2 kB gzip
+- sheet: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- data-table: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- table-toolbar: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- data-table-body: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- page-aside: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- dock: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- peek: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- overlay-host: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- app-shell: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- controls: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- family ui: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- family table: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- family page: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 
 ## Findings
 
@@ -152,7 +161,7 @@ The cause of each difference, read from the source, and the plan row that carrie
 - **inner-nav, split-page, controls, control-home, app-shell**: App parts: they read field handles or the registered nav from a TanStack Router (no router: "Cannot read properties of null (reading 'stores')", "Invalid value used as weak map key"), on the server and in the browser alike. They are not island parts by contract; an Astro page uses links and the site profile instead.
 - **connection-indicator**: Reads `useConnection`, which needs a QueryClient: an app part, not an island part.
 - **refresh-button**: The age text is relative to the browser's clock and absent until hydration; a static page cannot know it.
-- **dock**: The dock takes focus on mount: the focus ring is the whole difference (0.03%).
+- **dock**: The dock takes focus on mount: the focus ring is the whole difference (0.03%). **Resolved: static-clean now; delete this finding.**
 
 ## Not measured
 
