@@ -103,6 +103,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/kit/list' }),
         },
         {
+          id: 'kit-projects',
+          label: 'Projects (monitoring)',
+          icon: Table,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/projects' }),
+        },
+        {
           id: 'kit-split',
           label: 'Split page',
           icon: Layout,
