@@ -1,30 +1,47 @@
 import { revalidateLogic } from '@tanstack/react-form'
 import { createFileRoute } from '@tanstack/react-router'
-import { FormField } from 'basalt-ui/controls'
-import type { FormFieldProps } from 'basalt-ui/controls'
+import { useRouterState } from '@tanstack/react-router'
+import {
+  FormActionRow,
+  FormConfirmRow,
+  FormField,
+  FormGroupRow,
+  FormSection,
+  filterSlot,
+  spec,
+} from 'basalt-ui/controls'
 import { createSyncedState } from 'basalt-ui/data'
 import { useAppForm } from 'basalt-ui/form'
-import { InnerNav, Page, PageBar, Section, SplitPage } from 'basalt-ui/page'
+import { InnerNav, Page, PageBar, SettingsLayout, SplitPage } from 'basalt-ui/page'
 import { defineControls, field } from 'basalt-ui/router'
-import { Fieldset } from 'basalt-ui/ui/field'
+import { Lozenge } from 'basalt-ui/ui/badge'
+import { Button } from 'basalt-ui/ui/button'
 import { Input } from 'basalt-ui/ui/input'
 import { Select } from 'basalt-ui/ui/select'
 import { Switch } from 'basalt-ui/ui/switch'
 import { Textarea } from 'basalt-ui/ui/textarea'
 import type { ReactElement } from 'react'
+import { useEffect } from 'react'
 import { z } from 'zod'
 import { useUnsavedGuard } from '../recipes/form-guard'
 
-const SECTIONS = ['profile', 'appearance', 'members', 'billing', 'api-keys'] as const
+const SECTIONS = ['profile', 'preferences', 'notifications', 'workspace'] as const
 type SectionId = (typeof SECTIONS)[number]
 
 const COPY: Record<SectionId, { title: string; body: string }> = {
-  profile: { title: 'Profile', body: 'Your name, email and the avatar shown to your team.' },
-  appearance: { title: 'Appearance', body: 'Theme, density and the language of the interface.' },
-  members: { title: 'Members', body: 'Who can open this workspace and what they may change.' },
-  billing: { title: 'Billing', body: 'Plan, invoices and the card on file.' },
-  'api-keys': { title: 'API keys', body: 'Tokens for scripts and integrations.' },
+  profile: { title: 'Profile', body: 'Your name, email and the bio shown to your team.' },
+  preferences: {
+    title: 'Preferences',
+    body: 'How the interface looks and speaks. Every change applies at once.',
+  },
+  notifications: {
+    title: 'Notifications',
+    body: 'Which events reach you, grouped by what they are about.',
+  },
+  workspace: { title: 'Workspace', body: 'Exports, sign-in policy and what cannot be undone.' },
 }
+
+type Groups = Parameters<typeof InnerNav>[0]['groups']
 
 const GROUPS = [
   {
@@ -32,28 +49,57 @@ const GROUPS = [
     label: 'Account',
     items: [
       { id: 'profile', label: 'Profile' },
-      { id: 'appearance', label: 'Appearance' },
+      { id: 'preferences', label: 'Preferences' },
+      { id: 'notifications', label: 'Notifications' },
     ],
   },
   {
     id: 'workspace',
     label: 'Workspace',
-    items: [
-      { id: 'members', label: 'Members', badge: { count: 4 } },
-      { id: 'billing', label: 'Billing', badge: { dot: true, attention: true } },
-      { id: 'api-keys', label: 'API keys' },
-    ],
+    items: [{ id: 'workspace', label: 'Workspace', badge: { dot: true, attention: true } }],
   },
-] as const
+] as const satisfies Groups
+
+/** Every setting a person can search for: its section, its row id and its name. */
+const INDEX: readonly { section: SectionId; id: string; label: string }[] = [
+  { section: 'profile', id: 'row-name', label: 'Name' },
+  { section: 'profile', id: 'row-email', label: 'Email' },
+  { section: 'profile', id: 'row-bio', label: 'Bio' },
+  { section: 'preferences', id: 'row-density', label: 'Density' },
+  { section: 'preferences', id: 'row-language', label: 'Language' },
+  { section: 'preferences', id: 'row-motion', label: 'Reduce motion' },
+  { section: 'preferences', id: 'row-digest', label: 'Weekly digest' },
+  { section: 'notifications', id: 'row-deploys', label: 'Deploy notifications' },
+  { section: 'notifications', id: 'row-activity', label: 'Activity notifications' },
+  { section: 'workspace', id: 'row-export', label: 'Export data' },
+  { section: 'workspace', id: 'row-sso', label: 'Single sign-on' },
+  { section: 'workspace', id: 'row-delete', label: 'Delete workspace' },
+]
 
 // Synced preferences: the person's, on every device. The transport is a stand-in server with one row.
 const Prefs = z.object({
   density: z.enum(['comfortable', 'compact']),
   language: z.enum(['en', 'de']),
+  motion: z.boolean(),
   digest: z.boolean(),
+  deployOk: z.boolean(),
+  deployFailed: z.boolean(),
+  mentions: z.boolean(),
+  comments: z.boolean(),
+  sso: z.boolean(),
 })
 type Prefs = z.infer<typeof Prefs>
-const INITIAL: Prefs = { density: 'comfortable', language: 'en', digest: true }
+const INITIAL: Prefs = {
+  density: 'comfortable',
+  language: 'en',
+  motion: false,
+  digest: true,
+  deployOk: false,
+  deployFailed: true,
+  mentions: true,
+  comments: false,
+  sso: false,
+}
 let row: { value: Prefs; rev: number } | null = null
 const later = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -83,21 +129,21 @@ const STATUS = {
   error: 'Save failed',
 } as const
 
-/** An instant-apply preference as the `field` a `FormField` binds. */
-function useFieldOf<K extends keyof Prefs>(key: K): NonNullable<FormFieldProps<Prefs[K]>['field']> {
-  const [value, set] = prefs.field(key).use()
-  return { state: { value, meta: { errors: [] } }, handleChange: set, handleBlur: () => {} }
-}
-
-function AppearanceForm(): ReactElement {
+/** Rows that apply at once: each is bound to the synced field itself, no form and no footer. */
+function PreferencesPane(): ReactElement {
   const { status } = prefs.use()
-  const density = useFieldOf('density')
-  const language = useFieldOf('language')
-  const digest = useFieldOf('digest')
   return (
-    <Fieldset className="max-w-md">
-      <output className="block text-sm text-muted-foreground">{STATUS[status]}</output>
-      <FormField field={density} label="Density">
+    <FormSection
+      title="Interface"
+      description="Kept on your account, so every device agrees."
+      action={<output className="text-sm text-muted-foreground">{STATUS[status]}</output>}
+    >
+      <FormField
+        id="row-density"
+        label="Density"
+        description="Row height in lists and tables."
+        control={prefs.field('density')}
+      >
         <Select
           aria-label="Density"
           options={[
@@ -106,7 +152,12 @@ function AppearanceForm(): ReactElement {
           ]}
         />
       </FormField>
-      <FormField field={language} label="Language">
+      <FormField
+        id="row-language"
+        label="Language"
+        description="Menus, dates and numbers."
+        control={prefs.field('language')}
+      >
         <Select
           aria-label="Language"
           options={[
@@ -115,10 +166,63 @@ function AppearanceForm(): ReactElement {
           ]}
         />
       </FormField>
-      <FormField field={digest} label="Weekly digest" description="One email on Monday.">
+      <FormField
+        id="row-motion"
+        label="Reduce motion"
+        description="Fades replace slides and zooms."
+        control={prefs.field('motion')}
+      >
         <Switch />
       </FormField>
-    </Fieldset>
+      <FormField
+        id="row-digest"
+        label="Weekly digest"
+        description="One email on Monday."
+        control={prefs.field('digest')}
+      >
+        <Switch />
+      </FormField>
+    </FormSection>
+  )
+}
+
+const on = (...flags: boolean[]): string => `${flags.filter(Boolean).length} of ${flags.length} on`
+
+function NotificationsPane(): ReactElement {
+  const [ok] = prefs.field('deployOk').use()
+  const [failed] = prefs.field('deployFailed').use()
+  const [mentions] = prefs.field('mentions').use()
+  const [comments] = prefs.field('comments').use()
+  return (
+    <FormSection title="Email" description="A row opens to the events it covers.">
+      <FormGroupRow
+        id="row-deploys"
+        label="Deploys"
+        description="What happens to your pipelines."
+        summary={on(ok, failed)}
+        defaultOpen
+      >
+        <FormField label="Deploy succeeded" control={prefs.field('deployOk')}>
+          <Switch />
+        </FormField>
+        <FormField label="Deploy failed" control={prefs.field('deployFailed')}>
+          <Switch />
+        </FormField>
+      </FormGroupRow>
+      <FormGroupRow
+        id="row-activity"
+        label="Activity"
+        description="People talking to you."
+        summary={on(mentions, comments)}
+      >
+        <FormField label="Mentions" control={prefs.field('mentions')}>
+          <Switch />
+        </FormField>
+        <FormField label="Comments on your runs" control={prefs.field('comments')}>
+          <Switch />
+        </FormField>
+      </FormGroupRow>
+    </FormSection>
   )
 }
 
@@ -129,7 +233,7 @@ const Profile = z.object({
   bio: z.string().max(160, 'Keep it under 160 characters.'),
 })
 
-function ProfileForm(): ReactElement {
+function ProfilePane({ edited }: { edited: boolean }): ReactElement {
   const form = useAppForm({
     defaultValues: { name: 'Ada Lovelace', email: 'ada@example.com', bio: '' },
     validationLogic: revalidateLogic({ mode: 'submit', modeAfterSubmission: 'change' }),
@@ -139,45 +243,110 @@ function ProfileForm(): ReactElement {
       formApi.reset(value)
     },
   })
+  // A link with `edited` opens the pane with a change in it, so a shot shows the unsaved bar.
+  useEffect(() => {
+    if (edited) form.setFieldValue('bio', 'Wrote the first program.')
+  }, [edited, form])
   const guard = useUnsavedGuard(form)
   return (
     <form.AppForm>
-      <form.Form className="max-w-md">
-        <form.AppField name="name">
-          {(f) => (
-            <f.FormField label="Name" required>
-              <Input />
-            </f.FormField>
-          )}
-        </form.AppField>
-        <form.AppField name="email">
-          {(f) => (
-            <f.FormField label="Email" required>
-              <Input type="email" />
-            </f.FormField>
-          )}
-        </form.AppField>
-        <form.AppField name="bio">
-          {(f) => (
-            <f.FormField label="Bio" description="Shown on your profile.">
-              <Textarea rows={3} />
-            </f.FormField>
-          )}
-        </form.AppField>
-        <form.Footer actions={[{ label: 'Save', primary: true }]} />
+      <form.Form>
+        <FormSection title="Identity" description="Shown to your team. Saved together.">
+          <form.AppField name="name">
+            {(f) => (
+              <f.FormField
+                id="row-name"
+                label="Name"
+                description="How you appear in lists."
+                required
+              >
+                <Input autoComplete="name" />
+              </f.FormField>
+            )}
+          </form.AppField>
+          <form.AppField name="email">
+            {(f) => (
+              <f.FormField id="row-email" label="Email" description="Where receipts go." required>
+                <Input type="email" autoComplete="email" inputMode="email" />
+              </f.FormField>
+            )}
+          </form.AppField>
+          <form.AppField name="bio">
+            {(f) => (
+              <f.FormField
+                id="row-bio"
+                label="Bio"
+                description="Up to 160 characters."
+                layout="stack"
+              >
+                <Textarea rows={3} autoComplete="off" />
+              </f.FormField>
+            )}
+          </form.AppField>
+        </FormSection>
+        <form.Footer
+          floating
+          actions={[
+            { label: 'Discard', onClick: () => form.reset() },
+            { label: 'Save changes', primary: true },
+          ]}
+        />
       </form.Form>
       {guard}
     </form.AppForm>
   )
 }
 
-const PANES: Partial<Record<SectionId, ReactElement>> = {
-  profile: <ProfileForm />,
-  appearance: <AppearanceForm />,
+function WorkspacePane(): ReactElement {
+  return (
+    <>
+      <FormSection title="Data" description="What leaves the workspace.">
+        <FormActionRow
+          id="row-export"
+          label="Export data"
+          description="A CSV of every run and its logs, mailed when it is ready."
+          action={<Button>Export</Button>}
+        />
+      </FormSection>
+      <FormSection
+        title="Single sign-on"
+        badge={<Lozenge tone="accent">Enterprise</Lozenge>}
+        description="Sign in through your identity provider."
+        locked="Part of the Enterprise plan."
+        action={<Button>See plans</Button>}
+      >
+        <FormField
+          id="row-sso"
+          label="Require SSO"
+          description="Members sign in through SAML only."
+          control={prefs.field('sso')}
+        >
+          <Switch />
+        </FormField>
+      </FormSection>
+      <FormSection title="Danger zone" description="None of this can be undone.">
+        <FormActionRow
+          id="row-transfer"
+          tone="danger"
+          label="Transfer ownership"
+          description="The new owner can remove you."
+          action={<Button variant="danger">Transfer</Button>}
+        />
+        <FormConfirmRow
+          id="row-delete"
+          label="Delete workspace"
+          description="Removes every project, run and member."
+          confirmText="acme"
+          actionLabel="Delete workspace"
+          onConfirm={() => later(600)}
+        />
+      </FormSection>
+    </>
+  )
 }
 
 // The section is a push field: each section is a history entry, Back walks them, and `InnerNav` draws
-// its links from the field as it is.
+// its links from the field as it is. `q` filters the names of settings; `edited` seeds a shot.
 const settings = defineControls({
   id: 'settings',
   scope: 'page',
@@ -185,29 +354,65 @@ const settings = defineControls({
     section: field
       .enum(SECTIONS, 'profile', { history: 'push' })
       .labels(Object.fromEntries(SECTIONS.map((id) => [id, COPY[id].title]))),
+    q: field.string(''),
+    edited: field.boolean(false),
   },
 })
 const section = settings.field.section
+const searchFilter = filterSlot([spec(settings.field.q, 'Search settings')])
+
+/** The nav's groups: the sections, with the settings whose name matches the search above them. */
+function groupsFor(q: string): Groups {
+  const needle = q.trim().toLowerCase()
+  if (needle === '') return GROUPS
+  const hits = INDEX.filter((entry) => entry.label.toLowerCase().includes(needle))
+  return [
+    {
+      id: 'matches',
+      label: hits.length === 0 ? 'No setting matches' : 'Settings',
+      items: hits.map((hit) => ({
+        id: hit.id,
+        label: `${hit.label} · ${COPY[hit.section].title}`,
+        href: `/settings?section=${hit.section}#${hit.id}`,
+      })),
+    },
+    ...GROUPS,
+  ]
+}
 
 // #region recipe:inner-nav
 function SettingsPane({ id }: { id: SectionId }): ReactElement {
   const { title, body } = COPY[id]
+  const [edited] = settings.field.edited.use()
+  // Under a router a hash change is a `pushState`, which fires no event: pass the row from the router.
+  const hash = useRouterState({ select: (state) => state.location.hash })
   return (
-    <Section title={title}>
-      {PANES[id] ?? <p className="m-0 text-sm text-muted-foreground">{body}</p>}
-    </Section>
+    <SettingsLayout title={title} description={body} {...(hash !== '' && { row: hash })}>
+      {id === 'profile' && <ProfilePane edited={edited} />}
+      {id === 'preferences' && <PreferencesPane />}
+      {id === 'notifications' && <NotificationsPane />}
+      {id === 'workspace' && <WorkspacePane />}
+    </SettingsLayout>
   )
 }
 
 export function SettingsPage(): ReactElement {
   const [current] = section.use()
+  const [q] = settings.field.q.use()
   const selected = section.useIsSet()
   return (
     <Page area="settings">
       <PageBar title="Settings" />
       <SplitPage
         selected={selected}
-        list={() => <InnerNav label="Settings sections" state={section} groups={GROUPS} />}
+        list={() => (
+          <InnerNav
+            label="Settings sections"
+            state={section}
+            filter={searchFilter}
+            groups={groupsFor(q)}
+          />
+        )}
         detail={() => <SettingsPane id={current} />}
       />
     </Page>
