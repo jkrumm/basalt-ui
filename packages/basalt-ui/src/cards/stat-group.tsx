@@ -73,13 +73,13 @@ const CARDS = cn(
  * collapse, so a loading cell is already its final height. Every cell carries a baseline: a delta
  * naming its base, a verdict, a meter or a trend; a group of bare numbers warns in development.
  *
- * @useWhen a page shows several headline figures side by side, a status bar or a row of KPIs
- * @neverWhen there is one figure (use a stat card), the figures are bare counts (put them in the footer of the card they belong to) or need a chart each (use chart cards)
- *
  * `flush` is the summary strip of a list page: it sits under the `PageBar` of a fill page, with no
  * card, and every cell carries the line that gives its figure a base. A bare number does not
- * render there (the owner rejected the bare stat strip): a cell with none of `sub`, `delta`,
- * `status`, `meter`, `chart` or `rows` is dropped, with a development warning.
+ * render there (the owner rejected the bare stat strip): a ready cell with none of `sub`, `delta`,
+ * `status`, `meter`, `chart` or `rows` is dropped, with a development warning; a loading or failed cell keeps its slot.
+ *
+ * @useWhen a page shows several headline figures side by side, a status bar or a row of KPIs
+ * @neverWhen there is one figure (use a stat card), the figures are bare counts (put them in the footer of the card they belong to) or need a chart each (use chart cards)
  *
  * @example
  * <StatGroup variant="strip" label="Fleet health">
@@ -96,7 +96,8 @@ export function StatGroup({ variant, label, children }: StatGroupProps): ReactEl
     )
   }
   const cells = variant === 'flush' ? withContext(children) : children
-  warnBare(cells)
+  // A flush strip has already dropped every cell without context.
+  if (variant !== 'flush') warnBare(cells)
   const shared = sharedFailure(cells)
   // A flush strip is the strip's cells and message without its card.
   const drawn = variant === 'flush' ? 'strip' : variant
@@ -125,8 +126,12 @@ export function StatGroup({ variant, label, children }: StatGroupProps): ReactEl
   )
 }
 
-/** True when a cell says what its figure is against: a sub-line, a delta, a verdict, a meter, a trend or rows. */
+/**
+ * True when a cell says what its figure is against (a sub-line, a delta, a verdict, a meter, a trend
+ * or rows), or is not ready yet: a loading, empty or failed cell draws its own state in its slot.
+ */
 function hasContext(cell: StatCellProps): boolean {
+  if (cell.empty !== undefined || resolvePhase(cell).tag !== 'ready') return true
   return (
     (cell.sub !== undefined && cell.sub !== '') ||
     cell.delta !== undefined ||

@@ -1,7 +1,7 @@
 ---
 name: StatGroup
 use when: 'a page shows several headline figures side by side, a status bar or a row of KPIs'
-never when: 'there is one figure (use a stat card), the figures are bare counts (put them in the footer of the card they belong to) or need a chart each (use chart cards) `flush` is the summary strip of a list page: it sits under the `PageBar` of a fill page, with no card, and every cell carries the line that gives its figure a base. A bare number does not render there (the owner rejected the bare stat strip): a cell with none of `sub`, `delta`, `status`, `meter`, `chart` or `rows` is dropped, with a development warning.'
+never when: 'there is one figure (use a stat card), the figures are bare counts (put them in the footer of the card they belong to) or need a chart each (use chart cards)'
 subpath: basalt-ui/cards
 peers: ['@base-ui/react']
 slots: []
