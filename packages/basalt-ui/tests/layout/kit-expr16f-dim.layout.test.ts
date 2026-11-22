@@ -74,11 +74,13 @@ layout('an ink-step bar series dims the bars the focus is not on', () => {
       document.querySelector('[data-testid="k16f-ink"]')!.getAttribute('data-focus-index'),
     )
     expect(index).toBe('1')
-    const faded = after.filter((b) => b.opacity < 0.99)
+    // The dim is in the bar's own paint (an external focus never re-runs the engine's states): the same grey at
+    // a lower alpha is a lighter bar on the card, and the focused bar is the strong ink.
+    const alpha = (fill: string): number => Number(/\/\s*([\d.]+)\)/.exec(fill)?.[1] ?? 1)
+    const grey = (fill: string): string => fill.split('/')[0]!.trim()
+    const faded = after.filter((b, i) => i !== 1 && alpha(b.fill) < alpha(rest[i]!.fill))
     expect(faded.length, 'the four bars the focus is not on').toBe(4)
-    expect(after[1]!.opacity).toBe(1)
-    // The same grey at a lower opacity is a lighter bar on the card: the painted difference.
-    expect(after[0]!.fill).toBe(rest[0]!.fill)
+    for (const b of faded) expect(grey(b.fill)).toBe(grey(rest[0]!.fill))
     expect(after[1]!.fill).not.toBe(rest[1]!.fill)
   })
 
