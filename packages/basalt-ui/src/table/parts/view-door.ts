@@ -1,7 +1,7 @@
 /**
  * The manage-view panel's open state and page, one store per table id. A module store rather than
  * component state because two parts open it: the views strip (Edit view, + View) and the header's
- * `Filter...`, which opens it on that column's filter page while a panel is mounted for the table
+ * `Filter column...`, which opens it on that column's filter page while a panel is mounted for the table
  * and keeps its own popover otherwise. Memory only: the panel is a working surface, not an address.
  */
 import { useEffect, useSyncExternalStore } from 'react'
