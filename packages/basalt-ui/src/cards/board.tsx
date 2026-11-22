@@ -133,6 +133,10 @@ export function Board<C extends string, T extends { id: string; title: string }>
     const title = items[move.from].find((item) => item.id === move.id)?.title
     if (target === undefined || title === undefined || target.disabled === true) return
     onMove(move)
+    // Below the regular tier the target may be a hidden column: show it, so the card stays in view.
+    const at = `[data-board="${CSS.escape(scope)}"] [data-column="${CSS.escape(move.to)}"]`
+    const column = document.querySelector<HTMLElement>(at)
+    if (column !== null && getComputedStyle(column).display === 'none') pick(move.to)
     const count = move.from === move.to ? target.count : target.count + 1
     setSaid(t('kanban.moved', title, target.label, move.index + 1, count))
     setMoved({ id: move.id, to: move.to, index: move.index })
@@ -168,14 +172,30 @@ export function Board<C extends string, T extends { id: string; title: string }>
     })
   }, [drag, scope])
 
-  // The card remounts in its new column once `items` carries the move; give its menu focus then.
+  // The card remounts in its new column once `items` carries the move; give its menu focus once it
+  // shows and the menu that sent the move has gone (its focus manager holds focus while it closes).
   useEffect(() => {
     if (moved === null || focusedFor.current === moved) return
     const at = `[data-column="${CSS.escape(moved.to)}"] [data-card-id="${CSS.escape(moved.id)}"] [data-slot="kanban-menu"]`
-    const menu = root.current?.querySelector<HTMLElement>(at)
-    if (menu === null || menu === undefined) return
-    menu.focus()
-    focusedFor.current = moved
+    let frame = 0
+    let frames = 0
+    const focus = (): void => {
+      const menu = root.current?.querySelector<HTMLElement>(at) ?? null
+      const column = menu?.closest<HTMLElement>('[data-slot="board-column"]') ?? null
+      const ready =
+        menu !== null &&
+        column !== null &&
+        getComputedStyle(column).display !== 'none' &&
+        document.querySelector('[role="menu"]') === null
+      if (!ready) {
+        if (frames++ < 30) frame = requestAnimationFrame(focus)
+        return
+      }
+      menu.focus()
+      focusedFor.current = moved
+    }
+    focus()
+    return () => cancelAnimationFrame(frame)
   }, [moved, items])
 
   const keepOf = (col: C): number | undefined => {
@@ -185,7 +205,12 @@ export function Board<C extends string, T extends { id: string; title: string }>
   }
 
   return (
-    <div ref={root} data-slot="board" className="@container flex min-w-0 flex-col gap-2.5">
+    <div
+      ref={root}
+      data-slot="board"
+      data-board={scope}
+      className="@container flex min-w-0 flex-col gap-2.5"
+    >
       {columns.length > 1 && shown !== undefined && (
         <div className="@regular:hidden">
           <Segmented

@@ -250,6 +250,26 @@ layout('KanbanCard and Board', () => {
           expect(focused).toBe('todo-1')
         })
 
+        test('on the phone a menu move to a hidden column shows it and keeps the card in focus', async () => {
+          if (!coarse) return
+          const page = await open(viewport, scheme)
+          const menu = '[data-testid="kb-board"] [data-card-id="todo-1"] [data-slot="kanban-menu"]'
+          await page.raw.click(menu)
+          await page.raw.waitForSelector('[role="menu"]')
+          await page.raw.click('[role="menuitem"]:has-text("Move to Doing")')
+          await page.raw.waitForFunction(
+            () =>
+              document.activeElement?.closest('[data-card-id]')?.getAttribute('data-card-id') ===
+              'todo-1',
+          )
+          const shown = await page.raw.$$eval('[data-testid="kb-board"] section', (els) =>
+            els
+              .filter((el) => getComputedStyle(el).display !== 'none')
+              .map((el) => el.dataset['column']),
+          )
+          expect(shown).toEqual(['doing'])
+        })
+
         test('the page does not scroll sideways', async () => {
           const page = await open(viewport, scheme)
           expectNoHorizontalOverflow(await page.horizontalOverflow(), 'cards-kanban', viewport)
