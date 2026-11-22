@@ -42,7 +42,8 @@ const stop = (event: SyntheticEvent): void => event.stopPropagation()
 function onKey(event: KeyboardEvent<HTMLElement>): void {
   event.stopPropagation()
   const control = event.target
-  if (!(control instanceof HTMLElement)) return
+  // A key from the open, portalled list bubbles here through React; the list keeps its own keys.
+  if (!(control instanceof HTMLElement) || !event.currentTarget.contains(control)) return
   if (control.getAttribute('aria-expanded') === 'true') return
   const trigger = control.closest('[data-slot="select-trigger"]') === control
   if (event.key !== 'F2' && !(event.key === 'Enter' && trigger)) return
