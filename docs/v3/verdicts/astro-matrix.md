@@ -9,7 +9,7 @@ Every basalt-ui part rendered by `apps/playground-astro` (Astro 7, @astrojs/reac
 - **90 parts** measured, **75** static-clean: the HTML Astro writes with no directive matches the client:only render word for word and to within 4 pixels (a measured flake) at 1440 and 390 px, light and dark.
 - **Zero JavaScript without an island:** 99 pages carry no island; together they loaded 0 bytes of script from 0 script tags.
 - **The first React island** costs 71.3 kB of gzip JavaScript before any basalt code: React, react-dom and the Astro island runtime (the baseline island). Each further island costs what its part adds, the "further" column.
-- **CSS** is one sheet per page, 26.7 kB gzip, with the whole basalt dist scanned by Tailwind.
+- **CSS** is one sheet per page, 27.3 kB gzip, with the whole basalt dist scanned by Tailwind.
 
 Cells: `no directive` is the static HTML: `clean`, `differs` from the client:only picture, or `fails` on the server. The hydrating modes give the page's gzip JavaScript and any hydration error or layout shift; `build fails` means a hydrating island of a part that throws on the server stops `astro build`.
 
@@ -24,68 +24,68 @@ Cells: `no directive` is the static HTML: `clean`, `differs` from the client:onl
 | pressable | Pressable | clean | 81.4 kB | 81.4 kB | 81.3 kB | 81.3 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: a native button; its handler is the page's own. |
 | card | Card, CardBand, CardInfo, CardPhase, IconTile, Inset | clean | 81.8 kB | 81.7 kB | 81.7 kB | 81.7 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: a static surface; CardInfo opens a native popover without page JS. |
 | collapsible | Collapsible, CollapsibleTrigger, CollapsibleContent | clean | 88.7 kB | 88.6 kB | 88.6 kB | 88.6 kB | client:visible | Static picture first, the island adds behaviour: the trigger is static; JS opens the hidden region. client:visible, 17.4 kB further (client:idle above the fold). |
-| dialog | Dialog, DialogTrigger, DialogContent, DialogClose | clean | 114.3 kB | 114.2 kB | 114.2 kB | 114.2 kB | client:visible | Needs the island to work: a modal opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, 43.1 kB further. |
-| alert-dialog | AlertDialog, AlertDialogTrigger, AlertDialogContent | clean | 114.3 kB | 114.3 kB | 114.2 kB | 114.2 kB | client:visible | Needs the island to work: a confirm opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, 43.1 kB further. |
-| sheet | Sheet, SheetTrigger, SheetContent, SheetClose | clean | 125.3 kB | 125.3 kB | 125.2 kB | 125.2 kB | client:visible | Needs the island to work: a panel opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, 54.1 kB further. |
+| dialog | Dialog, DialogTrigger, DialogContent, DialogClose | clean | 114.7 kB | 114.6 kB | 114.6 kB | 114.6 kB | client:visible | Needs the island to work: a modal opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, 43.4 kB further. |
+| alert-dialog | AlertDialog, AlertDialogTrigger, AlertDialogContent | clean | 114.7 kB | 114.7 kB | 114.6 kB | 114.6 kB | client:visible | Needs the island to work: a confirm opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, 43.5 kB further. |
+| sheet | Sheet, SheetTrigger, SheetContent, SheetClose | clean | 125.7 kB | 125.7 kB | 125.6 kB | 125.6 kB | client:visible | Needs the island to work: a panel opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, 54.5 kB further. |
 | menu | Menu, MenuTrigger, MenuContent, MenuItem, MenuGroup, MenuSeparator, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuSub | clean | 141.5 kB | 141.4 kB | 141.4 kB | 141.4 kB | client:visible | Needs the island to work: the list opens from its trigger and runs items on click; closed in the static picture. client:idle above the fold, client:visible below, 70.3 kB further. |
 | popover | Popover, PopoverTrigger, PopoverContent | clean | 125.8 kB | 125.8 kB | 125.7 kB | 125.7 kB | client:visible | Needs the island to work: the panel opens from its trigger; closed in the static picture. client:idle above the fold, client:visible below, 54.6 kB further. |
 | preview-card | PreviewCard, PreviewCardTrigger, PreviewCardContent | clean | 129.5 kB | 129.5 kB | 129.4 kB | 129.4 kB | client:visible | Static picture first, the island adds behaviour: the link is followed without JS; JS adds the card on hover and focus. client:visible, 58.3 kB further (client:idle above the fold). |
 | tooltip | Tooltip | clean | 119.7 kB | 119.6 kB | 119.6 kB | 119.6 kB | client:visible | Needs the island to work: the label shows only on hover or focus; the icon button keeps its own name. client:idle above the fold, client:visible below, 48.5 kB further. |
 | tabs | Tabs, TabsList, TabsTrigger, TabsContent | clean | 95.3 kB | 95.3 kB | 95.2 kB | 95.2 kB | client:visible | Static picture first, the island adds behaviour: the default panel is static; JS switches tabs. client:visible, 24.1 kB further (client:idle above the fold). |
 | toolbar | Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator | clean | 91.6 kB | 91.6 kB | 91.5 kB | 91.5 kB | client:visible | Static picture first, the island adds behaviour: the buttons are static; JS adds roving arrow-key focus. client:visible, 20.4 kB further (client:idle above the fold). |
-| kbd | Kbd | clean | 76.2 kB · CLS 0.0002 | 76.2 kB | 76.1 kB · CLS 0.0002 | 76.1 kB · CLS 0.0002 | no directive | The static HTML is the whole part, 0 bytes of JavaScript: key caps are static text. |
-| meter | Meter | clean | 82.5 kB | 82.5 kB | 82.5 kB | 82.5 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the zone and its word are drawn at rest. |
-| num | Num | clean | 78.3 kB | 78.2 kB | 78.2 kB | 78.2 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the figure is formatted at render. |
-| progress | Progress, Ring | clean | 82.2 kB | 82.2 kB | 82.1 kB | 82.1 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the value is drawn at rest. |
+| kbd | Kbd | clean | 76.2 kB | 76.2 kB | 76.1 kB | 76.1 kB · CLS 0.0002 | no directive | The static HTML is the whole part, 0 bytes of JavaScript: key caps are static text. |
+| meter | Meter | clean | 82.9 kB | 82.9 kB | 82.8 kB | 82.8 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the zone and its word are drawn at rest. |
+| num | Num | clean | 78.6 kB | 78.6 kB | 78.6 kB | 78.6 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the figure is formatted at render. |
+| progress | Progress, Ring | clean | 82.6 kB | 82.5 kB | 82.5 kB | 82.5 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the value is drawn at rest. |
 | separator | Separator | clean | 77.8 kB | 77.8 kB | 77.7 kB | 77.7 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: a hairline needs no behaviour. |
-| skeleton | Skeleton, Spinner | clean | 78.9 kB | 78.9 kB | 78.8 kB | 78.8 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the loading shape and spinner are static. |
+| skeleton | Skeleton, Spinner | clean | 79.3 kB | 79.3 kB | 79.2 kB | 79.2 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the loading shape and spinner are static. |
 | status | Status, Swatch | clean | 83.0 kB | 83.0 kB | 82.9 kB | 82.9 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the verdict word is the state at rest. |
-| info-hint | InfoHint | clean | 127.9 kB | 127.9 kB | 127.8 kB | 127.8 kB | client:visible | Needs the island to work: the definition sits in a popover that opens on hover, focus or press. client:idle above the fold, client:visible below, 56.7 kB further. |
+| info-hint | InfoHint | clean | 128.3 kB | 128.3 kB | 128.2 kB | 128.2 kB | client:visible | Needs the island to work: the definition sits in a popover that opens on hover, focus or press. client:idle above the fold, client:visible below, 57.1 kB further. |
 | scroll-area | ScrollArea | clean | 76.6 kB | 76.5 kB | 76.5 kB | 76.5 kB | client:visible | Static picture first, the island adds behaviour: native overflow scrolls; JS adds the keyboard tab stop when content overflows. client:visible, 5.3 kB further (client:idle above the fold). |
 | resizable | ResizablePanelGroup, ResizablePanel, ResizableHandle | clean | 90.7 kB | 90.7 kB | 90.6 kB | 90.6 kB | client:visible | Static picture first, the island adds behaviour: sizes render as static flex ratios; JS drags the divider. client:visible, 19.5 kB further (client:idle above the fold). |
 | virtual-list | VirtualList | clean | 83.9 kB | 83.9 kB | 83.8 kB | 83.8 kB | client:visible | Static picture first, the island adds behaviour: the first window renders statically; JS windows the scroll. client:visible, 12.7 kB further (client:idle above the fold). |
-| stat-card | StatCard | clean | 99.6 kB | 99.5 kB | 99.5 kB | 99.5 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: figure, delta, verdict and sparkline are all drawn at rest. |
-| stat-group | StatGroup, StatCell | clean | 105.4 kB | 105.3 kB | 105.3 kB | 105.3 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: figures, deltas and sparklines are drawn at rest; the chart sits in its box. |
-| bar-list | BarList | clean | 92.6 kB | 92.6 kB | 92.5 kB | 92.5 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the ranked bars are the picture; rows are plain text without a link. |
-| chain-view | ChainView | clean | 93.2 kB | 93.2 kB | 93.1 kB | 93.1 kB | client:visible | Static picture first, the island adds behaviour: pan, zoom and trace focus need JS; the laid-out graph is the static picture. client:visible, 22.0 kB further (client:idle above the fold). |
-| data-panel | DataPanel | clean | 88.2 kB · CLS 0.0001 | 88.2 kB · CLS 0.0001 | 88.1 kB · CLS 0.0001 | 88.1 kB · CLS 0.0001 | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the card frame and its body list are drawn at rest. |
-| event-list | EventList | clean | 86.9 kB | 86.9 kB | 86.8 kB | 86.8 kB | client:visible | Static picture first, the island adds behaviour: "Show more" pages the feed; the first page is the static picture. client:visible, 15.7 kB further (client:idle above the fold). |
-| kanban-card | KanbanCard | clean | 90.0 kB · CLS 0.0008 | 89.9 kB · CLS 0.0008 | 89.9 kB · CLS 0.0008 | 89.9 kB · CLS 0.0008 | client:visible | Static picture first, the island adds behaviour: the move menu and drag need JS; the card is drawn at rest. client:visible, 18.8 kB further (client:idle above the fold). |
-| row-list | RowList | clean | 88.2 kB | 88.2 kB | 88.1 kB | 88.1 kB | client:visible | Static picture first, the island adds behaviour: a row shares focus with its chart mark; hover and focus highlight need JS. client:visible, 17.0 kB further (client:idle above the fold). |
-| step-rail | StepRail | clean | 79.8 kB | 79.8 kB | 79.8 kB | 79.8 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: bars scaled to the longest step are drawn at rest; it never animates. |
-| lines | Lines | differs | 186.9 kB | 186.9 kB | 186.8 kB | 186.8 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 115.7 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (6890 px (8.1%) at 390-light). |
-| bars | Bars | differs | 186.8 kB | 186.8 kB | 186.7 kB | 186.7 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 115.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (14845 px (17.4%) at 390-light). |
-| cartesian-chart | CartesianChart | differs | 186.8 kB | 186.7 kB | 186.7 kB | 186.7 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 115.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (8939 px (10.5%) at 390-light). |
-| chart-card | ChartCard | differs | 200.8 kB | 200.8 kB | 200.7 kB | 200.7 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 129.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (4400 px (3.4%) at 390-light). |
-| heatmap | Heatmap | differs | 183.2 kB | 183.2 kB | 183.1 kB | 183.1 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 112.0 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (41996 px (55.8%) at 390-light). |
-| interval-track | IntervalTrack | differs | 184.3 kB | 184.3 kB | 184.2 kB | 184.2 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 113.1 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (11308 px (17.0%) at 390-dark). |
-| sparkline | Sparkline | clean | 88.2 kB | 88.2 kB | 88.2 kB | 88.2 kB | client:visible | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, 17.0 kB further (client:idle above the fold). |
-| band-strip | BandStrip | differs | 178.6 kB | 178.5 kB | 178.5 kB | 178.5 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 107.4 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (9098 px (28.3%) at 390-light). |
-| data-table | DataTable | clean | 290.0 kB | 290.0 kB | 289.9 kB | 289.9 kB | client:visible | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, 218.8 kB further (client:idle above the fold). |
-| static-table | Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption | clean | 83.7 kB · CLS 0.0006 | 83.6 kB · CLS 0.0006 | 83.6 kB · CLS 0.0006 | 83.6 kB · CLS 0.0006 | no directive | The static HTML is the whole part, 0 bytes of JavaScript: a static table; the picture is the whole part. |
-| table-toolbar | TableToolbar, BulkBar, TablePager | clean | 250.0 kB | 249.9 kB | 249.9 kB | 249.9 kB | client:visible | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, 178.7 kB further (client:idle above the fold). |
-| data-table-body | DataTableBody | clean | 285.1 kB · CLS 0.0012 | 285.1 kB | 285.0 kB · CLS 0.0012 | 285.0 kB · CLS 0.0012 | client:visible | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, 213.9 kB further (client:idle above the fold). |
-| markdown | Markdown | clean | 213.6 kB | 213.6 kB | 213.6 kB | 213.6 kB | client:visible | Static picture first, the island adds behaviour: the code is coloured in the static HTML; mermaid fences need JS. client:visible, 142.4 kB further (client:idle above the fold). |
-| code-block | CodeBlock | clean | 169.8 kB | 169.7 kB | 169.7 kB | 169.7 kB | client:visible | Static picture first, the island adds behaviour: the code is coloured in the static HTML; the copy button needs JS. client:visible, 98.6 kB further (client:idle above the fold). |
-| article-layout | ArticleLayout, Prose | clean | 132.1 kB · CLS 0.0025 | 132.1 kB · CLS 0.0025 | 132.0 kB · CLS 0.0026 | 132.0 kB · CLS 0.0025 | client:visible | Static picture first, the island adds behaviour: the scroll-spy TOC and reading progress need JS. client:visible, 60.9 kB further (client:idle above the fold). |
-| toc | Toc | clean | 80.6 kB | 80.6 kB | 80.5 kB | 80.5 kB | client:visible | Static picture first, the island adds behaviour: the scroll-spy marks the current section with JS. client:visible, 9.4 kB further (client:idle above the fold). |
-| callout | Callout | clean | 79.5 kB | 79.5 kB | 79.4 kB | 79.4 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: a static note; no behaviour. |
+| stat-card | StatCard | clean | 100.0 kB | 99.9 kB | 99.9 kB | 99.9 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: figure, delta, verdict and sparkline are all drawn at rest. |
+| stat-group | StatGroup, StatCell | clean | 105.8 kB | 105.7 kB | 105.7 kB | 105.7 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: figures, deltas and sparklines are drawn at rest; the chart sits in its box. |
+| bar-list | BarList | clean | 93.1 kB | 93.1 kB | 93.0 kB | 93.0 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the ranked bars are the picture; rows are plain text without a link. |
+| chain-view | ChainView | clean | 93.6 kB | 93.6 kB | 93.5 kB | 93.5 kB | client:visible | Static picture first, the island adds behaviour: pan, zoom and trace focus need JS; the laid-out graph is the static picture. client:visible, 22.4 kB further (client:idle above the fold). |
+| data-panel | DataPanel | clean | 88.7 kB · CLS 0.0001 | 88.7 kB · CLS 0.0001 | 88.6 kB · CLS 0.0001 | 88.6 kB · CLS 0.0001 | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the card frame and its body list are drawn at rest. |
+| event-list | EventList | clean | 87.3 kB | 87.3 kB | 87.2 kB | 87.2 kB | client:visible | Static picture first, the island adds behaviour: "Show more" pages the feed; the first page is the static picture. client:visible, 16.1 kB further (client:idle above the fold). |
+| kanban-card | KanbanCard | clean | 90.4 kB · CLS 0.0007 | 90.3 kB · CLS 0.0007 | 90.3 kB · CLS 0.0007 | 90.3 kB · CLS 0.0007 | client:visible | Static picture first, the island adds behaviour: the move menu and drag need JS; the card is drawn at rest. client:visible, 19.2 kB further (client:idle above the fold). |
+| row-list | RowList | clean | 88.6 kB | 88.6 kB | 88.5 kB | 88.5 kB | client:visible | Static picture first, the island adds behaviour: a row shares focus with its chart mark; hover and focus highlight need JS. client:visible, 17.4 kB further (client:idle above the fold). |
+| step-rail | StepRail | clean | 80.2 kB | 80.2 kB | 80.1 kB | 80.1 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: bars scaled to the longest step are drawn at rest; it never animates. |
+| lines | Lines | differs | 191.0 kB | 191.0 kB | 190.9 kB | 190.9 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 119.8 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (6890 px (8.1%) at 390-light). |
+| bars | Bars | differs | 190.9 kB | 190.9 kB | 190.9 kB | 190.9 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 119.7 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (14845 px (17.4%) at 390-light). |
+| cartesian-chart | CartesianChart | differs | 190.9 kB | 190.9 kB | 190.8 kB | 190.8 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 119.7 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (8939 px (10.5%) at 390-light). |
+| chart-card | ChartCard | differs | 202.8 kB | 202.8 kB | 202.8 kB | 202.8 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 131.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (4400 px (3.4%) at 390-light). |
+| heatmap | Heatmap | differs | 187.7 kB | 187.6 kB | 187.6 kB | 187.6 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 116.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (41996 px (55.8%) at 390-light). |
+| interval-track | IntervalTrack | differs | 188.7 kB | 188.7 kB | 188.6 kB | 188.6 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 117.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (11308 px (17.0%) at 390-dark). |
+| sparkline | Sparkline | clean | 88.6 kB | 88.6 kB | 88.5 kB | 88.5 kB | client:visible | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, 17.4 kB further (client:idle above the fold). |
+| band-strip | BandStrip | differs | 183.0 kB | 183.0 kB | 182.9 kB | 182.9 kB | client:visible | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, 111.8 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (9098 px (28.3%) at 390-light). |
+| data-table | DataTable | clean | 290.4 kB | 290.4 kB | 290.3 kB | 290.3 kB | client:visible | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, 219.2 kB further (client:idle above the fold). |
+| static-table | Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption | clean | 83.7 kB | 83.6 kB | 83.6 kB · CLS 0.0006 | 83.6 kB · CLS 0.0006 | no directive | The static HTML is the whole part, 0 bytes of JavaScript: a static table; the picture is the whole part. |
+| table-toolbar | TableToolbar, BulkBar, TablePager | clean | 250.4 kB | 250.3 kB | 250.3 kB | 250.3 kB | client:visible | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, 179.1 kB further (client:idle above the fold). |
+| data-table-body | DataTableBody | clean | 285.5 kB | 285.5 kB | 285.4 kB | 285.4 kB · CLS 0.0012 | client:visible | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, 214.3 kB further (client:idle above the fold). |
+| markdown | Markdown | clean | 214.0 kB | 214.0 kB | 213.9 kB | 213.9 kB | client:visible | Static picture first, the island adds behaviour: the code is coloured in the static HTML; mermaid fences need JS. client:visible, 142.8 kB further (client:idle above the fold). |
+| code-block | CodeBlock | clean | 170.2 kB | 170.1 kB | 170.1 kB | 170.1 kB | client:visible | Static picture first, the island adds behaviour: the code is coloured in the static HTML; the copy button needs JS. client:visible, 98.9 kB further (client:idle above the fold). |
+| article-layout | ArticleLayout, Prose | clean | 132.5 kB · CLS 0.0025 | 132.4 kB · CLS 0.0026 | 132.4 kB · CLS 0.0026 | 132.4 kB · CLS 0.0025 | client:visible | Static picture first, the island adds behaviour: the scroll-spy TOC and reading progress need JS. client:visible, 61.3 kB further (client:idle above the fold). |
+| toc | Toc | clean | 81.0 kB | 81.0 kB | 80.9 kB | 80.9 kB | client:visible | Static picture first, the island adds behaviour: the scroll-spy marks the current section with JS. client:visible, 9.8 kB further (client:idle above the fold). |
+| callout | Callout | clean | 79.9 kB | 79.9 kB | 79.8 kB | 79.8 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: a static note; no behaviour. |
 | prose | Prose | clean | 75.7 kB | 75.7 kB | 75.6 kB | 75.6 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: typography only. |
-| page | Page, PageBar, PageSummary, Section, CardGrid | clean | 179.2 kB | 179.2 kB | 179.1 kB | 179.1 kB | client:visible | Static picture first, the island adds behaviour: action buttons need JS; the frame, title, summary and figures are the static picture. client:visible, 108.0 kB further (client:idle above the fold). |
-| empty-state | EmptyState | clean | 84.9 kB | 84.8 kB | 84.8 kB | 84.8 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the cause line and the link action are drawn at rest; the filtered reset needs JS and is not shown. |
+| page | Page, PageBar, PageSummary, Section, CardGrid | clean | 179.8 kB | 179.7 kB | 179.7 kB | 179.7 kB | client:visible | Static picture first, the island adds behaviour: action buttons need JS; the frame, title, summary and figures are the static picture. client:visible, 108.6 kB further (client:idle above the fold). |
+| empty-state | EmptyState | clean | 85.2 kB | 85.2 kB | 85.2 kB | 85.2 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the cause line and the link action are drawn at rest; the filtered reset needs JS and is not shown. |
 | facts | Facts | clean | 72.1 kB | 72.1 kB | 72.0 kB | 72.0 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: a definition list is drawn at rest. |
 | inner-nav | InnerNav | fails | build fails | build fails | build fails | error | none works | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| page-aside | PageAside | clean | 130.5 kB | 130.5 kB | 130.4 kB | 130.4 kB | client:visible | Static picture first, the island adds behaviour: the docked panel is the picture; its open, close and sheet states need JS. client:visible, 59.3 kB further (client:idle above the fold). |
+| page-aside | PageAside | clean | 130.9 kB | 130.9 kB | 130.8 kB | 130.8 kB | client:visible | Static picture first, the island adds behaviour: the docked panel is the picture; its open, close and sheet states need JS. client:visible, 59.7 kB further (client:idle above the fold). |
 | split-page | SplitPage | fails | build fails | build fails | build fails | error | none works | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| dock | Dock | differs | 89.8 kB | 89.8 kB | 89.7 kB | 89.7 kB | client:visible | Static picture first, the island adds behaviour: the open record panel is the picture; close and focus hand-off need JS. client:visible, 18.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (37 px (0.0%) at 1440-light). |
-| peek | Peek | clean | 90.7 kB | 90.6 kB | 90.6 kB | 90.6 kB | client:visible | Static picture first, the island adds behaviour: the open panel is the picture; Escape, close and the width drag need JS. client:visible, 19.5 kB further (client:idle above the fold). |
-| query-state | QueryState | clean | 87.9 kB | 87.9 kB | 87.8 kB | 87.8 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the ready branch is drawn at rest; loading and error arms are not shown. |
-| refresh-button | RefreshButton | differs | 85.3 kB | 85.3 kB | 85.3 kB | 85.3 kB | client:visible | Static picture first, the island adds behaviour: the press runs the refresh and needs JS; the age text is absent until hydration. client:visible, 14.1 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (1931 px (4.8%) at 1440-dark). |
+| dock | Dock | differs | 90.2 kB | 90.2 kB | 90.1 kB | 90.1 kB | client:visible | Static picture first, the island adds behaviour: the open record panel is the picture; close and focus hand-off need JS. client:visible, 19.0 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (37 px (0.0%) at 1440-light). |
+| peek | Peek | clean | 91.1 kB | 91.1 kB | 91.0 kB | 91.0 kB | client:visible | Static picture first, the island adds behaviour: the open panel is the picture; Escape, close and the width drag need JS. client:visible, 19.9 kB further (client:idle above the fold). |
+| query-state | QueryState | clean | 88.4 kB | 88.4 kB | 88.3 kB | 88.3 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the ready branch is drawn at rest; loading and error arms are not shown. |
+| refresh-button | RefreshButton | differs | 85.7 kB | 85.7 kB | 85.6 kB | 85.6 kB | client:visible | Static picture first, the island adds behaviour: the press runs the refresh and needs JS; the age text is absent until hydration. client:visible, 14.5 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (1931 px (4.8%) at 1440-dark). |
 | connection-indicator | ConnectionIndicator | fails | build fails | build fails | build fails | error | none works | fails on the server (No QueryClient set, use QueryClientProvider to set one) and in the browser (No QueryClient set, use QueryClientProvider to set one) |
-| overlay-host | OverlayHost | clean | 128.1 kB | 128.0 kB | 128.0 kB | 128.0 kB | client:visible | Needs the island to work: overlays open by key from JS; nothing is open at rest, so the host draws nothing. client:idle above the fold, client:visible below, 56.9 kB further. |
-| toast-host | ToastHost | clean | no hydrate | 107.1 kB | 107.1 kB | 107.1 kB | client:visible | Static picture first, the island adds behaviour: it drains notify() calls made after mount; the viewport is empty at rest. client:visible, 35.9 kB further (client:idle above the fold). |
+| overlay-host | OverlayHost | clean | 128.5 kB | 128.4 kB | 128.4 kB | 128.4 kB | client:visible | Needs the island to work: overlays open by key from JS; nothing is open at rest, so the host draws nothing. client:idle above the fold, client:visible below, 57.2 kB further. |
+| toast-host | ToastHost | clean | no hydrate | 107.5 kB | 107.5 kB | 107.5 kB | client:visible | Static picture first, the island adds behaviour: it drains notify() calls made after mount; the viewport is empty at rest. client:visible, 36.3 kB further (client:idle above the fold). |
 | app-shell | AppShell | fails | build fails | build fails | build fails | error | none works | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
-| command-palette | CommandPalette | clean | 166.2 kB | 166.2 kB | 166.1 kB | 166.1 kB | client:visible | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, 95.0 kB further. |
+| command-palette | CommandPalette | clean | 167.0 kB | 166.9 kB | 166.9 kB | 166.9 kB | client:visible | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, 95.7 kB further. |
 | controls | FilterSet, ViewTabs | fails | build fails | build fails | build fails | error | none works | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | control-home | ControlHome, ControlView | fails | build fails | build fails | build fails | error | none works | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | basalt-provider | BasaltProvider | clean | 82.0 kB | 82.0 kB | 82.0 kB | 82.0 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the provider only sets locale and scheme; a Button inside it is the whole picture. |
@@ -97,15 +97,15 @@ Cells: `no directive` is the static HTML: `clean`, `differs` from the client:onl
 | select | Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem | clean | 134.9 kB | 134.9 kB | 134.8 kB | 134.8 kB | client:visible | Needs the island to work: the popup opens on JS; the closed trigger shows the label. client:idle above the fold, client:visible below, 63.7 kB further. |
 | native-select | NativeSelect | clean | 134.9 kB | 134.8 kB | 134.8 kB | 134.8 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the platform select works without JS. |
 | number-field | NumberField | clean | 92.3 kB | 92.2 kB | 92.2 kB | 92.2 kB | client:visible | Static picture first, the island adds behaviour: steppers and arrow keys need JS; the formatted value is static. client:visible, 21.0 kB further (client:idle above the fold). |
-| slider | Slider | clean | 98.9 kB | 98.9 kB | 98.8 kB | 98.8 kB | client:visible | Static picture first, the island adds behaviour: dragging and the keyboard need JS; the value is static. client:visible, 27.7 kB further (client:idle above the fold). |
+| slider | Slider | clean | 99.3 kB | 99.2 kB | 99.2 kB | 99.2 kB | client:visible | Static picture first, the island adds behaviour: dragging and the keyboard need JS; the value is static. client:visible, 28.1 kB further (client:idle above the fold). |
 | segmented | Segmented, SegmentedItem | clean | 92.3 kB | 92.2 kB | 92.2 kB | 92.2 kB | client:visible | Static picture first, the island adds behaviour: switching the option needs JS; the static row shows the selection. client:visible, 21.1 kB further (client:idle above the fold). |
-| date-picker | DatePicker | clean | 148.3 kB | 148.2 kB | 148.2 kB | 148.2 kB | client:visible | Needs the island to work: the calendar popup is JS; the trigger shows the day. client:idle above the fold, client:visible below, 77.1 kB further. |
-| date-range-picker | DateRangePicker | clean | 148.3 kB | 148.3 kB | 148.2 kB | 148.2 kB | client:visible | Needs the island to work: the calendar popup is JS; the trigger shows both ends. client:idle above the fold, client:visible below, 77.1 kB further. |
-| combobox | Combobox, ComboboxInput, ComboboxContent, ComboboxItem, ComboboxChips | clean | 140.1 kB | 140.1 kB | 140.0 kB | 140.0 kB | client:visible | Needs the island to work: search, the popup and chip removal need JS; the closed input is the picture. client:idle above the fold, client:visible below, 68.9 kB further. |
-| autocomplete | Autocomplete, AutocompleteInput, AutocompleteContent, AutocompleteItem | clean | 140.1 kB | 140.0 kB | 140.0 kB | 140.0 kB | client:visible | Needs the island to work: suggestions need JS; the typed text is the static picture. client:idle above the fold, client:visible below, 68.8 kB further. |
+| date-picker | DatePicker | clean | 148.7 kB | 148.6 kB | 148.6 kB | 148.6 kB | client:visible | Needs the island to work: the calendar popup is JS; the trigger shows the day. client:idle above the fold, client:visible below, 77.5 kB further. |
+| date-range-picker | DateRangePicker | clean | 148.7 kB | 148.6 kB | 148.6 kB | 148.6 kB | client:visible | Needs the island to work: the calendar popup is JS; the trigger shows both ends. client:idle above the fold, client:visible below, 77.5 kB further. |
+| combobox | Combobox, ComboboxInput, ComboboxContent, ComboboxItem, ComboboxChips | clean | 140.5 kB | 140.5 kB | 140.4 kB | 140.4 kB | client:visible | Needs the island to work: search, the popup and chip removal need JS; the closed input is the picture. client:idle above the fold, client:visible below, 69.3 kB further. |
+| autocomplete | Autocomplete, AutocompleteInput, AutocompleteContent, AutocompleteItem | clean | 140.4 kB | 140.4 kB | 140.4 kB | 140.4 kB | client:visible | Needs the island to work: suggestions need JS; the typed text is the static picture. client:idle above the fold, client:visible below, 69.2 kB further. |
 | file-upload | FileUpload | clean | 84.2 kB | 84.2 kB | 84.1 kB | 84.1 kB | client:visible | Needs the island to work: the picker and drop zone need JS. client:idle above the fold, client:visible below, 13.0 kB further. |
 | field | Form, Field, FieldLabel, FieldDescription, FieldError, Fieldset, FieldsetLegend | clean | 91.4 kB | 91.4 kB | 91.3 kB | 91.3 kB | client:visible | Static picture first, the island adds behaviour: Base UI validates on blur and submit with JS; labels are static (FieldLabel, FieldDescription and FieldError render through Field). client:visible, 20.2 kB further (client:idle above the fold). |
-| form-layout | FormSection, FormRow, FormField, FormFooter | clean | 110.7 kB | 110.7 kB | 110.6 kB | 110.6 kB | client:visible | Static picture first, the island adds behaviour: the footer tracks dirty and submitting state with JS; the fields are static. client:visible, 39.5 kB further (client:idle above the fold). |
+| form-layout | FormSection, FormRow, FormField, FormFooter | clean | 111.1 kB | 111.1 kB | 111.0 kB | 111.0 kB | client:visible | Static picture first, the island adds behaviour: the footer tracks dirty and submitting state with JS; the fields are static. client:visible, 39.9 kB further (client:idle above the fold). |
 | stepper | Stepper | clean | 76.3 kB | 76.3 kB | 76.2 kB | 76.2 kB | no directive | The static HTML is the whole part, 0 bytes of JavaScript: the static step list is the whole part; steps are buttons only with onStepChange. |
 
 ## Bytes per part
@@ -114,96 +114,96 @@ Gzip. First island: everything the part's client:load page runs. Further island:
 
 | Part | First island JS | Further island JS | CSS | LCP no directive | LCP client:load | LCP client:only | CLS on hydrate |
 |-|-|-|-|-|-|-|-|
-| button | 81.3 kB | 10.2 kB | 26.7 kB | 52 ms | 52 ms | 120 ms | 0 |
-| accordion | 89.3 kB | 18.2 kB | 26.7 kB | 52 ms | 76 ms | 92 ms | 0 |
-| alert | 76.4 kB | 5.3 kB | 26.7 kB | 32 ms | 128 ms | 124 ms | 0 |
-| badge | 76.8 kB | 5.7 kB | 26.7 kB | 60 ms | 52 ms | 124 ms | 0 |
-| pressable | 81.3 kB | 10.2 kB | 26.7 kB | 48 ms | 36 ms | 80 ms | 0 |
-| card | 81.7 kB | 10.5 kB | 26.7 kB | 52 ms | 60 ms | 80 ms | 0 |
-| collapsible | 88.6 kB | 17.4 kB | 26.7 kB | 44 ms | 40 ms | 76 ms | 0 |
-| dialog | 114.2 kB | 43.1 kB | 26.7 kB | 32 ms | 44 ms | 72 ms | 0 |
-| alert-dialog | 114.2 kB | 43.1 kB | 26.7 kB | 28 ms | 40 ms | 88 ms | 0 |
-| sheet | 125.2 kB | 54.1 kB | 26.7 kB | 36 ms | 36 ms | 84 ms | 0 |
-| menu | 141.4 kB | 70.3 kB | 26.7 kB | 32 ms | 36 ms | 80 ms | 0 |
-| popover | 125.7 kB | 54.6 kB | 26.7 kB | 32 ms | 36 ms | 60 ms | 0 |
-| preview-card | 129.4 kB | 58.3 kB | 26.7 kB | 44 ms | 40 ms | 80 ms | 0 |
-| tooltip | 119.6 kB | 48.5 kB | 26.7 kB | 0 ms | 0 ms | 0 ms | 0 |
-| tabs | 95.2 kB | 24.1 kB | 26.7 kB | 36 ms | 44 ms | 88 ms | 0 |
-| toolbar | 91.5 kB | 20.4 kB | 26.7 kB | 36 ms | 32 ms | 76 ms | 0 |
-| kbd | 76.1 kB | 5.0 kB | 26.7 kB | 80 ms | 44 ms | 108 ms | 0.0002 |
-| meter | 82.5 kB | 11.3 kB | 26.7 kB | 36 ms | 44 ms | 80 ms | 0 |
-| num | 78.2 kB | 7.0 kB | 26.7 kB | 28 ms | 48 ms | 72 ms | 0 |
-| progress | 82.1 kB | 11.0 kB | 26.7 kB | 40 ms | 40 ms | 88 ms | 0 |
-| separator | 77.7 kB | 6.6 kB | 26.7 kB | 40 ms | 44 ms | 88 ms | 0 |
-| skeleton | 78.8 kB | 7.7 kB | 26.7 kB | 52 ms | 40 ms | 84 ms | 0 |
-| status | 82.9 kB | 11.8 kB | 26.7 kB | 48 ms | 60 ms | 64 ms | 0 |
-| info-hint | 127.8 kB | 56.7 kB | 26.7 kB | 44 ms | 40 ms | 84 ms | 0 |
-| scroll-area | 76.5 kB | 5.3 kB | 26.7 kB | 32 ms | 28 ms | 80 ms | 0 |
-| resizable | 90.6 kB | 19.5 kB | 26.7 kB | 28 ms | 36 ms | 68 ms | 0 |
-| virtual-list | 83.8 kB | 12.7 kB | 26.7 kB | 56 ms | 56 ms | 68 ms | 0 |
-| stat-card | 99.5 kB | 28.4 kB | 28.7 kB | 44 ms | 60 ms | 104 ms | 0 |
-| stat-group | 105.3 kB | 34.1 kB | 28.7 kB | 44 ms | 40 ms | 128 ms | 0 |
-| bar-list | 92.5 kB | 21.4 kB | 26.7 kB | 56 ms | 64 ms | 88 ms | 0 |
-| chain-view | 93.1 kB | 22.0 kB | 26.7 kB | 72 ms | 40 ms | 96 ms | 0 |
-| data-panel | 88.1 kB | 17.0 kB | 26.7 kB | 40 ms | 40 ms | 84 ms | 0.0001 |
-| event-list | 86.8 kB | 15.7 kB | 26.7 kB | 52 ms | 40 ms | 148 ms | 0 |
-| kanban-card | 89.9 kB | 18.8 kB | 26.7 kB | 48 ms | 36 ms | 128 ms | 0.0008 |
-| row-list | 88.1 kB | 17.0 kB | 26.7 kB | 44 ms | 60 ms | 108 ms | 0 |
-| step-rail | 79.8 kB | 8.6 kB | 26.7 kB | 60 ms | 40 ms | 76 ms | 0 |
-| lines | 186.8 kB | 115.7 kB | 28.7 kB | 40 ms | 44 ms | 112 ms | 0 |
-| bars | 186.7 kB | 115.6 kB | 28.7 kB | 36 ms | 44 ms | 228 ms | 0 |
-| cartesian-chart | 186.7 kB | 115.5 kB | 28.7 kB | 48 ms | 36 ms | 136 ms | 0 |
-| chart-card | 200.7 kB | 129.6 kB | 28.7 kB | 36 ms | 56 ms | 228 ms | 0 |
-| heatmap | 183.1 kB | 112.0 kB | 28.7 kB | 32 ms | 36 ms | 132 ms | 0 |
-| interval-track | 184.2 kB | 113.1 kB | 28.7 kB | 32 ms | 36 ms | 108 ms | 0 |
-| sparkline | 88.2 kB | 17.0 kB | 28.7 kB | 28 ms | 52 ms | 76 ms | 0 |
-| band-strip | 178.5 kB | 107.4 kB | 28.7 kB | 44 ms | 96 ms | 104 ms | 0 |
-| data-table | 289.9 kB | 218.8 kB | 26.7 kB | 64 ms | 48 ms | 160 ms | 0 |
-| static-table | 83.6 kB | 12.5 kB | 26.7 kB | 32 ms | 48 ms | 80 ms | 0.0006 |
-| table-toolbar | 249.9 kB | 178.7 kB | 26.7 kB | 36 ms | 84 ms | 240 ms | 0 |
-| data-table-body | 285.0 kB | 213.9 kB | 26.7 kB | 40 ms | 60 ms | 232 ms | 0.0012 |
-| markdown | 213.6 kB | 142.4 kB | 26.7 kB | 68 ms | 48 ms | 112 ms | 0 |
-| code-block | 169.7 kB | 98.6 kB | 26.7 kB | 36 ms | 56 ms | 372 ms | 0 |
-| article-layout | 132.0 kB | 60.9 kB | 27.2 kB | 64 ms | 92 ms | 220 ms | 0.0026 |
-| toc | 80.5 kB | 9.4 kB | 27.2 kB | 36 ms | 32 ms | 212 ms | 0 |
-| callout | 79.4 kB | 8.3 kB | 27.2 kB | 36 ms | 32 ms | 60 ms | 0 |
-| prose | 75.6 kB | 4.5 kB | 27.2 kB | 76 ms | 36 ms | 88 ms | 0 |
-| page | 179.1 kB | 108.0 kB | 27.2 kB | 84 ms | 40 ms | 164 ms | 0 |
-| empty-state | 84.8 kB | 13.6 kB | 27.2 kB | 48 ms | 40 ms | 108 ms | 0 |
-| facts | 72.0 kB | 0.9 kB | 27.2 kB | 28 ms | 60 ms | 60 ms | 0 |
-| inner-nav | 0 | 0 | 27.1 kB | 32 ms | 32 ms | 0 ms | 0 |
-| page-aside | 130.4 kB | 59.3 kB | 27.2 kB | 36 ms | 48 ms | 108 ms | 0 |
-| split-page | 0 | 0 | 27.1 kB | 44 ms | 52 ms | 0 ms | 0 |
-| dock | 89.7 kB | 18.6 kB | 27.2 kB | 36 ms | 44 ms | 112 ms | 0 |
-| peek | 90.6 kB | 19.5 kB | 27.2 kB | 48 ms | 48 ms | 116 ms | 0 |
-| query-state | 87.8 kB | 16.7 kB | 27.2 kB | 32 ms | 32 ms | 104 ms | 0 |
-| refresh-button | 85.3 kB | 14.1 kB | 27.2 kB | 32 ms | 100 ms | 120 ms | 0 |
-| connection-indicator | 0 | 0 | 27.1 kB | 32 ms | 44 ms | 0 ms | 0 |
-| overlay-host | 128.0 kB | 56.9 kB | 27.2 kB | 28 ms | 32 ms | 88 ms | 0 |
-| toast-host | 107.1 kB | 35.9 kB | 27.2 kB | 0 ms | 0 ms | 0 ms | 0 |
-| app-shell | 0 | 0 | 27.1 kB | 76 ms | 28 ms | 0 ms | 0 |
-| command-palette | 166.1 kB | 95.0 kB | 26.7 kB | 48 ms | 28 ms | 80 ms | 0 |
-| controls | 0 | 0 | 26.6 kB | 32 ms | 32 ms | 0 ms | 0 |
-| control-home | 0 | 0 | 26.6 kB | 36 ms | 36 ms | 0 ms | 0 |
-| basalt-provider | 82.0 kB | 10.8 kB | 26.7 kB | 28 ms | 32 ms | 60 ms | 0 |
-| input | 83.0 kB | 11.9 kB | 26.7 kB | 40 ms | 36 ms | 56 ms | 0 |
-| textarea | 82.5 kB | 11.4 kB | 26.7 kB | 60 ms | 56 ms | 56 ms | 0 |
-| checkbox | 91.3 kB | 20.2 kB | 26.7 kB | 28 ms | 28 ms | 80 ms | 0 |
-| radio-group | 98.7 kB | 27.6 kB | 26.7 kB | 28 ms | 36 ms | 88 ms | 0 |
-| switch | 85.1 kB | 14.0 kB | 26.7 kB | 36 ms | 40 ms | 76 ms | 0 |
-| select | 134.8 kB | 63.7 kB | 26.7 kB | 24 ms | 72 ms | 96 ms | 0 |
-| native-select | 134.8 kB | 63.7 kB | 26.7 kB | 44 ms | 36 ms | 88 ms | 0 |
-| number-field | 92.2 kB | 21.0 kB | 26.7 kB | 44 ms | 32 ms | 84 ms | 0 |
-| slider | 98.8 kB | 27.7 kB | 26.7 kB | 40 ms | 48 ms | 84 ms | 0 |
-| segmented | 92.2 kB | 21.1 kB | 26.7 kB | 32 ms | 28 ms | 60 ms | 0 |
-| date-picker | 148.2 kB | 77.1 kB | 26.7 kB | 32 ms | 32 ms | 116 ms | 0 |
-| date-range-picker | 148.2 kB | 77.1 kB | 26.7 kB | 32 ms | 44 ms | 132 ms | 0 |
-| combobox | 140.0 kB | 68.9 kB | 26.7 kB | 44 ms | 48 ms | 136 ms | 0 |
-| autocomplete | 140.0 kB | 68.8 kB | 26.7 kB | 32 ms | 32 ms | 104 ms | 0 |
-| file-upload | 84.1 kB | 13.0 kB | 26.7 kB | 32 ms | 44 ms | 84 ms | 0 |
-| field | 91.3 kB | 20.2 kB | 26.7 kB | 44 ms | 32 ms | 68 ms | 0 |
-| form-layout | 110.6 kB | 39.5 kB | 26.7 kB | 56 ms | 40 ms | 100 ms | 0 |
-| stepper | 76.2 kB | 5.1 kB | 26.7 kB | 32 ms | 36 ms | 68 ms | 0 |
+| button | 81.3 kB | 10.2 kB | 27.3 kB | 60 ms | 60 ms | 72 ms | 0 |
+| accordion | 89.3 kB | 18.2 kB | 27.3 kB | 56 ms | 48 ms | 80 ms | 0 |
+| alert | 76.4 kB | 5.3 kB | 27.3 kB | 52 ms | 48 ms | 92 ms | 0 |
+| badge | 76.8 kB | 5.7 kB | 27.3 kB | 60 ms | 52 ms | 76 ms | 0 |
+| pressable | 81.3 kB | 10.2 kB | 27.3 kB | 36 ms | 40 ms | 96 ms | 0 |
+| card | 81.7 kB | 10.5 kB | 27.3 kB | 52 ms | 40 ms | 100 ms | 0 |
+| collapsible | 88.6 kB | 17.4 kB | 27.3 kB | 32 ms | 32 ms | 96 ms | 0 |
+| dialog | 114.6 kB | 43.4 kB | 27.3 kB | 32 ms | 36 ms | 112 ms | 0 |
+| alert-dialog | 114.6 kB | 43.5 kB | 27.3 kB | 32 ms | 40 ms | 104 ms | 0 |
+| sheet | 125.6 kB | 54.5 kB | 27.3 kB | 44 ms | 40 ms | 92 ms | 0 |
+| menu | 141.4 kB | 70.3 kB | 27.3 kB | 36 ms | 32 ms | 76 ms | 0 |
+| popover | 125.7 kB | 54.6 kB | 27.3 kB | 44 ms | 44 ms | 84 ms | 0 |
+| preview-card | 129.4 kB | 58.3 kB | 27.3 kB | 44 ms | 40 ms | 76 ms | 0 |
+| tooltip | 119.6 kB | 48.5 kB | 27.3 kB | 0 ms | 0 ms | 0 ms | 0 |
+| tabs | 95.2 kB | 24.1 kB | 27.3 kB | 48 ms | 44 ms | 80 ms | 0 |
+| toolbar | 91.5 kB | 20.4 kB | 27.3 kB | 56 ms | 44 ms | 76 ms | 0 |
+| kbd | 76.1 kB | 5.0 kB | 27.3 kB | 32 ms | 44 ms | 96 ms | 0 |
+| meter | 82.8 kB | 11.7 kB | 27.3 kB | 36 ms | 72 ms | 76 ms | 0 |
+| num | 78.6 kB | 7.4 kB | 27.3 kB | 36 ms | 40 ms | 76 ms | 0 |
+| progress | 82.5 kB | 11.4 kB | 27.3 kB | 32 ms | 44 ms | 76 ms | 0 |
+| separator | 77.7 kB | 6.6 kB | 27.3 kB | 44 ms | 28 ms | 64 ms | 0 |
+| skeleton | 79.2 kB | 8.1 kB | 27.3 kB | 32 ms | 36 ms | 76 ms | 0 |
+| status | 82.9 kB | 11.8 kB | 27.3 kB | 32 ms | 40 ms | 64 ms | 0 |
+| info-hint | 128.2 kB | 57.1 kB | 27.3 kB | 44 ms | 64 ms | 112 ms | 0 |
+| scroll-area | 76.5 kB | 5.3 kB | 27.3 kB | 28 ms | 28 ms | 56 ms | 0 |
+| resizable | 90.6 kB | 19.5 kB | 27.3 kB | 44 ms | 32 ms | 60 ms | 0 |
+| virtual-list | 83.8 kB | 12.7 kB | 27.3 kB | 44 ms | 36 ms | 60 ms | 0 |
+| stat-card | 99.9 kB | 28.8 kB | 29.3 kB | 48 ms | 52 ms | 84 ms | 0 |
+| stat-group | 105.7 kB | 34.5 kB | 29.3 kB | 36 ms | 48 ms | 104 ms | 0 |
+| bar-list | 93.0 kB | 21.9 kB | 27.3 kB | 28 ms | 60 ms | 80 ms | 0 |
+| chain-view | 93.5 kB | 22.4 kB | 27.3 kB | 40 ms | 40 ms | 104 ms | 0 |
+| data-panel | 88.6 kB | 17.5 kB | 27.3 kB | 60 ms | 52 ms | 84 ms | 0.0001 |
+| event-list | 87.2 kB | 16.1 kB | 27.3 kB | 48 ms | 40 ms | 80 ms | 0 |
+| kanban-card | 90.3 kB | 19.2 kB | 27.3 kB | 32 ms | 32 ms | 76 ms | 0.0007 |
+| row-list | 88.5 kB | 17.4 kB | 27.3 kB | 32 ms | 44 ms | 64 ms | 0 |
+| step-rail | 80.1 kB | 9.0 kB | 27.3 kB | 32 ms | 40 ms | 80 ms | 0 |
+| lines | 190.9 kB | 119.8 kB | 29.3 kB | 28 ms | 56 ms | 100 ms | 0 |
+| bars | 190.9 kB | 119.7 kB | 29.3 kB | 32 ms | 36 ms | 108 ms | 0 |
+| cartesian-chart | 190.8 kB | 119.7 kB | 29.3 kB | 68 ms | 128 ms | 212 ms | 0 |
+| chart-card | 202.8 kB | 131.6 kB | 29.3 kB | 60 ms | 52 ms | 112 ms | 0 |
+| heatmap | 187.6 kB | 116.5 kB | 29.3 kB | 28 ms | 36 ms | 96 ms | 0 |
+| interval-track | 188.6 kB | 117.5 kB | 29.3 kB | 36 ms | 36 ms | 88 ms | 0 |
+| sparkline | 88.5 kB | 17.4 kB | 29.3 kB | 32 ms | 52 ms | 72 ms | 0 |
+| band-strip | 182.9 kB | 111.8 kB | 29.3 kB | 40 ms | 40 ms | 112 ms | 0 |
+| data-table | 290.3 kB | 219.2 kB | 27.3 kB | 44 ms | 44 ms | 160 ms | 0 |
+| static-table | 83.6 kB | 12.5 kB | 27.3 kB | 84 ms | 44 ms | 64 ms | 0.0006 |
+| table-toolbar | 250.3 kB | 179.1 kB | 27.3 kB | 36 ms | 36 ms | 112 ms | 0 |
+| data-table-body | 285.4 kB | 214.3 kB | 27.3 kB | 44 ms | 36 ms | 120 ms | 0 |
+| markdown | 213.9 kB | 142.8 kB | 27.3 kB | 40 ms | 72 ms | 112 ms | 0 |
+| code-block | 170.1 kB | 98.9 kB | 27.3 kB | 36 ms | 56 ms | 84 ms | 0 |
+| article-layout | 132.4 kB | 61.3 kB | 27.8 kB | 48 ms | 52 ms | 108 ms | 0.0026 |
+| toc | 80.9 kB | 9.8 kB | 27.8 kB | 36 ms | 36 ms | 100 ms | 0 |
+| callout | 79.8 kB | 8.7 kB | 27.8 kB | 32 ms | 40 ms | 216 ms | 0 |
+| prose | 75.6 kB | 4.5 kB | 27.8 kB | 44 ms | 32 ms | 136 ms | 0 |
+| page | 179.7 kB | 108.6 kB | 27.8 kB | 40 ms | 44 ms | 116 ms | 0 |
+| empty-state | 85.2 kB | 14.0 kB | 27.8 kB | 44 ms | 92 ms | 220 ms | 0 |
+| facts | 72.0 kB | 0.9 kB | 27.8 kB | 32 ms | 40 ms | 80 ms | 0 |
+| inner-nav | 0 | 0 | 27.7 kB | 44 ms | 32 ms | 0 ms | 0 |
+| page-aside | 130.8 kB | 59.7 kB | 27.8 kB | 64 ms | 324 ms | 268 ms | 0 |
+| split-page | 0 | 0 | 27.7 kB | 40 ms | 36 ms | 0 ms | 0 |
+| dock | 90.1 kB | 19.0 kB | 27.8 kB | 40 ms | 196 ms | 108 ms | 0 |
+| peek | 91.0 kB | 19.9 kB | 27.8 kB | 44 ms | 72 ms | 220 ms | 0 |
+| query-state | 88.3 kB | 17.2 kB | 27.8 kB | 40 ms | 32 ms | 112 ms | 0 |
+| refresh-button | 85.6 kB | 14.5 kB | 27.8 kB | 28 ms | 108 ms | 232 ms | 0 |
+| connection-indicator | 0 | 0 | 27.7 kB | 40 ms | 80 ms | 0 ms | 0 |
+| overlay-host | 128.4 kB | 57.2 kB | 27.8 kB | 32 ms | 172 ms | 80 ms | 0 |
+| toast-host | 107.5 kB | 36.3 kB | 27.8 kB | 0 ms | 0 ms | 0 ms | 0 |
+| app-shell | 0 | 0 | 27.7 kB | 28 ms | 68 ms | 0 ms | 0 |
+| command-palette | 166.9 kB | 95.7 kB | 27.3 kB | 28 ms | 44 ms | 84 ms | 0 |
+| controls | 0 | 0 | 27.2 kB | 32 ms | 28 ms | 0 ms | 0 |
+| control-home | 0 | 0 | 27.2 kB | 32 ms | 40 ms | 0 ms | 0 |
+| basalt-provider | 82.0 kB | 10.8 kB | 27.3 kB | 40 ms | 40 ms | 80 ms | 0 |
+| input | 83.0 kB | 11.9 kB | 27.3 kB | 36 ms | 64 ms | 60 ms | 0 |
+| textarea | 82.5 kB | 11.4 kB | 27.3 kB | 28 ms | 44 ms | 88 ms | 0 |
+| checkbox | 91.3 kB | 20.2 kB | 27.3 kB | 32 ms | 56 ms | 76 ms | 0 |
+| radio-group | 98.7 kB | 27.6 kB | 27.3 kB | 32 ms | 32 ms | 108 ms | 0 |
+| switch | 85.1 kB | 14.0 kB | 27.3 kB | 28 ms | 68 ms | 108 ms | 0 |
+| select | 134.8 kB | 63.7 kB | 27.3 kB | 64 ms | 40 ms | 84 ms | 0 |
+| native-select | 134.8 kB | 63.7 kB | 27.3 kB | 40 ms | 48 ms | 128 ms | 0 |
+| number-field | 92.2 kB | 21.0 kB | 27.3 kB | 56 ms | 48 ms | 144 ms | 0 |
+| slider | 99.2 kB | 28.1 kB | 27.3 kB | 32 ms | 44 ms | 160 ms | 0 |
+| segmented | 92.2 kB | 21.1 kB | 27.3 kB | 28 ms | 36 ms | 108 ms | 0 |
+| date-picker | 148.6 kB | 77.5 kB | 27.3 kB | 36 ms | 44 ms | 88 ms | 0 |
+| date-range-picker | 148.6 kB | 77.5 kB | 27.3 kB | 72 ms | 36 ms | 256 ms | 0 |
+| combobox | 140.4 kB | 69.3 kB | 27.3 kB | 120 ms | 68 ms | 84 ms | 0 |
+| autocomplete | 140.4 kB | 69.2 kB | 27.3 kB | 28 ms | 32 ms | 100 ms | 0 |
+| file-upload | 84.1 kB | 13.0 kB | 27.3 kB | 48 ms | 56 ms | 92 ms | 0 |
+| field | 91.3 kB | 20.2 kB | 27.3 kB | 48 ms | 32 ms | 116 ms | 0 |
+| form-layout | 111.0 kB | 39.9 kB | 27.3 kB | 40 ms | 52 ms | 168 ms | 0 |
+| stepper | 76.2 kB | 5.1 kB | 27.3 kB | 44 ms | 32 ms | 96 ms | 0 |
 
 ## Several islands on one page
 
@@ -211,13 +211,13 @@ Every part of a family on one page, each its own island, in one mode. Astro send
 
 | Family | Parts | no directive | client:visible | client:idle | client:load | client:only | CSS | CLS (client:load) |
 |-|-|-|-|-|-|-|-|-|
-| ui | 27 | 0 | 129.6 kB | 238.5 kB | 238.5 kB | 238.5 kB | 26.7 kB | 0.0001 |
-| cards | 9 | 0 | 127.3 kB | 137.6 kB | 137.5 kB | 137.5 kB | 28.7 kB | 0 |
-| charts | 8 | 0 | 201.8 kB | 219.7 kB | 219.6 kB | 219.6 kB | 28.7 kB | 0 |
-| table | 4 | 0 | 290.3 kB | 294.9 kB | 294.8 kB | 294.8 kB | 26.7 kB | 0.0006 |
-| content | 5 | 0 | 269.9 kB | 271.1 kB | 271.0 kB | 271.0 kB | 27.2 kB | 0.0025 |
-| page | 19 | 0 | 181.6 kB | 252.8 kB | 252.7 kB | 334.6 kB | 27.2 kB | 0.0001 |
-| forms | 18 | 0 | 160.8 kB | 234.9 kB | 234.8 kB | 234.8 kB | 26.7 kB | 0 |
+| ui | 27 | 0 | 130.0 kB | 238.9 kB | 238.9 kB | 238.9 kB | 27.3 kB | 0.0001 |
+| cards | 9 | 0 | 127.9 kB | 138.1 kB | 138.0 kB | 138.0 kB | 29.3 kB | 0 |
+| charts | 8 | 0 | 203.8 kB | 221.7 kB | 221.7 kB | 221.7 kB | 29.3 kB | 0 |
+| table | 4 | 0 | 290.7 kB | 295.3 kB | 295.2 kB | 295.2 kB | 27.3 kB | 0.0006 |
+| content | 5 | 0 | 270.3 kB | 271.5 kB | 271.4 kB | 271.4 kB | 27.8 kB | 0.0025 |
+| page | 19 | 0 | 182.1 kB | 253.7 kB | 253.6 kB | 335.8 kB | 27.8 kB | 0.0001 |
+| forms | 18 | 0 | 160.8 kB | 235.3 kB | 235.2 kB | 235.2 kB | 27.3 kB | 0 |
 
 ## Charts: is the static picture correct?
 
@@ -225,14 +225,14 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 
 | Kind | Static picture | 1440-light | 1440-dark | 390-light | 390-dark | Hover on top |
 |-|-|-|-|-|-|-|
-| lines | correct at the declared width only | [0.00%](astro-matrix/lines.1440-light.png) | 0.00% | [8.06%](astro-matrix/lines.390-light.png) | 7.78% | client:visible, 115.7 kB further |
-| bars | correct at the declared width only | [0.00%](astro-matrix/bars.1440-light.png) | 0.00% | [17.36%](astro-matrix/bars.390-light.png) | 17.13% | client:visible, 115.6 kB further |
-| cartesian-chart | correct at the declared width only | [0.00%](astro-matrix/cartesian-chart.1440-light.png) | 0.00% | [10.46%](astro-matrix/cartesian-chart.390-light.png) | 10.18% | client:visible, 115.5 kB further |
-| chart-card | correct at the declared width only | [0.00%](astro-matrix/chart-card.1440-light.png) | 0.00% | [3.44%](astro-matrix/chart-card.390-light.png) | 3.29% | client:visible, 129.6 kB further |
-| heatmap | correct at the declared width only | [0.00%](astro-matrix/heatmap.1440-light.png) | 0.00% | [55.82%](astro-matrix/heatmap.390-light.png) | 49.36% | client:visible, 112.0 kB further |
-| interval-track | correct at the declared width only | [0.00%](astro-matrix/interval-track.1440-light.png) | 0.00% | [16.19%](astro-matrix/interval-track.390-light.png) | 16.96% | client:visible, 113.1 kB further |
-| sparkline | correct | [0.00%](astro-matrix/sparkline.1440-light.png) | 0.00% | [0.00%](astro-matrix/sparkline.390-light.png) | 0.00% | client:visible, 17.0 kB further |
-| band-strip | correct at the declared width only | [0.00%](astro-matrix/band-strip.1440-light.png) | 0.00% | [28.30%](astro-matrix/band-strip.390-light.png) | 28.10% | client:visible, 107.4 kB further |
+| lines | correct at the declared width only | [0.00%](astro-matrix/lines.1440-light.png) | 0.00% | [8.06%](astro-matrix/lines.390-light.png) | 7.78% | client:visible, 119.8 kB further |
+| bars | correct at the declared width only | [0.00%](astro-matrix/bars.1440-light.png) | 0.00% | [17.36%](astro-matrix/bars.390-light.png) | 17.13% | client:visible, 119.7 kB further |
+| cartesian-chart | correct at the declared width only | [0.00%](astro-matrix/cartesian-chart.1440-light.png) | 0.00% | [10.46%](astro-matrix/cartesian-chart.390-light.png) | 10.18% | client:visible, 119.7 kB further |
+| chart-card | correct at the declared width only | [0.00%](astro-matrix/chart-card.1440-light.png) | 0.00% | [3.44%](astro-matrix/chart-card.390-light.png) | 3.29% | client:visible, 131.6 kB further |
+| heatmap | correct at the declared width only | [0.00%](astro-matrix/heatmap.1440-light.png) | 0.00% | [55.82%](astro-matrix/heatmap.390-light.png) | 49.36% | client:visible, 116.5 kB further |
+| interval-track | correct at the declared width only | [0.00%](astro-matrix/interval-track.1440-light.png) | 0.00% | [16.19%](astro-matrix/interval-track.390-light.png) | 16.96% | client:visible, 117.5 kB further |
+| sparkline | correct | [0.00%](astro-matrix/sparkline.1440-light.png) | 0.00% | [0.00%](astro-matrix/sparkline.390-light.png) | 0.00% | client:visible, 17.4 kB further |
+| band-strip | correct at the declared width only | [0.00%](astro-matrix/band-strip.1440-light.png) | 0.00% | [28.30%](astro-matrix/band-strip.390-light.png) | 28.10% | client:visible, 111.8 kB further |
 
 ## Findings
 
