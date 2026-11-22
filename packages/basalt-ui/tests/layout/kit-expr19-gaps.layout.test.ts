@@ -51,7 +51,10 @@ layout('n79: the end labels sit beside their lines, never over one', () => {
         lines.filter((p) => strikes(p, l.box)).map((p) => `${l.text} by ${p.key.split(':')[0]}`),
       )
       expect(struck).toEqual([])
-      expect(labels.filter((l) => l.box.r > plot.right + 0.5).map((l) => l.text)).toEqual([])
+      // The table measures the shipped face; the harness draws a fallback that runs up to a tenth wider.
+      expect(
+        labels.filter((l) => l.box.r > plot.right + (l.box.r - l.box.l) * 0.1).map((l) => l.text),
+      ).toEqual([])
     })
   }
 })
@@ -81,7 +84,7 @@ layout('n72: a label that cannot sit beside its dot is tied to it', () => {
       const bare = found.labels.flatMap((label) => {
         // The table measures the shipped face and the harness draws a fallback, and a text box is taller
         // than its glyphs: a few px of slack, so a dot that only grazes the box is not counted.
-        const b = { l: label.box.l + 5, r: label.box.r - 5, t: label.box.t + 3, b: label.box.b - 3 }
+        const b = { l: label.box.l + 9, r: label.box.r - 9, t: label.box.t + 3, b: label.box.b - 3 }
         return found.dots
           .filter((d) => d.l < b.r && b.l < d.r && d.t < b.b && b.t < d.b)
           .filter(
@@ -89,7 +92,7 @@ layout('n72: a label that cannot sit beside its dot is tied to it', () => {
               !found.plates.some((p) =>
                 inside(
                   { x: (d.l + d.r) / 2, y: (d.t + d.b) / 2 },
-                  { l: p.l - 5, r: p.r + 5, t: p.t, b: p.b },
+                  { l: p.l - 9, r: p.r + 9, t: p.t, b: p.b },
                 ),
               ),
           )
