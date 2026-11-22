@@ -1,6 +1,7 @@
 /**
  * `TableToolbar` (docs/v3/concepts/data-table.md section 3): quick search, the `+ Filter` popover,
- * the chips, the Display popover and the Views panel, all writing the table's one state. Below
+ * the chips, the Display popover and the view tabs with their manage-view panel, all writing the
+ * table's one state. Below
  * 480 px of the TOOLBAR'S OWN container (not the viewport) the `+ Filter` door and the chips'
  * editors fold into one `Filters (n)` sheet; the swap is CSS on the container, so the server HTML
  * is already right and no observer runs before hydration.

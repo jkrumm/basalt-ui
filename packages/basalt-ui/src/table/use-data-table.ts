@@ -164,7 +164,7 @@ export type TableModel<T> = {
   keyboard: RowKeyboard
   /** Identity of a row, for the link to a chart's focus items. */
   getRowId: (row: T) => string
-  /** A `ViewStore` the caller supplied; absent, the Views panel keeps the views on the device. */
+  /** A `ViewStore` the caller supplied; absent, the view tabs keep the views on the device. */
   viewStore: ViewStore | undefined
   /**
    * The parts hand the detail host here; an activation shows into the latest one. `kind` names where

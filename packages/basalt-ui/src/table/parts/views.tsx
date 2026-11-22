@@ -137,10 +137,14 @@ async function writeStore(
     const was = byId.get(view.id)
     if (was === undefined || !same(was, view)) await store.save(tableId, view)
   }
+  // A store appends what it saves: the order differs from `next` when a kept view moved or a new one
+  // sits anywhere but last (a duplicate lands right after its source).
   const order = next.map((view) => view.id)
-  const before = prev.map((view) => view.id).filter((id) => kept.has(id))
-  const after = order.filter((id) => byId.has(id))
-  if (store.reorder !== undefined && before.join('\u0000') !== after.join('\u0000')) {
+  const appended = [
+    ...prev.map((view) => view.id).filter((id) => kept.has(id)),
+    ...order.filter((id) => !byId.has(id)),
+  ]
+  if (store.reorder !== undefined && appended.join('\u0000') !== order.join('\u0000')) {
     await store.reorder(tableId, order)
   }
 }
@@ -390,9 +394,15 @@ function useViewsController<T>(
     },
     async remove(id) {
       const kept = list.views.filter((view) => view.id !== id)
-      if (!(await commit(kept)) || param.id !== id) return
-      applyBase(model)
-      param.set(defaultView(kept) === undefined ? undefined : BASE_VIEW)
+      if (!(await commit(kept))) return
+      const fallback = defaultView(kept) === undefined ? undefined : BASE_VIEW
+      if (param.id === id) {
+        applyBase(model)
+        param.set(fallback)
+      } else if (param.id === BASE_VIEW && fallback === undefined) {
+        // The declared table needs no id of its own once no default is left.
+        param.set(undefined)
+      }
     },
     link() {
       if (typeof window === 'undefined') return ''

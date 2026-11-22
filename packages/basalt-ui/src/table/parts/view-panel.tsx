@@ -8,7 +8,7 @@
  * so the table stays in view and usable) and a bottom `Sheet` on a phone. It never takes the page's
  * `PageAside`, which is the detail host a row opens into.
  */
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import type { FormEvent, ReactElement, ReactNode } from 'react'
 import { cn } from '../../core/cn'
 import { useMessages } from '../../core/messages/use-messages'
@@ -22,6 +22,7 @@ import { RadioGroup } from '../../ui/radio-group'
 import { Sheet, SheetContent } from '../../ui/sheet'
 import type { RowHeight } from '../contract'
 import type { KindSpec } from '../core/kinds-spec'
+import { clampWidth, widthPx } from '../core/plan'
 import type { TableModel } from '../use-data-table'
 import { useFilterText } from './filter-text'
 import { OrderList } from './order-list'
@@ -35,34 +36,16 @@ import type { ViewsController } from './views'
 type Preset = 'compact' | 'default' | 'wide'
 const PRESET_SCALE: Record<Exclude<Preset, 'default'>, number> = { compact: 0.8, wide: 1.25 }
 
-/** Each column's own width per table, read while the reader has set none: what a preset scales. */
-const baseWidths = new Map<string, Readonly<Record<string, number>>>()
-
-function useBaseWidths<T>(model: TableModel<T>): Readonly<Record<string, number>> {
-  const widths = model.state.display.widths ?? {}
-  const empty = Object.keys(widths).length === 0
-  useEffect(() => {
-    if (!empty) return
-    const read: Record<string, number> = {}
-    for (const spec of model.specs)
-      if (model.resizable(spec.id)) read[spec.id] = model.widthOf(spec.id).px
-    baseWidths.set(model.id, read)
-  })
-  return baseWidths.get(model.id) ?? {}
-}
-
 /** The widths a preset writes: each resizable column's own width scaled, inside its bounds. */
 function presetWidths<T>(
   model: TableModel<T>,
-  base: Readonly<Record<string, number>>,
   preset: Exclude<Preset, 'default'>,
 ): Record<string, number> {
   const out: Record<string, number> = {}
   for (const spec of model.specs) {
     if (!model.resizable(spec.id)) continue
-    const { px, min, max } = model.widthOf(spec.id)
-    const own = base[spec.id] ?? px
-    out[spec.id] = Math.min(max, Math.max(min, Math.round(own * PRESET_SCALE[preset])))
+    // The kind's own width, never the drawn one: a stored width is what a preset replaces.
+    out[spec.id] = clampWidth(spec.kind, Math.round(widthPx(spec.width) * PRESET_SCALE[preset]))
   }
   return out
 }
@@ -199,15 +182,14 @@ function Root<T>({
   const t = useMessages(table)
   const { model, active } = c
   const labels = useLabels()
-  const base = useBaseWidths(model)
   const { request, display } = model.state
   const widths = display.widths ?? {}
   const preset: Preset | 'custom' =
     Object.keys(widths).length === 0
       ? 'default'
-      : sameWidths(widths, presetWidths(model, base, 'compact'))
+      : sameWidths(widths, presetWidths(model, 'compact'))
         ? 'compact'
-        : sameWidths(widths, presetWidths(model, base, 'wide'))
+        : sameWidths(widths, presetWidths(model, 'wide'))
           ? 'wide'
           : 'custom'
   const hidden = model.movable.filter((id) => display.visibility[id] === false).length
@@ -417,14 +399,13 @@ function ColumnWidthPage<T>({ c }: { c: ViewsController<T> }): ReactElement {
   const t = useMessages(table)
   const labels = useLabels()
   const { model } = c
-  const base = useBaseWidths(model)
   const widths = model.state.display.widths ?? {}
   const value: Preset | '' =
     Object.keys(widths).length === 0
       ? 'default'
-      : sameWidths(widths, presetWidths(model, base, 'compact'))
+      : sameWidths(widths, presetWidths(model, 'compact'))
         ? 'compact'
-        : sameWidths(widths, presetWidths(model, base, 'wide'))
+        : sameWidths(widths, presetWidths(model, 'wide'))
           ? 'wide'
           : ''
   return (
@@ -433,7 +414,7 @@ function ColumnWidthPage<T>({ c }: { c: ViewsController<T> }): ReactElement {
       value={value}
       onValueChange={(next) => {
         if (next === 'default' || next === '') model.resetWidths()
-        else model.state.setDisplay({ widths: presetWidths(model, base, next) })
+        else model.state.setDisplay({ widths: presetWidths(model, next) })
       }}
       options={[
         {
@@ -462,7 +443,7 @@ function ColumnsPage<T>({ c }: { c: ViewsController<T> }): ReactElement {
   const every = (shown: boolean): Record<string, boolean> =>
     Object.fromEntries(model.movable.map((id) => [id, shown]))
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 text-sm">
       <span id={titleId} className="sr-only">
         {t('table.panelColumns')}
       </span>
@@ -490,7 +471,7 @@ function ColumnsPage<T>({ c }: { c: ViewsController<T> }): ReactElement {
         lead={
           identity !== undefined && (
             <li className="flex min-h-8 items-center gap-2 pe-2 pointer-coarse:min-h-11">
-              <span aria-hidden="true" className="size-7 shrink-0" />
+              <span aria-hidden="true" className="size-6 shrink-0 pointer-coarse:mx-2.5" />
               <Checkbox aria-label={identity.header} checked disabled />
               <span className="min-w-0 flex-1 truncate">{identity.header}</span>
               <span className="sr-only">{t('table.panelLocked')}</span>
