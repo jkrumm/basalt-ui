@@ -60,6 +60,7 @@ function BoardRoute(): ReactElement {
     lost: [],
   }))
   const [links, setLinks] = useState(LINKS)
+  const [stage, setStage] = useState<Stage>('qualified')
   const f = useFormat()
   const usd = (n: number): string => f.money(n, 'USD', { maximumFractionDigits: 0 })
   return (
@@ -70,7 +71,8 @@ function BoardRoute(): ReactElement {
           label="Deals by stage"
           columns={columnsOf(deals, usd)}
           items={deals}
-          active="qualified"
+          active={stage}
+          onActiveChange={setStage}
           drag={drag}
           virtual={{ list: VirtualList, cardHeight: 110 }} // two meta lines and a 44 px menu on a coarse pointer
           onMove={(m) => setDeals((prev) => applyMove(prev, m))}
