@@ -72,10 +72,16 @@ function BoardRoute(): ReactElement {
           items={deals}
           active="qualified"
           drag={drag}
-          virtual={{ list: VirtualList, cardHeight: 92 }}
+          virtual={{ list: VirtualList, cardHeight: 110 }} // two meta lines and a 44 px menu on a coarse pointer
           onMove={(m) => setDeals((prev) => applyMove(prev, m))}
           card={(d, move) => (
-            <KanbanCard id={d.id} title={d.title} age={d.age} meta={d.meta} move={move} />
+            <KanbanCard
+              id={d.id}
+              title={d.title}
+              age={d.age}
+              meta={[d.meta[0], usd(d.value)]}
+              move={move}
+            />
           )}
         />
       </Section>
