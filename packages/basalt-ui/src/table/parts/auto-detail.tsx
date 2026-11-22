@@ -26,7 +26,7 @@ export function AutoDetail<T>({
   row: T
   box: Box
 }): ReactElement {
-  const env: CellEnv = { format: model.format, now: model.now, box }
+  const env: CellEnv = { format: model.format, now: model.now, zone: model.zone, box }
   return (
     <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
       {model.specs.map((spec) =>

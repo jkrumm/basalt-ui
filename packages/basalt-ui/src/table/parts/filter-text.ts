@@ -9,6 +9,7 @@ import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
 import type { FilterModel } from '../contract'
 import { numberOf, rangeEnds } from '../core/filters'
+import { isDayKind } from '../core/kinds-spec'
 import type { KindSpec } from '../core/kinds-spec'
 
 /** A filter as words: the operator (`contains`, `is`; none for a range) and the value. */
@@ -18,7 +19,7 @@ type Spec = Pick<KindSpec<never>, 'kind' | 'labels' | 'unit'>
 
 /** One end of a range as the column prints it: a day, an amount in the currency, a number. */
 function endText(spec: Spec, text: string, format: Format): string {
-  if (spec.kind === 'date' || spec.kind === 'relativeTime') {
+  if (isDayKind(spec.kind)) {
     return format.date(text as CalendarDate, 'short')
   }
   const value = numberOf(text)
@@ -35,7 +36,7 @@ export function useFilterText(): (spec: Spec | undefined, filter: FilterModel) =
   return (spec, filter) => {
     if (filter.op === 'range' && spec !== undefined) {
       const [from, to] = rangeEnds(filter.values)
-      const day = spec.kind === 'date' || spec.kind === 'relativeTime'
+      const day = isDayKind(spec.kind)
       const a = from === '' ? '' : endText(spec, from, format)
       const b = to === '' ? '' : endText(spec, to, format)
       const value =

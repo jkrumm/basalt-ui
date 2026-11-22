@@ -90,7 +90,11 @@ export const rows: readonly RowDef[] = [
     // pinned edge, all in the display state and saved views. A submenu with radio items cost 1.85 KB more and went.
     // 167600 -> 168000 (Issue 2853): +~250 B gz: the table's Button, Input, Select and
     // Combobox read the control group scope (`core/control-scope`), so a group sets their size.
-    ceiling: 168000,
+    // 168000 -> 171300 (Issue 2969): +~3.3 KB gz for the record kinds (bench-table-kinds): `person` and `people`
+    // (the Avatar and AvatarStack cells), `tags` (the measured fold to +N), `countdown` (day maths, three
+    // messages), `link` (the safe-URL rule), an entity's image and ref, the typed title and a quiet text, plus
+    // any-of over a list cell and the open option list.
+    ceiling: 171300,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -102,6 +106,13 @@ export const raises: Raises = {
       to: 168000,
       consumer:
         "one control vocabulary (plan row bench-control-groups, Issue 2853): every control resolves its size and variant through the group scope, so the table's header editors and toolbar take a ControlGroup's size like any other control",
+      repo: 'basalt-ui',
+    },
+    {
+      from: 168000,
+      to: 171300,
+      consumer:
+        'the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md): a Notes table needs person, tags, a due date as a distance, a link and an entity with a logo, each a counted custom column until now (Issue 2969)',
       repo: 'basalt-ui',
     },
     {

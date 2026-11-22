@@ -5,14 +5,20 @@
  * the cell (`cellAttributes`), so a renderer draws content only.
  */
 import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { cn } from '../../core/cn'
 import type { CalendarDate, DateStyle, Format } from '../../core/format'
 import { AppLink } from '../../core/link'
+import { table } from '../../core/messages/table'
+import { useMessages } from '../../core/messages/use-messages'
 import type { Delta, IconComponent, NavTarget, Tone } from '../../core/ports'
 import { TRUE_MINUS } from '../../format/shared'
-import { DeltaBadge } from '../../ui/badge'
+import { Avatar, AvatarStack } from '../../ui/avatar'
+import type { AvatarEntry } from '../../ui/avatar'
+import { DeltaBadge, Lozenge } from '../../ui/badge'
 import { Meter } from '../../ui/meter'
 import { Status } from '../../ui/status'
+import { dayOf } from './filters'
 import type { Align, KindSpec, Numerals } from './kinds-spec'
 
 /** An absent value: a muted en dash. Absent is not zero (I15, consumer-linewatch). */
@@ -27,7 +33,10 @@ export function Absent(): ReactNode {
 }
 
 export const isAbsent = (value: unknown): value is null | undefined =>
-  value === null || value === undefined || (typeof value === 'number' && Number.isNaN(value))
+  value === null ||
+  value === undefined ||
+  (typeof value === 'number' && Number.isNaN(value)) ||
+  (Array.isArray(value) && value.length === 0)
 
 /** The attributes the parts spread on a `th`/`td` of this column. */
 export type CellAttributes = {
@@ -157,11 +166,17 @@ export function EntityCell({
   sub,
   mono = false,
   subMono = false,
+  image,
+  id,
 }: {
   value: string
   href: string | NavTarget | undefined
   icon: IconComponent | undefined
   sub: string | undefined
+  /** A logo or photo: a 16 px face before the name; `src` is absent for a row with none (initials show). */
+  image?: { src: string | undefined; shape: 'person' | 'object' } | undefined
+  /** A short reference (`INV-0042`) in muted mono beside the name. */
+  id?: string | undefined
   /** The name is a time or an id: the mono face with tabular numerals. */
   mono?: boolean
   /** The sub line is a time or an id: the mono face with tabular numerals. */
@@ -170,7 +185,17 @@ export function EntityCell({
   const name = href === undefined ? value : <AppLink href={href}>{value}</AppLink>
   return (
     <span data-slot="table-entity" className="flex min-w-0 items-center gap-2">
-      {Icon !== undefined && <Icon aria-hidden="true" size={16} />}
+      {image !== undefined ? (
+        <Avatar
+          name={value}
+          {...(image.src !== undefined && { src: image.src })}
+          shape={image.shape}
+          size="xs"
+          aria-hidden="true"
+        />
+      ) : (
+        Icon !== undefined && <Icon aria-hidden="true" size={16} />
+      )}
       <span
         data-slot="table-entity-name"
         data-monospace={mono ? '' : undefined}
@@ -178,6 +203,14 @@ export function EntityCell({
       >
         {name}
       </span>
+      {id !== undefined && (
+        <span
+          data-slot="table-entity-id"
+          className="shrink-0 font-mono text-xs text-muted-foreground tabular-nums"
+        >
+          {id}
+        </span>
+      )}
       {sub !== undefined && (
         <span
           data-slot="table-entity-sub"
@@ -347,6 +380,303 @@ export function BooleanCell({
   return (
     <span data-slot="table-boolean" data-value={value ? 'true' : 'false'}>
       <span aria-hidden="true">{value ? '✓' : '✕'}</span> {value ? labels[0] : labels[1]}
+    </span>
+  )
+}
+
+// ---- person, tags, countdown, link ---------------------------------------------------------
+
+/** One person: a 16 px round face, the name, and the role in muted ink after it. */
+export function PersonCell({
+  name,
+  src,
+  role,
+  href,
+}: {
+  name: string
+  src: string | undefined
+  role: string | undefined
+  href: string | NavTarget | undefined
+}): ReactNode {
+  const label = href === undefined ? name : <AppLink href={href}>{name}</AppLink>
+  return (
+    <span
+      data-slot="table-person"
+      className="inline-flex max-w-full min-w-0 items-center gap-2 align-middle"
+    >
+      <Avatar name={name} {...(src !== undefined && { src })} size="xs" aria-hidden="true" />
+      <span className="max-w-full min-w-0 shrink-0 truncate">{label}</span>
+      {role !== undefined && (
+        <span
+          data-slot="table-person-role"
+          className="min-w-0 flex-1 truncate text-muted-foreground"
+        >
+          {role}
+        </span>
+      )}
+    </span>
+  )
+}
+
+/** Several people: overlapping 16 px faces (one initial each, the size of a `person` face) with a `+N`; the names are the group's title. */
+export function PeopleCell({
+  label,
+  people,
+  max,
+}: {
+  label: string
+  people: readonly AvatarEntry[]
+  max: number
+}): ReactNode {
+  return (
+    <span data-slot="table-people" title={people.map((p) => p.name).join(', ')}>
+      <AvatarStack label={label} people={people} max={max} size="xs" />
+    </span>
+  )
+}
+
+/** Width of the `+N` chip and its gap, kept free once the chips overflow. */
+const MORE_CHIP_PX = 32
+
+/**
+ * Tag chips on one line. The chips that do not fit are dropped, never wrapped, and a `+N` chip
+ * (its title lists the hidden ones) takes their place. Fit is measured after layout against the
+ * cell's own width, so it follows a resize; the first paint shows every chip, clipped.
+ */
+export function TagsCell({
+  tags,
+  labels,
+  tone,
+}: {
+  tags: readonly string[]
+  labels: Readonly<Record<string, string>> | undefined
+  tone: ((tag: string) => Tone) | undefined
+}): ReactNode {
+  const outer = useRef<HTMLSpanElement>(null)
+  const row = useRef<HTMLSpanElement>(null)
+  const [fit, setFit] = useState(tags.length)
+  const key = tags.join('\u0000')
+  useLayoutEffect(() => {
+    const box = outer.current
+    const chips = row.current?.children
+    if (box === null || chips === undefined || row.current === null) return
+    const measure = (): void => {
+      const width = box.clientWidth
+      const start = row.current?.offsetLeft ?? 0
+      const ends = Array.from(chips, (chip) => {
+        const el = chip as HTMLElement
+        return el.offsetLeft - start + el.offsetWidth
+      })
+      // No layout (hidden, detached): show everything rather than a bare `+N`.
+      if (width === 0 || ends.every((end) => end === 0)) return setFit(tags.length)
+      if ((ends.at(-1) ?? 0) <= width) return setFit(tags.length)
+      setFit(ends.filter((end) => end <= width - MORE_CHIP_PX).length)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(box)
+    return () => observer.disconnect()
+    // the chip list is its identity: a new array of the same tags measures the same
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- `key` stands for `tags`
+  }, [key])
+  const hidden = tags.slice(fit)
+  return (
+    <span
+      ref={outer}
+      data-slot="table-tags"
+      className="inline-flex max-w-full min-w-0 items-center gap-1 overflow-hidden align-middle"
+    >
+      <span ref={row} className="flex min-w-0 items-center gap-1 overflow-hidden">
+        {tags.map((tag, i) => (
+          <Lozenge
+            key={tag}
+            tone={tone?.(tag) ?? 'neutral'}
+            aria-hidden={i >= fit ? 'true' : undefined}
+            className={cn(i >= fit && 'invisible')}
+          >
+            {labels?.[tag] ?? tag}
+          </Lozenge>
+        ))}
+      </span>
+      {hidden.length > 0 && (
+        <span
+          data-slot="table-tags-more"
+          title={hidden.map((tag) => labels?.[tag] ?? tag).join(', ')}
+          className="shrink-0"
+        >
+          <Lozenge>{`+${hidden.length}`}</Lozenge>
+        </span>
+      )}
+    </span>
+  )
+}
+
+const DAY_MS = 86_400_000
+
+/**
+ * Whole calendar days from today to `value` in `zone` (`'host'` the runtime's, absent UTC): 0 today,
+ * negative past. `null` when the value is no date.
+ */
+export function countdownDays(
+  value: unknown,
+  now: number,
+  zone: string | undefined,
+): number | null {
+  const where = zone === 'host' ? undefined : (zone ?? 'UTC')
+  const due = dayOf(value, where)
+  const today = dayOf(now, where)
+  if (due === null || today === null) return null
+  return Math.round((Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / DAY_MS)
+}
+
+/** The thresholds a `countdown` column declares: days left at or below which the text turns. */
+export type CountdownLimits = {
+  /** Days at or below which the text is `bad`. Default -1: anything overdue. */
+  bad: number
+  /** Days at or below which the text is `warn`; absent, no warning band. */
+  warn: number | undefined
+  /** Distance in days beyond which the cell prints the date. */
+  horizon: number
+}
+
+export function countdownTone(days: number, limits: CountdownLimits): Tone {
+  if (days <= limits.bad) return 'bad'
+  if (limits.warn !== undefined && days <= limits.warn) return 'warn'
+  return 'neutral'
+}
+
+/** The ink of a countdown: plain until a threshold turns it, never a fill or a row tint. */
+const COUNTDOWN_INK: Readonly<Record<Tone, string>> = {
+  neutral: '',
+  accent: 'text-brand',
+  good: 'text-good',
+  warn: 'text-warn',
+  bad: 'text-bad',
+  info: 'text-info',
+}
+
+/** A date as its distance from today: `26 days late`, `Today`, `in 4 days`; the date past the horizon. */
+export function CountdownCell({
+  value,
+  format,
+  now,
+  zone,
+  limits,
+}: {
+  value: unknown
+  format: Format
+  now: number
+  zone: string | undefined
+  limits: CountdownLimits
+}): ReactNode {
+  const t = useMessages(table)
+  const days = countdownDays(value, now, zone)
+  const label = dateLabel(value, format, 'short')
+  if (days === null || label === null) return <Absent />
+  const text =
+    Math.abs(days) > limits.horizon
+      ? label.text
+      : days === 0
+        ? t('table.countdownToday')
+        : days < 0
+          ? t('table.countdownLate', -days)
+          : t('table.countdownIn', days)
+  const tone = countdownTone(days, limits)
+  return (
+    <time
+      dateTime={label.iso}
+      title={label.text}
+      data-slot="table-countdown"
+      data-tone={tone}
+      className={cn('tabular-nums', COUNTDOWN_INK[tone])}
+    >
+      {text}
+    </time>
+  )
+}
+
+const WEB_URL = /^https?:\/\//i
+const SAFE_URL = /^(https?:\/\/|mailto:|tel:)/i
+const EMAIL = /^[^\s@/:]+@[^\s@/:]+\.[^\s@/:]+$/
+
+/**
+ * Where a link's text points: an `http(s)`, `mailto` or `tel` URL as written, a bare address as
+ * `mailto:`. Anything else (a `javascript:` URL included) has no destination and prints as text.
+ */
+export function linkTarget(text: string): { href: string; web: boolean } | null {
+  const value = text.trim()
+  if (SAFE_URL.test(value)) return { href: value, web: WEB_URL.test(value) }
+  if (EMAIL.test(value)) return { href: `mailto:${value}`, web: false }
+  return null
+}
+
+/** A link's text when the row names none: the URL without its scheme and trailing slash. */
+export function linkLabel(text: string): string {
+  return text
+    .trim()
+    .replace(/^(https?:\/\/|mailto:|tel:)/i, '')
+    .replace(/\/$/, '')
+}
+
+/** A URL, an address or a record link as quiet text, with an optional leading icon. */
+export function LinkCell({
+  text,
+  label: named,
+  href,
+  icon: Icon,
+}: {
+  /** The stored value: a URL, an address or the record's name. */
+  text: string
+  /** What is printed, when the row names it; else the value without its scheme. */
+  label: string | undefined
+  /** A record link or in-app path the row names; it wins over the value's own destination. */
+  href: string | NavTarget | undefined
+  icon: IconComponent | undefined
+}): ReactNode {
+  const own = href === undefined ? linkTarget(text) : null
+  const className =
+    '-my-1 min-w-0 truncate py-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:text-foreground'
+  const label = named ?? (own === null ? text : linkLabel(text))
+  let body: ReactNode = <span className="min-w-0 truncate text-muted-foreground">{label}</span>
+  if (href !== undefined) {
+    body = (
+      <AppLink href={href} className={className}>
+        {label}
+      </AppLink>
+    )
+  } else if (own !== null) {
+    body = (
+      <a
+        href={own.href}
+        className={className}
+        {...(own.web && { target: '_blank', rel: 'noopener noreferrer' })}
+      >
+        {label}
+      </a>
+    )
+  }
+  return (
+    <span
+      data-slot="table-link"
+      className="inline-flex max-w-full min-w-0 items-center gap-1.5 align-middle"
+    >
+      {Icon !== undefined && (
+        <Icon aria-hidden="true" size={14} className="shrink-0 text-muted-foreground" />
+      )}
+      {body}
+    </span>
+  )
+}
+
+/** A text column's `quiet` cell: muted ink on one truncated line, the preview of a record. */
+export function QuietText({ text }: { text: string }): ReactNode {
+  return (
+    <span
+      data-slot="table-quiet"
+      title={text}
+      className="inline-block max-w-full truncate align-bottom text-muted-foreground"
+    >
+      {text}
     </span>
   )
 }

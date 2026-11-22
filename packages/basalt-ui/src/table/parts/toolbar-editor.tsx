@@ -27,6 +27,7 @@ import { ScrollArea } from '../../ui/scroll-area'
 import { Segmented } from '../../ui/segmented'
 import { Status } from '../../ui/status'
 import { isUsable } from '../core/filters'
+import { isDayKind } from '../core/kinds-spec'
 import type { KindSpec } from '../core/kinds-spec'
 import { useSearchDraft } from '../core/state'
 import type { TableModel } from '../use-data-table'
@@ -74,8 +75,12 @@ function OptionsEditor<T>({ model, spec }: FilterEditorProps<T>): ReactElement {
   const [query, setQuery] = useState('')
   const { filters } = model.state.request
   const selected = filterValues(filters, spec.id)
-  const options = spec.kind === 'status' ? model.rankOf(spec.id) : (spec.options ?? [])
   const counts = model.facetsOf(spec.id)
+  // A closed list is declared; an open one (`person`, `tags`) lists what the rows hold, and what is picked.
+  const options =
+    spec.kind === 'status'
+      ? model.rankOf(spec.id)
+      : (spec.options ?? [...new Set([...(counts?.keys() ?? []), ...selected])].toSorted())
   const labelOf = (value: string): string => spec.labels?.[value] ?? value
   const needle = query.trim().toLowerCase()
   const shown =
@@ -178,7 +183,7 @@ export function FilterEditor<T>(props: FilterEditorProps<T>): ReactElement {
   const t = useMessages(table)
   const { filters } = model.state.request
   const active = filters.some((f) => f.id === spec.id && isUsable(f.op, f.values))
-  const day = spec.kind === 'date' || spec.kind === 'relativeTime'
+  const day = isDayKind(spec.kind)
   const boolean = spec.kind === 'boolean'
   const editor =
     spec.filter === 'contains' ? (

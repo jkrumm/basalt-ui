@@ -45,7 +45,7 @@ import type { ArrangedColumn } from './core/arrange'
 import { useRowKeyboard } from './core/keyboard'
 import type { RowKeyboard } from './core/keyboard'
 import { engineColumn } from './core/kinds-engine'
-import { KIND_DEFAULTS, specOf } from './core/kinds-spec'
+import { KIND_DEFAULTS, isDayKind, specOf } from './core/kinds-spec'
 import type { KindSpec } from './core/kinds-spec'
 import {
   clampWidth,
@@ -189,6 +189,8 @@ export type TableModel<T> = {
    */
   detailListed: boolean
   format: Format
+  /** The zone a `countdown` counts days in: the provider's, `'host'` the runtime's. */
+  zone?: string
   /** One clock value per render so server and client agree on a relative time. */
   now: number
   sortOf(id: string): SortDirection
@@ -257,9 +259,7 @@ function usePageFilters<T>(filters: readonly PageFilter<T, any>[] = []) {
 
 /** What a column's `range` compares: calendar days in the table's zone on a date kind, else numbers. */
 function domainOf(spec: Pick<KindSpec<never>, 'kind'>, zone: string | undefined): RangeDomain {
-  return spec.kind === 'date' || spec.kind === 'relativeTime'
-    ? { kind: 'day', zone }
-    : { kind: 'number' }
+  return isDayKind(spec.kind) ? { kind: 'day', zone } : { kind: 'number' }
 }
 
 /**
@@ -535,7 +535,7 @@ export function useDataTable<
   const groupSpec = group?.spec
   // A date groups by its day in the table's zone, never by the instant.
   const groupKey =
-    groupSpec !== undefined && (groupSpec.kind === 'date' || groupSpec.kind === 'relativeTime')
+    groupSpec !== undefined && isDayKind(groupSpec.kind)
       ? (row: T) => dayOf(groupSpec.value(row), zone) ?? ''
       : undefined
   const items =
@@ -881,6 +881,7 @@ export function useDataTable<
       ),
     detailListed: activation.kind !== 'detail',
     format,
+    zone: zone ?? 'host',
     now,
     sortOf(id) {
       const entry = request.sort.find((s) => s.id === id)
@@ -910,8 +911,11 @@ export function useDataTable<
       const counts = new Map<string, number>()
       for (const [value, count] of column.getFacetedUniqueValues()) {
         if (value === undefined || value === null) continue
-        const key = String(value)
-        counts.set(key, (counts.get(key) ?? 0) + count)
+        // A list cell (`tags`, several people) counts under each of its entries.
+        for (const entry of Array.isArray(value) ? value : [value]) {
+          const key = String(entry)
+          counts.set(key, (counts.get(key) ?? 0) + count)
+        }
       }
       return counts
     },

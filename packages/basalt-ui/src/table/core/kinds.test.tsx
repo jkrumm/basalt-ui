@@ -27,6 +27,11 @@ type Row = {
   load: number
   active: boolean
   category: string
+  owner: string
+  team: string[]
+  tags: string[]
+  due: string
+  site: string
 }
 
 const ROW: Row = {
@@ -41,6 +46,11 @@ const ROW: Row = {
   load: 0.4,
   active: true,
   category: 'Food',
+  owner: 'Ada Lovelace',
+  team: ['Ada Lovelace', 'Alan Turing'],
+  tags: ['design', 'ops'],
+  due: '2026-11-15',
+  site: 'https://acme.example/pricing',
 }
 
 const ENV: CellEnv = {
@@ -69,6 +79,10 @@ function cell(column: ReturnType<typeof c.text>, row: Row = ROW): HTMLElement {
 
 const ALL = () => [
   c.entity('name'),
+  c.person('owner'),
+  c.tags('tags'),
+  c.countdown('due'),
+  c.link('site'),
   c.text('note'),
   c.number('count'),
   c.money('amount', { currency: 'EUR' }),

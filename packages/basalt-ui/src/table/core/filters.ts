@@ -5,8 +5,8 @@
  *
  * Law:
  * - `contains` (text kinds) is a case-insensitive substring of the cell, any value of the model.
- * - `anyOf` (enum kinds: `status`, `select`, `boolean`) is the EXACT string, any value of the
- *   model. `Eng` never matches `Engineering`; the 2.x substring match was the bug (I17). A boolean
+ * - `anyOf` (enum kinds: `status`, `select`, `boolean`, `person`, `tags`) is the EXACT string, any value of the
+ *   model; a list cell passes when any entry does. `Eng` never matches `Engineering`; the 2.x substring match was the bug (I17). A boolean
  *   cell compares as `true` or `false`.
  * - `range` (numeric and date kinds) is `[from, to]`, both ends inclusive, either end `''` for an
  *   open side. A numeric column compares numbers; a date column compares calendar days
@@ -131,6 +131,8 @@ export function matchesFilter(
   if (op === 'range') return inRange(cell, values, domain)
   const wanted = usableValues(values)
   if (wanted.length === 0) return true
+  // A list cell (`tags`, several people) passes when any of its entries does.
+  if (Array.isArray(cell)) return cell.some((entry) => matchesFilter(op, entry, values, domain))
   const text = textOf(cell)
   if (text === null) return false
   if (op === 'anyOf') return wanted.includes(text)

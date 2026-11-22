@@ -22,6 +22,12 @@ missing from every phone card (`craft-6/hidden-column`).
 col<T>(): Col<T>
   returns Col:
     entity(key: KeysOf<T, string>, o?: EntityOptions<T> | undefined): KindColumn<T>
+    title<const K extends string>(key: KeysOf<T, string>, o: TitleOptions<T, K>): KindColumn<T>
+    person(key: KeysOf<T, string>, o?: PersonOptions<T> | undefined): KindColumn<T>
+    people(key: KeysOf<T, readonly string[]>, o?: PeopleOptions<T> | undefined): KindColumn<T>
+    tags(key: KeysOf<T, readonly string[]>, o?: TagsOptions): KindColumn<T>
+    countdown(key: KeysOf<T, string | number | Date>, o?: CountdownOptions): KindColumn<T>
+    link(key: KeysOf<T, string>, o?: LinkOptions<T> | undefined): KindColumn<T>
     text(key: KeysOf<T, string>, o?: TextOptions): KindColumn<T>
     number(key: KeysOf<T, number>, o?: NumberOptions): KindColumn<T>
     money(key: KeysOf<T, number>, o: MoneyOptions): KindColumn<T>
@@ -46,11 +52,92 @@ col<T>(): Col<T>
     headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
     href?: (row: T) => string | NavTarget
     icon?: (row: T) => IconComponent
+    image?: (row: T) => string | null  // A logo or photo URL drawn as a 16 px face before the name (initials while it loads or when absent); wins over `icon`
+    imageShape?: "object" | "person"  // `'object'` (default) is a rounded square for a company or logo; `'person'` a circle
+    ref?: (row: T) => string | null  // A short reference (`INV-0042`) in muted mono beside the name
     sub?: (row: T) => string | null
     mono?: boolean  // The name is a time or an id: drawn in the mono face with tabular numerals
     subMono?: boolean  // The secondary text is a time or an id: drawn in the mono face with tabular numerals
     filter?: "text"
     width?: "content"  // `'content'` sizes the column to its widest loaded value, name or sub line (floor 18ch, cap 40ch), instead of a flexible share of what the other columns leave
+
+  TitleOptions<T, K>:
+    filter?: "text"
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    href?: (row: T) => string | NavTarget
+    imageShape?: "object" | "person"  // `'object'` (default) is a rounded square for a company or logo; `'person'` a circle
+    ref?: (row: T) => string | null  // A short reference (`INV-0042`) in muted mono beside the name
+    sub?: (row: T) => string | null
+    mono?: boolean  // The name is a time or an id: drawn in the mono face with tabular numerals
+    subMono?: boolean  // The secondary text is a time or an id: drawn in the mono face with tabular numerals
+    width?: "content"  // `'content'` sizes the column to its widest loaded value, name or sub line (floor 18ch, cap 40ch), instead of a flexible share of what the other columns leave
+    type: (row: T) => K
+    icons: Readonly<Record<K, IconComponent>>
+
+  PersonOptions<T>:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    avatar?: (row: T) => string | null  // The face's image URL; initials show while it loads or when absent
+    role?: (row: T) => string | null  // Muted text after the name: a job title, a team
+    href?: (row: T) => string | NavTarget
+    filter?: "multi"  // `'multi'` filters by a checklist of the names the rows hold
+
+  PeopleOptions<T>:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    avatar?: (name: string, row: T) => string | null  // The face's image URL of one name
+    max?: number  // Faces shown before the `+N`
+    filter?: "multi"
+
+  TagsOptions:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    labels?: Readonly<Record<string, string>>  // The text of a stored tag; the tag itself without an entry
+    tone?: (tag: string) => Tone  // The chip's tone, from the status tone map
+    filter?: "multi"  // `'multi'` filters by a checklist of the tags the rows hold; a row passes on any of its tags
+
+  CountdownOptions:
+    // either filter + picker or neither
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    filter?: "range"
+    picker?: DateRangeLike
+    bad?: number
+    warn?: number
+    horizon?: number
+
+  LinkOptions<T>:
+    header?: string  // Header text
+    id?: string  // Column id when it differs from the key (two columns over one field)
+    priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
+    card?: CardSlot  // First choice of card slot; the kind's own order follows
+    sortable?: false  // `false` turns sorting off for this column
+    headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
+    href?: (row: T) => string | NavTarget  // A record link or in-app path; without it the value's own URL or address is the destination
+    label?: (row: T) => string | null  // What is printed for the row; without it the value minus its scheme
+    icon?: (row: T) => IconComponent
+    filter?: "text"
 
   TextOptions:
     header?: string  // Header text
@@ -61,6 +148,7 @@ col<T>(): Col<T>
     headerIcon?: IconComponent  // An icon drawn before the header text (any component with the `IconComponent` shape)
     filter?: "text"
     labels?: Readonly<Record<string, string>>  // The text of a stored value in the cell and the phone card; the stored value without an entry
+    quiet?: boolean  // A muted one-line preview: secondary ink, truncated, never wrapped
 
   NumberOptions:
     header?: string  // Header text
