@@ -558,7 +558,12 @@ export function PageBar<K extends string = string, L extends string = string>({
             </div>
           )}
           {!isEmptyTabs(tabs) && (
-            <div data-slot="page-bar-tabs" className="flex min-w-0 shrink">
+            // Below regular the tabs scroll: the end fades so a cut tab reads as more, and the list keeps
+            // that fade's width free at its end so the last tab is whole once scrolled to.
+            <div
+              data-slot="page-bar-tabs"
+              className="flex min-w-0 shrink @max-regular:mask-[linear-gradient(to_right,black_calc(100%-1rem),transparent)] @max-regular:[&>[data-slot=tabs-list]]:pe-4"
+            >
               {renderTabs(tabs, 'pill')}
             </div>
           )}
