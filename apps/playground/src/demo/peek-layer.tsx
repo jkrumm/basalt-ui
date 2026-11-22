@@ -1,15 +1,29 @@
 import { Dock, Facts, Peek } from 'basalt-ui/page'
 import { usePeek } from 'basalt-ui/router'
+import { FileText, Image, Link } from 'lucide-react'
 import type { ReactElement } from 'react'
 import { globals } from './globals'
 import { PhotoDetail } from './kit-photo-detail'
-import { photoOf } from './kit-photos'
-import { recordOf } from './peek-records'
+import { PHOTOS, photoOf } from './kit-photos'
+import { PEEK_RECORDS, recordOf } from './peek-records'
 
 /** The record kinds a plain click opens in the peek, by their page: the Home records and the Kit's photos. */
 const KINDS = { record: '/peek/$id', photo: '/kit/photos/$id' } as const
 
 type Kind = keyof typeof KINDS
+
+/** Each kind's records in their list order: the peek steps through them. */
+const IDS: Record<Kind, readonly string[]> = {
+  record: PEEK_RECORDS.map((record) => record.id),
+  photo: PHOTOS.map((photo) => photo.id),
+}
+
+const ICONS = { record: FileText, photo: Image } as const
+
+/** Copies the record's own page address. */
+function copyLink(path: string | null): void {
+  if (path !== null) void navigator.clipboard?.writeText(new URL(path, window.location.href).href)
+}
 
 /** What `usePeek` hands back for an open record; the router entry exports no name for it. */
 type PeekTarget<K extends string> = { kind: K; id: string }
@@ -56,9 +70,15 @@ export function PeekLayer(): ReactElement | null {
     <>
       {peek.open !== null && (
         <Peek
+          kind={peek.open.kind}
+          icon={ICONS[peek.open.kind]}
           title={titleOf(peek.open)}
           tag={`#${peek.open.id}`}
           {...(peek.fullPage !== null && { fullPage: peek.fullPage })}
+          records={{ ids: IDS[peek.open.kind], id: peek.open.id, onStep: peek.go }}
+          actions={[
+            { id: 'copy', label: 'Copy link', icon: Link, onClick: () => copyLink(peek.fullPage) },
+          ]}
           onClose={peek.close}
           onPin={peek.pin}
         >
@@ -67,6 +87,7 @@ export function PeekLayer(): ReactElement | null {
       )}
       {dock.open !== null && (
         <Dock
+          icon={ICONS[dock.open.kind]}
           title={titleOf(dock.open)}
           tag={`#${dock.open.id}`}
           {...(dock.fullPage !== null && { fullPage: dock.fullPage })}

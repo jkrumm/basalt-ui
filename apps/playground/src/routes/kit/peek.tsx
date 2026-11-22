@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Bars, ChartCard } from 'basalt-ui/charts'
-import { Page, Section } from 'basalt-ui/page'
+import { Facts, Page, Section } from 'basalt-ui/page'
+import { defineControls, field } from 'basalt-ui/router'
 import { col, DataTable, useDataTable } from 'basalt-ui/table'
 import { BASALT } from 'basalt-ui/tokens'
 import type { ReactElement } from 'react'
@@ -20,6 +21,46 @@ const VIEWS = { light: BASALT.brand, dark: BASALT.brand }
 const TOP = PHOTOS.toSorted((a, b) => b.views - a.views).slice(0, 12)
 
 const c = col<Photo>()
+
+/** The row the table's own record panel shows, `?row=<id>`: a reload and a shared link restore it. */
+const store = defineControls({ id: 'kit-peek', scope: 'page', fields: { row: field.string('') } })
+
+/**
+ * A table whose rows open their record in the table's own panel: a side panel, a window or the page
+ * (the header's Open as menu, remembered for this table), with previous and next through the rows.
+ */
+function FromRows(): ReactElement {
+  const t = useDataTable({
+    id: 'kit-peek-rows',
+    label: 'Photos',
+    columns: [
+      c.entity('title', { header: 'Photo', sub: (photo) => COLLECTION_LABELS[photo.collection] }),
+      c.status('verdict', {
+        header: 'Verdict',
+        options: [...VERDICTS],
+        labels: VERDICT_LABELS,
+        tone: (value) => VERDICT_TONE[value],
+      }),
+      c.number('views', { header: 'Views' }),
+    ],
+    data: PHOTOS.slice(12, 24),
+    getRowId: (photo) => photo.id,
+    mode: { kind: 'client' },
+    detail: (photo) => (
+      <Facts
+        rows={[
+          { label: 'Collection', value: COLLECTION_LABELS[photo.collection] },
+          { label: 'Camera', value: photo.camera },
+          { label: 'Views', value: String(photo.views) },
+          { label: 'Verdict', value: VERDICT_LABELS[photo.verdict] },
+        ]}
+      />
+    ),
+    detailTitle: (photo) => photo.title,
+    detailState: store.field.row,
+  })
+  return <DataTable table={t} />
+}
 
 /** A list of photos whose names link to each photo's page: a plain click opens it in the peek instead. */
 function FromList(): ReactElement {
@@ -86,6 +127,12 @@ function PeekRoute(): ReactElement {
       >
         <FromList />
       </Section>
+      <Section
+        title="From a row"
+        summary="A row opens its record; previous and next step through the rows"
+      >
+        <FromRows />
+      </Section>
       <Section title="From a chart" summary="Selecting a bar opens the same panel">
         <FromChart />
       </Section>
@@ -95,5 +142,7 @@ function PeekRoute(): ReactElement {
 
 export const Route = createFileRoute('/kit/peek')({
   staticData: { title: 'Peek' },
+  validateSearch: store.validateSearch,
+  search: { middlewares: store.middlewares },
   component: PeekRoute,
 })
