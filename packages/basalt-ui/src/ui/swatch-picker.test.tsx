@@ -76,6 +76,22 @@ describe('swatch-picker', () => {
     expect(document.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe('Colour')
   })
 
+  test('menu: picking a colour closes the menu and fires onBlur once', () => {
+    let blurs = 0
+    const { getByRole } = render(
+      <SwatchPicker
+        aria-label="Stage colour"
+        display="menu"
+        options={options}
+        value="good"
+        onBlur={() => (blurs += 1)}
+      />,
+    )
+    fireEvent.click(getByRole('button'))
+    fireEvent.click(getByRole('radio', { name: options[1]!.label }))
+    expect(blurs).toBe(1)
+  })
+
   test('server render keeps the slots', () => {
     const html = renderToString(<Picker />)
     for (const part of swatchPickerParts) expect(html).toContain(`data-slot="${part}"`)

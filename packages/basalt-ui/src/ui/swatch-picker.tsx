@@ -149,7 +149,9 @@ export function SwatchPicker({
       onBlur={onFocusOut}
       onValueChange={(next) => {
         onValueChange?.(next as SwatchToken)
+        if (display !== 'menu') return
         setOpen(false)
+        onBlur?.()
       }}
     >
       {options.map((option) => (
