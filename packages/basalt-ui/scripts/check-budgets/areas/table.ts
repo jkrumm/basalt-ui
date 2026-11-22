@@ -109,6 +109,13 @@ export const rows: readonly RowDef[] = [
 export const raises: Raises = {
   'table-own': [
     {
+      from: 180000,
+      to: 182000,
+      consumer:
+        'the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md): a header at rest is an icon and a label with one menu, so every kind draws a header icon and the menu carries the sort and the moves the standing controls did (Issue 3017)',
+      repo: 'basalt-ui',
+    },
+    {
       from: 179500,
       to: 180000,
       consumer:
@@ -127,13 +134,6 @@ export const raises: Raises = {
       to: 168000,
       consumer:
         "one control vocabulary (plan row bench-control-groups, Issue 2853): every control resolves its size and variant through the group scope, so the table's header editors and toolbar take a ControlGroup's size like any other control",
-      repo: 'basalt-ui',
-    },
-    {
-      from: 171300,
-      to: 173300,
-      consumer:
-        'the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md): a header at rest is an icon and a label with one menu, so every kind draws a header icon and the menu carries the sort and the moves the standing controls did (Issue 3017)',
       repo: 'basalt-ui',
     },
     {
