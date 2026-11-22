@@ -208,7 +208,7 @@ describe('column widths', () => {
 })
 
 describe('row height', () => {
-  test('a step rebinds the density under the body alone; the head keeps its height', () => {
+  test('a step rebinds the density on the scroller and the body; the head keeps its height', () => {
     const { container } = render(<Subject id="rows" />)
     const body = container.querySelector('[data-slot="table-scroller"]')
     expect(body?.hasAttribute('data-density')).toBe(false)
