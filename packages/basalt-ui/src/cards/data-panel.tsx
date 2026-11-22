@@ -90,7 +90,8 @@ function useRowPx(ref: RefObject<HTMLElement | null>, enabled: boolean): number 
 /**
  * A `{ rows }` body shows whole rows. As a table its rows run past the declared height, the rows
  * are cut after the last one that fits, so no row is clipped through its text; a table that fits
- * takes the height of its rows, so no blank row is left under the last one. The loading skeleton
+ * takes the height of its rows, so no blank row is left under the last one; in a grid row that stretches the panel
+ * the table takes the whole box and its rows share the extra height, so no band is left under the last row. The loading skeleton
  * still draws the declared height. As phone cards (the table's rows are grids) the cards are taller
  * than a table row, so the box takes the height of the data cards its rows name (`dataRowsOf`: the
  * rows less the head row): every one of them is whole, none is left behind the box, and a shorter
@@ -132,6 +133,8 @@ function useWholeRows(
       // A row's place in the box is its place in the table's own scroll: a focus that scrolls the table to a row must not move where the rows end.
       const scroller = box.querySelector('[data-slot="table-scroller"]')
       const top = box.getBoundingClientRect().top - (scroller?.scrollTop ?? 0)
+      // The rows are measured at their own height, so the stretch (a table that fills the box) is off while they are read.
+      box.removeAttribute('data-fill')
       if (getComputedStyle(first).display === 'grid') {
         const last = rows[Math.min(dataRows, rows.length) - 1]!
         const bottom = Math.ceil(last.getBoundingClientRect().bottom - top)
@@ -142,8 +145,6 @@ function useWholeRows(
         )
         return
       }
-      // The rows are measured at their own height, so the stretch (a table that fills the box) is off while they are read.
-      box.removeAttribute('data-fill')
       // A panel stretched by its grid row has more room than it declared: cut at the box it has. Only a
       // box taller than its own stated height is stretched; a loading estimate is not room.
       const phaseBox = box.parentElement
@@ -328,13 +329,14 @@ function PanelHead(
  * declares, so a loading, empty or error panel is as tall as a ready one; in a grid row the panel
  * takes the row's height and the box grows past that floor, so the cards of a row end level and a
  * table shows the whole rows the taller box holds; a body shorter than the box (fewer rows than it
- * holds) keeps its own height and the extra sits below it. The body is called in `ready` and `stale`; in `empty` and `error` it is called too, so a table in it
+ * holds) takes the height of its rows, and in a stretched grid row it fills the box, its rows sharing the extra height,
+ * so no band is left under its last row (a body that is no table keeps its own height and the extra sits below it). The body is called in `ready` and `stale`; in `empty` and `error` it is called too, so a table in it
  * keeps its column header row and draws the arm under it (a body that draws no table stays hidden
  * there and the panel draws its own arm). A `rows` count is table rows at the table's row height
  * (`--basalt-row-h`, the head row included), so the box is `rows` x that height: declare N data rows
  * as `rows: N + 1`, and the desktop box holds the head row and all N with no blank row; a table with
  * fewer rows than that takes the height of its rows once measured (the desktop box keeps the declared
- * height until then), so no blank row is left under the last; a table
+ * height until then), so no blank row is left under the last, or the whole stretched box when a grid row grew the panel; a table
  * with more rows than the box shows whole rows, cut after the last that fits. Where the table folds to phone
  * cards the cards are taller than a row (108 px with a meter, 92 px without), so the box is as tall as
  * the N data cards and a shorter list ends at its last card: every card is whole at 390 px. A loading

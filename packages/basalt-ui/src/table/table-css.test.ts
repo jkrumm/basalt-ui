@@ -47,8 +47,9 @@ describe('table.css', () => {
   // the delta cell's clipped overflow and the columns tier's `!important` auto layout (expression cycle 16);
   // 4,872 with the mono id kept on one line in the four columns blocks (expression cycle 17); 4,930 with the
   // columns tier's head and state wrapping into the card (expression cycle 18); 5,063 with the tighter head
-  // controls and cell gutters in its four blocks (expression cycle 19).
-  test('stays small: under 5,100 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(5100)
+  // controls and cell gutters in its four blocks (expression cycle 19); 5,177 with the entity name that wraps in a table tier
+  // (three container blocks, expression cycle 19).
+  test('stays small: under 5,200 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(5200)
   })
 })

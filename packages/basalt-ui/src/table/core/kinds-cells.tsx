@@ -174,11 +174,7 @@ export function EntityCell({
       <span
         data-slot="table-entity-name"
         data-monospace={mono ? '' : undefined}
-        className={cn(
-          'max-w-full min-w-0 shrink-0',
-          // A name wraps onto a second line in a narrow column rather than end in an ellipsis; an id or a time stays one line.
-          mono ? 'truncate font-mono tabular-nums' : 'wrap-anywhere whitespace-normal',
-        )}
+        className={cn('max-w-full min-w-0 shrink-0 truncate', mono && 'font-mono tabular-nums')}
       >
         {name}
       </span>
