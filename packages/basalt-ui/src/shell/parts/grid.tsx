@@ -340,7 +340,10 @@ export function ShellMain({
         // The busy bar: a sticky hairline that takes no room, so the page under it does not move.
         'data-pending:before:sticky data-pending:before:top-0 data-pending:before:z-10 data-pending:before:-mb-0.5 data-pending:before:block data-pending:before:h-0.5 data-pending:before:animate-pulse data-pending:before:bg-primary data-pending:before:content-[""] motion-reduce:data-pending:before:animate-none',
         'min-h-0 min-w-0 overflow-auto overscroll-contain [grid-area:main]',
-        scrolls ? 'focus-ring' : 'outline-none',
+        // The ring is inset: the surface clips at its corners, so an outset ring would be cut off.
+        scrolls
+          ? 'outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand focus-visible:outline-solid'
+          : 'outline-none',
         // Under a shell the gutter is the shell's: `Page` declares its own default for use without one.
         '[&_[data-slot=page]]:[--page-gutter:var(--shell-gutter)]',
         PRINT_MAIN,
