@@ -326,6 +326,25 @@ describe('marks that stand on zero', () => {
     ).toThrow(/does not take the area of series "price"/)
   })
 
+  test('a production build draws a bar chart linear, on the linear domain of an object y.domain', () => {
+    const before = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+    try {
+      const html = renderToString(
+        <CartesianChart
+          label="V"
+          data={rowsOf([100, 150, 200])}
+          x={x}
+          series={[bar]}
+          y={{ scale: 'log', domain: { floor: 0 } }}
+        />,
+      )
+      expect(yTicks(html).at(0)).toBe(0)
+    } finally {
+      setEnv(before)
+    }
+  })
+
   test('a production build draws the chart linear', () => {
     const before = process.env.NODE_ENV
     process.env.NODE_ENV = 'production'

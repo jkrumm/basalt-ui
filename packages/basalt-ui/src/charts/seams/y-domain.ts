@@ -84,7 +84,10 @@ const seam: Seam = (spec, props) => {
   const given = props.y?.domain
   // A tuple is applied by `toEngineSpec` already; nothing given leaves the engine's auto domain.
   if (given === undefined || Array.isArray(given)) return spec
-  const log = props.y?.scale === 'log'
+  // A bar or an area stands on zero: withLogY draws such a chart linear, so its domain is the linear one.
+  const log =
+    props.y?.scale === 'log' &&
+    !props.series.some((s) => s.mark === 'bar' || (s.mark === 'line' && s.area !== undefined))
   const extent = leftExtent(props, log)
   if (extent === null) return spec
   const domain = typeof given === 'function' ? given(extent) : boundedDomain(extent, given, log)
