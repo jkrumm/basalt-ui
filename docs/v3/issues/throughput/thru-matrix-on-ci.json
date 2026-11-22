@@ -1,0 +1,23 @@
+{
+  "why": "The quality matrix is where basalt-ui's test capacity goes. Factory throughput, 2026-11-21 08:16Z to 2026-11-22 08:16Z: 475 slot steps, 3,432 slot-minutes and 2,910 minutes of waiting for a slot, 98 slot-minutes per closed Issue. By tier: quality-matrix 85 runs at p50 34.1 min and p90 40.0 min (about 2,900 minutes, 84% of the slot time), unit-fast 145 runs at p50 3.4 min, astro-matrix 74 runs at p50 4.9 min, layout-fast 69 runs at p50 3.6 min. The same matrix takes 185 s on an idle mini (docs/validation.md, 2026-11-16), so the load it adds is what slows it. CI runs every cell in eight shards on hosted runners in 7 to 16 minutes, off the mini, and `make merge-guard` already refuses a head without that run: 81% of the check minutes are local, 19% CI. A lead of the benchmark track waited 45 minutes for a matrix slot on 2026-11-22 and got none. The owner on 2026-11-22: \"the Basalt UI, especially the test view, takes a lot of throughput from us and slows us down [...] maybe we can optimize the test suite itself [...] drop the heavy tests or rewrite or improve the heavy tests\".",
+  "what": "`make check-fast` stops running the whole sampled matrix on the mini. CI holds the whole.",
+  "owns": [
+    "scripts/matrix-select.ts and its test, the `quality-matrix-fast` and `astro-matrix-fast` targets in the Makefile",
+    "project.yaml (`slots.run`), docs/validation.md, docs/factory-leads.md"
+  ],
+  "must_not_touch": [
+    ".github/workflows/ci.yml beyond what a shard count or a log check needs",
+    "the matrix cells themselves and `make quality-matrix`, which keeps running the whole"
+  ],
+  "change": "Decided: a lead never runs all 394 cells locally. (1) `matrix-select.ts` gets a third answer between `routes` of changed scenarios and `all`: for a change under packages/basalt-ui/src or the playground, the routes whose page reaches a changed file through the module graph (the way scripts/unit-select.ts reads bun's graph), capped; a change the graph cannot place or one that reaches most routes (a token, table.css, a shared primitive) runs a fixed smoke set of about 24 cells, one route per part family in both schemes at both widths. `all` stays for a change to the matrix harness itself and for `make quality-matrix`. (2) The same rule for `astro-matrix-fast`: the parts of the families the change reaches, never every part. (3) docs/factory-leads.md and docs/validation.md say what a lead does when CI's matrix fails: rerun the failing routes with `BASALT_MATRIX_ROUTES`, fix, push; no local whole run before a push. (4) `slots.run` in project.yaml goes back to 30m once the p90 of `check-fast` is under it. What the code decides: the cap, the smoke set, and whether the route graph is read from bun or from the playground's route files.",
+  "acceptance": [
+    "A branch that changes one primitive runs a subset of cells that includes every route rendering it (matrix-select test with fixtures for: one primitive, a token file, table.css, the harness, a scenario)",
+    "On three recent merged package-source PRs the selection is replayed and its cell count and wall time are stated in the PR, against 394 cells",
+    "`make quality-matrix` and CI still run every cell; the `ci` job's shard assertion is unchanged",
+    "Seven days after merge, `factory read throughput` shows the quality-matrix tier at p50 5 minutes or less and basalt-ui at 35 slot-minutes per closed Issue or less; the PR names who reads it (the throughput loop's finding or a follow-up row)",
+    "make check passes"
+  ],
+  "out_of_scope": "Dropping or rewriting matrix cells. Moving a step to the factory's step host. Changes to the factory's slot or load rules.",
+  "proof": "The before and after of the three replayed PRs (cells, minutes), and the first throughput reading after merge.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md)."
+}

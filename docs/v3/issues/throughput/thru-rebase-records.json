@@ -1,0 +1,24 @@
+{
+  "why": "Files generated from the package are committed, so two branches that both touch the package conflict in them on rebase, and the fix is a re-record that needs a build and often a test slot. In the week from 2026-11-15, 80 of 1,638 commits on master are of this kind (\"record the Astro matrix after the rebase\", \"sync the Astro island cost table\", \"sync the dogfooded skills\", \"resync the marketing site install\"). Each one is a lead turn inside the merge window, which held 447 minutes in the 24 hours to 2026-11-22 08:16Z. The astro-matrix tier alone ran 74 times at p50 4.9 minutes in that day.",
+  "what": "A rebase of a package branch needs no re-record that takes a slot.",
+  "owns": [
+    "docs/v3/verdicts/astro-matrix.json and astro-matrix.md, apps/playground-astro/scripts, the island cost table and its sync check",
+    "the dogfooded skill copies under .claude/, apps/marketing's site manifest and their sync checks (`make sync-self`)",
+    "docs/validation.md, docs/factory-leads.md, the merge-guard's generated-file check"
+  ],
+  "must_not_touch": [
+    "what a consumer installs: the shipped skills, rules and `basalt-ui sync`",
+    "CHANGELOG.md"
+  ],
+  "change": "Decided: a measured number that moves with every package change is not a committed record. (1) Astro matrix: the committed file holds what is judged (verdicts, budgets with their tolerance, the reason of each raise). Measured sizes within tolerance do not rewrite it. CI measures on every head and fails outside the tolerance; the full measured table is written where it cannot conflict (an artifact, or a file only master's CI writes). The island cost table in the docs follows the same source. (2) Dogfooded copies and the marketing manifest: either stop committing what a build step can produce, or make the regeneration a script step with no slot and no browser that the merge window runs once, with merge-guard checking the result. (3) State in docs/factory-leads.md the one command a lead runs after a rebase. What the code decides: per file, whether it leaves git, gets a tolerance, or keeps its sync with a cheaper regeneration. The lead writes that list as its Spec.",
+  "acceptance": [
+    "Two branches that each change a package source file rebase over one another with no conflict in a generated file and no slot step for a record (shown on a scratch pair of branches)",
+    "The Astro budgets still fail a real regression: a test raises one island past its tolerance and CI's check goes red",
+    "`basalt-ui doctor` and the site build on apps/marketing still pass, and this repo's own .claude/ rules and skills still match what ships (the dogfood blind spot stays closed)",
+    "The PR states the count of record and resync commits per week before (80 in the week from 2026-11-15) and names the reading that will show it after",
+    "make check passes"
+  ],
+  "out_of_scope": "The shipped agent layer's content. The release flow. Any change to what the Astro matrix measures.",
+  "proof": "The scratch rebase, the red budget test, and the list of files with what became of each.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md)."
+}
