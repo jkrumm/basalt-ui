@@ -3,6 +3,8 @@
  * the codec round trip) and the `Views` menu (apply, save by name, Reset, `?view=` while clean).
  */
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { hydrateRoot } from 'react-dom/client'
+import { renderToString } from 'react-dom/server'
 import { afterEach, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 import { useEffect } from 'react'
 import type { ReactElement } from 'react'
@@ -324,6 +326,22 @@ describe('views as tabs', () => {
     render(<Subject />)
     await settled()
     expect(tab('All rows').getAttribute('aria-selected')).toBe('true')
+  })
+
+  test('a hydrated page applies the stored default once the device list is read', async () => {
+    const html = renderToString(<Subject />)
+    viewsStore('v').set([
+      { ...saveView([], 'Open', state({ filters: [OPEN] })).views[0]!, default: true },
+    ])
+    const host = document.createElement('div')
+    host.innerHTML = html
+    document.body.append(host)
+    const root = await act(async () => hydrateRoot(host, <Subject />))
+    await settled()
+    expect(search().get('view')).toBe('open')
+    expect(model().state.request.filters).toEqual([OPEN])
+    await act(async () => root.unmount())
+    host.remove()
   })
 
   test('an edit keeps ?view and reads modified; Discard restores the view, Save stores the edit', async () => {

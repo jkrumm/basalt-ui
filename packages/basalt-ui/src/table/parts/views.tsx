@@ -14,7 +14,7 @@
  * over it. The id is read and written on the address bar (`replace`, never a push) unless the caller
  * binds it to its own route search through `view`.
  */
-import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { ComponentType, MouseEvent, ReactElement } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
@@ -227,15 +227,21 @@ function useStoreViews(
   }
 }
 
+const noSubscribe = (): (() => void) => () => {}
+const isClient = (): boolean => true
+const isServer = (): boolean => false
+
 /** The views of one model: its `ViewStore` when the caller gave one, else the device store. */
 function useViews<T>(model: TableModel<T>): ViewList {
   const device = viewsStore(model.id)
   const [onDevice] = device.use()
+  // A hydration render reads the server snapshot (no views): the list is ready on the client snapshot only.
+  const hydrated = useSyncExternalStore(noSubscribe, isClient, isServer)
   const remote = useStoreViews(model.viewStore, model.id, model.count)
   if (remote !== undefined) return remote
   return {
     views: onDevice,
-    ready: true,
+    ready: hydrated,
     failed: false,
     canReorder: true,
     canShare: false,
