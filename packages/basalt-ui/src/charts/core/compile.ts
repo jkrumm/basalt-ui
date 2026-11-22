@@ -1186,6 +1186,11 @@ const REF_LABEL_LEADER_PAD = 4
 const MAX_ZONE_ROWS = 24
 /** The most rows a zone caption tries down the side of its zone, after and before it. */
 const MAX_ZONE_SIDE_ROWS = 6
+/** A plot narrower than this (a phone's) keeps a zone caption inside its zone, over its own columns, or drops it: beside the zone it reads as the next thing's, px. */
+const ZONE_SIDE_MIN_PLOT_PX = 480
+/** Whether a plot of this width lets a zone's caption stand beside the zone: a phone's plot keeps it inside or drops it (a plot not yet measured keeps its first spot). */
+export const zoneSideSpotsFit = (plotWidth: number): boolean =>
+  plotWidth <= 0 || plotWidth >= ZONE_SIDE_MIN_PLOT_PX
 /** How many rows above its top edge and under its bottom edge a zone bounded in y tries for its caption. */
 const MAX_ZONE_EDGE_ROWS = 3
 /** The room a bar's value label takes above its end (below a negative bar's), px: its line and the air under it. */
@@ -1415,10 +1420,12 @@ const xZoneLabelMarks = <T, X extends ChartX>(
     const spots = [
       ...inside,
       ...edge,
-      ...Array.from({ length: MAX_ZONE_SIDE_ROWS }, (_, row) => [
-        { at: f[1], side: 1 as const, left: x1 + REF_LABEL_DX, inside: false, row },
-        { at: f[0], side: -1 as const, left: x0 - REF_LABEL_DX - width, inside: false, row },
-      ]).flat(),
+      ...(!zoneSideSpotsFit(plotWidth)
+        ? []
+        : Array.from({ length: MAX_ZONE_SIDE_ROWS }, (_, row) => [
+            { at: f[1], side: 1 as const, left: x1 + REF_LABEL_DX, inside: false, row },
+            { at: f[0], side: -1 as const, left: x0 - REF_LABEL_DX - width, inside: false, row },
+          ]).flat()),
       ...slid,
     ]
     type Spot = (typeof spots)[number]
@@ -2686,6 +2693,7 @@ export function compileCartesian<T, X extends ChartX>(
         edgeOf: (s) => axes.axisOf(axes.onRight(s) ? 'right' : 'left').domain,
         // A grouped bar's room: its slot of the group (as `barBoxes` and the value labels cut it).
         written: valueLabels.written,
+        nameLines: visible.some(isBar) && visible.some((s) => !isBar(s)),
         slotOf: (s) => {
           if (!model.band || input.stack !== undefined || !isBar(s)) return undefined
           const bars = visible.filter(isBar)

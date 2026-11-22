@@ -41,6 +41,8 @@ export function backingMarks(opts: {
   frame: { width: number; height: number }
   domain: readonly [number, number]
   scale: 'y' | 'y2'
+  /** The rect's paint: the card's own colour by default, a leader's ink when the boxes are hairlines. */
+  fill?: string
 }): ChartMarks {
   const { boxes, frame, domain, scale } = opts
   if (boxes.length === 0 || frame.width <= 0 || frame.height <= 0) return []
@@ -61,7 +63,7 @@ export function backingMarks(opts: {
         y2: 'y1',
         xScale: 'zx',
         yScale: scale,
-        fill: CV.surface,
+        fill: opts.fill ?? CV.surface,
         inset: 0,
         id: opts.id,
       }),
