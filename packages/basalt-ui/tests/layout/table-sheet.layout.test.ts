@@ -68,10 +68,15 @@ async function bundle(withPlugin: boolean): Promise<{ js: string; css: string }>
     build: {
       write: false,
       lib: { entry: join(FIXTURE_DIR, 'table-sheet-fixture.tsx'), formats: ['es'] },
+      // One inline script: `DataTable`'s lazy board and gallery fold into it rather than chunks it cannot fetch.
+      rolldownOptions: { output: { codeSplitting: false } },
     },
-  })) as unknown as { output: { fileName: string; code?: string; source?: string | Uint8Array }[] }
+  })) as unknown as {
+    output: { fileName: string; isEntry?: boolean; code?: string; source?: string | Uint8Array }[]
+  }
   const files = Array.isArray(out) ? out.flatMap((o) => (o as typeof out).output) : out.output
-  const js = files.find((f) => f.fileName.endsWith('.js'))?.code ?? ''
+  // The entry, never a lazy chunk of it (`DataTable` loads its board and gallery on first use).
+  const js = files.find((f) => f.isEntry === true)?.code ?? ''
   const css = files
     .filter((f) => f.fileName.endsWith('.css'))
     .map((f) => String(f.source))
