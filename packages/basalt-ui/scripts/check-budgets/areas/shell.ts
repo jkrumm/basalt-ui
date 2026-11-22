@@ -70,8 +70,9 @@ export const rows: readonly RowDef[] = [
     id: 'shell-subpath',
     order: 461,
     label: 'shell, whole barrel (gzip B minus base0, src/shell, peers bundled)',
-    // 129009 B measured; 142851 B with `@tanstack/react-hotkeys` bundled (Issue 2570); 143529 B with the work surface (Issue 2851).
-    ceiling: 143600,
+    // 129009 B measured; 142851 B with `@tanstack/react-hotkeys` bundled (Issue 2570); 143529 B with the work surface (Issue 2851);
+    // 143778 B with the group scope every shell control reads and the popups reset (Issue 2853).
+    ceiling: 143900,
     measure: () => measureSource(reExportAll({ shell: 'shell/index' })),
   },
   {
@@ -100,6 +101,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'shell-subpath': [
+    {
+      from: 143600,
+      to: 143900,
+      consumer:
+        "the shell's controls in a ButtonGroup or ControlGroup (plan row bench-control-groups, Issue 2853): each control reads the group's size and variant, and the shell's menus and sheets reset it so a portal does not inherit it",
+      repo: 'basalt-ui',
+    },
     {
       from: 143500,
       to: 143600,
