@@ -83,7 +83,8 @@ make check                 # build + pre + the layout suite + pack-test — the 
 make check-fast            # `check` with only the layout files and unit tests the branch's changes reach — the lead's check; CI runs the rest
 make test-fast             # just that unit step (BASE=<ref>, default origin/master): bun's module graph plus an always-on set, scripts/unit-select.ts
 make layout-fast           # just that layout step (BASE=<ref>, default origin/master)
-make astro-matrix          # build apps/playground-astro, measure every part per Astro render mode, check docs/v3/verdicts/astro-matrix.json (UPDATE=1 records it)
+make astro-matrix          # build apps/playground-astro, measure every part per Astro render mode, check the budgets in docs/v3/verdicts/astro-matrix.json
+make regen                 # after a rebase: rewrite every generated file (dogfood links, marketing manifest, matrix .md); no slot
 make verify                # probe production (curl basalt-ui.com) — not the local gate
 ```
 

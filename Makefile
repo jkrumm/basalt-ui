@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-fast ci-gate check-pre check-pre-fast check-post gen-check quality-matrix-fast astro-matrix astro-matrix-run astro-matrix-fast verify deploy logs marketing-image pre test test-fast layout layout-fast build evidence compare release release-dry sync-self merge-guard quality-matrix browser-shell
+.PHONY: help check check-fast ci-gate check-pre check-pre-fast check-post gen-check quality-matrix-fast astro-matrix astro-matrix-run astro-matrix-fast verify deploy logs marketing-image pre test test-fast layout layout-fast build evidence compare release release-dry sync-self regen merge-guard quality-matrix browser-shell
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -196,20 +196,24 @@ quality-matrix-fast: ## Quality matrix: only the routes the branch's changes rea
 
 # The Astro matrix (docs/validation.md § Astro matrix): apps/playground-astro renders every part in every render mode
 # on the built package; scripts/measure.ts measures each page in the headless shell and scripts/matrix.ts judges the run
-# against docs/v3/verdicts/astro-matrix.json: a part that was static-clean and is not, a page past its byte budget or a
-# page without an island that loads a script fails. UPDATE=1 records the run (the .json and the .md rendered from it).
+# against docs/v3/verdicts/astro-matrix.json, which holds verdicts and byte budgets, never a measured size: a part that
+# was static-clean and is not, a page past its budget or a page without an island that loads a script fails. The whole
+# measured run is apps/playground-astro/.astro-matrix/matrix.md (CI keeps it as an artifact). UPDATE=1 records new parts
+# and flipped verdicts and raises every budget the run exceeds, which needs REASON="<why>"; a size inside its budget
+# never rewrites the record.
 # `astro-matrix` builds the package first; `check` has built it already and runs `astro-matrix-run`.
-astro-matrix: browser-shell ## Astro playground: build, measure every part per render mode, check against docs/v3/verdicts/astro-matrix.json (UPDATE=1 records it)
+astro-matrix: browser-shell ## Astro playground: build, measure every part per render mode, check the budgets in docs/v3/verdicts/astro-matrix.json (UPDATE=1 REASON="<why>" raises them)
 	@cd packages/basalt-ui && bun run build
 	@$(MAKE) --no-print-directory astro-matrix-run
 
-# ASTRO_PARTS=<id,id> measures only those parts and their families' pages; the check then judges those alone, and a
-# partial run is never recorded (matrix.ts refuses UPDATE=1 on one).
+# ASTRO_PARTS=<id,id> measures only those parts and their families' pages; the check then judges those alone, and
+# UPDATE=1 on it rewrites only their lines.
 ASTRO_PARTS ?=
+REASON ?=
 astro-matrix-run:
 	@bun --filter @basalt-ui/playground-astro build
 	@$(call slot,astro-matrix) bun apps/playground-astro/scripts/measure.ts $(if $(ASTRO_PARTS),--parts $(ASTRO_PARTS))
-	@bun apps/playground-astro/scripts/matrix.ts $(if $(filter 1,$(UPDATE)),--update)
+	@bun apps/playground-astro/scripts/matrix.ts $(if $(filter 1,$(UPDATE)),--update $(if $(REASON),--reason "$(REASON)"))
 
 # The Astro matrix for the parts the branch's changes reach (BASE=<ref>, default origin/master; scripts/matrix-select.ts
 # --astro, the quality matrix's rule over the parts' demo modules, up to 24 parts): the package's build config, a token
@@ -236,9 +240,20 @@ release-dry: ## Preview the next release — dry run only, publishes nothing
 release: ## Dry run, show the version bump, confirm, then publish to npm
 	@scripts/release.sh
 
-sync-self: ## Install basalt-ui's own shipped rules + skills into this repo's /.claude/ (dogfood), then resync apps/marketing's site install
+sync-self: ## Link basalt-ui's own shipped rules + skills into this repo's /.claude/ (dogfood), then resync apps/marketing's site install
 	@bun packages/basalt-ui/scripts/sync-self.ts
 	@cd apps/marketing && ./node_modules/.bin/basalt-ui sync
+
+# The one command after a rebase (docs/factory-leads.md): every committed file a script derives from the tree, written
+# again. No slot, no browser: the dogfood links, the marketing install's manifest digests, the Astro matrix's .md and
+# the oxlint presets. A measured number is no committed record, so nothing here measures. The marketing sync runs the
+# built CLI, so a tree without packages/basalt-ui/dist builds it first.
+regen: ## After a rebase: rewrite every generated file (sync-self, the marketing manifest, the Astro matrix .md, the oxlint presets); no slot, no browser
+	@test -f packages/basalt-ui/dist/cli/index.js || (cd packages/basalt-ui && bun run build)
+	@$(MAKE) --no-print-directory sync-self
+	@bun apps/playground-astro/scripts/matrix.ts --render
+	@bun packages/basalt-ui/scripts/gen-oxlint.ts
+	@git status --short
 
 # A lead runs this right before it merges its pull request: PR CI green for the exact HEAD, generated files in sync, master not moved under it.
 merge-guard: ## Refuse unless PR CI is green for HEAD, generated files are in sync and master did not move under the branch (MERGE_GUARD_ARGS=--wait waits for the head's CI first)

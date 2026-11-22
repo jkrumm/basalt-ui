@@ -4,8 +4,13 @@
   exact head, and a branch behind `origin/master` shares no changed file with master's new commits while master is
   green; otherwise rebase, push and wait for PR CI (`MERGE_GUARD_ARGS=--wait make merge-guard` polls the head's CI
   first, 45 min by default, `--wait-minutes <n>`). Local `make check` does not replace PR CI.
-- `packages/basalt-ui/**` and non-package changes are separate commits in one PR; `make sync-self` is its own
+- `packages/basalt-ui/**` and non-package changes are separate commits in one PR; what `make regen` writes is its own
   non-package commit. Never edit `CHANGELOG.md`.
+- **After a rebase, run `make regen`** (seconds; no slot, no browser): it rewrites every generated file the tree derives,
+  the dogfood links in `.claude/`, apps/marketing's manifest digests, the Astro matrix `.md` and the oxlint presets.
+  Commit what it writes, then land. Nothing measured is committed, so a rebase never needs a matrix run: the Astro
+  record holds budgets, and a size inside its budget changes no file (`docs/validation.md` § Astro matrix). On a
+  conflict in a generated file, take either side and run `make regen`; `make merge-guard` refuses a stale one.
 - `make check` builds first; `bun run pre` is the inner loop (its unit step runs in a slot). A fresh worktree needs `bun install` and a package build.
 - `make check-fast` runs only the matrix cells and Astro parts the branch reaches; CI runs every one. When CI's matrix
   fails, rerun the failing routes (`make quality-matrix BASALT_MATRIX_ROUTES=<route,route>`, the Astro one with
