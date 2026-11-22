@@ -31,7 +31,7 @@ Dock({ title, tag, fullPage, onClose, icon, avatar, actions, records, footer, ch
   onClose: () => void  // The close button and Escape inside the panel: the caller decides how the address changes (`usePeek().dock.close`)
   icon?: IconComponent  // A glyph before the title, for what kind of record it is
   avatar?: AvatarEntry  // A face before the title, for a person or an object; wins over `icon`
-  actions?: PanelActions  // The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu
+  actions?: PanelActions  // The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu (a third alone stays inline)
   records?: RecordSequence  // The opener's records: previous and next in the header, ArrowUp and ArrowDown on the panel
   footer?: ReactNode  // A band under the body for a form's actions
   children?: ReactNode

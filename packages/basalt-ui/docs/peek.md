@@ -27,7 +27,7 @@ Peek(props: PeekProps): ReactElement | null
   fullPage?: string | NavTarget  // The record's own page
   onClose: () => void  // Escape, the close button and Back: the caller decides how the address changes (`usePeek().close`)
   onPin?: () => void  // Draws a button that moves the record into the shell's `Dock` (`usePeek().pin`)
-  actions?: PanelActions  // The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu
+  actions?: PanelActions  // The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu (a third alone stays inline)
   records?: RecordSequence  // The opener's records in its order (`usePeek().go` or a table's rows): draws previous and next, disabled at the ends, and ArrowUp and ArrowDown on the panel step through them in place
   footer?: ReactNode  // A band under the body for a form's actions
   defaultWidth?: number  // The width in px the side panel opens at, from where the app saved it; else the width the reader last dragged this kind to; else the default tiers

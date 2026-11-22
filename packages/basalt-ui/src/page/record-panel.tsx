@@ -28,7 +28,10 @@ import { Button, buttonVariants } from '../ui/button'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
 import { ScrollArea } from '../ui/scroll-area'
 
-/** One of a panel's own actions: data, like a `PageBar` action. The first two draw in the header, the rest in its More menu. */
+/**
+ * One of a panel's own actions: data, like a `PageBar` action. The first two draw in the header and
+ * the rest fold into its More menu; a third alone draws inline rather than as a menu of one.
+ */
 export type PanelAction = {
   id: string
   label: string
@@ -130,7 +133,11 @@ export function PanelSteps({ records }: { records: RecordSequence }): ReactEleme
         aria-label={t('page.previousRecord')}
         data-panel="previous"
         disabled={prev === undefined}
-        onClick={() => prev !== undefined && records.onStep(prev)}
+        onClick={() => {
+          // Read again at the click: the opener may have re-ordered since this render.
+          const to = neighbours(records).prev
+          if (to !== undefined) records.onStep(to)
+        }}
       >
         <Glyph d={UP} />
       </Button>
@@ -141,7 +148,10 @@ export function PanelSteps({ records }: { records: RecordSequence }): ReactEleme
         aria-label={t('page.nextRecord')}
         data-panel="next"
         disabled={next === undefined}
-        onClick={() => next !== undefined && records.onStep(next)}
+        onClick={() => {
+          const to = neighbours(records).next
+          if (to !== undefined) records.onStep(to)
+        }}
       >
         <Glyph d={DOWN} />
       </Button>
@@ -149,7 +159,8 @@ export function PanelSteps({ records }: { records: RecordSequence }): ReactEleme
   )
 }
 
-function Actions({ actions }: { actions: PanelActions }): ReactElement | null {
+/** The record's typed actions: the first two inline, the rest in a More menu (a third alone stays inline). */
+export function PanelActionBar({ actions }: { actions: PanelActions }): ReactElement | null {
   const t = useMessages(page)
   const list = actions.filter((action): action is PanelAction => action !== undefined)
   if (list.length === 0) return null
@@ -257,7 +268,7 @@ export function PanelHeader({
       <h2 className={PANEL_TITLE}>{title}</h2>
       <div className="flex shrink-0 items-center gap-1" data-peek="off">
         {records !== undefined && <PanelSteps records={records} />}
-        {actions !== undefined && <Actions actions={actions} />}
+        {actions !== undefined && <PanelActionBar actions={actions} />}
         {fullPage !== undefined && <FullPageLink href={fullPage} />}
         {onPin !== undefined && (
           <Button

@@ -32,7 +32,7 @@ export type DockProps = {
   icon?: IconComponent
   /** A face before the title, for a person or an object; wins over `icon`. */
   avatar?: AvatarEntry
-  /** The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu. */
+  /** The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu (a third alone stays inline). */
   actions?: PanelActions
   /** The opener's records: previous and next in the header, ArrowUp and ArrowDown on the panel. */
   records?: RecordSequence

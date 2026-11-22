@@ -167,7 +167,10 @@ export function PeekWindow({
       rect,
       (dx, dy) => resized(rect, edge, dx, dy),
       setRect,
-      (last) => store.set({ w: last.w, h: last.h }),
+      (last) => {
+        // A press that never moved the edge chose no size.
+        if (last.w !== rect.w || last.h !== rect.h) store.set({ w: last.w, h: last.h })
+      },
     )
   }
   return (
