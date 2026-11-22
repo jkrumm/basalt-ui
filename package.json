@@ -21,7 +21,7 @@
     "test:layout:harness": "bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 packages/basalt-ui/tests/layout/harness",
     "pre:static": "bun run fmt:check && bun run lint && bun run typecheck && bun run check-budgets && bun run check-literals && bun run check-recipes-lint && bun run check-readme-types && bun run check-playground-lint",
     "pre": "bun run pre:static && make --no-print-directory test",
-    "prepare": "lefthook install",
+    "prepare": "lefthook install && bun scripts/merge-json.ts --install",
     "hooks:install": "lefthook install",
     "hooks:uninstall": "lefthook uninstall",
     "evidence": "bun scripts/evidence/index.ts",
