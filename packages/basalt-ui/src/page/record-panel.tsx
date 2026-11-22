@@ -374,7 +374,7 @@ export function panelKeys(
 export function useFocusIn(
   panel: { current: HTMLElement | null },
   mounted: boolean,
-  key: string = '',
+  key?: string,
 ): void {
   useIsomorphicLayoutEffect(() => {
     if (!mounted) return undefined
@@ -392,7 +392,7 @@ export function useFocusIn(
     }
   }, [panel, mounted])
   useIsomorphicLayoutEffect(() => {
-    if (!mounted || key === '') return
+    if (!mounted || key === undefined) return
     panel.current?.focus({ preventScroll: true })
   }, [key])
 }

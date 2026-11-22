@@ -223,6 +223,7 @@ export function SheetContent({
   footer,
   className,
   style,
+  ref,
   children,
   ...props
 }: SheetContentProps): ReactElement {
@@ -244,7 +245,11 @@ export function SheetContent({
         <BaseDrawer.Viewport className="fixed inset-0 z-50 flex overflow-hidden data-ending-style:pointer-events-none">
           <BaseDrawer.Popup
             {...props}
-            ref={popup}
+            ref={(el: HTMLDivElement | null) => {
+              popup.current = el
+              if (typeof ref === 'function') ref(el)
+              else if (ref) ref.current = el
+            }}
             data-slot="sheet-content"
             style={typeof style === 'function' ? style : { ...style, ...sized }}
             className={cn(sheetContentVariants({ placement }), className)}
