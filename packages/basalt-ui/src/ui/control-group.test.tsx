@@ -12,6 +12,7 @@ import {
 } from './control-group'
 import { Input } from './input'
 import { PasswordInput } from './password-input'
+import { Popover, PopoverContent, PopoverTrigger } from './popover'
 import { NativeSelect } from './select'
 
 afterEach(cleanup)
@@ -120,6 +121,38 @@ describe('control-group module', () => {
       </ControlGroup>,
     )
     expect(byName(container, 'clear').className).not.toMatch(/(^| )grow( |$)/)
+  })
+
+  test('a popup opened from a group draws its controls with their own defaults', () => {
+    render(
+      <ButtonGroup size="sm" variant="ghost" fill>
+        <Popover defaultOpen>
+          <PopoverTrigger render={<Button />}>Filters</PopoverTrigger>
+          <PopoverContent aria-label="Filters">
+            <Input aria-label="In popup" />
+            <Button aria-label="Apply">Apply</Button>
+          </PopoverContent>
+        </Popover>
+      </ButtonGroup>,
+    )
+    const input = byName(document.body, 'In popup').className
+    expect(input).toContain('h-ctl')
+    expect(input).not.toContain('w-auto')
+    const apply = byName(document.body, 'Apply').className
+    expect(apply).not.toMatch(/(^| )grow( |$)/)
+    expect(apply).toContain('h-ctl')
+  })
+
+  test('an InputGroup in a ControlGroup passes the variant on to its buttons', () => {
+    const { container } = render(
+      <ControlGroup variant="ghost">
+        <InputGroup>
+          <Input aria-label="Amount" />
+          <Button aria-label="Go">Go</Button>
+        </InputGroup>
+      </ControlGroup>,
+    )
+    expect(byName(container, 'Go').className).not.toContain('shadow-raised')
   })
 
   test('server render keeps the slots', () => {

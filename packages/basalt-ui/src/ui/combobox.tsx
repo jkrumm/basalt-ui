@@ -5,7 +5,7 @@ import type { VariantProps } from 'class-variance-authority'
 import { createContext, useCallback, useContext, useRef, useState } from 'react'
 import type { ReactElement, ReactNode, Ref } from 'react'
 import { cn } from '../core/cn'
-import { scopeClass, useControlScope } from '../core/control-scope'
+import { scopeClass, useControlScope, ControlScopeProvider } from '../core/control-scope'
 import { select } from '../core/messages/select'
 import { useMessages } from '../core/messages/use-messages'
 
@@ -462,27 +462,29 @@ export function ComboboxContent({
       </>
     )
   return (
-    <BaseCombobox.Portal {...(container !== undefined && { container })}>
-      <BaseCombobox.Positioner
-        sideOffset={4}
-        className="z-50 outline-none"
-        ref={dismiss}
-        {...(anchor !== undefined && { anchor: anchor as never })}
-      >
-        <BaseCombobox.Popup
-          {...props}
-          data-slot="combobox-content"
-          className={cn(comboboxContentVariants(), className)}
+    <ControlScopeProvider value={null}>
+      <BaseCombobox.Portal {...(container !== undefined && { container })}>
+        <BaseCombobox.Positioner
+          sideOffset={4}
+          className="z-50 outline-none"
+          ref={dismiss}
+          {...(anchor !== undefined && { anchor: anchor as never })}
         >
-          {empty !== undefined && (
-            <BaseCombobox.Empty className="px-2 py-1.5 text-sm text-muted-foreground empty:hidden">
-              {empty}
-            </BaseCombobox.Empty>
-          )}
-          <BaseCombobox.List>{list as ReactNode}</BaseCombobox.List>
-        </BaseCombobox.Popup>
-      </BaseCombobox.Positioner>
-    </BaseCombobox.Portal>
+          <BaseCombobox.Popup
+            {...props}
+            data-slot="combobox-content"
+            className={cn(comboboxContentVariants(), className)}
+          >
+            {empty !== undefined && (
+              <BaseCombobox.Empty className="px-2 py-1.5 text-sm text-muted-foreground empty:hidden">
+                {empty}
+              </BaseCombobox.Empty>
+            )}
+            <BaseCombobox.List>{list as ReactNode}</BaseCombobox.List>
+          </BaseCombobox.Popup>
+        </BaseCombobox.Positioner>
+      </BaseCombobox.Portal>
+    </ControlScopeProvider>
   )
 }
 
@@ -698,27 +700,29 @@ export function AutocompleteContent({
   const anchor = useContext(AnchorContext)
   const dismiss = useDismissRef()
   return (
-    <BaseAutocomplete.Portal {...(container !== undefined && { container })}>
-      <BaseAutocomplete.Positioner
-        sideOffset={4}
-        className="z-50 outline-none"
-        ref={dismiss}
-        {...(anchor !== undefined && { anchor: anchor as never })}
-      >
-        <BaseAutocomplete.Popup
-          {...props}
-          data-slot="autocomplete-content"
-          className={cn(autocompleteContentVariants(), className)}
+    <ControlScopeProvider value={null}>
+      <BaseAutocomplete.Portal {...(container !== undefined && { container })}>
+        <BaseAutocomplete.Positioner
+          sideOffset={4}
+          className="z-50 outline-none"
+          ref={dismiss}
+          {...(anchor !== undefined && { anchor: anchor as never })}
         >
-          {empty !== undefined && (
-            <BaseAutocomplete.Empty className="px-2 py-1.5 text-sm text-muted-foreground empty:hidden">
-              {empty}
-            </BaseAutocomplete.Empty>
-          )}
-          <BaseAutocomplete.List>{children as ReactNode}</BaseAutocomplete.List>
-        </BaseAutocomplete.Popup>
-      </BaseAutocomplete.Positioner>
-    </BaseAutocomplete.Portal>
+          <BaseAutocomplete.Popup
+            {...props}
+            data-slot="autocomplete-content"
+            className={cn(autocompleteContentVariants(), className)}
+          >
+            {empty !== undefined && (
+              <BaseAutocomplete.Empty className="px-2 py-1.5 text-sm text-muted-foreground empty:hidden">
+                {empty}
+              </BaseAutocomplete.Empty>
+            )}
+            <BaseAutocomplete.List>{children as ReactNode}</BaseAutocomplete.List>
+          </BaseAutocomplete.Popup>
+        </BaseAutocomplete.Positioner>
+      </BaseAutocomplete.Portal>
+    </ControlScopeProvider>
   )
 }
 

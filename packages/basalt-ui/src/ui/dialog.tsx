@@ -4,6 +4,7 @@ import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { ControlScopeProvider } from '../core/control-scope'
 import { dialogs } from '../core/messages/dialogs'
 import { useMessages } from '../core/messages/use-messages'
 import { buttonVariants } from './button'
@@ -134,27 +135,29 @@ export function DialogContent({
   ...props
 }: DialogContentProps): ReactElement {
   return (
-    <BaseDialog.Portal>
-      <BaseDialog.Backdrop forceRender className={BACKDROP} />
-      <BaseDialog.Viewport className={VIEWPORT}>
-        <BaseDialog.Popup
-          {...props}
-          data-slot="dialog-content"
-          className={cn(dialogContentVariants({ size }), className)}
-        >
-          <header className="flex items-start gap-3">
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <DialogTitle>{title}</DialogTitle>
-              {description === undefined ? null : (
-                <DialogDescription>{description}</DialogDescription>
-              )}
-            </div>
-            <DialogClose />
-          </header>
-          {children}
-        </BaseDialog.Popup>
-      </BaseDialog.Viewport>
-    </BaseDialog.Portal>
+    <ControlScopeProvider value={null}>
+      <BaseDialog.Portal>
+        <BaseDialog.Backdrop forceRender className={BACKDROP} />
+        <BaseDialog.Viewport className={VIEWPORT}>
+          <BaseDialog.Popup
+            {...props}
+            data-slot="dialog-content"
+            className={cn(dialogContentVariants({ size }), className)}
+          >
+            <header className="flex items-start gap-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <DialogTitle>{title}</DialogTitle>
+                {description === undefined ? null : (
+                  <DialogDescription>{description}</DialogDescription>
+                )}
+              </div>
+              <DialogClose />
+            </header>
+            {children}
+          </BaseDialog.Popup>
+        </BaseDialog.Viewport>
+      </BaseDialog.Portal>
+    </ControlScopeProvider>
   )
 }
 
@@ -273,23 +276,27 @@ export function AlertDialogContent({
   ...props
 }: AlertDialogContentProps): ReactElement {
   return (
-    <BaseAlertDialog.Portal>
-      <BaseAlertDialog.Backdrop forceRender className={BACKDROP} />
-      <BaseAlertDialog.Viewport className={VIEWPORT}>
-        <BaseAlertDialog.Popup
-          {...props}
-          data-slot="alert-dialog-content"
-          className={cn(alertDialogContentVariants(), className)}
-        >
-          <div className="flex flex-col gap-1">
-            <DialogTitle>{title}</DialogTitle>
-            {description === undefined ? null : (
-              <DialogDescription>{description}</DialogDescription>
+    <ControlScopeProvider value={null}>
+      <BaseAlertDialog.Portal>
+        <BaseAlertDialog.Backdrop forceRender className={BACKDROP} />
+        <BaseAlertDialog.Viewport className={VIEWPORT}>
+          <BaseAlertDialog.Popup
+            {...props}
+            data-slot="alert-dialog-content"
+            className={cn(alertDialogContentVariants(), className)}
+          >
+            <div className="flex flex-col gap-1">
+              <DialogTitle>{title}</DialogTitle>
+              {description === undefined ? null : (
+                <DialogDescription>{description}</DialogDescription>
+              )}
+            </div>
+            {children === undefined ? null : (
+              <div className="flex justify-end gap-2">{children}</div>
             )}
-          </div>
-          {children === undefined ? null : <div className="flex justify-end gap-2">{children}</div>}
-        </BaseAlertDialog.Popup>
-      </BaseAlertDialog.Viewport>
-    </BaseAlertDialog.Portal>
+          </BaseAlertDialog.Popup>
+        </BaseAlertDialog.Viewport>
+      </BaseAlertDialog.Portal>
+    </ControlScopeProvider>
   )
 }

@@ -3,7 +3,7 @@ import type { VariantProps } from 'class-variance-authority'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
-import { buttonScopeClass, useControlScope } from '../core/control-scope'
+import { GROUPED_SMALL_BUTTON, buttonScopeClass, useControlScope } from '../core/control-scope'
 import { base as baseMessages } from '../core/messages/base'
 import { useMessages } from '../core/messages/use-messages'
 import { buttonVariants } from './button'
@@ -50,9 +50,6 @@ async function writeClipboard(text: string): Promise<boolean> {
   area.remove()
   return ok
 }
-
-// A small button in a group lifts to its neighbours' 44 px coarse floor, as `Button` does.
-const GROUPED_SM = 'pointer-coarse:mx-0 pointer-coarse:min-h-11 pointer-coarse:min-w-11'
 
 function CopyGlyph({ done }: { done: boolean }): ReactElement {
   return (
@@ -117,7 +114,7 @@ export function CopyButton({
       className={cn(
         buttonVariants({ variant: variant ?? scope?.variant ?? 'ghost', size: resolved, shape }),
         buttonScopeClass(scope),
-        scope !== null && resolved === 'sm' && GROUPED_SM,
+        scope !== null && resolved === 'sm' && GROUPED_SMALL_BUTTON,
         className,
       )}
       onClick={() => void copy()}
