@@ -29,7 +29,7 @@ const SECTIONS = ['profile', 'preferences', 'notifications', 'workspace'] as con
 type SectionId = (typeof SECTIONS)[number]
 
 const COPY: Record<SectionId, { title: string; body: string }> = {
-  profile: { title: 'Profile', body: 'Your name, email and the bio shown to your team.' },
+  profile: { title: 'Profile', body: 'Who you are in this workspace.' },
   preferences: {
     title: 'Preferences',
     body: 'How the interface looks and speaks. Every change applies at once.',
@@ -38,7 +38,7 @@ const COPY: Record<SectionId, { title: string; body: string }> = {
     title: 'Notifications',
     body: 'Which events reach you, grouped by what they are about.',
   },
-  workspace: { title: 'Workspace', body: 'Exports, sign-in policy and what cannot be undone.' },
+  workspace: { title: 'Workspace', body: 'Exports, sign-in policy and removal.' },
 }
 
 type Groups = Parameters<typeof InnerNav>[0]['groups']
@@ -324,7 +324,7 @@ function WorkspacePane(): ReactElement {
           title="Single sign-on"
           badge={<Lozenge tone="accent">Enterprise</Lozenge>}
           description="Sign in through your identity provider."
-          locked="Part of the Enterprise plan."
+          locked="Upgrade the plan to turn it on."
           action={<Button>See plans</Button>}
         >
           <FormField
