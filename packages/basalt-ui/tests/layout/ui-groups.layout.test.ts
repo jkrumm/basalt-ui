@@ -265,6 +265,17 @@ layout('control vocabulary and groups', () => {
             near(v.kids[i]!.top, v.kids[i - 1]!.bottom - 1, `v overlap ${i}`)
             near(v.kids[i]!.width, v.kids[0]!.width, `v width ${i}`)
           }
+          const rule = await page.raw.evaluate(() => {
+            const second = document.querySelector(
+              '[data-testid="bg-v"] [data-slot="button-group"] > :nth-child(2)',
+            )
+            const before = second === null ? null : getComputedStyle(second, '::before')
+            return before === null
+              ? null
+              : { height: before.height, colour: before.backgroundColor }
+          })
+          expect(rule?.height, 'a stacked button draws a hairline over its fused edge').toBe('1px')
+          expect(rule?.colour).not.toBe('rgba(0, 0, 0, 0)')
         })
 
         test(`${scheme}: ControlGroup keeps 2 px, fills its box and keeps a grow-0 child`, async () => {
