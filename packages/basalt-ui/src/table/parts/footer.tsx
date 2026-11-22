@@ -121,7 +121,7 @@ export function DataTableFooter<T>({
             shown && fn !== undefined ? (
               <dl data-slot="table-footer-item" className="m-0 min-w-0">
                 <dt className="truncate text-xs font-normal text-muted-foreground">
-                  <span className="sr-only">{spec.header}, </span>
+                  <span className="sr-only">{spec.header === '' ? spec.id : spec.header}, </span>
                   {label(fn)}
                 </dt>
                 <dd className="m-0 truncate">{drawAggregate(spec, value, env, fn)}</dd>

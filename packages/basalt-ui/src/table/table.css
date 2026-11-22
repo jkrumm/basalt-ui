@@ -359,7 +359,7 @@
     /* the head's controls are out of the tab order with the head (sort lives in the toolbar here) */
     [data-slot='table-root'][data-below='480'][data-phone='cards']
       [data-slot='table-header']
-      :is(button, [role='checkbox'], input) {
+      :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
     }
     [data-slot='table-root'][data-below='480'][data-phone='cards'] colgroup,
@@ -520,7 +520,7 @@
     /* the head's controls are out of the tab order with the head (sort lives in the toolbar here) */
     [data-slot='table-root'][data-below='800'][data-phone='cards']
       [data-slot='table-header']
-      :is(button, [role='checkbox'], input) {
+      :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
     }
     [data-slot='table-root'][data-below='800'][data-phone='cards'] colgroup,
@@ -682,7 +682,7 @@
     /* the head's controls are out of the tab order with the head (sort lives in the toolbar here) */
     [data-slot='table-root'][data-below='700'][data-phone='cards']
       [data-slot='table-header']
-      :is(button, [role='checkbox'], input) {
+      :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
     }
     [data-slot='table-root'][data-below='700'][data-phone='cards'] colgroup,
@@ -843,7 +843,7 @@
     /* the head's controls are out of the tab order with the head (sort lives in the toolbar here) */
     [data-slot='table-root'][data-below='always'][data-phone='cards']
       [data-slot='table-header']
-      :is(button, [role='checkbox'], input) {
+      :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
     }
     [data-slot='table-root'][data-below='always'][data-phone='cards'] colgroup,
@@ -1193,7 +1193,10 @@
     width: 7px;
     cursor: col-resize;
     touch-action: none;
-    outline: none;
+  }
+  [data-slot='table-resize']:focus-visible {
+    outline: 2px solid var(--basalt-brand);
+    outline-offset: -2px;
   }
   [data-slot='table-resize']::after {
     content: '';
@@ -1206,7 +1209,7 @@
   [data-slot='table-head']:hover > [data-slot='table-resize']::after {
     background: var(--basalt-line);
   }
-  [data-slot='table-resize']:is([data-active], :focus-visible)::after {
+  [data-slot='table-resize'][data-active]::after {
     inset-block: 0;
     width: 2px;
     background: var(--basalt-brand);
