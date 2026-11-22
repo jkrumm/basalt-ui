@@ -441,16 +441,18 @@ export function useDockModel(
   sizeClass: SizeClass,
   rail: RailState,
   asideReserved: number,
+  /** The width the open `Dock` draws at: the reader can drag it. */
+  dockWidth: number = DOCK_WIDTH,
 ): DockModel {
   const room = useMediaQuery(
     asideDockQuery({
       navbarWidth: railWidth(sizeClass, rail) + asideReserved,
-      asideWidth: DOCK_WIDTH,
+      asideWidth: dockWidth,
     }),
     false,
   )
   const docks = open && sizeClass !== 'compact' && room
-  return { docks, width: docks ? DOCK_WIDTH : 0 }
+  return { docks, width: docks ? dockWidth : 0 }
 }
 
 /**

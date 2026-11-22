@@ -8,8 +8,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { PageHostContext, ShellOverlayContext } from './page'
 import { fakeHost } from './page.test-support'
-import { Peek } from './peek'
-import { PEEK_MIN } from './peek-handle'
+import { widthStore } from './core/panel-store'
+import { PEEK_MIN, Peek } from './peek'
 
 const original = window.matchMedia
 const proto = HTMLElement.prototype
@@ -42,6 +42,7 @@ const realStyle = window.getComputedStyle
 
 afterEach(() => {
   cleanup()
+  widthStore('peek:record').reset()
   window.getComputedStyle = realStyle
   for (const stray of document.body.querySelectorAll(':scope > div:empty')) stray.remove()
   window.matchMedia = original
@@ -188,5 +189,19 @@ describe('PeekHandle', () => {
     )
     expect(screen.queryByRole('separator')).toBeNull()
     region.remove()
+  })
+
+  test('the width the reader chose is remembered on the device for the next peek of its kind', () => {
+    const first = mountShelled({})
+    fireEvent.keyDown(first.handle, { key: 'ArrowLeft' })
+    const chosen = first.el.style.getPropertyValue('--peek-w')
+    expect(chosen).toBe('616px')
+    first.done()
+    cleanup()
+    const second = mountShelled({})
+    expect(second.el.style.getPropertyValue('--peek-w')).toBe(chosen)
+    fireEvent.keyDown(second.handle, { key: 'Enter' })
+    expect(widthStore('peek:record').get()).toBeNull()
+    second.done()
   })
 })

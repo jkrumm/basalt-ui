@@ -147,21 +147,12 @@ layout('Peek width handle at 1440', () => {
   })
 })
 
-layout('Peek over the shell at 390 has no handle', () => {
-  test('the whole-area panel draws no width handle', async () => {
-    const page = await openFixture(SPEC, PHONE)
-    expect(await page.count(`${PEEK} [data-slot="peek-handle"]`)).toBe(0)
-  })
-})
-
 layout('Peek over the shell at 390', () => {
-  test('fills the whole content area, between the header and the tab bar', async () => {
+  test('is a bottom sheet with the scrim and draws no width handle (panels.layout.test.ts covers each presentation)', async () => {
     const page = await openFixture(SPEC, PHONE)
-    const peek = (await page.box('peek', PEEK)).box
-    const main = (await page.box('main', MAIN)).box
-    expect(Math.abs(peek.width - PHONE.width)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(peek.top - main.top)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(peek.bottom - main.bottom)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(peek.right - PHONE.width)).toBeLessThanOrEqual(TOLERANCE)
+    await page.raw.waitForSelector('[data-slot="sheet-content"]')
+    const sheet = (await page.box('sheet', '[data-slot="sheet-content"]')).box
+    expect(Math.abs(sheet.bottom - PHONE.height)).toBeLessThanOrEqual(1)
+    expect(await page.count('[data-slot="peek-handle"], [data-panel="handle"]')).toBe(0)
   })
 })

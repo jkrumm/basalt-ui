@@ -56,6 +56,8 @@ export type ShellDock = {
   readonly slot: HTMLElement | null
   readonly docked: boolean
   readonly claim: (id: string) => () => void
+  /** The width the open `Dock` draws at, so a docked one reserves exactly that. */
+  readonly setWidth?: (px: number) => void
 }
 
 export const ShellDockContext = createContext<ShellDock | null>(null)

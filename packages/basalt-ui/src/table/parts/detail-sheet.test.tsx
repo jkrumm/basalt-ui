@@ -11,6 +11,9 @@ import { col } from '../core/kinds'
 import { useDataTable } from '../use-data-table'
 import type { UseDataTable } from '../contract'
 import { DataTable } from './data-table'
+import { PageHostContext, ShellOverlayContext } from '../../page/page'
+import { fakeHost } from '../../page/page.test-support'
+import { presentationStore } from '../../page/core/panel-store'
 
 afterEach(cleanup)
 
@@ -119,5 +122,98 @@ describe('onRowActivate and the Details door', () => {
       />,
     )
     expect(document.querySelector('[data-slot="table-expand"]')).toBeNull()
+  })
+})
+
+describe('under a shell', () => {
+  const original = window.matchMedia
+  const wide = (): void => {
+    window.matchMedia = (query: string): MediaQueryList =>
+      ({
+        matches: true,
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }) as unknown as MediaQueryList
+  }
+  afterEach(() => {
+    window.matchMedia = original
+    presentationStore('sheet-test').reset()
+  })
+  function Shelled({ region }: { region: HTMLElement }): ReactElement {
+    const { host } = fakeHost()
+    return (
+      <PageHostContext value={host}>
+        <ShellOverlayContext value={region}>
+          <Subject options={{ detail: (r: Row) => <p>Box of {r.name}</p> }} />
+        </ShellOverlayContext>
+      </PageHostContext>
+    )
+  }
+  const peek = (): HTMLElement | null => document.querySelector('[data-slot="peek"]')
+
+  test('a row opens its record in a non-modal peek remembered per table, with no sheet and no scrim', async () => {
+    wide()
+    const region = document.createElement('div')
+    document.body.append(region)
+    render(<Shelled region={region} />)
+    fireEvent.click(row(0))
+    await settled()
+    expect(peek()?.textContent).toContain('Box of Alpha')
+    expect(sheet()).toBeNull()
+    expect(document.querySelector('[inert]')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Open as' })).toBeTruthy()
+    region.remove()
+  })
+
+  test("previous and next step through the table's rows in place and stop at the ends", async () => {
+    wide()
+    const region = document.createElement('div')
+    document.body.append(region)
+    render(<Shelled region={region} />)
+    fireEvent.click(row(0))
+    await settled()
+    const prev = screen.getByRole('button', { name: 'Previous record' }) as HTMLButtonElement
+    expect(prev.disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Next record' }))
+    await settled()
+    expect(peek()?.textContent).toContain('Box of Beta')
+    expect(
+      (screen.getByRole('button', { name: 'Next record' }) as HTMLButtonElement).disabled,
+    ).toBe(true)
+    region.remove()
+  })
+
+  test('Escape closes it and focus goes back to the row', async () => {
+    wide()
+    const region = document.createElement('div')
+    document.body.append(region)
+    render(<Shelled region={region} />)
+    row(1).focus()
+    fireEvent.keyDown(row(1), { key: 'Enter' })
+    await settled()
+    expect(document.activeElement).toBe(peek())
+    await act(async () => {
+      fireEvent.keyDown(peek() as HTMLElement, { key: 'Escape' })
+      await Promise.resolve()
+    })
+    expect(peek()).toBeNull()
+    expect(document.activeElement).toBe(row(1))
+    region.remove()
+  })
+
+  test("a caller's host gets the rows in order as the entry's records", async () => {
+    const show = mock((_entry: unknown) => undefined)
+    render(
+      <Subject
+        options={{ detail: (r: Row) => <p>Box of {r.name}</p> }}
+        host={{ isOpen: false, show, hide: () => undefined }}
+      />,
+    )
+    fireEvent.click(row(1))
+    await settled()
+    const entry = show.mock.calls[0]?.[0] as { records?: { ids: string[]; id: string } }
+    expect(entry.records?.ids).toEqual(['a', 'b'])
+    expect(entry.records?.id).toBe('b')
   })
 })

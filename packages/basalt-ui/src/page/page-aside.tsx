@@ -3,18 +3,24 @@ import type { CSSProperties, KeyboardEvent, ReactElement, ReactNode } from 'reac
 import { createPortal } from 'react-dom'
 import { focusLost, focusMain } from '../common/focus'
 import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
+import { PanelHandle, usePanelWidth } from '../common/panel-handle'
 import { page } from '../core/messages/page'
 import { useMessages } from '../core/messages/use-messages'
+import type { RecordSequence } from '../core/ports'
 import { Button } from '../ui/button'
-import { ScrollArea } from '../ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
 import type { PageAsideProps } from './contract'
 import type { ClaimHandle } from './core/claims'
 import type { AsideSheetState } from './core/docking'
+import { widthStore } from './core/panel-store'
 import { PageContext, PageHostContext } from './page'
+import { PanelBody, PanelHeader, PanelSteps, panelKeys } from './record-panel'
 
 /** The default aside width in px; 320, 360, 480 and 640 are the sanctioned widths. */
 export const DEFAULT_ASIDE_WIDTH = 360
+
+/** The narrowest the reader can drag an aside to. */
+export const ASIDE_MIN = 280
 
 type PanelProps = {
   title: string
@@ -28,6 +34,11 @@ type PanelProps = {
    * The panel never reads them; the shell's compact sheet does.
    */
   sheet?: AsideSheetState | undefined
+  /** The shown detail's records: previous and next in the header. */
+  records?: RecordSequence | undefined
+  /** The width handle's callbacks; absent where the aside is a sheet. */
+  onResize?: ((px: number | null) => void) | undefined
+  onCommit?: ((px: number | null) => void) | undefined
   children?: ReactNode
 }
 
@@ -43,52 +54,44 @@ export function PageAsidePanel({
   width,
   dock,
   onClose,
+  records,
+  onResize,
+  onCommit,
   children,
 }: PanelProps): ReactElement {
   const t = useMessages(page)
+  const panel = useRef<HTMLElement>(null)
   const style: PanelStyle = { '--page-aside-w': `${width}px` }
   // Escape inside the panel closes it. A control that used the key itself (a menu, a combobox
   // popup) has already prevented the default, and the key was theirs.
-  const escape = (event: KeyboardEvent<HTMLElement>): void => {
-    if (event.key !== 'Escape' || event.defaultPrevented || onClose === undefined) return
-    event.preventDefault()
-    onClose()
-  }
+  const keys = (event: KeyboardEvent<HTMLElement>): void => panelKeys(event, { onClose, records })
   return (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape bubbles from the controls inside; the landmark itself takes no input
     <aside
-      onKeyDown={escape}
+      ref={panel}
+      onKeyDown={keys}
       data-slot="page-aside"
       data-dock={dock}
       aria-label={title}
       style={style}
       className="sticky top-0 flex h-dvh w-(--page-aside-w) max-w-full flex-col border-s border-border bg-background"
     >
-      <header className="flex items-center gap-2 border-b border-border px-4 py-2">
-        <h2 className="m-0 min-w-0 flex-1 truncate font-head text-sm font-semibold text-foreground">
-          {title}
-        </h2>
-        {onClose !== undefined && (
-          <Button
-            variant="ghost"
-            size="sm"
-            shape="icon"
-            aria-label={t('page.closeAside')}
-            data-aside-close=""
-            onClick={onClose}
-          >
-            <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
-              <path
-                d="M4 4l8 8M12 4l-8 8"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-          </Button>
-        )}
-      </header>
-      <ScrollArea className="flex-1 p-4">{children}</ScrollArea>
+      {onResize !== undefined && onCommit !== undefined && (
+        <PanelHandle
+          panel={panel}
+          min={ASIDE_MIN}
+          label={t('page.resizePeek')}
+          onResize={onResize}
+          onCommit={onCommit}
+        />
+      )}
+      <PanelHeader
+        title={title}
+        records={records}
+        onClose={onClose}
+        closeLabel={t('page.closeAside')}
+      />
+      <PanelBody>{children}</PanelBody>
     </aside>
   )
 }
@@ -173,6 +176,12 @@ function AsideView({
     () => undefined,
   )
 
+  const chosen = usePanelWidth({
+    store: widthStore(`aside:${width}`),
+    name: `aside:${width}`,
+    min: ASIDE_MIN,
+  })
+  const shownWidth = chosen.width ?? width
   const detail = context?.detail ?? null
   // Outside any `Page` there is no column to measure: render in flow, open.
   // Under a shell the region's docking rule decides, not the page width.
@@ -230,7 +239,16 @@ function AsideView({
     if (host === null || !owns || !(isOpen || closable)) return undefined
     return host.claim(
       'aside',
-      <PageAsidePanel title={shownTitle} width={width} dock={dock} onClose={closes} sheet={sheet}>
+      <PageAsidePanel
+        title={shownTitle}
+        width={shownWidth}
+        dock={dock}
+        onClose={closes}
+        sheet={sheet}
+        records={detail?.records}
+        onResize={chosen.resize}
+        onCommit={chosen.commit}
+      >
         {body}
       </PageAsidePanel>,
       id,
@@ -253,14 +271,29 @@ function AsideView({
         <SheetTrigger render={<Button variant="secondary" data-aside-trigger="" />}>
           {title}
         </SheetTrigger>
-        <SheetContent title={shownTitle}>{body}</SheetContent>
+        <SheetContent
+          title={shownTitle}
+          actions={
+            detail?.records === undefined ? undefined : <PanelSteps records={detail.records} />
+          }
+        >
+          {body}
+        </SheetContent>
       </Sheet>
     )
   }
 
   if (!isOpen) return null
   const panel = (
-    <PageAsidePanel title={shownTitle} width={width} dock={dock} onClose={closes}>
+    <PageAsidePanel
+      title={shownTitle}
+      width={shownWidth}
+      dock={dock}
+      onClose={closes}
+      records={detail?.records}
+      onResize={chosen.resize}
+      onCommit={chosen.commit}
+    >
       {body}
     </PageAsidePanel>
   )
@@ -307,7 +340,10 @@ function BoundAside({
  * A bound aside follows its field: when the field unsets (a navigation that drops it, Back,
  * `clear()`), the detail shown in the aside goes with it.
  * `PageAside` also hosts the page's `DetailHost`: a table row or list item can show its detail in
- * the aside instead of a sheet of its own.
+ * the aside instead of a sheet of its own, with previous and next through the table's rows.
+ * It draws the one panel anatomy `Peek`, `Dock` and a right `Sheet` share, and a handle on its start
+ * edge resizes it (pointer, ArrowLeft and ArrowRight, Enter or a double click back to `width`); the
+ * device remembers the width per declared `width`.
  *
  * @useWhen a screen inspects or edits one record beside its list, or shows the detail of a record without leaving the page
  * @neverWhen the panel holds page-wide filters (use the PageBar controls) or two panels are needed (one aside per page)

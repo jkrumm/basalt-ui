@@ -1,37 +1,37 @@
 ---
 name: Peek
-use when: 'a plain click on a record link should show the record beside a list or a graph without leaving it (master-detail with the list kept live)'
+use when: 'a plain click on a record link or a table row should show the record beside a list or a graph without leaving it (master-detail with the list kept live)'
 never when: 'the choice is a yes or no (a `Dialog`), a form edited beside the page that should block it (a `Sheet`), or a page''s own inspector docked beside its content (`PageAside`)'
 subpath: basalt-ui/page
 peers: ['@base-ui/react', '@tanstack/react-router']
-slots: [peek]
+slots: []
 ---
 
 # Peek
 
-A right-side panel (a non-modal `<dialog open>`) over the page it was opened from, for a record: the page underneath stays
-mounted, so its scroll, filters and selection are where they were when the panel closes. It is
-not modal (no scrim, nothing inert), so another link can be clicked to swap what it shows. Under
-an `AppShell` it sits over main between the header and the footer and does not scroll with the
-page; without one it is a block in flow. Focus moves in when it opens and back to the opener
-when it closes. `onPin` adds a button that moves the record into the shell's `Dock`. Under a shell a drag handle on
-its start edge resizes it (pointer, or ArrowLeft and ArrowRight on the focused handle; Home and End for the
-narrowest and the widest, Enter to reset): the width is one `--peek-w`, kept in the panel for as long as it
-stays open, and `onWidthChange` hands it to the app to save and `defaultWidth` takes it back; basalt stores
-nothing. It draws no address and binds no keys: `usePeek` from `basalt-ui/router` owns
-the `?peek=` address, the click handler, history and Escape, and hands this panel its `onClose`.
+A record's panel, non-modal and over the page it was opened from: the page underneath stays
+mounted and live (no scrim, nothing inert), so its scroll, filters and selection are where they
+were when the panel closes, and another link can be clicked to swap what it shows. Focus moves in
+when it opens and back to the opener when it closes; Escape inside it closes it (in a field the
+first Escape only leaves the field).
 
 ## Signature
 
 ```ts
-Peek({ title, tag, fullPage, onClose, onPin, defaultWidth, onWidthChange, children, }: PeekProps): ReactElement | null
+Peek(props: PeekProps): ReactElement | null
   title: string  // The accessible name and the visible heading: what is shown (`Issue 12`)
   tag?: string  // A short mono tag before the title (`#12`), for what the heading does not say
+  icon?: IconComponent  // A glyph before the title, for what kind of record it is
+  avatar?: AvatarEntry  // A face before the title, for a person or an object; wins over `icon`
+  kind?: string  // The record kind (`issue`): its presentation, its side width and its window's size are remembered on the device per kind
   fullPage?: string | NavTarget  // The record's own page
   onClose: () => void  // Escape, the close button and Back: the caller decides how the address changes (`usePeek().close`)
   onPin?: () => void  // Draws a button that moves the record into the shell's `Dock` (`usePeek().pin`)
-  defaultWidth?: number  // The width in px the panel opens at, from where the app saved it; the default tiers when absent
-  onWidthChange?: (px: number | null) => void  // The width in px once the user released the pointer or pressed a key on the handle, `null` once Enter or a double click put it back at the default: the app saves it, basalt stores nothing
+  actions?: PanelActions  // The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu
+  records?: RecordSequence  // The opener's records in its order (`usePeek().go` or a table's rows): draws previous and next, disabled at the ends, and ArrowUp and ArrowDown on the panel step through them in place
+  footer?: ReactNode  // A band under the body for a form's actions
+  defaultWidth?: number  // The width in px the side panel opens at, from where the app saved it; else the width the reader last dragged this kind to; else the default tiers
+  onWidthChange?: (px: number | null) => void  // The width in px once the user released the pointer or pressed a key on the handle, `null` once Enter or a double click put it back at the default
   children?: ReactNode
 ```
 
@@ -40,7 +40,13 @@ Peek({ title, tag, fullPage, onClose, onPin, defaultWidth, onWidthChange, childr
 ```tsx
 const peek = usePeek({ field: globals.field.peek, kinds: { issue: '/issues/$id' } })
 {peek.open && (
-  <Peek title={`Issue ${peek.open.id}`} fullPage={peek.fullPage ?? undefined} onClose={peek.close}>
+  <Peek
+    kind="issue"
+    title={`Issue ${peek.open.id}`}
+    fullPage={peek.fullPage ?? undefined}
+    records={{ ids: issueIds, id: peek.open.id, onStep: peek.go }}
+    onClose={peek.close}
+  >
     <IssueView id={peek.open.id} />
   </Peek>
 )}

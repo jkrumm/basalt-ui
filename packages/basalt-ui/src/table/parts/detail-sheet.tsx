@@ -1,14 +1,21 @@
 /**
- * The default detail host of a table (docs/v3/concepts/data-table.md section 6): a sheet that shows
- * the entry a row activation hands it. A caller's own `DetailHost` wins, then the enclosing
- * `Page`'s (its `PageAside`, no wiring); without either, the body of the table brings this sheet, so a row tap always lands somewhere and a column a
- * tier hides is reachable.
+ * The default detail host of a table (docs/v3/concepts/data-table.md section 6): the record panel
+ * that shows the entry a row activation hands it. A caller's own `DetailHost` wins, then the
+ * enclosing `Page`'s (its `PageAside`, no wiring); without either, the body of the table brings
+ * its own, so a row tap always lands somewhere and a column a tier hides is reachable. Under an
+ * `AppShell` it is a `Peek` (non-modal, presented as a side panel, a window or the page, with
+ * previous and next through the table's rows, remembered per table); on a phone and without a shell
+ * it is a sheet.
  */
 import { useContext, useEffect, useRef, useState } from 'react'
 import type { ReactElement } from 'react'
 import type { DetailEntry, DetailHost } from '../../core/ports'
-import { DetailHostContext } from '../../page/page'
+import { DetailHostContext, PageHostContext } from '../../page/page'
+import { Peek } from '../../page/peek'
+import { useSizeClass } from '../../page/use-size-class'
 import { Sheet, SheetContent } from '../../ui/sheet'
+
+const BOX = { height: 'fill', phase: 'ready' } as const
 import type { TableModel } from '../use-data-table'
 
 /**
@@ -20,6 +27,8 @@ export function useDetailHost<T>(
   detail: DetailHost | undefined,
 ): ReactElement {
   const page = useContext(DetailHostContext)
+  const shell = useContext(PageHostContext)
+  const sizeClass = useSizeClass()
   const [entry, setEntry] = useState<DetailEntry | null>(null)
   // A sheet hidden before its open animation finished (a deep link the page's aside took over)
   // never runs an exit: its popup would stay mounted, closed and focusable. A new key drops it.
@@ -63,6 +72,21 @@ export function useDetailHost<T>(
       model.closeDetail(true)
     }
   })
+  if (shell !== null && sizeClass !== 'compact') {
+    // A closed peek draws nothing, and an open one portals into the shell: safe inside a `<tbody>`.
+    return entry === null ? (
+      <></>
+    ) : (
+      <Peek
+        kind={model.id}
+        title={entry.title}
+        {...(entry.records !== undefined && { records: entry.records })}
+        onClose={close}
+      >
+        {entry.body(BOX)}
+      </Peek>
+    )
+  }
   return (
     <Sheet
       key={generation}
@@ -72,9 +96,7 @@ export function useDetailHost<T>(
         painted.current = open
       }}
     >
-      <SheetContent title={entry?.title ?? ''}>
-        {entry?.body({ height: 'fill', phase: 'ready' })}
-      </SheetContent>
+      <SheetContent title={entry?.title ?? ''}>{entry?.body(BOX)}</SheetContent>
     </Sheet>
   )
 }

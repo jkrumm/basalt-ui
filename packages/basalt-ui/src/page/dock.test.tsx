@@ -43,8 +43,22 @@ describe('Dock: standalone', () => {
     )
     expect(screen.queryByRole('button', { name: 'Dock panel' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Close panel' }))
-    fireEvent.keyDown(screen.getByLabelText('inside'), { key: 'Escape' })
+    fireEvent.keyDown(panel() as HTMLElement, { key: 'Escape' })
     expect(onClose).toHaveBeenCalledTimes(2)
+  })
+
+  test('in a field the first Escape only leaves the field, so a draft is not thrown away', () => {
+    const onClose = mock(() => {})
+    render(
+      <Dock title="Issue 12" onClose={onClose}>
+        <input aria-label="inside" />
+      </Dock>,
+    )
+    const input = screen.getByLabelText('inside')
+    input.focus()
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(onClose).not.toHaveBeenCalled()
+    expect(document.activeElement).not.toBe(input)
   })
 
   test('leaves an Escape another control already used', () => {

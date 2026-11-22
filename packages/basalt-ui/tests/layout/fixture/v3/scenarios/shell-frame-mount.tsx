@@ -27,6 +27,7 @@ import { col } from '../../../../../src/table/core/kinds'
 import { DataTable } from '../../../../../src/table/parts/data-table'
 import { useDataTable } from '../../../../../src/table/use-data-table'
 import { AppShell } from '../../../../../src/shell/app-shell'
+import { Sheet, SheetContent } from '../../../../../src/ui/sheet'
 import { Card } from '../../../../../src/ui/card'
 import type { AppShellProps } from '../../../../../src/shell/contract'
 import type { FixtureSpec } from '../../spec'
@@ -270,6 +271,13 @@ function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> 
         </Peek>
       )}
       {options.dock !== undefined && options.dock !== false && <DockHarness mode={options.dock} />}
+      {options.sheet === true && (
+        <Sheet defaultOpen>
+          <SheetContent title="Edit run" tag="#12">
+            <p data-testid="sheet-body">Form</p>
+          </SheetContent>
+        </Sheet>
+      )}
       {aside !== false && (
         <PageAside
           title="Run details"
@@ -291,6 +299,12 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
   if (!RESET.isConnected) document.head.append(RESET)
   const options = (spec as ShellFrameSpec).shellFrame ?? {}
   localStorage.clear()
+  if (options.present !== undefined) {
+    localStorage.setItem(
+      'basalt:panel:record:present',
+      JSON.stringify({ v: 1, value: options.present }),
+    )
+  }
   if (options.rail !== undefined) {
     localStorage.setItem(
       'basalt:basalt-sidebar-collapsed',
