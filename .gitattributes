@@ -1,1 +1,2 @@
 docs/plan.yaml merge=plan
+apps/marketing/.basalt/manifest.json merge=basalt-json
