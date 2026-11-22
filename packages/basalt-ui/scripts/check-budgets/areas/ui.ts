@@ -113,7 +113,8 @@ export const rows: readonly RowDef[] = [
     order: 301,
     label: 'ui 25-part argo-shaped page (gzip B minus base0, src/ui, peers bundled)',
     // 149718 B measured. Informative target 118 KB.
-    ceiling: 157500,
+    // 157500 -> 157700 (Issue 2939): 157574 B measured; the Sheet draws the panel header, its footer band and width handle.
+    ceiling: 157700,
     measure: () => measureSource(page([...TEN, ...REST_OF_25])),
   },
   ...Object.entries(PER_PRIMITIVE).map(([name, ceiling], i): RowDef => ({
@@ -135,6 +136,15 @@ export const rows: readonly RowDef[] = [
 ]
 
 export const raises: Raises = {
+  'ui-page-25': [
+    {
+      from: 157500,
+      to: 157700,
+      consumer:
+        'the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md decision 6): one panel anatomy for Peek, Dock, PageAside and a right Sheet, each resizable with the width remembered, and a record that opens as a side panel, a window or the page, with previous and next (Issue 2939)',
+      repo: 'basalt-ui',
+    },
+  ],
   'ui-prim-card': [
     {
       from: 10000,
