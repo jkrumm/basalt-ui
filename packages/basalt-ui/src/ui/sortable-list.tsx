@@ -17,7 +17,7 @@ import type { DragData, DragEdge, DragLike } from '../core/ports'
 export const sortableListVariants = cva('m-0 flex list-none flex-col gap-1 p-0')
 
 const ROW =
-  'relative flex min-h-ctl min-w-0 items-center gap-2 rounded-ctrl data-dragging:opacity-30 data-edge:before:pointer-events-none data-edge:before:absolute data-edge:before:inset-x-0 data-edge:before:h-0.5 data-edge:before:rounded-full data-edge:before:bg-brand data-[edge=before]:before:-top-0.75 data-[edge=after]:before:-bottom-0.75'
+  'relative flex min-h-ctl min-w-0 items-center gap-2 rounded-ctrl data-dragging:opacity-30 data-edge:before:pointer-events-none data-edge:before:absolute data-edge:before:inset-x-0 data-edge:before:h-0.5 data-edge:before:rounded-full data-edge:before:bg-brand data-[edge=before]:before:-top-0.5 data-[edge=after]:before:-bottom-0.5'
 
 const HANDLE =
   'inline-flex size-6 shrink-0 cursor-grab touch-none items-center justify-center rounded-ctrl border-0 bg-transparent p-0 text-muted-foreground hover:bg-accent hover:text-foreground focus-ring active:cursor-grabbing pointer-coarse:size-11'
