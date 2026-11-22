@@ -11,6 +11,7 @@ import type {
   Box,
   ControlHandle,
   DetailHost,
+  DragLike,
   IconComponent,
   ListFocus,
   ListFocusItem,
@@ -81,7 +82,16 @@ export type TableDisplay = {
   groupBy?: string | null
   /** The footer reduce a reader picked per column id, `'none'` for none; absent, the declared `footer`. */
   aggregates?: Readonly<Record<string, Aggregate | 'none'>>
+  /** How the rows are drawn; absent, or a layout the table does not offer, is `table`. */
+  layout?: TableLayout
 }
+
+/**
+ * How a view draws its rows, all from the one model: `table`; `list`, one line per record from the
+ * columns' card slots; `board`, columns by a `select` column whose `commit` a drop calls; `gallery`,
+ * a grid of cards from the same slots.
+ */
+export type TableLayout = 'table' | 'list' | 'board' | 'gallery'
 
 /** A body row height: the density row of `dense`, `normal` and `comfortable` (`--basalt-row-h`). */
 export type RowHeight = 'compact' | 'default' | 'comfortable'
@@ -269,7 +279,16 @@ export type DataTableProps<T, I = unknown> = {
       }
     }
 ) &
-  ({ height?: 'auto' | Scrollport; virtual?: never } | { height: Scrollport; virtual: VirtualLike })
+  (
+    | { height?: 'auto' | Scrollport; virtual?: never }
+    | { height: Scrollport; virtual: VirtualLike }
+  ) & {
+    /**
+     * The drag engine of the board layout: `drag` from `basalt-ui/ui/sortable-list`. Without it a
+     * board card moves by its menu alone.
+     */
+    drag?: DragLike
+  }
 
 /** The options of the detail door, shared by the two forms that open one (`detail`, or `detailById` alone). */
 type DetailDoor<T> = {
@@ -439,6 +458,14 @@ export type UseDataTable<
   nested?: { parentOf: (row: T) => string | null | undefined }
   selection?: { bulk: BulkAction<T>[]; selectAll?: boolean }
   views?: { store?: ViewStore }
+  /**
+   * The layouts a reader may pick in the view row, in toggle order; the view saves the pick. One
+   * layout draws no toggle. `board` needs a client table with a `c.select` column (its `commit` is
+   * the drop) and is left out with a dev warning otherwise.
+   *
+   * @default ['table']
+   */
+  layouts?: readonly TableLayout[]
 } & (
   | (DetailDoor<T> & { detail: (row: T, box: Box) => ReactNode })
   | (DetailDoor<T> & { detail?: never; detailById: NonNullable<DetailDoor<T>['detailById']> })

@@ -13,10 +13,10 @@
   "packages/basalt-ui/src/content/contract.ts": "aac81048f2298c66dae01500513764ca0307d959bb3f0e94039fb11c663a32c8",
   "packages/basalt-ui/src/controls/contract.ts": "f943a77d599bb683ee343a8f989ac0d08c9e0e98e7c59bf9cf31b04b20e7c02e",
   "packages/basalt-ui/src/core/ports.ts": "3c1df5916a78f3f5dc6a52a6b79f7b221c107a9915be49c21fb44d9185b07e60",
-  "packages/basalt-ui/src/page/contract.ts": "8378a5749abe1a33d88be7067ae4070874282e4f355fce3ad1b46aa4eef6cb06",
+  "packages/basalt-ui/src/page/contract.ts": "551f92eefdea22ec12f35ccd726bc50190e3b17bf35438eb56ceebc5b01300c0",
   "packages/basalt-ui/src/router/index.ts": "ac323841296b0fa0fe599b7acf457f47f576cd7f16236b2f822069da9f3f77e3",
   "packages/basalt-ui/src/shell/contract.ts": "393fc65d26e373b10a9e1429db69b0cb32c31befe38ea7569c58376332a7fb43",
   "packages/basalt-ui/src/shell/index.ts": "9ffa5036e71bb8396edeeecf7a7f2266bd993628265f8b78ce30e854ec0a5f30",
-  "packages/basalt-ui/src/table/contract.ts": "c0a696fad1efc217dfec96226acba42ea1fe96e0d225575440d9c0e48b6f730c",
+  "packages/basalt-ui/src/table/contract.ts": "92821491e9dc9fc7376f6b92c6f0ba9409ccecb0868671638d427da9074570df",
   "packages/basalt-ui/src/ui/slots.ts": "fcf4f08a18d8ecf09fc9622ef7d4d576b9aa35005b37492643bfc34c303e23fb"
 }
