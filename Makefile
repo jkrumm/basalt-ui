@@ -179,14 +179,14 @@ BASALT_MATRIX_ROUTES ?=
 quality-matrix: browser-shell ## Quality matrix in a real browser: make quality-matrix [QUALITY_MATRIX=sampled|full] [BASALT_MATRIX_SHARD=<i>/<n>]
 	@$(call slot,quality-matrix) sh -c 'BASALT_MATRIX=$(QUALITY_MATRIX) BASALT_MATRIX_SHARD=$(BASALT_MATRIX_SHARD) BASALT_MATRIX_ROUTES=$(BASALT_MATRIX_ROUTES) bun --config=./packages/basalt-ui/tests/quality/matrix/bunfig.toml test --timeout 180000 $(bail) packages/basalt-ui/tests/quality/matrix'
 
-# The sampled matrix is 394 cells (53 routes and 144 pages, two cells each; 93 of the pages are scenarios) and 4.8 s a cell
-# under host load (measured 2026-11-21: 318 cells in 1515 s), so about 30 minutes whole. CI runs it as eight shards.
-# Only a UI input reaches a route: the package source, the matrix itself, the playground, a dependency bump.
-# `check-fast` asks scripts/matrix-select.ts (merge base with BASE, default origin/master, through the working tree,
-# untracked files included): no UI input changed -> skip; only scenarios added or edited -> those routes' cells
-# (BASALT_MATRIX_ROUTES, the log names them); anything else, or no merge base to diff against -> the whole sampled matrix.
-# `make quality-matrix` and `make check` always run it whole; CI runs every cell on every head.
-quality-matrix-fast: ## Quality matrix: skipped without a UI input change, the changed scenarios' cells for a scenario-only branch (BASE=<ref>, default origin/master)
+# The sampled matrix is 426 cells (2026-11-22: 55 routes at two cells, 158 pages at two hover cells) and 4.8 s a cell under
+# host load (measured 2026-11-21: 318 cells in 1515 s), so over 30 minutes whole. CI runs it as eight shards on every head;
+# a lead never runs it whole. `check-fast` asks scripts/matrix-select.ts (merge base with BASE, default origin/master,
+# through the working tree, untracked files included), which reads the playground's import graph (scripts/import-graph.ts):
+# the routes whose render imports a changed file run (BASALT_MATRIX_ROUTES, the log names them and why), up to 48 cells; a
+# module of the shell, a token sheet, a manifest or a file the graph cannot place runs the 24-cell smoke set; the matrix's
+# own harness, or no merge base, runs it whole; no page reached, nothing. `make quality-matrix` and `make check` run it whole.
+quality-matrix-fast: ## Quality matrix: only the routes the branch's changes reach, the smoke set for a shared change, whole for a harness change (BASE=<ref>, default origin/master)
 	@sel="$$(bun scripts/matrix-select.ts --base $(or $(BASE),origin/master))" || exit $$?; \
 	case "$$sel" in \
 		skip) exit 0;; \
@@ -203,20 +203,25 @@ astro-matrix: browser-shell ## Astro playground: build, measure every part per r
 	@cd packages/basalt-ui && bun run build
 	@$(MAKE) --no-print-directory astro-matrix-run
 
+# ASTRO_PARTS=<id,id> measures only those parts and their families' pages; the check then judges those alone, and a
+# partial run is never recorded (matrix.ts refuses UPDATE=1 on one).
+ASTRO_PARTS ?=
 astro-matrix-run:
 	@bun --filter @basalt-ui/playground-astro build
-	@$(call slot,astro-matrix) bun apps/playground-astro/scripts/measure.ts
+	@$(call slot,astro-matrix) bun apps/playground-astro/scripts/measure.ts $(if $(ASTRO_PARTS),--parts $(ASTRO_PARTS))
 	@bun apps/playground-astro/scripts/matrix.ts $(if $(filter 1,$(UPDATE)),--update)
 
-# The Astro matrix only when the branch touched one of its inputs (BASE=<ref>, default origin/master); CI runs it on every head.
-# The whole package is an input: the matrix measures its build, which its sources, build config and post-build scripts shape.
-ASTRO_INPUTS = packages/basalt-ui apps/playground/src/demo apps/playground-astro docs/v3/verdicts/astro-matrix.json package.json bun.lock
+# The Astro matrix for the parts the branch's changes reach (BASE=<ref>, default origin/master; scripts/matrix-select.ts
+# --astro, the quality matrix's rule over the parts' demo modules, up to 24 parts): the package's build config, a token
+# sheet or the layout runs the 7-part smoke set, one part per family; the matrix's scripts, registry or record run it
+# whole; no part reached, nothing. CI runs every part on every head.
 astro-matrix-fast:
-	@base="$$(git merge-base $(or $(BASE),origin/master) HEAD 2>/dev/null)"; \
-	if [ -n "$$base" ] && [ -z "$$(git diff --name-only "$$base" -- $(ASTRO_INPUTS); git ls-files --others --exclude-standard -- $(ASTRO_INPUTS))" ]; then \
-		echo "astro-matrix: no input changed since $(or $(BASE),origin/master); CI runs it on the head"; exit 0; \
-	fi; \
-	$(MAKE) --no-print-directory astro-matrix-run
+	@sel="$$(bun scripts/matrix-select.ts --astro --base $(or $(BASE),origin/master))" || exit $$?; \
+	case "$$sel" in \
+		skip) exit 0;; \
+		parts\ *) $(MAKE) --no-print-directory astro-matrix-run ASTRO_PARTS="$${sel#parts }";; \
+		*) $(MAKE) --no-print-directory astro-matrix-run;; \
+	esac
 
 # Design-parity board (scripts/evidence/compare.ts): crops each mapped playground pattern beside the local
 # Keel reference (.design-parity/keel/) into .design-parity/<LABEL>/ unless OUT is given. Images and board.html

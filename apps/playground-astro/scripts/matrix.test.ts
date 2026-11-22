@@ -110,6 +110,18 @@ describe('compare', () => {
     ])
   })
 
+  test('a partial run checks the parts it measured and leaves the rest', () => {
+    const was = record([part('button'), part('badge')])
+    const views = { ...part('button').views, '390-dark': view(0.04) }
+    expect(compare(was, record([part('button')]), true).failures).toEqual([])
+    expect(compare(was, record([part('button')])).failures).toEqual([
+      'badge: recorded but not measured (removed from the registry? record it with UPDATE=1)',
+    ])
+    expect(
+      compare(was, record([part('button', { staticClean: false, views })]), true).failures,
+    ).toEqual(['button: was static-clean, now 2227 px (4.0%) at 390-dark'])
+  })
+
   test('reports an improvement without failing', () => {
     const was = record([part('chart', { staticClean: false })])
     expect(compare(was, record([part('chart')]))).toEqual({

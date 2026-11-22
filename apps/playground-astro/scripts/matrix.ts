@@ -239,16 +239,21 @@ export function judge(
   }
 }
 
-/** What the fresh record does worse than the recorded one: \`failures\` fail the check, \`notes\` only report. */
+/**
+ * What the fresh record does worse than the recorded one: `failures` fail the check, `notes` only report. `partial`
+ * (a `--parts` run, `make astro-matrix-fast`) checks the parts and families it measured and leaves the rest to CI.
+ */
 export function compare(
   recorded: MatrixRecord,
   fresh: MatrixRecord,
+  partial = false,
 ): { failures: string[]; notes: string[] } {
   const failures: string[] = []
   const notes: string[] = []
   const now = new Map(fresh.parts.map((p) => [p.id, p]))
   for (const was of recorded.parts) {
     const is = now.get(was.id)
+    if (!is && partial) continue
     if (!is) {
       failures.push(
         `${was.id}: recorded but not measured (removed from the registry? record it with UPDATE=1)`,
@@ -477,6 +482,13 @@ if (import.meta.main) {
   const results = JSON.parse(await readFile(values.results!, 'utf8')) as Results
   const exported = await exportedParts(join(repo, 'packages/basalt-ui/scripts/export-surface'))
   const fresh = judge(results, PARTS, exported)
+  const partial = results.only !== undefined
+  if (values.update && partial) {
+    console.error(
+      'astro-matrix: a --parts run measured only some parts; record a whole run (make astro-matrix UPDATE=1)',
+    )
+    process.exit(1)
+  }
   if (values.update) {
     await writeFile(jsonPath, serialize(fresh))
     await writeFile(mdPath, render(fresh, FINDINGS))
@@ -490,7 +502,7 @@ if (import.meta.main) {
     )
   } else {
     const recorded = JSON.parse(await readFile(jsonPath, 'utf8')) as MatrixRecord
-    const { failures, notes } = compare(recorded, fresh)
+    const { failures, notes } = compare(recorded, fresh, partial)
     if ((await readFile(mdPath, 'utf8')) !== render(recorded, FINDINGS))
       failures.push(
         'docs/v3/verdicts/astro-matrix.md is not rendered from astro-matrix.json: record it with UPDATE=1',
@@ -499,7 +511,7 @@ if (import.meta.main) {
     for (const f of failures) console.error(`astro-matrix: FAIL ${f}`)
     if (failures.length) process.exit(1)
     console.log(
-      `astro-matrix: ${fresh.parts.length} parts checked against the record, no regression`,
+      `astro-matrix: ${fresh.parts.length}${partial ? ` of ${recorded.parts.length}` : ''} parts checked against the record, no regression${partial ? '; CI checks every part' : ''}`,
     )
   }
 }

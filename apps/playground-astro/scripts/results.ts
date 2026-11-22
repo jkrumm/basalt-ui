@@ -48,6 +48,8 @@ export type FamilyResult = { family: string; parts: number; modes: Record<Mode, 
 export type Results = {
   browser: string
   seconds: number
+  /** The part ids `--parts` kept (`make astro-matrix-fast`): a partial run is checked part by part and never recorded. */
+  only?: string[]
   baseline: Record<Mode, ModeResult>
   parts: PartResult[]
   families: FamilyResult[]
