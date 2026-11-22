@@ -24,6 +24,15 @@ basalt binds TanStack Form; the app owns its schema and its save. Props are in t
 - A free list of names (labels, tags) is a multiple Combobox (`basalt-ui/ui/combobox`) with ComboboxChips and `onCreate`, which offers a Create "x" row for text that matches no item.
 - An input with a fixed unit or a leading icon names it with the Input's `start` or `end` (`basalt-ui/ui/input`), never a label suffix.
 
+## Controls on one line
+
+- Every control takes the same `size`, `md` or `sm`, and a size is one height whichever control draws it; never set a control's height with a class.
+- A button inside a field (`Input` `end`: reveal, clear, copy) acts on that field only; one that reaches further sits beside the field in a group. A password is a `PasswordInput`, a value to copy takes a `CopyButton`.
+- Two to five actions that read as one control (previous, today, next) are a [ButtonGroup](node_modules/basalt-ui/docs/control-group.md): fused edges, one size and variant for all.
+- Different controls that make one request (a field and the select that scopes it, a search and its button) are a `ControlGroup`, 2 px apart; `fill` spreads them over the row and `className="grow-0"` keeps one at its own width.
+- A prefix or a unit outside the field edge (`https://`, `EUR`, a unit select) is an `InputGroup` with an `InputAddon`; the field's name says what the addon says ("Price in EUR").
+- A group sets `size` (and a ButtonGroup `variant`) for its children; a child that passes its own keeps it.
+
 ## Save
 
 - One save per form, never one per section of a larger form, and never a form that both saves on a button and applies some fields at once.
