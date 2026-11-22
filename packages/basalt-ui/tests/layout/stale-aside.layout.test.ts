@@ -33,7 +33,9 @@ const ROW = 'tbody tr'
 async function openRecord() {
   const page = await openFixture(SPEC, WIDE)
   await page.waitFor(ROW)
-  await page.tap(ROW)
+  // The row's first cell: the v3 fixture loads no table sheet, so the filler past the last column draws
+  // no row cell and a tap at the row's centre would land on the table.
+  await page.tap(`${ROW} td`)
   await page.waitFor(`${ASIDE} ${BODY}`)
   return page
 }

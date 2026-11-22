@@ -250,7 +250,8 @@ layout('AppShell frame — real layout', () => {
   test("a table row's detail opens in the page aside under its detailTitle, with no host wired", async () => {
     const wide: Viewport = { name: 'desktop', width: 1800, height: 900 }
     const p = await openFixture(specOf({ detailTable: true, aside: true }), wide)
-    await p.tap('tbody tr:nth-of-type(2)')
+    // the row's first cell: with no table sheet the filler past the last column is no row cell
+    await p.tap('tbody tr:nth-of-type(2) td')
     await p.waitFor('[data-testid="detail-body"]')
     expect(await p.raw.getAttribute(ASIDE, 'data-state')).toBe('docked')
     const aside = await p.raw.evaluate((sel) => {
