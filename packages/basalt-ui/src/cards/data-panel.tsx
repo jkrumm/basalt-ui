@@ -105,16 +105,20 @@ function useWholeRows(
   fit: number | undefined
   cards: boolean
   measured: boolean
+  /** Every row fits and a stretched grid row left room: the table takes the box, its rows share the extra. */
+  fills: boolean
 } {
   const ref = useRef<HTMLDivElement | null>(null)
   const [snapped, setSnapped] = useState<{
     fit: number | undefined
     cards: boolean
     measured: boolean
+    fills: boolean
   }>({
     fit: undefined,
     cards: false,
     measured: false,
+    fills: false,
   })
   const enabled = 'rows' in size
   const dataRows = dataRowsOf(size)
@@ -132,12 +136,14 @@ function useWholeRows(
         const last = rows[Math.min(dataRows, rows.length) - 1]!
         const bottom = Math.ceil(last.getBoundingClientRect().bottom - top)
         setSnapped((was) =>
-          was.cards && was.fit === bottom && was.measured
+          was.cards && was.fit === bottom && was.measured && !was.fills
             ? was
-            : { fit: bottom, cards: true, measured: true },
+            : { fit: bottom, cards: true, measured: true, fills: false },
         )
         return
       }
+      // The rows are measured at their own height, so the stretch (a table that fills the box) is off while they are read.
+      box.removeAttribute('data-fill')
       // A panel stretched by its grid row has more room than it declared: cut at the box it has. Only a
       // box taller than its own stated height is stretched; a loading estimate is not room.
       const phaseBox = box.parentElement
@@ -153,10 +159,13 @@ function useWholeRows(
         if (last <= limit + 0.5) fit = last
       }
       const next = fit === undefined ? undefined : Math.ceil(fit)
+      // Every row fits and the stretched grid row left room under them: the table takes the box, so no blank band is left.
+      const fills = grown && last <= limit + 0.5 && phaseBox.clientHeight > Math.ceil(last) + 1
+      if (fills) box.setAttribute('data-fill', '')
       setSnapped((was) =>
-        !was.cards && was.fit === next && was.measured
+        !was.cards && was.fit === next && was.measured && was.fills === fills
           ? was
-          : { fit: next, cards: false, measured: true },
+          : { fit: next, cards: false, measured: true, fills },
       )
     }
     measure()
@@ -173,6 +182,7 @@ function useWholeRows(
     fit: snapped.fit === undefined ? undefined : Math.max(MIN_BODY, snapped.fit),
     cards: snapped.cards,
     measured: snapped.measured,
+    fills: snapped.fills,
   }
 }
 
@@ -367,7 +377,7 @@ export function DataPanel(props: DataPanelProps): ReactElement {
   const rootRef = useRef<HTMLDivElement | null>(null)
   const rowPx = useRowPx(rootRef, 'rows' in bodySize)
   const declared = bodyHeightOf(bodySize, rowPx)
-  const { ref: insetRef, fit, measured } = useWholeRows(bodySize, declared)
+  const { ref: insetRef, fit, measured, fills } = useWholeRows(bodySize, declared)
   // A measured list takes the height its whole rows or cards fill (`fit`), else the declared height.
   const boxHeight = fit ?? declared
   const [claims, setClaims] = useState(0)
@@ -431,8 +441,8 @@ export function DataPanel(props: DataPanelProps): ReactElement {
                   {(box) => (
                     <div
                       data-slot="data-panel-rows"
-                      className="h-full overflow-clip"
-                      style={fit === undefined ? undefined : { height: fit }}
+                      className="h-full overflow-clip [&[data-fill]_[data-slot=table-root]]:h-full [&[data-fill]_[data-slot=table-scroller]]:h-full [&[data-fill]_table]:h-full"
+                      style={fit === undefined || fills ? undefined : { height: fit }}
                     >
                       {body(box)}
                     </div>

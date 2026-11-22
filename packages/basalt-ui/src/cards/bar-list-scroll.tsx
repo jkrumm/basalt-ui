@@ -73,9 +73,10 @@ export function ScrollRegion({
       ref={ref}
       data-slot="list-scroll"
       {...(scrollable && { role: 'region', 'aria-label': label, tabIndex: 0 })}
-      className="-mx-2 min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 focus-ring focus-visible:-outline-offset-2"
+      className="-mx-2 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-2 focus-ring focus-visible:-outline-offset-2"
     >
-      <div>{children}</div>
+      {/* Grows to the region, so a list in a card a grid row stretched can share the extra height among its rows. */}
+      <div className="flex flex-1 flex-col">{children}</div>
     </div>
   )
 }
