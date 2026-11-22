@@ -955,6 +955,28 @@ describe('PageBar view row', () => {
     }
   })
 
+  test('a primary inside a group ends its group, and the group stays joined', () => {
+    const q = memoryHandle<string>('q', '', { kind: 'string' })
+    render(
+      <Page>
+        <PageBar
+          search={{ state: q, label: 'Search' }}
+          actions={[
+            { id: 'new', label: 'New', primary: true, group: 'g', onClick: () => {} },
+            { id: 'b', label: 'B', group: 'g', onClick: () => {} },
+          ]}
+        />
+      </Page>,
+    )
+    const ids = [...band()!.querySelectorAll('[data-action-id]')].map((el) =>
+      el.getAttribute('data-action-id'),
+    )
+    expect(ids).toEqual(['b', 'new'])
+    const parent = band()!.querySelector('[data-action-id="b"]')!.parentElement
+    expect(parent).toBe(band()!.querySelector('[data-action-id="new"]')!.parentElement)
+    expect(parent!.getAttribute('data-slot')).not.toBe('page-actions')
+  })
+
   test('the end holds search, controls, layout, settings, then the actions with the primary last', () => {
     const layout = memoryHandle<string>('layout', 'table', { kind: 'enum' })
     const opened: string[] = []
