@@ -45,6 +45,11 @@ export function visibleColumns<T, C extends PlannedColumn>(
   })
 }
 
+/** The name a column is read by: its header, or its id when the header is empty. */
+export function columnName(spec: Pick<KindSpec<never>, 'header' | 'id'>): string {
+  return spec.header === '' ? spec.id : spec.header
+}
+
 /** Alignment and numerals of a kind as the `ui/table` cell props. */
 export function alignProps(spec: Pick<KindSpec<never>, 'align' | 'numerals'>): {
   numeric: boolean
@@ -174,7 +179,7 @@ function ResizeHandle<T>({
     <div
       role="separator"
       aria-orientation="vertical"
-      aria-label={t('table.resizeColumn', spec.header === '' ? spec.id : spec.header)}
+      aria-label={t('table.resizeColumn', columnName(spec))}
       aria-valuenow={Math.round(px)}
       aria-valuemin={min}
       aria-valuemax={max}

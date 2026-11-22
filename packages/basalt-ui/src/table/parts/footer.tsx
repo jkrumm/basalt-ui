@@ -21,7 +21,7 @@ import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { footerValue, nextAggregate } from './footer-model'
 import type { FooterValue } from './footer-model'
-import { alignProps, pinEdge, pinStyle, tierAttributes, visibleColumns } from './head'
+import { alignProps, columnName, pinEdge, pinStyle, tierAttributes, visibleColumns } from './head'
 import { RowNumberCell } from './row-number'
 
 const AGGREGATE_KEY: Record<Aggregate | 'none', keyof TableMessages> = {
@@ -121,7 +121,7 @@ export function DataTableFooter<T>({
             shown && fn !== undefined ? (
               <dl data-slot="table-footer-item" className="m-0 min-w-0">
                 <dt className="truncate text-xs font-normal text-muted-foreground">
-                  <span className="sr-only">{spec.header === '' ? spec.id : spec.header}, </span>
+                  <span className="sr-only">{columnName(spec)}, </span>
                   {label(fn)}
                 </dt>
                 <dd className="m-0 truncate">{drawAggregate(spec, value, env, fn)}</dd>
@@ -153,9 +153,7 @@ export function DataTableFooter<T>({
                 >
                   {item ?? (
                     <>
-                      <span className="sr-only">
-                        {t('table.summaryOf', spec.header === '' ? spec.id : spec.header)}
-                      </span>
+                      <span className="sr-only">{t('table.summaryOf', columnName(spec))}</span>
                       <span
                         data-reveal=""
                         aria-hidden="true"
