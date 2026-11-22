@@ -91,7 +91,8 @@ export function StatCard(props: StatCardProps): ReactElement {
   const staleText = useStaleText(stale?.refreshFailed === true)
   return (
     <div data-slot="stat-card" className="@container h-full min-w-0">
-      <Card flush className="relative h-full">
+      {/* `isolate`: the raised parts (`z-10`, `z-20`) stack inside the card, never over a sticky page bar. */}
+      <Card flush className="relative isolate h-full">
         {href !== undefined && <Target label={title} href={href} />}
         {onClick !== undefined && <Target label={title} onClick={onClick} />}
         <StatHead

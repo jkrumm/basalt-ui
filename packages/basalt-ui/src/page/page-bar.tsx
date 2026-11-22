@@ -562,7 +562,7 @@ export function PageBar<K extends string = string, L extends string = string>({
             // that fade's width free at its end so the last tab is whole once scrolled to.
             <div
               data-slot="page-bar-tabs"
-              className="flex min-w-0 shrink @max-regular:mask-[linear-gradient(to_right,black_calc(100%-1rem),transparent)] @max-regular:[&>[data-slot=tabs-list]]:pe-4"
+              className="flex min-w-0 shrink @max-regular:mask-[linear-gradient(to_right,black_calc(100%-1rem),transparent)] @max-regular:[&_[data-slot=tabs-list]]:pe-4"
             >
               {renderTabs(tabs, 'pill')}
             </div>
