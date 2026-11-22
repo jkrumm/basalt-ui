@@ -2,7 +2,8 @@
  * The playground's board recipe, as the `cards-kanban` fixture sees it. The layout test bundles the
  * fixture with a resolver that maps `@recipe/<name>` to `apps/playground/src/recipes/<name>.tsx`:
  * the package's `tsc` has `rootDir` at the package, so a relative import of the playground would
- * fail it. Only the two names the fixture reads are declared.
+ * fail it. Only the two names the fixture reads are declared. The demo mounts `Board` with the
+ * shipped `drag` engine.
  */
 declare module '@recipe/board-demo' {
   import type { ReactElement } from 'react'

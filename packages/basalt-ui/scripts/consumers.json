@@ -1,5 +1,6 @@
 {
   "alpha": "argo:apps/dashboard/src/features/strength-tracker/components/recent-records.tsx",
+  "applyMove": "software-factory:apps/console/src/components/flow/board.tsx (the pure move applied to the column cache under an optimistic update)",
   "ArticleLayout": "basalt-ui-obsidian:packages/basalt-ui-obsidian/src/render/note-view.tsx",
   "BandStrip": "linewatch:web/src/charts/availability-strip.tsx",
   "BarList": "argo:apps/dashboard/src/features/usage-tracking/charts/top-projects.tsx",
@@ -8,6 +9,7 @@
   "BasaltProvider": "argo:apps/dashboard/src/main.tsx",
   "basaltViteConfig": "argo:apps/dashboard/vite.config.ts",
   "bindInvalidation": "software-factory:apps/console/src/lib/live.ts",
+  "Board": "software-factory:apps/console/src/components/flow/board.tsx (flow columns; drag between states, Issue 2855)",
   "BP": "argo:apps/dashboard/src/lib/series.ts",
   "buildPaletteCss": "rb:apps/web/src/lib/series.test.ts",
   "BulkBar": "linewatch:web/src/components/outage-table.tsx",

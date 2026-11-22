@@ -244,7 +244,14 @@ export function pickerAncestry(): Record<string, ComponentType<{ children?: Reac
 }
 
 /** Parts whose element holds no text: they render without the `x` child. */
-const NO_TEXT = new Set(['table', 'table-header', 'table-body', 'table-row', 'tooltip'])
+const NO_TEXT = new Set([
+  'table',
+  'table-header',
+  'table-body',
+  'table-row',
+  'tooltip',
+  'sortable-list',
+])
 
 /** Wrappers that give a table part the native elements HTML requires around it. */
 function tableAncestry(
@@ -284,6 +291,13 @@ const PART_PROPS: Record<string, Record<string, unknown>> = {
   'menu-radio-item': { value: 'a' },
   num: { value: 1 },
   'virtual-list': { count: 0, estimateSize: () => 32, getItemKey: (i: number) => i },
+  'sortable-list': {
+    label: 'x',
+    items: [],
+    itemLabel: (item: { id: string }) => item.id,
+    onMove: () => undefined,
+    children: (item: { id: string }) => item.id,
+  },
 }
 
 const componentEntries = (exports: Record<string, unknown>): [string, PartComponent][] =>

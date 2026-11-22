@@ -76,6 +76,7 @@ const PER_PRIMITIVE: Readonly<Record<string, number>> = {
   sheet: 44000, // 41473 B
   skeleton: 7000, // 6522 B
   slider: 21000, // 19636 B
+  'sortable-list': 16500, // 15354 B
   status: 5500, // 4999 B
   switch: 11500, // 10848 B
   table: 6000, // 5240 B
@@ -126,9 +127,9 @@ export const rows: readonly RowDef[] = [
     id: 'ui-value-exports',
     order: 350,
     label: 'ui value exports, every src/ui .tsx module (exact; SLOTS is pinned)',
-    // 252 measured. Exact: a new value export is a row here and a consumer named for it; a lower
+    // 256 measured. Exact: a new value export is a row here and a consumer named for it; a lower
     // number ratchets the ceiling down in the same commit.
-    ceiling: 252,
+    ceiling: 256,
     measure: valueExports,
   },
 ]
@@ -150,6 +151,13 @@ export const raises: Raises = {
       consumer:
         "`ButtonGroup`, `ControlGroup`, `InputGroup`, `InputAddon` (with their four tables and `controlGroupParts`) from `basalt-ui/ui/control-group`, `CopyButton` and `copyButtonParts` from `basalt-ui/ui/copy-button`, `PasswordInput` and `passwordInputParts` from `basalt-ui/ui/password-input`: the owner's 2026-11-21 benchmark asked for Blueprint's joined controls (plan row bench-control-groups, Issue 2853); `PageBar` draws its action groups with `ButtonGroup` and the playground's forms pages show the rest",
       repo: 'basalt-ui',
+      },
+      {
+      from: 252,
+      to: 256,
+      consumer:
+        '`SortableList`, `sortableListVariants`, `sortableListParts` and `drag` from `basalt-ui/ui/sortable-list`: software-factory console settings order lists by hand (the list of sidebar links and of tabs) and its flow board drags cards through the engine adapter (Issue 2855)',
+      repo: 'software-factory',
     },
     {
       from: 229,
