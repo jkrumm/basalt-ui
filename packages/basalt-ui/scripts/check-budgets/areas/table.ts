@@ -97,13 +97,21 @@ export const rows: readonly RowDef[] = [
     // 171300 -> 179500 (Issue 2939): 179238 B measured; under a shell a row opens its record in a non-modal `Peek` (side panel,
     // window or page, previous and next through the rows) instead of the modal sheet, so the Peek, its window and
     // the panel anatomy join the table's closure.
-    ceiling: 179500,
+    // 179500 -> 180000 (Issue 2996): 179831 B measured, +~330 B gz: the table's select cell draws `Checkbox`, whose module now also holds the card variant.
+    ceiling: 180000,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 179500,
+      to: 180000,
+      consumer:
+        "choice cards (plan row bench-form-parts, Issue 2996): `Checkbox` and `RadioGroup` gain the card variant, and the table's select cell bundles the Checkbox module",
+      repo: 'basalt-ui',
+    },
     {
       from: 171300,
       to: 179500,

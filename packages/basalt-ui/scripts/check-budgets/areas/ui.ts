@@ -114,7 +114,8 @@ export const rows: readonly RowDef[] = [
     label: 'ui 25-part argo-shaped page (gzip B minus base0, src/ui, peers bundled)',
     // 149718 B measured. Informative target 118 KB.
     // 157500 -> 157700 (Issue 2939): 157574 B measured; the Sheet draws the panel header, its footer band and width handle.
-    ceiling: 157700,
+    // 157700 -> 158600 (Issue 2996): 158482 B measured; the page's Checkbox and RadioGroup also hold the card variant over `ChoiceCard`.
+    ceiling: 158600,
     measure: () => measureSource(page([...TEN, ...REST_OF_25])),
   },
   ...Object.entries(PER_PRIMITIVE).map(([name, ceiling], i): RowDef => ({
@@ -137,6 +138,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'ui-page-25': [
+    {
+      from: 157700,
+      to: 158600,
+      consumer:
+        'choice cards (plan row bench-form-parts, Issue 2996): `RadioGroup` and `CheckboxGroup` gain the card and tile variants over `ChoiceCard`, which the 25-part page draws',
+      repo: 'basalt-ui',
+    },
     {
       from: 157500,
       to: 157700,
