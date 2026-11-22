@@ -6,4 +6,5 @@
 @source '../../../src/charts';
 @source '../../../src/cards';
 @source '../../../src/table';
+@source '../../../src/core/panel.tsx';
 @source '../../../src/ui';

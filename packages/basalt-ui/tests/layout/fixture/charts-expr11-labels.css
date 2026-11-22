@@ -5,3 +5,4 @@
 @source './charts-expr11-labels-fixture.tsx';
 @source '../../../src/charts';
 @source '../../../src/ui';
+@source '../../../src/core/panel.tsx';

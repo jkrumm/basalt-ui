@@ -6,6 +6,7 @@
 @import '../../../src/css/tailwind.css' source(none);
 @source './k2-table-doc-fixture.tsx';
 @source '../../../src/ui';
+@source '../../../src/core/panel.tsx';
 @source '../../../src/table';
 @source '../../../src/cards';
 @source './k2-table-fixture.tsx';

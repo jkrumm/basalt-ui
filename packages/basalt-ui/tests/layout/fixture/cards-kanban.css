@@ -6,5 +6,6 @@
 @import '../../../src/css/tailwind.css' source(none);
 @source './cards-kanban-fixture.tsx';
 @source '../../../src/ui';
+@source '../../../src/core/panel.tsx';
 @source '../../../src/cards';
 @source '../../../../../apps/playground/src/recipes';

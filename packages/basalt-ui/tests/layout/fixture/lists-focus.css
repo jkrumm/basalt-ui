@@ -6,6 +6,7 @@
 @import '../../../src/css/tailwind.css' source(none);
 @source './lists-focus-fixture.tsx';
 @source '../../../src/ui';
+@source '../../../src/core/panel.tsx';
 @source '../../../src/table';
 @source '../../../src/cards';
 @source '../../../src/charts/parts';

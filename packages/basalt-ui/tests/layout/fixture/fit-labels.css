@@ -5,6 +5,7 @@
 @import '../../../src/css/tailwind.css' source(none);
 @source './fit-labels-fixture.tsx';
 @source '../../../src/ui';
+@source '../../../src/core/panel.tsx';
 @source '../../../src/controls';
 @source '../../../src/charts/parts';
 @source '../../../src/table';

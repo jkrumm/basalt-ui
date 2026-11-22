@@ -5,3 +5,4 @@
 @source './charts-bar-values-fixture.tsx';
 @source '../../../src/charts';
 @source '../../../src/ui';
+@source '../../../src/core/panel.tsx';
