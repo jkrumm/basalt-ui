@@ -141,10 +141,25 @@ layout('ControlHome', () => {
       for (const home of HOMES) {
         test(`${home}: eight filters all draw, none draws nothing`, async () => {
           const page = await open(viewport)
-          // A page-bar slot is a FilterSet: one pill per spec (the fold hides the tail, the DOM keeps it).
-          const drawn =
-            home === 'page-bar' ? '[data-slot="filter-set-pill"]' : '[data-slot="control-view"]'
-          expect(await page.count(`[data-testid="ch-${home}-8"] ${drawn}`)).toBe(8)
+          if (home === 'page-bar') {
+            // A page-bar slot of three filters or more is one Filter trigger, a popover from
+            // `@regular` up and a sheet below it; its body holds one section per spec.
+            const frame = '[data-testid="ch-page-bar-8"]'
+            expect(await page.count(`${frame} [data-slot="filter-set-pill"]`)).toBe(0)
+            await page.raw.click(`${frame} [data-filter-trigger]:visible`)
+            await page.raw.waitForSelector('[data-slot="filter-menu"]')
+            expect(
+              await page.raw.evaluate(
+                () =>
+                  document.querySelector('[data-slot="filter-menu"]')!.firstElementChild!
+                    .childElementCount,
+              ),
+            ).toBe(8)
+          } else {
+            expect(
+              await page.count(`[data-testid="ch-${home}-8"] [data-slot="control-view"]`),
+            ).toBe(8)
+          }
           expect(await page.count(`[data-testid="ch-${home}-0"] [data-home]`)).toBe(0)
           expect(await page.count(`[data-testid="ch-${home}-0"] [data-slot="control-view"]`)).toBe(
             0,
