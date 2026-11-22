@@ -1453,13 +1453,24 @@ rows:
     after: [bench-control-groups]
     after_needs: shipped
     facts: { 'brief': 'docs/v3/issues/bench/bench-form-parts.json' }
+  - key: bench-table-rest
+    title: 'DataTable at rest: a quiet header with one menu, columns that fill the surface, editable cells that rest as text'
+    repo: basalt-ui
+    kind: feature
+    seat: { tier: opus, effort: high }
+    lane: browser
+    checkpoint: spec
+    after: [bench-table-view, bench-table-kinds]
+    after_needs: shipped
+    facts: { 'brief': 'docs/v3/issues/bench/bench-table-rest.json' }
   - key: bench-reference-pages
     title: 'Reference pages: a list, a record, a settings page and a create flow built only from shipped parts'
     repo: basalt-ui
     kind: feature
     seat: { tier: opus, effort: high }
     lane: browser
-    after: [bench-view-layouts, bench-form-rows, bench-form-parts, bench-dialog-wizard]
+    after:
+      [bench-view-layouts, bench-table-rest, bench-form-rows, bench-form-parts, bench-dialog-wizard]
     after_needs: shipped
     facts: { 'brief': 'docs/v3/issues/bench/bench-reference-pages.json' }
   - key: bench-next-plan
