@@ -89,8 +89,9 @@ export const rows: readonly RowDef[] = [
     id: 'tokens-css-gzip',
     order: 320,
     label: 'tokens.css (gzip B, src/css/tokens.css)',
-    // 1539 B measured (zlib default level), +5 percent rounded up; 1876 with the motion scale (1786 B, raise row below).
-    ceiling: 1876,
+    // 1539 B measured (zlib default level), +5 percent rounded up; 1876 with the motion scale (1786 B, raise row below);
+    // 1877 with the card ring in both schemes (1787 B, Issue 2851).
+    ceiling: 1877,
     measure: () => gzipFileBytes(join(CSS_DIR, 'tokens.css')),
   },
   {
@@ -122,6 +123,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'tokens-css-gzip': [
+    {
+      from: 1876,
+      to: 1877,
+      consumer:
+        "the AppShell work surface (Issue 2851): `--basalt-shadow-card` is the hairline ring in both schemes, so a card on the surface's own colour reads by its edge",
+      repo: 'basalt-ui',
+    },
     {
       from: 1616,
       to: 1876,
