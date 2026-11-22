@@ -149,7 +149,7 @@ export function FormSection({
             <span
               id={titleId}
               data-slot="form-section-title"
-              className="font-head text-sm font-semibold tracking-tight text-foreground"
+              className="font-head text-sm font-semibold text-foreground"
             >
               {title}
             </span>

@@ -113,12 +113,10 @@ export function SettingsLayout({
     <div
       ref={root}
       data-slot="settings-layout"
-      className={cn('mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-10', className)}
+      className={cn('mx-auto flex w-full min-w-0 max-w-4xl flex-col gap-10', className)}
     >
       <header data-slot="settings-layout-header" className="flex min-w-0 flex-col gap-1">
-        <h2 className="m-0 font-head text-xl font-semibold tracking-tight text-foreground">
-          {title}
-        </h2>
+        <h2 className="m-0 font-head text-xl font-semibold text-foreground">{title}</h2>
         {hasDescription && (
           <p className="m-0 max-w-prose text-sm text-muted-foreground">{description}</p>
         )}

@@ -30,7 +30,7 @@ describe('SettingsLayout', () => {
     expect(getByRole('heading', { level: 2, name: 'Profile' })).toBeTruthy()
     const root = container.querySelector('[data-slot="settings-layout"]')!
     expect(root.className).toContain('mx-auto')
-    expect(root.className).toContain('max-w-3xl')
+    expect(root.className).toContain('max-w-4xl')
     expect(root.className).toContain('gap-10')
     expect(root.className).not.toMatch(/(^|\s)p[xy]?-/)
   })
