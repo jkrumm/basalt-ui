@@ -1,7 +1,7 @@
 import { Radio as BaseRadio } from '@base-ui/react/radio'
 import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group'
 import { cva } from 'class-variance-authority'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FocusEvent, ReactElement } from 'react'
 import { cn } from '../core/cn'
 import { base as baseMessages } from '../core/messages/base'
@@ -123,6 +123,8 @@ export function SwatchPicker({
 }: SwatchPickerProps): ReactElement {
   const t = useMessages(baseMessages)
   const [open, setOpen] = useState(false)
+  // A Space press selects through the radio's own click, which comes after the key: the menu closes on that click.
+  const spaceDown = useRef(false)
   const pick = () => {
     setOpen(false)
     onBlur?.()
@@ -153,7 +155,9 @@ export function SwatchPicker({
       onBlur={onFocusOut}
       onValueChange={(next) => onValueChange?.(next as SwatchToken)}
       onKeyDown={(event) => {
-        if (display === 'menu' && (event.key === 'Enter' || event.key === ' ')) pick()
+        if (display !== 'menu') return
+        if (event.key === ' ') spaceDown.current = true
+        if (event.key === 'Enter' && picked !== undefined) pick()
       }}
     >
       {options.map((option) => (
@@ -164,7 +168,10 @@ export function SwatchPicker({
           aria-label={option.label}
           // An arrow key selects a radio by clicking it with no pointer (detail 0): browsing must not close the menu.
           onClick={(event) => {
-            if (display === 'menu' && event.detail > 0) pick()
+            if (display !== 'menu') return
+            const fromSpace = spaceDown.current
+            spaceDown.current = false
+            if (event.detail > 0 || fromSpace) pick()
           }}
           className={cn(swatchVariants(), FILL[option.value])}
         >

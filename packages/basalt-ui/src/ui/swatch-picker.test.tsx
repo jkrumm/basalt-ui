@@ -96,6 +96,22 @@ describe('swatch-picker', () => {
     expect(blurs).toBe(1)
   })
 
+  test('menu: Space on a swatch picks it and closes the menu through its click', () => {
+    let blurs = 0
+    const { getByRole } = render(
+      <SwatchPicker
+        aria-label="Stage colour"
+        display="menu"
+        options={options}
+        onBlur={() => (blurs += 1)}
+      />,
+    )
+    fireEvent.click(getByRole('button'))
+    fireEvent.keyDown(getByRole('radiogroup'), { key: ' ' })
+    fireEvent.click(getByRole('radio', { name: options[1]!.label }))
+    expect(blurs).toBe(1)
+  })
+
   test('menu: Enter on a swatch closes the menu', () => {
     let blurs = 0
     const { getByRole } = render(
