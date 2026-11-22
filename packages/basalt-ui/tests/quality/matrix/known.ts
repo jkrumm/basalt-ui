@@ -108,14 +108,6 @@ export const KNOWN: readonly KnownFinding[] = [
     owner: 'charts: focusable plot ring contrast (as /charts)',
   },
   {
-    route: '/overview',
-    assertion: 'focusNotObscured',
-    // Which part of the stat card's control view (its layer or its label span) lies under the tab
-    // depends on the page's scroll offset when the walk reaches it.
-    item: /view-tabs\]>div>div\[segmented\]>button\[segmented-item\].*covered at .* by (div\[control-view\]|span)$/,
-    owner: 'controls: the phone track sits under the control view layer at the page edge',
-  },
-  {
     route: '/scenarios/mdx',
     assertion: 'axe',
     item: /^color-contrast \(serious\)|^\.text_/,
