@@ -26,7 +26,7 @@
       "id": "tb-createColumnHelper",
       "kind": "replace",
       "from": "basalt-ui/table#createColumnHelper (and meta.kind)",
-      "to": "col<T>() from basalt-ui/table: c.entity, c.text, c.number, c.money, c.date, c.relativeTime, c.status, c.delta, c.meter, c.boolean, c.spark, c.select, c.actions, c.custom",
+      "to": "col<T>() from basalt-ui/table: c.entity, c.text, c.number, c.money, c.date, c.relativeTime, c.countdown, c.person, c.people, c.tags, c.link, c.title, c.status, c.delta, c.meter, c.boolean, c.spark, c.select, c.actions, c.custom",
       "profiles": ["parts", "app"],
       "manual": true,
       "note": "a kind decides alignment, numerals, width, sort, filter and card slot, so meta.align, numeral and statusColor go; a free cell becomes c.custom, which must declare sortValue, card and priority",

@@ -17,12 +17,19 @@ import type { CodecKind, CodecOptions, TableSchema } from './kinds-codec'
 import {
   Absent,
   BooleanCell,
+  CountdownCell,
   DateCell,
   DeltaCell,
   EntityCell,
+  LinkCell,
   MeterCell,
+  linkLabel,
+  PeopleCell,
+  PersonCell,
+  QuietText,
   RelativeTimeCell,
   StatusCell,
+  TagsCell,
   WithIcon,
   dateLabel,
   deltaLabel,
@@ -86,6 +93,12 @@ type CellIconOption<T> = {
 export type EntityOptions<T> = CommonOptions & {
   href?: (row: T) => string | NavTarget | undefined
   icon?: (row: T) => IconComponent | undefined
+  /** A logo or photo URL drawn as a 16 px face before the name (initials while it loads or when absent); wins over `icon`. */
+  image?: (row: T) => string | null | undefined
+  /** `'object'` (default) is a rounded square for a company or logo; `'person'` a circle. */
+  imageShape?: 'person' | 'object'
+  /** A short reference (`INV-0042`) in muted mono beside the name. */
+  ref?: (row: T) => string | null | undefined
   sub?: (row: T) => string | null | undefined
   /** The name is a time or an id: drawn in the mono face with tabular numerals. */
   mono?: boolean | undefined
@@ -102,6 +115,53 @@ export type TextOptions = CommonOptions & {
   filter?: 'text'
   /** The text of a stored value in the cell and the phone card; the stored value without an entry. Sort and search read the stored value. */
   labels?: Readonly<Record<string, string>>
+  /** A muted one-line preview: secondary ink, truncated, never wrapped. */
+  quiet?: boolean
+}
+
+/** A typed leading icon: `type` names the row's kind, `icons` draws it; a kind with no icon shows none. */
+export type TitleOptions<T, K extends string> = Omit<EntityOptions<T>, 'icon' | 'image'> & {
+  type: (row: T) => K
+  icons: Readonly<Record<K, IconComponent>>
+}
+export type PersonOptions<T> = CommonOptions & {
+  /** The face's image URL; initials show while it loads or when absent. */
+  avatar?: (row: T) => string | null | undefined
+  /** Muted text after the name: a job title, a team. */
+  role?: (row: T) => string | null | undefined
+  href?: (row: T) => string | NavTarget | undefined
+  /** `'multi'` filters by a checklist of the names the rows hold. */
+  filter?: 'multi'
+}
+export type PeopleOptions<T> = CommonOptions & {
+  /** The face's image URL of one name. */
+  avatar?: (name: string, row: T) => string | null | undefined
+  /** Faces shown before the `+N`. Default 4. */
+  max?: number
+  filter?: 'multi'
+}
+export type TagsOptions = CommonOptions & {
+  /** The text of a stored tag; the tag itself without an entry. */
+  labels?: Readonly<Record<string, string>>
+  /** The chip's tone, from the status tone map. Default neutral. */
+  tone?: (tag: string) => Tone
+  /** `'multi'` filters by a checklist of the tags the rows hold; a row passes on any of its tags. */
+  filter?: 'multi'
+}
+/**
+ * A date as its distance from today. Thresholds are days: the text is `bad` at or below `bad`
+ * (default -1: overdue), `warn` at or below `warn`, plain above, and the date itself once the
+ * distance passes `horizon` (default 60).
+ */
+export type CountdownOptions = CommonOptions &
+  DateFilterOptions & { bad?: number; warn?: number; horizon?: number }
+export type LinkOptions<T> = CommonOptions & {
+  /** A record link or in-app path; without it the value's own URL or address is the destination. */
+  href?: (row: T) => string | NavTarget | undefined
+  /** What is printed for the row; without it the value minus its scheme. */
+  label?: (row: T) => string | null | undefined
+  icon?: (row: T) => IconComponent | undefined
+  filter?: 'text'
 }
 /** A numeric kind's footer: client mode reduces the filtered rows, server mode reads `totals`. */
 export type FooterOption = { footer?: Aggregate }
@@ -182,6 +242,18 @@ export type CustomOptions<T> = {
 
 export type Col<T> = {
   entity(key: KeysOf<T, string>, o?: EntityOptions<T>): KindColumn<T>
+  /** An entity whose leading icon is picked per row from a typed map, for records of mixed kinds in one list. */
+  title<const K extends string>(key: KeysOf<T, string>, o: TitleOptions<T, K>): KindColumn<T>
+  /** A face and a name, with an optional muted role. */
+  person(key: KeysOf<T, string>, o?: PersonOptions<T>): KindColumn<T>
+  /** Several people as overlapping faces. */
+  people(key: KeysOf<T, readonly string[]>, o?: PeopleOptions<T>): KindColumn<T>
+  /** Chips on one line, a `+N` for the ones that do not fit. */
+  tags(key: KeysOf<T, readonly string[]>, o?: TagsOptions): KindColumn<T>
+  /** A date as `26 days late` or `in 4 days`, toned by declared thresholds. */
+  countdown(key: KeysOf<T, string | number | Date>, o?: CountdownOptions): KindColumn<T>
+  /** A URL, an address or a record link as quiet text. */
+  link(key: KeysOf<T, string>, o?: LinkOptions<T>): KindColumn<T>
   text(key: KeysOf<T, string>, o?: TextOptions): KindColumn<T>
   number(key: KeysOf<T, number>, o?: NumberOptions): KindColumn<T>
   money(key: KeysOf<T, number>, o: MoneyOptions): KindColumn<T>
@@ -211,10 +283,32 @@ const OPTION_KEYS: Readonly<
   Record<KindName, { allowed: readonly string[]; required: readonly string[] }>
 > = {
   entity: {
-    allowed: [...COMMON, 'href', 'icon', 'sub', 'mono', 'subMono', 'filter', 'width'],
+    allowed: [
+      ...COMMON,
+      'href',
+      'icon',
+      'image',
+      'imageShape',
+      'ref',
+      'sub',
+      'mono',
+      'subMono',
+      'filter',
+      'width',
+    ],
     required: [],
   },
-  text: { allowed: [...COMMON, 'filter', 'labels'], required: [] },
+  person: {
+    allowed: [...COMMON, 'avatar', 'role', 'href', 'max', 'filter'],
+    required: [],
+  },
+  tags: { allowed: [...COMMON, 'labels', 'tone', 'filter'], required: [] },
+  countdown: {
+    allowed: [...COMMON, 'bad', 'warn', 'horizon', 'filter', 'picker'],
+    required: [],
+  },
+  link: { allowed: [...COMMON, 'href', 'label', 'icon', 'filter'], required: [] },
+  text: { allowed: [...COMMON, 'filter', 'labels', 'quiet'], required: [] },
   number: { allowed: [...COMMON, 'unit', 'digits', 'footer', 'filter', 'bounds'], required: [] },
   money: {
     allowed: [...COMMON, 'currency', 'footer', 'filter', 'bounds'],
@@ -267,6 +361,7 @@ const OPTION_VALUES: Readonly<Record<string, readonly unknown[]>> = {
   align: ['start', 'end', 'center'],
   style: ['short', 'long', 'month', 'weekday', 'day'],
   footer: ['sum', 'mean', 'min', 'max', 'count'],
+  imageShape: ['person', 'object'],
 }
 
 /** The footer spec of a numeric kind, or nothing when the column declares no `footer`. */
@@ -279,6 +374,10 @@ function footerOf<T>(
 
 const FILTER_VALUES: Partial<Record<KindName, readonly string[]>> = {
   entity: ['text'],
+  person: ['multi'],
+  tags: ['multi'],
+  countdown: ['range'],
+  link: ['text'],
   text: ['text'],
   status: ['multi'],
   select: ['multi'],
@@ -317,7 +416,10 @@ function validate(kind: KindName, id: string, options: object | undefined): void
   for (const key of required) {
     if (given[key] === undefined) fail(kind, id, `needs the option "${key}"`)
   }
-  if ((kind === 'date' || kind === 'relativeTime') && given['filter'] === 'range') {
+  if (
+    (kind === 'date' || kind === 'relativeTime' || kind === 'countdown') &&
+    given['filter'] === 'range'
+  ) {
     if (typeof given['picker'] !== 'function') {
       fail(
         kind,
@@ -481,6 +583,16 @@ function dateText(value: unknown, format: Format, style: DateStyle): string {
   return label === null ? '' : `${label.text}\n${label.iso.slice(0, 10)}`
 }
 
+/** A maybe-null string as the optional string a cell prop takes. */
+const hold = (value: string | null | undefined): string | undefined => value ?? undefined
+
+/** Two list cells by their entries read as one line, so the first name decides. */
+function compareLists(a: unknown, b: unknown): number {
+  return listLine(a).localeCompare(listLine(b))
+}
+
+const listLine = (v: unknown): string => (Array.isArray(v) ? v.join(', ') : String(v ?? ''))
+
 function byOption(options: readonly string[]): (a: unknown, b: unknown) => number {
   const rank = (v: unknown) => {
     const index = options.indexOf(String(v))
@@ -536,7 +648,7 @@ function keyed<T>(
  * const columns = [c.entity('payee', { header: 'Payee' }), c.money('amount', { currency: 'EUR' })]
  */
 export function col<T>(): Col<T> {
-  return {
+  const columns: Col<T> = {
     entity: (key, o) =>
       keyed<T>(
         'entity',
@@ -547,6 +659,12 @@ export function col<T>(): Col<T> {
             value={String(v)}
             href={o?.href?.(row)}
             icon={o?.icon?.(row)}
+            image={
+              o?.image === undefined
+                ? undefined
+                : { src: hold(o.image(row)), shape: o.imageShape ?? 'object' }
+            }
+            id={hold(o?.ref?.(row))}
             sub={o?.sub?.(row) ?? undefined}
             mono={o?.mono === true}
             subMono={o?.subMono === true}
@@ -561,7 +679,9 @@ export function col<T>(): Col<T> {
               content: {
                 measure: (row: T) =>
                   Math.max(
-                    String(read<T>(key)(row) ?? '').length + (o.icon === undefined ? 0 : 3),
+                    String(read<T>(key)(row) ?? '').length +
+                      (o.icon === undefined && o.image === undefined ? 0 : 3) +
+                      ((o.ref?.(row)?.length ?? -1) + 1),
                     o.sub?.(row)?.length ?? 0,
                   ),
               },
@@ -569,30 +689,157 @@ export function col<T>(): Col<T> {
           },
         },
       ),
-    text: (key, o) =>
-      keyed<T>('text', key, o, (v) => o?.labels?.[String(v)] ?? String(v), {
-        text: (v) => o?.labels?.[String(v)] ?? '',
-        spec: {
-          filter: o?.filter === 'text' ? 'contains' : null,
-          content: {
-            measure: (row: T) => {
-              const value = read<T>(key)(row)
-              return isAbsent(value) ? 1 : (o?.labels?.[String(value)] ?? String(value)).length
-            },
-            short: {
-              // the header's own floor, with room for its icon and filter button as floorOf gives it
-              minCh:
-                Math.min(
-                  HEADER_MAX_CH,
-                  (o?.header ?? humanize(o?.id ?? key)).length + HEADER_CHROME_CH,
-                ) +
-                (o?.headerIcon === undefined ? 0 : HEADER_ICON_CH) +
-                (o?.filter === 'text' ? FILTER_MARK_CH : 0),
-              maxCh: SHORT_TEXT_MAX_CH,
+    title: <const K extends string>(key: KeysOf<T, string>, o: TitleOptions<T, K>) => {
+      const { type, icons, ...entity } = o
+      return columns.entity(key, { ...entity, icon: (row: T) => icons[type(row)] })
+    },
+    person: (key, o) =>
+      keyed<T>(
+        'person',
+        key,
+        o,
+        (v, row) => (
+          <PersonCell
+            name={String(v)}
+            src={hold(o?.avatar?.(row))}
+            role={hold(o?.role?.(row))}
+            href={o?.href?.(row)}
+          />
+        ),
+        {
+          text: (_v, row) => o?.role?.(row) ?? '',
+          spec: {
+            ...(o?.role !== undefined && {
+              width: floorOf({ ch: 28, flex: false }, humanize(o?.id ?? key)),
+            }),
+            filter: o?.filter === 'multi' ? 'anyOf' : null,
+          },
+        },
+      ),
+    people: (key, o) => {
+      const header = o?.header ?? humanize(o?.id ?? key)
+      return keyed<T>(
+        'person',
+        key,
+        o,
+        (v, row) => (
+          <PeopleCell
+            label={header}
+            max={o?.max ?? 4}
+            people={(v as readonly string[]).map((name) => {
+              const src = o?.avatar?.(name, row)
+              return src === null || src === undefined ? { name } : { name, src }
+            })}
+          />
+        ),
+        {
+          spec: {
+            sort: { compare: compareLists },
+            filter: o?.filter === 'multi' ? 'anyOf' : null,
+          },
+        },
+      )
+    },
+    tags: (key, o) =>
+      keyed<T>(
+        'tags',
+        key,
+        o,
+        (v) => <TagsCell tags={v as readonly string[]} labels={o?.labels} tone={o?.tone} />,
+        {
+          text: (v) => (v as readonly string[]).map((tag) => o?.labels?.[tag] ?? tag).join('\n'),
+          spec: {
+            sort: { compare: compareLists },
+            ...(o?.labels !== undefined && { labels: o.labels }),
+            ...(o?.tone !== undefined && { tone: o.tone }),
+            filter: o?.filter === 'multi' ? 'anyOf' : null,
+          },
+        },
+      ),
+    countdown: (key, o) => {
+      const limits = { bad: o?.bad ?? -1, warn: o?.warn, horizon: o?.horizon ?? 60 }
+      return keyed<T>(
+        'countdown',
+        key,
+        o,
+        (v, _row, env) => (
+          <CountdownCell
+            value={v}
+            format={env.format}
+            now={env.now}
+            zone={env.zone}
+            limits={limits}
+          />
+        ),
+        {
+          text: (v, _row, format) => dateText(v, format, 'short'),
+          spec: dateFilter<T>(o),
+        },
+      )
+    },
+    link: (key, o) =>
+      keyed<T>(
+        'link',
+        key,
+        o,
+        (v, row) => (
+          <LinkCell
+            text={String(v)}
+            label={hold(o?.label?.(row))}
+            href={o?.href?.(row)}
+            icon={o?.icon?.(row)}
+          />
+        ),
+        {
+          text: (_v, row) => o?.label?.(row) ?? '',
+          spec: {
+            filter: o?.filter === 'text' ? 'contains' : null,
+            // sized to its widest loaded URL: a link cut short is a link that cannot be read
+            content: {
+              measure: (row: T) =>
+                (o?.label?.(row) ?? linkLabel(String(read<T>(key)(row) ?? ''))).length +
+                (o?.icon === undefined ? 0 : 2),
             },
           },
         },
-      }),
+      ),
+    text: (key, o) =>
+      keyed<T>(
+        'text',
+        key,
+        o,
+        (v) =>
+          o?.quiet === true ? (
+            <QuietText text={o?.labels?.[String(v)] ?? String(v)} />
+          ) : (
+            (o?.labels?.[String(v)] ?? String(v))
+          ),
+        {
+          text: (v) => o?.labels?.[String(v)] ?? '',
+          spec: {
+            // a preview wants the room the other columns leave
+            ...(o?.quiet === true && { wrap: false, width: { ch: 32, flex: true } }),
+            filter: o?.filter === 'text' ? 'contains' : null,
+            content: {
+              measure: (row: T) => {
+                const value = read<T>(key)(row)
+                return isAbsent(value) ? 1 : (o?.labels?.[String(value)] ?? String(value)).length
+              },
+              short: {
+                // the header's own floor, with room for its icon and filter button as floorOf gives it
+                minCh:
+                  Math.min(
+                    HEADER_MAX_CH,
+                    (o?.header ?? humanize(o?.id ?? key)).length + HEADER_CHROME_CH,
+                  ) +
+                  (o?.headerIcon === undefined ? 0 : HEADER_ICON_CH) +
+                  (o?.filter === 'text' ? FILTER_MARK_CH : 0),
+                maxCh: SHORT_TEXT_MAX_CH,
+              },
+            },
+          },
+        },
+      ),
     number: (key, o) =>
       keyed<T>(
         'number',
@@ -823,4 +1070,5 @@ export function col<T>(): Col<T> {
     },
     codec: (kinds, o) => codec(kinds, o),
   }
+  return columns
 }

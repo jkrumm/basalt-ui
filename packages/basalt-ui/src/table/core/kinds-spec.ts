@@ -19,6 +19,10 @@ import type { SortFnName } from './features'
 
 export type KindName =
   | 'entity'
+  | 'person'
+  | 'tags'
+  | 'countdown'
+  | 'link'
   | 'text'
   | 'number'
   | 'money'
@@ -32,6 +36,10 @@ export type KindName =
   | 'select'
   | 'actions'
   | 'custom'
+
+/** The kinds whose value is a date: a range filter compares calendar days and a group is one day. */
+export const isDayKind = (kind: string): boolean =>
+  kind === 'date' || kind === 'relativeTime' || kind === 'countdown'
 
 /** Logical alignment of a column's header and cells (`start`/`end` follow the writing direction). */
 export type Align = 'start' | 'end' | 'center'
@@ -51,8 +59,10 @@ export type CardPlace = CardSlot | 'kebab'
 /** What a cell renderer receives besides the row: the formatter, the clock, the box of a box slot. */
 export type CellEnv = {
   format: Format
-  /** Epoch ms for `relativeTime`; the parts pass one value per render so SSR and client agree. */
+  /** Epoch ms for `relativeTime` and `countdown`; the parts pass one value per render so SSR and client agree. */
   now: number
+  /** The IANA zone a `countdown` counts calendar days in, `'host'` for the runtime's; absent reads UTC. */
+  zone?: string | undefined
   /** The box a `spark` draws in; the table owns its geometry. */
   box: Box
 }
@@ -121,7 +131,7 @@ export type KindSpec<T> = {
   options?: readonly string[]
   /** `status`: the text drawn for an option value (cell, card, filter); absent, the value itself. */
   labels?: Readonly<Record<string, string>>
-  /** `status`: the tone of an option's dot, drawn in its filter list and its order list too. */
+  /** `status`, `tags`: the tone of an option's dot or chip, drawn in its filter list and its order list too. */
   tone?: (value: string) => Tone
   /** `actions`: the typed row actions. */
   actions?: readonly RowAction<T>[]
@@ -158,6 +168,50 @@ export type KindDefaults = {
 }
 
 export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
+  person: {
+    align: 'start',
+    numerals: 'proportional',
+    wrap: false,
+    width: { ch: 18, flex: false },
+    sort: 'alphanumeric',
+    card: ['subtitle', 'meta'],
+    priority: 2,
+    groupable: true,
+    minCh: 8,
+  },
+  tags: {
+    align: 'start',
+    numerals: 'proportional',
+    wrap: false,
+    width: { ch: 20, flex: false },
+    sort: 'alphanumeric',
+    card: ['meta'],
+    priority: 3,
+    groupable: true,
+    minCh: 8,
+  },
+  countdown: {
+    align: 'start',
+    numerals: 'tabular',
+    wrap: false,
+    width: { ch: 14, flex: false },
+    sort: 'datetime',
+    card: ['meta'],
+    priority: 2,
+    groupable: true,
+    minCh: 8,
+  },
+  link: {
+    align: 'start',
+    numerals: 'proportional',
+    wrap: false,
+    width: { ch: 20, flex: true },
+    sort: 'alphanumeric',
+    card: ['meta'],
+    priority: 3,
+    groupable: false,
+    minCh: 8,
+  },
   entity: {
     align: 'start',
     numerals: 'proportional',

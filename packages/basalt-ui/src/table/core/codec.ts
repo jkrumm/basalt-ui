@@ -54,12 +54,13 @@ export type TableCodecOptions = {
 export const MAX_PAGE_SIZE = 1000
 
 const NUMERIC_KINDS: ReadonlySet<string> = new Set(['number', 'money', 'delta', 'meter'])
-const DATE_KINDS: ReadonlySet<string> = new Set(['date', 'relativeTime'])
+const DATE_KINDS: ReadonlySet<string> = new Set(['date', 'relativeTime', 'countdown'])
 
 /** The operator of a column's kind, `null` for a kind that has no `f.<col>`. */
 export function filterOpOf(kind: string): FilterOp | null {
-  if (kind === 'entity' || kind === 'text') return 'contains'
+  if (kind === 'entity' || kind === 'text' || kind === 'link') return 'contains'
   if (kind === 'status' || kind === 'select' || kind === 'boolean') return 'anyOf'
+  if (kind === 'person' || kind === 'tags') return 'anyOf'
   if (NUMERIC_KINDS.has(kind) || DATE_KINDS.has(kind)) return 'range'
   return null
 }

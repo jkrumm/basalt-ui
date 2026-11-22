@@ -233,6 +233,7 @@ export function cellEnvOf<T>(model: TableModel<T>): CellEnv {
   return {
     format: model.format,
     now: model.now,
+    zone: model.zone,
     box: { height: BOX_HEIGHT, phase: model.phase.tag === 'stale' ? 'stale' : 'ready' },
   }
 }

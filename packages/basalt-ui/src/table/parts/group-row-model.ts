@@ -31,6 +31,7 @@ export function groupKey(value: string): string {
 }
 
 function groupValue(v: unknown): string {
+  if (Array.isArray(v)) return v.join(', ')
   return v === null || v === undefined ? '' : String(v)
 }
 
