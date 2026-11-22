@@ -53,8 +53,6 @@ export const dialogParts = [
   'dialog-content',
   'dialog-title',
   'dialog-description',
-  'dialog-meta',
-  'dialog-actions',
   'dialog-close',
   'alert-dialog-trigger',
   'alert-dialog-content',
@@ -193,13 +191,11 @@ export function DialogContent({
                     <DialogDescription>{description}</DialogDescription>
                   )}
                   {meta === undefined ? null : (
-                    <p data-slot="dialog-meta" className="m-0 text-xs text-muted-foreground">
-                      {meta}
-                    </p>
+                    <p className="m-0 text-xs text-muted-foreground">{meta}</p>
                   )}
                 </div>
                 {actions === undefined ? null : (
-                  <div data-slot="dialog-actions" className="flex shrink-0 items-center gap-1">
+                  <div className="flex shrink-0 items-center gap-1">
                     {actions.map((action) => (
                       <HeaderAction key={action.label} action={action} />
                     ))}

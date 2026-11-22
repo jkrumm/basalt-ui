@@ -4,7 +4,7 @@ use when: 'a modal decision or a short form interrupts the page; a destructive c
 never when: 'the content is a long edit beside the page (use `Sheet`) or a hint on a trigger (use `Popover` or `Tooltip`)'
 subpath: basalt-ui/ui/dialog
 peers: ['@base-ui/react']
-slots: [dialog-trigger, dialog-content, dialog-title, dialog-description, dialog-meta, dialog-actions, dialog-close, alert-dialog-trigger, alert-dialog-content]
+slots: [dialog-trigger, dialog-content, dialog-title, dialog-description, dialog-close, alert-dialog-trigger, alert-dialog-content]
 ---
 
 # Dialog
@@ -130,8 +130,6 @@ No variant axes.
 - `dialog-content`
 - `dialog-title`
 - `dialog-description`
-- `dialog-meta`
-- `dialog-actions`
 - `dialog-close`
 - `alert-dialog-trigger`
 - `alert-dialog-content`
