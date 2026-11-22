@@ -56,7 +56,10 @@ function Fixture(): ReactElement {
   return (
     <main
       className="grid content-start gap-4 p-4 text-foreground"
-      style={{ gridTemplateColumns: '1fr 1fr' }}
+      style={{
+        gridTemplateColumns: window.innerWidth >= 1000 ? '1fr 1fr' : '1fr',
+        maxWidth: 1500,
+      }}
     >
       <div data-testid="k19-side" className="min-w-0" />
       <div data-testid="k19-columns" className="min-w-0">

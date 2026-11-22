@@ -1,7 +1,8 @@
 /**
- * Expression cycle 15 (`v3-expr-15-kit-fixes` 3): a card a grid row stretches keeps its extra height below
- * its content. A DataPanel's rows body ends at its last row (n70 .15), and a StatCard inset keeps its own
- * height (n71 .20). Fixture: `fixture/kit-expr15-stretch-fixture.tsx`.
+ * Expression cycle 15 (`v3-expr-15-kit-fixes` 3): a card a grid row stretches puts its extra height where its
+ * content can use it. A DataPanel's table takes the box, its rows sharing the extra height (n70 .15; cycle 19
+ * reversed the cycle 15 band under the last row), and a StatCard inset keeps its own height (n71 .20).
+ * Fixture: `fixture/kit-expr15-stretch-fixture.tsx`.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
@@ -31,8 +32,8 @@ async function open(): Promise<LayoutPage> {
   return page
 }
 
-layout('a card a grid row stretches puts its extra height in its body, not under it', () => {
-  test('a DataPanel rows body ends at its last row and the inset grows to the card bottom (cycle 18: no band under it)', async () => {
+layout('a card a grid row stretches puts its extra height where its content uses it', () => {
+  test('a DataPanel table fills the box: its last row ends at the inset bottom, no band under it (cycle 19)', async () => {
     const page = await open()
     const m = await page.raw.evaluate(() => {
       const panel = document.querySelector('[data-testid="st-panel"] [data-slot="data-panel"]')!
@@ -43,7 +44,7 @@ layout('a card a grid row stretches puts its extra height in its body, not under
       return { card: card.bottom, inset: inset.bottom, lastRow: last.bottom, rows: rows.length }
     })
     expect(m.rows).toBe(9)
-    expect(m.inset - m.lastRow).toBeGreaterThan(100)
+    expect(m.inset - m.lastRow).toBeLessThan(24)
     expect(m.card - m.inset).toBeLessThan(12)
   })
 
