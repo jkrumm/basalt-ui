@@ -228,6 +228,19 @@ describe('SelectCell', () => {
     },
   )
 
+  test('F2 inside the open list neither commits nor reaches the row', async () => {
+    const commit = mock((_row: Row, _next: string) => Promise.resolve())
+    render(<Subject commit={commit} onRowActivate={() => undefined} />)
+    await act(async () => {
+      fireEvent.click(trigger('Category of Rent'))
+    })
+    const option = await screen.findByRole('option', { name: 'Travel' })
+    await act(async () => {
+      fireEvent.keyDown(option, { key: 'F2' })
+    })
+    expect(commit).not.toHaveBeenCalled()
+  })
+
   test('picking the current value commits nothing', async () => {
     const commit = mock((_row: Row, _next: string) => Promise.resolve())
     render(<Subject commit={commit} />)

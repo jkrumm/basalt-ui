@@ -499,7 +499,7 @@ type Base<T> = {
 const HEADER_CHROME_CH = 2
 /** A header asks for floor room up to this many `ch`; a longer one truncates (its title shows it whole). */
 const HEADER_MAX_CH = 24
-/** A header icon's room in `ch`: 16 px and its 6 px gap. */
+/** A header icon's room in `ch`: 16 px and its 6 px gap. Counted whether or not the table draws icons (`headerIcons` is read at draw time), so a floor never depends on the table. */
 const HEADER_ICON_CH = 3
 /** A status icon is wider than the dot it replaces by this many `ch`. */
 const STATUS_ICON_EXTRA_CH = 1
