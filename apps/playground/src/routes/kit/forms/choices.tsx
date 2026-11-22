@@ -13,7 +13,11 @@ import {
   ComboboxItem,
 } from 'basalt-ui/ui/combobox'
 import { CheckboxGroup } from 'basalt-ui/ui/checkbox'
+import { CheckboxMatrix } from 'basalt-ui/ui/checkbox-matrix'
+import type { MatrixValue } from 'basalt-ui/ui/checkbox-matrix'
 import { RadioGroup } from 'basalt-ui/ui/radio-group'
+import { SwatchPicker } from 'basalt-ui/ui/swatch-picker'
+import type { SwatchToken } from 'basalt-ui/ui/swatch-picker'
 import { Segmented } from 'basalt-ui/ui/segmented'
 import { Select } from 'basalt-ui/ui/select'
 import { Switch } from 'basalt-ui/ui/switch'
@@ -169,6 +173,158 @@ function PickSeveral(): ReactElement {
   )
 }
 
+const PLANS = [
+  { value: 'free', label: 'Free', description: 'Up to three users', trailing: '€0 / month' },
+  { value: 'pro', label: 'Pro', description: 'Team seats and audit log', trailing: '€12 / seat' },
+  { value: 'scale', label: 'Scale', description: 'SSO and a support SLA', trailing: '€40 / seat' },
+]
+
+function Thumb({ tone }: { tone: string }): ReactElement {
+  return <span className={`block h-14 w-full ${tone}`} />
+}
+
+const LOOKS = [
+  { value: 'light', label: 'Light', preview: <Thumb tone="bg-inset" /> },
+  { value: 'dark', label: 'Dark', preview: <Thumb tone="bg-foreground" /> },
+  { value: 'system', label: 'System', preview: <Thumb tone="bg-accent" /> },
+]
+
+function Cards(): ReactElement {
+  const plan = useSpecimen('pro')
+  const look = useSpecimen('system')
+  const notify = useSpecimen<string[]>(['email'])
+  const unpicked = useSpecimen('', 'Choose a plan to continue.')
+  return (
+    <Pair>
+      <FormField
+        label="Plan"
+        description="RadioGroup variant card: a title, a line, a trailing value."
+        field={plan}
+      >
+        <RadioGroup variant="card" aria-label="Plan" options={PLANS} />
+      </FormField>
+      <FormField
+        label="Appearance"
+        description="Variant tile: a preview over the title, in a wrapping grid."
+        field={look}
+      >
+        <RadioGroup variant="tile" aria-label="Appearance" options={LOOKS} />
+      </FormField>
+      <FormField
+        label="Notify by"
+        description="CheckboxGroup variant card: several at once."
+        field={notify}
+      >
+        <CheckboxGroup
+          variant="card"
+          aria-label="Notify by"
+          options={[
+            { value: 'email', label: 'Email', description: 'A daily digest' },
+            { value: 'push', label: 'Push', description: 'On your phone' },
+            {
+              value: 'sms',
+              label: 'SMS',
+              description: 'Not available on your plan',
+              disabled: true,
+            },
+          ]}
+        />
+      </FormField>
+      <FormField
+        label="Plan, invalid"
+        description="The error is read with the group."
+        field={unpicked}
+      >
+        <RadioGroup variant="card" aria-label="Plan, invalid" options={PLANS.slice(0, 2)} />
+      </FormField>
+    </Pair>
+  )
+}
+
+const ROLES = ['Owner', 'Admin', 'Member', 'Guest'].map((label) => ({
+  id: label.toLowerCase(),
+  label,
+}))
+const AREAS = [
+  { id: 'billing', label: 'Billing', description: 'Invoices, plans and payment methods' },
+  { id: 'members', label: 'Members', description: 'Invite, remove and change roles' },
+  { id: 'deploys', label: 'Deploys', description: 'Start and roll back a release' },
+  { id: 'audit', label: 'Audit log' },
+]
+
+function Matrix(): ReactElement {
+  const grants = useSpecimen<MatrixValue>({
+    billing: ['owner'],
+    members: ['owner', 'admin'],
+    deploys: ['owner', 'admin', 'member'],
+    audit: ['owner', 'admin'],
+  })
+  return (
+    <div className="max-w-5xl">
+      <FormField
+        label="Permissions"
+        description="Owners always keep every right; Guests cannot reach the audit log."
+        field={grants}
+      >
+        <CheckboxMatrix
+          aria-label="Permissions"
+          rows={AREAS}
+          columns={ROLES}
+          rowsLabel="Area"
+          rowToggles
+          columnToggles
+          cellState={(row, column) =>
+            column.id === 'owner'
+              ? 'locked'
+              : row.id === 'audit' && column.id === 'guest'
+                ? 'disabled'
+                : undefined
+          }
+        />
+      </FormField>
+    </div>
+  )
+}
+
+const STAGE_COLOURS = [
+  { value: 'neutral', label: 'Grey' },
+  { value: 'brand', label: 'Blue' },
+  { value: 'good', label: 'Green' },
+  { value: 'warn', label: 'Amber' },
+  { value: 'bad', label: 'Red' },
+  { value: 'info', label: 'Sky' },
+  { value: 'chart-1', label: 'Series 1' },
+  { value: 'chart-2', label: 'Series 2' },
+] as const
+
+function Colour(): ReactElement {
+  const stage = useSpecimen<SwatchToken | undefined>('good')
+  const label = useSpecimen<SwatchToken | undefined>('brand')
+  return (
+    <Pair>
+      <FormField
+        label="Stage colour"
+        description="Inline: named palette tokens, never a free colour."
+        field={stage}
+      >
+        <SwatchPicker aria-label="Stage colour" options={STAGE_COLOURS} />
+      </FormField>
+      <FormField
+        label="Label colour"
+        description="In a menu: for a field with little room."
+        field={label}
+      >
+        <SwatchPicker
+          aria-label="Label colour"
+          display="menu"
+          options={STAGE_COLOURS}
+          className="w-fit"
+        />
+      </FormField>
+    </Pair>
+  )
+}
+
 function InstantApply(): ReactElement {
   const compact = useSpecimen(true)
   return (
@@ -209,6 +365,24 @@ function ChoicesRoute(): ReactElement {
         summary="CheckboxGroup for independent choices; a multi Combobox with chips, creatable."
       >
         <PickSeveral />
+      </Section>
+      <Section
+        title="Cards"
+        summary="A choice with a hint, a price or a picture: selected by its border, never by fill alone."
+      >
+        <Cards />
+      </Section>
+      <Section
+        title="Matrix"
+        summary="Rows and columns of real checkboxes in a table; Tab visits every cell, the arrow keys move between them."
+      >
+        <Matrix />
+      </Section>
+      <Section
+        title="Colour"
+        summary="One colour of the palette, as swatches in place or in a menu."
+      >
+        <Colour />
       </Section>
       <Section
         title="Instant apply"

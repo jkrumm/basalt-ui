@@ -9,7 +9,10 @@ import { CopyButton } from 'basalt-ui/ui/copy-button'
 import { ControlGroup, InputAddon, InputGroup } from 'basalt-ui/ui/control-group'
 import { DatePicker } from 'basalt-ui/ui/date-picker'
 import { Input } from 'basalt-ui/ui/input'
+import { OneTimeCode } from 'basalt-ui/ui/one-time-code'
 import { PasswordInput } from 'basalt-ui/ui/password-input'
+import { QuickPicks } from 'basalt-ui/ui/quick-picks'
+import { TagInput } from 'basalt-ui/ui/tag-input'
 import { Segmented } from 'basalt-ui/ui/segmented'
 import { NumberField } from 'basalt-ui/ui/number-field'
 import { NativeSelect, Select } from 'basalt-ui/ui/select'
@@ -363,6 +366,73 @@ function Cells({ children }: { children: ReactElement[] }): ReactElement {
  * cell (point at it, tab into it); the scheme is the shell's own, so light and dark are the toggle in
  * the settings menu. Loading has no input form in the kit: only `Button` takes `loading` (/kit/forms/buttons).
  */
+const DUE = [
+  { value: '2026-11-22', label: 'Today' },
+  { value: '2026-11-23', label: 'Tomorrow' },
+  { value: '2026-11-25', label: 'In 3 days' },
+  { value: '2026-11-29', label: 'Next week' },
+]
+
+const isEmail = (tag: string): string | undefined =>
+  /^\S+@\S+\.\S+$/.test(tag) ? undefined : 'Not an email address'
+
+function TagsAndCodes(): ReactElement {
+  const invitees = useSpecimen<string[]>(['ana@example.com', 'lee@example'])
+  const code = useSpecimen('48')
+  const wrong = useSpecimen('123456', 'That code is wrong. Request a new one.')
+  const due = useSpecimen('2026-11-23')
+  return (
+    <div className="grid max-w-5xl gap-6 @regular:grid-cols-2">
+      <FormField
+        label="Invite by email"
+        description="Type, or paste a list: commas, semicolons and line breaks split it."
+        field={invitees}
+      >
+        <TagInput
+          aria-label="Invite by email"
+          validate={isEmail}
+          inputMode="email"
+          placeholder="name@company.com"
+        />
+      </FormField>
+      <FormField
+        label="Due date"
+        description="The pills write the date; typing another one clears the pick."
+        field={due}
+      >
+        <div className="flex flex-col gap-2">
+          <QuickPicks
+            aria-label="Due date shortcuts"
+            options={DUE}
+            value={due.state.value}
+            onValueChange={due.handleChange}
+          />
+          <Input
+            type="date"
+            aria-label="Due date"
+            value={due.state.value}
+            onValueChange={due.handleChange}
+          />
+        </div>
+      </FormField>
+      <FormField
+        label="Verification code"
+        description="Six digits; a pasted or suggested code fills every box."
+        field={code}
+      >
+        <OneTimeCode aria-label="Verification code" />
+      </FormField>
+      <FormField
+        label="Verification code, wrong"
+        description="All boxes turn red; the message is read with the group."
+        field={wrong}
+      >
+        <OneTimeCode aria-label="Verification code, wrong" />
+      </FormField>
+    </div>
+  )
+}
+
 function InputsRoute(): ReactElement {
   return (
     <Page area="kit-forms-inputs">
@@ -442,6 +512,12 @@ function InputsRoute(): ReactElement {
         summary="Every control at medium, then small. Under touch a lone small button keeps 24 px drawn with a 44 px hit area; in a group it lifts to 44."
       >
         <Heights />
+      </Section>
+      <Section
+        title="Tags, codes and shortcuts"
+        summary="Free values as chips, a code in boxes, and pills that write the field beside them."
+      >
+        <TagsAndCodes />
       </Section>
       <Section title="File upload" summary="Files from disk; the limits are in the hint.">
         <Cells>
