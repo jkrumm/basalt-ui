@@ -24,7 +24,7 @@ import {
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import type { FieldLike, IconComponent } from '../core/ports'
-import { IconTile } from '../ui/card'
+import { RowIcon } from './row-icon'
 import { Field, FieldDescription, FieldError } from '../ui/field'
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -289,11 +289,7 @@ function Frame({
         className,
       )}
     >
-      {Icon !== undefined && (
-        <IconTile>
-          <Icon className="size-icon" aria-hidden="true" />
-        </IconTile>
-      )}
+      {Icon !== undefined && <RowIcon icon={Icon} />}
       <div className={cn('@container min-w-0', Icon !== undefined && 'flex-1')}>{field}</div>
     </div>
   )

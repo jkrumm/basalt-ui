@@ -9,11 +9,11 @@ import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
 import type { IconComponent } from '../core/ports'
 import { Button } from '../ui/button'
-import { IconTile } from '../ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
 import { Field, Fieldset } from '../ui/field'
 import { Input } from '../ui/input'
 import { FormFieldLayoutContext } from './form-field'
+import { RowIcon } from './row-icon'
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
 export const settingsRowParts = [
@@ -58,13 +58,8 @@ function RowText({ labelId, descriptionId, label, description, tone }: RowTextPr
   )
 }
 
-function Tile({ icon: Icon }: { icon: IconComponent | undefined }): ReactElement | null {
-  if (Icon === undefined) return null
-  return (
-    <IconTile>
-      <Icon className="size-icon" aria-hidden="true" />
-    </IconTile>
-  )
+function Tile({ icon }: { icon: IconComponent | undefined }): ReactElement | null {
+  return icon === undefined ? null : <RowIcon icon={icon} />
 }
 
 type CommonRowProps = {
