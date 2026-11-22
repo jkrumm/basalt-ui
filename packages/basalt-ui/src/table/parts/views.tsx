@@ -471,6 +471,13 @@ function TabMenu<T>({
       }}
     >
       <MenuContent anchor={anchor} align="start" aria-label={t('table.viewMenu', view.name)}>
+        {c.modified && (
+          <>
+            <MenuItem onClick={() => void c.save()}>{t('table.viewSave')}</MenuItem>
+            <MenuItem onClick={c.discard}>{t('table.viewDiscard')}</MenuItem>
+            <MenuSeparator />
+          </>
+        )}
         <MenuItem onClick={() => c.show('root')}>{t('table.viewEdit')}</MenuItem>
         <MenuItem onClick={() => c.show('name')}>{t('table.viewRename')}</MenuItem>
         <MenuItem onClick={() => void navigator.clipboard?.writeText(c.link())}>
@@ -571,7 +578,11 @@ export function ViewStrip<T>({ c }: { c: ViewsController<T> }): ReactElement {
         <span className="@max-regular:sr-only">{t('table.viewAddShort')}</span>
       </Button>
       {c.modified && (
-        <span data-slot="table-view-pending" className="inline-flex shrink-0 items-center gap-1">
+        // Below the regular tier the tabs keep the room: Save and Discard move to the tab's menu and the panel.
+        <span
+          data-slot="table-view-pending"
+          className="inline-flex shrink-0 items-center gap-1 @max-regular:hidden"
+        >
           <Button variant="ghost" size="sm" onClick={c.discard}>
             {t('table.viewDiscard')}
           </Button>
@@ -661,7 +672,7 @@ export function ViewsBar<T>({
     ...(onExport !== undefined && { onExport }),
   })
   return (
-    <div data-slot="table-views" className="flex min-w-0 items-center gap-2">
+    <div data-slot="table-views" className="@container flex min-w-0 items-center gap-2">
       <div className="flex min-w-0 flex-1">
         <ViewStrip c={c} />
       </div>
