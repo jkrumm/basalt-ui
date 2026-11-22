@@ -363,6 +363,12 @@ export type UseDataTable<
    */
   look?: 'reading' | 'grid'
   /**
+   * `false` draws no column icon in any header: each kind's default and every `headerIcon` a column names.
+   *
+   * @default true
+   */
+  headerIcons?: boolean
+  /**
    * The width below which the table becomes cards (`regular` is 480 px, `wide` 800 px, `always` never a table).
    *
    * @default 'regular'
