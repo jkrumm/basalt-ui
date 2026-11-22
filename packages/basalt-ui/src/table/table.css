@@ -1015,19 +1015,19 @@
   }
 
   /* a long name wraps onto a second line in a table's column rather than end in an ellipsis; a mono id or time stays one line */
-  @container table (min-width: 480px) {
+  @container table not (max-width: 479.9px) {
     [data-below='480'] [data-slot='table-entity-name']:not([data-monospace]) {
       white-space: normal !important;
       overflow-wrap: break-word;
     }
   }
-  @container table (min-width: 700px) {
+  @container table not (max-width: 699.9px) {
     [data-below='700'] [data-slot='table-entity-name']:not([data-monospace]) {
       white-space: normal !important;
       overflow-wrap: break-word;
     }
   }
-  @container table (min-width: 800px) {
+  @container table not (max-width: 799.9px) {
     [data-below='800'] [data-slot='table-entity-name']:not([data-monospace]) {
       white-space: normal !important;
       overflow-wrap: break-word;
