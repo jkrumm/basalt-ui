@@ -103,6 +103,12 @@ function modeOf(m: ModeResult & { further: number }): ModeVerdict {
 
 const kb = (n: number): string => (n === 0 ? '0' : `${(n / 1024).toFixed(1)} kB`)
 
+/** The view that differs most, named without its counts: what the record says, so a rerun does not rewrite it. */
+function worstView(views: Record<View, ViewVerdict>): string {
+  const [view, p] = Object.entries(views).toSorted((a, b) => b[1].changed - a[1].changed)[0]!
+  return p.sameSize ? `most at ${view}` : `its size at ${view}`
+}
+
 function worst(views: Record<View, ViewVerdict>): string {
   const [view, p] = Object.entries(views).toSorted((a, b) => b[1].changed - a[1].changed)[0]!
   return p.sameSize
@@ -117,6 +123,7 @@ export function decide(
   part: Pick<PartEntry, 'interaction' | 'why'>,
   v: Judged,
   further: string = kb(v.modes.load.further),
+  differs: string = worst(v.views),
 ): { best: Verdict['best']; why: string } {
   const load = v.modes.load
   if (v.ssr === 'fail') {
@@ -138,7 +145,7 @@ export function decide(
     }
   const wrong = v.staticClean
     ? ''
-    : ` The static picture differs from the hydrated one until it hydrates (${worst(v.views)}).`
+    : ` The static picture differs from the hydrated one until it hydrates (${differs}).`
   if (part.interaction === 'none') {
     return v.staticClean
       ? {
@@ -361,7 +368,7 @@ export function toRecord(
       ssr: v.ssr,
       staticClean: v.staticClean,
       ...(v.chart ? { picture: chartVerdict(v) } : {}),
-      ...decide(entry, v, `up to ${kb(budget.further)}`),
+      ...decide(entry, v, `up to ${kb(budget.further)}`, worstView(v.views)),
       budget,
       ...(reason ? { raised: reason } : {}),
     })
