@@ -5,7 +5,6 @@ import { landing } from '../core/drag-landing'
 import { kanban } from '../core/messages/kanban'
 import { useMessages } from '../core/messages/use-messages'
 import type { DragData, DragEdge, DragLike, Tone, VirtualLike } from '../core/ports'
-import { CountBadge } from '../ui/badge'
 import { ScrollArea } from '../ui/scroll-area'
 import { statusVariants } from '../ui/status'
 import type { ColumnRef, KanbanCardProps, Move } from './contract'
@@ -300,7 +299,9 @@ function BoardColumn<C extends string>({
           >
             {col.label}
           </h3>
-          <CountBadge count={count} />
+          <span data-slot="board-count" className="text-xs text-muted-foreground tabular-nums">
+            {count}
+          </span>
         </span>
         {col.total !== undefined && (
           <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{col.total}</span>
