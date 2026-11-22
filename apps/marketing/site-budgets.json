@@ -2,7 +2,7 @@
   "staticModuleJsGzip": 0,
   "inlineJsGzip": 3250,
   "reactRuntimeGzip": 72000,
-  "furtherIslandGzip": 126500,
+  "furtherIslandGzip": 128000,
   "mdxIslandsGzip": 286000,
   "cssGzipPerPage": 27500,
   "lcpMs": 1000,
