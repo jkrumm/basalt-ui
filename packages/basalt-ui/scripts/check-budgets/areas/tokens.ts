@@ -91,7 +91,8 @@ export const rows: readonly RowDef[] = [
     label: 'tokens.css (gzip B, src/css/tokens.css)',
     // 1539 B measured (zlib default level), +5 percent rounded up; 1876 with the motion scale (1786 B, raise row below);
     // 1877 with the card ring in both schemes (1787 B, Issue 2851).
-    ceiling: 1877,
+    // 1892 with `--basalt-scrim-wash` in both schemes (1801 B, Issue 2940).
+    ceiling: 1892,
     measure: () => gzipFileBytes(join(CSS_DIR, 'tokens.css')),
   },
   {
@@ -123,6 +124,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'tokens-css-gzip': [
+    {
+      from: 1877,
+      to: 1892,
+      consumer:
+        'the wizard dialog (Issue 2940): `--basalt-scrim-wash` is the light backdrop of a Dialog, the canvas at half strength in both schemes, so the page stays readable behind it',
+      repo: 'basalt-ui',
+    },
     {
       from: 1876,
       to: 1877,
