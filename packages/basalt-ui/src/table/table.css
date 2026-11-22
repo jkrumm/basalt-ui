@@ -1217,13 +1217,12 @@
     --table-app-row-h: var(--basalt-row-h);
     --table-app-ctl-h: var(--basalt-ctl-h);
   }
-  [data-slot='table-scroller'][data-density] [data-slot='table-header'] {
+  [data-slot='table-scroller'][data-density]
+    :is([data-slot='table-header'], [data-slot='table-footer']) {
     --table-row-h: var(--table-app-row-h);
     --basalt-ctl-h: var(--table-app-ctl-h);
   }
-  [data-look='grid']
-    [data-slot='table-scroller'][data-density]:not([data-density='dense'])
-    [data-slot='table-body'] {
+  [data-slot='table-body'][data-density]:not([data-look='grid'] > [data-density='dense']) {
     --table-row-h: var(--basalt-row-h);
   }
 

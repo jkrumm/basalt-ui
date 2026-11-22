@@ -213,6 +213,10 @@ describe('row height', () => {
     ] as const) {
       act(() => latest().setRowHeight(height))
       expect(body?.getAttribute('data-density')).toBe(density)
+      // The body carries it too, so a bespoke layout's `DataTableBody` takes the step without the scroller.
+      expect(
+        container.querySelector('[data-slot="table-body"]')?.getAttribute('data-density'),
+      ).toBe(density)
       expect(
         container.querySelector('[data-slot="table-header"]')?.hasAttribute('data-density'),
       ).toBe(false)

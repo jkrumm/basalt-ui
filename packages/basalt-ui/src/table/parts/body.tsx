@@ -48,9 +48,10 @@ const DENSITY: Record<RowHeight, 'dense' | 'normal' | 'comfortable'> = {
 }
 
 /**
- * The scroller's `data-density`: a view's row height rebinds the density row (`--basalt-row-h`) under
- * the scroller, so the body rows and a `maxRows` height take that step while `table.css` holds the
- * head at the app's row and control height; nothing when the app's density holds.
+ * The `data-density` of a view's row height, on the body and on `DataTable`'s scroller: it rebinds the
+ * density row (`--basalt-row-h`), so the body rows (a bespoke layout's `DataTableBody` too) and a
+ * `maxRows` height take that step while `table.css` holds the head and the foot at the app's row and
+ * control height; nothing when the app's density holds.
  */
 export function bodyDensity<T>(model: TableModel<T>): { 'data-density'?: string } {
   return model.rowHeight === undefined ? {} : { 'data-density': DENSITY[model.rowHeight] }
@@ -419,6 +420,7 @@ export function DataTableBody<T>({
   return (
     <TableBody
       role="rowgroup"
+      {...bodyDensity(model)}
       {...model.keyboard.rootProps}
       {...(onPointerLeave !== undefined && { onPointerLeave })}
     >
