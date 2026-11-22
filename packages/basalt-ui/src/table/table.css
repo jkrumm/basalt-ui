@@ -26,8 +26,9 @@
     width: 100%;
     table-layout: fixed;
   }
-  /* a table with a filler `<col>` (data-fill): each row ends in a cell of it, so the hairline, the head
-     surface and the row tint run to the table's right edge past the last column */
+  /* the filler `<col>` (data-fill, every table): each row ends in a cell of it, so the head surface,
+     the row hairlines, the row and group tint and the footer rule run to the scroller's edge past the
+     last column; the grid closes its last column with a rule and lets the lines run on */
   [data-slot='table-root'][data-fill] [data-slot='table-row']::after {
     content: '';
     display: table-cell;
@@ -40,7 +41,7 @@
     background: var(--basalt-surface, Canvas);
   }
   [data-slot='table-root'][data-fill]
-    :is([data-slot='table-body'], [data-slot='table-footer'])
+    [data-slot='table-body']
     [data-slot='table-row']:last-child::after {
     border-bottom-width: 0;
   }
@@ -362,6 +363,12 @@
       :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
     }
+    /* a card draws its edit slot as the control it is */
+    [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-select-cell'] {
+      --table-edit-line: var(--basalt-input);
+      --table-edit-ground: var(--basalt-canvas);
+      --table-edit-chevron: 1;
+    }
     [data-slot='table-root'][data-below='480'][data-phone='cards'] colgroup,
     [data-slot='table-root'][data-below='480'][data-phone='cards'] [data-slot='table-row']::after {
       display: none;
@@ -522,6 +529,12 @@
       [data-slot='table-header']
       :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
+    }
+    /* a card draws its edit slot as the control it is */
+    [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-select-cell'] {
+      --table-edit-line: var(--basalt-input);
+      --table-edit-ground: var(--basalt-canvas);
+      --table-edit-chevron: 1;
     }
     [data-slot='table-root'][data-below='800'][data-phone='cards'] colgroup,
     [data-slot='table-root'][data-below='800'][data-phone='cards'] [data-slot='table-row']::after {
@@ -685,6 +698,12 @@
       :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
     }
+    /* a card draws its edit slot as the control it is */
+    [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-select-cell'] {
+      --table-edit-line: var(--basalt-input);
+      --table-edit-ground: var(--basalt-canvas);
+      --table-edit-chevron: 1;
+    }
     [data-slot='table-root'][data-below='700'][data-phone='cards'] colgroup,
     [data-slot='table-root'][data-below='700'][data-phone='cards'] [data-slot='table-row']::after {
       display: none;
@@ -846,6 +865,13 @@
       :is(button, [role='checkbox'], input, [role='separator']) {
       visibility: hidden;
     }
+    /* a card draws its edit slot as the control it is */
+    [data-slot='table-root'][data-below='always'][data-phone='cards']
+      [data-slot='table-select-cell'] {
+      --table-edit-line: var(--basalt-input);
+      --table-edit-ground: var(--basalt-canvas);
+      --table-edit-chevron: 1;
+    }
     [data-slot='table-root'][data-below='always'][data-phone='cards'] colgroup,
     [data-slot='table-root'][data-below='always'][data-phone='cards']
       [data-slot='table-row']::after {
@@ -968,8 +994,8 @@
   }
 
   /* the grid look (data-look='grid', working data): no tier drops a column, so the scroller scrolls
-     sideways at every width with the identity column (and the tick) pinned and opaque; with a filler
-     column the last real cell keeps its rule, so the grid closes before the filler */
+     sideways at every width with the identity column (and the tick) pinned and opaque; the last real
+     cell keeps its rule, so the grid closes before the filler */
   [data-slot='table-root'][data-look='grid']
     :is([data-slot='table-scroller'], [data-slot='virtual-list']) {
     overflow-x: auto;
@@ -1003,11 +1029,8 @@
   [data-slot='table-root'][data-look='grid'][data-fill] [data-slot='table-row'] > :last-child {
     border-inline-end-width: 1px !important;
   }
-  [data-slot='table-root'][data-look='grid'][data-fill] [data-slot='table-row']::after {
-    border-bottom-width: 0;
-  }
-  /* the head keeps the density row: its sort, filter and menu rings need the room a compact row lacks
-     at the scroller's top edge, where the sideways scroll clips them */
+  /* the head keeps the density row: its menu button's ring needs the room a compact row lacks at the
+     scroller's top edge, where the sideways scroll clips it */
   [data-slot='table-root'][data-look='grid'] [data-slot='table-header'] {
     --table-row-h: var(--basalt-row-h);
   }
@@ -1182,6 +1205,43 @@
       [data-monospace]:not([data-slot='table-entity-sub']) {
       white-space: nowrap !important;
     }
+  }
+
+  /* an inline edit cell rests as its value: the control draws its border, ground and chevron while
+     its row is hovered with a fine pointer, while it is focused or open, while it is pending, and on
+     a phone card (each sets the three properties) */
+  [data-slot='table-select-cell']
+    :is([data-slot='select-trigger'], [data-slot='combobox-input']):not(
+      :focus-visible,
+      :focus-within,
+      [data-popup-open]
+    ) {
+    border-color: var(--table-edit-line, transparent) !important;
+    background-color: var(--table-edit-ground, transparent) !important;
+    --table-edit-mark: var(--table-edit-chevron, 0);
+  }
+  [data-slot='table-select-cell'][data-pending] {
+    --table-edit-line: var(--basalt-input);
+    --table-edit-ground: var(--basalt-canvas);
+    --table-edit-chevron: 1;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    [data-slot='table-row']:hover [data-slot='table-select-cell'] {
+      --table-edit-line: var(--basalt-input);
+      --table-edit-ground: var(--basalt-canvas);
+      --table-edit-chevron: 1;
+    }
+  }
+  [data-slot='table-select-cell'] [data-slot='select-trigger'] > svg:last-child {
+    opacity: var(--table-edit-mark, 1);
+  }
+  /* the value sits where the column's text does; a trigger reads at the cell's size (a combobox input
+     keeps its own, which spares iOS a zoom) */
+  [data-slot='table-select-cell'] :is([data-slot='select-trigger'], [data-slot='combobox-input']) {
+    margin-inline: calc(var(--spacing) * -2);
+  }
+  [data-slot='table-select-cell'] [data-slot='select-trigger'] {
+    font-size: inherit !important;
   }
 
   /* the view: a 7 px resize handle on the head's end edge, a bar while dragged */

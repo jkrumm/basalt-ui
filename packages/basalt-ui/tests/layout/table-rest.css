@@ -1,0 +1,8 @@
+/*
+ * The `table-rest` fixture's Tailwind v4 entry, compiled WITH preflight the way a Tailwind consumer
+ * renders the table. `table-rest.layout.test.ts` compiles it and inlines `src/table/table.css`.
+ */
+@import '../../src/css/tailwind.css' source(none);
+@source './table-rest-fixture.tsx';
+@source '../../src/ui';
+@source '../../src/table';

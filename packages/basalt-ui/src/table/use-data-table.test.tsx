@@ -61,29 +61,43 @@ const names = (): (string | null)[] =>
     (tr) => tr.querySelector('td')?.textContent ?? null,
   )
 
-const sortButton = (name: string): HTMLElement => screen.getByRole('button', { name })
+// A header's one button, named by its label and, while it holds one, its sort or filter state.
+const headerButton = (header: string): HTMLElement => {
+  const escaped = header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return screen.getByRole('button', { name: new RegExp(`^${escaped}(, |$)`) })
+}
+// Opens a header's menu and picks one sort item. A radio item keeps the menu open, so Escape closes it.
+const sortBy = (
+  header: string,
+  item: 'Sort ascending' | 'Sort descending' | 'No sorting',
+): void => {
+  fireEvent.click(headerButton(header))
+  const radio = screen.getByRole('menuitemradio', { name: item })
+  fireEvent.click(radio)
+  fireEvent.keyDown(radio, { key: 'Escape' })
+}
 
 describe('sort', () => {
-  test('cycles none, ascending, descending, none and reflects it in aria-sort', () => {
+  test('the header menu cycles none, ascending, descending, none and reflects it in aria-sort', () => {
     render(<Subject />)
     const header = () => screen.getByRole('columnheader', { name: 'Name' })
     expect(header().getAttribute('aria-sort')).toBe('none')
-    fireEvent.click(sortButton('Name'))
+    sortBy('Name', 'Sort ascending')
     expect(header().getAttribute('aria-sort')).toBe('ascending')
     expect(names()).toEqual(['Project 1', 'Project 2', 'Project 10'])
-    fireEvent.click(sortButton('Name'))
+    sortBy('Name', 'Sort descending')
     expect(header().getAttribute('aria-sort')).toBe('descending')
     expect(names()).toEqual(['Project 10', 'Project 2', 'Project 1'])
-    fireEvent.click(sortButton('Name'))
+    sortBy('Name', 'No sorting')
     expect(header().getAttribute('aria-sort')).toBe('none')
     expect(names()).toEqual(['Project 10', 'Project 2', 'Project 1'])
   })
 
   test('an absent amount sorts last both ways and renders a dash, not 0', () => {
     render(<Subject />)
-    fireEvent.click(sortButton('Amount (EUR)'))
+    sortBy('Amount (EUR)', 'Sort ascending')
     expect(names().at(-1)).toBe('Project 2')
-    fireEvent.click(sortButton('Amount (EUR)'))
+    sortBy('Amount (EUR)', 'Sort descending')
     expect(names().at(-1)).toBe('Project 2')
     expect(document.querySelector('[data-slot="table-absent"]')).not.toBeNull()
   })
@@ -251,7 +265,7 @@ describe('selection', () => {
     expect(
       document.querySelector('tbody tr[data-selected]')?.querySelector('td + td')?.textContent,
     ).toBe('Project 10')
-    fireEvent.click(sortButton('Name'))
+    sortBy('Name', 'Sort ascending')
     expect(
       document.querySelector('tbody tr[data-selected]')?.querySelector('td + td')?.textContent,
     ).toBe('Project 10')

@@ -165,6 +165,16 @@ export type KindDefaults = {
   groupable: boolean
   /** The narrowest a reader may drag the column, in `ch` (the cell padding comes on top). */
   minCh: number
+  /**
+   * The width the grid look draws the column at, in `ch`, never below its floor: the grid scrolls
+   * sideways instead of shrinking a column to its content. `null` keeps the floor (`custom`, `actions`).
+   */
+  gridCh: number | null
+  /**
+   * A text-like column (title, text, link, person, tags) shares the free width of its table up to this
+   * many `ch`; the rest goes to the filler. `null`: figures, dates and marks keep their width.
+   */
+  capCh: number | null
 }
 
 export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
@@ -172,23 +182,27 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     align: 'start',
     numerals: 'proportional',
     wrap: false,
-    width: { ch: 18, flex: false },
+    width: { ch: 18, flex: true },
     sort: 'alphanumeric',
     card: ['subtitle', 'meta'],
     priority: 2,
     groupable: true,
     minCh: 8,
+    gridCh: 24,
+    capCh: 28,
   },
   tags: {
     align: 'start',
     numerals: 'proportional',
     wrap: false,
-    width: { ch: 20, flex: false },
+    width: { ch: 20, flex: true },
     sort: 'alphanumeric',
     card: ['meta'],
     priority: 3,
     groupable: true,
     minCh: 8,
+    gridCh: 26,
+    capCh: 32,
   },
   countdown: {
     align: 'start',
@@ -200,6 +214,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 2,
     groupable: true,
     minCh: 8,
+    gridCh: 16,
+    capCh: null,
   },
   link: {
     align: 'start',
@@ -211,6 +227,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 3,
     groupable: false,
     minCh: 8,
+    gridCh: 26,
+    capCh: 36,
   },
   entity: {
     align: 'start',
@@ -222,6 +240,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 1,
     groupable: true,
     minCh: 8,
+    gridCh: 30,
+    capCh: 40,
   },
   text: {
     align: 'start',
@@ -233,6 +253,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 2,
     groupable: true,
     minCh: 6,
+    gridCh: 30,
+    capCh: 48,
   },
   number: {
     align: 'end',
@@ -244,6 +266,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 2,
     groupable: false,
     minCh: 4,
+    gridCh: 14,
+    capCh: null,
   },
   money: {
     align: 'end',
@@ -255,6 +279,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 1,
     groupable: false,
     minCh: 6,
+    gridCh: 16,
+    capCh: null,
   },
   date: {
     align: 'start',
@@ -266,6 +292,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 3,
     groupable: true,
     minCh: 8,
+    gridCh: 16,
+    capCh: null,
   },
   relativeTime: {
     align: 'start',
@@ -278,6 +306,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 3,
     groupable: false,
     minCh: 8,
+    gridCh: 16,
+    capCh: null,
   },
   status: {
     align: 'start',
@@ -289,6 +319,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 2,
     groupable: true,
     minCh: 6,
+    gridCh: 18,
+    capCh: null,
   },
   delta: {
     align: 'end',
@@ -300,6 +332,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 3,
     groupable: false,
     minCh: 6,
+    gridCh: 16,
+    capCh: null,
   },
   meter: {
     align: 'start',
@@ -311,6 +345,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 3,
     groupable: false,
     minCh: 8,
+    gridCh: 18,
+    capCh: null,
   },
   boolean: {
     align: 'center',
@@ -322,6 +358,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 3,
     groupable: true,
     minCh: 3,
+    gridCh: 10,
+    capCh: null,
   },
   spark: {
     align: 'start',
@@ -333,6 +371,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 2,
     groupable: false,
     minCh: 10,
+    gridCh: 24,
+    capCh: null,
   },
   select: {
     align: 'start',
@@ -344,6 +384,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: 2,
     groupable: true,
     minCh: 8,
+    gridCh: 20,
+    capCh: null,
   },
   actions: {
     align: 'end',
@@ -355,6 +397,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: null,
     groupable: false,
     minCh: 0,
+    gridCh: null,
+    capCh: null,
   },
   custom: {
     align: 'start',
@@ -366,6 +410,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     priority: null,
     groupable: false,
     minCh: 4,
+    gridCh: null,
+    capCh: null,
   },
 }
 

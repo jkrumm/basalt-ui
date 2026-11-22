@@ -39,6 +39,7 @@ import {
   toInstant,
 } from './kinds-cells'
 import { KIND_DEFAULTS, KIND_SPEC } from './kinds-spec'
+import { KIND_ICONS } from './kind-icons'
 import type {
   Aggregate,
   Align,
@@ -76,8 +77,11 @@ export type CommonOptions = {
   card?: CardSlot
   /** `false` turns sorting off for this column. */
   sortable?: false
-  /** An icon drawn before the header text (any component with the `IconComponent` shape). */
-  headerIcon?: IconComponent
+  /**
+   * The icon drawn before the header text (any component with the `IconComponent` shape). Every kind
+   * but `custom` and `actions` draws its own by default; `false` draws none.
+   */
+  headerIcon?: IconComponent | false
 }
 
 /**
@@ -487,13 +491,11 @@ type Base<T> = {
   extra?: Partial<KindSpec<T>>
 }
 
-/** Room beside a header's text in `ch`: the sort mark, the gap and the column menu button. */
+/** Room beside a header's text in `ch`: the sort arrow and the filter mark it shows while it sorts or filters, with their gaps. */
 const HEADER_CHROME_CH = 5
 /** A header asks for floor room up to this many `ch`; a longer one truncates (its title shows it whole). */
 const HEADER_MAX_CH = 24
-/** A filterable header's extra room in `ch`: the filter button it shows at rest, 24 px and its 4 px gap. */
-const FILTER_MARK_CH = 4
-/** A header icon's room in `ch`: 14 px and its 6 px gap. */
+/** A header icon's room in `ch`: 16 px and its 6 px gap. */
 const HEADER_ICON_CH = 3
 /** A status icon is wider than the dot it replaces by this many `ch`. */
 const STATUS_ICON_EXTRA_CH = 1
@@ -514,6 +516,8 @@ function floorOf(width: Width, header: string, chrome: number = HEADER_CHROME_CH
 function build<T>(b: Base<T>): KindColumn<T> {
   const defaults = KIND_DEFAULTS[b.kind]
   const common = b.common ?? {}
+  const icon =
+    common.headerIcon === false ? undefined : (common.headerIcon ?? KIND_ICONS[b.kind] ?? undefined)
   const sort =
     common.sortable === false || defaults.sort === null || defaults.sort === 'declared'
       ? null
@@ -534,7 +538,7 @@ function build<T>(b: Base<T>): KindColumn<T> {
     id: b.id,
     kind: b.kind,
     header: b.header,
-    ...(common.headerIcon !== undefined && { headerIcon: common.headerIcon }),
+    ...(icon !== undefined && { headerIcon: icon }),
     ...(b.kind !== 'spark' && b.kind !== 'actions' && { search: searchOf(b) }),
     value: b.value,
     align: defaults.align,
@@ -550,11 +554,8 @@ function build<T>(b: Base<T>): KindColumn<T> {
     render,
     ...b.extra,
   }
-  // A header keeps room for its icon and its filter button, so no control ever cuts its label.
-  const chrome =
-    HEADER_CHROME_CH +
-    (spec.headerIcon === undefined ? 0 : HEADER_ICON_CH) +
-    (spec.filter === null ? 0 : FILTER_MARK_CH)
+  // A header keeps room for its icon and its state marks, so neither ever cuts its label.
+  const chrome = HEADER_CHROME_CH + (spec.headerIcon === undefined ? 0 : HEADER_ICON_CH)
   if (chrome !== HEADER_CHROME_CH) spec.width = floorOf(spec.width, b.header, chrome)
   const column: BuiltColumn<T> = { __brand: 'KindColumn', id: b.id, [KIND_SPEC]: spec }
   return column
@@ -826,14 +827,12 @@ export function col<T>(): Col<T> {
                 return isAbsent(value) ? 1 : (o?.labels?.[String(value)] ?? String(value)).length
               },
               short: {
-                // the header's own floor, with room for its icon and filter button as floorOf gives it
+                // the header's own floor, with room for its icon and state marks as floorOf gives it
                 minCh:
                   Math.min(
                     HEADER_MAX_CH,
                     (o?.header ?? humanize(o?.id ?? key)).length + HEADER_CHROME_CH,
-                  ) +
-                  (o?.headerIcon === undefined ? 0 : HEADER_ICON_CH) +
-                  (o?.filter === 'text' ? FILTER_MARK_CH : 0),
+                  ) + (o?.headerIcon === false ? 0 : HEADER_ICON_CH),
                 maxCh: SHORT_TEXT_MAX_CH,
               },
             },

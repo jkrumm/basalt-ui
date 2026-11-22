@@ -49,8 +49,10 @@ describe('table.css', () => {
   // columns tier's head and state wrapping into the card (expression cycle 18); 5,063 with the tighter head
   // controls and cell gutters in its four blocks (expression cycle 19); 5,177 with the entity name that wraps in a table tier
   // (three container blocks, expression cycle 19), 5,209 with the virtual tables it leaves out; 5,782 with the
-  // view's resize handle, row height, pinned edge shadow, row-number pin and footer pick (bench-table-view).
-  test('stays small: under 5,800 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(5800)
+  // view's resize handle, row height, pinned edge shadow, row-number pin and footer pick (bench-table-view);
+  // 6,234 with the rest state of an edit cell, the filler's lines in the grid and under the footer, and the
+  // card's drawn edit control (bench-table-rest).
+  test('stays small: under 6,300 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(6300)
   })
 })

@@ -27,7 +27,7 @@ describe('kind widths', () => {
 describe("entity width: 'content'", () => {
   const entity = c.entity('name', { width: 'content', sub: (r) => r.sub })
 
-  test('without a loaded width the column takes its floor and is no longer flexible', () => {
+  test('without a loaded width the column takes its floor', () => {
     const plan = planTable([entity], quiet)
     expect(plan.columns[0]?.widthPx).toBe(CONTENT_MIN_CH * CH_PX + CELL_PAD_PX)
   })
@@ -80,7 +80,8 @@ describe('text width: short values size the column', () => {
       ...quiet,
       ...(ch !== undefined && { contentCh: { ref: ch } }),
     }).columns[0]
-  const headerFloor = widthPx({ ch: 'Issue'.length + 5, flex: false })
+  // the header's chrome: the sort mark and the menu (5 ch), and the text kind's icon (3 ch)
+  const headerFloor = widthPx({ ch: 'Issue'.length + 8, flex: false })
 
   test('without loaded values the column keeps its kind width and stays flexible', () => {
     expect(widthAt(undefined)?.widthPx).toBe(widthPx({ ch: 16, flex: true }))
@@ -104,8 +105,8 @@ describe('text width: short values size the column', () => {
     expect(specOf(labelled).content?.measure({ ref: undefined as unknown as string })).toBe(1)
   })
 
-  test('an entity column is flexible unless it asks for its content', () => {
+  test('an entity column is flexible, with or without width: content', () => {
     expect(planTable([c.entity('name')], quiet).columns[0]?.flex).toBe(true)
-    expect(planTable([c.entity('name', { width: 'content' })], quiet).columns[0]?.flex).toBe(false)
+    expect(planTable([c.entity('name', { width: 'content' })], quiet).columns[0]?.flex).toBe(true)
   })
 })

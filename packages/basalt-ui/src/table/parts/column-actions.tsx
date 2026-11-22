@@ -6,11 +6,20 @@
  * `Filter...` and a ranked status column `Order categories...`; each opens its panel where the
  * caller anchors it (`DataTableHead` anchors both to the header cell).
  */
-import type { ReactElement, Ref } from 'react'
+import type { ReactElement, ReactNode, Ref } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
-import { Button } from '../../ui/button'
-import { Menu, MenuContent, MenuGroup, MenuItem, MenuSeparator, MenuTrigger } from '../../ui/menu'
+import { Button, Pressable } from '../../ui/button'
+import {
+  Menu,
+  MenuContent,
+  MenuGroup,
+  MenuItem,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuSeparator,
+  MenuTrigger,
+} from '../../ui/menu'
 import type { Aggregate, DataTableInstance } from '../contract'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
@@ -48,8 +57,12 @@ function reset<T>(model: TableModel<T>, column: string): void {
   model.state.setDisplay({ visibility })
 }
 
+const SORTS = ['asc', 'desc', 'none'] as const
+
 /**
- * The column menu of one header: sort ascending, descending or off, hide, reset.
+ * The column menu of one header: sort ascending, descending or none, filter, move, pin (grid), group
+ * and summarise, reset the width, hide, reset. With `children` the trigger is that content as one
+ * button (`DataTableHead` passes the header's icon, label and state marks); without, a caret button.
  *
  * @useWhen a bespoke head offers column actions from the column they act on
  * @neverWhen `DataTableHead` already offers them (it renders this menu), or for the actions column (it renders nothing)
@@ -61,6 +74,8 @@ export function ColumnActionsMenu<T>({
   table: instance,
   column,
   className,
+  children,
+  label,
   onFilter,
   onOrder,
   triggerRef,
@@ -70,6 +85,10 @@ export function ColumnActionsMenu<T>({
   column: string
   /** Layout of the trigger (where it sits in its header). */
   className?: string
+  /** The trigger's content (the header's label); absent, the trigger is a caret button. */
+  children?: ReactNode
+  /** The trigger's accessible name when `children` is given; default the column's header. */
+  label?: string
   /** Adds `Filter...`, which calls it: the caller opens the column's filter editor. */
   onFilter?: () => void
   /** Adds `Order categories...`, which calls it: the caller opens the column's order list. */
@@ -95,6 +114,8 @@ export function ColumnActionsMenu<T>({
   const at = peers.indexOf(column)
   const before = at > 0 ? peers[at - 1] : undefined
   const after = at >= 0 ? peers[at + 1] : undefined
+  const first = at > 0 ? peers[0] : undefined
+  const last = at >= 0 && at < peers.length - 1 ? peers.at(-1) : undefined
   const moveNext = (to: string | undefined): void => {
     if (to !== undefined) model.moveColumn(column, model.movable.indexOf(to))
   }
@@ -110,43 +131,58 @@ export function ColumnActionsMenu<T>({
     model.state.display.visibility[column] !== undefined
   return (
     <Menu>
-      <MenuTrigger
-        render={
-          <Button
-            {...(triggerRef !== undefined && { ref: triggerRef })}
-            size="sm"
-            shape="icon"
-            variant="ghost"
-            {...(className !== undefined && { className })}
-            aria-label={t('table.columnActions', spec.header)}
-          />
-        }
-      >
-        <svg viewBox="0 0 16 16" className="size-3" fill="currentColor" aria-hidden="true">
-          <path d="M3 5l5 6 5-6z" />
-        </svg>
-      </MenuTrigger>
+      {children === undefined ? (
+        <MenuTrigger
+          render={
+            <Button
+              {...(triggerRef !== undefined && { ref: triggerRef })}
+              size="sm"
+              shape="icon"
+              variant="ghost"
+              {...(className !== undefined && { className })}
+              aria-label={t('table.columnActions', spec.header)}
+            />
+          }
+        >
+          <svg viewBox="0 0 16 16" className="size-3" fill="currentColor" aria-hidden="true">
+            <path d="M3 5l5 6 5-6z" />
+          </svg>
+        </MenuTrigger>
+      ) : (
+        <MenuTrigger
+          data-slot="table-head-trigger"
+          render={
+            <Pressable
+              {...(triggerRef !== undefined && { ref: triggerRef })}
+              {...(className !== undefined && { className })}
+              aria-label={label ?? spec.header}
+            />
+          }
+        >
+          {children}
+        </MenuTrigger>
+      )}
       <MenuContent align="end">
         {sortable && (
           <>
-            <MenuItem
-              disabled={direction === 'asc'}
-              onClick={() => model.state.setRequest({ sort: [{ id: column, desc: false }] })}
+            <MenuRadioGroup
+              value={direction}
+              onValueChange={(next: (typeof SORTS)[number]) =>
+                model.state.setRequest({
+                  sort: next === 'none' ? [] : [{ id: column, desc: next === 'desc' }],
+                })
+              }
             >
-              {t('table.sortAsc')}
-            </MenuItem>
-            <MenuItem
-              disabled={direction === 'desc'}
-              onClick={() => model.state.setRequest({ sort: [{ id: column, desc: true }] })}
-            >
-              {t('table.sortDesc')}
-            </MenuItem>
-            <MenuItem
-              disabled={direction === 'none'}
-              onClick={() => model.state.setRequest({ sort: [] })}
-            >
-              {t('table.sortClear')}
-            </MenuItem>
+              {SORTS.map((sort) => (
+                <MenuRadioItem key={sort} value={sort} closeOnClick>
+                  {sort === 'asc'
+                    ? t('table.sortAsc')
+                    : sort === 'desc'
+                      ? t('table.sortDesc')
+                      : t('table.sortClear')}
+                </MenuRadioItem>
+              ))}
+            </MenuRadioGroup>
             <MenuSeparator />
           </>
         )}
@@ -168,6 +204,12 @@ export function ColumnActionsMenu<T>({
             </MenuItem>
             <MenuItem disabled={after === undefined} onClick={() => moveNext(after)}>
               {t('table.moveRight')}
+            </MenuItem>
+            <MenuItem disabled={first === undefined} onClick={() => moveNext(first)}>
+              {t('table.moveStart')}
+            </MenuItem>
+            <MenuItem disabled={last === undefined} onClick={() => moveNext(last)}>
+              {t('table.moveEnd')}
             </MenuItem>
             {model.look === 'grid' && (
               <MenuItem onClick={() => model.setPinned(column, !model.pinnedOf(column))}>
@@ -201,13 +243,13 @@ export function ColumnActionsMenu<T>({
             <MenuSeparator />
           </>
         )}
-        {hideable && (
-          <MenuItem onClick={() => hide(model, column)}>{t('table.hideColumn')}</MenuItem>
-        )}
         {widened && (
           <MenuItem onClick={() => model.setWidth(column, undefined)}>
             {t('table.resetWidth')}
           </MenuItem>
+        )}
+        {hideable && (
+          <MenuItem onClick={() => hide(model, column)}>{t('table.hideColumn')}</MenuItem>
         )}
         <MenuItem disabled={!touched} onClick={() => reset(model, column)}>
           {t('table.resetColumn')}

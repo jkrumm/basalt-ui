@@ -98,7 +98,10 @@ export const rows: readonly RowDef[] = [
     // window or page, previous and next through the rows) instead of the modal sheet, so the Peek, its window and
     // the panel anatomy join the table's closure.
     // 179500 -> 180000 (Issue 2996): 179831 B measured, +~330 B gz: the table's select cell draws `Checkbox`, whose module now also holds the card variant.
-    ceiling: 180000,
+    // 180000 -> 182000 (Issue 3017): +~1.1 KB gz for the table at rest (bench-table-rest): sixteen kind icons
+    // drawn as inline SVG, the one header menu with its sort radio group and moves to either end, and the
+    // inline select's F2 and Enter doors.
+    ceiling: 182000,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -124,6 +127,13 @@ export const raises: Raises = {
       to: 168000,
       consumer:
         "one control vocabulary (plan row bench-control-groups, Issue 2853): every control resolves its size and variant through the group scope, so the table's header editors and toolbar take a ControlGroup's size like any other control",
+      repo: 'basalt-ui',
+    },
+    {
+      from: 171300,
+      to: 173300,
+      consumer:
+        'the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md): a header at rest is an icon and a label with one menu, so every kind draws a header icon and the menu carries the sort and the moves the standing controls did (Issue 3017)',
       repo: 'basalt-ui',
     },
     {

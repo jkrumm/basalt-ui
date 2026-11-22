@@ -149,6 +149,8 @@ export type TableModel<T> = {
   pager: 'pages' | 'more' | 'none'
   /** How the table draws its rules; `grid` keeps every column and scrolls sideways. */
   look: 'reading' | 'grid'
+  /** Whether the headers draw their column icons (`headerIcons`, default on). */
+  headerIcons: boolean
   /** What a narrow table becomes (default `cards`, `scroll` for a grid) and the width it does so below. */
   phone: 'cards' | 'scroll' | 'columns'
   cardsBelow: 'regular' | 'wide' | 'always'
@@ -457,11 +459,13 @@ export function useDataTable<
       visibilityKey +
       JSON.stringify(contentCh) +
       JSON.stringify(widths) +
-      (preview === null ? '' : '|preview'),
+      (preview === null ? '' : '|preview') +
+      (options.look ?? 'reading'),
     display.visibility,
     contentCh,
     widths,
     preview !== null,
+    options.look ?? 'reading',
   )
   const look = options.look ?? 'reading'
   const tick = options.selection !== undefined
@@ -853,6 +857,7 @@ export function useDataTable<
     count: server ? countOf(mode) : matching,
     pager,
     look,
+    headerIcons: options.headerIcons !== false,
     phone: options.phone ?? (look === 'grid' ? 'scroll' : 'cards'),
     cardsBelow: options.cardsBelow ?? 'regular',
     cursor: server && 'cursor' in mode ? mode.cursor : undefined,
@@ -1054,9 +1059,10 @@ function usePlan<T>(
   contentCh: Record<string, number>,
   widths: Readonly<Record<string, number>>,
   previewing: boolean,
+  look: 'reading' | 'grid',
 ): TablePlan {
   // A drag re-plans on every pointer move: its dev warnings wait for the width it writes on release.
   const quiet = previewing ? { warn: () => {} } : {}
   // oxlint-disable-next-line react/exhaustive-deps -- `key` IS the shape of `columns`, `visibility`, `contentCh` and `widths`
-  return useMemo(() => planTable(columns, { visibility, contentCh, widths, ...quiet }), [key])
+  return useMemo(() => planTable(columns, { visibility, contentCh, widths, look, ...quiet }), [key])
 }

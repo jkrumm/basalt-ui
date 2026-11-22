@@ -134,14 +134,15 @@ function Subject(): ReactElement {
   )
 }
 
-/** Opens a column's ▾ menu and picks an item, by pointer. */
+/** Opens a column's header menu and picks an item, by pointer. */
 async function openByPointer(header: string, item: string): Promise<HTMLElement> {
-  fireEvent.click(screen.getByRole('button', { name: `${header} column actions` }))
+  const escaped = header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${escaped}(, |$)`) }))
   await settled()
   fireEvent.click(screen.getByRole('menuitem', { name: item }))
   await settled()
   return screen.getByRole('dialog', {
-    name: item === 'Filter...' ? `Filter ${header}` : `Order of ${header}`,
+    name: item === 'Filter column...' ? `Filter ${header}` : `Order of ${header}`,
   })
 }
 
@@ -158,25 +159,25 @@ describe('the header door opens every filterable kind', () => {
     ['Booked', (d: HTMLElement) => within(d).getByRole('button', { name: 'Booked range' })],
   ])('%s opens its editor from the header by pointer', async (header, control) => {
     render(<Subject />)
-    const dialog = await openByPointer(header, 'Filter...')
+    const dialog = await openByPointer(header, 'Filter column...')
     expect(control(dialog)).toBeTruthy()
   })
 
   test('a column with no filter offers no Filter item', async () => {
     render(<Subject />)
-    fireEvent.click(screen.getByRole('button', { name: 'Name column actions' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Name' }))
     await settled()
-    expect(screen.queryByRole('menuitem', { name: 'Filter...' })).toBeNull()
+    expect(screen.queryByRole('menuitem', { name: 'Filter column...' })).toBeNull()
   })
 
-  test('the keyboard opens the editor: Enter on the menu button, Enter on Filter..., Escape returns focus', async () => {
+  test('the keyboard opens the editor: Enter on the header button, Enter on Filter column..., Escape returns focus', async () => {
     render(<Subject />)
-    const trigger = screen.getByRole('button', { name: 'Amount (EUR) column actions' })
+    const trigger = screen.getByRole('button', { name: 'Amount (EUR)' })
     act(() => trigger.focus())
     fireEvent.keyDown(trigger, { key: 'Enter' })
     fireEvent.click(trigger)
     await settled()
-    const item = screen.getByRole('menuitem', { name: 'Filter...' })
+    const item = screen.getByRole('menuitem', { name: 'Filter column...' })
     act(() => item.focus())
     fireEvent.keyDown(item, { key: 'Enter' })
     fireEvent.click(item)
@@ -219,7 +220,7 @@ describe('the new operators filter rows', () => {
 
   test('the editors write the models: a preset, the picker, a checkbox, Yes', async () => {
     render(<Subject />)
-    let dialog = await openByPointer('Booked', 'Filter...')
+    let dialog = await openByPointer('Booked', 'Filter column...')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Last 7 days' }))
     expect(model().state.request.filters).toEqual([
       { id: 'at', op: 'range', values: ['2026-11-12', '2026-11-18'] },
@@ -229,7 +230,7 @@ describe('the new operators filter rows', () => {
     expect(model().state.request.filters[0]?.values).toEqual(['2026-10-01', '2026-10-31'])
     fireEvent.keyDown(dialog, { key: 'Escape' })
     await settled()
-    dialog = await openByPointer('Paid', 'Filter...')
+    dialog = await openByPointer('Paid', 'Filter column...')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Yes' }))
     expect(model().state.request.filters.find((f) => f.id === 'paid')).toEqual({
       id: 'paid',
@@ -242,7 +243,7 @@ describe('the new operators filter rows', () => {
   test('the checklist counts each value under the other filters', async () => {
     render(<Subject />)
     set([{ id: 'paid', op: 'anyOf', values: ['true'] }])
-    const dialog = await openByPointer('State', 'Filter...')
+    const dialog = await openByPointer('State', 'Filter column...')
     const count = (name: string) =>
       within(dialog)
         .getByRole('checkbox', { name: new RegExp(`^${name}\\b`) })
@@ -385,7 +386,7 @@ describe('category order', () => {
   test('the checklist lists a ranked column in its rank', async () => {
     render(<Subject />)
     act(() => model().setRank('state', ['Done', 'Open', 'Blocked']))
-    const dialog = await openByPointer('State', 'Filter...')
+    const dialog = await openByPointer('State', 'Filter column...')
     const names = within(dialog)
       .getAllByRole('checkbox')
       .map((box) => box.closest('label')?.textContent?.split(' ')[0])
@@ -396,7 +397,7 @@ describe('category order', () => {
 describe('one state behind the header, the chips and the sheet', () => {
   test('a filter set in the header shows as a chip, a header mark and a checked box in the sheet', async () => {
     render(<Subject />)
-    const dialog = await openByPointer('State', 'Filter...')
+    const dialog = await openByPointer('State', 'Filter column...')
     fireEvent.click(
       within(dialog)
         .getByRole('checkbox', { name: /^Done\b/ })
@@ -408,7 +409,7 @@ describe('one state behind the header, the chips and the sheet', () => {
     await settled()
     const chips = screen.getByRole('list', { name: 'Active filters' })
     expect(chips.textContent).toContain('State is Done')
-    const mark = screen.getByRole('button', { name: 'State filtered: Done. Edit filter' })
+    const mark = screen.getByRole('button', { name: 'State, filtered: Done' })
     fireEvent.click(screen.getByRole('button', { name: 'Filters (1)' }))
     await settled()
     const sheet = screen.getByRole('dialog', { name: 'Filters' })
@@ -422,8 +423,8 @@ describe('one state behind the header, the chips and the sheet', () => {
     expect(model().state.request.filters).toEqual([])
     // the filter button stays where it was, back at rest
     expect(mark.isConnected).toBe(true)
-    expect(mark.getAttribute('aria-label')).toBe('Filter State')
-    expect(mark.hasAttribute('data-active')).toBe(false)
+    expect(mark.getAttribute('aria-label')).toBe('State')
+    expect(mark.querySelector('[data-slot="table-filter-mark"]')).toBeNull()
     expect(
       within(sheet)
         .getByRole('checkbox', { name: /^Done\b/ })
@@ -431,14 +432,13 @@ describe('one state behind the header, the chips and the sheet', () => {
     ).toBe('false')
   })
 
-  test('the header mark opens the editor in one click and names the filter', async () => {
+  test('a filtered header names the filter, and its menu opens the editor', async () => {
     render(<Subject />)
     set([{ id: 'amount', op: 'range', values: ['10', '200'] }])
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Amount (EUR) filtered: €10.00 – €200.00. Edit filter' }),
-    )
-    await settled()
-    expect(screen.getByRole('dialog', { name: 'Filter Amount (EUR)' })).toBeTruthy()
+    expect(
+      screen.getByRole('button', { name: 'Amount (EUR), filtered: €10.00 – €200.00' }),
+    ).toBeTruthy()
+    await openByPointer('Amount (EUR)', 'Filter column...')
     expect(screen.getByRole('list', { name: 'Active filters' }).textContent).toContain(
       'Amount (EUR) €10.00 – €200.00',
     )

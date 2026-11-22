@@ -160,7 +160,7 @@ describe('moving a column', () => {
   test('from the column menu: Move right and Move left, disabled at the ends', async () => {
     const { container } = render(<Subject />)
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Amount (EUR) column actions' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Amount (EUR)' }))
     })
     expect(
       (await screen.findByRole('menuitem', { name: 'Move left' })).getAttribute('aria-disabled'),
@@ -175,7 +175,7 @@ describe('moving a column', () => {
     const { container } = render(<Subject />)
     act(() => model().state.setDisplay({ visibility: { state: false } }))
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Amount (EUR) column actions' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Amount (EUR)' }))
     })
     await act(async () => {
       fireEvent.click(await screen.findByRole('menuitem', { name: 'Move right' }))
@@ -251,7 +251,7 @@ describe('the grid look', () => {
   test('a pin from the menu draws the column pinned, after the name, at its offset', async () => {
     const { container } = render(<Subject look="grid" />)
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Note column actions' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Note' }))
     })
     await act(async () => {
       fireEvent.click(await screen.findByRole('menuitem', { name: 'Pin column' }))
@@ -266,7 +266,7 @@ describe('the grid look', () => {
   test('the reading look offers no pin', async () => {
     render(<Subject />)
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Note column actions' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Note' }))
     })
     expect(await screen.findByRole('menuitem', { name: 'Move left' })).toBeTruthy()
     expect(screen.queryByRole('menuitem', { name: 'Pin column' })).toBeNull()
