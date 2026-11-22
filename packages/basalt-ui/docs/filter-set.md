@@ -13,7 +13,10 @@ Draws a list of `spec(...)`s as pills in one row: each pill names its filter bes
 (`Region: All`), opens as a row form, and the tail that does not fit folds into `+N`. Below the
 `@regular` container the row becomes one `Filters (n)` button that opens a sheet. `n` counts the filters off their default (a multi that
 holds every option counts as none). The row ends with `Reset all` while any spec differs from its
-default, and the sheet has its own; either unsets them all. Inside a `ControlHome` the home's
+default, and the sheet has its own; either unsets them all. In the page bar three specs or more
+are one `Filter` trigger with the active count instead, keeping the view row one line: its
+popover groups an enum as chips and a multi as checkboxes, and its footer says `Showing N of M`
+from `match` beside `Reset all`. Inside a `ControlHome` the home's
 presentation applies: a `row` home draws the row forms stacked.
 
 ## Signature
@@ -21,6 +24,7 @@ presentation applies: a `row` home draws the row forms stacked.
 ```ts
 FilterSet(props: FilterSetProps): ReactElement | ReactNode
   specs: readonly FilterSpec<any, FilterScope>[]
+  match?: { shown: number; total: number; }  // The rows the filters keep, of all: the folded set's "Showing N of M"
 ```
 
 ## Example

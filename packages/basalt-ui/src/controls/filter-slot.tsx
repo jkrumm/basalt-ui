@@ -18,7 +18,7 @@ import type { ControlHandle, ControlsSlot } from '../core/ports'
 import { SlotHomeContext } from '../core/slot-home'
 import { Lozenge } from '../ui/badge'
 import { buttonVariants } from '../ui/button'
-import type { ControlPresentation, FilterScope, FilterSpec } from './contract'
+import type { ControlPresentation, FilterScope, FilterSetProps, FilterSpec } from './contract'
 import { ControlPresentationContext, ControlView } from './control-view'
 import { SpecFilterSet } from './filter-set-spec'
 import { describeValue } from './renderers'
@@ -73,7 +73,13 @@ function ResetAll({ specs }: { specs: readonly AnySpec[] }): ReactElement | null
   )
 }
 
-function SlotView({ specs }: { specs: readonly AnySpec[] }): ReactElement | null {
+function SlotView({
+  specs,
+  match,
+}: {
+  specs: readonly AnySpec[]
+  match: FilterSlotOptions['match']
+}): ReactElement | null {
   const presentation = use(ControlPresentationContext)
   const home = use(SlotHomeContext)
   // A pill home (`page-bar`, `section-header`) draws the folding `FilterSet`, except for one enum:
@@ -81,7 +87,7 @@ function SlotView({ specs }: { specs: readonly AnySpec[] }): ReactElement | null
   // make three.
   const loneEnum = specs.length === 1 && specs[0]?.handle.kind === 'enum'
   if (home !== undefined && presentation === 'pill' && !loneEnum)
-    return <SpecFilterSet specs={specs} />
+    return <SpecFilterSet specs={specs} match={match} />
   return (
     <>
       {specs.map((s) => (
@@ -158,10 +164,20 @@ function CustomView<T>({
   )
 }
 
+/** What `filterSlot` takes beside its specs. */
+export type FilterSlotOptions = {
+  /**
+   * The rows the filters keep, of all. In the page bar three filters or more fold into one
+   * `Filter` trigger whose popover says `Showing N of M` from it; build the slot in render to pass it.
+   */
+  match?: FilterSetProps['match']
+}
+
 /**
  * Typed data a composite takes its controls through. Specs render with `ControlView` in the
  * presentation of the home around them; in a pill home (`page-bar`, `section-header`) they draw as
- * `FilterSet`, so the measured fold and the phone's `Filters (n)` sheet apply; a `row` home with
+ * `FilterSet`, so the measured fold and the phone's `Filters (n)` sheet apply (three or more in the
+ * page bar: one `Filter` trigger, its popover counting `match`); a `row` home with
  * several specs adds `Reset all`. No specs, nothing drawn. The slot keeps its specs' scope in its type: a card (`StatCard`, `ChartCard`,
  * `DataPanel`) takes widget specs only, so a global or page spec in a card slot is a type error.
  *
@@ -174,12 +190,13 @@ function CustomView<T>({
 export function filterSlot<Scope extends FilterScope>(
   // oxlint-disable-next-line typescript/no-explicit-any -- the concept's `FilterSpec<any>[]`: handles of different `T` share one list
   specs: readonly FilterSpec<any, Scope>[],
+  options: FilterSlotOptions = {},
 ): ControlsSlot<Scope> & { readonly handles: readonly { readonly key: string }[] } {
   return {
     kind: 'controls-slot',
     count: specs.length,
     handles: specs.map((s) => s.handle),
-    render: () => (specs.length === 0 ? null : <SlotView specs={specs} />),
+    render: () => (specs.length === 0 ? null : <SlotView specs={specs} match={options.match} />),
   }
 }
 
