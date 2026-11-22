@@ -46,6 +46,19 @@ describe('StatGroup flush', () => {
     warn.mockRestore()
   })
 
+  test('a loading or failed cell keeps its slot; only a ready bare cell is dropped', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    render(
+      <StatGroup variant="flush" label="Invoices">
+        <StatCell label="Outstanding" value={186250} sub="33 invoices waiting" />
+        <StatCell label="Overdue" value={undefined} phase="loading" />
+        <StatCell label="Paid" value={undefined} phase={{ tag: 'error', message: 'down' }} />
+      </StatGroup>,
+    )
+    expect(document.querySelectorAll('[data-slot="stat-cell"]')).toHaveLength(3)
+    warn.mockRestore()
+  })
+
   test('a strip keeps a bare cell; only flush drops it', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     render(
