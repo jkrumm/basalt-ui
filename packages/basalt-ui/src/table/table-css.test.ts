@@ -46,8 +46,9 @@ describe('table.css', () => {
   // 4,450 until the `phone: 'columns'` tier (four container blocks, ~300 B) landed at 4,714; 4,803 with
   // the delta cell's clipped overflow and the columns tier's `!important` auto layout (expression cycle 16);
   // 4,872 with the mono id kept on one line in the four columns blocks (expression cycle 17); 4,930 with the
-  // columns tier's head and state wrapping into the card (expression cycle 18).
-  test('stays small: under 4,950 bytes gzipped', () => {
-    expect(gzipSync(SHEET).length).toBeLessThan(4950)
+  // columns tier's head and state wrapping into the card (expression cycle 18); 5,063 with the tighter head
+  // controls and cell gutters in its four blocks (expression cycle 19).
+  test('stays small: under 5,100 bytes gzipped', () => {
+    expect(gzipSync(SHEET).length).toBeLessThan(5100)
   })
 })
