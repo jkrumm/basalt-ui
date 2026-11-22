@@ -155,8 +155,11 @@ function ResizeHandle<T>({
     const moved = drag.current?.moved === true
     drag.current = null
     setActive(false)
-    if (commit && moved && next !== null) model.setWidth(spec.id, next)
-    else model.previewWidth(spec.id, null)
+    if (commit && moved && next !== null) return model.setWidth(spec.id, next)
+    model.previewWidth(spec.id, null)
+    // A cancelled drag hands the column back to the plan, and its value to the width drawn there.
+    const handle = event.currentTarget
+    if (moved) requestAnimationFrame(() => setDrawn(measure(handle)))
   }
   const onKeyDown = (event: KeyboardEvent<HTMLElement>): void => {
     const px = widthOn(event.currentTarget)
