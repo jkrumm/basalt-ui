@@ -61,10 +61,10 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | interval-track | IntervalTrack | differs | client:visible | 190.5 kB | 119.3 kB | 32.1 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 119.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | sparkline | Sparkline | clean | client:visible | 89.6 kB | 18.4 kB | 32.1 kB | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, up to 18.4 kB further (client:idle above the fold). |
 | band-strip | BandStrip | differs | client:visible | 184.8 kB | 113.6 kB | 32.1 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 113.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| data-table | DataTable | clean | client:visible | 307.7 kB | 236.5 kB | 30.1 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 236.5 kB further (client:idle above the fold). |
+| data-table | DataTable | clean | client:visible | 308.8 kB | 237.6 kB | 30.1 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 237.6 kB further (client:idle above the fold). |
 | static-table | Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption | clean | no directive | 84.7 kB | 13.5 kB | 30.1 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static table; the picture is the whole part. |
 | table-toolbar | TableToolbar, BulkBar, TablePager | clean | client:visible | 259.2 kB | 188.0 kB | 30.1 kB | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, up to 188.0 kB further (client:idle above the fold). |
-| data-table-body | DataTableBody | clean | client:visible | 302.6 kB | 231.4 kB | 30.1 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 231.4 kB further (client:idle above the fold). |
+| data-table-body | DataTableBody | clean | client:visible | 303.7 kB | 232.4 kB | 30.1 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 232.4 kB further (client:idle above the fold). |
 | markdown | Markdown | clean | client:visible | 215.4 kB | 144.2 kB | 30.1 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; mermaid fences need JS. client:visible, up to 144.2 kB further (client:idle above the fold). |
 | code-block | CodeBlock | clean | client:visible | 171.6 kB | 100.3 kB | 30.1 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; the copy button needs JS. client:visible, up to 100.3 kB further (client:idle above the fold). |
 | article-layout | ArticleLayout, Prose | clean | client:visible | 133.8 kB | 62.6 kB | 30.6 kB | Static picture first, the island adds behaviour: the scroll-spy TOC and reading progress need JS. client:visible, up to 62.6 kB further (client:idle above the fold). |
@@ -87,7 +87,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | app-shell | AppShell | fails | none works | 228.6 kB | 157.5 kB | 30.6 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
 | command-palette | CommandPalette | clean | client:visible | 168.5 kB | 97.2 kB | 30.1 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 97.2 kB further. |
 | controls | FilterSet, ViewTabs | fails | none works | 236.8 kB | 165.6 kB | 30.1 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
-| control-home | ControlHome, ControlView | fails | none works | 201.8 kB | 130.6 kB | 30.1 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
+| control-home | ControlHome, ControlView | fails | none works | 202.8 kB | 131.7 kB | 30.1 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | basalt-provider | BasaltProvider | clean | no directive | 83.4 kB | 12.2 kB | 30.1 kB | The static HTML is the whole part, 0 bytes of JavaScript: the provider only sets locale and scheme; a Button inside it is the whole picture. |
 | input | Input | clean | no directive | 84.4 kB | 13.2 kB | 30.1 kB | The static HTML is the whole part, 0 bytes of JavaScript: native typing; the field needs no script. |
 | textarea | Textarea | clean | no directive | 84.0 kB | 12.8 kB | 30.1 kB | The static HTML is the whole part, 0 bytes of JavaScript: native typing; the field grows with its content in CSS. |
@@ -117,10 +117,10 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | ui | 27 | 0 | 131.4 kB | 244.2 kB | 244.1 kB | 244.1 kB |
 | cards | 9 | 0 | 129.2 kB | 139.5 kB | 139.4 kB | 139.4 kB |
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
-| table | 4 | 0 | 308.0 kB | 312.9 kB | 312.9 kB | 312.9 kB |
+| table | 4 | 0 | 309.1 kB | 314.0 kB | 313.9 kB | 313.9 kB |
 | content | 5 | 0 | 271.7 kB | 272.9 kB | 272.9 kB | 272.9 kB |
-| page | 19 | 0 | 188.6 kB | 265.9 kB | 265.8 kB | 347.8 kB |
-| forms | 18 | 0 | 162.3 kB | 237.3 kB | 237.2 kB | 237.2 kB |
+| page | 19 | 0 | 188.6 kB | 265.9 kB | 265.8 kB | 348.9 kB |
+| forms | 18 | 0 | 163.5 kB | 239.3 kB | 239.2 kB | 239.2 kB |
 
 ## Charts: is the static picture correct?
 
@@ -183,10 +183,10 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - interval-track: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
 - sparkline: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
 - band-strip: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
-- data-table: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
+- data-table: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
 - static-table: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
 - table-toolbar: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
-- data-table-body: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
+- data-table-body: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
 - markdown: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
 - code-block: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
 - article-layout: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
@@ -209,7 +209,7 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - app-shell: the PageBar view row (Issue 2938): counted pill tabs, a search box, the Filter trigger fold, the layout toggle and view settings join the page bar, which the app shell and every page family page carry
 - command-palette: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
 - controls: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
-- control-home: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
+- control-home: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
 - basalt-provider: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
 - input: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
 - textarea: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
@@ -230,8 +230,9 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - form-layout: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
 - stepper: the PageBar view row (Issue 2938): its pill tabs, search box, Filter trigger, layout toggle and end fade add their classes to the shared stylesheet, and the page bar carries the view row into the app shell and every page family page
 - family ui: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
-- family table: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
-- family page: the PageBar view row (Issue 2938): counted pill tabs, a search box, the Filter trigger fold, the layout toggle and view settings join the page bar, which the app shell and every page family page carry
+- family table: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
+- family page: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
+- family forms: choice cards and the form parts (plan row bench-form-parts, Issue 2996): the checkbox and radio modules gain the card variant and the tile grid keys on size containers, a few dozen bytes of CSS in every part and a few hundred of JavaScript in the table and forms
 
 ## Findings
 
