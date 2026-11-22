@@ -85,7 +85,7 @@ function LayoutsRoute(): ReactElement {
           }),
       }),
       c.person('owner'),
-      c.money('arr', { header: 'ARR', currency: 'USD', footer: 'sum' }),
+      c.money('arr', { header: 'Revenue', currency: 'USD', footer: 'sum' }),
       c.date('since', { header: 'Customer since' }),
     ],
     data: accounts,
