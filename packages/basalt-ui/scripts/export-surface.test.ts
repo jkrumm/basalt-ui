@@ -185,7 +185,9 @@ describe('the committed shards', () => {
   })
 
   test('every `src/ui` module has its shard and no shard is left over', () => {
-    const modules = moduleFiles(join(SCRIPTS, '..')).map((f) => f.replace(/\.tsx$/, ''))
+    const modules = moduleFiles(join(SCRIPTS, '..'))
+      .map((f) => f.replace(/\.tsx$/, ''))
+      .toSorted()
     const shards = Object.keys(readShards(SHARDS))
       .filter((subpath) => subpath.startsWith('./ui/'))
       .map((subpath) => subpath.slice('./ui/'.length))

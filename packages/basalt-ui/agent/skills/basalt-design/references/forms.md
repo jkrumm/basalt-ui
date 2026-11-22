@@ -37,6 +37,14 @@ basalt binds TanStack Form; the app owns its schema and its save. Props are in t
 - A prefix or a unit outside the field edge (`https://`, `EUR`, a unit select) is an `InputGroup` with an `InputAddon`; the field's name says what the addon says ("Price in EUR").
 - A group sets `size` (and a ButtonGroup `variant`) for its children; a child that passes its own keeps it.
 
+## Parts for the common settings and sign-in screens
+
+- A choice with a hint, a price or a picture is `RadioGroup` or `CheckboxGroup` with `variant="card"` (stacked) or `"tile"` (a wrapping grid, a `preview` over the title); `trailing` is the value at the end of the title row. The selected card is told by its border; never restyle it with a fill.
+- A grid of yes or no per row and column (roles, notifications) is [CheckboxMatrix](node_modules/basalt-ui/docs/checkbox-matrix.md), not a hand-made table of checkboxes: it names every cell by its row and column and moves cell by cell on the arrow keys. A cell that cannot change is `locked` or `disabled` in `cellState`.
+- Free values (emails, keywords) are [TagInput](node_modules/basalt-ui/docs/tag-input.md): `validate` marks a failing tag as an invalid chip, never drops it, and a pasted list splits on its own.
+- A verification code is [OneTimeCode](node_modules/basalt-ui/docs/one-time-code.md); the error state is `aria-invalid` on the whole code and the message sits in the field's error, never per box.
+- One colour of the palette is [SwatchPicker](node_modules/basalt-ui/docs/swatch-picker.md) (tokens, never a colour value; `display="menu"` when the field has little room). Shortcut values for a field (Today, In 3 days) are [QuickPicks](node_modules/basalt-ui/docs/quick-picks.md) beside the field they write.
+
 ## Save
 
 - Two save models, never on one row: a row bound to a store control (`control=`) applies at once and has no footer; a section or page bound to a form (`field=`, `f.FormField`) saves through one floating unsaved bar. One save per form, never one per section of a larger form.

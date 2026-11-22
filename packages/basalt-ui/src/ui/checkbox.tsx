@@ -4,17 +4,29 @@ import { cva } from 'class-variance-authority'
 import { useId } from 'react'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
-import type { ChoiceOption } from './radio-group'
+import { ChoiceCard } from './choice-card'
+import type { ChoiceOption, ChoiceVariant } from './radio-group'
 
 /**
- * The `CheckboxGroup` cva table: the options stacked with one gap, wide enough on a coarse pointer
- * that no two 44 px hit areas overlap. No axes; display belongs to the table, so a caller never
+ * The `CheckboxGroup` cva table. `list` stacks the options with one gap, wide enough on a coarse
+ * pointer that no two 44 px hit areas overlap; `card` stacks choice cards; `tile` lays them in a
+ * wrapping grid for options with a preview. Display belongs to the table, so a caller never
  * re-lays the group out.
  *
  * @example
- * checkboxGroupVariants() // class string for a hand-built wrapper
+ * checkboxGroupVariants({ variant: 'card' }) // class string for a hand-built wrapper
  */
-export const checkboxGroupVariants = cva('flex flex-col gap-2 pointer-coarse:gap-7')
+export const checkboxGroupVariants = cva('', {
+  variants: {
+    variant: {
+      list: 'flex flex-col gap-2 pointer-coarse:gap-7',
+      card: 'flex flex-col gap-2',
+      // oxlint-disable-next-line basalt/tw-off-law -- tiles wrap by their own width (as many 9 rem columns as fit); the group has no container of its own to key a tier on
+      tile: 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,9rem),1fr))] gap-2',
+    },
+  },
+  defaultVariants: { variant: 'list' },
+})
 
 /**
  * The `Checkbox` cva table: a 16 px box with a check (or a dash when indeterminate). The root is a
@@ -41,13 +53,16 @@ type Layout<P> = Omit<P, 'className'> & {
 export type CheckboxGroupProps = Layout<BaseCheckboxGroup.Props> & {
   /** The choices, each a row with its label and description. When given, it replaces `children`. */
   options?: readonly ChoiceOption[]
+  /** `list` (default) is plain rows; `card` and `tile` draw each option as a `ChoiceCard`. Needs `options`. */
+  variant?: ChoiceVariant
 }
 export type CheckboxProps = Layout<Omit<BaseCheckbox.Root.Props, 'children'>>
 
 /**
  * A group of checkboxes on Base UI: the value is the list of checked options' `value`s. Works with
  * no provider and joins a Base UI `Field` when wrapped in one. Name each checkbox with a wrapping
- * `<label>`, or give `options` and each row is labelled and described for you.
+ * `<label>`, or give `options` and each row is labelled and described for you. `variant="card"` or
+ * `"tile"` draws the options as selectable cards.
  *
  * @example
  * <CheckboxGroup value={tags} onValueChange={setTags} aria-label="Tags"
@@ -59,6 +74,7 @@ export type CheckboxProps = Layout<Omit<BaseCheckbox.Root.Props, 'children'>>
  */
 export function CheckboxGroup({
   className,
+  variant = 'list',
   options,
   children,
   ...props
@@ -67,11 +83,14 @@ export function CheckboxGroup({
     <BaseCheckboxGroup
       {...props}
       data-slot="checkbox-group"
-      className={cn(checkboxGroupVariants(), className)}
+      data-variant={variant}
+      className={cn(checkboxGroupVariants({ variant }), className)}
     >
       {options === undefined
         ? children
-        : options.map((option) => <CheckboxOption key={String(option.value)} option={option} />)}
+        : options.map((option) => (
+            <CheckboxOption key={String(option.value)} option={option} variant={variant} />
+          ))}
     </BaseCheckboxGroup>
   )
 }
@@ -118,10 +137,27 @@ export function Checkbox({ className, ...props }: CheckboxProps): ReactElement {
  * One `options` row: the checkbox on the first text line, then the label and the description. The
  * label names the checkbox; the description describes it. The row is a `<label>`.
  */
-function CheckboxOption({ option }: { option: ChoiceOption }): ReactElement {
+function CheckboxOption({
+  option,
+  variant,
+}: {
+  option: ChoiceOption
+  variant: ChoiceVariant
+}): ReactElement {
   const labelId = useId()
   const descriptionId = useId()
   const hasDescription = option.description !== undefined
+  if (variant !== 'list') {
+    return (
+      <ChoiceCard
+        control={<Checkbox value={option.value} disabled={option.disabled ?? false} />}
+        label={option.label}
+        {...(option.description !== undefined && { description: option.description })}
+        {...(option.trailing !== undefined && { trailing: option.trailing })}
+        {...(option.preview !== undefined && { preview: option.preview })}
+      />
+    )
+  }
   return (
     <label className="flex items-start gap-2">
       <Checkbox

@@ -28,6 +28,8 @@
         "CardPhase": "div",
         "Checkbox": "div",
         "CheckboxGroup": "div",
+        "CheckboxMatrix": "div",
+        "ChoiceCard": "div",
         "Collapsible": "div",
         "CollapsibleContent": "div",
         "CollapsibleTrigger": "div",
@@ -79,6 +81,7 @@
         "NativeSelect": "select",
         "Num": "div",
         "NumberField": "input",
+        "OneTimeCode": "div",
         "PasswordInput": "input",
         "PopoverContent": "div",
         "PopoverTrigger": "div",
@@ -86,6 +89,7 @@
         "PreviewCardContent": "div",
         "PreviewCardTrigger": "div",
         "Progress": "div",
+        "QuickPicks": "div",
         "Radio": "div",
         "RadioGroup": "div",
         "ResizableHandle": "div",
@@ -112,6 +116,7 @@
         "Spinner": "div",
         "Status": "div",
         "Swatch": "div",
+        "SwatchPicker": "div",
         "Switch": "div",
         "Table": "table",
         "TableBody": "tbody",
@@ -124,6 +129,7 @@
         "TabsContent": "div",
         "TabsList": "div",
         "TabsTrigger": "div",
+        "TagInput": "div",
         "Textarea": "textarea",
         "Toast": "div",
         "ToastClose": "div",
@@ -312,6 +318,12 @@
             "message": "Card owns its height and display: eject it (basalt-ui eject card) to change them."
           },
           {
+            "pattern": "^CheckboxMatrix$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "CheckboxMatrix owns its height and display: eject it (basalt-ui eject checkbox-matrix) to change them."
+          },
+          {
             "pattern": "^CheckboxGroup$",
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
@@ -322,6 +334,12 @@
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
             "message": "Checkbox owns its height and display: eject it (basalt-ui eject checkbox) to change them."
+          },
+          {
+            "pattern": "^ChoiceCard$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "ChoiceCard owns its height and display: eject it (basalt-ui eject choice-card) to change them."
           },
           {
             "pattern": "^Combobox$",
@@ -504,6 +522,12 @@
             "message": "NumberField owns its height and display: use size (md, sm), or eject it (basalt-ui eject number-field)."
           },
           {
+            "pattern": "^OneTimeCode$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "OneTimeCode owns its height and display: eject it (basalt-ui eject one-time-code) to change them."
+          },
+          {
             "pattern": "^PopoverContent$",
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
@@ -520,6 +544,12 @@
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
             "message": "Ring owns its height and display: eject it (basalt-ui eject progress) to change them."
+          },
+          {
+            "pattern": "^QuickPicks$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "QuickPicks owns its height and display: eject it (basalt-ui eject quick-picks) to change them."
           },
           {
             "pattern": "^RadioGroup$",
@@ -630,6 +660,12 @@
             "message": "Swatch owns its height and display: eject it (basalt-ui eject status) to change them."
           },
           {
+            "pattern": "^SwatchPicker$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "SwatchPicker owns its height and display: eject it (basalt-ui eject swatch-picker) to change them."
+          },
+          {
             "pattern": "^Switch$",
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
@@ -646,6 +682,12 @@
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
             "message": "Tabs owns its height and display: use size (md, sm), or eject it (basalt-ui eject tabs)."
+          },
+          {
+            "pattern": "^TagInput$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "TagInput owns its height and display: eject it (basalt-ui eject tag-input) to change them."
           },
           {
             "pattern": "^Textarea$",
