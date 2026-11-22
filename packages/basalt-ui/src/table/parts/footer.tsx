@@ -144,10 +144,10 @@ export function DataTableFooter<T>({
                 (item ?? name)
               ) : (
                 <Pressable
-                  data-slot="table-footer-pick"
+                  data-footer-pick=""
                   data-quiet={quiet ? '' : undefined}
                   aria-label={`${t('table.summaryOf', spec.header === '' ? spec.id : spec.header)}: ${label(fn ?? 'none')}`}
-                  className="block w-full min-w-0 text-[inherit]"
+                  className="block w-full min-w-0 [text-align:inherit]"
                   onClick={() => model.setAggregate(spec.id, next)}
                 >
                   {item ?? (

@@ -129,9 +129,17 @@ describe('GroupRow', () => {
   test('a footer column reduces over the group, the table footer over every row', () => {
     const { container } = render(<Subject />)
     const [floor2, floor1] = groupRows(container)
-    expect(floor2?.querySelector('[data-kind="number"]')?.textContent).toBe('11')
-    expect(floor1?.querySelector('[data-kind="number"]')?.textContent).toBe('4')
+    expect(
+      floor2?.querySelector('[data-kind="number"] [data-slot="table-group-reduce"] > :last-child')
+        ?.textContent,
+    ).toBe('11')
+    expect(
+      floor1?.querySelector('[data-kind="number"] [data-slot="table-group-reduce"] > :last-child')
+        ?.textContent,
+    ).toBe('4')
     expect(container.querySelector('tfoot [data-kind="number"] dd')?.textContent).toBe('15')
+    // The group's reduce names itself, as the footer's does.
+    expect(floor2?.querySelector('[data-slot="table-group-reduce"]')?.textContent).toBe('Sum11')
   })
 
   test('collapse hides the rows of its group and never touches the request', async () => {
@@ -225,9 +233,15 @@ describe('GroupRow', () => {
     expect(dataRows(container)).toEqual(['Kitchen', 'Hall'])
     const [floor2, floor1] = groupRows(container)
     expect(floor2?.textContent).toContain('3 rows')
-    expect(floor2?.querySelector('[data-kind="number"]')?.textContent).toBe('11')
+    expect(
+      floor2?.querySelector('[data-kind="number"] [data-slot="table-group-reduce"] > :last-child')
+        ?.textContent,
+    ).toBe('11')
     expect(floor1?.textContent).toContain('2 rows')
-    expect(floor1?.querySelector('[data-kind="number"]')?.textContent).toBe('4')
+    expect(
+      floor1?.querySelector('[data-kind="number"] [data-slot="table-group-reduce"] > :last-child')
+        ?.textContent,
+    ).toBe('4')
   })
 
   test('an unknown group column throws naming it', () => {

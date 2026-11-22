@@ -16,7 +16,7 @@ import { TableCell, TableRow } from '../../ui/table'
 import { Absent, cellAttributes } from '../core/kinds-cells'
 import type { CellEnv } from '../core/kinds-spec'
 import type { TableModel } from '../use-data-table'
-import { drawAggregate } from './footer'
+import { drawAggregate, useAggregateLabel } from './footer'
 import { footerValue } from './footer-model'
 import type { BodyItem } from './group-row-model'
 import { alignProps, pinEdge, pinStyle, tierAttributes, visibleColumns } from './head'
@@ -65,6 +65,7 @@ export function GroupRow<T>({
   rowIndex?: number
 }): ReactElement {
   const t = useMessages(table)
+  const aggregateLabel = useAggregateLabel()
   const group = model.group
   const columns = visibleColumns(model.specs, model.plan.columns)
   const offset = model.lead.cols + 1
@@ -135,7 +136,23 @@ export function GroupRow<T>({
                 )}
               </span>
             ) : fn === undefined ? null : (
-              drawAggregate(spec, footerValue(spec, { kind: 'client', rows: members }, fn), env, fn)
+              // The reduce names itself, as the footer's does: a bare figure in a group row reads as a value.
+              <span
+                data-slot="table-group-reduce"
+                className="inline-flex min-w-0 items-baseline gap-1.5"
+              >
+                <span className="text-xs font-normal text-muted-foreground">
+                  {aggregateLabel(fn)}
+                </span>
+                <span className="min-w-0 truncate">
+                  {drawAggregate(
+                    spec,
+                    footerValue(spec, { kind: 'client', rows: members }, fn),
+                    env,
+                    fn,
+                  )}
+                </span>
+              </span>
             )}
           </TableCell>
         )
