@@ -32,6 +32,7 @@ import {
   RailControlProvider,
   ShellGrid,
   ShellMain,
+  ShellSurface,
   readAsideClaim,
   useAsideModel,
   useDockModel,
@@ -39,7 +40,7 @@ import {
   useRailState,
 } from './parts/grid'
 import type { AsideClaim } from './parts/grid'
-import { Header } from './parts/header'
+import { BrandZone, Header } from './parts/header'
 import { RailMount, TabBarMount } from './parts/mounts'
 import { usePrintScheme } from './parts/print'
 
@@ -79,7 +80,10 @@ function AsideSheet({ claim }: { claim: AsideClaim }): ReactElement {
 
 /**
  * The application frame: a header, a rail, the one scrollport, an aside region and, on a phone, a
- * tab bar, all projections of one `nav` declaration. It owns the markup (a CSS grid in
+ * tab bar, all projections of one `nav` declaration. Two planes: the frame carries the brand zone
+ * and the rail, one work surface carries the identity row (the crumb and the actions) and the page,
+ * with the aside and the dock inside it. `frame="panel"` (the default) insets and rounds that
+ * surface from `md` up; `frame="flush"` meets the window's edges, as every phone does. It owns the markup (a CSS grid in
  * `@layer basalt`), so there is nothing to override and nothing to fight. The crumb trail is the nav
  * section, then the page's `PageBar` `parent`, then its `title`; a selection such as
  * `/services?service=checkout` is `Fleet / Services / checkout` from
@@ -129,6 +133,7 @@ export function AppShell<Id extends string = string>({
   storageKey = DEFAULT_STORAGE_KEY,
   compactHeader = 'show',
   chrome = 'web',
+  frame = 'panel',
   children,
 }: AppShellProps<Id>): ReactElement {
   const router = useRouter()
@@ -203,6 +208,7 @@ export function AppShell<Id extends string = string>({
   useDocumentFrame()
   usePrintScheme()
 
+  const titlebar = chrome === 'native-overlay'
   const section = missing ? undefined : sectionLabelOf(declared, active.activeId)
   const leaf: ReactNode =
     breadcrumb ??
@@ -221,6 +227,23 @@ export function AppShell<Id extends string = string>({
       </>
     )
 
+  const header = (
+    <Header
+      brand={brand}
+      breadcrumb={trail}
+      globalControls={globalControls}
+      actions={actions}
+      globalActions={globalActions}
+      asideTrigger={
+        claim !== undefined && sizeClass === 'compact' && !emptyRecord(claim) ? (
+          <AsideSheet claim={claim} />
+        ) : null
+      }
+      sizeClass={sizeClass}
+      chrome={chrome}
+    />
+  )
+
   return (
     <ChromeHost chrome={chrome} host={shellHost.host}>
       <RailControlProvider value={rail}>
@@ -229,26 +252,15 @@ export function AppShell<Id extends string = string>({
             <ShellGrid
               rootRef={attachRoot}
               rail={rail.state}
+              frame={frame}
+              titlebar={titlebar}
               compactHeader={compactHeader}
               asideWidth={model.width}
               dockWidth={dockModel.width}
             >
               <SkipLink />
               <RouteAnnouncer message={announcement} />
-              <Header
-                brand={brand}
-                breadcrumb={trail}
-                globalControls={globalControls}
-                actions={actions}
-                globalActions={globalActions}
-                asideTrigger={
-                  claim !== undefined && sizeClass === 'compact' && !emptyRecord(claim) ? (
-                    <AsideSheet claim={claim} />
-                  ) : null
-                }
-                sizeClass={sizeClass}
-                chrome={chrome}
-              />
+              {titlebar ? header : <BrandZone brand={brand} />}
               <RailMount
                 runtime={runtime}
                 brand={brand}
@@ -258,9 +270,12 @@ export function AppShell<Id extends string = string>({
                 account={account}
                 search={search}
               />
-              <ShellMain pending={pending}>{children}</ShellMain>
-              <AsideRegion claim={regionClaim} model={model} regionRef={setOverlaySlot} />
-              <DockRegion model={dockModel} regionRef={setDockSlot} />
+              <ShellSurface titlebar={titlebar}>
+                {!titlebar && header}
+                <ShellMain pending={pending}>{children}</ShellMain>
+                <AsideRegion claim={regionClaim} model={model} regionRef={setOverlaySlot} />
+                <DockRegion model={dockModel} regionRef={setDockSlot} />
+              </ShellSurface>
               <TabBarMount
                 runtime={runtime}
                 badges={badges as AppShellProps['badges']}

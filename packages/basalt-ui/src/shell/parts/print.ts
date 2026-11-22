@@ -11,6 +11,10 @@ import { useEffect } from 'react'
 /** The root: a block that grows with its content. */
 export const PRINT_FRAME = 'print:block print:h-auto print:overflow-visible'
 
+/** The work surface: a plain block with no inset, edge or clip. */
+export const PRINT_SURFACE =
+  'print:m-0 print:block print:h-auto print:overflow-visible print:rounded-none print:border-0'
+
 /** `Main`: unclipped, so every row of a long table reaches the printer. */
 export const PRINT_MAIN = 'print:block print:h-auto print:overflow-visible'
 

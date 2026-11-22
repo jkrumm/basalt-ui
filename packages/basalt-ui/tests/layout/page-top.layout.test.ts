@@ -113,7 +113,7 @@ async function measure(viewport: Viewport, route: string, asideWidth?: number): 
       firstContentTop: first.getBoundingClientRect().top,
       gutter: parseFloat(getComputedStyle(main).paddingLeft),
       banded: band !== null,
-      headerRule: parseFloat(rule.height) > 0 ? parseFloat(rule.width) : 0,
+      headerRule: rule.display === 'none' ? 0 : parseFloat(rule.width) || 0,
       // Main starts where the rail ends: its left edge is the rail's width.
       railWidth: shellMain === null ? 0 : shellMain.getBoundingClientRect().left,
       headerWidth: header.getBoundingClientRect().width,
@@ -137,8 +137,8 @@ layout('the page top on the playground', () => {
           const m = await measure(viewport, route)
           expect(m.banded, 'the page has a band').toBe(true)
           expect(m.bandRule, 'the band draws the one rule').toBe(1)
-          expect(m.headerRule, "the header's rule covers the rail only").toBeLessThanOrEqual(
-            m.railWidth + 0.5,
+          expect(m.headerRule, "the header draws no rule over a band: the band's is the one").toBe(
+            0,
           )
           expect(m.firstContentTop - m.chromeBottom).toBeCloseTo(m.gutter, 0)
         })

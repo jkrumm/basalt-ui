@@ -123,7 +123,7 @@ export function FormFooter<const A extends readonly FormAction[]>({
       {...(dirty && { 'data-dirty': '' })}
       className={cn(
         'flex flex-col gap-2',
-        sticky && 'sticky bottom-0 z-10 border-t border-border bg-background py-3',
+        sticky && 'sticky bottom-0 z-10 border-t border-border bg-surface py-3',
         className,
       )}
     >

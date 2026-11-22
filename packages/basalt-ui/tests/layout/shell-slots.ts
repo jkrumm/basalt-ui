@@ -119,5 +119,21 @@ export const SHELL_GEOMETRY =
         railExpanded: SPACE_STEP.appShellNavbarWidth,
         railCollapsed: SPACE_STEP.appShellNavbarRailWidth,
         brandInsetExpanded: 20,
+        panelInset: 0,
+        panelEdge: 0,
       }
-    : { headerHeight: 48, railExpanded: 240, railCollapsed: 64, brandInsetExpanded: 16 }
+    : {
+        headerHeight: 48,
+        railExpanded: 240,
+        railCollapsed: 64,
+        brandInsetExpanded: 16,
+        // The work surface's panel from md up: an 8 px inset on its three free sides; its edge is an
+        // outset ring in that inset, so it takes no pixel from the rows inside.
+        panelInset: 8,
+        panelEdge: 0,
+      }
+
+/** What the panel takes off main's width from md up: the end inset and the two edges. */
+export const PANEL_WIDTH_LOSS = SHELL_GEOMETRY.panelInset + 2 * SHELL_GEOMETRY.panelEdge
+/** Where the surface's inner end edge sits from the window's end, from md up. */
+export const PANEL_END = SHELL_GEOMETRY.panelInset + SHELL_GEOMETRY.panelEdge

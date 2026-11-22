@@ -10,7 +10,7 @@
 import { acquireShellTarget } from './shell-target'
 import { afterAll, describe, expect, test } from 'bun:test'
 import type { ShellFrameSpec } from './fixture/v3/scenarios/shell-frame'
-import { LAYOUT_TARGET } from './shell-slots'
+import { LAYOUT_TARGET, PANEL_END, PANEL_WIDTH_LOSS } from './shell-slots'
 import {
   DESKTOP_1440,
   LAPTOP_1024,
@@ -56,10 +56,10 @@ layout('Dock over the shell at 1440', () => {
     const main = (await page.box('main', MAIN)).box
     near(dock.top, header.bottom)
     near(dock.bottom, main.bottom)
-    near(dock.right, DESKTOP_1440.width)
+    near(dock.right, DESKTOP_1440.width - PANEL_END)
     near(dock.width, DOCK_PX)
     near(main.right, dock.left)
-    near(main.width, DESKTOP_1440.width - RAIL_EXPANDED - DOCK_PX)
+    near(main.width, DESKTOP_1440.width - RAIL_EXPANDED - PANEL_WIDTH_LOSS - DOCK_PX)
     expect(await page.count(`${REGION}[data-state="docked"] ${DOCK}`)).toBe(1)
     near((await page.box('region', REGION)).box.width, DOCK_PX)
     near((await page.box('aside', ASIDE)).box.width, 0)
@@ -68,7 +68,10 @@ layout('Dock over the shell at 1440', () => {
   test('closed it reserves nothing: main takes the whole content area', async () => {
     const page = await openFixture(specOf({ dock: 'toggle' }), DESKTOP_1440)
     near((await page.box('region', REGION)).box.width, 0)
-    near((await page.box('main', MAIN)).box.width, DESKTOP_1440.width - RAIL_EXPANDED)
+    near(
+      (await page.box('main', MAIN)).box.width,
+      DESKTOP_1440.width - RAIL_EXPANDED - PANEL_WIDTH_LOSS,
+    )
     expect(await page.count(DOCK)).toBe(0)
   })
 
@@ -117,7 +120,10 @@ layout('Dock over the shell at 1440', () => {
     expect(await page.raw.evaluate(() => 'dockClosed' in document.documentElement.dataset)).toBe(
       true,
     )
-    near((await page.box('main', MAIN)).box.width, DESKTOP_1440.width - RAIL_EXPANDED)
+    near(
+      (await page.box('main', MAIN)).box.width,
+      DESKTOP_1440.width - RAIL_EXPANDED - PANEL_WIDTH_LOSS,
+    )
   })
 })
 
@@ -134,8 +140,8 @@ layout('Dock beside a docked PageAside', () => {
     near(dock.width, DOCK_PX)
     near(main.right, aside.left)
     near(aside.right, dock.left)
-    near(dock.right, WIDE.width)
-    near(main.width, WIDE.width - RAIL_EXPANDED - 360 - DOCK_PX)
+    near(dock.right, WIDE.width - PANEL_END)
+    near(main.width, WIDE.width - RAIL_EXPANDED - PANEL_WIDTH_LOSS - 360 - DOCK_PX)
   })
 })
 
@@ -148,9 +154,9 @@ layout('Dock with no room', () => {
     const main = (await page.box('main', MAIN)).box
     expect(await page.count(`${REGION}[data-state="overlay"] ${DOCK}`)).toBe(1)
     near(main.width, full)
-    near(main.width, LAPTOP_1024.width - RAIL_MEDIUM)
+    near(main.width, LAPTOP_1024.width - RAIL_MEDIUM - PANEL_WIDTH_LOSS)
     near((await page.box('region', REGION)).box.width, 0)
-    near(dock.right, LAPTOP_1024.width)
+    near(dock.right, LAPTOP_1024.width - PANEL_END)
     near(dock.width, DOCK_PX)
     expect(dock.left).toBeLessThan(main.right)
   })
@@ -192,7 +198,7 @@ async function sampleMain(
   )
 }
 
-const START = DESKTOP_1440.width - RAIL_EXPANDED
+const START = DESKTOP_1440.width - RAIL_EXPANDED - PANEL_WIDTH_LOSS
 const END = START - DOCK_PX
 
 layout('Dock motion', () => {

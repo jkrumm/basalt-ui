@@ -80,7 +80,7 @@ export function Rail({
     <nav
       data-slot="shell-rail"
       aria-label={SHELL_TEXT.primary}
-      className="@container flex h-full min-h-0 flex-col border-e border-border"
+      className="@container flex h-full min-h-0 flex-col"
     >
       <div
         data-slot="shell-rail-viewport"

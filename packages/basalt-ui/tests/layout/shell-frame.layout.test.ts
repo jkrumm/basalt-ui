@@ -17,7 +17,7 @@ import { afterAll, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { providedSlots } from './fixture/v3/registry'
 import type { ShellFrameSpec } from './fixture/v3/scenarios/shell-frame'
-import { LAYOUT_TARGET, S } from './shell-slots'
+import { LAYOUT_TARGET, PANEL_WIDTH_LOSS, S, SHELL_GEOMETRY } from './shell-slots'
 import {
   DESKTOP_1440,
   LAPTOP_1024,
@@ -63,6 +63,35 @@ const VIEWPORTS: readonly { viewport: Viewport; gutter: number; rail: number }[]
   { viewport: LAPTOP_1024, gutter: 16, rail: 64 },
   { viewport: PHONE, gutter: 8, rail: 0 },
 ]
+
+/** The work surface as laid out: its outer box, its inner top, its edges and the two planes' colours. */
+async function surfaceOf(p: LayoutPage) {
+  return p.raw.evaluate(() => {
+    const el = document.querySelector<HTMLElement>('[data-slot="shell-surface"]')
+    const root = document.querySelector<HTMLElement>('[data-slot="shell"]')
+    const rail = document.querySelector<HTMLElement>('[data-slot="shell-rail"]')
+    if (el === null || root === null || rail === null) throw new Error('LAYOUT: no shell surface')
+    const r = el.getBoundingClientRect()
+    const s = getComputedStyle(el)
+    return {
+      top: r.top,
+      left: r.left,
+      right: r.right,
+      bottom: r.bottom,
+      innerTop: r.top + el.clientTop,
+      innerLeft: r.left + el.clientLeft,
+      innerRight: r.left + el.clientLeft + el.clientWidth,
+      radius: parseFloat(s.borderTopLeftRadius),
+      edges: [s.borderTopWidth, s.borderRightWidth, s.borderBottomWidth, s.borderLeftWidth].map(
+        (w) => parseFloat(w),
+      ),
+      ring: s.boxShadow,
+      surface: s.backgroundColor,
+      frame: getComputedStyle(root).backgroundColor,
+      railEdge: parseFloat(getComputedStyle(rail).borderRightWidth) || 0,
+    }
+  })
+}
 
 /** The one pixel the band and the header each draw their seam on, plus sub-pixel layout. */
 const SEAM_TOLERANCE = 1
@@ -120,7 +149,8 @@ layout('AppShell frame — real layout', () => {
         const p = await openFixture(specOf(), viewport)
         const header = await p.box('header', HEADER)
         expect(header.box.height).toBe(48)
-        expect(header.box.top).toBe(0)
+        // The header is the work surface's first row.
+        expect(header.box.top).toBe((await surfaceOf(p)).innerTop)
         const root = await p.box('root', ROOT)
         expect(root.box.height).toBe(viewport.height)
         expect(parseFloat(await p.computed(PAGE_MAIN, 'padding-left'))).toBe(gutter)
@@ -239,7 +269,7 @@ layout('AppShell frame — real layout', () => {
     expect(await p.raw.getAttribute(ASIDE, 'data-state')).toBe('overlay')
     expect((await p.box('aside', ASIDE)).box.width).toBe(0)
     const main = await p.box('main', MAIN)
-    expect(main.box.width).toBe(1024 - 64)
+    expect(main.box.width).toBe(1024 - 64 - PANEL_WIDTH_LOSS)
     expect(await p.count(`${ASIDE} ${slot('page-aside')}`)).toBe(1)
   })
 
@@ -247,7 +277,7 @@ layout('AppShell frame — real layout', () => {
     const p = await openFixture(specOf({ aside: { dock: 'always', width: 320 } }), LAPTOP_1024)
     expect(await p.raw.getAttribute(ASIDE, 'data-state')).toBe('docked')
     expect((await p.box('aside', ASIDE)).box.width).toBe(320)
-    expect((await p.box('main', MAIN)).box.width).toBe(1024 - 64 - 320)
+    expect((await p.box('main', MAIN)).box.width).toBe(1024 - 64 - PANEL_WIDTH_LOSS - 320)
   })
 
   test('a phone gets the aside as a sheet behind a header trigger, not a column', async () => {
@@ -356,5 +386,89 @@ layout('AppShell frame — real layout', () => {
     ).length
     // 3200 px of rows cannot fit fewer than three A4 pages.
     expect(pages).toBeGreaterThanOrEqual(3)
+  })
+})
+
+layout('the two planes: the rail on the frame, one work surface for the page', () => {
+  const INSET = SHELL_GEOMETRY.panelInset
+  const CARD_RADIUS = 14
+
+  for (const scheme of ['light', 'dark'] as const) {
+    for (const { viewport, rail } of VIEWPORTS) {
+      test(`${scheme} ${viewport.name}: ${rail === 0 ? 'flush' : 'a panel'} on a frame of another colour, no hairline on the rail`, async () => {
+        const p = await openFixture(specOf(), viewport)
+        await p.raw.evaluate((s) => document.documentElement.setAttribute('data-theme', s), scheme)
+        const g = await surfaceOf(p)
+        expect(g.surface, 'the surface and the frame are two colours').not.toBe(g.frame)
+        expect(g.railEdge, 'the rail draws no hairline: the planes divide it').toBe(0)
+        const header = (await p.box('header', HEADER)).box
+        expect(
+          header.left,
+          'the identity row starts on the surface, past the rail',
+        ).toBeGreaterThanOrEqual(g.left)
+        if (rail === 0) {
+          expect([g.top, g.left, g.radius]).toEqual([0, 0, 0])
+          expect(g.right).toBe(viewport.width)
+          expect(g.edges).toEqual([0, 0, 0, 0])
+          expect(g.ring).toBe('none')
+          return
+        }
+        expect(g.left, 'no inset on the rail side').toBe(rail)
+        expect(g.top).toBe(INSET)
+        expect(viewport.width - g.right).toBe(INSET)
+        expect(viewport.height - g.bottom).toBe(INSET)
+        expect(g.radius).toBe(CARD_RADIUS)
+        expect(g.edges, 'the edge is a ring, not a border').toEqual([0, 0, 0, 0])
+        expect(g.ring).toMatch(/0px 0px 0px 1px/)
+      })
+    }
+  }
+
+  test('flush meets the window on every side, with one hairline toward the rail', async () => {
+    const p = await openFixture(specOf({ frame: 'flush' }), DESKTOP_1440)
+    const g = await surfaceOf(p)
+    expect([g.top, g.left, g.right, g.bottom, g.radius]).toEqual([
+      0,
+      240,
+      1440,
+      DESKTOP_1440.height,
+      0,
+    ])
+    expect(g.edges).toEqual([0, 0, 0, 1])
+    expect((await p.box('header', HEADER)).box.top).toBe(0)
+  })
+
+  test('a fill page runs its table to the surface edges with no card and no gutter', async () => {
+    for (const viewport of [DESKTOP_1440, PHONE]) {
+      const p = await openFixture(specOf({ fill: true }), viewport)
+      const g = await surfaceOf(p)
+      const table = (await p.box('table', slot('table-root'))).box
+      expect(Math.abs(table.left - g.innerLeft)).toBeLessThanOrEqual(SEAM_TOLERANCE)
+      expect(Math.abs(table.right - g.innerRight)).toBeLessThanOrEqual(SEAM_TOLERANCE)
+      expect(await p.count(`${slot('card')} ${slot('table-root')}`)).toBe(0)
+      expect(parseFloat(await p.computed(PAGE_MAIN, 'padding-left'))).toBe(0)
+      const band = (await p.box('band', BAND)).box
+      expect(Math.abs(table.top - band.bottom)).toBeLessThanOrEqual(SEAM_TOLERANCE)
+    }
+  })
+
+  test('a padded page keeps the gutter and its card reads by a hairline ring on the surface colour', async () => {
+    const p = await openFixture(specOf({ card: true }), DESKTOP_1440)
+    const card = await p.raw.evaluate(() => {
+      const el = document.querySelector<HTMLElement>('[data-slot="card"]')
+      const surface = document.querySelector<HTMLElement>('[data-slot="shell-surface"]')
+      if (el === null || surface === null) throw new Error('LAYOUT: no card')
+      const s = getComputedStyle(el)
+      return {
+        bg: s.backgroundColor,
+        surface: getComputedStyle(surface).backgroundColor,
+        shadow: s.boxShadow,
+        border: parseFloat(s.borderTopWidth) || 0,
+      }
+    })
+    expect(card.bg, 'no ground contrast: the card is the surface colour').toBe(card.surface)
+    expect(card.shadow, 'the ring is the card shadow').toMatch(/0px 0px 0px 1px/)
+    expect(card.border, 'one edge: no border beside the ring').toBe(0)
+    expect(parseFloat(await p.computed(PAGE_MAIN, 'padding-left'))).toBe(24)
   })
 })

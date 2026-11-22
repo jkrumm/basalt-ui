@@ -1,15 +1,24 @@
 /**
- * The frame: one CSS grid of five areas, owned here and nowhere else (concept section 1, decision 1).
+ * The frame: two planes, owned here and nowhere else (concept section 1, decision 1). The frame
+ * (`canvas`) holds the brand zone and the rail; the work surface (`card`) holds the identity row, main,
+ * the aside and the dock, and clips them to its corners:
  *
- *     header  header  header  header
- *     rail    main    aside   dock
- *     footer  footer  footer  footer
+ *     brand   surface            surface:  header  header  header
+ *     rail    surface                      main    aside   dock
+ *     footer  footer
+ *
+ * Under `chrome="native-overlay"` the header is the window's title bar and stays on the frame, a full
+ * row above the rail and the surface. `frame="panel"` insets the surface from `md` up (`--shell-inset`,
+ * none on the rail side), rounds it and draws its hairline; `flush` and every compact screen draw it
+ * edge to edge with one hairline on the rail side.
  *
  * The root is `h-dvh` and the document never scrolls: `Main` is the one scrollport and carries the
- * `<main>` landmark. Five custom properties are the frame's whole public geometry, set on the root
+ * `<main>` landmark. These custom properties are the frame's whole public geometry, set on the root
  * and read by the parts and by a page:
  *
  * - `--shell-header-h`: one height at every width (48), shorter on a landscape phone.
+ * - `--shell-inset`: the surface's margin from the window on its three free sides; 8 for a panel from
+ *   `md` up, else 0.
  * - `--shell-rail-w`: 0 compact, 64 medium, 240 expanded; `data-rail` overrides it once the user
  *   toggled the rail (`auto` is the CSS default, so server HTML is right for anyone who never did).
  * - `--shell-aside-w`: 0 while no `PageAside` is mounted, no 1 px ghost.
@@ -37,10 +46,10 @@ import { cn } from '../../core/cn'
 import { persisted } from '../../core/persisted'
 import { DOCK_WIDTH, asideDockQuery, resolveAsideDocking } from '../../page/core/docking'
 import type { AsideDock, AsideSheetState } from '../../page/core/docking'
-import type { SizeClass } from '../contract'
+import type { ShellFrame, SizeClass } from '../contract'
 import { MOTION_DURATION_MS } from '../../tokens/motion'
 import { SHELL_MAIN_ID } from './a11y'
-import { PRINT_FRAME, PRINT_MAIN, PRINT_OFF } from './print'
+import { PRINT_FRAME, PRINT_MAIN, PRINT_OFF, PRINT_SURFACE } from './print'
 
 // ---- Rail state ---------------------------------------------------------------------------------
 
@@ -132,6 +141,9 @@ type RootStyle = CSSProperties & { '--shell-aside-w': string; '--shell-dock-w': 
 export type ShellGridProps = {
   rootRef: (el: HTMLDivElement | null) => void
   rail: RailState
+  frame: ShellFrame
+  /** The header is the window's title bar, a row of the frame above the rail and the surface. */
+  titlebar: boolean
   compactHeader: 'show' | 'hidden'
   /** The width the aside region reserves, in px. */
   asideWidth: number
@@ -178,10 +190,12 @@ function useDockShift(dockWidth: number): boolean {
   return shifting
 }
 
-/** The root element: the grid, its four geometry properties and the print fallback. */
+/** The root element: the frame's grid, its geometry properties and the print fallback. */
 export function ShellGrid({
   rootRef,
   rail,
+  frame,
+  titlebar,
   compactHeader,
   asideWidth,
   dockWidth,
@@ -198,18 +212,63 @@ export function ShellGrid({
       data-slot="shell"
       data-dock-shift={shifting ? '' : undefined}
       data-rail={rail}
+      data-frame={frame}
+      data-titlebar={titlebar ? '' : undefined}
       data-compact-header={compactHeader}
       style={style}
       className={cn(
-        'group/shell grid h-dvh w-full grid-cols-[var(--shell-rail-w)_minmax(0,1fr)_var(--shell-aside-w)_var(--shell-dock-w)] grid-rows-[var(--shell-header-h)_minmax(0,1fr)_auto] bg-background font-sans text-foreground [grid-template-areas:"header_header_header_header"_"rail_main_aside_dock"_"footer_footer_footer_footer"]',
-        'motion-safe:data-dock-shift:transition-[grid-template-columns] motion-safe:data-dock-shift:duration-slow motion-safe:data-dock-shift:ease-standard',
-        '[--shell-header-h:--spacing(12)] [--shell-rail-w:0px] [--shell-gutter:--spacing(2)]',
+        'group/shell grid h-dvh w-full grid-cols-[var(--shell-rail-w)_minmax(0,1fr)] grid-rows-[var(--shell-top-h)_minmax(0,1fr)_auto] bg-background font-sans text-foreground',
+        titlebar
+          ? '[grid-template-areas:"header_header"_"rail_surface"_"footer_footer"] [--shell-top-h:var(--shell-header-h)]'
+          : '[grid-template-areas:"brand_surface"_"rail_surface"_"footer_footer"] [--shell-top-h:0px] md:[--shell-top-h:calc(var(--shell-header-h)_+_var(--shell-inset))]',
+        '[--shell-header-h:--spacing(12)] [--shell-rail-w:0px] [--shell-gutter:--spacing(2)] [--shell-inset:0px]',
+        'data-[frame=panel]:md:[--shell-inset:--spacing(2)]',
         'md:[--shell-rail-w:--spacing(16)] md:[--shell-gutter:--spacing(4)]',
         'xl:[--shell-rail-w:--spacing(60)] xl:[--shell-gutter:--spacing(6)]',
         'data-[rail=expanded]:md:[--shell-rail-w:--spacing(60)] data-[rail=collapsed]:md:[--shell-rail-w:--spacing(16)] data-[rail=collapsed]:xl:[--shell-rail-w:--spacing(16)]',
         '[@media(max-height:30rem)_and_(orientation:landscape)]:max-md:[--shell-header-h:clamp(2.25rem,9dvh,3rem)]',
         'data-[compact-header=hidden]:max-md:[--shell-header-h:0px]',
         PRINT_FRAME,
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+/**
+ * The work surface: one plane in the card colour holding the identity row, main, the aside and the
+ * dock, a grid of its own. It clips, so an aside or a dock panel ends at its corners. Its columns
+ * ease while a dock opens or closes (`data-dock-shift` on the root).
+ */
+export function ShellSurface({
+  titlebar,
+  children,
+}: {
+  /** The header sits on the frame above, so the surface has no header row. */
+  titlebar: boolean
+  children: ReactNode
+}): ReactElement {
+  return (
+    <div
+      data-slot="shell-surface"
+      data-surface="card"
+      className={cn(
+        'relative grid min-h-0 min-w-0 overflow-clip bg-card [grid-area:surface]',
+        'grid-cols-[minmax(0,1fr)_var(--shell-aside-w)_var(--shell-dock-w)]',
+        titlebar
+          ? 'grid-rows-[minmax(0,1fr)] [grid-template-areas:"main_aside_dock"]'
+          : 'grid-rows-[var(--shell-header-h)_minmax(0,1fr)] [grid-template-areas:"header_header_header"_"main_aside_dock"]',
+        'motion-safe:group-data-dock-shift/shell:transition-[grid-template-columns] motion-safe:group-data-dock-shift/shell:duration-slow motion-safe:group-data-dock-shift/shell:ease-standard',
+        // Panel: inset on the three free sides, rounded, one hairline drawn as an outset ring in the
+        // inset, so the edge costs the rows inside no pixel. Flush: one hairline on the rail side,
+        // where the frame's colour meets the surface's.
+        'border-border ring-border md:mt-(--shell-inset) md:me-(--shell-inset) md:mb-(--shell-inset)',
+        'group-data-[frame=panel]/shell:md:rounded-card group-data-[frame=panel]/shell:md:ring-1',
+        'group-data-[frame=flush]/shell:md:border-s',
+        // A title bar above: a flush surface draws its top edge under it.
+        titlebar && 'max-md:border-t group-data-[frame=flush]/shell:border-t',
+        PRINT_SURFACE,
       )}
     >
       {children}
@@ -407,7 +466,8 @@ export function DockRegion({
       data-slot="shell-dock"
       data-state={model.docks ? 'docked' : 'overlay'}
       className={cn(
-        'relative min-h-0 min-w-0 [grid-area:dock]',
+        // The docked panel paints the surface it sits on.
+        'relative min-h-0 min-w-0 [grid-area:dock] [&_[data-slot=dock]]:bg-surface',
         // Docked, the column's growing edge reveals the panel; overlaid, the panel spills over main.
         model.docks && 'overflow-hidden',
         PRINT_OFF,
@@ -443,7 +503,7 @@ export function AsideRegion({
           className={cn(
             // The panel is `h-dvh` for use without a shell; in the region it is as tall as the row,
             // and its header meets the page-bar band's bottom edge.
-            '[&>[data-slot=page-aside]]:h-full [&>[data-slot=page-aside]>header]:min-h-[var(--page-bar-h,0px)]',
+            '[&>[data-slot=page-aside]]:h-full [&>[data-slot=page-aside]]:bg-surface [&>[data-slot=page-aside]>header]:min-h-[var(--page-bar-h,0px)]',
             model.docks ? 'h-full' : 'absolute inset-y-0 end-0 z-20 shadow-overlay',
           )}
         >

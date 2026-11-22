@@ -889,16 +889,18 @@ describeShell(
           const main = await p.box('main', S('shell-main'))
           const row = await p.box('header row', S('shell-header-row'))
 
+          // The header is the surface's first row; the rail starts under the brand zone, which is as
+          // tall as the header plus the panel's inset; the band and the aside start under the header.
           const tops = [
-            ['header height', header.box.height],
-            ['navbar top', navbar.box.top],
-            ['page-bar band top', band.box.top],
-            ['aside top', aside.box.top],
+            ['header height', header.box.height, expected],
+            ['navbar top', navbar.box.top, expected + SHELL_GEOMETRY.panelInset],
+            ['page-bar band top', band.box.top, header.box.bottom],
+            ['aside top', aside.box.top, header.box.bottom],
           ] as const
-          for (const [name, value] of tops) {
-            if (Math.abs(value - expected) <= 0.5) continue
+          for (const [name, value, want] of tops) {
+            if (Math.abs(value - want) <= 0.5) continue
             throw new Error(
-              `LAYOUT: ${name} = ${value.toFixed(1)}px, expected ${expected}px (${label}) — something ` +
+              `LAYOUT: ${name} = ${value.toFixed(1)}px, expected ${want}px (${label}) — something ` +
                 'under the header kept its own copy of the header height',
             )
           }
@@ -913,7 +915,10 @@ describeShell(
             ['breadcrumb', S('shell-lead')],
           ] as const) {
             const box = (await p.box(name, selector)).box
-            const centre = box.top + box.height / 2
+            // The brand zone is a frame cell whose top padding is the panel's inset: its content
+            // centre is the centre of the box below that padding.
+            const pad = parseFloat(await p.computed(selector, 'padding-top')) || 0
+            const centre = box.top + pad + (box.height - pad) / 2
             if (Math.abs(centre - rowCentre) <= 1) continue
             throw new Error(
               `LAYOUT: ${name} centre y=${centre.toFixed(1)} is off the header row centre ` +

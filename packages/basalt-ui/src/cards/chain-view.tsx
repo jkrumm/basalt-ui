@@ -57,7 +57,7 @@ export type ChainViewProps<T> = {
 }
 
 const NODE =
-  'relative flex h-full min-w-0 flex-col justify-center gap-1 overflow-hidden rounded-card border border-border bg-card px-3 text-left text-foreground shadow-card'
+  'relative flex h-full min-w-0 flex-col justify-center gap-1 overflow-hidden rounded-card bg-card px-3 text-left text-foreground shadow-card'
 const TARGET =
   'w-full cursor-pointer hover:bg-accent focus-ring focus-visible:-outline-offset-2 group-data-focused/node:bg-accent'
 /** A node waiting on an open blocker is outlined in the warn tone, its whole border, never one edge. */

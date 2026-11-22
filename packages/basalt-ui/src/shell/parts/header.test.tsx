@@ -1,5 +1,6 @@
 /**
- * The header without a browser layout: the brand zone with the rail toggle, the tier data on every
+ * The header without a browser layout: the brand zone with the rail toggle (the frame's cell on the
+ * web, the title bar's under native-overlay), the tier data on every
  * global action and the one kebab. Container queries are CSS a unit environment does not evaluate,
  * so which action yields at which width is `tests/layout/shell-chrome.layout.test.ts`'s and
  * `core/header-tiers.test.ts`'s; this file pins what the markup declares.
@@ -9,7 +10,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import type { GlobalAction } from '../contract'
 import { RailControlProvider } from './grid'
 import type { RailControl } from './grid'
-import { Header } from './header'
+import { BrandZone, Header } from './header'
 import type { HeaderProps } from './header'
 
 afterEach(cleanup)
@@ -54,30 +55,62 @@ const CLUSTER: GlobalAction[] = [
   { kind: 'button', id: 'tag', label: 'Tag', icon: Glyph, priority: 3, onClick: () => {} },
 ]
 
+function renderZone(
+  brand: HeaderProps['brand'] = { name: 'Argo' },
+  rail: Partial<RailControl> = {},
+): { toggles: number } {
+  const out = { toggles: 0 }
+  const control: RailControl = {
+    state: 'auto',
+    collapsed: false,
+    setCollapsed: () => {},
+    toggle: () => {
+      out.toggles += 1
+    },
+    ...rail,
+  }
+  render(
+    <RailControlProvider value={control}>
+      <BrandZone brand={brand} />
+    </RailControlProvider>,
+  )
+  return out
+}
+
 describe('brand zone', () => {
-  test('shows the brand name and, with no logo, an initial mark', () => {
+  test('the web identity row leads with the logo alone; the zone is the frame cell above the rail', () => {
     renderHeader()
+    expect(document.querySelector('[data-slot="shell-brand-zone"]')).toBeNull()
+    expect(document.querySelector('[data-slot="shell-brand-mark"]')?.textContent).toBe('A')
+  })
+
+  test('under native-overlay the zone sits in the title bar', () => {
+    renderHeader({ chrome: 'native-overlay' })
+    expect(document.querySelector('[data-slot="shell-brand-zone"]')?.textContent).toContain('Argo')
+    expect(document.querySelector('[data-slot="shell-brand-mark"]')).toBeNull()
+  })
+
+  test('shows the brand name and, with no logo, an initial mark', () => {
+    renderZone()
     const zone = document.querySelector('[data-slot="shell-brand-zone"]')
     expect(zone?.textContent).toContain('Argo')
     expect(zone?.firstElementChild?.textContent).toBe('A')
   })
 
   test('a supplied logo is the zone first child, so the brand sits on the nav icon column', () => {
-    renderHeader({
-      brand: { name: 'Argo', logo: ({ className }) => <svg data-logo className={className} /> },
-    })
+    renderZone({ name: 'Argo', logo: ({ className }) => <svg data-logo className={className} /> })
     const zone = document.querySelector('[data-slot="shell-brand-zone"]')
     expect(zone?.firstElementChild?.hasAttribute('data-logo')).toBe(true)
   })
 
   test('the toggle is named by what it does and calls the rail control', () => {
-    const out = renderHeader()
+    const out = renderZone()
     fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
     expect(out.toggles).toBe(1)
   })
 
   test('a collapsed rail offers to expand it', () => {
-    renderHeader({}, { collapsed: true, state: 'collapsed' })
+    renderZone(undefined, { collapsed: true, state: 'collapsed' })
     expect(
       screen.getByRole('button', { name: 'Expand sidebar' }).getAttribute('aria-expanded'),
     ).toBe('false')

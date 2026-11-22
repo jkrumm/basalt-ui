@@ -39,6 +39,12 @@ export type ShellFrameSpec = FixtureSpec & {
     compactHeader?: 'hidden'
     /** The persisted rail state to start from. */
     rail?: 'collapsed' | 'expanded'
+    /** `AppShell frame` (default `panel`). */
+    frame?: 'panel' | 'flush'
+    /** A `fill` page: a band and a `DataTable` as its one main part, nothing else. */
+    fill?: boolean
+    /** A `Card` on a padded page, above the section. */
+    card?: boolean
   }
 }
 
@@ -59,6 +65,7 @@ export const shellFrameScenario: Scenario = {
     'shell-dock',
     'dock',
     'shell-tab-bar',
+    'shell-surface',
   ],
   matches: (spec) => (spec as ShellFrameSpec).shellFrame !== undefined,
   async mount(spec, container) {

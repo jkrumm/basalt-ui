@@ -4,9 +4,11 @@
  * on the header; this module is the single source of the numbers and the model the tests and the
  * kebab read.
  *
- * `priority` 1 never yields, 2 yields below 1100 px of header content width, 3 below 1280. The
- * header content width is the window minus the 12 px inline padding (the header spans the full
- * window, so the rail state does not move a tier). A yielded item is listed in the ONE kebab, in
+ * `priority` 1 never yields, 2 yields below 860 px of header content width, 3 below 1040. The
+ * header content width is the identity row's own width minus its 12 px inline padding: the row is
+ * the work surface's first row, so it is the window less the rail and the panel's inset, and a
+ * collapsed rail gives the row room. The numbers are spike S6's 1100 and 1280 of window less the
+ * expanded rail's 240, so the room each tier was measured with is the room it still gets. A yielded item is listed in the ONE kebab, in
  * declaration order, so nothing is ever lost. Labels are long at the `expanded` size class and
  * short below it (`box.sizeClass` carries the same axis to a `custom` item).
  *
@@ -18,14 +20,14 @@ import type { SizeClass } from '../contract'
 
 export type HeaderPriority = 1 | 2 | 3
 
-/** Inline padding of the header row, subtracted from the window width. */
+/** Inline padding of the header row, subtracted from the row's width. */
 export const HEADER_INLINE_PADDING = 12
 
 /** Minimum header content width at which each priority is shown in the row. */
 export const HEADER_TIER_MIN_WIDTH: Readonly<Record<HeaderPriority, number>> = {
   1: 0,
-  2: 1100,
-  3: 1280,
+  2: 860,
+  3: 1040,
 }
 
 /** An item's declared `priority` as a tier: missing is 1, out of range clamps to 1 or 3. */
@@ -35,8 +37,8 @@ export function headerPriority(priority: number | undefined): HeaderPriority {
   return Math.round(priority) as HeaderPriority
 }
 
-export function headerContentWidth(windowWidth: number): number {
-  return Math.max(0, windowWidth - HEADER_INLINE_PADDING)
+export function headerContentWidth(rowWidth: number): number {
+  return Math.max(0, rowWidth - HEADER_INLINE_PADDING)
 }
 
 /** Whether a priority is shown in the row at a header content width. */
@@ -56,9 +58,9 @@ export type HeaderTiers = {
 
 export function projectHeaderTiers(
   items: readonly HeaderTierItem[],
-  at: { windowWidth: number; sizeClass: SizeClass },
+  at: { rowWidth: number; sizeClass: SizeClass },
 ): HeaderTiers {
-  const width = headerContentWidth(at.windowWidth)
+  const width = headerContentWidth(at.rowWidth)
   const shown: string[] = []
   const kebab: string[] = []
   for (const item of items) {

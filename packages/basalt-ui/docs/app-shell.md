@@ -10,7 +10,10 @@ slots: [page-breadcrumb-leaf, page-breadcrumb-parent]
 # AppShell
 
 The application frame: a header, a rail, the one scrollport, an aside region and, on a phone, a
-tab bar, all projections of one `nav` declaration. It owns the markup (a CSS grid in
+tab bar, all projections of one `nav` declaration. Two planes: the frame carries the brand zone
+and the rail, one work surface carries the identity row (the crumb and the actions) and the page,
+with the aside and the dock inside it. `frame="panel"` (the default) insets and rounds that
+surface from `md` up; `frame="flush"` meets the window's edges, as every phone does. It owns the markup (a CSS grid in
 `@layer basalt`), so there is nothing to override and nothing to fight. The crumb trail is the nav
 section, then the page's `PageBar` `parent`, then its `title`; a selection such as
 `/services?service=checkout` is `Fleet / Services / checkout` from
@@ -25,7 +28,7 @@ shows its nav label, and a path no route matches shows `Not found`, in the crumb
 ## Signature
 
 ```ts
-AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, storageKey, compactHeader, chrome, children, }: AppShellProps<Id>): ReactElement
+AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControls, globalActions, settings, account, search, storageKey, compactHeader, chrome, frame, children, }: AppShellProps<Id>): ReactElement
   nav: NavConfig
   brand: ShellBrand
   badges?: Partial<Record<Id, NavBadge>>
@@ -37,6 +40,7 @@ AppShell<Id extends string = string>({ nav, brand, badges, blocks, globalControl
   search?: { onOpen: () => void; }
   storageKey?: string
   chrome?: ShellChrome
+  frame?: ShellFrame  // Default `panel`
   compactHeader?: "hidden" | "show"
   children?: ReactNode
 ```

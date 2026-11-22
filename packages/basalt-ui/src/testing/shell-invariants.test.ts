@@ -11,6 +11,7 @@ function healthy(): ShellGeometry {
     document: { scrollWidth: 1800, scrollHeight: 1200, clientHeight: 1200 },
     headerToken: 48,
     header: { top: 0, bottom: 48, left: 0, right: 1800 },
+    headerHome: 0,
     railVisible: true,
     rail: { top: 48, bottom: 1200, left: 0, right: 240 },
     railState: 'expanded',
@@ -44,6 +45,15 @@ function nativeFrame(): ShellGeometry {
 describe('judgeShell', () => {
   test('a healthy frame breaks nothing', () => {
     expect(judgeShell(healthy())).toEqual([])
+  })
+
+  test('a panel header sits on the surface inset; a header off its row breaks', () => {
+    const g = healthy()
+    g.headerHome = 9
+    g.header = { top: 9, bottom: 57, left: 240, right: 1792 }
+    expect(judgeShell(g)).toEqual([])
+    g.header = { top: 0, bottom: 48, left: 240, right: 1792 }
+    expect(judgeShell(g).join('\n')).toContain('header top 0 is not the top of its row 9')
   })
 
   test('a 2 px footer inset is under the rail padding', () => {

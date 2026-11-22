@@ -9,7 +9,7 @@
 import { acquireShellTarget } from './shell-target'
 import { afterAll, describe, expect, test } from 'bun:test'
 import type { ShellFrameSpec } from './fixture/v3/scenarios/shell-frame'
-import { LAYOUT_TARGET } from './shell-slots'
+import { LAYOUT_TARGET, PANEL_END } from './shell-slots'
 import { DESKTOP_1440, PHONE, closeLayoutSuite, initLayoutSuite, openFixture } from './harness'
 
 acquireShellTarget()
@@ -35,7 +35,7 @@ layout('Peek over the shell at 1440', () => {
     const main = (await page.box('main', MAIN)).box
     expect(Math.abs(peek.top - header.bottom)).toBeLessThanOrEqual(TOLERANCE)
     expect(Math.abs(peek.bottom - main.bottom)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(peek.right - DESKTOP_1440.width)).toBeLessThanOrEqual(TOLERANCE)
+    expect(Math.abs(peek.right - (DESKTOP_1440.width - PANEL_END))).toBeLessThanOrEqual(TOLERANCE)
     expect(peek.width).toBeGreaterThanOrEqual(38 * REM - TOLERANCE)
     expect(peek.width).toBeLessThanOrEqual(52 * REM + TOLERANCE)
     expect(await page.count(`[data-slot="shell-aside"] ${PEEK}`)).toBe(1)
@@ -109,7 +109,9 @@ layout('Peek width handle at 1440', () => {
     await page.raw.mouse.up()
     const widened = (await page.box('peek', PEEK)).box
     expect(Math.abs(widened.width - (before.width + 100))).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs(widened.right - DESKTOP_1440.width)).toBeLessThanOrEqual(TOLERANCE)
+    expect(Math.abs(widened.right - (DESKTOP_1440.width - PANEL_END))).toBeLessThanOrEqual(
+      TOLERANCE,
+    )
 
     const nowHandle = (await page.box('handle', HANDLE)).box
     await page.raw.mouse.move(nowHandle.left + 2, y)

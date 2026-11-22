@@ -103,13 +103,19 @@ export function SplitPage({
     <div
       data-slot="split-page"
       data-selected={selected ? '' : undefined}
-      className="grid min-w-0 grid-cols-1 gap-4 @wide:grid-cols-[minmax(12rem,16rem)_minmax(0,1fr)] @wide:items-start"
+      className={cn(
+        'grid min-w-0 grid-cols-1 gap-4 @wide:grid-cols-[minmax(12rem,16rem)_minmax(0,1fr)] @wide:items-start',
+        // In a fill page the panes meet the surface's edges: no gap, each pane takes the gutter
+        // inside itself and a hairline divides them beside each other.
+        'in-data-fill:flex-1 in-data-fill:gap-0 in-data-fill:@wide:items-stretch',
+      )}
     >
       <div
         ref={listPane}
         data-slot="split-page-list"
         className={cn(
           'min-w-0 @wide:sticky @wide:top-(--page-sticky-top)',
+          'in-data-fill:p-(--page-gutter) in-data-fill:@wide:border-e in-data-fill:@wide:border-border',
           selected && 'hidden @wide:block',
         )}
       >
@@ -122,7 +128,7 @@ export function SplitPage({
         ref={detailPane}
         data-slot="split-page-detail"
         className={cn(
-          'min-w-0',
+          'min-w-0 in-data-fill:p-(--page-gutter)',
           !selected && 'hidden @wide:block',
           // The back link sits above the detail in one column; beside the list the pane is plain block.
           selected && onBack !== undefined && 'grid grid-cols-[minmax(0,1fr)] gap-2 @wide:block',

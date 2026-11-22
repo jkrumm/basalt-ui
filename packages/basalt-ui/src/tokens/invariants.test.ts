@@ -211,7 +211,7 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     }
   })
 
-  test('v3 hairline: --hairline is an ink alpha (the 2.x divider, 9% both schemes) and the ring is drawn once, by Card::after', () => {
+  test('v3 hairline: --hairline is an ink alpha (the 2.x divider, 9% both schemes) and the card ring is drawn once, by shadow-card', () => {
     const css = emitTokensCss({ version: '3.0.0' })
     expect(css).toContain(
       `--basalt-hairline: color-mix(in srgb, var(--basalt-ink) ${INK_MIX_PCT.hairline.light}%, transparent);`,
@@ -219,11 +219,13 @@ describe('token invariants (docs/v3/evidence/self-tokens-theme.md §d)', () => {
     expect(css).toContain(
       `--basalt-hairline: color-mix(in srgb, var(--basalt-ink) ${INK_MIX_PCT.hairline.dark}%, transparent);`,
     )
-    // No shadow role embeds the hairline or an outset 1px ring: a second ring is a second edge (d8).
-    expect(css).not.toMatch(/--basalt-shadow-[a-z]+:[^;]*var\(--basalt-hairline\)/)
-    for (const [, value] of css.matchAll(/--basalt-shadow-card: ([^;]+);/g)) {
-      expect(value).not.toMatch(/0 0 0 1px/)
-    }
+    // The card ring is the card shadow, a hairline and nothing else, in both schemes: a card on the
+    // work surface (its own colour) reads by this edge. No other shadow role embeds the hairline: a
+    // second ring is a second edge (d8).
+    const cards = [...css.matchAll(/--basalt-shadow-card: ([^;]+);/g)].map(([, value]) => value)
+    expect(cards.length).toBeGreaterThan(0)
+    for (const value of cards) expect(value).toBe('0 0 0 1px var(--basalt-hairline)')
+    expect(css).not.toMatch(/--basalt-shadow-(?!card)[a-z]+:[^;]*var\(--basalt-hairline\)/)
     // The input boundary is a deliberate heavier line, never a scaled hairline (S3).
     expect(INK_MIX_PCT.input.light).toBeGreaterThan(INK_MIX_PCT.hairline.light * 3)
     expect(INK_MIX_PCT.input.dark).toBeGreaterThan(INK_MIX_PCT.hairline.dark * 3)

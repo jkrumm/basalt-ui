@@ -27,6 +27,7 @@ import { col } from '../../../../../src/table/core/kinds'
 import { DataTable } from '../../../../../src/table/parts/data-table'
 import { useDataTable } from '../../../../../src/table/use-data-table'
 import { AppShell } from '../../../../../src/shell/app-shell'
+import { Card } from '../../../../../src/ui/card'
 import type { AppShellProps } from '../../../../../src/shell/contract'
 import type { FixtureSpec } from '../../spec'
 import type { ShellFrameSpec } from './shell-frame'
@@ -213,6 +214,14 @@ function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> 
     if (record !== undefined) return boundRecordState(record)
     return state === undefined ? undefined : boundAsideState(state)
   })
+  if (options.fill === true) {
+    return (
+      <Page area="runs" fill>
+        <PageBar title="Runs" controls={controls} />
+        <DetailTable />
+      </Page>
+    )
+  }
   return (
     <Page area="runs">
       {bar && (
@@ -223,6 +232,11 @@ function Body({ options }: { options: NonNullable<ShellFrameSpec['shellFrame']> 
         />
       )}
       {!bar && <h1 className="sr-only">Runs</h1>}
+      {options.card === true && (
+        <Card>
+          <p className="text-sm">Card body</p>
+        </Card>
+      )}
       <Section title="Latency">
         {detailTable ? (
           <DetailTable />
@@ -290,6 +304,7 @@ export async function mount(spec: FixtureSpec, container: HTMLElement): Promise<
         brand={{ name: 'Basalt' }}
         globalActions={GLOBAL_ACTIONS}
         {...(options.compactHeader !== undefined && { compactHeader: options.compactHeader })}
+        {...(options.frame !== undefined && { frame: options.frame })}
       >
         <Outlet />
       </AppShell>

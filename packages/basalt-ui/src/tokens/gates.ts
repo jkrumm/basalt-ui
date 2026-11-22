@@ -153,6 +153,39 @@ function buildPairs(): PairRow[] {
       measure: (d, s) =>
         Math.abs(hexToOklab(hex(d, 'inset', s)).L - hexToOklab(hex(d, 'card', s)).L),
     })
+
+  // The shell's two planes: the frame (canvas, under the rail) and the work surface (card) read as
+  // two planes by lightness alone, before any hairline. Measured .023 light and .040 dark across the
+  // four neutral families.
+  for (const [scheme, min] of [
+    ['dark', 0.035],
+    ['light', 0.02],
+  ] as const)
+    rows.push({
+      gate: `plane-step-${scheme}`,
+      surface: 'canvas',
+      min,
+      digits: 3,
+      fix: FIX_NEUTRAL,
+      only: scheme,
+      measure: (d, s) =>
+        Math.abs(hexToOklab(hex(d, 'canvas', s)).L - hexToOklab(hex(d, 'card', s)).L),
+    })
+
+  // The hairline on both planes: the card ring and the panel's edge on the surface, the surface's own
+  // edge on the frame. The divider floor (1.15:1, DESIGN-SPEC section 5).
+  for (const bg of ['card', 'canvas'] as const)
+    rows.push({
+      gate: `hairline-on-${bg}`,
+      surface: bg,
+      min: 1.15,
+      digits: 2,
+      fix: 'Raise INK_MIX_PCT.hairline in derive.ts.',
+      measure: (d, s) => {
+        const base = hex(d, bg, s)
+        return contrastRatio(mixHex(base, hex(d, 'ink', s), INK_MIX_PCT.hairline[s] / 100), base)
+      },
+    })
   return rows
 }
 

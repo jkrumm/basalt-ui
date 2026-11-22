@@ -1,16 +1,18 @@
 /**
- * The header: three bare regions on one row of one height.
+ * The header: the identity row, the first row of the work surface, three bare regions on one row of
+ * one height. The brand zone is the frame's, above the rail (`BrandZone`); a compact screen has no
+ * rail, so the row leads with the logo there. Under `chrome="native-overlay"` the header is the
+ * window's title bar instead: a row of the frame over the whole width, the brand zone in it.
  *
- * - `start` (`shell-lead`): the brand zone, as wide as the rail so the breadcrumb after it starts on
- *   `Main`'s own edge, then the breadcrumb. The server renders the nav-derived breadcrumb; a page's
- *   `PageBar title` replaces it.
+ * - `start` (`shell-lead`): the breadcrumb, on the page's gutter. The server renders the nav-derived
+ *   breadcrumb; a page's `PageBar title` replaces it.
  * - `center`: the global controls (`AppShell globalControls`). Hidden compact, unless the slot says
  *   `compact: true`: it then draws its own narrow form (`globalControls(specs)`'s `Filters (n)`).
  * - `end`: the page's claimed actions, the aside trigger on a compact screen, then the global
  *   actions (`shell-trail`).
  *
  * The global actions run in priority tiers (`core/header-tiers.ts` holds the numbers): the header
- * row is a size container, a `priority` 3 action yields below 1280 px of row width, a 2 below 1100,
+ * row is a size container, a `priority` 3 action yields below 1040 px of row width, a 2 below 860,
  * a 1 never, and a yielded action is listed in the ONE kebab so nothing is lost. All of it is CSS,
  * so the server markup is right at every width.
  */
@@ -46,10 +48,15 @@ export type HeaderProps = {
 }
 
 /**
- * The brand zone, as wide as the rail so the breadcrumb after it starts on `Main`'s own edge. The
- * rail's collapse toggle lives here: expanded it sits at the zone's end, collapsed it is the zone's
- * only content, centred on the rail.
+ * The brand zone, as wide as the rail. The rail's collapse toggle lives here: expanded it sits at the
+ * zone's end, collapsed it is the zone's only content, centred on the rail. On the web it is the
+ * frame's top cell, above the rail and level with the identity row; under `native-overlay` it sits in
+ * the title bar.
  */
+export function BrandZone({ brand }: { brand: ShellBrand }): ReactElement {
+  return <Brand brand={brand} native={false} />
+}
+
 function Brand({ brand, native }: { brand: ShellBrand; native: boolean }): ReactElement {
   const Logo = brand.logo
   const rail = useRailControl()
@@ -59,9 +66,12 @@ function Brand({ brand, native }: { brand: ShellBrand; native: boolean }): React
       data-slot="shell-brand-zone"
       className={cn(
         'flex shrink-0 items-center gap-2 ps-4 pe-2 md:w-(--shell-rail-w) md:overflow-hidden',
+        // On the web the zone is a frame cell: hidden with the rail, level with the identity row.
+        !native && 'hidden min-w-0 [grid-area:brand] md:flex md:pt-(--shell-inset)',
+        !native && PRINT_OFF,
         // Collapsed: the zone is the rail's width and holds the toggle alone, centred.
-        'group-data-[rail=collapsed]/shell:md:justify-center group-data-[rail=collapsed]/shell:md:p-0',
-        'group-data-[rail=auto]/shell:md:max-xl:justify-center group-data-[rail=auto]/shell:md:max-xl:p-0',
+        'group-data-[rail=collapsed]/shell:md:justify-center group-data-[rail=collapsed]/shell:md:px-0',
+        'group-data-[rail=auto]/shell:md:max-xl:justify-center group-data-[rail=auto]/shell:md:max-xl:px-0',
         native && NATIVE_BRAND,
       )}
     >
@@ -126,6 +136,25 @@ function Brand({ brand, native }: { brand: ShellBrand; native: boolean }): React
   )
 }
 
+/** The logo alone at the identity row's lead edge, where a compact screen has no brand zone. */
+function BrandMark({ brand }: { brand: ShellBrand }): ReactElement {
+  const Logo = brand.logo
+  return (
+    <span data-slot="shell-brand-mark" className="flex shrink-0 items-center ps-4 pe-2 md:hidden">
+      {Logo !== undefined ? (
+        <Logo className="size-6 shrink-0" aria-hidden />
+      ) : (
+        <span
+          aria-hidden="true"
+          className="grid size-6 shrink-0 place-items-center rounded-ctrl bg-primary font-head text-xs font-semibold text-primary-foreground"
+        >
+          {brand.name.slice(0, 1).toUpperCase()}
+        </span>
+      )}
+    </span>
+  )
+}
+
 function ActionBody({ action, box }: { action: GlobalAction; box: ShellBox }): ReactElement {
   if (action.kind === 'custom') {
     return (
@@ -182,8 +211,8 @@ function GlobalActionView({ action, box }: { action: GlobalAction; box: ShellBox
       data-phone-off={phoneOff ? '' : undefined}
       className={cn(
         'flex shrink-0 items-center',
-        tier === 2 && '@max-[1099.98px]/header:hidden',
-        tier === 3 && '@max-[1279.98px]/header:hidden',
+        tier === 2 && '@max-[859.98px]/header:hidden',
+        tier === 3 && '@max-[1039.98px]/header:hidden',
         phoneOff && 'max-md:hidden',
       )}
     >
@@ -211,15 +240,18 @@ export function Header({
       data-slot="shell-header"
       data-tauri-drag-region={native ? 'deep' : undefined}
       className={cn(
-        native && NATIVE_HEADER,
-        'relative flex min-w-0 items-center bg-background [grid-area:header]',
-        // The header's rule. Over main it gives way to a page's band, whose own rule closes the bar:
-        // header and band read as one surface with one rule under it; the rail keeps its rule.
-        "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border after:content-['']",
-        'group-data-page-band/shell:after:end-auto group-data-page-band/shell:after:w-(--shell-rail-w)',
-        // The aside and dock columns have no band under them, so they keep their part of the rule.
-        "before:pointer-events-none before:absolute before:end-0 before:bottom-0 before:hidden before:h-px before:w-[calc(var(--shell-aside-w,0px)+var(--shell-dock-w,0px))] before:bg-border before:content-['']",
-        'group-data-page-band/shell:before:block',
+        'relative flex min-w-0 items-center [grid-area:header]',
+        native
+          ? cn(NATIVE_HEADER, 'bg-background')
+          : cn(
+              // The identity row's rule, a hairline row on the surface. Over main it gives way to a
+              // page's band, whose own rule closes the bar: row and band read as one with one rule.
+              "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border after:content-['']",
+              'group-data-page-band/shell:after:hidden',
+              // The aside and dock columns have no band under them, so they keep their part of the rule.
+              "before:pointer-events-none before:absolute before:end-0 before:bottom-0 before:hidden before:h-px before:w-[calc(var(--shell-aside-w,0px)+var(--shell-dock-w,0px))] before:bg-border before:content-['']",
+              'group-data-page-band/shell:before:block',
+            ),
         'group-data-[compact-header=hidden]/shell:max-md:hidden',
         PRINT_OFF,
       )}
@@ -230,13 +262,16 @@ export function Header({
         data-slot="shell-header-row"
         className="@container/header flex h-full w-full min-w-0 items-center pe-3"
       >
-        {/* The crumb floor: never less than 6 rem of breadcrumb beside the brand zone. */}
+        {/* The crumb floor: never less than 6 rem of breadcrumb, beside the brand zone in a title bar. */}
         <div
           data-slot="shell-lead"
-          className="flex min-w-[calc(var(--shell-rail-w)+6rem)] flex-1 items-center"
+          className={cn(
+            'flex flex-1 items-center',
+            native ? 'min-w-[calc(var(--shell-rail-w)+6rem)]' : 'min-w-24',
+          )}
         >
           {native && <Titlebar />}
-          <Brand brand={brand} native={native} />
+          {native ? <Brand brand={brand} native /> : <BrandMark brand={brand} />}
           <div
             data-slot="shell-breadcrumb"
             className="ms-(--shell-gutter) flex min-w-0 items-center gap-2 text-sm text-muted-foreground [&>*]:min-w-0 [&>*]:truncate [&>[data-slot=page-breadcrumb-leaf]]:font-medium [&>[data-slot=page-breadcrumb-leaf]]:text-foreground [&>[data-slot=page-breadcrumb-parent]]:after:ms-2 [&>[data-slot=page-breadcrumb-parent]]:after:text-faint [&>[data-slot=page-breadcrumb-parent]]:after:content-['/']"
@@ -275,8 +310,8 @@ export function Header({
                   className={cn(
                     'hidden shrink-0',
                     !tiers.phone && 'max-md:hidden!',
-                    tiers.p3 && '@max-[1279.98px]/header:inline-flex',
-                    tiers.p2 && '@max-[1099.98px]/header:inline-flex',
+                    tiers.p3 && '@max-[1039.98px]/header:inline-flex',
+                    tiers.p2 && '@max-[859.98px]/header:inline-flex',
                   )}
                 />
               )}
