@@ -20,10 +20,12 @@ import { clearTogether } from '../core/write-batch'
 import { isActive } from '../controls/filter-set-census'
 import type { AnySpec } from '../controls/filter-set-census'
 import type {
+  Aggregate,
   BulkAction,
   DataTableInstance,
   KindColumn,
   PageFilter,
+  RowHeight,
   TableEscape,
   TableRequest,
   Totals,
@@ -36,20 +38,29 @@ import { treeItems } from './parts/tree-row-model'
 import type { TreeInfo } from './parts/tree-row-model'
 import type { BodyItem } from './parts/group-row-model'
 import { tableEngine } from './core/features'
-import { constructFilterFn, toColumnFilters } from './core/filters'
+import { constructFilterFn, dayOf, toColumnFilters } from './core/filters'
 import type { RangeDomain } from './core/filters'
 import { arrangeColumns, moveColumn } from './core/arrange'
 import type { ArrangedColumn } from './core/arrange'
 import { useRowKeyboard } from './core/keyboard'
 import type { RowKeyboard } from './core/keyboard'
 import { engineColumn } from './core/kinds-engine'
-import { specOf } from './core/kinds-spec'
+import { KIND_DEFAULTS, specOf } from './core/kinds-spec'
 import type { KindSpec } from './core/kinds-spec'
-import { planTable, TICK_COL_PX } from './core/plan'
+import {
+  clampWidth,
+  isResizable,
+  minWidthPx,
+  planTable,
+  RESIZE_MAX_PX as RESIZE_MAX,
+  ROW_NUMBER_COL_PX,
+  TICK_COL_PX,
+} from './core/plan'
 import type { TablePlan } from './core/plan'
 import { useSelection } from './core/selection'
 import type { SelectionApi } from './core/selection'
 import { countOf, useTableState } from './core/state'
+import { aggregateOf, aggregatesOf } from './parts/footer-model'
 import type { TableStateApi } from './core/state'
 
 const MODEL: unique symbol = Symbol.for('basalt-ui.table.model')
@@ -83,6 +94,36 @@ export type TableModel<T> = {
   pinnedOf(id: string): boolean
   /** Pins or unpins a column, written to `display.pinned`. */
   setPinned(id: string, pinned: boolean): void
+  /** The leading columns before the first kind column: the tick and the row number, their count and px. */
+  lead: { tick: boolean; numbers: boolean; cols: number; px: number }
+  /** The row's number (`rowNumbers`): its place in the request, running on across groups and pages. */
+  numberOf(id: string): number | undefined
+  /** Whether a reader may drag the column's edge (every column but `actions`). */
+  resizable(id: string): boolean
+  /** The column's drawn width in px and its bounds. */
+  widthOf(id: string): { px: number; min: number; max: number }
+  /** A drag in progress: the width shown until `setWidth` writes it; `null` ends the preview. */
+  previewWidth(id: string, px: number | null): void
+  /** Writes a column's width to `display.widths`; `undefined` resets it to the kind's width. */
+  setWidth(id: string, px: number | undefined): void
+  /** Drops every width a reader set. */
+  resetWidths(): void
+  /** The body's row height: the view's, else the declared `rowHeight`; `undefined` is the app's density. */
+  rowHeight: RowHeight | undefined
+  /** Writes the view's row height; `undefined` returns to the declared one. */
+  setRowHeight(height: RowHeight | undefined): void
+  /** The column the rows are grouped by, `null` for none (a server table never groups). */
+  groupBy: string | null
+  /** Whether the rows may be grouped by the column (client mode, a kind that groups). */
+  groupable(id: string): boolean
+  /** Writes the view's grouping: a column id, `null` for none, `undefined` for the declared `group`. */
+  setGroupBy(id: string | null | undefined): void
+  /** The reduce the column's footer and group rows print, `undefined` for none. */
+  aggregateOf(id: string): Aggregate | undefined
+  /** The reduces a reader may pick for the column (none on a server table). */
+  aggregatesOf(id: string): readonly Aggregate[]
+  /** Writes the view's reduce for a column: `'none'` drops it, `undefined` returns to the declared one. */
+  setAggregate(id: string, fn: Aggregate | 'none' | undefined): void
   rows: readonly ModelRow<T>[]
   /** What the body draws in order: the rows, or group rows with the rows of open groups. */
   items: readonly BodyItem<T>[]
@@ -403,18 +444,31 @@ export function useDataTable<
     )
     .join('|')
   const contentCh = contentWidths(specs, options.data)
+  // A drag shows its width at once and writes the view once, on release.
+  const [preview, setPreview] = useState<{ id: string; px: number } | null>(null)
+  const widths =
+    preview === null ? (display.widths ?? {}) : { ...display.widths, [preview.id]: preview.px }
   const plan = usePlan(
     columns,
-    shapeKey + visibilityKey + JSON.stringify(contentCh),
+    shapeKey + visibilityKey + JSON.stringify(contentCh) + JSON.stringify(widths),
     display.visibility,
     contentCh,
+    widths,
   )
   const look = options.look ?? 'reading'
+  const tick = options.selection !== undefined
+  const numbers = options.rowNumbers === true
+  const lead = {
+    tick,
+    numbers,
+    cols: (tick ? 1 : 0) + (numbers ? 1 : 0),
+    px: (tick ? TICK_COL_PX : 0) + (numbers ? ROW_NUMBER_COL_PX : 0),
+  }
   const arranged = arrangeColumns(
     specs,
     plan,
     { order: display.order, pinned: look === 'grid' ? display.pinned : undefined },
-    options.selection === undefined ? 0 : TICK_COL_PX,
+    lead.px,
   )
   const pinnedIds = display.pinned ?? []
 
@@ -462,7 +516,13 @@ export function useDataTable<
     setLastRows(rows.length)
   }
 
-  const group = nestedRows ? undefined : groupOf(options.group, specs, server)
+  const group = nestedRows ? undefined : groupOf(options.group, specs, server, display.groupBy)
+  const groupSpec = group?.spec
+  // A date groups by its day in the table's zone, never by the instant.
+  const groupKey =
+    groupSpec !== undefined && (groupSpec.kind === 'date' || groupSpec.kind === 'relativeTime')
+      ? (row: T) => dayOf(groupSpec.value(row), zone) ?? ''
+      : undefined
   const items =
     options.nested !== undefined && nestedRows
       ? treeItems({
@@ -473,7 +533,7 @@ export function useDataTable<
           collapsed: display.collapsed,
           narrowed: request.q !== '' || request.filters.length > 0 || pageFilters.active,
         })
-      : bodyItems(rows, group?.spec, display.collapsed, matched)
+      : bodyItems(rows, groupSpec, display.collapsed, matched, groupKey)
   const treeOf = (id: string): TreeInfo | undefined => {
     const item = items.find((entry) => entry.type === 'row' && entry.row.id === id)
     return item?.type === 'row' ? item.tree : undefined
@@ -641,11 +701,15 @@ export function useDataTable<
     // The grid look roves cells: the tick (on a selectable table) and every drawn column.
     cells:
       look === 'grid'
-        ? (options.selection === undefined ? 0 : 1) +
-          arranged.plan.columns.filter((column) => column.visible).length
+        ? lead.cols + arranged.plan.columns.filter((column) => column.visible).length
         : undefined,
-    treeCell: options.selection === undefined ? 0 : 1,
+    treeCell: lead.cols,
   })
+  const numbersById = numbers
+    ? rowNumbers(items, paged ? (request.page - 1) * request.pageSize : 0)
+    : undefined
+  const specById = new Map(specs.map((spec) => [spec.id, spec]))
+  const plannedById = new Map(arranged.plan.columns.map((column) => [column.id, column]))
 
   const model: TableModel<T> = {
     id: options.id,
@@ -663,6 +727,64 @@ export function useDataTable<
     setPinned(id, pinned) {
       const others = pinnedIds.filter((value) => value !== id)
       state.setDisplay({ pinned: pinned ? [...others, id] : others })
+    },
+    lead,
+    numberOf: (id) => numbersById?.get(id),
+    resizable(id) {
+      const spec = specById.get(id)
+      return spec !== undefined && isResizable(spec)
+    },
+    widthOf(id) {
+      const spec = specById.get(id)
+      const min = spec === undefined ? 0 : minWidthPx(spec.kind)
+      return { px: plannedById.get(id)?.widthPx ?? min, min, max: RESIZE_MAX }
+    },
+    previewWidth(id, px) {
+      const spec = specById.get(id)
+      if (px === null || spec === undefined) setPreview(null)
+      else setPreview({ id, px: clampWidth(spec.kind, px) })
+    },
+    setWidth(id, px) {
+      const spec = specById.get(id)
+      setPreview(null)
+      if (spec === undefined || !isResizable(spec)) return
+      const { [id]: _previous, ...others } = display.widths ?? {}
+      state.setDisplay({
+        widths: px === undefined ? others : { ...others, [id]: clampWidth(spec.kind, px) },
+      })
+    },
+    resetWidths() {
+      setPreview(null)
+      state.setDisplay({ widths: {} })
+    },
+    rowHeight: display.rowHeight ?? options.rowHeight,
+    setRowHeight(height) {
+      state.updateDisplay(({ rowHeight: _previous, ...rest }) =>
+        height === undefined ? rest : { ...rest, rowHeight: height },
+      )
+    },
+    groupBy: group?.spec.id ?? null,
+    groupable(id) {
+      const spec = specById.get(id)
+      return !server && !nestedRows && spec !== undefined && KIND_DEFAULTS[spec.kind].groupable
+    },
+    setGroupBy(id) {
+      // The collapsed set names values of the old column: a new grouping opens every group.
+      state.updateDisplay(({ groupBy: _previous, ...rest }) =>
+        id === undefined ? { ...rest, collapsed: [] } : { ...rest, groupBy: id, collapsed: [] },
+      )
+    },
+    aggregateOf(id) {
+      const spec = specById.get(id)
+      return spec === undefined ? undefined : aggregateOf(spec, display.aggregates, server)
+    },
+    aggregatesOf(id) {
+      const spec = specById.get(id)
+      return spec === undefined || server ? [] : aggregatesOf(spec)
+    },
+    setAggregate(id, fn) {
+      const { [id]: _previous, ...others } = display.aggregates ?? {}
+      state.setDisplay({ aggregates: fn === undefined ? others : { ...others, [id]: fn } })
     },
     rows,
     items,
@@ -813,15 +935,44 @@ function groupOf<T>(
   group: UseDataTable<T>['group'],
   specs: readonly KindSpec<T>[],
   server: boolean,
+  picked: string | null | undefined,
 ): TableModel<T>['group'] {
-  if (group === undefined || server) return undefined
-  const spec = specs.find((s) => s.id === group.by)
-  if (spec === undefined) {
+  if (server) return undefined
+  if (group !== undefined && !specs.some((s) => s.id === group.by)) {
     throw new Error(
       `basalt-ui/table: group.by "${group.by}" is not a column; use one of ${specs.map((s) => s.id).join(', ')}`,
     )
   }
-  return { spec, ...(group.summary !== undefined && { summary: group.summary }) }
+  if (picked === null) return undefined
+  // A reader's pick holds while its column is still there and groups; else the declared grouping.
+  const chosen =
+    picked === undefined
+      ? undefined
+      : specs.find((s) => s.id === picked && KIND_DEFAULTS[s.kind].groupable)
+  const by = chosen?.id ?? group?.by
+  const spec = by === undefined ? undefined : specs.find((s) => s.id === by)
+  if (spec === undefined) return undefined
+  // The summary is the declared grouping's: it reads that column's rows.
+  const summary = spec.id === group?.by ? group.summary : undefined
+  return { spec, ...(summary !== undefined && { summary }) }
+}
+
+/**
+ * The number of each drawn row (`rowNumbers`): its place in body order from `offset`, the rows of a
+ * collapsed group counted too, so a row keeps its number when a group above it closes.
+ */
+function rowNumbers<T>(items: readonly BodyItem<T>[], offset: number): Map<string, number> {
+  const numbers = new Map<string, number>()
+  let at = offset
+  for (const item of items) {
+    if (item.type === 'group') {
+      if (item.collapsed) at += item.rows.length
+      continue
+    }
+    at += 1
+    numbers.set(item.row.id, at)
+  }
+  return numbers
 }
 
 /** Rows read when sizing a `width: 'content'` column; a longer list is sampled from its head. */
@@ -854,7 +1005,8 @@ function usePlan<T>(
   key: string,
   visibility: Record<string, boolean>,
   contentCh: Record<string, number>,
+  widths: Readonly<Record<string, number>>,
 ): TablePlan {
-  // oxlint-disable-next-line react/exhaustive-deps -- `key` IS the shape of `columns`, `visibility` and `contentCh`
-  return useMemo(() => planTable(columns, { visibility, contentCh }), [key])
+  // oxlint-disable-next-line react/exhaustive-deps -- `key` IS the shape of `columns`, `visibility`, `contentCh` and `widths`
+  return useMemo(() => planTable(columns, { visibility, contentCh, widths }), [key])
 }

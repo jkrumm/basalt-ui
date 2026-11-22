@@ -605,6 +605,7 @@ export function col<T>(): Col<T> {
           text: (v, _row, format) =>
             typeof v === 'number' ? formatNumber(format, v, o?.digits) : '',
           spec: {
+            drawTotal: (v, env) => formatNumber(env.format, v, o?.digits),
             ...footerOf<T>(o?.footer, (v, env) => formatNumber(env.format, v, o?.digits)).spec,
             ...rangeFilter<T>(o),
           },
@@ -623,6 +624,7 @@ export function col<T>(): Col<T> {
             typeof v === 'number' ? formatMoney(format, v, o.currency) : '',
           spec: {
             unit: o.currency,
+            drawTotal: (v, env) => formatMoney(env.format, v, o.currency),
             ...footerOf<T>(o?.footer, (v, env) => formatMoney(env.format, v, o.currency)).spec,
             ...rangeFilter<T>(o),
           },

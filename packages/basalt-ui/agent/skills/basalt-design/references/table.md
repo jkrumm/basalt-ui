@@ -41,6 +41,8 @@ export function Bookings({ rows }: { rows: readonly Booking[] }) {
 
 - Keep the reading look for a list a reader scans, summarises and opens; pass `look: 'grid'` when the reader works the data, comparing cells across columns and down rows.
 - A grid draws a rule between every two cells, compact rows and tabular figures, keeps every visible column and scrolls sideways inside its scroller with the name column pinned, so `priority` hides nothing there. Give it `height: 'fill'` or `{ maxRows }` when it holds more rows than a screen: a sideways scroller cannot stick its head to the page. The reader moves through it cell by cell with the arrow keys; a click on the name opens the row.
+- Widths, the row height, a grouping and the footer summaries are the reader's too: a header's end edge resizes its column, the column menu groups by a column whose kind groups and picks a summary, a footer cell steps through them. Declare the defaults (`group`, a kind's `footer`, `rowHeight`) and never rebuild these controls; a server table neither groups nor picks a summary.
+- A grid of many rows a reader counts takes `rowNumbers: true`: the tick, the number and the name stay pinned while the rest scrolls under them.
 - Readers move columns (the Display list, the column menu) and pin them in a grid. Order and pins live with hidden columns in the display state, on the device and in a saved view, never in the URL; declare the columns in the order most readers want and never reorder `columns` in app code to fake a reader's choice.
 
 ## Kinds and priority

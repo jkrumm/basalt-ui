@@ -1,6 +1,7 @@
 /**
  * Saved views, as pure values (docs/v3/concepts/data-table.md sections 3 and 6). A view stores
- * explicit values: `q`, filters, sort, page size and the columns (visibility, order, pins), never the page. It lives
+ * explicit values: `q`, filters, sort, page size, the columns (visibility, order, pins, widths), the
+ * row height, the grouping and the footer reduces, never the page. It lives
  * on the device at `basalt:table-views:<id>` in the frozen `{v,value}` envelope, so a bumped
  * version discards what an older shape wrote instead of reading it wrong.
  *
@@ -13,7 +14,7 @@
  */
 import { persisted } from '../../core/persisted'
 import type { Persisted, PersistedSchema } from '../../core/persisted'
-import type { TableState, View } from '../contract'
+import type { TableDisplay, TableState, View } from '../contract'
 import { sameScope } from '../core/state'
 
 /** The envelope version of the views store. Bump when `View` changes shape. */
@@ -64,6 +65,19 @@ const hidden = (visibility: Record<string, boolean>): string =>
 /** A stored id list as one comparable string; absent and empty are the same. */
 const listKey = (ids: readonly string[] | undefined): string => (ids ?? []).join('\u0000')
 
+/** A stored map by column id as one comparable string; absent and empty are the same. */
+const mapKey = (map: Readonly<Record<string, unknown>> | undefined): string =>
+  JSON.stringify(Object.entries(map ?? {}).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+
+/** The view properties beyond the columns: the row height, the grouping and the reduces. */
+const viewKey = (display: TableState['display']): string =>
+  JSON.stringify([
+    mapKey(display.widths),
+    display.rowHeight ?? '',
+    display.groupBy === undefined ? '' : display.groupBy === null ? '\u0000' : display.groupBy,
+    mapKey(display.aggregates),
+  ])
+
 /** Whether the table state differs from the view in anything the view carries. The page never counts. */
 export function isViewDirty(view: View, state: TableState): boolean {
   const saved = view.state.display
@@ -72,7 +86,8 @@ export function isViewDirty(view: View, state: TableState): boolean {
     !sameScope(view.state.request, state.request) ||
     hidden(saved.visibility) !== hidden(now.visibility) ||
     listKey(saved.order) !== listKey(now.order) ||
-    listKey([...(saved.pinned ?? [])].toSorted()) !== listKey([...(now.pinned ?? [])].toSorted())
+    listKey([...(saved.pinned ?? [])].toSorted()) !== listKey([...(now.pinned ?? [])].toSorted()) ||
+    viewKey(saved) !== viewKey(now)
   )
 }
 
@@ -108,6 +123,23 @@ export function pruneView(
         })
   const order = ids(display.order)
   const pinned = ids(display.pinned)
+  const byColumn = <V>(
+    map: Readonly<Record<string, V>> | undefined,
+  ): Record<string, V> | undefined => {
+    if (map === undefined) return undefined
+    const kept: Record<string, V> = {}
+    for (const [id, value] of Object.entries(map)) {
+      if (known.has(id)) kept[id] = value
+      else if (!dropped.includes(id)) dropped.push(id)
+    }
+    return kept
+  }
+  const widths = byColumn(display.widths)
+  const aggregates = byColumn(display.aggregates)
+  const groupGone =
+    typeof display.groupBy === 'string' && !known.has(display.groupBy) ? display.groupBy : undefined
+  if (groupGone !== undefined && !dropped.includes(groupGone)) dropped.push(groupGone)
+  const { groupBy: _groupBy, ...kept } = display
   return {
     dropped,
     view: {
@@ -121,13 +153,37 @@ export function pruneView(
           ...(request.ranks !== undefined && { ranks }),
         },
         display: {
-          ...display,
+          ...(groupGone === undefined ? display : kept),
           visibility,
           ...(order !== undefined && { order }),
           ...(pinned !== undefined && { pinned }),
+          ...(widths !== undefined && { widths }),
+          ...(aggregates !== undefined && { aggregates }),
         },
       },
     },
+  }
+}
+
+/**
+ * The display a table takes when it applies a view: the view's columns, widths, row height, grouping
+ * and reduces, each restored to the declared one where the view carries none (a view saved before a
+ * property existed), so the table equals the view it applied. The open and closed groups stay the
+ * device's while the grouping holds.
+ */
+export function viewDisplay(prev: TableDisplay, saved: TableDisplay): TableDisplay {
+  const { rowHeight: _rowHeight, groupBy: _groupBy, ...rest } = prev
+  const sameGroup = prev.groupBy === saved.groupBy
+  return {
+    ...rest,
+    visibility: saved.visibility,
+    order: saved.order ?? [],
+    pinned: saved.pinned ?? [],
+    widths: saved.widths ?? {},
+    aggregates: saved.aggregates ?? {},
+    ...(saved.rowHeight !== undefined && { rowHeight: saved.rowHeight }),
+    ...(saved.groupBy !== undefined && { groupBy: saved.groupBy }),
+    ...(!sameGroup && { collapsed: [] }),
   }
 }
 
@@ -155,6 +211,14 @@ export function saveView(
       ...((state.display.order?.length ?? 0) > 0 && { order: [...(state.display.order ?? [])] }),
       ...((state.display.pinned?.length ?? 0) > 0 && {
         pinned: [...(state.display.pinned ?? [])],
+      }),
+      ...(Object.keys(state.display.widths ?? {}).length > 0 && {
+        widths: { ...state.display.widths },
+      }),
+      ...(state.display.rowHeight !== undefined && { rowHeight: state.display.rowHeight }),
+      ...(state.display.groupBy !== undefined && { groupBy: state.display.groupBy }),
+      ...(Object.keys(state.display.aggregates ?? {}).length > 0 && {
+        aggregates: { ...state.display.aggregates },
       }),
     },
   }

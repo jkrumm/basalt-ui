@@ -20,6 +20,7 @@
  */
 import type { CardSlot, KindColumn, Priority } from '../contract'
 import { specOf } from './kinds'
+import { KIND_DEFAULTS } from './kinds-spec'
 import type { CardPlace, KindName, KindSpec, Width } from './kinds-spec'
 
 export const FULL_AT_STEPS = [
@@ -36,6 +37,10 @@ export const CELL_PAD_PX = 24
 export const ICON_COL_PX = 44
 /** The tick column's width: the `<col>` a selectable table draws and the offset of the first pinned column. */
 export const TICK_COL_PX = 40
+/** The row-number column's width (`rowNumbers`): four tabular digits and the cell padding. */
+export const ROW_NUMBER_COL_PX = 44
+/** The widest a reader may drag a column. */
+export const RESIZE_MAX_PX = 960
 
 /** The caps per card place; `detail` and `hidden` are unbounded. */
 export const SLOT_CAPS: Readonly<Partial<Record<CardPlace, number>>> = {
@@ -93,6 +98,8 @@ export type PlanOptions = {
   visibility?: Readonly<Record<string, boolean>>
   /** The widest loaded value in `ch` of each `width: 'content'` column, by id. */
   contentCh?: Readonly<Record<string, number>>
+  /** `display.widths`: the px a reader dragged a column to; it wins over the kind and the content width. */
+  widths?: Readonly<Record<string, number>>
   /** Dev warnings; default `console.warn` outside production. */
   warn?: (message: string) => void
 }
@@ -118,6 +125,27 @@ function contentWidth(input: PlanInput, loaded: number | undefined): number | nu
     return widthPx({ ch: Math.max(content.short.minCh, ch), flex: false })
   }
   return widthPx({ ch: Math.min(CONTENT_MAX_CH, Math.max(CONTENT_MIN_CH, ch)), flex: false })
+}
+
+/** The narrowest a reader may drag a column of `kind`, in px. */
+export function minWidthPx(kind: KindName): number {
+  return KIND_DEFAULTS[kind].minCh * CH_PX + CELL_PAD_PX
+}
+
+/** A dragged width held between the kind's minimum and `RESIZE_MAX_PX`, in whole px. */
+export function clampWidth(kind: KindName, px: number): number {
+  return Math.round(Math.min(RESIZE_MAX_PX, Math.max(minWidthPx(kind), px)))
+}
+
+/** Whether a reader may drag the column's edge: every column but the icon column of `actions`. */
+export function isResizable(input: Pick<PlanInput, 'width'>): boolean {
+  return input.width !== 'icon'
+}
+
+/** The px a reader set for the column, held to its bounds, or `null` when none (or it cannot resize). */
+function resizedWidth(input: PlanInput, set: number | undefined): number | null {
+  if (set === undefined || !Number.isFinite(set) || !isResizable(input)) return null
+  return clampWidth(input.kind, set)
 }
 
 function defaultWarn(message: string): void {
@@ -220,7 +248,10 @@ export function planInputs(inputs: readonly PlanInput[], options: PlanOptions = 
       `basalt-ui/table: more than two priority-1 columns; ${demoted.join(', ')} demoted to 2 by declaration order`,
     )
   }
-  const sized = inputs.map((c) => contentWidth(c, options.contentCh?.[c.id]))
+  // A width the reader set wins; a resized flexible column is fixed at it, the filler takes the rest.
+  const sized = inputs.map(
+    (c) => resizedWidth(c, options.widths?.[c.id]) ?? contentWidth(c, options.contentCh?.[c.id]),
+  )
   const widths = inputs.map((c, index) => sized[index] ?? widthPx(c.width))
 
   const sum = (pick: (index: number) => boolean) =>

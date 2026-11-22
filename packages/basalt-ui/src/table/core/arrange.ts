@@ -13,8 +13,11 @@
  */
 import type { PlannedColumn, TablePlan } from './plan'
 
-/** A planned column as the table draws it: `pinAt` is the inline offset of a start-pinned column in px. */
-export type ArrangedColumn = PlannedColumn & { pinAt?: number }
+/**
+ * A planned column as the table draws it: `pinAt` is the inline offset of a start-pinned column in
+ * px, `pinEdge` marks the last visible start-pinned column, the one that casts the scroll shadow.
+ */
+export type ArrangedColumn = PlannedColumn & { pinAt?: number; pinEdge?: boolean }
 
 export type Arranged<S> = {
   specs: S[]
@@ -68,6 +71,8 @@ export function arrangeColumns<S extends { id: string; kind: string }>(
     at += planned.widthPx
     return column
   })
+  const edge = columns.findLastIndex((column) => column.pinAt !== undefined)
+  if (edge !== -1) columns[edge] = { ...columns[edge]!, pinEdge: true }
   return {
     specs: indexes.map((index) => specs[index]!),
     plan: { ...plan, columns },

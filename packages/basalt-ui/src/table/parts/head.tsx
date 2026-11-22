@@ -6,7 +6,7 @@
  */
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- explicit roles keep the table a table under CSS projection (concept section 6, Roselli) */
 import { useId, useRef, useState } from 'react'
-import type { CSSProperties, ReactElement } from 'react'
+import type { CSSProperties, KeyboardEvent, PointerEvent, ReactElement } from 'react'
 import { cn } from '../../core/cn'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
@@ -23,6 +23,7 @@ import type { SortDirection, TableModel } from '../use-data-table'
 import { CategoryOrder } from './category-order'
 import { ColumnActionsMenu } from './column-actions'
 import { useFilterText } from './filter-text'
+import { RowNumberHead } from './row-number'
 import { FilterEditor } from './toolbar-editor'
 import { rankableSpecs } from './toolbar-filters'
 import type { FilterableSpec } from './toolbar-filters'
@@ -91,6 +92,105 @@ export function tierAttributes(
 export function pinStyle(planned: PlannedColumn & { pinAt?: number }): CSSProperties | undefined {
   if (planned.pin !== 'start' || planned.pinAt === undefined) return undefined
   return { ['--table-pin-at' as string]: `${planned.pinAt}px` }
+}
+
+/** `data-pin-edge` on the cells of the last start-pinned column: the one that casts the scroll shadow. */
+export function pinEdge(planned: PlannedColumn & { pinEdge?: boolean }): {
+  'data-pin-edge'?: ''
+} {
+  return planned.pinEdge === true ? { 'data-pin-edge': '' } : {}
+}
+
+/** One arrow press moves a column edge this far; with Shift, `RESIZE_STEP_WIDE_PX`. */
+export const RESIZE_STEP_PX = 8
+export const RESIZE_STEP_WIDE_PX = 40
+
+/**
+ * The resize handle on a header's end edge: a focusable separator whose value is the column's width.
+ * A drag previews the width and writes it to the view on release; Left and Right move the edge by
+ * 8 px (Shift 40), Home and End go to the kind's minimum and the maximum, Enter and a double-click
+ * return the column to its kind's width. In a right-to-left table the edge moves the other way.
+ */
+function ResizeHandle<T>({
+  model,
+  spec,
+}: {
+  model: TableModel<T>
+  spec: KindSpec<T>
+}): ReactElement {
+  const t = useMessages(table)
+  const { px, min, max } = model.widthOf(spec.id)
+  const drag = useRef<{ x: number; px: number; sign: 1 | -1; moved: boolean } | null>(null)
+  const [active, setActive] = useState(false)
+  const widthAt = (event: PointerEvent<HTMLElement>): number | null => {
+    const start = drag.current
+    if (start === null) return null
+    const delta = (event.clientX - start.x) * start.sign
+    if (Math.abs(delta) >= 1) start.moved = true
+    return start.px + delta
+  }
+  const end = (event: PointerEvent<HTMLElement>, commit: boolean): void => {
+    const next = widthAt(event)
+    const moved = drag.current?.moved === true
+    drag.current = null
+    setActive(false)
+    if (commit && moved && next !== null) model.setWidth(spec.id, next)
+    else model.previewWidth(spec.id, null)
+  }
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>): void => {
+    const rtl = getComputedStyle(event.currentTarget).direction === 'rtl'
+    const step = (event.shiftKey ? RESIZE_STEP_WIDE_PX : RESIZE_STEP_PX) * (rtl ? -1 : 1)
+    const next =
+      event.key === 'ArrowRight'
+        ? px + step
+        : event.key === 'ArrowLeft'
+          ? px - step
+          : event.key === 'Home'
+            ? min
+            : event.key === 'End'
+              ? max
+              : event.key === 'Enter'
+                ? undefined
+                : null
+    if (next === null) return
+    event.preventDefault()
+    event.stopPropagation()
+    model.setWidth(spec.id, next)
+  }
+  return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex, jsx-a11y/no-noninteractive-element-interactions -- a focusable separator is the WAI-ARIA window-splitter pattern: its value moves with the keys
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={t('table.resizeColumn', spec.header === '' ? spec.id : spec.header)}
+      aria-valuenow={Math.round(px)}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      tabIndex={0}
+      data-slot="table-resize"
+      data-active={active ? '' : undefined}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return
+        event.preventDefault()
+        event.stopPropagation()
+        event.currentTarget.setPointerCapture?.(event.pointerId)
+        const rtl = getComputedStyle(event.currentTarget).direction === 'rtl'
+        drag.current = { x: event.clientX, px, sign: rtl ? -1 : 1, moved: false }
+        setActive(true)
+      }}
+      onPointerMove={(event) => {
+        const next = widthAt(event)
+        if (next !== null && drag.current?.moved === true) model.previewWidth(spec.id, next)
+      }}
+      onPointerUp={(event) => end(event, true)}
+      onPointerCancel={(event) => end(event, false)}
+      onDoubleClick={(event) => {
+        event.stopPropagation()
+        model.setWidth(spec.id, undefined)
+      }}
+      onKeyDown={onKeyDown}
+    />
+  )
 }
 
 const ARIA_SORT: Record<SortDirection, 'ascending' | 'descending' | 'none'> = {
@@ -302,12 +402,13 @@ export function DataTableHead<T>({
 }): ReactElement {
   const model = modelOf(instance)
   const actionsLabel = useActionsLabel()
-  const offset = model.selection === undefined ? 1 : 2
+  const offset = model.lead.cols + 1
 
   return (
     <TableHeader role="rowgroup">
       <TableRow role="row" {...(rowIndex !== undefined && { 'aria-rowindex': rowIndex })}>
         <TriStateHeader model={model} />
+        <RowNumberHead model={model} />
         {visibleColumns(model.specs, model.plan.columns).map(({ spec, planned }, index) => {
           const direction = model.sortOf(spec.id)
           const sortable = spec.sort !== null
@@ -320,6 +421,7 @@ export function DataTableHead<T>({
               {...(sortable && { 'aria-sort': ARIA_SORT[direction], 'aria-label': spec.header })}
               {...cellAttributes(spec)}
               {...tierAttributes(planned, model.detailListed)}
+              {...pinEdge(planned)}
               style={pinStyle(planned)}
               numeric={numeric}
               className={cn('group/head', className)}
@@ -335,6 +437,7 @@ export function DataTableHead<T>({
                   direction={direction}
                 />
               )}
+              {model.resizable(spec.id) && <ResizeHandle model={model} spec={spec} />}
             </TableHead>
           )
         })}

@@ -180,6 +180,8 @@ export type TableStateApi = {
   display: TableDisplay
   setRequest(patch: Partial<TableRequest>): void
   setDisplay(patch: Partial<TableDisplay>): void
+  /** Rewrites the display from the stored one: how a key is dropped rather than set. */
+  updateDisplay(next: (prev: TableDisplay) => TableDisplay): void
 }
 
 export function useTableState(options: TableStateOptions): TableStateApi {
@@ -224,6 +226,7 @@ export function useTableState(options: TableStateOptions): TableStateApi {
     display,
     setRequest: (patch) => write(writeRequest(latest.current, patch)),
     setDisplay: (patch) => writeDisplay((prev) => ({ ...prev, ...patch })),
+    updateDisplay: (next) => writeDisplay(next),
   }
 }
 

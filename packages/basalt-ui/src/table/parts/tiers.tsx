@@ -6,7 +6,7 @@
  * `data-below` is the inline size under which the table stops being a table: `480`, `700` or `800` (the
  * plan's `reducedFrom`, `800` raised by `cardsBelow: 'wide'`) or `always`.
  */
-import type { CSSProperties, FocusEvent } from 'react'
+import type { CSSProperties, FocusEvent, UIEvent } from 'react'
 import { TICK_COL_PX } from '../core/plan'
 import type { TableModel } from '../use-data-table'
 
@@ -67,7 +67,7 @@ function pinnedPx<T>(model: TableModel<T>, edge: 'start' | 'end'): number {
 
 /** The sideways scroll's table width: the scrolled columns at their planned size. */
 export function scrollMinWidth<T>(model: TableModel<T>): CSSProperties {
-  const selectPx = model.selection === undefined ? 0 : TICK_COL_PX
+  const selectPx = model.lead.px
   const px = model.plan.columns.reduce(
     (sum, column) => (scrolled(model, column) ? sum + column.widthPx : sum),
     selectPx,
@@ -76,10 +76,28 @@ export function scrollMinWidth<T>(model: TableModel<T>): CSSProperties {
     ['--table-min-scroll' as string]: `${px}px`,
     // A start-pinned column rides beside the tick column when there is one.
     ['--table-pin-start' as string]: `${selectPx}px`,
+    // The row-number column rides beside the tick column when there is one.
+    ['--table-number-at' as string]: `${model.lead.tick ? TICK_COL_PX : 0}px`,
     // Focus scrolls clear of the pinned columns, which are opaque and sit over the scrolled cells.
     ['--table-scroll-pad-start' as string]: `${selectPx + pinnedPx(model, 'start')}px`,
     ['--table-scroll-pad-end' as string]: `${pinnedPx(model, 'end')}px`,
   }
+}
+
+/**
+ * Marks the table root `data-scrolled` while its scroller (the plain one or the virtual list) has
+ * moved sideways, so the last pinned column casts its edge shadow. One capture listener on the root
+ * reads the scroll position; it writes the attribute itself, so a scroll never re-renders the table.
+ */
+export function markScrolled(event: UIEvent<HTMLElement>): void {
+  const port = event.target
+  if (!(port instanceof HTMLElement)) return
+  if (!port.matches('[data-slot="table-scroller"], [data-slot="virtual-list"]')) return
+  const root = event.currentTarget
+  const moved = Math.abs(port.scrollLeft) > 0
+  if (moved === root.hasAttribute('data-scrolled')) return
+  if (moved) root.setAttribute('data-scrolled', '')
+  else root.removeAttribute('data-scrolled')
 }
 
 /** Room kept past a revealed control for its focus ring (outline width plus offset). */

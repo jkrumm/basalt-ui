@@ -7,7 +7,14 @@
 import type { ReactNode } from 'react'
 import type { Format } from '../../core/format'
 import type { Box, IconComponent, Tone } from '../../core/ports'
-import type { CardSlot, DateRangeLike, KindColumn, Priority, RowAction } from '../contract'
+import type {
+  Aggregate,
+  CardSlot,
+  DateRangeLike,
+  KindColumn,
+  Priority,
+  RowAction,
+} from '../contract'
 import type { SortFnName } from './features'
 
 export type KindName =
@@ -60,8 +67,8 @@ export type SelectEdit<T> = {
   commit: (row: T, value: string) => unknown
 }
 
-/** The reduce a numeric column's footer and group rows print (concept section 3, Footer). */
-export type Aggregate = 'sum' | 'mean' | 'min' | 'max' | 'count'
+/** The reduce a column's footer and group rows print (concept section 3, Footer). */
+export type { Aggregate }
 
 /** A numeric column's footer: the reduce and how its result reads in this kind. */
 export type FooterSpec = {
@@ -124,6 +131,11 @@ export type KindSpec<T> = {
   unit?: string
   /** `number`, `money`: the footer reduce. */
   footer?: FooterSpec
+  /**
+   * `number`, `money`: how a reduced number reads in this kind, for a footer or group reduce a
+   * reader picked on a column that declares none.
+   */
+  drawTotal?: (value: number, env: CellEnv) => ReactNode
   /** A numeric range filter's scale: the editor adds a two-thumb slider over it. */
   bounds?: readonly [number, number]
   /** `date`, `relativeTime` with a range filter: the from-to day picker its editor draws. */
@@ -139,6 +151,10 @@ export type KindDefaults = {
   sort: SortFnName | 'options' | 'declared' | null
   card: readonly CardPlace[]
   priority: Priority | null
+  /** Whether a reader may group the rows by this column: its values are a few repeated categories. */
+  groupable: boolean
+  /** The narrowest a reader may drag the column, in `ch` (the cell padding comes on top). */
+  minCh: number
 }
 
 export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
@@ -150,6 +166,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: 'alphanumeric',
     card: ['title', 'subtitle', 'meta'],
     priority: 1,
+    groupable: true,
+    minCh: 8,
   },
   text: {
     align: 'start',
@@ -159,6 +177,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: 'alphanumeric',
     card: ['subtitle', 'meta'],
     priority: 2,
+    groupable: true,
+    minCh: 6,
   },
   number: {
     align: 'end',
@@ -168,6 +188,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: 'basic',
     card: ['value', 'meta'],
     priority: 2,
+    groupable: false,
+    minCh: 4,
   },
   money: {
     align: 'end',
@@ -177,6 +199,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: 'basic',
     card: ['value', 'meta'],
     priority: 1,
+    groupable: false,
+    minCh: 6,
   },
   date: {
     align: 'start',
@@ -186,6 +210,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: 'datetime',
     card: ['meta'],
     priority: 3,
+    groupable: true,
+    minCh: 8,
   },
   relativeTime: {
     align: 'start',
@@ -196,6 +222,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: 'datetime',
     card: ['meta'],
     priority: 3,
+    groupable: false,
+    minCh: 8,
   },
   status: {
     align: 'start',
@@ -205,6 +233,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: 'options',
     card: ['badge', 'meta'],
     priority: 2,
+    groupable: true,
+    minCh: 6,
   },
   delta: {
     align: 'end',
@@ -214,6 +244,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: 'basic',
     card: ['meta'],
     priority: 3,
+    groupable: false,
+    minCh: 6,
   },
   meter: {
     align: 'start',
@@ -223,6 +255,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: 'basic',
     card: ['detail'],
     priority: 3,
+    groupable: false,
+    minCh: 8,
   },
   boolean: {
     align: 'center',
@@ -232,6 +266,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: 'basic',
     card: ['meta'],
     priority: 3,
+    groupable: true,
+    minCh: 3,
   },
   spark: {
     align: 'start',
@@ -241,6 +277,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: null,
     card: ['detail'],
     priority: 2,
+    groupable: false,
+    minCh: 10,
   },
   select: {
     align: 'start',
@@ -250,6 +288,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: null,
     card: ['edit'],
     priority: 2,
+    groupable: true,
+    minCh: 8,
   },
   actions: {
     align: 'end',
@@ -259,6 +299,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: null,
     card: ['kebab'],
     priority: null,
+    groupable: false,
+    minCh: 0,
   },
   custom: {
     align: 'start',
@@ -268,6 +310,8 @@ export const KIND_DEFAULTS: Readonly<Record<KindName, KindDefaults>> = {
     sort: 'declared',
     card: [],
     priority: null,
+    groupable: false,
+    minCh: 4,
   },
 }
 

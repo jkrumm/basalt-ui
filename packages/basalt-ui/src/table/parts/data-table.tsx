@@ -16,7 +16,7 @@ import { FrameArmContext } from '../../core/frame-arm'
 import type { FrameArm } from '../../core/frame-arm'
 import { useRowsShown } from '../../core/rows-shown'
 import type { DataTableProps } from '../contract'
-import { CONTENT_MAX_CH, TICK_COL_PX, widthPx } from '../core/plan'
+import { CONTENT_MAX_CH, ROW_NUMBER_COL_PX, widthPx } from '../core/plan'
 import { TableBody, TableCaption, Table } from '../../ui/table'
 import { DataTableBody } from './body'
 import { BulkBar } from './bulk-bar'
@@ -26,7 +26,13 @@ import { DataTableHead, visibleColumns } from './head'
 import { FrameArmRow } from './phases'
 import { RowFocusProvider, clearOnBlur, rowLinkOf } from './row-focus'
 import { TablePager } from './pager'
-import { revealFocus, scrollMinWidth, tierAttributesOf, warnWithoutTierSheet } from './tiers'
+import {
+  markScrolled,
+  revealFocus,
+  scrollMinWidth,
+  tierAttributesOf,
+  warnWithoutTierSheet,
+} from './tiers'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 
@@ -42,9 +48,19 @@ const ENTITY_SHARES = 2
 const ENTITY_MAX_CH = CONTENT_MAX_CH
 const ENTITY_SUB_MAX_CH = 2 * CONTENT_MAX_CH
 
-/** The table draws a filler column when its one flexible column is the title; `table.css` paints the filler cells. */
+/**
+ * The table draws a filler column when its one flexible column is the title, or when a reader's
+ * widths left it no flexible column (the columns then keep the widths they were dragged to);
+ * `table.css` paints the filler cells.
+ */
 function fillsTail<T>(model: TableModel<T>): boolean {
-  return model.look === 'grid' || titleCapPx(model) !== undefined
+  return model.look === 'grid' || titleCapPx(model) !== undefined || resizedFixed(model)
+}
+
+/** Every drawn column is fixed and a reader set a width: the rest of the row is the filler's. */
+function resizedFixed<T>(model: TableModel<T>): boolean {
+  if (Object.keys(model.state.display.widths ?? {}).length === 0) return false
+  return !visibleColumns(model.specs, model.plan.columns).some(({ planned }) => planned.flex)
 }
 
 /** The title column's cap in px when it is the table's one flexible column, else `undefined`. */
@@ -69,11 +85,11 @@ function Columns<T>({
   // A grid draws every column at its planned width and leaves the rest to the filler, so the offsets
   // of its pinned columns are sums of known widths.
   const grid = model.look === 'grid'
-  const tickPx = model.selection === undefined ? 0 : TICK_COL_PX
-  const gridPx = visible.reduce((sum, { planned }) => sum + planned.widthPx, tickPx)
+  const leadPx = model.lead.px
+  const gridPx = visible.reduce((sum, { planned }) => sum + planned.widthPx, leadPx)
   const fixedPx = visible.reduce(
     (sum, { planned }) => (planned.flex ? sum : sum + planned.widthPx),
-    model.selection === undefined ? 0 : TICK_COL_PX,
+    leadPx,
   )
   const shares = visible.reduce(
     (sum, { spec, planned }) =>
@@ -87,12 +103,16 @@ function Columns<T>({
       planned.flex || (planned.priority === 3 && model.plan.fullAt === null)
         ? sum
         : sum + planned.widthPx,
-    model.selection === undefined ? 0 : TICK_COL_PX,
+    leadPx,
   )
   const cap = fill ? titleCapPx(model) : undefined
+  const resized = fill && !grid && cap === undefined && resizedFixed(model)
   return (
     <colgroup>
       {model.selection !== undefined && <col style={{ width: '2.5rem' }} />}
+      {model.lead.numbers && (
+        <col data-kind="row-number" style={{ width: `${ROW_NUMBER_COL_PX}px` }} />
+      )}
       {visible.map(({ spec, planned }) => {
         const flexible = planned.flex && !grid
         // The title is the row's name: it gets a larger share of the free width, never less than its floor.
@@ -112,7 +132,7 @@ function Columns<T>({
           />
         )
       })}
-      {grid ? (
+      {grid || resized ? (
         <col data-fill="" style={{ width: `max(0px, calc(100cqw - ${gridPx}px))` }} />
       ) : (
         cap !== undefined && (
@@ -159,8 +179,7 @@ function FramedArm<T>({
   const model = modelOf(table)
   const { claim } = frame
   useLayoutEffect(claim, [claim])
-  const colcount =
-    visibleColumns(model.specs, model.plan.columns).length + (model.selection === undefined ? 0 : 1)
+  const colcount = visibleColumns(model.specs, model.plan.columns).length + model.lead.cols
   return (
     <div
       data-slot="table-root"
@@ -210,6 +229,12 @@ function FramedArm<T>({
  * the table, so the figures stay beside the title and the head, the hairlines and the row tint still
  * span the table.
  *
+ * The view is the reader's: a header's end edge resizes its column (drag, arrow keys, double-click
+ * resets), the column menu groups the rows by a column whose kind groups and picks its summary, and a
+ * footer cell steps through the summaries its kind allows. Widths, the row height (`rowHeight`), the
+ * grouping and the summaries live in the table's display state on the device and in a saved view,
+ * never in the URL. A server table neither groups nor takes a picked summary: its `totals` are the server's.
+ *
  * @useWhen a page lists records that sort, filter, page, select or open in a detail
  * @neverWhen the rows are static with no behaviour (use `ui/table`) or a chart says it better
  *
@@ -229,7 +254,7 @@ export function DataTable<T, I = unknown>({
   const model = modelOf(table)
   const scrolls = typeof height === 'object' || height === 'fill' || model.phone === 'scroll'
   const columns = visibleColumns(model.specs, model.plan.columns).length
-  const colcount = columns + (model.selection === undefined ? 0 : 1)
+  const colcount = columns + model.lead.cols
   const { phase } = model
   // A row is a tab stop (roving) once there are rows to activate; before that the scroller is.
   const focusable = model.rows.length > 0 && (phase.tag === 'ready' || phase.tag === 'stale')
@@ -257,6 +282,7 @@ export function DataTable<T, I = unknown>({
           {...tierAttributesOf(model)}
           onFocus={revealFocus}
           onBlur={onBlur}
+          onScrollCapture={markScrolled}
           // One row size holds the window exact: a windowed table never projects to cards (a card
           // is as tall as its content) and its cells hold one line; narrow, it scrolls sideways.
           data-phone="scroll"
@@ -308,6 +334,7 @@ export function DataTable<T, I = unknown>({
         {...tierAttributesOf(model)}
         onFocus={revealFocus}
         onBlur={onBlur}
+        onScrollCapture={markScrolled}
         data-refresh-failed={phase.tag === 'stale' && phase.refreshFailed ? '' : undefined}
         // A `fill` table takes its parent's height, so its scroller is a bounded region, as in the windowed path.
         className={cn(

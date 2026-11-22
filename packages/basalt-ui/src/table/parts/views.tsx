@@ -20,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover'
 import type { DataTableInstance, TableState, View, ViewStore } from '../contract'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
-import { isViewDirty, pruneView, saveView, viewsStore } from './views-model'
+import { isViewDirty, pruneView, saveView, viewDisplay, viewsStore } from './views-model'
 
 /** The applied view's id, and the write that changes it. */
 export type ViewParam = { id: string | undefined; set(id: string | undefined): void }
@@ -68,12 +68,8 @@ function applyView<T>(model: TableModel<T>, view: View): void {
     // A view without ranks restores the declared order, so the table equals the view it applied.
     ranks: request.ranks ?? {},
   })
-  // A view saved before columns moved carries no order or pins: it restores the declared ones.
-  model.state.setDisplay({
-    visibility: display.visibility,
-    order: display.order ?? [],
-    pinned: display.pinned ?? [],
-  })
+  // A view saved before a property existed (order, pins, widths, ...) restores the declared one.
+  model.state.updateDisplay((prev) => viewDisplay(prev, display))
 }
 
 /** The views of a table and the two writes on them; the same shape on the device and on a store. */

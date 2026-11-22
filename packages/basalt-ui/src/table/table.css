@@ -80,7 +80,7 @@
      the head cells take, the canvas where no surface is declared), with the row's own tint (hover,
      selected) layered over it, so a cell that scrolls under a pin never shows through and never
      paints a band against the row. */
-  [data-slot='table-cell']:is([data-pin], [data-kind='tick']) {
+  [data-slot='table-cell']:is([data-pin], [data-kind='tick'], [data-kind='row-number']) {
     background-color: var(--basalt-surface, var(--basalt-canvas));
     background-image: linear-gradient(var(--row-tint, transparent), var(--row-tint, transparent));
   }
@@ -980,12 +980,15 @@
   }
   [data-slot='table-root'][data-look='grid']
     [data-slot='table']
-    :is([data-pin], [data-kind='tick']) {
+    :is([data-pin], [data-kind='tick'], [data-kind='row-number']) {
     position: sticky;
     z-index: 1;
   }
   [data-slot='table-root'][data-look='grid'] [data-slot='table'] [data-kind='tick'] {
     inset-inline-start: 0;
+  }
+  [data-slot='table-root'][data-look='grid'] [data-slot='table'] [data-kind='row-number'] {
+    inset-inline-start: var(--table-number-at, 0);
   }
   [data-slot='table-root'][data-look='grid'] [data-slot='table'] [data-pin='start'] {
     inset-inline-start: var(--table-pin-at, var(--table-pin-start, 0));
@@ -994,7 +997,7 @@
     inset-inline-end: 0;
   }
   [data-slot='table-root'][data-look='grid']
-    [data-slot='table-head']:is([data-pin], [data-kind='tick']) {
+    [data-slot='table-head']:is([data-pin], [data-kind='tick'], [data-kind='row-number']) {
     z-index: 20 !important;
   }
   [data-slot='table-root'][data-look='grid'][data-fill] [data-slot='table-row'] > :last-child {
@@ -1181,9 +1184,66 @@
     }
   }
 
+  /* the view: a 7 px resize handle on the head's end edge, the brand rule while dragged or focused */
+  [data-slot='table-resize'] {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    z-index: 1;
+    width: 7px;
+    cursor: col-resize;
+    touch-action: none;
+    outline: none;
+  }
+  [data-slot='table-resize']::after {
+    content: '';
+    position: absolute;
+    inset-block: 25%;
+    inset-inline-end: 0;
+    width: 1px;
+    background: transparent;
+  }
+  [data-slot='table-head']:hover > [data-slot='table-resize']::after {
+    background: var(--basalt-line);
+  }
+  [data-slot='table-resize']:is([data-active], :focus-visible)::after {
+    inset-block: 0;
+    width: 2px;
+    background: var(--basalt-brand);
+  }
+
+  /* a view's row height is `data-density` on the body alone: the head keeps its height */
+  [data-slot='table-body'][data-density] {
+    --table-row-h: var(--basalt-row-h);
+  }
+
+  /* the last pinned column casts a shadow once the scroller moved sideways */
+  [data-slot='table-root'][data-scrolled] [data-pin-edge] {
+    box-shadow: var(--table-edge-x, 8px) 0 12px -8px
+      light-dark(
+        color-mix(in oklab, var(--basalt-ink) 14%, transparent),
+        color-mix(in oklab, var(--basalt-canvas) 80%, transparent)
+      );
+  }
+  [data-slot='table-root']:dir(rtl) {
+    --table-edge-x: -8px;
+  }
+
+  /* an empty footer pick shows on hover or focus */
+  [data-slot='table-footer-pick'][data-quiet] {
+    opacity: 0;
+  }
+  [data-slot='table-row']:hover [data-slot='table-footer-pick'][data-quiet],
+  [data-slot='table-footer-pick'][data-quiet]:focus-visible {
+    opacity: 1;
+  }
+
   @media print {
     [data-slot='table-scroller'] {
       overflow: visible;
+    }
+    [data-slot='table-resize'] {
+      display: none;
     }
   }
 }
