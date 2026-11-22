@@ -194,7 +194,7 @@ export function WizardDialog<F extends WizardForm>({
       <aside
         data-slot="wizard-preview"
         aria-label={t('controls.preview')}
-        className="hidden min-w-0 flex-1 items-center justify-center bg-canvas p-8 @wide:flex"
+        className="hidden min-w-0 flex-1 items-center justify-center bg-background p-8 @wide:flex"
       >
         <div
           data-slot="wizard-preview-card"
