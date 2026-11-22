@@ -214,8 +214,22 @@ export type ViewStore<S = unknown> = {
 
 // ---- Hosts (shell-nav-router 3.2) ---------------------------------------------------------
 
-/** What a detail host shows. Default host is a sheet; `PageAside` hosts it inside `AppShell`. */
-export type DetailEntry = { title: string; body: BoxSlot }
+/**
+ * The ordered records a panel was opened from: `ids` in the opener's order, `id` the one shown, and
+ * `onStep` swaps the panel to another of them. A panel draws previous and next from it, disabled at
+ * the ends.
+ */
+export type RecordSequence = {
+  readonly ids: readonly string[]
+  readonly id: string
+  onStep(id: string): void
+}
+
+/**
+ * What a detail host shows. The default host is a sheet, a `Peek` under `AppShell`; `PageAside`
+ * hosts it inside `AppShell`. `records` lets the host step through the opener's rows.
+ */
+export type DetailEntry = { title: string; body: BoxSlot; records?: RecordSequence }
 
 export type DetailHost = {
   readonly isOpen: boolean
