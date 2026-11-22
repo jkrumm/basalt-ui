@@ -11,6 +11,8 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import type { BoxSlot, ControlsSlot } from '../../core/ports'
+import { IntlScope } from '../../core/provider-props'
+import { ChartPlaceholder } from '../state'
 import { useInChartCard } from '../card-context'
 import type { ChartCardProps } from '../contract'
 import { ChartCard } from './chart-card'
@@ -136,6 +138,23 @@ describe('phase matrix', () => {
     const el = html(<ChartCard title="R" chart={c.slot} phase={query} />)
     expect(c.calls()).toBe(1)
     expect(el.querySelector('output')?.textContent).toBe('Could not refresh. Showing earlier data.')
+  })
+
+  test('Retry reads the provider message home.retry, in the card arm and in the placeholder', () => {
+    const retry = (): void => {}
+    const messages = { 'home.retry': 'Erneut versuchen' }
+    const card = html(
+      <IntlScope messages={messages}>
+        <ChartCard title="R" chart={() => null} phase={{ tag: 'error', retry }} />
+      </IntlScope>,
+    )
+    expect(card.querySelector('[role="alert"] button')?.textContent).toBe('Erneut versuchen')
+    const placeholder = html(
+      <IntlScope messages={messages}>
+        <ChartPlaceholder state={{ error: new Error('x') }} onRetry={retry} />
+      </IntlScope>,
+    )
+    expect(placeholder.querySelector('[role="alert"] button')?.textContent).toBe('Erneut versuchen')
   })
 
   test('the error arm offers Retry and a 403 offers none', () => {
