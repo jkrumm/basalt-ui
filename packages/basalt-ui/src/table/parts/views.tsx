@@ -14,8 +14,8 @@
  * over it. The id is read and written on the address bar (`replace`, never a push) unless the caller
  * binds it to its own route search through `view`.
  */
-import { useEffect, useRef, useState } from 'react'
-import type { MouseEvent, ReactElement } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import type { ComponentType, MouseEvent, ReactElement } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
 import type { ControlsSlot } from '../../core/ports'
@@ -28,7 +28,6 @@ import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { setDoor, useDoor, useMountDoor } from './view-door'
 import type { DoorState, PanelPage } from './view-door'
-import { ViewPanel } from './view-panel'
 import {
   BASE_VIEW,
   defaultView,
@@ -406,6 +405,26 @@ function useViewsController<T>(
   }
 }
 
+/**
+ * The panel loads on its first open: its pages (radio groups, the filter editors, the order list)
+ * stay out of every table's initial graph, and a page that never edits a view never fetches them.
+ */
+const LazyPanel = lazy(
+  async (): Promise<{ default: ComponentType<{ c: ViewsController<unknown> }> }> => ({
+    default: (await import('./view-panel')).ViewPanel,
+  }),
+)
+
+/** The panel while it is open, nothing while it is closed. */
+function Panel<T>({ c }: { c: ViewsController<T> }): ReactElement | null {
+  if (!c.door.open) return null
+  return (
+    <Suspense fallback={null}>
+      <LazyPanel c={c as unknown as ViewsController<unknown>} />
+    </Suspense>
+  )
+}
+
 function PlusGlyph(): ReactElement {
   return (
     <svg viewBox="0 0 16 16" className="size-icon" fill="none" aria-hidden="true">
@@ -493,6 +512,10 @@ export function ViewStrip<T>({ c }: { c: ViewsController<T> }): ReactElement {
   const t = useMessages(table)
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const value = c.active?.id ?? BASE_VIEW
+  // Fetch the panel's chunk once the strip is up, so its first open draws at once.
+  useEffect(() => {
+    void import('./view-panel')
+  }, [])
   const menuFor = (id: string) => (event: MouseEvent<HTMLElement>) => {
     if (id === value) setAnchor(event.currentTarget)
   }
@@ -605,7 +628,7 @@ export function useTableViews<T>(
   return {
     tabs: { kind: 'controls-slot', count: 1, render: () => <ViewStrip c={c} /> },
     settings: { label: t('table.viewEdit'), onClick: () => c.show('root') },
-    panel: <ViewPanel c={c} />,
+    panel: <Panel c={c} />,
   }
 }
 
@@ -651,7 +674,7 @@ export function ViewsBar<T>({
       >
         <EditGlyph />
       </Button>
-      <ViewPanel c={c} />
+      <Panel c={c} />
     </div>
   )
 }

@@ -3,7 +3,7 @@
  * the codec round trip) and the `Views` menu (apply, save by name, Reset, `?view=` while clean).
  */
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 import { useEffect } from 'react'
 import type { ReactElement } from 'react'
 import { persisted } from '../../core/persisted'
@@ -35,6 +35,10 @@ afterEach(() => {
   cleanup()
   localStorage.clear()
   window.history.replaceState(null, '', '/')
+})
+// The panel is a lazy chunk; load it once so the first open does not race the assertions.
+beforeAll(async () => {
+  await import('./view-panel')
 })
 beforeEach(() => {
   localStorage.clear()
