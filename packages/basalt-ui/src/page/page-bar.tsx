@@ -176,15 +176,29 @@ function MoreMenu({ items }: { items: readonly PageButtonAction[] }): ReactEleme
   )
 }
 
-/** The actions row: joined groups, the `mobile` fold and the overflow menu. */
-function PageActions({ actions }: { actions: readonly PageAction[] }): ReactElement {
+/**
+ * The actions row: joined groups, the `mobile` fold and the overflow menu. `primaryLast` moves the
+ * segment holding the primary to the end, whole, so the view row ends on it and no two groups fuse.
+ */
+function PageActions({
+  actions,
+  primaryLast,
+}: {
+  actions: readonly PageAction[]
+  primaryLast: boolean
+}): ReactElement {
   const placed = place(actions)
+  const segs = segments(placed)
+  const holdsPrimary = (segment: Placed[]): boolean => segment.some((p) => isPrimary(p.action))
+  const ordered = primaryLast
+    ? [...segs.filter((s) => !holdsPrimary(s)), ...segs.filter(holdsPrimary)]
+    : segs
   const overflow = placed.flatMap(({ action, placement }) =>
     placement === 'more' && !isText(action) ? [action] : [],
   )
   return (
     <div data-slot="page-actions" className="flex min-w-0 items-center gap-2">
-      {segments(placed).map((segment) => {
+      {ordered.map((segment) => {
         const body = segment.map(({ action, placement }) =>
           isText(action) ? (
             <ActionText key={action.id} action={action} folded={placement !== 'bar'} />
@@ -209,11 +223,6 @@ const isEmptySlot = (slot: { count: number } | undefined): boolean =>
   slot === undefined || slot.count === 0
 
 const isPrimary = (action: PageAction): boolean => 'primary' in action && action.primary === true
-
-/** The primary last, the rest in the caller's order: the view row ends on its one primary. */
-function primaryLast(actions: readonly PageAction[]): PageAction[] {
-  return [...actions.filter((a) => !isPrimary(a)), ...actions.filter(isPrimary)]
-}
 
 function SearchGlyph({ className }: { className?: string }): ReactElement {
   return (
@@ -465,7 +474,11 @@ export function PageBar<K extends string = string, L extends string = string>({
 
   useIsomorphicLayoutEffect(() => {
     if (host === null || !owns || list.length === 0 || !actionsInHeader) return undefined
-    return host.claim('actions', <PageActions actions={list} />, `${id}:actions`)
+    return host.claim(
+      'actions',
+      <PageActions actions={list} primaryLast={false} />,
+      `${id}:actions`,
+    )
     // `list` is rebuilt per render, `actions` is the caller's value.
   }, [host, owns, id, actions, actionsInHeader])
 
@@ -590,7 +603,7 @@ export function PageBar<K extends string = string, L extends string = string>({
             {refresh !== undefined && <RefreshButton {...refresh} />}
             {layout !== undefined && <LayoutToggle layout={layout} />}
             {settings !== undefined && <SettingsButton settings={settings} />}
-            {bandActions && <PageActions actions={primaryLast(list)} />}
+            {bandActions && <PageActions actions={list} primaryLast />}
           </div>
         </div>
       </div>

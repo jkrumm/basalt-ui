@@ -88,7 +88,7 @@ const CARDS = cn(
  *   <StatCell icon={Clock} label="Median duration" value={174} unit="s" delta={{ value: '-14 s', polarity: 'up-bad', label: 'vs prior 7 days' }} phase={query} />
  * </StatGroup>
  */
-export function StatGroup({ variant, label, children }: StatGroupProps): ReactElement {
+export function StatGroup({ variant, label, children }: StatGroupProps): ReactElement | null {
   const depth = useContext(FrameDepthContext)
   if (depth >= MAX_DEPTH) {
     warnOnce(
@@ -97,6 +97,8 @@ export function StatGroup({ variant, label, children }: StatGroupProps): ReactEl
     )
   }
   const cells = variant === 'flush' ? withContext(children) : children
+  // A flush strip with every cell dropped draws nothing, not an empty rule under the view row.
+  if (variant === 'flush' && Array.isArray(cells) && cells.length === 0) return null
   // A flush strip has already dropped every cell without context.
   if (variant !== 'flush') warnBare(cells)
   const shared = sharedFailure(cells)
