@@ -61,10 +61,10 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | interval-track | IntervalTrack | differs | client:visible | 190.5 kB | 119.3 kB | 31.1 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 119.3 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-dark). |
 | sparkline | Sparkline | clean | client:visible | 89.6 kB | 18.4 kB | 31.1 kB | Static picture first, the island adds behaviour: the keyboard and pointer readout of a labelled sparkline. client:visible, up to 18.4 kB further (client:idle above the fold). |
 | band-strip | BandStrip | differs | client:visible | 184.8 kB | 113.6 kB | 31.1 kB | Static picture first, the island adds behaviour: hover readout, focus and legend toggles. client:visible, up to 113.6 kB further (client:idle above the fold). The static picture differs from the hydrated one until it hydrates (most at 390-light). |
-| data-table | DataTable | clean | client:visible | 295.1 kB | 223.9 kB | 29.1 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 223.9 kB further (client:idle above the fold). |
+| data-table | DataTable | clean | client:visible | 298.1 kB | 226.9 kB | 29.1 kB | Static picture first, the island adds behaviour: sorting, paging and selection. client:visible, up to 226.9 kB further (client:idle above the fold). |
 | static-table | Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption | clean | no directive | 84.7 kB | 13.5 kB | 29.1 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static table; the picture is the whole part. |
-| table-toolbar | TableToolbar, BulkBar, TablePager | clean | client:visible | 253.7 kB | 182.5 kB | 29.1 kB | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, up to 182.5 kB further (client:idle above the fold). |
-| data-table-body | DataTableBody | clean | client:visible | 290.0 kB | 218.8 kB | 29.1 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 218.8 kB further (client:idle above the fold). |
+| table-toolbar | TableToolbar, BulkBar, TablePager | clean | client:visible | 256.7 kB | 185.5 kB | 29.1 kB | Static picture first, the island adds behaviour: search, filters, sorting, paging and bulk selection need JS. client:visible, up to 185.5 kB further (client:idle above the fold). |
+| data-table-body | DataTableBody | clean | client:visible | 293.0 kB | 221.8 kB | 29.1 kB | Static picture first, the island adds behaviour: sorting, selection and row activation need JS over the body. client:visible, up to 221.8 kB further (client:idle above the fold). |
 | markdown | Markdown | clean | client:visible | 215.4 kB | 144.2 kB | 29.1 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; mermaid fences need JS. client:visible, up to 144.2 kB further (client:idle above the fold). |
 | code-block | CodeBlock | clean | client:visible | 171.6 kB | 100.3 kB | 29.1 kB | Static picture first, the island adds behaviour: the code is coloured in the static HTML; the copy button needs JS. client:visible, up to 100.3 kB further (client:idle above the fold). |
 | article-layout | ArticleLayout, Prose | clean | client:visible | 133.8 kB | 62.6 kB | 29.6 kB | Static picture first, the island adds behaviour: the scroll-spy TOC and reading progress need JS. client:visible, up to 62.6 kB further (client:idle above the fold). |
@@ -117,7 +117,7 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | ui | 27 | 0 | 131.4 kB | 240.6 kB | 240.5 kB | 240.5 kB |
 | cards | 9 | 0 | 129.2 kB | 139.5 kB | 139.4 kB | 139.4 kB |
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
-| table | 4 | 0 | 295.4 kB | 300.4 kB | 300.3 kB | 300.3 kB |
+| table | 4 | 0 | 298.4 kB | 303.3 kB | 303.3 kB | 303.3 kB |
 | content | 5 | 0 | 271.7 kB | 272.9 kB | 272.9 kB | 272.9 kB |
 | page | 19 | 0 | 184.3 kB | 255.9 kB | 255.9 kB | 338.4 kB |
 | forms | 18 | 0 | 162.3 kB | 237.3 kB | 237.2 kB | 237.2 kB |
@@ -136,6 +136,13 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 | interval-track | correct at the declared width only | client:visible, up to 119.3 kB further |
 | sparkline | correct | client:visible, up to 18.4 kB further |
 | band-strip | correct at the declared width only | client:visible, up to 113.6 kB further |
+
+## Raised budgets
+
+- data-table: the record kinds: person, tags, countdown and link cells in the table island (Issue 2969), about 2 kB gzip
+- table-toolbar: the record kinds: person, tags, countdown and link cells in the table island (Issue 2969), about 2 kB gzip
+- data-table-body: the record kinds: person, tags, countdown and link cells in the table island (Issue 2969), about 2 kB gzip
+- family table: the record kinds: person, tags, countdown and link cells in the table island (Issue 2969), about 2 kB gzip
 
 ## Findings
 
