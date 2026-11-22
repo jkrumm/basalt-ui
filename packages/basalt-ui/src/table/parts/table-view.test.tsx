@@ -170,6 +170,21 @@ describe('column widths', () => {
     expect(colWidth(again.container, 3)).toBe(`${start + 60}px`)
   })
 
+  test('a cancelled drag and a menu reset give the handle the width the plan draws', () => {
+    const { container, getByRole } = render(<Subject id="cancel" />)
+    const handle = getByRole('separator', { name: /^Resize Amount/ })
+    const start = Number(handle.getAttribute('aria-valuenow'))
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100, pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientX: 160, pointerId: 1 })
+    expect(handle.getAttribute('aria-valuenow')).toBe(String(start + 60))
+    fireEvent.pointerCancel(handle, { clientX: 160, pointerId: 1 })
+    expect(colWidth(container, 3)).toBe(`${start}px`)
+    expect(handle.getAttribute('aria-valuenow')).toBe(String(start))
+    fireEvent.keyDown(handle, { key: 'ArrowRight' })
+    act(() => latest().setWidth('amount', undefined))
+    expect(handle.getAttribute('aria-valuenow')).toBe(String(start))
+  })
+
   test('the keyboard moves the edge, Home and End go to the bounds, Enter and a double-click reset it', () => {
     const { getByRole } = render(<Subject id="keys" />)
     const handle = getByRole('separator', { name: /^Resize Amount/ })
