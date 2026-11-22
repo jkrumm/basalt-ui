@@ -109,21 +109,34 @@ Worked rule: a multi-toggle bar chart colours bars `isMulti ? series.x : BASALT.
 
 ## Layout, elevation, shapes
 
-- **Density is the point.** A terminal, not a marketing page: sections separate by surface change
-  and shadow-carried depth, not air. Every inset, gap and radius is a step of the scales below.
-- **Depth = a whisper shadow + ring, never a bare hairline border.** Elevation tiers:
+- **Density is the point.** A terminal, not a marketing page: sections separate by an edge and a
+  shared plane, not air. Every inset, gap and radius is a step of the scales below.
+- **Two planes.** The frame (`canvas`) carries the brand zone and the rail. One work surface (`card`)
+  carries the identity row (crumb, page actions, global actions) and the page, with the aside and the
+  dock inside it, clipped to its corners. `AppShell frame="panel"` (the default) insets the surface
+  8 px from the window on its three free sides (none toward the rail), rounds it at `radius-card` and
+  draws its hairline, from the `md` shell tier up; `frame="flush"` and every compact screen draw it
+  edge to edge with one hairline on the rail side. No hairline cuts one colour in two: the rail and
+  the surface differ in plane, and the identity row's rule is the one rule on the surface. Under
+  `chrome="native-overlay"` the header is the window's title bar, a frame row above both.
+  `tokens/gates.ts` holds the planes apart (`plane-step-*`) and the hairline visible on both
+  (`hairline-on-card`, `hairline-on-canvas`).
+- **A page is padded or `fill`.** A dashboard, a form and a settings page keep the gutter and sit
+  their cards on the surface. A list, a split page and a canvas fill: no gutter, the band flush, the
+  one main part (a `DataTable`, a `SplitPage`, a map) edge to edge with no card around it.
+- **Depth = one hairline ring, never a ground contrast.** Elevation tiers:
 
-  | Level        | Treatment                                           | Use                                |
-  | ------------ | --------------------------------------------------- | ---------------------------------- |
-  | 0 (flat)     | No border, no shadow                                | Body text, page background         |
-  | 1 (surface)  | `surface-1` on `canvas`                             | Cards, panels                      |
-  | 2 (elevated) | `surface-2` + `shadow-card` (whisper shadow + ring) | Chart area, tooltips, lifted cards |
-  | 3 (focus)    | 2px primary outline                                 | Focused input / control            |
+  | Level        | Treatment                                              | Use                                    |
+  | ------------ | ------------------------------------------------------ | -------------------------------------- |
+  | 0 (flat)     | No edge                                                | Body text, the frame, the work surface |
+  | 1 (card)     | `card` + `shadow-card` (a 1 px hairline ring, no drop) | Cards, sections' frames, chart cards   |
+  | 2 (floating) | `raised` + `shadow-raised` or `shadow-overlay`         | Menus, popovers, tooltips, open panels |
+  | 3 (focus)    | 2px primary outline                                    | Focused input / control                |
 
-  `Card`/`Paper` default to the `shadow-card` token (a low-opacity shadow with the 1px ring baked
-  into the shadow itself, no `border` property) — depth comes from that whisper shadow, not a bare
-  hairline. There **is** a card-shadow token (`--basalt-shadow-card`); reach for `shadow-raised`
-  only for a genuinely one-off floating surface outside the standard card system.
+  `Card` and every frame on it default to the `shadow-card` token: the 1 px ring lives in the shadow,
+  so it costs no geometry and a card's inset stays concentric. A card on the work surface has the
+  surface's own colour, so it reads by that ring and never by a grey ground behind it; inside a
+  card a sub-panel is `inset`. Never add a `border` beside `shadow-card`: two edges.
 
 - **Tight radii.** Small radii read precise, not soft; nested surfaces step by at least 3 px. Owned in
   the theme (the `radius` knob shifts all). Values: § Scales.
