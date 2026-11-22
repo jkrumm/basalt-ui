@@ -7,6 +7,7 @@ import { splitEmptyCopy } from '../common/empty-copy'
 import { couldNotLoad } from '../core/could-not-load'
 import { toErrorMessage } from '../common/errors'
 import { RetryButton } from '../common/retry-button'
+import { useRetryLabel } from '../core/retry-label'
 import { BASALT } from '../tokens'
 import { CV } from './core/theme'
 import { ChartBox, growClass, stateClass } from './box'
@@ -154,6 +155,7 @@ export function ChartPlaceholder(props: {
   ghost?: PlotGhostShape
 }): ReactElement | null {
   const kind = resolveChartState(props.state)
+  const retryLabel = useRetryLabel()
   if (kind === null) return null
   const style = kind === 'pending' ? pendingStyle : kind === 'error' ? errorStyle : boxStyle
   // An error keeps the chart's height as a floor (the frame does not jump, `ssr-contract`) and may
@@ -194,7 +196,11 @@ export function ChartPlaceholder(props: {
       )}
       <span style={errorMessageStyle}>{label}</span>
       {kind === 'error' && props.onRetry !== undefined && (
-        <RetryButton onClick={props.onRetry} retrying={props.retrying ?? false} />
+        <RetryButton
+          onClick={props.onRetry}
+          retrying={props.retrying ?? false}
+          label={retryLabel}
+        />
       )}
       {props.action}
     </>
