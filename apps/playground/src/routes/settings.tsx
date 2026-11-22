@@ -135,7 +135,7 @@ function PreferencesPane(): ReactElement {
   return (
     <div data-shot="preferences">
       <FormSection
-        title="Interface"
+        title="Display and language"
         description="Kept on your account, so every device agrees."
         action={<output className="text-sm text-muted-foreground">{STATUS[status]}</output>}
       >
@@ -197,7 +197,10 @@ function NotificationsPane(): ReactElement {
   const [comments] = prefs.field('comments').use()
   return (
     <div data-shot="notifications">
-      <FormSection title="Email" description="A row opens to the events it covers.">
+      <FormSection
+        title="Email alerts"
+        description="Deploy results and replies that reach your inbox."
+      >
         <FormGroupRow
           id="row-deploys"
           label="Deploys"
@@ -306,8 +309,8 @@ function ProfilePane({ edited }: { edited: boolean }): ReactElement {
 function WorkspacePane(): ReactElement {
   return (
     <>
-      <div data-shot="workspace-data">
-        <FormSection title="Data" description="What leaves the workspace.">
+      <div data-shot="workspace-exports">
+        <FormSection title="Exports" description="What leaves the workspace.">
           <FormActionRow
             id="row-export"
             label="Export data"
