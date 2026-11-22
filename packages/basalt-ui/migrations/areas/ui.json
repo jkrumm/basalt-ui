@@ -172,14 +172,14 @@
       "id": "mantine-CopyButton",
       "kind": "map",
       "from": "@mantine/core#CopyButton",
-      "to": "basalt-ui/ui/button#CopyButton"
+      "to": "basalt-ui/ui/copy-button#CopyButton"
     },
     {
       "profiles": ["parts", "app"],
       "id": "mantine-useClipboard",
       "kind": "map",
       "from": "@mantine/hooks#useClipboard",
-      "to": "basalt-ui/ui/button#CopyButton",
+      "to": "basalt-ui/ui/copy-button#CopyButton",
       "note": "the hook only fed a copy button; CopyButton carries the insecure-context fallback"
     },
     {
@@ -187,7 +187,7 @@
       "id": "mantine-PasswordInput",
       "kind": "map",
       "from": "@mantine/core#PasswordInput",
-      "to": "basalt-ui/ui/input#PasswordInput"
+      "to": "basalt-ui/ui/password-input#PasswordInput"
     },
     {
       "profiles": ["parts", "app"],
@@ -284,7 +284,7 @@
       "kind": "map",
       "from": "@mantine/core#TextInput",
       "to": "basalt-ui/ui/input#Input",
-      "note": "label and error move to Field, FieldLabel, FieldError; leftSection and rightSection become InputGroup and InputAddon"
+      "note": "label and error move to Field, FieldLabel, FieldError; leftSection and rightSection become Input start and end; a section outside the field edge is InputGroup with InputAddon (basalt-ui/ui/control-group)"
     },
     {
       "profiles": ["parts", "app"],

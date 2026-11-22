@@ -51,7 +51,7 @@ function installPackage(app: string): string {
     }
   }
   mkdirSync(join(pkg, 'src/core'), { recursive: true })
-  for (const file of ['cn.ts', 'cn-theme.ts']) {
+  for (const file of ['cn.ts', 'cn-theme.ts', 'control-scope.ts']) {
     cpSync(join(PKG_ROOT, 'src/core', file), join(pkg, 'src/core', file))
   }
   return pkg
