@@ -62,6 +62,11 @@ describe('avatar module', () => {
 
   // happy-dom has no network, so an image fails at once; a loaded image is proved in a real browser (tests/layout/ui-avatar.layout.test.ts).
   test('a failing image is dropped and the initials stay', () => {
+    // A file earlier in the same process may have given the document an http origin, where the
+    // relative src becomes a fetch that never fails; on the blank document it fails at once.
+    ;(window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(
+      'about:blank',
+    )
     const { container } = render(<Avatar name="Ada Lovelace" src="/missing.png" />)
     expect(container.querySelector('img')).toBeNull()
     expect(container.textContent).toBe('AL')
