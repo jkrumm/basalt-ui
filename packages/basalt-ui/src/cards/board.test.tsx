@@ -283,6 +283,42 @@ describe('Board announcement and focus', () => {
   })
 })
 
+describe('Board focus after a late move', () => {
+  test('a parent that applies the move later still gets focus on the moved card', async () => {
+    function Late(): ReactElement {
+      const [items, setItems] = useState(base())
+      return (
+        <Board
+          label="Issues"
+          columns={COLUMNS}
+          items={items}
+          onMove={(m) => void setTimeout(() => setItems((prev) => applyMove(prev, m)), 50)}
+          card={(item, move) => <KanbanCard id={item.id} title={item.title} move={move} />}
+        />
+      )
+    }
+    render(<Late />)
+    const trigger = document.querySelector<HTMLButtonElement>(
+      '[data-card-id="a0"] [data-slot="kanban-menu"]',
+    )!
+    fireEvent.pointerEnter(trigger)
+    fireEvent.click(trigger)
+    await waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull())
+    const down = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
+      (el) => el.textContent === 'Move down',
+    )!
+    fireEvent.click(down)
+    await waitFor(() =>
+      expect(
+        document.activeElement?.closest('[data-slot="board-item"]')?.getAttribute('data-index'),
+      ).toBe('1'),
+    )
+    expect(document.activeElement?.closest('[data-card-id]')?.getAttribute('data-card-id')).toBe(
+      'a0',
+    )
+  })
+})
+
 describe('Board virtual', () => {
   // happy-dom measures every box as 0, which virtual-core reads as "nothing visible".
   const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')

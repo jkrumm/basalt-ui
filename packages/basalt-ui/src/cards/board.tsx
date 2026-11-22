@@ -182,8 +182,13 @@ export function Board<C extends string, T extends { id: string; title: string }>
     const focus = (): void => {
       const menu = root.current?.querySelector<HTMLElement>(at) ?? null
       const column = menu?.closest<HTMLElement>('[data-slot="board-column"]') ?? null
+      // The move has landed once the card sits at its index: a parent may apply it after a round trip.
+      const landed =
+        menu?.closest<HTMLElement>('[data-slot="board-item"]')?.dataset['index'] ===
+        String(moved.index)
       const ready =
         menu !== null &&
+        landed &&
         column !== null &&
         getComputedStyle(column).display !== 'none' &&
         document.querySelector('[role="menu"]') === null
@@ -405,6 +410,7 @@ function BoardItem<C extends string>({
     <div
       ref={ref}
       data-slot="board-item"
+      data-index={index}
       data-edge={edge ?? undefined}
       className="relative data-edge:before:pointer-events-none data-edge:before:absolute data-edge:before:inset-x-0 data-edge:before:h-0.5 data-edge:before:rounded-full data-edge:before:bg-brand data-[edge=after]:before:-bottom-1.5 data-[edge=before]:before:-top-1.5"
     >
