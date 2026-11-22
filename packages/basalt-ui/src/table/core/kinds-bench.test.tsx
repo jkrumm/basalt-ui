@@ -207,6 +207,22 @@ describe('entity and title', () => {
   })
 })
 
+describe('a list cell in the table', () => {
+  test('an empty list is not a value for the footer count or a group', async () => {
+    const { aggregate } = await import('../parts/footer-model')
+    const rows = [{ tags: ['a'] }, { tags: [] }, { tags: ['a', 'b'] }]
+    expect(aggregate('count', rows, (r) => r.tags)).toBe(2)
+    const { bodyItems } = await import('../parts/group-row-model')
+    const spec = specOf(c.tags('tags'))
+    const items = bodyItems(
+      rows.map((original, i) => ({ id: String(i), original })) as never,
+      spec as never,
+      undefined,
+    )
+    expect(items.filter((item) => item.type === 'group').length).toBe(3)
+  })
+})
+
 describe('quiet text', () => {
   test('is muted, truncated and never wraps', () => {
     const column = c.text('preview', { quiet: true })
