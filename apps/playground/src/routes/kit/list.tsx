@@ -179,12 +179,7 @@ function ListRoute(): ReactElement {
           )}
         />
         <StatCell label="Views per photo" value={medianViews} sub="Median over 14 days" />
-        <StatCell
-          label="Newest"
-          value={newest}
-          sub="Day the newest shown photo was taken"
-          subMono
-        />
+        <StatCell label="Newest" value={newest} sub="Day taken" subMono />
       </StatGroup>
       <DataTable table={t} />
       <Sheet state={store.field.settings}>
