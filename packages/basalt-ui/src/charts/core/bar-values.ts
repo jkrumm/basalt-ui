@@ -23,6 +23,8 @@ import { CV } from './theme'
 const GROUP_PADDING = 0.1
 /** Air between a bar's end and its label, px. */
 const GAP = 3
+/** Air between a bar's side and the value written beside its end, px. */
+const BESIDE_GAP = 3
 /** Air a label keeps inside the bar it stands in, px. */
 const INSIDE_PAD = 2
 /** How far a label standing in a bar may reach past each side of it, px: the text estimate errs wide, and a bar a few px under its label still holds it. A label needs the bar's height for its line, with no air. */
@@ -35,8 +37,16 @@ const TICK_REACH = 52
 const CLAMPED_ROW = Math.max(CARET_SIZE / 2, lineHeight(SIZE) / 2 + 2)
 /** Air two value labels keep between their boxes, px: a box is the line, and a line against a line reads as touching. */
 const LABEL_AIR = 1.5
-/** How far a label may overlap the body of the bar beside its own, px: the text estimate errs wide, and a body the label grazes by a few px still reads as the neighbour's. */
+/** How far a label may overlap the body of the bar beside its own, px: the text estimate errs wide, and a body the label grazes by a pixel still reads as the neighbour's. */
 const BODY_TOLERANCE = 3
+/** The same for a chart of few bars, which can raise a value that grazes the neighbour's body (see {@link LIFT_MAX_BARS}). */
+const BODY_TOLERANCE_FEW = 1
+/** A chart with this many bars or fewer lifts a value a bar's neighbour hides to the first free row above, tied to its bar by a leader; a denser one drops it. */
+const LIFT_MAX_BARS = 16
+/** How many label lines a lifted value climbs at most. */
+const LIFT_MAX_STEPS = 6
+/** A label this many px beyond its usual air from the bar's end is tied to the bar by a leader. */
+const LEADER_AFTER_PX = 5
 /** The least side of a text-sized box, px: a rule is 4 px thick and a line path piece under 11, a caption is 13 and more. */
 const CAPTION_MIN_PX = 12
 type Side = 'left' | 'right'
@@ -378,9 +388,10 @@ export function barValueLabels<T, X extends ChartX>(
         Math.abs(x.top - b.top) < 1.5 &&
         Math.abs(x.height - b.height) < 1.5,
     )
+  const tolerance = found.length <= LIFT_MAX_BARS ? BODY_TOLERANCE_FEW : BODY_TOLERANCE
   const shaved = input.obstacles.map((b) =>
-    isBody(b) && b.width > 2 * BODY_TOLERANCE + 4
-      ? { ...b, left: b.left + BODY_TOLERANCE, width: b.width - 2 * BODY_TOLERANCE }
+    isBody(b) && b.width > 2 * tolerance + 4
+      ? { ...b, left: b.left + tolerance, width: b.width - 2 * tolerance }
       : b,
   )
   const outside = placeWith(
@@ -390,6 +401,65 @@ export function barValueLabels<T, X extends ChartX>(
     { gap: GAP, obstacles: shaved, size: SIZE, air: LABEL_AIR },
   )
   const taken = new Set(outside.placed.map((p) => p.key))
+  // A bar that ends at the plot's edge has no room over (under) its end: its value stands beside the bar's end,
+  // right of it, else left (the highlighted widest bar of n98, a negative bar at the domain's floor).
+  const atEdge = (c: Candidate<X>): boolean =>
+    c.up ? c.edge < lineHeight(SIZE) + GAP : input.frame.height - c.edge < lineHeight(SIZE) + GAP
+  const aside: PlacedLabel<string>[] = []
+  for (const spot of ['right', 'left'] as const) {
+    const reached = new Set([...taken, ...aside.map((p) => p.key)])
+    const pending = found.flatMap((c, i) =>
+      !c.clamped && c.id !== undefined && atEdge(c) && !reached.has(String(i))
+        ? [
+            {
+              ...label(c, i, [spot]),
+              x: c.anchor.x + (spot === 'right' ? 1 : -1) * (c.body.width / 2),
+              y: c.up ? c.edge + lineHeight(SIZE) / 2 : c.edge - lineHeight(SIZE) / 2,
+            },
+          ]
+        : [],
+    )
+    if (pending.length === 0) break
+    aside.push(
+      ...placeWith(measure, pending, input.frame, {
+        gap: BESIDE_GAP,
+        obstacles: [...aired([...outside.placed, ...aside]), ...shaved],
+        air: LABEL_AIR,
+        size: SIZE,
+      }).placed,
+    )
+  }
+  for (const p of aside) taken.add(p.key)
+  // A value its neighbour's bar hides climbs, a line at a time, to the first free row over its own bar (never
+  // inside a bar, whose fill no ink reads on at every tone): a leader ties it back to the bar's end below.
+  const raiseStep = lineHeight(SIZE)
+  const raised: PlacedLabel<string>[] = []
+  if (found.length <= LIFT_MAX_BARS)
+    for (let step = 1; step <= LIFT_MAX_STEPS; step++) {
+      const reached = new Set([...taken, ...raised.map((p) => p.key)])
+      const pending = found.flatMap((c, i) =>
+        !c.clamped && c.body.height > 0 && !reached.has(String(i))
+          ? [
+              {
+                ...label(c, i, [c.up ? 'above' : 'below']),
+                y: c.anchor.y + (c.up ? -1 : 1) * step * raiseStep,
+              },
+            ]
+          : [],
+      )
+      if (pending.length === 0) break
+      raised.push(
+        ...placeWith(measure, pending, input.frame, {
+          gap: GAP,
+          obstacles: [...aired([...outside.placed, ...aside, ...raised]), ...shaved],
+          air: LABEL_AIR,
+          size: SIZE,
+        }).placed,
+      )
+    }
+  for (const p of raised) taken.add(p.key)
+  /** Every label standing outside its bar: over its end, or raised off it. */
+  const outsideAll = [...outside.placed, ...aside, ...raised]
   // A stack total never goes inside its stack: it sits above it, or it is dropped.
   const fitting = found.flatMap((c, i) =>
     !taken.has(String(i)) &&
@@ -420,7 +490,7 @@ export function barValueLabels<T, X extends ChartX>(
   )
   const inside = placeWith(measure, fitting, input.frame, {
     gap: INSIDE_PAD,
-    obstacles: [...input.clear, ...aired(outside.placed)],
+    obstacles: [...input.clear, ...aired(outsideAll)],
     air: LABEL_AIR,
     size: SIZE,
   })
@@ -452,8 +522,8 @@ export function barValueLabels<T, X extends ChartX>(
         gap: GAP,
         obstacles: [
           ...(air === 0
-            ? [...outside.placed, ...inside.placed, ...earlier]
-            : aired([...outside.placed, ...inside.placed, ...earlier])),
+            ? [...outsideAll, ...inside.placed, ...earlier]
+            : aired([...outsideAll, ...inside.placed, ...earlier])),
           ...obstacles,
         ],
         air,
@@ -490,7 +560,7 @@ export function barValueLabels<T, X extends ChartX>(
       if (pending.length === 0) break
       const got = placeWith(measure, pending, input.frame, {
         gap: GAP,
-        obstacles: [...aired([...outside.placed, ...inside.placed, ...earlier]), ...obstacles],
+        obstacles: [...aired([...outsideAll, ...inside.placed, ...earlier]), ...obstacles],
         air: LABEL_AIR,
         size: SIZE,
       }).placed
@@ -514,7 +584,7 @@ export function barValueLabels<T, X extends ChartX>(
   const rescued = { placed: earlier }
   // A clamped bar's value is never dropped: beside its body in the caret's row, the right side
   // first, then the left; over the bar under its caret when neither side has room.
-  const others = aired([...outside.placed, ...rescued.placed, ...inside.placed])
+  const others = aired([...outsideAll, ...rescued.placed, ...inside.placed])
   const right = placeWith(
     measure,
     found.flatMap((c, i) =>
@@ -578,7 +648,7 @@ export function barValueLabels<T, X extends ChartX>(
     overPlaced.push(...got.placed)
   }
   const placedAll: PlacedLabel<string>[] = [
-    ...outside.placed,
+    ...outsideAll,
     ...rescued.placed,
     ...right.placed,
     ...left.placed,
@@ -586,7 +656,7 @@ export function barValueLabels<T, X extends ChartX>(
     ...overPlaced,
   ]
   const paintOf = new Map<string, string>([
-    ...[...outside.placed, ...rescued.placed, ...right.placed, ...left.placed].map(
+    ...[...outsideAll, ...rescued.placed, ...right.placed, ...left.placed].map(
       (p) => [p.key, CV.inkMuted] as const,
     ),
     ...[...inside.placed, ...overPlaced].map(
@@ -603,6 +673,26 @@ export function barValueLabels<T, X extends ChartX>(
       return !onBody && isStruck(p, given.obstacles, input.frame) ? [p.key] : []
     }),
   )
+  // A value that stands off its bar's end (raised over a taller neighbour, stepped clear of another label) is tied
+  // to the bar by a hairline, so it never floats: it is the bar's, and the eye reads it so.
+  const leaders = placedAll.flatMap((p) => {
+    const c = found[Number(p.key)] as Candidate<X>
+    if (c.clamped || paintOf.get(p.key) !== CV.inkMuted) return []
+    if (p.spot !== 'above' && p.spot !== 'below') return []
+    const apart = c.up ? c.edge - (p.top + p.height) : p.top - c.edge
+    if (apart <= GAP + LEADER_AFTER_PX) return []
+    return [
+      {
+        side: c.side,
+        box: {
+          left: c.anchor.x - 0.5,
+          top: c.up ? p.top + p.height + 1 : c.edge,
+          width: 1,
+          height: apart - 1,
+        },
+      },
+    ]
+  })
   const marks = placedAll.map((p) => {
     const c = found[Number(p.key)] as Candidate<X>
     const ink = backed.has(p.key) ? CV.inkMuted : (paintOf.get(p.key) ?? CV.inkMuted)
@@ -637,12 +727,27 @@ export function barValueLabels<T, X extends ChartX>(
           scale,
         })
   })
+  const ties = scales.flatMap((scale) => {
+    const own = leaders.filter((l) => input.scaleOf(l.side) === scale)
+    const first = own[0]
+    return first === undefined
+      ? []
+      : backingMarks({
+          id: `bar-values-${scale}-leader`,
+          boxes: own.map((l) => l.box),
+          frame: input.frame,
+          domain: input.domainOf(first.side),
+          scale,
+          fill: CV.inkMuted,
+        })
+  })
   const written = new Set(placedAll.flatMap((p) => found[Number(p.key)]?.id ?? []))
   return {
     written,
-    backed: backed.size > 0,
+    backed: backed.size > 0 || leaders.length > 0,
     marks: [
       ...backings,
+      ...ties,
       ...scales.map((scale) =>
         decorative(
           text(

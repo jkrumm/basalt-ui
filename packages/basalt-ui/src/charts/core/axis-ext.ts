@@ -360,10 +360,14 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
   slotOf?: (s: ChartSeries<T>) => CapSlot | undefined
   /** Bars whose own `values` label was placed, `<series key>:<x fraction>`: their value is not written twice. */
   written?: ReadonlySet<string>
+  /** Bars and lines share the plot: a value written for a line names its series, so it is not read as a bar's. */
+  nameLines?: boolean
 }): ChartMarks {
   // One pass over the chart's values: a value past the cap is written once, and no two labels overprint.
   const taken: LabelBox[] = []
   const written = new Set<string>()
+  // Bars and lines on one plot: a number written beside a line's caret reads as the bar's unless it names its series.
+  const mixed = opts.nameLines === true
   const scanned = opts.series.flatMap((s) => {
     const domain = opts.domainOf(s)
     if (domain === null) return []
@@ -398,7 +402,10 @@ export function offScaleMarks<T, X extends ChartX>(opts: {
       if (run !== undefined && run.side !== side) close()
       const at: CapMark = {
         f,
-        text: opts.formatOf(s)(v, d),
+        text:
+          mixed && s.mark !== 'bar'
+            ? `${s.label} ${opts.formatOf(s)(v, d)}`
+            : opts.formatOf(s)(v, d),
         color: s.color,
         magnitude: Math.abs(v),
         ...(slot !== undefined && { slot }),
