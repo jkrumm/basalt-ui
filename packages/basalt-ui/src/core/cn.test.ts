@@ -34,6 +34,14 @@ describe('cn: disambiguation', () => {
     expect(cn('text-left', 'text-sm', 'text-ellipsis')).toBe('text-left text-sm text-ellipsis')
   })
 
+  test('outline width, style and colour are separate', () => {
+    expect(cn('outline-brand', 'outline-solid')).toBe('outline-brand outline-solid')
+    expect(cn('outline-2', 'outline-solid', 'outline-brand')).toBe(
+      'outline-2 outline-solid outline-brand',
+    )
+    expect(cn('outline-dashed', 'outline-solid')).toBe('outline-solid')
+  })
+
   test('border width, style and colour are separate', () => {
     expect(cn('border', 'border-line')).toBe('border border-line')
     expect(cn('border-2', 'border-4')).toBe('border-4')
