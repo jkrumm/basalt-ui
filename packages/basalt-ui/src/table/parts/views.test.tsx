@@ -465,10 +465,10 @@ describe('the manage-view panel', () => {
     )
   })
 
-  test('the header menu Filter... opens the panel on that column', async () => {
+  test('the header menu Filter column... opens the panel on that column', async () => {
     render(<Subject />)
-    await click(screen.getByRole('button', { name: 'State column actions' }))
-    await click(screen.getByRole('menuitem', { name: 'Filter...' }))
+    await click(screen.getByRole('button', { name: 'State' }))
+    await click(screen.getByRole('menuitem', { name: 'Filter column...' }))
     expect(panel().getAttribute('aria-label')).toBe('Filter: State')
     expect(within(panel()).getByRole('checkbox', { name: /^Open\b/ })).toBeTruthy()
   })

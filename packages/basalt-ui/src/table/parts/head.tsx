@@ -342,7 +342,7 @@ function HeaderContent<T>({
         triggerRef={trigger}
         label={name}
         {...(filterable && {
-          // The menu's Filter... edits in the manage-view panel while one is mounted for the table.
+          // The menu's Filter column... edits in the manage-view panel while one is mounted for the table.
           onFilter: () => {
             if (!openViewPanel(model.id, `filter:${spec.id}`)) setPanel('filter')
           },

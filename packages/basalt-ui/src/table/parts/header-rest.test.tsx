@@ -77,7 +77,7 @@ function Subject({
   })
   return (
     <>
-      <TableToolbar table={t} />
+      <TableToolbar table={t} views={false} />
       <DataTable table={t} />
     </>
   )
