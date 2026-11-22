@@ -154,9 +154,10 @@ describe('a value past the cap beside a line', () => {
 
 describe('a zone caption on a phone', () => {
   test('stands inside its zone or is dropped: a plot under 480 px has no spot beside the zone', () => {
-    expect(zoneSideSpotsFit(342)).toBe(false)
-    expect(zoneSideSpotsFit(1400)).toBe(true)
-    expect(zoneSideSpotsFit(0)).toBe(true)
+    expect(zoneSideSpotsFit(342, 111)).toBe(false)
+    expect(zoneSideSpotsFit(342, 24)).toBe(true)
+    expect(zoneSideSpotsFit(1400, 111)).toBe(true)
+    expect(zoneSideSpotsFit(0, 111)).toBe(true)
   })
 })
 

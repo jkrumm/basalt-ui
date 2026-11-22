@@ -1188,9 +1188,11 @@ const MAX_ZONE_ROWS = 24
 const MAX_ZONE_SIDE_ROWS = 6
 /** A plot narrower than this (a phone's) keeps a zone caption inside its zone, over its own columns, or drops it: beside the zone it reads as the next thing's, px. */
 const ZONE_SIDE_MIN_PLOT_PX = 480
-/** Whether a plot of this width lets a zone's caption stand beside the zone: a phone's plot keeps it inside or drops it (a plot not yet measured keeps its first spot). */
-export const zoneSideSpotsFit = (plotWidth: number): boolean =>
-  plotWidth <= 0 || plotWidth >= ZONE_SIDE_MIN_PLOT_PX
+/** A caption this wide or less (a run's '5 h') still stands beside its zone on a phone's plot, px. */
+const ZONE_SHORT_CAPTION_PX = 40
+/** Whether a zone's caption of this width may stand beside the zone on a plot of this width: a phone's plot keeps a longer caption inside its zone or drops it (a plot not yet measured keeps its first spot). */
+export const zoneSideSpotsFit = (plotWidth: number, captionPx: number): boolean =>
+  plotWidth <= 0 || plotWidth >= ZONE_SIDE_MIN_PLOT_PX || captionPx <= ZONE_SHORT_CAPTION_PX
 /** How many rows above its top edge and under its bottom edge a zone bounded in y tries for its caption. */
 const MAX_ZONE_EDGE_ROWS = 3
 /** The room a bar's value label takes above its end (below a negative bar's), px: its line and the air under it. */
@@ -1420,7 +1422,7 @@ const xZoneLabelMarks = <T, X extends ChartX>(
     const spots = [
       ...inside,
       ...edge,
-      ...(!zoneSideSpotsFit(plotWidth)
+      ...(!zoneSideSpotsFit(plotWidth, width)
         ? []
         : Array.from({ length: MAX_ZONE_SIDE_ROWS }, (_, row) => [
             { at: f[1], side: 1 as const, left: x1 + REF_LABEL_DX, inside: false, row },
