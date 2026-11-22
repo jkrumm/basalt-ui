@@ -44,6 +44,7 @@ import type { CSSProperties, ReactElement, ReactNode, RefObject } from 'react'
 import { useMediaQuery } from '../../common/use-media-query'
 import { cn } from '../../core/cn'
 import { persisted } from '../../core/persisted'
+import type { RecordSequence } from '../../core/ports'
 import { DOCK_WIDTH, asideDockQuery, resolveAsideDocking } from '../../page/core/docking'
 import type { AsideDock, AsideSheetState } from '../../page/core/docking'
 import type { ShellFrame, SizeClass } from '../contract'
@@ -366,6 +367,8 @@ export type AsideClaim = {
   readonly body: ReactNode
   /** Present when the aside is bound to a `state`: the page's open state and its setter. */
   readonly sheet?: AsideSheetState
+  /** The shown detail's records, so the phone's sheet steps through them too. */
+  readonly records?: RecordSequence
 }
 
 const DEFAULT_ASIDE_WIDTH = 360
@@ -380,6 +383,7 @@ export function readAsideClaim(node: ReactNode | undefined): AsideClaim | undefi
     width?: unknown
     dock?: unknown
     sheet?: AsideSheetState
+    records?: RecordSequence
     children?: ReactNode
   }
   return {
@@ -389,6 +393,7 @@ export function readAsideClaim(node: ReactNode | undefined): AsideClaim | undefi
     dock: props.dock === 'always' ? 'always' : 'auto',
     body: props.children,
     ...(props.sheet === undefined ? {} : { sheet: props.sheet }),
+    ...(props.records === undefined ? {} : { records: props.records }),
   }
 }
 

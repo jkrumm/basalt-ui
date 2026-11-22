@@ -5,6 +5,7 @@ import { useIsomorphicLayoutEffect } from '../common/isomorphic-layout-effect'
 import { ShellDockContext, ShellOverlayContext } from '../page/page'
 import type { ShellDock } from '../page/page'
 import { DOCK_WIDTH } from '../page/core/docking'
+import { PanelSteps } from '../page/record-panel'
 import { useSizeClass } from '../page/use-size-class'
 import { registerNav } from '../router/nav/registry'
 import { flattenNavEntries, resolveActive } from '../router/nav/resolve-active'
@@ -74,7 +75,12 @@ function AsideSheet({ claim }: { claim: AsideClaim }): ReactElement {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger render={<Button variant="secondary" size="sm" />}>{claim.title}</SheetTrigger>
-      <SheetContent title={claim.title}>{claim.body}</SheetContent>
+      <SheetContent
+        title={claim.title}
+        actions={claim.records === undefined ? undefined : <PanelSteps records={claim.records} />}
+      >
+        {claim.body}
+      </SheetContent>
     </Sheet>
   )
 }

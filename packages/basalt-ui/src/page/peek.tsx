@@ -28,6 +28,7 @@ import {
   PanelBody,
   PanelFooter,
   PanelHeader,
+  PanelActionBar,
   PanelSteps,
   FullPageLink,
   panelKeys,
@@ -59,7 +60,7 @@ export type PeekProps = {
   onClose: () => void
   /** Draws a button that moves the record into the shell's `Dock` (`usePeek().pin`). Not drawn on a phone. */
   onPin?: () => void
-  /** The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu. */
+  /** The record's own actions, data like `PageBar` actions: the first two in the header, the rest in its More menu (a third alone stays inline). */
   actions?: PanelActions
   /**
    * The opener's records in its order (`usePeek().go` or a table's rows): draws previous and
@@ -210,6 +211,7 @@ function PeekSheet({
   tag,
   fullPage,
   records,
+  actions,
   footer,
   onClose,
   children,
@@ -228,9 +230,10 @@ function PeekSheet({
         footer={footer}
         data-present="sheet"
         actions={
-          records === undefined && fullPage === undefined ? undefined : (
+          records === undefined && fullPage === undefined && actions === undefined ? undefined : (
             <>
               {records !== undefined && <PanelSteps records={records} />}
+              {actions !== undefined && <PanelActionBar actions={actions} />}
               {fullPage !== undefined && <FullPageLink href={fullPage} />}
             </>
           )

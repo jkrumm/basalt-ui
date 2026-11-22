@@ -12,6 +12,7 @@ import type { ReactElement } from 'react'
 import type { DetailEntry, DetailHost } from '../../core/ports'
 import { DetailHostContext, PageHostContext } from '../../page/page'
 import { Peek } from '../../page/peek'
+import { PanelSteps } from '../../page/record-panel'
 import { useSizeClass } from '../../page/use-size-class'
 import { Sheet, SheetContent } from '../../ui/sheet'
 
@@ -72,6 +73,11 @@ export function useDetailHost<T>(
       model.closeDetail(true)
     }
   })
+  // The table re-renders when the reader sorts or filters: the steps read its order of now.
+  const records =
+    entry?.records === undefined
+      ? undefined
+      : { ids: model.rowIds, id: entry.records.id, onStep: entry.records.onStep }
   if (shell !== null && sizeClass !== 'compact') {
     // A closed peek draws nothing, and an open one portals into the shell: safe inside a `<tbody>`.
     return entry === null ? (
@@ -80,7 +86,7 @@ export function useDetailHost<T>(
       <Peek
         kind={model.id}
         title={entry.title}
-        {...(entry.records !== undefined && { records: entry.records })}
+        {...(records !== undefined && { records })}
         onClose={close}
       >
         {entry.body(BOX)}
@@ -96,7 +102,12 @@ export function useDetailHost<T>(
         painted.current = open
       }}
     >
-      <SheetContent title={entry?.title ?? ''}>{entry?.body(BOX)}</SheetContent>
+      <SheetContent
+        title={entry?.title ?? ''}
+        actions={records === undefined ? undefined : <PanelSteps records={records} />}
+      >
+        {entry?.body(BOX)}
+      </SheetContent>
     </Sheet>
   )
 }

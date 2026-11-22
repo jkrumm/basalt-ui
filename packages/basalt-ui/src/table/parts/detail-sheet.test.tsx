@@ -140,12 +140,12 @@ describe('under a shell', () => {
     window.matchMedia = original
     presentationStore('sheet-test').reset()
   })
-  function Shelled({ region }: { region: HTMLElement }): ReactElement {
+  function Shelled({ region, data = ROWS }: { region: HTMLElement; data?: Row[] }): ReactElement {
     const { host } = fakeHost()
     return (
       <PageHostContext value={host}>
         <ShellOverlayContext value={region}>
-          <Subject options={{ detail: (r: Row) => <p>Box of {r.name}</p> }} />
+          <Subject options={{ data, detail: (r: Row) => <p>Box of {r.name}</p> }} />
         </ShellOverlayContext>
       </PageHostContext>
     )
@@ -181,6 +181,29 @@ describe('under a shell', () => {
     expect(
       (screen.getByRole('button', { name: 'Next record' }) as HTMLButtonElement).disabled,
     ).toBe(true)
+    region.remove()
+  })
+
+  test('the steps follow the order the rows have now, not the order they had when the record opened', async () => {
+    wide()
+    const region = document.createElement('div')
+    document.body.append(region)
+    const { rerender } = render(<Shelled region={region} />)
+    fireEvent.click(row(0))
+    await settled()
+    const prev = (): HTMLButtonElement =>
+      screen.getByRole('button', { name: 'Previous record' }) as HTMLButtonElement
+    expect(prev().disabled).toBe(true)
+    // The rows re-order with the record open (a sort, a filter, a refetch): Alpha is now last.
+    rerender(<Shelled region={region} data={[...ROWS].reverse()} />)
+    await settled()
+    expect(prev().disabled).toBe(false)
+    expect(
+      (screen.getByRole('button', { name: 'Next record' }) as HTMLButtonElement).disabled,
+    ).toBe(true)
+    fireEvent.click(prev())
+    await settled()
+    expect(document.querySelector('[data-slot="peek"]')?.textContent).toContain('Box of Beta')
     region.remove()
   })
 

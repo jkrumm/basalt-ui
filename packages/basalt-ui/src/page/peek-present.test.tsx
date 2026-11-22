@@ -219,6 +219,28 @@ describe('Peek records', () => {
 })
 
 describe('Peek on a phone', () => {
+  test("the sheet's header keeps the record's actions and its steps", () => {
+    wide = false
+    const { region } = shell()
+    const { host } = fakeHost()
+    const run = mock(() => {})
+    render(
+      <PageHostContext value={host}>
+        <ShellOverlayContext value={region}>
+          <Peek
+            title="Issue 12"
+            onClose={() => {}}
+            records={{ ids: ['a', 'b'], id: 'a', onStep: () => {} }}
+            actions={[{ id: 'copy', label: 'Copy link', onClick: run }]}
+          />
+        </ShellOverlayContext>
+      </PageHostContext>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link' }))
+    expect(run).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('button', { name: 'Next record' })).toBeTruthy()
+  })
+
   for (const present of ['peek', 'window', 'page'] as Presentation[]) {
     test(`a ${present} presentation is a bottom sheet with the scrim`, () => {
       wide = false

@@ -273,7 +273,7 @@ export function SheetContent({
               <ScrollArea className={PANEL_BODY}>
                 <div className="flex flex-col gap-4">{children}</div>
               </ScrollArea>
-              {footer !== undefined && footer !== null && (
+              {footer !== undefined && footer !== null && footer !== false && (
                 <div data-panel="footer" className={PANEL_FOOTER}>
                   {footer}
                 </div>

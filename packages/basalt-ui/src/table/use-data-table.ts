@@ -82,6 +82,8 @@ export type SortDirection = 'asc' | 'desc' | 'none'
 export type TableModel<T> = {
   id: string
   label: string
+  /** The row ids in the order the body draws them: what a detail host steps through. */
+  rowIds: readonly string[]
   /** The columns in drawn order: the identity column, the reader's order (pins first), `actions`. */
   specs: readonly KindSpec<T>[]
   /** The plan in the same drawn order; a start-pinned column carries its offset as `pinAt`. */
@@ -607,12 +609,26 @@ export function useDataTable<
 
   // The rows in the order the table draws them: a detail host steps through them in place.
   const rowOrder = items.flatMap((item) => (item.type === 'row' ? [item.row.id] : []))
-  const recordsAt = (id: string, step: (next: string) => void): RecordSequence | undefined =>
-    rowOrder.includes(id) ? { ids: rowOrder, id, onStep: step } : undefined
+  // A shown entry outlives the render that made it (the reader sorts or filters with the panel
+  // open), so its records read the order and the step of the latest render.
+  const live = useRef<{ order: readonly string[]; step: (id: string) => void }>({
+    order: rowOrder,
+    step: () => {},
+  })
+  const recordsAt = (id: string): RecordSequence | undefined =>
+    rowOrder.includes(id)
+      ? {
+          get ids() {
+            return live.current.order
+          },
+          id,
+          onStep: (next) => live.current.step(next),
+        }
+      : undefined
   const showAuto = (id: string): void => {
     const row = byId.get(id)
     if (row === undefined) return
-    const records = recordsAt(id, showAuto)
+    const records = recordsAt(id)
     host.current?.show({
       title: detailTitle(model, row),
       body: (box) => createElement(AutoDetail<T>, { model, row, box }),
@@ -622,7 +638,7 @@ export function useDataTable<
   const showDetail = (row: T): void => {
     if (activation.kind !== 'detail') return
     const { render } = activation
-    const records = recordsAt(getRowId(row), (next) => activate(next))
+    const records = recordsAt(getRowId(row))
     host.current?.show({
       title: options.detailTitle?.(row) ?? options.label,
       body: (box) => render(row, box),
@@ -736,6 +752,7 @@ export function useDataTable<
 
   const model: TableModel<T> = {
     id: options.id,
+    rowIds: rowOrder,
     label: options.label,
     specs: arranged.specs,
     plan: arranged.plan,
@@ -951,6 +968,9 @@ export function useDataTable<
         : []
     }),
   }
+  useEffect(() => {
+    live.current = { order: rowOrder, step: activation.kind === 'detail' ? activate : showAuto }
+  })
   return { __brand: 'DataTableInstance', table: escape, [MODEL]: model } as Built<T>
 }
 
