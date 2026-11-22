@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Page, Section } from 'basalt-ui/page'
 import { Button } from 'basalt-ui/ui/button'
+import { ButtonGroup } from 'basalt-ui/ui/control-group'
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from 'basalt-ui/ui/menu'
 import { useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
@@ -130,6 +131,47 @@ function ButtonsRoute(): ReactElement {
                 {variant === 'danger' ? <Trash /> : <Plus />}
               </Button>
             ))}
+          </Row>
+        </Stack>
+      </Section>
+      <Section
+        title="Button groups"
+        summary="Actions on one thing, drawn as one control; the group sets size and variant."
+      >
+        <Stack>
+          <Row caption="Medium, then small and ghost">
+            <ButtonGroup aria-label="Period">
+              <Button>Previous</Button>
+              <Button>Today</Button>
+              <Button>
+                Next
+                <Arrow />
+              </Button>
+            </ButtonGroup>
+            <ButtonGroup aria-label="Zoom" size="sm" variant="ghost">
+              <Button shape="icon" aria-label="Zoom in">
+                <Plus />
+              </Button>
+              <Button>100 %</Button>
+              <Button shape="icon" aria-label="Download the view">
+                <Download />
+              </Button>
+            </ButtonGroup>
+          </Row>
+          <Row caption="Stacked, and filling its box with one button at its own width">
+            <ButtonGroup aria-label="Order" orientation="vertical">
+              <Button>Move up</Button>
+              <Button>Move down</Button>
+            </ButtonGroup>
+            <div className="w-full max-w-md">
+              <ButtonGroup aria-label="Review" fill>
+                <Button variant="primary">Approve</Button>
+                <Button>Request changes</Button>
+                <Button shape="icon" aria-label="More review actions" className="grow-0">
+                  <More />
+                </Button>
+              </ButtonGroup>
+            </div>
           </Row>
         </Stack>
       </Section>
