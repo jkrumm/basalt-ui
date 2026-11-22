@@ -70,8 +70,8 @@ export const rows: readonly RowDef[] = [
     id: 'shell-subpath',
     order: 461,
     label: 'shell, whole barrel (gzip B minus base0, src/shell, peers bundled)',
-    // 129009 B measured; 142851 B with `@tanstack/react-hotkeys` bundled (Issue 2570).
-    ceiling: 143500,
+    // 129009 B measured; 142851 B with `@tanstack/react-hotkeys` bundled (Issue 2570); 143529 B with the work surface (Issue 2851).
+    ceiling: 143600,
     measure: () => measureSource(reExportAll({ shell: 'shell/index' })),
   },
   {
@@ -100,6 +100,13 @@ export const rows: readonly RowDef[] = [
 
 export const raises: Raises = {
   'shell-subpath': [
+    {
+      from: 143500,
+      to: 143600,
+      consumer:
+        "the AppShell work surface (Issue 2851): the rail on the frame and one panel for the page, `frame: 'panel' | 'flush'`, and a native title bar's own header tiers",
+      repo: 'basalt-ui',
+    },
     {
       from: 135500,
       to: 143500,
