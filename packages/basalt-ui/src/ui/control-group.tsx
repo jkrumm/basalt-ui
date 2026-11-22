@@ -17,6 +17,11 @@ const FUSE_Y =
 const STACK =
   '[&>*:hover]:z-1 [&>[aria-invalid=true]]:z-2 [&>[data-invalid]]:z-2 [&>:has([aria-invalid=true])]:z-2 [&>*:focus-visible]:z-3 [&>:has(:focus-visible)]:z-3'
 
+// A stacked secondary button has only a drop shadow in light, so the one below covers its neighbour's
+// edge; a hairline over each fused top edge keeps the buttons apart.
+const DIVIDE_Y =
+  '[&>*:not(:first-child)]:before:pointer-events-none [&>*:not(:first-child)]:before:absolute [&>*:not(:first-child)]:before:inset-x-0 [&>*:not(:first-child)]:before:top-0 [&>*:not(:first-child)]:before:h-px [&>*:not(:first-child)]:before:bg-border'
+
 /**
  * The `ButtonGroup` cva table: buttons drawn as one, fused edges, the outer corners rounded and a
  * stacking order that keeps a hovered or focused button's edge and ring above its neighbours.
@@ -24,11 +29,6 @@ const STACK =
  * @example
  * buttonGroupVariants({ orientation: 'vertical' })
  */
-// A stacked secondary button has only a drop shadow in light, so the one below covers its neighbour's
-// edge; a hairline over each fused top edge keeps the buttons apart.
-const DIVIDE_Y =
-  '[&>*:not(:first-child)]:before:pointer-events-none [&>*:not(:first-child)]:before:absolute [&>*:not(:first-child)]:before:inset-x-0 [&>*:not(:first-child)]:before:top-0 [&>*:not(:first-child)]:before:h-px [&>*:not(:first-child)]:before:bg-border'
-
 export const buttonGroupVariants = cva(`isolate items-stretch ${STACK}`, {
   variants: {
     // Stacked, every button takes the group's width: an icon button gives up its square for the column.
