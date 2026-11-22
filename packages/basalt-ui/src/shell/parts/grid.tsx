@@ -238,7 +238,7 @@ export function ShellGrid({
 
 /**
  * The work surface: one plane in the card colour holding the identity row, main, the aside and the
- * dock, a grid of its own. It clips, so an aside or a dock panel ends at its corners. Its columns
+ * dock, a grid of its own. As a rounded panel it clips, so an aside or a dock panel ends at its corners. Its columns
  * ease while a dock opens or closes (`data-dock-shift` on the root).
  */
 export function ShellSurface({
@@ -254,7 +254,7 @@ export function ShellSurface({
       data-slot="shell-surface"
       data-surface="card"
       className={cn(
-        'relative grid min-h-0 min-w-0 overflow-clip bg-card [grid-area:surface]',
+        'relative grid min-h-0 min-w-0 bg-card [grid-area:surface]',
         'grid-cols-[minmax(0,1fr)_var(--shell-aside-w)_var(--shell-dock-w)]',
         titlebar
           ? 'grid-rows-[minmax(0,1fr)] [grid-template-areas:"main_aside_dock"]'
@@ -264,7 +264,8 @@ export function ShellSurface({
         // inset, so the edge costs the rows inside no pixel. Flush: one hairline on the rail side,
         // where the frame's colour meets the surface's.
         'border-border ring-border md:mt-(--shell-inset) md:me-(--shell-inset) md:mb-(--shell-inset)',
-        'group-data-[frame=panel]/shell:md:rounded-card group-data-[frame=panel]/shell:md:ring-1',
+        // Only a rounded panel clips: its corners cut what runs to them (a fill table, an aside, a dock).
+        'group-data-[frame=panel]/shell:md:overflow-clip group-data-[frame=panel]/shell:md:rounded-card group-data-[frame=panel]/shell:md:ring-1',
         'group-data-[frame=flush]/shell:md:border-s',
         // A title bar above: a flush surface draws its top edge under it.
         titlebar && 'max-md:border-t group-data-[frame=flush]/shell:border-t',
@@ -340,7 +341,7 @@ export function ShellMain({
         // The busy bar: a sticky hairline that takes no room, so the page under it does not move.
         'data-pending:before:sticky data-pending:before:top-0 data-pending:before:z-10 data-pending:before:-mb-0.5 data-pending:before:block data-pending:before:h-0.5 data-pending:before:animate-pulse data-pending:before:bg-primary data-pending:before:content-[""] motion-reduce:data-pending:before:animate-none',
         'min-h-0 min-w-0 overflow-auto overscroll-contain [grid-area:main]',
-        // The ring is inset: the surface clips at its corners, so an outset ring would be cut off.
+        // The ring is inset: a panel surface clips at its corners, so an outset ring would be cut off.
         scrolls
           ? 'outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand focus-visible:outline-solid'
           : 'outline-none',
