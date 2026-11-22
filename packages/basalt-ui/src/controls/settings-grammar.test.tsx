@@ -156,6 +156,7 @@ describe('FormActionRow', () => {
     )
     const row = container.querySelector<HTMLElement>('#row-revoke')!
     expect(getByRole('group', { name: 'Revoke key' })).toBe(row)
+    expect(row.getAttribute('data-slot')).toBe('form-action-row')
     expect(row.textContent).toContain('Stops every script using it.')
     expect(row.querySelector('.text-bad')!.textContent).toBe('Revoke key')
     expect(row.contains(getByRole('button', { name: 'Revoke' }))).toBe(true)
@@ -188,6 +189,29 @@ describe('FormConfirmRow', () => {
     expect(confirmed).toBe(1)
     expect((input as HTMLInputElement).value).toBe('')
     expect(off()).toBe(true)
+  })
+
+  test('a rejected onConfirm keeps the typed text and the row declares its slot', async () => {
+    const { container, getByRole } = render(
+      <FormConfirmRow
+        label="Delete"
+        confirmText="x"
+        actionLabel="Go"
+        onConfirm={() => Promise.reject(new Error('nope'))}
+      />,
+    )
+    expect(container.querySelector('[data-slot="form-confirm-row"]')).not.toBeNull()
+    const input = getByRole('textbox', { name: 'Type x to confirm' }) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'x' } })
+    await act(async () => {
+      fireEvent.click(getByRole('button', { name: 'Go' }))
+    })
+    expect(input.value).toBe('x')
+  })
+
+  test('without a description the row names no description', () => {
+    const { container } = render(<FormActionRow label="Run" action={<Button>Go</Button>} />)
+    expect(container.querySelector('[aria-describedby]')).toBeNull()
   })
 
   test('the input is a plain field: no autofill, no spellcheck', () => {

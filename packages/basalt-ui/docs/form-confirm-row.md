@@ -25,7 +25,7 @@ FormConfirmRow({ label, description, icon, id, tone, confirmText, actionLabel, o
   className?: string  // Layout only (`w-full`)
   confirmText: string  // The text the person types to arm the button: the workspace's name, `delete`
   actionLabel: string  // The button's text, naming the act: `Delete workspace`
-  onConfirm: () => void | Promise<void>  // Runs once the typed text matches and the button is pressed; the field clears after it
+  onConfirm: () => void | Promise<void>  // Runs once the typed text matches and the button is pressed; the field clears when it resolves
 ```
 
 ## Example
