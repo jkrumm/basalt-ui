@@ -16,11 +16,12 @@ checks: { fast: make check-fast, full: make check, ci: true }
 # measured 2026-11-21) plus the build and lint: a branch that touches the package source or the playground shell runs
 # all of it. A scenario-only branch runs its own routes (scripts/matrix-select.ts) and ends far inside this.
 slots: { run: 60m }
-# The layout suite is a Chrome tree. Its context-per-test close keeps one run near 2.5 GB resident; a row that
-# adds browser work files itself `lane: browser`, so at most two such leads run at once.
+# The layout suite is a Chrome tree. Its context-per-test close keeps one run near 2.5 GB resident, under the 3 GiB
+# reservation below. A row that adds browser work files itself `lane: browser`; admission reserves `memory` per
+# running lead against the host ceiling, so memory holds them back. `leads: 16` is the repo cap: the count does not bind.
 lanes:
   browser:
-    leads: 2
+    leads: 16
     memory: 3GiB
 # The unit suite may run on the factory's step host when the mini's test line would make it wait longer (Makefile
 # `test`, `$(call slot,unit)`). Measured 2026-11-17: 187 s on the host in parallel against 412 s on the mini.
