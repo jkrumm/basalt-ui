@@ -1,0 +1,28 @@
+{
+  "why": "After bench-surface and bench-table-view the table still reads busier and narrower than the reference. Seen in the frames of PR 1225 (/kit/list) and PR 1232 (/table): every header shows up to three glyphs at rest (the sort mark, the funnel, the column menu caret), columns are sized to their content so a table on a fill page ends mid-surface, and an editable select cell draws a bordered control in every row. The owner on 2026-11-21: \"die Tabellen sind halt einfach auch nochmal auf einem ganz anderen Level wie bei uns\" and, on the Notes table, \"wie schön übersichtlich und stark das ist\".",
+  "what": "The table at rest: a quiet header with one menu, columns that fill the surface, editable cells that rest as text.",
+  "owns": [
+    "packages/basalt-ui/src/table/parts/head.tsx, column-actions.tsx and the header rules in table.css",
+    "the column width plan in packages/basalt-ui/src/table/parts/data-table.tsx and the per-kind default widths",
+    "the rest state of the inline edit cells under packages/basalt-ui/src/table/parts",
+    "docs/v3/concepts/data-table.md, and the table reference of the basalt-design skill through its generator"
+  ],
+  "must_not_touch": [
+    "the view store, grouping and footer code from bench-table-view beyond reading its setters",
+    "the kinds added by bench-table-kinds beyond giving each a header icon and a default width"
+  ],
+  "change": "Read first: docs/v3/issues/bench/README.md (owner direction, decisions, how to use the reference) and docs/v3/BENCHMARK-ACCORDEE-BLUEPRINT.md. Decided: this reverses the rule in head.tsx that every header control shows at rest on a fine pointer. (1) Header at rest: an optional kind icon and the label, nothing else. State stays visible: a sorted column shows its direction arrow, a filtered column shows one mark, and both are named for assistive tech; `aria-sort` stays. The whole header cell is one button that opens one menu: sort ascending, descending, none; filter (opens the existing FilterEditor popover anchored to the header); move left, right, to either end; reset width; hide. The same menu opens on a tap and from the keyboard. The standing funnel and caret go. The resize handle from bench-table-view stays on the edge. (2) Header icon: each kind has a default 16 px icon, a column may name its own or turn it off, and a table may turn all of them off. (3) Widths: in the grid look each kind gets a roomier default width and the table overflows sideways under its pinned leading columns instead of shrinking columns to their content. In both looks, free width on a fill page is shared among the text-like columns (title, text, entity, person, tags) up to a cap per kind, while figures and dates keep their width; what is still left goes to the trailing filler, which continues the header, row, group and footer lines and grounds to the surface edge, so no tint or hairline stops short (the P3 noted in PR 1232). (4) An inline-editable cell rests as plain cell content. Its control appears on hover (a quiet affordance, fine pointer only), on focus and while editing; Enter or F2 opens it from the keyboard, a tap on touch. No bordered control per row at rest. What the code decides: the exact widths per kind on basalt's ladder, and whether the shared free width needs a contract amendment.",
+  "reference": "Accordee, measured from the frames (~/.local/state/basalt-accordee/reports/tables.md 2.1, 2.3): header row 40 px with a 16 px type icon and a 14 px label in secondary ink and no other glyph; a sorted column adds one arrow after the label (\"Status\" on invoices); column widths at 1600 px wide: Company 265, Location 292, Founder 220, Employees 194, Website 216, Note 280, Content 360, so six columns already overflow sideways; a click on a header opens one menu: Ascending, Descending, No sorting (checked), Filter column, Move right, Move left, Move to right end, Move to left end, Hide column (red); cells are plain text with a 16 px logo or avatar, no control drawn at rest. Shots: tables/01-customers-table-rest.png, 07-customers-header-hover.png, 08-customers-header-click.png, 09-customers-filter-column.png, 31-notes-rest.png, 38-invoices-rest.png. Ours before this row: the after frames in PR 1225 (/kit/list) and PR 1232 (/table).",
+  "acceptance": [
+    "A header at rest shows an icon and a label only; a sorted and a filtered column each show their one mark (layout test, light and dark)",
+    "Every action the three header controls offered is reachable from the one menu by pointer, touch and keyboard, and axe passes on the open menu",
+    "On a fill page at 1800 px the table's lines and grounds reach the surface edge, with and without a group row and a footer (layout test)",
+    "A grid-look table with more columns than fit scrolls sideways under its pinned leading columns",
+    "An editable cell draws no bordered control at rest and opens by hover and click, by Enter or F2, and by tap (tests)",
+    "The phone card projection is unchanged",
+    "make check passes"
+  ],
+  "out_of_scope": "New kinds. A multi-sort. Column reorder by drag (the menu moves a column). The view row and the manage-view panel.",
+  "proof": "Before and after frames from `basalt-ui shot` of /table and /kit/list at 1800x1200 and 390x844, light and dark, attached to the PR, and the design reviewer run on them.",
+  "commits": "Conventional, empty scope, packages/basalt-ui/** in its own commits. Never feat!: and no BREAKING CHANGE footer (docs/release.md). A changed or removed export updates migrations/areas and the generated docs in the same PR."
+}
