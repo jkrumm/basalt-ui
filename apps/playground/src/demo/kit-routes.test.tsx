@@ -190,7 +190,8 @@ describe('the Kit forms', () => {
   test('choices: select, segmented, radios and a checkbox group', async () => {
     mount('/kit/forms/choices')
     expect(await screen.findByRole('radiogroup', { name: 'Rollout' })).toBeDefined()
-    expect(screen.getAllByRole('checkbox').length).toBe(4)
+    const events = screen.getByRole('group', { name: 'Notify me when' })
+    expect(within(events).getAllByRole('checkbox').length).toBe(4)
   })
 
   test('dates and numbers: the two pickers and the sliders', async () => {
