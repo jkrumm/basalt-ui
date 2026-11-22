@@ -221,7 +221,8 @@ function PillSet({
   const size = presentation === 'inline' ? 'sm' : 'md'
   // In a page bar or a section header the row-or-button swap keys on the page's container, the
   // bar's own room, not on the narrower cell the slot sits in (F2 n14).
-  const inBar = use(SlotHomeContext) !== undefined
+  const home = use(SlotHomeContext)
+  const inBar = home !== undefined
   const folded = specs.slice(visible)
   return (
     <fieldset
@@ -235,7 +236,12 @@ function PillSet({
           <div
             ref={rowRef}
             data-slot="filter-pills"
-            className="-mx-1 -my-1 hidden min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-clip p-1 [contain:inline-size] @regular:flex"
+            className={cn(
+              '-mx-1 -my-1 hidden min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-clip p-1 @regular:flex',
+              // The page bar's controls cell grows into the row's room: the pills claim no width
+              // of their own there, so the tabs keep theirs and the fold measures what is left.
+              home === 'page-bar' && '[contain:inline-size]',
+            )}
           >
             {specs.map((spec, index) => (
               <div
