@@ -178,7 +178,8 @@ function MoreMenu({ items }: { items: readonly PageButtonAction[] }): ReactEleme
 
 /**
  * The actions row: joined groups, the `mobile` fold and the overflow menu. `primaryLast` moves the
- * segment holding the primary to the end, whole, so the view row ends on it and no two groups fuse.
+ * segment holding the primary to the end, whole, with the primary last inside it, so the view row
+ * ends on the primary and no two groups fuse.
  */
 function PageActions({
   actions,
@@ -190,8 +191,13 @@ function PageActions({
   const placed = place(actions)
   const segs = segments(placed)
   const holdsPrimary = (segment: Placed[]): boolean => segment.some((p) => isPrimary(p.action))
+  // Within its own group too, so the row ends on the primary and the group stays joined.
+  const primaryInLast = (segment: Placed[]): Placed[] => [
+    ...segment.filter((p) => !isPrimary(p.action)),
+    ...segment.filter((p) => isPrimary(p.action)),
+  ]
   const ordered = primaryLast
-    ? [...segs.filter((s) => !holdsPrimary(s)), ...segs.filter(holdsPrimary)]
+    ? [...segs.filter((s) => !holdsPrimary(s)), ...segs.filter(holdsPrimary).map(primaryInLast)]
     : segs
   const overflow = placed.flatMap(({ action, placement }) =>
     placement === 'more' && !isText(action) ? [action] : [],
