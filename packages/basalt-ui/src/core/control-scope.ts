@@ -25,11 +25,17 @@ export function useControlScope(): ControlScope | null {
 }
 
 /**
- * The layout a control takes inside a group: it drops its `w-full` so a group sizes to its content,
- * grows with the others in a `fill` group, and, under a coarse pointer, lifts to the 44 px floor its
- * neighbours have. Placed before the caller's `className` in `cn`, so `grow-0` or `w-40` wins.
+ * The layout a control takes inside a group. A field drops its `w-full` so a group sizes to its
+ * content; with `fill` every child grows. A button keeps its own width (an icon button stays square)
+ * and only grows with `fill`. Placed before the caller's `className` in `cn`, so `grow-0` or
+ * `w-40` wins.
  */
 export function scopeClass(scope: ControlScope | null): string | undefined {
   if (scope === null) return undefined
   return scope.fill ? 'w-auto min-w-0 grow' : 'w-auto'
+}
+
+/** A button's share of `scopeClass`: it grows in a `fill` group and keeps its own width otherwise. */
+export function buttonScopeClass(scope: ControlScope | null): string | undefined {
+  return scope?.fill === true ? 'grow' : undefined
 }

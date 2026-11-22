@@ -26,7 +26,8 @@ const STACK =
  */
 export const buttonGroupVariants = cva(`isolate items-stretch ${STACK}`, {
   variants: {
-    orientation: { horizontal: `flex-row ${FUSE_X}`, vertical: `flex-col ${FUSE_Y}` },
+    // Stacked, every button takes the group's width: an icon button gives up its square for the column.
+    orientation: { horizontal: `flex-row ${FUSE_X}`, vertical: `flex-col ${FUSE_Y} [&>*]:w-auto` },
     fill: { true: 'flex w-full', false: 'inline-flex' },
   },
   defaultVariants: { orientation: 'horizontal', fill: false },

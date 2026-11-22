@@ -3,7 +3,7 @@ import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
-import { scopeClass, useControlScope } from '../core/control-scope'
+import { buttonScopeClass, useControlScope } from '../core/control-scope'
 import { buttonVariants } from './button'
 
 /**
@@ -131,7 +131,9 @@ export function ToolbarButton({
       render={render}
       data-slot="toolbar-button"
       className={
-        render === undefined ? cn(buttonVariants(axes), scopeClass(scope), className) : className
+        render === undefined
+          ? cn(buttonVariants(axes), buttonScopeClass(scope), className)
+          : className
       }
     />
   )

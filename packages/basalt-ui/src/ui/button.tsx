@@ -3,7 +3,7 @@ import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
-import { scopeClass, useControlScope } from '../core/control-scope'
+import { buttonScopeClass, useControlScope } from '../core/control-scope'
 
 /**
  * The `Button` cva table: the one source the generator reads for the type union, the `no-restyle`
@@ -89,7 +89,7 @@ function useScopedAxes(
       scope === null
         ? undefined
         : cn(
-            scopeClass(scope),
+            buttonScopeClass(scope),
             resolved === 'sm' &&
               'pointer-coarse:mx-0 pointer-coarse:min-h-11 pointer-coarse:min-w-11',
           ),
