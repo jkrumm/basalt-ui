@@ -71,7 +71,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | toc | Toc | clean | client:visible | 82.0 kB | 10.8 kB | 29.6 kB | Static picture first, the island adds behaviour: the scroll-spy marks the current section with JS. client:visible, up to 10.8 kB further (client:idle above the fold). |
 | callout | Callout | clean | no directive | 80.9 kB | 9.7 kB | 29.6 kB | The static HTML is the whole part, 0 bytes of JavaScript: a static note; no behaviour. |
 | prose | Prose | clean | no directive | 76.7 kB | 5.5 kB | 29.6 kB | The static HTML is the whole part, 0 bytes of JavaScript: typography only. |
-| page | Page, PageBar, PageSummary, Section, CardGrid | clean | client:visible | 181.9 kB | 110.7 kB | 29.6 kB | Static picture first, the island adds behaviour: action buttons need JS; the frame, title, summary and figures are the static picture. client:visible, up to 110.7 kB further (client:idle above the fold). |
+| page | Page, PageBar, PageSummary, Section, CardGrid | clean | client:visible | 186.2 kB | 115.0 kB | 30.6 kB | Static picture first, the island adds behaviour: action buttons need JS; the frame, title, summary and figures are the static picture. client:visible, up to 115.0 kB further (client:idle above the fold). |
 | empty-state | EmptyState | clean | no directive | 86.6 kB | 15.4 kB | 29.6 kB | The static HTML is the whole part, 0 bytes of JavaScript: the cause line and the link action are drawn at rest; the filtered reset needs JS and is not shown. |
 | facts | Facts | clean | no directive | 73.1 kB | 1.9 kB | 29.6 kB | The static HTML is the whole part, 0 bytes of JavaScript: a definition list is drawn at rest. |
 | inner-nav | InnerNav | fails | none works | 162.4 kB | 91.2 kB | 29.6 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
@@ -84,7 +84,7 @@ Columns: `No directive` is the static HTML: `clean`, `differs` from the client:o
 | connection-indicator | ConnectionIndicator | fails | none works | 133.0 kB | 61.9 kB | 29.6 kB | fails on the server (No QueryClient set, use QueryClientProvider to set one) and in the browser (No QueryClient set, use QueryClientProvider to set one) |
 | overlay-host | OverlayHost | clean | client:visible | 133.5 kB | 62.3 kB | 29.6 kB | Needs the island to work: overlays open by key from JS; nothing is open at rest, so the host draws nothing. client:idle above the fold, client:visible below, up to 62.3 kB further. |
 | toast-host | ToastHost | clean | client:visible | 108.9 kB | 37.7 kB | 29.6 kB | Static picture first, the island adds behaviour: it drains notify() calls made after mount; the viewport is empty at rest. client:visible, up to 37.7 kB further (client:idle above the fold). |
-| app-shell | AppShell | fails | none works | 224.4 kB | 153.3 kB | 29.6 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
+| app-shell | AppShell | fails | none works | 228.6 kB | 157.5 kB | 30.6 kB | fails on the server (Invalid value used as weak map key) and in the browser (Invalid value used as weak map key) |
 | command-palette | CommandPalette | clean | client:visible | 168.5 kB | 97.2 kB | 29.1 kB | Needs the island to work: the palette opens on a key or the search row; rendered closed, the trigger is the picture. client:idle above the fold, client:visible below, up to 97.2 kB further. |
 | controls | FilterSet, ViewTabs | fails | none works | 235.5 kB | 164.4 kB | 29.1 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
 | control-home | ControlHome, ControlView | fails | none works | 201.8 kB | 130.6 kB | 29.1 kB | fails on the server (Cannot read properties of null (reading 'stores')) and in the browser (Cannot read properties of null (reading 'stores')) |
@@ -119,7 +119,7 @@ Every part of a family on one page, each its own island, in one mode: the JavaSc
 | charts | 8 | 0 | 205.7 kB | 223.6 kB | 223.5 kB | 223.5 kB |
 | table | 4 | 0 | 308.0 kB | 312.9 kB | 312.9 kB | 312.9 kB |
 | content | 5 | 0 | 271.7 kB | 272.9 kB | 272.9 kB | 272.9 kB |
-| page | 19 | 0 | 184.3 kB | 262.9 kB | 262.8 kB | 345.4 kB |
+| page | 19 | 0 | 188.6 kB | 265.9 kB | 265.8 kB | 347.8 kB |
 | forms | 18 | 0 | 162.3 kB | 237.3 kB | 237.2 kB | 237.2 kB |
 
 ## Charts: is the static picture correct?
@@ -143,15 +143,16 @@ Each kind renders in a box of a declared 640 px (the engine's server width, `INI
 - data-table: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 - table-toolbar: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 - data-table-body: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- page: the PageBar view row (Issue 2938): counted pill tabs, a search box, the Filter trigger fold, the layout toggle and view settings join the page bar, which the app shell and every page family page carry
 - page-aside: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 - dock: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 - peek: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 - overlay-host: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
-- app-shell: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- app-shell: the PageBar view row (Issue 2938): counted pill tabs, a search box, the Filter trigger fold, the layout toggle and view settings join the page bar, which the app shell and every page family page carry
 - controls: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 - family ui: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
 - family table: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
-- family page: Issue 2939: one panel anatomy for Peek, Dock, PageAside and a right Sheet. The shared header draws Base UI menus (the More menu, Open as) and a phone Peek is a bottom Sheet; beside the page barrel, where both already ship, the cost is about 8 kB
+- family page: the PageBar view row (Issue 2938): counted pill tabs, a search box, the Filter trigger fold, the layout toggle and view settings join the page bar, which the app shell and every page family page carry
 
 ## Findings
 
