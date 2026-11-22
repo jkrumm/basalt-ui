@@ -97,11 +97,20 @@ type Mode =
 type Selection =
   | { kind: 'ids'; ids: readonly string[] }
   | { kind: 'all-matching'; request: TableRequest; excluded: readonly string[]; count: number }
-type View = { id: string; name: string; state: TableState }
+type View = {
+  id: string
+  name: string
+  state: TableState
+  default?: boolean
+  sharing?: 'private' | 'shared'
+}
 type ViewStore = {
   list(table: string): Promise<View[]>
   save(table: string, v: View): Promise<void>
   remove(table: string, id: string): Promise<void>
+  reorder?(table: string, ids: readonly string[]): Promise<void>
+  share?: boolean
+  count?(table: string, view: View): Promise<number | undefined>
 }
 type RowAction<T> = {
   key: string
@@ -326,7 +335,7 @@ Not a "never": a div or CSS-grid table with no role imports nothing and is invis
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `core/*` unit         | Plan totality, kinds, filter predicates, page reset, `resetOn`, priority demotion, selection union, keyboard, `select` commit and pending                                                                                                                                              |
 | URL property          | `parse(serialize(s)) = s` on generated states incl. dates, commas, numeric-looking strings, empty sets; #1257, #1268, Bazza Date as named fixtures                                                                                                                                     |
-| Views                 | Dirty diff, prune, version bump, `view` dropped on edit                                                                                                                                                                                                                                |
+| Views                 | Dirty diff, prune, v1 migration, `view` kept through an edit                                                                                                                                                                                                                           |
 | SSR                   | Server HTML equals hydrated tree, no warning, at each tier via container width                                                                                                                                                                                                         |
 | Layout (Chrome)       | 1440, 768, 390, 360, 320; long text; 8+ and 14 columns; 0 rows; loading; error; Select mode; page-sticky head under the band; pinned opaque under hover and selected; no horizontal overflow outside `scroll`; equal geometry across phases; hit floors; every column reachable at 390 |
 | Axe                   | Serious and critical fail, each tier; `label`, `button-name`, `scrollable-region-focusable`                                                                                                                                                                                            |
