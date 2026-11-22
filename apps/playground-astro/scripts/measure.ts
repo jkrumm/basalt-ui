@@ -180,12 +180,38 @@ async function load(browser: Browser, base: string, path: string): Promise<Load>
   }
 }
 
+/**
+ * Waits until the cell's markup has held still for QUIET_MS, or 10 s. `settle` waits for hydration, fonts and two frames,
+ * but a part that renders a Suspense fallback first (CodeBlock's plain block until shiki has loaded on a client:only page)
+ * swaps its content later, and under load past the 250 ms `settle` leaves: the 633 px code-block failures of 2026-11-22.
+ */
+const QUIET_MS = 300
+async function quiet(page: Page): Promise<void> {
+  await page
+    .waitForFunction(
+      (ms) => {
+        const w = window as unknown as { __quiet?: { html: string; at: number } }
+        const html = document.querySelector('section[data-cell]')?.innerHTML ?? ''
+        const now = performance.now()
+        if (w.__quiet?.html !== html) {
+          w.__quiet = { html, at: now }
+          return false
+        }
+        return now - w.__quiet.at >= ms
+      },
+      QUIET_MS,
+      { polling: 50, timeout: 10_000 },
+    )
+    .catch(() => {})
+}
+
 type Shot = { png: Buffer; w: number; h: number; text: string }
 
 async function shoot(context: BrowserContext, url: string): Promise<Shot> {
   const page = await context.newPage()
   await page.goto(url, { waitUntil: 'load' })
   await settle(page)
+  await quiet(page)
   const cell = page.locator('section[data-cell]').first()
   const box = (await cell.boundingBox()) ?? { width: 0, height: 0 }
   const text = (await cell.innerText()).replace(/\s+/g, ' ').trim()
