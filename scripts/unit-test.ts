@@ -29,8 +29,8 @@ import { parallelism, peakBudgetMib, pickNext } from './unit-parallelism'
 import { changedSince, selectUnit } from './unit-select'
 
 /**
- * Files whose own process peaked above 700 MiB, each with that peak in MiB rounded up (measured alone, 2026-11-21; two
- * of them in one chunk stacked to 2.4 GiB). The cost lets a parallel run keep the sum of what runs under its budget
+ * Files whose own process peaked above 700 MiB, each with that peak in MiB rounded up (measured alone, 2026-11-21; gen-llms, gen-llms-assert and
+ * tests/agent-doc-drift re-measured 2026-11-22 after the shared llms program; two of them in one chunk stacked to 2.4 GiB). The cost lets a parallel run keep the sum of what runs under its budget
  * (scripts/unit-parallelism.ts). A rename fails loudly rather than going unnoticed.
  */
 const HEAVY_MIB: Record<string, number> = {
