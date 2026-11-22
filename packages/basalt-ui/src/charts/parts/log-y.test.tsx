@@ -128,6 +128,30 @@ describe('log y beside a linear one', () => {
   })
 })
 
+describe('a log y.domain that cannot be drawn', () => {
+  test('a function answer with a bound at or below zero warns in a dev build and draws the data extent', () => {
+    const warned: string[] = []
+    const original = console.error
+    console.error = (...args: unknown[]) => void warned.push(args.join(' '))
+    try {
+      const html = renderToString(
+        <Lines
+          label="Price"
+          data={rows}
+          x={x}
+          series={[price]}
+          y={{ scale: 'log', domain: () => [0, 100] }}
+        />,
+      )
+      expect(yTicks(html).every(isRound)).toBe(true)
+      expect(yTicks(html).at(-1)).toBeGreaterThan(100)
+    } finally {
+      console.error = original
+    }
+    expect(warned.join('\n')).toContain('a log y.domain needs positive bounds')
+  })
+})
+
 describe('zones and reference lines on a log y', () => {
   const html = renderToString(
     <Lines
