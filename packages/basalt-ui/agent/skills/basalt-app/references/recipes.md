@@ -11,7 +11,7 @@ A recipe is the shipped answer to a pattern basalt composes but does not export:
 - [ai-external-runtime](node_modules/basalt-ui/docs/recipes/ai-external-runtime.md): a chat runs on TanStack AI, AG-UI or assistant-ui and still renders through partView
 - [ai-sdk-tools](node_modules/basalt-ui/docs/recipes/ai-sdk-tools.md): a model shows typed blocks through one AI SDK tool, with a route handler and a client that renders the part through the catalog
 - [dependent-validation](node_modules/basalt-ui/docs/recipes/dependent-validation.md): a form validates with one Standard Schema, with a rule across fields and one field the server decides
-- [board](node_modules/basalt-ui/docs/recipes/board.md): columns of KanbanCards that move between states, with a menu path and an app-owned drag engine
+- [board](node_modules/basalt-ui/docs/recipes/board.md): columns of KanbanCards that move between states, by drag and by the card menu, with an optimistic save
 - [chat-thread](node_modules/basalt-ui/docs/recipes/chat-thread.md): an AI chat thread: streamed replies without a bubble, a composer, one live region, a scroller that stays at the bottom
 - [chat-thread-composer](node_modules/basalt-ui/docs/recipes/chat-thread-composer.md): the message box of a chat thread: Enter sends, Shift+Enter and IME composition leave the draft, a failed send gives the text back
 - [chat-thread-scroll](node_modules/basalt-ui/docs/recipes/chat-thread-scroll.md): a scroller that follows a streaming reply to the bottom, releases on a scroll up and survives a late image or the keyboard closing
