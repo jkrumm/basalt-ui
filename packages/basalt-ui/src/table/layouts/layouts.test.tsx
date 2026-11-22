@@ -26,7 +26,7 @@ const DEALS: Deal[] = [
 const STAGES = ['new', 'won', 'lost']
 
 /** The model the last render built, read by the tests after it commits. */
-const seen: { model?: TableModel<Deal> } = {}
+const seen: { model?: TableModel<Deal> | undefined } = {}
 
 beforeEach(() => {
   localStorage.clear()
