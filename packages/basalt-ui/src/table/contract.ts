@@ -70,7 +70,24 @@ export type TableDisplay = {
   collapsed?: readonly string[]
   order?: readonly string[]
   pinned?: readonly string[]
+  /** Column widths in px a reader set by dragging a header edge, by column id; absent, the kind's width. */
+  widths?: Readonly<Record<string, number>>
+  /** The body's row height; absent, the table's declared `rowHeight`, else the app's density. */
+  rowHeight?: RowHeight
+  /**
+   * The column a reader grouped the rows by (client mode), `null` for none; absent, the declared
+   * `group.by` holds.
+   */
+  groupBy?: string | null
+  /** The footer reduce a reader picked per column id, `'none'` for none; absent, the declared `footer`. */
+  aggregates?: Readonly<Record<string, Aggregate | 'none'>>
 }
+
+/** A body row height: the density row of `dense`, `normal` and `comfortable` (`--basalt-row-h`). */
+export type RowHeight = 'compact' | 'default' | 'comfortable'
+
+/** A footer or group reduce: `count` counts the rows with a value, the rest read a numeric column. */
+export type Aggregate = 'sum' | 'mean' | 'min' | 'max' | 'count'
 
 export type TableState = { v: 1; request: TableRequest; display: TableDisplay }
 
@@ -357,7 +374,20 @@ export type UseDataTable<
    * @default 'none' on a client table, 'more' on a cursor table, 'pages' on any other server table
    */
   pager?: 'pages' | 'more' | 'none'
-  /** A type error unless `mode.kind` is `'client'` (enforced in `useDataTable` at the call site). */
+  /**
+   * The body's row height until a reader picks one in a view: the density row of `dense` (2rem),
+   * `normal` (2.5rem) or `comfortable` (3rem); the head keeps its height. Absent, the app's density.
+   */
+  rowHeight?: RowHeight
+  /**
+   * A row-number column after the tick: the row's place in the request (it runs on across groups and
+   * pages). In the grid look it stays pinned with the tick and the identity column; a card hides it.
+   */
+  rowNumbers?: boolean
+  /**
+   * The rows grouped by a column, until a reader picks another column or none in a view. A type
+   * error unless `mode.kind` is `'client'` (enforced in `useDataTable` at the call site).
+   */
   group?: {
     by: string
     summary?: (rows: readonly T[], box: Box) => ReactNode
