@@ -86,6 +86,41 @@ describe('checkbox-matrix', () => {
     expect(last['billing']).toEqual(['owner'])
   })
 
+  test('a toggle turns the open cells off once they are all on, whatever a locked cell holds', () => {
+    let last: MatrixValue = {}
+    const { getByRole } = render(
+      <CheckboxMatrix
+        aria-label="P"
+        rows={rows}
+        columns={columns}
+        rowToggles
+        onValueChange={(v) => (last = v)}
+        cellState={(row, column) =>
+          row.id === 'billing' && column.id === 'owner' ? 'locked' : undefined
+        }
+      />,
+    )
+    // The locked Owner cell is off and stays off: the toggle reads mixed after switching the rest on.
+    fireEvent.click(getByRole('checkbox', { name: 'All for Billing' }))
+    expect(last['billing']).toEqual(['admin', 'guest'])
+    fireEvent.click(getByRole('checkbox', { name: 'All for Billing' }))
+    expect(last['billing']).toEqual([])
+  })
+
+  test('a toggle takes its name from `name` when the label is not text', () => {
+    const { getByRole } = render(
+      <CheckboxMatrix
+        aria-label="P"
+        rows={[{ id: 'a', label: <b>Alpha</b>, name: 'Alpha' }]}
+        columns={[{ id: 'c', label: <i>Cee</i>, name: 'Cee' }]}
+        rowToggles
+        columnToggles
+      />,
+    )
+    expect(getByRole('checkbox', { name: 'All for Alpha' })).toBeDefined()
+    expect(getByRole('checkbox', { name: 'Cee for every row' })).toBeDefined()
+  })
+
   test('a locked cell is read-only and a disabled column cannot change', () => {
     const { getByRole } = render(
       <CheckboxMatrix

@@ -4,6 +4,8 @@ import { cva } from 'class-variance-authority'
 import { useState } from 'react'
 import type { FocusEvent, ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { base as baseMessages } from '../core/messages/base'
+import { useMessages } from '../core/messages/use-messages'
 import { buttonVariants } from './button'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
@@ -119,6 +121,7 @@ export function SwatchPicker({
   onBlur,
   className,
 }: SwatchPickerProps): ReactElement {
+  const t = useMessages(baseMessages)
   const [open, setOpen] = useState(false)
   const picked = options.find((option) => option.value === value)
   const triggerName =
@@ -196,7 +199,12 @@ export function SwatchPicker({
         {picked === undefined ? null : <Dot token={picked.value} />}
         {picked?.label}
       </PopoverTrigger>
-      <PopoverContent aria-label={ariaLabel ?? 'Colour'} className="w-auto">
+      <PopoverContent
+        {...(ariaLabelledBy === undefined
+          ? { 'aria-label': ariaLabel ?? t('base.swatch.menu') }
+          : { 'aria-labelledby': ariaLabelledBy })}
+        className="w-auto"
+      >
         {grid}
       </PopoverContent>
       {name !== undefined && <input type="hidden" name={name} value={picked?.value ?? ''} />}
