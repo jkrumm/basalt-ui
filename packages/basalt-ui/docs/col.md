@@ -63,8 +63,8 @@ col<T>(): Col<T>
 
   TitleOptions<T, K>:
     filter?: "text"
-    header?: string  // Header text
     id?: string  // Column id when it differs from the key (two columns over one field)
+    header?: string  // Header text
     priority?: Priority  // What survives a narrow tier: 1 always, 2 reduced and up, 3 full only
     card?: CardSlot  // First choice of card slot; the kind's own order follows
     sortable?: false  // `false` turns sorting off for this column
