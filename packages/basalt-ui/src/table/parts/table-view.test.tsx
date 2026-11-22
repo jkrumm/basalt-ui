@@ -36,9 +36,11 @@ const latest = (): TableModel<Row> => {
 function Subject({
   id = 'view',
   options = {},
+  maxRows,
 }: {
   id?: string
   options?: Partial<UseDataTable<Row>>
+  maxRows?: number
 }): ReactElement {
   const c = col<Row>()
   const t = useDataTable<Row>({
@@ -60,7 +62,11 @@ function Subject({
   useEffect(() => {
     model = current
   })
-  return <DataTable table={t} />
+  return maxRows === undefined ? (
+    <DataTable table={t} />
+  ) : (
+    <DataTable table={t} height={{ maxRows }} />
+  )
 }
 
 const stored = (id: string): TableState['display'] =>
@@ -225,6 +231,18 @@ describe('row height', () => {
     act(() => latest().setRowHeight(undefined))
     expect(body?.hasAttribute('data-density')).toBe(false)
     expect(stored('rows').rowHeight).toBeUndefined()
+  })
+
+  test('a maxRows height counts the head at the app row and the body rows at the step', () => {
+    const { container } = render(
+      <Subject id="cap" maxRows={3} options={{ rowHeight: 'comfortable' }} />,
+    )
+    const scroller = container.querySelector<HTMLElement>('[data-slot="table-scroller"]')
+    expect(scroller?.getAttribute('data-density')).toBe('comfortable')
+    // The scroller's own `--basalt-row-h` is the step's; the head row is the root's, which no step moves.
+    expect(scroller?.style.maxHeight).toBe(
+      'calc(var(--table-app-row-h, var(--basalt-row-h)) + 3 * var(--table-row-h, var(--basalt-row-h)))',
+    )
   })
 
   test('the declared rowHeight holds until the view picks one', () => {
