@@ -6,7 +6,7 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToString } from 'react-dom/server'
 import { Bars, CartesianChart } from './index'
-import type { Series } from './contract'
+import type { BarsSeries } from './index'
 import { leftExtent } from './seams/y-domain'
 
 type Day = { k: string; vig: number; mod: number }
@@ -21,7 +21,7 @@ const days = (peak: boolean): Day[] =>
     mod: peak && i === 6 ? 31 : 30 + (i % 4) * 5,
   }))
 
-const minutes = (opts: { segment?: boolean } = {}): Series<Day>[] => [
+const minutes = (opts: { segment?: boolean } = {}): BarsSeries<Day>[] => [
   {
     mark: 'bar',
     key: 'vig',
