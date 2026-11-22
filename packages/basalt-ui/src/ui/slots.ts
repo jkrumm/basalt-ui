@@ -84,6 +84,7 @@ export const SLOTS = {
   sheet: ['sheet-trigger', 'sheet-content', 'sheet-title', 'sheet-close'],
   skeleton: ['skeleton', 'spinner'],
   slider: ['slider'],
+  'sortable-list': ['sortable-list'],
   status: ['status', 'swatch'],
   switch: ['switch'],
   table: [

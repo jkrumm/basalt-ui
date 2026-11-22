@@ -1,5 +1,6 @@
 [
   "BarList",
+  "Board",
   "ChainView",
   "DataPanel",
   "EventList",
@@ -8,5 +9,6 @@
   "StatCard",
   "StatCell",
   "StatGroup",
-  "StepRail"
+  "StepRail",
+  "applyMove"
 ]

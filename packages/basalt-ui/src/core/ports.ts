@@ -249,6 +249,38 @@ export type VirtualLike = (props: {
   children(items: readonly VirtualItem[], totalSize: number): ReactNode
 }) => ReactElement | null
 
+/** The data a drag carries and a drop target names: flat, so it survives any engine. */
+export type DragData = Readonly<Record<string, string | number>>
+
+/** Which half of a target the pointer is over: the drop lands before or after it. */
+export type DragEdge = 'before' | 'after'
+
+/**
+ * Supplied by `drag` from `ui/sortable-list`, so `./cards` names no drag library and needs no
+ * peer. Each call registers one element and returns its cleanup. `item` makes an element
+ * draggable (by `handle` when given; `tilt` draws the preview as a tilted copy) and reports its
+ * own drag; `target` reports the edge the pointer is over, `null` on leave; `watch` gets every
+ * finished drag with its innermost target, `null` when it was dropped on none.
+ */
+export type DragLike = {
+  item(o: {
+    element: HTMLElement
+    handle?: HTMLElement | undefined
+    data: DragData
+    tilt?: boolean | undefined
+    onDrag?(dragging: boolean): void
+  }): () => void
+  target(o: {
+    element: HTMLElement
+    data: DragData
+    onHover?(edge: DragEdge | null): void
+  }): () => void
+  watch(o: {
+    onStart?(source: DragData): void
+    onDrop(drop: { source: DragData; target: DragData | null; edge: DragEdge | null }): void
+  }): () => void
+}
+
 // ---- Realtime views (live-realtime 3) -----------------------------------------------------
 
 export type ChannelStatus =
