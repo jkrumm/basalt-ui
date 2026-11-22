@@ -28,6 +28,7 @@ import type {
   RowHeight,
   TableDisplay,
   TableEscape,
+  TableLayout,
   TableRequest,
   Totals,
   UseDataTable,
@@ -127,6 +128,16 @@ export type TableModel<T> = {
   aggregatesOf(id: string): readonly Aggregate[]
   /** Writes the view's reduce for a column: `'none'` drops it, `undefined` returns to the declared one. */
   setAggregate(id: string, fn: Aggregate | 'none' | undefined): void
+  /** The layouts a reader may pick, in toggle order: `layouts` without the ones this table cannot draw. */
+  layouts: readonly TableLayout[]
+  /** The view's layout: its pick while the table offers it, else `table`. */
+  layout: TableLayout
+  /** Writes the view's layout; `table` drops the key. */
+  setLayout(layout: TableLayout): void
+  /** The `select` columns a board may stand on (client mode), in drawn order. */
+  boardAxes: readonly string[]
+  /** Activates a row as a click or Enter on it does: its `onRowActivate`, `detail` or derived sheet. */
+  activate(id: string): void
   rows: readonly ModelRow<T>[]
   /** What the body draws in order: the rows, or group rows with the rows of open groups. */
   items: readonly BodyItem<T>[]
@@ -261,6 +272,33 @@ function usePageFilters<T>(filters: readonly PageFilter<T, any>[] = []) {
     clear: () => clearTogether(filters.map((filter) => filter.field)),
   }
 }
+
+let layoutWarned = false
+
+/**
+ * The layouts a table offers: the caller's, `table` when none, without `board` where it cannot stand
+ * (a server table never groups; a board's drop is a `select` column's `commit`). A dev warning
+ * names a dropped board once per page.
+ */
+function offeredLayouts(
+  id: string,
+  asked: readonly TableLayout[] | undefined,
+  server: boolean,
+  hasAxis: boolean,
+): readonly TableLayout[] {
+  const wanted = asked === undefined || asked.length === 0 ? DEFAULT_LAYOUTS : asked
+  if (!wanted.includes('board') || (!server && hasAxis)) return wanted
+  if (process.env.NODE_ENV !== 'production' && !layoutWarned) {
+    layoutWarned = true
+    // oxlint-disable-next-line no-console -- a development warning for a layout the table cannot draw
+    console.warn(
+      `basalt-ui/table: "${id}" offers the board layout, but ${server ? 'a server table never groups its rows' : 'it has no c.select column whose commit a drop could call'}; the board was left out.`,
+    )
+  }
+  return wanted.filter((layout) => layout !== 'board')
+}
+
+const DEFAULT_LAYOUTS: readonly TableLayout[] = ['table']
 
 /** What a column's `range` compares: calendar days in the table's zone on a date kind, else numbers. */
 function domainOf(spec: Pick<KindSpec<never>, 'kind'>, zone: string | undefined): RangeDomain {
@@ -771,6 +809,12 @@ export function useDataTable<
     : undefined
   const specById = new Map(specs.map((spec) => [spec.id, spec]))
   const plannedById = new Map(arranged.plan.columns.map((column) => [column.id, column]))
+  const boardAxes = server
+    ? []
+    : arranged.specs.flatMap((spec) =>
+        spec.kind === 'select' && spec.edit !== undefined ? [spec.id] : [],
+      )
+  const layouts = offeredLayouts(options.id, options.layouts, server, boardAxes.length > 0)
 
   const model: TableModel<T> = {
     id: options.id,
@@ -819,6 +863,16 @@ export function useDataTable<
       setPreview(null)
       state.setDisplay({ widths: {} })
     },
+    layouts,
+    layout:
+      display.layout !== undefined && layouts.includes(display.layout) ? display.layout : 'table',
+    setLayout(next) {
+      state.updateDisplay(({ layout: _previous, ...rest }) =>
+        next === 'table' ? rest : { ...rest, layout: next },
+      )
+    },
+    boardAxes,
+    activate,
     rowHeight: display.rowHeight ?? options.rowHeight,
     setRowHeight(height) {
       state.updateDisplay(({ rowHeight: _previous, ...rest }) =>

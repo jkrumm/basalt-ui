@@ -76,6 +76,8 @@ export function tierAttributes(
     'data-priority': planned.priority === null ? undefined : String(planned.priority),
     'data-pin': planned.pin ?? undefined,
     'data-identity': planned.identity ? '' : undefined,
+    // The card place the list layout lays a row out by (`layouts/`, `table.css`).
+    'data-place': planned.place,
     // A column `phone: 'columns'` leaves off the phone row (the tier CSS reads it only there).
     'data-phone-drop': planned.phoneKeep ? undefined : '',
     // A column left off the phone card: hidden by the display state, or placed in the detail (a meter,

@@ -81,7 +81,7 @@ A row per watched thing (a project, a host, a queue) reads in the reading look w
 
 - `request` (search, filters, sort, page) is the query key and belongs in the URL; `display` (hidden, moved and pinned columns) is the device's. Bind `state` to a `field.composite` of a `defineControls` store, or omit it for a table that holds its own memory.
 - A filter the page shares with other widgets stays a page control and reaches the table through `resetOn`; a filter that is a chip on this table stays in `request`. A second table on a page needs a `prefix` on its codec.
-- A presentation switch (table or cards) is its own param, never `view`: see the `view-switch` recipe.
+- One record set as a table, a list, a board or a gallery is the view's layout: `useDataTable({ layouts })` and `PageBar layout={views.layout}`, never a second table or a hand-built card grid. A chain or nested presentation is its own param, never `view`: see the `view-switch` recipe.
 
 ## Phone and the 390 px check
 

@@ -1357,6 +1357,71 @@
     display: inline;
   }
 
+  /* list layout: one line per row by card place from 480 up, phone cards below */
+  @container table (min-width: 480px) {
+    [data-layout='list'] :is(table, thead, tbody) {
+      display: block;
+    }
+    [data-layout='list'] :is(colgroup, tfoot, [data-slot='table-resize'], th svg),
+    [data-layout='list'] tr::after,
+    [data-layout='list']
+      :is(td, th):is([data-place='detail'], [data-place='hidden'], [data-card='hidden']) {
+      display: none;
+    }
+    [data-layout='list'] tr {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing) * 4);
+      padding-inline: calc(var(--spacing) * 3);
+      min-height: calc(var(--spacing) * 14);
+      height: auto !important;
+      box-shadow: inset 0 -1px 0 var(--basalt-hairline);
+    }
+    [data-layout='list'] thead tr {
+      min-height: calc(var(--spacing) * 8);
+      font-size: var(--text-xs);
+      color: var(--basalt-ink-muted);
+    }
+    [data-layout='list'] thead :is(button, span) {
+      font: inherit;
+      color: inherit;
+    }
+    [data-layout='list'] :is(td, th) {
+      display: block;
+      flex: 1 1 0;
+      min-width: 0;
+      height: auto !important;
+      padding: 0 !important;
+      border: 0 !important;
+      background: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap !important;
+    }
+    [data-layout='list'] :is(td, th)[data-identity] {
+      flex: 2.4 1 0;
+      font-weight: 500;
+    }
+    [data-layout='list']
+      :is(td, th):is([data-kind='tick'], [data-kind='actions'], [data-kind='row-number']) {
+      flex: none;
+      overflow: visible;
+    }
+    [data-layout='list'] td[data-place='meta'] {
+      color: var(--basalt-ink-muted);
+    }
+    [data-layout='list'] :is(td, th)[data-place='value'] {
+      text-align: end;
+    }
+    [data-layout='list'] td[colspan] {
+      flex: 1 1 100%;
+    }
+  }
+  [data-slot='table-gallery-card'] {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 9.5rem;
+  }
+
   @media print {
     [data-slot='table-scroller'] {
       overflow: visible;

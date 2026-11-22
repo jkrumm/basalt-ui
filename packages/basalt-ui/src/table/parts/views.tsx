@@ -19,10 +19,12 @@ import type { ComponentType, MouseEvent, ReactElement } from 'react'
 import { useMessages } from '../../core/messages/use-messages'
 import { table } from '../../core/messages/table'
 import type { ControlsSlot } from '../../core/ports'
-import type { PageSettings } from '../../page/contract'
+import type { PageLayout, PageSettings } from '../../page/contract'
 import { Button } from '../../ui/button'
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs'
-import type { DataTableInstance, TableState, View, ViewStore } from '../contract'
+import type { DataTableInstance, TableLayout, TableState, View, ViewStore } from '../contract'
+import type { AddViewMenuProps } from '../layouts/add-menu'
+import { LayoutToggle, layoutHandle, useLayoutLabel, useLayoutOptions } from '../layouts/toggle'
 import { modelOf } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
 import { setDoor, useDoor, useMountDoor } from './view-door'
@@ -265,8 +267,8 @@ export type ViewsController<T> = {
   show(page?: PanelPage): void
   close(): void
   apply(id: string | undefined): void
-  /** Saves what is shown as a new view, applies it and opens the panel on its name. */
-  create(): Promise<void>
+  /** Saves what is shown as a new view (in `layout` when given), applies it and opens the panel on its name. */
+  create(layout?: TableLayout): Promise<void>
   save(): Promise<void>
   discard(): void
   rename(id: string, name: string): Promise<boolean>
@@ -352,9 +354,15 @@ function useViewsController<T>(
     show,
     close: () => setDoor(model.id, { open: false, page: door.page }),
     apply,
-    async create() {
-      const saved = saveView(list.views, freeName(list.views, t('table.viewNew')), state)
+    async create(layout) {
+      const { layout: _shown, ...display } = state.display
+      const start =
+        layout === undefined
+          ? state
+          : { ...state, display: layout === 'table' ? display : { ...display, layout } }
+      const saved = saveView(list.views, freeName(list.views, t('table.viewNew')), start)
       if (!(await commit(saved.views))) return
+      if (layout !== undefined) model.setLayout(layout)
       param.set(saved.id)
       show('name')
     },
@@ -436,9 +444,18 @@ const LazyTabMenu = lazy(async (): Promise<{ default: ComponentType<TabMenuProps
   default: (await import('./view-tab-menu')).TabMenu,
 }))
 
+/** `+ View`'s layout menu, with the tab menu's chunk timing: loaded on the first intent. */
+const LazyAddMenu = lazy(async (): Promise<{ default: ComponentType<AddViewMenuProps> }> => ({
+  default: (await import('../layouts/add-menu')).AddViewMenu,
+}))
+
 const preloadPanel = (): void => {
   void import('./view-panel')
   void import('./view-tab-menu')
+}
+
+const preloadAddMenu = (): void => {
+  void import('../layouts/add-menu')
 }
 
 /** The panel while it is open, nothing while it is closed. */
@@ -481,6 +498,8 @@ function ModifiedMark(): ReactElement {
 export function ViewStrip<T>({ c }: { c: ViewsController<T> }): ReactElement {
   const t = useMessages(table)
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  const [adding, setAdding] = useState<HTMLElement | null>(null)
+  const layouts = c.model.layouts.length > 1
   const value = c.active?.id ?? BASE_VIEW
   const menuFor = (id: string) => (event: MouseEvent<HTMLElement>) => {
     if (id === value) setAnchor(event.currentTarget)
@@ -538,7 +557,12 @@ export function ViewStrip<T>({ c }: { c: ViewsController<T> }): ReactElement {
         data-slot="table-view-add"
         aria-label={t('table.viewAdd')}
         className="pointer-coarse:min-w-11"
-        onClick={() => void c.create()}
+        {...(layouts && { 'aria-haspopup': 'menu' as const })}
+        onPointerEnter={layouts ? preloadAddMenu : undefined}
+        onClick={(event) => {
+          if (layouts) setAdding(event.currentTarget)
+          else void c.create()
+        }}
       >
         <PlusGlyph />
         <span className="@max-regular:sr-only">{t('table.viewAddShort')}</span>
@@ -562,6 +586,19 @@ export function ViewStrip<T>({ c }: { c: ViewsController<T> }): ReactElement {
           {t('table.viewFailed')}
         </span>
       )}
+      {adding !== null && (
+        <Suspense fallback={null}>
+          <LazyAddMenu
+            model={c.model as TableModel<unknown>}
+            anchor={adding}
+            onPick={(layout) => {
+              setAdding(null)
+              void c.create(layout)
+            }}
+            onClose={() => setAdding(null)}
+          />
+        </Suspense>
+      )}
       {anchor !== null && c.active !== undefined && (
         <Suspense fallback={null}>
           <LazyTabMenu
@@ -582,6 +619,8 @@ export type TableViewsResult = {
   tabs: ControlsSlot
   /** `PageBar settings`: Edit view, which opens the panel. */
   settings: PageSettings
+  /** `PageBar layout`: the view's layout toggle; absent when the table offers one layout. */
+  layout: PageLayout<TableLayout> | undefined
   /** The manage-view panel; mount it once on the page, it renders nothing while closed. */
   panel: ReactElement
 }
@@ -607,11 +646,22 @@ export function useTableViews<T>(
   instance: DataTableInstance<T>,
   options: TableViewsOptions = {},
 ): TableViewsResult {
-  const c = useViewsController(modelOf(instance), options)
+  const model = modelOf(instance)
+  const c = useViewsController(model, options)
   const t = useMessages(table)
+  const layouts = useLayoutOptions(model)
+  const layoutLabel = useLayoutLabel()
   return {
     tabs: { kind: 'controls-slot', count: 1, render: () => <ViewStrip c={c} /> },
     settings: { label: t('table.viewEdit'), onClick: () => c.show('root') },
+    layout:
+      layouts.length < 2
+        ? undefined
+        : {
+            state: layoutHandle(model),
+            label: layoutLabel,
+            options: layouts.map(({ value, label, icon }) => ({ value, label, icon })),
+          },
     panel: <Panel c={c} />,
   }
 }
@@ -649,6 +699,7 @@ export function ViewsBar<T>({
       <div className="flex min-w-0 flex-1">
         <ViewStrip c={c} />
       </div>
+      <LayoutToggle model={model} />
       <Button
         variant="ghost"
         size="sm"

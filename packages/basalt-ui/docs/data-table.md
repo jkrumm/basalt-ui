@@ -14,7 +14,7 @@ The data table: head, body and the phase arms of one `useDataTable` instance.
 ## Signature
 
 ```ts
-DataTable<T, I = unknown>({ table, detail, height, virtual, focus, focusSeries, focusItems, }: DataTableProps<T, I>): ReactElement
+DataTable<T, I = unknown>({ table, detail, height, virtual, focus, focusSeries, focusItems, drag, }: DataTableProps<T, I>): ReactElement
   // either focus, height + virtual, focusItems, focusItems + height + virtual, focusSeries or focusSeries + height + virtual
   table: DataTableInstance<T>
   detail?: DetailHost
@@ -23,6 +23,7 @@ DataTable<T, I = unknown>({ table, detail, height, virtual, focus, focusSeries, 
   focusItems?: { focus: ListFocus<I>; holds: (row: T, item: I) => boolean; }  // A chart's focus over items of another grain: `holds(row, item)` is true for every item the row stands for (the hours of a window, the probe a finding sits under), never by position
   height?: "auto" | Scrollport
   virtual?: VirtualLike
+  drag?: DragLike  // The drag engine of the board layout: `drag` from `basalt-ui/ui/sortable-list`
 ```
 
 ## Example
