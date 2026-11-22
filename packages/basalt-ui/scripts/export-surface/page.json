@@ -17,6 +17,7 @@
   "QueryState",
   "RefreshButton",
   "Section",
+  "SettingsLayout",
   "SplitPage",
   "ToastHost",
   "Toc",

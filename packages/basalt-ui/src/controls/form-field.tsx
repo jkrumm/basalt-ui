@@ -23,7 +23,8 @@ import {
 } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
-import type { ControlHandle, FieldLike } from '../core/ports'
+import type { ControlHandle, FieldLike, IconComponent } from '../core/ports'
+import { IconTile } from '../ui/card'
 import { Field, FieldDescription, FieldError } from '../ui/field'
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -35,6 +36,9 @@ export const formFieldParts = [
   'field-control',
 ] as const
 
+/** What a `control` row reads and writes: a `ControlHandle`, or the `use()` of a synced field. */
+export type ControlSource<T> = Pick<ControlHandle<T>, 'use'> & { readonly isDefault?: boolean }
+
 type Source<T> =
   | {
       /** A TanStack Form field, or any `FieldLike`: submit forms. Shows its first error. */
@@ -42,8 +46,11 @@ type Source<T> =
       control?: never
     }
   | {
-      /** A store `ControlHandle`: instant-apply preferences. Shows a dot while it is not the default. */
-      control: ControlHandle<T>
+      /**
+       * A store `ControlHandle` (instant-apply preferences, a dot while it is not the default) or
+       * any handle with `use()`, such as a synced state's `field(key)`: the row applies at once.
+       */
+      control: ControlSource<T>
       field?: never
     }
 
@@ -62,6 +69,13 @@ export type FormFieldProps<T = unknown> = Source<T> & {
    * `FormSection`'s layout, else `stack`.
    */
   layout?: FormFieldLayout
+  /**
+   * A stable id for the row, a target for a link (`#row-digest`): `SettingsLayout` scrolls to it
+   * and marks it once. Distinct from the control's own id.
+   */
+  id?: string
+  /** An icon tile at the start of the row, `layout="row"` only. */
+  icon?: IconComponent
   /** Layout only (`w-full`, `max-w-sm`). */
   className?: string
   /** The bare control: an `Input`, a `Select`, a `Switch`, a `Checkbox`, a `NumberField`, a `Slider`. */
@@ -169,6 +183,8 @@ function useNativeFieldsetDisabled(): [boolean, (el: HTMLElement | null) => void
 }
 
 type FrameProps = {
+  id: string | undefined
+  icon: IconComponent | undefined
   layout: FormFieldLayout | undefined
   /** The control is an on/off one (a switch, a checkbox): in a row it stays at the end at every width. */
   toggle: boolean
@@ -183,15 +199,18 @@ type FrameProps = {
 }
 
 // The row's grid: the label and the description share the start column, the control and its error
-// the end one. Narrow, it stacks label, description, control, error; a toggle keeps its end column.
+// the end one, a fixed 18rem wide. Narrow, it stacks label, description, control, error; a toggle
+// keeps its end column.
 const ROW_GRID =
-  'grid min-w-0 gap-x-6 gap-y-1 [grid-template-areas:"label"_"desc"_"control"_"error"] @regular:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @regular:grid-rows-[auto_1fr_auto] @regular:[grid-template-areas:"label_control"_"desc_control"_"._error"]'
+  'grid min-w-0 gap-x-6 gap-y-1 [grid-template-areas:"label"_"desc"_"control"_"error"] @regular:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] @regular:grid-rows-[auto_1fr_auto] @regular:[grid-template-areas:"label_control"_"desc_control"_"._error"]'
 const ROW_TOGGLE_GRID =
   'grid min-w-0 grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_1fr_auto] gap-x-6 gap-y-1 [grid-template-areas:"label_control"_"desc_control"_"error_error"]'
 const ROW_AREAS =
   '*:data-[slot=field-label]:[grid-area:label] *:data-[slot=field-description]:[grid-area:desc] *:data-[slot=field-description]:self-start *:data-[slot=field-control]:[grid-area:control] *:data-[slot=field-control]:self-start *:data-[slot=field-error-region]:[grid-area:error] *:data-[slot=field-error-region]:empty:hidden'
 
 function Frame({
+  id,
+  icon: Icon,
   layout: own,
   toggle,
   label,
@@ -236,6 +255,7 @@ function Frame({
         row && ROW_AREAS,
         row ? undefined : className,
       )}
+      {...(!row && id !== undefined && { id })}
     >
       <div
         data-slot="field-control"
@@ -257,8 +277,21 @@ function Frame({
   // The container is an inner box, never the root: a size container directly in a `<fieldset>`
   // loses its layout in Chrome (form-row.tsx), and a caller's fieldset may wrap the field.
   return (
-    <div data-slot="form-field-row" className={cn('min-w-0', className)}>
-      <div className="@container min-w-0">{field}</div>
+    <div
+      data-slot="form-field-row"
+      {...(id !== undefined && { id })}
+      className={cn(
+        'min-w-0 transition-colors duration-slow data-flash:bg-selected',
+        Icon !== undefined && 'flex items-start gap-3',
+        className,
+      )}
+    >
+      {Icon !== undefined && (
+        <IconTile>
+          <Icon className="size-icon" aria-hidden="true" />
+        </IconTile>
+      )}
+      <div className={cn('@container min-w-0', Icon !== undefined && 'flex-1')}>{field}</div>
     </div>
   )
 }
@@ -270,6 +303,8 @@ function SubmitField<T>({
   required,
   disabled,
   layout,
+  id,
+  icon,
   className,
   children,
 }: FormFieldProps<T> & { field: FieldLike<T> }): ReactElement {
@@ -291,6 +326,8 @@ function SubmitField<T>({
   )
   return (
     <Frame
+      id={id}
+      icon={icon}
       layout={layout}
       toggle={typeof field.state.value === 'boolean'}
       label={label}
@@ -313,9 +350,11 @@ function PreferenceField<T>({
   required,
   disabled,
   layout,
+  id,
+  icon,
   className,
   children,
-}: FormFieldProps<T> & { control: ControlHandle<T> }): ReactElement {
+}: FormFieldProps<T> & { control: ControlSource<T> }): ReactElement {
   const [value, set] = control.use()
   const bound = bindChild(
     children,
@@ -326,13 +365,15 @@ function PreferenceField<T>({
   )
   return (
     <Frame
+      id={id}
+      icon={icon}
       layout={layout}
       toggle={typeof value === 'boolean'}
       label={label}
       description={description}
       required={required}
       disabled={disabled}
-      dirty={!control.isDefault}
+      dirty={control.isDefault === false}
       error={undefined}
       className={className}
     >

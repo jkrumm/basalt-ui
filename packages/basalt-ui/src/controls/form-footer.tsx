@@ -93,6 +93,7 @@ export function FormFooter<const A extends readonly FormAction[]>({
   form,
   actions,
   sticky = false,
+  floating = false,
   className,
 }: {
   form: FormLike<unknown>
@@ -102,6 +103,13 @@ export function FormFooter<const A extends readonly FormAction[]>({
    * reads `Unsaved changes` while the form is dirty: the save of a long settings page.
    */
   sticky?: boolean
+  /**
+   * The unsaved bar: a raised bar that floats at the bottom of the scrollport and is there only
+   * while the form is dirty or saving (Discard, Save). It says `Unsaved changes`, and a click on
+   * Save still validates. Use it for a settings page or a section bound to a form; it implies
+   * `sticky` and is never combined with rows that apply at once.
+   */
+  floating?: boolean
   /** Layout only (`mt-4`, `w-full`). */
   className?: string
 }): ReactElement {
@@ -115,15 +123,22 @@ export function FormFooter<const A extends readonly FormAction[]>({
   )
   const error = firstError(state.errors)
   const dirty = state.isDirty === true
+  const open = !floating || dirty || state.isSubmitting || error !== undefined
+  const status = sticky || floating
   return (
     <div
       data-slot="form-footer"
       aria-busy={state.isSubmitting}
       {...(sticky && { 'data-sticky': '' })}
+      {...(floating && { 'data-floating': '' })}
       {...(dirty && { 'data-dirty': '' })}
+      {...(!open && { hidden: true })}
       className={cn(
         'flex flex-col gap-2',
-        sticky && 'sticky bottom-0 z-10 border-t border-border bg-surface py-3',
+        sticky && !floating && 'sticky bottom-0 z-10 border-t border-border bg-surface py-3',
+        floating &&
+          'sticky bottom-4 z-10 mx-auto w-full max-w-xl rounded-card border border-border bg-card px-4 py-3 shadow-raised animate-enter-item',
+        !open && 'hidden',
         className,
       )}
     >
@@ -138,7 +153,7 @@ export function FormFooter<const A extends readonly FormAction[]>({
         data-slot="form-footer-actions"
         className="flex flex-wrap items-center justify-end gap-2"
       >
-        {sticky && (
+        {status && (
           <p
             data-slot="form-footer-status"
             aria-live="polite"

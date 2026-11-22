@@ -119,7 +119,13 @@ describe('FormSection', () => {
       </FormSection>,
     )
     for (const slot of formSectionParts.filter(
-      (s) => s !== 'form-section-footer' && s !== 'form-section-loading-row',
+      (s) =>
+        ![
+          'form-section-footer',
+          'form-section-loading-row',
+          'form-section-locked',
+          'form-section-action',
+        ].includes(s),
     )) {
       expect(html).toContain(`data-slot="${slot}"`)
     }
@@ -168,7 +174,7 @@ describe('FormSection phase', () => {
 
   test('the footer band keeps the card surface and the frame keeps an edge under forced colours', () => {
     const { container } = render(section())
-    const frame = container.querySelector('[data-slot="form-section"]')!
+    const frame = container.querySelector('[data-slot="form-section-box"]')!
     expect(frame.className).toContain('forced-colors:border')
     const footer = container.querySelector('[data-slot="form-section-footer"]')!
     // The inset token is the page colour in dark: a band painted with it reads as the page.

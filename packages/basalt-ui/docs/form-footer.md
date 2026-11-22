@@ -16,10 +16,11 @@ form is invalid or unchanged and is disabled only while it submits. A server err
 ## Signature
 
 ```ts
-FormFooter<const A extends readonly FormAction[]>({ form, actions, sticky, className, }: { form: FormLike<unknown>; actions: A & ValidActions<A>; sticky?: boolean; className?: string; }): ReactElement
+FormFooter<const A extends readonly FormAction[]>({ form, actions, sticky, floating, className, }: { form: FormLike<unknown>; actions: A & ValidActions<A>; sticky?: boolean; floating?: boolean; className?: string; }): ReactElement
   form: FormLike<unknown>
   actions: A & ValidActions<A>
   sticky?: boolean  // Keeps the row at the bottom of the scrollport while the form scrolls, on a band of its own, and reads `Unsaved changes` while the form is dirty: the save of a long settings page
+  floating?: boolean  // The unsaved bar: a raised bar that floats at the bottom of the scrollport and is there only while the form is dirty or saving (Discard, Save)
   className?: string  // Layout only (`mt-4`, `w-full`)
 ```
 

@@ -16,6 +16,14 @@ export { FormRow } from './form-row'
 export type { FormRowProps } from './form-row'
 export { FormSection } from './form-section'
 export type { FormSectionProps } from './form-section'
+// Settings rows that hold no value: an action, a destructive action that asks for its name, an expandable list of rows.
+export { FormActionRow, FormConfirmRow, FormGroupRow } from './settings-rows'
+export type {
+  FormActionRowProps,
+  FormConfirmRowProps,
+  FormGroupRowProps,
+  SettingsRowTone,
+} from './settings-rows'
 export type { FormFieldLayout } from './form-field'
 
 // A multi-step form's step list: the current step marked, done steps reachable, folded when narrow.
