@@ -1,7 +1,7 @@
 /**
- * The `DataTable` header's controls in real Chrome (issue 2418): every header shows its sort mark, its filter
- * button (a filterable column) and its column menu at rest on a fine pointer, so the head keeps one geometry at
- * rest, on hover and with an active filter. Geometry jsdom cannot hold: the header cells' boxes at 1800 and 390.
+ * The `DataTable` header in real Chrome (issue 2418, bench-table-rest): a header at rest is its kind's icon and
+ * its label in one button that opens the column menu, and the head keeps one geometry at rest, on hover and with
+ * an active filter set from that menu. Geometry jsdom cannot hold: the header cells' boxes at 1800 and 390.
  *
  * Self-contained like `table-v0`: `fixture/table-header.css` is compiled with the Tailwind CLI into a temp
  * directory, the tier sheet `src/table/table.css` is inlined beside it, and `fixture/table-header-fixture.tsx`
@@ -136,7 +136,8 @@ layout('DataTable header controls', () => {
         await page.settle()
         const hoverAmount = await measureHead(page)
 
-        await page.raw.getByRole('button', { name: 'Filter State', exact: true }).click()
+        await page.raw.getByRole('button', { name: 'State', exact: true }).click()
+        await page.raw.getByRole('menuitem', { name: 'Filter column...', exact: true }).click()
         await page.raw
           .getByRole('dialog', { name: 'Filter State', exact: true })
           .getByRole('checkbox')
@@ -144,9 +145,9 @@ layout('DataTable header controls', () => {
           .click()
         await page.raw.keyboard.press('Escape')
         await page.settle()
-        const filter = page.raw.getByRole('button', { name: /^State filtered: / })
+        const filter = page.raw.getByRole('button', { name: /^State, filtered: / })
         await filter.waitFor()
-        expect(await filter.getAttribute('data-active')).not.toBeNull()
+        expect(await filter.locator('[data-slot="table-filter-mark"]').count()).toBe(1)
         const filtered = await measureHead(page)
 
         expect([
@@ -156,33 +157,29 @@ layout('DataTable header controls', () => {
         ]).toEqual([])
       })
 
-      test('at rest the Amount header shows its sort mark, filter button and column menu', async () => {
+      test('at rest the Amount header is its icon and its label in one button that opens its menu', async () => {
         const page = await open(viewport)
         const amount = headCell(page, /^Amount \(EUR\)$/)
-        const controls: [string, ReturnType<typeof amount.locator>][] = [
-          ['sort mark', amount.locator('[data-slot="table-sort-mark"]')],
-          ['filter', amount.getByRole('button', { name: 'Filter Amount (EUR)', exact: true })],
-          [
-            'column menu',
-            amount.getByRole('button', { name: 'Amount (EUR) column actions', exact: true }),
-          ],
-        ]
-        for (const [label, control] of controls) {
-          const box = await control.evaluate((el) => {
+        const rest = await amount.evaluate((cell) => {
+          const shown = [...cell.querySelectorAll('svg, button')].filter((el) => {
             const r = el.getBoundingClientRect()
-            return {
-              width: r.width,
-              height: r.height,
-              opacity: Number(getComputedStyle(el).opacity),
-            }
+            return r.width > 0 && r.height > 0 && Number(getComputedStyle(el).opacity) > 0
           })
-          expect({ label, width: box.width > 0, height: box.height > 0 }).toEqual({
-            label,
-            width: true,
-            height: true,
-          })
-          expect({ label, opacity: box.opacity > 0 }).toEqual({ label, opacity: true })
-        }
+          return {
+            buttons: shown.filter((el) => el.tagName === 'BUTTON').length,
+            icons: shown.filter((el) => el.matches('[data-slot="table-kind-icon"]')).length,
+            glyphs: shown.filter((el) => el.tagName === 'svg').length,
+          }
+        })
+        expect(rest).toEqual({ buttons: 1, icons: 1, glyphs: 1 })
+        await amount.getByRole('button', { name: 'Amount (EUR)', exact: true }).click()
+        const menu = page.raw.getByRole('menu')
+        await menu.waitFor()
+        for (const name of ['Sort ascending', 'Sort descending', 'No sorting'])
+          expect(await menu.getByRole('menuitemradio', { name, exact: true }).count()).toBe(1)
+        expect(
+          await menu.getByRole('menuitem', { name: 'Filter column...', exact: true }).count(),
+        ).toBe(1)
       })
     })
   }

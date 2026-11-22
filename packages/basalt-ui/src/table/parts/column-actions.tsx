@@ -150,7 +150,7 @@ export function ColumnActionsMenu<T>({
         </MenuTrigger>
       ) : (
         <MenuTrigger
-          data-slot="table-head-trigger"
+          data-column-menu=""
           render={
             <Pressable
               {...(triggerRef !== undefined && { ref: triggerRef })}
