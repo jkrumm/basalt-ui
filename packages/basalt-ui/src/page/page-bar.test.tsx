@@ -881,6 +881,34 @@ describe('PageBar view row', () => {
     expect((box as HTMLInputElement).value).toBe('from a link')
   })
 
+  test('a field that reports its value late keeps every typed character; an outside value still lands', () => {
+    // A URL field reports a write a render or more after it: the store moves only on `put`.
+    const q = memoryHandle<string>('q', '', { kind: 'string' })
+    const sent: string[] = []
+    const late = { ...q, use: () => [q.use()[0], (next: string) => sent.push(next)] as const }
+    render(
+      <Page>
+        <PageBar search={{ state: late as never, label: 'Search' }} />
+      </Page>,
+    )
+    const [box] = screen.getAllByRole('searchbox', { name: 'Search' }) as HTMLInputElement[]
+    fireEvent.change(box!, { target: { value: 'a' } })
+    fireEvent.change(box!, { target: { value: 'ab' } })
+    expect(sent).toEqual(['a', 'ab'])
+    act(() => {
+      q.put('a')
+    })
+    expect(box!.value).toBe('ab')
+    act(() => {
+      q.put('ab')
+    })
+    expect(box!.value).toBe('ab')
+    act(() => {
+      q.put('from a link')
+    })
+    expect(box!.value).toBe('from a link')
+  })
+
   test('below wide the search takes a line of its own; the inline one is hidden there', () => {
     const q = memoryHandle<string>('q', '', { kind: 'string' })
     render(
