@@ -1238,6 +1238,9 @@
     --table-edge-x: -8px;
   }
 
+  [data-kind='row-number'] {
+    padding-inline: calc(var(--spacing) * 2) !important;
+  }
   /* an empty footer pick shows on hover or focus */
   [data-slot='table-footer-pick'][data-quiet] {
     opacity: 0;

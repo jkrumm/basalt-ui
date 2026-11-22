@@ -39,6 +39,11 @@ export const ICON_COL_PX = 44
 export const TICK_COL_PX = 40
 /** The row-number column's width (`rowNumbers`): four tabular digits and the cell padding. */
 export const ROW_NUMBER_COL_PX = 44
+/** The row-number column for numbers up to `largest`: its digits at the body's `ch` and 8 px each side. */
+export function rowNumberPx(largest: number): number {
+  const digits = String(Math.max(1, Math.trunc(largest))).length
+  return Math.max(ROW_NUMBER_COL_PX, digits * CH_PX + 16)
+}
 /** The widest a reader may drag a column. */
 export const RESIZE_MAX_PX = 960
 

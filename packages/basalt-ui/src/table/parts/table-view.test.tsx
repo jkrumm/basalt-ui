@@ -9,7 +9,7 @@ import { useEffect } from 'react'
 import type { ReactElement } from 'react'
 import type { TableState, UseDataTable } from '../contract'
 import { col } from '../core/kinds'
-import { planInputs, RESIZE_MAX_PX, minWidthPx } from '../core/plan'
+import { planInputs, RESIZE_MAX_PX, minWidthPx, rowNumberPx } from '../core/plan'
 import type { PlanInput } from '../core/plan'
 import { arrangeColumns } from '../core/arrange'
 import { modelOf, useDataTable } from '../use-data-table'
@@ -398,6 +398,12 @@ describe('the view carries them', () => {
 })
 
 describe('the grid look', () => {
+  test('the row-number column fits the largest number it prints', () => {
+    expect(rowNumberPx(9)).toBe(44)
+    expect(rowNumberPx(3334)).toBe(48)
+    expect(rowNumberPx(10_000)).toBe(56)
+  })
+
   test('row numbers run on across groups, and the identity column carries the pinned edge', () => {
     const { container } = render(
       <Subject id="grid" options={{ look: 'grid', rowNumbers: true, group: { by: 'status' } }} />,

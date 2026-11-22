@@ -53,7 +53,7 @@ import {
   minWidthPx,
   planTable,
   RESIZE_MAX_PX as RESIZE_MAX,
-  ROW_NUMBER_COL_PX,
+  rowNumberPx,
   TICK_COL_PX,
 } from './core/plan'
 import type { TablePlan } from './core/plan'
@@ -95,7 +95,7 @@ export type TableModel<T> = {
   /** Pins or unpins a column, written to `display.pinned`. */
   setPinned(id: string, pinned: boolean): void
   /** The leading columns before the first kind column: the tick and the row number, their count and px. */
-  lead: { tick: boolean; numbers: boolean; cols: number; px: number }
+  lead: { tick: boolean; numbers: boolean; cols: number; numberPx: number; px: number }
   /** The row's number (`rowNumbers`): its place in the request, running on across groups and pages. */
   numberOf(id: string): number | undefined
   /** Whether a reader may drag the column's edge (every column but `actions`). */
@@ -458,11 +458,18 @@ export function useDataTable<
   const look = options.look ?? 'reading'
   const tick = options.selection !== undefined
   const numbers = options.rowNumbers === true
+  // The number column fits the largest number it can print: every row of a client table, the counted
+  // (or reached) rows of a server one.
+  const largest = server
+    ? (countOf(mode) ?? request.page * request.pageSize)
+    : (options.data?.length ?? 0)
+  const numberPx = numbers ? rowNumberPx(largest) : 0
   const lead = {
     tick,
     numbers,
     cols: (tick ? 1 : 0) + (numbers ? 1 : 0),
-    px: (tick ? TICK_COL_PX : 0) + (numbers ? ROW_NUMBER_COL_PX : 0),
+    numberPx,
+    px: (tick ? TICK_COL_PX : 0) + numberPx,
   }
   const arranged = arrangeColumns(
     specs,

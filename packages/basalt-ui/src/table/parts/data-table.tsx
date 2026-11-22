@@ -16,7 +16,7 @@ import { FrameArmContext } from '../../core/frame-arm'
 import type { FrameArm } from '../../core/frame-arm'
 import { useRowsShown } from '../../core/rows-shown'
 import type { DataTableProps } from '../contract'
-import { CONTENT_MAX_CH, ROW_NUMBER_COL_PX, widthPx } from '../core/plan'
+import { CONTENT_MAX_CH, widthPx } from '../core/plan'
 import { TableBody, TableCaption, Table } from '../../ui/table'
 import { bodyDensity, DataTableBody } from './body'
 import { BulkBar } from './bulk-bar'
@@ -111,7 +111,7 @@ function Columns<T>({
     <colgroup>
       {model.selection !== undefined && <col style={{ width: '2.5rem' }} />}
       {model.lead.numbers && (
-        <col data-kind="row-number" style={{ width: `${ROW_NUMBER_COL_PX}px` }} />
+        <col data-kind="row-number" style={{ width: `${model.lead.numberPx}px` }} />
       )}
       {visible.map(({ spec, planned }) => {
         const flexible = planned.flex && !grid
