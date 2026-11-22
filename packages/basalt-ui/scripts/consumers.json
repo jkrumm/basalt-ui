@@ -118,6 +118,7 @@
   "useChartFocus": "weatherorb:apps/web/src/map/point/meteogram.tsx",
   "useConnection": "software-factory:apps/console/src/lib/connection.ts",
   "useDataTable": "linewatch:web/src/components/outage-table.tsx",
+  "useTableViews": "basalt-ui:apps/playground/src/recipes/saved-views.tsx",
   "useFormat": "linewatch:web/src/lib/format.ts",
   "useFormDraft": "argo:apps/dashboard/src/routes/strength-tracker.tsx",
   "useFreshness": "argo:apps/dashboard/src/routes/__root.tsx",
