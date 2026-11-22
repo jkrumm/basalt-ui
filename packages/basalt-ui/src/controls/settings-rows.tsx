@@ -10,7 +10,7 @@ import { cn } from '../core/cn'
 import type { IconComponent } from '../core/ports'
 import { Button } from '../ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
-import { Field, Fieldset } from '../ui/field'
+import { Field } from '../ui/field'
 import { Input } from '../ui/input'
 import { FormFieldLayoutContext } from './form-field'
 import { RowIcon } from './row-icon'
@@ -30,6 +30,9 @@ export type SettingsRowTone = 'default' | 'danger'
 /** A row's own target: the flash `SettingsLayout` sets when a link points at it. */
 const ROW_FLASH = 'transition-colors duration-slow data-flash:bg-selected'
 
+const hasDescription = (description: ReactNode): boolean =>
+  description !== undefined && description !== null && description !== ''
+
 type RowTextProps = {
   labelId: string
   descriptionId: string
@@ -40,7 +43,6 @@ type RowTextProps = {
 
 /** The label and the description of a row that has no field to name them. */
 function RowText({ labelId, descriptionId, label, description, tone }: RowTextProps): ReactElement {
-  const hasDescription = description !== undefined && description !== null && description !== ''
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1">
       <span
@@ -49,7 +51,7 @@ function RowText({ labelId, descriptionId, label, description, tone }: RowTextPr
       >
         {label}
       </span>
-      {hasDescription && (
+      {hasDescription(description) && (
         <span id={descriptionId} className="text-xs text-muted-foreground">
           {description}
         </span>
@@ -105,12 +107,12 @@ export function FormActionRow({
   const labelId = useId()
   const descriptionId = useId()
   return (
-    <Fieldset
+    <fieldset
       data-slot="form-action-row"
       aria-labelledby={labelId}
-      aria-describedby={descriptionId}
+      {...(hasDescription(description) && { 'aria-describedby': descriptionId })}
       {...(id !== undefined && { id })}
-      className={cn('min-w-0 gap-0', ROW_FLASH, className)}
+      className={cn('m-0 min-w-0 border-0 p-0', ROW_FLASH, className)}
     >
       <div className="@container min-w-0">
         <div className="flex min-w-0 flex-col gap-3 @regular:flex-row @regular:items-center @regular:gap-4">
@@ -125,7 +127,7 @@ export function FormActionRow({
           <div className="shrink-0">{action}</div>
         </div>
       </div>
-    </Fieldset>
+    </fieldset>
   )
 }
 
@@ -134,7 +136,7 @@ export type FormConfirmRowProps = CommonRowProps & {
   confirmText: string
   /** The button's text, naming the act: `Delete workspace`. */
   actionLabel: string
-  /** Runs once the typed text matches and the button is pressed; the field clears after it. */
+  /** Runs once the typed text matches and the button is pressed; the field clears when it resolves. It owns its errors: a rejection keeps the text. */
   onConfirm: () => void | Promise<void>
 }
 
@@ -165,22 +167,23 @@ export function FormConfirmRow({
   const [typed, setTyped] = useState('')
   const [busy, setBusy] = useState(false)
   const armed = typed === confirmText && confirmText !== ''
+  // The caller owns its errors: a rejection keeps the typed text so the person can try again.
   const run = async (): Promise<void> => {
     setBusy(true)
     try {
       await onConfirm()
+      setTyped('')
     } finally {
       setBusy(false)
-      setTyped('')
     }
   }
   return (
-    <Fieldset
+    <fieldset
       data-slot="form-confirm-row"
       aria-labelledby={labelId}
-      aria-describedby={descriptionId}
+      {...(hasDescription(description) && { 'aria-describedby': descriptionId })}
       {...(id !== undefined && { id })}
-      className={cn('min-w-0 gap-0', ROW_FLASH, className)}
+      className={cn('m-0 min-w-0 border-0 p-0', ROW_FLASH, className)}
     >
       <div className="@container min-w-0">
         <div className="flex min-w-0 flex-col gap-3">
@@ -211,14 +214,14 @@ export function FormConfirmRow({
               variant={tone === 'danger' ? 'danger' : 'secondary'}
               disabled={!armed}
               loading={busy}
-              onClick={() => void run()}
+              onClick={() => void run().catch(() => {})}
             >
               {actionLabel}
             </Button>
           </div>
         </div>
       </div>
-    </Fieldset>
+    </fieldset>
   )
 }
 
@@ -276,7 +279,6 @@ export function FormGroupRow({
   className,
   children,
 }: FormGroupRowProps): ReactElement {
-  const hasDescription = description !== undefined && description !== null && description !== ''
   return (
     <div
       data-slot="form-group-row"
@@ -291,7 +293,9 @@ export function FormGroupRow({
           <Tile icon={icon} />
           <span className="flex min-w-0 flex-1 flex-col gap-1">
             <span className="text-sm font-medium text-foreground">{label}</span>
-            {hasDescription && <span className="text-xs text-muted-foreground">{description}</span>}
+            {hasDescription(description) && (
+              <span className="text-xs text-muted-foreground">{description}</span>
+            )}
           </span>
           {summary !== undefined && summary !== null && (
             <span className="shrink-0 text-sm text-muted-foreground">{summary}</span>
