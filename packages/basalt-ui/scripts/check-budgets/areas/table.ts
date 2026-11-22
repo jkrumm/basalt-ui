@@ -94,10 +94,10 @@ export const rows: readonly RowDef[] = [
     // (the Avatar and AvatarStack cells), `tags` (the measured fold to +N), `countdown` (day maths, three
     // messages), `link` (the safe-URL rule), an entity's image and ref, the typed title and a quiet text, plus
     // any-of over a list cell and the open option list.
-    // 171300 -> 180300 (Issue 2939): under a shell a row opens its record in a non-modal `Peek` (side panel,
+    // 171300 -> 179500 (Issue 2939): 179238 B measured; under a shell a row opens its record in a non-modal `Peek` (side panel,
     // window or page, previous and next through the rows) instead of the modal sheet, so the Peek, its window and
     // the panel anatomy join the table's closure.
-    ceiling: 180300,
+    ceiling: 179500,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
@@ -106,7 +106,7 @@ export const raises: Raises = {
   'table-own': [
     {
       from: 171300,
-      to: 180300,
+      to: 179500,
       consumer:
         'the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md decision 6): one panel anatomy for Peek, Dock, PageAside and a right Sheet, each resizable with the width remembered, and a record that opens as a side panel, a window or the page, with previous and next (Issue 2939)',
       repo: 'basalt-ui',
