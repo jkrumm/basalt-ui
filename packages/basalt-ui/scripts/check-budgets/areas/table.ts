@@ -105,13 +105,25 @@ export const rows: readonly RowDef[] = [
     // (bench-table-reading): the stacked meter, the meter and number fractions, the duration writer, the trend
     // arrow and its words, the age slot, the lamp, the spark total, the header help mark (InfoHint) and a folded
     // grouping.
-    ceiling: 186500,
+
+    // 186500 -> 207000 (Issue 3065): 206177 B measured over the reading look, +~20 KB gz for the view layouts (bench-view-layouts):
+    // the board (`Board`, `KanbanCard` and its menu, the drop with rollback) and the gallery (`CardGrid` of card
+    // faces) are lazy chunks of `DataTable`, fetched only when a view draws them; this row sums every chunk,
+    // so they count here while a table-only page loads none of them. The list is CSS on the table markup.
+    ceiling: 207000,
     measure: async () => (await measureSource(DATA_TABLE)) - (await engineBytes()),
   },
 ]
 
 export const raises: Raises = {
   'table-own': [
+    {
+      from: 186500,
+      to: 207000,
+      consumer:
+        'the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md): one record set as a table, list, board or gallery chosen per view, the board and gallery loaded only when a view draws them (Issue 3065)',
+      repo: 'basalt-ui',
+    },
     {
       from: 182000,
       to: 186500,
