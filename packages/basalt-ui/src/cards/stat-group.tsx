@@ -23,9 +23,11 @@ export type StatCellElement = ReactElement<StatCellProps>
 export type StatGroupProps = {
   /**
    * `strip` is one dense surface whose cells share their tracks; `cards` is one card per cell with
-   * the bands aligned across them, two to a line when the container is narrow.
+   * the bands aligned across them, two to a line when the container is narrow. `flush` is the strip
+   * with no card: cells split by hairlines and a rule below, edge to edge under the view row of a
+   * fill page. A flush cell with no sub-line, delta, status, meter, chart or rows does not render.
    */
-  variant: 'strip' | 'cards'
+  variant: 'strip' | 'cards' | 'flush'
   /** Names the group for assistive tech (`Recovery`). */
   label?: string
   children: StatCellElement | readonly StatCellElement[]
@@ -74,6 +76,11 @@ const CARDS = cn(
  * @useWhen a page shows several headline figures side by side, a status bar or a row of KPIs
  * @neverWhen there is one figure (use a stat card), the figures are bare counts (put them in the footer of the card they belong to) or need a chart each (use chart cards)
  *
+ * `flush` is the summary strip of a list page: it sits under the `PageBar` of a fill page, with no
+ * card, and every cell carries the line that gives its figure a base. A bare number does not
+ * render there (the owner rejected the bare stat strip): a cell with none of `sub`, `delta`,
+ * `status`, `meter`, `chart` or `rows` is dropped, with a development warning.
+ *
  * @example
  * <StatGroup variant="strip" label="Fleet health">
  *   <StatCell icon={Rocket} label="Deploys" value={164} delta={{ value: '+12%', polarity: 'up-good', label: 'vs prior 7 days' }} chart={perDay} phase={query} />
@@ -88,15 +95,22 @@ export function StatGroup({ variant, label, children }: StatGroupProps): ReactEl
       `A StatGroup sits ${depth} frames deep (over ${MAX_DEPTH}). Lay the frames out side by side instead of nesting them.`,
     )
   }
-  warnBare(children)
-  const shared = sharedFailure(children)
+  const cells = variant === 'flush' ? withContext(children) : children
+  warnBare(cells)
+  const shared = sharedFailure(cells)
+  // A flush strip is the strip's cells and message without its card.
+  const drawn = variant === 'flush' ? 'strip' : variant
   const message =
-    shared === null ? null : <GroupMessage failure={shared} label={label} variant={variant} />
+    shared === null ? null : <GroupMessage failure={shared} label={label} variant={drawn} />
   return (
     <FrameDepthContext.Provider value={depth + 1}>
-      <StatGroupContext.Provider value={variant}>
+      <StatGroupContext.Provider value={drawn}>
         <StatGroupCollapsedContext.Provider value={shared !== null}>
-          {variant === 'strip' ? (
+          {variant === 'flush' ? (
+            <FlushGroup label={label} message={message}>
+              {cells}
+            </FlushGroup>
+          ) : variant === 'strip' ? (
             <StripGroup label={label} message={message}>
               {children}
             </StripGroup>
@@ -109,6 +123,39 @@ export function StatGroup({ variant, label, children }: StatGroupProps): ReactEl
       </StatGroupContext.Provider>
     </FrameDepthContext.Provider>
   )
+}
+
+/** True when a cell says what its figure is against: a sub-line, a delta, a verdict, a meter, a trend or rows. */
+function hasContext(cell: StatCellProps): boolean {
+  return (
+    (cell.sub !== undefined && cell.sub !== '') ||
+    cell.delta !== undefined ||
+    cell.status !== undefined ||
+    cell.meter !== undefined ||
+    cell.chart !== undefined ||
+    (cell.rows !== undefined && cell.rows.length > 0)
+  )
+}
+
+/**
+ * The cells a flush strip draws: those with context. A bare figure is dropped, and development
+ * says which, so the strip never shows a row of numbers that compare nothing.
+ */
+function withContext(children: StatGroupProps['children']): StatCellElement[] {
+  const kept: StatCellElement[] = []
+  const dropped: string[] = []
+  for (const child of Children.toArray(children)) {
+    if (!isValidElement<StatCellProps>(child)) continue
+    if (hasContext(child.props)) kept.push(child)
+    else dropped.push(child.props.label)
+  }
+  if (dropped.length > 0) {
+    warnOnce(
+      'flush',
+      `A flush StatGroup dropped ${dropped.length} cell(s) with no sub-line or context (${dropped.join(', ')}): give each a sub, a delta that names its base, a status, a meter or a trend.`,
+    )
+  }
+  return kept
 }
 
 /**
@@ -250,6 +297,23 @@ function StripGroup({ label, message, children }: BodyProps): ReactElement {
           {message}
         </div>
       </Card>
+    </div>
+  )
+}
+
+function FlushGroup({ label, message, children }: BodyProps): ReactElement {
+  return (
+    <div
+      data-slot="stat-group"
+      data-variant="flush"
+      className="@container min-w-0 overflow-clip border-b border-border [--card-edge:--spacing(5)]"
+    >
+      {/* The explicit role is deliberate: a `fieldset` carries form semantics and a UA border. */}
+      {/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role */}
+      <div role="group" aria-label={label} className={STRIP}>
+        {children}
+        {message}
+      </div>
     </div>
   )
 }
