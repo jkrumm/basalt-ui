@@ -46,6 +46,10 @@ function coverTop(lower: number, upper: number, max: number, count: number): num
   return top
 }
 
+/** The dev warning for a log `y.domain` that cannot be drawn: `reportOnce` dedups on its text, so both callers share it. */
+export const LOG_DOMAIN_WARNING =
+  "[basalt] CartesianChart: a log y.domain needs positive bounds, min below max; using the data's extent"
+
 /** A log y domain: the positive values (and positive rule bounds) padded by `pad` at both ends. */
 function resolveLogDomain<T>(
   cfg: AxisConfig<T>,
@@ -58,11 +62,7 @@ function resolveLogDomain<T>(
   const given = typeof domain === 'function' ? domain(data, series) : domain
   if (Array.isArray(given) && given.every(positive) && given[0] < given[1])
     return given as readonly [number, number]
-  if (given !== 'auto')
-    reportOnce(
-      'CartesianChart',
-      "[basalt] CartesianChart: a log y.domain needs positive bounds, min below max; using the data's extent",
-    )
+  if (given !== 'auto') reportOnce('CartesianChart', LOG_DOMAIN_WARNING)
   let min = Infinity
   let max = -Infinity
   for (const d of data)
