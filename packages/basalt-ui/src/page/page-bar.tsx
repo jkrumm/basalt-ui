@@ -253,18 +253,25 @@ function SlidersGlyph({ className }: { className?: string }): ReactElement {
 /**
  * The view row's search box, bound to a string field and written as the reader types: an empty box
  * unsets the field. An IME composition writes once, at its end, so a half-built word is never a
- * query. A value the field takes from elsewhere (a link, Back, a reset) replaces the box's text.
+ * query. A value the field takes from elsewhere (a link, Back, a reset) replaces the box's text; a
+ * value it takes from this box's own writes never does, however late a URL field reports it.
  */
 function SearchBox({ search, className }: { search: PageSearch; className: string }): ReactElement {
   const [value, set] = search.state.use()
   const [text, setText] = useState(value)
   const [seen, setSeen] = useState(value)
+  // Writes not yet reported back by the field, oldest first.
+  const [pending, setPending] = useState<readonly string[]>([])
   if (seen !== value) {
     setSeen(value)
-    setText(value)
+    const at = pending.indexOf(value)
+    if (at === -1) {
+      setText(value)
+      setPending([])
+    } else setPending(pending.slice(at + 1))
   }
   const commit = (next: string): void => {
-    setSeen(next)
+    setPending((writes) => [...writes, next])
     if (next === '') search.state.clear()
     else set(next)
   }
