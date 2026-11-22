@@ -147,8 +147,9 @@ layout('DataTable group', () => {
         expect(first).toBeGreaterThan(0)
         for (const h of m.groups) expect(Math.abs(h - first)).toBeLessThanOrEqual(0.5)
         if (!m.cards) {
-          // One line at the table's row height: a virtual window keeps one row size.
-          for (const h of m.rows) expect(Math.abs(h - first)).toBeLessThanOrEqual(0.5)
+          // The table's row height at least: a long entity name wraps onto a second line (a virtual table's
+          // names keep one line, its window holds one row size), so a row is never shorter than a group row.
+          for (const h of m.rows) expect(h).toBeGreaterThanOrEqual(first - 0.5)
         }
         expect(m.cards).toBe(viewport.width < 480)
       })
