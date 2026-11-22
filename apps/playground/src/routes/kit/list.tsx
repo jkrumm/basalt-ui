@@ -75,12 +75,17 @@ function ListRoute(): ReactElement {
   const unrated = countOf('unrated')
   const views = rows.reduce((sum, photo) => sum + photo.views, 0)
   const pickedShare =
-    narrowed.length === 0
+    rows.length === 0
       ? 0
       : Math.round((rows.filter((p) => p.verdict === 'picked').length / rows.length) * 100)
   const sortedViews = rows.map((photo) => photo.views).toSorted((a, b) => a - b)
+  const mid = Math.floor(sortedViews.length / 2)
   const medianViews =
-    sortedViews.length === 0 ? null : sortedViews[Math.floor(sortedViews.length / 2)]!
+    sortedViews.length === 0
+      ? null
+      : sortedViews.length % 2 === 1
+        ? sortedViews[mid]!
+        : Math.round((sortedViews[mid - 1]! + sortedViews[mid]!) / 2)
   const newest = rows.reduce<string | null>(
     (day, photo) => (day === null || photo.taken > day ? photo.taken : day),
     null,
@@ -163,7 +168,7 @@ function ListRoute(): ReactElement {
           label="Picked"
           value={rows.length === 0 ? null : pickedShare}
           unit="%"
-          sub="Of the photos the filters keep"
+          sub="Of the photos in this view"
         />
         <StatCell
           label="Views, 14 days"
