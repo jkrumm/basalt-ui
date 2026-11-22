@@ -1308,7 +1308,8 @@ const refLabelMark = <T, X extends ChartX>(
 /**
  * The captions of the x zones that carry a `label`, over the marks, muted like a reference
  * caption: inside the zone at its top-start corner; after the zone, then before it, when the
- * caption is wider than the zone, and never over another zone; dropped when no spot stays in the
+ * caption is wider than the zone, and never over another zone; slid along the zone in 10 px steps (the first
+ * inside rows, then the edge rows) when the corner, the edges and the sides are all taken; dropped when no spot stays in the
  * plot clear of the reference captions, the zone captions placed before it, the end labels, the
  * page's own labels, every line and rule, every bar and dot and the room a bar's value label takes. Reads the plot size,
  * so only a chart with a zone caption pays the measured re-render.
@@ -1367,9 +1368,20 @@ const xZoneLabelMarks = <T, X extends ChartX>(
           row,
         }))
       : []
+    // The same rows, slid along the zone's own span: a zone that bars or lines fill from its corner to
+    // its far end still has a gap somewhere along it, so its caption moves there (10 px a try, the first
+    // three inside rows and the edge rows) rather than drop. A caption that fits its corner or sits
+    // beside its zone never moves.
+    const slid = [...inside.slice(0, 3), ...edge].flatMap((row) =>
+      Array.from({ length: Math.floor((x1 - x0 - width) / 10) }, (_, k) => ({
+        ...row,
+        at: f[0] + ((k + 1) * 10) / plotWidth,
+        left: row.left + (k + 1) * 10,
+      })),
+    )
     // Inside the zone, top to bottom, then above and under it, then after it and before it on the top
     // row, then lower down beside it: a zone that lines cross keeps its caption beside it rather
-    // than lose it.
+    // than lose it. Then the same rows along the zone.
     const spots = [
       ...inside,
       ...edge,
@@ -1377,6 +1389,7 @@ const xZoneLabelMarks = <T, X extends ChartX>(
         { at: f[1], side: 1 as const, left: x1 + REF_LABEL_DX, inside: false, row },
         { at: f[0], side: -1 as const, left: x0 - REF_LABEL_DX - width, inside: false, row },
       ]).flat(),
+      ...slid,
     ]
     type Spot = (typeof spots)[number]
     const offset = (spot: Spot): number => spot.row * stepPx
