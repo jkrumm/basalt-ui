@@ -347,6 +347,7 @@ function Large(): ReactElement {
     id: 'entries',
     label: 'Entries',
     look: 'grid',
+    rowNumbers: true,
     columns: [
       entry.entity('name', { header: 'Booking', filter: 'text' }),
       entry.status('state', {
