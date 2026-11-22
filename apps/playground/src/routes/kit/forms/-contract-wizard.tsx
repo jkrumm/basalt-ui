@@ -98,6 +98,7 @@ export function ContractWizard(): ReactElement {
       await later(600)
       setCreated(value.title)
       setOpen(false)
+      form.reset(EMPTY)
     },
   })
   const steps = [

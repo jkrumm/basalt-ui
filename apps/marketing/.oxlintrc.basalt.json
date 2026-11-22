@@ -194,6 +194,7 @@
           "*-accent",
           "*-selected",
           "*-scrim",
+          "*-scrim-wash",
           "*-border"
         ],
         "message": "\"{{className}}\" is a raw colour. Use one theme class with no dark: variant (tokens switch per scheme): ink is text-foreground or text-muted-foreground, status text text-good or text-brand, a surface bg-background, bg-card or bg-popover, a line border-border. Token names are not classes: canvas is bg-background, raised is bg-popover, hover is bg-accent, hairline is border-border, ink is text-foreground, ink-muted is text-muted-foreground, ink-faint is text-faint. No colour is added per app."
