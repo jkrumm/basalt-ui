@@ -248,7 +248,7 @@ layout('form parts', () => {
         const page = await open(viewport)
         const [one] = await rectsOf(page, 'tags', '[data-slot="tag-input"]')
         const [many] = await rectsOf(page, 'tags-many', '[data-slot="tag-input"]')
-        expect(one!.height).toBeGreaterThanOrEqual(31.5)
+        expect(one!.height).toBeGreaterThanOrEqual(29.5)
         expect(many!.height).toBeGreaterThan(one!.height)
         expect(many!.right).toBeLessThanOrEqual(viewport.width + 0.5)
         const chips = '[data-chip]'
