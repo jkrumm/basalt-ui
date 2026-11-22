@@ -57,6 +57,11 @@ function fillsTail<T>(model: TableModel<T>): boolean {
   return model.look === 'grid' || titleCapPx(model) !== undefined || resizedFixed(model)
 }
 
+/** A windowed table's filler: the grid look's, or a reader's widths that leave no flexible column. */
+function windowFill<T>(model: TableModel<T>): boolean {
+  return model.look === 'grid' || resizedFixed(model)
+}
+
 /** Every drawn column is fixed and a reader set a width: the rest of the row is the filler's. */
 function resizedFixed<T>(model: TableModel<T>): boolean {
   if (Object.keys(model.state.display.widths ?? {}).length === 0) return false
@@ -280,7 +285,9 @@ export function DataTable<T, I = unknown>({
           data-phase={phase.tag}
           data-contained=""
           data-virtual=""
-          data-fill={model.look === 'grid' ? '' : undefined}
+          // A windowed table keeps no title cap; it fills its tail in the grid look or once a reader's
+          // widths leave no flexible column.
+          data-fill={windowFill(model) ? '' : undefined}
           data-look={model.look === 'grid' ? 'grid' : undefined}
           data-full-at={model.look === 'grid' ? undefined : (model.plan.fullAt ?? undefined)}
           {...tierAttributesOf(model)}
@@ -311,7 +318,7 @@ export function DataTable<T, I = unknown>({
               detail={detail}
               head={
                 <>
-                  <Columns model={model} fill={model.look === 'grid'} />
+                  <Columns model={model} fill={windowFill(model)} />
                   <DataTableHead table={table} rowIndex={1} />
                 </>
               }

@@ -14,6 +14,7 @@ import type { PlanInput } from '../core/plan'
 import { arrangeColumns } from '../core/arrange'
 import { modelOf, useDataTable } from '../use-data-table'
 import type { TableModel } from '../use-data-table'
+import { VirtualList } from '../../ui/virtual-list'
 import { DataTable } from './data-table'
 import { aggregateOf, aggregatesOf, nextAggregate } from './footer-model'
 import { isViewDirty, saveView, viewDisplay } from './views-model'
@@ -37,10 +38,12 @@ function Subject({
   id = 'view',
   options = {},
   maxRows,
+  windowed = false,
 }: {
   id?: string
   options?: Partial<UseDataTable<Row>>
   maxRows?: number
+  windowed?: boolean
 }): ReactElement {
   const c = col<Row>()
   const t = useDataTable<Row>({
@@ -62,6 +65,7 @@ function Subject({
   useEffect(() => {
     model = current
   })
+  if (windowed) return <DataTable table={t} height="fill" virtual={VirtualList} />
   return maxRows === undefined ? (
     <DataTable table={t} />
   ) : (
@@ -168,6 +172,17 @@ describe('column widths', () => {
     unmount()
     const again = render(<Subject id="drag" />)
     expect(colWidth(again.container, 3)).toBe(`${start + 60}px`)
+  })
+
+  test('a windowed reading table whose flexible columns are all resized hands the rest of the row to a filler', () => {
+    const { container } = render(<Subject id="windowed" windowed />)
+    const root = container.querySelector<HTMLElement>('[data-slot="table-root"]')!
+    expect(root.hasAttribute('data-virtual')).toBe(true)
+    expect(container.querySelector('col[data-fill]')).toBeNull()
+    act(() => latest().setWidth('name', 300))
+    act(() => latest().setWidth('team', 160))
+    expect(root.hasAttribute('data-fill')).toBe(true)
+    expect(container.querySelector('col[data-fill]')).not.toBeNull()
   })
 
   test('a cancelled drag and a menu reset give the handle the width drawn on screen', () => {
