@@ -2,6 +2,7 @@ import { Popover as BasePopover } from '@base-ui/react/popover'
 import { cva } from 'class-variance-authority'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { ControlScopeProvider } from '../core/control-scope'
 
 /**
  * The `PopoverContent` cva table: a floating panel on the popup surface, 288 px wide unless a width
@@ -100,23 +101,25 @@ export function PopoverContent({
   ...props
 }: PopoverContentProps): ReactElement {
   return (
-    <BasePopover.Portal {...(container !== undefined && { container })}>
-      <BasePopover.Positioner
-        {...(anchor !== undefined && { anchor })}
-        {...(side !== undefined && { side })}
-        {...(align !== undefined && { align })}
-        {...(alignOffset !== undefined && { alignOffset })}
-        sideOffset={sideOffset}
-        className="z-50 outline-none"
-      >
-        <BasePopover.Popup
-          {...props}
-          data-slot="popover-content"
-          className={cn(popoverContentVariants(), className)}
+    <ControlScopeProvider value={null}>
+      <BasePopover.Portal {...(container !== undefined && { container })}>
+        <BasePopover.Positioner
+          {...(anchor !== undefined && { anchor })}
+          {...(side !== undefined && { side })}
+          {...(align !== undefined && { align })}
+          {...(alignOffset !== undefined && { alignOffset })}
+          sideOffset={sideOffset}
+          className="z-50 outline-none"
         >
-          {children}
-        </BasePopover.Popup>
-      </BasePopover.Positioner>
-    </BasePopover.Portal>
+          <BasePopover.Popup
+            {...props}
+            data-slot="popover-content"
+            className={cn(popoverContentVariants(), className)}
+          >
+            {children}
+          </BasePopover.Popup>
+        </BasePopover.Positioner>
+      </BasePopover.Portal>
+    </ControlScopeProvider>
   )
 }

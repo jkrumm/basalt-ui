@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority'
 import { createContext, useContext, useSyncExternalStore } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { ControlScopeProvider } from '../core/control-scope'
 import { dialogs } from '../core/messages/dialogs'
 import { useMessages } from '../core/messages/use-messages'
 import type { ControlHandle } from '../core/ports'
@@ -181,27 +182,29 @@ export function SheetContent({
 }: SheetContentProps): ReactElement {
   const placement = useContext(PlacementContext)
   return (
-    <BaseDrawer.Portal>
-      <BaseDrawer.Backdrop
-        forceRender
-        className="fixed inset-0 z-50 bg-scrim transition-opacity duration-slow data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
-      />
-      <BaseDrawer.Viewport className="fixed inset-0 z-50 flex overflow-hidden data-ending-style:pointer-events-none">
-        <BaseDrawer.Popup
-          {...props}
-          data-slot="sheet-content"
-          className={cn(sheetContentVariants({ placement }), className)}
-        >
-          <BaseDrawer.Content className="flex min-h-0 flex-1 flex-col gap-4">
-            <header className="flex items-start gap-3">
-              <SheetTitle className="min-w-0 flex-1">{title}</SheetTitle>
-              <SheetClose />
-            </header>
-            {children}
-          </BaseDrawer.Content>
-        </BaseDrawer.Popup>
-      </BaseDrawer.Viewport>
-    </BaseDrawer.Portal>
+    <ControlScopeProvider value={null}>
+      <BaseDrawer.Portal>
+        <BaseDrawer.Backdrop
+          forceRender
+          className="fixed inset-0 z-50 bg-scrim transition-opacity duration-slow data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
+        />
+        <BaseDrawer.Viewport className="fixed inset-0 z-50 flex overflow-hidden data-ending-style:pointer-events-none">
+          <BaseDrawer.Popup
+            {...props}
+            data-slot="sheet-content"
+            className={cn(sheetContentVariants({ placement }), className)}
+          >
+            <BaseDrawer.Content className="flex min-h-0 flex-1 flex-col gap-4">
+              <header className="flex items-start gap-3">
+                <SheetTitle className="min-w-0 flex-1">{title}</SheetTitle>
+                <SheetClose />
+              </header>
+              {children}
+            </BaseDrawer.Content>
+          </BaseDrawer.Popup>
+        </BaseDrawer.Viewport>
+      </BaseDrawer.Portal>
+    </ControlScopeProvider>
   )
 }
 

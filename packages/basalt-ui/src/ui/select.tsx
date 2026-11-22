@@ -3,7 +3,7 @@ import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
-import { scopeClass, useControlScope } from '../core/control-scope'
+import { scopeClass, useControlScope, ControlScopeProvider } from '../core/control-scope'
 import type { IconComponent } from '../core/ports'
 
 /**
@@ -315,17 +315,19 @@ export function SelectContent({
   ...props
 }: SelectContentProps): ReactElement {
   return (
-    <BaseSelect.Portal {...(container !== undefined && { container })}>
-      <BaseSelect.Positioner sideOffset={4} className="z-50 outline-none">
-        <BaseSelect.Popup
-          {...props}
-          data-slot="select-content"
-          className={cn(selectContentVariants(), className)}
-        >
-          <BaseSelect.List>{children}</BaseSelect.List>
-        </BaseSelect.Popup>
-      </BaseSelect.Positioner>
-    </BaseSelect.Portal>
+    <ControlScopeProvider value={null}>
+      <BaseSelect.Portal {...(container !== undefined && { container })}>
+        <BaseSelect.Positioner sideOffset={4} className="z-50 outline-none">
+          <BaseSelect.Popup
+            {...props}
+            data-slot="select-content"
+            className={cn(selectContentVariants(), className)}
+          >
+            <BaseSelect.List>{children}</BaseSelect.List>
+          </BaseSelect.Popup>
+        </BaseSelect.Positioner>
+      </BaseSelect.Portal>
+    </ControlScopeProvider>
   )
 }
 

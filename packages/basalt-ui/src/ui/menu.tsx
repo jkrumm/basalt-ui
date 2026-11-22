@@ -2,6 +2,7 @@ import { Menu as BaseMenu } from '@base-ui/react/menu'
 import { cva } from 'class-variance-authority'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { ControlScopeProvider } from '../core/control-scope'
 
 /**
  * The `MenuContent` cva table: the popup of a list of actions, at least 10 rem wide and never taller
@@ -162,25 +163,27 @@ export function MenuContent({
   ...props
 }: MenuContentProps): ReactElement {
   return (
-    <BaseMenu.Portal {...(container !== undefined && { container })}>
-      <BaseMenu.Positioner
-        {...(anchor !== undefined && { anchor })}
-        {...(side !== undefined && { side })}
-        {...(align !== undefined && { align })}
-        {...(alignOffset !== undefined && { alignOffset })}
-        sideOffset={sideOffset}
-        className="z-50 outline-none"
-      >
-        <BaseMenu.Popup
-          {...props}
-          {...(anchor !== undefined && { ref: focusFirstItem })}
-          data-slot="menu-content"
-          className={cn(menuContentVariants(), className)}
+    <ControlScopeProvider value={null}>
+      <BaseMenu.Portal {...(container !== undefined && { container })}>
+        <BaseMenu.Positioner
+          {...(anchor !== undefined && { anchor })}
+          {...(side !== undefined && { side })}
+          {...(align !== undefined && { align })}
+          {...(alignOffset !== undefined && { alignOffset })}
+          sideOffset={sideOffset}
+          className="z-50 outline-none"
         >
-          {children}
-        </BaseMenu.Popup>
-      </BaseMenu.Positioner>
-    </BaseMenu.Portal>
+          <BaseMenu.Popup
+            {...props}
+            {...(anchor !== undefined && { ref: focusFirstItem })}
+            data-slot="menu-content"
+            className={cn(menuContentVariants(), className)}
+          >
+            {children}
+          </BaseMenu.Popup>
+        </BaseMenu.Positioner>
+      </BaseMenu.Portal>
+    </ControlScopeProvider>
   )
 }
 

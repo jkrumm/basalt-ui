@@ -35,6 +35,13 @@ export function scopeClass(scope: ControlScope | null): string | undefined {
   return scope.fill ? 'w-auto min-w-0 grow' : 'w-auto'
 }
 
+/**
+ * A small button or copy button in a group lifts to the 44 px coarse floor of its neighbours (alone it
+ * keeps 24 px drawn and a 44 px `::after`) and drops the coarse inline margin that would open a gap.
+ */
+export const GROUPED_SMALL_BUTTON =
+  'pointer-coarse:mx-0 pointer-coarse:min-h-11 pointer-coarse:min-w-11'
+
 /** A button's share of `scopeClass`: it grows in a `fill` group and keeps its own width otherwise. */
 export function buttonScopeClass(scope: ControlScope | null): string | undefined {
   return scope?.fill === true ? 'grow' : undefined

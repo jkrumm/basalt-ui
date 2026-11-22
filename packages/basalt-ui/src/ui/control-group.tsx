@@ -228,9 +228,7 @@ export function InputGroup({ size, className, children, ...props }: InputGroupPr
       data-size={scope.size}
       className={cn(FIELDSET, inputGroupVariants(), scopeClass(parent), className)}
     >
-      <ControlScopeProvider value={{ size: scope.size, fill: false }}>
-        {children}
-      </ControlScopeProvider>
+      <ControlScopeProvider value={{ ...scope, fill: false }}>{children}</ControlScopeProvider>
     </fieldset>
   )
 }

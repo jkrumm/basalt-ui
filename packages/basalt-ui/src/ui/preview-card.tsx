@@ -2,6 +2,7 @@ import { PreviewCard as BasePreviewCard } from '@base-ui/react/preview-card'
 import { createContext, useContext, useState } from 'react'
 import type { PointerEvent, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { ControlScopeProvider } from '../core/control-scope'
 import { popoverContentVariants } from './popover'
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -151,23 +152,25 @@ export function PreviewCardContent({
   ...props
 }: PreviewCardContentProps): ReactElement {
   return (
-    <BasePreviewCard.Portal {...(container !== undefined && { container })}>
-      <BasePreviewCard.Positioner
-        {...(anchor !== undefined && { anchor })}
-        {...(side !== undefined && { side })}
-        {...(align !== undefined && { align })}
-        {...(alignOffset !== undefined && { alignOffset })}
-        sideOffset={sideOffset}
-        className="z-50 outline-none"
-      >
-        <BasePreviewCard.Popup
-          {...props}
-          data-slot="preview-card-content"
-          className={cn(popoverContentVariants(), className)}
+    <ControlScopeProvider value={null}>
+      <BasePreviewCard.Portal {...(container !== undefined && { container })}>
+        <BasePreviewCard.Positioner
+          {...(anchor !== undefined && { anchor })}
+          {...(side !== undefined && { side })}
+          {...(align !== undefined && { align })}
+          {...(alignOffset !== undefined && { alignOffset })}
+          sideOffset={sideOffset}
+          className="z-50 outline-none"
         >
-          {children}
-        </BasePreviewCard.Popup>
-      </BasePreviewCard.Positioner>
-    </BasePreviewCard.Portal>
+          <BasePreviewCard.Popup
+            {...props}
+            data-slot="preview-card-content"
+            className={cn(popoverContentVariants(), className)}
+          >
+            {children}
+          </BasePreviewCard.Popup>
+        </BasePreviewCard.Positioner>
+      </BasePreviewCard.Portal>
+    </ControlScopeProvider>
   )
 }
