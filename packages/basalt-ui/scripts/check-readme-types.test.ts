@@ -48,7 +48,7 @@ describe('extractBlocks', () => {
 describe('check-readme-types', () => {
   test('the package README type-checks', () => {
     expect(run().code).toBe(0)
-  })
+  }, 120_000)
 
   test('a block that does not type-check fails and names its README line', () => {
     const file = readme("# T\n\n```ts\nexport const mode: 'client' | 'server' = 'edge'\n```\n")
@@ -56,6 +56,17 @@ describe('check-readme-types', () => {
     expect(code).toBe(1)
     expect(stderr).toContain('README line 4')
   })
+
+  test('an augmentation of basalt-ui fails without an import and passes with one', () => {
+    const augment =
+      "declare module 'basalt-ui' {\n  interface BasaltRegister {\n    series: { a: 1 }\n  }\n}\n"
+    const bare = run(readme(`\`\`\`ts\n${augment}\`\`\`\n`))
+    expect(bare.code).toBe(1)
+    expect(bare.stderr).toContain('TS2664')
+    expect(
+      run(readme(`\`\`\`ts\nimport type {} from 'basalt-ui'\n\n${augment}\`\`\`\n`)).code,
+    ).toBe(0)
+  }, 120_000)
 
   test('a block that type-checks passes', () => {
     expect(

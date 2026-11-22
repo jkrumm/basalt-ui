@@ -70,7 +70,14 @@ declare const note: string
 
 const TSCONFIG = {
   extends: '../tsconfig.json',
-  compilerOptions: { noEmit: true, noUnusedLocals: false, noUnusedParameters: false },
+  // A consumer's create-vite flags: a block that augments 'basalt-ui' must import it, as a consumer's file does.
+  compilerOptions: {
+    noEmit: true,
+    noUnusedLocals: false,
+    noUnusedParameters: false,
+    verbatimModuleSyntax: true,
+    moduleDetection: 'force',
+  },
   include: ['./*'],
   exclude: [],
 }
@@ -82,8 +89,6 @@ export function checkBlocks(blocks: readonly Block[], dir = join(PLAYGROUND, OUT
   mkdirSync(dir, { recursive: true })
   try {
     writeFileSync(join(dir, 'prelude.d.ts'), PRELUDE)
-    // An augmentation of 'basalt-ui' only finds the module when the program already loads it.
-    writeFileSync(join(dir, 'root.ts'), "export type * from 'basalt-ui'\n")
     writeFileSync(join(dir, 'tsconfig.json'), JSON.stringify(TSCONFIG))
     for (const b of blocks) writeFileSync(join(dir, `block-${b.line}.${b.lang}`), b.code + '\n')
     // The series block is the app's own file: the blocks that `import tokens from './basalt.tokens'` resolve it.
