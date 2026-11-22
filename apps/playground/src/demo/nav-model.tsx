@@ -124,6 +124,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/kit/bar-list-series' }),
         },
         {
+          id: 'kit-board',
+          label: 'Board',
+          icon: Layout,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/board' }),
+        },
+        {
           id: 'kit-chain',
           label: 'Dependency chain',
           icon: Table,
