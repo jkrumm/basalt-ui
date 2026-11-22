@@ -88,7 +88,7 @@ Placed by `basalt-ui init`, refreshed by `basalt-ui sync` (`--check` gates drift
 
 **Never `shadcn add` a primitive basalt ships.** Eject it (`basalt-ui eject <name> --reason`) to change it.
 
-**A gap in basalt-ui** (a missing export, a part that cannot express the screen, a rule that refuses a legitimate shape) is filed as a factory Issue in `basalt-ui` with a minimal reproduction (the smallest file, the command and what it printed): `factory issue new --repo basalt-ui`, or `factory signal file --repo basalt-ui` from a factory lead. Never patch it locally: no edit under `node_modules`, no local copy of a part, no waiver standing in for the fix.
+**A gap in basalt-ui** (a missing export, a part that cannot express the screen, a rule that refuses a legitimate shape) is filed in the package's issue tracker (`bugs.url` in `node_modules/basalt-ui/package.json`) with a minimal reproduction (the smallest file, the command and what it printed). Never patch it locally: no edit under `node_modules`, no local copy of a part, no waiver standing in for the fix.
 
 **Overrides.** Restraint over "bold aesthetic direction" (`frontend-design`): neutral by default, the single accent spent only when earned. Basalt charts over `dataviz`: compose `CartesianChart` or a shipped kind.
 
