@@ -7,6 +7,10 @@
 - `packages/basalt-ui/**` and non-package changes are separate commits in one PR; `make sync-self` is its own
   non-package commit. Never edit `CHANGELOG.md`.
 - `make check` builds first; `bun run pre` is the inner loop (its unit step runs in a slot). A fresh worktree needs `bun install` and a package build.
+- `make check-fast` runs only the matrix cells and Astro parts the branch reaches; CI runs every one. When CI's matrix
+  fails, rerun the failing routes (`make quality-matrix BASALT_MATRIX_ROUTES=<route,route>`, the Astro one with
+  `make astro-matrix-run ASTRO_PARTS=<id,id>`), fix and push; never a whole local matrix run before a push
+  (`docs/validation.md` § Matrices the branch reaches).
 - The wave process is retired: work comes from Issues and `docs/plan.yaml` only. Leads rest on
   `docs/v3/ARCHITECTURE.md` and `docs/v3/DIRECTION.md`; superseded specs live in git history and on `v2`.
 - Paths in a facts file's `shared_append_only` are shared aggregators: edit only your own lines; on a rebase

@@ -342,7 +342,7 @@ const partResults = await pool(parts, 4, async (part): Promise<PartResult> => {
 const families: FamilyResult[] = []
 for (const family of FAMILIES) {
   const count = PARTS.filter((p) => p.family === family).length
-  if (!count) continue
+  if (!count || !parts.some((p) => p.family === family)) continue
   const modes = {} as Record<Mode, ModeResult>
   for (const mode of MODES) {
     const { files: _files, ...rest } = await load(browser, base, `/f/${family}/${mode}/`)
@@ -358,6 +358,7 @@ server.stop(true)
 const results: Results = {
   browser: readTestBrowser(),
   seconds: Math.round((Date.now() - started) / 1000),
+  ...(only ? { only: parts.map((p) => p.id) } : {}),
   baseline: Object.fromEntries(
     Object.entries(baseline).map(([m, { files: _f, ...r }]) => [m, r]),
   ) as Results['baseline'],

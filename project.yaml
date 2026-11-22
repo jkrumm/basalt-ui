@@ -12,9 +12,9 @@ leads: 16
 # request head as parallel jobs (checks, unit, the layout suite sharded four ways, the quality matrix, and `make check CI_SPLIT=1` for the steps no other
 # job runs; docs/validation.md), each step once, and `make merge-guard` demands that run green.
 checks: { fast: make check-fast, full: make check, ci: true }
-# The default 30m kills a `make check-fast` that has to run the whole sampled matrix (394 cells, ~30 min under host load,
-# measured 2026-11-21) plus the build and lint: a branch that touches the package source or the playground shell runs
-# all of it. A scenario-only branch runs its own routes (scripts/matrix-select.ts) and ends far inside this.
+# 60m dates from a `make check-fast` that ran the whole sampled matrix (394 cells, ~30 min under host load, 2026-11-21).
+# Since Issue 2949 it runs only the cells and Astro parts a branch reaches (scripts/matrix-select.ts: 48 cells at most, the
+# 24-cell smoke set for a shared change); this returns to 30m once the p90 of `check-fast` reads under it.
 slots: { run: 60m }
 # The layout suite is a Chrome tree. Its context-per-test close keeps one run near 2.5 GB resident, under the 3 GiB
 # reservation below. A row that adds browser work files itself `lane: browser`; admission reserves `memory` per
