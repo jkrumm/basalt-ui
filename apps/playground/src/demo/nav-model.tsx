@@ -137,6 +137,13 @@ export const NAV = defineNav({
           mobile: 'more',
           link: linkOptions({ to: '/kit/motion' }),
         },
+        {
+          id: 'kit-avatars',
+          label: 'Avatars',
+          icon: Layout,
+          mobile: 'more',
+          link: linkOptions({ to: '/kit/avatars' }),
+        },
       ],
     },
     // The kit's forms: every shipped control in its states, then three whole forms on TanStack Form.
