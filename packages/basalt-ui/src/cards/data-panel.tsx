@@ -127,14 +127,14 @@ function useWholeRows(
     const box = ref.current?.querySelector('[data-slot="data-panel-rows"]')
     if (!enabled || !(box instanceof HTMLElement)) return undefined
     const measure = (): void => {
+      // The rows are measured at their own height, so the stretch (a table that fills the box) is off while they are read, and stays off for a body with no rows.
+      box.removeAttribute('data-fill')
       const rows = box.querySelectorAll('tbody [data-slot="table-row"]')
       const first = rows[0]
       if (first === undefined) return
       // A row's place in the box is its place in the table's own scroll: a focus that scrolls the table to a row must not move where the rows end.
       const scroller = box.querySelector('[data-slot="table-scroller"]')
       const top = box.getBoundingClientRect().top - (scroller?.scrollTop ?? 0)
-      // The rows are measured at their own height, so the stretch (a table that fills the box) is off while they are read.
-      box.removeAttribute('data-fill')
       if (getComputedStyle(first).display === 'grid') {
         const last = rows[Math.min(dataRows, rows.length) - 1]!
         const bottom = Math.ceil(last.getBoundingClientRect().bottom - top)
