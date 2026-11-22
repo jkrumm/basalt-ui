@@ -10,6 +10,7 @@ export const CN_THEME = {
     'accent',
     'selected',
     'scrim',
+    'scrim-wash',
     'border',
     'input',
     'foreground',

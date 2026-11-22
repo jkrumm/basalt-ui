@@ -13,6 +13,7 @@ exports[`emitTokensCss snapshot: the whole default sheet 1`] = `
   --basalt-hover: color-mix(in srgb, var(--basalt-ink) 5%, transparent);
   --basalt-selected: color-mix(in srgb, var(--basalt-ink) 7.5%, transparent);
   --basalt-scrim: color-mix(in srgb, var(--basalt-ink) 45%, transparent);
+  --basalt-scrim-wash: color-mix(in srgb, var(--basalt-canvas) 50%, transparent);
   --basalt-hairline: color-mix(in srgb, var(--basalt-ink) 9%, transparent);
   --basalt-input: color-mix(in srgb, var(--basalt-ink) 52%, transparent);
   --basalt-ink: #262629;
@@ -54,6 +55,7 @@ exports[`emitTokensCss snapshot: the whole default sheet 1`] = `
     --basalt-hover: color-mix(in srgb, var(--basalt-ink) 7%, transparent);
     --basalt-selected: color-mix(in srgb, var(--basalt-ink) 9%, transparent);
     --basalt-scrim: color-mix(in srgb, #000000 60%, transparent);
+    --basalt-scrim-wash: color-mix(in srgb, var(--basalt-canvas) 50%, transparent);
     --basalt-hairline: color-mix(in srgb, var(--basalt-ink) 9%, transparent);
     --basalt-input: color-mix(in srgb, var(--basalt-ink) 44%, transparent);
     --basalt-ink: #e5e5e9;
@@ -97,6 +99,7 @@ exports[`emitTokensCss snapshot: the whole default sheet 1`] = `
       --basalt-hover: color-mix(in srgb, var(--basalt-ink) 7%, transparent);
       --basalt-selected: color-mix(in srgb, var(--basalt-ink) 9%, transparent);
       --basalt-scrim: color-mix(in srgb, #000000 60%, transparent);
+      --basalt-scrim-wash: color-mix(in srgb, var(--basalt-canvas) 50%, transparent);
       --basalt-hairline: color-mix(in srgb, var(--basalt-ink) 9%, transparent);
       --basalt-input: color-mix(in srgb, var(--basalt-ink) 44%, transparent);
       --basalt-ink: #e5e5e9;
@@ -222,6 +225,7 @@ export const BASALT = {
   hover: 'var(--basalt-hover)',
   selected: 'var(--basalt-selected)',
   scrim: 'var(--basalt-scrim)',
+  scrimWash: 'var(--basalt-scrim-wash)',
   hairline: 'var(--basalt-hairline)',
   input: 'var(--basalt-input)',
   ink: 'var(--basalt-ink)',
@@ -308,6 +312,7 @@ export type BasaltVar =
   | '--basalt-hover'
   | '--basalt-selected'
   | '--basalt-scrim'
+  | '--basalt-scrim-wash'
   | '--basalt-hairline'
   | '--basalt-input'
   | '--basalt-ink'
@@ -463,6 +468,7 @@ exports[`BASALT types, names, zone A snapshot: zone A denial 1`] = `
     "hover",
     "selected",
     "scrim",
+    "scrim-wash",
     "hairline",
   ],
 }

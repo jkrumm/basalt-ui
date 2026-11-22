@@ -27,7 +27,7 @@ export const zoneANames = [
   'seq-5',
 ] as const
 
-export const zoneAPremixed = ['accent', 'selected', 'scrim', 'border'] as const
+export const zoneAPremixed = ['accent', 'selected', 'scrim', 'scrim-wash', 'border'] as const
 
 export const zoneAFillOnly = [
   'brand-fill',

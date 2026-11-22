@@ -72,6 +72,10 @@ const inkMix = (key: keyof typeof INK_MIX_PCT) => (): SchemePair => ({
   light: ink(INK_MIX_PCT[key].light),
   dark: ink(INK_MIX_PCT[key].dark),
 })
+const canvasMix = (pct: number): string =>
+  `color-mix(in srgb, var(--basalt-canvas) ${pct}%, transparent)`
+/** Canvas share of the `scrim-wash` backdrop, per scheme: half strength in both. */
+const WASH_PCT = { light: 50, dark: 50 } as const
 const color =
   (name: ColorNameV3) =>
   (derived: DerivedV3): SchemePair =>
@@ -160,6 +164,17 @@ export const TOKENS: readonly TokenDef[] = [
       dark: 'color-mix(in srgb, #000000 60%, transparent)',
     }),
     tw: ['--color-scrim'],
+    premixed: true,
+  },
+  {
+    name: 'scrim-wash',
+    family: 'interaction',
+    role: 'Backdrop of a Dialog: the canvas the frame is drawn on at half strength, so the page stays readable behind it',
+    value: () => ({
+      light: canvasMix(WASH_PCT.light),
+      dark: canvasMix(WASH_PCT.dark),
+    }),
+    tw: ['--color-scrim-wash'],
     premixed: true,
   },
   // ── Line ──────────────────────────────────────────────────────────────────────────────────────
