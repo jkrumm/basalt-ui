@@ -16,6 +16,7 @@ import { CheckboxGroup } from 'basalt-ui/ui/checkbox'
 import { CheckboxMatrix } from 'basalt-ui/ui/checkbox-matrix'
 import type { MatrixValue } from 'basalt-ui/ui/checkbox-matrix'
 import { RadioGroup } from 'basalt-ui/ui/radio-group'
+import { Separator } from 'basalt-ui/ui/separator'
 import { SwatchPicker } from 'basalt-ui/ui/swatch-picker'
 import type { SwatchToken } from 'basalt-ui/ui/swatch-picker'
 import { Segmented } from 'basalt-ui/ui/segmented'
@@ -179,42 +180,42 @@ const PLANS = [
   { value: 'scale', label: 'Scale', description: 'SSO and a support SLA', trailing: '€40 / seat' },
 ]
 
-function Thumb({ tone }: { tone: string }): ReactElement {
-  return <span className={`block h-14 w-full ${tone}`} />
+/** A density in miniature: ruled rows, further apart as the density loosens. */
+function Rows({ gap }: { gap: string }): ReactElement {
+  return (
+    <span className={`flex h-14 w-full flex-col justify-center px-3 ${gap}`}>
+      <Separator />
+      <Separator />
+      <Separator />
+      <Separator />
+    </span>
+  )
 }
 
-const LOOKS = [
-  { value: 'light', label: 'Light', preview: <Thumb tone="bg-inset" /> },
-  { value: 'dark', label: 'Dark', preview: <Thumb tone="bg-foreground" /> },
-  { value: 'system', label: 'System', preview: <Thumb tone="bg-accent" /> },
+const DENSITIES = [
+  { value: 'compact', label: 'Compact', preview: <Rows gap="gap-0.5" /> },
+  { value: 'normal', label: 'Normal', preview: <Rows gap="gap-1.5" /> },
+  { value: 'comfortable', label: 'Comfortable', preview: <Rows gap="gap-2.5" /> },
 ]
 
 function Cards(): ReactElement {
   const plan = useSpecimen('pro')
-  const look = useSpecimen('system')
+  const density = useSpecimen('normal')
   const notify = useSpecimen<string[]>(['email'])
   const unpicked = useSpecimen('', 'Choose a plan to continue.')
   return (
     <Pair>
-      <FormField
-        label="Plan"
-        description="RadioGroup variant card: a title, a line, a trailing value."
-        field={plan}
-      >
+      <FormField label="Plan" description="A line and a price under each name." field={plan}>
         <RadioGroup variant="card" aria-label="Plan" options={PLANS} />
       </FormField>
       <FormField
-        label="Appearance"
-        description="Variant tile: a preview over the title, in a wrapping grid."
-        field={look}
+        label="Row density"
+        description="A preview over the title, wrapping with the width."
+        field={density}
       >
-        <RadioGroup variant="tile" aria-label="Appearance" options={LOOKS} />
+        <RadioGroup variant="tile" aria-label="Row density" options={DENSITIES} />
       </FormField>
-      <FormField
-        label="Notify by"
-        description="CheckboxGroup variant card: several at once."
-        field={notify}
-      >
+      <FormField label="Notify by" description="Several at once." field={notify}>
         <CheckboxGroup
           variant="card"
           aria-label="Notify by"
@@ -232,7 +233,7 @@ function Cards(): ReactElement {
       </FormField>
       <FormField
         label="Plan, invalid"
-        description="The error is read with the group."
+        description="The error sits under the group."
         field={unpicked}
       >
         <RadioGroup variant="card" aria-label="Plan, invalid" options={PLANS.slice(0, 2)} />
@@ -304,14 +305,14 @@ function Colour(): ReactElement {
     <Pair>
       <FormField
         label="Stage colour"
-        description="Inline: named palette tokens, never a free colour."
+        description="Named palette tokens, never a free colour."
         field={stage}
       >
         <SwatchPicker aria-label="Stage colour" options={STAGE_COLOURS} />
       </FormField>
       <FormField
         label="Label colour"
-        description="In a menu: for a field with little room."
+        description="In a menu, for a field with little room."
         field={label}
       >
         <SwatchPicker
@@ -366,15 +367,12 @@ function ChoicesRoute(): ReactElement {
       >
         <PickSeveral />
       </Section>
-      <Section
-        title="Cards"
-        summary="A choice with a hint, a price or a picture: selected by its border, never by fill alone."
-      >
+      <Section title="Choice cards" summary="Selected by its border, never by fill alone.">
         <Cards />
       </Section>
       <Section
-        title="Matrix"
-        summary="Rows and columns of real checkboxes in a table; Tab visits every cell, the arrow keys move between them."
+        title="Permission matrix"
+        summary="Tab visits every cell; the arrow keys move between them."
       >
         <Matrix />
       </Section>

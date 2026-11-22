@@ -417,14 +417,14 @@ function TagsAndCodes(): ReactElement {
       </FormField>
       <FormField
         label="Verification code"
-        description="Six digits; a pasted or suggested code fills every box."
+        description="Six digits; a pasted code fills every box."
         field={code}
       >
         <OneTimeCode aria-label="Verification code" />
       </FormField>
       <FormField
         label="Verification code, wrong"
-        description="All boxes turn red; the message is read with the group."
+        description="Every box turns red and the message follows."
         field={wrong}
       >
         <OneTimeCode aria-label="Verification code, wrong" />
@@ -514,8 +514,8 @@ function InputsRoute(): ReactElement {
         <Heights />
       </Section>
       <Section
-        title="Tags, codes and shortcuts"
-        summary="Free values as chips, a code in boxes, and pills that write the field beside them."
+        title="Tags, code and date shortcuts"
+        summary="Chips for a list, boxes for a code, pills for a date."
       >
         <TagsAndCodes />
       </Section>
