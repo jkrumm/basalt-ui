@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
 
-import { SIBLING_PREFIX } from '../src/cli/sync/sibling'
+import { drift } from '../scripts/sync-self'
 import { SURFACES } from '../src/surfaces'
 import type { SurfaceSpec } from '../src/surfaces'
 
@@ -253,63 +253,40 @@ describe('shipped lefthook preset', () => {
   })
 })
 
-// ── sync-self — this repo's /.claude/rules byte-match the shipped agent/rules ─────────────────────
+// ── sync-self — this repo's /.claude/ links every shipped rule, skill and agent ───────────────────
 
 describe('sync-self', () => {
-  const REPO_ROOT = join(PKG_ROOT, '..', '..')
-  const RULES_SRC = join(PKG_ROOT, 'agent/rules')
-  const RULES_DEST = join(REPO_ROOT, '.claude/rules')
-  const SKILLS_SRC = join(PKG_ROOT, 'agent/skills')
-  const SKILLS_DEST = join(REPO_ROOT, '.claude/skills')
-
-  // `make sync-self` (`scripts/sync-self.ts`) is a PLAIN copy, not `basalt-ui sync`'s three-way
-  // reconciliation — this repo is not a consumer of itself, so a stale `/.claude/rules/basalt-*.md`
-  // has one honest fix (re-run `make sync-self`), never a "locally edited, keep it" branch.
-  it('every shipped rule has a byte-identical copy in /.claude/rules', () => {
-    const names = readdirSync(RULES_SRC).filter((name) => name.endsWith('.md'))
-    expect(names.length).toBeGreaterThan(0)
-    for (const name of names) {
-      const shipped = readFileSync(join(RULES_SRC, name), 'utf8')
-      const installed = readFileSync(join(RULES_DEST, name), 'utf8')
-      expect([name, installed]).toEqual([name, shipped])
-    }
+  // `make sync-self` (`scripts/sync-self.ts`) links each entry to its shipped source, so the dogfood copy IS the
+  // shipped text: a regular file there (a copy that can go stale), a link elsewhere or a missing link fails, and so
+  // does an orphan, a `basalt-*` entry with no shipped source (a retired doctrine still read as live). A
+  // `basalt-v3-` name is a sibling install's placement (apps/marketing's sync), owned by that install's ledger and
+  // gitignored here, so it is no orphan of this repo's own sync.
+  it('every shipped rule, skill and subagent is linked into /.claude, and nothing else is (make sync-self)', () => {
+    expect(drift()).toEqual([])
   })
 
-  // The other direction: a rule dropped from `agent/rules/` (e.g. this repo's own dead-rule
-  // cleanup) must not survive in `.claude/rules` — `sync-self.ts`'s prune step is what deletes it,
-  // and this fails closed if that step regresses or `make sync-self` was never re-run.
-  // A `basalt-v3-` name is a sibling install's placement (apps/marketing's sync), owned by that
-  // install's ledger and gitignored here, so it is no orphan of this repo's own sync.
-  it('the installed rules carry no orphan — every basalt-*.md in .claude/rules has a shipped source', () => {
-    const installed = readdirSync(RULES_DEST).filter(
-      (name) =>
-        name.startsWith('basalt-') && !name.startsWith(SIBLING_PREFIX) && name.endsWith('.md'),
-    )
-    for (const name of installed) {
-      expect([name, existsSync(join(RULES_SRC, name))]).toEqual([name, true])
+  it('each link reads the shipped bytes', () => {
+    const REPO_ROOT = join(PKG_ROOT, '..', '..')
+    const pairs = [
+      ['agent/rules', '.claude/rules'],
+      ['agent/reviewer', '.claude/agents'],
+    ] as const
+    let read = 0
+    for (const [src, dest] of pairs)
+      for (const name of readdirSync(join(PKG_ROOT, src)).filter(
+        (n) => n.startsWith('basalt-') && n.endsWith('.md'),
+      )) {
+        expect([name, readFileSync(join(REPO_ROOT, dest, name), 'utf8')]).toEqual([
+          name,
+          readFileSync(join(PKG_ROOT, src, name), 'utf8'),
+        ])
+        read++
+      }
+    for (const skill of readdirSync(join(PKG_ROOT, 'agent/skills'))) {
+      const installed = join(REPO_ROOT, '.claude/skills', skill, 'SKILL.md')
+      expect([skill, existsSync(installed)]).toEqual([skill, true])
+      read++
     }
-  })
-
-  it('every shipped subagent has a byte-identical copy in /.claude/agents', () => {
-    const src = join(PKG_ROOT, 'agent/reviewer')
-    const dest = join(REPO_ROOT, '.claude/agents')
-    const names = readdirSync(src).filter(
-      (name) => name.startsWith('basalt-') && name.endsWith('.md'),
-    )
-    expect(names.length).toBeGreaterThan(0)
-    for (const name of names) {
-      const installed = readFileSync(join(dest, name), 'utf8')
-      expect([name, installed]).toEqual([name, readFileSync(join(src, name), 'utf8')])
-    }
-  })
-
-  // Same law, the skills half.
-  it('the installed skills carry no orphan — every basalt-* dir in .claude/skills has a shipped source', () => {
-    const installed = readdirSync(SKILLS_DEST, { withFileTypes: true }).filter(
-      (e) => e.isDirectory() && e.name.startsWith('basalt-') && !e.name.startsWith(SIBLING_PREFIX),
-    )
-    for (const dir of installed) {
-      expect([dir.name, existsSync(join(SKILLS_SRC, dir.name))]).toEqual([dir.name, true])
-    }
+    expect(read).toBeGreaterThan(5)
   })
 })

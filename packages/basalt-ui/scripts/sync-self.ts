@@ -1,90 +1,136 @@
 /**
- * Installs basalt-ui's OWN shipped rules, skills and subagents into this repo's `/.claude/` — the dogfood half
- * of C2 (`.claude/maturation/consolidation-plan.md`, "Dogfood"). Before this script, an agent
- * editing `packages/basalt-ui/src/**` never saw the 1,000+ lines of law the package ships to every
- * consumer (`agent/rules/*.md`, each skill's `agent/skills/<name>/SKILL.md`) — this repo carried
- * no `/.claude/rules/` and no `/.claude/skills/` at all.
+ * Links basalt-ui's OWN shipped rules, skills and subagents into this repo's `/.claude/`, the dogfood half
+ * of C2 (`.claude/maturation/consolidation-plan.md`, "Dogfood"): an agent editing `packages/basalt-ui/src/**`
+ * reads the law the package ships to every consumer (`agent/rules/*.md`, each skill's `agent/skills/<name>/`).
  *
- * Deliberately NOT `basalt-ui sync` (`src/cli`'s consumer command): that command reconciles a
- * CONSUMER's copy against a published version, with three-way discipline for locally-edited files
- * and a prune pass for namespaces a newer basalt no longer ships. This repo is not a consumer of
- * itself — there is no version skew to reconcile, so a plain overwrite is correct and the extra
- * machinery would be dead weight here.
+ * Each entry is a relative symlink to its shipped source, not a copy. A copy was a second committed file that every
+ * skill edit had to resync and that conflicted on every rebase of two branches touching the same skill (about one
+ * commit in twenty on master in the week from 2026-11-15); a link carries the shipped bytes by construction and
+ * never changes. Claude Code follows symlinked rules and skill directories.
  *
- * A plain copy is also why `tests/drift.test.ts`'s "sync-self" describe block can assert
- * `/.claude/rules/basalt-*.md` BYTE-MATCHES `agent/rules/*.md` — the drift check reads as literally
- * as the mechanism that satisfies it.
+ * Deliberately NOT `basalt-ui sync` (`src/cli`'s consumer command): that command reconciles a CONSUMER's copy
+ * against a published version, with three-way discipline for locally-edited files and a prune pass for namespaces
+ * a newer basalt no longer ships. This repo is not a consumer of itself.
  *
- * Usage: bun packages/basalt-ui/scripts/sync-self.ts
+ * `tests/drift.test.ts`'s "sync-self" block asserts every shipped entry is linked and nothing else is.
+ *
+ * Usage: bun packages/basalt-ui/scripts/sync-self.ts [--check]
+ *   --check writes nothing and exits 1 when an entry is not a link to its source, is missing or is an orphan.
  */
-import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
-import { dirname, join, relative, sep } from 'node:path'
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readdirSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+} from 'node:fs'
+import { join, relative } from 'node:path'
+import { SIBLING_PREFIX } from '../src/cli/sync/sibling'
 
 const PKG_ROOT = join(import.meta.dir, '..')
 const REPO_ROOT = join(PKG_ROOT, '..', '..')
 
-/**
- * One row per installed namespace. `unit` is what a source entry is: a file (`rule.md`) or a
- * directory holding `SKILL.md`. Rules, skills and agents share one copy and one prune.
- */
+/** One row per linked namespace: `unit` is what a source entry is, a file (`rule.md`) or a skill directory. */
 const NAMESPACES = [
-  { name: 'rule', dir: 'rules', unit: 'file' },
-  { name: 'skill', dir: 'skills', unit: 'dir' },
-  { name: 'agent', dir: 'agents', unit: 'file', from: 'reviewer' },
+  { name: 'rule', dir: 'rules', from: 'rules', unit: 'file' },
+  { name: 'skill', dir: 'skills', from: 'skills', unit: 'dir' },
+  { name: 'agent', dir: 'agents', from: 'reviewer', unit: 'file' },
 ] as const
 
-function entries(root: string, unit: 'file' | 'dir'): string[] {
-  if (!existsSync(root)) return []
-  return readdirSync(root, { withFileTypes: true })
+type Namespace = (typeof NAMESPACES)[number]
+
+/** The shipped entries of a namespace: `basalt-*.md` files, or the skill directories. */
+function shippedOf(ns: Namespace): string[] {
+  const src = join(PKG_ROOT, 'agent', ns.from)
+  if (!existsSync(src)) throw new Error(`sync-self: shipped source dir missing: ${src}`)
+  return readdirSync(src, { withFileTypes: true })
     .filter((e) =>
-      unit === 'dir' ? e.isDirectory() : e.name.startsWith('basalt-') && e.name.endsWith('.md'),
+      ns.unit === 'dir' ? e.isDirectory() : e.name.startsWith('basalt-') && e.name.endsWith('.md'),
     )
     .map((e) => e.name)
+    .toSorted()
 }
 
-/** Copy every shipped entry into `/.claude/<dir>`, then delete `basalt-*` entries with no source. */
-function syncNamespace(
-  dir: string,
-  unit: 'file' | 'dir',
-  from = dir,
-): { copied: number; pruned: number } {
-  const src = join(PKG_ROOT, 'agent', from)
-  const dest = join(REPO_ROOT, '.claude', dir)
-  if (!existsSync(src)) throw new Error(`sync-self: shipped source dir missing: ${src}`)
-  const shipped = entries(src, unit)
-  mkdirSync(dest, { recursive: true })
-  for (const name of shipped) {
-    if (unit === 'file') copyFileSync(join(src, name), join(dest, name))
-    else {
-      // A skill is its whole directory (SKILL.md + references/**). Clear first so a reference
-      // dropped upstream does not outlive the copy.
-      rmSync(join(dest, name), { recursive: true, force: true })
-      for (const e of readdirSync(join(src, name), { recursive: true, withFileTypes: true })) {
-        if (!e.isFile() || !e.name.endsWith('.md')) continue
-        const rel = relative(join(src, name), join(e.parentPath, e.name))
-        if (rel.split(sep).some((seg) => seg.startsWith('.'))) continue
-        mkdirSync(dirname(join(dest, name, rel)), { recursive: true })
-        copyFileSync(join(e.parentPath, e.name), join(dest, name, rel))
-      }
-    }
+/** The `basalt-*` entries this sync owns in `/.claude/<dir>`: a sibling install's `basalt-v3-*` placements are not. */
+function ownedOf(ns: Namespace): string[] {
+  const dest = join(REPO_ROOT, '.claude', ns.dir)
+  if (!existsSync(dest)) return []
+  return readdirSync(dest)
+    .filter((name) => name.startsWith('basalt-') && !name.startsWith(SIBLING_PREFIX))
+    .filter((name) => ns.unit === 'dir' || name.endsWith('.md'))
+    .toSorted()
+}
+
+/** The link target of an entry, relative to the directory that holds the link. */
+const targetOf = (ns: Namespace, name: string): string =>
+  relative(join(REPO_ROOT, '.claude', ns.dir), join(PKG_ROOT, 'agent', ns.from, name))
+
+/** Where a link points, or null when the path is not a link. */
+function linkedTo(path: string): string | null {
+  return lstatSafe(path)?.isSymbolicLink() ? readlinkSync(path) : null
+}
+
+function lstatSafe(path: string): ReturnType<typeof lstatSync> | null {
+  try {
+    return lstatSync(path)
+  } catch {
+    return null
   }
-  // A plain copy never removes a stale file: a rule, skill or agent dropped upstream stayed
-  // installed here forever, which is how a retired doctrine kept being read as live.
-  const orphans = entries(dest, unit).filter((n) => n.startsWith('basalt-') && !shipped.includes(n))
-  for (const name of orphans) rmSync(join(dest, name), { recursive: true })
-  return { copied: shipped.length, pruned: orphans.length }
 }
 
-function main(): void {
-  const results = NAMESPACES.map((ns) => ({
-    ns,
-    ...syncNamespace(ns.dir, ns.unit, 'from' in ns ? ns.from : ns.dir),
-  }))
-  const pruned = results.reduce((sum, r) => sum + r.pruned, 0)
-  console.log(
-    `✓ sync-self: ${results.map((r) => `${r.copied} ${r.ns.name}(s) → .claude/${r.ns.dir}`).join(', ')}` +
-      (pruned > 0 ? `, ${pruned} orphan(s) pruned` : ''),
-  )
+/** What is out of place: a shipped entry not linked to its source, and an owned entry with no source. */
+export function drift(): string[] {
+  const out: string[] = []
+  for (const ns of NAMESPACES) {
+    const shipped = shippedOf(ns)
+    for (const name of shipped) {
+      const path = join('.claude', ns.dir, name)
+      const link = linkedTo(join(REPO_ROOT, path))
+      if (link !== targetOf(ns, name))
+        out.push(
+          `${path}: ${link === null ? 'not a link' : `links to ${link}`}, want ${targetOf(ns, name)}`,
+        )
+    }
+    for (const name of ownedOf(ns))
+      if (!shipped.includes(name)) out.push(`.claude/${ns.dir}/${name}: no shipped source (orphan)`)
+  }
+  return out
 }
 
-main()
+function syncNamespace(ns: Namespace): { linked: number; pruned: number } {
+  const dest = join(REPO_ROOT, '.claude', ns.dir)
+  mkdirSync(dest, { recursive: true })
+  const shipped = shippedOf(ns)
+  for (const name of shipped) {
+    const path = join(dest, name)
+    if (linkedTo(path) === targetOf(ns, name)) continue
+    rmSync(path, { recursive: true, force: true })
+    symlinkSync(targetOf(ns, name), path)
+  }
+  // A rule, skill or agent dropped upstream must not stay installed here: that is how a retired doctrine kept being
+  // read as live.
+  const orphans = ownedOf(ns).filter((name) => !shipped.includes(name))
+  for (const name of orphans) rmSync(join(dest, name), { recursive: true, force: true })
+  return { linked: shipped.length, pruned: orphans.length }
+}
+
+if (import.meta.main) {
+  if (process.argv.includes('--check')) {
+    const out = drift()
+    for (const line of out) console.error(`sync-self: ${line}`)
+    if (out.length) {
+      console.error('sync-self: run make sync-self')
+      process.exit(1)
+    }
+    console.log('sync-self: every shipped rule, skill and agent is linked into .claude/')
+  } else {
+    const results = NAMESPACES.map((ns) => ({ ns, ...syncNamespace(ns) }))
+    const pruned = results.reduce((sum, r) => sum + r.pruned, 0)
+    console.log(
+      `sync-self: ${results.map((r) => `${r.linked} ${r.ns.name}(s) linked in .claude/${r.ns.dir}`).join(', ')}` +
+        (pruned > 0 ? `, ${pruned} orphan(s) pruned` : ''),
+    )
+  }
+}
