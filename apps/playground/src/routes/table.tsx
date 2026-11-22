@@ -15,7 +15,9 @@ import {
   CircleCheck as CheckCircle,
   Clock,
   Coins,
+  FileText,
   House as Home,
+  Phone,
   Radio as Signal,
   Tag,
   TriangleExclamationPoint as Alert,
@@ -385,6 +387,141 @@ function Large(): ReactElement {
   )
 }
 
+// ---- Section 4: notes, the record kinds --------------------------------------------------------
+
+type Note = {
+  id: string
+  title: string
+  kind: 'note' | 'call'
+  preview: string
+  author: string
+  role: string
+  team: string[]
+  tags: string[]
+  due: string
+  site: string
+  company: string
+  ref: string
+}
+
+const NOTES_NOW = Date.UTC(2026, 10, 14, 12)
+
+const NOTE_ROWS: readonly Note[] = [
+  [
+    'Renewal call',
+    'call',
+    'Walked through the renewal terms and the open seat questions',
+    'Ada Lovelace',
+    'Founder',
+    ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Linus Torvalds', 'Edsger Dijkstra'],
+    ['renewal', 'enterprise', 'priority', 'legal'],
+    '2026-10-19',
+    'https://acme.example/renewal',
+    'Acme Logistics',
+    'ACM-1',
+  ],
+  [
+    'Pricing review',
+    'note',
+    'Compare the new tiers against the three nearest competitors',
+    'Alan Turing',
+    'Engineer',
+    ['Alan Turing'],
+    ['pricing'],
+    '2026-11-18',
+    'ada@example.com',
+    'Globex GmbH',
+    'GLB-7',
+  ],
+  [
+    'Security questionnaire',
+    'note',
+    'Answers drafted, waiting on the infrastructure owner',
+    'Grace Hopper',
+    'Admiral',
+    ['Grace Hopper', 'Ada Lovelace'],
+    ['security', 'legal'],
+    '2026-11-14',
+    'https://initech.example',
+    'Initech',
+    'INI-3',
+  ],
+  [
+    'Onboarding handover',
+    'call',
+    'Hand the account to the success team with the integration notes',
+    'Linus Torvalds',
+    'Maintainer',
+    ['Linus Torvalds', 'Grace Hopper', 'Alan Turing'],
+    ['onboarding', 'handover'],
+    '2027-02-02',
+    'https://umbrella.example/onboarding',
+    'Umbrella Retail',
+    'UMB-4',
+  ],
+].map(([title, kind, preview, author, role, team, tags, due, site, company, ref], i) => ({
+  id: `nt-${i}`,
+  title,
+  kind,
+  preview,
+  author,
+  role,
+  team,
+  tags,
+  due,
+  site,
+  company,
+  ref,
+})) as Note[]
+
+const note = col<Note>()
+
+function Notes(): ReactElement {
+  const t = useDataTable({
+    id: 'notes',
+    label: 'Notes',
+    columns: [
+      note.title('title', {
+        header: 'Title',
+        type: (row) => row.kind,
+        icons: { note: FileText, call: Phone },
+      }),
+      note.text('preview', { header: 'Preview', quiet: true, priority: 3 }),
+      note.person('author', {
+        header: 'Author',
+        role: (row) => row.role,
+        filter: 'multi',
+        priority: 2,
+      }),
+      note.entity('company', {
+        header: 'Company',
+        ref: (row) => row.ref,
+        filter: 'text',
+        priority: 3,
+      }),
+      note.people('team', { header: 'Known by', priority: 3 }),
+      note.tags('tags', {
+        header: 'Tags',
+        filter: 'multi',
+        tone: (tag) => (tag === 'legal' ? 'warn' : tag === 'priority' ? 'accent' : 'neutral'),
+        priority: 3,
+      }),
+      note.countdown('due', { header: 'Due', warn: 7, priority: 2 }),
+      note.link('site', { header: 'Site', priority: 3 }),
+    ],
+    data: NOTE_ROWS,
+    getRowId: (row) => row.id,
+    mode: { kind: 'client' },
+    now: NOTES_NOW,
+  })
+  return (
+    <>
+      <TableToolbar table={t} />
+      <DataTable table={t} />
+    </>
+  )
+}
+
 // ---- Section 3: grouped ---------------------------------------------------------------------
 
 function Grouped(): ReactElement {
@@ -444,6 +581,9 @@ function TableRoute(): ReactElement {
       </Section>
       <Section title="Rooms">
         <Grouped />
+      </Section>
+      <Section title="Notes">
+        <Notes />
       </Section>
     </Page>
   )
