@@ -31,13 +31,23 @@ export const rows: readonly RowDef[] = [
     // every control in the barrel reads the group scope (`core/control-scope`).
     // 116500 -> 117000 (Issue 2940): 116707 B measured; the Dialog sizes, header actions and wash backdrop.
     // 117000 -> 117400 (Issue 2995): `SettingsLayout`, the pane frame that scrolls to a linked row and marks it.
-    ceiling: 117400,
+    // 117400 -> 125700 (Issue 2939): the one panel anatomy (typed actions with a More menu, previous and next, the
+    // avatar lead), Peek's window (drag, eight edges, the minimised chip), its page presentation and Open as menu, the
+    // width stores and the phone's bottom sheet.
+    ceiling: 125700,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
   'page-subpath': [
+    {
+      from: 117400,
+      to: 125700,
+      consumer:
+        'the benchmark against Accordee (owner direction 2026-11-21, docs/v3/issues/bench/README.md decision 6): one panel anatomy for Peek, Dock, PageAside and a right Sheet, each resizable with the width remembered, and a record that opens as a side panel, a window or the page, with previous and next (Issue 2939)',
+      repo: 'basalt-ui',
+    },
     {
       from: 117000,
       to: 117400,
