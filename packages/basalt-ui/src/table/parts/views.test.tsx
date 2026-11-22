@@ -450,6 +450,21 @@ describe('the manage-view panel', () => {
     expect(within(panel()).queryByText('Unsaved changes')).toBeNull()
   })
 
+  test('a width preset scales the kind width, never a stored one, and reads back by name', async () => {
+    render(<Subject />)
+    await click(screen.getByRole('button', { name: 'Edit view' }))
+    await click(within(panel()).getByRole('button', { name: /^Column width/ }))
+    await click(within(panel()).getByRole('radio', { name: /Compact/ }))
+    const compact = { ...model().state.display.widths }
+    await click(within(panel()).getByRole('radio', { name: /Wide/ }))
+    await click(within(panel()).getByRole('radio', { name: /Compact/ }))
+    expect(model().state.display.widths).toEqual(compact)
+    await click(within(panel()).getByRole('button', { name: 'Back' }))
+    expect(within(panel()).getByRole('button', { name: /^Column width/ }).textContent).toContain(
+      'Compact',
+    )
+  })
+
   test('the header menu Filter... opens the panel on that column', async () => {
     render(<Subject />)
     await click(screen.getByRole('button', { name: 'State column actions' }))
@@ -563,6 +578,24 @@ describe("a caller's ViewStore", () => {
     await menu('First', 'Move right')
     expect(order).toEqual([['second', 'first']])
     expect(tabs()).toEqual(['All rows', 'Second', 'First'])
+  })
+
+  test('a duplicate on a store that reorders writes its place after the source', async () => {
+    const order: string[][] = []
+    const store = memoryStore(
+      saveView(saveView([], 'First', state({})).views, 'Second', state({})).views,
+      {
+        reorder: (_t, ids) => {
+          order.push([...ids])
+          return Promise.resolve()
+        },
+      },
+    )
+    render(<Subject store={store} />)
+    await settled()
+    await click(tab(/^First/))
+    await menu('First', 'Duplicate')
+    expect(order).toEqual([['first', 'first-copy', 'second']])
   })
 
   test('the sharing row needs a store that shares, and then lists private and shared', async () => {
