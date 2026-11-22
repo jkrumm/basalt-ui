@@ -187,7 +187,7 @@ describe('column widths', () => {
     onScreen = 211
     fireEvent.pointerCancel(handle, { clientX: 160, pointerId: 1 })
     expect(handle.getAttribute('aria-valuenow')).toBe('211')
-    expect(latest().state.display.widths?.amount).toBeUndefined()
+    expect(latest().state.display.widths?.['amount']).toBeUndefined()
   })
 
   test('the keyboard moves the edge, Home and End go to the bounds, Enter and a double-click reset it', () => {
