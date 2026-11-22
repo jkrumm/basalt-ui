@@ -76,7 +76,8 @@ export const rows: readonly RowDef[] = [
     // 134200 -> 134700 (Issue 2716): 134553 B measured, +~460 B gz over the cap for the card-coloured backing under a value label a rule crosses, the clamp caret cut in the card's colour on a bar, and the ink-step bars' stronger recede and rise, the kit fixes of expression cycle 17.
     // 134700 -> 135100 (Issue 2784): 135017 B measured, +~320 B gz over the cap for the stacked panes' shared y gutter, the tick rows a bar value keeps off and the focused band label that keeps its neighbours, the kit fixes of expression cycle 18.
     // 135100 -> 135300 (Issue 2784): 135262 B measured, +~160 B gz over the cap for the band label measured as the engine measures it (chip bold, tick regular) in place of a shrunk estimate that Linux Chrome's wider glyphs defeated.
-    ceiling: 135300,
+    // 135300 -> 135400 (Issue 2889): 135349 B measured, +~90 B gz over master (135262) for the zone caption that slides along a zone full of bars (n96's aperture, ISO and shutter cards lost the caption their focal card kept).
+    ceiling: 135400,
     measure: () => measureSource(THREE_KIND),
   },
 ]
@@ -99,6 +100,13 @@ export const raises: Raises = {
     },
   ],
   'charts-three-kind': [
+    {
+      from: 135300,
+      to: 135400,
+      consumer:
+        "n96's four bar cards under one 1 % band (Issue 2889): the caption sat at the zone's start corner only, so the aperture, ISO and shutter cards, whose first bars are tall, drew none; it now slides along the zone to a gap",
+      repo: 'basalt-ui',
+    },
     {
       from: 134700,
       to: 135300,
