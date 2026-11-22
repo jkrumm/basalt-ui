@@ -1242,11 +1242,11 @@
     padding-inline: calc(var(--spacing) * 2) !important;
   }
   /* an empty footer pick takes no room until its row is pointed at or the pick is focused */
-  [data-footer-pick][data-quiet] > * {
+  [data-footer-pick][data-quiet] > [data-reveal] {
     display: none;
   }
-  [data-slot='table-row']:hover [data-footer-pick][data-quiet] > *,
-  [data-footer-pick][data-quiet]:focus-visible > * {
+  [data-slot='table-row']:hover [data-footer-pick][data-quiet] > [data-reveal],
+  [data-footer-pick][data-quiet]:focus-visible > [data-reveal] {
     display: inline;
   }
 

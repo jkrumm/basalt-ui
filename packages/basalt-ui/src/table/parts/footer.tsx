@@ -143,17 +143,29 @@ export function DataTableFooter<T>({
               {next === undefined ? (
                 (item ?? name)
               ) : (
+                // The pick is named by what it shows: a value reads as its header, reduce and figure;
+                // an empty pick as the column's summary, its visible word hidden until pointed at.
                 <Pressable
                   data-footer-pick=""
                   data-quiet={quiet ? '' : undefined}
-                  aria-label={`${t('table.summaryOf', spec.header === '' ? spec.id : spec.header)}: ${label(fn ?? 'none')}`}
                   className="block w-full min-w-0 [text-align:inherit]"
                   onClick={() => model.setAggregate(spec.id, next)}
                 >
                   {item ?? (
-                    <span className="text-xs font-normal text-muted-foreground">
-                      {t('table.footer')}
-                    </span>
+                    <>
+                      <span className="sr-only">
+                        {t('table.summaryOf', spec.header === '' ? spec.id : spec.header)}
+                      </span>
+                      <span
+                        data-reveal=""
+                        aria-hidden="true"
+                        className={
+                          name === null ? 'text-xs font-normal text-muted-foreground' : undefined
+                        }
+                      >
+                        {name ?? t('table.footer')}
+                      </span>
+                    </>
                   )}
                 </Pressable>
               )}
