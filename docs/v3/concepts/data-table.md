@@ -87,7 +87,9 @@ type TableDisplay = {
   rowHeight?: 'compact' | 'default' | 'comfortable' // the body's density row
   groupBy?: string | null // a reader's grouping, null for none; absent: the declared group
   aggregates?: Readonly<Record<string, Aggregate | 'none'>> // a reader's footer summary per column
+  layout?: TableLayout // how the view draws its rows; absent or not offered: 'table'
 }
+type TableLayout = 'table' | 'list' | 'board' | 'gallery'
 type TableState = { v: 1; request: TableRequest; display: TableDisplay }
 
 type Mode =
@@ -125,7 +127,7 @@ type Scrollport = 'fill' | { maxRows: number }
 type DataTableProps<T> = { table: DataTableInstance<T>; detail?: DetailHost } & (
   | { height?: 'auto' | Scrollport; virtual?: never }
   | { height: Scrollport; virtual: VirtualLike }
-) // VirtualLike lives in core/ports.ts: no composite .d.ts may name ui/*
+) & { drag?: DragLike } // VirtualLike and DragLike live in core/ports.ts: no composite .d.ts may name ui/*
 type UseDataTable<T> = {
   id: string
   label: string
@@ -138,6 +140,7 @@ type UseDataTable<T> = {
   resetOn?: readonly unknown[]
   look?: 'reading' | 'grid'
   rowHeight?: 'compact' | 'default' | 'comfortable' // the declared step; absent: the app's density
+  layouts?: readonly TableLayout[] // what a reader may pick; default ['table'], board needs client mode and a c.select
   rowNumbers?: boolean // a row-number column after the tick
   phone?: 'cards' | 'scroll'
   cardsBelow?: 'regular' | 'wide' | 'always'
@@ -271,7 +274,7 @@ Carried traps from gap-controls: `[strip, retain]` order, Router JSON-parses `?i
 
 Card mode loses nothing (R5): sort in toolbar; `Select` button puts the table in Select mode (`data-selecting`, tick visible, row activation off, toolbar replaced by `BulkBar`); kebab stays; `edit` slots stay live; filters in one sheet; pager compacts to prev/next plus range by CSS. **Reaching hidden columns.** `table-expand` shows only when the tier hides at least one column (card tier: a `Details` kebab item) and opens the auto sheet. With `detail`, activation opens it and `table-expand` is absent. With `onRowActivate`, activation still navigates and `table-expand` is the only way to the sheet. With neither, activation opens the auto sheet. Layout test: every column's data reachable at 390 px, one fixture per case.
 
-**Layouts** (bench-view-layouts). `display.layout` is `table`, `list`, `board` or `gallery`, saved with the view; `useDataTable({ layouts })` names what a reader may pick (default `['table']`, no toggle), and a stored layout the table does not offer reads as `table`. One model draws every layout, so search, filters, sort, grouping, selection, the bulk bar and the pager are shared. `list` is the table markup with `data-layout="list"`: from 480 px each row is one line laid out by its cells' card places (`data-place`), below it the phone card projection. `board` (`layouts/board-layout.tsx`) is `Board` over a `c.select` column: the view's `groupBy` when it names one, else the first; a drop shows at once and calls that column's `commit`, rolled back with a polite message when it rejects; a move inside a column changes nothing (the sort owns the order); the column total is the first visible column the view reduces. A server table offers no board (grouping is client-only). `gallery` is a `CardGrid` of the same card faces, sectioned by the view's grouping; off-screen cards skip paint (`content-visibility`) instead of a window, and a server gallery pages. Board and gallery are lazy chunks of `DataTable`; a non-ready phase draws the table's arm.
+**Layouts** (bench-view-layouts). `display.layout` is `table`, `list`, `board` or `gallery`, saved with the view; `useDataTable({ layouts })` names what a reader may pick (default `['table']`, no toggle), and a stored layout the table does not offer reads as `table`. One model draws every layout, so search, filters, sort, grouping, selection, the bulk bar and the pager are shared. `list` is the table markup with `data-layout="list"`: from 480 px each row is one line laid out by its cells' card places (`data-place`), below it the phone card projection. `board` (`layouts/board-layout.tsx`) is `Board` over a `c.select` column: the view's `groupBy` when it names one, else the first; a drop shows at once and calls that column's `commit`, rolled back with a polite message when it rejects (so `commit` returns its promise), and the override ends once the data agrees or replaces the row; a move inside a column changes nothing (the sort owns the order); the column total is the first visible column the view reduces. A server table offers no board (grouping is client-only). `gallery` is a `CardGrid` of the same card faces, sectioned by the view's grouping; off-screen cards skip paint (`content-visibility`) instead of a window, and a server gallery pages. Board and gallery are lazy chunks of `DataTable`; a non-ready phase draws the table's arm.
 
 **Accessibility:** native elements with explicit `role=table|rowgroup|row|columnheader|cell` (Roselli; `no-redundant-roles` off in zone S). `caption` from required `label`; `aria-colcount` = visible set incl. tier-hidden, `aria-colindex` per cell (I9); `aria-sort`. In the card tier each `meta` cell carries a real `<span data-slot=table-cell-label>` from the column, hidden above the tier; S1 decides whether it needs `aria-hidden`. Scroller is a named `role=region`; it takes `tabindex=0` when it holds no focusable row (static decision from props, replacing I9's measurement, per Roselli 2026-10-06 and AGWG #3029; re-tested in S1). One polite `role=status` announces result count, selection count, sort on settle. Page-size `Select` and pager named (axe criticals, gap-a11y). Coarse pointer: `min-h-11` rows, 44 px hit floors.
 
