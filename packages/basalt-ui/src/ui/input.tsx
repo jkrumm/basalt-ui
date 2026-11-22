@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import type { ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { ControlScopeProvider, scopeClass, useControlScope } from '../core/control-scope'
 import type { IconComponent } from '../core/ports'
 
 /**
@@ -35,7 +36,10 @@ export type InputProps = Omit<BaseInput.Props, 'className' | 'size'> &
     className?: string
     /** A non-interactive leading icon, drawn inside the field. */
     start?: IconComponent
-    /** A trailing unit (`ms`) or one small button, drawn inside the field. */
+    /**
+     * A trailing unit (`ms`) or one small button, drawn inside the field. A button here acts on this
+     * field only (reveal, clear, copy); one that reaches further sits beside it in a `ControlGroup`.
+     */
     end?: ReactNode
   }
 
@@ -50,21 +54,22 @@ export type InputProps = Omit<BaseInput.Props, 'className' | 'size'> &
  * <Input size="sm" aria-label="Quantity" inputMode="numeric" end="pcs" />
  */
 export function Input({ size, className, start: Start, end, ...props }: InputProps): ReactElement {
+  const scope = useControlScope()
+  const table = inputVariants({ size: size ?? scope?.size })
   if (Start === undefined && end === undefined) {
     return (
-      <BaseInput {...props} data-slot="input" className={cn(inputVariants({ size }), className)} />
+      <BaseInput {...props} data-slot="input" className={cn(table, scopeClass(scope), className)} />
     )
   }
   return (
-    <div data-input-group="" className={cn('relative w-full min-w-0', className)}>
+    <div
+      data-input-group=""
+      className={cn('relative w-full min-w-0', scopeClass(scope), className)}
+    >
       <BaseInput
         {...props}
         data-slot="input"
-        className={cn(
-          inputVariants({ size }),
-          Start !== undefined && 'ps-8',
-          end !== undefined && 'pe-8',
-        )}
+        className={cn(table, Start !== undefined && 'ps-8', end !== undefined && 'pe-8')}
       />
       {Start !== undefined && (
         <span className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-2.5 text-muted-foreground">
@@ -73,7 +78,8 @@ export function Input({ size, className, start: Start, end, ...props }: InputPro
       )}
       {end !== undefined && (
         <span className="absolute inset-y-0 end-0 flex items-center gap-1 pe-2.5 text-muted-foreground">
-          {end}
+          {/* A button in the field belongs to the field, never to a group around it. */}
+          <ControlScopeProvider value={null}>{end}</ControlScopeProvider>
         </span>
       )}
     </div>

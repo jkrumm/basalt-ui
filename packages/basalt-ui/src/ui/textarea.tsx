@@ -1,7 +1,9 @@
 import { Input as BaseInput } from '@base-ui/react/input'
 import { cva } from 'class-variance-authority'
+import type { VariantProps } from 'class-variance-authority'
 import type { ComponentProps, CSSProperties, FocusEvent, ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { useControlScope } from '../core/control-scope'
 
 /**
  * The nearest ancestor that may scroll, or null when only the page does. A local copy of
@@ -41,13 +43,23 @@ function revealOnFocus(el: HTMLElement): void {
  * The `Textarea` cva table. The box grows with its content (`field-sizing: content`) from a floor of
  * `rows` lines (`--textarea-rows`, set by the component) to a ceiling of 10 lines, then scrolls. An
  * engine without `field-sizing` keeps the fixed `rows` box. A coarse pointer gets the 44 px floor and
- * 16 px text (below that iOS Safari zooms the page on focus). No axes.
+ * 16 px text (below that iOS Safari zooms the page on focus). `size` sets the text and the padding,
+ * the same steps as `Input`; the height is `rows`.
  *
  * @example
- * textareaVariants() // class string for a hand-built textarea
+ * textareaVariants({ size: 'sm' }) // class string for a hand-built textarea
  */
 export const textareaVariants = cva(
-  'block field-sizing-content min-h-[calc(var(--textarea-rows,3)*1lh+1rem+2px)] max-h-[calc(10lh+1rem+2px)] w-full min-w-0 resize-y rounded-ctrl border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-faint focus-ring transition-colors [&[readonly]]:cursor-default [&[readonly]]:border-transparent [&[readonly]]:bg-inset aria-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-[max(2.75rem,calc(var(--textarea-rows,3)*1lh+1rem+2px))] pointer-coarse:text-base',
+  'block field-sizing-content min-h-[calc(var(--textarea-rows,3)*1lh+var(--textarea-pad)+2px)] max-h-[calc(10lh+var(--textarea-pad)+2px)] w-full min-w-0 resize-y rounded-ctrl border border-input bg-background text-foreground placeholder:text-faint focus-ring transition-colors [&[readonly]]:cursor-default [&[readonly]]:border-transparent [&[readonly]]:bg-inset aria-invalid:border-bad data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-[max(2.75rem,calc(var(--textarea-rows,3)*1lh+var(--textarea-pad)+2px))] pointer-coarse:text-base',
+  {
+    variants: {
+      size: {
+        md: 'px-3 py-2 text-sm [--textarea-pad:1rem]',
+        sm: 'px-2 py-1 text-xs [--textarea-pad:0.5rem]',
+      },
+    },
+    defaultVariants: { size: 'md' },
+  },
 )
 
 /** Every `data-slot` this module renders, in export order. Read by the generator for `SLOTS`. */
@@ -63,7 +75,7 @@ export type TextareaProps = Omit<
   onValueChange?: BaseInput.Props['onValueChange']
   /** Layout only (`max-w-md`, `resize-none`, a taller ceiling `max-h-96`). The floor belongs to `rows`. */
   className?: string
-}
+} & VariantProps<typeof textareaVariants>
 
 /**
  * A multi-line text field on Base UI's `Input`, rendered as a `<textarea>`. It grows with its
@@ -76,12 +88,14 @@ export type TextareaProps = Omit<
  * <Textarea value={note} onValueChange={setNote} rows={4} aria-label="Note" />
  */
 export function Textarea({
+  size,
   className,
   rows = 3,
   style,
   onFocus,
   ...props
 }: TextareaProps): ReactElement {
+  const scope = useControlScope()
   return (
     <BaseInput
       // The textarea attributes are a superset of what Base UI's input props type; the runtime
@@ -94,7 +108,7 @@ export function Textarea({
         revealOnFocus(event.currentTarget)
       }}
       data-slot="textarea"
-      className={cn(textareaVariants(), className)}
+      className={cn(textareaVariants({ size: size ?? scope?.size }), className)}
     />
   )
 }

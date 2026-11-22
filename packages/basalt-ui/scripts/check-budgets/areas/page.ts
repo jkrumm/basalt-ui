@@ -27,13 +27,22 @@ export const rows: readonly RowDef[] = [
     // 115500 -> 115600 (Issue 2784): the summary's error arm says its cause and keeps a Retry.
     // 115600 -> 115700 (Issue 2835): 115612 B measured; the summary's Retry reads `home.retry` instead of a hard-coded word.
     // 115700 -> 115800 (Issue 2851): 115757 B measured; `Page fill` drops the gutter and `SplitPage` insets its panes in a fill page.
-    ceiling: 115800,
+    // 115800 -> 116500 (Issue 2853): PageBar's action groups are the public `ButtonGroup`, and
+    // every control in the barrel reads the group scope (`core/control-scope`).
+    ceiling: 116500,
     measure: () => measureSource(reExportAll({ page: 'page/index' })),
   },
 ]
 
 export const raises: Raises = {
   'page-subpath': [
+    {
+      from: 115800,
+      to: 116500,
+      consumer:
+        "PageBar's grouped actions (plan row bench-control-groups, Issue 2853): the private fused fieldset became the public `ButtonGroup`, with its stacking order for hover and focus, and the page's controls take a group's size and variant",
+      repo: 'basalt-ui',
+    },
     {
       from: 115700,
       to: 115800,

@@ -28,8 +28,9 @@ through the app's `Format`. Arrow keys move by day, Page Up and Down by month, E
 `react-day-picker` is an optional peer of this module alone; nothing in a barrel imports it.
 
 ```ts
-DatePicker({ value, defaultValue, onChange, onValueChange, onBlur, placeholder, className, id, disabled, open, defaultOpen, onOpenChange, ...name }: DatePickerProps): ReactElement
+DatePicker({ value, defaultValue, onChange, onValueChange, onBlur, placeholder, size, className, id, disabled, open, defaultOpen, onOpenChange, ...name }: DatePickerProps): ReactElement
   // either aria-label or aria-labelledby
+  size?: "sm" | "md" | null
   className?: string  // Layout only (`w-48`, `flex-1`)
   id?: string  // The trigger's `id`, so a `<label htmlFor>` can name it
   disabled?: boolean
@@ -55,8 +56,9 @@ a one-day range. Clicking again after a full range starts a new one. The trigger
 in UTC through the app's `Format`.
 
 ```ts
-DateRangePicker({ value, defaultValue, onChange, onValueChange, onBlur, placeholder, className, id, disabled, open, defaultOpen, onOpenChange, ...name }: DateRangePickerProps): ReactElement
+DateRangePicker({ value, defaultValue, onChange, onValueChange, onBlur, placeholder, size, className, id, disabled, open, defaultOpen, onOpenChange, ...name }: DateRangePickerProps): ReactElement
   // either aria-label or aria-labelledby
+  size?: "sm" | "md" | null
   className?: string  // Layout only (`w-48`, `flex-1`)
   id?: string  // The trigger's `id`, so a `<label htmlFor>` can name it
   disabled?: boolean
@@ -77,7 +79,7 @@ DateRangePicker({ value, defaultValue, onChange, onValueChange, onBlur, placehol
 
 Part `date-picker`.
 
-No variant axes.
+- `size`: `md`, `sm` (default `md`)
 
 ## Slots
 

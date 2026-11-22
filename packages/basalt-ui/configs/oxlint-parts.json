@@ -21,6 +21,7 @@
         "Avatar": "div",
         "AvatarStack": "div",
         "Button": "button",
+        "ButtonGroup": "div",
         "Card": "div",
         "CardBand": "div",
         "CardInfo": "div",
@@ -36,6 +37,8 @@
         "ComboboxContent": "div",
         "ComboboxInput": "div",
         "ComboboxItem": "div",
+        "ControlGroup": "div",
+        "CopyButton": "button",
         "CountBadge": "div",
         "DatePicker": "div",
         "DateRangePicker": "div",
@@ -58,6 +61,8 @@
         "IconTile": "div",
         "InfoHint": "div",
         "Input": "input",
+        "InputAddon": "div",
+        "InputGroup": "div",
         "Inset": "div",
         "Kbd": "kbd",
         "Lozenge": "div",
@@ -74,6 +79,7 @@
         "NativeSelect": "select",
         "Num": "div",
         "NumberField": "input",
+        "PasswordInput": "input",
         "PopoverContent": "div",
         "PopoverTrigger": "div",
         "Pressable": "button",
@@ -376,10 +382,34 @@
             "message": "AutocompleteItem owns its height and display: eject it (basalt-ui eject combobox) to change them."
           },
           {
+            "pattern": "^ButtonGroup$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "ButtonGroup owns its height and display: eject it (basalt-ui eject control-group) to change them."
+          },
+          {
+            "pattern": "^ControlGroup$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "ControlGroup owns its height and display: eject it (basalt-ui eject control-group) to change them."
+          },
+          {
+            "pattern": "^InputGroup$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "InputGroup owns its height and display: eject it (basalt-ui eject control-group) to change them."
+          },
+          {
+            "pattern": "^InputAddon$",
+            "allow": ["layout"],
+            "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
+            "message": "InputAddon owns its height and display: use size (md, sm), or eject it (basalt-ui eject control-group)."
+          },
+          {
             "pattern": "^DatePicker$",
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
-            "message": "DatePicker owns its height and display: eject it (basalt-ui eject date-picker) to change them."
+            "message": "DatePicker owns its height and display: use size (md, sm), or eject it (basalt-ui eject date-picker)."
           },
           {
             "pattern": "^DialogContent$",
@@ -613,7 +643,7 @@
             "pattern": "^Textarea$",
             "allow": ["layout"],
             "deny": ["h-*", "min-h-*", "size-*", "hidden", "flex", "block", "grid", "inline-flex"],
-            "message": "Textarea owns its height and display: eject it (basalt-ui eject textarea) to change them."
+            "message": "Textarea owns its height and display: use size (md, sm), or eject it (basalt-ui eject textarea)."
           },
           {
             "pattern": "^ToastViewport$",

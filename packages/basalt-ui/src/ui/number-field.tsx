@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import type { ReactElement } from 'react'
 import { cn } from '../core/cn'
+import { scopeClass, useControlScope } from '../core/control-scope'
 
 /**
  * The `NumberField` cva table: a bordered row of decrement, text input and increment. Coarse
@@ -104,26 +105,28 @@ export function NumberField({
   placeholder,
   ...props
 }: NumberFieldProps): ReactElement {
+  const scope = useControlScope()
+  const step = size ?? scope?.size
   return (
     <BaseNumberField.Root
       {...props}
       locale={locale}
       data-slot="number-field"
-      className={cn(numberFieldVariants({ size }), className)}
+      className={cn(numberFieldVariants({ size: step }), scopeClass(scope), className)}
     >
-      <BaseNumberField.Decrement className={cn(stepperVariants({ size }), EDGE_START)}>
+      <BaseNumberField.Decrement className={cn(stepperVariants({ size: step }), EDGE_START)}>
         <svg {...STEP_ICON}>
           <path d="M2.5 6h7" />
         </svg>
       </BaseNumberField.Decrement>
       <BaseNumberField.Input
-        className={entryVariants({ size })}
+        className={entryVariants({ size: step })}
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
         aria-describedby={ariaDescribedBy}
         placeholder={placeholder}
       />
-      <BaseNumberField.Increment className={cn(stepperVariants({ size }), EDGE_END)}>
+      <BaseNumberField.Increment className={cn(stepperVariants({ size: step }), EDGE_END)}>
         <svg {...STEP_ICON}>
           <path d="M2.5 6h7M6 2.5v7" />
         </svg>

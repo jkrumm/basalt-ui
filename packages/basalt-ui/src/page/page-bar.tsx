@@ -8,6 +8,7 @@ import { page } from '../core/messages/page'
 import { SlotHomeContext } from '../core/slot-home'
 import { useMessages } from '../core/messages/use-messages'
 import { Button } from '../ui/button'
+import { ButtonGroup } from '../ui/control-group'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '../ui/menu'
 import { ConnectionIndicator } from './connection-indicator'
 import { devAssertOnce, createBarClaims } from './core/claims'
@@ -185,13 +186,9 @@ function PageActions({ actions }: { actions: readonly PageAction[] }): ReactElem
         const group = isText(segment[0]!.action) ? undefined : segment[0]!.action.group
         if (group === undefined || segment.length === 1) return body
         return (
-          <fieldset
-            key={group}
-            data-slot="page-action-group"
-            className="m-0 inline-flex min-w-0 items-center border-0 p-0 [&>*:not(:first-child)]:-ms-px [&>*:not(:first-child)]:rounded-s-none [&>*:not(:last-child)]:rounded-e-none"
-          >
+          <ButtonGroup key={group} className="min-w-0">
             {body}
-          </fieldset>
+          </ButtonGroup>
         )
       })}
       <MoreMenu items={overflow} />

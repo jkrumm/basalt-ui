@@ -2,8 +2,8 @@ import type { TextareaProps } from './textarea'
 
 /**
  * Hand-authored guard for `textarea` (docs/v3/ARCHITECTURE.md 4.2). `requires` survives eject;
- * `closed` is dropped on eject. The module has no cva axes, so the guard pins the props a caller
- * binds.
+ * `closed` is dropped on eject. Its one axis is `size`, which no composite calls, so the guard pins
+ * the props a caller binds.
  */
 
 // basalt:guard requires

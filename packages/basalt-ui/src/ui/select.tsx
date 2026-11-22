@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority'
 import type { VariantProps } from 'class-variance-authority'
 import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from 'react'
 import { cn } from '../core/cn'
+import { scopeClass, useControlScope } from '../core/control-scope'
 import type { IconComponent } from '../core/ports'
 
 /**
@@ -205,13 +206,14 @@ function triggerItem<Value>(option: SelectOption<Value>): SelectOption<Value> {
  */
 export function Select<Value = string>(props: SelectProps<Value>): ReactElement {
   const { className, size, options, placeholder, children, items, ...rest } = props
+  const scope = useControlScope()
   const {
     'aria-label': label,
     'aria-labelledby': labelledBy,
     ...root
   } = rest as SelectRootProps<Value> & Partial<{ 'aria-label': string; 'aria-labelledby': string }>
   return (
-    <div data-slot="select" className={cn(selectVariants(), className)}>
+    <div data-slot="select" className={cn(selectVariants(), scopeClass(scope), className)}>
       <BaseSelect.Root<Value, false>
         {...root}
         items={options === undefined ? items : options.map(triggerItem)}
@@ -264,11 +266,12 @@ export function SelectTrigger({
   children,
   ...props
 }: SelectTriggerProps): ReactElement {
+  const scope = useControlScope()
   return (
     <BaseSelect.Trigger
       {...props}
       data-slot="select-trigger"
-      className={cn(selectTriggerVariants({ size }), className)}
+      className={cn(selectTriggerVariants({ size: size ?? scope?.size }), className)}
     >
       {children}
       <BaseSelect.Icon render={<Chevron />} />
@@ -414,8 +417,16 @@ export function NativeSelect({
   children,
   ...props
 }: NativeSelectProps): ReactElement {
+  const scope = useControlScope()
   return (
-    <div data-slot="native-select" className={cn(nativeSelectVariants({ size }), className)}>
+    <div
+      data-slot="native-select"
+      className={cn(
+        nativeSelectVariants({ size: size ?? scope?.size }),
+        scopeClass(scope),
+        className,
+      )}
+    >
       <select
         {...props}
         onChange={(event) => {
