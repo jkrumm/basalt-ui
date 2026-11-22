@@ -28,7 +28,7 @@ import { FilterEditor } from './toolbar-editor'
 import { CategoryOrder } from './category-order'
 import { OrderList } from './order-list'
 import { activeFilters, filterableSpecs, rankableSpecs } from './toolbar-filters'
-import { ViewsMenu } from './views'
+import { ViewsBar } from './views'
 import type { ViewParam } from './views'
 
 function Search<T>({ model }: { model: TableModel<T> }): ReactElement {
@@ -202,7 +202,8 @@ function FiltersSheet<T>({ model }: { model: TableModel<T> }): ReactElement | nu
 }
 
 /**
- * The toolbar of a table: search, filters, chips, display and saved views.
+ * The toolbar of a table: the saved views as tabs with Edit view, then search, filters, chips and
+ * display. A page that draws the views in its `PageBar` (`useTableViews`) passes `views={false}`.
  *
  * @useWhen a data table needs search, filters or saved views above it
  * @neverWhen the table is small and fixed (omit the toolbar), or the page owns the filters in a `FilterSet`
@@ -214,10 +215,16 @@ function FiltersSheet<T>({ model }: { model: TableModel<T> }): ReactElement | nu
 export function TableToolbar<T>({
   table: instance,
   view,
+  views = true,
+  onExport,
 }: {
   table: DataTableInstance<T>
   /** Binds the applied view's id to the route's own search; the address bar's `?view=` when omitted. */
   view?: ViewParam
+  /** Draws the saved views; `false` where the page's `PageBar` holds them. Default `true`. */
+  views?: boolean
+  /** Draws Export in the views' menu and panel; the app writes the file. */
+  onExport?: () => void
 }): ReactElement {
   const model = modelOf(instance)
   return (
@@ -226,6 +233,7 @@ export function TableToolbar<T>({
       aria-label={model.label}
       className="@container/toolbar flex min-w-0 flex-col gap-2 pb-2"
     >
+      {views && <ViewsBar model={model} view={view} onExport={onExport} />}
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <Search model={model} />
         <span data-slot="table-filter-add" className="inline-flex @max-[479.9px]/toolbar:hidden">
@@ -233,7 +241,6 @@ export function TableToolbar<T>({
         </span>
         <FiltersSheet model={model} />
         <Display model={model} />
-        <ViewsMenu model={model} {...(view !== undefined && { view })} />
       </div>
       <ChipList model={model} />
     </search>

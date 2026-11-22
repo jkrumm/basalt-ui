@@ -70,13 +70,76 @@ export type TableMessages = Record<
   | 'table.unpinColumn'
   | 'table.columns'
   | 'table.views'
-  | 'table.viewSave'
-  | 'table.viewName'
-  | 'table.viewReset'
-  | 'table.viewEmpty'
-  | 'table.viewFailed'
   | 'table.viewNone'
-  | 'table.viewUnsaved'
+  | 'table.viewNew'
+  | 'table.viewModified'
+  | 'table.viewEdit'
+  | 'table.viewRename'
+  | 'table.viewCopyLink'
+  | 'table.viewDuplicate'
+  | 'table.viewSetDefault'
+  | 'table.viewUnsetDefault'
+  | 'table.viewMoveLeft'
+  | 'table.viewMoveRight'
+  | 'table.viewExport'
+  | 'table.viewDelete'
+  | 'table.viewAdd'
+  | 'table.viewAddShort'
+  | 'table.viewDiscard'
+  | 'table.viewSaveAs'
+  | 'table.viewSave'
+  | 'table.viewFailed'
+  | 'table.panelTitle'
+  | 'table.panelBack'
+  | 'table.panelPending'
+  | 'table.panelDiscard'
+  | 'table.panelSaveAs'
+  | 'table.panelSave'
+  | 'table.panelCompact'
+  | 'table.panelDefault'
+  | 'table.panelComfortable'
+  | 'table.panelWide'
+  | 'table.panelCustom'
+  | 'table.panelName'
+  | 'table.panelSharing'
+  | 'table.panelShared'
+  | 'table.panelPrivate'
+  | 'table.panelCopyLink'
+  | 'table.panelDefaultView'
+  | 'table.panelYes'
+  | 'table.panelNo'
+  | 'table.panelRowHeight'
+  | 'table.panelColumnWidth'
+  | 'table.panelResetWidths'
+  | 'table.panelColumns'
+  | 'table.panelAllShown'
+  | 'table.panelFilter'
+  | 'table.panelNone'
+  | 'table.panelSort'
+  | 'table.panelSortDefault'
+  | 'table.panelGroup'
+  | 'table.panelDuplicate'
+  | 'table.panelExport'
+  | 'table.panelRemove'
+  | 'table.panelNameTaken'
+  | 'table.panelRename'
+  | 'table.panelPrivateHint'
+  | 'table.panelSharedHint'
+  | 'table.panelCompactRows'
+  | 'table.panelDefaultRows'
+  | 'table.panelComfortableRows'
+  | 'table.panelCompactWidth'
+  | 'table.panelDefaultWidth'
+  | 'table.panelWideWidth'
+  | 'table.panelShowAll'
+  | 'table.panelHideAll'
+  | 'table.panelLocked'
+  | 'table.panelAny'
+  | 'table.panelClearFilters'
+  | 'table.panelDirection'
+  | 'table.panelAscending'
+  | 'table.panelDescending'
+  | 'table.panelCancel'
   | 'table.details'
   | 'table.rowsBelow'
   | 'table.footer'
@@ -101,7 +164,11 @@ export type TableMessages = Record<
   Record<
     | 'table.chipRemove'
     | 'table.columnActions'
-    | 'table.viewRemove'
+    | 'table.viewCopyOf'
+    | 'table.viewMenu'
+    | 'table.panelTitleOf'
+    | 'table.panelRemoveConfirm'
+    | 'table.panelFilterOf'
     | 'table.errorNamed'
     | 'table.resizeColumn'
     | 'table.groupBy'
@@ -126,6 +193,7 @@ export type TableMessages = Record<
   Record<'table.countdownToday', string> &
   Record<'table.countdownLate' | 'table.countdownIn', (f: Format, days: number) => string> &
   Record<'table.displayHidden', (f: Format, hidden: number) => string> &
+  Record<'table.panelHidden' | 'table.panelActive', (f: Format, count: number) => string> &
   Record<'table.orderMoved', (f: Format, label: string, at: number, of: number) => string> &
   Record<'table.orderHandle', (f: Format, label: string, at: number, of: number) => string>
 
@@ -194,13 +262,76 @@ export const table = {
   'table.unpinColumn': 'Unpin column',
   'table.columns': 'Columns',
   'table.views': 'Views',
-  'table.viewSave': 'Save view',
-  'table.viewName': 'View name',
-  'table.viewReset': 'Reset',
-  'table.viewEmpty': 'No saved views',
-  'table.viewFailed': 'The views could not be updated',
   'table.viewNone': 'All rows',
-  'table.viewUnsaved': 'Unsaved view',
+  'table.viewNew': 'New view',
+  'table.viewModified': 'modified',
+  'table.viewEdit': 'Edit view',
+  'table.viewRename': 'Rename',
+  'table.viewCopyLink': 'Copy link',
+  'table.viewDuplicate': 'Duplicate',
+  'table.viewSetDefault': 'Set as default',
+  'table.viewUnsetDefault': 'Remove as default',
+  'table.viewMoveLeft': 'Move left',
+  'table.viewMoveRight': 'Move right',
+  'table.viewExport': 'Export',
+  'table.viewDelete': 'Delete',
+  'table.viewAdd': 'Add view',
+  'table.viewAddShort': 'View',
+  'table.viewDiscard': 'Discard',
+  'table.viewSaveAs': 'Save as view',
+  'table.viewSave': 'Save',
+  'table.viewFailed': 'The views could not be updated',
+  'table.panelTitle': 'Edit view',
+  'table.panelBack': 'Back',
+  'table.panelPending': 'Unsaved changes',
+  'table.panelDiscard': 'Discard',
+  'table.panelSaveAs': 'Save as view',
+  'table.panelSave': 'Save',
+  'table.panelCompact': 'Compact',
+  'table.panelDefault': 'Default',
+  'table.panelComfortable': 'Comfortable',
+  'table.panelWide': 'Wide',
+  'table.panelCustom': 'Custom',
+  'table.panelName': 'Name',
+  'table.panelSharing': 'Sharing',
+  'table.panelShared': 'Shared',
+  'table.panelPrivate': 'Private',
+  'table.panelCopyLink': 'Copy link',
+  'table.panelDefaultView': 'Default view',
+  'table.panelYes': 'Yes',
+  'table.panelNo': 'No',
+  'table.panelRowHeight': 'Row height',
+  'table.panelColumnWidth': 'Column width',
+  'table.panelResetWidths': 'Reset column widths',
+  'table.panelColumns': 'Columns',
+  'table.panelAllShown': 'All shown',
+  'table.panelFilter': 'Filter',
+  'table.panelNone': 'None',
+  'table.panelSort': 'Sort',
+  'table.panelSortDefault': 'Default order',
+  'table.panelGroup': 'Group',
+  'table.panelDuplicate': 'Duplicate view',
+  'table.panelExport': 'Export table',
+  'table.panelRemove': 'Delete view',
+  'table.panelNameTaken': 'Another view has this name. Pick another.',
+  'table.panelRename': 'Rename',
+  'table.panelPrivateHint': 'Only you see this view',
+  'table.panelSharedHint': 'Everyone who can open this table sees it',
+  'table.panelCompactRows': 'More rows on screen',
+  'table.panelDefaultRows': 'Balanced for reading',
+  'table.panelComfortableRows': 'Extra room around each row',
+  'table.panelCompactWidth': 'Narrower columns, more of them in sight',
+  'table.panelDefaultWidth': "Each column at its kind's width",
+  'table.panelWideWidth': 'Wider columns, less truncation',
+  'table.panelShowAll': 'Show all',
+  'table.panelHideAll': 'Hide all',
+  'table.panelLocked': 'Always shown',
+  'table.panelAny': 'Any',
+  'table.panelClearFilters': 'Clear filters',
+  'table.panelDirection': 'Direction',
+  'table.panelAscending': 'Ascending',
+  'table.panelDescending': 'Descending',
+  'table.panelCancel': 'Cancel',
   'table.details': 'Details',
   'table.rowsBelow': 'Rows below',
   'table.footer': 'Summary',
@@ -229,7 +360,11 @@ export const table = {
   'table.resizeColumn': (_f, header) => `Resize ${header}`,
   'table.groupBy': (_f, header) => `Group by ${header}`,
   'table.summaryOf': (_f, header) => `Summary of ${header}`,
-  'table.viewRemove': (_f, name) => `Delete view ${name}`,
+  'table.viewCopyOf': (_f, name) => `${name} copy`,
+  'table.viewMenu': (_f, name) => `${name} view actions`,
+  'table.panelTitleOf': (_f, name) => `Edit view: ${name}`,
+  'table.panelRemoveConfirm': (_f, name) => `Delete the view ${name}? It cannot be restored.`,
+  'table.panelFilterOf': (_f, header) => `Filter: ${header}`,
   'table.errorNamed': (_f, name) => `${couldNotLoad(String(name))}.`,
   'table.cellFilter': (_f, header, value) => `Filter ${header} by ${value}`,
   'table.rangeBetween': (_f, from, to) => `${from} – ${to}`,
@@ -244,6 +379,8 @@ export const table = {
   'table.optionsOf': (_f, header) => `${header} values`,
   'table.searchIn': (_f, label) => `Search ${label}`,
   'table.displayHidden': (f, hidden) => `Display, ${f.number(hidden)} hidden`,
+  'table.panelHidden': (f, count) => `${f.number(count)} hidden`,
+  'table.panelActive': (f, count) => `${f.number(count)} active`,
   'table.orderMoved': (f, label, at, of) =>
     `${label} moved to position ${f.number(at)} of ${f.number(of)}`,
   'table.orderHandle': (f, label, at, of) =>
