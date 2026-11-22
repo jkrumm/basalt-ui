@@ -417,6 +417,12 @@ export type UseDataTable<
   group?: {
     by: string
     summary?: (rows: readonly T[], box: Box) => ReactNode
+    /**
+     * While the rows are grouped by `by`, its column folds into the group rows: drawn there, not in
+     * each row (a space or a team the rows share is no fact of their own). Flat, the column shows; a
+     * reader who shows or hides it from the columns menu decides.
+     */
+    fold?: boolean
   }
   /**
    * Nested rows (client mode only, never with `group`): each row is drawn under the row
