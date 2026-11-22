@@ -8,6 +8,7 @@
 @source './content-fixture.tsx';
 @source '../../../src/content';
 @source '../../../src/page';
+@source '../../../src/core/panel.tsx';
 @source '../../../src/ui/alert.tsx';
 @source '../../../src/ui/button.tsx';
 @source '../../../src/ui/popover.tsx';

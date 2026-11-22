@@ -15,6 +15,7 @@
 @import '../../../src/css/tailwind.css' source(none);
 @source './';
 @source '../../../src/ui';
+@source '../../../src/core/panel.tsx';
 @source '../../../src/cards';
 @source '../../../src/core/card-menu.tsx';
 @source '../../../src/page';

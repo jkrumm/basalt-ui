@@ -5,4 +5,5 @@
 @import '../../../src/css/tailwind.css' source(none);
 @source './form-row-draft-fixture.tsx';
 @source '../../../src/ui';
+@source '../../../src/core/panel.tsx';
 @source '../../../src/controls';

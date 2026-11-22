@@ -6,4 +6,5 @@
 @import '../../src/css/tailwind.css' source(none);
 @source './table-toolbar-fixture.tsx';
 @source '../../src/ui';
+@source '../../src/core/panel.tsx';
 @source '../../src/table';

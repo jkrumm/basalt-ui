@@ -51,6 +51,8 @@ type Anatomy = {
   weight: string
   hairline: string
   atTop: boolean
+  /** The page bar band's height, or null where the frame has none. */
+  band: number | null
 }
 
 async function anatomyOf(frame: Frame, panel: string): Promise<Anatomy> {
@@ -74,6 +76,8 @@ async function anatomyOf(frame: Frame, panel: string): Promise<Anatomy> {
       weight: title.fontWeight,
       hairline: getComputedStyle(header).borderBottomWidth,
       atTop: Math.abs(h.top - el.getBoundingClientRect().top) <= 1,
+      band:
+        document.querySelector('[data-slot="page-bar"]')?.getBoundingClientRect().height ?? null,
     }
   }, panel)
 }
@@ -103,13 +107,15 @@ layout('one panel anatomy at 1800', () => {
         hairline: '1px',
       })
       expect(a.atTop).toBe(true)
-      expect(a.height).toBeGreaterThanOrEqual(48 - TOLERANCE)
     }
-    // The three shell panels meet the page bar band's bottom edge, so they share its height.
-    expect(Math.abs((all['Dock'] as Anatomy).height - peek.height)).toBeLessThanOrEqual(TOLERANCE)
-    expect(Math.abs((all['PageAside'] as Anatomy).height - peek.height)).toBeLessThanOrEqual(
-      TOLERANCE,
-    )
+    // The three shell panels take the page bar band's height, so their hairline meets the band's.
+    for (const name of ['Peek', 'Dock', 'PageAside']) {
+      const a = all[name] as Anatomy
+      expect({ name, band: a.band !== null }).toEqual({ name, band: true })
+      expect(Math.abs(a.height - (a.band ?? 0))).toBeLessThanOrEqual(TOLERANCE)
+    }
+    // A Sheet is a layer over the whole app, beside no band: the header's own 48px.
+    expect(Math.abs((all['Sheet'] as Anatomy).height - 48)).toBeLessThanOrEqual(TOLERANCE)
   })
 
   for (const { name, frame, panel } of PANELS) {

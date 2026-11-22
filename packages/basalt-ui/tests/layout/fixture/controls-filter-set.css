@@ -6,4 +6,5 @@
 @import '../../../src/css/tailwind.css' source(none);
 @source './controls-filter-set-probe.tsx';
 @source '../../../src/ui';
+@source '../../../src/core/panel.tsx';
 @source '../../../src/controls';

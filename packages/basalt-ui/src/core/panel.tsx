@@ -9,11 +9,12 @@ import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent, ReactElement, RefObject } from 'react'
 
 /**
- * The header row: 48px, and under a shell at least the page bar band's height (`--page-bar-h`), so
- * a side panel's hairline meets the band's; the title's lead inset, the controls' tighter end inset.
+ * The header row: under a shell with a page bar band the band's height (`--page-bar-h`, unset while
+ * no band is mounted), so a side panel's hairline meets the band's, else 48px; the title's lead
+ * inset, the controls' tighter end inset.
  */
 export const PANEL_HEADER =
-  'flex h-12 min-h-(--page-bar-h) shrink-0 items-center gap-1 border-b border-border ps-4 pe-2 outline-none'
+  'flex h-[var(--page-bar-h,3rem)] shrink-0 items-center gap-1 border-b border-border ps-4 pe-2 outline-none'
 
 /** The record's heading in the header. */
 export const PANEL_TITLE =
