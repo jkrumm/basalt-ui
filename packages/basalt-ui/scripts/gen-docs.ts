@@ -324,8 +324,61 @@ function extractExports(roots: GenRoots): { exports: Extracted[]; problems: stri
       )
     }
   }
+  const cards = read.find((r) => r.key === CARD_TYPES_ENTRY)
+  if (cards?.source !== undefined) {
+    extractCardTypes(checker, roots, { source: cards.source, subpath: `${pkgName}/cards` }, acc)
+  }
   const exports = acc.out.toSorted((x, y) => x.info.name.localeCompare(y.info.name))
   return { exports, problems: acc.problems }
+}
+
+/** The `./cards` entry owns the card value types; its package export key. */
+const CARD_TYPES_ENTRY = './cards'
+
+/** The shared card types a page must read to write a card's props. Types, so no value-export walk finds them. */
+const CARD_TYPE_DOCS = ['Delta', 'Verdict', 'Empty', 'FootFacts', 'Fact'] as const
+
+/** One doc per card type: its declaration as the signature, JSDoc held to the same gate as a value export. */
+function extractCardTypes(
+  checker: ts.TypeChecker,
+  roots: GenRoots,
+  at: { source: ts.SourceFile; subpath: string },
+  acc: Collected,
+): void {
+  const moduleSymbol = checker.getSymbolAtLocation(at.source)
+  if (moduleSymbol === undefined) return
+  const exported = checker.getExportsOfModule(moduleSymbol)
+  for (const name of CARD_TYPE_DOCS) {
+    const found = exported.find((e) => e.name === name)
+    const symbol =
+      found !== undefined && found.flags & ts.SymbolFlags.Alias
+        ? checker.getAliasedSymbol(found)
+        : found
+    const decl = symbol?.declarations?.find(ts.isTypeAliasDeclaration)
+    if (symbol === undefined || decl === undefined) {
+      acc.problems.push(`${name} (${at.subpath}): not exported as a type alias`)
+      continue
+    }
+    const taken = acc.names.get(kebab(name))
+    if (taken !== undefined) {
+      acc.problems.push(
+        `${name} (${at.subpath}): docs/${kebab(name)}.md is already taken by ${taken}`,
+      )
+      continue
+    }
+    acc.names.set(kebab(name), `${name} (${at.subpath})`)
+    acc.out.push({
+      info: {
+        name,
+        subpath: at.subpath,
+        peers: roots.peersFor(CARD_TYPES_ENTRY),
+        slots: [],
+        jsdoc: jsdocOf(checker, symbol),
+      },
+      signature: decl.getText().replace(/^export /, ''),
+      examples: jsdocExamples(checker, symbol),
+    })
+  }
 }
 
 /** A primitive constant has no shape: `valueSignature` would list its `Number` or `String` methods. */

@@ -91,6 +91,8 @@ src/
 It ends in `basalt-ui doctor`, which reports, then prints the session note when its run wrote agent-read files. Running `init` twice changes nothing; `sync` refreshes
 what `init` placed and never creates an install.
 
+The editor hook runs `basalt-ui lint` after each edit. Claude Code labels a finding it prints "PostToolUse:Write hook blocking error": the file was written, and the finding blocks the turn until you fix it.
+
 `init` on an **existing** app is a lint-debt event, not a no-op: the generated preset switches on
 whole oxlint plugins the repo was never linted against, so previously-clean code lands with real
 findings on the first run. Run `oxlint .` and `./node_modules/.bin/basalt-ui lint` and triage
@@ -250,6 +252,20 @@ and failure messages: `docs/vite.md`.
 **No `'use client'` directive ships anywhere in the package.** A Next.js App Router consumer wraps
 the provider in its own client file and renders that from a server layout — basalt stays
 framework-agnostic and does not guess at the boundary.
+
+---
+
+## Compose a page
+
+`node_modules/basalt-ui/docs/` holds one page per export. For a dashboard page read these first, in this order:
+
+1. [`page`](docs/page.md): the root every route returns; it owns the gutter.
+2. [`stat-group`](docs/stat-group.md) and [`stat-card`](docs/stat-card.md): the strip of headline figures.
+3. [`chart-card`](docs/chart-card.md) and [`cartesian-chart`](docs/cartesian-chart.md): a chart in its card.
+4. [`data-table`](docs/data-table.md): the records under the chart.
+5. [`section`](docs/section.md): a titled group with its own `controls` slot.
+
+The card props are typed by five shared types, each with its own page: [`delta`](docs/delta.md), [`verdict`](docs/verdict.md), [`empty`](docs/empty.md), [`foot-facts`](docs/foot-facts.md) and [`fact`](docs/fact.md). Read them before the `.d.ts` files.
 
 ---
 
@@ -482,10 +498,12 @@ default are byte-identical to what they always emitted. Full doctrine and plugin
 
 `BasaltRegister` is the single declaration-merge interface consumers augment to register their app-specific shapes for exact-keyed typing. It follows the same pattern as TanStack Router's `Register` interface — augment once per concern in the concern's own file, and every battery that reads the slot gets narrow types automatically.
 
-<!-- readme-check: skip the augmentation fragment of the series.ts block above -->
+<!-- readme-check: skip an augmentation fragment: SERIES is the app's own and the block is not a program -->
 
 ```ts
 // src/series.ts — augment the series slot
+import type {} from 'basalt-ui'
+
 declare module 'basalt-ui' {
   interface BasaltRegister {
     series: typeof SERIES

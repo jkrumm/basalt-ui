@@ -10,6 +10,6 @@ Placed by `basalt-ui init`, refreshed by `basalt-ui sync` (`--check` gates drift
 
 **Before guessing a token**, read `node_modules/basalt-ui/docs/<name>.md` (`basalt-ui doctor` prints where it is installed).
 
-**Run the local bin** (`./node_modules/.bin/basalt-ui` or a package script), never `bunx`, `init` included: install `basalt-ui` first, then run `init` once from the local bin. Run the repo gate before reporting done. **A gap in basalt-ui** (a missing export, a part that cannot express the screen, a rule that refuses a legitimate shape) is filed as a factory Issue in `basalt-ui` with a minimal reproduction (the smallest file, the command and what it printed): `factory issue new --repo basalt-ui`, or `factory signal file --repo basalt-ui` from a factory lead. Never patch it locally: no edit under `node_modules`, no local copy of a part, no waiver standing in for the fix.
+**Run the local bin** (`./node_modules/.bin/basalt-ui` or a package script), never `bunx`, `init` included: install `basalt-ui` first, then run `init` once from the local bin. Run the repo gate before reporting done. **A gap in basalt-ui** (a missing export, a part that cannot express the screen, a rule that refuses a legitimate shape) is filed in the package's issue tracker (`bugs.url` in `node_modules/basalt-ui/package.json`) with a minimal reproduction (the smallest file, the command and what it printed). Never patch it locally: no edit under `node_modules`, no local copy of a part, no waiver standing in for the fix.
 
 <!-- basalt:end -->
