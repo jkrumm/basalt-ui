@@ -20,14 +20,15 @@ below the regular container tier only `active` shows.
 ## Signature
 
 ```ts
-Board<C extends string, T extends { id: string; title: string; }>({ label, columns, items, card, onMove, drag, active, virtual, }: BoardProps<C, T>): ReactElement
+Board<C extends string, T extends { id: string; title: string; }>({ label, columns, items, card, onMove, drag, active, onActiveChange, virtual, }: BoardProps<C, T>): ReactElement
   label: string  // The board's accessible name, the region its columns scroll in
   columns: readonly { id: C; label: string; tone?: Tone | undefined; total?: string | undefined; disabled?: boolean | undefined; }[]  // In order
   items: Readonly<Record<C, readonly T[]>>  // Every column's cards in order; a column's count is its length
   card: (item: T, move: { column: ColumnRef<C>; index: number; columns: readonly ColumnRef<C>[]; onMove: (m: Move<C>) => void; dragging?: boolean; }) => ReactElement  // One card: a `KanbanCard` given `move` as it is, so its menu is the keyboard path
   onMove: (move: Move<C>) => void  // Every finished move, by drop or by menu: `index` is the card's final index in `to`
   drag?: DragLike  // The drag engine: `drag` from `basalt-ui/ui/sortable-list`
-  active?: C  // The one column shown below the regular container tier (a URL field); the first by default
+  active?: C  // The one column shown below the regular container tier, where a switch above the board picks it
+  onActiveChange?: ((column: C) => void)
   virtual?: { list: VirtualLike; cardHeight: number; }  // Window every column: `VirtualList` from `basalt-ui/ui/virtual-list` and the fixed px height of one card
 ```
 
